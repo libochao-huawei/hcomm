@@ -1,0 +1,73 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#ifndef RANK_GRAPH_H
+#define RANK_GRAPH_H
+
+#include "topoinfo_struct.h"
+#include "hccl_api.h"
+#include "hccl_common.h"
+#include "hccl_impl_pub.h"
+
+namespace hccl {
+
+class RankGraph {
+struct RankGraphInfo {
+    RankInfo_t rankInfo;  // rank → server / supernode 等归属
+    std::vector<EndPoint> endPoints; // 通信端点信息
+};
+
+enum class HcclNetLayerlevel {
+    HCCL_NetLayer_L0 = 0,
+    HCCL_NetLayer_L1,
+    HCCL_NetLayer_L2,
+    HCCL_NetLayer_MAX,
+};
+
+public:
+    HcclResult Init(const RankTable_t& rankTable, const HcclTopoAttr &topoAttr);
+    HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
+        uint32_t* listSize);
+    // 根据 rankId 获取 rank 信息
+    const RankInfo_t* FindRank(uint32_t rankId) const;
+    HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+
+private:
+    HcclResult DevTypeToCommProtocol(DevType type, CommProtocol &protocol);
+    CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t srcInfo, const RankInfo_t dstInfo);
+    HcclResult InitRankInfo();
+    HcclResult InitServerRankInfo();
+    HcclResult InitSuperPodRankInfo();
+    HcclResult InitNetLayer();
+    HcclResult GetModuleIdx(const RankInfo_t &rankInfo, u32 &moduleIdx);
+    RankTable_t rankTable_;
+    // 根据 rankId 获取 RankInfo_t 与 EndPoint信息
+    std::unordered_map<uint32_t, RankGraphInfo> rankIndex_;
+    // 根据 srcRank dstRank 获取CommLink信息
+    std::map<std::pair<uint32_t, uint32_t>, std::vector<CommLink>> rankPairInfo_;
+    std::vector<uint32_t> netLayer_;
+    std::unordered_map<uint32_t, std::vector<u32>> rankList_;      //level->rankList
+    std::unordered_map<uint32_t, std::vector<u32>> rankSizeList_;  //level->rankSizeList
+    std::vector<RankInfo_t> rankGraph_;
+    HcclTopoAttr topoAttr_;
+    RankInfo_t rankData_;         // 当前rank的相关信息
+
+    // 通信域在当前superPod内, 按照serverIdx划分的所有rank信息
+    std::map<u32, std::vector<RankInfo_t> > serverToRank_;
+    // 通信域所有rank的信息, 按照superPodId -> RankInfo 的结构划分
+    std::map<u32, std::vector<RankInfo_t> > superPodToRank_;
+};
+} // namespace hccl
+#endif
