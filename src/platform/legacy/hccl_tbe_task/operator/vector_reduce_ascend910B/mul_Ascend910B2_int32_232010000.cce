@@ -1,0 +1,208 @@
+#ifdef __CCE_KT_TEST__
+#define __aicore__ 
+#else
+#define __aicore__ [aicore]
+#endif
+
+extern "C" __global__ __aicore__ void mul_Ascend910B2_int32_232010000(__gm__ int32_t* __restrict__ data_x1, __gm__ int32_t* __restrict__ data_x2, __gm__ int32_t* __restrict__ mul_46, __gm__ uint8_t* __restrict__ ddr_arg) {
+set_vector_mask((uint64_t)-1, (uint64_t)-1);
+set_mask_count();
+set_atomic_none();
+  dc_preload(((__gm__ uint64_t *)((__gm__ uint8_t *)ddr_arg)), (int16_t)0);
+  pipe_barrier(PIPE_ALL);
+  int32_t _dim_0_1 = (*((__gm__ int32_t *)((__gm__ uint8_t *)ddr_arg)));
+  int32_t _block_factor_0 = (*((__gm__ int32_t *)((__gm__ uint8_t *)ddr_arg + 4)));
+  int32_t _ub_factor_0 = (*((__gm__ int32_t *)((__gm__ uint8_t *)ddr_arg + 8)));
+  int64_t host_var = (((((int64_t)_dim_0_1) - (int64_t)1) / ((int64_t)_block_factor_0)) + (int64_t)1);
+  int64_t host_var1 = ((((int64_t)_ub_factor_0) * ((((((int64_t)_block_factor_0) - (int64_t)1) / ((int64_t)_ub_factor_0)) >> (int64_t)1) + (int64_t)1)) * (int64_t)2);
+  int64_t host_var2 = (((int64_t)_ub_factor_0) * (int64_t)2);
+  int64_t host_var3 = (((int64_t)_ub_factor_0) * (int64_t)4);
+  int64_t host_var4 = ((int64_t)4 - (((int64_t)_ub_factor_0) * (int64_t)4));
+  int64_t host_var5 = ((int64_t)1 - ((((int64_t)_ub_factor_0) + (int64_t)7) / (int64_t)8));
+  uint64_t host_var6 = ((uint64_t)_ub_factor_0);
+  int64_t host_var7 = (((((int64_t)_block_factor_0) - (int64_t)1) / ((int64_t)_ub_factor_0)) >> (int64_t)1);
+  int64_t host_var8 = ((((((int64_t)_block_factor_0) - (int64_t)1) / ((int64_t)_ub_factor_0)) >> (int64_t)1) + (int64_t)1);
+  int64_t host_var9 = (((int64_t)_ub_factor_0) * ((((int64_t)_block_factor_0) - (int64_t)1) / ((int64_t)_ub_factor_0)));
+// "aicore arch: Ascend910B2"
+  if (((int32_t)block_idx) < (((_dim_0_1 - 1) / _block_factor_0) + 1)) {
+__ubuf__     int32_t* data_x1_local_UB_2 = (__ubuf__  int32_t *)get_imm(0);
+__ubuf__     int32_t* data_x2_local_UB_3 = (__ubuf__  int32_t *)get_imm(24448);
+     int32_t reg_scalar1_5[1] = {0};
+__ubuf__     int32_t* ScalarToVector0_UB_6 = (__ubuf__  int32_t *)get_imm(48896);
+     int32_t reg_scalar1_7[1] = {0};
+__ubuf__     int32_t* data_x1_local_UB_9 = (__ubuf__  int32_t *)get_imm(48928);
+__ubuf__     int32_t* data_x2_local_UB_10 = (__ubuf__  int32_t *)get_imm(73376);
+     int32_t reg_scalar1_12[1] = {0};
+__ubuf__     int32_t* ScalarToVector0_UB_13 = (__ubuf__  int32_t *)get_imm(97824);
+     int32_t reg_scalar1_14[1] = {0};
+    if (((int64_t)((int32_t)block_idx)) < host_var) {
+      for (int64_t i0_inner_outer_db_s = 0; i0_inner_outer_db_s < host_var1; i0_inner_outer_db_s += host_var2) {
+        int64_t data_x2_local_UB_orig_bound_min_0 = (i0_inner_outer_db_s + ((int64_t)(((int32_t)block_idx) * _block_factor_0)));
+        int64_t ax0_ext = max((((int64_t)(_dim_0_1 - (((int32_t)block_idx) * _block_factor_0))) - i0_inner_outer_db_s), (int64_t)0);
+        int64_t intrin_offset0 = max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0);
+        int64_t i0_inner_inner_ext = max(min(((int64_t)_ub_factor_0), (((int64_t)(int32_t)(min((_dim_0_1 - (((int32_t)block_idx) * _block_factor_0)), _block_factor_0))) - (((i0_inner_outer_db_s / host_var2) * ((int64_t)_ub_factor_0)) * (int64_t)2))), (int64_t)0);
+        if ((int64_t)0 < (i0_inner_outer_db_s / host_var2)) {
+          wait_flag(PIPE_S, PIPE_MTE2, EVENT_ID0);
+        }
+        pipe_barrier(PIPE_MTE2);
+        copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x1_local_UB_2), ((__gm__ int32_t *)data_x1), 0, 1, 4, 0, 0, 0, 0);
+        if ((int64_t)0 < (i0_inner_outer_db_s / host_var2)) {
+          wait_flag(PIPE_V, PIPE_MTE2, EVENT_ID0);
+          wait_flag(PIPE_MTE3, PIPE_MTE2, EVENT_ID0);
+        }
+        if (((int64_t)_ub_factor_0) < (((int64_t)(_dim_0_1 - (((int32_t)block_idx) * _block_factor_0))) - i0_inner_outer_db_s)) {
+          if ((_ub_factor_0 <= 8) && (_ub_factor_0 <= 1)) {
+            copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_0), (uint8_t)0ULL, 1, host_var3, 0, 0, host_var4, host_var5);
+          } else {
+            copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_0), 0, 1, host_var3, 0, 0, 0, 0);
+          }
+        } else if ((int64_t)0 < ax0_ext) {
+          if ((ax0_ext <= (int64_t)8) && (ax0_ext <= (int64_t)1)) {
+            copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_0), (uint8_t)0ULL, 1, (ax0_ext * (int64_t)4), 0, 0, ((int64_t)4 - (ax0_ext * (int64_t)4)), ((int64_t)1 - ((ax0_ext + (int64_t)7) / (int64_t)8)));
+          } else {
+            copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_0), 0, 1, (ax0_ext * (int64_t)4), 0, 0, 0, 0);
+          }
+        }
+        set_flag(PIPE_MTE2, PIPE_MTE3, EVENT_ID0);
+        if (((int64_t)_ub_factor_0) < (((int64_t)(_dim_0_1 - (((int32_t)block_idx) * _block_factor_0))) - i0_inner_outer_db_s)) {
+          set_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          set_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          reg_scalar1_5[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)data_x1_local_UB_2)));
+          set_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          wait_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          set_vector_mask(0x0, 0x8);
+          vector_dup(((__ubuf__ int32_t *)ScalarToVector0_UB_6), reg_scalar1_5[0], 1, 0, 0, 0, 0);
+          pipe_barrier(PIPE_V);
+          set_vector_mask(0x0, host_var6);
+          vmul(((__ubuf__ int32_t *)data_x2_local_UB_3 + intrin_offset0), ((__ubuf__ int32_t *)ScalarToVector0_UB_6), ((__ubuf__ int32_t *)data_x2_local_UB_3 + intrin_offset0), 1, 1, 0, 1, 8, 0, 8);
+        } else if ((int64_t)0 < ax0_ext) {
+          set_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          set_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          reg_scalar1_7[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)data_x1_local_UB_2)));
+          set_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          wait_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          set_vector_mask(0x0, 0x8);
+          vector_dup(((__ubuf__ int32_t *)ScalarToVector0_UB_6), reg_scalar1_7[0], 1, 0, 0, 0, 0);
+          pipe_barrier(PIPE_V);
+          set_vector_mask(0x0, ((uint64_t)ax0_ext));
+          vmul(((__ubuf__ int32_t *)data_x2_local_UB_3 + intrin_offset0), ((__ubuf__ int32_t *)ScalarToVector0_UB_6), ((__ubuf__ int32_t *)data_x2_local_UB_3 + intrin_offset0), 1, 1, 0, 1, 8, 0, 8);
+        }
+        if (((i0_inner_outer_db_s / host_var2) < host_var7) && (host_var8 != (int64_t)1)) {
+          set_flag(PIPE_V, PIPE_MTE2, EVENT_ID0);
+        }
+        set_flag(PIPE_V, PIPE_MTE3, EVENT_ID0);
+        if (((i0_inner_outer_db_s / host_var2) < host_var7) && (host_var8 != (int64_t)1)) {
+          set_flag(PIPE_S, PIPE_MTE2, EVENT_ID0);
+        }
+        wait_flag(PIPE_MTE2, PIPE_MTE3, EVENT_ID0);
+        wait_flag(PIPE_V, PIPE_MTE3, EVENT_ID0);
+        if ((((int64_t)_ub_factor_0) < (((int64_t)(_dim_0_1 - (((int32_t)block_idx) * _block_factor_0))) - i0_inner_outer_db_s)) && (((int64_t)_ub_factor_0) < (((int64_t)_block_factor_0) - i0_inner_outer_db_s))) {
+          if ((int64_t)0 < i0_inner_inner_ext) {
+            pipe_barrier(PIPE_MTE3);
+            if (i0_inner_inner_ext <= (int64_t)1) {
+              copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_0), ((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), (uint8_t)0ULL, 1, (i0_inner_inner_ext * (int64_t)4), 0, 0, ((int64_t)1 - ((i0_inner_inner_ext + (int64_t)7) / (int64_t)8)), ((int64_t)4 - (i0_inner_inner_ext * (int64_t)4)));
+            } else {
+              copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_0), ((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), 0, 1, (i0_inner_inner_ext * (int64_t)4), 0, 0, 0, 0);
+            }
+          }
+        } else if ((int64_t)0 < i0_inner_inner_ext) {
+          pipe_barrier(PIPE_MTE3);
+          if (i0_inner_inner_ext <= (int64_t)1) {
+            copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_0), ((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), (uint8_t)0ULL, 1, (i0_inner_inner_ext * (int64_t)4), 0, 0, ((int64_t)1 - ((i0_inner_inner_ext + (int64_t)7) / (int64_t)8)), ((int64_t)4 - (i0_inner_inner_ext * (int64_t)4)));
+          } else {
+            copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_0), ((__ubuf__ int32_t *)data_x2_local_UB_3 + max((data_x2_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_1)), (int64_t)0)), 0, 1, (i0_inner_inner_ext * (int64_t)4), 0, 0, 0, 0);
+          }
+        }
+        if (((i0_inner_outer_db_s / host_var2) < host_var7) && (host_var8 != (int64_t)1)) {
+          set_flag(PIPE_MTE3, PIPE_MTE2, EVENT_ID0);
+        }
+        if ((int64_t)0 < (i0_inner_outer_db_s / host_var2)) {
+          wait_flag(PIPE_MTE3, PIPE_MTE2, EVENT_ID1);
+          wait_flag(PIPE_V, PIPE_MTE2, EVENT_ID1);
+          wait_flag(PIPE_S, PIPE_MTE2, EVENT_ID1);
+        }
+        if (i0_inner_outer_db_s < host_var9) {
+          int64_t data_x2_local_UB_orig_bound_min_01 = ((i0_inner_outer_db_s + ((int64_t)_ub_factor_0)) + ((int64_t)(((int32_t)block_idx) * _block_factor_0)));
+          int64_t ax0_ext1 = max(((((int64_t)_dim_0_1) - (i0_inner_outer_db_s + ((int64_t)_ub_factor_0))) - ((int64_t)(((int32_t)block_idx) * _block_factor_0))), (int64_t)0);
+          int64_t intrin_offset01 = max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0);
+          int64_t i0_inner_inner_ext1 = max(min(((int64_t)_ub_factor_0), min(((((int64_t)_dim_0_1) - ((((i0_inner_outer_db_s / host_var2) * (int64_t)2) + (int64_t)1) * ((int64_t)_ub_factor_0))) - ((int64_t)(((int32_t)block_idx) * _block_factor_0))), (((int64_t)_block_factor_0) - ((((i0_inner_outer_db_s / host_var2) * (int64_t)2) + (int64_t)1) * ((int64_t)_ub_factor_0))))), (int64_t)0);
+          copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x1_local_UB_9), ((__gm__ int32_t *)data_x1), 0, 1, 4, 0, 0, 0, 0);
+          if (((int64_t)_ub_factor_0) < ((((int64_t)_dim_0_1) - (i0_inner_outer_db_s + ((int64_t)_ub_factor_0))) - ((int64_t)(((int32_t)block_idx) * _block_factor_0)))) {
+            if ((_ub_factor_0 <= 8) && (_ub_factor_0 <= 1)) {
+              copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_01), (uint8_t)0ULL, 1, host_var3, 0, 0, host_var4, host_var5);
+            } else {
+              copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_01), 0, 1, host_var3, 0, 0, 0, 0);
+            }
+          } else if ((int64_t)0 < ax0_ext1) {
+            if ((ax0_ext1 <= (int64_t)8) && (ax0_ext1 <= (int64_t)1)) {
+              copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_01), (uint8_t)0ULL, 1, (ax0_ext1 * (int64_t)4), 0, 0, ((int64_t)4 - (ax0_ext1 * (int64_t)4)), ((int64_t)1 - ((ax0_ext1 + (int64_t)7) / (int64_t)8)));
+            } else {
+              copy_gm_to_ubuf_align_b32(((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), ((__gm__ int32_t *)data_x2 + data_x2_local_UB_orig_bound_min_01), 0, 1, (ax0_ext1 * (int64_t)4), 0, 0, 0, 0);
+            }
+          }
+          set_flag(PIPE_MTE2, PIPE_MTE3, EVENT_ID0);
+          if (((int64_t)_ub_factor_0) < ((((int64_t)_dim_0_1) - (i0_inner_outer_db_s + ((int64_t)_ub_factor_0))) - ((int64_t)(((int32_t)block_idx) * _block_factor_0)))) {
+            set_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+            wait_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+            set_flag(PIPE_V, PIPE_S, EVENT_ID0);
+            wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+            reg_scalar1_12[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)data_x1_local_UB_9)));
+            set_flag(PIPE_S, PIPE_V, EVENT_ID0);
+            wait_flag(PIPE_S, PIPE_V, EVENT_ID0);
+            set_vector_mask(0x0, 0x8);
+            vector_dup(((__ubuf__ int32_t *)ScalarToVector0_UB_13), reg_scalar1_12[0], 1, 0, 0, 0, 0);
+            pipe_barrier(PIPE_V);
+            set_vector_mask(0x0, host_var6);
+            vmul(((__ubuf__ int32_t *)data_x2_local_UB_10 + intrin_offset01), ((__ubuf__ int32_t *)ScalarToVector0_UB_13), ((__ubuf__ int32_t *)data_x2_local_UB_10 + intrin_offset01), 1, 1, 0, 1, 8, 0, 8);
+          } else if ((int64_t)0 < ax0_ext1) {
+            set_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+            wait_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+            set_flag(PIPE_V, PIPE_S, EVENT_ID0);
+            wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+            reg_scalar1_14[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)data_x1_local_UB_9)));
+            set_flag(PIPE_S, PIPE_V, EVENT_ID0);
+            wait_flag(PIPE_S, PIPE_V, EVENT_ID0);
+            set_vector_mask(0x0, 0x8);
+            vector_dup(((__ubuf__ int32_t *)ScalarToVector0_UB_13), reg_scalar1_14[0], 1, 0, 0, 0, 0);
+            pipe_barrier(PIPE_V);
+            set_vector_mask(0x0, ((uint64_t)ax0_ext1));
+            vmul(((__ubuf__ int32_t *)data_x2_local_UB_10 + intrin_offset01), ((__ubuf__ int32_t *)ScalarToVector0_UB_13), ((__ubuf__ int32_t *)data_x2_local_UB_10 + intrin_offset01), 1, 1, 0, 1, 8, 0, 8);
+          }
+          set_flag(PIPE_V, PIPE_MTE3, EVENT_ID0);
+          wait_flag(PIPE_MTE2, PIPE_MTE3, EVENT_ID0);
+          wait_flag(PIPE_V, PIPE_MTE3, EVENT_ID0);
+          if ((((int64_t)_ub_factor_0) < ((((int64_t)_dim_0_1) - (i0_inner_outer_db_s + ((int64_t)_ub_factor_0))) - ((int64_t)(((int32_t)block_idx) * _block_factor_0)))) && (((int64_t)_ub_factor_0) < (((int64_t)_block_factor_0) - (i0_inner_outer_db_s + ((int64_t)_ub_factor_0))))) {
+            if ((int64_t)0 < i0_inner_inner_ext1) {
+              pipe_barrier(PIPE_MTE3);
+              if (i0_inner_inner_ext1 <= (int64_t)1) {
+                copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_01), ((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), (uint8_t)0ULL, 1, (i0_inner_inner_ext1 * (int64_t)4), 0, 0, ((int64_t)1 - ((i0_inner_inner_ext1 + (int64_t)7) / (int64_t)8)), ((int64_t)4 - (i0_inner_inner_ext1 * (int64_t)4)));
+              } else {
+                copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_01), ((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), 0, 1, (i0_inner_inner_ext1 * (int64_t)4), 0, 0, 0, 0);
+              }
+            }
+          } else if ((int64_t)0 < i0_inner_inner_ext1) {
+            pipe_barrier(PIPE_MTE3);
+            if (i0_inner_inner_ext1 <= (int64_t)1) {
+              copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_01), ((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), (uint8_t)0ULL, 1, (i0_inner_inner_ext1 * (int64_t)4), 0, 0, ((int64_t)1 - ((i0_inner_inner_ext1 + (int64_t)7) / (int64_t)8)), ((int64_t)4 - (i0_inner_inner_ext1 * (int64_t)4)));
+            } else {
+              copy_ubuf_to_gm_align_b32(((__gm__ int32_t *)mul_46 + data_x2_local_UB_orig_bound_min_01), ((__ubuf__ int32_t *)data_x2_local_UB_10 + max((data_x2_local_UB_orig_bound_min_01 - ((int64_t)_dim_0_1)), (int64_t)0)), 0, 1, (i0_inner_inner_ext1 * (int64_t)4), 0, 0, 0, 0);
+            }
+          }
+        }
+        if (((i0_inner_outer_db_s / host_var2) < host_var7) && (host_var8 != (int64_t)1)) {
+          set_flag(PIPE_MTE3, PIPE_MTE2, EVENT_ID1);
+          set_flag(PIPE_S, PIPE_MTE2, EVENT_ID1);
+          set_flag(PIPE_V, PIPE_MTE2, EVENT_ID1);
+        }
+      }
+    }
+    pipe_barrier(PIPE_ALL);
+  }
+  pipe_barrier(PIPE_ALL);
+
+}
+

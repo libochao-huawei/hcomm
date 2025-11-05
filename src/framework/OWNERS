@@ -1,0 +1,25 @@
+approvers:
+- cauthyzheng
+- ccl_ligang
+- wangchao7620
+- xuemin05
+- dingweiqin
+- hey-yahei
+- noth1n9
+- reserved
+
+reviewers:
+- yanzhenghang
+- dingweiqin
+- xingping1029
+- philo_yan
+- yanyefeng
+- innoecho
+- lilianlin-hw
+- ccl_ligang
+- liuzhuheng
+- noth1n9
+- reserved
+
+options:
+ no_parent_owners: true

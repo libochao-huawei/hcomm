@@ -1,0 +1,234 @@
+#ifdef __CCE_KT_TEST__
+#define __aicore__ 
+#else
+#define __aicore__ [aicore]
+#endif
+
+extern "C" __global__ __aicore__ void MemSet_dynamic_AtomicAddrClean_1_ascend310p3__kernel0(__gm__ int64_t* __restrict__ addr_gm_list, __gm__ int32_t* __restrict__ tiling_gm) {
+set_rpn_offset(1.0f, 1.0h);
+set_vector_mask((uint64_t)-1, (uint64_t)-1);
+set_mask_norm();
+set_atomic_none();
+  if (((int32_t)block_idx) < 8) {
+     int64_t tik_scope_addr_local_UB_inner[1] = {0};
+     int64_t tik_for_addr_inner[1] = {0};
+     int32_t workspace_num26[1] = {0};
+     int32_t core_num_scalar27[1] = {0};
+     int32_t select_key28[1] = {0};
+     int32_t need_core_num29[1] = {0};
+     int32_t ele_num_full_mask_repeat_time30[1] = {0};
+     int32_t burst_len_full_mask_repeat_time31[1] = {0};
+     int32_t ele_num_front_core32[1] = {0};
+     int32_t init_times_full_mask_repeat_time_front_core33[1] = {0};
+     int32_t ele_num_front_part_front_core34[1] = {0};
+     int32_t burst_len_last_part_front_core35[1] = {0};
+     int32_t repeat_time_last_part_front_core36[1] = {0};
+     int32_t ele_num_last_core37[1] = {0};
+     int32_t init_times_full_mask_repeat_time_last_core38[1] = {0};
+     int32_t ele_num_front_part_last_core39[1] = {0};
+     int32_t burst_len_last_part_last_core40[1] = {0};
+     int32_t repeat_time_last_part_last_core41[1] = {0};
+     int32_t core_num42[1] = {0};
+     int32_t gap_last_core_last_time43[1] = {0};
+     int32_t offset44[1] = {0};
+     int64_t reg_buf45[1] = {0};
+     int64_t reg_buf46[1] = {0};
+     int64_t reg_buf47[1] = {0};
+     int64_t reg_buf48[1] = {0};
+     int64_t reg_buf49[1] = {0};
+     int64_t reg_buf50[1] = {0};
+// "aicore arch: Ascend310P"
+    int64_t ub_tmp_start_addr = tik_scope_addr_local_UB_inner[0];
+__ubuf__     int32_t* ub_tmp = (__ubuf__  int32_t *)(ub_tmp_start_addr);
+    tik_scope_addr_local_UB_inner[0] = (tik_scope_addr_local_UB_inner[0] + (int64_t)32);
+    pipe_barrier(PIPE_ALL);
+    copy_gm_to_ubuf(((__ubuf__ int32_t *)ub_tmp), ((__gm__ int32_t *)tiling_gm), 0, 1, 1, 0, 0);
+    pipe_barrier(PIPE_ALL);
+    pipe_barrier(PIPE_ALL);
+    workspace_num26[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)ub_tmp)));
+    pipe_barrier(PIPE_ALL);
+    tik_scope_addr_local_UB_inner[0] = ub_tmp_start_addr;
+    int64_t tiling_ub_start_addr = tik_scope_addr_local_UB_inner[0];
+__ubuf__     int32_t* tiling_ub = (__ubuf__  int32_t *)(tiling_ub_start_addr);
+    tik_scope_addr_local_UB_inner[0] = (tik_scope_addr_local_UB_inner[0] + (int64_t)64);
+    core_num_scalar27[0] = 8;
+    int64_t addr_ub_list_total_size = (((((int64_t)workspace_num26[0]) + (int64_t)4) / (int64_t)4) * (int64_t)4);
+    int64_t addr_ub_list_start_addr = tik_scope_addr_local_UB_inner[0];
+__ubuf__     int64_t* addr_ub_list = (__ubuf__  int64_t *)(addr_ub_list_start_addr);
+    tik_scope_addr_local_UB_inner[0] = (((((addr_ub_list_total_size * (int64_t)8) + (int64_t)31) >> (int64_t)5) * (int64_t)32) + tik_scope_addr_local_UB_inner[0]);
+    pipe_barrier(PIPE_ALL);
+    copy_gm_to_ubuf(((__ubuf__ int64_t *)addr_ub_list), ((__gm__ int64_t *)addr_gm_list), 0, 1, ((workspace_num26[0] + 4) / 4), 0, 0);
+    pipe_barrier(PIPE_ALL);
+    core_num_scalar27[0] = core_num42[0];
+    for (int32_t j = 0; j < 4; ++j) {
+      tik_for_addr_inner[0] = tik_scope_addr_local_UB_inner[0];
+      pipe_barrier(PIPE_ALL);
+      copy_gm_to_ubuf(((__ubuf__ int32_t *)tiling_ub), ((__gm__ int32_t *)tiling_gm + (((int64_t)j) * (int64_t)16)), 0, 1, 2, 0, 0);
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      select_key28[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      need_core_num29[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 1)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      ele_num_full_mask_repeat_time30[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 2)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      burst_len_full_mask_repeat_time31[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 3)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      ele_num_front_core32[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 4)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      init_times_full_mask_repeat_time_front_core33[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 5)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      ele_num_front_part_front_core34[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 6)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      burst_len_last_part_front_core35[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 7)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      repeat_time_last_part_front_core36[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 8)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      ele_num_last_core37[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 9)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      init_times_full_mask_repeat_time_last_core38[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 10)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      ele_num_front_part_last_core39[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 11)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      burst_len_last_part_last_core40[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 12)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      repeat_time_last_part_last_core41[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 13)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      core_num42[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 14)));
+      pipe_barrier(PIPE_ALL);
+      pipe_barrier(PIPE_ALL);
+      gap_last_core_last_time43[0] = (int32_t) (*( __ubuf__ int32_t* ) (((__ubuf__ int32_t *)tiling_ub + 15)));
+      pipe_barrier(PIPE_ALL);
+      int64_t ub_for_dup_start_addr = tik_scope_addr_local_UB_inner[0];
+__ubuf__       float* ub_for_dup = (__ubuf__  float *)(ub_for_dup_start_addr);
+      tik_scope_addr_local_UB_inner[0] = (tik_scope_addr_local_UB_inner[0] + (int64_t)65280);
+      if (((int32_t)block_idx) < (need_core_num29[0] - 1)) {
+        pipe_barrier(PIPE_ALL);
+        set_vector_mask(0x0, 0xffffffffffffffff);
+        pipe_barrier(PIPE_ALL);
+        for (int32_t k = 0; k < init_times_full_mask_repeat_time_front_core33[0]; ++k) {
+          offset44[0] = ((((int32_t)block_idx) * ele_num_front_core32[0]) + (k * ele_num_full_mask_repeat_time30[0]));
+          pipe_barrier(PIPE_ALL);
+          vector_dup(((__ubuf__ float *)ub_for_dup), 0.0000000000000000e+00f, 255, 1, 0, 8, 0, 0, 0);
+          pipe_barrier(PIPE_ALL);
+          pipe_barrier(PIPE_ALL);
+          reg_buf45[0] = (int64_t) (*( __ubuf__ int64_t* ) (((__ubuf__ int64_t *)addr_ub_list + ((int64_t)j))));
+          pipe_barrier(PIPE_ALL);
+          pipe_barrier(PIPE_ALL);
+          copy_ubuf_to_gm((__gm__ float*)(reg_buf45[0] + (((int64_t)offset44[(int64_t)0]) * (int64_t)4)), ((__ubuf__ float *)ub_for_dup), 0, 1, burst_len_full_mask_repeat_time31[0], 0, 0);
+          pipe_barrier(PIPE_ALL);
+        }
+        if (init_times_full_mask_repeat_time_front_core33[0] == 0) {
+          pipe_barrier(PIPE_ALL);
+          vector_dup(((__ubuf__ float *)ub_for_dup), 0.0000000000000000e+00f, repeat_time_last_part_front_core36[0], 1, 0, 8, 0, 0, 0);
+          pipe_barrier(PIPE_ALL);
+        }
+        offset44[0] = ((((int32_t)block_idx) * ele_num_front_core32[0]) + ele_num_front_part_front_core34[0]);
+        if (0 < burst_len_last_part_front_core35[0]) {
+          pipe_barrier(PIPE_ALL);
+          reg_buf46[0] = (int64_t) (*( __ubuf__ int64_t* ) (((__ubuf__ int64_t *)addr_ub_list + ((int64_t)j))));
+          pipe_barrier(PIPE_ALL);
+          pipe_barrier(PIPE_ALL);
+          copy_ubuf_to_gm((__gm__ float*)(reg_buf46[0] + (((int64_t)offset44[(int64_t)0]) * (int64_t)4)), ((__ubuf__ float *)ub_for_dup), 0, 1, burst_len_last_part_front_core35[0], 0, 0);
+          pipe_barrier(PIPE_ALL);
+        }
+      }
+      if (((int32_t)block_idx) == (need_core_num29[0] - 1)) {
+        pipe_barrier(PIPE_ALL);
+        set_vector_mask(0x0, 0xffffffffffffffff);
+        pipe_barrier(PIPE_ALL);
+        for (int32_t i_0 = 0; i_0 < init_times_full_mask_repeat_time_last_core38[0]; ++i_0) {
+          if ((i_0 == (init_times_full_mask_repeat_time_last_core38[0] - 1)) & (burst_len_last_part_last_core40[0] == 0)) {
+            offset44[0] = (((((int32_t)block_idx) * ele_num_front_core32[0]) + (i_0 * ele_num_full_mask_repeat_time30[0])) - gap_last_core_last_time43[0]);
+          } else {
+            offset44[0] = ((((int32_t)block_idx) * ele_num_front_core32[0]) + (i_0 * ele_num_full_mask_repeat_time30[0]));
+          }
+          pipe_barrier(PIPE_ALL);
+          vector_dup(((__ubuf__ float *)ub_for_dup), 0.0000000000000000e+00f, 255, 1, 0, 8, 0, 0, 0);
+          pipe_barrier(PIPE_ALL);
+          pipe_barrier(PIPE_ALL);
+          reg_buf47[0] = (int64_t) (*( __ubuf__ int64_t* ) (((__ubuf__ int64_t *)addr_ub_list + ((int64_t)j))));
+          pipe_barrier(PIPE_ALL);
+          pipe_barrier(PIPE_ALL);
+          copy_ubuf_to_gm((__gm__ float*)(reg_buf47[0] + (((int64_t)offset44[(int64_t)0]) * (int64_t)4)), ((__ubuf__ float *)ub_for_dup), 0, 1, burst_len_full_mask_repeat_time31[0], 0, 0);
+          pipe_barrier(PIPE_ALL);
+        }
+        if (init_times_full_mask_repeat_time_last_core38[0] == 0) {
+          if (((int32_t)block_idx) == 0) {
+            pipe_barrier(PIPE_ALL);
+            vector_dup(((__ubuf__ float *)ub_for_dup), 0.0000000000000000e+00f, repeat_time_last_part_last_core41[0], 1, 0, 8, 0, 0, 0);
+            pipe_barrier(PIPE_ALL);
+            offset44[0] = 0;
+            pipe_barrier(PIPE_ALL);
+            reg_buf48[0] = (int64_t) (*( __ubuf__ int64_t* ) (((__ubuf__ int64_t *)addr_ub_list + ((int64_t)j))));
+            pipe_barrier(PIPE_ALL);
+            pipe_barrier(PIPE_ALL);
+            copy_ubuf_to_gm((__gm__ float*)(reg_buf48[0] + (int64_t)0), ((__ubuf__ float *)ub_for_dup), 0, 1, (burst_len_last_part_last_core40[0] - 1), 0, 0);
+            pipe_barrier(PIPE_ALL);
+            pipe_barrier(PIPE_ALL);
+            reg_buf49[0] = (int64_t) (*( __ubuf__ int64_t* ) (((__ubuf__ int64_t *)addr_ub_list + ((int64_t)j))));
+            pipe_barrier(PIPE_ALL);
+            pipe_barrier(PIPE_ALL);
+            copy_ubuf_to_gm((__gm__ float*)(reg_buf49[0] + (((int64_t)gap_last_core_last_time43[(int64_t)0]) * (int64_t)4)), ((__ubuf__ float *)ub_for_dup), 0, 1, (burst_len_last_part_last_core40[0] - 1), 0, 0);
+            pipe_barrier(PIPE_ALL);
+          } else {
+            pipe_barrier(PIPE_ALL);
+            vector_dup(((__ubuf__ float *)ub_for_dup), 0.0000000000000000e+00f, repeat_time_last_part_last_core41[0], 1, 0, 8, 0, 0, 0);
+            pipe_barrier(PIPE_ALL);
+          }
+          offset44[0] = (((((int32_t)block_idx) * ele_num_front_core32[0]) + ele_num_front_part_last_core39[0]) - gap_last_core_last_time43[0]);
+          if (0 < burst_len_last_part_last_core40[0]) {
+            pipe_barrier(PIPE_ALL);
+            reg_buf50[0] = (int64_t) (*( __ubuf__ int64_t* ) (((__ubuf__ int64_t *)addr_ub_list + ((int64_t)j))));
+            pipe_barrier(PIPE_ALL);
+            pipe_barrier(PIPE_ALL);
+            copy_ubuf_to_gm((__gm__ float*)(reg_buf50[0] + (((int64_t)offset44[(int64_t)0]) * (int64_t)4)), ((__ubuf__ float *)ub_for_dup), 0, 1, burst_len_last_part_last_core40[0], 0, 0);
+            pipe_barrier(PIPE_ALL);
+          }
+        }
+      }
+      tik_scope_addr_local_UB_inner[0] = tik_for_addr_inner[0];
+    }
+    tik_scope_addr_local_UB_inner[0] = tiling_ub_start_addr;
+  }
+  
+  uint64_t status_overflow[1] = {0};
+  status_overflow[0] = get_status();
+  status_overflow[0] = (status_overflow[0] << 32) >> 32;
+  uint64_t status_mask = 0x520;
+  status_overflow[0] = status_overflow[0] & status_mask;
+  if (status_overflow[0]) {
+    uint64_t *ptr = (uint64_t *)get_imm(0x43FE0);
+    uint64_t buff[4];
+    buff[0] = ptr[0];
+    buff[1] = ptr[1];
+    buff[2] = ptr[2] | status_overflow[0];
+    buff[3] = ptr[3];
+    
+    if (buff[0] == 0) {
+      ptr[0] = 0xFFFFFFFFFFFFFFFF;
+      ptr[1] = block_idx;
+    }
+    ptr[2] = buff[2];
+    
+    pipe_barrier(PIPE_ALL);
+  }
+  
+  pipe_barrier(PIPE_ALL);
+
+}
+
