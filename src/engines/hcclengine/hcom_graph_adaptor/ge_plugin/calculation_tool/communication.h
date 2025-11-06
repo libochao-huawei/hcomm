@@ -18,7 +18,7 @@
 #include <vector>
 #include <algorithm>
 #include <numeric>
-#include "base.h"
+#include "hccl/base.h"
 #include "hcom_log.h"
 
 constexpr float PARA_FLOAT_ONE = 1.0;

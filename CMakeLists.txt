@@ -106,16 +106,6 @@ if(BUILD_OPEN_PROJECT)
     set(HCCL_HEAD
         inc/hccl/hccl.h
         inc/hccl/hccl_types.h
-        inc/hccl/hccl/base.h
-        inc/hccl/hccl/cltm.h
-        inc/hccl/hccl/hccl_evaluator_api.h
-        inc/hccl/hccl/hccl_ex.h
-        inc/hccl/hccl/hccl_one_sided_services.h
-        inc/hccl/hccl/hccl_types_in.h
-        inc/hccl/hccl/hcom_gradient_split_tune.h
-        inc/hccl/hccl/hcom_ops_stores.h
-        inc/hccl/hccl/hcom.h
-        inc/hccl/hccl/hvd_adapter_pub.h
         inc/hccl/hccl_api.h
         src/pub_inc/hccn_rping.h
     )
@@ -151,6 +141,17 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_HEAD}
         ${HCCL_JSON}
         DESTINATION ${INSTALL_INCLUDE_DIR}/hccl/ OPTIONAL
+    )
+
+    set(HCCL_PKG_HEAD
+        pkg_inc/hccl/base.h
+        pkg_inc/hccl/hccl_ex.h
+        pkg_inc/hccl/hccl_one_sided_services.h
+        pkg_inc/hccl/hcom.h
+    )
+    install(FILES
+        ${HCCL_PKG_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ OPTIONAL
     )
 endif()
 

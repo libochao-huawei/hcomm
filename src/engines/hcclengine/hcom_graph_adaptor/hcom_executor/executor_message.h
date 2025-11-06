@@ -17,7 +17,7 @@
 #include <string>
 #include <functional>
 #include <hccl/hccl_types.h>
-#include "base.h"
+#include "hccl/base.h"
 
 namespace hccl {
 using HcomOperation_t = struct HcomOperation;

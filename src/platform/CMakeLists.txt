@@ -69,6 +69,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl/
         ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/network

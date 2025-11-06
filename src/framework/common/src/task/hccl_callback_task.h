@@ -11,7 +11,7 @@
 #ifndef HCCL_CALLBACK_TASK_H
 #define HCCL_CALLBACK_TASK_H
 
-#include "base.h"
+#include "hccl/base.h"
 #include "dispatcher.h"
 
 namespace hccl {

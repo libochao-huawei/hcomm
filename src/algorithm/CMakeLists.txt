@@ -91,7 +91,7 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl/hccl
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pub_inc
-	${CMAKE_CURRENT_SOURCE_DIR}/../../inc/pkg_inc
+	${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc
 
         ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
         ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/adump/external/

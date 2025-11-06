@@ -45,7 +45,7 @@ set(include_list
     ${HCCL_BASE_DIR}/inc/hccl
     ${HCCL_BASE_DIR}/inc/hccl/hccl
     ${HCCL_BASE_DIR}/pub_inc
-    ${HCCL_BASE_DIR}/inc/pkg_inc
+    ${HCCL_BASE_DIR}/pkg_inc
     ${HCCL_BASE_DIR}/pub_inc/inner
     ${HCCL_BASE_DIR}/pub_inc/new
 
@@ -162,7 +162,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl/
-        ${HCCL_BASE_DIR}/../inc/pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/../pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
@@ -214,6 +214,7 @@ else()
         ${TOP_DIR}/hcomm/
         ${TOP_DIR}/hcomm/inc/hccl/hccl/             # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/inc/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/pkg_inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
@@ -297,7 +298,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl/
-        ${HCCL_BASE_DIR}/../inc/pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
@@ -344,7 +345,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl/
-        ${HCCL_BASE_DIR}/../inc/pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network

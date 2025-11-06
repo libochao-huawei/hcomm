@@ -19,7 +19,7 @@
 #include <set>
 #include <memory>
 #include <algorithm>
-#include "base.h"
+#include "hccl/base.h"
 #include "runtime/rt.h"
 
 namespace GraphMgr {

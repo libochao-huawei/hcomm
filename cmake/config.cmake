@@ -138,6 +138,7 @@ else()
 endif()
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
 set(INSTALL_INCLUDE_DIR hcomm/include)
+set(INSTALL_PKG_INCLUDE_DIR hcomm/pkg_inc)
 set(INSTALL_CCL_KERNEL_JSON_DIR hcomm/built-in/data/op/aicpu)
 set(INSTALL_DEVICE_TAR_DIR hcomm/Ascend/aicpu)
 
