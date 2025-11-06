@@ -14,7 +14,7 @@
 #include <vector>
 #include "layers.h"
 #include "cluster.h"
-#include "base.h"
+#include "hccl/base.h"
 #include "hcom_log.h"
 
 constexpr uint32_t DEFAULT_BATCH_SIZE = 32;

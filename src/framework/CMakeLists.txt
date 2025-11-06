@@ -67,6 +67,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
     ${HCCL_BASE_DIR}/framework/hcom/
+    ${HCCL_BASE_DIR}/framework/hcom/gradient_segment
     ${HCCL_BASE_DIR}/framework/inc/
     ${HCCL_BASE_DIR}/framework/
     ${HCCL_BASE_DIR}/framework/nslbdp/
@@ -92,7 +93,8 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl
-        ${HCCL_BASE_DIR}/../inc/pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/legacy/inc
 
@@ -624,7 +626,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_scatter
         ${HCCL_BASE_DIR}/algorithm/base/alg_template
         ${HCCL_BASE_DIR}/algorithm/pub_inc
-        ${HCCL_BASE_DIR}/../inc/pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/
     )
 
     target_link_directories(ccl_kernel PRIVATE
@@ -680,7 +682,7 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/hccl/hccl_comm/impl/
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-	${HCCL_BASE_DIR}/../inc/pkg_inc/
+	${HCCL_BASE_DIR}/../pkg_inc/
     )
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
@@ -744,7 +746,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl/
-        ${HCCL_BASE_DIR}/../inc/pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/aicpu
 

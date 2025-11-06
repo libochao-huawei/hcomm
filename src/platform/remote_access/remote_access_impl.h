@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "remote_access.h"
-#include "base.h"
+#include "hccl/base.h"
 #include "transport_remote_access.h"
 #include "comm_remote_access.h"
 

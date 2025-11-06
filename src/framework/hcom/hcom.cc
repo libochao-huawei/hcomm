@@ -30,7 +30,7 @@
 #include "adapter_prof.h"
 #include "topoinfo_ranktableParser_pub.h"
 #include "hccl_communicator.h"
-#include "hcom.h"
+#include "hccl/hcom.h"
 #include "topoinfo_ranktableOffline.h"
 #include "mmpa_api.h"
 #include "hccl_tbe_task.h"

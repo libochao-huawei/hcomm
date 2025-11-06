@@ -13,7 +13,7 @@
 
 #include <memory>
 #include <vector>
-#include "base.h"
+#include "hccl/base.h"
 #include "hccl_common.h"
 
 namespace hccl {

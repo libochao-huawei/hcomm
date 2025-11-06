@@ -11,7 +11,7 @@
 #include "layers.h"
 #include "cluster.h"
 #include "evaluator.h"
-#include "base.h"
+#include "hccl/base.h"
 #include "model.h"
 
 using namespace std;

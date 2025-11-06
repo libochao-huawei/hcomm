@@ -18,7 +18,7 @@
 #include <fstream>
 #include <cmath>
 #include "topology.h"
-#include "base.h"
+#include "hccl/base.h"
 #include "hcom_log.h"
 
 constexpr double EPSILON = 1e-6; /* 双精度比较可接受的误差 */

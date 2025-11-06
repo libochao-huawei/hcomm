@@ -5,6 +5,8 @@
         <path value="$(TARGET_ENV)/include" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/hccl" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/version" install_type="devel"/>
+        <path value="$(TARGET_ENV)/pkg_inc" install_type="devel"/>
+        <path value="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel"/>
     </dir_info>
     <file_info value="include" copy_type="source" src_path="hcomm/inc/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccl.h" pkg_inner_softlink="compiler:include/hccl/hccl.h;comop:include/hccl/hccl.h;hcomm:include/hccl/hccl.h"/>
@@ -12,6 +14,12 @@
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/src/pub_inc" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccn_rping.h" pkg_inner_softlink="compiler:include/hccl/hccn_rping.h;comop:include/hccl/hccn_rping.h;hcomm:include/hccl/hccn_rping.h"/>
+    </file_info>
+    <file_info value="include" copy_type="source" src_path="hcomm/pkg/hccl" dst_path="pkg_inc/hccl" install_path="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel" install_mod="440">
+        <file value="base.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hccl.h"/>
+        <file value="hccl_ex.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hccl_ex.h"/>
+        <file value="hccl_one_sided_services.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hccl_one_sided_services.h"/>
+        <file value="hcom.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hcom.h"/>
     </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->

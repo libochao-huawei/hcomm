@@ -25,6 +25,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl/
         ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccl_tbe_task
         ${CMAKE_CURRENT_SOURCE_DIR}/graph_ctx_mgr

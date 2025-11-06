@@ -13,7 +13,7 @@
 
 #include <hccl/hccl_types.h>
 
-#include "../../inc/hccl/hccl/hcom.h"
+#include "../../pkg_inc/hccl/hcom.h"
 
 HcclResult InitWorkflowMode(HcclWorkflowMode mode);
 HcclResult SetWorkflowMode(HcclWorkflowMode mode);
