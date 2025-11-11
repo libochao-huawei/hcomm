@@ -20,6 +20,8 @@
 #include "hccl_network.h"
 #include "externalinput.h"
 #include "transport_direct_npu.h"
+#include "launch_aicpu.h"
+#include "acl/acl_rt.h"
 
 using namespace std;
 
@@ -48,6 +50,7 @@ TransportDirectNpu::~TransportDirectNpu()
     HCCL_DEBUG("~TransportDirectNpu Enter!");
 
     (void)DeInit();
+    UnloadAICPUKernel();
 
     HCCL_DEBUG("~TransportDirectNpu Success!");
 }
@@ -63,6 +66,58 @@ HcclResult TransportDirectNpu::DeInit()
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportDirectNpu::LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+                                                aclrtBinHandle &binHandle)
+{
+    CHK_PRT_RET(binPath == nullptr,
+        HCCL_ERROR("[LoadBinaryFromFile] binary path is nullptr"),
+        HCCL_E_PTR);
+
+    char realPath[PATH_MAX] = {0};
+    CHK_PRT_RET(realpath(binPath, realPath) == nullptr,
+        HCCL_ERROR("LoadBinaryFromFile: %s is not a valid real path, err[%d]", binPath, errno),
+        HCCL_E_INTERNAL);
+    HCCL_INFO("[LoadBinaryFromFile]realPath: %s", realPath);
+
+    aclrtBinaryLoadOptions loadOptions = {0};
+    aclrtBinaryLoadOption option;
+    loadOptions.numOpt = 1;
+    loadOptions.options = &option;
+    option.type = optionType;
+    option.value.cpuKernelMode = cpuKernelMode;
+    aclError aclRet = aclrtBinaryLoadFromFile(realPath, &loadOptions, &binHandle); // ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE
+    CHK_PRT_RET(aclRet != ACL_SUCCESS,
+        HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx] load binary from file error.", aclRet),
+        HCCL_E_OPEN_FILE_FAILURE);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDirectNpu::LoadAICPUKernel(void)
+{
+    std::string jsonPath;
+    CHK_RET(GetKernelFilePath(jsonPath));
+    jsonPath += "ccl_kernel.json";
+    HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0, binHandle_);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
+        "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+    return HCCL_SUCCESS;
+}
+
+void TransportDirectNpu::UnloadAICPUKernel(void)
+{
+    if (binHandle_ != nullptr) {
+        aclError aclRet = aclrtBinaryUnLoad(binHandle_);
+        if (aclRet != ACL_SUCCESS) {
+            HCCL_ERROR("[UnloadAICPUKernel]errNo[0x%016llx] unload binary from binHandel[%p] error.",
+            aclRet, binHandle_);
+        }
+        binHandle_ = nullptr;
+    }
+    return;
+}
+    
 HcclResult TransportDirectNpu::DeRegOneMR(QpHandle& qpHandle, MemMsg& memMsg)
 {
     struct mr_info mrInfo = {nullptr};
@@ -166,6 +221,7 @@ HcclResult TransportDirectNpu::Init()
     CHK_RET(CheckDeviceId());
     CHK_RET(CheckExchangeData());
     CHK_RET(CreateAicpuMem());
+    CHK_RET(LoadAICPUKernel());
 
     // 上层初始化时保证 machinePara_.sockets 非空
     if (machinePara_.sockets.size() == 0) {
@@ -716,7 +772,6 @@ HcclResult TransportDirectNpu::RxPrepare(Stream &stream)
 HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
 {
     CHK_PTR_NULL(src);
-    rtAicpuArgsEx_t argsInfo;
     struct ApiParamDef
     {
         u32 lKey;
@@ -730,10 +785,8 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
         u64 remoteFlagAddr;
         u32 lfKey;
         u32 rfKey;
-        char kernelName[64] = "RunTransportRoceTx";
-        char soName[64] = "libccl_kernel.so";
-        char opName[64] = "HcclAicpuOp";
     };
+    const std::string kernelName = "RunTransportRoceTx";
     struct ApiParamDef apiParam;
     MemDetails inputMemDetails;
     MemDetails outputMemDetails;
@@ -772,27 +825,15 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
         apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey,
         apiParam.qpInfo.qpPtr);
 
-    argsInfo.args = static_cast<void *>(&apiParam);
-    argsInfo.hostInputInfoPtr = nullptr;
-    argsInfo.kernelOffsetInfoPtr = nullptr;
-    argsInfo.argsSize = sizeof(apiParam);
-    argsInfo.hostInputInfoNum = 0;
-    argsInfo.kernelOffsetInfoNum = 0;
-    argsInfo.soNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.soName) -
-                                                        reinterpret_cast<const char *>(&apiParam));
-
-    argsInfo.kernelNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.kernelName) -
-                                                            reinterpret_cast<const char *>(&apiParam));
-    argsInfo.isNoNeedH2DCopy = false;
-    CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, apiParam.opName, 1, &argsInfo, nullptr, stream.ptr(), 0));
-
+    CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
+            binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+    HCCL_INFO("[TransportDirectNpu][TxData] exec succ.");
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
 {
     CHK_PTR_NULL(dst);
-    rtAicpuArgsEx_t argsInfo;
     struct ApiParamDef
     {
         u32 lKey;
@@ -806,10 +847,8 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
         u64 remoteFlagAddr;
         u32 lfKey;
         u32 rfKey;
-        char kernelName[64] = "RunTransportRoceRx";
-        char soName[64] = "libccl_kernel.so";
-        char opName[64] = "HcclAicpuOp";
     };
+    const std::string kernelName = "RunTransportRoceRx";
     struct ApiParamDef apiParam;
     MemDetails inputMemDetails;
     MemDetails outputMemDetails;
@@ -839,6 +878,9 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
     apiParam.timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
          GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
     apiParam.localFlagAddr = reinterpret_cast<u64>(aicpuMem_.ptr());
+    std::vector<HcclQpInfoV2> aiQpInfos;
+    CHK_RET(GetAiQpInfo(aiQpInfos));
+    apiParam.qpInfo = aiQpInfos[0];
 
     HCCL_INFO("[TransportDirectNpu][RxData] lkey %u rkey %u remoteAddr %p localAddr %p dataSize %llu "
         "timeout %llu localFlagAddr %p remoteFlagAddr %p lfkey %u rfkey %u qpinfo %llu",
@@ -846,24 +888,9 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
         apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey,
         apiParam.qpInfo.qpPtr);
 
-    std::vector<HcclQpInfoV2> aiQpInfos;
-    CHK_RET(GetAiQpInfo(aiQpInfos));
-    apiParam.qpInfo = aiQpInfos[0];
-
-    argsInfo.args = static_cast<void *>(&apiParam);
-    argsInfo.hostInputInfoPtr = nullptr;
-    argsInfo.kernelOffsetInfoPtr = nullptr;
-    argsInfo.argsSize = sizeof(apiParam);
-    argsInfo.hostInputInfoNum = 0;
-    argsInfo.kernelOffsetInfoNum = 0;
-    argsInfo.soNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.soName) -
-                                                        reinterpret_cast<const char *>(&apiParam));
-
-    argsInfo.kernelNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.kernelName) -
-                                                            reinterpret_cast<const char *>(&apiParam));
-    argsInfo.isNoNeedH2DCopy = false;
-    CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, apiParam.opName, 1, &argsInfo, nullptr, stream.ptr(), 0));
-
+    CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
+            binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+    HCCL_INFO("[TransportDirectNpu][RxData] exec succ.");
     return HCCL_SUCCESS;
 }
 

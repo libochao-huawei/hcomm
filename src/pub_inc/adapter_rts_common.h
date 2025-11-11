@@ -13,8 +13,6 @@
 
 #include "hccl_common.h"
 #include "dtype_common.h"
-#include "runtime/kernel.h"
-#include "rts/rts_device.h"
 #include "acl/acl_rt.h"
 
 #if T_DESC("stream管理", true)
@@ -31,7 +29,7 @@ HcclResult hrtEventCreateWithFlag(HcclRtEvent *evt);
 HcclResult hrtGetEventID(HcclRtEvent event, uint32_t *eventId);
 HcclResult hrtNotifyGetPhyInfo(HcclRtNotify notify, uint32_t *phyDevId, uint32_t *tsId);
 HcclResult hrtGetNotifyID(HcclRtNotify signal, u32 *notifyID);
-HcclResult hrtNotifyReset(rtNotify_t notify);
+HcclResult hrtNotifyReset(aclrtNotify notify);
 
 #if T_DESC("Device管理", true)
 HcclResult hrtResetDevice(s32 deviceLogicId);
@@ -69,6 +67,10 @@ enum class HcclRtDeviceInfoType {
     HCCL_RT_DEVICE_INFO_RESERVED,
 };
 
+enum class HcclRtStreamClearStep {
+    HCCL_STREAM_STOP = 0,
+    HCCL_STREAM_CLEAR,
+};
 
 #ifdef __cplusplus
 extern "C" {
@@ -101,13 +103,10 @@ HcclResult hrtMemAsyncCopy(void *dst, uint64_t destMax, const void *src, uint64_
 HcclResult hrtMemcpyAddrAsync(void *dst, uint64_t destMax, uint64_t destOffset, const void *src, uint64_t count,
     uint64_t srcOffset, rtStream_t stream);
 
-HcclResult hrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t blockDim,
-    const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
-    rtStream_t stream, uint32_t flags);
 #if T_DESC("RtsTaskCallBack", true)
 HcclResult hrtSubscribeReport(u64 threadId, rtStream_t &stream);
 HcclResult hrtProcessReport(s32 timeout);
-HcclResult hrtTaskAbortHandleCallback(rtsDeviceTaskAbortCallback callback, void *args);
+HcclResult hrtTaskAbortHandleCallback(aclrtDeviceTaskAbortCallback callback, void *args);
 HcclResult hrtResourceClean();
 HcclResult hrtGetHccsPortNum(u32 deviceLogicId, s32 &num);
 #endif
@@ -115,7 +114,7 @@ HcclResult hrtGetHccsPortNum(u32 deviceLogicId, s32 &num);
 HcclResult hrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId);
  
 #if T_DESC("RtsTaskExceptionHandler", true)
-HcclResult hrtRegTaskFailCallbackByModule(rtTaskFailCallback callback);
+HcclResult hrtRegTaskFailCallbackByModule(aclrtExceptionInfoCallback callback);
 HcclResult hrtGetStreamAvailableNum(u32 &maxStrCount);
 #endif
 

@@ -19,11 +19,12 @@ JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
 COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${OUTPUT_DIR}"
-FULL_MODE="false"  # 新增变量，用于控制是否全量构建
+FULL_MODE="true"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
 DOWNLOAD_MOCKCPP="false"  # 新增变量，控制是否下载和编译 mockcpp
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
+BUILD_AARCH="false"
 
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
@@ -62,37 +63,37 @@ function clean()
 }
 
 function download_mockcpp() {
- 
+
     if [ -d "${MOCKCPP_DIR}/mockcpp" ];then
         rm -rf ${MOCKCPP_DIR}/mockcpp
         log "Info: delete ${MOCKCPP_DIR}/mockcpp"
     fi
- 
+
     if [ -d "${MOCKCPP_BUILD_DIR}" ]; then
         log "Info: mockcpp already built, skipping download and compilation."
         return
     fi
- 
+
     # 下载mockcpp
     log "Info: Downloading mockcpp..."
- 
+
     cd ${MOCKCPP_DIR}
- 
+
     git clone https://gitee.com/sinojelly/mockcpp.git || {
         log "ERROR: Failed to download mockcpp."
         log "ERROR: Please execute separately [git clone https://gitee.com/sinojelly/mockcpp.git]"
         exit 1
     }
 }
- 
+
 function build_mockcpp() {
-    
+
     cd ${MOCKCPP_BUILD_DIR}
     log "Info compiler mockcpp"
- 
+
     cmake_config "-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
     build mockcpp
- 
+
     chmod 775 src/libmockcpp.a
 }
 
@@ -274,6 +275,10 @@ while [[ $# -gt 0 ]]; do
         KERNEL="true"
         shift
         ;;
+    --build_aarch)
+        BUILD_AARCH="true"
+        shift
+        ;;
     --asan)
         ASAN="true"
         shift
@@ -307,7 +312,11 @@ if [ -n "${TEST}" ];then
 fi
 
 if [ "${KERNEL}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON"
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON"
+fi
+
+if [ "${BUILD_AARCH}" == "true" ];then
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
 fi
 
 if [ "${ASAN}" == "true" ];then
@@ -359,7 +368,7 @@ if [ "${DOWNLOAD_MOCKCPP}" == "true" ]; then
         log "Info: begin compiler mockcpp"
         mkdir -p ${MOCKCPP_DIR}
         download_mockcpp
- 
+
         if [ -d "${MOCKCPP_DIR}/mockcpp" ]; then
             mkdir -p ${MOCKCPP_BUILD_DIR}
             build_mockcpp
@@ -386,12 +395,12 @@ elif [ "${FULL_MODE}" == "true" ]; then
     mkdir -p ${BUILD_DEVICE_DIR}
     cd ${BUILD_DEVICE_DIR}
     CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend910B -DPRODUCT_SIDE=device -DUSE_ALOG=0"
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DFULL_MODE=ON -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend910B -DPRODUCT_SIDE=device -DUSE_ALOG=0"
     build_device
     BUILD_HCCD_DIR="${CURRENT_DIR}/build_hccd"
     mkdir -p ${BUILD_HCCD_DIR}
     cd ${BUILD_HCCD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1"
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DHCCD_PKG=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1"
     build_hccd
     rm -rf ${CURRENT_DIR}/third_party/openssl
     cd .. & cd ${BUILD_DIR}

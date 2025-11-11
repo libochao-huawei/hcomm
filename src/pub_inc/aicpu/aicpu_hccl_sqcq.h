@@ -15,9 +15,9 @@
 #include <vector>
 #include "ascend_hal.h"
 #include "log.h"
-#include "runtime/config.h"
+#include "rt_external.h"
+#include "acl/acl_rt.h"
 #include "driver/ascend_hal_define.h"
-#include "runtime/mem.h"
 
 namespace dfx {
 enum class CqeStatus : int64_t {
@@ -145,28 +145,26 @@ enum SqeType : uint8_t {
     FLIP_PLACEHOLDER_SQE
 };
 
-constexpr rtDataType_t DT_MAP_TABLE[HCCL_DATA_TYPE_RESERVED + 1] = {
-    RT_DATA_TYPE_INT8,   /* HCCL_DATA_TYPE_INT8 = 0 */
-    RT_DATA_TYPE_INT16,  /* HCCL_DATA_TYPE_INT16 = 1 */
-    RT_DATA_TYPE_INT32,  /* HCCL_DATA_TYPE_INT32 = 2 */
-    RT_DATA_TYPE_FP16,   /* HCCL_DATA_TYPE_FP16 = 3 */
-    RT_DATA_TYPE_FP32,   /* HCCL_DATA_TYPE_FP32 = 4 */
-    RT_DATA_TYPE_END,    /* HCCL_DATA_TYPE_INT64 = 5 */
-    RT_DATA_TYPE_END,    /* HCCL_DATA_TYPE_UINT64 = 6 */
-    RT_DATA_TYPE_UINT8,  /* HCCL_DATA_TYPE_UINT8 = 7 */
-    RT_DATA_TYPE_UINT16, /* HCCL_DATA_TYPE_UINT16 = 8 */
-    RT_DATA_TYPE_UINT32, /* HCCL_DATA_TYPE_UINT32 = 9 */
-    RT_DATA_TYPE_END,    /* HCCL_DATA_TYPE_FP64 = 10 */
-    RT_DATA_TYPE_BFP16,  /* HCCL_DATA_TYPE_BFP16 = 11 */
-    RT_DATA_TYPE_END     /* HCCL_DATA_TYPE_RESERVED */
+constexpr aclDataType DT_MAP_TABLE[HCCL_DATA_TYPE_RESERVED + 1] = {
+    ACL_INT8,         /* HCCL_DATA_TYPE_INT8 = 0 */
+    ACL_INT16,        /* HCCL_DATA_TYPE_INT16 = 1 */
+    ACL_INT32,        /* HCCL_DATA_TYPE_INT32 = 2 */
+    ACL_FLOAT16,      /* HCCL_DATA_TYPE_FP16 = 3 */
+    ACL_FLOAT,        /* HCCL_DATA_TYPE_FP32 = 4 */
+    ACL_DT_UNDEFINED, /* HCCL_DATA_TYPE_INT64 = 5 */
+    ACL_DT_UNDEFINED, /* HCCL_DATA_TYPE_UINT64 = 6 */
+    ACL_UINT8,        /* HCCL_DATA_TYPE_UINT8 = 7 */
+    ACL_UINT16,       /* HCCL_DATA_TYPE_UINT16 = 8 */
+    ACL_UINT32,       /* HCCL_DATA_TYPE_UINT32 = 9 */
+    ACL_DT_UNDEFINED, /* HCCL_DATA_TYPE_FP64 = 10 */
+    ACL_BF16,         /* HCCL_DATA_TYPE_BFP16 = 11 */
+    ACL_DT_UNDEFINED  /* HCCL_DATA_TYPE_RESERVED */
 };
 
-constexpr rtRecudeKind_t RK_MAP_TABLE[HCCL_REDUCE_RESERVED + 1] = {
-    RT_MEMCPY_SDMA_AUTOMATIC_ADD, /* HCCL_REDUCE_SUM = 0 */
-    RT_RECUDE_KIND_END,           /* HCCL_REDUCE_PROD = 1 */
-    RT_MEMCPY_SDMA_AUTOMATIC_MAX, /* HCCL_REDUCE_MAX = 2 */
-    RT_MEMCPY_SDMA_AUTOMATIC_MIN, /* HCCL_REDUCE_MIN = 3 */
-    RT_RECUDE_KIND_END,           /* HCCL_REDUCE_RESERVED */
+constexpr aclrtReduceKind RK_MAP_TABLE[HCCL_REDUCE_RESERVED + 1] = {
+    ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM, /* HCCL_REDUCE_SUM = 0 */
+    ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX, /* HCCL_REDUCE_MAX = 2 */
+    ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN, /* HCCL_REDUCE_MIN = 3 */
 };
 
 enum aicpuNotifySqeType { NOTIFY_RECORD = 0, NOTIFY_WAIT = 1 };

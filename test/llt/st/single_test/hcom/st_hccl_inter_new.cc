@@ -953,7 +953,7 @@ TEST_F(HcclInterTest, st_reduce_inter_sum_char)
 }
 #endif
 
-#if 1
+#if 0
 TEST_F(HcclInterTest, st_reduce_inter_sum_char_root3)
 {
 

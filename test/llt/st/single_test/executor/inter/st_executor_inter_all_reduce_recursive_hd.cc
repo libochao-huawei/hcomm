@@ -8,7 +8,14 @@
 ?* See LICENSE in the root of the software repository for the full text of the License.
 ?*/
 
-fine private public
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
+#include <stdio.h>
+#include "hccl/base.h"
+#include <hccl/hccl_types.h>
+ 
+#include "comm_base_pub.h"
+#define private public
 #define protected public
 #include "all_reduce_recursive_hd_pub.h"
 #undef private

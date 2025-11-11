@@ -14,6 +14,7 @@
 #include <hccl/base.h>
 #include "ffts_common.h"
 #include "ffts_ctx_provider.h"
+#include "rt_external.h"
  
  
 namespace GraphMgr {

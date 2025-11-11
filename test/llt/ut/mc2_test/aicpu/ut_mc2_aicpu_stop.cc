@@ -579,13 +579,13 @@ HcclResult PutStubCmd(hccl::HDCommunicate*This,unsigned int offset, unsigned int
 TEST_F(NsRecovery_ST, HostMC2EnvResume){ //ok
   dlog_setlevel(HCCL, DLOG_DEBUG, 0);
   HcclCommunicator hcclCommunicator;
-  hcclCommunicator.SetMC2EnvFlag();
+  hcclCommunicator.SetAicpuCommEngine(true);
   hcclCommunicator.kfcControlTransferH2D_ .reset(new (std::nothrow) hccl::HDCommunicate(0, HCCL_HDC_TYPE_H2D, h2dBufferSize));
   hcclCommunicator.kfcControlTransferH2D_->InitHost();
   MOCKER_CPP(&HDCommunicate::Put).stubs().will(invoke(PutStubCmd));
   auto ret = hcclCommunicator.HostMC2EnvResume();
   EXPECT_EQ(HCCL_SUCCESS, ret);
-  hcclCommunicator.isNsRecovery_ = false;
+  hcclCommunicator.isAicpuCommEngine_ = false;
 }
 
 TEST_F(NsRecovery_ST, StopLaunchCommandHandle_aicpu){

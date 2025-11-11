@@ -16,6 +16,7 @@
 #include "adapter_rts_common.h"
 #include "adapter_prof.h"
 #include "profiling_manager_pub.h"
+#include "prof_common.h"
 #include "stream_utils.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
@@ -1025,37 +1026,22 @@ HcclResult HcclOneSidedService::ReportProfilingCommInfo(const Stream &kfcStream,
 HcclResult HcclOneSidedService::AicpuInitKernelLaunch()
 {
     const u64 beginTime = hrtMsprofSysCycleTime();
-    struct ApiParamDef
-    {
-        u64 context = 0ULL; // 0 as nullptr
-        bool isCustom = false;
-        char kernelName[64] = "RunAicpuKfcResInitV2";
-        char soName[64] = "libccl_kernel.so";
-        char opName[64] = "HcclAicpuOp";
-    } apiParam;
-
-    if (initApiDeviceMem_.ptr() == nullptr) {
-        initApiDeviceMem_ = DeviceMem::alloc(sizeof(apiParam));
-    }
-    CHK_PTR_NULL(initApiDeviceMem_.ptr());
-    CHK_RET(hrtMemSyncCopy(initApiDeviceMem_.ptr(), initApiDeviceMem_.size(), &apiParam, sizeof(apiParam),
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-
-    rtAicpuArgsEx_t argsInfo;
-    argsInfo.args = initApiDeviceMem_.ptr();
-    argsInfo.argsSize = sizeof(apiParam);
-    argsInfo.hostInputInfoPtr = nullptr;
-    argsInfo.kernelOffsetInfoPtr = nullptr;
-    argsInfo.hostInputInfoNum = 0;
-    argsInfo.kernelOffsetInfoNum = 0;
-    argsInfo.soNameAddrOffset = offsetof(ApiParamDef, soName);
-    argsInfo.kernelNameAddrOffset = offsetof(ApiParamDef, kernelName);
-    argsInfo.isNoNeedH2DCopy = true;    // already given DeviceMem
-
     {
         std::unique_lock<std::mutex> guard{g_launchMutex};
         rtStream_t stream = g_launchStream->ptr();
-        CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, apiParam.opName, 1, &argsInfo, nullptr, stream, 0));
+
+        struct InitTask
+        {
+            u64 context; // A矩阵地址，通信在前时为sendbuffer
+            bool isCustom;
+        };
+        InitTask initTask = {0};
+        initTask.context = 0ULL;
+        initTask.isCustom = false;
+        u16 timeOut = 0;
+        char kernelName[64] = "RunAicpuKfcResInitV2";
+        CHK_RET(AicpuAclKernelLaunch(stream, reinterpret_cast<void *>(&initTask), sizeof(initTask),
+                                        binHandle_, kernelName, true, timeOut));
         CHK_RET(hcclStreamSynchronize(stream));
         HCCL_RUN_INFO("[AicpuInitKernelLaunch] launch in launchStream[%u], execStream[%u]", g_launchStream->id(),
             execStream_.id());

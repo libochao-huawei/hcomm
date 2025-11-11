@@ -60,9 +60,11 @@ public:
     AicpuLaunchMgr() = default;
     ~AicpuLaunchMgr() = default;
     template <typename OpParam, typename ApiParam>
-    static HcclResult KernelLaunch(OpParam &opParam, ApiParam &apiParam, rtStream_t aicpuInitStream);
-    static HcclResult ThreadKernelLaunch(std::vector<std::shared_ptr<HcclThread>> &newThreads,
-        const std::string commId, std::unique_ptr<ThreadHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
+    HcclResult static KernelLaunch(aclrtBinHandle binHandle, OpParam &opParam, ApiParam &apiParam,
+        rtStream_t aicpuInitStream);
+    HcclResult static ThreadKernelLaunch(aclrtBinHandle binHandle,
+        std::vector<std::shared_ptr<HcclThread>> &outThreads, const std::string commId,
+        std::unique_ptr<ThreadHandle[]> &hostHandle);
     static HcclResult NotifyKernelLaunchAlloc(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const std::string &commId, std::unique_ptr<NotifyHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchFree(std::vector<NotifyHandle> &aicpuNotifys, uint32_t notifyNum,

@@ -11,12 +11,13 @@
 #include <memory>
 #include "hccl_common.h"
 #include "stream_pub.h"
-#include "rts_notify.h"
+#include "rt_external.h"
 #include "aicpu/aicpu_hccl_sqcqv1.h"
 #include "aicpu/aicpu_hccl_sqcqv2.h"
 #include "sal.h"
 #include "config_plf_log.h"
 #include "dlhal_function.h"
+#include "adapter_hal_pub.h"
 #include "dispatcher_aicpu.h"
 
 namespace hccl {
@@ -195,7 +196,7 @@ HcclResult DispatcherAiCpu::SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &
     uint8_t *sqeTypeAddr = nullptr;
     uint8_t *sqeDfxInfoAddr = nullptr;
     uint16_t taskId = 0U;
-    rtRecudeKind_t rtReduceOp = RK_MAP_TABLE[HCCL_REDUCE_RESERVED];
+    aclrtReduceKind rtReduceOp = RK_MAP_TABLE[HCCL_REDUCE_RESERVED];
     uint8_t linkType = static_cast<uint8_t>(inLinkType);
 
     CHK_RET(GetStreamSqeBufferAddr(stream, sqeBuffer, sqeTypeAddr, sqeDfxInfoAddr, taskId));
@@ -203,7 +204,7 @@ HcclResult DispatcherAiCpu::SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &
     dfxInfo->opRingBufferIdx = opRingBufferIdx_;
     dfxInfo->remoteRank = remoteUserRank;
     dfxInfo->notifyId = notifyId;
-    addOneMemcpySqe_(streamInfo.actualStreamId, taskId, src.ptr(), src.size() , RT_DATA_TYPE_FP32, rtReduceOp,
+    addOneMemcpySqe_(streamInfo.actualStreamId, taskId, src.ptr(), src.size() , ACL_FLOAT, rtReduceOp,
         dst.ptr(), 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr);
 
     PLF_CONFIG_INFO(PLF_TASK,
@@ -290,7 +291,7 @@ HcclResult DispatcherAiCpu::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
     uint8_t *sqeDfxInfoAddr = nullptr;
     uint16_t taskId = 0U;
     HcclReduceOp redOp = HCCL_REDUCE_RESERVED;
-    rtRecudeKind_t rtReduceOp = RK_MAP_TABLE[redOp];
+    aclrtReduceKind rtReduceOp = RK_MAP_TABLE[redOp];
 
     if (countSize > HCCL_SDMA_MAX_COUNT_4GB) {
         spiltLoop = (countSize % HCCL_SDMA_MAX_COUNT_4GB) ? (countSize / HCCL_SDMA_MAX_COUNT_4GB) :
@@ -310,7 +311,7 @@ HcclResult DispatcherAiCpu::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
         dfxInfo->opRingBufferIdx = opRingBufferIdx_;
         dfxInfo->remoteRank = remoteUserRank;
         dfxInfo->notifyId = INVALID_VALUE_RANKID;
-        addOneMemcpySqe_(streamInfo.actualStreamId, taskId, srcSplit, countSplit , RT_DATA_TYPE_FP32, rtReduceOp,
+        addOneMemcpySqe_(streamInfo.actualStreamId, taskId, srcSplit, countSplit , ACL_FLOAT, rtReduceOp,
             dstSplit, 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr);
 
         PLF_CONFIG_INFO(PLF_TASK,
@@ -500,8 +501,8 @@ HcclResult DispatcherAiCpu::InlineReduceAsync(const void *src, u64 dataCount, co
     }
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
 
-    rtDataType_t runtimeDataType = DT_MAP_TABLE[datatype];
-    rtRecudeKind_t rtReduceOp = RK_MAP_TABLE[redOp];
+    aclDataType runtimeDataType = DT_MAP_TABLE[datatype];
+    aclrtReduceKind rtReduceOp = RK_MAP_TABLE[redOp];
 
     // 将数据按4GB切分循环处理
     uint64_t spiltLoop = 0;

@@ -43,6 +43,7 @@ enum class HcclSubModuleID {
 /* 每一条日志的长度,超过该长度会申请堆内存 */
 constexpr s32 LOG_TMPBUF_SIZE = 512;
 
+void DlogRecord(int32_t moduleId, int32_t level, const char *fmt, ...) __attribute((weak));
 #define LOG_FUNC(moudle, level, fmt, ...) do { \
     DlogRecord(moudle, level, fmt, ##__VA_ARGS__); \
 } while (0)

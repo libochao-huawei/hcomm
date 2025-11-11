@@ -994,6 +994,11 @@ HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void
         commContext, len, aivCoreLimit);
 }
 
+HcclResult hcclComm::SetAicpuCommEngine(bool isAicpuCommEngine)
+{
+    return communicator_->SetAicpuCommEngine(isAicpuCommEngine);
+}
+
 HcclResult hcclComm::GetWorkspaceSubStreamNum(u64 &streamNum, u64 dataSize, HcclCMDType optype) const
 {
     return communicator_->GetWorkspaceSubStreamNum(streamNum, dataSize, optype);

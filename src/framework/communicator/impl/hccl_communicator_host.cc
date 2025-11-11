@@ -344,7 +344,6 @@ namespace hccl
 
     HcclResult HcclCommunicator::LoadAICPUKernel(void)
     {
-        return HCCL_SUCCESS;
         std::string jsonPath;
         CHK_RET(GetKernelFilePath(jsonPath));
         jsonPath += "ccl_kernel.json";
@@ -4121,7 +4120,9 @@ namespace hccl
                 CHK_RET(SaveRankInfoHasLinked(resRequest));
             }
             resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag]);
+            // aiv算法不需要申请host侧的从流
+            bool isNeedHostSlaveStream = algDesc.isAivMode ? false : true;
+            HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
 
             // 对于91093超节点内aiv跨机通信算子，将不同机的CCLbuffer地址存在约定好的aiv将读取的HBM位置
@@ -4177,6 +4178,7 @@ namespace hccl
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         if (opParam.aicpuUnfoldMode) {
+            CHK_RET(SetAicpuCommEngine(true));
             isInplaceStatus_ = 0;
             inPlaceSupportRetryStatus_ = InplaceSupportRetryStatus::INPLACE_STATUS_END;
             // algOperator->SupportRetryWithInplaceCheck 依赖 algOperator->SetRetryEnable 才能正确返回是否支持inplace
@@ -4311,6 +4313,8 @@ namespace hccl
         u64 count = opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType];
 
         // 资源创建
+        // aiv算法不需要申请host侧的从流
+        bool isNeedHostSlaveStream = algDesc.isAivMode ? false : true;
         if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture)
         {
             auto resTmp = resMap_[newTag];
@@ -4331,7 +4335,7 @@ namespace hccl
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
             resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag]));
+            CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
 
             // 对于91093超节点内aiv跨机通信算子，将不同机的CCLbuffer地址存在约定好的aiv将读取的HBM位置
             CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
@@ -4358,7 +4362,7 @@ namespace hccl
                 CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
                 // alltoall算子重分配内存前需清除scratchMMem，防止内存泄漏
                 CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
-                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag]));
+                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
                 if (!isHaveCpuRank_) {
                     if (isUseRankPort_) {
                         std::vector<u32> &nicPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
@@ -4422,6 +4426,7 @@ namespace hccl
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         // 算法执行
         if (opParam.aicpuUnfoldMode && supportAicpuAlg) {
+            CHK_RET(SetAicpuCommEngine(true));
             isInplaceStatus_ = 0;
             inPlaceSupportRetryStatus_ = InplaceSupportRetryStatus::INPLACE_STATUS_END;
             // algOperator->SupportRetryWithInplaceCheck 依赖 algOperator->SetRetryEnable 才能正确返回是否支持inplace
@@ -5661,7 +5666,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::AllocAlgResource(const std::string &newTag, HcclCMDType opType, const OpParam &opParam,
-                                                  AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse)
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream)
     {
         HcclResult ret = HCCL_SUCCESS;
         bool isGraphZeroCopyAlgAlloc = false;
@@ -5694,7 +5699,7 @@ namespace hccl
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE ||
                  IsForceAicpuOpBaseMode(opParam, opType)) {
             CHK_RET(AllocOpBaseModeScratchMem(opType, opParam, resRequest, algResResponse));
-            if (resRequest.streamNum > 0) {
+            if ((resRequest.streamNum > 0) && isNeedHostSlaveStream) {
                 CHK_RET(opStreamManager_->RegisterMaster(opParam.stream));
                 algResResponse.slaveStreams =
                     opStreamManager_->AllocSlaves(StreamType::STREAM_TYPE_ONLINE, resRequest.streamNum);
@@ -6094,7 +6099,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::AllocComResource(const string &newTag, const string &algName,
-                                                  const HcclCMDType commType, const OpParam &opParam, rtStream_t stream)
+        const HcclCMDType commType, const OpParam &opParam, rtStream_t stream, bool isNeedHostSlaveStream)
     {
         if (resMap_.find(newTag) == resMap_.end()) { // 计算&申请通信资源
             unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(commType);
@@ -6102,7 +6107,7 @@ namespace hccl
                         HCCL_ERROR("[%s] algOperator is nullptr", __func__), HCCL_E_INTERNAL);
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
-            CHK_RET(AllocAlgResource(newTag, commType, opParam, resRequest, resMap_[newTag]));
+            CHK_RET(AllocAlgResource(newTag, commType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
             CHK_RET(RegisterToHeartBeat());
         }
 
@@ -6171,7 +6176,9 @@ namespace hccl
         void *pCount = reinterpret_cast<void *>(&countList[0]);
         void *pDispls = reinterpret_cast<void *>(&displsList[0]);
         CHK_RET(FillOpParam(opParam.opType, opParam, count, pCount, pDispls));
-        CHK_RET(AllocComResource(newTag, algName, opParam.opType, opParam, opParam.stream.ptr()));
+        // MC2算子不需要申请host侧的从流
+        bool isNeedHostSlaveStream = false;
+        CHK_RET(AllocComResource(newTag, algName, opParam.opType, opParam, opParam.stream.ptr(), isNeedHostSlaveStream));
         return HCCL_SUCCESS;
     }
 
@@ -6315,7 +6322,6 @@ namespace hccl
 
         std::string kernelName = "RunAicpuKfcResInit";
         CHK_RET(AiCpuKernelLaunch(tmpStream.ptr(), reinterpret_cast<u64>(commContext_.ptr()), kernelName));
-        SetMC2EnvFlag();
         if (isOpbaseMode == true) {
             CHK_RET(hcclStreamSynchronize(tmpStream.ptr()));
         }
@@ -6403,7 +6409,6 @@ namespace hccl
         // 在这里构建suspending状态码的HDC通道初始化，并且在host侧进行init
         // （这个主要是针对hcomId；对算子通信域的复用；也就是多个算子复用（tag+Identifier）这个通信域的情况）
         CHK_RET(AiCpuKernelLaunch(aicpuStream, reinterpret_cast<u64>(opResDevicePara_.ptr()), kernelName));
-        SetMC2EnvFlag(); // 并且只有资源初始化调用成功后
         newTagResAlloced_.insert(newTag);
         // 图模多档位场景，需要保证执行序上优先下资源初始化的kernel
         CHK_RET(hcclStreamSynchronize(aicpuStream));

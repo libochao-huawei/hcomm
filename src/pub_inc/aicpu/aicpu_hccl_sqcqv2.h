@@ -144,7 +144,7 @@ extern void AddOneRecordSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyId, 
 extern void AddOneWriteValueRecordSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyWRAddr, const uint8_t *sqeIn,
     uint8_t *sqeType);
 extern void AddOneMemcpySqeV2(uint16_t streamId, uint16_t taskId, const void *src, uint32_t length,
-    const rtDataType_t runtimeDataType, rtRecudeKind_t rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
+    const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
     uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType);
 extern void AddOneEventResetSqeV2(uint16_t streamId, int32_t eventId, uint16_t taskId, int64_t phyChipId,
     int64_t phyDieId, u64 addr, const uint8_t *sqeIn, uint8_t *sqeType);

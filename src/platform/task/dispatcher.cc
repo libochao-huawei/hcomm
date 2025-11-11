@@ -13,7 +13,8 @@
 #include "externalinput.h"
 #include "adapter_rts.h"
 #include "sal_pub.h"
-#include "toolchain/aprof_pub.h"
+#include "aprof_pub.h"
+#include "prof_common.h"
 #include "config_plf_log.h"
 #include "hccl_tbe_task.h"
 #ifndef HCCD

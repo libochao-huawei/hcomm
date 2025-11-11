@@ -16,6 +16,7 @@
 #include <vector>
 
 constexpr char HCCL_RPT_CODE[] = "EI9999";  // 每个组件有固定的标识号码
+constexpr size_t const HCCL_LIMIT_PER_MESSAGE = 1024U;
 using ErrContextPub = struct Context_Pub {
   uint64_t work_stream_id = 0; // default value 0, invalid value
   uint64_t reserved[7] = {0};

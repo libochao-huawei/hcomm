@@ -52,12 +52,12 @@ HcclResult NotifyManager::ParseBinNotifys(const std::string& uniqueIdStr,
     } else {
         CHK_PRT_RET(uniqueIdStr.empty(), HCCL_ERROR("[HcclThread][%s] uniqueIdStr is empty"), HCCL_E_INTERNAL);
         std::istringstream iss(uniqueIdStr);
-        iss.read(reinterpret_cast<char_t *>(&loadType), sizeof(NotifyLoadType));
+        iss.read(reinterpret_cast<char_t *>(&loadType), sizeof(loadType));
         iss.read(reinterpret_cast<char_t *>(&notifyNum), sizeof(notifyNum));
         CHK_RET(InitNotifys(iss, notifyNum, newNotifys));
     }
-    HCCL_RUN_INFO("[NotifyManager][%s] recover success, notifyNum[%u], notifyType[%u], uniqueId[%s]",
-        __func__, notifyNum, loadType, uniqueIdStr.c_str());
+    HCCL_RUN_INFO("[NotifyManager][%s] recover success, notifyNum[%u], notifyType[%u], uniqueIdSize[%s]",
+        __func__, notifyNum, loadType, uniqueIdStr.size());
     return HCCL_SUCCESS;
 }
 
@@ -127,21 +127,28 @@ HcclResult NotifyManager::HcommAllocNotify(CommEngine commEngine, NotifyType not
             CHK_RET(notify->SetIpc());
         }
         newNotifys.emplace_back(std::move(notify));
-        NotifyInfo info{commEngine, notifyType, isAicpu};
-        notifysInfo_[notify.get()] = info;
     }
 
     std::unique_ptr<NotifyHandle[]> handles;
     EXECEPTION_CATCH(handles = std::make_unique<NotifyHandle[]>(notifyNum), return HCCL_E_PTR);
     if (isAicpu) {
         CHK_RET(AicpuLaunchMgr::NotifyKernelLaunchAlloc(newNotifys, commId_, handles, binHandle_));
+        for (uint32_t i = 0; i < notifyNum; ++i) {
+            HCCL_INFO("[NotifyManager][%s] aicpu handles[%u] = [%lu]", __func__, i, handles[i]);
+        }
     } else {
         for (uint32_t i = 0; i < notifyNum; ++i) {
             handles[i] = reinterpret_cast<NotifyHandle>(newNotifys[i].get());
+            HCCL_INFO("[NotifyManager][%s] host handles[%u] = [%lu]", __func__, i, handles[i]);
         }
     }
+    for (uint32_t i = 0; i < notifyNum; ++i) {
+        LocalNotify *local = newNotifys[i].get();
+        NotifyInfo info{commEngine, notifyType, isAicpu, handles[i]};
+        notifysInfo_[local] = info;
+    }
     // 插入到 notifys_ 尾部
-    notifys_.insert(notifys_.end(), std::make_move_iterator(newNotifys.begin()), 
+    notifys_.insert(notifys_.end(), std::make_move_iterator(newNotifys.begin()),
         std::make_move_iterator(newNotifys.end()));
 
     handleBlocks_.push_back(std::move(handles));
@@ -159,21 +166,21 @@ HcclResult NotifyManager::HcommFreeNotify(uint32_t notifyNum, NotifyHandle *noti
 
     // 1. 预扫描，判断是否为 AICPU，并收集 LocalNotify 指针
     for (uint32_t i = 0; i < notifyNum; ++i) {
-        auto *localNotify = reinterpret_cast<LocalNotify*>(notifyHandleList[i]);
-        if (localNotify == nullptr) {
-            HCCL_RUN_WARNING("[NotifyManager][%s] localNotify[%u] is null", __func__, i);
+        NotifyHandle handle = notifyHandleList[i];
+        HCCL_INFO("[NotifyManager][%s] handles[%u] = [%lu]", __func__, i, handle);
+        auto itInfo = std::find_if(notifysInfo_.begin(), notifysInfo_.end(),
+            [handle](const auto &pair) {
+                return pair.second.notifyHandle == handle;
+            });
+        if (itInfo == notifysInfo_.end()) {
+            HCCL_RUN_WARNING("[NotifyManager][%s] handle[%lu] not found in notifysInfo_", __func__, handle);
             continue;
         }
-        auto infoIt = notifysInfo_.find(localNotify);
-        if (infoIt == notifysInfo_.end()) {
-            HCCL_RUN_WARNING("[NotifyManager][%s] localNotify[%u] not found in notifysInfo_", __func__, i);
-            continue;
-        }
-        const auto &info = infoIt->second;
+        LocalNotify *localNotify = itInfo->first;
+        const NotifyInfo &info = itInfo->second;
         if (info.isAicpu) {
-            aicpuNotifys.emplace_back(notifyHandleList[i]);
+            aicpuNotifys.push_back(handle);
         }
-
         localNotifys.push_back(localNotify);
     }
 
@@ -190,6 +197,7 @@ HcclResult NotifyManager::HcommFreeNotify(uint32_t notifyNum, NotifyHandle *noti
 
     // 3. 成功后再移除 Host 侧
     for (auto *localNotify : localNotifys) {
+        notifysInfo_.erase(localNotify);
         auto it = std::find_if(notifys_.begin(), notifys_.end(),
             [localNotify](const std::unique_ptr<LocalNotify>& ptr) {
                 return ptr.get() == localNotify;
@@ -197,7 +205,6 @@ HcclResult NotifyManager::HcommFreeNotify(uint32_t notifyNum, NotifyHandle *noti
         if (it != notifys_.end()) {
             notifys_.erase(it);
         }
-        notifysInfo_.erase(localNotify);
     }
 
     // 4. 删除对应的 handle block

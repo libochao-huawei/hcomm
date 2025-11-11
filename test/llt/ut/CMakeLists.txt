@@ -92,7 +92,8 @@ else()
         ${TOP_DIR}/ace/comop/inc
         ${TOP_DIR}/hcomm/inc/hccl
         ${TOP_DIR}/hcomm/inc/hccl/hccl
-		${TOP_DIR}/hcomm/inc/pkg_inc
+		${TOP_DIR}/hcomm/pkg_inc
+		${TOP_DIR}/hcomm/pkg_inc/hccl
         ${TOP_DIR}/graphengine/inc
         ${TOP_DIR}/metadef/
         ${TOP_DIR}/metadef/inc
@@ -206,7 +207,8 @@ else()
         ${HCCL_CODE_ROOT}/inc/
         ${HCCL_CODE_ROOT}/inc/hccl
         ${HCCL_CODE_ROOT}/inc/hccl/hccl
-		${HCCL_CODE_ROOT}/inc/pkg_inc
+		${HCCL_CODE_ROOT}/pkg_inc
+		${HCCL_CODE_ROOT}/pkg_inc/hccl
         ${HCCL_CODE_ROOT}/src/pub_inc
         ${HCCL_CODE_ROOT}/src/pub_inc/inner
         ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
@@ -240,6 +242,7 @@ else()
         ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/rank_graph
         ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine
         ${HCCL_CODE_ROOT}/src/framework/hcom/
+		${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
         ${HCCL_CODE_ROOT}/src/framework/op_base/src/
         ${HCCL_CODE_ROOT}/src/framework/nslbdp/
 
@@ -301,9 +304,6 @@ else()
 
         ${HCCL_CODE_ROOT}/test/llt/stub
         ${HCCL_CODE_ROOT}/test/hccl_api_single_thread_test
-
-        # hccl/cltm目录下头文件
-        ${HCCL_CODE_ROOT}/cltm/src
 
         # hccl/operator目录下头文件
         ${HCCL_CODE_ROOT}/operator

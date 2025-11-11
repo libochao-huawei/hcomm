@@ -15,7 +15,6 @@
 #include "adapter_hal.h"
 #include "hccl/base.h"
 
-#include "stream.h"
 #include "mem_name_repository_pub.h"
 #include "dispatcher_pub.h"
 
@@ -46,19 +45,16 @@ using HcclIpcRtsNotify = struct TagHcclIpcRtsNotify {
 using HcclNotifyInfo = struct TagHcclNotifyInfo {
     u32 type;
     HcclIpcRtsNotify ipcNotify;
-    rtIpcIntNoticeInfo_t eschedEvent;
 
     TagHcclNotifyInfo() : type(INVALID_UINT)
     {
     }
 
-    TagHcclNotifyInfo(const TagHcclNotifyInfo& that) : type(that.type), ipcNotify(that.ipcNotify),
-        eschedEvent(that.eschedEvent)
+    TagHcclNotifyInfo(const TagHcclNotifyInfo& that) : type(that.type), ipcNotify(that.ipcNotify)
     {
     }
 
-    TagHcclNotifyInfo(const TagHcclNotifyInfo&& that) : type(that.type), ipcNotify(that.ipcNotify),
-        eschedEvent(that.eschedEvent)
+    TagHcclNotifyInfo(const TagHcclNotifyInfo&& that) : type(that.type), ipcNotify(that.ipcNotify)
     {
     }
 
@@ -67,7 +63,6 @@ using HcclNotifyInfo = struct TagHcclNotifyInfo {
         if (&that != this) {
             type = that.type;
             ipcNotify = that.ipcNotify;
-            eschedEvent = that.eschedEvent;
         }
         return *this;
     }

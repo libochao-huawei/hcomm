@@ -13,7 +13,7 @@
 #include <cmath>
 #include "log.h"
 #include "mmpa_api.h"
-#include "atrace_api.h"
+#include "atrace_pub.h"
 #include "common/aicpu_hccl_common.h"
 #include "framework/aicpu_kfc_prof.h"
 #include "common/aicpu_kfc_utils.h"

@@ -168,37 +168,35 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/mmpa/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/msprof/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/slog/toolchain/
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
 
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/error_codes/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
-
-        ${HCCL_BASE_DIR}/../externel_depends/
-        ${HCCL_BASE_DIR}/../externel_depends/driver/
-        ${HCCL_BASE_DIR}/../externel_depends/aicpu/
-
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${HCCL_BASE_DIR}/../externel_depends/c_sec/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/include/mmpa/
-        ${HCCL_BASE_DIR}/../externel_depends/include/msprof/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/runtime/
+        # 临时依赖，后续删除
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
 
     target_link_directories(hccd PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 else()
     target_include_directories(hccd PRIVATE
@@ -253,7 +251,6 @@ if(BUILD_OPEN_PROJECT)
     target_link_libraries(hccd
         -Wl,--no-as-needed
         c_sec
-        slog
         mmpa
         -Wl,--as-needed
         -lrt
@@ -304,41 +301,32 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
-        # 暂缺其他头文件 直接拿取头文件放置于extenel_depends同级目录
-        ${HCCL_BASE_DIR}/../externel_depends/
-        ${HCCL_BASE_DIR}/../externel_depends/driver/
-        ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/../externel_depends/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/aicpu/aicpu_schedule/aicpu_sharder/
-        ${HCCL_BASE_DIR}/../externel_depends/asl/
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
 
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/ascendcl/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/atrace/utrace/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/common/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/mmpa/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/msprof/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/slog/toolchain/
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
 
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/error_codes/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+
+        # 临时依赖头文件，待删除
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
 
         ${THIRD_PARTY_NLOHMANN_PATH}
-
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${HCCL_BASE_DIR}/../externel_depends/c_sec/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/atrace/utrace/
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/common/
-        ${HCCL_BASE_DIR}/../externel_depends/include/mmpa/
-        ${HCCL_BASE_DIR}/../externel_depends/include/msprof/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/runtime/
     )
 
     target_include_directories(ccl_kernel_plf_a PRIVATE
@@ -351,49 +339,40 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
-        # 暂缺其他头文件 直接拿取头文件放置于extenel_depends同级目录
-        ${HCCL_BASE_DIR}/../externel_depends/
-        ${HCCL_BASE_DIR}/../externel_depends/driver/
-        ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/../externel_depends/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/aicpu/aicpu_schedule/aicpu_sharder/
-        ${HCCL_BASE_DIR}/../externel_depends/asl/
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
 
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/ascendcl/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/atrace/utrace/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/common/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/mmpa/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/msprof/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/slog/toolchain/
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
 
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/error_codes/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+
+        # 临时依赖头文件，待删除
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
 
         ${THIRD_PARTY_NLOHMANN_PATH}
-
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${HCCL_BASE_DIR}/../externel_depends/c_sec/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/atrace/utrace/
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/common/
-        ${HCCL_BASE_DIR}/../externel_depends/include/mmpa/
-        ${HCCL_BASE_DIR}/../externel_depends/include/msprof/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/runtime/
     )
 
     target_link_directories(ccl_kernel_plf PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 
     target_link_directories(ccl_kernel_plf_a PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 else()
     target_include_directories(ccl_kernel_plf PRIVATE

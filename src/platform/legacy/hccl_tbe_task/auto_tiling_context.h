@@ -15,7 +15,6 @@
 #include "exe_graph/runtime/tiling_context.h"
 #include "vector_op_info.h"
 #include "op_tiling.h"
-#include "op_tiling_info.h"
 #include "vector_tiling_rt2.h"
 
 namespace TbeReduce {
@@ -209,7 +208,6 @@ public:
         }
         return autoTilingCompileInfo->var_attr_wrap.WriteVarAttrs(tiling_key, *context);
     }
-    optiling::utils::OpRunInfo *GetRunInfo();
 
     template <typename ForwardIterator> bool AddWorkspace(ForwardIterator first, size_t n)
     {

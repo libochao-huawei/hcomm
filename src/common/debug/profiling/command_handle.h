@@ -11,7 +11,7 @@
 #ifndef COMMON_PROFILING_COMMAND_HANDLE_H
 #define COMMON_PROFILING_COMMAND_HANDLE_H
 
-#include "runtime/base.h"
+#include "rt_external.h"
 
 namespace hccl {
 rtError_t CommandHandle(uint32_t rtType, void *data, uint32_t len);

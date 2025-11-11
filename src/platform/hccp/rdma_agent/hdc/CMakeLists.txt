@@ -41,23 +41,18 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../roce/host_lite
         ${CMAKE_CURRENT_SOURCE_DIR}/../../roce/roce_user
-#临时依赖位置
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/abl/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/abl/toolchain
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/log
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../externel_depends/driver/
 
-        ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/slog/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/ascend_hal/driver/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../externel_depends/c_sec/include
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+
+        # 临时依赖，后续删除
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
     )
 
     target_link_directories(ra_hdc PRIVATE
@@ -65,7 +60,7 @@ if(BUILD_OPEN_PROJECT)
     )
     if (DEVICE_MODE)
         target_link_directories(ra_hdc PRIVATE
-            ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+            ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
         )
     endif()
 else()
@@ -96,7 +91,7 @@ if(BUILD_OPEN_PROJECT)
     target_link_libraries(ra_hdc PRIVATE
         -Wl,--no-as-needed
         c_sec
-        unified_dlog
+        $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
         -Wl,--as-needed
         -lrt
         -ldl
@@ -115,7 +110,7 @@ else()
     )
 endif()
 
-if((("${USE_ALOG}" STREQUAL "1")) OR ("${BUILD_OPEN_PROJECT}" STREQUAL "ON"))
+if(("${USE_ALOG}" STREQUAL "1"))
 target_compile_definitions(ra_hdc PRIVATE
     LOG_HOST
 )

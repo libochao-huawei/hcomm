@@ -33,7 +33,7 @@
 #include "hcom_common.h"
 #include "comm_config_pub.h"
 #include "kernel_tiling/kernel_tiling.h"
-#include "external/runtime/rt_error_codes.h"
+#include "error_codes/rt_error_codes.h"
 #include "mmpa_api.h"
 #include "op_base.h"
 #ifndef OPEN_BUILD_PROJECT

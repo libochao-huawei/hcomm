@@ -31,7 +31,6 @@ set(hccl_utest_misc_list
     ut_mpi_recv_task.cc
     ut_p2p_mgmt.cc
     ut_stream_active_manager.cc
-    ut_rank_table.cc
     ut_transport_virtural.cc
     ut_socket_manager.cc
     ut_op_base_stream_manager.cc

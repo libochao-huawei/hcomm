@@ -36,6 +36,24 @@
 #include "acl/acl.h"
 #endif
 
+#define DEBUG       0x0
+#define INFO        0x1
+#define WARNING     0x2
+#define ERROR       0x3
+#define LOG_LEVEL   DEBUG
+
+#define LOG(log_level, format, arg...) do {                                             \
+    if (log_level == ERROR) {                                                           \
+        printf("[ERROR] [%s:%d] [%u] ", __FILE__, __LINE__, getpid());                  \
+        printf(format, ##arg);                                                          \
+        printf("\n");                                                                   \
+    } else if (log_level >= LOG_LEVEL) {                                                \
+        printf("[%s] [%s:%d] [%u] ", #log_level, __FILE__, __LINE__, getpid());         \
+        printf(format, ##arg);                                                          \
+        printf("\n");                                                                   \
+    }                                                                                   \
+} while(0)
+
 // ---------------------------------------------------------------------------
 // Minimal HCCL types/prototypes used by this test (when mocking).
 // If MOCK_HCCL=0 we'll link to real library so these prototypes must match.
@@ -46,6 +64,7 @@ typedef int32_t HcclResult;
 typedef void *HcclComm;
 typedef uint64_t ThreadHandle;
 typedef uint64_t ChannelHandle;
+typedef uint64_t NotifyHandle;
 
 typedef enum {
     COMM_ENGINE_RESERVED = -1,   ///< 保留的通信引擎
@@ -56,6 +75,13 @@ typedef enum {
     COMM_ENGINE_AIV = 4,         ///< AIV引擎
     COMM_ENGINE_CCU = 5,         ///< CCU引擎
 } CommEngine;
+
+typedef enum {
+    NOTIFY_TYPE_RESERVED = -1,
+    NOTIFY_TYPE_RTS_NOTIFY = 0,
+    NOTIFY_TYPE_RTS_EVENT = 1,
+    NOTIFY_TYPE_DEVICE_MEM = 2,
+} NotifyType;
 
 struct HcclCommConfig {
     // minimal fields used in test
@@ -85,6 +111,9 @@ HcclResult __attribute__((weak)) CommChannelCreate(HcclComm comm, const char *ch
     const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
 HcclResult __attribute__((weak))
 CommWrite(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
+HcclResult __attribute__((weak)) HcommAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType notifyType,
+    uint32_t notifyNum, NotifyHandle **notifyHandleList);
+HcclResult __attribute__((weak)) HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *notifyHandleList);
 
 }  // extern "C"
 
@@ -105,6 +134,9 @@ struct MockChannel {
     std::string tag;
     uint32_t peer;
     uint64_t size;
+};
+struct MockNotifys {
+    uint32_t notifyNum;
 };
 
 HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank, HcclCommConfig *config, HcclComm *comm)
@@ -175,6 +207,7 @@ HcclResult CommChannelCreate(HcclComm comm, const char *channelTag, CommEngine e
               << std::endl;
     return 0;
 }
+
 HcclResult CommWrite(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     // copy if pointers valid
@@ -182,6 +215,42 @@ HcclResult CommWrite(ThreadHandle thread, ChannelHandle channel, void *dst, cons
         memcpy(dst, src, (size_t)len);
     return 0;
 }
+
+HcclResult HcommAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType notifyType,
+    uint32_t notifyNum, NotifyHandle **notifyHandleList)
+{
+    std::lock_guard<std::mutex> lk(g_mock_mtx);
+    *notifyHandleList = reinterpret_cast<NotifyHandle*>(malloc(sizeof(NotifyHandle) * notifyNum));
+    for (uint32_t i = 0; i < notifyNum; ++i) {
+        (*notifyHandleList)[i] = reinterpret_cast<NotifyHandle>(new MockNotifys());
+    }
+
+    std::cout << "[MOCK] HcommAllocNotify notifyNum=" << notifyNum << " notifyType="
+        << static_cast<int32_t>(notifyType) << std::endl;
+    return 0;
+}
+
+HcclResult HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *notifyHandleList)
+{
+    std::lock_guard<std::mutex> lk(g_mock_mtx);
+
+    if (notifyHandleList == nullptr) {
+        std::cerr << "[MOCK] HcommFreeNotify: notifyHandleList is null" << std::endl;
+        return 0;
+    }
+
+    for (uint32_t i = 0; i < notifyNum; ++i) {
+        if (notifyHandleList[i] != nullptr) {
+            delete reinterpret_cast<MockNotifys*>(notifyHandleList[i]);
+            notifyHandleList[i] = nullptr;
+        }
+    }
+
+    free(notifyHandleList);
+    std::cout << "[MOCK] HcommFreeNotify notifyNum=" << notifyNum << std::endl;
+    return 0;
+}
+
 #endif  // MOCK_HCCL
 
 // --------------------------- Device Buffer abstraction ---------------------
@@ -300,6 +369,7 @@ struct Config {
     uint32_t iters = 100;
     uint64_t msgSize = 64;
     uint32_t threadNum = 1;
+    CommEngine commEngine = COMM_ENGINE_HOSTCPU;
 };
 
 // -------测试用例注册--------
@@ -382,10 +452,36 @@ public:
         // Alloc thread resource (optional, but often required to use CommWrite)
         HcclResult r2 = CommAllocThreadRes(comm_, /*engine=*/commEngine, 1, /*notify*/ 1, &threadRes_);
         if (r2 != 0 || threadRes_ == 0) {
-            std::cerr << "[WARN] CommAllocThreadRes failed rc=" << r2 << " (continuing)\n";
+            LOG(ERROR, "%s CommAllocThreadRes fail, ret[%d]", __func__, r2);
             return false;
         } else {
-            std::cout << "[HCCL] Thread resources allocated threads=" << cfg_.threadNum << std::endl;
+            LOG(INFO, "%s CommAllocThreadRes success, allocated threads[%u]", __func__, cfg_.threadNum);
+        }
+
+        return true;
+    }
+
+    bool AllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum, NotifyHandle **notifyHandleList)
+    {
+        HcclResult ret = HcommAllocNotify(comm_, commEngine, notifyType, notifyNum, notifyHandleList);
+        if (ret != 0 || *notifyHandleList == nullptr) {
+            std::cerr << "[FAIL] HcommAllocNotify failed ret=" << ret << std::endl;
+            return false;
+        } else {
+            std::cout << "[HCCL] Notify resources allocated Notifys=" << notifyNum << std::endl;
+        }
+
+        return true;
+    }
+
+    bool FreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList)
+    {
+        HcclResult ret = HcommFreeNotify(comm_, notifyNum, notifyHandleList);
+        if (ret != 0) {
+            std::cerr << "[FAIL] HcommFreeNotify failed ret=" << ret << std::endl;
+            return false;
+        } else {
+            std::cout << "[HCCL] Notify resources free Notifys=" << notifyNum << std::endl;
         }
 
         return true;
@@ -394,76 +490,45 @@ public:
     // setup channels and buffers: create one channel per peer and allocate buffers
     bool setup_channel_pair(CommEngine commEngine)
     {
-        if (!comm_) {
-            std::cerr << "[ERROR] comm_ is null\n";
-            return false;
-        }
-        // create buffers (one per peer)
+        uint64_t buffSize = cfg_.msgSize + 128;
         uint32_t peers = cfg_.peers;
-        if (peers < 1) {
-            std::cerr << "[ERROR] peers should bigger than 1 null\n";
-            return false;
-        }
         buffers_.resize(peers);
+        // alloc device mem
         for (uint32_t i = 0; i < peers; ++i) {
-            buffers_[i] = allocate_device_buffer(cfg_.msgSize + 128, (int)cfg_.rank);
+            buffers_[i] = allocate_device_buffer(buffSize, (int)cfg_.rank);
             if (!buffers_[i].ptr) {
-                std::cerr << "[ERROR] allocate_device_buffer failed for peer " << i << std::endl;
+                LOG(ERROR, "%s allocate_device_buffer failed for peer[%d]", __func__, i);
                 return false;
             }
         }
 
         // build ChannelDesc list (use simple fields compatible with mock)
-#if MOCK_HCCL
         std::vector<ChannelDesc> descs(peers);
+#if MOCK_HCCL
         for (uint32_t i = 0; i < peers; i++) {
             descs[i].peerRank = i;
-            descs[i].size = cfg_.msgSize + 128;
+            descs[i].size = buffSize;
             descs[i].priority = 0;
             descs[i].bandwidth = 100;
         }
 #else
-        // If real ChannelDesc type differs, we rely on the actual header definition included.
-        std::vector<ChannelDesc> descs(peers);
         for (uint32_t i = 0; i < peers; i++) {
-            // Try fill those common fields; if not applicable, they will be ignored by compiler if struct differs.
             memset(&descs[i], 0, sizeof(ChannelDesc));
             descs[i].remoteRank = cfg_.rank == 0 ? 1 : 0;
             descs[i].notifyNum = 3;
-            // many HCCL ChannelDesc may include peerRank & size or remoteAddr; we provide what we can.
-            // Use placement if fields exist:
-            // Note: user may need to customize this block per actual HCCL header.
-            // descs[i].peerRank = i;
-            // try assign size if field exists:
-#ifdef __cplusplus
-            // above assignment maybe valid if size exists in real struct
-            // descs[i].size = cfg_.msgSize + 128;
-#endif
         }
 #endif
-
-        // prepare mem handle list from DeviceBuffer.memHandle
-        std::vector<const void *> memHandles(peers, nullptr);
-        for (uint32_t i = 0; i < peers; i++) {
-            memHandles[i] = buffers_[i].memHandle;
-        }
-
         // create channel handles vector
         channels_.resize(peers, 0);
 
         // call CommChannelCreate
-        HcclResult rc = CommChannelCreate(comm_,
-            "p2p_channel",
-            commEngine,
-            descs.data(),
-            static_cast<uint32_t>(descs.size()),
-            // memHandles.data(), static_cast<uint32_t>(memHandles.size()),
-            channels_.data());
+        HcclResult rc = CommChannelCreate(comm_, "p2p_channel", commEngine, descs.data(),
+            static_cast<uint32_t>(descs.size()), channels_.data());
         if (rc != 0) {
-            std::cerr << "[ERROR] CommChannelCreate failed rc=" << rc << std::endl;
+            LOG(ERROR, "%s CommChannelCreate failed, ret[%d]", __func__, rc);
             return false;
         }
-        std::cout << "[HCCL] Created " << peers << " channel(s)\n";
+        LOG(INFO, "%s success, peers[%u]", __func__, peers);
         return true;
     }
 
@@ -471,7 +536,7 @@ public:
     bool do_sample_write()
     {
         if (!threadRes_ || channels_.empty()) {
-            std::cerr << "[WARN] threadRes or channels not available for write test\n";
+            LOG(ERROR, "%s threadRes or channels not available for write test", __func__);
             return false;
         }
         // write a small pattern to peer 0 buffer
@@ -481,10 +546,10 @@ public:
         void *dst = buffers_[peer].ptr;
         HcclResult rc = CommWrite(threadRes_, channels_[peer], dst, sendbuf.data(), len);
         if (rc != 0) {
-            std::cerr << "[ERROR] CommWrite returned rc=" << rc << std::endl;
+            LOG(ERROR, "%s CommWrite fail, ret[%d]", __func__, rc);
             return false;
         }
-        std::cout << "[TEST] CommWrite OK (len=" << len << ")\n";
+        LOG(INFO, "%s success, len[%u]", __func__, len);
         return true;
     }
 
@@ -554,9 +619,9 @@ bool test_comminit(const Config &cfg)
 REGISTER_HCCL_TEST(comminit, test_comminit);
 
 // test: allocate thread resources with various thread counts
-bool test_alloc_thread(const Config &cfg)
+bool test_alloc_aicpu_thread(const Config &cfg)
 {
-    std::cout << "=== test_alloc_thread ===\n";
+    std::cout << "=== test_alloc_aicpu_thread ===\n";
     std::vector<uint32_t> tlist = {4, 4, 4};
 
     Config c = cfg;
@@ -575,10 +640,10 @@ bool test_alloc_thread(const Config &cfg)
 
         std::cout << "[INFO] alloc ok for threadNum=" << tn << std::endl;
     }
-    std::cout << "[PASS] test_alloc_thread\n";
+    std::cout << "[PASS] test_alloc_aicpu_thread\n";
     return true;
 }
-REGISTER_HCCL_TEST(allocthread, test_alloc_thread);
+REGISTER_HCCL_TEST(alloc_aicpu_thread, test_alloc_aicpu_thread);
 
 bool test_alloc_host_thread(const Config &cfg)
 {
@@ -606,29 +671,123 @@ bool test_alloc_host_thread(const Config &cfg)
 }
 REGISTER_HCCL_TEST(alloc_host_thread, test_alloc_host_thread);
 
+// test: allocate notify resources with various counts
+bool test_alloc_aicpu_notify(const Config &cfg)
+{
+    std::cout << "=== test_alloc_aicpu_notify ===\n";
+    std::vector<uint32_t> nlist = {4, 8, 16}; // 不同数量的 notify 测试
+    Config c = cfg;
+    HcclFwkTest t(c);
+    if (!t.init()) {
+        std::cerr << "[FAIL] comm init" << std::endl;
+        return false;
+    }
+
+    for (auto nn : nlist) {
+        NotifyHandle *notifyList = nullptr;
+        bool ok = t.AllocNotify(COMM_ENGINE_AICPU_TS, NOTIFY_TYPE_DEVICE_MEM, nn, &notifyList);
+        if (!ok || notifyList == nullptr) {
+            std::cerr << "[FAIL] alloc notify failed num=" << nn << std::endl;
+            return false;
+        }
+        std::cout << "[INFO] alloc ok for notifyNum=" << nn << std::endl;
+        // 模拟使用 notify ... 这里略
+        ok = t.FreeNotify(nn, notifyList);
+        if (!ok) {
+            std::cerr << "[FAIL] free notify failed num=" << nn << std::endl;
+            return false;
+        }
+        std::cout << "[INFO] free ok for notifyNum=" << nn << std::endl;
+    }
+    std::cout << "[PASS] test_alloc_aicpu_notify\n";
+    return true;
+}
+REGISTER_HCCL_TEST(alloc_aicpu_notify, test_alloc_aicpu_notify);
+
+
+// test: allocate host notify resources
+bool test_alloc_host_notify(const Config &cfg)
+{
+    std::cout << "=== test_alloc_host_notify ===\n";
+    std::vector<uint32_t> nlist = {2, 4, 8};
+
+    Config c = cfg;
+    HcclFwkTest t(c);
+    if (!t.init()) {
+        std::cerr << "[FAIL] comm init" << std::endl;
+        return false;
+    }
+    for (auto nn : nlist) {
+        NotifyHandle *notifyList = nullptr;
+        bool ok = t.AllocNotify(COMM_ENGINE_HOSTCPU_TS, NOTIFY_TYPE_RTS_NOTIFY, nn, &notifyList);
+        if (!ok || notifyList == nullptr) {
+            std::cerr << "[FAIL] alloc host notify failed num=" << nn << std::endl;
+            return false;
+        }
+        std::cout << "[INFO] alloc ok for host notifyNum=" << nn << std::endl;
+        ok = t.FreeNotify(nn, notifyList);
+        if (!ok) {
+            std::cerr << "[FAIL] free host notify failed num=" << nn << std::endl;
+            return false;
+        }
+        std::cout << "[INFO] free ok for host notifyNum=" << nn << std::endl;
+    }
+    std::cout << "[PASS] test_alloc_host_notify\n";
+    return true;
+}
+REGISTER_HCCL_TEST(alloc_host_notify, test_alloc_host_notify);
+
 // test: 测试两卡CommChannelCreate, 需同时拉起两个进程
-// rank_0进程: hccl_fwk_test --cluster_info test/hlt/ranktable-2p.json --rank 0 --test channel_create
-// rank_1进程: hccl_fwk_test --cluster_info test/hlt/ranktable-2p.json --rank 1 --test channel_create
+// rank_0进程: hccl_fwk_test --cluster_info test/hlt/ranktable-2p.json --rank 0 --test channel_create --engine 2
+// rank_1进程: hccl_fwk_test --cluster_info test/hlt/ranktable-2p.json --rank 1 --test channel_create --engine 2
 bool test_channel_create(const Config &cfg)
 {
-    std::cout << "=== test_channel_create ===\n";
+    LOG(INFO, "%s start", __func__);
     Config c = cfg;
     c.peers = 1;
     HcclFwkTest t(c);
     if (!t.init()) {
-        std::cerr << "[FAIL] init\n";
+        LOG(ERROR, "%s init fail", __func__);
         return false;
     }
-    if (!t.setup_channel_pair(COMM_ENGINE_HOSTCPU_TS)) {
-        std::cerr << "[FAIL] setup_channel_pair\n";
+    if (!t.setup_channel_pair(cfg.commEngine)) {
+        LOG(ERROR, "%s setup_channel_pair fail", __func__);
         return false;
     }
     sleep(1); // tip：两个进程，建链完会自动销毁，没有等待对端完成建链的握手机制，暂时通过添加sleep来等待对端。如果等待时间内对端未完成建链，本端会销毁，导致对端建链失败
     // t.do_sample_write();
-    std::cout << "[PASS] test_channel_create\n";
+    LOG(INFO, "%s PASS", __func__);
     return true;
 }
 REGISTER_HCCL_TEST(channel_create, test_channel_create);
+
+// test: 测试两卡CommAllocThreadRes+CommChannelCreate+Write+Read, 需同时拉起两个进程
+bool test_write_read(const Config &cfg)
+{
+    LOG(INFO, "%s start", __func__);
+    Config c = cfg;
+    c.peers = 1;
+    HcclFwkTest t(c);
+    if (!t.init()) {
+        LOG(ERROR, "%s init fail", __func__);
+        return false;
+    }
+
+    if (!t.AllocThread(cfg.commEngine)) {
+        LOG(ERROR, "%s alloc thread fail", __func__);
+        return false;
+    }
+
+    if (!t.setup_channel_pair(cfg.commEngine)) {
+        LOG(ERROR, "%s setup_channel_pair fail", __func__);
+        return false;
+    }
+    sleep(1); // tip：两个进程，建链完会自动销毁，没有等待对端完成建链的握手机制，暂时通过添加sleep来等待对端。如果等待时间内对端未完成建链，本端会销毁，导致对端建链失败
+    // t.do_sample_write();
+    LOG(INFO, "%s PASS", __func__);
+    return true;
+}
+REGISTER_HCCL_TEST(write_read, test_write_read);
 
 // test: combo allocThread->createChannel
 bool test_combo(const Config &cfg)
@@ -708,12 +867,13 @@ int main(int argc, char **argv)
         {"peers", required_argument, 0, 'p'},
         {"size", required_argument, 0, 's'},
         {"test", required_argument, 0, 't'},
+        {"engine", required_argument, 0, 'e'},
         {"list", no_argument, 0, 'l'},
         {"help", no_argument, 0, 'h'},
         {0, 0, 0, 0}};
     int opt;
     int long_index = 0;
-    while ((opt = getopt_long(argc, argv, "c:r:p:s:t:lh", long_options, &long_index)) != -1) {
+    while ((opt = getopt_long(argc, argv, "c:r:p:s:t:e:lh", long_options, &long_index)) != -1) {
         switch (opt) {
             case 'c':
                 cfg.clusterInfo = optarg;
@@ -729,6 +889,9 @@ int main(int argc, char **argv)
                 break;
             case 't':
                 selectedTest = optarg;
+                break;
+            case 'e':
+                cfg.commEngine = static_cast<CommEngine>(atoll(optarg));
                 break;
             case 'l':
                 ListAllTests();
@@ -754,9 +917,9 @@ int main(int argc, char **argv)
     if (env_rank)
         cfg.rank = static_cast<uint32_t>(atoi(env_rank));
 
-    printf("[MAIN] Config: clusterInfo[%s], rank[%u], peers[%u], test[%s], iters[%u], msgSize[%llu], "
+    printf("[MAIN] Config: clusterInfo[%s], rank[%u], peers[%u], test[%s], iters[%u], msgSize[%llu], commEngine[%d] "
         "threadNum[%u]\n", cfg.clusterInfo.c_str(), cfg.rank, cfg.peers, cfg.test.c_str(), cfg.iters,
-        cfg.msgSize, cfg.threadNum);
+        cfg.msgSize, cfg.commEngine, cfg.threadNum);
 
     // If user specified a single test name, run only that
     if (!selectedTest.empty()) {

@@ -89,7 +89,7 @@ TEST_F(TaskAbortHandlerTest, ut_task_abort_handle_deinit_test)
 TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage0_success)
 {
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage= RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage= ACL_RT_DEVICE_TASK_ABORT_POST;
     int a = 8;
     void* args = reinterpret_cast<void*>(&a);
     uint32_t time = 30U;
@@ -154,7 +154,7 @@ TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage0_false)
 TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage1_success)
 {
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage= ACL_RT_DEVICE_TASK_ABORT_POST;
     int a = 8;
     void* args = reinterpret_cast<void*>(&a);
     uint32_t time = 30U;
@@ -187,7 +187,7 @@ TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage1_success)
 TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage1_false)
 {
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage= ACL_RT_DEVICE_TASK_ABORT_POST;
     int a = 8;
     void* args = reinterpret_cast<void*>(&a);
     uint32_t time = 30U;
@@ -218,7 +218,7 @@ TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage1_false)
 TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage2_success)
 {
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage= ACL_RT_DEVICE_TASK_ABORT_POST;
     int a = 8;
     void* args = reinterpret_cast<void*>(&a);
     uint32_t time = 30U;
@@ -250,7 +250,7 @@ TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage2_success)
 TEST_F(TaskAbortHandlerTest, ut_ProcessTaskAbortHandleCallback_stage2_false)
 {
     uint32_t deviceLogicId = 0;
-    rtDeviceTaskAbortStage stage = RT_DEVICE_TASK_ABORT_POST;
+    aclrtDeviceTaskAbortStage stage= ACL_RT_DEVICE_TASK_ABORT_POST;
     int a = 8;
     void* args = reinterpret_cast<void*>(&a);
     uint32_t time = 30U;

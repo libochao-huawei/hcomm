@@ -15,7 +15,6 @@
 #include <pwd.h>
 #include <unistd.h>
 #include <sys/syscall.h>
-#include <slog.h>
 #include <dlog_pub.h>
 #define submodule_ccu "CCU"
 
@@ -44,16 +43,20 @@
 #ifdef LOG_HOST
 /* fix slog compatibility issue: rs will be packaged into runtime/opp and deployed on the device */
 #ifdef OPEN_BUILD_PROJECT
+int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel) __attribute((weak));
+int32_t CheckLogLevelForC(int32_t moduleId, int32_t logLevel) __attribute((weak));
+void DlogRecordForC(int32_t moduleId, int32_t level, const char *fmt, ...) __attribute((weak));
+void DlogRecord(int32_t moduleId, int32_t level, const char *fmt, ...) __attribute((weak));
 #define HCCPDlogForC(moduleId, level, fmt, ...) do { \
-    DlogRecordForC(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);  \
+    DlogRecord(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);  \
 } while (0)
 #else
 #define HCCPDlogForC(moduleId, level, fmt, ...) do {                                            \
-    if (CheckLogLevelForC(moduleId, level) == 1) {                                              \
-        if (DlogRecordForC == NULL) {                                                           \
-            DlogInnerForC(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);   \
+    if (CheckLogLevel(moduleId, level) == 1) {                                              \
+        if (DlogRecord == NULL) {                                                           \
+            DlogInner(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);   \
         } else {                                                                                \
-            DlogRecordForC(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);  \
+            DlogRecord(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);  \
         }                                                                                       \
     }                                                                                           \
 } while (0)
@@ -107,16 +110,10 @@
         HCCPDlogForC(ROCE, EVENT_LEVEL, "%s user(%s): " fmt, __func__, pwd->pw_name, ##args); \
     } while (0);
 #else
-
-/* fix slog compatibility issue: rs will be packaged into runtime/opp and deployed on the device */
 #define hccp_dlog(moduleId, level, fmt, ...)                                                   \
     do {                                                                                       \
         if (CheckLogLevel(moduleId, level) == 1) {                                             \
-            if (DlogRecord == NULL) {                                                          \
-                DlogInner(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);  \
-            } else {                                                                           \
-                DlogRecord(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__); \
-            }                                                                                  \
+            DlogRecord(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);     \
         }                                                                                      \
     } while (0)
 /* HCCP module */

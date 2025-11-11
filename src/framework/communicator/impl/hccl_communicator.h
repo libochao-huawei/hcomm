@@ -21,6 +21,7 @@
 #include "opexecounter_pub.h"
 #include "op_base_stream_manager_pub.h"
 #include "offload_stream_manager_pub.h"
+#include "prof_common.h"
 #include "profiler_manager.h"
 
 #include "topoinfo_parse.h"
@@ -88,7 +89,7 @@ struct AicpuOpTiling {
     std::string algName;
     AlgType  algType;
     bool isUsedMainStream = false;
-    u8 floatOverflowMode = RT_OVERFLOW_MODE_UNDEF;
+    u8 floatOverflowMode = ACL_RT_OVERFLOW_MODE_UNDEF;
     u8 dumpDebug = false;
 };
 
@@ -355,7 +356,7 @@ public:
     HcclResult FillOpParam(const HcclCMDType commType, OpParam& opParam,
         const uint64_t count, void *pCount, void *pDispls);
     HcclResult AllocComResource(const std::string &newTag, const std::string &algName,
-        const HcclCMDType commType, const OpParam& opParam, rtStream_t stream);
+        const HcclCMDType commType, const OpParam& opParam, rtStream_t stream, bool isNeedHostSlaveStream = true);
     HcclResult AllocComResourceByTiling(const std::string &algConfig, void *param);
 
     virtual HcclResult CreateCommResource(const std::string &tag, rtStream_t aiCpuStream, bool isOpbaseMode,
@@ -385,7 +386,8 @@ public:
     bool GetAivModeConfig();  // 获取通信域粒度aiv模式配置
     bool GetAicpuUnfoldConfig();  // 获取通信域粒度aicpu配置
     void SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
-    bool GetMC2EnvFlag();
+    bool GetAicpuCommEngine();
+    HcclResult SetAicpuCommEngine(bool isAicpuCommEngine);
     HcclResult SetStopFlag(bool value);
     HcclResult SetState(HcclCommState state);
     HcclCommState GetState();
@@ -457,7 +459,6 @@ private:
     HcclResult OneSidedBackupServerInit(HcclNetDevCtx &nicPortBackUpCtx);
     void SetAttrs();
     u32 HcclGetCmdTimeout();
-    HcclResult SetMC2EnvFlag();
     HcclResult InitCommParams(HcclCommParams &params);
     HcclResult InitRankInfo(const RankTable_t &rankTable);
     HcclResult InitRankInfoSubGroup(const std::vector<RankInfo> &rankList, WorldGroupInfo &groupCommonData);
@@ -711,7 +712,7 @@ private:
     HcclResult AllocOpBaseModeScratchMem(HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult AllocAlgResource(const std::string &tag, HcclCMDType opType, const OpParam &opParam,
-        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream = true);
     HcclResult IncreAllocLink(const std::string &newTag, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse);
@@ -968,7 +969,7 @@ private:
     HcclCommConnections commConnections_;
     HcclSocketPortConfig commPortConfig_;
     std::shared_ptr<PetersonLock> hostDeviceLock_;
-    bool isNsRecovery_{false};
+    bool isAicpuCommEngine_{false};
     HostMem opTilingDataBuf_;
     HostMem apiTilingDataMem_;
     DeviceMem tilingDataMemDevice_;

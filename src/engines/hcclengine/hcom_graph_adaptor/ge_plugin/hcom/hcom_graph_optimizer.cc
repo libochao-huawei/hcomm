@@ -234,8 +234,8 @@ ge::Status HcomGraphOptimizer::OptimizeOriginalGraph(ge::ComputeGraph& graph)
         HCCL_ERROR("[Optimize][OriginalGraph]graph[%s]: Original Optimize failed. ret[%d]",
             graph.GetName().c_str(), ret), ge::INTERNAL_ERROR);
     ge::TraceManager::GetInstance().ClearTraceOwner();
-    ge::GraphUtils::DumpGEGraph(graph.shared_from_this(), "HcclAfaterOptimizeOriginalGraph");
-    ge::GraphUtils::DumpGEGraphToOnnx(graph, "HcclAfaterOptimizeOriginalGraph");
+    ge::GraphUtils::DumpGEGraph(graph.shared_from_this(), "HcclAfterOptimizeOriginalGraph");
+    ge::GraphUtils::DumpGEGraphToOnnx(graph, "HcclAfterOptimizeOriginalGraph");
     HCCL_INFO("graph[%s] end fusion HcomReduce Op.", graph.GetName().c_str());
     return ge::SUCCESS;
 }

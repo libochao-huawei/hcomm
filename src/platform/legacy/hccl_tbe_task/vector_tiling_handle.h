@@ -17,8 +17,6 @@
 #include <memory>
 #include <cstdlib>
 #include <nlohmann/json.hpp>
-#include "register/op_tiling_registry.h"
-#include "register/op_tiling_attr_utils.h"
 #include "vector_op_info.h"
 #include "op_tiling.h"
 

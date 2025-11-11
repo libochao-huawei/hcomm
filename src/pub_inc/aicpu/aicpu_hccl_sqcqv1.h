@@ -45,7 +45,7 @@ extern void AddOneWriteValueRecordSqeV1(uint16_t streamId, uint16_t taskId, u64 
     uint8_t *sqeType);
 
 extern void AddOneMemcpySqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint32_t length,
-    const rtDataType_t runtimeDataType, rtRecudeKind_t rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
+    const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
     uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType);
 
 extern void AddOneRdmaDbSendSqeV1(uint16_t streamId, uint16_t taskId, uint64_t dbInfo, uint64_t dbAddr,

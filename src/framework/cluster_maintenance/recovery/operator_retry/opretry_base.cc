@@ -12,27 +12,25 @@
 #include "externalinput_pub.h"
 #include "opretry_manager.h"
 #include "adapter_pub.h"
-#include "runtime/base.h"
-#include "runtime/stream.h"
-#include "rts/rts_stream.h"
+#include "rt_external.h"
 #include "opretry_agent.h"
 #include "opretry_server.h"
 #include "opretry_base.h"
 
 namespace {
-HcclResult StreamClear(HcclRtStream stream, rtClearStep_t step)
+HcclResult StreamClear(HcclRtStream stream, HcclRtStreamClearStep step)
 {
     CHK_PTR_NULL(stream);
 
-    rtError_t ret;
-    if (step == RT_STREAM_STOP) {
-        ret = rtsStreamStop(stream);
-        HCCL_DEBUG("[StreamClear]Call rtsStreamStop, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
+    aclError  ret;
+    if (step == HcclRtStreamClearStep::HCCL_STREAM_STOP) {
+        ret = aclrtStreamStop(stream);
+        HCCL_DEBUG("[StreamClear]Call aclrtStreamStop, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
     } else {
-        ret = rtStreamAbort(stream);
-        HCCL_DEBUG("[StreamClear]Call rtStreamAbort, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
+        ret = aclrtStreamStop(stream);
+        HCCL_DEBUG("[StreamClear]Call aclrtStreamStop, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
     }
-    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[StreamClear]errNo[0x%016llx]Failed to clear stream. "
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[StreamClear]errNo[0x%016llx]Failed to clear stream. "
         "ret[%d], param: stream[%p], step[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, stream, step), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
@@ -306,7 +304,7 @@ HcclResult OpRetryBase::SetOpChangeLinkInfo(std::shared_ptr<HDCommunicate> hdcPt
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::ClearStream(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, rtClearStep_t clearStep)
+HcclResult OpRetryBase::ClearStream(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, HcclRtStreamClearStep clearStep)
 {
     HCCL_INFO("[OpRetry][ClearStream]start");
     CHK_SMART_PTR_NULL(opStreamPtr_);
@@ -325,7 +323,7 @@ HcclResult OpRetryBase::ClearStream(std::shared_ptr<HcclOpStreamRes> opStreamPtr
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::ClearStreamWithOpId(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, rtClearStep_t clearStep, 
+HcclResult OpRetryBase::ClearStreamWithOpId(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, HcclRtStreamClearStep clearStep, 
     HcclOpIdentifier &opId, HcclOpIdentifier &curOpId)
 {
     HCCL_INFO("[OpRetry][ClearStream]start");

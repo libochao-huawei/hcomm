@@ -28,7 +28,7 @@ struct TaskAbortCbArgs {
 TaskAbortHandler::TaskAbortHandler() {}
 TaskAbortHandler::~TaskAbortHandler() {}
  
-int32_t ProcessTaskAbortHandleCallback(uint32_t devId, rtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
+int32_t ProcessTaskAbortHandleCallback(int32_t  devId, aclrtDeviceTaskAbortStage stage, uint32_t timeout, void *args)
 {
     HcclUs startut = TIME_NOW();
     CHK_PTR_NULL(args);
@@ -37,7 +37,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t devId, rtDeviceTaskAbortStage st
     const std::chrono::seconds localtimeout = std::chrono::seconds(timeout);
     HcclResult ret = HCCL_SUCCESS;
     if (localtimeout != std::chrono::seconds(0)) {
-        if (stage == RT_DEVICE_TASK_ABORT_PRE) {
+        if (stage == ACL_RT_DEVICE_TASK_ABORT_PRE) {
             for (size_t i = 0; i < commVector.size(); i++) {
                 std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
                 ret = commVector[i]->Suspend();
@@ -54,7 +54,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t devId, rtDeviceTaskAbortStage st
             }
             g_isRdmaError = false;
             HCCL_INFO("ProcessTaskAbortHandleCallback set g_isRdmaError false");
-        } else if (stage == RT_DEVICE_TASK_ABORT_POST) {
+        } else if (stage == ACL_RT_DEVICE_TASK_ABORT_POST) {
             for (size_t i = 0; i < commVector.size(); i++) {
                 std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
                 ret = commVector[i]->Clean();
@@ -72,7 +72,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t devId, rtDeviceTaskAbortStage st
             }
         }
     } else {
-        if (stage == RT_DEVICE_TASK_ABORT_PRE){
+        if (stage == ACL_RT_DEVICE_TASK_ABORT_PRE){
             for( size_t i = 0; i < commVector.size(); i++) {
                 ret = commVector[i]->Suspend();
                 if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {
@@ -83,7 +83,7 @@ int32_t ProcessTaskAbortHandleCallback(uint32_t devId, rtDeviceTaskAbortStage st
             }
             g_isRdmaError = false;
             HCCL_INFO("ProcessTaskAbortHandleCallback set g_isRdmaError false");
-        } else if (stage == RT_DEVICE_TASK_ABORT_POST) {
+        } else if (stage == ACL_RT_DEVICE_TASK_ABORT_POST) {
             for (size_t i = 0; i < commVector.size(); i++) {
                 ret = commVector[i]->Clean();
                 if (ret != HCCL_SUCCESS && ret != HCCL_E_SUSPENDING) {

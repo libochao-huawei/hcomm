@@ -13,7 +13,7 @@
 #include "graph/ge_local_context.h"
 #include "external/ge/ge_api_types.h" // ge对内options
 #include <cstdlib>
-#include "rts_mem.h"
+#include "rt_external.h"
 
 HcclResult MemcpyKindTranslate(HcclRtMemcpyKind kind, aclrtMemcpyKind *rtKind)
 {
@@ -274,13 +274,13 @@ HcclResult hrtMemcpyAddrAsync(void **dst, uint64_t destMax, uint64_t destOffset,
         return HCCL_SUCCESS;
     }
 
-    rtError_t ret = rtMemcpyAsyncWithOffset(dst, destMax, destOffset, src, count, srcOffset,
-        RT_MEMCPY_KIND_INNER_DEVICE_TO_DEVICE, stream);
+     aclError ret = aclrtMemcpyAsyncWithOffset(dst, destMax, destOffset, src, count, srcOffset,
+        ACL_MEMCPY_INNER_DEVICE_TO_DEVICE, stream);
 
     HCCL_DEBUG("Call hrtMemcpyAddrAsync, return value[%d], dstAddr[%p], destMax[%llu], destOffset[%llu], "\
         "srcAddr[%p], count[%llu], srcOffset[%llu]", ret, dst, destMax, destOffset, src, count, srcOffset);
 
-    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[AsyncCopy][Mem] rt memory async copy failed, "\
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[AsyncCopy][Mem] rt memory async copy failed, "\
         "return[%d], para: dstAddr[%p], destMax[%llu], destOffset[%llu], srcAddr[%p], count[%llu], srcOffset[%llu], "\
         "stream[%p].",\
         ret, dst, destMax, destOffset, src, count, srcOffset, stream), HCCL_E_RUNTIME);

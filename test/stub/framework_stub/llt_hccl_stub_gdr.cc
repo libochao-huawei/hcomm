@@ -2941,10 +2941,10 @@ rtError_t rtDisableP2P(u32 devicePhyId1, u32 devicePhyId2)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtsGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
+aclError aclrtDevicePeerAccessStatus(int32_t deviceId, int32_t peerDeviceId, int32_t *status)
 {
     *status = 1;
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
 
 int ra_get_ifnum(struct ra_get_ifattr *config, unsigned int *num)

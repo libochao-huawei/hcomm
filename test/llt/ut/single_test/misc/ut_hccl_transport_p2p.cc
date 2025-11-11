@@ -587,7 +587,7 @@ TEST_F(LinkPcieTest, ut_SpecifyLink)
     ret = hrtIpcSetMemoryAttr(&name, 0, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    MOCKER(rtIpcSetMemoryAttr).stubs().with(any()).will(returnValue(1));
+    MOCKER(aclrtIpcMemSetAttr).stubs().with(any()).will(returnValue(1));
     ret = hrtIpcSetMemoryAttr(&name, 0, 1);
     EXPECT_EQ(ret, HCCL_E_RUNTIME);
 }

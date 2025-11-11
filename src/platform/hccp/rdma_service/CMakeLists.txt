@@ -1,5 +1,5 @@
 if(BUILD_OPEN_PROJECT)
-    set(ascend_kms stub_kms)
+    set(ascend_kms KMS)
     set(CRYP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../crypt)
     set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
     set(CTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ctx)
@@ -71,32 +71,26 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../crypt/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../roce/host_lite
         ${CMAKE_CURRENT_SOURCE_DIR}/../roce/roce_user
-#暂时依赖文件
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/abl/toolchain
-        ${CMAKE_CURRENT_SOURCE_DIR}/../stub_kms/libkmc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/driver/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../externel_depends/driver/
+        ${CMAKE_CURRENT_SOURCE_DIR}/../tls_adp
 
-        ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/slog/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/mmpa
-        ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/ascend_hal/driver/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../externel_depends/c_sec/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/log
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/../tls_adp
-        ${CMAKE_BINARY_DIR}/openssl-install/include
+        # 第三方库依赖路径
         ${CMAKE_BINARY_DIR}/../third_party/openssl/include
+
+        # 临时依赖，后续删除
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
     )
 
     target_link_directories(rs PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 else()
     #头文件搜索路径
@@ -167,7 +161,7 @@ target_compile_definitions(rs PRIVATE
     $<$<AND:$<STREQUAL:${PRODUCT},ascend310p>,$<STREQUAL:${PRODUCT_SIDE},device>>:NOT_INIT_IBVERBS>
 )
 
-if((("${USE_ALOG}" STREQUAL "1")) OR ("${BUILD_OPEN_PROJECT}" STREQUAL "ON"))
+if(("${USE_ALOG}" STREQUAL "1"))
 target_compile_definitions(rs PRIVATE
     LOG_HOST
 )
@@ -177,14 +171,13 @@ if(BUILD_OPEN_PROJECT)
     target_link_libraries(rs PRIVATE
         -Wl,--no-as-needed
         c_sec
-        unified_dlog
-        mmpa
-        -Wl,--as-needed
+        $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
+        #  目前本地编译在指定位置
         $<$<NOT:$<STREQUAL:${PRODUCT},ascend310p>>:tls_adp>
+        ${ascend_kms}
+        -Wl,--as-needed
         -Wl,--whole-archive
         -Wl,--no-whole-archive
-#  目前本地编译在指定位置
-        ${ascend_kms}
         -lrt
         -ldl
     )

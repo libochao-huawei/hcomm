@@ -11,7 +11,6 @@
 #include <adapter_tdt.h>
 #include "log.h"
 #include "workflow_pub.h"
-#include "rts/rts_device.h"
 #include "driver/ascend_hal.h"
 #include "sal_pub.h"
 using namespace hccl;

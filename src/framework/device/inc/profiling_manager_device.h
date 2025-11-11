@@ -14,7 +14,8 @@
 #include "stream_pub.h"
 #include "hccl_common.h"
 #include "common/aicpu_hccl_def.h"
-#include "toolchain/aprof_pub.h"
+#include "aprof_pub.h"
+#include "prof_common.h"
 
 extern "C" {
 __attribute__((weak)) int32_t AdprofReportBatchAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length);

@@ -32,9 +32,11 @@ public:
     HcclResult HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList);
     
 private:
+    HcclResult LoadAICPUKernel(void);
     std::unique_ptr<ThreadMgr> threadMgr_;
     std::unique_ptr<NotifyManager> notifyMgr_;
     std::mutex mtx_;
+    aclrtBinHandle binHandle_ = nullptr;
 };
 }
 #endif

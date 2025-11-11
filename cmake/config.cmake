@@ -70,12 +70,27 @@ set(HOST_STUBS
     ascendcl
 )
 endif()
-set(STUBS
-    ascend_hal
-    slog
-    aicpu_sharder
-    ${HOST_STUBS}
-)
+
+if (BUILD_AARCH)
+    set(STUBS
+        ascend_hal
+        slog
+        aicpu_sharder
+        ${HOST_STUBS}
+    )
+else()
+    set(STUBS
+        ascend_hal
+        slog
+        aicpu_sharder
+        ${HOST_STUBS}
+        runtime
+        acl_rt
+        metadef
+        opp_registry
+        error_manager
+    )
+endif()
 
 foreach(STUB ${STUBS})
     if(NOT TARGET ${STUB})

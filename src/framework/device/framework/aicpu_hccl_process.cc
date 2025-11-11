@@ -235,6 +235,35 @@ HcclResult AicpuHcclProcess::AicpuCreateCommbyGroup(const std::string &group, hc
     return HCCL_E_INTERNAL;
 }
 
+HcclResult AicpuHcclProcess::AicpuIndOpAllocAndGetComm(const std::string &group, hccl::HcclCommAicpu **aicpuComm)
+{
+    ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
+    // 读锁，查询是否已经创建过通信域
+    rwlock.readLock();
+    auto iter = g_commAicpuInfo.commMap.find(group);
+    if (iter != g_commAicpuInfo.commMap.end()) {
+        // 通信域存在，但正在被占用
+        if (iter->second.second) {
+            HCCL_ERROR("%s comm group [%s] has been used, last executed op: %s",
+                __func__, group.c_str(), iter->second.first->GetExcuteOp().c_str());
+            return HCCL_E_INTERNAL;
+        }
+
+        // 通信域可用
+        iter->second.second = true;
+        *aicpuComm = iter->second.first.get();
+        rwlock.readUnlock();
+        HCCL_DEBUG("%s group[%s] get comm success", __func__, group.c_str());
+        return HCCL_SUCCESS;
+    } else {
+        rwlock.readUnlock();
+        // 创建通信域
+        CHK_RET(AicpuCreateCommbyGroup(group, aicpuComm));
+        CHK_RET((*aicpuComm)->InitAicpuIndOp(group));
+    }
+    return HCCL_SUCCESS;
+}
+
 ReadWriteLockBase& AicpuHcclProcess::AicpuGetCommMutex()
 {
     return g_commAicpuInfo.commAicpuMapMutex;
@@ -558,34 +587,23 @@ HcclResult AicpuHcclProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 {
     hccl::HcclCommAicpu *commAicpu = nullptr;
     std::string group = param->hcomId;
-    commAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
-    if (commAicpu == nullptr) {
-        CHK_RET(AicpuCreateCommbyGroup(group, &commAicpu));
-        if (commAicpu == nullptr) {
-            HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpThreadInit]commAicpu is null group[%s]", group.c_str());
-            return HCCL_E_PTR;
-        }
-        CHK_RET(commAicpu->InitAicpuIndOp());
-    }
+    
+    CHK_RET(AicpuIndOpAllocAndGetComm(group, &commAicpu));
+    CHK_PRT_RET(!commAicpu, HCCL_ERROR("%s commAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
     HcclResult ret = commAicpu->InitThreads(param);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-    HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpThreadInit]errNo[0x%016llx] Failed to init threads group[%s]",
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpThreadInit]errNo[0x%016llx] Failed to init threads group[%s]",
         HCCL_ERROR_CODE(ret), group.c_str()), ret);
-
+    AicpuReleaseCommbyGroup(group);
     return HCCL_SUCCESS;
 }
 
 HcclResult AicpuHcclProcess::AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *commParam)
 {
     std::string group = commParam->hcomId;
-    std::string indOpSuffix = ":IndOp";
-    group += indOpSuffix;
     hccl::HcclCommAicpu *commAicpu = nullptr;
-    CHK_RET(AicpuCreateCommbyGroup(group, &commAicpu));
-    if (commAicpu == nullptr) {
-        HCCL_ERROR("[AicpuIndOpChannelInit]commAicpu is null group[%s]", group.c_str());
-        return HCCL_E_PTR;
-    }
+    CHK_RET(AicpuIndOpAllocAndGetComm(group, &commAicpu));
+    CHK_PRT_RET(!commAicpu, HCCL_ERROR("%s commAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
     return commAicpu->AllocChannelResource(commParam);
 }
 
@@ -593,15 +611,9 @@ HcclResult AicpuHcclProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
 {
     hccl::HcclCommAicpu *commAicpu = nullptr;
     std::string group = param->hcomId;
-    commAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
-    if (commAicpu == nullptr) {
-        CHK_RET(AicpuCreateCommbyGroup(group, &commAicpu));
-        if (commAicpu == nullptr) {
-            HCCL_ERROR("[AicpuHcclProcess][%s]commAicpu is null group[%s]", __func__, group.c_str());
-            return HCCL_E_PTR;
-        }
-        CHK_RET(commAicpu->InitAicpuIndOp());
-    }
+    CHK_RET(AicpuIndOpAllocAndGetComm(group, &commAicpu));
+    CHK_PRT_RET(!commAicpu, HCCL_ERROR("%s commAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+
     HcclResult ret = HCCL_E_INTERNAL;
     if (param->freeFlag) {
         ret = commAicpu->NotifyFree(param);
@@ -615,8 +627,8 @@ HcclResult AicpuHcclProcess::AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param)
             __func__, HCCL_ERROR_CODE(ret), group.c_str()), ret);
     }
 
-    HCCL_INFO("[AicpuHcclProcess][%s] comm identifier[%s], notify op[%u] success, num[%u], notifyParam[%.100s]",
-        __func__, group.c_str(), param->freeFlag, param->notifyNum, param->notifyParam);
-
+    HCCL_INFO("[AicpuHcclProcess][%s] comm identifier[%s], notify op[%u] success, num[%u]",
+        __func__, group.c_str(), param->freeFlag, param->notifyNum);
+    AicpuReleaseCommbyGroup(group);
     return HCCL_SUCCESS;
 }

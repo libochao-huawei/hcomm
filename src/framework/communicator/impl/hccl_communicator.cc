@@ -740,7 +740,7 @@ namespace hccl
         HCCL_INFO("start to stop the backGround Thread");
         if (deviceType_ == DevType::DEV_TYPE_910 || deviceType_ == DevType::DEV_TYPE_910B)
         {
-            if (GetMC2EnvFlag())
+            if (GetAicpuCommEngine())
             {
                 if (controlH2D != nullptr)
                 {
@@ -799,7 +799,7 @@ namespace hccl
                          __func__);
             return HCCL_SUCCESS;
         }
-        if (!GetMC2EnvFlag())
+        if (!GetAicpuCommEngine())
         {
             HCCL_INFO("[HcclCommunicator][%s]Not mc2 or aicpu environment, no needs to destroy the aicpu comm.",
                       __func__);
@@ -1046,15 +1046,15 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::SetMC2EnvFlag()
+    bool HcclCommunicator::GetAicpuCommEngine()
     {
-        isNsRecovery_ = true;
-        return HCCL_SUCCESS;
+        return isAicpuCommEngine_;
     }
-
-    bool HcclCommunicator::GetMC2EnvFlag()
+ 
+    HcclResult HcclCommunicator::SetAicpuCommEngine(bool isAicpuCommEngine)
     {
-        return isNsRecovery_;
+        isAicpuCommEngine_ = isAicpuCommEngine;
+        return HCCL_SUCCESS;
     }
 
     HcclResult HcclCommunicator::SetStopFlag(bool value)
@@ -1117,7 +1117,7 @@ namespace hccl
     HcclResult HcclCommunicator::Suspend(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
     {
         isSuspending = true;
-        if (GetMC2EnvFlag())
+        if (GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]MC2 OR AICPU ENVIRONMENT TO RECOVERY");
             KfcExecControl execCommand;
@@ -1175,7 +1175,7 @@ namespace hccl
     HcclResult HcclCommunicator::StopExec(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
     {
         isSuspending = true;
-        if (GetMC2EnvFlag())
+        if (GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]MC2 OR AICPU ENVIRONMENT TO RECOVERY");
             KfcExecStatus opInfo;
@@ -1239,7 +1239,7 @@ namespace hccl
     HcclResult HcclCommunicator::Clean(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
     {
         isSuspending = true;
-        if (GetMC2EnvFlag())
+        if (GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]MC2 OR AICPU ENVIRONMENT TO RECOVERY");
             KfcExecStatus opInfo;
@@ -2305,7 +2305,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::HostMC2EnvResume()
     {
-        if (GetMC2EnvFlag())
+        if (GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]reset the suspending flag");
             KfcExecControl controlCmd;

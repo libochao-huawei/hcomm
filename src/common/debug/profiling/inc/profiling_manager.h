@@ -11,14 +11,14 @@
 #ifndef COMMON_PROFILING_PROFILING_MANAGER_H
 #define COMMON_PROFILING_PROFILING_MANAGER_H
 
-#include "runtime/stream.h"
+#include "rt_external.h"
 #include "adapter_prof.h"
 #include "task_profiling_pub.h"
 #include "profiler_base_pub.h"
 #include "externalinput_pub.h"
 
 #include "profiling_manager_pub.h"
-#include "toolchain/aprof_pub.h"
+#include "aprof_pub.h"
 #include "dispatcher.h"
 
 #include <string>

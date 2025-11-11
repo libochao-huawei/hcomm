@@ -166,7 +166,7 @@ public:
     HcclResult InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex);
     HcclResult AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam);
 
-    HcclResult InitAicpuIndOp();
+    HcclResult InitAicpuIndOp(const std::string &group);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);

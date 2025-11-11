@@ -52,12 +52,12 @@ if(BUILD_OPEN_PROJECT)
         ${BASIC_PATH}/common
         ${BASIC_PATH}/roce/host_lite
 
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../externel_depends/c_sec/include
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
     )
 
     target_link_directories(ra_adp PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 endif()
 
@@ -110,12 +110,6 @@ if(BUILD_OPEN_PROJECT)
         -pthread
         # ofed_headers
     )
-endif()
-
-if((("${USE_ALOG}" STREQUAL "1")) OR ("${BUILD_OPEN_PROJECT}" STREQUAL "ON"))
-target_compile_definitions(ra_adp PRIVATE
-    LOG_HOST
-)
 endif()
 
 install(TARGETS  ra_adp

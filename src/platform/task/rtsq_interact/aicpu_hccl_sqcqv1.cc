@@ -20,27 +20,27 @@ uint8_t ReduceOpcodeHigh(uint8_t copyDataType)
 {
     uint8_t opcode;
     switch (copyDataType) {
-        case RT_DATA_TYPE_INT8: {
+        case ACL_INT8: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_DATA_TYPE_INT8);
             break;
         }
-        case RT_DATA_TYPE_INT16: {
+        case ACL_INT16: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_DATA_TYPE_INT16);
             break;
         }
-        case RT_DATA_TYPE_INT32: {
+        case ACL_INT32: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_DATA_TYPE_INT32);
             break;
         }
-        case RT_DATA_TYPE_FP16: {
+        case ACL_FLOAT16: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_DATA_TYPE_FP16);
             break;
         }
-        case RT_DATA_TYPE_FP32: {
+        case ACL_FLOAT: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_DATA_TYPE_FP32);
             break;
         }
-        case RT_DATA_TYPE_BFP16: {
+        case ACL_BF16: {
             if (ChipIsHaveStars()) {
                 opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_DATA_TYPE_BFP16);
             } else {
@@ -65,19 +65,19 @@ uint8_t ReduceOpcodeLow(uint32_t copyKind)
 {
     uint8_t opcode;
     switch (copyKind) {
-        case RT_MEMCPY_SDMA_AUTOMATIC_ADD: {
+        case ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_OP_KIND_ADD);
             break;
         }
-        case RT_MEMCPY_SDMA_AUTOMATIC_MAX: {
+        case ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_OP_KIND_MAX);
             break;
         }
-        case RT_MEMCPY_SDMA_AUTOMATIC_MIN: {
+        case ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_OP_KIND_MIN);
             break;
         }
-        case RT_MEMCPY_SDMA_AUTOMATIC_EQUAL: {
+        case ACL_RT_MEMCPY_SDMA_AUTOMATIC_EQUAL: {
             opcode = static_cast<uint8_t>(RT_STARS_MEMCPY_ASYNC_OP_KIND_EQUAL);
             break;
         }
@@ -168,7 +168,7 @@ void AddOneWriteValueRecordSqeV1(uint16_t streamId, uint16_t taskId, u64 notifyW
 }
 
 void AddOneMemcpySqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint32_t length,
-    const rtDataType_t runtimeDataType, rtRecudeKind_t rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
+    const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
     uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType)
 {
     (void)ssid;
@@ -198,8 +198,8 @@ void AddOneMemcpySqeV1(uint16_t streamId, uint16_t taskId, const void *src, uint
     sqe->header.taskId = taskId;
     sqe->kernel_credit = dfx::kCreditTimeDefault;
     const bool isReduce =
-        ((rtReduceOp == RT_MEMCPY_SDMA_AUTOMATIC_ADD) || (rtReduceOp == RT_MEMCPY_SDMA_AUTOMATIC_MAX) ||
-        (rtReduceOp == RT_MEMCPY_SDMA_AUTOMATIC_MIN) || (rtReduceOp == RT_MEMCPY_SDMA_AUTOMATIC_EQUAL));
+        ((rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM) || (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX) ||
+        (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN) || (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_EQUAL));
 
     sqe->opcode = isReduce ? GetOpcodeForReduce(rtReduceOp, runtimeDataType) : 0U;
     HCCL_INFO("[SQE]MemcpySqe copyKind=%u,Opcode=0x%x, streamId=%u, len=%u, src:%p, dst:%p",

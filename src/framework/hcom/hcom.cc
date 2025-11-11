@@ -4118,35 +4118,28 @@ HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMall
             if (devType == DevType::DEV_TYPE_310P3 || devType == DevType::DEV_TYPE_310P1) {
                 if (level2Address) { // 310P二级地址刷新时申请内存类型为：RT_MEMORY_TS
                     *isTsMem = true;
-                    // *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
-                    *memType = static_cast<int>(RT_MEMORY_TS);
+                    *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
                 } else {
-                    // *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
-                    *memType = static_cast<int>(RT_MEMORY_DDR);
+                    *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
                 }
             } else {
-                // *memType = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH);
-                *memType = static_cast<int>(RT_MEMORY_HBM);
+                *memType = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH);
             }
         } else {
             if (devType == DevType::DEV_TYPE_310P3) {
                 if (level2Address) { // 310P二级地址刷新时申请内存类型为：RT_MEMORY_TS
                     *isTsMem = true;
-                    // *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
-                    //     static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
-                    *memType = static_cast<int>(RT_MEMORY_TS);
+                    *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
+                        static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
                 } else {
-                    // *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
-                    //     static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
-                    *memType = static_cast<int>(RT_MEMORY_P2P_DDR);
+                    *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
+                        static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
                 }
             } else if (devType == DevType::DEV_TYPE_310P1) {
-                // *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
-                *memType = static_cast<int>(RT_MEMORY_DDR);
+                *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
             } else {
-                // *memType = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) |
-                //     static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
-                *memType = static_cast<int>(RT_MEMORY_P2P_HBM);
+                *memType = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) |
+                    static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
             }
         }
         return HCCL_SUCCESS;
@@ -4160,9 +4153,8 @@ HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMall
             CHK_RET(HcomGetHccsLinkNum(group, &numHccsLink));
         }
         if ((withoutImplCompile || !(rankSize == NUM_SIZE_TWO  && numHccsLink == NUM_SIZE_TWO))) {
-            // *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
-            //         static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
-            *memType = static_cast<int>(RT_MEMORY_P2P_DDR);
+            *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
+                    static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
         }
     }
  

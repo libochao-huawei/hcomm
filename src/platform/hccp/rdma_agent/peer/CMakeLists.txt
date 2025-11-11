@@ -31,18 +31,15 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/private/network
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../roce/host_lite
-#临时依赖位置
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/abl/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/log
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../externel_depends/driver/
 
-        ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/slog/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/ascend_hal/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
+
+        # 临时依赖，后续删除
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
     )
 
     target_link_directories(ra_peer PRIVATE
@@ -50,7 +47,7 @@ if(BUILD_OPEN_PROJECT)
     )
     if (DEVICE_MODE)
         target_link_directories(ra_peer PRIVATE
-            ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+            ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
         )
     endif()
 else()
@@ -77,7 +74,7 @@ if(BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         rs
         c_sec
-        unified_dlog
+        $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
         -Wl,--as-needed
         -ldl
     )
@@ -96,7 +93,7 @@ else()
     )
 endif()
 
-if((("${USE_ALOG}" STREQUAL "1")) OR ("${BUILD_OPEN_PROJECT}" STREQUAL "ON"))
+if(("${USE_ALOG}" STREQUAL "1"))
 target_compile_definitions(ra_peer PRIVATE
     LOG_HOST
 )

@@ -75,41 +75,35 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/network
         ${CMAKE_CURRENT_SOURCE_DIR}/legacy/inc
 
-        # 暂缺hccp等其他头文件 直接拿取头文件放置于extenel_depends同级目录
-        ${HCCL_BASE_DIR}/../externel_depends/
-        ${HCCL_BASE_DIR}/../externel_depends/driver/
-        ${HCCL_BASE_DIR}/../externel_depends/aicpu/
-        ${CMAKE_CURRENT_SOURCE_DIR}/hccp/external_depends/rdma-core/include
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/external/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/platform/
 
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/ascendcl/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/atrace/utrace/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/metadef/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/mmpa/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/msprof/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/runtime/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/slog/toolchain/
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
+
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
         ${THIRD_PARTY_NLOHMANN_PATH}
-
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/error_codes/
- 
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${HCCL_BASE_DIR}/../externel_depends/c_sec/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/atrace/utrace/
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/include/metadef/external/
-        ${HCCL_BASE_DIR}/../externel_depends/include/metadef/common/util/error_manager/
-        ${HCCL_BASE_DIR}/../externel_depends/include/mmpa/
-        ${HCCL_BASE_DIR}/../externel_depends/include/msprof/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/runtime/
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
     )
 
     target_link_directories(hccl_plf PRIVATE
@@ -142,6 +136,7 @@ target_compile_definitions(hccl_plf  PRIVATE
     USE_AICORE_REDUCESUM
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER
+    $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
 )
 
 set(CMAKE_CXX_STANDARD 14)
@@ -178,7 +173,7 @@ if(BUILD_OPEN_PROJECT)
         unified_dlog
         mmpa
         runtime
-        ascendcl
+        acl_rt
         error_manager
         hccl_legacy
         -Wl,--as-needed

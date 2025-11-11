@@ -22,15 +22,15 @@ uint8_t ReduceOpcode(uint8_t copyDataType)
 {
     uint8_t opcode;
     switch (copyDataType) {
-        case RT_DATA_TYPE_INT16: {
+        case ACL_INT16: {
             opcode = static_cast<uint8_t>(SdmaReduceOpcode::SDMA_OPCODE_INT_16);
             break;
         }
-        case RT_DATA_TYPE_FP16: {
+        case ACL_FLOAT16: {
             opcode = static_cast<uint8_t>(SdmaReduceOpcode::SDMA_OPCODE_FLOAT_16);
             break;
         }
-        case RT_DATA_TYPE_FP32: {
+        case ACL_FLOAT: {
             opcode = static_cast<uint8_t>(SdmaReduceOpcode::SDMA_OPCODE_FLOAT_32);
             break;
         }
@@ -88,7 +88,7 @@ void AddOneWriteValueRecordSqeV2(uint16_t streamId, uint16_t taskId, u64 notifyW
 }
 
 void AddOneMemcpySqeV2(uint16_t streamId, uint16_t taskId, const void *src, uint32_t length,
-    const rtDataType_t runtimeDataType, rtRecudeKind_t rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
+    const aclDataType runtimeDataType, aclrtReduceKind rtReduceOp, const void *dst, uint32_t partId, uint32_t ssid,
     uint32_t devId, u64 overflowAddr, uint8_t linkType, const uint8_t *sqeIn, uint8_t *sqeType)
 {
     (void)partId;
@@ -134,7 +134,7 @@ void AddOneMemcpySqeV2(uint16_t streamId, uint16_t taskId, const void *src, uint
         static_cast<uint32_t>((reinterpret_cast<u64>(overflowAddr) & 0xffffffff00000000U) >> UINT32_BIT_NUM);
 
     sqe->qos = 6; // 6 is HCCL QoS
-    const bool isReduce = (rtReduceOp == RT_MEMCPY_SDMA_AUTOMATIC_ADD);
+    const bool isReduce = (rtReduceOp == ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM);
     sqe->opcode = isReduce ? ReduceOpcode(runtimeDataType) : static_cast<uint8_t>(SdmaReduceOpcode::SDMA_OPCODE_NOT_ATOMIC);
     HCCL_INFO("[SQE]MemcpySqe copyKind=%u,Opcode=0x%x, streamId=%u, len=%u, src:%p, dst:%p src_substreamid:%u "
         "dst_substreamid:%u src_streamid:%x dst_streamid:%x overflowAddr:%llx",

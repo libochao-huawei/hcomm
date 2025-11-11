@@ -238,29 +238,18 @@ HcclResult FftsPlusTaskLaunchWithFlag(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rt
 {
     CHK_PTR_NULL(fftsPlusTaskInfo);
     CHK_PTR_NULL(stm);
-    uintptr_t input[2];     // fftsplus task下发时需要输入2个参数. 0: task info, 1: stream handle
-    input[0] = reinterpret_cast<uintptr_t>(fftsPlusTaskInfo);
-    input[1] = reinterpret_cast<uintptr_t>((stm));
 
-    rtError_t  ret = rtGeneralCtrl(input, 2, RT_GNL_CTRL_TYPE_FFTS_PLUS); // 2: fftsplus task有2个input
+    rtError_t  ret = rtFftsPlusTaskLaunchWithFlag(fftsPlusTaskInfo, stm, RT_GNL_CTRL_TYPE_FFTS_PLUS); // 2: fftsplus task有2个input
 
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[FftsPlusTaskLaunchWithFlag]rt ffts launch failed."),
         HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
 
-// 由于FFTS功能使用到的get device info需要的moduletype和infotype类型runtime还未支持，跟主线保持同步
-HcclResult LegacyGetDeviceInfo(u32 deviceId, rtDevAttr attr, s64 &val)
-{
-    rtError_t ret = rtsDeviceGetInfo(deviceId, attr, reinterpret_cast<int64_t *>(&val));
-    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[LegacyGetDeviceInfo]rt get device info failed."), HCCL_E_RUNTIME);
-    return HCCL_SUCCESS;
-}
-
 HcclResult GetRdmaDoorbellAddr(u32 dbIndex, u64 &dbAddr)
 {
     s32 devLogID = 0;
-    s64 chipID = 0;
+    int64_t chipID = 0;
     static std::mutex devChipIdMapSpinMutex; // devLogID 和 chipID 关系表的读写互斥锁
 
     CHK_RET(GetDevice(&devLogID));
@@ -272,7 +261,7 @@ HcclResult GetRdmaDoorbellAddr(u32 dbIndex, u64 &dbAddr)
         // 若已有记录，则直接获取chipID
         chipID = g_devChipIdMap[devLogID];
     } else {
-        CHK_RET(LegacyGetDeviceInfo(devLogID, RT_DEV_ATTR_PHY_CHIP_ID, chipID));
+        CHK_RET(GetDeviceInfo(devLogID, ACL_DEV_ATTR_PHY_CHIP_ID, &chipID));
         g_devChipIdMap[devLogID] = chipID;
     }
     // 解锁

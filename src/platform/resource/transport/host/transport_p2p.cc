@@ -404,7 +404,7 @@ HcclResult TransportP2p::ConstructIpcMemInfoForSend(void *ptr, u64 size, u8 *&ex
     // 设置ipc mem属性，指定通信链路从sio切换至hccs
     if (isSioToHccs_) {
         u32 ipcAttr = 1; // 0: SIO(默认), 1: HCCS
-        CHK_RET(hrtIpcSetMemoryAttr(memName.ipcName, 0, ipcAttr));
+        CHK_RET(hrtIpcSetMemoryAttr(memName.ipcName, ACL_RT_IPC_MEM_ATTR_ACCESS_LINK, ipcAttr));
     }
 
     CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize, memName.ipcName, HCCL_IPC_MEM_NAME_LEN));

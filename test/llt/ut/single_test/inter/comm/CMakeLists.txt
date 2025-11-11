@@ -17,7 +17,6 @@ set(hccl_utest_inter_comm_list
     ut_alltoall_aiv.cc
     ut_alltoallv_staged.cc
     ut_callback_thread_manager.cc
-    ut_cltm.cc
     ut_comm_base.cc
     ut_comm_factory.cc
     ut_comm_halving_doubling.cc

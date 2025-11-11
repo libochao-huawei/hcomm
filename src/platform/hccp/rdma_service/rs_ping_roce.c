@@ -22,7 +22,7 @@
 #include "rs_drv_rdma.h"
 #include "rs_ping_inner.h"
 #ifndef HNS_ROCE_LLT
-#include "slog.h"
+#include <dlog_pub.h>
 #endif
 #include "rs_ping_roce.h"
 

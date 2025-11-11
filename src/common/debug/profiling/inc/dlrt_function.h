@@ -15,9 +15,8 @@
 #include <securec.h>
 #include <mutex>
 #include <dlfcn.h>
-#include <runtime/dev.h>
 #include "hccl/base.h"
-#include "runtime/base.h"
+#include "rt_external.h"
 #include "externalinput_pub.h"
 #include "log.h"
 
