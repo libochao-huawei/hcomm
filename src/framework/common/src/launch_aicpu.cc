@@ -120,7 +120,7 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
         ret = TaskCommKernelArgsPrepare(binHandle, kernelName, addr, size, tilingDataPtr, tilingDataSize, funcHandle,
                                         argsHandle);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-                    HCCL_ERROR("[TaskCommKernelArgsPrepare]errNo[0x%016llx]taskCOmm args prepare failed, kernelName:%s",
+                    HCCL_ERROR("[TaskCommKernelArgsPrepare]errNo[0x%016llx]taskComm args prepare failed, kernelName:%s",
                     ret, kernelName.c_str()), HCCL_E_RUNTIME);
     }
 
@@ -150,7 +150,7 @@ HcclResult GetKernelFilePath(std::string &binaryPath)
         return HCCL_E_PARA;
     }
 
-    size_t mid = libPath.find("hccl/lib64");
+    size_t mid = libPath.find("hcomm/lib64");
     if (mid == libPath.npos) {
         HCCL_WARNING("[GetKernelFilePath]ENV:LD_LIBRARY_PATH lack hccl/lib64");
 
@@ -184,7 +184,7 @@ HcclResult GetKernelFilePath(std::string &binaryPath)
             HCCL_ERROR("[GetKernelFilePath]failed substr file path.");
             return HCCL_E_PARA;
         }
-        binaryPath += "/hccl";
+        binaryPath += "/hcomm";
     } else {
         u32 diff;
         if (libPath.find(":", mid) == libPath.npos) {

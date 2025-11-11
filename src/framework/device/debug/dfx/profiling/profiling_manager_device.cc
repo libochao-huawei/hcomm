@@ -9,8 +9,9 @@
  */
 
 #include "profiling_manager_device.h"
-#include "aicpu_schedule/aicpu_sharder/aicpu_context.h"
-#include "toolchain/aprof_pub.h"
+#include "aicpu_schedule/aicpu_context.h"
+#include "aprof_pub.h"
+#include "prof_common.h"
 #include "log.h"
 #include "sal_pub.h"
 #include "common/aicpu_sqe_context.h"

@@ -14,8 +14,8 @@
 #include <hccl/hccl_types.h>
 #include "hccl/base.h"
 #include "dltdt_function.h"
-#include "rts/rts_device.h"
 #include "acl/acl_base.h"
+#include "rt_external.h"
 
 #ifdef __cplusplus
 extern "C" {

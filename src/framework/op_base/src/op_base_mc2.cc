@@ -19,6 +19,7 @@
 #include "hccl/base.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "param_check_pub.h"
+#include "adv_api/tiling/hccl/hccl_tiling_msg.h"
 #ifndef OPEN_BUILD_PROJECT
 #include "op_base_v2.h"
 #endif
@@ -57,8 +58,9 @@ HcclResult HcclMc2ComResourceByTiling(HcclComm comm, void *mc2Tiling, rtStream_t
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     string commIdentifier = hcclComm->GetIdentifier();
+    bool isAicpuCommEngine = false;
     for (uint32_t i = 0U; i < tilingNum; ++i) {
-        const Mc2HcommCfg *tiling = static_cast<const Mc2HcommCfg *>(tilingList[i]);
+        const HcclApi::Mc2CcTilingInner *tiling = static_cast<const HcclApi::Mc2CcTilingInner *>(tilingList[i]);
         if (tiling == nullptr || string(tiling->groupName) != commIdentifier) {
             continue;
         }
@@ -74,8 +76,17 @@ HcclResult HcclMc2ComResourceByTiling(HcclComm comm, void *mc2Tiling, rtStream_t
             opParam.BatchWriteDataDes.queueNum = LOCAL_STREAM_MAX_NUM;
             HCCL_INFO("Requiring %u queues for batch-write.", opParam.BatchWriteDataDes.queueNum);
         }
-        HCCL_INFO("Comm resource will be created for group %s.", commIdentifier.c_str());
+        HCCL_INFO("Comm resource will be created for group %s. isAicpuCommEngine[%d] commEngine[%u]", 
+            commIdentifier.c_str(), isAicpuCommEngine, tiling->commEngine);
         CHK_RET(hcclComm->AllocComResourceByTiling(tiling->algConfig, reinterpret_cast<void *>(&opParam)));
+        // commEngine为0代表使能AICPU引擎
+        if (!isAicpuCommEngine && tiling->commEngine == 0) {
+            isAicpuCommEngine = true;
+        }
+    }
+
+    if (isAicpuCommEngine) {
+        CHK_RET(hcclComm->SetAicpuCommEngine(isAicpuCommEngine));
     }
 
     return HCCL_SUCCESS;

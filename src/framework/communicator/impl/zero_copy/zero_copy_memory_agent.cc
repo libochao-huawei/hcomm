@@ -630,11 +630,11 @@ HcclResult ZeroCopyMemoryAgent::ParseBareTgid(u8* &exchangeDataPtr, u32 &exchang
     CHK_RET(ParseData(exchangeDataPtr, exchangeDataBlankSize, devicePhyId));
 
     // 获取本端的ack，然后通过ack返回给对端
-    u32 tgid = 0;
-    rtError_t ret = rtDeviceGetBareTgid(&tgid);
-    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[ZeroCopyMemoryAgent][ParseBareTgid] get tgid failed, ret[%d]", ret), HCCL_E_RUNTIME);
+    int32_t tgid = 0;
+    aclError ret = aclrtDeviceGetBareTgid(&tgid);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[ZeroCopyMemoryAgent][ParseBareTgid] get tgid failed, ret[%d]", ret), HCCL_E_RUNTIME);
 
-    HCCL_INFO("[ZeroCopyMemoryAgent][ParseBareTgid] dev[%u] tgid[%u] to remoteDev[%u]", devicePhyId_, tgid, devicePhyId);
+    HCCL_INFO("[ZeroCopyMemoryAgent][ParseBareTgid] dev[%u] tgid[%d] to remoteDev[%u]", devicePhyId_, tgid, devicePhyId);
     CHK_RET(SendAckAfterParse(RequestType::SET_REMOTE_BARE_TGID, RequestType::SET_REMOTE_BARE_TGID_ACK, devicePhyId,
         &tgid, sizeof(tgid)));
     return HCCL_SUCCESS;

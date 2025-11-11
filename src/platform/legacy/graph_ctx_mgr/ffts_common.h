@@ -20,7 +20,7 @@
 #include <memory>
 #include <algorithm>
 #include "hccl/base.h"
-#include "runtime/rt.h"
+#include "rt_external.h"
 
 namespace GraphMgr {
 enum class HcclFftsTaskType : s32 {

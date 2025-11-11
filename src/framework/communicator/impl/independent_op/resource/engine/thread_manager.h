@@ -24,7 +24,7 @@ class ThreadMgr {
 public:
     ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, aclrtBinHandle binHandle);
     ~ThreadMgr() = default;
-    HcclResult CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
+    HcclResult CommAllocThreadRes(aclrtBinHandle binHandle, CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *thread);
     HcclResult CommAllocThreadResByStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);

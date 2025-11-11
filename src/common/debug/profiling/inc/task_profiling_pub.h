@@ -22,6 +22,7 @@
 #include "hccl/base.h"
 #include "profiler_base_pub.h"
 #include "adapter_prof.h"
+#include "prof_common.h"
 
 namespace hccl {
 constexpr u64 SHIFT_BITS_PLANE_ID = 28;

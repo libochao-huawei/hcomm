@@ -2950,13 +2950,13 @@ TEST_F(HcclImplTest,ut_stopExec_not_in){
     EXPECT_EQ(HCCL_SUCCESS, ret);
     GlobalMockObject::verify();
 
-    hcclCommunicator.SetMC2EnvFlag();
+    hcclCommunicator.SetAicpuCommEngine(true);
     MOCKER_CPP(&HDCommunicate::Get)
     .stubs()
     .will(invoke(GetCmd1));
     ret = hcclCommunicator.StopExec();
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    hcclCommunicator.isNsRecovery_ = false; //保证析构的时候不会调用到相关命令
+    hcclCommunicator.isAicpuCommEngine_ = false; //保证析构的时候不会调用到相关命令
     GlobalMockObject::verify();
 
 }
@@ -2968,13 +2968,13 @@ TEST_F(HcclImplTest,ut_Clean_not_in){
     EXPECT_EQ(HCCL_SUCCESS, ret);
     GlobalMockObject::verify();
 
-   hcclCommunicator.SetMC2EnvFlag();
+   hcclCommunicator.SetAicpuCommEngine(true);
     MOCKER_CPP(&HDCommunicate::Get)
     .stubs()
     .will(invoke(GetCmd2));
     ret = hcclCommunicator.Clean();
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    hcclCommunicator.isNsRecovery_ = false; //保证析构的时候不会调用到相关命令
+    hcclCommunicator.isAicpuCommEngine_ = false; //保证析构的时候不会调用到相关命令
     GlobalMockObject::verify();
 
 }

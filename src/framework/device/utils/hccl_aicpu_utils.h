@@ -12,7 +12,7 @@
 #define __MC2_AICPU_UTILS_H__
 
 #include <string>
-#include "aicpu_schedule/aicpu_sharder/aicpu_context.h"
+#include "aicpu_schedule/aicpu_context.h"
 #include "common/aicpu_hccl_def.h"
 #include "hdc_pub.h"
 

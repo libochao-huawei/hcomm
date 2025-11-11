@@ -8,7 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-clude "bcast_recursive_halvingdoubling_pub.h"
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
+#include <stdio.h>
+#include "hccl/base.h"
+#include <hccl/hccl_types.h>
+ 
+#include "comm_base_pub.h"
+#include "bcast_recursive_halvingdoubling_pub.h"
 #include "alg_template_register.h"
 #include "sal.h"
 #include "transport_base_pub.h"

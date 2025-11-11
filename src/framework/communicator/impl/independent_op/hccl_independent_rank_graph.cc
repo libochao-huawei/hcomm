@@ -20,6 +20,7 @@
 
 using namespace hccl;
 
+#ifndef CCL_KERNEL_AICPU
 HcclResult CommGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len)
 {
     CHK_PTR_NULL(comm);
@@ -61,7 +62,7 @@ HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLa
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(netLayers);
     CHK_PTR_NULL(netLayerNum);
- 
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& rankGraph = hcclComm->GetIndependentOp().GetRankGraph();
     HcclResult ret = rankGraph.GetNetLayers(netLayers, netLayerNum);
@@ -77,7 +78,7 @@ HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommT
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(topoType);
- 
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& rankGraph = hcclComm->GetIndependentOp().GetRankGraph();
     HcclResult ret = rankGraph.GetInstTopoTypeByNetLayer(netLayer, topoType);
@@ -93,7 +94,7 @@ HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
- 
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& rankGraph = hcclComm->GetIndependentOp().GetRankGraph();
     HcclResult ret = rankGraph.GetInstSizeByNetLayer(netLayer, rankNum);
@@ -110,7 +111,7 @@ HcclResult CommGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
     CHK_PTR_NULL(rankList);
- 
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& rankGraph = hcclComm->GetIndependentOp().GetRankGraph();
     HcclResult ret = rankGraph.GetInstRanksByNetLayer(netLayer, rankList, rankNum);
@@ -127,7 +128,7 @@ HcclResult CommGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer, uint3
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(instSizeList);
     CHK_PTR_NULL(listSize);
- 
+
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& rankGraph = hcclComm->GetIndependentOp().GetRankGraph();
     HcclResult ret = rankGraph.GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
@@ -138,6 +139,7 @@ HcclResult CommGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer, uint3
     HCCL_RUN_INFO("[%s] success, group[%s], listSize[%u]", __func__, hcclComm->GetIdentifier().c_str(), *listSize);
     return HCCL_SUCCESS;
 }
+#endif
 
 HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
 {

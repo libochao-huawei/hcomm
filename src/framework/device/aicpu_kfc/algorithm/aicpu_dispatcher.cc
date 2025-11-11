@@ -152,8 +152,8 @@ HcclResult AicpuDispatcher::CopyData(u16 streamId, void *src, void *dst, u32 len
     auto ctx = AicpuGetComContext();
     HcclComStreamInfo *streamInfo = &ctx->streamInfo[streamId];
 
-    rtDataType_t rtDataType = DT_MAP_TABLE[dataType];
-    rtRecudeKind_t rtReduceOp = RK_MAP_TABLE[reduceOp];
+    aclDataType rtDataType = DT_MAP_TABLE[dataType];
+    aclrtReduceKind rtReduceOp = RK_MAP_TABLE[reduceOp];
 
     uint8_t *sqeBuffer = nullptr;
     uint8_t *sqeTypeAddr = nullptr;

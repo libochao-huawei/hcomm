@@ -11,7 +11,7 @@
 #ifndef HCOM_ACL_ADAPTER_H
 #define HCOM_ACL_ADAPTER_H
 
-#include "runtime/rt.h"
+#include "rt_external.h"
 #include "acl/acl_rt.h"
 #include "hcom_log.h"
 

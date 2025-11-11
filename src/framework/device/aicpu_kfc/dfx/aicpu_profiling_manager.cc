@@ -10,7 +10,7 @@
 
 #include "aicpu_profiling_manager.h"
 
-#include "aicpu_schedule/aicpu_sharder/aicpu_context.h"
+#include "aicpu_schedule/aicpu_context.h"
 #include "common/aicpu_sqe_context.h"
 #include "common/aicpu_hccl_common.h"
 #include "profiling_manager_device.h"

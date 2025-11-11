@@ -17,7 +17,6 @@ set(hccl_stest_comm_list
     st_alltoall_aiv.cc
     st_alltoallv_staged.cc
     st_callback_thread_manager.cc
-    st_cltm.cc
     st_comm_base.cc
     st_comm_factory.cc
     st_comm_halving_doubling.cc

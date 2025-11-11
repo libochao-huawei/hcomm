@@ -59,7 +59,7 @@ ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::strin
 
 }
 
-HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
+HcclResult ThreadMgr::CommAllocThreadRes(aclrtBinHandle binHandle, CommEngine engine, uint32_t threadNum,
     uint32_t notifyNumPerThread, ThreadHandle *thread)
 {
     CHK_PTR_NULL(thread);
@@ -85,8 +85,8 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
     }
     uint32_t remainQuota = (threadNum_ > threads_.size()) ? (threadNum_ - threads_.size()) : 0;
     if (remainQuota == 0 || threadNum > remainQuota) {
-        HCCL_ERROR("[ThreadMgr][%s] Threads quota exhausted: remainQuota[%u], need[%u]."
-            , __func__, remainQuota, threadNum);
+        HCCL_ERROR("[ThreadMgr][%s] Threads quota exhausted: remainQuota[%u], need[%u].",
+            __func__, remainQuota, threadNum);
         return HCCL_E_UNAVAIL;
     }
 
@@ -102,7 +102,7 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
     }
 
     HCCL_INFO("[ThreadMgr][%s] Hcom[%s] CommAllocThreadRes quota: engine[%d] threadNum[%llu], "
-        "notifyPerThread[%u]", __func__, commId_.c_str(), engine, remainQuota, remainNotifyQuota);
+        "remainNotifyQuota[%u]", __func__, commId_.c_str(), engine, remainQuota, remainNotifyQuota);
 
     NotifyLoadType notifyLoadType;
     StreamType streamType;
@@ -114,6 +114,8 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
 
     for (uint32_t i = 0; i < threadNum; ++i) {
         std::shared_ptr<HcclThread> handle;
+        HCCL_ERROR("[ThreadMgr][%s] Hcom[%s] HcclThread notifyLoadType[%u], streamType[%u]",
+            __func__, commId_.c_str(), static_cast<int32_t>(notifyLoadType), static_cast<int32_t>(streamType));
         EXECEPTION_CATCH(handle = std::make_shared<HcclThread>(streamType, notifyNumPerThread, notifyLoadType),
             return HCCL_E_PTR);
         ret = handle->Init();
@@ -124,21 +126,23 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
         usedNotifyNum_ += notifyNumPerThread;
         newThreads.emplace_back(std::move(handle));
     }
-    
+
     // thread资源 AICPU侧展开
     std::unique_ptr<ThreadHandle[]> hostHandle;
     if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
         EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(newThreads.size()),
             return HCCL_E_PTR);
-        ret = AicpuLaunchMgr::ThreadKernelLaunch(newThreads, commId_, hostHandle, binHandle_);
+        ret = AicpuLaunchMgr::ThreadKernelLaunch(binHandle, newThreads, commId_, hostHandle);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[ThreadMgr][CommAllocThreadRes] AiCpuKernelLaunch failed, return [%d].", ret), ret);
         for (size_t i = 0; i < newThreads.size(); ++i) {
             thread[i] = hostHandle[i];
+            HCCL_INFO("[ThreadMgr][%s] aicpu threadArray[%u] = [%lu]", __func__, i, thread[i]);
         }
     } else {
         for (size_t i = 0; i < newThreads.size(); ++i) {
             thread[i] = reinterpret_cast<ThreadHandle>(newThreads[i].get());
+            HCCL_INFO("[ThreadMgr][%s] host threadArray[%u] = [%lu]", __func__, i, thread[i]);
         }
     }
     threads_.insert(threads_.end(),

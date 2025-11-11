@@ -11,8 +11,7 @@
  #include <unordered_map>
  #include <functional>
  #include "log.h"
- #include "runtime/stream.h"
- #include "runtime/rt_model.h"
+ #include "rt_external.h"
  #include "workflow_pub.h"
  #include "stream_utils.h"
  

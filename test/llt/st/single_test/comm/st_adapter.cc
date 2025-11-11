@@ -675,10 +675,10 @@ TEST_F(RuntimeTest, ut_hrtGetNotifyID)
 
 TEST_F(RuntimeTest, ut_hrtGetDeviceInfo)
 {
-    MOCKER(rtsDeviceGetInfo)
+    MOCKER(aclrtGetDeviceInfo)
     .stubs()
     .with()
-    .will(returnValue(RT_ERROR_NONE));
+    .will(returnValue(ACL_SUCCESS));
 
     u32 deviceId = 0;
     HcclRtDeviceModuleType moduleType = HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM;
@@ -1012,7 +1012,7 @@ TEST_F(RuntimeTest, st_rt_hrt_notify_reset_test)
 
 TEST_F(RuntimeTest, st_rt_hrt_task_abort_callback_test)
 {
-    int32_t ProcessTaskAbortHandleCallback(uint32_t deviceLogicId, rtDeviceTaskAbortStage stage,
+    int32_t ProcessTaskAbortHandleCallback(int32_t devId, aclrtDeviceTaskAbortStage stage,
                                            uint32_t timeout, void *args);
     void *ptr = nullptr;
     auto ret = hrtTaskAbortHandleCallback(ProcessTaskAbortHandleCallback, nullptr);
@@ -1087,7 +1087,7 @@ TEST_F(RuntimeTest, st_hrtGetPairDevicePhyId_16)
     GlobalMockObject::verify();
 }
 
-rtError_t rtsDeviceGetInfo_stub(uint32_t deviceId, rtDevAttr attr, int64_t *value)
+aclError aclrtGetDeviceInfo_stub(uint32_t deviceId, aclrtDevAttr attr, int64_t *value)
 {
     static std::array<int64_t,7> vals = {0x0,0x1c,0x1d,0x18,0x19,0x14,0x15};
     static int flag = 0;
@@ -1096,7 +1096,7 @@ rtError_t rtsDeviceGetInfo_stub(uint32_t deviceId, rtDevAttr attr, int64_t *valu
         return 0x07110001;
     }
     *value = vals[flag++-1];
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
 
 TEST_F(RuntimeTest, st_hrtGetHccsPortNum)
@@ -1116,9 +1116,9 @@ TEST_F(RuntimeTest, st_hrtGetHccsPortNum)
         .with(outBound(deviceType))
         .will(returnValue(HCCL_SUCCESS));
     
-    MOCKER(rtsDeviceGetInfo)
+    MOCKER(aclrtGetDeviceInfo)
             .stubs()
-            .will(invoke(rtsDeviceGetInfo_stub));
+            .will(invoke(aclrtGetDeviceInfo_stub));
     EXPECT_EQ(hrtGetHccsPortNum(0, portNum), HCCL_E_RUNTIME);
     EXPECT_EQ(hrtGetHccsPortNum(0, portNum), HCCL_SUCCESS);
     EXPECT_EQ(portNum, -1);

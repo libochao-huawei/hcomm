@@ -429,7 +429,7 @@ HcclResult OpRetryAgentWaitCmd::ParseCommandWithOpId(RetryContext* retryCtx, Ret
             break;
         case RETRY_CMD_STOP_STREAM:
             if (curState == RETRY_STATE_WAIT_CMD_STOP_STREAM) {
-                CHK_RET(ClearStreamWithOpId(retryCtx->opStreamPtr_, rtClearStep_t::RT_STREAM_STOP, commandinfo.opId, 
+                CHK_RET(ClearStreamWithOpId(retryCtx->opStreamPtr_, HcclRtStreamClearStep::HCCL_STREAM_STOP, commandinfo.opId, 
                     retryCtx->localRetryInfo_.opInfo.opId));
                 CHK_RET(SetOpExecCmdWithOpId(retryCtx->GetH2dPtr(), KfcCommand::kStopExec, commandinfo.opId));
                 nextState = RETRY_STATE_POLL_STREAM_STOPED;
@@ -437,7 +437,7 @@ HcclResult OpRetryAgentWaitCmd::ParseCommandWithOpId(RetryContext* retryCtx, Ret
             break;
         case RETRY_CMD_CLEAR_STREAM:
             if (curState == RETRY_STATE_WAIT_CMD_CLEAR_STREAM) {
-                CHK_RET(ClearStreamWithOpId(retryCtx->opStreamPtr_, rtClearStep_t::RT_STREAM_CLEAR, commandinfo.opId, 
+                CHK_RET(ClearStreamWithOpId(retryCtx->opStreamPtr_, HcclRtStreamClearStep::HCCL_STREAM_CLEAR, commandinfo.opId, 
                     retryCtx->localRetryInfo_.opInfo.opId));
                 nextState = RETRY_STATE_RESP_STREAM_CLEARED;
             }

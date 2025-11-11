@@ -277,10 +277,6 @@ set(hccl_list
     ${HCCL_CODE_ROOT}/src/framework/hcom/hcom.cc
     ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment/gradient_segment.cc
 
-    #/hccl/cltm
-    ${HCCL_CODE_ROOT}/cltm/src/cltm.cc
-    ${HCCL_CODE_ROOT}/cltm/src/rank_table.cc
-
     # hccl/hccl/algorithm/base/communicator
     ${HCCL_CODE_ROOT}/src/algorithm/base/communicator/calc_nb_transport_req.cc
     ${HCCL_CODE_ROOT}/src/algorithm/base/communicator/calc_nhr_transport_req.cc
@@ -760,7 +756,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${TOP_DIR}/hcomm/inc/
     ${TOP_DIR}/hcomm/inc/hccl
     ${TOP_DIR}/hcomm/inc/hccl/hccl
-    ${TOP_DIR}/hcomm/inc/pkg_inc
+    ${TOP_DIR}/hcomm/pkg_inc
+    ${TOP_DIR}/hcomm/pkg_inc/hccl
     ${TOP_DIR}/hcomm/src/engines/hcclengine/inc
     ${TOP_DIR}/asl/hss/inc
     ${TOP_DIR}/asl/hss/inc/pub
@@ -785,7 +782,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/inc/
     ${HCCL_CODE_ROOT}/inc/hccl/
     ${HCCL_CODE_ROOT}/inc/hccl/hccl
-    ${HCCL_CODE_ROOT}/inc/pkg_inc
+    ${HCCL_CODE_ROOT}/pkg_inc
+    ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/src/pub_inc/
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
@@ -822,6 +820,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/rank_graph
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_CODE_ROOT}/src/framework/hcom/
+    ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
 
@@ -915,9 +914,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template
     ${HCCL_CODE_ROOT}/src/algorithm/base/pub_inc
 
-    # hccl/cltm目录下头文件
-    ${HCCL_CODE_ROOT}/cltm/src
-
     # hccl/operator目录下头文件
     ${HCCL_CODE_ROOT}/operator
 
@@ -959,6 +955,7 @@ target_include_directories(hccl_llt_open  PRIVATE
     ${TOP_DIR}/ace/npuruntime/runtime/platform/inc
     ${TOP_DIR}/ace/npuruntime/inc/
     ${TOP_DIR}/metadef/inc/external/graph
+    ${TOP_DIR}/runtime/include/external
     ${TOP_DIR}/metadef/inc/common
     ${TOP_DIR}/inc/aicpu/
     ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
@@ -979,7 +976,8 @@ target_include_directories(hccl_llt_open  PRIVATE
     ${TOP_DIR}/hcomm/inc
     ${TOP_DIR}/hcomm/inc/hccl
     ${TOP_DIR}/hcomm/inc/hccl/hccl
-    ${TOP_DIR}/hcomm/inc/pkg_inc
+    ${TOP_DIR}/hcomm/pkg_inc
+    ${TOP_DIR}/hcomm/pkg_inc/hccl
     ${TOP_DIR}/hcomm/src/engines/hcclengine/inc
     ${TOP_DIR}/asl/hss/inc
     ${TOP_DIR}/asl/hss/inc/pub
@@ -1016,7 +1014,8 @@ target_include_directories(hccl_llt_open  PRIVATE
     ${HCCL_CODE_ROOT}/inc/
     ${HCCL_CODE_ROOT}/inc/hccl/
     ${HCCL_CODE_ROOT}/inc/hccl/hccl
-    ${HCCL_CODE_ROOT}/inc/pkg_inc
+    ${HCCL_CODE_ROOT}/pkg_inc
+    ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/src/framework/
     ${HCCL_CODE_ROOT}/src/framework/inc/
     ${HCCL_CODE_ROOT}/src/framework/inc/host
@@ -1041,6 +1040,7 @@ target_include_directories(hccl_llt_open  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/rank_graph
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_CODE_ROOT}/src/framework/hcom/
+    ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
 
     ${HCCL_CODE_ROOT}/src/platform/
@@ -1131,9 +1131,6 @@ target_include_directories(hccl_llt_open  PRIVATE
     ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template/component
     ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template
     ${HCCL_CODE_ROOT}/src/algorithm/pub_inc
-
-    # hccl/cltm目录下头文件
-    ${HCCL_CODE_ROOT}/cltm/src
 
     # hccl/operator目录下头文件
     ${HCCL_CODE_ROOT}/operator

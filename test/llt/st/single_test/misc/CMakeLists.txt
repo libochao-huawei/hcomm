@@ -31,7 +31,6 @@ set(hccl_stest_misc_list
     st_mpi_recv_task.cc
     st_p2p_mgmt.cc
     st_stream_active_manager.cc
-    st_rank_table.cc
     st_transport_virtural.cc
     st_socket_manager.cc
     st_op_base_stream_manager.cc

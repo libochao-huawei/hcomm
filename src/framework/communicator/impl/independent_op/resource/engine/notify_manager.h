@@ -21,6 +21,7 @@ struct NotifyInfo {
     CommEngine commEngine;
     NotifyType notifyType;
     bool isAicpu;
+    NotifyHandle notifyHandle;
 };
 public:
 

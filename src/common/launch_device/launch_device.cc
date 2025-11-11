@@ -20,7 +20,7 @@ using namespace std;
 
 namespace hccl {
 HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-                                                aclrtBinHandle &binHandle)
+    aclrtBinHandle &binHandle)
 {
     CHK_PRT_RET(binPath == nullptr,
         HCCL_ERROR("[Load][Binary]binary path is nullptr"),

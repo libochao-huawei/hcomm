@@ -97,7 +97,7 @@ static std::mutex taskFailCallbackMapMutex;
 static std::mutex taskAbortCallbackMapMutex;
 static std::mutex isExecutedMutex;
 static std::map<string, rtTaskFailCallback> taskFailCallbackMap;
-static std::map<string, rtsDeviceTaskAbortCallback> taskAbortCallbackMap;
+static std::map<string, aclrtDeviceTaskAbortCallback> taskAbortCallbackMap;
 s32 log_level_get_stub(){
     return stub_log_level;
 }
@@ -310,7 +310,7 @@ aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback)
     taskFailCallbackMap.insert({tmpStr, callback});
     return ACL_SUCCESS;
 }
-rtError_t rtsSetDeviceTaskAbortCallback(const char_t *moduleName, rtsDeviceTaskAbortCallback callback, void *args)
+aclError aclrtSetDeviceTaskAbortCallback(const char_t *moduleName, aclrtDeviceTaskAbortCallback callback, void *args)
 {
     string tmpStr(moduleName);
     void *p = nullptr;
@@ -461,7 +461,7 @@ aclError aclrtSynchronizeStream(aclrtStream stream)
     return ACL_SUCCESS;
 }
 
-rtError_t rtStreamSynchronizeWithTimeout(rtStream_t stream, int32_t timeout) {
+aclError aclrtSynchronizeStreamWithTimeout(aclrtStream stream, int32_t timeout) {
     return aclrtSynchronizeStream(stream);
 }
 
@@ -1563,9 +1563,9 @@ aclError aclrtIpcMemSetImportPid(const char *key, int32_t *pid, size_t num)
     return ACL_SUCCESS;
 }
 
-rtError_t rtIpcMemImportPidInterServer(const char *name, const rtServerPid *serverPids, size_t num)
+aclError aclrtIpcMemImportPidInterServer(const char *name, aclrtServerPid *serverPids, size_t num)
 {
-    const rtServerPid &rtServerPid = *serverPids;
+    const aclrtServerPid &rtServerPid = *serverPids;
     return aclrtIpcMemSetImportPid(name, rtServerPid.pid, rtServerPid.num);
 }
 
@@ -2570,21 +2570,21 @@ aclError aclrtWaitAndResetNotify(aclrtNotify notify, aclrtStream stream, uint32_
 #define INFO_TYPE_SERVER_ID 27
 #define INFO_TYPE_SUPPER_POD_ID 29
 
-rtError_t rtsDeviceGetInfo(uint32_t deviceId, rtDevAttr attr, int64_t *value)
+aclError aclrtGetDeviceInfo(uint32_t deviceId, aclrtDevAttr attr, int64_t *value)
 {
-    if (attr == RT_DEV_ATTR_PHY_CHIP_ID) {
+    if (attr == ACL_DEV_ATTR_PHY_CHIP_ID) {
         *value = deviceId;
-    } else if (attr == RT_DEV_ATTR_AICORE_CORE_NUM || attr == RT_DEV_ATTR_VECTOR_CORE_NUM) {
+    } else if (attr == ACL_DEV_ATTR_AICORE_CORE_NUM || attr == ACL_DEV_ATTR_VECTOR_CORE_NUM) {
         *value = 32;
-    } else if (attr == RT_DEV_ATTR_SUPER_POD_DEVICE_ID || attr == RT_DEV_ATTR_SUPER_POD_SERVER_ID ||
-               attr == RT_DEV_ATTR_SUPER_POD_ID) {
+    } else if (attr == ACL_DEV_ATTR_SUPER_POD_DEVIDE_ID || attr == ACL_DEV_ATTR_SUPER_POD_SERVER_ID ||
+               attr == ACL_DEV_ATTR_SUPER_POD_ID) {
         *value = 1;
-    } else if (attr = RT_DEV_ATTR_SMP_ID) {
+    } else if (attr = ACL_DEV_ATTR_SMP_ID) {
         *value = 0;
     } else {
         return 1;
     }
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
 
 rtError_t  rtGetNotifyAddress(rtNotify_t notify, uint64_t * const notifyAddres)
@@ -5147,9 +5147,9 @@ HcclResult CreateIntraExchanger(const std::string& commTag, HcclNetDevCtx portCt
  * @return RT_ERROR_INVALID_VALUE for error input
  * @return RT_ERROR_DRV_ERR for driver error
 */
-rtError_t rtIpcSetMemoryAttr(const char *name, uint32_t type, uint64_t attr)
+aclError aclrtIpcMemSetAttr(const char *key, aclrtIpcMemAttrType type, uint64_t attr)
 {
-    return RT_ERROR_NONE;
+    return ACL_SUCCESS;
 }
 
 drvError_t halEschedSubmitEvent(uint32_t devId, struct event_summary *event)

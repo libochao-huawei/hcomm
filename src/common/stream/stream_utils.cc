@@ -12,8 +12,7 @@
 #include <unordered_map>
 #include <functional>
 #include "log.h"
-#include "runtime/stream.h"
-#include "runtime/rt_model.h"
+#include "rt_external.h"
 #include "workflow_pub.h"
 
 static const std::unordered_map<int, std::function<void(bool&)>> captureStatusHandlers = {

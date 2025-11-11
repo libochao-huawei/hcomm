@@ -51,6 +51,7 @@ STATIC int ra_hdc_open_rdma_lite_so(void)
     } else {
             hccp_run_info("rdma lite api dlopen again!");
     }
+    return 0;
 #endif
     return 0;
 }

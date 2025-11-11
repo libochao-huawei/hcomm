@@ -15,7 +15,7 @@
 
 #include "adapter_rts_common.h"
 #include "acl/acl_rt.h"
-#include "runtime/rt.h"
+#include "rt_external.h"
 #include "hccl/base.h"
 #include "private_types.h"
 #include "acl/error_codes/rt_error_codes.h"
@@ -51,13 +51,12 @@ HcclResult stubSetDevice(u32 deviceLogicId);
 
 #if T_DESC("DeviceMemory管理", true)
 HcclResult MemcpyKindTranslate(HcclRtMemcpyKind kind, aclrtMemcpyKind *rtKind);
-HcclResult RtMemcpyKindTranslate(HcclRtMemcpyKind kind, rtMemcpyKind *rtKind);
 HcclResult hrtMemAsyncCopyWithoutCheckKind(void *dst, uint64_t destMax, const void *src, uint64_t count,
     HcclRtMemcpyKind kind, rtStream_t stream);
 HcclResult hrtGetPointAttr(HcclRtPointAttr ptrAttr, const void *ptr);
 HcclResult hrtIpcSetMemoryName(void *ptr, u8 *name, u64 ptrMaxLen = INVALID_U64, u32 nameMaxLen = INVALID_UINT);
 HcclResult hrtIpcDestroyMemoryName(const u8 *name);
-HcclResult hrtIpcSetMemoryAttr(const u8 *name, u32 type, u64 attr);
+HcclResult hrtIpcSetMemoryAttr(const u8 *name, aclrtIpcMemAttrType type, u64 attr);
 HcclResult hrtIpcOpenMemory(void **ptr, const u8 *name);
 HcclResult hrtIpcSetMemoryPid(const u8 *name, int pid[], int num);
 // 该接口仅用于910_93超节点模式
@@ -78,6 +77,7 @@ HcclResult HrtDevMalloc(void **devPtr, u64 size);
 HcclResult hrtStreamDestroy(rtStream_t stream);
 HcclResult hrtStreamCreate(aclrtStream *stream);
 HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint32_t flags);
+HcclResult hrtStreamCreateWithFlagsTemp(aclrtStream *stream, int32_t priority, uint32_t flags);
 s32 GetMsTimeFromExecTimeout();
 #endif
 
@@ -99,7 +99,7 @@ HcclResult hrtNotifyGetPhyInfoExt(rtNotify_t notify, rtNotifyPhyInfo *notifyInfo
 #if T_DESC("EnableP2P", true)
 HcclResult hrtEnableP2P(u32 peerDevPhyId);
 HcclResult hrtDisableP2P(u32 peerDevPhyId);
-HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, u32 *status);
+HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, int32_t *status);
 #endif
 #if T_DESC("RtsTaskCallBack", true)
 HcclResult hrtUnSubscribeReport(uint64_t threadId, aclrtStream &stream);
@@ -107,7 +107,7 @@ HcclResult hrtUnSubscribeReport(uint64_t threadId, aclrtStream &stream);
 
 HcclResult hrtSetIpcNotifyPid(aclrtNotify notify, int32_t pid[], int num);
 // 该接口仅用于910_93超节点模式
-HcclResult hrtSetIpcNotifySuperPodPid(rtNotify_t notify, s32 peerSdid, s32 peerPid[], s32 pidNum);
+HcclResult hrtSetIpcNotifySuperPodPid(aclrtNotify notify, s32 peerSdid, s32 peerPid[], s32 pidNum);
 HcclResult hrtIpcOpenNotify(aclrtNotify* notify, const u8 *name);
 HcclResult hrtReduceAsync(void* dst, uint64_t destMax, const void* src, uint64_t count, aclrtReduceKind kind,
     aclDataType type, aclrtStream stream);
@@ -118,9 +118,6 @@ HcclResult hrtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t coun
 HcclResult hrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo);
 HcclResult hrtRDMADBSend(uint32_t dbindex, uint64_t dbinfo, rtStream_t stream);
-HcclResult hrtAicpuKernelLaunch(const rtKernelLaunchNames_t &launchNames,
-    uint32_t blockDim, const void *args, uint32_t argsSize, rtSmDesc_t *smDesc, rtStream_t stm);
-HcclResult hrtFftsPlusTaskLaunchWithFlag(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rtStream_t stm, u32 flag);
 
 HcclResult hrtNotifyGetAddr(rtNotify_t signal, u64 *notifyAddr);
 
@@ -132,7 +129,7 @@ HcclResult hrtNotifyImportByKey(rtNotify_t *notify, const u8 *name);
 
 HcclResult hrtStreamGetSqid(const rtStream_t stm, uint32_t *sqId);
 HcclResult hrtStreamGetCqid(const rtStream_t stm, uint32_t *cqId, uint32_t *logicCqId);
-HcclResult hrtTaskAbortHandleCallback(rtsDeviceTaskAbortCallback callback, void *args);
+HcclResult hrtTaskAbortHandleCallback(aclrtDeviceTaskAbortCallback callback, void *args);
 HcclResult hrtResourceClean();
 HcclResult hrtGetHccsPortNum(u32 deviceLogicId, s32 &num);
 #endif

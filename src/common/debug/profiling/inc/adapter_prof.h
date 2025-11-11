@@ -13,7 +13,7 @@
 
 #include <hccl/hccl_types.h>
 
-#include "runtime/rt.h"
+#include "rt_external.h"
 #include "dlprof_function.h"
 #include "hccl/base.h"
 

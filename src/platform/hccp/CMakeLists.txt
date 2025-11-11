@@ -45,14 +45,12 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/roce/roce_user
         ${CMAKE_CURRENT_SOURCE_DIR}/common
         ${CMAKE_CURRENT_SOURCE_DIR}/roce/host_lite
-
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../../externel_depends/c_sec/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/stub_tsd/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
     )
 
     target_link_directories(hccp_service.bin PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 endif()
 
@@ -100,7 +98,7 @@ if(DEVICE_MODE)
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:stub_kms> ${HCCP_TAR_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:KMS> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
         COMMENT "Copying librs.so to ${HCCP_TAR_DIR}"

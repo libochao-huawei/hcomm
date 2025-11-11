@@ -55,6 +55,7 @@ using RankInfo_t = struct tagRankInfo {
     std::vector<TransportInfo_t> transportInfo; // [DEPRECATED]本rank与其余rank的数据传输信息（抽象信息）
     s32 bindDeviceId = INVALID_INT;     // 绑定的device id
     TlsStatus tlsStatus = TlsStatus::UNKNOWN; // TLS开关状态
+    std::string originalSuperPodId;     // 划分逻辑超节点前的原超节点ID，来源为用户配置
 };
 
 #ifdef __cplusplus

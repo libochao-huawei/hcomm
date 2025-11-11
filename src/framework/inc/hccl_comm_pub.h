@@ -236,6 +236,7 @@ public:
     HcclResult CreateCommCCLbuffer() const;
     HcclResult CreateIndirectCCLbuf();
     void ReleaseIndirectCCLbuf();
+    HcclResult SetAicpuCommEngine(bool isAicpuCommEngine);
 
     HcclResult GetOneSidedService(IHcclOneSidedService** service);//host侧专用
     HcclResult InitOneSidedServiceNetDevCtx(u32 remoteRankId);//host侧专用

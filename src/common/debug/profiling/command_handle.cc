@@ -10,7 +10,8 @@
 
 #include "command_handle.h"
 #include "profiling_manager.h"
-#include "toolchain/aprof_pub.h"
+#include "aprof_pub.h"
+#include "prof_common.h"
 
 namespace hccl {
 rtError_t CommandHandle(uint32_t rtType, void *data, uint32_t len)

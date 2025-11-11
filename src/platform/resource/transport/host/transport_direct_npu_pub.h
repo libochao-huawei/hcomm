@@ -130,6 +130,10 @@ protected:
     QPMode qpMode_{QPMode::INVALID}; // 是否为普通QP模式
 
 private:
+    HcclResult LoadAICPUKernel(void);
+    void UnloadAICPUKernel(void);
+    HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+        aclrtBinHandle& binHandle);
     static void ProcessCqeInfo(const s32 deviceId, const struct cqe_err_info *infolist, const u32 cqeNum,
         std::vector<std::pair<TransportBase*, CqeInfo>> &infos);
     // bit[63:32] devicePhyId, bit[31:0] qpn
@@ -137,6 +141,7 @@ private:
     static bool g_flag;
     static bool g_isSupCqeErrInfoListConfig;
     static u32 cqeErrQpn_;
+    aclrtBinHandle binHandle_ = nullptr;
     DeviceMem aicpuMem_;
 };
 }  // namespace hccl

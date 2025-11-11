@@ -22,7 +22,6 @@
 #include "op_tiling.h"
 #include "exe_graph/runtime/tiling_context.h"
 #include "exe_graph/runtime/tiling_parse_context.h"
-#include "graph/operator_reg.h"
 #include "acl/acl_rt.h"
 #include "legacy_common.h"
 

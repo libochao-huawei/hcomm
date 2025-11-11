@@ -315,7 +315,7 @@ HcclResult P2PMgmt::WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remote
 
 HcclResult P2PMgmt::CheckP2P(uint32_t remoteDevicePhysicID, bool &enabled)
 {
-    uint32_t status = DRV_P2P_STATUS_DISABLE;
+    int32_t status = DRV_P2P_STATUS_DISABLE;
     int32_t localDeviceLogicID;
     CHK_RET(hrtGetDevice(&localDeviceLogicID));
 

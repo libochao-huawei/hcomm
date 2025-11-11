@@ -98,40 +98,52 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/legacy/inc
 
-        ${HCCL_BASE_DIR}/../externel_depends/
-        ${HCCL_BASE_DIR}/../externel_depends/driver/
-
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/asc/include/adv_api/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/ascendcl/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/mmpa/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/msprof/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/slog/toolchain/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/atrace/utrace/
         ${THIRD_PARTY_NLOHMANN_PATH}
 
         ${HCCL_BASE_DIR}/common/debug/profiling/inc
         ${HCCL_BASE_DIR}/common/debug/profiling/inc/host
         ${HCCL_BASE_DIR}/common/debug/config
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
 
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+
+        # acl头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+
+        # highlevel_api
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/error_codes/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${HCCL_BASE_DIR}/../externel_depends/c_sec/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/mmpa/
-        ${HCCL_BASE_DIR}/../externel_depends/include/msprof/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/runtime/
+        if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+            message(STATUS "Host is x86_64")
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/detail/
+        elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
+            message(STATUS "Host is ARM64")
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/detail/
+        endif()
+
+        ${THIRD_PARTY_NLOHMANN_PATH}
     )
 
     target_link_directories(hccl_fwk PRIVATE
@@ -194,7 +206,7 @@ if(BUILD_OPEN_PROJECT)
             -Wl,--no-as-needed
             c_sec
             unified_dlog
-            ascendcl
+            acl_rt
             hccl_alg
             hccl_plf
             -Wl,--as-needed
@@ -526,6 +538,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/common/stream/stream_utils_aicpu.cc
 
         #framework
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
         ${HCCL_BASE_DIR}/framework/communicator/impl/one_sided_service/i_hccl_one_sided_service.cc
     )
     target_sources(ccl_kernel PRIVATE
@@ -630,7 +643,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     )
 
     target_link_directories(ccl_kernel PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
     )
 
     add_subdirectory(device)
@@ -750,42 +763,48 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/aicpu
 
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/ascendc/include/highlevel_api/impl/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/ascendcl/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/atrace/utrace
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/datagw/aicpu/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/mmpa/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/msprof/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/slog/toolchain/
-        ${ASCEND_SDK_PACKAGE_PATH}/runtime/include/external
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${HCCL_BASE_DIR}/../externel_depends/
-        ${HCCL_BASE_DIR}/../externel_depends/driver/
-        ${HCCL_BASE_DIR}/../externel_depends/asc/
-        ${HCCL_BASE_DIR}/../externel_depends/asc/impl
-        ${HCCL_BASE_DIR}/../externel_depends/asc/impl/adv_api/
-        ${HCCL_BASE_DIR}/../externel_depends/asc/impl/adv_api/detail/
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
 
-        ${THIRD_PARTY_NLOHMANN_PATH}
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
 
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/error_codes/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${HCCL_BASE_DIR}/../externel_depends/c_sec/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/
-        ${HCCL_BASE_DIR}/../externel_depends/include/atrace/utrace
-        ${HCCL_BASE_DIR}/../externel_depends/include/datagw/aicpu/
-        ${HCCL_BASE_DIR}/../externel_depends/include/mmpa/
-        ${HCCL_BASE_DIR}/../externel_depends/include/msprof/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/
-        ${HCCL_BASE_DIR}/../externel_depends/include/runtime/runtime/
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+
+        # ascendc
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+
+        if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
+            message(STATUS "Host is x86_64")
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/
+            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/detail/
+        elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
+            message(STATUS "Host is ARM64")
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/
+            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/detail/
+        endif()
+
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${THIRD_PARTY_NLOHMANN_PATH}
         )
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
@@ -803,7 +822,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         endif()
         message(STATUS "framework ASCEND_CANN_PACKAGE_ENV_PATH=${ASCEND_CANN_PACKAGE_ENV_PATH}")
         set(BUILD_PATH build)
-        if(DEVICE_MODE)
+        if(FULL_MODE)
             set(BUILD_PATH build_device)
         endif()
         target_link_libraries(ccl_kernel PRIVATE
@@ -831,11 +850,9 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
 
         target_link_directories(ccl_kernel PRIVATE
-            ${ASCEND_CANN_PACKAGE_PATH}/${SYSTEM_ARCH}-linux/lib64/device/lib64/ # c_sec、mmpa、unified_dlog动态库搜索路径
+            ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
         )
 
-        set_target_properties(ccl_kernel PROPERTIES
-            OUTPUT_NAME aicpu_custom)
     endif()
 endif()
 
@@ -849,5 +866,13 @@ if(DEVICE_MODE AND KERNEL_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel_plf> ${CCL_KERNEL_TAR_DIR}
         COMMENT "Copying libccl_kernel_plf.so libccl_kernel.so to ${CCL_KERNEL_TAR_DIR}"
     )
- 
+
+    set(AICPU_CUSTOM_DIR ${HCCL_BASE_DIR}/../build_device/aicpu_custom/)
+    add_custom_command(
+        TARGET ccl_kernel
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${AICPU_CUSTOM_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel> ${AICPU_CUSTOM_DIR}/libaicpu_custom.so
+        COMMENT "Copying libccl_kernel.so to ${AICPU_CUSTOM_DIR}/libaicpu_custom.so"
+    )
 endif()

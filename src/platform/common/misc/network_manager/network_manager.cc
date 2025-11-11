@@ -18,7 +18,6 @@
 #include "adapter_error_manager.h"
 #include "dlhal_function.h"
 #include "adapter_hccp_common.h"
-#include "rts/rts_device.h"
 namespace hccl {
 
 using namespace std;

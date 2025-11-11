@@ -1,6 +1,5 @@
 #include "adapter_error_manager.h"
 #include "adapter_error_manager_pub.h"
-#include "error_manager.h"
 #include "base/err_msg.h"
 #include "base/err_mgr.h"
 
@@ -46,8 +45,8 @@ void RptInnerErrPrt(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    char errorMsgStr[LIMIT_PER_MESSAGE] = {};
-    int ret = vsnprintf_s(errorMsgStr, LIMIT_PER_MESSAGE, LIMIT_PER_MESSAGE - 1U, fmt, args);
+    char errorMsgStr[HCCL_LIMIT_PER_MESSAGE] = {};
+    int ret = vsnprintf_s(errorMsgStr, HCCL_LIMIT_PER_MESSAGE, HCCL_LIMIT_PER_MESSAGE - 1U, fmt, args);
     va_end(args);
     if (ret == -1) {
         return;
@@ -59,8 +58,8 @@ void RptCallErr(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    char errorMsgStr[LIMIT_PER_MESSAGE] = {};
-    int ret = vsnprintf_s(errorMsgStr, LIMIT_PER_MESSAGE, LIMIT_PER_MESSAGE - 1U, fmt, args);
+    char errorMsgStr[HCCL_LIMIT_PER_MESSAGE] = {};
+    int ret = vsnprintf_s(errorMsgStr, HCCL_LIMIT_PER_MESSAGE, HCCL_LIMIT_PER_MESSAGE - 1U, fmt, args);
     va_end(args);
     if (ret == -1) {
         return;
@@ -72,8 +71,8 @@ void RptCallErrPrt(const char *fmt, ...)
 {
     va_list args;
     va_start(args, fmt);
-    char errorMsgStr[LIMIT_PER_MESSAGE] = {};
-    int ret = vsnprintf_s(errorMsgStr, LIMIT_PER_MESSAGE, LIMIT_PER_MESSAGE - 1U, fmt, args);
+    char errorMsgStr[HCCL_LIMIT_PER_MESSAGE] = {};
+    int ret = vsnprintf_s(errorMsgStr, HCCL_LIMIT_PER_MESSAGE, HCCL_LIMIT_PER_MESSAGE - 1U, fmt, args);
     va_end(args);
     if (ret == -1) {
         return;

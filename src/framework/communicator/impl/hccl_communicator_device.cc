@@ -1011,7 +1011,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::AllocAlgResource(const std::string &newTag, HcclCMDType opType, const OpParam &opParam,
-                                                  AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse)
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream)
     {
         SaveLinkRes(algResResponse.opTransportResponse);
         SaveLinkRes(algResResponse.opTransportResponseBackUp);
@@ -1078,7 +1078,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::AllocComResource(const string &newTag, const string &algName,
-                                                  const HcclCMDType commType, const OpParam &opParam, rtStream_t stream)
+        const HcclCMDType commType, const OpParam &opParam, rtStream_t stream, bool isNeedHostSlaveStream)
     {
         return HCCL_SUCCESS;
     }

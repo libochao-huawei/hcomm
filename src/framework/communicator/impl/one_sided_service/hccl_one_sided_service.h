@@ -37,7 +37,7 @@ struct AicpuOneSideCommTiling {
     HcclCMDType cmdType;
     std::string tag;
     rtStream_t stream;
-    u8 floatOverflowMode = RT_OVERFLOW_MODE_UNDEF;
+    u8 floatOverflowMode = ACL_RT_OVERFLOW_MODE_UNDEF;
     u8 dumpDebug = false;
     bool useRdma = false;
 };

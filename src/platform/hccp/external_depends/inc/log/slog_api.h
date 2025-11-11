@@ -9,7 +9,7 @@
  */
 #ifndef SLOG_API_H
 #define SLOG_API_H
-#include "slog.h"
+#include <dlog_pub.h>
 #ifdef __cplusplus
 #ifndef LOG_CPP
 extern "C" {

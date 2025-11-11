@@ -11,8 +11,16 @@
 ## 点对点通信
 
 - [HcclSend/HcclRecv（基础收发功能）](./02_point_to_point/01_send_recv/)
-- [HcclBatchSendRecv（实现 Ring 环状通信）](./02_point_to_point/01_send_recv/)
+- [HcclBatchSendRecv（实现 Ring 环状通信）](./02_point_to_point/02_batch_send_recv_ring/)
 
 ## 集合通信
 
-- [Scatter](./03_collectives/01_scatter/)
+- [AllReduce](./03_collectives/01_allreduce/)
+- [Broadcast](./03_collectives/02_broadcast/)
+- [AllGather](./03_collectives/03_allgather/)
+- [ReduceScatter](./03_collectives/04_reduce_scatter/)
+- [Reduce](./03_collectives/05_reduce/)
+- [AlltoAll](./03_collectives/06_alltoall/)
+- [AlltoAllV](./03_collectives/07_alltoallv/)
+- [AlltoAllVC](./03_collectives/08_alltoallvc/)
+- [Scatter](./03_collectives/09_scatter/)

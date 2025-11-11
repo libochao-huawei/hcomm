@@ -45,7 +45,7 @@ HcclResult RtsNotify::Open()
             CHK_RET(hrtIpcOpenNotify(&notifyPtr, notifyInfo_.ipcNotify.ipcName));
         } else {
             CHK_RET(hrtIpcOpenNotifyWithFlag(&notifyPtr, notifyInfo_.ipcNotify.ipcName,
-                RT_NOTIFY_FLAG_DOWNLOAD_TO_DEV));
+                ACL_NOTIFY_DEVICE_USE_ONLY));
         }
     } else {
         notifyPtr = notifyInfo_.ipcNotify.ptr;

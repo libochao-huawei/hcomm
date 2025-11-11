@@ -91,32 +91,37 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl/hccl
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pub_inc
-	${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/hccl
 
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/c_sec/include/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/adump/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/metadef/external/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/mmpa/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/msprof/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/runtime/runtime/
-        ${ASCEND_SDK_PACKAGE_PATH}/opensdk/opensdk/include/slog/toolchain/
-        ${ASCEND_SDK_PACKAGE_PATH}/runtime/include/external
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/error_codes/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/external/
+        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/platform/
 
-        # 缺runtime包临时引用放置在extenel_depends中的头文件
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../externel_depends/c_sec/include/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../externel_depends/include/adump/external/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../externel_depends/include/metadef/external/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../externel_depends/include/mmpa/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../externel_depends/include/msprof/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../externel_depends/include/runtime/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../externel_depends/include/runtime/runtime/
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+
+        # acl头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+
+        ${THIRD_PARTY_NLOHMANN_PATH}
     )
 
     target_link_directories(hccl_alg PRIVATE

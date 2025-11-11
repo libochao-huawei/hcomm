@@ -205,7 +205,7 @@ TEST_F(MC2AicpuRetry_ST, st_suspend_in_once_stopLaunch)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -243,7 +243,7 @@ TEST_F(MC2AicpuRetry_ST, st_suspend_in_once_stopLaunch)
     auto ret = hcclCommunicator->Suspend();
     threadHandle.join();
     EXPECT_EQ(HCCL_E_SUSPENDING, ret);
-    hcclCommunicator->isNsRecovery_ = false; //保证析构的时候不会调用到相关命令
+    hcclCommunicator->isAicpuCommEngine_ = false; //保证析构的时候不会调用到相关命令
     delete hcclCommunicator;
 }
 
@@ -262,7 +262,7 @@ TEST_F(MC2AicpuRetry_ST, st_suspend_in_once_Error)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -299,7 +299,7 @@ TEST_F(MC2AicpuRetry_ST, st_suspend_in_once_Error)
     auto ret = hcclCommunicator->Suspend();
     threadHandle.join();
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;  
 }
 
@@ -318,7 +318,7 @@ TEST_F(MC2AicpuRetry_ST, st_stopExec_in_once_stopExec)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -350,7 +350,7 @@ TEST_F(MC2AicpuRetry_ST, st_stopExec_in_once_stopExec)
     auto ret = hcclCommunicator->StopExec();
     threadHandle.join();
     EXPECT_EQ(HCCL_E_SUSPENDING, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;  
 }
 
@@ -369,7 +369,7 @@ TEST_F(MC2AicpuRetry_ST, st_stopExec_in_once_End)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-   hcclCommunicator->SetMC2EnvFlag();
+   hcclCommunicator->SetAicpuCommEngine(true);
     //printf("环境是[%d]",hcclCommunicator->kfcControlTransferH2D_->GetEnv());
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
@@ -400,7 +400,7 @@ TEST_F(MC2AicpuRetry_ST, st_stopExec_in_once_End)
     auto ret = hcclCommunicator->StopExec();
     threadHandle.join();
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;
 }
 
@@ -419,7 +419,7 @@ TEST_F(MC2AicpuRetry_ST, st_stopExec_in_once_Error)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -451,7 +451,7 @@ TEST_F(MC2AicpuRetry_ST, st_stopExec_in_once_Error)
     auto ret = hcclCommunicator->StopExec();
     threadHandle.join();
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator; 
 }
 
@@ -470,7 +470,7 @@ TEST_F(MC2AicpuRetry_ST, st_clean_in_once_clean)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -502,7 +502,7 @@ TEST_F(MC2AicpuRetry_ST, st_clean_in_once_clean)
     auto ret = hcclCommunicator->Clean();
     threadHandle.join();
     EXPECT_EQ(HCCL_E_SUSPENDING, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;
 }
 
@@ -521,7 +521,7 @@ TEST_F(MC2AicpuRetry_ST, st_clean_in_once_End)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     //printf("环境是[%d]",hcclCommunicator->kfcControlTransferH2D_->GetEnv());
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
@@ -552,7 +552,7 @@ TEST_F(MC2AicpuRetry_ST, st_clean_in_once_End)
     auto ret = hcclCommunicator->Clean();
     threadHandle.join();
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;
 }
 
@@ -571,7 +571,7 @@ TEST_F(MC2AicpuRetry_ST, st_clean_in_once_Error)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -603,7 +603,7 @@ TEST_F(MC2AicpuRetry_ST, st_clean_in_once_Error)
     auto ret = hcclCommunicator->Clean();
     threadHandle.join();
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;
 }
 
@@ -622,7 +622,7 @@ TEST_F(MC2AicpuRetry_ST, st_cleanEnd_in_once_End)
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     //printf("环境是[%d]",hcclCommunicator->kfcControlTransferH2D_->GetEnv());
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
@@ -653,7 +653,7 @@ TEST_F(MC2AicpuRetry_ST, st_cleanEnd_in_once_End)
     auto ret = hcclCommunicator->Clean();
     threadHandle.join();
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;
 } 
  
@@ -673,7 +673,7 @@ TEST_F(MC2AicpuRetry_ST, st_UnRegisterBackGroundThread_success){
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -701,7 +701,7 @@ TEST_F(MC2AicpuRetry_ST, st_UnRegisterBackGroundThread_success){
     auto ret = hcclCommunicator->UnRegisterBackGroundThread();
     threadHandle.join();
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;
 }
  
@@ -721,7 +721,7 @@ TEST_F(MC2AicpuRetry_ST, st_UnRegisterBackGroundThread_fail){
     hcclCommunicator->kfcStatusTransferD2H_->InitHost();
     paramTask.kfcControlTransferH2DParams = hcclCommunicator->kfcControlTransferH2D_->GetCommunicateParams();
     paramTask.kfcStatusTransferD2HParams = hcclCommunicator->kfcStatusTransferD2H_->GetCommunicateParams();
-    hcclCommunicator->SetMC2EnvFlag();
+    hcclCommunicator->SetAicpuCommEngine(true);
     // 现在就是实现device侧对应的内容->保证device侧共享内存和host侧共享内存是一个
     std::shared_ptr<hccl::HDCommunicate> h2dTransfer;
     std::shared_ptr<hccl::HDCommunicate> d2hTransfer;
@@ -749,7 +749,7 @@ TEST_F(MC2AicpuRetry_ST, st_UnRegisterBackGroundThread_fail){
     auto ret = hcclCommunicator->UnRegisterBackGroundThread();
     threadHandle.join();
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
-    hcclCommunicator->isNsRecovery_ = false;
+    hcclCommunicator->isAicpuCommEngine_ = false;
     delete hcclCommunicator;
 }
 #endif 

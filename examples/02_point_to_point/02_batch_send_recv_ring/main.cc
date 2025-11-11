@@ -1,12 +1,12 @@
-/*
- * This program is free software, you can redistribute it and/or modify it.
+/**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
- */
+ */
 
 #include <iostream>
 #include <fstream>
@@ -70,15 +70,14 @@ int Sample(void *arg)
 
     // 初始化集合通信域
     HcclComm hcclComm;
-    HCCLCHECK(HcclCommInitRootInfo(count, ctx->rootInfo, device, &hcclComm));
+    HCCLCHECK(HcclCommInitRootInfo(ctx->devCount, ctx->rootInfo, device, &hcclComm));
 
     // 创建任务流
     aclrtStream stream;
     ACLCHECK(aclrtCreateStream(&stream));
 
     // 执行 Send/Recv，将数据发送至下一节点，同时接收上一节点的数据
-    // HcclBatchSendRecv 可以同时下发本 Rank 上的多个收发任务，本 Rank
-    // 发送和接收之间是异步的，发送和接收任务之间不会相互阻塞
+    // HcclBatchSendRecv 可以同时下发本 Rank 上的多个收发任务
     uint32_t next = (device + 1) % count;
     uint32_t prev = (device - 1 + count) % count;
     HcclSendRecvItem sendRecvInfo[2];

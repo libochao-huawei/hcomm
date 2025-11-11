@@ -11,7 +11,8 @@ cmake_minimum_required(VERSION 3.16.0)
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
-if(BUILD_OPEN_PROJECT AND DEVICE_MODE)
+message(STATUS "AARCH_MODE=${AARCH_MODE}")
+if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
     # need to switch
     set(CMAKE_SYSTEM_NAME Linux)
     set(CMAKE_SYSTEM_PROCESSOR aarch64)
@@ -107,6 +108,8 @@ if(BUILD_OPEN_PROJECT)
         inc/hccl/hccl.h
         inc/hccl/hccl_types.h
         inc/hccl/hccl_api.h
+        inc/hccl/hccl_ctrl_plane.h
+        inc/hccl/hccl_ops.h
         src/pub_inc/hccn_rping.h
     )
 
@@ -123,7 +126,8 @@ if(BUILD_OPEN_PROJECT)
         add_custom_target(install_tar DEPENDS
             ${BUILD_DEVICE_DIR}/hcomm_device.tar.gz
             ${BUILD_DEVICE_DIR}/aicpu_hccl.tar.gz
-            ${BUILD_DEVICE_DIR}/hcomm_hccd.tar.gz
+            ${BUILD_HCCD_DIR}/hcomm_hccd.tar.gz
+            ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
         )
         install(FILES ${BUILD_DEVICE_DIR}/hcomm_device.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
@@ -133,6 +137,9 @@ if(BUILD_OPEN_PROJECT)
         )
         install(FILES ${BUILD_HCCD_DIR}/hcomm_hccd.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
+        )
+        install(FILES ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
+            DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
         )
         add_dependencies(install_tar hccl_fwk)
     endif()

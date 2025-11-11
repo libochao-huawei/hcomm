@@ -141,9 +141,9 @@ protected:
     /* agent-device 交互 */
     HcclResult GetOpExecInfo(std::shared_ptr<HDCommunicate> hdcPtr, KfcExecStatus &opInfo);
     HcclResult SetOpExecCmd(std::shared_ptr<HDCommunicate> hdcPtr, KfcCommand opCmd);
-    HcclResult ClearStream(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, rtClearStep_t clearStep);
+    HcclResult ClearStream(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, HcclRtStreamClearStep clearStep);
     HcclResult SetOpExecCmdWithOpId(std::shared_ptr<HDCommunicate> hdcPtr, KfcCommand opCmd, HcclOpIdentifier &opId);
-    HcclResult ClearStreamWithOpId(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, rtClearStep_t clearStep, 
+    HcclResult ClearStreamWithOpId(std::shared_ptr<HcclOpStreamRes> opStreamPtr_, HcclRtStreamClearStep clearStep, 
         HcclOpIdentifier &opId, HcclOpIdentifier &curOpId);
     HcclResult ResetNotify(RetryContext* retryCtx);
     HcclResult SetTransportStatusForStop(RetryContext* retryCtx);

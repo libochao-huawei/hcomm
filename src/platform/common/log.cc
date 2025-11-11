@@ -12,7 +12,7 @@
 #include "log.h"
 
 thread_local bool g_hcclErrToWarn = false;
-
+int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel) __attribute((weak));
 bool HcclCheckLogLevel(int logType, int moduleId)
 {
     return (CheckLogLevel(moduleId, logType) == 1);

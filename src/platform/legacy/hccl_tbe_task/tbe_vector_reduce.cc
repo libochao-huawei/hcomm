@@ -20,11 +20,11 @@
 #include "mmpa_api.h"
 #include "vector_tiling_rt2.h"
 #include "hccl_tbe_task.h"
-#include "graph/operator_reg.h"
 #include "base/context_builder/op_tiling_parse_context_builder.h"
 #include "base/context_builder/op_tiling_context_builder.h"
 #include "exe_graph/runtime/storage_shape.h"
 
+#if 0
 namespace ge {
 REG_OP(Add)
     .INPUT(x1, TensorType({ DT_INT64 }))
@@ -50,6 +50,7 @@ REG_OP(Minimum)
     .OUTPUT(y, TensorType({ DT_INT64 }))
     .OP_END_FACTORY_REG(Minimum);
 }
+#endif
 
 namespace TbeReduce {
 using namespace std;

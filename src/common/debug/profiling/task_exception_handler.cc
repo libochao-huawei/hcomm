@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <iomanip>
 #include <array>
+#include "rt_external.h"
 #include "adapter_rts_common.h"
 #include "externalinput_pub.h"
 #include "config_log.h"

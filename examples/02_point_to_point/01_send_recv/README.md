@@ -15,16 +15,16 @@
 ## 目录结构
 
 ```text
-├── main.cc         # 样例源文件
-├── Makefile        # 编译/构建配置文件
-└── 01_send_recv    # 编译生成的可执行文件
+├── main.cc      # 样例源文件
+├── Makefile     # 编译/构建配置文件
+└── send_recv    # 编译生成的可执行文件
 ```
 
 ## 环境准备
 
 ### 环境要求
 
-本示例支持以下昇腾产品，集群拓扑为单机 8 卡：
+本样例支持以下昇腾产品：
 
 - <term>Atlas 训练系列产品</term>
 - <term>Atlas A2 训练系列产品</term>
@@ -39,7 +39,7 @@ source /usr/local/Ascend/ascend-toolkit/set_env.sh
 
 ## 编译执行样例
 
-在本样例代码根目录下执行如下命令：
+在本样例代码目录下执行如下命令：
 
 ```bash
 make

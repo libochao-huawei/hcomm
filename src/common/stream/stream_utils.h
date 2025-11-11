@@ -12,7 +12,7 @@
  #define STREAM_UTILS_H
 
  #include "hccl/base.h"
- #include "external/runtime/rt_error_codes.h"
+ #include "error_codes/rt_error_codes.h"
  #include "acl/acl_rt.h"
 
  HcclResult GetStreamCaptureInfo(aclrtStream stream, aclmdlRI &rtModel, bool &isCapture);
