@@ -11,7 +11,7 @@
 #ifndef AICPU_KFC_RPC_SERVER_H
 #define AICPU_KFC_RPC_SERVER_H
 
-#include "impl/adv_api/detail/hccl/common/hccl_msg.h"
+#include "hccl_msg.h"
 #include "common/aicpu_hccl_def.h"
 #include "common/aicpu_kfc_def.h"
 

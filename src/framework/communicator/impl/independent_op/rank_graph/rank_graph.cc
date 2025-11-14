@@ -292,6 +292,50 @@ bool RankGraphSort(const RankInfo_t &first, const RankInfo_t &second)
         return first.rankId < second.rankId;
     }
 }
+
+HcclResult RankGraph::InitGraphRankInfo()
+{
+    for (u32 index = 0; index < rankGraph_.size(); index++) {
+        struct GraphRankInfo graphRankInfo = {};
+        graphRankInfo.rankId = rankGraph_[index].rankId;
+        graphRankInfo.localRank = rankGraph_[index].localRank;
+        graphRankInfo.serverId = rankGraph_[index].serverId;
+        graphRankInfo.serverIdx = rankGraph_[index].serverIdx;
+        graphRankInfo.superDeviceId = rankGraph_[index].superDeviceId;
+        graphRankInfo.superPodId = rankGraph_[index].superPodId;
+        graphRankInfo.superPodIdx = rankGraph_[index].superPodIdx;
+        graphRankInfo.hostPort = rankGraph_[index].hostPort;
+        graphRankInfo.nodeId = rankGraph_[index].nodeId;
+        graphRankInfo.itemId = rankGraph_[index].itemId;
+        graphRankInfo.deviceInfo.devicePhyId = rankGraph_[index].deviceInfo.devicePhyId;
+        graphRankInfo.deviceInfo.deviceType = rankGraph_[index].deviceInfo.deviceType;
+        graphRankInfo.deviceInfo.port = rankGraph_[index].deviceInfo.port;
+        graphRankInfo.deviceInfo.vnicPort = rankGraph_[index].deviceInfo.vnicPort;
+        graphRankInfo.deviceInfo.backupPort = rankGraph_[index].deviceInfo.backupPort;
+        graphRankInfo.bindDeviceId = rankGraph_[index].bindDeviceId;
+        graphRankInfo.originalSuperPodId = rankGraph_[index].originalSuperPodId;
+        
+        graphRankInfo_.push_back(graphRankInfo);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult RankGraph::GetRankGraphInfo(GraphType type, void **graph, uint32_t *len)
+{
+    switch (type) {
+        case RANK_GRAPH_910_93: {
+            *graph = graphRankInfo_.data();
+            *len = graphRankInfo_.size() * sizeof(GraphRankInfo);
+            break;
+        }
+        default: {
+            HCCL_ERROR("[RankGraph][%s]Graph type[%d] is invalid", __func__, type);
+            return HCCL_E_NOT_SUPPORT;
+        }
+    }
+    return HCCL_SUCCESS;
+}
  
 HcclResult RankGraph::InitRankInfo()
 {
@@ -304,6 +348,7 @@ HcclResult RankGraph::InitRankInfo()
     }
     CHK_RET(InitServerRankInfo());
     CHK_RET(InitSuperPodRankInfo());
+    CHK_RET(InitGraphRankInfo());
     return HCCL_SUCCESS;
 }
 

@@ -70,6 +70,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc/hccl/
         ${HCCL_BASE_DIR}/../inc/hccl/hccl
         ${HCCL_BASE_DIR}/../pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/network
@@ -96,7 +97,6 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -212,7 +212,6 @@ add_subdirectory(debug)
 add_subdirectory(remote_access)
 add_subdirectory(resource)
 add_subdirectory(task)
-add_subdirectory(legacy)
 add_subdirectory(ping_mesh)
 add_subdirectory(typical)
 add_subdirectory(hccp)

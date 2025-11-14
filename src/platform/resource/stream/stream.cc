@@ -14,7 +14,6 @@
 #include "stream_pub.h"
 
 namespace hccl {
-#define RT_STREAM_CP_PROCESS_USE (0x800U)
 // 默认构造函数只产生无效的Stream对象
 Stream::Stream() : stream_(nullptr), device_id_(HCCL_DEVICE_NOT_SET), stream_owner_(false), streamId_(0),
     isMainStream_(true), modeGotFlag_(false), streamMode_(0), sqId_(0), ctx_(nullptr), cqId_(0), logicCqid_(0) {}
@@ -62,8 +61,8 @@ Stream::Stream(const StreamType streamType, bool isMainStream)
         ret = hrtStreamCreateWithFlags(&rtStream, HCCL_STREAM_PRIORITY_HIGH,
             ACL_STREAM_FAST_LAUNCH | ACL_STREAM_FAST_SYNC);
     } else if (streamType == StreamType::STREAM_TYPE_DEVICE) {
-        ret = hrtStreamCreateWithFlagsTemp(&rtStream, HCCL_STREAM_PRIORITY_HIGH,
-            RT_STREAM_CP_PROCESS_USE);
+        ret = hrtStreamCreateWithFlags(&rtStream, HCCL_STREAM_PRIORITY_HIGH,
+            ACL_STREAM_DEVICE_USE_ONLY);
     } else {
         ret = hrtStreamCreateWithFlags(&rtStream, HCCL_STREAM_PRIORITY_LOW,
             ACL_STREAM_PERSISTENT);

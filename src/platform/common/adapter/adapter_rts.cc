@@ -1949,27 +1949,6 @@ HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint3
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
-rtError_t rtStreamCreateWithFlags(rtStream_t *stream, int32_t priority, uint32_t flags) __attribute((weak));
-HcclResult hrtStreamCreateWithFlagsTemp(aclrtStream *stream, int32_t priority, uint32_t flags)
-{
-#ifndef HCCD
-    CHK_PTR_NULL(stream);
-
-    rtError_t ret = rtStreamCreateWithFlags(stream, priority, flags);
-    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Stream][CreateWithFlags]errNo[0x%016llx] rtStreamCreate error, "
-        "rtRet[%d], flags[%u]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, flags), HCCL_E_RUNTIME);
-
-    s32 streamId = 0;
-    CHK_RET(hrtGetStreamId(stream, streamId));
-    s32 deviceId = GetDeviceLogicalId();
-    PLF_CONFIG_DEBUG(PLF_RES, "Create Stream Temp para: deviceId[%d] streamId[%d] priority[%d] flags[%u]",
-        deviceId, streamId, priority, flags);
-    return HCCL_SUCCESS;
-#else
-    HCCL_ERROR("[hrtStreamCreateWithFlagsTemp]Does not support this interface.");
-    return HCCL_E_NOT_SUPPORT;
-#endif
-}
 
 HcclResult hrtStreamSetMode(HcclRtStream stream, const uint64_t stmMode)
 {

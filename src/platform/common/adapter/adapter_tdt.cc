@@ -39,7 +39,7 @@ HcclResult hrtOpenTsd()
 
 HcclResult __hrtOpenNetService(rtNetServiceOpenArgs *openArgs)
 {
-#ifndef CCL_KERNEL
+#if !defined(CCL_KERNEL) && !defined(HCCD)
     aclError aclret = rtOpenNetService(openArgs);
     if (aclret != ACL_RT_SUCCESS) {
         HCCL_ERROR("[hrtOpenNetService]Open NetService failed, err code : %d", aclret);
@@ -56,7 +56,7 @@ weak_alias(__hrtOpenNetService, hrtOpenNetService);
 
 HcclResult __hrtCloseNetService()
 {
-#ifndef CCL_KERNEL
+#if !defined(CCL_KERNEL) && !defined(HCCD)
     aclError aclret = rtCloseNetService();
     if (aclret != ACL_RT_SUCCESS) {
         HCCL_ERROR("[hrtCloseNetService]Open NetService failed, err code : %d", aclret);

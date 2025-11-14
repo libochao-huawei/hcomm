@@ -13,11 +13,8 @@
 
 #include <hccl/hccl_types.h>
 
-#include "../../pkg_inc/hccl/hcom.h"
+#include "workflow.h"
 
-HcclResult InitWorkflowMode(HcclWorkflowMode mode);
-HcclResult SetWorkflowMode(HcclWorkflowMode mode);
-HcclWorkflowMode GetWorkflowMode();
 void SetLaunchKernelMode(bool state);
 bool IsLaunchKernelMode(void);
 void SetTaskNumCalMode(bool state);

@@ -306,6 +306,7 @@ typedef enum {
     COMM_ADDR_TYPE_ID = 2,        ///< ID地址类型
 } CommAddrType;
 
+
 /**
  * @brief 通信设备地址描述结构体
  */

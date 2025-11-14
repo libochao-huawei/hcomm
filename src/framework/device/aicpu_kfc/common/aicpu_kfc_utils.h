@@ -11,8 +11,8 @@
 #ifndef AICPU_KFC_UTILS_H
 #define AICPU_KFC_UTILS_H
 
-#include "tiling/hccl/hccl_tiling_msg.h"
-#include "hccl/common/hccl_msg.h"
+#include "hccl_tiling_msg.h"
+#include "hccl_msg.h"
 #include "common/aicpu_hccl_def.h"
 #include "common/aicpu_kfc_def.h"
 

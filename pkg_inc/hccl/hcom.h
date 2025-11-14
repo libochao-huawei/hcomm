@@ -17,6 +17,8 @@
 #include <vector>
 #include <unordered_map>
 #include <map>
+#include "workflow.h"
+#include "dtype_common.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,29 +37,11 @@ namespace hccl {
     };
 }  // namespace hccl
 
-enum class HcclWorkflowMode {
-    HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB = 0,
-    HCCL_WORKFLOW_MODE_OP_BASE = 1,
-    HCCL_WORKFLOW_MODE_RESERVED = 255
-};
-
 // profiling状态
 enum class HcomProfilingMode {
     PROFILING_CLOSE = 0,
     PROFILING_OPEN = 1,
     PROFILING_RESERVED
-};
-
-// 对内芯片类型
-enum class DevType {
-    DEV_TYPE_910 = 0,
-    DEV_TYPE_310P3 = 1, // PG
-    DEV_TYPE_910B = 2,
-    DEV_TYPE_310P1 = 3, // AG
-    DEV_TYPE_910_93 = 4,
-    DEV_TYPE_NOSOC = 5,
-    DEV_TYPE_910_95 = 6,
-    DEV_TYPE_COUNT = 7
 };
 
 typedef struct HcomInitConfig {

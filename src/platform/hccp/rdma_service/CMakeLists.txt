@@ -1,5 +1,4 @@
 if(BUILD_OPEN_PROJECT)
-    set(ascend_kms KMS)
     set(CRYP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../crypt)
     set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
     set(CTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ctx)
@@ -61,7 +60,7 @@ if(BUILD_OPEN_PROJECT)
     target_compile_definitions(rs PRIVATE
         OPEN_BUILD_PROJECT
         LOG_CPP)
-    
+
     target_include_directories(rs PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/
         ${CMAKE_CURRENT_SOURCE_DIR}/../inc
@@ -71,7 +70,6 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../crypt/inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../roce/host_lite
         ${CMAKE_CURRENT_SOURCE_DIR}/../roce/roce_user
-        ${CMAKE_CURRENT_SOURCE_DIR}/../tls_adp
 
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -84,6 +82,8 @@ if(BUILD_OPEN_PROJECT)
 
         # 第三方库依赖路径
         ${CMAKE_BINARY_DIR}/../third_party/openssl/include
+        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
+        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
         # 临时依赖，后续删除
         ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
@@ -102,10 +102,6 @@ else()
         ${TOP_DIR}/hccl/src/platform/hccp/common
         ${TOP_DIR}/hccl/src/platform/hccp/crypt/inc
         ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/
-        ${TOP_DIR}/hccl/src/platform/hccp/tls_adp
-        ${TOP_DIR}/abl/libkmc/include
-        ${TOP_DIR}/abl/libkmc/src/sdp
-        ${TOP_DIR}/abl/libkmc/src/common
     )
 endif()
 
@@ -172,9 +168,7 @@ if(BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         c_sec
         $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
-        #  目前本地编译在指定位置
         $<$<NOT:$<STREQUAL:${PRODUCT},ascend310p>>:tls_adp>
-        ${ascend_kms}
         -Wl,--as-needed
         -Wl,--whole-archive
         -Wl,--no-whole-archive
@@ -209,3 +203,5 @@ endif()
 install(TARGETS  rs
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
+
+add_dependencies(rs crypto_static ssl_static)

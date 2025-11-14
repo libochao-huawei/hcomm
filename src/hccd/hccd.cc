@@ -48,7 +48,7 @@ HcclResult HccdGenerateCommId(hccl::HcclCommParams &params)
     HCCL_INFO("params.id.internal [%s]", params.id.internal);
     return HCCL_SUCCESS;
 }
-
+int32_t DlogSetAttr(LogAttr logAttrInfo) __attribute((weak));
 HcclResult HcclInitComm(const char* rankTableM, uint32_t rank, const CommAttr* attr, HcclComm* comm,
     HccdInfo &rankInfo)
 {
@@ -73,7 +73,7 @@ HcclResult HcclInitComm(const char* rankTableM, uint32_t rank, const CommAttr* a
     logattr.type = APPLICATION;
     logattr.pid = hostPid;
     logattr.deviceId = attr->deviceId;
-    if (DlogSetAttr(logattr) != 0) {
+    if (DlogSetAttr!= nullptr && DlogSetAttr(logattr) != 0) {
         HCCL_ERROR("DlogSetAttr failed");
         return HCCL_E_SYSCALL;
     }

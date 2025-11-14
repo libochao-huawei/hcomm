@@ -93,8 +93,8 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl
-        ${HCCL_BASE_DIR}/../pkg_inc
-        ${HCCL_BASE_DIR}/../pkg_inc/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/legacy/inc
 
@@ -118,30 +118,16 @@ if(BUILD_OPEN_PROJECT)
 
         # highlevel_api
         ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
 
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
-        if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
-            message(STATUS "Host is x86_64")
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/detail/
-        elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
-            message(STATUS "Host is ARM64")
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/detail/
-        endif()
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
@@ -218,7 +204,6 @@ else()
     target_link_libraries(hccl_fwk
             $<BUILD_INTERFACE:kernel_tiling_headers>
             -Wl,--no-as-needed
-            ascendcl
             c_sec
             unified_dlog
             mmpa
@@ -640,6 +625,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template
         ${HCCL_BASE_DIR}/algorithm/pub_inc
         ${HCCL_BASE_DIR}/../pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
     )
 
     target_link_directories(ccl_kernel PRIVATE
@@ -695,7 +681,8 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/hccl/hccl_comm/impl/
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
-	${HCCL_BASE_DIR}/../pkg_inc/
+	    ${HCCL_BASE_DIR}/../pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
     )
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
@@ -759,7 +746,8 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/../inc
         ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/../inc/hccl/hccl/
-        ${HCCL_BASE_DIR}/../pkg_inc
+        ${HCCL_BASE_DIR}/../pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/aicpu
 
@@ -775,8 +763,6 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
@@ -787,20 +773,8 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
 
         # ascendc
         ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
-
-        if(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "x86_64")
-            message(STATUS "Host is x86_64")
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/
-            ${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/adv_api/detail/
-        elseif(CMAKE_HOST_SYSTEM_PROCESSOR MATCHES "aarch64")
-            message(STATUS "Host is ARM64")
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/
-            ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/adv_api/detail/
-        endif()
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
 
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include

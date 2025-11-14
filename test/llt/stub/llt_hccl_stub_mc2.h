@@ -28,8 +28,8 @@
 #include "utils/hccl_aicpu_utils.h"
 #include "aicpu_kfc/common/aicpu_kfc_utils.h"
 #include "coll_alg_param.h"
-#include "hccl/common/hccl_msg.h"
-#include "tiling/hccl/hccl_tiling_msg.h"
+#include "hccl_msg.h"
+#include "hccl_tiling_msg.h"
 #include "framework/aicpu_communicator.h"
 #undef private
 #undef protected
