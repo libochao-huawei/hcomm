@@ -93,7 +93,9 @@ if(DEVICE_MODE)
 endif()
 
 if(BUILD_OPEN_PROJECT)
+    include(cmake/third_party/openssl.cmake)
     include(cmake/third_party/json.cmake)
+    include(cmake/utils.cmake)
     include(cmake/config.cmake)
     include(cmake/package.cmake)
     pack_built_in()
@@ -111,6 +113,9 @@ if(BUILD_OPEN_PROJECT)
         inc/hccl/hccl_ctrl_plane.h
         inc/hccl/hccl_ops.h
         src/pub_inc/hccn_rping.h
+        inc/hccl/hccl_api_data.h
+        inc/hccl/hccl_mem_defs.h
+        inc/hccl/hccl_rank_graph.h
     )
 
     set(HCCL_JSON
@@ -155,6 +160,8 @@ if(BUILD_OPEN_PROJECT)
         pkg_inc/hccl/hccl_ex.h
         pkg_inc/hccl/hccl_one_sided_services.h
         pkg_inc/hccl/hcom.h
+        pkg_inc/hccl/dtype_common.h
+        pkg_inc/hccl/workflow.h
     )
     install(FILES
         ${HCCL_PKG_HEAD}

@@ -115,7 +115,6 @@ if(BUILD_OPEN_PROJECT)
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime/rts/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/

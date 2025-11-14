@@ -15,6 +15,7 @@
 #include "hccl_api.h"
 #include "hccl_common.h"
 #include "hccl_impl_pub.h"
+#include "hccl_rank_graph.h"
 
 namespace hccl {
 
@@ -43,6 +44,7 @@ public:
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
 
 private:
     HcclResult DevTypeToCommProtocol(DevType type, CommProtocol &protocol);
@@ -52,6 +54,9 @@ private:
     HcclResult InitSuperPodRankInfo();
     HcclResult InitNetLayer();
     HcclResult GetModuleIdx(const RankInfo_t &rankInfo, u32 &moduleIdx);
+
+    HcclResult InitGraphRankInfo();
+
     RankTable_t rankTable_;
     // 根据 rankId 获取 RankInfo_t 与 EndPoint信息
     std::unordered_map<uint32_t, RankGraphInfo> rankIndex_;
@@ -61,6 +66,7 @@ private:
     std::unordered_map<uint32_t, std::vector<u32>> rankList_;      //level->rankList
     std::unordered_map<uint32_t, std::vector<u32>> rankSizeList_;  //level->rankSizeList
     std::vector<RankInfo_t> rankGraph_;
+    std::vector<struct GraphRankInfo> graphRankInfo_;
     HcclTopoAttr topoAttr_;
     RankInfo_t rankData_;         // 当前rank的相关信息
 

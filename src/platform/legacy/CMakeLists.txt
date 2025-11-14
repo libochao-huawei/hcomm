@@ -8,8 +8,8 @@ if(BUILD_OPEN_PROJECT)
     set(HCCL_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../)
 else()
     message(STATUS "close TOP_DIR = ${TOP_DIR}")
-    set(HCCL_BASE_DIR ${TOP_DIR}/hccl/src/)
-    set(HCCL_OPEN_CODE_BASE_DIR ${TOP_DIR}/hccl/src/)
+    set(HCCL_BASE_DIR ${TOP_DIR}/hcomm/src/)
+    set(HCCL_OPEN_CODE_BASE_DIR ${TOP_DIR}/hcomm/src/)
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
 endif()
 
@@ -66,12 +66,21 @@ if(BUILD_OPEN_PROJECT)
     )
 else()
     set(tbe_include_list
+        ${HCCL_BASE_DIR}/../inc
+        ${HCCL_BASE_DIR}/../inc/hccl/
+        ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc
+
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/runtime/include/external
-        ${TOP_DIR}/ace/npuruntime/runtime/platform/inc
-        ${TOP_DIR}/air/inc/graph_metadef/
-        ${TOP_DIR}/air/inc/graph_metadef/external
-        ${TOP_DIR}/air/inc/graph_metadef/external/register/
+        ${TOP_DIR}/runtime/pkg_inc/
+        ${TOP_DIR}/runtime/pkg_inc/runtime/
+        ${TOP_DIR}/runtime/pkg_inc/profiling/
+        ${TOP_DIR}/runtime/pkg_inc/trace/
+        ${TOP_DIR}/runtime/pkg_inc/base/
+        ${TOP_DIR}/runtime/pkg_inc/aicpu/
+        ${TOP_DIR}/runtime/include/external/
+        ${TOP_DIR}/runtime/include/driver/
+        ${TOP_DIR}/runtime/src/runtime/platform/inc/
         ${TOP_DIR}/metadef/inc/external/
         ${TOP_DIR}/metadef/inc/
         ${TOP_DIR}/metadef/pkg_inc
@@ -128,20 +137,19 @@ else()
     target_link_libraries(hccl_legacy
     PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
-        $<BUILD_INTERFACE:hccl_headers>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
         mmpa
         runtime
-        ascendcl
+        acl_rt
+        metadef
+        opp_registry
         -Wl,--as-needed
         -lrt
         -ldl
         -lpthread
         ofed_headers
-    PUBLIC
-        hccl_headers
     )
 endif()
 

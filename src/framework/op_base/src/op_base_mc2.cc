@@ -19,7 +19,7 @@
 #include "hccl/base.h"
 #include "kernel_tiling/kernel_tiling.h"
 #include "param_check_pub.h"
-#include "adv_api/tiling/hccl/hccl_tiling_msg.h"
+#include "hccl_tiling_msg.h"
 #ifndef OPEN_BUILD_PROJECT
 #include "op_base_v2.h"
 #endif

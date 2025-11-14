@@ -39,7 +39,6 @@ set_source_files_properties(
     MemSet_dynamic_AtomicAddrClean_1_ascend310p3.cce PROPERTIES LANGUAGE CXX
 )
 
-
 if(BUILD_OPEN_PROJECT)
     set(CCE_DIR ${ASCEND_CANN_PACKAGE_PATH}/tools/ccec_compiler/bin)
     # dynamic_mul_int8_v51

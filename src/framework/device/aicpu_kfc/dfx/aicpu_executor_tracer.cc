@@ -10,7 +10,7 @@
 
 #include "aicpu_executor_tracer.h"
 
-#include "impl/adv_api/detail/hccl/common/hccl_msg.h"
+#include "hccl_msg.h"
 #include "common/aicpu_hccl_common.h"
 #include "mc2_trace_utils.h"
 #include "utils/aicpu_hdc_utils.h"

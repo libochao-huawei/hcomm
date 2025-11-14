@@ -15,7 +15,7 @@
 #include <chrono>
 #include "common/aicpu_hccl_def.h"
 #include "hccl_common.h"
-#include "impl/adv_api/detail/hccl/common/hccl_msg.h"
+#include "hccl_msg.h"
 #include "aicpu_operator_pub.h"
 
 constexpr int32_t AICPU_CNT = 8;

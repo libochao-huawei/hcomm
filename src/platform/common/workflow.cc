@@ -11,7 +11,7 @@
 #include <mutex>
 #include <array>
 #include "adapter_rts.h"
-#include "workflow.h"
+#include "workflow_pub.h"
 
 static std::mutex g_workFlowModeMutex;
 

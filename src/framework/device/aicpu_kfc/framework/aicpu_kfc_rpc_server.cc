@@ -11,7 +11,7 @@
 #include "aicpu_kfc_rpc_server.h"
 
 #include "log_control.h"
-#include "adv_api/tiling/hccl/hccl_tiling_msg.h"
+#include "hccl_tiling_msg.h"
 #include "algorithm/task_orchestrator.h"
 #include "common/aicpu_hccl_common.h"
 #include "common/aicpu_kfc_utils.h"

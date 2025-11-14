@@ -28,7 +28,7 @@ HcclResult CommGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_
     CHK_PTR_NULL(len);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& rankGraph = hcclComm->GetIndependentOp().GetRankGraph();
-    HcclResult ret = rankGraph.GetRankGraph(type, graph, len);
+    HcclResult ret = rankGraph.GetRankGraphInfo(type, graph, len);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to CommGetRankGraph ret[%d]", __func__, ret);
         return ret;

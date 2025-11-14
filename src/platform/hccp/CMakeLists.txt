@@ -8,14 +8,12 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 if(BUILD_OPEN_PROJECT)
-    add_subdirectory(stub_kms)
     if (DEVICE_MODE)
         add_subdirectory(stub_tsd)
     endif()
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
-add_subdirectory(tls_adp)
 
 if (NOT DEVICE_MODE)
     return()
@@ -98,8 +96,6 @@ if(DEVICE_MODE)
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:KMS> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
         COMMENT "Copying librs.so to ${HCCP_TAR_DIR}"
     )

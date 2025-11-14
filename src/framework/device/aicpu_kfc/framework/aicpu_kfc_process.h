@@ -12,7 +12,7 @@
 #define AICPU_KFC_PROCESS_H
 
 #include "common/aicpu_hccl_def.h"
-#include "adv_api/tiling/hccl/hccl_tiling_msg.h"
+#include "hccl_tiling_msg.h"
 #include "aicpu_kfc_rpc_server.h"
 
 class AicpuKfcProcess {
