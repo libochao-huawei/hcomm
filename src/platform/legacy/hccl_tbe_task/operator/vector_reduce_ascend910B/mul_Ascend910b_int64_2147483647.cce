@@ -1,0 +1,14 @@
+#ifdef __CCE_KT_TEST__
+#define __aicore__ 
+#else
+#define __aicore__ [aicore]
+#endif
+
+extern "C" __global__ __aicore__ void mul_Ascend910b_int64_2147483647(__gm__ int64_t* __restrict__ data_x1, __gm__ int64_t* __restrict__ data_x2, __gm__ int64_t* __restrict__ mul_0, __gm__ uint8_t* __restrict__ tiling_data) {
+set_mask_count();
+set_atomic_none();
+// "aicore arch: Ascend910B1"
+  pipe_barrier(PIPE_ALL);
+
+}
+
