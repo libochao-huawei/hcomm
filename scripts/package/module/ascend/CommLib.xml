@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<block name="CommLib" copy_type="delivery" src_path="" dst_path="" install_path="" install_own="$username:$usergroup" install_mod="550" install_type="run;devel">
+    <dir_info install_mod="550">
+        <path value="$(TARGET_ENV)/lib64"/>
+        <path value="$(TARGET_ENV)/include" install_type="devel"/>
+        <path value="$(TARGET_ENV)/include/hccl" install_type="devel"/>
+        <path value="$(TARGET_ENV)/include/version" install_type="devel"/>
+        <path value="$(TARGET_ENV)/pkg_inc" install_type="devel"/>
+        <path value="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel"/>
+        <path value="hcomm/Ascend/aicpu" install_type="devel"/>
+        <path value="hcomm/built-in/data/op/aicpu" install_type="devel"/>
+    </dir_info>
+    <file_info value="include" copy_type="source" src_path="hcomm/inc/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
+        <file value="hccl.h" pkg_inner_softlink="compiler:include/hccl/hccl.h;comop:include/hccl/hccl.h;hcomm:include/hccl/hccl.h"/>
+        <file value="hccl_types.h" pkg_inner_softlink="compiler:include/hccl/hccl_types.h;comop:include/hccl/hccl_types.h;hcomm:include/hccl/hccl_types.h"/>
+        <file value="hccl_ops.h" pkg_inner_softlink="compiler:include/hccl/hccl_ops.h;comop:include/hccl/hccl_ops.h;hcomm:include/hccl/hccl_ops.h"/>
+        <file value="hccl_ctrl_plane.h" pkg_inner_softlink="compiler:include/hccl/hccl_ctrl_plane.h;comop:include/hccl/hccl_ctrl_plane.h;hcomm:include/hccl/hccl_ctrl_plane.h"/>
+        <file value="hccl_mem_defs.h" pkg_inner_softlink="compiler:include/hccl/hccl_mem_defs.h;comop:include/hccl/hccl_mem_defs.h;hcomm:include/hccl/hccl_mem_defs.h"/>
+        <file value="hccl_rank_graph.h" pkg_inner_softlink="compiler:include/hccl/hccl_rank_graph.h;comop:include/hccl/hccl_rank_graph.h;hcomm:include/hccl/hccl_rank_graph.h"/>
+        <file value="hccl_api.h" pkg_inner_softlink="compiler:include/hccl/hccl_api.h;comop:include/hccl/hccl_api.h;hcomm:include/hccl/hccl_api.h"/>
+        <file value="hccl_api_data.h" pkg_inner_softlink="compiler:include/hccl/hccl_api_data.h;comop:include/hccl/hccl_api_data.h;hcomm:include/hccl/hccl_api_data.h"/>
+    </file_info>
+    <file_info value="include" copy_type="source" src_path="hcomm/src/pub_inc" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
+        <file value="hccn_rping.h" pkg_inner_softlink="compiler:include/hccl/hccn_rping.h;comop:include/hccl/hccn_rping.h;hcomm:include/hccl/hccn_rping.h"/>
+    </file_info>
+    <file_info value="include" copy_type="source" src_path="hcomm/pkg/hccl" dst_path="pkg_inc/hccl" install_path="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel" install_mod="440">
+        <file value="base.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hccl.h"/>
+        <file value="hccl_ex.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hccl_ex.h"/>
+        <file value="hccl_one_sided_services.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hccl_one_sided_services.h"/>
+        <file value="hcom.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/hcom.h"/>
+        <file value="dtype_common.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/dtype_common.h"/>
+        <file value="workflow.h" pkg_inner_softlink="hcomm:pkg_inc/hccl/workflow.h"/>
+    </file_info>
+    <file_info value="device" copy_type="delivery" src_path="build" dst_path="Ascend/aicpu" install_path="hcomm/Ascend/aicpu" install_type="all" install_mod="440">
+        <file value="hcomm_device.tar.gz"/>
+        <file value="aicpu_hccl.tar.gz"/>
+        <file value="hcomm_hccd.tar.gz"/>
+    </file_info>
+    <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="hcomm/built-in/data/op/aicpu" install_type="all" install_mod="440">
+        <file value="ccl_kernel.json"/>
+    </file_info>
+    <file_info value="aicpu_custom" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="hcomm/built-in/data/op/aicpu" install_type="all" install_mod="440">
+        <file value="libaicpu_custom.so"/>
+    </file_info>
+    <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
+        <!-- hccl -->
+        <!-- <file value="libhcom_gradtune_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so;comop:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so"/>
+        <file value="libhvd_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhvd_opskernel_builder.so;comop:lib64/plugin/opskernel/libhvd_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhvd_opskernel_builder.so"/>
+        <file value="libhcom_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhcom_opskernel_builder.so;comop:lib64/plugin/opskernel/libhcom_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhcom_opskernel_builder.so"/> -->
+        <file value="libhccl_fwk.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_fwk.so;comop:lib64/libhccl_fwk.so;hcomm:lib64/libhccl_fwk.so"/>
+        <file value="libhccl_alg.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_alg.so;comop:lib64/libhccl_alg.so;hcomm:lib64/libhccl_alg.so"/>
+        <file value="libhccl_plf.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_plf.so;comop:lib64/libhccl_plf.so;hcomm:lib64/libhccl_plf.so"/>
+        <file value="libhccl_legacy.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_legacy.so;comop:lib64/libhccl_legacy.so;hcomm:lib64/libhccl_legacy.so"/>
+        <!-- <file value="libhccl_v2.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2.so;comop:lib64/libhccl_v2.so;hcomm:lib64/libhccl_v2.so" release_type="debug"/>
+        <file value="libhccl_v2_alg_frame.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_alg_frame.so;comop:lib64/libhccl_v2_alg_frame.so;hcomm:lib64/libhccl_v2_alg_frame.so" release_type="debug"/>
+        <file value="libhccl_v2_native_alg_repo.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_native_alg_repo.so;comop:lib64/libhccl_v2_native_alg_repo.so;hcomm:lib64/libhccl_v2_native_alg_repo.so" release_type="debug"/> -->
+        <file value="dynamic_mul_int8_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int8_v80.o;comop:lib64/dynamic_mul_int8_v80.o;hcomm:lib64/dynamic_mul_int8_v80.o"/>
+        <file value="dynamic_minimum_int8_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_int8_v80.o;comop:lib64/dynamic_minimum_int8_v80.o;hcomm:lib64/dynamic_minimum_int8_v80.o"/>
+        <file value="dynamic_maximum_int8_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_int8_v80.o;comop:lib64/dynamic_maximum_int8_v80.o;hcomm:lib64/dynamic_maximum_int8_v80.o"/>
+        <file value="dynamic_add_int8_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_add_int8_v80.o;comop:lib64/dynamic_add_int8_v80.o;hcomm:lib64/dynamic_add_int8_v80.o"/>
+        <file value="dynamic_mul_int64_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int64_v80.o;comop:lib64/dynamic_mul_int64_v80.o;hcomm:lib64/dynamic_mul_int64_v80.o"/>
+        <file value="dynamic_minimum_int64_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_int64_v80.o;comop:lib64/dynamic_minimum_int64_v80.o;hcomm:lib64/dynamic_minimum_int64_v80.o"/>
+        <file value="dynamic_maximum_int64_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_int64_v80.o;comop:lib64/dynamic_maximum_int64_v80.o;hcomm:lib64/dynamic_maximum_int64_v80.o"/>
+        <file value="dynamic_add_int64_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_add_int64_v80.o;comop:lib64/dynamic_add_int64_v80.o;hcomm:lib64/dynamic_add_int64_v80.o"/>
+        <file value="dynamic_mul_float32_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float32_v80.o;comop:lib64/dynamic_mul_float32_v80.o;hcomm:lib64/dynamic_mul_float32_v80.o"/>
+        <file value="dynamic_minimum_float32_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_float32_v80.o;comop:lib64/dynamic_minimum_float32_v80.o;hcomm:lib64/dynamic_minimum_float32_v80.o"/>
+        <file value="dynamic_maximum_float32_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_float32_v80.o;comop:lib64/dynamic_maximum_float32_v80.o;hcomm:lib64/dynamic_maximum_float32_v80.o"/>
+        <file value="dynamic_mul_float16_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float16_v80.o;comop:lib64/dynamic_mul_float16_v80.o;hcomm:lib64/dynamic_mul_float16_v80.o"/>
+        <file value="dynamic_add_float16_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_add_float16_v80.o;comop:lib64/dynamic_add_float16_v80.o;hcomm:lib64/dynamic_add_float16_v80.o"/>
+        <file value="dynamic_minimum_float16_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_float16_v80.o;comop:lib64/dynamic_minimum_float16_v80.o;hcomm:lib64/dynamic_minimum_float16_v80.o"/>
+        <file value="dynamic_maximum_float16_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_float16_v80.o;comop:lib64/dynamic_maximum_float16_v80.o;hcomm:lib64/dynamic_maximum_float16_v80.o"/>
+        <file value="dynamic_mul_int32_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int32_v80.o;comop:lib64/dynamic_mul_int32_v80.o;hcomm:lib64/dynamic_mul_int32_v80.o"/>
+        <file value="dynamic_minimum_int32_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_int32_v80.o;comop:lib64/dynamic_minimum_int32_v80.o;hcomm:lib64/dynamic_minimum_int32_v80.o"/>
+        <file value="dynamic_maximum_int32_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_int32_v80.o;comop:lib64/dynamic_maximum_int32_v80.o;hcomm:lib64/dynamic_maximum_int32_v80.o"/>
+        <file value="dynamic_add_int32_v80.o" pkg_inner_softlink="compiler:lib64/dynamic_add_int32_v80.o;comop:lib64/dynamic_add_int32_v80.o;hcomm:lib64/dynamic_add_int32_v80.o"/>
+        <file value="MemSet_dynamic_AtomicAddrClean_1_ascend910.o" pkg_inner_softlink="compiler:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend910.o;comop:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend910.o;hcomm:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend910.o"/>
+        <file value="dynamic_mul_int32_v81_910B4.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int32_v81_910B4.o;comop:lib64/dynamic_mul_int32_v81_910B4.o;hcomm:lib64/dynamic_mul_int32_v81_910B4.o"/>
+        <file value="dynamic_mul_int8_v81_910B4.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int8_v81_910B4.o;comop:lib64/dynamic_mul_int8_v81_910B4.o;hcomm:lib64/dynamic_mul_int8_v81_910B4.o"/>
+        <file value="dynamic_mul_float16_v81_910B4.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float16_v81_910B4.o;comop:lib64/dynamic_mul_float16_v81_910B4.o;hcomm:lib64/dynamic_mul_float16_v81_910B4.o"/>
+        <file value="dynamic_mul_float32_v81_910B4.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float32_v81_910B4.o;comop:lib64/dynamic_mul_float32_v81_910B4.o;hcomm:lib64/dynamic_mul_float32_v81_910B4.o"/>
+        <file value="dynamic_mul_int32_v81_910B3.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int32_v81_910B3.o;comop:lib64/dynamic_mul_int32_v81_910B3.o;hcomm:lib64/dynamic_mul_int32_v81_910B3.o"/>
+        <file value="dynamic_mul_int8_v81_910B3.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int8_v81_910B3.o;comop:lib64/dynamic_mul_int8_v81_910B3.o;hcomm:lib64/dynamic_mul_int8_v81_910B3.o"/>
+        <file value="dynamic_mul_float16_v81_910B3.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float16_v81_910B3.o;comop:lib64/dynamic_mul_float16_v81_910B3.o;hcomm:lib64/dynamic_mul_float16_v81_910B3.o"/>
+        <file value="dynamic_mul_float32_v81_910B3.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float32_v81_910B3.o;comop:lib64/dynamic_mul_float32_v81_910B3.o;hcomm:lib64/dynamic_mul_float32_v81_910B3.o"/>
+        <file value="dynamic_mul_int32_v81_910B2.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int32_v81_910B2.o;comop:lib64/dynamic_mul_int32_v81_910B2.o;hcomm:lib64/dynamic_mul_int32_v81_910B2.o"/>
+        <file value="dynamic_mul_int8_v81_910B2.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int8_v81_910B2.o;comop:lib64/dynamic_mul_int8_v81_910B2.o;hcomm:lib64/dynamic_mul_int8_v81_910B2.o"/>
+        <file value="dynamic_mul_float16_v81_910B2.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float16_v81_910B2.o;comop:lib64/dynamic_mul_float16_v81_910B2.o;hcomm:lib64/dynamic_mul_float16_v81_910B2.o"/>
+        <file value="dynamic_mul_float32_v81_910B2.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float32_v81_910B2.o;comop:lib64/dynamic_mul_float32_v81_910B2.o;hcomm:lib64/dynamic_mul_float32_v81_910B2.o"/>
+        <file value="dynamic_mul_int32_v81_910B1.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int32_v81_910B1.o;comop:lib64/dynamic_mul_int32_v81_910B1.o;hcomm:lib64/dynamic_mul_int32_v81_910B1.o"/>
+        <file value="dynamic_mul_int8_v81_910B1.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int8_v81_910B1.o;comop:lib64/dynamic_mul_int8_v81_910B1.o;hcomm:lib64/dynamic_mul_int8_v81_910B1.o"/>
+        <file value="dynamic_mul_float16_v81_910B1.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float16_v81_910B1.o;comop:lib64/dynamic_mul_float16_v81_910B1.o;hcomm:lib64/dynamic_mul_float16_v81_910B1.o"/>
+        <file value="dynamic_mul_float32_v81_910B1.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float32_v81_910B1.o;comop:lib64/dynamic_mul_float32_v81_910B1.o;hcomm:lib64/dynamic_mul_float32_v81_910B1.o"/>
+        <file value="dynamic_mul_int64_v81.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int64_v81.o;comop:lib64/dynamic_mul_int64_v81.o;hcomm:lib64/dynamic_mul_int64_v81.o"/>
+        <file value="dynamic_minimum_int64_v81.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_int64_v81.o;comop:lib64/dynamic_minimum_int64_v81.o;hcomm:lib64/dynamic_minimum_int64_v81.o"/>
+        <file value="dynamic_maximum_int64_v81.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_int64_v81.o;comop:lib64/dynamic_maximum_int64_v81.o;hcomm:lib64/dynamic_maximum_int64_v81.o"/>
+        <file value="dynamic_add_int64_v81.o" pkg_inner_softlink="compiler:lib64/dynamic_add_int64_v81.o;comop:lib64/dynamic_add_int64_v81.o;hcomm:lib64/dynamic_add_int64_v81.o"/>
+        <file value="MemSet_dynamic_AtomicAddrClean_1_ascend910b.o" pkg_inner_softlink="compiler:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend910b.o;comop:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend910b.o;hcomm:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend910b.o"/>
+        <file value="dynamic_mul_int8_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int8_v51.o;comop:lib64/dynamic_mul_int8_v51.o;hcomm:lib64/dynamic_mul_int8_v51.o"/>
+        <file value="dynamic_add_int8_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_add_int8_v51.o;comop:lib64/dynamic_add_int8_v51.o;hcomm:lib64/dynamic_add_int8_v51.o"/>
+        <file value="dynamic_minimum_int8_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_int8_v51.o;comop:lib64/dynamic_minimum_int8_v51.o;hcomm:lib64/dynamic_minimum_int8_v51.o"/>
+        <file value="dynamic_maximum_int8_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_int8_v51.o;comop:lib64/dynamic_maximum_int8_v51.o;hcomm:lib64/dynamic_maximum_int8_v51.o"/>
+        <file value="dynamic_mul_int32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_int32_v51.o;comop:lib64/dynamic_mul_int32_v51.o;hcomm:lib64/dynamic_mul_int32_v51.o"/>
+        <file value="dynamic_minimum_int32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_int32_v51.o;comop:lib64/dynamic_minimum_int32_v51.o;hcomm:lib64/dynamic_minimum_int32_v51.o"/>
+        <file value="dynamic_maximum_int32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_int32_v51.o;comop:lib64/dynamic_maximum_int32_v51.o;hcomm:lib64/dynamic_maximum_int32_v51.o"/>
+        <file value="dynamic_add_int32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_add_int32_v51.o;comop:lib64/dynamic_add_int32_v51.o;hcomm:lib64/dynamic_add_int32_v51.o"/>
+        <file value="dynamic_mul_float32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float32_v51.o;comop:lib64/dynamic_mul_float32_v51.o;hcomm:lib64/dynamic_mul_float32_v51.o"/>
+        <file value="dynamic_minimum_float32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_float32_v51.o;comop:lib64/dynamic_minimum_float32_v51.o;hcomm:lib64/dynamic_minimum_float32_v51.o"/>
+        <file value="dynamic_maximum_float32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_float32_v51.o;comop:lib64/dynamic_maximum_float32_v51.o;hcomm:lib64/dynamic_maximum_float32_v51.o"/>
+        <file value="dynamic_add_float32_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_add_float32_v51.o;comop:lib64/dynamic_add_float32_v51.o;hcomm:lib64/dynamic_add_float32_v51.o"/>
+        <file value="dynamic_mul_float16_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_mul_float16_v51.o;comop:lib64/dynamic_mul_float16_v51.o;hcomm:lib64/dynamic_mul_float16_v51.o"/>
+        <file value="dynamic_minimum_float16_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_minimum_float16_v51.o;comop:lib64/dynamic_minimum_float16_v51.o;hcomm:lib64/dynamic_minimum_float16_v51.o"/>
+        <file value="dynamic_maximum_float16_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_maximum_float16_v51.o;comop:lib64/dynamic_maximum_float16_v51.o;hcomm:lib64/dynamic_maximum_float16_v51.o"/>
+        <file value="dynamic_add_float16_v51.o" pkg_inner_softlink="compiler:lib64/dynamic_add_float16_v51.o;comop:lib64/dynamic_add_float16_v51.o;hcomm:lib64/dynamic_add_float16_v51.o"/>
+        <file value="MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o" pkg_inner_softlink="compiler:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o;comop:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o;hcomm:lib64/MemSet_dynamic_AtomicAddrClean_1_ascend310p3.o"/>
+        <file value="hccl_aiv_op_ascend910B.o" pkg_inner_softlink="compiler:lib64/hccl_aiv_op_ascend910B.o;comop:lib64/hccl_aiv_op_ascend910B.o;hcomm:lib64/hccl_aiv_op_ascend910B.o"/>
+        <file value="hccl_ag_superkernel_int8.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_int8.o;comop:lib64/hccl_ag_superkernel_int8.o;hcomm:lib64/hccl_ag_superkernel_int8.o"/>
+        <file value="hccl_ag_superkernel_int16.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_int16.o;comop:lib64/hccl_ag_superkernel_int16.o;hcomm:lib64/hccl_ag_superkernel_int16.o"/>
+        <file value="hccl_ag_superkernel_int32.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_int32.o;comop:lib64/hccl_ag_superkernel_int32.o;hcomm:lib64/hccl_ag_superkernel_int32.o"/>
+        <file value="hccl_ag_superkernel_float16.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_float16.o;comop:lib64/hccl_ag_superkernel_float16.o;hcomm:lib64/hccl_ag_superkernel_float16.o"/>
+        <file value="hccl_ag_superkernel_float32.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_floa32.o;comop:lib64/hccl_ag_superkernel_floa32.o;hcomm:lib64/hccl_ag_superkernel_floa32.o"/>
+        <file value="hccl_ag_superkernel_bfloat16.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_bfloat16.o;comop:lib64/hccl_ag_superkernel_bfloat16.o;hcomm:lib64/hccl_ag_superkernel_bfloat16.o"/>
+        <file value="hccl_ag_superkernel_uint8.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_uint8.o;comop:lib64/hccl_ag_superkernel_int8.o;hcomm:lib64/hccl_ag_superkernel_uint8.o"/>
+        <file value="hccl_ag_superkernel_uint16.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_uint16.o;comop:lib64/hccl_ag_superkernel_int16.o;hcomm:lib64/hccl_ag_superkernel_uint16.o"/>
+        <file value="hccl_ag_superkernel_uint32.o" pkg_inner_softlink="compiler:lib64/hccl_ag_superkernel_uint32.o;comop:lib64/hccl_ag_superkernel_int32.o;hcomm:lib64/hccl_ag_superkernel_uint32.o"/>
+        <file value="hccl_rs_superkernel_int8.o" pkg_inner_softlink="compiler:lib64/hccl_rs_superkernel_int8.o;comop:lib64/hccl_rs_superkernel_int8.o;hcomm:lib64/hccl_rs_superkernel_int8.o"/>
+        <file value="hccl_rs_superkernel_int16.o" pkg_inner_softlink="compiler:lib64/hccl_rs_superkernel_int16.o;comop:lib64/hccl_rs_superkernel_int16.o;hcomm:lib64/hccl_rs_superkernel_int16.o"/>
+        <file value="hccl_rs_superkernel_int32.o" pkg_inner_softlink="compiler:lib64/hccl_rs_superkernel_int32.o;comop:lib64/hccl_rs_superkernel_int32.o;hcomm:lib64/hccl_rs_superkernel_int32.o"/>
+        <file value="hccl_rs_superkernel_float16.o" pkg_inner_softlink="compiler:lib64/hccl_rs_superkernel_float16.o;comop:lib64/hccl_rs_superkernel_float16.o;hcomm:lib64/hccl_rs_superkernel_float16.o"/>
+        <file value="hccl_rs_superkernel_float32.o" pkg_inner_softlink="compiler:lib64/hccl_rs_superkernel_floa32.o;comop:lib64/hccl_rs_superkernel_floa32.o;hcomm:lib64/hccl_rs_superkernel_floa32.o"/>
+        <file value="hccl_rs_superkernel_bfloat16.o" pkg_inner_softlink="compiler:lib64/hccl_rs_superkernel_bfloat16.o;comop:lib64/hccl_rs_superkernel_bfloat16.o;hcomm:lib64/hccl_rs_superkernel_bfloat16.o"/>
+        <file value="hccl_a2a_superkernel_int8.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_int8.o;comop:lib64/hccl_a2a_superkernel_int8.o;hcomm:lib64/hccl_a2a_superkernel_int8.o"/>
+        <file value="hccl_a2a_superkernel_int16.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_int16.o;comop:lib64/hccl_a2a_superkernel_int16.o;hcomm:lib64/hccl_a2a_superkernel_int16.o"/>
+        <file value="hccl_a2a_superkernel_int32.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_int32.o;comop:lib64/hccl_a2a_superkernel_int32.o;hcomm:lib64/hccl_a2a_superkernel_int32.o"/>
+        <file value="hccl_a2a_superkernel_float16.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_float16.o;comop:lib64/hccl_a2a_superkernel_float16.o;hcomm:lib64/hccl_a2a_superkernel_float16.o"/>
+        <file value="hccl_a2a_superkernel_float32.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_floa32.o;comop:lib64/hccl_a2a_superkernel_floa32.o;hcomm:lib64/hccl_a2a_superkernel_floa32.o"/>
+        <file value="hccl_a2a_superkernel_bfloat16.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_bfloat16.o;comop:lib64/hccl_a2a_superkernel_bfloat16.o;hcomm:lib64/hccl_a2a_superkernel_bfloat16.o"/>
+        <file value="hccl_a2a_superkernel_uint8.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_uint8.o;comop:lib64/hccl_a2a_superkernel_int8.o;hcomm:lib64/hccl_a2a_superkernel_uint8.o"/>
+        <file value="hccl_a2a_superkernel_uint16.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_uint16.o;comop:lib64/hccl_a2a_superkernel_int16.o;hcomm:lib64/hccl_a2a_superkernel_uint16.o"/>
+        <file value="hccl_a2a_superkernel_uint32.o" pkg_inner_softlink="compiler:lib64/hccl_a2a_superkernel_uint32.o;comop:lib64/hccl_a2a_superkernel_int32.o;hcomm:lib64/hccl_a2a_superkernel_uint32.o"/>
+        <file value="hccl_ar_superkernel_int8.o" pkg_inner_softlink="compiler:lib64/hccl_ar_superkernel_int8.o;comop:lib64/hccl_ar_superkernel_int8.o;hcomm:lib64/hccl_ar_superkernel_int8.o"/>
+        <file value="hccl_ar_superkernel_int16.o" pkg_inner_softlink="compiler:lib64/hccl_ar_superkernel_int16.o;comop:lib64/hccl_ar_superkernel_int16.o;hcomm:lib64/hccl_ar_superkernel_int16.o"/>
+        <file value="hccl_ar_superkernel_int32.o" pkg_inner_softlink="compiler:lib64/hccl_ar_superkernel_int32.o;comop:lib64/hccl_ar_superkernel_int32.o;hcomm:lib64/hccl_ar_superkernel_int32.o"/>
+        <file value="hccl_ar_superkernel_float16.o" pkg_inner_softlink="compiler:lib64/hccl_ar_superkernel_float16.o;comop:lib64/hccl_ar_superkernel_float16.o;hcomm:lib64/hccl_ar_superkernel_float16.o"/>
+        <file value="hccl_ar_superkernel_float32.o" pkg_inner_softlink="compiler:lib64/hccl_ar_superkernel_floa32.o;comop:lib64/hccl_ar_superkernel_floa32.o;hcomm:lib64/hccl_ar_superkernel_floa32.o"/>
+        <file value="hccl_ar_superkernel_bfloat16.o" pkg_inner_softlink="compiler:lib64/hccl_ar_superkernel_bfloat16.o;comop:lib64/hccl_ar_superkernel_bfloat16.o;hcomm:lib64/hccl_ar_superkernel_bfloat16.o"/>
+        <!-- <file value="libhcom_executor.so" pkg_inner_softlink="comop:lib64/libhcom_executor.so;hcomm:lib64/libhcom_executor.so"/>
+        <file value="libhcom_graph_adaptor.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhcom_graph_adaptor.so;comop:lib64/libhcom_graph_adaptor.so;hcomm:lib64/libhcom_graph_adaptor.so"/> -->
+        <!-- network -->
+        <file value="libra.so" file_type="shared" install_type="run;devel;docker" pkg_inner_softlink="compiler:lib64/libra.so;comdeamon:lib64/libra.so;comop:lib64/libra.so;hcomm:lib64/libra.so"/>
+        <file value="libra_hdc.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libra_hdc.so;comdeamon:lib64/libra_hdc.so;comop:lib64/libra_hdc.so;hcomm:lib64/libra_hdc.so"/>
+        <file value="librs.so" file_type="shared" pkg_inner_softlink="compiler:lib64/librs.so;comdeamon:lib64/librs.so;comop:lib64/librs.so;hcomm:lib64/librs.so"/>
+        <file value="libra_peer.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libra_peer.so;comdeamon:lib64/libra_peer.so;comop:lib64/libra_peer.so;hcomm:lib64/libra_peer.so"/>
+        <file value="libascend_kms.so" file_type="shared" pkg_inner_softlink="hcomm:lib64/libascend_kms.so"/>
+        <file value="libtls_adp.so" file_type="shared" pkg_inner_softlink="hcomm:lib64/libtls_adp.so"/>
+        <!-- python -->
+        <file value="hccl-0.1.0-py3-none-any.whl" file_type="whl" pkg_inner_softlink="compiler:lib64/hccl-0.1.0-py3-none-any.whl;hcomm:lib64/hccl-0.1.0-py3-none-any.whl"/>
+    </file_info>
+</block>

@@ -1,0 +1,154 @@
+#ifdef __CCE_KT_TEST__
+#define __aicore__ 
+#else
+#define __aicore__ [aicore]
+#endif
+
+extern "C" __global__ __aicore__ void mul_Ascend910_float16_223000000(__gm__ half* __restrict__ data_x1, __gm__ half* __restrict__ data_x2, __gm__ half* __restrict__ mul_8, __gm__ uint8_t* __restrict__ ddr_arg) {
+set_vector_mask((uint64_t)-1, (uint64_t)-1);
+set_atomic_none();
+__ubuf__   uint8_t* ub_arg = (__ubuf__  uint8_t *)get_imm(0);
+  copy_gm_to_ubuf(((__ubuf__ uint8_t *)ub_arg), ((__gm__ uint8_t *)ddr_arg), 0, 1, 1, 0, 0);
+  pipe_barrier(PIPE_ALL);
+  int32_t _dim_0_0 = (*((__ubuf__ int32_t *)((__ubuf__ uint8_t *)ub_arg)));
+  int32_t _block_factor_0 = (*((__ubuf__ int32_t *)((__ubuf__ uint8_t *)ub_arg + 4)));
+  int32_t _ub_factor_0 = (*((__ubuf__ int32_t *)((__ubuf__ uint8_t *)ub_arg + 8)));
+  uint64_t host_var = (((uint64_t)(_ub_factor_0 % 128)) - (uint64_t)1ULL);
+  uint64_t host_var1 = ((((uint64_t)(_ub_factor_0 % 128)) - (uint64_t)64ULL) - (uint64_t)1ULL);
+  uint64_t host_var2 = (((uint64_t)_ub_factor_0) - (uint64_t)1ULL);
+  uint64_t host_var3 = ((((uint64_t)_ub_factor_0) - (uint64_t)64ULL) - (uint64_t)1ULL);
+  int64_t host_var4 = (((((int64_t)_dim_0_0) - (int64_t)1) / ((int64_t)_block_factor_0)) + (int64_t)1);
+  int64_t host_var5 = (((int64_t)_ub_factor_0) * (((((int64_t)_block_factor_0) - (int64_t)1) / ((int64_t)_ub_factor_0)) + (int64_t)1));
+  int64_t host_var6 = ((((int64_t)_ub_factor_0) + (int64_t)15) / (int64_t)16);
+  int64_t host_var7 = (((int64_t)_ub_factor_0) / (int64_t)128);
+  int64_t host_var8 = (((int64_t)_ub_factor_0) % (int64_t)128);
+  uint64_t host_var9 = ((uint64_t)(_ub_factor_0 % 128));
+  int64_t host_var10 = ((((int64_t)_ub_factor_0) / (int64_t)128) * (int64_t)128);
+  uint64_t host_var11 = ((uint64_t)_ub_factor_0);
+  int64_t host_var12 = (((int64_t)_ub_factor_0) * ((((int64_t)_block_factor_0) - (int64_t)1) / ((int64_t)_ub_factor_0)));
+  int64_t host_var13 = (((((int64_t)_block_factor_0) - (int64_t)1) / ((int64_t)_ub_factor_0)) + (int64_t)1);
+  uint64_t low_temp = (((uint64_t)1ULL << host_var) - (uint64_t)1ULL);
+  uint64_t main_high_temp = (((uint64_t)1ULL << host_var1) - (uint64_t)1ULL);
+  uint64_t low_temp1 = (((uint64_t)1ULL << host_var2) - (uint64_t)1ULL);
+  uint64_t main_high_temp1 = (((uint64_t)1ULL << host_var3) - (uint64_t)1ULL);
+// "aicore arch: Ascend910A"
+  if (((int32_t)block_idx) < (((_dim_0_0 - 1) / _block_factor_0) + 1)) {
+__ubuf__     half* data_x1_local_UB = (__ubuf__  half *)get_imm(0);
+__ubuf__     half* data_x2_local_UB = (__ubuf__  half *)get_imm(87296);
+     half reg_scalar2[1] = {0};
+     half reg_scalar21[1] = {0};
+    if (((int64_t)((int32_t)block_idx)) < host_var4) {
+      for (int64_t i0_inner_outer_s = 0; i0_inner_outer_s < host_var5; i0_inner_outer_s += ((int64_t)_ub_factor_0)) {
+        int64_t data_x1_local_UB_orig_bound_min_0 = (i0_inner_outer_s + ((int64_t)(((int32_t)block_idx) * _block_factor_0)));
+        int64_t ax0_ext = max(((((int64_t)_dim_0_0) - i0_inner_outer_s) - ((int64_t)(((int32_t)block_idx) * _block_factor_0))), (int64_t)0);
+        int64_t intrin_offset0 = max((data_x1_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_0)), (int64_t)0);
+        uint64_t low_temp2 = (((uint64_t)1ULL << (((uint64_t)(ax0_ext % (int64_t)128)) - (uint64_t)1ULL)) - (uint64_t)1ULL);
+        uint64_t main_high_temp2 = (((uint64_t)1ULL << ((((uint64_t)(ax0_ext % (int64_t)128)) - (uint64_t)64ULL) - (uint64_t)1ULL)) - (uint64_t)1ULL);
+        uint64_t low_temp3 = (((uint64_t)1ULL << (((uint64_t)ax0_ext) - (uint64_t)1ULL)) - (uint64_t)1ULL);
+        uint64_t main_high_temp3 = (((uint64_t)1ULL << ((((uint64_t)ax0_ext) - (uint64_t)64ULL) - (uint64_t)1ULL)) - (uint64_t)1ULL);
+        int64_t i0_inner_inner_ext = max(min(((int64_t)_ub_factor_0), min(((((int64_t)_dim_0_0) - i0_inner_outer_s) - ((int64_t)(((int32_t)block_idx) * _block_factor_0))), (((int64_t)_block_factor_0) - i0_inner_outer_s))), (int64_t)0);
+        if ((int64_t)0 < (i0_inner_outer_s / ((int64_t)_ub_factor_0))) {
+          wait_flag(PIPE_V, PIPE_MTE2, EVENT_ID0);
+          wait_flag(PIPE_MTE3, PIPE_MTE2, EVENT_ID0);
+        }
+          asm volatile ("NOP.MTE2");
+        if (((int64_t)_ub_factor_0) < ((((int64_t)_dim_0_0) - i0_inner_outer_s) - ((int64_t)(((int32_t)block_idx) * _block_factor_0)))) {
+          copy_gm_to_ubuf(((__ubuf__ half *)data_x1_local_UB + max((data_x1_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_0)), (int64_t)0)), ((__gm__ half *)data_x1 + data_x1_local_UB_orig_bound_min_0), 0, 1, host_var6, 0, 0);
+        } else if ((int64_t)0 < ax0_ext) {
+          copy_gm_to_ubuf(((__ubuf__ half *)data_x1_local_UB + max((data_x1_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_0)), (int64_t)0)), ((__gm__ half *)data_x1 + data_x1_local_UB_orig_bound_min_0), 0, 1, ((ax0_ext + (int64_t)15) / (int64_t)16), 0, 0);
+        }
+        set_flag(PIPE_MTE2, PIPE_MTE3, EVENT_ID0);
+        set_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
+        pipe_barrier(PIPE_MTE2);
+        copy_gm_to_ubuf(((__ubuf__ half *)data_x2_local_UB), ((__gm__ half *)data_x2), 0, 1, 1, 0, 0);
+        if ((int64_t)0 < (i0_inner_outer_s / ((int64_t)_ub_factor_0))) {
+          wait_flag(PIPE_MTE3, PIPE_V, EVENT_ID0);
+        }
+        wait_flag(PIPE_MTE2, PIPE_V, EVENT_ID0);
+          asm volatile ("NOP.V");
+        if (((int64_t)_ub_factor_0) < ((((int64_t)_dim_0_0) - i0_inner_outer_s) - ((int64_t)(((int32_t)block_idx) * _block_factor_0)))) {
+          set_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          set_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          reg_scalar2[0] = (half) (*( __ubuf__ half* ) (((__ubuf__ half *)data_x2_local_UB)));
+          set_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          wait_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          pipe_barrier(PIPE_V);
+          if (128 < _ub_factor_0) {
+            set_vector_mask(0xffffffffffffffff, 0xffffffffffffffff);
+            vmuls(((__ubuf__ half *)data_x1_local_UB + intrin_offset0), ((__ubuf__ half *)data_x1_local_UB + intrin_offset0), reg_scalar2[0], host_var7, 1, 1, (int64_t)8, (int64_t)8);
+            if (host_var8 != (int64_t)0) {
+              pipe_barrier(PIPE_V);
+              if ((uint64_t)64ULL < host_var9) {
+                set_vector_mask((main_high_temp + ((uint64_t)1ULL << host_var1)), 0xffffffffffffffff);
+              } else {
+                set_vector_mask(0x0, (low_temp + ((uint64_t)1ULL << host_var)));
+              }
+              vmuls(((__ubuf__ half *)data_x1_local_UB + (host_var10 + intrin_offset0)), ((__ubuf__ half *)data_x1_local_UB + (host_var10 + intrin_offset0)), reg_scalar2[0], (int64_t)1, 1, 1, (int64_t)0, (int64_t)0);
+            }
+          } else {
+            pipe_barrier(PIPE_V);
+            if ((uint64_t)64ULL < host_var11) {
+              set_vector_mask((main_high_temp1 + ((uint64_t)1ULL << host_var3)), 0xffffffffffffffff);
+            } else {
+              set_vector_mask(0x0, (low_temp1 + ((uint64_t)1ULL << host_var2)));
+            }
+            vmuls(((__ubuf__ half *)data_x1_local_UB + intrin_offset0), ((__ubuf__ half *)data_x1_local_UB + intrin_offset0), reg_scalar2[0], (int64_t)1, 1, 1, (int64_t)0, (int64_t)0);
+          }
+        } else if ((int64_t)0 < ax0_ext) {
+          set_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_MTE2, PIPE_S, EVENT_ID0);
+          set_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          wait_flag(PIPE_V, PIPE_S, EVENT_ID0);
+          reg_scalar21[0] = (half) (*( __ubuf__ half* ) (((__ubuf__ half *)data_x2_local_UB)));
+          set_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          wait_flag(PIPE_S, PIPE_V, EVENT_ID0);
+          pipe_barrier(PIPE_V);
+          if ((int64_t)128 < ax0_ext) {
+            set_vector_mask(0xffffffffffffffff, 0xffffffffffffffff);
+            vmuls(((__ubuf__ half *)data_x1_local_UB + intrin_offset0), ((__ubuf__ half *)data_x1_local_UB + intrin_offset0), reg_scalar21[0], (ax0_ext / (int64_t)128), 1, 1, (int64_t)8, (int64_t)8);
+            if ((ax0_ext % (int64_t)128) != (int64_t)0) {
+              pipe_barrier(PIPE_V);
+              if ((uint64_t)64ULL < ((uint64_t)(ax0_ext % (int64_t)128))) {
+                set_vector_mask((main_high_temp2 + ((uint64_t)1ULL << ((((uint64_t)(ax0_ext % (int64_t)128)) - (uint64_t)64ULL) - (uint64_t)1ULL))), 0xffffffffffffffff);
+              } else {
+                set_vector_mask(0x0, (low_temp2 + ((uint64_t)1ULL << (((uint64_t)(ax0_ext % (int64_t)128)) - (uint64_t)1ULL))));
+              }
+              vmuls(((__ubuf__ half *)data_x1_local_UB + (((ax0_ext / (int64_t)128) * (int64_t)128) + intrin_offset0)), ((__ubuf__ half *)data_x1_local_UB + (((ax0_ext / (int64_t)128) * (int64_t)128) + intrin_offset0)), reg_scalar21[0], (int64_t)1, 1, 1, (int64_t)0, (int64_t)0);
+            }
+          } else {
+            pipe_barrier(PIPE_V);
+            if ((uint64_t)64ULL < ((uint64_t)ax0_ext)) {
+              set_vector_mask((main_high_temp3 + ((uint64_t)1ULL << ((((uint64_t)ax0_ext) - (uint64_t)64ULL) - (uint64_t)1ULL))), 0xffffffffffffffff);
+            } else {
+              set_vector_mask(0x0, (low_temp3 + ((uint64_t)1ULL << (((uint64_t)ax0_ext) - (uint64_t)1ULL))));
+            }
+            vmuls(((__ubuf__ half *)data_x1_local_UB + intrin_offset0), ((__ubuf__ half *)data_x1_local_UB + intrin_offset0), reg_scalar21[0], (int64_t)1, 1, 1, (int64_t)0, (int64_t)0);
+          }
+        }
+        if ((i0_inner_outer_s < host_var12) && (host_var13 != (int64_t)1)) {
+          set_flag(PIPE_V, PIPE_MTE2, EVENT_ID0);
+        }
+        set_flag(PIPE_V, PIPE_MTE3, EVENT_ID0);
+        wait_flag(PIPE_MTE2, PIPE_MTE3, EVENT_ID0);
+        wait_flag(PIPE_V, PIPE_MTE3, EVENT_ID0);
+        if ((((int64_t)_ub_factor_0) < ((((int64_t)_dim_0_0) - i0_inner_outer_s) - ((int64_t)(((int32_t)block_idx) * _block_factor_0)))) && (((int64_t)_ub_factor_0) < (((int64_t)_block_factor_0) - i0_inner_outer_s))) {
+          if ((int64_t)0 < i0_inner_inner_ext) {
+            copy_ubuf_to_gm(((__gm__ half *)mul_8 + data_x1_local_UB_orig_bound_min_0), ((__ubuf__ half *)data_x1_local_UB + max((data_x1_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_0)), (int64_t)0)), 0, 1, ((i0_inner_inner_ext + (int64_t)15) / (int64_t)16), 0, 0);
+          }
+        } else if ((int64_t)0 < i0_inner_inner_ext) {
+          copy_ubuf_to_gm(((__gm__ half *)mul_8 + data_x1_local_UB_orig_bound_min_0), ((__ubuf__ half *)data_x1_local_UB + max((data_x1_local_UB_orig_bound_min_0 - ((int64_t)_dim_0_0)), (int64_t)0)), 0, 1, ((i0_inner_inner_ext + (int64_t)15) / (int64_t)16), 0, 0);
+        }
+        if ((i0_inner_outer_s < host_var12) && (host_var13 != (int64_t)1)) {
+          set_flag(PIPE_MTE3, PIPE_V, EVENT_ID0);
+          set_flag(PIPE_MTE3, PIPE_MTE2, EVENT_ID0);
+        }
+      }
+    }
+    pipe_barrier(PIPE_ALL);
+  }
+  pipe_barrier(PIPE_ALL);
+
+}
+

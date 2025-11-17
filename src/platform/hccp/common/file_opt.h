@@ -1,0 +1,61 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#ifndef _COMMON_FILE_OPT_H_
+#define _COMMON_FILE_OPT_H_
+
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/fcntl.h>
+#include <sys/file.h>
+
+#define CONLINE_LEN  384
+
+#define FILE_EXIST 0
+
+#define FILE_CHECK_RET_WITHOUT_RETURN(ret, fmt, val...) do {    \
+    if (ret) { \
+        roce_warn(fmt, ##val); \
+    } \
+} while (0)
+
+#define FILE_CHECK_PTR_VALID_RETURN_VAL(p, ret) do { \
+    if ((p) == NULL) { \
+        roce_err("ptr is NULL!"); \
+        return ret; \
+    } \
+} while (0)
+
+enum {
+    FILE_OPT_ERR = 0x3000,
+    FILE_OPT_NO_MEM_ERR,
+    FILE_OPT_INNER_PARAM_ERR,
+    FILE_OPT_SYS_FOPEN_ERR,
+    FILE_OPT_SYS_WRITE_FILE_ERR,
+    FILE_OPT_SYS_READ_FILE_ERR,
+    FILE_OPT_SYS_RD_FILE_NOT_FOUND,
+    FILE_OPT_SYS_DELETE_FILE_ERR,
+    FILE_OPT_SYS_TIME_OP_ERR,
+    FILE_OPT_SYS_CERT_EXPRD_ERR,
+    FILE_OPT_SYS_TERMIOS_ERR,
+    FILE_OPT_SYS_BUSY_ERR,
+    FILE_OPT_SYS_NOT_ACCESS,
+    FILE_OPT_OP_NOT_SUPPORT_IPV6_ERR,
+    FILE_OPT_OP_NOT_SUPPORT_BOND_ERR,
+};
+
+int read_file_to_buf(const char *path, char *content, unsigned int *content_len);
+int write_buf_to_file(const unsigned char *buf, unsigned int buf_len, const char *file, mode_t mode);
+void remove_file(const char *file);
+int get_file_lock(const char *path, int *lock_fd);
+int release_file_lock(int lock_fd, const char *lock_file_path);
+int check_file_path(const char *path, mode_t mode);
+int file_read_cfg(const char *file_path, int dev_id, const char *conf_name, char *conf_value, unsigned int len);
+
+#endif
