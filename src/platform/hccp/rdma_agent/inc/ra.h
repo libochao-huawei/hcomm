@@ -192,6 +192,7 @@ struct ra_qp_handle {
     unsigned int psn;
     unsigned int gid_idx;
     unsigned int sq_depth; // only valid in RDMA Lite scenario
+    unsigned int bp_cnt; // only valid in RDMA Lite scenario
     struct ra_loopback_info *loopback_info;
     struct ra_qp_handle *loopback_qp_handle;
 };

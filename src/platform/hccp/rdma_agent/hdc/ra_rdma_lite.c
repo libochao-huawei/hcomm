@@ -148,7 +148,7 @@ DL_ATTRI_VISI_DEF int ra_hdc_rdma_lite_api_init(void)
     if (ret) {
         pthread_mutex_unlock(&g_rdma_lite_api_lock);
         hccp_err("hccp_dlopen[libascend_rdma_lite.so]"\
-            "fail! ret=[%d][%s]. Please check rdma lite driver has been installed.", ret, dlerror());
+            "failed! ret=[%d][%s]. Please check rdma lite driver has been installed.", ret, dlerror());
         return ret;
     }
 

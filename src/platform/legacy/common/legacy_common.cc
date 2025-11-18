@@ -22,7 +22,6 @@ const char *GetSocVer()
     return aclrtGetSocName();
 }
 
-
 HcclResult GetDeviceType(LegacyDevType &deviceType)
 {
     const char *socName = GetSocVer();

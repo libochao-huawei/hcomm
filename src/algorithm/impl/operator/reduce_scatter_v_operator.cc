@@ -65,14 +65,6 @@ HcclResult ReduceScatterVOperator::SelectAlg(const std::string& tag, const OpPar
     }
 
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_INFO("[SelectAlg] ReduceScatterV newTag is [%s]", newTag.c_str());
-
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
-        HCCL_CONFIG_INFO(HCCL_ALG,
-            "[ReduceScatterVOperator][SelectAlg]userRank_[%u], algName[%s] actual level1 algo[%d], level2 algo[%d]",
-            userRank_, algName.c_str(), algType_.algoLevel1, algType_.algoLevel2);
-    }
-
     return ret;
 }
 
@@ -125,19 +117,27 @@ HcclResult ReduceScatterVOperator::SelectAlgfor91093(const OpParam& param, std::
 
 HcclResult ReduceScatterVOperator::SelectAlgfor910B(const OpParam& param, std::string& algName)
 {
-    bool isMeshTopo = topoType_ == TopoType::TOPO_TYPE_NP_MESH || topoType_ == TopoType::TOPO_TYPE_4P_MESH ||
-        topoType_ == TopoType::TOPO_TYPE_2P_MESH || topoType_ == TopoType::TOPO_TYPE_1P_MESH;
+    //图模式切入确定性
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && !isSingleMeshAggregation_) {
-        if (!multiModuleDiffDeviceNumMode_ && isMeshTopo) {
+        if (!multiModuleDiffDeviceNumMode_) {
             algName = "ReduceScatterVDeterExecutor";//多机图模式当前默认选中确定性算法
+            if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING ||
+                algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB ||
+                algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR)) {
+                //只支持server间ring,NB和NHR，默认使能NHR
+                algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+                HCCL_WARNING("[ReduceScatterVOperator][SelectAlgfor910B] only support ring, NB and NHR in AlgoLevel1 yet,"
+                    " default algType is NHR.");
+            }
             HCCL_INFO("[SelectAlgfor910B] ReduceScatterV SelectAlgfor910B algName is [%s]", algName.c_str());
             return HCCL_SUCCESS;
         } else {
-            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor910B] ReduceScatterV not support uneven devices in multiServer or one rank per server.");
+            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor910B] ReduceScatterV not support uneven devices in multiServer.");
             return HCCL_E_NOT_SUPPORT;
         }
     }
-
+    bool isMeshTopo = topoType_ == TopoType::TOPO_TYPE_NP_MESH || topoType_ == TopoType::TOPO_TYPE_4P_MESH ||
+        topoType_ == TopoType::TOPO_TYPE_2P_MESH || topoType_ == TopoType::TOPO_TYPE_1P_MESH;
     // Deterministic 确定性分支
     bool isDeterministic = topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE  
         && isMeshTopo && !multiModuleDiffDeviceNumMode_

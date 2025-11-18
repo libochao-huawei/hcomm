@@ -191,12 +191,12 @@ public:
         u32 itemNum, rtStream_t stream);
 
     HcclResult send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType, u32 destRank,
-        rtStream_t stream);
+        rtStream_t stream, u32 srTag, u32 localGroupRank);
     HcclResult SendOutPlace(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType, u32 destRank,
         rtStream_t stream);
 
     HcclResult receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType, u32 srcRank,
-        rtStream_t stream);
+        rtStream_t stream, u32 srTag, u32 localGroupRank);
     HcclResult ReceiveOutPlace(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType, u32 srcRank,
         rtStream_t stream);
 
@@ -300,6 +300,7 @@ public:
     bool IsNeedResetDevice();
     HcclResult ResetDeviceEnable();
     HcclResult CommCheckErrorCqe(HcclResult &result);
+    HcclResult CommCheckOpInconsistentError(HcclResult &result);
     HcclResult SaveTraceInfo(std::string &logInfo);
     HcclResult AllocComResourceByTiling(const std::string &algConfig, void *param);
     HcclResult CreateCommResource(const std::string &tag, rtStream_t aiCpuStream, bool isOpbaseMode,
@@ -349,26 +350,17 @@ public:
 
     // 独立算子专用
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable);
+    HcclResult InitIndependentOp();
 #ifndef CCL_KERNEL_AICPU
     IndependentOp& GetIndependentOp();
 #endif
-    
-    HcclResult CreateCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx);
-    HcclResult GetCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx);
-    HcclResult DestroyCommEngineCtx(const HcclMem *engineCtx);
+    HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, bool isAicpuModeEn);
     HcclResult PrepareChannelMem(const std::string &tag, TransportIOMem &transMem);
-    HcclResult ChannelCommCreate(const std::string &tag, CommEngine engine, 
-        const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
-    HcclResult ChannelCommGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum);
-    HcclResult ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum);
-    HcclResult ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer);
-    HcclResult ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
 
     //Decouple for MC2
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
-    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, uint32_t *topoType);
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -395,7 +387,7 @@ private:
     std::unique_ptr<HcclCommunicator> communicator_;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
-    IndependentOp IndependentOp_;
+    IndependentOp independentOp_;
 #endif
 };
 }  // namespace hccl

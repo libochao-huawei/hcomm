@@ -252,6 +252,10 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         algName = "RunAlltoAllVFor310PExecutor";
     } else if (IsA3PipelineCondition(param)) {
         algName = "RunAlltoAllVTwoLevelPipeline";
+    } else if (IsSatisfyAlltoallContinuousPipelineCondition()) {
+        algName = "RunAlltoAllVContinuousPipeline"; // continuous pipeline 算法
+        HCCL_INFO("[SelectAlgforAlltoAll] AllToAll algName is [%s]", algName.c_str());
+        return HCCL_SUCCESS ;
     } else if (IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
         isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize()) || param.aicpuUnfoldMode || deviceType_ == DevType::DEV_TYPE_310P3) {
         algName = "RunAlltoAllDirectFullmesh";
@@ -309,18 +313,10 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
     } else {
         newTag = tag;
     }
-    HCCL_INFO("[SelectAlg] Alltoall operator newTag is [%s].", newTag.c_str());
 
     if (useA3Pipeline || (!useA2AAiv && !useDirectFullmesh && !param.aicpuUnfoldMode)) {
         CHK_RET(SetExcutorExtraInfo(algName, param));
     }
-
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
-        HCCL_CONFIG_INFO(HCCL_ALG,
-            "[AlltoAllOperator][SelectAlg]userRank_[%u], algName[%s] actual level1 algo[%d], level2 algo[%d]",
-            userRank_, algName.c_str(), algType_.algoLevel1, algType_.algoLevel2);
-    }
-
     return ret;
 }
 
@@ -394,8 +390,9 @@ bool AlltoAllOperator::JudgeIfNeedPreProcessAndGetParam(const OpParam& param,
     bool useA2AAiv = IsSatisfyAlltoAllAivCondition(param);
     bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
             isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize());
+    bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition();
     if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && !useA2AAiv) {
-        if (!useA3Pipeline && (useDirectFullmesh || param.aicpuUnfoldMode)) {
+        if (!useA3Pipeline && (useDirectFullmesh || useContinuousPipeline || param.aicpuUnfoldMode)) {
             return false;
         }
         CHK_RET(PrepareAlltoAllAddrInfo(param.All2AllDataDes.sendCounts, param.All2AllDataDes.sdispls,
@@ -595,6 +592,24 @@ bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
         return false;
     }
     return true;
+}
+
+bool AlltoAllOperator::IsSatisfyAlltoallContinuousPipelineCondition()
+{
+    bool cclBigEnough = cclBufferManager_.GetInCCLbufferSize() >= ALLTOALL_PIPELINE_MIN_CCL_SIZE;
+    bool multiRankPerServer = meshAggregationRankSize_ > 1;
+    bool isMultiServer = ((userRankSize_ > meshAggregationRankSize_) &&
+        (userRankSize_ % meshAggregationRankSize_) == 0);
+    auto autoAlgTypeLevel1 = static_cast<u32>(algType_.algoLevel1);
+    bool satisfyAlgType =
+        (static_cast<AlgTypeLevel1>(autoAlgTypeLevel1) == AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE);
+    bool res = (deviceType_ == DevType::DEV_TYPE_910B && satisfyAlgType && multiRankPerServer &&
+        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && isMultiServer &&
+        !multiModuleDiffDeviceNumMode_ && cclBigEnough);
+    HCCL_DEBUG("[AlltoAllOperator][IsSatisfyAlltoallContinuousPipelineCondition] isSatisfy[%d], multiRankPerServer %u, "
+        "isMultiServer %u, satisfyAlgType %u, multiModuleDiffDeviceNumMode_ %u", res, multiRankPerServer,
+        isMultiServer, satisfyAlgType, multiModuleDiffDeviceNumMode_);
+    return res;
 }
 
 HcclResult AlltoAllOperator::GetAlltoAllStagedWorkSpaceMemSize(const OpParam& param, u64 &memSize)

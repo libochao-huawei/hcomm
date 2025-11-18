@@ -14,26 +14,16 @@
 #include "dl_hal_function.h"
 #include "ra.h"
 #include "ra_async.h"
-#include "ra_ctx.h"
 #include "ra_rs_comm.h"
 #include "ra_rs_err.h"
 #include "ra_hdc.h"
-#include "ra_hdc_ctx.h"
 #include "ra_hdc_socket.h"
-#include "ra_hdc_async_ctx.h"
 #include "ra_hdc_async_socket.h"
 #include "ra_hdc_async.h"
 
 struct hdc_async_info g_ra_hdc_async[RA_MAX_PHY_ID_NUM] = { 0 };
 
 struct ra_async_op_handle g_ra_async_op_handle[] = {
-    {RA_RS_LMEM_REG, RDMA_OP, ra_hdc_async_handle_lmem_register, sizeof(union op_lmem_reg_info_data)},
-    {RA_RS_LMEM_UNREG, RDMA_OP, NULL, sizeof(union op_lmem_unreg_info_data)},
-    {RA_RS_CTX_QP_CREATE, RDMA_OP, ra_hdc_async_handle_qp_create, sizeof(union op_ctx_qp_create_data)},
-    {RA_RS_CTX_QP_DESTROY, RDMA_OP, NULL, sizeof(union op_ctx_qp_destroy_data)},
-    {RA_RS_CTX_QP_IMPORT, RDMA_OP, ra_hdc_async_handle_qp_import, sizeof(union op_ctx_qp_import_data)},
-    {RA_RS_CTX_QP_UNIMPORT, RDMA_OP, NULL, sizeof(union op_ctx_qp_unimport_data)},
-    {RA_RS_GET_TP_INFO_LIST, RDMA_OP, ra_hdc_async_handle_tp_info_list, sizeof(union op_get_tp_info_list_data)},
     {RA_RS_SOCKET_SEND, SOCKET_OP, ra_hdc_async_handle_socket_send, sizeof(union op_socket_send_data)},
     {RA_RS_SOCKET_RECV, SOCKET_OP, ra_hdc_async_handle_socket_recv, sizeof(union op_socket_recv_data)},
     {RA_RS_SOCKET_LISTEN_START, SOCKET_OP, ra_hdc_async_handle_socket_listen_start,
@@ -367,7 +357,7 @@ STATIC void ra_hw_async_hdc_client_init(void *arg)
     phy_id = cfg.phy_id;
     ret = dl_drv_device_get_index_by_phy_id(phy_id, &logic_id);
     if (ret != 0) {
-        hccp_err("get logic id fail(%d), phy_id(%u)", ret, phy_id);
+        hccp_err("get logic id failed(%d), phy_id(%u)", ret, phy_id);
         return;
     }
 

@@ -356,7 +356,7 @@ HcclResult SendRecvExecutor::PutRun(DeviceMem& putBuffer)
 HcclResult SendRecvExecutor::PollCq()
 {
     auto startTime = std::chrono::steady_clock::now();
-    auto timeout = std::chrono::seconds(GetExternalInputHcclExecTimeOut());
+    auto timeout = std::chrono::seconds(static_cast<s32>(GetExternalInputHcclExecTimeOut()));
 
     struct ibv_wc wc[HCCL_POLL_CQ_DEPTH];
     while ((std::chrono::steady_clock::now() - startTime) < timeout) {

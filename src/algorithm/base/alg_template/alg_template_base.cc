@@ -396,6 +396,16 @@ HcclResult ExecutorBase::Prepare(HcomCollOpInfo *opInfo, DeviceMem &cclBuffer, c
     return HCCL_E_PARA;
 }
 
+HcclResult ExecutorBase::Prepare(const u32 userRank, const A2aPipelineMemory &a2aPipelineMemory,
+    const SubCommInfo &level0CommInfo, const SubCommInfo &level1CommInfo,
+    const Stream &mainStream, std::vector<Stream> &subStream,
+    std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub,
+    std::vector<SendRecvInfo> &sendRecvInfoList, const HcclDataType dataType,
+    const HcclWorkflowMode workMode)
+{
+    return HCCL_E_PARA;
+}
+
 /* 12个参数 */
 // AlltoAllVFor310P
 HcclResult ExecutorBase::Prepare(DeviceMem &userInput, DeviceMem &userOutput, DeviceMem &cclInMem, DeviceMem &cclOutMem,

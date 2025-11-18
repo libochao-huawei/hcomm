@@ -1,8 +1,6 @@
 
 set(ra_list
-    ra_ctx.c
     async/ra_comm.c
-    async/ra_ctx.c
     async/ra_socket.c
     ra_host.c
     ra_common.c
@@ -21,7 +19,7 @@ if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra PRIVATE
         OPEN_BUILD_PROJECT
         LOG_CPP)
-    
+
     target_include_directories(ra PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
@@ -32,7 +30,6 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../peer
         ${CMAKE_CURRENT_SOURCE_DIR}/
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../roce/host_lite
 
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -43,8 +40,9 @@ if(BUILD_OPEN_PROJECT)
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
 
-        # 临时依赖，后续删除
+        # rdma头文件
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     )
 
     target_link_directories(ra PRIVATE
@@ -67,7 +65,7 @@ else()
         ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/peer
         ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/client
         ${TOP_DIR}/hccl/src/platform/hccp/common
-        ${TOP_DIR}/hccl/src/platform/hccp/roce/host_lite
+        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/host_lite
     )
 endif()
 

@@ -22,6 +22,7 @@ CollAllReduceMeshAivFor91093Executor::CollAllReduceMeshAivFor91093Executor(const
     DMAReduceFlag_ = false;
     desc_.isAivMode = true;
     desc_.isAivCrossNode = true;
+    desc_.deterministic = 1;
 }
  
 HcclResult CollAllReduceMeshAivFor91093Executor::CalcStreamNum(u32& streamNum)
@@ -178,7 +179,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::Orchestrate(OpParam& param, Alg
  
 HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllReduceMeshAivFor91093Executor][KernelRun]allreduce aiv enter.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] allreduce aiv enter.", __func__);
  
     CHK_RET(CheckCommSize(COMM_COMBINE_ORDER, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);

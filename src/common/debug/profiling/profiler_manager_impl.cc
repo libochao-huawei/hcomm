@@ -306,11 +306,11 @@ void ProfilerManagerImpl::HandleGraphLaunchTask(struct TaskPara *taskPara)
 {
     if (GetIfProfile()) {
         auto &profilingManager = hccl::ProfilingManager::Instance();
-        if (!profilingManager.GetFftsLaunchApiState()) {
+        if (!profilingManager.GetFftsLaunchApiState() || ProfilingManagerPub::GetThreadCaptureStatus()) {
             // 上报批量下发的ContextId信息
             (void)profilingManager.CallMsprofReportContextIdInfo((taskPara->graphLaunch.ctxNum - 1));
 
-            if (!profilingManager.GetTaskApiState()) {
+            if (!profilingManager.GetTaskApiState() || ProfilingManagerPub::GetThreadCaptureStatus()) {
                 // 上报编排的task(memcpy\notify等) addition Info
                 profilingManager.ReportStoragedFftsInfo();
             }

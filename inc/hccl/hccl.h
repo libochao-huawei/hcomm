@@ -214,6 +214,7 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
     config->commEngine = HCCL_COMM_ENGINE_CONFIG_NOT_SET;
     config->threadNum = HCCL_COMM_THREADNUM_CONFIG_NOT_SET;
     config->notifyNumPerThread = HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET;
+    config->aclGraphZeroCopyEnable = 0;
 }
 
 /**

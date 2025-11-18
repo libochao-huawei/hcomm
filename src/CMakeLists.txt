@@ -586,7 +586,6 @@ add_subdirectory(hccd)
 add_subdirectory(algorithm)
 add_subdirectory(platform)
 add_subdirectory(common)
-add_subdirectory(engines/hcclengine)
 # 自动找到项目内所有头文件
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${TOP_DIR}/hccl/*)
 foreach (dir ${sources_list})

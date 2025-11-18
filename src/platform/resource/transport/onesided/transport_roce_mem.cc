@@ -728,10 +728,7 @@ HcclResult TransportRoceMem::CreateNotifyValueBuffer()
 {
     if (notifyMem_.ptr() == nullptr) {
         u64 notifyVaule = 1;  // notify值写1表示record
-        notifyMem_ = DeviceMem::alloc(notifyValueSize_);
-        CHK_PRT_RET(
-            !notifyMem_, HCCL_ERROR("[Create][NotifyValueBuffer]In lbv notify buffer, malloc failed."), HCCL_E_MEMORY);
-        HCCL_DEBUG("create notify value buffer[%p], size[%u]", notifyMem_.ptr(), notifySize_);
+        CHK_RET(DeviceMem::alloc(notifyMem_, notifyValueSize_));
 
         CHK_RET(hrtMemSyncCopy(notifyMem_.ptr(),
             notifyMem_.size(),

@@ -15,6 +15,7 @@
 namespace hccl {
 class AllGatherUnifiedMarch : public AlgTemplateBase {
 public:
+    using AlgTemplateBase::Prepare;
     explicit AllGatherUnifiedMarch(const HcclDispatcher dispatcher);
     ~AllGatherUnifiedMarch() override;
     HcclResult Prepare(const Stream &mainStream,

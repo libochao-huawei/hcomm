@@ -33,6 +33,19 @@
 using namespace hccl;
 using namespace std;
 
+/* 检查函数返回值是否为ROCE_ENOMEM_RET, 记录指定日志, 并返回HCCL_E_OOM */
+#define CHK_OOM_RET(ret, qpInfo)                                                                                    \
+    do {                                                                                                            \
+        if ((ret) == ROCE_ENOMEM_RET) {                                                                                     \
+            RPT_ENV_ERR(true, "EI0011",                                                                             \
+                std::vector<std::string>({"memory_size"}),                                                          \
+                std::vector<std::string>({"size: [0.25MB, 3MB], Affected by QP depth configuration."}));            \
+            HCCL_ERROR("[%s] ra qp create fail, reason: out of memory. qpInfo:[%s], return: ret[%d]",               \
+                __func__, (qpInfo), (ret));                                                                         \
+            return HCCL_E_OOM;                                                                                      \
+        }                                                                                                           \
+    } while (0)
+
 constexpr u32 MAX_NUM_OF_BATCH_CONN = 16;
 constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
@@ -120,6 +133,8 @@ HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &
 
     s32 ret = DlRaFunction::GetInstance().dlRaQpCreate(rdmaHandle, flag, qpMode, &qpHandle);
 
+    CHK_OOM_RET(ret, qpInfo.c_str());
+
     CHK_PRT_RET(ret != 0 || (qpHandle == nullptr),
         HCCL_ERROR("[Create][RaQp]errNo[0x%016llx] ra qp create fail. qpInfo:[%s], return: ret[%d]",
         HCCL_ERROR_CODE(HCCL_E_NETWORK), qpInfo.c_str(), ret),
@@ -143,6 +158,9 @@ HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     std::to_string(reinterpret_cast<intptr_t>(&qpHandle));
 
     s32 ret = DlRaFunction::GetInstance().dlRaTypicalQpCreate(rdmaHandle, flag, qpMode, qpInfo, &qpHandle);
+
+    CHK_OOM_RET(ret, qpInfoStr.c_str());
+
     RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007",
         std::vector<std::string>({"resource_type", "resource_info"}), std::vector<std::string>({"qp", qpInfoStr}));
 
@@ -668,7 +686,7 @@ HcclResult HrtRaInit(struct ra_init_config *config)
                     config->phy_id, config->nic_position, config->hdc_type);
                 return HCCL_E_PARA;
             }
-            HCCL_ERROR("[Init][Ra]errNo[0x%016llx] ra init fail.ret[%d] phy_id[%u] nic_position[%u] hdc_type[%d]", \
+            HCCL_ERROR("[Init][Ra]errNo[0x%016llx] ra init fail ret[%d] phy_id[%u] nic_position[%u] hdc_type[%d]", \
                 HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, config->phy_id, config->nic_position, config->hdc_type);
             return HCCL_E_NETWORK;  // 非ra限速场景错误，不轮询。直接退出
         }
@@ -1842,6 +1860,16 @@ HcclResult hrtRaNormalQpCreate(RdmaHandle handle, struct ibv_qp_init_attr* initA
     HCCL_DEBUG("ra normal qp create: initAttr[%p]", initAttr);
     s32 ret = DlRaFunction::GetInstance().dlRaNormalQpCreate(handle, initAttr, &qpHandle,
         reinterpret_cast<void **>(&qp));
+
+    std::string qpInfo = std::string("qp_type[") + std::to_string(initAttr->qp_type) + std::string("] ") +
+        std::string("max_inline_data[") + std::to_string(initAttr->cap.max_inline_data) + std::string("] ") +
+        std::string("max_send_wr[") + std::to_string(initAttr->cap.max_send_wr) + std::string("] ") +
+        std::string("max_send_sge[") + std::to_string(initAttr->cap.max_send_sge) + std::string("] ") +
+        std::string("max_recv_wr[") + std::to_string(initAttr->cap.max_recv_wr) + std::string("] ") +
+        std::string("max_recv_sge[") + std::to_string(initAttr->cap.max_recv_sge) + std::string("]");
+
+    CHK_OOM_RET(ret, qpInfo.c_str());
+
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Create][NormalQp]errNo[0x%016llx] ra create normal qp fail.ret[%d]"
         "qp_type[%u] max_inline_data[%u] max_send_wr[%u] max_send_sge[%u] max_recv_wr[%u] max_recv_sge[%u]",\
         HCCL_ERROR_CODE(HCCL_E_INTERNAL), ret, initAttr->qp_type, initAttr->cap.max_inline_data, initAttr->cap.max_send_wr,
@@ -2420,6 +2448,8 @@ HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *at
             __func__);
     }
 
+    CHK_OOM_RET(ret, qpInfo.c_str());
+
     CHK_PRT_RET(ret != 0 || (qpHandle == nullptr),
         HCCL_ERROR("[Create][RaQp]errNo[0x%016llx] ra qp create with attrs fail. qpInfo:[%s], return: ret[%d]",
         HCCL_ERROR_CODE(HCCL_E_NETWORK), qpInfo.c_str(), ret),
@@ -2445,6 +2475,18 @@ HcclResult hrtRaAiQpCreate(u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attr
         return HCCL_E_NOT_SUPPORT;
     }
     s32 ret = DlRaFunction::GetInstance().dlRaAiQpCreate(rdmaHandle, attrs, info, &qpHandle);
+
+    string qpInfo = string("qp attr:[qpMode:") + to_string(attrs->qp_mode) +
+        string(",udp_sport:") + to_string(attrs->udp_sport) + string(",version:") + to_string(attrs->version) +
+        string(",mem_align:") + to_string(attrs->mem_align) + string("]; cq attr: [send_cq_depth:") +
+        to_string(attrs->cq_attr.send_cq_depth) + string(",recv_cq_depth:") + to_string(attrs->cq_attr.recv_cq_depth) +
+        string(",send_cq_comp_vector:") + to_string(attrs->cq_attr.send_cq_comp_vector) +
+        string(",recv_cq_comp_vector:") + to_string(attrs->cq_attr.recv_cq_comp_vector) + string(",cap.max_send_wr:") +
+        to_string(attrs->qp_attr.cap.max_send_wr) + string(",cap.max_recv_wr:") +
+        to_string(attrs->qp_attr.cap.max_recv_wr) + "]";
+
+    CHK_OOM_RET(ret, qpInfo.c_str());
+
     CHK_PRT_RET(ret != 0 || (qpHandle == nullptr),
         HCCL_ERROR("[Create][RaAiQp]errNo[0x%016llx] ra ai qp create fail. "
                    "return: ret[%d]",
@@ -2682,7 +2724,7 @@ HcclResult hrtRaPingTargetAdd(void *pingHandle, struct ping_target_info target[]
         return HCCL_E_NOT_SUPPORT;
     }
     s32 ret = DlRaFunction::GetInstance().dlRaPingTargetAdd(pingHandle, target, num);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("Rping add target failed, ret is [%d]", ret), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("Rping add target failed, ret is [%d], num[%u]", ret, num), HCCL_E_NOT_SUPPORT);
     return HCCL_SUCCESS;
 }
 
@@ -2693,7 +2735,7 @@ HcclResult hrtRaPingTargetDel(void *pingHandle, struct ping_target_comm_info tar
         return HCCL_E_NOT_SUPPORT;
     }
     s32 ret = DlRaFunction::GetInstance().dlRaPingTargetDel(pingHandle, target, num);
-    CHK_PRT_RET(ret != 0, HCCL_ERROR("Rping delete target failed, ret is [%d]", ret), HCCL_E_NOT_SUPPORT);
+    CHK_PRT_RET(ret != 0, HCCL_ERROR("Rping delete target failed, ret is [%d], num[%u]", ret, num), HCCL_E_NOT_SUPPORT);
     return HCCL_SUCCESS;
 }
 

@@ -120,12 +120,12 @@ HcclResult OpRetryConnection::Init(const std::string &group, u32 rankSize, const
             "[OpRetryConnection][Init] group[%s] rankId [%u] rankSize [%u] serverIp [%s] localIp [%s] rootRank [%u] failed",
             group.c_str(), rankId, rankSize, serverIp.GetReadableIP(), localIp.GetReadableIP(), rootRank);
         HCCL_ERROR("There maybe some reasons to cause this error:");
-        HCCL_ERROR("  1. The port may have been used so we will bind error. OpRetry used port range [%u-%u]",
+        HCCL_ERROR("1. The port may have been used so we will bind error. OpRetry used port range [%u-%u]",
             serverPort, serverPort + OP_RETRY_CONN_PORT_MAX_RANGE);
-        HCCL_ERROR("  2. Somebody may have already listen on those ports, so we connect to wrong server");
-        HCCL_ERROR("     and we will meet 'Recv unmatched ack' error");
-        HCCL_ERROR("You may can set system reserved port to avoid this error by");
-        HCCL_ERROR("  sysctl -w net.ipv4.ip_local_reserved_ports=%u-%u",
+        HCCL_ERROR("2. Somebody may have already listen on those ports, so we connect to wrong server "
+            "and we will meet 'Recv unmatched ack' error");
+        HCCL_ERROR("You may can set system reserved port to avoid this error by:");
+        HCCL_ERROR("sysctl -w net.ipv4.ip_local_reserved_ports=%u-%u",
             serverPort, serverPort + OP_RETRY_CONN_PORT_MAX_RANGE);
         return HCCL_E_INTERNAL;
     }

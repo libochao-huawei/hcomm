@@ -94,9 +94,7 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
     CHK_PTR_NULL(recvBuf);
 
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    const char *socNamePtr = aclrtGetSocName();
-    CHK_PTR_NULL(socNamePtr);
-    HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream), socNamePtr);
+    HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
 #endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);

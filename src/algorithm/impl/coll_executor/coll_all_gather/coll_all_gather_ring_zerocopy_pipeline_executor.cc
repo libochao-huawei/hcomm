@@ -118,12 +118,12 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::Orchestrate(OpParam& param
 
     mainStream_ = param.stream;
     subStreams_ = algResResp_->slaveStreams;
-    sdmaMainStream_ = subStreams_.front();
-    sdmaSubStreams_.assign(subStreams_.begin() + 1, subStreams_.end());
-    notifyMainToSdma_ = algResResp_->notifiesMain.front();
-    notifySdmaToMain_ = algResResp_->notifiesAux.front();
-    notifySdmaMain_.assign(algResResp_->notifiesMain.begin() + 1, algResResp_->notifiesMain.end());
-    notifySdmaSub_.assign(algResResp_->notifiesAux.begin() + 1, algResResp_->notifiesAux.end());
+    rdmaMainStream_ = subStreams_.back();
+    sdmaSubStreams_.assign(subStreams_.begin(), subStreams_.end() - 1);
+    notifyMainToRdma_ = algResResp_->notifiesAux.back(); // 主流通知从流使用Aux
+    notifyRdmaToMain_ = algResResp_->notifiesMain.back(); // 从流通知主流使用Main
+    notifySdmaMain_.assign(algResResp_->notifiesMain.begin(), algResResp_->notifiesMain.end() - 1);
+    notifySdmaSub_.assign(algResResp_->notifiesAux.begin(), algResResp_->notifiesAux.end() - 1);
 
     CHK_RET(GetCommRankInfoNormal(level0Rank_, level0RankSize_, level1Rank_, level1RankSize_, level2Rank_,
         level2RankSize_, false));
@@ -164,7 +164,7 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::RunLoop(OpParam &param)
         execMem.outputMem = algResResp_->cclOutputMem;
         execMem.inputPtr = curInputPtr;
         execMem.outputPtr = curOutputPtr;
-        CHK_RET(KernelRun(param, execMem, isLastLoop));
+        CHK_RET(KernelRunWithLoop(param, execMem, isLastLoop));
         CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, subStreams_));
 
         curInputPtr += curSize;
@@ -174,9 +174,9 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::RunLoop(OpParam &param)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRun(const OpParam &param, ExecMem &execMem, bool isLastLoop)
+HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunWithLoop(const OpParam &param, ExecMem &execMem, bool isLastLoop)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllGatherRingZerocopyPipelineExecutor][KernelRun]KernelRun begins.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllGatherRingZerocopyPipelineExecutor][KernelRunWithLoop]KernelRun begins.");
     u64 curSize = execMem.count * unitSize_;
 
     // Local Copy: UserIn -> Ccl
@@ -187,18 +187,11 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRun(const OpParam &p
     memIdx_ = 0;
     blockIdx_ = level2Rank_;
 
-    for (u32 step = 0; step < level2RankSize_; step++) { // level2 ring算法的步数 + 开头一步
-        // L2 RDMA
-        if (step > 0) {
-            blockIdx_ = (blockIdx_ + level2RankSize_ - 1) % level2RankSize_;
-            CHK_RET(KernelRunInterSuperPod(param, execMem));
-            memIdx_ = 1 - memIdx_;
-
-            CHK_RET(WaitSdmaStreamFinish());
-        }
-
-        // L0可以先启动一步
-        CHK_RET(NotifySdmaStreamStart());
+    for (u32 step = 0; step < level2RankSize_; step++) { // level2 ring算法的步数 + 结尾一步
+        // 启动L2 RDMA
+        if (step < level2RankSize_ - 1) {
+            CHK_RET(NotifyRdmaStreamStart());
+        }        
 
         // L1 SDMA
         CHK_RET(KernelRunInterServer(param, execMem));
@@ -216,9 +209,15 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRun(const OpParam &p
             level0ExecMem.outputPtr = outputPtr;
             CHK_RET(KernelRunIntraServerPost(param, level0ExecMem));
         }
-    }
 
-    CHK_RET(WaitSdmaStreamFinish());
+        // L2 RDMA
+        if (step < level2RankSize_ - 1) {
+            blockIdx_ = (blockIdx_ + level2RankSize_ - 1) % level2RankSize_;
+            CHK_RET(KernelRunInterSuperPod(param, execMem));
+            memIdx_ = 1 - memIdx_;
+            CHK_RET(WaitRdmaStreamFinish());
+        }
+    }
 
     return HCCL_SUCCESS;
 }
@@ -226,6 +225,7 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRun(const OpParam &p
 /* 超节点间1步 RMDA通信 */
 HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterSuperPod(const OpParam &param, ExecMem &execMem)
 {
+    (void)param;
     CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
     SubCommInfo level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
 
@@ -234,8 +234,8 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterSuperPod(con
     LINK prevLevel2Link = level2CommInfo.links[prevLevel2Rank];
     LINK nextLevel2Link = level2CommInfo.links[nextLevel2Rank];
 
-    CHK_RET(prevLevel2Link->TxAck(mainStream_));
-    CHK_RET(nextLevel2Link->RxAck(mainStream_));
+    CHK_RET(prevLevel2Link->TxAck(rdmaMainStream_));
+    CHK_RET(nextLevel2Link->RxAck(rdmaMainStream_));
 
     u64 curSize = execMem.count * unitSize_;
     CHK_PRT_RET(memIdx_ > 1, HCCL_ERROR("[KernelRunInterSuperPod]memIdx[%u] is not valid", memIdx_), HCCL_E_PARA);
@@ -245,11 +245,11 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterSuperPod(con
         level2Rank_, nextLevel2Rank, prevLevel2Rank, srcOffset, dstOffset, curSize);
 
     CHK_RET(nextLevel2Link->TxAsync(UserMemType::INPUT_MEM, dstOffset,
-        static_cast<u8 *>(execMem.inputMem.ptr()) + srcOffset, curSize, mainStream_));
+        static_cast<u8 *>(execMem.inputMem.ptr()) + srcOffset, curSize, rdmaMainStream_));
     CHK_RET(prevLevel2Link->RxAsync(UserMemType::INPUT_MEM, srcOffset,
-        static_cast<u8 *>(execMem.inputMem.ptr()) + dstOffset, curSize, mainStream_));
-    CHK_RET(prevLevel2Link->PostFinAck(mainStream_));
-    CHK_RET(nextLevel2Link->WaitFinAck(mainStream_));
+        static_cast<u8 *>(execMem.inputMem.ptr()) + dstOffset, curSize, rdmaMainStream_));
+    CHK_RET(prevLevel2Link->PostFinAck(rdmaMainStream_));
+    CHK_RET(nextLevel2Link->WaitFinAck(rdmaMainStream_));
     return HCCL_SUCCESS;
 }
 
@@ -267,13 +267,13 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunIntraServerPost(c
     if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) { // 只有1个ring环，只用到一条流，没有流之间同步
         HCCL_INFO("[%s] single ring AllGather", __func__);
         CHK_RET(MultiRingAllGather(tag_, execMem.inputMem, execMem.outputMem, execMem.count, param.DataDes.dataType,
-            multRingsUserMemSlice, sdmaMainStream_, PROF_STAGE_0, baseOffset, nullptr, multRingsUserMemSlice));
+            multRingsUserMemSlice, mainStream_, PROF_STAGE_0, baseOffset, nullptr, multRingsUserMemSlice));
     } else {
         CHK_PRT_RET(topoType_ != TopoType::TOPO_TYPE_NP_DOUBLE_RING,
             HCCL_ERROR("[%s] unknown topoType: %u", __func__, topoType_), HCCL_E_NOT_SUPPORT);
         HCCL_INFO("[%s] semi ring AllGather", __func__);
         CHK_RET(SemiRingAllGather(tag_, execMem.inputMem, execMem.outputMem, execMem.count, param.DataDes.dataType,
-            multRingsUserMemSlice, sdmaMainStream_, PROF_STAGE_0, baseOffset, nullptr, multRingsUserMemSlice));
+            multRingsUserMemSlice, mainStream_, PROF_STAGE_0, baseOffset, nullptr, multRingsUserMemSlice));
     }
 
     return HCCL_SUCCESS;
@@ -285,12 +285,16 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::SemiRingAllGather(
     const Stream &stream, s32 profStage, const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> &multRingsUserMemSlice)
 {    
+    (void)tag;
+    (void)multRingsSliceZero;
+    (void)opInfo;
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
 
     // 执行
     std::unique_ptr<AlgTemplateBase> level0Template = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_GATHER_UNIFIED_MARCH, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_UNIFIED_MARCH in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(level0Template);
 
     CHK_RET(level0Template->Prepare(stream, level0CommInfo, inputMem, outputMem,
@@ -325,15 +329,15 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterServer(const
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
             level1AGTemplate = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
-            HCCL_INFO("[KernelRunInterServer] using ring algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RING in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1AGTemplate = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
-            HCCL_INFO("[KernelRunInterServer] using nb algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NB in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
             level1AGTemplate = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-            HCCL_INFO("[KernelRunInterServer] using nhr algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL1", __func__);
         } else {
             HCCL_ERROR("[KernelRunInterServer] unsupported level1 algtype [%s]", AlgTypeToStr(algType_).c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -341,9 +345,9 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterServer(const
         CHK_SMART_PTR_NULL(level1AGTemplate);
         // 执行算法编排
         CHK_RET(level1AGTemplate->Prepare(execMem.outputMem, execMem.outputMem, execMem.inputMem, INVALID_U64,
-            param.DataDes.dataType, sdmaMainStream_, HCCL_REDUCE_RESERVED, INVALID_VALUE_RANKID, level1DataSegsSlice));
+            param.DataDes.dataType, mainStream_, HCCL_REDUCE_RESERVED, INVALID_VALUE_RANKID, level1DataSegsSlice));
         CHK_RET(level1AGTemplate->RegisterProfiler((level1RankSize_ << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level1Rank_,
-            PROF_STAGE_1, HCCL_EXEC_STEP_NOT_SET, sdmaMainStream_));
+            PROF_STAGE_1, HCCL_EXEC_STEP_NOT_SET, mainStream_));
         CHK_RET(CheckCommSize(COMM_LEVEL1, level0Rank_ + 1));
         SubCommInfo level1CommInfo = GetSubCommInfo(COMM_LEVEL1, level0Rank_);
         CHK_RET(RunTemplate(level1AGTemplate, level1CommInfo));
@@ -387,20 +391,20 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterServerPrePro
         if (IsRemoteRankSendNeighbor) {
             HCCL_DEBUG("[%s] neighbor process srcPtr[%p] tmpPtr[%p] size[%llu]", __func__, srcMem.ptr(), tmpMem.ptr(),
                 curSize);
-            CHK_RET(HcclD2DMemcpyAsync(dispatcher_, tmpMem, srcMem, sdmaMainStream_));
+            CHK_RET(HcclD2DMemcpyAsync(dispatcher_, tmpMem, srcMem, mainStream_));
         }
 
         // 执行通信
-        CHK_RET(recvLink->TxAck(sdmaMainStream_));
-        CHK_RET(sendLink->RxAck(sdmaMainStream_));
+        CHK_RET(recvLink->TxAck(mainStream_));
+        CHK_RET(sendLink->RxAck(mainStream_));
 
         u32 remoteLevel1RankSend = remoteRankSend % (level0RankSize_ * level1RankSize_) / level0RankSize_;
         u64 txDstOffset = remoteLevel1RankSend * curSize;
         HCCL_INFO("[%s] remoteRankSend[%u] txDstOffset[%llu]", __func__, remoteRankSend, txDstOffset);
         if (IsRemoteRankSendNeighbor) {
-            CHK_RET(sendLink->TxAsync(UserMemType::OUTPUT_MEM, txDstOffset, tmpMem.ptr(), curSize, sdmaMainStream_));
+            CHK_RET(sendLink->TxAsync(UserMemType::OUTPUT_MEM, txDstOffset, tmpMem.ptr(), curSize, mainStream_));
         } else {
-            CHK_RET(sendLink->TxAsync(UserMemType::OUTPUT_MEM, txDstOffset, srcMem.ptr(), curSize, sdmaMainStream_));
+            CHK_RET(sendLink->TxAsync(UserMemType::OUTPUT_MEM, txDstOffset, srcMem.ptr(), curSize, mainStream_));
         }
 
         u64 rxSrcOffset = memIdx_ * curSize;
@@ -408,19 +412,19 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterServerPrePro
             u32 remoteLevel0RankRecv = remoteRankRecv % level0RankSize_;
             rxSrcOffset = static_cast<u8 *>(execMem.outputPtr) - static_cast<u8 *>(param.outputPtr) +
                 blockOffset + totalSize_ * remoteLevel0RankRecv * level1RankSize_;
-            CHK_RET(recvLink->RxAsync(UserMemType::OUTPUT_MEM, rxSrcOffset, dstMem.ptr(), curSize, sdmaMainStream_));
+            CHK_RET(recvLink->RxAsync(UserMemType::OUTPUT_MEM, rxSrcOffset, dstMem.ptr(), curSize, mainStream_));
         } else {
-            CHK_RET(recvLink->RxAsync(UserMemType::INPUT_MEM, rxSrcOffset, dstMem.ptr(), curSize, sdmaMainStream_));
+            CHK_RET(recvLink->RxAsync(UserMemType::INPUT_MEM, rxSrcOffset, dstMem.ptr(), curSize, mainStream_));
         }
         HCCL_INFO("[%s] remoteRankRecv[%u] rxSrcOffset[%llu]", __func__, remoteRankRecv, rxSrcOffset);
 
         // 交换数据的两端之间Barrier，确认收发完成
-        CHK_RET(recvLink->TxAck(sdmaMainStream_));
-        CHK_RET(sendLink->RxAck(sdmaMainStream_));
-        CHK_RET(sendLink->TxDataSignal(sdmaMainStream_));
-        CHK_RET(recvLink->RxDataSignal(sdmaMainStream_));
+        CHK_RET(recvLink->TxAck(mainStream_));
+        CHK_RET(sendLink->RxAck(mainStream_));
+        CHK_RET(sendLink->TxDataSignal(mainStream_));
+        CHK_RET(recvLink->RxDataSignal(mainStream_));
     } else { // 不需要交换数据，将数据从ccl in拷到ccl out
-        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, sdmaMainStream_));
+        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, mainStream_));
     }
 
     return HCCL_SUCCESS;
@@ -430,29 +434,30 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterServerPrePro
 HcclResult CollAllGatherRingZerocopyPipelineExecutor::KernelRunInterServerPostProcess(const OpParam &param,
     ExecMem &execMem)
 {
+    (void)param;
     u64 blockOffset = blockIdx_ * blockSize_;
     u64 curSize = execMem.count * unitSize_;
     for (u32 i = 0; i < level1RankSize_; i++) {
         DeviceMem srcMem = DeviceMem::create(static_cast<u8 *>(execMem.outputMem.ptr()) + i * curSize, curSize);
         u64 outputOffset = blockOffset + totalSize_ * (level0Rank_ * level1RankSize_ + i);
         DeviceMem dstMem = DeviceMem::create(static_cast<u8 *>(execMem.outputPtr) + outputOffset, curSize);
-        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, sdmaMainStream_));
+        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, mainStream_));
         HCCL_DEBUG("[%s] memcopy from CCLOut[%p] to UserOut[%p]", __func__, srcMem.ptr(), dstMem.ptr());
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllGatherRingZerocopyPipelineExecutor::NotifySdmaStreamStart()
+HcclResult CollAllGatherRingZerocopyPipelineExecutor::NotifyRdmaStreamStart()
 {
-    CHK_RET(LocalNotify::Post(mainStream_, dispatcher_, notifyMainToSdma_, INVALID_VALUE_STAGE));
-    CHK_RET(LocalNotify::Wait(sdmaMainStream_, dispatcher_, notifyMainToSdma_, INVALID_VALUE_STAGE));
+    CHK_RET(LocalNotify::Post(mainStream_, dispatcher_, notifyMainToRdma_, INVALID_VALUE_STAGE));
+    CHK_RET(LocalNotify::Wait(rdmaMainStream_, dispatcher_, notifyMainToRdma_, INVALID_VALUE_STAGE));
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllGatherRingZerocopyPipelineExecutor::WaitSdmaStreamFinish()
+HcclResult CollAllGatherRingZerocopyPipelineExecutor::WaitRdmaStreamFinish()
 {
-    CHK_RET(LocalNotify::Post(sdmaMainStream_, dispatcher_, notifySdmaToMain_, INVALID_VALUE_STAGE));
-    CHK_RET(LocalNotify::Wait(mainStream_, dispatcher_, notifySdmaToMain_, INVALID_VALUE_STAGE));
+    CHK_RET(LocalNotify::Post(rdmaMainStream_, dispatcher_, notifyRdmaToMain_, INVALID_VALUE_STAGE));
+    CHK_RET(LocalNotify::Wait(mainStream_, dispatcher_, notifyRdmaToMain_, INVALID_VALUE_STAGE));
     return HCCL_SUCCESS;
 }
 

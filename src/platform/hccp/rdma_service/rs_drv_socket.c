@@ -38,7 +38,7 @@ int rs_drv_ssl_bind_fd(struct rs_conn_info *conn, int fd)
     ssl_adp_set_mode(conn->ssl, SSL_MODE_AUTO_RETRY);
     ret = ssl_adp_set_fd(conn->ssl, fd);
     if (ret != 1) {
-        hccp_err("bind connfd and ssl fail, ret %d", ret);
+        hccp_err("bind connfd and ssl failed, ret %d", ret);
         goto out;
     }
 

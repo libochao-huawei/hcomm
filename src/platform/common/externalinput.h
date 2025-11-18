@@ -68,7 +68,7 @@ struct ExternalInput {
 
     //  环境变量参数
     s32 linkTimeOut;
-    s32 execTimeOut;
+    double execTimeOut;
     u32 hcclIfBasePort;
     u32 rdmaTrafficClass;
     u32 rdmaServerLevel;

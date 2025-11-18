@@ -100,6 +100,35 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         CHK_RET(SetExecutorAttr(param));
     }
     algDesc = executor_->GetAlgDesc();
+
+    // 打印维测日志
+    if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
+        // 获取展开模式，转换成字符串
+        std::string opExpansionStr;
+        if (algDesc.isAivMode) {
+            opExpansionStr = "AIV";
+        } else if (param.aicpuUnfoldMode) {
+            opExpansionStr = "AI_CPU";
+        } else if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+            opExpansionStr = "HOST";
+        } else {
+            opExpansionStr = "HOST_TS";
+        }
+        // 尝试获取确定性属性（如果Executor有声明自己是否为确定性）
+        std::string appendStr = "";
+        if (algDesc.deterministic >= 0) {
+            appendStr += "deterministic[" + std::to_string(algDesc.deterministic) + "]";
+        }
+        // 打印关键维测内容
+        bool isOpBase = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+        HCCL_CONFIG_INFO(HCCL_ALG,
+            "[%s] newTag[%s] algName[%s] userRank[%u] topoType[%d] algType[%s] "\
+            "userRankSize[%u] level0Size[%u] level1Size[%u] level2Size[%u] "\
+            "opExpansionMode[%s] isZeroCopy[%u] retryEnable[%u] isOpBase[%u] isCapture[%u] aivCoreLimit[%u] %s.",
+            __func__, newTag.c_str(), algName.c_str(), userRank_, topoType_, AlgTypeToStr(algDesc.algType).c_str(),
+            userRankSize_, deviceNumPerAggregation_, moduleNum_ / superPodNum_, superPodNum_,
+            opExpansionStr.c_str(), algDesc.isZeroCopy, retryEnable_, isOpBase, param.isCapture, param.aivCoreLimit, appendStr.c_str());
+    }
     return HCCL_SUCCESS;
 }
 

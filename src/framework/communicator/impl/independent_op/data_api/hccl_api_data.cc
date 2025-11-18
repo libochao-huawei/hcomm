@@ -95,7 +95,7 @@ HcclResult CommLocalBareNotifyWait(ThreadHandle thread, uint64_t notifyId, uint3
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
-    HCCL_DEBUG("[CommNotifyWait]thread[%p], channel[%p], notifyId[%u], timeOut[%u].",
+    HCCL_DEBUG("[CommLocalBareNotifyWait]thread[%p], notifyId[%llu], timeOut[%u].",
         thread, notifyId, timeOut);
     return HcclLocalBareNotifyWait(stream, notifyId, timeOut);
 }
@@ -262,5 +262,6 @@ HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后
 
 HcclResult CommSetLaunchMode(const char *launchTag, LaunchMode mode)
 {
+    HCCL_DEBUG("CommSetLaunchMode launchTag[%s]", launchTag);
     return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
 }

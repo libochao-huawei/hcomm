@@ -303,7 +303,7 @@ extern HcclResult CommChannelFence(ThreadHandle thread, ChannelHandle channel);
  * @note 可运行在Host或Device上。
  * @warning
  */
-extern HcclResult CommSetLaunchMode(int64_t launchId, LaunchMode mode);
+extern HcclResult CommSetLaunchMode(const char *launchTag, LaunchMode mode);
 
 /** @} */  // 批量下发设置接口
 /** @} */  // 数据面编程接口

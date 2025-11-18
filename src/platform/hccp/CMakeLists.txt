@@ -33,6 +33,8 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
         ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
         ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
+        ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/providers/hns
         ${CMAKE_CURRENT_SOURCE_DIR}/inc/network
         ${CMAKE_CURRENT_SOURCE_DIR}/inc/private/network
         ${CMAKE_CURRENT_SOURCE_DIR}/rdma_service
@@ -40,9 +42,7 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/adapter/async
         ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/hdc
         ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/roce/roce_user
         ${CMAKE_CURRENT_SOURCE_DIR}/common
-        ${CMAKE_CURRENT_SOURCE_DIR}/roce/host_lite
         ${ASCEND_CANN_PACKAGE_PATH}/include/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
     )
@@ -96,7 +96,9 @@ if(DEVICE_MODE)
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
-        COMMENT "Copying librs.so to ${HCCP_TAR_DIR}"
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/* ${HCCP_TAR_DIR}
+        COMMENT "Copying rs ra_adp hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"
     )
 endif()

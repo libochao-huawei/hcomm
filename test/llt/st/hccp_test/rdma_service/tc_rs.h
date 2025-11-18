@@ -85,6 +85,7 @@ void tc_rs_remap_mr();
 void tc_rs_roce_get_api_version();
 void tc_rs_get_tls_enable();
 void tc_rs_get_sec_random();
+void tc_rs_get_hccn_cfg();
 void tc_rs_socket_fill_wlist_by_phyID();
 void tc_dl_hal_set_clear_user_config();
 
@@ -157,5 +158,6 @@ void tc_rs_server_valid_async_abnormal_01();
 void tc_rs_free_dev_list(void);
 void tc_rs_free_rdev_list(void);
 void tc_rs_free_udev_list(void);
+void tc_rs_drv_create_cq_with_attrs_abnormal();
 
 #endif

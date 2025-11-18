@@ -111,9 +111,7 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    const char *socNamePtr = aclrtGetSocName();
-    CHK_PTR_NULL(socNamePtr);
-    HCCLV2_FUNC_RUN(HcclAllocComResourceByTilingV2(comm, stream, Mc2Tiling, commContext), socNamePtr);
+    HCCLV2_FUNC_RUN(HcclAllocComResourceByTilingV2(comm, stream, Mc2Tiling, commContext));
 #endif
     if (*pVersion < MC2_TILING_VERSION || devType != DevType::DEV_TYPE_910_93) {
         return HcclCreateComResourceByComm(comm, streamMode, true, commContext, true, Mc2Tiling);

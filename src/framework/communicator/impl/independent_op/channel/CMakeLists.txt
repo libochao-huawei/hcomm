@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
-    ${CMAKE_CURRENT_SOURCE_DIR}/independent_op_channel_manager.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/channel_manager.cc
 )
 
 target_sources(hccl_fwk PRIVATE

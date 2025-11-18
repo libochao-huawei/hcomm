@@ -47,7 +47,7 @@ public:
     static HcclResult AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *commParam);
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
-    static HcclResult AicpuIndOpAllocAndGetComm(const std::string &group, hccl::HcclCommAicpu **aicpuComm);
+    static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);
 private:
     static HcclResult CalcDataSize(HcclCMDType op, HcclDataType type, u64 count, u32 rankSize,
         u64 &inputSize, u64 &outputSize);

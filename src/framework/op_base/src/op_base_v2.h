@@ -68,8 +68,6 @@ HcclResult __attribute__((weak)) HcclScatterV2(void *sendBuf, void *recvBuf, uin
 
 HcclResult __attribute__((weak)) HcclCommSuspend(HcclComm comm);
 
-HcclResult __attribute__((weak)) HcclGetCommNameV2(HcclComm commHandle, char *commName);
-
 HcclResult __attribute__((weak)) HcclReduceScatterV2(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op,
     HcclComm comm, aclrtStream stream);
 
@@ -101,10 +99,6 @@ HcclResult __attribute__((weak)) HcclCommResumeV2(HcclComm comm);
 HcclResult __attribute__((weak)) HcclCommResumeImplV2(HcclComm comm);
 
 HcclResult __attribute__((weak)) HcclGetCommAsyncErrorV2();
-
-HcclResult __attribute__((weak)) HcclSetCommConfigV2(HcclComm comm, int32_t accelerator);
-
-HcclResult __attribute__((weak)) HcclGetCommConfigV2(HcclComm comm, int32_t* accelerator);
 
 HcclResult __attribute__((weak)) HcclGetRawCommHandle(const char *commName, HcclComm *commHandle);
 

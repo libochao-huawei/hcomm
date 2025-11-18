@@ -46,6 +46,7 @@ public:
     语义上类似C语言申请内存(malloc)的方式，好理解
     */
     static DeviceMem alloc(u64 size, bool level2Address = false);
+    static HcclResult alloc(DeviceMem &mem, u64 size, bool level2Address = false);
     static DeviceMem create(void *ptr, u64 size);
 
     /* * 部分操作符声明or重载, 期望达到类似memory指针操作那样来操作Mem对象 */

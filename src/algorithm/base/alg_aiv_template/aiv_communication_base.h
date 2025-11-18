@@ -68,6 +68,13 @@ enum class CommPattern {
     } \
 } while(0)
 
+#define AIV_ERROR(condition, format,...) do { \
+    if(condition) { \
+        AscendC::PrintfImpl(DumpType::DUMP_SCALAR, "[AIV_ERROR] %s:%d:" format, __FILE__, __LINE__, ##__VA_ARGS__); \
+        trap(); \
+    } \
+} while(0)
+
 #define KERNEL_ARGS_DEF \
 GM_ADDR buffIn0, GM_ADDR buffIn1, GM_ADDR buffIn2, GM_ADDR buffIn3, \
 GM_ADDR buffIn4, GM_ADDR buffIn5, GM_ADDR buffIn6, GM_ADDR buffIn7, \
@@ -537,7 +544,9 @@ __aicore__ inline void AivCommBase::ClearFlag()
     // 用10个flag
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_]);
     __gm__ int32_t *emtpyGM = (__gm__ int32_t *)(GM_OUT[rank_] + CLEAR_BUFFER_OFFSET);
-    CpGM2GM(ctrlFlagsGM, emtpyGM, BUFFER_AREA / sizeof(int32_t));
+    if (GetBlockIdx() == 0) {
+        CpGM2GM(ctrlFlagsGM, emtpyGM, BUFFER_AREA / sizeof(int32_t));
+    }
 }
  
 __aicore__ inline void AivCommBase::BlockSync()

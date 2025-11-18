@@ -17,6 +17,7 @@ CollReduceScatterMeshAivSmallCountExecutor::CollReduceScatterMeshAivSmallCountEx
 {
     DMAReduceFlag_ = false;
     desc_.isAivMode = true;
+    desc_.deterministic = 0;
 }
  
 HcclResult CollReduceScatterMeshAivSmallCountExecutor::CalcStreamNum(u32& streamNum)
@@ -152,14 +153,14 @@ HcclResult CollReduceScatterMeshAivSmallCountExecutor::Orchestrate(OpParam& para
         HCCL_ERROR("[CollReduceScatterMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], ReduceScatter executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
  
 HcclResult CollReduceScatterMeshAivSmallCountExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]AllReduce aiv enter");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] ReduceScatter aiv enter", __func__);
  
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
@@ -205,13 +206,13 @@ HcclResult CollReduceScatterMeshAivSmallCountExecutor::KernelRun(const OpParam &
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]AllReduce aiv failed, return[%d]", ret),
+        HCCL_ERROR("[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]ReduceScatter aiv failed, return[%d]", ret),
         ret);
 
     ExtraArgs extraArgs;
     CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
  
-    HCCL_INFO("[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]AllReduce aiv run success");
+    HCCL_INFO("[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]ReduceScatter aiv run success");
     return HCCL_SUCCESS;
 }
  

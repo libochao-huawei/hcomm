@@ -18,6 +18,7 @@ CollAllReduceMeshAivExecutor::CollAllReduceMeshAivExecutor(const HcclDispatcher 
 {
     DMAReduceFlag_ = false;
     desc_.isAivMode = true;
+    desc_.deterministic = 0;
 }
 
 HcclResult CollAllReduceMeshAivExecutor::CalcStreamNum(u32& streamNum)
@@ -63,24 +64,18 @@ HcclResult CollAllReduceMeshAivExecutor::CalcLevel0CommInfo(TransportMemType inp
 HcclResult CollAllReduceMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
     blockDim = rankSize; // 默认情况使用rankSize个AIV
-    
+
     bool isOpBase = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     if (isOpBase) {
         blockDim = BLOCK_DIM_FACTOR_TWO * rankSize; // 单机场景，单算子AllReduce大数据使用2倍 rankSize个aiv
     }
 
     u32 bestBlockDim = blockDim;
-    if (isOpBase || topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
-        CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_ERROR("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-            blockDim_, blockDim), HCCL_E_PARA);
-    } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
-        CHK_PRT_RET(blockDim_ < rankSize,
-            HCCL_ERROR("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
-            blockDim_, rankSize), HCCL_E_PARA);
-        if (blockDim_ < blockDim) {
-            blockDim = blockDim_ / rankSize * rankSize;
-        }
+    CHK_PRT_RET(blockDim_ < rankSize,
+        HCCL_ERROR("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        blockDim_, rankSize), HCCL_E_PARA);
+    if (blockDim_ < blockDim) {
+        blockDim = blockDim_ / rankSize * rankSize;
     }
 
     HCCL_INFO("[CollAllReduceMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -180,7 +175,7 @@ HcclResult CollAllReduceMeshAivExecutor::GetAivExecParam(const OpParam& param, A
 
 HcclResult CollAllReduceMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_INFO("[CollAllReduceMeshAivExecutor][KernelRun]AllReduce aiv enter.");
+    HCCL_INFO("[%s] AllReduce aiv enter.", __func__);
 
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);

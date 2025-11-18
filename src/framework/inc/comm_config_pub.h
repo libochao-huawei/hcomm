@@ -18,8 +18,9 @@ enum CommConfigVersion {
     COMM_CONFIG_VERSION_TWO = 2,
     COMM_CONFIG_VERSION_THREE = 3,
     COMM_CONFIG_VERSION_FOUR = 4,
-    COMM_CONFIG_VERSION_FIVE = 5,                     // 当前支持的最高版本
-    COMM_CONFIG_VERSION_SIX = 6
+    COMM_CONFIG_VERSION_FIVE = 5,
+    COMM_CONFIG_VERSION_SIX = 6,
+    COMM_CONFIG_VERSION_SEVEN = 7                       // 当前支持的最高版本
 };
 
 enum CommConfigOpExpansion {
@@ -53,6 +54,7 @@ typedef struct CommConfigHandleDef {
     int32_t commEngine;        ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
     u32 threadNum;             ///< thread数量（新增）
     u32 notifyNumPerThread;    ///< 每个thread的notify数量（新增）
+    u8 aclGraphZeroCopyEnable; ///< 0:关闭aclgraph零拷贝 1:开启aclgraph零拷贝
 } CommConfigHandle;
 
 namespace hccl {
@@ -77,6 +79,7 @@ public:
     int32_t GetCommEngine() const;
     u32 GetThreadNum() const;
     u32 GetNotifyNumPerThread() const;
+    u8 GetConfigAclGraphZeroCopyEnable() const; // 获取aclGraphZeroCopyEnable 的配置值，在ExecOp Zerocopy准备流程中使用
 
 private:
     HcclResult CheckMagicWord(const CommConfigHandle& config);      // 检查Magic Word是否合法
@@ -101,6 +104,7 @@ private:
     int32_t commEngine_ = -1;
     u32 threadNum_ = 0;
     u32 notifyNumPerThread_ = 0;
+    u8 aclGraphZeroCopyEnable_ = 0;     // 0:关闭aclgraph零拷贝 1:开启aclgraph零拷贝
     bool onlyAivMode_;
 };
 }

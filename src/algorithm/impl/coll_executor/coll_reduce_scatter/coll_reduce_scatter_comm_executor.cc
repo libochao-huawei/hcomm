@@ -17,6 +17,7 @@ CollReduceScatterCommExecutor::CollReduceScatterCommExecutor(const HcclDispatche
     std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollReduceScatterExecutor(dispatcher, topoMatcher)
 {
+    desc_.deterministic = 1;
     DMAReduceFlag_ = false;
 }
 
@@ -130,7 +131,7 @@ bool CollReduceScatterCommExecutor::IsHugeData(const u64 curSize, OpParam *param
 
 HcclResult CollReduceScatterCommExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceScatterCommExecutor][KernelRun] userRank[%u] starts.", topoAttr_.userRank);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] userRank[%u] starts.", __func__, topoAttr_.userRank);
     CommPlane commPlane = COMM_COMBINE_ORDER;
 
     CHK_RET(CheckCommSize(commPlane, COMM_INDEX_0 + 1));
@@ -143,7 +144,7 @@ HcclResult CollReduceScatterCommExecutor::KernelRun(const OpParam &param, ExecMe
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
-        HCCL_INFO("ReduceScatter comm: using nhr algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr, false));
         CHK_RET(tempAlg->Prepare(execMem.inputMem, execMem.outputMem, execMem.scratchMem, execMem.count,
@@ -155,7 +156,7 @@ HcclResult CollReduceScatterCommExecutor::KernelRun(const OpParam &param, ExecMe
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_NHR_V1, dispatcher_);
-        HCCL_INFO("ReduceScatter comm: using nhr_v1 algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR_V1 in COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
         CHK_RET(tempAlg->Prepare(execMem.inputMem, execMem.outputMem, execMem.scratchMem, execMem.count,
@@ -164,7 +165,7 @@ HcclResult CollReduceScatterCommExecutor::KernelRun(const OpParam &param, ExecMe
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
-        HCCL_INFO("ReduceScatter comm: using nonuniform-bruck algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
         CHK_RET(tempAlg->Prepare(execMem.inputMem, execMem.outputMem, execMem.scratchMem, execMem.count,
@@ -173,7 +174,7 @@ HcclResult CollReduceScatterCommExecutor::KernelRun(const OpParam &param, ExecMe
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_RECURSIVE_HD, dispatcher_);
-        HCCL_INFO("ReduceScatter comm: using halving-doubling algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RECURSIVE_HD in COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
         DeviceMem scratchMem = execMem.scratchMem.range(0, execMem.inputMem.size());
@@ -188,7 +189,7 @@ HcclResult CollReduceScatterCommExecutor::KernelRun(const OpParam &param, ExecMe
     } else {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
-        HCCL_INFO("ReduceScatter comm: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
         CHK_RET(tempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count,

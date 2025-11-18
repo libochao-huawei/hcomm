@@ -322,6 +322,7 @@ HcclResult hrtDrvGetPlatformInfo(uint32_t *info)
 {
     // 参数有效性检查
     CHK_PTR_NULL(info);
+    CHK_SMART_PTR_NULL(DlHalFunction::GetInstance().dlHalDrvGetPlatformInfo);
     HCCL_INFO("Entry-hrtDrvGetPlatformInfo");
     drvError_t ret = DlHalFunction::GetInstance().dlHalDrvGetPlatformInfo(info);
     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] hrtDrvGetPlatformInfo fail,"

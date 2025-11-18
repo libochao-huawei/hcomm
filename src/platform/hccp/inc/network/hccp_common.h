@@ -112,7 +112,6 @@ enum network_mode {
  */
 enum protocol_type {
     PROTOCOL_RDMA = 0,
-    PROTOCOL_UDMA,
     PROTOCOL_UNSUPPORT,
 };
 
@@ -135,6 +134,13 @@ union hccp_gid {
 struct ra_info {
     int mode; /**< reference to network_mode */
     unsigned int phy_id; /**< physical device id */
+};
+
+enum hccn_cfg_key {
+    HCCN_CFG_UDP_PORT_MODE = 0,
+    HCCN_CFG_MULTI_QP_COUNT = 1,
+    HCCN_CFG_MULTI_QP_UDP_PORTS = 2,
+    HCCN_CFG_KEY_INVALID
 };
 
 /**

@@ -16,6 +16,7 @@ CollReduceCommExecutor::CollReduceCommExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollReduceExecutor(dispatcher, topoMatcher)
 {
+    desc_.deterministic = 1;
 }
 
 HcclResult CollReduceCommExecutor::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
@@ -59,7 +60,7 @@ HcclResult CollReduceCommExecutor::CalcCombinedCommInfo(TransportMemType inputTy
 
 HcclResult CollReduceCommExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceCommExecutor][KernelRun]ReduceCommExecutor starts.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] ReduceCommExecutor starts.", __func__);
     CommPlane commPlane = COMM_COMBINE;
     if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         commPlane = COMM_COMBINE_ORDER;
@@ -72,7 +73,7 @@ HcclResult CollReduceCommExecutor::KernelRun(const OpParam &param, ExecMem &exec
 
     std::unique_ptr<AlgTemplateBase> tempAlg;
     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCE_RING, dispatcher_);
-    HCCL_INFO("Reduce comm: using ring algo inter-server.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCE_RING in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
     CHK_SMART_PTR_NULL(tempAlg);
     CHK_RET(tempAlg->Prepare(reduceAttr));
 

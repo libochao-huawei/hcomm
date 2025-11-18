@@ -305,7 +305,8 @@ union op_typical_mr_reg_data {
     struct {
         unsigned int lkey;
         unsigned int rkey;
-        unsigned int rsvd[RA_RSVD_NUM_4];
+        uint64_t addr;
+        unsigned int rsvd[RA_RSVD_NUM_2];
     } rx_data;
 };
 

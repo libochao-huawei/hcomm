@@ -99,7 +99,7 @@ int rs_wlist_check_conn_add(struct rs_cb *rs_cb, struct rs_conn_info* conn_tmp)
     /* add conn node to server list */
     ret = rs_alloc_conn_node(&conn, conn_tmp->port);
     if (ret) {
-        hccp_err("server IP:0x%s add conn info to list fail, fd:%d, ret:%d",
+        hccp_err("server IP:0x%s add conn info to list failed, fd:%d, ret:%d",
             conn_tmp->server_ip.read_addr, conn_tmp->connfd, ret);
         goto alloc_err;
     }
@@ -265,7 +265,7 @@ STATIC int rs_epoll_event_ssl_accept_in_handle(struct rs_cb *rs_cb, int fd)
 
                 ret = ssl_adp_set_fd(accept_info->ssl, accept_info->conn_fd);
                 if (ret != 1) {
-                    hccp_err("bind connfd and ssl fail, ret %d", ret);
+                    hccp_err("bind connfd and ssl failed, ret %d", ret);
                     ssl_adp_shutdown(accept_info->ssl);
                     ssl_adp_free(accept_info->ssl);
                     accept_info->ssl = NULL;
@@ -505,7 +505,7 @@ STATIC void *rs_epoll_handle(void *arg)
 
     struct epoll_event events[RS_EPOLL_EVENT];
 
-    CHK_PRT_RETURN(pthread_detach(pthread_self()), hccp_err("pthread_detach fail! thread_id:%lu, errno:%d",
+    CHK_PRT_RETURN(pthread_detach(pthread_self()), hccp_err("pthread_detach failed! thread_id:%lu, errno:%d",
         pthread_self(), errno), NULL);
 
     (void)prctl(PR_SET_NAME, (unsigned long)"hccp_epoll");
@@ -638,7 +638,7 @@ STATIC void *rs_connect_handle(void *arg)
 
     hccp_info("<SOCKET> thread begin! thread_id:%lu, pid:%d, ppid:%d",
         pthread_self(), getpid(), getppid());
-    CHK_PRT_RETURN(pthread_detach(pthread_self()), hccp_err("pthread_detach fail! thread_id:%lu, errno:%d",
+    CHK_PRT_RETURN(pthread_detach(pthread_self()), hccp_err("pthread_detach failed! thread_id:%lu, errno:%d",
         pthread_self(), errno), NULL);
 
     (void)prctl(PR_SET_NAME, (unsigned long)"hccp_connect");

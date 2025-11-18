@@ -98,16 +98,10 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfo(uint32_t type, uint64_
     s32 sret = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
     HCCL_DEBUG("CallMsprofReportAdditionInfo, AdditionInfoType[%u]", type);
-    if (MsprofReportBatchAdditionalInfo == nullptr) {
-        CHK_PTR_NULL(AdprofReportAdditionalInfo);
-        CHK_PRT_RET(AdprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0,
+    CHK_PTR_NULL(AdprofReportAdditionalInfo);
+    CHK_PRT_RET(AdprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0,
         HCCL_ERROR("AdprofReportAdditionalInfo failed."),
         HCCL_E_INTERNAL);
-    } else {
-        CHK_PRT_RET(MsprofReportBatchAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0,
-        HCCL_ERROR("MsprofReportBatchAdditionalInfo failed."),
-        HCCL_E_INTERNAL);
-    }
     HCCL_DEBUG("CallMsprofReportAdditionInfo with additionInfoType[%u] successfully", type);
     return HCCL_SUCCESS;
 }

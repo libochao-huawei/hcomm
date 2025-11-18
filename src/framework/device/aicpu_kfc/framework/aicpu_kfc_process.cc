@@ -1350,10 +1350,6 @@ HcclResult KfcNotifyPost(const std::vector<u64> &args)
         HCCL_DEBUG("No need to add notify for MC2.");
         return HCCL_SUCCESS;
     }
-    if (AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_NOTIFY_WAIT_TIMEOUT)) {
-        HCCL_DEBUG("Skip notify post when debug mode is on.");
-        return HCCL_SUCCESS;
-    }
     return rpc->AddCcoreNotify(reinterpret_cast<HcclDispatcher>(args[1]), rpc->GetFinishAddr(rpc->GetMsgPos()),
                                rpc->GetMsgPosForKernel(), reinterpret_cast<Stream *>(args[2]));
 }
@@ -1710,7 +1706,7 @@ HcclResult AicpuKfcProcess::AicpuRunRpcServerForApi(AicpuComContext *ctx, u64 ti
 HcclResult AicpuKfcProcess::AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const Mc2InitTilingInner *tilingData)
 {
     static std::atomic<bool> initFlag(false);
-    if (!initFlag.exchange(true)) {
+    if (HcclAicpuUtils::GetBlockNum() <= 1U || !initFlag.exchange(true)) {
         for (u64 i = 0UL; i < task->ctxNum; i++) {
             HcclOpResParam *ctx = reinterpret_cast<HcclOpResParam *>(task->context[i]);
             HcclAicpuUtils::PrintHcclOpResParam(ctx);

@@ -150,7 +150,7 @@ std::string &HcclThread::GetUniqueId()
 
 HcclResult HcclThread::InitStream(HcclStreamParam &streamParam)
 {
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
     HcclStreamInfo &streamInfo = streamParam.streamInfo;
 
     static bool isCustom = false;
@@ -182,20 +182,15 @@ HcclResult HcclThread::InitStream(HcclStreamParam &streamParam)
     CHK_RET(QuerySqBaseAddr(devId_, streamInfo.sqIds, sqAddr));
     comStreamInfo.sqBaseAddr = reinterpret_cast<void *>(sqAddr);
     if (comStreamInfo.sqBaseAddr == nullptr) {
-        HCCL_ERROR("[HcclThread][InitStream]sqe base addr ptr is null.");
+        HCCL_ERROR("%s sqe base addr ptr is null.", __func__);
         return HCCL_E_PARA;
     }
     CHK_RET(QuerySqStatusByType(devId_, streamInfo.sqIds, DRV_SQCQ_PROP_SQ_DEPTH, comStreamInfo.sqDepth));
     CHK_RET(QuerySqStatusByType(devId_, streamInfo.sqIds, DRV_SQCQ_PROP_SQ_TAIL, sqTail));
     CHK_RET(QuerySqStatusByType(devId_, streamInfo.sqIds, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
-    HCCL_DEBUG("[HcclCommAicpu][GetStreamData] get stream data success, streamId[%d], sqId[%d], "
-               "logicCqId[%u], sqDepth[%u], sqHead[%u], sqTail[%u]",
-        comStreamInfo.actualStreamId,
-        comStreamInfo.sqId,
-        comStreamInfo.logicCqId,
-        comStreamInfo.sqDepth,
-        sqHead,
-        sqTail);
+    HCCL_DEBUG("%s get stream data success, streamId[%d], sqId[%d], logicCqId[%u], sqDepth[%u], sqHead[%u], sqTail[%u]",
+        __func__, comStreamInfo.actualStreamId, comStreamInfo.sqId, comStreamInfo.logicCqId, comStreamInfo.sqDepth,
+        sqHead, sqTail);
 
     stream_.reset(new (std::nothrow) Stream(comStreamInfo));
     CHK_SMART_PTR_NULL(stream_);

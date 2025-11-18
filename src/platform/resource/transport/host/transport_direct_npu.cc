@@ -69,6 +69,7 @@ HcclResult TransportDirectNpu::DeInit()
 HcclResult TransportDirectNpu::LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
 {
+#ifndef CCL_KERNEL
     CHK_PRT_RET(binPath == nullptr,
         HCCL_ERROR("[LoadBinaryFromFile] binary path is nullptr"),
         HCCL_E_PTR);
@@ -89,12 +90,16 @@ HcclResult TransportDirectNpu::LoadBinaryFromFile(const char *binPath, aclrtBina
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
         HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx] load binary from file error.", aclRet),
         HCCL_E_OPEN_FILE_FAILURE);
-
+#else
+    HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportDirectNpu::LoadAICPUKernel(void)
 {
+#ifndef CCL_KERNEL
     std::string jsonPath;
     CHK_RET(GetKernelFilePath(jsonPath));
     jsonPath += "ccl_kernel.json";
@@ -102,11 +107,13 @@ HcclResult TransportDirectNpu::LoadAICPUKernel(void)
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
         "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
+#endif
     return HCCL_SUCCESS;
 }
 
 void TransportDirectNpu::UnloadAICPUKernel(void)
 {
+#ifndef CCL_KERNEL
     if (binHandle_ != nullptr) {
         aclError aclRet = aclrtBinaryUnLoad(binHandle_);
         if (aclRet != ACL_SUCCESS) {
@@ -115,6 +122,7 @@ void TransportDirectNpu::UnloadAICPUKernel(void)
         }
         binHandle_ = nullptr;
     }
+#endif
     return;
 }
     
@@ -192,9 +200,7 @@ HcclResult TransportDirectNpu::DestroyAicpuMem()
 
 HcclResult TransportDirectNpu::CreateAicpuMem()
 {
-    aicpuMem_ = DeviceMem::alloc(AICPU_FLAG_AREA);
-    CHK_PRT_RET(aicpuMem_.ptr() == nullptr,
-        HCCL_ERROR("[TransportDirectNpu][CreateAicpuMem]Create aicpu buffer fail,buffer ptr is nullptr"), HCCL_E_PTR);
+    CHK_RET(DeviceMem::alloc(aicpuMem_, AICPU_FLAG_AREA));
 
     CHK_RET(hrtMemSet(aicpuMem_.ptr(), aicpuMem_.size(), aicpuMem_.size()));
 
@@ -825,8 +831,13 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
         apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey,
         apiParam.qpInfo.qpPtr);
 
+#ifndef CCL_KERNEL
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
             binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+#else
+    HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
     HCCL_INFO("[TransportDirectNpu][TxData] exec succ.");
     return HCCL_SUCCESS;
 }
@@ -888,8 +899,13 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
         apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey,
         apiParam.qpInfo.qpPtr);
 
+#ifndef CCL_KERNEL
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
             binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+#else
+    HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
     HCCL_INFO("[TransportDirectNpu][RxData] exec succ.");
     return HCCL_SUCCESS;
 }

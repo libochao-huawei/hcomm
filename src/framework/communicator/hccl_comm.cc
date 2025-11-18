@@ -21,6 +21,7 @@
 #include "task_abort_handler_pub.h"
 #include "coll_alg_utils.h"
 #include "env_config.h"
+#include "independent_op.h"
 
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
@@ -124,6 +125,9 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
     HCCL_USER_CRITICAL_LOG("hcclCommInitInfo:commId[%s], rank[%u], totalRanks[%u], serverId[%s], deviceType[%d]," \
         "logicDevId[%d], identifier[%s]", params.id.internal, params.rank, params.totalRanks, params.serverId.c_str(),
         params.deviceType, params.logicDevId, params.identifier.c_str());
+
+    InitIndependentOp();
+
     return HCCL_SUCCESS;
 }
 
@@ -726,7 +730,7 @@ HcclResult hcclComm::BatchSendRecv(const std::string &tag, struct HcclSendRecvIt
 }
 
 HcclResult hcclComm::send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-                          u32 destRank, rtStream_t stream)
+                          u32 destRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
 {
     /* 增加输出日志关键字 */
     HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], count[%llu], data_type[%s], destRank[%u]",
@@ -744,7 +748,7 @@ HcclResult hcclComm::send(const std::string &tag, void *inputPtr, u64 count, Hcc
     CHK_RET(communicator_->CheckCount(count));
     CHK_RET(communicator_->CheckDataType(dataType, false));
     CHK_RET(communicator_->CheckUserRank(destRank));
-    HcclResult ret = communicator_->Send(tag, inputPtr, count, dataType, destRank, stream);
+    HcclResult ret = communicator_->Send(tag, inputPtr, count, dataType, destRank, stream, srTag, localGroupRank);
     if (ret != HCCL_SUCCESS) {
         PrintSubmittedOpCnt(tag, ret);
         return ret;
@@ -792,7 +796,7 @@ HcclResult hcclComm::ReceiveOutPlace(const std::string &tag, void *outputPtr, u6
 }
 
 HcclResult hcclComm::receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-                             u32 srcRank, rtStream_t stream)
+                             u32 srcRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
 {
     /* 增加输出日志关键字 */
     HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], output_ptr[%p], count[%llu], data_type[%s], srcRank[%u]",
@@ -807,7 +811,7 @@ HcclResult hcclComm::receive(const std::string &tag, void *outputPtr, u64 count,
     CHK_RET(communicator_->CheckCount(count));
     CHK_RET(communicator_->CheckDataType(dataType, false));
     CHK_RET(communicator_->CheckUserRank(srcRank));
-    HcclResult ret = communicator_->Receive(tag, outputPtr, count, dataType, srcRank, stream);
+    HcclResult ret = communicator_->Receive(tag, outputPtr, count, dataType, srcRank, stream, srTag, localGroupRank);
     if (ret != HCCL_SUCCESS) {
         PrintSubmittedOpCnt(tag, ret);
         return ret;
@@ -853,10 +857,8 @@ HcclResult hcclComm::CreateCommCCLbuffer() const
 
 HcclResult hcclComm::CreateIndirectCCLbuf()
 {
-    indirectInCCLbuffer_ = DeviceMem::alloc(sizeof(uintptr_t), true);
-    CHK_SMART_PTR_NULL(indirectInCCLbuffer_);
-    indirectOutCCLbuffer_ = DeviceMem::alloc(sizeof(uintptr_t), true);
-    CHK_SMART_PTR_NULL(indirectOutCCLbuffer_);
+    CHK_RET(DeviceMem::alloc(indirectInCCLbuffer_, sizeof(uintptr_t), true));
+    CHK_RET(DeviceMem::alloc(indirectOutCCLbuffer_, sizeof(uintptr_t), true));
 
     return HCCL_SUCCESS;
 }
@@ -892,6 +894,13 @@ HcclResult hcclComm::CommCheckErrorCqe(HcclResult &result)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::CommCheckOpInconsistentError(HcclResult &result)
+{
+    CHK_RET(communicator_->GetOpInconsistentError(result));
+ 
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::InitImpl(DevType deviceType, const CommConfig &commConfig)
 {
     HCCL_INFO("InitImpl Implementation isHeterogComm_[%d] isHaveCpuRank_[%d] deviceType[%d] isSpecialType_[%d]",
@@ -912,12 +921,8 @@ HcclResult hcclComm::CreateBarrierMemory()
 {
     if (isFirstBarrier_) {
         // 申请device内存
-        barrierInMemory_ = DeviceMem::alloc(HCCL_BARRIER_DEFAULT_COUNT * sizeof(float));
-        barrierOutMemory_ = DeviceMem::alloc(HCCL_BARRIER_DEFAULT_COUNT * sizeof(float));
-        CHK_PRT_RET(!barrierInMemory_, HCCL_ERROR("[Create][BarrierMemory]create barrier input memory fail"),
-            HCCL_E_PTR);
-        CHK_PRT_RET(!barrierOutMemory_, HCCL_ERROR("[Create][BarrierMemory]create barrier output memory fail"),
-            HCCL_E_PTR);
+        CHK_RET(DeviceMem::alloc(barrierInMemory_, HCCL_BARRIER_DEFAULT_COUNT * sizeof(float)));
+        CHK_RET(DeviceMem::alloc(barrierOutMemory_, HCCL_BARRIER_DEFAULT_COUNT * sizeof(float)));
 
         barrierSendBuf = static_cast<void *>(barrierInMemory_.ptr());
         barrierRecvBuf = static_cast<void *>(barrierOutMemory_.ptr());
@@ -1407,10 +1412,5 @@ HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetInstTopoTypeByNetLayer(uint32_t netLayer, uint32_t *topoType)
-{
-    CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->GetInstTopoTypeByNetLayer(netLayer, topoType));
-    return HCCL_SUCCESS;
-}
+
 }  // namespace hccl

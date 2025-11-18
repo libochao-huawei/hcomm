@@ -45,6 +45,7 @@ typedef enum {
     HCCL_E_REMOTE = 21,             /**< error cqe */
     HCCL_E_SUSPENDING = 22,         /**< error communicator suspending */
     HCCL_E_OPRETRY_FAIL = 23,       /**< retry constraint */
+    HCCL_E_OOM = 24,                /**< out of memory */
     HCCL_E_IN_STATUS = 1041,        /**< The error information is in the status. */
     HCCL_E_RESERVED                 /**< reserved */
 } HcclResult;
@@ -120,7 +121,7 @@ typedef struct HcclRootInfoDef {
 
 const uint32_t HCCL_COMM_CONFIG_INFO_BYTES = 24;
 const uint32_t HCCL_COMM_CONFIG_MAGIC_WORD = 0xf0f0f0f0;
-const uint32_t HCCL_COMM_CONFIG_VERSION = 6;
+const uint32_t HCCL_COMM_CONFIG_VERSION = 7;
 const uint32_t HCCL_COMM_DEFAULT_BUFFSIZE = 200;
 const uint32_t HCCL_COMM_BUFFSIZE_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_DEFAULT_DETERMINISTIC = 0;
@@ -148,6 +149,7 @@ typedef struct HcclCommConfigDef {
     int32_t commEngine;             ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
     uint32_t threadNum;             ///< thread数量（新增）
     uint32_t notifyNumPerThread;    ///< 每个thread的notify数量（新增）
+    uint8_t aclGraphZeroCopyEnable; ///< 只有Reduce类算子(单算子和AclGraph下算法选择不一致)受此配置影响 0:默认值，关闭aclgraph零拷贝(结果与单算子一致优先) 1:开启aclgraph零拷贝(性能优先) 
 } HcclCommConfig;
 
 typedef enum {
@@ -195,7 +197,7 @@ typedef enum {
     HCCL_CMD_ALLGATHER_V,
     HCCL_CMD_REDUCE_SCATTER_V,
     HCCL_CMD_BATCH_WRITE,
-    HCCL_CMD_HALF_ALLTOALLV,
+    HCCL_CMD_HALF_ALLTOALLV = 20,
     HCCL_CMD_ALL,
     HCCL_CMD_FINALIZE = 100,
     HCCL_CMD_INTER_GROUP_SYNC,

@@ -19,6 +19,7 @@ CollReduceScatterHccsSioExecutor::CollReduceScatterHccsSioExecutor(
     : CollReduceScatterExecutor(dispatcher, topoMatcher)
 {
     desc_.isZeroCopy = false;
+    desc_.deterministic = 1;
     DMAReduceFlag_ = true;
     CCLMemSlice_ = false;
 }
@@ -87,7 +88,7 @@ HcclResult CollReduceScatterHccsSioExecutor::CalcLevel0CommInfo(TransportMemType
 
 HcclResult CollReduceScatterHccsSioExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceScatterHccsSioExecutor][KernelRun] userRank[%u] starts.", topoAttr_.userRank);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] userRank[%u] starts.", __func__, topoAttr_.userRank);
     HcclDataType dataType = param.DataDes.dataType;
     HcomCollOpInfo opInfo = {"", execMem.inputPtr, execMem.outputPtr, param.DataDes.count, param.DataDes.dataType, 
         param.root, param.reduceType};
@@ -100,6 +101,7 @@ HcclResult CollReduceScatterHccsSioExecutor::KernelRun(const OpParam &param, Exe
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, dataType, param.reduceType);
     std::unique_ptr<AlgTemplateBase> TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_HCCS_SIO, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_HCCS_SIO in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(TempAlg);
 
     CHK_RET(TempAlg->Prepare(execMem.inputMem, execMem.outputMem, execMem.scratchMem, execMem.count, dataType,

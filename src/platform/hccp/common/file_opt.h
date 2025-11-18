@@ -15,7 +15,9 @@
 #include <sys/fcntl.h>
 #include <sys/file.h>
 
-#define CONLINE_LEN  384
+#define CONF_NAME_MAX_LEN   64
+#define CONF_VALUE_MAX_LEN  2048
+#define CONLINE_LEN         (CONF_NAME_MAX_LEN + CONF_VALUE_MAX_LEN + 1)
 
 #define FILE_EXIST 0
 

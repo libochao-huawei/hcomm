@@ -278,8 +278,7 @@ HcclResult HDCommunicate::AllocShm(u32 devid, DeviceMem &devShm, HostMem &hostSh
 {
     // 共享内存size需要按照4K(4*1024=4096)对齐
     u32 size = (buffLen_ + HCCL_HDC_CONTROL_WORDS * sizeof(u32) + HCCL_SHM_ALIGN - 1) / HCCL_SHM_ALIGN * HCCL_SHM_ALIGN;
-    devShm = DeviceMem::alloc(size);
-    CHK_PTR_NULL(devShm.ptr());
+    CHK_RET(DeviceMem::alloc(devShm, size));
     CHK_RET(hrtMemSet(devShm.ptr(), size, size));
 
     if (supportDevMemReg_) {
@@ -308,8 +307,7 @@ HcclResult HDCommunicate::AllocReadCache(u32 flag, void *&readCacheAddr)
             HCCL_E_INTERNAL);
         readCacheAddr = hostCache_.ptr();
     } else {
-        devCache_ = DeviceMem::alloc(devMem_.size());
-        CHK_PTR_NULL(devCache_.ptr());
+        CHK_RET(DeviceMem::alloc(devCache_, devMem_.size()));
         CHK_RET(hrtMemSet(devCache_.ptr(), devCache_.size(), devCache_.size()));
         readCacheAddr = devCache_.ptr();
     }

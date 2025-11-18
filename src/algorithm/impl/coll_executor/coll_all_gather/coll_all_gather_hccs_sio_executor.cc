@@ -86,7 +86,7 @@ HcclResult CollAllGatherHccsSioExecutor::CalcLevel0CommInfo(TransportMemType inp
  
 HcclResult CollAllGatherHccsSioExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllGatherHccsSioExecutor][KernelRun] The AllGatherHccsSioExecutor starts.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] The AllGatherHccsSioExecutor starts.", __func__);
     HcomCollOpInfo opInfo = {"", execMem.inputPtr, execMem.outputPtr, param.DataDes.count, param.DataDes.dataType, 
         param.root, param.reduceType};
  
@@ -99,6 +99,7 @@ HcclResult CollAllGatherHccsSioExecutor::KernelRun(const OpParam &param, ExecMem
     // 执行
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_GATHER_HCCS_SIO, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_HCCS_SIO in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(tempAlg);
 
     CHK_RET(tempAlg->Prepare(outerCommInfoHccs, outerCommInfoSio, execMem.inputMem, execMem.outputMem,

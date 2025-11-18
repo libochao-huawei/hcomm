@@ -9,6 +9,8 @@
  */
 
 #include "independent_op.h"
+#include "launch_aicpu.h"
+#include "manager_common.h"
 
 namespace hccl {
 
@@ -25,10 +27,59 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commMemMgr_.CommSetHcclBufferSize(commConfig.GetConfigBufferSize());
     HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u]", 
         __func__, commId_.c_str(), threadNum_, notifyNumPerThread_);
-    CHK_PRT(engineResMgr_.Init(threadNum_, notifyNumPerThread_, commId_, binHandle));
+    binHandle_ = binHandle;
+
+    // aicpu侧初始化状态的回调函数
+    ManagerCallbacks callbacks;
+    callbacks.getAicpuCommState = [this]() { return this->GetAicpuCommState(); };
+    callbacks.setAicpuCommState = [this](bool state) { this->SetAicpuCommState(state); };
+    callbacks.kernelLaunchAicpuCommInit = [this]() { return this->KernelLaunchAicpuCommInit(); };
+
+    CHK_PRT(engineResMgr_.Init(threadNum_, notifyNumPerThread_, commId_, binHandle, callbacks));
     CHK_RET(rankgraph_.Init(rankTable, topoAttr));
+    CHK_PRT(channelMgr_.Init(binHandle, topoAttr.userRank, callbacks));
+
+    // Aicpu通信域初始化参数
+    snprintf_s(commAicpuParam_.hcomId, HCOMID_MAX_SIZE, HCOMID_MAX_SIZE - 1, "%s", commId_.c_str());
+    commAicpuParam_.deviceLogicId = topoAttr.deviceLogicId;
+    commAicpuParam_.devicePhyId = topoAttr.devicePhyId;
+    commAicpuParam_.deviceType = static_cast<u32>(topoAttr.deviceType);
     return HCCL_SUCCESS;
 }
 
+bool IndependentOp::GetAicpuCommState()
+{
+    return isAicpuCommInit_;
+}
+
+void IndependentOp::SetAicpuCommState(bool aicpuCommState)
+{
+    isAicpuCommInit_ = aicpuCommState;
+    return;
+}
+
+HcclResult IndependentOp::KernelLaunchAicpuCommInit()
+{
+    // 创建局部流
+    Stream localStream(StreamType::STREAM_TYPE_ONLINE);
+    constexpr u32 aicpuStreamMode = 1;
+    CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
+
+    // 下kernel进行自定义算子aicpu侧通信域的公共初始化
+    std::string kernelName = "RunAicpuIndOpCommInit";
+
+    CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
+        sizeof(commAicpuParam_), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
+    CHK_RET(hcclStreamSynchronize(localStream.ptr()));
+
+    // 打印增加初始化对应的参数
+    HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);
+    return HCCL_SUCCESS;
+}
+
+HcclResult IndependentOp::SetChannelCallbacks(const ChannelManagerCallbacks& channelCallbacks)
+{
+    return channelMgr_.SetChannelCallbacks(channelCallbacks);
+}
 
 }  // namespace hccl

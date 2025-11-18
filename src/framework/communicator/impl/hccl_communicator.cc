@@ -444,6 +444,10 @@ namespace hccl
         nicDeployment_ = attrCollector_.GetNicDeployment();
     }
 
+    void HcclCommunicator::ForceProf(bool isForce) {
+        ForceProfOn(dispatcher_, isForce);    
+    }
+
     HcclResult HcclCommunicator::InitRankInfoSubGroup(const std::vector<RankInfo> &rankList,
                                                       WorldGroupInfo &groupCommonData)
     {
@@ -738,7 +742,7 @@ namespace hccl
                                                             std::shared_ptr<HDCommunicate> &statusD2H)
     {
         HCCL_INFO("start to stop the backGround Thread");
-        if (deviceType_ == DevType::DEV_TYPE_910 || deviceType_ == DevType::DEV_TYPE_910B)
+        if (deviceType_ == DevType::DEV_TYPE_910 || (deviceType_ == DevType::DEV_TYPE_910B && !GetAicpuUnfoldFlag()))
         {
             if (GetAicpuCommEngine())
             {
@@ -787,7 +791,7 @@ namespace hccl
                                                   std::shared_ptr<HDCommunicate> &statusD2H)
     {
         HCCL_INFO("[HcclCommunicator][%s]start to destroy the aicpu comm, group[%s].", __func__, identifier_.c_str());
-        if (deviceType_ != DevType::DEV_TYPE_910_93)
+        if (deviceType_ != DevType::DEV_TYPE_910_93 && !(deviceType_ == DevType::DEV_TYPE_910B && GetAicpuUnfoldFlag()))
         {
             HCCL_INFO("[HcclCommunicator][%s]Device type[%d] no needs to destroy the aicpu comm.", __func__,
                       deviceType_);
@@ -1050,11 +1054,22 @@ namespace hccl
     {
         return isAicpuCommEngine_;
     }
- 
+
     HcclResult HcclCommunicator::SetAicpuCommEngine(bool isAicpuCommEngine)
     {
         isAicpuCommEngine_ = isAicpuCommEngine;
         return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SetAicpuUnfoldFlag()
+    {
+        isAicpuUnfold_ = true;
+        return HCCL_SUCCESS;
+    }
+
+    bool HcclCommunicator::GetAicpuUnfoldFlag()
+    {
+        return isAicpuUnfold_;
     }
 
     HcclResult HcclCommunicator::SetStopFlag(bool value)
@@ -1378,7 +1393,8 @@ namespace hccl
         HCCL_PROFILER_DEL_OPDATA(param.tag);
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
              hccl::ProfilingManagerPub::GetAddtionInfoState() &&
-             hccl::ProfilingManagerPub::GetTaskApiState()))
+             hccl::ProfilingManagerPub::GetTaskApiState()) &&
+             !hccl::ProfilingManagerPub::GetThreadCaptureStatus())
         {
             return HCCL_SUCCESS;
         }
@@ -1435,8 +1451,8 @@ namespace hccl
         {
             if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER)
             {
-                DeviceMem tmpBuffer = DeviceMem::alloc(resRequest.scratchMemSize + CCE_REDUCE_ALIGN_SIZE);
-                CHK_PTR_NULL(tmpBuffer.ptr());
+                DeviceMem tmpBuffer;
+                CHK_RET(DeviceMem::alloc(tmpBuffer, resRequest.scratchMemSize + CCE_REDUCE_ALIGN_SIZE));
                 // cce reduce地址32字节对齐，截取32字节对齐后的内存地址
                 u32 addOffset = (reinterpret_cast<uintptr_t>(tmpBuffer.ptr())) % CCE_REDUCE_ALIGN_SIZE;
                 algResResponse.scratchMem = addOffset == 0 ? tmpBuffer.range(addOffset, cclBufferManager_.GetInCCLbufferSize()) : tmpBuffer.range(CCE_REDUCE_ALIGN_SIZE - addOffset, cclBufferManager_.GetInCCLbufferSize());
@@ -1444,8 +1460,7 @@ namespace hccl
             }
             else
             {
-                algResResponse.scratchMem = DeviceMem::alloc(resRequest.scratchMemSize);
-                CHK_PTR_NULL(algResResponse.scratchMem.ptr());
+                CHK_RET(DeviceMem::alloc(algResResponse.scratchMem, resRequest.scratchMemSize));
             }
         }
 
@@ -2587,8 +2602,7 @@ namespace hccl
 
         CHK_RET(AllocAndClearHostMem(sizeof(MemDetails) * tmpMemDetailSize, aiMemDetailsMem_));
         MemDetails *aiMemDetailsHost = reinterpret_cast<MemDetails*>(aiMemDetailsMem_->ptr());
-
-        aiMemDetailsDev_ = DeviceMem::alloc(aiMemDetailsMem_->size());
+        CHK_RET(DeviceMem::alloc(aiMemDetailsDev_, aiMemDetailsMem_->size()));
         u64 memBase = reinterpret_cast<uint64_t>(aiMemDetailsDev_.ptr());
 
         for (u32 i = 0; i < aiRMAInfoPtr->rankNum; i++)
@@ -2661,22 +2675,22 @@ namespace hccl
         aiRMAInfoPtr->sizeOfAiRMACQ = static_cast<u32>(sizeof(HcclAiRMACQ));
         aiRMAInfoPtr->sizeOfAiRMAMem = static_cast<u32>(sizeof(HcclAiRMAMemInfo));
 
-        aiSqDev_ = DeviceMem::alloc(aiSqMem_->size());
+        CHK_RET(DeviceMem::alloc(aiSqDev_, aiSqMem_->size()));
         aiRMAInfoPtr->sqPtr = aiSqDev_.ptr();
         CHK_RET(hrtMemAsyncCopy(aiSqDev_.ptr(), aiSqDev_.size(), aiSqMem_->ptr(), aiSqDev_.size(),
                                      HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
 
-        aiScqDev_ = DeviceMem::alloc(aiScqMem_->size());
+        CHK_RET(DeviceMem::alloc(aiScqDev_, aiScqMem_->size()));
         aiRMAInfoPtr->scqPtr = aiScqDev_.ptr();
         CHK_RET(hrtMemAsyncCopy(aiScqDev_.ptr(), aiScqDev_.size(), aiScqMem_->ptr(), aiScqDev_.size(),
                                      HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
 
-        aiRqDev_ = DeviceMem::alloc(aiRqMem_->size());
+        CHK_RET(DeviceMem::alloc(aiRqDev_, aiRqMem_->size()));
         aiRMAInfoPtr->rqPtr = aiRqDev_.ptr();
         CHK_RET(hrtMemAsyncCopy(aiRqDev_.ptr(), aiRqDev_.size(), aiRqMem_->ptr(), aiRqDev_.size(),
                                      HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
 
-        aiRcqDev_ = DeviceMem::alloc(aiRcqMem_->size());
+        CHK_RET(DeviceMem::alloc(aiRcqDev_, aiRcqMem_->size()));
         aiRMAInfoPtr->rcqPtr = aiRcqDev_.ptr();
         CHK_RET(hrtMemAsyncCopy(aiRcqDev_.ptr(), aiRcqDev_.size(), aiRcqMem_->ptr(), aiRcqDev_.size(),
                                      HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
@@ -2684,13 +2698,13 @@ namespace hccl
         CHK_RET(hrtMemAsyncCopy(aiMemDetailsDev_.ptr(), aiMemDetailsDev_.size(), aiMemDetailsMem_->ptr(),
                                      aiMemDetailsDev_.size(), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
 
-        aiMemDev_ = DeviceMem::alloc(aiMemMem_->size());
+        CHK_RET(DeviceMem::alloc(aiMemDev_, aiMemMem_->size()));
         aiRMAInfoPtr->memPtr = aiMemDev_.ptr();
         CHK_RET(hrtMemAsyncCopy(aiMemDev_.ptr(), aiMemDev_.size(), aiMemMem_->ptr(), aiMemDev_.size(),
                                      HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
 
         combinOparaPtr->sizeOfAiRMAInfo = static_cast<u64>(sizeof(HcclAiRMAInfo));
-        aiRMAInfoDev_ = DeviceMem::alloc(combinOparaPtr->sizeOfAiRMAInfo);
+        CHK_RET(DeviceMem::alloc(aiRMAInfoDev_, combinOparaPtr->sizeOfAiRMAInfo));
         combinOparaPtr->aiRMAInfo = aiRMAInfoDev_.ptr();
         CHK_RET(hrtMemAsyncCopy(aiRMAInfoDev_.ptr(), aiRMAInfoDev_.size(), aiRMAInfoMem_->ptr(), aiRMAInfoDev_.size(),
                                      HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));

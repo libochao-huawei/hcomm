@@ -644,7 +644,10 @@ struct ibv_cq *ibv_create_cq(struct ibv_context *context, int cqe,
  */
 int ibv_destroy_cq(struct ibv_cq *cq)
 {
-	free(cq);
+	if (cq != NULL) {
+		free(cq);
+		cq = NULL;
+	}
 
 	return 0;
 }

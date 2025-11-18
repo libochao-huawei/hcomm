@@ -243,3 +243,13 @@ drvError_t drvBindHostPid(struct drvBindHostpidInfo info)
 {
     return 0;
 }
+
+int file_read_cfg(const char *file_path, int dev_id, const char *conf_name, char *conf_value, unsigned int len)
+{
+    if (strncmp(conf_name, "udp_port_mode", strlen("udp_port_mode") + 1) == 0){
+        memcpy_s(conf_value, len, "nslb_dp", strlen("nslb_dp"));
+    } else {
+        memcpy_s(conf_value, len, "16666", strlen("16666"));
+    }
+    return 0;
+}

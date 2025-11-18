@@ -38,8 +38,7 @@ HcclResult CCLBufferManager::CreateCCLbuffer(u64 size, DeviceMem &buffer)
     CHK_PRT_RET((size > ULONG_MAX),
         HCCL_ERROR("[CCLBufferManager][CreateCCLbuffer]buffer size is greater than %llu", ULONG_MAX), HCCL_E_PARA);
 
-    buffer = DeviceMem::alloc(size);
-    CHK_PRT_RET(buffer.ptr() == nullptr,HCCL_ERROR("[CCLBufferManager][CreateCCLbuffer]Create ccl buffer fail,buffer ptr is nullptr"),HCCL_E_PTR);
+    CHK_RET(DeviceMem::alloc(buffer, size));
     HCCL_INFO("[CreateCCLbuffer] buffer ptr[%p], size[%llu]", buffer.ptr(), buffer.size());
     CHK_PRT_RET(size && !buffer, HCCL_ERROR("[CCLBufferManager][CreateCCLbuffer]Create ccl buffer size[%llu] fail,"
         "please check environmental variable HCCL_BUFFSIZE.", size), HCCL_E_PTR);

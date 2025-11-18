@@ -236,7 +236,8 @@ HcclResult CollNativeExecutorBase::AddSubStreamToProfiling()
 #ifndef OPEN_HCCL_TEST
     if (((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
         hccl::ProfilingManagerPub::GetAddtionInfoState() &&
-        hccl::ProfilingManagerPub::GetTaskApiState())) {
+        hccl::ProfilingManagerPub::GetTaskApiState() &&
+        !hccl::ProfilingManagerPub::GetThreadCaptureStatus())) {
         return HCCL_SUCCESS;
     }
 

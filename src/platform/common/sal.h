@@ -30,7 +30,7 @@ HcclResult SalGetJsonProperty(const nlohmann::json &obj, const std::string &prop
 #endif
 
 u32 SalStrLen(const char *s, u32 maxLen = INT_MAX);
-
+HcclResult SalStrToDouble(const std::string str, double &val);
 template <typename MapType>
 void ExceptionTransportInfoRetriever(const u32 localRank, const MapType& rankTransportMap)
 {

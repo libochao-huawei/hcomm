@@ -51,11 +51,8 @@
 #include "aclgraph/zero_copy_acl_graph.h"
 #include "../nslbdp/hccl_nslbdp.h"
 #include "hccl_api.h"
-#include "independent_op_context_manager.h"
 #include "independent_op.h"
 #include "comm_config_pub.h"
-#include "independent_op_channel_manager.h"
-#include "independent_op_channel_param.h"
 #include "new/hccl_dispatcher_ctx.h"
 
 namespace hccl {
@@ -217,13 +214,13 @@ public:
         u32 itemNum, rtStream_t stream);
 
     virtual HcclResult Send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-        u32 destRank, rtStream_t stream);
+        u32 destRank, rtStream_t stream, u32 srTag = 0, u32 localGroupRank = 0);
 
     virtual HcclResult SendOutPlace(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
         u32 destRank, rtStream_t stream);
 
     virtual HcclResult Receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-        u32 srcRank, rtStream_t stream);
+        u32 srcRank, rtStream_t stream, u32 srTag = 0, u32 localGroupRank = 0);
 
     virtual HcclResult ReceiveOutPlace(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
         u32 srcRank, rtStream_t stream);
@@ -234,6 +231,8 @@ public:
     virtual HcclResult SupportDeterministicOptim(bool &isDeterministicOptim);
 
     virtual HcclResult GetCqeError(HcclResult &result);
+
+    virtual HcclResult GetOpInconsistentError(HcclResult &result);
 
     //  对内接口
     virtual HcclResult CheckDataType(const HcclDataType dataType, bool needReduce);
@@ -395,6 +394,7 @@ public:
     HcclResult ResetNotifyForDestRank(s64 destRank);
     HcclResult InitZeroCopyMemoryAgent();
     HcclResult DeinitZeroCopyMemoryAgent(bool inDestructor = false);
+    u8 GetConfigAclGraphZeroCopyEnable(); // 从commConfig_里通过函数获取用户配置的aclGraphZeroCopyEnable值
     HcclResult SetMemoryRange(void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
     HcclResult UnsetMemoryRange(void *baseVirPtr);
     HcclResult ActivateCommMemory(void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
@@ -412,29 +412,9 @@ public:
     static HcclResult GetTransportCqeErrors(const HcclNetDevCtx netDevCtx, std::vector<ErrCqeInfo> &infos, u32 &num);
     ErrorMessageReport GetAicpuTaskException();
 
-    HcclResult CreateCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx);
-    HcclResult GetCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx);
-    HcclResult DestroyCommEngineCtx(const HcclMem *engineCtx);
     // 独立算子专用
-    HcclResult DeepCopyH2DChannelP2p(const HcclChannelP2p &hostChannelP2p, HcclChannelP2p &deviceChannelP2p);
-    HcclResult DeepCopyH2DChannelRoce(const HcclChannelRoce &hostChannelRoce, HcclChannelRoce &deviceChannelRoce);
-    HcclResult DeepCopyH2DChannelRemoteResV2(const HcclIndOpChannelRemoteResV2 &hostRemoteResV2, 
-        HcclIndOpChannelRemoteResV2 &deviceRemoteResV2);
-    HcclResult DeepCopyH2DchannelParam(const HcclIndOpChannelRemoteResV3 &hostChannelParam, 
-        HcclIndOpChannelRemoteResV3 &deviceChannelParam);
-    HcclResult ReleaseChannelParam(HcclIndOpChannelRemoteResV3 &channelParam);
-    HcclResult BuildOpRemoteChannelP2pResParam(const LINK &link, HcclIndOpChannelRemoteResV2 &remoteRes);
-    HcclResult BuildOpRemoteChannelRoceResParam(const LINK &link, HcclIndOpChannelRemoteResV2 &remoteRes);
-    HcclResult ParseChannelRemoteDataToMem(const OpCommTransport &opTransportResponse, HcclIndOpChannelRemoteResV3 &channelParam);
-    HcclResult AicpuChannelInit(const std::string &commId, const std::string &tag, CommEngine engine, 
-        const OpCommTransport &opTransportResponse, ChannelHandle *channelList, uint32_t listNum);
-    OpCommTransport BuildChannelRequests(const std::vector<ChannelDesc> &descs);
-    HcclResult ChannelCommCreate(const std::string &commId, const std::string &tag, CommEngine engine, 
-        const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList, TransportIOMem& transMem);
-    HcclResult ChannelCommGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum);
-    HcclResult ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum);
-    HcclResult ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer);
-    HcclResult ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
+    HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, 
+        TransportIOMem& transMem, bool isAicpuModeEn);
     aclrtBinHandle GetBinCustomHandle();
 
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
@@ -449,7 +429,7 @@ public:
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
     HcclTopoAttr GetTopoAttr();
-    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, uint32_t *topoType);
+    void ForceProf(bool isForce);
 private:
 
     bool IsEnableRoce();
@@ -480,8 +460,6 @@ private:
     HcclResult DeinitProfiling();
     HcclResult InitProfiler();
     HcclResult InitOneSidedService(const RankTable_t &rankTable);
-    HcclResult InitContextManager();
-    HcclResult InitChannelManager();
 
     HcclResult RegistTaskExceptionHandler() const;
     HcclResult UnRegistTaskExceptionHandler() const;
@@ -579,7 +557,10 @@ private:
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup,
         std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H);
     HcclResult SaveRankInfoHasLinked(const AlgResourceRequest& resRequest);
+    HcclResult RecordOpPara(HcclCMDType opType, OpParam &opParam);
 
+    HcclResult SetAicpuUnfoldFlag();
+    bool GetAicpuUnfoldFlag();
     u32 deviceNumPerServer_;
     HcclDispatcher dispatcher_; // dispatcher放到最后析构
     DispatcherCtxPtr dispatcherCtx_{nullptr};
@@ -901,12 +882,6 @@ private:
     std::unique_ptr<HcclSocketManager> socketManager_;
     std::unique_ptr<TransportManager> transportManager_ = { nullptr };
 
-#ifndef CCL_KERNEL_AICPU
-    // 独立算子专用成员变量
-    std::unique_ptr<ContextManager> contextManager_ = { nullptr };
-    std::unique_ptr<ChannelManager> channelManager_ = { nullptr };
-#endif
-
     std::unique_ptr<ZeroCopyMemoryAgent> zeroCopyMemoryAgent_ = { nullptr };
 
     std::unordered_map<std::string, AlgResourceResponse> resMap_; // tag : AlgResourceResponse
@@ -970,6 +945,7 @@ private:
     HcclSocketPortConfig commPortConfig_;
     std::shared_ptr<PetersonLock> hostDeviceLock_;
     bool isAicpuCommEngine_{false};
+    bool isAicpuUnfold_{false};
     HostMem opTilingDataBuf_;
     HostMem apiTilingDataMem_;
     DeviceMem tilingDataMemDevice_;

@@ -17,6 +17,7 @@ CollAllReduceMeshAivSmallCountExecutor::CollAllReduceMeshAivSmallCountExecutor(c
 {
     DMAReduceFlag_ = false;
     desc_.isAivMode = true;
+    desc_.deterministic = 0;
 }
 
 HcclResult CollAllReduceMeshAivSmallCountExecutor::CalcStreamNum(u32& streamNum)
@@ -158,7 +159,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::GetAdjInfo(AlgResourceRespons
 
 HcclResult CollAllReduceMeshAivSmallCountExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllReduceMeshAivSmallCountExecutor][KernelRun]AllReduce aiv enter.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllReduce aiv enter.", __func__);
 
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);

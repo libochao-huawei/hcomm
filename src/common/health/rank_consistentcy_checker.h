@@ -42,6 +42,7 @@ using HcclCMDInfo = struct TagHcclCMDInfo {
     u64 inCclBufferSize{0};
     u64 outCclBufferSize{0};
     u32 aivCoreLimit{0};
+    u8 deterministic{0};
 };
 
 using HcclCRCInfo = struct TagHcclCRCInfo {
@@ -86,22 +87,14 @@ public:
 
     static RankConsistentcyChecker& GetInstance(s32 deviceLogicId = 0xFF);
 
-    // all gather and alltoall alltoallv alltoallvc
-    HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count, HcclDataType dataType,
-        u64 inCclBufferSize, u64 outCclBufferSize, const char *group = nullptr, u32 crc = DEFAULT_CRC,
-        u32 aivCoreLimit = 0);
-    // all reduce
-    HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count, HcclDataType dataType,
-        HcclReduceOp op, u64 inCclBufferSize, u64 outCclBufferSize, const char *group = nullptr,
-        u32 crc = DEFAULT_CRC, u32 aivCoreLimit = 0);
-    // broadcast
+    // gather
     HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count, HcclDataType dataType, u32 root,
         u64 inCclBufferSize, u64 outCclBufferSize, const char *group = nullptr, u32 crc = DEFAULT_CRC,
         u32 aivCoreLimit = 0);
-    // reduce
+    // all reduce && all gather && broadcast && scatter && reduce && alltoall alltoallv alltoallvc
     HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count, HcclDataType dataType,
         HcclReduceOp op, u32 root, u64 inCclBufferSize, u64 outCclBufferSize, const char *group = nullptr,
-        u32 crc = DEFAULT_CRC);
+        u32 crc = DEFAULT_CRC, u8 deterministic = 0, u32 aivCoreLimit = 0);
     // send && receive
     HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count, HcclDataType dataType, u32 rank,
         u32 srTag, u32 selfRank, u64 inCclBufferSize, u64 outCclBufferSize, const char *group,
@@ -109,15 +102,10 @@ public:
     // batchsendrecv
     HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 inCclBufferSize, u64 outCclBufferSize,
         const char *group = nullptr, u32 crc = DEFAULT_CRC);
-    // AllGather v
-    HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag,
-        const void* counts, const void *displs, const u32 rankSize, HcclDataType dataType,
-        u64 inCclBufferSize, u64 outCclBufferSize, const char *group = nullptr, u32 crc = DEFAULT_CRC,
-        u32 aivCoreLimit = 0);
-    // reduce scatter v
+    // reduce scatter v && AllGather v
     HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag,
         const void* counts, const void *displs, const u32 rankSize, HcclDataType dataType, HcclReduceOp op,
-        u64 inCclBufferSize, u64 outCclBufferSize, const char *group = nullptr, u32 crc = DEFAULT_CRC,
+        u64 inCclBufferSize, u64 outCclBufferSize, const char *group = nullptr, u32 crc = DEFAULT_CRC, u8 deterministic = 0,
         u32 aivCoreLimit = 0);
 
     HcclResult DelOpPara(const std::string &tag);
@@ -143,7 +131,7 @@ private:
     // all of that
     HcclResult RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count, HcclDataType dataType,
         HcclReduceOp op, u32 root, u32 rank, u32 srTag, u32 selfRank, u64 inCclBufferSize, u64 outCclBufferSize,
-        const char *group, u32 crc, u32 aivCoreLimit = 0);
+        const char *group, u32 crc, u8 deterministic = 0, u32 aivCoreLimit = 0);
     // for reduce_scatter_v and all_gatherv
     HcclResult RecordVaringOpPara(const std::string &tag, const void *counts, const void *displs, const u32 rankSize);
     // get CMDinfo by tag

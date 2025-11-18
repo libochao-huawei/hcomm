@@ -16,6 +16,7 @@ CollReduceRingFor91093Executor::CollReduceRingFor91093Executor(const HcclDispatc
     std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollReduceExecutor(dispatcher, topoMatcher)
 {
+    desc_.deterministic = 1;
 }
 
 HcclResult CollReduceRingFor91093Executor::CalcStreamNum(u32& streamNum)
@@ -99,7 +100,7 @@ HcclResult CollReduceRingFor91093Executor::CalcLevel2CommInfo(TransportMemType i
 
 HcclResult CollReduceRingFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceRingFor91093Executor][Run]The CollReduceRingFor91093Executor starts.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] The CollReduceRingFor91093Executor starts.", __func__);
     u32 perDataSize = 0;
     CHK_RET(SalGetDataTypeSize(param.DataDes.dataType, perDataSize));
     CHK_PRT_RET(perDataSize == 0, 
@@ -156,11 +157,11 @@ HcclResult CollReduceRingFor91093Executor::KernelRun(const OpParam &param, ExecM
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCE_RING, 
                 dispatcher_);
-            HCCL_INFO("[CollReduceRingFor91093Executor]reduce: using ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCE_RING in COMM_LEVEL1", __func__);
         } else {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCE_RECURSIVE_HALVING_DOUBLING, 
                 dispatcher_);
-            HCCL_INFO("[CollReduceRingFor91093Executor]reduce: using halving-doubling algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCE_RECURSIVE_HALVING_DOUBLING in COMM_LEVEL1", __func__);
         }
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr));
@@ -202,7 +203,7 @@ HcclResult CollReduceRingFor91093Executor::KernelRun(const OpParam &param, ExecM
                     dispatcher_);
                 CHK_SMART_PTR_NULL(level1RSTempAlg);
                 CHK_RET(level1RSTempAlg->Prepare(reduceAttr));
-                HCCL_INFO("[CollReduceRingFor91093Executor] ReduceScatter: using ring algo inter-server");
+                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
             } else {
                 HCCL_ERROR("[CollReduceRingFor91093Executor][superpod]ReduceScatter: algType_[%u] is not supported.", 
                     algType_.algoLevel1);
@@ -240,11 +241,11 @@ HcclResult CollReduceRingFor91093Executor::KernelRun(const OpParam &param, ExecM
         std::unique_ptr<AlgTemplateBase> level1RTempAlg;
         if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_RING) {
             level1RTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCE_RING, dispatcher_);
-            HCCL_INFO("[CollReduceRingFor91093Executor][superpod]reduce: using ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCE_RING in COMM_LEVEL2", __func__);
         } else {
             level1RTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCE_RECURSIVE_HALVING_DOUBLING, 
                 dispatcher_);
-            HCCL_INFO("[CollReduceRingFor91093Executor][superpod]reduce: using halving-doubling algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCE_RECURSIVE_HALVING_DOUBLING in COMM_LEVEL2", __func__);
         }
         CHK_SMART_PTR_NULL(level1RTempAlg);
         CHK_RET(level1RTempAlg->Prepare(reduceAttr));
@@ -271,7 +272,7 @@ HcclResult CollReduceRingFor91093Executor::KernelRun(const OpParam &param, ExecM
             DeviceMem gatherOutput = execMem.outputMem.range(level1Offset, hdSize);
             level1GTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_GATHER_RING, 
                 dispatcher_);
-            HCCL_INFO("[CollReduceRingFor91093Executor]gather ring: using ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_GATHER_RING in COMM_LEVEL1", __func__);
             
             CHK_SMART_PTR_NULL(level1GTempAlg);
             CHK_RET(level1GTempAlg->Prepare(gatherOutput, gatherOutput, gatherOutput, arCount, 

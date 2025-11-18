@@ -31,6 +31,8 @@ public:
 
     static HcclResult Process(const OpTilingData *tilingData);
     static std::shared_ptr<HcclOneSideServiceAicpu> GetService(const std::string &tag, const OpTilingData *tilingData);
+    static HcclResult CleanAllStreamFunc();
+    static HcclResult DisableAllStreamFunc();
 
 private:
     HcclResult Init(const std::string &tag, const OpTilingData *tilingData);
@@ -54,6 +56,11 @@ private:
     HcclResult CombineReportOpInfo(HcclCMDType cmdType, u8 dataType, u64 count);
     HcclResult ReportHcclTaskInfo();
     HcclResult ClearStreamLocalBuff();
+    HcclResult CleanStreamFunc();
+    HcclResult DisableStreamFunc();
+    HcclResult CleanStream(Stream &stream);
+    void ResetStreamCqeExceptionStatus(const Stream &stream);
+    HcclResult UpdateSqStatus(Stream &stream);
 
     static std::mutex serviceMapMutex_;
     static std::unordered_map<std::string, std::shared_ptr<HcclOneSideServiceAicpu>> services_;
@@ -73,6 +80,8 @@ private:
     u32 linkTimeout_{INVALID_UINT};
     std::unordered_map<u32, std::shared_ptr<TransportMem>> rdmaLinks_; // 根据remoteRankId索引transport
     std::vector<std::shared_ptr<LocalNotify>> opNotifies_;     // host与device间同步的notify
+    bool execStreamEnable_ = true;
+
     // for profiling
     u64 groupHashId_{0};
     u64 totalCount_{0};

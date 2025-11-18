@@ -16,6 +16,7 @@ CollAllReduceCommExecutor::CollAllReduceCommExecutor(const HcclDispatcher dispat
                                                      std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollAllReduceExecutor(dispatcher, topoMatcher)
 {
+    desc_.deterministic = 1;
     DMAReduceFlag_ = false;
 }
 
@@ -81,7 +82,7 @@ bool CollAllReduceCommExecutor::IsSmallData(const u64 totalSize, const u64 curSi
 
 HcclResult CollAllReduceCommExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllReduceCommExecutor][KernelRun] userRank[%u] starts.", topoAttr_.userRank);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] userRank[%u] starts.", __func__, topoAttr_.userRank);
     CommPlane commPlane = COMM_COMBINE;
     if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         commPlane = COMM_COMBINE_ORDER;
@@ -97,8 +98,10 @@ HcclResult CollAllReduceCommExecutor::KernelRun(const OpParam &param, ExecMem &e
         u64 curSize = execMem.count * SIZE_TABLE[param.DataDes.dataType]; // 单位 byte
         if (curSize <= NHR_ALLREDUCE_SMALL_SIZE) {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR_ONESHOT, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR_ONESHOT in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         } else {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         }
         HCCL_INFO("AllReduce comm: using nhr algo inter-server.");
         CHK_SMART_PTR_NULL(tempAlg);
@@ -108,17 +111,17 @@ HcclResult CollAllReduceCommExecutor::KernelRun(const OpParam &param, ExecMem &e
         }
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR_V1, dispatcher_);
-        HCCL_INFO("AllReduce comm: using nhr_v1 algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR_V1 in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NB, dispatcher_);
-        HCCL_INFO("AllReduce comm: using nonuniform-bruck algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NB in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
     } else {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_RING, dispatcher_);
-        HCCL_INFO("AllReduce comm: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_RING in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
     }

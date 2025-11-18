@@ -24,6 +24,12 @@ public:
     __aicore__ inline void Process(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t totalLen);
 
     template<typename T>
+    __aicore__ inline void ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t totalLen);
+
+    template<typename T>
+    __aicore__ inline void ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t totalLen);
+
+    template<typename T>
     __aicore__ inline void ClearFlag(uint32_t flagOffsetBase);
 };
 
@@ -123,6 +129,53 @@ __aicore__ inline void AivAllGatherBig910B::Process(GM_ADDR input, GM_ADDR outpu
 }
 
 template<typename T>
+__aicore__ inline void AivAllGatherBig910B::ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag,
+    uint64_t totalLen)
+{
+    uint32_t avgLengthPerSlice = len;
+    uint32_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
+    uint32_t targetRank = block_idx;
+
+    // 用10个flag
+    __gm__ T *inputGm = (__gm__ T *)input;
+    __gm__ T *outputGm = (__gm__ T *)output;
+    __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_]);
+    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
+
+    int32_t outputOffset = targetRank * totalLen;
+    if (block_idx == rank_) {
+        CpGM2GMWithFlagWrap(cclGmSelf, inputGm, avgLengthPerSlice, rank_, 8, tag);
+        pipe_barrier(PIPE_ALL);
+        CpGM2GM(outputGm + rank_ * totalLen, inputGm, avgLengthPerSlice);
+        // 所有对端都取走数据
+        pipe_barrier(PIPE_ALL);
+        Wait1vN((rankSize_ - 1) * tag, CommPattern::intraRank, true);
+    } else {
+        MemcpyWithFlagWrap(outputGm + outputOffset, cclGmOther, len, targetRank, tag);
+        pipe_barrier(PIPE_ALL);
+        Record(tag, targetRank, AivNotifyType::DataSignal);
+        pipe_barrier(PIPE_ALL);
+        Wait(tag, targetRank, AivNotifyType::DataSignal);
+        pipe_barrier(PIPE_ALL);
+        //是否要加清零的参数
+        RecordNv1(tag, rank_);
+        pipe_barrier(PIPE_ALL);
+    }
+    return;
+}
+
+template<typename T>
+__aicore__ inline void AivAllGatherBig910B::ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag,
+    uint64_t totalLen)
+{
+    if (blockdim_ == rankSize_){
+        ProcessSingleRanksizeCore<T>(input, output, len, tag, totalLen);
+    }else{
+        Process<T>(input, output, len, tag, totalLen);
+    }
+}
+
+template<typename T>
 __aicore__ inline void aiv_all_gather_910b_bigdata(KERNEL_ARGS_DEF)
 {
     AivAllGatherBig910B op;
@@ -139,7 +192,7 @@ __aicore__ inline void aiv_all_gather_910b_bigdata(KERNEL_ARGS_DEF)
         uint64_t curSize = curCount * sizeof(T);
 
         // 执行kernel
-        op.Process<T>(curInput, curOutput, curCount, curTag, len);
+        op.ProcessProxy<T>(curInput, curOutput, curCount, curTag, len);
 
         countLeft -= curCount;
         curInput += curSize;

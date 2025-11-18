@@ -62,6 +62,7 @@ void tc_ra_hdc_lite_ctx_init();
 void rc_ra_hdc_lite_qp_create();
 void tc_ra_hdc_tlv_request();
 void tc_ra_hdc_get_tlv_recv_msg();
+void tc_ra_hdc_qp_create_with_attrs();
 #ifdef __cplusplus
 }
 #endif

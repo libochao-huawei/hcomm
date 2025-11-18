@@ -185,10 +185,7 @@ HcclResult TransportRemoteAccess::CreateNotifyValueBuffer()
     std::unique_lock<std::mutex> lock(notifyValueMutex_[deviceLogicId_]);
     if (notifyValueMem_[deviceLogicId_].ptr() == nullptr) {
         u64 notifyVaule = 1; // notify值写1表示record
-        notifyValueMem_[deviceLogicId_] = DeviceMem::alloc(notifyValueSize_);
-        CHK_PRT_RET(!notifyValueMem_[deviceLogicId_],
-            HCCL_ERROR("[Create][NotifyValueBuffer]In TransportRemoteAccess create"
-            "notify buffer, malloc failed."), HCCL_E_MEMORY);
+        CHK_RET(DeviceMem::alloc(notifyValueMem_[deviceLogicId_], notifyValueSize_));
         HCCL_DEBUG("create notify value size[%u]", notifySize_);
 
         CHK_RET(hrtMemSyncCopy(notifyValueMem_[deviceLogicId_].ptr(), notifyValueMem_[deviceLogicId_].size(),

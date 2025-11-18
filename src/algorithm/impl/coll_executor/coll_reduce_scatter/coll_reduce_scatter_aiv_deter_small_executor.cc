@@ -57,18 +57,22 @@ HcclResult CollReduceScatterAivDeterSmallExecutor::CalcLevel0CommInfo(TransportM
 HcclResult CollReduceScatterAivDeterSmallExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
     blockDim = rankSize; // 默认情况使用rankSize个AIV
- 
+
     blockDim = BLOCK_DIM_FACTOR_TWO * rankSize; // 小数据量使用2倍rankSize的AIV core
     if ((rankSize * dataSize) >= AIV_REDUCE_SCATTER_DETER_SMALL_SIZE) {
         blockDim = BLOCK_DIM_FACTOR_THREE * rankSize;
     }
 
-    CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[CollReduceScatterAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-        blockDim_, blockDim), HCCL_E_PARA);
+    u32 bestBlockDim = blockDim;
+    CHK_PRT_RET(blockDim_ < rankSize,
+        HCCL_ERROR("[CollReduceScatterAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        blockDim_, rankSize), HCCL_E_PARA);
+    if (blockDim_ < blockDim) {
+        blockDim = blockDim_ / rankSize * rankSize;
+    }
 
     HCCL_INFO("[CollReduceScatterAivDeterSmallExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, blockDim);
+        blockDim, blockDim_, bestBlockDim);
     return HCCL_SUCCESS;
 }
  

@@ -110,7 +110,7 @@ private:
     HcclBuf *GetHcclBufByDesc(std::string &descStr, bool useRdma);
 
     // Prepare新增函数
-    void ConnectByThread(std::shared_ptr<HcclOneSidedConn>& conn, const std::string &commIdentifier, s32 timeoutSec);
+    void ConnectByThread(std::shared_ptr<HcclOneSidedConn>& conn, const std::string &commIdentifier, s32 timeoutSec, HcclResult &retOut);
     HcclResult CreateLinkFullmesh(const std::string &commIdentifier, s32 timeoutSec);
     HcclResult RegBoundMem(HcclNetDevCtx netDevCtx, const HcclMem& localMem,
         HcclMemDesc &localMemDesc, HcclBuf& buf);

@@ -30,7 +30,7 @@ STATIC int rs_get_netco_cfg(unsigned int phy_id, NetCoIpPortArg *netco_arg)
     // file not exist or item not found, degrade log level
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_RD_FILE_NOT_FOUND,
         hccp_run_warn("file_read_cfg udp_port_mode unsuccessful, ret(%d)", ret), -ENOTSUPP);
-    CHK_PRT_RETURN(ret != 0, hccp_err("file_read_cfg udp_port_mode fail, ret(%d)", ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("file_read_cfg udp_port_mode failed, ret(%d)", ret), ret);
 
     nslb_support = (strncmp(cfg_val, "nslb_dp", strlen("nslb_dp") + 1) == 0) ? true : false;
     CHK_PRT_RETURN(!nslb_support, hccp_run_warn("phy_id(%u) not support nslb", phy_id), -ENOTSUPP);
@@ -40,7 +40,7 @@ STATIC int rs_get_netco_cfg(unsigned int phy_id, NetCoIpPortArg *netco_arg)
     // file not exist or item not found, degrade log level
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_RD_FILE_NOT_FOUND,
         hccp_run_warn("file_read_cfg nslb_dp_listen_port unsuccessful, ret(%d)", ret), -ENOTSUPP);
-    CHK_PRT_RETURN(ret != 0, hccp_err("file_read_cfg nslb_dp_listen_port fail, ret(%d)", ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("file_read_cfg nslb_dp_listen_port failed, ret(%d)", ret), ret);
 
     netco_arg->listenPort = (unsigned short)strtoul(cfg_val, NULL, NETCO_PORT_NUM_BASE);
     netco_arg->gatewayPort = netco_arg->listenPort;
@@ -56,7 +56,7 @@ STATIC int rs_netco_init_arg(unsigned int phy_id, NetCoIpPortArg *netco_arg)
 
     ret = rs_get_netco_cfg(phy_id, netco_arg);
     CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_run_warn("get netco cfg unsuccessful, ret(%d) phy_id(%u)", ret, phy_id), ret);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get netco cfg fail, ret(%d) phy_id(%u)", ret, phy_id), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get netco cfg failed, ret(%d) phy_id(%u)", ret, phy_id), ret);
 
     ret = rs_get_ifaddrs(&ifaddr_infos, &num, phy_id);
     CHK_PRT_RETURN(ret != 0 || num != 1, hccp_err("rs get ifaddr failed, ret(%d) or num(%u) != 1", ret, num), -EINVAL);
@@ -79,7 +79,7 @@ int rs_nslb_netco_init(struct rs_nslb_cb *nslb_cb)
 
     ret = rs_netco_init_arg(nslb_cb->phy_id, &netco_arg);
     CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_warn("get netco init arg unsuccessful, ret(%d)", ret), ret);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get netco init arg fail, ret(%d)", ret), -EINVAL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get netco init arg failed, ret(%d)", ret), -EINVAL);
 
     ret = rs_nslb_api_init();
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_nslb_api_init[%d]", ret), ret);

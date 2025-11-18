@@ -84,7 +84,7 @@ HcclResult CollAllGatherSmallCountExecutor::CalcCombinedCommInfo(TransportMemTyp
 
 HcclResult CollAllGatherSmallCountExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllGatherSmallCountExecutor][KernelRun] starts.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] starts.", __func__);
     CommPlane commPlane = COMM_COMBINE_ORDER;
 
     CHK_RET(CheckCommSize(commPlane, COMM_INDEX_0 + 1));
@@ -93,6 +93,7 @@ HcclResult CollAllGatherSmallCountExecutor::KernelRun(const OpParam &param, Exec
     // 构造ring algorithm对应的all_gather实例
     std::unique_ptr<AlgTemplateBase> algTemplate = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_GATHER_HD_STAGE, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_HD_STAGE in COMM_COMBINE_ORDER", __func__);
     CHK_RET(ActiveSlaveStreams(param.stream));
     HcomCollOpInfo opInfo = {"", execMem.inputPtr, execMem.outputPtr, param.DataDes.count, param.DataDes.dataType,
         param.root, param.reduceType};

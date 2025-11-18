@@ -64,12 +64,16 @@ HcclResult CollAllReduceAivDeterSmallExecutor::CalBlockDim(u32& blockDim, u32 ra
         blockDim = BLOCK_DIM_FACTOR_THREE * rankSize;
     }
 
-    CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[CollAllReduceAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-        blockDim_, blockDim), HCCL_E_PARA);
+    u32 bestBlockDim = blockDim;
+    CHK_PRT_RET(blockDim_ < rankSize,
+        HCCL_ERROR("[CollAllReduceAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        blockDim_, rankSize), HCCL_E_PARA);
+    if (blockDim_ < blockDim) {
+        blockDim = blockDim_ / rankSize * rankSize;
+    }
 
     HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, blockDim);
+        blockDim, blockDim_, bestBlockDim);
     return HCCL_SUCCESS;
 }
 

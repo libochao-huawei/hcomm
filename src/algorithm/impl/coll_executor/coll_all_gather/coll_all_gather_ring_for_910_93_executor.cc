@@ -251,8 +251,8 @@ HcclResult CollAllGatherRingFor91093Executor::PrepareUserMemSlices(std::vector<s
 
 HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllGatherRingFor91093Executor][KernelRun] The AllGatherRingExecutor starts. "
-        "topoType_[%u], agv[%u]", topoType_, isAllGatherV_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] The AllGatherRingExecutor starts, topoType_[%u], agv[%u]",
+        __func__, topoType_, isAllGatherV_);
     CHK_RET(ActiveSlaveStreams(param.stream));
     const HcclDataType dataType = param.GetDataType();
     u32 perDataSize = 0;
@@ -314,15 +314,15 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
         if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
             level2AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
-            HCCL_INFO("AllGather ring: using nonuniform-bruck algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NB in COMM_LEVEL2", __func__);
         } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
             level2AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-            HCCL_INFO("AllGather ring: using nonuniform-hierarchical-ring algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL2", __func__);
         } else {
             level2AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
-            HCCL_INFO("AllGather ring: using ring algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RING in COMM_LEVEL2", __func__);
         }
         CHK_SMART_PTR_NULL(level2AGExecutor);
 
@@ -348,15 +348,15 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
             level1AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
-            HCCL_INFO("AllGather ring: using ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RING in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
-            HCCL_INFO("AllGather ring: using nonuniform-bruck algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NB in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
             level1AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-            HCCL_INFO("AllGather ring: using nonuniform-hierarchical-ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
             // 获取通信域分组信息
             std::vector<std::vector<std::vector<u32>>> globalSubGroups;
@@ -365,10 +365,10 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
             topoMatcher_->GetAHCAlgOption(ahcAlgOption);
             if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
                 level1AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_AHC, dispatcher_);
-                HCCL_INFO("AllGather comm: using ahc algo inter-server.");
+                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_AHC in COMM_LEVEL1", __func__);
             } else {
                 level1AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_AHC_BROKE, dispatcher_);
-                HCCL_INFO("AllGather comm: using ahc-broke algo inter-server.");
+                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_AHC_BROKE in COMM_LEVEL1", __func__);
             }
             CHK_SMART_PTR_NULL(level1AGExecutor);
             CHK_RET(level1AGExecutor->Prepare(execMem.count, globalSubGroups, ahcAlgOption));

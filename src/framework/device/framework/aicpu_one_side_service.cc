@@ -15,6 +15,7 @@
 #include "transport_pub.h"
 #include "adapter_hal_pub.h"
 #include "dispatcher.h"
+#include "aicpu_hccl_sqcq.h"
 
 namespace hccl {
 constexpr u64 MAX_RDMA_WQE_SIZE = 2ULL * 1024 * 1024 * 1024;    // RDMA最大WQE限制是2GB
@@ -405,5 +406,71 @@ HcclResult HcclOneSideServiceAicpu::ClearStreamLocalBuff()
 {
     CHK_RET(execStream_.ClearLocalBuff());
     return dfx::ProfilingManager::UpdateStartReportSqeIdx(execStream_.id(), 0);
+}
+
+HcclResult HcclOneSideServiceAicpu::CleanStreamFunc()
+{
+    if (execStreamEnable_) {
+        return HCCL_SUCCESS;
+    }
+    HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc tag[%s]", identifier_.c_str());
+    const HcclComStreamInfo &streamInfo = execStream_.GetHcclStreamInfo();
+    CHK_RET(ConfigSqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, 1));
+    execStreamEnable_ = true;
+
+    CHK_RET(CleanStream(execStream_));
+    HCCL_RUN_INFO("Entry HcclOneSideServiceAicpu::CleanStreamFunc reset stream sq buffer success"
+        "SetStreanEnable streamid[%d]", streamInfo.actualStreamId);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclOneSideServiceAicpu::CleanAllStreamFunc()
+{
+    HCCL_INFO("Entry HcclOneSideServiceAicpu::CleanAllStreamFunc");
+    std::unique_lock<std::mutex> guard{serviceMapMutex_};
+    for (auto &serviceIter : services_) {
+        CHK_RET(serviceIter.second->CleanStreamFunc());
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclOneSideServiceAicpu::DisableStreamFunc()
+{
+    HCCL_INFO("Entry HcclOneSideServiceAicpu::DisableStreamFunc tag[%s]", identifier_.c_str());
+    execStreamEnable_ = false;
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclOneSideServiceAicpu::DisableAllStreamFunc()
+{
+    HCCL_INFO("Entry HcclOneSideServiceAicpu::DisabalAllStreamFunc");
+    std::unique_lock<std::mutex> guard{serviceMapMutex_};
+    for (auto &serviceIter : services_) {
+        CHK_RET(serviceIter.second->DisableStreamFunc());
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclOneSideServiceAicpu::CleanStream(Stream &stream)
+{
+    CHK_RET(stream.ClearLocalBuff());
+    CHK_RET(UpdateSqStatus(stream));
+    HCCL_INFO("Entry HcclOneSideServiceAicpu::CleanStream %u success tag[%s]", stream.sqId(), identifier_.c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclOneSideServiceAicpu::UpdateSqStatus(Stream &stream)
+{
+    HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
+    CHK_PTR_NULL(sqeContext);
+    SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
+    auto &head = sqeContextBuffer->sqHead;
+    auto &tail = sqeContextBuffer->sqTail;
+
+    CHK_RET(QuerySqStatusByType(devId_, stream.sqId(), DRV_SQCQ_PROP_SQ_TAIL, head));
+    CHK_RET(QuerySqStatusByType(devId_, stream.sqId(), DRV_SQCQ_PROP_SQ_HEAD, tail));
+    HCCL_INFO("Entry HcclOneSideServiceAicpu::UpdateSqStatus, sqid:%u head:%u tail:%u tag[%s]", 
+        stream.sqId(), head, tail, identifier_.c_str());
+    return HCCL_SUCCESS;
 }
 }

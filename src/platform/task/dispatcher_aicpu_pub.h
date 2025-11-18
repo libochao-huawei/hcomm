@@ -110,7 +110,7 @@ public:
         return SignalRecord(nullptr, stream, INVALID_VALUE_RANKID, INVALID_U64, INVALID_VALUE_STAGE, true,
             INVALID_U64, static_cast<u32>(notifyId));
     }
-    HcclResult SignalWait(Stream &stream, u64 notifyId, u32 timeOut)
+    HcclResult SignalWait(Stream &stream, u32 notifyId, u32 timeOut)
     {
         return SignalWait(nullptr, stream, INVALID_VALUE_RANKID, INVALID_VALUE_RANKID,
             INVALID_VALUE_STAGE, true, static_cast<u32>(notifyId), timeOut);

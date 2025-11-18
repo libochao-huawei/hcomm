@@ -219,15 +219,13 @@ HcclResult hcclImpl::CreateAlltoAllVCommMem(DeviceMem& inputMem, DeviceMem& outp
     std::unique_lock<std::mutex> lock(inOutPutTempMemMutex_[deviceLogicId_]);
     if (inputMem.ptr() == nullptr) {
         if (inOutPutTempMem_[deviceLogicId_].ptr() == nullptr) {
-            inOutPutTempMem_[deviceLogicId_] = DeviceMem::alloc(tinyMemSizeForTransportCreation);
-            CHK_PTR_NULL(inOutPutTempMem_[deviceLogicId_].ptr());
+            CHK_RET(DeviceMem::alloc(inOutPutTempMem_[deviceLogicId_], tinyMemSizeForTransportCreation));
         }
         inputMem = inOutPutTempMem_[deviceLogicId_].range(0, inOutPutTempMem_[deviceLogicId_].size());
     }
     if (outputMem.ptr() == nullptr) {
         if (inOutPutTempMem_[deviceLogicId_].ptr() == nullptr) {
-            inOutPutTempMem_[deviceLogicId_] = DeviceMem::alloc(tinyMemSizeForTransportCreation);
-            CHK_PTR_NULL(inOutPutTempMem_[deviceLogicId_].ptr());
+            CHK_RET(DeviceMem::alloc(inOutPutTempMem_[deviceLogicId_], tinyMemSizeForTransportCreation));
         }
         outputMem = inOutPutTempMem_[deviceLogicId_].range(0, inOutPutTempMem_[deviceLogicId_].size());
     }
@@ -327,8 +325,7 @@ HcclResult hcclImpl::BuildAlltoAllVScratchMem(const std::string &tag, u64 workSp
 {
     std::unique_lock<std::mutex> lock(inOutPutTempMemMutex_[deviceLogicId_]);
     if (workSpaceMemSize == 0 && inOutPutTempMem_[deviceLogicId_].ptr() == nullptr) {
-        inOutPutTempMem_[deviceLogicId_] = DeviceMem::alloc(tinyMemSizeForTransportCreation);
-        CHK_PTR_NULL(inOutPutTempMem_[deviceLogicId_].ptr());
+        CHK_RET(DeviceMem::alloc(inOutPutTempMem_[deviceLogicId_], tinyMemSizeForTransportCreation));
     }
     lock.unlock();
     DeviceMem tmpMem;
@@ -339,7 +336,7 @@ HcclResult hcclImpl::BuildAlltoAllVScratchMem(const std::string &tag, u64 workSp
             scratchMemMap_.insert(std::pair<std::string, DeviceMem>(tag, tmpMem));
         } else {
             if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-                tmpMem = DeviceMem::alloc(max(workSpaceMemSize, cclBufferManager_.GetInCCLbufferSize()));
+                CHK_RET(DeviceMem::alloc(tmpMem, max(workSpaceMemSize, cclBufferManager_.GetInCCLbufferSize())));
             } else {
                 tmpMem = workSpaceRes_->AllocDeviceMem(tag, workSpaceMemSize);
             }
@@ -356,7 +353,7 @@ HcclResult hcclImpl::BuildAlltoAllVScratchMem(const std::string &tag, u64 workSp
             u64 nextworkSpaceMemSize = max(workSpaceMemSize, cclBufferManager_.GetInCCLbufferSize());
             HCCL_INFO("[Rebuild][workSpaceMem] workSpaceMem expand, cur size[%llu], next size[%llu]",
                 curSize, nextworkSpaceMemSize);
-            tmpMem = DeviceMem::alloc(nextworkSpaceMemSize);
+            CHK_RET(DeviceMem::alloc(tmpMem, nextworkSpaceMemSize));
             scratchMemMap_.insert(std::pair<std::string, DeviceMem>(tag, std::move(tmpMem)));
         }
     }
@@ -1143,7 +1140,8 @@ HcclResult hcclImpl::AddSubStreamToProfiling(const std::string &tag, HcclCMDType
 {
     if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
         hccl::ProfilingManagerPub::GetAddtionInfoState() &&
-        hccl::ProfilingManagerPub::GetTaskApiState())) {
+        hccl::ProfilingManagerPub::GetTaskApiState() &&
+        !hccl::ProfilingManagerPub::GetThreadCaptureStatus())) {
         return HCCL_SUCCESS;
     }
 

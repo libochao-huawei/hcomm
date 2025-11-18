@@ -193,6 +193,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    u8 HcclCommunicator::GetConfigAclGraphZeroCopyEnable()
+    {
+        return 0;
+    }
+
     HcclResult HcclCommunicator::ClearResMap(const std::string &tag, bool &findTag)
     {
         return HCCL_SUCCESS;
@@ -743,7 +748,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::Send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-                                      u32 destRank, rtStream_t stream)
+                                      u32 destRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
     {
         return HCCL_SUCCESS;
     }
@@ -755,7 +760,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::Receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-                                         u32 srcRank, rtStream_t stream)
+                                         u32 srcRank, rtStream_t stream, u32 srTag, u32 localGroupRank)
     {
         return HCCL_SUCCESS;
     }
@@ -1406,19 +1411,6 @@ namespace hccl
         return;
     }
 
-    HcclResult HcclCommunicator::CreateCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::GetCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::DestroyCommEngineCtx(const HcclMem *engineCtx)
-    {
-        return HCCL_SUCCESS;
-    }    
-
     HcclResult HcclCommunicator::GetCacheMap(std::unique_ptr<CollAlgOperator>& algOperator , OpParam& opParam, 
         AlgType& algType, bool selectAivAlg, std::string& newTag)
     {
@@ -1443,80 +1435,13 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
-    
-    HcclResult HcclCommunicator::ChannelCommCreate(const std::string &commId, const std::string &tag, CommEngine engine, 
-        const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList, TransportIOMem& transMem)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::ChannelCommGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum)
-    {
-        return HCCL_SUCCESS;
-    }
-    OpCommTransport HcclCommunicator::BuildChannelRequests(const std::vector<ChannelDesc> &descs)
-    {
-        return {};
-    }
-    HcclResult HcclCommunicator::AicpuChannelInit(const std::string &commId, const std::string &tag, CommEngine engine, 
-        const OpCommTransport &opTransportResponse, ChannelHandle *channelList, uint32_t listNum)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::ParseChannelRemoteDataToMem(const OpCommTransport &opTransportResponse, 
-        HcclIndOpChannelRemoteResV3 &channelParam)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::BuildOpRemoteChannelP2pResParam(const LINK &link, HcclIndOpChannelRemoteResV2 &remoteRes)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::BuildOpRemoteChannelRoceResParam(const LINK &link, HcclIndOpChannelRemoteResV2 &remoteRes)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::DeepCopyH2DchannelParam(const HcclIndOpChannelRemoteResV3 &hostChannelParam, 
-        HcclIndOpChannelRemoteResV3 &deviceChannelParam)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::DeepCopyH2DChannelRemoteResV2(const HcclIndOpChannelRemoteResV2 &hostRemoteResV2, 
-        HcclIndOpChannelRemoteResV2 &deviceRemoteResV2)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::DeepCopyH2DChannelRoce(const HcclChannelRoce &hostChannelRoce, 
-        HcclChannelRoce &deviceChannelRoce)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::DeepCopyH2DChannelP2p(const HcclChannelP2p &hostChannelP2p, 
-        HcclChannelP2p &deviceChannelP2p)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::ReleaseChannelParam(HcclIndOpChannelRemoteResV3 &channelParam)
+    HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, 
+        TransportIOMem& transMem, bool isAicpuModeEn)
     {
         return HCCL_SUCCESS;
     }
  
-    HcclResult HcclCommunicator::GetInstTopoTypeByNetLayer(uint32_t netLayer, uint32_t *topoType)
-    {
-        return HCCL_SUCCESS;
-    }
-    HcclResult HcclCommunicator::InitChannelManager()
+    HcclResult HcclCommunicator::GetOpInconsistentError(HcclResult &result)
     {
         return HCCL_SUCCESS;
     }
@@ -1528,9 +1453,5 @@ namespace hccl
     aclrtBinHandle HcclCommunicator::GetBinCustomHandle()
     {
         return nullptr;
-    }
-    HcclResult HcclCommunicator::InitContextManager()
-    {
-        return HCCL_SUCCESS;
     }
 }
