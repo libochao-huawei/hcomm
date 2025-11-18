@@ -1334,7 +1334,7 @@ void tc_rs_qp_create_with_attrs_v1()
     ret = rs_get_rdev_cb(rs_cb, rdev_index, &rdev_cb);
 	EXPECT_INT_EQ(ret, 0);
 
-	int qp_cnt_tmp = rdev_cb->qp_cnt; 
+	int qp_cnt_tmp = rdev_cb->qp_cnt;
 	rdev_cb->qp_cnt = 44444;
 	ret = rs_qp_create_with_attrs(phy_id, rdev_index, &qp_norm, &qp_resp_create);
 	EXPECT_INT_NE(ret, 0);
@@ -3953,7 +3953,7 @@ void tc_rs_ssl_get_ca_data()
 	char ca_file;
 	struct rs_cb rscb = {0};
 	struct tls_cert_mng_info mng_info = {0};
-	
+
 
 	mocker(calloc, 20, NULL);
 	ret = rs_ssl_get_ca_data(&rscb, &end_file, &ca_file, &mng_info);
@@ -4884,7 +4884,7 @@ void tc_rs_epoll_event_in_handle()
 int *stub__errno_locations()
 {
     static int err_no = 0;
- 
+
     err_no = EADDRINUSE;
     return &err_no;
 }
@@ -4927,7 +4927,7 @@ void tc_rs_socket_listen_bind_listen()
     ret = rs_socket_listen_bind_listen(-1, &conn_cb, &conn, &listen_info, 0);
     EXPECT_INT_EQ(EAGAIN, ret);
 	mocker_clean();
- 
+
 	mocker(setsockopt, 20, 0);
     mocker(bind, 20, 0);
     mocker(listen, 20, 1);
@@ -4935,7 +4935,7 @@ void tc_rs_socket_listen_bind_listen()
     ret = rs_socket_listen_bind_listen(-1, &conn_cb, &conn, &listen_info, 0);
     EXPECT_INT_EQ(EAGAIN, ret);
     mocker_clean();
- 
+
 	mocker(setsockopt, 20, 0);
     mocker(bind, 20, 0);
     mocker(listen, 20, 1);
@@ -6071,36 +6071,41 @@ void tc_rs_typical_register_mr()
 	struct rdma_mr_reg_info mr_reg_info = {0};
 	struct ibv_mr *ra_rs_mr_handle = NULL;
 	struct rs_init_config cfg = {0};
- 
+
 	addr = malloc(RS_TEST_MEM_SIZE);
 	mr_reg_info.addr = addr;
 	mr_reg_info.len = RS_TEST_MEM_SIZE;
 	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
- 
+
 	struct rdev rdev_info = {0};
 	rdev_info.phy_id = 0;
 	rdev_info.family = AF_INET;
 	rdev_info.local_ip.addr.s_addr = inet_addr("127.0.0.1");
- 
+
 	ret = rs_init(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 	ret = rs_rdev_init(rdev_info, NOTIFY, &rdev_index);
 	EXPECT_INT_EQ(ret, 0);
- 
- 
-	ret = rs_typical_register_mr(phy_id, rdev_index, &mr_reg_info, &ra_rs_mr_handle);
+
+	ret = rs_typical_register_mr_v1(phy_id, rdev_index, &mr_reg_info, &ra_rs_mr_handle);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	ret = rs_typical_deregister_mr(phy_id, rdev_index, (uint64_t)addr);
 	EXPECT_INT_EQ(ret, 0);
- 
+
+	ret = rs_typical_register_mr(phy_id, rdev_index, &mr_reg_info, &ra_rs_mr_handle);
+	EXPECT_INT_EQ(ret, 0);
+
+	ret = rs_typical_deregister_mr(phy_id, rdev_index, (uint64_t)ra_rs_mr_handle);
+	EXPECT_INT_EQ(ret, 0);
+
 	ret = rs_rdev_deinit(phy_id, NOTIFY, rdev_index);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	cfg.chip_id = 0;
 	ret = rs_deinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	free(addr);
 }
 
@@ -6122,26 +6127,26 @@ void tc_rs_typical_qp_modify()
 	struct rdma_mr_reg_info mr_reg_info = {0};
 	struct ibv_mr *ra_rs_mr_handle = NULL;
 	struct rs_init_config cfg = {0};
- 
+
 	addr = malloc(RS_TEST_MEM_SIZE);
 	mr_reg_info.addr = addr;
 	mr_reg_info.len = RS_TEST_MEM_SIZE;
 	mr_reg_info.access = RS_ACCESS_LOCAL_WRITE;
- 
+
 	struct rdev rdev_info = {0};
 	rdev_info.phy_id = 0;
 	rdev_info.family = AF_INET;
 	rdev_info.local_ip.addr.s_addr = inet_addr("127.0.0.1");
- 
+
 	ret = rs_init(&cfg);
 	EXPECT_INT_EQ(ret, 0);
 	ret = rs_rdev_init(rdev_info, NOTIFY, &rdev_index);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	struct typical_qp local_qp_info = {0};
 	struct typical_qp remote_qp_info = {0};
 	unsigned int udp_sport;
- 
+
 	struct rs_qp_norm qp_norm = {0};
 	struct rs_qp_resp resp = {0};
 	struct rs_qp_resp resp2 = {0};
@@ -6152,12 +6157,12 @@ void tc_rs_typical_qp_modify()
 	qp_norm.is_exp = 1;
 	qp_norm.is_ext = 1;
 	int batch_modify_qpn[2];
- 
+
 	ret = rs_qp_create(phy_id, rdev_index, qp_norm, &resp);
 	EXPECT_INT_EQ(ret, 0);
 	ret = rs_qp_create(phy_id, rdev_index, qp_norm, &resp2);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	local_qp_info.qpn = resp.qpn;
 	local_qp_info.psn = resp.psn;
 	local_qp_info.gid_idx = resp.gid_idx;
@@ -6166,7 +6171,7 @@ void tc_rs_typical_qp_modify()
 	remote_qp_info.psn = resp2.psn;
 	remote_qp_info.gid_idx = resp2.gid_idx;
 	(void)memcpy_s(remote_qp_info.gid, HCCP_GID_RAW_LEN, resp2.gid.raw, HCCP_GID_RAW_LEN);
- 
+
 	mocker_invoke(rs_ibv_query_qp, stub_rs_ibv_query_qp_init, 10);
     mocker(rs_roce_query_qpc, 10, 1);
 	ret = rs_typical_qp_modify(phy_id, rdev_index, local_qp_info, remote_qp_info, &udp_sport);
@@ -6190,14 +6195,14 @@ void tc_rs_typical_qp_modify()
 	EXPECT_INT_EQ(ret, 0);
 	ret = rs_qp_destroy(phy_id, rdev_index, resp2.qpn);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	ret = rs_rdev_deinit(phy_id, NOTIFY, rdev_index);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	cfg.chip_id = 0;
 	ret = rs_deinit(&cfg);
 	EXPECT_INT_EQ(ret, 0);
- 
+
 	free(addr);
 }
 
@@ -6258,7 +6263,7 @@ void tc_rs_ssl_get_cert() {
 	return;
 }
 
-void tc_rs_ssl_X509_store_init() 
+void tc_rs_ssl_X509_store_init()
 {
 	int ret;
 	X509_STORE_CTX ctx = {0};
@@ -6517,7 +6522,7 @@ int stub_rs_find_listen_node(struct rs_conn_cb *conn_cb, struct rs_ip_addr_info 
 
     return 0;
 }
- 
+
 void tc_rs_socket_accept_credit_add()
 {
     struct socket_listen_info conn[10] = {0};
@@ -6709,6 +6714,18 @@ void tc_rs_get_sec_random()
 
 	ret = rs_get_sec_random(&value);
     EXPECT_INT_NE(ret, 0);
+}
+
+void tc_rs_get_hccn_cfg()
+{
+    char *value[2048] = {0};
+    unsigned int value_len = 2048;
+
+    int ret;
+
+    ret = rs_get_hccn_cfg(0, HCCN_CFG_UDP_PORT_MODE, value, &value_len);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
 }
 
 void tc_dl_hal_set_clear_user_config()

@@ -13,6 +13,7 @@
 #include <iostream>
 #include <fstream>
 #include <unordered_map>
+#include <cmath>
 #include "mmpa_api.h"
 #include "adapter_rts_common.h"
 #include "workflow_pub.h"
@@ -538,9 +539,25 @@ HcclResult UnRegisterAivKernel()
     return HCCL_SUCCESS;
 }
 
+HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSchedTimeout)
+{
+    uint64_t interval = 0;
+    aclError aclRet = aclrtGetOpTimeOutInterval(&interval);
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("aclrtGetOpTimeOutInterval get timeout interval failed, ret[%d]",
+        aclRet), HCCL_E_RUNTIME);
+    double intervalMs = interval / 1000.0;
+    // NPU超时范围(1, 254) * interval
+    minNpuSchedTimeout = static_cast<u64>(round(1 * intervalMs));
+    maxNpuSchedTimeout = static_cast<u64>(round(254 * intervalMs));
+    HCCL_RUN_INFO("GetMinAndMaxNpuSchedTimeOut minNpuSchedTimeout[%u]ms, maxNpuSchedTimeout[%u]ms",
+        minNpuSchedTimeout, maxNpuSchedTimeout);
+    return HCCL_SUCCESS;
+}
+
 u32 GetAivTimeout() {
     u32 timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-         GetExternalInputHcclExecTimeOut() : AIV_TIMEOUT_DEFAULT;
+        static_cast<u32>(std::ceil(GetExternalInputHcclExecTimeOut())) : AIV_TIMEOUT_DEFAULT;
+
     return timeout < AIV_TIMEOUT_MAX ? timeout : AIV_TIMEOUT_MAX;
 }
 

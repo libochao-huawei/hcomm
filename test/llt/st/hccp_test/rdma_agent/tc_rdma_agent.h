@@ -91,6 +91,8 @@ void tc_ra_get_sec_random();
 void tc_ra_rs_get_sec_random();
 void tc_ra_get_tls_enable();
 void tc_ra_rs_get_tls_enable();
+void tc_ra_get_hccn_cfg();
+void tc_ra_rs_get_hccn_cfg();
 void tc_ra_hdc_socket_accept_credit_add();
 void tc_hdc_socket_batch_abort();
 void tc_ra_rs_socket_batch_abort();
@@ -103,4 +105,5 @@ void tc_ra_loopback_qp_create();
 void tc_ra_peer_loopback_qp_create();
 void tc_ra_peer_loopback_single_qp_create();
 void tc_ra_hdc_uninit_async();
+void tc_ra_hdc_qp_create_with_attrs();
 #endif

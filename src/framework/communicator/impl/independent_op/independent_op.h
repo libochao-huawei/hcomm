@@ -21,6 +21,9 @@
 #include "comm_engine_res_manager.h"
 #include "rank_graph.h"
 #include "comm_config_pub.h"
+#include "independent_op_context_manager.h"
+#include "channel_manager.h"
+#include "aicpu_init_param.h"
 
 namespace hccl {
 
@@ -32,10 +35,14 @@ public:
     // 初始化资源管理器
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
         const HcclTopoAttr &topoAttr, const aclrtBinHandle binHandle);
+    HcclResult SetChannelCallbacks(const ChannelManagerCallbacks& channelCallbacks);
 
     // 获取配置信息
     u32 GetThreadNum() const { return threadNum_; }
     u32 GetNotifyNumPerThread() const { return notifyNumPerThread_; }
+
+    bool GetAicpuCommState(); // 是否线程安全
+    void SetAicpuCommState(bool aicpuCommState);
 
     inline CommMemMgr& GetCommMemMgr() {
         return commMemMgr_;
@@ -49,6 +56,17 @@ public:
         return rankgraph_;
     }
 
+    inline ContextManager& GetContextManager() {
+        return contextMgr_;
+    }
+
+    inline ChannelManager& GetChannelManager() {
+        return channelMgr_;
+    }
+
+    // 自定义算子Aicpu通信域公共初始化
+    HcclResult KernelLaunchAicpuCommInit();
+
 private:
     // config内容
     int32_t commEngine_ = -1;
@@ -56,12 +74,18 @@ private:
     u32 notifyNumPerThread_ = 0;
     u64 cclBufferSize_;
     std::string commId_;
+    aclrtBinHandle binHandle_ = nullptr;
 
-    // 内存注册管理器
+    // 管理器
     RegMemMgr regMemMgr_;
     CommMemMgr commMemMgr_;
     CommEngineResMgr engineResMgr_;
     RankGraph rankgraph_;
+    ContextManager contextMgr_;
+    ChannelManager channelMgr_;
+
+    bool isAicpuCommInit_ = false;
+    CommAicpuParam commAicpuParam_;
 };
 
 }  // namespace hccl

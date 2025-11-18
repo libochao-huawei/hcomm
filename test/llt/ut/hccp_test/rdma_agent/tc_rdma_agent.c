@@ -405,7 +405,7 @@ void tc_ra_socket_init_v1()
     socket_init.rdev_info.local_ip.addr.s_addr = 0;
     ra_socket_init_v1(NETWORK_PEER_ONLINE, socket_init, &socket_handle);
     ra_socket_deinit(socket_handle);
-    
+
     ra_socket_init_v1(NETWORK_ONLINE, socket_init, &socket_handle);
 
     mocker(calloc, 1, NULL);
@@ -480,10 +480,10 @@ void tc_ra_rdev_get_port_status()
     int out_len;
     int op_result;
     int rcv_buf_len = 300;
- 
+
     char in_buf[512];
     char out_buf[512];
- 
+
     ret = ra_rs_rdev_get_port_status(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
     EXPECT_INT_EQ(ret, 0);
 }
@@ -965,7 +965,7 @@ void tc_ra_create_comp_channel()
     ra_rdma_handle.rdev_index = 0;
     ra_rdma_handle.rdev_info.phy_id = 32767;
     ra_rdma_handle.rdma_ops = NULL;
-   
+
     void *comp_channel = NULL;
     ra_create_comp_channel(rdma_handle, &comp_channel);
     ra_destroy_comp_channel(rdma_handle, comp_channel);
@@ -1058,7 +1058,7 @@ void tc_ra_create_srq()
     ra_rdma_handle.rdev_info.phy_id = 32767;
     ra_rdma_handle.rdma_ops = NULL;
     struct srq_attr attr = {0};
-   
+
     ra_create_srq(rdma_handle, NULL);
     ra_destroy_srq(rdma_handle, NULL);
 
@@ -1190,11 +1190,16 @@ void tc_ra_rs_typical_mr_reg()
     int out_len;
     int op_result;
     int rcv_buf_len = 300;
- 
+
 
     char in_buf[512];
     char out_buf[512];
- 
+
+    ret = ra_rs_typical_mr_reg_v1(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    EXPECT_INT_EQ(ret, 0);
+    ret = ra_rs_typical_mr_dereg(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    EXPECT_INT_EQ(ret, 0);
+
     ret = ra_rs_typical_mr_reg(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
     EXPECT_INT_EQ(ret, 0);
     ret = ra_rs_typical_mr_dereg(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
@@ -1207,10 +1212,10 @@ void tc_ra_rs_typical_qp_create()
     int out_len;
     int op_result;
     int rcv_buf_len = 300;
- 
+
     char in_buf[512];
     char out_buf[512];
- 
+
     ret = ra_rs_typical_qp_create(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
     EXPECT_INT_EQ(ret, 0);
     ret = ra_rs_typical_qp_modify(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
@@ -1312,6 +1317,58 @@ void tc_ra_rs_get_tls_enable()
     memcpy(in_buf + sizeof(struct msg_head), &op_data , sizeof(union op_get_tls_enable_data));
     memcpy(out_buf + sizeof(struct msg_head), &op_data, sizeof(union op_get_tls_enable_data));
     ret = ra_rs_get_tls_enable(in_buf, out_buf, &out_len, &op_result, size);
+    EXPECT_INT_EQ(0, ret);
+
+    free(in_buf);
+    free(out_buf);
+    in_buf = NULL;
+    out_buf = NULL;
+}
+
+void tc_ra_get_hccn_cfg()
+{
+    struct ra_info info = {0};
+    char *value = calloc(1, 2048);
+    unsigned int val_len = 2048;
+    int ret;
+
+    mocker_clean();
+    info.mode = NETWORK_OFFLINE;
+    ret = ra_get_hccn_cfg(NULL, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(128303, ret);
+
+    val_len = 1024;
+    ret = ra_get_hccn_cfg(&info, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(128303, ret);
+
+    info.phy_id = 64;
+    info.mode = NETWORK_OFFLINE;
+    val_len = 2048;
+    ret = ra_get_hccn_cfg(&info, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(128303, ret);
+
+    info.phy_id = 0;
+    mocker(ra_hdc_process_msg, 10, 0);
+    ret = ra_get_hccn_cfg(&info, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
+    free(value);
+}
+
+void tc_ra_rs_get_hccn_cfg()
+{
+    unsigned int size = sizeof(union op_get_hccn_cfg_data) + sizeof(struct msg_head);
+    union op_get_hccn_cfg_data op_data  = {{0}};
+
+    char* in_buf = calloc(1, size);
+    char* out_buf = calloc(1, size);
+    int out_len;
+    int op_result;
+    int ret;
+
+    memcpy(in_buf + sizeof(struct msg_head), &op_data , sizeof(union op_get_hccn_cfg_data));
+    memcpy(out_buf + sizeof(struct msg_head), &op_data, sizeof(union op_get_hccn_cfg_data));
+    ret = ra_rs_get_hccn_cfg(in_buf, out_buf, &out_len, &op_result, size);
     EXPECT_INT_EQ(0, ret);
 
     free(in_buf);

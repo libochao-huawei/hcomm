@@ -243,33 +243,33 @@ int rs_ibverbs_api_init(void)
     int ret;
 
     ret = rs_open_ibverbs_so();
-    CHK_PRT_RETURN(ret, hccp_err("hccp_dlopen[libibverbs.so or libibverbs.so.1] fail! ret=[%d],"\
+    CHK_PRT_RETURN(ret, hccp_err("hccp_dlopen[libibverbs.so or libibverbs.so.1] failed! ret=[%d],"\
     "Please check network adapter driver has been installed", ret), ret);
 
     ret = rs_context_ops_api_init();
     if (ret) {
-        hccp_err("[rs_context_ops_api_init]hccp_dlopen fail! ret=[%d]", ret);
+        hccp_err("[rs_context_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
         rs_close_ibverbs_so();
         return ret;
     }
 
     ret = rs_qp_ops_api_init();
     if (ret) {
-        hccp_err("[rs_qp_ops_api_init]hccp_dlopen fail! ret=[%d]", ret);
+        hccp_err("[rs_qp_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
         rs_close_ibverbs_so();
         return ret;
     }
 
     ret = rs_pd_ops_api_init();
     if (ret) {
-        hccp_err("[rs_pd_ops_api_init]hccp_dlopen fail! ret=[%d]", ret);
+        hccp_err("[rs_pd_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
         rs_close_ibverbs_so();
         return ret;
     }
 
     ret = rs_device_ops_api_init();
     if (ret) {
-        hccp_err("[rs_device_ops_api_init]hccp_dlopen fail! ret=[%d]", ret);
+        hccp_err("[rs_device_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
         rs_close_ibverbs_so();
         return ret;
     }
@@ -419,18 +419,18 @@ int rs_roce_user_api_init(void)
 
     ret = rs_open_roce_user_so(&type);
     CHK_PRT_RETURN(ret != 0, hccp_err("hccp_dlopen[libhns-rdmav17.so or libhns-rdmav25.so or libhrn0-rdmav17.so]"
-        "fail! ret=[%d]. Please check network adapter driver has been installed.", ret), ret);
+        "failed! ret=[%d]. Please check network adapter driver has been installed.", ret), ret);
 
 #ifndef CA_CONFIG_LLT
     ret = rs_roce_user_ibv_api_init();
     if (ret != 0) {
-        hccp_err("rs_roce_user_ibv_api_init fail! ret=[%d]", ret);
+        hccp_err("rs_roce_user_ibv_api_init failed! ret=[%d]", ret);
         goto close_roce_user_so;
     }
 
     ret = rs_roce_user_drv_api_init();
     if (ret != 0) {
-        hccp_err("rs_roce_user_drv_api_init fail! ret=[%d]", ret);
+        hccp_err("rs_roce_user_drv_api_init failed! ret=[%d]", ret);
         goto close_roce_user_so;
     }
 
@@ -459,11 +459,11 @@ DL_ATTRI_VISI_DEF int rs_api_init(void)
 #ifndef CA_CONFIG_LLT
     int ret;
     ret = rs_ibverbs_api_init();
-    CHK_PRT_RETURN(ret, hccp_err("rs_ibverbs_api_init fail! ret=[%d]", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("rs_ibverbs_api_init failed! ret=[%d]", ret), ret);
 #ifdef CUSTOM_INTERFACE
     ret = rs_roce_user_api_init();
     if (ret != 0) {
-        hccp_err("rs_roce_user_api_init fail! ret=[%d]", ret);
+        hccp_err("rs_roce_user_api_init failed! ret=[%d]", ret);
         rs_close_ibverbs_so();
         return ret;
     }

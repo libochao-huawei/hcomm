@@ -296,10 +296,6 @@ bool AicpuKfcRpcServer::CheckRcvAddrMsg(HcclMsg *hcclMsg, uint32_t msgPos)
 
 bool AicpuKfcRpcServer::ReadAddrMsg(HcclMsg *hcclMsg, uint32_t msgPos)
 {
-    if (hcclMsg == nullptr) {
-        HCCL_ERROR("Msg is nullptr");
-        return false;
-    }
     auto ctx = AicpuGetComContext();
     if (ctx == nullptr) {
         HCCL_ERROR("Get ctx is nullptr");
@@ -307,7 +303,13 @@ bool AicpuKfcRpcServer::ReadAddrMsg(HcclMsg *hcclMsg, uint32_t msgPos)
     }
     uint32_t loopCnt = 0;
     u64 startUsec = GetCurCpuTimestamp();
-    bool timeoutFlag = false;
+#ifdef CCL_LLT
+    const u64 warningThreshold = static_cast<unsigned long long>(NSEC_PER_SEC);
+    const u64 errorThreshold = static_cast<unsigned long long>(NSEC_PER_SEC);
+#else
+    const u64 warningThreshold = static_cast<unsigned long long>(NSEC_PER_SEC) * MC2_API_MSG_TIMEOUT;
+    const u64 errorThreshold = static_cast<unsigned long long>(NSEC_PER_SEC) * dfx::kKfcTimeOut;
+#endif
     u8 eventPrintTurn = 1;   // 标记 Event日志的打印
     do {
         if (ctx->dfxExtendInfo.pollStatus == PollStatus::kStopAsException) {
@@ -329,37 +331,20 @@ bool AicpuKfcRpcServer::ReadAddrMsg(HcclMsg *hcclMsg, uint32_t msgPos)
             HCCL_INFO("current states %s Msg %p, msgPos %u", GetMsgTypeString(RANK_MSG_TYPE::RANK_ADDR).c_str(),
                       &(hcclMsgArea_->commMsg.singleMsg.sendMsgs[msgPos]), msgPos);
         }
-        if (GetCurCpuTimestamp() - startUsec >
-            static_cast<unsigned long long>(NSEC_PER_SEC) * MC2_API_MSG_TIMEOUT * eventPrintTurn) {
+        const u64 passedTs = GetCurCpuTimestamp() - startUsec;
+        if (passedTs > warningThreshold * eventPrintTurn) {
             HCCL_RUN_WARNING("[AicpuKfcRpcServer][ReadAddrMsg] ReadValidMsg[%u] timeout %lus",
-                             msgPos, MC2_API_MSG_TIMEOUT * eventPrintTurn);
+                             msgPos, warningThreshold / static_cast<unsigned long long>(NSEC_PER_SEC));
             LogControl logControl(false, true);
             PrintAllHcclMsgArea();
-            TaskOrchestrator::PrintTimeOutSqInfo(ctx, MC2_API_MSG_TIMEOUT * eventPrintTurn);
+            if (!ctx->multiServerFlag) {
+                TaskOrchestrator::PrintTimeOutSqInfo(
+                        ctx, warningThreshold / static_cast<unsigned long long>(NSEC_PER_SEC));
+            }
             eventPrintTurn *= 2;    // 2 is print event log times
-        }
-
-#ifdef CCL_LLT
-        if (!timeoutFlag && msgPos != 0 &&
-            GetCurCpuTimestamp() - startUsec > static_cast<unsigned long long>(NSEC_PER_SEC)) {
-#else
-        if (!timeoutFlag && msgPos != 0 &&
-            GetCurCpuTimestamp() - startUsec > static_cast<unsigned long long>(NSEC_PER_SEC) * dfx::kKfcTimeOut) {
-#endif
-            HCCL_ERROR("ReadValidMsg timeout %lus... ", dfx::kKfcTimeOut);
-            PrintAllHcclMsgArea();
-            TaskOrchestrator::PrintTimeOutSqInfo(ctx, dfx::kKfcTimeOut);
-            timeoutFlag = true;
-            return false;
-        }
-
-#ifdef CCL_LLT
-        if (GetCurCpuTimestamp() - startUsec > static_cast<unsigned long long>(NSEC_PER_SEC)) {
-#else
-        if (GetCurCpuTimestamp() - startUsec > static_cast<unsigned long long>(NSEC_PER_SEC) * dfx::kKfcTimeOut) {
-#endif
-            HCCL_ERROR("ReadValidMsg timeout %ds... ", dfx::kKfcTimeOut);
-            return false;
+            if (passedTs > errorThreshold) {
+                return false;
+            }
         }
         loopCnt++;
     } while (!(ReadApiValidMsg(hcclMsg, &(hcclMsgArea_->commMsg.singleMsg.sendMsgs[msgPos]), true)));

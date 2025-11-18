@@ -96,7 +96,7 @@ const std::string& GetExternalInputProfilingOption();
 
 const std::string& GetExternalInputCannVersion();
 
-const s32& GetExternalInputHcclExecTimeOut();
+const double& GetExternalInputHcclExecTimeOut();
 
 const s32& GetExternalInputHcclLinkTimeOut();
 

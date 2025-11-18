@@ -22,6 +22,14 @@ public:
     template<typename T>
     __aicore__ inline void Process(GM_ADDR input, GM_ADDR output, uint64_t len, uint64_t maxCount, int32_t tag,
         uint64_t totallen);
+
+    template<typename T>
+    __aicore__ inline void ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, uint64_t maxCount, int32_t tag,
+        uint64_t totallen);
+
+    template<typename T>
+    __aicore__ inline void ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, uint64_t maxCount, int32_t tag,
+        uint64_t totallen);
 };
 
 template<typename T>
@@ -127,6 +135,53 @@ __aicore__ inline void AivReduceScatterBig910B::Process(GM_ADDR input, GM_ADDR o
 }
 
 template<typename T>
+__aicore__ inline void AivReduceScatterBig910B::ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, uint64_t maxCount,
+    int32_t tag, uint64_t totallen)
+{
+    uint64_t avgLengthPerSlice = len;
+    uint64_t avgSizePerSlice = avgLengthPerSlice * sizeof(T);
+    uint32_t targetRank = block_idx;
+
+    __gm__ T *inputGm = (__gm__ T *)input;
+    __gm__ T *outputGm = (__gm__ T *)output;
+    __gm__ T *cclGmSelf = (__gm__ T *)(GM_IN[rank_]);
+    __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[targetRank]);
+
+    uint64_t inputOffset = targetRank * totallen;
+    uint64_t cclGmSelfOffset = targetRank * maxCount;
+
+    if (targetRank != rank_) {
+        CpGM2GMWithFlagWrap(cclGmSelf + cclGmSelfOffset, inputGm + inputOffset, avgLengthPerSlice, targetRank, 8, tag);
+        pipe_barrier(PIPE_ALL);
+
+        uint64_t cclGmOtherOffset = rank_ * maxCount;
+        ReduceWithFlagWrap(outputGm, cclGmOther + cclGmOtherOffset, len, targetRank , tag);
+        pipe_barrier(PIPE_ALL);
+
+        RecordNv1(tag, rank_);
+    } else {
+        uint64_t inputOffset = rank_ * totallen;
+
+        CpGM2GMWithFlagWrap(outputGm, inputGm + inputOffset, avgLengthPerSlice, rank_, 8, tag);
+        // 确认已加完
+        Wait1vN((rankSize_ - 1) * tag, CommPattern::intraRank);
+    }
+
+    return;
+}
+
+template<typename T>
+__aicore__ inline void AivReduceScatterBig910B::ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, uint64_t maxCount,
+    int32_t tag, uint64_t totallen)
+{
+    if (blockdim_ == rankSize_){
+        ProcessSingleRanksizeCore<T>(input, output, len, maxCount, tag, totallen);
+    }else{
+        Process<T>(input, output, len, maxCount, tag, totallen);
+    }
+}
+
+template<typename T>
 __aicore__ inline void aiv_reduce_scatter_910b_bigdata(KERNEL_ARGS_DEF)
 {
     AivReduceScatterBig910B op;
@@ -143,7 +198,7 @@ __aicore__ inline void aiv_reduce_scatter_910b_bigdata(KERNEL_ARGS_DEF)
         uint64_t curSize = curCount * sizeof(T);
 
         // 执行kernel
-        op.Process<T>(curInput, curOutput, curCount, maxCountPerLoop, curTag, len);
+        op.ProcessProxy<T>(curInput, curOutput, curCount, maxCountPerLoop, curTag, len);
 
         countLeft -= curCount;
         curInput += curSize;

@@ -88,7 +88,7 @@ HcclResult HcclParseRanktable(const std::string &rankTableM,
 #include "param_check_basic_v2.h"
 bool IsSupportHCCLV2(const char *socNamePtr);
 #else
-#define HCCLV2_FUNC_RUN(func, socNamePtr, ...)
+#define HCCLV2_FUNC_RUN(func, ...)
 #endif
 
 #endif  // PARAM_CHECK_PUB_H

@@ -15,6 +15,7 @@
 #include "string"
  
 #include "hccl_types.h"
+#include "acl/acl_rt.h"
 #include "hccl_common.h"
 #include "common.h"
 #include "mem_device_pub.h"
@@ -225,6 +226,8 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs, const AivTopoArgs &topoA
     AivProfilingInfo& aivProfilingInfo);
 
 HcclResult ReadBinFile(const std::string& fileName, std::string& buffer);
+
+HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, s8* stubFunc);
 
 void SetAivProfilingInfoBeginTime(AivProfilingInfo& aivProfilingInfo);
 void SetAivProfilingInfoBeginTime(uint64_t& oneTime);

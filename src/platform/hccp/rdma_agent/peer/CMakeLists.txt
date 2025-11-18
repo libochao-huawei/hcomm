@@ -21,7 +21,7 @@ if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_peer PRIVATE
         OPEN_BUILD_PROJECT
         LOG_CPP)
-    
+
     target_include_directories(ra_peer PRIVATE
         ${BASE_DIR}/
         ${CMAKE_CURRENT_SOURCE_DIR}/
@@ -30,7 +30,6 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/network
         ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/private/network
         ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../roce/host_lite
 
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -38,8 +37,9 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
-        # 临时依赖，后续删除
+        # rdma头文件
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     )
 
     target_link_directories(ra_peer PRIVATE
@@ -60,7 +60,7 @@ else()
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm
         ${TOP_DIR}/hccl/src/platform/hccp/common
-        ${TOP_DIR}/hccl/src/platform/hccp/roce/host_lite
+        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/host_lite
     )
 endif()
 

@@ -17,6 +17,7 @@
 namespace hccl {
 
 constexpr u64 MAX_310P_RANK_SIZE = 4;
+constexpr u32 MODULE_NUM_FOUR = 4;
 
 AllGatherVOperator::AllGatherVOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
     HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)
@@ -60,13 +61,6 @@ HcclResult AllGatherVOperator::SelectAlg(const std::string& tag, const OpParam& 
     }
 
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
-        HCCL_CONFIG_INFO(HCCL_ALG,
-            "[AllGatherVOperator][SelectAlg]userRank_[%u], algName[%s] actual level1 algo[%d], level2 algo[%d]",
-            userRank_, algName.c_str(), algType_.algoLevel1, algType_.algoLevel2);
-    }
-    HCCL_INFO("[SelectAlg] AllGatherV newTag is [%s]", newTag.c_str());
     return ret;
 }
 
@@ -108,11 +102,6 @@ HcclResult AllGatherVOperator::SelectAlgfor91093(const OpParam& param, std::stri
 
 HcclResult AllGatherVOperator::SelectAlgfor910B(const OpParam& param, std::string& algName)
 {
-    if(!isSingleMeshAggregation_ && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
-        HCCL_ERROR("[AllGatherVOperator][SelectAlgforA2] AllGatherV only support one server and only support the first"
-            " 8 devices or the last 8 devices for offline mode.");
-        return HCCL_E_NOT_SUPPORT;
-    }
     const auto *countsPtr = static_cast<const u64*>(param.VDataDes.counts);
     auto countsPerRank = std::vector<u64>(countsPtr, countsPtr + userRankSize_);
     u64 maxCount = *std::max_element(countsPerRank.begin(), countsPerRank.end());
@@ -150,18 +139,22 @@ HcclResult AllGatherVOperator::SelectAlgfor910B(const OpParam& param, std::strin
 
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         if (isAivMode) {
-            if (isBigData){
-                algName = "AllGatherVMeshAivExecutor";
-            }else{
-                algName = "AllGatherVMeshAivSmallCountExecutor";
-            }
+            algName = isBigData ? "AllGatherVMeshAivExecutor" : "AllGatherVMeshAivSmallCountExecutor";
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE && !isSingleMeshAggregation_) {
             algName = "AllGatherVMeshOpbasePipelineExecutor";
         } else {
-            algName = "AllGatherVMeshOpbaseExecutor";
+            algName = "AllGatherVMeshExecutor";
         }
     } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
-        algName = "AllGatherVMeshExecutor";
+        if (isSingleMeshAggregation_) {
+            algName = "AllGatherVMeshGraphExecutor";
+        } else if (deviceNumPerAggregation_ > 1 &&
+                (dataSize > HCCL_SMALL_COUNT_1_MB || moduleNum_ <= MODULE_NUM_FOUR ||
+                                    algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE)) {
+            algName = "AllGatherVMeshGraphPipelineExecutor";
+        } else {
+            algName = "AllGatherVMeshExecutor"; 
+        } 
     }
     HCCL_INFO("[SelectAlgforA2] AllGatherV SelectAlgforA2 is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;

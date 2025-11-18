@@ -27,6 +27,7 @@ CommConfig::CommConfig(const std::string &commName)
       commEngine_(HCCL_COMM_ENGINE_CONFIG_NOT_SET),
       threadNum_(HCCL_COMM_THREADNUM_CONFIG_NOT_SET),
       notifyNumPerThread_(HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET),
+      aclGraphZeroCopyEnable_(0),
       onlyAivMode_(false)
 {}
 
@@ -39,6 +40,7 @@ CommConfig::CommConfig()
       serviceLevel_(HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET),
       worldRankID_(0),
       jobID_(0),
+      aclGraphZeroCopyEnable_(0),
       onlyAivMode_(false)
 {}
 
@@ -149,6 +151,14 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
         // 版本大于等于6
         worldRankID_ = config.worldRankID;
         jobID_ = config.jobID;
+    }
+ 
+    if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_SEVEN) {
+        // 版本大于等于7，支持配置AclGraph使能/去使能
+        CHK_PRT_RET(config.aclGraphZeroCopyEnable > 1,
+            HCCL_ERROR("[CommConfig][SetConfigByVersion] aclGraphZeroCopyEnable value=[%u] invalid. support 0 or 1", config.aclGraphZeroCopyEnable),
+            HCCL_E_PARA);
+        aclGraphZeroCopyEnable_ = config.aclGraphZeroCopyEnable;
     }
     HCCL_INFO("NSLBDP-VERSION config.info.version = [%u] .", config.info.version);
     return HCCL_SUCCESS;
@@ -344,5 +354,10 @@ u32 CommConfig::GetThreadNum() const
 u32 CommConfig::GetNotifyNumPerThread() const
 {
     return notifyNumPerThread_;
+}
+
+u8 CommConfig::GetConfigAclGraphZeroCopyEnable() const
+{
+    return aclGraphZeroCopyEnable_;
 }
 }

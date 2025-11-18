@@ -11,6 +11,7 @@
 #include "hccl_api.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
+#include "independent_op.h"
 #include <string>
 #include "param_check_pub.h"
 #include "hccl.h"

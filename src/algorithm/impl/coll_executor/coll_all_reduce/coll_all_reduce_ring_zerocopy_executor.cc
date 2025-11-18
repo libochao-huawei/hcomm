@@ -21,6 +21,7 @@ CollAllReduceRingZerocopyExecutor::CollAllReduceRingZerocopyExecutor(const HcclD
 {
     DMAReduceFlag_ = true;      // 设为true，以禁用RunLoop中的本地拷贝
     desc_.isZeroCopy = true;
+    desc_.deterministic = 1;
     desc_.level1SupportedAlgos = {
         AlgTypeLevel1::ALG_LEVEL1_NHR,
         AlgTypeLevel1::ALG_LEVEL1_NB,
@@ -102,6 +103,7 @@ HcclResult CollAllReduceRingZerocopyExecutor::DoubleRingReduceScatter(const std:
     // 执行算法编排
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_DB_RING, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_DB_RING in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(tempAlg);
     CHK_RET(tempAlg->Prepare(inputMem, inputMem, outputMem, count, dataType, stream,
         multRingsSliceZero, reductionOp, LEVEL0_BRIDGE_RANK_ID, baseOffset, false, 
@@ -218,7 +220,7 @@ HcclResult CollAllReduceRingZerocopyExecutor::KernelRunInterServerAllReduceSingl
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_RING, 
             dispatcher_);
-        HCCL_INFO("AllReduce ring: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_RING in COMM_LEVEL1", __func__);
         CHK_SMART_PTR_NULL(level1TempAlg);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
         // 获取通信域分组信息
@@ -228,27 +230,28 @@ HcclResult CollAllReduceRingZerocopyExecutor::KernelRunInterServerAllReduceSingl
         topoMatcher_->GetAHCAlgOption(ahcAlgOption);
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_AHC, dispatcher_);
-            HCCL_INFO("AllReduce ring: using ahc algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_AHC in COMM_LEVEL1", __func__);
         } else {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_AHC_BROKE, dispatcher_);
-            HCCL_INFO("AllReduce ring: using ahc-broke algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_AHC_BROKE in COMM_LEVEL1", __func__);
         }
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(level1DataCount, globalSubGroups, ahcAlgOption));
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NB, 
             dispatcher_);
-        HCCL_INFO("AllReduce ring: using nonuniform-bruck algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NB in COMM_LEVEL1", __func__);
         CHK_SMART_PTR_NULL(level1TempAlg);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         HCCL_DEBUG("AllReduce ring: level1DataSize[%llu] deviceNumPerAggregation[%u] commLevel0Size[%u]",
             level1DataSize, topoAttr_.deviceNumPerAggregation, level0RankSize_);
         if (level1DataSize / topoAttr_.deviceNumPerAggregation <= NHR_ALLREDUCE_SMALL_SIZE) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR_ONESHOT, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR_ONESHOT in COMM_LEVEL1", __func__);
         } else {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR in COMM_LEVEL1", __func__);
         }
-        HCCL_INFO("AllReduce ring: using nhr algo inter-server");
         CHK_SMART_PTR_NULL(level1TempAlg);
     } else {
         HCCL_ERROR("AllReduce ring: unsupported level1 algtype [%s]", AlgTypeToStr(algType_).c_str());
@@ -301,19 +304,19 @@ HcclResult CollAllReduceRingZerocopyExecutor::KernelRunInterServerAllReduceMulti
                 dispatcher_);
             CHK_SMART_PTR_NULL(level1RSTempAlg);
             CHK_RET(level1RSTempAlg->Prepare(reduceAttr));
-            HCCL_INFO("AllReduce ring: using ring algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1RSTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_NB, 
                 dispatcher_);
             CHK_SMART_PTR_NULL(level1RSTempAlg);
             CHK_RET(level1RSTempAlg->Prepare(reduceAttr));
-            HCCL_INFO("AllReduce ring: using nonuniform-bruck algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
             level1RSTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_NHR, 
                 dispatcher_);
             CHK_SMART_PTR_NULL(level1RSTempAlg);
             CHK_RET(level1RSTempAlg->Prepare(reduceAttr, false));
-            HCCL_INFO("AllReduce ring: using nonuniform-hierarchical-ring algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL1", __func__);
         } else {
             HCCL_ERROR("AllReduce ring: unsupported level1 algtype [%s]", AlgTypeToStr(algType_).c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -337,16 +340,16 @@ HcclResult CollAllReduceRingZerocopyExecutor::KernelRunInterServerAllReduceMulti
     std::unique_ptr<AlgTemplateBase> level2ARTempAlg;
     if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
         level2ARTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NB, dispatcher_);
-        HCCL_INFO("AllReduce ring: using nonuniform-bruck algo inter-superPod");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NB in COMM_LEVEL2", __func__);
     } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
         level2ARTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR, dispatcher_);
-        HCCL_INFO("AllReduce ring: using nonuniform-hierarchical-ring algo inter-superPod");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR in COMM_LEVEL2", __func__);
     } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_RING) {
         level2ARTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_RING, dispatcher_);
-        HCCL_INFO("AllReduce ring: using ring algo inter-superPod");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_RING in COMM_LEVEL2", __func__);
     } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_HD) {
         level2ARTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_RECURSIVE_HALVING_DOUBLING, dispatcher_);
-        HCCL_INFO("AllReduce ring: using halving-doubling algo inter-superPod");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_RECURSIVE_HALVING_DOUBLING in COMM_LEVEL2", __func__);
     } else {
         HCCL_ERROR("AllReduce ring: unsupported level2 algtype [%s]", AlgTypeToStr(algType_).c_str());
         return HCCL_E_NOT_SUPPORT;
@@ -372,15 +375,15 @@ HcclResult CollAllReduceRingZerocopyExecutor::KernelRunInterServerAllReduceMulti
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
             level1AGTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_RING, 
                 dispatcher_);
-            HCCL_INFO("AllReduce ring: using ring algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RING in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1AGTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NB, 
                 dispatcher_);
-            HCCL_INFO("AllReduce ring: using nonuniform-bruck algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NB in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
             level1AGTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NHR, 
                 dispatcher_);
-            HCCL_INFO("AllReduce ring: using nonuniform-hierarchical-ring algo inter-server");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL1", __func__);
         } else {
             HCCL_ERROR("AllReduce ring: algType_[%u] is not supported", algType_.algoLevel1);
             return HCCL_E_NOT_SUPPORT;
@@ -423,6 +426,7 @@ HcclResult CollAllReduceRingZerocopyExecutor::DoubleRingAllGather(
     // 执行算法编排
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALIGNED_ALL_GATHER_DOUBLE_RING, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALIGNED_ALL_GATHER_DOUBLE_RING in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(tempAlg);
     CHK_RET(tempAlg->Prepare(opInfo, topoAttr_.userRank, algResResp_->slaveStreams, 
         algResResp_->notifiesMain, algResResp_->notifiesAux, rankOrders, multRingsUserMemSlice));

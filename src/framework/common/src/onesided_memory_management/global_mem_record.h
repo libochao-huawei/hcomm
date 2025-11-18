@@ -15,7 +15,7 @@
 #include <memory>
 #include <string>
 
-#include "hccl.h"
+#include <hccl/hccl.h>
 #include "hccl_common.h"
 #include "hccl_ip_address.h"
 #include "hccl_mem_defs.h"

@@ -13,7 +13,7 @@
 #include "mem_device_pub.h"
 #include "hccl_dispatcher_ctx.h"
 #include "dispatcher_task_types.h"
-#include "dispatcher_pub.h"
+#include "dispatcher_aicpu_pub.h"
 #include "local_notify.h"
 #include "dispatcher_ctx.h"
 
@@ -194,6 +194,7 @@ HcclResult HcclLocalBareNotifyWait(StreamHandle streamHandle, uint64_t notifyId,
     CHK_RET(GetPubDispatcher(&dispatcherPtr));
 
     hccl::Stream *stream = reinterpret_cast<hccl::Stream*>(streamHandle);
+    HCCL_INFO("%s notifyId[%llu]", __func__, notifyId);
     return dispatcherPtr->SignalWait(*stream, notifyId, timeOut);
 }
 

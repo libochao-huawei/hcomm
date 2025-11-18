@@ -70,14 +70,6 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
         newTag = tag + level1Iter->second + algName;
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_INFO("[SelectAlg] AllGather newTag is [%s]", newTag.c_str());
-
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
-        HCCL_CONFIG_INFO(HCCL_ALG, 
-            "[AllGatherOperator][SelectAlg]userRank_[%u], algName[%s] actual level1 algo[%d], level2 algo[%d]",
-            userRank_, algName.c_str(), algType_.algoLevel1, algType_.algoLevel2);
-    }
-
     return ret;
 }
 

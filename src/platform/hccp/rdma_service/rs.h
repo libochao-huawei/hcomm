@@ -156,6 +156,8 @@ RS_ATTRI_VISI_DEF int rs_mr_dereg(unsigned int phy_id, unsigned int rdev_index, 
 
 RS_ATTRI_VISI_DEF int rs_register_mr(unsigned int phy_id, unsigned int rdev_index,
     struct rdma_mr_reg_info *mr_reg_info, void **mr_handle);
+RS_ATTRI_VISI_DEF int rs_typical_register_mr_v1(unsigned int phy_id, unsigned int rdev_index,
+    struct rdma_mr_reg_info *mr_reg_info, void **mr_handle);
 RS_ATTRI_VISI_DEF int rs_typical_register_mr(unsigned int phy_id, unsigned int rdev_index,
     struct rdma_mr_reg_info *mr_reg_info, void **mr_handle);
 RS_ATTRI_VISI_DEF int rs_remap_mr(unsigned int phy_id, unsigned int rdev_index, struct mem_remap_info mem_list[],
@@ -182,6 +184,8 @@ RS_ATTRI_VISI_DEF int rs_set_host_pid(uint32_t phy_id, pid_t host_pid, const cha
 
 RS_ATTRI_VISI_DEF int rs_init(struct rs_init_config *cfg);
 RS_ATTRI_VISI_DEF int rs_get_tls_enable(unsigned int phy_id, bool *tls_enable);
+RS_ATTRI_VISI_DEF int rs_get_hccn_cfg(unsigned int phy_id, enum hccn_cfg_key key, char *value,
+    unsigned int *value_len);
 RS_ATTRI_VISI_DEF int rs_bind_hostpid(unsigned int chip_id, pid_t pid);
 RS_ATTRI_VISI_DEF int rs_deinit(struct rs_init_config *cfg);
 

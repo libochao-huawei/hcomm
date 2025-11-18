@@ -15,7 +15,7 @@
 #include "aiv_reduce_scatter_91093_smalldata.h"
 // aiv reducescatter
  
-extern "C" __aicore__ void sk_reduce_scatter(SUPERKERNEL_LITE_ARGS_DEF) {
+extern "C" __aicore__ void sk_reducescatter(SUPERKERNEL_LITE_ARGS_DEF) {
     SUPERKERNEL_LITE_ARGS_EXTRACT;
     return sk_reduce_scatter_91093_smalldata(SUPERKERNEL_ARGS_CALL);
 }

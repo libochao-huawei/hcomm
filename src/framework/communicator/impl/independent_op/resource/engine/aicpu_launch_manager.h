@@ -16,11 +16,11 @@
 #include "hccl_thread.h"
 #include "hccl_api.h"
 #include "local_notify.h"
+#include "aicpu_init_param.h"
 
 constexpr uint32_t THREAD_UNIQUE_ID_MAX_SIZE = 1024;
 constexpr uint32_t NOTIFY_UNIQUE_ID_MAX_SIZE = THREAD_UNIQUE_ID_MAX_SIZE * LOCAL_NOTIFY_MAX_NUM;
 constexpr uint32_t NOTIFY_DEVCIE_ID_MAX_SIZE = 21  * LOCAL_NOTIFY_MAX_NUM;
-constexpr uint32_t HCOMID_MAX_SIZE = 128;
 constexpr uint32_t NAME_SIZE = 64;
 struct ThreadMgrAicpuParam {
     u32 threadNum;
@@ -60,11 +60,9 @@ public:
     AicpuLaunchMgr() = default;
     ~AicpuLaunchMgr() = default;
     template <typename OpParam, typename ApiParam>
-    HcclResult static KernelLaunch(aclrtBinHandle binHandle, OpParam &opParam, ApiParam &apiParam,
-        rtStream_t aicpuInitStream);
-    HcclResult static ThreadKernelLaunch(aclrtBinHandle binHandle,
-        std::vector<std::shared_ptr<HcclThread>> &outThreads, const std::string commId,
-        std::unique_ptr<ThreadHandle[]> &hostHandle);
+    static HcclResult KernelLaunch(OpParam &opParam, ApiParam &apiParam, rtStream_t aicpuInitStream);
+    static HcclResult ThreadKernelLaunch(std::vector<std::shared_ptr<HcclThread>> &newThreads,
+        const std::string commId, std::unique_ptr<ThreadHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchAlloc(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const std::string &commId, std::unique_ptr<NotifyHandle[]> &hostHandle, aclrtBinHandle binCustomHandle);
     static HcclResult NotifyKernelLaunchFree(std::vector<NotifyHandle> &aicpuNotifys, uint32_t notifyNum,

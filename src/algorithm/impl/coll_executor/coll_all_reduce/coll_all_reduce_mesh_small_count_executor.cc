@@ -17,6 +17,7 @@ CollAllReduceMeshSmallCountExecutor::CollAllReduceMeshSmallCountExecutor(const H
     : CollAllReduceExecutor(dispatcher, topoMatcher)
 {
     DMAReduceFlag_ = true;
+    desc_.deterministic = 1;
 }
 
 void CollAllReduceMeshSmallCountExecutor::ParseParam(const OpParam& param)
@@ -145,8 +146,7 @@ HcclResult CollAllReduceMeshSmallCountExecutor::GetAdjInfo(AlgResourceResponse& 
 
 HcclResult CollAllReduceMeshSmallCountExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG,
-        "[CollAllReduceMeshSmallCountExecutor][KernelRun] userRank[%u] starts.", topoAttr_.userRank);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] userRank[%u] starts.", __func__, topoAttr_.userRank);
     std::vector<Slice> dataSegsSlice; // 数据分成ranksize份，每份的起始偏移和大小
     if (!CalcScratchMemFlag(totalSize_)) {
         execMem.scratchMem = execMem.outputMem;
@@ -176,6 +176,7 @@ HcclResult CollAllReduceMeshSmallCountExecutor::KernelRun(const OpParam &param, 
     if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         bool aicpu = true;
         level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_HD_OPTIM, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_HD_OPTIM in COMM_LEVEL0", __func__);
         CHK_SMART_PTR_NULL(level0TempAlg);
         CHK_RET(level0TempAlg->Prepare(reduceAttr, algResResp_->slaveStreams, algResResp_->notifiesMain, algResResp_->notifiesAux,
             level0CommInfo.localRank, &opInfo, aicpu));
@@ -183,19 +184,23 @@ HcclResult CollAllReduceMeshSmallCountExecutor::KernelRun(const OpParam &param, 
         isUsedRegister = true;
         level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_REDUCE_REDUCE_BCAST, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_REDUCE_BCAST in COMM_LEVEL0", __func__);
     } else if (topoAttr_.deviceNumPerAggregation == DEVICE_EIGHT) {
         if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE || aicpuUnfoldMode_) {
             level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_DOUBLING, 
                 dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_DOUBLING in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(level0TempAlg);
             CHK_RET(level0TempAlg->Prepare(reduceAttr));
         } else {
             level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_DOUBLING_DIRECT, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_DOUBLING_DIRECT in COMM_LEVEL0", __func__);
             CHK_SMART_PTR_NULL(level0TempAlg);
             CHK_RET(level0TempAlg->Prepare(reduceAttr, &opInfo));
         }
     } else {
         level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_LOCAL_REDUCE_BCAST, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_LOCAL_REDUCE_BCAST in COMM_LEVEL0", __func__);
         CHK_SMART_PTR_NULL(level0TempAlg);
         CHK_RET(level0TempAlg->Prepare(reduceAttr, algResResp_->slaveStreams, algResResp_->notifiesMain, algResResp_->notifiesAux,
             level0CommInfo.localRank, level0CommInfo.localRankSize, topoAttr_.userRank, &opInfo));

@@ -169,7 +169,7 @@ HcclResult CollAllGatherVMeshOpbasePipelineExecutor::SelectTempAlg(std::unique_p
 {
     if (level1RankSize > 1) {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_PIPELINE, dispatcher_);
+                TemplateType::TEMPLATE_ALL_GATHER_V_PIPELINE, dispatcher_);
         CHK_SMART_PTR_NULL(level1TempAlg);
         return HCCL_SUCCESS;
     }

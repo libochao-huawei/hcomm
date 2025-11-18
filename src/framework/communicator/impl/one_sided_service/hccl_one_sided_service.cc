@@ -713,12 +713,13 @@ HcclResult HcclOneSidedService::InitIsUsedRdmaMap(bool& needInitNic, bool& needI
 }
 
 void HcclOneSidedService::ConnectByThread(std::shared_ptr<HcclOneSidedConn>& conn, const std::string &commIdentifier,
-    s32 timeoutSec)
+    s32 timeoutSec, HcclResult &retOut)
 {
     if (deviceLogicId_ != HOST_DEVICE_ID) {
         hrtSetDevice(deviceLogicId_);
     }
     HcclResult ret = conn->ConnectWithRemote(commIdentifier, localProcess_, timeoutSec);
+    retOut = ret;
     if (ret != HCCL_SUCCESS) {
         hasErrorFlag_ = true;
         if (ret == HCCL_E_TIMEOUT) {
@@ -744,7 +745,9 @@ HcclResult HcclOneSidedService::CreateLinkFullmesh(const std::string &commIdenti
     }
 
     std::vector<std::unique_ptr<std::thread>> linkThreads;
+    std::vector<HcclResult> linkResult;
     linkThreads.resize(rankSize);
+    linkResult.resize(rankSize, HCCL_SUCCESS);
     hasErrorFlag_ = false;
     ThreadsGuard threadsGuard(linkThreads);
     for (u32 remoteRankId = 0; remoteRankId < rankSize; remoteRankId++) {
@@ -753,7 +756,7 @@ HcclResult HcclOneSidedService::CreateLinkFullmesh(const std::string &commIdenti
         }
         linkThreads[remoteRankId].reset(
                     new (std::nothrow) std::thread(&HcclOneSidedService::ConnectByThread, this,
-                    std::ref(oneSidedConns_[remoteRankId]), commIdentifier, timeoutSec));
+                    std::ref(oneSidedConns_[remoteRankId]), commIdentifier, timeoutSec, std::ref(linkResult[remoteRankId])));
         CHK_SMART_PTR_NULL(linkThreads[remoteRankId]);
     }
 
@@ -764,6 +767,12 @@ HcclResult HcclOneSidedService::CreateLinkFullmesh(const std::string &commIdenti
         linkThreads[remoteRankId]->join(); // 等待线程执行完毕
     }
     linkThreads.clear();
+
+    for (u32 remoteRankId = 0; remoteRankId < linkResult.size(); remoteRankId++) {
+        CHK_PRT_RET(linkResult[remoteRankId] != HCCL_SUCCESS,
+            HCCL_ERROR("[HcclOneSidedService][CreateLinkFullmesh] Create links failed. commIdentifier[%s].",
+                commIdentifier.c_str()), linkResult[remoteRankId]);
+    }
 
     CHK_PRT_RET(hasErrorFlag_ == true,
         HCCL_ERROR("[HcclOneSidedService][CreateLinkFullmesh] Create links failed. commIdentifier[%s].",
@@ -982,8 +991,7 @@ HcclResult HcclOneSidedService::AicpuResourceInit()
     commResPara_.execStreamParam.streamInfo.sqIds = execStream_.sqId();
     commResPara_.execStreamParam.streamInfo.cqIds = execStream_.cqId();
     commResPara_.execStreamParam.streamInfo.logicCqids = execStream_.logicCqId();
-    execStreamContext_ = DeviceMem::alloc(streamContextSize);
-    CHK_PTR_NULL(execStreamContext_.ptr());
+    CHK_RET(DeviceMem::alloc(execStreamContext_, streamContextSize));
     CHK_RET(hrtMemSet(execStreamContext_.ptr(), streamContextSize, streamContextSize));
     commResPara_.execStreamParam.sqCqContextAddr = reinterpret_cast<u64>(execStreamContext_.ptr());
     commResPara_.execStreamParam.sqCqContextSize = streamContextSize;
@@ -997,8 +1005,7 @@ HcclResult HcclOneSidedService::AicpuResourceInit()
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AicpuResourceInit] create aicpu wait notify failed, errNo[0x%016llx]",
         HCCL_ERROR_CODE(ret)), ret);
 
-    commResParaDevice_ = DeviceMem::alloc(sizeof(HcclOneSideCommResParam));
-    CHK_PTR_NULL(commResParaDevice_.ptr());
+    CHK_RET(DeviceMem::alloc(commResParaDevice_, sizeof(HcclOneSideCommResParam)));
 
     const u64 endTime = hrtMsprofSysCycleTime();
     HCCL_DEBUG("[AicpuResourceInit] done, time cost[%llu]", (endTime - beginTime));

@@ -42,6 +42,8 @@ const std::map<HcclReduceOp, aclrtReduceKind> HCCL_RT_REDUCE_OP_MAP = {
 };
 }
 
+bool DispatcherPub::isForce_ = false;
+
 DispatcherPub::DispatcherPub(const s32 deviceLogicId)
     : deviceLogicId_(deviceLogicId), notifyWaitMode_(SyncMode::DEFAULT_TIMEWAITSYNCMODE),
     hostNicTcpSendThreadState_(true), overflowAddr_(nullptr), setDeviceFlag_(false)
@@ -1278,7 +1280,7 @@ HcclResult DispatcherPub::WriteValue(hccl::Stream &stream, u64 writeAddr, u64 va
 
 bool DispatcherPub::IsProfSubscribeAdditionInfo() {
     u64 profConfig = GetProfConfig();
-    if (((profConfig & PROF_TASK_TIME_L1_MASK) != 0) || ((profConfig & PROF_HCCL_TRACE_MASK) != 0)) {
+    if (((profConfig & PROF_TASK_TIME_L1_MASK) != 0) || ((profConfig & PROF_HCCL_TRACE_MASK) != 0) || isForce_) {
         return true;
     }
     return false;

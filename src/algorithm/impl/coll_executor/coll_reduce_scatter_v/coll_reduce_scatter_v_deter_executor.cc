@@ -36,6 +36,8 @@ void CollReduceScatterVDeterExecutor::ParseParam(const OpParam& param)
         }
         maxCount_ = maxCount;
         totalSize_ = maxCount * topoAttr_.userRankSize * SIZE_TABLE[param.VDataDes.dataType];
+        isMeshTopo_ = (topoType_ == TopoType::TOPO_TYPE_NP_MESH || topoType_ == TopoType::TOPO_TYPE_4P_MESH ||
+            topoType_ == TopoType::TOPO_TYPE_2P_MESH || topoType_ == TopoType::TOPO_TYPE_1P_MESH);
     }
 }
 
@@ -98,8 +100,8 @@ HcclResult CollReduceScatterVDeterExecutor::CalcStreamNum(u32& streamNum)
 }
 
 HcclResult CollReduceScatterVDeterExecutor::CalcScratchMemSize(u64& scratchMemSize)
-{
-    scratchMemSize = scratchMemFlag_ ? totalSize_ : 0U;
+{ 
+    scratchMemSize = scratchMemFlag_ && isMeshTopo_ ? totalSize_ : 0U;
     HCCL_INFO("[%s]tag[%s] scratchMemSize[%llu]", __func__, tag_.c_str(), scratchMemSize);
     return HCCL_SUCCESS;
 }
@@ -111,7 +113,11 @@ HcclResult CollReduceScatterVDeterExecutor::CalcCommInfo(
     TransportMemType outputType = TransportMemType::RESERVED;
     CHK_RET(CalcTransportMemType(inputType, outputType));
     CHK_RET(CalcLevel0CommInfo(inputType, outputType, opTransport));
-    CHK_RET(CalcLevel1CommInfo(inputType, outputType, opTransport));
+    if (isMeshTopo_) {
+        CHK_RET(CalcLevel1CommInfoForMeshTopo(inputType, outputType, opTransport));
+    } else {
+        CHK_RET(CalcLevel1CommInfo(inputType, outputType, opTransport));
+    }
     return HCCL_SUCCESS;
 }
 
@@ -120,7 +126,9 @@ HcclResult CollReduceScatterVDeterExecutor::CalcTransportMemType(TransportMemTyp
 {
     // scratchMemFlag_ 对应图模式场景（图模式没有cclbuffer）, PARAM_INPUT -> userInput
     inputType = scratchMemFlag_ ? TransportMemType::PARAM_INPUT : TransportMemType::CCL_INPUT;
-    outputType = scratchMemFlag_ ? TransportMemType::SCRATCH : TransportMemType::CCL_OUTPUT;
+    outputType = scratchMemFlag_ ? 
+        ( isMeshTopo_ ? TransportMemType::PARAM_OUTPUT : TransportMemType::SCRATCH )
+        : TransportMemType::CCL_OUTPUT;
     HCCL_INFO("[%s]tag[%s] inputType[%d], outputType[%d]", __func__, tag_.c_str(), inputType, outputType);
     return HCCL_SUCCESS;
 }
@@ -134,7 +142,7 @@ HcclResult CollReduceScatterVDeterExecutor::CalcLevel0CommInfo(TransportMemType 
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterVDeterExecutor::CalcLevel1CommInfo(TransportMemType inputType,
+HcclResult CollReduceScatterVDeterExecutor::CalcLevel1CommInfoForMeshTopo(TransportMemType inputType,
     TransportMemType outputType, std::vector<LevelNSubCommTransport>& opTransport)
 {
     if (topoAttr_.moduleNum > 1) {
@@ -143,6 +151,7 @@ HcclResult CollReduceScatterVDeterExecutor::CalcLevel1CommInfo(TransportMemType 
     }
     return HCCL_SUCCESS;
 }
+
 bool CollReduceScatterVDeterExecutor::IsContainZeroSlice(const OpParam &param)
 {
     // 对于RSv counts中含0的场景，不进行子图复用
@@ -202,7 +211,7 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel0(const OpPara
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem,
+HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1ForMeshTopo(const OpParam &param, ExecMem &execMem,
     SubCommInfo &level0CommInfo)
 {
     u32 level0RankId = level0CommInfo.localRank;
@@ -243,33 +252,105 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpPara
     return HCCL_SUCCESS;
 }
 
+HcclResult CollReduceScatterVDeterExecutor::CalReduceScatterVSliceData(const OpParam &param, u32 level0RankSize, u32 level1RankSize, std::vector<Slice> &dataSlices)
+{
+    u32 unitSize = SIZE_TABLE[param.VDataDes.dataType];
+    std::vector<Slice> slices;
+    const auto curCounts = static_cast<u64*>(param.VDataDes.counts);
+    u64 offset = 0;
+    for(u32 moduleId = 0; moduleId < level1RankSize; moduleId++) {
+        Slice slice;
+        slice.size = curCounts[moduleId] * unitSize;
+        slice.offset = offset * unitSize;
+        slices.emplace_back(std::move(slice));
+        offset += curCounts[moduleId];
+    }
+    dataSlices = std::move(slices);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem,
+    SubCommInfo &level0CommInfo)
+{
+    u32 commIndex = level0CommInfo.localRank; // 找到rank所在的节点间平面
+    CHK_RET(CheckCommSize(COMM_LEVEL1, commIndex + 1));
+    SubCommInfo level1CommInfo = GetSubCommInfo(COMM_LEVEL1, commIndex);
+
+    HcclDataType dataType = param.VDataDes.dataType;
+
+    u32 level0RankSize = level0CommInfo.localRankSize;
+    u32 level1RankSize = level1CommInfo.localRankSize;
+    /* ******************第一步: 机间reducescatter *******************************/
+    u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, dataType, param.reduceType);
+    std::unique_ptr<AlgTemplateBase> level1TempAlg;
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(level1TempAlg->Prepare(reduceAttr));
+        HCCL_INFO("reducescatterv mesh: using ring algo inter-server.");
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
+            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+                TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
+        HCCL_INFO("reducescatterv mesh: using nonuniform-bruck algo inter-server.");
+        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(level1TempAlg->Prepare(reduceAttr)); 
+    } else { 
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+        HCCL_INFO("reducescatterv mesh: using nhr algo inter-server.");
+        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
+        level1TempAlg->CloseBarrier();
+    }
+
+    std::vector<Slice> slices;
+    CalReduceScatterVSliceData(param, level0RankSize, level1RankSize, slices);
+  
+    CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.outputMem, 0,
+        dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, slices));
+
+    CHK_RET(level1TempAlg->RegisterProfiler(
+        (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level1CommInfo.localRank,
+        PROF_STAGE_0, HCCL_EXEC_STEP_NOT_SET, param.stream));
+
+    CHK_RET(RunTemplate(level1TempAlg, level1CommInfo));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollReduceScatterVDeterExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s][CollReduceScatterVDeterExecutor] ReduceScatterV deter run start, tag[%s]", __func__, tag_.c_str());
     
-    auto unitSize = SIZE_TABLE[param.VDataDes.dataType];
-    const auto curCounts = static_cast<u64*>(param.VDataDes.counts);
-    u64 maxCount = *std::max_element(curCounts, curCounts + topoAttr_.userRankSize);
-    u64 maxCountPerloop = CalcLoopMaxCount(unitSize);
-    minBiasOffset_ = maxCount < maxCountPerloop ? maxCount : maxCountPerloop;
-
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
-    // L0 节点内 reduce scatter v
-    CHK_RET(RunReduceScattervLevel0(param, execMem, level0CommInfo));
-    
-    // L1 节点间 reduce scatter v
-    if (topoAttr_.moduleNum > 1) {
-        CHK_RET(RunReduceScattervLevel1(param, execMem, level0CommInfo));
+
+    auto unitSize = SIZE_TABLE[param.VDataDes.dataType];
+    const auto curCounts = static_cast<u64*>(param.VDataDes.counts);
+    const auto curDispls = static_cast<u64*>(param.VDataDes.displs);
+    u64 dataSize = execMem.count * unitSize;
+    DeviceMem srcMem;
+
+    if (isMeshTopo_) {
+        u64 maxCount = *std::max_element(curCounts, curCounts + topoAttr_.userRankSize);
+        u64 maxCountPerloop = CalcLoopMaxCount(unitSize);
+        minBiasOffset_ = maxCount < maxCountPerloop ? maxCount : maxCountPerloop;
+        // L0 节点内 reduce scatter v
+        CHK_RET(RunReduceScattervLevel0(param, execMem, level0CommInfo));
+        // L1 节点间 reduce scatter v
+        if (topoAttr_.moduleNum > 1) {
+            CHK_RET(RunReduceScattervLevel1ForMeshTopo(param, execMem, level0CommInfo));
+        }
+        srcMem = execMem.scratchMem.range(minBiasOffset_ * topoAttr_.userRank * unitSize, dataSize);// Opbase: CO/Sr->UO
+    } else { // 处理 Nx1 场景的图模式
+        RunReduceScattervLevel1(param, execMem, level0CommInfo);
+        srcMem = execMem.inputMem.range(curDispls[topoAttr_.userRank] * unitSize, dataSize);// Offload:UI->UO
     }
 
-    u64 dataSize = execMem.count * unitSize;
-    DeviceMem srcMem = execMem.scratchMem.range(minBiasOffset_ * topoAttr_.userRank * unitSize, dataSize);
-    DeviceMem dstMem = DeviceMem::create(execMem.outputPtr, dataSize);
     Stream stream = param.stream;
+    DeviceMem dstMem = DeviceMem::create(execMem.outputPtr, dataSize);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, stream));
-
-    HCCL_INFO("[%s]ReduceScatterV deter run success, tag[%s]", __func__, tag_.c_str());
+    HCCL_CONFIG_INFO(HCCL_ALG,"[%s]ReduceScatterV deter run success, tag[%s]", __func__, tag_.c_str());
     return HCCL_SUCCESS;    
 }
 

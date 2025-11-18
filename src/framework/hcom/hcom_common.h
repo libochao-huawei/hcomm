@@ -12,7 +12,9 @@
 #define HCOM_COMMOM_H
 
 #include "hccl_comm_pub.h"
+#ifndef OPEN_BUILD_PROJECT
 #include "hcom_common_v2.h"
+#endif
 #include "../common/src/topo/topoinfo_detect.h"
 
 #include "topoinfo_struct.h"

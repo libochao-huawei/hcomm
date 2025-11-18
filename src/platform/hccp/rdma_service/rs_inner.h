@@ -36,7 +36,6 @@
 #include "tls.h"
 #include "hccp_common.h"
 #include "hccp_ping.h"
-#include "ra_rs_ctx.h"
 #include "rs_common_inner.h"
 #include "rs_ping_inner.h"
 #include "rs.h"

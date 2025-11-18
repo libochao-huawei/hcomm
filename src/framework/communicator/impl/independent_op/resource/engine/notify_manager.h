@@ -14,8 +14,10 @@
 #include "local_notify.h"
 #include "hccl_common.h"
 #include "hccl_api.h"
+#include "manager_common.h"
 
 namespace hccl {
+
 class NotifyManager {
 struct NotifyInfo {
     CommEngine commEngine;
@@ -26,7 +28,7 @@ struct NotifyInfo {
 public:
 
 #ifndef CCL_KERNEL_AICPU
-    NotifyManager(std::string commId, aclrtBinHandle binHandle);
+    NotifyManager(std::string commId, aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     ~NotifyManager() = default;
 #endif
 
@@ -67,6 +69,7 @@ private:
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     std::vector<std::unique_ptr<NotifyHandle[]>> handleBlocks_; // 托管所有 handle 数组
     std::unordered_map<LocalNotify*, NotifyInfo> notifysInfo_;
+    ManagerCallbacks callbacks_;
 #endif
 };
 }

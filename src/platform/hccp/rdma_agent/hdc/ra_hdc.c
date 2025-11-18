@@ -73,6 +73,7 @@ struct opcode_interface_info g_ra_interface_info_list[] = {
     {RA_RS_QP_BATCH_MODIFY, 0},
     {RA_RS_MR_REG, 0},
     {RA_RS_MR_DEREG, 0},
+    {RA_RS_TYPICAL_MR_REG_V1, 0},
     {RA_RS_TYPICAL_MR_REG, 0},
     {RA_RS_REMAP_MR, 0},
     {RA_RS_TYPICAL_MR_DEREG, 0},
@@ -126,6 +127,7 @@ struct opcode_interface_info g_ra_interface_info_list[] = {
     {RA_RS_TLV_REQUEST, 0},
     {RA_RS_GET_TLS_ENABLE, 0},
     {RA_RS_GET_SEC_RANDOM, 0},
+    {RA_RS_GET_HCCN_CFG, 0},
     {RA_RS_GET_ROCE_API_VERSION, 0},
 
     // outer opcode version: 2.0
@@ -261,19 +263,19 @@ static int ra_hdc_recv_retry_msg(HDC_SESSION session, struct drvHdcMsg *p_msg_rc
     ret = RA_HDC_OPS.recv(
         session, p_msg_rcv, MAX_HDC_DATA, RA_HDC_WAIT_TIMEOUT, &recv_buf_cnt, RA_HDC_RETRY_SEND_TIMEOUT);
     if (ret) {
-        hccp_err("[recv][ra_hdc_recv_retry_msg]HDC get retry recv msg fail(%d)", ret);
+        hccp_err("[recv][ra_hdc_recv_retry_msg]HDC get retry recv msg failed(%d)", ret);
         return ret;
     }
 
     ret = RA_HDC_OPS.get_msg_buffer(p_msg_rcv, 0, &recv_buf, &rcv_buf_len);
     if (ret) {
-        hccp_err("[recv][ra_hdc_recv_retry_msg]HDC get retry msg buffer fail(%d)", ret);
+        hccp_err("[recv][ra_hdc_recv_retry_msg]HDC get retry msg buffer failed(%d)", ret);
         return ret;
     }
 
     ret = msg_head_check((struct msg_head *)recv_buf, RA_RS_GET_IFNUM, 0, sizeof(union op_ifnum_data));
     if (rcv_buf_len != out_buf_len || ret != 0) {
-        hccp_err("[recv][ra_hdc_recv_retry_msg]HDC get retry recv msg fail, ret(%d), rcv_buf_len:%d, out_buf_len:%d",
+        hccp_err("[recv][ra_hdc_recv_retry_msg]HDC get retry recv msg failed, ret(%d), rcv_buf_len:%d, out_buf_len:%d",
             ret, rcv_buf_len, out_buf_len);
         return ret;
     }
@@ -297,12 +299,12 @@ static int hdc_send_recv_pkt_recv(HDC_SESSION session, unsigned int phy_id, stru
         hccp_run_info("[recv][hdc_send_recv_pkt_recv]HDC recv timeout, start retry");
         ret = ra_hdc_send_retry_msg(phy_id, &p_retry_rcv);
         CHK_PRT_RETURN(
-            ret != 0, hccp_err("[recv][hdc_send_recv_pkt_recv]HDC get msg by first retry fail(%d)", ret), ret);
+            ret != 0, hccp_err("[recv][hdc_send_recv_pkt_recv]HDC get msg by first retry failed(%d)", ret), ret);
 
         ret = RA_HDC_OPS.recv(
             session, p_msg_rcv, MAX_HDC_DATA, RA_HDC_WAIT_TIMEOUT, &recv_buf_cnt, RA_HDC_RECV_SEND_TIMEOUT);
         if (ret) {
-            hccp_err("[recv][hdc_send_recv_pkt_recv]HDC get msg by first retry fail(%d)", ret);
+            hccp_err("[recv][hdc_send_recv_pkt_recv]HDC get msg by first retry failed(%d)", ret);
             RA_HDC_OPS.free_msg(p_retry_rcv);
             return ret;
         }
@@ -316,7 +318,7 @@ static int hdc_send_recv_pkt_recv(HDC_SESSION session, unsigned int phy_id, stru
 
         ret = ra_hdc_recv_retry_msg(session, p_retry_rcv);
         if (ret) {
-            hccp_err("[recv][hdc_send_recv_pkt_recv]HDC recv first retry msg fail(%d)", ret);
+            hccp_err("[recv][hdc_send_recv_pkt_recv]HDC recv first retry msg failed(%d)", ret);
         }
 
         RA_HDC_OPS.free_msg(p_retry_rcv);
@@ -488,7 +490,7 @@ int ra_hdc_process_msg(unsigned int opcode, unsigned int phy_id, char *data, uns
     }
 
     if (memcpy_s(data, data_size, send_rcv_buf + sizeof(struct msg_head), data_size)) {
-        hccp_err("[process][ra_hdc_msg]memcpy_s fail. dest size(%d) ret(%d)  phy_id(%u)", data_size, ret, phy_id);
+        hccp_err("[process][ra_hdc_msg]memcpy_s failed. dest size(%d) ret(%d)  phy_id(%u)", data_size, ret, phy_id);
         ret = -ESAFEFUNC;
     }
 out:
@@ -693,7 +695,7 @@ STATIC int ra_hdc_init_apart(unsigned int phy_id, unsigned int *logic_id)
 {
     int ret;
     ret = dl_drv_device_get_index_by_phy_id(phy_id, logic_id);
-    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_apart]get logic id fail(%d), phy_id(%u)", ret, phy_id), -ENODEV);
+    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_apart]get logic id failed(%d), phy_id(%u)", ret, phy_id), -ENODEV);
 
     ret = pthread_mutex_init(&g_ra_hdc[phy_id].lock, NULL);
     CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_apart]pthread_mutex_init failed, ret(%d) phy_id(%u)",
@@ -1002,5 +1004,24 @@ int ra_hdc_get_sec_random(unsigned int phy_id, unsigned int *value)
         ret, phy_id), ret);
 
     *value = op_data.rx_data.value;
+    return ret;
+}
+
+int ra_hdc_get_hccn_cfg(unsigned int phy_id, enum hccn_cfg_key key, char *value, unsigned int *value_len)
+{
+    union op_get_hccn_cfg_data op_data = {0};
+    int ret;
+
+    op_data.tx_data.phy_id = phy_id;
+    op_data.tx_data.key = key;
+    ret = ra_hdc_process_msg(RA_RS_GET_HCCN_CFG, phy_id, (char *)&op_data, sizeof(union op_get_hccn_cfg_data));
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][hccn_cfg]ra hdc message process failed ret(%d) phy_id(%u)",
+        ret, phy_id), ret);
+
+    ret = memcpy_s(value, *value_len, op_data.rx_data.value, op_data.rx_data.value_len);
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][hccn_cfg]ra hdc message process failed ret(%d) phy_id(%u)",
+        ret, phy_id), ret);
+
+    *value_len = op_data.rx_data.value_len;
     return ret;
 }

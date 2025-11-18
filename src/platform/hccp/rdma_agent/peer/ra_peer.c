@@ -519,7 +519,7 @@ int ra_peer_qp_create_with_attrs(struct ra_rdma_handle *rdma_handle, struct qp_e
     qp_norm.is_ext = 0;
     ret = memcpy_s(&qp_norm.ext_attrs, sizeof(struct qp_ext_attrs), ext_attrs, sizeof(struct qp_ext_attrs));
     if (ret) {
-        hccp_err("[create][ra_peer_qp_with_attrs]memcpy_s for ext_attrs fail ret[%d]", ret);
+        hccp_err("[create][ra_peer_qp_with_attrs]memcpy_s for ext_attrs failed ret[%d]", ret);
         ret = -ESAFEFUNC;
         goto calloc_err;
     }

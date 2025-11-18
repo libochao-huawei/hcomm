@@ -38,6 +38,27 @@ u32 SalStrLen(const char *s, u32 maxLen)
     return strnlen(s, maxLen);
 }
 
+// 字符串转换成浮点数
+HcclResult SalStrToDouble(const std::string str, double &val)
+{
+    try {
+        val = std::stod(str);
+    }
+    catch (std::invalid_argument&) {
+        HCCL_ERROR("[Transform][StrToDouble]stod invalid argument, str[%s] val[%f]", str.c_str(), val);
+        return HCCL_E_PARA;
+    }
+    catch (std::out_of_range&) {
+        HCCL_ERROR("[Transform][StrToDouble]stod out of range, str[%s] val[%f]", str.c_str(), val);
+        return HCCL_E_PARA;
+    }
+    catch (...) {
+        HCCL_ERROR("[Transform][StrToDouble]stod catch error, str[%s] val[%f]", str.c_str(), val);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
 #endif
 
 #if T_DESC("时间处理接口适配", true)

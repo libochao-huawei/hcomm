@@ -76,6 +76,11 @@ void tc_ra_ctx_lmem_unregister_async()
     ra_ctx_lmem_unregister_async(&ctx_handle, lmem_handle, &req_handle);
     mocker_clean();
     free(req_handle);
+
+    mocker(ra_hdc_ctx_lmem_unregister_async, 1, -1);
+    lmem_handle = malloc(sizeof(struct ra_lmem_handle));
+    ra_ctx_lmem_unregister_async(&ctx_handle, lmem_handle, &req_handle);
+    mocker_clean();
 }
  
 void tc_ra_ctx_qp_create_async()
@@ -104,6 +109,10 @@ void tc_ra_ctx_qp_create_async()
     mocker_clean();
     free(qp_handle);
     free(req_handle);
+
+    mocker(ra_hdc_ctx_qp_create_async, 1, -1);
+    ra_ctx_qp_create_async(&ctx_handle, &qp_attr, &qp_info, &qp_handle, &req_handle);
+    mocker_clean();
 }
  
 void tc_ra_ctx_qp_destroy_async()
@@ -118,6 +127,11 @@ void tc_ra_ctx_qp_destroy_async()
     mocker_clean();
 
     free(req_handle);
+
+    qp_handle = malloc(sizeof(struct ra_ctx_qp_handle));
+    mocker(ra_hdc_ctx_qp_destroy_async, 1, -1);
+    ra_ctx_qp_destroy_async(qp_handle, &req_handle);
+    mocker_clean();
 }
  
 void tc_ra_ctx_qp_import_async()
@@ -152,6 +166,11 @@ void tc_ra_ctx_qp_unimport_async()
     mocker_clean();
 
     free(req_handle);
+
+    rem_qp_handle = malloc(sizeof(struct ra_ctx_rem_qp_handle));
+    mocker(ra_hdc_ctx_qp_unimport_async, 1, -1);
+    ra_ctx_qp_unimport_async(rem_qp_handle, &req_handle);
+    mocker_clean();
 }
  
 void tc_ra_socket_send_async()

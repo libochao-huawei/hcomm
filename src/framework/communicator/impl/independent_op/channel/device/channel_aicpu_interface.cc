@@ -10,7 +10,7 @@
 
 #include "channel_aicpu_interface.h"
 #include "framework/aicpu_hccl_process.h"
-#include "independent_op_channel_param.h"
+#include "channel_param.h"
 
 extern "C" {
 __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInit(void *args)

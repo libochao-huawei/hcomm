@@ -33,6 +33,12 @@ public:
  
     template<typename T>
     __aicore__ inline void Process(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize);
+
+    template<typename T>
+    __aicore__ inline void ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize);
+
+    template<typename T>
+    __aicore__ inline void ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize);
 };
 
 __aicore__ inline void AivAllReduceDeterMid910B::EndSync(int32_t tag)
@@ -268,12 +274,12 @@ __aicore__ inline void AivAllReduceDeterMid910B::Process(GM_ADDR input, GM_ADDR 
             __gm__ int32_t *flagCntDonePre = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset3stCount - FLAG_SIZE);
             __gm__ int32_t *flagCntSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset2stCount);
             __gm__ int32_t *flagCntDoneSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset3stCount);
-            
+
             ReduceWithFlagWrap(cclGMSelf + curCount, cclGMSelf + curCount + x * dataCntSize, dataCntSize, tag, 
                 flagCntDonePre, flagCntSelf, flagCntDoneSelf);
         }
     }
- 
+
     // 第2组搬运cclbuffer到output
     if (blockNumPerGroup<=block_idx && block_idx < DOUBLE * blockNumPerGroup) {
         int32_t lastOpCore = rankSize_ - 1;
@@ -286,7 +292,86 @@ __aicore__ inline void AivAllReduceDeterMid910B::Process(GM_ADDR input, GM_ADDR 
         CPGM2GMAccordingFlag(outputGM + x * avgDataNum, cclGMOther + curCount, dataCntSize, 0, ctrlFlagGMDone, tag, 0);
     }
 }
- 
+
+template<typename T>
+__aicore__ inline void AivAllReduceDeterMid910B::ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag,
+                                                        uint64_t bufferSize)
+{
+    int64_t curCount = len;
+    int64_t blockNumPerGroup = rankSize_;
+    int64_t x = block_idx % blockNumPerGroup;
+    int64_t avgDataNum = curCount / rankSize_;
+    int64_t lastDataNum = curCount - (rankSize_ - 1) * avgDataNum;
+    int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_ALL_REDUCE_DETER_910B_MIDDATA;
+
+    uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
+    uint32_t dataOffset = (tag % 2 == 0) ? AIV_INIT_OFFSET : AIV_PING_PONG_SIZE;
+
+    __gm__ T *inputGM = (__gm__ T *)input;
+    __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[x] + dataOffset);
+    __gm__ T *outputGM = (__gm__ T *)output;
+
+    int64_t flagOffset1stCount = flagOffsetBase + (x) * FLAG_SIZE;
+    int64_t flagOffset2stCount = flagOffsetBase + (rankSize_ + x) * FLAG_SIZE;
+    int64_t flagOffset3stCount = flagOffsetBase + (DOUBLE * rankSize_ + x) * FLAG_SIZE;
+
+    // 先从input拷贝到cclbuffer
+    int64_t dataCntSize = (x == rankSize_ - 1) ? lastDataNum : avgDataNum;
+    CpGM2GMWithFlagWrap(cclGMSelf + x * avgDataNum, inputGM + x * avgDataNum, dataCntSize,
+                        (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset1stCount), 8, tag);
+    PipeBarrier<PIPE_ALL>();
+
+    // 拷贝cclbuffer前半部分到cllbuffer后半部分
+    __gm__ int32_t *flagCntDoneOtner = (__gm__ int32_t *)(GM_OUT[x] + flagOffsetBase + (rank_)* FLAG_SIZE);
+    __gm__ int32_t *flagCntSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset2stCount);
+    if (x == 0) {
+        flagCntSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset3stCount);
+    }
+    dataCntSize = (rank_ == rankSize_ - 1) ? lastDataNum : avgDataNum;
+
+    CPGM2GMAccordingFlag(cclGMSelf + curCount + x * dataCntSize, cclGMOther + rank_ * avgDataNum, dataCntSize,
+        flagCntSelf, flagCntDoneOtner, tag, 8);
+    PipeBarrier<PIPE_ALL>();
+
+    // 进行reduce操作
+    if (x != 0) {
+        dataCntSize = (rank_ == rankSize_ - 1) ? lastDataNum : avgDataNum;
+        if (rankSize_ >= DETERMINISTIC_RANKSIZE) {
+            SumByPairs(cclGMSelf + curCount, x, dataCntSize, tag, flagOffsetBase);
+        } else {
+            __gm__ int32_t *flagCntDonePre = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset3stCount - FLAG_SIZE);
+            __gm__ int32_t *flagCntSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset2stCount);
+            __gm__ int32_t *flagCntDoneSelf = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset3stCount);
+
+            ReduceWithFlagWrap(cclGMSelf + curCount, cclGMSelf + curCount + x * dataCntSize, dataCntSize, tag,
+                flagCntDonePre, flagCntSelf, flagCntDoneSelf);
+        }
+    }
+    PipeBarrier<PIPE_ALL>();
+
+    // 搬运cclbuffer到output
+    int32_t lastOpCore = rankSize_ - 1;
+    if (rankSize_ >= DETERMINISTIC_RANKSIZE) {
+        lastOpCore = rankSize_ > DETERMINISTIC_RANKSIZE ? DETERMINISTIC_RANKSIZE : DOUBLE;
+    }
+    __gm__ int32_t *ctrlFlagGMDone = (__gm__ int32_t *)(GM_OUT[x] + flagOffsetBase + (DOUBLE * rankSize_ + lastOpCore) * FLAG_SIZE);
+    dataCntSize = (x == rankSize_ - 1) ? lastDataNum : avgDataNum;
+
+    CPGM2GMAccordingFlag(outputGM + x * avgDataNum, cclGMOther + curCount, dataCntSize, 0, ctrlFlagGMDone, tag, 0);
+}
+
+template<typename T>
+__aicore__ inline void AivAllReduceDeterMid910B::ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag,
+                                                        uint64_t bufferSize)
+{
+    if (blockdim_ == rankSize_){
+        ProcessSingleRanksizeCore<T>(input, output, len, tag, bufferSize);
+    }else{
+        Process<T>(input, output, len, tag, bufferSize);
+    }
+}
+
 template<typename T>
 __aicore__ inline void aiv_all_reduce_deter_910b_middata(KERNEL_ARGS_DEF)
 {
@@ -294,7 +379,7 @@ __aicore__ inline void aiv_all_reduce_deter_910b_middata(KERNEL_ARGS_DEF)
     op.Init(KERNEL_CLASS_INIT, true);
     op.HeadCounter();
     int32_t curTag = (tag << 15);
-    op.Process<T>(input, output, len, curTag, bufferSize);
+    op.ProcessProxy<T>(input, output, len, curTag, bufferSize);
     if (tag == 1000) {
         op.EndSync(tag);
     }

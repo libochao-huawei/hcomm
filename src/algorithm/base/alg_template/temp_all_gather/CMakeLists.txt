@@ -30,6 +30,7 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_hd_stage.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_hccs_sio.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_v_pipeline.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/all_gather_v_graph_pipeline.cc
 )
 
 target_sources(hccl_alg PRIVATE

@@ -96,6 +96,7 @@ struct SubCommLinkPara {
     u32 remoteRankIdStartIndex;
     u32 remoteRankIdNum;
     std::vector<std::unique_ptr<std::thread>> linkThreads;
+    std::vector<HcclResult> linkResult; // TransportManager::CreateLink返回值出参
 
     SubCommLinkPara(struct SingleSubCommTransport &singleSubCommTransport,
         std::vector<std::pair<u32, u32>> &remoteRankMap,
@@ -168,7 +169,7 @@ class TransportManager {
 public:
     TransportManager(CCLBufferManager &cclBufferManager,
         const std::unique_ptr<HcclSocketManager> &socketManager_,
-        const HcclDispatcher &dispatcher,
+        HcclDispatcher &dispatcher,
         const std::unique_ptr<NotifyPool> &notifyPool,
         const std::vector<RankInfo> &rankInfoList,
         RankId userRank,
@@ -227,7 +228,7 @@ private:
     HcclResult MakeRemoteLinkInfo(const u32 remoteRank, bool isInterRdma,
         u32 socketsPerLink, HcclRankLinkInfo &remoteLinkInfo);
     HcclResult CreateDestSockets(const std::string &newTag, RankId remoteRank, u64 taskNum,
-        std::vector<std::shared_ptr<HcclSocket> > &connectSockets, bool &isInterRdma, bool forceRdma = false, bool isBackup = false,
+        std::vector<std::shared_ptr<HcclSocket> > &connectSockets, HcclNetDevCtx &netDevCtx, bool &isInterRdma, bool forceRdma = false, bool isBackup = false,
         u32 subCommIndex = 0, TransportLinkType linkType = TransportLinkType::RESERVED);
     u32 GetSocketsPerLink(u64 taskNum);
     HcclResult SetMachinePara(const std::string &tag, MachineType machineType, const std::string &serverId, u32 dstRank,
@@ -235,7 +236,7 @@ private:
         const std::vector<std::shared_ptr<HcclSocket> > &socketList, const DeviceMem &inputMem,
         const DeviceMem &outputMem, const DeviceMem &expMem, bool isAicpuModeEn, bool isBackup, bool isCapture,
         u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara, RankInfo &loaclRank, RankInfo &remoteRank,
-        TransportLinkType linkType = TransportLinkType::RESERVED, 
+        const HcclNetDevCtx &netDevCtx, TransportLinkType linkType = TransportLinkType::RESERVED, 
         const IndOpMem &indOpMem = IndOpMem(), bool isIndOp = false,
 		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
     TransportType GetTransportType(const u32 dstRank, bool isUsedRdma);
@@ -246,7 +247,7 @@ private:
         const std::string &serverId, const u32 remoteRank, const bool supportDataReceivedAck, const LinkMode linkMode,
         const bool enableUseOneDoorbell, const std::string threadStr,
         const std::vector<std::shared_ptr<HcclSocket> > sockets, const DeviceMem inputMem, const DeviceMem outputMem,
-        bool isUsedRdma, std::shared_ptr<Transport> &link, bool isAicpuModeEn,
+        bool isUsedRdma, std::shared_ptr<Transport> &link, bool isAicpuModeEn, HcclResult &retOut, const HcclNetDevCtx &netDevCtx,
         u32 notifyNum = 0, bool isBackup = false, bool isCapture = false, const DeviceMem expMem = DeviceMem(),
         TransportLinkType linkType = TransportLinkType::RESERVED, bool isIndOp = false, const IndOpMem indOpMem = IndOpMem(),
 		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
@@ -259,17 +260,17 @@ private:
     HcclResult GetConfigSrcPorts(MachinePara &machinePara);
     HcclResult createSubCommLinkThreads(const std::string &tag, const TransportIOMem &transMem,
         struct SubCommLinkPara &subCommLinkPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
     HcclResult waitSubCommLinkThreadsComplete(struct SubCommLinkPara &subCommLinkPara);
     HcclResult checkSubCommLinkThreadsStatus(const std::string &tag, struct SubCommLinkPara &subCommLinkPara, bool isBackup);
     HcclResult AllocSubCommLinks(const std::string &tag, const TransportIOMem &transMem,
         struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
+        bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
 
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;
     const std::unique_ptr<HcclSocketManager> &socketManager_;
-    const HcclDispatcher &dispatcher_;
+    HcclDispatcher &dispatcher_;
     const std::unique_ptr<NotifyPool> &notifyPool_;
     const std::vector<RankInfo> &rankInfoList_;
     RankId userRank_;

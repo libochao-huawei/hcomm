@@ -55,6 +55,7 @@ const std::map<HcclAlgoType, std::string> HcclAlgoTypeMap = {
     {HcclAlgoType::HCCL_ALGO_TYPE_NB, "NB"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NULL, "null"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NA, "NA"},
+    {HcclAlgoType::HCCL_ALGO_TYPE_CONTINUOUS_PIPELINE, "CP"},
 };
 
 HcclResult ResetAlgEnvConfigInitState();
@@ -74,4 +75,6 @@ HcclResult SplitHcclOpType(const std::string &algoConfig, std::vector<std::strin
 HcclResult CheckAlgoConfigValid(std::vector<std::string> &algos, bool& anyCommonConfig, bool& anySpecificConfig);
 
 HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::string> &algos);
+
+const s32 GetInternalExecTimeOut();
 #endif // HCCL_ALG_ENV_CONFIG_H

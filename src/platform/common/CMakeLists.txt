@@ -24,11 +24,11 @@ set(src_list
     dlprof_func.cc
     dltrace_function.cc
     dlhns_function.cc
-    launch_aicpu.cc
 )
 
 target_sources(hccl_plf PRIVATE
     ${src_list}
+    launch_aicpu.cc
 )
 
 target_sources(ccl_kernel_plf PRIVATE

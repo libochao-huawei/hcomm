@@ -26,8 +26,8 @@ private:
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcLevel1CommInfo(TransportMemType inputType,TransportMemType outputType, 
-        std::vector<LevelNSubCommTransport>& opTransport) override;
+    HcclResult CalcLevel1CommInfoForMeshTopo(TransportMemType inputType,TransportMemType outputType, 
+        std::vector<LevelNSubCommTransport>& opTransport);
     u32 CalReduceStreamNum(const u32& localRankSize);
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
@@ -40,11 +40,14 @@ private:
     /* *************** 算法编排 *************** */
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
     HcclResult RunReduceScattervLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo) ;
+    HcclResult RunReduceScattervLevel1ForMeshTopo(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
+    HcclResult CalReduceScatterVSliceData(const OpParam &param, u32 level0RankSize, u32 level1RankSize, std::vector<Slice> &dataSlices);
     HcclResult RunReduceScattervLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo);
     u32 all2allOffset_ = 0;
     u64 maxCount_ = 0;
     bool isNeedSpaceBorrow_ = false;
     u64 minBiasOffset_ = 0;
+    bool isMeshTopo_ = true;
 };
 
 } // namespace hccl

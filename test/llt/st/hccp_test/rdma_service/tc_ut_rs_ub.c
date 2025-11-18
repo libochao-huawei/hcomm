@@ -50,6 +50,32 @@ extern int rs_ub_create_ctx(urma_device_t *urma_dev, unsigned int eid_index, urm
 extern int rs_ub_get_ue_info(urma_context_t *urma_ctx, struct dev_base_attr *dev_base_attr);
 extern uint32_t rs_generate_ue_info(uint32_t die_id, uint32_t func_id);
 extern uint32_t rs_generate_dev_index(uint32_t dev_cnt, uint32_t die_id, uint32_t func_id);
+extern int rs_ub_get_dev_attr(struct rs_ub_dev_cb *dev_cb, struct dev_base_attr *dev_attr, unsigned int *dev_index);
+extern int rs_ub_get_jfc_cb(struct rs_ub_dev_cb *dev_cb, unsigned long long addr, struct rs_ctx_jfc_cb **jfc_cb);
+extern void rs_ub_free_seg_cb_list(struct rs_ub_dev_cb *dev_cb, struct rs_list_head *lseg_list,
+    struct rs_list_head *rseg_list);
+extern void rs_ub_free_jetty_cb_list(struct rs_ub_dev_cb *dev_cb, struct rs_list_head *jetty_list,
+    struct rs_list_head *rjetty_list);
+extern void rs_ub_free_jfc_cb_list(struct rs_ub_dev_cb *dev_cb, struct rs_list_head *jfc_list);
+extern void rs_ub_free_jfce_cb_list(struct rs_ub_dev_cb *dev_cb, struct rs_list_head *jfce_list);
+extern void rs_ub_free_token_id_cb_list(struct rs_ub_dev_cb *dev_cb, struct rs_list_head *token_id_list);
+extern int rs_ub_get_token_id_cb(struct rs_ub_dev_cb *dev_cb, unsigned long long addr,
+    struct rs_token_id_cb **token_id_cb);
+extern int rs_ub_init_seg_cb(struct mem_reg_attr_t *mem_attr, struct rs_ub_dev_cb *dev_cb, struct rs_seg_cb *seg_cb);
+extern int rs_ub_ctx_jfc_create_ext(struct rs_ctx_jfc_cb *ctx_jfc_cb, urma_jfc_cfg_t jfc_cfg, urma_jfc_t **jfc);
+extern int rs_ub_ctx_init_jetty_cb(struct rs_ub_dev_cb *dev_cb, struct ctx_qp_attr *attr,
+    struct rs_ctx_jetty_cb **jetty_cb);
+extern int rs_ub_query_jfc_cb(struct rs_ub_dev_cb *dev_cb, unsigned long long scq_index, unsigned long long rcq_index,
+                              struct rs_ctx_jfc_cb **send_jfc_cb, struct rs_ctx_jfc_cb **recv_jfc_cb);
+extern void rs_ub_ctx_free_jetty_cb(struct rs_ctx_jetty_cb *jetty_cb);
+extern int rs_ub_ctx_drv_jetty_create(struct rs_ctx_jetty_cb *jetty_cb, struct rs_ctx_jfc_cb *send_jfc_cb,
+    struct rs_ctx_jfc_cb *recv_jfc_cb);
+extern int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_create_info *jetty_info);
+extern void rs_ub_ctx_drv_jetty_delete(struct rs_ctx_jetty_cb *jetty_cb);
+extern int rs_ub_ctx_init_rjetty_cb(struct rs_ub_dev_cb *dev_cb, struct rs_jetty_import_attr *import_attr,
+    struct rs_ctx_rem_jetty_cb **rjetty_cb);
+extern int rs_ub_ctx_drv_jetty_import(struct rs_ctx_rem_jetty_cb *rjetty_cb);
+extern int rs_ub_get_jetty_cb(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_id, struct rs_ctx_jetty_cb **jetty_cb);
 char g_rev_buf[RS_BUF_SIZE] = {0};
 struct rs_cb stub_rs_cb;
 struct rs_ub_dev_cb stub_dev_cb;
@@ -954,4 +980,222 @@ void tc_rs_ub_ctx_drv_jetty_import()
 
     free(rjetty_cb.tjetty);
     rjetty_cb.tjetty = NULL;
+}
+
+void tc_rs_ub_dev_cb_init()
+{
+    struct dev_base_attr base_attr = {0};
+    struct rs_ub_dev_cb dev_cb = {0};
+    struct ctx_init_attr attr = {0};
+    struct rs_cb rscb = {0};
+    int dev_index = 0;
+    int ret = 0;
+
+    mocker(pthread_mutex_init, 1, 0);
+    mocker(rs_ub_create_ctx, 1, -1);
+    mocker(pthread_mutex_destroy, 1, -1);
+    ret = rs_ub_dev_cb_init(&attr, &dev_cb, &rscb, &dev_index, &base_attr);
+    EXPECT_INT_NE(0, ret);
+
+    mocker_clean();
+    mocker(pthread_mutex_init, 1, 0);
+    mocker(rs_ub_create_ctx, 1, 0);
+    mocker(rs_ub_get_dev_attr, 1, -1);
+    mocker(rs_urma_delete_context, 1, -1);
+    mocker(pthread_mutex_destroy, 1, -1);
+    ret = rs_ub_dev_cb_init(&attr, &dev_cb, &rscb, &dev_index, &base_attr);
+    EXPECT_INT_NE(0, ret);
+
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_init()
+{
+    struct dev_base_attr base_attr = {0};
+    struct ctx_init_attr attr = {0};
+    struct rs_cb rs_cb = {0};
+    int dev_index = 0;
+    int ret = 0;
+
+    mocker(rs_urma_get_device_by_eid, 1, NULL);
+    ret = rs_ub_ctx_init(&rs_cb, &attr, &dev_index, &base_attr);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_jfc_destroy()
+{
+    struct rs_ub_dev_cb dev_cb = {0};
+    unsigned long long addr = 0;
+    int ret = 0;
+
+    mocker(rs_ub_get_jfc_cb, 1, -1);
+    ret = rs_ub_ctx_jfc_destroy(&dev_cb, addr);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_ext_jetty_delete()
+{
+    struct rs_ctx_jetty_cb jetty_cb = {0};
+    struct rs_ub_dev_cb dev_cb = {0};
+    int ret = 0;
+
+    jetty_cb.dev_cb = &dev_cb;
+    mocker(rs_urma_user_ctl, 1, -1);
+    ret = rs_ub_ctx_ext_jetty_delete(&jetty_cb);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_chan_create()
+{
+    struct rs_ub_dev_cb dev_cb = {0};
+    unsigned long long addr = 0;
+    int ret = 0;
+
+    mocker(rs_urma_create_jfce, 1, NULL);
+    ret = rs_ub_ctx_chan_create(&dev_cb, &addr);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_deinit()
+{
+    struct rs_ub_dev_cb *dev_cb = (struct rs_ub_dev_cb *)calloc(1, sizeof(struct rs_ub_dev_cb));
+    struct rs_cb rs_cb = {0};
+    int ret = 0;
+
+    dev_cb->rscb = &rs_cb;
+    mocker(rs_urma_delete_context, 1, -1);
+    mocker(rs_ub_free_seg_cb_list, 1, -1);
+    mocker(rs_ub_free_jetty_cb_list, 1, -1);
+    mocker(rs_ub_free_jfc_cb_list, 1, -1);
+    mocker(rs_ub_free_jfce_cb_list, 1, -1);
+    mocker(rs_ub_free_token_id_cb_list, 1, -1);
+    RS_INIT_LIST_HEAD(&dev_cb->list);
+    ret = rs_ub_ctx_deinit(dev_cb);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_init_seg_cb()
+{
+    struct mem_reg_attr_t mem_attr = {0};
+    struct rs_ub_dev_cb dev_cb = {0};
+    struct rs_seg_cb seg_cb = {0};
+    int ret = 0;
+
+    mocker(rs_ub_get_token_id_cb, 1, 0);
+    mocker(rs_urma_register_seg, 1, NULL);
+    ret = rs_ub_init_seg_cb(&mem_attr, &dev_cb, &seg_cb);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_lmem_reg()
+{
+    struct mem_reg_attr_t mem_attr = {0};
+    struct mem_reg_info_t mem_info = {0};
+    struct rs_ub_dev_cb dev_cb = {0};
+    int ret = 0;
+
+    mem_attr.mem.size = 1;
+    mocker(rs_ub_init_seg_cb, 1, -1);
+    ret = rs_ub_ctx_lmem_reg(&dev_cb, &mem_attr, &mem_info);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+
+    mocker(rs_urma_import_seg, 1, NULL);
+    ret = rs_ub_ctx_rmem_import(&dev_cb, &mem_attr, &mem_info);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_jfc_create_fail()
+{
+    struct rs_ub_dev_cb dev_cb = {0};
+    struct ctx_cq_attr attr = {0};
+    struct ctx_cq_info info = {0};
+    int ret = 0;
+
+    attr.ub.mode = JFC_MODE_STARS_POLL;
+    mocker(rs_ub_ctx_jfc_create_ext, 1, -1);
+    ret = rs_ub_ctx_jfc_create(&dev_cb, &attr, &info);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_init_jetty_cb()
+{
+    struct rs_ctx_jetty_cb *jetty_cb = NULL;
+    struct rs_ub_dev_cb dev_cb = {0};
+    struct ctx_qp_attr attr = {0};
+    int ret = 0;
+
+    mocker(pthread_mutex_init, 1, -1);
+    ret = rs_ub_ctx_init_jetty_cb(&dev_cb, &attr, &jetty_cb);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_jetty_create_fail()
+{
+    struct rs_ub_dev_cb dev_cb = {0};
+    struct qp_create_info info = {0};
+    struct ctx_qp_attr attr = {0};
+    int ret = 0;
+
+    mocker(rs_ub_ctx_init_jetty_cb, 1, 0);
+    mocker(rs_ub_query_jfc_cb, 1, -1);
+    mocker(rs_ub_ctx_free_jetty_cb, 1, -1);
+    ret = rs_ub_ctx_jetty_create(&dev_cb, &attr, &info);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+
+    mocker(rs_ub_ctx_init_jetty_cb, 1, 0);
+    mocker(rs_ub_query_jfc_cb, 1, 0);
+    mocker(rs_ub_ctx_drv_jetty_create, 1, 0);
+    mocker(rs_ub_fill_jetty_info, 1, -1);
+    mocker(rs_ub_ctx_drv_jetty_delete, 1, -1);
+    mocker(rs_ub_ctx_free_jetty_cb, 1, -1);
+    ret = rs_ub_ctx_jetty_create(&dev_cb, &attr, &info);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_jetty_import_fail()
+{
+    struct rs_jetty_import_attr import_attr = {0};
+    struct rs_jetty_import_info import_info = {0};
+    struct rs_ub_dev_cb dev_cb = {0};
+    int ret = 0;
+
+    mocker(rs_ub_ctx_init_rjetty_cb, 1, 0);
+    mocker(rs_ub_ctx_drv_jetty_import, 1, -1);
+    ret = rs_ub_ctx_jetty_import(&dev_cb, &import_attr, &import_info);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+}
+
+void tc_rs_ub_ctx_batch_send_wr_fail()
+{
+    struct wrlist_send_complete_num wrlist_num = {0};
+    struct wrlist_base_info base_info = {0};
+    struct batch_send_wr_data wr_data = {0};
+    struct send_wr_resp wr_resp = {0};
+    struct rs_cb rs_cb = {0};
+    int ret = 0;
+
+    wrlist_num.send_num = 1;
+    mocker(rs_ub_get_dev_cb, 1, -1);
+    ret = rs_ub_ctx_batch_send_wr(&rs_cb, &base_info, &wr_data, &wr_resp, &wrlist_num);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
+
+    mocker(rs_ub_get_dev_cb, 1, 0);
+    mocker(rs_ub_get_jetty_cb, 1, -1);
+    ret = rs_ub_ctx_batch_send_wr(&rs_cb, &base_info, &wr_data, &wr_resp, &wrlist_num);
+    EXPECT_INT_NE(0, ret);
+    mocker_clean();
 }

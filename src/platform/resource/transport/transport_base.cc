@@ -12,6 +12,8 @@
 #include "adapter_rts.h"
 #include "externalinput_pub.h"
 #include "device_capacity.h"
+#include "new/hccl_dispatcher_ctx.h"
+#include "dispatcher_ctx.h"
 
 namespace hccl {
 struct SuperPodInfo {
@@ -32,6 +34,16 @@ TransportBase::TransportBase(DispatcherPub *dispatcher,
 {
     if (machinePara_.sockets.size() > 0) {
         defaultSocket_ = machinePara_.sockets[0];
+    }
+
+    if (dispatcher_ == nullptr) {
+        hccl::DispatcherCtx* ctx_temp = reinterpret_cast<hccl::DispatcherCtx *>(GetDispatcherCtx());
+        if (ctx_temp == nullptr || ctx_temp->GetDispatcher() == nullptr) {
+            HCCL_ERROR("Init IndOp dispatcher fail, ctx_temp or GetDispatcher is nullptr");
+        } else {
+            dispatcher_ = reinterpret_cast<DispatcherPub*>(ctx_temp->GetDispatcher());
+            HCCL_INFO("%s success", __func__);
+        }
     }
 }
 
@@ -760,6 +772,7 @@ HcclResult TransportBase::SignalInit(const std::shared_ptr<LocalNotify> &notify,
     CHK_RET(notify->GetNotifyData(signalInfo));
     EXECEPTION_CATCH((ipcNotify = std::make_shared<LocalIpcNotify>()), return HCCL_E_PTR);
     CHK_RET(ipcNotify->Init(signalInfo, NotifyLoadType::DEVICE_NOTIFY));
+    HCCL_INFO("%s notifyId_ [%u]", __func__, ipcNotify->notifyId_);
     return HCCL_SUCCESS;
 }
 

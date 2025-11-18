@@ -12,7 +12,7 @@
 
 namespace hccl {
 
-constexpr u32 BUFFER_DIVIDE=2;
+constexpr u32 BUFFER_DIVIDE = 2;
 constexpr u32 MAX_TARGET_NUM = 20;
 
 CollReduceScatterMeshAivFor91093Executor::CollReduceScatterMeshAivFor91093Executor(const HcclDispatcher dispatcher,
@@ -22,6 +22,7 @@ CollReduceScatterMeshAivFor91093Executor::CollReduceScatterMeshAivFor91093Execut
     DMAReduceFlag_ = false;
     desc_.isAivMode = true;
     desc_.isAivCrossNode = true;
+    desc_.deterministic = 1;
 }
  
 HcclResult CollReduceScatterMeshAivFor91093Executor::CalcStreamNum(u32& streamNum)
@@ -262,7 +263,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::Orchestrate(OpParam& param,
  
 HcclResult CollReduceScatterMeshAivFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceScatterMeshAivFor91093Executor][KernelRun]ReduceScatter aiv enter.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] ReduceScatter aiv enter.", __func__);
  
     CHK_RET(CheckCommSize(COMM_COMBINE_ORDER, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);

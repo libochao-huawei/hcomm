@@ -27,7 +27,7 @@ HcclResult __attribute__((weak)) HcomSendV2(const char *tag, void *inputPtr, u64
     u32 srTag, const char *group, rtStream_t &stream);
 HcclResult __attribute__((weak)) HcomReceiveV2(const char *tag, void *outputPtr, u64 count, HcclDataType dataType, u32 srcRank,
     u32 srTag, const char *group, rtStream_t &stream);
-HcclResult __attribute__((weak)) HcomGetWorkspaceSubStreamNumV2(const char *group, u64 &streamNum, u64 dataSize, HcclCMDType optype);
+HcclResult __attribute__((weak)) HcomGetWorkspaceSubStreamNumV2(const char *group, u64 &streamNum, u64 dataSize, HcclDataType dataType, HcclCMDType optype);
 HcclResult __attribute__((weak)) HcomGetWorkspaceMemSizeV2(
     const std::string &opType, u64 count, HcclDataType dataType, const char *group, u64 &memSize);
 HcclResult __attribute__((weak)) HcomSetWorkspaceResourceV2(

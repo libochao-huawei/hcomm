@@ -35,13 +35,13 @@ STATIC int hccp_parse_logic_id(const char *input, struct hccp_init_param *param)
     int ret;
 
     ret = dl_drv_get_dev_num(&dev_num);
-    CHK_PRT_RETURN(ret, hccp_err("get dev num fail, ret %d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("get dev num failed, ret %d", ret), ret);
     ret = hccp_param_parse_id(input, &param->logic_id);
     CHK_PRT_RETURN(ret, hccp_err("hccp_param_parse_id failed"), ret);
 
     ret = dl_drv_device_get_phy_id_by_index(param->logic_id, &(param->chip_id));
     CHK_PRT_RETURN(ret != 0 || param->chip_id >= dev_num || param->chip_id > HCCP_MAX_CHIP_ID,
-        hccp_err("get chip id fail, ret:%d, chip_id:%u, dev_num:%u", ret, param->chip_id, dev_num), -EINVAL);
+        hccp_err("get chip id failed, ret:%d, chip_id:%u, dev_num:%u", ret, param->chip_id, dev_num), -EINVAL);
 
     hccp_info("logic_id from TSD is [%d], chip_id[%u]", param->logic_id, param->chip_id);
     return 0;

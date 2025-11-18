@@ -179,6 +179,7 @@ TEST_M(RS, tc_rs_remap_mr);
 TEST_M(RS, tc_rs_roce_get_api_version);
 TEST_M(RS, tc_rs_get_tls_enable);
 TEST_M(RS, tc_rs_get_sec_random);
+TEST_M(RS, tc_rs_get_hccn_cfg);
 TEST_M(RS, tc_dl_hal_set_clear_user_config);
 
 /**
@@ -292,6 +293,19 @@ TEST_M(RS, tc_rs_epoll_event_ssl_recv_tag_in_handle);
 
 TEST_M(RS, tc_rs_get_tp_info_list);
 TEST_M(RS, tc_rs_ub_ctx_drv_jetty_import);
+TEST_M(RS, tc_rs_ub_dev_cb_init);
+TEST_M(RS, tc_rs_ub_ctx_init);
+TEST_M(RS, tc_rs_ub_ctx_jfc_destroy);
+TEST_M(RS, tc_rs_ub_ctx_ext_jetty_delete);
+TEST_M(RS, tc_rs_ub_ctx_chan_create);
+TEST_M(RS, tc_rs_ub_ctx_deinit);
+TEST_M(RS, tc_rs_ub_init_seg_cb);
+TEST_M(RS, tc_rs_ub_ctx_lmem_reg);
+TEST_M(RS, tc_rs_ub_ctx_jfc_create_fail);
+TEST_M(RS, tc_rs_ub_ctx_init_jetty_cb);
+TEST_M(RS, tc_rs_ub_ctx_jetty_create_fail);
+TEST_M(RS, tc_rs_ub_ctx_jetty_import_fail);
+TEST_M(RS, tc_rs_ub_ctx_batch_send_wr_fail);
 
 TEST_M(RS, tc_rs_tlv_init);
 TEST_M(RS, tc_rs_tlv_deinit);

@@ -17,22 +17,8 @@
 
 namespace hccl {
 template <typename OpParam, typename ApiParam>
-HcclResult AicpuLaunchMgr::KernelLaunch(aclrtBinHandle binHandle, OpParam &opParam, ApiParam &apiParam,
-    rtStream_t aicpuInitStream)
+HcclResult AicpuLaunchMgr::KernelLaunch(OpParam &opParam, ApiParam &apiParam, rtStream_t aicpuInitStream)
 {
-    // Step 1. 拷贝 opParam 到 Device
-    DeviceMem addr = DeviceMem::alloc(sizeof(OpParam));
-    CHK_RET(hrtMemSyncCopy(addr.ptr(), sizeof(OpParam), &opParam, sizeof(OpParam),
-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-
-    // Step 2. 填充 apiParam 中的 commContext
-    apiParam.commContext = reinterpret_cast<uint64_t>(addr.ptr());
-
-    // Step 3. 启动 kernel
-    u16 timeOut = 0;
-    CHK_RET(AicpuAclKernelLaunch(aicpuInitStream, &apiParam.commContext, sizeof(apiParam.commContext),
-        binHandle, apiParam.kernelName, true, timeOut));
-
     return HCCL_SUCCESS;
 }
 
@@ -78,33 +64,28 @@ HcclResult AicpuLaunchMgr::AiCpuStreamAllocAndGet(rtStream_t &aiCpuStream)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuLaunchMgr::ThreadKernelLaunch(aclrtBinHandle binHandle,
-    std::vector<std::shared_ptr<HcclThread>> &outThreads, const std::string commId,
-    std::unique_ptr<ThreadHandle[]> &hostHandle)
+HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<HcclThread>> &newThreads,
+    const std::string commId, std::unique_ptr<ThreadHandle[]> &hostHandle, aclrtBinHandle binCustomHandle)
 {
-    CHK_PTR_NULL(binHandle);
-    CHK_PRT_RET(outThreads.size() > LOCAL_STREAM_MAX_NUM,
-        HCCL_ERROR("[ThreadMgr][AiCpuKernelLaunch] streamNum[%zu] > LOCAL_STREAM_MAX_NUM[%u]",
-        outThreads.size(), LOCAL_STREAM_MAX_NUM), HCCL_E_PARA);
- 
+    CHK_PRT_RET(newThreads.size() > LOCAL_STREAM_MAX_NUM,
+        HCCL_ERROR("[AicpuLaunchMgr][%s] streamNum[%zu] > LOCAL_STREAM_MAX_NUM[%u]", __func__,
+        newThreads.size(), LOCAL_STREAM_MAX_NUM), HCCL_E_PARA);
+
     // Step 1. 创建局部 stream
     Stream localStream(StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
     CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
- 
+
     // Step 2. 填写 opParam
     ThreadMgrAicpuParam opParam{};
-    errno_t sRet = memset_s(&opParam, sizeof(opParam), 0, sizeof(opParam));
-    CHK_PRT_RET(sRet != EOK,
-        HCCL_ERROR("[ThreadMgr][AiCpuKernelLaunch] call memset_s failed, return [%d].", sRet),
-        HCCL_E_MEMORY);
-    opParam.threadNum = outThreads.size();
-    sRet = strncpy_s(opParam.hcomId, HCOMID_MAX_SIZE, commId.c_str(), commId.length());
+    (void)memset_s(&opParam, sizeof(opParam), 0, sizeof(opParam));
+    opParam.threadNum = newThreads.size();
+    errno_t sRet = strncpy_s(opParam.hcomId, HCOMID_MAX_SIZE, commId.c_str(), commId.length());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[AicpuLaunchMgr][%s] call strncpy_s failed, return [%d].", __func__, sRet),
         HCCL_E_MEMORY);
     opParam.hcomId[HCOMID_MAX_SIZE - 1] = '\0';
     for (u32 i = 0; i < opParam.threadNum; ++i) {
-        const std::string &uid = outThreads[i]->GetUniqueId();
+        const std::string &uid = newThreads[i]->GetUniqueId();
         size_t copyLen = std::min(uid.size(), static_cast<size_t>(THREAD_UNIQUE_ID_MAX_SIZE));
         sRet = memcpy_s(opParam.threadParam[i], THREAD_UNIQUE_ID_MAX_SIZE, uid.c_str(), copyLen);
         CHK_PRT_RET(sRet != EOK,
@@ -122,28 +103,25 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunch(aclrtBinHandle binHandle,
             HCCL_INFO("[AicpuLaunchMgr][%s] %s", __func__, oss.str().c_str());
         }
     }
- 
-    size_t handleLen = sizeof(ThreadHandle) * outThreads.size();
+
+    size_t handleLen = sizeof(ThreadHandle) * newThreads.size();
     DeviceMem deviceHandle = DeviceMem::alloc(handleLen);
     CHK_SMART_PTR_NULL(deviceHandle);
     opParam.deviceHandle = deviceHandle.ptr();
- 
+
     // Step 3. 调用 KernelLaunch，传入本地流
-    ApiParamDef apiParam("RunAicpuIndOpThreadInit", "libccl_kernel.so", "HcclAicpuOp");
- 
-    HcclResult ret = KernelLaunch(binHandle, opParam, apiParam, localStream.ptr());
+
+    HcclResult ret = KernelLaunchAicpuCustom(opParam, "RunAicpuIndOpThreadInit", localStream.ptr(), binCustomHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[ThreadMgr][AiCpuKernelLaunch] KernelLaunch failed, return [%d].", ret), ret);
- 
+        HCCL_ERROR("[AicpuLaunchMgr][%s] KernelLaunch failed, return [%d].", __func__, ret), ret);
+
     // Step 4. 等待流完成，localStream生命周期随函数结束自动销毁
     CHK_RET(hcclStreamSynchronize(localStream.ptr()));
- 
-    // Step 5. 返回device侧句柄 
-    EXECEPTION_CATCH(hostHandle = std::make_unique<ThreadHandle[]>(outThreads.size()),
-        return HCCL_E_PTR);
+
+    // Step 5. 返回device侧句柄
     CHK_RET(hrtMemSyncCopy(hostHandle.get(), handleLen, opParam.deviceHandle, handleLen,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
- 
+
     return HCCL_SUCCESS;
 }
 

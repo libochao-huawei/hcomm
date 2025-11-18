@@ -9,40 +9,23 @@
  */
 
 #include "comm_engine_res_manager.h"
-#include "launch_aicpu.h"
-#include "launch_device.h"
 
 namespace hccl {
-HcclResult CommEngineResMgr::LoadAICPUKernel(void)
-{
-    std::string jsonPath;
-    CHK_RET(GetKernelFilePath(jsonPath));
-    jsonPath += "ccl_kernel.json";
-
-    HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
-        binHandle_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
-        "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
-    return HCCL_SUCCESS;
-}
+CommEngineResMgr::CommEngineResMgr(){};
 
 HcclResult CommEngineResMgr::Init(uint32_t threadNum, uint32_t notifyNumPerThread,
-    const std::string& commId, const aclrtBinHandle binHandle)
+    const std::string& commId, const aclrtBinHandle binHandle, const ManagerCallbacks& callbacks)
 {
     std::lock_guard<std::mutex> lock(mtx_);
     HCCL_INFO("[CommEngineResMgr][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u]", 
         __func__, commId.c_str(), threadNum, notifyNumPerThread);
     if (!threadMgr_) {
-        EXECEPTION_CATCH(threadMgr_ = std::make_unique<ThreadMgr>(threadNum, notifyNumPerThread, commId, binHandle),
+        EXECEPTION_CATCH(threadMgr_ = std::make_unique<ThreadMgr>(threadNum, notifyNumPerThread, commId, binHandle, callbacks),
             return HCCL_E_PTR);
     }
     if (!notifyMgr_) {
-        EXECEPTION_CATCH(notifyMgr_ = std::make_unique<NotifyManager>(commId, binHandle),
+        EXECEPTION_CATCH(notifyMgr_ = std::make_unique<NotifyManager>(commId, binHandle, callbacks),
             return HCCL_E_PTR);
-    }
-    if (!binHandle_) {
-        CHK_RET(LoadAICPUKernel());
     }
     return HCCL_SUCCESS;
 }
@@ -57,7 +40,7 @@ HcclResult CommEngineResMgr::CommAllocThreadRes(CommEngine engine, uint32_t thre
         __func__, threadNum, setThreadNum), HCCL_E_PARA);
     CHK_PRT_RET(notifyNumPerThread > setNotifyNumPerThread,  HCCL_ERROR("[%s] Alloced preNotify num[%u] more than "
         "num[%u] in config", __func__, notifyNumPerThread, setNotifyNumPerThread), HCCL_E_PARA);
-    return threadMgr_->CommAllocThreadRes(binHandle_, engine, threadNum, notifyNumPerThread, thread);
+    return threadMgr_->CommAllocThreadRes(engine, threadNum, notifyNumPerThread, thread);
 }
 
 HcclResult CommEngineResMgr::CommAllocThreadResByStream(CommEngine engine,

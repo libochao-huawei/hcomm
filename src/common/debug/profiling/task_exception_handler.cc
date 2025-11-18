@@ -813,7 +813,7 @@ bool TaskExceptionHandler::FindAndValidateContext(rtExceptionInfo *exceptionInfo
 {
     auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
     if (mapIt == opCtxInfo[exceptionInfo->deviceid].end()) {
-        HCCL_INFO("stream not found. the fail ctx is not from HCCL. streamid[%u]", exceptionInfo->streamid);
+        HCCL_RUN_INFO("stream not found. the fail ctx is not from HCCL. streamid[%u]", exceptionInfo->streamid);
         return false;
     }
 
@@ -889,7 +889,7 @@ bool TaskExceptionHandler::DealExceptionOp(rtExceptionInfo *exceptionInfo)
     bool taskFound = false;
     auto mapIt = opMap[exceptionInfo->deviceid].find(exceptionInfo->streamid);
     CHK_PRT_RET(mapIt == opMap[exceptionInfo->deviceid].end(),
-        HCCL_INFO("stream not found. the fail op is not from HCCL. streamid[%u]", exceptionInfo->streamid), false);
+        HCCL_RUN_INFO("stream not found. the fail op is not from HCCL. streamid[%u]", exceptionInfo->streamid), false);
     auto &queIt = mapIt->second;
     CHK_PRT_RET(queIt->size() == 0, HCCL_ERROR("[TaskExceptionHandler][Callback] OpInfo queue size 0"), false);
     auto exceptionOpInfo = queIt->back();
@@ -1139,7 +1139,7 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
     bool taskFound = false;
     auto mapIt = taskMap[exceptionInfo->deviceid].find(exceptionInfo->streamid);
     CHK_PRT_RET(mapIt == taskMap[exceptionInfo->deviceid].end(),
-        HCCL_INFO("stream not found. the fail task is not from HCCL. streamid[%u]", exceptionInfo->streamid), false);
+        HCCL_RUN_INFO("stream not found. the fail task is not from HCCL. streamid[%u]", exceptionInfo->streamid), false);
     auto &queIt = mapIt->second;
     CHK_PRT_RET(queIt->size() == 0, HCCL_ERROR("[TaskExceptionHandler][Callback] TaskInfo queue size 0"), false);
     
@@ -1306,7 +1306,7 @@ void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageRep
 
 void TaskExceptionHandler::Callback(rtExceptionInfo *exceptionInfo)
 {
-    HCCL_ERROR("[TaskExceptionHandler][%s]begin to execute hccl task exception callback function.", __func__);
+    HCCL_RUN_INFO("[TaskExceptionHandler][%s]begin to execute hccl task exception callback function.", __func__);
     bool isExistAicpuError = false;
     if (exceptionInfo == nullptr) {
         HCCL_ERROR("[TaskExceptionHandler][Callback] exceptionInfo is nullptr.");

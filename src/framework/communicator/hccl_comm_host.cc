@@ -122,24 +122,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult hcclComm::CreateCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx)
-    {
-        CHK_SMART_PTR_NULL(communicator_);
-        return communicator_->CreateCommEngineCtx(tag, engine, engineCtx);
-    }
-
-    HcclResult hcclComm::GetCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx)
-    {
-        CHK_SMART_PTR_NULL(communicator_);
-        return communicator_->GetCommEngineCtx(tag, engine, engineCtx);
-    }
-
-    HcclResult hcclComm::DestroyCommEngineCtx(const HcclMem *engineCtx)
-    {
-        CHK_SMART_PTR_NULL(communicator_);
-        return communicator_->DestroyCommEngineCtx(engineCtx);
-    }
-
     HcclResult hcclComm::RegisterCommUserMem(void* addr, u64 size, void **handle)
     {
         CHK_SMART_PTR_NULL(communicator_);
@@ -160,35 +142,6 @@ namespace hccl
         return communicator_->ExchangeCommUserMem(handle, peerRanks);
     }
 
-    HcclResult hcclComm::ChannelCommCreate(const std::string &tag, CommEngine engine, 
-        const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
-    {
-        TransportIOMem transMem;
-        CHK_RET(PrepareChannelMem(tag, transMem));
-        CHK_SMART_PTR_NULL(communicator_);
-        std::string commId = GetIdentifier();
-        return communicator_->ChannelCommCreate(commId, tag, engine, channelDescList, listNum, channelList, transMem);
-    }
-    HcclResult hcclComm::ChannelCommGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum)
-    {
-        CHK_SMART_PTR_NULL(communicator_);
-        return communicator_->ChannelCommGetNotifyNum(channel, notifyNum);
-    }
-    HcclResult hcclComm::ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum)
-    {
-        CHK_SMART_PTR_NULL(communicator_);
-        return communicator_->ChannelCommDestroy(channelList, channelNum);
-    }
-    HcclResult hcclComm::ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer)
-    {
-        CHK_SMART_PTR_NULL(communicator_);
-        return communicator_->ChannelCommGetHcclBuffer(channel, buffer);
-    }
-    HcclResult hcclComm::ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum)
-    {
-        CHK_SMART_PTR_NULL(communicator_);
-        return communicator_->ChannelCommGetRemoteMem(channel, remoteMem, memNum);
-    }
     HcclResult hcclComm::SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable)
     {
         CHK_SMART_PTR_NULL(communicator_);
@@ -197,8 +150,19 @@ namespace hccl
         CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle));
         return HCCL_SUCCESS;
     }
+    HcclResult hcclComm::InitIndependentOp()
+    {
+        ChannelManagerCallbacks channelCallbacks;
+        channelCallbacks.indOpTransportAlloc = [this](const std::string &tag, OpCommTransport &opCommTransport, 
+            bool isAicpuModeEn) -> HcclResult {
+            return this->IndOpTransportAlloc(tag, opCommTransport, isAicpuModeEn);
+        };
+        channelCallbacks.getRankLists = [this]() -> std::vector<RankInfo> { return this->GetRankLists(); };
+        return independentOp_.SetChannelCallbacks(channelCallbacks);
+    }
+
     IndependentOp& hcclComm::GetIndependentOp() {
-        return IndependentOp_;
+        return independentOp_;
     }
     HcclResult hcclComm::PrepareChannelMem(const std::string &tag, TransportIOMem &transMem)
     {
@@ -225,5 +189,13 @@ namespace hccl
         transMem.cclInputMem = cclbuffer;
         transMem.cclOutputMem = cclbuffer;
         return HCCL_SUCCESS;
+    }
+    HcclResult hcclComm::IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, bool isAicpuModeEn)
+    {
+        CHK_SMART_PTR_NULL(communicator_);
+        TransportIOMem transMem;
+        CHK_RET(PrepareChannelMem(tag, transMem));
+        std::string commId = GetIdentifier();
+        return communicator_->IndOpTransportAlloc(tag, opCommTransport, transMem, isAicpuModeEn);
     }
 } // namespace hccl

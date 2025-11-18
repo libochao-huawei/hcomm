@@ -12,9 +12,7 @@
 #define RA_HDC_ASYNC_H
 
 #include "hccp_common.h"
-#include "hccp_ctx.h"
 #include "ra.h"
-#include "ra_ctx.h"
 #include "ra_async.h"
 #include "ra_rs_comm.h"
 #include "ra_hdc.h"

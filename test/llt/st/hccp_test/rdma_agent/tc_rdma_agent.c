@@ -89,7 +89,7 @@ extern int ra_rdma_lite_init_mem_pool(struct rdma_lite_context *lite_ctx, struct
 extern int ra_rdma_lite_deinit_mem_pool(struct rdma_lite_context *lite_ctx, u32 mem_idx);
 extern int ra_hdc_get_cqe_err_info_num(struct ra_rdma_handle *rdma_handle, unsigned int *num);
 extern struct rdma_lite_context *ra_rdma_lite_alloc_ctx(u8 phy_id, struct dev_cap_info *cap);
-extern struct rdma_lite_cq *ra_rdma_lite_create_cq(struct rdma_lite_context *lite_ctx, 
+extern struct rdma_lite_cq *ra_rdma_lite_create_cq(struct rdma_lite_context *lite_ctx,
     struct rdma_lite_cq_attr *lite_cq_attr);
 extern int ra_rdma_lite_destroy_qp(struct rdma_lite_qp *lite_qp);
 extern struct rdma_lite_qp *ra_rdma_lite_create_qp(struct rdma_lite_context *lite_ctx,
@@ -2180,10 +2180,10 @@ void tc_ra_rdev_get_port_status()
     int out_len;
     int op_result;
     int rcv_buf_len = 300;
- 
+
     char in_buf[512];
     char out_buf[512];
- 
+
     ret = ra_rs_rdev_get_port_status(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
     EXPECT_INT_EQ(ret, 0);
 }
@@ -2674,6 +2674,10 @@ void tc_ra_create_notmal_qp()
     ra_rdma_handle.rdev_info.phy_id = 0;
     ra_normal_qp_create(rdma_handle, &qp_init_attr, &qp_handle, &qp);
     ra_normal_qp_destroy(qp_handle);
+
+    mocker((stub_fn_t)ra_peer_normal_qp_create, 10, -1);
+    ra_normal_qp_create(rdma_handle, &qp_init_attr, &qp_handle, &qp);
+    mocker_clean();
 }
 int ra_set_qp_attr_qos_stub(struct ra_qp_handle *qp_stub, struct qos_attr *attr)
 {
@@ -3318,12 +3322,12 @@ void tc_ra_peer_socket_batch_abort()
     unsigned int dev_id;
     struct socket_connect_info_t conn[4] = {0};
     int ret = 0;
- 
+
     mocker(ra_get_socket_connect_info, 20, 1);
     ret = ra_peer_socket_batch_abort(dev_id, conn, 5);
     EXPECT_INT_NE(ret, 0);
     mocker_clean();
- 
+
     mocker(ra_get_socket_connect_info, 20, 0);
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
@@ -3331,7 +3335,7 @@ void tc_ra_peer_socket_batch_abort()
     ret = ra_peer_socket_batch_abort(dev_id, conn, 5);
     EXPECT_INT_EQ(ret, 1);
     mocker_clean();
- 
+
     mocker(ra_get_socket_connect_info, 20, 0);
     mocker(pthread_mutex_lock, 10, 0);
     mocker(pthread_mutex_unlock, 10, 0);
@@ -3701,6 +3705,11 @@ void tc_ra_rs_typical_mr_reg()
     char in_buf[512];
     char out_buf[512];
 
+    ret = ra_rs_typical_mr_reg_v1(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    EXPECT_INT_EQ(ret, 0);
+    ret = ra_rs_typical_mr_dereg(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
+    EXPECT_INT_EQ(ret, 0);
+
     ret = ra_rs_typical_mr_reg(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
     EXPECT_INT_EQ(ret, 0);
     ret = ra_rs_typical_mr_dereg(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
@@ -3915,7 +3924,7 @@ int ra_socket_batch_abort_stub(unsigned int phy_id, struct socket_connect_info_t
 {
     return 0;
 }
- 
+
 void tc_ra_socket_batch_abort(void)
 {
     int ret;
@@ -3923,27 +3932,27 @@ void tc_ra_socket_batch_abort(void)
     struct socket_connect_info_t conn = {0};
     struct ra_socket_handle socket_handle = {0};
     struct ra_socket_ops socket_ops = {0};
- 
+
     ret = ra_socket_batch_abort(NULL, 0);
     EXPECT_INT_EQ(128203, ret);
- 
+
     conn.socket_handle = NULL;
     ret = ra_socket_batch_abort(&conn, 1);
     EXPECT_INT_EQ(128203, ret);
- 
+
     socket_ops.ra_socket_batch_abort = ra_socket_batch_abort_stub;
     socket_handle.socket_ops = &socket_ops;
     socket_handle.rdev_info.phy_id = 16;
     conn.socket_handle = &socket_handle;
     ret = ra_socket_batch_abort(&conn, 1);
     EXPECT_INT_EQ(128203, ret);
- 
+
     socket_handle.rdev_info.phy_id = 0;
     mocker(ra_inet_pton, 5, -1);
     ret = ra_socket_batch_abort(&conn, 1);
     EXPECT_INT_NE(0, ret);
     mocker_clean();
- 
+
     mocker(ra_inet_pton, 5, 0);
     ret = ra_socket_batch_abort(&conn, 1);
     EXPECT_INT_EQ(0, ret);
@@ -4253,15 +4262,15 @@ void tc_ra_get_client_socket_err_info()
     unsigned int num = 1;
     struct ra_socket_handle *socket_handle = NULL;
     struct rdev rdev_info = {0};
- 
+
     socket_handle = malloc(sizeof(struct ra_socket_handle));
     socket_handle->rdev_info = rdev_info;
     mocker_clean();
- 
+
     conn[0].socket_handle = NULL;
     ret = ra_get_client_socket_err_info(conn, err, num);
     EXPECT_INT_EQ(128203, ret);
- 
+
     conn[0].socket_handle = socket_handle;
     socket_handle->socket_ops = &g_ra_peer_socket_ops;
     rdev_info.phy_id = 0;
@@ -4272,7 +4281,7 @@ void tc_ra_get_client_socket_err_info()
     ret = ra_get_client_socket_err_info(conn, err, num);
     EXPECT_INT_EQ(328207, ret);
     mocker_clean();
- 
+
     mocker(ra_inet_pton, 5, 0);
     mocker(ra_get_socket_connect_info, 1, 0);
     mocker(rs_set_ctx, 1, 0);
@@ -4280,11 +4289,11 @@ void tc_ra_get_client_socket_err_info()
     ret = ra_get_client_socket_err_info(conn, err, num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
- 
+
     free(socket_handle);
     socket_handle = NULL;
 }
- 
+
 void tc_ra_get_server_socket_err_info()
 {
     int ret = 0;
@@ -4293,15 +4302,15 @@ void tc_ra_get_server_socket_err_info()
     unsigned int num = 1;
     struct ra_socket_handle *socket_handle = NULL;
     struct rdev rdev_info = {0};
- 
+
     socket_handle = malloc(sizeof(struct ra_socket_handle));
     socket_handle->rdev_info = rdev_info;
     mocker_clean();
- 
+
     conn[0].socket_handle = NULL;
     ret = ra_get_server_socket_err_info(conn, err, num);
     EXPECT_INT_EQ(128203, ret);
- 
+
     conn[0].socket_handle = socket_handle;
     socket_handle->socket_ops = &g_ra_peer_socket_ops;
     rdev_info.phy_id = 0;
@@ -4312,7 +4321,7 @@ void tc_ra_get_server_socket_err_info()
     ret = ra_get_server_socket_err_info(conn, err, num);
     EXPECT_INT_EQ(328207, ret);
     mocker_clean();
- 
+
     mocker(ra_inet_pton, 5, 0);
     mocker(ra_get_socket_listen_info, 1, 0);
     mocker(rs_set_ctx, 1, 0);
@@ -4320,7 +4329,7 @@ void tc_ra_get_server_socket_err_info()
     ret = ra_get_server_socket_err_info(conn, err, num);
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
- 
+
     free(socket_handle);
     socket_handle = NULL;
 }
@@ -4392,7 +4401,7 @@ void tc_ra_remap_mr(void)
     struct mem_remap_info info[1] = {0};
     struct ra_rdma_ops rdma_ops = {0};
     int ret = 0;
- 
+
     mocker_clean();
     rdma_handle.rdma_ops = &rdma_ops;
     rdma_handle.rdma_ops->ra_remap_mr = ra_hdc_remap_mr;
@@ -4401,7 +4410,7 @@ void tc_ra_remap_mr(void)
     EXPECT_INT_EQ(0, ret);
     mocker_clean();
 }
- 
+
 void tc_ra_register_mr(void)
 {
     struct ra_rdma_handle rdma_handle = {0};
@@ -4409,7 +4418,7 @@ void tc_ra_register_mr(void)
     struct ra_rdma_ops rdma_ops = {0};
     struct mr_info info = {0};
     int ret = 0;
- 
+
     mocker_clean();
     mocker(ra_hdc_process_msg, 2, 0);
     rdma_handle.rdma_ops = &rdma_ops;
@@ -4596,6 +4605,58 @@ void tc_ra_hdc_socket_accept_credit_add()
     ret = ra_hdc_socket_accept_credit_add(1, conn, 1, 1);
     EXPECT_INT_EQ(1, 1);
     mocker_clean();
+}
+
+void tc_ra_get_hccn_cfg()
+{
+    struct ra_info info = {0};
+    char *value = calloc(1, 2048);
+    unsigned int val_len = 2048;
+    int ret;
+
+    mocker_clean();
+    info.mode = NETWORK_OFFLINE;
+    ret = ra_get_hccn_cfg(NULL, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(128303, ret);
+
+    val_len = 1024;
+    ret = ra_get_hccn_cfg(&info, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(128303, ret);
+
+    info.phy_id = 64;
+    info.mode = NETWORK_OFFLINE;
+    val_len = 2048;
+    ret = ra_get_hccn_cfg(&info, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(128303, ret);
+
+    info.phy_id = 0;
+    mocker(ra_hdc_process_msg, 10, 0);
+    ret = ra_get_hccn_cfg(&info, HCCN_CFG_UDP_PORT_MODE, value, &val_len);
+    EXPECT_INT_EQ(0, ret);
+    mocker_clean();
+    free(value);
+}
+
+void tc_ra_rs_get_hccn_cfg()
+{
+    unsigned int size = sizeof(union op_get_hccn_cfg_data) + sizeof(struct msg_head);
+    union op_get_hccn_cfg_data op_data  = {{0}};
+
+    char* in_buf = calloc(1, size);
+    char* out_buf = calloc(1, size);
+    int out_len;
+    int op_result;
+    int ret;
+
+    memcpy(in_buf + sizeof(struct msg_head), &op_data , sizeof(union op_get_hccn_cfg_data));
+    memcpy(out_buf + sizeof(struct msg_head), &op_data, sizeof(union op_get_hccn_cfg_data));
+    ret = ra_rs_get_hccn_cfg(in_buf, out_buf, &out_len, &op_result, size);
+    EXPECT_INT_EQ(0, ret);
+
+    free(in_buf);
+    free(out_buf);
+    in_buf = NULL;
+    out_buf = NULL;
 }
 
 void tc_ra_save_snapshot_input()
@@ -4864,4 +4925,28 @@ void tc_ra_peer_loopback_single_qp_create()
 void tc_ra_hdc_uninit_async()
 {
     ra_hdc_uninit_async();
+}
+
+void tc_ra_hdc_qp_create_with_attrs()
+{
+    struct ra_rdma_handle rdma_handle = {0};
+    struct qp_ext_attrs ext_attrs = {0};
+    struct ai_qp_info info = {0};
+    void *qp_handle = NULL;
+    int ret = 0;
+
+    mocker(memcpy_s, 1, -1);
+    ret = ra_hdc_qp_create_with_attrs(&rdma_handle, &ext_attrs, &qp_handle);
+    EXPECT_INT_EQ(ret, -256);
+    mocker_clean();
+
+    mocker(memcpy_s, 1, -1);
+    ret = ra_hdc_ai_qp_create(&rdma_handle, &ext_attrs, &info, &qp_handle);
+    EXPECT_INT_EQ(ret, -256);
+    mocker_clean();
+
+    mocker(memcpy_s, 1, -1);
+    ret = ra_hdc_ai_qp_create_with_attrs(&rdma_handle, &ext_attrs, &info, &qp_handle);
+    EXPECT_INT_EQ(ret, -256);
+    mocker_clean();
 }

@@ -89,6 +89,7 @@ extern "C" {
     HcclResult HcclSetSqeTimeOut(HcclDispatcher dispatcherPtr, const u64 timeOut);
     HcclResult HcclSetSqFullWaitTimeOut(HcclDispatcher dispatcherPtr, const u64 timeOut);
     HcclResult HcclSetOpRingBufferIdx(HcclDispatcher dispatcherPtr, const u32 opRingBufferIdx);
+    HcclResult ForceProfOn(HcclDispatcher &dispatcherPtr, bool isForce);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

@@ -40,7 +40,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalcCommInfo(std::vector<LevelNSubCommT
 
 HcclResult CollBroadcastMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = (rankSize <= TWO_RANK_SIZE) ? rankSize : rankSize - 1; // 默认情况使用rankSize - 1 个AIV, 2卡使用2个
+    blockDim = rankSize; // 默认情况使用rankSize个AIV
     CHK_PRT_RET(blockDim_ < blockDim,
         HCCL_ERROR("[CollBroadcastMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
         blockDim_, blockDim), HCCL_E_PARA);

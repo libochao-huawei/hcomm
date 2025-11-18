@@ -16,6 +16,7 @@ CollReduceScatterDeterExecutor::CollReduceScatterDeterExecutor(const HcclDispatc
     std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollReduceScatterExecutor(dispatcher, topoMatcher)
 {
+    desc_.deterministic = 1;
     DMAReduceFlag_ = true;
     CCLMemSlice_ = false;
 }
@@ -151,7 +152,7 @@ bool CollReduceScatterDeterExecutor::IsSmallData(const u64 totalSize, const u64 
 
 HcclResult CollReduceScatterDeterExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceScatterDeterExecutor][KernelRun] userRank[%u] starts.", topoAttr_.userRank);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] userRank[%u] starts.", __func__, topoAttr_.userRank);
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
     std::vector<Slice> dataSegsSlice; // 数据分成ranksize份，每份的起始偏移和大小
     std::unique_ptr<AlgTemplateBase> level0TempAlg;
@@ -181,9 +182,11 @@ HcclResult CollReduceScatterDeterExecutor::KernelRun(const OpParam &param, ExecM
     if (isLocalReduce91073 || isLocalReduce910B) {
         level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_LOCAL_REDUCE, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_LOCAL_REDUCE in COMM_COMBINE_ORDER", __func__);
     } else {
         level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_HDSTAGE, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_HDSTAGE in COMM_COMBINE_ORDER", __func__);
     }
 
     CHK_SMART_PTR_NULL(level0TempAlg);

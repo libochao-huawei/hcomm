@@ -33,6 +33,7 @@
 #include "dl_ibverbs_function.h"
 #include "dl_hal_function.h"
 #include "rs_drv_rdma.h"
+#include "file_opt.h"
 #ifdef CONFIG_TLV
 #include "hccp_tlv.h"
 #include "rs_tlv.h"
@@ -84,7 +85,8 @@ struct opcode_interface_info g_interface_info_list[] = {
     {RA_RS_QP_INFO, 1},
     {RA_RS_MR_REG, 2},
     {RA_RS_MR_DEREG, 1},
-    {RA_RS_TYPICAL_MR_REG, 2},
+    {RA_RS_TYPICAL_MR_REG_V1, 2},
+    {RA_RS_TYPICAL_MR_REG, 1},
     {RA_RS_REMAP_MR, 1},
     {RA_RS_TYPICAL_MR_DEREG, 1},
     {RA_RS_SEND_WR, 1},
@@ -139,6 +141,7 @@ struct opcode_interface_info g_interface_info_list[] = {
 #endif
     {RA_RS_GET_TLS_ENABLE, 1},
     {RA_RS_GET_SEC_RANDOM, 1},
+    {RA_RS_GET_HCCN_CFG, 1},
     {RA_RS_GET_ROCE_API_VERSION, 0},
 
     // inner opcode version
@@ -275,10 +278,10 @@ int rs_rdev2rdev_cb(unsigned int chip_id, unsigned int rdev_index, struct rs_rde
     struct rs_cb *rs_cb = NULL;
 
     ret = rs_dev2rscb(chip_id, &rs_cb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rs_cb fail for chip_id:%u, ret:%d", chip_id, ret), -ENODEV);
+    CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed for chip_id:%u, ret:%d", chip_id, ret), -ENODEV);
 
     ret = rs_get_rdev_cb(rs_cb, rdev_index, rdev_cb);
-    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb fail!, ret %d, rdev_index %u", ret, rdev_index), ret);
+    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed!, ret %d, rdev_index %u", ret, rdev_index), ret);
 
     return 0;
 }
@@ -486,7 +489,7 @@ RS_ATTRI_VISI_DEF int rs_init(struct rs_init_config *cfg)
 
     ret = rs_init_rscb_cfg(rscb);
     if (ret != 0) {
-        hccp_err("rs init rscb configure fail,ret:%d", ret);
+        hccp_err("rs init rscb configure failed,ret:%d", ret);
         pthread_mutex_destroy(&rscb->mutex);
         pthread_mutex_destroy(&rscb->conn_cb.conn_mutex);
         goto pthread_mutex_err;
@@ -538,6 +541,39 @@ RS_ATTRI_VISI_DEF int rs_get_tls_enable(unsigned int phy_id, bool *tls_enable)
     return 0;
 }
 
+RS_ATTRI_VISI_DEF int rs_get_hccn_cfg(unsigned int phy_id, enum hccn_cfg_key key, char *value,
+    unsigned int *value_len)
+{
+#define HCCN_CFGFILE_PATH "/etc/hccl.cfg"
+    const char *key_name[HCCN_CFG_KEY_INVALID] = {"udp_port_mode", "multi_qp_count", "multi_qp_udp_ports"};
+    int ret = FILE_OPT_INNER_PARAM_ERR;
+    unsigned int val_len = 0;
+    unsigned int buf_len;
+
+    CHK_PRT_RETURN(value == NULL || value_len == NULL, hccp_err("param err, value or value_len is NULL"), -EINVAL);
+    CHK_PRT_RETURN(key >= HCCN_CFG_KEY_INVALID,
+        hccp_err("param err, key should < [%d]", HCCN_CFG_KEY_INVALID), -EINVAL);
+
+    buf_len = *value_len;
+    CHK_PRT_RETURN(buf_len < HCCN_CFG_MSG_DATA_LEN,
+        hccp_err("param err, buf_len should >= [%d]", HCCN_CFG_MSG_DATA_LEN), -EINVAL);
+
+    *value_len = 0;
+#ifdef CONFIG_TLV
+    ret = file_read_cfg(HCCN_CFGFILE_PATH, (int)phy_id, key_name[key], value, buf_len);
+#endif
+    CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_READ_FILE_ERR,
+        hccp_run_warn("get hccn cfg file unsuccessful, ret(%d)", ret), -ENOENT);
+    CHK_PRT_RETURN(ret == FILE_OPT_NO_MEM_ERR,
+        hccp_err("value_len > buf_len[%d], ret(%d)", buf_len, ret), -ENOMEM);
+    CHK_PRT_RETURN(ret != 0, hccp_run_warn("get hccn cfg [%s] unsuccessful, ret(%d)",
+        key_name[key], ret), 0);
+
+    val_len = (unsigned int)strlen(value);
+    *value_len = (val_len == 0) ? val_len : (val_len + 1);
+    return 0;
+}
+
 RS_ATTRI_VISI_DEF int rs_bind_hostpid(unsigned int chip_id, pid_t pid)
 {
 #define QUERY_BIND_HOST_PID_TIME_US 10000
@@ -576,7 +612,7 @@ RS_ATTRI_VISI_DEF int rs_bind_hostpid(unsigned int chip_id, pid_t pid)
 
     // save host_pid for later setup sharemem
     ret = rs_dev2rscb(chip_id, &rs_cb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rs_cb fail, ret:%d, chip_id:%u", ret, chip_id), -ENODEV);
+    CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed, ret:%d, chip_id:%u", ret, chip_id), -ENODEV);
     rs_cb->host_pid = pid;
 
     return 0;
@@ -674,7 +710,7 @@ int rs_setup_sharemem(struct rs_cb *rs_cb, bool backup_flag, unsigned int backup
     CHK_PRT_RETURN(ret != 0, hccp_err("dl_hal_get_device_info failed, ret:%d logic_id:%u chip_id:%u",
         ret, logic_id, chip_id), ret);
     // not 910b/910_93 and not protocol udma, skip to setup share mem
-    if (dl_hal_plat_get_chip((uint64_t)device_info) != CHIP_TYPE_910B_910_93 && rs_cb->protocol != PROTOCOL_UDMA) {
+    if (dl_hal_plat_get_chip((uint64_t)device_info) != CHIP_TYPE_910B_910_93) {
         hccp_info("logic_id:%u chip_id:%u protocol:%d skip to setup share mem", logic_id, chip_id, rs_cb->protocol);
         rs_cb->grp_setup_flag = true;
         return 0;
@@ -695,7 +731,7 @@ int rs_setup_sharemem(struct rs_cb *rs_cb, bool backup_flag, unsigned int backup
 
     // query & save grp_id on rs_cb
     ret = rs_set_rscb_grp_id(rs_cb, logic_id);
-    CHK_PRT_RETURN(ret, hccp_err("rs_set_rscb_grp_id fail, ret:%d logic_id:%u chip_id:%u", ret, logic_id, chip_id),
+    CHK_PRT_RETURN(ret, hccp_err("rs_set_rscb_grp_id failed, ret:%d logic_id:%u chip_id:%u", ret, logic_id, chip_id),
         ret);
 
     rs_cb->grp_setup_flag = true;
@@ -784,7 +820,7 @@ STATIC int rs_get_host_rdev_index(struct rdev rdev_info, struct rs_rdev_cb *rdev
     struct rs_ip_addr_info local_ip;
     int ret = rs_convert_ip_addr(rdev_info.family, &rdev_info.local_ip, &local_ip);
     if (ret != 0) {
-        hccp_err("convert(ntop) ip fail, ret:%d", ret);
+        hccp_err("convert(ntop) ip failed, ret:%d", ret);
         RS_PTHREAD_MUTEX_ULOCK(&rdev_cb->rs_cb->mutex);
         return ret;
     }
@@ -857,7 +893,7 @@ int rs_get_rs_cb(unsigned int phy_id, struct rs_cb **rs_cb)
     CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phy_id, ret), ret);
 
     ret = rs_dev2rscb(chip_id, rs_cb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rs_cb fail, ret:%d", ret), -ENODEV);
+    CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed, ret:%d", ret), -ENODEV);
     return 0;
 }
 
@@ -941,7 +977,7 @@ STATIC int rs_rdev_cb_init(struct rdev rdev_info, struct rs_rdev_cb *rdev_cb, st
 
     ret = rs_get_ib_ctx_and_rdev_index(rdev_info, rdev_cb, rdev_index);
     if (ret) {
-        hccp_err("rs_get_ib_ctx_and_rdev_index fail, ret:%d", ret);
+        hccp_err("rs_get_ib_ctx_and_rdev_index failed, ret:%d", ret);
         goto destroy_cqe_mutex;
     }
 
@@ -1033,7 +1069,7 @@ STATIC int rs_rdev_init_with_backup_info(struct rdev rdev_info, struct rs_backup
     RS_CHECK_POINTER_NULL_RETURN_INT(rdev_index);
 
     ret = rs_api_init();
-    CHK_PRT_RETURN(ret, hccp_err("rs_api_init fail! ret[%d]", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("rs_api_init failed! ret[%d]", ret), ret);
 
     ret = rs_get_rs_cb(phy_id, &rs_cb);
     if (ret) {
@@ -1043,7 +1079,7 @@ STATIC int rs_rdev_init_with_backup_info(struct rdev rdev_info, struct rs_backup
 
     rdev_cb = calloc(1, sizeof(struct rs_rdev_cb));
     if (rdev_cb == NULL) {
-        hccp_err("calloc for rdev_cb fail");
+        hccp_err("calloc for rdev_cb failed");
         ret = -ENOMEM;
         goto get_rs_cb_fail;
     }
@@ -1707,7 +1743,7 @@ RS_ATTRI_VISI_DEF int rs_socket_deinit(struct rdev rdev_info)
     rs_convert_ip_addr(rdev_info.family, &rdev_info.local_ip, &local_ip);
 
     ret = rs_dev2rscb(chip_id, &rscb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rscb fail for chip_id:%u, ret:%d", chip_id, ret), -ENODEV);
+    CHK_PRT_RETURN(ret, hccp_err("get rscb failed for chip_id:%u, ret:%d", chip_id, ret), -ENODEV);
 
     RS_PTHREAD_MUTEX_LOCK(&rscb->mutex);
     rs_free_socket_list(rscb, &local_ip);
@@ -1756,9 +1792,6 @@ STATIC void rs_free_dev_list(struct rs_cb *rs_cb)
     switch (rs_cb->protocol) {
         case PROTOCOL_RDMA:
             rs_free_rdev_list(rs_cb);
-            break;
-        case PROTOCOL_UDMA:
-            rs_free_udev_list(rs_cb);
             break;
         default:
             hccp_err("protocol[%d] not support", rs_cb->protocol);
@@ -1938,7 +1971,7 @@ STATIC int rs_get_vnic_ip_info(unsigned int phy_id, unsigned int id, enum id_typ
         CHK_PRT_RETURN(ret != 0, hccp_err("phy_id:%u dl_hal_get_device_info failed! sdid:0x%x ret:%d",
             phy_id, id, ret), ret);
     } else {
-        hccp_err("phy_id:%u get vnic ip fail! id:0x%x, invalid type:%u", phy_id, id, type);
+        hccp_err("phy_id:%u get vnic ip failed! id:0x%x, invalid type:%u", phy_id, id, type);
         return -EINVAL;
     }
 
@@ -1964,7 +1997,7 @@ RS_ATTRI_VISI_DEF int rs_get_vnic_ip_infos(unsigned int phy_id, enum id_type typ
     for (i = 0; i < num; i++) {
         ret = rs_get_vnic_ip_info(phy_id, ids[i], type, &infos[i]);
         if (ret != 0) {
-            hccp_err("phy_id:%u get vnic ip info fail! ids[%u]:0x%x type:%u", phy_id, i, ids[i], type);
+            hccp_err("phy_id:%u get vnic ip info failed! ids[%u]:0x%x type:%u", phy_id, i, ids[i], type);
             return ret;
         }
     }
@@ -1978,7 +2011,7 @@ RS_ATTRI_VISI_DEF int rs_get_interface_version(unsigned int opcode, unsigned int
     unsigned int interface_version = 0; // default interface is 0 (0: not support this interface opcode)
     int num = sizeof(g_interface_info_list) / sizeof(g_interface_info_list[0]);
 
-    CHK_PRT_RETURN(version == NULL, hccp_err("rs_get_interface_version fail! version is null"), -EINVAL);
+    CHK_PRT_RETURN(version == NULL, hccp_err("rs_get_interface_version failed! version is null"), -EINVAL);
 
     for (i = 0; i < num; i++) {
         if (opcode == g_interface_info_list[i].opcode && opcode != RA_RS_GET_ROCE_API_VERSION) {
@@ -2072,7 +2105,7 @@ RS_ATTRI_VISI_DEF int rs_get_cqe_err_info(struct cqe_err_info *info)
     int ret;
 
     ret = rs_drv_get_cqe_err_info(info);
-    CHK_PRT_RETURN(ret, hccp_err("get fail! ret:%d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("get failed! ret:%d", ret), ret);
     return 0;
 }
 

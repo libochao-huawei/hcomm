@@ -74,19 +74,12 @@ HcclResult CollAllGatherMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize
     }
 
     u32 bestBlockDim = blockDim;
-    if (isOpBase || topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
-        CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_ERROR("[CollAllGatherMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-            blockDim_, blockDim), HCCL_E_PARA);
-    } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
-        CHK_PRT_RET(blockDim_ < rankSize,
-            HCCL_ERROR("[CollAllGatherMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
-            blockDim_, rankSize), HCCL_E_PARA);
-        if (blockDim_ < blockDim) {
-            blockDim = blockDim_ / rankSize * rankSize;
-        }
+    CHK_PRT_RET(blockDim_ < rankSize,
+        HCCL_ERROR("[CollAllGatherMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        blockDim_, rankSize), HCCL_E_PARA);
+    if (blockDim_ < blockDim) {
+        blockDim = blockDim_ / rankSize * rankSize;
     }
-
     HCCL_INFO("[CollAllGatherMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
         blockDim, blockDim_, bestBlockDim);
     return HCCL_SUCCESS;

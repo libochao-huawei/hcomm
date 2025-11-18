@@ -248,6 +248,10 @@ public:
         return ret;
     }
 
+    static void ForceProf(bool isForce) {
+        isForce_ = isForce;
+    }
+
     static bool IsProfSubscribeAdditionInfo();
 
 protected:
@@ -285,6 +289,7 @@ protected:
     void *callBackUserPtr_{nullptr};
     std::map<int32_t, void *> devMemMap_; // streamId和device内存的map
     std::mutex devMemMutex_;
+    static bool isForce_; // 强制profiling上报或缓存
 
 private:
     void SetupTaskParaDma(hccl::TaskPara& taskPara, hccl::TaskParaDMA& para, TaskType taskType,

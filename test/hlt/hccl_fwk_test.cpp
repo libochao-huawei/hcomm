@@ -54,6 +54,15 @@
     }                                                                                   \
 } while(0)
 
+#define CHK_RET(call)                                 \
+    do {                                              \
+        bool hcclRet = call;                        \
+        if (hcclRet == true) {                    \
+            LOG(ERROR, "[%s]call trace: hcclRet -> %d", __func__, hcclRet); \
+            return hcclRet;                               \
+        }                                             \
+    } while (0)
+
 // ---------------------------------------------------------------------------
 // Minimal HCCL types/prototypes used by this test (when mocking).
 // If MOCK_HCCL=0 we'll link to real library so these prototypes must match.
@@ -102,18 +111,23 @@ struct ChannelDesc {
 #endif
 
 HcclResult __attribute__((weak))
-HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank, HcclCommConfig *config, HcclComm *comm);
+    HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank, HcclCommConfig *config, HcclComm *comm);
 HcclResult __attribute__((weak)) HcclCommDestroy(HcclComm comm);
-void __attribute__((weak)) HcclCommConfigInit(HcclCommConfig *config);
+    void __attribute__((weak)) HcclCommConfigInit(HcclCommConfig *config);
 HcclResult __attribute__((weak)) CommAllocThreadRes(
     HcclComm comm, CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *thread);
 HcclResult __attribute__((weak)) CommChannelCreate(HcclComm comm, const char *channelTag, CommEngine engine,
     const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
 HcclResult __attribute__((weak))
-CommWrite(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
+    CommWrite(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
+HcclResult __attribute__((weak))
+    CommRead(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 HcclResult __attribute__((weak)) HcommAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType notifyType,
     uint32_t notifyNum, NotifyHandle **notifyHandleList);
 HcclResult __attribute__((weak)) HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *notifyHandleList);
+HcclResult __attribute__((weak)) CommGetHcclBuffer(HcclComm comm, CommBuffer *buffer);
+HcclResult __attribute__((weak)) CommChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer);
+
 
 }  // extern "C"
 
@@ -277,8 +291,10 @@ DeviceBuffer allocate_device_buffer(uint64_t size, int device = 0)
     db.ptr = host_aligned_alloc((size_t)size);
     db.size = size;
     db.memHandle = nullptr;
-    if (db.ptr)
+    if (db.ptr) {
         memset(db.ptr, 0, (size_t)size);
+    }
+    LOG(DEBUG, "[MOCK]%s ptr[%p], size[%llu], memHandle[%p]", __func__, db.ptr, db.size, db.memHandle);
 #else
     // Try to use ACL device malloc; if fails, fallback to host alloc
     void *devptr = nullptr;
@@ -287,13 +303,16 @@ DeviceBuffer allocate_device_buffer(uint64_t size, int device = 0)
         db.ptr = devptr;
         db.size = size;
         db.memHandle = devptr;  // often HCCL accepts device pointer as mem handle; if not, user must adapt
+        LOG(DEBUG, "%s aclrtMalloc ptr[%p], size[%llu], memHandle[%p]", __func__, db.ptr, db.size, db.memHandle);
     } else {
-        std::cerr << "[WARN] aclrtMalloc failed, fallback to host malloc\n";
+        LOG(ERROR, "%s [WARN] aclrtMalloc failed, fallback to host malloc", __func__);
         db.ptr = host_aligned_alloc((size_t)size);
         db.size = size;
         db.memHandle = nullptr;
-        if (db.ptr)
+        if (db.ptr) {
             memset(db.ptr, 0, (size_t)size);
+        }
+        LOG(DEBUG, "%s host_aligned_alloc ptr[%p], size[%llu], memHandle[%p]", __func__, db.ptr, db.size, db.memHandle);
     }
 #endif
     return db;
@@ -413,7 +432,7 @@ public:
         aclError aret = aclInit(nullptr);
         if (aret != ACL_SUCCESS) {
             std::cerr << "[ERROR] aclInit failed ret=" << aret << std::endl;
-            return false;
+            return true;
         }
         // set device according to rank (this sample uses rank as device id)
         aret = aclrtSetDevice(static_cast<int>(cfg_.rank));
@@ -421,7 +440,7 @@ public:
             std::cerr << "[ERROR] aclrtSetDevice failed ret=" << aret << std::endl;
             // try finalize
             aclFinalize();
-            return false;
+            return true;
         }
         std::cout << "[ACL] Initialized and set device " << cfg_.rank << std::endl;
 #endif
@@ -440,11 +459,11 @@ public:
         HcclResult r = HcclCommInitClusterInfoConfig(cfg_.clusterInfo.c_str(), cfg_.rank, &config, &comm_);
         if (r != 0 || comm_ == nullptr) {
             std::cerr << "[ERROR] HcclCommInitClusterInfoConfig failed rc=" << r << std::endl;
-            return false;
+            return true;
         }
         std::cout << "[HCCL] Comm initialized\n";
 
-        return true;
+        return false;
     }
 
     bool AllocThread(CommEngine commEngine)
@@ -453,12 +472,12 @@ public:
         HcclResult r2 = CommAllocThreadRes(comm_, /*engine=*/commEngine, 1, /*notify*/ 1, &threadRes_);
         if (r2 != 0 || threadRes_ == 0) {
             LOG(ERROR, "%s CommAllocThreadRes fail, ret[%d]", __func__, r2);
-            return false;
+            return true;
         } else {
             LOG(INFO, "%s CommAllocThreadRes success, allocated threads[%u]", __func__, cfg_.threadNum);
         }
 
-        return true;
+        return false;
     }
 
     bool AllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum, NotifyHandle **notifyHandleList)
@@ -466,12 +485,12 @@ public:
         HcclResult ret = HcommAllocNotify(comm_, commEngine, notifyType, notifyNum, notifyHandleList);
         if (ret != 0 || *notifyHandleList == nullptr) {
             std::cerr << "[FAIL] HcommAllocNotify failed ret=" << ret << std::endl;
-            return false;
+            return true;
         } else {
             std::cout << "[HCCL] Notify resources allocated Notifys=" << notifyNum << std::endl;
         }
 
-        return true;
+        return false;
     }
 
     bool FreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList)
@@ -479,12 +498,12 @@ public:
         HcclResult ret = HcommFreeNotify(comm_, notifyNum, notifyHandleList);
         if (ret != 0) {
             std::cerr << "[FAIL] HcommFreeNotify failed ret=" << ret << std::endl;
-            return false;
+            return true;
         } else {
             std::cout << "[HCCL] Notify resources free Notifys=" << notifyNum << std::endl;
         }
 
-        return true;
+        return false;
     }
 
     // setup channels and buffers: create one channel per peer and allocate buffers
@@ -498,7 +517,7 @@ public:
             buffers_[i] = allocate_device_buffer(buffSize, (int)cfg_.rank);
             if (!buffers_[i].ptr) {
                 LOG(ERROR, "%s allocate_device_buffer failed for peer[%d]", __func__, i);
-                return false;
+                return true;
             }
         }
 
@@ -526,31 +545,47 @@ public:
             static_cast<uint32_t>(descs.size()), channels_.data());
         if (rc != 0) {
             LOG(ERROR, "%s CommChannelCreate failed, ret[%d]", __func__, rc);
-            return false;
+            return true;
         }
         LOG(INFO, "%s success, peers[%u]", __func__, peers);
-        return true;
+        return false;
     }
 
     // small verification write if threadRes and channels available
     bool do_sample_write()
     {
-        if (!threadRes_ || channels_.empty()) {
-            LOG(ERROR, "%s threadRes or channels not available for write test", __func__);
-            return false;
-        }
-        // write a small pattern to peer 0 buffer
-        uint32_t peer = 0;
-        uint64_t len = std::min<uint64_t>(cfg_.msgSize, buffers_[peer].size);
-        std::vector<uint8_t> sendbuf(len, 0x5A);
-        void *dst = buffers_[peer].ptr;
-        HcclResult rc = CommWrite(threadRes_, channels_[peer], dst, sendbuf.data(), len);
-        if (rc != 0) {
-            LOG(ERROR, "%s CommWrite fail, ret[%d]", __func__, rc);
-            return false;
-        }
+        ChannelHandle &channel = channels_[0];
+        CommBuffer localBuf;
+        CHK_RET(CommGetHcclBuffer(comm_, &localBuf));
+
+        CommBuffer remoteBuf;
+        CHK_RET(CommChannelGetHcclBuffer(comm_, channel, &remoteBuf));
+
+        uint64_t len = std::min(localBuf.size, remoteBuf.size);
+        LOG(INFO, "%s localBuf: addr[%p] size[%llu], remoteBuf: addr[%p] size[%llu], len[%llu]",
+            __func__, localBuf.addr, localBuf.size, remoteBuf.addr, remoteBuf.size, len);
+
+        CHK_RET(CommWrite(threadRes_, channel, remoteBuf.addr, localBuf.addr, len));
         LOG(INFO, "%s success, len[%u]", __func__, len);
-        return true;
+        return false;
+    }
+
+    bool do_sample_read()
+    {
+        ChannelHandle &channel = channels_[0];
+        CommBuffer localBuf;
+        CHK_RET(CommGetHcclBuffer(comm_, &localBuf));
+
+        CommBuffer remoteBuf;
+        CHK_RET(CommChannelGetHcclBuffer(comm_, channel, &remoteBuf));
+
+        uint64_t len = std::min(localBuf.size, remoteBuf.size);
+        LOG(INFO, "%s localBuf: addr[%p] size[%llu], remoteBuf: addr[%p] size[%llu], len[%llu]",
+            __func__, localBuf.addr, localBuf.size, remoteBuf.addr, remoteBuf.size, len);
+
+        CHK_RET(CommRead(threadRes_, channel, localBuf.addr, remoteBuf.addr, len));
+        LOG(INFO, "%s success, len[%u]", __func__, len);
+        return false;
     }
 
     void cleanup()
@@ -607,14 +642,10 @@ bool test_comminit(const Config &cfg)
     for (int i = 0; i < rounds; ++i) {
         Config c = cfg;
         HcclFwkTest t(c);
-        if (!t.init()) {
-            std::cerr << "[FAIL] comm init at iter=" << i << std::endl;
-            return false;
-        }
-        // destructor will cleanup
+        CHK_RET(t.init());
     }
     std::cout << "[PASS] test_comminit\n";
-    return true;
+    return false;
 }
 REGISTER_HCCL_TEST(comminit, test_comminit);
 
@@ -627,21 +658,14 @@ bool test_alloc_aicpu_thread(const Config &cfg)
     Config c = cfg;
     c.threadNum = 1;
     HcclFwkTest t(c);
-    if (!t.init()) {
-        std::cerr << "[FAIL] comm init" << std::endl;
-        return false;
-    }
+    CHK_RET(t.init());
 
     for (auto tn : tlist) {
-        if (!t.AllocThread(COMM_ENGINE_AICPU_TS)) {
-            std::cerr << "[FAIL] alloc thread init threads=" << tn << std::endl;
-            return false;
-        }
-
+        CHK_RET(t.AllocThread(COMM_ENGINE_AICPU_TS));
         std::cout << "[INFO] alloc ok for threadNum=" << tn << std::endl;
     }
     std::cout << "[PASS] test_alloc_aicpu_thread\n";
-    return true;
+    return false;
 }
 REGISTER_HCCL_TEST(alloc_aicpu_thread, test_alloc_aicpu_thread);
 
@@ -653,21 +677,15 @@ bool test_alloc_host_thread(const Config &cfg)
     Config c = cfg;
     c.threadNum = 1;
     HcclFwkTest t(c);
-    if (!t.init()) {
-        std::cerr << "[FAIL] comm init" << std::endl;
-        return false;
-    }
+    CHK_RET(t.init());
 
     for (auto tn : tlist) {
-        if (!t.AllocThread(COMM_ENGINE_HOSTCPU_TS)) {
-            std::cerr << "[FAIL] alloc thread init threads=" << tn << std::endl;
-            return false;
-        }
+        CHK_RET(t.AllocThread(COMM_ENGINE_HOSTCPU_TS));
 
         std::cout << "[INFO] alloc ok for threadNum=" << tn << std::endl;
     }
     std::cout << "[PASS] alloc_host_thread\n";
-    return true;
+    return false;
 }
 REGISTER_HCCL_TEST(alloc_host_thread, test_alloc_host_thread);
 
@@ -678,29 +696,26 @@ bool test_alloc_aicpu_notify(const Config &cfg)
     std::vector<uint32_t> nlist = {4, 8, 16}; // 不同数量的 notify 测试
     Config c = cfg;
     HcclFwkTest t(c);
-    if (!t.init()) {
-        std::cerr << "[FAIL] comm init" << std::endl;
-        return false;
-    }
+    CHK_RET(t.init());
 
     for (auto nn : nlist) {
         NotifyHandle *notifyList = nullptr;
-        bool ok = t.AllocNotify(COMM_ENGINE_AICPU_TS, NOTIFY_TYPE_DEVICE_MEM, nn, &notifyList);
-        if (!ok || notifyList == nullptr) {
+        bool ret = t.AllocNotify(COMM_ENGINE_AICPU_TS, NOTIFY_TYPE_DEVICE_MEM, nn, &notifyList);
+        if (ret || notifyList == nullptr) {
             std::cerr << "[FAIL] alloc notify failed num=" << nn << std::endl;
-            return false;
+            return true;
         }
-        std::cout << "[INFO] alloc ok for notifyNum=" << nn << std::endl;
+        std::cout << "[INFO] alloc notifyNum=" << nn << std::endl;
         // 模拟使用 notify ... 这里略
-        ok = t.FreeNotify(nn, notifyList);
-        if (!ok) {
+        ret = t.FreeNotify(nn, notifyList);
+        if (ret) {
             std::cerr << "[FAIL] free notify failed num=" << nn << std::endl;
-            return false;
+            return true;
         }
-        std::cout << "[INFO] free ok for notifyNum=" << nn << std::endl;
+        std::cout << "[INFO] free notifyNum=" << nn << std::endl;
     }
     std::cout << "[PASS] test_alloc_aicpu_notify\n";
-    return true;
+    return false;
 }
 REGISTER_HCCL_TEST(alloc_aicpu_notify, test_alloc_aicpu_notify);
 
@@ -713,27 +728,24 @@ bool test_alloc_host_notify(const Config &cfg)
 
     Config c = cfg;
     HcclFwkTest t(c);
-    if (!t.init()) {
-        std::cerr << "[FAIL] comm init" << std::endl;
-        return false;
-    }
+    CHK_RET(t.init());
     for (auto nn : nlist) {
         NotifyHandle *notifyList = nullptr;
-        bool ok = t.AllocNotify(COMM_ENGINE_HOSTCPU_TS, NOTIFY_TYPE_RTS_NOTIFY, nn, &notifyList);
-        if (!ok || notifyList == nullptr) {
+        bool ret = t.AllocNotify(COMM_ENGINE_HOSTCPU_TS, NOTIFY_TYPE_RTS_NOTIFY, nn, &notifyList);
+        if (ret || notifyList == nullptr) {
             std::cerr << "[FAIL] alloc host notify failed num=" << nn << std::endl;
-            return false;
+            return true;
         }
-        std::cout << "[INFO] alloc ok for host notifyNum=" << nn << std::endl;
-        ok = t.FreeNotify(nn, notifyList);
-        if (!ok) {
+        std::cout << "[INFO] alloc host notifyNum=" << nn << std::endl;
+        ret = t.FreeNotify(nn, notifyList);
+        if (ret) {
             std::cerr << "[FAIL] free host notify failed num=" << nn << std::endl;
-            return false;
+            return true;
         }
-        std::cout << "[INFO] free ok for host notifyNum=" << nn << std::endl;
+        std::cout << "[INFO] free host notifyNum=" << nn << std::endl;
     }
     std::cout << "[PASS] test_alloc_host_notify\n";
-    return true;
+    return false;
 }
 REGISTER_HCCL_TEST(alloc_host_notify, test_alloc_host_notify);
 
@@ -746,70 +758,38 @@ bool test_channel_create(const Config &cfg)
     Config c = cfg;
     c.peers = 1;
     HcclFwkTest t(c);
-    if (!t.init()) {
-        LOG(ERROR, "%s init fail", __func__);
-        return false;
-    }
-    if (!t.setup_channel_pair(cfg.commEngine)) {
-        LOG(ERROR, "%s setup_channel_pair fail", __func__);
-        return false;
-    }
+    CHK_RET(t.init());
+    CHK_RET(t.setup_channel_pair(cfg.commEngine));
     sleep(1); // tip：两个进程，建链完会自动销毁，没有等待对端完成建链的握手机制，暂时通过添加sleep来等待对端。如果等待时间内对端未完成建链，本端会销毁，导致对端建链失败
-    // t.do_sample_write();
     LOG(INFO, "%s PASS", __func__);
-    return true;
+    return false;
 }
 REGISTER_HCCL_TEST(channel_create, test_channel_create);
 
-// test: 测试两卡CommAllocThreadRes+CommChannelCreate+Write+Read, 需同时拉起两个进程
-bool test_write_read(const Config &cfg)
+// test: 测试host展开下，两卡CommAllocThreadRes+CommChannelCreate+Write+Read, 需同时拉起两个进程
+bool test_host_write_read(const Config &cfg)
 {
     LOG(INFO, "%s start", __func__);
     Config c = cfg;
     c.peers = 1;
     HcclFwkTest t(c);
-    if (!t.init()) {
-        LOG(ERROR, "%s init fail", __func__);
-        return false;
-    }
 
-    if (!t.AllocThread(cfg.commEngine)) {
-        LOG(ERROR, "%s alloc thread fail", __func__);
-        return false;
-    }
+    CHK_RET(t.init());
 
-    if (!t.setup_channel_pair(cfg.commEngine)) {
-        LOG(ERROR, "%s setup_channel_pair fail", __func__);
-        return false;
+    CHK_RET(t.AllocThread(cfg.commEngine));
+
+    CHK_RET(t.setup_channel_pair(cfg.commEngine));
+
+    if (cfg.rank == 0) {
+        CHK_RET(t.do_sample_write());
+    } else {
+        CHK_RET(t.do_sample_read());
     }
-    sleep(1); // tip：两个进程，建链完会自动销毁，没有等待对端完成建链的握手机制，暂时通过添加sleep来等待对端。如果等待时间内对端未完成建链，本端会销毁，导致对端建链失败
-    // t.do_sample_write();
+    sleep(1);
     LOG(INFO, "%s PASS", __func__);
-    return true;
+    return false;
 }
-REGISTER_HCCL_TEST(write_read, test_write_read);
-
-// test: combo allocThread->createChannel
-bool test_combo(const Config &cfg)
-{
-    std::cout << "=== test_combo_alloc_then_channel ===\n";
-    Config c = cfg;
-    c.threadNum = std::max<uint32_t>(cfg.threadNum, 2);
-    c.peers = std::max<uint32_t>(cfg.peers, 2);
-    HcclFwkTest t(c);
-    if (!t.init()) {
-        std::cerr << "[FAIL] init\n";
-        return false;
-    }
-    if (!t.setup_channel_pair(COMM_ENGINE_HOSTCPU_TS)) {
-        std::cerr << "[FAIL] setup_channel_pair\n";
-        return false;
-    }
-    t.do_sample_write();
-    std::cout << "[PASS] test_combo_alloc_then_channel\n";
-    return true;
-}
-REGISTER_HCCL_TEST(combo, test_combo);
+REGISTER_HCCL_TEST(host_write_read, test_host_write_read);
 
 // test: stress create/destroy loops
 bool test_stress(const Config &cfg)
@@ -821,34 +801,15 @@ bool test_stress(const Config &cfg)
         Config c = cfg;
         c.peers = 1 + (i % std::max<uint32_t>(1, cfg.peers));
         HcclFwkTest t(c);
-        if (!t.init() || !t.setup_channel_pair(COMM_ENGINE_HOSTCPU_TS)) {
+        if (t.init() || t.setup_channel_pair(COMM_ENGINE_HOSTCPU_TS)) {
             ++fails;
             std::cerr << "[WARN] iter=" << i << " failed\n";
         }
     }
     std::cout << "[RESULT] stress iters=" << iters << " fail_count=" << fails << "\n";
-    return fails == 0;
+    return fails != 0;
 }
 REGISTER_HCCL_TEST(stress, test_stress);
-
-bool test_your_testcase(const Config &cfg)
-{
-    std::cout << "=== test_your_testcase ===\n";
-    int iters = 1;
-    int fails = 0;
-    for (int i = 0; i < iters; ++i) {
-        Config c = cfg;
-        HcclFwkTest t(c);
-        if (!t.init()) {
-            ++fails;
-            std::cerr << "[WARN] iter=" << i << " failed\n";
-        }
-        // your test code
-    }
-    std::cout << "[RESULT] iters=" << iters << " ail_count=" << fails << "\n";
-    return fails == 0;
-}
-REGISTER_HCCL_TEST(your_testcase, test_your_testcase);
 
 // --------------------------- CLI & main ------------------------------------
 static void print_usage(const char *prog)

@@ -97,8 +97,7 @@ HcclResult HcclAlg::Init(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, bool is
 
 #ifndef OPEN_HCCL_TEST
     if (static_cast<s32>(topoAttr_.devicePhyId) != HOST_DEVICE_ID) {
-        tinySendRecvMem_ = DeviceMem::alloc(TINY_MEMORY_SIZE);
-        CHK_PTR_NULL(tinySendRecvMem_.ptr());
+        CHK_RET(DeviceMem::alloc(tinySendRecvMem_, TINY_MEMORY_SIZE));
     }
 #endif
     return HCCL_SUCCESS;

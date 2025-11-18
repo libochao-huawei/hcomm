@@ -115,7 +115,6 @@ CommonHcclMsgRingBuffer g_hcclMsgQueue;
 constexpr s32 PREFER_CLUSTER_ID = 0;
 constexpr u32 DELAY_TIME_IN_NS = 15U * 1000U;
 static constexpr uint64_t WQE_SEND_TIMEOUT = 15;
-static constexpr uint64_t SLAVE_EXECUTE_TIMEOUT = 30;
 std::mutex g_mtxForCpuCheck;
 #ifdef CCL_LLT
 // mock GetCpuId 多个线程需要放回不同的值，mock组件在多线程时不安全，会放回错误。所以在跑llt时加锁。
@@ -365,7 +364,6 @@ HcclResult AicpuKfcBatchwriteProcess::RunSlaveRpcServerForApi(AicpuComContext *c
     CommonHcclMsg commonHcclMsg;
     int32_t sendSeqNum = -1;
     u32 threadId = g_sharedCtx.curThreadIdsOnCpu[HcclAicpuUtils::GetCpuId()];
-    u64 startTimeStamp = GetCurCpuTimestamp();
     while (true) {
 #if defined(__aarch64__) || defined(__amd64__)
         __asm__ __volatile__("nop");
@@ -381,11 +379,6 @@ HcclResult AicpuKfcBatchwriteProcess::RunSlaveRpcServerForApi(AicpuComContext *c
                 CHK_RET(ConcurrentPostSendWqe(commonHcclMsg, ctx, &needSendTotalNum));
                 sendSeqNum = commonHcclMsg.seqNum;
             }
-        }
-
-        if (CheckTimeOut(startTimeStamp, SLAVE_EXECUTE_TIMEOUT)) {
-            HCCL_ERROR("slave thread timeout.");
-            return HCCL_E_TIMEOUT;
         }
     }
     return HCCL_SUCCESS;

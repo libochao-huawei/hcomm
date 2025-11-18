@@ -163,6 +163,10 @@ enum TemplateType {
     TEMPLATE_ALL_GATHER_V_PIPELINE = 98, // AllGatherV pipeline
 
     TEMPLATE_ALL_REDUCE_DOUBLING_LOCAL_REDUCE = 99, // AllReduceDoublingLocalReduce AR 910A单机小数据量tbe reduce优化
+    
+    TEMPLATE_ALL_GATHER_V_GRAPH_PIPELINE = 101, // AllGatherV Graph pipeline
+
+    TEMPLATE_ALL_2_ALL_V_CONTINUOUS_PIPELINE = 100, // AlltoallvContinuousPipeline
 
     TEMPLATE_NATIVE_MAX_NUM,                        // 内置template最大值
 
@@ -431,6 +435,14 @@ public:
         std::vector<Stream> &meshStreams, std::vector<std::shared_ptr<LocalNotify>> &meshSignal,
         std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux, u32 userRank, HcomCollOpInfo *opInfo);
     
+    // Prepare for AlltoAllvContinuousPipeline
+    virtual HcclResult Prepare(const u32 userRank, const A2aPipelineMemory &a2aPipelineMemory,
+        const SubCommInfo &level0CommInfo, const SubCommInfo &level1CommInfo,
+        const Stream &mainStream, std::vector<Stream> &subStream,
+        std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub,
+        std::vector<SendRecvInfo> &sendRecvInfoList, const HcclDataType dataType,
+        const HcclWorkflowMode workMode);
+
     /* 12个参数 */
     // AlltoAllVFor310P
     virtual HcclResult Prepare(DeviceMem &userInput, DeviceMem &userOutput, DeviceMem &cclInMem, DeviceMem &cclOutMem,

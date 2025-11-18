@@ -37,6 +37,27 @@ void ZeroCopyAclGraph::SetRetryEnable(bool retryEnable)
     this->retryEnable_ = retryEnable;
 }
 
+bool ZeroCopyAclGraph::IsAclGraphZeroCopyAlgAvailable(HcclCMDType opType, OpParam &opParam)
+{
+    bool isReduceOps = (
+        opType == HCCL_CMD_ALLREDUCE ||
+        opType == HCCL_CMD_REDUCE ||
+        opType == HCCL_CMD_REDUCE_SCATTER ||
+        opType == HCCL_CMD_REDUCE_SCATTER_V
+    );
+    // 非Reduce类算子，不受aclGraphZeroCopyEnable 用户配置值的影响，继续配置AclGraphZeroCopy的算法选择模式
+    if (!isReduceOps == true) {
+        return true;
+    }
+    
+    // 检查用户的Aclgraph配置，如果配置了Aclgraph等于0并且当前是Reduce类算子，则退出AclgraphZeroCopy算法配置流程
+    if (opParam.aclGraphZeroCopyEnable == 1) {
+        // Reduce 类算子，但是保证性能优先，算法选择和单算自不一致。继续配置AclGraphZeroCopy的算法选择模式
+        return true;
+    }
+    return false;
+}
+
 bool ZeroCopyAclGraph::SetAclGraphZeroCopyMode(
     DevType deviceType, HcclCMDType opType, OpParam &opParam, HcclAlg *impl, u64 bufferSize)
 {
@@ -53,6 +74,10 @@ bool ZeroCopyAclGraph::SetAclGraphZeroCopyMode(
     if (opParam.isZeroCopy || opParam.supportZeroCopy) {
         HCCL_INFO("[ZeroCopyAclGraph][SetAclGraphZeroCopyMode] Hccl can't support graph zero copy mode and operator "
                   "zero copy at the same time.");
+        return false;
+    }
+    if (IsAclGraphZeroCopyAlgAvailable(opType, opParam) == false) {
+        HCCL_INFO("[ZeroCopyAclGraph][SetAclGraphZeroCopyMode] Hccl aclGraph was set disable mode.");
         return false;
     }
 

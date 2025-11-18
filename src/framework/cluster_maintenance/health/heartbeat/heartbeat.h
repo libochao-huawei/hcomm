@@ -30,7 +30,8 @@ using RankId = u32;
 constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
 constexpr u32 STUCK_INTERVAL = 300000; // 5min监控一次,默认 300000 ms
 constexpr u32 STUCK_COUNT = STUCK_INTERVAL / BROADCAST_INTERVAL;
-constexpr u32 OPINFO_SEND_NUM = 16;   // 一次心跳帧发送的算子信息个数
+constexpr u32 OPINFO_SEND_NUM_BY_TAG = 500;   // 一次心跳帧发送的算子信息个数
+constexpr u32 OPINFO_TAG_QUEUE_NUM = 10;   // 一次心跳帧发送的算子信息个数
 
 using UIDType = struct HcclHeartBeatUid {
     char id[512] = {0}; // ip[IP_ADDRESS_BUFFER_LEN] + ifname[MAX_INTERFACE_NAME_LEN] + devid 最大不超过512字节
@@ -106,14 +107,23 @@ struct OpInfoDesc {
     HcclCMDType opType = HcclCMDType::HCCL_CMD_INVALID;
     HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
     HcclReduceOp reduceOp = HcclReduceOp::HCCL_REDUCE_RESERVED;
-    uint64_t count = 0;
     uint32_t root = 0;
-    char identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH] = "\0";
+    uint64_t count = 0;
     uint64_t index = 0;
     bool isValid = false;
 };
 
-struct HeartBeatFrame {
+struct OpInfoTagQueue {
+    OpInfoDesc opInfoList[OPINFO_SEND_NUM_BY_TAG];
+    char identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    u32 opInfoNum = 0;
+};
+
+struct OpInfoTagQueueFrame {
+    OpInfoTagQueue opInfoTagQueue[OPINFO_TAG_QUEUE_NUM];//10个
+};
+
+struct HeartBeatFrame { 
     UIDType src;
     UIDType dst;
     UIDType crimer;
@@ -121,7 +131,7 @@ struct HeartBeatFrame {
     HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
     HcclUs TOARelative; // time of arrival (Relative)
     HcclSystemTime TOASystem; // time of arrival (System)
-    OpInfoDesc opInfoList[OPINFO_SEND_NUM];
+    OpInfoTagQueueFrame opInfoTagQueueFrame;
     HeartBeatFrame() {}
     HeartBeatFrame(UIDType &crimer, UIDType &informer, HeartBeatStatus status, HcclUs TOARelativeIn,
         HcclSystemTime TOASystemIn)
@@ -187,6 +197,7 @@ public:
     // 非点对点通信，解开注册
     void UnRegisterToHeartBeat(DevType devType, const std::string &commIdentifier, const std::string &tag);
     HcclResult CheckErrorCqe(const std::string &identifier, HcclResult &result);
+    HcclResult CheckOpInconsistentError(const std::string &identifier, HcclResult &result);
     HcclResult SetRankPortInfo(bool isUseRankPort, std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPorts,
         bool devPortSwitchOn);
     std::vector<std::string> GetErrStatusVec();
@@ -215,7 +226,7 @@ private:
         ConnInfo>& needConnectRank, bool isUsedRdmaLevel0, bool isUsedRdma = false);
     UIDType GetUId(const RankInfo& rankInfo) const;
     std::string FormatUId(const UIDType& uid) const;
-    HcclResult SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status, const std::vector<OpInfoDesc> &opInfoList);
+    HcclResult SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status, const OpInfoTagQueueFrame &opInfoTagQueueFrame);
     HcclResult RecvFrame(UIDType &src);
     HcclResult ParseFrame(HeartBeatFrame& bf, UIDType &src);
     void SetStatus(UIDType &crimer, UIDType &informer, HeartBeatStatus status, bool needBroadcast = true);
@@ -244,12 +255,14 @@ private:
     void CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo needConnectRank);
     void CreateHBLinksAsync();
     void AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &newTag);
-    OpInfoDesc GetOneOpInfo();
-    void GetSendOpInfoList(std::vector<OpInfoDesc> &opInfoList);
-    void SaveOpInfo(OpInfoDesc opInfoList[], UIDType &src);
+    void GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo);
+    void GetSendOpInfoList(OpInfoTagQueueFrame &opInfoTagQueueFrame);
+    void SaveOpInfo(const OpInfoTagQueueFrame &opInfoTagQueueFrame, UIDType &src);
     bool CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo);
     void CheckRecvOpInfoList();
     void AddopInfoListToSendFrame(UIDType &dst, HeartBeatFrame &bf, const std::vector<OpInfoDesc> &opInfoList, bool &hasValidOpInfo);
+    void RegisterSROpIdentifier(const std::string &identifier, const std::string &newTag);
+    void AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo);
     struct Status {
         HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
         UIDType informer;
@@ -308,12 +321,17 @@ private:
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap_;
     std::map<HcclIpAddress, std::shared_ptr<HcclSocket>> listenSocketMap_;
     s32 stuckDetectTime_;
-    std::deque<OpInfoDesc> opInfoQueue_;
-    std::unordered_map<std::string, u64> opInfoIndexMap_;
-    std::unordered_map<std::string, std::map<u64, OpInfoDesc>> opInfoMap_;
     std::mutex opInfoQueueMutex_;
+    std::deque<std::pair<std::string, OpInfoDesc>> opInfoQueue_;
+    std::deque<std::pair<std::string, OpInfoDesc>> opInfoQueueForSend_;
+    std::unordered_map<std::string, u64> opInfoIndexMap_;
     std::mutex opInfoMapMutex_;
-    std::list<std::pair<OpInfoDesc, UIDType>> recvOpInfoList_;
+    std::unordered_map<std::string, std::map<u64, OpInfoDesc>> opInfoMap_;
+    std::list<std::tuple<OpInfoDesc, std::string, UIDType>> recvOpInfoList_;
+    std::mutex inconsistentOpMutex_;
+    std::map<std::string, bool> inconsistentOpMap_;
+    std::mutex srTagMutex_;
+    std::map<std::string, std::string> srTagMap_;//SR算子tag->identifier映射
 };
 } // namespace hccl
 

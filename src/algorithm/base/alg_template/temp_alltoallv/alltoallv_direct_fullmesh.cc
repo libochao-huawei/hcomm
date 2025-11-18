@@ -471,7 +471,7 @@ HcclResult AlltoAllVDirectFullMesh::NotifyRemoteRankStart(u32 step)
     return HCCL_SUCCESS;
 }
 
-HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step)
+HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32 roundIdx)
 {
     u32 streamIndex = 0;
     for (auto& sendRecvSide : partialCommRankSet_) {
@@ -497,9 +497,21 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step)
                 CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, currStream,
                     readTransport->GetRemoteRank(), readTransport->GetLinkType()));
                 HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvData] userRank [%u], recvRank[%u], sendRank[%u]," \
-                    "sdma stream [%llu] read data from remote offset [%llu] len [%llu] to local [%llu]",
+                    "sdma stream [%u] read data from remote offset [%llu] len [%llu] to local [%llu], "
+                    "post sync info: step[%u], roundIdx[%u], lastStep_[%u], lastRoundIdx_[%u]",
                     userRank_,  recvRank, sendRank, streamIndex, readInfo[step].remoteOffset,
-                    readInfo[step].recvLen, readInfo[step].recvOffset); 
+                    readInfo[step].recvLen, readInfo[step].recvOffset, step, roundIdx, lastStep_, lastRoundIdx_);
+                if ((step == lastStep_) && (roundIdx == lastRoundIdx_) && algOpContext_.opRetryHandler.retryEnable) {
+                    HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvData] post sync begins");
+                    CHK_RET(LocalNotify::Post(currStream, dispatcher_, sdmaMeshSignalMainToSub_[streamIndex],
+                        INVALID_VALUE_STAGE));
+                    CHK_RET(LocalNotify::Wait(mainStream_, dispatcher_, sdmaMeshSignalMainToSub_[streamIndex],
+                        INVALID_VALUE_STAGE));
+                    CHK_RET(LocalNotify::Post(mainStream_, dispatcher_, sdmaMeshSignalSubToMain_[streamIndex],
+                        INVALID_VALUE_STAGE));
+                    CHK_RET(LocalNotify::Wait(currStream, dispatcher_, sdmaMeshSignalSubToMain_[streamIndex],
+                        INVALID_VALUE_STAGE));
+                }
                 CHK_RET(readTransport->TxDataSignal(currStream));
             }
             if (step < sendInfo.size()) {
@@ -524,7 +536,7 @@ HcclResult AlltoAllVDirectFullMesh::SendRecvData(u32 step, u32 roundIdx)
         CHK_RET(NotifyLocalSubStreamStart());
         CHK_RET(PrepareIntraData(step, nextSubStreamSendInfo_));
     }
-    CHK_RET(SDMAwithRemoteRankAndNotifyEnd(step));
+    CHK_RET(SDMAwithRemoteRankAndNotifyEnd(step, roundIdx));
 
     return HCCL_SUCCESS;
 }
@@ -916,11 +928,15 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMAFineGrained(u32 totalStep, HcclOpMeta
 HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
 {
     u32 totalStep = CalcNumSubStep();
- 
+    lastStep_ = totalStep - 1;
     // 计算每个rank分组fullmesh后需要通信的轮次，向上取整
     commRounds_ = (devNumInlocalPod_ + sdmaConcurrentNum_ - 1) / sdmaConcurrentNum_;
-    HCCL_DEBUG("[AlltoAllVDirectFullMesh][RunSDMA] userRank [%u] communication rounds[%llu] totalStep %u stepSize %u",
-        userRank_, commRounds_, totalStep, algOpContext_.mc2Handler.stepSize);
+    u32 leftRankSize = devNumInlocalPod_ - 1; // leftRankSize中去掉本卡
+    lastRoundIdx_ = std::min((leftRankSize + sdmaConcurrentNum_ - 1) / sdmaConcurrentNum_, static_cast<u32>(commRounds_)) - 1;
+    HCCL_DEBUG("[AlltoAllVDirectFullMesh][RunSDMA] userRank [%u] communication rounds[%llu] totalStep [%u] "
+        "stepSize [%u], post sync info: lastStep_[%u] lastRoundIdx_[%u] devNumInlocalPod_[%u] sdmaConcurrentNum_[%u]",
+        userRank_, commRounds_, totalStep, algOpContext_.mc2Handler.stepSize,
+        lastStep_, lastRoundIdx_, devNumInlocalPod_, sdmaConcurrentNum_);
 
     if (UNLIKELY(algOpContext_.mc2Handler.stepSize > 0)){
         CHK_RET(RunSDMAFineGrained(totalStep, opMeta));

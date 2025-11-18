@@ -159,7 +159,7 @@ int ra_hdc_qp_create_with_attrs(struct ra_rdma_handle *rdma_handle, struct qp_ex
     op_data.tx_data.rdev_index = rdma_handle->rdev_index;
     ret = memcpy_s(&op_data.tx_data.ext_attrs, sizeof(struct qp_ext_attrs), ext_attrs, sizeof(struct qp_ext_attrs));
     if (ret) {
-        hccp_err("[create][ra_hdc_qp_with_attrs]memcpy_s for ext_attrs fail, ret:%d", ret);
+        hccp_err("[create][ra_hdc_qp_with_attrs]memcpy_s for ext_attrs failed, ret:%d", ret);
         ret = -ESAFEFUNC;
         goto out;
     }
@@ -220,7 +220,7 @@ int ra_hdc_ai_qp_create(struct ra_rdma_handle *rdma_handle, struct qp_ext_attrs 
     ret = memcpy_s(&qp_create_data.tx_data.ext_attrs, sizeof(struct qp_ext_attrs), ext_attrs,
         sizeof(struct qp_ext_attrs));
     if (ret) {
-        hccp_err("[create][ra_hdc_ai_qp]memcpy_s for ext_attrs fail, ret:%d", ret);
+        hccp_err("[create][ra_hdc_ai_qp]memcpy_s for ext_attrs failed, ret:%d", ret);
         free(qp_hdc);
         qp_hdc = NULL;
         return -ESAFEFUNC;
@@ -267,7 +267,7 @@ int ra_hdc_ai_qp_create_with_attrs(struct ra_rdma_handle *rdma_handle, struct qp
     ret = memcpy_s(&qp_create_data.tx_data.ext_attrs, sizeof(struct qp_ext_attrs), ext_attrs,
         sizeof(struct qp_ext_attrs));
     if (ret) {
-        hccp_err("[create][ra_hdc_ai_qp]memcpy_s for ext_attrs fail, ret:%d", ret);
+        hccp_err("[create][ra_hdc_ai_qp]memcpy_s for ext_attrs failed, ret:%d", ret);
         free(qp_hdc);
         qp_hdc = NULL;
         return -ESAFEFUNC;
@@ -592,34 +592,42 @@ int ra_hdc_mr_reg(struct ra_qp_handle *qp_hdc, struct mr_info *info)
 
 int ra_hdc_typical_mr_reg(struct ra_rdma_handle *rdma_handle, struct mr_info *info, void **mr_handle)
 {
+    unsigned int phy_id = rdma_handle->rdev_info.phy_id;
     union op_typical_mr_reg_data mr_reg_data = {0};
+    unsigned int opcode = RA_RS_TYPICAL_MR_REG_V1;
     struct ra_mr_handle *mr_hdc = NULL;
+    unsigned int interface_version = 0;
     int ret;
 
     mr_hdc = (struct ra_mr_handle *)calloc(1, sizeof(struct ra_mr_handle));
     CHK_PRT_RETURN(mr_hdc == NULL, hccp_err("[reg][ra_hdc_typical_mr]mr_hdc calloc failed phy_id(%u)",
-        rdma_handle->rdev_info.phy_id), -ENOMEM);
+        phy_id), -ENOMEM);
 
-    mr_reg_data.tx_data.phy_id = rdma_handle->rdev_info.phy_id;
+    mr_reg_data.tx_data.phy_id = phy_id;
     mr_reg_data.tx_data.rdev_index = rdma_handle->rdev_index;
     mr_reg_data.tx_data.mr_reg_attr.addr = info->addr;
     mr_reg_data.tx_data.mr_reg_attr.len = info->size;
     mr_reg_data.tx_data.mr_reg_attr.access = info->access;
 
-    ret = ra_hdc_process_msg(RA_RS_TYPICAL_MR_REG, rdma_handle->rdev_info.phy_id,
-        (char *)&mr_reg_data, sizeof(union op_typical_mr_reg_data));
+    ret = ra_hdc_get_interface_version(phy_id, RA_RS_TYPICAL_MR_REG, &interface_version);
+    if (ret == 0 && interface_version >= RA_RS_OPCODE_BASE_VERSION) {
+        opcode = RA_RS_TYPICAL_MR_REG;
+    }
+    ret = ra_hdc_process_msg(opcode, phy_id, (char *)&mr_reg_data, sizeof(union op_typical_mr_reg_data));
     if (ret) {
-        hccp_err("[reg][ra_hdc_typical_mr]ra hdc message process failed ret(%d) phy_id(%u)", ret,
-            rdma_handle->rdev_info.phy_id);
+        hccp_err("[reg][ra_hdc_typical_mr]ra hdc message process failed ret(%d) phy_id(%u)", ret, phy_id);
         free(mr_hdc);
         return ret;
     }
 
     info->lkey = mr_reg_data.rx_data.lkey;
     info->rkey = mr_reg_data.rx_data.rkey;
-    mr_hdc->addr = (unsigned long long)(uintptr_t)info->addr;
+    if (opcode == RA_RS_TYPICAL_MR_REG_V1) {
+        mr_hdc->addr = (unsigned long long)(uintptr_t)info->addr;
+    } else {
+        mr_hdc->addr = mr_reg_data.rx_data.addr;
+    }
     *mr_handle = mr_hdc;
-
     return 0;
 }
 

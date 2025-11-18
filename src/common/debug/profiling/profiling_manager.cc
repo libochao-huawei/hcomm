@@ -157,7 +157,8 @@ HcclResult ProfilingManager::CallMsprofReportNodeInfo(uint64_t beginTime, uint64
 HcclResult ProfilingManager::CallMsprofReportHostApi(HcclCMDType cmdType, uint64_t beginTime, u64 count,
     HcclDataType dataType, AlgType algType, uint64_t groupName, u32 blockDim) const
 {
-    if (isHostApiSubscribe_ != HCCL_SUCCESS && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if (isHostApiSubscribe_ != HCCL_SUCCESS && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
+        !GetThreadCaptureStatus()) {
         return HCCL_SUCCESS;
     }
     uint64_t endTime = hrtMsprofSysCycleTime();
@@ -193,7 +194,8 @@ HcclResult ProfilingManager::ReportTaskApi(
     // 2、l0 l1 级别时, 子图 launch都需要上报
     if ((isTaskApiSubscribe_ != HCCL_SUCCESS) &&
         (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-        (taskType != ProfTaskType::TASK_LAUNCH_FFTS_TASK) && (taskType != ProfTaskType::TASK_AIV)){
+        (taskType != ProfTaskType::TASK_LAUNCH_FFTS_TASK) && (taskType != ProfTaskType::TASK_AIV) &&
+        !GetThreadCaptureStatus()){
         return HCCL_SUCCESS;
     }
     MsprofApi reporterData{};
@@ -225,6 +227,9 @@ HcclResult ProfilingManager::ReportTaskApi(
 HcclResult ProfilingManager::CallMsprofReportHostAclApi(
     uint32_t type, uint64_t beginTime, uint64_t endTime, uint64_t itemId, uint32_t threadId) const
 {
+    if (isHostApiSubscribe_ != HCCL_SUCCESS) {
+        return HCCL_SUCCESS;
+    }
     MsprofApi reporterData{};
     reporterData.level = MSPROF_REPORT_ACL_LEVEL;
     reporterData.type = static_cast<int32_t>(type) + MSPROF_REPORT_ACL_HOST_HCCL_BASE_TYPE;
@@ -283,7 +288,8 @@ HcclResult ProfilingManager::CallMsprofReportHostHcclOpApi(
     auto mode = GetWorkflowMode();
     if ((isHostHcclOpSubscribe_ != HCCL_SUCCESS || GetExternalInputHcclAicpuUnfold() ||
          GetExternalInputHcclEnableFfts()) &&
-        (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE)) {
+        (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
+        !GetThreadCaptureStatus()) {
         return HCCL_SUCCESS;
     }
 
@@ -380,7 +386,7 @@ HcclResult ProfilingManager::CallMsprofReportMc2CommInfo(uint64_t timeStamp, con
     s32 sret = memcpy_s(reporterData.data, MSPROF_ADDTIONAL_INFO_DATA_LENGTH, data, len);
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
 
-    if (isHostApiSubscribe_ != HCCL_SUCCESS) {
+    if (isHostApiSubscribe_ != HCCL_SUCCESS || GetThreadCaptureStatus()) {
         // 缓存对应数据
         s32 deviceLogicId = -1;
         CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -423,7 +429,7 @@ HcclResult ProfilingManager::CallEsMsprofReportTaskApi(
 
 HcclResult ProfilingManager::CallMsprofReportMultiThreadInfo(const std::vector<uint32_t> &tidInfo) const
 {
-    if (isTaskApiSubscribe_ != HCCL_SUCCESS) {
+    if (isTaskApiSubscribe_ != HCCL_SUCCESS && !GetThreadCaptureStatus()) {
         return HCCL_SUCCESS;
     }
 
@@ -513,7 +519,8 @@ HcclResult ProfilingManager::ReportAdditionInfo(
     // 1、单算子场景，如果订阅开关没有开, 且上报的不是contextID,直接退出;
     if ((isAddtionInfoSubscribe_  != HCCL_SUCCESS) &&
         (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
-        (type != MSPROF_REPORT_NODE_CONTEXT_ID_INFO_TYPE)) {
+        (type != MSPROF_REPORT_NODE_CONTEXT_ID_INFO_TYPE) &&
+        !GetThreadCaptureStatus()) {
         return HCCL_SUCCESS;
     }
     MsprofAdditionalInfo reporterData{};
@@ -798,7 +805,9 @@ HcclResult ProfilingManager::ReportStoragedFftsInfo()
             storageAdditionInfoFftsCapture_[deviceLogicId].push(reportData);
             lockCapture.unlock();
         }
-        CHK_RET(hrtMsprofReportAdditionalInfo(0, &reportData, sizeof(MsprofAdditionalInfo)));
+        if (isFftsLaunchSubscribe_ == HCCL_SUCCESS && isTaskApiSubscribe_ == HCCL_SUCCESS) {
+            CHK_RET(hrtMsprofReportAdditionalInfo(0, &reportData, sizeof(MsprofAdditionalInfo)));
+        }
     }
     return HCCL_SUCCESS;
 }

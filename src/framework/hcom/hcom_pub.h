@@ -73,7 +73,7 @@ HcclResult HcclCommGraphSetIsPytorchComm();
 // pytorch单算子通信域复用 end
 
 HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 dataSize = 0,
-    HcclCMDType optype = HcclCMDType::HCCL_CMD_INVALID);
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclCMDType optype = HcclCMDType::HCCL_CMD_INVALID);
 HcclResult HcomGetWorkspaceMemSize(const std::string &opType, u64 count,
     HcclDataType dataType, const char *group, u64 &memSize);
 HcclResult HcomGetAlltoAllStagedWorkSpaceMemSize(const char *group, u64 *sendCounts, u64 *sdispls,

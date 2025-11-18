@@ -264,6 +264,13 @@ int rs_typical_qp_modify(unsigned int phy_id, unsigned int rdev_index,
 	return 0;
 }
 
+int rs_typical_register_mr_v1(unsigned int phy_id, unsigned int rdev_index, struct rdma_mr_reg_info *mr_reg_info,
+    void **mr_handle)
+{
+	*mr_handle = &stub_mr;
+	return 0;
+}
+
 int rs_typical_register_mr(unsigned int phy_id, unsigned int rdev_index, struct rdma_mr_reg_info *mr_reg_info,
     void **mr_handle)
 {
@@ -740,6 +747,12 @@ int rs_get_sec_random(unsigned int *value)
 }
 
 int rs_drv_get_random_num(int *rand_num)
+{
+	return 0;
+}
+
+int rs_get_hccn_cfg(unsigned int phy_id, enum hccn_cfg_key key, char *value,
+    unsigned int *value_len)
 {
 	return 0;
 }

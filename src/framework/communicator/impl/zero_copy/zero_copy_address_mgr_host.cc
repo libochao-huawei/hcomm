@@ -20,14 +20,10 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        ringBuffer_ = DeviceMem::alloc(ZERO_COPY_BUFFER_MAX_MAP_COUNT * sizeof(ZeroCopyRingBufferItem));
-        CHK_PRT_RET(ringBuffer_.ptr() == nullptr,
-                    HCCL_ERROR("[ZeroCopyAddressMgr][InitRingBuffer] alloc ring buffer failed"), HCCL_E_INTERNAL);
+        CHK_RET(DeviceMem::alloc(ringBuffer_, ZERO_COPY_BUFFER_MAX_MAP_COUNT * sizeof(ZeroCopyRingBufferItem)));
         CHK_RET(hrtMemSet(ringBuffer_.ptr(), ringBuffer_.size(), ringBuffer_.size()));
 
-        ringBufferCtl_ = DeviceMem::alloc(sizeof(u32) + sizeof(u32));
-        CHK_PRT_RET(ringBufferCtl_.ptr() == nullptr,
-                    HCCL_ERROR("[ZeroCopyAddressMgr][InitRingBuffer] alloc ring buffer ctl failed"), HCCL_E_INTERNAL);
+        CHK_RET(DeviceMem::alloc(ringBufferCtl_, sizeof(u32) + sizeof(u32)));
         CHK_RET(hrtMemSet(ringBufferCtl_.ptr(), ringBufferCtl_.size(), ringBufferCtl_.size()));
 
         devRingBufBase_ = reinterpret_cast<ZeroCopyRingBufferItem *>(ringBuffer_.ptr());

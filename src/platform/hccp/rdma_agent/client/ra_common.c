@@ -108,23 +108,25 @@ HCCP_ATTRI_VISI_DEF int ra_restore_snapshot(struct ra_info *info)
     return conver_return_code(OTHERS, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int ra_get_sec_random(struct ra_info *info, u32 *value)
+HCCP_ATTRI_VISI_DEF int ra_get_hccn_cfg(struct ra_info *info, enum hccn_cfg_key key, char *value, unsigned int *value_len)
 {
     int ret;
 
-    CHK_PRT_RETURN(info == NULL || value == NULL, hccp_err("[get][sec_random]info or value is NULL"),
+    CHK_PRT_RETURN(info == NULL || value == NULL || value_len == NULL, hccp_err("[get][hccn_cfg]info or value or value_len is NULL"),
         conver_return_code(OTHERS, -EINVAL));
-    hccp_run_info("Input parameters: phy_id[%u], info.mode:[%d]", info->phy_id, info->mode);
+    CHK_PRT_RETURN(*value_len < HCCN_CFG_MSG_DATA_LEN,
+        hccp_err("[get][hccn_cfg] failed, value_len[%d] < min_len[%d]", *value_len, HCCN_CFG_MSG_DATA_LEN),
+        conver_return_code(OTHERS, -EINVAL));
+    CHK_PRT_RETURN(info->phy_id >= RA_MAX_PHY_ID_NUM, hccp_err("[get][hccn_cfg]phy_id(%u) must smaller than %u",
+        info->phy_id, RA_MAX_PHY_ID_NUM), conver_return_code(OTHERS, -EINVAL));
+    CHK_PRT_RETURN(info->mode != NETWORK_OFFLINE, hccp_err("[get][hccn_cfg]do not support mode(%u)", info->mode),
+        conver_return_code(OTHERS, -EINVAL));
 
-    ret = ra_peer_get_sec_random(value);
-    if(ret != 0 && info->mode == NETWORK_OFFLINE) {
-        CHK_PRT_RETURN(info->phy_id >= RA_MAX_PHY_ID_NUM, hccp_err("[get][sec_random]phy_id(%u) must smaller than %u",
-            info->phy_id, RA_MAX_PHY_ID_NUM), conver_return_code(OTHERS, -EINVAL));
-        ret = ra_hdc_get_sec_random(info->phy_id, value);
-    } else if (ret != 0 && info->mode != NETWORK_OFFLINE) {
-        hccp_err("[get][sec_random] failed, mode[%u], ret[%d]", info->mode, ret);
-    } else {
-        hccp_run_info("[get][sec_random] success, mode[%u]", info->mode);
+    hccp_run_info("Input parameters: phy_id[%u], nic_position:[%d], hccn_cfg_key[%d]",
+        info->phy_id, info->mode, key);
+    ret = ra_hdc_get_hccn_cfg(info->phy_id, key, value, value_len);
+    if (ret != 0) {
+        hccp_err("[get][hccn_cfg] failed, phy_id[%u], ret[%d]", info->phy_id, ret);
     }
 
     return conver_return_code(OTHERS, ret);

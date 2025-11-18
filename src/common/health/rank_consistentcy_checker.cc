@@ -36,24 +36,7 @@ RankConsistentcyChecker& RankConsistentcyChecker::GetInstance(s32 deviceLogicId)
     return instance[deviceLogicId];
 }
 
-// AllGather
-HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count,
-    HcclDataType dataType, u64 inCclBufferSize, u64 outCclBufferSize, const char *group, u32 crc, u32 aivCoreLimit)
-{
-    return RecordOpPara(opCMD, tag, count, dataType, HCCL_REDUCE_RESERVED, 0, 0, 0, 0, inCclBufferSize,
-        outCclBufferSize, group, crc, aivCoreLimit);
-}
-
-// all reduce
-HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count,
-    HcclDataType dataType, HcclReduceOp op, u64 inCclBufferSize, u64 outCclBufferSize, const char *group, u32 crc,
-    u32 aivCoreLimit)
-{
-    return RecordOpPara(opCMD, tag, count, dataType, op, 0, 0, 0, 0, inCclBufferSize,
-        outCclBufferSize, group, crc, aivCoreLimit);
-}
-
-// broadcast
+// gather
 HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count,
     HcclDataType dataType, u32 root, u64 inCclBufferSize, u64 outCclBufferSize, const char *group, u32 crc,
     u32 aivCoreLimit)
@@ -65,9 +48,9 @@ HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::s
 // reduce
 HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count,
     HcclDataType dataType, HcclReduceOp op, u32 root, u64 inCclBufferSize, u64 outCclBufferSize,
-    const char *group, u32 crc)
+    const char *group, u32 crc, u8 deterministic, u32 aivCoreLimit)
 {
-    return RecordOpPara(opCMD, tag, count, dataType, op, root, 0, 0, 0, inCclBufferSize, outCclBufferSize, group, crc);
+    return RecordOpPara(opCMD, tag, count, dataType, op, root, 0, 0, 0, inCclBufferSize, outCclBufferSize, group, crc, aivCoreLimit);
 }
 
 // send && receive
@@ -87,21 +70,10 @@ HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::s
         outCclBufferSize, group, crc);
 }
 
-// AllGather v
+// reduce scatter v && AllGather v
 HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag,
     const void *counts, const void *displs, const u32 rankSize,
-    HcclDataType dataType, u64 inCclBufferSize, u64 outCclBufferSize, const char *group, u32 crc, u32 aivCoreLimit)
-{
-    CHK_RET(RecordOpPara(opCMD, tag, 0, dataType, HCCL_REDUCE_RESERVED, 0, 0, 0, 0, inCclBufferSize,
-        outCclBufferSize, group, crc, aivCoreLimit));
-    CHK_RET(RecordVaringOpPara(tag, counts, displs, rankSize));
-    return HCCL_SUCCESS;
-}
-
-// reduce scatter v
-HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag,
-    const void *counts, const void *displs, const u32 rankSize,
-    HcclDataType dataType, HcclReduceOp op, u64 inCclBufferSize, u64 outCclBufferSize, const char *group, u32 crc,
+    HcclDataType dataType, HcclReduceOp op, u64 inCclBufferSize, u64 outCclBufferSize, const char *group, u32 crc, u8 deterministic,
     u32 aivCoreLimit)
 {
     CHK_RET(RecordOpPara(opCMD, tag, 0, dataType, op, 0, 0, 0, 0, inCclBufferSize,
@@ -279,7 +251,7 @@ void RankConsistentcyChecker::SetCheckCannVersionSwitch(const bool cannVerCheckS
 // private
 HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::string &tag, u64 count,
     HcclDataType dataType, HcclReduceOp op, u32 root, u32 rank, u32 srTag, u32 selfRank, u64 inCclBufferSize,
-    u64 outCclBufferSize, const char *group, u32 crc, u32 aivCoreLimit)
+    u64 outCclBufferSize, const char *group, u32 crc, u8 deterministic, u32 aivCoreLimit)
 {
     HcclCMDInfo cmdInfo;
     // 相关规范的例外场景，对固定数组的memset_s可以不判断返回值
@@ -306,6 +278,7 @@ HcclResult RankConsistentcyChecker::RecordOpPara(HcclCMDType opCMD, const std::s
     cmdInfo.inCclBufferSize = inCclBufferSize;
     cmdInfo.outCclBufferSize = outCclBufferSize;
     cmdInfo.aivCoreLimit = aivCoreLimit;
+    cmdInfo.deterministic = deterministic;
 
     std::lock_guard<std::mutex> lock(mutex_);
     cmdInfoMap_[tag] = cmdInfo;
@@ -506,6 +479,11 @@ void RankConsistentcyChecker::CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheck
     if (localInfo->aivCoreLimit != remoteInfo->aivCoreLimit) {
         ReportCmdInfoCheckFailed(localInfo->tag, "aivCoreLimit", localInfo->aivCoreLimit,
             remoteInfo->aivCoreLimit);
+    }
+
+    if (localInfo->deterministic != remoteInfo->deterministic) {
+        ReportCmdInfoCheckFailed(localInfo->tag, "deterministic", localInfo->deterministic,
+            remoteInfo->deterministic);
     }
 
     return;

@@ -165,13 +165,6 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
         newTag = tag;
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_INFO("[SelectAlg] AllReduce newTag is [%s]", newTag.c_str());
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
-        HCCL_CONFIG_INFO(HCCL_ALG, 
-            "[AllReduceOperator][SelectAlg]userRank_[%u], algName[%s] actual level1 algo[%d], level2 algo[%d]",
-            userRank_, algName.c_str(), algType_.algoLevel1, algType_.algoLevel2);
-    }
-
     return ret;
 }
 
@@ -334,7 +327,8 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
     bool isCCLBufferGE16M = !isOpbase ||
         (commInputSize >= HCCL_MID_COUNT_16_MB && commOutputSize >= HCCL_MID_COUNT_16_MB);
 
-    bool isAivMode = topoMatcher_->GetAivModeConfig()
+    bool isBarrierOp = param.syncMode == SyncMode::UNLIMITED_TIMEWAITSYNCMODE;   // Barrier算子不使能AIV
+    bool isAivMode = (topoMatcher_->GetAivModeConfig() && !isBarrierOp)
                     && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                     && isMesh
                     && isCCLBufferGE16M
@@ -379,7 +373,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
     if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT &&
         (param.DataDes.dataType == HCCL_DATA_TYPE_FP16 || param.DataDes.dataType == HCCL_DATA_TYPE_FP32 ||
         param.DataDes.dataType == HCCL_DATA_TYPE_BFP16)) {
-        if (param.aicpuUnfoldMode || topoMatcher_->GetAivModeConfig()) {
+        if (param.aicpuUnfoldMode || (topoMatcher_->GetAivModeConfig() && !isBarrierOp)) {
             // AIV / AICPU场景，规约保序优先级更高
             HCCL_WARNING("[SelectAlgfor910B]aicpuMode[%d], AivModeConfig[%d], "
                 "the Aiv/AICPU mode does not support when the reduce order preservation is enabled.",
@@ -575,15 +569,16 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool isOpbase = workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
     bool isOnlyAiv = topoMatcher_->GetIsOnlyAivConfig();
     // A3 AIV确定性 超节点内(单机与跨机) 支持单算子与图模式 限制单卡数据量8MB
+    bool isBarrierOp = param.syncMode == SyncMode::UNLIMITED_TIMEWAITSYNCMODE;   // Barrier算子不使能AIV
     bool isSupportAivDeter = (superPodNum_ == 1)
-                        &&  topoMatcher_->GetAivModeConfig()
+                        && (topoMatcher_->GetAivModeConfig() && !isBarrierOp)
                         && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                         && ((topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) || (serverNum_ > 1))
                         && (dataSize < HCCL_SMALL_COUNT_8_MB)
                         && (!retryEnable_)
                         && userRankSize_ > 1;
 
-    bool isAivMode = topoMatcher_->GetAivModeConfig()
+    bool isAivMode = (topoMatcher_->GetAivModeConfig() && !isBarrierOp)
                     && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                     && serverNum_ == 1
                     && ((isOpbase && (dataSizePerRank <= AIV_ALL_REDUCE_A3_ENTRY_SIZE || isOnlyAiv)) || !isOpbase)
