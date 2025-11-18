@@ -296,11 +296,17 @@ int release_file_lock(int lock_fd, const char *lock_file_path)
 
 STATIC int cfg_inner_read_conf_byfd(FILE *fp, const char *conf_name, char *conf_value, unsigned int len)
 {
-    char line_buf[CONLINE_LEN] = {0};
+    int ret = FILE_OPT_SYS_RD_FILE_NOT_FOUND;
+    char *line_buf = NULL;
     unsigned long len_buf;
     unsigned int len_tmp;
     char *c = NULL;
-    int ret = 0;
+
+    line_buf = calloc(CONLINE_LEN, sizeof(char));
+    if (line_buf == NULL) {
+        roce_err("calloc line_buf failed");
+        return FILE_OPT_NO_MEM_ERR;
+    }
 
     while (feof(fp) == 0 && fgets(line_buf, CONLINE_LEN, fp) != NULL) {
         if ((line_buf[0] == '#') || (strlen(line_buf) < strlen("*=*"))) {
@@ -322,13 +328,17 @@ STATIC int cfg_inner_read_conf_byfd(FILE *fp, const char *conf_name, char *conf_
             ret = strcpy_s(conf_value, len, c);
             if (ret) {
                 roce_err("strcpy_s err[%d], len:%u", ret, len);
-                return FILE_OPT_NO_MEM_ERR;
+                ret = FILE_OPT_NO_MEM_ERR;
             }
-            return 0;
+
+            goto out;
         }
     }
 
-    return FILE_OPT_SYS_RD_FILE_NOT_FOUND;
+out:
+    free(line_buf);
+    line_buf = NULL;
+    return ret;
 }
 
 STATIC int cfg_inner_read_conf(const char *conf_path, const char *conf_name, char *conf_value, unsigned int len)

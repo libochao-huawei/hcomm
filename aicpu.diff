@@ -1,0 +1,1237 @@
+From 2e883e6769ad0e9e9c653c1e37067d64bb640179 Mon Sep 17 00:00:00 2001
+
+Change-Id: I0a16176f0bd09f3cd4fc1e2e7ca4d3a5dfa87560
+Signed-off-by: linzhiyang <linzhiyang5@huawei.com>
+Signed-off-by: leo011 <leo011@noreply.gitcode.com>
+---
+ cmake/config.cmake                            |   1 +
+ .../debug/profiling/task_exception_handler.cc |   4 +-
+ .../framework/CMakeLists.txt                  |  15 +
+ .../framework/common/src/CMakeLists.txt       |   1 +
+ .../framework/common/src/config/env_config.cc |   1 +
+ .../framework/common/src/launch_aicpu.cc      | 206 ++++++++++
+ .../framework/common/src/launch_aicpu.h       |  25 ++
+ .../communicator/impl/hccl_communicator.cc    |  55 +--
+ .../communicator/impl/hccl_communicator.h     |  15 +-
+ .../impl/hccl_communicator_device.cc          |  37 +-
+ .../impl/hccl_communicator_host.cc            | 360 +++++-------------
+ .../hccl_one_sided_service.cc                 | 149 +++-----
+ .../hccl_one_sided_service.h                  |   3 +
+ .../framework/device/framework/ccl_kernel.ini |  12 +-
+ 14 files changed, 432 insertions(+), 452 deletions(-)
+ create mode 100644 src/domain/collective_communication/framework/common/src/launch_aicpu.cc
+ create mode 100644 src/domain/collective_communication/framework/common/src/launch_aicpu.h
+
+diff --git a/cmake/config.cmake b/cmake/config.cmake
+index 53f83382a1..7472af37fe 100644
+--- a/cmake/config.cmake
++++ b/cmake/config.cmake
+@@ -129,6 +129,7 @@ else()
+ endif()
+ set(INSTALL_LIBRARY_DIR packages/${CMAKE_SYSTEM_PROCESSOR}-linux/lib64)
+ set(INSTALL_INCLUDE_DIR packages/${CMAKE_SYSTEM_PROCESSOR}-linux/include)
++set(INSTALL_CCL_KERNEL_JSON_DIR packages/hccl/built-in/data/op/aicpu)
+ 
+ if (ENABLE_TEST)
+     set(CMAKE_SKIP_RPATH FALSE)
+diff --git a/src/domain/collective_communication/common/debug/profiling/task_exception_handler.cc b/src/domain/collective_communication/common/debug/profiling/task_exception_handler.cc
+index b4dee0dbd1..8b509c147d 100644
+--- a/src/domain/collective_communication/common/debug/profiling/task_exception_handler.cc
++++ b/src/domain/collective_communication/common/debug/profiling/task_exception_handler.cc
+@@ -1347,10 +1347,10 @@ HcclResult TaskExceptionHandler::Init()
+         CHK_RET(hrtRegTaskFailCallbackByModule(Callback));
+     }
+ 
+-    CHK_RET(hrtGetMaxStreamAndTask(maxStrCount, maxTaskCount));
++    CHK_RET(hrtGetStreamAvailableNum(maxStrCount));
+ 
+     maxStrCount = (maxStrCount < STREAM_COUNT_UPPER_LIMIT) ? maxStrCount : STREAM_COUNT_UPPER_LIMIT;
+-    maxTaskCount = (maxTaskCount < TASK_COUNT_UPPER_LIMIT) ? maxTaskCount : TASK_COUNT_UPPER_LIMIT;
++    maxTaskCount = TASK_COUNT_UPPER_LIMIT;
+     // 单算子模式task过多的特殊处理
+     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+         maxTaskCount = TASK_COUNT_UPPER_LIMIT_OP_BASE;
+diff --git a/src/domain/collective_communication/framework/CMakeLists.txt b/src/domain/collective_communication/framework/CMakeLists.txt
+index e742fdddad..8bf44dd9cf 100755
+--- a/src/domain/collective_communication/framework/CMakeLists.txt
++++ b/src/domain/collective_communication/framework/CMakeLists.txt
+@@ -10,6 +10,7 @@ else()
+     set(HCCL_BASE_DIR ${TOP_DIR}/ace/comop/hccl/whole/hccl/)
+     set(HCCL_OPEN_CODE_BASE_DIR ${TOP_DIR}/ace/comop/hccl/open_source/src/domain/collective_communication/)
+     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
++    set(INSTALL_CCL_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
+ endif()
+ 
+ set(HCCL_NEXT_CODE_ROOT ${TOP_DIR}/ace/comop/hccl/whole/hccl_next)
+@@ -695,6 +696,20 @@ add_subdirectory(op_base)
+ add_subdirectory(cluster_maintenance)
+ add_subdirectory(nslbdp)
+ 
++if(NOT KERNEL_MODE)
++    SET(HCCL_CMAKE_DIR ${HCCL_OPEN_CODE_BASE_DIR}/../../../cmake/)
++    message(STATUS "HCCL_CMAKE_DIR = ${HCCL_CMAKE_DIR}")
++    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
++        COMMAND ${HI_PYTHON} ${HCCL_CMAKE_DIR}/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/ccl_kernel.ini ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
++        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
++    )
++    add_custom_target(ccl_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json)
++        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
++        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
++    )
++    add_dependencies(hccl ccl_kernel_json)
++endif()
++
+ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
+     target_include_directories(ccl_kernel PRIVATE
+         ${hccl_include_list}
+diff --git a/src/domain/collective_communication/framework/common/src/CMakeLists.txt b/src/domain/collective_communication/framework/common/src/CMakeLists.txt
+index a9b85041bf..7e6492562c 100644
+--- a/src/domain/collective_communication/framework/common/src/CMakeLists.txt
++++ b/src/domain/collective_communication/framework/common/src/CMakeLists.txt
+@@ -9,6 +9,7 @@ set(src_list
+ target_sources(hccl PRIVATE
+     ${src_list}
+     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_hash_utils.cc
++    ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu.cc
+ )
+ 
+ 
+diff --git a/src/domain/collective_communication/framework/common/src/config/env_config.cc b/src/domain/collective_communication/framework/common/src/config/env_config.cc
+index 4b309d7348..0c34a60c53 100644
+--- a/src/domain/collective_communication/framework/common/src/config/env_config.cc
++++ b/src/domain/collective_communication/framework/common/src/config/env_config.cc
+@@ -567,6 +567,7 @@ HcclResult ParseLibraryPath(std::string &cannPath)
+         HCCL_ERROR("[ParseLibraryPath]ENV:LD_LIBRARY_PATH is not set");
+         return HCCL_E_PARA;
+     } else {
++        HCCL_INFO("ParseLibraryPath]getPath[%s]", getPath.c_str());
+         cannPath = getPath;
+     }
+     return HCCL_SUCCESS;
+diff --git a/src/domain/collective_communication/framework/common/src/launch_aicpu.cc b/src/domain/collective_communication/framework/common/src/launch_aicpu.cc
+new file mode 100644
+index 0000000000..b6ac2a9bbf
+--- /dev/null
++++ b/src/domain/collective_communication/framework/common/src/launch_aicpu.cc
+@@ -0,0 +1,206 @@
++/*
++ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
++ * This file is a part of the CANN Open Software.
++ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
++ * Please refer to the License for details. You may not use this file except in compliance with the License.
++ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
++ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
++ * See LICENSE in the root of the software repository for the full text of the License.
++ */
++
++#include <iostream>
++#include <fstream>
++#include <string>
++#include "launch_aicpu.h"
++#include "log.h"
++#include "env_config.h"
++#include "mmpa_api.h"
++
++
++using namespace std;
++
++namespace hccl {
++
++
++HcclResult InitKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
++    void *initTaskAddr, u32 initTaskSize, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle)
++{
++    aclError ret = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
++    CHK_PRT_RET(ret != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName:%s",
++                            ret, kernelName.c_str()),
++                HCCL_E_RUNTIME);
++
++    ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
++    CHK_PRT_RET(ret != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName:%s", ret, kernelName.c_str()),
++                HCCL_E_RUNTIME);
++
++    aclrtParamHandle paraHandle;
++    ret = aclrtKernelArgsAppend(argsHandle, initTaskAddr, initTaskSize, &paraHandle); // 假设opResPara_为结构体参数
++    CHK_PRT_RET(ret != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size %u, kernelName:%s", ret,
++                            initTaskSize, kernelName.c_str()),
++                HCCL_E_RUNTIME);
++
++    ret = aclrtKernelArgsFinalize(argsHandle);
++    CHK_PRT_RET(ret != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName:%s", ret,
++                            kernelName.c_str()),
++                HCCL_E_RUNTIME);
++    return HCCL_SUCCESS;
++}
++
++HcclResult TaskCommKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
++    void *contextAddr, u32 contextSize, void *tilingDataPtr, u32 tilingDataSize, aclrtFuncHandle &funcHandle,
++    aclrtArgsHandle &argsHandle)
++{
++    CHK_PRT_RET((tilingDataPtr == nullptr || tilingDataSize == 0),
++        HCCL_ERROR("[TaskCommKernelArgsPrepare]param is invalid,tilingDataPtr[%p], tilingDataSize[%llu], kernelName:%s",
++        tilingDataPtr, tilingDataSize, kernelName.c_str()), HCCL_E_PARA);
++    aclError aclRet = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
++    CHK_PRT_RET(aclRet != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName:%s",
++                            aclRet, kernelName.c_str()),
++                HCCL_E_RUNTIME);
++
++    aclRet = aclrtKernelArgsInit(funcHandle, &argsHandle);
++    CHK_PRT_RET(aclRet != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName:%s", aclRet,
++                kernelName.c_str()), HCCL_E_RUNTIME);
++    // 拼凑aicpu侧KFCTaskComm结构体
++    // 1、先存放HcclOpResParam的context指针
++    aclrtParamHandle paraHandle;
++    aclRet = aclrtKernelArgsAppend(argsHandle, contextAddr, contextSize, &paraHandle);
++    CHK_PRT_RET(aclRet != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size %u, kernelName:%s",
++                aclRet, contextSize, kernelName.c_str()), HCCL_E_RUNTIME);
++    // 2、再将OpTilingData的tilingData指针拼凑，并将tilingData的hostMem给rts进行H2D
++    void *dataAddr;
++    aclRet = aclrtKernelArgsAppendPlaceHolder(argsHandle, &paraHandle);
++    CHK_PRT_RET(aclRet != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsAppendPlaceHolder]errNo[0x%016llx] args append place holder failed",
++                aclRet), HCCL_E_RUNTIME);
++
++    aclRet = aclrtKernelArgsGetPlaceHolderBuffer(argsHandle, paraHandle, tilingDataSize, &dataAddr);
++    CHK_PRT_RET(aclRet != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsGetPlaceHolderBuffer]errNo[0x%016llx] args get place holder buffer failed,"
++                "tilingDataSize %u", aclRet, tilingDataSize), HCCL_E_RUNTIME);
++    CHK_SAFETY_FUNC_RET(memcpy_s(dataAddr, tilingDataSize, tilingDataPtr, tilingDataSize));
++
++    aclRet = aclrtKernelArgsFinalize(argsHandle);
++    CHK_PRT_RET(aclRet != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName:%s", aclRet,
++                            kernelName.c_str()),
++                HCCL_E_RUNTIME);
++    return HCCL_SUCCESS;
++}
++
++HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
++    aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
++    void *tilingDataPtr, u32 tilingDataSize)
++{
++    if (binHandle == nullptr) {
++        HCCL_ERROR("binHandle is nullptr, no need to launch aicpu kernel, binHandle[%p]", binHandle);
++        return HCCL_E_PTR;
++    }
++    CHK_PRT_RET((addr == nullptr || size == 0),
++        HCCL_ERROR("[AicpuAclKernelLaunch]param is invalid,contextAddr[%p], size[%llu], kernelName:%s",
++        addr, size, kernelName.c_str()), HCCL_E_PARA);
++
++    aclrtFuncHandle funcHandle;
++    aclrtArgsHandle argsHandle;
++    HcclResult ret;
++    if (isInitTask) {
++        ret = InitKernelArgsPrepare(binHandle, kernelName, addr, size, funcHandle, argsHandle);
++        CHK_PRT_RET(ret != HCCL_SUCCESS,
++                    HCCL_ERROR("[InitKernelArgsPrepare]errNo[0x%016llx]init args prepare failed, kernelName:%s", ret,
++                                kernelName.c_str()),
++                    HCCL_E_RUNTIME);
++    } else {
++        ret = TaskCommKernelArgsPrepare(binHandle, kernelName, addr, size, tilingDataPtr, tilingDataSize, funcHandle,
++                                        argsHandle);
++        CHK_PRT_RET(ret != HCCL_SUCCESS,
++                    HCCL_ERROR("[TaskCommKernelArgsPrepare]errNo[0x%016llx]taskCOmm args prepare failed, kernelName:%s",
++                    ret, kernelName.c_str()), HCCL_E_RUNTIME);
++    }
++
++    aclrtLaunchKernelCfg cfg;
++    aclrtLaunchKernelAttr attr;
++    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
++    attr.value.timeout = timeOut;
++    cfg.numAttrs = 1;
++    cfg.attrs = &attr;
++    constexpr u32 blockDim = 1;
++    aclError aclRet = aclrtLaunchKernelWithConfig(funcHandle, blockDim, stm, &cfg, argsHandle, nullptr);
++    CHK_PRT_RET(aclRet != ACL_SUCCESS,
++                HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed", ret), HCCL_E_OPEN_FILE_FAILURE);
++    return HCCL_SUCCESS;
++}
++
++HcclResult GetKernelFilePath(std::string &binaryPath)
++{
++    // 获取二进制文件路径
++    std::string libPath;
++    char *getPath = getenv("LD_LIBRARY_PATH");
++    MM_SYS_GET_ENV(MM_ENV_LD_LIBRARY_PATH, getPath);
++    if (getPath != nullptr) {
++        libPath = getPath;
++    } else {
++        HCCL_ERROR("[GetKernelFilePath]ENV:LD_LIBRARY_PATH is not set");
++        return HCCL_E_PARA;
++    }
++
++    size_t mid = libPath.find("hccl/lib64");
++    if (mid == libPath.npos) {
++        HCCL_WARNING("[GetKernelFilePath]ENV:LD_LIBRARY_PATH lack hccl/lib64");
++
++        mmDlInfo info;
++        if (mmDladdr(reinterpret_cast<void *>(GetKernelFilePath), &info) != EN_OK) {
++            HCCL_ERROR("[GetKernelFilePath]mmDladdr get binary path failed");
++            return HCCL_E_PARA;
++        }
++
++        CHK_PRT_RET(info.dli_fname == nullptr, HCCL_ERROR("[GetKernelFilePath]get path of libhccl.so failed"),
++            HCCL_E_UNAVAIL);
++
++        char resolvedPath[PATH_MAX];
++        if (realpath(info.dli_fname, resolvedPath) == nullptr) {
++            HCCL_ERROR("[GetKernelFilePath]path %s is not a valid real path", info.dli_fname);
++            return HCCL_E_INTERNAL;
++        }
++        binaryPath = resolvedPath;
++        HCCL_DEBUG("[GetKernelFilePath]binaryPath folder path[%s]", binaryPath.c_str());
++        if (binaryPath.find("/lib64/libhccl.so") != binaryPath.npos) {
++            binaryPath.erase(binaryPath.find("/lib64/libhccl.so"));
++        } else {
++            HCCL_ERROR("[GetKernelFilePath]get binary path failed");
++            return HCCL_E_PARA;
++        }
++
++        size_t pos = binaryPath.find_last_of("/");
++        if (pos != std::string::npos) {
++            binaryPath = binaryPath.substr(0, pos);
++        } else {
++            HCCL_ERROR("[GetKernelFilePath]failed substr file path.");
++            return HCCL_E_PARA;
++        }
++        binaryPath += "/hccl";
++    } else {
++        u32 diff;
++        if (libPath.find(":", mid) == libPath.npos) {
++            diff = libPath.length() - libPath.rfind(":", mid);
++        } else {
++            diff = libPath.find(":", mid) - libPath.rfind(":", mid);
++        }
++        binaryPath = libPath.substr(libPath.rfind(":", mid) + 1, diff - 1);
++        binaryPath.erase(binaryPath.find("/lib64"));
++    }
++    HCCL_DEBUG("[GetKernelFilePath]hccl folder path[%s]", binaryPath.c_str());
++    binaryPath += "/built-in/data/op/aicpu/";
++    HCCL_DEBUG("[GetKernelFilePath]kernel folder path[%s]", binaryPath.c_str());
++
++    return HCCL_SUCCESS;
++}
++
++}   // ~~ namespace hccl
+\ No newline at end of file
+diff --git a/src/domain/collective_communication/framework/common/src/launch_aicpu.h b/src/domain/collective_communication/framework/common/src/launch_aicpu.h
+new file mode 100644
+index 0000000000..c7896370ed
+--- /dev/null
++++ b/src/domain/collective_communication/framework/common/src/launch_aicpu.h
+@@ -0,0 +1,25 @@
++/*
++ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
++ * This file is a part of the CANN Open Software.
++ * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
++ * Please refer to the License for details. You may not use this file except in compliance with the License.
++ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
++ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
++ * See LICENSE in the root of the software repository for the full text of the License.
++ */
++ 
++#ifndef LAUNCH_AICPU_H
++#define LAUNCH_AICPU_H
++
++#include "base.h"
++#include "hccl_types.h"
++#include "acl/acl_rt.h"
++
++namespace hccl {
++    HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void* addr, u32 size, aclrtBinHandle binHandle,
++        const std::string &kernelName, bool isInitTask, u16 timeOut,
++        void* tilingDataPtr = nullptr, u32 tilingDataSize = 0);
++    HcclResult GetKernelFilePath(std::string &binaryPath);
++}
++
++#endif // LAUNCH_AICPU_H
+\ No newline at end of file
+diff --git a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.cc b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.cc
+index 9ef23e8526..2052bf428c 100755
+--- a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.cc
++++ b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.cc
+@@ -38,6 +38,7 @@
+ #include "mmpa_api.h"
+ #include "config_log.h"
+ #include "../nslbdp/hccl_nslbdp.h"
++#include "launch_device.h"
+ using namespace std;
+ 
+ constexpr u32 MODULE_NUM_FOUR = 4;
+@@ -1348,47 +1349,6 @@ namespace hccl
+         return HCCL_SUCCESS;
+     }
+ 
+-    HcclResult HcclCommunicator::AicpuResourceInit(const std::string &algName,
+-                                                   const AlgResourceResponse &algResource, const std::string &newTag, const rtStream_t &aicpuStream,
+-                                                   const HcclCMDType opType, bool isCustom)
+-    {
+-        HCCL_RUN_INFO("[%s] start to init group[%s] aicpu resources newTag[%s] local rankId[%u]",
+-                      __func__, identifier_.c_str(), newTag.c_str(), userRank_);
+-        isContextLaunched_ = true;
+-        CHK_RET(BuildOpResParam(algName, algResource, newTag, opType)); // 构建context结构体
+-        std::string kernelName = "RunAicpuKfcResInitV2";
+-        // 在这里构建suspending状态码的HDC通道初始化，并且在host侧进行init
+-        // （这个主要是针对hcomId；对算子通信域的复用；也就是多个算子复用（tag+Identifier）这个通信域的情况）
+-        CHK_RET(AiCpuKernelLaunch(aicpuStream, reinterpret_cast<u64>(opResDevicePara_.ptr()), kernelName));
+-        newTagResAlloced_.insert(newTag);
+-        // 图模多档位场景，需要保证执行序上优先下资源初始化的kernel
+-        CHK_RET(hcclStreamSynchronize(aicpuStream));
+-
+-        if (IsEnableCustom())
+-        {
+-            struct InitTask
+-            {
+-                u64 context; // A矩阵地址，通信在前时为sendbuffer
+-                bool isCustom;
+-            };
+-            InitTask customInitTask = {0};
+-            customInitTask.context = reinterpret_cast<u64>(opResDevicePara_.ptr());
+-            customInitTask.isCustom = true;
+-            CHK_RET(BuildCustomOpResParam());
+-            uint64_t customBeginTime = hrtMsprofSysCycleTime();
+-            const std::string customProfName = "hcomAicpuCustomInit";
+-            CHK_RET(AicpuAclKernelLaunch(aicpuStream, reinterpret_cast<void *>(&customInitTask), sizeof(customInitTask),
+-                                         binCustomHandle_, kernelName, true));
+-            uint64_t customEndTime = hrtMsprofSysCycleTime();
+-            s32 customthreadId = SalGetTid();
+-            CHK_RET(ProfilingManagerPub::CallMsprofReportNodeInfo(customBeginTime, customEndTime, customProfName,
+-                                                                  customthreadId));
+-            CHK_RET(hcclStreamSynchronize(aicpuStream));
+-        }
+-
+-        return HCCL_SUCCESS;
+-    }
+-
+     HcclResult HcclCommunicator::AicpuResourceRefresh(const AlgResourceResponse &algResource, const std::string &newTag,
+                                                       const HcclCMDType opType)
+     {
+@@ -1700,17 +1660,8 @@ namespace hccl
+     HcclResult HcclCommunicator::KernelLaunchChooseAicpuOrCustom(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+                                                                  void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode, const std::string &tag, bool isCustom)
+     {
+-        if (isCustom)
+-        {
+-            return AicpuUnfoldKernelLaunchIsCustom(inputPtr, outputPtr, stm, addr, tilingDataPtr, tilingDataSize,
+-                                                   kernelName, mode, tag, isCustom);
+-        }
+-        else
+-        {
+-            return AicpuUnfoldKernelLaunchV2(inputPtr, outputPtr, stm, addr, tilingDataPtr, tilingDataSize, kernelName,
+-                                             mode, tag);
+-        }
+-        return HCCL_SUCCESS;
++        return AicpuUnfoldKernelLaunchV2(inputPtr, outputPtr, stm, addr, tilingDataPtr, tilingDataSize,
++            kernelName, mode, tag, isCustom);
+     }
+ 
+     HcclResult HcclCommunicator::SaveTraceInfo(std::string &logInfo)
+diff --git a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.h b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.h
+index 69ff02b090..d319ef9b4d 100644
+--- a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.h
++++ b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator.h
+@@ -357,14 +357,10 @@ public:
+         const std::string &tag);
+     virtual HcclResult AicpuUnfoldKernelLaunchV2(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
+-        const std::string &tag);
++        const std::string &tag, bool isCustom);
+     HcclResult KernelLaunchChooseAicpuOrCustom(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
+         const std::string &tag, bool isCustom);
+-    HcclResult AicpuUnfoldKernelLaunchIsCustom(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+-        void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
+-        const std::string &tag, bool isCustom);
+-
+     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
+     HcclResult Mc2AiCpuInitStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
+     HcclResult GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize);
+@@ -801,16 +797,11 @@ private:
+     HcclResult LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+         aclrtBinHandle& binHandle);
+     void UnloadBinary(aclrtBinHandle& binHandle);
+-    HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void* addr, u32 size, aclrtBinHandle binHandle,
+-        const std::string &kernelName, bool isInitTask, void* tilingDataPtr = nullptr, u32 tilingDataSize = 0);
+-    HcclResult InitKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
+-        void* initTaskAddr, u32 initTaskSize, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle);
+-    HcclResult TaskCommKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
+-        void* contextAddr, u32 contextSize, void* tilingDataPtr, u32 tilingDataSize, aclrtFuncHandle &funcHandle,
+-        aclrtArgsHandle &argsHandle);
+     bool IsEnableCustom();
+     void UnloadCustomKernel(void);
+     HcclResult LoadCustomKernel(void);
++    HcclResult LoadAICPUKernel(void);
++    void UnloadAICPUKernel(void);
+     u32 LargestPowerOfTwoLessThan(const u32 localRankSize);
+     u32 CalcStreamNumForReduceOrderPreservation();
+     
+diff --git a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_device.cc b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_device.cc
+index c9a4fadedd..bd26b1e7f7 100644
+--- a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_device.cc
++++ b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_device.cc
+@@ -1141,30 +1141,28 @@ namespace hccl
+         return HCCL_SUCCESS;
+     }
+ 
++    HcclResult HcclCommunicator::AicpuResourceInit(const std::string &algName,
++        const AlgResourceResponse &algResource, const std::string &newTag, const rtStream_t &aicpuStream,
++        const HcclCMDType opType, bool isCustom)
++    {
++        return HCCL_SUCCESS;
++    }
++
+     HcclResult HcclCommunicator::AiCpuKernelLaunch(const rtStream_t stm, u64 addr, const std::string &kernelName)
+     {
+         return HCCL_SUCCESS;
+     }
+ 
+-    HcclResult HcclCommunicator::InitKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
+-        void* initTaskAddr, u32 initTaskSize, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle)
++
++    HcclResult HcclCommunicator::LoadAICPUKernel(void)
+     {
+         return HCCL_SUCCESS;
+     }
+-    
+-    HcclResult HcclCommunicator::TaskCommKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
+-        void* contextAddr, u32 contextSize, void* tilingDataPtr, u32 tilingDataSize, aclrtFuncHandle &funcHandle,
+-        aclrtArgsHandle &argsHandle)
++
++    void HcclCommunicator::UnloadAICPUKernel(void)
+     {
+-        return HCCL_SUCCESS;
++        return;
+     }
+-    
+-    HcclResult HcclCommunicator::AicpuAclKernelLaunch(const rtStream_t stm, void* addr, u32 size, aclrtBinHandle binHandle,
+-        const std::string &kernelName, bool isInitTask, void* tilingDataPtr, u32 tilingDataSize)
+-    {
+-        return HCCL_SUCCESS;
+-    }
+-    
+ 
+     HcclResult HcclCommunicator::AicpuKfcTilingDataLaunch(const OpParam &opParam, const HcclCMDType &opType,
+                                                           const DeviceMem &deviceContext, const std::string &kernelName, const AicpuOpTiling opTilingInfo)
+@@ -1197,14 +1195,9 @@ namespace hccl
+         return HCCL_SUCCESS;
+     }
+ 
+-    HcclResult HcclCommunicator::AicpuUnfoldKernelLaunchV2(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+-                                                           void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode, const std::string &tag)
+-    {
+-        return HCCL_SUCCESS;
+-    }
+-
+-    HcclResult HcclCommunicator::AicpuUnfoldKernelLaunchIsCustom(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+-                                                                 void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode, const std::string &tag, bool isCustom)
++    HcclResult HcclCommunicator::AicpuUnfoldKernelLaunchV2(void *inputPtr, void *outputPtr, const rtStream_t stm,
++        u64 addr, void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
++        const std::string &tag, bool isCustom)
+     {
+         return HCCL_SUCCESS;
+     }
+diff --git a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_host.cc b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_host.cc
+index 952f2dfd50..a66f526e1e 100644
+--- a/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_host.cc
++++ b/src/domain/collective_communication/framework/communicator/impl/hccl_communicator_host.cc
+@@ -40,6 +40,7 @@
+ #include "../nslbdp/hccl_nslbdp.h"
+ #include "hccl_one_sided_service.h"
+ #include "launch_device.h"
++#include "launch_aicpu.h"
+ #include "hccl_communicator.h"
+ #include "order_launch/order_launch.h"
+ 
+@@ -254,6 +255,7 @@ namespace hccl
+             aiCpuNoIpcEvnet_.pop_back();
+         }
+ 
++        UnloadAICPUKernel();
+         UnloadCustomKernel();
+         if (dispatcher_ != nullptr) {
+             HcclDispatcherDestroy(dispatcher_);
+@@ -297,6 +299,7 @@ namespace hccl
+         if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93){
+             CHK_RET(RegisterKernel(deviceType_));
+         }
++        CHK_RET(LoadAICPUKernel());
+         CHK_RET(LoadCustomKernel());
+         CHK_RET(InitHDCommunicate());
+         CHK_RET(InitOpRetry());
+@@ -322,6 +325,7 @@ namespace hccl
+         CHK_RET(InitMemoryManagerSubGroup());
+         CHK_RET(InitHcclAlg());
+         CHK_RET(LoadCustomKernel());
++        CHK_RET(LoadAICPUKernel());
+         CHK_RET(InitHDCommunicate());
+         CHK_RET(InitOpRetry());
+         CHK_RET(InitOpResPara());
+@@ -355,6 +359,32 @@ namespace hccl
+         return HCCL_SUCCESS;
+     }
+ 
++    HcclResult HcclCommunicator::LoadAICPUKernel(void)
++    {
++        std::string jsonPath;
++        CHK_RET(GetKernelFilePath(jsonPath));
++        jsonPath += "ccl_kernel.json";
++        HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
++            binHandle_, false);
++        CHK_PRT_RET(ret != HCCL_SUCCESS,
++            HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
++            "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
++        return HCCL_SUCCESS;
++    }
++
++    void HcclCommunicator::UnloadAICPUKernel(void)
++    {
++        if (binHandle_ != nullptr) {
++            aclError aclRet = aclrtBinaryUnLoad(binHandle_);
++            if (aclRet != ACL_SUCCESS) {
++                HCCL_ERROR("[UnloadAICPUKernel]errNo[0x%016llx] unload binary from binHandel[%p] error.",
++                aclRet, binHandle_);
++            }
++            binHandle_ = nullptr;
++        }
++        return;
++    }
++
+     HcclResult HcclCommunicator::InitOneSidedServiceNetDevCtx(u32 remoteRankId)
+     {
+         if (nicDeployment_ != NICDeployment::NIC_DEPLOYMENT_DEVICE) {
+@@ -6349,165 +6379,70 @@ namespace hccl
+         return HCCL_SUCCESS;
+     }
+ 
++    HcclResult HcclCommunicator::AicpuResourceInit(const std::string &algName,
++        const AlgResourceResponse &algResource, const std::string &newTag, const rtStream_t &aicpuStream,
++        const HcclCMDType opType, bool isCustom)
++    {
++        HCCL_RUN_INFO("[%s] start to init group[%s] aicpu resources newTag[%s] local rankId[%u]",
++                      __func__, identifier_.c_str(), newTag.c_str(), userRank_);
++        isContextLaunched_ = true;
++        CHK_RET(BuildOpResParam(algName, algResource, newTag, opType)); // 构建context结构体
++        std::string kernelName = "RunAicpuKfcResInitV2";
++        // 在这里构建suspending状态码的HDC通道初始化，并且在host侧进行init
++        // （这个主要是针对hcomId；对算子通信域的复用；也就是多个算子复用（tag+Identifier）这个通信域的情况）
++        CHK_RET(AiCpuKernelLaunch(aicpuStream, reinterpret_cast<u64>(opResDevicePara_.ptr()), kernelName));
++        newTagResAlloced_.insert(newTag);
++        // 图模多档位场景，需要保证执行序上优先下资源初始化的kernel
++        CHK_RET(hcclStreamSynchronize(aicpuStream));
++
++        if (IsEnableCustom()) {
++            struct InitTask
++            {
++                u64 context; // A矩阵地址，通信在前时为sendbuffer
++                bool isCustom;
++            };
++            InitTask customInitTask = {0};
++            customInitTask.context = reinterpret_cast<u64>(opResDevicePara_.ptr());
++            customInitTask.isCustom = true;
++            CHK_RET(BuildCustomOpResParam());
++            uint64_t customBeginTime = hrtMsprofSysCycleTime();
++            const std::string customProfName = "hcomAicpuCustomInit";
++            u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
++                (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
++            CHK_RET(AicpuAclKernelLaunch(aicpuStream, reinterpret_cast<void *>(&customInitTask),
++                sizeof(customInitTask), binCustomHandle_, kernelName, true, timeOut));
++            uint64_t customEndTime = hrtMsprofSysCycleTime();
++            s32 customthreadId = SalGetTid();
++            CHK_RET(ProfilingManagerPub::CallMsprofReportNodeInfo(customBeginTime, customEndTime, customProfName,
++                                                                  customthreadId));
++            CHK_RET(hcclStreamSynchronize(aicpuStream));
++        }
++
++        return HCCL_SUCCESS;
++    }
++
+     HcclResult HcclCommunicator::AiCpuKernelLaunch(const rtStream_t stm, u64 addr, const std::string &kernelName)
+     {
+         uint64_t beginTime = hrtMsprofSysCycleTime();
+         const std::string profName = "hcomAicpuInit";
+-        rtAicpuArgsEx_t argsInfo;
+-        struct ApiParamDef
++        struct InitTask
+         {
+-            u64 commContext;
++            u64 context; // A矩阵地址，通信在前时为sendbuffer
+             bool isCustom;
+-            char kernelName[64] = "";
+-            char soName[64] = "libccl_kernel.so";
+-            char opName[64] = "HcclAicpuOp";
+         };
+-        struct ApiParamDef apiParam;
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParam.kernelName, sizeof(apiParam.kernelName), kernelName.c_str(), kernelName.length() + 1));
+-        apiParam.commContext = static_cast<uint64_t>(addr);
+-        apiParam.isCustom = false;
+-
+-        if (mc2DeviceMem_.ptr() == nullptr) {
+-            CHK_RET(DeviceMem::alloc(mc2DeviceMem_, sizeof(apiParam)));
+-        }
+-        CHK_RET(hrtMemSyncCopy(mc2DeviceMem_.ptr(), sizeof(apiParam), &apiParam, sizeof(apiParam),
+-                               HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+-
+-        argsInfo.args = mc2DeviceMem_.ptr();
+-        argsInfo.hostInputInfoPtr = nullptr;
+-        argsInfo.kernelOffsetInfoPtr = nullptr;
+-        argsInfo.argsSize = sizeof(apiParam);
+-        argsInfo.hostInputInfoNum = 0;
+-        argsInfo.kernelOffsetInfoNum = 0;
+-        argsInfo.soNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.soName) -
+-                                                          reinterpret_cast<const char *>(&apiParam));
+-
+-        argsInfo.kernelNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.kernelName) -
+-                                                              reinterpret_cast<const char *>(&apiParam));
+-        argsInfo.isNoNeedH2DCopy = true;
+-        CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, apiParam.opName, 1, &argsInfo, nullptr, stm, 0));
++        InitTask initTask = {0};
++        initTask.context = addr;
++        initTask.isCustom = false;
++        u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
++            (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
++        CHK_RET(AicpuAclKernelLaunch(stm, reinterpret_cast<void *>(&initTask), sizeof(initTask),
++            binHandle_, kernelName, true, timeOut));
+         uint64_t endTime = hrtMsprofSysCycleTime();
+         s32 threadId = SalGetTid();
+         CHK_RET(ProfilingManagerPub::CallMsprofReportNodeInfo(beginTime, endTime, profName, threadId));
+         return HCCL_SUCCESS;
+     }
+ 
+-    HcclResult HcclCommunicator::InitKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
+-                                                       void *initTaskAddr, u32 initTaskSize, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle)
+-    {
+-        aclError ret = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName:%s",
+-                               ret, kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-
+-        ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName:%s", ret, kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-
+-        aclrtParamHandle paraHandle;
+-        ret = aclrtKernelArgsAppend(argsHandle, initTaskAddr, initTaskSize, &paraHandle); // 假设opResPara_为结构体参数
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size %u, kernelName:%s", ret,
+-                               initTaskSize, kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-
+-        ret = aclrtKernelArgsFinalize(argsHandle);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName:%s", ret,
+-                               kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-        return HCCL_SUCCESS;
+-    }
+-
+-    HcclResult HcclCommunicator::TaskCommKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
+-                                                           void *contextAddr, u32 contextSize, void *tilingDataPtr, u32 tilingDataSize, aclrtFuncHandle &funcHandle,
+-                                                           aclrtArgsHandle &argsHandle)
+-    {
+-        aclError ret = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName:%s",
+-                               ret, kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-
+-        ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName:%s", ret, kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-        // 拼凑aicpu侧KFCTaskComm结构体
+-        // 1、先存放HcclOpResParam的context指针
+-        aclrtParamHandle paraHandle;
+-        ret = aclrtKernelArgsAppend(argsHandle, contextAddr, contextSize, &paraHandle); // 假设opResPara_为结构体参数
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size %u, kernelName:%s", ret,
+-                               contextSize, kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-        // 2、再将OpTilingData的tilingData指针拼凑，并将tilingData的hostMem给rts进行H2D
+-        void *dataAddr;
+-        ret = aclrtKernelArgsAppendPlaceHolder(argsHandle, &paraHandle);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsAppendPlaceHolder]errNo[0x%016llx] args append place holder failed",
+-                               ret),
+-                    HCCL_E_RUNTIME);
+-
+-        ret = aclrtKernelArgsGetPlaceHolderBuffer(argsHandle, paraHandle, tilingDataSize, &dataAddr);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsGetPlaceHolderBuffer]errNo[0x%016llx] args get place holder buffer failed,"
+-                               "tilingDataSize %u",
+-                               ret, tilingDataSize),
+-                    HCCL_E_RUNTIME);
+-        CHK_SAFETY_FUNC_RET(memcpy_s(dataAddr, tilingDataSize, tilingDataPtr, tilingDataSize));
+-
+-        ret = aclrtKernelArgsFinalize(argsHandle);
+-        CHK_PRT_RET(ret != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName:%s", ret,
+-                               kernelName.c_str()),
+-                    HCCL_E_RUNTIME);
+-        return HCCL_SUCCESS;
+-    }
+-
+-    HcclResult HcclCommunicator::AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size, aclrtBinHandle binHandle,
+-                                                      const std::string &kernelName, bool isInitTask, void *tilingDataPtr, u32 tilingDataSize)
+-    {
+-        if (binHandle == nullptr) {
+-            HCCL_ERROR("binHandle is nullptr, no need to launch aicpu kernel, binHandle[%p], customHandle[%p]", binHandle_,
+-                       binCustomHandle_);
+-            return HCCL_E_PTR;
+-        }
+-
+-        aclrtFuncHandle funcHandle;
+-        aclrtArgsHandle argsHandle;
+-        HcclResult ret;
+-        if (isInitTask) {
+-            ret = InitKernelArgsPrepare(binHandle, kernelName, addr, size, funcHandle, argsHandle);
+-            CHK_PRT_RET(ret != HCCL_SUCCESS,
+-                        HCCL_ERROR("[InitKernelArgsPrepare]errNo[0x%016llx]init args prepare failed, kernelName:%s", ret,
+-                                   kernelName.c_str()),
+-                        HCCL_E_RUNTIME);
+-        } else {
+-            ret = TaskCommKernelArgsPrepare(binHandle, kernelName, addr, size, tilingDataPtr, tilingDataSize, funcHandle,
+-                                            argsHandle);
+-            CHK_PRT_RET(ret != HCCL_SUCCESS,
+-                        HCCL_ERROR("[TaskCommKernelArgsPrepare]errNo[0x%016llx]taskCOmm args prepare failed, kernelName:%s", ret,
+-                                   kernelName.c_str()),
+-                        HCCL_E_RUNTIME);
+-        }
+-
+-        aclrtLaunchKernelCfg cfg;
+-        aclrtLaunchKernelAttr attr;
+-        attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+-        attr.value.timeout = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime : (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
+-        cfg.numAttrs = 1;
+-        cfg.attrs = &attr;
+-        constexpr u32 blockDim = 1;
+-        aclError aclRet = aclrtLaunchKernelWithConfig(funcHandle, blockDim, stm, &cfg, argsHandle, nullptr);
+-        CHK_PRT_RET(aclRet != ACL_SUCCESS,
+-                    HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed", ret), HCCL_E_OPEN_FILE_FAILURE);
+-        return HCCL_SUCCESS;
+-    }
+-
+     HcclResult HcclCommunicator::AicpuKfcTilingDataLaunch(const OpParam &opParam, const HcclCMDType &opType,
+                                                           const DeviceMem &deviceContext, const std::string &kernelName, const AicpuOpTiling opTilingInfo)
+     {
+@@ -6823,142 +6758,39 @@ namespace hccl
+             uint64_t gatherOut;     // 算子recvbuffer地址
+             uint64_t context;       // 通信资源准备的地址
+             uint64_t workspace;     // 消息区地址
+-            uint64_t tilingDataPtr; // tilingData地址
+-            uint8_t tilingData[2048];
+-            char soName[32] = "libccl_kernel.so";
+-            char kernelName[32] = "";
+-            char opName[32] = "HcclAicpuOp";
+-            char hostInputInfo[16];
+         };
+-
+         struct ApiParamDef apiParam;
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParam.kernelName, sizeof(apiParam.kernelName), kernelName.c_str(), kernelName.length() + 1));
+         apiParam.x1 = reinterpret_cast<uint64_t>(inputPtr);
+         apiParam.gatherOut = reinterpret_cast<uint64_t>(outputPtr);
+         apiParam.context = addr;
+         apiParam.workspace = (u64)workSpace_.ptr();
+-        CHK_SAFETY_FUNC_RET(memcpy_s(apiParam.tilingData, sizeof(apiParam.tilingData), tilingDataPtr,
+-                                     tilingDataSize));
+ 
+-        rtAicpuArgsEx_t argsInfo;
+-
+-        argsInfo.args = (void *)&apiParam;
+-        apiParam.tilingDataPtr = reinterpret_cast<uint64_t>(apiParam.tilingData);
+-
+-        rtHostInputInfo_t *hostInfo = (rtHostInputInfo_t *)apiParam.hostInputInfo;
+-        hostInfo->addrOffset = 5 * sizeof(void *); // aclnn与aicore协定，addr地址偏移时5*(void*）
+-        hostInfo->dataOffset = 6 * sizeof(void *); // aclnn与aicore协定，data偏移6*(void*)
+-        argsInfo.hostInputInfoPtr = hostInfo;
+-        argsInfo.kernelOffsetInfoPtr = nullptr;
+-        argsInfo.argsSize = sizeof(apiParam);
+-        argsInfo.hostInputInfoNum = 1;
+-        argsInfo.kernelOffsetInfoNum = 0;
+-        argsInfo.soNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.soName) -
+-                                                          reinterpret_cast<const char *>(&apiParam));
+-
+-        argsInfo.kernelNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&apiParam.kernelName) -
+-                                                              reinterpret_cast<const char *>(&apiParam));
+-        argsInfo.isNoNeedH2DCopy = false;
+-
+-        CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, apiParam.opName, 1, &argsInfo, nullptr, stm, 0));
++        u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
++            (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
++        CHK_PRT(AicpuAclKernelLaunch(stm, reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
++            binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
++        HCCL_INFO("[HcclCommunicator][AicpuUnfoldKernelLaunch] exec succ.");
+         return HCCL_SUCCESS;
+     }
+ 
+-    HcclResult HcclCommunicator::AicpuUnfoldKernelLaunchV2(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+-                                                           void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode, const std::string &tag)
+-    {
+-        struct ApiParamDef
+-        {
+-            uint64_t context;
+-            uint64_t tilingDataPtr; // tilingData 地址
+-            char soName[32];
+-            char kernelName[32];
+-            char opName[32];
+-            char hostInputInfo[16];
+-            uint8_t tilingData[];
+-        };
+-
+-        u32 apiTilingDataSize = sizeof(struct ApiParamDef) + tilingDataSize;
+-        if (apiTilingDataMem_.ptr() == nullptr) {
+-            apiTilingDataMem_ = HostMem::alloc(TILINGDATA_BUF_SIZE);
+-            CHK_PRT_RET(apiTilingDataMem_.ptr() == nullptr,
+-                        HCCL_ERROR("[HcclCommunicator][AicpuUnfoldKernelLaunch] Alloc apiTilingDataMem_ failed!"),
+-                        HCCL_E_INTERNAL);
+-            std::string opName = "HcclAicpuOp";
+-            std::string soName = "libccl_kernel.so";
+-            struct ApiParamDef *apiParamTmp = static_cast<struct ApiParamDef *>(apiTilingDataMem_.ptr());
+-            CHK_SAFETY_FUNC_RET(
+-                memcpy_s(apiParamTmp->soName, sizeof(apiParamTmp->soName), soName.c_str(), soName.length() + 1));
+-            CHK_SAFETY_FUNC_RET(
+-                memcpy_s(apiParamTmp->opName, sizeof(apiParamTmp->opName), opName.c_str(), opName.length() + 1));
+-        }
+-        void *pytr;
+-        HostMem apiTilingDataMemTmp_;
+-        bool isNeedReAlloc = apiTilingDataSize > TILINGDATA_BUF_SIZE;
+-        if (isNeedReAlloc) {
+-            apiTilingDataMemTmp_ = HostMem::alloc(apiTilingDataSize);
+-            CHK_PRT_RET(apiTilingDataMemTmp_.ptr() == nullptr,
+-                        HCCL_ERROR("[HcclCommunicator][AicpuUnfoldKernelLaunch] Alloc apiTilingDataMemTmp_ failed!"),
+-                        HCCL_E_INTERNAL);
+-            HCCL_INFO("[HcclCommunicator][AicpuUnfoldKernelLaunch] apiTilingDataSize is larger than "
+-                      "the size of TILINGDATA_BUF_SIZE.");
+-            std::string opName = "HcclAicpuOp";
+-            std::string soName = "libccl_kernel.so";
+-            struct ApiParamDef *apiParamTmp = static_cast<struct ApiParamDef *>(apiTilingDataMemTmp_.ptr());
+-            CHK_SAFETY_FUNC_RET(
+-                memcpy_s(apiParamTmp->soName, sizeof(apiParamTmp->soName), soName.c_str(), soName.length() + 1));
+-            CHK_SAFETY_FUNC_RET(
+-                memcpy_s(apiParamTmp->opName, sizeof(apiParamTmp->opName), opName.c_str(), opName.length() + 1));
+-            pytr = apiTilingDataMemTmp_.range(0, apiTilingDataSize).ptr();
+-        } else {
+-            pytr = apiTilingDataMem_.range(0, apiTilingDataSize).ptr();
+-        }
+-        struct ApiParamDef *apiParam = static_cast<struct ApiParamDef *>(pytr);
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParam->kernelName, sizeof(apiParam->kernelName), kernelName.c_str(), kernelName.length() + 1));
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParam->tilingData, tilingDataSize, tilingDataPtr, tilingDataSize));
+-        apiParam->context = addr;
+-
+-        rtAicpuArgsEx_t argsInfo;
+-        argsInfo.args = (void *)apiParam;
+-        apiParam->tilingDataPtr = reinterpret_cast<uint64_t>(apiParam->tilingData);
+-        rtHostInputInfo_t *hostInfo = (rtHostInputInfo_t *)(apiParam->hostInputInfo);
+-        hostInfo->addrOffset = 1 * sizeof(void *);  // tiliingDataPtr, addr地址偏移时1*(void*）
+-        hostInfo->dataOffset = 16 * sizeof(void *); // tilingData，data偏移16*(void*)
+-        argsInfo.hostInputInfoPtr = hostInfo;
+-        argsInfo.kernelOffsetInfoPtr = nullptr;
+-        argsInfo.argsSize = apiTilingDataSize;
+-        argsInfo.hostInputInfoNum = 1;
+-        argsInfo.kernelOffsetInfoNum = 0;
+-        argsInfo.soNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&(apiParam->soName)) -
+-                                                          reinterpret_cast<const char *>(apiParam));
+-        argsInfo.kernelNameAddrOffset = static_cast<uint16_t>(reinterpret_cast<const char *>(&(apiParam->kernelName)) -
+-                                                              reinterpret_cast<const char *>(apiParam));
+-        argsInfo.timeout = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime : (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
+-        argsInfo.isNoNeedH2DCopy = false;
+-        CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, apiParam->opName, 1, &argsInfo, nullptr, stm,
+-                                               RT_KERNEL_USE_SPECIAL_TIMEOUT));
+-        HCCL_INFO("[HcclCommunicator][AicpuUnfoldKernelLaunchV2] exec succ.");
+-        return HCCL_SUCCESS;
+-    }
+-
+-    HcclResult HcclCommunicator::AicpuUnfoldKernelLaunchIsCustom(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
+-                                                                 void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode, const std::string &tag, bool isCustom)
++    HcclResult HcclCommunicator::AicpuUnfoldKernelLaunchV2(void *inputPtr, void *outputPtr, const rtStream_t stm,
++        u64 addr, void *tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
++        const std::string &tag, bool isCustom)
+     {
+         u64 context = addr;
+         HCCL_INFO("[HcclCommunicator]context[%p] tilingDataPtr[%p] tilingData[%p]", context,
+                   tilingDataPtr, tilingDataSize);
+ 
+         aclrtBinHandle binHandle = isCustom ? binCustomHandle_ : binHandle_;
+-        if (isCustom == true && binHandle == nullptr) {
+-            HCCL_ERROR("[AicpuUnfoldKernelLaunchIsCustom]custom task but custom switch is not open, please check.");
++        if (binHandle == nullptr) {
++            HCCL_ERROR("[AicpuUnfoldKernelLaunchV2]isCustom[%d] binHandle is nullptr, please check.", isCustom);
+             return HCCL_E_NOT_SUPPORT;
+         }
+-        CHK_PRT(AicpuAclKernelLaunch(stm, reinterpret_cast<void *>(&context), sizeof(context), binHandle, kernelName,
+-                                     false, tilingDataPtr, tilingDataSize));
+-        HCCL_INFO("[HcclCommunicator][AicpuUnfoldKernelLaunchIsCustom] exec succ.");
++        u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
++            (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
++        CHK_PRT(AicpuAclKernelLaunch(stm, reinterpret_cast<void *>(&context), sizeof(context),
++            binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
++        HCCL_INFO("[HcclCommunicator][AicpuUnfoldKernelLaunchV2] exec succ, isCustom[%d].", isCustom);
+         return HCCL_SUCCESS;
+     }
+ 
+diff --git a/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc b/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc
+index d1a7d2fd20..9b5c3fd194 100644
+--- a/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc
++++ b/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.cc
+@@ -18,6 +18,8 @@
+ #include "profiling_manager_pub.h"
+ #include "stream_utils.h"
+ #include "alg_env_config.h"
++#include "launch_aicpu.h"
++#include "launch_device.h"
+ 
+ namespace hccl {
+ using namespace std;
+@@ -73,6 +75,7 @@ HcclOneSidedService::~HcclOneSidedService()
+             }
+         }
+     }
++    UnloadAICPUKernel();
+ }
+ 
+ HcclResult HcclOneSidedService::IsUsedRdma(RankId remoteRankId, bool &useRdma)
+@@ -334,6 +337,7 @@ HcclResult HcclOneSidedService::InitAicpuUnfoldMode()
+     HCCL_INFO("[InitAicpuUnfoldMode] A3[%u] rdma[%u] aicpu[%u]", (deviceType == DevType::DEV_TYPE_910_93),
+         (netDevRdmaCtx_ != nullptr), aicpuUnfoldMode_);
+     if (aicpuUnfoldMode_) {
++        CHK_PRT(LoadAICPUKernel());
+         CHK_RET(CreateLaunchStream());
+         CHK_RET(AicpuResourceInit());       // 初始化service粒度资源
+         CHK_RET(AicpuInitKernelLaunch());
+@@ -344,6 +348,32 @@ HcclResult HcclOneSidedService::InitAicpuUnfoldMode()
+     return HCCL_SUCCESS;
+ }
+ 
++HcclResult HcclOneSidedService::LoadAICPUKernel(void)
++{
++    std::string jsonPath;
++    CHK_RET(GetKernelFilePath(jsonPath));
++    jsonPath += "ccl_kernel.json";
++    HcclResult ret = LoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
++        binHandle_, false);
++    CHK_PRT_RET(ret != HCCL_SUCCESS,
++        HCCL_ERROR("[LoadAICPUKernel]errNo[0x%016llx]load aicpu file fail, path[%s] optionType[%u]"
++        "cpuKernelMode[%u].", ret, jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0), ret);
++    return HCCL_SUCCESS;
++}
++
++void HcclOneSidedService::UnloadAICPUKernel(void)
++{
++    if (binHandle_ != nullptr) {
++        aclError aclRet = aclrtBinaryUnLoad(binHandle_);
++        if (aclRet != ACL_SUCCESS) {
++            HCCL_ERROR("[UnloadAICPUKernel]errNo[0x%016llx] unload binary from binHandel[%p] error.",
++            aclRet, binHandle_);
++        }
++        binHandle_ = nullptr;
++    }
++    return;
++}
++
+ HcclResult HcclOneSidedService::CreateConnection(RankId remoteRankId, const HcclRankLinkInfo &remoteRankInfo,
+     std::shared_ptr<HcclOneSidedConn> &tempConn)
+ {
+@@ -566,6 +596,7 @@ HcclResult HcclOneSidedService::DeInit()
+         CHK_RET(DisableMemAccess());
+         prepared_ = false;
+     }
++    UnloadAICPUKernel();
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -1002,41 +1033,26 @@ HcclResult HcclOneSidedService::ReportProfilingCommInfo(const Stream &kfcStream,
+ HcclResult HcclOneSidedService::AicpuInitKernelLaunch()
+ {
+     const u64 beginTime = hrtMsprofSysCycleTime();
+-    struct ApiParamDef
+     {
+-        u64 context = 0ULL; // 0 as nullptr
+-        bool isCustom = false;
++        std::unique_lock<std::mutex> guard{launchMutex_};
++        rtStream_t stream = launchStream_.ptr();
++
++        struct InitTask
++        {
++            u64 context; // A矩阵地址，通信在前时为sendbuffer
++            bool isCustom;
++        };
++        InitTask initTask = {0};
++        initTask.context = 0ULL;
++        initTask.isCustom = false;
++        u16 timeOut = 0;
+         char kernelName[64] = "RunAicpuKfcResInitV2";
+-        char soName[64] = "libccl_kernel.so";
+-        char opName[64] = "HcclAicpuOp";
+-    } apiParam;
+-
+-    if (initApiDeviceMem_.ptr() == nullptr) {
+-        CHK_RET(DeviceMem::alloc(initApiDeviceMem_, sizeof(apiParam)));
+-    }
+-    CHK_RET(hrtMemSyncCopy(initApiDeviceMem_.ptr(), initApiDeviceMem_.size(), &apiParam, sizeof(apiParam),
+-        HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
+-
+-    rtAicpuArgsEx_t argsInfo;
+-    argsInfo.args = initApiDeviceMem_.ptr();
+-    argsInfo.argsSize = sizeof(apiParam);
+-    argsInfo.hostInputInfoPtr = nullptr;
+-    argsInfo.kernelOffsetInfoPtr = nullptr;
+-    argsInfo.hostInputInfoNum = 0;
+-    argsInfo.kernelOffsetInfoNum = 0;
+-    argsInfo.soNameAddrOffset = offsetof(ApiParamDef, soName);
+-    argsInfo.kernelNameAddrOffset = offsetof(ApiParamDef, kernelName);
+-    argsInfo.isNoNeedH2DCopy = true;    // already given DeviceMem
+-
+-    {
+-        std::unique_lock<std::mutex> guard{g_launchMutex};
+-        rtStream_t stream = g_launchStream->ptr();
+-        CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, apiParam.opName, 1, &argsInfo, nullptr, stream, 0));
++        CHK_RET(AicpuAclKernelLaunch(stream, reinterpret_cast<void *>(&initTask), sizeof(initTask),
++                                        binHandle_, kernelName, true, timeOut));
+         CHK_RET(hcclStreamSynchronize(stream));
+         HCCL_RUN_INFO("[AicpuInitKernelLaunch] launch in launchStream[%u], execStream[%u]", g_launchStream->id(),
+             execStream_.id());
+     }
+-
+     const u64 endTime = hrtMsprofSysCycleTime();
+     s32 threadId = SalGetTid();
+     std::string profName = "OneSideCommAicpuInit";
+@@ -1181,76 +1197,11 @@ HcclResult HcclOneSidedService::AicpuKernelLaunch(const std::shared_ptr<HcclOneS
+ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &kernelName, void *tilingDataPtr,
+     u64 tilingDataSize, const rtStream_t stream)
+ {
+-    struct ApiParamDef
+-    {
+-        u64 commContext;    // not used by OneSideComm
+-        u64 tilingDataPtr;
+-        char kernelName[64];
+-        char soName[64];
+-        char opName[64];
+-        rtHostInputInfo_t hostInputInfo;
+-        u8 tilingData[];
+-    };
+-
+-    const u64 apiTilingDataSize = sizeof(struct ApiParamDef) + tilingDataSize;
+-    if (apiTilingDataMem_.ptr() == nullptr) {
+-        apiTilingDataMem_ = HostMem::alloc(std::max(apiTilingDataSize, TILINGDATA_BUF_SIZE));
+-        CHK_PRT_RET(apiTilingDataMem_.ptr() == nullptr,
+-            HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] Alloc apiTilingDataMem failed!"), HCCL_E_MEMORY);
+-        HCCL_DEBUG("[AicpuUnfoldKernelLaunchV2] Alloc apiTilingDataMem size[%llu]", apiTilingDataMem_.size());
+-        std::string soName = "libccl_kernel.so";
+-        std::string opName = "HcclAicpuOp";
+-        struct ApiParamDef *apiParamTmp = static_cast<struct ApiParamDef *>(apiTilingDataMem_.ptr());
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParamTmp->soName, sizeof(apiParamTmp->soName), soName.c_str(), soName.length() + 1));
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParamTmp->opName, sizeof(apiParamTmp->opName), opName.c_str(), opName.length() + 1));
+-    }
+-    if (apiTilingDataSize > apiTilingDataMem_.size()) {
+-        HCCL_INFO("[AicpuUnfoldKernelLaunchV2] Increase apiTilingDataMem from size[%llu] to apiTilingDataSize[%llu]",
+-            apiTilingDataMem_.size(), apiTilingDataSize);
+-        apiTilingDataMem_.free();
+-        apiTilingDataMem_ = HostMem::alloc(apiTilingDataSize);
+-        CHK_PRT_RET(apiTilingDataMem_.ptr() == nullptr,
+-            HCCL_ERROR("[AicpuUnfoldKernelLaunchV2] Increase apiTilingDataMem failed!"), HCCL_E_MEMORY);
+-        std::string soName = "libccl_kernel.so";
+-        std::string opName = "HcclAicpuOp";
+-        struct ApiParamDef *apiParamTmp = static_cast<struct ApiParamDef *>(apiTilingDataMem_.ptr());
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParamTmp->soName, sizeof(apiParamTmp->soName), soName.c_str(), soName.length() + 1));
+-        CHK_SAFETY_FUNC_RET(
+-            memcpy_s(apiParamTmp->opName, sizeof(apiParamTmp->opName), opName.c_str(), opName.length() + 1));
+-    }
+-
+-    void *apiParamPtr = apiTilingDataMem_.range(0, apiTilingDataSize).ptr();
+-    CHK_PTR_NULL(apiParamPtr);
+-    struct ApiParamDef *apiParam = static_cast<struct ApiParamDef *>(apiParamPtr);
+-    apiParam->commContext = 0ULL;   // nullptr
+-    apiParam->tilingDataPtr = reinterpret_cast<u64>(apiParam->tilingData);
+-    CHK_SAFETY_FUNC_RET(
+-        memcpy_s(apiParam->kernelName, sizeof(apiParam->kernelName), kernelName.c_str(), kernelName.length() + 1));
+-    CHK_SAFETY_FUNC_RET(
+-        memcpy_s(apiParam->tilingData, apiTilingDataMem_.size() - sizeof(struct ApiParamDef),
+-        tilingDataPtr, tilingDataSize));
+-
+-    rtAicpuArgsEx_t argsInfo;
+-    argsInfo.args = apiParamPtr;
+-    argsInfo.argsSize = apiTilingDataSize;
+-    rtHostInputInfo_t &hostInputInfo = apiParam->hostInputInfo;
+-    hostInputInfo.addrOffset = offsetof(ApiParamDef, tilingDataPtr);
+-    hostInputInfo.dataOffset = sizeof(ApiParamDef);
+-    argsInfo.hostInputInfoNum = 1;
+-    argsInfo.hostInputInfoPtr = &(apiParam->hostInputInfo);
+-    argsInfo.kernelOffsetInfoNum = 0;
+-    argsInfo.kernelOffsetInfoPtr = nullptr;
+-    argsInfo.soNameAddrOffset = offsetof(ApiParamDef, soName);
+-    argsInfo.kernelNameAddrOffset = offsetof(ApiParamDef, kernelName);
+-    const u32 timeOut = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
+-        GetInternalExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+-    argsInfo.timeout = timeOut + AICPU_KERNEL_TIMEOUT_INC;
+-    argsInfo.isNoNeedH2DCopy = false;
+-    CHK_RET(hrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU_KFC, apiParam->opName, 1, &argsInfo, nullptr, stream,
+-        RT_KERNEL_USE_SPECIAL_TIMEOUT));
++    u64 commContext = 0ULL;
++    u16 timeOut = static_cast<u16>((GetExternalInputHcclExecTimeoutSet() !=
++        HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ? GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME);
++    CHK_RET(AicpuAclKernelLaunch(stream, reinterpret_cast<void *>(&commContext),
++        sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
+     HCCL_DEBUG("[HcclOneSidedService][AicpuUnfoldKernelLaunchV2] exec succ.");
+     return HCCL_SUCCESS;
+ }
+diff --git a/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.h b/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.h
+index f267ffba1d..4a38cbc627 100644
+--- a/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.h
++++ b/src/domain/collective_communication/framework/communicator/impl/one_sided_service/hccl_one_sided_service.h
+@@ -125,6 +125,8 @@ private:
+ 
+     static HcclResult CreateLaunchStream();
+     HcclResult InitAicpuUnfoldMode();
++    HcclResult LoadAICPUKernel(void);
++    void UnloadAICPUKernel(void);
+     HcclResult AicpuResourceInit();
+     HcclResult ReportProfilingCommInfo(const Stream &kfcStream, const Stream &aicpuStream);
+     HcclResult AicpuInitKernelLaunch();
+@@ -175,6 +177,7 @@ private:
+     HcclOneSideCommResParam commResPara_;
+     DeviceMem commResParaDevice_;
+     DeviceMem execStreamContext_;
++    aclrtBinHandle binHandle_ = nullptr;
+ };
+ }
+ 
+diff --git a/src/domain/collective_communication/framework/device/framework/ccl_kernel.ini b/src/domain/collective_communication/framework/device/framework/ccl_kernel.ini
+index 5e4cb22780..de4a9f4197 100644
+--- a/src/domain/collective_communication/framework/device/framework/ccl_kernel.ini
++++ b/src/domain/collective_communication/framework/device/framework/ccl_kernel.ini
+@@ -6,4 +6,14 @@ opInfo.functionName=RunAicpuKfcResInitV2
+ [RunAicpuRpcSrvLaunchV2]
+ opInfo.opKernelLib=KFCKernel
+ opInfo.kernelSo=libccl_kernel.so
+-opInfo.functionName=RunAicpuRpcSrvLaunchV2
+\ No newline at end of file
++opInfo.functionName=RunAicpuRpcSrvLaunchV2
++
++[RunAicpuKfcResInit]
++opInfo.opKernelLib=AICPUKernel
++opInfo.kernelSo=libccl_kernel.so
++opInfo.functionName=RunAicpuKfcResInit
++
++[RunAicpuRpcSrvLaunch]
++opInfo.opKernelLib=KFCKernel
++opInfo.kernelSo=libccl_kernel.so
++opInfo.functionName=RunAicpuRpcSrvLaunch
+\ No newline at end of file
+-- 
+2.45.2.huawei.10
+

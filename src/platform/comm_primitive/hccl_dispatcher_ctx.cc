@@ -10,7 +10,7 @@
 
 #include "hccl_dispatcher_ctx.h"
 #include "dispatcher_ctx.h"
-static thread_local DispatcherCtxPtr gDispatcherCtx = nullptr;
+static DispatcherCtxPtr gDispatcherCtx = nullptr;
 HcclResult CreateDispatcherCtx(DispatcherCtxPtr *ctx, u32 devPhyId)
 {
     HCCL_INFO("CreateCtx");

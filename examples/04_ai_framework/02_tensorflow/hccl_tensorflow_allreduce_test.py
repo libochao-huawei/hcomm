@@ -1,3 +1,15 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+# -----------------------------------------------------------------------------------------------------------
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+# -----------------------------------------------------------------------------------------------------------
+
 import numpy as np
 import tensorflow as tf
 from hccl.split.api import *
@@ -7,10 +19,12 @@ from npu_bridge.hccl import hccl_ops
 from npu_bridge.estimator import npu_ops
 from npu_bridge.estimator.npu import util
 
+RANK_SIZE = 8
 
-def hccl_operator(rank_id, group, data):
+
+def hccl_operator(group: str, rank_size: int):
     tensors = {}
-    send_data = np.full(data, rank_id + 2, dtype=np.float32)
+    send_data = np.arange(rank_size, dtype=np.float32)
     allreduce_sum_output = hccl_ops.allreduce(send_data, "sum", group=group)
     tensors["allreduce_sum_output"] = allreduce_sum_output
 
@@ -39,7 +53,7 @@ def main():
         rank_id = get_rank_id()
         try:
             # 调用HCCL接口,下发集合通信算子
-            tensors = hccl_operator(rank_id, "hccl_world_group", 8)
+            tensors = hccl_operator("hccl_world_group", RANK_SIZE)
 
             # tf框架全局变量初始化
             init_var = tf.compat.v1.global_variables_initializer()

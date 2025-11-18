@@ -29,7 +29,8 @@ public:
 __aicore__ inline void AivBroadcastBig910B::WaitRecordSync(int32_t tag, uint32_t root)
 {
     int32_t targetRank = (block_idx < root) ? block_idx : (block_idx + 1);
-    bool ifPingpong = (tag % 2 == 0);
+    int32_t nowTag = tag >> TAG_MOVE_LEFT_BITS;
+    bool ifPingpong = (nowTag % 2 == 0);
     if ((rank_ < root && block_idx == rank_) || (rank_ > root && block_idx == rank_ - 1)){
         Record(tag, root, AivNotifyType::DataSignal, 0, ifPingpong);  // 告诉root数据拿过来了
         PipeBarrier<PIPE_ALL>();
@@ -133,7 +134,8 @@ __aicore__ inline void AivBroadcastBig910B::Process2Rank(
             CpGM2GM(outputGM + dataOffset, cclGMRoot + dataOffset, curCount);
         }
     }
-    bool ifPingpong = (tag % 2 == 0);
+    int32_t nowTag = tag >> TAG_MOVE_LEFT_BITS;
+    bool ifPingpong = (nowTag % 2 == 0);
     if (rank_ == root) {
         int32_t anotherRank = (root == 0) ? 1 : 0;
         if(block_idx == 0) {
@@ -162,7 +164,7 @@ __aicore__ inline void aiv_broadcast_910b_bigdata(KERNEL_ARGS_DEF)
     uint64_t countLeft = len;
     GM_ADDR curInput = input;    // 当前输入地址
     GM_ADDR curOutput = output;  // 当前输出地址
-    int32_t curTag = (tag << 15);
+    int32_t curTag = tag << TAG_MOVE_LEFT_BITS;
     while (countLeft > 0) {
         uint64_t curCount = countLeft > maxDataLength ? maxDataLength : countLeft;
         if(rankSize == 2){

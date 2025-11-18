@@ -94,7 +94,7 @@ HcclResult CollScatterRingFor91093Executor::CalcLevel2CommInfo(TransportMemType 
 
 HcclResult CollScatterRingFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollScatterRingFor91093Executor][KernelRun] starts.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] starts.", __func__);
     Stream& stream = const_cast<Stream&>(param.stream);
 
     CHK_RET(SalGetDataTypeSize(param.DataDes.dataType, perDataSize_));
@@ -130,6 +130,7 @@ HcclResult CollScatterRingFor91093Executor::KernelRunLevel2(const OpParam &param
     u32 level2RankSize = level2CommInfo_.localRankSize;
     u32 level2Rank = level2CommInfo_.localRank;
     subUserRankRootSupperPod_ = topoMatcher_->GetSubRootWithSuperPod(topoAttr_.userRank, param.root);
+
     if (level2RankSize > 1 && subUserRankRootSupperPod_ == topoAttr_.userRank) {
         u32 planeRootSupperPod = 0;
         CHK_RET(GetRankByUserRank(COMM_LEVEL2, COMM_INDEX_0, param.root, planeRootSupperPod));
@@ -137,15 +138,15 @@ HcclResult CollScatterRingFor91093Executor::KernelRunLevel2(const OpParam &param
         if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_NB, dispatcher_);
-            HCCL_INFO("scatter ring: using nonuniform-bruck algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_NB in COMM_LEVEL2", __func__);
         } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_NHR, dispatcher_);
-            HCCL_INFO("scatter ring: using nonuniform-hierarchical-ring algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_NHR in COMM_LEVEL2", __func__);
         } else {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
-            HCCL_INFO("scatter ring: using ring algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL2", __func__);
         }
 
         CHK_SMART_PTR_NULL(level2TempAlg);

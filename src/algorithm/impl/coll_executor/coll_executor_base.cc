@@ -43,6 +43,8 @@ HcclResult CollExecutorBase::SetAlgType(const AlgType algType)
             algType_.algoLevel2, l2Algo[0]);
         algType_.algoLevel2 = l2Algo[0];
     }
+    // 记录刷新后的算法类型到executor的描述中
+    desc_.algType = algType_;
     return HCCL_SUCCESS;
 }
 

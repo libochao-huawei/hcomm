@@ -17,6 +17,7 @@ CollReduceScatterMeshAivExecutor::CollReduceScatterMeshAivExecutor(const HcclDis
 {
     DMAReduceFlag_ = false;
     desc_.isAivMode = true;
+    desc_.deterministic = 0;
 }
  
 HcclResult CollReduceScatterMeshAivExecutor::CalcStreamNum(u32& streamNum)
@@ -74,9 +75,13 @@ HcclResult CollReduceScatterMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rank
     }
 
     u32 bestBlockDim = blockDim;
-    CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-        blockDim_, blockDim), HCCL_E_PARA);
+    CHK_PRT_RET(blockDim_ < rankSize,
+        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        blockDim_, rankSize), HCCL_E_PARA);
+
+    if (blockDim_ < blockDim) {
+        blockDim = blockDim_ / rankSize * rankSize;
+    }
 
     HCCL_INFO("[CollReduceScatterMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
         blockDim, blockDim_, bestBlockDim);
@@ -164,7 +169,7 @@ HcclResult CollReduceScatterMeshAivExecutor::Orchestrate(OpParam& param, AlgReso
  
 HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceScatterMeshAivExecutor][KernelRun]AllReduce aiv enter.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllReduce aiv enter.", __func__);
  
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);

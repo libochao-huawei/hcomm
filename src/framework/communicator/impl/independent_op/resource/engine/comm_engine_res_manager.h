@@ -20,8 +20,9 @@
 namespace hccl {
 class CommEngineResMgr {
 public:
+    CommEngineResMgr();
     HcclResult Init(uint32_t threadNum, uint32_t notifyNumPerThread, const std::string& commId,
-        const aclrtBinHandle binHandle);
+        const aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     HcclResult CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *thread);
     HcclResult CommAllocThreadResByStream(CommEngine engine,
@@ -32,11 +33,9 @@ public:
     HcclResult HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList);
     
 private:
-    HcclResult LoadAICPUKernel(void);
     std::unique_ptr<ThreadMgr> threadMgr_;
     std::unique_ptr<NotifyManager> notifyMgr_;
     std::mutex mtx_;
-    aclrtBinHandle binHandle_ = nullptr;
 };
 }
 #endif

@@ -56,6 +56,18 @@ DeviceMem DeviceMem::alloc(u64 size, bool level2Address)
     return mem;
 }
 
+HcclResult DeviceMem::alloc(DeviceMem &mem, u64 size, bool level2Address)
+{
+    void *ptr = nullptr;
+    HcclResult ret = hrtMalloc(&ptr, size, level2Address);
+    if (ret != HCCL_SUCCESS || ptr == nullptr) {
+        HCCL_ERROR("[DeviceMem][Alloc]rt_malloc error, ptr is nullptr, ret[%d], size[%llu Byte]", ret, size);
+        return ret;
+    }
+    mem = DeviceMem(ptr, size, true);
+    return ret;
+}
+
 void DeviceMem::free()
 {
     if (ptr_) {

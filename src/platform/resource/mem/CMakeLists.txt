@@ -17,14 +17,17 @@ set(src_list
 
 target_sources(hccl_plf PRIVATE
     ${src_list}
+    mem_mapping_manager_host.cc
 )
 
 target_sources(ccl_kernel_plf PRIVATE
     ${src_list}
+    mem_mapping_manager_device.cc
 )
 
 target_sources(ccl_kernel_plf_a  PRIVATE
     ${src_list}
+    mem_mapping_manager_device.cc
 )
 
 target_sources(hccd  PRIVATE

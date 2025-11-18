@@ -289,7 +289,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::GetAlltoAllvTmpRankSendRecvInfo(const 
 
 HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllDirectFullmesh][KernelRun] AllToAll fullmesh start.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllToAll fullmesh start.", __func__);
 
     // 准备数据
     CHK_RET(ActiveSlaveStreams(param.stream));
@@ -316,7 +316,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
     // 执行
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_2_ALL_V_DIRECT_FULL_MESH, dispatcher_);
-
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_2_ALL_V_DIRECT_FULL_MESH in COMM_COMBINE_ORDER", __func__);
     CHK_SMART_PTR_NULL(tempAlg);
 
     PrepareData prepareData;

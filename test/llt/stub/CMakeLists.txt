@@ -419,7 +419,7 @@ set(hccl_list_open
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy/zero_copy_address_mgr.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/zero_copy/zero_copy_address_mgr_host.cc
 
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/independent_op_channel_manager.cc
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/channel_manager.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/device/channel_aicpu_interface.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/hccl_api_data.cc
     ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/data_api/launch_context.cc

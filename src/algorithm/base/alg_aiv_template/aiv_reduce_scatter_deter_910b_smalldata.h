@@ -27,6 +27,12 @@ public:
  
     template <typename T>
     __aicore__ inline void Process(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize);
+
+    template <typename T>
+    __aicore__ inline void ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize);
+
+    template <typename T>
+    __aicore__ inline void ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize);
 };
  
 __aicore__ inline int64_t AivReduceScatterDeterSmall910B::GetDeterministicRankOffset(int64_t x)
@@ -144,13 +150,71 @@ __aicore__ inline void AivReduceScatterDeterSmall910B::Process(GM_ADDR input, GM
         }
     }
 }
- 
+
+template <typename T>
+__aicore__ inline void AivReduceScatterDeterSmall910B::ProcessSingleRanksizeCore(GM_ADDR input, GM_ADDR output, uint64_t len, 
+    int32_t tag, uint64_t bufferSize)
+{
+    int64_t count = len;
+    int64_t allCount = count * rankSize_;
+    int64_t blockNumPerGroup = rankSize_;
+    int64_t x = block_idx % blockNumPerGroup;
+    int64_t flagOffsetBasic = seperateOffset + BASE_FLAG_OFFSET * AIV_REDUCE_SCATTER_DETER_910B_SMALLDATA;
+
+    uint32_t flagOffsetBase = ((tag % 2 == 0) ? 0 : 6 * rankSize_ * FLAG_SIZE) + flagOffsetBasic;
+    uint32_t dataOffset = (tag % 2 == 0) ? AIV_INIT_OFFSET : AIV_PING_PONG_SIZE;
+
+    __gm__ T *inputGM = (__gm__ T *)input;
+    __gm__ T *cclGMSelf = (__gm__ T *)(GM_IN[rank_] + dataOffset);
+    __gm__ T *cclGMOther = (__gm__ T *)(GM_IN[x] + dataOffset);
+    __gm__ T *outputGM = (__gm__ T *)output;
+
+    int64_t flagOffset1st = flagOffsetBase + x * FLAG_SIZE;
+    int64_t flagOffset2st = flagOffsetBase + (rankSize_ + x) * FLAG_SIZE;
+
+    // 先从input拷贝到cclbuffer
+    CpGM2GM(cclGMSelf + x * count, inputGM + x * count, count);
+    PipeBarrier<PIPE_ALL>();
+    SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + flagOffsetBase + block_idx * FLAG_SIZE), localSetTensor, tag);
+
+    // 拷贝cclbuffer到cllbuffer后半部分, 并进行reduce
+    WaitSignalValue((__gm__ int32_t *)(GM_OUT[x] + flagOffsetBase + rank_ * FLAG_SIZE), localCheckTensor, tag);
+    CpGM2GM(cclGMSelf + allCount + x * count, cclGMOther + rank_ * count, count);
+    PipeBarrier<PIPE_ALL>();
+    GatherReduce(x, count, tag, cclGMSelf+allCount, flagOffset2st);
+    PipeBarrier<PIPE_ALL>();
+
+    // 拷贝cclbuffer到output
+    if (x == rank_) {
+        int64_t flagOffsetLast = flagOffsetBase + (2 * rankSize_ - 1) * FLAG_SIZE;
+        if (rankSize_ >= DETERMINISTIC_RANKSIZE) {
+            if (rankSize_ < 5) {
+                flagOffsetLast = flagOffsetBase + (rankSize_ + 2) * FLAG_SIZE + rankSize_ * 2 * FLAG_SIZE;
+            } else {
+                flagOffsetLast = flagOffsetBase + (rankSize_ + 4) * FLAG_SIZE + rankSize_ * 4 * FLAG_SIZE;
+            }
+        }
+        WaitSignalValue((__gm__ int32_t *)(GM_OUT[x] + flagOffsetLast), localCheckTensor, tag);
+        CpGM2GM(outputGM, cclGMSelf + allCount, count);
+    }
+}
+
+template <typename T>
+__aicore__ inline void AivReduceScatterDeterSmall910B::ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, uint64_t bufferSize)
+{
+    if (blockdim_ == rankSize_){
+        ProcessSingleRanksizeCore<T>(input, output, len, tag, bufferSize);
+    }else{
+        Process<T>(input, output, len, tag, bufferSize);
+    }
+}
+
 template <typename T>
 __aicore__ inline void aiv_reduce_scatter_deter_910b_smalldata(KERNEL_ARGS_DEF)
 {
     AivReduceScatterDeterSmall910B op;
     op.Init(KERNEL_CLASS_INIT, false);
     op.HeadCounter();
-    op.Process<T>(input, output, len, tag, bufferSize);
+    op.ProcessProxy<T>(input, output, len, tag, bufferSize);
     op.TailCounter();
 }

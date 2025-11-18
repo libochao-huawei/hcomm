@@ -553,14 +553,17 @@ HCCP_ATTRI_VISI_DEF int ra_get_tls_enable(struct ra_info *info, bool *tls_enable
 
 /**
  * @ingroup libcommon
- * @brief ra get sec random
+ * @brief get hccn cfg value
  * @param info [IN] see ra_info
- * @param value [OUT] sec random value
+ * @param key [IN] see enum hccn_cfg_key
+ * @param value [IN/OUT] corresponding key value
+ * @param value_len [IN/OUT] value len, in_value_len should >= 2K
  * @see ra_init
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_get_sec_random(struct ra_info *info, uint32_t *value);
+HCCP_ATTRI_VISI_DEF int ra_get_hccn_cfg(struct ra_info *info, enum hccn_cfg_key key,
+    char *value,unsigned int *value_len);
 
 /**
  * @ingroup libinit

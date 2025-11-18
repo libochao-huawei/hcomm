@@ -61,11 +61,7 @@ HcclResult PetersonLock::AllocDeviceMem()
         return HCCL_E_INTERNAL;
     }
 
-    devMem_ = DeviceMem::alloc(size_);
-    if (devMem_.ptr() == nullptr) {
-        HCCL_ERROR("[PetersonLock][AllocDeviceMem] alloc device memory failed");
-        return HCCL_E_INTERNAL;
-    }
+    CHK_RET(DeviceMem::alloc(devMem_, size_));
 
     if (hrtMemSet(devMem_.ptr(), devMem_.size(), devMem_.size()) != HCCL_SUCCESS) {
         HCCL_ERROR("[PetersonLock][AllocDeviceMem] memset device memory failed");

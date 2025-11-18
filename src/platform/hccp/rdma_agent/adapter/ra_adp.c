@@ -68,6 +68,8 @@ struct rs_ops {
     int (*mr_dereg)(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, char *addr);
     int (*register_mr)(unsigned int phy_id, unsigned int rdev_index, struct rdma_mr_reg_info *mr_reg_info,
         void **mr_handle);
+    int (*typical_register_mr)(unsigned int phy_id, unsigned int rdev_index, struct rdma_mr_reg_info *mr_reg_info,
+        void **mr_handle);
     int (*remap_mr)(unsigned int phy_id, unsigned int rdev_index, struct mem_remap_info mem_list[],
         unsigned int mem_num);
     int (*typical_deregister_mr)(unsigned int phy_id, unsigned int dev_index, unsigned long long addr);
@@ -119,6 +121,7 @@ struct rs_ops {
         unsigned int *num);
     int (*get_tls_enable)(unsigned int phy_id, bool *tls_enable);
     int (*get_sec_random)(int *value);
+    int (*get_hccn_cfg)(unsigned int phy_id, enum hccn_cfg_key key, char *value, unsigned int *value_len);
 };
 
 struct rs_ops g_ra_rs_ops = {
@@ -145,7 +148,8 @@ struct rs_ops g_ra_rs_ops = {
     .get_qp_status = rs_get_qp_status,
     .mr_reg = rs_mr_reg,
     .mr_dereg = rs_mr_dereg,
-    .register_mr = rs_typical_register_mr,
+    .register_mr = rs_typical_register_mr_v1,
+    .typical_register_mr = rs_typical_register_mr,
     .remap_mr = rs_remap_mr,
     .typical_deregister_mr = rs_typical_deregister_mr,
     .send_wr = rs_send_wr,
@@ -185,6 +189,7 @@ struct rs_ops g_ra_rs_ops = {
     .get_cqe_err_info_list = rs_get_cqe_err_info_list,
     .get_tls_enable = rs_get_tls_enable,
     .get_sec_random = rs_drv_get_random_num,
+    .get_hccn_cfg = rs_get_hccn_cfg,
 };
 
 struct hdc_ops g_ra_hdc_ops = {
@@ -945,7 +950,7 @@ STATIC int ra_rs_mr_dereg(char *in_buf, char *out_buf, int *out_len, int *op_res
     return 0;
 }
 
-STATIC int ra_rs_typical_mr_reg(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
+STATIC int ra_rs_typical_mr_reg_v1(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
 {
     union op_typical_mr_reg_data *reg_mr_data = (union op_typical_mr_reg_data *)(in_buf + sizeof(struct msg_head));
     struct rdma_mr_reg_info mr_reg_info = { 0 };
@@ -967,6 +972,33 @@ STATIC int ra_rs_typical_mr_reg(char *in_buf, char *out_buf, int *out_len, int *
     reg_mr_data = (union op_typical_mr_reg_data *)(out_buf + sizeof(struct msg_head));
     reg_mr_data->rx_data.lkey = mr_reg_info.lkey;
     reg_mr_data->rx_data.rkey = mr_reg_info.rkey;
+
+    return 0;
+}
+
+STATIC int ra_rs_typical_mr_reg(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
+{
+    union op_typical_mr_reg_data *reg_mr_data = (union op_typical_mr_reg_data *)(in_buf + sizeof(struct msg_head));
+    struct rdma_mr_reg_info mr_reg_info = { 0 };
+    struct ibv_mr *ra_rs_mr_handle = NULL;
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union op_typical_mr_reg_data), sizeof(struct msg_head),
+        rcv_buf_len, op_result);
+
+    mr_reg_info.addr = reg_mr_data->tx_data.mr_reg_attr.addr;
+    mr_reg_info.len = reg_mr_data->tx_data.mr_reg_attr.len;
+    mr_reg_info.access = reg_mr_data->tx_data.mr_reg_attr.access;
+    *op_result = g_ra_rs_ops.typical_register_mr(reg_mr_data->tx_data.phy_id, reg_mr_data->tx_data.rdev_index,
+        &mr_reg_info, (void **)&ra_rs_mr_handle);
+    if (*op_result != 0) {
+        hccp_err("reg_mr failed ret[%d].", *op_result);
+        return 0;
+    }
+
+    reg_mr_data = (union op_typical_mr_reg_data *)(out_buf + sizeof(struct msg_head));
+    reg_mr_data->rx_data.lkey = mr_reg_info.lkey;
+    reg_mr_data->rx_data.rkey = mr_reg_info.rkey;
+    reg_mr_data->rx_data.addr = (uint64_t)(uintptr_t)ra_rs_mr_handle;
 
     return 0;
 }
@@ -2058,6 +2090,23 @@ STATIC int ra_rs_get_sec_random(char *in_buf, char *out_buf, int *out_len, int *
     return 0;
 }
 
+STATIC int ra_rs_get_hccn_cfg(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
+{
+    union op_get_hccn_cfg_data *op_data_ret = (union op_get_hccn_cfg_data *)(out_buf + sizeof(struct msg_head));
+    union op_get_hccn_cfg_data *op_data = (union op_get_hccn_cfg_data *)(in_buf + sizeof(struct msg_head));
+
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union op_get_hccn_cfg_data), sizeof(struct msg_head), rcv_buf_len,
+        op_result);
+
+    op_data_ret->rx_data.value_len = HCCN_CFG_MSG_DATA_LEN;
+    *op_result = g_ra_rs_ops.get_hccn_cfg(op_data->tx_data.phy_id, op_data->tx_data.key, op_data_ret->rx_data.value,
+        &op_data_ret->rx_data.value_len);
+    if (*op_result != 0) {
+        hccp_err("get hccn cfg failed, ret %d", *op_result);
+    }
+    return 0;
+}
+
 #define US_PRE_SECOND 1000000
 #define US_PRE_MSECOND 1000
 #define MS_PRE_SECOND 1000
@@ -2141,6 +2190,7 @@ struct ra_op_handle g_ra_op_handle[] = {
     {RA_RS_QP_INFO, ra_rs_get_qp_info, sizeof(union op_qp_info_data)},
     {RA_RS_MR_REG, ra_rs_mr_reg, sizeof(union op_mr_reg_data)},
     {RA_RS_MR_DEREG, ra_rs_mr_dereg, sizeof(union op_mr_dereg_data)},
+    {RA_RS_TYPICAL_MR_REG_V1, ra_rs_typical_mr_reg_v1, sizeof(union op_typical_mr_reg_data)},
     {RA_RS_TYPICAL_MR_REG, ra_rs_typical_mr_reg, sizeof(union op_typical_mr_reg_data)},
     {RA_RS_REMAP_MR, ra_rs_remap_mr, sizeof(union op_remap_mr_data)},
     {RA_RS_TYPICAL_MR_DEREG, ra_rs_typical_mr_dereg, sizeof(union op_typical_mr_dereg_data)},
@@ -2200,6 +2250,7 @@ struct ra_op_handle g_ra_op_handle[] = {
 #endif
     {RA_RS_GET_TLS_ENABLE, ra_rs_get_tls_enable, sizeof(union op_get_tls_enable_data)},
     {RA_RS_GET_SEC_RANDOM, ra_rs_get_sec_random, sizeof(union op_get_sec_random_data)},
+    {RA_RS_GET_HCCN_CFG, ra_rs_get_hccn_cfg, sizeof(union op_get_hccn_cfg_data)},
     {RA_RS_ASYNC_HDC_SESSION_CONNECT, ra_rs_async_hdc_session_connect, sizeof(union op_async_hdc_connect_data)},
     {RA_RS_ASYNC_HDC_SESSION_CLOSE, ra_rs_async_hdc_session_close, sizeof(union op_async_hdc_close_data)},
 };
@@ -2257,20 +2308,20 @@ int ra_handle(struct ra_hdc_op_sec *op_sec, char *recv_buf, int rcv_buf_len, cha
     int num = sizeof(g_ra_op_handle) / sizeof(g_ra_op_handle[0]);
 
     ret = ra_check_param(recv_buf, rcv_buf_len, send_buf, snd_buf_len, &param_check_ret);
-    CHK_PRT_RETURN(param_check_ret != 0 || ret != 0, hccp_err("ra param check fail. param check ret:[%d]"
+    CHK_PRT_RETURN(param_check_ret != 0 || ret != 0, hccp_err("ra param check failed. param check ret:[%d]"
         "function call ret:[%d]", param_check_ret, ret), ret);
 
     ra_get_op_right(op_sec, recv_msg_head->opcode, recv_msg_head->async_req_id, &op_right);
     CHK_PRT_RETURN(op_right != HAVE_OP_RIGHT, ret = op_msg_err(send_buf, recv_msg_head, snd_buf_len, op_right), ret);
 
     *send_buf = (char *)calloc(sizeof(char), recv_msg_head->msg_data_len + sizeof(struct msg_head));
-    CHK_PRT_RETURN(*send_buf == NULL, hccp_err("calloc fail."), -ENOMEM);
+    CHK_PRT_RETURN(*send_buf == NULL, hccp_err("calloc failed."), -ENOMEM);
 
     for (i = 0; i < num; i++) {
         if (g_ra_op_handle[i].opcode == recv_msg_head->opcode) {
             ret = g_ra_op_handle[i].op_handle(recv_buf, *send_buf, snd_buf_len, &op_ret, rcv_buf_len);
             if (ret) {
-                hccp_err("ra handle fail. ret:[%d]", ret);
+                hccp_err("ra handle failed. ret:[%d]", ret);
                 goto out;
             }
             msg_head_build_up_hw(*send_buf, recv_msg_head, op_ret, recv_msg_head->msg_data_len);

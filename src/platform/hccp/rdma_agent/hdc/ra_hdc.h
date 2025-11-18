@@ -134,6 +134,19 @@ union op_get_sec_random_data {
     } rx_data;
 };
 
+union op_get_hccn_cfg_data {
+    struct {
+        unsigned int phy_id;
+        enum hccn_cfg_key key;
+        unsigned int rsvd[RA_RSVD_NUM_4];
+    } tx_data;
+    struct {
+        char value[HCCN_CFG_MSG_DATA_LEN];
+        unsigned int value_len;
+        unsigned int rsvd[RA_RSVD_NUM_4];
+    } rx_data;
+};
+
 union op_hdc_close_data {
     struct {
         unsigned int phy_id;
@@ -226,4 +239,5 @@ int hdc_async_recv_pkt(struct hdc_async_info *async_info, unsigned int phy_id, v
 int ra_hdc_save_snapshot(unsigned int phy_id, enum save_snapshot_action action);
 int ra_hdc_restore_snapshot(unsigned int phy_id);
 int ra_hdc_get_sec_random(unsigned int phy_id, unsigned int *value);
+int ra_hdc_get_hccn_cfg(unsigned int phy_id, enum hccn_cfg_key key, char *value, unsigned int *value_len);
 #endif // RA_HDC_H

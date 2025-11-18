@@ -101,7 +101,7 @@ int llt_main(int argc, char *argv[])
 
     hccp_run_info("hccp init start!");
     ret = hccp_change_num_of_file();
-    CHK_PRT_RETURN(ret, hccp_err("hccp change limit of nofile fail, ret = %d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("hccp change limit of nofile failed, ret = %d", ret), ret);
 
 #ifdef CONFIG_CGROUP
     ret = hccp_add_to_cgroup();

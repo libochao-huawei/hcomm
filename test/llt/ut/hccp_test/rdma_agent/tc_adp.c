@@ -430,6 +430,11 @@ void tc_mr_reg()
     tc_common_test();
 
     tc_adp_env_init();
+    mocker((stub_fn_t)rs_typical_register_mr_v1, 1, 0);
+    add_test_msg(RA_RS_TYPICAL_MR_REG_V1, sizeof(union op_typical_mr_reg_data));
+    tc_common_test();
+
+    tc_adp_env_init();
     mocker((stub_fn_t)rs_typical_register_mr, 1, 0);
     add_test_msg(RA_RS_TYPICAL_MR_REG, sizeof(union op_typical_mr_reg_data));
     tc_common_test();

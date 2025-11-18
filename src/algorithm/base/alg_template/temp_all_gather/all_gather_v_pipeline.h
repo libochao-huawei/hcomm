@@ -8,11 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
- #ifndef ALL_GATHER_V_PIPELINE_H
- #define ALL_GATHER_V_PIPELINE_H
- 
- #include "all_gather_v_pipeline_pub.h"
- namespace hccl {
- }  // namespace hccl
- 
- #endif /* * ALL_GATHER_V_PIPELINE_H */
+#ifndef ALL_GATHER_V_PIPELINE_H
+#define ALL_GATHER_V_PIPELINE_H
+
+#include "all_gather_v_pipeline_pub.h"
+namespace hccl {
+}  // namespace hccl
+
+#endif /* * ALL_GATHER_V_PIPELINE_H */

@@ -93,8 +93,7 @@ HcclResult TransportShmEvent::InitMem()
             CHK_PTR_NULL(outputShmMem_.ptr());
         }
         if (envelopeShmQue_.ptr() == nullptr) {
-            envelopeShmQue_ = DeviceMem::alloc(CALC_SHMENVELOPE_SIZE * sizeof(ShmEnvelopeQue));
-            CHK_PTR_NULL(envelopeShmQue_.ptr());
+            CHK_RET(DeviceMem::alloc(envelopeShmQue_, CALC_SHMENVELOPE_SIZE * sizeof(ShmEnvelopeQue)));
             std::unique_ptr<ShmEnvelopeQue> tempQue(new (std::nothrow) ShmEnvelopeQue());
             CHK_SMART_PTR_NULL(tempQue);
             CHK_RET(hrtDrvMemCpy(envelopeShmQue_.ptr(), envelopeShmQue_.size(), tempQue.get(), sizeof(ShmEnvelopeQue)));

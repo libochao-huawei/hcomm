@@ -35,7 +35,7 @@ private:
     /* *************** 算法编排 *************** */
     u64 CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize) override;
     HcclResult RunLoop(OpParam &param);
-    HcclResult KernelRun(const OpParam &param, ExecMem &execMem, bool isLastLoop);
+    HcclResult KernelRunWithLoop(const OpParam &param, ExecMem &execMem, bool isLastLoop);
 
     HcclResult KernelRunInterSuperPod(const OpParam &param, ExecMem &execMem);
 
@@ -50,8 +50,8 @@ private:
     HcclResult KernelRunInterServerPreProcess(const OpParam &param, ExecMem &execMem);
     HcclResult KernelRunInterServerPostProcess(const OpParam &param, ExecMem &execMem);
 
-    HcclResult NotifySdmaStreamStart();
-    HcclResult WaitSdmaStreamFinish();
+    HcclResult NotifyRdmaStreamStart();
+    HcclResult WaitRdmaStreamFinish();
 
     HcclResult CalExchangeRemoteRank(u32 &remoteRankSend, u32 &remoteRankRecv);
     HcclResult CalcDataSlices(u64 sliceSize, u32 rankSize, std::vector<Slice> &dataSegsSlice);
@@ -66,12 +66,12 @@ private:
     u32 level1RankSize_ = INVALID_VALUE_RANKSIZE;
     u32 level2RankSize_ = INVALID_VALUE_RANKSIZE;
 
-    Stream mainStream_; // RDMA+localcopy
+    Stream mainStream_; // SDMA+localcopy
     std::vector<Stream> subStreams_; 
-    Stream sdmaMainStream_;
+    Stream rdmaMainStream_;
     std::vector<Stream> sdmaSubStreams_;
-    std::shared_ptr<LocalNotify> notifyMainToSdma_;
-    std::shared_ptr<LocalNotify> notifySdmaToMain_;
+    std::shared_ptr<LocalNotify> notifyMainToRdma_;
+    std::shared_ptr<LocalNotify> notifyRdmaToMain_;
     std::vector<std::shared_ptr<LocalNotify>> notifySdmaMain_;
     std::vector<std::shared_ptr<LocalNotify>> notifySdmaSub_;
 

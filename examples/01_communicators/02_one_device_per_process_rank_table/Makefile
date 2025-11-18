@@ -47,7 +47,8 @@ all:
 
 # Test target
 test: 
-	mpirun -n 8 ./${TARGET}
+	export LD_LIBRARY_PATH=${MPI_LIB_DIR}:${LD_LIBRARY_PATH}; \
+	${MPI_HOME}/bin/mpirun -n 8 ./${TARGET}
 
 # Clean build artifacts
 clean:

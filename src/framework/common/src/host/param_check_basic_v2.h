@@ -11,8 +11,10 @@
 #ifndef PARAM_CHECK_PUB_BASIC_V2_H
 #define PARAM_CHECK_PUB_BASIC_V2_H
 
-#define HCCLV2_FUNC_RUN(func, socNamePtr, ...) \
+#define HCCLV2_FUNC_RUN(func, ...) \
     do { \
+        const char *socNamePtr = aclrtGetSocName(); \
+        CHK_PTR_NULL(socNamePtr); \
         if (IsSupportHCCLV2(socNamePtr)) { \
             return func; \
         } \

@@ -90,6 +90,7 @@ int Sample(void *arg)
     ACLCHECK(aclrtSynchronizeStream(stream));
 
     // 将 Device 侧集合通信任务结果拷贝到 Host，并打印结果
+    std::this_thread::sleep_for(std::chrono::seconds(device));
     void *resultHostBuf;
     ACLCHECK(aclrtMallocHost(&resultHostBuf, recvSize));
     ACLCHECK(aclrtMemcpy(resultHostBuf, recvSize, recvBuf, recvSize, ACL_MEMCPY_DEVICE_TO_HOST));

@@ -25,6 +25,19 @@ void tc_rs_ub_ctx_ext_jetty_create();
 void tc_rs_ub_ctx_rmem_import();
 void tc_rs_get_tp_info_list();
 void tc_rs_ub_ctx_drv_jetty_import();
+void tc_rs_ub_dev_cb_init();
+void tc_rs_ub_ctx_init();
+void tc_rs_ub_ctx_jfc_destroy();
+void tc_rs_ub_ctx_ext_jetty_delete();
+void tc_rs_ub_ctx_chan_create();
+void tc_rs_ub_ctx_deinit();
+void tc_rs_ub_init_seg_cb();
+void tc_rs_ub_ctx_lmem_reg();
+void tc_rs_ub_ctx_jfc_create_fail();
+void tc_rs_ub_ctx_init_jetty_cb();
+void tc_rs_ub_ctx_jetty_create_fail();
+void tc_rs_ub_ctx_jetty_import_fail();
+void tc_rs_ub_ctx_batch_send_wr_fail();
 #ifdef __cplusplus
 }
 #endif

@@ -84,6 +84,8 @@ void tc_ra_get_tls_enable();
 void tc_ra_get_sec_random();
 void tc_ra_rs_get_sec_random();
 void tc_ra_rs_get_tls_enable();
+void tc_ra_get_hccn_cfg();
+void tc_ra_rs_get_hccn_cfg();
 void tc_ra_save_snapshot_input();
 void tc_ra_save_snapshot_pre();
 void tc_ra_save_snapshot_post();

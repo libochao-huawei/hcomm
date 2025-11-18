@@ -152,6 +152,7 @@ void tc_rs_remap_mr();
 void tc_rs_roce_get_api_version();
 void tc_rs_get_tls_enable();
 void tc_rs_get_sec_random();
+void tc_rs_get_hccn_cfg();
 void tc_dl_hal_set_clear_user_config();
 
 void tc_rs_typical_register_mr();

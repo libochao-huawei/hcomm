@@ -60,6 +60,7 @@ HcclResult CollAlignedAllGatherDoubleRingFor91093Executor::DoubleRingAllGather(
     // 初始化executor
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALIGNED_ALL_GATHER_DOUBLE_RING, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALIGNED_ALL_GATHER_DOUBLE_RING in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(tempAlg);
     CHK_RET(tempAlg->Prepare(const_cast<HcomCollOpInfo *>(opInfo), topoAttr_.userRank, algResResp_->slaveStreams,
         algResResp_->notifiesMain, algResResp_->notifiesAux, rankOrders, userMemOutputSlicesOfDoubleRing));

@@ -88,8 +88,11 @@ STATIC int rs_ping_cb_get_ib_ctx_and_index(struct rdev *rdev_info, struct rs_pin
             }
             ping_cb->rdev_cb.ib_ctx = ib_ctx;
             ret = rs_ibv_query_gid(ib_ctx, ping_cb->rdev_cb.ib_port, ping_cb->rdev_cb.gid_idx, &ping_cb->rdev_cb.gid);
-            CHK_PRT_RETURN(ret != 0, hccp_err("query gid failed gid_idx %d, ret %d", ping_cb->rdev_cb.gid_idx, ret),
-                -EOPENSRC);
+            if (ret != 0) {
+                rs_ibv_close_device(ib_ctx);
+                hccp_err("query gid failed gid_idx %d, ret %d", ping_cb->rdev_cb.gid_idx, ret);
+                return -EOPENSRC;
+            }
             return 0;
         } else if (ret == -EEXIST) {
             rs_ibv_close_device(ib_ctx);
@@ -924,7 +927,7 @@ STATIC int rs_pong_post_send(struct rs_ping_ctx_cb *ping_cb, struct ibv_wc *wc, 
         return -EIO;
     }
     ret = memcpy_s((void *)(uintptr_t)send_list.addr, send_list.length,
-        (void *)(uintptr_t)recv_list.addr + RS_PING_PAYLOAD_HEADER_RESV_GRH,
+        (void *)(uintptr_t)(recv_list.addr + RS_PING_PAYLOAD_HEADER_RESV_GRH),
         wc->byte_len - RS_PING_PAYLOAD_HEADER_RESV_GRH);
     CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s buffer wc->byte_len:%u send_list.length:%u failed, ret:%d",
         wc->byte_len, send_list.length, ret), -ESAFEFUNC);

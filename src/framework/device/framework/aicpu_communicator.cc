@@ -28,6 +28,7 @@
 #include "externalinput_pub.h"
 #include "env_config.h"
 #include "config_log.h"
+#include "aicpu_one_side_service.h"
 #include "notify_manager.h"
 #include <iomanip>
 
@@ -962,6 +963,11 @@ HcclResult HcclCommAicpu::SetTransportMachinePara(MachinePara &machinePara, u32 
             (linkType == TransportLinkType::SIO) ? LinkTypeInServer::SIO_TYPE : LinkTypeInServer::HCCS_SW_TYPE;
     }
 
+    HCCL_INFO("%s success, group[%s], rankId[%u], linkAttribute[%x], localUserRank[%u], remoteWorldRank[%u], "
+        "remoteUserrank[%u], deviceLogicId[%d], localDeviceId[%d], deviceType[%d], newTag[%s], specifyLink[%d]",
+        __func__, identifier_.c_str(), rankId, machinePara.linkAttribute, machinePara.localUserrank,
+        machinePara.remoteWorldRank, machinePara.remoteUserrank, machinePara.deviceLogicId, machinePara.localDeviceId,
+        machinePara.deviceType, machinePara.tag.c_str(), machinePara.specifyLink);
     return HCCL_SUCCESS;
 }
 
@@ -1276,7 +1282,7 @@ HcclResult HcclCommAicpu::InitLinkRoce(HccltagRemoteResV2 *tagRes, u32 &rankId, 
 HcclResult HcclCommAicpu::InitRemoteTagRes(u32 &rankId, const ListCommon &head,
     const std::string &newTag, u32 notifyNum, TransportLinkType linkType)
 {
-    HCCL_INFO("[%s] Entry parse remote resource rankId[%u], group[%s], newTag[%s], head[%p], "
+    HCCL_RUN_INFO("[%s] Entry parse remote resource rankId[%u], group[%s], newTag[%s], head[%p], "
         "linkType[%d]", __func__,
         rankId, identifier_.c_str(), newTag.c_str(), &head, linkType);
     ListCommon *curList = reinterpret_cast<ListCommon *>(head.nextDevice);
@@ -1301,7 +1307,7 @@ HcclResult HcclCommAicpu::InitRemoteTagRes(u32 &rankId, const ListCommon &head,
     }
 
     if (tagRes == nullptr) {
-        HCCL_INFO("[%s]newTag[%s] not found, rankId[%u], head[%p], curList[%p], nextList[%llu], notifyNum[%u], "
+        HCCL_ERROR("[%s]newTag[%s] not found, rankId[%u], head[%p], curList[%p], nextList[%llu], notifyNum[%u], "
             "linkType[%d]",
             __func__, newTag.c_str(), rankId, &head, curList, curList->nextDevice, notifyNum, linkType);
         return HCCL_E_PARA;
@@ -1353,6 +1359,10 @@ HcclResult HcclCommAicpu::RefreshTransportsResForRank(const HcclOpResParam *comm
             __func__, rankId, &rankRelationResPtr->nextTagRes, rankRelationResPtr->nextTagRes.nextDevice,
             rankRelationResPtr->nextTagRes.preDevice, identifier_.c_str());
         CHK_RET(InitRemoteTagRes(rankId, rankRelationResPtr->nextTagRes, newTag, notifyNum, linkType));
+    } else {
+        HCCL_ERROR("[%s]could not find member in rankRelationRes list, rankId[%u], head[%p], nextDevice[%p]", __func__,
+            rankId, &rankRelationResPtr->nextTagRes, rankRelationResPtr->nextTagRes.nextDevice);
+        return HCCL_E_PARA;
     }
     HCCL_INFO("[%s] process success rankId[%u], group[%s], newTag[%s]",
         __func__, rankId, identifier_.c_str(), newTag.c_str());
@@ -1820,8 +1830,6 @@ HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &a
 
     UpdateOpRingBufferIdx();
     hcclOpExecIndex_ = CalculateOpExecIndex(opParam, localUserRank_);
-    // 算子下发信息记录在共享内存区
-    CHK_RET(aicpuShareData_.RecordOpInfo(newTag, opParam, hcclOpExecIndex_, localUserRank_, isCustom_));
     HcclResult ret = Orchestrate(newTag, algName, opParam, executor, *algResResponse, commParam);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclCommAicpu][ExecOp] executor op fail, tag[%s], algName[%s], identifier[%s]",
@@ -1859,6 +1867,7 @@ HcclResult HcclCommAicpu::RefreshAlgResponseTransportRes(const std::string &newT
     } else {
         // 提前清理所有tag的链路，避免冲突
         for (auto &resMapIt: resMap_) {
+            HCCL_RUN_INFO("[%s] clean roce resource of tag[%s].", __func__, resMapIt.first.c_str());
             CleanRoceResource(resMapIt.first, resMapIt.second, remoteRankPortMap, param);
         }
         // 对resMap中所有tag的transport link根据主备进行刷新
@@ -1888,7 +1897,7 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
         std::lock_guard<std::mutex> lock(preemptMutexForResMap_);
         iter = resMap_.find(newTag);
         if (iter == resMap_.end()) {
-            HCCL_INFO("[%s] Alloc resource for alg [%s]", __func__, algName.c_str());
+            HCCL_RUN_INFO("[%s] Alloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
             AlgResourceRequest resRequest;
             CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
             CHK_RET(AllocAlgResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
@@ -1898,6 +1907,7 @@ HcclResult HcclCommAicpu::GetAlgResponseRes(const std::string &newTag, const std
         }
     } else if (algName == "BatchSendRecv" || algName == "BatchSendRecvRetry") {
         AlgResourceRequest resRequest;
+        HCCL_INFO("[%s]IncreAlloc resource for alg[%s], tag[%s]", __func__, algName.c_str(), newTag.c_str());
         CHK_RET(CalcResRequest(algName, opParam, executor, resRequest));
         CHK_RET(IncreAllocTransportResource(newTag, opParam, commParam, resRequest, resMap_[newTag]));
     }
@@ -1995,6 +2005,9 @@ HcclResult HcclCommAicpu::UpdateProfReportStartSqeIdx()
 HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::string &algName, OpParam &param,
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, const HcclOpResParam *commParam)
 {
+    // 算子下发信息记录在共享内存区
+    CHK_RET(aicpuShareData_.RecordOpInfo(newTag, param, (isDeviceMode_ ? mc2OpIndex_ : hcclOpExecIndex_),
+                                         localUserRank_, isCustom_));
     CHK_RET(UpdateProfReportStartSqeIdx());
 
     // 每个算子都刷新一下profiling开关, 支持profiling从中间迭代采集
@@ -2544,6 +2557,7 @@ void HcclCommAicpu::NsCommStop()
         (void)InvokeKfcHandler(AicpuKfcHandlerType::kClearCommitTurn, {rpc_});
     }
     (void)aicpuHdc_.SetOpExecStatus(kfcStatusTransferD2H_, KfcStatus::kStopExec, KfcError::kNone, 0);
+    (void)HcclOneSideServiceAicpu::DisableAllStreamFunc();
     HCCL_RUN_INFO("[NsRecovery][AICPU]stopFunc Finished");
 }
 
@@ -2551,7 +2565,8 @@ void HcclCommAicpu::NsCommClean()
 {
     // 等待drv任务停止
     if ((DeviceQuery(devId_, ts::APP_ABORT_TERMINATE_FINISH, 0U) != HCCL_SUCCESS) ||
-        (CleanStreamFunc() != HCCL_SUCCESS) || (ResetSqBuff() != HCCL_SUCCESS)) {
+        (CleanStreamFunc() != HCCL_SUCCESS) || (HcclOneSideServiceAicpu::CleanAllStreamFunc() != HCCL_SUCCESS) || 
+        (ResetSqBuff() != HCCL_SUCCESS)) {
         (void)aicpuHdc_.SetOpExecStatus(kfcStatusTransferD2H_, KfcStatus::kError, KfcError::kExec, 0);
         HCCL_ERROR("[NsRecovery][AICPU]stream terminate failed");
         return;
@@ -3658,9 +3673,6 @@ std::string HcclCommAicpu::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
 
 void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer)
 {
-    if (isDeviceMode_) {
-        return;
-    }
     const u32 sqeNum = 50; // 打印当前位置的前50个task
     // 记录上一次打印的算子信息
     const AicpuOpInfo *lastOpInfo =
@@ -3730,7 +3742,11 @@ std::string HcclCommAicpu::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextB
         case RT_STARS_SQE_TYPE_SDMA:
             taskName = "SD"; // SDMA
             break;
+        case RT_STARS_SQE_TYPE_COND:
+            taskName = "CO";
+            break;
         default:
+            taskName = std::to_string(sqeType);
             break;
     }
 
@@ -4286,7 +4302,8 @@ void HcclCommAicpu::HandleCqeException(hccl::Stream &stream, bool isReadClear)
         bool isSdmaTypeErr = cqeStatus == dfx::CqeStatus::kCqeException &&
                              cqeCtx.sqeType == RT_STARS_SQE_TYPE_SDMA;
         bool isCompDataErr = cqeCtx.errorCode == RT_SDMA_COMPDATAERR ||
-                             cqeCtx.errorCode == RT_SDMA_COMPERR;
+                             cqeCtx.errorCode == RT_SDMA_COMPERR ||
+                             cqeCtx.errorCode == RT_SDMA_DATAERR;
         bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
 
         // 统一AICPU进程中进行故障上报
@@ -4321,14 +4338,16 @@ void HcclCommAicpu::ReportErrCqe(hccl::Stream &stream, ErrCqeContext &cqeCtx)
     bool isSdmaTypeErr = cqeStatus == dfx::CqeStatus::kCqeException &&
                          cqeCtx.sqeType == RT_STARS_SQE_TYPE_SDMA;
     bool isCompDataErr = cqeCtx.errorCode == RT_SDMA_COMPDATAERR ||
-                         cqeCtx.errorCode == RT_SDMA_COMPERR;
+                         cqeCtx.errorCode == RT_SDMA_COMPERR ||
+                         cqeCtx.errorCode == RT_SDMA_DATAERR;
     bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
 
-    // 发生notify wait超时才上报error message
+    // 发生sdma、notify_wait、place_holder、write_value错误，上报error message
     bool isComReportErrMesg = cqeStatus == dfx::CqeStatus::kCqeException &&
                              (cqeCtx.sqeType == RT_STARS_SQE_TYPE_SDMA ||
                               cqeCtx.sqeType == RT_STARS_SQE_TYPE_NOTIFY_WAIT ||
-                              cqeCtx.sqeType == RT_STARS_SQE_TYPE_PLACE_HOLDER);
+                              cqeCtx.sqeType == RT_STARS_SQE_TYPE_PLACE_HOLDER ||
+                              cqeCtx.sqeType == RT_STARS_SQE_TYPE_WRITE_VALUE);
 
     // 使能重执行且触发SDMA ERROR的场景，修改ERROR->RUN_WARNING
     LogControl retryLog(false, retryEnable_ && isSdmaCompDataErr);
@@ -4337,12 +4356,15 @@ void HcclCommAicpu::ReportErrCqe(hccl::Stream &stream, ErrCqeContext &cqeCtx)
     if (isComReportErrMesg && errMessageReport_) {
         // 记录关键信息，并通过D2H通信通道交给host内存
         GenTaskExceptionInfo(cqeCtx.sqeType, stream, head);
-        // 通知ts错误信息
-        if (isSdmaTypeErr && (!retryEnable_ || !isCompDataErr)) {
+        // 通知ts错误信息，触发非SDMA错误、不使能重执行触发SDMA错误、使能重执行触发无法重执行的错误时，进行故障上报
+        if (!isSdmaTypeErr || (isSdmaTypeErr && (!retryEnable_ || !isCompDataErr))) {
             HcclResult ret =
                 SendTaskExceptionByMBox(cqeCtx.errorCode);
+            HCCL_RUN_INFO("[HcclCommAicpu][SendTaskExceptionByMBox]group[%s]:"
+                "Try to send task exception by mailbox, errType[%u], errCode[%u], streamId[%d]",
+                identifier_.c_str(), cqeCtx.sqeType, cqeCtx.errorCode, stream.id());
             CHK_PRT_CONT(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[OpRetry][AICPU]group[%s]:Send task exception by mailBox failed.streamId[%d]",
+                HCCL_ERROR("[OpRetry][AICPU]group[%s]:Send task exception by mailBox failed, streamId[%d]",
                 identifier_.c_str(), stream.id()));
         }
         // 当前阶段， 每个通信域在plog打印一次，error message作为host上报，只打印首次
@@ -4494,7 +4516,7 @@ HcclResult HcclCommAicpu::RevertTransportsForSwitchNic(std::unordered_map<std::s
         return HCCL_SUCCESS;
     }
     for (auto &resMapIt: resMap_) {
-        HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], rank[%u], revert transport in algResResponse of tag[%s].",
+        HCCL_RUN_INFO("[HcclCommAicpu][%s] comm identifier[%s], rank[%u], revert transport in algResResponse of tag[%s].",
             __func__, identifier_.c_str(), localUserRank_, resMapIt.first.c_str());
         auto linkIt = reservedLinks.find(resMapIt.first);
         if (linkIt == reservedLinks.end()) {
@@ -4630,6 +4652,7 @@ HcclResult HcclCommAicpu::RefreshCommResponseTransportRes(std::map<u32, bool> &r
     OpParam param;
     // 提前清理所有tag的链路，避免冲突
     for (auto &resMapIt: resMap_) {
+        HCCL_RUN_INFO("[%s] clean roce resource of tag[%s].", __func__, resMapIt.first.c_str());
         CleanRoceResource(resMapIt.first, resMapIt.second, remoteRankPortMap, param);
     }
     for (auto &resMapIt: resMap_) {
@@ -4639,11 +4662,22 @@ HcclResult HcclCommAicpu::RefreshCommResponseTransportRes(std::map<u32, bool> &r
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::InitAicpuIndOp(const std::string &group)
+HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
-    identifier_ = group;
+    topoInfo_.deviceLogicId = commAicpuParam->deviceLogicId;
+    topoInfo_.devicePhyId = commAicpuParam->devicePhyId;
+    topoInfo_.deviceType = static_cast<DevType>(commAicpuParam->deviceType);
+    identifier_ = std::string(commAicpuParam->hcomId);
     threads_.reserve(LOCAL_STREAM_MAX_NUM);
     notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
+
+    CHK_RET(hrtSetWorkModeAicpu(true));
+    CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
+    CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
+    CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
+    CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_));
+    CHK_PTR_NULL(dispatcherCtx_);
+
     HCCL_RUN_INFO("%s group[%s] success!", __func__, identifier_.c_str());
     return HCCL_SUCCESS;
 }
@@ -4690,11 +4724,10 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
     return HCCL_SUCCESS;
 }
 
-
 HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam)
 {
-    if (commParam->engine != COMM_ENGINE_AICPU || 
-        commParam->engine != COMM_ENGINE_AICPU) {
+    if (commParam->engine != COMM_ENGINE_AICPU && 
+        commParam->engine != COMM_ENGINE_AICPU_TS) {
         HCCL_ERROR("[HcclCommAicpu][%s] engine type[%d] is not supported", __func__, commParam->engine);
         return HCCL_E_PARA;
     }
@@ -4817,7 +4850,8 @@ HcclResult HcclCommAicpu::SetChannelP2pNotify(TransportDeviceP2pData &transDevP2
         actualNotifyNum++;
     }
 
-    HCCL_DEBUG("[%s]get p2pNotify success, actualNotifyNum[%u]", __func__, actualNotifyNum);
+    HCCL_DEBUG("%s get p2pNotify success, p2pNotifyNum[%llu], actualNotifyNum[%llu]",
+        __func__, p2pNotifyNum, actualNotifyNum);
     return HCCL_SUCCESS;
 }
 

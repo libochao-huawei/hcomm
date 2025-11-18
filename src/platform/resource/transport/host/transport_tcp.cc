@@ -66,10 +66,8 @@ HcclResult TransportTcp::Init()
         hostRecvBuffer_ = HostMem::alloc(TCP_BUFFER_SIZE);
         CHK_PRT_RET(!hostRecvBuffer_, HCCL_ERROR("[TransportTcp][Init]malloc recv buffer failed."), HCCL_E_MEMORY);
     } else {
-        deviceSendBuffer_ = DeviceMem::alloc(TCP_BUFFER_SIZE);
-        CHK_PRT_RET(!deviceSendBuffer_, HCCL_ERROR("[TransportTcp][Init]malloc send buffer failed."), HCCL_E_MEMORY);
-        deviceRecvBuffer_ = DeviceMem::alloc(TCP_BUFFER_SIZE);
-        CHK_PRT_RET(!deviceRecvBuffer_, HCCL_ERROR("[TransportTcp][Init]malloc recv buffer failed."), HCCL_E_MEMORY);
+        CHK_RET(DeviceMem::alloc(deviceSendBuffer_, TCP_BUFFER_SIZE));
+        CHK_RET(DeviceMem::alloc(deviceRecvBuffer_, TCP_BUFFER_SIZE));
     }
 
     HCCL_INFO(

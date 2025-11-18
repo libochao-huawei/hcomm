@@ -8,26 +8,43 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef COLL_ALLGATHER_V_MESH_EXECUTOR_H
-#define COLL_ALLGATHER_V_MESH_EXECUTOR_H
+#ifndef COLL_ALLGATHERV_MESH_OPBASE_EXECUTOR_H
+#define COLL_ALLGATHERV_MESH_OPBASE_EXECUTOR_H
 #include "coll_all_gather_v_executor.h"
-namespace hccl {
-class CollAllGatherVMeshExecutor : public CollAllGatherVExecutor {
-public:
-    explicit CollAllGatherVMeshExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
-    ~CollAllGatherVMeshExecutor() = default;
+namespace hccl
+{
+    class CollAllGatherVMeshExecutor : public CollAllGatherVExecutor
+    {
+    public:
+        explicit CollAllGatherVMeshExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
+        ~CollAllGatherVMeshExecutor() override = default;
 
-private:
-    /* *************** 资源计算 *************** */
-    HcclResult CalcStreamNum(u32& streamNum) override;
-    HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
-        std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
+    private:
+        /* *************** 资源计算 *************** */
+        HcclResult CalcStreamNum(u32 &streamNum) override;
+        HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport> &opTransport) override;
+        HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
+                                      std::vector<LevelNSubCommTransport> &opTransport) override;
+        HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
 
-    /* *************** 算法编排 *************** */
-    HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
-};
+        /* *************** 算法编排 *************** */
+        HcclResult CalcCurCountsAndCurDispls(const u64 maxTotalCount, std::vector<u64> &countsLeft,
+                                             std::vector<u64> &displs, std::vector<u64> &curCounts, std::vector<u64> &curDispls, bool &finished) override;
+        HcclResult CalcCurCountsAndCurDisplsMultiModule(const u64 maxTotalCount,
+            std::vector<u64> &countsLeft, std::vector<u64> &displs, std::vector<u64> &curCounts, std::vector<u64> &curDispls,
+            bool &finished);
+        HcclResult CalcCurCountsAndCurDisplsSingleModule(const u64 maxTotalCount,
+            std::vector<u64> &countsLeft, std::vector<u64> &displs, std::vector<u64> &curCounts, std::vector<u64> &curDispls,
+            bool &finished);
+        u64 CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize) override;
+        bool IsHugeData(const u64 curSize) override;
+        HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
+        HcclResult RunSingleMesh(const OpParam &param, ExecMem &execMem);
+        HcclResult RunLevel1(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo,
+                             SubCommInfo &level1CommInfo);
+        HcclResult RunLevel0(const OpParam &param, ExecMem &execMem, SubCommInfo &level0CommInfo,
+                             SubCommInfo &level1CommInfo);
+    };
 
 } // namespace hccl
 

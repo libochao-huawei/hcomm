@@ -292,7 +292,7 @@ int ra_hdc_socket_send(unsigned int phy_id, const void *handle, const void *data
         sizeof(union op_socket_send_data));
     if (ret) {
         if (ret > 0) {
-            ret = -EINVAL; /* 0:success; ret > 0:fail maybe drv interface return; ret < 0:fail maybe rs return */
+            ret = -EINVAL; /* 0:success; ret > 0:failed maybe drv interface return; ret < 0:failed maybe rs return */
         }
         if (ret != -EAGAIN) {
             hccp_warn("[send][ra_hdc_socket]ra hdc message process unsuccessful, ret(%d) phy_id(%u)", ret, phy_id);
@@ -320,7 +320,7 @@ int ra_hdc_socket_recv(unsigned int phy_id, const void *handle, void *data, unsi
     }
 
     recv_data_head = (union op_socket_recv_data *)calloc(size + sizeof(union op_socket_recv_data), sizeof(char));
-    CHK_PRT_RETURN(recv_data_head == NULL, hccp_err("[recv][ra_hdc_socket]calloc fail. phy_id(%u)", phy_id), -ENOMEM);
+    CHK_PRT_RETURN(recv_data_head == NULL, hccp_err("[recv][ra_hdc_socket]calloc failed. phy_id(%u)", phy_id), -ENOMEM);
     recv_data_head->tx_data.fd = (unsigned int)((const struct socket_hdc_info *)handle)->fd;
     recv_data_head->tx_data.recv_size = size;
 
@@ -328,7 +328,7 @@ int ra_hdc_socket_recv(unsigned int phy_id, const void *handle, void *data, unsi
         sizeof(union op_socket_recv_data) + size);
     if (ret) {
         if (ret > 0) {
-            ret = -EINVAL; /* 0:success; ret > 0:fail maybe drv interface return; ret < 0:fail maybe rs return */
+            ret = -EINVAL; /* 0:success; ret > 0:failed maybe drv interface return; ret < 0:failed maybe rs return */
         }
         if (ret != -EAGAIN) {
             hccp_warn("[recv][ra_hdc_socket]ra hdc message process unsuccessful, ret(%d) phy_id(%u)", ret, phy_id);
@@ -389,7 +389,7 @@ int ra_hdc_get_sockets(unsigned int phy_id, unsigned int role, struct socket_inf
 
     socket_info_data = (union op_socket_info_data *)calloc(sizeof(union op_socket_info_data), sizeof(char));
     CHK_PRT_RETURN(socket_info_data == NULL, hccp_err("[get][ra_hdc_sockets]socket info data"
-        "calloc fail phy_id(%u)", phy_id), -ENOMEM);
+        "calloc failed phy_id(%u)", phy_id), -ENOMEM);
     socket_info_data->tx_data.num = num;
     socket_info_data->tx_data.role = role;
 
@@ -432,7 +432,7 @@ STATIC int ra_hdc_get_all_vnic(unsigned int cur_phy_id, unsigned int *vnic_ip, u
     union op_get_vnic_ip_data vnic_ip_data;
 
     ret = dl_drv_get_dev_num(&dev_num);
-    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_all_vnic]get dev num fail, ret(%d)", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_all_vnic]get dev num failed, ret(%d)", ret), ret);
 
     for (logic_id = 0; logic_id < dev_num; logic_id++) {
         ret = dl_drv_device_get_phy_id_by_index(logic_id, &phy_id);
@@ -654,7 +654,7 @@ static int ra_hdc_socket_white_list_op_v1(unsigned int opcode, struct rdev rdev_
     union op_wlist_data *wlist_data = NULL;
     int ret;
     wlist_data = (union op_wlist_data *)calloc(sizeof(union op_wlist_data), sizeof(char));
-    CHK_PRT_RETURN(wlist_data == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data fail! phy_id(%u)",
+    CHK_PRT_RETURN(wlist_data == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data failed! phy_id(%u)",
         rdev_info.phy_id), -ENOMEM);
     wlist_data->tx_data.num = num;
     ret = memcpy_s(&(wlist_data->tx_data.rdev_info), sizeof(struct rdev), &(rdev_info), sizeof(struct rdev));
@@ -692,7 +692,7 @@ static int ra_hdc_socket_white_list_op_v2(unsigned int opcode, struct rdev rdev_
     union op_wlist_data_v2 *wlist_data = NULL;
 
     wlist_data = (union op_wlist_data_v2 *)calloc(sizeof(union op_wlist_data_v2), sizeof(char));
-    CHK_PRT_RETURN(wlist_data == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data fail! phy_id(%u)",
+    CHK_PRT_RETURN(wlist_data == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data failed! phy_id(%u)",
         rdev_info.phy_id), -ENOMEM);
     wlist_data->tx_data.num = num;
     ret = memcpy_s(&(wlist_data->tx_data.rdev_info), sizeof(struct rdev), &(rdev_info), sizeof(struct rdev));

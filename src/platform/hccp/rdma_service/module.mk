@@ -28,7 +28,7 @@ IO_ROOT_DIR := $(TOPDIR)third_party
 LOCAL_C_INCLUDES+= 	$(IO_ROOT_DIR)/ofed/build/rdma-core/include
 LOCAL_C_INCLUDES+=      $(TOPDIR)open_source/openssl/include
 LOCAL_C_INCLUDES+= 	$(IO_ROOT_DIR)/../libc_sec/include
-LOCAL_C_INCLUDES+=	$(TOPDIR)drivers/network/roce/roce_user
+LOCAL_C_INCLUDES+=      ${TOPDIR}/hccl/src/platform/hccp/external_depends/rdma-core/providers/hns
 LOCAL_C_INCLUDES+=	$(TOPDIR)inc/toolchain
 LOCAL_C_INCLUDES+=	$(TOPDIR)inc/driver
 LOCAL_C_INCLUDES+=	$(TOPDIR)drivers/network/include
@@ -81,7 +81,7 @@ IO_ROOT_DIR := $(TOPDIR)third_party
 LOCAL_C_INCLUDES+= 	$(IO_ROOT_DIR)/ofed/build/rdma-core/include
 LOCAL_C_INCLUDES+=      $(TOPDIR)open_source/openssl/include
 LOCAL_C_INCLUDES+= 	$(IO_ROOT_DIR)/../libc_sec/include
-LOCAL_C_INCLUDES+=      $(TOPDIR)drivers/network/roce/roce_user
+LOCAL_C_INCLUDES+=      ${TOPDIR}/hccl/src/platform/hccp/external_depends/rdma-core/providers/hns
 LOCAL_C_INCLUDES+=	$(TOPDIR)inc/toolchain
 LOCAL_C_INCLUDES+=      $(TOPDIR)inc/driver
 LOCAL_C_INCLUDES+=	$(TOPDIR)drivers/network/include
@@ -92,7 +92,7 @@ LOCAL_C_INCLUDES+=      $(TOPDIR)inc/mmpa
 LOCAL_C_INCLUDES+=      $(TOPDIR)libkmc/include
 LOCAL_C_INCLUDES+=      $(TOPDIR)libkmc/src/sdp
 LOCAL_C_INCLUDES+=      $(TOPDIR)libkmc/src/common
-LOCAL_LD_DIRS :=  
+LOCAL_LD_DIRS :=
 
 LOCAL_CFLAGS += -Werror -lssl -lcrypto -DRS_DEVICE_CONFIG -Dgoogle=ascend_private -std=c11 -Wfloat-equal -Wextra
 ## add more LOCAL_SRC_FILES and LOCAL_C_INCLUDES

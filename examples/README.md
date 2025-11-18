@@ -24,3 +24,8 @@
 - [AlltoAllV](./03_collectives/07_alltoallv/)
 - [AlltoAllVC](./03_collectives/08_alltoallvc/)
 - [Scatter](./03_collectives/09_scatter/)
+
+## AI 框架
+
+- [PyTorch](./04_ai_framework/01_pytorch/)
+- [Tensorflow](./04_ai_framework/02_tensorflow/)

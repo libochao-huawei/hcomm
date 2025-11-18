@@ -95,7 +95,7 @@ HCCP_ATTRI_VISI_DEF int ra_tlv_deinit(void *tlv_handle)
         tlv_handle_tmp->init_info.nic_position, tlv_handle_tmp->module_type);
     ret = tlv_handle_tmp->tlv_ops->ra_tlv_deinit(tlv_handle_tmp);
     if (ret != 0) {
-        hccp_err("[deinit][ra_tlv]ra_tlv_deinit fail, ret(%d), phy_id(%u)", ret, tlv_handle_tmp->init_info.phy_id);
+        hccp_err("[deinit][ra_tlv]ra_tlv_deinit failed, ret(%d), phy_id(%u)", ret, tlv_handle_tmp->init_info.phy_id);
         goto ra_tlv_deinit_fail;
     }
 

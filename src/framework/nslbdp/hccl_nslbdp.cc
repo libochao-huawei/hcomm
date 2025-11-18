@@ -53,13 +53,13 @@ hcclNslbDp::~hcclNslbDp()
 void hcclNslbDp::InitCmmDesc(std::string &identifier_nslb)
 {
     nslbdp_identifier_ = identifier_nslb;
-    HCCL_INFO("[NSLB-DP] InitCmmDesc nslbdp_identifier_[%s] .", nslbdp_identifier_.c_str());
+    HCCL_INFO("[NSLB-DP] Init CmmDesc nslbdp_identifier_[%s] .", nslbdp_identifier_.c_str());
     return;
 }
 
 std::string hcclNslbDp::GetCmmDesc()
 {
-    HCCL_INFO("[NSLB-DP] GetCmmDesc nslbdp_identifier_[%s] .", nslbdp_identifier_.c_str());
+    HCCL_INFO("[NSLB-DP] Get CmmDesc nslbdp_identifier_[%s] .", nslbdp_identifier_.c_str());
     return nslbdp_identifier_;
 }
 
@@ -77,11 +77,11 @@ bool hcclNslbDp::GetDeviceType()
 
 HcclResult hcclNslbDp::setHccpInfo(u32 buffer_size, void* tlv_handle)
 {
-    HCCL_DEBUG("[NSLB-DP] try setHccpInfo.");
+    HCCL_DEBUG("[NSLB-DP] try to set hccp info.");
     nslbdp_buffsize_ = buffer_size;
     nslbdp_handle_ = tlv_handle;
     nslbdpIsInitHccp_ = true;
-    HCCL_INFO("[NSLB-DP] setHccpInfo buffer_size:[%u].", buffer_size);
+    HCCL_INFO("[NSLB-DP] set hccp info buffer_size:[%u].", buffer_size);
     return HCCL_SUCCESS;
 }
 
@@ -162,7 +162,8 @@ u32 hcclNslbDp::Getl4SPortId()
 }
 
 //切分identifier字段
-void hcclNslbDp::SplitString(const std::string& identifier, std::vector<std::string>& splitInfo, const std::string& frag)
+void hcclNslbDp::SplitString(const std::string& identifier, std::vector<std::string>& splitInfo,
+    const std::string& frag)
 {
     std::string::size_type pos2 = identifier.find(frag);
     std::string::size_type pos1 = 0;
@@ -189,10 +190,10 @@ u32 hcclNslbDp::ipToUint32(const std::string& ipAddress)
 /*执行send 流程*/
 HcclResult hcclNslbDp::SendCommRankTable(uint32_t rank, NslbDpCommConfigVal globalCommInfo)
 {
-    HCCL_DEBUG("[NSLB-DP] entry SendTableFir");
+    HCCL_DEBUG("[NSLB-DP] entry to send TBL_COMM_INFO");
     u32 rankTotalNum = globalCommInfo.rankTotalNum;
 
-    HCCL_INFO("[NSLB-DP] SendTableFir rankTotalNum:[%u].", rankTotalNum);
+    HCCL_INFO("[NSLB-DP] TBL_COMM_INFO rankTotalNum:[%u].", rankTotalNum);
     if (rankTotalNum > NSLBDP_RANKTOTALNUM_BLOCK_FOU) {
         return HCCL_SUCCESS;
     }
@@ -208,7 +209,7 @@ HcclResult hcclNslbDp::SendCommRankTable(uint32_t rank, NslbDpCommConfigVal glob
     }
     SendTableProc(rank, packetNum, globalCommInfo);
 
-    HCCL_DEBUG("[NSLB-DP] entry SendTableFir end");
+    HCCL_DEBUG("[NSLB-DP] entry send TBL_COMM_INFO end");
     return HCCL_SUCCESS;
 }
 
@@ -264,9 +265,9 @@ bool hcclNslbDp::CheckAhcSupport(u8 algType, std::string identifier)
 
 // 读配置文件的场景与正常创建通信域场景下填充通信域信息表（表一）
 void hcclNslbDp::SetGlobalCommRankTable_RootInfo(const RankTable_t &rankTable, const HcclBasicRankInfo &localRankInfo,
-                                 const std::vector<RankInfo> &rankLists, const std::string& identifier, u32 nRanks, u32 rank)
+    const std::vector<RankInfo> &rankLists, const std::string& identifier, u32 nRanks, u32 rank)
 {
-    HCCL_INFO("[NSLB-DP] Entry SetGlobalCommRankTable_RootInfo commDesc[%s] - size = [%u].", identifier.c_str(), rankTable.rankList.size());
+    HCCL_INFO("[NSLB-DP] Try to collect NSLBDP_TYPE_TBL_COMM_INFO commDesc[%s] - size = [%u].", identifier.c_str(), rankTable.rankList.size());
     u64 checkTaskId = GetGlobalCommTaskId();
     if (checkTaskId == 0 || nRanks == 1) {
         return;
@@ -279,20 +280,34 @@ void hcclNslbDp::SetGlobalCommRankTable_RootInfo(const RankTable_t &rankTable, c
     }
 
     NslbDpCommConfigVal globalCommInfo{};
-
     u32 sRet = memset_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH, 0, sizeof(globalCommInfo.commDesc));
     if (sRet != EOK) {
-        HCCL_INFO("memset_s commDesc fail");
+        HCCL_ERROR("memset_s commDesc fail sRet[%u]", sRet);
         return;
     }
-    // 获取通信域唯一标识
-    s32 ret = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,  identifier.c_str(), identifier.size());
-    if (ret != EOK) {
-        HCCL_INFO("strncpy_s globalCommInfo.commDesc fail");
+    int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
+    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
+        /* 此时认为通信域描述信息中包含时间戳 */
+        size_t lastUnderScoreIndex = identifier.rfind('_');
+        std::string nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
+        sRet = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,  nslbIdentifier.c_str(), nslbIdentifier.size());
+        if (sRet != EOK) {  return; }
+        for (size_t operSize = 0; operSize < hcclNslbDpCommConfig_.size(); operSize++) {
+            if (strcmp(globalCommInfo.commDesc, hcclNslbDpCommConfig_[operSize].commDesc) == 0) {
+                return;
+            }
+        }
+    } else {
+        /* 获取通信域唯一标识 */
+        sRet = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,
+            identifier.c_str(), identifier.size());
+        if (sRet != EOK) {  return; }
     }
-    u64 utime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-    globalCommInfo.commInitTime = utime;
+    globalCommInfo.commDesc[COMM_DESC_MAX_LENGTH - 1] = '\0';
 
+    u64 utime = std::chrono::duration_cast<std::chrono::milliseconds>
+        (std::chrono::system_clock::now().time_since_epoch()).count();
+    globalCommInfo.commInitTime = utime;
     globalCommInfo.taskId = checkTaskId;
     globalCommInfo.rankTotalNum = nRanks;
 
@@ -318,7 +333,6 @@ void hcclNslbDp::SetGlobalCommRankTable_RootInfo(const RankTable_t &rankTable, c
         globalCommInfo.rankInfo.push_back(dpRankInfo);
     }
     NSLBMD5::calculateRankInfoMd5(globalCommInfo.rankInfo, globalCommInfo.commMd5Sum);
-
     std::string nslbdpmd5 = NSLBMD5::md5ToString(globalCommInfo.commMd5Sum);
     HCCL_DEBUG("[NSLB-DP] NSLBDP-MD5 nslbdpmd5:[%s] success.", nslbdpmd5.c_str());
 
@@ -326,15 +340,15 @@ void hcclNslbDp::SetGlobalCommRankTable_RootInfo(const RankTable_t &rankTable, c
     if (ipToUint32(npuIp) != 0) {
         SendCommRankTable(rank, globalCommInfo);
     }
-
     hcclNslbDpCommConfig_.push_back(globalCommInfo);
-    HCCL_INFO("[NSLB-DP] nslbdp Entry SetGlobalCommRankTable_RootInfo end size = [%zu]", hcclNslbDpCommConfig_.size());
+    HCCL_INFO("[NSLB-DP] Entry SetGlobalCommRankTable_RootInfo end size = [%zu]",
+        hcclNslbDpCommConfig_.size());
 }
 
 //填充表5
 void hcclNslbDp::SetGlobalDisRankTable(const HcclBasicRankInfo &rankTable)
 {
-    HCCL_INFO("[NSLB-DP] Entry SetGlobalDisRankTable");
+    HCCL_INFO("[NSLB-DP] Try to collect NSLBDP_TYPE_TBL_RANK_DIST");
     u64 taskId = GetGlobalCommTaskId();
     if (taskId == 0) {
         return;
@@ -350,15 +364,16 @@ void hcclNslbDp::SetGlobalDisRankTable(const HcclBasicRankInfo &rankTable)
 
     std::string serverIp = rankTable.hostIP.GetReadableIP();
     hcclNslbDpGlobalDisRankVal_.serverIp = ipToUint32(serverIp);
-    HCCL_INFO("[NSLB-DP] SetGlobalDisRankTable serverIp:[%u].", hcclNslbDpGlobalDisRankVal_.serverIp);
+    HCCL_DEBUG("[NSLB-DP] SetGlobalDisRankTable serverIp:[%u].", hcclNslbDpGlobalDisRankVal_.serverIp);
 
     hcclNslbDpGlobalDisRankVal_.npuIp = ipToUint32(npuIp);
-    HCCL_INFO("[NSLB-DP] SetGlobalDisRankTable npuIp:[%u].", hcclNslbDpGlobalDisRankVal_.npuIp);
+    HCCL_DEBUG("[NSLB-DP] SetGlobalDisRankTable npuIp:[%u].", hcclNslbDpGlobalDisRankVal_.npuIp);
 }
 
 //check 是否是多机场景
 bool hcclNslbDp::CheckMultiMachine(const RankTable_t rankTable)
 {
+    HCCL_DEBUG("[NSLB-DP] check device is multi machine");
     u32 serverIpFir = 0;
     u16 podIdFir = 0;
     bool bIsMultiMachine = false;
@@ -407,42 +422,35 @@ bool hcclNslbDp::CheckMultiMachine(const RankTable_t rankTable)
 //无ranktable场景， 子通信域场景表1 赋值
 HcclResult hcclNslbDp::SetCommInfo_NoRankTable(const hccl::RankTable_t rankTable, std::string identifier)
 {
-    HCCL_DEBUG("[NSLB-DP] Entry SetCommInfo_NoRankTable");
+    HCCL_DEBUG("[NSLB-DP] Try to collect NSLBDP_TYPE_TBL_COMM_INFO for no RankTable");
     u64 taskId = GetGlobalCommTaskId();
     if (taskId == 0) {
         return HCCL_SUCCESS;
     }
-    //判断是否跨机
+    //判断是否跨机 false非错误场景
     if (CheckMultiMachine(rankTable) == false) {
         HCCL_INFO("[NSLB-DP] nslb-dp CheckMultiMachine is false");
         return HCCL_SUCCESS;
     }
 
     NslbDpCommConfigVal globalCommInfo;
-
-    s32 sRet = memset_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH, 0, sizeof(globalCommInfo.commDesc));
-    if (sRet != EOK) {
-        HCCL_ERROR("memset_s commDesc fail");
-        return HCCL_SUCCESS;
-    }
+    (void)memset_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,
+        0, sizeof(globalCommInfo.commDesc));
 
     // 获取通信域唯一标识
-    s32 ret = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,  identifier.c_str(), identifier.size());
+    s32 ret = strncpy_s(globalCommInfo.commDesc, COMM_DESC_MAX_LENGTH,
+        identifier.c_str(), identifier.size());
     if (ret != EOK) {
         HCCL_INFO("strncpy_s globalCommInfo.commDesc fail");
+        return HCCL_E_MEMORY;
     }
     globalCommInfo.commDesc[COMM_DESC_MAX_LENGTH - 1] = '\0';
-
-    std::string descstr = globalCommInfo.commDesc;
-
     CHK_PRT_RET(ret != EOK, HCCL_ERROR("[NSLB_DP]GetIdentifier str copy fail. return[%d]", ret), HCCL_E_INTERNAL);
 
     // commInitTime在有ranktable的赋值
     u64 utime = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     globalCommInfo.commInitTime = utime;
-
     u16 nRanks = rankTable.rankNum;
-
     globalCommInfo.taskId = taskId;
     globalCommInfo.rankTotalNum = nRanks;
 
@@ -468,22 +476,20 @@ HcclResult hcclNslbDp::SetCommInfo_NoRankTable(const hccl::RankTable_t rankTable
 //有ranktable场景， 表1 赋值
 HcclResult hcclNslbDp::SetCommInfo_RankTableExit(RankTable_t rankTable)
 {
-    HCCL_DEBUG("[NSLB-DP] entry SetCommInfo_RankTableExit");
+    HCCL_DEBUG("[NSLB-DP] Entry SetCommInfo for RankTable exit");
     u16 nRanks = rankTable.rankNum;
     u64 taskId = GetGlobalCommTaskId();
     if (taskId == 0 || nRanks == 1) {
-        return HCCL_SUCCESS;;
+        return HCCL_SUCCESS;
     }
 
     NslbDpCommConfigVal globalCommInfo = {};
     // 获取通信域唯一标识
-    s32 sRet = memset_s(hcclNslbDpGlobalRankVal_.commDesc, COMM_DESC_MAX_LENGTH, 0, sizeof(hcclNslbDpGlobalRankVal_.commDesc));
-    if (sRet != EOK) {
-        HCCL_ERROR("memset_s set null fail");
-        return HCCL_SUCCESS;;
-    }
+    (void)memset_s(hcclNslbDpGlobalRankVal_.commDesc, COMM_DESC_MAX_LENGTH,
+        0, sizeof(hcclNslbDpGlobalRankVal_.commDesc));
     char commDesc[COMM_DESC_MAX_LENGTH] = "HCCL_WORLD_GROUP";
-    sRet = memcpy_s(globalCommInfo.commDesc, sizeof(globalCommInfo.commDesc), commDesc, COMM_DESC_MAX_LENGTH);
+    s32 sRet = memcpy_s(globalCommInfo.commDesc, sizeof(globalCommInfo.commDesc),
+        commDesc, COMM_DESC_MAX_LENGTH);
     if (sRet != EOK) {
         HCCL_ERROR("memcpy_s commDesc fail");
         return HCCL_SUCCESS;;
@@ -534,20 +540,18 @@ HcclResult hcclNslbDp::SetCommInfo_RankTableExit(RankTable_t rankTable)
 HcclResult hcclNslbDp::SetGlobalRank_RankTableExit(const hccl::RankTable_t  rankTable)
 {
     u64 taskId = GetGlobalCommTaskId();
-    HCCL_INFO("[NSLB-DP] SetGlobalRank_RankTableExit[%ull] success.", taskId);
+    HCCL_INFO("[NSLB-DP] set TBL_RANK for RankTableExit[%ull] success.", taskId);
 
     if (taskId == 0) {
         return HCCL_SUCCESS;
     }
     u16 nRanks = rankTable.rankNum;
     hcclNslbDpGlobalRankVal_.taskId = taskId;
-    s32 sRet = memset_s(hcclNslbDpGlobalRankVal_.commDesc, COMM_DESC_MAX_LENGTH, 0, sizeof(hcclNslbDpGlobalRankVal_.commDesc));
-    if (sRet != EOK) {
-        HCCL_ERROR("memset_s commDesc fail");
-        return HCCL_SUCCESS;
-    }
+    (void)memset_s(hcclNslbDpGlobalRankVal_.commDesc, COMM_DESC_MAX_LENGTH,
+        0, sizeof(hcclNslbDpGlobalRankVal_.commDesc));
     char commDesc[COMM_DESC_MAX_LENGTH] = "HCCL_WORLD_GROUP";
-    sRet = memcpy_s(hcclNslbDpGlobalRankVal_.commDesc, sizeof(hcclNslbDpGlobalRankVal_.commDesc), commDesc, COMM_DESC_MAX_LENGTH);
+    s32 sRet = memcpy_s(hcclNslbDpGlobalRankVal_.commDesc, sizeof(hcclNslbDpGlobalRankVal_.commDesc),
+        commDesc, COMM_DESC_MAX_LENGTH);
     if (sRet != EOK) {
         HCCL_ERROR("memcpy_s commDesc fail");
         return HCCL_SUCCESS;
@@ -577,7 +581,7 @@ HcclResult hcclNslbDp::SetGlobalRank_RankTableExit(const hccl::RankTable_t  rank
     return HCCL_SUCCESS;
 }
 
-//拼接 l4SPortId  ---待对齐
+//拼接 l4SPortId
 HcclResult hcclNslbDp::GetNslbDpl4SPortId(u32 rankSize, u8 algType, u16 *l4SPortId)
 {
     u16 priFlag = NSLBDP_PRIVATE_PORT;
@@ -603,14 +607,14 @@ HcclResult hcclNslbDp::GetNslbDpl4SPortId(u32 rankSize, u8 algType, u16 *l4SPort
     *l4SPortId = (priFlag << NSLBDP_RANGE_ID) + (CommIntervalFlag << NSLBDP_COMMON_RANGE) + (CommPrecisely << NSLBDP_ALGO_RANGE) + CommalgType;
     hcclNslbDpL4SPortId_ = *l4SPortId;
 
-    HCCL_INFO("[NSLB-DP-L4PORT]  hcclNslbDpL4SPortId_[%u]", hcclNslbDpL4SPortId_);
+    HCCL_INFO("[NSLB-DP-L4PORT] get hcclNslbDpL4SPortId_[%u] success", hcclNslbDpL4SPortId_);
     return HCCL_SUCCESS;
 }
 
 // 表6赋值
 HcclResult hcclNslbDp::SetNslbDpRootRank(HcclCMDType opType, u32 rootRank, std::string identifier, u8 algType)
 {
-    HCCL_DEBUG("[NSLB-DP] entry SetNslbDpRootRank");
+    HCCL_DEBUG("[NSLB-DP] try to collect NSLBDP_TYPE_TBL_ROOT_RANK");
     u64 taskId = GetGlobalCommTaskId();
     if (taskId == 0) {
         return HCCL_SUCCESS;
@@ -619,15 +623,18 @@ HcclResult hcclNslbDp::SetNslbDpRootRank(HcclCMDType opType, u32 rootRank, std::
         HCCL_DEBUG("[NSLB-DP-BEGIN] RootRank first entry");
         // 获取task id 
         hcclNslbDpRootRankVal_.taskId = taskId;
-        s32 sRet = memset_s(hcclNslbDpRootRankVal_.commDesc, COMM_DESC_MAX_LENGTH, 0, sizeof(hcclNslbDpRootRankVal_.commDesc));
+        s32 sRet = memset_s(hcclNslbDpRootRankVal_.commDesc, COMM_DESC_MAX_LENGTH,
+            0, sizeof(hcclNslbDpRootRankVal_.commDesc));
         if (sRet != EOK) {
             HCCL_ERROR("memset_s commDesc fail");
             return HCCL_SUCCESS;
         }
         // 获取通信域唯一标识
-        s32 ret = strncpy_s(hcclNslbDpRootRankVal_.commDesc, COMM_DESC_MAX_LENGTH, identifier.c_str(), identifier.size());
+        s32 ret = strncpy_s(hcclNslbDpRootRankVal_.commDesc, COMM_DESC_MAX_LENGTH,
+            identifier.c_str(), identifier.size());
         if (ret != EOK) {
             HCCL_INFO("strncpy_s hcclNslbDpRootRankVal_.commDesc fail");
+            return HCCL_SUCCESS;
         }
         hcclNslbDpRootRankVal_.commDesc[COMM_DESC_MAX_LENGTH - 1] = '\0';
 
@@ -646,14 +653,14 @@ HcclResult hcclNslbDp::SetNslbDpRootRank(HcclCMDType opType, u32 rootRank, std::
         hcclNslbDpRootRankVal_.rankId.push_back(rootRankId);
 
         HCCL_INFO("[NSLB-DP] Rootable rootRankNum[%u]-rootRank[%u]-algorithm[%u].", 
-                   hcclNslbDpRootRankVal_.rootRankNum, rootRank, hcclNslbDpRootRankVal_.algorithm);
+            hcclNslbDpRootRankVal_.rootRankNum, rootRank, hcclNslbDpRootRankVal_.algorithm);
 
         HCCL_DEBUG("[NSLB-DP] Rootabl entry SetNslbDpRootRank end");
         SendRootRankTable();
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[NSLB-DP] Rootable rankId.size[%zu]-rootRankNum[%u]-rootRank[%u].",
-               hcclNslbDpRootRankVal_.rankId.size(), hcclNslbDpRootRankVal_.rootRankNum, rootRank);
+        hcclNslbDpRootRankVal_.rankId.size(), hcclNslbDpRootRankVal_.rootRankNum, rootRank);
 
     for (const auto& rank : hcclNslbDpRootRankVal_.rankId) {
         HCCL_INFO("[NSLB-DP] Rootable rootRank exit rankID[%u]-rootRank[%u]",rank.rankID, rootRank);
@@ -676,6 +683,7 @@ HcclResult hcclNslbDp::SetNslbDpRootRank(HcclCMDType opType, u32 rootRank, std::
 // AlgType 的转换
 u8 hcclNslbDp::GetNslbLevel1AlgType(AlgTypeLevel1 algValue)
 {
+    HCCL_DEBUG("[NSLB-DP] try to switch Level1 type to nslbtype");
     switch (algValue) {
         case AlgTypeLevel1::ALG_LEVEL1_RING: {
             return NSLB_ALGO_TYPE_RING;
@@ -709,6 +717,7 @@ u8 hcclNslbDp::GetNslbLevel1AlgType(AlgTypeLevel1 algValue)
 // Level2 的 AlgType 转换
 u8 hcclNslbDp::GetNslbLevel2AlgType(AlgTypeLevel2 algValue)
 {
+    HCCL_DEBUG("[NSLB-DP] try to switch Level2 type to nslbtype");
     switch (algValue) {
         case AlgTypeLevel2::ALG_LEVEL2_RING: {
             return NSLB_ALGO_TYPE_RING;
@@ -733,6 +742,7 @@ u8 hcclNslbDp::GetNslbLevel2AlgType(AlgTypeLevel2 algValue)
 // opType 的转换
 u8 hcclNslbDp::GetNslbOpType(HcclCMDType opType)
 {
+    HCCL_DEBUG("[NSLB-DP] try to get nslb optype");
     switch (opType) {
         case HcclCMDType::HCCL_CMD_BROADCAST: {
             return NSLBDP_CMD_BROADCAST;
@@ -791,7 +801,7 @@ u64 hcclNslbDp::GetNslbDpFirstFourBit(u8 opType, u8 algType)
         firstFourBit = 1 << 1;
     }
 
-    HCCL_INFO("[NSLB-DP-FIRST4] firstFourBit[%llu]-algType[%u]", firstFourBit, algType);
+    HCCL_INFO("[NSLB-DP-FIRST4] try to get first FourBit[%llu]-algType[%u]", firstFourBit, algType);
     return firstFourBit;
 }
 
@@ -839,12 +849,13 @@ bool hcclNslbDp::CheckAlgoConsistency(HcclCMDType opType, std::string& algName)
 
 bool hcclNslbDp::CheckSupportOptype(HcclCMDType opType)
 {
-    if (GetNslbOpType(opType) != NSLBDP_CMD_ALLREDUCE && GetNslbOpType(opType) != NSLBDP_CMD_ALLGATHER
-        && GetNslbOpType(opType) != NSLBDP_CMD_REDUCE_SCATTER && GetNslbOpType(opType) != NSLBDP_CMD_ALLTOALL
-        && GetNslbOpType(opType) != NSLBDP_CMD_ALLTOALLV && GetNslbOpType(opType) != NSLBDP_CMD_ALLTOALLVC
-        && GetNslbOpType(opType) != NSLBDP_CMD_BROADCAST && GetNslbOpType(opType) != NSLBDP_CMD_SCATTER
-        && GetNslbOpType(opType) != NSLBDP_CMD_BATCH_SEND_RECV && GetNslbOpType(opType) != NSLBDP_CMD_REDUCE
-        && GetNslbOpType(opType) != NSLBDP_CMD_SEND) {
+    HCCL_DEBUG("[NSLB-DP] try to check support optype");
+    if (GetNslbOpType(opType) != NSLBDP_CMD_ALLREDUCE && GetNslbOpType(opType) != NSLBDP_CMD_ALLGATHER &&
+        GetNslbOpType(opType) != NSLBDP_CMD_REDUCE_SCATTER && GetNslbOpType(opType) != NSLBDP_CMD_ALLTOALL &&
+        GetNslbOpType(opType) != NSLBDP_CMD_ALLTOALLV && GetNslbOpType(opType) != NSLBDP_CMD_ALLTOALLVC &&
+        GetNslbOpType(opType) != NSLBDP_CMD_BROADCAST && GetNslbOpType(opType) != NSLBDP_CMD_SCATTER &&
+        GetNslbOpType(opType) != NSLBDP_CMD_BATCH_SEND_RECV && GetNslbOpType(opType) != NSLBDP_CMD_REDUCE &&
+        GetNslbOpType(opType) != NSLBDP_CMD_SEND) {
         return false;
     }
     return true;
@@ -854,8 +865,14 @@ bool hcclNslbDp::CheckSupportOptype(HcclCMDType opType)
 HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRankId, u32 rootRank, 
             u8 algType, std::string identifier, AdjInfo nslbAdjInfo)
 {
+    std::string nslbIdentifier = identifier;
+    int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
+    if (countUnderScores == 3) {
+        size_t lastUnderScoreIndex = identifier.rfind('_');
+        nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
+    }
     HCCL_DEBUG("[NSLB-DP] check table NSLBDP_TYPE_TBL_ADJ size:[%zu].", hcclNslbDpAlgorithmInfo_.size());
-    if (CheckAhcSupport(algType, identifier) == false) {
+    if (CheckAhcSupport(algType, nslbIdentifier) == false) {
         HCCL_RUN_INFO("[NSLB-DP-ADJ] Check AHC commoninfo is not support.");
         return HCCL_SUCCESS;
     }
@@ -864,7 +881,7 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
         return HCCL_SUCCESS;
     }
     HCCL_INFO("[NSLB-DP-ADJ] opType:[%u],srcLocalRankId[%u],rootRank[%u]-commDesc[%s],dstRankNum:[%u].",
-               opType, srcLocalRankId, rootRank, identifier.c_str(), nslbAdjInfo.dstRankNum);
+        opType, srcLocalRankId, rootRank, nslbIdentifier.c_str(), nslbAdjInfo.dstRankNum);
 
     if (CheckSupportOptype(opType) == false) {
         HCCL_INFO("[NSLB-DP-OPER] CheckSupportOptype false .");
@@ -873,12 +890,10 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
 
     NslbDpAlgorithmInfo algorithmInfo;
     algorithmInfo.taskId = taskId;
-    s32 sRet = memset_s(algorithmInfo.commDesc, COMM_DESC_MAX_LENGTH, 0, sizeof(algorithmInfo.commDesc));
-    if (sRet != EOK) {
-        HCCL_ERROR("memcpy_s commDesc fail");
-        return HCCL_SUCCESS;
-    }
-    s32 ret = strncpy_s(algorithmInfo.commDesc, COMM_DESC_MAX_LENGTH, identifier.c_str(), identifier.size());
+    (void)memset_s(algorithmInfo.commDesc, COMM_DESC_MAX_LENGTH,
+        0, sizeof(algorithmInfo.commDesc));
+    s32 ret = strncpy_s(algorithmInfo.commDesc, COMM_DESC_MAX_LENGTH,
+        nslbIdentifier.c_str(), nslbIdentifier.size());
     if (ret != EOK) {
         HCCL_INFO("[NSLB-DP] strncpy_s algorithmInfo.commDesc fail");
     }
@@ -901,7 +916,7 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
     // 根据表一信息填充MD5
     for (size_t comsize = 0; comsize < hcclNslbDpCommConfig_.size(); comsize++) {
         if(strcmp(algorithmInfo.commDesc, hcclNslbDpCommConfig_[comsize].commDesc) == 0) {
-            sRet = memcpy_s(algorithmInfo.commMd5Sum, sizeof(algorithmInfo.commMd5Sum),
+            s32 sRet = memcpy_s(algorithmInfo.commMd5Sum, sizeof(algorithmInfo.commMd5Sum),
                         hcclNslbDpCommConfig_[comsize].commMd5Sum, sizeof(hcclNslbDpCommConfig_[comsize].commMd5Sum));
             if (sRet != EOK) {
                 HCCL_ERROR("memcpy_s commMd5Sum fail");
@@ -911,7 +926,7 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
         }
     }
     HCCL_RUN_INFO("[NSLB-DP] add adjINfo:***[%llu]***[%u]***[%u]***[%u]***[%u]-[%zu] success.",
-                   taskId, srcLocalRankId, rootRank, GetNslbOpType(opType),algType, nslbAdjInfo.nsAdjInfo.size());
+        taskId, srcLocalRankId, rootRank, GetNslbOpType(opType),algType, nslbAdjInfo.nsAdjInfo.size());
 
     for (const auto& info : hcclNslbDpAlgorithmInfo_) {
         HCCL_INFO("[NSLB-DP-ADJ] info: *[%llu]-[%u]-[%u]-[%u]-[%u]* success.",
@@ -925,7 +940,7 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
     }
 
     HCCL_INFO("[NSLB-DP-ADJ] add adjINfo:***[%llu]***[%u]***[%u]***[%u]***[%u] success.",
-                   taskId, srcLocalRankId, rootRank, GetNslbOpType(opType), algType);
+        taskId, srcLocalRankId, rootRank, GetNslbOpType(opType), algType);
 
     algorithmInfo.srcLocalRankId = srcLocalRankId;
     algorithmInfo.rootRank =  static_cast<u16>(rootRank);
@@ -959,10 +974,9 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
 
 bool hcclNslbDp::CheckCommDescExit(NslbDpOperatorInfo &OperatorInfo)
 {
-    HCCL_DEBUG("[NSLB-DP-OPER] CheckCommDescExit size:[%zu].", hcclNslbDpCommConfig_.size());
+    HCCL_DEBUG("[NSLB-DP-OPER] Check CommDescExit size:[%zu].", hcclNslbDpCommConfig_.size());
     for (const auto& info : hcclNslbDpCommConfig_) {
         HCCL_DEBUG("[NSLB-DP-OPER] CheckCommDescExit info.commDesc[%s] .", info.commDesc);
-        HCCL_DEBUG("[NSLB-DP-OPER] CheckCommDescExit OperatorInfo.commDesc[%s] .", OperatorInfo.commDesc);
         if (strcmp(OperatorInfo.commDesc, info.commDesc) == 0) {
             return true;
         }
@@ -972,11 +986,17 @@ bool hcclNslbDp::CheckCommDescExit(NslbDpOperatorInfo &OperatorInfo)
 
 void hcclNslbDp::fullcommDescInitTime(std::string identifier, NslbDpOperatorInfo &OperatorInfo)
 {
-    // 获取通信域唯一标识
-    s32 ret = strncpy_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH,  identifier.c_str(), identifier.size());
-    if (ret != EOK) {
-        HCCL_INFO("GetIdentifier str copy fail. return[%d]", ret);
-        return;
+    int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
+    if (countUnderScores == 3) {
+        /* 此时认为通信域描述信息中包含时间戳 */
+        size_t lastUnderScoreIndex = identifier.rfind('_');
+        std::string nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
+        (void)strncpy_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH,
+            nslbIdentifier.c_str(), nslbIdentifier.size());
+    } else {
+        /* 获取通信域唯一标识 */
+        (void)strncpy_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH,
+            identifier.c_str(), identifier.size()); 
     }
     HCCL_DEBUG("[NSLB-DP-OPER] fullcommDescInitTime commDesc[%s] .", identifier.c_str());
 
@@ -1007,7 +1027,7 @@ bool hcclNslbDp::CheckSameOperatorVal(size_t operSize, NslbDpOperatorInfo &Opera
 
 // 写算法算子表--表2
 HcclResult hcclNslbDp::GenerateOpAndAdjTable(HcclCMDType opType, u32 rootRank, u32 srcLocalRankId, u8 algType,
-                                             std::string identifier, u64 count, u32 rankSize)
+    std::string identifier, u64 count, u32 rankSize)
 {
     HCCL_INFO("[NSLB-DP-OPER] count=[%llu], hcclNslbDpOperatorVal_ size:[%zu].", count, hcclNslbDpOperatorVal_.size());
     u64 taskId = GetGlobalCommTaskId();
@@ -1028,11 +1048,8 @@ HcclResult hcclNslbDp::GenerateOpAndAdjTable(HcclCMDType opType, u32 rootRank, u
     NslbDpOperatorInfo OperatorInfo = {};
     // 获取task id 
     OperatorInfo.taskId = taskId;
-    s32 sRet = memset_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH, 0, sizeof(OperatorInfo.commDesc));
-    if (sRet != EOK) {
-        HCCL_ERROR("memset_s commDesc fail");
-        return HCCL_SUCCESS;
-    }
+    (void)memset_s(OperatorInfo.commDesc, COMM_DESC_MAX_LENGTH,
+        0, sizeof(OperatorInfo.commDesc));
 
     fullcommDescInitTime(identifier, OperatorInfo);
 
@@ -1077,7 +1094,7 @@ HcclResult hcclNslbDp::GenerateOpAndAdjTable(HcclCMDType opType, u32 rootRank, u
 /*根将表1 序列化处理*/
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableFir(NslbDpCommConfigInfo cominfo) 
 {
-    HCCL_DEBUG("[NSLB-DP] entry serializeTLV_TableFir beg");
+    HCCL_DEBUG("[NSLB-DP] entry serializeTLV TBL_COMM_INFO beg");
 
     std::vector<uint8_t> tlvData;
 
@@ -1149,13 +1166,14 @@ std::vector<uint8_t> hcclNslbDp::serializeTLV_TableFir(NslbDpCommConfigInfo comi
         tlvData.resize(tlvData.size() + sizeof(netRev3));
         (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netRev3), sizeof(netRev3), &netRev3, sizeof(netRev3));
     }
-    HCCL_DEBUG("[NSLB-DP] entry serializeTLV_TableFir end");
+    HCCL_DEBUG("[NSLB-DP] entry serializeTLV TBL_COMM_INFO end");
 
     return tlvData;
 }
 
 void hcclNslbDp::fullCommConfigInfo(NslbDpCommConfigInfo &tab_f, NslbDpCommConfigVal cominfo, u32 packetNum)
 {
+    HCCL_DEBUG("[NSLB-DP] entry full CommConfigInfo");
     tab_f.taskId = cominfo.taskId;
     s32 sRet = memcpy_s(tab_f.commDesc, sizeof(tab_f.commDesc), cominfo.commDesc, COMM_DESC_MAX_LENGTH);
     if (sRet != EOK) {
@@ -1231,7 +1249,6 @@ HcclResult hcclNslbDp::SendTableProc(u32 rank, u32 packetNum, NslbDpCommConfigVa
 /*遍历表1 执行send 流程*/
 HcclResult hcclNslbDp::SendTableFir(uint32_t rank)
 {
-    HCCL_DEBUG("[NSLB-DP] entry SendTableFir");
     size_t size = hcclNslbDpCommConfig_.size();
     HCCL_INFO("[NSLB-DP] SendTableFir size:[%u] success.", size);
     for (size_t i = 0; i < hcclNslbDpCommConfig_.size(); i++) {
@@ -1290,7 +1307,7 @@ HcclResult hcclNslbDp::SendRankTable(NslbDpCommConfigInfo tab_f)
 /*根将表2 序列化处理*/
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableOpAndAdj(NslbDpOperatorInfo &info) 
 {
-    HCCL_DEBUG("[NSLB-DP] ndlbdp entry serializeTLV_TableOpAndAdj.");
+    HCCL_DEBUG("[NSLB-DP] ndlbdp entry serializeTLV TableOpAndAdj.");
     std::vector<uint8_t> tlvData;
 
     // 处理 taskId

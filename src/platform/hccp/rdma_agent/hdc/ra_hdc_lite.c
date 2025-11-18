@@ -476,7 +476,7 @@ int ra_hdc_lite_qp_create(struct ra_rdma_handle *rdma_handle, struct ra_qp_handl
 
     ret = ra_hdc_lite_init_mem_pool(rdma_handle, qp_hdc, &lite_send_cq_attr, &lite_recv_cq_attr, &lite_qp_attr);
     CHK_PRT_RETURN(ret != 0, hccp_err("[create][ra_hdc_lite_qp]ra_hdc_lite_init_mem_pool failed ret(%d) phy_id(%u)",
-        ret, phy_id), ret);
+        ret, phy_id), -EFAULT);
 
     qp_hdc->send_lite_cq = ra_rdma_lite_create_cq(rdma_handle->lite_ctx, &lite_send_cq_attr);
     if (qp_hdc->send_lite_cq == NULL) {
@@ -814,7 +814,7 @@ STATIC void *ra_hdc_lite_pthread(void *arg)
 
     hccp_run_info("lite thread begin! thread_id:%lu, pid:%d, ppid:%d, phy_id:%u",
         pthread_self(), getpid(), getppid(), phy_id);
-    CHK_PRT_RETURN(pthread_detach(pthread_self()), hccp_err("pthread_detach fail! thread_id:%lu, errno:%d, phy_id:%u",
+    CHK_PRT_RETURN(pthread_detach(pthread_self()), hccp_err("pthread_detach failed! thread_id:%lu, errno:%d, phy_id:%u",
         pthread_self(), errno, phy_id), NULL);
 
     (void)prctl(PR_SET_NAME, (unsigned long)"hccp_hdc_lite");
@@ -943,6 +943,44 @@ static int ra_hdc_lite_get_mr(struct ra_qp_handle *qp_hdc, unsigned long long ad
     return -EINVAL;
 }
 
+STATIC int ra_hdc_lite_handle_bp(struct ra_qp_handle *qp_hdc)
+{
+    u32 send_wr;
+
+    if (qp_hdc->send_wr_num >= qp_hdc->poll_cqe_num) {
+        send_wr = qp_hdc->send_wr_num - qp_hdc->poll_cqe_num;
+    } else {
+        send_wr = qp_hdc->send_wr_num + (0xFFFFFFFF - qp_hdc->poll_cqe_num);
+    }
+
+    /*
+     * Due to driver limitations, the software pointer updates before the hardware pointer.
+     * The software must reserve sq_depth(2^x - 2) to prevent the backpressure mechanism from failing.
+     */
+    if (send_wr < (qp_hdc->sq_depth - 2U)) {
+        if (qp_hdc->bp_cnt != 0) {
+            hccp_run_info("qpn:%u send_wr_num:%u poll_cqe_num:%u send_wr:%u sq_depth:%u "
+                "bp_cnt:%u, back pressure relieved",
+                qp_hdc->qpn, qp_hdc->send_wr_num, qp_hdc->poll_cqe_num, send_wr, qp_hdc->sq_depth,
+                qp_hdc->bp_cnt);
+            qp_hdc->bp_cnt = 0;
+        }
+        return 0;
+    }
+
+    // first time back pressure occurred
+    if (qp_hdc->bp_cnt == 0) {
+        hccp_run_warn("qpn:%u send_wr_num:%u poll_cqe_num:%u send_wr:%u sq_depth:%u, back pressure occurred",
+            qp_hdc->qpn, qp_hdc->send_wr_num, qp_hdc->poll_cqe_num, send_wr, qp_hdc->sq_depth);
+    } else {
+        hccp_warn("qpn:%u send_wr_num:%u poll_cqe_num:%u send_wr:%u sq_depth:%u, back pressure continues bp_cnt:%u",
+            qp_hdc->qpn, qp_hdc->send_wr_num, qp_hdc->poll_cqe_num, send_wr, qp_hdc->sq_depth, qp_hdc->bp_cnt);
+    }
+
+    qp_hdc->bp_cnt++;
+    return -ENOMEM;
+}
+
 int ra_hdc_lite_typical_send_wr(struct ra_qp_handle *qp_hdc, struct lite_send_wr *wr, struct send_wr_rsp *op_rsp,
     unsigned long long wr_id)
 {
@@ -955,24 +993,12 @@ int ra_hdc_lite_typical_send_wr(struct ra_qp_handle *qp_hdc, struct lite_send_wr
         .send_flags = wr->wr.send_flag,
     };
     struct rdma_lite_send_wr *bad_wr = NULL;
-    u32 send_wr;
     int ret;
     int i;
 
-    if (qp_hdc->send_wr_num >= qp_hdc->poll_cqe_num) {
-        send_wr = qp_hdc->send_wr_num - qp_hdc->poll_cqe_num;
-    } else {
-        send_wr = qp_hdc->send_wr_num + (0xFFFFFFFF - qp_hdc->poll_cqe_num);
-    }
-
-    /*
-     * Due to driver limitations, the software pointer updates before the hardware pointer.
-     * The software must reserve sq_depth(2^x - 2) to prevent the backpressure mechanism from failing.
-     */
-    if (send_wr >= (qp_hdc->sq_depth - 2U)) {
-        hccp_warn("qpn:%u send_wr_num:%u poll_cqe_num:%u send_wr:%u sq_depth:%u, send queue is full, cannot send more",
-            qp_hdc->qpn, qp_hdc->send_wr_num, qp_hdc->poll_cqe_num, send_wr, qp_hdc->sq_depth);
-        return -ENOMEM;
+    ret = ra_hdc_lite_handle_bp(qp_hdc);
+    if (ret != 0) {
+        return ret;
     }
 
     for (i = 0; i < wr->wr.buf_num && i < RA_SGLIST_MAX; i++) {
@@ -1022,7 +1048,6 @@ int ra_hdc_lite_send_wr(struct ra_qp_handle *qp_hdc, struct lite_send_wr *wr, st
 {
     struct lite_mr_info *local_mr = NULL;
     struct lite_mr_info *rem_mr = NULL;
-    u32 send_wr;
     int ret;
 
     ret = ra_hdc_lite_get_mr(qp_hdc, wr->wr.buf_list[0].addr, &local_mr, qp_hdc->local_mr, RA_MR_MAX_NUM);
@@ -1036,20 +1061,9 @@ int ra_hdc_lite_send_wr(struct ra_qp_handle *qp_hdc, struct lite_send_wr *wr, st
             ret, qp_hdc->phy_id), ret);
     }
 
-    if (qp_hdc->send_wr_num >= qp_hdc->poll_cqe_num) {
-        send_wr = qp_hdc->send_wr_num - qp_hdc->poll_cqe_num;
-    } else {
-        send_wr = qp_hdc->send_wr_num + (0xFFFFFFFF - qp_hdc->poll_cqe_num);
-    }
-
-    /*
-     * Due to driver limitations, the software pointer updates before the hardware pointer.
-     * The software must reserve sq_depth(2^x - 2) to prevent the backpressure mechanism from failing.
-     */
-    if (send_wr >= (qp_hdc->sq_depth - 2U)) {
-        hccp_warn("qpn:%u send_wr_num:%u poll_cqe_num:%u send_wr:%u sq_depth:%u, send queue is full, cannot send more",
-            qp_hdc->qpn, qp_hdc->send_wr_num, qp_hdc->poll_cqe_num, send_wr, qp_hdc->sq_depth);
-        return -ENOMEM;
+    ret = ra_hdc_lite_handle_bp(qp_hdc);
+    if (ret != 0) {
+        return ret;
     }
 
     ret = ra_hdc_lite_post_send(qp_hdc, local_mr, rem_mr, wr, op_rsp, wr_id);

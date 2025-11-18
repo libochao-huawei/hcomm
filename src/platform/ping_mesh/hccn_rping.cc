@@ -42,10 +42,13 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
     // 初始化ra接口
     CHK_PRT_RET(DlRaFunction::GetInstance().DlRaFunctionInit() != HCCL_SUCCESS,
         HCCL_ERROR("[HccnRpingInit]dlrafunction failed."), HCCN_E_FAIL);
+    HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
+        initAttr->mode, initAttr->port, initAttr->npuNum, initAttr->bufferSize, initAttr->sl, initAttr->tc,
+        std::string(initAttr->ipAddr).c_str());
     // 获取device id
     s32 currDevLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&currDevLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingInit]cannot get device logic id."), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingInit]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != static_cast<u32>(currDevLogicId)) {
@@ -66,27 +69,31 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
     }
     npuNum++;
     npuNum = npuNum < NPU_NUM_MIN ? NPU_NUM_MIN : npuNum;
-    // buffer_size必须为4k的倍数
-    u32 buffer_size = 0;
+    // bufferSize必须为4k的倍数
+    u32 bufferSize = 0;
     if (initAttr->bufferSize > 0) {
-        buffer_size = ((initAttr->bufferSize - 1) / BUFFER_SIZE_UNIT + 1) * BUFFER_SIZE_UNIT;
+        bufferSize = ((initAttr->bufferSize - 1) / BUFFER_SIZE_UNIT + 1) * BUFFER_SIZE_UNIT;
     }
 
     // 初始化pingmesh实例
-    ret = rping->HccnRpingInit(devLogicId, LINK_TYPE_MODE_ROCE, ipAddr, initAttr->port, npuNum, buffer_size,
+    ret = rping->HccnRpingInit(devLogicId, LINK_TYPE_MODE_ROCE, ipAddr, initAttr->port, npuNum, bufferSize,
         initAttr->sl, initAttr->tc);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HccnRpingInit] Pingmesh init failed.");
+        HCCL_ERROR("[HccnRpingInit]Pingmesh init failed, ret:%d, devLogicId:%u, port:%u npuNum:%u bufferSize:%u sl:%u"
+        " tc:%u ip:%s", ret, devLogicId, initAttr->port, npuNum, bufferSize, initAttr->sl, initAttr->tc,
+        ipAddr.GetReadableIP());
         delete rping; // 初始化失败释放内存
         return HCCN_E_FAIL;
     }
 
-    HCCL_RUN_INFO("[HccnRpingInit] Pingmesh init success.");
+    HCCL_RUN_INFO("[HccnRpingInit]Pingmesh init success, devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u"
+        " tc:%u ip:%s", devLogicId, initAttr->mode, initAttr->port, npuNum, bufferSize, initAttr->sl, initAttr->tc,
+        ipAddr.GetReadableIP());
     // 记录pingmesh指针
     *rpingCtx = rping;
     return HCCN_SUCCESS;
 }
- 
+
 HccnResult HccnRpingDeinit(HccnRpingCtx rpingCtx)
 {
     // 初始化ra接口
@@ -98,7 +105,7 @@ HccnResult HccnRpingDeinit(HccnRpingCtx rpingCtx)
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingDeinit]cannot get device logic id."), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingDeinit]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
@@ -106,18 +113,18 @@ HccnResult HccnRpingDeinit(HccnRpingCtx rpingCtx)
             devLogicId, rping->GetDeviceLogicId());
         return HCCN_E_PARA;
     }
- 
+
     ret = rping->HccnRpingDeinit(static_cast<u32>(devLogicId));
     delete rping; // 先释放资源
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HccnRpingDeinit]Device[%d] deinit fail", devLogicId);
+        HCCL_ERROR("[HccnRpingDeinit]Device[%d] deinit fail, ret[%d]", devLogicId, ret);
         return HCCN_E_FAIL;
     }
-    
+
     HCCL_RUN_INFO("[HccnRpingDeinit]Device[%d] deinit success", devLogicId);
     return HCCN_SUCCESS;
 }
- 
+
 HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target)
 {
     HccnRpingAddTargetConfig config;
@@ -140,11 +147,12 @@ HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnR
         HCCL_ERROR("[HccnRpingAddTarget]targetNum[%u] is more than %u!", targetNum, TARGET_NUM_MAX), HCCN_E_PARA);
     // 校验指针，并将其转换为pingmesh指针
     CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingAddTarget]rpingCtx is null."), HCCN_E_PARA);
+    HCCL_DEBUG("[HccnRpingAddTarget]targetNum:%u connectTimeout:%u", targetNum, config->connectTimeout);
     PingMesh *rping = static_cast<PingMesh*>(rpingCtx);
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingAddTarget]cannot get device logic id."), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingAddTarget]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
@@ -153,7 +161,7 @@ HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnR
         return HCCN_E_PARA;
     }
     HCCL_DEBUG("[HccnRpingAddTarget] device id is %d", devLogicId);
- 
+
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingAddTarget]memory alloc failed."), HCCN_E_MEM);
@@ -167,21 +175,21 @@ HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnR
         input[i].len = target[i].payloadLen;
         s32 sRet = memcpy_s(input[i].payload, input[i].len, target[i].payload, target[i].payloadLen);
         if (sRet != EOK) {
-            HCCL_WARNING("[HccnRpingAddTarget]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] dstPtr[%p] "
+            HCCL_ERROR("[HccnRpingAddTarget]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] dstPtr[%p] "
                          "srclen[%d] srcPayload[%p]",
                 sRet, input[i].len, input[i].payload, target[0].payloadLen, target[0].payload);
-            continue;
+            return HCCN_E_MEM;
         }
     }
     ret = rping->HccnRpingAddTarget(static_cast<u32>(devLogicId), targetNum, input, config);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HccnRpingAddTarget]Device[%d] add targets fail", devLogicId);
+        HCCL_ERROR("[HccnRpingAddTarget]Device[%d] add targetNum %u fail, ret[%d]", devLogicId, targetNum, ret);
         delete[] input;
         return HCCN_E_FAIL;
     }
- 
+
     delete[] input;
-    HCCL_RUN_INFO("[HccnRpingAddTarget]Device[%d] add targets success", devLogicId);
+    HCCL_RUN_INFO("[HccnRpingAddTarget]Device[%d] add targetNum %u success", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
  
@@ -193,11 +201,12 @@ HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, Hccn
         HCCL_ERROR("[HccnRpingRemoveTarget]targetNum[%u] is more than %u!", targetNum, TARGET_NUM_MAX), HCCN_E_PARA);
     // 校验指针，并将其转换为pingmesh指针
     CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingRemoveTarget]rpingCtx is null."), HCCN_E_PARA);
+    HCCL_DEBUG("[HccnRpingRemoveTarget]targetNum:%u", targetNum);
     PingMesh *rping = static_cast<PingMesh*>(rpingCtx);
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingRemoveTarget]cannot get device logic id."), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingRemoveTarget]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
@@ -206,7 +215,7 @@ HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, Hccn
         return HCCN_E_PARA;
     }
     HCCL_DEBUG("[HccnRpingRemoveTarget] device id is %d", devLogicId);
- 
+
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingRemoveTarget]memory alloc failed."), HCCN_E_FAIL);
@@ -216,16 +225,16 @@ HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, Hccn
         input[i].sl = target[i].sl;
         input[i].tc = target[i].tc;
     }
- 
+
     ret = rping->HccnRpingRemoveTarget(static_cast<u32>(devLogicId), targetNum, input);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HccnRpingRemoveTarget]Device[%d] remove targets fail", devLogicId);
+        HCCL_ERROR("[HccnRpingRemoveTarget]Device[%d] remove targetNum %u fail, ret[%d]", devLogicId, targetNum, ret);
         delete[] input;
         return HCCN_E_FAIL;
     }
- 
+
     delete[] input;
-    HCCL_RUN_INFO("[HccnRpingRemoveTarget]Device[%d] remove targets success", devLogicId);
+    HCCL_RUN_INFO("[HccnRpingRemoveTarget]Device[%d] remove targetNum %u success", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
 
@@ -262,11 +271,12 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         HCCL_ERROR("[HccnRpingGetTarget]targetNum[%u] is more than %u!", targetNum, TARGET_NUM_MAX), HCCN_E_PARA);
     // 校验指针，并将其转换为pingmesh指针
     CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingGetTarget]rpingCtx is null."), HCCN_E_PARA);
+    HCCL_DEBUG("[HccnRpingGetTarget]targetNum:%u", targetNum);
     PingMesh *rping = static_cast<PingMesh*>(rpingCtx);
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetTarget]cannot get device logic id."), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetTarget]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
@@ -275,7 +285,7 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         return HCCN_E_PARA;
     }
     HCCL_DEBUG("[HccnRpingGetTarget] device id is %d", devLogicId);
- 
+
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed."), HCCN_E_MEM);
@@ -288,7 +298,7 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     CHK_PRT_RET(state == nullptr, HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed."), HCCN_E_MEM);
     ret = rping->HccnRpingGetTarget(static_cast<u32>(devLogicId), targetNum, input, state);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HccnRpingGetTarget]Device[%d] get targets fail", devLogicId);
+        HCCL_ERROR("[HccnRpingGetTarget]Device[%d] get targetNum %u fail, ret[%d]", devLogicId, targetNum, ret);
         delete[] input;
         delete[] state;
         return HCCN_E_FAIL;
@@ -297,19 +307,20 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     ConvertTargetState(targetNum, state, targetState);
     delete[] input;
     delete[] state;
-    HCCL_RUN_INFO("[HccnRpingGetTarget]Device[%d] get targets success", devLogicId);
+    HCCL_RUN_INFO("[HccnRpingGetTarget]Device[%d] get targetNum %u success", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
- 
+
 HccnResult HccnRpingBatchPingStart(HccnRpingCtx rpingCtx, uint32_t pktNum, uint32_t interval, uint32_t timeout)
 {
     // 校验指针，并将其转换为pingmesh指针
     CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingBatchPingStart]rpingCtx is null.", rpingCtx), HCCN_E_PARA);
+    HCCL_DEBUG("[HccnRpingBatchPingStart]pktNum:%u, interval:%u, timeout:%u", pktNum, interval, timeout);
     PingMesh *rping = static_cast<PingMesh*>(rpingCtx);
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingBatchPingStart]cannot get device logic id."), HCCN_E_PARA);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingBatchPingStart]cannot get device logic id, ret[%d].", ret), HCCN_E_PARA);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
@@ -318,13 +329,16 @@ HccnResult HccnRpingBatchPingStart(HccnRpingCtx rpingCtx, uint32_t pktNum, uint3
         return HCCN_E_PARA;
     }
 
-    CHK_PRT_RET(rping->HccnRpingBatchPingStart(static_cast<u32>(devLogicId), pktNum, interval, timeout) != HCCL_SUCCESS,
-        HCCL_ERROR("[HccnRpingBatchPingStart]task start failed."), HCCN_E_FAIL);
-    
-    HCCL_RUN_INFO("[HccnRpingBatchPingStart]task start success");
+    ret = rping->HccnRpingBatchPingStart(static_cast<u32>(devLogicId), pktNum, interval, timeout);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HccnRpingBatchPingStart]task start failed, devLogicId[%d], ret[%d], pktNum:%u, interval:%u, timeout:%u.",
+        devLogicId, ret, pktNum, interval, timeout), HCCN_E_FAIL);
+
+    HCCL_RUN_INFO("[HccnRpingBatchPingStart]task start success, devLogicId:%d, pktNum:%u, interval:%u, timeout:%u",
+        devLogicId, pktNum, interval, timeout);
     return HCCN_SUCCESS;
 }
- 
+
 HccnResult HccnRpingBatchPingStop(HccnRpingCtx rpingCtx)
 {
     // 校验指针，并将其转换为pingmesh指针
@@ -333,7 +347,7 @@ HccnResult HccnRpingBatchPingStop(HccnRpingCtx rpingCtx)
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingBatchPingStop]cannot get device logic id."), HCCN_E_PARA);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingBatchPingStop]cannot get device logic id, ret[%d].", ret), HCCN_E_PARA);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
@@ -342,10 +356,11 @@ HccnResult HccnRpingBatchPingStop(HccnRpingCtx rpingCtx)
         return HCCN_E_PARA;
     }
 
-    CHK_PRT_RET(rping->HccnRpingBatchPingStop(static_cast<u32>(devLogicId)) != HCCL_SUCCESS,
-        HCCL_ERROR("[HccnRpingBatchPingStop]task stop failed."), HCCN_E_FAIL);
+    ret = rping->HccnRpingBatchPingStop(static_cast<u32>(devLogicId));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HccnRpingBatchPingStop]task stop failed, devLogicId[%d] ret[%d].", devLogicId, ret), HCCN_E_FAIL);
 
-    HCCL_RUN_INFO("[HccnRpingBatchPingStop]task stop success");
+    HCCL_RUN_INFO("[HccnRpingBatchPingStop]task stop success, devLogicId[%d]", devLogicId);
     return HCCN_SUCCESS;
 }
 
@@ -357,7 +372,7 @@ inline void ConvertResultState(uint32_t state, HccnRpingResultState &resultState
         resultState = HCCN_RPING_RESULT_STATE_INVALID;
     }
 }
- 
+
 HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
                               HccnRpingResultInfo *result)
 {
@@ -368,18 +383,19 @@ HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         HCCL_ERROR("[HccnRpingGetResult]targetNum[%u] is more than %u!", targetNum, TARGET_NUM_MAX), HCCN_E_PARA);
     // 校验指针，并将其转换为pingmesh指针
     CHK_PRT_RET(rpingCtx == nullptr, HCCL_ERROR("[HccnRpingGetResult]rpingCtx is null."), HCCN_E_PARA);
+    HCCL_DEBUG("[HccnRpingGetResult]targetNum:%u", targetNum);
     PingMesh *rping = static_cast<PingMesh*>(rpingCtx);
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetResult]cannot get device logic id."), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetResult]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
         HCCL_ERROR("[HccnRpingGetResult]curr devId[%d] not match record[%d].", devLogicId, rping->GetDeviceLogicId());
         return HCCN_E_PARA;
     }
- 
+
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingGetResult]memory alloc failed."), HCCN_E_MEM);
@@ -401,16 +417,16 @@ HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         return HCCN_E_AGAIN;
     }
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HccnRpingGetResult]Device[%d] get result fail", devLogicId);
+        HCCL_ERROR("[HccnRpingGetResult]Device[%d] get result fail, targetNum[%u] ret[%d]", devLogicId, targetNum, ret);
         delete[] input;
         delete[] output;
         return HCCN_E_FAIL;
     }
- 
+
     for (uint32_t i = 0; i < targetNum; i++) {
         ConvertResultState(output[i].state, result[i].state);
         if (output[i].state != ping_result_state::PING_RESULT_STATE_VALID) {
-            HCCL_WARNING("[HccnRpingGetResult]Target[%d]'s state is not valid.", i);
+            HCCL_INFO("[HccnRpingGetResult]Target[%d]'s state is not valid, state[%d].", i, output[i].state);
             continue;
         }
         result[i].txPkt = output[i].txPkt;
@@ -419,10 +435,10 @@ HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         result[i].maxRTT = output[i].maxRTT;
         result[i].avgRTT = output[i].avgRTT;
     }
- 
+
     delete[] input;
     delete[] output;
-    HCCL_RUN_INFO("[HccnRpingGetResult]Device[%d] get result success", devLogicId);
+    HCCL_RUN_INFO("[HccnRpingGetResult]Device[%d] get result success, targetNum[%u]", devLogicId, targetNum);
     return HCCN_SUCCESS;
 }
 
@@ -437,7 +453,7 @@ HccnResult HccnRpingGetPayload(HccnRpingCtx rpingCtx, void **payload, uint32_t *
     // 获取device id
     s32 devLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&devLogicId);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetPayload]cannot get device logic id."), HCCN_E_FAIL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetPayload]cannot get device logic id, ret[%d].", ret), HCCN_E_FAIL);
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
@@ -446,10 +462,10 @@ HccnResult HccnRpingGetPayload(HccnRpingCtx rpingCtx, void **payload, uint32_t *
     }
 
     ret = rping->HccnRpingGetPayload(static_cast<u32>(devLogicId), payload, payloadLen);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetPayload]Device[%d] get payload fail", devLogicId),
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetPayload]Device[%d] get payload fail, ret[%d]", devLogicId, ret),
         HCCN_E_FAIL);
-    
-    HCCL_RUN_INFO("[HccnRpingGetPayload]Device[%d] get payload success", devLogicId);
+
+    HCCL_RUN_INFO("[HccnRpingGetPayload]Device[%d] get payload success, payloadLen[%u]", devLogicId, *payloadLen);
     return HCCN_SUCCESS;
 }
 

@@ -11,7 +11,6 @@
 #define _HCCP_PING_H
 
 #include "hccp_common.h"
-#include "hccp_ctx.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,18 +34,6 @@ union ping_qp_attr {
         } qp_attr;
         uint32_t reserved[4U];
     } rdma;
-    struct {
-        struct cq_ext_attr cq_attr;
-        struct {
-            struct qp_cap cap;
-            uint32_t token_value; /**< refer to urma_token_t */
-            uint32_t reserved[3U];
-        } qp_attr;
-        struct {
-            uint32_t token_value;
-        } seg_attr;
-        uint32_t reserved[4U];
-    } ub;
 };
 
 struct ping_local_comm_info {
@@ -59,19 +46,11 @@ struct ping_local_comm_info {
             uint32_t udp_sport;
             uint32_t reserved[7U];
         } rdma;
-        struct {
-            struct qos_attr qos_attr;
-            uint32_t reserved[7U];
-        } ub;
     };
 };
 
 union ping_dev {
     struct rdev rdma;
-    struct {
-        union hccp_eid eid;
-        uint32_t eid_index;
-    } ub;
 };
 
 struct ping_init_attr {
@@ -87,10 +66,6 @@ struct ping_init_attr {
         struct {
             uint32_t reserved[31U];
         } rdma;
-        struct {
-            unsigned int phy_id;
-            uint32_t reserved[30U];
-        } ub;
     };
 };
 
@@ -103,12 +78,6 @@ struct ping_qp_info {
             uint32_t qkey;
             uint32_t reserved[4U];
         } rdma;
-        struct {
-            uint8_t size;
-            uint8_t key[28U]; // refer to qp_key
-            uint8_t reserved[7U];
-            uint32_t token_value;
-        } ub;
     };
 };
 
@@ -146,7 +115,6 @@ struct ping_payload_info {
 struct ping_target_comm_info {
     union {
         union hccp_ip_addr ip;
-        union hccp_eid eid;
     };
     struct ping_qp_info qp_info;
 };

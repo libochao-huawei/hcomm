@@ -36,7 +36,7 @@ private:
     HcclResult WaitLocalSubStreamFinish();
     u32 CalcNumSubStep();
     HcclResult NotifyRemoteRankStart(u32 step);
-    HcclResult SDMAwithRemoteRankAndNotifyEnd(u32 step);
+    HcclResult SDMAwithRemoteRankAndNotifyEnd(u32 step, u32 roundIdx);
     HcclResult SendRecvData(u32 step, u32 roundIdx);
 
     void UpdateCurrRankSendInfo(u32 roundIdx, u32 side, u32 destRank, std::vector<SendDataBlock>& sendInfo, u32 maxSendStep);
@@ -127,6 +127,8 @@ private:
     std::vector<std::shared_ptr<LocalNotify>> rdmaControl2SubNotifies_;
     std::vector<std::shared_ptr<LocalNotify>> rdmaSub2ControlNotifies_;
     Mc2HandlerPub mc2HandlerPub;
+    u32 lastStep_ = 0;
+    u32 lastRoundIdx_ = 0;
 };
 } // namespace hccl
 #endif /* ALLTOALL_V_MESH_READ_ONLY_PUB_H */

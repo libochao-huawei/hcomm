@@ -82,7 +82,7 @@ STATIC void *rs_ping_handle(void *arg)
     RS_CHECK_POINTER_NULL_RETURN_NULL(arg);
 
     hccp_info("<PING> thread begin! thread_id:%lu, pid:%d, ppid:%d", pthread_self(), getpid(), getppid());
-    CHK_PRT_RETURN(pthread_detach(pthread_self()) != 0, hccp_err("pthread_detach fail! thread_id:%lu, errno:%d",
+    CHK_PRT_RETURN(pthread_detach(pthread_self()) != 0, hccp_err("pthread_detach failed! thread_id:%lu, errno:%d",
         pthread_self(), errno), NULL);
 
     (void)prctl(PR_SET_NAME, (unsigned long)"hccp_ping");
@@ -201,7 +201,7 @@ RS_ATTRI_VISI_DEF int rs_ping_handle_init(unsigned int chip_id, int hdc_type, un
     }
 
     ret = rs_dev2rscb(chip_id, &rs_cb, false);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get rs_cb fail, ret:%d, chip_id:%u", ret, chip_id), -ENODEV);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get rs_cb failed, ret:%d, chip_id:%u", ret, chip_id), -ENODEV);
 
     ret = rs_ping_cb_init_mutex(&rs_cb->ping_cb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_ping_cb_init_mutex failed, ret %d", ret), ret);
@@ -227,7 +227,7 @@ RS_ATTRI_VISI_DEF int rs_ping_handle_deinit(unsigned int chip_id)
     int i;
 
     ret = rs_dev2rscb(chip_id, &rs_cb, false);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get rs_cb fail, ret:%d, chip_id:%u", ret, chip_id), -ENODEV);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get rs_cb failed, ret:%d, chip_id:%u", ret, chip_id), -ENODEV);
 
     if (rs_cb->ping_cb.thread_status != RS_PING_THREAD_RUNNING) {
         return 0;
@@ -286,7 +286,7 @@ RS_ATTRI_VISI_DEF int rs_ping_init(struct ping_init_attr *attr, struct ping_init
     CHK_PRT_RETURN(attr == NULL || info == NULL || dev_index == NULL,
         hccp_err("param error, attr or info or dev_index is NULL"), -EINVAL);
 
-    phy_id = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phy_id : attr->ub.phy_id;
+    phy_id = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phy_id : UINT_MAX;
     ret = rs_get_rs_cb(phy_id, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phy_id[%u] invalid, ret %d", phy_id, ret), ret);
 

@@ -82,7 +82,8 @@ HcclResult ContextManager::DestroyCommEngineCtx(const HcclMem *engineCtx)
     std::lock_guard<std::mutex> lock(mutex_); 
     // Ctx不存在返回错误
     if (tagMap_.find(*engineCtx) == tagMap_.end()) {
-        HCCL_ERROR("[%s]The provided engineCtx does not exist.", __func__);
+        HCCL_ERROR("[%s]The provided engineCtx does not exist. engineCtx type[%d], addr[%p], size:[%lu]", 
+                __func__, engineCtx->type, engineCtx->addr, engineCtx->size);
         return HCCL_E_PARA;
     }
 

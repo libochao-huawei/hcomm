@@ -15,6 +15,7 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/alltoallv_staged_pairwise.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/alltoallv_for_310p.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/alltoallv_direct_fullmesh.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/alltoallv_continuous_pipeline.cc
 )
 
 target_sources(hccl_alg PRIVATE

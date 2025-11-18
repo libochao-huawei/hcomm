@@ -224,7 +224,8 @@ HcclResult TaskProfiling::Run(const TaskData &taskData)
     HCCLReportData hcclReportData{};
     auto &profilingManager = hccl::ProfilingManager::Instance();
     HcclResult is_subscribe = profilingManager.GetAddtionInfoState();
-    if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
+    !hccl::ProfilingManagerPub::GetThreadCaptureStatus()) {
         return HCCL_SUCCESS;
     }
     std::unique_lock<std::mutex> lock(mutex_);
@@ -325,7 +326,8 @@ HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, const TaskParaAiv &pa
     HCCLReportData hcclReportData{};
     auto &profilingManager = hccl::ProfilingManager::Instance();
     HcclResult is_subscribe = profilingManager.GetAddtionInfoState();
-    if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
+        !hccl::ProfilingManagerPub::GetThreadCaptureStatus()) {
         return HCCL_SUCCESS;
     }
     std::unique_lock<std::mutex> lock(mutex_);

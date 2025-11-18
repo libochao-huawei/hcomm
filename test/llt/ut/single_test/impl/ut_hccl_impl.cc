@@ -6538,35 +6538,3 @@ TEST_F(HcclImplTest, ut_HcclCommunicator_AicpuUnfold_and_AllReduceAicpuUnfold)
     GlobalMockObject::verify();
 }
 #endif
-
-TEST_F(HcclImplTest, ut_inst_topo_getNetLayer)
-{
-    uint32_t netLayer = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1);
-    uint32_t netLayerNum = 0;
-    HcclCommunicator hcclCommunicator;
-    hcclCommunicator.deviceType_ = DevType::DEV_TYPE_910_93;
-    HcclResult ret = hcclCommunicator.GetInstTopoTypeByNetLayer(netLayer, &netLayerNum);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    netLayer = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
-    ret = hcclCommunicator.GetInstTopoTypeByNetLayer(netLayer, &netLayerNum);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    hcclCommunicator.deviceType_ = DevType::DEV_TYPE_910B;
-    ret = hcclCommunicator.GetInstTopoTypeByNetLayer(netLayer, &netLayerNum);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    hcclCommunicator.deviceType_ = DevType::DEV_TYPE_310P3;
-    ret = hcclCommunicator.GetInstTopoTypeByNetLayer(netLayer, &netLayerNum);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-}
-
-TEST_F(HcclImplTest, ut_get_inst_byNetLayer)
-{
-    hcclComm hcclcomm;
-    uint32_t netLayer = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
-    uint32_t netLayerNum = 0;
-    hcclcomm.communicator_ = std::make_unique<HcclCommunicator>();
-    auto ret = hcclcomm.GetInstTopoTypeByNetLayer(netLayer, &netLayerNum);
-    EXPECT_EQ(HCCL_SUCCESS, ret);
-}

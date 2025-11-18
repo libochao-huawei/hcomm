@@ -41,6 +41,12 @@ HcclResult RegisterLoadTaskCallBack(HcclDispatcher dispatcherPtr, void *userPtr,
     return HCCL_SUCCESS;
 }
 
+HcclResult ForceProfOn(HcclDispatcher &dispatcherPtr, bool isForce)
+{
+    CHK_PTR_NULL(dispatcherPtr);
+    reinterpret_cast<DispatcherPub*>(dispatcherPtr)->ForceProf(isForce);
+    return HCCL_SUCCESS;
+}
 HcclResult HcclDispatcherInit(DispatcherType type, const s32 devicePhyId, HcclDispatcher *dispatcher)
 {
     CHK_RET(DlProfFunc::GetInstance().DlProfFunctionInit());

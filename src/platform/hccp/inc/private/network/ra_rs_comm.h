@@ -20,6 +20,7 @@
 #define RA_MR_MAX_NUM 8
 
 #define RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
+#define HCCN_CFG_MSG_DATA_LEN 2048U
 
 enum op_type {
     RA_RS_SOCKET_CONN = 0,
@@ -69,7 +70,7 @@ enum op_type {
     RA_RS_GET_LITE_MEM_ATTR = 44,
     RA_RS_TYPICAL_QP_CREATE = 45,
     RA_RS_TYPICAL_QP_MODIFY = 46,
-    RA_RS_TYPICAL_MR_REG = 47,
+    RA_RS_TYPICAL_MR_REG_V1 = 47,
     RA_RS_TYPICAL_MR_DEREG = 48,
     RA_RS_CTX_INIT = 49,
     RA_RS_CTX_DEINIT = 50,
@@ -122,6 +123,8 @@ enum op_type {
     RA_RS_SOCKET_ABORT = 97,
     RA_RS_ACCEPT_CREDIT_ADD = 98,
     RA_RS_GET_SEC_RANDOM = 99,
+    RA_RS_GET_HCCN_CFG = 100,
+    RA_RS_TYPICAL_MR_REG = 101,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode

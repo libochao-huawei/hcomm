@@ -15,15 +15,7 @@ list(APPEND ra_adp_list
 )
 endif()
 
-if ((PRODUCT IN_LIST ASCEND910_95_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_96_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_55_PRODUCT_LIST))
-add_definitions(-DCONFIG_CONTEXT)
 
-list(APPEND ra_adp_list
-    ${BASIC_PATH}/rdma_agent/adapter/ctx/ra_adp_ctx.c
-)
-endif()
 
 #编译目标
 add_library(ra_adp SHARED
@@ -50,10 +42,12 @@ if(BUILD_OPEN_PROJECT)
         ${BASIC_PATH}/rdma_agent/adapter/async/
         ${BASIC_PATH}/rdma_service
         ${BASIC_PATH}/common
-        ${BASIC_PATH}/roce/host_lite
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+
+        # rdma头文件
+        ${BASIC_PATH}/external_depends/host_lite
     )
 
     target_link_directories(ra_adp PRIVATE
@@ -71,15 +65,6 @@ target_include_directories(ra_adp PRIVATE
 
 target_compile_definitions(ra_adp PRIVATE
     CONFIG_TLV
-)
-endif()
-
-if ((PRODUCT IN_LIST ASCEND910_95_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_96_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_55_PRODUCT_LIST))
-target_include_directories(ra_adp PRIVATE
-    ${BASIC_PATH}/rdma_agent/adapter/ctx/
-    ${BASIC_PATH}/rdma_service/ctx/
 )
 endif()
 

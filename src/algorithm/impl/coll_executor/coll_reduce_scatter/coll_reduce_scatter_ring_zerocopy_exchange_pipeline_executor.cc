@@ -19,6 +19,7 @@ CollReduceScatterRingZerocopyExchangePipelineExecutor::CollReduceScatterRingZero
     CCLMemSlice_ = false;
     DMAReduceFlag_ = true;    // 设为true，以禁用RunLoop中的本地拷贝
     desc_.isZeroCopy = true;  // 执行RunLoop的KernelRunInterServer分支
+    desc_.deterministic = 1;
     desc_.level1SupportedAlgos = {
         AlgTypeLevel1::ALG_LEVEL1_RING,
         AlgTypeLevel1::ALG_LEVEL1_NHR,
@@ -144,6 +145,7 @@ u64 CollReduceScatterRingZerocopyExchangePipelineExecutor::CalcLoopMaxCount(cons
 HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::KernelRunIntraServerPre(
     const OpParam &param, ExecMem &execMem)
 {
+    (void)execMem;
     CHK_RET(SalGetDataTypeSize(param.DataDes.dataType, unitSize_));
     CHK_RET(GetCommRankInfoNormal(level0Rank_, level0RankSize_, level1Rank_, level1RankSize_, level2Rank_,
         level2RankSize_, false));
@@ -226,6 +228,7 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunSuperPodPos
 HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunIntraServer(
     const OpParam &param, ExecMem &execMem, u32 step)
 {
+    (void)execMem;
     // 计算slice信息, 将user in分成level2RankSize_块, 每个step处理一块blockIndex, 每个block需要分成level0RankSize_片
     u64 level0Count = param.DataDes.count * level1RankSize_;
     u32 blockIndex = (level2Rank_ + level2RankSize_ - (step + 1)) % level2RankSize_;
@@ -265,6 +268,10 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::SemiRingReduce
     const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> multRingsUserMemSlice)
 {
+    (void)tag;
+    (void)multRingsSliceZero;
+    (void)baseOffset;
+    (void)opInfo;
     HCCL_DEBUG("[SemiRingReduceScatter] starts, rank[%u:%u,%u,%u]",
         topoAttr_.userRank, level2Rank_, level1Rank_, level0Rank_);
 
@@ -276,6 +283,7 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::SemiRingReduce
     // 执行
     std::unique_ptr<AlgTemplateBase> executor = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_UNIFIED_MARCH, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_UNIFIED_MARCH in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(executor);
 
     CHK_RET(executor->Prepare(stream, level0CommInfo,
@@ -342,19 +350,23 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunInterServer
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
         level1TempAlg =
             AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr));
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         level1TempAlg =
             AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL1", __func__);
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         level1TempAlg =
             AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr));
     }
+    CHK_SMART_PTR_NULL(level1TempAlg);
 
     // 执行算法编排, 主流上执行，只会使用ccl in，执行完成后数据在ccl in
     CHK_RET(CheckCommSize(COMM_LEVEL1, level0Rank_ + 1));
@@ -480,6 +492,7 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunInterServer
 HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::RunSuperPod(
     const OpParam &param, const ExecMem &execMem, u32 step)
 {
+    (void)param;
     Stream slaveStream = algResResp_->slaveStreams.back();
     // 发送前回RS好的数据
     u32 blockIndexSnd = (level2Rank_ + level2RankSize_ - step) % level2RankSize_;

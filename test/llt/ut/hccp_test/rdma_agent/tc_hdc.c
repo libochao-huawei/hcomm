@@ -2364,3 +2364,27 @@ void tc_ra_hdc_tlv_request()
     free(send_msg.data);
     send_msg.data = NULL;
 }
+
+void tc_ra_hdc_qp_create_with_attrs()
+{
+    struct ra_rdma_handle rdma_handle = {0};
+    struct qp_ext_attrs ext_attrs = {0};
+    struct ai_qp_info info = {0};
+    void *qp_handle = NULL;
+    int ret = 0;
+
+    mocker(memcpy_s, 1, -1);
+    ret = ra_hdc_qp_create_with_attrs(&rdma_handle, &ext_attrs, &qp_handle);
+    EXPECT_INT_EQ(ret, -256);
+    mocker_clean();
+
+    mocker(memcpy_s, 1, -1);
+    ret = ra_hdc_ai_qp_create(&rdma_handle, &ext_attrs, &info, &qp_handle);
+    EXPECT_INT_EQ(ret, -256);
+    mocker_clean();
+
+    mocker(memcpy_s, 1, -1);
+    ret = ra_hdc_ai_qp_create_with_attrs(&rdma_handle, &ext_attrs, &info, &qp_handle);
+    EXPECT_INT_EQ(ret, -256);
+    mocker_clean();
+}

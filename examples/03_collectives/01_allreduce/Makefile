@@ -29,7 +29,7 @@ ASCEND_INC_DIR = ${ASCEND_HOME_PATH}/include
 ASCEND_LIB_DIR = ${ASCEND_HOME_PATH}/lib64
 LIBS = -L$(ASCEND_LIB_DIR) -lhccl -lascendcl
 INCS = -I$(ASCEND_INC_DIR)
-TARGET = one_device_per_pthread
+TARGET = all_reduce
 
 # Default target
 all:

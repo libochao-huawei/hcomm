@@ -16,7 +16,6 @@
 #include <infiniband/verbs.h>
 #include "ra_rs_comm.h"
 #include "ra.h"
-#include "ra_ctx.h"
 
 struct ra_socket_ops {
     int (*ra_socket_init)(struct rdev rdev_info);

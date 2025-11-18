@@ -21,7 +21,7 @@ namespace hccl {
 
 TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
                                    const std::unique_ptr<HcclSocketManager> &socketManager,
-                                   const HcclDispatcher &dispatcher,
+                                   HcclDispatcher &dispatcher,
                                    const std::unique_ptr<NotifyPool> &notifyPool,
                                    const std::vector<RankInfo> &rankInfoList,
                                    RankId userRank,
@@ -157,11 +157,12 @@ HcclResult TransportManager::GetRemoteRankList(OpCommTransport &opTransportRespo
 
 HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, const TransportIOMem &transMem,
     struct SubCommLinkPara &subCommLinkPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex, bool isCapture,
-    const HcclCMDType &opType)
+    const HcclCMDType &opType, bool isIndOp)
 {
     u32 num = subCommLinkPara.remoteRankIdNum;
     struct SingleSubCommTransport &singleSubCommTransport = subCommLinkPara.singleSubCommTransport;
     subCommLinkPara.linkThreads.resize(num);
+    subCommLinkPara.linkResult.resize(num, HCCL_SUCCESS);
 
     for (u32 i = 0; i < num; i++) {
         u32 index = subCommLinkPara.remoteRankMap[(subCommLinkPara.remoteRankIdStartIndex + i) % subCommLinkPara.remoteRankMap.size()].second;
@@ -183,11 +184,18 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
         HCCL_DEBUG("transportRequest.inputMemType[%d] transportRequest.outputMemType[%d], isBackup[%d]",
             transportRequest.inputMemType, transportRequest.outputMemType, isBackup);
 
+        IndOpMem indOpMem;
+        if (isIndOp) {
+            indOpMem = transMem.indOpMem;
+            HCCL_DEBUG("transportRequest indOpMem, userHostMem size[%llu], userDeviceMem size[%llu]", indOpMem.userHostMem.size(), indOpMem.userDeviceMem.size());
+        }
+
         std::vector<std::shared_ptr<HcclSocket>> connectSockets;
         bool isInterRdma;
         bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
+        HcclNetDevCtx netDevCtx;
         HcclResult ret = CreateDestSockets(tag, transportRequest.remoteUserRank, singleSubCommTransport.taskNum,
-            connectSockets, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
+            connectSockets, netDevCtx, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
             transportRequest.linkType);
         HCCL_DEBUG("[%s]CreateDestSockets finished, chooseBackup[%d]", __func__, chooseBackup);
         HCCL_DEBUG("[%s]: remoteUserRank[%u], userRank[%u], isUsedRdma[%u]", __func__, transportRequest.remoteUserRank,
@@ -197,8 +205,6 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
         MachineType machineType = transportRequest.localUserRank < transportRequest.remoteUserRank ?
             MachineType::MACHINE_SERVER_TYPE : MachineType::MACHINE_CLIENT_TYPE;
         std::string threadStr = (isInterRdma ? "HcclTerL_" : "HcclIntra_") + std::to_string(i);
-        bool isIndOp = false;
-        IndOpMem indOpMem;
         subCommLinkPara.linkThreads[i].reset(
             new (std::nothrow) std::thread(&TransportManager::CreateLink,
                 this, tag, hrtErrMGetErrorContextPub(), 
@@ -206,7 +212,7 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
                 singleSubCommTransport.supportDataReceivedAck, singleSubCommTransport.linkMode, 
                 singleSubCommTransport.enableUseOneDoorbell, threadStr,
                 connectSockets, inputMem, outputMem, transportRequest.isUsedRdma, 
-                std::ref(link), isAicpuModeEn,
+                std::ref(link), isAicpuModeEn, std::ref(subCommLinkPara.linkResult[i]), netDevCtx,
                 transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                 isIndOp, indOpMem, opType));
         CHK_SMART_PTR_NULL(subCommLinkPara.linkThreads[i]); // 异常时其他线程待处理
@@ -236,6 +242,9 @@ HcclResult TransportManager::checkSubCommLinkThreadsStatus(const std::string &ta
     u32 num = subCommLinkPara.remoteRankIdNum;
     struct SingleSubCommTransport &singleSubCommTransport = subCommLinkPara.singleSubCommTransport;
 
+    for (u32 i = 0; i < subCommLinkPara.linkResult.size(); i++) {
+        CHK_RET(subCommLinkPara.linkResult[i]);
+    }
     for (u32 i = 0; i < num; i++) {
         u32 index = subCommLinkPara.remoteRankMap[(subCommLinkPara.remoteRankIdStartIndex + i) % subCommLinkPara.remoteRankMap.size()].second;
         auto &transportRequest = singleSubCommTransport.transportRequests[index];
@@ -267,7 +276,7 @@ HcclResult TransportManager::checkSubCommLinkThreadsStatus(const std::string &ta
 
 HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const TransportIOMem &transMem,
     struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
-    bool isCapture, const HcclCMDType &opType)
+    bool isCapture, const HcclCMDType &opType, bool isIndOp)
 {
     const u32 offset = 8;
     std::vector<std::pair<u32, u32>> remoteRankMap;
@@ -319,9 +328,9 @@ HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const Tra
         }
 
         CHK_RET(createSubCommLinkThreads(tag, transMem, nextSubCommLinkPara, isAicpuModeEn, isBackup, subCommIndex,
-            isCapture, opType));
+            isCapture, opType, isIndOp));
         CHK_RET(createSubCommLinkThreads(tag, transMem, prevSubCommLinkPara, isAicpuModeEn, isBackup, subCommIndex,
-            isCapture, opType));
+            isCapture, opType, isIndOp));
         CHK_RET(waitSubCommLinkThreadsComplete(nextSubCommLinkPara));
         CHK_RET(waitSubCommLinkThreadsComplete(prevSubCommLinkPara));
         CHK_RET(checkSubCommLinkThreadsStatus(tag, nextSubCommLinkPara, isBackup));
@@ -365,12 +374,14 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                     }
                 }
                 CHK_RET(AllocSubCommLinks(tag, transMem, singleSubCommTransport, isAicpuModeEn, isBackup, subCommIndex,
-                    isCapture, opType));
+                    isCapture, opType, isIndOp));
                 continue;
             }
 
             std::vector<std::unique_ptr<std::thread> > linkThreads; // 建链所需线程
+            std::vector<HcclResult> linkResult;                     // CreateLink返回值出参
             linkThreads.resize(singleSubCommTransport.transportRequests.size());
+            linkResult.resize(linkThreads.size(), HCCL_SUCCESS);
             ThreadsGuard threadsGuard(linkThreads);                 // 确保异常退出场景析构时等待线程join
             u32 threadsRapplyNum{0};                                // 线程使用计数器
 
@@ -400,8 +411,8 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
 
                     IndOpMem indOpMem;
                     if (isIndOp) {
-                        HCCL_DEBUG("transportRequest indOpMem");
                         indOpMem = transMem.indOpMem;
+                        HCCL_DEBUG("transportRequest indOpMem, userHostMem size[%llu], userDeviceMem size[%llu]", indOpMem.userHostMem.size(), indOpMem.userDeviceMem.size());
                     }
 
                     std::vector<std::shared_ptr<HcclSocket> > connectSockets;
@@ -409,8 +420,9 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                     HCCL_DEBUG("[%s]: remoteUserRank[%u], userRank[%u], isUsedRdma[%u], tag[%s]", __func__,
                         transportRequest.remoteUserRank, userRank_, transportRequest.isUsedRdma, tag.c_str());
                     bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
+                    HcclNetDevCtx netDevCtx;
                     HcclResult ret = CreateDestSockets(tag, transportRequest.remoteUserRank, singleSubCommTransport.taskNum,
-                        connectSockets, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
+                        connectSockets, netDevCtx, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
                         transportRequest.linkType);
                     HCCL_DEBUG("[%s]CreateDestSockets finished, chooseBackup[%d]", __func__, chooseBackup);
                     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Alloc]Create dest sockets failed"), ret);
@@ -434,6 +446,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                             singleSubCommTransport.enableUseOneDoorbell, threadStr, connectSockets,
                             inputMem, outputMem, transportRequest.isUsedRdma,
                             std::ref(singleSubCommTransport.links[linkIdx]), isAicpuModeEn,
+                            std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                             isIndOp, indOpMem, opType));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
@@ -452,6 +465,9 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
             }
             linkThreads.clear();
             CHK_PRT_RET(GetStopFlag(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
+            for (u32 index = 0; index < linkResult.size(); index++) {
+                CHK_RET(linkResult[index]);
+            }
 
             linkIdx = 0;
             for (auto &transportRequest : singleSubCommTransport.transportRequests) {
@@ -513,7 +529,9 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
         for (u32 ringIndex = 0; ringIndex < opTransportReq[levelIndex].size(); ringIndex++) {
             subCommIndex++;
             std::vector<std::unique_ptr<std::thread> > linkThreads; // 建链所需线程
+            std::vector<HcclResult> linkResult;                     // CreateLink返回值出参
             linkThreads.resize(opTransportReq[levelIndex][ringIndex].transportRequests.size());
+            linkResult.resize(linkThreads.size(), HCCL_SUCCESS);
             ThreadsGuard threadsGuard(linkThreads);                 // 确保异常退出场景析构时等待线程join
             u32 threadsRapplyNum{0};                                // 线程使用计数器
             SingleSubCommTransport &reqSingleSubComm = opTransportReq[levelIndex][ringIndex];
@@ -546,8 +564,9 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                     std::vector<std::shared_ptr<HcclSocket> > connectSockets;
                     bool isInterRdma;
                     bool chooseBackup = transportRequest.isUsedRdma ? isBackup : false;
+                    HcclNetDevCtx netDevCtx;
                     HcclResult ret = CreateDestSockets(tag, transportRequest.remoteUserRank, reqSingleSubComm.taskNum,
-                        connectSockets, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
+                        connectSockets, netDevCtx, isInterRdma, transportRequest.isUsedRdma, chooseBackup, subCommIndex,
                         transportRequest.linkType);
                     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[IncreAlloc]Create dest sockets failed"), ret);
 
@@ -563,6 +582,7 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                             reqSingleSubComm.supportDataReceivedAck, reqSingleSubComm.linkMode,
                             reqSingleSubComm.enableUseOneDoorbell, threadStr, connectSockets, inputMem, outputMem,
                             transportRequest.isUsedRdma, std::ref(respSingleSubComm.links[rankIndex]), isAicpuModeEn,
+                            std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
                             isIndOp, indOpMem, opType));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
@@ -577,7 +597,9 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                 }
             }
             linkThreads.clear();
-
+            for (u32 index = 0; index < linkResult.size(); index++) {
+                CHK_RET(linkResult[index]);
+            }
             for (auto &tmpTag : socketTagVec_) {
                 (void)socketManager_->DestroySockets(tmpTag);
             }
@@ -695,7 +717,7 @@ u32 TransportManager::GetRemoteNicPort(s32 devicePhyId, u32 dstUserRank, bool is
 }
 
 HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId remoteRank, u64 taskNum,
-    std::vector<std::shared_ptr<HcclSocket> > &connectSockets, bool &isInterRdma, bool forceRdma, bool isBackup,
+    std::vector<std::shared_ptr<HcclSocket> > &connectSockets, HcclNetDevCtx &netDevCtx, bool &isInterRdma, bool forceRdma, bool isBackup,
     u32 subCommIndex, TransportLinkType linkType)
 {
     // 改对端的ip和port
@@ -725,7 +747,7 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
 
     HcclResult ret = HCCL_SUCCESS;
     if (isInterRdma || Is310PDevice()) {
-        HcclNetDevCtx netDevCtx = nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE ?
+        netDevCtx = nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE ?
             netDevCtxMap_[devIpAddr_[0]]: netDevCtxMap_[hostIp_];
         if (isBackup && nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
             netDevCtx = netDevCtxMap_[rankInfoList_[userRank_].backupNicIp[0]];
@@ -768,8 +790,8 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
                     rankInfoList_[userRank_].devicePhyId, rankInfoList_[remoteRank].devicePhyId, ret), ret);
             }
         }
-        ret = socketManager_->CreateSingleLinkSocket(newTag, netDevCtxMap_[localVnicIp_],
-            remoteLinkInfo, connectSockets, false, true);
+        netDevCtx = netDevCtxMap_[localVnicIp_];
+        ret = socketManager_->CreateSingleLinkSocket(newTag, netDevCtx, remoteLinkInfo, connectSockets, false, true);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Create][DestSockets]Create single link sockets failed, "
@@ -826,7 +848,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     const bool enableUseOneDoorbell, const std::string threadStr,
     const std::vector<std::shared_ptr<HcclSocket> > sockets,
     const DeviceMem inputMem, const DeviceMem outputMem, bool isUsedRdma,
-    std::shared_ptr<Transport> &link, bool isAicpuModeEn,
+    std::shared_ptr<Transport> &link, bool isAicpuModeEn, HcclResult &retOut, const HcclNetDevCtx &netDevCtx,
     u32 notifyNum, bool isBackup, bool isCapture, const DeviceMem expMem, TransportLinkType linkType,
     bool isIndOp, const IndOpMem indOpMemd, const HcclCMDType &opType)
 {
@@ -834,21 +856,29 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     // 给当前线程添加名字
     SetThreadName(threadStr);
     link = nullptr;
-    CHK_RET(hrtSetDevice(deviceLogicId_));
+    retOut = hrtSetDevice(deviceLogicId_);
+    CHK_RET(retOut);
 
     SetWorkflowMode(workflowMode_); // 更新本线程的workflow
 
     MachinePara machinePara;
     RankInfo loaclRankInfo = rankInfoList_[userRank_];
     RankInfo remoteRankInfo  = rankInfoList_[remoteRank];
-    CHK_RET(SetMachinePara(tag, machineType, serverId, remoteRank, supportDataReceivedAck, linkMode, sockets,
-        inputMem, outputMem, expMem, isAicpuModeEn, isBackup, isCapture, notifyNum, trafficClass_, serviceLevel_, machinePara,
-        loaclRankInfo, remoteRankInfo, linkType, indOpMemd, isIndOp, opType));
+    HcclResult ret = HCCL_SUCCESS;
+    do {
+        ret = SetMachinePara(tag, machineType, serverId, remoteRank, supportDataReceivedAck, linkMode, sockets,
+            inputMem, outputMem, expMem, isAicpuModeEn, isBackup, isCapture, notifyNum, trafficClass_, serviceLevel_, machinePara,
+            loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMemd, isIndOp, opType);
+        retOut = ret;
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx]SetMachinePara error.", __func__, HCCL_ERROR_CODE(ret)),);
     HCCL_DEBUG("inputMem[%p],outputMem[%p], inputMem size[%llu], outputMem size[%llu]", inputMem.ptr(), outputMem.ptr(),
         inputMem.size(), outputMem.size());
     if (isIndOp) {
         HCCL_DEBUG("userHostMem num[%llu], userDeviceMem num[%llu]", indOpMemd.userHostMem.size(), 
             indOpMemd.userDeviceMem.size());
+        if (dispatcher_) {
+            dispatcher_ = nullptr;
+        }
     }
     HCCL_INFO("[createLink para]tag[%s], rank[%u]-localUserrank[%u]-localIpAddr[%s], linkMode[%d] "
               "dst_rank[%u]-remoteUserrank[%u]-remote_ip_addr[%s], machineType[%d], serverId[%s], "
@@ -862,11 +892,17 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     //目前只有A2 batch_send_recv 才切换到新链路
     if (type == TransportType::TRANS_TYPE_IBV_EXP && opType_ == HCCL_CMD_BATCH_SEND_RECV &&
         rankInfoList_[userRank_].deviceType == DevType::DEV_TYPE_910B) {
-        CHK_RET(CheckLinkNumAndSwitchLinkType(type, machinePara, sockets));
+            ret = CheckLinkNumAndSwitchLinkType(type, machinePara, sockets);
+            retOut = ret;
+            CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx]CheckLinkNumAndSwitchLinkType error.", __func__, HCCL_ERROR_CODE(ret)),);
     }
-    HcclResult ret = TransportInit(remoteRank, machinePara, link, enableUseOneDoorbell, isUsedRdma, type);
+        ret = TransportInit(remoteRank, machinePara, link, enableUseOneDoorbell, isUsedRdma, type);
+        retOut = ret;
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx]TransportInit error.", __func__, HCCL_ERROR_CODE(ret)),);
+    } while(0);
     if (ret != HCCL_SUCCESS) {
         link = nullptr;
+        retOut = ret;
         if (ret == HCCL_E_MEMORY) {
             std::string err_str = "[Create][DestLink]Transport init error! IPC memory allocation failed due to "
                 "possible memory limit exceeded. Suggested solution: Use 3TB / (ranksize * 2) as the upper limit of "
@@ -908,7 +944,7 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
     const std::vector<std::shared_ptr<HcclSocket> > &socketList,
     const DeviceMem &inputMem, const DeviceMem &outputMem, const DeviceMem &expMem, bool isAicpuModeEn, 
     bool isBackup, bool isCapture, u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara,
-    RankInfo &loaclRank, RankInfo &remoteRank, TransportLinkType linkType,
+    RankInfo &loaclRank, RankInfo &remoteRank, const HcclNetDevCtx &netDevCtx, TransportLinkType linkType,
     const IndOpMem &indOpMem, bool isIndOp, const HcclCMDType &opType)
 {
     machinePara.notifyNum = notifyNum;
@@ -972,7 +1008,7 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
         std::map<u32, u32> dstRankToUserRank;
         dstRankToUserRank[dstRank] = dstRank;
         CHK_RET(socketManager_->WaitLinksEstablishCompleted(socketList[0]->GetLocalRole(),
-            socketsMap, dstRankToUserRank, loaclRank, remoteRank));
+            socketsMap, dstRankToUserRank, loaclRank, remoteRank, netDevCtx));
         machinePara.sockets = socketList;
     }
     machinePara.exchangeInfo.resize(rankConsistentDataLength_);

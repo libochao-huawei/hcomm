@@ -43,19 +43,6 @@ HcclResult hcclComm::DeinitOneSidedService()
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::CreateCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx)
-{
-    return HCCL_SUCCESS;
-}
-HcclResult hcclComm::GetCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx)
-{
-    return HCCL_SUCCESS;
-}
-HcclResult hcclComm::DestroyCommEngineCtx(const HcclMem *engineCtx)
-{
-    return HCCL_SUCCESS;
-}
-
 HcclResult hcclComm::RegisterCommUserMem(void* addr, u64 size, void **handle)
 {
     return HCCL_SUCCESS;
@@ -70,33 +57,22 @@ HcclResult hcclComm::ExchangeCommUserMem(void* handle, std::vector<u32>& peerRan
 {
     return HCCL_SUCCESS;
 }
-HcclResult hcclComm::ChannelCommCreate(const std::string &tag, CommEngine engine, 
-    const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
-{
-    return HCCL_SUCCESS;
-}
-HcclResult hcclComm::ChannelCommGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum)
-{
-    return HCCL_SUCCESS;
-}
-HcclResult hcclComm::ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum)
-{
-    return HCCL_SUCCESS;
-}
-HcclResult hcclComm::ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer)
-{
-    return HCCL_SUCCESS;
-}
-HcclResult hcclComm::ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum)
-{
-    return HCCL_SUCCESS;
-}
+
 HcclResult hcclComm::SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable)
 {
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::InitIndependentOp()
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::PrepareChannelMem(const std::string &tag, TransportIOMem &transMem)
+{
+    return HCCL_SUCCESS;
+}
+HcclResult hcclComm::IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, bool isAicpuModeEn)
 {
     return HCCL_SUCCESS;
 }

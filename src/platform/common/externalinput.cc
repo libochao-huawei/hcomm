@@ -15,6 +15,8 @@
 #include <thread>
 #include <mutex>
 #include <unistd.h>
+#include <regex>
+#include <cmath>
 #include "sal.h"
 #include "adapter_error_manager.h"
 #include "externalinput_pub.h"
@@ -326,6 +328,16 @@ HcclResult ParseRdmaFastPost()
     return HCCL_SUCCESS;
 }
 
+bool IsValidExecTimeOutMs(const std::string &execTimeOutStr)
+{
+    // 校验配置值为数字格式，小数点最多2位
+    std::regex validFormat(R"(^\d+(\.\d{1,2})?$)");
+    if (!std::regex_match(execTimeOutStr, validFormat)) {
+        return false;
+    }
+
+    return true;
+}
 HcclResult ParseExecTimeOut()
 {
     std::string execTimeOutEnv = GET_ENV(MM_ENV_HCCL_EXEC_TIMEOUT);
@@ -738,14 +750,17 @@ HcclResult SplitHcclSocketIfName(const std::string &socketIfName, std::vector<st
 HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutSet execTimeOutSet)
 {
     CHK_PTR_NULL(execTimeOutStr);
+    if (!IsValidExecTimeOutMs(execTimeOutStr)) {
+        HCCL_ERROR("[SetHccLExecTimeOut]Invalid config value, execTimeOutStr[%s]", execTimeOutStr);
+        return HCCL_E_PARA;
+    }
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType)); // 910A和910B要分开
-    s32 hcclExecTimeout = (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) ?\
+    double hcclExecTimeout = (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) ?\
         HCCL_EXEC_TIME_OUT_S_910_93 : HCCL_EXEC_TIME_OUT_S;
-    s32 execTimeOut = hcclExecTimeout;
+    double execTimeOut = hcclExecTimeout;
     g_externalInput.execTimeOut = hcclExecTimeout;
-    CHK_RET(IsAllDigit(execTimeOutStr));
-    HcclResult ret = SalStrToInt(execTimeOutStr, HCCL_BASE_DECIMAL, execTimeOut);
+    HcclResult ret = SalStrToDouble(execTimeOutStr, execTimeOut);
 
     bool flag = false;
     if (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) {
@@ -773,16 +788,16 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
         CHK_PRT_RET(flag,
             HCCL_ERROR("[Parse][HcclExecTimeOut]ExecTimeOut[%s] is invalid. except: [1, %d]",
             execTimeOutStr, HCCL_EXEC_TIME_OUT_S), HCCL_E_PARA);
-        s32 intPart = execTimeOut / HCCL_INTEVAL_EXEC_TIME_OUT_S;
+        s32 intPart = static_cast<s32>(execTimeOut / HCCL_INTEVAL_EXEC_TIME_OUT_S);
         intPart = (intPart == 0) ? 1 : intPart;
         execTimeOut = intPart * HCCL_INTEVAL_EXEC_TIME_OUT_S;
     }
     g_externalInput.execTimeOut = execTimeOut;
     g_externalInput.execTimeOutSet = execTimeOutSet;
     if (execTimeOutSet == HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_SET_BY_ENV) {
-        HCCL_RUN_INFO("HCCL_EXEC_TIMEOUT set by environment to [%d]s", execTimeOut);
+        HCCL_RUN_INFO("HCCL_EXEC_TIMEOUT set by environment to [%.2f]s", execTimeOut);
     } else {
-        HCCL_RUN_INFO("HCCL_EXEC_TIMEOUT set by GE option to [%d]s", execTimeOut);
+        HCCL_RUN_INFO("HCCL_EXEC_TIMEOUT set by GE option to [%.2f]s", execTimeOut);
     }
     return HCCL_SUCCESS;
 }
@@ -1355,9 +1370,6 @@ HcclResult ParseOpExpansion()
             g_externalInput.aicpuUnfold = true;
         }
     } else if (opExpansionModeEnv == "AIV") {
-        if (g_externalInput.hcclDeterministic == true) {
-            HCCL_WARNING("Deterministic do not support aiv");
-        }
         g_externalInput.aivMode = true;
     } else if (opExpansionModeEnv == "HOST") {
         g_externalInput.aivMode = false;
@@ -1659,7 +1671,7 @@ const std::string& GetExternalInputCannVersion()
     return g_externalInput.cannVersion;
 }
 
-const s32& GetExternalInputHcclExecTimeOut()
+const double& GetExternalInputHcclExecTimeOut()
 {
     return g_externalInput.execTimeOut;
 }

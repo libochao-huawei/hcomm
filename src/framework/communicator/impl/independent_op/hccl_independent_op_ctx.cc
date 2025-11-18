@@ -12,6 +12,7 @@
 #include "independent_op_context_manager.h"
 #include "log.h"
 #include "hccl_comm_pub.h"
+#include "independent_op.h"
 #include <string>
 
 using namespace hccl;
@@ -23,15 +24,20 @@ HcclResult CommCreateEngineCtx(HcclComm comm, const char *engineTag, CommEngine 
     CHK_PTR_NULL(engineCtx);
     CHK_PRT_RET(strlen(engineTag) > HCCL_OP_TAG_LEN_MAX,
         HCCL_ERROR("[%s] engineTag length exceeds maximum length, engineTag length[%zu], max length[%d]",
-            __func__,
-            strlen(engineTag),
-            HCCL_OP_TAG_LEN_MAX),
-        HCCL_E_PARA);
-    CHK_PRT_RET(engineCtx->size == 0, HCCL_ERROR("[%s]Invalid CtxSize, CtxSize[%u]",
-        __func__, engineCtx->size), HCCL_E_PARA);
+            __func__,  strlen(engineTag), HCCL_OP_TAG_LEN_MAX), HCCL_E_PARA);
+    CHK_PRT_RET(engineCtx->size == 0, HCCL_ERROR("[%s]Invalid CtxSize, CtxSize[%u]", __func__, 
+        engineCtx->size), HCCL_E_PARA);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    CHK_RET(hcclComm->CreateCommEngineCtx(std::string(engineTag), engine, engineCtx));
-    HCCL_RUN_INFO("[%s] success, group[%s]", __func__, hcclComm->GetIdentifier().c_str());
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.CreateCommEngineCtx(std::string(engineTag), engine, engineCtx);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to create CommEngineCtx with engineTag[%s], engine[%d], engineCtx size[%llu], ret[%d]",
+           __func__, engineTag, engine, engineCtx->size, ret);
+        return ret;
+    }
+
+    HCCL_RUN_INFO("[%s] success, engineTag[%s], engine[%d], engineCtx[type:%d, addr:%p, size:%llu], group[%s]", 
+        __func__, engineTag, engine, engineCtx->type, engineCtx->addr, engineCtx->size, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }
 
@@ -41,12 +47,19 @@ HcclResult CommGetEngineCtx(HcclComm comm, const char *engineTag, CommEngine eng
     CHK_PTR_NULL(engineTag);
     CHK_PRT_RET(strlen(engineTag) > HCCL_OP_TAG_LEN_MAX,
         HCCL_ERROR("[%s] engineTag length exceeds maximum length, engineTag length[%zu], max length[%d]",
-            __func__,
-            strlen(engineTag),
-            HCCL_OP_TAG_LEN_MAX),
-        HCCL_E_PARA);
+            __func__, strlen(engineTag), HCCL_OP_TAG_LEN_MAX), HCCL_E_PARA);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    return hcclComm->GetCommEngineCtx(std::string(engineTag), engine, engineCtx);
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.GetCommEngineCtx(std::string(engineTag), engine, engineCtx);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_WARNING("[%s] Failed to get CommEngineCtx with engineTag[%s], engine[%d], engineCtx[type:%d, addr:%p, size:%llu], ret[%d]",
+           __func__, engineTag, engine, engineCtx->type, engineCtx->addr, engineCtx->size, ret);
+        return ret;
+    }
+
+    HCCL_RUN_INFO("[%s] success, engineTag[%s], engine[%d], engineCtx[type:%d, addr:%p, size:%llu], group[%s]", 
+        __func__, engineTag, engine, engineCtx->type, engineCtx->addr, engineCtx->size, hcclComm->GetIdentifier().c_str());
+    return HCCL_SUCCESS;
 }
 
 HcclResult CommDestroyEngineCtx(HcclComm comm, const HcclMem *engineCtx)
@@ -54,7 +67,15 @@ HcclResult CommDestroyEngineCtx(HcclComm comm, const HcclMem *engineCtx)
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(engineCtx);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    CHK_RET(hcclComm->DestroyCommEngineCtx(engineCtx));
-    HCCL_RUN_INFO("[%s] success, group[%s]", __func__, hcclComm->GetIdentifier().c_str());
+    auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
+    HcclResult ret = contextMgr.DestroyCommEngineCtx(engineCtx);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to destroy CommEngineCtx, engineCtx[type:%d, addr:%p, size:%lu], ret[%d]",
+           __func__, engineCtx->type, engineCtx->addr, engineCtx->size, ret);
+        return ret;
+    }
+
+    HCCL_RUN_INFO("[%s] success, engineCtx[type:%d, addr:%p, size:%lu], group[%s]", 
+        __func__, engineCtx->type, engineCtx->addr, engineCtx->size, hcclComm->GetIdentifier().c_str());
     return HCCL_SUCCESS;
 }

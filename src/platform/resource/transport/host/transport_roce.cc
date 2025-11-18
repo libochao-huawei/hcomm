@@ -334,8 +334,7 @@ HcclResult TransportRoce::Init()
     CHK_RET(CheckExchangeData());
     if (isESMode_) {
         if (!isESPs_) {
-            sendEnvelopeMem_ = DeviceMem::alloc(sizeof(HcclEnvelope));
-            CHK_PTR_NULL(sendEnvelopeMem_.ptr());
+            CHK_RET(DeviceMem::alloc(sendEnvelopeMem_, sizeof(HcclEnvelope)));
             CHK_RET(MrManager::GetInstance().RegGlobalMr(sendEnvelopeMem_.ptr(), sendEnvelopeMem_.size()));
         }
 

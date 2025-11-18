@@ -59,13 +59,6 @@ STATIC int ra_ping_init_get_handle(struct ping_init_attr *init_attr, struct ping
         ping_handle->phy_id = init_attr->dev.rdma.phy_id;
         hccp_run_info("Input parameters: phy_id[%u], nic_position[%d] family[%d] ip[%s] buffer_size[0x%x]",
             init_attr->dev.rdma.phy_id, init_attr->mode, init_attr->dev.rdma.family, local_ip, init_attr->buffer_size);
-    } else if (init_attr->protocol == PROTOCOL_UDMA) {
-        ret = ra_udev_init_check(init_attr->ub.phy_id, ping_handle);
-        CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_ping]ra_ub_dev_init_check failed, ret(%d)", ret), -EINVAL);
-
-        ping_handle->phy_id = init_attr->ub.phy_id;
-        hccp_run_info("Input parameters: phy_id[%u], nic_position[%d], eid_index[%u] buffer_size[0x%x]",
-            init_attr->ub.phy_id, init_attr->mode, init_attr->dev.ub.eid_index, init_attr->buffer_size);
     } else {
         hccp_err("[init][ra_ping]protocol:%d do not support", init_attr->protocol);
         return -ENOTSUPP;
@@ -364,10 +357,6 @@ STATIC int ra_ping_deinit_para_check(struct ra_ping_handle *ping_handle)
         hccp_run_info("Input parameters: phy_id[%u] dev_index[%u] family[%d] local_ip[%s] target_cnt[%u] task_cnt[%u]",
             phy_id, ping_handle->dev_index, dev_info.rdma.family, local_ip, ping_handle->target_cnt,
             ping_handle->task_cnt);
-    } else if (ping_handle->protocol == PROTOCOL_UDMA) {
-        hccp_run_info("Input parameters: eid_index[%u] eid[0x%016llx%016llx] target_cnt[%u] task_cnt[%u]",
-            dev_info.ub.eid_index, dev_info.ub.eid.in6.subnet_prefix, dev_info.ub.eid.in6.interface_id,
-            ping_handle->target_cnt, ping_handle->task_cnt);
     } else {
         hccp_err("[deinit][ra_ping]protocol:%d do not support", ping_handle->protocol);
         return -ENOTSUPP;

@@ -41,7 +41,8 @@ enum class HcclAlgoType {
     HCCL_ALGO_TYPE_NULL,
     HCCL_ALGO_TYPE_NA,
     HCCL_ALGO_TYPE_AHC,
-    HCCL_ALGO_TYPE_AHC_BROKE
+    HCCL_ALGO_TYPE_AHC_BROKE,
+    HCCL_ALGO_TYPE_CONTINUOUS_PIPELINE
 };
 
 // 对内拓扑算法枚举
@@ -72,6 +73,7 @@ enum class AlgTypeLevel1 {
     ALG_LEVEL1_NB,              // 拓扑组合1层，NB
     ALG_LEVEL1_AHC,             // 拓扑组合1层，AHC
     ALG_LEVEL1_AHC_BROKE,       // 拓扑组合1层，AHC_BROKE
+    ALG_LEVEL1_CONTINUOUS_PIPELINE, // 拓扑组合1层, Continuous pipeline
     ALG_LEVEL1_RESERVED
 };
  
@@ -227,6 +229,7 @@ const std::map<AlgTypeLevel1, std::string> HCCL_ALGO_LEVEL1_NAME_MAP = {
     {AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE, "AHC_BROKE"},
     {AlgTypeLevel1::ALG_LEVEL1_NB, "NB"},
     {AlgTypeLevel1::ALG_LEVEL1_RESERVED, "null"},
+    {AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE, "CP"},
 };
 
 const std::map<AlgTypeLevel2, std::string> HCCL_ALGO_LEVEL2_NAME_MAP = {

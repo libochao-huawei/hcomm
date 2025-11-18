@@ -2123,10 +2123,7 @@ HcclResult TransportIbverbs::CreateNotifyValueBuffer()
     std::unique_lock<std::mutex> lock(notifyValueMutex_[machinePara_.deviceLogicId]);
     if (notifyValueMem_[machinePara_.deviceLogicId].ptr() == nullptr) {
         u64 notifyVaule = 1; // notify值写1表示record
-        notifyValueMem_[machinePara_.deviceLogicId] = DeviceMem::alloc(notifyValueSize_);
-        CHK_PRT_RET(!notifyValueMem_[machinePara_.deviceLogicId],
-            HCCL_ERROR("[Create][NotifyValueBuffer]In lbv notify buffer, malloc failed."),
-            HCCL_E_MEMORY);
+        CHK_RET(DeviceMem::alloc(notifyValueMem_[machinePara_.deviceLogicId], notifyValueSize_));
         HCCL_DEBUG("create notify value buffer[%p], size[%u]", notifyValueMem_[machinePara_.deviceLogicId].ptr(),
             notifySize_);
 

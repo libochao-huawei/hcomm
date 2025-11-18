@@ -67,7 +67,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_varying_size_1)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -92,7 +92,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_varying_size_2)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -124,7 +124,7 @@ TEST_F(AllGatherVTest, allgather_v_test)
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(AllGatherVTest, allgather_v_AllGatherVMeshOpbaseExecutor_test)
+TEST_F(AllGatherVTest, allgather_v_AllGatherVMeshExecutor_test)
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -141,7 +141,7 @@ TEST_F(AllGatherVTest, allgather_v_AllGatherVMeshOpbaseExecutor_test)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -166,7 +166,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_varying_size_3)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -191,7 +191,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_varying_size_4)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -219,7 +219,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_varying_size_5)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -247,7 +247,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_varying_size_6)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -275,7 +275,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_opbase_varying_size_7)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshOpbaseExecutor";
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -300,7 +300,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_1)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -325,7 +325,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_2)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -350,7 +350,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_3)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -375,7 +375,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_4)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -400,7 +400,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_5)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -425,7 +425,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_6)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -450,7 +450,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_7)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -475,7 +475,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_offload_varying_size_8)
     checkerOpParam.VDataDes.counts = counts;
     checkerOpParam.VDataDes.displs = displs;
     checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "AllGatherVMeshExecutor";
+    checkerOpParam.algName = "AllGatherVMeshGraphExecutor";
 
     Checker checker;
     HcclResult ret;
@@ -738,4 +738,119 @@ TEST_F(AllGatherVTest, all_gather_v_91093_AllGatherVSemiRingExecutor_singleServe
     HcclResult ret;
     ret = checker.Check(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_pipeline)
+{
+    MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 4, 4);
+ 
+    vector<u64> counts{10000, 20000, 30000, 40000, 30000, 20000, 10000, 20000, 100, 200, 300, 400, 300, 200, 100, 200};
+    vector<u64> displs{0};
+    for (auto i = 1; i < counts.size(); ++i) {
+            displs.emplace_back(displs[i - 1] + counts[i - 1]);
+    }
+ 
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
+    checkerOpParam.tag = "AllGatherV";
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.VDataDes.counts = counts;
+    checkerOpParam.VDataDes.displs = displs;
+    checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "AllGatherVMeshGraphPipelineExecutor";
+ 
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+}
+ 
+TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_ring)
+{
+    setenv("HCCL_ALGO", "level0:NA;level1:ring", 1);
+    MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 4, 4);
+ 
+    vector<u64> counts{10000, 20000, 30000, 40000, 30000, 20000, 10000, 20000, 100, 200, 300, 400, 300, 200, 100, 200};
+    vector<u64> displs{0};
+    for (auto i = 1; i < counts.size(); ++i) {
+            displs.emplace_back(displs[i - 1] + counts[i - 1]);
+    }
+ 
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
+    checkerOpParam.tag = "AllGatherV";
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.VDataDes.counts = counts;
+    checkerOpParam.VDataDes.displs = displs;
+    checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
+ 
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+}
+ 
+TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_nb)
+{
+    setenv("HCCL_ALGO", "level0:NA;level1:nb", 1);
+    MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 4, 4);
+ 
+    vector<u64> counts{10000, 20000, 30000, 40000, 30000, 20000, 10000, 20000, 100, 200, 300, 400, 300, 200, 100, 200};
+    vector<u64> displs{0};
+    for (auto i = 1; i < counts.size(); ++i) {
+            displs.emplace_back(displs[i - 1] + counts[i - 1]);
+    }
+ 
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
+    checkerOpParam.tag = "AllGatherV";
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.VDataDes.counts = counts;
+    checkerOpParam.VDataDes.displs = displs;
+    checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
+ 
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+}
+ 
+TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_nhr)
+{
+    setenv("HCCL_ALGO", "level0:NA;level1:nhr", 1);
+    MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 4, 4);
+ 
+    vector<u64> counts{10000, 20000, 30000, 40000, 30000, 20000, 10000, 20000, 100, 200, 300, 400, 300, 200, 100, 200};
+    vector<u64> displs{0};
+    for (auto i = 1; i < counts.size(); ++i) {
+            displs.emplace_back(displs[i - 1] + counts[i - 1]);
+    }
+ 
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
+    checkerOpParam.tag = "AllGatherV";
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.VDataDes.counts = counts;
+    checkerOpParam.VDataDes.displs = displs;
+    checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
+ 
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
 }

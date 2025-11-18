@@ -89,6 +89,7 @@ HcclResult CollReduceScatterSemiRingExecutor::DoubleRingMidCountReduceScatter(
     // 执行
     std::unique_ptr<AlgTemplateBase> executor = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_REDUCESCATTER_UNIFIED_MARCH, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_UNIFIED_MARCH in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(executor);
 
     CHK_RET(executor->Prepare(stream, level0CommInfo,

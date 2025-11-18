@@ -36,9 +36,11 @@
 #include "aicpu_share_data_manager.h"
 #include "read_write_lock.h"
 #include "hccl_api.h"
-#include "independent_op_channel_param.h"
+#include "channel_param.h"
 #include "aicpu_launch_manager.h"
 #include "hccl_thread.h"
+#include "new/hccl_dispatcher_ctx.h"
+#include "aicpu_init_param.h"
 
 namespace hccl {
 
@@ -166,7 +168,7 @@ public:
     HcclResult InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex);
     HcclResult AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam);
 
-    HcclResult InitAicpuIndOp(const std::string &group);
+    HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
@@ -526,6 +528,7 @@ private:
     AicpuKfcHandler kfcHandlers_[static_cast<size_t>(AicpuKfcHandlerType::kMax)]{};
 
     // 独立算子
+    DispatcherCtxPtr dispatcherCtx_{nullptr};
     std::unordered_map<std::string, ChannelHandle> channelHandleMap_;
     std::unordered_map<ChannelHandle, std::shared_ptr<Transport>> linkMap_;
     std::vector<std::shared_ptr<HcclThread>> threads_;

@@ -13,56 +13,65 @@
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum); // host ffts+或aicpu stars使用"
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen); // host ffts+使用
 
-static std::string g_launchTag;
-static std::unordered_map<std::string, std::unordered_set<ThreadHandle>> g_launchModeMap;
-static std::mutex g_mtx;
-
 void LaunchContext::AddThread(ThreadHandle thread)
 {
     if (mode_ != LAUNCH_MODE_BATCH) {
         // 仅 BATCH 模式缓存线程
         return;
     }
-    std::lock_guard<std::mutex> lock(g_mtx);
-    auto& threadSet = g_launchModeMap[g_launchTag];
+    std::lock_guard<std::mutex> lock(mtx_);
+    auto& threadSet = launchModeMap_[launchTag_];
     threadSet.insert(thread);
+    HCCL_INFO("[%s] AddThread end, launchTag[%s], launchMode[%d], thread[%lu].",
+        __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), thread);
 }
 
 HcclResult LaunchContext::HandleEagerMode()
 {
-    auto it = g_launchModeMap.find(g_launchTag);
-    if (it == g_launchModeMap.end()) {
-        HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, g_launchTag.c_str());
+    auto it = launchModeMap_.find(launchTag_);
+    if (it == launchModeMap_.end()) {
+        HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
         return HCCL_SUCCESS;
     }
 
     const auto &threadSet = it->second;
     if (threadSet.empty()) {
-        HCCL_WARNING("[%s] launchTag[%s] has no threads.", __func__, g_launchTag.c_str());
+        HCCL_WARNING("[%s] launchTag[%s] has no threads.", __func__, launchTag_.c_str());
         return HCCL_SUCCESS;
     }
 
     std::vector<ThreadHandle> threadVec(threadSet.begin(), threadSet.end());
+    for (size_t i = 0; i < threadVec.size(); i++) {
+        HCCL_INFO("[%s] HandleEagerMode begin, launchTag[%s], launchMode[%d], thread[%lu].",
+            __func__, launchTag_.c_str(), static_cast<int32_t>(mode_), threadVec[i]);
+    }
     return CommTaskLaunch(threadVec.data(), threadVec.size());
 }
 
 
-HcclResult LaunchContext::HandleReservedMode()
+HcclResult LaunchContext::HandleClear()
 {
-    auto it = g_launchModeMap.find(g_launchTag);
-    if (it == g_launchModeMap.end()) {
-        HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, g_launchTag.c_str());
+    auto it = launchModeMap_.find(launchTag_);
+    if (it == launchModeMap_.end()) {
+        HCCL_WARNING("[%s] launchTag[%s] not found.", __func__, launchTag_.c_str());
         return HCCL_SUCCESS;
     }
 
-    g_launchModeMap.erase(it);
-    return HcclTaskClear(g_launchTag);
+    launchModeMap_.erase(it);
+    HCCL_INFO("[%s] begin clear, launchTag[%s], launchMode[%d]",
+        __func__, launchTag_.c_str(), static_cast<int32_t>(mode_));
+    return HcclTaskClear(launchTag_);
 }
 
 /*
     1 AICPU_TS模式
     AICPU上执行
     告知后面的CommWrite等任务进入批量模式，（只写任务的SQE，但是不触发执行）
+    举例：
+    HcommSetLaunchMode("abc", LAUNCH_MODE_BATCH);
+    CommLocalBareNotifyWait(thread, notifyId, 0);
+    CommLocalBareNotifyRecord(thread, notifyId);
+    HcommSetLaunchMode("abc", LAUNCH_MODE_EAGER);
 
     2 CPU_TS模式
     FFTS+子图，最后批量提交。在HOST CPU上执行
@@ -84,31 +93,31 @@ HcclResult LaunchContext::HandleReservedMode()
  */
 HcclResult LaunchContext::SetLaunchMode(const char* launchTag, LaunchMode mode)
 {
-    std::lock_guard<std::mutex> lock(g_mtx);
+    std::lock_guard<std::mutex> lock(mtx_);
     mode_ = mode;
-
     // 统一处理 launchTag
     bool defaultTag = (launchTag == nullptr);
-    g_launchTag = defaultTag ? "" : std::string(launchTag);
+    launchTag_ = defaultTag ? "" : std::string(launchTag);
+    HCCL_INFO("[%s] SetLaunchMode begin, launchTag[%s], launchMode[%d].",
+        __func__, launchTag_.c_str(), static_cast<int32_t>(mode));
 
     switch (mode_) {
         case LAUNCH_MODE_BATCH:
+#ifndef CCL_KERNEL_AICPU
+            HCCL_INFO("[%s]host mode, need CommTaskPrepare", __func__);
             if (!defaultTag) {
                 // 仅非缺省 tag 需要准备任务缓存
-                return CommTaskPrepare(const_cast<char*>(g_launchTag.c_str()), g_launchTag.length());
+                return CommTaskPrepare(const_cast<char*>(launchTag_.c_str()), launchTag_.length());
             }
             return HCCL_SUCCESS;
+#endif
         case LAUNCH_MODE_EAGER:
             CHK_RET(HandleEagerMode());
             // 缺省 tag 模式下清理缓存
-            if (defaultTag) {
-                g_launchModeMap.clear();
-            }
-            return HCCL_SUCCESS;
-
+            return HandleClear();
         case LAUNCH_MODE_RESERVED:
             if (!defaultTag) {
-                return HandleReservedMode();
+                return HandleClear();
             }
             return HCCL_SUCCESS;
         default:

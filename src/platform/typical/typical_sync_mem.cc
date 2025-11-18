@@ -47,9 +47,7 @@ HcclResult TypicalSyncMem::InitNotifySrcMem()
     u32 notifySize = 0;
     CHK_RET(hrtGetNotifySize(notifySize));
 
-    srcDevMem_ = DeviceMem::alloc(notifySize);
-    CHK_PRT_RET(!srcDevMem_.ptr(),
-        HCCL_ERROR("[TypicalSyncMem][InitNotifySrcMem]In typical notify src buffer, malloc failed."), HCCL_E_MEMORY);
+    CHK_RET(DeviceMem::alloc(srcDevMem_, notifySize));
     HCCL_DEBUG("[TypicalSyncMem][InitNotifySrcMem]Create notify src buffer[%p], size[%u].",
         srcDevMem_.ptr(), notifySize);
 

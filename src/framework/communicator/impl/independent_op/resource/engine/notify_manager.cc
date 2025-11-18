@@ -15,10 +15,9 @@
 #include "aicpu_launch_manager.h"
 
 namespace hccl {
-
-
 #ifndef CCL_KERNEL_AICPU
-NotifyManager::NotifyManager(std::string commId, aclrtBinHandle binHandle) : commId_(commId) , binHandle_(binHandle){}
+NotifyManager::NotifyManager(std::string commId, aclrtBinHandle binHandle, const ManagerCallbacks& callbacks) : 
+    commId_(commId), binHandle_(binHandle), callbacks_(callbacks){}
 #endif
 
 HcclResult NotifyManager::InitNotifys(std::istringstream &iss, size_t notifyNum,
@@ -132,6 +131,12 @@ HcclResult NotifyManager::HcommAllocNotify(CommEngine commEngine, NotifyType not
     std::unique_ptr<NotifyHandle[]> handles;
     EXECEPTION_CATCH(handles = std::make_unique<NotifyHandle[]>(notifyNum), return HCCL_E_PTR);
     if (isAicpu) {
+        if (!callbacks_.getAicpuCommState()) {
+            HcclResult ret = callbacks_.kernelLaunchAicpuCommInit();
+            CHK_PRT_RET(ret != HCCL_SUCCESS, 
+                HCCL_ERROR("[%s] kernelLaunchAicpuCommInit failed, return [%d].", __func__, ret), ret);
+            callbacks_.setAicpuCommState(true);
+        }
         CHK_RET(AicpuLaunchMgr::NotifyKernelLaunchAlloc(newNotifys, commId_, handles, binHandle_));
         for (uint32_t i = 0; i < notifyNum; ++i) {
             HCCL_INFO("[NotifyManager][%s] aicpu handles[%u] = [%lu]", __func__, i, handles[i]);

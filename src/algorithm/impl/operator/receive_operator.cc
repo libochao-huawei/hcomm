@@ -33,7 +33,7 @@ HcclResult ReceiveOperator::SelectAlg(const std::string& tag, const OpParam& par
         newTag = tag + algName;
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_INFO("[SelectAlg] receive newTag is [%s]", newTag.c_str());
+    HCCL_INFO("[SelectAlg] Receive newTag is [%s]", newTag.c_str());
     return HCCL_SUCCESS;
 }
 

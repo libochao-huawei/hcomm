@@ -1,11 +1,9 @@
 if(BUILD_OPEN_PROJECT)
     set(CRYP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../crypt)
     set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
-    set(CTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ctx)
 else()
     set(CRYP_DIR ${TOP_DIR}/hccl/src/platform/hccp/crypt)
     set(TLV_DIR ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/tlv)
-    set(CTX_DIR ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/ctx)
 endif()
 
 set(rs_list
@@ -36,24 +34,6 @@ list(APPEND rs_list
 )
 endif()
 
-if ((PRODUCT IN_LIST ASCEND910_95_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_96_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_55_PRODUCT_LIST))
-add_definitions(-DTGID_VA)
-add_definitions(-DCONFIG_CONTEXT -DCUSTOM_INTERFACE)
-
-list(APPEND rs_list
-    ${CTX_DIR}/dl_ccu_function.c
-    ${CTX_DIR}/dl_urma_function.c
-    ${CTX_DIR}/rs_ccu.c
-    ${CTX_DIR}/rs_ub.c
-    ${CTX_DIR}/rs_ctx.c
-    ${CTX_DIR}/rs_esched.c
-    ${CTX_DIR}/rs_ping_urma.c
-)
-endif()
-
-
 add_library(rs  SHARED ${rs_list})
 
 if(BUILD_OPEN_PROJECT)
@@ -68,8 +48,6 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../inc/private/network
         ${CMAKE_CURRENT_SOURCE_DIR}/../common/
         ${CMAKE_CURRENT_SOURCE_DIR}/../crypt/inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../roce/host_lite
-        ${CMAKE_CURRENT_SOURCE_DIR}/../roce/roce_user
 
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -85,8 +63,10 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
-        # 临时依赖，后续删除
+        # rdma头文件
         ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
+        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
     )
 
     target_link_directories(rs PRIVATE
@@ -97,11 +77,11 @@ else()
     target_include_directories(rs PRIVATE
         ${TOP_DIR}/hccl/src/platform/hccp/inc/network
         ${TOP_DIR}/hccl/src/platform/hccp/inc/private/network
-        ${TOP_DIR}/hccl/src/platform/hccp/roce/roce_user
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/hccl/src/platform/hccp/common
         ${TOP_DIR}/hccl/src/platform/hccp/crypt/inc
         ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/
+        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/rdma-core/providers/hns
     )
 endif()
 
@@ -118,21 +98,6 @@ if((("${PRODUCT}" STREQUAL "ascend910B") OR ("${PRODUCT}" STREQUAL "ascend")) AN
     )
 endif()
 
-if ((PRODUCT IN_LIST ASCEND910_95_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_96_PRODUCT_LIST) OR
-    (PRODUCT IN_LIST ASCEND910_55_PRODUCT_LIST))
-target_include_directories(rs PRIVATE
-    ${TOP_DIR}/ubengine/ssapi/kernelspace/urma/code/lib/urma/include
-    ${TOP_DIR}/ubengine/ssapi/kernelspace/urma/code/include
-    ${TOP_DIR}/ubengine/ssapi/kernelspace/include/udma
-    ${TOP_DIR}/ubengine/ssapi/userspace/include/external/udma
-    ${TOP_DIR}/ubengine/ssapi/userspace/include/udma
-    ${TOP_DIR}/ubengine/ssapi/userspace/udma
-    ${TOP_DIR}/drivers/network/ccu/ccu_user
-    ${TOP_DIR}/drivers/network/hccp/rdma_service/ctx
-    ${TOP_DIR}/ace/csruntime/inc/tsch
-)
-endif()
 
 target_compile_options(rs PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal

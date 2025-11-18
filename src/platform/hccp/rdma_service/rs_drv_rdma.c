@@ -42,7 +42,7 @@ int rs_drv_init_cqe_err_info(void)
     if (ret != 0) {
         pthread_mutex_destroy(&err_info->mutex);
     }
-    CHK_PRT_RETURN(ret, hccp_err("memset_s fail ret[%d]", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s failed ret[%d]", ret), -ESAFEFUNC);
     return 0;
 }
 
@@ -116,7 +116,7 @@ int rs_drv_get_cqe_err_info(struct cqe_err_info *info)
 
     ret = memset_s(&err_info->info, sizeof(struct cqe_err_info), 0, sizeof(struct cqe_err_info));
     RS_PTHREAD_MUTEX_ULOCK(&err_info->mutex);
-    CHK_PRT_RETURN(ret, hccp_err("memset_s fail ret[%d], buf len:%u", ret, sizeof(struct cqe_err_info)), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s failed ret[%d], buf len:%u", ret, sizeof(struct cqe_err_info)), -ESAFEFUNC);
     return 0;
 }
 
@@ -278,7 +278,7 @@ int rs_drv_get_gid_index(struct rs_rdev_cb *rdev_cb, struct ibv_port_attr *attr,
     int i;
 
     ret = rs_ibv_query_port(rdev_cb->ib_ctx, rdev_cb->ib_port, attr);
-    CHK_PRT_RETURN(ret, hccp_err("ibv_query_port fail ret[%d]", ret), -EOPENSRC);
+    CHK_PRT_RETURN(ret, hccp_err("ibv_query_port failed ret[%d]", ret), -EOPENSRC);
 
     // link maybe suffer from intermittent disconnection, should continue process
     if (attr->state != IBV_PORT_ACTIVE) {
@@ -361,7 +361,8 @@ int rs_drv_create_cq_with_attrs(struct rs_qp_cb *qp_cb, int is_ext, struct cq_ex
             NULL, channel, send_eq_num);
     }
 
-    CHK_PRT_RETURN(qp_cb->ib_send_cq == NULL, hccp_err("ibv create send cq fail "), -EOPENSRC);
+    /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
+    CHK_PRT_RETURN(qp_cb->ib_send_cq == NULL, hccp_err("ibv create send cq failed"), -ENOMEM);
 
     if (is_ext == 1) {
         qp_cb->ib_recv_cq = rs_ibv_exp_create_cq(qp_cb->rdev_cb->ib_ctx, cq_attr->recv_cq_depth,
@@ -372,10 +373,11 @@ int rs_drv_create_cq_with_attrs(struct rs_qp_cb *qp_cb, int is_ext, struct cq_ex
             NULL, channel, recv_eq_num);
     }
 
+    /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     if (qp_cb->ib_recv_cq == NULL) {
-        hccp_err("ibv create recv cq fail ");
+        hccp_err("ibv create recv cq failed");
         (void)rs_ibv_destroy_cq(qp_cb->ib_send_cq);
-        return -EOPENSRC;
+        return -ENOMEM;
     }
 
     hccp_info("create cq success");
@@ -422,7 +424,7 @@ int rs_drv_qp_state_modifyto_reset(struct rs_qp_cb *qp_cb)
 
     attr.qp_state = IBV_QPS_RESET;
     ret = rs_ibv_modify_qp(qp_cb->ib_qp, &attr, IBV_QP_STATE);
-    CHK_PRT_RETURN(ret, hccp_err("[modify]qpn[%d] modify to reset fail, ret %d", qp_cb->qp_info_lo.qpn, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("[modify]qpn[%d] modify to reset failed, ret %d", qp_cb->qp_info_lo.qpn, ret), ret);
 
     (void)memset_s(&attr, sizeof(struct ibv_qp_attr), 0, sizeof(struct ibv_qp_attr));
 
@@ -447,7 +449,7 @@ int rs_drv_qp_state_modifyto_init(struct rs_qp_cb *qp_cb, struct ibv_qp_attr *at
     attr->qp_access_flags = DEFAULT_ACCESS_FLAG;
     ret = rs_ibv_modify_qp(qp_cb->ib_qp, attr, IBV_QP_STATE |
                         IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_ACCESS_FLAGS);
-    CHK_PRT_RETURN(ret, hccp_err("[modify]qpn[%d] modify to init fail, ret %d", qp_cb->qp_info_lo.qpn, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("[modify]qpn[%d] modify to init failed, ret %d", qp_cb->qp_info_lo.qpn, ret), ret);
 
     hccp_info("qpn[%d] modify to init success", qp_cb->qp_info_lo.qpn);
     return 0;
@@ -496,7 +498,7 @@ int rs_drv_qp_state_modifyto_rtr(struct rs_qp_cb *qp_cb, struct ibv_qp_attr *att
 
     // get gid_idx dynamically
     ret = rs_drv_get_gid_index(qp_cb->rdev_cb, &port_attr, &qp_cb->qp_info_lo.gid_idx);
-    CHK_PRT_RETURN(ret, hccp_err("rs_drv_get_gid_index fail ret[%d], qpn[%d] gid_idx[%d]",
+    CHK_PRT_RETURN(ret, hccp_err("rs_drv_get_gid_index failed ret[%d], qpn[%d] gid_idx[%d]",
         ret, qp_cb->qp_info_lo.qpn, qp_cb->qp_info_lo.gid_idx), ret);
 
     if (qp_cb->qp_info_rem.gid.global.interface_id) {
@@ -512,7 +514,7 @@ int rs_drv_qp_state_modifyto_rtr(struct rs_qp_cb *qp_cb, struct ibv_qp_attr *att
                            IBV_QP_PATH_MTU | IBV_QP_DEST_QPN |
                            IBV_QP_RQ_PSN | IBV_QP_MAX_DEST_RD_ATOMIC |
                            IBV_QP_MIN_RNR_TIMER);
-    CHK_PRT_RETURN(ret, hccp_err("qpn[%d] failed to modify QP to RTR, ibv_modify_qp fail ret[%d], errno[%d]",
+    CHK_PRT_RETURN(ret, hccp_err("qpn[%d] failed to modify QP to RTR, ibv_modify_qp failed ret[%d], errno[%d]",
         qp_cb->qp_info_lo.qpn, ret, errno), -EOPENSRC);
     hccp_info("qp qos attr: qpn[%d] tc[%u] sl[%u]", qp_cb->qp_info_lo.qpn, qp_cb->qos_attr.tc, qp_cb->qos_attr.sl);
     return 0;
@@ -535,7 +537,7 @@ int rs_drv_qp_state_modifyto_rts(struct rs_qp_cb *qp_cb, struct ibv_qp_attr *att
                            IBV_QP_STATE | IBV_QP_TIMEOUT |
                            IBV_QP_RETRY_CNT | IBV_QP_RNR_RETRY |
                            IBV_QP_SQ_PSN | IBV_QP_MAX_QP_RD_ATOMIC);
-    CHK_PRT_RETURN(ret, hccp_err("qpn[%d] failed to modify QP to RTS, ibv_modify_qp fail ret[%d]",
+    CHK_PRT_RETURN(ret, hccp_err("qpn[%d] failed to modify QP to RTS, ibv_modify_qp failed ret[%d]",
         qp_cb->qp_info_lo.qpn, ret), -EOPENSRC);
     hccp_info("qp rdma attr: qpn[%d] timeout[%u] retrycnt[%u]", qp_cb->qp_info_lo.qpn, qp_cb->timeout,
         qp_cb->retry_cnt);
@@ -612,7 +614,7 @@ STATIC int rs_drv_query_notify(struct rs_rdev_cb *rdev_cb)
     if (rdev_cb->backup_info.backup_flag) {
         // open backup device to get ib_ctx to get backup notify va and size
         ret = rs_open_backup_ib_ctx(rdev_cb);
-        CHK_PRT_RETURN(ret, hccp_err("rs_open_backup_ib_ctx fail, ret:%d", ret), ret);
+        CHK_PRT_RETURN(ret, hccp_err("rs_open_backup_ib_ctx failed, ret:%d", ret), ret);
 
         ret = rs_ibv_exp_query_notify(rdev_cb->backup_info.ib_ctx, &rdev_cb->notify_va_base, &rdev_cb->notify_size);
         if (ret != 0) {
@@ -642,7 +644,7 @@ int rs_drv_query_notify_and_alloc_pd(struct rs_rdev_cb *rdev_cb)
 #ifdef CUSTOM_INTERFACE
         rs_close_backup_ib_ctx(rdev_cb);
 #endif
-        hccp_err("rs_ibv_alloc_pd fail, errno:%d", errno);
+        hccp_err("rs_ibv_alloc_pd failed, errno:%d", errno);
         return -ENOMEM;
     }
 
@@ -674,12 +676,12 @@ int rs_drv_reg_notify_mr(struct rs_rdev_cb *rdev_cb)
 #endif
         }
         default: {
-            hccp_err("rs_drv_reg_notify_mr fail! notify_type = %u", rdev_cb->notify_type);
+            hccp_err("rs_drv_reg_notify_mr failed! notify_type = %u", rdev_cb->notify_type);
             return -EINVAL;
         }
     }
 
-    CHK_PRT_RETURN(rdev_cb->notify_mr == NULL, hccp_err("ibv_reg_mr addr[0x%llx] len[%llu] errno[%d]fail",
+    CHK_PRT_RETURN(rdev_cb->notify_mr == NULL, hccp_err("ibv_reg_mr addr[0x%llx] len[%llu] errno[%d]failed",
         rdev_cb->notify_va_base, rdev_cb->notify_size, errno), -EACCES);
 
     hccp_info("ibv_reg_mr ok");
@@ -796,22 +798,22 @@ STATIC int rs_drv_qp_query_info(struct rs_qp_cb *qp_cb, struct rs_rdev_cb *rdev_
     int ret;
     /* modify qp state */
     ret = memset_s(qp_attr, sizeof(struct ibv_qp_attr), 0, sizeof(struct ibv_qp_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s fail ret[%d], buf len:%u", ret, sizeof(struct ibv_qp_attr)), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s failed ret[%d], buf len:%u", ret, sizeof(struct ibv_qp_attr)), -ESAFEFUNC);
     qp_attr->qp_state = IBV_QPS_INIT;
     qp_attr->pkey_index = 0;
     qp_attr->port_num = rdev_cb->ib_port;
     qp_attr->qp_access_flags = DEFAULT_ACCESS_FLAG;
     ret = rs_ibv_modify_qp(qp_cb->ib_qp, qp_attr, IBV_QP_STATE |
                         IBV_QP_PKEY_INDEX | IBV_QP_PORT | IBV_QP_ACCESS_FLAGS);
-    CHK_PRT_RETURN(ret, hccp_err("ibv_modify_qp fail ret[%d]", ret), -EOPENSRC);
+    CHK_PRT_RETURN(ret, hccp_err("ibv_modify_qp failed ret[%d]", ret), -EOPENSRC);
 
     /* prepare qp info for exchange */
     ret = rs_drv_get_gid_index(rdev_cb, attr, &qp_cb->qp_info_lo.gid_idx);
-    CHK_PRT_RETURN(ret, hccp_err("rs_drv_get_gid_index fail ret[%d] qpn[%u] gid_idx[%d]",
+    CHK_PRT_RETURN(ret, hccp_err("rs_drv_get_gid_index failed ret[%d] qpn[%u] gid_idx[%d]",
         ret, qp_cb->ib_qp->qp_num, qp_cb->qp_info_lo.gid_idx), ret);
 
     ret = rs_ibv_query_gid(rdev_cb->ib_ctx, rdev_cb->ib_port, qp_cb->qp_info_lo.gid_idx, gid_tmp);
-    CHK_PRT_RETURN(ret, hccp_err("ibv_query_gid fail ret[%d]", ret), -EOPENSRC);
+    CHK_PRT_RETURN(ret, hccp_err("ibv_query_gid failed ret[%d]", ret), -EOPENSRC);
     return 0;
 }
 
@@ -822,13 +824,13 @@ RS_ATTRI_VISI_DEF int rs_drv_get_random_num(int *rand_num)
     int ret_close = 0;
 
     rand_fd = open("/dev/urandom", O_RDONLY, S_IRUSR);
-    CHK_PRT_RETURN(rand_fd < 0, hccp_err("open random fail ret[%d] rand_fd[%d]", errno, rand_fd), -EFILEOPER);
+    CHK_PRT_RETURN(rand_fd < 0, hccp_err("open random failed ret[%d] rand_fd[%d]", errno, rand_fd), -EFILEOPER);
     do {
         ret = read(rand_fd, rand_num, sizeof(int));
     } while ((ret < 0) && (errno == EINTR));
 
     if (ret < 0) {
-        hccp_err("get random fail ret[%d]", ret);
+        hccp_err("get random failed ret[%d]", ret);
         RS_CLOSE_RETRY_FOR_EINTR(ret_close, rand_fd);
         return -EFILEOPER;
     }
@@ -876,9 +878,9 @@ STATIC int rs_drv_exp_qp_create_init(struct ibv_exp_qp_init_attr *qp_init_attr,
 {
     int ret;
     ret = memset_s(attr, sizeof(struct ibv_port_attr), 0, sizeof(struct ibv_port_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr failed, ret:%d", ret), -ESAFEFUNC);
     ret = memset_s(qp_init_attr, sizeof(struct ibv_exp_qp_init_attr), 0, sizeof(struct ibv_exp_qp_init_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ESAFEFUNC);
 
     qp_init_attr->attr.qp_type = IBV_QPT_RC;
     qp_init_attr->attr.send_cq = qp_cb->ib_send_cq;
@@ -904,14 +906,15 @@ STATIC int rs_drv_exp_qp_create(struct rs_qp_cb *qp_cb, int qp_mode)
     rdev_cb = qp_cb->rdev_cb;
     qp_cb->qp_mode = qp_mode;
     ret = rs_drv_exp_qp_create_init(&qp_init_attr, qp_cb, &attr);
-    CHK_PRT_RETURN(ret, hccp_err("rs_drv_qp_create_init fail, ret:%d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("rs_drv_qp_create_init failed, ret:%d", ret), ret);
 
     qp_init_attr.gdr_enable = qp_mode;
     qp_init_attr.lite_op_support = rs_drv_get_support_lite(rdev_cb, qp_cb->qp_mode, qp_cb->ai_op_support);
     qp_init_attr.mem_align = qp_cb->mem_align;
     qp_init_attr.mem_idx = qp_cb->mem_resp.mem_data.mem_idx;
+    /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     qp_cb->ib_qp = rs_ibv_exp_create_qp(qp_cb->ib_pd, &qp_init_attr, &qp_cb->qp_resp.qp_data);
-    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_exp_create_qp fail"), -ENOMEM);
+    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_exp_create_qp failed"), -ENOMEM);
 
     qp_cb->db_index = (qp_mode == RA_RS_OP_QP_MODE ||
                        qp_mode == RA_RS_GDR_ASYN_QP_MODE) ? qp_cb->qp_resp.qp_data.qp_info : 0;
@@ -947,9 +950,9 @@ STATIC int rs_drv_normal_qp_create_init(struct ibv_qp_init_attr *qp_init_attr,
 {
     int ret;
     ret = memset_s(attr, sizeof(struct ibv_port_attr), 0, sizeof(struct ibv_port_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr failed, ret:%d", ret), -ESAFEFUNC);
     ret = memset_s(qp_init_attr, sizeof(struct ibv_qp_init_attr), 0, sizeof(struct ibv_qp_init_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ESAFEFUNC);
 
     qp_init_attr->qp_type = IBV_QPT_RC;
     qp_init_attr->send_cq = qp_cb->ib_send_cq;
@@ -974,10 +977,11 @@ STATIC int rs_drv_qp_normal(struct rs_qp_cb *qp_cb, int qp_mode)
     rdev_cb = qp_cb->rdev_cb;
     qp_cb->qp_mode = qp_mode;
     ret = rs_drv_normal_qp_create_init(&qp_init_attr, qp_cb, &attr);
-    CHK_PRT_RETURN(ret, hccp_err("rs_drv_normal_qp_create_init fail, ret:%d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("rs_drv_normal_qp_create_init failed, ret:%d", ret), ret);
 
+    /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     qp_cb->ib_qp = rs_ibv_create_qp(qp_cb->ib_pd, &qp_init_attr);
-    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_create_qp fail, errno=%d", errno), -ENOMEM);
+    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_create_qp failed, errno=%d", errno), -ENOMEM);
 
     /* query qp attr */
     ret = rs_ibv_query_qp(qp_cb->ib_qp, &qp_attr, IBV_QP_CAP, &qp_init_attr);
@@ -1021,16 +1025,16 @@ STATIC int rs_drv_exp_qp_create_init_with_attrs(struct ibv_exp_qp_init_attr *qp_
     int ret;
 
     ret = memset_s(attr, sizeof(struct ibv_port_attr), 0, sizeof(struct ibv_port_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr failed, ret:%d", ret), -ESAFEFUNC);
     ret = memset_s(qp_init_attr, sizeof(struct ibv_exp_qp_init_attr), 0, sizeof(struct ibv_exp_qp_init_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ESAFEFUNC);
 
     qp_init_attr->attr.send_cq = qp_cb->ib_send_cq;
     qp_init_attr->attr.recv_cq = qp_cb->ib_recv_cq;
 
     ret = memcpy_s(&qp_init_attr->attr.cap, sizeof(struct ibv_qp_cap), &qp_norm->ext_attrs.qp_attr.cap,
         sizeof(struct ibv_qp_cap));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr fail, ret:%d", ret), -ENOMEM);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ENOMEM);
     qp_init_attr->attr.qp_type = qp_norm->ext_attrs.qp_attr.qp_type;
     qp_init_attr->attr.sq_sig_all = qp_norm->ext_attrs.qp_attr.sq_sig_all;
 
@@ -1050,7 +1054,7 @@ STATIC int rs_drv_exp_qp_create_with_attrs(struct rs_qp_cb *qp_cb, struct rs_qp_
     hccp_dbg("qp exp create begin..");
     rdev_cb = qp_cb->rdev_cb;
     ret = rs_drv_exp_qp_create_init_with_attrs(&qp_init_attr, qp_cb, &attr, qp_norm);
-    CHK_PRT_RETURN(ret, hccp_err("rs_drv_qp_create_init fail, ret:%d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("rs_drv_qp_create_init failed, ret:%d", ret), ret);
 
     qp_init_attr.gdr_enable = qp_cb->qp_mode;
     qp_init_attr.lite_op_support = rs_drv_get_support_lite(rdev_cb, qp_cb->qp_mode, qp_cb->ai_op_support);
@@ -1059,8 +1063,9 @@ STATIC int rs_drv_exp_qp_create_with_attrs(struct rs_qp_cb *qp_cb, struct rs_qp_
     qp_init_attr.ai_op_support = qp_cb->ai_op_support;
     qp_init_attr.grp_id = qp_cb->grp_id;
     qp_init_attr.qp_cstm_flag = qp_cb->ai_op_support;
+    /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     qp_cb->ib_qp = rs_ibv_exp_create_qp(qp_cb->ib_pd, &qp_init_attr, &qp_cb->qp_resp.qp_data);
-    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_exp_create_qp fail"), -ENOMEM);
+    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_exp_create_qp failed"), -ENOMEM);
 
     qp_cb->db_index = (qp_cb->qp_mode == RA_RS_OP_QP_MODE ||
                        qp_cb->qp_mode == RA_RS_GDR_ASYN_QP_MODE) ? qp_cb->qp_resp.qp_data.qp_info : 0;
@@ -1097,16 +1102,16 @@ STATIC int rs_drv_normal_qp_create_init_with_attrs(struct ibv_qp_init_attr *qp_i
     int ret;
 
     ret = memset_s(attr, sizeof(struct ibv_port_attr), 0, sizeof(struct ibv_port_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for attr failed, ret:%d", ret), -ESAFEFUNC);
     ret = memset_s(qp_init_attr, sizeof(struct ibv_qp_init_attr), 0, sizeof(struct ibv_qp_init_attr));
-    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr fail, ret:%d", ret), -ESAFEFUNC);
+    CHK_PRT_RETURN(ret, hccp_err("memset_s for qp_init_attr failed, ret:%d", ret), -ESAFEFUNC);
 
     qp_init_attr->send_cq = qp_cb->ib_send_cq;
     qp_init_attr->recv_cq = qp_cb->ib_recv_cq;
 
     ret = memcpy_s(&qp_init_attr->cap, sizeof(struct ibv_qp_cap), &qp_norm->ext_attrs.qp_attr.cap,
         sizeof(struct ibv_qp_cap));
-    CHK_PRT_RETURN(ret, hccp_err("memcpy_s for qp_init_attr fail, ret:%d", ret), -ENOMEM);
+    CHK_PRT_RETURN(ret, hccp_err("memcpy_s for qp_init_attr failed, ret:%d", ret), -ENOMEM);
     qp_init_attr->qp_type = qp_norm->ext_attrs.qp_attr.qp_type;
     qp_init_attr->sq_sig_all = qp_norm->ext_attrs.qp_attr.sq_sig_all;
 
@@ -1124,10 +1129,11 @@ STATIC int rs_drv_qp_normal_with_attrs(struct rs_qp_cb *qp_cb, struct rs_qp_norm
     hccp_dbg("qp normal create begin..");
     rdev_cb = qp_cb->rdev_cb;
     ret = rs_drv_normal_qp_create_init_with_attrs(&qp_init_attr, qp_cb, &attr, qp_norm);
-    CHK_PRT_RETURN(ret, hccp_err("rs_drv_normal_qp_create_init fail, ret:%d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("rs_drv_normal_qp_create_init failed, ret:%d", ret), ret);
 
+    /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     qp_cb->ib_qp = rs_ibv_create_qp(qp_cb->ib_pd, &qp_init_attr);
-    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_create_qp fail, errno=%d", errno), -ENOMEM);
+    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_create_qp failed, errno=%d", errno), -ENOMEM);
 
     /* query qp attr */
     ret = rs_ibv_query_qp(qp_cb->ib_qp, &qp_attr, IBV_QP_CAP, &qp_init_attr);
@@ -1139,7 +1145,7 @@ STATIC int rs_drv_qp_normal_with_attrs(struct rs_qp_cb *qp_cb, struct rs_qp_norm
 
     ret = rs_drv_qp_info_related(qp_cb, rdev_cb, &attr, &qp_attr);
     if (ret) {
-        hccp_err("qp info related failed %d", ret);
+        hccp_err("qp info related failed ret %d", ret);
         goto normal_init_qp_err;
     }
 
@@ -1204,12 +1210,12 @@ int rs_drv_create_cq_event(struct rs_cq_context *cq_context, struct cq_attr *att
 
     if (cq_context->cq_create_mode == RS_NORMAL_CQ_CREATE || cq_context->cq_create_mode == RS_SQ_CQ_CREATE) {
         ret = rs_query_event(attr->send_cq_event_id, &(cq_context->send_event));
-        CHK_PRT_RETURN(ret, hccp_err("rs_query_event send_event failed!ret:%d", ret), ret);
+        CHK_PRT_RETURN(ret, hccp_err("rs_query_event send_event failed! ret:%d", ret), ret);
 
         cq_context->ib_send_cq = rs_ibv_create_cq(cq_context->rdev_cb->ib_ctx, attr->send_cq_depth,
             cq_context->send_event, cq_context->channel, cq_context->eq_num);
         if (cq_context->ib_send_cq == NULL) {
-            hccp_err("rs_drv_create_cq_event ibv create send cq fail,send_cq_event_id:%d", attr->send_cq_event_id);
+            hccp_err("rs_drv_create_cq_event ibv create send cq failed, send_cq_event_id:%d", attr->send_cq_event_id);
             goto create_cq_even_err;
         }
 
@@ -1224,14 +1230,14 @@ int rs_drv_create_cq_event(struct rs_cq_context *cq_context, struct cq_attr *att
     if (cq_context->cq_create_mode == RS_NORMAL_CQ_CREATE || cq_context->cq_create_mode == RS_SRQ_CQ_CREATE) {
         ret = rs_query_event(attr->recv_cq_event_id, &(cq_context->recv_event));
         if (ret) {
-            hccp_err("rs_query_event send_event failed!ret:%d", ret);
+            hccp_err("rs_query_event send_event failed! ret:%d", ret);
             goto create_cq_even_err;
         }
 
         cq_context->ib_recv_cq = rs_ibv_create_cq(cq_context->rdev_cb->ib_ctx, attr->recv_cq_depth,
             cq_context->recv_event, cq_context->channel, cq_context->eq_num);
         if (cq_context->ib_recv_cq == NULL) {
-            hccp_err("rs_drv_create_cq_event ibv create recv cq fail,recv_cq_event_id:%d", attr->recv_cq_event_id);
+            hccp_err("rs_drv_create_cq_event ibv create recv cq failed, recv_cq_event_id:%d", attr->recv_cq_event_id);
             goto create_cq_even_err;
         }
 
@@ -1269,14 +1275,14 @@ int rs_drv_create_cq_with_channel(struct rs_cq_context *cq_context, struct cq_at
     cq_context->ib_send_cq = rs_ibv_create_cq(cq_context->rdev_cb->ib_ctx, attr->send_cq_depth,
         NULL, attr->send_channel, 1);
     if (cq_context->ib_send_cq == NULL) {
-        hccp_err("rs_drv_create_cq_with_channel ibv create send cq fail.");
+        hccp_err("rs_drv_create_cq_with_channel ibv create send cq failed.");
         return -EOPENSRC;
     }
 
     cq_context->ib_recv_cq = rs_ibv_create_cq(cq_context->rdev_cb->ib_ctx, attr->recv_cq_depth,
         NULL, attr->recv_channel, 1);
     if (cq_context->ib_recv_cq == NULL) {
-        hccp_err("rs_drv_create_cq_with_channel ibv create serecvnd cq fail.");
+        hccp_err("rs_drv_create_cq_with_channel ibv create serecvnd cq failed.");
         goto create_recv_cq_err;
     }
 
@@ -1323,8 +1329,9 @@ int rs_drv_normal_qp_create(struct rs_qp_cb *qp_cb, struct ibv_qp_init_attr *qp_
     hccp_dbg("rs_drv_normal_qp_create begin..");
     rdev_cb = qp_cb->rdev_cb;
 
+    /* A return value of NULL indicates an OutOfMemoryError(OOM) has occurred */
     qp_cb->ib_qp = rs_ibv_create_qp(qp_cb->ib_pd, qp_init_attr);
-    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_create_qp fail, errno=%d", errno), -ENOMEM);
+    CHK_PRT_RETURN(qp_cb->ib_qp == NULL, hccp_err("rs_ibv_create_qp failed, errno=%d", errno), -ENOMEM);
 
     /* query qp attr */
     ret = rs_ibv_query_qp(qp_cb->ib_qp, &qp_attr, IBV_QP_CAP, qp_init_attr);

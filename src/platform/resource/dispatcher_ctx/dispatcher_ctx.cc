@@ -13,6 +13,7 @@
 #include "dispatcher_pub.h"
 #include "dispatcher_aicpu_pub.h"
 #include "dispatcher_virtural_pub.h"
+#include "dlhal_function.h"
 
 namespace hccl {
     FftsCounterCallBack DispatcherCtx::GetInitTaskCallback() const
@@ -28,6 +29,7 @@ namespace hccl {
 
     HcclResult DispatcherCtx::Init()
     {
+        CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
         // 获取host侧还是device侧
         u32 info = 0;
         CHK_RET(hrtDrvGetPlatformInfo(&info));
@@ -81,7 +83,7 @@ namespace hccl {
 
     HcclResult DispatcherCtx::DispatcherInit(CtxDispatcherType type, const s32 devicePhyId, HcclDispatcher *dispatcher)
     {
-        CHK_RET(DlProfFunc::GetInstance().DlProfFunctionInit());
+        CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
         CHK_PTR_NULL(dispatcher);
         dispatcherType_ = type;
         DispatcherPub *pDispatcher = nullptr;

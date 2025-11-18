@@ -249,9 +249,8 @@ HcclResult WorkspaceResourceImpl::CreateOpBasedResources(const HcclCMDType &opTy
     CHK_RET(GetOpBasedMemSize(opType, memSize, opInfo));
 
     // 创建 device memory
-    DeviceMem deviceMem = DeviceMem::alloc(memSize);
-    CHK_PRT_RET(!deviceMem, HCCL_ERROR("[WorkspaceResourceImpl][CreateOpBasedResources]In create workspace mem,"
-        " malloc failed."), HCCL_E_MEMORY);
+    DeviceMem deviceMem;
+    CHK_RET(DeviceMem::alloc(deviceMem, memSize));
     std::vector<rtStream_t> stream;
     u64 maxSize = deviceMem.size();
     CHK_RET(SetWorkspaceResource(tag, deviceMem.ptr(), maxSize, stream));
@@ -275,9 +274,8 @@ HcclResult WorkspaceResourceImpl::CreateAndInsertDevMem(const std::string &tag, 
     std::vector<rtStream_t> &streamPtr)
 {
     // 创建device memory
-    DeviceMem deviceMem = DeviceMem::alloc(memSize);
-    CHK_PRT_RET(!deviceMem, HCCL_ERROR("[WorkspaceResourceImpl][CreateAndInsertDevMem]"
-        "In create workspace mem malloc failed."), HCCL_E_MEMORY);
+    DeviceMem deviceMem;
+    CHK_RET(DeviceMem::alloc(deviceMem, memSize));
 
     CHK_RET(SetWorkspaceResource(tag, deviceMem.ptr(), memSize, streamPtr));
         HCCL_INFO("[WorkspaceResourceImpl][CreateAndInsertDevMem]create workspace memory success. "

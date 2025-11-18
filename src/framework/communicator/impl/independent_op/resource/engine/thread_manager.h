@@ -17,14 +17,15 @@
 #include "hccl_api.h"
 #include "hccl_thread.h"
 #include "log.h"
+#include "manager_common.h"
 
 namespace hccl {
 
 class ThreadMgr {
 public:
-    ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, aclrtBinHandle binHandle);
+    ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     ~ThreadMgr() = default;
-    HcclResult CommAllocThreadRes(aclrtBinHandle binHandle, CommEngine engine, uint32_t threadNum,
+    HcclResult CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *thread);
     HcclResult CommAllocThreadResByStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
@@ -48,6 +49,8 @@ private:
 
     std::mutex mainThreadMutex_;
     std::map<rtStream_t, std::unique_ptr<HcclThread>> mainThread_;
+
+    ManagerCallbacks callbacks_;
 };
 }
 #endif

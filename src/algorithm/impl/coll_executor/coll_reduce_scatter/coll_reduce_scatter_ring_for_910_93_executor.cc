@@ -19,6 +19,7 @@ CollReduceScatterRingFor91093Executor::CollReduceScatterRingFor91093Executor(con
     : CollReduceScatterExecutor(dispatcher, topoMatcher)
 {
     DMAReduceFlag_ = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    desc_.deterministic = 1;
     desc_.level1SupportedAlgos = {
         AlgTypeLevel1::ALG_LEVEL1_NHR,
         AlgTypeLevel1::ALG_LEVEL1_NB,
@@ -550,8 +551,7 @@ u64 CollReduceScatterRingFor91093Executor::CalcSrcMemOffset(const ExecMem &execM
 
 HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollReduceScatterRingFor91093Executor][KernelRun] executor starts. rsv[%u]",
-        isReduceScatterV_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] executor starts, rsv[%u]", __func__, isReduceScatterV_);
     u32 perDataSize = 0;
     const HcclDataType dataType = param.GetDataType();
     CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
@@ -650,13 +650,13 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
                 TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(reduceAttr));
-            HCCL_INFO("ReduceScatter ring: using ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(reduceAttr));
-            HCCL_INFO("ReduceScatter ring: using nonuniform-bruck algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
             // 获取通信域分组信息
             std::vector<std::vector<std::vector<u32>>> globalSubGroups;
@@ -665,10 +665,10 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
             topoMatcher_->GetAHCAlgOption(ahcAlgOption);
             if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
                 level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_AHC, dispatcher_);
-                HCCL_INFO("ReduceScatter ring: using ahc algo inter-server.");
+                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC in COMM_LEVEL1", __func__);
             } else {
                 level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_AHC_BROKE, dispatcher_);
-                HCCL_INFO("ReduceScatter ring: using ahc-broke algo inter-server.");
+                HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC_BROKE in COMM_LEVEL1", __func__);
             }
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(execMem.count, globalSubGroups, ahcAlgOption));
@@ -678,7 +678,7 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
                 TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
-            HCCL_INFO("ReduceScatter ring: using nonuniform-hierarchical-ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL1", __func__);
         }
 
         CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count,
@@ -703,19 +703,19 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
                 TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr));
-            HCCL_INFO("ReduceScatter ring: using nonuniform-bruck algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL2", __func__);
         } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr, false));
-            HCCL_INFO("ReduceScatter ring: using nonuniform-hierarchical-ring algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL2", __func__);
         } else {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr));
-            HCCL_INFO("ReduceScatter ring: using ring algo inter-superPod.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL2", __func__);
         }
 
         CHK_RET(level2TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count, dataType,
@@ -792,14 +792,17 @@ HcclResult CollReduceScatterRingFor91093Executor::SelectTempAlg(std::unique_ptr<
         if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL2", __func__);
             CHK_SMART_PTR_NULL(level1TempAlg);
         } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL2", __func__);
             CHK_SMART_PTR_NULL(level1TempAlg);
         } else {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_RING in COMM_LEVEL2", __func__);
             CHK_SMART_PTR_NULL(level1TempAlg);
         }
         return HCCL_SUCCESS;

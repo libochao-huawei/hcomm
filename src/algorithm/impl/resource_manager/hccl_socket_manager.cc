@@ -845,16 +845,13 @@ HcclResult HcclSocketManager::WaitLinkEstablish(std::shared_ptr<HcclSocket> sock
 
 HcclResult HcclSocketManager::WaitLinksEstablishCompleted(HcclSocketRole localRole,
     std::map <u32, std::vector<std::shared_ptr<HcclSocket> > > &socketsMap, std::map<u32, u32> &dstRankToUserRank,
-    RankInfo &loaclRankInfo, RankInfo &remoteRankInfo)
+    RankInfo &loaclRankInfo, RankInfo &remoteRankInfo, const HcclNetDevCtx &netDevCtx)
 {
     HcclResult ret = WaitLinksEstablishCompleted(localRole, socketsMap);
     if (ret != HCCL_SUCCESS) {
         TlsStatus tlsStatus = TlsStatus::UNKNOWN;
+        CHK_PRT_CONT(HcclNetDevGetTlsStatus(netDevCtx, &tlsStatus), HCCL_WARNING("[HcclNetDevGetTlsStatus] Can not get TlsStatus"));
         PrintErrorConnection(localRole, socketsMap, dstRankToUserRank, tlsStatus);
-        // 只有多qp场景才会出现同一个src + dst出现多个socket，但是socket链路类型一致
-        // vnic多server场景下，需要添加nic白名单，loaclRankInfo，remoteRankInfo保存的ip为nicIp
-        NicType nicType = socketsMap[remoteRankInfo.userRank][0]->GetSocketType();
-        AddIpQueue(loaclRankInfo, remoteRankInfo, nicType, deviceLogicId_);
         HCCL_ERROR("[Create][Sockets]Wait links establish completed failed, local role is client. ret[%d]", ret);
         return ret;
     }

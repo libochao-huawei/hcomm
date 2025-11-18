@@ -404,7 +404,7 @@ get_addrs:
             return 0;
         }
     }
-    hccp_err("[check][ip]fail, ret(%d) the IP address(%s) in the ranktable is inconsistent with the IP(%s)"\
+    hccp_err("[check][ip]failed, ret(%d) the IP address(%s) in the ranktable is inconsistent with the IP(%s)"\
         "address of the network adapter, please make sure they're consistent. "\
         "num(%u)", ret, local_ip, interface_ip, num);
 
@@ -1118,7 +1118,7 @@ HCCP_ATTRI_VISI_DEF int ra_qp_create(void *rdev_handle, int flag, int qp_mode, v
 
     ret = rdma_handle_tmp->rdma_ops->ra_qp_create(rdma_handle_tmp, flag, qp_mode, qp_handle);
     CHK_PRT_RETURN(ret != 0 || *qp_handle == NULL,
-        hccp_err("[create][ra_qp]create qp fail, ret(%d) phy_id(%u)", ret, phy_id),
+        hccp_err("[create][ra_qp]create qp failed, ret(%d) phy_id(%u)", ret, phy_id),
         conver_return_code(RDMA_OP, ret));
 
     return 0;
@@ -1168,7 +1168,7 @@ HCCP_ATTRI_VISI_DEF int ra_qp_create_with_attrs(void *rdev_handle, struct qp_ext
     rdma_handle_tmp->qp_cnt++;
     ret = rdma_handle_tmp->rdma_ops->ra_qp_create_with_attrs(rdma_handle_tmp, ext_attrs, qp_handle);
     CHK_PRT_RETURN(ret != 0 || *qp_handle == NULL,
-        hccp_err("[create][ra_qp_with_attrs]create qp fail, ret(%d) phy_id(%u)", ret, phy_id),
+        hccp_err("[create][ra_qp_with_attrs]create qp failed, ret(%d) phy_id(%u)", ret, phy_id),
         conver_return_code(RDMA_OP, ret));
 
     return 0;
@@ -1220,7 +1220,7 @@ HCCP_ATTRI_VISI_DEF int ra_ai_qp_create(void *rdev_handle, struct qp_ext_attrs *
         // origin procedure: not support to process data_plane_flag.bs.cq_cstm
         ret = rdma_handle_tmp->rdma_ops->ra_ai_qp_create(rdma_handle_tmp, attrs, info, qp_handle);
     }
-    CHK_PRT_RETURN(ret != 0 || *qp_handle == NULL, hccp_err("[create][ra_ai_qp]create qp fail, ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret != 0 || *qp_handle == NULL, hccp_err("[create][ra_ai_qp]create qp failed, ret(%d) phy_id(%u)",
         ret, phy_id), conver_return_code(RDMA_OP, ret));
 
     return 0;
@@ -1259,7 +1259,7 @@ HCCP_ATTRI_VISI_DEF int ra_typical_qp_create(void *rdev_handle, int flag, int qp
 
     ret = rdma_handle_tmp->rdma_ops->ra_typical_qp_create(rdma_handle_tmp, flag, qp_mode, qp_info, qp_handle);
     CHK_PRT_RETURN(ret != 0 || *qp_handle == NULL,
-        hccp_err("[create][ra_typical_qp]create qp fail, ret(%d) phy_id(%u)", ret, phy_id),
+        hccp_err("[create][ra_typical_qp]create qp failed, ret(%d) phy_id(%u)", ret, phy_id),
         conver_return_code(RDMA_OP, ret));
 
     return 0;
@@ -1884,7 +1884,7 @@ HCCP_ATTRI_VISI_DEF int ra_cq_create(void *rdev_handle, struct cq_attr *attr)
 
     ret = rdma_handle_tmp->rdma_ops->ra_cq_create(rdma_handle_tmp, attr);
     CHK_PRT_RETURN(ret != 0 || *attr->ib_send_cq == NULL || *attr->ib_recv_cq == NULL || *attr->qp_context == NULL,
-        hccp_err("[create][ra_cq]create cp fail, ret(%d) phy_id(%u)", ret, phy_id),
+        hccp_err("[create][ra_cq]create cp failed, ret(%d) phy_id(%u)", ret, phy_id),
         conver_return_code(RDMA_OP, -EINVAL));
 
     return 0;
@@ -1911,7 +1911,7 @@ HCCP_ATTRI_VISI_DEF int ra_cq_destroy(void *rdev_handle, struct cq_attr *attr)
     ret = rdma_handle_tmp->rdma_ops->ra_cq_destroy(rdma_handle_tmp, attr);
     CHK_PRT_RETURN(ret != 0 || *attr->ib_send_cq == NULL || *attr->ib_recv_cq == NULL ||
                    *attr->qp_context == NULL,
-        hccp_err("[destroy][ra_cq]destroy cp fail, ret(%d) phy_id(%u)", ret, phy_id),
+        hccp_err("[destroy][ra_cq]destroy cp failed, ret(%d) phy_id(%u)", ret, phy_id),
         conver_return_code(RDMA_OP, -EINVAL));
 
     return 0;
@@ -1945,8 +1945,8 @@ HCCP_ATTRI_VISI_DEF int ra_normal_qp_create(void *rdev_handle, struct ibv_qp_ini
 
     ret = rdma_handle_tmp->rdma_ops->ra_normal_qp_create(rdma_handle_tmp, qp_init_attr, qp_handle, qp);
     if (ret != 0 || *qp_handle == NULL) {
-        hccp_err("[create][ra_normal_qp]create qp fail, ret(%d) phy_id(%u)", ret, phy_id);
-        return conver_return_code(RDMA_OP, -EINVAL);
+        hccp_err("[create][ra_normal_qp]create qp failed, ret(%d) phy_id(%u)", ret, phy_id);
+        return conver_return_code(RDMA_OP, ret);
     }
 
     return 0;
@@ -2343,7 +2343,7 @@ HCCP_ATTRI_VISI_DEF int ra_typical_qp_modify(void *qp_handle, struct typical_qp 
 
     ret = ra_qp_handle->rdma_ops->ra_typical_qp_modify(ra_qp_handle, local_qp_info, remote_qp_info);
     if (ret != 0) {
-        hccp_err("[modify][ra_qp]modify qp fail, ret(%d) phy_id(%u)", ret, phy_id);
+        hccp_err("[modify][ra_qp]modify qp failed, ret(%d) phy_id(%u)", ret, phy_id);
         return conver_return_code(RDMA_OP, ret);
     }
 
@@ -2450,7 +2450,8 @@ HCCP_ATTRI_VISI_DEF int ra_qp_batch_modify(void *rdma_handle, void *qp_handle[],
     }
     ret = ra_rdma_handle->rdma_ops->ra_qp_batch_modify(rdma_handle, qp_handle, num, expect_status);
     if (ret != 0) {
-        hccp_err("[modify][ra_qp_batch_modify]modify qp to [%d] fail, ret[%d] phy_id[%u]", expect_status, ret, phy_id);
+        hccp_err("[modify][ra_qp_batch_modify]modify qp to [%d] failed, ret[%d] phy_id[%u]",
+            expect_status, ret, phy_id);
     }
     if ((ra_rdma_handle->support_lite != 0) && expect_status == RA_QP_STATUS_PAUSE) {
         RA_PTHREAD_MUTEX_UNLOCK(&ra_rdma_handle->rdev_mutex);
