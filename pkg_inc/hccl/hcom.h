@@ -327,9 +327,6 @@ void HcomSetDumpDebugMode(const bool dumpDebug);
 
 HcclResult HcomGetAlgorithm(u32 level, char** algo);
 
-HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm,
-    std::string& group, std::string &sTag);
-
 HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, void *inputPtr, void *outputPtr,
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
     void **commContext, u64 *len, u32 aivCoreLimit);
@@ -373,9 +370,6 @@ HcclResult HcomTbeMemClean(int64_t addrList[], int64_t sizeList[], uint32_t coun
     rtStream_t stream, int32_t deviceLogicId);
 
 #ifndef OPEN_BUILD_PROJECT
-HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
-HcclResult HcclCommCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
-
 HcclResult HcomCreateCommCclBuf(const int64_t &hcomComm, const char *group);
 HcclResult HcomGetInCclBuf(const int64_t &hcomComm, const char *sGroup, void* &commInputPtr, u64 &commInputSize);
 HcclResult HcomGetOutCclBuf(const int64_t &hcomComm, const char *sGroup, void* &commOutputPtr, u64 &commOutputSize);
@@ -383,9 +377,6 @@ HcclResult HcomGetIndirectInCclBuf(const int64_t &hcomComm, const char *sGroup, 
 HcclResult HcomGetIndirectOutCclBuf(const int64_t &hcomComm, const char *sGroup, void* &indirectOutCCLbufPtr, u64 &indirectCommOutputSize);
 HcclResult HcomGetIndirectInCclBuffer(const int64_t &hcomComm, const char *sGroup, void* &indirectInCCLbufPtr, u64 &indirectCommInputSize);
 HcclResult HcomGetIndirectOutCclBuffer(const int64_t &hcomComm, const char *sGroup, void* &indirectOutCCLbufPtr, u64 &indirectCommOutputSize);
-
-HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel);
 #endif
 
 HcclResult HcomGetInitStatus(bool *initiated);
