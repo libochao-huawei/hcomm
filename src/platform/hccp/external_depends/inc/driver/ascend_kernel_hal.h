@@ -797,7 +797,7 @@ void hal_kernel_svm_put_user_pages(void **pages, u32 nr_pages, bool is_remap_add
 * @return   0 Success, others for fail
 * @note Support: Ascend310Brc
 */
-int bbox_bootdot_init_blk(u32 block_id, u32 magic, u32 execption_id, u32 expect_status);
+int hal_kernel_bbox_bootdot_init_blk(u32 block_id, u32 magic, u32 execption_id, u32 expect_status);
 
 /**
 * @ingroup driver
@@ -808,7 +808,7 @@ int bbox_bootdot_init_blk(u32 block_id, u32 magic, u32 execption_id, u32 expect_
 * @return   0 Success, others for fail
 * @note Support: Ascend310Brc
 */
-int bbox_bootdot_set_blk(u32 block_id, u32 magic, u32 current_status);
+int hal_kernel_bbox_bootdot_set_blk(u32 block_id, u32 magic, u32 current_status);
 
 /* This model indicates the the relationship between hosts and devices is fixed by hardware and cannot be reconfigured. */
 #define FIX_MODEL     0
