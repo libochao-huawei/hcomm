@@ -74,7 +74,7 @@ if(BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         rs
         c_sec
-        $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
+        $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
         -Wl,--as-needed
         -ldl
     )
@@ -93,11 +93,9 @@ else()
     )
 endif()
 
-if(("${USE_ALOG}" STREQUAL "1"))
 target_compile_definitions(ra_peer PRIVATE
     LOG_HOST
 )
-endif()
 
 install(TARGETS  ra_peer
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL

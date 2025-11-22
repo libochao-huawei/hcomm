@@ -59,7 +59,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
 
         # 第三方库依赖路径
-        ${CMAKE_BINARY_DIR}/../third_party/openssl/include
+        ${OPENSSL_INCLUDE_DIR}
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
@@ -132,7 +132,7 @@ if(BUILD_OPEN_PROJECT)
     target_link_libraries(rs PRIVATE
         -Wl,--no-as-needed
         c_sec
-        $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
+        $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
         $<$<NOT:$<STREQUAL:${PRODUCT},ascend310p>>:tls_adp>
         -Wl,--as-needed
         -Wl,--whole-archive

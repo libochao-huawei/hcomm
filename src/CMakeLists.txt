@@ -285,8 +285,7 @@ add_library(ccl_kernel_plf_a  STATIC)
 # 指定ccl_kernel_plf所需包含文件搜索路径
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ccl_kernel_plf PRIVATE
-        OPEN_BUILD_PROJECT
-        LOG_CPP)
+        OPEN_BUILD_PROJECT)
 
     target_compile_definitions(ccl_kernel_plf_a PRIVATE
         OPEN_BUILD_PROJECT)
@@ -516,6 +515,7 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
+        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
@@ -527,6 +527,7 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
+        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
@@ -640,7 +641,7 @@ install(TARGETS  ccl_kernel_plf_a
 )
 
 if(DEVICE_MODE)
-    set(HCCD_TAR_DIR ${HCCL_BASE_DIR}/../build_hccd/hccd_tar_pkg/)
+    set(HCCD_TAR_DIR ${HCCL_BASE_DIR}/../build_hccd/hccd_tar_pkg/lib64)
     add_custom_command(
         TARGET hccd
         POST_BUILD
@@ -650,6 +651,7 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_hdc> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccd> ${HCCD_TAR_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/* ${HCCP_TAR_DIR}
         COMMENT "Copying libhccd.so to ${HCCD_TAR_DIR}"
     )
 endif()
