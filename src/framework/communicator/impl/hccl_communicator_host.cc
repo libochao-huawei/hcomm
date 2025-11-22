@@ -1249,14 +1249,6 @@ namespace hccl
                           localVnicIp_.GetReadableAddress(), localVnicListenPort_);
             }
 
-            if (isHaveCpuRank_) {
-                HcclNetDevCtx hostPortCtx;
-                CHK_RET(HcclNetOpenDev(&hostPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, loopBackIp_));
-                CHK_PTR_NULL(hostPortCtx);
-                netDevCtxMap_.insert(std::make_pair(loopBackIp_, hostPortCtx));
-                CHK_RET(socketManager_->ServerInit(hostPortCtx, hostPort_));
-            }
-
             if (IsEnableRoce()) {
                 CHK_RET(InitNic()); // isUsedRdmaLevel0_默认为false，若初始化网卡时，网卡IP有效才根据环境变量配置
             }
@@ -1432,11 +1424,6 @@ namespace hccl
         }
 
         if (raResourceInit_ && (static_cast<s32>(devicePhyId_) != HOST_DEVICE_ID) && !Is310PDevice()) {
-            if (isHaveCpuRank_) {
-                CHK_RET(socketManager_->ServerDeInit(netDevCtxMap_[loopBackIp_], hostPort_));
-                HcclNetCloseDev(netDevCtxMap_[loopBackIp_]);
-                netDevCtxMap_.erase(loopBackIp_);
-            }
             CHK_RET(socketManager_->ServerDeInit(netDevCtxMap_[localVnicIp_], localVnicListenPort_));
             HcclNetCloseDev(netDevCtxMap_[localVnicIp_]);
             netDevCtxMap_.erase(localVnicIp_);
@@ -3076,28 +3063,25 @@ namespace hccl
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
-        if (isHaveCpuRank_) {
-            CHK_RET(implAlg_->Broadcast(tag, ptr, count, dataType, root, streamObj));
-        } else {
-            u32 perDataSize = SIZE_TABLE[dataType];
-            u64 totalSize = count * perDataSize;
+        u32 perDataSize = SIZE_TABLE[dataType];
+        u64 totalSize = count * perDataSize;
 
-            OpParam opParam;
-            opParam.tag = tag;
-            opParam.inputPtr = ptr;
-            opParam.outputPtr = ptr;
-            opParam.inputSize = totalSize;
-            opParam.outputSize = totalSize;
-            opParam.DataDes.count = count;
-            opParam.DataDes.dataType = dataType;
-            opParam.root = root;
-            opParam.stream = streamObj;
-            opParam.aicpuUnfoldMode = aicpuUnfoldMode;
-            opParam.isCapture = isCapture;
-            opParam.opType = HcclCMDType::HCCL_CMD_BROADCAST;
+        OpParam opParam;
+        opParam.tag = tag;
+        opParam.inputPtr = ptr;
+        opParam.outputPtr = ptr;
+        opParam.inputSize = totalSize;
+        opParam.outputSize = totalSize;
+        opParam.DataDes.count = count;
+        opParam.DataDes.dataType = dataType;
+        opParam.root = root;
+        opParam.stream = streamObj;
+        opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
+        opParam.opType = HcclCMDType::HCCL_CMD_BROADCAST;
 
-            CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_BROADCAST, opParam));
-        }
+        CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_BROADCAST, opParam));
+
         return HCCL_SUCCESS;
     }
 
@@ -3650,29 +3634,25 @@ namespace hccl
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
-        if (isHaveCpuRank_) {
-            CHK_RET(implAlg_->SendOutPlace(tag, inputPtr, count, dataType, destRank, streamObj));
-        } else {
-            u32 perDataSize = SIZE_TABLE[dataType];
-            u64 totalSize = count * perDataSize;
+        u32 perDataSize = SIZE_TABLE[dataType];
+        u64 totalSize = count * perDataSize;
 
-            OpParam opParam;
-            opParam.tag = tag;
-            opParam.inputPtr = inputPtr;
-            opParam.inputSize = totalSize;
-            opParam.outputPtr = inputPtr;
-            opParam.outputSize = totalSize;
-            opParam.DataDes.count = count;
-            opParam.DataDes.dataType = dataType;
-            opParam.stream = streamObj;
-            opParam.aicpuUnfoldMode = aicpuUnfoldMode;
-            opParam.isCapture = isCapture;
-            opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
-            opParam.dstRank = destRank;
-            opParam.opType = HcclCMDType::HCCL_CMD_SEND;
-            opParam.localGroupRank = userRank_;
-            CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_SEND, opParam));
-        }
+        OpParam opParam;
+        opParam.tag = tag;
+        opParam.inputPtr = inputPtr;
+        opParam.inputSize = totalSize;
+        opParam.outputPtr = inputPtr;
+        opParam.outputSize = totalSize;
+        opParam.DataDes.count = count;
+        opParam.DataDes.dataType = dataType;
+        opParam.stream = streamObj;
+        opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
+        opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
+        opParam.dstRank = destRank;
+        opParam.opType = HcclCMDType::HCCL_CMD_SEND;
+        opParam.localGroupRank = userRank_;
+        CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_SEND, opParam));
 
         return HCCL_SUCCESS;
     }
@@ -3748,49 +3728,26 @@ namespace hccl
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
 
-        if (isHaveCpuRank_) {
-            CHK_RET(implAlg_->ReceiveOutPlace(tag, outputPtr, count, dataType, srcRank, streamObj));
-        } else {
-            u32 perDataSize = SIZE_TABLE[dataType];
-            u64 totalSize = count * perDataSize;
+        u32 perDataSize = SIZE_TABLE[dataType];
+        u64 totalSize = count * perDataSize;
 
-            OpParam opParam;
-            opParam.tag = tag;
-            opParam.inputPtr = outputPtr;
-            opParam.inputSize = totalSize;
-            opParam.outputPtr = outputPtr;
-            opParam.outputSize = totalSize;
-            opParam.DataDes.count = count;
-            opParam.DataDes.dataType = dataType;
-            opParam.stream = streamObj;
-            opParam.aicpuUnfoldMode = aicpuUnfoldMode;
-            opParam.isCapture = isCapture;
-            opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
-            opParam.srcRank = srcRank;
-            opParam.opType = HcclCMDType::HCCL_CMD_RECEIVE;
-            opParam.localGroupRank = userRank_;
-            CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_RECEIVE, opParam));
-        }
+        OpParam opParam;
+        opParam.tag = tag;
+        opParam.inputPtr = outputPtr;
+        opParam.inputSize = totalSize;
+        opParam.outputPtr = outputPtr;
+        opParam.outputSize = totalSize;
+        opParam.DataDes.count = count;
+        opParam.DataDes.dataType = dataType;
+        opParam.stream = streamObj;
+        opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.isCapture = isCapture;
+        opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
+        opParam.srcRank = srcRank;
+        opParam.opType = HcclCMDType::HCCL_CMD_RECEIVE;
+        opParam.localGroupRank = userRank_;
+        CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_RECEIVE, opParam));
 
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank,
-                                        u64 inputCount, HcclDataType dataType, rtStream_t stream)
-    {
-        CHK_RET(CheckSuspendingStatus());
-        if (!IsAtomicInit()) {
-            HCCL_ERROR("[HcclCommunicator][Gather]errNo[0x%016llx] hccl init must be called before call this function",
-                       HCCL_ERROR_CODE(HCCL_E_UNAVAIL));
-            return HCCL_E_UNAVAIL;
-        }
-
-        Stream streamObj(stream);
-        CHK_RET(callbackTask_->CallbackRegStream(stream));
-
-        std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
-        implAlg_->SetHDCModeInfo(rankDevicePhyIdNicInfoMap_, ranksPorts, isSetHDCModeInfo_, isUseRankPort_);
-        CHK_RET(implAlg_->Gather(tag, inputPtr, outputPtr, rootRank, inputCount, dataType, streamObj));
         return HCCL_SUCCESS;
     }
 

@@ -45,7 +45,6 @@ set(aicpu_kfc_list
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/common/adapter/adapter_rts.cc
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/common/adapter/adapter_hal.cc
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/common/adapter/adapter_hccp.cc
-    ${AICPU_KFC_CODE_ROOT}/hccl/platform/common/adapter/adapter_hdds.cc
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/common/adapter/adapter_tdt.cc
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/common/adapter/adapter_error_manager.cc
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/common/adapter/adapter_error_manager_pub.cc
@@ -598,9 +597,6 @@ set(aicpu_kfc_list_open
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/operator/alltoall_operator.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/operator/registry/coll_alg_op_registry.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/legacy/hccl_impl.cc
-    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/legacy/operator/gather_operator.cc
-    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/legacy/operator/send_receive_operator.cc
-    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/legacy/operator/broadcast_operator_for_hetero.cc
 
     # hccl/hccl/common/health
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/common/health/rank_consistentcy_checker.cc

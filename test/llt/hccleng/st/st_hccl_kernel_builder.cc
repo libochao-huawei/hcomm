@@ -1336,7 +1336,6 @@ TEST_F(HcomKernelBuilderTest, st_GenerateTaskDef)
     nodeptr->GetOpDesc()->SetStreamId((s64)streamId);
     std::string name = "HcomTag";
     nodeptr->GetOpDesc()->SetName(name);
-    // std::string type = HCCL_KERNEL_OP_TYPE_REMOTE_LOOKUP;
     std::string type = HCCL_KERNEL_OP_TYPE_ALLREDUCE;
     nodeptr->GetOpDesc()->SetType(type);
     nodeptr->GetOpDesc()->SetId((s64)Id);

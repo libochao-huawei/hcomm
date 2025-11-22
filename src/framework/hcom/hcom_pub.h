@@ -99,8 +99,6 @@ HcclResult HcomSetQosCfg(const char *group, const u32 qosCfg);
 HcclResult HcclCommSetQosCfg(s64 opBaseHcom, const u32 qosCfg);
 HcclResult HcomResetQosCfg(const char *group);
 HcclResult HcclCommResetQosCfg(s64 opBaseHcom);
-HcclResult HcomGather(const char *tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-    HcclDataType dataType, const char *group, rtStream_t stream);
 HcclResult GenerateGroupHash(std::string &group, std::string &groupHash);
 
 HcclResult HcclCommGraphClearAivSyncBuf(s64 comm, bool aivClearEnable);

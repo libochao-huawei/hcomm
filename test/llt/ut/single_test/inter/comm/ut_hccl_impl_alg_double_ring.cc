@@ -197,8 +197,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceScatterDoubleRingExecutor_Ring)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
-
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
     OpParam opParam;
@@ -299,7 +297,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceScatterFastDoubleRingFor91093Exec
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
@@ -403,7 +400,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_SuperPod_CollReduceScatterDoubleRingExecuto
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
@@ -507,7 +503,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceDoubleRingExecutor_Ring)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -587,7 +582,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceDoubleRingExecutor_Ring_level2)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -681,7 +675,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_AllGatherDoubleRingExecutor_Ring_SuperPod)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -808,7 +801,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollAllGatherDoubleRingExecutor_Ring)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -932,7 +924,6 @@ TEST_F(HcclImplAlgTestDoubleRing, ut_CollReduceScatterDoubleRingExecutor_UpdateO
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 

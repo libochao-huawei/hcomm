@@ -134,9 +134,6 @@ TEST_F(HcomGraphOptimizerTest, ut_optimize_graphprepare_SetHcomOpParallelLabel)
     graph.AddNode(opDescPtr);
     EXPECT_EQ(ge_ret, ge::SUCCESS);
 
-    const string typeEs = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_PAIRED;
-    op.SetType(typeEs);
-
     HcomGraphOptimizer optimizer;
     std::string groupLabel = "hcom_op";
     for (auto nodePtr : graph.GetAllNodes()) {
@@ -2027,7 +2024,7 @@ TEST_F(HcomGraphOptimizerTest, ut_HcomCalcOpRunningParam_by_comm_pytorch)
     MOCKER_CPP(&HcomGraphOptimizer::GetLookupUpdateWorkspace)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    const string coll_type = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_UPDATE;
+    const string coll_type = HCCL_KERNEL_OP_TYPE_ALLREDUCE;
     ops[0].GetOpDesc()->SetType(coll_type);
     ret = hcomGraphOptimizer.HcomCalcOpRunningParam(ops[0], false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -2257,14 +2254,6 @@ TEST_F(HcomGraphOptimizerTest, ut_offlinebuild_calcSubStreamNum)
     .stubs()
     .will(returnValue(false));
 
-    ret = graphOptimizer.HcomCalcOpRunningParam(*nodeptr, false);
-
-    type = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_PAIRED;
-    nodeptr->GetOpDesc()->SetType(type);
-    ret = graphOptimizer.HcomCalcOpRunningParam(*nodeptr, false);
-
-    type = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_UNIQUED_PAIRED;
-    nodeptr->GetOpDesc()->SetType(type);
     ret = graphOptimizer.HcomCalcOpRunningParam(*nodeptr, false);
 
     MOCKER_CPP(&HcomGraphOptimizer::CalAndSetOpWorkerSpaceForKnowShape)
@@ -2648,66 +2637,6 @@ HcclResult GetDeviceTypeA2Stub(const char *group, DevType &deviceType) {
     return HCCL_SUCCESS;      
 }
 
-TEST_F(HcomGraphOptimizerTest, ut_GetOpWorkspaceMemSize)
-{
-    ge::Node node;
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_MAXNUM");
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_EMBEDDINGDIM");
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_FLAGS");
-
-    ge::AttrUtils::SetInt(node.GetOpDesc(), "flags", 1);
-
-    HcomGraphOptimizer graphOptimizer;
-    u64 opMemSize;
-    std::string sCollectiveType;
-    sCollectiveType = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_PAIRED;
-
-    s32 ret = graphOptimizer.GetOpWorkspaceMemSize(node, sCollectiveType, opMemSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    sCollectiveType = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_UPDATE_PAIRED;
-
-    ret = graphOptimizer.GetOpWorkspaceMemSize(node, sCollectiveType, opMemSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    ret = graphOptimizer.GetOpWorkspaceMemSize(node, HCCL_KERNEL_OP_TYPE_REMOTE_LOOKUP, opMemSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    sCollectiveType = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_UNIQUED_PAIRED;
-    ret = graphOptimizer.GetOpWorkspaceMemSize(node, sCollectiveType, opMemSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    sCollectiveType = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_PAIRED;
-    ret = graphOptimizer.GetOpWorkspaceMemSize(node, sCollectiveType, opMemSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    MOCKER(HcomOpUtils::GetReduceScatterVCounts)
-    .stubs()
-    .with(any())
-    .will(invoke(GetReduceScatterVCountsStub));
-    MOCKER(GetDeviceType, HcclResult (const char *, DevType &)).stubs().will(invoke(GetDeviceTypeA2Stub));
-    ret = graphOptimizer.GetOpWorkspaceMemSize(node, HCCL_KERNEL_OP_TYPE_REDUCESCATTERV, opMemSize);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    GlobalMockObject::verify();
-}
-
-TEST_F(HcomGraphOptimizerTest, ut_GetLookupUpdateWorkspace)
-{
-    HcomGraphOptimizer graphOptimizer;
-    u64 opMemSize;
-    HcclResult ret;
-    s32 flags = 0;
-
-    ge::Node node;
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_MAXNUM");
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_EMBEDDINGDIM");
-
-    ret = graphOptimizer.GetLookupUpdateWorkspace(node, opMemSize, 0);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
-
 HcclResult stub_GetOpWorkspaceMemSize(HcomGraphOptimizer* that, ge::Node& node, const std::string &sCollectiveType,
     u64 &opMemSize)
 {
@@ -3088,22 +3017,6 @@ TEST_F(HcomGraphOptimizerTest, ut_GetStreamNumOfflineComp_ErrorTest)
     u64 streamNum = 1;
     ret = GetStreamNumOfflineComp(sCollectiveType, curGroup, streamNum);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-
-    GlobalMockObject::verify();
-}
-
-TEST_F(HcomGraphOptimizerTest, ut_offlinebuild_calcSubStreamNum_1)
-{
-    HcomGraphOptimizer graphOptimizer;
-    ge::NodePtr nodeptr(new NodeTest);
-
-    std::string type = HCCL_KERNEL_OP_TYPE_GATHER;
-    std::string nodeName = "ALL_GATHER";
-    nodeptr->GetOpDesc()->SetType(type);
-    MOCKER(&ge::AttrUtils::SetInt).stubs().will(returnValue(true));
-    MOCKER_CPP(&HcomGraphOptimizer::CalAndSetOpWorkerSpaceForKnowShape).stubs().will(returnValue(HCCL_SUCCESS));
-    ge::Status ret = graphOptimizer.HcomCalcOpRunningParam(*nodeptr, false);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
 
     GlobalMockObject::verify();
 }

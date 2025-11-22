@@ -39,10 +39,6 @@ constexpr u32 ALG_8P_RING_COMM_STEP = 7;
 constexpr u32 PIPLINE_STREAM_EVENT_NUM = 2;
 constexpr u32 MINUS_MESH_STREAM_NUM = 2;
 
-namespace hccl {
-    class HcclCommBase;
-}
-
 enum class GeDeterministicOption {
     DISABLE = 0,
     ENABLE = 1,
@@ -78,14 +74,12 @@ using HcclGroupParams = struct TagHcclGroupParamsInfo {
     u32 totalRanks;              /* * 用于指示group内的节点总数, rank范围[0, totalRanks-1] */
     std::vector<u32> groupRanks;  // 内部存储wordrankid，其下标表示groupid
     HcclCommPtr pSubComm;
-    std::shared_ptr<hccl::HcclCommBase> pSubCommBase;
     u32 refCounter = 0;
     bool destroyFlag = false;
 };
 
 using HcomInfo = struct HcomInfoTag {
     HcclCommPtr pComm;
-    std::shared_ptr<hccl::HcclCommBase> pCommBase;
     void *psComm;
     hccl::HcclCommParams params;
     std::unordered_map<std::string, HcclGroupParams> hcomGroupMap;  // 每个group的信息(kname为服务器的server_id,按照服务器区分)

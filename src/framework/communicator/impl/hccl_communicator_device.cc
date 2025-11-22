@@ -771,12 +771,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank,
-                                        u64 inputCount, HcclDataType dataType, rtStream_t stream)
-    {
-        return HCCL_SUCCESS;
-    }
-
     HcclResult HcclCommunicator::RegressCalPreOp(AlltoAllOperator *&alltoAllOperator, const OpParam &opParam,
                                                  std::unique_ptr<PreProcessMetaInfo> &preMetaInfo)
     {

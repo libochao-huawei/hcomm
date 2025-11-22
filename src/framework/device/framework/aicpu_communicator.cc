@@ -3496,7 +3496,7 @@ HcclResult HcclCommAicpu::CheckOpExecStatus()
                     "errorCode[%u]", identifier_.c_str(), dfxExtendInfo_.cqeStatus, dfxExtendInfo_.cqeException.sqeType,
                     dfxExtendInfo_.cqeException.errorCode);
             }
-            return HCCL_SUCCESS;
+            return HCCL_E_INTERNAL;
         }
     }
 

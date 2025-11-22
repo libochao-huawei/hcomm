@@ -1632,16 +1632,6 @@ TEST_F(HcomKernelBuilderTest, ut_getOpWorkspaceMemSize)
 
     HcclResult ret = hcomKernelInfo.GetOpWorkspaceMemSize(*nodeptr, HCCL_KERNEL_OP_TYPE_ALLTOALLV, opMemSize);
 
-    MOCKER_CPP(&HcomOpsKernelBuilder::GetLookupUpdateWorkspace)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    ret = hcomKernelInfo.GetOpWorkspaceMemSize(*nodeptr, HCCL_KERNEL_OP_TYPE_COLL_REMOTE_UPDATE, opMemSize);
-
-    MOCKER_CPP(&HcomOpsKernelBuilder::GetLookupUpdateWorkspace)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-    ret = hcomKernelInfo.GetOpWorkspaceMemSize(*nodeptr, HCCL_KERNEL_OP_TYPE_REMOTE_LOOKUP, opMemSize);
-
     MOCKER(GetDeviceType, HcclResult (const char *, DevType &)).stubs().will(invoke(GetDeviceTypeA2Stub));
     ret = hcomKernelInfo.GetOpWorkspaceMemSize(*nodeptr, HCCL_KERNEL_OP_TYPE_REDUCESCATTERV, opMemSize);
     EXPECT_EQ(HCCL_SUCCESS, ret);
@@ -1765,27 +1755,6 @@ TEST_F(HcomKernelBuilderTest, ut_offlinebuild_calcSubStreamNumAllToAllVC)
     GlobalMockObject::verify();
 }
 #if 1
-TEST_F(HcomKernelBuilderTest, ut_GetLookupUpdateWorkspace)
-{
-    HcomOpsKernelBuilder graphOptimizer;
-    u64 opMemSize;
-    HcclResult ret;
-    s32 flags = 0;
-
-    ge::Node node;
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_MAXNUM");
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_EMBEDDINGDIM");
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_FLAGS");
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_TAG");
-    ge::AttrUtils::HasAttr(node.GetOpDesc(), "DUMMY_SET_TRUE_MAXEMBEDDINGDIM");
-
-
-    ge::AttrUtils::SetInt(node.GetOpDesc(), "flags", 1);
-
-    ret = graphOptimizer.GetLookupUpdateWorkspace(node, opMemSize, 1);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
 TEST_F(HcomKernelBuilderTest, ut_GenerateTaskDef)
 {
     ge::NodePtr nodeptr(new NodeTest);
@@ -1796,7 +1765,7 @@ TEST_F(HcomKernelBuilderTest, ut_GenerateTaskDef)
     nodeptr->GetOpDesc()->SetStreamId((s64)streamId);
     std::string name = "HcomTag";
     nodeptr->GetOpDesc()->SetName(name);
-    std::string type = HCCL_KERNEL_OP_TYPE_REMOTE_LOOKUP;
+    std::string type = HCCL_KERNEL_OP_TYPE_GATHER;
     nodeptr->GetOpDesc()->SetType(type);
     nodeptr->GetOpDesc()->SetId((s64)Id);
     HCCL_KERNEL_INFO_PRIVATE_DEF privateDefBuf;

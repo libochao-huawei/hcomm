@@ -9,11 +9,8 @@
  */
 
 #include "hccl_alg.h"
-#include "gather_operator.h"
-#include "send_receive_operator.h"
 #include "alltoall_operator.h"
 #include "all_reduce_operator.h"
-#include "broadcast_operator_for_hetero.h"
 #include "coll_alg_op_registry.h"
 #include "topo_matcher.h"
 #include "topo_info_extractor.h"
@@ -206,89 +203,10 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclAlg::Broadcast(
-        const std::string &tag, void *ptr, u64 count, HcclDataType dataType, u32 root, Stream stream)
-    {
-        (void) tag;
-        (void) ptr;
-        (void) count;
-        (void) dataType;
-        (void) root;
-        (void) stream;
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclAlg::Send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType, u32 destRank,
-                             Stream stream)
-    {
-        (void) tag;
-        (void) inputPtr;
-        (void) count;
-        (void) dataType;
-        (void) destRank;
-        (void) stream;
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclAlg::SendOutPlace(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-                                     u32 destRank, Stream stream)
-    {
-        (void) tag;
-        (void) inputPtr;
-        (void) count;
-        (void) dataType;
-        (void) destRank;
-        (void) stream;
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclAlg::Receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-                                u32 srcRank, Stream stream)
-    {
-        (void) tag;
-        (void) outputPtr;
-        (void) count;
-        (void) dataType;
-        (void) srcRank;
-        (void) stream;
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclAlg::ReceiveOutPlace(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-                                        u32 srcRank, Stream stream)
-    {
-        (void) tag;
-        (void) outputPtr;
-        (void) count;
-        (void) dataType;
-        (void) srcRank;
-        (void) stream;
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclAlg::Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-                               HcclDataType dataType, Stream stream)
-    {
-        (void) tag;
-        (void) inputPtr;
-        (void) outputPtr;
-        (void) rootRank;
-        (void) inputCount;
-        (void) dataType;
-        (void) stream;
-        return HCCL_SUCCESS;
-    }
-
     HcclResult HcclAlg::ClearOpResource(const std::string &tag)
     {
         (void) tag;
         return HCCL_SUCCESS;
-    }
-
-    bool HcclAlg::IsExistCommRes(const std::string &tag)
-    {
-        (void) tag;
-        return false;
     }
 
     HcclResult HcclAlg::CreateMutiStreamRes(const std::string &tag, Stream &stream, level1StreamInfo_t &streamInfo,
@@ -325,22 +243,6 @@ namespace hccl
         (void) algType;
         (void) root;
         (void) isP2p;
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclAlg::CreateP2PCommQuerry(const std::string &tag, u32 &status)
-    {
-        (void) tag;
-        (void) status;
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclAlg::CreateP2PCommAsync(const std::string &tag, DeviceMem &mem, u32 peerRank, u32 &status)
-    {
-        (void) tag;
-        (void) mem;
-        (void) peerRank;
-        (void) status;
         return HCCL_SUCCESS;
     }
 
