@@ -21,10 +21,10 @@ endif()
 set(OPENSSL_DOWNLOAD_COMMAND "")
 # 检查 CANN_3RD_LIB_PATH 是否存在且不为空
 if(DEFINED CANN_3RD_LIB_PATH AND NOT CANN_3RD_LIB_PATH STREQUAL "")
-    set(OPENSSL_SRC_DIR ${PROJECT_SOURCE_DIR}/third_party/openssl)
+    set(OPENSSL_SRC_DIR ${PROJECT_SOURCE_DIR}/third_party/openssl-${PRODUCT_SIDE})
     if(EXISTS ${CANN_3RD_LIB_PATH}/openssl)
-        file(COPY ${CANN_3RD_LIB_PATH}/openssl DESTINATION ${PROJECT_SOURCE_DIR}/third_party)
-        message(STATUS "Successfully copied ${CANN_3RD_LIB_PATH}/openssl to ${PROJECT_SOURCE_DIR}/third_party/.")
+        file(COPY ${CANN_3RD_LIB_PATH}/openssl/ DESTINATION ${OPENSSL_SRC_DIR})
+        message(STATUS "Successfully copied ${CANN_3RD_LIB_PATH}/openssl to ${OPENSSL_SRC_DIR}.")
     else()
         message(FATAL_ERROR "Source directory ${CANN_3RD_LIB_PATH}/openssl does not exist.")
     endif()
@@ -37,6 +37,10 @@ else()
     )
 endif()
 set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/openssl-install) # 安装路径
+set(OPENSSL_INCLUDE_DIR
+    ${CMAKE_BINARY_DIR}/openssl-install/include
+    ${OPENSSL_SRC_DIR}/include
+)
 message("---------------------------${OPENSSL_TARBALL}")
 message("---------------------------${OPENSSL_SRC_DIR}")
 # ========== 工具链配置（根据系统架构判断） ==========

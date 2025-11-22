@@ -80,7 +80,7 @@ if(BUILD_OPEN_PROJECT)
     target_link_libraries(ra PRIVATE
         -Wl,--no-as-needed
         c_sec
-        $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
+        $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
         ra_hdc
         ra_peer
         -Wl,--as-needed
@@ -101,11 +101,9 @@ else()
     )
 endif()
 
-if(("${USE_ALOG}" STREQUAL "1"))
 target_compile_definitions(ra PRIVATE
     LOG_HOST
 )
-endif()
 
 install(TARGETS  ra
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL

@@ -693,6 +693,7 @@ if(NOT BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         c_sec
         ccl_kernel_plf
+        unified_dlog
         mmpa
         -Wl,--as-needed
         -lrt
@@ -792,20 +793,22 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             set(ASCEND_CANN_PACKAGE_ENV_PATH ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux)
         endif()
         message(STATUS "framework ASCEND_CANN_PACKAGE_ENV_PATH=${ASCEND_CANN_PACKAGE_ENV_PATH}")
-        set(BUILD_PATH build)
+        set(CCL_KERNEL_PLF_PATH
+            -Wl,--whole-archive
+            ${HCCL_BASE_DIR}/../build/src/libccl_kernel_plf.a
+            -Wl,--no-whole-archive
+            -Wl,-Bsymbolic
+        )
         if(FULL_MODE)
-            set(BUILD_PATH build_device)
+            set(CCL_KERNEL_PLF_PATH ccl_kernel_plf)
         endif()
         target_link_libraries(ccl_kernel PRIVATE
             -Wl,--no-as-needed
             ascend_hal
             c_sec
             mmpa
+            ${CCL_KERNEL_PLF_PATH}
             -Wl,--as-needed
-            -Wl,--whole-archive
-            ${HCCL_BASE_DIR}/../${BUILD_PATH}/src/libccl_kernel_plf.a
-            -Wl,--no-whole-archive
-            -Wl,-Bsymbolic
             -lrt
             -ldl
             -lpthread
@@ -828,7 +831,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
 endif()
 
 if(DEVICE_MODE AND KERNEL_MODE)
-    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/)
+    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
     add_custom_command(
         TARGET ccl_kernel
         POST_BUILD

@@ -89,7 +89,7 @@ if(BUILD_OPEN_PROJECT)
     target_link_libraries(ra_hdc PRIVATE
         -Wl,--no-as-needed
         c_sec
-        $<$<NOT:$<STREQUAL:${HCCD_PKG},ON>>:unified_dlog>
+        $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
         -Wl,--as-needed
         -lrt
         -ldl
@@ -108,11 +108,9 @@ else()
     )
 endif()
 
-if(("${USE_ALOG}" STREQUAL "1"))
 target_compile_definitions(ra_hdc PRIVATE
     LOG_HOST
 )
-endif()
 
 install(TARGETS  ra_hdc
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL

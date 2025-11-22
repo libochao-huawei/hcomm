@@ -33,7 +33,7 @@
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="Ascend/aicpu" install_path="hcomm/Ascend/aicpu" install_type="all" install_mod="440">
         <file value="hcomm_device.tar.gz"/>
-        <file value="aicpu_hccl.tar.gz"/>
+        <file value="aicpu_hcomm.tar.gz"/>
         <file value="hcomm_hccd.tar.gz"/>
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="hcomm/built-in/data/op/aicpu" install_type="all" install_mod="440">
