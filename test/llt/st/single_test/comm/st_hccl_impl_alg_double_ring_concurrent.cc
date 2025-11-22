@@ -416,7 +416,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, st_CollReduceScatterDoubleRingConcur
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
@@ -501,7 +500,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, st_CollAllGatherDoubleRingConcurrent
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -657,7 +655,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, st_CollReduceScatterDoubleRingConcur
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
@@ -725,7 +722,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollAllGatherDoubleRingConcurrent
     const std::vector<std::vector<u32>> tmpRingNics = {
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
@@ -815,7 +811,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrent, ut_CollReduceScatterSingleRingConcur
     const std::vector<std::vector<u32>> tmpRingNics = {
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));

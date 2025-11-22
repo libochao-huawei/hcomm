@@ -547,9 +547,6 @@ set(hccl_list_open
     ${HCCL_CODE_ROOT}/src/algorithm/impl/operator/alltoall_operator.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/operator/registry/coll_alg_op_registry.cc
     ${HCCL_CODE_ROOT}/src/algorithm/impl/legacy/hccl_impl.cc
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/legacy/operator/gather_operator.cc
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/legacy/operator/send_receive_operator.cc
-    ${HCCL_CODE_ROOT}/src/algorithm/impl/legacy/operator/broadcast_operator_for_hetero.cc
 
     # hccl/hccl/common/health
     ${HCCL_CODE_ROOT}/src/common/health/rank_consistentcy_checker.cc

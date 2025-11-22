@@ -1116,31 +1116,6 @@ HcclResult hcclComm::Is310PDuoCard(bool &is310PDuoCard)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-    HcclDataType dataType, rtStream_t stream)
-{
-    /* 增加输出日志关键字 */
-    HCCL_DEBUG("HCCL_KEY_INFO: tag[%s], input_ptr[%p], output_ptr[%p], count[%llu], data_type[%s]",
-               tag.c_str(), inputPtr, outputPtr, inputCount, GetDataTypeEnumStr(dataType).c_str());
-
-    /* * 入参检查 */
-    CHK_PTR_NULL(inputPtr);
-    CHK_PTR_NULL(stream);
-
-    CHK_PRT_RET(tag.empty(), HCCL_ERROR("[HcclComm][Gather]errNo[0x%016llx] gather tag length is 0",
-        HCCL_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
-
-    CHK_RET(communicator_->CheckCount(inputCount));
-    CHK_RET(communicator_->CheckDataType(dataType, false));
-    HcclResult ret = communicator_->Gather(tag, inputPtr, outputPtr, rootRank, inputCount, dataType, stream);
-    if (ret != HCCL_SUCCESS) {
-        PrintSubmittedOpCnt(tag, ret);
-        return ret;
-    }
-
-    return HCCL_SUCCESS;
-}
-
 bool hcclComm::IsNeedResetDevice()
 {
     return isResetDevice_;

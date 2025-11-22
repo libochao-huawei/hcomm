@@ -952,106 +952,6 @@ TEST_F(HcclCommTest, hcclComm_broadcast)
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 }
 
-TEST_F(HcclCommTest, hcclComm_broadcast_hetero)
-{
-    s32 ret = HCCL_SUCCESS;
-    s32 rt_ret = RT_ERROR_NONE;
-
-    setenv("HCCL_NET_NAME", "eth0", 1);
-
-    // 申请stream
-    rtStream_t stream;
-    rt_ret = aclrtCreateStream(&stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    // 申请device memory
-    void* mem_dev = nullptr;
-    rt_ret = rtMalloc(&mem_dev, 1024, RT_MEMORY_DEFAULT, HCCL);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    // 初始化通信域
-    HcclCommParams comm_params;
-    comm_params.rank = 0;
-    comm_params.totalRanks = 1;
-    comm_params.logicDevId = 0;
-    comm_params.deviceType = DevType::DEV_TYPE_910;
-    ret = hcclComm::GetUniqueId(&comm_params.id);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    hcclComm comm;
-    RankTable_t rankTable = get_rank_table_rank_nic_device();
-    ret = comm.init(comm_params, rankTable);
-    // 设置isHaveCpuRank_为true，使得可以走入异构场景
-    comm.communicator_->isHaveCpuRank_ = true;
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    if (HCCL_SUCCESS == ret)
-    {
-        // 执行broadcast
-        ret = comm.Broadcast("braodcast__MC2MultiServer1", mem_dev, 1, HCCL_DATA_TYPE_INT8, 0, stream);
-        EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    }
-
-    rt_ret = aclrtSynchronizeStream(stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    rt_ret = aclrtFree(mem_dev);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    rt_ret = aclrtDestroyStream(stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-}
-
-TEST_F(HcclCommTest, hcclComm_broadcast_outplace_hetero)
-{
-    s32 ret = HCCL_SUCCESS;
-    s32 rt_ret = RT_ERROR_NONE;
-
-    setenv("HCCL_NET_NAME", "eth0", 1);
-
-    // 申请stream
-    rtStream_t stream;
-    rt_ret = aclrtCreateStream(&stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    // 申请device memory
-    void* mem_dev = nullptr;
-    rt_ret = rtMalloc(&mem_dev, 1024, RT_MEMORY_DEFAULT, HCCL);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    // 初始化通信域
-    HcclCommParams comm_params;
-    comm_params.rank = 0;
-    comm_params.totalRanks = 1;
-    comm_params.logicDevId = 0;
-    comm_params.deviceType = DevType::DEV_TYPE_910;
-    ret = hcclComm::GetUniqueId(&comm_params.id);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    hcclComm comm;
-    RankTable_t rankTable = get_rank_table_rank_nic_device();
-    ret = comm.init(comm_params, rankTable);
-    // 设置isHaveCpuRank_为true，使得可以走入异构场景
-    comm.communicator_->isHaveCpuRank_ = true;
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    if (HCCL_SUCCESS == ret)
-    {
-        // 执行broadcast
-        ret = comm.BroadcastOutPlace("braodcast__MC2MultiServer1",mem_dev, 1, HCCL_DATA_TYPE_INT8, 0, stream);
-        EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    }
-
-    rt_ret = aclrtSynchronizeStream(stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    rt_ret = aclrtFree(mem_dev);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-
-    rt_ret = aclrtDestroyStream(stream);
-    EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-}
-
 TEST_F(HcclCommTest, hcclComm_broadcast_mesh)
 {
     s32 ret = HCCL_SUCCESS;
@@ -5651,10 +5551,6 @@ TEST_F(HcclCommTest, hcclComm_printErrIndex)
     .stubs()
     .will(returnValue(HCCL_E_PARA));
 
-    MOCKER_CPP_VIRTUAL(impl2, &HcclCommunicator::Gather)
-    .stubs()
-    .will(returnValue(HCCL_E_PARA));
-
     hcclComm comm;
     RankTable_t rankTable = get_rank_table_rank_nic_device();
     ret = comm.init(comm_params, rankTable);
@@ -5671,9 +5567,6 @@ TEST_F(HcclCommTest, hcclComm_printErrIndex)
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     ret = comm.SendOutPlace("sendOutPlace", mem_dev_input, 1, HCCL_DATA_TYPE_INT8, 0, stream);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-
-    ret = comm.Gather("gather", mem_dev_input, mem_dev_output, 0, 1, HCCL_DATA_TYPE_INT8, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     rt_ret = aclrtFree(mem_dev_input);

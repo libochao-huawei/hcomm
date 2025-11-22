@@ -146,12 +146,6 @@ TEST_F(Aiv_Device_UT, AlgDeviceTest) {
     alg->ReleaseCommInfos();
     std::string tag = "alg";
     Stream stream;
-    alg->Broadcast(tag, nullptr, 0, dataType, 0, stream);
-    alg->Send(tag, nullptr, 0, dataType, 0, stream);
-    alg->SendOutPlace(tag, nullptr, 0, dataType, 0, stream);
-    alg->Receive(tag, nullptr, 0, dataType, 0, stream);
-    alg->ReceiveOutPlace(tag, nullptr, 0, dataType, 0, stream);
-    alg->Gather(tag, nullptr, nullptr, 0, 0, dataType, stream);
 
     alg->ClearOpResource(tag);
     alg->IsExistCommRes(tag);
@@ -162,9 +156,6 @@ TEST_F(Aiv_Device_UT, AlgDeviceTest) {
     alg->CreateComm(tag, deviceMem, deviceMem, algType, commInfo, 0, true, true);
     alg->CreateComm(tag, deviceMem, deviceMem, algType, 0, true);
     u32 status;
-    alg->CreateP2PCommQuerry(tag, status);
-    alg->CreateP2PCommAsync(tag, deviceMem, 0, status);
-    alg->CancelCommRes(tag);
     alg->Break();
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> rankDevicePhyIdNicInfoMap;
     std::vector<u32> ranksPort;

@@ -1867,7 +1867,6 @@ HcclResult HcomGetWorkspaceMemSize(const std::string &opType, u64 count, HcclDat
 #endif
     u32 rankSize = 0;
     std::shared_ptr<hccl::hcclComm> hcclComm{};
-    std::shared_ptr<hccl::HcclCommBase> hcclCommbase{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm != nullptr) {
         hcclComm = hcomInfo.pComm;
@@ -2727,7 +2726,6 @@ HcclResult HcomGetTopoDesc(const char *group, HcclTopoDescs *topoDescs, uint32_t
 #endif
 
     std::shared_ptr<hcclComm> hcclComm;
-    std::shared_ptr<HcclCommBase> hcclCommbase;
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
     if (HcomGetCommByGroup(group, hcclComm)==HCCL_SUCCESS) {

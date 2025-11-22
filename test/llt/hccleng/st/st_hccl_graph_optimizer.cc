@@ -100,9 +100,6 @@ TEST_F(HcomGraphOptimizerTest, st_optimize_graphprepare_SetHcomOpParallelLabel)
     graph.AddNode(opDescPtr);
     EXPECT_EQ(ge_ret, ge::SUCCESS);
 
-    // const string typeEs = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_PAIRED;
-    // op.SetType(typeEs);
-
     HcomGraphOptimizer optimizer;
     std::string groupLabel = "hcom_op";
     for (auto nodePtr : graph.GetAllNodes()) {

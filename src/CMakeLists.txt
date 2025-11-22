@@ -386,9 +386,6 @@ else()
         ${TOP_DIR}/abl/adump/inc/adump
         ${TOP_DIR}/inc/aicpu/common
         ${TOP_DIR}/ace/csruntime/inc/tsch
-        ${TOP_DIR}/asl/hss/inc
-        ${TOP_DIR}/asl/hss/inc/pub
-        ${TOP_DIR}/asl/hss/common/hash_table
         ${TOP_DIR}/metadef
         ${TOP_DIR}/metadef/inc
         ${TOP_DIR}/metadef/pkg_inc
@@ -416,9 +413,6 @@ else()
         ${TOP_DIR}/abl/msprof/inc
         ${TOP_DIR}/inc/aicpu/common
         ${TOP_DIR}/ace/csruntime/inc/tsch
-        ${TOP_DIR}/asl/hss/inc
-        ${TOP_DIR}/asl/hss/inc/pub
-        ${TOP_DIR}/asl/hss/common/hash_table
         ${TOP_DIR}/metadef
         ${TOP_DIR}/metadef/inc
         ${TOP_DIR}/metadef/pkg_inc

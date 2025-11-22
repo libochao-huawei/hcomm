@@ -666,9 +666,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
-        ${TOP_DIR}/asl/hss/inc/
-        ${TOP_DIR}/asl/hss/inc/pub
-        ${TOP_DIR}/asl/hss/common/hash_table
 
         ${HCCL_BASE_DIR}/inc
         ${HCCL_BASE_DIR}/hdcs
