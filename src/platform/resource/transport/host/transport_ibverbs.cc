@@ -1051,8 +1051,8 @@ bool TransportIbverbs::IsTemplateMode()
 
 HcclResult TransportIbverbs::GetIndOpRemoteMemDetails(MemDetails** remoteMem, uint32_t *memNum, HcclMemType memType)
 {
-    CHK_PRT_RET(remoteMem, HCCL_ERROR("[%s] remoteMem is nullptr", __func__), HCCL_E_PARA);
-    CHK_PRT_RET(memNum, HCCL_ERROR("[%s] memNum is nullptr", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[%s] remoteMem is nullptr", __func__), HCCL_E_PARA);
+    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[%s] memNum is nullptr", __func__), HCCL_E_PARA);
  
     *remoteMem = nullptr;
     *memNum = 0;

@@ -4733,9 +4733,6 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
     }
     multiQpThreshold_ = commParam->multiQpThreshold;
     localUserRank_ = commParam->localUserRank;
-    topoInfo_.deviceLogicId = commParam->deviceLogicId;
-    topoInfo_.devicePhyId = commParam->devicePhyId;
-    topoInfo_.deviceType = static_cast<DevType>(commParam->deviceType);
     HCCL_INFO("%s multiQpThreshold[%u], localUserRank[%u], deviceLogicId[%d], devicePhyId[%u], deviceType[%d], "
         "listNum[%u]", __func__, multiQpThreshold_, localUserRank_, topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
         topoInfo_.deviceType, commParam->listNum);
@@ -4889,9 +4886,8 @@ HcclResult HcclCommAicpu::InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam
             transDevIbverbsData.inputBufferPtr, transDevIbverbsData.outputBufferPtr);
         return HCCL_E_PARA;
     }
-    // 是否需要 localMem 待确认
-    // transDevIbverbsData.localInputMem
-    // transDevIbverbsData.localOutputMem
+    transDevIbverbsData.localInputMem = channelRoce.localHcclbuffer;
+    transDevIbverbsData.localOutputMem = channelRoce.localHcclbuffer;
     transDevIbverbsData.localNotifyValueAddr = channelRoce.notifyValue;
     transDevIbverbsData.notifyValueKey = channelRoce.notifyValueKey;
     transDevIbverbsData.remoteInputKey = channelRoce.remoteHcclbuffer.key;
