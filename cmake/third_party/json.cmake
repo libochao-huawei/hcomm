@@ -53,13 +53,10 @@ else()
             URL ${REQ_URL}
             TLS_VERIFY OFF
             DOWNLOAD_DIR ${JSON_DOWNLOAD_PATH}
-            DOWNLOAD_NO_EXTRACT TRUE
             SOURCE_DIR ${JSON_INSTALL_PATH}
             CONFIGURE_COMMAND ""
             BUILD_COMMAND ""
-            INSTALL_COMMAND
-                ${CMAKE_COMMAND} -E make_directory ${JSON_INSTALL_PATH} &&
-                ${CMAKE_COMMAND} -E chdir ${JSON_INSTALL_PATH} ${CMAKE_COMMAND} -E tar xf "${JSON_DOWNLOAD_PATH}/include.zip" --format=zip
+            INSTALL_COMMAND ""
             UPDATE_COMMAND ""
     )
 

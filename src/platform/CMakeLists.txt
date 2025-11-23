@@ -216,6 +216,8 @@ add_subdirectory(ping_mesh)
 add_subdirectory(typical)
 add_subdirectory(hccp)
 
+add_dependencies(hccl_plf json)
+
 install(TARGETS  hccl_plf
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
