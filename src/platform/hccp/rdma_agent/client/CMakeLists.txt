@@ -71,6 +71,7 @@ endif()
 
 target_compile_options(ra PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -std=gnu11 -Wextra
+    $<$<CONFIG:Debug>:-g>
 )
 
 target_compile_definitions(ra PRIVATE

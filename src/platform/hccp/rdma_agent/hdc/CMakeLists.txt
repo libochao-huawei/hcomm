@@ -79,6 +79,7 @@ endif()
 
 target_compile_options(ra_hdc PRIVATE
     -Werror -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11 -Wextra
+    $<$<CONFIG:Debug>:-g>
 )
 
 target_compile_definitions(ra_hdc PRIVATE

@@ -102,6 +102,7 @@ endif()
 target_compile_options(rs PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
     -Wextra -Wno-unused-parameter -std=gnu11
+    $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(rs PRIVATE

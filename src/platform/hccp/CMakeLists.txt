@@ -54,6 +54,7 @@ endif()
 
 target_compile_options(hccp_service.bin PRIVATE
     -Werror -Wall -fPIC -rdynamic -fvisibility=hidden -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11
+    $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(hccp_service.bin PRIVATE
