@@ -182,17 +182,6 @@ HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size);
 
 HcclResult HcomCreateCommCCLbuffer(const char *group);
 
-HcclResult HcomGetInCclBuf(const int64_t &hcomComm, const char *sGroup, void* &commInputPtr, u64 &commInputSize);
-
-HcclResult HcomGetOutCclBuf(const int64_t &hcomComm, const char *sGroup, void* &commOutputPtr, u64 &commOutputSize);
-
-HcclResult HcomCreateCommCclBuf(const int64_t &hcomComm, const char *group);
-
-HcclResult HcomGetIndirectInCclBuf(const int64_t &hcomComm, const char *sGroup, void* &indirectInCCLbufPtr, u64 &indirectCommInputSize);
-
-HcclResult HcomGetIndirectOutCclBuf(const int64_t &hcomComm, const char *sGroup, void* &indirectOutCCLbufPtr, u64 &indirectCommOutputSize);
-
-
 
 aclError aclrtGetMemcpyDescSize(aclrtMemcpyKind kind, size_t *descSize);
 

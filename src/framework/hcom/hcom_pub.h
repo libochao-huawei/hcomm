@@ -110,7 +110,6 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
 #ifndef OPEN_BUILD_PROJECT
 HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum);
 HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
-HcclResult HcclCommCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
 #endif
 HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum, s32 deviceNumPerServer,
     DevType devType, u32 &taskNum);
