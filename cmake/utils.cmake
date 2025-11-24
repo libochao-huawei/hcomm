@@ -17,13 +17,13 @@ else()
     message(STATUS "hcomm_utils CANN_UTILS_LIB_PATH ${CANN_UTILS_LIB_PATH}   process ${CMAKE_HOST_SYSTEM_PROCESSOR}")
     file(GLOB HCOMM_UTILS_PKG
         LIST_DIRECTORIES True
-        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_8.5.0.alpha001_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz
+        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_8.5.0_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz
     )
 
     if(NOT EXISTS ${HCOMM_UTILS_PKG})
-        set(HCOMM_UTILS_FILE cann-hcomm-utils_8.5.0.alpha001_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz)
+        set(HCOMM_UTILS_FILE cann-hcomm-utils_8.5.0_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz)
         set(SIMULATOR_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/${HCOMM_UTILS_FILE})
-        set(SIMULATOR_VERSION 8.5.0.alpha001)
+        set(SIMULATOR_VERSION 8.5.0)
         execute_process(COMMAND rm -rf ${SIMULATOR_DIR})
 
         set(HCOMM_UTILS_URL "https://mirrors.huaweicloud.com/artifactory/cann-run/${SIMULATOR_VERSION}/inner/${CMAKE_HOST_SYSTEM_PROCESSOR}/${HCOMM_UTILS_FILE}")
