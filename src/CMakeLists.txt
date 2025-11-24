@@ -240,6 +240,7 @@ target_compile_options(hccd PRIVATE
     -pipe
     -O3
     -std=c++14
+    $<$<CONFIG:Debug>:-g>
 )
 
 #hccd 编译宏
@@ -464,6 +465,7 @@ target_compile_options(ccl_kernel_plf PRIVATE
     -O3
     -std=c++14
     -D_FORTIFY_SOURCE=2 -O2
+    $<$<CONFIG:Debug>:-g>
 )
 
 # 给ccl_kernel_plf_a添加编译选项
@@ -478,6 +480,7 @@ target_compile_options(ccl_kernel_plf_a PRIVATE
     -ftrapv
     -D_FORTIFY_SOURCE=2 -O2
     -fPIC
+    $<$<CONFIG:Debug>:-g>
 )
 # 为ccl_kernel_plf添加编译定义
 target_compile_definitions(ccl_kernel_plf PRIVATE

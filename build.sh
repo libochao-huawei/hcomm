@@ -230,6 +230,15 @@ function build_kernel() {
 
 while [[ $# -gt 0 ]]; do
     case $1 in
+    -j*)
+        JOB_NUM="$1"
+        shift
+        ;;
+    --build-type=*)
+        OPTARG=$1
+        BUILD_TYPE="${OPTARG#*=}"
+        shift
+        ;;
     --ccache)
         CCACHE_PROGRAM="$2"
         shift 2
@@ -388,6 +397,8 @@ fi
 CUSTOM_OPTION="${CUSTOM_OPTION} -DCUSTOM_ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}"
 # CUSTOM_OPTION="${CUSTOM_OPTION} -DCANN_3RD_LIB_PATH=${cann_3rd_lib_path}"
 CUSTOM_OPTION="$CUSTOM_OPTION -DCANN_3RD_LIB_PATH=${CANN_3RD_LIB_PATH} -DCANN_UTILS_LIB_PATH=${CANN_UTILS_LIB_PATH}"
+
+CUSTOM_OPTION="$CUSTOM_OPTION -DCMAKE_BUILD_TYPE=${BUILD_TYPE}"
 
 set_env
 

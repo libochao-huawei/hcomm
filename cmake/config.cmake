@@ -1,3 +1,10 @@
+
+set(DEFAULT_BUILD_TYPE "Release")
+
+if (NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
+    set(CMAKE_BUILD_TYPE "${DEFAULT_BUILD_TYPE}" CACHE STRING "Choose the build type: Release/Debug" FORCE)
+endif()
+
 function(generate_stub_with_output_name STUB STUB_OUTPUT_NAME)
     if(EXISTS ${DOWNLOAD_LIB_DIR}/lib${STUB_OUTPUT_NAME}.so)
         add_library(${STUB} SHARED IMPORTED GLOBAL)

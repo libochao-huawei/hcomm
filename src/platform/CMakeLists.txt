@@ -151,6 +151,7 @@ target_compile_options(hccl_plf PRIVATE
     -O3
     -std=c++14
     -fstack-protector-all
+    $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(hccl_plf PRIVATE

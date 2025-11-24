@@ -67,6 +67,7 @@ endif()
 
 target_compile_options(ra_peer PRIVATE
     -Werror -std=gnu11 -fno-common -Wfloat-equal -Wextra
+    $<$<CONFIG:Debug>:-g>
 )
 
 if(BUILD_OPEN_PROJECT)
