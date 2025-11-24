@@ -29,3 +29,38 @@
 
 - [PyTorch](./04_ai_framework/01_pytorch/)
 - [Tensorflow](./04_ai_framework/02_tensorflow/)
+
+## 依赖安装
+mpich下载地址，选择4.1.3版本
+```bash
+https://www.mpich.org/static/downloads/4.1.3/mpich-4.1.3.tar.gz
+```
+
+### 编译安装
+
+```shell
+tar -zxvf mpich-4.1.3.tar.gz
+cd mpich-4.1.3.tar.gz
+
+./configure --disable-fortran  --prefix=/usr/local/mpich --with-device=ch3:nemesis
+--prefix=可以指定安装路径
+
+make -j32 && make install
+```
+
+## 用例执行
+1、设置MPI安装路径环境变量
+
+```shell
+export MPI_HOME=/usr/local/mpich
+```
+
+2、设置环境变量
+```shell
+source /usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash
+该脚本和装包路径有关
+```
+3、执行前冒烟用例
+```shell
+bash build.sh --cb_test_verify
+```

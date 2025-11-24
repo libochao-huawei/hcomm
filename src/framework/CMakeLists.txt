@@ -724,7 +724,17 @@ if(NOT KERNEL_MODE)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
-    add_dependencies(hccl_fwk ccl_kernel_json)
+
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+    )
+
+    add_dependencies(hccl_fwk ccl_kernel_json aicpu_custom_json)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
@@ -820,13 +830,12 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+            DESTINATION ${CMAKE_CURRENT_BINARY_DIR} OPTIONAL
         )
 
         target_link_directories(ccl_kernel PRIVATE
             ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
         )
-
     endif()
 endif()
 
