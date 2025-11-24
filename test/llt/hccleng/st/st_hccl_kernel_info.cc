@@ -1536,15 +1536,6 @@ TEST_F(HcomKernelInfoTest, st_GetHcomOutCCLbufferSize)
     .with(mockcpp::any(), outBound(outputAddr), outBound(OutputAddrSize))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcomGetIndirectOutCclBuf)
-    .stubs()
-    .with(mockcpp::any(), mockcpp::any(), outBound(outputAddr), outBound(OutputAddrSize))
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER(HcomGetIndirectInCclBuf)
-    .stubs()
-    .with(mockcpp::any(), mockcpp::any(), outBound(outputAddr), outBound(OutputAddrSize))
-    .will(returnValue(HCCL_SUCCESS));
     MOCKER(HcomGetDeviceType).stubs().with(mockcpp::any()).will(returnValue(DevType::DEV_TYPE_910_95));
     ret = hcomOpsKernelInfoStore_.GetHcomOutCCLbufferSize(commOutputSize, shapeType, hcomComm, sGroup);
     EXPECT_EQ(ret, HCCL_SUCCESS);
