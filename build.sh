@@ -111,6 +111,7 @@ function cmake_config()
 
 function build()
 {
+    log "Info: build target:$@ JOB_NUM:${JOB_NUM}"
     cmake --build . --target "$@" ${JOB_NUM} #--verbose
 }
 

@@ -11,8 +11,8 @@ set_source_files_properties(
     aiv_communication.h PROPERTIES LANGUAGE CXX
 )
 
-if(CCAHE_PROGRAM)
-    set(BISHENG_CCACHE ${CCAHE_PROGRAM})
+if(CCACHE_PROGRAM)
+    set(BISHENG_CCACHE ${CCACHE_PROGRAM})
 endif()
 if(BUILD_OPEN_PROJECT)
     set(CCE_DIR ${ASCEND_CANN_PACKAGE_PATH}/tools/ccec_compiler/bin)
