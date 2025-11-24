@@ -32,6 +32,8 @@ ENABLE_SIGN="true"
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
 
+BUILD_CB_TEST="false"
+
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
     DEFAULT_INSTALL_DIR="${HOME}/Ascend/latest"
@@ -146,6 +148,12 @@ function build_hccd(){
     fi
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
+}
+
+function build_cb_test_verify(){
+    cd ${CURRENT_DIR}/examples/
+    source ${ASCEND_CANN_PACKAGE_PATH}/bin/setenv.bash
+    bash build.sh
 }
 
 function build_test() {
@@ -314,6 +322,10 @@ while [[ $# -gt 0 ]]; do
         MOCK_FWK_HLT="1"
         shift
         ;;
+    --cb_test_verify)
+        BUILD_CB_TEST="true"
+        shift
+        ;;
     --enable-sign)
         ENABLE_SIGN="true"
         shift
@@ -417,6 +429,10 @@ elif [ "${BUILD_FWK_HLT}" == "true" ]; then
     build hccl_fwk_test
     log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
     log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
+elif [ "${BUILD_CB_TEST}" == "true" ]; then
+    log "Info: Building cb_test_verify"
+    build_cb_test_verify
+    log "Info: Building cb_test_verify success"
 elif [ "${FULL_MODE}" == "true" ]; then
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}
