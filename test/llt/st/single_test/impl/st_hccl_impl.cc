@@ -33,7 +33,6 @@
 #include "coll_alg_operator.h"
 #include "all_gather_operator.h"
 #include "reduce_operator.h"
-#include "send_receive_operator.h"
 #include "reduce_scatter_operator.h"
 #include "broadcast_operator.h"
 #include "coll_comm_executor.h"
@@ -262,64 +261,6 @@ DispatcherPub *HcclImplTest::dispatcher = nullptr;
 
 HcclCommParams HcclImplTest::params;
 RankTable_t HcclImplTest::rankTable;
-
-TEST_F(HcclImplTest, st_hcclimpl_BuildAlltoAllVScratchMem)
-{
-    std::unique_ptr<HcclCommunicator> implBase(new (std::nothrow) HcclCommunicator());
-
-    MOCKER_CPP(&HcclCommunicator::InitRaResource)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    HcclResult ret = implBase->Init(params, rankTable);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    std::unique_ptr<hcclImpl> &impl = implBase->implAlg_->pimpl_;
-
-    impl->BuildAlltoAllVScratchMem("test", 64);
-
-    MOCKER(GetWorkflowMode)
-    .stubs()
-    .will(returnValue(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
-
-    impl->BuildAlltoAllVScratchMem("test", 128);
-    GlobalMockObject::verify();
-}
-
-TEST_F(HcclImplTest, st_hcclimpl_CreateCommForAlltoAllFullMesh)
-{
-    std::unique_ptr<HcclCommunicator> implBase(new (std::nothrow) HcclCommunicator());
-
-    MOCKER_CPP(&HcclCommunicator::InitRaResource)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    HcclResult ret = implBase->Init(params, rankTable);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    std::unique_ptr<hcclImpl> &impl = implBase->implAlg_->pimpl_;
-    implBase->nicInitialized_ = false;
-    implBase->hcomGroupNicInit_ = false;
-    impl->userRankSize_ = 16;
-    impl->isDiffDeviceModule_  = true;
-    impl->isUsedRdmaLevel0_ = false;
-    impl->serverNum_ = 1;
-
-    std::string tag = "alltoallv";
-    DeviceMem sendBuf;
-    DeviceMem recvBuf;
-
-    MOCKER_CPP(&HcclCommunicator::InitNic)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-
-    ret = impl->CreateCommForAlltoAllFullMesh(tag, sendBuf, recvBuf);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-
-    GlobalMockObject::verify();
-}
 
 TEST_F(HcclImplTest, st_hcclimpl_GetInnerServerAverageDevice)
 {
@@ -1654,8 +1595,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_double_ring_executer_by_all_reduce)
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
 
-    impl->SetRingNics(tag, tmpRingNics);
-
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -1731,7 +1670,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_double_ring_executer_for_91093_by_broadcast
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
@@ -1809,7 +1747,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_double_ring_executer_for_91093_by_all_reduc
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
@@ -1882,8 +1819,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_fast_double_ring_for_910_93_executer_by_all
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP(&TransportManager::Alloc)
     .stubs()
@@ -3197,7 +3132,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_ring_executer_by_all_reduce_stars)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(opParam.tag, tmpRingNics);
 
     std::printf("[st_CollAllReduceRingFor91093Executor_Ring]");
 
@@ -3291,7 +3225,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_ring_executer_by_all_gather_stars)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(opParam.tag, tmpRingNics);
 
     AlgResourceRequest resourceRequest;
     AlgResourceResponse resourceResponse;
@@ -3395,8 +3328,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_double_ring_executer_by_all_reduce_stars_2)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-
-    impl->SetRingNics(opParam.tag, tmpRingNics);
 
     AlgResourceRequest resourceRequest;
     AlgResourceResponse resourceResponse;
@@ -3713,7 +3644,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_a3_aiv_coressnode_opbase)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(opParam.tag, tmpRingNics);
 
     AlgResourceRequest resourceRequest;
     AlgResourceResponse resourceResponse;
@@ -3793,7 +3723,6 @@ TEST_F(HcclImplTest, st_hcclImpl_run_a3_aiv_coressnode_offload)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(opParam.tag, tmpRingNics);
 
     AlgResourceRequest resourceRequest;
     AlgResourceResponse resourceResponse;
@@ -5769,7 +5698,6 @@ TEST_F(HcclImplTest, st_update_zerocopy)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(opParam.tag, tmpRingNics);
     AlgResourceRequest resourceRequest;
     AlgResourceResponse resourceResponse;
     ret = executor->CalcResRequest(opParam, resourceRequest);
@@ -5876,7 +5804,6 @@ TEST_F(HcclImplTest, st_prepare_zerocopy_algname)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(opParam.tag, tmpRingNics);
 
     bool isSupportZeroCopy = implBase->IsSupportZeroCopy(opParam);
     AlgDesc algDesc;
@@ -5956,7 +5883,6 @@ TEST_F(HcclImplTest, st_prepare_zerocopy_op)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(opParam.tag, tmpRingNics);
 
     bool isSupportZeroCopy = implBase->IsSupportZeroCopy(opParam);
     AlgDesc algDesc;

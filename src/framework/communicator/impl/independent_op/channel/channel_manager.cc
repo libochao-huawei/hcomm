@@ -346,6 +346,8 @@ HcclResult ChannelManager::BuildOpRemoteChannelRoceResParam(const LINK &link, Hc
 {
     remoteRes.isUsedRdma = true;
     HcclChannelRoce &linkRoce = remoteRes.channelRoce;
+    // 填充localMem信息到linkRoce中
+    CHK_RET(link->GetLocalMemDetails(UserMemType::INPUT_MEM, linkRoce.localHcclbuffer));
     // 填充remoteMem信息到linkRoce中
     void *bufferPtr = nullptr;
     CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &bufferPtr));
@@ -556,13 +558,6 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     strncpy_s(channelParam.channelTag, TAG_MAX_LENGTH, tag.c_str(), TAG_MAX_LENGTH - 1);
     channelParam.engine = engine;
     channelParam.localUserRank = userRank_;
-    s32 deviceLogicId_ = 0; // 临时赋值
-    channelParam.deviceLogicId = deviceLogicId_;
-    channelParam.devicePhyId = deviceLogicId_;
-    u32 devicePhyId_ = 0; // 临时赋值
-    channelParam.devicePhyId = devicePhyId_;
-    u32 deviceType_ = 0; // 临时赋值
-    channelParam.deviceType = deviceType_;
     channelParam.multiQpThreshold = GetExternalInputMultiQpThreshold();
 
     // 为device侧的channelList分配内存

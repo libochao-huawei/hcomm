@@ -45,23 +45,10 @@ public:
     HcclResult GetTinyMem(DeviceMem &tinySendRecvMem);
 
     // legacy code
-    HcclResult Broadcast(const std::string &tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
-        Stream stream);
-    HcclResult Send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-        u32 destRank, Stream stream);
-    HcclResult SendOutPlace(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-        u32 destRank, Stream stream);
-    HcclResult Receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-        u32 srcRank, Stream stream);
-    HcclResult ReceiveOutPlace(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-        u32 srcRank, Stream stream);
-    HcclResult Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-        HcclDataType dataType, Stream stream);
     HcclResult GetAlltoAllStagedWorkSpaceMemSize(std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo,
         u64 &memSize);
     HcclResult GetAllReduceScratchSize(const u32 count, const HcclDataType dataType, u64 &scratchSize);
     HcclResult ClearOpResource(const std::string &tag);
-    bool IsExistCommRes(const std::string &tag);
     HcclResult CreateMutiStreamRes(const std::string &tag, Stream &stream, level1StreamInfo_t &streamInfo,
         AlgType algType, bool isAicpuModeEn = false);
     HcclResult CreateComm(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem, 
@@ -69,8 +56,6 @@ public:
         bool isP2p = false, bool isAicpuModeEn = false);
     HcclResult CreateComm(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem, AlgType algType,
         u32 root = INVALID_VALUE_RANKID, bool isP2p = false);
-    HcclResult CreateP2PCommQuerry(const std::string &tag, u32& status);
-    HcclResult CreateP2PCommAsync(const std::string &tag, DeviceMem &mem, u32 peerRank, u32& status);
     void CancelCommRes(const std::string &tag);
     void Break();
     HcclResult SetAlgType(AlgType algType, HcclCMDType opType);

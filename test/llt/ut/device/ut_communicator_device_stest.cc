@@ -263,8 +263,6 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     hcclCommunicator.Receive(tag, nullptr, 0, dataType, 0, stream_t);
     hcclCommunicator.ReceiveOutPlace(tag, nullptr, 0, dataType, 0, stream_t);
 
-    hcclCommunicator.Gather(tag, nullptr, nullptr, 0, 0, dataType, stream_t);
-
     AlltoAllOperator *alltoAllOperator = nullptr;
     std::unique_ptr<PreProcessMetaInfo> preMetaInfo = nullptr;
     hcclCommunicator.RegressCalPreOp(alltoAllOperator, opParam, preMetaInfo);

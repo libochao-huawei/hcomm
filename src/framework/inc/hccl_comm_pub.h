@@ -215,9 +215,6 @@ public:
     HcclResult AlltoAll(const void *sendBuf, u64 sendCount, HcclDataType sendType, const void *recvBuf,
         u64 recvCount, HcclDataType recvType, rtStream_t stream, const std::string &tag);
 
-    HcclResult Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-        HcclDataType dataType, rtStream_t stream);
-
     /**********************************************************************
      功能描述  : 生成唯一的集合通信域标识
      输入参数  : 无

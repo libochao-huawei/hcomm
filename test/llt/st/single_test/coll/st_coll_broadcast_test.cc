@@ -545,7 +545,6 @@ TEST_F(CollBroadcastSTTest, broadcast_superpod_Ring)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
@@ -897,7 +896,6 @@ TEST_F(CollBroadcastSTTest, broadcast_double_ring_1)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 

@@ -186,12 +186,6 @@ TEST_F(GradientSplitTuneTest, stGradientSplitTune2)
     ret = sca.CalculateXferFrequency(8, "sa", slices);
     ret = sca.CalculateXferPercentage(8, "sa", slices);
 
-    Gather gat(1);
-    ret = gat.CalculateXferFrequency(8, "ring", slices);
-    ret = gat.CalculateXferPercentage(8, "ring", slices);
-    ret = gat.CalculateXferFrequency(8, "sa", slices);
-    ret = gat.CalculateXferPercentage(8, "sa", slices);
-
     Allgather allg(1);
     ret = allg.CalculateXferFrequency(8, "ring", slices);
     ret = allg.CalculateXferFrequency(8, "H-D", slices);

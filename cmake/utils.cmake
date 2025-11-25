@@ -17,7 +17,7 @@ else()
     message(STATUS "hcomm_utils CANN_UTILS_LIB_PATH ${CANN_UTILS_LIB_PATH}   process ${CMAKE_HOST_SYSTEM_PROCESSOR}")
     file(GLOB HCOMM_UTILS_PKG
         LIST_DIRECTORIES True
-        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_8.5.0.alpha001_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz
+        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_8.5.0_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz
     )
 
     if(NOT EXISTS ${HCOMM_UTILS_PKG})

@@ -36,7 +36,6 @@
 #include "hccl_impl.h"
 #include "hccl_comm_pub.h"
 #include "hccl_communicator.h"
-#include "send_receive_operator.h"
 #include "coll_batch_send_recv_executor.h"
 #include "coll_reduce_scatter_v_executor.h"
 #include "coll_all_gather_v_executor.h"

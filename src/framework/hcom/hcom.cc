@@ -1763,14 +1763,18 @@ HcclResult GetGradientSegment(const std::string &group, const struct model_featu
 
 #ifndef OPEN_BUILD_PROJECT  
 HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel)
+    HcclCMDType opType, bool *ifAiv, char *algName, bool isSuperKernel)
 {
+    std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
-        CHK_RET(HcomGraphSelectAlgV2(comm, group, count, dataType, op, opType, ifAiv, algName, isSuperKernel));
+        CHK_RET(HcomGraphSelectAlgV2(comm, group, count, dataType, op, opType, *ifAiv, tempAlgName, isSuperKernel));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
-        CHK_RET(HcomSelectAlgV2(comm, group, count, dataType, op, opType, ifAiv, algName, isSuperKernel));
+        CHK_RET(HcomSelectAlgV2(comm, group, count, dataType, op, opType, *ifAiv, tempAlgName, isSuperKernel));
     }
+    int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomExecSelectAlg][algName]memcpy failed. ret[%d],"
+        "params:destMaxSize[%zu],count[%zu]", sret, ALG_NAME_MAX_LEN, (tempAlgName.length() + 1)), HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
 #endif
@@ -1780,7 +1784,7 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
     bool *ifAiv, char *algName, bool isSuperKernel)
 {
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, count, dataType, op, opType, *ifAiv, algNameStr, isSuperKernel));
+    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, count, dataType, op, opType, ifAiv, algName, isSuperKernel));
 #endif
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -1795,6 +1799,7 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
         CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
         CHK_RET(hcclComm->HcclSelectAlg(opType, count, dataType, op, *ifAiv, tempAlgName, isSuperKernel));
     }
+
     int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomSelectAlg][algName]memcpy failed. ret[%d],"
         "params:destMaxSize[%zu],count[%zu]", sret, ALG_NAME_MAX_LEN, (tempAlgName.length() + 1)), HCCL_E_PARA);
@@ -1867,7 +1872,6 @@ HcclResult HcomGetWorkspaceMemSize(const std::string &opType, u64 count, HcclDat
 #endif
     u32 rankSize = 0;
     std::shared_ptr<hccl::hcclComm> hcclComm{};
-    std::shared_ptr<hccl::HcclCommBase> hcclCommbase{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm != nullptr) {
         hcclComm = hcomInfo.pComm;
@@ -2727,7 +2731,6 @@ HcclResult HcomGetTopoDesc(const char *group, HcclTopoDescs *topoDescs, uint32_t
 #endif
 
     std::shared_ptr<hcclComm> hcclComm;
-    std::shared_ptr<HcclCommBase> hcclCommbase;
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
     if (HcomGetCommByGroup(group, hcclComm)==HCCL_SUCCESS) {
@@ -2800,101 +2803,8 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit)
     return HCCL_SUCCESS;
 }
 
-#ifndef OPEN_BUILD_PROJECT 
-HcclResult HcomCreateCommCclBuf(const int64_t &hcomComm, const char *group)
-{
-    HCCL_INFO("HcomCreateCommCclBuf start.");
-    CHK_PTR_NULL(group);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    if (hcomComm == static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
-        HCCLV2_FUNC_RUN(HcomCreateCommCclBufV2(group));
-    } else {
-        HCCLV2_FUNC_RUN(HcomGraphCreateCommCclBufV2(hcomComm));
-    }
-#endif
-    return HCCL_SUCCESS;
-}
-#endif
-
-#ifndef OPEN_BUILD_PROJECT 
-HcclResult HcomGetInCclBuf(const int64_t &hcomComm, const char *sGroup, void *&commInputPtr, u64 &commInputSize)
-{
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    if (hcomComm == static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
-        HCCLV2_FUNC_RUN(HcomGetInCclBufV2(sGroup, commInputPtr, commInputSize));
-    } else {
-        HCCLV2_FUNC_RUN(HcomGraphGetInCclBufV2(hcomComm, commInputPtr, commInputSize));
-    }
-#endif
-    return HCCL_SUCCESS;
-}
-#endif
-
-#ifndef OPEN_BUILD_PROJECT 
-HcclResult HcomGetOutCclBuf(const int64_t &hcomComm, const char *sGroup, void *&commOutputPtr, u64 &commOutputSize)
-{    
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    if (hcomComm == static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
-        HCCLV2_FUNC_RUN(HcomGetOutCclBufV2(sGroup, commOutputPtr, commOutputSize));
-    } else {
-        HCCLV2_FUNC_RUN(HcomGraphGetOutCclBufV2(hcomComm, commOutputPtr, commOutputSize));
-    }
-#endif
-    return HCCL_SUCCESS;
-}
-#endif
-
-#ifndef OPEN_BUILD_PROJECT
-HcclResult HcomGetIndirectInCclBuffer(
-    const int64_t &hcomComm, const char *sGroup, void *&indirectInCCLbufPtr, u64 &indirectCommInputSize)
-{
-    return HcomGetIndirectInCclBufV2(sGroup, indirectInCCLbufPtr, indirectCommInputSize);
-}
-#endif
-
-#ifndef OPEN_BUILD_PROJECT
-HcclResult HcomGetIndirectInCclBuf(
-    const int64_t &hcomComm, const char *sGroup, void *&indirectInCCLbufPtr, u64 &indirectCommInputSize)
-{
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomGetIndirectInCclBuffer(hcomComm, sGroup, indirectInCCLbufPtr, indirectCommInputSize));
-#endif
-    return HCCL_SUCCESS;
-}
-#endif
-
-#ifndef OPEN_BUILD_PROJECT
-HcclResult HcomGetIndirectOutCclBuffer(
-    const int64_t &hcomComm, const char *sGroup, void *&indirectOutCCLbufPtr, u64 &indirectCommOutputSize)
-{
-    return HcomGetIndirectOutCclBufV2(sGroup, indirectOutCCLbufPtr, indirectCommOutputSize);
-}
-#endif
-
-#ifndef OPEN_BUILD_PROJECT
-HcclResult HcomGetIndirectOutCclBuf(
-    const int64_t &hcomComm, const char *sGroup, void *&indirectOutCCLbufPtr, u64 &indirectCommOutputSize)
-{
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomGetIndirectOutCclBuffer(hcomComm, sGroup, indirectOutCCLbufPtr, indirectCommOutputSize));
-#endif
-    return HCCL_SUCCESS;
-}
-#endif
-
 #ifndef OPEN_BUILD_PROJECT
 HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum)
-{
-    CHK_PTR_NULL(hcomOpParam);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomCalcTaskNumV2(hcomOpParam, taskNum));
-#endif
-    return HCCL_SUCCESS;
-}
-#endif
-
-#ifndef OPEN_BUILD_PROJECT
-HcclResult HcclCommCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum)
 {
     CHK_PTR_NULL(hcomOpParam);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))

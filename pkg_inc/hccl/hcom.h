@@ -247,36 +247,6 @@ extern HcclResult HcomInitByRankTable(const char *rankTable, uint32_t rankId);
  */
 extern HcclResult HcomDestroy(void);
 
-/**
- * @brief optimizer offload CPU-side establish a link.
- *
- * @param op A pointer identifying the op desc.
- * @param request A pointer identifying the link setup handle.
- * @return HcclResult
- */
-extern HcclResult HcomPrepareStart(const HcomOpDesc* op, HcomRequest* request);
-
-/**
- * @brief optimizer offload CPU-side query link status.
- *
- * @param request A pointer identifying link setup handle.
- * @param status A pointer identifying the link status.
- * @return HcclResult
- */
-extern HcclResult HcomPrepareQuery(HcomRequest request, HcomStatus* status);
-
-/**
- * @brief optimizer offload CPU-side cancel a link.
- *
- * @param request A pointer identifying link setup handle.
- * @param status A pointer identifying the link status.
- * @return HcclResult
- */
-extern HcclResult HcomPrepareCancel(HcomRequest request, HcomStatus* status);
-
-extern HcclResult HcclCpuCommInitClusterInfoMemConfig(const char* clusterInfoMem, uint32_t rank,
-    HcclCommConfig* config);
-
 extern HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle);
 
 HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname);
@@ -327,9 +297,6 @@ void HcomSetDumpDebugMode(const bool dumpDebug);
 
 HcclResult HcomGetAlgorithm(u32 level, char** algo);
 
-HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm,
-    std::string& group, std::string &sTag);
-
 HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, void *inputPtr, void *outputPtr,
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
     void **commContext, u64 *len, u32 aivCoreLimit);
@@ -371,22 +338,6 @@ HcclResult HcomSupportDeterministicOptim(const char *group, bool *isDeterministi
 
 HcclResult HcomTbeMemClean(int64_t addrList[], int64_t sizeList[], uint32_t count,
     rtStream_t stream, int32_t deviceLogicId);
-
-#ifndef OPEN_BUILD_PROJECT
-HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
-HcclResult HcclCommCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
-
-HcclResult HcomCreateCommCclBuf(const int64_t &hcomComm, const char *group);
-HcclResult HcomGetInCclBuf(const int64_t &hcomComm, const char *sGroup, void* &commInputPtr, u64 &commInputSize);
-HcclResult HcomGetOutCclBuf(const int64_t &hcomComm, const char *sGroup, void* &commOutputPtr, u64 &commOutputSize);
-HcclResult HcomGetIndirectInCclBuf(const int64_t &hcomComm, const char *sGroup, void* &indirectInCCLbufPtr, u64 &indirectCommInputSize);
-HcclResult HcomGetIndirectOutCclBuf(const int64_t &hcomComm, const char *sGroup, void* &indirectOutCCLbufPtr, u64 &indirectCommOutputSize);
-HcclResult HcomGetIndirectInCclBuffer(const int64_t &hcomComm, const char *sGroup, void* &indirectInCCLbufPtr, u64 &indirectCommInputSize);
-HcclResult HcomGetIndirectOutCclBuffer(const int64_t &hcomComm, const char *sGroup, void* &indirectOutCCLbufPtr, u64 &indirectCommOutputSize);
-
-HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel);
-#endif
 
 HcclResult HcomGetInitStatus(bool *initiated);
 HcclResult HcomAllGather(const char *tag, void *inputPtr, void *outputPtr, u64 inputCount,

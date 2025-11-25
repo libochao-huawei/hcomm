@@ -174,6 +174,7 @@ target_compile_options(hccl_fwk PRIVATE
     -O3
     -std=c++14
     -fstack-protector-all
+    $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(hccl_fwk PRIVATE
@@ -539,6 +540,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         -pipe
         -O3
         -std=c++14
+        $<$<CONFIG:Debug>:-g>
     )
 
     target_compile_definitions(ccl_kernel PRIVATE
@@ -666,9 +668,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
-        ${TOP_DIR}/asl/hss/inc/
-        ${TOP_DIR}/asl/hss/inc/pub
-        ${TOP_DIR}/asl/hss/common/hash_table
 
         ${HCCL_BASE_DIR}/inc
         ${HCCL_BASE_DIR}/hdcs
@@ -696,6 +695,7 @@ if(NOT BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         c_sec
         ccl_kernel_plf
+        unified_dlog
         mmpa
         -Wl,--as-needed
         -lrt
@@ -726,7 +726,17 @@ if(NOT KERNEL_MODE)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ccl_kernel.json
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
-    add_dependencies(hccl_fwk ccl_kernel_json)
+
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/device/framework/aicpu_custom.ini ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
+        DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
+    )
+
+    add_dependencies(hccl_fwk ccl_kernel_json aicpu_custom_json)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
@@ -795,20 +805,22 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             set(ASCEND_CANN_PACKAGE_ENV_PATH ${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux)
         endif()
         message(STATUS "framework ASCEND_CANN_PACKAGE_ENV_PATH=${ASCEND_CANN_PACKAGE_ENV_PATH}")
-        set(BUILD_PATH build)
+        set(CCL_KERNEL_PLF_PATH
+            -Wl,--whole-archive
+            ${HCCL_BASE_DIR}/../build/src/libccl_kernel_plf.a
+            -Wl,--no-whole-archive
+            -Wl,-Bsymbolic
+        )
         if(FULL_MODE)
-            set(BUILD_PATH build_device)
+            set(CCL_KERNEL_PLF_PATH ccl_kernel_plf)
         endif()
         target_link_libraries(ccl_kernel PRIVATE
             -Wl,--no-as-needed
             ascend_hal
             c_sec
             mmpa
+            ${CCL_KERNEL_PLF_PATH}
             -Wl,--as-needed
-            -Wl,--whole-archive
-            ${HCCL_BASE_DIR}/../${BUILD_PATH}/src/libccl_kernel_plf.a
-            -Wl,--no-whole-archive
-            -Wl,-Bsymbolic
             -lrt
             -ldl
             -lpthread
@@ -820,18 +832,17 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         )
         add_custom_target(aicpu_custom_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json)
         install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libaicpu_custom.json
-            DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
+            DESTINATION ${CMAKE_CURRENT_BINARY_DIR} OPTIONAL
         )
 
         target_link_directories(ccl_kernel PRIVATE
             ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
         )
-
     endif()
 endif()
 
 if(DEVICE_MODE AND KERNEL_MODE)
-    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/)
+    set(CCL_KERNEL_TAR_DIR ${HCCL_BASE_DIR}/../build_device/ccl_kernel_tar_pkg/aicpu_kernels_device)
     add_custom_command(
         TARGET ccl_kernel
         POST_BUILD

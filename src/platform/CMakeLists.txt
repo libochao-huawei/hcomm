@@ -151,6 +151,7 @@ target_compile_options(hccl_plf PRIVATE
     -O3
     -std=c++14
     -fstack-protector-all
+    $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(hccl_plf PRIVATE
@@ -215,6 +216,8 @@ add_subdirectory(task)
 add_subdirectory(ping_mesh)
 add_subdirectory(typical)
 add_subdirectory(hccp)
+
+add_dependencies(hccl_plf json)
 
 install(TARGETS  hccl_plf
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL

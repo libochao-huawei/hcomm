@@ -1,0 +1,467 @@
+From 23a850f5a1945593490978d97b04e9f2a3f2a0d5 Mon Sep 17 00:00:00 2001
+From: leo011 <leo011@noreply.gitcode.com>
+
+Description:sign new
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: I5533c64630c16551ad50034e211637e0a4d24c0f
+Signed-off-by: leo011 <leo011@noreply.gitcode.com>
+---
+ CMakeLists.txt          | 113 ++++++++++++------------
+ build.sh                |  12 +--
+ cmake/_pack_stage.cmake |  66 ++++++++++++++
+ cmake/func.cmake        | 191 ++++++++++++++++++++++++++++++++++++++++
+ 4 files changed, 318 insertions(+), 64 deletions(-)
+ create mode 100644 cmake/_pack_stage.cmake
+ create mode 100644 cmake/func.cmake
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9f6e25fd..5bcf4815 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -71,59 +71,6 @@ message(STATUS "Detected JOBS: ${JOBS}")
+ set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
+ set(CMAKE_JOB_POOL_LINK "${JOBS}")
+ 
+-if(DEVICE_MODE)
+-    set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
+-    set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
+-    set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
+-
+-    add_custom_target(generate_device_hccp_package
+-        COMMAND cd ${HCCP_TAR_DIR} && ls && tar czf ../hcomm_device.tar.gz *.so *.bin hccp_compat_bin_hash.cfg
+-        DEPENDS hccp_service.bin
+-        COMMENT "Creating hcomm_device.tar.gz"
+-    )
+-    add_dependencies(generate_device_hccp_package rs)
+-
+-    add_custom_target(generate_device_hccd_package
+-        COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../hcomm_hccd.tar.gz lib64
+-        DEPENDS hccd
+-        COMMENT "Creating hcomm_hccd.tar.gz"
+-    )
+-    add_dependencies(generate_device_hccd_package hccd)
+-
+-    if(KERNEL_MODE)
+-        add_custom_target(generate_device_aicpu_package
+-            COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hcomm.tar.gz aicpu_kernels_device
+-            DEPENDS ccl_kernel
+-            COMMENT "Creating aicpu_hcomm.tar.gz"
+-        )
+-        add_dependencies(generate_device_aicpu_package ccl_kernel)
+-    endif()
+-    message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
+-    if(ENABLE_SIGN)
+-        message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
+-        add_custom_target(sign_hcomm_device
+-            COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${HCCP_TAR_DIR}/../hcomm_device.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
+-            DEPENDS generate_device_hccp_package
+-            COMMENT "Sign hcomm_device.tar.gz"
+-        )
+-        add_dependencies(sign_hcomm_device generate_device_hccp_package)
+-        add_custom_target(sign_hcomm_hccd
+-            COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${HCCD_TAR_DIR}/../hcomm_hccd.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
+-            DEPENDS generate_device_hccd_package
+-            COMMENT "Sign hcomm_hccd.tar.gz"
+-        )
+-        add_dependencies(sign_hcomm_hccd generate_device_hccd_package)
+-        if(KERNEL_MODE)
+-            add_custom_target(sign_aicpu_hcomm
+-                COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${CCL_KERNEL_TAR_DIR}/../aicpu_hcomm.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
+-                DEPENDS generate_device_aicpu_package
+-                COMMENT "Sign aicpu_hcomm.tar.gz"
+-            )
+-            add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
+-        endif()
+-    endif()
+-endif()
+-
+ if(BUILD_OPEN_PROJECT)
+     include(cmake/third_party/openssl.cmake)
+     include(cmake/third_party/json.cmake)
+@@ -137,6 +84,62 @@ if(BUILD_OPEN_PROJECT)
+     if(DEFINED ENABLE_TEST)
+         add_subdirectory(test)
+     endif()
++    if(DEVICE_MODE)
++        include(cmake/func.cmake)
++        set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
++        set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
++        set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
++
++        message(STATUS "Detected 99 CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
++        message(STATUS "Detected 100 ENABLE_SIGN: ${ENABLE_SIGN}")
++        pack_targets_and_files(
++            OUTPUT_TARGET "generate_device_hccp_package"
++            OUTPUT "hcomm_device.tar.gz"
++            TARGETS hccp_service.bin
++            FILES  ${HCCP_TAR_DIR}/librs.so ${HCCP_TAR_DIR}/libra_adp.so ${HCCP_TAR_DIR}/libtls_adp.so ${HCCP_TAR_DIR}/libascend_kms.so
++            MANIFEST "hccp_compat_bin_hash.cfg"
++        )
++        add_dependencies(generate_device_hccp_package hccp_service.bin)
++
++        sign_file(
++            INPUT "hcomm_device.tar.gz"
++            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
++            RESULT_VAR "hcomm_device_sign_file"
++            DEPENDS generate_device_hccp_package
++        )
++        add_dependencies(sign_hcomm_device generate_device_hccp_package)
++
++        add_custom_target(generate_device_hccd_package
++            COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../hcomm_hccd.tar.gz lib64
++            DEPENDS hccd
++            COMMENT "Creating hcomm_hccd.tar.gz"
++        )
++        add_dependencies(generate_device_hccd_package hccd)
++
++        sign_file(
++            INPUT "hcomm_hccd.tar.gz"
++            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
++            RESULT_VAR "hcomm_hccd_sign_file"
++            DEPENDS generate_device_hccd_package
++        )
++        add_dependencies(sign_hcomm_hccd generate_device_hccd_package)
++
++        if(KERNEL_MODE)
++            add_custom_target(generate_device_aicpu_package
++                COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hcomm.tar.gz aicpu_kernels_device
++                DEPENDS ccl_kernel
++                COMMENT "Creating aicpu_hcomm.tar.gz"
++            )
++            add_dependencies(generate_device_aicpu_package ccl_kernel)
++            sign_file(
++                INPUT "aicpu_hcomm.tar.gz"
++                CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
++                RESULT_VAR "aicpu_hcomm_sign_file"
++                DEPENDS generate_device_aicpu_package
++            )
++            add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
++        endif()
++    endif()
+ 
+     set(HCCL_HEAD
+         inc/hccl/hccl.h
+@@ -156,8 +159,8 @@ if(BUILD_OPEN_PROJECT)
+     if (NOT DEVICE_MODE)
+         message(STATUS "Detected INSTALL_LIBRARY_DIR: ${INSTALL_LIBRARY_DIR}")
+ 
+-        set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/)
+-        set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/)
++        set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/signatures/)
++        set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/signatures/)
+         add_custom_target(install_tar DEPENDS
+             ${BUILD_DEVICE_DIR}/hcomm_device.tar.gz
+             ${BUILD_DEVICE_DIR}/aicpu_hcomm.tar.gz
+diff --git a/build.sh b/build.sh
+index afd6e50d..bbfcc8c9 100644
+--- a/build.sh
++++ b/build.sh
+@@ -27,7 +27,7 @@ CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
+ CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
+ BUILD_AARCH="false"
+ CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/../vendor/hisi/build/scripts/sign_and_add_header.sh"
+-ENABLE_SIGN="true"
++ENABLE_SIGN="false"
+ 
+ BUILD_FWK_HLT="false"
+ MOCK_FWK_HLT="0"
+@@ -128,10 +128,7 @@ function build_device(){
+     echo "TARGET_LIST=${TARGET_LIST}"
+     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
+     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
+-    SIGN_TARGET_LIST=""
+-    if [ "${ENABLE_SIGN}" == "true" ]; then
+-        SIGN_TARGET_LIST="sign_hcomm_device sign_aicpu_hcomm"
+-    fi
++    SIGN_TARGET_LIST="sign_hcomm_device sign_aicpu_hcomm"
+     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
+     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
+ }
+@@ -143,10 +140,7 @@ function build_hccd(){
+     echo "TARGET_LIST=${TARGET_LIST}"
+     PKG_TARGET_LIST="generate_device_hccd_package"
+     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
+-    SIGN_TARGET_LIST=""
+-    if [ "${ENABLE_SIGN}" == "true" ]; then
+-        SIGN_TARGET_LIST="sign_hcomm_hccd"
+-    fi
++    SIGN_TARGET_LIST="sign_hcomm_hccd"
+     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
+     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
+ }
+diff --git a/cmake/_pack_stage.cmake b/cmake/_pack_stage.cmake
+new file mode 100644
+index 00000000..9bf5b72c
+--- /dev/null
++++ b/cmake/_pack_stage.cmake
+@@ -0,0 +1,66 @@
++
++# _pack_stage.cmake
++# Unified staging script: copies files + optionally generates SHA256 manifest.
++#
++# Inputs:
++#   _STAGING_DIR    : required, absolute path
++#   _ITEMS          : required, ;-list of file paths
++#   _MANIFEST_FILE  : optional, if set → generate manifest at this path
++
++cmake_minimum_required(VERSION 3.16)
++
++if(NOT _STAGING_DIR)
++    message(FATAL_ERROR "_STAGING_DIR not set")
++endif()
++if(NOT _ITEMS)
++    message(FATAL_ERROR "_ITEMS not set")
++endif()
++
++# Ensure staging dir exists (defensive)
++file(MAKE_DIRECTORY "${_STAGING_DIR}")
++
++# Clear manifest if requested
++if(_MANIFEST_FILE)
++    file(WRITE "${_MANIFEST_FILE}" "")
++endif()
++
++set(failed 0)
++foreach(full_path IN LISTS _ITEMS)
++    string(STRIP "${full_path}" full_path)
++    if("${full_path}" MATCHES "^\\$")
++        message(FATAL_ERROR "Generator expression not expanded: '${full_path}'")
++    endif()
++
++    if(NOT EXISTS "${full_path}")
++        message(WARNING "Skip missing: '${full_path}'")
++        math(EXPR failed "${failed} + 1")
++        continue()
++    endif()
++
++    get_filename_component(basename "${full_path}" NAME)
++    if("${basename}" STREQUAL "")
++        message(WARNING "Skip empty basename: '${full_path}'")
++        math(EXPR failed "${failed} + 1")
++        continue()
++    endif()
++
++    # Copy flat
++    file(COPY "${full_path}" DESTINATION "${_STAGING_DIR}")
++
++    # Optionally compute & append SHA256
++    if(_MANIFEST_FILE)
++        file(SHA256 "${full_path}" sha256)
++        file(APPEND "${_MANIFEST_FILE}" "${basename}=${sha256}\n")
++        message(STATUS "${basename} → ${sha256}")
++    else()
++        message(STATUS "${basename}")
++    endif()
++endforeach()
++
++if(failed GREATER 0)
++    message(FATAL_ERROR "${failed} file(s) missing")
++endif()
++
++if(_MANIFEST_FILE)
++    message(STATUS "Manifest: ${_MANIFEST_FILE}")
++endif()
+diff --git a/cmake/func.cmake b/cmake/func.cmake
+new file mode 100644
+index 00000000..547bdf2e
+--- /dev/null
++++ b/cmake/func.cmake
+@@ -0,0 +1,191 @@
++# =============================================================================
++# Function: pack_targets_and_files
++#
++# Packs targets and/or files into a flat tar.gz archive (no directory structure).
++# Optionally generates a SHA256 manifest file and includes it in the archive.
++#
++# Usage:
++#   pack_targets_and_files(
++#       OUTPUT <output.tar.gz>           # e.g., "cann-tsch-compat.tar.gz"
++#       [TARGETS target1 [target2 ...]]
++#       [FILES file1 [file2 ...]]
++#       [MANIFEST <manifest_filename>]   # e.g., "aicpu_compat_bin_hash.cfg"
++#   )
++#
++# Examples:
++#   # With manifest
++#   pack_targets_and_files(
++#       OUTPUT cann-tsch-compat.tar.gz
++#       TARGETS app server
++#       FILES "LICENSE" "config/default.json"
++#       MANIFEST "aicpu_compat_bin_hash.cfg"
++#   )
++#
++#   # Without manifest
++#   pack_targets_and_files(
++#       OUTPUT cann-tsch-compat.tar.gz
++#       TARGETS app
++#       FILES "README.md"
++#   )
++# =============================================================================
++function(pack_targets_and_files)
++    cmake_parse_arguments(ARG
++        ""
++        "OUTPUT;MANIFEST;OUTPUT_TARGET" 
++        "TARGETS;FILES"
++        ${ARGN}
++    )
++
++    # --- Validation ---
++    if(NOT ARG_OUTPUT)
++        message(FATAL_ERROR "[pack_targets_and_files] OUTPUT is required")
++    endif()
++
++    if(NOT IS_ABSOLUTE "${ARG_OUTPUT}")
++        set(ARG_OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${ARG_OUTPUT}")
++    endif()
++
++    if(NOT ARG_OUTPUT_TARGET)
++        message(FATAL_ERROR "[pack_targets_and_files] OUTPUT_TARGET is required")
++    endif()
++
++    # Generate safe target name
++    get_filename_component(tar_basename "${ARG_OUTPUT}" NAME_WE)
++    string(MAKE_C_IDENTIFIER "pack_${tar_basename}" safe_name)
++    set(staging_dir "${CMAKE_CURRENT_BINARY_DIR}/_${safe_name}_stage")
++
++    # --- Collect all source items (as generator expressions) ---
++    set(src_items "")
++    foreach(tgt IN LISTS ARG_TARGETS)
++        if(NOT TARGET ${tgt})
++            message(FATAL_ERROR "[pack_targets_and_files] Target '${tgt}' does not exist")
++        endif()
++        list(APPEND src_items "$<TARGET_FILE:${tgt}>")
++    endforeach()
++    list(APPEND src_items ${ARG_FILES})
++
++    if(NOT src_items)
++        message(FATAL_ERROR "[pack_targets_and_files] No targets or files specified to pack")
++    endif()
++
++    set(manifest_arg "")
++    if(ARG_MANIFEST)
++        if("${ARG_MANIFEST}" STREQUAL "")
++            message(FATAL_ERROR "[pack] MANIFEST filename cannot be empty")
++        endif()
++        if(IS_ABSOLUTE "${ARG_MANIFEST}")
++            message(FATAL_ERROR "[pack] MANIFEST must be relative (e.g., 'sha256sums.cfg')")
++        endif()
++        set(manifest_arg "-D _MANIFEST_FILE=${staging_dir}/${ARG_MANIFEST}")
++    endif()
++
++    add_custom_command(
++        OUTPUT ${staging_dir}
++        COMMAND ${CMAKE_COMMAND} -E make_directory "${staging_dir}"
++        VERBATIM
++    )
++
++    add_custom_command(
++        OUTPUT "${ARG_OUTPUT}"
++        COMMAND ${CMAKE_COMMAND}
++            -D _STAGING_DIR=${staging_dir}
++            ${manifest_arg}
++            -D "_ITEMS=$<JOIN:${src_items},;>"
++            -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/_pack_stage.cmake"
++        COMMAND ${CMAKE_COMMAND} -E tar "czf" "${ARG_OUTPUT}" .
++        WORKING_DIRECTORY ${staging_dir}
++        DEPENDS ${ARG_TARGETS} ${staging_dir}
++        COMMENT "Packing with ${ARG_OUTPUT}"
++        VERBATIM
++    )
++
++    add_custom_target(${ARG_OUTPUT_TARGET} ALL DEPENDS "${ARG_OUTPUT}")
++endfunction()
++
++# =============================================================================
++# Function: sign_file
++#
++# Signs a file and places signature in a standard directory.
++#
++# Usage:
++#   sign_file(
++#       INPUT <input_file>
++#       CONFIG <sign_config>
++#       RESULT_VAR <output_var>     # ← returns generated sig path
++#       [DEPENDS ...]
++#   )
++#
++# =============================================================================
++function(sign_file)
++    cmake_parse_arguments(
++        ARG
++        ""
++        "INPUT;CONFIG;RESULT_VAR"
++        "DEPENDS"
++        ${ARGN}
++    )
++
++    # --- Validation ---
++    if(DEFINED CUSTOM_SIGN_SCRIPT AND NOT CUSTOM_SIGN_SCRIPT STREQUAL "")
++        set(SIGN_SCRIPT ${CUSTOM_SIGN_SCRIPT})
++    else()
++        set(SIGN_SCRIPT)
++    endif()
++
++    if(ENABLE_SIGN)
++        set(sign_flag "true")
++    else()
++        set(sign_flag "false")
++    endif()
++
++    foreach(var INPUT CONFIG RESULT_VAR)
++        if(NOT ARG_${var})
++            message(FATAL_ERROR "[sign_file] Missing required: ${var}")
++        endif()
++    endforeach()
++
++    if(NOT EXISTS "${ARG_CONFIG}")
++        message(FATAL_ERROR "[sign_file] Sign config not found: ${ARG_CONFIG}")
++    endif()
++
++    # Normalize input
++    if(NOT IS_ABSOLUTE "${ARG_INPUT}")
++        set(ARG_INPUT "${CMAKE_CURRENT_BINARY_DIR}/${ARG_INPUT}")
++    endif()
++
++    # Auto output path: ${CMAKE_CURRENT_BINARY_DIR}/signatures
++    set(signatures_dir "${CMAKE_CURRENT_BINARY_DIR}/signatures")
++    get_filename_component(input_name "${ARG_INPUT}" NAME)
++    set(output_sig "${signatures_dir}/${input_name}")
++
++    if(EXISTS "${SIGN_SCRIPT}")
++        set(sign_cmd bash ${SIGN_SCRIPT} ${output_sig} ${ARG_CONFIG} ${sign_flag})
++    else()
++        set(sign_cmd )
++    endif()
++
++    # Ensure dir exists
++    file(MAKE_DIRECTORY "${signatures_dir}")
++
++    # Target name
++    get_filename_component(sign_basename "${ARG_INPUT}" NAME_WE)
++    string(MAKE_C_IDENTIFIER "${sign_basename}" safe_name)
++    set(sign_target "sign_${safe_name}")
++
++    add_custom_command(
++        OUTPUT "${output_sig}"
++        COMMAND ${CMAKE_COMMAND} -E make_directory ${signatures_dir}
++        COMMAND ${CMAKE_COMMAND} -E copy ${ARG_INPUT} ${output_sig}
++        COMMAND ${sign_cmd}
++        DEPENDS "${ARG_INPUT}" "${SIGN_SCRIPT}" ${ARG_DEPENDS} ${ARG_CONFIG}
++        COMMENT "Signing: ${ARG_INPUT} → ${output_sig}"
++        VERBATIM
++    )
++
++    add_custom_target(${sign_target} ALL DEPENDS "${output_sig}")
++
++    # Return path via RESULT_VAR
++    if(ARG_RESULT_VAR)
++        set(${ARG_RESULT_VAR} "${output_sig}" PARENT_SCOPE)
++    endif()
++endfunction()
+\ No newline at end of file
+-- 
+2.45.2.huawei.10
+

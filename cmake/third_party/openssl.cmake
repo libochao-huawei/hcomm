@@ -9,26 +9,35 @@
 # -----------------------------------------------------------------------------------------------------------
 include(ExternalProject)
 
+if(CCACHE_PROGRAM)
+    set(OPENSSL_CC "${CCACHE_PROGRAM} ${CMAKE_C_COMPILER}")
+    set(OPENSSL_CXX "${CCACHE_PROGRAM} ${CMAKE_CXX_COMPILER}")
+else()
+    set(OPENSSL_CC "${CMAKE_C_COMPILER}")
+    set(OPENSSL_CXX "${CMAKE_CXX_COMPILER}")
+endif()
+
 # ========== 基本路径配置 ==========
 set(OPENSSL_DOWNLOAD_COMMAND "")
 # 检查 CANN_3RD_LIB_PATH 是否存在且不为空
-if(DEFINED CANN_3RD_LIB_PATH AND NOT CANN_3RD_LIB_PATH STREQUAL "")
-    set(OPENSSL_SRC_DIR ${PROJECT_SOURCE_DIR}/third_party/openssl)
-    if(EXISTS ${CANN_3RD_LIB_PATH}/openssl)
-        file(COPY ${CANN_3RD_LIB_PATH}/openssl DESTINATION ${PROJECT_SOURCE_DIR}/third_party)
-        message(STATUS "Successfully copied ${CANN_3RD_LIB_PATH}/openssl to ${PROJECT_SOURCE_DIR}/third_party/.")
-    else()
-        message(FATAL_ERROR "Source directory ${CANN_3RD_LIB_PATH}/openssl does not exist.")
-    endif()
+if(EXISTS ${CANN_3RD_LIB_PATH}/openssl)
+    set(OPENSSL_SRC_DIR ${PROJECT_SOURCE_DIR}/third_party/openssl-${PRODUCT_SIDE})
+    file(COPY ${CANN_3RD_LIB_PATH}/openssl/ DESTINATION ${OPENSSL_SRC_DIR})
+    message(STATUS "Successfully copied ${CANN_3RD_LIB_PATH}/openssl to ${OPENSSL_SRC_DIR}.")
 else()
     set(OPENSSL_TARBALL https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/openssl-openssl-3.0.9.tar.gz)   # 源码包
     set(OPENSSL_SRC_DIR ${CMAKE_BINARY_DIR}/openssl-src)        # 解压后的源码路径
     set(OPENSSL_DOWNLOAD_COMMAND
         URL ${OPENSSL_TARBALL}
         DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/downloads
+        TLS_VERIFY OFF
     )
 endif()
 set(OPENSSL_INSTALL_DIR ${CMAKE_BINARY_DIR}/openssl-install) # 安装路径
+set(OPENSSL_INCLUDE_DIR
+    ${CMAKE_BINARY_DIR}/openssl-install/include
+    ${OPENSSL_SRC_DIR}/include
+)
 message("---------------------------${OPENSSL_TARBALL}")
 message("---------------------------${OPENSSL_SRC_DIR}")
 # ========== 工具链配置（根据系统架构判断） ==========
@@ -56,8 +65,8 @@ endif()
 find_program(PERL_PATH perl REQUIRED)
 
 # ========== 构建命令 ==========
-set(OPENSSL_MAKE_CMD make -j${JOBS})
-set(OPENSSL_INSTALL_CMD make install_dev)
+set(OPENSSL_MAKE_CMD $(MAKE))
+set(OPENSSL_INSTALL_CMD $(MAKE) install_dev)
 
 message(STATUS "------------------------CMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}")
 message(STATUS "------------------------CMAKE_C_COMPILER=${CMAKE_C_COMPILER}")
@@ -74,10 +83,8 @@ set(OPENSSL_CONFIGURE_PUB_COMMAND
 
 if (DEVICE_MODE)
     set(OPENSSL_CONFIGURE_COMMAND
-        unset CC &&
-        unset CXX &&
+        unset CROSS_COMPILE &&
         ${OPENSSL_CONFIGURE_PUB_COMMAND}
-        --cross-compile-prefix=${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-
     )
     set(OPENSSL_INSTALL_PATH lib)
     set(COPY_BIN_COMMAND "")
@@ -98,7 +105,7 @@ ExternalProject_Add(openssl_project
     ${OPENSSL_DOWNLOAD_COMMAND}
     # COMMAND tar -zxf ${OPENSSL_TARBALL} --strip-components 1 -C ${OPENSSL_SRC_DIR}
     SOURCE_DIR ${OPENSSL_SRC_DIR}                 # 解压后的源码目录
-    CONFIGURE_COMMAND   ${OPENSSL_CONFIGURE_COMMAND}
+    CONFIGURE_COMMAND   ${OPENSSL_CONFIGURE_COMMAND} CC=${OPENSSL_CC} CXX={OPENSSL_CXX}
     BUILD_COMMAND ${OPENSSL_MAKE_CMD}
     INSTALL_COMMAND ${OPENSSL_INSTALL_CMD}
     BUILD_IN_SOURCE TRUE                          # OpenSSL 不支持分离构建目录

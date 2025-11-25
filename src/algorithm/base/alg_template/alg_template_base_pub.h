@@ -163,10 +163,10 @@ enum TemplateType {
     TEMPLATE_ALL_GATHER_V_PIPELINE = 98, // AllGatherV pipeline
 
     TEMPLATE_ALL_REDUCE_DOUBLING_LOCAL_REDUCE = 99, // AllReduceDoublingLocalReduce AR 910A单机小数据量tbe reduce优化
-    
-    TEMPLATE_ALL_GATHER_V_GRAPH_PIPELINE = 101, // AllGatherV Graph pipeline
 
     TEMPLATE_ALL_2_ALL_V_CONTINUOUS_PIPELINE = 100, // AlltoallvContinuousPipeline
+
+    TEMPLATE_ALL_GATHER_V_GRAPH_PIPELINE = 101, // AllGatherV Graph pipeline
 
     TEMPLATE_NATIVE_MAX_NUM,                        // 内置template最大值
 

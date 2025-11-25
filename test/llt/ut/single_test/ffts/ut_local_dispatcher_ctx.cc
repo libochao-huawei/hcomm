@@ -43,7 +43,6 @@
 #include "notify_pool.h"
 #include "comm_base_pub.h"
 #include "task_abort_handler_pub.h"
-#include "send_receive_operator.h"
 #include "coll_comm_executor.h"
 #include "adapter_rts.h"
 #include "heartbeat.h"
