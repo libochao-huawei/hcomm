@@ -1096,7 +1096,7 @@ int host_notify_base_addr_init(unsigned int phy_id)
     notify_va = mmap(NULL, notify_size, PROT_READ | PROT_WRITE, MAP_SHARED,
         g_notify_fd, (unsigned long long)logic_id << PAGE_SHIFT);
     if (notify_va == MAP_FAILED) {
-        hccp_err("[init][base_addr]failed to mmap recv buf, fd[%d]", g_notify_fd);
+        hccp_err("[init][base_addr]failed to mmap recv buf, fd[%d], err_code[%d]", g_notify_fd, errno);
         ret = -ENOMEM;
         goto close_fd;
     }
