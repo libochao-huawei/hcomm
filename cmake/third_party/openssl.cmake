@@ -8,6 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 include(ExternalProject)
+set(OPENSSL_SRC_DIR ${PROJECT_SOURCE_DIR}/third_party/openssl-${PRODUCT_SIDE})
 
 if(CCACHE_PROGRAM)
     set(OPENSSL_CC "${CCACHE_PROGRAM} ${CMAKE_C_COMPILER}")
@@ -21,12 +22,10 @@ endif()
 set(OPENSSL_DOWNLOAD_COMMAND "")
 # 检查 CANN_3RD_LIB_PATH 是否存在且不为空
 if(EXISTS ${CANN_3RD_LIB_PATH}/openssl)
-    set(OPENSSL_SRC_DIR ${PROJECT_SOURCE_DIR}/third_party/openssl-${PRODUCT_SIDE})
     file(COPY ${CANN_3RD_LIB_PATH}/openssl/ DESTINATION ${OPENSSL_SRC_DIR})
     message(STATUS "Successfully copied ${CANN_3RD_LIB_PATH}/openssl to ${OPENSSL_SRC_DIR}.")
 else()
     set(OPENSSL_TARBALL https://gitcode.com/cann-src-third-party/openssl/releases/download/openssl-3.0.9/openssl-openssl-3.0.9.tar.gz)   # 源码包
-    set(OPENSSL_SRC_DIR ${CMAKE_BINARY_DIR}/openssl-src)        # 解压后的源码路径
     set(OPENSSL_DOWNLOAD_COMMAND
         URL ${OPENSSL_TARBALL}
         DOWNLOAD_DIR ${CMAKE_BINARY_DIR}/downloads

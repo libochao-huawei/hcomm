@@ -156,7 +156,6 @@ else()
         -Wl,--whole-archive
         $<$<STREQUAL:${PRODUCT_SIDE},device>:ascend_protobuf_static>
         crypto_static
-        ssl_static
         -Wl,--no-whole-archive
         kmc
         sdp
@@ -170,4 +169,4 @@ install(TARGETS  rs
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
 
-add_dependencies(rs crypto_static ssl_static)
+add_dependencies(rs crypto_static)
