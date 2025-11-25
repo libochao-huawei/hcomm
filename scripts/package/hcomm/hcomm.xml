@@ -29,4 +29,19 @@
         <block name="EngineeringFiles"/>
         <block name="CommLib"/>
     </block_info>
+    <dir_info value="hcomm" install_path="hcomm" install_type="all">
+        <path value="hcomm/script" install_mod="555"/>
+        <path value="hcomm/bin" install_mod="555"/>
+        <path value="hcomm/lib64" install_mod="555"/>
+        <path value="hcomm/include" install_mod="555"/>
+        <path value="hcomm/include/hccl" install_mod="555"/>
+        <path value="hcomm/pkg_inc" install_mod="555"/>
+        <path value="hcomm/pkg_inc/hccl" install_mod="555"/>
+        <path value="hcomm/Ascend" install_mod="555"/>
+        <path value="hcomm/Ascend/aicpu" install_mod="555"/>
+        <path value="hcomm/built-in" install_mod="555"/>
+        <path value="hcomm/built-in/data" install_mod="555"/>
+        <path value="hcomm/built-in/data/op" install_mod="555"/>
+        <path value="hcomm/built-in/data/op/aicpu" install_mod="555"/>
+    </dir_info>
 </config>
