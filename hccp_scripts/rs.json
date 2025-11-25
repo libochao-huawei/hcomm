@@ -1,0 +1,38 @@
+{
+    "includes": [
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_service",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_service/tlv",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/inc", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/inc/network", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/inc/private/network", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/common/", 
+
+        "/home/xxx/Ascend/latest/pkg_inc/base/", 
+        "/home/xxx/Ascend/latest/include/", 
+        "/home/xxx/Ascend/latest/include/toolchain/", 
+        "/home/xxx/Ascend/latest/include/driver/", 
+        "/home/xxx/Ascend/latest/pkg_inc", 
+        "/home/xxx/Ascend/latest/runtime/include/ ", 
+
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/third_party/openssl/include",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/hcomm_utils/device/include/tls_adp",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/hcomm_utils/device/include/kms",
+
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/hcomm_utils/host/include/tls_adp",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/hcomm_utils/host/include/kms",
+        
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/include",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/external_depends/host_lite",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/providers/hns"
+    ],
+    "defines": [
+        "CUSTOM_INTERFACE",
+        "CONFIG_TLV",
+        "CONFIG_SSL"
+    ],
+    "std": "gnu11",
+    "coption": "-Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal -Wextra -Wno-unused-parameter",
+    "sources": [
+        "./rdma_service"
+    ]
+}

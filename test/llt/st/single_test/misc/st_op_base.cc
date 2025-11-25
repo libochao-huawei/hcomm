@@ -35,7 +35,6 @@
 #include "hccl_impl.h"
 #include "hccl_comm_pub.h"
 #include "hccl_communicator.h"
-#include "send_receive_operator.h"
 #include "coll_batch_send_recv_executor.h"
 #include "coll_reduce_scatter_v_executor.h"
 #include "coll_all_gather_v_executor.h"
@@ -3588,7 +3587,6 @@ TEST_F(OpbaseTest, st_check_alltoallv_external_mem)
     ret = HcomCheckAlltoAllVExternalMem(addr, sendCounts, addr, recvCounts, rankSize);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
-extern u64 HcclGetLookupUpdateWorkspace(s32 count, s32 valueDim, HcclDataType keyType, HcclDataType valueType, s32 flags);
 
 TEST_F(OpbaseTest, st_HcclConfig_deterministic)
 {

@@ -1407,6 +1407,17 @@ HcclResult HcomCreateCommCCLbuffer(const char *group)
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+
+#ifndef OPEN_BUILD_PROJECT
+    DevType devType = HcomGetDeviceType();
+    if(devType == DevType::DEV_TYPE_910_95){
+        HCCL_INFO("HcomCreateCommCclBufV2 start.");
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        HCCLV2_FUNC_RUN(HcomCreateCommCclBufV2(group));
+#endif
+        return HCCL_SUCCESS;
+    }
+#endif
  
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
@@ -1431,6 +1442,16 @@ HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetInCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+
+#ifndef OPEN_BUILD_PROJECT
+    DevType devType = HcomGetDeviceType();
+    if(devType == DevType::DEV_TYPE_910_95){
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        HCCLV2_FUNC_RUN(HcomGetInCclBufV2(group));
+#endif
+        return HCCL_SUCCESS;
+    }
+#endif
  
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
@@ -1455,6 +1476,16 @@ HcclResult HcomGetOutCCLbuffer(const char *group, void** buffer, u64 *size)
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetOutCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+
+#ifndef OPEN_BUILD_PROJECT
+    DevType devType = HcomGetDeviceType();
+    if(devType == DevType::DEV_TYPE_910_95){
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        HCCLV2_FUNC_RUN(HcomGetOutCclBufV2(group));
+#endif
+        return HCCL_SUCCESS;
+    }
+#endif
  
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));

@@ -240,6 +240,7 @@ target_compile_options(hccd PRIVATE
     -pipe
     -O3
     -std=c++14
+    $<$<CONFIG:Debug>:-g>
 )
 
 #hccd 编译宏
@@ -285,8 +286,7 @@ add_library(ccl_kernel_plf_a  STATIC)
 # 指定ccl_kernel_plf所需包含文件搜索路径
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ccl_kernel_plf PRIVATE
-        OPEN_BUILD_PROJECT
-        LOG_CPP)
+        OPEN_BUILD_PROJECT)
 
     target_compile_definitions(ccl_kernel_plf_a PRIVATE
         OPEN_BUILD_PROJECT)
@@ -386,9 +386,6 @@ else()
         ${TOP_DIR}/abl/adump/inc/adump
         ${TOP_DIR}/inc/aicpu/common
         ${TOP_DIR}/ace/csruntime/inc/tsch
-        ${TOP_DIR}/asl/hss/inc
-        ${TOP_DIR}/asl/hss/inc/pub
-        ${TOP_DIR}/asl/hss/common/hash_table
         ${TOP_DIR}/metadef
         ${TOP_DIR}/metadef/inc
         ${TOP_DIR}/metadef/pkg_inc
@@ -416,9 +413,6 @@ else()
         ${TOP_DIR}/abl/msprof/inc
         ${TOP_DIR}/inc/aicpu/common
         ${TOP_DIR}/ace/csruntime/inc/tsch
-        ${TOP_DIR}/asl/hss/inc
-        ${TOP_DIR}/asl/hss/inc/pub
-        ${TOP_DIR}/asl/hss/common/hash_table
         ${TOP_DIR}/metadef
         ${TOP_DIR}/metadef/inc
         ${TOP_DIR}/metadef/pkg_inc
@@ -433,6 +427,8 @@ else()
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
 endif()
+
+add_dependencies(ccl_kernel_plf json)
 
 target_compile_definitions(ccl_kernel_plf PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
@@ -469,6 +465,7 @@ target_compile_options(ccl_kernel_plf PRIVATE
     -O3
     -std=c++14
     -D_FORTIFY_SOURCE=2 -O2
+    $<$<CONFIG:Debug>:-g>
 )
 
 # 给ccl_kernel_plf_a添加编译选项
@@ -483,6 +480,7 @@ target_compile_options(ccl_kernel_plf_a PRIVATE
     -ftrapv
     -D_FORTIFY_SOURCE=2 -O2
     -fPIC
+    $<$<CONFIG:Debug>:-g>
 )
 # 为ccl_kernel_plf添加编译定义
 target_compile_definitions(ccl_kernel_plf PRIVATE
@@ -522,6 +520,7 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
+        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
@@ -533,6 +532,7 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
+        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
@@ -646,7 +646,7 @@ install(TARGETS  ccl_kernel_plf_a
 )
 
 if(DEVICE_MODE)
-    set(HCCD_TAR_DIR ${HCCL_BASE_DIR}/../build_hccd/hccd_tar_pkg/)
+    set(HCCD_TAR_DIR ${HCCL_BASE_DIR}/../build_hccd/hccd_tar_pkg/lib64)
     add_custom_command(
         TARGET hccd
         POST_BUILD
@@ -656,6 +656,7 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_hdc> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccd> ${HCCD_TAR_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/* ${HCCP_TAR_DIR}
         COMMENT "Copying libhccd.so to ${HCCD_TAR_DIR}"
     )
 endif()

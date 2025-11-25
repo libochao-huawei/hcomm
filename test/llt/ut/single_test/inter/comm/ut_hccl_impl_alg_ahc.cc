@@ -719,7 +719,6 @@ static inline void ConstructCommTestCase91093(AHCEnvType ahcEnvType, AHCCommType
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*HcclImplAlgTestAHCAllreduce::dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -1116,7 +1115,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AllReduceAHCExecute91093)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*HcclImplAlgTestAHCAllreduce::dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -1221,7 +1219,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AllReduceAHCBrokeExecute91093)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*HcclImplAlgTestAHCAllreduce::dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -1319,7 +1316,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AllReduceNULLAHCExecute91093)
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*HcclImplAlgTestAHCAllreduce::dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -1478,7 +1474,6 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AHC_Mesh_910C){
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*HcclImplAlgTestAHCAllreduce::dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));

@@ -12,17 +12,26 @@ option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "AARCH_MODE=${AARCH_MODE}")
+
+find_program(CCACHE_PROGRAM ccache)
+if(CCACHE_PROGRAM)
+    set(CMAKE_C_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+    set(CMAKE_CXX_COMPILER_LAUNCHER ${CCACHE_PROGRAM})
+endif()
+
 if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
     # need to switch
     set(CMAKE_SYSTEM_NAME Linux)
     set(CMAKE_SYSTEM_PROCESSOR aarch64)
     #Change the path to the absolute path of the cross compilation tool after the toolkit package is decompressed
     # set cross compile toolchain dir
-    set(TOOLCHAIN_DIR $ENV{TOOLCHAIN_DIR})
-    #Specify cross compiler
-    message(STATUS "TOOLCHAIN_DIR=${TOOLCHAIN_DIR}")
     set(TOOLCHAIN_DIR ${CUSTOM_ASCEND_CANN_PACKAGE_PATH}/toolkit/toolchain/hcc/)
     message(STATUS "TOOLCHAIN_DIR: ${TOOLCHAIN_DIR}")
+    if (NOT "x${TOOLCHAIN_DIR}" STREQUAL "x")
+        if (NOT IS_DIRECTORY ${TOOLCHAIN_DIR})
+            message(FATAL_ERROR "specify cross compile toolchain directory(${TOOLCHAIN_DIR}) is not exist")
+        endif()
+    endif()
     # endif()
     set(CMAKE_CXX_COMPILER ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-g++)
     set(CMAKE_C_COMPILER   ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
@@ -68,15 +77,14 @@ if(DEVICE_MODE)
     set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
 
     add_custom_target(generate_device_hccp_package
-
-        COMMAND cd ${HCCP_TAR_DIR} && ls && tar czf ../hcomm_device.tar.gz *.so *.bin
+        COMMAND cd ${HCCP_TAR_DIR} && ls && tar czf ../hcomm_device.tar.gz *.so *.bin hccp_compat_bin_hash.cfg
         DEPENDS hccp_service.bin
         COMMENT "Creating hcomm_device.tar.gz"
     )
     add_dependencies(generate_device_hccp_package rs)
 
     add_custom_target(generate_device_hccd_package
-        COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../hcomm_hccd.tar.gz *.so
+        COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../hcomm_hccd.tar.gz lib64
         DEPENDS hccd
         COMMENT "Creating hcomm_hccd.tar.gz"
     )
@@ -84,11 +92,35 @@ if(DEVICE_MODE)
 
     if(KERNEL_MODE)
         add_custom_target(generate_device_aicpu_package
-            COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hccl.tar.gz *.so
+            COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hcomm.tar.gz aicpu_kernels_device
             DEPENDS ccl_kernel
-            COMMENT "Creating aicpu_hccl.tar.gz"
+            COMMENT "Creating aicpu_hcomm.tar.gz"
         )
         add_dependencies(generate_device_aicpu_package ccl_kernel)
+    endif()
+    message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
+    if(ENABLE_SIGN)
+        message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
+        add_custom_target(sign_hcomm_device
+            COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${HCCP_TAR_DIR}/../hcomm_device.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
+            DEPENDS generate_device_hccp_package
+            COMMENT "Sign hcomm_device.tar.gz"
+        )
+        add_dependencies(sign_hcomm_device generate_device_hccp_package)
+        add_custom_target(sign_hcomm_hccd
+            COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${HCCD_TAR_DIR}/../hcomm_hccd.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
+            DEPENDS generate_device_hccd_package
+            COMMENT "Sign hcomm_hccd.tar.gz"
+        )
+        add_dependencies(sign_hcomm_hccd generate_device_hccd_package)
+        if(KERNEL_MODE)
+            add_custom_target(sign_aicpu_hcomm
+                COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${CCL_KERNEL_TAR_DIR}/../aicpu_hcomm.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
+                DEPENDS generate_device_aicpu_package
+                COMMENT "Sign aicpu_hcomm.tar.gz"
+            )
+            add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
+        endif()
     endif()
 endif()
 
@@ -122,22 +154,20 @@ if(BUILD_OPEN_PROJECT)
         cmake/scripts/ccl_kernel.json
     )
     if (NOT DEVICE_MODE)
-        #TODO 最好能换成output
-        message(STATUS "Detected DEVICE_MODE: ${DEVICE_MODE}")
         message(STATUS "Detected INSTALL_LIBRARY_DIR: ${INSTALL_LIBRARY_DIR}")
 
         set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/)
         set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/)
         add_custom_target(install_tar DEPENDS
             ${BUILD_DEVICE_DIR}/hcomm_device.tar.gz
-            ${BUILD_DEVICE_DIR}/aicpu_hccl.tar.gz
+            ${BUILD_DEVICE_DIR}/aicpu_hcomm.tar.gz
             ${BUILD_HCCD_DIR}/hcomm_hccd.tar.gz
             ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
         )
         install(FILES ${BUILD_DEVICE_DIR}/hcomm_device.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
-        install(FILES ${BUILD_DEVICE_DIR}/aicpu_hccl.tar.gz
+        install(FILES ${BUILD_DEVICE_DIR}/aicpu_hcomm.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
         install(FILES ${BUILD_HCCD_DIR}/hcomm_hccd.tar.gz
@@ -167,10 +197,4 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_PKG_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ OPTIONAL
     )
-endif()
-
-find_program(SYSTEM_CCACHE_PROGRAM ccache)
-if (SYSTEM_CCACHE_PROGRAM)
-    set(CMAKE_C_COMPILER_LAUNCHER ${SYSTEM_CCACHE_PROGRAM} CACHE PATH "cache Compiler")
-    set(CMAKE_CXX_COMPILER_LAUNCHER ${SYSTEM_CCACHE_PROGRAM} CACHE PATH "cache Compiler")
 endif()

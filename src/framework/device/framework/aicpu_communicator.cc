@@ -50,6 +50,9 @@ constexpr u32 BSR_RETRY_SENDRECV_PAIR_NUM_MAX = 2;
 constexpr u32 BSR_RETRY_SENDRECV_PAIR_INDEX_0 = 0;
 constexpr u32 BSR_RETRY_SENDRECV_PAIR_INDEX_1 = 1;
 
+constexpr u32 NOTIFY_SIZE_FOUR = 4;
+constexpr u32 NOTIFY_SIZE_EIGHT = 8;
+
 bool HcclCommAicpu::errMessageReport_ = true;
 
 #define HCCL_RETRY_CHK_RET_AND_TRANS_FSM(result__, exeLog__, error__, state__) \
@@ -3496,7 +3499,7 @@ HcclResult HcclCommAicpu::CheckOpExecStatus()
                     "errorCode[%u]", identifier_.c_str(), dfxExtendInfo_.cqeStatus, dfxExtendInfo_.cqeException.sqeType,
                     dfxExtendInfo_.cqeException.errorCode);
             }
-            return HCCL_SUCCESS;
+            return HCCL_E_INTERNAL;
         }
     }
 
@@ -4670,6 +4673,11 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     identifier_ = std::string(commAicpuParam->hcomId);
     threads_.reserve(LOCAL_STREAM_MAX_NUM);
     notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
+    if (topoInfo_.deviceType == DevType::DEV_TYPE_910_93 || topoInfo_.deviceType == DevType::DEV_TYPE_910B) {
+        notifySize_ = NOTIFY_SIZE_FOUR;
+    } else {
+        notifySize_ = NOTIFY_SIZE_EIGHT;
+    }
 
     CHK_RET(hrtSetWorkModeAicpu(true));
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
@@ -4678,7 +4686,8 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_));
     CHK_PTR_NULL(dispatcherCtx_);
 
-    HCCL_RUN_INFO("%s group[%s] success!", __func__, identifier_.c_str());
+    HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u]", __func__,
+        identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, notifySize_);
     return HCCL_SUCCESS;
 }
 
@@ -4733,9 +4742,6 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
     }
     multiQpThreshold_ = commParam->multiQpThreshold;
     localUserRank_ = commParam->localUserRank;
-    topoInfo_.deviceLogicId = commParam->deviceLogicId;
-    topoInfo_.devicePhyId = commParam->devicePhyId;
-    topoInfo_.deviceType = static_cast<DevType>(commParam->deviceType);
     HCCL_INFO("%s multiQpThreshold[%u], localUserRank[%u], deviceLogicId[%d], devicePhyId[%u], deviceType[%d], "
         "listNum[%u]", __func__, multiQpThreshold_, localUserRank_, topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
         topoInfo_.deviceType, commParam->listNum);
@@ -4889,9 +4895,8 @@ HcclResult HcclCommAicpu::InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam
             transDevIbverbsData.inputBufferPtr, transDevIbverbsData.outputBufferPtr);
         return HCCL_E_PARA;
     }
-    // 是否需要 localMem 待确认
-    // transDevIbverbsData.localInputMem
-    // transDevIbverbsData.localOutputMem
+    transDevIbverbsData.localInputMem = channelRoce.localHcclbuffer;
+    transDevIbverbsData.localOutputMem = channelRoce.localHcclbuffer;
     transDevIbverbsData.localNotifyValueAddr = channelRoce.notifyValue;
     transDevIbverbsData.notifyValueKey = channelRoce.notifyValueKey;
     transDevIbverbsData.remoteInputKey = channelRoce.remoteHcclbuffer.key;

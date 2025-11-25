@@ -975,58 +975,6 @@ TEST_F(HcomKernelInfoTest, ut_LoadTask)
     // EXPECT_EQ(ret, ge::INTERNAL_ERROR);
     GlobalMockObject::verify();
 
-    // -------------------HcomGather test----------------
-    task.kernelHcclInfo[0].hccl_type=HCCL_KERNEL_OP_TYPE_GATHER;
-    MOCKER(HcomGather)
-    .expects(atMost(2))
-    .will(returnValue(HCCL_E_PARA))
-    .then(returnValue(HCCL_SUCCESS));
-
-    MOCKER(HcomSetWorkspaceResource)
-    .expects(atMost(2))
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER(hrtMemAsyncCopy)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER(hrtMemcpyAddrAsync)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER(HcomGetInitStatus)
-    .stubs()
-    .with(outBound(true))
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER(InitGroup)
-    .stubs()
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&hccl::OffloadStreamManager::GetSlaves)
-    .stubs()
-    .will(returnValue(vector<Stream>(1, Stream(StreamType::STREAM_TYPE_OFFLINE))));
-
-    MOCKER_CPP(&TbeReduce::TbeVectorReduce::GetTilingDataDevMem)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-
-    MOCKER_CPP(&TbeReduce::TbeCrackCleard::ExecuteKernelLaunch)
-    .stubs()
-    .with(any())
-    .will(returnValue(HCCL_SUCCESS));
-    task.id = taskID++;
-    ret = hcomKernelInfo.LoadTask(task);
-    EXPECT_EQ(ret, ge::INTERNAL_ERROR);
-    // load task success
-    task.id = taskID++;
-    ret = hcomKernelInfo.LoadTask(task);
-    EXPECT_EQ(ret, ge::SUCCESS);
-    GlobalMockObject::verify();
-
     // -------------------HcomReduce test----------------
     task.kernelHcclInfo[0].hccl_type=HCCL_KERNEL_OP_TYPE_REDUCE;
     MOCKER(HcomReduce)
@@ -3065,12 +3013,12 @@ TEST_F(HcomKernelInfoTest, ut_GetOpWorkspaceMemSize)
 
     u64 opMemSize;
     std::string sCollectiveType;
-    sCollectiveType = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_PAIRED;
+    sCollectiveType = HCCL_KERNEL_OP_TYPE_GATHER;
     HcomOpsKernelBuilder kernelbuilder;
     s32 ret = kernelbuilder.GetOpWorkspaceMemSize(node, sCollectiveType, opMemSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    sCollectiveType = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_UPDATE_PAIRED;
+    sCollectiveType = HCCL_KERNEL_OP_TYPE_GATHER;
 
     ret = kernelbuilder.GetOpWorkspaceMemSize(node, sCollectiveType, opMemSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -3854,18 +3802,8 @@ TEST_F(HcomKernelInfoTest, ut_CheckWorkSpaceNeedSet)
     std::vector<std::string> tagVec;
     tagVec.push_back(tag);
 
-    std::string sCollectiveType = HCCL_KERNEL_OP_TYPE_COLL_REMOTE_LOOKUP_PAIRED;
+    std::string sCollectiveType = HCCL_KERNEL_OP_TYPE_GATHER;
     bool isNeedSet;
-    ret = hcomKernelInfo.CheckWorkSpaceNeedSet(task, hcclInfo, sCollectiveType, isNeedSet);
-    EXPECT_EQ(ret, HCCL_E_PTR);
-
-    u64 workSpaceAddr = 0;
-    hcclInfo.workSpaceAddr = &workSpaceAddr;
-    hcclInfo.workSpaceMemSize = 8;
-    ret = hcomKernelInfo.CheckWorkSpaceNeedSet(task, hcclInfo, sCollectiveType, isNeedSet);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    hcclInfo.workSpaceAddr = nullptr;
     ret = hcomKernelInfo.CheckWorkSpaceNeedSet(task, hcclInfo, sCollectiveType, isNeedSet);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();

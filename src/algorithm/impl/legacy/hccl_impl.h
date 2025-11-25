@@ -88,62 +88,10 @@ namespace hccl
                           std::shared_ptr<TopoInfoExtractor> topoInfoEx);
         ~hcclImpl();
         HcclResult Init(bool isHeterogComm = false);
-        HcclResult AddSubStreamToProfiling(const std::string &tag, HcclCMDType opType);
-        HcclResult PrepareCommRes(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem, AlgType algType,
-                                  Stream stream, u32 root = INVALID_VALUE_RANKID, bool isP2p = false, bool isHaveCpuRank = false,
-                                  bool isBatchSendRecv = false, bool meshSinglePlane = false, bool aivMode = false,
-                                  std::set<u32> batchSendRecvtargetRanks = std::set<u32>());
-
-        HcclResult GetRingNics(const std::string &tag, std::vector<std::vector<u32>> &ringNics);
-        HcclResult SetRingNics(const std::string &tag, const std::vector<std::vector<u32>> &ringNics);
-
-        HcclResult PrepareLevel1CommInfo(u32 &segmentIdx, u32 &commIndex, u64 &hdSize,
-                                         const SubCommInfo &commInfo,
-                                         const std::vector<std::vector<Slice>> &multRingsSliceZero,
-                                         const std::string &tag);
-        HcclResult PrepareLevel1CommInfo(u32 &segmentIdx, u32 &commIndex, u64 &hdSize,
-                                         std::vector<std::unique_ptr<CommBase>> &commLevel0,
-                                         const std::vector<std::vector<Slice>> &multRingsSliceZero,
-                                         const std::string &tag);
-        HcclResult ActiveRingStreams(const std::string &tag, Stream &stream);
+        HcclResult ReleaseCommInfos();
         HcclResult CreateMutiStreamRes(const std::string &tag, Stream &stream, AlgType algType,
                                        bool isBatchSendRecv = false, u32 ringNum = 0);
-        HcclResult RegisterToHeartBeat();
-        HcclResult CreateCommForNoScratchAlltoall(
-            const std::string &tag, DeviceMem &sendBuf, DeviceMem &recvBuf, DeviceMem scratchMem = DeviceMem());
-        HcclResult CreateCommForAlltoallVStaged(const std::string &tag, DeviceMem &sendBuf, DeviceMem &recvBuf,
-                                                DeviceMem &scratchMem, bool alltoallReadOnly = false);
-        HcclResult CreateCommForAlltoAllFullMesh(const std::string &tag, DeviceMem &sendBuf, DeviceMem &recvBuf);
-        HcclResult CreateAlltoAllVCommMem(DeviceMem &inputMem, DeviceMem &outputMem) const;
-        HcclResult BuildAlltoAllVScratchMem(const std::string &tag, u64 workSpaceMemSize);
 
-        u32 GetSubRootForScatter(const u32 root);
-        u32 GetSubRootUserRank(const u32 userRank, const u32 rootUserRank);
-        u32 GetSubRootUserRankWithSuperPod(const u32 userRank, const u32 rootUserRank);
-        HcclResult GetCommInfo(CommInfo *&currComm, const std::string &tag);
-        HcclResult SetScratchMem(DeviceMem &scratchMem, const std::string &tag, u64 allocMemSize);
-        HcclResult GetScratchMem(DeviceMem &scratchMem, const std::string &tag);
-        HcclResult SetNicSendSize(const std::string &tag, std::vector<u64> &sizeList);
-        level1StreamInfo_t *GetStreamInfo(const std::string &tag);
-        HcclResult GetStreamThreadManage(const std::string &tag, u32 streamNum,
-                                         std::vector<std::shared_ptr<ThreadManage>> &threadManager);
-        level1StreamInfo_t *GetStreamInfoWithoutCheck(const std::string &tag);
-        HcclResult UpdateAlltoAllStatus(bool &isAlltoAllZCopyMode, bool &needRecreateAlltoallComm,
-                                        std::map<std::string, bool> &isAlltoAllZCopyModeMap);
-        u64 GetOtherRankAllocScratchSize(
-            u32 rank,
-            std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo);
-        void CheckStagedAlltoAllNeedRecreateComm(
-            std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo,
-            const std::string &tag);
-        HcclResult CreateOpBasedResources(const HcclCMDType &opType, const std::string &tag,
-                                          const HcomCollOpInfo &opInfo);
-        // 提供网口裁剪使用，在无节点间通信域场景下，获取本rank在节点间子通信域(多平面)内当前平面的rank号
-        u32 GetLevel1CommRank(const u32 ringIdx);
-        std::unique_ptr<CommBase> &GetCommMesh();
-        std::unique_ptr<CommBase> &GetCommMeshByTag(const std::string &tag);
-
-        HcclResult ReleaseCommInfos();
         HcclResult CreateMutiStreamRes(const std::string &tag, Stream &stream, level1StreamInfo_t &streamInfo,
                                        AlgType algType, bool isAicpuModeEn = false, bool isBatchSendRecv = false, u32 ringNum = 0);
         HcclResult CreateComm(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem, AlgType algType,
@@ -155,9 +103,6 @@ namespace hccl
                               u32 root = INVALID_VALUE_RANKID, bool isP2p = false, bool isBatchSendRecv = false, bool meshSinglePlane = false,
                               bool aivMode = false, std::set<u32> batchSendRecvtargetRanks = std::set<u32>());
         HcclResult ClearOpResource(const std::string &tag);
-        HcclResult GetTopoAttr(HcclTopoAttr &topoAttr);
-        HcclResult GetAlgoAttr(HcclAlgoAttr &algoAttr);
-        HcclResult GetDispatcher(HcclDispatcher &dispatcher);
         void Break()
         {
             if (Is310P3Common(isHaveCpuRank_, deviceType_))
@@ -200,26 +145,9 @@ namespace hccl
             return (tagCommInfo_.find(tag) != tagCommInfo_.end());
         }
 
-        inline void CancelCommRes(const std::string &tag)
-        {
-            std::unique_lock<std::mutex> commLock(commLock_);
-            if (tagCommInfo_.find(tag) == tagCommInfo_.end())
-            {
-                HCCL_ERROR("opTag[%s] is not exist.", tag.c_str());
-            }
-            else
-            {
-                tagCommInfo_.erase(tag);
-            }
-            return;
-        }
-        HcclResult CreateP2PCommQuerry(const std::string &tag, u32 &status);
-        HcclResult CreateP2PCommAsync(const std::string &tag, DeviceMem &mem, u32 peerRank, u32 &status);
         void SetHDCModeInfo(
             std::unordered_map<std::string, std::map<u32, HcclIpAddress>> &rankDevicePhyIdNicInfoMap,
             std::vector<u32> &ranksPort, bool isSetHDCModeInfo, bool isUseRankPort);
-
-        u64 GetInCCLbufferSize() const; // 获取CCL缓存区大小，用于Executor计算scratch大小
 
     private:
         void SetAlgoAttr(HcclAlgoAttr &algoAttr);
@@ -241,18 +169,11 @@ namespace hccl
         void DestroyIntraServerComm(const std::string &tag);
         void DestroyLevel0Comm(const std::string &tag);
         HcclResult ReleaseSignal(level1StreamInfo_t &level1Stream);
-        HcclResult RunTemplateAlg(std::unique_ptr<CommBase> &commCombine, std::unique_ptr<AlgTemplateBase> &tempAlg,
-                                  DeviceMem &inputMem, DeviceMem &outputMem, u64 count, HcclDataType GetLevel0AlgTypedataType,
-                                  HcclReduceOp op, u32 root, Stream &stream) const;
 
         HcclResult InitMultiStreamResource(const std::string &tag, level1StreamInfo_t &streamInfo, AlgType algType,
                                            bool isAicpuModeEn = false, bool isBatchSendRecv = false, u32 ringNum = 0);
 
         HcclResult WaitCommThread(std::unique_ptr<std::thread> &ThreadPtr) const;
-        HcclResult RegisterToHeartBeat(u32 peerRankId, const std::string &tag);
-        void UnRegisterToHeartBeatP2P();
-        void UnRegisterToHeartBeat();
-        void UnRegisterToHeartBeat(const std::string &tag);
         HcclResult SetRankPortInfo(s32 deviceLogicID, bool isUseRankPort, std::vector<u32> &ranksPort);
 
         /* ---------------以下为私有成员变量定义领域-------------------------- */

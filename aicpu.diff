@@ -1,4 +1,12 @@
 From 2e883e6769ad0e9e9c653c1e37067d64bb640179 Mon Sep 17 00:00:00 2001
+From: linzhiyang <linzhiyang5@huawei.com>
+Date: Thu, 11 Sep 2025 17:39:13 +0800
+Subject: [PATCH] DTS:AR20250802819240
+
+Description:Replace Interface(aicpu)
+
+Team:OTHERS
+Feature or Bugfix:Feature
 
 Change-Id: I0a16176f0bd09f3cd4fc1e2e7ca4d3a5dfa87560
 Signed-off-by: linzhiyang <linzhiyang5@huawei.com>

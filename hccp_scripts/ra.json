@@ -1,0 +1,35 @@
+{
+    "includes": [
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_agent", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_agent/inc", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_agent/hdc", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_agent/hdc/async", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_agent/comm", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_agent/peer", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/rdma_agent/client",
+
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/common/", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/inc/private/network", 
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/inc/network", 
+
+        "/home/xxx/Ascend/latest/pkg_inc/base/", 
+        "/home/xxx/Ascend/latest/include/", 
+        "/home/xxx/Ascend/latest/include/toolchain/", 
+        "/home/xxx/Ascend/latest/include/driver/", 
+        "/home/xxx/Ascend/latest/pkg_inc", 
+        "/home/xxx/Ascend/latest/runtime/include/ ", 
+
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/include",
+        "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/external_depends/host_lite"
+    ],
+    "defines": [
+        "CUSTOM_INTERFACE",
+        "CONFIG_TLV",
+        "CONFIG_SSL"
+    ],
+    "std": "gnu11",
+    "coption": "-Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -std=gnu11 -Wextra",
+    "sources": [
+        "./rdma_agent/client"
+    ]
+}

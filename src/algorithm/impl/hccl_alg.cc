@@ -10,11 +10,8 @@
 
 #include <memory>
 #include "hccl_impl.h"
-#include "gather_operator.h"
-#include "send_receive_operator.h"
 #include "alltoall_operator.h"
 #include "all_reduce_operator.h"
-#include "broadcast_operator_for_hetero.h"
 #include "coll_alg_op_registry.h"
 #include "topo_matcher.h"
 #include "topo_info_extractor.h"
@@ -303,62 +300,9 @@ HcclResult HcclAlg::ReleaseCommInfos()
     return pimpl_->ReleaseCommInfos();
 }
 
-HcclResult HcclAlg::Broadcast(
-    const std::string &tag, void *ptr, u64 count, HcclDataType dataType, u32 root, Stream stream)
-{
-    BroadCastOperatorForHetero operation(algConfigurator_.get(), cclBufferManager_, dispatcher_, topoMatcher_);
-    operation.SetLegacyHcclImpl(pimpl_);
-    return operation.Broadcast(tag, ptr, count, dataType, root, stream);
-}
-
-HcclResult HcclAlg::Send(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType, u32 destRank,
-    Stream stream)
-{
-    SendReceiveOperator operation(algConfigurator_.get(), cclBufferManager_, dispatcher_, topoMatcher_);
-    operation.SetLegacyHcclImpl(pimpl_);
-    return operation.Send(tag, inputPtr, count, dataType, destRank, stream);
-}
-
-HcclResult HcclAlg::SendOutPlace(const std::string &tag, void *inputPtr, u64 count, HcclDataType dataType,
-    u32 destRank, Stream stream)
-{
-    SendReceiveOperator operation(algConfigurator_.get(), cclBufferManager_, dispatcher_, topoMatcher_);
-    operation.SetLegacyHcclImpl(pimpl_);
-    return operation.SendOutPlace(tag, inputPtr, count, dataType, destRank, stream);
-}
-
-HcclResult HcclAlg::Receive(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-    u32 srcRank, Stream stream)
-{
-    SendReceiveOperator operation(algConfigurator_.get(), cclBufferManager_, dispatcher_, topoMatcher_);
-    operation.SetLegacyHcclImpl(pimpl_);
-    return operation.Receive(tag, outputPtr, count, dataType, srcRank, stream);
-}
-
-HcclResult HcclAlg::ReceiveOutPlace(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
-    u32 srcRank, Stream stream)
-{
-    SendReceiveOperator operation(algConfigurator_.get(), cclBufferManager_, dispatcher_, topoMatcher_);
-    operation.SetLegacyHcclImpl(pimpl_);
-    return operation.ReceiveOutPlace(tag, outputPtr, count, dataType, srcRank, stream);
-}
-
-HcclResult HcclAlg::Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-    HcclDataType dataType, Stream stream)
-{
-    GatherOperator operation(algConfigurator_.get(), cclBufferManager_, dispatcher_, topoMatcher_);
-    operation.SetLegacyHcclImpl(pimpl_);
-    return operation.Gather(tag, inputPtr, outputPtr, rootRank, inputCount, dataType, stream);
-}
-
 HcclResult HcclAlg::ClearOpResource(const std::string &tag)
 {
     return pimpl_->ClearOpResource(tag);
-}
-
-bool HcclAlg::IsExistCommRes(const std::string &tag)
-{
-    return pimpl_->IsExistCommRes(tag);
 }
 
 HcclResult HcclAlg::CreateMutiStreamRes(const std::string &tag, Stream &stream, level1StreamInfo_t &streamInfo,
@@ -377,21 +321,6 @@ HcclResult HcclAlg::CreateComm(
     const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem, AlgType algType, u32 root, bool isP2p)
 {
     return pimpl_->CreateComm(tag, inputMem, outputMem, algType, root, isP2p);
-}
-
-HcclResult HcclAlg::CreateP2PCommQuerry(const std::string &tag, u32 &status)
-{
-    return pimpl_->CreateP2PCommQuerry(tag, status);
-}
-
-HcclResult HcclAlg::CreateP2PCommAsync(const std::string &tag, DeviceMem &mem, u32 peerRank, u32 &status)
-{
-    return pimpl_->CreateP2PCommAsync(tag, mem, peerRank, status);
-}
-
-void HcclAlg::CancelCommRes(const std::string &tag)
-{
-    pimpl_->CancelCommRes(tag);
 }
 
 void HcclAlg::Break()

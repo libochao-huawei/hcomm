@@ -54,8 +54,6 @@ bool &HcomGetCtxAutoTuneMode(void);
 HcclResult HcomFlushBackloggedGroups();
 HcclResult QueryDestroyFlag(const char *group);
 HcclResult HcomGroupUnref(const char *group);
-HcclResult HcpuGetCommByGroup(const char *group, std::shared_ptr<hccl::HcclCommBase> &hcclComm);
-HcclResult HcpuInit(const char *rankTableM, const char *identify, WorkMode commWorkMode);
 HcclResult HcomCheckInitClusterInfo(const char *rankTableM, const char *identify);
 
 HcclResult HcomRPCInit(const char *rankTableM, const char *identify, HcomInfo &hcomInfo,

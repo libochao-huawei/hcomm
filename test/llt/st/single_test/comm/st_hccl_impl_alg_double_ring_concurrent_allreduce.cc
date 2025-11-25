@@ -333,7 +333,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrentallreduce, st_CollAllReduceDoubleRingC
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
     std::unique_ptr<TopoMatcher> &topoMatcher = implBase->implAlg_->topoMatcher_;
     topoMatcher->topoInfo_.deviceLogicId = 0;
     topoMatcher->topoInfo_.devicePhyId = 0;
@@ -415,7 +414,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrentallreduce, st_CollAllReduceDoubleRingC
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
 
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
@@ -502,7 +500,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrentallreduce, st_CollAllReduceDoubleRingC
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
@@ -590,7 +587,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrentallreduce, st_CollAllReduceDoubleRingC
         { 0, 1, 2, 3, 4, 5, 6, 7 },
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
@@ -669,7 +665,6 @@ TEST_F(HcclImplAlgTestDoubleRingConcurrentallreduce, st_CollAllReduceDoubleRingC
     const std::vector<std::vector<u32>> tmpRingNics = {
         { 0, 1, 2, 3, 4, 5, 6, 7 }
     };
-    impl->SetRingNics(tag, tmpRingNics);
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
         s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,

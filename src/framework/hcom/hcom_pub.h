@@ -99,8 +99,6 @@ HcclResult HcomSetQosCfg(const char *group, const u32 qosCfg);
 HcclResult HcclCommSetQosCfg(s64 opBaseHcom, const u32 qosCfg);
 HcclResult HcomResetQosCfg(const char *group);
 HcclResult HcclCommResetQosCfg(s64 opBaseHcom);
-HcclResult HcomGather(const char *tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-    HcclDataType dataType, const char *group, rtStream_t stream);
 HcclResult GenerateGroupHash(std::string &group, std::string &groupHash);
 
 HcclResult HcclCommGraphClearAivSyncBuf(s64 comm, bool aivClearEnable);
@@ -111,6 +109,7 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
     bool multiModuleDiffDeviceNumMode, u32 &taskNum, DevType devType);
 #ifndef OPEN_BUILD_PROJECT
 HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum);
+HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
 #endif
 HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum, s32 deviceNumPerServer,
     DevType devType, u32 &taskNum);
@@ -153,6 +152,14 @@ HcclResult GetServerAndDevNumFromRanklist(const u32 *groupList, u32 groupListSiz
 HcclResult GetServerIdByRankId(const std::vector<hccl::RankInfo_t> &rankList, const u32 &rankId, u32 &serverId);
 HcclResult GetModuleInfo(DevType devType, const std::vector<hccl::RankInfo_t> &rankList, bool &multiModuleDiffDeviceNumMode);
 HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic);
+// end
+
+HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm,
+    std::string& group, std::string &sTag);
+#ifndef OPEN_BUILD_PROJECT
+HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
+    HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel);
+#endif
 
 #ifdef __cplusplus
 }

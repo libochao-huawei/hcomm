@@ -31,6 +31,7 @@ struct HcclChannelRoce {
     // 将固定数组改为指针
     MemDetails* remoteUserHostMem = nullptr;    // 远端用户主机内存
     MemDetails* remoteUserDeviceMem = nullptr;  // 远端用户设备内存
+    MemDetails localHcclbuffer;                 // 本端用户cclbuffer
     MemDetails remoteHcclbuffer;                // 远端用户cclbuffer
     u32 remoteUserHostMemCount = 0;             // 远端用户主机内存数量
     u32 remoteUserDeviceMemCount = 0;           // 远端用户设备内存数量
@@ -61,9 +62,6 @@ struct HcclIndOpChannelRemoteResV3 {
     char channelTag[TAG_MAX_LENGTH];                    // channelTag 最大长度待修改
     CommEngine engine;                                  // 通信引擎类型
     u32 localUserRank;                                  // 本地rankId
-    s32 deviceLogicId;                                  // TopoInfo中取得
-    u32 devicePhyId;                                    // TopoInfo中取得
-    u32 deviceType;                                     // TopoInfo中取得
     u32 multiQpThreshold;                               // 多QP每个QP分担数据量最小阈值
     void* channelList;                                  // device侧channelList地址
     u32 listNum = 0;                                    // 建链channel的总数量

@@ -225,9 +225,6 @@ public:
     virtual HcclResult ReceiveOutPlace(const std::string &tag, void *outputPtr, u64 count, HcclDataType dataType,
         u32 srcRank, rtStream_t stream);
 
-    virtual HcclResult Gather(const std::string &tag, void *inputPtr, void *outputPtr, u32 rootRank, u64 inputCount,
-        HcclDataType dataType, rtStream_t stream);
-
     virtual HcclResult SupportDeterministicOptim(bool &isDeterministicOptim);
 
     virtual HcclResult GetCqeError(HcclResult &result);
