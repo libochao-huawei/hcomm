@@ -141,62 +141,17 @@ HcclResult GetKernelFilePath(std::string &binaryPath)
 {
     // 获取二进制文件路径
     std::string libPath;
-    char *getPath = getenv("LD_LIBRARY_PATH");
-    MM_SYS_GET_ENV(MM_ENV_LD_LIBRARY_PATH, getPath);
+    char *getPath = getenv("ASCEND_HOME_PATH");
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, getPath);
     if (getPath != nullptr) {
         libPath = getPath;
     } else {
-        HCCL_ERROR("[GetKernelFilePath]ENV:LD_LIBRARY_PATH is not set");
-        return HCCL_E_PARA;
+        libPath = "/usr/local/Ascend/latest/";
+        HCCL_WARNING("[GetKernelFilePath]ENV:ASCEND_HOME_PATH is not set");
     }
 
-    size_t mid = libPath.find("hcomm/lib64");
-    if (mid == libPath.npos) {
-        HCCL_WARNING("[GetKernelFilePath]ENV:LD_LIBRARY_PATH lack hccl/lib64");
-
-        mmDlInfo info;
-        if (mmDladdr(reinterpret_cast<void *>(GetKernelFilePath), &info) != EN_OK) {
-            HCCL_ERROR("[GetKernelFilePath]mmDladdr get binary path failed");
-            return HCCL_E_PARA;
-        }
-
-        CHK_PRT_RET(info.dli_fname == nullptr, HCCL_ERROR("[GetKernelFilePath]get path of libhccl_fwk.so failed"),
-            HCCL_E_UNAVAIL);
-
-        char resolvedPath[PATH_MAX];
-        if (realpath(info.dli_fname, resolvedPath) == nullptr) {
-            HCCL_ERROR("[GetKernelFilePath]path %s is not a valid real path", info.dli_fname);
-            return HCCL_E_INTERNAL;
-        }
-        binaryPath = resolvedPath;
-        HCCL_DEBUG("[GetKernelFilePath]binaryPath folder path[%s]", binaryPath.c_str());
-        if (binaryPath.find("/lib64/libhccl_fwk.so") != binaryPath.npos) {
-            binaryPath.erase(binaryPath.find("/lib64/libhccl_fwk.so"));
-        } else {
-            HCCL_ERROR("[GetKernelFilePath]get binary path failed");
-            return HCCL_E_PARA;
-        }
-
-        size_t pos = binaryPath.find_last_of("/");
-        if (pos != std::string::npos) {
-            binaryPath = binaryPath.substr(0, pos);
-        } else {
-            HCCL_ERROR("[GetKernelFilePath]failed substr file path.");
-            return HCCL_E_PARA;
-        }
-        binaryPath += "/hcomm";
-    } else {
-        u32 diff;
-        if (libPath.find(":", mid) == libPath.npos) {
-            diff = libPath.length() - libPath.rfind(":", mid);
-        } else {
-            diff = libPath.find(":", mid) - libPath.rfind(":", mid);
-        }
-        binaryPath = libPath.substr(libPath.rfind(":", mid) + 1, diff - 1);
-        binaryPath.erase(binaryPath.find("/lib64"));
-    }
-    HCCL_DEBUG("[GetKernelFilePath]hccl folder path[%s]", binaryPath.c_str());
-    binaryPath += "/built-in/data/op/aicpu/";
+    libPath += "/opp/built-in/op_impl/aicpu/config/";
+    binaryPath = libPath;
     HCCL_DEBUG("[GetKernelFilePath]kernel folder path[%s]", binaryPath.c_str());
 
     return HCCL_SUCCESS;
