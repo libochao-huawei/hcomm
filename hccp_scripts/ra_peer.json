@@ -9,11 +9,11 @@
         "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/inc/private/network", 
         "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/inc/network", 
 
-        "/home/xxxx/Ascend/latest/pkg_inc/base/", 
-        "/home/xxxx/Ascend/latest/include/", 
-        "/home/xxxx/Ascend/latest/include/toolchain/", 
-        "/home/xxxx/Ascend/latest/include/driver/", 
-        "/home/xxxx/Ascend/latest/pkg_inc", 
+        "/home/x00949166/Ascend/latest/pkg_inc/base/", 
+        "/home/x00949166/Ascend/latest/include/", 
+        "/home/x00949166/Ascend/latest/include/toolchain/", 
+        "/home/x00949166/Ascend/latest/include/driver/", 
+        "/home/x00949166/Ascend/latest/pkg_inc", 
 
         "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/include",
         "/srv/workspace/ai_code_style_adaptation/work_code/hcomm/src/platform/hccp/external_depends/host_lite"

@@ -33,6 +33,6 @@
     "std": "gnu11",
     "coption": "-Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal -Wextra -Wno-unused-parameter",
     "sources": [
-        "./rdma_service"
+        "./common"
     ]
 }
