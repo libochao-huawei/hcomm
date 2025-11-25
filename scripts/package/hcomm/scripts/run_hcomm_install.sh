@@ -146,6 +146,15 @@ new_install() {
     fi
 
     create_latest_linux_softlink
+    local linux_path="$(realpath $common_parse_dir/..)"
+    local latest_path="$(realpath $linux_path)/latest"
+    if [ ! -e "$latest_path/opp" ]; then
+        ln -srfn "$common_parse_dir/opp" "$latest_path/opp"
+    fi
+
+    if [ ! -e "$latest_path/compat" ]; then
+        ln -srfn "$common_parse_dir/compat" "$latest_path/compat"
+    fi
     return 0
 }
 
