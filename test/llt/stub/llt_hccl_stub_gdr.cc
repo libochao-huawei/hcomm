@@ -3285,10 +3285,25 @@ drvError_t drvGetDevNum(uint32_t *num)
     return DRV_ERROR_NONE;
 }
 
+extern g_stubDevType;
 drvError_t halGetChipInfo(uint32_t devId, halChipInfo * chipInfo)
 {
-    static halChipInfo info = {"Ascend", "910B4", "0"};
-    *chipInfo = info;
+    if (g_stubDevType == DevType::DEV_TYPE_910B) {
+        static halChipInfo info = {"Ascend", "910B1", "0"};
+        *chipInfo = info;
+    } else if (g_stubDevType == DevType::DEV_TYPE_310P1 || g_stubDevType == DevType::DEV_TYPE_310P3) {
+        static halChipInfo info = {"Ascend", "310P1", "0"};
+        *chipInfo = info;
+    } else if (g_stubDevType == DevType::DEV_TYPE_910_93) {
+        static halChipInfo info = {"Ascend", "910_9391", "0"};
+        *chipInfo = info;
+    } else if (g_stubDevType == DevType::DEV_TYPE_910) {
+        static halChipInfo info = {"Ascend", "910", "0"};
+        *chipInfo = info;
+    } else {
+        static halChipInfo info = {"Ascend", "910B1", "0"};
+        *chipInfo = info;
+    }
     return DRV_ERROR_NONE;
 }
 
