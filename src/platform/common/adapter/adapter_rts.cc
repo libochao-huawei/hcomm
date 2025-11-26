@@ -757,8 +757,9 @@ HcclResult hrtMemcpyAddrAsync(void *dst, uint64_t destMax, uint64_t destOffset, 
         return HCCL_SUCCESS;
     }
 
-    aclError ret = aclrtMemcpyAsyncWithOffset(
-        &dst, destMax, destOffset, &src, count, srcOffset, ACL_MEMCPY_INNER_DEVICE_TO_DEVICE, stream);
+    aclError ret = aclrtMemcpyAsyncWithOffset(reinterpret_cast<void **>(dst), destMax, destOffset,
+        reinterpret_cast<const void **>(const_cast<void *>(src)), count, srcOffset, ACL_MEMCPY_INNER_DEVICE_TO_DEVICE,
+        stream);
 
     HCCL_DEBUG("Call hrtMemcpyAddrAsync, return value[%d], dstAddr[%p], destMax[%llu], destOffset[%llu], "\
         "srcAddr[%p], count[%llu], srcOffset[%llu]", ret, dst, destMax, destOffset, src, count, srcOffset);
