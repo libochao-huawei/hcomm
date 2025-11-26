@@ -22,6 +22,7 @@
 #include "cann_error_reporter.h"
 #include "executor_tracer.h"
 #include "dfx/aicpu_executor_tracer.h"
+#include "framework/aicpu_one_side_service.h"
 
 namespace dfx_tracer {
 void ExecutorTracer::BackGroundDfx(void *info)
@@ -50,6 +51,7 @@ void ExecutorTracer::BackGroundDfx(void *info)
         HandleSwitchNic(ctx);
         HandleCqeStatus(ctx);
         HandleResumeChangeLink(ctx);
+        hccl::HcclOneSideServiceAicpu::HandleErrCqe();
         usleep(TEN_MILLISECOND_OF_USLEEP);
     }
     (void)dfx::CannErrorReporter::GetInstance().Clear();
@@ -116,6 +118,10 @@ void ExecutorTracer::StopBackGround(AicpuComContext *const ctx, bool &isNotStop)
             }
         }
         rwlock.readUnlock();
+    }
+
+    if (!hccl::HcclOneSideServiceAicpu::isAllDestroy()) {
+        isNotStop = true;
     }
 }
 
