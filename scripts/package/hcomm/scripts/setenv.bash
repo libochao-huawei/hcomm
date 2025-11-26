@@ -29,9 +29,9 @@ get_install_dir() {
     local hetero_arch=$(get_install_param "Hcomm_Hetero_Arch_Flag" "${install_info}")
     if [ "$param_mult_ver" = "multi_version" ]; then
         if [ "$hetero_arch" = "y" ]; then
-            echo "$(realpath $curpath/../../../../../latest)/hcomm"
+            echo "$(realpath $curpath/../../../../../latest)"
         else
-            echo "$(realpath $curpath/../../../latest)/hcomm"
+            echo "$(realpath $curpath/../../../latest)"
         fi
     else
         echo "$(realpath $curpath/..)"

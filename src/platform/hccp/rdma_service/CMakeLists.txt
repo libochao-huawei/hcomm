@@ -56,7 +56,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # 第三方库依赖路径
         ${OPENSSL_INCLUDE_DIR}
