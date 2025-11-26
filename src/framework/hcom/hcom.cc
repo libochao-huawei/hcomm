@@ -155,6 +155,12 @@ HcclResult HcomInit(const char *rankTableM, const char *identify, WorkMode commW
             HCCL_ERROR("[Init][Result]errNo[0x%016llx] hcclComm init error", HCOM_ERROR_CODE(ret)),
             errorFlag = true);
 
+        /* 设置独立算子参数 */
+        ret = hcomInfo.pComm->SetIndependentOpConfig(commConfig, hcomInfo.rankTable);
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Init][Result]errNo[0x%016llx] set SetIndependentOpConfig error.", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+
         group = hcomInfo.pComm->GetIdentifier().c_str();
 
         ret = ShowRanktableConfigInfo(hcomInfo.cloudFlag, hcomInfo.params, hcomInfo.rankTable);
