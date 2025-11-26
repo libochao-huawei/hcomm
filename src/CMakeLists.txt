@@ -170,7 +170,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
@@ -303,7 +303,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
@@ -340,7 +340,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/

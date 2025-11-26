@@ -77,15 +77,15 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/legacy/inc
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/external/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/platform/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
 
         # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
