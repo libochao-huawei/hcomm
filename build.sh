@@ -153,7 +153,6 @@ function build_hccd(){
 
 function build_cb_test_verify(){
     cd ${CURRENT_DIR}/examples/
-    source ${ASCEND_CANN_PACKAGE_PATH}/bin/setenv.bash
     bash build.sh
 }
 
