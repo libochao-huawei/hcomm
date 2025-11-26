@@ -1,8 +1,19 @@
 CURRENT_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 BUILD_DIR=${CURRENT_DIR}/../build/
+
+# 设置使用的device
+if [ -f "/root/set_davinci.txt" ]; then
+    # 读取文件内容并去除换行符
+    DAVINCI_VALUE=$(cat /root/set_davinci.txt | tr -d '\n')
+    export ASCEND_RT_VISIBLE_DEVICES="$DAVINCI_VALUE"
+    echo "ASCEND_RT_VISIBLE_DEVICES=$ASCEND_RT_VISIBLE_DEVICES"
+fi
+
 for dir in ${CURRENT_DIR}/*/*/;do
     # 检查是否是需要跳过的目录
-    if [ "$dir" = "${CURRENT_DIR}/03_collectives/09_scatter/" ]; then
+    if [ "$dir" = "${CURRENT_DIR}/03_collectives/09_scatter/" ] ||
+        [ "$dir" = "${CURRENT_DIR}/01_communicators/01_one_device_per_process" ] ||
+        [ "$dir" = "${CURRENT_DIR}/01_communicators/02_one_device_per_process_rank_table/" ]; then
         echo "Skipping directory: $dir" | tee -a ${BUILD_DIR}/build.log
         continue
     fi
