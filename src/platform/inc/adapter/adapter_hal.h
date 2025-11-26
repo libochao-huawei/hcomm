@@ -28,6 +28,32 @@ constexpr int HCCL_RESERVED_DEV_ID = -1;
 
 constexpr unsigned char SAFTY_STATE_SENSOR_TYTPE = 0xC3;
 
+const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{
+    {"Ascend310P1", DevType::DEV_TYPE_310P3},
+    {"Ascend310P3", DevType::DEV_TYPE_310P3},
+    {"Ascend310P5", DevType::DEV_TYPE_310P3},
+    {"Ascend310P7", DevType::DEV_TYPE_310P3},
+    {"Ascend310B1", DevType::DEV_TYPE_310P3},  // 临时映射，临时当前Ascend310B1 torch_npu未与hccl的so解耦；计划20250630完成解耦，解耦后删除
+    {"Ascend910", DevType::DEV_TYPE_910},
+    {"Ascend910A", DevType::DEV_TYPE_910},
+    {"Ascend910B", DevType::DEV_TYPE_910},
+    {"Ascend910ProA", DevType::DEV_TYPE_910},
+    {"Ascend910ProB", DevType::DEV_TYPE_910},
+    {"Ascend910PremiumA", DevType::DEV_TYPE_910},
+    {"Ascend910B1", DevType::DEV_TYPE_910B},
+    {"Ascend910B2", DevType::DEV_TYPE_910B},
+    {"Ascend910B2C", DevType::DEV_TYPE_910B},
+    {"Ascend910B3", DevType::DEV_TYPE_910B},
+    {"Ascend910B4", DevType::DEV_TYPE_910B},
+    {"Ascend910B4-1", DevType::DEV_TYPE_910B},
+    {"Ascend910_9391", DevType::DEV_TYPE_910_93},
+    {"Ascend910_9381", DevType::DEV_TYPE_910_93},
+    {"Ascend910_9392", DevType::DEV_TYPE_910_93},   // Ascend910_9392、Ascend910_9382为预留类型，当前版本暂不支持，待跟随后续版本节奏交付
+    {"Ascend910_9382", DevType::DEV_TYPE_910_93},
+    {"Ascend910_9372", DevType::DEV_TYPE_910_93},
+    {"Ascend910_9362", DevType::DEV_TYPE_910_93},
+    {"nosoc", DevType::DEV_TYPE_NOSOC}};
+
 HcclResult hrtHalSubmitEvent(u32 devId, u32 eventId, u32 groupId = HCCL_ESCHED_GROUP_ID);
 HcclResult hrtHalEschedAttachDevice(unsigned int devId);
 HcclResult hrtHalEschedDettachDevice(unsigned int devId);
