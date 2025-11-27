@@ -100,11 +100,7 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:rs> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_adp> ${HCCP_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccp_service.bin> ${HCCP_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/* ${HCCP_TAR_DIR}
-        COMMAND bash ${GENERATE_HASH_SCRIPT} ${HCCP_TAR_DIR}/hccp_service.bin ${HCCP_TAR_DIR}/hccp_compat_bin_hash.cfg
-        COMMAND cat ${HCCP_TAR_DIR}/hccp_compat_bin_hash.cfg
-        COMMENT "Generating hccp_compat_bin_hash.cfg"
-
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCP_TAR_DIR}
         COMMENT "Copying rs ra_adp hccp_service.bin ascend_kms tls_adp to ${HCCP_TAR_DIR}"
     )
 endif()
