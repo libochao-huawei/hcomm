@@ -10,7 +10,7 @@
 # ----------------------------------------------------------------------------
 set(HCOMM_UTILS_PATH ${CMAKE_CURRENT_BINARY_DIR})
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
-set(CANN_UTILS_VERSION "8.5.0.alpha001")
+set(CANN_UTILS_VERSION "8.5.0")
 
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "hcomm_utils found in ${HCOMM_UTILS_PATH}")
@@ -67,6 +67,7 @@ else()
     add_library(hccl_legacy SHARED IMPORTED)
 
     set_target_properties(hccl_legacy PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/include"
         IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so"
     )
     install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so

@@ -29,6 +29,7 @@ using namespace hccl;
 
 namespace {
 const u32 MC2_TILING_VERSION = 2U;
+const u32 ENABLE_AICPU_COMM_ENGINE = 0U;
 }
 HcclResult HcclGetInitTilingList(const void *mc2Tiling, const void *p[], uint32_t &cnt)
 {
@@ -80,7 +81,7 @@ HcclResult HcclMc2ComResourceByTiling(HcclComm comm, void *mc2Tiling, rtStream_t
             commIdentifier.c_str(), isAicpuCommEngine, tiling->commEngine);
         CHK_RET(hcclComm->AllocComResourceByTiling(tiling->algConfig, reinterpret_cast<void *>(&opParam)));
         // commEngine为0代表使能AICPU引擎
-        if (!isAicpuCommEngine && tiling->commEngine == 0) {
+        if (!isAicpuCommEngine && tiling->commEngine == ENABLE_AICPU_COMM_ENGINE) {
             isAicpuCommEngine = true;
         }
     }

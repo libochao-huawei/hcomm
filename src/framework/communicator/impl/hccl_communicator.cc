@@ -149,8 +149,9 @@ namespace hccl
         // 按通信域配置是否使用算子级重执行
         HcclIpAddress serverIp = !rankInfoList_.empty() ? rankInfoList_[0].hostIp : HcclIpAddress();
         HcclIpAddress localIp = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].hostIp : HcclIpAddress();
+        bool isAivMode = GetAivModeConfig() || GetConfigIsOnlyAivMode();
         SetRetryEnable(deviceType_, superPodNum_, serverNum_, deviceNumPerAggregation_,
-            isDiffDeviceType_, GetAivModeConfig(), serverIp, localIp, retryEnable_);
+            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_);
         // 校验A+X单机双module场景下通信能否建立
         CHK_RET(CheckSingleServerComm(rankTable.rankList));
         // 解析rank和port的映射信息
@@ -473,8 +474,9 @@ namespace hccl
         // 按通信域配置是否使用算子级重执行
         HcclIpAddress serverIp = !rankInfoList_.empty() ? rankInfoList_[0].hostIp : HcclIpAddress();
         HcclIpAddress localIp = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].hostIp : HcclIpAddress();
+        bool isAivMode = GetAivModeConfig() || GetConfigIsOnlyAivMode();
         SetRetryEnable(deviceType_, superPodNum_, serverNum_, deviceNumPerAggregation_,
-            isDiffDeviceType_, GetAivModeConfig(), serverIp, localIp, retryEnable_);
+            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_);
         groupNicRanksPort_.resize(rankInfoList_.size(), HCCL_INVALID_PORT);
         if (nicRanksPort_.size())
         {
@@ -744,7 +746,7 @@ namespace hccl
         HCCL_INFO("start to stop the backGround Thread");
         if (deviceType_ == DevType::DEV_TYPE_910 || (deviceType_ == DevType::DEV_TYPE_910B && !GetAicpuUnfoldFlag()))
         {
-            if (GetAicpuCommEngine())
+            if (GetMC2EnvFlag())
             {
                 if (controlH2D != nullptr)
                 {
@@ -803,7 +805,7 @@ namespace hccl
                          __func__);
             return HCCL_SUCCESS;
         }
-        if (!GetAicpuCommEngine())
+        if (!GetMC2EnvFlag())
         {
             HCCL_INFO("[HcclCommunicator][%s]Not mc2 or aicpu environment, no needs to destroy the aicpu comm.",
                       __func__);
@@ -1050,6 +1052,17 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::SetMC2EnvFlag()
+    {
+        isNsRecovery_ = true;
+        return HCCL_SUCCESS;
+    }
+
+    bool HcclCommunicator::GetMC2EnvFlag()
+    {
+        return isNsRecovery_;
+    }
+
     bool HcclCommunicator::GetAicpuCommEngine()
     {
         return isAicpuCommEngine_;
@@ -1057,6 +1070,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::SetAicpuCommEngine(bool isAicpuCommEngine)
     {
+        HCCL_INFO("SetAicpuCommEngine isAicpuCommEngine[%u]", isAicpuCommEngine);
         isAicpuCommEngine_ = isAicpuCommEngine;
         return HCCL_SUCCESS;
     }
@@ -1132,7 +1146,7 @@ namespace hccl
     HcclResult HcclCommunicator::Suspend(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
     {
         isSuspending = true;
-        if (GetAicpuCommEngine())
+        if (GetAicpuUnfoldFlag() || GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]MC2 OR AICPU ENVIRONMENT TO RECOVERY");
             KfcExecControl execCommand;
@@ -1190,7 +1204,7 @@ namespace hccl
     HcclResult HcclCommunicator::StopExec(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
     {
         isSuspending = true;
-        if (GetAicpuCommEngine())
+        if (GetAicpuUnfoldFlag() || GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]MC2 OR AICPU ENVIRONMENT TO RECOVERY");
             KfcExecStatus opInfo;
@@ -1254,7 +1268,7 @@ namespace hccl
     HcclResult HcclCommunicator::Clean(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
     {
         isSuspending = true;
-        if (GetAicpuCommEngine())
+        if (GetAicpuUnfoldFlag() || GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]MC2 OR AICPU ENVIRONMENT TO RECOVERY");
             KfcExecStatus opInfo;
@@ -2320,7 +2334,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::HostMC2EnvResume()
     {
-        if (GetAicpuCommEngine())
+        if (GetAicpuUnfoldFlag() || GetAicpuCommEngine())
         {
             HCCL_DEBUG("[NsRecovery]reset the suspending flag");
             KfcExecControl controlCmd;
