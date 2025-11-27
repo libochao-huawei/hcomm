@@ -264,7 +264,7 @@ migrate_user_assets() {
         for src in $path_list
         do
             dst=${src##*$pkg_name/}
-            dst="$common_parse_dir/hcomm/$dst"
+            dst="$common_parse_dir/share/info/hcomm/$dst"
 
             if [ "$dst" = "$(realpath "$src")" ]; then
                 log "INFO" "file '$src' and '$dst' are the same file, no need copy."
@@ -312,33 +312,24 @@ clear_kernel_cache_dir() {
 }
 
 WHL_INSTALL_DIR_PATH="${common_parse_dir}/python/site-packages"
-WHL_SOFTLINK_INSTALL_DIR_PATH="${common_parse_dir}/hcomm/python/site-packages"
 PYTHON_HCOMM_WHL="${sourcedir}/lib64/hccl-0.1.0-py3-none-any.whl"
 
 custom_install() {
-    if [ -z "$common_parse_dir/hcomm" ]; then
+    if [ -z "$common_parse_dir/share/info/hcomm" ]; then
         log "ERROR" "ERR_NO:0x0001;ERR_DES:hcomm directory is empty"
         exit 1
     fi
 
     if [ "$hetero_arch" != "y" ]; then
-        local arch_name="$(get_arch_name $common_parse_dir/hcomm)"
-        create_stub_softlink "$common_parse_dir/hcomm/lib64/stub" "linux/$arch_name"
+        local arch_name="$(get_arch_name $common_parse_dir/share/info/hcomm)"
     else
-        local arch_name="$(get_arch_name $common_parse_dir/hcomm)"
-        create_stub_softlink "$common_parse_dir/hcomm/lib64/stub" "linux/$arch_name"
+        local arch_name="$(get_arch_name $common_parse_dir/share/info/hcomm)"
     fi
 
     if [ "$hetero_arch" != "y" ]; then
         log "INFO" "install hcomm extension module begin..."
         hcomm_install_package "${PYTHON_HCOMM_WHL}" "${WHL_INSTALL_DIR_PATH}"
         log "INFO" "the hcomm extension module installed successfully!"
-
-        mkdir -p "$WHL_SOFTLINK_INSTALL_DIR_PATH"
-        if [ "${pylocal}" = "y" ]; then
-            create_softlink_if_exists "${WHL_INSTALL_DIR_PATH}" "$WHL_SOFTLINK_INSTALL_DIR_PATH" "hcomm"
-            create_softlink_if_exists "${WHL_INSTALL_DIR_PATH}" "$WHL_SOFTLINK_INSTALL_DIR_PATH" "hcomm-*.dist-info"
-        fi
 
         if [ "${pylocal}" = "y" ]; then
             log "INFO" "please make sure PYTHONPATH include ${WHL_INSTALL_DIR_PATH}."

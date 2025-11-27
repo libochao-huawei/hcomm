@@ -32,15 +32,15 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/common
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/external/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/platform/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
 
         # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -55,8 +55,8 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
 
         # metadef头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/metadef/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/metadef/include/external/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
 
         # 第三方头文件
         ${THIRD_PARTY_NLOHMANN_PATH}

@@ -5039,27 +5039,6 @@ strong_alias(__hrtOpenNetServiceSub, hrtOpenNetService);
 strong_alias(__hrtCloseNetServiceSub, hrtCloseNetService);
 }
 
-const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{
-    {"Ascend310P1", DevType::DEV_TYPE_310P1},
-    {"Ascend310P3", DevType::DEV_TYPE_310P3},
-    {"Ascend310P5", DevType::DEV_TYPE_310P3},
-    {"Ascend310P7", DevType::DEV_TYPE_310P3},
-    {"Ascend910", DevType::DEV_TYPE_910},
-    {"Ascend910A", DevType::DEV_TYPE_910},
-    {"Ascend910B", DevType::DEV_TYPE_910},
-    {"Ascend910ProA", DevType::DEV_TYPE_910},
-    {"Ascend910ProB", DevType::DEV_TYPE_910},
-    {"Ascend910PremiumA", DevType::DEV_TYPE_910},
-    {"Ascend910B1", DevType::DEV_TYPE_910B},
-    {"Ascend910B2", DevType::DEV_TYPE_910B},
-    {"Ascend910B2C", DevType::DEV_TYPE_910B},
-    {"Ascend910B3", DevType::DEV_TYPE_910B},
-    {"Ascend910B4", DevType::DEV_TYPE_910B},
-    {"Ascend910_9391", DevType::DEV_TYPE_910_93},
-    {"Ascend910_9381", DevType::DEV_TYPE_910_93},
-    {"Ascend910_9372", DevType::DEV_TYPE_910_93},
-    {"nosoc", DevType::DEV_TYPE_NOSOC}};
-
 HcclResult __hrtGetDeviceTypeStub(DevType &devType)
 {
 #ifndef HCCD

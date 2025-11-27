@@ -19,64 +19,6 @@
 using namespace hccl;
 
 int (*g_grpIdCallback)(int tag, int *grpId, int *devId) = nullptr;
-
-#define HCCL_PLAT_COMBINE(arch, chip, ver) (((arch) << 16U) | ((chip) << 8U) | (ver))
-#define HCCL_PLAT_GET_CHIP(type)           (((type) >> 8U) & 0xffU)
-
-typedef enum tagHrtChipType {
-    CHIP_BEGIN = 0,
-    CHIP_MINI = CHIP_BEGIN,
-    CHIP_CLOUD = 1,
-    CHIP_MDC = 2,
-    CHIP_LHISI = 3,
-    CHIP_DC = 4,
-    CHIP_CLOUD_V2 = 5,
-    CHIP_NO_DEVICE = 6,
-    CHIP_MINI_V3 = 7,
-    CHIP_5612 = 8, /* 1910b tiny */
-    CHIP_NANO = 9,
-    CHIP_1636 = 10,
-    CHIP_AS31XM1 = 11,
-    CHIP_610LITE = 12,
-    CHIP_CLOUD_V3 = 13, // drive used, runtime not used
-    CHIP_BS9SX1A = 14,  /* BS9SX1A */
-    CHIP_DAVID = 15,
-    CHIP_CLOUD_V5 = 16,
-    CHIP_MC62CM12A = 17,  /* MC62CM12A */
-    CHIP_END
-} hrtChipType_t;
-
-typedef enum tagHrtVersion {
-    VER_BEGIN = 0,
-    VER_NA = VER_BEGIN,
-    VER_ES = 1,
-    VER_CS = 2,
-    VER_SD3403 = 3,
-    VER_LITE = 4,
-    VER_310M1 = 5,
-    VER_END = 6,
-} hrtVersion_t;
-
-typedef enum tagHrtArchType {
-    ARCH_BEGIN = 0,
-    ARCH_V100 = ARCH_BEGIN,
-    ARCH_V200 = 1,
-    ARCH_V300 = 2,
-    ARCH_C100 = 3, /* Ascend910 */
-    ARCH_C220 = 4, /* Ascend910B & Ascend910_93 */
-    ARCH_M100 = 5, /* Ascend310 */
-    ARCH_M200 = 6, /* Ascend310P & Ascend610 */
-    ARCH_M201 = 7, /* BS9SX1A */
-    ARCH_T300 = 8, /* Tiny */
-    ARCH_N350 = 9, /* Nano */
-    ARCH_M300 = 10, /* Ascend310B & AS31XM1X */
-    ARCH_M310 = 11, /* Ascend610Lite */
-    ARCH_S200 = 12, /* Hi3796CV300ES & TsnsE */
-    ARCH_S202 = 13, /* Hi3796CV300CS & OPTG & SD3403 &TsnsC */
-    ARCH_M510 = 14, /* MC62CM12A */
-    ARCH_END,
-} hrtArchType_t;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -338,7 +280,8 @@ HcclResult hrtHalGetChipInfo(uint32_t devId, std::string &chipName)
     drvError_t ret = DlHalFunction::GetInstance().dlHalGetChipInfo(devId, &chipInfo);
     CHK_PRT_RET(ret != DRV_ERROR_NONE, HCCL_ERROR("errNo[0x%016llx] hrtHalGetChipInfo fail,"
         "return[%d].", HCCL_ERROR_CODE(HCCL_E_DRV), ret), HCCL_E_DRV);
-    chipName = reinterpret_cast<char *>(chipInfo.name);
+    chipName = reinterpret_cast<char *>(chipInfo.type);
+    chipName += reinterpret_cast<char *>(chipInfo.name);
     HCCL_INFO("hrtHalGetChipInfo succ chipName[%s]", chipName.c_str());
     return HCCL_SUCCESS;
 }
@@ -568,73 +511,24 @@ HcclResult hrtHalGetDeviceType(const uint32_t devId, DevType &devType)
     if (UNLIKELY(!hccl::DlHalFunction::GetInstance().DlHalFunctionIsInit())) {
         CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
     }
+
     devType = DevType::DEV_TYPE_COUNT;
-    int64_t hardwareVersion;
-    HcclResult ret = hrtHalGetDeviceInfo(devId, MODULE_TYPE_SYSTEM, INFO_TYPE_VERSION, &hardwareVersion);
-    if (ret == HCCL_E_NOT_SUPPORT) {
-        devType = DevType::DEV_TYPE_NOSOC;
-        return HCCL_SUCCESS;
-    } else if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[hrtHalGetDeviceType]Get device info failed, ret[%d]", ret);
-        return ret;
-    }
     std::string chipName;
-    ret= hrtHalGetChipInfo(devId, chipName);
+    HcclResult ret = hrtHalGetChipInfo(devId, chipName);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("hrtHalGetChipInfo failed, ret[%d], devId[%u]", ret, devId);
         return ret;
     }
- 
-    const hrtChipType_t chipType = static_cast<hrtChipType_t>(HCCL_PLAT_GET_CHIP(hardwareVersion));
-    HCCL_INFO("[Get][DeviceType]ChipType %u hardwareVersion %lld, name[%s].",
-        chipType, hardwareVersion, chipName.c_str());
- 
-    switch (chipType) {
-        case CHIP_DC:   // 310P1/P3
-            {
-                const std::unordered_map<std::string, DevType> SOC_NAME_CONVERT{
-                    {"310P1", DevType::DEV_TYPE_310P3},
-                    {"310P3", DevType::DEV_TYPE_310P3},
-                    {"310P5", DevType::DEV_TYPE_310P3},
-                    {"310P7", DevType::DEV_TYPE_310P3}};
-                auto iter = SOC_NAME_CONVERT.find(chipName);
-                if (iter == SOC_NAME_CONVERT.end()) {
-                    HCCL_ERROR("[Get][DeviceType]errNo[0x%016llx] hrtHalGetChipInfo get illegal chipver, "
-                    "chip_name[%s].", HCCL_ERROR_CODE(HCCL_E_DRV), chipName.c_str());
-                    return HCCL_E_DRV;
-                }
-                devType = iter->second;
-                break;
-            }
-        case CHIP_CLOUD:    // 910A1
-            {
-                HCCL_INFO("[Get][DeviceType]get 910A %lld.", hardwareVersion);
-                devType = DevType::DEV_TYPE_910;
-                break;
-            }
-        case CHIP_CLOUD_V2: // 910A2/910A3
-            {
-                constexpr u64 DEVDRV_PLATFORM_CLOUD_V3 = HCCL_PLAT_COMBINE(ARCH_V100, CHIP_CLOUD_V2, VER_NA);
-                if (hardwareVersion == DEVDRV_PLATFORM_CLOUD_V3) {  // 910A3
-                    const std::string CHIP_NAME_910_93 = "910_93";
-                    if (chipName.find(CHIP_NAME_910_93) != std::string::npos) {
-                        HCCL_INFO("[Get][DeviceType]get 910_93 %lld", hardwareVersion);
-                        devType = DevType::DEV_TYPE_910_93;
-                        break;
-                    }
-                    HCCL_INFO("[Get][DeviceType]get hardwareVersion %lld", hardwareVersion);
-                }
-                HCCL_INFO("[Get][DeviceType]get 910B %lld.", hardwareVersion);
-                devType = DevType::DEV_TYPE_910B;
-                break;
-            }
-        default:
-            {
-                // 其他芯片不支持
-                HCCL_ERROR("Hardware version %lld is unsupported", hardwareVersion);
-                return HCCL_E_DRV;
-            }
+    HCCL_INFO("[Get][DeviceType]Chip name[%s].", chipName.c_str());
+
+    auto iter = SOC_VER_CONVERT.find(chipName);
+    if (iter == SOC_VER_CONVERT.end()) {
+        HCCL_ERROR("[Get][DeviceType]errNo[0x%016llx] hrtHalGetChipInfo get illegal chipver, chipName[%s].",
+            HCCL_ERROR_CODE(HCCL_E_DRV), chipName.c_str());
+        return HCCL_E_DRV;
     }
+    devType = iter->second;
+
     HCCL_INFO("[Get][DeviceType]deviceId[%u] get devType[%d] success!", devId, devType);
     return HCCL_SUCCESS;
 }

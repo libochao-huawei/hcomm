@@ -222,7 +222,7 @@ TEST(MC2TraceUtilsTest, ut_GetPlatform)
     DevType devType = DevType::DEV_TYPE_COUNT;
     HcclResult ret = hrtHalGetDeviceType(0, devType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(devType, DevType::DEV_TYPE_910_93);
+    EXPECT_EQ(devType, DevType::DEV_TYPE_910B);
     GlobalMockObject::verify();
     g_stubDevType = tem;
 }

@@ -272,7 +272,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
     mapLock.unlock();
 
     std::unique_lock<std::mutex> lock(ProcessLock_);
-    for (const auto remRank : rankInfos) {
+    for (const auto& remRank : rankInfos) {
         UIDType rem = GetUId(remRank);
         rankId2StatusMap_.insert(rem, Status());
         groupMap_[group].insert(std::make_pair(rem, NO_CONN));
@@ -536,7 +536,7 @@ HcclResult Heartbeat::UnRegisterRanks(const std::string &group)
             return HCCL_SUCCESS;
         }
 
-        for (const auto remRank : groupMap_[group]) {
+        for (const auto& remRank : groupMap_[group]) {
             UIDType rem = remRank.first;
             rankId2StatusMap_.erase(rem);
             if (remRank.second == HAS_CONN) {
@@ -1365,7 +1365,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         CreateHBLinksAsync();
         ProcessLock_.lock();
         count++;
-        HCCL_INFO("[%s] local[%s] opInfoQueue size[%d]", __func__, uid_, opInfoQueue_.size());
+        HCCL_INFO("[%s] local[%s] opInfoQueue size[%d]", __func__, FormatUId(uid_).c_str(), opInfoQueue_.size());
         if (count >= HEARTBEAT_COUNT) {
             count = 0;
             OpInfoTagQueueFrame opInfoTagQueueFrame;

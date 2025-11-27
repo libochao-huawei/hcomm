@@ -38,7 +38,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # rdma头文件
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include

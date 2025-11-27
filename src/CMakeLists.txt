@@ -155,8 +155,7 @@ set(include_list
 # 指定hccd所需包含文件搜索路径
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(hccd PRIVATE
-        OPEN_BUILD_PROJECT
-        LOG_CPP)
+        OPEN_BUILD_PROJECT)
 
     target_include_directories(hccd PRIVATE
         ${HCCL_BASE_DIR}/../inc
@@ -170,7 +169,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
@@ -303,7 +302,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
@@ -340,7 +339,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/

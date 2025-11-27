@@ -158,38 +158,30 @@ remove_last_license() {
     fi
 }
 
-WHL_SOFTLINK_INSTALL_DIR_PATH="${common_parse_dir}/hcomm/python/site-packages"
 WHL_INSTALL_DIR_PATH="${common_parse_dir}/python/site-packages"
-HCOMM_NAME="hcomm"
+HCOMM_NAME="hccl"
 
 custom_uninstall() {
-    if [ -z "$common_parse_dir/hcomm" ]; then
+    if [ -z "$common_parse_dir/share/info/hcomm" ]; then
         log "ERROR" "ERR_NO:0x0001;ERR_DES:hcomm directory is empty"
         exit 1
     fi
 
     if [ "$hetero_arch" != "y" ]; then
-        local arch_name="$(get_arch_name $common_parse_dir/hcomm)"
-        local ref_dir="$common_parse_dir/hcomm/lib64/stub/linux/$arch_name"
-        remove_stub_softlink "$ref_dir" "$common_parse_dir/hcomm/lib64/stub"
+        local arch_name="$(get_arch_name $common_parse_dir/share/info/hcomm)"
     else
-        local arch_name="$(get_arch_name $common_parse_dir/hcomm)"
-        local ref_dir="$common_parse_dir/hcomm/lib64/stub/linux/$arch_name"
-        remove_stub_softlink "$ref_dir" "$common_parse_dir/hcomm/lib64/stub"
+        local arch_name="$(get_arch_name $common_parse_dir/share/info/hcomm)"
     fi
 
     if [ "$hetero_arch" != "y" ]; then
         chmod +w -R "$curpath" 2> /dev/null
-        chmod +w -R "${WHL_INSTALL_DIR_PATH}/hcomm" 2> /dev/null
-        chmod +w -R "${WHL_INSTALL_DIR_PATH}/hcomm-0.1.0.dist-info" 2> /dev/null
+        chmod +w -R "${WHL_INSTALL_DIR_PATH}/hccl" 2> /dev/null
+        chmod +w -R "${WHL_INSTALL_DIR_PATH}/hccl-0.1.0.dist-info" 2> /dev/null
 
         log "INFO" "uninstall hcomm tool begin..."
         whl_uninstall_package "${HCOMM_NAME}" "${WHL_INSTALL_DIR_PATH}"
         log "INFO" "hcomm tool uninstalled successfully!"
     fi
-
-    test -d "$WHL_SOFTLINK_INSTALL_DIR_PATH" && rm -rf "$WHL_SOFTLINK_INSTALL_DIR_PATH" > /dev/null 2>&1
-    remove_empty_dir "${common_parse_dir}/hcomm/python"
 
     if [ "$hetero_arch" != "y" ]; then
         if [ -d "${WHL_INSTALL_DIR_PATH}" ]; then

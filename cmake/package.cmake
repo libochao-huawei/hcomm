@@ -69,7 +69,7 @@ function(pack_built_in)
 
   set(script_prefix ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts)
   install(DIRECTORY ${script_prefix}/
-      DESTINATION hcomm/script
+      DESTINATION share/info/hcomm/script
       FILE_PERMISSIONS
       OWNER_READ OWNER_WRITE OWNER_EXECUTE  # 文件权限
       GROUP_READ GROUP_EXECUTE
@@ -91,7 +91,7 @@ function(pack_built_in)
   )
 
   install(FILES ${SCRIPTS_FILES}
-      DESTINATION hcomm/script
+      DESTINATION share/info/hcomm/script
   )
   set(COMMON_FILES
       ${CMAKE_SOURCE_DIR}/scripts/package/common/sh/install_common_parser.sh
@@ -115,13 +115,13 @@ function(pack_built_in)
       ${CMAKE_SOURCE_DIR}/scripts/package/common/cfg/path.cfg
   )
   install(FILES ${CMAKE_SOURCE_DIR}/version.info
-      DESTINATION .
+      DESTINATION share/info/hcomm
   )
   install(FILES ${CONF_FILES}
       DESTINATION hcomm/conf
   )
   install(FILES ${PACKAGE_FILES}
-      DESTINATION hcomm/script
+      DESTINATION share/info/hcomm/script
   )
   install(FILES ${LATEST_MANGER_FILES}
       DESTINATION latest_manager
@@ -138,7 +138,7 @@ function(pack_built_in)
       ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts/setenv.fish
   )
   install(FILES ${BIN_FILES}
-      DESTINATION hcomm/bin
+      DESTINATION share/info/hcomm/bin
   )
 
   string(FIND "${ASCEND_COMPUTE_UNIT}" ";" SEMICOLON_INDEX)

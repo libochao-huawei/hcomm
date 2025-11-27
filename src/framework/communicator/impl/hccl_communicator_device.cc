@@ -1300,6 +1300,11 @@ namespace hccl
         return false;
     }
 
+    bool HcclCommunicator::GetConfigIsOnlyAivMode()
+    {
+        return false;
+    }
+
     bool HcclCommunicator::GetAicpuUnfoldConfig()
     {
         return false;

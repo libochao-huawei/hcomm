@@ -4033,7 +4033,6 @@ namespace hccl
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         if (opParam.aicpuUnfoldMode) {
-            CHK_RET(SetAicpuCommEngine(true));
             isInplaceStatus_ = 0;
             inPlaceSupportRetryStatus_ = InplaceSupportRetryStatus::INPLACE_STATUS_END;
             // algOperator->SupportRetryWithInplaceCheck 依赖 algOperator->SetRetryEnable 才能正确返回是否支持inplace
@@ -4294,7 +4293,6 @@ namespace hccl
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         // 算法执行
         if (opParam.aicpuUnfoldMode && supportAicpuAlg) {
-            CHK_RET(SetAicpuCommEngine(true));
             isInplaceStatus_ = 0;
             inPlaceSupportRetryStatus_ = InplaceSupportRetryStatus::INPLACE_STATUS_END;
             // algOperator->SupportRetryWithInplaceCheck 依赖 algOperator->SetRetryEnable 才能正确返回是否支持inplace
@@ -6245,6 +6243,7 @@ namespace hccl
 
         std::string kernelName = "RunAicpuKfcResInit";
         CHK_RET(AiCpuKernelLaunch(tmpStream.ptr(), reinterpret_cast<u64>(commContext_.ptr()), kernelName));
+        SetMC2EnvFlag();
         if (isOpbaseMode == true) {
             CHK_RET(hcclStreamSynchronize(tmpStream.ptr()));
         }
@@ -6332,6 +6331,7 @@ namespace hccl
         // 在这里构建suspending状态码的HDC通道初始化，并且在host侧进行init
         // （这个主要是针对hcomId；对算子通信域的复用；也就是多个算子复用（tag+Identifier）这个通信域的情况）
         CHK_RET(AiCpuKernelLaunch(aicpuStream, reinterpret_cast<u64>(opResDevicePara_.ptr()), kernelName));
+        SetMC2EnvFlag();
         newTagResAlloced_.insert(newTag);
         // 图模多档位场景，需要保证执行序上优先下资源初始化的kernel
         CHK_RET(hcclStreamSynchronize(aicpuStream));
@@ -7322,6 +7322,11 @@ namespace hccl
     bool HcclCommunicator::GetAivModeConfig()
     {
         return commConfig_.GetConfigAivMode();
+    }
+
+    bool HcclCommunicator::GetConfigIsOnlyAivMode()
+    {
+        return commConfig_.GetConfigIsOnlyAivMode();
     }
 
     bool HcclCommunicator::GetAicpuUnfoldConfig()
