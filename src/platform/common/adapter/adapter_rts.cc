@@ -602,7 +602,7 @@ HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address)
             policy = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
         } else {
             policy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) |
-                static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
+                static_cast<int>(ACL_MEM_MALLOC_HUGE_FIRST);
         }
     }
 

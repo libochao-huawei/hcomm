@@ -56,7 +56,7 @@ HcclResult Malloc(void **devPtr, u64 size)
     } else if (devType == LegacyDevType::DEV_TYPE_310P1) {
         mallocPolicy = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
     } else {
-        mallocPolicy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) | static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
+        mallocPolicy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) | static_cast<int>(ACL_MEM_MALLOC_HUGE_FIRST);
     }
     attriBute.attr = ACL_RT_MEM_ATTR_MODULE_ID;
     attriBute.value.moduleId = HCCL;
