@@ -155,8 +155,7 @@ set(include_list
 # 指定hccd所需包含文件搜索路径
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(hccd PRIVATE
-        OPEN_BUILD_PROJECT
-        LOG_CPP)
+        OPEN_BUILD_PROJECT)
 
     target_include_directories(hccd PRIVATE
         ${HCCL_BASE_DIR}/../inc
