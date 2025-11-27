@@ -1361,7 +1361,7 @@ HcclResult TaskExceptionHandler::Init()
     if (GetExternalInputHcclEnableFfts() &&
         GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         GetExternalInputTaskExceptionSwitch() == 1) {
-        for (std::vector<CtxInfo> ctxInfoVector : ctxInfoArray) {
+        for (std::vector<CtxInfo> &ctxInfoVector : ctxInfoArray) {
             ctxInfoVector.reserve(100); // vector预留100个ctxInfo空间
         }
     }
