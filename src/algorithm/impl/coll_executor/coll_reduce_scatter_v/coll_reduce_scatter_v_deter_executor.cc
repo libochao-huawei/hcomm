@@ -127,7 +127,7 @@ HcclResult CollReduceScatterVDeterExecutor::CalcTransportMemType(TransportMemTyp
     // scratchMemFlag_ 对应图模式场景（图模式没有cclbuffer）, PARAM_INPUT -> userInput
     inputType = scratchMemFlag_ ? TransportMemType::PARAM_INPUT : TransportMemType::CCL_INPUT;
     outputType = scratchMemFlag_ ? 
-        ( isMeshTopo_ ? TransportMemType::PARAM_OUTPUT : TransportMemType::SCRATCH )
+        ( isMeshTopo_ ? TransportMemType::SCRATCH : TransportMemType::PARAM_OUTPUT )
         : TransportMemType::CCL_OUTPUT;
     HCCL_INFO("[%s]tag[%s] inputType[%d], outputType[%d]", __func__, tag_.c_str(), inputType, outputType);
     return HCCL_SUCCESS;

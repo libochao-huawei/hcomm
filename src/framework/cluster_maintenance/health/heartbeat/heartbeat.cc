@@ -1365,7 +1365,7 @@ void Heartbeat::HeartbeatStatusMonitor()
         CreateHBLinksAsync();
         ProcessLock_.lock();
         count++;
-        HCCL_INFO("[%s] local[%s] opInfoQueue size[%d]", __func__, uid_, opInfoQueue_.size());
+        HCCL_INFO("[%s] local[%s] opInfoQueue size[%d]", __func__, FormatUId(uid_).c_str(), opInfoQueue_.size());
         if (count >= HEARTBEAT_COUNT) {
             count = 0;
             OpInfoTagQueueFrame opInfoTagQueueFrame;
