@@ -441,7 +441,12 @@ elif [ "${BUILD_FWK_HLT}" == "true" ]; then
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
     log "Info: Building cb_test_verify"
     build_cb_test_verify
-    log "Info: Building cb_test_verify success"
+    if grep -q "Make Failure" ${BUILD_DIR}/build.log || grep -q "Make test Failure" ${BUILD_DIR}/build.log; then
+        log "Info: Building cb_test_verify failed"
+        exit 1
+    else
+        log "Info: Building cb_test_verify success"
+    fi
 elif [ "${FULL_MODE}" == "true" ]; then
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}

@@ -12,7 +12,7 @@ fi
 for dir in ${CURRENT_DIR}/*/*/;do
     # 检查是否是需要跳过的目录
     if [ "$dir" = "${CURRENT_DIR}/03_collectives/09_scatter/" ] ||
-        [ "$dir" = "${CURRENT_DIR}/01_communicators/01_one_device_per_process" ] ||
+        [ "$dir" = "${CURRENT_DIR}/01_communicators/01_one_device_per_process/" ] ||
         [ "$dir" = "${CURRENT_DIR}/01_communicators/02_one_device_per_process_rank_table/" ]; then
         echo "Skipping directory: $dir" | tee -a ${BUILD_DIR}/build.log
         continue
@@ -28,8 +28,17 @@ for dir in ${CURRENT_DIR}/*/*/;do
     if [ -f Makefile ]; then
         echo "Processing directory: $dir" | tee -a ${BUILD_DIR}/build.log
         # 执行make和make test，并将输出记录到build.log
-        make ${JOB_NUM} | tee -a ${BUILD_DIR}/build.log
-        make test | tee -a ${BUILD_DIR}/build.log
+        make ${JOB_NUM} && echo "Make Success" || echo "Make Failure" | tee -a ${BUILD_DIR}/build.log
+        if grep -q "Make Failure" ${BUILD_DIR}/build.log; then
+            echo "Processing directory: $dir .. make failed" | tee -a ${BUILD_DIR}/build.log
+            break
+        fi
+
+        make test && echo "Make test Success" || echo "Make test Failure" | tee -a ${BUILD_DIR}/build.log
+        if grep -q "Make test Failure" ${BUILD_DIR}/build.log; then
+            echo "Processing directory: $dir .. make test failed" | tee -a ${BUILD_DIR}/build.log
+            break
+        fi
     else
         echo "No Makefile found in directory: $dir" | tee -a ${BUILD_DIR}/build.log
     fi
