@@ -701,11 +701,7 @@ install_run() {
             "${is_quiet}" "${pylocal}" "${input_setenv}" "${docker_root}" "${in_install_for_all}"
         if [ $? -eq 0 ]; then
             update_version_info_version
-            if [ "$hetero_arch" = "y" ]; then
-                create_compiler_atc_fwkacllib_softlink "${hcomm_install_path_param}" "${in_install_for_all}"
-            else
-                create_compiler_atc_fwkacllib_softlink "${hcomm_install_path_param}/${pkg_version_dir}" "${in_install_for_all}"
-            fi
+
             log "INFO" "Hcomm package installed successfully! The new version takes effect immediately."
             log_operation "${operation}" "succeeded"
             chmod_end
@@ -748,11 +744,7 @@ upgrade_run() {
             "${is_quiet}" "${pylocal}" "${input_setenv}" "${docker_root}" "${in_install_for_all}"
         if [ $? -eq 0 ]; then
             update_version_info_version
-            if [ "$hetero_arch" = "y" ]; then
-                create_compiler_atc_fwkacllib_softlink "${hcomm_install_path_param}" "${in_install_for_all}"
-            else
-                create_compiler_atc_fwkacllib_softlink "${hcomm_install_path_param}/${pkg_version_dir}" "${in_install_for_all}"
-            fi
+
             log "INFO" "Hcomm package upgraded successfully! The new version takes effect immediately."
             log_operation "${operation}" "succeeded"
             chmod_end
@@ -799,12 +791,7 @@ uninstall_run() {
         chmod_start "$upgrade_default_dir"
         new_echo "INFO" "uninstall ${hcomm_install_path_param} ${hcomm_install_type}"
         log "INFO" "uninstall ${hcomm_install_path_param} ${hcomm_install_type}"
-        if [ "$hetero_arch" = "y" ]; then
-            remove_compiler_atc_fwkacllib_softlink "${hcomm_install_path_param}"
-        else
-            local version_dir="$(basename $(dirname $upgrade_default_dir))"
-            remove_compiler_atc_fwkacllib_softlink "${hcomm_install_path_param}/${version_dir}"
-        fi
+
         bash "$upgrade_default_dir/script/run_hcomm_uninstall.sh" "uninstall" "${hcomm_input_install_path}" "${hcomm_install_type}" "${is_quiet}" \
             "${is_docker_install}" "${docker_root}" "${is_recreate_softlink}"
         if [ $? -eq 0 ]; then

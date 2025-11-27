@@ -244,11 +244,7 @@ uninstall_run() {
     fi
     if [ $? -eq 0 ]; then
         log "INFO" "${RUN_CMD} ${hcomm_install_path_param} ${hcomm_install_type}"
-        if [ "$hetero_arch" = "y" ]; then
-            remove_compiler_atc_fwkacllib_softlink "$hcomm_install_path_param"
-        else
-            remove_compiler_atc_fwkacllib_softlink "$hcomm_install_path_param/$version_dir"
-        fi
+
         bash "${UNINSTALL_SHELL}" "${RUN_CMD}" "${hcomm_install_path_param}" "${hcomm_install_type}" "${IS_QUIET}" "n" "" "y"
         if [ $? -eq 0 ]; then
             rm -f "${ASCEND_INSTALL_INFO_FILE}"
