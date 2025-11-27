@@ -69,7 +69,7 @@ HcclResult TopoInfoExchangeBase::SendClusterInfo(std::shared_ptr<HcclSocket> soc
 void TopoInfoExchangeBase::PrintRecvFailReasons(std::shared_ptr<HcclSocket> socket, HcclResult ret)
 {
     HCCL_ERROR("[TopoInfoExchangeBase][%s]receive msg length from fdhandle failed, ret[%d]", __func__, ret);
-    HCCL_ERROR("Current rank get socket with server[%s] success, but wait for recv rankTable from server faild, maybe due to following reasons:",
+    HCCL_ERROR("Current rank get socket with server[%s] success, but wait for recv rankTable from server failed, maybe due to following reasons:",
         socket->GetRemoteIp().GetReadableIP());
     HCCL_ERROR("1. client wait for recv timeout, please check [ERROR] info in server[%s], wheather all ranks were executed to create the communication",
         socket->GetRemoteIp().GetReadableIP());
