@@ -12,7 +12,7 @@ version_compat_func_path="${curpath}/version_compatiable.inc"
 common_func_v2_path="${curpath}/common_func_v2.inc"
 version_cfg_path="${curpath}/version_cfg.inc"
 hcomm_func_path="${curpath}/hcomm_func.sh"
-pkg_version_path="${curpath}/../../version.info"
+pkg_version_path="${curpath}/../version.info"
 install_info_old="/etc/ascend_install.info"
 run_dir="$(echo "$2" | cut -d'-' -f 3-)"
  
@@ -644,13 +644,13 @@ prompt_set_env() {
     fi
     if [ "$hetero_arch" = "y" ]; then
         echo "Please make sure that
-            - PATH includes ${install_path}/hcomm/bin
-            - LD_LIBRARY_PATH includes ${install_path}/hcomm/lib64"
+            - PATH includes ${install_path}/share/info/hcomm/bin
+            - LD_LIBRARY_PATH includes ${install_path}/lib64"
     else
         echo "Please make sure that
-            - PATH includes ${install_path}/hcomm/bin
-            - LD_LIBRARY_PATH includes ${install_path}/hcomm/lib64
-            - PYTHONPATH includes ${install_path}/hcomm/python/site-packages"
+            - PATH includes ${install_path}/share/info/hcomm/bin
+            - LD_LIBRARY_PATH includes ${install_path}/lib64
+            - PYTHONPATH includes ${install_path}/python/site-packages"
     fi
 }
  
@@ -1245,9 +1245,9 @@ else
 fi
  
 if [ "$pkg_is_multi_version" = "true" ] && [ "$hetero_arch" != "y" ]; then
-    default_dir="${pkg_install_path}/$pkg_version_dir/hcomm"
+    default_dir="${pkg_install_path}/$pkg_version_dir/share/info/hcomm"
 else
-    default_dir="${pkg_install_path}/hcomm"
+    default_dir="${pkg_install_path}/share/info/hcomm"
 fi
 install_info="${default_dir}/ascend_install.info"
  
@@ -1327,7 +1327,7 @@ if [ "$input_install_for_all" = "n" ]; then
     fi
 fi
  
-uninstall_none_multi_version "$pkg_install_path/hcomm"
+uninstall_none_multi_version "$pkg_install_path/share/info/hcomm"
 check_install_for_all
 create_default_install_dir_for_common_user
 log_base_version
