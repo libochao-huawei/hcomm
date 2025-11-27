@@ -105,7 +105,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/common/debug/config
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
@@ -762,7 +762,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/pub_inc/aicpu
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/acl/

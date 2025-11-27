@@ -187,16 +187,38 @@ set(other_include_list
     ${HCCL_OPEN_CODE_ROOT}/cltm/src
 )
 # 桩函数
-add_subdirectory(stub)
+# add_subdirectory(stub)
 # 算法组测试用例
-add_subdirectory(algorithm)
+# add_subdirectory(algorithm)
 # # 增加framework下的所有测试用例
 # add_subdirectory(framework)
 # 增加对外接口单线程测试
-add_subdirectory(hccl_api_single_thread_test)
+# add_subdirectory(hccl_api_single_thread_test)
 
 # 下面的测试用例仅解决编译问题，需要进行拆分
 # llt目录下的测试用例
-add_subdirectory(llt/ut)
-add_subdirectory(llt/st)
-add_subdirectory(framework)
+# add_subdirectory(llt/ut)
+# add_subdirectory(llt/st)
+# add_subdirectory(framework)
+
+set(CMAKE_PREFIX_PATH
+    ${ASCEND_3RD_LIB_PATH}/json 
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/lib64
+    ${ASCEND_INSTALL_PATH}
+)
+
+# find_package(GTest REQUIRED)
+
+set(COMMON_INC_PATH
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/include
+)
+
+# UT
+if(ENABLE_UT)
+    add_subdirectory(ut)
+endif()
+
+# ST
+if(ENABLE_ST)
+    add_subdirectory(st)
+endif()

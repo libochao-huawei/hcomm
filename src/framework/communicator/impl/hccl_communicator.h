@@ -380,8 +380,11 @@ public:
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv); // 设置aiv only模式配置
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
     bool GetAivModeConfig();  // 获取通信域粒度aiv模式配置
+    bool GetConfigIsOnlyAivMode(); // 获取通信域粒度aiv only模式配置
     bool GetAicpuUnfoldConfig();  // 获取通信域粒度aicpu配置
     void SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
+    HcclResult SetMC2EnvFlag();
+    bool GetMC2EnvFlag();
     bool GetAicpuCommEngine();
     HcclResult SetAicpuCommEngine(bool isAicpuCommEngine);
     HcclResult SetStopFlag(bool value);
@@ -941,6 +944,7 @@ private:
     HcclCommConnections commConnections_;
     HcclSocketPortConfig commPortConfig_;
     std::shared_ptr<PetersonLock> hostDeviceLock_;
+    bool isNsRecovery_{false};
     bool isAicpuCommEngine_{false};
     bool isAicpuUnfold_{false};
     HostMem opTilingDataBuf_;

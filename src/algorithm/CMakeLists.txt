@@ -96,12 +96,11 @@ if(BUILD_OPEN_PROJECT)
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/external/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/platform/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/

@@ -224,6 +224,11 @@ HcclResult GlobalMemRegMgr::CheckOneSidedBackupAndSetDevId(const HcclIpAddress &
     std::vector<HcclIpAddress> backupIpList;
     std::vector<std::vector<HcclIpAddress>> chipDeviceIPs;
     CHK_RET(hrtRaGetDeviceAllNicIP(chipDeviceIPs));
+    if (chipDeviceIPs.empty()) {
+        HCCL_RUN_WARNING("[GlobalMemRegMgr::CheckOneSidedBackupAndSetDevId] chipDeviceIPs is empty, system nic ip may not set.");
+        isOneSidedTaskAndBackupInitA3 = false;
+        return HCCL_SUCCESS;
+    }
     u32 ipIdex = 1U - (devicePhyId_ % 2U);
     std::copy_if(chipDeviceIPs[ipIdex].begin(), chipDeviceIPs[ipIdex].end(),
                 std::back_inserter(backupIpList), [](const HcclIpAddress& ip) { return !ip.IsIPv6(); });

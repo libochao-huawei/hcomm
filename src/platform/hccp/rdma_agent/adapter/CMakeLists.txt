@@ -44,7 +44,7 @@ if(BUILD_OPEN_PROJECT)
         ${BASIC_PATH}/common
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # rdma头文件
         ${BASIC_PATH}/external_depends/host_lite

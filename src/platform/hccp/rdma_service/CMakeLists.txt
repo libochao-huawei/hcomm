@@ -56,7 +56,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # 第三方库依赖路径
         ${OPENSSL_INCLUDE_DIR}
@@ -156,7 +156,6 @@ else()
         -Wl,--whole-archive
         $<$<STREQUAL:${PRODUCT_SIDE},device>:ascend_protobuf_static>
         crypto_static
-        ssl_static
         -Wl,--no-whole-archive
         kmc
         sdp
@@ -170,4 +169,4 @@ install(TARGETS  rs
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
 
-add_dependencies(rs crypto_static ssl_static)
+add_dependencies(rs crypto_static)

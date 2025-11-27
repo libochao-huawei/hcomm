@@ -74,18 +74,18 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/
         ${CMAKE_CURRENT_SOURCE_DIR}/hccp/inc/network
-        ${CMAKE_CURRENT_SOURCE_DIR}/legacy/inc
+        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy/
 
         # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/external/
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/platform/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/external/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
 
         # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/runtime/include/driver/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/

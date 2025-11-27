@@ -22,6 +22,7 @@
 #include "transport_mem.h"
 #include "dispatcher.h"
 #include "aicpu_operator_pub.h"
+#include "read_write_lock.h"
 
 namespace hccl {
 class HcclOneSideServiceAicpu {
@@ -33,6 +34,8 @@ public:
     static std::shared_ptr<HcclOneSideServiceAicpu> GetService(const std::string &tag, const OpTilingData *tilingData);
     static HcclResult CleanAllStreamFunc();
     static HcclResult DisableAllStreamFunc();
+    static HcclResult HandleErrCqe();
+    static bool isAllDestroy();
 
 private:
     HcclResult Init(const std::string &tag, const OpTilingData *tilingData);
@@ -61,8 +64,10 @@ private:
     HcclResult CleanStream(Stream &stream);
     void ResetStreamCqeExceptionStatus(const Stream &stream);
     HcclResult UpdateSqStatus(Stream &stream);
+    void HandleCqeMessage(bool isReadClear);
+    void PollCqeException(Stream &stream, bool isReadClear, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
 
-    static std::mutex serviceMapMutex_;
+    static ReadWriteLockBase serviceMapMutex_;
     static std::unordered_map<std::string, std::shared_ptr<HcclOneSideServiceAicpu>> services_;
 
     bool isInited_{false};

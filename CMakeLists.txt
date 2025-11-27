@@ -124,6 +124,12 @@ if(DEVICE_MODE)
     endif()
 endif()
 
+if(ENABLE_TEST)
+    include(cmake/config.cmake)
+    add_subdirectory(test)
+    return()
+endif()
+
 if(BUILD_OPEN_PROJECT)
     include(cmake/third_party/openssl.cmake)
     include(cmake/third_party/json.cmake)
@@ -133,10 +139,6 @@ if(BUILD_OPEN_PROJECT)
     pack_built_in()
     add_subdirectory(src)
     add_subdirectory(python)
-
-    if(DEFINED ENABLE_TEST)
-        add_subdirectory(test)
-    endif()
 
     set(HCCL_HEAD
         inc/hccl/hccl.h

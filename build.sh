@@ -21,7 +21,6 @@ COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${OUTPUT_DIR}"
 FULL_MODE="true"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
-DOWNLOAD_MOCKCPP="false"  # 新增变量，控制是否下载和编译 mockcpp
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
@@ -33,6 +32,11 @@ BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
 
 BUILD_CB_TEST="false"
+
+ENABLE_UT="off"
+ENABLE_ST="off"
+CMAKE_BUILD_TYPE="Debug"
+ASCEND_3RD_LIB_PATH="${CURRENT_DIR}/output/third_party"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -65,41 +69,6 @@ function clean()
     fi
 
     mkdir -p ${BUILD_DIR}
-}
-
-function download_mockcpp() {
-
-    if [ -d "${MOCKCPP_DIR}/mockcpp" ];then
-        rm -rf ${MOCKCPP_DIR}/mockcpp
-        log "Info: delete ${MOCKCPP_DIR}/mockcpp"
-    fi
-
-    if [ -d "${MOCKCPP_BUILD_DIR}" ]; then
-        log "Info: mockcpp already built, skipping download and compilation."
-        return
-    fi
-
-    # 下载mockcpp
-    log "Info: Downloading mockcpp..."
-
-    cd ${MOCKCPP_DIR}
-
-    git clone https://gitee.com/sinojelly/mockcpp.git || {
-        log "ERROR: Failed to download mockcpp."
-        log "ERROR: Please execute separately [git clone https://gitee.com/sinojelly/mockcpp.git]"
-        exit 1
-    }
-}
-
-function build_mockcpp() {
-
-    cd ${MOCKCPP_BUILD_DIR}
-    log "Info compiler mockcpp"
-
-    cmake_config "-DCMAKE_CXX_FLAGS=-D_GLIBCXX_USE_CXX11_ABI=0"
-    build mockcpp
-
-    chmod 775 src/libmockcpp.a
 }
 
 function cmake_config()
@@ -153,7 +122,6 @@ function build_hccd(){
 
 function build_cb_test_verify(){
     cd ${CURRENT_DIR}/examples/
-    source ${ASCEND_CANN_PACKAGE_PATH}/bin/setenv.bash
     bash build.sh
 }
 
@@ -229,6 +197,54 @@ function build_kernel() {
     build ccl_kernel_plf ccl_kernel_plf_a ccl_kernel aicpu_custom_json
 }
 
+function mk_dir() {
+  local create_dir="$1"  # the target to make
+  mkdir -pv "${create_dir}"
+  echo "created ${create_dir}"
+}
+
+# create build path
+function build_ut() {
+  echo "create build directory and build";
+  mk_dir "${BUILD_DIR}"
+  cd "${BUILD_DIR}"
+
+  CMAKE_ARGS="-DPRODUCT_SIDE=host \
+              -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
+              -DCMAKE_INSTALL_PREFIX=${OUTPUT_DIR} \
+              -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
+              -DASCEND_3RD_LIB_PATH=${ASCEND_3RD_LIB_PATH} \
+              -DENABLE_COV=${ENABLE_COV} \
+              -DENABLE_TEST=${ENABLE_TEST} \
+              -DENABLE_UT=${ENABLE_UT} \
+              -DENABLE_ST=${ENABLE_ST}"
+
+  echo "CMAKE_ARGS=${CMAKE_ARGS}"
+  cmake ${CMAKE_ARGS} ..
+  if [ $? -ne 0 ]; then
+    echo "execute command: cmake ${CMAKE_ARGS} .. failed."
+    return 1
+  fi
+
+  # make all
+  cmake --build . -j${CPU_NUM}
+  echo "build success!"
+}
+
+function run_ut() {
+  if [[ "X$ENABLE_UT" = "Xon" ]]; then
+    local ut_dir="${BUILD_DIR}/test"
+    echo "ut_dir = ${ut_dir}"
+    find "$ut_dir" -type f -executable | while read -r ut_exec; do
+        filename=$(basename "$ut_exec")
+        echo "Executing: $filename"
+        ${ut_exec}
+    done
+  else
+    echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
+  fi
+}
+
 while [[ $# -gt 0 ]]; do
     case $1 in
     -j*)
@@ -261,44 +277,42 @@ while [[ $# -gt 0 ]]; do
         CANN_3RD_LIB_PATH="$(realpath ${OPTARG#*=})"
         shift
         ;;
+    -u|--ut)
+        ENABLE_TEST="on"
+        ENABLE_UT="on"
+        shift
+        ;;
     -t|--test)
         TEST="all"
-        DOWNLOAD_MOCKCPP="true"
         shift
         ;;
     --open_hccl_test)
         TEST="partial"
-        DOWNLOAD_MOCKCPP="true"
         TEST_TASK_NAME="open_hccl_test"
         shift
         ;;
     --executor_hccl_test)
         TEST="partial"
-        DOWNLOAD_MOCKCPP="true"
         TEST_TASK_NAME="executor_hccl_test"
         shift
         ;;
     --executor_reduce_hccl_test)
         TEST="partial"
-        DOWNLOAD_MOCKCPP="true"
         TEST_TASK_NAME="executor_reduce_hccl_test"
         shift
         ;;
     --executor_pipeline_hccl_test)
         TEST="partial"
-        DOWNLOAD_MOCKCPP="true"
         TEST_TASK_NAME="executor_pipeline_hccl_test"
         shift
         ;;
     --device_testcase)
         TEST="partial"
-        DOWNLOAD_MOCKCPP="true"
         TEST_TASK_NAME="device_testcase"
         shift
         ;;
     --executor_aiv_hccl_test)
         TEST="partial"
-        DOWNLOAD_MOCKCPP="true"
         TEST_TASK_NAME="executor_aiv_hccl_test"
         shift
         ;;
@@ -409,29 +423,12 @@ else
     mkdir -p "${BUILD_DIR}"
 fi
 
-if [ "${DOWNLOAD_MOCKCPP}" == "true" ]; then
-    MOCKCPP_DIR="${CURRENT_DIR}/third_party"
-    MOCKCPP_BUILD_DIR="${MOCKCPP_DIR}/mockcpp/build"
-    # mockcpp编译过了之后就不编译了
-    if [ -f "${MOCKCPP_BUILD_DIR}/src/libmockcpp.a" ];then
-        log "Info: mockcpp is not compiler"
-    else
-        log "Info: begin compiler mockcpp"
-        mkdir -p ${MOCKCPP_DIR}
-        download_mockcpp
-
-        if [ -d "${MOCKCPP_DIR}/mockcpp" ]; then
-            mkdir -p ${MOCKCPP_BUILD_DIR}
-            build_mockcpp
-        else
-            log "ERROR: The compilation directory does not exist."
-        fi
-    fi
-fi
-
 cd ${BUILD_DIR}
 
-if [ -n "${TEST}" ];then
+if [ "${ENABLE_UT}" == "on" ]; then
+    build_ut
+    run_ut
+elif [ -n "${TEST}" ];then
     build_test
 elif [ "${KERNEL}" == "true" ]; then
     build_kernel
@@ -444,7 +441,12 @@ elif [ "${BUILD_FWK_HLT}" == "true" ]; then
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
     log "Info: Building cb_test_verify"
     build_cb_test_verify
-    log "Info: Building cb_test_verify success"
+    if grep -q "Make Failure" ${BUILD_DIR}/build.log || grep -q "Make test Failure" ${BUILD_DIR}/build.log; then
+        log "Info: Building cb_test_verify failed"
+        exit 1
+    else
+        log "Info: Building cb_test_verify success"
+    fi
 elif [ "${FULL_MODE}" == "true" ]; then
     cd ..
     mkdir -p ${BUILD_DEVICE_DIR}

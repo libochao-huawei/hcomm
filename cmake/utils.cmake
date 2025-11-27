@@ -10,6 +10,8 @@
 # ----------------------------------------------------------------------------
 set(HCOMM_UTILS_PATH ${CMAKE_CURRENT_BINARY_DIR})
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
+set(CANN_UTILS_VERSION "8.5.0")
+
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "hcomm_utils found in ${HCOMM_UTILS_PATH}")
 else()
@@ -17,16 +19,15 @@ else()
     message(STATUS "hcomm_utils CANN_UTILS_LIB_PATH ${CANN_UTILS_LIB_PATH}   process ${CMAKE_HOST_SYSTEM_PROCESSOR}")
     file(GLOB HCOMM_UTILS_PKG
         LIST_DIRECTORIES True
-        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_8.5.0_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz
+        ${CANN_UTILS_LIB_PATH}/cann-hcomm-utils_*_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz
     )
 
     if(NOT EXISTS ${HCOMM_UTILS_PKG})
-        set(HCOMM_UTILS_FILE cann-hcomm-utils_8.5.0.alpha001_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz)
+        set(HCOMM_UTILS_FILE "cann-hcomm-utils_${CANN_UTILS_VERSION}_linux-${CMAKE_HOST_SYSTEM_PROCESSOR}.tar.gz")
         set(SIMULATOR_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/${HCOMM_UTILS_FILE})
-        set(SIMULATOR_VERSION 8.5.0.alpha001)
         execute_process(COMMAND rm -rf ${SIMULATOR_DIR})
 
-        set(HCOMM_UTILS_URL "https://mirrors.huaweicloud.com/artifactory/cann-run/${SIMULATOR_VERSION}/inner/${CMAKE_HOST_SYSTEM_PROCESSOR}/${HCOMM_UTILS_FILE}")
+        set(HCOMM_UTILS_URL "https://mirrors.huaweicloud.com/artifactory/cann-run/${CANN_UTILS_VERSION}/inner/${CMAKE_HOST_SYSTEM_PROCESSOR}/${HCOMM_UTILS_FILE}")
         message(STATUS "hcomm_utils pkg not found in ${HCOMM_UTILS_PKG}, downloading utils pkg from ${HCOMM_UTILS_URL}")
         file(DOWNLOAD
             ${HCOMM_UTILS_URL}
@@ -66,6 +67,7 @@ else()
     add_library(hccl_legacy SHARED IMPORTED)
 
     set_target_properties(hccl_legacy PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${HCOMM_UTILS_PATH}/hcomm_utils/${PRODUCT_SIDE}/include"
         IMPORTED_LOCATION "${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so"
     )
     install(FILES  ${HCOMM_UTILS_PATH}/hcomm_utils/host/lib/libhccl_legacy.so
