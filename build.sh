@@ -25,8 +25,8 @@ DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
-CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/../vendor/hisi/build/scripts/sign_and_add_header.sh"
-ENABLE_SIGN="true"
+CUSTOM_SIGN_SCRIPT=""
+ENABLE_SIGN="false"
 
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
@@ -97,10 +97,7 @@ function build_device(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST=""
-    if [ "${ENABLE_SIGN}" == "true" ]; then
-        SIGN_TARGET_LIST="sign_hcomm_device sign_aicpu_hcomm"
-    fi
+    SIGN_TARGET_LIST="sign_hcomm_device sign_aicpu_hcomm"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -112,10 +109,7 @@ function build_hccd(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccd_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST=""
-    if [ "${ENABLE_SIGN}" == "true" ]; then
-        SIGN_TARGET_LIST="sign_hcomm_hccd"
-    fi
+    SIGN_TARGET_LIST="sign_hcomm_hccd"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -354,21 +348,15 @@ while [[ $# -gt 0 ]]; do
         ENABLE_SIGN="true"
         shift
         ;;
-    --sign_script=*)
-        OPTARG=$1
-        CUSTOM_SIGN_SCRIPT="$(realpath ${OPTARG#*=})"
-        ENABLE_SIGN="true"
-        shift
+    --sign-script)
+        CUSTOM_SIGN_SCRIPT="$(realpath $2)"
+        shift 2
         ;;
     *)
         break
         ;;
     esac
 done
-
-if [ ! -f "$CUSTOM_SIGN_SCRIPT" ];then
-    ENABLE_SIGN="false"
-fi
 
 if [ -n "${TEST}" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_TEST=ON"

@@ -71,59 +71,6 @@ message(STATUS "Detected JOBS: ${JOBS}")
 set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
 set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
-if(DEVICE_MODE)
-    set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
-    set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
-    set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
-
-    add_custom_target(generate_device_hccp_package
-        COMMAND cd ${HCCP_TAR_DIR} && ls && tar czf ../hcomm_device.tar.gz *.so *.bin hccp_compat_bin_hash.cfg
-        DEPENDS hccp_service.bin
-        COMMENT "Creating hcomm_device.tar.gz"
-    )
-    add_dependencies(generate_device_hccp_package rs)
-
-    add_custom_target(generate_device_hccd_package
-        COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../hcomm_hccd.tar.gz lib64
-        DEPENDS hccd
-        COMMENT "Creating hcomm_hccd.tar.gz"
-    )
-    add_dependencies(generate_device_hccd_package hccd)
-
-    if(KERNEL_MODE)
-        add_custom_target(generate_device_aicpu_package
-            COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hcomm.tar.gz aicpu_kernels_device
-            DEPENDS ccl_kernel
-            COMMENT "Creating aicpu_hcomm.tar.gz"
-        )
-        add_dependencies(generate_device_aicpu_package ccl_kernel)
-    endif()
-    message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
-    if(ENABLE_SIGN)
-        message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
-        add_custom_target(sign_hcomm_device
-            COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${HCCP_TAR_DIR}/../hcomm_device.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
-            DEPENDS generate_device_hccp_package
-            COMMENT "Sign hcomm_device.tar.gz"
-        )
-        add_dependencies(sign_hcomm_device generate_device_hccp_package)
-        add_custom_target(sign_hcomm_hccd
-            COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${HCCD_TAR_DIR}/../hcomm_hccd.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
-            DEPENDS generate_device_hccd_package
-            COMMENT "Sign hcomm_hccd.tar.gz"
-        )
-        add_dependencies(sign_hcomm_hccd generate_device_hccd_package)
-        if(KERNEL_MODE)
-            add_custom_target(sign_aicpu_hcomm
-                COMMAND bash ${CUSTOM_SIGN_SCRIPT} ${CCL_KERNEL_TAR_DIR}/../aicpu_hcomm.tar.gz ${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml
-                DEPENDS generate_device_aicpu_package
-                COMMENT "Sign aicpu_hcomm.tar.gz"
-            )
-            add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
-        endif()
-    endif()
-endif()
-
 if(ENABLE_TEST)
     include(cmake/config.cmake)
     add_subdirectory(test)
@@ -155,24 +102,82 @@ if(BUILD_OPEN_PROJECT)
     set(HCCL_JSON
         cmake/scripts/ccl_kernel.json
     )
+
+    if(DEVICE_MODE)
+        include(cmake/func.cmake)
+        set(HCCP_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/tar_pkg/)
+        set(CCL_KERNEL_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/ccl_kernel_tar_pkg/)
+        set(HCCD_TAR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/hccd_tar_pkg/)
+
+        message(STATUS "Detected CUSTOM_SIGN_SCRIPT: ${CUSTOM_SIGN_SCRIPT}")
+        message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
+        pack_targets_and_files(
+            OUTPUT_TARGET "generate_device_hccp_package"
+            OUTPUT "hcomm_device.tar.gz"
+            TARGETS hccp_service.bin
+            FILES  ${HCCP_TAR_DIR}/librs.so ${HCCP_TAR_DIR}/libra_adp.so ${HCCP_TAR_DIR}/libtls_adp.so ${HCCP_TAR_DIR}/libascend_kms.so
+            MANIFEST "hccp_compat_bin_hash.cfg"
+        )
+        add_dependencies(generate_device_hccp_package hccp_service.bin)
+
+        sign_file(
+            INPUT "hcomm_device.tar.gz"
+            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
+            RESULT_VAR "hcomm_device_sign_file"
+            DEPENDS generate_device_hccp_package
+        )
+        add_dependencies(sign_hcomm_device generate_device_hccp_package)
+
+        add_custom_target(generate_device_hccd_package
+            COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../hcomm_hccd.tar.gz lib64
+            DEPENDS hccd
+            COMMENT "Creating hcomm_hccd.tar.gz"
+        )
+        add_dependencies(generate_device_hccd_package hccd)
+
+        sign_file(
+            INPUT "hcomm_hccd.tar.gz"
+            CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
+            RESULT_VAR "hcomm_hccd_sign_file"
+            DEPENDS generate_device_hccd_package
+        )
+        add_dependencies(sign_hcomm_hccd generate_device_hccd_package)
+
+        if(KERNEL_MODE)
+            add_custom_target(generate_device_aicpu_package
+                COMMAND cd ${CCL_KERNEL_TAR_DIR} && ls && tar czf ../aicpu_hcomm.tar.gz aicpu_kernels_device
+                DEPENDS ccl_kernel
+                COMMENT "Creating aicpu_hcomm.tar.gz"
+            )
+            add_dependencies(generate_device_aicpu_package ccl_kernel)
+            sign_file(
+                INPUT "aicpu_hcomm.tar.gz"
+                CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
+                RESULT_VAR "aicpu_hcomm_sign_file"
+                DEPENDS generate_device_aicpu_package
+            )
+            add_dependencies(sign_aicpu_hcomm generate_device_aicpu_package)
+        endif()
+    endif()
+
     if (NOT DEVICE_MODE)
         message(STATUS "Detected INSTALL_LIBRARY_DIR: ${INSTALL_LIBRARY_DIR}")
 
         set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/)
         set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/)
         add_custom_target(install_tar DEPENDS
-            ${BUILD_DEVICE_DIR}/hcomm_device.tar.gz
-            ${BUILD_DEVICE_DIR}/aicpu_hcomm.tar.gz
-            ${BUILD_HCCD_DIR}/hcomm_hccd.tar.gz
+            ${BUILD_DEVICE_DIR}/signatures/hcomm_device.tar.gz
+            ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
+            ${BUILD_HCCD_DIR}/signatures/hcomm_hccd.tar.gz
             ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
         )
-        install(FILES ${BUILD_DEVICE_DIR}/hcomm_device.tar.gz
+        install(FILES ${BUILD_DEVICE_DIR}/signatures/hcomm_device.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
-        install(FILES ${BUILD_DEVICE_DIR}/aicpu_hcomm.tar.gz
+        install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
-        install(FILES ${BUILD_HCCD_DIR}/hcomm_hccd.tar.gz
+        install(FILES ${BUILD_HCCD_DIR}/signatures/hcomm_hccd.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
