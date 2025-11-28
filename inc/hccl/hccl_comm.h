@@ -16,7 +16,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif  // __cplusplus
 
 /**
  * @brief Initialize HCCL.
@@ -283,8 +283,6 @@ extern HcclResult HcclSetCommConfig(HcclComm comm, HcclConfig config, HcclConfig
 extern HcclResult HcclGetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue *configValue);
 #endif
 
-HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
-    HcclComm comm, aclrtStream stream);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

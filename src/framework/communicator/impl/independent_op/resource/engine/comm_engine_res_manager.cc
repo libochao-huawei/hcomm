@@ -30,7 +30,7 @@ HcclResult CommEngineResMgr::Init(uint32_t threadNum, uint32_t notifyNumPerThrea
     return HCCL_SUCCESS;
 }
 
-HcclResult CommEngineResMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
+HcclResult CommEngineResMgr::HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
     uint32_t notifyNumPerThread, ThreadHandle *thread)
 {
     CHK_SMART_PTR_NULL(threadMgr_);
@@ -40,7 +40,7 @@ HcclResult CommEngineResMgr::CommAllocThreadRes(CommEngine engine, uint32_t thre
         __func__, threadNum, setThreadNum), HCCL_E_PARA);
     CHK_PRT_RET(notifyNumPerThread > setNotifyNumPerThread,  HCCL_ERROR("[%s] Alloced preNotify num[%u] more than "
         "num[%u] in config", __func__, notifyNumPerThread, setNotifyNumPerThread), HCCL_E_PARA);
-    return threadMgr_->CommAllocThreadRes(engine, threadNum, notifyNumPerThread, thread);
+    return threadMgr_->HcclAllocThreadRes(engine, threadNum, notifyNumPerThread, thread);
 }
 
 HcclResult CommEngineResMgr::CommAllocThreadResByStream(CommEngine engine,
@@ -50,17 +50,17 @@ HcclResult CommEngineResMgr::CommAllocThreadResByStream(CommEngine engine,
     return threadMgr_->CommAllocThreadResByStream(engine, stream, notifyNum, thread);
 }
 
-HcclResult CommEngineResMgr::CommGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum)
+HcclResult CommEngineResMgr::HcclGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum)
 {
     CHK_SMART_PTR_NULL(threadMgr_);
-    return threadMgr_->CommGetNotifyNumInThread(thread, notifyNum);
+    return threadMgr_->HcclGetNotifyNumInThread(thread, notifyNum);
 }
 
-HcclResult CommEngineResMgr::HcommAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+HcclResult CommEngineResMgr::HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
 {
     CHK_SMART_PTR_NULL(threadMgr_);
-    return notifyMgr_->HcommAllocNotify(commEngine, notifyType, notifyNum, notifyHandleList);
+    return notifyMgr_->HcclAllocNotify(commEngine, notifyType, notifyNum, notifyHandleList);
 }
 
 HcclResult CommEngineResMgr::HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList)

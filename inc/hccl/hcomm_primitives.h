@@ -8,19 +8,21 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_API_DATA_H
-#define HCCL_API_DATA_H
+#ifndef HCOMM_PRIMITIVES_H
+#define HCOMM_PRIMITIVES_H
 
-#include "hccl_types.h"
 #include <stdint.h>
 #include <securec.h>
 #include <arpa/inet.h>
-#include <hccl/base.h>
-#include "hccl_mem_defs.h"
+#include "acl/acl_rt.h"
+
+// #include "hccl_res.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
+
+typedef uint64_t NotifyHandle;
 
 /**
  * @brief 通道句柄类型（不透明结构）
@@ -44,19 +46,13 @@ typedef enum {
     LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
 } LaunchMode;
 
-
 /**
  * @defgroup 数据面编程接口
  * @{
  */
 
 /**
- * @defgroup 本地操作接口
- * @{
- */
-
- /**
- * @name 本地数据拷贝相关
+ * @name 本地拷贝和规约
  * @{
  */
 
@@ -68,9 +64,9 @@ typedef enum {
  * @param[in] len 数据长度（字节）
  * @return HcclResult 执行结果状态码
  * @note 源目内存地址要能执行引擎直接访问
- * @warning
+ * @warning  是否需要将数据面接口的void *改为void，因为在较多场景存在地址不是直接访问的。
  */
-extern HcclResult CommLocalCopy(ThreadHandle thread, void *dst, const void *src, uint64_t len);
+extern HcclResult HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len);
 
 /**
  * @brief 本地归约操作
@@ -82,13 +78,14 @@ extern HcclResult CommLocalCopy(ThreadHandle thread, void *dst, const void *src,
  * @param[in] reduceOp 归约操作类型
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult CommLocalReduce(
+extern HcclResult HcommLocalReduceOnThread(
     ThreadHandle thread, void *dst, const void *src, uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp);
 
-/** @} */  // 本地基本操作
+/** @} */  // 本地拷贝和规约
+
 
 /**
- * @name 本地通知
+ * @name 本地线程间同步通知
  * @{
  */
 
@@ -98,10 +95,10 @@ extern HcclResult CommLocalReduce(
  * @param[in] dstThread 目标线程句柄
  * @param[in] dstNotifyIdx 目标通知索引
  * @return HcclResult 执行结果状态码
- * @note 配合CommLocalNotifyWait使用
+ * @note 配合HcommInterThreadNotifyWaitOnThread使用
  * @warning
  */
-extern HcclResult CommLocalNotifyRecord(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
+extern HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
 
 /**
  * @brief 本地等待通知
@@ -109,11 +106,16 @@ extern HcclResult CommLocalNotifyRecord(ThreadHandle thread, ThreadHandle dstThr
  * @param[in] notifyIdx 通知索引
  * @param[in] timeout 超时时间(毫秒)
  * @return HcclResult 执行结果状态码
- * @note 配合CommLocalNotifyRecord使用
+ * @note 配合HcommInterThreadNotifyRecordOnThread使用
  * @warning
  */
-extern HcclResult CommLocalNotifyWait(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout);
+extern HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout);
+/** @} */  // 本地线程间同步通知
 
+/**
+ * @name 本地通知
+ * @{
+ */
 
 /**
  * @brief 记录通知事件（生产者）
@@ -134,27 +136,33 @@ extern HcclResult CommLocalBareNotifyWait(ThreadHandle thread, uint64_t notifyId
 /** @} */  // 本地通知
 
 /**
- * @name 同步
+ * @name 算子间同步和值通知
  * @{
+ * @note 应用于一个通信引擎算子与另一个通信引擎算子或引擎算子外的同步通知
  */
 
 /**
- * @brief 本地同步操作
+ * @brief 算子间记录通知
+ * 
  * @param[in] thread 线程句柄
+ * @param[in] notifyHandle 通知标识
  * @return HcclResult 执行结果状态码
- * @note 确保该thread上此前的所有任务都已经执行完成。在AIV、Host 网卡等场景常用
- * @warning
+ * @warning  怎么区分基于内存的、rtNotify、rtEvent的？需要分别对应新的接口？
+ * 或者这个notifyId改为signalId，signalId增加标识区分类别。
  */
-extern HcclResult CommFence(ThreadHandle thread, ChannelHandle channel);
-
-/** @} */  // 同步
-/** @} */  // 本地操作接口
+extern HcclResult HcommInterOpNotifyRecordOnThread(ThreadHandle thread, NotifyHandle notifyHandle);
 
 /**
- * @defgroup 通信通道操作接口（单边语义）
- * @{
- * @warning
+ * @brief 算子间等待通知
+ * 
+ * @param[in] thread 线程句柄
+ * @param[in] notifyHandle 通知标识
+ * @param[in] timeout 超时时间(毫秒)
+ * @return HcclResult 执行结果状态码
  */
+extern HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, NotifyHandle notifyHandle, uint32_t timeout);
+
+/** @} */ // 算子间同步和值通知
 
 /**
  * @name 数据读写相关
@@ -171,7 +179,7 @@ extern HcclResult CommFence(ThreadHandle thread, ChannelHandle channel);
  * @return HcclResult 执行结果状态码
  * @warning
  */
-extern HcclResult CommWrite(
+extern HcclResult HcommWriteOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
@@ -185,7 +193,7 @@ extern HcclResult CommWrite(
  * @return HcclResult 执行结果状态码
  * @note 当前在A5上主要支持
  */
-extern HcclResult CommWriteWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+extern HcclResult HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
@@ -199,24 +207,8 @@ extern HcclResult CommWriteWithNotify(ThreadHandle thread, ChannelHandle channel
  * @param[in] reduceOp 归约操作类型
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult CommWriteReduce(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+extern HcclResult HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp);
-
-/**
- * @brief 带通知的归约写操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @param[out] dst 目标内存地址
- * @param[in] src 源内存地址
- * @param[in] count 元素个数
- * @param[in] dataType 数据类型
- * @param[in] reduceOp 归约操作类型
- * @param[in] remoteNotifyIdx 远端通知索引
- * @return HcclResult 执行结果状态码
- * @note 当前在A5上主要支持
- */
-extern HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 单边读操作
@@ -227,7 +219,7 @@ extern HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle c
  * @param[in] len 数据长度（字节）
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult CommRead(
+extern HcclResult HcommReadOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
@@ -241,10 +233,10 @@ extern HcclResult CommRead(
  * @param[in] reduceOp 归约操作类型
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult CommReadReduce(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
+extern HcclResult HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
     HcclDataType dataType, HcclReduceOp reduceOp);
-
 /** @} */  // 数据读写相关
+
 
 /**
  * @name 通知
@@ -258,7 +250,7 @@ extern HcclResult CommReadReduce(ThreadHandle thread, ChannelHandle channel, voi
  * @param[in] remoteNotifyIdx 远端通知索引
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult CommNotifyRecord(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
+extern HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 等待通知事件
@@ -268,9 +260,9 @@ extern HcclResult CommNotifyRecord(ThreadHandle thread, ChannelHandle channel, u
  * @param[in] timeout 超时时间(毫秒)
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult CommNotifyWait(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
-
+extern HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
 /** @} */  // 通知
+
 
 /**
  * @name channel同步
@@ -285,10 +277,11 @@ extern HcclResult CommNotifyWait(ThreadHandle thread, ChannelHandle channel, uin
  * @note 确保该通道上此前的所有任务都已经执行完成
  * @warning
  */
-extern HcclResult CommChannelFence(ThreadHandle thread, ChannelHandle channel);
+extern HcclResult HcommChannelFence(ThreadHandle thread, ChannelHandle channel);
 
 /** @} */  // channel同步
-/** @} */  // 通信通道操作接口（单边语义）
+
+
 
 /**
  * @defgroup 批量下发设置接口
@@ -303,13 +296,13 @@ extern HcclResult CommChannelFence(ThreadHandle thread, ChannelHandle channel);
  * @note 可运行在Host或Device上。
  * @warning
  */
-extern HcclResult CommSetLaunchMode(const char *launchTag, LaunchMode mode);
+extern HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode);
 
 /** @} */  // 批量下发设置接口
-/** @} */  // 数据面编程接口
-/** @} */  // 算子编程接口
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
 
-#endif  // HCCL_API_DATA_H
+
+#endif

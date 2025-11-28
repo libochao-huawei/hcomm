@@ -22,8 +22,9 @@
         <file value="hccl_ctrl_plane.h"/>
         <file value="hccl_mem_defs.h"/>
         <file value="hccl_rank_graph.h"/>
-        <file value="hccl_api.h"/>
-        <file value="hccl_api_data.h"/>
+        <file value="hccl_rankgraph.h"/>
+        <file value="hccl_res.h"/>
+        <file value="hcomm_primitives.h"/>
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/src/pub_inc" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccn_rping.h"/>

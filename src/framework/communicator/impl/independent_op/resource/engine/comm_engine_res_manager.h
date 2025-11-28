@@ -23,12 +23,12 @@ public:
     CommEngineResMgr();
     HcclResult Init(uint32_t threadNum, uint32_t notifyNumPerThread, const std::string& commId,
         const aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
-    HcclResult CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
+    HcclResult HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *thread);
     HcclResult CommAllocThreadResByStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
-    HcclResult CommGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
-    HcclResult HcommAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+    HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
+    HcclResult HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
         NotifyHandle **notifyHandleList);
     HcclResult HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList);
     

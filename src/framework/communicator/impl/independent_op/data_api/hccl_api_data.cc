@@ -22,11 +22,11 @@ void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }
 
-HcclResult CommLocalCopy(ThreadHandle thread, void *dst, const void *src, uint64_t len)
+HcclResult HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    HCCL_DEBUG("[CommLocalCopy]dst[%p], src[%p], len[%llu].", dst, src, len);
+    HCCL_DEBUG("[HcommLocalCopyOnThread]dst[%p], src[%p], len[%llu].", dst, src, len);
 
     HcclBuf srcBuf{const_cast<void*>(src), len, nullptr};
     HcclBuf dstBuf{dst, len, nullptr};
@@ -37,12 +37,12 @@ HcclResult CommLocalCopy(ThreadHandle thread, void *dst, const void *src, uint64
     return HcclLocalCopy(stream, &dstBuf, &srcBuf);
 }
 
-HcclResult CommLocalReduce(ThreadHandle thread, void *dst, const void *src, uint64_t count,
+HcclResult HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t count,
     HcclDataType dataType, HcclReduceOp reduceOp)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
-    HCCL_DEBUG("[CommLocalReduce]dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d].",
+    HCCL_DEBUG("[HcommLocalReduceOnThread]dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d].",
         dst, src, count, dataType, reduceOp);
 
     HcclBuf srcBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
@@ -55,9 +55,9 @@ HcclResult CommLocalReduce(ThreadHandle thread, void *dst, const void *src, uint
     return HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
 }
 
-HcclResult CommLocalNotifyRecord(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
+HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
 {
-    HCCL_DEBUG("[CommLocalNotifyRecord]thread[%llu], dstThread[%p], dstNotifyIdx[%u].", thread, dstThread, dstNotifyIdx);
+    HCCL_DEBUG("[HcommInterThreadNotifyRecordOnThread]thread[%llu], dstThread[%p], dstNotifyIdx[%u].", thread, dstThread, dstNotifyIdx);
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -68,9 +68,9 @@ HcclResult CommLocalNotifyRecord(ThreadHandle thread, ThreadHandle dstThread, ui
     return HcclLocalNotifyRecord(stream, notify);
 }
 
-HcclResult CommLocalNotifyWait(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
+HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
 {
-    HCCL_DEBUG("[CommLocalNotifyWait]thread[%llu], notifyIdx[%u], timeOut[%u].", thread, notifyIdx, timeOut);
+    HCCL_DEBUG("[HcommInterThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeOut[%u].", thread, notifyIdx, timeOut);
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -128,12 +128,12 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     return HcclTaskLaunch(streams.data(), threadNum);
 }
 
-HcclResult CommWrite(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
+HcclResult HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
     AddThread(thread);
-    HCCL_DEBUG("[CommWrite]dst[%p], src[%p], len[%llu].", dst, src, len);
+    HCCL_DEBUG("[HcommWriteOnThread]dst[%p], src[%p], len[%llu].", dst, src, len);
 
     HcclBuf locBuf{const_cast<void*>(src), len, nullptr};
     HcclBuf rmtBuf{dst, len, nullptr};
@@ -144,13 +144,13 @@ HcclResult CommWrite(ThreadHandle thread, ChannelHandle channel, void *dst, cons
     return HcclRemoteWrite(stream, reinterpret_cast<void*>(channel), &rmtBuf, &locBuf);
 }
 
-HcclResult CommWriteReduce(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+HcclResult HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
     AddThread(thread);
-    HCCL_DEBUG("[CommWriteReduce]dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d].",
+    HCCL_DEBUG("[HcommWriteReduceOnThread]dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d].",
         dst, src, count, dataType, reduceOp);
 
     HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
@@ -179,7 +179,7 @@ HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel,
     return HcclRemoteWriteReduceWithNotify(stream, reinterpret_cast<void*>(channel), &rmtBuf, &locBuf, reduceInfo,
         remoteNotifyIdx);
 }
-HcclResult CommWriteWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+HcclResult HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
     CHK_PTR_NULL(src);
@@ -194,13 +194,13 @@ HcclResult CommWriteWithNotify(ThreadHandle thread, ChannelHandle channel, void 
     return HcclRemoteWriteWithNotify(stream, reinterpret_cast<void*>(channel), &rmtBuf, &locBuf, remoteNotifyIdx);
 }
 
-HcclResult CommRead(
+HcclResult HcommReadOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
     AddThread(thread);
-    HCCL_DEBUG("[CommRead]dst[%p], src[%p], len[%llu].", dst, src, len);
+    HCCL_DEBUG("[HcommReadOnThread]dst[%p], src[%p], len[%llu].", dst, src, len);
 
     HcclBuf locBuf{dst, len, nullptr};
     HcclBuf rmtBuf{const_cast<void*>(src), len, nullptr};
@@ -211,13 +211,13 @@ HcclResult CommRead(
     return HcclRemoteRead(stream, reinterpret_cast<void*>(channel), &locBuf, &rmtBuf);
 }
 
-HcclResult CommReadReduce(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
+HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
     HcclDataType dataType, HcclReduceOp reduceOp)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
     AddThread(thread);
-    HCCL_DEBUG("[CommReadReduce]dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d].",
+    HCCL_DEBUG("[HcommNotifyWaitOnThread]dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d].",
         dst, src, count, dataType, reduceOp);
     HcclBuf locBuf{dst, count * SIZE_TABLE[dataType], nullptr};
     HcclBuf rmtBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
@@ -229,9 +229,9 @@ HcclResult CommReadReduce(ThreadHandle thread, ChannelHandle channel, void *dst,
     return HcclRemoteReadReduce(stream, reinterpret_cast<void*>(channel), &locBuf, &rmtBuf, reduceInfo);
 }
 
-HcclResult CommNotifyRecord(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
+HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
 {
-    HCCL_DEBUG("[CommNotifyRecord]thread[%llu], channel[%llu], remoteNotifyIdx[%u].",
+    HCCL_DEBUG("[HcommNotifyRecordOnThread]thread[%llu], channel[%llu], remoteNotifyIdx[%u].",
         thread, channel, remoteNotifyIdx);
     AddThread(thread);
 
@@ -241,9 +241,9 @@ HcclResult CommNotifyRecord(ThreadHandle thread, ChannelHandle channel, const ui
     return HcclRemoteNotifyRecord(stream, reinterpret_cast<void*>(channel), remoteNotifyIdx);
 }
 
-HcclResult CommNotifyWait(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
-    HCCL_DEBUG("[CommNotifyWait]thread[%llu], channel[%llu], localNotifyIdx[%u], timeout[%u].",
+    HCCL_DEBUG("[HcommNotifyWaitOnThread]thread[%llu], channel[%llu], localNotifyIdx[%u], timeout[%u].",
         thread, channel, localNotifyIdx, timeout);
     AddThread(thread);
     Stream *stream = GetStream(thread);
@@ -260,8 +260,8 @@ HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后
     return HcclRemoteFence(stream, reinterpret_cast<void*>(channel), false);
 }
 
-HcclResult CommSetLaunchMode(const char *launchTag, LaunchMode mode)
+HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode)
 {
-    HCCL_DEBUG("CommSetLaunchMode launchTag[%s]", launchTag);
+    HCCL_DEBUG("HcommSetLaunchMode launchTag[%s]", launchTag);
     return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
 }

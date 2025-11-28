@@ -58,18 +58,18 @@ ThreadMgr::ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::strin
     aclrtBinHandle binHandle, const ManagerCallbacks& callbacks) : threadNum_(threadNum), notifyNumPerThread_(notifyNumPerThread), 
     commId_(commId), binHandle_(binHandle), callbacks_(callbacks){}
 
-HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
+HcclResult ThreadMgr::HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
     uint32_t notifyNumPerThread, ThreadHandle *thread)
 {
     CHK_PTR_NULL(thread);
     std::lock_guard<std::mutex> lock(threadMutex_);
 
-    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] CommAllocThreadRes begin, max: engine[%d] threadNum[%u],"
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclAllocThreadRes begin, max: engine[%d] threadNum[%u],"
         "notifyPerThread[%u], need: threadNum[%u], notifyPerThread[%u]",
         __func__, commId_.c_str(), engine, threadNum_, notifyNumPerThread_, threadNum, notifyNumPerThread);
 
     if (threadNum == 0) {
-        HCCL_ERROR("[ThreadMgr][CommAllocThreadRes] threadNum is 0");
+        HCCL_ERROR("[ThreadMgr][HcclAllocThreadRes] threadNum is 0");
         return HCCL_E_PARA;
     }
     // 如果没设定最大值，设置一下
@@ -101,7 +101,7 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
         return HCCL_E_UNAVAIL;
     }
 
-    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] CommAllocThreadRes quota: engine[%d] threadNum[%llu], "
+    HCCL_INFO("[ThreadMgr][%s] Hcom[%s] HcclAllocThreadRes quota: engine[%d] threadNum[%llu], "
         "remainNotifyQuota[%u]", __func__, commId_.c_str(), engine, remainQuota, remainNotifyQuota);
 
     NotifyLoadType notifyLoadType;
@@ -120,7 +120,7 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
             return HCCL_E_PTR);
         ret = handle->Init();
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[ThreadMgr][CommAllocThreadRes] Failed to init thread index %u", i);
+            HCCL_ERROR("[ThreadMgr][HcclAllocThreadRes] Failed to init thread index %u", i);
             return ret;
         }
         usedNotifyNum_ += notifyNumPerThread;
@@ -140,7 +140,7 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
             return HCCL_E_PTR);
         ret = AicpuLaunchMgr::ThreadKernelLaunch(newThreads, commId_, hostHandle, binHandle_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[ThreadMgr][CommAllocThreadRes] AiCpuKernelLaunch failed, return [%d].", ret), ret);
+            HCCL_ERROR("[ThreadMgr][HcclAllocThreadRes] AiCpuKernelLaunch failed, return [%d].", ret), ret);
         for (size_t i = 0; i < newThreads.size(); ++i) {
             thread[i] = hostHandle[i];
             HCCL_INFO("[ThreadMgr][%s] aicpu threadArray[%u] = [%lu]", __func__, i, thread[i]);
@@ -155,19 +155,19 @@ HcclResult ThreadMgr::CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
                     std::make_move_iterator(newThreads.begin()),
                     std::make_move_iterator(newThreads.end()));
 
-    HCCL_INFO("[ThreadMgr][CommAllocThreadRes] Hcom[%s] CommAllocThreadRes done: engine[%d] threadNum[%u],"
+    HCCL_INFO("[ThreadMgr][HcclAllocThreadRes] Hcom[%s] HcclAllocThreadRes done: engine[%d] threadNum[%u],"
         "notifyPerThread[%u]%s", commId_.c_str(), engine, threadNum, notifyNumPerThread,
         (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) ? " (AICPU token ready)" : "");
     return HCCL_SUCCESS;
 }
 
-HcclResult ThreadMgr::CommGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum)
+HcclResult ThreadMgr::HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum)
 {
     CHK_PTR_NULL(notifyNum);
     HcclThread* hcclThread = reinterpret_cast<HcclThread*>(thread);
     CHK_PTR_NULL(hcclThread);
     *notifyNum = hcclThread->GetNotifyNum();
-    HCCL_INFO("[ThreadMgr] Hcom[%s] thread[%s] CommGetNotifyNumInThread done: notifyPerThread[%u]",
+    HCCL_INFO("[ThreadMgr] Hcom[%s] thread[%s] HcclGetNotifyNumInThread done: notifyPerThread[%u]",
         commId_.c_str(), hcclThread->GetUniqueId().c_str(), *notifyNum);
     return HCCL_SUCCESS;
 }

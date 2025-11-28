@@ -91,12 +91,13 @@ if(BUILD_OPEN_PROJECT)
         inc/hccl/hccl_comm.h
         inc/hccl/hccl_inner.h
         inc/hccl/hccl_types.h
-        inc/hccl/hccl_api.h
         inc/hccl/hccl_ctrl_plane.h
         src/pub_inc/hccn_rping.h
-        inc/hccl/hccl_api_data.h
         inc/hccl/hccl_mem_defs.h
         inc/hccl/hccl_rank_graph.h
+        inc/hccl/hccl_rankgraph.h
+        inc/hccl/hccl_res.h
+        inc/hccl/hcomm_primitives.h
     )
 
     set(HCCL_JSON

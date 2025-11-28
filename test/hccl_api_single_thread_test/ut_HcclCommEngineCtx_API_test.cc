@@ -93,11 +93,11 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Error_Input_Expect_Return_ER
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     // destroy: comm null
-    ret = CommDestroyEngineCtx(nullptr, &engineCtx);
+    ret = HcommEngineCtxDestroy(nullptr, &engineCtx);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     // destroy: engineCtx null
-    ret = CommDestroyEngineCtx(comm, nullptr);
+    ret = HcommEngineCtxDestroy(comm, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
 }
@@ -114,7 +114,7 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommCreateEngineCtx_When_Duplicate_Creation_Exp
     ret = CommCreateEngineCtx(comm, "opTag", CommEngine::COMM_ENGINE_HOSTCPU, &engineCtx);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    ret = CommDestroyEngineCtx(comm, &engineCtx);
+    ret = HcommEngineCtxDestroy(comm, &engineCtx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -141,15 +141,15 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommGetEngineCtx_When_Error_Engine_Expect_Retur
     ret = CommGetEngineCtx(comm, "opTag", CommEngine::COMM_ENGINE_CCU, engineCtxPtr);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    ret = CommDestroyEngineCtx(comm, &engineCtx);
+    ret = HcommEngineCtxDestroy(comm, &engineCtx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 // 未创建时销毁失败校验 HCCL_E_PARA
-TEST_F(HcclCommEngineCtxTest, Ut_CommDestroyEngineCtx_When_Uncreated_Expect_Return_EPARA)
+TEST_F(HcclCommEngineCtxTest, Ut_HcommEngineCtxDestroy_When_Uncreated_Expect_Return_EPARA)
 {
     HcclMem engineCtx = MakeMem((void*)0x1, 16, HCCL_MEM_TYPE_HOST);
-    HcclResult ret = CommDestroyEngineCtx(comm, &engineCtx);
+    HcclResult ret = HcommEngineCtxDestroy(comm, &engineCtx);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
@@ -168,7 +168,7 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Host_Expect_Return_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(IsMemEqual(engineCtx, engineCtxGet), true);
 
-    ret = CommDestroyEngineCtx(comm, &engineCtx);
+    ret = HcommEngineCtxDestroy(comm, &engineCtx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -186,7 +186,7 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Device_Expect_Return_SUCCESS
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(IsMemEqual(engineCtx, engineCtxGet), true);
 
-    ret = CommDestroyEngineCtx(comm, &engineCtx);
+    ret = HcommEngineCtxDestroy(comm, &engineCtx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

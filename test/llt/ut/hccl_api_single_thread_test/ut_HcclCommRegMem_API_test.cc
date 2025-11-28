@@ -80,9 +80,9 @@ TEST_F(HcclCommRegMemTest, RegMem_SameTag_Normal_And_Idempotent)
     EXPECT_EQ(h1, h2);
 
     // 解绑一次：移除该 tag 下这条绑定
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "opX", h1));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "opX", h1));
     // 再解绑一次：幂等（可能已经没有绑定），不报错
-    (void)HcclCommUnregMem(comm, "opX", h2);
+    (void)HcclUnregMem(comm, "opX", h2);
 }
 
 /*=========================================================
@@ -119,9 +119,9 @@ TEST_F(HcclCommRegMemTest, RegMem_SameTag_OverlapRules)
     EXPECT_EQ(HCCL_SUCCESS, HcclCommRegMem(comm, "opA", &l, attr, &leftAdj));
 
     // 清理：三个 raw 都各自解绑一次
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "opA", rightAdj));
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "opA", leftAdj));
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "opA", base));  
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "opA", rightAdj));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "opA", leftAdj));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "opA", base));  
 }
 
 /*=========================================================
@@ -145,8 +145,8 @@ TEST_F(HcclCommRegMemTest, RegMem_DifferentTags_Overlap_Allowed)
 
     // 不同 tag 分表管理，raw 可能不同；不做相等断言
     // 分别解绑各自的 raw
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "opA", hA));
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "opB", hB));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "opA", hA));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "opB", hB));
 }
 
 /*=========================================================
@@ -169,9 +169,9 @@ TEST_F(HcclCommRegMemTest, RegMem_DifferentAddrs)
     EXPECT_NE(h2, nullptr);
     EXPECT_NE(h3, nullptr);
 
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "op1", h1));
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "op2", h2));
-    EXPECT_EQ(HCCL_SUCCESS, HcclCommUnregMem(comm, "op3", h3));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "op1", h1));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "op2", h2));
+    EXPECT_EQ(HCCL_SUCCESS, HcclUnregMem(comm, "op3", h3));
 }
 
 /*============================
@@ -179,8 +179,8 @@ TEST_F(HcclCommRegMemTest, RegMem_DifferentAddrs)
  *============================*/
 TEST_F(HcclCommRegMemTest, Dereg_ParamCheck)
 {
-    EXPECT_EQ(HCCL_E_PARA, HcclCommUnregMem(nullptr, "opX", (void*)0x1234)); // comm null
-    EXPECT_EQ(HCCL_E_PARA, HcclCommUnregMem(comm, nullptr, (void*)0x1234));  // memTag null
-    EXPECT_EQ(HCCL_E_PARA, HcclCommUnregMem(comm, "", (void*)0x1234));       // memTag empty
-    EXPECT_EQ(HCCL_E_PARA, HcclCommUnregMem(comm, "opX", nullptr));          // handle null
+    EXPECT_EQ(HCCL_E_PARA, HcclUnregMem(nullptr, "opX", (void*)0x1234)); // comm null
+    EXPECT_EQ(HCCL_E_PARA, HcclUnregMem(comm, nullptr, (void*)0x1234));  // memTag null
+    EXPECT_EQ(HCCL_E_PARA, HcclUnregMem(comm, "", (void*)0x1234));       // memTag empty
+    EXPECT_EQ(HCCL_E_PARA, HcclUnregMem(comm, "opX", nullptr));          // handle null
 }
