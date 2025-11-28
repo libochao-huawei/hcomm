@@ -126,6 +126,8 @@ TEST_F(CollBatchSendRecvRetryTest, test_BatchSendRecvRetry_normally)
     opParam.stream = Stream(StreamType::STREAM_TYPE_ONLINE);
     opParam.BatchSendRecvDataDes.curIterNum = 0;
     opParam.BatchSendRecvDataDes.curMode = BatchSendRecvCurMode::SEND;
+    u8 isDirectRemoteRank[16] = {0};
+    param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
 
 
     MOCKER_CPP(&TransportManager::Alloc)
@@ -210,6 +212,8 @@ TEST_F(CollBatchSendRecvRetryTest, test_BatchSendRecvRetry_test)
     opParam.stream = Stream(StreamType::STREAM_TYPE_ONLINE);
     opParam.BatchSendRecvDataDes.curIterNum = 0;
     opParam.BatchSendRecvDataDes.curMode = BatchSendRecvCurMode::RECV;
+    u8 isDirectRemoteRank[16] = {0};
+    param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
 
 
     MOCKER_CPP(&TransportManager::Alloc)
@@ -300,6 +304,8 @@ TEST_F(CollBatchSendRecvRetryTest, test_BatchSendRecvRetry_test_1)
     opParam.stream = Stream(StreamType::STREAM_TYPE_ONLINE);
     opParam.BatchSendRecvDataDes.curIterNum = 0;
     opParam.BatchSendRecvDataDes.curMode = BatchSendRecvCurMode::SEND_RECV;
+    u8 isDirectRemoteRank[16] = {0};
+    param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
 
 
     MOCKER_CPP(&TransportManager::Alloc)
@@ -390,6 +396,8 @@ TEST_F(CollBatchSendRecvRetryTest, test_BatchSendRecvRetry_test_2)
     opParam.stream = Stream(StreamType::STREAM_TYPE_ONLINE);
     opParam.BatchSendRecvDataDes.curIterNum = 0;
     opParam.BatchSendRecvDataDes.curMode = BatchSendRecvCurMode::SEND_RECV;
+    u8 isDirectRemoteRank[16] = {0};
+    param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
 
 
     MOCKER_CPP(&TransportManager::Alloc)

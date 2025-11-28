@@ -38,7 +38,7 @@ constexpr u32 MULTI_QP_CONFIG_IP_PAIR_SHIFT_NUM = 32;
 constexpr u32 MULTI_QP_CONFIG_FILE_LINE_MAX = 128 * 1024; // 配置文件最多只能配置128k行有效内容
 constexpr u32 MULTI_QP_CONFIG_SRC_PORT_NUM_MAX = 32; // 一对ip对最多配置32个源端口号
 constexpr u32 MULTI_QP_CONFIG_SRC_PORT_ID_MAX = 65535;
-constexpr u32 MASSIVE_IBV_CONNECTION_COUNT = 1000; // A2上大于这个链路数量就切换链路类型
+constexpr u32 MASSIVE_IBV_CONNECTION_COUNT = 1000; // bsr大于这个链路数量就切换链路类型
 constexpr u32 SEND_QP_DEPTH_FOR_BSR = 512; // 使用Transport NpuDriect链路的时候设置send深度为512
 constexpr u32 RECV_QP_DEPTH_FOR_BSR = 128; // // 使用Transport NpuDriect链路的时候设置recv深度为128
 
@@ -217,6 +217,7 @@ public:
     void SetPortConfig(bool devPortSwitchOn);
     HcclResult CheckLinkNumAndSwitchLinkType(TransportType& type, MachinePara& machinePara, const std::vector<std::shared_ptr<HcclSocket> > sockets);
     void SetOpType(HcclCMDType opType);
+    std::map<u32, TransportType> GetRemoteTransportMap();
 private:
     HcclResult GetIOMem(const TransportIOMem &transMem,
         const TransportMemType inputMemType, const TransportMemType outputMemType,
@@ -290,6 +291,7 @@ private:
     const HcclIpAddress &localVnicIp_;
     std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap_;
     bool devPortSwitchOn_{ false };
+    std::map<u32, TransportType> remoteTransportMap_;
 
     std::unordered_map<TransportData, LINK> transportMap_;
     std::vector<u32> enableP2PDevices_;

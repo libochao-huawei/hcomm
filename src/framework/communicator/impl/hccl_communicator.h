@@ -423,6 +423,8 @@ public:
     HcclResult GetCacheMap(std::unique_ptr<CollAlgOperator>& algOperator, OpParam& opParam,
         AlgType& algType, bool selectAivAlg, std::string& newTag);
     HcclResult ExecOpCache(HcclCMDType opType, OpParam &opParam, HcclCacheInfo& cacheInfo);
+    void SplitBsrData(OpParam &opParam, std::vector<u8>& isDirectRemoteRank,
+        std::vector<HcclSendRecvItem>& hostSendRecvInfo, std::vector<HcclSendRecvItem>& aicpuSendRecvInfo);
 
     //decouple for MC2
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
@@ -1020,6 +1022,7 @@ private:
     void *p2pCclBuf_[AICPU_MAX_RANK_NUM]{};
     void *cclBuf_[AICPU_MAX_RANK_NUM]{};
     std::vector<RankInfo_t> rankGraph_;
+    std::map<u32, TransportType> remoteTransportMap_;
 
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
