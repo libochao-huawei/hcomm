@@ -314,6 +314,10 @@ while [[ $# -gt 0 ]]; do
         KERNEL="true"
         shift
         ;;
+    --full)
+        FULL_MODE="true"
+        shift
+        ;;
     --build_aarch)
         BUILD_AARCH="true"
         shift
@@ -364,6 +368,10 @@ fi
 
 if [ "${KERNEL}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device"
+fi
+
+if [ "${FULL_MODE}" == "true" ];then
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
 fi
 
 if [ "${BUILD_AARCH}" == "true" ];then
@@ -452,5 +460,6 @@ elif [ "${FULL_MODE}" == "true" ]; then
     build_package
     rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
 fi
