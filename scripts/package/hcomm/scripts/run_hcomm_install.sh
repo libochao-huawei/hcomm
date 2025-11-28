@@ -148,20 +148,9 @@ new_install() {
     create_latest_linux_softlink
     local linux_path="$(realpath $common_parse_dir/..)"
     local latest_path="$(realpath $linux_path)/latest"
-    
-    if [ ! -e "$latest_path/opp/built-in/op_impl/aicpu/kernel" ]; then
-        mkdir -p "$latest_path/opp/built-in/op_impl/aicpu/kernel"
+    if [ ! -e "$latest_path/opp" ]; then	
+        ln -srfn "$common_parse_dir/opp" "$latest_path/opp"	
     fi
-
-    cp "$common_parse_dir/opp/built-in/op_impl/aicpu/kernel/aicpu_hcomm.tar.gz" "$latest_path/opp/built-in/op_impl/aicpu/kernel/." -rf
-    cp "$common_parse_dir/opp/built-in/op_impl/aicpu/kernel/libaicpu_custom.so" "$latest_path/opp/built-in/op_impl/aicpu/kernel/." -rf
-
-    if [ ! -e "$latest_path/opp/built-in/op_impl/aicpu/config" ]; then
-        mkdir -p "$latest_path/opp/built-in/op_impl/aicpu/config"
-    fi
-
-    cp "$common_parse_dir/opp/built-in/op_impl/aicpu/config/ccl_kernel.json" "$latest_path/opp/built-in/op_impl/aicpu/config/." -rf
-    cp "$common_parse_dir/opp/built-in/op_impl/aicpu/config/libaicpu_custom.json" "$latest_path/opp/built-in/op_impl/aicpu/config/." -rf
 
     if [ ! -e "$latest_path/compat" ]; then
         ln -srfn "$common_parse_dir/compat" "$latest_path/compat"
