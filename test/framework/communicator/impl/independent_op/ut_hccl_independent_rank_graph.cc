@@ -38,9 +38,9 @@ public:
     }
 };
 
-TEST_F(HcclIndependentOpRankGraphTest, Ut_CommGetLinks_When_CommIsNull_Expect_PtrError)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_CommIsNull_Expect_PtrError)
 {
-    HcclResult ret = CommGetLinks(nullptr, 0, 0, 0, nullptr, nullptr);
+    HcclResult ret = HcclGetLinks(nullptr, 0, 0, 0, nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
 TEST_F(HcclIndependentOpRankGraphTest, Ut_A2CommGetRankGraph_When_RightPara_Expect_Success)
@@ -95,51 +95,51 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_A2CommGetRankGraph_When_RightPara_Expe
     uint32_t *rankSizeList = nullptr;
     CommTopo topoType;
  
-    ret = CommGetNetLayers(hcom_info.pComm.get(), &netlayers, &netLayersNum);
+    ret = HcclGetNetLayers(hcom_info.pComm.get(), &netlayers, &netLayersNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(netLayersNum, 2);
     for (int i=0; i<netLayersNum; i++) {
         EXPECT_EQ(netlayers[i], i);
     }
  
-    ret = CommGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 0, &topoType);
+    ret = HcclGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 0, &topoType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(topoType, CommTopo::COMM_TOPO_1DMESH);
  
-    ret = CommGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 1, &topoType);
+    ret = HcclGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 1, &topoType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(topoType, CommTopo::COMM_TOPO_CLOS);
  
-    ret = CommGetInstSizeByNetLayer(hcom_info.pComm.get(), 0, &rankNum);
+    ret = HcclGetInstSizeByNetLayer(hcom_info.pComm.get(), 0, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 4);
  
-    ret = CommGetInstSizeByNetLayer(hcom_info.pComm.get(), 1, &rankNum);
+    ret = HcclGetInstSizeByNetLayer(hcom_info.pComm.get(), 1, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 8);
  
-    ret = CommGetInstRanksByNetLayer(hcom_info.pComm.get(), 0, &rankList, &rankNum);
+    ret = HcclGetInstRanksByNetLayer(hcom_info.pComm.get(), 0, &rankList, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 4);
     for (int i=0; i<rankNum; i++) {
         EXPECT_EQ(rankList[i], i+4); //当前rank是5，L0 ranklist应该是 {4, 5, 6, 7}
     }
  
-    ret = CommGetInstRanksByNetLayer(hcom_info.pComm.get(), 1, &rankList, &rankNum);
+    ret = HcclGetInstRanksByNetLayer(hcom_info.pComm.get(), 1, &rankList, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 8);
     for (int i=0; i<rankNum; i++) {
         EXPECT_EQ(rankList[i], i); ////当前rank是5，L1 ranklist应该是 {0, 1, 2, 3, 4, 5, 6, 7}
     }
  
-    ret = CommGetInstSizeListByNetLayer(hcom_info.pComm.get(), 0, &rankSizeList, &rankListNum);
+    ret = HcclGetInstSizeListByNetLayer(hcom_info.pComm.get(), 0, &rankSizeList, &rankListNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankListNum, 2);
     for (int i=0; i<rankListNum; i++) {
         EXPECT_EQ(rankSizeList[i], 4); //双机，L0 {4, 4}
     }
  
-    ret = CommGetInstSizeListByNetLayer(hcom_info.pComm.get(), 1, &rankSizeList, &rankListNum);
+    ret = HcclGetInstSizeListByNetLayer(hcom_info.pComm.get(), 1, &rankSizeList, &rankListNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankListNum, 1);
     EXPECT_EQ(rankSizeList[0], 8);  //双机 L1 {8}
@@ -206,72 +206,72 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_A3CommGetRankGraph_When_RightPara_Expe
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(len, 16 *sizeof(RankInfo_t));
  
-    ret = CommGetNetLayers(hcom_info.pComm.get(), &netlayers, &netLayersNum);
+    ret = HcclGetNetLayers(hcom_info.pComm.get(), &netlayers, &netLayersNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(netLayersNum, 3);
     for (int i=0; i<netLayersNum; i++) {
         EXPECT_EQ(netlayers[i], i);
     }
  
-    ret = CommGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 0, &topoType);
+    ret = HcclGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 0, &topoType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(topoType, CommTopo::COMM_TOPO_910_93);
  
-    ret = CommGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 1, &topoType);
+    ret = HcclGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 1, &topoType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(topoType, CommTopo::COMM_TOPO_CLOS);
  
-    ret = CommGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 2, &topoType);
+    ret = HcclGetInstTopoTypeByNetLayer(hcom_info.pComm.get(), 2, &topoType);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(topoType, CommTopo::COMM_TOPO_CLOS);
  
-    ret = CommGetInstSizeByNetLayer(hcom_info.pComm.get(), 0, &rankNum);
+    ret = HcclGetInstSizeByNetLayer(hcom_info.pComm.get(), 0, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 4); //rankId 9  server内 L0 {8, 9, 10, 11}
  
-    ret = CommGetInstSizeByNetLayer(hcom_info.pComm.get(), 1, &rankNum);
+    ret = HcclGetInstSizeByNetLayer(hcom_info.pComm.get(), 1, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 8);//rankId 9  superPod内 L1 {8, 9, 10, 11, 12, 13, 14, 15}
  
-    ret = CommGetInstSizeByNetLayer(hcom_info.pComm.get(), 2, &rankNum);
+    ret = HcclGetInstSizeByNetLayer(hcom_info.pComm.get(), 2, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 16);//rankId 9  所有rank L2 {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
  
-    ret = CommGetInstRanksByNetLayer(hcom_info.pComm.get(), 0, &rankList, &rankNum);
+    ret = HcclGetInstRanksByNetLayer(hcom_info.pComm.get(), 0, &rankList, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 4);
     for (int i=0; i<rankNum; i++) {
         EXPECT_EQ(rankList[i], i+8); //rankId 9  server内 L0 {8, 9, 10, 11}
     }
  
-    ret = CommGetInstRanksByNetLayer(hcom_info.pComm.get(), 1, &rankList, &rankNum);
+    ret = HcclGetInstRanksByNetLayer(hcom_info.pComm.get(), 1, &rankList, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 8);
     for (int i=0; i<rankNum; i++) {
         EXPECT_EQ(rankList[i], i+8); //当前rank是9，L1 ranklist应该是 {8, 9, 10, 11, 12, 13, 14, 15}
     }
  
-    ret = CommGetInstRanksByNetLayer(hcom_info.pComm.get(), 2, &rankList, &rankNum);
+    ret = HcclGetInstRanksByNetLayer(hcom_info.pComm.get(), 2, &rankList, &rankNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankNum, 16);
     for (int i=0; i<rankNum; i++) {
         EXPECT_EQ(rankList[i], i); //rankId 9  所有rank L2 {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
     }
  
-    ret = CommGetInstSizeListByNetLayer(hcom_info.pComm.get(), 0, &rankSizeList, &rankListNum);
+    ret = HcclGetInstSizeListByNetLayer(hcom_info.pComm.get(), 0, &rankSizeList, &rankListNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankListNum, 4);
     for (int i=0; i<rankListNum; i++) {
         EXPECT_EQ(rankSizeList[i], 4); //L0 {4, 4, 4, 4}
     }
  
-    ret = CommGetInstSizeListByNetLayer(hcom_info.pComm.get(), 1, &rankSizeList, &rankListNum);
+    ret = HcclGetInstSizeListByNetLayer(hcom_info.pComm.get(), 1, &rankSizeList, &rankListNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankListNum, 2);
     EXPECT_EQ(rankSizeList[0], 8);
     EXPECT_EQ(rankSizeList[1], 8); // L1 {8, 8}
  
-    ret = CommGetInstSizeListByNetLayer(hcom_info.pComm.get(), 2, &rankSizeList, &rankListNum);
+    ret = HcclGetInstSizeListByNetLayer(hcom_info.pComm.get(), 2, &rankSizeList, &rankListNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankListNum, 1);
     EXPECT_EQ(rankSizeList[0], 16);  //L2 {16}

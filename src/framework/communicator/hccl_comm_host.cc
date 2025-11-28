@@ -168,7 +168,7 @@ namespace hccl
     {
         // 获取本地cclbuffer
         CommBuffer commBuffer;
-        CHK_RET(GetIndependentOp().GetCommMemMgr().CommGetHcclBuffer(&commBuffer));
+        CHK_RET(GetIndependentOp().GetCommMemMgr().GetHcclBuffer(&commBuffer));
         DeviceMem cclbuffer =  DeviceMem::create(commBuffer.addr, commBuffer.size);
         CHK_PTR_NULL(cclbuffer.ptr());
 

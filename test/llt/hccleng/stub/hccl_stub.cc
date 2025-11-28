@@ -8,12 +8,12 @@ using namespace bg;
 extern "C" {
 #endif // __cplusplus
 
-HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
+HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
 {
     return HCCL_SUCCESS;
 }

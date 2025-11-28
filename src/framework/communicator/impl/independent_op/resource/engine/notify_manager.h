@@ -38,7 +38,7 @@ public:
     static std::string GetBinNotifys(std::vector<std::unique_ptr<LocalNotify>> &newNotifys,
         const NotifyLoadType notifyType);
 
-    HcclResult HcommAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+    HcclResult HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
         NotifyHandle **notifyHandleList);
     HcclResult HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList);
 

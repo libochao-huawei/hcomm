@@ -16,7 +16,7 @@
 #include "hccl_common.h"
 #include "hccl_impl_pub.h"
 #include "hccl_rank_graph.h"
-
+#include "hccl_rankgraph.h"
 namespace hccl {
 
 class RankGraph {

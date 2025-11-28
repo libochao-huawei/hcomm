@@ -159,9 +159,9 @@ extern "C" {
 
 #define  ACL_ERROR_RT_PARAM_INVALID              107000 // param invalid
 
-HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
+HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
 
-HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType);
+HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType);
 
 HcclResult GetGroupNameByOpBaseHcom(s64 opBaseHcom, char **groupname);
 
