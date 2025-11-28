@@ -386,6 +386,8 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
             reinterpret_cast<struct OpTilingBatchSendRecvDataDes*>(dynamicDataPtr);
         opParam.BatchSendRecvDataDes.itemNum = batchSendRecvDataPtr->itemNum;
         opParam.BatchSendRecvDataDes.sendRecvItemsPtr = batchSendRecvDataPtr->batchSendRecvItem;
+        opParam.BatchSendRecvDataDes.isDirectRemoteRank = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem +
+            batchSendRecvDataPtr->itemNum);
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U, "tag:%s", opParam.tag.c_str());
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", opParam.tag.c_str()));
     } else if (opParam.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
@@ -526,10 +528,10 @@ HcclResult AicpuHcclProcess::WaitAsyncFlag(hccl::Transport::Buffer *localFlagBuf
             break; // 当前位置的值等于flag时，说明对端写过来了，可以退出
         }
     }
-    CHK_PRT_RET(isTimeout, HCCL_ERROR("[AicpuHcclProcess][WaitAsyncFlag]Kernel Run TimeOut, now Opetation is CheckFlag, "
+    CHK_PRT_RET(isTimeout, HCCL_ERROR("[AicpuHcclProcess][WaitAsyncFlag]Kernel Run TimeOut %llus, now Opetation is CheckFlag, "
                 "localFlagBufforCheck0.addr is [%p], localFlagBufforCheck0.value is [%u],"
                 "localFlagBufforCheck1.addr is [%p], localFlagBufforCheck1.value is [%u],"
-                "localFlagBufforCheck2.addr is [%p], localFlagBufforCheck2.value is [%u]",
+                "localFlagBufforCheck2.addr is [%p], localFlagBufforCheck2.value is [%u]", timeOut,
                 localFlagBufforCheck[0].addr, *(const uint32_t*)(localFlagBufforCheck[0].addr),
                 localFlagBufforCheck[1].addr, *(const uint32_t*)(localFlagBufforCheck[1].addr),
                 localFlagBufforCheck[2].addr, *(const uint32_t*)(localFlagBufforCheck[2].addr)), HCCL_E_INTERNAL);

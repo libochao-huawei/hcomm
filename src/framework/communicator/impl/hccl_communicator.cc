@@ -1626,7 +1626,8 @@ namespace hccl
         if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV)
         {
             dynamicDataSize = sizeof(struct OpTilingBatchSendRecvDataDes) +
-                              opParam.BatchSendRecvDataDes.itemNum * sizeof(HcclSendRecvItem);
+                              opParam.BatchSendRecvDataDes.itemNum * sizeof(HcclSendRecvItem) +
+                              userRankSize_ * sizeof(u8);
         }
         else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL)
         {
