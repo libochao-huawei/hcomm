@@ -29,7 +29,8 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
 #include "v80_rank_table.h"
 #include "hccl_communicator.h"
@@ -1831,7 +1832,7 @@ TEST_F(OneSidedSt, st_one_sided_service_RegUnRegDevMemMaxCnt_multi_remoteRank)
     s32 count = 1024;
     void* comm;
     const char* rank_table_file = "./ut_opbase_test.json";
- 
+
     localbuf= (s8*)sal_malloc(count * sizeof(s8));
     sal_memset(localbuf, count * sizeof(s8), 0, count * sizeof(s8));
     ret = HcclCommInitClusterInfo(rank_table_file, 0, &comm);
@@ -2835,7 +2836,7 @@ TEST_F(OneSidedSt, st_one_sided_service_batchput_batchget_err)
 
     int ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     const char* rank_table_file = "./ut_opbase_test.json";
     HcclComm comm;
     ret = HcclCommInitClusterInfo(rank_table_file, 0, &comm);
@@ -3340,7 +3341,7 @@ TEST_F(OneSidedSt, st_one_sided_service_mem_test_prepare)
     int ret = HCCL_SUCCESS;
     void* comm;
     const char* rank_table_file = "./ut_opbase_test.json";
- 
+
     ret = HcclCommInitClusterInfo(rank_table_file, 0, &comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -3457,7 +3458,7 @@ TEST_F(OneSidedSt, st_one_sided_service_mem_test_RegisterBoundMems)
     int ret = HCCL_SUCCESS;
     void* comm;
     const char* rank_table_file = "./ut_opbase_test.json";
- 
+
     ret = HcclCommInitClusterInfo(rank_table_file, 0, &comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -3569,7 +3570,7 @@ TEST_F(OneSidedSt, st_one_sided_service_mem_test_Exchange_and_enable_Mem)
     int ret = HCCL_SUCCESS;
     void* comm;
     const char* rank_table_file = "./ut_opbase_test.json";
- 
+
     ret = HcclCommInitClusterInfo(rank_table_file, 0, &comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -3895,40 +3896,40 @@ TEST_F(OneSidedSt, st_hcclComm_InitNic_IsOneSidedBackupInit)
 TEST_F(OneSidedSt, st_one_sided_service_prepare_fail)
 {
     int ret = HCCL_SUCCESS;
- 
+
     NetDevContext netDevCtx;;
     netDevCtx.nicType_ = NicType::DEVICE_NIC_TYPE;
     netDevCtx.localRdmaRmaBufferMgr_ = std::make_shared<LocalRdmaRmaBufferMgr>();
     HcclNetDevCtx devCtx = &netDevCtx;
- 
+
     NetDevContext vNetDevCtx;
     vNetDevCtx.nicType_ = NicType::VNIC_TYPE;
     vNetDevCtx.localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>();
     HcclNetDevCtx vDevCtx = &vNetDevCtx;
- 
+
     unique_ptr<HcclSocketManager> socketManager = std::make_unique<HcclSocketManager>(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0);
     unique_ptr<NotifyPool> notifyPool = std::make_unique<NotifyPool>();
     unique_ptr<HcclOneSidedService> service = std::make_unique<HcclOneSidedService>(socketManager, notifyPool);
- 
+
     MOCKER_CPP(&HcclOneSidedService::PrepareFullMesh)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_TIMEOUT));
- 
+
     HcclDispatcher dispatcher = &notifyPool;
     HcclRankLinkInfo localRankInfo{};
     RankTable_t rankTable{};
     RankInfo_t rankInfo;
     rankTable.rankList.push_back(rankInfo);
     map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap{};
- 
+
     service->Config(dispatcher, localRankInfo, &rankTable);
- 
+
     std::string commIdentifier("test");
     HcclPrepareConfig config;
     config.topoType = HcclTopoType::HCCL_TOPO_FULLMESH;
     ret = service->Prepare(commIdentifier, &config, 1);
- 
+
     GlobalMockObject::verify();
 }
 #if 0
@@ -3944,7 +3945,7 @@ TEST_F(OneSidedSt, st_HcclBatchGetPut_When_SdmaAicpuUnflod_Expect_Success)
         HCCL_ERROR("open %s failed", file_name_t);
     }
     outfile.close();
- 
+
     HcclResult ret = HCCL_SUCCESS;
     rtError_t rt_ret = RT_ERROR_NONE;
     rtStream_t stream;
@@ -3955,29 +3956,29 @@ TEST_F(OneSidedSt, st_HcclBatchGetPut_When_SdmaAicpuUnflod_Expect_Success)
     s32 count = 1024;
     ret = hrtSetDevice(0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     rt_ret = rtStreamCreate(&stream, 0);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
- 
+
     localbuf = (s8*)sal_malloc(count * sizeof(s8));
     sal_memset(localbuf, count * sizeof(s8), 0, count * sizeof(s8));
     remotebuf = (s8*)sal_malloc(count * sizeof(s8));
     sal_memset(remotebuf, count * sizeof(s8), 0, count * sizeof(s8));
- 
+
     void *comm;
     const char *rankTableFile = "./ut_opbase_test.json";
     ret = HcclCommInitClusterInfo(rankTableFile, 0, &comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     MOCKER(GetExternalInputHcclAicpuUnfold).stubs().with(any()).will(returnValue(true));
     MOCKER(GetExternalInputIntraRoceSwitch).stubs().will(returnValue(0));
- 
+
     const DevType deviceType = DevType::DEV_TYPE_910_93;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(deviceType)).will(returnValue(HCCL_SUCCESS));
- 
+
     MOCKER(hrtMemSyncCopy).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaSendWrV2).stubs().will(returnValue(HCCL_SUCCESS));
- 
+
     for (int j = 0; j < count; j++) {
         localbuf[j] = 2;
     }
@@ -3987,17 +3988,17 @@ TEST_F(OneSidedSt, st_HcclBatchGetPut_When_SdmaAicpuUnflod_Expect_Success)
     desc[0].dataType = HCCL_DATA_TYPE_INT8;
     desc[0].localAddr = localbuf;
     desc[0].remoteAddr = remotebuf;
- 
+
     NetDevContext devContext;
     devContext.nicType_ = NicType::DEVICE_NIC_TYPE;
     devContext.localIpcRmaBufferMgr_ = std::make_shared<LocalIpcRmaBufferMgr>();
     devContext.localRdmaRmaBufferMgr_ = std::make_shared<LocalRdmaRmaBufferMgr>();
     HcclNetDevCtx devCtx = &devContext;
- 
+
     const u32 remoteRankId = 1;
     HcclRankLinkInfo remoteLinkInfo {};
     remoteLinkInfo.userRank = remoteRankId;
- 
+
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     IHcclOneSidedService *iService = nullptr;
     hcclComm->GetOneSidedService(&iService);
@@ -4011,56 +4012,56 @@ TEST_F(OneSidedSt, st_HcclBatchGetPut_When_SdmaAicpuUnflod_Expect_Success)
     EXPECT_TRUE(service->aicpuUnfoldMode_);
     std::shared_ptr<hccl::HcclOneSidedConn> connPtr = service->oneSidedConns_[remoteRankId];
     EXPECT_NE(connPtr, nullptr);
- 
+
     TransportIpcMem *transport = dynamic_cast<TransportIpcMem *>(connPtr->transportMemPtr_.get());
     BufferKey<uintptr_t, u64> tempLocalKey(reinterpret_cast<uintptr_t>(localbuf), count * sizeof(s8));
     auto tempLocalBufferPtr = make_shared<LocalIpcRmaBuffer>(devCtx, localbuf, count * sizeof(s8));
     tempLocalBufferPtr->devAddr = localbuf;
     devContext.localIpcRmaBufferMgr_->Add(tempLocalKey, tempLocalBufferPtr);
- 
+
     BufferKey<uintptr_t, u64> tempRemoteKey(reinterpret_cast<uintptr_t>(remotebuf), count * sizeof(s8));
     RemoteIpcRmaBuffer tempRemoteBufferPtr(devCtx);
     tempRemoteBufferPtr.addr = remotebuf;
     tempRemoteBufferPtr.size = count * sizeof(s8);
     tempRemoteBufferPtr.devAddr = remotebuf;
     connPtr->remoteRmaBufferMgr_.Add(tempRemoteKey, reinterpret_cast<void *>(&tempRemoteBufferPtr));
- 
+
     HcclIpAddress ipAddr;
     auto socketPtr = make_shared<HcclSocket>("tag", devCtx, ipAddr, 16666, HcclSocketRole::SOCKET_ROLE_CLIENT);
     std::vector<std::shared_ptr<HcclSocket>> connectSockets;
     connectSockets.push_back(socketPtr);
- 
+
     MOCKER_CPP(&HcclSocketManager::CreateSingleLinkSocket).stubs()
         .with(any(), any(), any(), outBound(connectSockets), any(), any()).will(returnValue(HCCL_SUCCESS));
- 
+
     MOCKER_CPP_VIRTUAL(*transport, &TransportIpcMem::ExchangeMemDesc).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP_VIRTUAL(*transport, &TransportIpcMem::SetSocket).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&LocalNotify::Wait).stubs().will(returnValue(HCCL_SUCCESS));
- 
+
     ret = connPtr->Connect(commIdentifier, 10);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     ret = HcclBatchGet(comm, 1, desc, itemNum, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     rt_ret = hcclStreamSynchronize(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
- 
+
     ret = HcclBatchPut(comm, 1, desc, itemNum, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     rt_ret = hcclStreamSynchronize(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
- 
+
     sal_free(localbuf);
     sal_free(remotebuf);
- 
+
     rt_ret = rtStreamDestroy(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
- 
+
     ret = HcclCommDestroy(comm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     remove(file_name_t);
     GlobalMockObject::verify();
 }
@@ -4069,81 +4070,81 @@ TEST_F(OneSidedSt, ut_one_sided_DeregisterGlobalMem_When_2_comms_Expect_ReturnIs
 {
     nlohmann::json rank_table = rank_table_910_1server_2rank;
     std::string clusterString = rank_table.dump();
- 
+
     int ret = HCCL_SUCCESS;
     void* comm1;
     void* comm2;
     u32 rankIdInComm1 = 0;
     u32 rankIdInComm2 = 0;
- 
+
     HcclCommConfig commConfig1;
     HcclCommConfigInit(&commConfig1);
     commConfig1.hcclBufferSize=800;
     strcpy_s(commConfig1.hcclCommName, COMM_NAME_MAX_LENGTH, "comm1");
- 
+
     ret = HcclCommInitClusterInfoMemConfig(const_cast<char*>(clusterString.c_str()), rankIdInComm1, &commConfig1, &comm1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hccl::hcclComm* hcclComm1 = static_cast<hccl::hcclComm *>(comm1);
- 
+
     HcclCommConfig commConfig2;
     HcclCommConfigInit(&commConfig2);
     commConfig2.hcclBufferSize=800;
     strcpy_s(commConfig2.hcclCommName, COMM_NAME_MAX_LENGTH, "comm2");
- 
+
     ret = HcclCommInitClusterInfoMemConfig(const_cast<char*>(clusterString.c_str()), rankIdInComm2, &commConfig2, &comm2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hccl::hcclComm* hcclComm2 = static_cast<hccl::hcclComm *>(comm2);
- 
+
     IHcclOneSidedService *iService1 = nullptr;
     hcclComm1->GetOneSidedService(&iService1);
     EXPECT_NE(iService1, nullptr);
     iService1->netDevIpcCtx_ = nullptr;
- 
+
     IHcclOneSidedService *iService2 = nullptr;
     hcclComm1->GetOneSidedService(&iService2);
     EXPECT_NE(iService2, nullptr);
     iService2->netDevIpcCtx_ = nullptr;
- 
+
     // 注册全局内存
     GlobalMemRegMgr mgr;
     auto buffer1 = std::vector<int8_t>(10);
     HcclMem mem1{HCCL_MEM_TYPE_DEVICE, buffer1.data(), buffer1.size()};
     void* memHandle1 = nullptr;
- 
+
     ret = HcclRegisterGlobalMem(&mem1, &memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     // Service绑定一块内存
     ret = HcclCommBindMem(comm1, memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcclCommBindMem(comm2, memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     MOCKER_CPP(&HcclOneSidedService::PrepareFullMesh)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     HcclPrepareConfig config;
     config.topoType = HcclTopoType::HCCL_TOPO_FULLMESH;
     ret = HcclCommPrepare(comm1, &config, 120);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     static_cast<HcclOneSidedService*>(iService1)->prepared_ = false;
- 
+
     ret = HcclCommPrepare(comm1, &config, 120);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     static_cast<HcclOneSidedService*>(iService1)->prepared_ = false;
- 
+
     // 解绑内存
     ret = HcclCommUnbindMem(comm1, memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcclCommUnbindMem(comm2, memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     // 解注册全局内存
     ret = HcclDeregisterGlobalMem(memHandle1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     ret = HcclCommDestroy(comm1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcclCommDestroy(comm2);

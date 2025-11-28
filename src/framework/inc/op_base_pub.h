@@ -13,7 +13,8 @@
 
 #include <vector>
 #include <hccl/hccl_types.h>
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 
 #include "hccl/base.h"
 

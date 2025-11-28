@@ -33,7 +33,8 @@
 #undef protected
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "hccl_comm_pub.h"
 #include "llt_hccl_stub_pub.h"
 #include <iostream>
@@ -290,7 +291,7 @@ TEST_F(MPI_TOPO_DETECT_Test, st_hcclMasterInfo_single_server_2p_success_normal)
     unsetenv("HCCL_WHITELIST_DISABLE");
     unsetenv("HCCL_IF_IP");
     unsetenv("HCCL_BUFFSIZE");
-    
+
 }
 
 // 超时用例影响线上执行耗时已下掉

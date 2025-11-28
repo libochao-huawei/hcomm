@@ -12,7 +12,8 @@
 #define OP_BASE_H
 
 #include <vector>
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_types.h>
 
 #include "op_base_pub.h"

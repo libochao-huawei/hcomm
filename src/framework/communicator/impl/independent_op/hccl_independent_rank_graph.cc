@@ -14,7 +14,8 @@
 #include "independent_op.h"
 #include <string>
 #include "param_check_pub.h"
-#include "hccl.h"
+#include "hccl_comm.h"
+#include "hccl_inner.h"
 #ifndef OPEN_BUILD_PROJECT
 #include "op_base_v2.h"
 #endif

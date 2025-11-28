@@ -30,7 +30,8 @@
 
 #if !MOCK_HCCL
 // Real headers (NPU environment). Adjust include paths if needed.
-#include "hccl/hccl.h"
+#include "hccl/hccl_comm.h"
+#include "hccl/hccl_inner.h"
 #include "hccl/hccl_types.h"
 #include "hccl/hccl_api.h"
 #include "acl/acl.h"

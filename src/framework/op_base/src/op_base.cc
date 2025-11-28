@@ -715,13 +715,13 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s]errNo[0x%016llx] set only aivMode error.", __func__, HCCL_ERROR_CODE(ret)),
             errorFlag = true);
-        
+
         /* 设置AICPU */
         ret = pComm->SetAicpuUnfoldConfig(commConfig.GetConfigAicpuUnfold());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s]errNo[0x%016llx] set aicpu error.", __func__, HCCL_ERROR_CODE(ret)),
             errorFlag = true);
-        
+
         ret = InitWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s]errNo[0x%016llx] init workflow mode error.", __func__, HCCL_ERROR_CODE(ret)),
@@ -1527,7 +1527,7 @@ void HcclResetIfProfile()
     SetIfProfile(true);
 }
 
-HcclResult HcclBroadcast(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
+HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
                          aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -1544,10 +1544,10 @@ HcclResult HcclBroadcast(void *buf, uint64_t count, HcclDataType dataType, uint3
 
     // 入参合法性校验
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclBroadcast", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclBroadcastInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(buf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclBroadcast", "buf", "nullptr", "please check buf"}));
+        std::vector<std::string>({"HcclBroadcastInner", "buf", "nullptr", "please check buf"}));
     CHK_PTR_NULL(buf);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclBroadcastV2(buf, count, dataType, root, comm, stream));
@@ -1583,7 +1583,7 @@ HcclResult HcclBroadcast(void *buf, uint64_t count, HcclDataType dataType, uint3
             tag.c_str(), buf, count, GetDataTypeEnumStr(dataType).c_str(), root, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclBroadcast:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclBroadcastInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -1605,7 +1605,7 @@ HcclResult HcclBroadcast(void *buf, uint64_t count, HcclDataType dataType, uint3
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclBroadcast:success,take time: " +
+        std::string endInfo = "HcclBroadcastInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -1628,7 +1628,7 @@ HcclResult HcclBroadcast(void *buf, uint64_t count, HcclDataType dataType, uint3
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
+HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
                              HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -1644,13 +1644,13 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
     CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return ReduceScatter success"), HCCL_SUCCESS);
     // 入参合法性校验
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatter", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclReduceScatterInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatter", "sendBuf", "nullptr", "please check sendBuf"}));
+        std::vector<std::string>({"HcclReduceScatterInner", "sendBuf", "nullptr", "please check sendBuf"}));
     CHK_PTR_NULL(sendBuf);
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatter", "recvBuf", "nullptr", "please check recvBuf"}));
+        std::vector<std::string>({"HcclReduceScatterInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream));
@@ -1686,7 +1686,7 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
             streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclReduceScatter:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclReduceScatterInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -1711,7 +1711,7 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclReduceScatter:success,take time: " +
+        std::string endInfo = "HcclReduceScatterInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -1719,7 +1719,7 @@ HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, H
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void *sendDispls,
+HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const void *sendDispls,
     void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -1736,19 +1736,19 @@ HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void 
 
     // 入参合法性校验
     RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatterV", "sendCounts", "nullptr", "please check sendCounts"}));
+        std::vector<std::string>({"HcclReduceScatterVInner", "sendCounts", "nullptr", "please check sendCounts"}));
     CHK_PTR_NULL(sendCounts);
     RPT_INPUT_ERR(sendDispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatterV", "sendDispls", "nullptr", "please check sendDispls"}));
+        std::vector<std::string>({"HcclReduceScatterVInner", "sendDispls", "nullptr", "please check sendDispls"}));
     CHK_PTR_NULL(sendDispls);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatterV", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclReduceScatterVInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
 
     if (UNLIKELY(recvCount > 0 && recvBuf == nullptr)) {
         RPT_INPUT_ERR(true, "EI0003",\
         std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatterV", "recvBuf", "nullptr", "please check recvBuf"}));
+        std::vector<std::string>({"HcclReduceScatterVInner", "recvBuf", "nullptr", "please check recvBuf"}));
         CHK_PTR_NULL(recvBuf);
     }
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
@@ -1777,7 +1777,7 @@ HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void 
     u64* counts = static_cast<u64 *>(const_cast<void*>(sendCounts));
     for (u32 i = 0; i < rankSize; i++) {
         CHK_PRT_RET(counts[i] > SYS_MAX_COUNT,
-            HCCL_ERROR("HcclReduceScatterV sendCounts[%u][%llu] is invalid.(bigger than MAX count[%llu])",
+            HCCL_ERROR("HcclReduceScatterVInner sendCounts[%u][%llu] is invalid.(bigger than MAX count[%llu])",
                 i, counts[i], SYS_MAX_COUNT),
             HCCL_E_PARA);
         inputCount += counts[i];
@@ -1786,7 +1786,7 @@ HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void 
     CHK_PRT_RET(inputCount == 0, HCCL_WARNING("The inputCount is 0, this ReduceScatter v has no task to execute, "
         "returning success."), HCCL_SUCCESS);
     RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduceScatterV", "sendBuf", "nullptr", "please check sendBuf"}));
+        std::vector<std::string>({"HcclReduceScatterVInner", "sendBuf", "nullptr", "please check sendBuf"}));
     CHK_PTR_NULL(sendBuf);
 
     /* 接口交互信息日志 */
@@ -1805,7 +1805,7 @@ HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void 
             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclReduceScatterV:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclReduceScatterVInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -1816,7 +1816,7 @@ HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void 
 
     const u64 countOfThisRank = static_cast<const u64 *>(sendCounts)[userRank];
     CHK_PRT_RET(recvCount != countOfThisRank,
-        HCCL_ERROR("[HcclReduceScatterV] input recvCount[%llu] is not equal to sendCounts[%u][%llu]", recvCount,
+        HCCL_ERROR("[HcclReduceScatterVInner] input recvCount[%llu] is not equal to sendCounts[%u][%llu]", recvCount,
         userRank, countOfThisRank),
         HCCL_E_PARA);
 
@@ -1843,7 +1843,7 @@ HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void 
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclReduceScatterV:success,take time: " +
+        std::string endInfo = "HcclReduceScatterVInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -1855,10 +1855,10 @@ HcclResult CheckScatterInputPara(HcclComm comm, void *recvBuf)
 {
     // 入参合法性校验
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclScatter", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclScatterInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclScatter", "recvBuf", "nullptr", "please check recvBuf"}));
+        std::vector<std::string>({"HcclScatterInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 
     return HCCL_SUCCESS;
@@ -1891,7 +1891,7 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
     CHK_RET(hcclComm->GetUserRank(commRank));
     if (commRank == root) { // 本rank为root节点，send_buff不为空
         RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({"HcclScatter", "sendBuf", "nullptr", "please check sendBuf"}));
+            std::vector<std::string>({"HcclScatterInner", "sendBuf", "nullptr", "please check sendBuf"}));
         CHK_PTR_NULL(sendBuf);
     }
 
@@ -1921,7 +1921,7 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
             tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), root, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclScatter:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclScatterInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -1945,7 +1945,7 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclScatter:success,take time: " +
+        std::string endInfo = "HcclScatterInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag;
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -1968,7 +1968,7 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
+HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
                          HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -1981,16 +1981,16 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(sendCount == 0, HCCL_WARNING("input sendCount is 0, return HcclAllGather success"), HCCL_SUCCESS);
+    CHK_PRT_RET(sendCount == 0, HCCL_WARNING("input sendCount is 0, return HcclAllGatherInner success"), HCCL_SUCCESS);
     // 入参合法性校验
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGather", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclAllGatherInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGather", "sendBuf", "nullptr", "please check sendBuf"}));
+        std::vector<std::string>({"HcclAllGatherInner", "sendBuf", "nullptr", "please check sendBuf"}));
     CHK_PTR_NULL(sendBuf);
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGather", "recvBuf", "nullptr", "please check recvBuf"}));
+        std::vector<std::string>({"HcclAllGatherInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, comm, stream));
@@ -2009,7 +2009,7 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
-    
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
@@ -2019,7 +2019,7 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
             tag.c_str(), sendBuf, recvBuf, sendCount, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclAllGather:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclAllGatherInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2041,7 +2041,7 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGather:success,take time: " +
+        std::string endInfo = "HcclAllGatherInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -2049,7 +2049,7 @@ HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclD
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
+HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     const void *recvCounts, const void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -2066,16 +2066,16 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
 
     // 入参合法性校验
     RPT_INPUT_ERR(recvCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGatherV", "recvCounts", "nullptr", "please check recvCounts"}));
+        std::vector<std::string>({"HcclAllGatherVInner", "recvCounts", "nullptr", "please check recvCounts"}));
     CHK_PTR_NULL(recvCounts);
     RPT_INPUT_ERR(recvDispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGatherV", "recvDispls", "nullptr", "please check recvDispls"}));
+        std::vector<std::string>({"HcclAllGatherVInner", "recvDispls", "nullptr", "please check recvDispls"}));
     CHK_PTR_NULL(recvDispls);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGatherV", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclAllGatherVInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGatherV", "stream", "nullptr", "please check stream"}));
+        std::vector<std::string>({"HcclAllGatherVInner", "stream", "nullptr", "please check stream"}));
     CHK_PTR_NULL(stream);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAllGatherVV2(sendBuf, sendCount, recvBuf, const_cast<void*>(recvCounts), const_cast<void*>(recvDispls), dataType, comm, stream));
@@ -2083,7 +2083,7 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
     if (UNLIKELY(sendCount > 0 && sendBuf == nullptr)) {
             RPT_INPUT_ERR(true, "EI0003",\
             std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({"HcclAllGatherV", "sendBuf", "nullptr", "please check sendBuf"}));
+            std::vector<std::string>({"HcclAllGatherVInner", "sendBuf", "nullptr", "please check sendBuf"}));
             CHK_PTR_NULL(sendBuf);
     }
 
@@ -2104,7 +2104,7 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
     u64* counts = static_cast<u64 *>(const_cast<void*>(recvCounts));
     for (u32 i = 0; i < rankSize; i++) {
         CHK_PRT_RET(counts[i] > SYS_MAX_COUNT,
-            HCCL_ERROR("HcclAllGatherV recvCounts[%u][%llu] is invalid.(bigger than MAX count[%llu])",
+            HCCL_ERROR("HcclAllGatherVInner recvCounts[%u][%llu] is invalid.(bigger than MAX count[%llu])",
                 i, counts[i], SYS_MAX_COUNT),
             HCCL_E_PARA);
         outputCount += counts[i];
@@ -2113,7 +2113,7 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
     CHK_PRT_RET(outputCount == 0, HCCL_WARNING("The outputCount is 0, this AllGatherV has no task to execute, "
         "returning success."), HCCL_SUCCESS);
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAllGatherV", "recvBuf", "nullptr", "please check recvBuf"}));
+        std::vector<std::string>({"HcclAllGatherVInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 
     /* 接口交互信息日志 */
@@ -2132,7 +2132,7 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
             GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclAllGatherV:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclAllGatherVInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2143,7 +2143,7 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
 
     const u64 countOfThisRank = static_cast<const u64*>(recvCounts)[userRank];
     CHK_PRT_RET(sendCount != countOfThisRank,
-        HCCL_ERROR("[HcclAllGatherV] input sendCount[%llu] is not equal to recvCounts[%u][%llu]", sendCount,
+        HCCL_ERROR("[HcclAllGatherVInner] input sendCount[%llu] is not equal to recvCounts[%u][%llu]", sendCount,
         userRank, countOfThisRank),
         HCCL_E_PARA);
 
@@ -2167,7 +2167,7 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllGatherV:success,take time: " +
+        std::string endInfo = "HcclAllGatherVInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -2175,7 +2175,7 @@ HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSend(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
+HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
                     HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -2188,7 +2188,7 @@ HcclResult HcclSend(void* sendBuf, uint64_t count, HcclDataType dataType, uint32
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclSend success"), HCCL_SUCCESS);
+    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclSendInner success"), HCCL_SUCCESS);
     // 入参合法性校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(sendBuf);
@@ -2225,7 +2225,7 @@ HcclResult HcclSend(void* sendBuf, uint64_t count, HcclDataType dataType, uint32
             tag.c_str(), sendBuf, count, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclSend:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclSendInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2246,7 +2246,7 @@ HcclResult HcclSend(void* sendBuf, uint64_t count, HcclDataType dataType, uint32
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclSend:success,take time: " +
+        std::string endInfo = "HcclSendInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -2254,7 +2254,7 @@ HcclResult HcclSend(void* sendBuf, uint64_t count, HcclDataType dataType, uint32
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclRecv(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
+HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
                     HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -2267,7 +2267,7 @@ HcclResult HcclRecv(void* recvBuf, uint64_t count, HcclDataType dataType, uint32
     }
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclRecv success"), HCCL_SUCCESS);
+    CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return HcclRecvInner success"), HCCL_SUCCESS);
     // 入参合法性校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(recvBuf);
@@ -2304,7 +2304,7 @@ HcclResult HcclRecv(void* recvBuf, uint64_t count, HcclDataType dataType, uint32
             tag.c_str(), recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclRecv:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclRecvInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2325,7 +2325,7 @@ HcclResult HcclRecv(void* recvBuf, uint64_t count, HcclDataType dataType, uint32
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclRecv:success,take time: " +
+        std::string endInfo = "HcclRecvInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -2595,7 +2595,7 @@ HcclResult HcclGetOpBasedMemSize(const HcclCMDType &opType, u64 &size,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
+HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
     uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -2612,11 +2612,11 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
         HCCL_WARNING("sendCount and recvCount are both 0, return AllToAll success"), HCCL_SUCCESS);
     RPT_INPUT_ERR(sendBuf == nullptr, "EI0003",\
         std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAll", "sendBuf", "nullptr", "please check sendBuf"}));
+        std::vector<std::string>({"HcclAlltoAllInner", "sendBuf", "nullptr", "please check sendBuf"}));
     CHK_PTR_NULL(sendBuf);
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003",\
         std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAll", "recvBuf", "nullptr", "please check recvBuf"}));
+        std::vector<std::string>({"HcclAlltoAllInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
     CHK_PRT_RET(sendCount != recvCount,
         HCCL_ERROR("sendCount[%lu] and recvCount[%lu] are not equal, please check params",
@@ -2626,13 +2626,13 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
             GetDataTypeEnumStr(sendType).c_str(), GetDataTypeEnumStr(recvType).c_str()), HCCL_E_PARA);
 
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAll", "stream", "nullptr", "please check stream"}));
+        std::vector<std::string>({"HcclAlltoAllInner", "stream", "nullptr", "please check stream"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAll", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclAlltoAllInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     CHK_PRT_RET(sendBuf == recvBuf,
-        HCCL_ERROR("[HcclAlltoAll] sendBuf and recvBuf cannot be same."), HCCL_E_PARA);
+        HCCL_ERROR("[HcclAlltoAllInner] sendBuf and recvBuf cannot be same."), HCCL_E_PARA);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, comm, stream));
 #endif
@@ -2658,7 +2658,7 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
             streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclAlltoAll:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclAlltoAllInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2677,7 +2677,7 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
 
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
-        std::string endInfo = "HcclAlltoAll:success,take time: " +
+        std::string endInfo = "HcclAlltoAllInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -2686,7 +2686,7 @@ HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType se
 }
 
 // sendBuf & recvBuf为device mem, 其它为host mem
-HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
+HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
                          HcclComm comm, aclrtStream stream)
 {
@@ -2701,22 +2701,22 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
     RPT_INPUT_ERR(sendCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllV", "sendCounts", "nullptr", "please check sendCounts"}));
+        std::vector<std::string>({"HcclAlltoAllVInner", "sendCounts", "nullptr", "please check sendCounts"}));
     CHK_PTR_NULL(sendCounts);
     RPT_INPUT_ERR(sdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllV", "sdispls", "nullptr", "please check sdispls"}));
+        std::vector<std::string>({"HcclAlltoAllVInner", "sdispls", "nullptr", "please check sdispls"}));
     CHK_PTR_NULL(sdispls);
     RPT_INPUT_ERR(recvCounts == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllV", "recvCounts", "nullptr", "please check recvCounts"}));
+        std::vector<std::string>({"HcclAlltoAllVInner", "recvCounts", "nullptr", "please check recvCounts"}));
     CHK_PTR_NULL(recvCounts);
     RPT_INPUT_ERR(rdispls == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllV", "rdispls", "nullptr", "please check rdispls"}));
+        std::vector<std::string>({"HcclAlltoAllVInner", "rdispls", "nullptr", "please check rdispls"}));
     CHK_PTR_NULL(rdispls);
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllV", "stream", "nullptr", "please check stream"}));
+        std::vector<std::string>({"HcclAlltoAllVInner", "stream", "nullptr", "please check stream"}));
     CHK_PTR_NULL(stream);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllV", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclAlltoAllVInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, comm, stream));
@@ -2747,7 +2747,7 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
             GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclAlltoAllV:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclAlltoAllVInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2780,7 +2780,7 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAlltoAllV:success,take time: " +
+        std::string endInfo = "HcclAlltoAllVInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -2788,7 +2788,7 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAlltoAllVC(const void *sendBuf, const void *sendCountMatrix,
+HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     HcclDataType sendType, const void *recvBuf, HcclDataType recvType,
     HcclComm comm, rtStream_t stream)
 {
@@ -2806,10 +2806,10 @@ HcclResult HcclAlltoAllVC(const void *sendBuf, const void *sendCountMatrix,
 
     RPT_INPUT_ERR(sendCountMatrix == nullptr, "EI0003",\
         std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllVC", "sendCountMatrix", "nullptr", "please check sendCountMatrix"}));
+        std::vector<std::string>({"HcclAlltoAllVCInner", "sendCountMatrix", "nullptr", "please check sendCountMatrix"}));
     CHK_PTR_NULL(sendCountMatrix);
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclAlltoAllVC", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclAlltoAllVCInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, comm, stream));
@@ -2847,7 +2847,7 @@ HcclResult HcclAlltoAllVC(const void *sendBuf, const void *sendCountMatrix,
             GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclAlltoAllVC:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclAlltoAllVCInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2879,7 +2879,7 @@ HcclResult HcclAlltoAllVC(const void *sendBuf, const void *sendCountMatrix,
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAlltoAllVC:success,take time: " +
+        std::string endInfo = "HcclAlltoAllVCInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -2887,7 +2887,7 @@ HcclResult HcclAlltoAllVC(const void *sendBuf, const void *sendCountMatrix,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
+HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
                       uint32_t root, HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -2903,13 +2903,13 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return reduce success"), HCCL_SUCCESS);
     // 入参合法性校验
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduce", "comm", "nullptr", "please check comm"}));
+        std::vector<std::string>({"HcclReduceInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduce", "sendBuf", "nullptr", "please check sendBuf"}));
+        std::vector<std::string>({"HcclReduceInner", "sendBuf", "nullptr", "please check sendBuf"}));
     CHK_PTR_NULL(sendBuf);
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclReduce", "recvBuf", "nullptr", "please check recvBuf"}));
+        std::vector<std::string>({"HcclReduceInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream));
@@ -2947,7 +2947,7 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
             root, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclReduce:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclReduceInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -2969,7 +2969,7 @@ HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclReduce:success,take time: " +
+        std::string endInfo = "HcclReduceInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }
@@ -3111,7 +3111,7 @@ HcclResult HcclGatherAlltoAllV(HcomGatherAllToAllVParams params, HcclComm comm, 
     CHK_RET_AND_PRINT_IDE(RunGather(&sendCounts, &sdispls, params.gatheredbuf, gatherPara), tag.c_str());
 
     // step2 alltoallv
-    CHK_RET_AND_PRINT_IDE(HcclAlltoAllV(params.gatheredbuf, &sendCounts, &sdispls, params.recvtype, params.recvbuf,
+    CHK_RET_AND_PRINT_IDE(HcclAlltoAllVInner(params.gatheredbuf, &sendCounts, &sdispls, params.recvtype, params.recvbuf,
         params.recvcounts, params.rdispls, params.recvtype, comm, stream), tag.c_str());
 
     if (GetExternalInputHcclEnableEntryLog()) {
@@ -3476,7 +3476,7 @@ HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8
 }
 #endif // __cplusplus
 
-HcclResult HcclBatchSendRecv(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream)
+HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream)
 {
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclBatchSendRecvV2(sendRecvInfo, itemNum, comm, stream));
@@ -3517,12 +3517,12 @@ HcclResult HcclBatchSendRecv(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, H
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
-    
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], itemNum[%u], streamId[%d], deviceLogicId[%d]", tag.c_str(), itemNum, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-        std::string logInfo = "Entry-HcclBatchSendRecv:" + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclBatchSendRecvInner:" + std::string(stackLogBuffer) +
             ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET(hcclComm->SaveTraceInfo(logInfo));
     }
@@ -3539,7 +3539,7 @@ HcclResult HcclBatchSendRecv(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, H
                 (sendRecvInfo + i)->sendRecvType, (sendRecvInfo + i)->remoteRank, (sendRecvInfo + i)->count,
                 (sendRecvInfo + i)->dataType, (sendRecvInfo + i)->buf);
             CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
-            std::string logInfo = "[HcclBatchSendRecv]" + std::string(stackLogBuffer);
+            std::string logInfo = "[HcclBatchSendRecvInner]" + std::string(stackLogBuffer);
             CHK_RET(hcclComm->SaveTraceInfo(logInfo));
         }
     }
@@ -3556,7 +3556,7 @@ HcclResult HcclBatchSendRecv(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, H
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclBatchSendRecv:success,take time: " +
+        std::string endInfo = "HcclBatchSendRecvInner:success,take time: " +
             std::to_string(DURATION_US(endut - startut).count()) + " us, tag: " + tag;
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }

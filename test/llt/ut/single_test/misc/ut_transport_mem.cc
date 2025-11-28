@@ -45,7 +45,8 @@
 #include "tcp_send_thread_pool.h"
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
@@ -395,12 +396,12 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_TransportMem_Init_Roce)
     transport->serviceLevel_ = 8; // HCCL_RDMA_SL_MAX 为7，异常分支校验
     ret = transport->Connect(1);
     EXPECT_EQ(ret, HCCL_E_PARA);
- 
+
     transport->trafficClass_ = 256; // HCCL_RDMA_TC_MAX 为255，异常分支校验
     transport->serviceLevel_ = 0;
     ret = transport->Connect(1);
     EXPECT_EQ(ret, HCCL_E_PARA);
- 
+
     transport->trafficClass_ = 0;
     transport->serviceLevel_ = 0;
     ret = transport->Connect(1);
@@ -1167,7 +1168,7 @@ TEST_F(ST_MPI_TRANSPORT_MEM_TEST, ut_transport_roce_mem_read_write)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = transport->Write(remoteMemop2, localMemop2, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    
+
     rt_ret = aclrtSynchronizeStream(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
     rt_ret = aclrtDestroyStream(stream);

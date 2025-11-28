@@ -129,7 +129,7 @@ HcclResult FakeHrtGetDeviceType(DevType &devType)
     } else {
         devType = DevType::DEV_TYPE_910_93;
     }
-    
+
     return HCCL_SUCCESS;
 }
 
@@ -219,7 +219,7 @@ TEST_F(MPI_AllGatherMix_Test, ut_mpi_HcclAllGatherOutPlace_mix_2p)
     s8* recvBuf = (s8*)sal_malloc(2 * count * sizeof(s8));
     sal_memset(recvBuf, 2 * count * sizeof(s8), 0, 2 * count * sizeof(s8));
 
-    ret = HcclAllGather(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, newcomm, stream);
+    ret = HcclAllGatherInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, newcomm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);

@@ -49,7 +49,8 @@
 
 #include "common/src/topo/hccl_whitelist.h"
 #include "profiling_manager.h"
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
 #include <iostream>
 #include <fstream>
@@ -188,7 +189,7 @@ TEST_F(STnslbdpTest, hccl_prepare_ut_env)
     u32 nodeid = hcclNslbDp::GetInstance().GetGlobalCommNodeId();
     HCCL_INFO("GetGlobalCommNodeId = %u", nodeid);
     u32 ranknum = hcclNslbDp::GetInstance().GetGlobalCommLocalRankNum();
-    HCCL_INFO("GetGlobalCommLocalRankNum = %u", ranknum); 
+    HCCL_INFO("GetGlobalCommLocalRankNum = %u", ranknum);
     u32 totalnum = hcclNslbDp::GetInstance().GetGlobalCommRankTotalNum();
     HCCL_INFO("GetGlobalCommRankTotalNum = %u", totalnum);
 
@@ -660,7 +661,7 @@ TEST_F(STnslbdpTest, ut_collect_table2_910b)
     opParam.All2AllDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_FP32;
     opParam.All2AllDataDes.sendCount = 16;
 
-    std::string algName = "ReduceScatterVMeshOpbaseExecutor";  
+    std::string algName = "ReduceScatterVMeshOpbaseExecutor";
 
     std::string identifier_ = "192.168.0.101-8000-8001";
     DevType deviceType_ = DevType::DEV_TYPE_910B;
@@ -705,7 +706,7 @@ TEST_F(STnslbdpTest, ut_collect_table3_910b)
     opParam.All2AllDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_FP32;
     opParam.All2AllDataDes.sendCount = 16;
 
-    std::string algName = "ReduceScatterVMeshOpbaseExecutor";  
+    std::string algName = "ReduceScatterVMeshOpbaseExecutor";
 
     std::string identifier_ = "192.168.0.101-8000-8001";
     DevType deviceType_ = DevType::DEV_TYPE_910B;
@@ -812,7 +813,7 @@ TEST_F(STnslbdpTest, ut_collect_ahc_table2_910C)
     opParam.All2AllDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_FP32;
     opParam.All2AllDataDes.sendCount = 16;
 
-    string algName = "ReduceScatterRingFor91093Executor";  
+    string algName = "ReduceScatterRingFor91093Executor";
 
     string identifier_ = "192.168.0.101_8000_8001";
 
@@ -865,7 +866,7 @@ TEST_F(STnslbdpTest, ut_collect_ahc_table3_910C)
     opParam.All2AllDataDes.recvType = HcclDataType::HCCL_DATA_TYPE_FP32;
     opParam.All2AllDataDes.sendCount = 16;
 
-    string algName = "ReduceScatterRingFor91093Executor";  
+    string algName = "ReduceScatterRingFor91093Executor";
 
     string identifier_ = "192.168.0.101-8000-8001";
     AlgType nslbAlgType;
