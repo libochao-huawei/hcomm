@@ -146,7 +146,7 @@ HcclResult GetKernelFilePath(std::string &binaryPath)
     if (getPath != nullptr) {
         libPath = getPath;
     } else {
-        libPath = "/usr/local/Ascend/latest/";
+        libPath = "/usr/local/Ascend/cann/";
         HCCL_WARNING("[GetKernelFilePath]ENV:ASCEND_HOME_PATH is not set");
     }
 

@@ -36,14 +36,6 @@
         <file value="dtype_common.h"/>
         <file value="workflow.h"/>
     </file_info>
-    <file_info value="include" copy_type="source" src_path="hcomm/pkg/hccl" dst_path="pkg_inc/hccl" install_path="hcomm/pkg_inc/hccl" install_type="devel" install_mod="440">
-        <file value="base.h"/>
-        <file value="hccl_ex.h"/>
-        <file value="hccl_one_sided_services.h"/>
-        <file value="hcom.h"/>
-        <file value="dtype_common.h"/>
-        <file value="workflow.h"/>
-    </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="Ascend/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440">
         <file value="aicpu_hcomm.tar.gz"/>
     </file_info>
