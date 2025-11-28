@@ -11,7 +11,7 @@
         <check_features>true</check_features>
     </package_info>
     <generate_info value="hcomm_version.h" dst_path="share/info/hcomm" install_path="$(TARGET_ENV)/include/version" install_mod="440" install_type="devel" generator="version_header">
-       <HCOMM_VERSION>$(CUR_VER)</HCOMM_VERSION>
+       <HCOMM_VERSION>$(ASCEND_VER)</HCOMM_VERSION>
        <HCOMM_TIMESTAMP>$(TIMESTAMP_NO)</HCOMM_TIMESTAMP>
     </generate_info>
     <generate_info value="scene.info" dst_path="share/info/hcomm" install_path="share/info/hcomm" install_mod="440">
