@@ -10,7 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <runtime/rt.h>
@@ -26,7 +26,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "dlra_function.h"
- 
+
 #define private public
 #define protected public
 #include "externalinput.h"
@@ -37,18 +37,19 @@
 #include "rdma_resource_manager.h"
 #include "externalinput_pub.h"
 #undef private
- 
-#include <hccl/hccl.h>
+
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
 #include <iostream>
 #include <fstream>
- 
+
 using namespace std;
 using namespace hccl;
- 
- 
+
+
 class TypicalQPManagerTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -59,7 +60,7 @@ protected:
     {
         std::cout << "TypicalQPManagerTest TearDown" << std::endl;
     }
- 
+
     virtual void SetUp()
     {
         std::cout << "A Test SetUP" << std::endl;
@@ -78,8 +79,8 @@ HcclResult stub_HrtRaGetNotifyBaseAddr_1(RdmaHandle handle, u64 *va, u64 *size)
     *size = 4;
     return HCCL_SUCCESS;
 }
-  
- 
+
+
 TEST_F(TypicalQPManagerTest, st_CreateQp)
 {
     MOCKER(hrtRaTypicalQpCreate).stubs().will(returnValue(HCCL_SUCCESS));
@@ -88,15 +89,15 @@ TEST_F(TypicalQPManagerTest, st_CreateQp)
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaTimeOut).stubs().will(returnValue(1));
- 
+
     s32 device_id = 0;
     HcclResult ret = hrtSetDevice(device_id);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     ret = RdmaResourceManager::GetInstance().Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
- 
+
+
     struct typical_qp qpInfo;
     auto& manager = TypicalQpManager::GetInstance();
     manager.rdmaHandle_ = (void *)0x1000000;
@@ -106,19 +107,19 @@ TEST_F(TypicalQPManagerTest, st_CreateQp)
     ret = hrtResetDevice(device_id);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
- 
+
 TEST_F(TypicalQPManagerTest, st_ModifyQp)
 {
     HcclResult ret;
     s8* temp = (s8*)sal_malloc(sizeof(s8));
- 
+
     MOCKER(hrtRaTypicalQpModify)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
- 
+
     struct typical_qp localQpInfo;
     struct typical_qp remoteQpInfo;
- 
+
     localQpInfo.qpn = 1;
     remoteQpInfo.qpn = 2;
     auto& manager = TypicalQpManager::GetInstance();
@@ -128,16 +129,16 @@ TEST_F(TypicalQPManagerTest, st_ModifyQp)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     sal_free(temp);
 }
- 
+
 TEST_F(TypicalQPManagerTest, st_DestroyQp)
 {
     HcclResult ret;
     s8* temp = (s8*)sal_malloc(sizeof(s8));
- 
+
     MOCKER(HrtRaQpDestroy)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
- 
+
     struct typical_qp qpInfo;
     qpInfo.qpn = 1;
     auto& manager = TypicalQpManager::GetInstance();

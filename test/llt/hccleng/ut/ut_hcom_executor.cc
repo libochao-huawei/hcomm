@@ -83,7 +83,7 @@ void getMutiExecutorStatus(HcclResult &status, int count)
 
 ge::graphStatus FakeGetOption1(ge::GEThreadLocalContext *that, const std::string &optionExec, std::string &dumpDebugValue)
 {
-    nlohmann::json group_list = 
+    nlohmann::json group_list =
     {
         {
             {"group_name", "aa"},
@@ -159,7 +159,7 @@ ge::graphStatus FakeGetOptionError1(ge::GEThreadLocalContext *that, const std::s
 {
     if (optionExec == ge::OPTION_EXEC_HCOM_GROUPLIST) {
         dumpDebugValue = R"({"rank_map":[{"logic_rank_id":1,"model_rank_id":0},{"logic_rank_id":1,"model_rank_id":0]})";
-    } 
+    }
     return ge::GRAPH_SUCCESS;
 }
 #define HCCL_COM_DATA_SIZE 1024
@@ -198,7 +198,7 @@ TEST_F(HcomExecutorTest, ut_executor_initgroup)
     MOCKER_CPP(&ge::GEThreadLocalContext::GetOption)
     .stubs()
     .will(invoke(FakeGetOption1));
-    
+
     ret = hccl::HcomExecutor::GetInstance().InitGroup();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -343,7 +343,7 @@ TEST_F(HcomExecutorTest, ut_executor_broadcast)
     MOCKER_CPP(&ge::GEThreadLocalContext::GetOption)
     .stubs()
     .will(invoke(FakeGetOptionGrouplist));
-    
+
     ret = HcomExecInitialize();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -385,7 +385,7 @@ TEST_F(HcomExecutorTest, ut_executor_broadcast)
     }
 
     (void) HcomSetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    ret = HcclBroadcast(sendbuf, count, HCCL_DATA_TYPE_INT8, 0, hcclComm, stream);
+    ret = HcclBroadcastInner(sendbuf, count, HCCL_DATA_TYPE_INT8, 0, hcclComm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = rtStreamSynchronize(stream);
@@ -492,7 +492,7 @@ TEST_F(HcomExecutorTest, ut_executor_allreduce)
     }
 
     (void) HcomSetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    ret = HcclAllReduce(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, hcclComm, stream);
+    ret = HcclAllReduceInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, hcclComm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     rt_ret = rtStreamSynchronize(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
@@ -1630,7 +1630,7 @@ TEST_F(HcomExecutorTest, ut_executor_reduce)
     }
 
     (void) HcomSetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    ret = HcclReduce(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, hcclComm, stream);
+    ret = HcclReduceInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, hcclComm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = rtStreamSynchronize(stream);
@@ -1683,37 +1683,37 @@ TEST_F(HcomExecutorTest, Ut_HcomExec) {
     std::vector<HcomRemoteAccessAddrInfo> addrInfos;
     result = HcomExecEnqueueRemoteAccess(remoteAccessType, addrInfos, callback);
     EXPECT_EQ(result, HCCL_E_NOT_SUPPORT);
-          
+
     HcomOperation_t opInfo1;
     opInfo1.group = "testGroup";
-    opInfo1.inputPtr = nullptr; 
+    opInfo1.inputPtr = nullptr;
     opInfo1.count = 10;
     opInfo1.dataType = HCCL_DATA_TYPE_INT32;
     opInfo1.root = 0;
     result = hccl::HcomExecutor::GetInstance().ExecuteBroadcast(opInfo1);
     EXPECT_EQ(result, HCCL_SUCCESS);
-    
+
     result = hccl::HcomExecutor::GetInstance().ExecuteAllreduce(opInfo1);
-    EXPECT_EQ(result, HCCL_SUCCESS); 
-    
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
     result = hccl::HcomExecutor::GetInstance().ExecuteAllGather(opInfo1);
     EXPECT_EQ(result, HCCL_SUCCESS);
-    
+
     result = hccl::HcomExecutor::GetInstance().ExecuteReduceScatter(opInfo1);
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
 TEST_F(HcomExecutorTest, Ut_ExecuteAlltoAll) {
-    void* baseAddr = malloc(100); 
+    void* baseAddr = malloc(100);
     u64 offset = 0;
-    std::vector<u64> addrInfo = {10, 20, 30, 40}; 
+    std::vector<u64> addrInfo = {10, 20, 30, 40};
     u64 beginIndex = 0;
     u64 count = 2;
     u64 tmpMemSize = 0;
 
     hccl::HcomExecutor::GetInstance().GatherMemCopyThread(baseAddr, offset, addrInfo, beginIndex, count, tmpMemSize);
     free(baseAddr);
-    
+
     HcomAllToAllVParams opInfo;
     opInfo.group = nullptr;
     opInfo.sendbuf = (void*)0x1000;

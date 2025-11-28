@@ -50,7 +50,8 @@
 
 #include "common/src/topo/hccl_whitelist.h"
 #include "profiling_manager.h"
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
 #include <iostream>
 #include <fstream>
@@ -103,12 +104,12 @@ protected:
         ResetInitState();
         SetFftsSwitch(true);
         // MOCKER(InitTask).stubs().will(invoke(InitTask_stub));
-        MOCKER(GetWorkflowMode).stubs().will(returnValue(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));    
+        MOCKER(GetWorkflowMode).stubs().will(returnValue(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
         s32 ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr);
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
-        fftsDispatcher = reinterpret_cast<DispatcherGraph*>(dispatcherPtr); 
-        
+        fftsDispatcher = reinterpret_cast<DispatcherGraph*>(dispatcherPtr);
+
     }
     virtual void TearDown()
     {
@@ -167,7 +168,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_base)
         EXPECT_EQ(fftsCtxsPtr->taskInfos[i], taskInfos[i]);
     }
     EXPECT_EQ(fftsCtxsPtr->taskInfos.size(), 100);
-    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 4);    
+    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 4);
 
     EXPECT_EQ(fftsCtxsPtr->contexts.size(), 100);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorNum, (u32)1);
@@ -188,7 +189,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_base)
 // wait            record
 // placeholder3
 TEST_F(FftsGraphV2Test, FFTSGRAPHV2_inchipwait_no_afterCtx_repeat)
-{   
+{
     HcclRtNotify signal;
     EXPECT_EQ(hrtNotifyCreateWithFlag(0, &signal), HCCL_SUCCESS);
 
@@ -199,7 +200,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_inchipwait_no_afterCtx_repeat)
     Stream stream1(StreamType::STREAM_TYPE_OFFLINE);
     Stream stream2(StreamType::STREAM_TYPE_OFFLINE);
     Stream stream3(StreamType::STREAM_TYPE_OFFLINE);
-    
+
     EXPECT_EQ(fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "inchipwait_no_afterCtx_repeat1",true), HCCL_SUCCESS);
     EXPECT_EQ(fftsDispatcher->SignalRecord(signal, stream1, (u32)0, (u64)0x0, (s32)0, true, (u64)0x0, 1), HCCL_SUCCESS);
     EXPECT_EQ(fftsDispatcher->SignalRecord(signal, stream1, (u32)0, (u64)0x0, (s32)0, true, (u64)0x0, 1), HCCL_SUCCESS);
@@ -261,7 +262,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_inchipwait_no_afterCtx_repeat)
     EXPECT_EQ(fftsCtxsPtr->contexts[5].successorNum, (u32)0);
 
     EXPECT_EQ(fftsCtxsPtr->taskInfos.size(), 100);
-    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 14);    
+    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 14);
 
     // 子图复用验证
     EXPECT_EQ(fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "inchipwait_no_afterCtx_repeat2",true), HCCL_SUCCESS);
@@ -316,7 +317,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_record_no_prectx_repeat)
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->MemcpyAsync(dst, src, stream1, (u32)1, hccl::LinkType::LINK_HCCS));
 
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->LaunchTasksEx(stream1, subStreams));
-    
+
     std::vector<GraphMgr::HcclFfftsTaskInfo> taskInfos = {
         GraphMgr::HcclFfftsTaskInfo(0, 8, 0, stream1.id(), 4294967295, 0, 1, 1, 0),
         GraphMgr::HcclFfftsTaskInfo(1, 0, 0, stream1.id(), notifyId, 1, 2, 2, 7),
@@ -356,7 +357,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_record_no_prectx_repeat)
     EXPECT_EQ(fftsCtxsPtr->contexts[5].successorList[0], (u32)2);
     EXPECT_EQ(fftsCtxsPtr->contexts[6].successorNum, (u32)0);
     EXPECT_EQ(fftsCtxsPtr->taskInfos.size(), 100);
-    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 15);    
+    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 15);
 
     EXPECT_EQ(fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "record_no_prectx_repeat2",true), HCCL_SUCCESS);
     EXPECT_EQ(fftsDispatcher->SignalRecord(signal, stream1, (u32)0, (u64)0x0, (s32)0, true, (u64)0x0, 1), HCCL_SUCCESS);
@@ -380,8 +381,8 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_no_label_task_repeat)
 {
     HcclRtNotify signal;
     EXPECT_EQ(hrtNotifyCreateWithFlag(0, &signal), HCCL_SUCCESS);
-    
-    
+
+
     u32 notifyId = 0;
     EXPECT_EQ(GetNotifyID(signal, &notifyId), HCCL_SUCCESS);
     HCCL_INFO("notify id %u", notifyId);
@@ -389,7 +390,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_no_label_task_repeat)
     Stream stream1(StreamType::STREAM_TYPE_OFFLINE);
     Stream stream2(StreamType::STREAM_TYPE_OFFLINE);
     Stream stream3(StreamType::STREAM_TYPE_OFFLINE);
-    
+
     EXPECT_EQ(fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "no_label_task_repeat1",true), HCCL_SUCCESS);
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->MemcpyAsync(dst, src, stream1, (u32)1));
     EXPECT_EQ(fftsDispatcher->SignalRecord(signal, stream1, (u32)0, (u64)0x0, (s32)0, true, (u64)0x0, 1), HCCL_SUCCESS);
@@ -422,7 +423,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_no_label_task_repeat)
         GraphMgr::HcclFfftsTaskInfo(11, 4, 4, stream2.id(), 4294967295, 1, 0, 0, 0),
         GraphMgr::HcclFfftsTaskInfo(12, 8, 5, stream3.id(), 4294967295, 1, 1, 13, 0),
         GraphMgr::HcclFfftsTaskInfo(13, 0, 5, stream3.id(), notifyId, 1, 1, 5, 0),
-        GraphMgr::HcclFfftsTaskInfo(14, 4, 6, stream1.id(), 4294967295, 1, 0, 0, 0), 
+        GraphMgr::HcclFfftsTaskInfo(14, 4, 6, stream1.id(), 4294967295, 1, 0, 0, 0),
     };
     GraphMgr::HcclFftsContextsInfo *fftsCtxsPtr = static_cast<GraphMgr::HcclFftsContextsInfo*>(fftsDispatcher->fftsCtxsPtr);
     for (u32 i = 0; i < fftsCtxsPtr->refreshTaskIndex; i++) {
@@ -446,7 +447,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_no_label_task_repeat)
     EXPECT_EQ(fftsCtxsPtr->contexts[5].successorList[0], (u32)2);
     EXPECT_EQ(fftsCtxsPtr->contexts[6].successorNum, (u32)0);
     EXPECT_EQ(fftsCtxsPtr->taskInfos.size(), 100);
-    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 15);    
+    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 15);
 
     EXPECT_EQ(fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "no_label_task_repeat2",true), HCCL_SUCCESS);
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->MemcpyAsync(dst, src, stream1, (u32)1));
@@ -468,7 +469,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_no_label_task_repeat)
 
 
 // 保证覆盖率最基本的用例
-// 单条流连续  wait record  wait record 
+// 单条流连续  wait record  wait record
 // 单条流连续  record wait  record  wait
 TEST_F(FftsGraphV2Test, FFTSGRAPHV2_wait_no_afterctx_2_repeat)
 {
@@ -519,7 +520,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_wait_no_afterctx_2_repeat)
         EXPECT_EQ(fftsCtxsPtr->taskInfos[i], taskInfos[i]);
     }
     EXPECT_EQ(fftsCtxsPtr->taskInfos.size(), 100);
-    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 14);    
+    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 14);
 
     EXPECT_EQ(fftsCtxsPtr->contexts.size(), 100);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorNum, (u32)3);
@@ -533,7 +534,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_wait_no_afterctx_2_repeat)
 
     EXPECT_EQ(fftsCtxsPtr->contexts[2].successorNum, (u32)0);
     EXPECT_EQ(fftsCtxsPtr->contexts[3].successorNum, (u32)0);
-    EXPECT_EQ(fftsCtxsPtr->ctxNum, 4);    
+    EXPECT_EQ(fftsCtxsPtr->ctxNum, 4);
 
     // 子图复用
     fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "wait_no_afterctx_2_repeat2",true);
@@ -551,7 +552,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_wait_no_afterctx_2_repeat)
     EXPECT_EQ(fftsDispatcher->SignalRecord(signal, stream2, (u32)0, (u64)0x0, (s32)0, true, (u64)0x0, 1), HCCL_SUCCESS);
     EXPECT_EQ(fftsDispatcher->SignalWait(signal, stream2, 0, 0, 0, true, 1), HCCL_SUCCESS);
 
-    EXPECT_EQ(fftsCtxsPtr->ctxNum, 4);   
+    EXPECT_EQ(fftsCtxsPtr->ctxNum, 4);
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->LaunchTasksEx(stream1, subStreams));
 }
 
@@ -1461,28 +1462,28 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_all_task)
     }
 
     EXPECT_EQ(fftsCtxsPtr->taskInfos.size(), 100);
-    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 10);    
+    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 10);
 
     EXPECT_EQ(fftsCtxsPtr->contexts.size(), 100);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorNum, (u32)2);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorList[0], (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorList[1], (u32)4);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[1].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[1].successorList[0], (u32)2);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[2].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[2].successorList[0], (u32)3);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[3].successorNum, (u32)0);
 
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[4].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[4].successorList[0], (u32)5);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[5].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[5].successorList[0], (u32)6);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[6].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[6].successorList[0], (u32)7);
 
@@ -1520,10 +1521,10 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_wait_no_record)
     u64 dataCount = 64;
     EXPECT_EQ(fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "wait_no_record1",true), HCCL_SUCCESS);
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->MemcpyAsync(dst, src, stream1, (u32)1));
-    
+
     EXPECT_EQ(fftsDispatcher->SignalWait(signal, stream2, 0, 0, 0, true, 1), HCCL_SUCCESS);
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->MemcpyAsync(dst, src, stream2, (u32)1));
-  
+
     EXPECT_EQ(HCCL_E_INTERNAL, fftsDispatcher->LaunchTasksEx(stream1, subStreams));
 
 }
@@ -1594,7 +1595,7 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_TBEReduce)
     Stream stream2(StreamType::STREAM_TYPE_OFFLINE);
     u64 dataCount = 64;
     EXPECT_EQ(fftsDispatcher->ResetGraphCtx(meta.isEnableCache, "TBEReduce",true), HCCL_SUCCESS);
-    
+
 
     EXPECT_EQ(HCCL_SUCCESS, fftsDispatcher->MemcpyAsync(dst, src, stream1, (u32)1));
     EXPECT_EQ(fftsDispatcher->SignalRecord(signal, stream1, (u32)0, (u64)0x0, (s32)0, true, (u64)0x0, 1), HCCL_SUCCESS);
@@ -1637,28 +1638,28 @@ TEST_F(FftsGraphV2Test, FFTSGRAPHV2_TBEReduce)
     }
 
     EXPECT_EQ(fftsCtxsPtr->taskInfos.size(), 100);
-    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 15);    
+    EXPECT_EQ(fftsCtxsPtr->refreshTaskIndex, 15);
 
     EXPECT_EQ(fftsCtxsPtr->contexts.size(), 100);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorNum, (u32)2);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorList[0], (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[0].successorList[1], (u32)4);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[1].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[1].successorList[0], (u32)2);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[2].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[2].successorList[0], (u32)3);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[3].successorNum, (u32)0);
 
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[4].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[4].successorList[0], (u32)5);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[5].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[5].successorList[0], (u32)6);
-    
+
     EXPECT_EQ(fftsCtxsPtr->contexts[6].successorNum, (u32)1);
     EXPECT_EQ(fftsCtxsPtr->contexts[6].successorList[0], (u32)7);
 

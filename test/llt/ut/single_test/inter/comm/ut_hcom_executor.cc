@@ -23,7 +23,8 @@
 #include "hccl/hcom.h"
 #include "workflow_pub.h"
 #include "hcom.h"
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
 #include "config.h"
 #include "topoinfo_ranktableParser_pub.h"
@@ -160,7 +161,7 @@ TEST_F(HcomExecutorTest, ut_executor_broadcast)
     }
 
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    ret = HcclBroadcast(sendbuf, count, HCCL_DATA_TYPE_INT8, 0, comm, stream);
+    ret = HcclBroadcastInner(sendbuf, count, HCCL_DATA_TYPE_INT8, 0, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
@@ -271,7 +272,7 @@ TEST_F(HcomExecutorTest, ut_executor_allreduce)
     }
 
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    ret = HcclAllReduce(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    ret = HcclAllReduceInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     rt_ret = aclrtSynchronizeStream(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
@@ -357,7 +358,7 @@ TEST_F(HcomExecutorTest, ut_executor_equeue_allreduce_mix)
     {
         sendbuf[j] = 2;
     }
-    
+
     ret = HcomAllReduce("testallreduce", sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, NULL, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -1204,7 +1205,7 @@ TEST_F(HcomExecutorTest, ut_executor_reduce)
     }
 
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    ret = HcclReduce(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, comm, stream);
+    ret = HcclReduceInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     rt_ret = aclrtSynchronizeStream(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);

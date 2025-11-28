@@ -46,7 +46,8 @@
 #undef protected
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
@@ -130,7 +131,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_ExchangeIpcMesg)
     transport.machinePara_.localUserrank = 1;
     transport.machinePara_.remoteUserrank = 0;
 
-    MOCKER_CPP(&MemNameRepository::SetIpcMem, 
+    MOCKER_CPP(&MemNameRepository::SetIpcMem,
         HcclResult (MemNameRepository::*)(void *, u64, u8*, u32, u64 &, s32, s32, bool))
     .stubs()
     .with(any())
@@ -208,7 +209,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_ExchangePidMesg)
     transport.machinePara_.remoteUserrank = 0;
     HcclResult ret;
 
-    MOCKER_CPP(&MemNameRepository::SetIpcMem, 
+    MOCKER_CPP(&MemNameRepository::SetIpcMem,
         HcclResult (MemNameRepository::*)(void *, u64, u8*, u32, u64 &, s32, s32, bool))
     .stubs()
     .with(any())
@@ -313,7 +314,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_SocketSend)
     transport.machinePara_.remoteUserrank = 0;
     HcclResult ret;
 
-    MOCKER_CPP(&MemNameRepository::SetIpcMem, 
+    MOCKER_CPP(&MemNameRepository::SetIpcMem,
         HcclResult (MemNameRepository::*)(void *, u64, u8*, u32, u64 &, s32, s32, bool))
     .stubs()
     .with(any())
@@ -392,7 +393,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_PrepareConnect)
     transport.machinePara_.remoteUserrank = 0;
     HcclResult ret;
 
-    MOCKER_CPP(&MemNameRepository::SetIpcMem, 
+    MOCKER_CPP(&MemNameRepository::SetIpcMem,
         HcclResult (MemNameRepository::*)(void *, u64, u8*, u32, u64 &, s32, s32, bool))
     .stubs()
     .with(any())
@@ -422,7 +423,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_PrepareConnect)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
+
     MOCKER(hrtRaBlockGetSockets)
     .stubs()
     .with(any())
@@ -521,7 +522,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_Init)
     raResourceInfo.hostNetSocketMap.insert({invaildIp, ipsocketInfo});
 
     HcclResult ret;
-    MOCKER_CPP(&MemNameRepository::SetIpcMem, 
+    MOCKER_CPP(&MemNameRepository::SetIpcMem,
         HcclResult (MemNameRepository::*)(void *, u64, u8*, u32, u64 &, s32, s32, bool))
     .stubs()
     .with(any())
@@ -555,7 +556,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_Init)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
+
     MOCKER(hrtRaBlockGetSockets)
     .stubs()
     .with(any())
@@ -712,7 +713,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_Imrecv)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
+
 
     MOCKER_CPP(&RemoteNotify::Post)
     .stubs()
@@ -758,7 +759,7 @@ TEST_F(TransportShmEventTest, ut_TransportShmEvent_CheckShmMemRange)
     transport.machinePara_.remoteUserrank = 0;
     HcclResult ret;
 
-    MOCKER_CPP(&MemNameRepository::SetIpcMem, 
+    MOCKER_CPP(&MemNameRepository::SetIpcMem,
         HcclResult (MemNameRepository::*)(void *, u64, u8*, u32, u64 &, s32, s32, bool))
     .stubs()
     .with(any())

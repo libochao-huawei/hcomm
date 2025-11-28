@@ -26,7 +26,8 @@
 #include <sys/mman.h>
 #include <fcntl.h>
 #include <sys/mman.h>
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 
 #define private public
 #define protected public
@@ -92,7 +93,7 @@ struct ThreadContext {
 
 void ExecAllReduce(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t rankId)
 {
-    
+
     int ret = HCCL_SUCCESS;
     /* 1. 申请相关资源 */
     ret = hrtSetDevice(deviceLogicID);
@@ -128,7 +129,7 @@ void ExecAllReduce(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t ran
     EXPECT_EQ(rankID, rankId);
 
     /* 2. 执行allreduce */
-    ret = HcclAllReduce(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    ret = HcclAllReduceInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
@@ -168,7 +169,7 @@ TEST_F(OpbaseMultiThreadTest, ut_HcclAllReduce)
     }
     ret = HcclCommInitAll(ndev, devices, comms);
     EXPECT_EQ(ret, 0);
- 
+
     std::vector<std::thread> threads;
     threads.resize(ndev);
     for (uint32_t i = 0; i < ndev; i++) {
@@ -191,7 +192,7 @@ TEST_F(OpbaseMultiThreadTest, ut_HcclAllReduce)
 
 void ExecAllGather(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t rankId)
 {
-    
+
     int ret = HCCL_SUCCESS;
     /* 1. 申请相关资源 */
     ret = hrtSetDevice(deviceLogicID);
@@ -227,7 +228,7 @@ void ExecAllGather(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t ran
     EXPECT_EQ(rankID, rankId);
 
     /* 2. 执行allreduce */
-    ret =  HcclAllGather(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, comm, stream);
+    ret =  HcclAllGatherInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
@@ -288,7 +289,7 @@ TEST_F(OpbaseMultiThreadTest, ut_HcclAllGather)
 #endif
 void ExecBroadCast(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t rankId)
 {
-    
+
     int ret = HCCL_SUCCESS;
     /* 1. 申请相关资源 */
     ret = hrtSetDevice(deviceLogicID);
@@ -320,8 +321,8 @@ void ExecBroadCast(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t ran
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankID, rankId);
 
-    /* 2. 执行 HcclBroadcast */
-    ret = HcclBroadcast(sendbuf, count, HCCL_DATA_TYPE_INT8, 0, comm, stream);
+    /* 2. 执行 HcclBroadcastInner */
+    ret = HcclBroadcastInner(sendbuf, count, HCCL_DATA_TYPE_INT8, 0, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
@@ -382,7 +383,7 @@ TEST_F(OpbaseMultiThreadTest, ut_HcclBroadCast)
 
 void ExecReduceScatter(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t rankId)
 {
-    
+
     int ret = HCCL_SUCCESS;
     /* 1. 申请相关资源 */
     ret = hrtSetDevice(deviceLogicID);
@@ -418,8 +419,8 @@ void ExecReduceScatter(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankID, rankId);
 
-    /* 2. 执行 HcclReduceScatter */
-    ret = HcclReduceScatter(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    /* 2. 执行 HcclReduceScatterInner */
+    ret = HcclReduceScatterInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
@@ -480,7 +481,7 @@ TEST_F(OpbaseMultiThreadTest, ut_HcclReduceScatter)
 #endif
 void ExecReduce(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t rankId)
 {
-    
+
     int ret = HCCL_SUCCESS;
     /* 1. 申请相关资源 */
     ret = hrtSetDevice(deviceLogicID);
@@ -516,15 +517,15 @@ void ExecReduce(int ndev, HcclComm comm, uint32_t deviceLogicID, uint32_t rankId
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(rankID, rankId);
 
-    /* 2. 执行 HcclReduce */
-    ret = HcclReduce(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, comm, stream);
+    /* 2. 执行 HcclReduceInner */
+    ret = HcclReduceInner(sendbuf, recvbuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, 0, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     rt_ret = aclrtSynchronizeStream(stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
 
     /* 3. 校验执行结果准确性 */
-    
+
     s32 errors = 0;
 
     if (rankId == 0) {

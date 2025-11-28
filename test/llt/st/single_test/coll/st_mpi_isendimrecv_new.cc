@@ -46,7 +46,8 @@
 #undef protected
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
@@ -139,14 +140,14 @@ protected:
         rankVec[0].deviceInfo.devicePhyId = 0;
         HcclIpAddress ipAddr1(1811982528);
         rankVec[0].deviceInfo.deviceIp.push_back(ipAddr1); // 108.0.168.192
-        rankVec[0].deviceInfo.port = HETEROG_CCL_PORT; 
+        rankVec[0].deviceInfo.port = HETEROG_CCL_PORT;
         rankVec[0].serverIdx = 0;
         rankVec[0].serverId = "192.168.0.108";
         rankVec[1].rankId = 1;
         rankVec[1].deviceInfo.devicePhyId = 0;
         HcclIpAddress ipAddr2(1711319232);
         rankVec[1].deviceInfo.deviceIp.push_back(ipAddr2); // 109.0.168.192
-        rankVec[0].deviceInfo.port = HETEROG_CCL_PORT; 
+        rankVec[0].deviceInfo.port = HETEROG_CCL_PORT;
         rankVec[1].serverIdx = 1;
         rankVec[1].serverId = "192.168.0.109";
         rankTable.rankList.assign(rankVec.begin(), rankVec.end());
@@ -362,7 +363,7 @@ HcclResult stub_HccdBuildHeterogeneousTransport(HccdImplPml* impl, u32 commId, u
             invalidIp, invalidIp, 18000, 0, TransportResourceInfo()));
         transportHandle = link.get();
     }
- 
+
     return HCCL_SUCCESS;
 }
 
@@ -389,7 +390,7 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_send)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     HcclIpAddress invalidIp;
     TransportHeterogRoce transport("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::SendFlowControl)
@@ -400,7 +401,7 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_send)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     int ret;
     std::unique_ptr<HccdImplPml> impl;
     impl.reset(new (std::nothrow) HccdImplPml());
@@ -414,19 +415,19 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_send)
     u32 peerRank = 1;
     u32 tag = 0;
     u32 userRequire = 0;
- 
+
     RankInfo usrRankInfo;
     usrRankInfo.nicIp.push_back(HcclIpAddress(1));
     RankInfo peerRankInfo;
     peerRankInfo.nicIp.push_back(HcclIpAddress(1));
     impl->rankInfoList_.push_back(usrRankInfo);
     impl->rankInfoList_.push_back(peerRankInfo);
- 
+
     ret = impl->Isend(&buffer, count, dataType, peerRank, tag, requestHandle, userRequire);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
- 
+
 TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_improbe)
 {
     HcclIpAddress invalidIp;
@@ -459,7 +460,7 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_improbe)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     SetTcpMode(false);
     int ret;
     std::unique_ptr<HccdImplPml> impl;
@@ -467,7 +468,7 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_improbe)
     impl->userRankSize_ = 2;
     impl->userRank_ = 0;
     u32 peerRank = 1;
- 
+
     s32 tag = 0;
     s32 flag = HCCL_IMPROBE_COMPLETED;
     HcclMessageInfo msgInfo;
@@ -475,27 +476,27 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_improbe)
     HcclStatus status;
     status.error = 0;
     status.count = 1;
- 
+
     TransportEndPointInfo commRankTagKey(0, peerRank, tag);
     std::unique_lock<SpinMutex> transportMapLock(impl->transportMapSpinMutex_);
     impl->transportStorage_[commRankTagKey] = nullptr;
     transportMapLock.unlock();
- 
+
     ret = impl->Improbe(peerRank, tag, flag, msg, status);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     HcclEnvelopeSummary envelopInfo;
     TransportEndPointInfo dst(0, impl->userRank_, tag);
     std::unique_lock<std::mutex> Queuelock(TransportHeterogEventRoce::gReceivedEnvelopesMutex);
     TransportHeterogEventRoce::gReceivedEnvelopes[dst].push(envelopInfo);
     Queuelock.unlock();
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_RECV_REQUEST_MSG]++;
- 
+
     ret = impl->Improbe(peerRank, tag, flag, msg, status);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
- 
+
 TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_Imrecv)
 {
     MOCKER_CPP(&LocklessRingMemoryAllocate<HcclRequestInfo>::Alloc)
@@ -518,12 +519,12 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_Imrecv)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     int ret;
     std::unique_ptr<HccdImplPml> impl;
     impl.reset(new (std::nothrow) HccdImplPml());
     impl->userRankSize_ = 2;
- 
+
     u64 buffer = 0;
     s32 count = 1;
     HcclDataType dataType = HCCL_DATA_TYPE_INT8;
@@ -539,12 +540,12 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_Imrecv)
     msgHandle.envelope.envelope.protocol = 1;
     HcclMessage msg = &msgHandle;
     HcclRequest request = nullptr;
- 
+
     ret = impl->Imrecv(reinterpret_cast<void *>(buffer), count, dataType, msg, request);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
- 
+
 TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_HcclTest)
 {
     MOCKER_CPP(&TransportHeterog::ConnectAsync)
@@ -558,34 +559,34 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_roce_HcclTest)
     impl.reset(new (std::nothrow) HccdImplPml());
     impl->userRankSize_ = 2;
     unique_ptr<TransportHeterogEventRoce> link(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
- 
+
     s32 flag;
     HcclStatus compState;
     HcclRequestInfo requestInfo;
     requestInfo.transportHandle = link.get();
     requestInfo.transportRequest.epParam.src.rank = 1;
     requestInfo.transportRequest.status = 0;
- 
+
     requestInfo.transportRequest.requestType = HcclRequestType::HCCL_REQUEST_SEND;
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_SEND_COMPLETION_MSG] = 0;
     ret = impl->HcclTest(&requestInfo, flag, compState);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     requestInfo.transportHandle = link.get();
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_SEND_COMPLETION_MSG] = 1;
     ret = impl->HcclTest(&requestInfo, flag, compState);
- 
+
     requestInfo.transportHandle = link.get();
     requestInfo.transportRequest.requestType = HcclRequestType::HCCL_REQUEST_RECV;
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_RECV_COMPLETION_MSG] = 0;
     ret = impl->HcclTest(&requestInfo, flag, compState);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     requestInfo.transportHandle = link.get();
     requestInfo.transportRequest.requestType = HcclRequestType::HCCL_REQUEST_RECV;
     TransportHeterogEventRoce::gCqeCounterPerEvent[HCCL_EVENT_RECV_COMPLETION_MSG] = 1;
     ret = impl->HcclTest(&requestInfo, flag, compState);
- 
+
     requestInfo.transportHandle = link.get();
     requestInfo.transportRequest.requestType = HcclRequestType::HCCL_REQUEST_INVAIL;
     ret = impl->HcclTest(&requestInfo, flag, compState);
@@ -599,29 +600,29 @@ TEST_F(MPI_ISENDIRECV_TEST, st_hccd_impl_BuildHeterogeneousTransport)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     MOCKER_CPP(&TransportHeterogEventTcp::RegisterEschedAckCallback)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     MOCKER_CPP(&TransportHeterogEventTcp::ConnectAsync)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     SetTcpMode(true);
     std::unique_ptr<HccdImplPml> impl;
     impl.reset(new (std::nothrow) HccdImplPml());
     HccdImplPml *implPtr = impl.get();
- 
+
     RankInfo usrRankInfo;
     usrRankInfo.nicIp.push_back(HcclIpAddress(1));
     RankInfo peerRankInfo;
     peerRankInfo.nicIp.push_back(HcclIpAddress(1));
     implPtr->rankInfoList_.push_back(usrRankInfo);
     implPtr->rankInfoList_.push_back(peerRankInfo);
- 
+
     implPtr->ranksPort_.push_back(0);
     implPtr->ranksPort_.push_back(1);
     implPtr->devicePhyId_ = 0;

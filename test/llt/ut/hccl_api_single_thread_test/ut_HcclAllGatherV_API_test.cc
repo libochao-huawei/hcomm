@@ -49,7 +49,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_SendBufIsNullAndSendCountGEZer
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls,
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls,
         HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
@@ -66,7 +66,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_SendBufIsNullAndSendCountIsZer
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -82,7 +82,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_SendCountIsTooLarge_Expect_Ret
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -98,7 +98,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_RecvBufIsNull_Expect_ReturnIsH
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -114,7 +114,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_RecvCountsIsNull_Expect_Return
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -130,7 +130,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_RecvDisplsIsNull_Expect_Return
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -146,9 +146,9 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_RecvCountsZero_Expect_ReturnIs
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    
+
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
@@ -162,7 +162,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_CommIsNull_Expect_ReturnIsHCCL
     Ut_Device_Set(0);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -178,7 +178,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_RankDataNotEqual_Expect_Return
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -194,7 +194,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_DataSize1KB_Expect_ReturnIsHCC
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -210,7 +210,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_DataSize300MB_Expect_ReturnIsH
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -228,7 +228,7 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_Exec20times_Expect_ReturnIsHCC
     UT_STREAM_CREATE_DEFAULT(stream);
 
     for (u64 k = 0;k < LOOP_TIMES;k ++) {
-        HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+        HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
         EXPECT_EQ(ret, HCCL_SUCCESS);
         Ut_Stream_Synchronize(stream);
     }
@@ -241,12 +241,12 @@ TEST_F(HcclAllGatherVTest, Ut_HcclAllGatherV_When_2Server4Rank_Expect_ReturnIsHC
     UT_SET_SENDBUF_COUNT_RECVBUFV(HCCL_COM_DATA_SIZE,
         HCCL_COM_DATA_SIZE,
         rankNum * HCCL_COM_DATA_SIZE,
-        rankNum, HCCL_COM_DATA_SIZE, 
+        rankNum, HCCL_COM_DATA_SIZE,
         rankNum, HCCL_COM_DATA_SIZE);
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllGatherV(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAllGatherVInner(sendBuf, sendCount, recvBuf, recvCounts, recvDispls, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUFV_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);

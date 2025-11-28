@@ -40,7 +40,8 @@
 #include "transport_heterog_event_roce_pub.h"
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
@@ -165,7 +166,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_InitAllLinkVec)
 {
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo)); 
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
     TransportHeterogEventRoce *transportHandle = transport.get();
     int ret = transportHandle->InitAllLinkVec();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -188,7 +189,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_EraseTransportFr
 
         HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo)); 
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
     TransportHeterogEventRoce *transportHandle = transport.get();
 
     int ret = transportHandle->EraseTransportFromAllLinkVec(&transportPtr);
@@ -205,7 +206,7 @@ HcclResult stub_CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_White_List)
 {
     HcclIpAddress invalidIp;
-    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", 
+    unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective",
         invalidIp, invalidIp, 18000, 0, transportResourceInfo));
     transport->isHdcMode_ = true;
     transport->deviceLogicId_ = HOST_DEVICE_ID;
@@ -300,7 +301,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Init)
 {
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo)); 
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
     TransportHeterogEventRoce *transportHandle = transport.get();
     TransportHeterogEventRoce *transportHandle_1 = transport.get();
     RaResourceInfo raResourceInfo;
@@ -394,7 +395,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Init)
     ret = transportHandle_1->Deinit();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    GlobalMockObject::verify();    
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Deinit)
@@ -418,7 +419,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Deinit)
     .will(returnValue(HCCL_SUCCESS));
 
     unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo)); 
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
     TransportHeterogEventRoce *transportHandle = transport.get();
     int ret = transportHandle->Deinit();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -429,7 +430,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Send)
 {
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
-    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo)); 
+    // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
     TransportHeterogEventRoce *transportHandle = transport.get();
     TransData sendData;
     TransportEndPointParam epParam;
@@ -452,7 +453,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Imrecv)
     HcclRequestInfo* request;
     bool flag;
     bool needRecordFlag = true;
- 
+
     MOCKER_CPP_VIRTUAL(transport, &TransportHeterogRoce::Imrecv,
         HcclResult (TransportHeterogRoce::*)(const TransData&, HcclMessageInfo&, HcclRequestInfo*&))
     .stubs()
@@ -464,13 +465,13 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_Imrecv)
     .stubs()
     .with(any())
     .will(returnValue(1));
- 
+
     MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_AGAIN));
     transport.WaitBuildLinkComplete();
- 
+
     MOCKER_CPP(&TransportHeterog::CheckAndPushBuildLink)
     .stubs()
     .with(any())
@@ -738,7 +739,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogEventRoce_ParseDataRq
     wcDataRq[0].status = IBV_WC_WR_FLUSH_ERR;
     ret = transportHandle_1->ParseDataRqes(wcDataRq, num);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseDataRqes)
@@ -790,7 +791,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseDataRqes)
     wcDataRq[0].status = IBV_WC_WR_FLUSH_ERR;
     ret = transportHandle->ParseDataRqes(wcDataRq, num);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseDataSqes)
@@ -823,7 +824,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_ParseDataSqes)
     wc[0].status = IBV_WC_WR_FLUSH_ERR;
     ret = transportHandle->ParseDataSqes(wc, num);
     EXPECT_EQ(ret, HCCL_E_NETWORK);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullRecvRequestStatus)
@@ -842,7 +843,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullRecvRequestS
 
     int ret = TransportHeterogEventRoce::PullRecvRequestStatus(transportHandle);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportHeterogRoce_PullRecvRequestStatus_1)
@@ -1024,7 +1025,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_TransportEventHeterogRoce_InitTagRecv
 HcclResult stub_AllocMemBlocks(TransportHeterogRoce* roce, std::list<void *> &blockList)
 {
     static HcclRequestInfo requestInfo;
-    blockList.push_front(&requestInfo); 
+    blockList.push_front(&requestInfo);
     return HCCL_SUCCESS;
 }
 
@@ -1115,7 +1116,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, ut_hccd_TransportHeterogRoce_CreateSrq_s
 {
     std::unique_ptr<HccdImplPml> impl;
     impl.reset(new (std::nothrow) HccdImplPml());
- 
+
     impl->srqInit_ = true;
     int ret = impl->CreateSrq();
     EXPECT_EQ(ret, HCCL_SUCCESS);

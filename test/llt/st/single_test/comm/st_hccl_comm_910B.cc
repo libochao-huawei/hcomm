@@ -2061,7 +2061,7 @@ TEST_F(HcclCommTest910B, st_SetAlgType_module_8server_1dev_ring_ring)
     MOCKER_CPP_VIRTUAL(implstub, &HcclCommunicator::IsStandardCard)
     .stubs()
     .will(returnValue(false));
-    
+
     u32 ifnumVersion = 3;
     MOCKER(hrtRaGetInterfaceVersion)
     .stubs()
@@ -2793,7 +2793,7 @@ void *inter_reduce_scatter_task_undeter_opbase(void *parg)
 
   if (ret != HCCL_SUCCESS)
   {
-    HCCL_ERROR("dev[%d] task HcclReduceScatter falis", hcom_info.params.rank);
+    HCCL_ERROR("dev[%d] task HcclReduceScatterInner falis", hcom_info.params.rank);
   }
 
   rt_ret = aclrtSynchronizeStream(para_info->stream);

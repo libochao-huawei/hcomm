@@ -44,7 +44,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_SendBufIsNull_Expect_ReturnIsHCCL_
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -56,7 +56,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_RecvBufIsNull_Expect_ReturnIsHCCL_
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -68,7 +68,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_CountIsZero_Expect_ReturnIsHCCL_SU
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -80,9 +80,9 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_CountIsNotEqual_Expect_ReturnIsHCC
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    
+
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
@@ -92,9 +92,9 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_TypeIsNotEqual_Expect_ReturnIsHCCL
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT32, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT32, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    
+
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
@@ -104,7 +104,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_CommIsNull_Expect_ReturnIsHCCL_E_P
     Ut_Device_Set(0);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -116,7 +116,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_DataSize1KB_Expect_ReturnIsHCCL_SU
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -128,7 +128,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_DataSize300MB_Expect_ReturnIsHCCL_
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -142,7 +142,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_Exec20times_Expect_ReturnIsHCCL_SU
     UT_STREAM_CREATE_DEFAULT(stream);
 
     for(int k = 0;k < LOOP_TIMES;k ++) {
-        HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
+        HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);
         EXPECT_EQ(ret, HCCL_SUCCESS);
         Ut_Stream_Synchronize(stream);
     }
@@ -156,7 +156,7 @@ TEST_F(HcclAlltoAllTest, Ut_HcclAlltoAll_When_2Server4Rank_Expect_ReturnIsHCCL_S
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAlltoAll(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);;
+    HcclResult ret = HcclAlltoAllInner(sendBuf, sendCount, HCCL_DATA_TYPE_INT8, recvBuf, recvCount, HCCL_DATA_TYPE_INT8, comm, stream);;
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);

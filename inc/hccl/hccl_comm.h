@@ -8,12 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_H_
-#define HCCL_H_
+#ifndef HCCL_COMM_H_
+#define HCCL_COMM_H_
 
 #include <hccl/hccl_types.h>
 #include <acl/acl.h>
-#include "hccl_ops.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -289,4 +288,4 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif // HCCL_H
+#endif // HCCL_COMM_H_

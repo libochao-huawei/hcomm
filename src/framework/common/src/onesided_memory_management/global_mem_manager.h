@@ -16,7 +16,8 @@
 #include <memory>
 #include <unordered_set>
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "hccl_mem_defs.h"
 #include "global_mem_record.h"
 #include "hccl_network_pub.h"

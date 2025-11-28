@@ -66,7 +66,7 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus &captureStat
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
+HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
                          HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
     HcclUs startut = TIME_NOW();
@@ -84,17 +84,17 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
     CHK_PRT_RET(count == 0, HCCL_WARNING("input count is 0, return AllReduce success"), HCCL_SUCCESS);
     // 入参合法性校验
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
-                  std::vector<std::string>({"HcclAllReduce", "comm", "nullptr", "please check comm"}));
+                  std::vector<std::string>({"HcclAllReduceInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     RPT_INPUT_ERR(sendBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
-                  std::vector<std::string>({"HcclAllReduce", "sendBuf", "nullptr", "please check sendBuf"}));
+                  std::vector<std::string>({"HcclAllReduceInner", "sendBuf", "nullptr", "please check sendBuf"}));
     CHK_PTR_NULL(sendBuf);
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
-                  std::vector<std::string>({"HcclAllReduce", "recvBuf", "nullptr", "please check recvBuf"}));
+                  std::vector<std::string>({"HcclAllReduceInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
+    HCCLV2_FUNC_RUN(HcclAllReduceInnerV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
 #endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
@@ -131,7 +131,7 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
 
-        std::string logInfo = "Entry-HcclAllReduce: " + std::string(stackLogBuffer) +
+        std::string logInfo = "Entry-HcclAllReduceInner: " + std::string(stackLogBuffer) +
                               ", capture status[" + to_string(captureStatus) + "], model id[" + to_string(modelId) + "].";
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(logInfo), tag.c_str());
     }
@@ -154,7 +154,7 @@ HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataT
     if (GetExternalInputHcclEnableEntryLog()) {
         HcclUs endut = TIME_NOW();
         /* 关键状态记录 */
-        std::string endInfo = "HcclAllReduce:success,take time: " +
+        std::string endInfo = "HcclAllReduceInner:success,take time: " +
                               std::to_string(DURATION_US(endut - startut).count()) + " us," + std::string(stackLogBuffer);
         CHK_RET_AND_PRINT_IDE(hcclComm->SaveTraceInfo(endInfo), tag.c_str());
     }

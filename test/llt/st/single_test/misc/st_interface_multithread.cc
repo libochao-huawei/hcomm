@@ -10,7 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <runtime/rt.h>
@@ -26,7 +26,7 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 #include "dlra_function.h"
- 
+
 #define private public
 #define protected public
 #include "externalinput.h"
@@ -37,17 +37,18 @@
 #include "externalinput_pub.h"
 #include "interface_hccl.h"
 #undef private
- 
-#include <hccl/hccl.h>
+
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
 #include <iostream>
 #include <fstream>
- 
+
 using namespace std;
 using namespace hccl;
- 
+
 class MultiThreadNpuGpu : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -58,7 +59,7 @@ protected:
     {
         std::cout << "MultiThreadNpuGpu TearDown" << std::endl;
     }
- 
+
     virtual void SetUp()
     {
         std::cout << "A Test SetUP" << std::endl;
@@ -70,7 +71,7 @@ protected:
     }
 };
 
- 
+
 HcclResult stub_HrtRaGetNotifyBaseAddr_3(RdmaHandle handle, u64 *va, u64 *size)
 {
     *va = 0x20000000;
@@ -131,7 +132,7 @@ TEST_F(MultiThreadNpuGpu, EndtoEndOneProcess)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -249,7 +250,7 @@ void* ThreadHandleTypIcalQP(void* args)
     localMr.key = 4;
     EXPECT_EQ(hcclAllocWindowMem((void**)(&localMr.addr), localMr.size), HCCL_SUCCESS);
     EXPECT_EQ(hcclRegisterMem(&localMr), HCCL_SUCCESS);
-    
+
     AscendSendRecvLinkInfo linkInfo;
     linkInfo.localSyncMemAck = &localSyncMemAck;
     linkInfo.localQPinfo = &localQPInfo;
@@ -322,7 +323,7 @@ void* ThreadHandleQPWithAttr(void* args)
     localMr.key = 4;
     EXPECT_EQ(hcclAllocWindowMem((void**)(&localMr.addr), localMr.size), HCCL_SUCCESS);
     EXPECT_EQ(hcclRegisterMem(&localMr), HCCL_SUCCESS);
-    
+
     AscendSendRecvLinkInfo linkInfo;
     linkInfo.localSyncMemAck = &localSyncMemAck;
     linkInfo.localQPinfo = &localQPInfo;
@@ -355,7 +356,7 @@ TEST_F(MultiThreadNpuGpu, EndtoEndMutiThread)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -390,7 +391,7 @@ TEST_F(MultiThreadNpuGpu, EndtoEndMutiThreadSwitchDevice)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -411,13 +412,13 @@ TEST_F(MultiThreadNpuGpu, EndtoEndMutiThreadSwitchDevice)
 
 TEST_F(MultiThreadNpuGpu, EndtoEndOneProcessWithAttr)
 {
-    
+
     MOCKER(hrtRaGetQpAttr).stubs().will(invoke(stub_hrtRaGetQpAttr));
     MOCKER(hrtRaGetInterfaceVersion).stubs().will(invoke(stub_hrtRaGetInterfaceVersion_support));
     MOCKER(hrtRaQpCreateWithAttrs).stubs().will(invoke(stub_hrtRaQpCreateWithAttrs));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -437,13 +438,13 @@ TEST_F(MultiThreadNpuGpu, EndtoEndOneProcessWithAttr)
 
 TEST_F(MultiThreadNpuGpu, EndtoEndOneProcessWithAttrMultiThread)
 {
-    
+
     MOCKER(hrtRaGetQpAttr).stubs().will(invoke(stub_hrtRaGetQpAttr));
     MOCKER(hrtRaGetInterfaceVersion).stubs().will(invoke(stub_hrtRaGetInterfaceVersion_support));
     MOCKER(hrtRaQpCreateWithAttrs).stubs().will(invoke(stub_hrtRaQpCreateWithAttrs));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -453,7 +454,7 @@ TEST_F(MultiThreadNpuGpu, EndtoEndOneProcessWithAttrMultiThread)
 
     MOCKER(hrtNotifyWaitWithTimeOut).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtRDMADBSend).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    
+
     sal_thread_t tid[DEV_NUM];
     for (int devId = 0; devId < DEV_NUM; devId++) {
         tid[devId] = sal_thread_create("thread", ThreadHandleQPWithAttr, (void*)&devId);
@@ -557,7 +558,7 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndOneProcess)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -634,7 +635,7 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndOneProcessVerifyFailed)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -717,7 +718,7 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndOneProcessVerifyFailed)
 void* OneSideThreadHandleTypIcalQP(void* args)
 {
     s32 devId = *(s32*)args;
-    
+
     HcclResult ret = HCCL_SUCCESS;
     EXPECT_EQ(hrtSetDevice(devId), HCCL_SUCCESS);
     EXPECT_EQ(hcclAscendRdmaInit(), HCCL_SUCCESS);
@@ -784,7 +785,7 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndMutiThreadSwitchDevice)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));
@@ -807,7 +808,7 @@ TEST_F(MultiThreadNpuGpu, OneSideEndtoEndMutiThread)
     MOCKER(hrtRaTypicalQpCreate).stubs().will(invoke(stub_hrtRaTypicalQpCreate));
     MOCKER(HrtRaQpDestroy).stubs().will(invoke(stub_hrtRaQpDestroy_1));
     MOCKER(HrtRaGetNotifyBaseAddr).stubs().will(invoke(stub_HrtRaGetNotifyBaseAddr_3));
-    
+
     MOCKER(GetExternalInputRdmaTrafficClass).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaServerLevel).stubs().will(returnValue(1));
     MOCKER(GetExternalInputRdmaRetryCnt).stubs().will(returnValue(1));

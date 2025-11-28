@@ -10,7 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
- 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <runtime/rt.h>
@@ -35,7 +35,8 @@
 #include "typical_sync_mem.h"
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
@@ -94,7 +95,7 @@ HcclResult hrtRaRecvWrlistMock(QpHandle handle, struct recv_wrlist_data *wr, uns
     *completeNum = 1;
     return HCCL_SUCCESS;
 }
- 
+
 s32 hrtRaPollCqMock(QpHandle handle, bool is_send_cq, unsigned int num, void *wc)
 {
     struct ibv_wc* wcPtr = static_cast<struct ibv_wc*>(wc);
@@ -113,7 +114,7 @@ void TypicalSendRecvTest::PrepareMem()
     testremoteWindowMem_.addr = memptr;
     testremoteWindowMem_.size = WINDOW_MEM_SIZE;
 }
- 
+
 TEST_F(TypicalSendRecvTest, ut_TypicalSendRecv_send)
 {
     QpHandle qpHandle;
@@ -188,7 +189,7 @@ TEST_F(TypicalSendRecvTest, ut_TypicalSendRecv_send)
     executorWithImm.ackNotify_ = (HcclRtSignal)0x01;
     executorWithImm.doneNotify_ = (HcclRtSignal)0x01;
     executorWithImm.notifySrcMem_.addr = (void*)0x01;
- 
+
     ret = executorWithImm.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = executorWithImm.Send(sendbuf, count, HcclDataType::HCCL_DATA_TYPE_INT8);
@@ -196,7 +197,7 @@ TEST_F(TypicalSendRecvTest, ut_TypicalSendRecv_send)
 
     aclrtDestroyStream(stream);
     sal_free(sendbuf);
-    
+
     GlobalMockObject::verify();
 }
 
@@ -218,7 +219,7 @@ TEST_F(TypicalSendRecvTest, ut_TypicalSendRecv_recv)
     .stubs()
     .with(any())
     .will(invoke(hrtRaRecvWrlistMock));
-    
+
     MOCKER(hrtRaPollCq)
     .stubs()
     .will(invoke(hrtRaPollCqMock));
@@ -285,7 +286,7 @@ TEST_F(TypicalSendRecvTest, ut_TypicalSendRecv_recv)
     executorWithImm.ackNotify_ = (HcclRtSignal)0x01;
     executorWithImm.doneNotify_ = (HcclRtSignal)0x01;
     executorWithImm.notifySrcMem_.addr = (void*)0x01;
- 
+
     ret = executorWithImm.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = executorWithImm.Receive(recvbuf, count, HcclDataType::HCCL_DATA_TYPE_INT8);

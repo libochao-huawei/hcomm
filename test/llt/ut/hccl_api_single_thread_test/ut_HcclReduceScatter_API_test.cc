@@ -25,13 +25,13 @@ public:
         MOCKER_CPP_VIRTUAL(commun_mock, &HcclCommunicator::ReduceScatterOutPlace)
             .stubs()
             .with(any())
-            .will(returnValue(HCCL_SUCCESS));         
+            .will(returnValue(HCCL_SUCCESS));
     }
     void TearDown() override {
         BaseInit::TearDown();
         GlobalMockObject::verify();
         remove(rankTableFileName);
-         
+
     }
 protected:
     s8 *sendBuf = nullptr;
@@ -45,7 +45,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_SendBufIsNull_Expect_Ret
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -57,7 +57,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_RecvBufIsNull_Expect_Ret
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -69,7 +69,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_CountIsZero_Expect_Retur
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -81,9 +81,9 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_CountIsTooLarge_Expect_R
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    
+
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
@@ -94,7 +94,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_CommIsNull_Expect_Return
 
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -108,7 +108,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_DeviceNotSupport_Expect_
     DevType deviceType = DevType::DEV_TYPE_910_93/*or DevType::DEV_TYPE_910B*/;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(deviceType)).will(returnValue(HCCL_SUCCESS));
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT16/*or HCCL_DATA_TYPE_BFP16*/, HCCL_REDUCE_PROD, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT16/*or HCCL_DATA_TYPE_BFP16*/, HCCL_REDUCE_PROD, comm, stream);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -121,7 +121,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_DataSize1KB_Expect_Retur
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -133,7 +133,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_DataSize300MB_Expect_Ret
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -147,7 +147,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_Exec20times_Expect_Retur
     UT_STREAM_CREATE_DEFAULT(stream);
 
     for(int k = 0;k < LOOP_TIMES;k ++) {
-        HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+        HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
         EXPECT_EQ(ret, HCCL_SUCCESS);
         Ut_Stream_Synchronize(stream);
     }
@@ -161,7 +161,7 @@ TEST_F(HcclReduceScatterTest, Ut_HcclReduceScatter_When_2Server4Rank_Expect_Retu
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclReduceScatter(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);;
+    HcclResult ret = HcclReduceScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);;
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
