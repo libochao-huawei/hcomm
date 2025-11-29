@@ -41,7 +41,7 @@ HcclResult CommChannelCreate(HcclComm comm, const char *channelTag,
     return HCCL_SUCCESS;
 }
 
-HcclResult CommChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_t *notifyNum)
+HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_t *notifyNum)
 {
     CHK_PTR_NULL(notifyNum);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -78,7 +78,7 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
     return HCCL_SUCCESS;
 }
 
-HcclResult CommChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer)
+HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(buffer);
@@ -97,7 +97,7 @@ HcclResult CommChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBu
     return HCCL_SUCCESS;
 }
 
-HcclResult CommChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, HcclMem **remoteMem, char **memTag, uint32_t *memNum)
+HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, HcclMem **remoteMem, char **memTag, uint32_t *memNum)
 {
     // memTag 目前未使用
     CHK_PTR_NULL(comm);

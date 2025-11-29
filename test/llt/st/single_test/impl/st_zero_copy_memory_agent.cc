@@ -29,7 +29,8 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
 #include "v80_rank_table.h"
 #include "hccl/base.h"
@@ -354,7 +355,7 @@ protected:
     }
     static void TearDownTestCase()
     {
-        TsdClose(0); 
+        TsdClose(0);
         std::cout << "\033[36m--OneSidedUt TearDown--\033[0m" << std::endl;
     }
     virtual void SetUp()
@@ -381,7 +382,7 @@ protected:
         DlRaFunction::GetInstance().DlRaFunctionInit();
         ClearHalEvent();
         struct ra_init_config config;
-        
+
         std::cout << "A Test SetUP" << std::endl;
     }
     virtual void TearDown()
@@ -441,7 +442,7 @@ TEST_F(ZeroCopyMemoryAgentSt, st_agent_test)
         .expects(atMost(1))
         .with(any(), any(), outBoundP(&interfaceVersion))
         .will(returnValue(HCCL_SUCCESS));
-    HcclResult ret; 
+    HcclResult ret;
     u32 recvBufLen = 64;
     u64 compSize = 64;
     MOCKER_CPP(&HcclSocket::Send, HcclResult(HcclSocket::*)(const void *, u64))
@@ -504,7 +505,7 @@ TEST_F(ZeroCopyMemoryAgentSt, st_agent_test1)
         .expects(atMost(1))
         .with(any(), any(), outBoundP(&interfaceVersion))
         .will(returnValue(HCCL_SUCCESS));
-    HcclResult ret; 
+    HcclResult ret;
     u32 recvBufLen = 64;
     u64 compSize = 64;
     MOCKER_CPP(&HcclSocket::Send, HcclResult(HcclSocket::*)(const void *, u64))
@@ -532,50 +533,50 @@ TEST_F(ZeroCopyMemoryAgentSt, st_agent_test1)
     MOCKER(aclrtReserveMemAddress)
         .stubs()
         .will(invoke(aclrtReserveMemAddress_stub));
- 
+
     MOCKER_CPP(&ZeroCopyMemoryAgent::WaitForAllRemoteComplete).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&ZeroCopyMemoryAgent::SetRemoteTgid).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(hrtMemcpy).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(aclrtMemExportToShareableHandle).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER(aclrtMemSetPidToShareableHandle).stubs().will(returnValue(ACL_SUCCESS));
- 
+
     u64 baseSetAddr = 0x1000;
     u64 baseSetLen = 2 * 1024 * 1024; // 2MB
     int dummyHandle = 1;
     void *handle = &dummyHandle;
- 
+
     EXPECT_EQ(ZeroCopyMemoryAgent.SetMemoryRange((void *)baseSetAddr, baseSetLen, 0, 0), HCCL_SUCCESS);
     // 重复set、重叠set
     EXPECT_NE(ZeroCopyMemoryAgent.SetMemoryRange((void *)baseSetAddr, baseSetLen, 0, 0), HCCL_SUCCESS);
     EXPECT_NE(ZeroCopyMemoryAgent.SetMemoryRange((void *)(baseSetAddr + 10), baseSetLen, 0, 0), HCCL_SUCCESS);
- 
+
     // activate区间与set不匹配
     EXPECT_NE(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr - 0x10), baseSetLen, 0, handle, 0), HCCL_SUCCESS);
     EXPECT_NE(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr), baseSetLen + 1, 0, handle, 0), HCCL_SUCCESS);
- 
+
     EXPECT_EQ(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr), 10, 0, handle, 0), HCCL_SUCCESS);
     EXPECT_EQ(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr + 10), 10, 0, handle, 0), HCCL_SUCCESS);
     EXPECT_EQ(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr + 20), 10, 0, handle, 0), HCCL_SUCCESS);
- 
+
     // activate重叠
     EXPECT_NE(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr), 1, 0, handle, 0), HCCL_SUCCESS);
     EXPECT_NE(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr + 1), 10, 0, handle, 0), HCCL_SUCCESS);
     EXPECT_NE(ZeroCopyMemoryAgent.ActivateCommMemory((void *)(baseSetAddr + 15), 100, 0, handle, 0), HCCL_SUCCESS);
- 
+
     // deactivate不存在
     EXPECT_NE(ZeroCopyMemoryAgent.DeactivateCommMemory((void *)(baseSetAddr + 1)), HCCL_SUCCESS);
     EXPECT_NE(ZeroCopyMemoryAgent.DeactivateCommMemory((void *)(baseSetAddr + 11)), HCCL_SUCCESS);
     EXPECT_NE(ZeroCopyMemoryAgent.DeactivateCommMemory((void *)(baseSetAddr + 33)), HCCL_SUCCESS);
- 
+
     // 仍有activate内存
     EXPECT_NE(ZeroCopyMemoryAgent.UnsetMemoryRange((void*)(baseSetAddr)), HCCL_SUCCESS);
- 
+
     EXPECT_EQ(ZeroCopyMemoryAgent.DeactivateCommMemory((void *)(baseSetAddr)), HCCL_SUCCESS);
     EXPECT_EQ(ZeroCopyMemoryAgent.DeactivateCommMemory((void *)(baseSetAddr + 10)), HCCL_SUCCESS);
     EXPECT_EQ(ZeroCopyMemoryAgent.DeactivateCommMemory((void *)(baseSetAddr + 20)), HCCL_SUCCESS);
- 
+
     EXPECT_EQ(ZeroCopyMemoryAgent.UnsetMemoryRange((void*)(baseSetAddr)), HCCL_SUCCESS);
- 
+
     EXPECT_EQ(ZeroCopyMemoryAgent.BarrierClose(), HCCL_SUCCESS);
     EXPECT_EQ(ZeroCopyMemoryAgent.DeInit(), HCCL_SUCCESS);
     ZeroCopyMemoryAgent.mapDevPhyIdconnectedSockets_.clear();

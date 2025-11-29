@@ -16,7 +16,7 @@
 #include "ra_rs_err.h"
 #include "ra_adp_pool.h"
 
-STATIC void *ra_hdc_worker_thread(void *arg)
+STATIC void *RaHdcWorkerThread(void *arg)
 {
     struct ra_hdc_thread_pool *pool = (struct ra_hdc_thread_pool *)arg;
     pthread_t tidp = pthread_self();
@@ -58,7 +58,7 @@ STATIC void *ra_hdc_worker_thread(void *arg)
     return NULL;
 }
 
-STATIC int ra_hdc_pool_mutex_cond_init(struct ra_hdc_thread_pool *pool)
+STATIC int RaHdcPoolMutexCondInit(struct ra_hdc_thread_pool *pool)
 {
     int ret;
 
@@ -79,13 +79,13 @@ deinit_pool_mutex:
     return ret;
 }
 
-STATIC void ra_hdc_pool_mutex_cond_deinit(struct ra_hdc_thread_pool *pool)
+STATIC void RaHdcPoolMutexCondDeinit(struct ra_hdc_thread_pool *pool)
 {
     pthread_cond_destroy(&pool->condition);
     pthread_mutex_destroy(&pool->pool_mutex);
 }
 
-STATIC void ra_hdc_pool_free_workers(struct ra_hdc_thread_pool *pool)
+STATIC void RaHdcPoolFreeWorkers(struct ra_hdc_thread_pool *pool)
 {
     int timeout = RA_THREAD_TRY_TIME;
     unsigned int i;
@@ -103,11 +103,11 @@ STATIC void ra_hdc_pool_free_workers(struct ra_hdc_thread_pool *pool)
         timeout--;
     }
     if (pool->thread_num > 0 && timeout <= 0) {
-        hccp_warn("destroy thread pool timeout, thread_num:%u > 0 and timeout:%d <= 0", pool->thread_num, timeout);
+        hccp_warn("destroy thread pool timeout, threadNum:%u > 0 and timeout:%d <= 0", pool->thread_num, timeout);
     }
 }
 
-struct ra_hdc_thread_pool *ra_hdc_pool_create(unsigned int queue_size, unsigned int thread_num)
+struct ra_hdc_thread_pool *RaHdcPoolCreate(unsigned int queueSize, unsigned int threadNum)
 {
     struct ra_hdc_thread_pool *pool = NULL;
     unsigned int i;
@@ -115,41 +115,41 @@ struct ra_hdc_thread_pool *ra_hdc_pool_create(unsigned int queue_size, unsigned 
 
     pool = (struct ra_hdc_thread_pool *)calloc(1, sizeof(struct ra_hdc_thread_pool));
     CHK_PRT_RETURN(pool == NULL, hccp_err("calloc pool failed"), NULL);
-    pool->task_queue = (struct ra_hdc_task *)calloc(queue_size, sizeof(struct ra_hdc_task));
+    pool->task_queue = (struct ra_hdc_task *)calloc(queueSize, sizeof(struct ra_hdc_task));
     if (pool->task_queue == NULL) {
-        hccp_err("calloc task_queue failed, queue_size:%u", queue_size);
+        hccp_err("calloc task_queue failed, queueSize:%u", queueSize);
         goto free_pool;
     }
-    pool->queue_size = queue_size;
+    pool->queue_size = queueSize;
 
-    ret = ra_hdc_pool_mutex_cond_init(pool);
+    ret = RaHdcPoolMutexCondInit(pool);
     if (ret != 0) {
         hccp_err("ra_hdc_pool_mutex_cond_init failed, ret:%d", ret);
         goto free_queue;
     }
 
-    pool->worker_threads = (pthread_t *)calloc(thread_num, sizeof(pthread_t));
+    pool->worker_threads = (pthread_t *)calloc(threadNum, sizeof(pthread_t));
     if (pool->worker_threads == NULL) {
-        hccp_err("calloc worker_threads failed, thread_num:%u", thread_num);
+        hccp_err("calloc worker_threads failed, threadNum:%u", threadNum);
         goto free_cond;
     }
-    for (i = 0; i < thread_num; i++) {
-        ret = pthread_create(&pool->worker_threads[i], NULL, (void *)ra_hdc_worker_thread, pool);
+    for (i = 0; i < threadNum; i++) {
+        ret = pthread_create(&pool->worker_threads[i], NULL, (void *)RaHdcWorkerThread, pool);
         if (ret != 0) {
             hccp_err("Create pthread i:%u failed, ret:%d", i, ret);
             pool->thread_num = i;
             goto free_thread;
         }
     }
-    pool->thread_num = thread_num;
+    pool->thread_num = threadNum;
 
     return pool;
 free_thread:
-    ra_hdc_pool_free_workers(pool);
+    RaHdcPoolFreeWorkers(pool);
     free(pool->worker_threads);
     pool->worker_threads = NULL;
 free_cond:
-    ra_hdc_pool_mutex_cond_deinit(pool);
+    RaHdcPoolMutexCondDeinit(pool);
 free_queue:
     free(pool->task_queue);
     pool->task_queue = NULL;
@@ -159,8 +159,8 @@ free_pool:
     return NULL;
 }
 
-void ra_hdc_pool_add_task(struct ra_hdc_thread_pool *pool, task_func_t func, unsigned int chip_id, void *recv_buf,
-    unsigned int recv_len)
+void RaHdcPoolAddTask(struct ra_hdc_thread_pool *pool, task_func_t func, unsigned int chipId, void *recvBuf,
+    unsigned int recvLen)
 {
     RA_PTHREAD_MUTEX_LOCK(&pool->pool_mutex);
     // block until task can be received
@@ -170,9 +170,9 @@ void ra_hdc_pool_add_task(struct ra_hdc_thread_pool *pool, task_func_t func, uns
 
     // produce a task
     pool->task_queue[pool->queue_pi].func = func;
-    pool->task_queue[pool->queue_pi].args.chip_id = chip_id;
-    pool->task_queue[pool->queue_pi].args.recv_buf = recv_buf;
-    pool->task_queue[pool->queue_pi].args.recv_len = recv_len;
+    pool->task_queue[pool->queue_pi].args.chip_id = chipId;
+    pool->task_queue[pool->queue_pi].args.recv_buf = recvBuf;
+    pool->task_queue[pool->queue_pi].args.recv_len = recvLen;
     pool->queue_pi = (pool->queue_pi + 1) % pool->queue_size;
     pool->task_num++;
 
@@ -181,11 +181,11 @@ void ra_hdc_pool_add_task(struct ra_hdc_thread_pool *pool, task_func_t func, uns
     RA_PTHREAD_MUTEX_UNLOCK(&pool->pool_mutex);
 }
 
-int ra_hdc_pool_destroy(struct ra_hdc_thread_pool *pool)
+int RaHdcPoolDestroy(struct ra_hdc_thread_pool *pool)
 {
     CHK_PRT_RETURN(pool == NULL, hccp_err("param invalid, pool is NULL"), -EINVAL);
 
-    ra_hdc_pool_free_workers(pool);
+    RaHdcPoolFreeWorkers(pool);
     if (pool->task_queue != NULL) {
         free(pool->task_queue);
         pool->task_queue = NULL;
@@ -194,7 +194,7 @@ int ra_hdc_pool_destroy(struct ra_hdc_thread_pool *pool)
         free(pool->worker_threads);
         pool->worker_threads = NULL;
     }
-    ra_hdc_pool_mutex_cond_deinit(pool);
+    RaHdcPoolMutexCondDeinit(pool);
     free(pool);
     pool = NULL;
     return 0;

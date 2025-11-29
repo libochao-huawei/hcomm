@@ -3880,6 +3880,36 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    void HcclCommunicator::SplitBsrData(OpParam &opParam, std::vector<u8>& isDirectRemoteRank,
+        std::vector<HcclSendRecvItem>& hostSendRecvInfo, std::vector<HcclSendRecvItem>& aicpuSendRecvInfo)
+    {
+        u32 itemNum = opParam.BatchSendRecvDataDes.itemNum;
+        isDirectRemoteRank.resize(userRankSize_);
+        HCCL_INFO("[HcclCommunicator][SplitBsrData] rankSize %u", userRankSize_);
+        HcclSendRecvItem* sendRecvInfo = opParam.BatchSendRecvDataDes.sendRecvItemsPtr;
+        for (u32 i = 0; i < itemNum; i++) {
+            if (remoteTransportMap_[sendRecvInfo->remoteRank] == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
+                //host 侧需要下发的数据
+                HCCL_INFO("[HcclCommunicator][SplitBsrData]host localRank %u remoteRank %u type %d sendRecvType %d count %llu",
+                    userRank_, sendRecvInfo->remoteRank, remoteTransportMap_[sendRecvInfo->remoteRank],
+                    sendRecvInfo->sendRecvType, sendRecvInfo->count);
+                isDirectRemoteRank[sendRecvInfo->remoteRank] = true;
+                hostSendRecvInfo.push_back(*sendRecvInfo);
+            } else {
+                //aicpu侧需要下发的数据
+                HCCL_INFO("[HcclCommunicator][SplitBsrData]aicpu localRank %u remoteRank %u type %d sendRecvType %d count %llu",
+                    userRank_, sendRecvInfo->remoteRank, remoteTransportMap_[sendRecvInfo->remoteRank],
+                    sendRecvInfo->sendRecvType, sendRecvInfo->count);
+                isDirectRemoteRank[sendRecvInfo->remoteRank] = false;
+                aicpuSendRecvInfo.push_back(*sendRecvInfo);
+            }
+            sendRecvInfo++;
+        }
+        HCCL_INFO("[HcclCommunicator][SplitBsrData] itemNum %u hostItemNum %zu aicpuItemNum %zu", itemNum, hostSendRecvInfo.size(),
+            aicpuSendRecvInfo.size());
+        return;
+    }
+
     HcclResult HcclCommunicator::ExecOp(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
         std::string tag = opParam.tag;
@@ -4028,6 +4058,18 @@ namespace hccl
             }
             CHK_RET(algOperator->SetBlockDim(aivCoreLimit));
         }
+        std::vector<HcclSendRecvItem> hostSendRecvInfo;
+        std::vector<HcclSendRecvItem> aicpuSendRecvInfo;
+        std::vector<u8> isDirectRemoteRank;
+        if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && deviceType_ == DevType::DEV_TYPE_910_93) {
+            SplitBsrData(opParam, isDirectRemoteRank, hostSendRecvInfo, aicpuSendRecvInfo);
+            // A3 bsr记录Direct下发方式数据
+            opParam.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank.data();
+            if (!retryEnable_) {
+                opParam.BatchSendRecvDataDes.sendRecvItemsPtr = aicpuSendRecvInfo.data();
+                opParam.BatchSendRecvDataDes.itemNum = aicpuSendRecvInfo.size();
+            }
+        }
         auto algType = algOperator->GetAlgType();
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
         // 头计数
@@ -4060,6 +4102,19 @@ namespace hccl
             if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
+        }
+        //A3 bsr 只有走NPU直驱的时候hostSendRecvInfo才有内容
+        if (!hostSendRecvInfo.empty()) {
+            // A3 bsr获取到host侧需要下发的数据
+            HCCL_INFO("[HcclCommunicator][ExecOp] hostSendRecvInfo size %zu", hostSendRecvInfo.size());
+            opParam.BatchSendRecvDataDes.sendRecvItemsPtr = hostSendRecvInfo.data();
+            opParam.BatchSendRecvDataDes.itemNum = hostSendRecvInfo.size();
+            opParam.aicpuUnfoldMode = false;
+            std::string tempTag;
+            std::unique_ptr<CollAlgOperator> newalgOperator = implAlg_->GetAlgOperator(opType);
+            CHK_SMART_PTR_NULL(newalgOperator);
+            CHK_RET(newalgOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, tempTag));
+            CHK_RET(newalgOperator->Orchestrate(algName, opParam, resMap_[newTag]));
         }
         // 尾计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
@@ -5030,6 +5085,8 @@ namespace hccl
             (notifyAddrKey.size() > RDMA_NOTIFY_MAX_NUM) ||
             ((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce->qpsPerConnection) ||
             ((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce->qpsPerConnection)) {
+            HCCL_ERROR("[HcclCommunicator][BuildOpRemoteLinkRoceResParam] signalInfos %zu notifyAddrKey %zu "
+                "qpsPerConnection %u", signalInfos.size(), notifyAddrKey.size(), linkRoce->qpsPerConnection);
             return HCCL_E_INTERNAL;
         }
         u64 notifyNum = (notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) / linkRoce->qpsPerConnection - static_cast<u32>(linkRoce->qpsPerConnection > 1);
@@ -5324,6 +5381,11 @@ namespace hccl
         aclrtFloatOverflowMode floatOverflowMode = ACL_RT_OVERFLOW_MODE_UNDEF;
         CHK_RET(hrtGetDeviceSatMode(&floatOverflowMode));
         opResPara_.config.floatOverflowMode = floatOverflowMode;
+        bool isSupportAtomicWrite = false;
+        if (userRankSize_ > 1) {
+            CHK_RET(IsSupportAtomicWrite(deviceType_, devicePhyId_, isSupportAtomicWrite));
+        }
+        opResPara_.config.isSupportAtomicWrite = static_cast<u8>(isSupportAtomicWrite);
         opResPara_.config.notifyWaitTime =
             (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET)
                 ? GetInternalExecTimeOut()
@@ -5783,6 +5845,7 @@ namespace hccl
         }
         SaveLinkRes(algResResponse.opTransportResponse);
         SaveLinkRes(algResResponse.opTransportResponseBackUp);
+        remoteTransportMap_ = transportManager_->GetRemoteTransportMap();
         HCCL_DEBUG("[%s] process success newtag[%s]", __func__, newTag.c_str());
         return HCCL_SUCCESS;
     }
@@ -5854,6 +5917,7 @@ namespace hccl
                                                   algResResponse.opTransportResponseBackUp, opParam.aicpuUnfoldMode, true,
                                                   opParam.isCapture, opParam.opType));
         }
+        remoteTransportMap_ = transportManager_->GetRemoteTransportMap();
         SaveLinkRes(algResResponse.opTransportResponse);
         SaveLinkRes(algResResponse.opTransportResponseBackUp);
         return HCCL_SUCCESS;
@@ -6457,6 +6521,11 @@ namespace hccl
             {
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
+            }
+            u8 *isDirectRemoteRankPtr = reinterpret_cast<u8*>(batchSendRecvDataPtr->batchSendRecvItem + opParam.BatchSendRecvDataDes.itemNum);
+            for (u32 i = 0; i < userRankSize_; i++) {
+                CHK_PTR_NULL(isDirectRemoteRankPtr + i);
+                isDirectRemoteRankPtr[i] = *(opParam.BatchSendRecvDataDes.isDirectRemoteRank + i);
             }
         } else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             CHK_RET(SetDynamicTilingDataAlltoall(opParam, dynamicDataMem));
@@ -7686,26 +7755,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::LoadIndOpCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-                                                aclrtBinHandle &binHandle)
-    {
-        s64 isOpenCustomSwitch = 0;
-        CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
-                                 HcclRtDeviceInfoType::HCCL_INFO_TYPE_CUST_OP_ENHANCE, isOpenCustomSwitch));
-        if (isOpenCustomSwitch == 1) {
-            HcclResult ret = LoadIndOpBinaryFromFile(binPath, optionType, cpuKernelMode, binHandle, false);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                        HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
-                                   "cpuKernelMode[%u].",
-                                   ret, binPath, optionType, cpuKernelMode),
-                        ret);
-        } else {
-            binHandle = nullptr;
-            HCCL_RUN_WARNING("[LoadCustomFile]custom switch is not open, please confirm the switch.");
-        }
-        return HCCL_SUCCESS;
-    }
-
     void HcclCommunicator::UnloadBinary(aclrtBinHandle &binHandle)
     {
         if (binHandle != nullptr) {
@@ -7892,9 +7941,9 @@ namespace hccl
         return topoAttr;
     }
 
-    aclrtBinHandle HcclCommunicator::GetBinCustomHandle()
+    aclrtBinHandle HcclCommunicator::GetBinHandle()
     {
-        return binCustomHandle_;
+        return binHandle_;
     }
 
 }

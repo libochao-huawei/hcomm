@@ -8,12 +8,12 @@ using namespace bg;
 extern "C" {
 #endif // __cplusplus
 
-HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
+HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
 {
     return HCCL_SUCCESS;
 }
@@ -156,7 +156,7 @@ HcclResult HcomGetInitStatus(bool *initiated)
 }
 
 HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
-{   
+{
     static int a = 0;
     *commHandle = &a;
     return HCCL_SUCCESS;
@@ -246,14 +246,14 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAlltoAll(const void *sendBuf, uint64_t sendCount, HcclDataType sendType,
+HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataType sendType,
                                const void *recvBuf, uint64_t recvCount, HcclDataType recvType,
                                HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
+HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const void *sdispls, HcclDataType sendType,
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
                          HcclComm comm, aclrtStream stream)
 {
@@ -261,7 +261,7 @@ HcclResult HcclAlltoAllV(const void *sendBuf, const void *sendCounts, const void
 }
 
 
-HcclResult HcclAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType, 
+HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix, HcclDataType sendType,
                             const void *recvBuf, HcclDataType recvType, HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
@@ -336,7 +336,7 @@ HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *gr
 }
 
 HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, void *inputPtr, void *outputPtr,
-    HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
+    HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op,
     void **commContext, u64 *len, u32 aivCoreLimit)
 {
     return HCCL_SUCCESS;
@@ -428,55 +428,55 @@ HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllGather(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
+HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
     HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllGatherV(void *sendBuf, uint64_t sendCount, void *recvBuf,
+HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     const void *recvCounts, const void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
+HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
     HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclBroadcast(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
+HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
     aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReduceScatter(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
+HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
     HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReduceScatterV(void *sendBuf, const void *sendCounts, const void *sendDispls,
+HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const void *sendDispls,
     void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSend(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
+HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
                            HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclReduce(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
+HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
                              HcclReduceOp op, uint32_t root, HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclRecv(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
+HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
                            HcclComm comm, aclrtStream stream)
 {
     return HCCL_SUCCESS;

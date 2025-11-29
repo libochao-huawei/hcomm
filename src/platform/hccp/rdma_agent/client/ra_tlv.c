@@ -17,113 +17,113 @@
 #include "ra.h"
 #include "ra_tlv.h"
 
-STATIC struct ra_tlv_ops g_ra_hdc_tlv_ops = {
-    .ra_tlv_init = ra_hdc_tlv_init,
-    .ra_tlv_deinit = ra_hdc_tlv_deinit,
-    .ra_tlv_request = ra_hdc_tlv_request,
+STATIC struct ra_tlv_ops gRaHdcTlvOps = {
+    .ra_tlv_init = RaHdcTlvInit,
+    .ra_tlv_deinit = RaHdcTlvDeinit,
+    .ra_tlv_request = RaHdcTlvRequest,
 };
 
-HCCP_ATTRI_VISI_DEF int ra_tlv_init(struct tlv_init_info *init_info, unsigned int module_type,
-    unsigned int *buffer_size, void **tlv_handle)
+HCCP_ATTRI_VISI_DEF int RaTlvInit(struct tlv_init_info *initInfo, unsigned int moduleType,
+    unsigned int *bufferSize, void **tlvHandle)
 {
-    struct ra_tlv_handle *tlv_handle_tmp = NULL;
+    struct ra_tlv_handle *tlvHandleTmp = NULL;
     int ret = 0;
 
-    CHK_PRT_RETURN(init_info == NULL || buffer_size == NULL || tlv_handle == NULL,
+    CHK_PRT_RETURN(initInfo == NULL || bufferSize == NULL || tlvHandle == NULL,
         hccp_err("[init][ra_tlv]init_info or buffer_size or tlv_handle is NULL"),
-            conver_return_code(HCCP_INIT, -EINVAL));
+            ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    CHK_PRT_RETURN(module_type >= TLV_MODULE_TYPE_MAX,
+    CHK_PRT_RETURN(moduleType >= TLV_MODULE_TYPE_MAX,
         hccp_err("[init][ra_tlv]module_type(%u) invalid, must smaller than TLV_MODULE_TYPE_MAX(%u)",
-        module_type, TLV_MODULE_TYPE_MAX), conver_return_code(HCCP_INIT, -EINVAL));
-    CHK_PRT_RETURN(init_info->nic_position != NETWORK_OFFLINE, hccp_err("[init][ra_tlv]mode(%u) not support",
-        init_info->nic_position), conver_return_code(HCCP_INIT, -EINVAL));
-    CHK_PRT_RETURN(init_info->phy_id >= RA_MAX_PHY_ID_NUM,
-        hccp_err("[init][ra_tlv]phy_id(%u) must smaller than %u", init_info->phy_id, RA_MAX_PHY_ID_NUM),
-        conver_return_code(HCCP_INIT, -EINVAL));
+        moduleType, TLV_MODULE_TYPE_MAX), ConverReturnCode(HCCP_INIT, -EINVAL));
+    CHK_PRT_RETURN(initInfo->nic_position != NETWORK_OFFLINE, hccp_err("[init][ra_tlv]mode(%u) not support",
+        initInfo->nic_position), ConverReturnCode(HCCP_INIT, -EINVAL));
+    CHK_PRT_RETURN(initInfo->phy_id >= RA_MAX_PHY_ID_NUM,
+        hccp_err("[init][ra_tlv]phy_id(%u) must smaller than %u", initInfo->phy_id, RA_MAX_PHY_ID_NUM),
+        ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    tlv_handle_tmp = calloc(1, sizeof(struct ra_tlv_handle));
-    CHK_PRT_RETURN(tlv_handle_tmp == NULL, hccp_err("[init][ra_tlv]calloc for tlv_handle failed"),
-        conver_return_code(HCCP_INIT, -ENOMEM));
+    tlvHandleTmp = calloc(1, sizeof(struct ra_tlv_handle));
+    CHK_PRT_RETURN(tlvHandleTmp == NULL, hccp_err("[init][ra_tlv]calloc for tlv_handle failed"),
+        ConverReturnCode(HCCP_INIT, -ENOMEM));
 
-    (void)memcpy_s(&(tlv_handle_tmp->init_info), sizeof(struct tlv_init_info), init_info, sizeof(struct tlv_init_info));
-    tlv_handle_tmp->module_type = module_type;
-    tlv_handle_tmp->tlv_ops = &g_ra_hdc_tlv_ops;
-    if (tlv_handle_tmp->tlv_ops->ra_tlv_init == NULL) {
+    (void)memcpy_s(&(tlvHandleTmp->init_info), sizeof(struct tlv_init_info), initInfo, sizeof(struct tlv_init_info));
+    tlvHandleTmp->module_type = moduleType;
+    tlvHandleTmp->tlv_ops = &gRaHdcTlvOps;
+    if (tlvHandleTmp->tlv_ops->ra_tlv_init == NULL) {
         ret = -EINVAL;
         hccp_err("[init][ra_tlv]ra_tlv_init is NULL");
         goto ra_tlv_init_err;
     }
 
-    hccp_run_info("Input parameters: phy_id[%u], nic_position[%u], module_type[%u]", init_info->phy_id,
-        init_info->nic_position, module_type);
-    ret = tlv_handle_tmp->tlv_ops->ra_tlv_init(tlv_handle_tmp);
+    hccp_run_info("Input parameters: phy_id[%u], nic_position[%u], moduleType[%u]", initInfo->phy_id,
+        initInfo->nic_position, moduleType);
+    ret = tlvHandleTmp->tlv_ops->ra_tlv_init(tlvHandleTmp);
     if (ret == -ENOTSUPP) {
-        hccp_run_warn("[init][ra_tlv]ra_tlv_init unsuccessful, ret(%d), phy_id(%u)", ret, init_info->phy_id);
+        hccp_run_warn("[init][ra_tlv]ra_tlv_init unsuccessful, ret(%d), phy_id(%u)", ret, initInfo->phy_id);
         goto ra_tlv_init_err;
     } else if (ret != 0) {
-        hccp_err("[init][ra_tlv]ra_tlv_init failed, ret(%d), phy_id(%u)", ret, init_info->phy_id);
+        hccp_err("[init][ra_tlv]ra_tlv_init failed, ret(%d), phy_id(%u)", ret, initInfo->phy_id);
         goto ra_tlv_init_err;
     }
 
-    *buffer_size = tlv_handle_tmp->buffer_size;
-    *tlv_handle = (void *)tlv_handle_tmp;
+    *bufferSize = tlvHandleTmp->buffer_size;
+    *tlvHandle = (void *)tlvHandleTmp;
     return 0;
 
 ra_tlv_init_err:
-    free(tlv_handle_tmp);
-    tlv_handle_tmp = NULL;
-    return conver_return_code(HCCP_INIT, ret);
+    free(tlvHandleTmp);
+    tlvHandleTmp = NULL;
+    return ConverReturnCode(HCCP_INIT, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int ra_tlv_deinit(void *tlv_handle)
+HCCP_ATTRI_VISI_DEF int RaTlvDeinit(void *tlvHandle)
 {
-    struct ra_tlv_handle *tlv_handle_tmp = NULL;
+    struct ra_tlv_handle *tlvHandleTmp = NULL;
     int ret = 0;
 
-    CHK_PRT_RETURN(tlv_handle == NULL, hccp_err("[deinit][ra_tlv]tlv_handle is NULL"),
-        conver_return_code(HCCP_INIT, -EINVAL));
+    CHK_PRT_RETURN(tlvHandle == NULL, hccp_err("[deinit][ra_tlv]tlv_handle is NULL"),
+        ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    tlv_handle_tmp = (struct ra_tlv_handle *)tlv_handle;
-    if (tlv_handle_tmp->tlv_ops->ra_tlv_deinit == NULL) {
+    tlvHandleTmp = (struct ra_tlv_handle *)tlvHandle;
+    if (tlvHandleTmp->tlv_ops->ra_tlv_deinit == NULL) {
         ret = -EINVAL;
-        hccp_err("[deinit][ra_tlv]ra_tlv_deinit is NULL, ret(%d), phy_id(%u)", ret, tlv_handle_tmp->init_info.phy_id);
+        hccp_err("[deinit][ra_tlv]ra_tlv_deinit is NULL, ret(%d), phy_id(%u)", ret, tlvHandleTmp->init_info.phy_id);
         goto ra_tlv_deinit_fail;
     }
 
-    hccp_run_info("Input parameters: phy_id[%u], nic_position[%u], module_type[%u]", tlv_handle_tmp->init_info.phy_id,
-        tlv_handle_tmp->init_info.nic_position, tlv_handle_tmp->module_type);
-    ret = tlv_handle_tmp->tlv_ops->ra_tlv_deinit(tlv_handle_tmp);
+    hccp_run_info("Input parameters: phy_id[%u], nic_position[%u], moduleType[%u]", tlvHandleTmp->init_info.phy_id,
+        tlvHandleTmp->init_info.nic_position, tlvHandleTmp->module_type);
+    ret = tlvHandleTmp->tlv_ops->ra_tlv_deinit(tlvHandleTmp);
     if (ret != 0) {
-        hccp_err("[deinit][ra_tlv]ra_tlv_deinit failed, ret(%d), phy_id(%u)", ret, tlv_handle_tmp->init_info.phy_id);
+        hccp_err("[deinit][ra_tlv]ra_tlv_deinit failed, ret(%d), phy_id(%u)", ret, tlvHandleTmp->init_info.phy_id);
         goto ra_tlv_deinit_fail;
     }
 
 ra_tlv_deinit_fail:
-    free(tlv_handle_tmp);
-    tlv_handle_tmp = NULL;
-    return conver_return_code(HCCP_INIT, ret);
+    free(tlvHandleTmp);
+    tlvHandleTmp = NULL;
+    return ConverReturnCode(HCCP_INIT, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int ra_tlv_request(void *tlv_handle, struct tlv_msg *send_msg, struct tlv_msg *recv_msg)
+HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, struct tlv_msg *sendMsg, struct tlv_msg *recvMsg)
 {
-    struct ra_tlv_handle *tlv_handle_tmp = NULL;
+    struct ra_tlv_handle *tlvHandleTmp = NULL;
     int ret = 0;
 
-    CHK_PRT_RETURN(tlv_handle == NULL || send_msg == NULL || recv_msg == NULL,
-        hccp_err("[request][ra_tlv]tlv_handle or send_msg or recv_msg is NULL"), conver_return_code(OTHERS, -EINVAL));
+    CHK_PRT_RETURN(tlvHandle == NULL || sendMsg == NULL || recvMsg == NULL,
+        hccp_err("[request][ra_tlv]tlv_handle or send_msg or recv_msg is NULL"), ConverReturnCode(OTHERS, -EINVAL));
 
-    tlv_handle_tmp = (struct ra_tlv_handle *)tlv_handle;
-    CHK_PRT_RETURN(send_msg->length > tlv_handle_tmp->buffer_size || send_msg->length == 0,
+    tlvHandleTmp = (struct ra_tlv_handle *)tlvHandle;
+    CHK_PRT_RETURN(sendMsg->length > tlvHandleTmp->buffer_size || sendMsg->length == 0,
         hccp_err("[request][ra_tlv]send length(%u) out of range(%u) or equal to 0",
-        send_msg->length, tlv_handle_tmp->buffer_size), conver_return_code(OTHERS, -EINVAL));
-    CHK_PRT_RETURN(tlv_handle_tmp->tlv_ops->ra_tlv_request == NULL,
-        hccp_err("[request][ra_tlv]ra_tlv_request is NULL"), conver_return_code(OTHERS, -EINVAL));
+        sendMsg->length, tlvHandleTmp->buffer_size), ConverReturnCode(OTHERS, -EINVAL));
+    CHK_PRT_RETURN(tlvHandleTmp->tlv_ops->ra_tlv_request == NULL,
+        hccp_err("[request][ra_tlv]ra_tlv_request is NULL"), ConverReturnCode(OTHERS, -EINVAL));
 
-    ret = tlv_handle_tmp->tlv_ops->ra_tlv_request(tlv_handle_tmp, send_msg, recv_msg);
+    ret = tlvHandleTmp->tlv_ops->ra_tlv_request(tlvHandleTmp, sendMsg, recvMsg);
     if (ret != 0) {
-        hccp_err("[request][ra_tlv]ra_tlv_request failed, ret(%d), phy_id(%u)", ret, tlv_handle_tmp->init_info.phy_id);
+        hccp_err("[request][ra_tlv]ra_tlv_request failed, ret(%d), phy_id(%u)", ret, tlvHandleTmp->init_info.phy_id);
     }
 
-    return conver_return_code(OTHERS, ret);
+    return ConverReturnCode(OTHERS, ret);
 }

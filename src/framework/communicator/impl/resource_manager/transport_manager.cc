@@ -820,21 +820,13 @@ u32 TransportManager::GetSocketsPerLink(u64 taskNum)
 
 HcclResult TransportManager::CheckLinkNumAndSwitchLinkType(TransportType& type, MachinePara& machinePara,
     const std::vector<std::shared_ptr<HcclSocket> > sockets) {
-    std::unique_lock<std::mutex> lock(ibvCountMutex_);
-    ibvCount_ ++;
     u32 localCount = ibvCount_;
-    lock.unlock();
     u32 remoteCount = 0;
     CHK_RET(sockets[0]->Send(&localCount, sizeof(localCount)));
     CHK_RET(sockets[0]->Recv(&remoteCount, sizeof(remoteCount)));
     if (localCount > MASSIVE_IBV_CONNECTION_COUNT || remoteCount > MASSIVE_IBV_CONNECTION_COUNT) {
         //走aicpu直驱时暂时不支持iscapture特性
         type = TransportType::TRANS_TYPE_DEVICE_DIRECT;
-        machinePara.qpMode = QPMode::NORMAL;
-        machinePara.queueDepthAttr.recvCqDepth = RECV_QP_DEPTH_FOR_BSR;
-        machinePara.queueDepthAttr.rqDepth = RECV_QP_DEPTH_FOR_BSR;
-        machinePara.queueDepthAttr.sendCqDepth = SEND_QP_DEPTH_FOR_BSR;
-        machinePara.queueDepthAttr.sqDepth = SEND_QP_DEPTH_FOR_BSR;
     }
     HCCL_INFO("[TransportManager][CheckLinkNumAndSwitchLinkType] local ibvCount[%u], remote IbvCount[%u] " \
         "localrank[%u], remoterank[%u], type[%d]",
@@ -889,13 +881,32 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
         machinePara.nicDeploy, isBackup, opType);
     // transport初始化
     TransportType type = GetTransportType(remoteRank, isUsedRdma);
-    //目前只有A2 batch_send_recv 才切换到新链路
-    if (type == TransportType::TRANS_TYPE_IBV_EXP && opType_ == HCCL_CMD_BATCH_SEND_RECV &&
-        rankInfoList_[userRank_].deviceType == DevType::DEV_TYPE_910B) {
+        // A2/A3 batch_send_recv 走roce才切换到新链路
+        if (type == TransportType::TRANS_TYPE_IBV_EXP && opType_ == HCCL_CMD_BATCH_SEND_RECV) {
             ret = CheckLinkNumAndSwitchLinkType(type, machinePara, sockets);
             retOut = ret;
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx]CheckLinkNumAndSwitchLinkType error.", __func__, HCCL_ERROR_CODE(ret)),);
-    }
+            std::lock_guard<std::mutex> lock(ibvCountMutex_);
+            // 之前已经经过链了，则使用之前的老链路，bsr会建2条链路
+            if (remoteTransportMap_.find(machinePara.remoteUserrank) != remoteTransportMap_.end()) {
+                type = remoteTransportMap_[machinePara.remoteUserrank];
+                HCCL_INFO("[TransportManager][CreateLink] use the same type as before, localRank %u remoteRank %u type %d",
+                    machinePara.localUserrank, machinePara.remoteUserrank, type);
+            } else {
+                remoteTransportMap_.insert(std::make_pair(machinePara.remoteUserrank, type));
+                HCCL_INFO("[TransportManager][CreateLink] transportMap save remoterank %u type %d",
+                    machinePara.remoteUserrank, type);
+            }
+            if (type == TransportType::TRANS_TYPE_IBV_EXP) {
+                ibvCount_ ++;
+            } else if (type == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
+                machinePara.qpMode = QPMode::NORMAL;
+                machinePara.queueDepthAttr.recvCqDepth = RECV_QP_DEPTH_FOR_BSR;
+                machinePara.queueDepthAttr.rqDepth = RECV_QP_DEPTH_FOR_BSR;
+                machinePara.queueDepthAttr.sendCqDepth = SEND_QP_DEPTH_FOR_BSR;
+                machinePara.queueDepthAttr.sqDepth = SEND_QP_DEPTH_FOR_BSR;
+            }
+        }
         ret = TransportInit(remoteRank, machinePara, link, enableUseOneDoorbell, isUsedRdma, type);
         retOut = ret;
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx]TransportInit error.", __func__, HCCL_ERROR_CODE(ret)),);
@@ -1259,6 +1270,11 @@ void TransportManager::SetOpType(HcclCMDType opType)
 {
     opType_ = opType;
     return;
+}
+
+std::map<u32, TransportType> TransportManager::GetRemoteTransportMap()
+{
+    return remoteTransportMap_;
 }
 
 std::vector<std::string> Split(std::string &s, std::string delimiter)

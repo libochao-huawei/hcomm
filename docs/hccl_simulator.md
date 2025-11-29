@@ -6,12 +6,12 @@
 
 为集群通信模块提供**离线、可扩展、高确定性**的测试框架：
 
-- **新算法研发**  
+- **新算法研发**
   支持自定义通信算子（如 scatter 变种）的设计验证，提供算法可视化分析
 - **基础包质量保障**
   - [x] 评审意见：增加新目标基础包看护 @`lijianbo`
         通过 Runtime/Driver/Net 等 HAL 接口实现 HCCL 用例的离线快速回归
-- **架构验证（远期）**  
+- **架构验证（远期）**
   验证算法与硬件拓扑（HCCS/RoCE）的物理兼容性
 
 ### 范围
@@ -39,11 +39,11 @@
 
 #### 输入形式
 
-- **配置驱动**  
+- **配置驱动**
   YAML 定义硬件拓扑（附录 B）
   - [ ] 遗留问题：是否考虑优先使用 JSON @`yuhao`
   - [ ] 遗留问题：明确拓扑定义内容 @`zhanhaifeng`
-- **API 劫持**  
+- **API 劫持**
   重定向 hcclInitComm/aclrtMalloc 等调用到模拟后端
 
 #### 输出形式
@@ -107,7 +107,7 @@ C --> D[CPU执行]
    - 参考 scatter 算子实现 **CustomAllreduce 算子**
    - 完成算子构建并验证运行成功
 
-3. **执行验证用例**  
+3. **执行验证用例**
    在代码工程中运行 Checker 用例（示例逻辑）：
 
    ```python
@@ -126,7 +126,7 @@ C --> D[CPU执行]
    EXPECT(checker.CheckSemantic(), 'success')  # 验证结果
    ```
 
-4. **验证自定义算子**  
+4. **验证自定义算子**
    将上述代码中的 `HcclScatter` 替换为 `CustomAllreduce` 后重新执行用例
 
 #### 开发者本地开发集合通信代码后，上库前在仿真系统上快速迭代验证
@@ -261,12 +261,12 @@ graph LR
 | L2      | A2/5 全系 | HCCL/ACL   | 顺序执行 | A5 插件化移植 | ✅           | ✅       |
 | L2 挑战 | 分布式    | 批量转发   | 并行计算 | 可视化        | 高并发 IO 库 | 集群管理 |
 
-- **L1 阶段**：交付 模拟器核心库  
-  `libhccl-vm.so`（A3/AICPU 的建模仿真+校验器） + `libhccl-proxy.so`（精简代理机）  
+- **L1 阶段**：交付 模拟器核心库
+  `libhccl-vm.so`（A3/AICPU 的建模仿真+校验器） + `libhccl-proxy.so`（精简代理机）
   用户通过 LLT 实现通信语义校验（FR2.1→FR3）
   - [x] 评审意见: checker 项目支持至少引入 3k 工作量，模拟器针对 L1 阶段分解出最小开源要求，可以参考 check 老的 llt 使用方式。@lijianbo/yinding
-- **L2 阶段**：交付独立控制器  
-  `hccl-vm`（FR5） + 完整建模器（FR1） + 持久化（FR4）  
+- **L2 阶段**：交付独立控制器
+  `hccl-vm`（FR5） + 完整建模器（FR1） + 持久化（FR4）
   支持命令行启动非侵入式环境，实现逻辑功能复现
 - **L2 挑战**：挑战直接运行测试组原有分布式真机用例
   - [x] 评审意见: 成图->执行的串行机制不符合系统行为，且中心化任务图容易造成 IO 瓶颈 @xiaoshizhong
@@ -290,10 +290,10 @@ device = model.GetStatus("device0")
 ```
 
 **交互流程**：
-| 步骤 | 动作 | 结果 |  
-|------|-------|------|  
-| 1 | 加载 YAML 配置 | 生成初始模型 |  
-| 2 | 调用`SimWorld()` | 返回模型句柄 |  
+| 步骤 | 动作 | 结果 |
+|------|-------|------|
+| 1 | 加载 YAML 配置 | 生成初始模型 |
+| 2 | 调用`SimWorld()` | 返回模型句柄 |
 | 3 | 查询`GetStatus()` | 获取指定状态数据 |
 
 **失败场景**：配置文件错误，打印解析详情
@@ -473,7 +473,7 @@ hccl.error.InvalidGraphError:
 
 ```python
 # 在通信执行中尝试校验
-while HcclAllReduce(is_running=True):
+while HcclAllReduceInner(is_running=True):
     validator.CheckSemantic()  # 非法调用！
 ```
 
@@ -481,7 +481,7 @@ while HcclAllReduce(is_running=True):
 
 ```
 [FATAL] Validator state conflict:
-  - Operation not allowed during HcclAllReduce execution
+  - Operation not allowed during HcclAllReduceInner execution
   - Call GetStatus('idle') before validation
 ```
 
@@ -788,7 +788,7 @@ struct SimValidationResult {
 
 ```c++
 // 在 allreduce_validator.so 中需要实现的函数
-extern "C" SimValidationResult post_hcclAllReduce_hook(const SimCommContext* context) {
+extern "C" SimValidationResult post_HcclAllReduceInner_hook(const SimCommContext* context) {
     // 1. 根据 context->datatype 确定数据类型
     // 2. 在 CPU 上分配内存，将所有 rank_output_buffers 的内容拷贝出来
     // 3. 实现 AllReduce 的数学逻辑校验 (e.g., 检查所有 Rank 的输出是否一致)

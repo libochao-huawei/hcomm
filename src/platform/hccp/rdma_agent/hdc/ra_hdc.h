@@ -183,10 +183,10 @@ struct hdc_ops {
     DLLEXPORT hdcError_t (*get_capacity)(struct drvHdcCapacity *capacity);
     DLLEXPORT hdcError_t (*client_create)(HDC_CLIENT *client, int maxSessionNum, int serviceType, int flag);
     DLLEXPORT hdcError_t (*client_destroy)(HDC_CLIENT client);
-    DLLEXPORT hdcError_t (*session_connect)(int peer_node, int peer_logicid, HDC_CLIENT client, HDC_SESSION *session);
-    DLLEXPORT hdcError_t (*session_connect_ex)(int peer_node, int peer_devid, int peer_pid, HDC_CLIENT client,
+    DLLEXPORT hdcError_t (*session_connect)(int peerNode, int peerLogicid, HDC_CLIENT client, HDC_SESSION *session);
+    DLLEXPORT hdcError_t (*session_connect_ex)(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client,
         HDC_SESSION *pSession);
-    DLLEXPORT hdcError_t (*server_create)(int chip_id, int serviceType, HDC_SERVER *server);
+    DLLEXPORT hdcError_t (*server_create)(int chipId, int serviceType, HDC_SERVER *server);
     DLLEXPORT hdcError_t (*server_destroy)(HDC_SERVER server);
     DLLEXPORT hdcError_t (*session_accept)(HDC_SERVER server, HDC_SESSION *session);
     DLLEXPORT hdcError_t (*session_close)(HDC_SESSION session);
@@ -216,28 +216,28 @@ struct hdc_ops {
     } \
 } while (0)
 
-static inline bool ra_hdc_is_broken(int last_recv_status)
+static inline bool RaHdcIsBroken(int lastRecvStatus)
 {
-    return last_recv_status == DRV_ERROR_SOCKET_CLOSE;
+    return lastRecvStatus == DRV_ERROR_SOCKET_CLOSE;
 }
 
-int ra_hdc_init(struct ra_init_config *cfg, struct process_ra_sign p_ra_sign);
-int ra_hdc_get_tls_enable(unsigned int phy_id, bool *tls_enable);
-int ra_hdc_deinit(struct ra_init_config *cfg);
-int ra_hdc_get_interface_version(unsigned int phy_id, unsigned int interface_opcode, unsigned int *interface_version);
-void ra_hdc_get_all_opcode_version(unsigned int phy_id);
-int ra_hdc_get_cqe_err_info(unsigned int phy_id, struct cqe_err_info *info);
-int ra_hdc_process_msg(unsigned int opcode, unsigned int phy_id, char *data, unsigned int data_size);
-int ra_hdc_init_session(int peer_node, int peer_devid, unsigned int phy_id, int hdc_type, HDC_SESSION *session);
-void ra_hdc_deinit_session(HDC_SESSION *session);
-int ra_hdc_set_session_reference(HDC_SESSION *session);
-void msg_head_build_up(struct msg_head *p_send_rcv_head, unsigned int opcode, unsigned int req_id,
-    unsigned int msg_data_len, pid_t host_tgid);
-int hdc_async_send_pkt(struct hdc_async_info *async_info, unsigned int phy_id, void *send_buf, unsigned int send_len,
-    struct ra_request_handle *req_handle);
-int hdc_async_recv_pkt(struct hdc_async_info *async_info, unsigned int phy_id, void *recv_buf, unsigned int *recv_len);
-int ra_hdc_save_snapshot(unsigned int phy_id, enum save_snapshot_action action);
-int ra_hdc_restore_snapshot(unsigned int phy_id);
-int ra_hdc_get_sec_random(unsigned int phy_id, unsigned int *value);
-int ra_hdc_get_hccn_cfg(unsigned int phy_id, enum hccn_cfg_key key, char *value, unsigned int *value_len);
+int RaHdcInit(struct ra_init_config *cfg, struct process_ra_sign pRaSign);
+int RaHdcGetTlsEnable(unsigned int phyId, bool *tlsEnable);
+int RaHdcDeinit(struct ra_init_config *cfg);
+int RaHdcGetInterfaceVersion(unsigned int phyId, unsigned int interfaceOpcode, unsigned int *interfaceVersion);
+void RaHdcGetAllOpcodeVersion(unsigned int phyId);
+int RaHdcGetCqeErrInfo(unsigned int phyId, struct cqe_err_info *info);
+int RaHdcProcessMsg(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize);
+int RaHdcInitSession(int peerNode, int peerDevid, unsigned int phyId, int hdcType, HDC_SESSION *session);
+void RaHdcDeinitSession(HDC_SESSION *session);
+int RaHdcSetSessionReference(HDC_SESSION *session);
+void MsgHeadBuildUp(struct msg_head *pSendRcvHead, unsigned int opcode, unsigned int reqId,
+    unsigned int msgDataLen, pid_t hostTgid);
+int HdcAsyncSendPkt(struct hdc_async_info *asyncInfo, unsigned int phyId, void *sendBuf, unsigned int sendLen,
+    struct ra_request_handle *reqHandle);
+int HdcAsyncRecvPkt(struct hdc_async_info *asyncInfo, unsigned int phyId, void *recvBuf, unsigned int *recvLen);
+int RaHdcSaveSnapshot(unsigned int phyId, enum save_snapshot_action action);
+int RaHdcRestoreSnapshot(unsigned int phyId);
+int RaHdcGetSecRandom(unsigned int phyId, unsigned int *value);
+int RaHdcGetHccnCfg(unsigned int phyId, enum hccn_cfg_key key, char *value, unsigned int *valueLen);
 #endif // RA_HDC_H

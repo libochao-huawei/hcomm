@@ -232,7 +232,7 @@ TEST_F(HcomLoweringTest, ut_node_reducescatterv)
     op->SetType(HCCL_KERNEL_OP_TYPE_REDUCESCATTERV);
     ge::AttrUtils::SetStr(op, "reduction", "sum");
     auto reducescattervNode = graph.AddNode(op);
- 
+
     gert::LowerInput lowerInput;
     gert::bg::ValueHolderPtr valuePtr;
 	gert::bg::DevMemValueHolderPtr memValuePtr;
@@ -373,8 +373,8 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_allgatherv_count0)
 
     gert::Shape outshape({0});
     launchArgs.outputShapes.push_back(outshape);
-    
-    MOCKER(HcclAllGatherV)
+
+    MOCKER(HcclAllGatherVInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -449,7 +449,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_broadcast)
     .with(mockcpp::any(), outBound(launchArgs))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclBroadcast)
+    MOCKER(HcclBroadcastInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -526,7 +526,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_send)
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclSend)
+    MOCKER(HcclSendInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -606,7 +606,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_reduce)
     .with(mockcpp::any(), outBound(launchArgs))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclReduce)
+    MOCKER(HcclReduceInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -655,7 +655,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_reducescatter)
     context.input_size = 1;
     *(allGatherContext->GetContext()) = context;
 
-    MOCKER(HcclReduceScatter)
+    MOCKER(HcclReduceScatterInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -727,7 +727,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_reducescatterv_count0)
     gert::Shape outshape({0});
     launchArgs.outputShapes.push_back(outshape);
 
-    MOCKER(HcclReduceScatterV)
+    MOCKER(HcclReduceScatterVInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -811,7 +811,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_alltoallv)
     .with(mockcpp::any(), outBound(launchArgs))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclAlltoAllV)
+    MOCKER(HcclAlltoAllVInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -888,7 +888,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_alltoallvc)
     .with(mockcpp::any(), outBound(launchArgs))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclAlltoAllVC)
+    MOCKER(HcclAlltoAllVCInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -960,7 +960,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_allgather_new)
     .with(mockcpp::any(), outBound(launchArgs))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclAllGather)
+    MOCKER(HcclAllGatherInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -1142,7 +1142,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_errortest4)
     .with(mockcpp::any(), outBound(launchArgs))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclAllGather)
+    MOCKER(HcclAllGatherInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -1218,7 +1218,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_allreduce_sess)
     .with(mockcpp::any(), outBound(launchArgs))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclAllReduce)
+    MOCKER(HcclAllReduceInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -1296,7 +1296,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_allreduce_large_sess)
     .with(mockcpp::any(), mockcpp::any(), outBound(count))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclAllReduce)
+    MOCKER(HcclAllReduceInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -1374,7 +1374,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_allreduce_multi_input_sess)
     .with(mockcpp::any(), mockcpp::any(), outBound(count))
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER(HcclAllReduce)
+    MOCKER(HcclAllReduceInner)
     .stubs()
     .with(mockcpp::any())
     .will(returnValue(HCCL_SUCCESS));
@@ -1453,7 +1453,7 @@ TEST_F(HcomLoweringTest, ut_launchHcomKernelInitComm_test)
     MOCKER_CPP(&ge::GEThreadLocalContext::GetOption)
     .stubs()
     .will(invoke(GetOption2));
-    
+
     LaunchHcomKernelInitComm(allGatherContext);
     delete allGatherContext;
     remove(file_name_t);
@@ -1471,7 +1471,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_allGatherv2_When_Normal_Expect_Retu
 {
 
 
-    MOCKER(HcclAllGather).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
+    MOCKER(HcclAllGatherInner).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
     MOCKER(HcomGetDeviceType).stubs().with(mockcpp::any()).will(returnValue(DevType::DEV_TYPE_910_95));
     MOCKER(HcomAllGatherKernel).stubs().with(mockcpp::any()).will(returnValue(HCCL_SUCCESS));
 
@@ -1516,7 +1516,7 @@ TEST_F(HcomLoweringTest, ut_hcomLaunchKernel_allGatherv2_When_Normal_Expect_Retu
     GlobalMockObject::verify();
 }
 
-TEST_F(HcomLoweringTest, Ut_HcomReduceScatterKernelV2) 
+TEST_F(HcomLoweringTest, Ut_HcomReduceScatterKernelV2)
 {
     MOCKER(GetCountByShape).stubs().with().will(returnValue(HCCL_SUCCESS));
     HcomOpLaunchArgs launchArgs;
@@ -1528,7 +1528,7 @@ TEST_F(HcomLoweringTest, Ut_HcomReduceScatterKernelV2)
     launchArgs.stream = nullptr;
     HcclResult result = HcomReduceScatterKernelV2(launchArgs);
     EXPECT_EQ(result, HCCL_SUCCESS);
-    
+
     result = HcomAllToAllVKernelV2(launchArgs);
     EXPECT_EQ(result, HCCL_SUCCESS);
 
@@ -1542,14 +1542,14 @@ TEST_F(HcomLoweringTest, Ut_HcomReduceScatterKernelV2)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
-TEST_F(HcomLoweringTest, Ut_HcomCopyInputsToCCLbuff) 
+TEST_F(HcomLoweringTest, Ut_HcomCopyInputsToCCLbuff)
 {
     MOCKER(hrtMemAsyncCopy).stubs().with().will(returnValue(HCCL_SUCCESS));
     HcomOpLaunchArgs launchArgs;
     launchArgs.opAttr.dataType = HCCL_DATA_TYPE_INT32; // 假设数据类型为int32
     launchArgs.inputAddrs = {reinterpret_cast<void *>(0x1000), reinterpret_cast<void *>(0x2000)};
     launchArgs.outputAddrs = {reinterpret_cast<void *>(0x2000), reinterpret_cast<void *>(0x3000)};
-    launchArgs.stream = nullptr; 
+    launchArgs.stream = nullptr;
 
     uint32_t inputsNum = 2;
     uint32_t inputsOffset = 0;

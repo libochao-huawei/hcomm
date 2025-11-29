@@ -29,7 +29,8 @@
 #include <memory>
 #include <iostream>
 #include <fstream>
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
 #include "v80_rank_table.h"
 #include "hccl/base.h"
@@ -355,7 +356,7 @@ protected:
     }
     static void TearDownTestCase()
     {
-        TsdClose(0); 
+        TsdClose(0);
         std::cout << "\033[36m--OneSidedUt TearDown--\033[0m" << std::endl;
     }
     virtual void SetUp()
@@ -382,7 +383,7 @@ protected:
         DlRaFunction::GetInstance().DlRaFunctionInit();
         ClearHalEvent();
         struct ra_init_config config;
-        
+
         std::cout << "A Test SetUP" << std::endl;
     }
     virtual void TearDown()
@@ -442,7 +443,7 @@ TEST_F(ZeroCopyMemoryAgentUt, ut_agent_test)
         .expects(atMost(1))
         .with(any(), any(), outBoundP(&interfaceVersion))
         .will(returnValue(HCCL_SUCCESS));
-    HcclResult ret; 
+    HcclResult ret;
     u32 recvBufLen = 64;
     u64 compSize = 64;
     MOCKER_CPP(&HcclSocket::Send, HcclResult(HcclSocket::*)(const void *, u64))

@@ -45,6 +45,7 @@
 #include "heartbeat.h"
 #undef private
 #undef protected
+#include "dlra_function.h"
 #include "llt_hccl_stub_sal_pub.h"
 #include "dispatcher_pub.h"
 #include "reduce_scatter_nb_pub.h"
@@ -78,6 +79,7 @@ protected:
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "HcclImplAlgTestAHCAllreduce SetUP" << std::endl;
     }
     static void TearDownTestCase()

@@ -14,7 +14,8 @@
 #include "independent_op.h"
 #include <string>
 #include "param_check_pub.h"
-#include "hccl.h"
+#include "hccl_comm.h"
+#include "hccl_inner.h"
 #ifndef OPEN_BUILD_PROJECT
 #include "op_base_v2.h"
 #endif
@@ -38,7 +39,7 @@ HcclResult CommGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
     CommLink **linkList, uint32_t *listSize)
 {
     CHK_PTR_NULL(comm);
@@ -58,7 +59,7 @@ HcclResult CommGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum)
+HcclResult HcclGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(netLayers);
@@ -75,7 +76,7 @@ HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLa
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommTopo *topoType)
+HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommTopo *topoType)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(topoType);
@@ -91,7 +92,7 @@ HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommT
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+HcclResult HcclGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
@@ -107,7 +108,7 @@ HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
@@ -124,7 +125,7 @@ HcclResult CommGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+HcclResult HcclGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(instSizeList);

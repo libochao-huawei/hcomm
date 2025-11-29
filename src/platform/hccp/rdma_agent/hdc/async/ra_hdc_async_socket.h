@@ -31,20 +31,20 @@ struct ra_response_socket_batch_close {
     unsigned int num;
 };
 
-int ra_hdc_socket_send_async(const struct socket_hdc_info *fd_handle, const void *data, unsigned long long size,
-    unsigned long long *sent_size, void **req_handle);
-void ra_hdc_async_handle_socket_send(struct ra_request_handle *req_handle);
-int ra_hdc_socket_recv_async(const struct socket_hdc_info *fd_handle, void *data, unsigned long long size,
-    unsigned long long *received_size, void **req_handle);
-void ra_hdc_async_handle_socket_recv(struct ra_request_handle *req_handle);
-int ra_hdc_socket_listen_start_async(unsigned int phy_id, struct socket_listen_info_t conn[], unsigned int num,
-    void **req_handle);
-void ra_hdc_async_handle_socket_listen_start(struct ra_request_handle *req_handle);
-int ra_hdc_socket_listen_stop_async(unsigned int phy_id, struct socket_listen_info_t conn[], unsigned int num,
-    void **req_handle);
-int ra_hdc_socket_batch_connect_async(unsigned int phy_id, struct socket_connect_info_t conn[], unsigned int num,
-    void **req_handle);
-int ra_hdc_socket_batch_close_async(unsigned int phy_id, struct socket_close_info_t conn[], unsigned int num,
-    void **req_handle);
-void ra_hdc_async_handle_socket_batch_close(struct ra_request_handle *req_handle);
+int RaHdcSocketSendAsync(const struct socket_hdc_info *fdHandle, const void *data, unsigned long long size,
+    unsigned long long *sentSize, void **reqHandle);
+void RaHdcAsyncHandleSocketSend(struct ra_request_handle *reqHandle);
+int RaHdcSocketRecvAsync(const struct socket_hdc_info *fdHandle, void *data, unsigned long long size,
+    unsigned long long *receivedSize, void **reqHandle);
+void RaHdcAsyncHandleSocketRecv(struct ra_request_handle *reqHandle);
+int RaHdcSocketListenStartAsync(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num,
+    void **reqHandle);
+void RaHdcAsyncHandleSocketListenStart(struct ra_request_handle *reqHandle);
+int RaHdcSocketListenStopAsync(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num,
+    void **reqHandle);
+int RaHdcSocketBatchConnectAsync(unsigned int phyId, struct socket_connect_info_t conn[], unsigned int num,
+    void **reqHandle);
+int RaHdcSocketBatchCloseAsync(unsigned int phyId, struct socket_close_info_t conn[], unsigned int num,
+    void **reqHandle);
+void RaHdcAsyncHandleSocketBatchClose(struct ra_request_handle *reqHandle);
 #endif // RA_ASYNC_SOCKET_H

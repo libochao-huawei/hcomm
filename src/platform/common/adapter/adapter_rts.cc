@@ -377,7 +377,7 @@ HcclResult hrtGetDeviceIndexByPhyId(u32 devicePhyId, u32 &deviceLogicId)
         return HCCL_SUCCESS;
     }
 
-    aclError ret = aclrtGetPhyDevIdByLogicDevId(phyDevId, &logicDevId);
+    aclError ret = aclrtGetLogicDevIdByPhyDevId(phyDevId, &logicDevId);
 #else
     static auto funcPtr = (rtError_t(*)(int32_t, int32_t *const))g_dlAclrt.Handle<ACL_RT_GET_LOGICID_BY_PHYID>();
     CHK_PTR_NULL(funcPtr);
@@ -602,7 +602,7 @@ HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address)
             policy = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH);
         } else {
             policy = static_cast<int>(ACL_MEM_TYPE_HIGH_BAND_WIDTH) |
-                static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
+                static_cast<int>(ACL_MEM_MALLOC_HUGE_FIRST);
         }
     }
 

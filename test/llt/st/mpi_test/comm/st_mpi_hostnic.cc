@@ -58,7 +58,8 @@
 #include "externalinput_pub.h"
 #include "v80_rank_table.h"
 #include "dltdt_function.h"
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <iostream>
 #include <fstream>
 #include "opexecounter_pub.h"
@@ -228,7 +229,7 @@ void* inter_all_reduce_task_for_hostnic(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
     }
 
     rt_ret = aclrtSynchronizeStream(para_info->stream);
@@ -237,7 +238,7 @@ void* inter_all_reduce_task_for_hostnic(void* parg)
         HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
-    
+
     for (s32 i = 0; i < stream_list_size; i++)
     {
         rt_ret = rtModelUnbindStream(model, streamList[i]);
@@ -298,7 +299,7 @@ TEST_F(MPI_HostNic_Test, st_hrtGetHostIf)
     ret = hrtGetHostIf(hostIf);
     EXPECT_EQ(ret, 1);
     GlobalMockObject::verify();
-  
+
     ifAddrNum = 0;
     MOCKER(hrtGetIfNum)
     .stubs()
@@ -373,13 +374,13 @@ TEST_F(MPI_HostNic_Test, st_mpi_910_93_hcclMasterInfo_single_server_2p_success_n
     s32 nnode, rank = 0;
     MPI_Comm_size(MPI_COMM_WORLD, &nnode); // nnode 为mpi进程数，即服务器个数
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
- 
+
     DevType type91093 = DevType::DEV_TYPE_910_93;
     MOCKER(hrtGetDeviceType)
     .stubs()
     .with(outBound(type91093))
     .will(returnValue(HCCL_SUCCESS));
- 
+
     MOCKER(hrtGetDeviceInfo)
     .stubs()
 	.will(invoke(stub_hrtGetDeviceInfo));
@@ -389,11 +390,11 @@ TEST_F(MPI_HostNic_Test, st_mpi_910_93_hcclMasterInfo_single_server_2p_success_n
 	.with(any())
 	.will(invoke(stub_hrtRaGetSingleSocketVnicIpInfo));
     hrtSetDevice(rank);
- 
+
     setenv("HCCL_WHITELIST_DISABLE", "1", 1);
     setenv("HCCL_IF_IP", "127.0.0.1", 1);
     setenv("HCCL_BUFFSIZE", "200", 1);
- 
+
     string masterIp = "127.0.0.1";
     string masterPort = "6000";
     string masterID = "0";
@@ -401,10 +402,10 @@ TEST_F(MPI_HostNic_Test, st_mpi_910_93_hcclMasterInfo_single_server_2p_success_n
     string rankSize = "2";
     ret = HcomInitByMasterInfo(masterIp.c_str(), masterPort.c_str(), masterID.c_str(), rankSize.c_str(), rankIp.c_str());
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
- 
+
+
     MPI_Barrier(MPI_COMM_WORLD);
- 
+
     ret = HcomDestroy();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ResetInitState();

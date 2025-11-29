@@ -99,11 +99,11 @@ int Sample(void *arg)
     ACLCHECK(aclrtFreeHost(resultBuff));
 
     // 释放资源
+    HCCLCHECK(HcclCommDestroy(hcclComm));  // 销毁通信域
     ACLCHECK(aclrtFree(sendBuf));          // 释放 Device 侧内存
     ACLCHECK(aclrtFree(recvBuf));          // 释放 Device 侧内存
     ACLCHECK(aclrtFreeHost(hostBuf));      // 释放 Host 侧内存
     ACLCHECK(aclrtDestroyStream(stream));  // 销毁任务流
-    HCCLCHECK(HcclCommDestroy(hcclComm));  // 销毁通信域
     return 0;
 }
 

@@ -2865,15 +2865,15 @@ TEST_F(MPI_Link_Ibv_Test, st_data_plane_interface_rdma)
     ret = hcclStreamSynchronize(stream->ptr());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = CommLocalNotifyRecord(reinterpret_cast<uint64_t>(&mianThread), reinterpret_cast<uint64_t>(&subThread), 0);
+    ret = HcommInterThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&mianThread), reinterpret_cast<uint64_t>(&subThread), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = CommLocalNotifyWait(reinterpret_cast<uint64_t>(&subThread), 0, 1);
+    ret = HcommInterThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&subThread), 0, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = CommLocalNotifyRecord(reinterpret_cast<uint64_t>(&subThread), reinterpret_cast<uint64_t>(&mianThread), 1);
+    ret = HcommInterThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&subThread), reinterpret_cast<uint64_t>(&mianThread), 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = CommLocalNotifyWait(reinterpret_cast<uint64_t>(&mianThread), 1, 1);
+    ret = HcommInterThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&mianThread), 1, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = hcclStreamSynchronize(stream->ptr());
@@ -2888,7 +2888,7 @@ TEST_F(MPI_Link_Ibv_Test, st_data_plane_interface_rdma)
     ret = HcclRemoteWriteReduceWithNotify(stream, link.get(), &rmtBuf, &rmtBuf, reduceInfo, 0);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 
-    ret = CommWriteWithNotify(reinterpret_cast<uint64_t>(&mianThread), reinterpret_cast<uint64_t>(link.get()),
+    ret = HcommWriteWithNotifyOnThread(reinterpret_cast<uint64_t>(&mianThread), reinterpret_cast<uint64_t>(link.get()),
         outputMem.ptr(), inputMem.ptr(), len, 0);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 

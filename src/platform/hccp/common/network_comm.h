@@ -17,7 +17,7 @@
 #define NET_PHY_ID_MAX 16
 #define BUF_LEN 256
 
-int net_comm_get_self_home(char *home_path, unsigned int path_len);
-int net_get_gateway_address(unsigned int phy_id, unsigned int *gtw_addr);
+int NetCommGetSelfHome(char *homePath, unsigned int pathLen);
+int NetGetGatewayAddress(unsigned int phyId, unsigned int *gtwAddr);
 
 #endif

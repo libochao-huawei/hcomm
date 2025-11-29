@@ -415,7 +415,7 @@ public:
     // 独立算子专用
     HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, 
         TransportIOMem& transMem, bool isAicpuModeEn);
-    aclrtBinHandle GetBinCustomHandle();
+    aclrtBinHandle GetBinHandle();
 
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
@@ -423,6 +423,8 @@ public:
     HcclResult GetCacheMap(std::unique_ptr<CollAlgOperator>& algOperator, OpParam& opParam,
         AlgType& algType, bool selectAivAlg, std::string& newTag);
     HcclResult ExecOpCache(HcclCMDType opType, OpParam &opParam, HcclCacheInfo& cacheInfo);
+    void SplitBsrData(OpParam &opParam, std::vector<u8>& isDirectRemoteRank,
+        std::vector<HcclSendRecvItem>& hostSendRecvInfo, std::vector<HcclSendRecvItem>& aicpuSendRecvInfo);
 
     //decouple for MC2
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
@@ -809,8 +811,6 @@ private:
     u32 UpdateOpIndex(const OpParam &opParam); // 更新opIndex
     HcclResult LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
         aclrtBinHandle& binHandle);
-    HcclResult LoadIndOpCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-        aclrtBinHandle& binHandle);
     void UnloadBinary(aclrtBinHandle& binHandle);
     bool IsEnableCustom();
     void UnloadCustomKernel(void);
@@ -1020,6 +1020,7 @@ private:
     void *p2pCclBuf_[AICPU_MAX_RANK_NUM]{};
     void *cclBuf_[AICPU_MAX_RANK_NUM]{};
     std::vector<RankInfo_t> rankGraph_;
+    std::map<u32, TransportType> remoteTransportMap_;
 
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;

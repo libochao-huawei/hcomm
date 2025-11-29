@@ -59,7 +59,8 @@
 #include <iostream>
 #include <fstream>
 #include "graph/ge_context.h"
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "hcom_graph_mc2.h"
 #include "adapter_rts.h"
 
@@ -106,16 +107,16 @@ TEST_F(HcomGraphMc2Test, ut_mc2_creatComResourceErr)
     HcclComm newcomm;
     ret = HcclCommInitRootInfo(1, &id, 0, &newcomm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(newcomm);
- 
+
     const ge::OpDescPtr opDescPtr = std::make_shared<ge::OpDesc>();
     opDescPtr->SetType("MatmulAllReduce");
     ge::AttrUtils::SetStr(opDescPtr, "group", hcclComm->GetIdentifier());
- 
+
     ge_ret = hccl::HcomCreateComResource(opDescPtr, commContext);
     EXPECT_EQ(ge_ret, ge::GRAPH_FAILED);
- 
+
     shared_ptr<std::vector<void *>> rt_resource_list = std::make_shared<std::vector<void *>>();
     opDescPtr->SetExtAttr("_rt_resource_list", rt_resource_list);
     ge_ret = hccl::HcomCreateComResource(opDescPtr, commContext);
@@ -144,35 +145,35 @@ TEST_F(HcomGraphMc2Test, ut_mc2_creatComResource)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcclGetRootInfo(&id);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     HcclComm newcomm;
     ret = HcclCommInitRootInfo(1, &id, 0, &newcomm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(newcomm);
- 
+
     ge::OpDescPtr opDescPtr = std::make_shared<ge::OpDesc>();
     opDescPtr->SetType("MatmulAllReduce");
     ge::AttrUtils::SetStr(opDescPtr, "group", hcclComm->GetIdentifier());
- 
+
     shared_ptr<std::vector<void *>> rt_resource_list = std::make_shared<std::vector<void *>>();
- 
+
     rt_ret = aclrtCreateStream(&stream);
     EXPECT_EQ(rt_ret, RT_ERROR_NONE);
     ret = hrtNotifyCreate(0, &notify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     rt_resource_list->push_back((void *)stream);
     opDescPtr->SetExtAttr("_rt_resource_list", rt_resource_list);
- 
+
     ge_ret = hccl::HcomCreateComResource(opDescPtr, commContext);
     EXPECT_EQ(ge_ret, ge::GRAPH_SUCCESS);
- 
+
     rt_ret = aclrtDestroyStream(stream);
     EXPECT_EQ(ret, RT_ERROR_NONE);
     ret = hrtNotifyDestroy(notify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
- 
+
     ret = HcclCommDestroy(newcomm);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();

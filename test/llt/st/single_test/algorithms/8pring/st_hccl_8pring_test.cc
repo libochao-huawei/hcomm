@@ -120,13 +120,13 @@ void* all_reduce_8pring_task(void* parg)
 
     hcom_info.pComm.reset(new(std::nothrow) hccl::hcclComm());
     rtModel_t model = (void*)1;
-    CommConfig commConfig("hccl_world_group"); 
+    CommConfig commConfig("hccl_world_group");
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
         HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
     }
-    
+
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
     bool swapped;
@@ -188,7 +188,7 @@ void* all_reduce_8pring_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -245,13 +245,13 @@ void* all_reduce_8pring_task_ffts(void* parg)
     hcom_info.params.deviceType = DevType::DEV_TYPE_910B;
 
     rtModel_t model = (void*)1;
-    CommConfig commConfig("hccl_world_group"); 
+    CommConfig commConfig("hccl_world_group");
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
         HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
     }
-    
+
     bool swapped;
     //-----------------Get Workspace Resource Start------------------//
     u64 stream_list_size = 0;
@@ -261,12 +261,12 @@ void* all_reduce_8pring_task_ffts(void* parg)
     vector<HcclRtStream> streamList(stream_list_size);
 
     rtError_t rt_ret;
-    
+
     for (s32 i = 0; i < stream_list_size; i++)
     {
         rt_ret = aclrtCreateStreamWithConfig(&streamList[i], 0, ACL_STREAM_PERSISTENT);
         EXPECT_EQ(rt_ret, RT_ERROR_NONE);
-        
+
         rt_ret = rtModelBindStream(model, streamList[i], RT_MODEL_WAIT_ACTIVE_STREAM);
         EXPECT_EQ(rt_ret, RT_ERROR_NONE);
     }
@@ -297,9 +297,9 @@ void* all_reduce_8pring_task_ffts(void* parg)
     while (!swapped);
 
     while (*(para_info->sync_addr) < para_info->ranks_local)
-    { sched_yield(); } 
+    { sched_yield(); }
 
-    __sync_synchronize();  
+    __sync_synchronize();
 
     ret =  hcom_info.pComm->AllReduceOutPlace("tag_all_reduce_8pring_task_ffts_0",
                                para_info->sendbuff,
@@ -311,7 +311,7 @@ void* all_reduce_8pring_task_ffts(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -373,7 +373,7 @@ protected:
         std::cout << "A Test TearDown" << std::endl;
     }
 };
-  
+
 #define DEV_NUM_8 8
 INSTANTIATE_TEST_CASE_P(FFTSSwitch, Hccl8pRingTest, testing::Bool());
 #if 1
@@ -381,7 +381,7 @@ TEST_P(Hccl8pRingTest, st_allreduce_inter_char_1ring)
 {
 
     nlohmann::json rank_table = rank_table_1server_8rank;
- 
+
 
     char file_name_t[] = "./st_allreduce_inter_char_1ring.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -497,7 +497,7 @@ TEST_P(Hccl8pRingTest, st_allreduce_inter_char_1ring)
         } else {
             tid[i] = sal_thread_create("thread", all_reduce_8pring_task, (void*)&para_info[i]);
         }
-        
+
         EXPECT_NE(tid[i], (sal_thread_t )NULL);
     }
 
@@ -553,7 +553,7 @@ TEST_F(Hccl8pRingTest, st_allreduce_inter_char_2ring)
 {
 
     nlohmann::json rank_table = rank_table_1server_8rank;
- 
+
 
     char file_name_t[] = "./st_allreduce_inter_char_2ring.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -1045,7 +1045,7 @@ TEST_F(Hccl8pRingTest, st_allreduce_inter_float_128bytes)
 {
 
     nlohmann::json rank_table = rank_table_1server_8rank;
-    
+
 
     char file_name_t[] = "./st_allreduce_inter_float_128bytes.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -1211,7 +1211,7 @@ TEST_F(Hccl8pRingTest, st_allreduce_inter_float_128bytes)
 TEST_F(Hccl8pRingTest, st_allreduce_inter_float_4096bytes)
 {
     nlohmann::json rank_table = rank_table_1server_8rank;
-   
+
 
     char file_name_t[] = "./st_allreduce_inter_float_4096bytes.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -1375,7 +1375,7 @@ TEST_F(Hccl8pRingTest, st_allreduce_inter_float_4096bytes)
 TEST_F(Hccl8pRingTest, st_allreduce_8P_common_ring_float)
 {
     nlohmann::json rank_table = rank_table_1server_8rank;
-   
+
 
     char file_name_t[] = "./st_allreduce_8P_common_ring_float.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -1782,7 +1782,7 @@ TEST_F(Hccl8pRingTest, st_allreduce_intra_8P_cloud)
 TEST_F(Hccl8pRingTest, st_allreduce_inter_float_3Mcounts)
 {
     nlohmann::json rank_table = rank_table_1server_8rank;
-   
+
 
     char file_name_t[] = "./st_allreduce_inter_float_3Mcounts.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -1949,7 +1949,7 @@ TEST_F(Hccl8pRingTest, st_allreduce_inter_char_padding)
 {
 
     nlohmann::json rank_table = rank_table_1server_8rank;
-   
+
 
     char file_name_t[] = "./st_allreduce_inter_char_padding.json";
     std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
@@ -2143,13 +2143,13 @@ void* reduce_scatter_8pring_task(void* parg)
 
     hcom_info.pComm.reset(new(std::nothrow) hccl::hcclComm());
     rtModel_t model = (void*)1;
-    CommConfig commConfig("hccl_world_group"); 
+    CommConfig commConfig("hccl_world_group");
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
         HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
     }
-    
+
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
     bool swapped;

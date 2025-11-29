@@ -35,7 +35,8 @@
 #undef protected
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
@@ -106,7 +107,7 @@ TEST_F(MPI_TCP_SENDRECV_TEST, st_mpi_tcp_send_link)
 {
     SetTcpMode(true);
     HcclResult ret;
-    string data = "MPI_TCP_SENDRECV_TEST"; 
+    string data = "MPI_TCP_SENDRECV_TEST";
     string *buffer = &data;
     u32 peerRank = 0;
     u32 tag = 0;
@@ -180,7 +181,7 @@ TEST_F(MPI_TCP_SENDRECV_TEST, st_mpi_tcp_improbe)
     std::unique_lock<std::mutex> lock(g_transportStorageMutex);
     g_commRankTagMap[commRankTagInfo].hcclHandle = link.get();
     lock.unlock();
-    
+
     ret = impl.Improbe(peerRank, tag, flag, msg, status);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -195,7 +196,7 @@ TEST_F(MPI_TCP_SENDRECV_TEST, st_mpi_tcp_imrecv)
     u32 commId = 0;
     u32 peerRank = 0;
     u32 tag = 0;
-    string data = "MPI_TCP_SENDRECV_TEST"; 
+    string data = "MPI_TCP_SENDRECV_TEST";
     string *buffer = &data;
     void *request = nullptr;
     void **requestPtr = &request;
@@ -303,7 +304,7 @@ TEST_F(MPI_TCP_SENDRECV_TEST, st_mpi_tcp_sendWork)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
+
     HcclResult ret;
     hcclImpl impl;
     TcpSendThreadPool tcpThreadPool(&impl, 0);

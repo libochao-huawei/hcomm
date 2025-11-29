@@ -30,13 +30,13 @@ struct ra_ping_handle {
 };
 
 struct ra_ping_ops {
-    int (*ra_ping_init)(struct ra_ping_handle *ping_handle, struct ping_init_attr *init_attr,
-        struct ping_init_info *init_info);
-    int (*ra_ping_target_add)(struct ra_ping_handle *ping_handle, struct ping_target_info target[], uint32_t num);
-    int (*ra_ping_task_start)(struct ra_ping_handle *ping_handle, struct ping_task_attr *attr);
-    int (*ra_ping_get_results)(struct ra_ping_handle *ping_handle, struct ping_target_result target[], uint32_t *num);
-    int (*ra_ping_target_del)(struct ra_ping_handle *ping_handle, struct ping_target_comm_info target[], uint32_t num);
-    int (*ra_ping_task_stop)(struct ra_ping_handle *ping_handle);
-    int (*ra_ping_deinit)(struct ra_ping_handle *ping_handle);
+    int (*ra_ping_init)(struct ra_ping_handle *pingHandle, struct ping_init_attr *initAttr,
+        struct ping_init_info *initInfo);
+    int (*ra_ping_target_add)(struct ra_ping_handle *pingHandle, struct ping_target_info target[], uint32_t num);
+    int (*ra_ping_task_start)(struct ra_ping_handle *pingHandle, struct ping_task_attr *attr);
+    int (*ra_ping_get_results)(struct ra_ping_handle *pingHandle, struct ping_target_result target[], uint32_t *num);
+    int (*ra_ping_target_del)(struct ra_ping_handle *pingHandle, struct ping_target_comm_info target[], uint32_t num);
+    int (*ra_ping_task_stop)(struct ra_ping_handle *pingHandle);
+    int (*ra_ping_deinit)(struct ra_ping_handle *pingHandle);
 };
 #endif // RA_PING_H

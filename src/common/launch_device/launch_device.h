@@ -19,9 +19,6 @@ namespace hccl {
 
 HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
     aclrtBinHandle& binHandle);
-
-HcclResult LoadIndOpBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-    aclrtBinHandle& binHandle, bool isRelativePath = true);
 }
 
 #endif // LAUNCH_DEVIDE_H

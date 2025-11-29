@@ -105,7 +105,7 @@ HcclResult NotifyManager::NotifyTypeToNotifyLoadType(NotifyType notifyType, Noti
     return HCCL_SUCCESS;
 }
 
-HcclResult NotifyManager::HcommAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
+HcclResult NotifyManager::HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
     NotifyHandle **notifyHandleList)
 {
     std::lock_guard<std::mutex> lock(notifyMutex_);

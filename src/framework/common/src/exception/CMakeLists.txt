@@ -10,6 +10,6 @@
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/exception_handler.cc
 )
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
 )

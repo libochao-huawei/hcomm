@@ -16,7 +16,7 @@
 
 #define RS_NSLB_BUFFER_SIZE    (64 * 1024) // 64KB
 
-RS_ATTRI_VISI_DEF int rs_tlv_init(unsigned int module_type, unsigned int phy_id, unsigned int *buffer_size);
-RS_ATTRI_VISI_DEF int rs_tlv_deinit(unsigned int module_type, unsigned int phy_id);
-RS_ATTRI_VISI_DEF int rs_tlv_request(struct tlv_request_msg_head *head, char *data);
+RS_ATTRI_VISI_DEF int RsTlvInit(unsigned int moduleType, unsigned int phyId, unsigned int *bufferSize);
+RS_ATTRI_VISI_DEF int RsTlvDeinit(unsigned int moduleType, unsigned int phyId);
+RS_ATTRI_VISI_DEF int RsTlvRequest(struct tlv_request_msg_head *head, char *data);
 #endif // RS_TLV_H

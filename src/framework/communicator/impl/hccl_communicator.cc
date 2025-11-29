@@ -104,7 +104,6 @@ namespace hccl
     {
         // 卸载自定义算子
         // 请勿删除，该函数为用户自定义算子时使用，应释放句柄：UnloadBinary(binCustomHandle_);
-        UnloadBinary(binCustomHandle_);
         return;
     }
 
@@ -112,8 +111,6 @@ namespace hccl
     {
         // 加载自定义算子
         // 请勿删除，该函数为用户自定义算子时使用，应加载句柄
-        const char *binPath1 = "/usr/local/Ascend/latest/libaicpu_custom.json";
-        CHK_RET(LoadIndOpCustomFile(binPath1, ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 1, binCustomHandle_));
         return HCCL_SUCCESS;
     }
 
@@ -1626,7 +1623,8 @@ namespace hccl
         if (opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV)
         {
             dynamicDataSize = sizeof(struct OpTilingBatchSendRecvDataDes) +
-                              opParam.BatchSendRecvDataDes.itemNum * sizeof(HcclSendRecvItem);
+                              opParam.BatchSendRecvDataDes.itemNum * sizeof(HcclSendRecvItem) +
+                              userRankSize_ * sizeof(u8);
         }
         else if (opType == HcclCMDType::HCCL_CMD_ALLTOALL)
         {

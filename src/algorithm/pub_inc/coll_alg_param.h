@@ -185,6 +185,7 @@ struct OpParam {
             u32 itemNum;
             u32 curIterNum;
             BatchSendRecvCurMode curMode;
+            u8* isDirectRemoteRank;
         } BatchSendRecvDataDes;
         struct {
             u32 itemNum;

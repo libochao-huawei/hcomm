@@ -17,13 +17,13 @@ struct rs_netco_ops {
     void *(*rs_netco_init)(int epollfd, NetCoIpPortArg ipPortArg);
     void (*rs_netco_deinit)(void *co);
     unsigned int (*rs_netco_event_dispatch)(void *co, int fd, unsigned int curEvents);
-    int (*rs_netco_tbl_add_upd)(void *netco_handle, unsigned int type, char *data, unsigned int data_len);
+    int (*rs_netco_tbl_add_upd)(void *netcoHandle, unsigned int type, char *data, unsigned int dataLen);
 };
 
-void rs_nslb_api_deinit(void);
-int rs_nslb_api_init(void);
-void *rs_netco_init(int epollfd, NetCoIpPortArg ipPortArg);
-void rs_netco_deinit(void *co);
-unsigned int rs_netco_event_dispatch(void *co, int fd, unsigned int curEvents);
-int rs_netco_tbl_add_upd(void *netco_handle, unsigned int type, char *data, unsigned int data_len);
+void RsNslbApiDeinit(void);
+int RsNslbApiInit(void);
+void *RsNetcoInit(int epollfd, NetCoIpPortArg ipPortArg);
+void RsNetcoDeinit(void *co);
+unsigned int RsNetcoEventDispatch(void *co, int fd, unsigned int curEvents);
+int RsNetcoTblAddUpd(void *netcoHandle, unsigned int type, char *data, unsigned int dataLen);
 #endif // DL_NETCO_FUNCTION_H

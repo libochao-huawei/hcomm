@@ -3623,6 +3623,8 @@ TEST_F(AicpuUnfold_UT, InitBatchSendRecvOpId)
         HcclSendRecvItem sendrecvPair;
         sendrecvPair.sendRecvType = HcclSendRecvType::HCCL_SEND;
         sendrecvPair.remoteRank = 1;
+        u8 isDirectRemoteRank[2] = {0};
+        param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
         HcclOpIdentifier opId;
         HcclResult result = hcclCommAicpu->InitBatchSendRecvOpId(param, &sendrecvPair, opId, 0, algResource);
         EXPECT_EQ(result, HCCL_SUCCESS);
@@ -3638,6 +3640,8 @@ TEST_F(AicpuUnfold_UT, InitBatchSendRecvOpId)
         HcclSendRecvItem sendrecvPair;
         sendrecvPair.sendRecvType = HcclSendRecvType::HCCL_RECV;
         sendrecvPair.remoteRank = 1;
+        u8 isDirectRemoteRank[2] = {0};
+        param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
         HcclOpIdentifier opId;
         HcclResult result = hcclCommAicpu->InitBatchSendRecvOpId(param, &sendrecvPair, opId, 0, algResource);
         EXPECT_EQ(result, HCCL_SUCCESS);
@@ -3650,6 +3654,8 @@ TEST_F(AicpuUnfold_UT, InitBatchSendRecvOpId)
         OpParam param;
         param.BatchSendRecvDataDes.curIterNum = 1;
         AlgResourceResponse algResource;
+        u8 isDirectRemoteRank[2] = {0};
+        param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
         algResource.slaveStreams.resize(BSR_RETRY_STREAM_NUM);
         EXPECT_EQ(hcclCommAicpu->InitBatchSendRecvOpId(param, algResource), HCCL_SUCCESS);
     }
@@ -3658,6 +3664,8 @@ TEST_F(AicpuUnfold_UT, InitBatchSendRecvOpId)
         OpParam param;
         AlgResourceResponse algResource;
         param.BatchSendRecvDataDes.curIterNum = 2;
+        u8 isDirectRemoteRank[2] = {0};
+        param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
         algResource.slaveStreams.resize(BSR_RETRY_STREAM_NUM - 1);
         EXPECT_EQ(hcclCommAicpu->InitBatchSendRecvOpId(param, algResource), HCCL_E_INTERNAL);
     }
@@ -3666,6 +3674,8 @@ TEST_F(AicpuUnfold_UT, InitBatchSendRecvOpId)
         OpParam param;
         param.BatchSendRecvDataDes.curIterNum = 1;
         AlgResourceResponse algResource;
+        u8 isDirectRemoteRank[2] = {0};
+        param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
         algResource.slaveStreams.resize(BSR_RETRY_STREAM_NUM);
         EXPECT_EQ(hcclCommAicpu->InitBatchSendRecvOpId(param, algResource), HCCL_SUCCESS);
     }
@@ -3674,6 +3684,8 @@ TEST_F(AicpuUnfold_UT, InitBatchSendRecvOpId)
         OpParam param;
         param.BatchSendRecvDataDes.curIterNum = 0;
         AlgResourceResponse algResource;
+        u8 isDirectRemoteRank[2] = {0};
+        param.BatchSendRecvDataDes.isDirectRemoteRank = isDirectRemoteRank;
         algResource.slaveStreams.resize(BSR_RETRY_STREAM_NUM);
         EXPECT_EQ(hcclCommAicpu->InitBatchSendRecvOpId(param, algResource), HCCL_SUCCESS);
     }

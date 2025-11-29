@@ -27,7 +27,7 @@ static inline void RS_INIT_LIST_HEAD(struct rs_list_head *list)
     (n) = list_entry((pos)->member.next, type, member);         \
 } while (0)
 
-static inline bool rs_list_empty(struct rs_list_head *head)
+static inline bool RsListEmpty(struct rs_list_head *head)
 {
     return head->next == head;
 }
@@ -42,7 +42,7 @@ static inline void __rs_list_add(struct rs_list_head *xnew,
     prev->next = xnew;
 }
 
-static inline void rs_list_add_tail(struct rs_list_head *xnew, struct rs_list_head *head)
+static inline void RsListAddTail(struct rs_list_head *xnew, struct rs_list_head *head)
 {
     __rs_list_add(xnew, head->prev, head);
 }
@@ -53,7 +53,7 @@ static inline void __rs_list_del(struct rs_list_head *prev, struct rs_list_head 
     prev->next = next;
 }
 
-static inline void rs_list_del(struct rs_list_head *entry)
+static inline void RsListDel(struct rs_list_head *entry)
 {
     __rs_list_del(entry->prev, entry->next);
 }

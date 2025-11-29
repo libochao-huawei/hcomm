@@ -350,7 +350,7 @@ struct tlv_request_msg_head {
 #define QP_DEFAULT_MAX_ATTR_TIMEOUT       20
 #define QP_DEFAULT_MAX_ATTR_RETRY_CNT     7
 
-int conver_return_code(enum module_type module, int erro_code);
+int ConverReturnCode(enum module_type module, int erroCode);
 
 #endif
 

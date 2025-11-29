@@ -27,25 +27,16 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/impl/aicore/basic_api/utils
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
             --cce-aicore-jump-expand=true -std=c++17 -fstack-protector-all -DONE_CORE_DUMP_SIZE=1024
             COMMAND ${CCE_DIR}/ld.lld -m aicorelinux -Ttext=0 ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B_tmp.o -static -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_ascend910B.o
@@ -61,22 +52,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -94,22 +77,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -128,22 +103,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -162,22 +129,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -196,22 +155,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -230,22 +181,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -264,22 +207,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -298,22 +233,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -332,22 +259,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -367,22 +286,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -401,22 +312,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -435,22 +338,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -469,22 +364,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -503,22 +390,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -538,22 +417,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -572,22 +443,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -606,22 +469,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -640,22 +495,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -674,22 +521,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -708,22 +547,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -742,22 +573,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -776,22 +599,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -810,22 +625,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -844,22 +651,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -878,22 +677,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -912,22 +703,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -947,22 +730,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -981,22 +756,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1015,22 +782,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1049,22 +808,14 @@ if(BUILD_OPEN_PROJECT)
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1086,22 +837,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1121,22 +864,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1154,22 +889,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1187,22 +914,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1220,22 +939,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1253,22 +964,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1287,22 +990,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1320,22 +1015,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1353,22 +1040,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1386,22 +1065,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1420,22 +1091,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1453,22 +1116,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1486,22 +1141,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1519,22 +1166,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1552,22 +1191,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1586,22 +1217,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1619,22 +1242,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1652,22 +1267,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1685,22 +1292,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1718,22 +1317,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1751,22 +1342,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1784,22 +1367,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1817,22 +1392,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1850,22 +1417,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1883,22 +1442,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1916,22 +1467,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1949,22 +1492,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -1983,22 +1518,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -2016,22 +1543,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -2049,22 +1568,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
@@ -2082,22 +1593,14 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/basic_api/interface/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/include/adv_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/x86_64-linux/include/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/ascendc/include/basic_api/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/asc/impl/micro_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
-            -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/ascendc/include/basic_api/impl/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/asc/impl/micro_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
+            -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
             -I${TOP_DIR}/hcomm/inc/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}

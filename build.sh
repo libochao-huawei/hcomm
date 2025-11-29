@@ -14,7 +14,7 @@ BUILD_DIR=${CURRENT_DIR}/build
 BUILD_DEVICE_DIR="${CURRENT_DIR}/build_device"
 OUTPUT_DIR=${CURRENT_DIR}/build_out
 USER_ID=$(id -u)
-CPU_NUM=$(($(cat /proc/cpuinfo | grep "^processor" | wc -l)*2))
+CPU_NUM=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
 JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
 COV="false"
@@ -25,8 +25,8 @@ DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
-CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/../vendor/hisi/build/scripts/sign_and_add_header.sh"
-ENABLE_SIGN="true"
+CUSTOM_SIGN_SCRIPT=""
+ENABLE_SIGN="false"
 
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
@@ -97,10 +97,7 @@ function build_device(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST=""
-    if [ "${ENABLE_SIGN}" == "true" ]; then
-        SIGN_TARGET_LIST="sign_hcomm_device sign_aicpu_hcomm"
-    fi
+    SIGN_TARGET_LIST="sign_cann_hcomm_compat sign_aicpu_hcomm"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -112,10 +109,7 @@ function build_hccd(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccd_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST=""
-    if [ "${ENABLE_SIGN}" == "true" ]; then
-        SIGN_TARGET_LIST="sign_hcomm_hccd"
-    fi
+    SIGN_TARGET_LIST="sign_cann_hccd_compat"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -320,6 +314,10 @@ while [[ $# -gt 0 ]]; do
         KERNEL="true"
         shift
         ;;
+    --full)
+        FULL_MODE="true"
+        shift
+        ;;
     --build_aarch)
         BUILD_AARCH="true"
         shift
@@ -354,11 +352,9 @@ while [[ $# -gt 0 ]]; do
         ENABLE_SIGN="true"
         shift
         ;;
-    --sign_script=*)
-        OPTARG=$1
-        CUSTOM_SIGN_SCRIPT="$(realpath ${OPTARG#*=})"
-        ENABLE_SIGN="true"
-        shift
+    --sign-script)
+        CUSTOM_SIGN_SCRIPT="$(realpath $2)"
+        shift 2
         ;;
     *)
         break
@@ -366,16 +362,16 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-if [ ! -f "$CUSTOM_SIGN_SCRIPT" ];then
-    ENABLE_SIGN="false"
-fi
-
 if [ -n "${TEST}" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_TEST=ON"
 fi
 
 if [ "${KERNEL}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DKERNEL_MODE=ON -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device"
+fi
+
+if [ "${FULL_MODE}" == "true" ];then
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
 fi
 
 if [ "${BUILD_AARCH}" == "true" ];then
@@ -435,9 +431,9 @@ elif [ "${KERNEL}" == "true" ]; then
 elif [ "${BUILD_FWK_HLT}" == "true" ]; then
     log "Info: Building fwk_test with MOCK_HCCL=${MOCK_FWK_HLT}"
     cmake ${CUSTOM_OPTION} -DMOCK_HCCL=${MOCK_FWK_HLT} ../test/hlt
-    build hccl_fwk_test
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
+    build hcomm_test
+    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
+    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
     log "Info: Building cb_test_verify"
     build_cb_test_verify
@@ -464,5 +460,6 @@ elif [ "${FULL_MODE}" == "true" ]; then
     build_package
     rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
 fi

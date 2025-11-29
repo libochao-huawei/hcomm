@@ -709,6 +709,9 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
                 TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr, false));
+            if (algoAttr_.isSupportAtomicWrite) {
+                level2TempAlg->CloseBarrier();
+            }
             HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL2", __func__);
         } else {
             level2TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(

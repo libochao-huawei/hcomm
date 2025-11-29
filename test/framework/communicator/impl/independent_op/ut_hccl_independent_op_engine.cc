@@ -53,26 +53,26 @@ void CreateCommByConfig(HcclComm *comm, int32_t commEngine, uint32_t threadNum, 
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(HcclIndependentOpEngineTest, Ut_CommAllocThreadRes_When_Param_Is_Invalid_Expect_Para_Error)
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclAllocThreadRes_When_Param_Is_Invalid_Expect_Para_Error)
 {
     ThreadHandle thread[2] = {0};
-    HcclResult ret = CommAllocThreadRes(nullptr, CommEngine::COMM_ENGINE_HOSTCPU, 2, 1, thread);
+    HcclResult ret = HcclAllocThreadRes(nullptr, CommEngine::COMM_ENGINE_HOSTCPU, 2, 1, thread);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     CreateCommByConfig(&comm, static_cast<int32_t>(CommEngine::COMM_ENGINE_HOSTCPU), 4, 2);
-    ret = CommAllocThreadRes(comm, CommEngine::COMM_ENGINE_HOSTCPU, 2, 1, nullptr);
+    ret = HcclAllocThreadRes(comm, CommEngine::COMM_ENGINE_HOSTCPU, 2, 1, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
-    ret = CommAllocThreadRes(comm, CommEngine::COMM_ENGINE_RESERVED, 2, 1, thread);
+    ret = HcclAllocThreadRes(comm, CommEngine::COMM_ENGINE_RESERVED, 2, 1, thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    ret = CommAllocThreadRes(comm, CommEngine::COMM_ENGINE_HOSTCPU, 5, 1, thread);
+    ret = HcclAllocThreadRes(comm, CommEngine::COMM_ENGINE_HOSTCPU, 5, 1, thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    ret = CommAllocThreadRes(comm, CommEngine::COMM_ENGINE_HOSTCPU, 2, 3, thread);
+    ret = HcclAllocThreadRes(comm, CommEngine::COMM_ENGINE_HOSTCPU, 2, 3, thread);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     Ut_Comm_Destroy(comm);
 }
 
-// -----CommAllocThreadRes接口host侧用例-------
+// -----HcclAllocThreadRes接口host侧用例-------
 // 限定数量
 
 HcclResult hrtDrvGetPlatformInfoStub(uint32_t *info)
@@ -120,14 +120,14 @@ void LocalCopyFfts(ThreadHandle thread) {
     HcclMem userInputMem{HcclMemType::HCCL_MEM_TYPE_HOST, userIn.ptr(), 1};
     HcclMem cclInputMem{HcclMemType::HCCL_MEM_TYPE_HOST, cclIn.ptr(), 1};
 
-    ret = CommLocalCopy(thread, &userInputMem, &cclInputMem, 1);
+    ret = HcommLocalCopyOnThread(thread, &userInputMem, &cclInputMem, 1);
     EXPECT_EQ(HCCL_SUCCESS, ret);
     ret = DestoryDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
 const CommEngine g_hostEngine = CommEngine::COMM_ENGINE_HOSTCPU;
-TEST_F(HcclIndependentOpEngineTest, Ut_CommAllocThreadRes_When_Alloced_Threads_Morethan_Quota_Expect_Unavailable)
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclAllocThreadRes_When_Alloced_Threads_Morethan_Quota_Expect_Unavailable)
 {
     bool isDeviceSide = false;
     MOCKER(GetRunSideIsDevice)
@@ -143,7 +143,7 @@ TEST_F(HcclIndependentOpEngineTest, Ut_CommAllocThreadRes_When_Alloced_Threads_M
 
     CreateCommByConfig(&comm, static_cast<int32_t>(g_hostEngine), 4, 2);
     ThreadHandle thread1[2] = {0};
-    HcclResult ret = CommAllocThreadRes(comm, g_hostEngine, 2, 2, thread1);
+    HcclResult ret = HcclAllocThreadRes(comm, g_hostEngine, 2, 2, thread1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < 2; i++) {
         EXPECT_NE(thread1[i], 0);
@@ -152,24 +152,24 @@ TEST_F(HcclIndependentOpEngineTest, Ut_CommAllocThreadRes_When_Alloced_Threads_M
     LocalCopyFfts(thread1[0]);
 
     ThreadHandle thread2[1] = {0};
-    ret = CommAllocThreadRes(comm, g_hostEngine, 1, 2, thread2);
+    ret = HcclAllocThreadRes(comm, g_hostEngine, 1, 2, thread2);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < 1; i++) {
         EXPECT_NE(thread2[i], 0);
     }
 
     ThreadHandle thread3[2] = {0};
-    ret = CommAllocThreadRes(comm, g_hostEngine, 2, 1, thread3);
+    ret = HcclAllocThreadRes(comm, g_hostEngine, 2, 1, thread3);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
     Ut_Comm_Destroy(comm);
 }
 
 // 默认数量
-TEST_F(HcclIndependentOpEngineTest, Ut_CommAllocThreadRes_When_Alloced_Notify_Morethan_Quota_Expect_Unavailable)
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclAllocThreadRes_When_Alloced_Notify_Morethan_Quota_Expect_Unavailable)
 {
     CreateCommByConfig(&comm, static_cast<int32_t>(CommEngine::COMM_ENGINE_HOSTCPU), 0, 0);
     ThreadHandle thread1[2] = {0};
-    HcclResult ret = CommAllocThreadRes(comm, g_hostEngine, 2, 100, thread1);
+    HcclResult ret = HcclAllocThreadRes(comm, g_hostEngine, 2, 100, thread1);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
     Ut_Comm_Destroy(comm);
 }
@@ -185,11 +185,11 @@ TEST_F(HcclIndependentOpEngineTest, Ut_CommGetNotifyNumInThread_When_Alloced_And
     CreateCommByConfig(&comm, static_cast<int32_t>(CommEngine::COMM_ENGINE_HOSTCPU), 0, 0);
     ThreadHandle thread1[1] = {0};
     uint32_t notifyNum = 2;
-    HcclResult ret = CommAllocThreadRes(comm, g_hostEngine, 1, notifyNum, thread1);
+    HcclResult ret = HcclAllocThreadRes(comm, g_hostEngine, 1, notifyNum, thread1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     uint32_t getNotifyNum = 0;
-    ret = CommGetNotifyNumInThread(comm, thread1[0], g_hostEngine, &getNotifyNum);
+    ret = HcclGetNotifyNumInThread(comm, thread1[0], g_hostEngine, &getNotifyNum);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(notifyNum, getNotifyNum);
     Ut_Comm_Destroy(comm);
@@ -202,16 +202,16 @@ TEST_F(HcclIndependentOpEngineTest, Ut_CommGetNotifyNumInThread_When_Param_Is_In
     ThreadHandle thread1[1] = {0};
     uint32_t notifyNum = 2;
     uint32_t getNotifyNum = 0;
-    HcclResult ret = CommGetNotifyNumInThread(nullptr, thread1[0], g_hostEngine, &getNotifyNum);
+    HcclResult ret = HcclGetNotifyNumInThread(nullptr, thread1[0], g_hostEngine, &getNotifyNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    ret = CommGetNotifyNumInThread(comm, thread1[0], g_hostEngine, nullptr);
+    ret = HcclGetNotifyNumInThread(comm, thread1[0], g_hostEngine, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    ret = CommGetNotifyNumInThread(comm, thread1[0], g_hostEngine, &getNotifyNum);
+    ret = HcclGetNotifyNumInThread(comm, thread1[0], g_hostEngine, &getNotifyNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    ret = CommGetNotifyNumInThread(comm, thread1[0], CommEngine::COMM_ENGINE_RESERVED, &getNotifyNum);
+    ret = HcclGetNotifyNumInThread(comm, thread1[0], CommEngine::COMM_ENGINE_RESERVED, &getNotifyNum);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     Ut_Comm_Destroy(comm);

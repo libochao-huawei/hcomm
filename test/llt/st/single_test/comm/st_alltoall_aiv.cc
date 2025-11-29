@@ -13,6 +13,7 @@
 
 #include <string>
 #include "mem_device_pub.h"
+#include "dlra_function.h"
 #define private public
 #define protected public
 #include "hccl_impl.h"
@@ -37,6 +38,7 @@ protected:
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "HcclImplAlltoAllAIVTest SetUP" << std::endl;
         TestConstructParam(params, rankTable);
     }

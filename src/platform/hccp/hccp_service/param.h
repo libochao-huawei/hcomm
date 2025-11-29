@@ -58,5 +58,5 @@ struct param_handle {
     int opt_val;
 };
 
-int hccp_param_parse(int argc, char *argv[], struct hccp_init_param *param);
+int HccpParamParse(int argc, char *argv[], struct hccp_init_param *param);
 #endif // PARAM_H

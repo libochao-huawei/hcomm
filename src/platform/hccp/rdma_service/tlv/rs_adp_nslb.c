@@ -20,111 +20,111 @@
 #include "network_comm.h"
 #include "rs_adp_nslb.h"
 
-STATIC int rs_get_netco_cfg(unsigned int phy_id, NetCoIpPortArg *netco_arg)
+STATIC int RsGetNetcoCfg(unsigned int phyId, NetCoIpPortArg *netcoArg)
 {
-    char cfg_val[CFG_VAL_LEN] = {0};
-    bool nslb_support = false;
+    char cfgVal[CFG_VAL_LEN] = {0};
+    bool nslbSupport = false;
     int ret = 0;
 
-    ret = file_read_cfg(NETCO_CFGFILE_PATH, (int)phy_id, "udp_port_mode", cfg_val, CFG_VAL_LEN);
+    ret = FileReadCfg(NETCO_CFGFILE_PATH, (int)phyId, "udp_port_mode", cfgVal, CFG_VAL_LEN);
     // file not exist or item not found, degrade log level
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_RD_FILE_NOT_FOUND,
         hccp_run_warn("file_read_cfg udp_port_mode unsuccessful, ret(%d)", ret), -ENOTSUPP);
     CHK_PRT_RETURN(ret != 0, hccp_err("file_read_cfg udp_port_mode failed, ret(%d)", ret), ret);
 
-    nslb_support = (strncmp(cfg_val, "nslb_dp", strlen("nslb_dp") + 1) == 0) ? true : false;
-    CHK_PRT_RETURN(!nslb_support, hccp_run_warn("phy_id(%u) not support nslb", phy_id), -ENOTSUPP);
+    nslbSupport = (strncmp(cfgVal, "nslb_dp", strlen("nslb_dp") + 1) == 0) ? true : false;
+    CHK_PRT_RETURN(!nslbSupport, hccp_run_warn("phy_id(%u) not support nslb", phyId), -ENOTSUPP);
 
-    (void)memset_s(cfg_val, CFG_VAL_LEN, 0, CFG_VAL_LEN);
-    ret = file_read_cfg(NETCO_CFGFILE_PATH, (int)phy_id, "nslb_dp_listen_port", cfg_val, CFG_VAL_LEN);
+    (void)memset_s(cfgVal, CFG_VAL_LEN, 0, CFG_VAL_LEN);
+    ret = FileReadCfg(NETCO_CFGFILE_PATH, (int)phyId, "nslb_dp_listen_port", cfgVal, CFG_VAL_LEN);
     // file not exist or item not found, degrade log level
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_RD_FILE_NOT_FOUND,
         hccp_run_warn("file_read_cfg nslb_dp_listen_port unsuccessful, ret(%d)", ret), -ENOTSUPP);
     CHK_PRT_RETURN(ret != 0, hccp_err("file_read_cfg nslb_dp_listen_port failed, ret(%d)", ret), ret);
 
-    netco_arg->listenPort = (unsigned short)strtoul(cfg_val, NULL, NETCO_PORT_NUM_BASE);
-    netco_arg->gatewayPort = netco_arg->listenPort;
+    netcoArg->listenPort = (unsigned short)strtoul(cfgVal, NULL, NETCO_PORT_NUM_BASE);
+    netcoArg->gatewayPort = netcoArg->listenPort;
     return 0;
 }
 
-STATIC int rs_netco_init_arg(unsigned int phy_id, NetCoIpPortArg *netco_arg)
+STATIC int RsNetcoInitArg(unsigned int phyId, NetCoIpPortArg *netcoArg)
 {
-    struct ifaddr_info ifaddr_infos = {0};
-    unsigned int gw_addr = 0;
+    struct ifaddr_info ifaddrInfos = {0};
+    unsigned int gwAddr = 0;
     unsigned int num = 1;
     int ret = 0;
 
-    ret = rs_get_netco_cfg(phy_id, netco_arg);
-    CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_run_warn("get netco cfg unsuccessful, ret(%d) phy_id(%u)", ret, phy_id), ret);
-    CHK_PRT_RETURN(ret != 0, hccp_err("get netco cfg failed, ret(%d) phy_id(%u)", ret, phy_id), ret);
+    ret = RsGetNetcoCfg(phyId, netcoArg);
+    CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_run_warn("get netco cfg unsuccessful, ret(%d) phyId(%u)", ret, phyId), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("get netco cfg failed, ret(%d) phyId(%u)", ret, phyId), ret);
 
-    ret = rs_get_ifaddrs(&ifaddr_infos, &num, phy_id);
+    ret = RsGetIfaddrs(&ifaddrInfos, &num, phyId);
     CHK_PRT_RETURN(ret != 0 || num != 1, hccp_err("rs get ifaddr failed, ret(%d) or num(%u) != 1", ret, num), -EINVAL);
-    netco_arg->localIp = ntohl(ifaddr_infos.ip.addr.s_addr);
+    netcoArg->localIp = ntohl(ifaddrInfos.ip.addr.s_addr);
 
-    ret = net_get_gateway_address(phy_id, &gw_addr);
+    ret = NetGetGatewayAddress(phyId, &gwAddr);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs get gateway failed ret %d", ret), ret);
-    netco_arg->gatewayIp = ntohl(gw_addr);
+    netcoArg->gatewayIp = ntohl(gwAddr);
 
     // 0 indicates port will be assigned randomly
-    netco_arg->localNetPort = htons(0);
+    netcoArg->localNetPort = htons(0);
     return 0;
 }
 
-int rs_nslb_netco_init(struct rs_nslb_cb *nslb_cb)
+int RsNslbNetcoInit(struct rs_nslb_cb *nslbCb)
 {
-    NetCoIpPortArg netco_arg = {0};
-    void *netco_cb = NULL;
+    NetCoIpPortArg netcoArg = {0};
+    void *netcoCb = NULL;
     int ret = 0;
 
-    ret = rs_netco_init_arg(nslb_cb->phy_id, &netco_arg);
+    ret = RsNetcoInitArg(nslbCb->phy_id, &netcoArg);
     CHK_PRT_RETURN(ret == -ENOTSUPP, hccp_warn("get netco init arg unsuccessful, ret(%d)", ret), ret);
     CHK_PRT_RETURN(ret != 0, hccp_err("get netco init arg failed, ret(%d)", ret), -EINVAL);
 
-    ret = rs_nslb_api_init();
+    ret = RsNslbApiInit();
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_nslb_api_init[%d]", ret), ret);
 
-    netco_cb = rs_netco_init(nslb_cb->rscb->conn_cb.epollfd, netco_arg);
-    CHK_PRT_RETURN(netco_cb == NULL, hccp_err("netco init failed"), -EINVAL);
+    netcoCb = RsNetcoInit(nslbCb->rscb->conn_cb.epollfd, netcoArg);
+    CHK_PRT_RETURN(netcoCb == NULL, hccp_err("netco init failed"), -EINVAL);
 
-    nslb_cb->netco_cb = netco_cb;
-    nslb_cb->netco_init_flag = true;
+    nslbCb->netco_cb = netcoCb;
+    nslbCb->netco_init_flag = true;
     return 0;
 }
 
-void rs_nslb_netco_deinit(struct rs_nslb_cb *nslb_cb)
+void RsNslbNetcoDeinit(struct rs_nslb_cb *nslbCb)
 {
-    rs_netco_deinit(nslb_cb->netco_cb);
-    nslb_cb->netco_init_flag = false;
-    nslb_cb->netco_cb = NULL;
+    RsNetcoDeinit(nslbCb->netco_cb);
+    nslbCb->netco_init_flag = false;
+    nslbCb->netco_cb = NULL;
 
-    rs_nslb_api_deinit();
+    RsNslbApiDeinit();
     return;
 }
 
-int rs_nslb_netco_request(struct rs_nslb_cb *nslb_cb, unsigned int type, char *data, unsigned int data_len)
+int RsNslbNetcoRequest(struct rs_nslb_cb *nslbCb, unsigned int type, char *data, unsigned int dataLen)
 {
     int ret = 0;
 
-    ret = rs_netco_tbl_add_upd(nslb_cb->netco_cb, type, data, data_len);
+    ret = RsNetcoTblAddUpd(nslbCb->netco_cb, type, data, dataLen);
     ret = (ret > 0) ? -ret: ret;
     CHK_PRT_RETURN(ret != 0, hccp_err("netco request failed, type(%u) ret(%d)", type, ret), ret);
     return 0;
 }
 
-int rs_epoll_nslb_event_handle(struct rs_nslb_cb *nslb_cb, int fd, unsigned int events)
+int RsEpollNslbEventHandle(struct rs_nslb_cb *nslbCb, int fd, unsigned int events)
 {
     unsigned int ret = 0;
-    int ret_val = 0;
+    int retVal = 0;
 
     // netco is not initialized, no epoll event need to handle
-    if (!nslb_cb->netco_init_flag) {
+    if (!nslbCb->netco_init_flag) {
         return -ENODEV;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&nslb_cb->mutex);
-    ret = rs_netco_event_dispatch(nslb_cb->netco_cb, fd, events);
-    ret_val = (ret == NET_CO_PROCED) ? (int)ret : -ENODEV;
-    RS_PTHREAD_MUTEX_ULOCK(&nslb_cb->mutex);
-    return ret_val;
+    RS_PTHREAD_MUTEX_LOCK(&nslbCb->mutex);
+    ret = RsNetcoEventDispatch(nslbCb->netco_cb, fd, events);
+    retVal = (ret == NET_CO_PROCED) ? (int)ret : -ENODEV;
+    RS_PTHREAD_MUTEX_ULOCK(&nslbCb->mutex);
+    return retVal;
 }
