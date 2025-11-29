@@ -89,7 +89,6 @@ if(BUILD_OPEN_PROJECT)
 
     set(HCCL_HEAD
         inc/hccl/hccl_comm.h
-        inc/hccl/hccl_inner.h
         inc/hccl/hccl_types.h
         inc/hccl/hccl_ctrl_plane.h
         src/pub_inc/hccn_rping.h
@@ -200,6 +199,7 @@ if(BUILD_OPEN_PROJECT)
         pkg_inc/hccl/hcom.h
         pkg_inc/hccl/dtype_common.h
         pkg_inc/hccl/workflow.h
+        pkg_inc/hccl/hccl_inner.h
     )
     install(FILES
         ${HCCL_PKG_HEAD}
