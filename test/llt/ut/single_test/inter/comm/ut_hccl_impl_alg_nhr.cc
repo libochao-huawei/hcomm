@@ -34,6 +34,7 @@
 #undef private
 #undef protected
 #include "llt_hccl_stub_sal_pub.h"
+#include "dlra_function.h"
 
 using namespace hccl;
 using namespace std;
@@ -46,6 +47,7 @@ protected:
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "HcclImplAlgTestNHR SetUP" << std::endl;
     }
     static void TearDownTestCase()

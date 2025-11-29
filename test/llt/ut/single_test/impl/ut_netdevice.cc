@@ -47,7 +47,8 @@
 #include "adapter_rts.h"
 #include "heartbeat.h"
 #include "acl/acl.h"
-#include "hccl.h"
+#include "hccl_comm.h"
+#include "hccl_inner.h"
 #undef private
 #undef protected
 #include "remote_notify.h"
@@ -200,7 +201,7 @@ TEST_F(NetDevUt, TestHostDeploymentRoce) {
     MOCKER(Is310PDevice).stubs().with(any()).will(returnValue(false));
     MOCKER(GetExternalInputHcclIsTcpMode).stubs().with(any()).will(returnValue(false));
     EXPECT_EQ(HcclNetDevOpen(&info, &netDev), HCCL_SUCCESS);
-    
+
     EXPECT_EQ(HcclNetDevClose(netDev), HCCL_SUCCESS);
     GlobalMockObject::verify();
     MOCKER(Is310PDevice).stubs().with(any()).will(returnValue(false));
@@ -210,11 +211,11 @@ TEST_F(NetDevUt, TestHostDeploymentRoce) {
 }
 
 TEST_F(NetDevUt, TestHostDeploymentBus) {
-    // 
+    //
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_HOST;
     info.isBackup = false;
     info.addr.protoType = HcclProtoType::HCCL_PROTO_TYPE_BUS;
-    
+
     EXPECT_EQ(HcclNetDevOpen(&info, &netDev), HCCL_E_NOT_SUPPORT);
     EXPECT_EQ(netDev, nullptr);
     EXPECT_EQ(HcclNetDevClose(netDev), HCCL_E_PTR);
@@ -222,18 +223,18 @@ TEST_F(NetDevUt, TestHostDeploymentBus) {
 }
 
 TEST_F(NetDevUt, TestHostDeploymentReserved) {
-    // 
+    //
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_HOST;
     info.isBackup = false;
     info.addr.protoType = HcclProtoType::HCCL_PROTO_TYPE_RESERVED;
-    
+
     EXPECT_EQ(HcclNetDevOpen(&info, &netDev), HCCL_E_NOT_SUPPORT);
     EXPECT_EQ(netDev, nullptr);
     EXPECT_EQ(HcclNetDevClose(netDev), HCCL_E_PTR);
     GlobalMockObject::verify();
 }
 
-// 当前桩有问题  只能先初始化 tcp才能初始化rdma  
+// 当前桩有问题  只能先初始化 tcp才能初始化rdma
 TEST_F(NetDevUt, TestDeviceDeploymentRoce) {
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE;
     info.isBackup = false;
@@ -249,7 +250,7 @@ TEST_F(NetDevUt, TestDeviceDeploymentRoce) {
     MOCKER(GetExternalInputHcclIsTcpMode).stubs().with(any()).will(returnValue(false));
 
     EXPECT_EQ(HcclNetDevOpen(&info, &netDev), HCCL_SUCCESS);
-    
+
 
     EXPECT_EQ(HcclNetDevClose(netDev), HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -259,7 +260,7 @@ TEST_F(NetDevUt, TestDeviceDeploymentRoce) {
     GlobalMockObject::verify();
 }
 
-// 当前桩有问题  只能先初始化 tcp才能初始化rdma  
+// 当前桩有问题  只能先初始化 tcp才能初始化rdma
 TEST_F(NetDevUt, TestDeviceDeploymentRoceBackup) {
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE;
     info.isBackup = true;
@@ -285,7 +286,7 @@ TEST_F(NetDevUt, TestDeviceDeploymentRoceBackup) {
     .with(any(), any(), outBound(linkType))
     .will(returnValue(HCCL_SUCCESS));
     EXPECT_EQ(HcclNetDevOpen(&info, &netDev), HCCL_SUCCESS);
-    
+
 
     EXPECT_EQ(HcclNetDevClose(netDev), HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -296,7 +297,7 @@ TEST_F(NetDevUt, TestDeviceDeploymentRoceBackup) {
 }
 
 TEST_F(NetDevUt, TestDeviceDeploymentTcp) {
-    // 
+    //
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE;
     info.isBackup = false;
     info.addr.protoType = HcclProtoType::HCCL_PROTO_TYPE_TCP;
@@ -319,7 +320,7 @@ TEST_F(NetDevUt, TestDeviceDeploymentTcp) {
 }
 
 TEST_F(NetDevUt, TestDeviceDeploymentTcpERR) {
-    // 
+    //
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE;
     info.isBackup = false;
     info.addr.protoType = HcclProtoType::HCCL_PROTO_TYPE_TCP;
@@ -342,11 +343,11 @@ TEST_F(NetDevUt, TestDeviceDeploymentTcpERR) {
 }
 
 TEST_F(NetDevUt, TestDeviceDeploymentReserved) {
-    // 
+    //
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_DEVICE;
     info.isBackup = false;
     info.addr.protoType = HcclProtoType::HCCL_PROTO_TYPE_RESERVED;
-    
+
      EXPECT_EQ(HcclNetDevOpen(&info, &netDev), HCCL_E_NOT_SUPPORT);
      EXPECT_EQ(netDev, nullptr);
      EXPECT_EQ(HcclNetDevClose(netDev), HCCL_E_PTR);
@@ -357,7 +358,7 @@ TEST_F(NetDevUt, TestReservedDeploymentReserved) {
     info.netdevDeployment = HcclNetDevDeployment::HCCL_NETDEV_DEPLOYMENT_RESERVED;
     info.isBackup = false;
     info.addr.protoType = HcclProtoType::HCCL_PROTO_TYPE_RESERVED;
-    
+
     EXPECT_EQ(HcclNetDevOpen(&info, &netDev), HCCL_E_NOT_SUPPORT);
     EXPECT_EQ(netDev, nullptr);
     EXPECT_EQ(HcclNetDevClose(netDev), HCCL_E_PTR);
@@ -371,7 +372,7 @@ TEST_F(NetDevUt, TestDeviceDeploymentBus) {
     MOCKER(Is310PDevice).stubs().with(any()).will(returnValue(false));
     u32 deviceLogicId;
     hrtGetDeviceIndexByPhyId(info.devicePhyId, deviceLogicId);
-    
+
     bool supportGetVincip = true;
     MOCKER(IsSuppportRaGetSocketVnicIps)
         .stubs()

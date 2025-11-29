@@ -14,8 +14,8 @@
 #include <dlfcn.h>
 #include "user_log.h"
 
-void *ascend_hal_dlopen(const char *libName, int mode);
-void *ascend_hal_dlsym(void *handle, const char *funcName);
-int ascend_hal_dlclose(void *handle);
+void *AscendHalDlopen(const char *libName, int mode);
+void *AscendHalDlsym(void *handle, const char *funcName);
+int AscendHalDlclose(void *handle);
 
 #endif

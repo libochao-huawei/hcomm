@@ -69,6 +69,7 @@ class SuperFastKernelTest : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "\033[36m--SuperFastKernelTest SetUP--\033[0m" << std::endl;
     }
     static void TearDownTestCase()

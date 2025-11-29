@@ -13,9 +13,9 @@
 #include "rs.h"
 #include "dl_netco_function.h"
 
-void *g_netco_api_handle = NULL;
+void *gNetcoApiHandle = NULL;
 #ifndef CA_CONFIG_LLT
-struct rs_netco_ops g_netco_ops;
+struct rs_netco_ops gNetcoOps;
 #else
 struct rs_netco_ops g_netco_ops = {
     .rs_netco_init = Net_CoInitFactory,
@@ -25,12 +25,12 @@ struct rs_netco_ops g_netco_ops = {
 };
 #endif
 
-STATIC int rs_open_libnet_co_so(void)
+STATIC int RsOpenLibnetCoSo(void)
 {
 #ifndef CA_CONFIG_LLT
-    if (g_netco_api_handle == NULL) {
-        g_netco_api_handle = hccp_dlopen("libnet_co.so", RTLD_NOW);
-        if (g_netco_api_handle != NULL) {
+    if (gNetcoApiHandle == NULL) {
+        gNetcoApiHandle = HccpDlopen("libnet_co.so", RTLD_NOW);
+        if (gNetcoApiHandle != NULL) {
             return 0;
         }
         hccp_err("hccp_dlopen[libnet_co.so] failed! errno=%d, dlerror: %s", errno, dlerror());
@@ -42,115 +42,115 @@ STATIC int rs_open_libnet_co_so(void)
     return 0;
 }
 
-STATIC void rs_close_netco_so(void)
+STATIC void RsCloseNetcoSo(void)
 {
 #ifndef CA_CONFIG_LLT
-    if (g_netco_api_handle != NULL) {
-        (void)hccp_dlclose(g_netco_api_handle);
-        g_netco_api_handle = NULL;
+    if (gNetcoApiHandle != NULL) {
+        (void)HccpDlclose(gNetcoApiHandle);
+        gNetcoApiHandle = NULL;
     }
 #endif
     return;
 }
 
-STATIC int rs_netco_tbl_api_init(void)
+STATIC int RsNetcoTblApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    g_netco_ops.rs_netco_init = (void *(*)(int, NetCoIpPortArg))
-        hccp_dlsym(g_netco_api_handle, "Net_CoInitFactory");
-    DL_API_RET_IS_NULL_CHECK(g_netco_ops.rs_netco_init, "Net_CoInitFactory");
+    gNetcoOps.rs_netco_init = (void *(*)(int, NetCoIpPortArg))
+        HccpDlsym(gNetcoApiHandle, "Net_CoInitFactory");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_init, "Net_CoInitFactory");
 
-    g_netco_ops.rs_netco_deinit = (void (*)(void *))
-        hccp_dlsym(g_netco_api_handle, "NET_CoDestruct");
-    DL_API_RET_IS_NULL_CHECK(g_netco_ops.rs_netco_deinit, "NET_CoDestruct");
+    gNetcoOps.rs_netco_deinit = (void (*)(void *))
+        HccpDlsym(gNetcoApiHandle, "NET_CoDestruct");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_deinit, "NET_CoDestruct");
 
-    g_netco_ops.rs_netco_event_dispatch = (unsigned int (*)(void *, int, unsigned int))
-        hccp_dlsym(g_netco_api_handle, "NET_CoFdEventDispatch");
-    DL_API_RET_IS_NULL_CHECK(g_netco_ops.rs_netco_event_dispatch, "NET_CoFdEventDispatch");
+    gNetcoOps.rs_netco_event_dispatch = (unsigned int (*)(void *, int, unsigned int))
+        HccpDlsym(gNetcoApiHandle, "NET_CoFdEventDispatch");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_event_dispatch, "NET_CoFdEventDispatch");
 
-    g_netco_ops.rs_netco_tbl_add_upd = (int (*)(void *, unsigned int, char *, unsigned int))
-        hccp_dlsym(g_netco_api_handle, "NET_CoTblAddUpd");
-    DL_API_RET_IS_NULL_CHECK(g_netco_ops.rs_netco_tbl_add_upd, "NET_CoTblAddUpd");
+    gNetcoOps.rs_netco_tbl_add_upd = (int (*)(void *, unsigned int, char *, unsigned int))
+        HccpDlsym(gNetcoApiHandle, "NET_CoTblAddUpd");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_tbl_add_upd, "NET_CoTblAddUpd");
 #endif
     return 0;
 }
 
-STATIC int rs_netco_api_init(void)
+STATIC int RsNetcoApiInit(void)
 {
     int ret;
-    ret = rs_open_libnet_co_so();
+    ret = RsOpenLibnetCoSo();
     CHK_PRT_RETURN(ret, hccp_err("hccp_dlopen[libnet_co.so] failed! ret=[%d],"\
     "Please check network adapter driver has been installed", ret), ret);
 
-    ret = rs_netco_tbl_api_init();
+    ret = RsNetcoTblApiInit();
     if (ret != 0) {
         hccp_err("[rs_netco_tbl_api_init]hccp_dlopen failed! ret=[%d]", ret);
-        rs_close_netco_so();
+        RsCloseNetcoSo();
         return ret;
     }
 
     return 0;
 }
 
-int rs_nslb_api_init(void)
+int RsNslbApiInit(void)
 {
     int ret;
 
-    ret = rs_netco_api_init();
+    ret = RsNetcoApiInit();
     CHK_PRT_RETURN(ret, hccp_err("rs_netco_api_init failed! ret=[%d]", ret), ret);
 
     return 0;
 }
 
-void rs_nslb_api_deinit(void)
+void RsNslbApiDeinit(void)
 {
-    if (g_netco_api_handle != NULL) {
-        (void)hccp_dlclose(g_netco_api_handle);
-        g_netco_api_handle = NULL;
+    if (gNetcoApiHandle != NULL) {
+        (void)HccpDlclose(gNetcoApiHandle);
+        gNetcoApiHandle = NULL;
     }
     return;
 }
 
-void *rs_netco_init(int epollfd, NetCoIpPortArg ipPortArg)
+void *RsNetcoInit(int epollfd, NetCoIpPortArg ipPortArg)
 {
-    if (g_netco_ops.rs_netco_init == NULL) {
+    if (gNetcoOps.rs_netco_init == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_init is null");
         return NULL;
 #endif
     }
-    return g_netco_ops.rs_netco_init(epollfd, ipPortArg);
+    return gNetcoOps.rs_netco_init(epollfd, ipPortArg);
 }
 
-void rs_netco_deinit(void *co)
+void RsNetcoDeinit(void *co)
 {
-    if (g_netco_ops.rs_netco_deinit == NULL) {
+    if (gNetcoOps.rs_netco_deinit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_deinit is null");
         return;
 #endif
     }
-    return g_netco_ops.rs_netco_deinit(co);
+    return gNetcoOps.rs_netco_deinit(co);
 }
 
-unsigned int rs_netco_event_dispatch(void *co, int fd, unsigned int curEvents)
+unsigned int RsNetcoEventDispatch(void *co, int fd, unsigned int curEvents)
 {
-    if (g_netco_ops.rs_netco_event_dispatch == NULL) {
+    if (gNetcoOps.rs_netco_event_dispatch == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_event_dispatch is null");
         return -EINVAL;
 #endif
     }
-    return g_netco_ops.rs_netco_event_dispatch(co, fd, curEvents);
+    return gNetcoOps.rs_netco_event_dispatch(co, fd, curEvents);
 }
 
-int rs_netco_tbl_add_upd(void *netco_handle, unsigned int type, char *data, unsigned int data_len)
+int RsNetcoTblAddUpd(void *netcoHandle, unsigned int type, char *data, unsigned int dataLen)
 {
-    if (g_netco_ops.rs_netco_tbl_add_upd == NULL) {
+    if (gNetcoOps.rs_netco_tbl_add_upd == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_tbl_add_upd is null");
         return -EINVAL;
 #endif
     }
-    return g_netco_ops.rs_netco_tbl_add_upd(netco_handle, type, data, data_len);
+    return gNetcoOps.rs_netco_tbl_add_upd(netcoHandle, type, data, dataLen);
 }

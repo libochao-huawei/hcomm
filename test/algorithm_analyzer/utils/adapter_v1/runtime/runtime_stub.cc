@@ -329,3 +329,9 @@ rtError_t rtsLaunchKernelWithHostArgs(rtFuncHandle funcHandle, uint32_t blockDim
 {
     return RT_ERROR_NONE;
 }
+
+HcclResult hrtRaGetInterfaceVersion(unsigned int phyId, unsigned int interfaceOpcode, unsigned int* interfaceVersion)
+{
+    *interfaceVersion = 1;
+    return HCCL_SUCCESS;
+}

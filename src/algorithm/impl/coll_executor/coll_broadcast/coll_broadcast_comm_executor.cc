@@ -96,10 +96,6 @@ HcclResult CollBroadcastCommExecutor::KernelRun(const OpParam &param, ExecMem &e
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_BROADCAST_NHR, dispatcher_);
         }
-        if (topoAttr_.deviceType != DevType::DEV_TYPE_910_93) {
-            CHK_SMART_PTR_NULL(tempAlg);
-            tempAlg->CloseBarrier();
-        }
         HCCL_INFO("broadcast comm: using nhr algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         isUsedRegister = true;

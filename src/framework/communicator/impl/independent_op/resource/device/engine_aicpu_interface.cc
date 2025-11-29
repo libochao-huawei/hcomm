@@ -24,7 +24,6 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpThreadInit(void *ar
         bool isCustom;
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    CHK_PRT_RET(ctxArgs->isCustom == false, HCCL_ERROR("[%s]isCustom is unvalid", __func__), HCCL_E_PARA);
     ThreadMgrAicpuParam* param = reinterpret_cast<ThreadMgrAicpuParam*>(ctxArgs->context);
     return AicpuHcclProcess::AicpuIndOpThreadInit(param);
 }
@@ -41,7 +40,6 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpNotify(void *args)
         bool isCustom;
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    CHK_PRT_RET(ctxArgs->isCustom == false, HCCL_ERROR("[%s]isCustom is unvalid", __func__), HCCL_E_PARA);
     NotifyMgrAicpuParam* param = reinterpret_cast<NotifyMgrAicpuParam*>(ctxArgs->context);
     return AicpuHcclProcess::AicpuIndOpNotifyInit(param);
 }

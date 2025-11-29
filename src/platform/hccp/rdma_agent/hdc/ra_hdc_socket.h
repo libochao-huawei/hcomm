@@ -225,25 +225,25 @@ union op_get_vnic_ip_infos_data {
     } rx_data;
 };
 
-int ra_hdc_socket_white_list_add(struct rdev rdev_info, struct socket_wlist_info_t white_list[], unsigned int num);
-int ra_hdc_socket_white_list_del(struct rdev rdev_info, struct socket_wlist_info_t white_list[], unsigned int num);
-int ra_hdc_socket_accept_credit_add(unsigned int phy_id, struct socket_listen_info_t conn[], unsigned int num,
-    unsigned int credit_limit);
-int ra_hdc_socket_batch_connect(unsigned int phy_id, struct socket_connect_info_t conn[], unsigned int num);
-int ra_hdc_socket_batch_close(unsigned int phy_id, struct socket_close_info_t conn[], unsigned int num);
-int ra_hdc_socket_batch_abort(unsigned int phy_id, struct socket_connect_info_t conn[], unsigned int num);
-int ra_hdc_socket_listen_start(unsigned int phy_id, struct socket_listen_info_t conn[], unsigned int num);
-int ra_hdc_socket_listen_stop(unsigned int phy_id, struct socket_listen_info_t conn[], unsigned int num);
-int ra_hdc_get_sockets(unsigned int phy_id, unsigned int role, struct socket_info_t conn[], unsigned int num);
-int ra_hdc_socket_send(unsigned int phy_id, const void *handle, const void *data, unsigned long long size);
-int ra_hdc_socket_recv(unsigned int phy_id, const void *handle, void *data, unsigned long long size);
-int ra_hdc_socket_init(struct rdev rdev_info);
-int ra_hdc_socket_deinit(struct rdev rdev_info);
-int ra_hdc_get_ifnum(unsigned int phy_id, bool is_all, unsigned int *num);
-int ra_hdc_get_ifaddrs(unsigned int phy_id, struct ifaddr_info ifaddr_infos[], unsigned int *num);
-int ra_hdc_get_ifaddrs_v2(unsigned int phy_id, bool is_all, struct interface_info interface_infos[], unsigned int *num);
-int ra_hdc_get_vnic_ip_infos_v1(unsigned int phy_id, enum id_type type, unsigned int ids[], unsigned int num,
+int RaHdcSocketWhiteListAdd(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[], unsigned int num);
+int RaHdcSocketWhiteListDel(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[], unsigned int num);
+int RaHdcSocketAcceptCreditAdd(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num,
+    unsigned int creditLimit);
+int RaHdcSocketBatchConnect(unsigned int phyId, struct socket_connect_info_t conn[], unsigned int num);
+int RaHdcSocketBatchClose(unsigned int phyId, struct socket_close_info_t conn[], unsigned int num);
+int RaHdcSocketBatchAbort(unsigned int phyId, struct socket_connect_info_t conn[], unsigned int num);
+int RaHdcSocketListenStart(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num);
+int RaHdcSocketListenStop(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num);
+int RaHdcGetSockets(unsigned int phyId, unsigned int role, struct socket_info_t conn[], unsigned int num);
+int RaHdcSocketSend(unsigned int phyId, const void *handle, const void *data, unsigned long long size);
+int RaHdcSocketRecv(unsigned int phyId, const void *handle, void *data, unsigned long long size);
+int RaHdcSocketInit(struct rdev rdevInfo);
+int RaHdcSocketDeinit(struct rdev rdevInfo);
+int RaHdcGetIfnum(unsigned int phyId, bool isAll, unsigned int *num);
+int RaHdcGetIfaddrs(unsigned int phyId, struct ifaddr_info ifaddrInfos[], unsigned int *num);
+int RaHdcGetIfaddrsV2(unsigned int phyId, bool isAll, struct interface_info interfaceInfos[], unsigned int *num);
+int RaHdcGetVnicIpInfosV1(unsigned int phyId, enum id_type type, unsigned int ids[], unsigned int num,
     struct ip_info infos[]);
-int ra_hdc_get_vnic_ip_infos(unsigned int phy_id, enum id_type type, unsigned int ids[], unsigned int num,
+int RaHdcGetVnicIpInfos(unsigned int phyId, enum id_type type, unsigned int ids[], unsigned int num,
     struct ip_info infos[]);
 #endif // RA_HDC_SOCKET_H

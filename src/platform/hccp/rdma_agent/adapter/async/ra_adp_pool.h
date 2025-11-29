@@ -15,7 +15,7 @@
 
 #define SHUTDOWN_SIGNAL 1U
 
-typedef int (*task_func_t)(unsigned int chip_id, void *recv_buf, unsigned int recv_len);
+typedef int (*task_func_t)(unsigned int chipId, void *recvBuf, unsigned int recvLen);
 
 struct ra_hdc_task {
     task_func_t func;
@@ -42,8 +42,8 @@ struct ra_hdc_thread_pool {
     unsigned int shutdown;
 };
 
-struct ra_hdc_thread_pool *ra_hdc_pool_create(unsigned int queue_size, unsigned int thread_num);
-int ra_hdc_pool_destroy(struct ra_hdc_thread_pool *pool);
-void ra_hdc_pool_add_task(struct ra_hdc_thread_pool *pool, task_func_t func, unsigned int chip_id, void *recv_buf,
-    unsigned int recv_len);
+struct ra_hdc_thread_pool *RaHdcPoolCreate(unsigned int queueSize, unsigned int threadNum);
+int RaHdcPoolDestroy(struct ra_hdc_thread_pool *pool);
+void RaHdcPoolAddTask(struct ra_hdc_thread_pool *pool, task_func_t func, unsigned int chipId, void *recvBuf,
+    unsigned int recvLen);
 #endif // RA_ADP_POOL_H

@@ -18,8 +18,8 @@
 #define NETCO_PORT_NUM_BASE 10
 #define CFG_VAL_LEN 16
 
-int rs_nslb_netco_init(struct rs_nslb_cb *nslb_cb);
-void rs_nslb_netco_deinit(struct rs_nslb_cb *nslb_cb);
-int rs_nslb_netco_request(struct rs_nslb_cb *nslb_cb, unsigned int type, char *data, unsigned int data_len);
-int rs_epoll_nslb_event_handle(struct rs_nslb_cb *nslb_cb, int fd, unsigned int events);
+int RsNslbNetcoInit(struct rs_nslb_cb *nslbCb);
+void RsNslbNetcoDeinit(struct rs_nslb_cb *nslbCb);
+int RsNslbNetcoRequest(struct rs_nslb_cb *nslbCb, unsigned int type, char *data, unsigned int dataLen);
+int RsEpollNslbEventHandle(struct rs_nslb_cb *nslbCb, int fd, unsigned int events);
 #endif // RS_ADP_NSLB_H

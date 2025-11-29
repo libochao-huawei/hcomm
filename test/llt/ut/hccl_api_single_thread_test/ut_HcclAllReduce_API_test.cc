@@ -43,7 +43,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_SendBufIsNull_Expect_ReturnIsHCC
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -55,7 +55,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_RecvBufIsNull_Expect_ReturnIsHCC
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -67,7 +67,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_CountIsZero_Expect_ReturnIsHCCL_
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -79,9 +79,9 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_CountIsTooLarge_Expect_ReturnIsH
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    
+
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
@@ -91,7 +91,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_CommIsNull_Expect_ReturnIsHCCL_E
     Ut_Device_Set(0);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -105,7 +105,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_DeviceNotSupport_Expect_ReturnIs
     DevType deviceType = DevType::DEV_TYPE_910_93/*or DevType::DEV_TYPE_910B*/;
     MOCKER(hrtGetDeviceType).stubs().with(outBound(deviceType)).will(returnValue(HCCL_SUCCESS));
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT16/*or HCCL_DATA_TYPE_BFP16*/, HCCL_REDUCE_PROD, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT16/*or HCCL_DATA_TYPE_BFP16*/, HCCL_REDUCE_PROD, comm, stream);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -118,7 +118,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_DataSize1KB_Expect_ReturnIsHCCL_
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -130,7 +130,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_DataSize300MB_Expect_ReturnIsHCC
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -144,7 +144,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_Exec20times_Expect_ReturnIsHCCL_
     UT_STREAM_CREATE_DEFAULT(stream);
 
     for(int k = 0;k < LOOP_TIMES;k ++) {
-        HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+        HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
         EXPECT_EQ(ret, HCCL_SUCCESS);
         Ut_Stream_Synchronize(stream);
     }
@@ -158,7 +158,7 @@ TEST_F(HcclAllReduceTest, Ut_HcclAllReduce_When_2Server4Rank_Expect_ReturnIsHCCL
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclAllReduce(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
+    HcclResult ret = HcclAllReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);

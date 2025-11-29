@@ -53,7 +53,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args)
     // 轮询等待flag 1
     ret = AicpuHcclProcess::WaitAsyncFlag(localFlagBufforCheck, 1, timeout);
     if(ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AiCpuKernel][RunTransportRoceTx]WaitFlag Failed.");
+        HCCL_ERROR("[AiCpuKernel][RunTransportRoceTx]WaitFlag Failed lfKey %u rfKey %u.", lfKey, rfKey);
         return ret;
     }
     // 向对端开始写数据
@@ -85,7 +85,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args)
     // 轮询等待flag 2
     ret = AicpuHcclProcess::WaitAsyncFlag(localFlagBufforCheck, 2, timeout);
     if(ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AiCpuKernel][RunTransportRoceTx]WaitFlag Failed.");
+        HCCL_ERROR("[AiCpuKernel][RunTransportRoceTx]WaitFlag Failed lfKey %u rfKey %u.", lfKey, rfKey);
         return ret;
     }
     // 再发个flag 3，尾同步
@@ -100,7 +100,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceTx(void *args)
     // 轮询等待flag 3
     ret = AicpuHcclProcess::WaitAsyncFlag(localFlagBufforCheck, 3, timeout);
     if(ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AiCpuKernel][RunTransportRoceTx]WaitFlag Failed.");
+        HCCL_ERROR("[AiCpuKernel][RunTransportRoceTx]WaitFlag Failed lfKey %u rfKey %u.", lfKey, rfKey);
         return ret;
     }
     HCCL_INFO("[AiCpuKernel][RunTransportRoceTx]Kernel run success");
@@ -141,7 +141,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceRx(void *args)
     // 轮询等待flag 1
     ret = AicpuHcclProcess::WaitAsyncFlag(localFlagBufforCheck, 1, timeout);
     if(ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AiCpuKernel][RunTransportRoceRx]WaitFlag Failed.");
+        HCCL_ERROR("[AiCpuKernel][RunTransportRoceRx]WaitFlag Failed lfKey %u rfKey %u.", lfKey, rfKey);
         return ret;
     }
 
@@ -156,7 +156,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceRx(void *args)
     // 轮询等待flag 2
     ret = AicpuHcclProcess::WaitAsyncFlag(localFlagBufforCheck, 2, timeout);
     if(ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AiCpuKernel][RunTransportRoceRx]WaitFlag Failed.");
+        HCCL_ERROR("[AiCpuKernel][RunTransportRoceRx]WaitFlag Failed lfKey %u rfKey %u.", lfKey, rfKey);
         return ret;
     }
     // 再发个flag 3，尾同步
@@ -171,7 +171,7 @@ __attribute__((visibility("default"))) uint32_t RunTransportRoceRx(void *args)
     // 轮询等待flag 3
     ret = AicpuHcclProcess::WaitAsyncFlag(localFlagBufforCheck, 3, timeout);
     if(ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[AiCpuKernel][RunTransportRoceRx]WaitFlag Failed.");
+        HCCL_ERROR("[AiCpuKernel][RunTransportRoceRx]WaitFlag Failed lfKey %u rfKey %u.", lfKey, rfKey);
         return ret;
     }
     HCCL_INFO("[AiCpuKernel][RunTransportRoceRx]Kernel run success");

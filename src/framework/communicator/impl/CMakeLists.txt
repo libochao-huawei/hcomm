@@ -12,7 +12,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_attrs.cc 
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/aclgraph/zero_copy_acl_graph.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_communicator_host.cc

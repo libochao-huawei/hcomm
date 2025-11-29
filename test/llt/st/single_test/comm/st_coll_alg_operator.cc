@@ -15,7 +15,7 @@
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
 #include "llt_hccl_stub_pub.h"
-
+#include "dlra_function.h"
 
 #define private public
 #define protected public
@@ -35,6 +35,7 @@ class CollAlgOperatorTest : public testing::Test
 protected:
     static void SetUpTestCase()
     {
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "\033[36m--CollAlgOperatorTest SetUP--\033[0m" << std::endl;
     }
     static void TearDownTestCase()

@@ -62,7 +62,7 @@ HcclResult CommGetEngineCtx(HcclComm comm, const char *engineTag, CommEngine eng
     return HCCL_SUCCESS;
 }
 
-HcclResult CommDestroyEngineCtx(HcclComm comm, const HcclMem *engineCtx)
+HcclResult HcommEngineCtxDestroy(HcclComm comm, const HcclMem *engineCtx)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(engineCtx);

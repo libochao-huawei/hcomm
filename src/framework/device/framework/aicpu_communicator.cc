@@ -842,6 +842,7 @@ HcclResult HcclCommAicpu::InitConfigInfo(const HcclOpResParam *commParam)
     fftsEnable_ = false;
     algoInfo_.inlineReduceSwitchOn = true;
     algoInfo_.identifier = commParam->hcomId;
+    algoInfo_.isSupportAtomicWrite = static_cast<bool>(commParam->config.isSupportAtomicWrite);
     notifySize_ = commParam->notifysize;
     slaveStreams_.reserve(LOCAL_STREAM_MAX_NUM);
     localNotifies_.reserve(LOCAL_NOTIFY_MAX_NUM);
@@ -1543,6 +1544,11 @@ HcclResult HcclCommAicpu::AllocTransportResource(const std::string &newTag, cons
                         bsrTansportRank.find(transportRequest.remoteUserRank) != bsrTansportRank.end()){
                         //仅仅在batchsendrecv rdma下发的时候需要第二次刷新，实际第一次下发都刷好了，第二次就是get一下
                         isSecondBuild = true;
+                    }
+                    // A3 bsr远端是DirectNpu 链路的话则跳过
+                    if ((opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
+                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        continue;
                     }
                     bsrTansportRank.insert(transportRequest.remoteUserRank);
                     CHK_RET(CreateLink(newTag, transportRequest, commParam, singleSubCommTransport.links.back(),
@@ -4017,7 +4023,7 @@ HcclResult HcclCommAicpu::InitBatchSendRecvOpId(const OpParam &param, const Hccl
     CHK_SAFETY_FUNC_RET(memcpy_s(opId.newTag, sizeof(opId.newTag), sendrecvNewTag.c_str(), sendrecvNewTag.size()));
 
     u32 qpn = 0 ;
-    if ( opId.srcRank !=  opId.detRank){
+    if ((opId.srcRank != opId.detRank) && (!param.BatchSendRecvDataDes.isDirectRemoteRank[sendrecvPair->remoteRank])){
         CHK_RET(GetBsrTransportQpn(sendrecvPair, algResource, qpn));
     }
 

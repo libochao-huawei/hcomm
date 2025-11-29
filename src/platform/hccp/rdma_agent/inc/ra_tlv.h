@@ -21,8 +21,8 @@ struct ra_tlv_handle {
 };
 
 struct ra_tlv_ops {
-    int (*ra_tlv_init)(struct ra_tlv_handle *tlv_handle);
-    int (*ra_tlv_deinit)(struct ra_tlv_handle *tlv_handle);
-    int (*ra_tlv_request)(struct ra_tlv_handle *tlv_handle, struct tlv_msg *send_msg, struct tlv_msg *recv_msg);
+    int (*ra_tlv_init)(struct ra_tlv_handle *tlvHandle);
+    int (*ra_tlv_deinit)(struct ra_tlv_handle *tlvHandle);
+    int (*ra_tlv_request)(struct ra_tlv_handle *tlvHandle, struct tlv_msg *sendMsg, struct tlv_msg *recvMsg);
 };
 #endif // RA_TLV_H

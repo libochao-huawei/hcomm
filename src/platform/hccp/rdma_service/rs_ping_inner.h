@@ -189,33 +189,33 @@ struct rs_ping_ctx_cb {
 };
 
 struct rs_ping_pong_ops {
-    bool (*check_ping_fd)(struct rs_ping_ctx_cb *ping_cb, int fd);
-    bool (*check_pong_fd)(struct rs_ping_ctx_cb *ping_cb, int fd);
-    int (*init_ping_cb)(unsigned int phy_id, struct ping_init_attr *attr, struct ping_init_info *info,
-        unsigned int *dev_index, struct rs_ping_ctx_cb *ping_cb);
-    int (*ping_find_target_node)(struct rs_ping_ctx_cb *ping_cb, struct ping_qp_info *target,
+    bool (*check_ping_fd)(struct rs_ping_ctx_cb *pingCb, int fd);
+    bool (*check_pong_fd)(struct rs_ping_ctx_cb *pingCb, int fd);
+    int (*init_ping_cb)(unsigned int phyId, struct ping_init_attr *attr, struct ping_init_info *info,
+        unsigned int *devIndex, struct rs_ping_ctx_cb *pingCb);
+    int (*ping_find_target_node)(struct rs_ping_ctx_cb *pingCb, struct ping_qp_info *target,
         struct rs_ping_target_info **node);
-    int (*ping_alloc_target_node)(struct rs_ping_ctx_cb *ping_cb, struct ping_target_info *target,
+    int (*ping_alloc_target_node)(struct rs_ping_ctx_cb *pingCb, struct ping_target_info *target,
         struct rs_ping_target_info **node);
-    void (*reset_recv_buffer)(struct rs_ping_ctx_cb *ping_cb);
-    int (*ping_post_send)(struct rs_ping_ctx_cb *ping_cb, struct rs_ping_target_info *target);
-    int (*ping_poll_scq)(struct rs_ping_ctx_cb *ping_cb, struct rs_ping_target_info *target);
-    int (*ping_poll_rcq)(struct rs_ping_ctx_cb *ping_cb, int *polled_cnt, struct timeval *timestamp2);
-    void (*pong_handle_send)(struct rs_ping_ctx_cb *ping_cb, int polled_cnt, struct timeval *timestamp2);
-    void (*pong_poll_rcq)(struct rs_ping_ctx_cb *ping_cb);
-    int (*get_target_result)(struct rs_ping_ctx_cb *ping_cb, struct ping_target_comm_info *target,
+    void (*reset_recv_buffer)(struct rs_ping_ctx_cb *pingCb);
+    int (*ping_post_send)(struct rs_ping_ctx_cb *pingCb, struct rs_ping_target_info *target);
+    int (*ping_poll_scq)(struct rs_ping_ctx_cb *pingCb, struct rs_ping_target_info *target);
+    int (*ping_poll_rcq)(struct rs_ping_ctx_cb *pingCb, int *polledCnt, struct timeval *timestamp2);
+    void (*pong_handle_send)(struct rs_ping_ctx_cb *pingCb, int polledCnt, struct timeval *timestamp2);
+    void (*pong_poll_rcq)(struct rs_ping_ctx_cb *pingCb);
+    int (*get_target_result)(struct rs_ping_ctx_cb *pingCb, struct ping_target_comm_info *target,
         struct ping_result_info *result);
-    void (*ping_free_target_node)(struct rs_ping_ctx_cb *ping_cb, struct rs_ping_target_info *target_info);
-    void (*deinit_ping_cb)(unsigned int phy_id, struct rs_ping_ctx_cb *ping_cb);
+    void (*ping_free_target_node)(struct rs_ping_ctx_cb *pingCb, struct rs_ping_target_info *targetInfo);
+    void (*deinit_ping_cb)(unsigned int phyId, struct rs_ping_ctx_cb *pingCb);
 };
 
 struct rs_ping_pong_dfx {
-    void (*add_target_success)(struct ping_target_info *target, struct rs_ping_target_info *target_info);
-    void (*init_ping_cb_success)(unsigned int phy_id, struct ping_init_attr *attr, unsigned int dev_index);
+    void (*add_target_success)(struct ping_target_info *target, struct rs_ping_target_info *targetInfo);
+    void (*init_ping_cb_success)(unsigned int phyId, struct ping_init_attr *attr, unsigned int devIndex);
     void (*ping_cannot_find_target_node)(unsigned int i, int ret, struct ping_target_comm_info target,
-        unsigned int phy_id);
+        unsigned int phyId);
 };
 
-uint32_t rs_ping_get_trip_time(struct rs_ping_timestamp *timestamp);
+uint32_t RsPingGetTripTime(struct rs_ping_timestamp *timestamp);
 
 #endif // RS_PING_INNER_H

@@ -39,7 +39,8 @@
 #include "network_manager_pub.h"
 #undef private
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h"
@@ -138,7 +139,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_SendAsync)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
- 
+
     roce.isESMode_ = true;
     ret = roce.Connect();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -509,7 +510,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExec)
     roce.taskOrchestration_[streamId].push_back(std::make_pair(OperationType::OP_WAIT_DONE, tempParam));
     ret = roce.TaskExec(streamId, queIndex);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_isSupportTransportWithReduce)
@@ -577,7 +578,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxWithReduce)
 
     int ret = roce.TxWithReduce(dstMemType, 0, &srcData, 4, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_GetRemoteMem)
@@ -637,7 +638,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxWaitDone)
     roce.recvWithReduceParam_.datatype = HCCL_DATA_TYPE_INT8;
     int ret = roce.RxWaitDone(stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxWaitDone)
@@ -669,14 +670,14 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxWaitDone)
     s32 queIndex = 0;
     SendRecvParam tempParam(streamId, &roce, queIndex);
     roce.taskOrchestration_[streamId].push_back(std::make_pair(OperationType::OP_SEND, tempParam));
-    
+
     Stream stream;
     roce.recvWithReduceParam_.stream = &stream;
     roce.recvWithReduceParam_.reduceOp = HCCL_REDUCE_SUM;
     roce.recvWithReduceParam_.datatype = HCCL_DATA_TYPE_INT8;
     int ret = roce.TxWaitDone(stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExecCallback)
@@ -700,7 +701,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TaskExecCallback)
     SendRecvParam param;
     param.transportRocePtr = &roce;
     // TaskExecCallback(&param);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAck)
@@ -719,7 +720,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAck)
     Stream stream;
     int ret = roce.RxAck(stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAck)
@@ -738,7 +739,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAck)
     Stream stream;
     int ret = roce.TxAck(stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync)
@@ -757,7 +758,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync)
     Stream stream;
     int ret = roce.RxAsync(UserMemType::INPUT_MEM, 0, nullptr, 1024, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync_alltoallv)
@@ -777,7 +778,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxAsync_alltoallv)
     std::vector<RxMemoryInfo> rxMems;
     int ret = roce.RxAsync(rxMems, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAsync_alltoallv)
@@ -797,7 +798,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAsync_alltoallv)
     std::vector<TxMemoryInfo> txMems;
     int ret = roce.TxAsync(txMems, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxAsync)
@@ -840,7 +841,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RxDataSignal)
     Stream stream;
     int ret = roce.RxDataSignal(stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify(); 
+    GlobalMockObject::verify();
 }
 
 TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_TxDataSignal)
@@ -918,7 +919,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_RegUserMem)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
-    
+
     MachinePara machinePara;
     std::chrono::milliseconds timeout;
     HcclIpAddress invalidIp;
@@ -1157,7 +1158,7 @@ TEST_F(MPI_TRANSPORT_ROCE_TEST, ut_TransportRoce_Init)
     roce.machinePara_.outputMem = outputMem;
     roce.machinePara_.localIpAddr = HcclIpAddress(0);
     int ret = roce.Init();
-    EXPECT_EQ(ret, HCCL_SUCCESS);    
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 
     roce.machinePara_.localUserrank = 1;
     roce.machinePara_.remoteUserrank = 0;

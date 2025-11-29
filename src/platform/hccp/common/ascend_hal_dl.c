@@ -9,17 +9,17 @@
  */
 #include "ascend_hal_dl.h"
 
-int ascend_hal_dlclose(void *handle)
+int AscendHalDlclose(void *handle)
 {
     return dlclose(handle);
 }
 
-void *ascend_hal_dlsym(void *handle, const char *funcName)
+void *AscendHalDlsym(void *handle, const char *funcName)
 {
     return dlsym(handle, funcName);
 }
 
-void *ascend_hal_dlopen(const char *libName, int mode)
+void *AscendHalDlopen(const char *libName, int mode)
 {
     return dlopen(libName, mode);
 }

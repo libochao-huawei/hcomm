@@ -43,7 +43,7 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_DataIsNull_Expect_ReturnIsHCCL_E
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -56,7 +56,7 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_CountIsZero_Expect_ReturnIsHCCL_
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -69,7 +69,7 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_RootIsInvaild_Expect_ReturnIsHCC
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -78,11 +78,11 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_RootIsInvaild_Expect_ReturnIsHCC
 TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_CommIsNull_Expect_ReturnIsHCCL_E_PTR)
 {
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
-    int root = 0;  
+    int root = 0;
     Ut_Device_Set(0);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -91,11 +91,11 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_CommIsNull_Expect_ReturnIsHCCL_E
 TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_DataSize1KB_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
-    int root = 0;  
+    int root = 0;
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -104,11 +104,11 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_DataSize1KB_Expect_ReturnIsHCCL_
 TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_DataSize300MB_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT(HCCL_COM_BIG_DATA_SIZE, HCCL_COM_BIG_DATA_SIZE);
-    int root = 0;  
+    int root = 0;
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
@@ -118,12 +118,12 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_Exec20times_Expect_ReturnIsHCCL_
 {
     constexpr int LOOP_TIMES = 20;
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
-    int root = 0;  
+    int root = 0;
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
     for(int k = 0; k < LOOP_TIMES; k++) {
-        HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+        HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
         EXPECT_EQ(ret, HCCL_SUCCESS);
 
         Ut_Stream_Synchronize(stream);
@@ -135,11 +135,11 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_Exec20times_Expect_ReturnIsHCCL_
 TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_2Server4Rank_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
-    int root = 0;  
+    int root = 0;
     UT_COMM_CREATE_DEFAULT(comm);
     UT_STREAM_CREATE_DEFAULT(stream);
 
-    HcclResult ret = HcclBroadcast(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);

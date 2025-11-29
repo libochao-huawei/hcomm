@@ -134,7 +134,6 @@ HcclResult CollBroadcastRingExecutor::KernelRun(const OpParam &param, ExecMem &e
                 level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                     TemplateType::TEMPLATE_BROADCAST_NHR, dispatcher_);
             }
-            level1TempAlg->CloseBarrier();
             HCCL_INFO("broadcast ring: using nhr algo inter-server.");
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
             isUsedRegister = true;

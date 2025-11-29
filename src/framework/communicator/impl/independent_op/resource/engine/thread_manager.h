@@ -25,11 +25,11 @@ class ThreadMgr {
 public:
     ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     ~ThreadMgr() = default;
-    HcclResult CommAllocThreadRes(CommEngine engine, uint32_t threadNum,
+    HcclResult HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *thread);
     HcclResult CommAllocThreadResByStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
-    HcclResult CommGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
+    HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
 
     u32 GetThreadNum() const { return threadNum_; }
     u32 GetNotifyNumPerThread() const { return notifyNumPerThread_; }

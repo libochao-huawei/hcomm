@@ -14,6 +14,6 @@
 
 #define RS_MAX_VNIC_NUM 16
 
-int rs_inet_ntop(int family, union hccp_ip_addr *ip, char read_addr[], unsigned int len);
-void rs_socket_save_err_info(int action, int err_no, struct socket_err_info *err_info);
+int RsInetNtop(int family, union hccp_ip_addr *ip, char readAddr[], unsigned int len);
+void RsSocketSaveErrInfo(int action, int errNo, struct socket_err_info *errInfo);
 #endif // RS_SOCKET_H

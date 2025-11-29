@@ -610,13 +610,13 @@ TEST_F(DispatcherAiCpu_ST, st_data_plane_interface_aicpu)
     DispatcherCtxPtr ctx;
     ret = CreateDispatcherCtx(&ctx, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = CommLocalNotifyRecord(reinterpret_cast<uint64_t>(&mainDevThread), reinterpret_cast<uint64_t>(&subDevThread), 0);
+    ret = HcommInterThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&mainDevThread), reinterpret_cast<uint64_t>(&subDevThread), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = CommLocalNotifyWait(reinterpret_cast<uint64_t>(&subDevThread), 0, 1);
+    ret = HcommInterThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&subDevThread), 0, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = CommLocalNotifyRecord(reinterpret_cast<uint64_t>(&subDevThread), reinterpret_cast<uint64_t>(&mainDevThread), 1);
+    ret = HcommInterThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&subDevThread), reinterpret_cast<uint64_t>(&mainDevThread), 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = CommLocalNotifyWait(reinterpret_cast<uint64_t>(&mainDevThread), 1, 1);
+    ret = HcommInterThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&mainDevThread), 1, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ThreadHandle threads[2];

@@ -56,6 +56,8 @@ HcclResult CollAllGatherCommExecutor::CalcCombinedCommInfo(TransportMemType inpu
         commParaInfo.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING_V1;
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         commParaInfo.commType = CommType::COMM_TAG_NONUNIFORM_BRUCK;
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
+        commParaInfo.commType = CommType::COMM_TAG_HALVING_DOUBLING;
     } else {
         commParaInfo.commType = CommType::COMM_TAG_RING_INNER;
     }
@@ -79,9 +81,6 @@ HcclResult CollAllGatherCommExecutor::KernelRun(const OpParam &param, ExecMem &e
     std::unique_ptr<AlgTemplateBase> tempAlg;
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-        if (topoAttr_.deviceType != DevType::DEV_TYPE_910_93) {
-            tempAlg->CloseBarrier();
-        }
         HCCL_INFO("algather comm: using nhr algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NHRV1, dispatcher_);
@@ -89,6 +88,13 @@ HcclResult CollAllGatherCommExecutor::KernelRun(const OpParam &param, ExecMem &e
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
         HCCL_INFO("algather comm: using nonuniform-bruck algo inter-server.");
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
+        u8* dstPtr = static_cast<u8 *>(execMem.outputMem.ptr()) + execMem.inputMem.size() * combinedCommInfo.localRank;
+        DeviceMem dstMem = DeviceMem::create(dstPtr, execMem.inputMem.size());
+        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, execMem.inputMem, const_cast<Stream&>(param.stream)));
+        tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_ALL_GATHER_RECURSIVE_HALVING_DOUBLING, dispatcher_);
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_RECURSIVE_HALVING_DOUBLING in COMM_COMBINE_ORDER", __func__);
     } else {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
         HCCL_INFO("algather comm: ring algo inter-server.");
@@ -129,6 +135,10 @@ HcclResult CollAllGatherCommExecutor::SelectTempAlg(std::unique_ptr<AlgTemplateB
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
             HCCL_INFO("allgather comm: using nonuniform-bruck algo inter-server.");
+        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
+            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+                TemplateType::TEMPLATE_ALL_GATHER_RECURSIVE_HALVING_DOUBLING, dispatcher_);
+            HCCL_INFO("allgather comm: using halving-doubling algo inter-server.");
         } else {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
             HCCL_INFO("allgather comm: ring algo inter-server.");

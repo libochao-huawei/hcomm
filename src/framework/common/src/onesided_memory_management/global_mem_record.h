@@ -15,7 +15,8 @@
 #include <memory>
 #include <string>
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "hccl_common.h"
 #include "hccl_ip_address.h"
 #include "hccl_mem_defs.h"
@@ -86,7 +87,7 @@ public:
     HcclResult UnbindFromComm(const std::string &commIdentifier);   // 与一个通信域解绑
     std::string PrintInfo() const; // 获取内存信息字符串
     inline void SaveRegBufInfo(HcclNetDevCtx& ctx, HcclBuf& buf)
-    {   
+    {
         HCCL_INFO("[GlobalMemRecord][SaveRegBufInfo] ctx[%p], addr[%p], len[%llu].", ctx, buf.addr, buf.len);
         std::lock_guard<std::mutex> lock(regBufInfoMtx_);
         regBufInfo_.insert(std::make_pair(ctx, buf));

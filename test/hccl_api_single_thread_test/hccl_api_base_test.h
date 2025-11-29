@@ -45,7 +45,8 @@
 #undef private
 #include "hccl_whitelist.h"
 #include "profiling_manager.h"
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "llt_hccl_stub_pub.h"
 #include <iostream>
 #include <fstream>

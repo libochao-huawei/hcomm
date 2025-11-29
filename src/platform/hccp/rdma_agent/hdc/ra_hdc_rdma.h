@@ -500,49 +500,49 @@ union op_get_cqe_err_info_list_data {
     } rx_data;
 };
 
-int ra_hdc_qp_create(struct ra_rdma_handle *rdma_handle, int flag, int qp_mode, void **qp_handle);
-int ra_hdc_qp_create_with_attrs(struct ra_rdma_handle *rdma_handle, struct qp_ext_attrs *ext_attrs, void **qp_handle);
-int ra_hdc_ai_qp_create(struct ra_rdma_handle *rdma_handle, struct qp_ext_attrs *ext_attrs,
-    struct ai_qp_info *info, void **qp_handle);
-int ra_hdc_ai_qp_create_with_attrs(struct ra_rdma_handle *rdma_handle, struct qp_ext_attrs *ext_attrs,
-    struct ai_qp_info *info, void **qp_handle);
-int ra_hdc_typical_qp_create(struct ra_rdma_handle *rdma_handle, int flag, int qp_mode, struct typical_qp *qp_info,
-    void **qp_handle);
-int ra_hdc_poll_cq(struct ra_qp_handle *qp_hdc, bool is_send_cq, unsigned int num_entries, void *wc);
-int ra_hdc_qp_destroy(struct ra_qp_handle *qp_hdc);
-int ra_hdc_typical_qp_modify(struct ra_qp_handle *qp_hdc, struct typical_qp *local_qp_info,
-    struct typical_qp *remote_qp_info);
-int ra_hdc_qp_connect_async(struct ra_qp_handle *qp_hdc, const void *sock_handle);
-int ra_hdc_get_qp_status(struct ra_qp_handle *qp_hdc, int *status);
-int ra_hdc_mr_reg(struct ra_qp_handle *qp_hdc, struct mr_info *info);
-int ra_hdc_mr_dereg(struct ra_qp_handle *qp_hdc, struct mr_info *info);
-int ra_hdc_typical_mr_reg(struct ra_rdma_handle *rdma_handle, struct mr_info *info, void **mr_handle);
-int ra_hdc_remap_mr(struct ra_rdma_handle *rdma_handle, struct mem_remap_info info[], unsigned int num);
-int ra_hdc_typical_mr_dereg(struct ra_rdma_handle *rdma_handle, void *mr_handle);
-int ra_hdc_send_wr(struct ra_qp_handle *qp_hdc, struct send_wr *wr, struct send_wr_rsp *op_rsp);
-int ra_hdc_typical_send_wr(struct ra_qp_handle *qp_hdc, struct send_wr *wr, struct send_wr_rsp *op_rsp);
-int ra_hdc_send_wr_v2(struct ra_qp_handle *qp_hdc, struct send_wr_v2 *wr, struct send_wr_rsp *op_rsp);
-int ra_hdc_send_wrlist(struct ra_qp_handle *qp_hdc, struct send_wrlist_data wr[], struct send_wr_rsp op_rsp[],
-    struct wrlist_send_complete_num wrlist_num);
-int ra_hdc_send_wrlist_ext(struct ra_qp_handle *qp_hdc, struct send_wrlist_data_ext wr[], struct send_wr_rsp op_rsp[],
-    struct wrlist_send_complete_num wrlist_num);
-int ra_hdc_send_normal_wrlist(struct ra_qp_handle *qp_hdc, struct wr_info wr[], struct send_wr_rsp op_rsp[],
-    struct wrlist_send_complete_num wrlist_num);
-int ra_hdc_recv_wrlist(struct ra_qp_handle *qp_hdc, struct recv_wrlist_data *wr, unsigned int recv_num,
-    unsigned int *complete_num);
-int ra_hdc_rdev_init(struct ra_rdma_handle *rdma_handle, unsigned int notify_type, struct rdev rdev_info,
-    unsigned int *rdev_index);
-int ra_hdc_rdev_get_port_status(struct ra_rdma_handle *rdma_handle, enum port_status *status);
-int ra_hdc_rdev_deinit(struct ra_rdma_handle *rdma_handle, unsigned int notify_type);
-int ra_hdc_rdev_restore_deinit(struct ra_rdma_handle *rdma_handle, unsigned int notify_type);
-int ra_hdc_set_tsqp_depth(struct ra_rdma_handle *rdma_handle, unsigned int temp_depth, unsigned int *qp_num);
-int ra_hdc_get_tsqp_depth(struct ra_rdma_handle *rdma_handle, unsigned int *temp_depth, unsigned int *qp_num);
-int ra_hdc_set_qp_attr_qos(struct ra_qp_handle *qp_hdc, struct qos_attr *attr);
-int ra_hdc_set_qp_attr_timeout(struct ra_qp_handle *qp_hdc, unsigned int *timeout);
-int ra_hdc_set_qp_attr_retry_cnt(struct ra_qp_handle *qp_hdc, unsigned int *retry_cnt);
-int ra_hdc_get_cqe_err_info_list(struct ra_rdma_handle *rdma_handle, struct cqe_err_info *info_list, unsigned int *num);
-int ra_hdc_qp_batch_modify(struct ra_rdma_handle *rdma_handle, void *qp_hdc[], unsigned int num, int expect_status);
-int ra_hdc_rdma_set_ops(struct ra_rdma_handle *rdma_handle, struct ra_rdma_ops *rdma_ops);
-int ra_hdc_rdma_save_snapshot(struct ra_rdma_handle *rdma_handle, enum save_snapshot_action action);
-int ra_hdc_rdma_restore_snapshot(struct ra_rdma_handle *rdma_handle, struct ra_rdma_ops *rdma_ops);
+int RaHdcQpCreate(struct ra_rdma_handle *rdmaHandle, int flag, int qpMode, void **qpHandle);
+int RaHdcQpCreateWithAttrs(struct ra_rdma_handle *rdmaHandle, struct qp_ext_attrs *extAttrs, void **qpHandle);
+int RaHdcAiQpCreate(struct ra_rdma_handle *rdmaHandle, struct qp_ext_attrs *extAttrs,
+    struct ai_qp_info *info, void **qpHandle);
+int RaHdcAiQpCreateWithAttrs(struct ra_rdma_handle *rdmaHandle, struct qp_ext_attrs *extAttrs,
+    struct ai_qp_info *info, void **qpHandle);
+int RaHdcTypicalQpCreate(struct ra_rdma_handle *rdmaHandle, int flag, int qpMode, struct typical_qp *qpInfo,
+    void **qpHandle);
+int RaHdcPollCq(struct ra_qp_handle *qpHdc, bool isSendCq, unsigned int numEntries, void *wc);
+int RaHdcQpDestroy(struct ra_qp_handle *qpHdc);
+int RaHdcTypicalQpModify(struct ra_qp_handle *qpHdc, struct typical_qp *localQpInfo,
+    struct typical_qp *remoteQpInfo);
+int RaHdcQpConnectAsync(struct ra_qp_handle *qpHdc, const void *sockHandle);
+int RaHdcGetQpStatus(struct ra_qp_handle *qpHdc, int *status);
+int RaHdcMrReg(struct ra_qp_handle *qpHdc, struct mr_info *info);
+int RaHdcMrDereg(struct ra_qp_handle *qpHdc, struct mr_info *info);
+int RaHdcTypicalMrReg(struct ra_rdma_handle *rdmaHandle, struct mr_info *info, void **mrHandle);
+int RaHdcRemapMr(struct ra_rdma_handle *rdmaHandle, struct mem_remap_info info[], unsigned int num);
+int RaHdcTypicalMrDereg(struct ra_rdma_handle *rdmaHandle, void *mrHandle);
+int RaHdcSendWr(struct ra_qp_handle *qpHdc, struct send_wr *wr, struct send_wr_rsp *opRsp);
+int RaHdcTypicalSendWr(struct ra_qp_handle *qpHdc, struct send_wr *wr, struct send_wr_rsp *opRsp);
+int RaHdcSendWrV2(struct ra_qp_handle *qpHdc, struct send_wr_v2 *wr, struct send_wr_rsp *opRsp);
+int RaHdcSendWrlist(struct ra_qp_handle *qpHdc, struct send_wrlist_data wr[], struct send_wr_rsp opRsp[],
+    struct wrlist_send_complete_num wrlistNum);
+int RaHdcSendWrlistExt(struct ra_qp_handle *qpHdc, struct send_wrlist_data_ext wr[], struct send_wr_rsp opRsp[],
+    struct wrlist_send_complete_num wrlistNum);
+int RaHdcSendNormalWrlist(struct ra_qp_handle *qpHdc, struct wr_info wr[], struct send_wr_rsp opRsp[],
+    struct wrlist_send_complete_num wrlistNum);
+int RaHdcRecvWrlist(struct ra_qp_handle *qpHdc, struct recv_wrlist_data *wr, unsigned int recvNum,
+    unsigned int *completeNum);
+int RaHdcRdevInit(struct ra_rdma_handle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo,
+    unsigned int *rdevIndex);
+int RaHdcRdevGetPortStatus(struct ra_rdma_handle *rdmaHandle, enum port_status *status);
+int RaHdcRdevDeinit(struct ra_rdma_handle *rdmaHandle, unsigned int notifyType);
+int RaHdcRdevRestoreDeinit(struct ra_rdma_handle *rdmaHandle, unsigned int notifyType);
+int RaHdcSetTsqpDepth(struct ra_rdma_handle *rdmaHandle, unsigned int tempDepth, unsigned int *qpNum);
+int RaHdcGetTsqpDepth(struct ra_rdma_handle *rdmaHandle, unsigned int *tempDepth, unsigned int *qpNum);
+int RaHdcSetQpAttrQos(struct ra_qp_handle *qpHdc, struct qos_attr *attr);
+int RaHdcSetQpAttrTimeout(struct ra_qp_handle *qpHdc, unsigned int *timeout);
+int RaHdcSetQpAttrRetryCnt(struct ra_qp_handle *qpHdc, unsigned int *retryCnt);
+int RaHdcGetCqeErrInfoList(struct ra_rdma_handle *rdmaHandle, struct cqe_err_info *infoList, unsigned int *num);
+int RaHdcQpBatchModify(struct ra_rdma_handle *rdmaHandle, void *qpHdc[], unsigned int num, int expectStatus);
+int RaHdcRdmaSetOps(struct ra_rdma_handle *rdmaHandle, struct ra_rdma_ops *rdmaOps);
+int RaHdcRdmaSaveSnapshot(struct ra_rdma_handle *rdmaHandle, enum save_snapshot_action action);
+int RaHdcRdmaRestoreSnapshot(struct ra_rdma_handle *rdmaHandle, struct ra_rdma_ops *rdmaOps);
 #endif // RA_HDC_RDMA_H

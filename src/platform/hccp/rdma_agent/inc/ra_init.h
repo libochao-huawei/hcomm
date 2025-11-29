@@ -20,6 +20,6 @@ typedef struct {
     pthread_mutex_t mutex;
 } ra_instance;
 
-void ra_rdev_set_handle(unsigned int phy_id, void *rdma_handle);
-void ra_rdev_inc_send_wr_num(void);
+void RaRdevSetHandle(unsigned int phyId, void *rdmaHandle);
+void RaRdevIncSendWrNum(void);
 #endif // RA_INIT_H

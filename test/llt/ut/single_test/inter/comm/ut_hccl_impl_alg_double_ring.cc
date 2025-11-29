@@ -35,6 +35,7 @@
 #include "heartbeat.h"
 #undef private
 #undef protected
+#include "dlra_function.h"
 
 using namespace hccl;
 using namespace std;
@@ -47,6 +48,7 @@ protected:
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "HcclImplAlgTestDoubleRing SetUP" << std::endl;
     }
     static void TearDownTestCase()

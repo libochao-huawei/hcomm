@@ -54,7 +54,8 @@ struct HcclOpConfig {
     u8 deterministic; // 确定性计算开关
     u8 retryEnable;  // 是否重执行
     u8 highPerfEnable; // deprecate
-    u8 padding[5];  // 大小需要64By对齐，未来添加参数时减小padding
+    u8 isSupportAtomicWrite = 0;
+    u8 padding[4];  // 大小需要64By对齐，未来添加参数时减小padding
     std::chrono::milliseconds linkTimeOut; //发送超时时长
     u64 notifyWaitTime;  // 超时时长，同HCCL_EXEC_TIMEOUT
     u32 retryHoldTime;

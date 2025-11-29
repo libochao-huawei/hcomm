@@ -96,8 +96,6 @@ HcclResult CollBroadcastMeshExecutor::KernelRun(const OpParam &param, ExecMem &e
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_BROADCAST_NHR, dispatcher_);
         }
-        CHK_SMART_PTR_NULL(level1TempAlg);
-        level1TempAlg->CloseBarrier();
         HCCL_INFO("broadcast mesh: using nhr algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         isUsedRegister = true;

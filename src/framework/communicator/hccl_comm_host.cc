@@ -146,7 +146,7 @@ namespace hccl
     {
         CHK_SMART_PTR_NULL(communicator_);
         HcclTopoAttr topoAttr = communicator_->GetTopoAttr();
-        aclrtBinHandle binHandle = communicator_->GetBinCustomHandle();
+        aclrtBinHandle binHandle = communicator_->GetBinHandle();
         CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle));
         return HCCL_SUCCESS;
     }
@@ -168,7 +168,7 @@ namespace hccl
     {
         // 获取本地cclbuffer
         CommBuffer commBuffer;
-        CHK_RET(GetIndependentOp().GetCommMemMgr().CommGetHcclBuffer(&commBuffer));
+        CHK_RET(GetIndependentOp().GetCommMemMgr().GetHcclBuffer(&commBuffer));
         DeviceMem cclbuffer =  DeviceMem::create(commBuffer.addr, commBuffer.size);
         CHK_PTR_NULL(cclbuffer.ptr());
 

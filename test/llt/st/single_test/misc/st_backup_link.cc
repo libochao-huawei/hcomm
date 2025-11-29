@@ -13,6 +13,7 @@
 #include "llt_hccl_stub_sal_pub.h"
 #include "adapter_tdt.h"
 #include "adapter_hal.h"
+#include "dlra_function.h"
 
 #define private public
 #define protected public
@@ -35,6 +36,7 @@ class BackupLinkTest : public testing::Test
 protected:
     static void SetUpTestCase()
     {
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         cout << "\033[36m--BackupLinkTest SetUP--\033[0m" << endl;
     }
     static void TearDownTestCase()

@@ -180,12 +180,18 @@ HcclResult CollBatchSendRecvRetryExecutor::RunLoop(OpParam &param, AlgResourceRe
     } else {
         curSendRecvPair = sendRecvPair;
     }
+
     // 执行当前需执行的算子
-    for (u32 opIndex = 0; opIndex < curSendRecvPair.size(); opIndex++) {
-        if (curSendRecvPair[opIndex]->sendRecvType == HcclSendRecvType::HCCL_SEND) {
-            CHK_RET(CalcSendSlices(algRes, curSendRecvPair[opIndex]));
-        } else if (curSendRecvPair[opIndex]->sendRecvType == HcclSendRecvType::HCCL_RECV) {
-            CHK_RET(CalcRecvSlices(algRes, curSendRecvPair[opIndex]));
+    for (const auto& itemPtr : curSendRecvPair) {
+        if (param.BatchSendRecvDataDes.isDirectRemoteRank[itemPtr->remoteRank]) {
+            // device direct链路的任务会在host侧下发，此处需要跳过
+            continue;
+        }
+        HCCL_INFO("[CollBatchSendRecvRetryExecutor][RunLoop] remoteRank %u", itemPtr->remoteRank);
+        if (itemPtr->sendRecvType == HcclSendRecvType::HCCL_SEND) {
+            CHK_RET(CalcSendSlices(algRes, itemPtr));
+        } else if (itemPtr->sendRecvType == HcclSendRecvType::HCCL_RECV) {
+            CHK_RET(CalcRecvSlices(algRes, itemPtr));
         } else {
             HCCL_ERROR("[CollBatchSendRecvRetryExecutor][RunLoop] sendRecvType is Wrong.");
             return HCCL_E_PARA;

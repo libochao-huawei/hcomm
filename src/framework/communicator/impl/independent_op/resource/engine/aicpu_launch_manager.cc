@@ -39,7 +39,7 @@ HcclResult AicpuLaunchMgr::KernelLaunchAicpuCustom(OpParam &opParam, std::string
 
     // Step 2. 填充 customInitTask 中的 commContext
     customInitTask.context = reinterpret_cast<uint64_t>(addr.ptr());
-    customInitTask.isCustom = true;
+    customInitTask.isCustom = false;
 
     // Step 3. 启动 
     CHK_RET(AicpuAclKernelLaunch(aicpuInitStream, reinterpret_cast<void *>(&customInitTask),

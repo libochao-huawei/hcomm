@@ -47,7 +47,8 @@
 #include "adapter_rts.h"
 #include "heartbeat.h"
 #include "acl/acl.h"
-#include "hccl.h"
+#include "hccl_comm.h"
+#include "hccl_inner.h"
 #undef private
 #undef protected
 #include "remote_notify.h"
@@ -206,7 +207,7 @@ TEST_F(LocalCtxUt, CreateCtxERRMode) {
     HcclResult ret = CreateDispatcherCtx(&ctx, devicePhyId);
     EXPECT_NE(ret, HCCL_SUCCESS);
 }
- 
+
 
 TEST_F(LocalCtxUt, LocalCopyAICpu) {
     MOCKER(hrtDrvGetPlatformInfo)
@@ -243,7 +244,7 @@ TEST_F(LocalCtxUt, LocalCopyFfts) {
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(invoke(hrtDrvGetPlatformInfoStub));
-    
+
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -283,7 +284,7 @@ TEST_F(LocalCtxUt, LocalCopyNormal) {
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(invoke(hrtDrvGetPlatformInfoStub));
-    
+
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -322,7 +323,7 @@ TEST_F(LocalCtxUt, LocalCopyERR) {
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(invoke(hrtDrvGetPlatformInfoStub));
-    
+
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -362,7 +363,7 @@ TEST_F(LocalCtxUt, LocalCopyWithReduceNormal) {
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(invoke(hrtDrvGetPlatformInfoStub));
-    
+
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -419,7 +420,7 @@ TEST_F(LocalCtxUt, LocalLaunchTaskExtendNormal) {
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(invoke(hrtDrvGetPlatformInfoStub));
-    
+
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -474,7 +475,7 @@ TEST_F(LocalCtxUt, LocalInitTaskNormal) {
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(invoke(hrtDrvGetPlatformInfoStub));
-    
+
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -518,7 +519,7 @@ TEST_F(LocalCtxUt, HcclLocalNotifyRecordNormal) {
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(invoke(hrtDrvGetPlatformInfoStub));
-    
+
     MOCKER(hrtDrvGetPlatformInfo)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
@@ -533,7 +534,7 @@ TEST_F(LocalCtxUt, HcclLocalNotifyRecordNormal) {
     .stubs()
     .with(outBound(deviceType))
     .will(returnValue(HCCL_SUCCESS));
-    
+
     DispatcherCtxPtr ctx;
     HcclResult ret = CreateDispatcherCtx(&ctx, 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);

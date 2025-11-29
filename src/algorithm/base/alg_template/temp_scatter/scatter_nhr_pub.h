@@ -46,8 +46,6 @@ private:
 
     HcclResult GetStepInfo(u32 step, u32 nSteps, u32 rank, u32 rankSize, InterServerAlgoStep &stepInfo) override;
 
-    HcclResult ExecuteBarrier(const std::shared_ptr<Transport> &preLink, const std::shared_ptr<Transport> &aftLink);
-
     u32 interRank_;       // comm内的rank排序
     u32 interRankSize_;  // 本comm内ranksize总数
 };

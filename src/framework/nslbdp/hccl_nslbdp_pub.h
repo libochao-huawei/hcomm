@@ -16,7 +16,8 @@
 #include <map>
 #include <mutex>
 #include <hccl/hccl_types.h>
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 
 #include "hccl/base.h"
 #include "hccl_common.h"
@@ -36,7 +37,7 @@ const u32 COMM_DESC_MAX_LENGTH = 128; // group name max length
 
 const u32 COMM_MAX_GLOABLE_ROOTRANK = 256; // group name max length
 
-// 通信域信息表RankInfo 
+// 通信域信息表RankInfo
 struct NslbDpRankInfo {
     u32 deviceIp;
     u32 serverIp;
@@ -48,7 +49,7 @@ struct NslbDeviceIp {
     u32 deviceIp;
 };
 
-// 表4 RankInfo 
+// 表4 RankInfo
 struct TableFourRankInfo {
     u32 deviceIp;
     u32 serverIp;
@@ -69,7 +70,7 @@ struct NslbDpCommConfigVal {
 struct NslbDpCommConfigInfo {
     u64 taskId;
     char commDesc[COMM_DESC_MAX_LENGTH];
-    u64 commInitTime; 
+    u64 commInitTime;
     u16 packetId;
     u16 rev;
     u16 packetNum;
@@ -88,7 +89,7 @@ struct NslbDpOperatorInfo {
     u64 commInitTime;
     u8 oper;
     u8 algorithm;
-    u16 rootRank; 
+    u16 rootRank;
     u64 trafficCnt;
     u16 l4SPortId;
     u16 maskLen;
@@ -113,10 +114,10 @@ struct AdjInfo {
 
 // 分表3-算法邻接表
 struct NslbDpAlgorithmTlv {
-    u64 taskId; 
+    u64 taskId;
     char commDesc[COMM_DESC_MAX_LENGTH];
     u8 commMd5Sum[16];
-    u16 srcLocalRankId;   
+    u16 srcLocalRankId;
     u8 oper;
     u8 algorithm;
     u16 rootRank;
@@ -128,10 +129,10 @@ struct NslbDpAlgorithmTlv {
 
 
 struct NslbDpAlgorithmInfo {
-    u64 taskId; 
+    u64 taskId;
     char commDesc[COMM_DESC_MAX_LENGTH];
     u8 commMd5Sum[16];
-    u16 srcLocalRankId;   
+    u16 srcLocalRankId;
     u8 oper;
     u8 algorithm;
     u16 rootRank;
@@ -142,7 +143,7 @@ struct NslbDpAlgorithmInfo {
 
 // 分表4-全局Rank表val
 struct NslbDpGlobalRankVal {
-    u64 taskId; 
+    u64 taskId;
     char commDesc[COMM_DESC_MAX_LENGTH];
     u64 commInitTime;
     u32 rankTotalNum;
@@ -153,7 +154,7 @@ struct NslbDpGlobalRankVal {
 
 // 分表4-全局Rank表
 struct NslbDpGlobalRankInfo {
-    u64 taskId; 
+    u64 taskId;
     char commDesc[COMM_DESC_MAX_LENGTH];
     u64 commInitTime;
     u16 packetId;
@@ -171,7 +172,7 @@ struct NslbDpGlobalRankInfo {
 
 // 分表5-全局Rank分布式信息val
 struct NslbDpGlobalDisRankVal {
-    u64 taskId; 
+    u64 taskId;
     u32 npuIp;
     u32 serverIp;
     u32 nodeId;
@@ -194,7 +195,7 @@ struct NslbDpRankId {
 
 // 分表6-Root Rank分布式信息
 struct NslbDpRootRank {
-    u64 taskId; 
+    u64 taskId;
     char commDesc[COMM_DESC_MAX_LENGTH];
     u64 commInitTime;
     u8  oper;

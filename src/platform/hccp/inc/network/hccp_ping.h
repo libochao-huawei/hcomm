@@ -170,8 +170,8 @@ struct ping_target_result {
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_ping_init(struct ping_init_attr *init_attr, struct ping_init_info *init_info,
-    void **ping_handle);
+HCCP_ATTRI_VISI_DEF int RaPingInit(struct ping_init_attr *initAttr, struct ping_init_info *initInfo,
+    void **pingHandle);
 
 /**
  * @ingroup librdma
@@ -183,7 +183,7 @@ HCCP_ATTRI_VISI_DEF int ra_ping_init(struct ping_init_attr *init_attr, struct pi
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_ping_target_add(void *ping_handle, struct ping_target_info target[], uint32_t num);
+HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct ping_target_info target[], uint32_t num);
 
 /**
  * @ingroup librdma
@@ -194,7 +194,7 @@ HCCP_ATTRI_VISI_DEF int ra_ping_target_add(void *ping_handle, struct ping_target
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_ping_task_start(void *ping_handle, struct ping_task_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaPingTaskStart(void *pingHandle, struct ping_task_attr *attr);
 
 /**
  * @ingroup librdma
@@ -206,7 +206,7 @@ HCCP_ATTRI_VISI_DEF int ra_ping_task_start(void *ping_handle, struct ping_task_a
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_ping_get_results(void *ping_handle, struct ping_target_result target[], uint32_t *num);
+HCCP_ATTRI_VISI_DEF int RaPingGetResults(void *pingHandle, struct ping_target_result target[], uint32_t *num);
 
 /**
  * @ingroup librdma
@@ -218,7 +218,7 @@ HCCP_ATTRI_VISI_DEF int ra_ping_get_results(void *ping_handle, struct ping_targe
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_ping_target_del(void *ping_handle, struct ping_target_comm_info target[], uint32_t num);
+HCCP_ATTRI_VISI_DEF int RaPingTargetDel(void *pingHandle, struct ping_target_comm_info target[], uint32_t num);
 
 /**
  * @ingroup librdma
@@ -228,7 +228,7 @@ HCCP_ATTRI_VISI_DEF int ra_ping_target_del(void *ping_handle, struct ping_target
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_ping_task_stop(void *ping_handle);
+HCCP_ATTRI_VISI_DEF int RaPingTaskStop(void *pingHandle);
 
 /**
  * @ingroup libinit
@@ -238,7 +238,7 @@ HCCP_ATTRI_VISI_DEF int ra_ping_task_stop(void *ping_handle);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_ping_deinit(void *ping_handle);
+HCCP_ATTRI_VISI_DEF int RaPingDeinit(void *pingHandle);
 #ifdef __cplusplus
 }
 #endif

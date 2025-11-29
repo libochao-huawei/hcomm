@@ -14,7 +14,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include "externalinput_pub.h"
 #include "externalinput.h"
 #include "adapter_rts.h"
@@ -178,7 +179,7 @@ TEST_F(CommConfigTest, utCommConfig_op_expansion)
     MOCKER(GetExternalInputCCLBuffSize)
     .stubs()
     .will(returnValue(static_cast<u64>(200 * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE)));
- 
+
     MOCKER(GetExternalInputHcclDeterministic)
     .stubs()
     .will(returnValue(false));

@@ -27,7 +27,8 @@
 #include <fcntl.h>
 #include <sys/mman.h>
 
-#include <hccl/hccl.h>
+#include <hccl/hccl_comm.h>
+#include <hccl/hccl_inner.h>
 #include <hccl/hccl_ex.h>
 #include "llt_hccl_stub_pub.h"
 #include "llt_hccl_stub_gdr.h" //delete here?
@@ -384,7 +385,7 @@ TEST_F(MPI_RAW_SENDRECV_TEST, st_pd_force_and_concurrency_link01)
     MOCKER(hrtRaSocketNonBlockSendHeterog)
     .stubs()
     .will(invoke(stub_TCPMode_hrtRaSocketNonBlockSendComplete));
-    
+
     MOCKER(hrtRaSocketNonBlockRecvHeterog)
     .stubs()
     .will(invoke(stub_TCPMode_hrtRaSocketNonBlockRecv));
@@ -426,7 +427,7 @@ TEST_F(MPI_RAW_SENDRECV_TEST, st_pd_force_and_concurrency_link01)
         HcclAddr acceptAddr;
         int flag = 0;
         HcclStatus status;
-        HcclMessageInfo msgInfo; 
+        HcclMessageInfo msgInfo;
         HcclMessage msg = &msgInfo;
 
         // open

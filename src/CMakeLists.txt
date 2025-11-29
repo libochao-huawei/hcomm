@@ -147,7 +147,8 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/ping_mesh
     ${HCCL_BASE_DIR}/platform/resource/socket
     ${HCCL_BASE_DIR}/platform/task
-    ${HCCL_BASE_DIR}/platform/legacy/inc
+    #${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+    ${CMAKE_BINARY_DIR}/hcomm_utils/host/include/legacy
     ${HCCL_BASE_DIR}/platform/aiv_communication
     ${HCCL_BASE_DIR}/platform/typical
 )
@@ -655,7 +656,8 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra_hdc> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccd> ${HCCD_TAR_DIR}
-        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/* ${HCCP_TAR_DIR}
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCD_TAR_DIR}
+        COMMAND chmod 750 ${HCCD_TAR_DIR}/lib*
         COMMENT "Copying libhccd.so to ${HCCD_TAR_DIR}"
     )
 endif()
