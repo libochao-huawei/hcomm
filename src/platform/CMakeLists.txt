@@ -214,7 +214,6 @@ add_subdirectory(remote_access)
 add_subdirectory(resource)
 add_subdirectory(task)
 add_subdirectory(ping_mesh)
-add_subdirectory(typical)
 add_subdirectory(hccp)
 
 add_dependencies(hccl_plf json)
