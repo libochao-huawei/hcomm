@@ -11,7 +11,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom_common.cc
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/hcom.cc
 )

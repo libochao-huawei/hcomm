@@ -57,9 +57,9 @@ def check_rank_id(rank_id):
 
 
 def load_lib():
-    """ load libhccl_fwk.so file."""
+    """ load libhcomm.so file."""
     try:
-        hccl_lib = ctypes.CDLL('libhccl_fwk.so')
+        hccl_lib = ctypes.CDLL('libhcomm.so')
     except Exception as e:
         raise ValueError('load hccl lib error')
 

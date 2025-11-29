@@ -12,7 +12,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/comm_config.cc
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_comm_host.cc
 )

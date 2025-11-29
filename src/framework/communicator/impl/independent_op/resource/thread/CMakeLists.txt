@@ -11,7 +11,7 @@ set(src_list
     hccl_thread.cc
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
 )
 

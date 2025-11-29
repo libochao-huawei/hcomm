@@ -97,7 +97,7 @@ function build_device(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST="sign_hcomm_device sign_aicpu_hcomm"
+    SIGN_TARGET_LIST="sign_cann_hcomm_compat sign_aicpu_hcomm"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -109,7 +109,7 @@ function build_hccd(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccd_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST="sign_hcomm_hccd"
+    SIGN_TARGET_LIST="sign_cann_hccd_compat"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -431,9 +431,9 @@ elif [ "${KERNEL}" == "true" ]; then
 elif [ "${BUILD_FWK_HLT}" == "true" ]; then
     log "Info: Building fwk_test with MOCK_HCCL=${MOCK_FWK_HLT}"
     cmake ${CUSTOM_OPTION} -DMOCK_HCCL=${MOCK_FWK_HLT} ../test/hlt
-    build hccl_fwk_test
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
+    build hcomm_test
+    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
+    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
     log "Info: Building cb_test_verify"
     build_cb_test_verify

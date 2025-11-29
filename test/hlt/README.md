@@ -68,10 +68,10 @@
 
    ```bash
    # 查看测试用例列表
-   ./build/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --list
+   ./build/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --list
 
    # 执行指定测试用例（allocthread为例）
-   ./build/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread
+   ./build/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread
    ```
 
 ## 运行
@@ -79,7 +79,7 @@
 * **单个进程运行示例**
 
   ```bash
-  ./hccl_fwk_test --cluster_info '{"server_list":[{"device":[{"device_id":"0","device_ip":"127.0.0.1","rank_id":"0"}]}]}' --rank 0 --peers 2 --size 4096
+  ./hcomm_test --cluster_info '{"server_list":[{"device":[{"device_id":"0","device_ip":"127.0.0.1","rank_id":"0"}]}]}' --rank 0 --peers 2 --size 4096
   ```
 
   命令行参数（常用）含义如下：
@@ -102,12 +102,12 @@
   # 进程1
   export RANK_TABLE_FILE=../rank_table.json
   export RANK_ID=0
-  ./hccl_fwk_test --cluster_info $RANK_TABLE_FILE --rank 0 --peers 2 --size 4096
+  ./hcomm_test --cluster_info $RANK_TABLE_FILE --rank 0 --peers 2 --size 4096
   
   # 进程2
   export RANK_TABLE_FILE=../rank_table.json
   export RANK_ID=1
-  ./hccl_fwk_test --cluster_info $RANK_TABLE_FILE --rank 1 --peers 2 --size 4096
+  ./hcomm_test --cluster_info $RANK_TABLE_FILE --rank 1 --peers 2 --size 4096
   ```
 
 ## 输出结果
@@ -133,7 +133,7 @@
 
 ## 如何新增测试用例
 
-下面示例说明如何在 `hccl_fwk_test.cpp` 内扩展新的资源测试用例，并将其加入 CLI 调用列表。
+下面示例说明如何在 `hcomm_test.cpp` 内扩展新的资源测试用例，并将其加入 CLI 调用列表。
 
 ### 约定
 
@@ -184,19 +184,19 @@ REGISTER_HCCL_TEST(your_testcase, test_your_testcase);
 * 列出可用用例：
 
   ```bash
-  ./hccl_fwk_test --list
+  ./hcomm_test --list
   ```
 
 * 运行单个用例：
 
   ```bash
-  ./hccl_fwk_test --cluster_info ./rank_table.json --rank 0 --test comminit
+  ./hcomm_test --cluster_info ./rank_table.json --rank 0 --test comminit
   ```
 
 * 运行全部用例（默认）：
 
   ```bash
-  ./hccl_fwk_test --cluster_info ./rank_table.json --rank 0
+  ./hcomm_test --cluster_info ./rank_table.json --rank 0
   ```
 
 ### 更严密的断言（建议）
@@ -228,11 +228,11 @@ REGISTER_HCCL_TEST(your_testcase, test_your_testcase);
 ```bash
 # 真实硬件环境执行
 mkdir -p build && cd build
-cmake ../ && cmake --build . && ./hccl_fwk_test --cluster_info ../ranktable.json --rank 0
+cmake ../ && cmake --build . && ./hcomm_test --cluster_info ../ranktable.json --rank 0
 
 # 模拟环境执行
-cmake -DMOCK_HCCL=1 ../ && cmake --build . && ./hccl_fwk_test --cluster_info ../ranktable.json --rank 0
+cmake -DMOCK_HCCL=1 ../ && cmake --build . && ./hcomm_test --cluster_info ../ranktable.json --rank 0
 
 # 其他运行参考
-./hccl_fwk_test --cluster_info '{"server_list":[{"device":[{"device_id":"0","device_ip":"127.0.0.1","rank_id":"0"}]}]}' --rank 0 --peers 2 --size 4096
+./hcomm_test --cluster_info '{"server_list":[{"device":[{"device_id":"0","device_ip":"127.0.0.1","rank_id":"0"}]}]}' --rank 0 --peers 2 --size 4096
 ```

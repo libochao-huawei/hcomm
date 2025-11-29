@@ -8,7 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.5)
-project(hccl_fwk_test CXX)
+project(hcomm_test CXX)
 option(MOCK_HCCL "enable mock hccl" OFF)   # 默认 OFF，可被 -DMOCK_HCCL=ON/1 覆盖
 
 set(ASCEND_HOME_PATH $ENV{ASCEND_HOME_PATH} CACHE PATH "Ascend SDK root directory (or set ASCEND_HOME_PATH env)")
@@ -24,7 +24,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # EnsureSharedOrStub
 # 用法: EnsureSharedOrStub(<name> <out_var> [<path1> <path2> ...])
-# 示例: EnsureSharedOrStub(hccl_fwk COMMON_TO_LINK ${ASCEND_HOME_PATH})
+# 示例: EnsureSharedOrStub(hcomm COMMON_TO_LINK ${ASCEND_HOME_PATH})
 function(EnsureSharedOrStub name out_var)
     # 把剩余参数当作 find_library 的 PATHS
     set(_paths ${ARGN})
@@ -57,9 +57,9 @@ link_directories(
   "${ACL_LIB_DIR}"
 )
 
-add_executable(hccl_fwk_test hccl_fwk_test.cpp)
+add_executable(hcomm_test hcomm_test.cpp)
 
-target_include_directories(hccl_fwk_test PRIVATE
+target_include_directories(hcomm_test PRIVATE
   ${HCOMM_BASE}/inc
   ${HCOMM_BASE}/inc/hccl
   ${HCOMM_BASE}/src/pub_inc
@@ -72,34 +72,34 @@ if(MOCK_HCCL)
 else()
   set(_MOCK_HCCL_VAL 0)
 endif()
-target_compile_definitions(hccl_fwk_test PRIVATE MOCK_HCCL=${_MOCK_HCCL_VAL})
+target_compile_definitions(hcomm_test PRIVATE MOCK_HCCL=${_MOCK_HCCL_VAL})
 
-target_compile_options(hccl_fwk_test PRIVATE
+target_compile_options(hcomm_test PRIVATE
     # -U_FORTIFY_SOURCE
     -O0 -g
     # $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
-EnsureSharedOrStub(hccl_fwk HCCL_FWK_TO_LINK)
+EnsureSharedOrStub(hcomm HCCL_FWK_TO_LINK)
 
 EnsureSharedOrStub(hccl HCCL_TO_LINK)
 
 # HCCL_FWK_TO_LINK 要么是真实库路径（字符串），要么是 stub 的 target 名称
-target_link_libraries(hccl_fwk_test PRIVATE ${HCCL_FWK_TO_LINK})
+target_link_libraries(hcomm_test PRIVATE ${HCCL_FWK_TO_LINK})
 
-target_link_libraries(hccl_fwk_test PRIVATE 
+target_link_libraries(hcomm_test PRIVATE 
     ${HCCL_TO_LINK}
     ascendcl) 
 
-target_link_libraries(hccl_fwk_test PRIVATE pthread)
+target_link_libraries(hcomm_test PRIVATE pthread)
 
 message(STATUS "CMake configuration done. Binaries will be placed in ${CMAKE_BINARY_DIR}/bin")
 message(STATUS "ASCEND_HOME_PATH = ${ASCEND_HOME_PATH}")
 
 add_custom_command(
-    TARGET hccl_fwk_test POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/libhccl_fwk.so
+    TARGET hcomm_test POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/libhcomm.so
     COMMAND ${CMAKE_COMMAND} -E remove ${CMAKE_BINARY_DIR}/libhccl.so
 )
 
-message(STATUS "post build: libhccl_fwk.so and libhccl.so will be deleted in ${CMAKE_BINARY_DIR}")
+message(STATUS "post build: libhcomm.so and libhccl.so will be deleted in ${CMAKE_BINARY_DIR}")

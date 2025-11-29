@@ -12,7 +12,7 @@ set(src_list
 )
 
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
 )
 
