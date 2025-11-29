@@ -62,6 +62,7 @@ add_executable(hcomm_test hcomm_test.cpp)
 target_include_directories(hcomm_test PRIVATE
   ${HCOMM_BASE}/inc
   ${HCOMM_BASE}/inc/hccl
+  ${HCOMM_BASE}/pkg_inc
   ${HCOMM_BASE}/src/pub_inc
   ${ACL_INC_DIR}
 )

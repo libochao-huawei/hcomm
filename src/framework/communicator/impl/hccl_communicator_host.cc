@@ -7755,26 +7755,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::LoadIndOpCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-                                                aclrtBinHandle &binHandle)
-    {
-        s64 isOpenCustomSwitch = 0;
-        CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
-                                 HcclRtDeviceInfoType::HCCL_INFO_TYPE_CUST_OP_ENHANCE, isOpenCustomSwitch));
-        if (isOpenCustomSwitch == 1) {
-            HcclResult ret = LoadIndOpBinaryFromFile(binPath, optionType, cpuKernelMode, binHandle, false);
-            CHK_PRT_RET(ret != HCCL_SUCCESS,
-                        HCCL_ERROR("[LoadCustomFile]errNo[0x%016llx]load custom file fail, path[%s] optionType[%u]"
-                                   "cpuKernelMode[%u].",
-                                   ret, binPath, optionType, cpuKernelMode),
-                        ret);
-        } else {
-            binHandle = nullptr;
-            HCCL_RUN_WARNING("[LoadCustomFile]custom switch is not open, please confirm the switch.");
-        }
-        return HCCL_SUCCESS;
-    }
-
     void HcclCommunicator::UnloadBinary(aclrtBinHandle &binHandle)
     {
         if (binHandle != nullptr) {
@@ -7961,9 +7941,9 @@ namespace hccl
         return topoAttr;
     }
 
-    aclrtBinHandle HcclCommunicator::GetBinCustomHandle()
+    aclrtBinHandle HcclCommunicator::GetBinHandle()
     {
-        return binCustomHandle_;
+        return binHandle_;
     }
 
 }

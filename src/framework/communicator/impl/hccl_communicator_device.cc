@@ -1399,12 +1399,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::LoadIndOpCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-        aclrtBinHandle& binHandle)
-    {
-        return HCCL_SUCCESS;
-    }
-
     void HcclCommunicator::UnloadBinary(aclrtBinHandle &binHandle)
     {
         return;
@@ -1449,7 +1443,7 @@ namespace hccl
     {
         return {};
     }
-    aclrtBinHandle HcclCommunicator::GetBinCustomHandle()
+    aclrtBinHandle HcclCommunicator::GetBinHandle()
     {
         return nullptr;
     }

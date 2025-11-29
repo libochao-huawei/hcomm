@@ -1097,8 +1097,8 @@ HcclResult TransportIbverbs::GetIndOpRemoteMemDetails(MemDetails** remoteMem, ui
 
 HcclResult TransportIbverbs::GetIndOpRemoteMem(HcclMem **remoteMem, uint32_t *memNum)
 {
-    CHK_PRT_RET(remoteMem, HCCL_ERROR("[GetIndOpRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
-    CHK_PRT_RET(memNum, HCCL_ERROR("[GetIndOpRemoteMem] memNum is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(remoteMem == nullptr, HCCL_ERROR("[GetIndOpRemoteMem] remoteMem is nullptr"), HCCL_E_PARA);
+    CHK_PRT_RET(memNum == nullptr, HCCL_ERROR("[GetIndOpRemoteMem] memNum is nullptr"), HCCL_E_PARA);
 
     *remoteMem = nullptr;
     *memNum = 0;

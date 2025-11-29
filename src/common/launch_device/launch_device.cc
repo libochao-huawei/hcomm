@@ -45,46 +45,5 @@ HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType opt
 
     return HCCL_SUCCESS;
 }
-
-HcclResult LoadIndOpBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-                                                aclrtBinHandle &binHandle, bool isRelativePath)
-{
-    CHK_PRT_RET(binPath == nullptr,
-        HCCL_ERROR("[Load][Binary]binary path is nullptr"),
-        HCCL_E_PTR);
- 
-    std::string cannPath(binPath); // 存放cann安装路径
-    if (isRelativePath) {
-        std::string libraryPath;
-        HcclResult ret = ParseLibraryPath(libraryPath);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx]parse path fail.", ret), ret);
- 
-        ret = GetKeyWordPath(libraryPath, "/hccl", cannPath);
-        CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[LoadBinaryFromFile]cannot found version file in %s.", libraryPath.c_str()),
-            HCCL_E_PARA);
-        cannPath += binPath;
-    }
- 
-    char realPath[PATH_MAX] = {0};
-    CHK_PRT_RET(realpath(cannPath.c_str(), realPath) == nullptr,
-        HCCL_ERROR("LoadBinaryFromFile: %s is not a valid real path, err[%d]", cannPath.c_str(), errno),
-        HCCL_E_INTERNAL);
-    HCCL_INFO("[LoadBinaryFromFile]realPath: %s", realPath);
- 
-    aclrtBinaryLoadOptions loadOptions = {0};
-    aclrtBinaryLoadOption option;
-    loadOptions.numOpt = 1;
-    loadOptions.options = &option;
-    option.type = optionType;
-    option.value.cpuKernelMode = cpuKernelMode;
-    aclError aclRet = aclrtBinaryLoadFromFile(realPath, &loadOptions, &binHandle); // ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE
-    CHK_PRT_RET(aclRet != ACL_SUCCESS,
-        HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx] load binary from file error.", aclRet),
-        HCCL_E_OPEN_FILE_FAILURE);
-        
-    return HCCL_SUCCESS;
-}
  
 }   // ~~ namespace hccl
