@@ -365,7 +365,6 @@ u32 GetNotifyMaxWaitTime()
     return notifyMaxWaitTime;
 }
 
-#ifndef OPEN_HCCL_TEST
 HcclResult IsSupportAtomicWrite(DevType deviceType, u32 devicePhyId, bool& isSupportAtomicWrite)
 {
     if (deviceType == DevType::DEV_TYPE_910_93) {
@@ -382,5 +381,4 @@ HcclResult IsSupportAtomicWrite(DevType deviceType, u32 devicePhyId, bool& isSup
     }
     return HCCL_SUCCESS;
 }
-#endif
 }

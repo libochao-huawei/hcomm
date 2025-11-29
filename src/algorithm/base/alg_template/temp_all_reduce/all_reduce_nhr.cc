@@ -143,10 +143,6 @@ HcclResult AllReduceNHR::RunAllGather(u32 rank, u32 rankSize, const std::vector<
         "count[%llu] planeID:[%d]", rank, inputMem_.ptr(), outputMem_.ptr(), outputMem_.size(),
         count_, profilerInput_.planeID);
 
-    if (!barrierSwitchOn_) {
-        tempAlg->CloseBarrier();
-    }
-
     CHK_RET(tempAlg->Prepare(inputMem_, outputMem_, outputMem_, count_, dataType_, stream_,
         reductionOp_, root_, slices_, baseOffset_));
 

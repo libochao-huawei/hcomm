@@ -56,6 +56,7 @@
 #include "topoinfo_ranktableParser_pub.h"
 #include "tsd/tsd_client.h"
 #include "dltdt_function.h"
+#include "dlra_function.h"
 #include <unistd.h>
 #include "externalinput_pub.h"
 #include "v80_rank_table.h"
@@ -87,6 +88,7 @@ protected:
     {
         static s32  call_cnt = 0;
         DlTdtFunction::GetInstance().DlTdtFunctionInit();
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         TsdOpen(1,2);
         string name =std::to_string(call_cnt++) +"_" + __PRETTY_FUNCTION__;
         ra_set_shm_name(name .c_str());

@@ -262,7 +262,6 @@ HcclResult CollAllReduceOrderPreservedExecutor::RunAllGatherLevel1(const OpParam
     } else {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-        level1TempAlg->CloseBarrier();
         HCCL_INFO("AllGather mesh: using nhr algo inter-server.");
     }
 

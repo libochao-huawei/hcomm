@@ -101,7 +101,6 @@ HcclResult CollAllGatherMeshGraphExecutor::KernelRun(const OpParam &param, ExecM
         HCCL_INFO("AllGather mesh: using ring algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
 		level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-		level1TempAlg->CloseBarrier();
         HCCL_INFO("AllGather mesh: using nhr algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
 		level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_NHRV1, dispatcher_);

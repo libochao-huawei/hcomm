@@ -143,7 +143,6 @@ HcclResult CollAllGatherAivRdmaExecutor::KernelRun(const OpParam &param, ExecMem
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         innerExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-        innerExecutor->CloseBarrier();
         HCCL_INFO("AllGather mesh: using nhr algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         innerExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(

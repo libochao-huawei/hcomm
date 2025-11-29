@@ -33,6 +33,7 @@
 #include "coll_reduce_mesh_executor.h"
 #undef private
 #undef protected
+#include "dlra_function.h"
 #include "llt_hccl_stub_sal_pub.h"
 
 using namespace hccl;
@@ -46,6 +47,7 @@ protected:
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "HcclImplAlgTestNHR SetUP" << std::endl;
     }
     static void TearDownTestCase()

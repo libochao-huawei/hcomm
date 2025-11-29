@@ -428,12 +428,15 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable())
         && ((isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB)
         || (!isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_2_MB))));
+    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB); // 涉及ROCE平面
+
     isHccsPlusSio = false; //待1520出版本
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
     } else if (multiModuleDiffDeviceNumMode_) {
         algName = "ReduceScatterComm";
-    } else if (useHostComm || (smallCountOptimMultiServer && !isPowOfTwo &&
+    } else if (smallCountOptimMultiPod || useHostComm || (smallCountOptimMultiServer && !isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_256_KB))) {
         algName = "ReduceScatterComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;

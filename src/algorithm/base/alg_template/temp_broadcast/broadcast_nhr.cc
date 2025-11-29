@@ -58,9 +58,7 @@ HcclResult BroadcastNHR::RunAsync(const u32 rank, const u32 rankSize,
         TemplateType::TEMPLATE_SCATTER_NHR, dispatcher_);
     CHK_SMART_PTR_NULL(tempAlgScatter);
     CHK_RET(tempAlgScatter->Prepare(true));
-    if (!barrierSwitchOn_) {
-        tempAlgScatter->CloseBarrier();
-    }
+    tempAlgScatter->CloseBarrier();
     CHK_RET(tempAlgScatter->Prepare(srcMem, srcMem, srcMem, count_, dataType_, stream_,
         reductionOp_, root_, slices_, baseOffset_));
 
@@ -73,9 +71,6 @@ HcclResult BroadcastNHR::RunAsync(const u32 rank, const u32 rankSize,
         TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
     CHK_SMART_PTR_NULL(tempAlgAllgather);
     CHK_RET(tempAlgAllgather->Prepare(true));
-    if (!barrierSwitchOn_) {
-        tempAlgAllgather->CloseBarrier();
-    }
     CHK_RET(tempAlgAllgather->Prepare(srcMem, srcMem, srcMem, count_, dataType_, stream_,
         reductionOp_, root_, slices_, baseOffset_));
 

@@ -296,6 +296,9 @@ HcclResult CollReduceScatterRingZerocopyExecutor::KernelRunInterServer(const OpP
                 TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
             CHK_SMART_PTR_NULL(level2TempAlg);
             CHK_RET(level2TempAlg->Prepare(reduceAttr, false));
+            if (algoAttr_.isSupportAtomicWrite) {
+                level2TempAlg->CloseBarrier();
+            }
             HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NHR in COMM_LEVEL2", __func__);
         } else {
             HCCL_ERROR("ReduceScatter ring: unsupported level2 algtype [%s]", AlgTypeToStr(algType_).c_str());

@@ -15,7 +15,7 @@
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
 #include "llt_hccl_stub_pub.h"
-
+#include "dlra_function.h"
 
 #define private public
 #define protected public
@@ -36,6 +36,7 @@ class CollScatterST : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "CollScatterST set up." << std::endl;
     }
 

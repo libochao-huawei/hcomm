@@ -159,10 +159,6 @@ HcclResult ScatterNHR::RdmaTxRx(LINK &linkLeft, LINK &linkRight, InterServerAlgo
         ret = linkLeft->PostFinAck(stream_);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ScatterNHR][RunScatterNHR] PostFinAck failed"), ret);
     }
-
-    if (barrierSwitchOn_) {
-        CHK_RET(ExecuteBarrier(linkLeft, linkRight));
-    }
     return HCCL_SUCCESS;
 }
 
@@ -302,27 +298,6 @@ HcclResult ScatterNHR::GetStepInfo(u32 step, u32 nSteps, u32 rank, u32 rankSize,
         stepInfo.fromRank = recvFrom;
         stepInfo.nSlices = nSlices;
     }
-    return HCCL_SUCCESS;
-}
-
-HcclResult ScatterNHR::ExecuteBarrier(const std::shared_ptr<Transport> &preLink,
-    const std::shared_ptr<Transport> &aftLink)
-{
-    if (preLink != nullptr) {
-        CHK_RET(preLink->TxAck(stream_));
-    }
-    if (aftLink != nullptr) {
-        CHK_RET(aftLink->RxAck(stream_));
-        CHK_RET(aftLink->TxDataSignal(stream_));
-    }
-    if (preLink != nullptr) {
-        CHK_RET(preLink->RxDataSignal(stream_));
-        CHK_RET(preLink->PostFinAck(stream_));
-    }
-    if (aftLink != nullptr) {
-        CHK_RET(aftLink->WaitFinAck(stream_));
-    }
-
     return HCCL_SUCCESS;
 }
 
