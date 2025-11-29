@@ -57,133 +57,133 @@ struct host_roce_notify_info {
 
 #define HOST_CDEV_IOC_FREE_NOTIFY _IOWR(HOST_CDEV_IOC_MAGIC, 1, struct host_roce_notify_info)
 
-int ra_peer_socket_batch_connect(unsigned int dev_id, struct socket_connect_info_t conn[], unsigned int num);
+int RaPeerSocketBatchConnect(unsigned int devId, struct socket_connect_info_t conn[], unsigned int num);
 
-int ra_peer_socket_batch_close(unsigned int dev_id, struct socket_close_info_t conn[], unsigned int num);
+int RaPeerSocketBatchClose(unsigned int devId, struct socket_close_info_t conn[], unsigned int num);
 
-int ra_peer_socket_batch_abort(unsigned int dev_id, struct socket_connect_info_t conn[], unsigned int num);
+int RaPeerSocketBatchAbort(unsigned int devId, struct socket_connect_info_t conn[], unsigned int num);
 
-int ra_peer_socket_listen_start(unsigned int dev_id, struct socket_listen_info_t conn[], unsigned int num);
+int RaPeerSocketListenStart(unsigned int devId, struct socket_listen_info_t conn[], unsigned int num);
 
-int ra_peer_socket_listen_stop(unsigned int dev_id, struct socket_listen_info_t conn[], unsigned int num);
+int RaPeerSocketListenStop(unsigned int devId, struct socket_listen_info_t conn[], unsigned int num);
 
-int ra_peer_get_sockets(unsigned int phy_id, unsigned int role, struct socket_info_t conn[], unsigned int num);
+int RaPeerGetSockets(unsigned int phyId, unsigned int role, struct socket_info_t conn[], unsigned int num);
 
-int ra_peer_socket_send(unsigned int dev_id, const void *handle, const void *data, unsigned long long size);
+int RaPeerSocketSend(unsigned int devId, const void *handle, const void *data, unsigned long long size);
 
-int ra_peer_socket_recv(unsigned int dev_id, const void *handle, void *data, unsigned long long size);
+int RaPeerSocketRecv(unsigned int devId, const void *handle, void *data, unsigned long long size);
 
-int ra_peer_epoll_ctl_add(const void *fd_handle, enum RaEpollEvent event);
+int RaPeerEpollCtlAdd(const void *fdHandle, enum RaEpollEvent event);
 
-int ra_peer_epoll_ctl_mod(const void *fd_handle, enum RaEpollEvent event);
+int RaPeerEpollCtlMod(const void *fdHandle, enum RaEpollEvent event);
 
-int ra_peer_epoll_ctl_del(const void *fd_handle);
+int RaPeerEpollCtlDel(const void *fdHandle);
 
-void ra_peer_set_tcp_recv_callback(unsigned int phy_id, const void *callback);
+void RaPeerSetTcpRecvCallback(unsigned int phyId, const void *callback);
 
-int ra_peer_socket_white_list_add(struct rdev rdev_info, struct socket_wlist_info_t white_list[], unsigned int num);
+int RaPeerSocketWhiteListAdd(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[], unsigned int num);
 
-int ra_peer_socket_white_list_del(struct rdev rdev_info, struct socket_wlist_info_t white_list[], unsigned int num);
+int RaPeerSocketWhiteListDel(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[], unsigned int num);
 
-int ra_peer_socket_deinit(struct rdev rdev_info);
+int RaPeerSocketDeinit(struct rdev rdevInfo);
 
-int ra_peer_qp_create(struct ra_rdma_handle *rdma_handle, int flag, int qp_mode, void **qp_handle);
+int RaPeerQpCreate(struct ra_rdma_handle *rdmaHandle, int flag, int qpMode, void **qpHandle);
 
-int ra_peer_qp_create_with_attrs(struct ra_rdma_handle *rdma_handle, struct qp_ext_attrs *ext_attrs, void **qp_handle);
+int RaPeerQpCreateWithAttrs(struct ra_rdma_handle *rdmaHandle, struct qp_ext_attrs *extAttrs, void **qpHandle);
 
-int ra_peer_loopback_qp_create(struct ra_rdma_handle *rdma_handle, struct loopback_qp_pair *qp_pair, void **qp_handle);
+int RaPeerLoopbackQpCreate(struct ra_rdma_handle *rdmaHandle, struct loopback_qp_pair *qpPair, void **qpHandle);
 
-int ra_peer_qp_destroy(struct ra_qp_handle *qp_peer);
+int RaPeerQpDestroy(struct ra_qp_handle *qpPeer);
 
-int ra_peer_typical_qp_modify(struct ra_qp_handle *qp_peer, struct typical_qp *local_qp_info,
-    struct typical_qp *remote_qp_info);
+int RaPeerTypicalQpModify(struct ra_qp_handle *qpPeer, struct typical_qp *localQpInfo,
+    struct typical_qp *remoteQpInfo);
 
-int ra_peer_qp_connect_async(struct ra_qp_handle *qp_peer, const void *sock_handle);
+int RaPeerQpConnectAsync(struct ra_qp_handle *qpPeer, const void *sockHandle);
 
-int ra_peer_get_qp_status(struct ra_qp_handle *qp_peer, int *status);
+int RaPeerGetQpStatus(struct ra_qp_handle *qpPeer, int *status);
 
-int ra_peer_mr_reg(struct ra_qp_handle *qp_peer, struct mr_info *info);
+int RaPeerMrReg(struct ra_qp_handle *qpPeer, struct mr_info *info);
 
-int ra_peer_mr_dereg(struct ra_qp_handle *qp_peer, struct mr_info *info);
+int RaPeerMrDereg(struct ra_qp_handle *qpPeer, struct mr_info *info);
 
-int ra_peer_register_mr(struct ra_rdma_handle *rdma_peer, struct mr_info *info, void **mr_handle);
+int RaPeerRegisterMr(struct ra_rdma_handle *rdmaPeer, struct mr_info *info, void **mrHandle);
 
-int ra_peer_deregister_mr(struct ra_rdma_handle *rdma_peer, void *mr_handle);
+int RaPeerDeregisterMr(struct ra_rdma_handle *rdmaPeer, void *mrHandle);
 
-int ra_peer_send_wr(struct ra_qp_handle *qp_peer, struct send_wr *wr, struct send_wr_rsp *op_rsp);
+int RaPeerSendWr(struct ra_qp_handle *qpPeer, struct send_wr *wr, struct send_wr_rsp *opRsp);
 
-int ra_peer_send_wrlist(struct ra_qp_handle *qp_handle, struct send_wrlist_data wr[], struct send_wr_rsp op_rsp[],
-    struct wrlist_send_complete_num wrlist_num);
+int RaPeerSendWrlist(struct ra_qp_handle *qpHandle, struct send_wrlist_data wr[], struct send_wr_rsp opRsp[],
+    struct wrlist_send_complete_num wrlistNum);
 
-int ra_peer_recv_wrlist(struct ra_qp_handle *qp_handle, struct recv_wrlist_data *wr, unsigned int recv_num,
-    unsigned int *complete_num);
+int RaPeerRecvWrlist(struct ra_qp_handle *qpHandle, struct recv_wrlist_data *wr, unsigned int recvNum,
+    unsigned int *completeNum);
 
-int ra_peer_get_notify_base_addr(struct ra_rdma_handle *handle, unsigned long long *va, unsigned long long *size);
+int RaPeerGetNotifyBaseAddr(struct ra_rdma_handle *handle, unsigned long long *va, unsigned long long *size);
 
-int ra_peer_init(struct ra_init_config *cfg, unsigned int white_list_status);
+int RaPeerInit(struct ra_init_config *cfg, unsigned int whiteListStatus);
 
-int ra_peer_get_tls_enable(unsigned int phy_id, bool *tls_enable);
+int RaPeerGetTlsEnable(unsigned int phyId, bool *tlsEnable);
 
-int ra_peer_get_sec_random(unsigned int *value);
+int RaPeerGetSecRandom(unsigned int *value);
 
-int ra_peer_deinit(struct ra_init_config *cfg);
+int RaPeerDeinit(struct ra_init_config *cfg);
 
-int ra_peer_get_ifnum(unsigned int phy_id, unsigned int *num);
+int RaPeerGetIfnum(unsigned int phyId, unsigned int *num);
 
-int ra_peer_get_ifaddrs(unsigned int phy_id, struct interface_info interface_infos[], unsigned int *num);
+int RaPeerGetIfaddrs(unsigned int phyId, struct interface_info interfaceInfos[], unsigned int *num);
 
-int ra_peer_rdev_init(
-    struct ra_rdma_handle *rdma_handle, unsigned int notify_type, struct rdev rdev_info, unsigned int *rdev_index);
+int RaPeerRdevInit(
+    struct ra_rdma_handle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex);
 
-int ra_peer_rdev_deinit(struct ra_rdma_handle *rdma_handle, unsigned int notify_type);
+int RaPeerRdevDeinit(struct ra_rdma_handle *rdmaHandle, unsigned int notifyType);
 
-int host_notify_base_addr_init(unsigned int phy_id);
+int HostNotifyBaseAddrInit(unsigned int phyId);
 
-int ra_peer_notify_base_addr_init(unsigned int notify_type, unsigned int phy_id);
+int RaPeerNotifyBaseAddrInit(unsigned int notifyType, unsigned int phyId);
 
-int host_notify_base_addr_uninit(unsigned int phy_id);
+int HostNotifyBaseAddrUninit(unsigned int phyId);
 
-int notify_base_addr_uninit(unsigned int notify_type, unsigned int phy_id);
+int NotifyBaseAddrUninit(unsigned int notifyType, unsigned int phyId);
 
-int ra_peer_set_tsqp_depth(struct ra_rdma_handle *rdma_handle, unsigned int temp_depth, unsigned int *qp_num);
+int RaPeerSetTsqpDepth(struct ra_rdma_handle *rdmaHandle, unsigned int tempDepth, unsigned int *qpNum);
 
-int ra_peer_get_tsqp_depth(struct ra_rdma_handle *rdma_handle, unsigned int *temp_depth, unsigned int *qp_num);
+int RaPeerGetTsqpDepth(struct ra_rdma_handle *rdmaHandle, unsigned int *tempDepth, unsigned int *qpNum);
 
-int ra_peer_get_qp_context(struct ra_qp_handle *qp_peer, void** qp, void** send_cq, void** recv_cq);
+int RaPeerGetQpContext(struct ra_qp_handle *qpPeer, void** qp, void** sendCq, void** recvCq);
 
-int ra_peer_normal_qp_create(struct ra_rdma_handle *rdma_handle, struct ibv_qp_init_attr *qp_init_attr,
-    void **qp_handle, void** qp);
+int RaPeerNormalQpCreate(struct ra_rdma_handle *rdmaHandle, struct ibv_qp_init_attr *qpInitAttr,
+    void **qpHandle, void** qp);
 
-int ra_peer_normal_qp_destroy(struct ra_qp_handle *qp_peer);
+int RaPeerNormalQpDestroy(struct ra_qp_handle *qpPeer);
 
-int ra_peer_cq_create(struct ra_rdma_handle *rdma_handle, struct cq_attr *attr);
+int RaPeerCqCreate(struct ra_rdma_handle *rdmaHandle, struct cq_attr *attr);
 
-int ra_peer_cq_destroy(struct ra_rdma_handle *rdma_handle, struct cq_attr *attr);
+int RaPeerCqDestroy(struct ra_rdma_handle *rdmaHandle, struct cq_attr *attr);
 
-int ra_peer_set_qp_attr_qos(struct ra_qp_handle *qp_peer, struct qos_attr *attr);
+int RaPeerSetQpAttrQos(struct ra_qp_handle *qpPeer, struct qos_attr *attr);
 
-int ra_peer_set_qp_attr_timeout(struct ra_qp_handle *qp_peer, unsigned int *timeout);
+int RaPeerSetQpAttrTimeout(struct ra_qp_handle *qpPeer, unsigned int *timeout);
 
-int ra_peer_set_qp_attr_retry_cnt(struct ra_qp_handle *qp_peer, unsigned int *retry_cnt);
+int RaPeerSetQpAttrRetryCnt(struct ra_qp_handle *qpPeer, unsigned int *retryCnt);
 
-int ra_peer_create_comp_channel(struct ra_rdma_handle *rdma_handle, void** comp_channel);
+int RaPeerCreateCompChannel(struct ra_rdma_handle *rdmaHandle, void** compChannel);
 
-int ra_peer_destroy_comp_channel(void* comp_channel);
+int RaPeerDestroyCompChannel(void* compChannel);
 
-int ra_peer_create_srq(struct ra_rdma_handle *rdma_handle, struct srq_attr *attr);
+int RaPeerCreateSrq(struct ra_rdma_handle *rdmaHandle, struct srq_attr *attr);
 
-int ra_peer_destroy_srq(struct ra_rdma_handle *rdma_handle, struct srq_attr *attr);
+int RaPeerDestroySrq(struct ra_rdma_handle *rdmaHandle, struct srq_attr *attr);
 
-int ra_peer_create_event_handle(int *event_handle);
+int RaPeerCreateEventHandle(int *eventHandle);
 
-int ra_peer_ctl_event_handle(int event_handle, const void *fd_handle, int opcode, enum RaEpollEvent event);
+int RaPeerCtlEventHandle(int eventHandle, const void *fdHandle, int opcode, enum RaEpollEvent event);
 
-int ra_peer_wait_event_handle(int event_handle, struct socket_event_info *event_infos, int timeout,
-    unsigned int maxevents, unsigned int *events_num);
+int RaPeerWaitEventHandle(int eventHandle, struct socket_event_info *eventInfos, int timeout,
+    unsigned int maxevents, unsigned int *eventsNum);
 
-int ra_peer_destroy_event_handle(int *event_handle);
+int RaPeerDestroyEventHandle(int *eventHandle);
 
-void ra_peer_mutex_lock(unsigned int phy_id);
+void RaPeerMutexLock(unsigned int phyId);
 
-void ra_peer_mutex_unlock(unsigned int phy_id);
+void RaPeerMutexUnlock(unsigned int phyId);
 #endif // RA_PEER_H

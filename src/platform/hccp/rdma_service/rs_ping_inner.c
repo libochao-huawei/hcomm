@@ -11,18 +11,18 @@
 #include "user_log.h"
 #include "rs_ping_inner.h"
 
-uint32_t rs_ping_get_trip_time(struct rs_ping_timestamp *timestamp)
+uint32_t RsPingGetTripTime(struct rs_ping_timestamp *timestamp)
 {
-    uint64_t local_interval = ((timestamp->tv_sec4 - timestamp->tv_sec1) * RS_PING_SEC_TO_USEC + timestamp->tv_usec4) -
+    uint64_t localInterval = ((timestamp->tv_sec4 - timestamp->tv_sec1) * RS_PING_SEC_TO_USEC + timestamp->tv_usec4) -
         timestamp->tv_usec1;
-    uint64_t remote_interval = ((timestamp->tv_sec3 - timestamp->tv_sec2) * RS_PING_SEC_TO_USEC + timestamp->tv_usec3) -
+    uint64_t remoteInterval = ((timestamp->tv_sec3 - timestamp->tv_sec2) * RS_PING_SEC_TO_USEC + timestamp->tv_usec3) -
         timestamp->tv_usec2;
 
     hccp_dbg("t1:{%llu, %llu} t4:{%llu, %llu} t4-t1:%llu, t2:{%llu, %llu} t3:{%llu, %llu} t3-t2:%llu, rtt:%u",
         timestamp->tv_sec1, timestamp->tv_usec1,
-        timestamp->tv_sec4, timestamp->tv_usec4, local_interval,
+        timestamp->tv_sec4, timestamp->tv_usec4, localInterval,
         timestamp->tv_sec2, timestamp->tv_usec2,
-        timestamp->tv_sec3, timestamp->tv_usec3, remote_interval, (uint32_t)(local_interval - remote_interval));
+        timestamp->tv_sec3, timestamp->tv_usec3, remoteInterval, (uint32_t)(localInterval - remoteInterval));
 
-    return (uint32_t)(local_interval - remote_interval);
+    return (uint32_t)(localInterval - remoteInterval);
 }

@@ -31,8 +31,8 @@ struct ra_hdc_async_info {
     struct ra_hdc_thread_pool *pool;
 };
 
-int ra_hw_async_init(unsigned int chip_id, pid_t pid);
-void ra_hw_async_deinit(void);
-int ra_rs_async_hdc_session_connect(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_async_hdc_session_close(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+int RaHwAsyncInit(unsigned int chipId, pid_t pid);
+void RaHwAsyncDeinit(void);
+int RaRsAsyncHdcSessionConnect(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsAsyncHdcSessionClose(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 #endif // RA_ADP_ASYNC_H

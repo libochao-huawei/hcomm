@@ -29,8 +29,8 @@
 #include "rs.h"
 #include "rs_inner.h"
 
-int rs_drv_connect(int fd, struct rs_ip_addr_info *server_ip, struct rs_ip_addr_info *client_ip, uint16_t port);
-int rs_drv_socket_send(int fd, const void *data, uint64_t size, int flags);
-int rs_drv_socket_recv(int fd, void *data, uint64_t size, int flags);
-int rs_drv_ssl_bind_fd(struct rs_conn_info *conn, int fd);
+int RsDrvConnect(int fd, struct rs_ip_addr_info *serverIp, struct rs_ip_addr_info *clientIp, uint16_t port);
+int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags);
+int RsDrvSocketRecv(int fd, void *data, uint64_t size, int flags);
+int RsDrvSslBindFd(struct rs_conn_info *conn, int fd);
 #endif // RS_DRV_SOCKET_H

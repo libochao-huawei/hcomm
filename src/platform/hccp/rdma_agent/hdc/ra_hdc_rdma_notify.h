@@ -58,8 +58,8 @@ union op_notify_cfg_get_data {
     } rx_data;
 };
 
-int ra_hdc_get_notify_base_addr(struct ra_rdma_handle *rdma_handle, unsigned long long *va, unsigned long long *size);
-int ra_hdc_get_notify_mr_info(struct ra_rdma_handle *rdma_handle, struct mr_info *info);
-int ra_hdc_notify_cfg_set(unsigned int phy_id, unsigned long long va, unsigned long long size);
-int ra_hdc_notify_cfg_get(unsigned int phy_id, unsigned long long *va, unsigned long long *size);
+int RaHdcGetNotifyBaseAddr(struct ra_rdma_handle *rdmaHandle, unsigned long long *va, unsigned long long *size);
+int RaHdcGetNotifyMrInfo(struct ra_rdma_handle *rdmaHandle, struct mr_info *info);
+int RaHdcNotifyCfgSet(unsigned int phyId, unsigned long long va, unsigned long long size);
+int RaHdcNotifyCfgGet(unsigned int phyId, unsigned long long *va, unsigned long long *size);
 #endif // RA_HDC_RDMA_NOTIFY_H

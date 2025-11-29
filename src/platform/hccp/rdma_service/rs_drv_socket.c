@@ -27,11 +27,11 @@
 #include "rs_drv_socket.h"
 #include "ssl_adp.h"
 
-int rs_drv_ssl_bind_fd(struct rs_conn_info *conn, int fd)
+int RsDrvSslBindFd(struct rs_conn_info *conn, int fd)
 {
     int ret;
     if (conn->ssl == NULL) {
-        conn->ssl = ssl_adp_new(g_rs_cb->client_ssl_ctx);
+        conn->ssl = ssl_adp_new(gRsCb->client_ssl_ctx);
         CHK_PRT_RETURN(conn->ssl == NULL, hccp_err("server ssl ctx alloc failed"), -ENOMEM);
     }
 
@@ -52,32 +52,32 @@ out:
     return -EINVAL;
 }
 
-int rs_drv_connect(int fd, struct rs_ip_addr_info *server_ip, struct rs_ip_addr_info *client_ip, uint16_t port)
+int RsDrvConnect(int fd, struct rs_ip_addr_info *serverIp, struct rs_ip_addr_info *clientIp, uint16_t port)
 {
     int ret;
-    int err_no;
-    union rs_socketaddr client_addr = { 0 };
-    socklen_t client_addr_len = 0;
-    uint16_t client_port = 0;
+    int errNo;
+    union rs_socketaddr clientAddr = { 0 };
+    socklen_t clientAddrLen = 0;
+    uint16_t clientPort = 0;
 
-    hccp_info("IP(%s) port %d family %d fd:%d begin", server_ip->read_addr, port, client_ip->family, fd);
-    if (client_ip->family == AF_INET) {
+    hccp_info("IP(%s) port %d family %d fd:%d begin", serverIp->read_addr, port, clientIp->family, fd);
+    if (clientIp->family == AF_INET) {
         struct sockaddr_in addr = {0};
-        addr.sin_family = client_ip->family;
+        addr.sin_family = clientIp->family;
         addr.sin_port = htons(port);
-        addr.sin_addr = server_ip->bin_addr.addr;
+        addr.sin_addr = serverIp->bin_addr.addr;
         ret = connect(fd, &addr, sizeof(addr));
     } else {
         struct sockaddr_in6 addr = {0};
-        addr.sin6_family = client_ip->family;
+        addr.sin6_family = clientIp->family;
         addr.sin6_port = htons(port);
-        addr.sin6_addr = server_ip->bin_addr.addr6;
+        addr.sin6_addr = serverIp->bin_addr.addr6;
         ret = connect(fd, &addr, sizeof(addr));
     }
 
     if (ret) {
-        err_no = errno;
-        if (err_no == -EISCONN) {
+        errNo = errno;
+        if (errNo == -EISCONN) {
             goto out;
         }
 
@@ -85,43 +85,43 @@ int rs_drv_connect(int fd, struct rs_ip_addr_info *server_ip, struct rs_ip_addr_
          * if the errno is EINTR, it can not retry directly,
          * otherwise it will directly return an error
          */
-        hccp_warn("connect not success, need to try again! server IP:%s, port:%d, fd:%d, ret:%d, err_no:%d",
-            server_ip->read_addr, port, fd, ret, err_no);
+        hccp_warn("connect not success, need to try again! server IP:%s, port:%d, fd:%d, ret:%d, errNo:%d",
+            serverIp->read_addr, port, fd, ret, errNo);
 
-        return -err_no;
+        return -errNo;
     }
 
 out:
-    client_addr_len = (client_ip->family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
-    getsockname(fd, (struct sockaddr *)&client_addr, &client_addr_len);
-    client_port =
-        (client_ip->family == AF_INET) ? ntohs(client_addr.s_addr.sin_port) : ntohs(client_addr.s_addr6.sin6_port);
+    clientAddrLen = (clientIp->family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+    getsockname(fd, (struct sockaddr *)&clientAddr, &clientAddrLen);
+    clientPort =
+        (clientIp->family == AF_INET) ? ntohs(clientAddr.s_addr.sin_port) : ntohs(clientAddr.s_addr6.sin6_port);
 
-    if ((client_port < 60000) || (client_port > 60015)) { // HCCL默认监听60000-60015端口,如client使用该端口，记录EVENT日志
-        hccp_info("client connect success. client family %d addr %s:%u, server addr %s:%u, fd:%d", client_ip->family,
-            client_ip->read_addr, client_port, server_ip->read_addr, port, fd);
+    if ((clientPort < 60000) || (clientPort > 60015)) { // HCCL默认监听60000-60015端口,如client使用该端口，记录EVENT日志
+        hccp_info("client connect success. client family %d addr %s:%u, server addr %s:%u, fd:%d", clientIp->family,
+            clientIp->read_addr, clientPort, serverIp->read_addr, port, fd);
     } else {
         hccp_run_info("client connect success. client family %d addr %s:%u, server addr %s:%u, fd:%d",
-            client_ip->family, client_ip->read_addr, client_port, server_ip->read_addr, port, fd);
+            clientIp->family, clientIp->read_addr, clientPort, serverIp->read_addr, port, fd);
     }
 
     return 0;
 }
 
-int rs_drv_socket_send(int fd, const void *data, uint64_t size, int flags)
+int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
 {
     int ret = 0;
-    int err_no;
+    int errNo;
 
     CHK_PRT_RETURN(fd < 0 || size == 0 || data == NULL, hccp_err("param error ! fd:%d < 0, size:%llu or data is NULL",
         fd, size), -EINVAL);
 
-    if (g_rs_cb->ssl_enable == RS_SSL_ENABLE) {
+    if (gRsCb->ssl_enable == RS_SSL_ENABLE) {
 #ifdef CONFIG_SSL
         int err;
         struct rs_conn_info *conn = NULL;
 
-        ret = rs_fd2conn(fd, &conn);
+        ret = RsFd2conn(fd, &conn);
         CHK_PRT_RETURN(ret, hccp_err("fd to conn failed, ret:%d", ret), ret);
         ret = ssl_adp_write(conn->ssl, data, size);
         if (ret <= 0) {
@@ -135,12 +135,12 @@ int rs_drv_socket_send(int fd, const void *data, uint64_t size, int flags)
     } else {
         ret = send(fd, data, size, flags);
         if (ret < 0) {
-            err_no = errno;
-            if (err_no == EAGAIN || err_no == EINTR) {
-                hccp_dbg("send to fd:%d need retry, send size:%llu, ret:%d, errno:%d", fd, size, ret, err_no);
+            errNo = errno;
+            if (errNo == EAGAIN || errNo == EINTR) {
+                hccp_dbg("send to fd:%d need retry, send size:%llu, ret:%d, errno:%d", fd, size, ret, errNo);
                 ret = -EAGAIN;
             } else {
-                hccp_warn("send to fd:%d not success, send size:%llu, ret:%d, errno:%d", fd, size, ret, err_no);
+                hccp_warn("send to fd:%d not success, send size:%llu, ret:%d, errno:%d", fd, size, ret, errNo);
                 ret = -EFILEOPER;
             }
         }
@@ -149,20 +149,20 @@ int rs_drv_socket_send(int fd, const void *data, uint64_t size, int flags)
     return ret;
 }
 
-int rs_drv_socket_recv(int fd, void *data, uint64_t size, int flags)
+int RsDrvSocketRecv(int fd, void *data, uint64_t size, int flags)
 {
     int ret = 0;
-    int err_no;
+    int errNo;
 
     CHK_PRT_RETURN(fd < 0 || data == NULL || size == 0, hccp_err("param error ! fd:%d < 0 or data is NULL, size:%llu",
         fd, size), -EINVAL);
 
-    if (g_rs_cb->ssl_enable == RS_SSL_ENABLE) {
+    if (gRsCb->ssl_enable == RS_SSL_ENABLE) {
 #ifdef CONFIG_SSL
         int err;
         struct rs_conn_info *conn = NULL;
 
-        ret = rs_fd2conn(fd, &conn);
+        ret = RsFd2conn(fd, &conn);
         CHK_PRT_RETURN(ret, hccp_warn("can not find conn for fd[%d], ret:%d, the local fd may have been closed ",
             fd, ret), ret);
         ret = ssl_adp_read(conn->ssl, data, size);
@@ -177,12 +177,12 @@ int rs_drv_socket_recv(int fd, void *data, uint64_t size, int flags)
     } else {
         ret = recv(fd, data, size, flags);
         if (ret < 0) {
-            err_no = errno;
+            errNo = errno;
             // not to print to avoid log flush
-            if (err_no == EAGAIN || err_no == EINTR) {
+            if (errNo == EAGAIN || errNo == EINTR) {
                 ret = -EAGAIN;
             } else {
-                hccp_warn("recv for fd:%d not success, recv size:%llu, ret:%d, err_no:%d", fd, size, ret, err_no);
+                hccp_warn("recv for fd:%d not success, recv size:%llu, ret:%d, errNo:%d", fd, size, ret, errNo);
                 ret = -EFILEOPER;
             }
         }

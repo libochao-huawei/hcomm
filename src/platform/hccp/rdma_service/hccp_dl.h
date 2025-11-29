@@ -25,7 +25,7 @@
     } \
 } while (0)
 
-void *hccp_dlopen(const char *libName, int mode);
-void *hccp_dlsym(void *handle, const char *funcName);
-int hccp_dlclose(void *handle);
+void *HccpDlopen(const char *libName, int mode);
+void *HccpDlsym(void *handle, const char *funcName);
+int HccpDlclose(void *handle);
 #endif // HCCP_DL_H

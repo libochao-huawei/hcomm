@@ -14,19 +14,19 @@
 #include "ra_hdc_async.h"
 #include "hccp_async.h"
 
-HCCP_ATTRI_VISI_DEF int ra_get_async_req_result(void *req_handle, int *req_result)
+HCCP_ATTRI_VISI_DEF int RaGetAsyncReqResult(void *reqHandle, int *reqResult)
 {
-    struct ra_request_handle *req_handle_tmp = NULL;
+    struct ra_request_handle *reqHandleTmp = NULL;
 
-    CHK_PRT_RETURN(req_handle == NULL || req_result == NULL, hccp_err("[get][async]req_handle or req_result is NULL"),
-        conver_return_code(OTHERS, -EINVAL));
+    CHK_PRT_RETURN(reqHandle == NULL || reqResult == NULL, hccp_err("[get][async]req_handle or req_result is NULL"),
+        ConverReturnCode(OTHERS, -EINVAL));
 
-    req_handle_tmp = (struct ra_request_handle *)req_handle;
-    if (!req_handle_tmp->is_done){
-        return conver_return_code(OTHERS, -EAGAIN);
+    reqHandleTmp = (struct ra_request_handle *)reqHandle;
+    if (!reqHandleTmp->is_done){
+        return ConverReturnCode(OTHERS, -EAGAIN);
     }
 
-    *req_result = conver_return_code(req_handle_tmp->op_handle->op_module, req_handle_tmp->op_ret);
-    hdc_async_del_response(req_handle_tmp);
+    *reqResult = ConverReturnCode(reqHandleTmp->op_handle->op_module, reqHandleTmp->op_ret);
+    HdcAsyncDelResponse(reqHandleTmp);
     return 0;
 }

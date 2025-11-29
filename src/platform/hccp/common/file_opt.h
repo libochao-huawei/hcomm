@@ -52,12 +52,12 @@ enum {
     FILE_OPT_OP_NOT_SUPPORT_BOND_ERR,
 };
 
-int read_file_to_buf(const char *path, char *content, unsigned int *content_len);
-int write_buf_to_file(const unsigned char *buf, unsigned int buf_len, const char *file, mode_t mode);
-void remove_file(const char *file);
-int get_file_lock(const char *path, int *lock_fd);
-int release_file_lock(int lock_fd, const char *lock_file_path);
-int check_file_path(const char *path, mode_t mode);
-int file_read_cfg(const char *file_path, int dev_id, const char *conf_name, char *conf_value, unsigned int len);
+int ReadFileToBuf(const char *path, char *content, unsigned int *contentLen);
+int WriteBufToFile(const unsigned char *buf, unsigned int bufLen, const char *file, mode_t mode);
+void RemoveFile(const char *file);
+int GetFileLock(const char *path, int *lockFd);
+int ReleaseFileLock(int lockFd, const char *lockFilePath);
+int CheckFilePath(const char *path, mode_t mode);
+int FileReadCfg(const char *filePath, int devId, const char *confName, char *confValue, unsigned int len);
 
 #endif

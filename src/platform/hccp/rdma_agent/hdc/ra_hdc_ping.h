@@ -106,12 +106,12 @@ union op_ping_deinit_data {
     } rx_data;
 };
 
-int ra_hdc_ping_init(struct ra_ping_handle *ping_handle, struct ping_init_attr *init_attr,
-    struct ping_init_info *init_info);
-int ra_hdc_ping_target_add(struct ra_ping_handle *ping_handle, struct ping_target_info target[], uint32_t num);
-int ra_hdc_ping_task_start(struct ra_ping_handle *ping_handle, struct ping_task_attr *attr);
-int ra_hdc_ping_get_results(struct ra_ping_handle *ping_handle, struct ping_target_result target[], uint32_t *num);
-int ra_hdc_ping_target_del(struct ra_ping_handle *ping_handle, struct ping_target_comm_info target[], uint32_t num);
-int ra_hdc_ping_task_stop(struct ra_ping_handle *ping_handle);
-int ra_hdc_ping_deinit(struct ra_ping_handle *ping_handle);
+int RaHdcPingInit(struct ra_ping_handle *pingHandle, struct ping_init_attr *initAttr,
+    struct ping_init_info *initInfo);
+int RaHdcPingTargetAdd(struct ra_ping_handle *pingHandle, struct ping_target_info target[], uint32_t num);
+int RaHdcPingTaskStart(struct ra_ping_handle *pingHandle, struct ping_task_attr *attr);
+int RaHdcPingGetResults(struct ra_ping_handle *pingHandle, struct ping_target_result target[], uint32_t *num);
+int RaHdcPingTargetDel(struct ra_ping_handle *pingHandle, struct ping_target_comm_info target[], uint32_t num);
+int RaHdcPingTaskStop(struct ra_ping_handle *pingHandle);
+int RaHdcPingDeinit(struct ra_ping_handle *pingHandle);
 #endif // RA_HDC_PING_H

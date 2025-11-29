@@ -53,178 +53,178 @@ DlRaFunction::~DlRaFunction()
 
 HcclResult DlRaFunction::DlRaFunctionRdmaInit()
 {
-    dlRaGetQpDepth = (int(*)(RdmaHandle, unsigned int*, unsigned int*))HcclDlsym(handle_, "ra_get_tsqp_depth");
+    dlRaGetQpDepth = (int(*)(RdmaHandle, unsigned int*, unsigned int*))HcclDlsym(handle_, "RaGetTsqpDepth");
     CHK_SMART_PTR_NULL(dlRaGetQpDepth);
-    dlRaSetQpDepth = (int(*)(RdmaHandle, unsigned int, unsigned int*))HcclDlsym(handle_, "ra_set_tsqp_depth");
+    dlRaSetQpDepth = (int(*)(RdmaHandle, unsigned int, unsigned int*))HcclDlsym(handle_, "RaSetTsqpDepth");
     CHK_SMART_PTR_NULL(dlRaSetQpDepth);
-    dlRaQpCreate = (int(*)(RdmaHandle, int, int, QpHandle*))HcclDlsym(handle_, "ra_qp_create");
+    dlRaQpCreate = (int(*)(RdmaHandle, int, int, QpHandle*))HcclDlsym(handle_, "RaQpCreate");
     CHK_SMART_PTR_NULL(dlRaQpCreate);
-    dlRaQpDestroy = (int(*)(QpHandle))HcclDlsym(handle_, "ra_qp_destroy");
+    dlRaQpDestroy = (int(*)(QpHandle))HcclDlsym(handle_, "RaQpDestroy");
     CHK_SMART_PTR_NULL(dlRaQpDestroy);
-    dlRaGetQpContext = (int(*)(void*, void**, void**, void**))HcclDlsym(handle_, "ra_get_qp_context");
+    dlRaGetQpContext = (int(*)(void*, void**, void**, void**))HcclDlsym(handle_, "RaGetQpContext");
     CHK_SMART_PTR_NULL(dlRaGetQpContext);
-    dlRaQpConnectAsync = (int(*)(QpHandle, const SocketHandle))HcclDlsym(handle_, "ra_qp_connect_async");
+    dlRaQpConnectAsync = (int(*)(QpHandle, const SocketHandle))HcclDlsym(handle_, "RaQpConnectAsync");
     CHK_SMART_PTR_NULL(dlRaQpConnectAsync);
-    dlRaGetQpStatus = (int(*)(QpHandle, int*))HcclDlsym(handle_, "ra_get_qp_status");
+    dlRaGetQpStatus = (int(*)(QpHandle, int*))HcclDlsym(handle_, "RaGetQpStatus");
     CHK_SMART_PTR_NULL(dlRaGetQpStatus);
-    dlRaMrDereg = (int(*)(QpHandle, struct mr_info*))HcclDlsym(handle_, "ra_mr_dereg");
+    dlRaMrDereg = (int(*)(QpHandle, struct mr_info*))HcclDlsym(handle_, "RaMrDereg");
     CHK_SMART_PTR_NULL(dlRaMrDereg);
-    dlRaMrReg = (int(*)(QpHandle, struct mr_info*))HcclDlsym(handle_, "ra_mr_reg");
+    dlRaMrReg = (int(*)(QpHandle, struct mr_info*))HcclDlsym(handle_, "RaMrReg");
     CHK_SMART_PTR_NULL(dlRaMrReg);
-    dlRaGetNotifyMrInfo = (int(*)(RdmaHandle, struct mr_info*))HcclDlsym(handle_, "ra_get_notify_mr_info");
+    dlRaGetNotifyMrInfo = (int(*)(RdmaHandle, struct mr_info*))HcclDlsym(handle_, "RaGetNotifyMrInfo");
     CHK_SMART_PTR_NULL(dlRaGetNotifyMrInfo);
-    dlRaRdmaDeInit = (int(*)(RdmaHandle, u32))HcclDlsym(handle_, "ra_rdev_deinit");
+    dlRaRdmaDeInit = (int(*)(RdmaHandle, u32))HcclDlsym(handle_, "RaRdevDeinit");
     CHK_SMART_PTR_NULL(dlRaRdmaDeInit);
     dlRaRdmaInitWithAttr = (int(*)(struct rdev_init_info, struct rdev, RdmaHandle*))\
-        HcclDlsym(handle_, "ra_rdev_init_v2");
+        HcclDlsym(handle_, "RaRdevInitV2");
     CHK_SMART_PTR_NULL(dlRaRdmaInitWithAttr);
     dlRaRdmaInitWithBackupAttr = (int(*)(struct rdev_init_info*, struct rdev*, struct rdev*, RdmaHandle*))\
-        HcclDlsym(handle_, "ra_rdev_init_with_backup");
+        HcclDlsym(handle_, "RaRdevInitWithBackup");
     CHK_SMART_PTR_NULL(dlRaRdmaInitWithBackupAttr);
-    dlRaRdmaGetHandle = (int(*)(unsigned int, RdmaHandle*))HcclDlsym(handle_, "ra_rdev_get_handle");
-    dlRaRdmaInit = (int(*)(int, u32, struct rdev, RdmaHandle*))HcclDlsym(handle_, "ra_rdev_init");
+    dlRaRdmaGetHandle = (int(*)(unsigned int, RdmaHandle*))HcclDlsym(handle_, "RaRdevGetHandle");
+    dlRaRdmaInit = (int(*)(int, u32, struct rdev, RdmaHandle*))HcclDlsym(handle_, "RaRdevInit");
     CHK_SMART_PTR_NULL(dlRaRdmaInit);
-    dlRaSendWr = (int(*)(QpHandle, struct send_wr*, struct send_wr_rsp*))HcclDlsym(handle_, "ra_send_wr");
+    dlRaSendWr = (int(*)(QpHandle, struct send_wr*, struct send_wr_rsp*))HcclDlsym(handle_, "RaSendWr");
     CHK_SMART_PTR_NULL(dlRaSendWr);
-    dlRaSendWrV2 = (int(*)(QpHandle, struct send_wr_v2*, struct send_wr_rsp*))HcclDlsym(handle_, "ra_send_wr_v2");
+    dlRaSendWrV2 = (int(*)(QpHandle, struct send_wr_v2*, struct send_wr_rsp*))HcclDlsym(handle_, "RaSendWrV2");
     CHK_SMART_PTR_NULL(dlRaSendWrV2);
-    dlRaPollCq = (int(*)(QpHandle, bool, unsigned int, void *))HcclDlsym(handle_, "ra_poll_cq");
+    dlRaPollCq = (int(*)(QpHandle, bool, unsigned int, void *))HcclDlsym(handle_, "RaPollCq");
     CHK_SMART_PTR_NULL(dlRaPollCq);
     dlRaSendWrlist = (int(*)(QpHandle handle, struct send_wrlist_data wr[], struct send_wr_rsp op_rsp[],
-        unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "ra_send_wrlist");
+        unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "RaSendWrlist");
     if (dlRaSendWrlist == nullptr) {
-        HCCL_WARNING("dlRaSendWrlist is nullptr, can not use ra_send_wrlist");
+        HCCL_WARNING("dlRaSendWrlist is nullptr, can not use RaSendWrlist");
     }
     dlRaSendWrlistExt = (int(*)(QpHandle handle, struct send_wrlist_data_ext wr[], struct send_wr_rsp op_rsp[],
-        unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "ra_send_wrlist_ext");
+        unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "RaSendWrlistExt");
     if (dlRaSendWrlistExt == nullptr) {
         HCCL_WARNING("dlRaSendWrlistExt is nullptr, can not use ra_send_wrlist_ext");
     }
     dlRaSendNormalWrlist = (int(*)(QpHandle handle, struct wr_info wr[], struct send_wr_rsp opRsp[],
-        unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "ra_send_normal_wrlist");
+        unsigned int sendNum, unsigned int *completeNum))HcclDlsym(handle_, "RaSendNormalWrlist");
     CHK_SMART_PTR_NULL(dlRaSendNormalWrlist);
     dlRaRegGlobalMr = (int(*)(const RdmaHandle, struct mr_info *info, MrHandle *mrHandle))HcclDlsym(handle_,
-        "ra_register_mr");
+        "RaRegisterMr");
     CHK_SMART_PTR_NULL(dlRaRegGlobalMr);
-    dlRaDeRegGlobalMr = (int(*)(const RdmaHandle, MrHandle mrHandle))HcclDlsym(handle_, "ra_deregister_mr");
+    dlRaDeRegGlobalMr = (int(*)(const RdmaHandle, MrHandle mrHandle))HcclDlsym(handle_, "RaDeregisterMr");
     CHK_SMART_PTR_NULL(dlRaDeRegGlobalMr);
-    dlRaCreateCq = (int(*)(RdmaHandle, struct cq_attr *))HcclDlsym(handle_, "ra_cq_create");
+    dlRaCreateCq = (int(*)(RdmaHandle, struct cq_attr *))HcclDlsym(handle_, "RaCqCreate");
     CHK_SMART_PTR_NULL(dlRaCreateCq);
-    dlRaDestroyCq = (int(*)(RdmaHandle, struct cq_attr *))HcclDlsym(handle_, "ra_cq_destroy");
+    dlRaDestroyCq = (int(*)(RdmaHandle, struct cq_attr *))HcclDlsym(handle_, "RaCqDestroy");
     CHK_SMART_PTR_NULL(dlRaDestroyCq);
     dlRaNormalQpCreate = (int(*)(RdmaHandle, struct ibv_qp_init_attr *, void **, void **))HcclDlsym(handle_,
-        "ra_normal_qp_create");
+        "RaNormalQpCreate");
     CHK_SMART_PTR_NULL(dlRaNormalQpCreate);
-    dlRaNormalQpDestroy = (int(*)(QpHandle))HcclDlsym(handle_, "ra_normal_qp_destroy");
+    dlRaNormalQpDestroy = (int(*)(QpHandle))HcclDlsym(handle_, "RaNormalQpDestroy");
     CHK_SMART_PTR_NULL(dlRaNormalQpDestroy);
-    dlRaSetQpAttrQos = (int(*)(QpHandle, struct qos_attr *))HcclDlsym(handle_, "ra_set_qp_attr_qos");
+    dlRaSetQpAttrQos = (int(*)(QpHandle, struct qos_attr *))HcclDlsym(handle_, "RaSetQpAttrQos");
     CHK_SMART_PTR_NULL(dlRaSetQpAttrQos);
-    dlRaSetQpAttrTimeOut = (int(*)(QpHandle, u32 *))HcclDlsym(handle_, "ra_set_qp_attr_timeout");
+    dlRaSetQpAttrTimeOut = (int(*)(QpHandle, u32 *))HcclDlsym(handle_, "RaSetQpAttrTimeout");
     CHK_SMART_PTR_NULL(dlRaSetQpAttrTimeOut);
-    dlRaSetQpAttrRetryCnt = (int(*)(QpHandle, u32 *))HcclDlsym(handle_, "ra_set_qp_attr_retry_cnt");
+    dlRaSetQpAttrRetryCnt = (int(*)(QpHandle, u32 *))HcclDlsym(handle_, "RaSetQpAttrRetryCnt");
     CHK_SMART_PTR_NULL(dlRaSetQpAttrRetryCnt);
-    dlRaCreateCompChannel = (int(*)(const void*, void **))HcclDlsym(handle_, "ra_create_comp_channel");
+    dlRaCreateCompChannel = (int(*)(const void*, void **))HcclDlsym(handle_, "RaCreateCompChannel");
     CHK_SMART_PTR_NULL(dlRaCreateCompChannel);
-    dlRaDestroyCompChannel = (int(*)(const void*, void *))HcclDlsym(handle_, "ra_destroy_comp_channel");
+    dlRaDestroyCompChannel = (int(*)(const void*, void *))HcclDlsym(handle_, "RaDestroyCompChannel");
     CHK_SMART_PTR_NULL(dlRaDestroyCompChannel);
-    dlRaGetCqeErrInfo = (int(*)(unsigned int phy_id, struct cqe_err_info *))HcclDlsym(handle_, "ra_get_cqe_err_info");
+    dlRaGetCqeErrInfo = (int(*)(unsigned int phy_id, struct cqe_err_info *))HcclDlsym(handle_, "RaGetCqeErrInfo");
     CHK_SMART_PTR_NULL(dlRaGetCqeErrInfo);
     dlRaGetCqeErrInfoList = 
-            (int (*)(RdmaHandle, struct cqe_err_info *, u32 *))HcclDlsym(handle_, "ra_rdev_get_cqe_err_info_list");
+            (int (*)(RdmaHandle, struct cqe_err_info *, u32 *))HcclDlsym(handle_, "RaRdevGetCqeErrInfoList");
     CHK_SMART_PTR_NULL(dlRaGetCqeErrInfoList);
-    dlRaGetQpAttr = (int(*)(QpHandle, struct qp_attr *))HcclDlsym(handle_, "ra_get_qp_attr");
+    dlRaGetQpAttr = (int(*)(QpHandle, struct qp_attr *))HcclDlsym(handle_, "RaGetQpAttr");
     CHK_SMART_PTR_NULL(dlRaGetQpAttr);
-    dlRaCreateSrq = (int(*)(const void*, struct srq_attr *))HcclDlsym(handle_, "ra_create_srq");
+    dlRaCreateSrq = (int(*)(const void*, struct srq_attr *))HcclDlsym(handle_, "RaCreateSrq");
     CHK_SMART_PTR_NULL(dlRaCreateSrq);
-    dlRaDestroyeSrq = (int(*)(const void*, struct srq_attr *))HcclDlsym(handle_, "ra_destroy_srq");
+    dlRaDestroyeSrq = (int(*)(const void*, struct srq_attr *))HcclDlsym(handle_, "RaDestroySrq");
     CHK_SMART_PTR_NULL(dlRaDestroyeSrq);
     dlRaQpCreateWithAttrs =
-        (int (*)(RdmaHandle, struct qp_ext_attrs *, QpHandle *))HcclDlsym(handle_, "ra_qp_create_with_attrs");
+        (int (*)(RdmaHandle, struct qp_ext_attrs *, QpHandle *))HcclDlsym(handle_, "RaQpCreateWithAttrs");
     CHK_SMART_PTR_NULL(dlRaQpCreateWithAttrs);
     dlRaTypicalQpCreate =
-        (int(*)(RdmaHandle, int, int, struct typical_qp*, QpHandle*))HcclDlsym(handle_, "ra_typical_qp_create");
+        (int(*)(RdmaHandle, int, int, struct typical_qp*, QpHandle*))HcclDlsym(handle_, "RaTypicalQpCreate");
     CHK_SMART_PTR_NULL(dlRaTypicalQpCreate);
     dlRaTypicalQpModify =
-        (int(*)(QpHandle, struct typical_qp*, struct typical_qp*))HcclDlsym(handle_, "ra_typical_qp_modify");
+        (int(*)(QpHandle, struct typical_qp*, struct typical_qp*))HcclDlsym(handle_, "RaTypicalQpModify");
     CHK_SMART_PTR_NULL(dlRaTypicalQpModify);
     dlRaTypicalSendWr =
-        (int(*)(QpHandle, struct send_wr*, struct send_wr_rsp*))HcclDlsym(handle_, "ra_typical_send_wr");
+        (int(*)(QpHandle, struct send_wr*, struct send_wr_rsp*))HcclDlsym(handle_, "RaTypicalSendWr");
     CHK_SMART_PTR_NULL(dlRaTypicalSendWr);
     dlRaAiQpCreate = (int (*)(RdmaHandle, struct qp_ext_attrs *, struct ai_qp_info *, QpHandle *))HcclDlsym(handle_,
-        "ra_ai_qp_create");
+        "RaAiQpCreate");
     CHK_SMART_PTR_NULL(dlRaAiQpCreate);
     dlRaRecvWrlist = (int(*)(QpHandle handle, struct recv_wrlist_data *wr, unsigned int recvNum,
-        unsigned int *completeNum))HcclDlsym(handle_, "ra_recv_wrlist");
+        unsigned int *completeNum))HcclDlsym(handle_, "RaRecvWrlist");
     if (dlRaRecvWrlist == nullptr) {
         HCCL_WARNING("dlRaRecvWrlist is nullptr, can not use ra_recv_wrlist");
     }
-    dlRaGetRdmaLiteStatus = (int (*)(RdmaHandle, int *))HcclDlsym(handle_, "ra_rdev_get_support_lite");
+    dlRaGetRdmaLiteStatus = (int (*)(RdmaHandle, int *))HcclDlsym(handle_, "RaRdevGetSupportLite");
     CHK_SMART_PTR_NULL(dlRaGetRdmaLiteStatus);
 
     dlRaQpBatchModify =
         (int (*)(RdmaHandle rdmaHandle, void **qpHandle, unsigned int num, int expectStatus))HcclDlsym(handle_,
-        "ra_qp_batch_modify");
+        "RaQpBatchModify");
     if (dlRaQpBatchModify == nullptr) {
         HCCL_ERROR("dlRaQpBatchModify is nullptr, can not use ra_qp_batch_modify");
     }
     CHK_SMART_PTR_NULL(dlRaQpBatchModify);
 
     dlRaPingInit =
-        (int (*)(struct ping_init_attr *, struct ping_init_info *, void **))HcclDlsym(handle_, "ra_ping_init");
+        (int (*)(struct ping_init_attr *, struct ping_init_info *, void **))HcclDlsym(handle_, "RaPingInit");
     if (dlRaPingInit == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaPingInit, please check!");
     }
-    dlRaPingDeinit = (int(*)(void *))HcclDlsym(handle_, "ra_ping_deinit");
+    dlRaPingDeinit = (int(*)(void *))HcclDlsym(handle_, "RaPingDeinit");
     if (dlRaPingDeinit == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaPingDeinit, please check!");
     }
     dlRaPingTargetAdd =
-        (int(*)(void *, struct ping_target_info target[], uint32_t))HcclDlsym(handle_, "ra_ping_target_add");
+        (int(*)(void *, struct ping_target_info target[], uint32_t))HcclDlsym(handle_, "RaPingTargetAdd");
     if (dlRaPingTargetAdd == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaPingTargetAdd, please check!");
     }
     dlRaPingTargetDel =
-        (int(*)(void *, struct ping_target_comm_info target[], uint32_t))HcclDlsym(handle_, "ra_ping_target_del");
+        (int(*)(void *, struct ping_target_comm_info target[], uint32_t))HcclDlsym(handle_, "RaPingTargetDel");
     if (dlRaPingTargetDel == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaPingTargetDel, please check!");
     }
-    dlRaPingTaskStart = (int(*)(void *, struct ping_task_attr *))HcclDlsym(handle_, "ra_ping_task_start");
+    dlRaPingTaskStart = (int(*)(void *, struct ping_task_attr *))HcclDlsym(handle_, "RaPingTaskStart");
     if (dlRaPingTaskStart == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaPingTaskStart, please check!");
     }
-    dlRaPingTaskStop = (int(*)(void *))HcclDlsym(handle_, "ra_ping_task_stop");
+    dlRaPingTaskStop = (int(*)(void *))HcclDlsym(handle_, "RaPingTaskStop");
     if (dlRaPingTaskStop == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaPingTaskStop, please check!");
     }
     dlRaPingGetResults =
-        (int(*)(void *, struct ping_target_result target[], uint32_t *))HcclDlsym(handle_, "ra_ping_get_results");
+        (int(*)(void *, struct ping_target_result target[], uint32_t *))HcclDlsym(handle_, "RaPingGetResults");
     if (dlRaPingGetResults == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaPingGetResults, please check!");
     }
 
-    dlRaIsFirstUsed = (int(*)(int))HcclDlsym(handle_, "ra_is_first_used");
+    dlRaIsFirstUsed = (int(*)(int))HcclDlsym(handle_, "RaIsFirstUsed");
     CHK_SMART_PTR_NULL(dlRaIsFirstUsed);
 
-    dlRaIsLastUsed = (int(*)(int))HcclDlsym(handle_, "ra_is_last_used");
+    dlRaIsLastUsed = (int(*)(int))HcclDlsym(handle_, "RaIsLastUsed");
     CHK_SMART_PTR_NULL(dlRaIsLastUsed);
 
-    dlRaRdevGetPortStatus = (int(*)(RdmaHandle, enum port_status *))HcclDlsym(handle_, "ra_rdev_get_port_status");
+    dlRaRdevGetPortStatus = (int(*)(RdmaHandle, enum port_status *))HcclDlsym(handle_, "RaRdevGetPortStatus");
     CHK_SMART_PTR_NULL(dlRaRdevGetPortStatus);
 
-    dlRaRemapMr = (int(*)(RdmaHandle, struct mem_remap_info info[], unsigned int num))HcclDlsym(handle_, "ra_remap_mr");
+    dlRaRemapMr = (int(*)(RdmaHandle, struct mem_remap_info info[], unsigned int num))HcclDlsym(handle_, "RaRemapMr");
     if (dlRaRemapMr == nullptr) {
         HCCL_WARNING("Current package doesn't have dlRaRemapMr, please check!");
     }
 
-    dlH2DTlvInit = (int(*)(struct tlv_init_info *, uint32_t, uint32_t *, void**))HcclDlsym(handle_, "ra_tlv_init");
+    dlH2DTlvInit = (int(*)(struct tlv_init_info *, uint32_t, uint32_t *, void**))HcclDlsym(handle_, "RaTlvInit");
     if (dlH2DTlvInit == nullptr) {
         HCCL_WARNING("Current package doesn't have dlH2DTlvInit, please check!");
     }
-    dlH2DTlvDeinit = (int(*)(void*))HcclDlsym(handle_, "ra_tlv_deinit");
+    dlH2DTlvDeinit = (int(*)(void*))HcclDlsym(handle_, "RaTlvDeinit");
     if (dlH2DTlvDeinit == nullptr) {
         HCCL_WARNING("Current package doesn't have dlH2DTlvDeinit, please check!");
     }
-    dlH2DTlvRequest = (int(*)(void *, struct tlv_msg[],  struct tlv_msg[]))HcclDlsym(handle_, "ra_tlv_request");
+    dlH2DTlvRequest = (int(*)(void *, struct tlv_msg[],  struct tlv_msg[]))HcclDlsym(handle_, "RaTlvRequest");
     if (dlH2DTlvRequest == nullptr) {
         HCCL_WARNING("Current package doesn't have H2DTlvRequest, please check!");
     }
@@ -234,115 +234,115 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
 HcclResult DlRaFunction::DlRaFunctionSocketInit()
 {
     dlRaGetNotifyBaseAddr =
-        (int(*)(RdmaHandle, unsigned long long*, unsigned long long*))HcclDlsym(handle_, "ra_get_notify_base_addr");
+        (int(*)(RdmaHandle, unsigned long long*, unsigned long long*))HcclDlsym(handle_, "RaGetNotifyBaseAddr");
     CHK_SMART_PTR_NULL(dlRaGetNotifyBaseAddr);
     dlRaGetSockets = (int(*)(unsigned int, struct socket_info_t[], unsigned int, unsigned int*))\
-        HcclDlsym(handle_, "ra_get_sockets");
+        HcclDlsym(handle_, "RaGetSockets");
     CHK_SMART_PTR_NULL(dlRaGetSockets);
     dlRaSocketBatchClose =
-        (int(*)(struct socket_close_info_t[], unsigned int))HcclDlsym(handle_, "ra_socket_batch_close");
+        (int(*)(struct socket_close_info_t[], unsigned int))HcclDlsym(handle_, "RaSocketBatchClose");
     CHK_SMART_PTR_NULL(dlRaSocketBatchClose);
     dlRaSocketBatchConnect =
-        (int(*)(struct socket_connect_info_t[], unsigned int num))HcclDlsym(handle_, "ra_socket_batch_connect");
+        (int(*)(struct socket_connect_info_t[], unsigned int num))HcclDlsym(handle_, "RaSocketBatchConnect");
     CHK_SMART_PTR_NULL(dlRaSocketBatchConnect);
     dlRaSocketBatchAbort =
-        (int(*)(struct socket_connect_info_t[], unsigned int num))HcclDlsym(handle_, "ra_socket_batch_abort");
+        (int(*)(struct socket_connect_info_t[], unsigned int num))HcclDlsym(handle_, "RaSocketBatchAbort");
     CHK_SMART_PTR_NULL(dlRaSocketBatchAbort);
-    dlRaSocketDeInit = (int(*)(SocketHandle))HcclDlsym(handle_, "ra_socket_deinit");
+    dlRaSocketDeInit = (int(*)(SocketHandle))HcclDlsym(handle_, "RaSocketDeinit");
     CHK_SMART_PTR_NULL(dlRaSocketDeInit);
-    dlRaSocketInit = (int(*)(int, struct rdev, SocketHandle*))HcclDlsym(handle_, "ra_socket_init");
+    dlRaSocketInit = (int(*)(int, struct rdev, SocketHandle*))HcclDlsym(handle_, "RaSocketInit");
     CHK_SMART_PTR_NULL(dlRaSocketInit);
-    dlRaSocketInitV1 = (int(*)(int, struct socket_init_info_t, SocketHandle*))HcclDlsym(handle_, "ra_socket_init_v1");
+    dlRaSocketInitV1 = (int(*)(int, struct socket_init_info_t, SocketHandle*))HcclDlsym(handle_, "RaSocketInitV1");
     CHK_SMART_PTR_NULL(dlRaSocketInitV1);
     dlRaSocketListenStart =
-        (int(*)(struct socket_listen_info_t[], unsigned int))HcclDlsym(handle_, "ra_socket_listen_start");
+        (int(*)(struct socket_listen_info_t[], unsigned int))HcclDlsym(handle_, "RaSocketListenStart");
     CHK_SMART_PTR_NULL(dlRaSocketListenStart);
     dlRaSocketAcceptCreditAdd =
-        (int(*)(struct socket_listen_info_t[], unsigned int, unsigned int))HcclDlsym(handle_, "ra_socket_accept_credit_add");
+        (int(*)(struct socket_listen_info_t[], unsigned int, unsigned int))HcclDlsym(handle_, "RaSocketAcceptCreditAdd");
     CHK_SMART_PTR_NULL(dlRaSocketAcceptCreditAdd);
     dlRaSocketListenStop =
-        (int(*)(struct socket_listen_info_t[], unsigned int))HcclDlsym(handle_, "ra_socket_listen_stop");
+        (int(*)(struct socket_listen_info_t[], unsigned int))HcclDlsym(handle_, "RaSocketListenStop");
     CHK_SMART_PTR_NULL(dlRaSocketListenStop);
     dlRaSocketRecv = (int(*)(const FdHandle, const void*, unsigned long long, unsigned long long*))\
-            HcclDlsym(handle_, "ra_socket_recv");
+            HcclDlsym(handle_, "RaSocketRecv");
     CHK_SMART_PTR_NULL(dlRaSocketRecv);
     dlRaSocketSend = (int(*)(const FdHandle, const void*, unsigned long long, unsigned long long*))\
-            HcclDlsym(handle_, "ra_socket_send");
+            HcclDlsym(handle_, "RaSocketSend");
     CHK_SMART_PTR_NULL(dlRaSocketSend);
     dlRaSocketSetWhiteListStatus =
-        (int(*)(unsigned int))HcclDlsym(handle_, "ra_socket_set_white_list_status");
+        (int(*)(unsigned int))HcclDlsym(handle_, "RaSocketSetWhiteListStatus");
     CHK_SMART_PTR_NULL(dlRaSocketSetWhiteListStatus);
     dlRaSocketGetWhiteListStatus =
-        (int(*)(unsigned int*))HcclDlsym(handle_, "ra_socket_get_white_list_status");
+        (int(*)(unsigned int*))HcclDlsym(handle_, "RaSocketGetWhiteListStatus");
     CHK_SMART_PTR_NULL(dlRaSocketGetWhiteListStatus);
     dlRaSocketWhiteListAdd =
         (int(*)(SocketHandle, struct socket_wlist_info_t[], unsigned int))HcclDlsym(handle_,
-        "ra_socket_white_list_add");
+        "RaSocketWhiteListAdd");
     CHK_SMART_PTR_NULL(dlRaSocketWhiteListAdd);
     dlRaSocketWhiteListDel =
         (int(*)(SocketHandle, struct socket_wlist_info_t[], unsigned int))HcclDlsym(handle_,
-        "ra_socket_white_list_del");
+        "RaSocketWhiteListDel");
     CHK_SMART_PTR_NULL(dlRaSocketWhiteListDel);
     /* 考虑兼容性问题，这里不校验dlRaGetIfNum是否为空，在使用处校验 */
-    dlRaGetIfNum = (int(*)(struct ra_get_ifattr *config, unsigned int *num))HcclDlsym(handle_, "ra_get_ifnum");
+    dlRaGetIfNum = (int(*)(struct ra_get_ifattr *config, unsigned int *num))HcclDlsym(handle_, "RaGetIfnum");
     if (dlRaGetIfNum == nullptr) {
         HCCL_WARNING("dlRaGetIfNum is nullptr, can not use ra_get_ifnum");
     }
 
     dlRaGetIfAddress =
         (int(*)(struct ra_get_ifattr *config, struct interface_info interface_infos[], unsigned int *num))\
-        HcclDlsym(handle_, "ra_get_ifaddrs");
+        HcclDlsym(handle_, "RaGetIfaddrs");
     CHK_SMART_PTR_NULL(dlRaGetIfAddress);
     dlRaGetInterfaceVersion =
         (int(*)(unsigned int phy_id, unsigned int interface_opcode, unsigned int* interface_version))\
-        HcclDlsym(handle_, "ra_get_interface_version");
+        HcclDlsym(handle_, "RaGetInterfaceVersion");
     if (dlRaGetInterfaceVersion == nullptr) {
         HCCL_WARNING("dlRaGetInterfaceVersion is nullptr, can not use ra_get_interface_version");
     }
-    dlRaEpollCtlAdd = (int(*)(const FdHandle fd_handle, RaEpollEvent event))HcclDlsym(handle_, "ra_epoll_ctl_add");
+    dlRaEpollCtlAdd = (int(*)(const FdHandle fd_handle, RaEpollEvent event))HcclDlsym(handle_, "RaEpollCtlAdd");
     CHK_SMART_PTR_NULL(dlRaEpollCtlAdd);
-    dlRaEpollCtlMod = (int(*)(const FdHandle fd_handle, RaEpollEvent event))HcclDlsym(handle_, "ra_epoll_ctl_mod");
+    dlRaEpollCtlMod = (int(*)(const FdHandle fd_handle, RaEpollEvent event))HcclDlsym(handle_, "RaEpollCtlMod");
     CHK_SMART_PTR_NULL(dlRaEpollCtlMod);
-    dlRaEpollCtlDel = (int(*)(const FdHandle fd_handle))HcclDlsym(handle_, "ra_epoll_ctl_del");
+    dlRaEpollCtlDel = (int(*)(const FdHandle fd_handle))HcclDlsym(handle_, "RaEpollCtlDel");
     CHK_SMART_PTR_NULL(dlRaEpollCtlDel);
     dlRaSetRecvDataCallback = (int(*)(const SocketHandle socketHandle, const void *callback))
-        HcclDlsym(handle_, "ra_set_tcp_recv_callback");
+        HcclDlsym(handle_, "RaSetTcpRecvCallback");
     CHK_SMART_PTR_NULL(dlRaSetRecvDataCallback);
 
-    dlRaCreateEventHandle = (int(*)(int *event_handle))HcclDlsym(handle_, "ra_create_event_handle");
+    dlRaCreateEventHandle = (int(*)(int *event_handle))HcclDlsym(handle_, "RaCreateEventHandle");
     if (dlRaCreateEventHandle == nullptr) {
         HCCL_WARNING("dlRaCreateEventHandle is nullptr, can not use ra_create_event_handle");
     }
     dlRaCtlEventHandle =
         (int(*)(int event_handle, const void *fd_handle, int opcode, RaEpollEvent event))
-        HcclDlsym(handle_, "ra_ctl_event_handle");
+        HcclDlsym(handle_, "RaCtlEventHandle");
     if (dlRaCtlEventHandle == nullptr) {
         HCCL_WARNING("dlRaCtlEventHandle is nullptr, can not use ra_ctl_event_handle");
     }
     dlRaWaitEventHandle =
         (int(*)(int event_handle, struct socket_event_info *event_infos, int timeout, unsigned int maxevents,
-        unsigned int *events_num))HcclDlsym(handle_, "ra_wait_event_handle");
+        unsigned int *events_num))HcclDlsym(handle_, "RaWaitEventHandle");
     if (dlRaWaitEventHandle == nullptr) {
         HCCL_WARNING("dlRaWaitEventHandle is nullptr, can not use ra_wait_event_handle");
     }
-    dlRaDestroyEventHandle = (int(*)(int *event_handle))HcclDlsym(handle_, "ra_destroy_event_handle");
+    dlRaDestroyEventHandle = (int(*)(int *event_handle))HcclDlsym(handle_, "RaDestroyEventHandle");
     if (dlRaDestroyEventHandle == nullptr) {
         HCCL_WARNING("dlRaDestroyEventHandle is nullptr, can not use ra_destroy_event_handle");
     }
 
     dlRaGetSocketVnicIpInfos = (int (*)(unsigned int, enum id_type, unsigned int *, unsigned int,
-        struct ip_info infos[]))HcclDlsym(handle_, "ra_socket_get_vnic_ip_infos");
+        struct ip_info infos[]))HcclDlsym(handle_, "RaSocketGetVnicIpInfos");
     CHK_SMART_PTR_NULL(dlRaGetSocketVnicIpInfos);
 
-    dlRaRaGetTlsEnable = (int(*)(struct ra_info*, bool *))HcclDlsym(handle_, "ra_get_tls_enable");
+    dlRaRaGetTlsEnable = (int(*)(struct ra_info*, bool *))HcclDlsym(handle_, "RaGetTlsEnable");
     if (dlRaRaGetTlsEnable == nullptr) {
         HCCL_WARNING("dlRaRaGetTlsEnable is nullptr, can not use ra_get_tls_enable");
     }
 
-    dlRaSaveSnapShot = (int(*)(struct ra_info*, enum save_snapshot_action))HcclDlsym(handle_, "ra_save_snapshot");
+    dlRaSaveSnapShot = (int(*)(struct ra_info*, enum save_snapshot_action))HcclDlsym(handle_, "RaSaveSnapshot");
     CHK_SMART_PTR_NULL(dlRaSaveSnapShot);
 
-    dlRaRestoreSnapShot = (int(*)(struct ra_info*))HcclDlsym(handle_, "ra_restore_snapshot");
+    dlRaRestoreSnapShot = (int(*)(struct ra_info*))HcclDlsym(handle_, "RaRestoreSnapshot");
     CHK_SMART_PTR_NULL(dlRaRestoreSnapShot);
     return HCCL_SUCCESS;
 }
@@ -357,9 +357,9 @@ HcclResult DlRaFunction::DlRaFunctionInit()
             (errMsg == nullptr) ? "please check the file exist or permission denied." : errMsg),\
             HCCL_E_OPEN_FILE_FAILURE);
     }
-    dlRaInit = (int(*)(struct ra_init_config*))HcclDlsym(handle_, "ra_init");
+    dlRaInit = (int(*)(struct ra_init_config*))HcclDlsym(handle_, "RaInit");
     CHK_SMART_PTR_NULL(dlRaInit);
-    dlRaDeInit = (int(*)(struct ra_init_config*))HcclDlsym(handle_, "ra_deinit");
+    dlRaDeInit = (int(*)(struct ra_init_config*))HcclDlsym(handle_, "RaDeinit");
     CHK_SMART_PTR_NULL(dlRaDeInit);
     CHK_RET(DlRaFunctionRdmaInit());
     CHK_RET(DlRaFunctionSocketInit());
