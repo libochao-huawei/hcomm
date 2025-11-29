@@ -11,8 +11,7 @@ fi
 
 for dir in ${CURRENT_DIR}/*/*/;do
     # 检查是否是需要跳过的目录
-    if [ "$dir" = "${CURRENT_DIR}/03_collectives/09_scatter/" ] ||
-        [ "$dir" = "${CURRENT_DIR}/01_communicators/01_one_device_per_process/" ] ||
+    if [ "$dir" = "${CURRENT_DIR}/01_communicators/01_one_device_per_process/" ] ||
         [ "$dir" = "${CURRENT_DIR}/01_communicators/02_one_device_per_process_rank_table/" ]; then
         echo "Skipping directory: $dir" | tee -a ${BUILD_DIR}/build.log
         continue
