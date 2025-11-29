@@ -415,7 +415,7 @@ public:
     // 独立算子专用
     HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, 
         TransportIOMem& transMem, bool isAicpuModeEn);
-    aclrtBinHandle GetBinCustomHandle();
+    aclrtBinHandle GetBinHandle();
 
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
@@ -810,8 +810,6 @@ private:
     HcclResult AllocAndGetStreamContextBuff(u32 streamId, u64 &addr, u64 &size);
     u32 UpdateOpIndex(const OpParam &opParam); // 更新opIndex
     HcclResult LoadCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
-        aclrtBinHandle& binHandle);
-    HcclResult LoadIndOpCustomFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
         aclrtBinHandle& binHandle);
     void UnloadBinary(aclrtBinHandle& binHandle);
     bool IsEnableCustom();

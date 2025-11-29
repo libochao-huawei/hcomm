@@ -21,7 +21,6 @@ __attribute__((visibility("default"))) uint32_t RunAicpuIndOpChannelInit(void *a
         bool isCustom;
     };
     InitTask *ctxArgs = reinterpret_cast<InitTask *>(args);
-    CHK_PRT_RET(ctxArgs->isCustom == false, HCCL_ERROR("[%s]isCustom is unvalid", __func__), HCCL_E_PARA);
     HcclIndOpChannelRemoteResV3 *commParam = reinterpret_cast<HcclIndOpChannelRemoteResV3 *>(ctxArgs->context);
     return AicpuHcclProcess::AicpuIndOpChannelInit(commParam);
 }
