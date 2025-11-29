@@ -54,7 +54,7 @@ union op_tlv_request_data {
     } rx_data;
 };
 
-int ra_hdc_tlv_init(struct ra_tlv_handle *tlv_handle);
-int ra_hdc_tlv_deinit(struct ra_tlv_handle *tlv_handle);
-int ra_hdc_tlv_request(struct ra_tlv_handle *tlv_handle, struct tlv_msg *send_msg, struct tlv_msg *recv_msg);
+int RaHdcTlvInit(struct ra_tlv_handle *tlvHandle);
+int RaHdcTlvDeinit(struct ra_tlv_handle *tlvHandle);
+int RaHdcTlvRequest(struct ra_tlv_handle *tlvHandle, struct tlv_msg *sendMsg, struct tlv_msg *recvMsg);
 #endif // RA_HDC_TLV_H

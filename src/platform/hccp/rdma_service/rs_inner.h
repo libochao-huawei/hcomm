@@ -700,35 +700,35 @@ struct rs_socketaddr_info {
     union rs_socketaddr addr;
 };
 
-int rs_qp_info_sync(struct rs_qp_cb *qp_cb);
-int rs_set_device(int dev_id);
-int rs_socket_connect_async(struct rs_conn_info *conn, struct rs_cb *rscb);
-int rs_get_socket_connect_state(struct rs_conn_info *conn);
-int rs_alloc_conn_node(struct rs_conn_info **conn, unsigned short server_port);
+int RsQpInfoSync(struct rs_qp_cb *qpCb);
+int RsSetDevice(int devId);
+int RsSocketConnectAsync(struct rs_conn_info *conn, struct rs_cb *rscb);
+int RsGetSocketConnectState(struct rs_conn_info *conn);
+int RsAllocConnNode(struct rs_conn_info **conn, unsigned short serverPort);
 
-extern __thread struct rs_cb *g_rs_cb;
+extern __thread struct rs_cb *gRsCb;
 
-int rs_socket_nodeid2vnic(uint32_t node_id, uint32_t *ip_addr);
-int rs_get_hccp_mode(unsigned int chip_id);
-int rs_dev2conncb(uint32_t chip_id, struct rs_conn_cb **conn_cb);
-int rs_fd2conn(int fd, struct rs_conn_info **conn);
-int rs_dev2rscb(uint32_t chip_id, struct rs_cb **rs_cb, bool init_flag);
-int rs_qpn2qpcb(unsigned int phy_id, unsigned int rdev_index, uint32_t qpn, struct rs_qp_cb **qp_cb);
-int rs_rdev2rdev_cb(unsigned int chip_id, unsigned int rdev_index, struct rs_rdev_cb **rdev_cb);
-int rs_get_rdev_cb(struct rs_cb *rs_cb, unsigned int rdev_index, struct rs_rdev_cb **rdev_cb);
-void rs_accpet_list_node_free(struct rs_cb *rscb);
-int rs_wlist_check_conn_add(struct rs_cb *rs_cb, struct rs_conn_info* conn_tmp);
-void show_conn_node(struct rs_list_head *list_head);
-enum ibv_mtu rs_drv_set_mtu(struct rs_qp_cb *qp_cb);
-enum rs_hardware_type rs_get_device_type(unsigned int phy_id);
+int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
+int RsGetHccpMode(unsigned int chipId);
+int RsDev2conncb(uint32_t chipId, struct rs_conn_cb **connCb);
+int RsFd2conn(int fd, struct rs_conn_info **conn);
+int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag);
+int RsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct rs_qp_cb **qpCb);
+int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb);
+int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb);
+void RsAccpetListNodeFree(struct rs_cb *rscb);
+int RsWlistCheckConnAdd(struct rs_cb *rsCb, struct rs_conn_info* connTmp);
+void ShowConnNode(struct rs_list_head *listHead);
+enum ibv_mtu RsDrvSetMtu(struct rs_qp_cb *qpCb);
+enum rs_hardware_type RsGetDeviceType(unsigned int phyId);
 
-int rs_convert_ip_addr(int family, union hccp_ip_addr *ip_addr, struct rs_ip_addr_info *ip);
-bool rs_compare_ip_addr(struct rs_ip_addr_info *a, struct rs_ip_addr_info *b);
+int RsConvertIpAddr(int family, union hccp_ip_addr *ipAddr, struct rs_ip_addr_info *ip);
+bool RsCompareIpAddr(struct rs_ip_addr_info *a, struct rs_ip_addr_info *b);
 #ifdef CUSTOM_INTERFACE
-int rs_setup_sharemem(struct rs_cb *rs_cb, bool backup_flag, unsigned int backup_phyid);
+int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyid);
 #endif
-int rs_query_mr_cb(struct rs_rdev_cb *dev_cb, uint64_t addr, struct rs_mr_cb **mr_cb, struct rs_list_head *mr_list);
-int rs_get_rs_cb(unsigned int phy_id, struct rs_cb **rs_cb);
-int rs_query_gid(struct rdev rdev_info, struct ibv_context *ib_ctx_tmp, uint8_t ib_port, int *gid_idx);
-int rs_epoll_event_ping_handle(struct rs_cb *rs_cb, int fd);
+int RsQueryMrCb(struct rs_rdev_cb *devCb, uint64_t addr, struct rs_mr_cb **mrCb, struct rs_list_head *mrList);
+int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
+int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
+int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
 #endif // RS_INNER_H

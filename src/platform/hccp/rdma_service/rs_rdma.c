@@ -30,9 +30,9 @@
 #include "rs_drv_rdma.h"
 #include "rs_rdma.h"
 
-unsigned int g_rs_send_wr_num = 0;
+unsigned int gRsSendWrNum = 0;
 
-STATIC void rs_buf_print(char *addr, int len)
+STATIC void RsBufPrint(char *addr, int len)
 {
     int i;
 
@@ -41,113 +41,113 @@ STATIC void rs_buf_print(char *addr, int len)
     }
 }
 
-STATIC int rs_get_qpcb(struct rs_rdev_cb *rdev_cb, uint32_t qpn, struct rs_qp_cb **qp_cb)
+STATIC int RsGetQpcb(struct rs_rdev_cb *rdevCb, uint32_t qpn, struct rs_qp_cb **qpCb)
 {
-    struct rs_qp_cb *qp_cb_tmp = NULL;
-    struct rs_qp_cb *qp_cb_tmp2 = NULL;
+    struct rs_qp_cb *qpCbTmp = NULL;
+    struct rs_qp_cb *qpCbTmp2 = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(qp_cb_tmp, qp_cb_tmp2, &rdev_cb->qp_list, list, struct rs_qp_cb);
-    for (; (&qp_cb_tmp->list) != &rdev_cb->qp_list;
-        qp_cb_tmp = qp_cb_tmp2, qp_cb_tmp2 = list_entry(qp_cb_tmp2->list.next, struct rs_qp_cb, list)) {
-        if (qp_cb_tmp->ib_qp->qp_num == qpn) {
-            *qp_cb = qp_cb_tmp;
+    RS_LIST_GET_HEAD_ENTRY(qpCbTmp, qpCbTmp2, &rdevCb->qp_list, list, struct rs_qp_cb);
+    for (; (&qpCbTmp->list) != &rdevCb->qp_list;
+        qpCbTmp = qpCbTmp2, qpCbTmp2 = list_entry(qpCbTmp2->list.next, struct rs_qp_cb, list)) {
+        if (qpCbTmp->ib_qp->qp_num == qpn) {
+            *qpCb = qpCbTmp;
             return 0;
         }
     }
 
-    *qp_cb = NULL;
+    *qpCb = NULL;
     hccp_err("qp_cb for qp %u do not available!", qpn);
 
     return -ENODEV;
 }
 
-int rs_qpn2qpcb(unsigned int phy_id, unsigned int rdev_index, uint32_t qpn, struct rs_qp_cb **qp_cb)
+int RsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct rs_qp_cb **qpCb)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_cb *rs_cb = NULL;
-    struct rs_rdev_cb *rdev_cb = NULL;
+    unsigned int chipId;
+    struct rs_cb *rsCb = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("rs set param error! phy_id:%u", phy_id), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error! phy_id:%u", phyId), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret, hccp_err("rs_qpn2qpcb rsGetLocalDevIDByHostDevID phy_id[%u] invalid, ret:%d",
-        phy_id, ret), ret);
+        phyId, ret), ret);
 
-    ret = rs_dev2rscb(chip_id, &rs_cb, false);
+    ret = RsDev2rscb(chipId, &rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("rs_qpn2qpcb get rs_cb failed, ret:%d", ret), -ENODEV);
 
-    ret = rs_get_rdev_cb(rs_cb, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdev_index:%u", ret, rdev_index), ret);
+    ret = RsGetRdevCb(rsCb, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdevIndex:%u", ret, rdevIndex), ret);
 
-    ret = rs_get_qpcb(rdev_cb, qpn, qp_cb);
+    ret = RsGetQpcb(rdevCb, qpn, qpCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_get_qpcb failed! ret:%d, qpn:%u", ret, qpn), ret);
 
     return 0;
 }
 
-STATIC int rs_get_mrcb(struct rs_qp_cb *qp_cb, uint64_t addr, struct rs_mr_cb **mr_cb,
-    struct rs_list_head *mr_list)
+STATIC int RsGetMrcb(struct rs_qp_cb *qpCb, uint64_t addr, struct rs_mr_cb **mrCb,
+    struct rs_list_head *mrList)
 {
-    struct rs_mr_cb *mr_tmp = NULL;
-    struct rs_mr_cb *mr_tmp2 = NULL;
+    struct rs_mr_cb *mrTmp = NULL;
+    struct rs_mr_cb *mrTmp2 = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
-    RS_LIST_GET_HEAD_ENTRY(mr_tmp, mr_tmp2, mr_list, list, struct rs_mr_cb);
-    for (; (&mr_tmp->list) != mr_list;
-        mr_tmp = mr_tmp2, mr_tmp2 = list_entry(mr_tmp2->list.next, struct rs_mr_cb, list)) {
-        if ((mr_tmp->mr_info.addr <= addr) && (addr < mr_tmp->mr_info.addr + mr_tmp->mr_info.len)) {
-            *mr_cb = mr_tmp;
-            RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
+    RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, mrList, list, struct rs_mr_cb);
+    for (; (&mrTmp->list) != mrList;
+        mrTmp = mrTmp2, mrTmp2 = list_entry(mrTmp2->list.next, struct rs_mr_cb, list)) {
+        if ((mrTmp->mr_info.addr <= addr) && (addr < mrTmp->mr_info.addr + mrTmp->mr_info.len)) {
+            *mrCb = mrTmp;
+            RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
             return 0;
         }
     }
 
-    *mr_cb = NULL;
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    *mrCb = NULL;
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
 
     hccp_info("cannot find mrcb for addr@0x%lx !", addr);
 
     return -ENODEV;
 }
 
-STATIC void *rs_notify_mr_list_add(struct rs_qp_cb *qp_cb, const char *buf)
+STATIC void *RsNotifyMrListAdd(struct rs_qp_cb *qpCb, const char *buf)
 {
     int ret;
-    struct rs_mr_cb *notify_mr_cb;
+    struct rs_mr_cb *notifyMrCb;
 
-    notify_mr_cb = calloc(1, sizeof(struct rs_mr_cb));
-    CHK_PRT_RETURN(notify_mr_cb == NULL, hccp_err("notify_mr_cb calloc failed"), NULL);
-    ret = memcpy_s(&notify_mr_cb->mr_info, sizeof(struct rs_mr_info),
+    notifyMrCb = calloc(1, sizeof(struct rs_mr_cb));
+    CHK_PRT_RETURN(notifyMrCb == NULL, hccp_err("notify_mr_cb calloc failed"), NULL);
+    ret = memcpy_s(&notifyMrCb->mr_info, sizeof(struct rs_mr_info),
                    &((const struct rs_qp_info *)buf)->notify_mr, sizeof(struct rs_mr_info));
     if (ret) {
         hccp_err("memcpy_s failed, ret:%d, src_len:%u, dst_len:%u",
             ret, sizeof(struct rs_mr_info), sizeof(struct rs_mr_info));
-        free(notify_mr_cb);
-        notify_mr_cb = NULL;
+        free(notifyMrCb);
+        notifyMrCb = NULL;
         return NULL;
     }
 
-    hccp_info("qpn is %d, rdev_index:%u, chip_id %u, recv notify va is 0x%llx, notify size is %llu",
-        qp_cb->qp_info_lo.qpn, qp_cb->rdev_cb->rdev_index, qp_cb->rdev_cb->rs_cb->chip_id,
-        notify_mr_cb->mr_info.addr, notify_mr_cb->mr_info.len);
+    hccp_info("qpn is %d, rdevIndex:%u, chipId %u, recv notify va is 0x%llx, notify size is %llu",
+        qpCb->qp_info_lo.qpn, qpCb->rdev_cb->rdev_index, qpCb->rdev_cb->rs_cb->chip_id,
+        notifyMrCb->mr_info.addr, notifyMrCb->mr_info.len);
 
-    rs_list_add_tail(&notify_mr_cb->list, &qp_cb->rem_mr_list);
+    RsListAddTail(&notifyMrCb->list, &qpCb->rem_mr_list);
 
-    return notify_mr_cb;
+    return notifyMrCb;
 }
 
-STATIC int rs_qp_state_modify(struct rs_qp_cb *qp_cb)
+STATIC int RsQpStateModify(struct rs_qp_cb *qpCb)
 {
-    struct ibv_qp_init_attr init_attr = { 0 };
+    struct ibv_qp_init_attr initAttr = { 0 };
     struct ibv_qp_attr attr = { 0 };
     enum ibv_qp_state state;
     int ret;
 
     // see ib_modify_qp_is_ok for status modify, only support modify qp from INIT to RTR
-    ret = rs_ibv_query_qp(qp_cb->ib_qp, &attr, IBV_QP_STATE, &init_attr);
+    ret = RsIbvQueryQp(qpCb->ib_qp, &attr, IBV_QP_STATE, &initAttr);
     if (ret != 0) {
-        hccp_warn("rs_ibv_query_qp qpn:%d unsuccessful, ret:%d", qp_cb->qp_info_lo.qpn, ret);
+        hccp_warn("rs_ibv_query_qp qpn:%d unsuccessful, ret:%d", qpCb->qp_info_lo.qpn, ret);
         state = IBV_QPS_UNKNOWN;
     } else {
         state = attr.qp_state;
@@ -155,157 +155,157 @@ STATIC int rs_qp_state_modify(struct rs_qp_cb *qp_cb)
 
     // disallow modify qp from IBV_QPS_RTS to IBV_QPS_RTS
     if (state == IBV_QPS_RTS) {
-        hccp_err("qpn:%d disallow modify from %d", qp_cb->qp_info_lo.qpn, state);
+        hccp_err("qpn:%d disallow modify from %d", qpCb->qp_info_lo.qpn, state);
         return -EINVAL;
     }
 
-    hccp_info("qpn:%d state:%d start modify", qp_cb->qp_info_lo.qpn, state);
+    hccp_info("qpn:%d state:%d start modify", qpCb->qp_info_lo.qpn, state);
 
     // modify qp from others to RESET
     if (state != IBV_QPS_RESET && state != IBV_QPS_INIT && state != IBV_QPS_RTR) {
-        ret = rs_drv_qp_state_modifyto_reset(qp_cb);
-        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to reset failed, ret:%d", qp_cb->qp_info_lo.qpn, state, ret),
+        ret = RsDrvQpStateModifytoReset(qpCb);
+        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to reset failed, ret:%d", qpCb->qp_info_lo.qpn, state, ret),
             ret);
         state = IBV_QPS_RESET;
     }
 
     // modify qp from RESET to INIT
     if (state == IBV_QPS_RESET) {
-        ret = rs_drv_qp_state_modifyto_init(qp_cb, &attr);
-        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to init failed, ret %d", qp_cb->qp_info_lo.qpn, state, ret),
+        ret = RsDrvQpStateModifytoInit(qpCb, &attr);
+        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to init failed, ret %d", qpCb->qp_info_lo.qpn, state, ret),
             ret);
         state = IBV_QPS_INIT;
     }
 
     // modify qp from INIT to RTR
     if (state == IBV_QPS_INIT) {
-        ret = rs_drv_qp_state_modifyto_rtr(qp_cb, &attr);
-        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to rtr failed, ret %d", qp_cb->qp_info_lo.qpn, state, ret), ret);
+        ret = RsDrvQpStateModifytoRtr(qpCb, &attr);
+        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to rtr failed, ret %d", qpCb->qp_info_lo.qpn, state, ret), ret);
         state = IBV_QPS_RTR;
     }
 
     // modify qp from RTR to RTS
     if (state == IBV_QPS_RTR) {
-        ret = rs_drv_qp_state_modifyto_rts(qp_cb, &attr);
-        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to rts failed, ret %d", qp_cb->qp_info_lo.qpn, state, ret), ret);
+        ret = RsDrvQpStateModifytoRts(qpCb, &attr);
+        CHK_PRT_RETURN(ret, hccp_err("qpn:%d modify %d to rts failed, ret %d", qpCb->qp_info_lo.qpn, state, ret), ret);
     }
 
-    hccp_info("local qpn[%d] remote qpn[%d] modify succ", qp_cb->qp_info_lo.qpn, qp_cb->qp_info_rem.qpn);
+    hccp_info("local qpn[%d] remote qpn[%d] modify succ", qpCb->qp_info_lo.qpn, qpCb->qp_info_rem.qpn);
 
     return 0;
 }
 
-STATIC int rs_epoll_recv_qp_handle(struct rs_qp_cb *qp_cb, const char *buf_tmp)
+STATIC int RsEpollRecvQpHandle(struct rs_qp_cb *qpCb, const char *bufTmp)
 {
     int ret;
-    float time_cost = 0.0;
+    float timeCost = 0.0;
 
-    ret = memcpy_s(&qp_cb->qp_info_rem, sizeof(struct rs_qp_info),
-                   buf_tmp, sizeof(struct rs_qp_info));
+    ret = memcpy_s(&qpCb->qp_info_rem, sizeof(struct rs_qp_info),
+                   bufTmp, sizeof(struct rs_qp_info));
     CHK_PRT_RETURN(ret, hccp_err("memcpy_s failed[%d], dest size:%d, src size:%d", ret, sizeof(struct rs_qp_info),
         sizeof(struct rs_qp_info)), -ENOMEM);
 
     /* modify qp state to RTR/RTS */
-    ret = rs_qp_state_modify(qp_cb);
+    ret = RsQpStateModify(qpCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_qp_state_modify local qpn[%d] remote qpn[%d] failed ret[%d]",
-        qp_cb->qp_info_lo.qpn, qp_cb->qp_info_rem.qpn, ret), ret);
+        qpCb->qp_info_lo.qpn, qpCb->qp_info_rem.qpn, ret), ret);
 
-    rs_get_cur_time(&qp_cb->end_time);
-    hccp_time_interval(&qp_cb->end_time, &qp_cb->start_time, &time_cost);
-    if (time_cost > RS_EXPECT_TIME_MAX) {
-        hccp_warn("local qpn[%d] remote qpn [%d] connect success cost[%f] more than[%f]ms!", qp_cb->qp_info_lo.qpn,
-            qp_cb->qp_info_rem.qpn, time_cost, RS_EXPECT_TIME_MAX);
+    RsGetCurTime(&qpCb->end_time);
+    HccpTimeInterval(&qpCb->end_time, &qpCb->start_time, &timeCost);
+    if (timeCost > RS_EXPECT_TIME_MAX) {
+        hccp_warn("local qpn[%d] remote qpn [%d] connect success cost[%f] more than[%f]ms!", qpCb->qp_info_lo.qpn,
+            qpCb->qp_info_rem.qpn, timeCost, RS_EXPECT_TIME_MAX);
     } else {
-        hccp_info("local qpn[%d] remote qpn [%d] connect success! cost [%f] ms", qp_cb->qp_info_lo.qpn,
-            qp_cb->qp_info_rem.qpn, time_cost);
+        hccp_info("local qpn[%d] remote qpn [%d] connect success! cost [%f] ms", qpCb->qp_info_lo.qpn,
+            qpCb->qp_info_rem.qpn, timeCost);
     }
 
-    hccp_info("qp [%d] state has been migrate to RTS!, qp_cb state is %d", qp_cb->qp_info_lo.qpn, qp_cb->state);
+    hccp_info("qp [%d] state has been migrate to RTS!, qpCb state is %d", qpCb->qp_info_lo.qpn, qpCb->state);
 
     return 0;
 }
 
-STATIC void *rs_epoll_recv_mr_handle(struct rs_qp_cb *qp_cb, const char *buf_tmp)
+STATIC void *RsEpollRecvMrHandle(struct rs_qp_cb *qpCb, const char *bufTmp)
 {
     int ret;
-    struct rs_mr_cb *mr_cb;
+    struct rs_mr_cb *mrCb;
 
-    mr_cb = calloc(1, sizeof(struct rs_mr_cb));
-    CHK_PRT_RETURN(mr_cb == NULL, hccp_err("mr_cb calloc failed"), NULL);
-    ret = memcpy_s(&mr_cb->mr_info, sizeof(struct rs_mr_info), buf_tmp, sizeof(struct rs_mr_info));
+    mrCb = calloc(1, sizeof(struct rs_mr_cb));
+    CHK_PRT_RETURN(mrCb == NULL, hccp_err("mr_cb calloc failed"), NULL);
+    ret = memcpy_s(&mrCb->mr_info, sizeof(struct rs_mr_info), bufTmp, sizeof(struct rs_mr_info));
     if (ret) {
         hccp_err("memcpy_s failed[%d], dest size:%u, src size:%u", ret, sizeof(struct rs_mr_info),
             sizeof(struct rs_mr_info));
-        free(mr_cb);
-        mr_cb = NULL;
+        free(mrCb);
+        mrCb = NULL;
         return NULL;
     }
 
-    rs_list_add_tail(&mr_cb->list, &qp_cb->rem_mr_list);
+    RsListAddTail(&mrCb->list, &qpCb->rem_mr_list);
 
-    hccp_info("recv mr addr is 0x%llx", mr_cb->mr_info.addr);
-    hccp_info("recv mr len is %llu", mr_cb->mr_info.len);
+    hccp_info("recv mr addr is 0x%llx", mrCb->mr_info.addr);
+    hccp_info("recv mr len is %llu", mrCb->mr_info.len);
 
-    return mr_cb;
+    return mrCb;
 }
 
-STATIC int rs_cmd_qp_info_handle(struct rs_qp_cb *qp_cb, unsigned int total_size,
-    const char *buf_tmp, unsigned int cur_size, bool *flag)
+STATIC int RsCmdQpInfoHandle(struct rs_qp_cb *qpCb, unsigned int totalSize,
+    const char *bufTmp, unsigned int curSize, bool *flag)
 {
     int ret;
-    CHK_PRT_RETURN((total_size - cur_size) < sizeof(struct rs_qp_info), hccp_info("qp_info remain size"
-        "[%u] < size [%u], wait for next recv", total_size - cur_size, sizeof(struct rs_qp_info)), -EINVAL);
+    CHK_PRT_RETURN((totalSize - curSize) < sizeof(struct rs_qp_info), hccp_info("qp_info remain size"
+        "[%u] < size [%u], wait for next recv", totalSize - curSize, sizeof(struct rs_qp_info)), -EINVAL);
 
-    ret = rs_epoll_recv_qp_handle(qp_cb, buf_tmp);
+    ret = RsEpollRecvQpHandle(qpCb, bufTmp);
     CHK_PRT_RETURN(ret, hccp_err("rs_epoll_recv_qp_handle failed! ret[%d]", ret), ret);
 
-    rs_notify_mr_list_add(qp_cb, buf_tmp);
+    RsNotifyMrListAdd(qpCb, bufTmp);
     hccp_info("rs_notify_mr_list_add");
 
     *flag = true;
-    hccp_info("qp_info cur_size(%u) len(%u) !", cur_size, sizeof(struct rs_qp_info));
+    hccp_info("qp_info cur_size(%u) len(%u) !", curSize, sizeof(struct rs_qp_info));
 
     return 0;
 }
 
-STATIC int rs_cmd_mr_info_handle(struct rs_qp_cb *qp_cb, unsigned int total_size, const char *buf_tmp,
-    unsigned int cur_size, bool *flag)
+STATIC int RsCmdMrInfoHandle(struct rs_qp_cb *qpCb, unsigned int totalSize, const char *bufTmp,
+    unsigned int curSize, bool *flag)
 {
-    CHK_PRT_RETURN((total_size - cur_size) < sizeof(struct rs_mr_info), hccp_info("mr_info remain size"
-        "[%u] < size [%u], wait for next recv", total_size - cur_size, sizeof(struct rs_mr_info)), -EINVAL);
+    CHK_PRT_RETURN((totalSize - curSize) < sizeof(struct rs_mr_info), hccp_info("mr_info remain size"
+        "[%u] < size [%u], wait for next recv", totalSize - curSize, sizeof(struct rs_mr_info)), -EINVAL);
 
-    (void)rs_epoll_recv_mr_handle(qp_cb, buf_tmp);
+    (void)RsEpollRecvMrHandle(qpCb, bufTmp);
 
     *flag = true;
 
-    hccp_info("mr_info cur_size(%u) len(%u) !", cur_size, sizeof(struct rs_mr_info));
+    hccp_info("mr_info cur_size(%u) len(%u) !", curSize, sizeof(struct rs_mr_info));
 
     return 0;
 }
 
-STATIC int rs_cmd_len_info_handle(struct rs_qp_cb *qp_cb, unsigned int total_size, const char *buf_tmp,
-    unsigned int cur_size, bool *flag)
+STATIC int RsCmdLenInfoHandle(struct rs_qp_cb *qpCb, unsigned int totalSize, const char *bufTmp,
+    unsigned int curSize, bool *flag)
 {
-    CHK_PRT_RETURN((total_size - cur_size) < sizeof(struct rs_qp_len_info), hccp_info("len_info remain size"
-        "[%u] < size [%u], wait for next recv", total_size - cur_size, sizeof(struct rs_qp_len_info)), -EINVAL);
+    CHK_PRT_RETURN((totalSize - curSize) < sizeof(struct rs_qp_len_info), hccp_info("len_info remain size"
+        "[%u] < size [%u], wait for next recv", totalSize - curSize, sizeof(struct rs_qp_len_info)), -EINVAL);
 
-    qp_cb->expect_len = *((const uint32_t*)(buf_tmp + sizeof(uint32_t)));
+    qpCb->expect_len = *((const uint32_t*)(bufTmp + sizeof(uint32_t)));
 
     *flag = true;
 
     return 0;
 }
 
-STATIC void rs_epoll_recv_handle_remain(struct rs_qp_cb *qp_cb, unsigned int total_size,
-    unsigned int cur_size, bool flag, const char *buf_tmp)
+STATIC void RsEpollRecvHandleRemain(struct rs_qp_cb *qpCb, unsigned int totalSize,
+    unsigned int curSize, bool flag, const char *bufTmp)
 {
     int ret = 0;
 
-    qp_cb->remain_size = total_size - cur_size;
-    if ((qp_cb->remain_size > 0) && (flag == true)) {
-        ret = memcpy_s(qp_cb->qp_mr_buf, RS_BUF_SIZE, buf_tmp, qp_cb->remain_size);
+    qpCb->remain_size = totalSize - curSize;
+    if ((qpCb->remain_size > 0) && (flag == true)) {
+        ret = memcpy_s(qpCb->qp_mr_buf, RS_BUF_SIZE, bufTmp, qpCb->remain_size);
         if (ret) {
-            hccp_err("memcpy_s failed, ret:%d, remain_size:%u", ret, qp_cb->remain_size);
+            hccp_err("memcpy_s failed, ret:%d, remain_size:%u", ret, qpCb->remain_size);
             return;
         }
     }
@@ -313,76 +313,76 @@ STATIC void rs_epoll_recv_handle_remain(struct rs_qp_cb *qp_cb, unsigned int tot
     return;
 }
 
-STATIC void rs_epoll_recv_handle(struct rs_qp_cb *qp_cb, char *buf, int size)
+STATIC void RsEpollRecvHandle(struct rs_qp_cb *qpCb, char *buf, int size)
 {
-    unsigned int total_size = qp_cb->remain_size + (unsigned int)size;
-    char *buf_tmp = (char *)qp_cb->qp_mr_buf;
-    unsigned int cur_size = 0;
+    unsigned int totalSize = qpCb->remain_size + (unsigned int)size;
+    char *bufTmp = (char *)qpCb->qp_mr_buf;
+    unsigned int curSize = 0;
     bool flag = false;
     uint32_t cmd;
     int ret;
 
-    hccp_info("Message for qp:%d, qp_cb->remain_size:%u, size:%d", qp_cb->qp_info_lo.qpn, qp_cb->remain_size, size);
-    ret = memcpy_s(qp_cb->qp_mr_buf + qp_cb->remain_size, RS_BUF_SIZE - qp_cb->remain_size, buf, size);
+    hccp_info("Message for qp:%d, qpCb->remain_size:%u, size:%d", qpCb->qp_info_lo.qpn, qpCb->remain_size, size);
+    ret = memcpy_s(qpCb->qp_mr_buf + qpCb->remain_size, RS_BUF_SIZE - qpCb->remain_size, buf, size);
     if (ret) {
-        hccp_err("memcpy_s failed, ret:%d, remain_size:%u, size:%d", ret, qp_cb->remain_size, size);
+        hccp_err("memcpy_s failed, ret:%d, remain_size:%u, size:%d", ret, qpCb->remain_size, size);
         return;
     }
 
     do {
-        cmd = *((uint32_t *)buf_tmp);
+        cmd = *((uint32_t *)bufTmp);
         switch (cmd) {
             case RS_CMD_QP_INFO:
-                ret = rs_cmd_qp_info_handle(qp_cb, total_size, buf_tmp, cur_size, &flag);
+                ret = RsCmdQpInfoHandle(qpCb, totalSize, bufTmp, curSize, &flag);
                 if (ret) {
                     goto out;
                 }
 
-                cur_size += sizeof(struct rs_qp_info);
-                buf_tmp = qp_cb->qp_mr_buf + cur_size;
+                curSize += sizeof(struct rs_qp_info);
+                bufTmp = qpCb->qp_mr_buf + curSize;
                 break;
             case RS_CMD_MR_INFO:
-                ret = rs_cmd_mr_info_handle(qp_cb, total_size, buf_tmp, cur_size, &flag);
+                ret = RsCmdMrInfoHandle(qpCb, totalSize, bufTmp, curSize, &flag);
                 if (ret) {
                     goto out;
                 }
 
-                cur_size += sizeof(struct rs_mr_info);
-                buf_tmp = qp_cb->qp_mr_buf + cur_size;
+                curSize += sizeof(struct rs_mr_info);
+                bufTmp = qpCb->qp_mr_buf + curSize;
                 break;
             case RS_CMD_LEN_INFO:
-                ret = rs_cmd_len_info_handle(qp_cb, total_size, buf_tmp, cur_size, &flag);
+                ret = RsCmdLenInfoHandle(qpCb, totalSize, bufTmp, curSize, &flag);
                 if (ret) {
                     goto out;
                 }
-                cur_size += sizeof(struct rs_qp_len_info);
-                buf_tmp = qp_cb->qp_mr_buf + cur_size;
+                curSize += sizeof(struct rs_qp_len_info);
+                bufTmp = qpCb->qp_mr_buf + curSize;
                 break;
             default:
-                hccp_warn("qp %d, unknown cmd(0x%x)!", qp_cb->qp_info_lo.qpn, cmd);
-                rs_buf_print(buf, size);
+                hccp_warn("qp %d, unknown cmd(0x%x)!", qpCb->qp_info_lo.qpn, cmd);
+                RsBufPrint(buf, size);
                 return;
         }
-    } while (cur_size < total_size);
+    } while (curSize < totalSize);
 
 out:
-    rs_epoll_recv_handle_remain(qp_cb, total_size, cur_size, flag, buf_tmp);
+    RsEpollRecvHandleRemain(qpCb, totalSize, curSize, flag, bufTmp);
 }
 
-STATIC void rs_qp_mr_recv_handle(int fd, struct rs_qp_cb *qp_cb)
+STATIC void RsQpMrRecvHandle(int fd, struct rs_qp_cb *qpCb)
 {
     char buf[RS_BUF_SIZE];
     int size;
     int ret;
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
 
-    size = rs_socket_recv(fd, buf, RS_BUF_SIZE - qp_cb->remain_size);
-    hccp_dbg("fd %d qpn %d read size = %d, qp_cb->remain_size:%u", fd, qp_cb->qp_info_lo.qpn, size, qp_cb->remain_size);
+    size = RsSocketRecv(fd, buf, RS_BUF_SIZE - qpCb->remain_size);
+    hccp_dbg("fd %d qpn %d read size = %d, qpCb->remain_size:%u", fd, qpCb->qp_info_lo.qpn, size, qpCb->remain_size);
 
     if (size > 0) {
-        qp_cb->recv_len += (uint32_t)size;
-        rs_epoll_recv_handle(qp_cb, buf, size);
+        qpCb->recv_len += (uint32_t)size;
+        RsEpollRecvHandle(qpCb, buf, size);
     } else if (size == 0) {
         hccp_dbg("fd %d read size = %d, remote fd has been closed, fd cannot use !", fd, size);
 #ifdef CA_CONFIG_LLT
@@ -392,49 +392,49 @@ STATIC void rs_qp_mr_recv_handle(int fd, struct rs_qp_cb *qp_cb)
         ret = errno;
         hccp_dbg("no data available, errno:%d", ret);
     }
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
 
     return;
 }
 
-STATIC int rs_handle_qp_mr_epoll_event(struct rs_rdev_cb *rdev_cb, int fd)
+STATIC int RsHandleQpMrEpollEvent(struct rs_rdev_cb *rdevCb, int fd)
 {
-    struct rs_qp_cb *qp_cb;
-    struct rs_qp_cb *qp_cb2 = NULL;
+    struct rs_qp_cb *qpCb;
+    struct rs_qp_cb *qpCb2 = NULL;
 
     /* QP event, QP info exchange */
-    RS_LIST_GET_HEAD_ENTRY(qp_cb, qp_cb2, &rdev_cb->qp_list, list, struct rs_qp_cb);
-    for (; (&qp_cb->list) != &rdev_cb->qp_list;
-        qp_cb = qp_cb2, qp_cb2 = list_entry(qp_cb2->list.next, struct rs_qp_cb, list)) {
-        if (qp_cb->channel == NULL) {
+    RS_LIST_GET_HEAD_ENTRY(qpCb, qpCb2, &rdevCb->qp_list, list, struct rs_qp_cb);
+    for (; (&qpCb->list) != &rdevCb->qp_list;
+        qpCb = qpCb2, qpCb2 = list_entry(qpCb2->list.next, struct rs_qp_cb, list)) {
+        if (qpCb->channel == NULL) {
             continue;
         }
-        if (qp_cb->srq_context != NULL && qp_cb->srq_context->channel->fd == fd) {
+        if (qpCb->srq_context != NULL && qpCb->srq_context->channel->fd == fd) {
             hccp_dbg("fd %d poll cq!", fd);
-            rs_drv_poll_srq_cq_handle(qp_cb);
+            RsDrvPollSrqCqHandle(qpCb);
             return 0;
         }
-        if (fd == qp_cb->channel->fd) {
+        if (fd == qpCb->channel->fd) {
             hccp_dbg("fd %d poll cq!", fd);
-            rs_drv_poll_cq_handle(qp_cb);
+            RsDrvPollCqHandle(qpCb);
             return 0;
         }
     }
     return -ENODEV;
 }
 
-int rs_epoll_event_qp_mr_in_handle(struct rs_cb *rs_cb, int fd)
+int RsEpollEventQpMrInHandle(struct rs_cb *rsCb, int fd)
 {
     int ret;
-    struct rs_rdev_cb *rdev_cb_tmp = NULL;
-    struct rs_rdev_cb *rdev_cb_tmp2 = NULL;
+    struct rs_rdev_cb *rdevCbTmp = NULL;
+    struct rs_rdev_cb *rdevCbTmp2 = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(rdev_cb_tmp, rdev_cb_tmp2, &rs_cb->rdev_list, list, struct rs_rdev_cb);
-    for (; (&rdev_cb_tmp->list) != &rs_cb->rdev_list;
-        rdev_cb_tmp = rdev_cb_tmp2, rdev_cb_tmp2 = list_entry(rdev_cb_tmp2->list.next, struct rs_rdev_cb, list)) {
-            RS_PTHREAD_MUTEX_LOCK(&rdev_cb_tmp->rdev_mutex);
-            ret = rs_handle_qp_mr_epoll_event(rdev_cb_tmp, fd);
-            RS_PTHREAD_MUTEX_ULOCK(&rdev_cb_tmp->rdev_mutex);
+    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rsCb->rdev_list, list, struct rs_rdev_cb);
+    for (; (&rdevCbTmp->list) != &rsCb->rdev_list;
+        rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct rs_rdev_cb, list)) {
+            RS_PTHREAD_MUTEX_LOCK(&rdevCbTmp->rdev_mutex);
+            ret = RsHandleQpMrEpollEvent(rdevCbTmp, fd);
+            RS_PTHREAD_MUTEX_ULOCK(&rdevCbTmp->rdev_mutex);
             if (ret == 0) {
                 return 0;
             }
@@ -442,496 +442,496 @@ int rs_epoll_event_qp_mr_in_handle(struct rs_cb *rs_cb, int fd)
     return -ENODEV;
 }
 
-STATIC int rs_mr_info_sync(struct rs_mr_cb *mr_cb)
+STATIC int RsMrInfoSync(struct rs_mr_cb *mrCb)
 {
     int ret;
 
-    hccp_info("mr state:%d, addr:0x%lx", mr_cb->state, mr_cb->mr_info.addr);
+    hccp_info("mr state:%d, addr:0x%lx", mrCb->state, mrCb->mr_info.addr);
 
-    CHK_PRT_RETURN(mr_cb->state & RS_MR_STATE_SYNCED, hccp_warn("mr synced ! mr_cb->flag[%d] & [%d] != 0",
-        mr_cb->state, RS_MR_STATE_SYNCED), 0);
+    CHK_PRT_RETURN(mrCb->state & RS_MR_STATE_SYNCED, hccp_warn("mr synced ! mr_cb->flag[%d] & [%d] != 0",
+        mrCb->state, RS_MR_STATE_SYNCED), 0);
 
     /*
      * no socket available for MR_INFO exchange if allowed
      * need exchange when socket available!!!
      */
-    CHK_PRT_RETURN(mr_cb->qp_cb->conn_info == NULL, hccp_warn("no conn available !"), 0);
+    CHK_PRT_RETURN(mrCb->qp_cb->conn_info == NULL, hccp_warn("no conn available !"), 0);
 
-    CHK_PRT_RETURN(mr_cb->qp_cb->state == RS_QP_STATUS_REM_FD_CLOSE, hccp_warn("remote qp fd closed,"
-        "cann not use it anymore! status[%d](RS_QP_STATUS_REM_FD_CLOSE)", mr_cb->qp_cb->state), -EFAULT);
+    CHK_PRT_RETURN(mrCb->qp_cb->state == RS_QP_STATUS_REM_FD_CLOSE, hccp_warn("remote qp fd closed,"
+        "cann not use it anymore! status[%d](RS_QP_STATUS_REM_FD_CLOSE)", mrCb->qp_cb->state), -EFAULT);
 
-    CHK_PRT_RETURN(mr_cb->qp_cb->conn_info->connfd == RS_FD_INVALID, hccp_warn("rm info sync failed! fd not ready!"
-        "connfd[%d](RS_FD_INVALID)", mr_cb->qp_cb->conn_info->connfd), -ENETUNREACH);
+    CHK_PRT_RETURN(mrCb->qp_cb->conn_info->connfd == RS_FD_INVALID, hccp_warn("rm info sync failed! fd not ready!"
+        "connfd[%d](RS_FD_INVALID)", mrCb->qp_cb->conn_info->connfd), -ENETUNREACH);
 
-    mr_cb->mr_info.cmd = (unsigned int)RS_CMD_MR_INFO;
-    ret = rs_socket_send(mr_cb->qp_cb->conn_info->connfd, &mr_cb->mr_info,
+    mrCb->mr_info.cmd = (unsigned int)RS_CMD_MR_INFO;
+    ret = RsSocketSend(mrCb->qp_cb->conn_info->connfd, &mrCb->mr_info,
         sizeof(struct rs_mr_info));
     CHK_PRT_RETURN(ret != sizeof(struct rs_mr_info), hccp_err("mr_info send %d/%ld incomplete",
         ret, sizeof(struct rs_mr_info)), -EAGAIN);
 
-    mr_cb->qp_cb->send_len += (uint32_t)ret;
-    mr_cb->state |= RS_MR_STATE_SYNCED;
-    hccp_info("after send mr state:%d, addr:0x%lx", mr_cb->state, mr_cb->mr_info.addr);
+    mrCb->qp_cb->send_len += (uint32_t)ret;
+    mrCb->state |= RS_MR_STATE_SYNCED;
+    hccp_info("after send mr state:%d, addr:0x%lx", mrCb->state, mrCb->mr_info.addr);
 
     return 0;
 }
 
-STATIC int rs_mr_pre_reg(unsigned int phy_id, struct rs_qp_cb *qp_cb, struct rs_mr_cb *mr_cb,
-    struct rdma_mr_reg_info *mr_reg_info)
+STATIC int RsMrPreReg(unsigned int phyId, struct rs_qp_cb *qpCb, struct rs_mr_cb *mrCb,
+    struct rdma_mr_reg_info *mrRegInfo)
 {
     struct roce_process_sign roceSign;
     int ret;
-    unsigned int chip_id;
-    char *addr = mr_reg_info->addr;
-    unsigned long long len = mr_reg_info->len;
-    int access = mr_reg_info->access;
+    unsigned int chipId;
+    char *addr = mrRegInfo->addr;
+    unsigned long long len = mrRegInfo->len;
+    int access = mrRegInfo->access;
 
-    if (qp_cb->rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE || qp_cb->rdev_cb->rs_cb->hccp_mode == NETWORK_ONLINE ||
-        qp_cb->is_exp == RS_NOT_EXP) {
-        mr_cb->ib_mr = rs_drv_mr_reg(qp_cb->ib_pd, addr, len, access);
-        CHK_PRT_RETURN(mr_cb->ib_mr == NULL, hccp_err("rs_drv_mr_reg addr is NULL len[%lld] failed ",
+    if (qpCb->rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE || qpCb->rdev_cb->rs_cb->hccp_mode == NETWORK_ONLINE ||
+        qpCb->is_exp == RS_NOT_EXP) {
+        mrCb->ib_mr = RsDrvMrReg(qpCb->ib_pd, addr, len, access);
+        CHK_PRT_RETURN(mrCb->ib_mr == NULL, hccp_err("rs_drv_mr_reg addr is NULL len[%lld] failed ",
             len), -EACCES);
     } else {
         // reg mr with backup phy_id
-        if (qp_cb->rdev_cb->backup_info.backup_flag) {
-            phy_id = qp_cb->rdev_cb->backup_info.rdev_info.phy_id;
+        if (qpCb->rdev_cb->backup_info.backup_flag) {
+            phyId = qpCb->rdev_cb->backup_info.rdev_info.phy_id;
         }
-        ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-        CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, ret %d, phyid[%u]", ret, phy_id), -EACCES);
-        roceSign.tgid = qp_cb->rdev_cb->rs_cb->p_rs_sign.tgid;
-        roceSign.devid = chip_id;
+        ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+        CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, ret %d, phyid[%u]", ret, phyId), -EACCES);
+        roceSign.tgid = qpCb->rdev_cb->rs_cb->p_rs_sign.tgid;
+        roceSign.devid = chipId;
         roceSign.vfid = 0;
-        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, qp_cb->rdev_cb->rs_cb->p_rs_sign.sign);
+        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, qpCb->rdev_cb->rs_cb->p_rs_sign.sign);
         CHK_PRT_RETURN(ret, hccp_err("Invalid pid sign, ret(%d)", ret), -ESAFEFUNC);
-        mr_cb->ib_mr = rs_drv_exp_mr_reg(qp_cb->ib_pd, addr, len, access, roceSign);
-        CHK_PRT_RETURN(mr_cb->ib_mr == NULL, hccp_err("rs_drv_exp_mr_reg addr is NULL len[%lld] failed ",
+        mrCb->ib_mr = RsDrvExpMrReg(qpCb->ib_pd, addr, len, access, roceSign);
+        CHK_PRT_RETURN(mrCb->ib_mr == NULL, hccp_err("rs_drv_exp_mr_reg addr is NULL len[%lld] failed ",
             len), -EACCES);
     }
 
-    mr_cb->mr_info.cmd = (unsigned int)RS_CMD_MR_INFO;
-    mr_cb->mr_info.addr = (uintptr_t)addr;
-    mr_cb->mr_info.len = len;
-    mr_cb->mr_info.rkey = mr_cb->ib_mr->rkey;
+    mrCb->mr_info.cmd = (unsigned int)RS_CMD_MR_INFO;
+    mrCb->mr_info.addr = (uintptr_t)addr;
+    mrCb->mr_info.len = len;
+    mrCb->mr_info.rkey = mrCb->ib_mr->rkey;
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
-    rs_list_add_tail(&mr_cb->list, &qp_cb->mr_list);
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
+    RsListAddTail(&mrCb->list, &qpCb->mr_list);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
 
-    qp_cb->mr_num++;
+    qpCb->mr_num++;
     return 0;
 }
 
-STATIC int rs_calloc_mr(int num, struct rs_mr_cb **mr_cb)
+STATIC int RsCallocMr(int num, struct rs_mr_cb **mrCb)
 {
     CHK_PRT_RETURN(num <= 0, hccp_err("invalid num for mr calloc"), -EINVAL);
 
-    *mr_cb = calloc(num, sizeof(struct rs_mr_cb));
-    CHK_PRT_RETURN((*mr_cb) == NULL, hccp_err("calloc mr_cb failed"), -ENOMEM);
+    *mrCb = calloc(num, sizeof(struct rs_mr_cb));
+    CHK_PRT_RETURN((*mrCb) == NULL, hccp_err("calloc mr_cb failed"), -ENOMEM);
     return 0;
 }
 
-STATIC int rs_calloc_qpcb(int num, struct rs_qp_cb **qp_cb)
+STATIC int RsCallocQpcb(int num, struct rs_qp_cb **qpCb)
 {
     if (num <= 0) {
         return -EINVAL;
     }
 
-    *qp_cb = calloc(num, sizeof(struct rs_qp_cb));
-    if ((*qp_cb) == NULL) {
+    *qpCb = calloc(num, sizeof(struct rs_qp_cb));
+    if ((*qpCb) == NULL) {
         return -ENOMEM;
     }
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_mr_reg(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn,
-    struct rdma_mr_reg_info *mr_reg_info)
+RS_ATTRI_VISI_DEF int RsMrReg(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
+    struct rdma_mr_reg_info *mrRegInfo)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
-    struct rs_mr_cb *mr_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
+    struct rs_mr_cb *mrCb = NULL;
 
-    CHK_PRT_RETURN(mr_reg_info == NULL || mr_reg_info->addr == NULL || mr_reg_info->len == 0 ||
-        phy_id >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phy_id:%u >= [%d]", phy_id, RS_MAX_DEV_NUM),
+    CHK_PRT_RETURN(mrRegInfo == NULL || mrRegInfo->addr == NULL || mrRegInfo->len == 0 ||
+        phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
     hccp_info("qpn[%u], len[0x%llx], access[%d]",
-        qpn, mr_reg_info->len, mr_reg_info->access);
+        qpn, mrRegInfo->len, mrRegInfo->access);
 
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_qpn2qpcb qpn[%d] ret[%d] failed ", qpn, ret), ret);
 
-    CHK_PRT_RETURN(qp_cb->mr_num >= RS_MR_NUM_MAX, hccp_err("Exceeded the maximum MR limit %d",
-        qp_cb->mr_num), -EINVAL);
+    CHK_PRT_RETURN(qpCb->mr_num >= RS_MR_NUM_MAX, hccp_err("Exceeded the maximum MR limit %d",
+        qpCb->mr_num), -EINVAL);
 
-    ret = rs_get_mrcb(qp_cb, (uintptr_t)mr_reg_info->addr, &mr_cb, &qp_cb->mr_list);
+    ret = RsGetMrcb(qpCb, (uintptr_t)mrRegInfo->addr, &mrCb, &qpCb->mr_list);
     if (!ret) {
         hccp_warn("mr already registered");
         goto found;
     }
 
-    ret = rs_calloc_mr(1, &mr_cb);
+    ret = RsCallocMr(1, &mrCb);
     CHK_PRT_RETURN(ret, hccp_err("calloc mr failed"), ret);
 
-    mr_cb->qp_cb = qp_cb;
+    mrCb->qp_cb = qpCb;
 
-    ret = rs_mr_pre_reg(phy_id, qp_cb, mr_cb, mr_reg_info);
+    ret = RsMrPreReg(phyId, qpCb, mrCb, mrRegInfo);
     if (ret) {
         hccp_err("pre reg mr failed, qpn %u, ret %d", qpn, ret);
         goto reg_err;
     }
 
 found:
-    mr_reg_info->lkey = mr_cb->ib_mr->lkey;
-    mr_reg_info->rkey = mr_cb->ib_mr->rkey;
+    mrRegInfo->lkey = mrCb->ib_mr->lkey;
+    mrRegInfo->rkey = mrCb->ib_mr->rkey;
 
-    hccp_info("rs_mr_reg succ, state:%u", mr_cb->state);
+    hccp_info("rs_mr_reg succ, state:%u", mrCb->state);
     return 0;
 
 reg_err:
-    free(mr_cb);
-    mr_cb = NULL;
+    free(mrCb);
+    mrCb = NULL;
 
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_mr_dereg(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, char *addr)
+RS_ATTRI_VISI_DEF int RsMrDereg(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, char *addr)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
-    struct rs_mr_cb *mr_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
+    struct rs_mr_cb *mrCb = NULL;
 
     hccp_dbg("start rs_mr_dereg");
     RS_CHECK_POINTER_NULL_RETURN_INT(addr);
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid", phy_id, RS_MAX_DEV_NUM),
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_qpn2qpcb failed ret[%d]", ret), ret);
 
-    CHK_PRT_RETURN(rs_get_mrcb(qp_cb, (uintptr_t)addr, &mr_cb, &qp_cb->mr_list), hccp_err("rs_get_mrcb failed "\
-        "g_rs_send_wr_num[%u]", g_rs_send_wr_num), -EFAULT);
+    CHK_PRT_RETURN(RsGetMrcb(qpCb, (uintptr_t)addr, &mrCb, &qpCb->mr_list), hccp_err("rs_get_mrcb failed "\
+        "g_rs_send_wr_num[%u]", gRsSendWrNum), -EFAULT);
 
-    ret = rs_drv_mr_dereg(mr_cb->ib_mr);
+    ret = RsDrvMrDereg(mrCb->ib_mr);
     CHK_PRT_RETURN(ret, hccp_err("rs_drv_mr_dereg failed ret[%d] ", ret), -EACCES);
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
-    rs_list_del(&mr_cb->list);
-    free(mr_cb);
-    mr_cb = NULL;
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
-    qp_cb->mr_num--;
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
+    RsListDel(&mrCb->list);
+    free(mrCb);
+    mrCb = NULL;
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
+    qpCb->mr_num--;
 
     hccp_dbg("qpn[%u] succ", qpn);
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_register_mr(unsigned int phy_id, unsigned int rdev_index, struct rdma_mr_reg_info *mr_reg_info,
-    void **mr_handle)
+RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex, struct rdma_mr_reg_info *mrRegInfo,
+    void **mrHandle)
 {
-    RS_CHECK_POINTER_NULL_RETURN_INT(mr_handle);
+    RS_CHECK_POINTER_NULL_RETURN_INT(mrHandle);
 
     int ret;
-    unsigned int chip_id;
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct ibv_mr *rs_mr_handle = NULL;
+    unsigned int chipId;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct ibv_mr *rsMrHandle = NULL;
 
-    CHK_PRT_RETURN(mr_reg_info == NULL || mr_reg_info->addr == NULL || mr_reg_info->len == 0 ||
-        phy_id >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phy_id:%u >= [%d]", phy_id,
+    CHK_PRT_RETURN(mrRegInfo == NULL || mrRegInfo->addr == NULL || mrRegInfo->len == 0 ||
+        phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId,
         RS_MAX_DEV_NUM), -EINVAL);
 
     hccp_info("[rs_register_mr] len[0x%llx], access[%d]",
-        mr_reg_info->len, mr_reg_info->access);
+        mrRegInfo->len, mrRegInfo->access);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret, hccp_err("rs_register_mr rsGetLocalDevIDByHostDevID phy_id[%u] invalid, ret %d",
-        phy_id, ret), ret);
+        phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret || rdev_cb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
-        chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+        chipId, ret), ret);
 
-    *mr_handle = (void *)rs_drv_mr_reg(rdev_cb->ib_pd, mr_reg_info->addr, mr_reg_info->len, mr_reg_info->access);
-    if (*mr_handle == NULL) {
-        hccp_warn("rs_drv_mr_reg addr is NULL len[%lld] access[%d] unsuccessful ", mr_reg_info->len,
-            mr_reg_info->access);
+    *mrHandle = (void *)RsDrvMrReg(rdevCb->ib_pd, mrRegInfo->addr, mrRegInfo->len, mrRegInfo->access);
+    if (*mrHandle == NULL) {
+        hccp_warn("rs_drv_mr_reg addr is NULL len[%lld] access[%d] unsuccessful ", mrRegInfo->len,
+            mrRegInfo->access);
         goto reg_err;
     }
 
-    rs_mr_handle = (struct ibv_mr *)*mr_handle;
-    mr_reg_info->lkey = rs_mr_handle->lkey;
-    mr_reg_info->rkey = rs_mr_handle->rkey;
+    rsMrHandle = (struct ibv_mr *)*mrHandle;
+    mrRegInfo->lkey = rsMrHandle->lkey;
+    mrRegInfo->rkey = rsMrHandle->rkey;
 
     hccp_info("rs_register_mr succ");
     return ret;
 reg_err:
-    mr_reg_info->lkey = 0;
+    mrRegInfo->lkey = 0;
 
     return 0;
 }
 
-STATIC int rs_init_typical_mr_cb(unsigned int phy_id, struct rdma_mr_reg_info *mr_reg_info, struct rs_rdev_cb *dev_cb,
-                                 struct rs_mr_cb *mr_cb)
+STATIC int RsInitTypicalMrCb(unsigned int phyId, struct rdma_mr_reg_info *mrRegInfo, struct rs_rdev_cb *devCb,
+                                 struct rs_mr_cb *mrCb)
 {
-    unsigned long long len = mr_reg_info->len;
-    char *addr = (char *)mr_reg_info->addr;
-    int access = mr_reg_info->access;
+    unsigned long long len = mrRegInfo->len;
+    char *addr = (char *)mrRegInfo->addr;
+    int access = mrRegInfo->access;
     struct roce_process_sign roceSign;
-    unsigned int chip_id;
+    unsigned int chipId;
     int ret;
 
-    if (dev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE || dev_cb->rs_cb->hccp_mode == NETWORK_ONLINE) {
-        mr_cb->ib_mr = rs_drv_mr_reg(dev_cb->ib_pd, addr, len, access);
-        CHK_PRT_RETURN(mr_cb->ib_mr == NULL, hccp_err("rs_drv_mr_reg addr is NULL len[%lld] failed", len), -EACCES);
+    if (devCb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE || devCb->rs_cb->hccp_mode == NETWORK_ONLINE) {
+        mrCb->ib_mr = RsDrvMrReg(devCb->ib_pd, addr, len, access);
+        CHK_PRT_RETURN(mrCb->ib_mr == NULL, hccp_err("rs_drv_mr_reg addr is NULL len[%lld] failed", len), -EACCES);
     } else {
         // reg mr with backup phy_id
-        if (dev_cb->backup_info.backup_flag) {
-            phy_id = dev_cb->backup_info.rdev_info.phy_id;
+        if (devCb->backup_info.backup_flag) {
+            phyId = devCb->backup_info.rdev_info.phy_id;
         }
-        ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-        CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, ret %d, phyid[%u]", ret, phy_id), -EACCES);
-        roceSign.tgid = dev_cb->rs_cb->p_rs_sign.tgid;
-        roceSign.devid = chip_id;
+        ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+        CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, ret %d, phyid[%u]", ret, phyId), -EACCES);
+        roceSign.tgid = devCb->rs_cb->p_rs_sign.tgid;
+        roceSign.devid = chipId;
         roceSign.vfid = 0;
-        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, dev_cb->rs_cb->p_rs_sign.sign);
+        ret = strcpy_s(roceSign.sign, PROCESS_RS_SIGN_LENGTH, devCb->rs_cb->p_rs_sign.sign);
         CHK_PRT_RETURN(ret, hccp_err("Invalid pid sign, ret(%d)", ret), -ESAFEFUNC);
-        mr_cb->ib_mr = rs_drv_exp_mr_reg(dev_cb->ib_pd, addr, len, access, roceSign);
-        CHK_PRT_RETURN(mr_cb->ib_mr == NULL, hccp_err("rs_drv_exp_mr_reg addr is NULL len[%lld] failed", len), -EACCES);
+        mrCb->ib_mr = RsDrvExpMrReg(devCb->ib_pd, addr, len, access, roceSign);
+        CHK_PRT_RETURN(mrCb->ib_mr == NULL, hccp_err("rs_drv_exp_mr_reg addr is NULL len[%lld] failed", len), -EACCES);
     }
 
-    mr_cb->mr_info.addr = (uintptr_t)addr;
-    mr_cb->mr_info.len = len;
-    mr_cb->mr_info.rkey = mr_cb->ib_mr->rkey;
+    mrCb->mr_info.addr = (uintptr_t)addr;
+    mrCb->mr_info.len = len;
+    mrCb->mr_info.rkey = mrCb->ib_mr->rkey;
 
-    RS_PTHREAD_MUTEX_LOCK(&dev_cb->rdev_mutex);
-    rs_list_add_tail(&mr_cb->list, &dev_cb->typical_mr_list);
-    RS_PTHREAD_MUTEX_ULOCK(&dev_cb->rdev_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rdev_mutex);
+    RsListAddTail(&mrCb->list, &devCb->typical_mr_list);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rdev_mutex);
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_typical_register_mr_v1(unsigned int phy_id, unsigned int rdev_index,
-    struct rdma_mr_reg_info *mr_reg_info, void **mr_handle)
+RS_ATTRI_VISI_DEF int RsTypicalRegisterMrV1(unsigned int phyId, unsigned int rdevIndex,
+    struct rdma_mr_reg_info *mrRegInfo, void **mrHandle)
 {
-    RS_CHECK_POINTER_NULL_RETURN_INT(mr_handle);
+    RS_CHECK_POINTER_NULL_RETURN_INT(mrHandle);
 
-    struct rs_mr_cb *typical_mr_cb = NULL;
-    struct rs_rdev_cb *rdev_cb = NULL;
-    unsigned int chip_id;
+    struct rs_mr_cb *typicalMrCb = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
+    unsigned int chipId;
     int ret;
 
-    CHK_PRT_RETURN(mr_reg_info == NULL || mr_reg_info->addr == NULL || mr_reg_info->len == 0 ||
-        phy_id >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phy_id:%u >= [%d]", phy_id,
+    CHK_PRT_RETURN(mrRegInfo == NULL || mrRegInfo->addr == NULL || mrRegInfo->len == 0 ||
+        phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId,
         RS_MAX_DEV_NUM), -EINVAL);
 
     hccp_info("[rs_typical_register_mr] len[0x%llx], access[%d]",
-        mr_reg_info->len, mr_reg_info->access);
+        mrRegInfo->len, mrRegInfo->access);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_typical_register_mr rsGetLocalDevIDByHostDevID phy_id[%u] invalid, ret %d",
-        phy_id, ret), ret);
+        phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret != 0 || rdev_cb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
-        chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+        chipId, ret), ret);
 
-    ret = rs_query_mr_cb(rdev_cb, (uint64_t)(uintptr_t)mr_reg_info->addr, &typical_mr_cb, &rdev_cb->typical_mr_list);
+    ret = RsQueryMrCb(rdevCb, (uint64_t)(uintptr_t)mrRegInfo->addr, &typicalMrCb, &rdevCb->typical_mr_list);
     if (ret == 0) {
         hccp_warn("typical mr already registered");
         goto found;
     }
 
-    typical_mr_cb = calloc(1, sizeof(struct rs_mr_cb));
-    CHK_PRT_RETURN(typical_mr_cb == NULL, hccp_err("calloc typical_mr_cb failed"), -ENOMEM);
-    typical_mr_cb->dev_cb = rdev_cb;
+    typicalMrCb = calloc(1, sizeof(struct rs_mr_cb));
+    CHK_PRT_RETURN(typicalMrCb == NULL, hccp_err("calloc typical_mr_cb failed"), -ENOMEM);
+    typicalMrCb->dev_cb = rdevCb;
 
-    ret = rs_init_typical_mr_cb(phy_id, mr_reg_info, rdev_cb, typical_mr_cb);
+    ret = RsInitTypicalMrCb(phyId, mrRegInfo, rdevCb, typicalMrCb);
     if (ret != 0) {
-        hccp_err("rs_init_typical_mr_cb failed, dev_index[%u], ret[%d]", rdev_index, ret);
+        hccp_err("rs_init_typical_mr_cb failed, devIndex[%u], ret[%d]", rdevIndex, ret);
         goto reg_err;
     }
 
 found:
-    *mr_handle = typical_mr_cb->ib_mr;
-    mr_reg_info->lkey = typical_mr_cb->ib_mr->lkey;
-    mr_reg_info->rkey = typical_mr_cb->ib_mr->rkey;
-    hccp_info("rs_typical_register_mr succ, state:%d", typical_mr_cb->state);
+    *mrHandle = typicalMrCb->ib_mr;
+    mrRegInfo->lkey = typicalMrCb->ib_mr->lkey;
+    mrRegInfo->rkey = typicalMrCb->ib_mr->rkey;
+    hccp_info("rs_typical_register_mr succ, state:%d", typicalMrCb->state);
     return 0;
 
 reg_err:
-    free(typical_mr_cb);
-    typical_mr_cb = NULL;
+    free(typicalMrCb);
+    typicalMrCb = NULL;
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_typical_register_mr(unsigned int phy_id, unsigned int rdev_index,
-    struct rdma_mr_reg_info *mr_reg_info, void **mr_handle)
+RS_ATTRI_VISI_DEF int RsTypicalRegisterMr(unsigned int phyId, unsigned int rdevIndex,
+    struct rdma_mr_reg_info *mrRegInfo, void **mrHandle)
 {
-    RS_CHECK_POINTER_NULL_RETURN_INT(mr_handle);
+    RS_CHECK_POINTER_NULL_RETURN_INT(mrHandle);
 
-    struct rs_mr_cb *typical_mr_cb = NULL;
-    struct rs_rdev_cb *rdev_cb = NULL;
-    unsigned int chip_id;
+    struct rs_mr_cb *typicalMrCb = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
+    unsigned int chipId;
     int ret;
 
-    CHK_PRT_RETURN(mr_reg_info == NULL || mr_reg_info->addr == NULL || mr_reg_info->len == 0 ||
-        phy_id >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phy_id:%u >= [%d]", phy_id,
+    CHK_PRT_RETURN(mrRegInfo == NULL || mrRegInfo->addr == NULL || mrRegInfo->len == 0 ||
+        phyId >= RS_MAX_DEV_NUM, hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId,
         RS_MAX_DEV_NUM), -EINVAL);
 
-    hccp_info("start register len[0x%llx], access[%d]", mr_reg_info->len, mr_reg_info->access);
+    hccp_info("start register len[0x%llx], access[%d]", mrRegInfo->len, mrRegInfo->access);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rsGetLocalDevIDByHostDevID phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rsGetLocalDevIDByHostDevID phy_id[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret != 0 || rdev_cb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
-        chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+        chipId, ret), ret);
 
-    typical_mr_cb = calloc(1, sizeof(struct rs_mr_cb));
-    CHK_PRT_RETURN(typical_mr_cb == NULL, hccp_err("calloc typical_mr_cb failed"), -ENOMEM);
-    typical_mr_cb->dev_cb = rdev_cb;
+    typicalMrCb = calloc(1, sizeof(struct rs_mr_cb));
+    CHK_PRT_RETURN(typicalMrCb == NULL, hccp_err("calloc typical_mr_cb failed"), -ENOMEM);
+    typicalMrCb->dev_cb = rdevCb;
 
-    ret = rs_init_typical_mr_cb(phy_id, mr_reg_info, rdev_cb, typical_mr_cb);
+    ret = RsInitTypicalMrCb(phyId, mrRegInfo, rdevCb, typicalMrCb);
     if (ret != 0) {
-        hccp_err("rs_init_typical_mr_cb failed, dev_index[%u], ret[%d]", rdev_index, ret);
+        hccp_err("rs_init_typical_mr_cb failed, devIndex[%u], ret[%d]", rdevIndex, ret);
         goto reg_err;
     }
 
     // resv len as 1 to save addr for later unreg to query
-    typical_mr_cb->mr_info.addr = (uint64_t)(uintptr_t)typical_mr_cb->ib_mr;
-    typical_mr_cb->mr_info.len = 1U;
-    *mr_handle = typical_mr_cb->ib_mr;
-    mr_reg_info->lkey = typical_mr_cb->ib_mr->lkey;
-    mr_reg_info->rkey = typical_mr_cb->ib_mr->rkey;
-    hccp_info("register succ, state:%d", typical_mr_cb->state);
+    typicalMrCb->mr_info.addr = (uint64_t)(uintptr_t)typicalMrCb->ib_mr;
+    typicalMrCb->mr_info.len = 1U;
+    *mrHandle = typicalMrCb->ib_mr;
+    mrRegInfo->lkey = typicalMrCb->ib_mr->lkey;
+    mrRegInfo->rkey = typicalMrCb->ib_mr->rkey;
+    hccp_info("register succ, state:%d", typicalMrCb->state);
     return 0;
 
 reg_err:
-    free(typical_mr_cb);
-    typical_mr_cb = NULL;
+    free(typicalMrCb);
+    typicalMrCb = NULL;
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_remap_mr(unsigned int phy_id, unsigned int rdev_index, struct mem_remap_info mem_list[],
-    unsigned int mem_num)
+RS_ATTRI_VISI_DEF int RsRemapMr(unsigned int phyId, unsigned int rdevIndex, struct mem_remap_info memList[],
+    unsigned int memNum)
 {
-    struct rs_rdev_cb *dev_cb = NULL;
-    struct rs_mr_cb *mr_curr = NULL;
-    struct rs_mr_cb *mr_next = NULL;
+    struct rs_rdev_cb *devCb = NULL;
+    struct rs_mr_cb *mrCurr = NULL;
+    struct rs_mr_cb *mrNext = NULL;
     unsigned long long addr = 0;
-    bool is_mem_matched = false;
-    unsigned int chip_id;
+    bool isMemMatched = false;
+    unsigned int chipId;
     unsigned int i;
     int ret;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= %d, is invalid", phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= %d, is invalid", phyId, RS_MAX_DEV_NUM), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, phy_id:%u invalid, ret:%d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, phyId:%u invalid, ret:%d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &dev_cb);
-    CHK_PRT_RETURN(dev_cb == NULL, hccp_err("rs_rdev2rdev_cb failed, chip_id:%u, ret:%d", chip_id, ret), -ENODEV);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &devCb);
+    CHK_PRT_RETURN(devCb == NULL, hccp_err("rs_rdev2rdev_cb failed, chipId:%u, ret:%d", chipId, ret), -ENODEV);
 
-    for (i = 0; i < mem_num; i++) {
-        is_mem_matched = false;
-        addr = (uint64_t)(uintptr_t)mem_list[i].addr;
-        RS_PTHREAD_MUTEX_LOCK(&dev_cb->rdev_mutex);
-        RS_LIST_GET_HEAD_ENTRY(mr_curr, mr_next, &dev_cb->typical_mr_list, list, struct rs_mr_cb);
-        for (; (&mr_curr->list) != &dev_cb->typical_mr_list;
-            mr_curr = mr_next, mr_next = list_entry(mr_next->list.next, struct rs_mr_cb, list)) {
+    for (i = 0; i < memNum; i++) {
+        isMemMatched = false;
+        addr = (uint64_t)(uintptr_t)memList[i].addr;
+        RS_PTHREAD_MUTEX_LOCK(&devCb->rdev_mutex);
+        RS_LIST_GET_HEAD_ENTRY(mrCurr, mrNext, &devCb->typical_mr_list, list, struct rs_mr_cb);
+        for (; (&mrCurr->list) != &devCb->typical_mr_list;
+            mrCurr = mrNext, mrNext = list_entry(mrNext->list.next, struct rs_mr_cb, list)) {
             // mem is out range of mr, continue to find next matching mr
-            if ((addr < (uint64_t)(uintptr_t)mr_curr->ib_mr->addr) ||
-                (mem_list[i].size > mr_curr->ib_mr->length) ||
-                (addr + mem_list[i].size < addr) ||
-                (addr + mem_list[i].size > (uint64_t)(uintptr_t)mr_curr->ib_mr->addr + mr_curr->ib_mr->length)) {
+            if ((addr < (uint64_t)(uintptr_t)mrCurr->ib_mr->addr) ||
+                (memList[i].size > mrCurr->ib_mr->length) ||
+                (addr + memList[i].size < addr) ||
+                (addr + memList[i].size > (uint64_t)(uintptr_t)mrCurr->ib_mr->addr + mrCurr->ib_mr->length)) {
                 continue;
             }
 
             // each mr remap each corresponding mem
-            ret = rs_roce_remap_mr(mr_curr->ib_mr, (struct hns_roce_mr_remap_info *)&mem_list[i], 1);
+            ret = RsRoceRemapMr(mrCurr->ib_mr, (struct hns_roce_mr_remap_info *)&memList[i], 1);
             if (ret != 0) {
-                hccp_err("remap %u-th mem failed, ret:%d addr:0x%llx size:0x%llx", i, ret, addr, mem_list[i].size);
-                RS_PTHREAD_MUTEX_ULOCK(&dev_cb->rdev_mutex);
+                hccp_err("remap %u-th mem failed, ret:%d addr:0x%llx size:0x%llx", i, ret, addr, memList[i].size);
+                RS_PTHREAD_MUTEX_ULOCK(&devCb->rdev_mutex);
                 return ret;
             }
-            is_mem_matched = true;
+            isMemMatched = true;
         }
-        RS_PTHREAD_MUTEX_ULOCK(&dev_cb->rdev_mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&devCb->rdev_mutex);
 
-        if (!is_mem_matched) {
-            hccp_err("find %u-th mem failed, addr:0x%llx size:0x%llx", i, addr, mem_list[i].size);
+        if (!isMemMatched) {
+            hccp_err("find %u-th mem failed, addr:0x%llx size:0x%llx", i, addr, memList[i].size);
             return -ENODEV;
         }
-        hccp_dbg("remap %u-th mem success, addr:0x%llx size:0x%llx", i, addr, mem_list[i].size);
+        hccp_dbg("remap %u-th mem success, addr:0x%llx size:0x%llx", i, addr, memList[i].size);
     }
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_typical_deregister_mr(unsigned int phy_id, unsigned int dev_index, unsigned long long addr)
+RS_ATTRI_VISI_DEF int RsTypicalDeregisterMr(unsigned int phyId, unsigned int devIndex, unsigned long long addr)
 {
-    struct rs_mr_cb *typical_mr_cb = NULL;
-    struct rs_rdev_cb *dev_cb = NULL;
-    unsigned int chip_id;
+    struct rs_mr_cb *typicalMrCb = NULL;
+    struct rs_rdev_cb *devCb = NULL;
+    unsigned int chipId;
     int ret;
 
     hccp_info("typical mr unreg start, addr[%llu]", addr);
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= %d, is invalid", phy_id, RS_MAX_DEV_NUM),
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= %d, is invalid", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, dev_index, &dev_cb);
-    CHK_PRT_RETURN(ret != 0 || dev_cb == NULL, hccp_err("rs_rdev2rdev_cb get dev_cb failed for chip_id[%u], ret[%d]",
-        chip_id, ret), -ENODEV);
+    ret = RsRdev2rdevCb(chipId, devIndex, &devCb);
+    CHK_PRT_RETURN(ret != 0 || devCb == NULL, hccp_err("rs_rdev2rdev_cb get dev_cb failed for chip_id[%u], ret[%d]",
+        chipId, ret), -ENODEV);
 
-    ret = rs_query_mr_cb(dev_cb, addr, &typical_mr_cb, &dev_cb->typical_mr_list);
+    ret = RsQueryMrCb(devCb, addr, &typicalMrCb, &devCb->typical_mr_list);
     CHK_PRT_RETURN(ret, hccp_err("rs_query_mr_cb failed ret[%d]", ret), ret);
 
-    ret = rs_drv_mr_dereg(typical_mr_cb->ib_mr);
+    ret = RsDrvMrDereg(typicalMrCb->ib_mr);
     CHK_PRT_RETURN(ret, hccp_err("rs_drv_mr_dereg failed ret[%d]", ret), -EACCES);
 
-    RS_PTHREAD_MUTEX_LOCK(&dev_cb->rdev_mutex);
-    rs_list_del(&typical_mr_cb->list);
-    free(typical_mr_cb);
-    typical_mr_cb = NULL;
-    RS_PTHREAD_MUTEX_ULOCK(&dev_cb->rdev_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rdev_mutex);
+    RsListDel(&typicalMrCb->list);
+    free(typicalMrCb);
+    typicalMrCb = NULL;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rdev_mutex);
 
-    hccp_info("dev_index[%u] succ", dev_index);
+    hccp_info("dev_index[%u] succ", devIndex);
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_deregister_mr(void *mr_handle)
+RS_ATTRI_VISI_DEF int RsDeregisterMr(void *mrHandle)
 {
-    RS_CHECK_POINTER_NULL_RETURN_INT(mr_handle);
+    RS_CHECK_POINTER_NULL_RETURN_INT(mrHandle);
 
     int ret;
-    struct ibv_mr *rs_mr_handle = (struct ibv_mr *)mr_handle;
+    struct ibv_mr *rsMrHandle = (struct ibv_mr *)mrHandle;
 
-    ret = rs_drv_mr_dereg(rs_mr_handle);
+    ret = RsDrvMrDereg(rsMrHandle);
     CHK_PRT_RETURN(ret, hccp_err("rs_drv_mr_dereg failed ret[%d] ", ret), -EACCES);
 
     hccp_info("rs_deregister_mr succ");
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_send_wr(unsigned int phy_id, unsigned int rdev_index, uint32_t qpn, struct send_wr *wr,
-    struct send_wr_rsp *wr_rsp)
+RS_ATTRI_VISI_DEF int RsSendWr(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct send_wr *wr,
+    struct send_wr_rsp *wrRsp)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
-    struct rs_mr_cb *mr_cb = NULL;
-    struct rs_mr_cb *rem_mr_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
+    struct rs_mr_cb *mrCb = NULL;
+    struct rs_mr_cb *remMrCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(wr);
     RS_CHECK_POINTER_NULL_RETURN_INT(wr->buf_list);
-    RS_CHECK_POINTER_NULL_RETURN_INT(wr_rsp);
+    RS_CHECK_POINTER_NULL_RETURN_INT(wrRsp);
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
-        phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
+        phyId, RS_MAX_DEV_NUM), -EINVAL);
 
     CHK_PRT_RETURN(wr->buf_num > MAX_SGE_NUM || wr->buf_num == 0, hccp_err("invalid buf_num[%u]!",
         wr->buf_num), -EINVAL);
@@ -939,14 +939,14 @@ RS_ATTRI_VISI_DEF int rs_send_wr(unsigned int phy_id, unsigned int rdev_index, u
     CHK_PRT_RETURN(wr->buf_list->len > RS_SGLIST_LEN_MAX || wr->buf_list->len == 0, hccp_err("sg list"
         "len is more than 2G, len[%u]", wr->buf_list->len), -EINVAL);
 
-    if (rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb)) {
+    if (RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb)) {
         return -EACCES;
     }
 
-    qp_cb->send_wr_num++;
+    qpCb->send_wr_num++;
 
     hccp_info("qpn %d, buf_list[0].addr is 0x%llx", qpn, wr->buf_list[0].addr);
-    if (rs_get_mrcb(qp_cb, wr->buf_list[0].addr, &mr_cb, &qp_cb->mr_list)) {
+    if (RsGetMrcb(qpCb, wr->buf_list[0].addr, &mrCb, &qpCb->mr_list)) {
         hccp_err("qpn %d, buf_list[0].addr[0x%llx] len[0x%x] is invalid.", qpn, wr->buf_list[0].addr,
             wr->buf_list[0].len);
         return -EFAULT;
@@ -955,550 +955,550 @@ RS_ATTRI_VISI_DEF int rs_send_wr(unsigned int phy_id, unsigned int rdev_index, u
     // send op no need to check & get remote mr
     if (wr->op != RA_WR_SEND && wr->op != RA_WR_SEND_WITH_IMM) {
         hccp_info("remote wr dst addr is 0x%llx", wr->dst_addr);
-        if (rs_get_mrcb(qp_cb, wr->dst_addr, &rem_mr_cb, &qp_cb->rem_mr_list)) {
+        if (RsGetMrcb(qpCb, wr->dst_addr, &remMrCb, &qpCb->rem_mr_list)) {
             hccp_err("qpn %d, remote wr dst addr[0x%llx] len[0x%x] is invalid.", qpn, wr->dst_addr,
                 wr->buf_list[0].len);
             return -ENOENT;
         }
     }
 
-    ret = rs_drv_send_exp(qp_cb, mr_cb, rem_mr_cb, wr, wr_rsp);
+    ret = RsDrvSendExp(qpCb, mrCb, remMrCb, wr, wrRsp);
     if (ret) {
         hccp_err("send exp failed qpn %u, ret %d", qpn, ret);
     }
-    g_rs_send_wr_num++;
+    gRsSendWrNum++;
     return ret;
 }
 
-STATIC void build_up_wr_with_key(struct wr_info *wr, struct ibv_sge *list, struct ibv_send_wr *ib_wr)
+STATIC void BuildUpWrWithKey(struct wr_info *wr, struct ibv_sge *list, struct ibv_send_wr *ibWr)
 {
     list->addr = (uintptr_t)wr->mem_list.addr;
     list->length = wr->mem_list.len;
     list->lkey = wr->mem_list.lkey;
 
-    ib_wr->sg_list = list;
-    ib_wr->opcode = wr->op;
-    ib_wr->send_flags = (unsigned int)wr->send_flags;
-    ib_wr->imm_data = htobe32(wr->imm_data);
+    ibWr->sg_list = list;
+    ibWr->opcode = wr->op;
+    ibWr->send_flags = (unsigned int)wr->send_flags;
+    ibWr->imm_data = htobe32(wr->imm_data);
 
-    ib_wr->num_sge = 1; /* only support one sge */
-    ib_wr->wr_id = wr->wr_id;
+    ibWr->num_sge = 1; /* only support one sge */
+    ibWr->wr_id = wr->wr_id;
     if (wr->op != IBV_WR_SEND && wr->op != IBV_WR_SEND_WITH_IMM) {
-        ib_wr->wr.rdma.rkey = wr->rkey;
-        ib_wr->wr.rdma.remote_addr = wr->dst_addr;
+        ibWr->wr.rdma.rkey = wr->rkey;
+        ibWr->wr.rdma.remote_addr = wr->dst_addr;
     }
 }
 
-STATIC void rs_send_build_up_wr(struct rs_mr_cb *mr_cb, struct wr_info *wr, struct ibv_sge *list,
-    struct ibv_send_wr *ib_wr)
+STATIC void RsSendBuildUpWr(struct rs_mr_cb *mrCb, struct wr_info *wr, struct ibv_sge *list,
+    struct ibv_send_wr *ibWr)
 {
     list->addr = (uintptr_t)wr->mem_list.addr;
-    list->lkey =  mr_cb->ib_mr->lkey;
+    list->lkey =  mrCb->ib_mr->lkey;
     list->length = wr->mem_list.len;
 
-    ib_wr->sg_list = list;
-    ib_wr->opcode = wr->op;
-    ib_wr->imm_data = htobe32(wr->imm_data);
-    ib_wr->send_flags = (unsigned int)wr->send_flags;
+    ibWr->sg_list = list;
+    ibWr->opcode = wr->op;
+    ibWr->imm_data = htobe32(wr->imm_data);
+    ibWr->send_flags = (unsigned int)wr->send_flags;
 
-    ib_wr->num_sge = 1; /* only support one sge */
-    ib_wr->wr_id = wr->wr_id;
+    ibWr->num_sge = 1; /* only support one sge */
+    ibWr->wr_id = wr->wr_id;
 }
 
-STATIC void rs_wirte_and_read_build_up_wr(struct rs_mr_cb *mr_cb, struct rs_mr_cb *rem_mr_cb,
-    struct wr_info *wr, struct ibv_sge *list, struct ibv_send_wr *ib_wr)
+STATIC void RsWirteAndReadBuildUpWr(struct rs_mr_cb *mrCb, struct rs_mr_cb *remMrCb,
+    struct wr_info *wr, struct ibv_sge *list, struct ibv_send_wr *ibWr)
 {
     list->addr = (uintptr_t)wr->mem_list.addr;
     list->length = wr->mem_list.len;
-    list->lkey =  mr_cb->ib_mr->lkey;
+    list->lkey =  mrCb->ib_mr->lkey;
 
-    ib_wr->sg_list = list;
-    ib_wr->opcode = wr->op;
-    ib_wr->send_flags = (unsigned int)wr->send_flags;
-    ib_wr->imm_data = htobe32(wr->imm_data);
+    ibWr->sg_list = list;
+    ibWr->opcode = wr->op;
+    ibWr->send_flags = (unsigned int)wr->send_flags;
+    ibWr->imm_data = htobe32(wr->imm_data);
 
-    ib_wr->num_sge = 1; /* only support one sge */
-    ib_wr->wr_id = wr->wr_id;
-    ib_wr->wr.rdma.rkey = rem_mr_cb->mr_info.rkey;
-    ib_wr->wr.rdma.remote_addr = wr->dst_addr;
+    ibWr->num_sge = 1; /* only support one sge */
+    ibWr->wr_id = wr->wr_id;
+    ibWr->wr.rdma.rkey = remMrCb->mr_info.rkey;
+    ibWr->wr.rdma.remote_addr = wr->dst_addr;
 }
 
-STATIC int rs_build_up_wr_list(struct wr_info *wr_list, struct rs_qp_cb *qp_cb, struct ibv_sge *list,
-    struct ibv_send_wr *ib_wr, unsigned int i)
+STATIC int RsBuildUpWrList(struct wr_info *wrList, struct rs_qp_cb *qpCb, struct ibv_sge *list,
+    struct ibv_send_wr *ibWr, unsigned int i)
 {
-    struct rs_mr_cb *mr_cb = NULL;
-    struct rs_mr_cb *rem_mr_cb = NULL;
-    CHK_PRT_RETURN(wr_list[i].mem_list.len > RS_SGLIST_LEN_MAX, hccp_err("sg list len is more than 2G, len[%u]",
-        wr_list[i].mem_list.len), -EINVAL);
+    struct rs_mr_cb *mrCb = NULL;
+    struct rs_mr_cb *remMrCb = NULL;
+    CHK_PRT_RETURN(wrList[i].mem_list.len > RS_SGLIST_LEN_MAX, hccp_err("sg list len is more than 2G, len[%u]",
+        wrList[i].mem_list.len), -EINVAL);
 
-    hccp_dbg("qpn %d, buf_list[0].addr is 0x%llx", qp_cb->ib_qp->qp_num, wr_list[i].mem_list.addr);
-    if (rs_get_mrcb(qp_cb, wr_list[i].mem_list.addr, &mr_cb, &qp_cb->mr_list)) {
-        hccp_err("qpn %d, buf_list[0].addr[0x%llx] len[0x%x] is invalid.", qp_cb->ib_qp->qp_num,
-            wr_list[i].mem_list.addr, wr_list[i].mem_list.len);
+    hccp_dbg("qpn %d, buf_list[0].addr is 0x%llx", qpCb->ib_qp->qp_num, wrList[i].mem_list.addr);
+    if (RsGetMrcb(qpCb, wrList[i].mem_list.addr, &mrCb, &qpCb->mr_list)) {
+        hccp_err("qpn %d, buf_list[0].addr[0x%llx] len[0x%x] is invalid.", qpCb->ib_qp->qp_num,
+            wrList[i].mem_list.addr, wrList[i].mem_list.len);
         return -EFAULT;
     }
 
     // send op no need to check & get remote mr
-    if (wr_list[i].op != IBV_WR_SEND && wr_list[i].op != IBV_WR_SEND_WITH_IMM) {
-        hccp_dbg("remote wr dst addr is 0x%llx", wr_list[i].dst_addr);
-        if (rs_get_mrcb(qp_cb, wr_list[i].dst_addr, &rem_mr_cb, &qp_cb->rem_mr_list)) {
-            hccp_err("qpn %d, remote wr dst addr[0x%llx] len[0x%x] is invalid.", qp_cb->ib_qp->qp_num,
-                wr_list[i].dst_addr, wr_list[i].mem_list.len);
+    if (wrList[i].op != IBV_WR_SEND && wrList[i].op != IBV_WR_SEND_WITH_IMM) {
+        hccp_dbg("remote wr dst addr is 0x%llx", wrList[i].dst_addr);
+        if (RsGetMrcb(qpCb, wrList[i].dst_addr, &remMrCb, &qpCb->rem_mr_list)) {
+            hccp_err("qpn %d, remote wr dst addr[0x%llx] len[0x%x] is invalid.", qpCb->ib_qp->qp_num,
+                wrList[i].dst_addr, wrList[i].mem_list.len);
             return -ENOENT;
         }
-        rs_wirte_and_read_build_up_wr(mr_cb, rem_mr_cb, &wr_list[i], &list[i], &ib_wr[i]);
+        RsWirteAndReadBuildUpWr(mrCb, remMrCb, &wrList[i], &list[i], &ibWr[i]);
     } else {
-        rs_send_build_up_wr(mr_cb, &wr_list[i], &list[i], &ib_wr[i]);
+        RsSendBuildUpWr(mrCb, &wrList[i], &list[i], &ibWr[i]);
     }
 
     return 0;
 }
 
-STATIC int rs_build_up_wr_list_with_key(struct wr_info *wr_list, struct ibv_sge *list,
-    struct ibv_send_wr *ib_wr, unsigned int i)
+STATIC int RsBuildUpWrListWithKey(struct wr_info *wrList, struct ibv_sge *list,
+    struct ibv_send_wr *ibWr, unsigned int i)
 {
-    CHK_PRT_RETURN(wr_list[i].mem_list.len > RS_SGLIST_LEN_MAX, hccp_err("sg list len is more than 2G, len[%u]",
-        wr_list[i].mem_list.len), -EINVAL);
+    CHK_PRT_RETURN(wrList[i].mem_list.len > RS_SGLIST_LEN_MAX, hccp_err("sg list len is more than 2G, len[%u]",
+        wrList[i].mem_list.len), -EINVAL);
 
-    build_up_wr_with_key(&wr_list[i], &list[i], &ib_wr[i]);
+    BuildUpWrWithKey(&wrList[i], &list[i], &ibWr[i]);
     return 0;
 }
 
-STATIC int rs_send_normal_wrlist(struct rs_qp_cb *qp_cb, struct wr_info *wr_list,
-    unsigned int send_num, unsigned int *complete_num, unsigned int key_flag)
+STATIC int RsSendNormalWrlist(struct rs_qp_cb *qpCb, struct wr_info *wrList,
+    unsigned int sendNum, unsigned int *completeNum, unsigned int keyFlag)
 {
     int ret;
     unsigned int i, j;
 
-    struct ibv_send_wr *bad_wr = NULL;
-    CHK_PRT_RETURN(send_num > MAX_WR_NUM || send_num == 0, hccp_err("send num[%u] is invalid!", send_num), -EINVAL);
-    struct ibv_send_wr *ib_wr = (struct ibv_send_wr *)calloc(send_num, sizeof(struct ibv_send_wr));
-    CHK_PRT_RETURN(ib_wr == NULL, hccp_err("calloc ib_wr failed!"), -ENOSPC);
+    struct ibv_send_wr *badWr = NULL;
+    CHK_PRT_RETURN(sendNum > MAX_WR_NUM || sendNum == 0, hccp_err("send num[%u] is invalid!", sendNum), -EINVAL);
+    struct ibv_send_wr *ibWr = (struct ibv_send_wr *)calloc(sendNum, sizeof(struct ibv_send_wr));
+    CHK_PRT_RETURN(ibWr == NULL, hccp_err("calloc ib_wr failed!"), -ENOSPC);
 
-    struct ibv_sge *list = (struct ibv_sge *)calloc(send_num, sizeof(struct ibv_sge));
+    struct ibv_sge *list = (struct ibv_sge *)calloc(sendNum, sizeof(struct ibv_sge));
     if (list == NULL) {
         hccp_err("calloc list failed!");
         ret = -ENOSPC;
         goto alloc_fail;
     }
 
-    for (i = 0; i < send_num; i++) {
-        ret = (key_flag == 0) ? rs_build_up_wr_list(wr_list, qp_cb, list, ib_wr, i) :
-            rs_build_up_wr_list_with_key(wr_list, list, ib_wr, i);
+    for (i = 0; i < sendNum; i++) {
+        ret = (keyFlag == 0) ? RsBuildUpWrList(wrList, qpCb, list, ibWr, i) :
+            RsBuildUpWrListWithKey(wrList, list, ibWr, i);
         if (ret) {
             goto input_err;
         }
         j = i + 1;
-        ib_wr[i].next = (i < send_num - 1) ? &ib_wr[j] : NULL;
+        ibWr[i].next = (i < sendNum - 1) ? &ibWr[j] : NULL;
     }
 
-    ret = rs_ibv_post_send(qp_cb->ib_qp, &ib_wr[0], &bad_wr);
+    ret = RsIbvPostSend(qpCb->ib_qp, &ibWr[0], &badWr);
     if (ret == 0) {
-        *complete_num = send_num;
+        *completeNum = sendNum;
     } else if (ret == -ENOMEM) {
-        *complete_num = (unsigned int)((void *)bad_wr - (void *)ib_wr) / sizeof(struct ibv_send_wr);
-        hccp_dbg("post send wqe overflow, complete_num[%d]", *complete_num);
+        *completeNum = (unsigned int)((void *)badWr - (void *)ibWr) / sizeof(struct ibv_send_wr);
+        hccp_dbg("post send wqe overflow, completeNum[%d]", *completeNum);
     } else {
         hccp_err("ibv_post_send failed, ret[%d]", ret);
-        *complete_num = 0;
+        *completeNum = 0;
     }
-    qp_cb->send_wr_num = qp_cb->send_wr_num + (*complete_num);
+    qpCb->send_wr_num = qpCb->send_wr_num + (*completeNum);
 
 input_err:
     free(list);
     list = NULL;
 alloc_fail:
-    free(ib_wr);
-    ib_wr = NULL;
+    free(ibWr);
+    ibWr = NULL;
     return (ret == -ENOMEM) ? 0 : ret;
 }
 
-STATIC int rs_send_exp_wrlist(struct rs_qp_cb *qp_cb, struct wr_info *wr_list, unsigned int send_num,
-    struct send_wr_rsp *wr_rsp, unsigned int *complete_num, unsigned int key_flag)
+STATIC int RsSendExpWrlist(struct rs_qp_cb *qpCb, struct wr_info *wrList, unsigned int sendNum,
+    struct send_wr_rsp *wrRsp, unsigned int *completeNum, unsigned int keyFlag)
 {
-    struct ibv_post_send_ext_attr ext_attr = {0};
-    struct ibv_post_send_ext_resp ext_rsp = {0};
-    struct ibv_send_wr *bad_wr = NULL;
-    struct wr_exp_rsp exp_rsp = {0};
-    struct ibv_send_wr ib_wr = {0};
+    struct ibv_post_send_ext_attr extAttr = {0};
+    struct ibv_post_send_ext_resp extRsp = {0};
+    struct ibv_send_wr *badWr = NULL;
+    struct wr_exp_rsp expRsp = {0};
+    struct ibv_send_wr ibWr = {0};
     struct ibv_sge list = {0};
     unsigned int i;
     int ret = 0;
 
-    for (i = 0; i < send_num; i++) {
+    for (i = 0; i < sendNum; i++) {
         // reuse code: only need to build up one wr once a time
-        ret = (key_flag == 0) ? rs_build_up_wr_list(&wr_list[i], qp_cb, &list, &ib_wr, 0) :
-            rs_build_up_wr_list_with_key(&wr_list[i], &list, &ib_wr, 0);
+        ret = (keyFlag == 0) ? RsBuildUpWrList(&wrList[i], qpCb, &list, &ibWr, 0) :
+            RsBuildUpWrListWithKey(&wrList[i], &list, &ibWr, 0);
         if (ret != 0) {
-            hccp_err("qpn:%u key_flag:%u build_up_wr i:%u failed, ret:%d", qp_cb->ib_qp->qp_num, key_flag, i, ret);
+            hccp_err("qpn:%u key_flag:%u build_up_wr i:%u failed, ret:%d", qpCb->ib_qp->qp_num, keyFlag, i, ret);
             break;
         }
 
-        if (wr_list[i].op == RA_WR_RDMA_WRITE_WITH_NOTIFY ||
-            wr_list[i].op == RA_WR_RDMA_REDUCE_WRITE ||
-            wr_list[i].op == RA_WR_RDMA_REDUCE_WRITE_WITH_NOTIFY) {
-            ib_wr.imm_data = htobe32((wr_list[i].aux.notify_offset & WRITE_NOTIFY_OFFSET_MASK) |
+        if (wrList[i].op == RA_WR_RDMA_WRITE_WITH_NOTIFY ||
+            wrList[i].op == RA_WR_RDMA_REDUCE_WRITE ||
+            wrList[i].op == RA_WR_RDMA_REDUCE_WRITE_WITH_NOTIFY) {
+            ibWr.imm_data = htobe32((wrList[i].aux.notify_offset & WRITE_NOTIFY_OFFSET_MASK) |
                 WRITE_NOTIFY_VALUE_RECORD);
-            ext_attr.reduce_op = wr_list[i].aux.reduce_type;
-            ext_attr.reduce_type = wr_list[i].aux.data_type;
-            ret = rs_ibv_ext_post_send(qp_cb->ib_qp, &ib_wr, &bad_wr, &ext_attr, &ext_rsp);
-            exp_rsp.wqe_index = ext_rsp.wqe_index;
-            exp_rsp.db_info = ext_rsp.db_info;
+            extAttr.reduce_op = wrList[i].aux.reduce_type;
+            extAttr.reduce_type = wrList[i].aux.data_type;
+            ret = RsIbvExtPostSend(qpCb->ib_qp, &ibWr, &badWr, &extAttr, &extRsp);
+            expRsp.wqe_index = extRsp.wqe_index;
+            expRsp.db_info = extRsp.db_info;
             hccp_dbg("rs_ibv_ext_post_send, op = [%x], imm_data = [0x%lx], reduce_op = [%d],reduce_type = [%d]",
-                     ib_wr.opcode, ib_wr.imm_data, ext_attr.reduce_op, ext_attr.reduce_type);
+                     ibWr.opcode, ibWr.imm_data, extAttr.reduce_op, extAttr.reduce_type);
         } else {
-            ret = rs_ibv_exp_post_send(qp_cb->ib_qp, &ib_wr, &bad_wr, &exp_rsp);
+            ret = RsIbvExpPostSend(qpCb->ib_qp, &ibWr, &badWr, &expRsp);
             hccp_dbg("rs_ibv_exp_post_send, op = [%x], remote_addr = [0x%llx], size = [%d]",
-                     ib_wr.opcode, ib_wr.wr.rdma.remote_addr, ib_wr.sg_list->length);
+                     ibWr.opcode, ibWr.wr.rdma.remote_addr, ibWr.sg_list->length);
         }
 
         if (ret != 0) {
             if (ret == -ENOMEM) {
-                hccp_warn("qpn:%u rs_ibv_exp_post_send i:%u unsuccessful, ret %d", qp_cb->ib_qp->qp_num, i, ret);
+                hccp_warn("qpn:%u rs_ibv_exp_post_send i:%u unsuccessful, ret %d", qpCb->ib_qp->qp_num, i, ret);
             } else {
-                hccp_err("qpn:%u rs_ibv_exp_post_send i:%u failed, ret %d", qp_cb->ib_qp->qp_num, i, ret);
+                hccp_err("qpn:%u rs_ibv_exp_post_send i:%u failed, ret %d", qpCb->ib_qp->qp_num, i, ret);
             }
             break;
         }
 
-        qp_cb->send_wr_num++;
+        qpCb->send_wr_num++;
 
-        if (qp_cb->qp_mode == RA_RS_GDR_TMPL_QP_MODE) {
-            wr_rsp[i].wqe_tmp.sq_index = (unsigned int)qp_cb->sq_index;
-            wr_rsp[i].wqe_tmp.wqe_index = exp_rsp.wqe_index;
-        } else if (qp_cb->qp_mode == RA_RS_OP_QP_MODE ||
-                   qp_cb->qp_mode == RA_RS_GDR_ASYN_QP_MODE) {
-            wr_rsp[i].db.db_index = (unsigned int)qp_cb->db_index;
-            wr_rsp[i].db.db_info = exp_rsp.db_info;
+        if (qpCb->qp_mode == RA_RS_GDR_TMPL_QP_MODE) {
+            wrRsp[i].wqe_tmp.sq_index = (unsigned int)qpCb->sq_index;
+            wrRsp[i].wqe_tmp.wqe_index = expRsp.wqe_index;
+        } else if (qpCb->qp_mode == RA_RS_OP_QP_MODE ||
+                   qpCb->qp_mode == RA_RS_GDR_ASYN_QP_MODE) {
+            wrRsp[i].db.db_index = (unsigned int)qpCb->db_index;
+            wrRsp[i].db.db_info = expRsp.db_info;
         }
     }
 
     hccp_dbg("complete_num[%d], ret[%d]", i, ret);
-    *complete_num = i;
+    *completeNum = i;
     return (ret == -ENOMEM) ? 0 : ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_send_wrlist(struct rs_wrlist_base_info base_info, struct wr_info *wr_list,
-    unsigned int send_num, struct send_wr_rsp *wr_rsp, unsigned int *complete_num)
+RS_ATTRI_VISI_DEF int RsSendWrlist(struct rs_wrlist_base_info baseInfo, struct wr_info *wrList,
+    unsigned int sendNum, struct send_wr_rsp *wrRsp, unsigned int *completeNum)
 {
     int ret;
-    unsigned int phy_id, rdev_index, qpn;
-    struct rs_qp_cb *qp_cb = NULL;
+    unsigned int phyId, rdevIndex, qpn;
+    struct rs_qp_cb *qpCb = NULL;
 
-    RS_CHECK_POINTER_NULL_RETURN_INT(wr_list);
-    RS_CHECK_POINTER_NULL_RETURN_INT(wr_rsp);
-    CHK_PRT_RETURN(send_num > MAX_WR_NUM || send_num == 0 || base_info.phy_id >= RS_MAX_DEV_NUM,
-        hccp_err("send_num[%u] or phy_id:%u >= [%d], is invalid", send_num, base_info.phy_id, RS_MAX_DEV_NUM),
+    RS_CHECK_POINTER_NULL_RETURN_INT(wrList);
+    RS_CHECK_POINTER_NULL_RETURN_INT(wrRsp);
+    CHK_PRT_RETURN(sendNum > MAX_WR_NUM || sendNum == 0 || baseInfo.phy_id >= RS_MAX_DEV_NUM,
+        hccp_err("send_num[%u] or phy_id:%u >= [%d], is invalid", sendNum, baseInfo.phy_id, RS_MAX_DEV_NUM),
         -EINVAL);
 
-    phy_id = base_info.phy_id;
-    rdev_index = base_info.rdev_index;
-    qpn = base_info.qpn;
+    phyId = baseInfo.phy_id;
+    rdevIndex = baseInfo.rdev_index;
+    qpn = baseInfo.qpn;
 
-    CHK_PRT_RETURN(rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb), hccp_err("rs_qpn2qpcb failed, physical id[%u]",
-        phy_id), -EACCES);
+    CHK_PRT_RETURN(RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb), hccp_err("rs_qpn2qpcb failed, physical id[%u]",
+        phyId), -EACCES);
 
     // only allow normal qp to call this func when ai_op_support not set
-    if (qp_cb->qp_mode == RA_RS_NOR_QP_MODE && qp_cb->ai_op_support == 0) {
-        ret = rs_send_normal_wrlist(qp_cb, wr_list, send_num, complete_num, base_info.key_flag);
+    if (qpCb->qp_mode == RA_RS_NOR_QP_MODE && qpCb->ai_op_support == 0) {
+        ret = RsSendNormalWrlist(qpCb, wrList, sendNum, completeNum, baseInfo.key_flag);
     } else {
-        ret = rs_send_exp_wrlist(qp_cb, wr_list, send_num, wr_rsp, complete_num, base_info.key_flag);
+        ret = RsSendExpWrlist(qpCb, wrList, sendNum, wrRsp, completeNum, baseInfo.key_flag);
     }
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_recv_wrlist(struct rs_wrlist_base_info base_info, struct recv_wrlist_data *wr,
-    unsigned int recv_num, unsigned int *complete_num)
+RS_ATTRI_VISI_DEF int RsRecvWrlist(struct rs_wrlist_base_info baseInfo, struct recv_wrlist_data *wr,
+    unsigned int recvNum, unsigned int *completeNum)
 {
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(wr);
-    CHK_PRT_RETURN(recv_num > MAX_WR_NUM || recv_num == 0 || base_info.phy_id >= RS_MAX_DEV_NUM,
-        hccp_err("recv_num[%u] or phy_id:%u >= [%d], is invalid", recv_num, base_info.phy_id, RS_MAX_DEV_NUM),
+    CHK_PRT_RETURN(recvNum > MAX_WR_NUM || recvNum == 0 || baseInfo.phy_id >= RS_MAX_DEV_NUM,
+        hccp_err("recv_num[%u] or phy_id:%u >= [%d], is invalid", recvNum, baseInfo.phy_id, RS_MAX_DEV_NUM),
         -EINVAL);
 
-    CHK_PRT_RETURN(rs_qpn2qpcb(base_info.phy_id, base_info.rdev_index, base_info.qpn, &qp_cb),
-        hccp_err("rs_qpn2qpcb failed, physical id[%u]",  base_info.phy_id), -EACCES);
+    CHK_PRT_RETURN(RsQpn2qpcb(baseInfo.phy_id, baseInfo.rdev_index, baseInfo.qpn, &qpCb),
+        hccp_err("rs_qpn2qpcb failed, physical id[%u]",  baseInfo.phy_id), -EACCES);
 
-    return rs_drv_post_recv(qp_cb, wr, recv_num, complete_num);
+    return RsDrvPostRecv(qpCb, wr, recvNum, completeNum);
 }
 
-RS_ATTRI_VISI_DEF int rs_set_host_pid(uint32_t phy_id, pid_t host_pid, const char *pid_sign)
+RS_ATTRI_VISI_DEF int RsSetHostPid(uint32_t phyId, pid_t hostPid, const char *pidSign)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_cb *rs_cb = NULL;
+    unsigned int chipId;
+    struct rs_cb *rsCb = NULL;
 
-    RS_CHECK_POINTER_NULL_RETURN_INT(pid_sign);
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("rs_set_host_pid rs set param error ! phy_id:%u",
-        phy_id), -EINVAL);
+    RS_CHECK_POINTER_NULL_RETURN_INT(pidSign);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs_set_host_pid rs set param error ! phy_id:%u",
+        phyId), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret, hccp_err("rs_set_host_pid rsGetLocalDevIDByHostDevID phy_id invalid, ret %d", ret), ret);
 
-    hccp_info("phy_id[%u] host_pid[%d]", chip_id, host_pid);
+    hccp_info("phy_id[%u] host_pid[%d]", chipId, hostPid);
 
-    ret = rs_dev2rscb(chip_id, &rs_cb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rs cb failed, chip_id:%u", chip_id), ret);
+    ret = RsDev2rscb(chipId, &rsCb, false);
+    CHK_PRT_RETURN(ret, hccp_err("get rs cb failed, chipId:%u", chipId), ret);
 
-    rs_cb->p_rs_sign.tgid = host_pid;
-    ret = strcpy_s(rs_cb->p_rs_sign.sign, PROCESS_RS_SIGN_LENGTH, pid_sign);
+    rsCb->p_rs_sign.tgid = hostPid;
+    ret = strcpy_s(rsCb->p_rs_sign.sign, PROCESS_RS_SIGN_LENGTH, pidSign);
     CHK_PRT_RETURN(ret, hccp_err("copy sign failed, ret %d", ret), -ESAFEFUNC);
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_rdev_get_port_status(unsigned int phy_id, unsigned int rdev_index, enum port_status *status)
+RS_ATTRI_VISI_DEF int RsRdevGetPortStatus(unsigned int phyId, unsigned int rdevIndex, enum port_status *status)
 {
-    struct ibv_port_attr port_attr = { 0 };
-    struct rs_rdev_cb *rdev_cb = NULL;
-    unsigned int chip_id;
+    struct ibv_port_attr portAttr = { 0 };
+    struct rs_rdev_cb *rdevCb = NULL;
+    unsigned int chipId;
     int ret;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
-        phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
+        phyId, RS_MAX_DEV_NUM), -EINVAL);
     CHK_PRT_RETURN(status == NULL, hccp_err("param err! status is NULL"), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("rsGetLocalDevIDByHostDevID failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret != 0 || rdev_cb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
-        chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+        chipId, ret), ret);
 
-    ret = rs_ibv_query_port(rdev_cb->ib_ctx, rdev_cb->ib_port, &port_attr);
+    ret = RsIbvQueryPort(rdevCb->ib_ctx, rdevCb->ib_port, &portAttr);
     CHK_PRT_RETURN(ret, hccp_err("ibv_query_port failed ret[%d]", ret), -EOPENSRC);
 
-    *status = port_attr.state == IBV_PORT_ACTIVE ? PORT_STATUS_ACTIVE : PORT_STATUS_DOWN;
+    *status = portAttr.state == IBV_PORT_ACTIVE ? PORT_STATUS_ACTIVE : PORT_STATUS_DOWN;
 
-    hccp_dbg("phy_id:%u port_attr.state:%u status:%u", phy_id, port_attr.state, *status);
+    hccp_dbg("phy_id:%u port_attr.state:%u status:%u", phyId, portAttr.state, *status);
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_notify_mr_info(unsigned int phy_id, unsigned int rdev_index, struct mr_info *info)
+RS_ATTRI_VISI_DEF int RsGetNotifyMrInfo(unsigned int phyId, unsigned int rdevIndex, struct mr_info *info)
 {
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct rs_cb *rs_cb = NULL;
-    unsigned int chip_id;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct rs_cb *rsCb = NULL;
+    unsigned int chipId;
     int ret;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
-        phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
+        phyId, RS_MAX_DEV_NUM), -EINVAL);
 
     CHK_PRT_RETURN(info == NULL, hccp_err("param err! info is NULL"), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret:%d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret:%d", phyId, ret), ret);
 
-    ret = rs_dev2rscb(chip_id, &rs_cb, false);
+    ret = RsDev2rscb(chipId, &rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed, ret:%d", ret), -ENODEV);
 
-    ret = rs_get_rdev_cb(rs_cb, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed!, ret:%d, rdev_index:%u", ret, rdev_index), ret);
+    ret = RsGetRdevCb(rsCb, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed!, ret:%d, rdevIndex:%u", ret, rdevIndex), ret);
 
-    info->addr = (void *)(uintptr_t)rdev_cb->notify_va_base;
-    info->size = rdev_cb->notify_size;
-    info->access = rdev_cb->notify_access;
-    info->lkey = rdev_cb->notify_mr->lkey;
+    info->addr = (void *)(uintptr_t)rdevCb->notify_va_base;
+    info->size = rdevCb->notify_size;
+    info->access = rdevCb->notify_access;
+    info->lkey = rdevCb->notify_mr->lkey;
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_notify_cfg_set(unsigned int phy_id, unsigned long long va, unsigned long long size)
+RS_ATTRI_VISI_DEF int RsNotifyCfgSet(unsigned int phyId, unsigned long long va, unsigned long long size)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_cb *rs_cb = NULL;
+    unsigned int chipId;
+    struct rs_cb *rsCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT((void *)(uintptr_t)va);
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM ||
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM ||
         (size != MAX_NOTIFY_SIZE_CLOUD && size != NOTIFY_NUM_MAX_V2 && size != NOTIFY_NUM_MAX_V3),
-        hccp_err("rs_notify_cfg_set rs set param error ! phy_id[%u] size[%llu]", phy_id, size), -EINVAL);
+        hccp_err("rs_notify_cfg_set rs set param error ! phy_id[%u] size[%llu]", phyId, size), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("rs_notify_cfg_set phy_id invalid, ret %d, phy_id:%u", ret, phy_id), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("rs_notify_cfg_set phy_id invalid, ret %d, phyId:%u", ret, phyId), ret);
 
-    ret = rs_dev2rscb(chip_id, &rs_cb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rs cb failed, chip_id:%u", chip_id), ret);
+    ret = RsDev2rscb(chipId, &rsCb, false);
+    CHK_PRT_RETURN(ret, hccp_err("get rs cb failed, chipId:%u", chipId), ret);
 
-    rs_cb->notify_va_base = va;
-    rs_cb->notify_size = size;
+    rsCb->notify_va_base = va;
+    rsCb->notify_size = size;
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_notify_cfg_get(unsigned int phy_id, unsigned long long *va, unsigned long long *size)
+RS_ATTRI_VISI_DEF int RsNotifyCfgGet(unsigned int phyId, unsigned long long *va, unsigned long long *size)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_cb *rs_cb = NULL;
+    unsigned int chipId;
+    struct rs_cb *rsCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(va);
     RS_CHECK_POINTER_NULL_RETURN_INT(size);
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("rs_notify_cfg_get rs set param error ! phy_id:%u",
-        phy_id), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs_notify_cfg_get rs set param error ! phy_id:%u",
+        phyId), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("rs_notify_cfg_get phy_id invalid, ret %d, phy_id:%u", ret, phy_id), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("rs_notify_cfg_get phy_id invalid, ret %d, phyId:%u", ret, phyId), ret);
 
-    ret = rs_dev2rscb(chip_id, &rs_cb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rs cb failed, chip_id:%u", chip_id), ret);
+    ret = RsDev2rscb(chipId, &rsCb, false);
+    CHK_PRT_RETURN(ret, hccp_err("get rs cb failed, chipId:%u", chipId), ret);
 
-    *va = rs_cb->notify_va_base;
-    *size = rs_cb->notify_size;
+    *va = rsCb->notify_va_base;
+    *size = rsCb->notify_size;
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_set_tsqp_depth(unsigned int phy_id, unsigned int rdev_index, unsigned int temp_depth,
-    unsigned int *qp_num)
+RS_ATTRI_VISI_DEF int RsSetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int tempDepth,
+    unsigned int *qpNum)
 {
 #ifdef CUSTOM_INTERFACE
     int ret;
-    unsigned int chip_id = 0;
-    unsigned int sq_depth = 0;
-    struct rs_rdev_cb *rdev_cb = NULL;
+    unsigned int chipId = 0;
+    unsigned int sqDepth = 0;
+    struct rs_rdev_cb *rdevCb = NULL;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("rs_set_tsqp_depth param error ! phy_id:%d", phy_id), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs_set_tsqp_depth param error ! phy_id:%d", phyId), -EINVAL);
 
-    CHK_PRT_RETURN(qp_num == NULL, hccp_err("rs_set_tsqp_depth qp_num is NULL, param error!"), -EINVAL);
+    CHK_PRT_RETURN(qpNum == NULL, hccp_err("rs_set_tsqp_depth qp_num is NULL, param error!"), -EINVAL);
 
-    CHK_PRT_RETURN(temp_depth < RS_MIN_TEMPTH_DEPTH || temp_depth > RS_MAX_TEMPTH_DEPTH, hccp_err("param error!"
-        "temp_depth[%u] can not smaller than [%d] or bigerr than [%d]", temp_depth, RS_MIN_TEMPTH_DEPTH,
+    CHK_PRT_RETURN(tempDepth < RS_MIN_TEMPTH_DEPTH || tempDepth > RS_MAX_TEMPTH_DEPTH, hccp_err("param error!"
+        "temp_depth[%u] can not smaller than [%d] or bigerr than [%d]", tempDepth, RS_MIN_TEMPTH_DEPTH,
         RS_MAX_TEMPTH_DEPTH), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret || rdev_cb == NULL, hccp_err("rs_set_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
-        "failed, ret %d", chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_set_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
+        "failed, ret %d", chipId, ret), ret);
 
-    ret = rs_roce_set_tsqp_depth(rdev_cb->dev_name, rdev_index, temp_depth, qp_num, &sq_depth);
-    CHK_PRT_RETURN(ret, hccp_err("rs_roce_set_tsqp_depth failed, ret %d, dev_name[%s]", ret, rdev_cb->dev_name), ret);
+    ret = RsRoceSetTsqpDepth(rdevCb->dev_name, rdevIndex, tempDepth, qpNum, &sqDepth);
+    CHK_PRT_RETURN(ret, hccp_err("rs_roce_set_tsqp_depth failed, ret %d, dev_name[%s]", ret, rdevCb->dev_name), ret);
 
-    rdev_cb->tx_depth = sq_depth;
-    rdev_cb->rx_depth = sq_depth;
-    rdev_cb->qp_max_num = *qp_num;
+    rdevCb->tx_depth = sqDepth;
+    rdevCb->rx_depth = sqDepth;
+    rdevCb->qp_max_num = *qpNum;
 #endif
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_tsqp_depth(unsigned int phy_id, unsigned int rdev_index, unsigned int *temp_depth,
-    unsigned int *qp_num)
+RS_ATTRI_VISI_DEF int RsGetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int *tempDepth,
+    unsigned int *qpNum)
 {
 #ifdef CUSTOM_INTERFACE
     int ret;
-    unsigned int chip_id = 0;
-    unsigned int sq_depth = 0;
-    struct rs_rdev_cb *rdev_cb = NULL;
+    unsigned int chipId = 0;
+    unsigned int sqDepth = 0;
+    struct rs_rdev_cb *rdevCb = NULL;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("param error ! phy_id:%d", phy_id), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("param error ! phy_id:%d", phyId), -EINVAL);
 
-    CHK_PRT_RETURN(temp_depth == NULL || qp_num == NULL, hccp_err("temp_depth or qp_num is NULL,"
+    CHK_PRT_RETURN(tempDepth == NULL || qpNum == NULL, hccp_err("temp_depth or qp_num is NULL,"
         "param error!"), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret || rdev_cb == NULL, hccp_err("rs_get_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
-        "failed, ret %d", chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_get_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
+        "failed, ret %d", chipId, ret), ret);
 
-    ret = rs_roce_get_tsqp_depth(rdev_cb->dev_name, rdev_index, temp_depth, qp_num, &sq_depth);
-    CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret %d, dev_name[%s]", ret, rdev_cb->dev_name), ret);
+    ret = RsRoceGetTsqpDepth(rdevCb->dev_name, rdevIndex, tempDepth, qpNum, &sqDepth);
+    CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret %d, dev_name[%s]", ret, rdevCb->dev_name), ret);
 #endif
     return 0;
 }
 
-STATIC void rs_set_qp_depth_attr(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb, struct rs_qp_norm *qp_norm)
+STATIC void RsSetQpDepthAttr(struct rs_rdev_cb *rdevCb, struct rs_qp_cb *qpCb, struct rs_qp_norm *qpNorm)
 {
-    if (qp_cb->qp_mode == RA_RS_GDR_TMPL_QP_MODE) {
-        qp_cb->tx_depth = rdev_cb->tx_depth;
-        qp_cb->rx_depth = rdev_cb->rx_depth;
+    if (qpCb->qp_mode == RA_RS_GDR_TMPL_QP_MODE) {
+        qpCb->tx_depth = rdevCb->tx_depth;
+        qpCb->rx_depth = rdevCb->rx_depth;
     } else {
-        if (rdev_cb->rs_cb->hccp_mode == NETWORK_OFFLINE) {
-            qp_cb->tx_depth = RS_QP_TX_DEPTH_OFFLINE;
-            qp_cb->rx_depth = RS_QP_RX_DEPTH_OFFLINE;
+        if (rdevCb->rs_cb->hccp_mode == NETWORK_OFFLINE) {
+            qpCb->tx_depth = RS_QP_TX_DEPTH_OFFLINE;
+            qpCb->rx_depth = RS_QP_RX_DEPTH_OFFLINE;
         } else {
-            qp_cb->tx_depth = RS_QP_TX_DEPTH_ONLINE;
-            qp_cb->rx_depth = RS_QP_RX_DEPTH_ONLINE;
+            qpCb->tx_depth = RS_QP_TX_DEPTH_ONLINE;
+            qpCb->rx_depth = RS_QP_RX_DEPTH_ONLINE;
         }
     }
 
-    if (qp_norm->is_exp != 0 && qp_norm->qp_mode != RA_RS_NOR_QP_MODE) {
-        if (rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
-            qp_cb->tx_depth = (qp_cb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qp_cb->tx_depth;
-            qp_cb->rx_depth = (qp_cb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qp_cb->rx_depth;
+    if (qpNorm->is_exp != 0 && qpNorm->qp_mode != RA_RS_NOR_QP_MODE) {
+        if (rdevCb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
+            qpCb->tx_depth = (qpCb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->tx_depth;
+            qpCb->rx_depth = (qpCb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->rx_depth;
         } else {
-            qp_cb->tx_depth = (qp_cb->qp_mode != RA_RS_GDR_TMPL_QP_MODE && qp_cb->qp_mode != RA_RS_GDR_ASYN_QP_MODE)
+            qpCb->tx_depth = (qpCb->qp_mode != RA_RS_GDR_TMPL_QP_MODE && qpCb->qp_mode != RA_RS_GDR_ASYN_QP_MODE)
                                   ? RS_QP_32K_DEPTH
-                                  : qp_cb->tx_depth;
+                                  : qpCb->tx_depth;
         }
-        qp_cb->send_sge_num = 1;
-        qp_cb->recv_sge_num = 1;
+        qpCb->send_sge_num = 1;
+        qpCb->recv_sge_num = 1;
     } else {
-        if (rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
-            qp_cb->tx_depth = (qp_cb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qp_cb->tx_depth;
-            qp_cb->rx_depth = (qp_cb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qp_cb->rx_depth;
+        if (rdevCb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
+            qpCb->tx_depth = (qpCb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->tx_depth;
+            qpCb->rx_depth = (qpCb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH_PEER_ONLINE : qpCb->rx_depth;
         } else {
-            qp_cb->tx_depth = (qp_cb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH : qp_cb->tx_depth;
-            qp_cb->rx_depth = (qp_cb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH : qp_cb->rx_depth;
+            qpCb->tx_depth = (qpCb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH : qpCb->tx_depth;
+            qpCb->rx_depth = (qpCb->qp_mode != RA_RS_GDR_TMPL_QP_MODE) ? RS_QP_TX_DEPTH : qpCb->rx_depth;
         }
-        qp_cb->send_sge_num = RS_QP_ATTR_MAX_SEND_SGE;
-        qp_cb->recv_sge_num = 1;
+        qpCb->send_sge_num = RS_QP_ATTR_MAX_SEND_SGE;
+        qpCb->recv_sge_num = 1;
     }
 }
 
-STATIC int rs_qpcb_init(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb, struct rs_qp_norm *qp_norm)
+STATIC int RsQpcbInit(struct rs_rdev_cb *rdevCb, struct rs_qp_cb *qpCb, struct rs_qp_norm *qpNorm)
 {
 #define RS_DRV_CQ_DEPTH         16384
 #define RS_DRV_CQ_128_DEPTH     128
 #define RS_DRV_CQ_8K_DEPTH      8192
 #define RS_DRV_CQ_32K_DEPTH     32768
-    int qp_mode = qp_norm->qp_mode;
+    int qpMode = qpNorm->qp_mode;
     int ret;
 
-    qp_cb->rdev_cb = rdev_cb;
-    RS_INIT_LIST_HEAD(&qp_cb->mr_list);
-    RS_INIT_LIST_HEAD(&qp_cb->rem_mr_list);
+    qpCb->rdev_cb = rdevCb;
+    RS_INIT_LIST_HEAD(&qpCb->mr_list);
+    RS_INIT_LIST_HEAD(&qpCb->rem_mr_list);
 
-    qp_cb->qp_mode = qp_mode;
-    qp_cb->eq_num = 0;
-    qp_cb->num_recv_cq_events = 0;
-    qp_cb->num_send_cq_events = 0;
-    qp_cb->state = RS_QP_STATUS_DISCONNECT;
-    qp_cb->ib_pd = rdev_cb->ib_pd;
+    qpCb->qp_mode = qpMode;
+    qpCb->eq_num = 0;
+    qpCb->num_recv_cq_events = 0;
+    qpCb->num_send_cq_events = 0;
+    qpCb->state = RS_QP_STATUS_DISCONNECT;
+    qpCb->ib_pd = rdevCb->ib_pd;
 
     // cq attr
-    if (qp_norm->is_ext == 1) {
+    if (qpNorm->is_ext == 1) {
         // update TEMP & ASYN mode cq depth from 32K to 8K due to memory issue
-        qp_cb->send_cq_depth = (qp_mode != RA_RS_GDR_TMPL_QP_MODE && qp_mode != RA_RS_GDR_ASYN_QP_MODE)
+        qpCb->send_cq_depth = (qpMode != RA_RS_GDR_TMPL_QP_MODE && qpMode != RA_RS_GDR_ASYN_QP_MODE)
             ? RS_DRV_CQ_32K_DEPTH : RS_DRV_CQ_8K_DEPTH;
-        qp_cb->recv_cq_depth = RS_DRV_CQ_128_DEPTH;
+        qpCb->recv_cq_depth = RS_DRV_CQ_128_DEPTH;
     } else {
-        qp_cb->send_cq_depth = RS_DRV_CQ_DEPTH;
-        qp_cb->recv_cq_depth = RS_DRV_CQ_DEPTH;
+        qpCb->send_cq_depth = RS_DRV_CQ_DEPTH;
+        qpCb->recv_cq_depth = RS_DRV_CQ_DEPTH;
     }
 
     // qp attr
-    rs_set_qp_depth_attr(rdev_cb, qp_cb, qp_norm);
+    RsSetQpDepthAttr(rdevCb, qpCb, qpNorm);
 
-    qp_cb->mem_align = qp_norm->mem_align;
+    qpCb->mem_align = qpNorm->mem_align;
 
-    qp_cb->channel = rs_ibv_create_comp_channel(rdev_cb->ib_ctx);
-    CHK_PRT_RETURN(qp_cb->channel == NULL, hccp_err("ibv_create_comp_channel failed! errno(%d)", errno), -EINVAL);
-    qp_cb->qos_attr.tc = (RS_ROCE_DSCP_33 & RS_DSCP_MASK) << RS_DSCP_OFF;
-    qp_cb->qos_attr.sl = RS_ROCE_4_SL;
-    qp_cb->timeout = RS_QP_ATTR_TIMEOUT;
-    qp_cb->retry_cnt = RS_QP_ATTR_RETRY_CNT;
+    qpCb->channel = RsIbvCreateCompChannel(rdevCb->ib_ctx);
+    CHK_PRT_RETURN(qpCb->channel == NULL, hccp_err("ibv_create_comp_channel failed! errno(%d)", errno), -EINVAL);
+    qpCb->qos_attr.tc = (RS_ROCE_DSCP_33 & RS_DSCP_MASK) << RS_DSCP_OFF;
+    qpCb->qos_attr.sl = RS_ROCE_4_SL;
+    qpCb->timeout = RS_QP_ATTR_TIMEOUT;
+    qpCb->retry_cnt = RS_QP_ATTR_RETRY_CNT;
 
-    ret = rs_epoll_ctl(rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_ADD, qp_cb->channel->fd, EPOLLIN | EPOLLRDHUP);
+    ret = RsEpollCtl(rdevCb->rs_cb->conn_cb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
-        rs_ibv_destroy_comp_channel(qp_cb->channel);
+        RsIbvDestroyCompChannel(qpCb->channel);
         hccp_err("add channel fd failed ret %d", ret);
         return ret;
     }
@@ -1506,25 +1506,25 @@ STATIC int rs_qpcb_init(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb, stru
     return 0;
 }
 
-STATIC int rs_qpcb_deinit(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb)
+STATIC int RsQpcbDeinit(struct rs_rdev_cb *rdevCb, struct rs_qp_cb *qpCb)
 {
     int ret;
 
-    if (qp_cb == NULL || qp_cb->channel == NULL) {
+    if (qpCb == NULL || qpCb->channel == NULL) {
         hccp_err("qp_cb or qp_cb->channel is NULL!");
         return -EINVAL;
     }
 
-    ret = rs_epoll_ctl(rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_DEL, qp_cb->channel->fd, EPOLLIN | EPOLLRDHUP);
+    ret = RsEpollCtl(rdevCb->rs_cb->conn_cb.epollfd, EPOLL_CTL_DEL, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
         hccp_err("del channel fd failed ret %d", ret);
     }
 #endif
 
-    if (qp_cb->channel != NULL) {
-        rs_ibv_destroy_comp_channel(qp_cb->channel);
-        qp_cb->channel = NULL;
+    if (qpCb->channel != NULL) {
+        RsIbvDestroyCompChannel(qpCb->channel);
+        qpCb->channel = NULL;
     }
 #ifndef CA_CONFIG_LLT
     return ret;
@@ -1533,137 +1533,137 @@ STATIC int rs_qpcb_deinit(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb)
 #endif
 }
 
-STATIC int rs_qp_notify_mr(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb, uint32_t *qpn)
+STATIC int RsQpNotifyMr(struct rs_rdev_cb *rdevCb, struct rs_qp_cb *qpCb, uint32_t *qpn)
 {
     int ret;
-    struct rs_mr_cb *notify_mr_node = NULL;
+    struct rs_mr_cb *notifyMrNode = NULL;
 
-    ret = rs_calloc_mr(1, &notify_mr_node);
+    ret = RsCallocMr(1, &notifyMrNode);
     CHK_PRT_RETURN(ret, hccp_err("notify_mr_cb malloc failed"), ret);
 
-    RS_PTHREAD_MUTEX_LOCK(&rdev_cb->rdev_mutex);
-    rs_list_add_tail(&qp_cb->list, &rdev_cb->qp_list);
-    RS_PTHREAD_MUTEX_ULOCK(&rdev_cb->rdev_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rdev_mutex);
+    RsListAddTail(&qpCb->list, &rdevCb->qp_list);
+    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rdev_mutex);
 
-    if (rdev_cb->notify_type != NO_USE) {
-        notify_mr_node->qp_cb = qp_cb;
-        notify_mr_node->ib_mr = rdev_cb->notify_mr;
-        notify_mr_node->mr_info.addr = rdev_cb->notify_va_base;
-        notify_mr_node->mr_info.len = rdev_cb->notify_size;
-        notify_mr_node->mr_info.rkey = notify_mr_node->ib_mr->rkey;
+    if (rdevCb->notify_type != NO_USE) {
+        notifyMrNode->qp_cb = qpCb;
+        notifyMrNode->ib_mr = rdevCb->notify_mr;
+        notifyMrNode->mr_info.addr = rdevCb->notify_va_base;
+        notifyMrNode->mr_info.len = rdevCb->notify_size;
+        notifyMrNode->mr_info.rkey = notifyMrNode->ib_mr->rkey;
     } else {
-        notify_mr_node->qp_cb = qp_cb;
-        notify_mr_node->ib_mr = NULL;
+        notifyMrNode->qp_cb = qpCb;
+        notifyMrNode->ib_mr = NULL;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
-    rs_list_add_tail(&notify_mr_node->list, &qp_cb->mr_list);
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
-    rdev_cb->qp_cnt++;
-    *qpn = qp_cb->ib_qp->qp_num;
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
+    RsListAddTail(&notifyMrNode->list, &qpCb->mr_list);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
+    rdevCb->qp_cnt++;
+    *qpn = qpCb->ib_qp->qp_num;
 
     hccp_info("rs qp %d create OK!", *qpn);
 
     return 0;
 }
 
-STATIC int rs_qp_query_info(unsigned int phy_id, unsigned int rdev_index, struct rs_rdev_cb **rdev_cb, int qp_mode)
+STATIC int RsQpQueryInfo(unsigned int phyId, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb, int qpMode)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_cb *rs_cb = NULL;
+    unsigned int chipId;
+    struct rs_cb *rsCb = NULL;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("rs_qp_query_info rs set param error! phy_id:%u",
-        phy_id), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs_qp_query_info rs set param error! phy_id:%u",
+        phyId), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("rs_qp_query_info phy_id[%u] invalid, ret:%d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("rs_qp_query_info phy_id[%u] invalid, ret:%d", phyId, ret), ret);
 
-    ret = rs_dev2rscb(chip_id, &rs_cb, false);
+    ret = RsDev2rscb(chipId, &rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("rs_qp_query_info get rs_cb failed, ret:%d", ret), -ENODEV);
 
-    ret = rs_get_rdev_cb(rs_cb, rdev_index, rdev_cb);
-    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdev_index:%u", ret, rdev_index), ret);
+    ret = RsGetRdevCb(rsCb, rdevIndex, rdevCb);
+    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdevIndex:%u", ret, rdevIndex), ret);
 
-    if (qp_mode == RA_RS_GDR_TMPL_QP_MODE) {
-        CHK_PRT_RETURN((*rdev_cb)->qp_cnt >= (*rdev_cb)->qp_max_num, hccp_err("Exceeded the maximum QP limit(%u)",
-            (*rdev_cb)->qp_max_num), -EINVAL);
+    if (qpMode == RA_RS_GDR_TMPL_QP_MODE) {
+        CHK_PRT_RETURN((*rdevCb)->qp_cnt >= (*rdevCb)->qp_max_num, hccp_err("Exceeded the maximum QP limit(%u)",
+            (*rdevCb)->qp_max_num), -EINVAL);
     } else {
-        CHK_PRT_RETURN((*rdev_cb)->qp_cnt >= RS_QP_NUM_MAX, hccp_err("Exceeded the maximum QP limit(%u)",
-            (*rdev_cb)->qp_cnt), -EINVAL);
+        CHK_PRT_RETURN((*rdevCb)->qp_cnt >= RS_QP_NUM_MAX, hccp_err("Exceeded the maximum QP limit(%u)",
+            (*rdevCb)->qp_cnt), -EINVAL);
     }
 
     return 0;
 }
 
-STATIC int rs_init_mem_pool(struct rs_qp_cb *qp_cb)
+STATIC int RsInitMemPool(struct rs_qp_cb *qpCb)
 {
-    struct roce_mem_cq_qp_attr mem_attr = {0};
+    struct roce_mem_cq_qp_attr memAttr = {0};
     int ret;
 
-    if ((qp_cb->qp_mode != RA_RS_OP_QP_MODE && qp_cb->qp_mode != RA_RS_OP_QP_MODE_EXT) ||
-        qp_cb->mem_align != LITE_ALIGN_2MB) {
+    if ((qpCb->qp_mode != RA_RS_OP_QP_MODE && qpCb->qp_mode != RA_RS_OP_QP_MODE_EXT) ||
+        qpCb->mem_align != LITE_ALIGN_2MB) {
         return 0;
     }
 
     // init mem_pool and store mem_data in mem_resp
-    mem_attr.mem_align = qp_cb->mem_align;
-    mem_attr.send_qp_depth = qp_cb->tx_depth;
-    mem_attr.send_cq_depth = (unsigned int)qp_cb->send_cq_depth;
-    mem_attr.send_sge_num = qp_cb->send_sge_num;
-    mem_attr.recv_qp_depth = qp_cb->rx_depth;
-    mem_attr.recv_cq_depth = (unsigned int)qp_cb->recv_cq_depth;
-    mem_attr.recv_sge_num = qp_cb->recv_sge_num;
+    memAttr.mem_align = qpCb->mem_align;
+    memAttr.send_qp_depth = qpCb->tx_depth;
+    memAttr.send_cq_depth = (unsigned int)qpCb->send_cq_depth;
+    memAttr.send_sge_num = qpCb->send_sge_num;
+    memAttr.recv_qp_depth = qpCb->rx_depth;
+    memAttr.recv_cq_depth = (unsigned int)qpCb->recv_cq_depth;
+    memAttr.recv_sge_num = qpCb->recv_sge_num;
 
-    ret = rs_roce_init_mem_pool(&mem_attr, &qp_cb->mem_resp.mem_data, qp_cb->rdev_cb->rs_cb->chip_id);
+    ret = RsRoceInitMemPool(&memAttr, &qpCb->mem_resp.mem_data, qpCb->rdev_cb->rs_cb->chip_id);
     if (ret != 0) {
-        hccp_err("rs_roce_init_mem_pool failed, ret=%d, chip_id=%u", ret, qp_cb->rdev_cb->rs_cb->chip_id);
+        hccp_err("rs_roce_init_mem_pool failed, ret=%d, chipId=%u", ret, qpCb->rdev_cb->rs_cb->chip_id);
     }
     return ret;
 }
 
-STATIC void rs_deinit_mem_pool(struct rs_qp_cb *qp_cb)
+STATIC void RsDeinitMemPool(struct rs_qp_cb *qpCb)
 {
-    if ((qp_cb->qp_mode != RA_RS_OP_QP_MODE && qp_cb->qp_mode != RA_RS_OP_QP_MODE_EXT) ||
-        qp_cb->mem_align != LITE_ALIGN_2MB) {
+    if ((qpCb->qp_mode != RA_RS_OP_QP_MODE && qpCb->qp_mode != RA_RS_OP_QP_MODE_EXT) ||
+        qpCb->mem_align != LITE_ALIGN_2MB) {
         return;
     }
 
-    (void)rs_roce_deinit_mem_pool(qp_cb->mem_resp.mem_data.mem_idx);
+    (void)RsRoceDeinitMemPool(qpCb->mem_resp.mem_data.mem_idx);
 }
 
-STATIC int rs_alloc_qpcb(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb **qp_cb, struct rs_qp_norm *qp_norm)
+STATIC int RsAllocQpcb(struct rs_rdev_cb *rdevCb, struct rs_qp_cb **qpCb, struct rs_qp_norm *qpNorm)
 {
     int ret;
 
-    ret = rs_calloc_qpcb(1, qp_cb);
+    ret = RsCallocQpcb(1, qpCb);
     CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d errno:%d", ret, errno), -ENOMEM);
 
-    ret = pthread_mutex_init(&(*qp_cb)->qp_mutex, NULL);
+    ret = pthread_mutex_init(&(*qpCb)->qp_mutex, NULL);
     if (ret) {
         hccp_err("pthread_mutex_init failed, ret %d", ret);
         goto qp_mutex_init_err;
     }
 
-    ret = pthread_mutex_init(&(*qp_cb)->cqe_err_info.mutex, NULL);
+    ret = pthread_mutex_init(&(*qpCb)->cqe_err_info.mutex, NULL);
     if (ret) {
         hccp_err("pthread_mutex_init failed, ret %d", ret);
         goto cqe_mutex_init_err;
     }
 
-    ret = rs_qpcb_init(rdev_cb, *qp_cb, qp_norm);
+    ret = RsQpcbInit(rdevCb, *qpCb, qpNorm);
     if (ret) {
         hccp_err("create qp tx rx failed ret %d", ret);
         goto rs_qpcb_init_err;
     }
 
-    ret = rs_init_mem_pool(*qp_cb);
+    ret = RsInitMemPool(*qpCb);
     if (ret) {
         hccp_err("init mem pool failed ret %d", ret);
         goto rs_init_mem_err;
     }
 
-    ret = rs_drv_create_cq(*qp_cb, qp_norm->is_ext);
+    ret = RsDrvCreateCq(*qpCb, qpNorm->is_ext);
     if (ret) {
         hccp_err("create cq failed ret %d", ret);
         goto create_cq_err;
@@ -1672,138 +1672,138 @@ STATIC int rs_alloc_qpcb(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb **qp_cb, st
     return 0;
 
 create_cq_err:
-    rs_deinit_mem_pool(*qp_cb);
+    RsDeinitMemPool(*qpCb);
 
 rs_init_mem_err:
-    rs_qpcb_deinit(rdev_cb, *qp_cb);
+    RsQpcbDeinit(rdevCb, *qpCb);
 
 rs_qpcb_init_err:
-    pthread_mutex_destroy(&(*qp_cb)->cqe_err_info.mutex);
+    pthread_mutex_destroy(&(*qpCb)->cqe_err_info.mutex);
 
 cqe_mutex_init_err:
-    pthread_mutex_destroy(&(*qp_cb)->qp_mutex);
+    pthread_mutex_destroy(&(*qpCb)->qp_mutex);
 
 qp_mutex_init_err:
-    free(*qp_cb);
-    *qp_cb = NULL;
+    free(*qpCb);
+    *qpCb = NULL;
 
     return ret;
 }
 
-STATIC void rs_free_qpcb(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb)
+STATIC void RsFreeQpcb(struct rs_rdev_cb *rdevCb, struct rs_qp_cb *qpCb)
 {
-    rs_drv_destroy_cq(qp_cb);
-    rs_deinit_mem_pool(qp_cb);
-    (void)rs_qpcb_deinit(rdev_cb, qp_cb);
-    pthread_mutex_destroy(&qp_cb->cqe_err_info.mutex);
-    pthread_mutex_destroy(&qp_cb->qp_mutex);
-    free(qp_cb);
-    qp_cb = NULL;
+    RsDrvDestroyCq(qpCb);
+    RsDeinitMemPool(qpCb);
+    (void)RsQpcbDeinit(rdevCb, qpCb);
+    pthread_mutex_destroy(&qpCb->cqe_err_info.mutex);
+    pthread_mutex_destroy(&qpCb->qp_mutex);
+    free(qpCb);
+    qpCb = NULL;
 }
 
-RS_ATTRI_VISI_DEF int rs_qp_create(unsigned int phy_id, unsigned int rdev_index, struct rs_qp_norm qp_norm,
-    struct rs_qp_resp *qp_resp)
+RS_ATTRI_VISI_DEF int RsQpCreate(unsigned int phyId, unsigned int rdevIndex, struct rs_qp_norm qpNorm,
+    struct rs_qp_resp *qpResp)
 {
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
     int ret;
 
-    RS_QP_PARA_CHECK(phy_id);
-    CHK_PRT_RETURN(qp_resp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
+    RS_QP_PARA_CHECK(phyId);
+    CHK_PRT_RETURN(qpResp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
 
-    ret = rs_qp_query_info(phy_id, rdev_index, &rdev_cb, qp_norm.qp_mode);
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, qpNorm.qp_mode);
     CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
 
-    ret = rs_alloc_qpcb(rdev_cb, &qp_cb, &qp_norm);
+    ret = RsAllocQpcb(rdevCb, &qpCb, &qpNorm);
     CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d", ret), ret);
 
-    ret = rs_drv_qp_create(qp_cb, &qp_norm);
+    ret = RsDrvQpCreate(qpCb, &qpNorm);
     if (ret) {
         hccp_err("create drv qp create failed:%d", ret);
         goto create_qp_err;
     }
 
-    ret = ibv_req_notify_cq(qp_cb->ib_send_cq, 0);
+    ret = ibv_req_notify_cq(qpCb->ib_send_cq, 0);
     if (ret) {
         hccp_err("Couldn't request send CQ notification, ret:%d", ret);
         ret = -EOPENSRC;
         goto ret_noritfy_cq;
     }
 
-    ret = ibv_req_notify_cq(qp_cb->ib_recv_cq, 0);
+    ret = ibv_req_notify_cq(qpCb->ib_recv_cq, 0);
     if (ret) {
         hccp_err("Couldn't request recv CQ notification, ret:%d", ret);
         ret = -EOPENSRC;
         goto ret_noritfy_cq;
     }
 
-    ret = rs_qp_notify_mr(rdev_cb, qp_cb, &qp_resp->qpn);   // alloc mr
+    ret = RsQpNotifyMr(rdevCb, qpCb, &qpResp->qpn);   // alloc mr
     if (ret) {
         hccp_err("store qp notify mr failed:%d", ret);
         goto ret_noritfy_cq;
     }
 
-    if (qp_norm.is_exp) {
-        qp_cb->is_exp = RS_IS_EXP;
+    if (qpNorm.is_exp) {
+        qpCb->is_exp = RS_IS_EXP;
     } else {
-        qp_cb->is_exp = RS_NOT_EXP;
+        qpCb->is_exp = RS_NOT_EXP;
     }
 
-    qp_resp->qpn = (unsigned int)qp_cb->qp_info_lo.qpn;
-    qp_resp->gid_idx = (unsigned int)qp_cb->qp_info_lo.gid_idx;
-    qp_resp->psn = (unsigned int)qp_cb->qp_info_lo.psn;
-    qp_resp->gid = qp_cb->qp_info_lo.gid;
+    qpResp->qpn = (unsigned int)qpCb->qp_info_lo.qpn;
+    qpResp->gid_idx = (unsigned int)qpCb->qp_info_lo.gid_idx;
+    qpResp->psn = (unsigned int)qpCb->qp_info_lo.psn;
+    qpResp->gid = qpCb->qp_info_lo.gid;
 
     return 0;
 
 ret_noritfy_cq:
-    rs_drv_qp_destroy(qp_cb);
+    RsDrvQpDestroy(qpCb);
 
 create_qp_err:
-    rs_free_qpcb(rdev_cb, qp_cb);
+    RsFreeQpcb(rdevCb, qpCb);
     return ret;
 }
 
-STATIC int rs_qpcb_init_with_attrs(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *qp_cb,
-    struct rs_qp_norm_with_attrs *qp_norm)
+STATIC int RsQpcbInitWithAttrs(struct rs_rdev_cb *rdevCb, struct rs_qp_cb *qpCb,
+    struct rs_qp_norm_with_attrs *qpNorm)
 {
     int ret;
 
-    qp_cb->rdev_cb = rdev_cb;
-    RS_INIT_LIST_HEAD(&qp_cb->mr_list);
-    RS_INIT_LIST_HEAD(&qp_cb->rem_mr_list);
+    qpCb->rdev_cb = rdevCb;
+    RS_INIT_LIST_HEAD(&qpCb->mr_list);
+    RS_INIT_LIST_HEAD(&qpCb->rem_mr_list);
 
-    qp_cb->qp_mode = qp_norm->ext_attrs.qp_mode;
-    qp_cb->num_recv_cq_events = 0;
-    qp_cb->num_send_cq_events = 0;
-    qp_cb->state = RS_QP_STATUS_DISCONNECT;
-    qp_cb->ib_pd = rdev_cb->ib_pd;
+    qpCb->qp_mode = qpNorm->ext_attrs.qp_mode;
+    qpCb->num_recv_cq_events = 0;
+    qpCb->num_send_cq_events = 0;
+    qpCb->state = RS_QP_STATUS_DISCONNECT;
+    qpCb->ib_pd = rdevCb->ib_pd;
 
-    qp_cb->tx_depth = qp_norm->ext_attrs.qp_attr.cap.max_send_wr;
-    qp_cb->rx_depth = qp_norm->ext_attrs.qp_attr.cap.max_send_wr;
-    qp_cb->send_sge_num = qp_norm->ext_attrs.qp_attr.cap.max_send_sge;
-    qp_cb->recv_sge_num = qp_norm->ext_attrs.qp_attr.cap.max_recv_sge;
-    qp_cb->send_cq_depth = qp_norm->ext_attrs.cq_attr.send_cq_depth;
-    qp_cb->recv_cq_depth = qp_norm->ext_attrs.cq_attr.recv_cq_depth;
-    qp_cb->mem_align = qp_norm->ext_attrs.mem_align;
+    qpCb->tx_depth = qpNorm->ext_attrs.qp_attr.cap.max_send_wr;
+    qpCb->rx_depth = qpNorm->ext_attrs.qp_attr.cap.max_send_wr;
+    qpCb->send_sge_num = qpNorm->ext_attrs.qp_attr.cap.max_send_sge;
+    qpCb->recv_sge_num = qpNorm->ext_attrs.qp_attr.cap.max_recv_sge;
+    qpCb->send_cq_depth = qpNorm->ext_attrs.cq_attr.send_cq_depth;
+    qpCb->recv_cq_depth = qpNorm->ext_attrs.cq_attr.recv_cq_depth;
+    qpCb->mem_align = qpNorm->ext_attrs.mem_align;
 
-    qp_cb->channel = rs_ibv_create_comp_channel(rdev_cb->ib_ctx);
-    CHK_PRT_RETURN(qp_cb->channel == NULL, hccp_err("ibv_create_comp_channel failed! errno(%d)", errno), -EINVAL);
-    qp_cb->qos_attr.tc = (RS_ROCE_DSCP_33 & RS_DSCP_MASK) << RS_DSCP_OFF;
-    qp_cb->qos_attr.sl = RS_ROCE_4_SL;
-    qp_cb->timeout = RS_QP_ATTR_TIMEOUT;
-    qp_cb->retry_cnt = RS_QP_ATTR_RETRY_CNT;
+    qpCb->channel = RsIbvCreateCompChannel(rdevCb->ib_ctx);
+    CHK_PRT_RETURN(qpCb->channel == NULL, hccp_err("ibv_create_comp_channel failed! errno(%d)", errno), -EINVAL);
+    qpCb->qos_attr.tc = (RS_ROCE_DSCP_33 & RS_DSCP_MASK) << RS_DSCP_OFF;
+    qpCb->qos_attr.sl = RS_ROCE_4_SL;
+    qpCb->timeout = RS_QP_ATTR_TIMEOUT;
+    qpCb->retry_cnt = RS_QP_ATTR_RETRY_CNT;
 
-    qp_cb->udp_sport = qp_norm->ext_attrs.udp_sport;
+    qpCb->udp_sport = qpNorm->ext_attrs.udp_sport;
 
-    qp_cb->ai_op_support = qp_norm->ai_op_support;
-    qp_cb->grp_id = rdev_cb->rs_cb->grp_id;
-    qp_cb->cq_cstm_flag = qp_norm->ext_attrs.data_plane_flag.bs.cq_cstm;
+    qpCb->ai_op_support = qpNorm->ai_op_support;
+    qpCb->grp_id = rdevCb->rs_cb->grp_id;
+    qpCb->cq_cstm_flag = qpNorm->ext_attrs.data_plane_flag.bs.cq_cstm;
 
-    ret = rs_epoll_ctl(rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_ADD, qp_cb->channel->fd, EPOLLIN | EPOLLRDHUP);
+    ret = RsEpollCtl(rdevCb->rs_cb->conn_cb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
-        rs_ibv_destroy_comp_channel(qp_cb->channel);
+        RsIbvDestroyCompChannel(qpCb->channel);
         hccp_err("add channel fd failed ret %d", ret);
         return ret;
     }
@@ -1811,39 +1811,39 @@ STATIC int rs_qpcb_init_with_attrs(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb *
     return 0;
 }
 
-STATIC int rs_alloc_qpcb_with_attrs(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb **qp_cb,
-    struct rs_qp_norm_with_attrs *qp_norm)
+STATIC int RsAllocQpcbWithAttrs(struct rs_rdev_cb *rdevCb, struct rs_qp_cb **qpCb,
+    struct rs_qp_norm_with_attrs *qpNorm)
 {
     int ret;
 
-    ret = rs_calloc_qpcb(1, qp_cb);
+    ret = RsCallocQpcb(1, qpCb);
     CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d errno:%d", ret, errno), -ENOMEM);
 
-    ret = pthread_mutex_init(&(*qp_cb)->qp_mutex, NULL);
+    ret = pthread_mutex_init(&(*qpCb)->qp_mutex, NULL);
     if (ret) {
         hccp_err("pthread_mutex_init failed, ret %d", ret);
         goto qp_mutex_init_err;
     }
 
-    ret = pthread_mutex_init(&(*qp_cb)->cqe_err_info.mutex, NULL);
+    ret = pthread_mutex_init(&(*qpCb)->cqe_err_info.mutex, NULL);
     if (ret) {
         hccp_err("pthread_mutex_init failed, ret %d", ret);
         goto cqe_mutex_init_err;
     }
 
-    ret = rs_qpcb_init_with_attrs(rdev_cb, *qp_cb, qp_norm);
+    ret = RsQpcbInitWithAttrs(rdevCb, *qpCb, qpNorm);
     if (ret) {
         hccp_err("create qp tx rx failed ret %d", ret);
         goto rs_qpcb_init_err;
     }
 
-    ret = rs_init_mem_pool(*qp_cb);
+    ret = RsInitMemPool(*qpCb);
     if (ret) {
         hccp_err("init mem pool failed ret %d", ret);
         goto rs_init_mem_err;
     }
 
-    ret = rs_drv_create_cq_with_attrs(*qp_cb, qp_norm->is_ext, &qp_norm->ext_attrs.cq_attr);
+    ret = RsDrvCreateCqWithAttrs(*qpCb, qpNorm->is_ext, &qpNorm->ext_attrs.cq_attr);
     if (ret) {
         hccp_err("create cq failed ret %d", ret);
         goto create_cq_err;
@@ -1852,475 +1852,475 @@ STATIC int rs_alloc_qpcb_with_attrs(struct rs_rdev_cb *rdev_cb, struct rs_qp_cb 
     return 0;
 
 create_cq_err:
-    rs_deinit_mem_pool(*qp_cb);
+    RsDeinitMemPool(*qpCb);
 
 rs_init_mem_err:
-    rs_qpcb_deinit(rdev_cb, *qp_cb);
+    RsQpcbDeinit(rdevCb, *qpCb);
 
 rs_qpcb_init_err:
-    pthread_mutex_destroy(&(*qp_cb)->cqe_err_info.mutex);
+    pthread_mutex_destroy(&(*qpCb)->cqe_err_info.mutex);
 
 cqe_mutex_init_err:
-    pthread_mutex_destroy(&(*qp_cb)->qp_mutex);
+    pthread_mutex_destroy(&(*qpCb)->qp_mutex);
 
 qp_mutex_init_err:
-    free(*qp_cb);
-    *qp_cb = NULL;
+    free(*qpCb);
+    *qpCb = NULL;
 
     return ret;
 }
 
-STATIC int rs_qp_check_qp_norm(struct rs_qp_norm_with_attrs *qp_norm, int *qp_mode)
+STATIC int RsQpCheckQpNorm(struct rs_qp_norm_with_attrs *qpNorm, int *qpMode)
 {
-    CHK_PRT_RETURN(qp_norm == NULL, hccp_err("qp_norm is NULL!"), -EINVAL);
-    CHK_PRT_RETURN(qp_norm->ext_attrs.version != QP_CREATE_WITH_ATTR_VERSION,
-        hccp_err("attr version[%d] mismatch, expect [%d]", qp_norm->ext_attrs.version, QP_CREATE_WITH_ATTR_VERSION),
+    CHK_PRT_RETURN(qpNorm == NULL, hccp_err("qp_norm is NULL!"), -EINVAL);
+    CHK_PRT_RETURN(qpNorm->ext_attrs.version != QP_CREATE_WITH_ATTR_VERSION,
+        hccp_err("attr version[%d] mismatch, expect [%d]", qpNorm->ext_attrs.version, QP_CREATE_WITH_ATTR_VERSION),
         -EINVAL);
 
-    *qp_mode = qp_norm->ext_attrs.qp_mode;
-    if (*qp_mode < 0 || *qp_mode >= RA_RS_ERR_QP_MODE) {
-        hccp_err("qp_mode[%d] must greater or equal to 0 and less than %d", *qp_mode, RA_RS_ERR_QP_MODE);
+    *qpMode = qpNorm->ext_attrs.qp_mode;
+    if (*qpMode < 0 || *qpMode >= RA_RS_ERR_QP_MODE) {
+        hccp_err("qp_mode[%d] must greater or equal to 0 and less than %d", *qpMode, RA_RS_ERR_QP_MODE);
         return -EINVAL;
     }
 
-    if (*qp_mode == RA_RS_OP_QP_MODE_EXT) {
-        *qp_mode = RA_RS_OP_QP_MODE;
+    if (*qpMode == RA_RS_OP_QP_MODE_EXT) {
+        *qpMode = RA_RS_OP_QP_MODE;
     }
 
-    qp_norm->ext_attrs.qp_mode = *qp_mode;
+    qpNorm->ext_attrs.qp_mode = *qpMode;
     return 0;
 }
 
 #ifdef CUSTOM_INTERFACE
-STATIC void rs_qp_prepare_cq_data_plane_info(struct ibv_cq *ib_cq, struct ai_data_plane_cq *data_plane_cq)
+STATIC void RsQpPrepareCqDataPlaneInfo(struct ibv_cq *ibCq, struct ai_data_plane_cq *dataPlaneCq)
 {
-    struct hns_roce_cq_data_plane_info cq_info = {0};
+    struct hns_roce_cq_data_plane_info cqInfo = {0};
 
-    (void)rs_roce_get_cq_data_plane_info(ib_cq, &cq_info);
-    data_plane_cq->cqn = cq_info.cqn;
-    data_plane_cq->buf_addr = cq_info.buf_addr;
-    data_plane_cq->cqe_size = cq_info.cqe_size;
-    data_plane_cq->depth = cq_info.depth;
-    data_plane_cq->head_addr = cq_info.head_addr;
-    data_plane_cq->tail_addr = cq_info.tail_addr;
-    data_plane_cq->swdb_addr = cq_info.swdb_addr;
-    data_plane_cq->db_reg = cq_info.db_reg;
+    (void)RsRoceGetCqDataPlaneInfo(ibCq, &cqInfo);
+    dataPlaneCq->cqn = cqInfo.cqn;
+    dataPlaneCq->buf_addr = cqInfo.buf_addr;
+    dataPlaneCq->cqe_size = cqInfo.cqe_size;
+    dataPlaneCq->depth = cqInfo.depth;
+    dataPlaneCq->head_addr = cqInfo.head_addr;
+    dataPlaneCq->tail_addr = cqInfo.tail_addr;
+    dataPlaneCq->swdb_addr = cqInfo.swdb_addr;
+    dataPlaneCq->db_reg = cqInfo.db_reg;
     hccp_info("cqn:%u buf_addr:0x%llx cqe_size:%u depth:%u head_addr:0x%llx tail_addr:0x%llx swdb_addr:0x%llx",
-        data_plane_cq->cqn, data_plane_cq->buf_addr, data_plane_cq->cqe_size, data_plane_cq->depth,
-        data_plane_cq->head_addr, data_plane_cq->tail_addr, data_plane_cq->swdb_addr);
+        dataPlaneCq->cqn, dataPlaneCq->buf_addr, dataPlaneCq->cqe_size, dataPlaneCq->depth,
+        dataPlaneCq->head_addr, dataPlaneCq->tail_addr, dataPlaneCq->swdb_addr);
 }
 
-STATIC void rs_qp_prepare_wq_data_plane_info(struct hns_roce_wq_data_plane_info *wq_info,
-    struct ai_data_plane_wq *data_plane_wq)
+STATIC void RsQpPrepareWqDataPlaneInfo(struct hns_roce_wq_data_plane_info *wqInfo,
+    struct ai_data_plane_wq *dataPlaneWq)
 {
-    data_plane_wq->wqn = wq_info->wqn;
-    data_plane_wq->buf_addr = wq_info->buf_addr;
-    data_plane_wq->wqebb_size = wq_info->wqebb_size;
-    data_plane_wq->depth = wq_info->depth;
-    data_plane_wq->head_addr = wq_info->head_addr;
-    data_plane_wq->tail_addr = wq_info->tail_addr;
-    data_plane_wq->swdb_addr = wq_info->swdb_addr;
-    data_plane_wq->db_reg = wq_info->db_reg;
+    dataPlaneWq->wqn = wqInfo->wqn;
+    dataPlaneWq->buf_addr = wqInfo->buf_addr;
+    dataPlaneWq->wqebb_size = wqInfo->wqebb_size;
+    dataPlaneWq->depth = wqInfo->depth;
+    dataPlaneWq->head_addr = wqInfo->head_addr;
+    dataPlaneWq->tail_addr = wqInfo->tail_addr;
+    dataPlaneWq->swdb_addr = wqInfo->swdb_addr;
+    dataPlaneWq->db_reg = wqInfo->db_reg;
     hccp_info("wqn:%u buf_addr:0x%llx wqebb_size:%u depth:%u head_addr:%u tail_addr:%u swdb_addr:0x%llx",
-        data_plane_wq->wqn, data_plane_wq->buf_addr, data_plane_wq->wqebb_size, data_plane_wq->depth,
-        data_plane_wq->head_addr, data_plane_wq->tail_addr, data_plane_wq->swdb_addr);
+        dataPlaneWq->wqn, dataPlaneWq->buf_addr, dataPlaneWq->wqebb_size, dataPlaneWq->depth,
+        dataPlaneWq->head_addr, dataPlaneWq->tail_addr, dataPlaneWq->swdb_addr);
 }
 
-STATIC void rs_qp_prepare_qp_data_plane_info(struct ibv_qp *ib_qp, struct ai_data_plane_wq *data_plane_sq,
-    struct ai_data_plane_wq *data_plane_rq)
+STATIC void RsQpPrepareQpDataPlaneInfo(struct ibv_qp *ibQp, struct ai_data_plane_wq *dataPlaneSq,
+    struct ai_data_plane_wq *dataPlaneRq)
 {
-    struct hns_roce_qp_data_plane_info qp_info = {0};
+    struct hns_roce_qp_data_plane_info qpInfo = {0};
 
-    (void)rs_roce_get_qp_data_plane_info(ib_qp, &qp_info);
-    rs_qp_prepare_wq_data_plane_info(&qp_info.sq, data_plane_sq);
-    rs_qp_prepare_wq_data_plane_info(&qp_info.rq, data_plane_rq);
+    (void)RsRoceGetQpDataPlaneInfo(ibQp, &qpInfo);
+    RsQpPrepareWqDataPlaneInfo(&qpInfo.sq, dataPlaneSq);
+    RsQpPrepareWqDataPlaneInfo(&qpInfo.rq, dataPlaneRq);
 }
 
-STATIC void rs_qp_prepare_data_plane_info(struct rs_qp_norm_with_attrs *qp_norm, struct rs_qp_cb *qp_cb,
-    struct rs_qp_resp_with_attrs *qp_resp)
+STATIC void RsQpPrepareDataPlaneInfo(struct rs_qp_norm_with_attrs *qpNorm, struct rs_qp_cb *qpCb,
+    struct rs_qp_resp_with_attrs *qpResp)
 {
     // skip to prepare cq data plane info
-    if (qp_norm->ext_attrs.data_plane_flag.bs.cq_cstm != 0) {
-        qp_resp->ai_scq_addr = (unsigned long long)(uintptr_t)qp_cb->ib_send_cq;
-        qp_resp->ai_rcq_addr = (unsigned long long)(uintptr_t)qp_cb->ib_recv_cq;
-        rs_qp_prepare_cq_data_plane_info(qp_cb->ib_send_cq, &qp_resp->data_plane_info.scq);
-        rs_qp_prepare_cq_data_plane_info(qp_cb->ib_recv_cq, &qp_resp->data_plane_info.rcq);
+    if (qpNorm->ext_attrs.data_plane_flag.bs.cq_cstm != 0) {
+        qpResp->ai_scq_addr = (unsigned long long)(uintptr_t)qpCb->ib_send_cq;
+        qpResp->ai_rcq_addr = (unsigned long long)(uintptr_t)qpCb->ib_recv_cq;
+        RsQpPrepareCqDataPlaneInfo(qpCb->ib_send_cq, &qpResp->data_plane_info.scq);
+        RsQpPrepareCqDataPlaneInfo(qpCb->ib_recv_cq, &qpResp->data_plane_info.rcq);
     }
 
     // skip to prepare qp data plane info
-    if (qp_norm->ai_op_support != 0) {
-        rs_qp_prepare_qp_data_plane_info(qp_cb->ib_qp, &qp_resp->data_plane_info.sq, &qp_resp->data_plane_info.rq);
+    if (qpNorm->ai_op_support != 0) {
+        RsQpPrepareQpDataPlaneInfo(qpCb->ib_qp, &qpResp->data_plane_info.sq, &qpResp->data_plane_info.rq);
     }
 }
 #endif
 
-STATIC void rs_qp_prepare_qp_resp(struct rs_qp_norm_with_attrs *qp_norm, struct rs_qp_cb *qp_cb,
-    struct rs_qp_resp_with_attrs *qp_resp)
+STATIC void RsQpPrepareQpResp(struct rs_qp_norm_with_attrs *qpNorm, struct rs_qp_cb *qpCb,
+    struct rs_qp_resp_with_attrs *qpResp)
 {
-    if (qp_norm->is_exp != 0) {
-        qp_cb->is_exp = RS_IS_EXP;
+    if (qpNorm->is_exp != 0) {
+        qpCb->is_exp = RS_IS_EXP;
     } else {
-        qp_cb->is_exp = RS_NOT_EXP;
+        qpCb->is_exp = RS_NOT_EXP;
     }
 
-    qp_resp->ai_qp_addr = (unsigned long long)(uintptr_t)qp_cb->ib_qp;
-    qp_resp->sq_index = (unsigned int)qp_cb->sq_index;
-    qp_resp->db_index = (unsigned int)qp_cb->db_index;
-    qp_resp->gid_idx = (unsigned int)qp_cb->qp_info_lo.gid_idx;
-    qp_resp->psn = (unsigned int)qp_cb->qp_info_lo.psn;
+    qpResp->ai_qp_addr = (unsigned long long)(uintptr_t)qpCb->ib_qp;
+    qpResp->sq_index = (unsigned int)qpCb->sq_index;
+    qpResp->db_index = (unsigned int)qpCb->db_index;
+    qpResp->gid_idx = (unsigned int)qpCb->qp_info_lo.gid_idx;
+    qpResp->psn = (unsigned int)qpCb->qp_info_lo.psn;
 
 #ifdef CUSTOM_INTERFACE
-    rs_qp_prepare_data_plane_info(qp_norm, qp_cb, qp_resp);
+    RsQpPrepareDataPlaneInfo(qpNorm, qpCb, qpResp);
 #endif
 
     return;
 }
 
-RS_ATTRI_VISI_DEF int rs_qp_create_with_attrs(unsigned int phy_id, unsigned int rdev_index,
-    struct rs_qp_norm_with_attrs *qp_norm, struct rs_qp_resp_with_attrs *qp_resp)
+RS_ATTRI_VISI_DEF int RsQpCreateWithAttrs(unsigned int phyId, unsigned int rdevIndex,
+    struct rs_qp_norm_with_attrs *qpNorm, struct rs_qp_resp_with_attrs *qpResp)
 {
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct rs_qp_cb *qp_cb = NULL;
-    int qp_mode;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
+    int qpMode;
     int ret;
 
-    RS_QP_PARA_CHECK(phy_id);
-    CHK_PRT_RETURN(qp_resp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
+    RS_QP_PARA_CHECK(phyId);
+    CHK_PRT_RETURN(qpResp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
 
-    ret = rs_qp_check_qp_norm(qp_norm, &qp_mode);
+    ret = RsQpCheckQpNorm(qpNorm, &qpMode);
     CHK_PRT_RETURN(ret != 0, hccp_err("check qp mode failed, ret:%d", ret), ret);
 
-    ret = rs_qp_query_info(phy_id, rdev_index, &rdev_cb, qp_mode);
+    ret = RsQpQueryInfo(phyId, rdevIndex, &rdevCb, qpMode);
     CHK_PRT_RETURN(ret, hccp_err("query qp info failed:%d", ret), ret);
 
-    ret = rs_alloc_qpcb_with_attrs(rdev_cb, &qp_cb, qp_norm);
+    ret = RsAllocQpcbWithAttrs(rdevCb, &qpCb, qpNorm);
     CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d", ret), ret);
 
-    ret = rs_drv_qp_create_with_attrs(qp_cb, qp_norm);
+    ret = RsDrvQpCreateWithAttrs(qpCb, qpNorm);
     if (ret) {
         hccp_err("create drv qp create failed:%d", ret);
         goto create_qp_err;
     }
 
-    ret = ibv_req_notify_cq(qp_cb->ib_send_cq, 0);
+    ret = ibv_req_notify_cq(qpCb->ib_send_cq, 0);
     if (ret) {
         hccp_err("Couldn't request send CQ notification, ret:%d", ret);
         ret = -EOPENSRC;
         goto ret_noritfy_cq;
     }
 
-    ret = ibv_req_notify_cq(qp_cb->ib_recv_cq, 0);
+    ret = ibv_req_notify_cq(qpCb->ib_recv_cq, 0);
     if (ret) {
         hccp_err("Couldn't request recv CQ notification, ret:%d", ret);
         ret = -EOPENSRC;
         goto ret_noritfy_cq;
     }
 
-    ret = rs_qp_notify_mr(rdev_cb, qp_cb, &qp_resp->qpn);   // alloc mr
+    ret = RsQpNotifyMr(rdevCb, qpCb, &qpResp->qpn);   // alloc mr
     if (ret) {
         hccp_err("store qp notify mr failed:%d", ret);
         goto ret_noritfy_cq;
     }
 
-    rs_qp_prepare_qp_resp(qp_norm, qp_cb, qp_resp);
+    RsQpPrepareQpResp(qpNorm, qpCb, qpResp);
 
     return 0;
 
 ret_noritfy_cq:
-    rs_drv_qp_destroy(qp_cb);
+    RsDrvQpDestroy(qpCb);
 
 create_qp_err:
-    rs_free_qpcb(rdev_cb, qp_cb);
+    RsFreeQpcb(rdevCb, qpCb);
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_qp_destroy(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn)
+RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
-    struct rs_mr_cb *mr_tmp = NULL;
-    struct rs_mr_cb *mr_tmp2 = NULL;
+    struct rs_qp_cb *qpCb = NULL;
+    struct rs_mr_cb *mrTmp = NULL;
+    struct rs_mr_cb *mrTmp2 = NULL;
 
-    RS_QP_PARA_CHECK(phy_id);
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
-    CHK_PRT_RETURN(ret || qp_cb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->rdev_cb->rdev_mutex);
-    rs_list_del(&qp_cb->list);
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->rdev_cb->rdev_mutex);
-    rs_ibv_ack_cq_events(qp_cb->ib_send_cq, qp_cb->num_send_cq_events);
-    rs_ibv_ack_cq_events(qp_cb->ib_recv_cq, qp_cb->num_recv_cq_events);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdev_cb->rdev_mutex);
+    RsListDel(&qpCb->list);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdev_cb->rdev_mutex);
+    RsIbvAckCqEvents(qpCb->ib_send_cq, qpCb->num_send_cq_events);
+    RsIbvAckCqEvents(qpCb->ib_recv_cq, qpCb->num_recv_cq_events);
 
     // dereg mr
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
-    RS_LIST_GET_HEAD_ENTRY(mr_tmp, mr_tmp2, &qp_cb->mr_list, list, struct rs_mr_cb);
-    for (; (&mr_tmp->list) != &qp_cb->mr_list;
-        mr_tmp = mr_tmp2, mr_tmp2 = list_entry(mr_tmp2->list.next, struct rs_mr_cb, list)) {
-        if (mr_tmp->ib_mr != qp_cb->rdev_cb->notify_mr) {
-            (void)rs_drv_mr_dereg(mr_tmp->ib_mr);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
+    RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, &qpCb->mr_list, list, struct rs_mr_cb);
+    for (; (&mrTmp->list) != &qpCb->mr_list;
+        mrTmp = mrTmp2, mrTmp2 = list_entry(mrTmp2->list.next, struct rs_mr_cb, list)) {
+        if (mrTmp->ib_mr != qpCb->rdev_cb->notify_mr) {
+            (void)RsDrvMrDereg(mrTmp->ib_mr);
         }
-        rs_list_del(&mr_tmp->list);
-        free(mr_tmp);
-        mr_tmp = NULL;
+        RsListDel(&mrTmp->list);
+        free(mrTmp);
+        mrTmp = NULL;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(mr_tmp, mr_tmp2, &qp_cb->rem_mr_list, list, struct rs_mr_cb);
-    for (; (&mr_tmp->list) != &qp_cb->rem_mr_list;
-        mr_tmp = mr_tmp2, mr_tmp2 = list_entry(mr_tmp2->list.next, struct rs_mr_cb, list)) {
-        rs_list_del(&mr_tmp->list);
-        free(mr_tmp);
-        mr_tmp = NULL;
+    RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, &qpCb->rem_mr_list, list, struct rs_mr_cb);
+    for (; (&mrTmp->list) != &qpCb->rem_mr_list;
+        mrTmp = mrTmp2, mrTmp2 = list_entry(mrTmp2->list.next, struct rs_mr_cb, list)) {
+        RsListDel(&mrTmp->list);
+        free(mrTmp);
+        mrTmp = NULL;
     }
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
 
     // destroy qp
-    rs_drv_qp_destroy(qp_cb);
-    rs_drv_destroy_cq(qp_cb);
-    rs_deinit_mem_pool(qp_cb);
+    RsDrvQpDestroy(qpCb);
+    RsDrvDestroyCq(qpCb);
+    RsDeinitMemPool(qpCb);
 
-    qp_cb->rdev_cb->qp_cnt--;
-    ret = rs_qpcb_deinit(qp_cb->rdev_cb, qp_cb);
+    qpCb->rdev_cb->qp_cnt--;
+    ret = RsQpcbDeinit(qpCb->rdev_cb, qpCb);
     if (ret) {
         hccp_err("rs_qpcb_deinit failed! ret[%d]", ret);
     }
 
-    pthread_mutex_destroy(&qp_cb->cqe_err_info.mutex);
-    pthread_mutex_destroy(&qp_cb->qp_mutex);
-    hccp_info("qp %d destroy qp, send wr[%u].", qpn, qp_cb->send_wr_num);
+    pthread_mutex_destroy(&qpCb->cqe_err_info.mutex);
+    pthread_mutex_destroy(&qpCb->qp_mutex);
+    hccp_info("qp %d destroy qp, send wr[%u].", qpn, qpCb->send_wr_num);
 
-    free(qp_cb);
-    qp_cb = NULL;
+    free(qpCb);
+    qpCb = NULL;
     return ret;
 }
 
-static void rs_qp_connect_async_mr(const struct rs_qp_cb *qp_cb)
+static void RsQpConnectAsyncMr(const struct rs_qp_cb *qpCb)
 {
     int ret;
-    struct rs_mr_cb *mr_cb = NULL;
-    struct rs_mr_cb *mr_cb2 = NULL;
+    struct rs_mr_cb *mrCb = NULL;
+    struct rs_mr_cb *mrCb2 = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(mr_cb, mr_cb2, &qp_cb->mr_list, list, struct rs_mr_cb);
-    for (; (&mr_cb->list) != &qp_cb->mr_list;
-        mr_cb = mr_cb2, mr_cb2 = list_entry(mr_cb2->list.next, struct rs_mr_cb, list)) {
-        ret = rs_mr_info_sync(mr_cb);
+    RS_LIST_GET_HEAD_ENTRY(mrCb, mrCb2, &qpCb->mr_list, list, struct rs_mr_cb);
+    for (; (&mrCb->list) != &qpCb->mr_list;
+        mrCb = mrCb2, mrCb2 = list_entry(mrCb2->list.next, struct rs_mr_cb, list)) {
+        ret = RsMrInfoSync(mrCb);
         if (ret) {
             hccp_warn("rs_mr_info_sync unsuccessful, ret:%d", ret);
         }
     }
 }
 
-STATIC void rs_qp_connect_async_qpcb_set(int fd, struct rs_qp_cb *qp_cb)
+STATIC void RsQpConnectAsyncQpcbSet(int fd, struct rs_qp_cb *qpCb)
 {
     int ret;
-    ret = rs_socket_send(fd, &qp_cb->qp_info_lo, sizeof(struct rs_qp_info));
+    ret = RsSocketSend(fd, &qpCb->qp_info_lo, sizeof(struct rs_qp_info));
     if (ret == sizeof(struct rs_qp_info)) {
-        qp_cb->send_len += (uint32_t)ret;
-        qp_cb->state = RS_QP_STATUS_CONNECTING;
+        qpCb->send_len += (uint32_t)ret;
+        qpCb->state = RS_QP_STATUS_CONNECTING;
     } else {
-        qp_cb->state = RS_QP_STATUS_TIMEOUT;
+        qpCb->state = RS_QP_STATUS_TIMEOUT;
     }
 }
 
-STATIC void rs_qp_connect_async_length(int fd, struct rs_qp_cb *qp_cb)
+STATIC void RsQpConnectAsyncLength(int fd, struct rs_qp_cb *qpCb)
 {
     int ret;
     struct rs_qp_len_info msg;
 
     msg.cmd = RS_CMD_LEN_INFO;
-    msg.len = qp_cb->send_len;
+    msg.len = qpCb->send_len;
 
-    ret = rs_socket_send(fd, &msg, sizeof(struct rs_qp_len_info));
+    ret = RsSocketSend(fd, &msg, sizeof(struct rs_qp_len_info));
     if (ret != sizeof(struct rs_qp_len_info)) {
-        qp_cb->state = RS_QP_STATUS_TIMEOUT;
+        qpCb->state = RS_QP_STATUS_TIMEOUT;
     }
 }
 
-static int rs_qp_connect_async_init_para(struct rs_qp_conn_para qp_conn_para, int fd,
-    struct rs_qp_cb **qp_cb, struct rs_conn_info **conn)
+static int RsQpConnectAsyncInitPara(struct rs_qp_conn_para qpConnPara, int fd,
+    struct rs_qp_cb **qpCb, struct rs_conn_info **conn)
 {
     int ret;
 
-    CHK_PRT_RETURN(qp_conn_para.phy_id >= RS_MAX_DEV_NUM, hccp_err("param error ! phy_id:%u",
-        qp_conn_para.phy_id), -EINVAL);
+    CHK_PRT_RETURN(qpConnPara.phy_id >= RS_MAX_DEV_NUM, hccp_err("param error ! phy_id:%u",
+        qpConnPara.phy_id), -EINVAL);
 
     CHK_PRT_RETURN(fd < 0, hccp_err("param error ! fd:%d must bigger than 0", fd), -EINVAL);
 
-    ret = rs_qpn2qpcb(qp_conn_para.phy_id, qp_conn_para.rdev_index, qp_conn_para.qpn, qp_cb);
-    CHK_PRT_RETURN(ret, hccp_err("get qpcb failed, qpn %u, ret %d", qp_conn_para.qpn, ret), ret);
+    ret = RsQpn2qpcb(qpConnPara.phy_id, qpConnPara.rdev_index, qpConnPara.qpn, qpCb);
+    CHK_PRT_RETURN(ret, hccp_err("get qpcb failed, qpn %u, ret %d", qpConnPara.qpn, ret), ret);
 
-    ret = rs_fd2conn(fd, conn);
+    ret = RsFd2conn(fd, conn);
     CHK_PRT_RETURN(ret, hccp_err("get conn failed, fd %d, ret %d", fd, ret), ret);
 
-    rs_get_cur_time(&((*qp_cb)->start_time));
-    (*qp_cb)->send_len = 0;
-    (*qp_cb)->recv_len = 0;
-    (*qp_cb)->expect_len = 0;
-    (*qp_cb)->conn_info = *conn;
+    RsGetCurTime(&((*qpCb)->start_time));
+    (*qpCb)->send_len = 0;
+    (*qpCb)->recv_len = 0;
+    (*qpCb)->expect_len = 0;
+    (*qpCb)->conn_info = *conn;
 
     return 0;
 }
 
-STATIC int rs_typical_qp_state_modifyto_rtr(struct rs_qp_cb *qp_cb, struct typical_qp *local_qp_info,
-    struct typical_qp *remote_qp_info)
+STATIC int RsTypicalQpStateModifytoRtr(struct rs_qp_cb *qpCb, struct typical_qp *localQpInfo,
+    struct typical_qp *remoteQpInfo)
 {
-    struct ibv_port_attr port_attr = { 0 };
-    union ibv_gid remote_info_gid = { 0 };
+    struct ibv_port_attr portAttr = { 0 };
+    union ibv_gid remoteInfoGid = { 0 };
     struct ibv_qp_attr attr = { 0 };
     int ret;
 
     attr.qp_state                  = IBV_QPS_RTR;
-    attr.dest_qp_num               = remote_qp_info->qpn;
-    attr.rq_psn                    = remote_qp_info->psn;
+    attr.dest_qp_num               = remoteQpInfo->qpn;
+    attr.rq_psn                    = remoteQpInfo->psn;
     attr.min_rnr_timer             = RS_QP_ATTR_MIN_RNR_TIMER;
     (attr.ah_attr).is_global       = 0;
-    (attr.ah_attr).sl              = local_qp_info->sl;
+    (attr.ah_attr).sl              = localQpInfo->sl;
     (attr.ah_attr).src_path_bits   = 0;
-    (attr.ah_attr).port_num        = qp_cb->rdev_cb->ib_port;
+    (attr.ah_attr).port_num        = qpCb->rdev_cb->ib_port;
 
-    attr.path_mtu = rs_drv_set_mtu(qp_cb);
+    attr.path_mtu = RsDrvSetMtu(qpCb);
     CHK_PRT_RETURN(attr.path_mtu < IBV_MTU_1024, hccp_err("qpn[%u] failed to set mtu, mtu[%d] < [%d]",
-        local_qp_info->qpn, attr.path_mtu, IBV_MTU_1024), -EPERM);
-    if (qp_cb->rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
+        localQpInfo->qpn, attr.path_mtu, IBV_MTU_1024), -EPERM);
+    if (qpCb->rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
         attr.max_dest_rd_atomic = RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE;
     } else {
         attr.max_dest_rd_atomic = RS_MAX_RD_ATOMIC_NUM;
     }
-    (attr.ah_attr).grh.traffic_class = local_qp_info->tc;
+    (attr.ah_attr).grh.traffic_class = localQpInfo->tc;
     // get gid_idx dynamically to avoid gid_idx changed issue: refresh gid_idx when it changed
-    ret = rs_drv_get_gid_index(qp_cb->rdev_cb, &port_attr, &qp_cb->qp_info_lo.gid_idx);
-    if (ret == 0 && local_qp_info->gid_idx != (uint32_t)qp_cb->qp_info_lo.gid_idx) {
-        hccp_warn("qpn[%u] qp_mode[%d] refresh gid_idx[%u] to [%d]", local_qp_info->qpn, qp_cb->qp_mode,
-            local_qp_info->gid_idx, qp_cb->qp_info_lo.gid_idx);
-        local_qp_info->gid_idx = (uint32_t)qp_cb->qp_info_lo.gid_idx;
+    ret = RsDrvGetGidIndex(qpCb->rdev_cb, &portAttr, &qpCb->qp_info_lo.gid_idx);
+    if (ret == 0 && localQpInfo->gid_idx != (uint32_t)qpCb->qp_info_lo.gid_idx) {
+        hccp_warn("qpn[%u] qp_mode[%d] refresh gid_idx[%u] to [%d]", localQpInfo->qpn, qpCb->qp_mode,
+            localQpInfo->gid_idx, qpCb->qp_info_lo.gid_idx);
+        localQpInfo->gid_idx = (uint32_t)qpCb->qp_info_lo.gid_idx;
     }
 
-    (void)memcpy_s(remote_info_gid.raw, HCCP_GID_RAW_LEN, remote_qp_info->gid, HCCP_GID_RAW_LEN);
-    if (remote_info_gid.global.interface_id) {
+    (void)memcpy_s(remoteInfoGid.raw, HCCP_GID_RAW_LEN, remoteQpInfo->gid, HCCP_GID_RAW_LEN);
+    if (remoteInfoGid.global.interface_id) {
         attr.ah_attr.is_global = 1;
         attr.ah_attr.grh.hop_limit = 1;
-        attr.ah_attr.grh.dgid = remote_info_gid;
-        attr.ah_attr.grh.sgid_index = local_qp_info->gid_idx;
+        attr.ah_attr.grh.dgid = remoteInfoGid;
+        attr.ah_attr.grh.sgid_index = localQpInfo->gid_idx;
     }
 
-    ret = rs_ibv_modify_qp(qp_cb->ib_qp, &attr,
+    ret = RsIbvModifyQp(qpCb->ib_qp, &attr,
                            IBV_QP_STATE | IBV_QP_AV |
                            IBV_QP_PATH_MTU | IBV_QP_DEST_QPN |
                            IBV_QP_RQ_PSN | IBV_QP_MAX_DEST_RD_ATOMIC |
                            IBV_QP_MIN_RNR_TIMER);
     CHK_PRT_RETURN(ret, hccp_err("[modifyto_rtr]local_qpn[%u] remote_qpn[%u] ibv_modify_qp failed ret[%d], errno[%d]",
-        local_qp_info->qpn, remote_qp_info->qpn, ret, errno), -EOPENSRC);
-    hccp_info("qp qos attr: qpn[%u] tc[%u] sl[%u]", local_qp_info->qpn, local_qp_info->tc, local_qp_info->sl);
+        localQpInfo->qpn, remoteQpInfo->qpn, ret, errno), -EOPENSRC);
+    hccp_info("qp qos attr: qpn[%u] tc[%u] sl[%u]", localQpInfo->qpn, localQpInfo->tc, localQpInfo->sl);
     return 0;
 }
 
-STATIC int rs_typical_qp_state_modifyto_rts(struct rs_qp_cb *qp_cb, struct typical_qp *local_qp_info)
+STATIC int RsTypicalQpStateModifytoRts(struct rs_qp_cb *qpCb, struct typical_qp *localQpInfo)
 {
     struct ibv_qp_attr attr = {0};
     int ret;
 
     attr.qp_state      = IBV_QPS_RTS;
-    attr.timeout       = (uint8_t)local_qp_info->retry_time;
-    attr.retry_cnt     = (uint8_t)local_qp_info->retry_cnt;
+    attr.timeout       = (uint8_t)localQpInfo->retry_time;
+    attr.retry_cnt     = (uint8_t)localQpInfo->retry_cnt;
     attr.rnr_retry     = RS_QP_ATTR_RNR_RETRY;
-    attr.sq_psn        = local_qp_info->psn;
-    if (qp_cb->rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
+    attr.sq_psn        = localQpInfo->psn;
+    if (qpCb->rdev_cb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
         attr.max_rd_atomic = RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE;
     } else {
         attr.max_rd_atomic = RS_MAX_RD_ATOMIC_NUM;
     }
 
-    ret = rs_ibv_modify_qp(qp_cb->ib_qp, &attr,
+    ret = RsIbvModifyQp(qpCb->ib_qp, &attr,
                            IBV_QP_STATE | IBV_QP_TIMEOUT |
                            IBV_QP_RETRY_CNT | IBV_QP_RNR_RETRY |
                            IBV_QP_SQ_PSN | IBV_QP_MAX_QP_RD_ATOMIC);
     CHK_PRT_RETURN(ret != 0, hccp_err("[modifyto_rts]local_qpn[%u] ibv_modify_qp failed ret[%d], errno[%d]",
-        local_qp_info->qpn, ret, errno), -EOPENSRC);
+        localQpInfo->qpn, ret, errno), -EOPENSRC);
 
-    hccp_info("qp rdma attr: qpn[%u] timeout[%u] retrycnt[%u]", local_qp_info->qpn, local_qp_info->retry_time,
-        local_qp_info->retry_cnt);
+    hccp_info("qp rdma attr: qpn[%u] timeout[%u] retrycnt[%u]", localQpInfo->qpn, localQpInfo->retry_time,
+        localQpInfo->retry_cnt);
     return 0;
 }
 
-STATIC void rs_typical_qp_modify_info_related(struct rs_qp_cb *qp_cb, struct typical_qp *local_qp_info,
-    struct typical_qp *remote_qp_info)
+STATIC void RsTypicalQpModifyInfoRelated(struct rs_qp_cb *qpCb, struct typical_qp *localQpInfo,
+    struct typical_qp *remoteQpInfo)
 {
-    qp_cb->state = RS_QP_STATUS_CONNECTED;
+    qpCb->state = RS_QP_STATUS_CONNECTED;
     // local qp info related: no need to relate qpn, psn, gid_idx, gid
-    qp_cb->qos_attr.tc = (unsigned char)local_qp_info->tc;
-    qp_cb->qos_attr.sl = (unsigned char)local_qp_info->sl;
-    qp_cb->retry_cnt = local_qp_info->retry_cnt;
-    qp_cb->timeout = local_qp_info->retry_time;
+    qpCb->qos_attr.tc = (unsigned char)localQpInfo->tc;
+    qpCb->qos_attr.sl = (unsigned char)localQpInfo->sl;
+    qpCb->retry_cnt = localQpInfo->retry_cnt;
+    qpCb->timeout = localQpInfo->retry_time;
     // remote qp info related
-    qp_cb->qp_info_rem.qpn = (int)remote_qp_info->qpn;
-    qp_cb->qp_info_rem.psn = (int)remote_qp_info->psn;
-    qp_cb->qp_info_rem.gid_idx = (int)remote_qp_info->gid_idx;
-    (void)memcpy_s(qp_cb->qp_info_rem.gid.raw, HCCP_GID_RAW_LEN, remote_qp_info->gid, HCCP_GID_RAW_LEN);
+    qpCb->qp_info_rem.qpn = (int)remoteQpInfo->qpn;
+    qpCb->qp_info_rem.psn = (int)remoteQpInfo->psn;
+    qpCb->qp_info_rem.gid_idx = (int)remoteQpInfo->gid_idx;
+    (void)memcpy_s(qpCb->qp_info_rem.gid.raw, HCCP_GID_RAW_LEN, remoteQpInfo->gid, HCCP_GID_RAW_LEN);
 }
 
-RS_ATTRI_VISI_DEF int rs_typical_qp_modify(unsigned int phy_id, unsigned int rdev_index,
-    struct typical_qp local_qp_info, struct typical_qp remote_qp_info, unsigned int *udp_sport)
+RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevIndex,
+    struct typical_qp localQpInfo, struct typical_qp remoteQpInfo, unsigned int *udpSport)
 {
 #ifdef CUSTOM_INTERFACE
-    unsigned int qp_attr_mask = HNS_ROCE_AI_QPC_UDPSPN;
-    struct hns_roce_qpc_attr_val qp_attr_val = { 0 };
+    unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
+    struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
 #endif
-    struct ibv_qp_init_attr init_attr = { 0 };
+    struct ibv_qp_init_attr initAttr = { 0 };
     struct ibv_qp_attr attr = { 0 };
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
     int ret;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("[modify]phy_id:%u >= [%d], is invalid", phy_id, RS_MAX_DEV_NUM),
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("[modify]phy_id:%u >= [%d], is invalid", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
-    CHK_PRT_RETURN(rs_qpn2qpcb(phy_id, rdev_index, local_qp_info.qpn, &qp_cb),
-        hccp_err("[modify]rs_qpn2qpcb qpn:%u failed, phy_id[%u]", local_qp_info.qpn, phy_id), -EACCES);
+    CHK_PRT_RETURN(RsQpn2qpcb(phyId, rdevIndex, localQpInfo.qpn, &qpCb),
+        hccp_err("[modify]rs_qpn2qpcb qpn:%u failed, phyId[%u]", localQpInfo.qpn, phyId), -EACCES);
 
-    CHK_PRT_RETURN(qp_cb->state == RS_QP_STATUS_CONNECTED,
+    CHK_PRT_RETURN(qpCb->state == RS_QP_STATUS_CONNECTED,
         hccp_info("local_qpn:%u remote_qpn:%u already been connected, no need to modify again",
-        local_qp_info.qpn, remote_qp_info.qpn), 0);
+        localQpInfo.qpn, remoteQpInfo.qpn), 0);
 
     // see ib_modify_qp_is_ok for status modify, only support modify qp from INIT to RTR
-    ret = rs_ibv_query_qp(qp_cb->ib_qp, &attr, IBV_QP_STATE, &init_attr);
+    ret = RsIbvQueryQp(qpCb->ib_qp, &attr, IBV_QP_STATE, &initAttr);
     CHK_PRT_RETURN(ret != 0 || attr.qp_state != IBV_QPS_INIT, hccp_err("query qpn:%u failed, ret:%d or state:%d != %d",
-        local_qp_info.qpn, ret, attr.qp_state, IBV_QPS_INIT), -EOPENSRC);
+        localQpInfo.qpn, ret, attr.qp_state, IBV_QPS_INIT), -EOPENSRC);
 
-    ret = rs_typical_qp_state_modifyto_rtr(qp_cb, &local_qp_info, &remote_qp_info);
+    ret = RsTypicalQpStateModifytoRtr(qpCb, &localQpInfo, &remoteQpInfo);
     CHK_PRT_RETURN(ret != 0, hccp_err("[modify]local_qpn:%u remote_qpn:%u modify to rtr failed, ret %d",
-        local_qp_info.qpn, remote_qp_info.qpn, ret), ret);
+        localQpInfo.qpn, remoteQpInfo.qpn, ret), ret);
 
-    ret = rs_typical_qp_state_modifyto_rts(qp_cb, &local_qp_info);
+    ret = RsTypicalQpStateModifytoRts(qpCb, &localQpInfo);
     CHK_PRT_RETURN(ret != 0, hccp_err("[modify]local_qpn:%u remote_qpn:%u modify to rts failed, ret %d",
-        local_qp_info.qpn, remote_qp_info.qpn, ret), ret);
+        localQpInfo.qpn, remoteQpInfo.qpn, ret), ret);
 
 #ifdef CUSTOM_INTERFACE
-    ret = rs_roce_query_qpc(qp_cb->ib_qp, &qp_attr_val, qp_attr_mask);
+    ret = RsRoceQueryQpc(qpCb->ib_qp, &qpAttrVal, qpAttrMask);
     if (ret != 0) {
-        hccp_warn("qpn:%d query qpc unsuccessful, ret %d", local_qp_info.qpn, ret);
+        hccp_warn("qpn:%d query qpc unsuccessful, ret %d", localQpInfo.qpn, ret);
     } else {
-        qp_cb->udp_sport = qp_attr_val.udp_sport;
+        qpCb->udp_sport = qpAttrVal.udp_sport;
     }
 #endif
-    *udp_sport = qp_cb->udp_sport;
-    rs_typical_qp_modify_info_related(qp_cb, &local_qp_info, &remote_qp_info);
+    *udpSport = qpCb->udp_sport;
+    RsTypicalQpModifyInfoRelated(qpCb, &localQpInfo, &remoteQpInfo);
 
-    hccp_info("local_qpn:%u remote_qpn:%u modify succ, udp_sport:%u",
-        local_qp_info.qpn, remote_qp_info.qpn, qp_cb->udp_sport);
+    hccp_info("local_qpn:%u remote_qpn:%u modify succ, udpSport:%u",
+        localQpInfo.qpn, remoteQpInfo.qpn, qpCb->udp_sport);
 
     return 0;
 }
 
-STATIC int rs_qp_state_batch_modifyto_pause(struct rs_qp_cb *qp_cb)
+STATIC int RsQpStateBatchModifytoPause(struct rs_qp_cb *qpCb)
 {
     int ret;
 
-    ret = rs_drv_qp_state_modifyto_reset(qp_cb);
+    ret = RsDrvQpStateModifytoReset(qpCb);
     CHK_PRT_RETURN(ret, hccp_err("qp modify to reset failed, ret %d", ret), ret);
 
-    hccp_info("local qpn[%d] remote qpn[%d] modify to pause succ", qp_cb->qp_info_lo.qpn, qp_cb->qp_info_rem.qpn);
+    hccp_info("local qpn[%d] remote qpn[%d] modify to pause succ", qpCb->qp_info_lo.qpn, qpCb->qp_info_rem.qpn);
     return 0;
 }
 
-STATIC int rs_qp_state_batch_modifyto_connected(struct rs_qp_cb *qp_cb)
+STATIC int RsQpStateBatchModifytoConnected(struct rs_qp_cb *qpCb)
 {
     struct ibv_qp_attr attr;
     int ret;
@@ -2328,247 +2328,247 @@ STATIC int rs_qp_state_batch_modifyto_connected(struct rs_qp_cb *qp_cb)
     ret = memset_s(&attr, sizeof(struct ibv_qp_attr), 0, sizeof(struct ibv_qp_attr));
     CHK_PRT_RETURN(ret, hccp_err("memset_s attr failed ret %d", ret), -ESAFEFUNC);
 
-    ret = rs_drv_qp_state_modifyto_init(qp_cb, &attr);
+    ret = RsDrvQpStateModifytoInit(qpCb, &attr);
     CHK_PRT_RETURN(ret, hccp_err("qp modify to init failed, ret %d", ret), ret);
-    ret = rs_drv_qp_state_modifyto_rtr(qp_cb, &attr);
+    ret = RsDrvQpStateModifytoRtr(qpCb, &attr);
     CHK_PRT_RETURN(ret, hccp_err("qp modify to rtr failed, ret %d", ret), ret);
-    ret = rs_drv_qp_state_modifyto_rts(qp_cb, &attr);
+    ret = RsDrvQpStateModifytoRts(qpCb, &attr);
     CHK_PRT_RETURN(ret, hccp_err("qp modify to rts failed, ret %d", ret), ret);
 
-    hccp_info("local qpn[%d] remote qpn[%d] modify to rts succ", qp_cb->qp_info_lo.qpn, qp_cb->qp_info_rem.qpn);
+    hccp_info("local qpn[%d] remote qpn[%d] modify to rts succ", qpCb->qp_info_lo.qpn, qpCb->qp_info_rem.qpn);
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_qp_batch_modify(unsigned int phy_id, unsigned int rdev_index,
-    int status, int qpn[], int qpn_num)
+RS_ATTRI_VISI_DEF int RsQpBatchModify(unsigned int phyId, unsigned int rdevIndex,
+    int status, int qpn[], int qpnNum)
 {
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
     int ret;
     int i;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("[modify]phy_id:%u >= [%d], is invalid", phy_id, RS_MAX_DEV_NUM),
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("[modify]phy_id:%u >= [%d], is invalid", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
-    for (i = 0; i < qpn_num; i++) {
-        CHK_PRT_RETURN(rs_qpn2qpcb(phy_id, rdev_index, (uint32_t)qpn[i], &qp_cb),
-            hccp_err("[modify]rs_qpn2qpcb failed, phy_id[%u]", phy_id), -EACCES);
+    for (i = 0; i < qpnNum; i++) {
+        CHK_PRT_RETURN(RsQpn2qpcb(phyId, rdevIndex, (uint32_t)qpn[i], &qpCb),
+            hccp_err("[modify]rs_qpn2qpcb failed, phyId[%u]", phyId), -EACCES);
 
         /*
          * see ib_modify_qp_is_ok for status modify
          * only support modify qp from STATUS_PAUSE(RESET) to STATUS_CONNECTED(INIT)
          */
-        if (status == RS_QP_STATUS_CONNECTED && qp_cb->state == RS_QP_STATUS_PAUSE) {
-            ret = rs_qp_state_batch_modifyto_connected(qp_cb);
-            CHK_PRT_RETURN(ret, hccp_err("modify_qp qpn[%d]:%d to connected failed, ret[%d] phy_id[%u]",
-                i, qpn[i], ret, phy_id), ret);
+        if (status == RS_QP_STATUS_CONNECTED && qpCb->state == RS_QP_STATUS_PAUSE) {
+            ret = RsQpStateBatchModifytoConnected(qpCb);
+            CHK_PRT_RETURN(ret, hccp_err("modify_qp qpn[%d]:%d to connected failed, ret[%d] phyId[%u]",
+                i, qpn[i], ret, phyId), ret);
         } else if (status == RS_QP_STATUS_PAUSE) {
-            ret = rs_qp_state_batch_modifyto_pause(qp_cb);
-            CHK_PRT_RETURN(ret, hccp_err("modify_qp qpn[%d]:%d to pause failed, ret[%d] phy_id[%u]",
-                i, qpn[i], ret, phy_id), ret);
+            ret = RsQpStateBatchModifytoPause(qpCb);
+            CHK_PRT_RETURN(ret, hccp_err("modify_qp qpn[%d]:%d to pause failed, ret[%d] phyId[%u]",
+                i, qpn[i], ret, phyId), ret);
         } else {
-            hccp_err("modify_qp qpn[%d]:%d failed, not support to modify status[%d] to status[%d], phy_id[%u]",
-                i, qpn[i], qp_cb->state, status, phy_id);
+            hccp_err("modify_qp qpn[%d]:%d failed, not support to modify status[%d] to status[%d], phyId[%u]",
+                i, qpn[i], qpCb->state, status, phyId);
             return -EINVAL;
         }
 
-        qp_cb->state = status;
+        qpCb->state = status;
     }
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_qp_connect_async(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, int fd)
+RS_ATTRI_VISI_DEF int RsQpConnectAsync(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int fd)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
     struct rs_conn_info *conn = NULL;
-    struct rs_qp_conn_para qp_conn_para;
+    struct rs_qp_conn_para qpConnPara;
     hccp_info("qp:%d, fd:%d", qpn, fd);
 
-    qp_conn_para.phy_id = phy_id;
-    qp_conn_para.rdev_index = rdev_index;
-    qp_conn_para.qpn = qpn;
-    ret = rs_qp_connect_async_init_para(qp_conn_para, fd, &qp_cb, &conn);
+    qpConnPara.phy_id = phyId;
+    qpConnPara.rdev_index = rdevIndex;
+    qpConnPara.qpn = qpn;
+    ret = RsQpConnectAsyncInitPara(qpConnPara, fd, &qpCb, &conn);
     CHK_PRT_RETURN(ret, hccp_err("rs_qp_connect_async_init_para failed, qpn %u, ret %d", qpn, ret), ret);
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
 
-    if (qp_cb->state == RS_QP_STATUS_REM_FD_CLOSE) {
+    if (qpCb->state == RS_QP_STATUS_REM_FD_CLOSE) {
         hccp_warn("remote qp fd close, can not use it anymore!");
-        RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
         return -EFAULT;
     }
 
-    if ((qp_cb->state == RS_QP_STATUS_CONNECTED) || (qp_cb->state == RS_QP_STATUS_CONNECTING)) {
-        hccp_warn("qp %d has already sync! state[%d]", qp_cb->qp_info_lo.qpn, qp_cb->state);
-        RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    if ((qpCb->state == RS_QP_STATUS_CONNECTED) || (qpCb->state == RS_QP_STATUS_CONNECTING)) {
+        hccp_warn("qp %d has already sync! state[%d]", qpCb->qp_info_lo.qpn, qpCb->state);
+        RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
         return -EEXIST;
     }
 
-    rs_qp_connect_async_qpcb_set(fd, qp_cb);
+    RsQpConnectAsyncQpcbSet(fd, qpCb);
 
-    hccp_info("after socket fd %d send QP %u, chip_id %u, state:%d!",
-        fd, qpn, qp_cb->rdev_cb->rs_cb->chip_id, qp_cb->state);
+    hccp_info("after socket fd %d send QP %u, chipId %u, state:%d!",
+        fd, qpn, qpCb->rdev_cb->rs_cb->chip_id, qpCb->state);
 
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
 
-    rs_qp_mr_recv_handle(fd, qp_cb);
+    RsQpMrRecvHandle(fd, qpCb);
 
-    rs_qp_connect_async_mr(qp_cb);
+    RsQpConnectAsyncMr(qpCb);
 
-    rs_qp_connect_async_length(fd, qp_cb);
+    RsQpConnectAsyncLength(fd, qpCb);
 
-    hccp_info("QP %d async done, state:%d!", qpn, qp_cb->state);
+    hccp_info("QP %d async done, state:%d!", qpn, qpCb->state);
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_qp_status(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn,
-    struct rs_qp_status_info *qp_info)
+RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
+    struct rs_qp_status_info *qpInfo)
 {
 #ifdef CUSTOM_INTERFACE
-    unsigned int qp_attr_mask = HNS_ROCE_AI_QPC_UDPSPN;
-    struct hns_roce_qpc_attr_val qp_attr_val = { 0 };
+    unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
+    struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
 #endif
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
     int ret;
 
-    CHK_PRT_RETURN(qp_info == NULL, hccp_err("param error, qp_info is NULL"), -EINVAL);
+    CHK_PRT_RETURN(qpInfo == NULL, hccp_err("param error, qpInfo is NULL"), -EINVAL);
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
-        phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid",
+        phyId, RS_MAX_DEV_NUM), -EINVAL);
 
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
     CHK_PRT_RETURN(ret, hccp_err("get qp cb failed, qpn:%u, ret %d", qpn, ret), ret);
 
     // qp state is CONNECTED, no need to handle
-    if (qp_cb->state == RS_QP_STATUS_CONNECTED) {
+    if (qpCb->state == RS_QP_STATUS_CONNECTED) {
         goto update_qp_cb;
     }
 
     // modify state to CONNECTED
-    if (qp_cb->expect_len == qp_cb->recv_len - sizeof(struct rs_qp_len_info)) {
-        qp_cb->state = RS_QP_STATUS_CONNECTED;
+    if (qpCb->expect_len == qpCb->recv_len - sizeof(struct rs_qp_len_info)) {
+        qpCb->state = RS_QP_STATUS_CONNECTED;
     } else {
-        rs_qp_mr_recv_handle(qp_cb->conn_info->connfd, qp_cb);
+        RsQpMrRecvHandle(qpCb->conn_info->connfd, qpCb);
         goto out;
     }
 
 update_qp_cb:
 #ifdef CUSTOM_INTERFACE
-    ret = rs_roce_query_qpc(qp_cb->ib_qp, &qp_attr_val, qp_attr_mask);
+    ret = RsRoceQueryQpc(qpCb->ib_qp, &qpAttrVal, qpAttrMask);
     if (ret != 0) {
-        hccp_warn("qpn:%d query qpc unsuccessful, ret %d", qp_cb->qp_info_lo.qpn, ret);
+        hccp_warn("qpn:%d query qpc unsuccessful, ret %d", qpCb->qp_info_lo.qpn, ret);
     } else {
-        qp_cb->udp_sport = qp_attr_val.udp_sport;
+        qpCb->udp_sport = qpAttrVal.udp_sport;
     }
 #endif
 out:
-    hccp_dbg("qp:%u, state:%d, udp_sport:%u", qpn, qp_cb->state, qp_cb->udp_sport);
-    qp_info->status = qp_cb->state;
-    qp_info->udp_sport = qp_cb->udp_sport;
+    hccp_dbg("qp:%u, state:%d, udpSport:%u", qpn, qpCb->state, qpCb->udp_sport);
+    qpInfo->status = qpCb->state;
+    qpInfo->udp_sport = qpCb->udp_sport;
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_qp_context(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, void** qp,
-    void** send_cq, void** recv_cq)
+RS_ATTRI_VISI_DEF int RsGetQpContext(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, void** qp,
+    void** sendCq, void** recvCq)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid", phy_id, RS_MAX_DEV_NUM),
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_qpn2qpcb failed ret[%d]", ret), ret);
 
-    *qp = qp_cb->ib_qp;
-    *send_cq = qp_cb->ib_send_cq;
-    *recv_cq = qp_cb->ib_recv_cq;
+    *qp = qpCb->ib_qp;
+    *sendCq = qpCb->ib_send_cq;
+    *recvCq = qpCb->ib_recv_cq;
 
     hccp_dbg("qpn[%u] succ", qpn);
 
     return 0;
 }
 
-STATIC int rs_query_rdev_cb(unsigned int phy_id, unsigned int rdev_index, struct rs_rdev_cb **rdev_cb)
+STATIC int RsQueryRdevCb(unsigned int phyId, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_cb *rs_cb = NULL;
+    unsigned int chipId;
+    struct rs_cb *rsCb = NULL;
 
-    RS_QP_PARA_CHECK(phy_id);
+    RS_QP_PARA_CHECK(phyId);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phy_id[%u] invalid, ret:%d", phy_id, ret), ret);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phy_id[%u] invalid, ret:%d", phyId, ret), ret);
 
-    ret = rs_dev2rscb(chip_id, &rs_cb, false);
+    ret = RsDev2rscb(chipId, &rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb get rs_cb failed, ret:%d", ret), -ENODEV);
 
-    ret = rs_get_rdev_cb(rs_cb, rdev_index, rdev_cb);
-    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdev_index:%u", ret, rdev_index), ret);
+    ret = RsGetRdevCb(rsCb, rdevIndex, rdevCb);
+    CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed! ret:%d, rdevIndex:%u", ret, rdevIndex), ret);
 
     return 0;
 }
 
-STATIC int rs_build_up_qpcb(struct rs_cq_context *cq_context, struct ibv_qp_init_attr *qp_init_attr,
-    struct rs_qp_cb **qp_cb)
+STATIC int RsBuildUpQpcb(struct rs_cq_context *cqContext, struct ibv_qp_init_attr *qpInitAttr,
+    struct rs_qp_cb **qpCb)
 {
     int ret;
 
-    ret = rs_calloc_qpcb(1, qp_cb);
+    ret = RsCallocQpcb(1, qpCb);
     CHK_PRT_RETURN(ret, hccp_err("alloc mem for qp_cb failed, ret:%d errno:%d", ret, errno), -ENOMEM);
 
-    ret = pthread_mutex_init(&(*qp_cb)->qp_mutex, NULL);
+    ret = pthread_mutex_init(&(*qpCb)->qp_mutex, NULL);
     if (ret) {
         hccp_err("pthread_mutex_init failed, ret %d", ret);
         goto pthread_mutex_init_err;
     }
 
-    (*qp_cb)->rdev_cb = cq_context->rdev_cb;
-    RS_INIT_LIST_HEAD(&(*qp_cb)->mr_list);
-    RS_INIT_LIST_HEAD(&(*qp_cb)->rem_mr_list);
+    (*qpCb)->rdev_cb = cqContext->rdev_cb;
+    RS_INIT_LIST_HEAD(&(*qpCb)->mr_list);
+    RS_INIT_LIST_HEAD(&(*qpCb)->rem_mr_list);
 
-    (*qp_cb)->eq_num = cq_context->eq_num;
-    (*qp_cb)->channel = cq_context->channel;
-    (*qp_cb)->ib_send_cq = cq_context->ib_send_cq;
-    (*qp_cb)->ib_recv_cq = cq_context->ib_recv_cq;
-    (*qp_cb)->send_event = cq_context->send_event;
-    (*qp_cb)->recv_event = cq_context->recv_event;
-    (*qp_cb)->num_recv_cq_events = 0;
-    (*qp_cb)->num_send_cq_events = 0;
-    (*qp_cb)->srq_context = cq_context->srq_context;
-    (*qp_cb)->state = RS_QP_STATUS_DISCONNECT;
-    (*qp_cb)->ib_pd = cq_context->rdev_cb->ib_pd;
-    (*qp_cb)->tx_depth = qp_init_attr->cap.max_send_wr;
-    (*qp_cb)->rx_depth = qp_init_attr->cap.max_recv_wr;
-    (*qp_cb)->qos_attr.tc = (RS_ROCE_DSCP_33 & RS_DSCP_MASK) << RS_DSCP_OFF;
-    (*qp_cb)->qos_attr.sl = RS_ROCE_4_SL;
-    (*qp_cb)->timeout = RS_QP_ATTR_TIMEOUT;
-    (*qp_cb)->retry_cnt = RS_QP_ATTR_RETRY_CNT;
+    (*qpCb)->eq_num = cqContext->eq_num;
+    (*qpCb)->channel = cqContext->channel;
+    (*qpCb)->ib_send_cq = cqContext->ib_send_cq;
+    (*qpCb)->ib_recv_cq = cqContext->ib_recv_cq;
+    (*qpCb)->send_event = cqContext->send_event;
+    (*qpCb)->recv_event = cqContext->recv_event;
+    (*qpCb)->num_recv_cq_events = 0;
+    (*qpCb)->num_send_cq_events = 0;
+    (*qpCb)->srq_context = cqContext->srq_context;
+    (*qpCb)->state = RS_QP_STATUS_DISCONNECT;
+    (*qpCb)->ib_pd = cqContext->rdev_cb->ib_pd;
+    (*qpCb)->tx_depth = qpInitAttr->cap.max_send_wr;
+    (*qpCb)->rx_depth = qpInitAttr->cap.max_recv_wr;
+    (*qpCb)->qos_attr.tc = (RS_ROCE_DSCP_33 & RS_DSCP_MASK) << RS_DSCP_OFF;
+    (*qpCb)->qos_attr.sl = RS_ROCE_4_SL;
+    (*qpCb)->timeout = RS_QP_ATTR_TIMEOUT;
+    (*qpCb)->retry_cnt = RS_QP_ATTR_RETRY_CNT;
 
     return 0;
 
 pthread_mutex_init_err:
-    free(*qp_cb);
-    (*qp_cb) = NULL;
+    free(*qpCb);
+    (*qpCb) = NULL;
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_create_cq_event(struct rs_cq_context *cq_context, struct cq_attr *attr)
+RS_ATTRI_VISI_DEF int RsCreateCqEvent(struct rs_cq_context *cqContext, struct cq_attr *attr)
 {
     int ret;
-    cq_context->channel = rs_ibv_create_comp_channel(cq_context->rdev_cb->ib_ctx);
+    cqContext->channel = RsIbvCreateCompChannel(cqContext->rdev_cb->ib_ctx);
 
-    if (cq_context->channel == NULL) {
+    if (cqContext->channel == NULL) {
         hccp_err("ibv_create_comp_channel failed, ret %d, errno(%d)", -EINVAL, errno);
         return -EINVAL;
     }
 
-    hccp_info("comp channel fd[%d].", cq_context->channel->fd);
-    ret = rs_epoll_ctl(cq_context->rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_ADD,
-        cq_context->channel->fd, EPOLLIN | EPOLLRDHUP);
+    hccp_info("comp channel fd[%d].", cqContext->channel->fd);
+    ret = RsEpollCtl(cqContext->rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_ADD,
+        cqContext->channel->fd, EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
         hccp_err("add channel fd failed ret %d", ret);
@@ -2576,7 +2576,7 @@ RS_ATTRI_VISI_DEF int rs_create_cq_event(struct rs_cq_context *cq_context, struc
     }
 #endif
 
-    ret = rs_drv_create_cq_event(cq_context, attr);
+    ret = RsDrvCreateCqEvent(cqContext, attr);
     if (ret) {
         hccp_err("create drv cq event failed:%d", ret);
         goto rs_cq_create_err;
@@ -2584,7 +2584,7 @@ RS_ATTRI_VISI_DEF int rs_create_cq_event(struct rs_cq_context *cq_context, struc
 
     return ret;
 rs_cq_create_err:
-    ret = rs_epoll_ctl(cq_context->rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_DEL, cq_context->channel->fd,
+    ret = RsEpollCtl(cqContext->rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_DEL, cqContext->channel->fd,
         EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
     if (ret) {
@@ -2592,49 +2592,49 @@ rs_cq_create_err:
     }
 #endif
 rs_cq_epoll_ctl_err:
-    if (cq_context->channel != NULL) {
-        rs_ibv_destroy_comp_channel(cq_context->channel);
-        cq_context->channel = NULL;
+    if (cqContext->channel != NULL) {
+        RsIbvDestroyCompChannel(cqContext->channel);
+        cqContext->channel = NULL;
     }
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_cq_create(unsigned int phy_id, unsigned int rdev_index, struct cq_attr *attr)
+RS_ATTRI_VISI_DEF int RsCqCreate(unsigned int phyId, unsigned int rdevIndex, struct cq_attr *attr)
 {
     int ret;
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct rs_cq_context *cq_context = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct rs_cq_context *cqContext = NULL;
 
-    ret = rs_query_rdev_cb(phy_id, rdev_index, &rdev_cb);
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     if (ret) {
-        hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u], ret %d", phy_id, rdev_index, ret);
+        hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u], ret %d", phyId, rdevIndex, ret);
         return ret;
     }
 
-    cq_context = calloc(1, sizeof(struct rs_cq_context));
-    if (cq_context == NULL) {
+    cqContext = calloc(1, sizeof(struct rs_cq_context));
+    if (cqContext == NULL) {
         return -ENOMEM;
     }
-    cq_context->rdev_cb = rdev_cb;
-    cq_context->eq_num = 0;
+    cqContext->rdev_cb = rdevCb;
+    cqContext->eq_num = 0;
     if (attr->send_channel == NULL && attr->recv_channel == NULL) {
         if (*attr->ib_send_cq == NULL && *attr->ib_recv_cq != NULL) {
             // 只创建sq cq
-            cq_context->cq_create_mode = RS_SQ_CQ_CREATE;
-            cq_context->ib_recv_cq = *attr->ib_recv_cq;
-            cq_context->srq_context = attr->srq_context;
+            cqContext->cq_create_mode = RS_SQ_CQ_CREATE;
+            cqContext->ib_recv_cq = *attr->ib_recv_cq;
+            cqContext->srq_context = attr->srq_context;
         } else {
             // 创建sq&rq cq
-            cq_context->cq_create_mode = RS_NORMAL_CQ_CREATE;
+            cqContext->cq_create_mode = RS_NORMAL_CQ_CREATE;
         }
-        ret = rs_create_cq_event(cq_context, attr);
+        ret = RsCreateCqEvent(cqContext, attr);
         if (ret) {
             hccp_err("create cq event failed:%d", ret);
             goto rs_cq_create_err;
         }
     } else if (attr->send_channel != NULL && attr->recv_channel != NULL) {
         // 使用输入comp channel创建sq&rq
-        ret = rs_drv_create_cq_with_channel(cq_context, attr);
+        ret = RsDrvCreateCqWithChannel(cqContext, attr);
         if (ret) {
             hccp_err("create drv cq with channel failed:%d", ret);
             goto rs_cq_create_err;
@@ -2645,171 +2645,171 @@ RS_ATTRI_VISI_DEF int rs_cq_create(unsigned int phy_id, unsigned int rdev_index,
         goto rs_cq_create_err;
     }
 
-    *attr->qp_context = cq_context;
+    *attr->qp_context = cqContext;
     return 0;
 
 rs_cq_create_err:
-    free(cq_context);
-    cq_context = NULL;
+    free(cqContext);
+    cqContext = NULL;
 
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_cq_destroy(unsigned int phy_id, unsigned int rdev_index, struct cq_attr *attr)
+RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct cq_attr *attr)
 {
     int ret;
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct rs_cq_context *cq_context = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct rs_cq_context *cqContext = NULL;
 
-    ret = rs_query_rdev_cb(phy_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u], ret %d", phy_id, rdev_index, ret), ret);
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u], ret %d", phyId, rdevIndex, ret), ret);
 
-    cq_context = *attr->qp_context;
+    cqContext = *attr->qp_context;
 
-    ret = rs_drv_destroy_cq_event(cq_context);
+    ret = RsDrvDestroyCqEvent(cqContext);
     if (ret) {
         hccp_err("rs_drv_destroy_cq_event failed ret %d", ret);
     }
 
-    if (cq_context->channel != NULL) {
-        ret = rs_epoll_ctl(rdev_cb->rs_cb->conn_cb.epollfd, EPOLL_CTL_DEL, cq_context->channel->fd,
+    if (cqContext->channel != NULL) {
+        ret = RsEpollCtl(rdevCb->rs_cb->conn_cb.epollfd, EPOLL_CTL_DEL, cqContext->channel->fd,
             EPOLLIN | EPOLLRDHUP);
 #ifndef CA_CONFIG_LLT
             if (ret) {
                 hccp_err("del channel fd failed ret %d", ret);
             }
 #endif
-        rs_ibv_destroy_comp_channel(cq_context->channel);
-        cq_context->channel = NULL;
+        RsIbvDestroyCompChannel(cqContext->channel);
+        cqContext->channel = NULL;
     }
 
-    free(cq_context);
-    cq_context = NULL;
+    free(cqContext);
+    cqContext = NULL;
 
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_normal_qp_create(unsigned int phy_id, unsigned int rdev_index,
-    struct ibv_qp_init_attr *qp_init_attr, struct rs_qp_resp *qp_resp, void **qp)
+RS_ATTRI_VISI_DEF int RsNormalQpCreate(unsigned int phyId, unsigned int rdevIndex,
+    struct ibv_qp_init_attr *qpInitAttr, struct rs_qp_resp *qpResp, void **qp)
 {
-    struct rs_cq_context *cq_context = NULL;
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_cq_context *cqContext = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
     int ret;
 
-    CHK_PRT_RETURN(qp_resp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
-    ret = rs_query_rdev_cb(phy_id, rdev_index, &rdev_cb);
+    CHK_PRT_RETURN(qpResp == NULL, hccp_err("qp_resp is NULL!"), -EINVAL);
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u], ret %d",
-        phy_id, rdev_index, ret), ret);
+        phyId, rdevIndex, ret), ret);
 
-    CHK_PRT_RETURN(qp_init_attr == NULL, hccp_err("qp_init_attr is NULL!"), -EINVAL);
+    CHK_PRT_RETURN(qpInitAttr == NULL, hccp_err("qp_init_attr is NULL!"), -EINVAL);
 
-    cq_context = qp_init_attr->qp_context;
-    CHK_PRT_RETURN(cq_context == NULL, hccp_err("cq_context is NULL!"), -EINVAL);
-    CHK_PRT_RETURN(rdev_cb != cq_context->rdev_cb, hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u],"
-        "rdev_cb is invalid.", phy_id, rdev_index), -EINVAL);
+    cqContext = qpInitAttr->qp_context;
+    CHK_PRT_RETURN(cqContext == NULL, hccp_err("cq_context is NULL!"), -EINVAL);
+    CHK_PRT_RETURN(rdevCb != cqContext->rdev_cb, hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u],"
+        "rdevCb is invalid.", phyId, rdevIndex), -EINVAL);
 
-    ret = rs_build_up_qpcb(cq_context, qp_init_attr, &qp_cb);
+    ret = RsBuildUpQpcb(cqContext, qpInitAttr, &qpCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_build_up_qpcb failed, ret:%d", ret), ret);
 
-    ret = rs_drv_normal_qp_create(qp_cb, qp_init_attr);
+    ret = RsDrvNormalQpCreate(qpCb, qpInitAttr);
     if (ret) {
         hccp_err("create drv qp create failed:%d", ret);
         goto create_qp_err;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&rdev_cb->rdev_mutex);
-    rs_list_add_tail(&qp_cb->list, &rdev_cb->qp_list);
-    RS_PTHREAD_MUTEX_ULOCK(&rdev_cb->rdev_mutex);
-    rdev_cb->qp_cnt++;
-    *qp = qp_cb->ib_qp;
-    qp_resp->qpn = (unsigned int)qp_cb->qp_info_lo.qpn;
-    qp_resp->gid_idx = (unsigned int)qp_cb->qp_info_lo.gid_idx;
-    qp_resp->psn = (unsigned int)qp_cb->qp_info_lo.psn;
-    qp_resp->gid = qp_cb->qp_info_lo.gid;
+    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rdev_mutex);
+    RsListAddTail(&qpCb->list, &rdevCb->qp_list);
+    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rdev_mutex);
+    rdevCb->qp_cnt++;
+    *qp = qpCb->ib_qp;
+    qpResp->qpn = (unsigned int)qpCb->qp_info_lo.qpn;
+    qpResp->gid_idx = (unsigned int)qpCb->qp_info_lo.gid_idx;
+    qpResp->psn = (unsigned int)qpCb->qp_info_lo.psn;
+    qpResp->gid = qpCb->qp_info_lo.gid;
 
-    hccp_info("qp %d create qp.", qp_resp->qpn);
+    hccp_info("qp %d create qp.", qpResp->qpn);
 
     return 0;
 
 create_qp_err:
-    pthread_mutex_destroy(&qp_cb->qp_mutex);
-    free(qp_cb);
-    qp_cb = NULL;
+    pthread_mutex_destroy(&qpCb->qp_mutex);
+    free(qpCb);
+    qpCb = NULL;
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_normal_qp_destroy(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn)
+RS_ATTRI_VISI_DEF int RsNormalQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
-    struct rs_mr_cb *mr_tmp = NULL;
-    struct rs_mr_cb *mr_tmp2 = NULL;
+    struct rs_qp_cb *qpCb = NULL;
+    struct rs_mr_cb *mrTmp = NULL;
+    struct rs_mr_cb *mrTmp2 = NULL;
 
-    RS_QP_PARA_CHECK(phy_id);
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
-    CHK_PRT_RETURN(ret || qp_cb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->rdev_cb->rdev_mutex);
-    rs_list_del(&qp_cb->list);
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->rdev_cb->rdev_mutex);
-    rs_ibv_ack_cq_events(qp_cb->ib_send_cq, qp_cb->num_send_cq_events);
-    rs_ibv_ack_cq_events(qp_cb->ib_recv_cq, qp_cb->num_recv_cq_events);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->rdev_cb->rdev_mutex);
+    RsListDel(&qpCb->list);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->rdev_cb->rdev_mutex);
+    RsIbvAckCqEvents(qpCb->ib_send_cq, qpCb->num_send_cq_events);
+    RsIbvAckCqEvents(qpCb->ib_recv_cq, qpCb->num_recv_cq_events);
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
-    RS_LIST_GET_HEAD_ENTRY(mr_tmp, mr_tmp2, &qp_cb->mr_list, list, struct rs_mr_cb);
-    for (; (&mr_tmp->list) != &qp_cb->mr_list;
-        mr_tmp = mr_tmp2, mr_tmp2 = list_entry(mr_tmp2->list.next, struct rs_mr_cb, list)) {
-        if (mr_tmp->ib_mr != qp_cb->rdev_cb->notify_mr) {
-            (void)rs_drv_mr_dereg(mr_tmp->ib_mr);
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
+    RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, &qpCb->mr_list, list, struct rs_mr_cb);
+    for (; (&mrTmp->list) != &qpCb->mr_list;
+        mrTmp = mrTmp2, mrTmp2 = list_entry(mrTmp2->list.next, struct rs_mr_cb, list)) {
+        if (mrTmp->ib_mr != qpCb->rdev_cb->notify_mr) {
+            (void)RsDrvMrDereg(mrTmp->ib_mr);
         }
-        rs_list_del(&mr_tmp->list);
-        free(mr_tmp);
-        mr_tmp = NULL;
+        RsListDel(&mrTmp->list);
+        free(mrTmp);
+        mrTmp = NULL;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(mr_tmp, mr_tmp2, &qp_cb->rem_mr_list, list, struct rs_mr_cb);
-    for (; (&mr_tmp->list) != &qp_cb->rem_mr_list;
-        mr_tmp = mr_tmp2, mr_tmp2 = list_entry(mr_tmp2->list.next, struct rs_mr_cb, list)) {
-        rs_list_del(&mr_tmp->list);
-        free(mr_tmp);
-        mr_tmp = NULL;
+    RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, &qpCb->rem_mr_list, list, struct rs_mr_cb);
+    for (; (&mrTmp->list) != &qpCb->rem_mr_list;
+        mrTmp = mrTmp2, mrTmp2 = list_entry(mrTmp2->list.next, struct rs_mr_cb, list)) {
+        RsListDel(&mrTmp->list);
+        free(mrTmp);
+        mrTmp = NULL;
     }
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
 
     // destroy qp
-    rs_drv_qp_destroy(qp_cb);
+    RsDrvQpDestroy(qpCb);
 
-    qp_cb->rdev_cb->qp_cnt--;
+    qpCb->rdev_cb->qp_cnt--;
 
-    pthread_mutex_destroy(&qp_cb->qp_mutex);
-    hccp_info("qp %d destroy qp, send wr[%u].", qpn, qp_cb->send_wr_num);
+    pthread_mutex_destroy(&qpCb->qp_mutex);
+    hccp_info("qp %d destroy qp, send wr[%u].", qpn, qpCb->send_wr_num);
 
-    free(qp_cb);
-    qp_cb = NULL;
+    free(qpCb);
+    qpCb = NULL;
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_create_comp_channel(unsigned int phy_id, unsigned int rdev_index, void** comp_channel)
+RS_ATTRI_VISI_DEF int RsCreateCompChannel(unsigned int phyId, unsigned int rdevIndex, void** compChannel)
 {
     int ret;
-    unsigned int chip_id;
+    unsigned int chipId;
 
-    struct rs_rdev_cb *rdev_cb = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
 
-    CHK_PRT_RETURN(comp_channel == NULL || phy_id >= RS_MAX_DEV_NUM,
-        hccp_err("param err, NULL pointer or phy_id:%u >= [%d]", phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(compChannel == NULL || phyId >= RS_MAX_DEV_NUM,
+        hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
     CHK_PRT_RETURN(ret,
-        hccp_err("rs_create_comp_channel rsGetLocalDevIDByHostDevID phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+        hccp_err("rs_create_comp_channel rsGetLocalDevIDByHostDevID phy_id[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret || rdev_cb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
-        chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+        chipId, ret), ret);
 
-    *comp_channel = (void *)rs_ibv_create_comp_channel(rdev_cb->ib_ctx);
-    if (*comp_channel == NULL) {
+    *compChannel = (void *)RsIbvCreateCompChannel(rdevCb->ib_ctx);
+    if (*compChannel == NULL) {
         hccp_err("rs_ibv_create_comp_channel failed, errno(%d)", errno);
         return -EOPENSRC;
     }
@@ -2817,63 +2817,62 @@ RS_ATTRI_VISI_DEF int rs_create_comp_channel(unsigned int phy_id, unsigned int r
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_destroy_comp_channel(void* comp_channel)
+RS_ATTRI_VISI_DEF int RsDestroyCompChannel(void* compChannel)
 {
     int ret;
-    struct ibv_comp_channel *rs_comp_channel = (struct ibv_comp_channel *)comp_channel;
+    struct ibv_comp_channel *rsCompChannel = (struct ibv_comp_channel *)compChannel;
 
-    ret = rs_ibv_destroy_comp_channel(rs_comp_channel);
+    ret = RsIbvDestroyCompChannel(rsCompChannel);
     CHK_PRT_RETURN(ret, hccp_err("rs_destroy_comp_channel failed."), ret);
     hccp_info("destroy comp channel success!");
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_create_srq(unsigned int phy_id, unsigned int rdev_index, struct srq_attr *attr)
+RS_ATTRI_VISI_DEF int RsCreateSrq(unsigned int phyId, unsigned int rdevIndex, struct srq_attr *attr)
 {
     int ret;
-    struct rs_rdev_cb *rdev_cb = NULL;
-    struct rs_cq_context *cq_context = NULL;
+    struct rs_rdev_cb *rdevCb = NULL;
+    struct rs_cq_context *cqContext = NULL;
 
-    CHK_PRT_RETURN(attr == NULL || phy_id >= RS_MAX_DEV_NUM,
-        hccp_err("param err, NULL pointer or phy_id:%u >= [%d]", phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(attr == NULL || phyId >= RS_MAX_DEV_NUM,
+        hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM), -EINVAL);
 
-    ret = rs_query_rdev_cb(phy_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u], ret %d", phy_id, rdev_index, ret), ret);
+    ret = RsQueryRdevCb(phyId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret, hccp_err("rs_query_rdev_cb phy_id[%u] rdev_index[%u], ret %d", phyId, rdevIndex, ret), ret);
 
-    cq_context = calloc(1, sizeof(struct rs_cq_context));
-    if (cq_context == NULL) {
+    cqContext = calloc(1, sizeof(struct rs_cq_context));
+    if (cqContext == NULL) {
         return -ENOMEM;
     }
 
-    cq_context->rdev_cb = rdev_cb;
-    cq_context->eq_num = 0;
-    cq_context->cq_create_mode = RS_SRQ_CQ_CREATE;
-    *attr->context = cq_context;
+    cqContext->rdev_cb = rdevCb;
+    cqContext->eq_num = 0;
+    cqContext->cq_create_mode = RS_SRQ_CQ_CREATE;
+    *attr->context = cqContext;
 
-    struct cq_attr cq_attr = {0};
-    cq_attr.recv_cq_depth = attr->cq_depth;
-    cq_attr.recv_cq_event_id = attr->srq_event_id;
-    cq_attr.ib_recv_cq = attr->ib_recv_cq;
+    struct cq_attr cqAttr = {0};
+    cqAttr.recv_cq_depth = attr->cq_depth;
+    cqAttr.recv_cq_event_id = attr->srq_event_id;
+    cqAttr.ib_recv_cq = attr->ib_recv_cq;
     // 创建srq cq
-    ret = rs_create_cq_event(cq_context, &cq_attr);
+    ret = RsCreateCqEvent(cqContext, &cqAttr);
     if (ret) {
         hccp_err("rs_create_cq_event create cq failed! ret:%d", ret);
         goto create_cq_event_err;
     }
-    cq_context->ib_srq_cq = *attr->ib_recv_cq;
+    cqContext->ib_srq_cq = *attr->ib_recv_cq;
 
-
-    struct ibv_srq_init_attr srq_init_attr = {
+    struct ibv_srq_init_attr srqInitAttr = {
         .attr = {
             .max_wr  = attr->srq_depth,
             .max_sge = attr->max_sge
         }
     };
-    hccp_info("max_wr [%u], max_sge[%u]", srq_init_attr.attr.max_wr, srq_init_attr.attr.max_sge);
+    hccp_info("max_wr [%u], max_sge[%u]", srqInitAttr.attr.max_wr, srqInitAttr.attr.max_sge);
 
     // 创建srq
-    *attr->ib_srq = rs_ibv_create_srq(rdev_cb->ib_pd, &srq_init_attr);
+    *attr->ib_srq = RsIbvCreateSrq(rdevCb->ib_pd, &srqInitAttr);
     if (*attr->ib_srq == NULL) {
         hccp_err("rs_ibv_create_srq failed.");
         ret = -EOPENSRC;
@@ -2884,76 +2883,76 @@ RS_ATTRI_VISI_DEF int rs_create_srq(unsigned int phy_id, unsigned int rdev_index
     return 0;
 create_cq_event_err:
 create_srq_err:
-    cq_attr.qp_context = attr->context;
-    rs_cq_destroy(phy_id, rdev_index, &cq_attr);
+    cqAttr.qp_context = attr->context;
+    RsCqDestroy(phyId, rdevIndex, &cqAttr);
 
     return ret;
 }
 
-RS_ATTRI_VISI_DEF int rs_destroy_srq(unsigned int phy_id, unsigned int rdev_index, struct srq_attr *attr)
+RS_ATTRI_VISI_DEF int RsDestroySrq(unsigned int phyId, unsigned int rdevIndex, struct srq_attr *attr)
 {
     int ret;
 
-    CHK_PRT_RETURN(*attr->context == NULL || *attr->ib_srq == NULL|| phy_id >= RS_MAX_DEV_NUM,
-        hccp_err("param err, NULL pointer or phy_id:%u >= [%d]", phy_id, RS_MAX_DEV_NUM), -EINVAL);
+    CHK_PRT_RETURN(*attr->context == NULL || *attr->ib_srq == NULL|| phyId >= RS_MAX_DEV_NUM,
+        hccp_err("param err, NULL pointer or phyId:%u >= [%d]", phyId, RS_MAX_DEV_NUM), -EINVAL);
 
-    struct cq_attr cq_attr = {0};
-    struct rs_cq_context *cq_context = *attr->context;
-    cq_attr.qp_context = attr->context;
+    struct cq_attr cqAttr = {0};
+    struct rs_cq_context *cqContext = *attr->context;
+    cqAttr.qp_context = attr->context;
 
-    rs_ibv_ack_cq_events(cq_context->ib_srq_cq, cq_context->num_recv_cq_events);
+    RsIbvAckCqEvents(cqContext->ib_srq_cq, cqContext->num_recv_cq_events);
 
     // 销毁srq cq
-    ret = rs_cq_destroy(phy_id, rdev_index, &cq_attr);
+    ret = RsCqDestroy(phyId, rdevIndex, &cqAttr);
     CHK_PRT_RETURN(ret, hccp_err("rs_cq_destroy destroy cq failed! ret:%d", ret), ret);
 
-    ret = rs_ibv_destroy_srq(*attr->ib_srq);
+    ret = RsIbvDestroySrq(*attr->ib_srq);
     CHK_PRT_RETURN(ret, hccp_err("rs_ibv_destroy_srq failed."), ret);
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_lite_support(unsigned int phy_id, unsigned int rdev_index, int *support_lite)
+RS_ATTRI_VISI_DEF int RsGetLiteSupport(unsigned int phyId, unsigned int rdevIndex, int *supportLite)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_rdev_cb *rdev_cb = NULL;
+    unsigned int chipId;
+    struct rs_rdev_cb *rdevCb = NULL;
 
-    RS_CHECK_POINTER_NULL_RETURN_INT(support_lite);
+    RS_CHECK_POINTER_NULL_RETURN_INT(supportLite);
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phy_id), -EINVAL);
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phyId), -EINVAL);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret || rdev_cb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
-        chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+        chipId, ret), ret);
 
-    rdev_cb->support_lite = 1;
-    *support_lite = rdev_cb->support_lite;
+    rdevCb->support_lite = 1;
+    *supportLite = rdevCb->support_lite;
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_lite_rdev_cap(
-    unsigned int phy_id, unsigned int rdev_index, struct lite_rdev_cap_resp *resp)
+RS_ATTRI_VISI_DEF int RsGetLiteRdevCap(
+    unsigned int phyId, unsigned int rdevIndex, struct lite_rdev_cap_resp *resp)
 {
     int ret;
-    unsigned int chip_id;
-    struct rs_rdev_cb *rdev_cb = NULL;
+    unsigned int chipId;
+    struct rs_rdev_cb *rdevCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(resp);
 
-    CHK_PRT_RETURN(phy_id >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phy_id), -EINVAL);
-    ret = rsGetLocalDevIDByHostDevID(phy_id, &chip_id);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phy_id, ret), ret);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phyId), -EINVAL);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = rs_rdev2rdev_cb(chip_id, rdev_index, &rdev_cb);
-    CHK_PRT_RETURN(ret || rdev_cb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
-        chip_id, ret), ret);
+    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+        chipId, ret), ret);
 
-    ret = rs_ibv_exp_query_device(rdev_cb->ib_ctx, &resp->cap);
-    CHK_PRT_RETURN(ret, hccp_err("rs_ibv_exp_query_device for phy_id[%u] failed, ret %d", phy_id, ret), ret);
+    ret = RsIbvExpQueryDevice(rdevCb->ib_ctx, &resp->cap);
+    CHK_PRT_RETURN(ret, hccp_err("rs_ibv_exp_query_device for phy_id[%u] failed, ret %d", phyId, ret), ret);
 
     ret = memcpy_s(resp, sizeof(struct dev_cap_info), (void *)&resp->cap, sizeof(resp->cap));
     if (ret) {
@@ -2967,23 +2966,23 @@ RS_ATTRI_VISI_DEF int rs_get_lite_rdev_cap(
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_lite_qp_cq_attr(
-    unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, struct lite_qp_cq_attr_resp *resp)
+RS_ATTRI_VISI_DEF int RsGetLiteQpCqAttr(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct lite_qp_cq_attr_resp *resp)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(resp);
 
-    RS_QP_PARA_CHECK(phy_id);
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
-    CHK_PRT_RETURN(ret || qp_cb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
-    ret = memcpy_s(resp, sizeof(struct lite_qp_cq_attr_resp), (void *)&qp_cb->qp_resp, sizeof(qp_cb->qp_resp));
+    ret = memcpy_s(resp, sizeof(struct lite_qp_cq_attr_resp), (void *)&qpCb->qp_resp, sizeof(qpCb->qp_resp));
     if (ret) {
         hccp_err("memcpy_s failed, ret:%d, src_len:%u, dst_len:%u",
             ret,
-            (unsigned int)sizeof(qp_cb->qp_resp),
+            (unsigned int)sizeof(qpCb->qp_resp),
             (unsigned int)sizeof(struct lite_qp_cq_attr_resp));
         return ret;
     }
@@ -2991,23 +2990,23 @@ RS_ATTRI_VISI_DEF int rs_get_lite_qp_cq_attr(
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int rs_get_lite_mem_attr(
-    unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, struct lite_mem_attr_resp *resp)
+RS_ATTRI_VISI_DEF int RsGetLiteMemAttr(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct lite_mem_attr_resp *resp)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(resp);
 
-    RS_QP_PARA_CHECK(phy_id);
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
-    CHK_PRT_RETURN(ret != 0 || qp_cb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret != 0 || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
-    ret = memcpy_s(resp, sizeof(struct lite_mem_attr_resp), (void *)&qp_cb->mem_resp, sizeof(qp_cb->mem_resp));
+    ret = memcpy_s(resp, sizeof(struct lite_mem_attr_resp), (void *)&qpCb->mem_resp, sizeof(qpCb->mem_resp));
     if (ret) {
         hccp_err("memcpy_s failed, ret:%d, src_len:%u, dst_len:%u",
             ret,
-            (unsigned int)sizeof(qp_cb->mem_resp),
+            (unsigned int)sizeof(qpCb->mem_resp),
             (unsigned int)sizeof(struct lite_mem_attr_resp));
         return ret;
     }
@@ -3015,47 +3014,47 @@ RS_ATTRI_VISI_DEF int rs_get_lite_mem_attr(
     return 0;
 }
 
-STATIC void rs_get_mr_info(
-    struct rs_qp_cb *qp_cb, struct lite_mr_info *mr, uint32_t max_mr_num, struct rs_list_head *mr_list)
+STATIC void RsGetMrInfo(
+    struct rs_qp_cb *qpCb, struct lite_mr_info *mr, uint32_t maxMrNum, struct rs_list_head *mrList)
 {
-    struct rs_mr_cb *mr_tmp = NULL;
-    struct rs_mr_cb *mr_tmp2 = NULL;
+    struct rs_mr_cb *mrTmp = NULL;
+    struct rs_mr_cb *mrTmp2 = NULL;
     uint32_t i = 0;
 
-    RS_PTHREAD_MUTEX_LOCK(&qp_cb->qp_mutex);
-    RS_LIST_GET_HEAD_ENTRY(mr_tmp, mr_tmp2, mr_list, list, struct rs_mr_cb);
-    for (; (&mr_tmp->list) != mr_list;
-        mr_tmp = mr_tmp2, mr_tmp2 = list_entry(mr_tmp2->list.next, struct rs_mr_cb, list)) {
-        if (i < max_mr_num) {
-            mr[i].key = mr_tmp->mr_info.rkey;
-            mr[i].addr = mr_tmp->mr_info.addr;
-            mr[i].len = mr_tmp->mr_info.len;
+    RS_PTHREAD_MUTEX_LOCK(&qpCb->qp_mutex);
+    RS_LIST_GET_HEAD_ENTRY(mrTmp, mrTmp2, mrList, list, struct rs_mr_cb);
+    for (; (&mrTmp->list) != mrList;
+        mrTmp = mrTmp2, mrTmp2 = list_entry(mrTmp2->list.next, struct rs_mr_cb, list)) {
+        if (i < maxMrNum) {
+            mr[i].key = mrTmp->mr_info.rkey;
+            mr[i].addr = mrTmp->mr_info.addr;
+            mr[i].len = mrTmp->mr_info.len;
             i++;
         } else {
             break;
         }
     }
 
-    RS_PTHREAD_MUTEX_ULOCK(&qp_cb->qp_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&qpCb->qp_mutex);
 }
 
-RS_ATTRI_VISI_DEF int rs_get_lite_connected_info(
-    unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, struct lite_connected_info_resp *resp)
+RS_ATTRI_VISI_DEF int RsGetLiteConnectedInfo(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct lite_connected_info_resp *resp)
 {
     int ret;
-    struct rs_qp_cb *qp_cb = NULL;
+    struct rs_qp_cb *qpCb = NULL;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(resp);
-    RS_QP_PARA_CHECK(phy_id);
-    ret = rs_qpn2qpcb(phy_id, rdev_index, qpn, &qp_cb);
-    CHK_PRT_RETURN(ret || qp_cb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
+    RS_QP_PARA_CHECK(phyId);
+    ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
+    CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
-    resp->state = (unsigned int)qp_cb->state;
+    resp->state = (unsigned int)qpCb->state;
     if (resp->state == RS_QP_STATUS_CONNECTED) {
-        rs_get_mr_info(qp_cb, &resp->local_mr[0], RA_MR_MAX_NUM, &qp_cb->mr_list);
-        rs_get_mr_info(qp_cb, &resp->rem_mr[0], RA_MR_MAX_NUM, &qp_cb->rem_mr_list);
-        resp->qos_attr.sl = qp_cb->qos_attr.sl;
-        resp->qos_attr.tc = qp_cb->qos_attr.tc;
+        RsGetMrInfo(qpCb, &resp->local_mr[0], RA_MR_MAX_NUM, &qpCb->mr_list);
+        RsGetMrInfo(qpCb, &resp->rem_mr[0], RA_MR_MAX_NUM, &qpCb->rem_mr_list);
+        resp->qos_attr.sl = qpCb->qos_attr.sl;
+        resp->qos_attr.tc = qpCb->qos_attr.tc;
     }
 
     return 0;

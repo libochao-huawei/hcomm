@@ -18,9 +18,9 @@
 
 #define ROOT_PATH "/root"
 
-int net_comm_get_self_home(char *home_path, unsigned int path_len)
+int NetCommGetSelfHome(char *homePath, unsigned int pathLen)
 {
-    int ret, ret_val;
+    int ret, retVal;
     struct passwd *pwd = getpwuid(getuid());
     CHK_PRT_RETURN(pwd == NULL, roce_err("pwd is NULL! getpwuid fail, errno:%d", errno), -EINVAL);
 
@@ -33,9 +33,9 @@ int net_comm_get_self_home(char *home_path, unsigned int path_len)
     // root用户的home路径为/root
     // 其他用户的home路径为/home/${user_name}
     if (strncmp(pwd->pw_name, "root", strlen("root") + 1) == 0) {
-        ret = sprintf_s((char *)home_path, path_len, ROOT_PATH);
+        ret = sprintf_s((char *)homePath, pathLen, ROOT_PATH);
     } else {
-        ret = sprintf_s((char *)home_path, path_len, "/home/%s", pwd->pw_name);
+        ret = sprintf_s((char *)homePath, pathLen, "/home/%s", pwd->pw_name);
     }
     if (ret <= 0) {
         roce_err("sprintf_s for user name:%s failed, ret:%d ", pwd->pw_name, ret);
@@ -45,21 +45,21 @@ int net_comm_get_self_home(char *home_path, unsigned int path_len)
 
     ret = 0;
 out_get_self_home:
-    ret_val = memset_s(pwd, sizeof(struct passwd), 0, sizeof(struct passwd));
-    if (ret_val) {
-        roce_err("memset error, ret_val[%d]", ret_val);
-        ret = ret_val;
+    retVal = memset_s(pwd, sizeof(struct passwd), 0, sizeof(struct passwd));
+    if (retVal) {
+        roce_err("memset error, retVal[%d]", retVal);
+        ret = retVal;
     }
 
     return ret;
 }
 
-int net_get_gateway_address(unsigned int phy_id, unsigned int *gtw_addr)
+int NetGetGatewayAddress(unsigned int phyId, unsigned int *gtwAddr)
 {
-    unsigned int gtw_dst = NET_INVALID_GW;
-    unsigned int eth_id = 0;
+    unsigned int gtwDst = NET_INVALID_GW;
+    unsigned int ethId = 0;
     char buf[BUF_LEN];
-    int ret, ret_val;
+    int ret, retVal;
     char *tmp = NULL;
     FILE *fp = NULL;
 
@@ -79,25 +79,25 @@ int net_get_gateway_address(unsigned int phy_id, unsigned int *gtw_addr)
             continue;
         }
 
-        ret = sscanf_s(tmp, "eth%u%x%x", &eth_id, &gtw_dst, gtw_addr);
+        ret = sscanf_s(tmp, "eth%u%x%x", &ethId, &gtwDst, gtwAddr);
         if (ret != NET_THREE_VALUE) {
             roce_err("sscanf buf(%s) to gtw_addr failed. ret(%d)", buf, ret);
             ret = -ENOMEM;
             goto out;
         }
 
-        if (gtw_dst == 0 && eth_id == phy_id) {
+        if (gtwDst == 0 && ethId == phyId) {
             ret = 0;
             goto out;
         }
     }
 
-    roce_err("cannot find gateway by phy_id: %u", phy_id);
+    roce_err("cannot find gateway by phy_id: %u", phyId);
     ret = -ENOENT;
 out:
-    ret_val = fclose(fp);
-    if (ret_val) {
-        roce_warn("fclose fail, ret_val:%d, errno:%d", ret_val, errno);
+    retVal = fclose(fp);
+    if (retVal) {
+        roce_warn("fclose fail, retVal:%d, errno:%d", retVal, errno);
     }
     fp = NULL;
     return ret;

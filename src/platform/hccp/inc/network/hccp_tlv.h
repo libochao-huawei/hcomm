@@ -45,8 +45,8 @@ struct tlv_msg {
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_tlv_init(struct tlv_init_info *init_info, unsigned int module_type,
-    unsigned int *buffer_size, void **tlv_handle);
+HCCP_ATTRI_VISI_DEF int RaTlvInit(struct tlv_init_info *initInfo, unsigned int moduleType,
+    unsigned int *bufferSize, void **tlvHandle);
 
 /**
  * @ingroup libinit
@@ -56,7 +56,7 @@ HCCP_ATTRI_VISI_DEF int ra_tlv_init(struct tlv_init_info *init_info, unsigned in
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_tlv_deinit(void *tlv_handle);
+HCCP_ATTRI_VISI_DEF int RaTlvDeinit(void *tlvHandle);
 
 /**
  * @ingroup libcommon
@@ -68,7 +68,7 @@ HCCP_ATTRI_VISI_DEF int ra_tlv_deinit(void *tlv_handle);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_tlv_request(void *tlv_handle, struct tlv_msg *send_msg, struct tlv_msg *recv_msg);
+HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, struct tlv_msg *sendMsg, struct tlv_msg *recvMsg);
 
 #ifdef __cplusplus
 }

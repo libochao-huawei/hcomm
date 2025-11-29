@@ -20,12 +20,12 @@
 #define SOCKET_USE_PORT_BIT 31U
 #define SOCKET_DISUSE_LINGER_BIT 31U
 
-int ra_get_socket_listen_info(const struct socket_listen_info_t conn[], unsigned int num,
-    struct socket_listen_info rs_conn[], unsigned int rs_num);
+int RaGetSocketListenInfo(const struct socket_listen_info_t conn[], unsigned int num,
+    struct socket_listen_info rsConn[], unsigned int rsNum);
 
-int ra_get_socket_listen_result(const struct socket_listen_info rs_conn[], unsigned int rs_num,
+int RaGetSocketListenResult(const struct socket_listen_info rsConn[], unsigned int rsNum,
     struct socket_listen_info_t conn[], unsigned int num);
 
-int ra_get_socket_connect_info(const struct socket_connect_info_t conn[], unsigned int num,
-    struct socket_connect_info rs_conn[], unsigned int rs_num);
+int RaGetSocketConnectInfo(const struct socket_connect_info_t conn[], unsigned int num,
+    struct socket_connect_info rsConn[], unsigned int rsNum);
 #endif // RA_COMM_H

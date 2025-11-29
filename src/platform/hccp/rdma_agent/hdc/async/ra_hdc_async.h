@@ -41,11 +41,11 @@ union op_async_hdc_close_data {
     } rx_data;
 };
 
-int ra_hdc_init_async(struct ra_init_config *cfg);
-int ra_hdc_deinit_async(unsigned int phy_id);
-int ra_hdc_send_msg_async(unsigned int opcode, unsigned int phy_id, char *data, unsigned int data_size,
-    struct ra_request_handle *req_handle);
-void hdc_async_del_response(struct ra_request_handle *req_handle);
-int ra_hdc_async_save_snapshot(unsigned int phy_id, enum save_snapshot_action action);
-int ra_hdc_async_restore_snapshot(unsigned int phy_id);
+int RaHdcInitAsync(struct ra_init_config *cfg);
+int RaHdcDeinitAsync(unsigned int phyId);
+int RaHdcSendMsgAsync(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize,
+    struct ra_request_handle *reqHandle);
+void HdcAsyncDelResponse(struct ra_request_handle *reqHandle);
+int RaHdcAsyncSaveSnapshot(unsigned int phyId, enum save_snapshot_action action);
+int RaHdcAsyncRestoreSnapshot(unsigned int phyId);
 #endif // RA_HDC_ASYNC_H

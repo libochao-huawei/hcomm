@@ -9,17 +9,17 @@
  */
 #include "hccp_dl.h"
 
-int hccp_dlclose(void *handle)
+int HccpDlclose(void *handle)
 {
     return dlclose(handle);
 }
 
-void *hccp_dlsym(void *handle, const char *funcName)
+void *HccpDlsym(void *handle, const char *funcName)
 {
     return dlsym(handle, funcName);
 }
 
-void *hccp_dlopen(const char *libName, int mode)
+void *HccpDlopen(const char *libName, int mode)
 {
     return dlopen(libName, mode);
 }

@@ -19,7 +19,7 @@
 #include "ra_adp.h"
 #include "param.h"
 
-STATIC int hccp_param_parse_id(const char *input, int *id)
+STATIC int HccpParamParseId(const char *input, int *id)
 {
     int ret;
 
@@ -29,29 +29,29 @@ STATIC int hccp_param_parse_id(const char *input, int *id)
     return 0;
 }
 
-STATIC int hccp_parse_logic_id(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseLogicId(const char *input, struct hccp_init_param *param)
 {
-    unsigned int dev_num;
+    unsigned int devNum;
     int ret;
 
-    ret = dl_drv_get_dev_num(&dev_num);
+    ret = DlDrvGetDevNum(&devNum);
     CHK_PRT_RETURN(ret, hccp_err("get dev num failed, ret %d", ret), ret);
-    ret = hccp_param_parse_id(input, &param->logic_id);
+    ret = HccpParamParseId(input, &param->logic_id);
     CHK_PRT_RETURN(ret, hccp_err("hccp_param_parse_id failed"), ret);
 
-    ret = dl_drv_device_get_phy_id_by_index(param->logic_id, &(param->chip_id));
-    CHK_PRT_RETURN(ret != 0 || param->chip_id >= dev_num || param->chip_id > HCCP_MAX_CHIP_ID,
-        hccp_err("get chip id failed, ret:%d, chip_id:%u, dev_num:%u", ret, param->chip_id, dev_num), -EINVAL);
+    ret = DlDrvDeviceGetPhyIdByIndex(param->logic_id, &(param->chip_id));
+    CHK_PRT_RETURN(ret != 0 || param->chip_id >= devNum || param->chip_id > HCCP_MAX_CHIP_ID,
+        hccp_err("get chip id failed, ret:%d, chip_id:%u, devNum:%u", ret, param->chip_id, devNum), -EINVAL);
 
     hccp_info("logic_id from TSD is [%d], chip_id[%u]", param->logic_id, param->chip_id);
     return 0;
 }
 
-STATIC int hccp_parse_pid(const char *input, struct hccp_init_param *param)
+STATIC int HccpParsePid(const char *input, struct hccp_init_param *param)
 {
     int ret;
 
-    ret = hccp_param_parse_id(input, &param->pid);
+    ret = HccpParamParseId(input, &param->pid);
     CHK_PRT_RETURN(ret, hccp_err("hccp parse pid failed"), ret);
 
     CHK_PRT_RETURN(param->pid <= 0, hccp_err("pid:%d <= 0", param->pid), -EINVAL);
@@ -59,27 +59,27 @@ STATIC int hccp_parse_pid(const char *input, struct hccp_init_param *param)
     return 0;
 }
 
-STATIC int hccp_parse_pid_sign(const char *input, struct hccp_init_param *param)
+STATIC int HccpParsePidSign(const char *input, struct hccp_init_param *param)
 {
     // no need to parse pid sign, skip
     return 0;
 }
 
-STATIC int hccp_parse_log_level(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseLogLevel(const char *input, struct hccp_init_param *param)
 {
     int ret;
 
-    ret = hccp_param_parse_id(input, &param->log_level);
+    ret = HccpParamParseId(input, &param->log_level);
     CHK_PRT_RETURN(ret, hccp_err("hccp parse log level failed, ret[%d]", ret), ret);
     hccp_info("log_level from TSD is [%d]", param->log_level);
     return 0;
 }
 
-STATIC int hccp_parse_hdc_type(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseHdcType(const char *input, struct hccp_init_param *param)
 {
     int ret;
 
-    ret = hccp_param_parse_id(input, &param->hdc_type);
+    ret = HccpParamParseId(input, &param->hdc_type);
     if (ret != 0 || (param->hdc_type != HDC_SERVICE_TYPE_RDMA && param->hdc_type != HDC_SERVICE_TYPE_RDMA_V2)) {
         hccp_warn("parse hdcType unsuccessful ret:%d or hdc_type[%d] invalid. set to default hdc_type[%d]",
             ret, param->hdc_type, HDC_SERVICE_TYPE_RDMA);
@@ -90,11 +90,11 @@ STATIC int hccp_parse_hdc_type(const char *input, struct hccp_init_param *param)
     return 0;
 }
 
-STATIC int hccp_parse_white_list_status(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseWhiteListStatus(const char *input, struct hccp_init_param *param)
 {
     int ret;
 
-    ret = hccp_param_parse_id(input, (int *)&param->white_list_status);
+    ret = HccpParamParseId(input, (int *)&param->white_list_status);
     if (ret != 0) {
         param->white_list_status = WHITE_LIST_ENABLE;
         hccp_warn("parse whiteListStatus unsuccessful ret:%d. set to default [%u]", ret, param->white_list_status);
@@ -105,31 +105,31 @@ STATIC int hccp_parse_white_list_status(const char *input, struct hccp_init_para
     return 0;
 }
 
-STATIC int hccp_parse_backup_phyid(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseBackupPhyid(const char *input, struct hccp_init_param *param)
 {
-    unsigned int backup_phy_id = 0;
+    unsigned int backupPhyId = 0;
     int ret;
 
-    ret = hccp_param_parse_id(input, (int *)&backup_phy_id);
+    ret = HccpParamParseId(input, (int *)&backupPhyId);
     if (ret != 0) {
         hccp_warn("parse backup phy_id unsuccessful ret:%d", ret);
         return 0;
     }
 
-    ret = dl_drv_get_local_dev_id_by_host_dev_id(backup_phy_id, &param->backup_chip_id);
+    ret = DlDrvGetLocalDevIdByHostDevId(backupPhyId, &param->backup_chip_id);
     if (ret != 0) {
-        hccp_warn("dl_drv_get_local_dev_id_by_host_dev_id unsuccessful ret:%d, backup_phy_id:%u", ret, backup_phy_id);
+        hccp_warn("dl_drv_get_local_dev_id_by_host_dev_id unsuccessful ret:%d, backupPhyId:%u", ret, backupPhyId);
         return 0;
     }
 
-    hccp_info("backup_phy_id from TSD is [%u], backup_chip_id[%u]", backup_phy_id, param->backup_chip_id);
+    hccp_info("backup_phy_id from TSD is [%u], backup_chip_id[%u]", backupPhyId, param->backup_chip_id);
     param->backup_flag = true;
     return 0;
 }
 
-int hccp_param_parse(int argc, char *argv[], struct hccp_init_param *param)
+int HccpParamParse(int argc, char *argv[], struct hccp_init_param *param)
 {
-    static struct option long_opts[] = {
+    static struct option longOpts[] = {
         {DEVID_PREFIX, required_argument, NULL, HCCP_ARGC_DEV},
         {PID_PREFIX, required_argument, NULL, HCCP_ARGC_PID},
         {PID_SIGN_PREFIX, required_argument, NULL, HCCP_ARGC_PID_SIGN},
@@ -139,19 +139,19 @@ int hccp_param_parse(int argc, char *argv[], struct hccp_init_param *param)
         {BACKUP_PHYID_PREFIX, required_argument, NULL, HCCP_ARGC_BACKUP_PHYID},
         {0, no_argument, NULL, HCCP_ARGC_NUM},
     };
-    static struct param_handle param_handles[] = {
-        {hccp_parse_logic_id, true, HCCP_ARGC_DEV},
-        {hccp_parse_pid, true, HCCP_ARGC_PID},
-        {hccp_parse_pid_sign, false, HCCP_ARGC_PID_SIGN},
-        {hccp_parse_log_level, true, HCCP_ARGC_LOG_LEVEL},
-        {hccp_parse_hdc_type, false, HCCP_ARGC_HDC_TYPE},
-        {hccp_parse_white_list_status, false, HCCP_ARGC_WHITE_LIST_STATUS},
-        {hccp_parse_backup_phyid, false, HCCP_ARGC_BACKUP_PHYID},
+    static struct param_handle paramHandles[] = {
+        {HccpParseLogicId, true, HCCP_ARGC_DEV},
+        {HccpParsePid, true, HCCP_ARGC_PID},
+        {HccpParsePidSign, false, HCCP_ARGC_PID_SIGN},
+        {HccpParseLogLevel, true, HCCP_ARGC_LOG_LEVEL},
+        {HccpParseHdcType, false, HCCP_ARGC_HDC_TYPE},
+        {HccpParseWhiteListStatus, false, HCCP_ARGC_WHITE_LIST_STATUS},
+        {HccpParseBackupPhyid, false, HCCP_ARGC_BACKUP_PHYID},
         {NULL, false, HCCP_ARGC_NUM},
     };
     const char *optstring = "";
-    int required_cnt = 0;
-    int opt_idx;
+    int requiredCnt = 0;
+    int optIdx;
     int ret;
 
     // set default attr
@@ -159,27 +159,27 @@ int hccp_param_parse(int argc, char *argv[], struct hccp_init_param *param)
     param->white_list_status = WHITE_LIST_ENABLE;
     param->backup_flag = false;
 
-    while (getopt_long(argc, argv, optstring, long_opts, &opt_idx) != -1) {
+    while (getopt_long(argc, argv, optstring, longOpts, &optIdx) != -1) {
         // unrecognized option, skip to parse
         if (optarg == NULL) {
             continue;
         }
 
-        CHK_PRT_RETURN(opt_idx < 0 || opt_idx >= HCCP_ARGC_NUM || param_handles[opt_idx].opt_handle == NULL,
-            hccp_err("opt_idx:%d invalid, valid range[0, %d), errno:%d", opt_idx, HCCP_ARGC_NUM, errno),-EINVAL);
+        CHK_PRT_RETURN(optIdx < 0 || optIdx >= HCCP_ARGC_NUM || paramHandles[optIdx].opt_handle == NULL,
+            hccp_err("opt_idx:%d invalid, valid range[0, %d), errno:%d", optIdx, HCCP_ARGC_NUM, errno),-EINVAL);
 
-        CHK_PRT_RETURN(param_handles[opt_idx].opt_val != opt_idx, hccp_err("opt_val:%d != opt_idx:%d",
-            param_handles[opt_idx].opt_val, opt_idx), -EINVAL);
+        CHK_PRT_RETURN(paramHandles[optIdx].opt_val != optIdx, hccp_err("opt_val:%d != opt_idx:%d",
+            paramHandles[optIdx].opt_val, optIdx), -EINVAL);
 
-        ret = param_handles[opt_idx].opt_handle(optarg, param);
-        CHK_PRT_RETURN(ret != 0, hccp_err("parse param failed, opt_idx:%d, ret:%d", opt_idx, ret), ret);
+        ret = paramHandles[optIdx].opt_handle(optarg, param);
+        CHK_PRT_RETURN(ret != 0, hccp_err("parse param failed, optIdx:%d, ret:%d", optIdx, ret), ret);
 
-        if (param_handles[opt_idx].is_default_required) {
-            required_cnt++;
+        if (paramHandles[optIdx].is_default_required) {
+            requiredCnt++;
         }
     }
 
-    CHK_PRT_RETURN(required_cnt != HCCP_DEFAULT_REQUIRED_ARGC_NUM,
-        hccp_err("param num error, required_cnt:%d, argc:%d", required_cnt, HCCP_DEFAULT_REQUIRED_ARGC_NUM), -EINVAL);
+    CHK_PRT_RETURN(requiredCnt != HCCP_DEFAULT_REQUIRED_ARGC_NUM,
+        hccp_err("param num error, requiredCnt:%d, argc:%d", requiredCnt, HCCP_DEFAULT_REQUIRED_ARGC_NUM), -EINVAL);
     return 0;
 }

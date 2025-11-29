@@ -77,7 +77,7 @@ static inline void RA_INIT_LIST_HEAD(struct ra_list_head *list)
     (n) = list_entry((pos)->member.next, type, member);     \
 } while (0)
 
-static inline bool ra_list_empty(struct ra_list_head *head)
+static inline bool RaListEmpty(struct ra_list_head *head)
 {
     return head->next == head;
 }
@@ -90,7 +90,7 @@ static inline void ra_list_add_(struct ra_list_head *xnew, struct ra_list_head *
     prev->next = xnew;
 }
 
-static inline void ra_list_add_tail(struct ra_list_head *xnew, struct ra_list_head *head)
+static inline void RaListAddTail(struct ra_list_head *xnew, struct ra_list_head *head)
 {
     ra_list_add_(xnew, head->prev, head);
 }
@@ -101,7 +101,7 @@ static inline void ra_list_del_(struct ra_list_head *prev, struct ra_list_head *
     prev->next = next;
 }
 
-static inline void ra_list_del(struct ra_list_head *entry)
+static inline void RaListDel(struct ra_list_head *entry)
 {
     ra_list_del_(entry->prev, entry->next);
 }

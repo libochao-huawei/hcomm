@@ -91,20 +91,20 @@ extern "C" {
 
 #define RS_ATTRI_VISI_DEF __attribute__ ((visibility ("default")))
 
-RS_ATTRI_VISI_DEF int rs_set_tsqp_depth(unsigned int phy_id, unsigned int rdev_index, unsigned int temp_depth,
-    unsigned int *qp_num);
-RS_ATTRI_VISI_DEF int rs_get_tsqp_depth(unsigned int phy_id, unsigned int rdev_index, unsigned int *temp_depth,
-    unsigned int *qp_num);
-RS_ATTRI_VISI_DEF int rs_qp_create(unsigned int phy_id, unsigned int rdev_index, struct rs_qp_norm qp_norm,
-    struct rs_qp_resp *qp_resp);
-RS_ATTRI_VISI_DEF int rs_qp_create_with_attrs(unsigned int phy_id, unsigned int rdev_index,
-    struct rs_qp_norm_with_attrs *qp_norm, struct rs_qp_resp_with_attrs *qp_resp);
-RS_ATTRI_VISI_DEF int rs_qp_destroy(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn);
-RS_ATTRI_VISI_DEF int rs_typical_qp_modify(unsigned int phy_id, unsigned int rdev_index,
-    struct typical_qp local_qp_info, struct typical_qp remote_qp_info, unsigned int *udp_sport);
-RS_ATTRI_VISI_DEF int rs_qp_batch_modify(unsigned int phy_id, unsigned int rdev_index,
-    int status, int qpn[], int qpn_num);
-RS_ATTRI_VISI_DEF int rs_qp_connect_async(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, int fd);
+RS_ATTRI_VISI_DEF int RsSetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int tempDepth,
+    unsigned int *qpNum);
+RS_ATTRI_VISI_DEF int RsGetTsqpDepth(unsigned int phyId, unsigned int rdevIndex, unsigned int *tempDepth,
+    unsigned int *qpNum);
+RS_ATTRI_VISI_DEF int RsQpCreate(unsigned int phyId, unsigned int rdevIndex, struct rs_qp_norm qpNorm,
+    struct rs_qp_resp *qpResp);
+RS_ATTRI_VISI_DEF int RsQpCreateWithAttrs(unsigned int phyId, unsigned int rdevIndex,
+    struct rs_qp_norm_with_attrs *qpNorm, struct rs_qp_resp_with_attrs *qpResp);
+RS_ATTRI_VISI_DEF int RsQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
+RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevIndex,
+    struct typical_qp localQpInfo, struct typical_qp remoteQpInfo, unsigned int *udpSport);
+RS_ATTRI_VISI_DEF int RsQpBatchModify(unsigned int phyId, unsigned int rdevIndex,
+    int status, int qpn[], int qpnNum);
+RS_ATTRI_VISI_DEF int RsQpConnectAsync(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, int fd);
 
 enum rs_qp_status {
     RS_QP_STATUS_DISCONNECT = 0,
@@ -150,20 +150,20 @@ struct rs_pthread_info {
     struct timeval last_check_time;
 };
 
-RS_ATTRI_VISI_DEF int rs_mr_reg(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn,
-    struct rdma_mr_reg_info *mr_reg_info);
-RS_ATTRI_VISI_DEF int rs_mr_dereg(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, char *addr);
+RS_ATTRI_VISI_DEF int RsMrReg(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
+    struct rdma_mr_reg_info *mrRegInfo);
+RS_ATTRI_VISI_DEF int RsMrDereg(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, char *addr);
 
-RS_ATTRI_VISI_DEF int rs_register_mr(unsigned int phy_id, unsigned int rdev_index,
-    struct rdma_mr_reg_info *mr_reg_info, void **mr_handle);
-RS_ATTRI_VISI_DEF int rs_typical_register_mr_v1(unsigned int phy_id, unsigned int rdev_index,
-    struct rdma_mr_reg_info *mr_reg_info, void **mr_handle);
-RS_ATTRI_VISI_DEF int rs_typical_register_mr(unsigned int phy_id, unsigned int rdev_index,
-    struct rdma_mr_reg_info *mr_reg_info, void **mr_handle);
-RS_ATTRI_VISI_DEF int rs_remap_mr(unsigned int phy_id, unsigned int rdev_index, struct mem_remap_info mem_list[],
-    unsigned int mem_num);
-RS_ATTRI_VISI_DEF int rs_typical_deregister_mr(unsigned int phy_id, unsigned int dev_index, unsigned long long addr);
-RS_ATTRI_VISI_DEF int rs_deregister_mr(void *mr_handle);
+RS_ATTRI_VISI_DEF int RsRegisterMr(unsigned int phyId, unsigned int rdevIndex,
+    struct rdma_mr_reg_info *mrRegInfo, void **mrHandle);
+RS_ATTRI_VISI_DEF int RsTypicalRegisterMrV1(unsigned int phyId, unsigned int rdevIndex,
+    struct rdma_mr_reg_info *mrRegInfo, void **mrHandle);
+RS_ATTRI_VISI_DEF int RsTypicalRegisterMr(unsigned int phyId, unsigned int rdevIndex,
+    struct rdma_mr_reg_info *mrRegInfo, void **mrHandle);
+RS_ATTRI_VISI_DEF int RsRemapMr(unsigned int phyId, unsigned int rdevIndex, struct mem_remap_info memList[],
+    unsigned int memNum);
+RS_ATTRI_VISI_DEF int RsTypicalDeregisterMr(unsigned int phyId, unsigned int devIndex, unsigned long long addr);
+RS_ATTRI_VISI_DEF int RsDeregisterMr(void *mrHandle);
 
 enum rs_send_flags {
     RS_SEND_FENCE  = 1 << 0,
@@ -171,84 +171,84 @@ enum rs_send_flags {
     RS_SEND_SOLICITED = 1 << 2,
     RS_SEND_INLINE  = 1 << 3,
 };
-RS_ATTRI_VISI_DEF int rs_send_wr(unsigned int phy_id, unsigned int rdev_index, uint32_t qpn, struct send_wr *wr,
-    struct send_wr_rsp *wr_rsp);
-RS_ATTRI_VISI_DEF int rs_send_wrlist(struct rs_wrlist_base_info base_info, struct wr_info *wr_list,
-    unsigned int send_num, struct send_wr_rsp *wr_rsp, unsigned int *complete_num);
+RS_ATTRI_VISI_DEF int RsSendWr(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct send_wr *wr,
+    struct send_wr_rsp *wrRsp);
+RS_ATTRI_VISI_DEF int RsSendWrlist(struct rs_wrlist_base_info baseInfo, struct wr_info *wrList,
+    unsigned int sendNum, struct send_wr_rsp *wrRsp, unsigned int *completeNum);
 
-RS_ATTRI_VISI_DEF int rs_recv_wrlist(struct rs_wrlist_base_info base_info, struct recv_wrlist_data *wr,
-    unsigned int recv_num, unsigned int *complete_num);
+RS_ATTRI_VISI_DEF int RsRecvWrlist(struct rs_wrlist_base_info baseInfo, struct recv_wrlist_data *wr,
+    unsigned int recvNum, unsigned int *completeNum);
 
-RS_ATTRI_VISI_DEF int rs_get_notify_mr_info(unsigned int phy_id, unsigned int rdev_index, struct mr_info *info);
-RS_ATTRI_VISI_DEF int rs_set_host_pid(uint32_t phy_id, pid_t host_pid, const char *pid_sign);
+RS_ATTRI_VISI_DEF int RsGetNotifyMrInfo(unsigned int phyId, unsigned int rdevIndex, struct mr_info *info);
+RS_ATTRI_VISI_DEF int RsSetHostPid(uint32_t phyId, pid_t hostPid, const char *pidSign);
 
-RS_ATTRI_VISI_DEF int rs_init(struct rs_init_config *cfg);
-RS_ATTRI_VISI_DEF int rs_get_tls_enable(unsigned int phy_id, bool *tls_enable);
-RS_ATTRI_VISI_DEF int rs_get_hccn_cfg(unsigned int phy_id, enum hccn_cfg_key key, char *value,
-    unsigned int *value_len);
-RS_ATTRI_VISI_DEF int rs_bind_hostpid(unsigned int chip_id, pid_t pid);
-RS_ATTRI_VISI_DEF int rs_deinit(struct rs_init_config *cfg);
+RS_ATTRI_VISI_DEF int RsInit(struct rs_init_config *cfg);
+RS_ATTRI_VISI_DEF int RsGetTlsEnable(unsigned int phyId, bool *tlsEnable);
+RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum hccn_cfg_key key, char *value,
+    unsigned int *valueLen);
+RS_ATTRI_VISI_DEF int RsBindHostpid(unsigned int chipId, pid_t pid);
+RS_ATTRI_VISI_DEF int RsDeinit(struct rs_init_config *cfg);
 
-RS_ATTRI_VISI_DEF int rs_socket_init(const unsigned int *vnic_ip, unsigned int num);
-RS_ATTRI_VISI_DEF int rs_socket_deinit(struct rdev rdev_info);
+RS_ATTRI_VISI_DEF int RsSocketInit(const unsigned int *vnicIp, unsigned int num);
+RS_ATTRI_VISI_DEF int RsSocketDeinit(struct rdev rdevInfo);
 
-RS_ATTRI_VISI_DEF int rs_rdev_init(struct rdev rdev_info, unsigned int notify_type, unsigned int *rdev_index);
-RS_ATTRI_VISI_DEF int rs_rdev_init_with_backup(struct rdev rdev_info, struct rdev backup_rdev_info,
-    unsigned int notify_type, unsigned int *rdev_index);
-RS_ATTRI_VISI_DEF int rs_rdev_get_port_status(unsigned int phy_id, unsigned int rdev_index, enum port_status *status);
-RS_ATTRI_VISI_DEF int rs_rdev_deinit(unsigned int phy_id, unsigned int notify_type, unsigned int rdev_index);
+RS_ATTRI_VISI_DEF int RsRdevInit(struct rdev rdevInfo, unsigned int notifyType, unsigned int *rdevIndex);
+RS_ATTRI_VISI_DEF int RsRdevInitWithBackup(struct rdev rdevInfo, struct rdev backupRdevInfo,
+    unsigned int notifyType, unsigned int *rdevIndex);
+RS_ATTRI_VISI_DEF int RsRdevGetPortStatus(unsigned int phyId, unsigned int rdevIndex, enum port_status *status);
+RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, unsigned int rdevIndex);
 
 /* ++++++++++++++++++++++++++++++Epoll API start++++++++++++++++++++++++++++++++++ */
-RS_ATTRI_VISI_DEF int rs_epoll_ctl_add(const void *fd_handle, enum RaEpollEvent event);
-RS_ATTRI_VISI_DEF int rs_epoll_ctl_mod(const void *fd_handle, enum RaEpollEvent event);
-RS_ATTRI_VISI_DEF int rs_epoll_ctl_del(int fd);
-RS_ATTRI_VISI_DEF void rs_set_tcp_recv_callback(const void *callback);
-RS_ATTRI_VISI_DEF int rs_create_event_handle(int *event_handle);
-RS_ATTRI_VISI_DEF int rs_ctl_event_handle(int event_handle, const void *fd_handle, int opcode,
+RS_ATTRI_VISI_DEF int RsEpollCtlAdd(const void *fdHandle, enum RaEpollEvent event);
+RS_ATTRI_VISI_DEF int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent event);
+RS_ATTRI_VISI_DEF int RsEpollCtlDel(int fd);
+RS_ATTRI_VISI_DEF void RsSetTcpRecvCallback(const void *callback);
+RS_ATTRI_VISI_DEF int RsCreateEventHandle(int *eventHandle);
+RS_ATTRI_VISI_DEF int RsCtlEventHandle(int eventHandle, const void *fdHandle, int opcode,
     enum RaEpollEvent event);
-RS_ATTRI_VISI_DEF int rs_wait_event_handle(int event_handle, struct socket_event_info *event_infos,
-    int timeout, unsigned int maxevents, unsigned int *events_num);
-RS_ATTRI_VISI_DEF int rs_destroy_event_handle(int *event_handle);
+RS_ATTRI_VISI_DEF int RsWaitEventHandle(int eventHandle, struct socket_event_info *eventInfos,
+    int timeout, unsigned int maxevents, unsigned int *eventsNum);
+RS_ATTRI_VISI_DEF int RsDestroyEventHandle(int *eventHandle);
 /* ++++++++++++++++++++++++++++++Epoll API end++++++++++++++++++++++++++++++++++ */
 
 /* ++++++++++++++++++++++++++++++Socket API++++++++++++++++++++++++++++++++++ */
 #define RS_SOCK_PORT_DEF 16666
-RS_ATTRI_VISI_DEF int rs_socket_listen_start(struct socket_listen_info conn[], uint32_t num);
-RS_ATTRI_VISI_DEF int rs_socket_listen_stop(struct socket_listen_info conn[], uint32_t num);
+RS_ATTRI_VISI_DEF int RsSocketListenStart(struct socket_listen_info conn[], uint32_t num);
+RS_ATTRI_VISI_DEF int RsSocketListenStop(struct socket_listen_info conn[], uint32_t num);
 
-RS_ATTRI_VISI_DEF int rs_socket_batch_connect(struct socket_connect_info conn[], uint32_t num);
-RS_ATTRI_VISI_DEF int rs_socket_batch_abort(struct socket_connect_info conn[], uint32_t num);
+RS_ATTRI_VISI_DEF int RsSocketBatchConnect(struct socket_connect_info conn[], uint32_t num);
+RS_ATTRI_VISI_DEF int RsSocketBatchAbort(struct socket_connect_info conn[], uint32_t num);
 
-RS_ATTRI_VISI_DEF int rs_socket_get_client_socket_err_info(struct socket_connect_info conn[],
+RS_ATTRI_VISI_DEF int RsSocketGetClientSocketErrInfo(struct socket_connect_info conn[],
     struct socket_err_info err[], unsigned int num);
-RS_ATTRI_VISI_DEF int rs_socket_get_server_socket_err_info(struct socket_listen_info conn[],
+RS_ATTRI_VISI_DEF int RsSocketGetServerSocketErrInfo(struct socket_listen_info conn[],
     struct server_socket_err_info err[], unsigned int num);
 
-RS_ATTRI_VISI_DEF void rs_get_cur_time(struct timeval *time);
-RS_ATTRI_VISI_DEF void hccp_time_interval(struct timeval *end_time, struct timeval *start_time, float *msec);
-RS_ATTRI_VISI_DEF int rs_socket_white_list_switch(unsigned int phy_id, unsigned int enable);
-RS_ATTRI_VISI_DEF int rs_socket_white_list_add(struct rdev rdev_info, struct socket_wlist_info_t white_list[],
+RS_ATTRI_VISI_DEF void RsGetCurTime(struct timeval *time);
+RS_ATTRI_VISI_DEF void HccpTimeInterval(struct timeval *endTime, struct timeval *startTime, float *msec);
+RS_ATTRI_VISI_DEF int RsSocketWhiteListSwitch(unsigned int phyId, unsigned int enable);
+RS_ATTRI_VISI_DEF int RsSocketWhiteListAdd(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[],
     unsigned int num);
-RS_ATTRI_VISI_DEF int rs_socket_white_list_del(struct rdev rdev_info, struct socket_wlist_info_t white_list[],
+RS_ATTRI_VISI_DEF int RsSocketWhiteListDel(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[],
     unsigned int num);
-RS_ATTRI_VISI_DEF int rs_socket_accept_credit_add(struct socket_listen_info conn[], uint32_t num,
-    unsigned int credit_limit);
-RS_ATTRI_VISI_DEF int rs_get_ifnum(unsigned int phy_id, bool is_all, unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_peer_get_ifnum(unsigned int phy_id, unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_get_ifaddrs(struct ifaddr_info ifaddr_infos[], unsigned int *num, unsigned int phy_id);
-RS_ATTRI_VISI_DEF int rs_get_ifaddrs_v2(struct interface_info interface_infos[], unsigned int *num,
-    unsigned int phy_id, bool is_all);
-RS_ATTRI_VISI_DEF int rs_peer_get_ifaddrs(struct interface_info interface_infos[], unsigned int *num,
-    unsigned int phy_id);
-RS_ATTRI_VISI_DEF int rs_get_vnic_ip(unsigned int phy_id, unsigned int *vnic_ip);
-RS_ATTRI_VISI_DEF int rs_get_interface_version(unsigned int opcode, unsigned int *version);
-RS_ATTRI_VISI_DEF int rs_get_vnic_ip_infos(unsigned int phy_id, enum id_type type, unsigned int ids[], unsigned int num,
+RS_ATTRI_VISI_DEF int RsSocketAcceptCreditAdd(struct socket_listen_info conn[], uint32_t num,
+    unsigned int creditLimit);
+RS_ATTRI_VISI_DEF int RsGetIfnum(unsigned int phyId, bool isAll, unsigned int *num);
+RS_ATTRI_VISI_DEF int RsPeerGetIfnum(unsigned int phyId, unsigned int *num);
+RS_ATTRI_VISI_DEF int RsGetIfaddrs(struct ifaddr_info ifaddrInfos[], unsigned int *num, unsigned int phyId);
+RS_ATTRI_VISI_DEF int RsGetIfaddrsV2(struct interface_info interfaceInfos[], unsigned int *num,
+    unsigned int phyId, bool isAll);
+RS_ATTRI_VISI_DEF int RsPeerGetIfaddrs(struct interface_info interfaceInfos[], unsigned int *num,
+    unsigned int phyId);
+RS_ATTRI_VISI_DEF int RsGetVnicIp(unsigned int phyId, unsigned int *vnicIp);
+RS_ATTRI_VISI_DEF int RsGetInterfaceVersion(unsigned int opcode, unsigned int *version);
+RS_ATTRI_VISI_DEF int RsGetVnicIpInfos(unsigned int phyId, enum id_type type, unsigned int ids[], unsigned int num,
     struct ip_info infos[]);
-RS_ATTRI_VISI_DEF int rs_socket_set_scope_id(unsigned int dev_id, int scope_id);
+RS_ATTRI_VISI_DEF int RsSocketSetScopeId(unsigned int devId, int scopeId);
 struct rs_socket_close_info_t {
     int fd;
 };
-RS_ATTRI_VISI_DEF int rs_socket_batch_close(int disuse_linger, struct rs_socket_close_info_t conn[], uint32_t num);
+RS_ATTRI_VISI_DEF int RsSocketBatchClose(int disuseLinger, struct rs_socket_close_info_t conn[], uint32_t num);
 
 enum rs_conn_role {
     RS_CONN_ROLE_SERVER = 0,
@@ -261,55 +261,55 @@ enum rs_socket_status {
     RS_SOCK_STATUS_ING = 3,
 };
 
-RS_ATTRI_VISI_DEF int rs_get_sockets(uint32_t role, struct socket_fd_data conn[], uint32_t num);
-RS_ATTRI_VISI_DEF int rs_get_ssl_enable(uint32_t *ssl_enable);
-RS_ATTRI_VISI_DEF int rs_socket_send(int fd, const void *data, uint64_t size);
-RS_ATTRI_VISI_DEF int rs_peer_socket_send(uint32_t ssl_enable, int fd, const void *data, uint64_t size);
-RS_ATTRI_VISI_DEF int rs_socket_recv(int fd, void *data, uint64_t size);
-RS_ATTRI_VISI_DEF int rs_peer_socket_recv(uint32_t ssl_enable, int fd, void *data, uint64_t size);
-RS_ATTRI_VISI_DEF int rs_notify_cfg_set(unsigned int phy_id, unsigned long long va, unsigned long long size);
-RS_ATTRI_VISI_DEF int rs_notify_cfg_get(unsigned int phy_id, unsigned long long *va, unsigned long long *size);
-RS_ATTRI_VISI_DEF void rs_heartbeat_alive_print(struct rs_pthread_info *pthread_info);
+RS_ATTRI_VISI_DEF int RsGetSockets(uint32_t role, struct socket_fd_data conn[], uint32_t num);
+RS_ATTRI_VISI_DEF int RsGetSslEnable(uint32_t *sslEnable);
+RS_ATTRI_VISI_DEF int RsSocketSend(int fd, const void *data, uint64_t size);
+RS_ATTRI_VISI_DEF int RsPeerSocketSend(uint32_t sslEnable, int fd, const void *data, uint64_t size);
+RS_ATTRI_VISI_DEF int RsSocketRecv(int fd, void *data, uint64_t size);
+RS_ATTRI_VISI_DEF int RsPeerSocketRecv(uint32_t sslEnable, int fd, void *data, uint64_t size);
+RS_ATTRI_VISI_DEF int RsNotifyCfgSet(unsigned int phyId, unsigned long long va, unsigned long long size);
+RS_ATTRI_VISI_DEF int RsNotifyCfgGet(unsigned int phyId, unsigned long long *va, unsigned long long *size);
+RS_ATTRI_VISI_DEF void RsHeartbeatAlivePrint(struct rs_pthread_info *pthreadInfo);
 
-RS_ATTRI_VISI_DEF int rs_get_qp_context(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, void** qp,
-                                        void** send_cq, void** recv_cq);
-RS_ATTRI_VISI_DEF int rs_get_qp_status(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn,
-    struct rs_qp_status_info *qp_info);
+RS_ATTRI_VISI_DEF int RsGetQpContext(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, void** qp,
+                                        void** sendCq, void** recvCq);
+RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
+    struct rs_qp_status_info *qpInfo);
 
-int rsGetLocalDevIDByHostDevID(unsigned int phy_id, unsigned int *chip_id);
-int rsGetDevIDByLocalDevID(unsigned int chip_id, unsigned int *phy_id);
+int rsGetLocalDevIDByHostDevID(unsigned int phyId, unsigned int *chipId);
+int rsGetDevIDByLocalDevID(unsigned int chipId, unsigned int *phyId);
 
-RS_ATTRI_VISI_DEF int rs_cq_create(unsigned int phy_id, unsigned int rdev_index, struct cq_attr *attr);
-RS_ATTRI_VISI_DEF int rs_cq_destroy(unsigned int phy_id, unsigned int rdev_index, struct cq_attr *attr);
-RS_ATTRI_VISI_DEF int rs_normal_qp_create(unsigned int phy_id, unsigned int rdev_index,
-    struct ibv_qp_init_attr *qp_init_attr, struct rs_qp_resp *qp_resp, void **qp);
-RS_ATTRI_VISI_DEF int rs_normal_qp_destroy(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn);
-RS_ATTRI_VISI_DEF int rs_set_qp_attr_qos(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn,
+RS_ATTRI_VISI_DEF int RsCqCreate(unsigned int phyId, unsigned int rdevIndex, struct cq_attr *attr);
+RS_ATTRI_VISI_DEF int RsCqDestroy(unsigned int phyId, unsigned int rdevIndex, struct cq_attr *attr);
+RS_ATTRI_VISI_DEF int RsNormalQpCreate(unsigned int phyId, unsigned int rdevIndex,
+    struct ibv_qp_init_attr *qpInitAttr, struct rs_qp_resp *qpResp, void **qp);
+RS_ATTRI_VISI_DEF int RsNormalQpDestroy(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn);
+RS_ATTRI_VISI_DEF int RsSetQpAttrQos(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
     struct qos_attr *attr);
-RS_ATTRI_VISI_DEF int rs_set_qp_attr_timeout(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn,
+RS_ATTRI_VISI_DEF int RsSetQpAttrTimeout(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
     unsigned int *timeout);
-RS_ATTRI_VISI_DEF int rs_set_qp_attr_retry_cnt(unsigned int phy_id, unsigned int rdev_index, unsigned int qpn,
-    unsigned int *retry_cnt);
-RS_ATTRI_VISI_DEF int rs_create_comp_channel(unsigned int phy_id, unsigned int rdev_index, void** comp_channel);
-RS_ATTRI_VISI_DEF int rs_destroy_comp_channel(void* comp_channel);
-RS_ATTRI_VISI_DEF int rs_get_cqe_err_info(struct cqe_err_info *info);
-RS_ATTRI_VISI_DEF int rs_create_srq(unsigned int phy_id, unsigned int rdev_index, struct srq_attr *attr);
-RS_ATTRI_VISI_DEF int rs_destroy_srq(unsigned int phy_id, unsigned int rdev_index, struct srq_attr *attr);
-RS_ATTRI_VISI_DEF int rs_get_lite_support(unsigned int phy_id, unsigned int rdev_index, int *support_lite);
-RS_ATTRI_VISI_DEF int rs_get_lite_rdev_cap(
-    unsigned int phy_id, unsigned int rdev_index, struct lite_rdev_cap_resp *resp);
-RS_ATTRI_VISI_DEF int rs_get_lite_qp_cq_attr(
-    unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, struct lite_qp_cq_attr_resp *resp);
-RS_ATTRI_VISI_DEF int rs_get_lite_connected_info(
-    unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, struct lite_connected_info_resp *resp);
-RS_ATTRI_VISI_DEF int rs_get_lite_mem_attr(
-    unsigned int phy_id, unsigned int rdev_index, unsigned int qpn, struct lite_mem_attr_resp *resp);
-RS_ATTRI_VISI_DEF void rs_set_ctx(unsigned int phy_id);
-RS_ATTRI_VISI_DEF int rs_get_cqe_err_info_num(unsigned int phy_id, unsigned int rdev_idx, unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_get_cqe_err_info_list(unsigned int phy_id, unsigned int rdev_idx, struct cqe_err_info *info,
+RS_ATTRI_VISI_DEF int RsSetQpAttrRetryCnt(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
+    unsigned int *retryCnt);
+RS_ATTRI_VISI_DEF int RsCreateCompChannel(unsigned int phyId, unsigned int rdevIndex, void** compChannel);
+RS_ATTRI_VISI_DEF int RsDestroyCompChannel(void* compChannel);
+RS_ATTRI_VISI_DEF int RsGetCqeErrInfo(struct cqe_err_info *info);
+RS_ATTRI_VISI_DEF int RsCreateSrq(unsigned int phyId, unsigned int rdevIndex, struct srq_attr *attr);
+RS_ATTRI_VISI_DEF int RsDestroySrq(unsigned int phyId, unsigned int rdevIndex, struct srq_attr *attr);
+RS_ATTRI_VISI_DEF int RsGetLiteSupport(unsigned int phyId, unsigned int rdevIndex, int *supportLite);
+RS_ATTRI_VISI_DEF int RsGetLiteRdevCap(
+    unsigned int phyId, unsigned int rdevIndex, struct lite_rdev_cap_resp *resp);
+RS_ATTRI_VISI_DEF int RsGetLiteQpCqAttr(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct lite_qp_cq_attr_resp *resp);
+RS_ATTRI_VISI_DEF int RsGetLiteConnectedInfo(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct lite_connected_info_resp *resp);
+RS_ATTRI_VISI_DEF int RsGetLiteMemAttr(
+    unsigned int phyId, unsigned int rdevIndex, unsigned int qpn, struct lite_mem_attr_resp *resp);
+RS_ATTRI_VISI_DEF void RsSetCtx(unsigned int phyId);
+RS_ATTRI_VISI_DEF int RsGetCqeErrInfoNum(unsigned int phyId, unsigned int rdevIdx, unsigned int *num);
+RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevIdx, struct cqe_err_info *info,
     unsigned int *num);
-RS_ATTRI_VISI_DEF int rs_drv_get_random_num(int *rand_num);
-RS_ATTRI_VISI_DEF int rs_get_sec_random(unsigned int *value);
+RS_ATTRI_VISI_DEF int RsDrvGetRandomNum(int *randNum);
+RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value);
 #ifdef __cplusplus
 }
 #endif

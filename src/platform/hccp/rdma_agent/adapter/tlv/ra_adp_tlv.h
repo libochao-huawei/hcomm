@@ -11,7 +11,7 @@
 #ifndef RA_ADP_TLV_H
 #define RA_ADP_TLV_H
 
-int ra_rs_tlv_init(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_tlv_deinit(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
-int ra_rs_tlv_request(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+int RaRsTlvInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsTlvDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
+int RaRsTlvRequest(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen);
 #endif // RA_ADP_TLV_H

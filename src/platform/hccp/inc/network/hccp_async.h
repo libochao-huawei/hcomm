@@ -22,7 +22,7 @@ extern "C" {
  * @retval #OTHERS_EAGAIN try again
  * @retval #non-zero Failure(exclude OTHERS_EAGAIN)
 */
-HCCP_ATTRI_VISI_DEF int ra_get_async_req_result(void *req_handle, int *req_result);
+HCCP_ATTRI_VISI_DEF int RaGetAsyncReqResult(void *reqHandle, int *reqResult);
 
 /**
  * @ingroup libsocket
@@ -34,8 +34,8 @@ HCCP_ATTRI_VISI_DEF int ra_get_async_req_result(void *req_handle, int *req_resul
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_socket_batch_connect_async(struct socket_connect_info_t conn[], unsigned int num,
-    void **req_handle);
+HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct socket_connect_info_t conn[], unsigned int num,
+    void **reqHandle);
 
 /**
  * @ingroup libsocket
@@ -48,8 +48,8 @@ HCCP_ATTRI_VISI_DEF int ra_socket_batch_connect_async(struct socket_connect_info
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_socket_listen_start_async(struct socket_listen_info_t conn[], unsigned int num,
-    void **req_handle);
+HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct socket_listen_info_t conn[], unsigned int num,
+    void **reqHandle);
 
 /**
  * @ingroup libsocket
@@ -62,8 +62,8 @@ HCCP_ATTRI_VISI_DEF int ra_socket_listen_start_async(struct socket_listen_info_t
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_socket_listen_stop_async(struct socket_listen_info_t conn[], unsigned int num,
-    void **req_handle);
+HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct socket_listen_info_t conn[], unsigned int num,
+    void **reqHandle);
 
 /**
  * @ingroup libsocket
@@ -75,8 +75,8 @@ HCCP_ATTRI_VISI_DEF int ra_socket_listen_stop_async(struct socket_listen_info_t 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_socket_batch_close_async(struct socket_close_info_t conn[], unsigned int num,
-    void **req_handle);
+HCCP_ATTRI_VISI_DEF int RaSocketBatchCloseAsync(struct socket_close_info_t conn[], unsigned int num,
+    void **reqHandle);
 
 /**
  * @ingroup libsocket
@@ -91,8 +91,8 @@ HCCP_ATTRI_VISI_DEF int ra_socket_batch_close_async(struct socket_close_info_t c
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int ra_socket_send_async(const void *fd_handle, const void *data, unsigned long long size,
-    unsigned long long *sent_size, void **req_handle);
+HCCP_ATTRI_VISI_DEF int RaSocketSendAsync(const void *fdHandle, const void *data, unsigned long long size,
+    unsigned long long *sentSize, void **reqHandle);
 
 /**
  * @ingroup libsocket
@@ -108,8 +108,8 @@ HCCP_ATTRI_VISI_DEF int ra_socket_send_async(const void *fd_handle, const void *
  * @retval #SOCK_EAGAIN Success(no data received by socket)
  * @retval #non-zero Failure(exclude SOCK_EAGAIN)
 */
-HCCP_ATTRI_VISI_DEF int ra_socket_recv_async(const void *fd_handle, void *data, unsigned long long size,
-    unsigned long long *received_size, void **req_handle);
+HCCP_ATTRI_VISI_DEF int RaSocketRecvAsync(const void *fdHandle, void *data, unsigned long long size,
+    unsigned long long *receivedSize, void **reqHandle);
 #ifdef __cplusplus
 }
 #endif

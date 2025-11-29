@@ -53,8 +53,8 @@ struct ra_op_handle {
 };
 
 #define RA_ADP_ATTRI_VISI_DEF __attribute__ ((visibility ("default")))
-RA_ADP_ATTRI_VISI_DEF int hccp_init(unsigned int chip_id, pid_t pid, int hdc_type, unsigned int white_list_status);
-RA_ADP_ATTRI_VISI_DEF int hccp_deinit(unsigned int chip_id);
+RA_ADP_ATTRI_VISI_DEF int HccpInit(unsigned int chipId, pid_t pid, int hdcType, unsigned int whiteListStatus);
+RA_ADP_ATTRI_VISI_DEF int HccpDeinit(unsigned int chipId);
 
 #define HCCP_CHECK_PARAM_LEN(data_size, head_size, rcv_buf_len) do { \
     if ((data_size) + (head_size) != (rcv_buf_len)) {         \
@@ -86,13 +86,13 @@ RA_ADP_ATTRI_VISI_DEF int hccp_deinit(unsigned int chip_id);
     }           \
 } while (0)
 
-void ra_hdc_init_op_sec(struct ra_hdc_op_sec *op_sec, unsigned long long token_num, bool is_async_op);
-int ra_hdc_session_accept(unsigned int chip_id, HDC_SESSION *session, int init_host_tgid);
-int ra_hdc_async_recv_pkt(struct ra_hdc_async_info *async_info, unsigned int chip_id, void **recv_buf,
-    unsigned int *recv_len);
-int ra_handle(struct ra_hdc_op_sec *op_sec, char *recv_buf, int rcv_buf_len, char **send_buf, int *snd_buf_len,
-    unsigned int *close_session);
-int ra_hdc_async_send_pkt(struct ra_hdc_async_info *async_info, unsigned int chip_id, void *send_buf,
-    unsigned int send_len);
-void ra_hdc_close_session(HDC_SESSION *session);
+void RaHdcInitOpSec(struct ra_hdc_op_sec *opSec, unsigned long long tokenNum, bool isAsyncOp);
+int RaHdcSessionAccept(unsigned int chipId, HDC_SESSION *session, int initHostTgid);
+int RaHdcAsyncRecvPkt(struct ra_hdc_async_info *asyncInfo, unsigned int chipId, void **recvBuf,
+    unsigned int *recvLen);
+int RaHandle(struct ra_hdc_op_sec *opSec, char *recvBuf, int rcvBufLen, char **sendBuf, int *sndBufLen,
+    unsigned int *closeSession);
+int RaHdcAsyncSendPkt(struct ra_hdc_async_info *asyncInfo, unsigned int chipId, void *sendBuf,
+    unsigned int sendLen);
+void RaHdcCloseSession(HDC_SESSION *session);
 #endif // RA_ADP_HW_H

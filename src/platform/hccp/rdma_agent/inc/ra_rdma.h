@@ -13,5 +13,5 @@
 
 #include "ra.h"
 
-void ra_rdev_save_notify_mr(struct ra_rdma_handle *rdma_handle, int ret, uint64_t va, uint64_t size);
+void RaRdevSaveNotifyMr(struct ra_rdma_handle *rdmaHandle, int ret, uint64_t va, uint64_t size);
 #endif // RA_RDMA_H
