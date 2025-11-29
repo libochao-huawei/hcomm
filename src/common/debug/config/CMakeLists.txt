@@ -11,7 +11,7 @@ target_sources(hccl_alg PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/config_log.cc
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/config_log.cc
 )
 

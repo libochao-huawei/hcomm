@@ -657,6 +657,7 @@ if(DEVICE_MODE)
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ra> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:hccd> ${HCCD_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/lib/lib* ${HCCD_TAR_DIR}
+        COMMAND chmod 750 ${HCCD_TAR_DIR}/lib*
         COMMENT "Copying libhccd.so to ${HCCD_TAR_DIR}"
     )
 endif()

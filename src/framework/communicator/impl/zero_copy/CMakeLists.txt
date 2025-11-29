@@ -23,6 +23,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     )
 endif()
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
 )

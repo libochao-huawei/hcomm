@@ -12,6 +12,6 @@ set(src_list
     ${OPRETRY_SRC}
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
 )

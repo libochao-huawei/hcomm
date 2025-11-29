@@ -15,7 +15,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/read_write_lock.cc
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_hash_utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/launch_aicpu.cc

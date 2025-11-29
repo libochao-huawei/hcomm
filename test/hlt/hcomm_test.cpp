@@ -470,7 +470,7 @@ public:
         config.commEngine = 0;
         config.threadNum = 8;
         config.notifyNumPerThread = 2;
-        strncpy(config.hcclCommName, "hccl_fwk_test_comm", sizeof(config.hcclCommName) - 1);
+        strncpy(config.hcclCommName, "hcomm_test_comm", sizeof(config.hcclCommName) - 1);
 
         // call HcclCommInitClusterInfoConfig (mock or real)
         HcclResult r = HcclCommInitClusterInfoConfig(cfg_.clusterInfo.c_str(), cfg_.rank, &config, &comm_);
@@ -767,8 +767,8 @@ bool test_alloc_host_notify(const Config &cfg)
 REGISTER_HCCL_TEST(alloc_host_notify, test_alloc_host_notify);
 
 // test: 测试两卡CommChannelCreate, 需同时拉起两个进程
-// rank_0进程: hccl_fwk_test --cluster_info test/hlt/ranktable-2p.json --rank 0 --test channel_create --engine 2
-// rank_1进程: hccl_fwk_test --cluster_info test/hlt/ranktable-2p.json --rank 1 --test channel_create --engine 2
+// rank_0进程: hcomm_test --cluster_info test/hlt/ranktable-2p.json --rank 0 --test channel_create --engine 2
+// rank_1进程: hcomm_test --cluster_info test/hlt/ranktable-2p.json --rank 1 --test channel_create --engine 2
 bool test_channel_create(const Config &cfg)
 {
     LOG(INFO, "%s start", __func__);

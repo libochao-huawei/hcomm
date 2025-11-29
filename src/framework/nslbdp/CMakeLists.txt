@@ -12,7 +12,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_nslb_md5.cc
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
 )
 
