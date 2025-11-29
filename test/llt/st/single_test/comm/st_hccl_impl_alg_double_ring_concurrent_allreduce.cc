@@ -12,6 +12,7 @@
 #include <mockcpp/mockcpp.hpp>
 
 #include <string>
+#include "dlra_function.h"
 
 #define private public
 #define protected public
@@ -44,6 +45,7 @@ protected:
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "HcclImplAlgTestDoubleRingConcurrentallreduce SetUP" << std::endl;
     }
     static void TearDownTestCase()

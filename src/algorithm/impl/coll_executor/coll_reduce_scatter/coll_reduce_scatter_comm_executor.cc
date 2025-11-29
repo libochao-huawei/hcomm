@@ -149,7 +149,7 @@ HcclResult CollReduceScatterCommExecutor::KernelRun(const OpParam &param, ExecMe
         CHK_RET(tempAlg->Prepare(reduceAttr, false));
         CHK_RET(tempAlg->Prepare(execMem.inputMem, execMem.outputMem, execMem.scratchMem, execMem.count,
             param.DataDes.dataType, param.stream, param.reduceType));
-        if (topoAttr_.deviceType != DevType::DEV_TYPE_910_93) {
+        if (topoAttr_.deviceType != DevType::DEV_TYPE_910_93 || algoAttr_.isSupportAtomicWrite) {
             tempAlg->CloseBarrier();
         }
         CHK_RET(RunTemplate(tempAlg, combinedCommInfo));

@@ -290,6 +290,10 @@ HcclResult HcclAlg::InitAlgoInfo(HcclAlgoInfo& algoInfo, HcclAlgoAttr &algoAttr)
     algoInfo.identifier = algoAttr.identifier;
     algoInfo.inlineReduceSwitchOn = algoAttr.inlineReduceSwitchOn;
     algoInfo.isUsedRdmaLevel0 = algoAttr.isUsedRdmaLevel0;
+    algoInfo.isSupportAtomicWrite = false;
+    if (topoAttr_.userRankSize > 1) {
+        CHK_RET(IsSupportAtomicWrite(topoAttr_.deviceType, topoAttr_.devicePhyId, algoInfo.isSupportAtomicWrite));
+    }
     return HCCL_SUCCESS;
 }
 

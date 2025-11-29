@@ -355,6 +355,10 @@ HcclResult CollAllReduceRingFor91093Executor::KernelRun(const OpParam &param, Ex
         } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
             level2ARTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_NHR, dispatcher_);
             HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_NHR in COMM_LEVEL2", __func__);
+            if (algoAttr_.isSupportAtomicWrite) {
+                CHK_SMART_PTR_NULL(level2ARTempAlg);
+                level2ARTempAlg->CloseBarrier();
+            }
         } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_RING) {
             level2ARTempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_RING, dispatcher_);
             HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_RING in COMM_LEVEL2", __func__);

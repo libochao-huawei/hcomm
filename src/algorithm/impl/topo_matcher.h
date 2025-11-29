@@ -26,11 +26,13 @@ using HcclAlgoInfo = struct HcclAlgoInfoDef {
     bool inlineReduceSwitchOn;       // 收到数量时同时完成Reduce计算
     std::string identifier;
     bool isUsedRdmaLevel0;
+    bool isSupportAtomicWrite;
 
     HcclAlgoInfoDef()
         : inlineReduceSwitchOn(true),
         identifier(""),
-        isUsedRdmaLevel0(false)
+        isUsedRdmaLevel0(false),
+        isSupportAtomicWrite(false)
     {}
 };
 

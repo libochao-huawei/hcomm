@@ -188,6 +188,7 @@ constexpr s64 HCCL_SMALL_COUNT_1_MB = 1024 * 1024;  // 910BB aiv+rdma，AIVIN的
 constexpr s64 HCCL_SMALL_COUNT_2_MB = 2048 * 1024;
 constexpr s64 HCCL_SMALL_COUNT_4_MB = 4096 * 1024;
 constexpr s64 HCCL_SMALL_COUNT_8_MB = 8192 * 1024;
+constexpr s64 HCCL_SMALL_COUNT_16_KB = 16 * 1024; // A3打平ROCE
 constexpr s64 HCCL_MID_COUNT_16_MB = 16 * 1024 * 1024;  // 910B aiv+rdma 中数据量支持上限
 constexpr s64 HCCL_MID_COUNT_32_MB = 32 * 1024 * 1024;
 

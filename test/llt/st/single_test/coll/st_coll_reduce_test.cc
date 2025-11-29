@@ -14,7 +14,7 @@
 #include "hccl/base.h"
 #include <hccl/hccl_types.h>
 #include "llt_hccl_stub_pub.h"
-
+#include "dlra_function.h"
 
 #define private public
 #define protected public
@@ -44,6 +44,7 @@ protected:
         if (ret != HCCL_SUCCESS) return;
         if (dispatcherPtr == nullptr) return;
         dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         std::cout << "\033[36m--CollReduceInterTest SetUP--\033[0m" << std::endl;
     }
     static void TearDownTestCase()

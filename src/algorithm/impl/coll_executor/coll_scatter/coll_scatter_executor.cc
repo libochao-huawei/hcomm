@@ -221,9 +221,6 @@ HcclResult CollScatterExecutor::KernelRunLevel1(DeviceMem& inputMem, u64 count, 
         HCCL_INFO("[Scatter][KernelRunLevel1]: using NB algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_SCATTER_NHR, dispatcher_);
-        if (topoAttr_.deviceType != DevType::DEV_TYPE_910_93) {
-            level1TempAlg->CloseBarrier();
-        }
         HCCL_INFO("[Scatter][KernelRunLevel1]: using NHR algo inter-server.");
     } else {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(

@@ -106,7 +106,7 @@ HcclResult CollAllReduceCommExecutor::KernelRun(const OpParam &param, ExecMem &e
         HCCL_INFO("AllReduce comm: using nhr algo inter-server.");
         CHK_SMART_PTR_NULL(tempAlg);
         CHK_RET(tempAlg->Prepare(reduceAttr));
-        if (topoAttr_.deviceType != DevType::DEV_TYPE_910_93) {
+        if (topoAttr_.deviceType != DevType::DEV_TYPE_910_93 || algoAttr_.isSupportAtomicWrite) {
             tempAlg->CloseBarrier();
         }
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {

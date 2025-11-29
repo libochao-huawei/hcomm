@@ -10,6 +10,7 @@
 
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
+#include "dlra_function.h"
 
 #define private public
 #define protected public
@@ -30,6 +31,7 @@ class SwitchNicTest : public testing::Test
 protected:
     static void SetUpTestCase()
     {
+        DlRaFunction::GetInstance().DlRaFunctionInit();
         cout << "\033[36m--SwitchNicTest SetUP--\033[0m" << endl;
     }
     static void TearDownTestCase()

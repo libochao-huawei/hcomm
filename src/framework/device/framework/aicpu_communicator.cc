@@ -842,6 +842,7 @@ HcclResult HcclCommAicpu::InitConfigInfo(const HcclOpResParam *commParam)
     fftsEnable_ = false;
     algoInfo_.inlineReduceSwitchOn = true;
     algoInfo_.identifier = commParam->hcomId;
+    algoInfo_.isSupportAtomicWrite = static_cast<bool>(commParam->config.isSupportAtomicWrite);
     notifySize_ = commParam->notifysize;
     slaveStreams_.reserve(LOCAL_STREAM_MAX_NUM);
     localNotifies_.reserve(LOCAL_NOTIFY_MAX_NUM);

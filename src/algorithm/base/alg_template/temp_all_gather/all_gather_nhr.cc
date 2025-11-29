@@ -125,10 +125,6 @@ HcclResult AllGatherNHR::RdmaTxRx(const LINK &linkLeft, const LINK &linkRight, I
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AllGatherNHR][RunAllGather] PostFinAck failed"), ret);
     ret = linkRight->WaitFinAck(stream_);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AllGatherNHR][RunAllGather] WaitFinAck failed"), ret);
-
-    if (barrierSwitchOn_) {
-        CHK_RET(ExecuteBarrier(linkLeft, linkRight));
-    }
     return HCCL_SUCCESS;
 }
 

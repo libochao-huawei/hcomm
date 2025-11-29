@@ -631,9 +631,12 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool useHostComm = !isSupportInlineReduce && ((serverNum_ != 1 && superPodNum_ == 1 && !GetExternalInputInterHccsDisable())
         || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable())
         && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB * deviceNumPerAggregation_));
+    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_); // 涉及ROCE平面
+
     if (multiModuleDiffDeviceNumMode_) {
         algName = "AllReduceComm";
-    } else if (useHostComm || smallCountOptimMultiServer) {
+    } else if (useHostComm || smallCountOptimMultiServer || smallCountOptimMultiPod) {
         algName = "AllReduceComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
     } else if (smallCountOptimSingleServer) {
