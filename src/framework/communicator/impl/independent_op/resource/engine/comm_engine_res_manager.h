@@ -25,7 +25,7 @@ public:
         const aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     HcclResult HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *thread);
-    HcclResult CommAllocThreadResByStream(CommEngine engine,
+    HcclResult HcclAllocThreadResByStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
     HcclResult HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,

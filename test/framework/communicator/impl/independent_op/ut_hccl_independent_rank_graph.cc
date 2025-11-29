@@ -202,7 +202,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_A3CommGetRankGraph_When_RightPara_Expe
     u32 len = 0;
     void *rankgraph = nullptr;
  
-    ret = CommGetRankGraph(hcom_info.pComm.get(), RANK_GRAPH_910_93, &rankgraph, &len);
+    ret = HcclGetRankGraph(hcom_info.pComm.get(), RANK_GRAPH_910_93, &rankgraph, &len);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(len, 16 *sizeof(RankInfo_t));
  

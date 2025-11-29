@@ -69,8 +69,8 @@ HcclResult LaunchContext::HandleClear()
     告知后面的CommWrite等任务进入批量模式，（只写任务的SQE，但是不触发执行）
     举例：
     HcommSetLaunchMode("abc", LAUNCH_MODE_BATCH);
-    CommLocalBareNotifyWait(thread, notifyId, 0);
-    CommLocalBareNotifyRecord(thread, notifyId);
+    HcommInterOpNotifyWaitOnThread(thread, notifyId, 0);
+    HcommInterOpNotifyRecordOnThread(thread, notifyId);
     HcommSetLaunchMode("abc", LAUNCH_MODE_EAGER);
 
     2 CPU_TS模式

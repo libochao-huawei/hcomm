@@ -17,7 +17,7 @@
 
 using namespace hccl;
 
-HcclResult CommCreateEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx)
+HcclResult HcclCreateEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(engineTag);
@@ -41,7 +41,7 @@ HcclResult CommCreateEngineCtx(HcclComm comm, const char *engineTag, CommEngine 
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx)
+HcclResult HcclGetEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(engineTag);
