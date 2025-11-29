@@ -147,7 +147,7 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/ping_mesh
     ${HCCL_BASE_DIR}/platform/resource/socket
     ${HCCL_BASE_DIR}/platform/task
-    ${HCCL_BASE_DIR}/platform/legacy/inc
+    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     ${HCCL_BASE_DIR}/platform/aiv_communication
     ${HCCL_BASE_DIR}/platform/typical
 )
