@@ -24,7 +24,7 @@ endif()
 
 message(STATUS "HCCL_OPEN_CODE_BASE_DIR = ${HCCL_OPEN_CODE_BASE_DIR}")
 message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
-add_library(hccl_fwk  SHARED)
+add_library(hcomm  SHARED)
 
 set(hccl_include_list
     ${HCCL_BASE_DIR}/algorithm/base/inc
@@ -77,16 +77,16 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/common/launch_device/
 )
 
-target_include_directories(hccl_fwk PRIVATE
+target_include_directories(hcomm PRIVATE
     ${hccl_include_list}
 )
 
 if(BUILD_OPEN_PROJECT)
-    target_compile_definitions(hccl_fwk PRIVATE
+    target_compile_definitions(hcomm PRIVATE
         OPEN_BUILD_PROJECT
         LOG_CPP)
 
-    target_include_directories(hccl_fwk PRIVATE
+    target_include_directories(hcomm PRIVATE
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/new/
         ${HCCL_BASE_DIR}/inc
@@ -96,7 +96,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/platform/common
-        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy/
+        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
 
         ${THIRD_PARTY_NLOHMANN_PATH}
 
@@ -132,11 +132,11 @@ if(BUILD_OPEN_PROJECT)
         ${THIRD_PARTY_NLOHMANN_PATH}
     )
 
-    target_link_directories(hccl_fwk PRIVATE
+    target_link_directories(hcomm PRIVATE
         ${ASCEND_CANN_PACKAGE_PATH}/lib64
     )
 else()
-    target_include_directories(hccl_fwk PRIVATE
+    target_include_directories(hcomm PRIVATE
         ${TOP_DIR}/hcomm/inc/hccl/hccl/             # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/inc/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/algorithm/pub_inc
@@ -164,7 +164,7 @@ endif()
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-target_compile_options(hccl_fwk PRIVATE
+target_compile_options(hcomm PRIVATE
     -Werror
     -Wfloat-equal
     -Wall
@@ -177,19 +177,19 @@ target_compile_options(hccl_fwk PRIVATE
     $<$<CONFIG:Debug>:-g>
 )
 
-target_link_options(hccl_fwk PRIVATE
+target_link_options(hcomm PRIVATE
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
     -s
 )
 
-target_compile_definitions(hccl_fwk PRIVATE
+target_compile_definitions(hcomm PRIVATE
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
 )
 
 if(BUILD_OPEN_PROJECT)
-    target_link_libraries(hccl_fwk
+    target_link_libraries(hcomm
             -Wl,--no-as-needed
             c_sec
             unified_dlog
@@ -202,7 +202,7 @@ if(BUILD_OPEN_PROJECT)
             -lpthread
     )
 else()
-    target_link_libraries(hccl_fwk
+    target_link_libraries(hcomm
             $<BUILD_INTERFACE:kernel_tiling_headers>
             -Wl,--no-as-needed
             c_sec
@@ -217,7 +217,7 @@ else()
     )
 endif()
 
-install(TARGETS hccl_fwk
+install(TARGETS hcomm
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR} OPTIONAL
 )
 
@@ -736,7 +736,7 @@ if(NOT KERNEL_MODE)
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
 
-    add_dependencies(hccl_fwk ccl_kernel_json aicpu_custom_json)
+    add_dependencies(hcomm ccl_kernel_json aicpu_custom_json)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
@@ -849,6 +849,7 @@ if(DEVICE_MODE AND KERNEL_MODE)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CCL_KERNEL_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel> ${CCL_KERNEL_TAR_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel_plf> ${CCL_KERNEL_TAR_DIR}
+        COMMAND chmod 750 ${CCL_KERNEL_TAR_DIR}/lib*
         COMMENT "Copying libccl_kernel_plf.so libccl_kernel.so to ${CCL_KERNEL_TAR_DIR}"
     )
 
@@ -858,6 +859,7 @@ if(DEVICE_MODE AND KERNEL_MODE)
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${AICPU_CUSTOM_DIR}
         COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:ccl_kernel> ${AICPU_CUSTOM_DIR}/libaicpu_custom.so
+        COMMAND chmod 750 ${AICPU_CUSTOM_DIR}/lib*
         COMMENT "Copying libccl_kernel.so to ${AICPU_CUSTOM_DIR}/libaicpu_custom.so"
     )
 endif()

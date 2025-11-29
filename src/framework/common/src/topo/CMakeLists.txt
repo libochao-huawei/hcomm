@@ -23,7 +23,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_whitelist.cc
 )
 
-target_sources(hccl_fwk   PRIVATE
+target_sources(hcomm   PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktableOffline.cc
 )

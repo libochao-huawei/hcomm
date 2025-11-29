@@ -17,7 +17,6 @@
     </dir_info>
     <file_info value="include" copy_type="source" src_path="hcomm/inc/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccl_comm.h"/>
-        <file value="hccl_inner.h"/>
         <file value="hccl_types.h"/>
         <file value="hccl_ctrl_plane.h"/>
         <file value="hccl_mem_defs.h"/>
@@ -36,13 +35,14 @@
         <file value="hcom.h"/>
         <file value="dtype_common.h"/>
         <file value="workflow.h"/>
+        <file value="hccl_inner.h"/>
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="Ascend/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440" optional="true">
         <file value="aicpu_hcomm.tar.gz"/>
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="Ascend/aicpu" install_path="compat" install_type="all" install_mod="440" optional="true">
-        <file value="hcomm_device.tar.gz"/>
-        <file value="hcomm_hccd.tar.gz"/>
+        <file value="cann-hcomm-compat.tar.gz"/>
+        <file value="cann-hccd-compat.tar.gz"/>
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
@@ -56,7 +56,7 @@
         <!-- <file value="libhcom_gradtune_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so;comop:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so"/>
         <file value="libhvd_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhvd_opskernel_builder.so;comop:lib64/plugin/opskernel/libhvd_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhvd_opskernel_builder.so"/>
         <file value="libhcom_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhcom_opskernel_builder.so;comop:lib64/plugin/opskernel/libhcom_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhcom_opskernel_builder.so"/> -->
-        <file value="libhccl_fwk.so" file_type="shared"/>
+        <file value="libhcomm.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libhccl_fwk.so"/>
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>

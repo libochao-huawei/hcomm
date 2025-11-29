@@ -592,7 +592,7 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     };
     InitTask customInitTask = {0};
     customInitTask.context = reinterpret_cast<u64>(addr.ptr());
-    customInitTask.isCustom = true;
+    customInitTask.isCustom = false;
 
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&customInitTask),
         sizeof(customInitTask), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));

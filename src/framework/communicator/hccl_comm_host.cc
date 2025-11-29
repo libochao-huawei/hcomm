@@ -146,7 +146,7 @@ namespace hccl
     {
         CHK_SMART_PTR_NULL(communicator_);
         HcclTopoAttr topoAttr = communicator_->GetTopoAttr();
-        aclrtBinHandle binHandle = communicator_->GetBinCustomHandle();
+        aclrtBinHandle binHandle = communicator_->GetBinHandle();
         CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle));
         return HCCL_SUCCESS;
     }

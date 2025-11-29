@@ -11,6 +11,6 @@ set(src_list
     gradient_segment.cc
 )
 
-target_sources(hccl_fwk PRIVATE
+target_sources(hcomm PRIVATE
     ${src_list}
 )

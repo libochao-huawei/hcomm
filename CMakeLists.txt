@@ -89,7 +89,6 @@ if(BUILD_OPEN_PROJECT)
 
     set(HCCL_HEAD
         inc/hccl/hccl_comm.h
-        inc/hccl/hccl_inner.h
         inc/hccl/hccl_types.h
         inc/hccl/hccl_ctrl_plane.h
         src/pub_inc/hccn_rping.h
@@ -114,7 +113,7 @@ if(BUILD_OPEN_PROJECT)
         message(STATUS "Detected ENABLE_SIGN: ${ENABLE_SIGN}")
         pack_targets_and_files(
             OUTPUT_TARGET "generate_device_hccp_package"
-            OUTPUT "hcomm_device.tar.gz"
+            OUTPUT "cann-hcomm-compat.tar.gz"
             TARGETS hccp_service.bin
             FILES  ${HCCP_TAR_DIR}/librs.so ${HCCP_TAR_DIR}/libra_adp.so ${HCCP_TAR_DIR}/libtls_adp.so ${HCCP_TAR_DIR}/libascend_kms.so
             MANIFEST "hccp_compat_bin_hash.cfg"
@@ -122,27 +121,27 @@ if(BUILD_OPEN_PROJECT)
         add_dependencies(generate_device_hccp_package hccp_service.bin)
 
         sign_file(
-            INPUT "hcomm_device.tar.gz"
+            INPUT "cann-hcomm-compat.tar.gz"
             CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-            RESULT_VAR "hcomm_device_sign_file"
+            RESULT_VAR "cann-hcomm-compat_sign_file"
             DEPENDS generate_device_hccp_package
         )
-        add_dependencies(sign_hcomm_device generate_device_hccp_package)
+        add_dependencies(sign_cann_hcomm_compat generate_device_hccp_package)
 
         add_custom_target(generate_device_hccd_package
-            COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../hcomm_hccd.tar.gz lib64
+            COMMAND cd ${HCCD_TAR_DIR} && ls && tar czf ../cann-hccd-compat.tar.gz lib64
             DEPENDS hccd
-            COMMENT "Creating hcomm_hccd.tar.gz"
+            COMMENT "Creating cann-hccd-compat.tar.gz"
         )
         add_dependencies(generate_device_hccd_package hccd)
 
         sign_file(
-            INPUT "hcomm_hccd.tar.gz"
+            INPUT "cann-hccd-compat.tar.gz"
             CONFIG "${CMAKE_CURRENT_SOURCE_DIR}/scripts/sign/hcomm_check_cfg.xml"
-            RESULT_VAR "hcomm_hccd_sign_file"
+            RESULT_VAR "cann-hccd-compat_sign_file"
             DEPENDS generate_device_hccd_package
         )
-        add_dependencies(sign_hcomm_hccd generate_device_hccd_package)
+        add_dependencies(sign_cann_hccd_compat generate_device_hccd_package)
 
         if(KERNEL_MODE)
             add_custom_target(generate_device_aicpu_package
@@ -167,24 +166,24 @@ if(BUILD_OPEN_PROJECT)
         set(BUILD_DEVICE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_device/)
         set(BUILD_HCCD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/build_hccd/)
         add_custom_target(install_tar DEPENDS
-            ${BUILD_DEVICE_DIR}/signatures/hcomm_device.tar.gz
+            ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
-            ${BUILD_HCCD_DIR}/signatures/hcomm_hccd.tar.gz
+            ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
         )
-        install(FILES ${BUILD_DEVICE_DIR}/signatures/hcomm_device.tar.gz
+        install(FILES ${BUILD_DEVICE_DIR}/signatures/cann-hcomm-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/signatures/aicpu_hcomm.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
-        install(FILES ${BUILD_HCCD_DIR}/signatures/hcomm_hccd.tar.gz
+        install(FILES ${BUILD_HCCD_DIR}/signatures/cann-hccd-compat.tar.gz
             DESTINATION ${INSTALL_DEVICE_TAR_DIR} OPTIONAL
         )
         install(FILES ${BUILD_DEVICE_DIR}/aicpu_custom/libaicpu_custom.so
             DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
         )
-        add_dependencies(install_tar hccl_fwk)
+        add_dependencies(install_tar hcomm)
     endif()
 
     install(FILES
@@ -200,6 +199,7 @@ if(BUILD_OPEN_PROJECT)
         pkg_inc/hccl/hcom.h
         pkg_inc/hccl/dtype_common.h
         pkg_inc/hccl/workflow.h
+        pkg_inc/hccl/hccl_inner.h
     )
     install(FILES
         ${HCCL_PKG_HEAD}

@@ -14,12 +14,12 @@ BUILD_DIR=${CURRENT_DIR}/build
 BUILD_DEVICE_DIR="${CURRENT_DIR}/build_device"
 OUTPUT_DIR=${CURRENT_DIR}/build_out
 USER_ID=$(id -u)
-CPU_NUM=$(($(cat /proc/cpuinfo | grep "^processor" | wc -l)*2))
+CPU_NUM=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
 JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
 COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${OUTPUT_DIR}"
-FULL_MODE="true"  # 新增变量，用于控制是否全量构建
+FULL_MODE="false"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
@@ -27,6 +27,7 @@ CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
 CUSTOM_SIGN_SCRIPT=""
 ENABLE_SIGN="false"
+VERSION_INFO="8.5.0.0.B010"
 
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
@@ -97,7 +98,7 @@ function build_device(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccp_package generate_device_aicpu_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST="sign_hcomm_device sign_aicpu_hcomm"
+    SIGN_TARGET_LIST="sign_cann_hcomm_compat sign_aicpu_hcomm"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -109,7 +110,7 @@ function build_hccd(){
     echo "TARGET_LIST=${TARGET_LIST}"
     PKG_TARGET_LIST="generate_device_hccd_package"
     echo "PKG_TARGET_LIST=${PKG_TARGET_LIST}"
-    SIGN_TARGET_LIST="sign_hcomm_hccd"
+    SIGN_TARGET_LIST="sign_cann_hccd_compat"
     echo "SIGN_TARGET_LIST=${SIGN_TARGET_LIST}"
     build ${TARGET_LIST} ${PKG_TARGET_LIST} ${SIGN_TARGET_LIST}
 }
@@ -356,6 +357,10 @@ while [[ $# -gt 0 ]]; do
         CUSTOM_SIGN_SCRIPT="$(realpath $2)"
         shift 2
         ;;
+    --version)
+        VERSION_INFO="$2"
+        shift 2
+        ;;
     *)
         break
         ;;
@@ -431,9 +436,9 @@ elif [ "${KERNEL}" == "true" ]; then
 elif [ "${BUILD_FWK_HLT}" == "true" ]; then
     log "Info: Building fwk_test with MOCK_HCCL=${MOCK_FWK_HLT}"
     cmake ${CUSTOM_OPTION} -DMOCK_HCCL=${MOCK_FWK_HLT} ../test/hlt
-    build hccl_fwk_test
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
-    log "Info: fwk_test execution example: ${BUILD_DIR}/hccl_fwk_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
+    build hcomm_test
+    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --list"
+    log "Info: fwk_test execution example: ${BUILD_DIR}/hcomm_test --cluster_info test/hlt/ranktable.json --rank 0 --test allocthread"
 elif [ "${BUILD_CB_TEST}" == "true" ]; then
     log "Info: Building cb_test_verify"
     build_cb_test_verify
@@ -448,12 +453,12 @@ elif [ "${FULL_MODE}" == "true" ]; then
     mkdir -p ${BUILD_DEVICE_DIR}
     cd ${BUILD_DEVICE_DIR}
     CURRENT_CUSTOM_OPTION="${CUSTOM_OPTION}"
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DFULL_MODE=ON -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend910B -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN}"
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DFULL_MODE=ON -DDEVICE_MODE=ON -DKERNEL_MODE=ON -DPRODUCT=ascend910B -DPRODUCT_SIDE=device -DUSE_ALOG=0 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
     build_device
     BUILD_HCCD_DIR="${CURRENT_DIR}/build_hccd"
     mkdir -p ${BUILD_HCCD_DIR}
     cd ${BUILD_HCCD_DIR}
-    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN}"
+    CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=ON -DPRODUCT=ascend -DPRODUCT_SIDE=device -DUSE_ALOG=1 -DCUSTOM_SIGN_SCRIPT=${CUSTOM_SIGN_SCRIPT} -DENABLE_SIGN=${ENABLE_SIGN} -DVERSION_INFO=${VERSION_INFO}"
     build_hccd
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
