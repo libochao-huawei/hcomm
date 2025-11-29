@@ -96,7 +96,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/platform/common
-        ${HCCL_BASE_DIR}/platform/legacy/inc
+        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
 
         ${THIRD_PARTY_NLOHMANN_PATH}
 
