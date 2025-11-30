@@ -33,10 +33,10 @@ extern int rs_rdev_deinit(unsigned int dev_id, unsigned int notify_type, unsigne
 extern int ra_peer_socket_white_list_add(struct rdev rdev_info, struct socket_wlist_info_t white_list[], unsigned int num);
 extern int rs_socket_white_list_add(struct rdev rdev_info, struct socket_wlist_info_t white_list[], unsigned int num);
 extern int rs_socket_white_list_del(struct rdev rdev_info, struct socket_wlist_info_t white_list[], unsigned int num);
-extern int ra_get_socket_connect_info(const struct socket_connect_info_t conn[], unsigned int num, struct socket_connect_info rs_conn[], unsigned int rs_num);
-extern int ra_get_socket_listen_result(const struct socket_listen_info rs_conn[], unsigned int rs_num, struct socket_listen_info_t conn[], unsigned int num);
+extern int ra_get_socket_connect_info(const struct SocketConnectInfoT conn[], unsigned int num, struct socket_connect_info rs_conn[], unsigned int rs_num);
+extern int ra_get_socket_listen_result(const struct socket_listen_info rs_conn[], unsigned int rs_num, struct SocketListenInfoT conn[], unsigned int num);
 extern int rs_socket_listen_start(struct socket_listen_info conn[], uint32_t num);
-extern int ra_peer_set_rs_conn_param(struct socket_info_t conn[], unsigned int num, struct socket_fd_data rs_conn[], unsigned int rs_num);
+extern int ra_peer_set_rs_conn_param(struct SocketInfoT conn[], unsigned int num, struct socket_fd_data rs_conn[], unsigned int rs_num);
 extern int ra_inet_pton(int family, union hccp_ip_addr ip, char net_addr[], unsigned int len);
 extern int ra_hdc_rdev_deinit(struct ra_rdma_handle *rdma_handle, unsigned int notify_type);
 extern int ra_hdc_rdev_init(struct ra_rdma_handle *rdma_handle, unsigned int notify_type, struct rdev rdev_info, unsigned int *rdev_index);
@@ -293,7 +293,7 @@ void tc_ra_peer_rdev_deinit_03()
 void tc_ra_peer_socket_batch_connect()
 {
     unsigned int dev_id;
-    struct socket_connect_info_t conn[4] = {0};
+    struct SocketConnectInfoT conn[4] = {0};
     mocker(ra_get_socket_connect_info, 20, 1);
     ra_peer_socket_batch_connect(dev_id, conn, 5);
     mocker_clean();
@@ -302,7 +302,7 @@ void tc_ra_peer_socket_batch_connect()
 void tc_ra_peer_socket_batch_abort()
 {
     unsigned int dev_id;
-    struct socket_connect_info_t conn[4] = {0};
+    struct SocketConnectInfoT conn[4] = {0};
     int ret = 0;
 
     mocker(ra_get_socket_connect_info, 20, 1);
@@ -330,7 +330,7 @@ void tc_ra_peer_socket_batch_abort()
 void tc_ra_peer_socket_listen_start_01()
 {
     unsigned int dev_id;
-    struct socket_listen_info_t conn[5] = {0};
+    struct SocketListenInfoT conn[5] = {0};
     mocker(ra_get_socket_listen_info, 10, 1);
     ra_peer_socket_listen_start(dev_id, conn, 5);
     mocker_clean();
@@ -339,7 +339,7 @@ void tc_ra_peer_socket_listen_start_01()
 void tc_ra_peer_socket_listen_start_02()
 {
     unsigned int dev_id;
-    struct socket_listen_info_t conn[5] = {0};
+    struct SocketListenInfoT conn[5] = {0};
     mocker(ra_get_socket_listen_info, 10, 0);
     mocker(rs_socket_listen_start, 10, 0);
     mocker(ra_get_socket_listen_result, 10, 1);
@@ -350,7 +350,7 @@ void tc_ra_peer_socket_listen_start_02()
 void tc_ra_peer_socket_listen_stop()
 {
     unsigned int dev_id;
-    struct socket_listen_info_t conn[5] = {0};
+    struct SocketListenInfoT conn[5] = {0};
     mocker(ra_get_socket_listen_info, 10, 1);
     ra_peer_socket_listen_stop(dev_id, conn, 5);
     mocker_clean();
@@ -358,7 +358,7 @@ void tc_ra_peer_socket_listen_stop()
 
 void tc_ra_peer_set_rs_conn_param()
 {
-    struct socket_info_t  conn[6] = {0};
+    struct SocketInfoT  conn[6] = {0};
     struct socket_fd_data  rs_conn[5] = {0};
     ra_peer_set_rs_conn_param(conn, 6, rs_conn, 5);
 }
@@ -537,7 +537,7 @@ void tc_ra_hdc_socket_white_list_del()
 
 void tc_ra_hdc_socket_accept_credit_add()
 {
-    struct socket_listen_info_t conn[1];
+    struct SocketListenInfoT conn[1];
     int ret;
     mocker(ra_get_socket_listen_info, 1, -1);
     ret = ra_hdc_socket_accept_credit_add(1, conn, 1, 1);
@@ -1430,7 +1430,7 @@ void tc_ra_save_snapshot_pre()
     rdev_info.phy_id = 0;
     rdev_info.family = AF_INET;
     rdev_info.local_ip.addr.s_addr = 0;
-    struct rdev_init_info init_info = {0};
+    struct RdevInitInfo init_info = {0};
     init_info.disabled_lite_thread = false;
     init_info.mode = NETWORK_OFFLINE;
     init_info.notify_type = NOTIFY;
@@ -1475,7 +1475,7 @@ void tc_ra_save_snapshot_post()
     rdev_info.phy_id = 0;
     rdev_info.family = AF_INET;
     rdev_info.local_ip.addr.s_addr = 0;
-    struct rdev_init_info init_info = {0};
+    struct RdevInitInfo init_info = {0};
     init_info.disabled_lite_thread = false;
     init_info.mode = NETWORK_OFFLINE;
     init_info.notify_type = NOTIFY;

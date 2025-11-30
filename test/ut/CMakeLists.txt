@@ -215,6 +215,6 @@ set(include_list
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
 )
 
-add_subdirectory(stub)
+# add_subdirectory(stub)
 add_subdirectory(common/prepare_ut_env)
-add_subdirectory(platform/resource/dispatcher)
+# add_subdirectory(platform/resource/dispatcher)

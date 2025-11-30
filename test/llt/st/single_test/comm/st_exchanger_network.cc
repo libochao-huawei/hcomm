@@ -52,7 +52,7 @@ protected:
     }
 };
 
-HcclResult stub_HrtRaRdmaInitWithAttr(struct rdev_init_info init_info, struct rdev rdevInfo, RdmaHandle &rdmaHandle)
+HcclResult stub_HrtRaRdmaInitWithAttr(struct RdevInitInfo init_info, struct rdev rdevInfo, RdmaHandle &rdmaHandle)
 {
     int val = 0;
     rdmaHandle = &val;

@@ -130,7 +130,7 @@ void ra_set_test_type(u32 type, const char* name)
     sal_strncpy(g_shm_mpi_name, 64 - 1, name, SalStrLen(name));
     g_shm_mpi_name[63] = 0;
 }
-struct sg_list g_sg_list[SG_LIST_MAX] = { 0 };
+struct SgList g_sg_list[SG_LIST_MAX] = { 0 };
 
 struct qp_socket_info
 {
@@ -311,7 +311,7 @@ int RaQpCreate(void *rdma_handle, int flag, int qp_mode, void **qpHandle)
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;
     if(GetInfoFromHandle(rdma_handle, device_id, localIp, idx)) {
-        HCCL_ERROR("GetInfoFromHandle error, conn.socket_handle is null");
+        HCCL_ERROR("GetInfoFromHandle error, conn.socketHandle is null");
         return -1;
     };
     s32 qp_cnt = 0;
@@ -334,7 +334,7 @@ int RaQpCreate(void *rdma_handle, int flag, int qp_mode, void **qpHandle)
         sal_memset(&cn[qp_cnt], sizeof(struct cn_info), 0, sizeof(struct cn_info));
         flag = flag; /*连接类型  桩函数使用共享内存通信，故无视*/
 
-        //cn[qp_cnt].local_ip = localIpAddr;
+        //cn[qp_cnt].localIp = localIpAddr;
         cn[qp_cnt].local_port = -1;
         cn[qp_cnt].qpn = qp_cnt;
         cn[qp_cnt].dev_id = idx;
@@ -863,7 +863,7 @@ int RaSocketRecv(const void* handle, void* data, u64 size, u64 *recvSize) /*非�
         return 0;
     }
 }
-int RaSendWrlist(void *handle, struct send_wrlist_data wr[], struct send_wr_rsp op_rsp[], unsigned int send_num, unsigned int *complete_num)
+int RaSendWrlist(void *handle, struct SendWrlistData wr[], struct SendWrRsp op_rsp[], unsigned int send_num, unsigned int *complete_num)
 {
     HCCL_INFO("ra_send_wrlist send_num[%u]", send_num);
     if ((handle == NULL) || (wr == NULL) || (op_rsp == NULL)) {
@@ -872,15 +872,15 @@ int RaSendWrlist(void *handle, struct send_wrlist_data wr[], struct send_wr_rsp 
         return -1;
     }
     s32 ret = 0;
-    struct send_wr wr_tmp = {0};
+    struct SendWr wr_tmp = {0};
 
     for (u32 j = 0; j < send_num; j++) {
-        wr_tmp.buf_list = &(wr[j].mem_list);
-        wr_tmp.buf_num = 1; /* 此处list只有一个，设置为1 */
-        wr_tmp.dst_addr = (u64)(uintptr_t)(wr[j].dst_addr);
+        wr_tmp.bufList = &(wr[j].memList);
+        wr_tmp.bufNum = 1; /* 此处list只有一个，设置为1 */
+        wr_tmp.dstAddr = (u64)(uintptr_t)(wr[j].dstAddr);
         wr_tmp.op = wr[j].op; /* RDMA_WRITE: 0 */
-        wr_tmp.send_flag = wr[j].send_flags;
-        HCCL_INFO("[cc] ra_send_wrlist dst[%0x] local[%0x] sendNum[%u] len[%u]", wr_tmp.dst_addr, wr[j].mem_list.addr, send_num, wr[j].mem_list.len);
+        wr_tmp.sendFlag = wr[j].sendFlags;
+        HCCL_INFO("[cc] ra_send_wrlist dst[%0x] local[%0x] sendNum[%u] len[%u]", wr_tmp.dstAddr, wr[j].memList.addr, send_num, wr[j].memList.len);
         ret = RaSendWr(handle, &wr_tmp, op_rsp);
         if (ret != 0) {
             *complete_num = j;
@@ -893,14 +893,14 @@ int RaSendWrlist(void *handle, struct send_wrlist_data wr[], struct send_wr_rsp 
     return 0;
 }
 
-int RaSendWrlistExt(void *qp_handle, struct send_wrlist_data_ext wr[], struct send_wr_rsp op_rsp[],
+int RaSendWrlistExt(void *qp_handle, struct send_wrlist_data_ext wr[], struct SendWrRsp op_rsp[],
     unsigned int send_num, unsigned int *complete_num)
 {
     HCCL_INFO("ra_send_wrlist_ext fake");
     return 0;
 }
 
-int RaSendWr(void* handle, struct send_wr* wr, struct send_wr_rsp *op_rsp)
+int RaSendWr(void* handle, struct SendWr* wr, struct SendWrRsp *op_rsp)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 wqe_index = 0;
@@ -931,15 +931,15 @@ int RaSendWr(void* handle, struct send_wr* wr, struct send_wr_rsp *op_rsp)
     }
 
     if (g_qp_mode == 1) { // 下沉模式
-        op_rsp->wqe_tmp.sq_index = ((struct cn_info*)handle)->qpn;
-        op_rsp->wqe_tmp.wqe_index = wqe_index;
+        op_rsp->wqeTmp.sqIndex = ((struct cn_info*)handle)->qpn;
+        op_rsp->wqeTmp.wqeIndex = wqe_index;
     } else if(g_qp_mode == 2 || g_qp_mode == 3 || g_qp_mode == 4) {
-        op_rsp->db.db_index = wqe_index;
-        op_rsp->db.db_info = ((struct cn_info*)handle)->qpn;
+        op_rsp->db.dbIndex = wqe_index;
+        op_rsp->db.dbInfo = ((struct cn_info*)handle)->qpn;
     } else if(g_qp_mode == 0) {
         HCCL_INFO("Using Common Qp");
-        op_rsp->db.db_index = wqe_index;
-        op_rsp->db.db_info = ((struct cn_info*)handle)->qpn;
+        op_rsp->db.dbIndex = wqe_index;
+        op_rsp->db.dbInfo = ((struct cn_info*)handle)->qpn;
     } else {
         HCCL_ERROR("error qp mode[%d]", g_qp_mode);
         return -1;
@@ -957,16 +957,16 @@ int RaSendWr(void* handle, struct send_wr* wr, struct send_wr_rsp *op_rsp)
     }
     if(list_index < SG_LIST_MAX)
     {
-        g_sg_list[list_index].addr = wr->buf_list->addr;
-        g_sg_list[list_index].len = wr->buf_list->len;
+        g_sg_list[list_index].addr = wr->bufList->addr;
+        g_sg_list[list_index].len = wr->bufList->len;
         //HCCL_INFO("g_sg_list[list_index].addr[0x08%x], index[%d]", g_sg_list[list_index].addr, list_index);
-        wr->buf_list = &g_sg_list[list_index];
+        wr->bufList = &g_sg_list[list_index];
     } else {
         HCCL_ERROR("no available list_index for new g_list");
         return -1;
     }
 
-    HcclResult ret = sal_memcpy( &p_cn->qp.send_mr_mgr.wq[wqn], sizeof(struct send_wr), wr, sizeof(struct send_wr));
+    HcclResult ret = sal_memcpy( &p_cn->qp.send_mr_mgr.wq[wqn], sizeof(struct SendWr), wr, sizeof(struct SendWr));
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("rdma send: sal memcpy error");
         return -1;
@@ -1103,82 +1103,82 @@ rdevInfo_t gRdevVnicInfo[DEV_MAX] = {0};
 static std::mutex g_raNicMutex;    // 默认构造函数构造此全局mutex
 
 // 目前只设计支持两个网口, 初始化完成，不支持并发访问
-int RaSocketInit(int mode, struct rdev rdev_info, void **socketHandle)
+int RaSocketInit(int mode, struct rdev rdevInfo, void **socketHandle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     // dev_id 传的是物理ID，最大为4，DEV_MAX 为 16
-    if (rdev_info.phy_id > DEV_MAX) {
-        HCCL_ERROR("in ra_socket_init, error dev_id[%d]", rdev_info.phy_id);
+    if (rdevInfo.phyId > DEV_MAX) {
+        HCCL_ERROR("in ra_socket_init, error dev_id[%d]", rdevInfo.phyId);
         return -1;
     }
 
-    HCCL_INFO("ra_socket_init, rdev_info.dev_id[%d], rdev_info.local_ip.addr.s_addr[%u]",
-        rdev_info.phy_id, rdev_info.local_ip.addr.s_addr);
+    HCCL_INFO("ra_socket_init, rdevInfo.dev_id[%d], rdevInfo.localIp.addr.s_addr[%u]",
+        rdevInfo.phyId, rdevInfo.localIp.addr.s_addr);
 
     std::unique_lock<std::mutex> lock(g_raNicMutex);
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
-    if (rdev_info.local_ip.addr.s_addr < DEV_MAX) {
-        u32 dev_id = rdev_info.phy_id;
-        gRdevVnicInfo[dev_id].dev_id = rdev_info.phy_id;
-        gRdevVnicInfo[dev_id].local_ip = rdev_info.local_ip.addr.s_addr;
-        gRdevVnicInfo[dev_id].idx = rdev_info.phy_id;
-        *socketHandle = (void*)&gRdevVnicInfo[rdev_info.phy_id];
+    if (rdevInfo.localIp.addr.s_addr < DEV_MAX) {
+        u32 dev_id = rdevInfo.phyId;
+        gRdevVnicInfo[dev_id].dev_id = rdevInfo.phyId;
+        gRdevVnicInfo[dev_id].local_ip = rdevInfo.localIp.addr.s_addr;
+        gRdevVnicInfo[dev_id].idx = rdevInfo.phyId;
+        *socketHandle = (void*)&gRdevVnicInfo[rdevInfo.phyId];
         return 0;
     } else {
         // 0， 1 存储device 0 的网卡0，1信息; 2， 3 存储device 1 的网卡0，1信息; 以此类推
-        u32 idx = rdev_info.phy_id * 2;
+        u32 idx = rdevInfo.phyId * 2;
         if (gRdevNicInfo[idx].local_ip != 0) {
-            idx = rdev_info.phy_id * 2 + 1;
+            idx = rdevInfo.phyId * 2 + 1;
             if (gRdevNicInfo[idx].local_ip != 0) {
-                HCCL_ERROR("ra_socket_init fail, local_ip0[%u], local_ip1[%u]", gRdevNicInfo[rdev_info.phy_id * 2],
-                gRdevNicInfo[rdev_info.phy_id * 2 + 1]);
+                HCCL_ERROR("ra_socket_init fail, local_ip0[%u], local_ip1[%u]", gRdevNicInfo[rdevInfo.phyId * 2],
+                gRdevNicInfo[rdevInfo.phyId * 2 + 1]);
                 return -1;
             }
         }
 
-        gRdevNicInfo[idx].dev_id = rdev_info.phy_id;
-        gRdevNicInfo[idx].local_ip = rdev_info.local_ip.addr.s_addr;
+        gRdevNicInfo[idx].dev_id = rdevInfo.phyId;
+        gRdevNicInfo[idx].local_ip = rdevInfo.localIp.addr.s_addr;
         gRdevNicInfo[idx].idx = idx;
         *socketHandle = (void*)&gRdevNicInfo[idx];
         return 0;
     }
     return -1;
 }
-int RaSocketInitV1(int mode, struct socket_init_info_t socket_init, void **socketHandle)
+int RaSocketInitV1(int mode, struct SocketInitInfoT socket_init, void **socketHandle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     // dev_id 传的是物理ID，最大为4，DEV_MAX 为 16
-    if (socket_init.rdev_info.phy_id > DEV_MAX) {
-        HCCL_ERROR("in ra_socket_init, error dev_id[%d]", socket_init.rdev_info.phy_id);
+    if (socket_init.rdevInfo.phyId > DEV_MAX) {
+        HCCL_ERROR("in ra_socket_init, error dev_id[%d]", socket_init.rdevInfo.phyId);
         return -1;
     }
 
-    HCCL_INFO("ra_socket_init, rdev_info.dev_id[%d], rdev_info.local_ip.addr.s_addr[%u]",
-        socket_init.rdev_info.phy_id, socket_init.rdev_info.local_ip.addr.s_addr);
+    HCCL_INFO("ra_socket_init, rdevInfo.dev_id[%d], rdevInfo.localIp.addr.s_addr[%u]",
+        socket_init.rdevInfo.phyId, socket_init.rdevInfo.localIp.addr.s_addr);
 
     std::unique_lock<std::mutex> lock(g_raNicMutex);
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
-    if (socket_init.rdev_info.local_ip.addr.s_addr < DEV_MAX) {
-        u32 dev_id = socket_init.rdev_info.phy_id;
-        gRdevVnicInfo[dev_id].dev_id = socket_init.rdev_info.phy_id;
-        gRdevVnicInfo[dev_id].local_ip = socket_init.rdev_info.local_ip.addr.s_addr;
-        gRdevVnicInfo[dev_id].idx = socket_init.rdev_info.phy_id;
-        *socketHandle = (void*)&gRdevVnicInfo[socket_init.rdev_info.phy_id];
+    if (socket_init.rdevInfo.localIp.addr.s_addr < DEV_MAX) {
+        u32 dev_id = socket_init.rdevInfo.phyId;
+        gRdevVnicInfo[dev_id].dev_id = socket_init.rdevInfo.phyId;
+        gRdevVnicInfo[dev_id].local_ip = socket_init.rdevInfo.localIp.addr.s_addr;
+        gRdevVnicInfo[dev_id].idx = socket_init.rdevInfo.phyId;
+        *socketHandle = (void*)&gRdevVnicInfo[socket_init.rdevInfo.phyId];
         return 0;
     } else {
         // 0， 1 存储device 0 的网卡0，1信息; 2， 3 存储device 1 的网卡0，1信息; 以此类推
-        u32 idx = socket_init.rdev_info.phy_id * 2;
+        u32 idx = socket_init.rdevInfo.phyId * 2;
         if (gRdevNicInfo[idx].local_ip != 0) {
-            idx = socket_init.rdev_info.phy_id * 2 + 1;
+            idx = socket_init.rdevInfo.phyId * 2 + 1;
             if (gRdevNicInfo[idx].local_ip != 0) {
-                HCCL_ERROR("ra_socket_init fail, local_ip0[%u], local_ip1[%u]", gRdevNicInfo[socket_init.rdev_info.phy_id * 2],
-                gRdevNicInfo[socket_init.rdev_info.phy_id * 2 + 1]);
+                HCCL_ERROR("ra_socket_init fail, local_ip0[%u], local_ip1[%u]", gRdevNicInfo[socket_init.rdevInfo.phyId * 2],
+                gRdevNicInfo[socket_init.rdevInfo.phyId * 2 + 1]);
                 return -1;
             }
         }
 
-        gRdevNicInfo[idx].dev_id = socket_init.rdev_info.phy_id;
-        gRdevNicInfo[idx].local_ip = socket_init.rdev_info.local_ip.addr.s_addr;
+        gRdevNicInfo[idx].dev_id = socket_init.rdevInfo.phyId;
+        gRdevNicInfo[idx].local_ip = socket_init.rdevInfo.localIp.addr.s_addr;
         gRdevNicInfo[idx].idx = idx;
         *socketHandle = (void*)&gRdevNicInfo[idx];
         return 0;
@@ -1220,26 +1220,26 @@ int RaSocketDeinit(void *socket_handle)
     return -1;
 }
 
-int RaRdevInit(int mode, unsigned int notify_type, struct rdev rdev_info, void **rdma_handle)
+int RaRdevInit(int mode, unsigned int notify_type, struct rdev rdevInfo, void **rdma_handle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     // rdev_init 只有rdma使用，因此采用pcie时，不初始化
     // 采用rdma时，初始化内容与socket相同，直接return socket的内容；
     // dev_id 最大为8，DEV_MAX 为 16
-    if (rdev_info.phy_id > DEV_MAX) {
-        HCCL_ERROR("in ra_dev_init, error dev_id[%d]", rdev_info.phy_id);
+    if (rdevInfo.phyId > DEV_MAX) {
+        HCCL_ERROR("in ra_dev_init, error dev_id[%d]", rdevInfo.phyId);
         return -1;
     }
 
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
-    if (rdev_info.local_ip.addr.s_addr < DEV_MAX) {
-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdev_info.local_ip.addr.s_addr);
+    if (rdevInfo.localIp.addr.s_addr < DEV_MAX) {
+        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdevInfo.localIp.addr.s_addr);
         return -1;
     } else {
-        int idx = rdev_info.phy_id * 2;
-        if (gRdevNicInfo[idx].local_ip != rdev_info.local_ip.addr.s_addr) {
-            idx = rdev_info.phy_id * 2 + 1;
-            if (gRdevNicInfo[idx].local_ip != rdev_info.local_ip.addr.s_addr) {
+        int idx = rdevInfo.phyId * 2;
+        if (gRdevNicInfo[idx].local_ip != rdevInfo.localIp.addr.s_addr) {
+            idx = rdevInfo.phyId * 2 + 1;
+            if (gRdevNicInfo[idx].local_ip != rdevInfo.localIp.addr.s_addr) {
                 HCCL_ERROR("ra_rdev_init, should init ra rdev after ra socket");
                 return -1;
             }
@@ -1254,29 +1254,29 @@ int RaRdevInit(int mode, unsigned int notify_type, struct rdev rdev_info, void *
     return -1;
 }
 
-int RaRdevInitWithBackup(struct rdev_init_info *init_info, struct rdev *rdev_info,
-    struct rdev *backup_rdev_info, void **rdma_handle)
+int RaRdevInitWithBackup(struct RdevInitInfo *init_info, struct rdev *rdevInfo,
+    struct rdev *backup_rdevInfo, void **rdma_handle)
 {
     int mode = init_info->mode;
-    unsigned int notify_type = init_info->notify_type;
+    unsigned int notify_type = init_info->notifyType;
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     // rdev_init 只有rdma使用，因此采用pcie时，不初始化
     // 采用rdma时，初始化内容与socket相同，直接return socket的内容；
     // dev_id 最大为8，DEV_MAX 为 16
-    if (rdev_info->phy_id > DEV_MAX) {
-        HCCL_ERROR("in ra_dev_init, error dev_id[%d]", rdev_info->phy_id);
+    if (rdevInfo->phyId > DEV_MAX) {
+        HCCL_ERROR("in ra_dev_init, error dev_id[%d]", rdevInfo->phyId);
         return -1;
     }
 
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
-    if (rdev_info->local_ip.addr.s_addr < DEV_MAX) {
-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdev_info->local_ip.addr.s_addr);
+    if (rdevInfo->localIp.addr.s_addr < DEV_MAX) {
+        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdevInfo->localIp.addr.s_addr);
         return -1;
     } else {
-        int idx = rdev_info->phy_id * 2;
-        if (gRdevNicInfo[idx].local_ip != rdev_info->local_ip.addr.s_addr) {
-            idx = rdev_info->phy_id * 2 + 1;
-            if (gRdevNicInfo[idx].local_ip != rdev_info->local_ip.addr.s_addr) {
+        int idx = rdevInfo->phyId * 2;
+        if (gRdevNicInfo[idx].local_ip != rdevInfo->localIp.addr.s_addr) {
+            idx = rdevInfo->phyId * 2 + 1;
+            if (gRdevNicInfo[idx].local_ip != rdevInfo->localIp.addr.s_addr) {
                 HCCL_ERROR("ra_rdev_init, should init ra rdev after ra socket");
                 return -1;
             }
@@ -1291,28 +1291,28 @@ int RaRdevInitWithBackup(struct rdev_init_info *init_info, struct rdev *rdev_inf
     return -1;
 }
 
-int RaRdevInitV2(struct rdev_init_info init_info, struct rdev rdev_info, void **rdma_handle)
+int RaRdevInitV2(struct RdevInitInfo init_info, struct rdev rdevInfo, void **rdma_handle)
 {
     int mode = init_info.mode;
-    unsigned int notify_type = init_info.notify_type;
+    unsigned int notify_type = init_info.notifyType;
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     // rdev_init 只有rdma使用，因此采用pcie时，不初始化
     // 采用rdma时，初始化内容与socket相同，直接return socket的内容；
     // dev_id 最大为8，DEV_MAX 为 16
-    if (rdev_info.phy_id > DEV_MAX) {
-        HCCL_ERROR("in ra_dev_init, error dev_id[%d]", rdev_info.phy_id);
+    if (rdevInfo.phyId > DEV_MAX) {
+        HCCL_ERROR("in ra_dev_init, error dev_id[%d]", rdevInfo.phyId);
         return -1;
     }
 
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
-    if (rdev_info.local_ip.addr.s_addr < DEV_MAX) {
-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdev_info.local_ip.addr.s_addr);
+    if (rdevInfo.localIp.addr.s_addr < DEV_MAX) {
+        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdevInfo.localIp.addr.s_addr);
         return -1;
     } else {
-        int idx = rdev_info.phy_id * 2;
-        if (gRdevNicInfo[idx].local_ip != rdev_info.local_ip.addr.s_addr) {
-            idx = rdev_info.phy_id * 2 + 1;
-            if (gRdevNicInfo[idx].local_ip != rdev_info.local_ip.addr.s_addr) {
+        int idx = rdevInfo.phyId * 2;
+        if (gRdevNicInfo[idx].local_ip != rdevInfo.localIp.addr.s_addr) {
+            idx = rdevInfo.phyId * 2 + 1;
+            if (gRdevNicInfo[idx].local_ip != rdevInfo.localIp.addr.s_addr) {
                 HCCL_ERROR("ra_rdev_init, should init ra rdev after ra socket");
                 return -1;
             }
@@ -1447,11 +1447,11 @@ u32 map_to_loop_ip(u32 ipAddr)
 } // extern "C"
 #endif
 
-int batch_connect_inner_nodes(struct socket_connect_info_t conn, s32 device_id, u32 num)
+int batch_connect_inner_nodes(struct SocketConnectInfoT conn, s32 device_id, u32 num)
 {
     // 将远端的device 转变成 IP地址
     u32 remote_ip = 0;
-    ra_get_ip_by_dev(conn.remote_ip.addr.s_addr, &remote_ip);
+    ra_get_ip_by_dev(conn.remoteIp.addr.s_addr, &remote_ip);
     HCCL_INFO("batch_connect_inner_nodes : device_id[%u], server_ip[0x%08x]", device_id, remote_ip);
     if (device_id >= DEV_MAX) {
         HCCL_ERROR("invalid device_id[%d]", device_id);
@@ -1497,7 +1497,7 @@ int batch_connect_inner_nodes(struct socket_connect_info_t conn, s32 device_id, 
     u32 size_sent = 0;
     u32 size_residue = size_total;
 
-    rt_get_dev_ip(0, ((rdevInfo_t*)conn.socket_handle)->idx , &send_info.client_ip);
+    rt_get_dev_ip(0, ((rdevInfo_t*)conn.socketHandle)->idx , &send_info.client_ip);
     memcpy(send_info.tag, conn.tag, sizeof(conn.tag));
     do {
         char* send_addr = (char*)(&send_info) + size_sent;
@@ -1540,16 +1540,16 @@ int batch_connect_inner_nodes(struct socket_connect_info_t conn, s32 device_id, 
 }
 
 // 此处的device_id，实际是idx编号
-int batch_connect_between_nodes(struct socket_connect_info_t conn, s32 device_id, u32 num)
+int batch_connect_between_nodes(struct SocketConnectInfoT conn, s32 device_id, u32 num)
 {
-    HCCL_INFO("batch_connect_between_nodes : device_id[%u], server_ip[0x%08x]", device_id, conn.remote_ip.addr.s_addr);
+    HCCL_INFO("batch_connect_between_nodes : device_id[%u], server_ip[0x%08x]", device_id, conn.remoteIp.addr.s_addr);
     if(device_id >=  DEV_MAX_NODES)  {
         HCCL_INFO("device_id beyond max, device_id[%d]", device_id);
         return -1;
     }
 
     u32 deviceId = 0, localIp = 0, idx = 0;
-    if (GetInfoFromHandle(conn.socket_handle, deviceId, localIp, idx)) {
+    if (GetInfoFromHandle(conn.socketHandle, deviceId, localIp, idx)) {
         HCCL_ERROR("GetInfoFromHandle ERROR, socket_handle is null");
         return -1;
     };
@@ -1561,7 +1561,7 @@ int batch_connect_between_nodes(struct socket_connect_info_t conn, s32 device_id
     }
 
     s32 on = 1;
-    u32 server_ip = map_to_loop_ip(conn.remote_ip.addr.s_addr);
+    u32 server_ip = map_to_loop_ip(conn.remoteIp.addr.s_addr);
     setsockopt(connection.conn_fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
 
     struct sockaddr_in server_addr;
@@ -1573,7 +1573,7 @@ int batch_connect_between_nodes(struct socket_connect_info_t conn, s32 device_id
     while (1) {
     if (count > 500) {
         HCCL_ERROR("client batch connect timeout: device_id[%d], server_ip[%08x], %s(errno: %d)",
-        device_id, conn.remote_ip.addr.s_addr, strerror(errno), errno);
+        device_id, conn.remoteIp.addr.s_addr, strerror(errno), errno);
         return -1;
      }
 
@@ -1619,7 +1619,7 @@ int batch_connect_between_nodes(struct socket_connect_info_t conn, s32 device_id
     HCCL_DEBUG("connect success!, send client ip[0x%08x], tag[%s]", send_info.client_ip, send_info.tag);
 
     connection.client_ip = send_info.client_ip;
-    connection.server_ip = conn.remote_ip.addr.s_addr;
+    connection.server_ip = conn.remoteIp.addr.s_addr;
     connection.status = 1;//已连接
     connection.device_id = device_id;
     connection.role = CONN_CLIENT;
@@ -1628,13 +1628,13 @@ int batch_connect_between_nodes(struct socket_connect_info_t conn, s32 device_id
     return 0;
 }
 
-int RaSocketBatchConnect(struct socket_connect_info_t conn[], u32 num)
+int RaSocketBatchConnect(struct SocketConnectInfoT conn[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
     u32 device_id = 0, ipAddr = 0, idx = 0;
     for (u32 connect_cnt=0; connect_cnt<num; connect_cnt++) {
-        if (GetInfoFromHandle(conn[connect_cnt].socket_handle, device_id, ipAddr, idx)) {
+        if (GetInfoFromHandle(conn[connect_cnt].socketHandle, device_id, ipAddr, idx)) {
             HCCL_ERROR("GetInfoFromHandle ERROR, socket_handle is null");
             return -1;
         };
@@ -1661,18 +1661,18 @@ int RaSocketBatchConnect(struct socket_connect_info_t conn[], u32 num)
 }
 
 /* 目前stub中batch_connect()是同步方式实现的，因此建链失败后abort无需做任何事 */
-int RaSocketBatchAbort(struct socket_connect_info_t conn[], u32 num)
+int RaSocketBatchAbort(struct SocketConnectInfoT conn[], u32 num)
 {
     return 0;
 }
 
-int RaSocketBatchClose(struct socket_close_info_t conn[], u32 num)
+int RaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
     for (int i = 0; i < num; i++){
-        if (conn[i].fd_handle != NULL) {
-            struct connect_info_t* connection = (struct connect_info_t*)conn[i].fd_handle;
+        if (conn[i].fdHandle != NULL) {
+            struct connect_info_t* connection = (struct connect_info_t*)conn[i].fdHandle;
             close(connection->conn_fd);
             u32 device_id = connection->device_id;
             // 节点间关闭连接
@@ -1702,7 +1702,7 @@ int RaSocketBatchClose(struct socket_close_info_t conn[], u32 num)
                 g_conn_client[device_id].del_conn(connection->tag, *connection);
             }
             }
-            conn[i].fd_handle = NULL;
+            conn[i].fdHandle = NULL;
         }
     }
 
@@ -1934,14 +1934,14 @@ void* accept_process_between_nodes(void* arg)
     HCCL_INFO("tid[%d] exit, device_id[%d], server_ip[0x%08x], listen_fd[%d]", SalGetTid(), device_id, server_ip, listenfd);
     return NULL;
 }
-int ra_listen_start_inner_nodes(struct socket_listen_info_t conn)
+int ra_listen_start_inner_nodes(struct SocketListenInfoT conn)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;
     int listenfd;
     struct sockaddr_in servaddr;
-    if(GetInfoFromHandle(conn.socket_handle, device_id, localIp, idx)) {
-        HCCL_ERROR("GetInfoFromHandle error, conn.socket_handle is null");
+    if(GetInfoFromHandle(conn.socketHandle, device_id, localIp, idx)) {
+        HCCL_ERROR("GetInfoFromHandle error, conn.socketHandle is null");
         return -1;
     };
     ra_get_ip_by_dev(localIp, &localIp);
@@ -2032,7 +2032,7 @@ int ra_listen_start_inner_nodes(struct socket_listen_info_t conn)
 }
 
 // 桩函数中，弱化device id的概念，用idx代替，idx = device_id * 2 + nic_port_id
-int ra_listen_start_between_nodes(struct socket_listen_info_t conn)
+int ra_listen_start_between_nodes(struct SocketListenInfoT conn)
 {
     HCCL_INFO("HCCL TEST STUB Port[%u]", conn.port);
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
@@ -2040,8 +2040,8 @@ int ra_listen_start_between_nodes(struct socket_listen_info_t conn)
     int listenfd;
     struct sockaddr_in servaddr;
 
-    if(GetInfoFromHandle(conn.socket_handle, device_id, localIp, idx)) {
-        HCCL_ERROR("GetInfoFromHandle error, conn.socket_handle error");
+    if(GetInfoFromHandle(conn.socketHandle, device_id, localIp, idx)) {
+        HCCL_ERROR("GetInfoFromHandle error, conn.socketHandle error");
         return -1;
     }
 
@@ -2140,13 +2140,13 @@ int ra_listen_start_between_nodes(struct socket_listen_info_t conn)
     return 0;
 }
 
-int RaSocketListenStart(struct socket_listen_info_t conn[], u32 num)
+int RaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
     u32 deviceId = 0, localIp = 0, idx = 0;
     for (u32 listen_cnt=0; listen_cnt<num; listen_cnt++) {
-        if (GetInfoFromHandle(conn[listen_cnt].socket_handle, deviceId, localIp, idx)) {
+        if (GetInfoFromHandle(conn[listen_cnt].socketHandle, deviceId, localIp, idx)) {
             HCCL_ERROR("GetInfoFromHandle error");
             return -1;
         }
@@ -2271,14 +2271,14 @@ int ra_listen_stop_between_nodes(u32 device_id)
     return 0;
 }
 
-int RaSocketListenStop(struct socket_listen_info_t conn[], u32 num)
+int RaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
 {
     // CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
     u32 device_id = 0, localIp = 0, idx = 0;
     for (u32 listen_cnt=0; listen_cnt<num; listen_cnt++) {
-        if (GetInfoFromHandle(conn[listen_cnt].socket_handle, device_id, localIp, idx)) {
-            HCCL_ERROR("GetInfoFromHandle, conn[listen_cnt].socket_handle is null");
+        if (GetInfoFromHandle(conn[listen_cnt].socketHandle, device_id, localIp, idx)) {
+            HCCL_ERROR("GetInfoFromHandle, conn[listen_cnt].socketHandle is null");
             return -1;
         }
         HCCL_INFO("listen stop : listen_cnt=%u, device_id=%d, ipAddr=0x%08x, idx=%u",
@@ -2312,9 +2312,9 @@ int RaSocketListenStop(struct socket_listen_info_t conn[], u32 num)
 }
 
 //节点内获取sockets 信息
-int ra_get_sockets_inner_nodes(u32 role, struct socket_info_t conn[], u32 num, int* count)
+int ra_get_sockets_inner_nodes(u32 role, struct SocketInfoT conn[], u32 num, int* count)
 {
-    HCCL_DEBUG("ra_get_sockets_inner_nodes, server_ip[0x%08x], role[%d]", conn[0].remote_ip.addr.s_addr, role);
+    HCCL_DEBUG("ra_get_sockets_inner_nodes, server_ip[0x%08x], role[%d]", conn[0].remoteIp.addr.s_addr, role);
     int valid_socket_num = 0;
     u32 server_ip;
     char tag[SOCK_CONN_TAG_SIZE + 1];
@@ -2323,41 +2323,41 @@ int ra_get_sockets_inner_nodes(u32 role, struct socket_info_t conn[], u32 num, i
         // 节点内的socket
         if (CONN_CLIENT == role) {
              //client 端，以conn[i] 为key进行查找
-            server_ip = conn[i].remote_ip.addr.s_addr;
+            server_ip = conn[i].remoteIp.addr.s_addr;
             ra_get_ip_by_dev(server_ip, &server_ip);
             memcpy(tag, conn[i].tag, sizeof(conn[i].tag));
-            u32 idx = ((rdevInfo_t *)conn[i].socket_handle)->idx;
+            u32 idx = ((rdevInfo_t *)conn[i].socketHandle)->idx;
             struct connect_info_t* connection = g_conn_client[idx].get_conn(tag, server_ip);
             if (NULL != connection) {
                 // client在batch_connect阶段已完成ip发送
-                conn[i].fd_handle = connection;
+                conn[i].fdHandle = connection;
                 ra_change_ip_to_dev(connection->server_ip, &changeDevId);
-                conn[i].remote_ip.addr.s_addr = changeDevId;
+                conn[i].remoteIp.addr.s_addr = changeDevId;
                 conn[i].status = connection->status;
 
                 HCCL_INFO("client: handle[%p], accept_fd[%d], server_ip[%08x]",
-                        conn[i].fd_handle,
-                        ((struct connect_info_t*)conn[i].fd_handle)->conn_fd,
-                        conn[i].remote_ip.addr.s_addr);
+                        conn[i].fdHandle,
+                        ((struct connect_info_t*)conn[i].fdHandle)->conn_fd,
+                        conn[i].remoteIp.addr.s_addr);
                 valid_socket_num++;
             }
         } else if (CONN_SERVER == role) {
-            server_ip = ((rdevInfo_t *)conn[i].socket_handle)->local_ip;
+            server_ip = ((rdevInfo_t *)conn[i].socketHandle)->local_ip;
             ra_get_ip_by_dev(server_ip, &server_ip);
             memcpy(tag, conn[i].tag, sizeof(conn[0].tag));
-            u32 idx = ((rdevInfo_t *)conn[i].socket_handle)->idx;
+            u32 idx = ((rdevInfo_t *)conn[i].socketHandle)->idx;
             HCCL_DEBUG("ra_get_sockets_inner_nodes: role[%d], conn idx[%u], server ip[0x%x]", role, idx, server_ip);
             struct connect_info_t* connection = g_conn_server[idx].get_conn(tag, server_ip);
             if (NULL != connection) {
                 // client在batch_connect阶段已完成ip发送
-                conn[i].fd_handle = connection;
-                conn[i].remote_ip.addr.s_addr = 0;
-                // conn[i].remote_ip.addr.s_addr = connection->server_ip;
+                conn[i].fdHandle = connection;
+                conn[i].remoteIp.addr.s_addr = 0;
+                // conn[i].remoteIp.addr.s_addr = connection->server_ip;
                 conn[i].status = connection->status;
                 HCCL_INFO("server: handle[%p], accept_fd[%d], remote_ip[%08x]",
-                        conn[i].fd_handle,
-                        ((struct connect_info_t*)conn[i].fd_handle)->conn_fd,
-                        conn[i].remote_ip.addr.s_addr);
+                        conn[i].fdHandle,
+                        ((struct connect_info_t*)conn[i].fdHandle)->conn_fd,
+                        conn[i].remoteIp.addr.s_addr);
 
                 valid_socket_num++;
             }
@@ -2370,55 +2370,55 @@ int ra_get_sockets_inner_nodes(u32 role, struct socket_info_t conn[], u32 num, i
 }
 
 //节点间获取sockets 信息
-int ra_get_sockets_between_nodes(u32 role, struct socket_info_t conn[], u32 num, int* count)
+int ra_get_sockets_between_nodes(u32 role, struct SocketInfoT conn[], u32 num, int* count)
 {
     int valid_socket_num = 0;
     s32 device_id;
     u32 server_ip;
     char tag[SOCK_CONN_TAG_SIZE + 1] = { 0 };
     u32 changeDevId;
-    HCCL_DEBUG("ra_get_sockets_between_nodes, server_ip[0x%08x], role[%d]", conn[0].remote_ip.addr.s_addr, role);
+    HCCL_DEBUG("ra_get_sockets_between_nodes, server_ip[0x%08x], role[%d]", conn[0].remoteIp.addr.s_addr, role);
     for (int i = 0; i < num; i++) {
         // 节点间的socket
         if (CONN_CLIENT == role) {
              //client 端，以conn[i] 为key进行查找
-            server_ip = conn[i].remote_ip.addr.s_addr;
+            server_ip = conn[i].remoteIp.addr.s_addr;
             memcpy(tag, conn[i].tag, sizeof(conn[i].tag));
-            u32 idx = ((rdevInfo_t *)conn[i].socket_handle)->idx;
+            u32 idx = ((rdevInfo_t *)conn[i].socketHandle)->idx;
             struct connect_info_t* connection = g_conn_client_nodes[idx].get_conn(tag, server_ip);
             if (NULL != connection) {
-                conn[i].fd_handle = connection;
-                conn[i].remote_ip.addr.s_addr = connection->server_ip;
+                conn[i].fdHandle = connection;
+                conn[i].remoteIp.addr.s_addr = connection->server_ip;
                 conn[i].status = connection->status;
                 HCCL_INFO("ra_get_sockets_between_nodes, client: fd_handle[%p], accept_fd[%p], server_ip[%08x]",
-                        conn[i].fd_handle,
-                        ((struct connect_info_t*)conn[i].fd_handle)->conn_fd,
-                        conn[i].remote_ip.addr.s_addr);
+                        conn[i].fdHandle,
+                        ((struct connect_info_t*)conn[i].fdHandle)->conn_fd,
+                        conn[i].remoteIp.addr.s_addr);
                 valid_socket_num++;
             } else {
-                conn[i].fd_handle = NULL;
-                conn[i].remote_ip.addr.s_addr = 0;
+                conn[i].fdHandle = NULL;
+                conn[i].remoteIp.addr.s_addr = 0;
                 conn[i].status = 1;
             }
         } else if (CONN_SERVER == role) {
              //Server 端，以自已的IP
-            server_ip = ((rdevInfo_t *)conn[i].socket_handle)->local_ip;
+            server_ip = ((rdevInfo_t *)conn[i].socketHandle)->local_ip;
             memcpy(tag, conn[i].tag, sizeof(conn[i].tag));
-            u32 idx = ((rdevInfo_t *)conn[i].socket_handle)->idx;
+            u32 idx = ((rdevInfo_t *)conn[i].socketHandle)->idx;
             struct connect_info_t* connection = g_conn_server_nodes[idx].get_conn(tag, server_ip);
             if (NULL != connection) {
                 // client在batch_connect阶段已完成ip发送
-                conn[i].fd_handle = connection;
-                conn[i].remote_ip.addr.s_addr = connection->client_ip;
+                conn[i].fdHandle = connection;
+                conn[i].remoteIp.addr.s_addr = connection->client_ip;
                 conn[i].status = connection->status;
                 HCCL_INFO("ra_get_sockets_between_nodes bbb, server: handle[%p], accept_fd[%d], server_ip[%08x]",
-                        conn[i].fd_handle,
-                        ((struct connect_info_t*)conn[i].fd_handle)->conn_fd,
-                        conn[i].remote_ip.addr.s_addr);
+                        conn[i].fdHandle,
+                        ((struct connect_info_t*)conn[i].fdHandle)->conn_fd,
+                        conn[i].remoteIp.addr.s_addr);
                 valid_socket_num++;
             } else {
-                   conn[i].fd_handle = NULL;
-                   conn[i].remote_ip.addr.s_addr = 0;
+                   conn[i].fdHandle = NULL;
+                   conn[i].remoteIp.addr.s_addr = 0;
                    conn[i].status = 1;
             }
         } else {
@@ -2429,7 +2429,7 @@ int ra_get_sockets_between_nodes(u32 role, struct socket_info_t conn[], u32 num,
     return 0;
 }
 
-int RaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+int RaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     if (conn == NULL) {
@@ -2441,11 +2441,11 @@ int RaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedN
     char tag[SOCK_CONN_TAG_SIZE + 1];
     int ret = 0;
     SaluSleep(1000*100);
-    if (conn[0].socket_handle == nullptr) {
+    if (conn[0].socketHandle == nullptr) {
         HCCL_ERROR("socket handle is null");
         return 1;
     }
-    u32 localIp = ((rdevInfo_t *)conn[0].socket_handle)->local_ip;
+    u32 localIp = ((rdevInfo_t *)conn[0].socketHandle)->local_ip;
 
     HCCL_DEBUG("ra_get_sockets, localIp[0x%08x], role[%d], num", localIp, role, num);
     // 此接口固定使用conn[0]的localIp和tag作为查找参数
@@ -2939,19 +2939,19 @@ aclError aclrtDeviceDisablePeerAccess(int32_t devicePhyId)
     return ACL_SUCCESS;
 }
 
-int RaGetIfnum(struct ra_get_ifattr *config, unsigned int *num)
+int RaGetIfnum(struct RaGetIfattr *config, unsigned int *num)
 {
-    if (config->nic_position == 0) {
+    if (config->nicPosition == 0) {
         *num = 4;
-    } else if(config->nic_position == 1) {
+    } else if(config->nicPosition == 1) {
         *num = 2;
     }
     return DRV_ERROR_NONE;
 }
 
-int RaGetIfaddrs(struct ra_get_ifattr *config, struct interface_info ifaddr_infos[], unsigned int *num)
+int RaGetIfaddrs(struct RaGetIfattr *config, struct InterfaceInfo ifaddr_infos[], unsigned int *num)
 {
-    if (config->nic_position == 0) {
+    if (config->nicPosition == 0) {
         ifaddr_infos[0].ifaddr.ip.addr.s_addr = 0x100007f;
         ifaddr_infos[0].ifaddr.mask.s_addr = 0xffff;
         ifaddr_infos[0].ifname[0] = 'e';
@@ -3001,9 +3001,9 @@ int RaGetIfaddrs(struct ra_get_ifattr *config, struct interface_info ifaddr_info
         ifaddr_infos[3].ifname[2] = '\0';
         ifaddr_infos[3].family = AF_INET6;
         *num = 4;
-    } else if (config->nic_position == 1) {
+    } else if (config->nicPosition == 1) {
         CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), DRV_ERROR_WAIT_TIMEOUT);
-        ifaddr_infos[0].ifaddr.ip.addr.s_addr = 0x400007f | (config->phy_id << 28);;
+        ifaddr_infos[0].ifaddr.ip.addr.s_addr = 0x400007f | (config->phyId << 28);;
         ifaddr_infos[0].ifaddr.mask.s_addr = 0xffff;
         ifaddr_infos[0].ifname[0] = 'e';
         ifaddr_infos[0].ifname[1] = 't';
@@ -3040,9 +3040,9 @@ int RaGetIfaddrs(struct ra_get_ifattr *config, struct interface_info ifaddr_info
     return DRV_ERROR_NONE;
 }
 
-int ra_get_ifaddrs_ipv4(struct ra_get_ifattr *config, struct interface_info ifaddr_infos[], unsigned int *num)
+int ra_get_ifaddrs_ipv4(struct RaGetIfattr *config, struct InterfaceInfo ifaddr_infos[], unsigned int *num)
 {
-    if (config->nic_position == 0) {
+    if (config->nicPosition == 0) {
         ifaddr_infos[0].ifaddr.ip.addr.s_addr = 0x100007f;
         ifaddr_infos[0].ifaddr.mask.s_addr = 0xffff;
         ifaddr_infos[0].ifname[0] = 'e';
@@ -3071,9 +3071,9 @@ int ra_get_ifaddrs_ipv4(struct ra_get_ifattr *config, struct interface_info ifad
         ifaddr_infos[2].family = AF_INET;
 
         *num = 3;
-    } else if (config->nic_position == 1) {
+    } else if (config->nicPosition == 1) {
         CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), DRV_ERROR_WAIT_TIMEOUT);
-        ifaddr_infos[0].ifaddr.ip.addr.s_addr = 0x400007f | (config->phy_id << 28);;
+        ifaddr_infos[0].ifaddr.ip.addr.s_addr = 0x400007f | (config->phyId << 28);;
         ifaddr_infos[0].ifaddr.mask.s_addr = 0xffff;
         ifaddr_infos[0].ifname[0] = 'e';
         ifaddr_infos[0].ifname[1] = 't';
@@ -3086,9 +3086,9 @@ int ra_get_ifaddrs_ipv4(struct ra_get_ifattr *config, struct interface_info ifad
     return DRV_ERROR_NONE;
 }
 
-int ra_get_ifaddrs_ipv6(struct ra_get_ifattr *config, struct interface_info ifaddr_infos[], unsigned int *num)
+int ra_get_ifaddrs_ipv6(struct RaGetIfattr *config, struct InterfaceInfo ifaddr_infos[], unsigned int *num)
 {
-    if (config->nic_position == 0) {
+    if (config->nicPosition == 0) {
         ifaddr_infos[0].ifaddr.ip.addr6.s6_addr[0] = 0;
         ifaddr_infos[0].ifaddr.ip.addr6.s6_addr[1] = 0;
         ifaddr_infos[0].ifaddr.ip.addr6.s6_addr[2] = 0;
@@ -3111,7 +3111,7 @@ int ra_get_ifaddrs_ipv6(struct ra_get_ifattr *config, struct interface_info ifad
         ifaddr_infos[0].ifname[2] = '\0';
         ifaddr_infos[0].family = AF_INET6;
         *num = 1;
-    } else if (config->nic_position == 1) {
+    } else if (config->nicPosition == 1) {
         CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), DRV_ERROR_WAIT_TIMEOUT);
         ifaddr_infos[0].ifaddr.ip.addr6.s6_addr[0] = 0;
         ifaddr_infos[0].ifaddr.ip.addr6.s6_addr[1] = 0;
@@ -3168,7 +3168,7 @@ int RaEpollCtlDel(const void *fd_handle)
     return 0;
 }
 
-int RaSocketGetVnicIpInfos(unsigned int phy_id, enum id_type type, unsigned int* ids, unsigned int num, struct ip_info *infos)
+int RaSocketGetVnicIpInfos(unsigned int phy_id, enum IdType type, unsigned int* ids, unsigned int num, struct IpInfo *infos)
 {
     if (type == DeviceIdType::DEVICE_ID_TYPE_PHY_ID) {
             infos[0].ip.addr.s_addr = 2;
@@ -3632,7 +3632,7 @@ int RaTypicalQpModify(void *qp_handle, struct typical_qp *local_qp_info, struct 
     return 0;
 }
  
-int RaTypicalSendWr(void *qp_handle, struct send_wr *wr, struct send_wr_rsp *op_rsp)
+int RaTypicalSendWr(void *qp_handle, struct SendWr *wr, struct SendWrRsp *op_rsp)
 {
     return 0;
 }
@@ -3645,7 +3645,7 @@ int RaTypicalSendWr(void *qp_handle, struct send_wr *wr, struct send_wr_rsp *op_
 //     return 0;
 // }
 
-int RaRdevGetPortStatus(void *rdmaHandle, enum port_status *status)
+int RaRdevGetPortStatus(void *rdmaHandle, enum PortStatus *status)
 {
     return 0;
 }
@@ -3665,7 +3665,7 @@ int RaNormalQpCreate(void *rdev_handle, struct ibv_qp_init_attr *qp_init_attr, v
    CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;
     if(GetInfoFromHandle(rdev_handle, device_id, localIp, idx)) {
-        HCCL_ERROR("GetInfoFromHandle error, conn.socket_handle is null");
+        HCCL_ERROR("GetInfoFromHandle error, conn.socketHandle is null");
         return -1;
     };
     s32 qp_cnt = 0;
@@ -3810,7 +3810,7 @@ int RaNormalQpCreate(void *rdev_handle, struct ibv_qp_init_attr *qp_init_attr, v
     return 0;
 }
 
-int RaSocketAcceptCreditAdd(struct socket_listen_info_t conn[], unsigned int num, unsigned int creditLimit)
+int RaSocketAcceptCreditAdd(struct SocketListenInfoT conn[], unsigned int num, unsigned int creditLimit)
 {
     return 0;
 }
@@ -3879,19 +3879,19 @@ drvError_t drvDeviceGetPhyIdByIndex(unsigned int deviceLogicId, unsigned int *de
     return DRV_ERROR_NONE;
 }
 
-int RaQpCreateWithAttrs(void *rdma_handle, struct qp_ext_attrs *qp_attrs, void **qpHandle)
+int RaQpCreateWithAttrs(void *rdma_handle, struct QpExtAttrs *qp_attrs, void **qpHandle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;
     if(GetInfoFromHandle(rdma_handle, device_id, localIp, idx)) {
-        HCCL_ERROR("GetInfoFromHandle error, conn.socket_handle is null");
+        HCCL_ERROR("GetInfoFromHandle error, conn.socketHandle is null");
         return -1;
     };
     s32 qp_cnt = 0;
     {
         /** 此处可能会与并发，加锁 */
         std::unique_lock<std::mutex> lock(g_qpMutex);
-        g_qp_mode = qp_attrs->qp_mode;
+        g_qp_mode = qp_attrs->qpMode;
         for (; qp_cnt < QP_MAX; qp_cnt++) {
             /*cn为线程资源，暂不考虑竞争问题*/
             if (!cn[qp_cnt].set_flag) {
@@ -3909,7 +3909,7 @@ int RaQpCreateWithAttrs(void *rdma_handle, struct qp_ext_attrs *qp_attrs, void *
         cn[qp_cnt].local_port = -1;
         cn[qp_cnt].qpn = qp_cnt;
         cn[qp_cnt].dev_id = idx;
-        cn[qp_cnt].qpMode = qp_attrs->qp_mode;
+        cn[qp_cnt].qpMode = qp_attrs->qpMode;
         //引用计数自增
         dev_flag[idx] += 1;
 
@@ -4032,19 +4032,19 @@ int RaQpCreateWithAttrs(void *rdma_handle, struct qp_ext_attrs *qp_attrs, void *
     return 0;
 }
 
-int RaAiQpCreate(void *rdma_handle, struct qp_ext_attrs *qp_attrs, struct ai_qp_info *info, void **qpHandle)
+int RaAiQpCreate(void *rdma_handle, struct QpExtAttrs *qp_attrs, struct AiQpInfo *info, void **qpHandle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;
     if(GetInfoFromHandle(rdma_handle, device_id, localIp, idx)) {
-        HCCL_ERROR("GetInfoFromHandle error, conn.socket_handle is null");
+        HCCL_ERROR("GetInfoFromHandle error, conn.socketHandle is null");
         return -1;
     };
     s32 qp_cnt = 0;
     {
         /** 此处可能会与并发，加锁 */
         std::unique_lock<std::mutex> lock(g_qpMutex);
-        g_qp_mode = qp_attrs->qp_mode;
+        g_qp_mode = qp_attrs->qpMode;
         for (; qp_cnt < QP_MAX; qp_cnt++) {
             /*cn为线程资源，暂不考虑竞争问题*/
             if (!cn[qp_cnt].set_flag) {
@@ -4062,7 +4062,7 @@ int RaAiQpCreate(void *rdma_handle, struct qp_ext_attrs *qp_attrs, struct ai_qp_
         cn[qp_cnt].local_port = -1;
         cn[qp_cnt].qpn = qp_cnt;
         cn[qp_cnt].dev_id = idx;
-        cn[qp_cnt].qpMode = qp_attrs->qp_mode;
+        cn[qp_cnt].qpMode = qp_attrs->qpMode;
         //引用计数自增
         dev_flag[idx] += 1;
 
@@ -4182,18 +4182,18 @@ int RaAiQpCreate(void *rdma_handle, struct qp_ext_attrs *qp_attrs, struct ai_qp_
         return -1;
     }
     *qpHandle = &cn[qp_cnt];
-    info->ai_qp_addr = 0x3000;
-    info->sq_index = 1;
-    info->db_index = 2;
+    info->aiQpAddr = 0x3000;
+    info->sqIndex = 1;
+    info->dbIndex = 2;
     return 0;
 }
 
-int RaSendWrV2(QpHandle qphandle, struct send_wr_v2* wr, struct send_wr_rsp* rsp)
+int RaSendWrV2(QpHandle qphandle, struct send_wr_v2* wr, struct SendWrRsp* rsp)
 {
     return 0;
 }
 
-int RaSendNormalWrlist(QpHandle qphandle, struct wr_info wr[], struct send_wr_rsp op_rsp[],
+int RaSendNormalWrlist(QpHandle qphandle, struct wr_info wr[], struct SendWrRsp op_rsp[],
     unsigned int send_num, unsigned int *complete_num)
 {
     return 0;
@@ -4284,7 +4284,7 @@ HcclResult MockCreateOneQp(TransportIbverbs *obj, s32 qpMode, u32 qpsPerConnecti
     return HCCL_SUCCESS;
 }
 
-int RaSaveSnapshot(struct ra_info *info, enum save_snapshot_action action)
+int RaSaveSnapshot(struct ra_info *info, enum SaveSnapshotAction action)
 {
     HCCL_INFO("call %s", __func__);
     return 0;

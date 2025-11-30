@@ -2051,7 +2051,7 @@ HcclResult stub_hrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHan
 }
 
 HcclResult stub_hrtRaAiQpCreate(
-    u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, struct ai_qp_info *info1, QpHandle &qpHandle)
+    u32 phy_id, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, struct AiQpInfo *info1, QpHandle &qpHandle)
 {
     static u32 qpn = 0;
     StubQpInfo *info = new StubQpInfo();
@@ -2063,7 +2063,7 @@ HcclResult stub_hrtRaAiQpCreate(
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, QpHandle &qpHandle)
+HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, QpHandle &qpHandle)
 {
     static u32 qpn = 0;
     StubQpInfo *info = new StubQpInfo();

@@ -1262,7 +1262,7 @@ int ra_rdev_init(int mode, unsigned int notify_type, struct rdev rdev_info, void
     return -1;
 }
 
-int ra_rdev_init_with_backup(struct rdev_init_info *init_info, struct rdev *rdev_info,
+int ra_rdev_init_with_backup(struct RdevInitInfo *init_info, struct rdev *rdev_info,
     struct rdev *backup_rdev_info, void **rdma_handle)
 {
     int mode = init_info->mode;
@@ -1299,7 +1299,7 @@ int ra_rdev_init_with_backup(struct rdev_init_info *init_info, struct rdev *rdev
     return -1;
 }
 
-int ra_rdev_init_v2(struct rdev_init_info init_info, struct rdev rdev_info, void **rdma_handle)
+int ra_rdev_init_v2(struct RdevInitInfo init_info, struct rdev rdev_info, void **rdma_handle)
 {
     int mode = init_info.mode;
     unsigned int notify_type = init_info.notify_type;
@@ -1455,7 +1455,7 @@ u32 map_to_loop_ip(u32 ipAddr)
 } // extern "C"
 #endif
 
-int batch_connect_inner_nodes(struct socket_connect_info_t conn, s32 device_id, u32 num)
+int batch_connect_inner_nodes(struct SocketConnectInfoT conn, s32 device_id, u32 num)
 {
     // 将远端的device 转变成 IP地址
     u32 remote_ip = 0;
@@ -1548,7 +1548,7 @@ int batch_connect_inner_nodes(struct socket_connect_info_t conn, s32 device_id, 
 }
 
 // 此处的device_id，实际是idx编号
-int batch_connect_between_nodes(struct socket_connect_info_t conn, s32 device_id, u32 num)
+int batch_connect_between_nodes(struct SocketConnectInfoT conn, s32 device_id, u32 num)
 {
     HCCL_INFO("batch_connect_between_nodes : device_id[%u], server_ip[0x%08x]", device_id, conn.remote_ip.addr.s_addr);
     if(device_id >=  DEV_MAX_NODES)  {
@@ -1636,7 +1636,7 @@ int batch_connect_between_nodes(struct socket_connect_info_t conn, s32 device_id
     return 0;
 }
 
-int ra_socket_batch_connect(struct socket_connect_info_t conn[], u32 num)
+int ra_socket_batch_connect(struct SocketConnectInfoT conn[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
@@ -1669,12 +1669,12 @@ int ra_socket_batch_connect(struct socket_connect_info_t conn[], u32 num)
 }
 
 /* 目前stub中batch_connect()是同步方式实现的，因此建链失败后abort无需做任何事 */
-int ra_socket_batch_abort(struct socket_connect_info_t conn[], u32 num)
+int ra_socket_batch_abort(struct SocketConnectInfoT conn[], u32 num)
 {
     return 0;
 }
 
-int ra_socket_batch_close(struct socket_close_info_t conn[], u32 num)
+int ra_socket_batch_close(struct SocketCloseInfoT conn[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
@@ -1942,7 +1942,7 @@ void* accept_process_between_nodes(void* arg)
     HCCL_INFO("tid[%d] exit, device_id[%d], server_ip[0x%08x], listen_fd[%d]", SalGetTid(), device_id, server_ip, listenfd);
     return NULL;
 }
-int ra_listen_start_inner_nodes(struct socket_listen_info_t conn)
+int ra_listen_start_inner_nodes(struct SocketListenInfoT conn)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;
@@ -2040,7 +2040,7 @@ int ra_listen_start_inner_nodes(struct socket_listen_info_t conn)
 }
 
 // 桩函数中，弱化device id的概念，用idx代替，idx = device_id * 2 + nic_port_id
-int ra_listen_start_between_nodes(struct socket_listen_info_t conn)
+int ra_listen_start_between_nodes(struct SocketListenInfoT conn)
 {
     HCCL_INFO("HCCL TEST STUB Port[%u]", conn.port);
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
@@ -2148,7 +2148,7 @@ int ra_listen_start_between_nodes(struct socket_listen_info_t conn)
     return 0;
 }
 
-int ra_socket_listen_start(struct socket_listen_info_t conn[], u32 num)
+int ra_socket_listen_start(struct SocketListenInfoT conn[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
@@ -2281,7 +2281,7 @@ int ra_listen_stop_between_nodes(u32 device_id)
     return 0;
 }
 
-int ra_socket_listen_stop(struct socket_listen_info_t conn[], u32 num)
+int ra_socket_listen_stop(struct SocketListenInfoT conn[], u32 num)
 {
     // CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     int ret = 0;
@@ -2322,7 +2322,7 @@ int ra_socket_listen_stop(struct socket_listen_info_t conn[], u32 num)
 }
 
 //节点内获取sockets 信息
-int ra_get_sockets_inner_nodes(u32 role, struct socket_info_t conn[], u32 num, int* count)
+int ra_get_sockets_inner_nodes(u32 role, struct SocketInfoT conn[], u32 num, int* count)
 {
     HCCL_DEBUG("ra_get_sockets_inner_nodes, server_ip[0x%08x], role[%d]", conn[0].remote_ip.addr.s_addr, role);
     int valid_socket_num = 0;
@@ -2380,7 +2380,7 @@ int ra_get_sockets_inner_nodes(u32 role, struct socket_info_t conn[], u32 num, i
 }
 
 //节点间获取sockets 信息
-int ra_get_sockets_between_nodes(u32 role, struct socket_info_t conn[], u32 num, int* count)
+int ra_get_sockets_between_nodes(u32 role, struct SocketInfoT conn[], u32 num, int* count)
 {
     int valid_socket_num = 0;
     s32 device_id;
@@ -2439,7 +2439,7 @@ int ra_get_sockets_between_nodes(u32 role, struct socket_info_t conn[], u32 num,
     return 0;
 }
 
-int ra_get_sockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+int ra_get_sockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     if (conn == NULL) {
@@ -3799,7 +3799,7 @@ int ra_normal_qp_create(void *rdev_handle, struct ibv_qp_init_attr *qp_init_attr
     return 0;
 }
 
-int ra_socket_accept_credit_add(struct socket_listen_info_t conn[], unsigned int num, unsigned int creditLimit)
+int ra_socket_accept_credit_add(struct SocketListenInfoT conn[], unsigned int num, unsigned int creditLimit)
 {
     return 0;
 }
@@ -3874,7 +3874,7 @@ drvError_t drvDeviceGetPhyIdByIndex(unsigned int deviceLogicId, unsigned int *de
     return DRV_ERROR_NONE;
 }
 
-int ra_qp_create_with_attrs(void *rdma_handle, struct qp_ext_attrs *qp_attrs, void **qpHandle)
+int ra_qp_create_with_attrs(void *rdma_handle, struct QpExtAttrs *qp_attrs, void **qpHandle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;
@@ -4027,7 +4027,7 @@ int ra_qp_create_with_attrs(void *rdma_handle, struct qp_ext_attrs *qp_attrs, vo
     return 0;
 }
 
-int ra_ai_qp_create(void *rdma_handle, struct qp_ext_attrs *qp_attrs, struct ai_qp_info *info, void **qpHandle)
+int ra_ai_qp_create(void *rdma_handle, struct QpExtAttrs *qp_attrs, struct AiQpInfo *info, void **qpHandle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     u32 device_id = 0, localIp = 0, idx = 0;

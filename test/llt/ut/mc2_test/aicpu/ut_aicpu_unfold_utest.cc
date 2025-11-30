@@ -3999,7 +3999,7 @@ HcclResult stub_hrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHan
 }
 
 HcclResult stub_hrtRaAiQpCreate(
-    u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, struct ai_qp_info *info1, QpHandle &qpHandle)
+    u32 phy_id, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, struct AiQpInfo *info1, QpHandle &qpHandle)
 {
     static u32 qpn = 0;
     StubQpInfo *info = new StubQpInfo();
@@ -4011,7 +4011,7 @@ HcclResult stub_hrtRaAiQpCreate(
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, QpHandle &qpHandle)
+HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, QpHandle &qpHandle)
 {
     static u32 qpn = 0;
     StubQpInfo *info = new StubQpInfo();
@@ -4063,12 +4063,12 @@ TEST_F(AicpuUnfold_UT, st_MultiQp_useSingleQp)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaMrReg).stubs().will(returnValue(HCCL_SUCCESS));
-    struct qp_ext_attrs;
-    ai_qp_info aiQpInfo;
+    struct QpExtAttrs;
+    AiQpInfo AiQpInfo;
     char aiapaddr[4];
-    aiQpInfo.ai_qp_addr = reinterpret_cast<std::uintptr_t>(&aiapaddr);
-    aiQpInfo.db_index = 1;
-    aiQpInfo.sq_index = 1;
+    AiQpInfo.ai_qp_addr = reinterpret_cast<std::uintptr_t>(&aiapaddr);
+    AiQpInfo.db_index = 1;
+    AiQpInfo.sq_index = 1;
     char aphandle[4];
     QpHandle qpHandle = &aphandle;
     MOCKER(HrtRaQpCreate).stubs().will(invoke(stub_hrtRaQpCreate));
@@ -4543,12 +4543,12 @@ TEST_F(AicpuUnfold_UT, st_MultiQp_32Qp_3Notify)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaMrReg).stubs().will(returnValue(HCCL_SUCCESS));
-    struct qp_ext_attrs;
-    ai_qp_info aiQpInfo;
+    struct QpExtAttrs;
+    AiQpInfo AiQpInfo;
     char aiapaddr[4];
-    aiQpInfo.ai_qp_addr = reinterpret_cast<std::uintptr_t>(&aiapaddr);
-    aiQpInfo.db_index = 1;
-    aiQpInfo.sq_index = 1;
+    AiQpInfo.ai_qp_addr = reinterpret_cast<std::uintptr_t>(&aiapaddr);
+    AiQpInfo.db_index = 1;
+    AiQpInfo.sq_index = 1;
     char aphandle[4];
     QpHandle qpHandle = &aphandle;
     MOCKER(HrtRaQpCreate).stubs().will(invoke(stub_hrtRaQpCreate));

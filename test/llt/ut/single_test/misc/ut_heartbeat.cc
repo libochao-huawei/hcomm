@@ -80,7 +80,7 @@ s32 stub_complete_hrtRaSocketNonBlockRecvHB(const FdHandle fdHandle, void *data,
     return 0;
 }
 
-HcclResult stub_complete_hrtRaBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num)
+HcclResult stub_complete_hrtRaBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {
@@ -91,7 +91,7 @@ HcclResult stub_complete_hrtRaBlockGetSockets(u32 role, struct socket_info_t con
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_complete_hrtRaNonBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+HcclResult stub_complete_hrtRaNonBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {
@@ -103,7 +103,7 @@ HcclResult stub_complete_hrtRaNonBlockGetSockets(u32 role, struct socket_info_t 
     return HCCL_SUCCESS;
 }
 
-extern s32 stub_SocketManagerTest_hrtRaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum);
+extern s32 stub_SocketManagerTest_hrtRaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum);
 
 class HeartBeatTest : public testing::Test {
 protected:

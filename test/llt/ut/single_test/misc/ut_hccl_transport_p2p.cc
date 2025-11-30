@@ -543,12 +543,12 @@ TEST_F(LinkPcieTest, ut_function_for_device)
     my_send_wr_rsp.db.db_info = 0x12345678;
     unsigned int *completeNum = &sendNum;
  
-    struct ai_qp_info qpInfo;
+    struct AiQpInfo qpInfo;
     qpInfo.ai_qp_addr = 0x12345678;
     qpInfo.sq_index = 0;
     qpInfo.db_index = 1;
     linktmp->combineAiQpInfos_.resize(1);
-    linktmp->combineAiQpInfos_[0].aiQpInfo = qpInfo;
+    linktmp->combineAiQpInfos_[0].AiQpInfo = qpInfo;
     WrInfo wrInfo;
     wrInfo.wrData = wr_info_ptr;
     ret = linktmp->TxSendWrlistExt(&wrInfo, sendNum, &my_send_wr_rsp, completeNum);

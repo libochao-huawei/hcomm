@@ -201,7 +201,7 @@ TEST_F(MPI_RAW_SENDRECV_TEST, st_InitTransport_error_test)
 {
     HcclCommConn::AcceptCommConn acceptComConn;
 
-    socket_info_t tmp;
+    SocketInfoT tmp;
     tmp.status = CONNECT_OK;
     tmp.fd_handle = nullptr;
     MOCKER_CPP(&HcclCommConn::GetSocket)
@@ -225,7 +225,7 @@ TEST_F(MPI_RAW_SENDRECV_TEST, st_InitTransport_error_test)
     GlobalMockObject::verify();
 }
 
-HcclResult stub_complete_hrtRaNonBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+HcclResult stub_complete_hrtRaNonBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {
@@ -244,7 +244,7 @@ TEST_F(MPI_RAW_SENDRECV_TEST, st_getsocket_error_test)
     .will(invoke(stub_complete_hrtRaNonBlockGetSockets));
 
     HcclCommConn conn;
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     HcclResult ret = HCCL_SUCCESS;
     ret = conn.GetSocket(socketInfo);
     EXPECT_EQ(ret, HCCL_E_TCP_CONNECT);
@@ -299,7 +299,7 @@ TEST_F(MPI_RAW_SENDRECV_TEST, ut_HcclCommConn_connect_failed)
     delete conn;
     GlobalMockObject::verify();
 
-    socket_connect_info_t connInfos{};
+    SocketConnectInfoT connInfos{};
     MOCKER(ra_socket_batch_abort).stubs()
         .will(returnValue(0))
         .then(returnValue(SOCK_EAGAIN))
@@ -341,7 +341,7 @@ HcclResult stub_TCPMode_hrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *d
 TEST_F(MPI_RAW_SENDRECV_TEST, st_pd_force_and_concurrency_link01)
 {
     s32 nnode, noderank = 0;
-    socket_info_t tmp;
+    SocketInfoT tmp;
     u64 buf = 0;
     HcclRequest request = nullptr;
 

@@ -68,7 +68,7 @@ s32 stub_exchangerSocketTest_hrtRaSocketNonBlockSendHB(const FdHandle fdHandle, 
     return 0;
 }
 
-HcclResult stub_exchangerSocketTest_hrtRaBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num)
+HcclResult stub_exchangerSocketTest_hrtRaBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {
@@ -246,8 +246,8 @@ TEST_F(ExchangerSocketTest, st_ExchangerSocket_init)
     ExchangerSocket Socket(identifier, userRank, userRankSize, deviceIds, userRanks, tag, rankIpMap);
     HcclResult ret = Socket.Init();
     EXPECT_EQ(ret, HCCL_E_PARA);
-    std::vector<socket_info_t> socketInfoVer;
-    socket_info_t socketInfo;
+    std::vector<SocketInfoT> socketInfoVer;
+    SocketInfoT socketInfo;
     socketInfo.socket_handle = (void*)0x00000001;
     socketInfoVer.push_back(socketInfo);
     ret = Socket.GetSockets(0, userRanks, socketInfoVer);

@@ -286,7 +286,7 @@ HcclResult stub_ZeroCopyMemoryAgentSt_IRecv(hccl::HcclSocket *socket, void *recv
     return HCCL_SUCCESS;
 }
 
-s32 stub_SocketManagerTest_hrtRaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+s32 stub_SocketManagerTest_hrtRaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {
@@ -304,7 +304,7 @@ HcclResult stub_SocketManagerTest_GetIsSupSockBatchCloseImmed(u32 phyId, bool &i
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_exchangerSocketTest_hrtRaBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num)
+HcclResult stub_exchangerSocketTest_hrtRaBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {

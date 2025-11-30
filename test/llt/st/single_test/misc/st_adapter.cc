@@ -37,7 +37,7 @@ protected:
 
 TEST_F(HccpTest, ut_hrtRdmaInitWithBackupAttr_notSupport)
 {
-    struct rdev_init_info redvInitInfo;
+    struct RdevInitInfo redvInitInfo;
     redvInitInfo.mode = 1;
     redvInitInfo.notify_type = 0;
     redvInitInfo.enabled_910a_lite = false;

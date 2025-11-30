@@ -97,7 +97,7 @@ HcclResult stub_hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, QpHandle &qpHandle)
+HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, QpHandle &qpHandle)
 {
     StubQpInfo *info = new StubQpInfo();
     info->qpn = gQpn++;

@@ -4137,7 +4137,7 @@ rtError_t stream_class::notify_wait(rt_notify_t* notify)
 rtError_t stream_class::rdma_send(u32 wqe_index, void* cnn)
 {
     struct cn_info* con_info = (struct cn_info* )cnn;
-    struct send_wr* wqe = &(con_info->qp.send_mr_mgr.wq[wqe_index]);
+    struct SendWr* wqe = &(con_info->qp.send_mr_mgr.wq[wqe_index]);
 
     while ((con_info->qp.local_qp_msg_ptr->cnt != con_info->qp.remote_qp_msg_ptr->rsp_cnt) && (con_info->qp.send_mr_mgr.wqe_set[wqe_index])
         ||(!(con_info->qp.send_mr_mgr.wqe_set[wqe_index]))) {
@@ -4147,21 +4147,21 @@ rtError_t stream_class::rdma_send(u32 wqe_index, void* cnn)
     }
 
     con_info->qp.local_qp_msg_ptr->cmd = QP_CMD_WRITE_DATA;
-    con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr = (void*)wqe->dst_addr;
-    con_info->qp.local_qp_msg_ptr->msg.write_info.len =wqe->buf_list->len;
+    con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr = (void*)wqe->dstAddr;
+    con_info->qp.local_qp_msg_ptr->msg.write_info.len =wqe->bufList->len;
     con_info->qp.local_qp_msg_ptr->msg.write_info.op = wqe->op;
-    HCCL_INFO("wqe_index:%d qp.local_qp_msg_ptr.dst_addr[0x%0x] qp write_info.len[%d] wqe_op[%d] local[0x%0x] wqe_dst_addr[0x%0x]",
-            wqe_index, (u64)(con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), con_info->qp.local_qp_msg_ptr->msg.write_info.len, wqe->op, wqe->buf_list->addr,
-            wqe->dst_addr);
+    HCCL_INFO("wqe_index:%d qp.local_qp_msg_ptr.dstAddr[0x%0x] qp write_info.len[%d] wqe_op[%d] local[0x%0x] wqe_dstAddr[0x%0x]",
+            wqe_index, (u64)(con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), con_info->qp.local_qp_msg_ptr->msg.write_info.len, wqe->op, wqe->bufList->addr,
+            wqe->dstAddr);
     HcclResult ret;
     if (wqe->op == 0) {
-        HCCL_INFO("data[0][%f], wqe->buf_list->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->buf_list->addr)));
-        ret = sal_memcpy(&(con_info->qp.local_qp_msg_ptr->msg.write_info.data[0]), QP_MSG_MAX_SIZE, (void*)wqe->buf_list->addr, wqe->buf_list->len);
-        HCCL_INFO("data[0][%f], wqe->buf_list->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->buf_list->addr)));
+        HCCL_INFO("data[0][%f], wqe->bufList->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->bufList->addr)));
+        ret = sal_memcpy(&(con_info->qp.local_qp_msg_ptr->msg.write_info.data[0]), QP_MSG_MAX_SIZE, (void*)wqe->bufList->addr, wqe->bufList->len);
+        HCCL_INFO("data[0][%f], wqe->bufList->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->bufList->addr)));
     } else if (wqe->op == 4){
-        void * ptrTmp = (void*)wqe->buf_list->addr;
-        HCCL_INFO("[TMP] ptrTmp[%p]  notifyData[%d] Length[%d]", ptrTmp, con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], wqe->buf_list->len);
-        ret = sal_memcpy((void*)wqe->buf_list->addr, QP_MSG_MAX_SIZE, (con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), wqe->buf_list->len);
+        void * ptrTmp = (void*)wqe->bufList->addr;
+        HCCL_INFO("[TMP] ptrTmp[%p]  notifyData[%d] Length[%d]", ptrTmp, con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], wqe->bufList->len);
+        ret = sal_memcpy((void*)wqe->bufList->addr, QP_MSG_MAX_SIZE, (con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), wqe->bufList->len);
     } else {
         HCCL_ERROR("rdma send: sal memcpy error");
         return ACL_ERROR_RT_PARAM_INVALID;
@@ -4171,8 +4171,8 @@ rtError_t stream_class::rdma_send(u32 wqe_index, void* cnn)
         return ACL_ERROR_RT_PARAM_INVALID;
     }
     con_info->qp.local_qp_msg_ptr->cnt++;
-    wqe->buf_list->len = 0;
-    wqe->buf_list->addr = 0;
+    wqe->bufList->len = 0;
+    wqe->bufList->addr = 0;
     con_info->qp.send_mr_mgr.wqe_set[wqe_index] = false;/*本wqe已发送，故标记为空*/
 
     return RT_ERROR_NONE;
