@@ -882,7 +882,7 @@ namespace hccl
         u32 nslb_buffersize = 0;
         void *tlv_handle;
         HCCL_INFO("H2DTlvInit HCCL nslb InitHccp version:[%u]-phyId:[%u]-nic_posion:[%u] .",
-                  nslb_hccp.version, nslb_hccp.phyId, nslb_hccp.nic_posion);
+            nslb_hccp.version, nslb_hccp.phyId, nslb_hccp.nic_posion);
 
         HcclResult ret = H2DTlvInit(reinterpret_cast<TlvInitInfo *>(&nslb_hccp), MODULE_TYPE_NSLB, &nslb_buffersize, &tlv_handle);
         if (ret != HCCL_SUCCESS) {
@@ -7945,5 +7945,4 @@ namespace hccl
     {
         return binHandle_;
     }
-
 }
