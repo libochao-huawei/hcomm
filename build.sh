@@ -25,7 +25,7 @@ DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
-CUSTOM_SIGN_SCRIPT=""
+CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/add_header_sign.py"
 ENABLE_SIGN="false"
 VERSION_INFO="8.5.0.0.B010"
 
