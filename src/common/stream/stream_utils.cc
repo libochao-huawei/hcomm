@@ -36,6 +36,7 @@ HcclResult GetStreamCaptureInfo(aclrtStream stream, aclmdlRI &rtModel, bool &isC
         CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclmdlRICaptureGetInfo fail.  return[%d].", __func__, ret),
             HCCL_E_RUNTIME);
     }
+
     auto it = captureStatusHandlers.find(captureStatus);
     if (it != captureStatusHandlers.end()) {
         it->second(isCapture);
