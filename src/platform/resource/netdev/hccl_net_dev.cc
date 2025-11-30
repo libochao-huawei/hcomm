@@ -8,7 +8,6 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "log.h"
-#include "hccl_net_dev_v2.h"
 #include "hccl_net_dev_v1.h"
 #include "adapter_rts_common.h"
 #include "hccl_net_dev.h"
