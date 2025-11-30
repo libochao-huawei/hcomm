@@ -680,13 +680,13 @@ int ra_connect(void* handle, u32 ipAddr, u16 port, u64 timeout_ms)
     }
 }
 
-int RaMrReg(void* handle, struct mr_info *mrInfo)
+int RaMrReg(void* handle, struct MrInfoT *mrInfo)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
       return ((handle == NULL) || (mrInfo == NULL)) ? -1 :0;
 }
 
-int RaGetNotifyMrInfo(void* handle, struct mr_info *mrInfo)
+int RaGetNotifyMrInfo(void* handle, struct MrInfoT *mrInfo)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
       return ((handle == nullptr) || (mrInfo == nullptr)) ? -1 :0;
@@ -757,7 +757,7 @@ int RaSocketSend(const void* handle, const void* data, u64 size, u64 *sentSize)/
     return 0;
 }
 
-int RaTlvInit(struct tlv_init_info *init_info, unsigned int module_type, unsigned int *buffer_size, void **tlv_handle)
+int RaTlvInit(struct TlvInitInfo *init_info, unsigned int module_type, unsigned int *buffer_size, void **tlv_handle)
 {
     return 0;
 }
@@ -767,7 +767,7 @@ int RaTlvDeinit(void *tlv_handle)
     return 0;
 }
  
-int RaTlvRequest(void *tlv_handle, struct tlv_msg *send_msg, struct tlv_msg *recv_msg)
+int RaTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
 {
     return 0;
 }
@@ -893,7 +893,7 @@ int RaSendWrlist(void *handle, struct SendWrlistData wr[], struct SendWrRsp op_r
     return 0;
 }
 
-int RaSendWrlistExt(void *qp_handle, struct send_wrlist_data_ext wr[], struct SendWrRsp op_rsp[],
+int RaSendWrlistExt(void *qp_handle, struct SendWrlistDataExt wr[], struct SendWrRsp op_rsp[],
     unsigned int send_num, unsigned int *complete_num)
 {
     HCCL_INFO("ra_send_wrlist_ext fake");
@@ -1009,13 +1009,13 @@ rtError_t rtRDMADBSend(uint32_t dbindex, uint64_t dbinfo, rtStream_t stream)
     return rtRDMASend((u32)dbinfo, dbindex, stream);
 }
 
-int RaMrDereg(void* handle, struct mr_info *mrInfo)/*桩函数只负责将数据发送出去，不需要设置mr*/
+int RaMrDereg(void* handle, struct MrInfoT *mrInfo)/*桩函数只负责将数据发送出去，不需要设置mr*/
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     return ((handle == NULL) || (mrInfo == NULL)) ? -1 :0;
 }
 
-int RaRegisterMr(const void* handle, struct mr_info *mrInfo, void **mrHandle)
+int RaRegisterMr(const void* handle, struct MrInfoT *mrInfo, void **mrHandle)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     *mrHandle = (void *)0xabcd;
@@ -1048,14 +1048,14 @@ int RaGetNotifyBaseAddr(void *handle, u64 *va, u64 *size)
     return 0;
 }
 
-int RaInit(struct ra_init_config *config)
+int RaInit(struct RaInitConfig *config)
 {
     hccpThreadStatus = 1;
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     return 0;
 }
 
-int RaDeinit(struct ra_init_config *config)
+int RaDeinit(struct RaInitConfig *config)
 {
     // CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     return 0;
@@ -2911,13 +2911,13 @@ int RaSocketGetWhiteListStatus(unsigned int *enable)
     return 0;
 }
 
-int RaSocketWhiteListAdd(void *socket_handle, struct socket_wlist_info_t white_list[], u32 num)
+int RaSocketWhiteListAdd(void *socket_handle, struct SocketWlistInfoT white_list[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     return 0; // 白名单特性主要支持HCCP安全特性，桩函数暂不适配
 }
 
-int RaSocketWhiteListDel(void *socket_handle, struct socket_wlist_info_t white_list[], u32 num)
+int RaSocketWhiteListDel(void *socket_handle, struct SocketWlistInfoT white_list[], u32 num)
 {
     CHK_PRT_RET(hccpThreadStatus == 0, HCCL_ERROR("Hccp thread has not been started"), -1);
     return 0; // 白名单特性主要支持HCCP安全特性，桩函数暂不适配
@@ -3481,12 +3481,12 @@ pid_t drvDeviceGetBareTgid(void)
 	return getpid();
 }
 
-int RaCqCreate(void *rdev_handle, struct cq_attr *attr)
+int RaCqCreate(void *rdev_handle, struct CqAttr *attr)
 {
     return 0;
 }
 
-int RaCqDestroy(void *rdev_handle, struct cq_attr *attr)
+int RaCqDestroy(void *rdev_handle, struct CqAttr *attr)
 {
     return 0;
 }
@@ -3500,7 +3500,7 @@ int RaNormalQpDestroy(void *qp_handle)
     return 0;
 }
 
-int RaSetQpAttrQos(void *qpHandle, struct qos_attr *attr)
+int RaSetQpAttrQos(void *qpHandle, struct QosAttr *attr)
 {
     return 0;
 }
@@ -3515,27 +3515,27 @@ int RaSetQpAttrRetryCnt(void *qpHandle, u32 *retry_cnt)
     return 0;
 }
 
-int RaGetCqeErrInfo(unsigned int phy_id, struct cqe_err_info *info)
+int RaGetCqeErrInfo(unsigned int phy_id, struct CqeErrInfo *info)
 {
     return 0;
 }
 
-int RaRdevGetCqeErrInfoList(void *rdev_handle, struct cqe_err_info *infolist, u32 *num)
+int RaRdevGetCqeErrInfoList(void *rdev_handle, struct CqeErrInfo *infolist, u32 *num)
 {
     return 0;
 }
 
-int RaGetQpAttr(void *qp_handle, struct qp_attr *attr)
+int RaGetQpAttr(void *qp_handle, struct QpAttr *attr)
 {
     return 0;
 }
 
-int RaCreateSrq(const void *rdmaHandle, struct srq_attr *attr)
+int RaCreateSrq(const void *rdmaHandle, struct SrqAttr *attr)
 {
     return 0;
 }
 
-int RaDestroySrq(const void*, struct srq_attr *)
+int RaDestroySrq(const void*, struct SrqAttr *)
 {
     return 0;
 }
@@ -3595,7 +3595,7 @@ int RaCtlEventHandle(int event_handle, const void *fd_handle, int opcode, enum R
     return ret;
 }
 
-int RaWaitEventHandle(int event_handle, struct socket_event_info *event_infos, int timeout, unsigned int maxevents,
+int RaWaitEventHandle(int event_handle, struct SocketEventInfoT *event_infos, int timeout, unsigned int maxevents,
     unsigned int *events_num)
 {
     int event_count;
@@ -3622,12 +3622,12 @@ int RaDestroyEventHandle(int *event_handle)
     return ret;
 }
 
-int RaTypicalQpCreate(void *rdev_handle, int flag, int qp_mode, struct typical_qp *qp_info, void **qp_handle)
+int RaTypicalQpCreate(void *rdev_handle, int flag, int qp_mode, struct TypicalQp *qp_info, void **qp_handle)
 {
     return 0;
 }
  
-int RaTypicalQpModify(void *qp_handle, struct typical_qp *local_qp_info, struct typical_qp *remote_qp_info)
+int RaTypicalQpModify(void *qp_handle, struct TypicalQp *local_qp_info, struct TypicalQp *remote_qp_info)
 {
     return 0;
 }
@@ -3650,12 +3650,12 @@ int RaRdevGetPortStatus(void *rdmaHandle, enum PortStatus *status)
     return 0;
 }
 
-int RaRemapMr(const void *rdmaHandle, struct mem_remap_info info[], unsigned int num)
+int RaRemapMr(const void *rdmaHandle, struct MemRemapInfo info[], unsigned int num)
 {
     return 0;
 }
 
-int RaGetTlsEnable(struct ra_info *info, bool *tls_enable)
+int RaGetTlsEnable(struct RaInfo *info, bool *tls_enable)
 {
     return 0;
 }
@@ -4188,12 +4188,12 @@ int RaAiQpCreate(void *rdma_handle, struct QpExtAttrs *qp_attrs, struct AiQpInfo
     return 0;
 }
 
-int RaSendWrV2(QpHandle qphandle, struct send_wr_v2* wr, struct SendWrRsp* rsp)
+int RaSendWrV2(QpHandle qphandle, struct SendWrV2* wr, struct SendWrRsp* rsp)
 {
     return 0;
 }
 
-int RaSendNormalWrlist(QpHandle qphandle, struct wr_info wr[], struct SendWrRsp op_rsp[],
+int RaSendNormalWrlist(QpHandle qphandle, struct WrInfo wr[], struct SendWrRsp op_rsp[],
     unsigned int send_num, unsigned int *complete_num)
 {
     return 0;
@@ -4204,7 +4204,7 @@ int RaPollCq(QpHandle qphandle, bool status, unsigned int num, void* ptr)
     return 0;
 }
 
-int RaRecvWrlist(QpHandle handle, struct recv_wrlist_data* wr, unsigned int recvNum, unsigned int* completeNum)
+int RaRecvWrlist(QpHandle handle, struct RecvWrlistData* wr, unsigned int recvNum, unsigned int* completeNum)
 {
     return 0;
 }
@@ -4284,13 +4284,13 @@ HcclResult MockCreateOneQp(TransportIbverbs *obj, s32 qpMode, u32 qpsPerConnecti
     return HCCL_SUCCESS;
 }
 
-int RaSaveSnapshot(struct ra_info *info, enum SaveSnapshotAction action)
+int RaSaveSnapshot(struct RaInfo *info, enum SaveSnapshotAction action)
 {
     HCCL_INFO("call %s", __func__);
     return 0;
 }
  
-int RaRestoreSnapshot(struct ra_info *info)
+int RaRestoreSnapshot(struct RaInfo *info)
 {
     HCCL_INFO("call %s", __func__);
     return 0;
