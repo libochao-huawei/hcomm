@@ -17,44 +17,44 @@
 
 #define MAX_TLV_MSG_DATA_LEN 2048U
 
-union op_tlv_init_data {
+union OpTlvInitData {
     struct {
-        unsigned int phy_id;
-        unsigned int module_type;
+        unsigned int phyId;
+        unsigned int moduleType;
         uint32_t reserved[RA_RSVD_NUM_61];
-    } tx_data;
+    } txData;
 
     struct {
-        unsigned int buffer_size;
+        unsigned int bufferSize;
         uint32_t reserved[RA_RSVD_NUM_63];
-    } rx_data;
+    } rxData;
 };
 
-union op_tlv_deinit_data {
+union OpTlvDeinitData {
     struct {
-        unsigned int phy_id;
-        unsigned int module_type;
+        unsigned int phyId;
+        unsigned int moduleType;
         uint32_t reserved[RA_RSVD_NUM_61];
-    } tx_data;
+    } txData;
 
     struct {
         uint32_t reserved[RA_RSVD_NUM_64];
-    } rx_data;
+    } rxData;
 };
 
-union op_tlv_request_data {
+union OpTlvRequestData {
     struct {
-        struct tlv_request_msg_head head;
+        struct TlvRequestMsgHead head;
         char data[MAX_TLV_MSG_DATA_LEN];
-    } tx_data;
+    } txData;
 
     struct {
-        unsigned int recv_bytes;
-        char recv_data[MAX_TLV_MSG_DATA_LEN];
-    } rx_data;
+        unsigned int recvBytes;
+        char recvData[MAX_TLV_MSG_DATA_LEN];
+    } rxData;
 };
 
-int RaHdcTlvInit(struct ra_tlv_handle *tlvHandle);
-int RaHdcTlvDeinit(struct ra_tlv_handle *tlvHandle);
-int RaHdcTlvRequest(struct ra_tlv_handle *tlvHandle, struct tlv_msg *sendMsg, struct tlv_msg *recvMsg);
+int RaHdcTlvInit(struct RaTlvHandle *tlvHandle);
+int RaHdcTlvDeinit(struct RaTlvHandle *tlvHandle);
+int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
 #endif // RA_HDC_TLV_H

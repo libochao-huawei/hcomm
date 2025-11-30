@@ -25,180 +25,180 @@
 
 static pthread_mutex_t gHalApiLock = PTHREAD_MUTEX_INITIALIZER;
 static void *gHalApiHandle = NULL;
-static struct dl_hal_ops gHalOps;
+static struct DlHalOps gHalOps;
 static int gHalApiRefcnt = 0;
 
 static void DlHalApiInit(void)
 {
-    gHalOps.dl_devdrv_get_board_id = (int (*)(unsigned int devId, unsigned int *boardId))
+    gHalOps.dlDevdrvGetBoardId = (int (*)(unsigned int devId, unsigned int *boardId))
         AscendHalDlsym(gHalApiHandle, "devdrv_get_board_id");
 
-    gHalOps.dl_devdrv_get_vnic_ip = (int (*)(unsigned int devId, unsigned int *ipAddr))
+    gHalOps.dlDevdrvGetVnicIp = (int (*)(unsigned int devId, unsigned int *ipAddr))
         AscendHalDlsym(gHalApiHandle, "devdrv_get_vnic_ip");
 
-    gHalOps.dl_drv_get_dev_num = (int (*)(unsigned int *numDev))
+    gHalOps.dlDrvGetDevNum = (int (*)(unsigned int *numDev))
         AscendHalDlsym(gHalApiHandle, "drvGetDevNum");
 
-    gHalOps.dl_drv_get_local_dev_id_by_host_dev_id = (int (*)(uint32_t devId, uint32_t* chipId))
+    gHalOps.dlDrvGetLocalDevIdByHostDevId = (int (*)(uint32_t devId, uint32_t* chipId))
         AscendHalDlsym(gHalApiHandle, "drvGetLocalDevIDByHostDevID");
 
-    gHalOps.dl_drv_get_dev_id_by_local_dev_id = (int (*)(uint32_t localDevId, uint32_t *devId))
+    gHalOps.dlDrvGetDevIdByLocalDevId = (int (*)(uint32_t localDevId, uint32_t *devId))
         AscendHalDlsym(gHalApiHandle, "drvGetDevIDByLocalDevID");
 
-    gHalOps.dl_drv_device_get_index_by_phy_id = (int (*)(uint32_t phyId, uint32_t *devIndex))
+    gHalOps.dlDrvDeviceGetIndexByPhyId = (int (*)(uint32_t phyId, uint32_t *devIndex))
         AscendHalDlsym(gHalApiHandle, "drvDeviceGetIndexByPhyId");
 
-    gHalOps.dl_drv_device_get_phy_id_by_index = (int (*)(unsigned int devIndex, unsigned int *phyId))
+    gHalOps.dlDrvDeviceGetPhyIdByIndex = (int (*)(unsigned int devIndex, unsigned int *phyId))
         AscendHalDlsym(gHalApiHandle, "drvDeviceGetPhyIdByIndex");
 
-    gHalOps.dl_hal_hdc_get_session_attr = (int (*)(HDC_SESSION session, int attr, int *value))
+    gHalOps.dlHalHdcGetSessionAttr = (int (*)(HDC_SESSION session, int attr, int *value))
         AscendHalDlsym(gHalApiHandle, "halHdcGetSessionAttr");
 
-    gHalOps.dl_drv_hdc_get_capacity = (hdcError_t (*)(struct drvHdcCapacity *capacity))
+    gHalOps.dlDrvHdcGetCapacity = (hdcError_t (*)(struct drvHdcCapacity *capacity))
         AscendHalDlsym(gHalApiHandle, "drvHdcGetCapacity");
 
-    gHalOps.dl_drv_hdc_client_create = (hdcError_t (*)(HDC_CLIENT *client, int maxSessionNum,
+    gHalOps.dlDrvHdcClientCreate = (hdcError_t (*)(HDC_CLIENT *client, int maxSessionNum,
         int serviceType, int flag))AscendHalDlsym(gHalApiHandle, "drvHdcClientCreate");
 
-    gHalOps.dl_drv_hdc_client_destroy = (hdcError_t (*)(HDC_CLIENT client))
+    gHalOps.dlDrvHdcClientDestroy = (hdcError_t (*)(HDC_CLIENT client))
         AscendHalDlsym(gHalApiHandle, "drvHdcClientDestroy");
 
-    gHalOps.dl_drv_hdc_session_connect =
+    gHalOps.dlDrvHdcSessionConnect =
         (hdcError_t (*)(int peerNode, int peerDevid, HDC_CLIENT client, HDC_SESSION *session))
             AscendHalDlsym(gHalApiHandle, "drvHdcSessionConnect");
 
-    gHalOps.dl_drv_hdc_server_create = (hdcError_t (*)(int devid, int serviceType, HDC_SERVER *pServer))
+    gHalOps.dlDrvHdcServerCreate = (hdcError_t (*)(int devid, int serviceType, HDC_SERVER *pServer))
         AscendHalDlsym(gHalApiHandle, "drvHdcServerCreate");
 
-    gHalOps.dl_drv_hdc_server_destroy = (hdcError_t (*)(HDC_SERVER server))
+    gHalOps.dlDrvHdcServerDestroy = (hdcError_t (*)(HDC_SERVER server))
         AscendHalDlsym(gHalApiHandle, "drvHdcServerDestroy");
 
-    gHalOps.dl_drv_hdc_session_accept = (hdcError_t (*)(HDC_SERVER server, HDC_SESSION *session))
+    gHalOps.dlDrvHdcSessionAccept = (hdcError_t (*)(HDC_SERVER server, HDC_SESSION *session))
         AscendHalDlsym(gHalApiHandle, "drvHdcSessionAccept");
 
-    gHalOps.dl_drv_hdc_session_close = (hdcError_t (*)(HDC_SESSION session))
+    gHalOps.dlDrvHdcSessionClose = (hdcError_t (*)(HDC_SESSION session))
         AscendHalDlsym(gHalApiHandle, "drvHdcSessionClose");
 
-    gHalOps.dl_drv_hdc_free_msg = (hdcError_t (*)(struct drvHdcMsg *msg))
+    gHalOps.dlDrvHdcFreeMsg = (hdcError_t (*)(struct drvHdcMsg *msg))
         AscendHalDlsym(gHalApiHandle, "drvHdcFreeMsg");
 
-    gHalOps.dl_drv_hdc_reuse_msg = (hdcError_t (*)(struct drvHdcMsg *msg))
+    gHalOps.dlDrvHdcReuseMsg = (hdcError_t (*)(struct drvHdcMsg *msg))
         AscendHalDlsym(gHalApiHandle, "drvHdcReuseMsg");
 
-    gHalOps.dl_drv_hdc_add_msg_buffer = (hdcError_t (*)(struct drvHdcMsg *msg, char *pBuf, int len))
+    gHalOps.dlDrvHdcAddMsgBuffer = (hdcError_t (*)(struct drvHdcMsg *msg, char *pBuf, int len))
         AscendHalDlsym(gHalApiHandle, "drvHdcAddMsgBuffer");
 
-    gHalOps.dl_drv_hdc_get_msg_buffer = (hdcError_t (*)(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen))
+    gHalOps.dlDrvHdcGetMsgBuffer = (hdcError_t (*)(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen))
         AscendHalDlsym(gHalApiHandle, "drvHdcGetMsgBuffer");
 
-    gHalOps.dl_hal_hdc_recv =
+    gHalOps.dlHalHdcRecv =
         (hdcError_t (*)(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, UINT64 flag, int *recvBufCount,
             UINT32 timeout))AscendHalDlsym(gHalApiHandle, "halHdcRecv");
 
-    gHalOps.dl_hal_hdc_send = (hdcError_t (*)(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag,
+    gHalOps.dlHalHdcSend = (hdcError_t (*)(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag,
         UINT32 timeout))AscendHalDlsym(gHalApiHandle, "halHdcSend");
 
-    gHalOps.dl_drv_hdc_alloc_msg = (hdcError_t (*)(HDC_SESSION session, struct drvHdcMsg **ppMsg, int count))
+    gHalOps.dlDrvHdcAllocMsg = (hdcError_t (*)(HDC_SESSION session, struct drvHdcMsg **ppMsg, int count))
         AscendHalDlsym(gHalApiHandle, "drvHdcAllocMsg");
 
-    gHalOps.dl_drv_hdc_set_session_reference = (hdcError_t (*)(HDC_SESSION session))
+    gHalOps.dlDrvHdcSetSessionReference = (hdcError_t (*)(HDC_SESSION session))
         AscendHalDlsym(gHalApiHandle, "drvHdcSetSessionReference");
 
-    gHalOps.dl_drv_get_process_sign = (int (*)(struct process_sign *sign))
+    gHalOps.dlDrvGetProcessSign = (int (*)(struct process_sign *sign))
         AscendHalDlsym(gHalApiHandle, "drvGetProcessSign");
 
-    gHalOps.dl_drv_device_get_bare_tgid = (pid_t (*)(void))
+    gHalOps.dlDrvDeviceGetBareTgid = (pid_t (*)(void))
         AscendHalDlsym(gHalApiHandle, "drvDeviceGetBareTgid");
 
-    gHalOps.dl_hal_notify_get_info = (int (*)(uint32_t devId, uint32_t tsId, uint32_t type, uint32_t *val))
+    gHalOps.dlHalNotifyGetInfo = (int (*)(uint32_t devId, uint32_t tsId, uint32_t type, uint32_t *val))
         AscendHalDlsym(gHalApiHandle, "halNotifyGetInfo");
 
-    gHalOps.dl_hal_mem_alloc = (int (*)(void **pp, unsigned long long size, unsigned long long flag))
+    gHalOps.dlHalMemAlloc = (int (*)(void **pp, unsigned long long size, unsigned long long flag))
         AscendHalDlsym(gHalApiHandle, "halMemAlloc");
 
-    gHalOps.dl_hal_mem_free = (int (*)(void *pp))
+    gHalOps.dlHalMemFree = (int (*)(void *pp))
         AscendHalDlsym(gHalApiHandle, "halMemFree");
 
-    gHalOps.dl_hal_esched_submit_event = (int (*)(uint32_t devId, struct event_summary *event))
+    gHalOps.dlHalEschedSubmitEvent = (int (*)(uint32_t devId, struct event_summary *event))
         AscendHalDlsym(gHalApiHandle, "halEschedSubmitEvent");
 
-    gHalOps.dl_devdrv_set_user_config = (int (*)(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize))
+    gHalOps.dlDevdrvSetUserConfig = (int (*)(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize))
         AscendHalDlsym(gHalApiHandle, "devdrv_set_user_config");
 
-    gHalOps.dl_devdrv_clear_user_config = (int (*)(uint32_t devid, const char *name))
+    gHalOps.dlDevdrvClearUserConfig = (int (*)(uint32_t devid, const char *name))
         AscendHalDlsym(gHalApiHandle, "devdrv_clear_user_config");
 
-    gHalOps.dl_hal_get_device_info = (int (*)(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value))
+    gHalOps.dlHalGetDeviceInfo = (int (*)(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value))
         AscendHalDlsym(gHalApiHandle, "halGetDeviceInfo");
 
-    gHalOps.dl_hal_bind_cgroup = (int (*)(BIND_CGROUP_TYPE bindType))
+    gHalOps.dlHalBindCgroup = (int (*)(BIND_CGROUP_TYPE bindType))
         AscendHalDlsym(gHalApiHandle, "halBindCgroup");
 
-    gHalOps.dl_drv_get_platform_info = (int (*)(uint32_t* info))
+    gHalOps.dlDrvGetPlatformInfo = (int (*)(uint32_t* info))
         AscendHalDlsym(gHalApiHandle, "drvGetPlatformInfo");
 
-    gHalOps.dl_hal_get_chip_info = (int (*)(unsigned int devId, halChipInfo *chipInfo))
+    gHalOps.dlHalGetChipInfo = (int (*)(unsigned int devId, halChipInfo *chipInfo))
         AscendHalDlsym(gHalApiHandle, "halGetChipInfo");
 
 #ifndef HNS_ROCE_LLT
-    gHalOps.dl_hal_mem_ctl =
+    gHalOps.dlHalMemCtl =
         (int (*)(int type, void *paramValue, size_t paramValueSize, void *outValue, size_t *outSizeRet))
             AscendHalDlsym(gHalApiHandle, "halMemCtl");
 #endif
 
-    gHalOps.dl_hal_query_dev_pid = (drvError_t (*)(struct halQueryDevpidInfo info, pid_t *devPid))
+    gHalOps.dlHalQueryDevPid = (drvError_t (*)(struct halQueryDevpidInfo info, pid_t *devPid))
         AscendHalDlsym(gHalApiHandle, "halQueryDevpid");
 
-    gHalOps.dl_hal_hdc_session_connect_ex =
+    gHalOps.dlHalHdcSessionConnectEx =
         (hdcError_t (*)(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client, HDC_SESSION *pSession))
             AscendHalDlsym(gHalApiHandle, "halHdcSessionConnectEx");
 
-    gHalOps.dl_devdrv_get_vnic_ip_by_sdid = (int (*)(unsigned int sdid, unsigned int *ipAddr))
+    gHalOps.dlDevdrvGetVnicIpBySdid = (int (*)(unsigned int sdid, unsigned int *ipAddr))
         AscendHalDlsym(gHalApiHandle, "devdrv_get_vnic_ip_by_sdid");
 
-    gHalOps.dl_hal_mem_bind_sibling =
+    gHalOps.dlHalMemBindSibling =
         (drvError_t (*)(int hostPid, int aicpuPid, unsigned int vfid, unsigned int devId, unsigned int flag))
             AscendHalDlsym(gHalApiHandle, "halMemBindSibling");
 
-    gHalOps.dl_drv_query_process_host_pid = (drvError_t (*)(int pid, unsigned int *chipId, unsigned int *vfid,
+    gHalOps.dlDrvQueryProcessHostPid = (drvError_t (*)(int pid, unsigned int *chipId, unsigned int *vfid,
         unsigned int *hostPid, unsigned int *cpType))
             AscendHalDlsym(gHalApiHandle, "drvQueryProcessHostPid");
 
-    gHalOps.dl_hal_mem_get_info_ex = (drvError_t (*)(unsigned int devId, unsigned int type, struct MemInfo *info))
+    gHalOps.dlHalMemGetInfoEx = (drvError_t (*)(unsigned int devId, unsigned int type, struct MemInfo *info))
             AscendHalDlsym(gHalApiHandle, "halMemGetInfoEx");
 
-    gHalOps.dl_hal_grp_query = (int (*)(GroupQueryCmdType cmd, void *inBuff, unsigned int inLen, void *outBuff,
+    gHalOps.dlHalGrpQuery = (int (*)(GroupQueryCmdType cmd, void *inBuff, unsigned int inLen, void *outBuff,
         unsigned int *outLen))
             AscendHalDlsym(gHalApiHandle, "halGrpQuery");
 
-    gHalOps.dl_hal_sensor_node_register =
+    gHalOps.dlHalSensorNodeRegister =
         (drvError_t (*)(uint32_t devid, struct halSensorNodeCfg *cfg, uint64_t *handle))
         AscendHalDlsym(gHalApiHandle, "halSensorNodeRegister");
 
-    gHalOps.dl_hal_sensor_node_unregister = (drvError_t (*)(uint32_t devid, uint64_t handle))
+    gHalOps.dlHalSensorNodeUnregister = (drvError_t (*)(uint32_t devid, uint64_t handle))
         AscendHalDlsym(gHalApiHandle, "halSensorNodeUnregister");
 
-    gHalOps.dl_hal_sensor_node_update_state =
+    gHalOps.dlHalSensorNodeUpdateState =
         (drvError_t (*)(uint32_t devid, uint64_t handle, int val, halGeneralEventType_t assertion))
         AscendHalDlsym(gHalApiHandle, "halSensorNodeUpdateState");
 
-    gHalOps.dl_hal_buff_alloc_align_ex = (int (*)(uint64_t size, unsigned int align, unsigned long flag, int grpId,
+    gHalOps.dlHalBuffAllocAlignEx = (int (*)(uint64_t size, unsigned int align, unsigned long flag, int grpId,
         void **buff))
             AscendHalDlsym(gHalApiHandle, "halBuffAllocAlignEx");
 
-    gHalOps.dl_hal_buff_free = (int (*)(void *buff))
+    gHalOps.dlHalBuffFree = (int (*)(void *buff))
             AscendHalDlsym(gHalApiHandle, "halBuffFree");
 
-    gHalOps.dl_hal_esched_attach_device = (int (*)(uint32_t devId))
+    gHalOps.dlHalEschedAttachDevice = (int (*)(uint32_t devId))
         AscendHalDlsym(gHalApiHandle, "halEschedAttachDevice");
 
-    gHalOps.dl_hal_esched_create_grp = (int (*)(uint32_t devId, uint32_t grpId, GROUP_TYPE type))
+    gHalOps.dlHalEschedCreateGrp = (int (*)(uint32_t devId, uint32_t grpId, GROUP_TYPE type))
         AscendHalDlsym(gHalApiHandle, "halEschedCreateGrp");
 
-    gHalOps.dl_hal_esched_subscribe_event = (int (*)(uint32_t devId, uint32_t grpId, uint32_t threadId,
+    gHalOps.dlHalEschedSubscribeEvent = (int (*)(uint32_t devId, uint32_t grpId, uint32_t threadId,
         uint64_t eventBitmap))AscendHalDlsym(gHalApiHandle, "halEschedSubscribeEvent");
 
-    gHalOps.dl_hal_esched_wait_event = (int (*)(uint32_t devId, uint32_t grpId, uint32_t threadId, int32_t timeout,
+    gHalOps.dlHalEschedWaitEvent = (int (*)(uint32_t devId, uint32_t grpId, uint32_t threadId, int32_t timeout,
         struct event_info *event))AscendHalDlsym(gHalApiHandle, "halEschedWaitEvent");
 
     return;
@@ -251,270 +251,270 @@ int DlHalInit(void)
 
 int DlDevdrvGetBoardId(unsigned int devId, unsigned int *boardId)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_devdrv_get_board_id, "dl_devdrv_get_board_id");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvGetBoardId, "dl_devdrv_get_board_id");
 
-    return gHalOps.dl_devdrv_get_board_id(devId, boardId);
+    return gHalOps.dlDevdrvGetBoardId(devId, boardId);
 }
 
 int DlDevdrvGetVnicIp(unsigned int devId, unsigned int *ipAddr)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_devdrv_get_vnic_ip, "dl_devdrv_get_vnic_ip");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvGetVnicIp, "dl_devdrv_get_vnic_ip");
 
-    return gHalOps.dl_devdrv_get_vnic_ip(devId, ipAddr);
+    return gHalOps.dlDevdrvGetVnicIp(devId, ipAddr);
 }
 
 int DlDevdrvGetVnicIpBySdid(unsigned int sdid, unsigned int *ipAddr)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_devdrv_get_vnic_ip_by_sdid, "dl_devdrv_get_vnic_ip_by_sdid");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvGetVnicIpBySdid, "dl_devdrv_get_vnic_ip_by_sdid");
 
-    return gHalOps.dl_devdrv_get_vnic_ip_by_sdid(sdid, ipAddr);
+    return gHalOps.dlDevdrvGetVnicIpBySdid(sdid, ipAddr);
 }
 
 int DlDrvGetDevNum(unsigned int *numDev)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_get_dev_num, "dl_drv_get_dev_num");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvGetDevNum, "dl_drv_get_dev_num");
 
-    return gHalOps.dl_drv_get_dev_num(numDev);
+    return gHalOps.dlDrvGetDevNum(numDev);
 }
 
 int DlDrvGetLocalDevIdByHostDevId(unsigned int devId, unsigned int* chipId)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_get_local_dev_id_by_host_dev_id,
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvGetLocalDevIdByHostDevId,
         "dl_drv_get_local_dev_id_by_host_dev_id");
 
-    return gHalOps.dl_drv_get_local_dev_id_by_host_dev_id(devId, chipId);
+    return gHalOps.dlDrvGetLocalDevIdByHostDevId(devId, chipId);
 }
 
 int DlDrvDeviceGetIndexByPhyId(uint32_t phyId, uint32_t *devIndex)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_device_get_index_by_phy_id,
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvDeviceGetIndexByPhyId,
         "dl_drv_device_get_index_by_phy_id");
 
-    return gHalOps.dl_drv_device_get_index_by_phy_id(phyId, devIndex);
+    return gHalOps.dlDrvDeviceGetIndexByPhyId(phyId, devIndex);
 }
 
 int DlDrvGetDevIdByLocalDevId(unsigned int localDevId, unsigned int *devId)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_get_dev_id_by_local_dev_id,
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvGetDevIdByLocalDevId,
         "dl_drv_get_dev_id_by_local_dev_id");
 
-    return gHalOps.dl_drv_get_dev_id_by_local_dev_id(localDevId, devId);
+    return gHalOps.dlDrvGetDevIdByLocalDevId(localDevId, devId);
 }
 
 int DlDrvDeviceGetPhyIdByIndex(unsigned int devIndex, unsigned int *phyId)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_device_get_phy_id_by_index,
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvDeviceGetPhyIdByIndex,
         "dl_drv_device_get_phy_id_by_index");
 
-    return gHalOps.dl_drv_device_get_phy_id_by_index(devIndex, phyId);
+    return gHalOps.dlDrvDeviceGetPhyIdByIndex(devIndex, phyId);
 }
 
 drvError_t DlHalQueryDevPid(struct halQueryDevpidInfo info, pid_t *devPid)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_query_dev_pid, "dl_hal_query_dev_pid");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalQueryDevPid, "dl_hal_query_dev_pid");
 
-    return gHalOps.dl_hal_query_dev_pid(info, devPid);
+    return gHalOps.dlHalQueryDevPid(info, devPid);
 }
 
 drvError_t DlHalMemBindSibling(int hostPid, int aicpuPid, unsigned int vfid, unsigned int devId,
     unsigned int flag)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_mem_bind_sibling, "dl_hal_mem_bind_sibling");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemBindSibling, "dl_hal_mem_bind_sibling");
 
-    return gHalOps.dl_hal_mem_bind_sibling(hostPid, aicpuPid, vfid, devId, flag);
+    return gHalOps.dlHalMemBindSibling(hostPid, aicpuPid, vfid, devId, flag);
 }
 
 drvError_t DlDrvQueryProcessHostPid(int pid, unsigned int *chipId, unsigned int *vfid, unsigned int *hostPid,
     unsigned int *cpType)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_query_process_host_pid, "dl_drv_query_process_host_pid");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvQueryProcessHostPid, "dl_drv_query_process_host_pid");
 
-    return gHalOps.dl_drv_query_process_host_pid(pid, chipId, vfid, hostPid, cpType);
+    return gHalOps.dlDrvQueryProcessHostPid(pid, chipId, vfid, hostPid, cpType);
 }
 
 drvError_t DlHalMemGetInfoEx(unsigned int devId, unsigned int type, struct MemInfo *info)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_mem_get_info_ex, "dl_hal_mem_get_info_ex");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemGetInfoEx, "dl_hal_mem_get_info_ex");
 
-    return gHalOps.dl_hal_mem_get_info_ex(devId, type, info);
+    return gHalOps.dlHalMemGetInfoEx(devId, type, info);
 }
 
 int DlHalGrpQuery(GroupQueryCmdType cmd, void *inBuff, unsigned int inLen, void *outBuff, unsigned int *outLen)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_grp_query, "dl_hal_grp_query");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalGrpQuery, "dl_hal_grp_query");
 
-    return gHalOps.dl_hal_grp_query(cmd, inBuff, inLen, outBuff, outLen);
+    return gHalOps.dlHalGrpQuery(cmd, inBuff, inLen, outBuff, outLen);
 }
 
 int DlHalHdcGetSessionAttr(HDC_SESSION session, int attr, int *value)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_hdc_get_session_attr, "dl_hal_hdc_get_session_attr");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHdcGetSessionAttr, "dl_hal_hdc_get_session_attr");
 
-    return gHalOps.dl_hal_hdc_get_session_attr(session, attr, value);
+    return gHalOps.dlHalHdcGetSessionAttr(session, attr, value);
 }
 
 hdcError_t DlDrvHdcGetCapacity(struct drvHdcCapacity *capacity)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_get_capacity, "dl_drv_hdc_get_capacity");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcGetCapacity, "dl_drv_hdc_get_capacity");
 
-    return gHalOps.dl_drv_hdc_get_capacity(capacity);
+    return gHalOps.dlDrvHdcGetCapacity(capacity);
 }
 
 hdcError_t DlDrvHdcClientCreate(HDC_CLIENT *client, int maxSessionNum, int serviceType, int flag)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_client_create, "dl_drv_hdc_client_create");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcClientCreate, "dl_drv_hdc_client_create");
 
-    return gHalOps.dl_drv_hdc_client_create(client, maxSessionNum, serviceType, flag);
+    return gHalOps.dlDrvHdcClientCreate(client, maxSessionNum, serviceType, flag);
 }
 
 hdcError_t DlDrvHdcClientDestroy(HDC_CLIENT client)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_client_destroy, "dl_drv_hdc_client_destroy");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcClientDestroy, "dl_drv_hdc_client_destroy");
 
-    return gHalOps.dl_drv_hdc_client_destroy(client);
+    return gHalOps.dlDrvHdcClientDestroy(client);
 }
 
 hdcError_t DlDrvHdcSessionConnect(int peerNode, int peerDevid, HDC_CLIENT client, HDC_SESSION *session)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_session_connect, "dl_drv_hdc_session_connect");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcSessionConnect, "dl_drv_hdc_session_connect");
 
-    return gHalOps.dl_drv_hdc_session_connect(peerNode, peerDevid, client, session);
+    return gHalOps.dlDrvHdcSessionConnect(peerNode, peerDevid, client, session);
 }
 
 hdcError_t DlHalHdcSessionConnectEx(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client,
     HDC_SESSION *pSession)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_hdc_session_connect_ex, "dl_hal_hdc_session_connect_ex");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHdcSessionConnectEx, "dl_hal_hdc_session_connect_ex");
 
-    return gHalOps.dl_hal_hdc_session_connect_ex(peerNode, peerDevid, peerPid, client, pSession);
+    return gHalOps.dlHalHdcSessionConnectEx(peerNode, peerDevid, peerPid, client, pSession);
 }
 
 hdcError_t DlDrvHdcServerCreate(int devid, int serviceType, HDC_SERVER *pServer)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_server_create, "dl_drv_hdc_server_create");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcServerCreate, "dl_drv_hdc_server_create");
 
-    return gHalOps.dl_drv_hdc_server_create(devid, serviceType, pServer);
+    return gHalOps.dlDrvHdcServerCreate(devid, serviceType, pServer);
 }
 
 hdcError_t DlDrvHdcServerDestroy(HDC_SERVER server)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_server_destroy, "dl_drv_hdc_server_destroy");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcServerDestroy, "dl_drv_hdc_server_destroy");
 
-    return gHalOps.dl_drv_hdc_server_destroy(server);
+    return gHalOps.dlDrvHdcServerDestroy(server);
 }
 
 hdcError_t DlDrvHdcSessionAccept(HDC_SERVER server, HDC_SESSION *session)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_session_accept, "dl_drv_hdc_session_accept");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcSessionAccept, "dl_drv_hdc_session_accept");
 
-    return gHalOps.dl_drv_hdc_session_accept(server, session);
+    return gHalOps.dlDrvHdcSessionAccept(server, session);
 }
 
 hdcError_t DlDrvHdcSessionClose(HDC_SESSION session)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_session_close, "dl_drv_hdc_session_close");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcSessionClose, "dl_drv_hdc_session_close");
 
-    return gHalOps.dl_drv_hdc_session_close(session);
+    return gHalOps.dlDrvHdcSessionClose(session);
 }
 
 hdcError_t DlDrvHdcFreeMsg(struct drvHdcMsg *msg)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_free_msg, "dl_drv_hdc_free_msg");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcFreeMsg, "dl_drv_hdc_free_msg");
 
-    return gHalOps.dl_drv_hdc_free_msg(msg);
+    return gHalOps.dlDrvHdcFreeMsg(msg);
 }
 
 hdcError_t DlDrvHdcReuseMsg(struct drvHdcMsg *msg)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_reuse_msg, "dl_drv_hdc_reuse_msg");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcReuseMsg, "dl_drv_hdc_reuse_msg");
 
-    return gHalOps.dl_drv_hdc_reuse_msg(msg);
+    return gHalOps.dlDrvHdcReuseMsg(msg);
 }
 
 hdcError_t DlDrvHdcAddMsgBuffer(struct drvHdcMsg *msg, char *pBuf, int len)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_add_msg_buffer, "dl_drv_hdc_add_msg_buffer");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcAddMsgBuffer, "dl_drv_hdc_add_msg_buffer");
 
-    return gHalOps.dl_drv_hdc_add_msg_buffer(msg, pBuf, len);
+    return gHalOps.dlDrvHdcAddMsgBuffer(msg, pBuf, len);
 }
 
 hdcError_t DlDrvHdcGetMsgBuffer(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_get_msg_buffer, "dl_drv_hdc_get_msg_buffer");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcGetMsgBuffer, "dl_drv_hdc_get_msg_buffer");
 
-    return gHalOps.dl_drv_hdc_get_msg_buffer(msg, index, pBuf, pLen);
+    return gHalOps.dlDrvHdcGetMsgBuffer(msg, index, pBuf, pLen);
 }
 
 hdcError_t DlHalHdcRecv(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, UINT64 flag,
     int *recvBufCount, UINT32 timeout)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_hdc_recv, "dl_hal_hdc_recv");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHdcRecv, "dl_hal_hdc_recv");
 
-    return gHalOps.dl_hal_hdc_recv(session, pMsg, bufLen, flag, recvBufCount, timeout);
+    return gHalOps.dlHalHdcRecv(session, pMsg, bufLen, flag, recvBufCount, timeout);
 }
 
 hdcError_t DlHalHdcSend(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag, UINT32 timeout)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_hdc_send, "dl_hal_hdc_send");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalHdcSend, "dl_hal_hdc_send");
 
-    return gHalOps.dl_hal_hdc_send(session, pMsg, flag, timeout);
+    return gHalOps.dlHalHdcSend(session, pMsg, flag, timeout);
 }
 
 hdcError_t DlDrvHdcAllocMsg(HDC_SESSION session, struct drvHdcMsg **ppMsg, int count)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_alloc_msg, "dl_drv_hdc_alloc_msg");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcAllocMsg, "dl_drv_hdc_alloc_msg");
 
-    return gHalOps.dl_drv_hdc_alloc_msg(session, ppMsg, count);
+    return gHalOps.dlDrvHdcAllocMsg(session, ppMsg, count);
 }
 
 hdcError_t DlDrvHdcSetSessionReference(HDC_SESSION session)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_hdc_set_session_reference,
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvHdcSetSessionReference,
         "dl_drv_hdc_set_session_reference");
 
-    return gHalOps.dl_drv_hdc_set_session_reference(session);
+    return gHalOps.dlDrvHdcSetSessionReference(session);
 }
 
 int DlDrvGetProcessSign(struct process_sign *sign)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_get_process_sign, "dl_drv_get_process_sign");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvGetProcessSign, "dl_drv_get_process_sign");
 
-    return gHalOps.dl_drv_get_process_sign(sign);
+    return gHalOps.dlDrvGetProcessSign(sign);
 }
 
 pid_t DlDrvDeviceGetBareTgid(void)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_device_get_bare_tgid, "dl_drv_device_get_bare_tgid");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvDeviceGetBareTgid, "dl_drv_device_get_bare_tgid");
 
-    return gHalOps.dl_drv_device_get_bare_tgid();
+    return gHalOps.dlDrvDeviceGetBareTgid();
 }
 
 int DlHalNotifyGetInfo(uint32_t devId, uint32_t tsId, uint32_t type, uint32_t *val)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_notify_get_info, "dl_hal_notify_get_info");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalNotifyGetInfo, "dl_hal_notify_get_info");
 
-    return gHalOps.dl_hal_notify_get_info(devId, tsId, type, val);
+    return gHalOps.dlHalNotifyGetInfo(devId, tsId, type, val);
 }
 
 int DlHalMemAlloc(void **pp, unsigned long long size, unsigned long long flag)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_mem_alloc, "dl_hal_mem_alloc");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemAlloc, "dl_hal_mem_alloc");
 
-    return gHalOps.dl_hal_mem_alloc(pp, size, flag);
+    return gHalOps.dlHalMemAlloc(pp, size, flag);
 }
 
 int DlHalMemFree(void *pp)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_mem_free, "dl_hal_mem_free");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemFree, "dl_hal_mem_free");
 
-    return gHalOps.dl_hal_mem_free(pp);
+    return gHalOps.dlHalMemFree(pp);
 }
 
 int DlHalEschedSubmitEvent(uint32_t devId, struct event_summary *event)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_esched_submit_event, "dl_hal_esched_submit_event");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalEschedSubmitEvent, "dl_hal_esched_submit_event");
 
-    return gHalOps.dl_hal_esched_submit_event(devId, event);
+    return gHalOps.dlHalEschedSubmitEvent(devId, event);
 }
 
 int DlDevdrvSetUserConfig(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize)
@@ -526,9 +526,9 @@ int DlDevdrvSetUserConfig(uint32_t devid, const char *name, uint8_t *buf, uint32
         roce_err("dl_hal_init failed, ret:%d", ret);
         return ret;
     }
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_devdrv_set_user_config, "dl_devdrv_set_user_config");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvSetUserConfig, "dl_devdrv_set_user_config");
 
-    ret = gHalOps.dl_devdrv_set_user_config(devid, name, buf, bufSize);
+    ret = gHalOps.dlDevdrvSetUserConfig(devid, name, buf, bufSize);
     DlHalDeinit();
 
     return ret;
@@ -543,9 +543,9 @@ int DlDevdrvClearUserConfig(uint32_t devid, const char *name)
         roce_err("dl_hal_init failed, ret:%d", ret);
         return ret;
     }
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_devdrv_clear_user_config, "dl_devdrv_clear_user_config");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvClearUserConfig, "dl_devdrv_clear_user_config");
 
-    ret = gHalOps.dl_devdrv_clear_user_config(devid, name);
+    ret = gHalOps.dlDevdrvClearUserConfig(devid, name);
     DlHalDeinit();
 
     return ret;
@@ -553,44 +553,44 @@ int DlDevdrvClearUserConfig(uint32_t devid, const char *name)
 
 int DlHalMemCtl(int type, void *paramValue, size_t paramValueSize, void *outValue, size_t *outSizeRet)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_mem_ctl, "dl_hal_mem_ctl");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalMemCtl, "dl_hal_mem_ctl");
 
-    return gHalOps.dl_hal_mem_ctl(type, paramValue, paramValueSize, outValue, outSizeRet);
+    return gHalOps.dlHalMemCtl(type, paramValue, paramValueSize, outValue, outSizeRet);
 }
 
 int DlHalBuffAllocAlignEx(uint64_t size, unsigned int align, unsigned long flag, int grpId, void **buff)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_buff_alloc_align_ex, "dl_hal_buff_alloc_align_ex");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalBuffAllocAlignEx, "dl_hal_buff_alloc_align_ex");
 
-    return gHalOps.dl_hal_buff_alloc_align_ex(size, align, flag, grpId, buff);
+    return gHalOps.dlHalBuffAllocAlignEx(size, align, flag, grpId, buff);
 }
 
 int DlHalBuffFree(void *buff)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_buff_free, "dl_hal_buff_free");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalBuffFree, "dl_hal_buff_free");
 
-    return gHalOps.dl_hal_buff_free(buff);
+    return gHalOps.dlHalBuffFree(buff);
 }
 
 int DlHalBindCgroup(BIND_CGROUP_TYPE bindType)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_bind_cgroup, "dl_hal_bind_cgroup");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalBindCgroup, "dl_hal_bind_cgroup");
 
-    return gHalOps.dl_hal_bind_cgroup(bindType);
+    return gHalOps.dlHalBindCgroup(bindType);
 }
 
 int DlDrvGetPlatformInfo(uint32_t* info)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_drv_get_platform_info, "dl_drv_get_platform_info");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDrvGetPlatformInfo, "dl_drv_get_platform_info");
 
-    return gHalOps.dl_drv_get_platform_info(info);
+    return gHalOps.dlDrvGetPlatformInfo(info);
 }
 
 int DlHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_get_device_info, "dl_hal_get_device_info");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalGetDeviceInfo, "dl_hal_get_device_info");
 
-    return gHalOps.dl_hal_get_device_info(devId, moduleType, infoType, value);
+    return gHalOps.dlHalGetDeviceInfo(devId, moduleType, infoType, value);
 }
 
 int DlHalGetChipInfo(unsigned int devId, halChipInfo *chipInfo)
@@ -600,19 +600,19 @@ int DlHalGetChipInfo(unsigned int devId, halChipInfo *chipInfo)
         return -EINVAL;
     }
 
-    if (gHalOps.dl_hal_get_chip_info == NULL) {
+    if (gHalOps.dlHalGetChipInfo == NULL) {
         roce_warn("dl_hal_get_chip_info is NULL!");
         return -EINVAL;
     }
 
-    return gHalOps.dl_hal_get_chip_info(devId, chipInfo);
+    return gHalOps.dlHalGetChipInfo(devId, chipInfo);
 }
 
 int DlHalSensorNodeRegister(uint32_t devid, struct halSensorNodeCfg *cfg, uint64_t *handle)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_sensor_node_register, "dl_hal_sensor_node_register");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalSensorNodeRegister, "dl_hal_sensor_node_register");
 
-    return gHalOps.dl_hal_sensor_node_register(devid, cfg, handle);
+    return gHalOps.dlHalSensorNodeRegister(devid, cfg, handle);
 }
 
 int DlHalSensorNodeUnregister(uint32_t devid, uint64_t handle)
@@ -622,44 +622,44 @@ int DlHalSensorNodeUnregister(uint32_t devid, uint64_t handle)
         return 0;
     }
 
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_sensor_node_unregister, "dl_hal_sensor_node_unregister");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalSensorNodeUnregister, "dl_hal_sensor_node_unregister");
 
-    return gHalOps.dl_hal_sensor_node_unregister(devid, handle);
+    return gHalOps.dlHalSensorNodeUnregister(devid, handle);
 }
 
 int DlHalSensorNodeUpdateState(uint32_t devid, uint64_t handle, int val, halGeneralEventType_t assertion)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_sensor_node_update_state,
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalSensorNodeUpdateState,
         "dl_hal_sensor_node_update_state");
 
-    return gHalOps.dl_hal_sensor_node_update_state(devid, handle, val, assertion);
+    return gHalOps.dlHalSensorNodeUpdateState(devid, handle, val, assertion);
 }
 
 int DlHalEschedAttachDevice(uint32_t devId)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_esched_attach_device, "dl_hal_esched_attach_device");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalEschedAttachDevice, "dl_hal_esched_attach_device");
 
-    return gHalOps.dl_hal_esched_attach_device(devId);
+    return gHalOps.dlHalEschedAttachDevice(devId);
 }
 
 int DlHalEschedCreateGrp(uint32_t devId, uint32_t grpId, GROUP_TYPE type)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_esched_create_grp, "dl_hal_esched_create_grp");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalEschedCreateGrp, "dl_hal_esched_create_grp");
 
-    return gHalOps.dl_hal_esched_create_grp(devId, grpId, type);
+    return gHalOps.dlHalEschedCreateGrp(devId, grpId, type);
 }
 
 int DlHalEschedSubscribeEvent(uint32_t devId, uint32_t grpId, uint32_t threadId, uint64_t eventBitmap)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_esched_subscribe_event, "dl_hal_esched_subscribe_event");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalEschedSubscribeEvent, "dl_hal_esched_subscribe_event");
 
-    return gHalOps.dl_hal_esched_subscribe_event(devId, grpId, threadId, eventBitmap);
+    return gHalOps.dlHalEschedSubscribeEvent(devId, grpId, threadId, eventBitmap);
 }
 
 int DlHalEschedWaitEvent(uint32_t devId, uint32_t grpId, uint32_t threadId, int32_t timeout,
     struct event_info *event)
 {
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dl_hal_esched_wait_event, "dl_hal_esched_wait_event");
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalEschedWaitEvent, "dl_hal_esched_wait_event");
 
-    return gHalOps.dl_hal_esched_wait_event(devId, grpId, threadId, timeout, event);
+    return gHalOps.dlHalEschedWaitEvent(devId, grpId, threadId, timeout, event);
 }

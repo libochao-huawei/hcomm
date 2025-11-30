@@ -36,7 +36,7 @@ extern "C" {
 #define MAX_INTERFACE_NUM_BAK   1024
 #define MAX_SOCKET_EVENT_NUM 1024
 
-enum notify_type {
+enum NotifyTypeT {
     NO_USE = 0,
     NOTIFY = 1,
     EVENTID = 2,
@@ -46,7 +46,7 @@ enum notify_type {
  * @ingroup libinit
  * white list switch
  */
-enum white_list_status {
+enum WhiteListStatus {
     WHITE_LIST_DISABLE = 0, /**< enable white list */
     WHITE_LIST_ENABLE, /**< disable white list */
 };
@@ -100,7 +100,7 @@ enum white_list_status {
  * @ingroup libinit
  * hccp operating environment
  */
-enum network_mode {
+enum NetworkMode {
     NETWORK_PEER_ONLINE = 0, /**< Third-party online mode */
     NETWORK_OFFLINE, /**< offline mode */
     NETWORK_ONLINE, /**< online mode */
@@ -110,7 +110,7 @@ enum network_mode {
  * @ingroup libinit
  * hccp support protocol type
  */
-enum protocol_type {
+enum ProtocolTypeT {
     PROTOCOL_RDMA = 0,
     PROTOCOL_UNSUPPORT,
 };
@@ -119,11 +119,11 @@ enum protocol_type {
  * @ingroup libinit
  * rdma gid, aka infiniband ibv_gid
  */
-union hccp_gid {
+union HccpGid {
     uint8_t raw[HCCP_GID_RAW_LEN];
     struct {
-        uint64_t subnet_prefix;
-        uint64_t interface_id;
+        uint64_t subnetPrefix;
+        uint64_t interfaceId;
     } global;
 };
 
@@ -131,12 +131,12 @@ union hccp_gid {
  * @ingroup libinit
  * info need of rdma_agent
  */
-struct ra_info {
+struct RaInfo {
     int mode; /**< reference to network_mode */
-    unsigned int phy_id; /**< physical device id */
+    unsigned int phyId; /**< physical device id */
 };
 
-enum hccn_cfg_key {
+enum HccnCfgKey {
     HCCN_CFG_UDP_PORT_MODE = 0,
     HCCN_CFG_MULTI_QP_COUNT = 1,
     HCCN_CFG_MULTI_QP_UDP_PORTS = 2,
@@ -147,7 +147,7 @@ enum hccn_cfg_key {
  * @ingroup libinit
  * ip address
  */
-union hccp_ip_addr {
+union HccpIpAddr {
     struct in_addr addr;
     struct in6_addr addr6;
 };
@@ -157,29 +157,29 @@ union hccp_ip_addr {
  * hccp init info
  */
 struct rdev {
-    unsigned int phy_id; /**< physical device id */
+    unsigned int phyId; /**< physical device id */
     int family; /**< AF_INET(ipv4) or AF_INET6(ipv6) */
-    union hccp_ip_addr local_ip;
+    union HccpIpAddr localIp;
 };
 
-struct rdev_init_info {
+struct RdevInitInfo {
     int mode;
-    unsigned int notify_type;
-    bool enabled_910a_lite; /**< true will enable 910A lite, invalid if enabled_2mb_lite is false; default is false */
-    bool disabled_lite_thread; /**< true will not start lite thread, flag invalid if enabled_910a/2mb_lite is false */
-    bool enabled_2mb_lite; /**< true will enable 2MB lite(include 910A & 910B), default is false */
+    unsigned int notifyType;
+    bool enabled910aLite; /**< true will enable 910A lite, invalid if enabled_2mb_lite is false; default is false */
+    bool disabledLiteThread; /**< true will not start lite thread, flag invalid if enabled_910a/2mb_lite is false */
+    bool enabled2mbLite; /**< true will enable 2MB lite(include 910A & 910B), default is false */
 };
 
-struct socket_init_info_t {
-    struct rdev rdev_info;
-    int scope_id;
+struct SocketInitInfoT {
+    struct rdev rdevInfo;
+    int scopeId;
 };
 
 /**
  * @ingroup libsocket
  * socket listen status
  */
-enum listen_phase {
+enum ListenPhase {
     LISTEN_OK = 0, /**< socket listen ok */
     LISTEN_CREATE_FD_ERR = 1, /**< socket create fd error */
     LISTEN_BIND_ERR = 2, /**< socket bind socket port error */
@@ -190,8 +190,8 @@ enum listen_phase {
  * @ingroup libsocket
  * struct of the listen info
  */
-struct socket_listen_info_t {
-    void *socket_handle; /**< socket handle */
+struct SocketListenInfoT {
+    void *socketHandle; /**< socket handle */
     unsigned int port; /**< Socket listening port number */
     unsigned int phase; /**< refer to enum listen_phase */
     unsigned int err; /**< errno */
@@ -201,9 +201,9 @@ struct socket_listen_info_t {
  * @ingroup libsocket
  * struct of the client socket
  */
-struct socket_connect_info_t {
-    void *socket_handle; /**< socket handle */
-    union hccp_ip_addr remote_ip; /**< IP address of remote socket, [0-7] is reserved for vnic */
+struct SocketConnectInfoT {
+    void *socketHandle; /**< socket handle */
+    union HccpIpAddr remoteIp; /**< IP address of remote socket, [0-7] is reserved for vnic */
     unsigned int port; /**< Socket listening port number */
     char tag[SOCK_CONN_TAG_SIZE]; /**< tag must ended by '\0' */
 };
@@ -212,20 +212,20 @@ struct socket_connect_info_t {
  * @ingroup libsocket
  * struct of the socket to be closed
  */
-struct socket_close_info_t {
-    void *socket_handle; /**< socket handle */
-    void *fd_handle; /**< fd handle */
-    int disuse_linger; /**< 0:use(default l_linger is RS_CLOSE_TIMEOUT), others:disuse */
+struct SocketCloseInfoT {
+    void *socketHandle; /**< socket handle */
+    void *fdHandle; /**< fd handle */
+    int disuseLinger; /**< 0:use(default l_linger is RS_CLOSE_TIMEOUT), others:disuse */
 };
 
 /**
  * @ingroup libsocket
  * Details about socket after socket is linked
  */
-struct socket_info_t {
-    void *socket_handle; /**< socket handle */
-    void *fd_handle; /**< fd handle */
-    union hccp_ip_addr remote_ip; /**< IP address of remote socket */
+struct SocketInfoT {
+    void *socketHandle; /**< socket handle */
+    void *fdHandle; /**< fd handle */
+    union HccpIpAddr remoteIp; /**< IP address of remote socket */
     int status; /**< socket status:0 not connected 1:connected 2:connect timeout 3:connecting */
     char tag[SOCK_CONN_TAG_SIZE]; /**< tag must ended by '\0' */
 };
@@ -240,10 +240,10 @@ struct socket_info_t {
 #define EPOLL_PACKED
 #endif
 
-struct socket_event_info {
+struct SocketEventInfoT {
     uint32_t event;
     union {
-        void *fd_handle;
+        void *fdHandle;
         uint64_t u64;
     };
 } EPOLL_PACKED;
@@ -251,24 +251,24 @@ struct socket_event_info {
  * @ingroup libinit
  * Configuration of rdma_agent initializatioin
  */
-struct ra_init_config {
-    unsigned int phy_id; /**< physical device id */
-    unsigned int nic_position; /**< reference to network_mode */
-    int hdc_type; /**< reference to drvHdcServiceType */
-    bool enable_hdc_async; /**< true will init an extra HDC session for async APIs */
+struct RaInitConfig {
+    unsigned int phyId; /**< physical device id */
+    unsigned int nicPosition; /**< reference to network_mode */
+    int hdcType; /**< reference to drvHdcServiceType */
+    bool enableHdcAsync; /**< true will init an extra HDC session for async APIs */
 };
 
-struct ra_get_ifattr {
-    unsigned int phy_id; /**< physical device id */
-    unsigned int nic_position; /**< reference to network_mode */
-    bool is_all; /**< valid when nic_position is NETWORK_OFFLINE. false: get specific rnic ip, true: get all rnic ip */
+struct RaGetIfattr {
+    unsigned int phyId; /**< physical device id */
+    unsigned int nicPosition; /**< reference to network_mode */
+    bool isAll; /**< valid when nic_position is NETWORK_OFFLINE. false: get specific rnic ip, true: get all rnic ip */
 };
 
 /**
  * @ingroup libinit
  * id type to get vnic ip
  */
-enum id_type {
+enum IdType {
     PHY_ID_VNIC_IP,
     SDID_VNIC_IP
 };
@@ -277,9 +277,9 @@ enum id_type {
  * @ingroup libinit
  * struct of ip info
  */
-struct ip_info {
+struct IpInfo {
     int family;
-    union hccp_ip_addr ip;
+    union HccpIpAddr ip;
     uint32_t resv[2U];
 };
 
@@ -287,7 +287,7 @@ struct ip_info {
  * @ingroup librdma
  * Flag of RMDA operations
  */
-enum ra_send_flags {
+enum RaSendFlags {
     RA_SEND_FENCE = 1 << 0, /**< RDMA operation with fence */
     RA_SEND_SIGNALED = 1 << 1, /**< RDMA operation with signaled */
     RA_SEND_SOLICITED = 1 << 2, /**< RDMA operation with solicited */
@@ -298,13 +298,13 @@ enum ra_send_flags {
  * @ingroup librdma
  * Scatter and gather element
  */
-struct sg_list {
+struct SgList {
     uint64_t addr; /**< address of buf */
     uint32_t len; /**< len of buf */
     uint32_t lkey; /**< local addr access key */
 };
 
-enum ra_wr_opcode {
+enum RaWrOpcode {
     RA_WR_RDMA_WRITE,
     RA_WR_RDMA_WRITE_WITH_IMM,
     RA_WR_SEND,
@@ -320,7 +320,7 @@ enum ra_wr_opcode {
  * @ingroup librdma
  * port status
  */
-enum port_status {
+enum PortStatus {
     PORT_STATUS_DOWN = 0,
     PORT_STATUS_ACTIVE = 1,
 };
@@ -329,81 +329,81 @@ enum port_status {
  * @ingroup librdma
  * RDMA work request
  */
-struct send_wr {
-    struct sg_list *buf_list; /**< list of sg */
-    uint16_t buf_num; /**< num of buf_list */
-    uint64_t dst_addr; /**< destination address */
+struct SendWr {
+    struct SgList *bufList; /**< list of sg */
+    uint16_t bufNum; /**< num of buf_list */
+    uint64_t dstAddr; /**< destination address */
     uint32_t rkey;     /**< remote address access key */
     uint32_t op; /**< operations of RDMA supported:RDMA_WRITE:0 */
-    int send_flag; /**< reference to ra_send_flags */
+    int sendFlag; /**< reference to ra_send_flags */
 };
 
-struct wr_aux_info {
-    uint8_t data_type;
-    uint8_t reduce_type;
-    uint32_t notify_offset;
+struct WrAuxInfo {
+    uint8_t dataType;
+    uint8_t reduceType;
+    uint32_t notifyOffset;
 };
 
-struct wr_ext_info {
-    uint32_t imm_data;
+struct WrExtInfo {
+    uint32_t immData;
     uint16_t resv;
 };
 
-struct send_wrlist_data {
-    unsigned long long dst_addr; /**< destination address */
+struct SendWrlistData {
+    unsigned long long dstAddr; /**< destination address */
     unsigned int op; /**< operations of RDMA supported:RDMA_WRITE:0, RDMA_READ:4 */
-    int send_flags; /**< reference to ra_send_flags */
-    struct sg_list mem_list; /**< list of sg */
+    int sendFlags; /**< reference to ra_send_flags */
+    struct SgList memList; /**< list of sg */
 };
 
-struct send_wrlist_data_ext {
-    unsigned long long dst_addr; /**< destination address */
+struct SendWrlistDataExt {
+    unsigned long long dstAddr; /**< destination address */
     unsigned int op; /**< operations of RDMA supported:RDMA_WRITE:0, RDMA_READ:4 */
-    int send_flags; /**< reference to ra_send_flags */
-    struct sg_list mem_list; /**< list of sg */
+    int sendFlags; /**< reference to ra_send_flags */
+    struct SgList memList; /**< list of sg */
     union {
-        struct wr_aux_info aux; /**< aux info */
-        struct wr_ext_info ext; /**< ext info */
+        struct WrAuxInfo aux; /**< aux info */
+        struct WrExtInfo ext; /**< ext info */
     };
 };
 
-struct send_wr_v2 {
-    uint64_t wr_id; /**< user assigned work request ID */
-    struct sg_list *buf_list; /**< list of sg */
-    uint16_t buf_num; /**< num of buf_list */
-    uint64_t dst_addr; /**< destination address */
+struct SendWrV2 {
+    uint64_t wrId; /**< user assigned work request ID */
+    struct SgList *bufList; /**< list of sg */
+    uint16_t bufNum; /**< num of buf_list */
+    uint64_t dstAddr; /**< destination address */
     uint32_t rkey;     /**< remote address access key */
     uint32_t op; /**< operations of RDMA supported:RDMA_WRITE:0 */
-    int send_flag; /**< reference to ra_send_flags */
+    int sendFlag; /**< reference to ra_send_flags */
     union {
-        struct wr_aux_info aux; /**< aux info */
-        struct wr_ext_info ext; /**< ext info */
+        struct WrAuxInfo aux; /**< aux info */
+        struct WrExtInfo ext; /**< ext info */
     };
 };
 
-struct wr_info {
-    int send_flags;                 /**< reference to ra_send_flags */
+struct WrInfo {
+    int sendFlags;                 /**< reference to ra_send_flags */
     uint32_t rkey;                  /**< remote address access key */
     uint32_t op;                    /**< operations of RDMA supported:ra_wr_opcode */
-    uint32_t imm_data;              /**< imm data */
-    uint64_t wr_id;                 /**< user assigned work request ID */
-    uint64_t dst_addr;              /**< destination address */
-    struct sg_list mem_list;        /**< sg info */
-    struct wr_aux_info aux;         /**< aux info */
+    uint32_t immData;              /**< imm data */
+    uint64_t wrId;                 /**< user assigned work request ID */
+    uint64_t dstAddr;              /**< destination address */
+    struct SgList memList;        /**< sg info */
+    struct WrAuxInfo aux;         /**< aux info */
 };
 
-struct recv_wrlist_data {
-    uint64_t wr_id; /**< user assigned work request ID */
-    struct sg_list mem_list; /**< list of sg */
+struct RecvWrlistData {
+    uint64_t wrId; /**< user assigned work request ID */
+    struct SgList memList; /**< list of sg */
 };
 
 /**
  * @ingroup libsocket
  * Socket whitelist
  */
-struct socket_wlist_info_t {
-    union hccp_ip_addr remote_ip; /**< IP address of remote */
-    unsigned int conn_limit; /**< limit of whilte list */
+struct SocketWlistInfoT {
+    union HccpIpAddr remoteIp; /**< IP address of remote */
+    unsigned int connLimit; /**< limit of whilte list */
     char tag[SOCK_CONN_TAG_SIZE]; /**< tag used for whitelist must ended by '\0' */
 };
 
@@ -411,7 +411,7 @@ struct socket_wlist_info_t {
  * @ingroup librdma
  * Flag of mr access
  */
-enum ra_access_flags {
+enum RaAccessFlags {
     RA_ACCESS_LOCAL_WRITE  = 1, /**< mr local write access */
     RA_ACCESS_REMOTE_WRITE = (1 << 1), /**< mr remote write access */
     RA_ACCESS_REMOTE_READ  = (1 << 2), /**< mr remote read access */
@@ -425,44 +425,44 @@ enum ra_access_flags {
  * @ingroup librdma
  * wqe template info
  */
-struct wqe_info {
-    unsigned int sq_index; /**< index of sq */
-    unsigned int wqe_index; /**< index of wqe */
+struct WqeInfo {
+    unsigned int sqIndex; /**< index of sq */
+    unsigned int wqeIndex; /**< index of wqe */
 };
 
 /**
  * @ingroup librdma
  * doorbell info
  */
-struct db_info {
-    unsigned int db_index; /**< index of db */
-    unsigned long db_info; /**< db content */
+struct DbInfo {
+    unsigned int dbIndex; /**< index of db */
+    unsigned long dbInfo; /**< db content */
 };
 
 /**
  * @ingroup librdma
  * respond of sending work request
  */
-struct send_wr_rsp {
+struct SendWrRsp {
     union {
-        struct wqe_info wqe_tmp; /**< wqe template info */
-        struct db_info db; /**< doorbell info */
+        struct WqeInfo wqeTmp; /**< wqe template info */
+        struct DbInfo db; /**< doorbell info */
     };
 };
 
-struct ifaddr_info {
-    union hccp_ip_addr ip; /* Address of interface */
+struct IfaddrInfo {
+    union HccpIpAddr ip; /* Address of interface */
     struct in_addr mask; /* Netmask of interface */
 };
 
-struct interface_info {
+struct InterfaceInfo {
     int family;
-    int scope_id;
-    struct ifaddr_info ifaddr; /* Address and netmask of interface */
+    int scopeId;
+    struct IfaddrInfo ifaddr; /* Address and netmask of interface */
     char ifname[MAX_INTERFACE_NAME_LEN]; /* Name of interface */
 };
 
-struct mr_info {
+struct MrInfoT {
     void *addr; /**< starting address of mr */
     unsigned long long size; /**< size of mr */
     int access; /**< access of mr, reference to ra_access_flags */
@@ -470,12 +470,12 @@ struct mr_info {
     unsigned int rkey; /**< remote addr access key */
 };
 
-struct mem_remap_info {
+struct MemRemapInfo {
     void *addr; /**< starting address of needed remap memory */
     unsigned long long size; /**< size of needed remap memory */
 };
 
-enum ra_wc_opcode {
+enum RaWcOpcode {
     RA_WC_SEND,
     RA_WC_RDMA_WRITE,
     RA_WC_RDMA_READ,
@@ -495,83 +495,83 @@ enum RaEpollEvent {
     RA_EPOLLINVALD
 };
 
-struct cq_attr {
-    void **qp_context;
-    struct ibv_cq **ib_send_cq;
-    struct ibv_cq **ib_recv_cq;
-    int send_cq_depth;
-    int recv_cq_depth;
-    int send_cq_event_id;
-    int recv_cq_event_id;
-    struct ibv_comp_channel *send_channel;
-    struct ibv_comp_channel *recv_channel;
-    void *srq_context;
+struct CqAttr {
+    void **qpContext;
+    struct ibv_cq **ibSendCq;
+    struct ibv_cq **ibRecvCq;
+    int sendCqDepth;
+    int recvCqDepth;
+    int sendCqEventId;
+    int recvCqEventId;
+    struct ibv_comp_channel *sendChannel;
+    struct ibv_comp_channel *recvChannel;
+    void *srqContext;
 };
 
-struct srq_attr {
+struct SrqAttr {
     void **context;
-    struct ibv_srq **ib_srq;
-    struct ibv_cq **ib_recv_cq;
-    int cq_depth;
-    int srq_depth;
-    int max_sge;
-    int srq_event_id;
+    struct ibv_srq **ibSrq;
+    struct ibv_cq **ibRecvCq;
+    int cqDepth;
+    int srqDepth;
+    int maxSge;
+    int srqEventId;
 };
 
-struct qos_attr {
+struct QosAttr {
     unsigned char tc;          // traffic class
     unsigned char sl;          // priority(service level)
     unsigned char reserved[RA_QOS_ATTR_RESERVED];
 };
 
-struct cqe_err_info {
+struct CqeErrInfo {
     uint32_t status;
     uint32_t qpn;
     struct timeval time;
 };
 
-struct cq_ext_attr {
-    int send_cq_depth;
-    int recv_cq_depth;
-    int send_cq_comp_vector;
-    int recv_cq_comp_vector;
+struct CqExtAttr {
+    int sendCqDepth;
+    int recvCqDepth;
+    int sendCqCompVector;
+    int recvCqCompVector;
 };
 
-struct ai_data_plane_wq {
+struct AiDataPlaneWq {
     unsigned wqn;
-    unsigned long long buf_addr;
-    unsigned int wqebb_size;
+    unsigned long long bufAddr;
+    unsigned int wqebbSize;
     unsigned int depth;
-    unsigned long long head_addr;
-    unsigned long long tail_addr;
-    unsigned long long swdb_addr;
-    unsigned long long db_reg;
+    unsigned long long headAddr;
+    unsigned long long tailAddr;
+    unsigned long long swdbAddr;
+    unsigned long long dbReg;
     unsigned int reserved[8U];
 };
 
-struct ai_data_plane_cq {
+struct AiDataPlaneCq {
     unsigned int cqn;
-    unsigned long long buf_addr;
-    unsigned int cqe_size;
+    unsigned long long bufAddr;
+    unsigned int cqeSize;
     unsigned int depth;
-    unsigned long long head_addr;
-    unsigned long long tail_addr;
-    unsigned long long swdb_addr;
-    unsigned long long db_reg;
+    unsigned long long headAddr;
+    unsigned long long tailAddr;
+    unsigned long long swdbAddr;
+    unsigned long long dbReg;
     unsigned int reserved[2U];
 };
 
-struct ai_data_plane_info {
-    struct ai_data_plane_wq sq;
-    struct ai_data_plane_wq rq;
-    struct ai_data_plane_cq scq;
-    struct ai_data_plane_cq rcq;
+struct AiDataPlaneInfo {
+    struct AiDataPlaneWq sq;
+    struct AiDataPlaneWq rq;
+    struct AiDataPlaneCq scq;
+    struct AiDataPlaneCq rcq;
     unsigned int reserved[8U];
 };
 
-union ai_data_plane_cstm_flag {
+union AiDataPlaneCstmFlag {
     struct {
-        uint32_t cq_cstm  : 1; // 0: hccp poll cq; 1: caller poll cq
+        uint32_t cqCstm  : 1; // 0: hccp poll cq; 1: caller poll cq
         uint32_t reserved : 31;
     } bs;
     uint32_t value;
@@ -586,73 +586,73 @@ enum {
     HCCP_RDMA_ERR_MODE      = 5
 };
 
-struct qp_ext_attrs {
-    int qp_mode;
+struct QpExtAttrs {
+    int qpMode;
     // cq attr
-    struct cq_ext_attr cq_attr;
+    struct CqExtAttr cqAttr;
     // qp attr
-    struct ibv_qp_init_attr qp_attr;
+    struct ibv_qp_init_attr qpAttr;
     // version control and reserved
     int version;
-    int mem_align; // 0,1:4KB, 2:2MB
-    uint32_t udp_sport;
-    union ai_data_plane_cstm_flag data_plane_flag; // only valid in ra_ai_qp_create
+    int memAlign; // 0,1:4KB, 2:2MB
+    uint32_t udpSport;
+    union AiDataPlaneCstmFlag dataPlaneFlag; // only valid in ra_ai_qp_create
     uint32_t reserved[29U];
 };
 
-struct ai_qp_info {
-    unsigned long long ai_qp_addr; // refer to struct ibv_qp *
-    unsigned int sq_index; // index of sq
-    unsigned int db_index; // index of db
+struct AiQpInfo {
+    unsigned long long aiQpAddr; // refer to struct ibv_qp *
+    unsigned int sqIndex; // index of sq
+    unsigned int dbIndex; // index of db
 
     // below cq related info valid when data_plane_flag.bs.cq_cstm was 1
-    unsigned long long ai_scq_addr; // refer to struct ibv_cq *scq
-    unsigned long long ai_rcq_addr; // refer to struct ibv_cq *rcq
-    struct ai_data_plane_info data_plane_info;
+    unsigned long long aiScqAddr; // refer to struct ibv_cq *scq
+    unsigned long long aiRcqAddr; // refer to struct ibv_cq *rcq
+    struct AiDataPlaneInfo dataPlaneInfo;
 };
 
-struct typical_qp {
+struct TypicalQp {
     uint32_t qpn;
     uint32_t psn;
-    uint32_t gid_idx;
+    uint32_t gidIdx;
     uint8_t resv1[4U]; // for compatibility issue
     uint8_t gid[HCCP_GID_RAW_LEN];
     uint32_t tc;
     uint32_t sl;
-    uint32_t retry_cnt;
-    uint32_t retry_time;
+    uint32_t retryCnt;
+    uint32_t retryTime;
     // version control and reserved
     int version;
     uint32_t reserved[32U];
     uint8_t resv2[4U]; // for compatibility issue
 };
 
-struct qp_attr {
+struct QpAttr {
     unsigned int qpn;
-    unsigned int udp_sport;
+    unsigned int udpSport;
     unsigned int psn;
-    unsigned int gid_idx;
+    unsigned int gidIdx;
     unsigned char gid[HCCP_GID_RAW_LEN];
 };
 
-struct loopback_qp_pair {
-    void *ibv_qp0;
-    void *ibv_qp1;
+struct LoopbackQpPair {
+    void *ibvQp0;
+    void *ibvQp1;
 };
 
-struct socket_err_info {
+struct SocketErrInfo {
     struct timeval time;
-    int err_no;
+    int errNo;
     int action; // refer to enum rs_conn_state
     char resv[32U];
 };
 
-struct server_socket_err_info {
-    struct socket_err_info epoll_wait;
-    struct socket_err_info accept;
+struct ServerSocketErrInfo {
+    struct SocketErrInfo epollWait;
+    struct SocketErrInfo accept;
 };
 
-enum save_snapshot_action {
+enum SaveSnapshotAction {
     SAVE_SNAPSHOT_ACTION_PRE_PROCESSING = 0,
     SAVE_SNAPSHOT_ACTION_POST_PROCESSING = 1,
     SAVE_SNAPSHOT_ACTION_MAX,

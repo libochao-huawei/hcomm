@@ -14,28 +14,28 @@
 #include "ra.h"
 #include "ra_rs_comm.h"
 
-struct ra_request_handle {
-    unsigned int req_id;
-    struct ra_async_op_handle *op_handle;
-    unsigned int phy_id;
-    unsigned int data_size;
+struct RaRequestHandle {
+    unsigned int reqId;
+    struct RaAsyncOpHandle *opHandle;
+    unsigned int phyId;
+    unsigned int dataSize;
 
-    void *recv_buf;
-    unsigned int recv_len;
-    int op_ret;
-    bool is_done;
+    void *recvBuf;
+    unsigned int recvLen;
+    int opRet;
+    bool isDone;
 
-    unsigned int dev_index;
-    void *priv_data;
-    void *priv_handle;
+    unsigned int devIndex;
+    void *privData;
+    void *privHandle;
 
-    struct ra_list_head list;
+    struct RaListHead list;
 };
 
-struct ra_async_op_handle {
-    enum op_type opcode;
-    enum module_type op_module;
-    void (*priv_data_handle)(struct ra_request_handle *);
-    unsigned int data_size;
+struct RaAsyncOpHandle {
+    enum OpType opcode;
+    enum ModuleType opModule;
+    void (*privDataHandle)(struct RaRequestHandle *);
+    unsigned int dataSize;
 };
 #endif // RA_ASYNC_H

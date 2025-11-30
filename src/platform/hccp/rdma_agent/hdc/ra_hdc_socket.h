@@ -19,231 +19,231 @@
 #define VNIC_IP_TYPE 0
 #define RA_MAX_VNIC_NUM 16
 
-struct close_fd_data {
-    unsigned int phy_id;
-    int close_fd;
+struct CloseFdData {
+    unsigned int phyId;
+    int closeFd;
 };
 
-union op_socket_init_data {
+union OpSocketInitData {
     struct {
-        unsigned int vnic_ip[RA_MAX_VNIC_NUM];
+        unsigned int vnicIp[RA_MAX_VNIC_NUM];
         unsigned int num;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_socket_deinit_data {
+union OpSocketDeinitData {
     struct {
-        struct rdev rdev_info;
+        struct rdev rdevInfo;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd;
-    } rx_data;
+    } rxData;
 };
 
-union op_socket_connect_data {
+union OpSocketConnectData {
     struct {
         unsigned int num;  // resv bit 31 for use_port on HDC, for compatibility issue
-        struct socket_connect_info conn[MAX_SOCKET_NUM];
-    } tx_data;
+        struct SocketConnectInfo conn[MAX_SOCKET_NUM];
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_801];
-    } rx_data;
+    } rxData;
 };
 
-union op_socket_close_data {
+union OpSocketCloseData {
     struct {
         unsigned int num;  // resv bit 31 for disuse_linger on HDC, for compatibility issue
-        struct close_fd_data conn[MAX_SOCKET_NUM];
-    } tx_data;
+        struct CloseFdData conn[MAX_SOCKET_NUM];
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_33];
-    } rx_data;
+    } rxData;
 };
 
-union op_socket_listen_data {
+union OpSocketListenData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         unsigned int num;  // resv bit 31 for use_port on HDC, for compatibility issue
-        struct socket_listen_info conn[MAX_SOCKET_NUM];
-    } tx_data;
+        struct SocketListenInfo conn[MAX_SOCKET_NUM];
+    } txData;
 
     struct {
         unsigned int rsvd;
-        struct socket_listen_info conn[MAX_SOCKET_NUM];
-    } rx_data;
+        struct SocketListenInfo conn[MAX_SOCKET_NUM];
+    } rxData;
 };
 
-union op_socket_info_data {
+union OpSocketInfoData {
     struct {
         unsigned int num;
         unsigned int role;
-        struct socket_fd_data conn[MAX_SOCKET_NUM];
-    } tx_data;
+        struct SocketFdData conn[MAX_SOCKET_NUM];
+    } txData;
 
     struct {
         int num;
         unsigned int rsvd;
-        struct socket_fd_data conn[MAX_SOCKET_NUM];
-    } rx_data;
+        struct SocketFdData conn[MAX_SOCKET_NUM];
+    } rxData;
 };
 
-union op_socket_send_data {
+union OpSocketSendData {
     struct {
         unsigned int fd;
         unsigned int rsvd;
-        unsigned long long send_size;
-        char data_send[SOCKET_SEND_MAXLEN];
-    } tx_data;
+        unsigned long long sendSize;
+        char dataSend[SOCKET_SEND_MAXLEN];
+    } txData;
 
     struct {
-        unsigned long long real_send_size;
+        unsigned long long realSendSize;
         unsigned int rsvd[RA_RSVD_NUM_2];
-    } rx_data;
+    } rxData;
 };
 
-union op_socket_recv_data {
+union OpSocketRecvData {
     struct {
         unsigned int fd;
         unsigned int rsvd;
-        unsigned long long recv_size;
-    } tx_data;
+        unsigned long long recvSize;
+    } txData;
 
     struct {
-        unsigned long long real_recv_size;
+        unsigned long long realRecvSize;
         unsigned int rsvd[RA_RSVD_NUM_2];
-    } rx_data;
+    } rxData;
 };
 
-union op_wlist_data {
+union OpWlistData {
     struct {
-        struct rdev rdev_info;
-        struct socket_wlist_info_t wlist[MAX_WLIST_NUM_V1];
+        struct rdev rdevInfo;
+        struct SocketWlistInfoT wlist[MAX_WLIST_NUM_V1];
         unsigned int num;
-    } tx_data;
+    } txData;
 
     struct {
-    } rx_data;
+    } rxData;
 };
 
-union op_wlist_data_v2 {
+union OpWlistDataV2 {
     struct {
-        struct rdev rdev_info;
+        struct rdev rdevInfo;
         unsigned int num;
-        struct socket_wlist_info_t wlist[MAX_WLIST_NUM];
-    } tx_data;
+        struct SocketWlistInfoT wlist[MAX_WLIST_NUM];
+    } txData;
 
     struct {
-    } rx_data;
+    } rxData;
 };
 
-union op_accept_credit_data {
+union OpAcceptCreditData {
     struct {
-        unsigned int phy_id;
-        unsigned int credit_limit;
+        unsigned int phyId;
+        unsigned int creditLimit;
         unsigned int num;
-        struct socket_listen_info conn[MAX_SOCKET_NUM];
-    } tx_data;
+        struct SocketListenInfo conn[MAX_SOCKET_NUM];
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_64];
-    } rx_data;
+    } rxData;
 };
 
-union op_ifaddr_data {
+union OpIfaddrData {
     struct {
-        unsigned int phy_id;
-        struct ifaddr_info ifaddr_infos[MAX_INTERFACE_NUM];
+        unsigned int phyId;
+        struct IfaddrInfo ifaddrInfos[MAX_INTERFACE_NUM];
         unsigned int num;
-    } tx_data;
+    } txData;
 
     struct {
-        struct ifaddr_info ifaddr_infos[MAX_INTERFACE_NUM];
+        struct IfaddrInfo ifaddrInfos[MAX_INTERFACE_NUM];
         unsigned int num;
-    } rx_data;
+    } rxData;
 };
 
 // support IPV4/IPV6
-union op_ifaddr_data_v2 {
+union OpIfaddrDataV2 {
     struct {
-        unsigned int phy_id;
-        struct interface_info interface_infos[MAX_INTERFACE_NUM];
+        unsigned int phyId;
+        struct InterfaceInfo interfaceInfos[MAX_INTERFACE_NUM];
         unsigned int num;
-    } tx_data;
+    } txData;
 
     struct {
-        struct interface_info interface_infos[MAX_INTERFACE_NUM];
+        struct InterfaceInfo interfaceInfos[MAX_INTERFACE_NUM];
         unsigned int num;
-    } rx_data;
+    } rxData;
 };
 
-union op_get_vnic_ip_data {
+union OpGetVnicIpData {
     struct {
-        unsigned int phy_id;
-    } tx_data;
+        unsigned int phyId;
+    } txData;
 
     struct {
-        unsigned int vnic_ip;
-    } rx_data;
+        unsigned int vnicIp;
+    } rxData;
 };
 
-union op_get_vnic_ip_infos_data_v1 {
+union OpGetVnicIpInfosDataV1 {
     struct {
-        unsigned int phy_id;
-        enum id_type type;
+        unsigned int phyId;
+        enum IdType type;
         unsigned int ids[MAX_IP_INFO_NUM_V1];
         unsigned int num;
         unsigned int rsv;
-    } tx_data;
+    } txData;
 
     struct {
-        struct ip_info infos[MAX_IP_INFO_NUM_V1];
+        struct IpInfo infos[MAX_IP_INFO_NUM_V1];
         unsigned int rsv;
-    } rx_data;
+    } rxData;
 };
 
-union op_get_vnic_ip_infos_data {
+union OpGetVnicIpInfosData {
     struct {
-        unsigned int phy_id;
-        enum id_type type;
+        unsigned int phyId;
+        enum IdType type;
         unsigned int ids[MAX_IP_INFO_NUM];
         unsigned int num;
         unsigned int rsv;
-    } tx_data;
+    } txData;
 
     struct {
-        struct ip_info infos[MAX_IP_INFO_NUM];
+        struct IpInfo infos[MAX_IP_INFO_NUM];
         unsigned int rsv;
-    } rx_data;
+    } rxData;
 };
 
-int RaHdcSocketWhiteListAdd(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[], unsigned int num);
-int RaHdcSocketWhiteListDel(struct rdev rdevInfo, struct socket_wlist_info_t whiteList[], unsigned int num);
-int RaHdcSocketAcceptCreditAdd(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num,
+int RaHdcSocketWhiteListAdd(struct rdev rdevInfo, struct SocketWlistInfoT whiteList[], unsigned int num);
+int RaHdcSocketWhiteListDel(struct rdev rdevInfo, struct SocketWlistInfoT whiteList[], unsigned int num);
+int RaHdcSocketAcceptCreditAdd(unsigned int phyId, struct SocketListenInfoT conn[], unsigned int num,
     unsigned int creditLimit);
-int RaHdcSocketBatchConnect(unsigned int phyId, struct socket_connect_info_t conn[], unsigned int num);
-int RaHdcSocketBatchClose(unsigned int phyId, struct socket_close_info_t conn[], unsigned int num);
-int RaHdcSocketBatchAbort(unsigned int phyId, struct socket_connect_info_t conn[], unsigned int num);
-int RaHdcSocketListenStart(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num);
-int RaHdcSocketListenStop(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num);
-int RaHdcGetSockets(unsigned int phyId, unsigned int role, struct socket_info_t conn[], unsigned int num);
+int RaHdcSocketBatchConnect(unsigned int phyId, struct SocketConnectInfoT conn[], unsigned int num);
+int RaHdcSocketBatchClose(unsigned int phyId, struct SocketCloseInfoT conn[], unsigned int num);
+int RaHdcSocketBatchAbort(unsigned int phyId, struct SocketConnectInfoT conn[], unsigned int num);
+int RaHdcSocketListenStart(unsigned int phyId, struct SocketListenInfoT conn[], unsigned int num);
+int RaHdcSocketListenStop(unsigned int phyId, struct SocketListenInfoT conn[], unsigned int num);
+int RaHdcGetSockets(unsigned int phyId, unsigned int role, struct SocketInfoT conn[], unsigned int num);
 int RaHdcSocketSend(unsigned int phyId, const void *handle, const void *data, unsigned long long size);
 int RaHdcSocketRecv(unsigned int phyId, const void *handle, void *data, unsigned long long size);
 int RaHdcSocketInit(struct rdev rdevInfo);
 int RaHdcSocketDeinit(struct rdev rdevInfo);
 int RaHdcGetIfnum(unsigned int phyId, bool isAll, unsigned int *num);
-int RaHdcGetIfaddrs(unsigned int phyId, struct ifaddr_info ifaddrInfos[], unsigned int *num);
-int RaHdcGetIfaddrsV2(unsigned int phyId, bool isAll, struct interface_info interfaceInfos[], unsigned int *num);
-int RaHdcGetVnicIpInfosV1(unsigned int phyId, enum id_type type, unsigned int ids[], unsigned int num,
-    struct ip_info infos[]);
-int RaHdcGetVnicIpInfos(unsigned int phyId, enum id_type type, unsigned int ids[], unsigned int num,
-    struct ip_info infos[]);
+int RaHdcGetIfaddrs(unsigned int phyId, struct IfaddrInfo ifaddrInfos[], unsigned int *num);
+int RaHdcGetIfaddrsV2(unsigned int phyId, bool isAll, struct InterfaceInfo interfaceInfos[], unsigned int *num);
+int RaHdcGetVnicIpInfosV1(unsigned int phyId, enum IdType type, unsigned int ids[], unsigned int num,
+    struct IpInfo infos[]);
+int RaHdcGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[], unsigned int num,
+    struct IpInfo infos[]);
 #endif // RA_HDC_SOCKET_H

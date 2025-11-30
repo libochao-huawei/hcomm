@@ -55,7 +55,7 @@ public:
     HcclResult InlineReduceAsync(const void *src, u64 dataCount, const HcclDataType datatype, HcclReduceOp redOp,
         Stream &stream, void *dst, u32 remoteUserRank = INVALID_VALUE_RANKID,
         hccl::LinkType inLinkType = hccl::LinkType::LINK_ONCHIP) override;
-    HcclResult RdmaRecord(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    HcclResult RdmaRecord(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         RdmaType rdmaType, u32 userRank, u64 offset, u32 notifyId) override;
 
     HcclResult LaunchTasksEx(Stream &stream, std::vector<Stream> &subStreams) override;

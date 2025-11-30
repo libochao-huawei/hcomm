@@ -175,7 +175,6 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
 {
     CHK_PTR_NULL(commHandle);
     CHK_PTR_NULL(group);
-
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));

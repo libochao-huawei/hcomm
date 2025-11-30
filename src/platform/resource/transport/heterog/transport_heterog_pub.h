@@ -57,8 +57,8 @@ struct InitInfo {
     u32 role = 0;
     u32 signal = 0;
     u8 checkFrame[HETEROG_MAX_FRAME_LEN] = {0};
-    std::vector<socket_info_t> socketInfo;
-    std::vector<socket_connect_info_t> socketConnInfo;
+    std::vector<SocketInfoT> socketInfo;
+    std::vector<SocketConnectInfoT> socketConnInfo;
 };
 
 struct InitStateMachine {
@@ -91,7 +91,7 @@ public:
     virtual ~TransportHeterog();
     virtual HcclResult Init() = 0;
     virtual HcclResult Init(u32 localUserRank, u32 remoteUserRank);
-    virtual HcclResult Init(socket_info_t &socketInfo, RdmaHandle rdmaHandle, MrHandle mrHandle);
+    virtual HcclResult Init(SocketInfoT &socketInfo, RdmaHandle rdmaHandle, MrHandle mrHandle);
     virtual HcclResult Deinit() = 0;
     virtual HcclResult Isend(const TransData &sendData, const TransportEndPointParam &epParam,
         HcclRequestInfo *&request) = 0;
@@ -142,8 +142,8 @@ protected:
     HcclResult GenerateRecvMessage(HcclEnvelopeSummary &recvEnvelope, HcclMessageInfo *&msg, HcclStatus &status);
     HcclResult FreeRecvMessage(HcclMessageInfo &msg) const;
     HcclResult ProbeNothing(s32 &flag, HcclMessageInfo *&msg, HcclStatus &status) const;
-    HcclResult ConnectSocket(socket_connect_info_t conn[], u32 num, bool &completed);
-    HcclResult GetSocket(u32 role, struct socket_info_t info[], u32 num, u32 &connectedNum, bool &completed);
+    HcclResult ConnectSocket(SocketConnectInfoT conn[], u32 num, bool &completed);
+    HcclResult GetSocket(u32 role, struct SocketInfoT info[], u32 num, u32 &connectedNum, bool &completed);
     HcclResult SocketClose();
     HcclResult CheckConsistentFrame();
     HcclResult ConnectAsync();

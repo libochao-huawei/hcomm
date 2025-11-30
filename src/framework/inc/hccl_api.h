@@ -895,7 +895,7 @@ extern HcclResult HcclExchangeMem(HcclComm comm, const EndPoint *srcEndPoint, co
  * @param notifyType 
  * @param notifyHandleList
  * @return HcclResult 
- * @warning  需要考虑是否带tag? 2、需要确认安全校验等方案 3、CommEngine commEngine,NotifyType notifyType是否要加？
+ * @warning  需要考虑是否带tag? 2、需要确认安全校验等方案 3、CommEngine commEngine,NotifyTypeT notifyType是否要加？
  */
 extern HcclResult HcclFreeNotify(HcclComm comm, NotifyHandle *notifyHandleList, uint32_t notifyNum);
 /** @} */  // 通信引擎资源管理

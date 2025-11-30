@@ -1296,7 +1296,7 @@ HcclResult hcclNslbDp::SendRankTable(NslbDpCommConfigInfo tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_COMM_INFO;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<tlv_msg*>(&sendMsg), reinterpret_cast<tlv_msg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
 	HCCL_INFO("!!!!!!!!!!hccl send Table 1 to hccp. ret(%d)!!!!!!!!!!\n", ret);
 
@@ -1370,7 +1370,7 @@ HcclResult hcclNslbDp::SendRankTableOpAndAdj(NslbDpOperatorInfo &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_OPER;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<tlv_msg*>(&sendMsg), reinterpret_cast<tlv_msg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
 	HCCL_INFO("!!!!!!!!!!hccl send Table 2 to hccp. ret(%d)!!!!!!!!!!\n", ret);
 
@@ -1487,7 +1487,7 @@ HcclResult hcclNslbDp::SendRankTableAlgorithmInfo(NslbDpAlgorithmTlv &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_ADJ;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<tlv_msg*>(&sendMsg), reinterpret_cast<tlv_msg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
 	HCCL_INFO("!!!!!!!!!!hccl send Table 3 to hccp. ret(%d)!!!!!!!!!!\n", ret);
     return HCCL_SUCCESS;
@@ -1627,7 +1627,7 @@ HcclResult hcclNslbDp::SendRankTableGlobalRank(NslbDpGlobalRankInfo &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_RANK;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<tlv_msg*>(&sendMsg), reinterpret_cast<tlv_msg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
     HCCL_INFO("!!!!!!!!!!hccl send Table 4 to hccp. ret(%d)!!!!!!!!!!\n", ret);
 
@@ -1783,7 +1783,7 @@ HcclResult hcclNslbDp::SendRankTableGlobalDisRankVal(NslbDpGlobalDisRankVal &tab
     sendMsg.type = NSLBDP_TYPE_TBL_RANK_DIST;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<tlv_msg*>(&sendMsg), reinterpret_cast<tlv_msg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
     HCCL_INFO("!!!!!!!!!!hccl send Table NSLBDP_TYPE_TBL_RANK_DIST to hccp. ret(%d)!!!!!!!!!!\n", ret);
     return HCCL_SUCCESS;
@@ -1877,7 +1877,7 @@ HcclResult hcclNslbDp::SendRankTableRootRank(NslbDpRootRank &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_ROOT_RANK;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<tlv_msg*>(&sendMsg), reinterpret_cast<tlv_msg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
     HCCL_INFO("!!!!!!!!!!hccl send Table 6 to hccp. ret(%d)!!!!!!!!!!\n", ret);
     return HCCL_SUCCESS;

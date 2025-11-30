@@ -156,12 +156,12 @@ HcclResult HcclSocket::AddWhiteList(std::vector<SocketWlistInfo> &wlistInfoVec)
         return HCCL_E_NOT_FOUND;
     }
 
-    std::vector<struct socket_wlist_info_t> wlistInfosVec;
+    std::vector<struct SocketWlistInfoT> wlistInfosVec;
     for (auto remote : wlistInfoVec) {
-        struct socket_wlist_info_t wlistInfo = {0};
-        wlistInfo.conn_limit = remote.connLimit;
-        wlistInfo.remote_ip.addr = remote.remoteIp.addr;
-        wlistInfo.remote_ip.addr6 = remote.remoteIp.addr6;
+        struct SocketWlistInfoT wlistInfo = {0};
+        wlistInfo.connLimit = remote.connLimit;
+        wlistInfo.remoteIp.addr = remote.remoteIp.addr;
+        wlistInfo.remoteIp.addr6 = remote.remoteIp.addr6;
         s32 sRet = memcpy_s(&wlistInfo.tag[0], sizeof(wlistInfo.tag), remote.tag, sizeof(remote.tag));
         if (sRet != EOK) {
             HCCL_ERROR("[Delete][SocketWhiteList]memory copy failed. errorno[%d]", sRet);
@@ -181,12 +181,12 @@ HcclResult HcclSocket::DelWhiteList(std::vector<SocketWlistInfo> &wlistInfoVec)
         return HCCL_E_NOT_FOUND;
     }
 
-    std::vector<struct socket_wlist_info_t> wlistInfosVec;
+    std::vector<struct SocketWlistInfoT> wlistInfosVec;
     for (auto remote : wlistInfoVec) {
-        struct socket_wlist_info_t wlistInfo = {0};
-        wlistInfo.conn_limit = remote.connLimit;
-        wlistInfo.remote_ip.addr = remote.remoteIp.addr;
-        wlistInfo.remote_ip.addr6 = remote.remoteIp.addr6;
+        struct SocketWlistInfoT wlistInfo = {0};
+        wlistInfo.connLimit = remote.connLimit;
+        wlistInfo.remoteIp.addr = remote.remoteIp.addr;
+        wlistInfo.remoteIp.addr6 = remote.remoteIp.addr6;
         s32 sRet = memcpy_s(&wlistInfo.tag[0], sizeof(wlistInfo.tag), remote.tag, sizeof(remote.tag));
         if (sRet != EOK) {
             HCCL_ERROR("[Delete][SocketWhiteList]memory copy failed. errorno[%d]", sRet);
@@ -211,14 +211,14 @@ HcclResult HcclSocket::Connect()
 
     // 作为客户端时, 向远端发起 Connect 请求; 作为服务端时, 暂什么也不做
     if (localRole_ == HcclSocketRole::SOCKET_ROLE_CLIENT) {
-        socket_connect_info_t connectInfo {};
-        connectInfo.remote_ip.addr = remoteIp_.GetBinaryAddress().addr;
-        connectInfo.remote_ip.addr6 = remoteIp_.GetBinaryAddress().addr6;
-        connectInfo.socket_handle = nicSocketHandle_;
+        SocketConnectInfoT connectInfo {};
+        connectInfo.remoteIp.addr = remoteIp_.GetBinaryAddress().addr;
+        connectInfo.remoteIp.addr6 = remoteIp_.GetBinaryAddress().addr6;
+        connectInfo.socketHandle = nicSocketHandle_;
         connectInfo.port = remotePort_;
         CHK_SAFETY_FUNC_RET(strcpy_s(connectInfo.tag, SOCK_CONN_TAG_SIZE, tag_.c_str()));
 
-        HCCL_INFO("[Connect] localIp[%s], remoteIp[%s], socket_handle[%lu], tag[%s], port[%u]",
+        HCCL_INFO("[Connect] localIp[%s], remoteIp[%s], socketHandle[%lu], tag[%s], port[%u]",
             localIp_.GetReadableAddress(), remoteIp_.GetReadableAddress(),
             nicSocketHandle_, connectInfo.tag, remotePort_);
 
@@ -234,7 +234,7 @@ HcclResult HcclSocket::Connect()
 
 void HcclSocket::Close()
 {
-    HCCL_INFO("[Close] localIp[%s], remoteIp[%s], socket_handle[%lu], tag[%s], port[%u] status[%d]",
+    HCCL_INFO("[Close] localIp[%s], remoteIp[%s], socketHandle[%lu], tag[%s], port[%u] status[%d]",
         localIp_.GetReadableAddress(), remoteIp_.GetReadableAddress(),
         nicSocketHandle_, tag_.c_str(), remotePort_, status_);
     // 若socket处于超时状态，调用abort接口终止连接请求
@@ -246,10 +246,10 @@ void HcclSocket::Close()
         // 作为客户端时, 终止向远端发起的 connect 请求; 作为服务端时, 暂什么也不做
         if (isSupportRaSocketAbort && localRole_ == HcclSocketRole::SOCKET_ROLE_CLIENT && !remoteIp_.IsInvalid() &&
             nicSocketHandle_) {
-            socket_connect_info_t connectInfo {};
-            connectInfo.remote_ip.addr = remoteIp_.GetBinaryAddress().addr;
-            connectInfo.remote_ip.addr6 = remoteIp_.GetBinaryAddress().addr6;
-            connectInfo.socket_handle = nicSocketHandle_;
+            SocketConnectInfoT connectInfo {};
+            connectInfo.remoteIp.addr = remoteIp_.GetBinaryAddress().addr;
+            connectInfo.remoteIp.addr6 = remoteIp_.GetBinaryAddress().addr6;
+            connectInfo.socketHandle = nicSocketHandle_;
             connectInfo.port = remotePort_;
             strcpy_s(connectInfo.tag, SOCK_CONN_TAG_SIZE, tag_.c_str());
 
@@ -266,12 +266,12 @@ void HcclSocket::Close()
             HCCL_WARNING("[Close] socket's fdHandle is null, do not need close.");
             return;
         }
-        socket_close_info_t closeInfo = {0};
-        closeInfo.socket_handle = nicSocketHandle_;
-        closeInfo.fd_handle = fdHandle_;
-        closeInfo.disuse_linger = static_cast<s32>(forceClose_);
-        HCCL_DEBUG("[HcclSocket][Close] socketType[%d] nicHandle[%p] fdHandle[%p] disuse_linger[%d]", socketType_,
-            nicSocketHandle_, fdHandle_, closeInfo.disuse_linger);
+        SocketCloseInfoT closeInfo = {0};
+        closeInfo.socketHandle = nicSocketHandle_;
+        closeInfo.fdHandle = fdHandle_;
+        closeInfo.disuseLinger = static_cast<s32>(forceClose_);
+        HCCL_DEBUG("[HcclSocket][Close] socketType[%d] nicHandle[%p] fdHandle[%p] disuseLinger[%d]", socketType_,
+            nicSocketHandle_, fdHandle_, closeInfo.disuseLinger);
 
         HcclResult sRet = hrtRaSocketBatchClose(&closeInfo, 1, 1);
         if (sRet != HCCL_SUCCESS) {
@@ -333,10 +333,10 @@ HcclSocketStatus HcclSocket::GetStatus()
 
     // 疑问: Listen Socket 会是什么状态？
 
-    socket_info_t socketInfo {};
-    socketInfo.remote_ip.addr = remoteIp_.GetBinaryAddress().addr;
-    socketInfo.remote_ip.addr6 = remoteIp_.GetBinaryAddress().addr6;
-    socketInfo.socket_handle = nicSocketHandle_;
+    SocketInfoT socketInfo {};
+    socketInfo.remoteIp.addr = remoteIp_.GetBinaryAddress().addr;
+    socketInfo.remoteIp.addr6 = remoteIp_.GetBinaryAddress().addr6;
+    socketInfo.socketHandle = nicSocketHandle_;
     s32 ret = strcpy_s(socketInfo.tag, SOCK_CONN_TAG_SIZE, tag_.c_str());
     CHK_PRT_RET(ret != 0,
         HCCL_ERROR("[Get][Status]strcpy_s failed. ret[%u]", ret), HcclSocketStatus::SOCKET_ERROR);
@@ -351,7 +351,7 @@ HcclSocketStatus HcclSocket::GetStatus()
     } else {
         if (connectedNum == 1) {
             status_ = ConvertRaSocketStatus(socketInfo.status);
-            fdHandle_ = socketInfo.fd_handle;
+            fdHandle_ = socketInfo.fdHandle;
             HCCL_INFO("[Get][Status]status_[%u] ", status_);
             return status_;
         } else {
@@ -373,7 +373,7 @@ HcclResult HcclSocket::Accept(const std::string &tag, std::shared_ptr<HcclSocket
     CHK_SMART_PTR_NULL(socket);
     CHK_RET(socket->Init());
 
-    HCCL_INFO("[Accept]localIp[%s], remoteIp[%s], socket_handle[%p], tag[%s]",
+    HCCL_INFO("[Accept]localIp[%s], remoteIp[%s], socketHandle[%p], tag[%s]",
         localIp_.GetReadableAddress(), remoteIp_.GetReadableAddress(), nicSocketHandle_, tag.c_str());
 
     s32 acceptTimeOutTmp  = static_cast<s32>(acceptTimeOut);

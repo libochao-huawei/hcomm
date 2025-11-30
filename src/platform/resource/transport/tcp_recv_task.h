@@ -47,7 +47,7 @@ public:
     }
 
     static void RecvDataCb(const FdHandle fdHandle);
-    HcclResult Init(const socket_info_t socketInfo, void *transportPtr);
+    HcclResult Init(const SocketInfoT socketInfo, void *transportPtr);
     HcclResult Deinit();
     HcclResult SetRecvTask(const FdHandle fdHandle, HcclRequestInfo *request);
 

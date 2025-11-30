@@ -203,7 +203,7 @@ std::map<HostMappingKey, HostMappingInfo>::iterator MrManager::SearchMappingMap(
 
 HcclResult MrManager::RegMrImpl(void *addr, u64 size, HcclMrInfo &mrInfo, MrHandle &mrHandle, void *&devVirAddr)
 {
-    mr_info info = {};
+    MrInfoT info = {};
     info.addr = mrInfo.addr;
     info.size = mrInfo.size;
     info.access = mrInfo.access;
@@ -252,7 +252,7 @@ HcclResult MrManager::DeRegMrImpl(MrInfo mrInfo)
     if (isUseQPHandle_) {
         // 注销MR
         TransMrInfo((IsHostMem_) ? mrInfo.devVirAddr : mrInfo.addr, mrInfo.size, mrInfoTmp);
-        mr_info hccpMrInfoTmp = {};
+        MrInfoT hccpMrInfoTmp = {};
         hccpMrInfoTmp.addr = mrInfoTmp.addr;
         hccpMrInfoTmp.size = mrInfoTmp.size;
         hccpMrInfoTmp.access = mrInfoTmp.access;

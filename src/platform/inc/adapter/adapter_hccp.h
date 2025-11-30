@@ -173,7 +173,7 @@ inline HcclResult CheckQpDepth(uint32_t depth)
     return HCCL_E_PARA;
 }
 
-HcclResult ConstructQpAttrs(s32 qpMode, struct qp_ext_attrs &attrs, const QueueDepthAttr& qpDepth,
+HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDepthAttr& qpDepth,
     bool isWorkFlowLib = false);
 
 HcclResult HrtRaGetQpDepth(RdmaHandle rdmaHandle, unsigned int *tempDepth, unsigned int *qpNum);
@@ -184,28 +184,28 @@ HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockH
 HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle,
     std::function<bool()> needStop = []() { return false; });
 s32 hrtGetRaQpStatus(QpHandle handle, int *status);
-HcclResult HrtRaMrReg(QpHandle handle, struct mr_info *mrInfo);
-HcclResult HrtRaGetNotifyMrInfo(u32 phy_id, RdmaHandle handle, struct mr_info *mrInfo);
-HcclResult HrtRaMrDereg(QpHandle handle, struct mr_info *mrInfo);
-HcclResult HrtRaSendWr(QpHandle handle, struct send_wr *wr, struct send_wr_rsp *opRsp);
-HcclResult HrtRaSendWrV2(QpHandle handle, struct send_wr_v2 *wr, struct send_wr_rsp *opRsp,
+HcclResult HrtRaMrReg(QpHandle handle, struct MrInfoT *mrInfo);
+HcclResult HrtRaGetNotifyMrInfo(u32 phyId, RdmaHandle handle, struct MrInfoT *mrInfo);
+HcclResult HrtRaMrDereg(QpHandle handle, struct MrInfoT *mrInfo);
+HcclResult HrtRaSendWr(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp);
+HcclResult HrtRaSendWrV2(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp *opRsp,
     HcclWorkflowMode workflowMode = HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
 s32 hrtRaPollCq(QpHandle handle, bool is_send_cq, unsigned int num, void *wc);
-HcclResult HrtRaSendWrlist(QpHandle handle, struct send_wrlist_data wr[], struct send_wr_rsp opRsp[],
+HcclResult HrtRaSendWrlist(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     unsigned int sendNum, unsigned int *completeNum);
-HcclResult HrtRaSendWrlistExt(QpHandle handle, struct send_wrlist_data_ext wr[], struct send_wr_rsp opRsp[],
+HcclResult HrtRaSendWrlistExt(QpHandle handle, struct SendWrlistDataExt wr[], struct SendWrRsp opRsp[],
     unsigned int sendNum, unsigned int *completeNum);
-HcclResult HrtRaSendNormalWrlist(QpHandle handle, struct wr_info wr[], struct send_wr_rsp opRsp[],
+HcclResult HrtRaSendNormalWrlist(QpHandle handle, struct WrInfo wr[], struct SendWrRsp opRsp[],
                            unsigned int sendNum, unsigned int *completeNum);
 HcclResult HrtRaGetNotifyBaseAddr(RdmaHandle handle, u64 *va, u64 *size,
     std::function<bool()> needStop = []() { return false; });
-HcclResult HrtRaInit(struct ra_init_config *config);
-HcclResult HrtRaDeInit(struct ra_init_config *config);
+HcclResult HrtRaInit(struct RaInitConfig *config);
+HcclResult HrtRaDeInit(struct RaInitConfig *config);
 
 HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHandle &rdmaHandle);
 HcclResult HrtRaRdmaInitRef(int mode, u32 notifyType, const struct rdev &rdevInfo, RdmaHandle &rdmaHandle);
-HcclResult HrtRaRdmaInitWithAttr(struct rdev_init_info &init_info, const struct rdev &rdevInfo, RdmaHandle &rdmaHandle);
-HcclResult HrtRdmaInitWithBackupAttr(struct rdev_init_info &init_info, struct rdev &rdevInfo,
+HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rdev &rdevInfo, RdmaHandle &rdmaHandle);
+HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev &rdevInfo,
     struct rdev &backupRdevInfo, RdmaHandle &rdmaHandle);
 HcclResult HrtRaRdmaGetHandle(unsigned int phyId, RdmaHandle &rdmaHandle);
 HcclResult HrtRaRdmaDeInit(RdmaHandle &rdmaHandle, u32 notifyType);
@@ -213,21 +213,21 @@ HcclResult HrtRaRdmaDeInitRef(RdmaHandle &rdmaHandle, u32 notifyType);
 HcclResult HrtGetRdmaLiteStatus(RdmaHandle rdmaHandle, int *supportLite);
 HcclResult hrtRaSocketInit(int mode, struct rdev rdevInfo, SocketHandle &socketHandle);
 HcclResult hrtRaSocketInitRef(int mode, const struct rdev &rdevInfo, SocketHandle &socketHandle);
-HcclResult hrtRaSocketInitV1(int mode, struct socket_init_info_t socket_init, SocketHandle &socketHandle);
+HcclResult hrtRaSocketInitV1(int mode, struct SocketInitInfoT socket_init, SocketHandle &socketHandle);
 HcclResult hrtRaSocketDeInit(SocketHandle &socketHandle);
 HcclResult hrtRaSocketDeInitRef(SocketHandle &socketHandle);
 
-HcclResult hrtRaSocketNonBlockListenStart(struct socket_listen_info_t conn[], u32 num);
-HcclResult hrtRaSocketListenStart(struct socket_listen_info_t conn[], u32 num);
-HcclResult hrtRaSocketAcceptCreditAdd(struct socket_listen_info_t conn[], u32 num, u32 creditLimit);
-HcclResult hrtRaSocketListenStop(struct socket_listen_info_t conn[], u32 num);
-HcclResult hrtRaSocketNonBlockBatchConnect(struct socket_connect_info_t conn[], u32 num);
-HcclResult hrtRaSocketBatchConnect(struct socket_connect_info_t conn[], u32 num, u32 maxLen = MAX_VALUE_U32,
+HcclResult hrtRaSocketNonBlockListenStart(struct SocketListenInfoT conn[], u32 num);
+HcclResult hrtRaSocketListenStart(struct SocketListenInfoT conn[], u32 num);
+HcclResult hrtRaSocketAcceptCreditAdd(struct SocketListenInfoT conn[], u32 num, u32 creditLimit);
+HcclResult hrtRaSocketListenStop(struct SocketListenInfoT conn[], u32 num);
+HcclResult hrtRaSocketNonBlockBatchConnect(struct SocketConnectInfoT conn[], u32 num);
+HcclResult hrtRaSocketBatchConnect(struct SocketConnectInfoT conn[], u32 num, u32 maxLen = MAX_VALUE_U32,
     std::function<bool()> needStop = []() { return false; });
-HcclResult hrtRaSocketBatchClose(struct socket_close_info_t conn[], u32 num, u32 maxLen = MAX_VALUE_U32);
-s32 hrtRaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum);
-HcclResult hrtRaNonBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum);
-HcclResult hrtRaBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num);
+HcclResult hrtRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num, u32 maxLen = MAX_VALUE_U32);
+s32 hrtRaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum);
+HcclResult hrtRaNonBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum);
+HcclResult hrtRaBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num);
 HcclResult hrtRaSocketNonBlockSendHeterog(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize);
 s32 hrtRaSocketNonBlockSend(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize);
 HcclResult hrtRaSocketNonBlockSendHeart(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize);
@@ -247,21 +247,21 @@ HcclResult hrtEpollCtlDel(const FdHandle fdHandle);
 HcclResult hrtSetRecvDataCallback(const SocketHandle socketHandle, const void *callback);
 
 HcclResult hrtGetServerId(std::string& serverId);
-HcclResult hrtGetIfNum(struct ra_get_ifattr &config, u32 &num);
-HcclResult hrtGetIfAddress(struct ra_get_ifattr &config, struct interface_info ifaddrInfos[], u32 &num);
+HcclResult hrtGetIfNum(struct RaGetIfattr &config, u32 &num);
+HcclResult hrtGetIfAddress(struct RaGetIfattr &config, struct InterfaceInfo ifaddrInfos[], u32 &num);
 HcclResult hrtRaGetInterfaceVersion(unsigned int phyId, unsigned int interfaceOpcode,
     unsigned int* interfaceVersion);
 HcclResult hrtRaSocketSetWhiteListStatus(u32 enable);
 HcclResult hrtRaSocketGetWhiteListStatus(u32 &enable);
-HcclResult hrtRaSocketWhiteListAdd(SocketHandle socketHandle, struct socket_wlist_info_t whiteList[], u32 num);
-HcclResult hrtRaSocketWhiteListDel(SocketHandle socketHandle, struct socket_wlist_info_t whiteList[], u32 num);
-HcclResult hrtRaRegGlobalMr(const RdmaHandle rdmaHandle, struct mr_info &mrInfo, MrHandle &mrHandle);
+HcclResult hrtRaSocketWhiteListAdd(SocketHandle socketHandle, struct SocketWlistInfoT whiteList[], u32 num);
+HcclResult hrtRaSocketWhiteListDel(SocketHandle socketHandle, struct SocketWlistInfoT whiteList[], u32 num);
+HcclResult hrtRaRegGlobalMr(const RdmaHandle rdmaHandle, struct MrInfoT &mrInfo, MrHandle &mrHandle);
 HcclResult hrtRaDeRegGlobalMr(const RdmaHandle rdmaHandle, MrHandle mrHandle);
 HcclResult hrtRaNormalQpCreate(RdmaHandle handle, struct ibv_qp_init_attr* initAttr, QpHandle &qpHandle,
     struct ibv_qp* &qp);
 HcclResult hrtRaNormalQpDestroy(QpHandle qpHandle);
-HcclResult hrtRaCreateCq(RdmaHandle handle, struct cq_attr* attr);
-HcclResult hrtRaDestroyCq(RdmaHandle handle, struct cq_attr* attr);
+HcclResult hrtRaCreateCq(RdmaHandle handle, struct CqAttr* attr);
+HcclResult hrtRaDestroyCq(RdmaHandle handle, struct CqAttr* attr);
 HcclResult CreateNormalQp(RdmaHandle rdmaHandle, QpInfo& qp);
 HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, bool isESMode = false);
 HcclResult CreateCqAndQp(RdmaHandle &rdmaHandle, std::string &label, QpConfig &config, QpInfo &info);
@@ -271,9 +271,9 @@ HcclResult DestroyQpWithSharedCq(const QpInfo& info, s32 qpAppend);
 HcclResult CreateQpWithCq(RdmaHandle rdmaHandle, s32 sqEvent, s32 rqEvent, RdmaHandle sendChannel,
     RdmaHandle recvChannel, QpInfo& info, bool isHdcMode = false, bool isESMode = false);
 HcclResult DestroyQpWithCq(const QpInfo& info, bool isHdcMode = false);
-HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct ai_qp_info &aiQpInfo, QpInfo &info, u32 devicePhyId);
+HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &info, u32 devicePhyId);
 HcclResult DestroyAiQp(const QpInfo &info);
-HcclResult hrtRaSetQpAttrQos(QpHandle qpHandle, struct qos_attr &attr);
+HcclResult hrtRaSetQpAttrQos(QpHandle qpHandle, struct QosAttr &attr);
 HcclResult hrtRaSetQpAttrTimeOut(QpHandle qpHandle, u32 &timeOut);
 HcclResult hrtRaSetQpAttrRetryCnt(QpHandle qpHandle, u32 &retryCnt);
 HcclResult SetQpAttrQos(QpHandle qpHandle, u32 tc = HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET,
@@ -282,44 +282,44 @@ HcclResult SetQpAttrTimeOut(QpHandle qpHandle);
 HcclResult SetQpAttrRetryCnt(QpHandle qpHandle);
 HcclResult hrtRaCreateCompChannel(RdmaHandle rdmaHandle, void **compChannel);
 HcclResult hrtRaDestroyCompChannel(RdmaHandle rdmaHandle, void *compChannel);
-HcclResult hrtRaGetCqeErrInfo(unsigned int phy_id, struct cqe_err_info *info);
-HcclResult hrtRaGetCqeErrInfoList(RdmaHandle rdmaHandle, struct cqe_err_info *infolist, u32 *num);
+HcclResult hrtRaGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);
+HcclResult hrtRaGetCqeErrInfoList(RdmaHandle rdmaHandle, struct CqeErrInfo *infolist, u32 *num);
 HcclResult IsSuppCqeErrInfoListConfig(bool& supCqeErrInfoListConfig);
 HcclResult IsSupportRaSendNormalWrlist(bool& isSupportRaSendNormalWrlist);
-HcclResult hrtRaGetQpAttr(QpHandle qpHandle, struct qp_attr *attr);
+HcclResult hrtRaGetQpAttr(QpHandle qpHandle, struct QpAttr *attr);
 HcclResult hrtRaCreateSrq(RdmaHandle rdmaHandle, SrqInfo &srqInfo);
 HcclResult hrtRaDestroySrq(RdmaHandle rdmaHandle, SrqInfo &srqInfo);
-HcclResult hrtRaRecvWrlist(QpHandle handle, struct recv_wrlist_data *wr, unsigned int recvNum,
+HcclResult hrtRaRecvWrlist(QpHandle handle, struct RecvWrlistData *wr, unsigned int recvNum,
     unsigned int *completeNum);
 
-HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, QpHandle &qpHandle);
-HcclResult hrtRaAiQpCreate(u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs,
-    struct ai_qp_info *info, QpHandle &qpHandle);
+HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, QpHandle &qpHandle);
+HcclResult hrtRaAiQpCreate(u32 phyId, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
+    struct AiQpInfo *info, QpHandle &qpHandle);
 
 HcclResult IsSuppportRaGetSocketVnicIps(bool& supportGetSocketVnicIp);
-HcclResult hrtRaGetSocketVnicIpInfos(u32 phy_id, enum id_type type, std::vector<u32> deviceIds,
+HcclResult hrtRaGetSocketVnicIpInfos(u32 phyId, enum IdType type, std::vector<u32> deviceIds,
     std::vector<hccl::HcclIpAddress> &vnicIps);
 
-HcclResult hrtRaPingInit(struct ping_init_attr *initAttr, struct ping_init_info *initInfo, void **pingHandle);
+HcclResult hrtRaPingInit(struct PingInitAttr *initAttr, struct PingInitInfo *initInfo, void **pingHandle);
 HcclResult hrtRaPingDeinit(void *pingHandle);
-HcclResult hrtRaPingTargetAdd(void *pingHandle, struct ping_target_info target[], uint32_t num);
-HcclResult hrtRaPingTargetDel(void *pingHandle, struct ping_target_comm_info target[], uint32_t num);
-HcclResult hrtRaPingTaskStart(void *pingHandle, struct ping_task_attr *attr);
+HcclResult hrtRaPingTargetAdd(void *pingHandle, struct PingTargetInfo target[], uint32_t num);
+HcclResult hrtRaPingTargetDel(void *pingHandle, struct PingTargetCommInfo target[], uint32_t num);
+HcclResult hrtRaPingTaskStart(void *pingHandle, struct PingTaskAttr *attr);
 HcclResult hrtRaPingTaskStop(void *pingHandle);
-HcclResult hrtRaPingGetResults(void *pingHandle, struct ping_target_result target[], uint32_t *num);
+HcclResult hrtRaPingGetResults(void *pingHandle, struct PingTargetResult target[], uint32_t *num);
 
 HcclResult hrtRaIsFirstUsed(s32 insId, bool &used);
 HcclResult hrtRaIsLastUsed(s32 insId, bool &used);
 HcclResult hrtRaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsigned int num, int expectStatus);
 HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
-    int qpMode, struct typical_qp* qpInfo, QpHandle &qpHandle);
-HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct typical_qp* localQpInfo, struct typical_qp* remoteQpInfo);
-HcclResult hrtRaTypicalSendWr(QpHandle handle, struct send_wr *wr, struct send_wr_rsp *opRsp);
-HcclResult hrtRaRdevGetPortStatus(RdmaHandle rdmaHandle, enum port_status *status);
-HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct mem_remap_info info[], unsigned int num);
-HcclResult HrtRaGetTlsEnable(struct ra_info *info, bool *tlsEnable);
+    int qpMode, struct TypicalQp* qpInfo, QpHandle &qpHandle);
+HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo);
+HcclResult hrtRaTypicalSendWr(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp);
+HcclResult hrtRaRdevGetPortStatus(RdmaHandle rdmaHandle, enum PortStatus *status);
+HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct MemRemapInfo info[], unsigned int num);
+HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable);
 // 目前该接口只支持peer模式，且只适用于终止未建链成功的链路，即未get_socket成功的链路
-HcclResult hrtRaSocketNonBlockBatchAbort(socket_connect_info_t conn[], u32 num);
-HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct typical_qp& qpInfo);
+HcclResult hrtRaSocketNonBlockBatchAbort(SocketConnectInfoT conn[], u32 num);
+HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo);
 HcclResult IsSupportRaSocketAbort(bool& isSupportRaSocketAbort);
 #endif

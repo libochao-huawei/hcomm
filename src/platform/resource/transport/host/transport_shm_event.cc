@@ -400,21 +400,21 @@ HcclResult TransportShmEvent::PrepareConnect()
 
 HcclResult TransportShmEvent::GetConnection()
 {
-    socket_info_t socketInfo = {nullptr};
+    SocketInfoT socketInfo = {nullptr};
 
-    socketInfo.socket_handle = socketHandle_;
-    socketInfo.fd_handle = nullptr;
-    socketInfo.remote_ip.addr = peerIp_.GetBinaryAddress().addr;
-    socketInfo.remote_ip.addr6 = peerIp_.GetBinaryAddress().addr6;
+    socketInfo.socketHandle = socketHandle_;
+    socketInfo.fdHandle = nullptr;
+    socketInfo.remoteIp.addr = peerIp_.GetBinaryAddress().addr;
+    socketInfo.remoteIp.addr6 = peerIp_.GetBinaryAddress().addr6;
 
     socketInfo.status = CONNECT_FAIL;
     s32 sRet = memcpy_s(socketInfo.tag, sizeof(socketInfo.tag) - 1, linkTag_.c_str(), linkTag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d]", sRet), HCCL_E_MEMORY);
     CHK_RET(hrtRaBlockGetSockets(role_, &socketInfo, 1));
-    CHK_PRT_RET((socketInfo.status != CONNECT_OK) || (socketInfo.fd_handle == nullptr),
+    CHK_PRT_RET((socketInfo.status != CONNECT_OK) || (socketInfo.fdHandle == nullptr),
         HCCL_ERROR("[Socket][GetConnection] get socket failed. status[%d]",
             socketInfo.status), HCCL_E_TCP_TRANSFER);
-    fdHandle_ = socketInfo.fd_handle;
+    fdHandle_ = socketInfo.fdHandle;
     HCCL_INFO("[Socket][GetConnection] get socket success with remote[%s], tag[%s]",
         peerIp_.GetReadableAddress(), socketInfo.tag);
 
@@ -427,10 +427,10 @@ HcclResult TransportShmEvent::ConnectToServer()
         return HCCL_SUCCESS;
     }
 
-    socket_connect_info_t connInfo = {nullptr};
-    connInfo.remote_ip.addr = peerIp_.GetBinaryAddress().addr;
-    connInfo.remote_ip.addr6 = peerIp_.GetBinaryAddress().addr6;
-    connInfo.socket_handle = socketHandle_;
+    SocketConnectInfoT connInfo = {nullptr};
+    connInfo.remoteIp.addr = peerIp_.GetBinaryAddress().addr;
+    connInfo.remoteIp.addr6 = peerIp_.GetBinaryAddress().addr6;
+    connInfo.socketHandle = socketHandle_;
     connInfo.port = peerPort_;
     s32 sRet = memcpy_s(connInfo.tag, sizeof(connInfo.tag) - 1, linkTag_.c_str(), linkTag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d]", sRet), HCCL_E_MEMORY);
@@ -444,13 +444,13 @@ HcclResult TransportShmEvent::InitSocketWhiteList()
     s32 sRet = memset_s(&wlistInfo_, sizeof(wlistInfo_), 0, sizeof(wlistInfo_));
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memset failed, errorno[%d]", sRet), HCCL_E_MEMORY);
 
-    wlistInfo_.conn_limit = NIC_SOCKET_CONN_LIMIT;
+    wlistInfo_.connLimit = NIC_SOCKET_CONN_LIMIT;
 
     sRet = memcpy_s(wlistInfo_.tag, sizeof(wlistInfo_.tag) - 1, linkTag_.c_str(), linkTag_.size());
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("memcpy_s failed, errorno[%d]", sRet), HCCL_E_MEMORY);
 
-    wlistInfo_.remote_ip.addr = peerIp_.GetBinaryAddress().addr;
-    wlistInfo_.remote_ip.addr6 = peerIp_.GetBinaryAddress().addr6;
+    wlistInfo_.remoteIp.addr = peerIp_.GetBinaryAddress().addr;
+    wlistInfo_.remoteIp.addr6 = peerIp_.GetBinaryAddress().addr6;
     HCCL_INFO("[Socket][InitSocketWhiteList] tag[%s]", wlistInfo_.tag);
 
     return HCCL_SUCCESS;
@@ -482,9 +482,9 @@ HcclResult TransportShmEvent::Close()
     }
     HCCL_INFO("[Socket][Close] linkTag[%s]", linkTag_.c_str());
     CHK_RET(DelSocketWhiteList());
-    socket_close_info_t closeInfo = {0};
-    closeInfo.socket_handle = socketHandle_;
-    closeInfo.fd_handle = fdHandle_;
+    SocketCloseInfoT closeInfo = {0};
+    closeInfo.socketHandle = socketHandle_;
+    closeInfo.fdHandle = fdHandle_;
     if (hrtRaSocketBatchClose(&closeInfo, 1) != HCCL_SUCCESS) {
         HCCL_ERROR("ra socket batch close failed");
     }

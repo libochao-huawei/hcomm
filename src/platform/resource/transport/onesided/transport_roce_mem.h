@@ -68,7 +68,7 @@ private:
     };
     HcclResult CreateCqAndQp();
     HcclResult WaitQPLinkComplete(s32 timeoutSec);
-    HcclResult DoorBellSend(const s32 qpMode, wr_info &sendWrInfo, const send_wr_rsp &opRsp, rtStream_t stream);
+    HcclResult DoorBellSend(const s32 qpMode, WrInfo &sendWrInfo, const SendWrRsp &opRsp, rtStream_t stream);
     HcclResult DestroyCqAndQp();
     HcclResult CreatSignalMesg();
     HcclResult GetNotifySize();
@@ -80,7 +80,7 @@ private:
         std::shared_ptr<LocalIpcNotify> &localNotify, MemMsg &rdmaSignalInfo, MemType notifyType);
     HcclResult GetRdmaHandle();
     HcclResult ExchangeNotifyValueBuffer();
-    HcclResult RdmaDbSend(u32 dbindex, u64 dbinfo, const struct send_wr &sendWr, rtStream_t stream);
+    HcclResult RdmaDbSend(u32 dbindex, u64 dbinfo, const struct SendWr &sendWr, rtStream_t stream);
     HcclResult CreateNotifyValueBuffer();
     HcclResult TransportRdmaWithType(const RmaBufferSlice &localRmaBufferSlice,
         const RmaBufferSlice &remoteRmaBufferSlice, const rtStream_t &stream, const RdmaOp &rdmaOp);
@@ -105,7 +105,7 @@ private:
     QpInfo dataQpInfo_{};
     s32 access_{RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_WRITE | RA_ACCESS_REMOTE_READ};
     void *nicRdmaHandle_{nullptr};
-    struct ai_qp_info aiQpInfo_{};    // struct ibv_qp
+    struct AiQpInfo aiQpInfo_{};    // struct ibv_qp
     std::shared_ptr<LocalIpcNotify> remoteIsendDoneSignal_{nullptr};
     MemMsg rdmaSignal_[REMOTE_RDMA_SIGNAL_SIZE];
     MrHandle rdmaSignalMrHandle_{nullptr};

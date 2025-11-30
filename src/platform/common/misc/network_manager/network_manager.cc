@@ -191,25 +191,25 @@ HcclResult NetworkManager::PrepareInit(NICDeployment nicDeploy, u32 devicePhyId,
     }
     return HCCL_SUCCESS;
 }
-HcclResult NetworkManager::GetConfigAndRaInit(struct ra_init_config &config, bool isHdcV2, NICDeployment nicDeploy)
+HcclResult NetworkManager::GetConfigAndRaInit(struct RaInitConfig &config, bool isHdcV2, NICDeployment nicDeploy)
 {
      // DC场景网卡与进程在同一侧，需要设置为类似host网卡模式
-    config.nic_position = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
-    config.phy_id = devicePhyId_;
+    config.nicPosition = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
+    config.phyId = devicePhyId_;
 
     if (isHdcV2) {
         // 使用HDC_SERVICE_TYPE_RDMA_V2指定进程粒度
-        config.hdc_type = HDC_SERVICE_TYPE_RDMA_V2;
-        HCCL_DEBUG("[%s]hdc_type is set to HDC_SERVICE_TYPE_RDMA_V2"
+        config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
+        HCCL_DEBUG("[%s]hdcType is set to HDC_SERVICE_TYPE_RDMA_V2"
             "devicePhyId[%u], deviceLogicId_[%d]", __func__, devicePhyId_, deviceLogicId_);
     }
     HcclResult ret = HrtRaInit(&config);
     RPT_CALL_ERR(ret != HCCL_SUCCESS,
-        "ra init failed,return[%d] devicePhyId_[%u], nic_position[%u]", ret, devicePhyId_,
+        "ra init failed,return[%d] devicePhyId_[%u], nicPosition[%u]", ret, devicePhyId_,
         static_cast<u32>(nicDeploy));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[NetworkManager][Init]errNo[0x%016llx] ra init failed,return[%d] devicePhyId_[%u], "
-            "nic_position[%u]", HCCL_ERROR_CODE(ret), ret, devicePhyId_, static_cast<u32>(nicDeploy)), HCCL_E_NETWORK);
+            "nicPosition[%u]", HCCL_ERROR_CODE(ret), ret, devicePhyId_, static_cast<u32>(nicDeploy)), HCCL_E_NETWORK);
 
     return HCCL_SUCCESS;
 }
@@ -281,7 +281,7 @@ HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFla
         }
     }
 
-    struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
     u32 enableWhiteList = (GetExternalInputHcclEnableWhitelist() == HCCL_WHITELIST_ON) ? 1 : 0;
     if (GetRemoteIsHdc() && IsGeneralServer()) {
         HCCL_INFO("General server NetworkManager open Whitelist");
@@ -292,25 +292,25 @@ HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFla
         CHK_RET(hrtRaSocketSetWhiteListStatus(enableWhiteList));
     }
     // DC场景网卡与进程在同一侧，需要设置为类似host网卡模式
-    config.nic_position = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
-    config.phy_id = devicePhyId_;
-    HCCL_DEBUG("[%s]config.phy_id = %u, nic_position[%u], hasBackup[%d], devicePhyId_[%u], deviceLogicId_[%d], "
-        "devicePhyId[%u]", __func__, config.phy_id, config.nic_position, hasBackup, devicePhyId_, deviceLogicId_,
+    config.nicPosition = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
+    config.phyId = devicePhyId_;
+    HCCL_DEBUG("[%s]config.phyId = %u, nicPosition[%u], hasBackup[%d], devicePhyId_[%u], deviceLogicId_[%d], "
+        "devicePhyId[%u]", __func__, config.phyId, config.nicPosition, hasBackup, devicePhyId_, deviceLogicId_,
         devicePhyId);
 
     if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !Is310PDevice() && (supportMultiProcHCCP || hasBackup)) {
         // 使用HDC_SERVICE_TYPE_RDMA_V2指定进程粒度
-        config.hdc_type = HDC_SERVICE_TYPE_RDMA_V2;
-        HCCL_DEBUG("[%s]hdc_type is set to HDC_SERVICE_TYPE_RDMA_V2, hasBackup[%d], nicDeploy[%d], "
+        config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
+        HCCL_DEBUG("[%s]hdcType is set to HDC_SERVICE_TYPE_RDMA_V2, hasBackup[%d], nicDeploy[%d], "
             "devicePhyId[%u], deviceLogicId_[%d]", __func__, hasBackup, nicDeploy, devicePhyId_, deviceLogicId_);
     }
     HcclResult ret = HrtRaInit(&config);
     RPT_CALL_ERR(ret != HCCL_SUCCESS,
-        "ra init failed,return[%d] devicePhyId_[%u], nic_position[%u]", ret, devicePhyId_,
+        "ra init failed,return[%d] devicePhyId_[%u], nicPosition[%u]", ret, devicePhyId_,
         static_cast<u32>(nicDeploy));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[NetworkManager][Init]errNo[0x%016llx] ra init failed,return[%d] devicePhyId_[%u], "
-            "nic_position[%u]", HCCL_ERROR_CODE(ret), ret, devicePhyId_, static_cast<u32>(nicDeploy)), HCCL_E_NETWORK);
+            "nicPosition[%u]", HCCL_ERROR_CODE(ret), ret, devicePhyId_, static_cast<u32>(nicDeploy)), HCCL_E_NETWORK);
 
     HCCL_INFO("NetworkManager nicDeploy[%u] deviceLogicId_[%d] devicePhyId_[%u] init ra OK, nicSocketMap size[%u], "
         "isHostUseDevNic[%d]", static_cast<u32>(nicDeploy), deviceLogicId_, devicePhyId_,
@@ -332,10 +332,10 @@ HcclResult NetworkManager::InitV2(NICDeployment nicDeploy, bool isBackup, u32 de
     bool supportMultiProcHCCP = false;
     CHK_RET(GetTsdOpen(nicDeploy, isBackup, supportMultiProcHCCP));
 
-    struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false};
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false};
     bool isHdcV2 = (nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !Is310PDevice() && (supportMultiProcHCCP || isBackup));
     if (isHdcV2) {
-        HCCL_DEBUG("[%s]hdc_type is set to HDC_SERVICE_TYPE_RDMA_V2, isBackup[%d], nicDeploy[%d], "
+        HCCL_DEBUG("[%s]hdcType is set to HDC_SERVICE_TYPE_RDMA_V2, isBackup[%d], nicDeploy[%d], "
             "devicePhyId[%u], deviceLogicId_[%d]", __func__, isBackup, nicDeploy, devicePhyId_, deviceLogicId_);
     }
     CHK_RET(GetConfigAndRaInit(config, isHdcV2, nicDeploy));
@@ -375,17 +375,17 @@ HcclResult NetworkManager::HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u
     CHK_RET(hrtRaSocketSetWhiteListStatus(0));
 
     // 暂缺获取物理id的手段
-    ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
-    config.phy_id = ((static_cast<s32>(devId) == HOST_DEVICE_ID) ? 0 : devId);
-    config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
+    RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    config.phyId = ((static_cast<s32>(devId) == HOST_DEVICE_ID) ? 0 : devId);
+    config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
     HCCL_INFO("HeterogInit call HrtRaInit.");
     CHK_RET(HrtRaInit(&config));
 
     struct rdev nicRdevInfo;
-    nicRdevInfo.phy_id = devId;
+    nicRdevInfo.phyId = devId;
     nicRdevInfo.family = ipAddr.GetFamily();
-    nicRdevInfo.local_ip.addr = ipAddr.GetBinaryAddress().addr;
-    nicRdevInfo.local_ip.addr6 = ipAddr.GetBinaryAddress().addr6;
+    nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;
+    nicRdevInfo.localIp.addr6 = ipAddr.GetBinaryAddress().addr6;
     SocketHandle socketHandle = nullptr;
     HcclResult ret = hrtRaSocketInit(NETWORK_PEER_ONLINE, nicRdevInfo, socketHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -453,9 +453,9 @@ HcclResult NetworkManager::HeterogDeinit(u32 devId, const HcclIpAddress &ipAddr,
         CHK_RET(HrtRaRdmaDeInit(nicRdmaHandle, NO_USE));
     }
 
-    ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
-    config.phy_id = devId;
-    config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
+    RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    config.phyId = devId;
+    config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
 
     HCCL_INFO("HeterogDeinit call HrtRaDeInit.");
     CHK_RET(HrtRaDeInit(&config));
@@ -500,7 +500,7 @@ HcclResult NetworkManager::PrepareDeInit(s32 &ref, NICDeployment nicDeploy)
     return HCCL_SUCCESS;
 }
 
-HcclResult NetworkManager::GetConfigAndRaDeinit(struct ra_init_config &config, NICDeployment nicDeploy, bool &isMultiProc, bool hasBackup)
+HcclResult NetworkManager::GetConfigAndRaDeinit(struct RaInitConfig &config, NICDeployment nicDeploy, bool &isMultiProc, bool hasBackup)
 {
         if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !Is310PDevice()) {
         CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionInit());
@@ -508,14 +508,14 @@ HcclResult NetworkManager::GetConfigAndRaDeinit(struct ra_init_config &config, N
         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
         if(supportMultiProcHCCP || hasBackup) {
             isMultiProc = true;
-            config.hdc_type = HDC_SERVICE_TYPE_RDMA_V2;
+            config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
         }
     }
 
     HcclResult ret = HrtRaDeInit(&config);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[NetworkManager][DeInit]ra deinit failed. para: nicdeploy[%u], phy_id[%u], ret[%u]",
-        config.nic_position, config.phy_id, ret), ret);
+        HCCL_ERROR("[NetworkManager][DeInit]ra deinit failed. para: nicdeploy[%u], phyId[%u], ret[%u]",
+        config.nicPosition, config.phyId, ret), ret);
     if (IsGeneralServer()) {
         isRaDeInit_ = true;
     }
@@ -545,9 +545,9 @@ HcclResult NetworkManager::DeInit(NICDeployment nicDeploy, bool resetDeviceFlag,
         return HCCL_E_INTERNAL;
     }
 
-    struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
-    config.nic_position = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
-    config.phy_id = devicePhyId_;
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    config.nicPosition = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
+    config.phyId = devicePhyId_;
 
     bool isMultiProc = false;
     if (nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !Is310PDevice()) {
@@ -556,22 +556,22 @@ HcclResult NetworkManager::DeInit(NICDeployment nicDeploy, bool resetDeviceFlag,
         CHK_RET(TsdCapabilityGet(supportMultiProcHCCP));
         if(supportMultiProcHCCP || hasBackup) {
             isMultiProc = true;
-            config.hdc_type = HDC_SERVICE_TYPE_RDMA_V2;
+            config.hdcType = HDC_SERVICE_TYPE_RDMA_V2;
         }
     }
 
     HcclResult ret = HrtRaDeInit(&config);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[NetworkManager][DeInit]ra deinit failed. para: nicdeploy[%u], phy_id[%u], ret[%u]",
-        config.nic_position, config.phy_id, ret), ret);
+        HCCL_ERROR("[NetworkManager][DeInit]ra deinit failed. para: nicdeploy[%u], phyId[%u], ret[%u]",
+        config.nicPosition, config.phyId, ret), ret);
     if (IsGeneralServer()) {
         isRaDeInit_ = true;
     }
 
     if (isMultiProc) {
         CHK_RET(CloseHccpProcess());
-        HCCL_INFO("[%s]finish CloseHccpProcess, phy_id[%u], hdc_type[%d], nicDeployment[%d], hasBackup[%d]",
-            __func__, config.phy_id, config.hdc_type, nicDeploy, hasBackup);
+        HCCL_INFO("[%s]finish CloseHccpProcess, phyId[%u], hdcType[%d], nicDeployment[%d], hasBackup[%d]",
+            __func__, config.phyId, config.hdcType, nicDeploy, hasBackup);
     }
 
     HCCL_INFO("NetworkManager: deinit nic success, nicPosition[%u] ref[%u].", static_cast<u32>(nicDeploy), ref);
@@ -588,17 +588,17 @@ HcclResult NetworkManager::DeInitV2(NICDeployment nicDeploy,  bool isBackup, boo
         return HCCL_SUCCESS;
     }
 
-    struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
-    config.nic_position = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
-    config.phy_id = devicePhyId_;
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    config.nicPosition = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
+    config.phyId = devicePhyId_;
 
     bool isMultiProc = false;
     CHK_RET(GetConfigAndRaDeinit(config, nicDeploy, isMultiProc, isBackup));
 
     if (isMultiProc) {
         CHK_RET(CloseHccpProcess());
-        HCCL_INFO("[%s]finish CloseHccpProcess, phy_id[%u], hdc_type[%d], nicDeployment[%d], isBackup[%d]",
-            __func__, config.phy_id, config.hdc_type, nicDeploy, isBackup);
+        HCCL_INFO("[%s]finish CloseHccpProcess, phyId[%u], hdcType[%d], nicDeployment[%d], isBackup[%d]",
+            __func__, config.phyId, config.hdcType, nicDeploy, isBackup);
     }
 
     HCCL_INFO("NetworkManager: DeInitV2 success, nicPosition[%u] ref[%u].", static_cast<u32>(nicDeploy), ref);
@@ -719,7 +719,7 @@ HcclResult NetworkManager::StartNic(const HcclIpAddress &ipAddr, u32 &port, bool
         HCCL_INFO("NetworkManager: socket has inited, ipAddr[%s] port[%u], skip.", ipAddr.GetReadableAddress(), port);
     }
     if (sock.nicRdmaHandle == nullptr && rdmaFlag) {
-        network_mode netMode;
+        NetworkMode netMode;
         GetNetworkMode(netMode);
         CHK_RET(GetNotifyType(notifyType_));
         HcclResult ret = InitRDMA(devicePhyId_, ipAddr, netMode, notifyType_, sock.nicRdmaHandle, false,
@@ -791,7 +791,7 @@ HcclResult NetworkManager::CreateNicSocketHandle(const HcclIpAddress &ipAddr)
     return HCCL_SUCCESS;
 }
 
-HcclResult NetworkManager::CreateRdmaHandle(const HcclIpAddress &ipAddr, bool isBackup, network_mode netMode, notify_type notifyType, HcclNetDevDeployment netDevDeployment)
+HcclResult NetworkManager::CreateRdmaHandle(const HcclIpAddress &ipAddr, bool isBackup, NetworkMode netMode, NotifyTypeT notifyType, HcclNetDevDeployment netDevDeployment)
 {
     //  device侧如果传入的ip是备份ip,那么给InitRDMA传递的两个主备ip(两个相同)都是备份ip hostrdma没有备份 不受影响
     HcclIpAddress ipAddrBackup(ipAddr.GetFamily(), ipAddr.GetBinaryAddress());
@@ -1012,22 +1012,22 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
     return  HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
 }
 
-HcclResult NetworkManager::InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipAddr, network_mode netMode,
-    notify_type notifyType, RdmaHandle &rdmaHandle, bool disabledLiteThread, bool enable910ALite,
+HcclResult NetworkManager::InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipAddr, NetworkMode netMode,
+    NotifyTypeT notifyType, RdmaHandle &rdmaHandle, bool disabledLiteThread, bool enable910ALite,
     HcclIpAddress ipAddrBackup)
 {
     struct rdev nicRdevInfo;
-    nicRdevInfo.phy_id = devicePhysicID;
+    nicRdevInfo.phyId = devicePhysicID;
     nicRdevInfo.family = ipAddr.GetFamily();
-    nicRdevInfo.local_ip.addr = ipAddr.GetBinaryAddress().addr;
-    nicRdevInfo.local_ip.addr6 = ipAddr.GetBinaryAddress().addr6;
+    nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;
+    nicRdevInfo.localIp.addr6 = ipAddr.GetBinaryAddress().addr6;
 
-    struct rdev_init_info init_info = { DEFAULT_INIT_RDMA_CONFIG };
+    struct RdevInitInfo init_info = { DEFAULT_INIT_RDMA_CONFIG };
     init_info.mode = netMode;
-    init_info.notify_type = notifyType;
-    init_info.disabled_lite_thread = disabledLiteThread;
-    init_info.enabled_910a_lite = enable910ALite;
-    init_info.enabled_2mb_lite = GetExternalInputRdmaFastPost();
+    init_info.notifyType = notifyType;
+    init_info.disabledLiteThread = disabledLiteThread;
+    init_info.enabled910aLite = enable910ALite;
+    init_info.enabled2mbLite = GetExternalInputRdmaFastPost();
 
     HcclResult ret;
     HCCL_DEBUG("isRaInitRepeated_[%d]", isRaInitRepeated_);
@@ -1037,10 +1037,10 @@ HcclResult NetworkManager::InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipA
     } else {
         if (!ipAddrBackup.IsInvalid()) {
             struct rdev nicRdevInfoback;
-            CHK_RET(hrtGetPairDevicePhyId(devicePhysicID, nicRdevInfoback.phy_id));
+            CHK_RET(hrtGetPairDevicePhyId(devicePhysicID, nicRdevInfoback.phyId));
             nicRdevInfoback.family = ipAddrBackup.GetFamily();
-            nicRdevInfoback.local_ip.addr = ipAddrBackup.GetBinaryAddress().addr;
-            nicRdevInfoback.local_ip.addr6 = ipAddrBackup.GetBinaryAddress().addr6;
+            nicRdevInfoback.localIp.addr = ipAddrBackup.GetBinaryAddress().addr;
+            nicRdevInfoback.localIp.addr6 = ipAddrBackup.GetBinaryAddress().addr6;
             HCCL_DEBUG("[%s]backup rdev info: ipAddr[%s], ipAddrBackup[%s]", __func__,
                 ipAddr.GetReadableIP(), ipAddrBackup.GetReadableIP());
             ret = HrtRdmaInitWithBackupAttr(init_info, nicRdevInfo, nicRdevInfoback, rdmaHandle);
@@ -1053,7 +1053,7 @@ HcclResult NetworkManager::InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipA
         HCCL_ERROR("[Init][RDMA]errNo[0x%016llx] ra rdma init failed, devid[%u] ip[%s], notifyType[%d], return[%d]",
         HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhysicID, ipAddr.GetReadableAddress(), notifyType, ret),
         HCCL_E_TCP_CONNECT);
-    HCCL_INFO("devicePhyId[%u], ip[%s] disabled_lite_thread[%u] enabled_910a_lite[%u] rdmaHandle[%p] rdma init OK",
+    HCCL_INFO("devicePhyId[%u], ip[%s] disabledLiteThread[%u] enabled910aLite[%u] rdmaHandle[%p] rdma init OK",
         devicePhysicID, ipAddr.GetReadableAddress(), disabledLiteThread, enable910ALite, rdmaHandle);
 
     return HCCL_SUCCESS;
@@ -1064,7 +1064,7 @@ bool NetworkManager::GetRdmaLiteStatus()
     return isRdmaLiteEn_;
 }
 
-HcclResult NetworkManager::GetNotifyType(notify_type &notifyType) const
+HcclResult NetworkManager::GetNotifyType(NotifyTypeT &notifyType) const
 {
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
@@ -1080,7 +1080,7 @@ HcclResult NetworkManager::GetNotifyType(notify_type &notifyType) const
     return HCCL_SUCCESS;
 }
 
-void NetworkManager::GetNetworkMode(network_mode &netMode) const
+void NetworkManager::GetNetworkMode(NetworkMode &netMode) const
 {
     if (Is310PDevice()) {
         netMode = NETWORK_PEER_ONLINE;
@@ -1092,12 +1092,12 @@ void NetworkManager::GetNetworkMode(network_mode &netMode) const
 HcclResult NetworkManager::InitDeviceSocket(u32 devicePhysicID, const HcclIpAddress &ipAddr, SocketHandle &socketHandle)
 {
     struct rdev nicRdevInfo;
-    nicRdevInfo.phy_id = devicePhysicID;
+    nicRdevInfo.phyId = devicePhysicID;
     nicRdevInfo.family = ipAddr.GetFamily();
-    nicRdevInfo.local_ip.addr = ipAddr.GetBinaryAddress().addr;
-    nicRdevInfo.local_ip.addr6 = ipAddr.GetBinaryAddress().addr6;
+    nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;
+    nicRdevInfo.localIp.addr6 = ipAddr.GetBinaryAddress().addr6;
 
-    network_mode netMode;
+    NetworkMode netMode;
     GetNetworkMode(netMode);
 
     HcclResult ret = hrtRaSocketInit(netMode, nicRdevInfo, socketHandle);
@@ -1266,11 +1266,11 @@ HcclResult NetworkManager::Destroy()
     HCCL_DEBUG("Destroy call HrtRaDeInit.");
     if (deviceNicInitRef_.Count() != 0 && !isRaDeInit_) {
         HCCL_WARNING("device Nic is not deinit when NetworkManager Destroy. ref[%d]", deviceNicInitRef_.Count());
-        struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
         GetDeviceRaInitConfig(config);
-        config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+        config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
         if (HrtRaDeInit(&config) != HCCL_SUCCESS) {
-            HCCL_ERROR("ra deinit failed. para: nicdeploy[%u], phy_id[%u]", config.nic_position, config.phy_id);
+            HCCL_ERROR("ra deinit failed. para: nicdeploy[%u], phyId[%u]", config.nicPosition, config.phyId);
         }
 
         isRaDeInit_ = true;
@@ -1278,11 +1278,11 @@ HcclResult NetworkManager::Destroy()
     }
     if (hostNicInitRef_.Count() != 0) {
         HCCL_WARNING("host Nic is not deinit when NetworkManager Destroy. ref[%d]", hostNicInitRef_.Count());
-        struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
-        config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
-        config.phy_id = devicePhyId_;
+        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+        config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
+        config.phyId = devicePhyId_;
         if (HrtRaDeInit(&config) != HCCL_SUCCESS) {
-            HCCL_ERROR("ra deinit failed. para: nicdeploy[%u], phy_id[%u]", config.nic_position, config.phy_id);
+            HCCL_ERROR("ra deinit failed. para: nicdeploy[%u], phyId[%u]", config.nicPosition, config.phyId);
         }
         hostNicInitRef_.Clear();
     }
@@ -1338,8 +1338,8 @@ void NetworkManager::DestroyRaVnicResource()
 {
     if (raResourceInfo_.vnicSocketHandle != nullptr) {
         HCCL_DEBUG("stop intra socket listen");
-        struct socket_listen_info_t serverInfoVnic{};
-        serverInfoVnic.socket_handle = raResourceInfo_.vnicSocketHandle;
+        struct SocketListenInfoT serverInfoVnic{};
+        serverInfoVnic.socketHandle = raResourceInfo_.vnicSocketHandle;
         serverInfoVnic.port = vnicPort_;
         if (hrtRaSocketListenStop(&serverInfoVnic, 1) != HCCL_SUCCESS) { /* 当前只拉起一个server */
             HCCL_WARNING("VNIC socket listen is not stopped successfully");
@@ -1365,8 +1365,8 @@ HcclResult NetworkManager::InitRdmaHandle(u32 devId, const HcclIpAddress &ipAddr
     u32 devicePhyId = ((static_cast<s32>(devId) == HOST_DEVICE_ID) ? 0 : devId);
     RdmaHandle rdmaHandle = nullptr;
     // 模式和notify类型按照是否为hdc模式进行赋值
-    network_mode initRdmaMode = (isHostUseDevNic_) ? NETWORK_OFFLINE : NETWORK_PEER_ONLINE;
-    notify_type notifyType = (isHostUseDevNic_) ? notify_type::NOTIFY : notify_type::NO_USE;
+    NetworkMode initRdmaMode = (isHostUseDevNic_) ? NETWORK_OFFLINE : NETWORK_PEER_ONLINE;
+    NotifyTypeT notifyType = (isHostUseDevNic_) ? NotifyTypeT::NOTIFY : NotifyTypeT::NO_USE;
     HcclResult ret = InitRDMA(devicePhyId, ipAddr, initRdmaMode, notifyType, rdmaHandle,
         disabledLiteThread, enable910ALite);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1447,15 +1447,15 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
 
     CHK_RET(hrtRaSocketSetWhiteListStatus(static_cast<u32>(isOpenWhiteList)));
 
-    ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
-    config.phy_id = devicePhyId;
+    RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    config.phyId = devicePhyId;
     if (ipAddrStr == "127.0.0.1") {
-        config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
+        config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
     } else {
-        config.nic_position = static_cast<u32>(isHostUseDevNic_);
+        config.nicPosition = static_cast<u32>(isHostUseDevNic_);
     }
     if (isHostUseDevNic_) {
-        config.hdc_type = PID_HDC_TYPE;
+        config.hdcType = PID_HDC_TYPE;
     }
 
     if (!isRaInitRepeated_) {
@@ -1464,12 +1464,12 @@ HcclResult NetworkManager::PsWorkerRaInit(u32 devId, const HcclIpAddress &ipAddr
     }
 
     struct rdev nicRdevInfo;
-    nicRdevInfo.phy_id = devicePhyId;
+    nicRdevInfo.phyId = devicePhyId;
     nicRdevInfo.family = ipAddr.GetFamily();
-    nicRdevInfo.local_ip.addr = ipAddr.GetBinaryAddress().addr;
-    nicRdevInfo.local_ip.addr6 = ipAddr.GetBinaryAddress().addr6;
+    nicRdevInfo.localIp.addr = ipAddr.GetBinaryAddress().addr;
+    nicRdevInfo.localIp.addr6 = ipAddr.GetBinaryAddress().addr6;
     SocketHandle socketHandle = nullptr;
-    network_mode raSocketInitMode = (isHostUseDevNic_) ? NETWORK_OFFLINE : NETWORK_PEER_ONLINE;
+    NetworkMode raSocketInitMode = (isHostUseDevNic_) ? NETWORK_OFFLINE : NETWORK_PEER_ONLINE;
     HcclResult ret = hrtRaSocketInit(raSocketInitMode, nicRdevInfo, socketHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Init][HostSocket]errNo[0x%016llx] ra socket init failed, ip[%s], return[%d]",
@@ -1505,7 +1505,7 @@ HcclResult NetworkManager::CloseHccpSubProc()
     return HCCL_SUCCESS;
 }
 
-HcclResult NetworkManager::PingMeshRaPingInit(u32 devLogicId, u32 devPhyId, ra_init_config *config)
+HcclResult NetworkManager::PingMeshRaPingInit(u32 devLogicId, u32 devPhyId, RaInitConfig *config)
 {
     // 引用计数
     deviceLogicId_ = static_cast<s32>(devLogicId);
@@ -1515,8 +1515,8 @@ HcclResult NetworkManager::PingMeshRaPingInit(u32 devLogicId, u32 devPhyId, ra_i
  
     // hccp侧初始化ping mesh资源
     CHK_RET(HrtRaInit(config));
-    HCCL_INFO("[HCCN][PingMeshRaPingInit]Device[%u] config.hdc_type[%d], config.nic_position[%u], config.phy_id[%u].",
-        deviceLogicId_, config->hdc_type, config->nic_position, config->phy_id);
+    HCCL_INFO("[HCCN][PingMeshRaPingInit]Device[%u] config.hdcType[%d], config.nicPosition[%u], config.phyId[%u].",
+        deviceLogicId_, config->hdcType, config->nicPosition, config->phyId);
     deviceNicInitRef_.Ref();
  
     return HCCL_SUCCESS;
@@ -1527,7 +1527,7 @@ HcclResult NetworkManager::PingMeshRaPingDeinit()
     // 引用计数
     isRaInitRepeated_ = false;
 
-    struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
     GetDeviceRaInitConfig(config);
     CHK_RET(HrtRaDeInit(&config));
     deviceNicInitRef_.Unref();
@@ -1535,16 +1535,16 @@ HcclResult NetworkManager::PingMeshRaPingDeinit()
     return HCCL_SUCCESS;
 }
 
-void NetworkManager::GetDeviceRaInitConfig(ra_init_config &config)
+void NetworkManager::GetDeviceRaInitConfig(RaInitConfig &config)
 {
     u32 devicePhyId = ((static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_);
     HCCL_INFO("RaDeinit devicePhyId_[%u] devicePhyId[%u]", devicePhyId_, devicePhyId);
 
-    config.phy_id = devicePhyId;
-    config.nic_position = static_cast<u32>(isHostUseDevNic_);
+    config.phyId = devicePhyId;
+    config.nicPosition = static_cast<u32>(isHostUseDevNic_);
 
     if (isHostUseDevNic_) {
-        config.hdc_type = PID_HDC_TYPE;
+        config.hdcType = PID_HDC_TYPE;
     }
 }
 
@@ -1581,17 +1581,17 @@ HcclResult NetworkManager::PsWorkerRaDeinit(u32 devId, const HcclIpAddress &ipAd
     SocketHandle nicRdmaHandle = raResourceInfo_.nicSocketMap[ipAddr].nicRdmaHandle;
     if (!GetExternalInputHcclIsTcpMode() && nicRdmaHandle != nullptr && !isRaInitRepeated_) {
         // Helper的PS临时暂不调用 CHK_RET(HrtRaRdmaDeInit(nicRdmaHandle, (isHostUseDevNic_) ?
-        // notify_type::NOTIFY : notify_type::NO_USE));
+        // NotifyTypeT::NOTIFY : NotifyTypeT::NO_USE));
         HCCL_INFO("Not call RaRdmaDeInit devicePhyId[%u]", devicePhyId_);
     }
 
-    struct ra_init_config config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
     GetDeviceRaInitConfig(config);
 
     if (ipAddrStr == "127.0.0.1") {
         if (hostNicInitRef_.Count() == 0) {
             HCCL_INFO("PsWorkerRaDeinit call hrtRaDeInit. devicePhyId[%u]", devicePhyId_);
-            config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
+            config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
             CHK_RET(HrtRaDeInit(&config));
         }
     } else {
@@ -1612,12 +1612,12 @@ HcclResult NetworkManager::PsWorkerRaDeinit(u32 devId, const HcclIpAddress &ipAd
 
 HcclResult NetworkManager::InitHostSocket(const HcclIpAddress &addr, SocketHandle &socketHandle) const
 {
-    struct socket_init_info_t socketInitInfo;
-    socketInitInfo.rdev_info.family = addr.GetFamily();
-    socketInitInfo.rdev_info.phy_id = devicePhyId_;
-    socketInitInfo.rdev_info.local_ip.addr = addr.GetBinaryAddress().addr;
-    socketInitInfo.rdev_info.local_ip.addr6 = addr.GetBinaryAddress().addr6;
-    socketInitInfo.scope_id = addr.GetScopeID();
+    struct SocketInitInfoT socketInitInfo;
+    socketInitInfo.rdevInfo.family = addr.GetFamily();
+    socketInitInfo.rdevInfo.phyId = devicePhyId_;
+    socketInitInfo.rdevInfo.localIp.addr = addr.GetBinaryAddress().addr;
+    socketInitInfo.rdevInfo.localIp.addr6 = addr.GetBinaryAddress().addr6;
+    socketInitInfo.scopeId = addr.GetScopeID();
     HcclResult ret = hrtRaSocketInitV1(NETWORK_PEER_ONLINE, socketInitInfo, socketHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Init][HostSocket]errNo[0x%016llx] ra socket init v1 failed, ip[%s], return[%d]",
@@ -1711,8 +1711,8 @@ HcclResult NetworkManager::CreateHostSocketHandle(const HcclIpAddress &ipAddr, S
 
 HcclResult NetworkManager::StartListenSocket(const SocketHandle socketHandle, u32 &port) const
 {
-    struct socket_listen_info_t serverInfo;
-    serverInfo.socket_handle = const_cast<SocketHandle>(socketHandle);
+    struct SocketListenInfoT serverInfo;
+    serverInfo.socketHandle = const_cast<SocketHandle>(socketHandle);
     serverInfo.port = port;
     if (isRaInitRepeated_) {
         return HCCL_SUCCESS;
@@ -1738,8 +1738,8 @@ HcclResult NetworkManager::StartListenSocket(const SocketHandle socketHandle, u3
 
 HcclResult NetworkManager::StopListenSocket(const SocketHandle socketHandle, u32 port) const
 {
-    struct socket_listen_info_t serverInfo;
-    serverInfo.socket_handle = const_cast<SocketHandle>(socketHandle);
+    struct SocketListenInfoT serverInfo;
+    serverInfo.socketHandle = const_cast<SocketHandle>(socketHandle);
     serverInfo.port = port;
     HcclResult ret = hrtRaSocketListenStop(&serverInfo, 1);
     RPT_CALL_ERR(ret != HCCL_SUCCESS, "socket listen stop failed, port[%u], return[%d]", port, ret);

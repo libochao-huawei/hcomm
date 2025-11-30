@@ -12,7 +12,6 @@
 #include "hccl_network.h"
 #include "remote_ipc_rma_buffer.h"
 #include "remote_rdma_rma_buffer.h"
-#include "hccl_mem_v2.h"
 
 using namespace hccl;
 

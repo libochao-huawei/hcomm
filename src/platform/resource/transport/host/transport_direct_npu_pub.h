@@ -105,7 +105,7 @@ protected:
     HcclResult GetNicHandle();
     u32 GetQpsPerConnection();
     virtual HcclResult RegUserMem(MemType memType, u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
-    HcclResult CreateOneQp(s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, ai_qp_info &aiQpInfo,
+    HcclResult CreateOneQp(s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, AiQpInfo &aiQpInfo,
         bool useAicpu = false, u32 udpSport = 0);
     virtual HcclResult GetMemInfo(UserMemType memType, void **dstMemPtr, u64 *dstMemSize);
 
@@ -114,8 +114,8 @@ protected:
     HcclResult GetAiQpInfo(std::vector<HcclQpInfoV2> &aiQpInfo) override;
 
     std::vector<QpHandle> qpHandles_;
-    struct ai_qp_info aiQpInfo_;
-    std::vector<ai_qp_info> aiQpInfos_;
+    struct AiQpInfo aiQpInfo_;
+    std::vector<AiQpInfo> aiQpInfos_;
     u32 qpsPerConnection_;
 
     s32 access_;
@@ -134,7 +134,7 @@ private:
     void UnloadAICPUKernel(void);
     HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
         aclrtBinHandle& binHandle);
-    static void ProcessCqeInfo(const s32 deviceId, const struct cqe_err_info *infolist, const u32 cqeNum,
+    static void ProcessCqeInfo(const s32 deviceId, const struct CqeErrInfo *infolist, const u32 cqeNum,
         std::vector<std::pair<TransportBase*, CqeInfo>> &infos);
     // bit[63:32] devicePhyId, bit[31:0] qpn
     static UniversalConcurrentMap<u64, TransportDirectNpu*> g_qpn2IbversLinkMap_;

@@ -24,7 +24,7 @@
 
 static unsigned int gSendWrNum = 0;
 static void *gRaRdevHandle[RA_MAX_PHY_ID_NUM] = { 0 };
-static ra_instance gRefInstances[RA_MAX_INSTANCES] = { { 0, PTHREAD_MUTEX_INITIALIZER } };
+static RaInstance gRefInstances[RA_MAX_INSTANCES] = { { 0, PTHREAD_MUTEX_INITIALIZER } };
 
 HCCP_ATTRI_VISI_DEF int RaIsFirstUsed(int insId)
 {
@@ -34,13 +34,13 @@ HCCP_ATTRI_VISI_DEF int RaIsFirstUsed(int insId)
         insId, RA_MAX_INSTANCES), -EINVAL);
 
     pthread_mutex_lock(&gRefInstances[insId].mutex);
-    if (gRefInstances[insId].ref_count == 0) {
+    if (gRefInstances[insId].refCount == 0) {
         isFirst++;
         hccp_run_info("[ra]ins_id(%d) is first used", insId);
     }
 
-    gRefInstances[insId].ref_count++;
-    hccp_info("[ra]ins_id[%d] is %d", insId, gRefInstances[insId].ref_count);
+    gRefInstances[insId].refCount++;
+    hccp_info("[ra]ins_id[%d] is %d", insId, gRefInstances[insId].refCount);
     pthread_mutex_unlock(&gRefInstances[insId].mutex);
 
     return isFirst;
@@ -54,19 +54,19 @@ HCCP_ATTRI_VISI_DEF int RaIsLastUsed(int insId)
         insId, RA_MAX_INSTANCES), -EINVAL);
 
     pthread_mutex_lock(&gRefInstances[insId].mutex);
-    if (gRefInstances[insId].ref_count == 0) {
+    if (gRefInstances[insId].refCount == 0) {
         hccp_err("[ra]ins_id %d has not been used", insId);
         pthread_mutex_unlock(&gRefInstances[insId].mutex);
         return -EINVAL;
     }
 
-    if (gRefInstances[insId].ref_count == 1) {
+    if (gRefInstances[insId].refCount == 1) {
         isLast++;
         hccp_run_info("[ra]ins_id(%d) is last used", insId);
     }
 
-    hccp_info("[ra]ins_id[%d] is %d", insId, gRefInstances[insId].ref_count);
-    gRefInstances[insId].ref_count--;
+    hccp_info("[ra]ins_id[%d] is %d", insId, gRefInstances[insId].refCount);
+    gRefInstances[insId].refCount--;
     pthread_mutex_unlock(&gRefInstances[insId].mutex);
 
     return isLast;
@@ -100,10 +100,10 @@ void RaRdevIncSendWrNum(void)
     gSendWrNum++;
 }
 
-STATIC int RaInitHdc(struct ra_init_config *config)
+STATIC int RaInitHdc(struct RaInitConfig *config)
 {
-    struct process_ra_sign pRaSign = {0};
-    unsigned int phyId = config->phy_id;
+    struct ProcessRaSign pRaSign = {0};
+    unsigned int phyId = config->phyId;
     struct process_sign psign = {0};
     int ret;
 
@@ -129,9 +129,9 @@ STATIC int RaInitHdc(struct ra_init_config *config)
     return ret;
 }
 
-STATIC int RaInitPeer(struct ra_init_config *config)
+STATIC int RaInitPeer(struct RaInitConfig *config)
 {
-    unsigned int phyId = config->phy_id;
+    unsigned int phyId = config->phyId;
     unsigned int whiteListSwitch = 0;
     int ret;
 
@@ -144,42 +144,42 @@ STATIC int RaInitPeer(struct ra_init_config *config)
     return 0;
 }
 
-HCCP_ATTRI_VISI_DEF int RaInit(struct ra_init_config *config)
+HCCP_ATTRI_VISI_DEF int RaInit(struct RaInitConfig *config)
 {
     unsigned int phyId;
     int ret;
 
     CHK_PRT_RETURN(config == NULL, hccp_err("[init][ra]config is NULL"), ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    phyId = config->phy_id;
+    phyId = config->phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[init][ra]phy_id(%u) is invalid! it must greater or "
         "equal to 0 and less than %d!", phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    if (config->hdc_type != HDC_SERVICE_TYPE_RDMA && config->hdc_type != HDC_SERVICE_TYPE_RDMA_V2) {
-        hccp_warn("[init][ra]hdc_type(%d) is invalid, set it to default hdc_type(%d)",
-            config->hdc_type, HDC_SERVICE_TYPE_RDMA);
-        config->hdc_type = HDC_SERVICE_TYPE_RDMA;
+    if (config->hdcType != HDC_SERVICE_TYPE_RDMA && config->hdcType != HDC_SERVICE_TYPE_RDMA_V2) {
+        hccp_warn("[init][ra]hdc_type(%d) is invalid, set it to default hdcType(%d)",
+            config->hdcType, HDC_SERVICE_TYPE_RDMA);
+        config->hdcType = HDC_SERVICE_TYPE_RDMA;
     }
 
-    hccp_run_info("Input parameters: phy_id[%u], nic_position:[%u] hdc_type:[%d] enable_hdc_async[%d]",
-        phyId, config->nic_position, config->hdc_type, config->enable_hdc_async);
+    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%u] hdcType:[%d] enableHdcAsync[%d]",
+        phyId, config->nicPosition, config->hdcType, config->enableHdcAsync);
     ret = DlHalInit();
     CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra]dl_hal_init failed, ret(%d) phyId(%u)", ret, phyId), ret);
 
-    if (config->nic_position == NETWORK_OFFLINE) {
+    if (config->nicPosition == NETWORK_OFFLINE) {
         ret = RaInitHdc(config);
         if (ret != 0) {
             hccp_err("[init][ra]ra_init_hdc failed, ret(%d) phyId(%u)", ret, phyId);
             goto err;
         }
-    } else if (config->nic_position == NETWORK_PEER_ONLINE) {
+    } else if (config->nicPosition == NETWORK_PEER_ONLINE) {
         ret = RaInitPeer(config);
         if (ret != 0) {
             hccp_err("[init][ra]ra_init_peer failed, ret(%d) phyId(%u)", ret, phyId);
             goto err;
         }
     } else {
-        hccp_err("[init][ra]do not support nic_position(%u) phy_id(%u)", config->nic_position, phyId);
+        hccp_err("[init][ra]do not support nic_position(%u) phy_id(%u)", config->nicPosition, phyId);
         ret = -EPROTONOSUPPORT;
         goto err;
     }
@@ -191,11 +191,11 @@ err:
     return ConverReturnCode(HCCP_INIT, ret);
 }
 
-STATIC int RaDeinitHdc(struct ra_init_config *config)
+STATIC int RaDeinitHdc(struct RaInitConfig *config)
 {
     int ret;
 
-    ret = RaHdcDeinitAsync(config->phy_id);
+    ret = RaHdcDeinitAsync(config->phyId);
     CHK_PRT_RETURN(ret != 0 && ret != -ENODEV, hccp_err("[deinit][ra]ra_hdc_deinit_async failed, ret(%d)", ret), ret);
 
     ret = RaHdcDeinit(config);
@@ -204,7 +204,7 @@ STATIC int RaDeinitHdc(struct ra_init_config *config)
     return ret;
 }
 
-HCCP_ATTRI_VISI_DEF int RaDeinit(struct ra_init_config *config)
+HCCP_ATTRI_VISI_DEF int RaDeinit(struct RaInitConfig *config)
 {
     unsigned int phyId;
     int ret;
@@ -212,25 +212,25 @@ HCCP_ATTRI_VISI_DEF int RaDeinit(struct ra_init_config *config)
     CHK_PRT_RETURN(config == NULL, hccp_err("[deinit][ra]config is NULL, invalid"),
         ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    phyId = config->phy_id;
+    phyId = config->phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
         hccp_err("[deinit][ra]phy_id(%u) is invalid! it must greater or equal to 0 and less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    hccp_run_info("Input parameters: phy_id[%u], nic_position:[%u]", phyId, config->nic_position);
+    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%u]", phyId, config->nicPosition);
 
-    if (config->nic_position == NETWORK_OFFLINE) {
+    if (config->nicPosition == NETWORK_OFFLINE) {
         ret = RaDeinitHdc(config);
         CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra]ra_deinit_hdc failed, ret(%d) phyId(%u)", ret, phyId),
             ConverReturnCode(HCCP_INIT, ret));
-    } else if (config->nic_position == NETWORK_PEER_ONLINE) {
+    } else if (config->nicPosition == NETWORK_PEER_ONLINE) {
         ret = RaPeerDeinit(config);
         CHK_PRT_RETURN(ret == -EAGAIN, hccp_warn("[deinit][ra]ra_peer_deinit unsuccessful, ret(%d) phyId(%u)",
             ret, phyId), ConverReturnCode(HCCP_INIT, ret));
         CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra]ra_peer_deinit failed, ret(%d) phyId(%u)", ret, phyId),
             ConverReturnCode(HCCP_INIT, ret));
     } else {
-        hccp_err("[deinit][ra]do not support nic_position(%u) phy_id(%u)", config->nic_position, phyId);
+        hccp_err("[deinit][ra]do not support nic_position(%u) phy_id(%u)", config->nicPosition, phyId);
         return ConverReturnCode(HCCP_INIT, -EPROTONOSUPPORT);
     }
 

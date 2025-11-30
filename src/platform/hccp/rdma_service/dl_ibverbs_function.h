@@ -19,76 +19,76 @@
 #include "verbs_exp.h"
 #include "rdma_lite_common.h"
 
-enum so_type {
+enum SoType {
     SO_TYPE_EXP,
     SO_TYPE_EXT,
     SO_TYPE_INVALID,
 };
 
-struct rs_ibverbs_ops {
-    void (*rs_ibv_free_device_list)(struct ibv_device **list);
-    void (*rs_ibv_ack_cq_events)(struct ibv_cq *cq, unsigned int nevents);
-    const char *(*rs_ibv_get_device_name)(struct ibv_device *device);
-    const char *(*rs_ibv_wc_status_str)(enum ibv_wc_status status);
-    int (*rs_ibv_query_gid_type)(struct ibv_context *context, uint8_t portNum, unsigned int index,
+struct RsIbverbsOps {
+    void (*rsIbvFreeDeviceList)(struct ibv_device **list);
+    void (*rsIbvAckCqEvents)(struct ibv_cq *cq, unsigned int nevents);
+    const char *(*rsIbvGetDeviceName)(struct ibv_device *device);
+    const char *(*rsIbvWcStatusStr)(enum ibv_wc_status status);
+    int (*rsIbvQueryGidType)(struct ibv_context *context, uint8_t portNum, unsigned int index,
         enum ibv_gid_type_sysfs *type);
-    int (*rs_ibv_dereg_mr)(struct ibv_mr *mr);
-    int (*rs_ibv_query_qp)(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask,
+    int (*rsIbvDeregMr)(struct ibv_mr *mr);
+    int (*rsIbvQueryQp)(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask,
         struct ibv_qp_init_attr *initAttr);
-    int (*rs_ibv_destroy_qp)(struct ibv_qp *qp);
-    int (*rs_ibv_get_cq_event)(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cqContext);
-    int (*rs_ibv_destroy_cq)(struct ibv_cq *cq);
-    int (*rs_ibv_modify_qp)(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask);
-    int (*rs_ibv_query_port)(struct ibv_context *context, uint8_t portNum, struct ibv_port_attr *portAttr);
-    int (*rs_ibv_query_gid)(struct ibv_context *context, uint8_t portNum, int index, union ibv_gid *gid);
-    int (*rs_ibv_close_device)(struct ibv_context *context);
-    int (*rs_ibv_dealloc_pd)(struct ibv_pd *pd);
-    int (*rs_ibv_destroy_comp_channel)(struct ibv_comp_channel *channel);
-    struct ibv_context *(*rs_ibv_open_device)(struct ibv_device *device);
-    struct ibv_pd *(*rs_ibv_alloc_pd)(struct ibv_context *context);
-    struct ibv_device **(*rs_ibv_get_device_list)(int *numDevices);
-    struct ibv_cq *(*rs_ibv_create_cq)(struct ibv_context *context, int cqe, void *cqContext,
+    int (*rsIbvDestroyQp)(struct ibv_qp *qp);
+    int (*rsIbvGetCqEvent)(struct ibv_comp_channel *channel, struct ibv_cq **cq, void **cqContext);
+    int (*rsIbvDestroyCq)(struct ibv_cq *cq);
+    int (*rsIbvModifyQp)(struct ibv_qp *qp, struct ibv_qp_attr *attr, int attrMask);
+    int (*rsIbvQueryPort)(struct ibv_context *context, uint8_t portNum, struct ibv_port_attr *portAttr);
+    int (*rsIbvQueryGid)(struct ibv_context *context, uint8_t portNum, int index, union ibv_gid *gid);
+    int (*rsIbvCloseDevice)(struct ibv_context *context);
+    int (*rsIbvDeallocPd)(struct ibv_pd *pd);
+    int (*rsIbvDestroyCompChannel)(struct ibv_comp_channel *channel);
+    struct ibv_context *(*rsIbvOpenDevice)(struct ibv_device *device);
+    struct ibv_pd *(*rsIbvAllocPd)(struct ibv_context *context);
+    struct ibv_device **(*rsIbvGetDeviceList)(int *numDevices);
+    struct ibv_cq *(*rsIbvCreateCq)(struct ibv_context *context, int cqe, void *cqContext,
         struct ibv_comp_channel *channel, int compVector);
-    struct ibv_mr *(*rs_ibv_reg_mr)(struct ibv_pd *pd, void *addr, size_t length, int access);
-    struct ibv_qp *(*rs_ibv_create_qp)(struct ibv_pd *pd, struct ibv_qp_init_attr *qpInitAttr);
-    struct ibv_comp_channel *(*rs_ibv_create_comp_channel)(struct ibv_context *context);
-    struct ibv_srq *(*rs_ibv_create_srq)(struct ibv_pd *pd, struct ibv_srq_init_attr *srqInitAttr);
-    int (*rs_ibv_destroy_srq)(struct ibv_srq *);
-    struct ibv_ah *(*rs_ibv_create_ah)(struct ibv_pd *pd, struct ibv_ah_attr *attr);
-    int (*rs_ibv_destroy_ah)(struct ibv_ah *ah);
+    struct ibv_mr *(*rsIbvRegMr)(struct ibv_pd *pd, void *addr, size_t length, int access);
+    struct ibv_qp *(*rsIbvCreateQp)(struct ibv_pd *pd, struct ibv_qp_init_attr *qpInitAttr);
+    struct ibv_comp_channel *(*rsIbvCreateCompChannel)(struct ibv_context *context);
+    struct ibv_srq *(*rsIbvCreateSrq)(struct ibv_pd *pd, struct ibv_srq_init_attr *srqInitAttr);
+    int (*rsIbvDestroySrq)(struct ibv_srq *);
+    struct ibv_ah *(*rsIbvCreateAh)(struct ibv_pd *pd, struct ibv_ah_attr *attr);
+    int (*rsIbvDestroyAh)(struct ibv_ah *ah);
 };
 
-struct rs_roce_user_ops {
-    int (*rs_roce_set_tsqp_depth)(const char *devName, unsigned int rdevIndex, unsigned int tempDepth,
+struct RsRoceUserOps {
+    int (*rsRoceSetTsqpDepth)(const char *devName, unsigned int rdevIndex, unsigned int tempDepth,
         unsigned int *qpNum, unsigned int *sqDepth);
-    int (*rs_roce_get_tsqp_depth)(const char *devName, unsigned int rdevIndex, unsigned int *tempDepth,
+    int (*rsRoceGetTsqpDepth)(const char *devName, unsigned int rdevIndex, unsigned int *tempDepth,
         unsigned int *qpNum, unsigned int *sqDepth);
-    int (*rs_roce_get_roce_dev_data)(const char *devName, struct roce_dev_data *rdevData);
-    int (*rs_ibv_exp_query_notify)(struct ibv_context *context, unsigned long long *notifyVa,
+    int (*rsRoceGetRoceDevData)(const char *devName, struct roce_dev_data *rdevData);
+    int (*rsIbvExpQueryNotify)(struct ibv_context *context, unsigned long long *notifyVa,
         unsigned long long *size);
-    int (*rs_ibv_exp_post_send)(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **badWr,
+    int (*rsIbvExpPostSend)(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **badWr,
         struct wr_exp_rsp *expRsp);
-    int (*rs_ibv_ext_post_send)(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **badWr,
+    int (*rsIbvExtPostSend)(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **badWr,
         struct ibv_post_send_ext_attr *extAttr, struct ibv_post_send_ext_resp *extResp);
-    struct ibv_mr *(*rs_ibv_exp_reg_mr)(struct ibv_pd *pd, void *addr, size_t length, int access,
+    struct ibv_mr *(*rsIbvExpRegMr)(struct ibv_pd *pd, void *addr, size_t length, int access,
         struct roce_process_sign roceSign);
-    struct ibv_qp *(*rs_ibv_exp_create_qp)(struct ibv_pd *pd, struct ibv_exp_qp_init_attr *qpInitAttr,
+    struct ibv_qp *(*rsIbvExpCreateQp)(struct ibv_pd *pd, struct ibv_exp_qp_init_attr *qpInitAttr,
         struct rdma_lite_device_qp_attr *qpResp);
-    struct ibv_cq *(*rs_ibv_exp_create_cq)(struct ibv_context *context, int cqe, void *cqContext,
+    struct ibv_cq *(*rsIbvExpCreateCq)(struct ibv_context *context, int cqe, void *cqContext,
         struct ibv_comp_channel *channel, int compVector, struct rdma_lite_device_cq_init_attr *attr,
         struct rdma_lite_device_cq_attr *cqResp);
-    int (*rs_ibv_exp_query_device)(struct ibv_context *context, struct dev_cap_info *cap);
-    int (*rs_roce_init_mem_pool)(const struct roce_mem_cq_qp_attr *memAttr,
+    int (*rsIbvExpQueryDevice)(struct ibv_context *context, struct dev_cap_info *cap);
+    int (*rsRoceInitMemPool)(const struct roce_mem_cq_qp_attr *memAttr,
         struct rdma_lite_device_mem_attr *memData, unsigned int devId);
-    int (*rs_roce_deinit_mem_pool)(unsigned int memIdx);
-    int (*rs_roce_query_qpc)(struct ibv_qp *qp, struct hns_roce_qpc_attr_val *attrVal, unsigned int attrMask);
-    struct ibv_ah *(*rs_ibv_exp_create_ah)(struct ibv_pd *pd, struct ibv_exp_ah_attr *attrx);
-    int (*rs_roce_mmap_ai_db_reg)(struct ibv_context *context, unsigned int tgid);
-    int (*rs_roce_unmmap_ai_db_reg)(struct ibv_context *context);
-    int (*rs_roce_get_cq_data_plane_info)(struct ibv_cq *cq, struct hns_roce_cq_data_plane_info *info);
-    int (*rs_roce_get_qp_data_plane_info)(struct ibv_qp *qp, struct hns_roce_qp_data_plane_info *info);
-    int (*rs_roce_remap_mr)(struct ibv_mr *mr, struct hns_roce_mr_remap_info info[], unsigned int num);
-    unsigned int (*rs_roce_get_api_version)(void);
+    int (*rsRoceDeinitMemPool)(unsigned int memIdx);
+    int (*rsRoceQueryQpc)(struct ibv_qp *qp, struct hns_roce_qpc_attr_val *attrVal, unsigned int attrMask);
+    struct ibv_ah *(*rsIbvExpCreateAh)(struct ibv_pd *pd, struct ibv_exp_ah_attr *attrx);
+    int (*rsRoceMmapAiDbReg)(struct ibv_context *context, unsigned int tgid);
+    int (*rsRoceUnmmapAiDbReg)(struct ibv_context *context);
+    int (*rsRoceGetCqDataPlaneInfo)(struct ibv_cq *cq, struct hns_roce_cq_data_plane_info *info);
+    int (*rsRoceGetQpDataPlaneInfo)(struct ibv_qp *qp, struct hns_roce_qp_data_plane_info *info);
+    int (*rsRoceRemapMr)(struct ibv_mr *mr, struct hns_roce_mr_remap_info info[], unsigned int num);
+    unsigned int (*rsRoceGetApiVersion)(void);
 };
 
 struct ibv_mr *RsIbvExpRegMr(struct ibv_pd *pd, void *addr, size_t length, int access,

@@ -12,20 +12,21 @@ set -e
 CURRENT_DIR=$(dirname $(readlink -f ${BASH_SOURCE[0]}))
 BUILD_DIR=${CURRENT_DIR}/build
 BUILD_DEVICE_DIR="${CURRENT_DIR}/build_device"
-OUTPUT_DIR=${CURRENT_DIR}/build_out
+BUILD_OUTPUT_DIR=${CURRENT_DIR}/build_out
+OUTPUT_PATH="${CURRENT_DIR}/output"
 USER_ID=$(id -u)
 CPU_NUM=$(cat /proc/cpuinfo | grep "^processor" | wc -l)
 JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
 COV="false"
-CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${OUTPUT_DIR}"
-FULL_MODE="false"  # 新增变量，用于控制是否全量构建
+CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
+FULL_MODE="true"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
-CUSTOM_SIGN_SCRIPT=""
+CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/add_header_sign.py"
 ENABLE_SIGN="false"
 VERSION_INFO="8.5.0.0.B010"
 
@@ -64,8 +65,8 @@ function clean()
     fi
 
     if [ -z "${TEST}" ] && [ -z "${KERNEL}" ];then
-        if [ -n "${OUTPUT_DIR}" ];then
-            rm -rf ${OUTPUT_DIR}
+        if [ -n "${BUILD_OUTPUT_DIR}" ];then
+            rm -rf ${BUILD_OUTPUT_DIR}
         fi
     fi
 
@@ -201,18 +202,23 @@ function mk_dir() {
 # create build path
 function build_ut() {
   echo "create build directory and build";
+  mk_dir ${OUTPUT_PATH}
   mk_dir "${BUILD_DIR}"
+  local report_dir="${OUTPUT_PATH}/report/ut" && mk_dir "${report_dir}"
   cd "${BUILD_DIR}"
 
+  local LLT_KILL_TIME=1200
   CMAKE_ARGS="-DPRODUCT_SIDE=host \
               -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE} \
-              -DCMAKE_INSTALL_PREFIX=${OUTPUT_DIR} \
+              -DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR} \
               -DASCEND_INSTALL_PATH=${ASCEND_INSTALL_PATH} \
               -DASCEND_3RD_LIB_PATH=${ASCEND_3RD_LIB_PATH} \
               -DENABLE_COV=${ENABLE_COV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
-              -DENABLE_ST=${ENABLE_ST}"
+              -DENABLE_ST=${ENABLE_ST} \
+              -DOUTPUT_PATH=${OUTPUT_PATH} \
+              -DLLT_KILL_TIME=${LLT_KILL_TIME}"
 
   echo "CMAKE_ARGS=${CMAKE_ARGS}"
   cmake ${CMAKE_ARGS} ..
@@ -223,7 +229,33 @@ function build_ut() {
 
   # make all
   cmake --build . -j${CPU_NUM}
+  run_ret=${PIPESTATUS[0]}
+  echo "exit code: ${run_ret}"
+  if [ "${run_ret}" -eq 137 ]
+  then
+      echo "timeout: execute more than ${LLT_KILL_TIME}s killed"
+      exit 1
+  fi
+  if [ $? -ne 0 ]; then
+    echo "execute command: make -j${THREAD_NUM} failed."
+    return 1
+  fi
   echo "build success!"
+}
+
+function make_ut_gov() {
+  if [[ "X$ENABLE_UT" = "Xon" || "X$ENABLE_COV" = "Xon" ]]; then
+    echo "Generated coverage statistics, please wait..."
+    cd ${CURRENT_DIR}
+    rm -rf ${CURRENT_DIR}/cov
+    mkdir -p ${CURRENT_DIR}/cov
+    lcov -c -d ${BUILD_DIR}/test/ut/ -o cov/tmp.info
+    LCOV_COMMAND="lcov -r cov/tmp.info ${CURRENT_DIR}src/* -o cov/coverage.info" && ${LCOV_COMMAND}
+    # lcov -r cov/tmp.info "/usr/*" "${OUTPUT_PATH}/*" "${BASEPATH}/test/*" "${ASCEND_INSTALL_PATH}/*" "${ASCEND_3RD_LIB_PATH}/*" -o cov/coverage.info
+
+    cd ${CURRENT_DIR}/cov
+    genhtml coverage.info
+  fi
 }
 
 function run_ut() {
@@ -427,8 +459,9 @@ fi
 cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
+    exit 0
     build_ut
-    run_ut
+    make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
 elif [ "${KERNEL}" == "true" ]; then

@@ -126,9 +126,9 @@ HcclResult TransportDeviceRoceMem::DoorBellSend(Stream &stream, u64 dbInfo, u32 
 {
     HCCL_DEBUG("[DoorBellSend] dbIndex[%#x] dbInfo[%#llx] remoteRankId[%u]", qpInfo_.dbIndex, dbInfo, remoteRankId_);
     RdmaTaskInfo rdmaInfo;
-    WrInfo wrInfo;
+    WrInformation wrInfo;
     wrInfo.notifyId = 0;
-    wrInfo.wrData.mem_list.len = wrDataLen;
+    wrInfo.wrData.memList.len = wrDataLen;
     rdmaInfo.wrInfos.emplace_back(wrInfo);
     rdmaInfo.rdmaType = fence ? RdmaType::RDMA_SEND_NOTIFY : RdmaType::RDMA_SEND_PAYLOAD;
     rdmaInfo.remoteRank = remoteRankId_;

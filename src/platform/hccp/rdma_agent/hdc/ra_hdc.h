@@ -20,56 +20,56 @@
 #include "ra_async.h"
 #include "ra_rs_comm.h"
 
-struct socket_hdc_info {
-    unsigned int phy_id;
+struct SocketHdcInfo {
+    unsigned int phyId;
     int fd;
-    void *socket_handle;
+    void *socketHandle;
     uint32_t rsv; // consistent with socket_peer_info
 };
 
-struct hdc_info {
+struct HdcInfo {
     HDC_CLIENT client;
     HDC_SESSION session;
-    HDC_SESSION snapshot_session;
-    int start_deinit;
-    int last_recv_status;
+    HDC_SESSION snapshotSession;
+    int startDeinit;
+    int lastRecvStatus;
     pthread_mutex_t lock;
-    unsigned int restore_flag;
+    unsigned int restoreFlag;
 };
 
-struct hdc_async_info {
-    pid_t host_tgid;
+struct HdcAsyncInfo {
+    pid_t hostTgid;
     HDC_SESSION session;
-    HDC_SESSION snapshot_session;
+    HDC_SESSION snapshotSession;
     pthread_t tid;
-    unsigned int connect_status; // hdc session connect status
-    unsigned int thread_status; // recv thread status
+    unsigned int connectStatus; // hdc session connect status
+    unsigned int threadStatus; // recv thread status
 
-    int last_recv_status;
-    pthread_mutex_t send_mutex;
-    pthread_mutex_t recv_mutex;
+    int lastRecvStatus;
+    pthread_mutex_t sendMutex;
+    pthread_mutex_t recvMutex;
 
-    unsigned int req_id;
-    pthread_mutex_t req_mutex;
-    struct ra_list_head req_list;
-    pthread_mutex_t rsp_mutex;
-    struct ra_list_head rsp_list;
-    unsigned int restore_flag;
+    unsigned int reqId;
+    pthread_mutex_t reqMutex;
+    struct RaListHead reqList;
+    pthread_mutex_t rspMutex;
+    struct RaListHead rspList;
+    unsigned int restoreFlag;
 };
 
-struct msg_head {
+struct MsgHead {
     unsigned int opcode;
     int ret;
     union {
         unsigned int rsvd;
-        unsigned int async_req_id;
+        unsigned int asyncReqId;
     };
-    unsigned int msg_data_len;
-    pid_t host_tgid;
-    char pid_sign[PROCESS_RA_SIGN_LENGTH];
+    unsigned int msgDataLen;
+    pid_t hostTgid;
+    char pidSign[PROCESS_RA_SIGN_LENGTH];
 };
 
-enum ra_hdc_recv_mode {
+enum RaHdcRecvMode {
     RA_HDC_WAIT_FOREVER,
     RA_HDC_NOWAIT,
     RA_HDC_WAIT_TIMEOUT,
@@ -91,115 +91,115 @@ enum ra_hdc_recv_mode {
 #define RA_RSVD_NUM_801 801
 #define MAX_HDC_MSG_DATA (4096 - 16)
 
-union op_set_pid_data {
+union OpSetPidData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         pid_t pid;
         unsigned int rsvd[RA_RSVD_NUM_2];
-        char pid_sign[PROCESS_RA_SIGN_LENGTH];
+        char pidSign[PROCESS_RA_SIGN_LENGTH];
         char resv[PROCESS_RA_RESV_LENGTH];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_get_cqe_err_info_data {
+union OpGetCqeErrInfoData {
     struct {
-    } tx_data;
+    } txData;
 
     struct {
-        struct cqe_err_info info;
-    } rx_data;
+        struct CqeErrInfo info;
+    } rxData;
 };
 
-union op_get_tls_enable_data {
+union OpGetTlsEnableData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
     struct {
-        bool tls_enable;
+        bool tlsEnable;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_get_sec_random_data {
+union OpGetSecRandomData {
     struct {
         unsigned int rsvd;
-    } tx_data;
+    } txData;
     struct {
         unsigned int value;
-    } rx_data;
+    } rxData;
 };
 
-union op_get_hccn_cfg_data {
+union OpGetHccnCfgData {
     struct {
-        unsigned int phy_id;
-        enum hccn_cfg_key key;
+        unsigned int phyId;
+        enum HccnCfgKey key;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
     struct {
         char value[HCCN_CFG_MSG_DATA_LEN];
-        unsigned int value_len;
+        unsigned int valueLen;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_hdc_close_data {
+union OpHdcCloseData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         char resv[PROCESS_RA_RESV_LENGTH];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_ifnum_data {
+union OpIfnumData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         unsigned int num; /* resv bit 31 for is_all */
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int num;
-    } rx_data;
+    } rxData;
 };
 
-union op_get_version_data {
+union OpGetVersionData {
     struct {
         unsigned int opcode;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int version;
-    } rx_data;
+    } rxData;
 };
 
-struct hdc_ops {
-    DLLEXPORT hdcError_t (*get_capacity)(struct drvHdcCapacity *capacity);
-    DLLEXPORT hdcError_t (*client_create)(HDC_CLIENT *client, int maxSessionNum, int serviceType, int flag);
-    DLLEXPORT hdcError_t (*client_destroy)(HDC_CLIENT client);
-    DLLEXPORT hdcError_t (*session_connect)(int peerNode, int peerLogicid, HDC_CLIENT client, HDC_SESSION *session);
-    DLLEXPORT hdcError_t (*session_connect_ex)(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client,
+struct HdcOps {
+    DLLEXPORT hdcError_t (*getCapacity)(struct drvHdcCapacity *capacity);
+    DLLEXPORT hdcError_t (*clientCreate)(HDC_CLIENT *client, int maxSessionNum, int serviceType, int flag);
+    DLLEXPORT hdcError_t (*clientDestroy)(HDC_CLIENT client);
+    DLLEXPORT hdcError_t (*sessionConnect)(int peerNode, int peerLogicid, HDC_CLIENT client, HDC_SESSION *session);
+    DLLEXPORT hdcError_t (*sessionConnectEx)(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client,
         HDC_SESSION *pSession);
-    DLLEXPORT hdcError_t (*server_create)(int chipId, int serviceType, HDC_SERVER *server);
-    DLLEXPORT hdcError_t (*server_destroy)(HDC_SERVER server);
-    DLLEXPORT hdcError_t (*session_accept)(HDC_SERVER server, HDC_SESSION *session);
-    DLLEXPORT hdcError_t (*session_close)(HDC_SESSION session);
-    DLLEXPORT hdcError_t (*alloc_msg)(HDC_SESSION session, struct drvHdcMsg **ppMsg, int count);
-    DLLEXPORT hdcError_t (*free_msg)(struct drvHdcMsg *msg);
-    DLLEXPORT hdcError_t (*reuse_msg)(struct drvHdcMsg *msg);
-    DLLEXPORT hdcError_t (*add_msg_buffer)(struct drvHdcMsg *msg, char *pBuf, int len);
-    DLLEXPORT hdcError_t (*get_msg_buffer)(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen);
+    DLLEXPORT hdcError_t (*serverCreate)(int chipId, int serviceType, HDC_SERVER *server);
+    DLLEXPORT hdcError_t (*serverDestroy)(HDC_SERVER server);
+    DLLEXPORT hdcError_t (*sessionAccept)(HDC_SERVER server, HDC_SESSION *session);
+    DLLEXPORT hdcError_t (*sessionClose)(HDC_SESSION session);
+    DLLEXPORT hdcError_t (*allocMsg)(HDC_SESSION session, struct drvHdcMsg **ppMsg, int count);
+    DLLEXPORT hdcError_t (*freeMsg)(struct drvHdcMsg *msg);
+    DLLEXPORT hdcError_t (*reuseMsg)(struct drvHdcMsg *msg);
+    DLLEXPORT hdcError_t (*addMsgBuffer)(struct drvHdcMsg *msg, char *pBuf, int len);
+    DLLEXPORT hdcError_t (*getMsgBuffer)(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen);
     DLLEXPORT hdcError_t (*recv)(HDC_SESSION session, struct drvHdcMsg *msg, int bufLen, unsigned long long flag,
                           int *recvBufCount, unsigned int timeout);
     DLLEXPORT hdcError_t (*send)(HDC_SESSION session, struct drvHdcMsg *msg, unsigned long long flag,
                           unsigned int timeout);
-    DLLEXPORT hdcError_t (*set_session_reference)(HDC_SESSION session) ;
+    DLLEXPORT hdcError_t (*setSessionReference)(HDC_SESSION session) ;
 };
 
 #define RA_PTHREAD_MUTEX_LOCK(mutex) do { \
@@ -221,23 +221,23 @@ static inline bool RaHdcIsBroken(int lastRecvStatus)
     return lastRecvStatus == DRV_ERROR_SOCKET_CLOSE;
 }
 
-int RaHdcInit(struct ra_init_config *cfg, struct process_ra_sign pRaSign);
+int RaHdcInit(struct RaInitConfig *cfg, struct ProcessRaSign pRaSign);
 int RaHdcGetTlsEnable(unsigned int phyId, bool *tlsEnable);
-int RaHdcDeinit(struct ra_init_config *cfg);
+int RaHdcDeinit(struct RaInitConfig *cfg);
 int RaHdcGetInterfaceVersion(unsigned int phyId, unsigned int interfaceOpcode, unsigned int *interfaceVersion);
 void RaHdcGetAllOpcodeVersion(unsigned int phyId);
-int RaHdcGetCqeErrInfo(unsigned int phyId, struct cqe_err_info *info);
+int RaHdcGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);
 int RaHdcProcessMsg(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize);
 int RaHdcInitSession(int peerNode, int peerDevid, unsigned int phyId, int hdcType, HDC_SESSION *session);
 void RaHdcDeinitSession(HDC_SESSION *session);
 int RaHdcSetSessionReference(HDC_SESSION *session);
-void MsgHeadBuildUp(struct msg_head *pSendRcvHead, unsigned int opcode, unsigned int reqId,
+void MsgHeadBuildUp(struct MsgHead *pSendRcvHead, unsigned int opcode, unsigned int reqId,
     unsigned int msgDataLen, pid_t hostTgid);
-int HdcAsyncSendPkt(struct hdc_async_info *asyncInfo, unsigned int phyId, void *sendBuf, unsigned int sendLen,
-    struct ra_request_handle *reqHandle);
-int HdcAsyncRecvPkt(struct hdc_async_info *asyncInfo, unsigned int phyId, void *recvBuf, unsigned int *recvLen);
-int RaHdcSaveSnapshot(unsigned int phyId, enum save_snapshot_action action);
+int HdcAsyncSendPkt(struct HdcAsyncInfo *asyncInfo, unsigned int phyId, void *sendBuf, unsigned int sendLen,
+    struct RaRequestHandle *reqHandle);
+int HdcAsyncRecvPkt(struct HdcAsyncInfo *asyncInfo, unsigned int phyId, void *recvBuf, unsigned int *recvLen);
+int RaHdcSaveSnapshot(unsigned int phyId, enum SaveSnapshotAction action);
 int RaHdcRestoreSnapshot(unsigned int phyId);
 int RaHdcGetSecRandom(unsigned int phyId, unsigned int *value);
-int RaHdcGetHccnCfg(unsigned int phyId, enum hccn_cfg_key key, char *value, unsigned int *valueLen);
+int RaHdcGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char *value, unsigned int *valueLen);
 #endif // RA_HDC_H

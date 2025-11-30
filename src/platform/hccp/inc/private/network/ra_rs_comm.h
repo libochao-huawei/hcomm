@@ -22,7 +22,7 @@
 #define RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
 #define HCCN_CFG_MSG_DATA_LEN 2048U
 
-enum op_type {
+enum OpType {
     RA_RS_SOCKET_CONN = 0,
     RA_RS_SOCKET_CLOSE = 1,
     RA_RS_SOCKET_LISTEN_START = 2,
@@ -138,7 +138,7 @@ enum op_type {
     RA_RS_OP_MAX_NUM,
 };
 
-enum module_type {
+enum ModuleType {
     HCCP_INIT = 0,
     RDMA_OP = 1,
     SOCKET_OP = 2,
@@ -154,24 +154,24 @@ enum {
     RA_RS_ERR_QP_MODE      = 5,
 };
 
-struct opcode_interface_info {
-    enum op_type opcode;
+struct OpcodeInterfaceInfo {
+    enum OpType opcode;
     unsigned int version;
 };
 
-struct wrlist_send_complete_num {
-    unsigned int send_num;
-    unsigned int *complete_num;
+struct WrlistSendCompleteNum {
+    unsigned int sendNum;
+    unsigned int *completeNum;
 };
 
-struct rdma_mr_reg_attr {
+struct RdmaMrRegAttr {
     void *addr;
     unsigned long long len;
     int access;
     unsigned int resv;
 };
 
-struct rdma_mr_reg_info {
+struct RdmaMrRegInfo {
     void *addr;
     unsigned long long len;
     int access;
@@ -179,108 +179,108 @@ struct rdma_mr_reg_info {
     unsigned int rkey;
 };
 
-struct socket_connect_info {
-    unsigned int phy_id;
+struct SocketConnectInfo {
+    unsigned int phyId;
     int family;
-    union hccp_ip_addr local_ip;
-    union hccp_ip_addr remote_ip;
+    union HccpIpAddr localIp;
+    union HccpIpAddr remoteIp;
     unsigned int port;
     char tag[SOCK_CONN_TAG_SIZE];
 };
 
-struct socket_listen_info {
-    unsigned int phy_id;
+struct SocketListenInfo {
+    unsigned int phyId;
     int family;
-    union hccp_ip_addr local_ip;
+    union HccpIpAddr localIp;
     unsigned int port;
     unsigned int phase;
     unsigned int err;
 };
 
-struct socket_fd_data {
+struct SocketFdData {
     int fd;
-    unsigned int phy_id;
+    unsigned int phyId;
     int family; // AF_INET(ipv4) or AF_INET6(ipv6)
-    union hccp_ip_addr local_ip;
-    union hccp_ip_addr remote_ip;
+    union HccpIpAddr localIp;
+    union HccpIpAddr remoteIp;
     int status;
     char tag[SOCK_CONN_TAG_SIZE];
 };
 
-struct socket_peer_info {
-    int phy_id;
+struct SocketPeerInfo {
+    int phyId;
     int fd;
-    void *socket_handle;
-    uint32_t ssl_enable;
+    void *socketHandle;
+    uint32_t sslEnable;
 };
 
-struct qp_attr_dscp_info {
+struct QpAttrDscpInfo {
     unsigned char tc;
     unsigned char sl;
 };
 
-struct lite_mr_info {
+struct LiteMrInfo {
     uint32_t key;
     uint64_t addr;
     uint64_t len;
 };
 
-struct lite_rdev_cap_resp {
+struct LiteRdevCapResp {
     struct dev_cap_info cap;
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
-struct lite_qp_cq_attr_resp {
-    struct rdma_lite_device_qp_attr qp_data;
-    struct rdma_lite_device_cq_attr send_cq_data;
-    struct rdma_lite_device_cq_attr recv_cq_data;
+struct LiteQpCqAttrResp {
+    struct rdma_lite_device_qp_attr qpData;
+    struct rdma_lite_device_cq_attr sendCqData;
+    struct rdma_lite_device_cq_attr recvCqData;
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
-struct lite_connected_info_resp {
+struct LiteConnectedInfoResp {
     unsigned int state;
-    struct lite_mr_info local_mr[RA_MR_MAX_NUM];
-    struct lite_mr_info rem_mr[RA_MR_MAX_NUM];
-    struct qos_attr qos_attr;
+    struct LiteMrInfo localMr[RA_MR_MAX_NUM];
+    struct LiteMrInfo remMr[RA_MR_MAX_NUM];
+    struct QosAttr qosAttr;
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
-struct lite_mem_attr_resp {
-    struct rdma_lite_device_mem_attr mem_data;
+struct LiteMemAttrResp {
+    struct rdma_lite_device_mem_attr memData;
     unsigned char reserved[HOST_LITE_RESERVED];
 };
 
-struct rs_qp_norm_with_attrs {
-    int is_exp;
-    int is_ext;
-    struct qp_ext_attrs ext_attrs;
-    unsigned int ai_op_support;
+struct RsQpNormWithAttrs {
+    int isExp;
+    int isExt;
+    struct QpExtAttrs extAttrs;
+    unsigned int aiOpSupport;
 };
 
-struct rs_qp_resp_with_attrs {
+struct RsQpRespWithAttrs {
     unsigned int qpn;
-    unsigned long long ai_qp_addr; // refer to struct ibv_qp *
-    unsigned int sq_index; // index of sq
-    unsigned int db_index; // index of db
+    unsigned long long aiQpAddr; // refer to struct ibv_qp *
+    unsigned int sqIndex; // index of sq
+    unsigned int dbIndex; // index of db
     unsigned int psn;
-    unsigned int gid_idx;
+    unsigned int gidIdx;
 
     // below cq related info valid when data_plane_flag.bs.cq_cstm was 1
-    unsigned long long ai_scq_addr; // refer to struct ibv_cq *scq
-    unsigned long long ai_rcq_addr; // refer to struct ibv_cq *rcq
-    struct ai_data_plane_info data_plane_info;
+    unsigned long long aiScqAddr; // refer to struct ibv_cq *scq
+    unsigned long long aiRcqAddr; // refer to struct ibv_cq *rcq
+    struct AiDataPlaneInfo dataPlaneInfo;
 };
 
-struct rs_qp_resp {
+struct RsQpResp {
     unsigned int qpn;
     unsigned int psn;
-    unsigned int gid_idx;
+    unsigned int gidIdx;
     union ibv_gid gid;
 };
 
-struct ra_rs_dev_info {
-    unsigned int phy_id;
-    unsigned int dev_index;
+struct RaRsDevInfo {
+    unsigned int phyId;
+    unsigned int devIndex;
 };
 
 enum {
@@ -294,12 +294,12 @@ enum {
     HDC_CONNECTED  = 1,
 };
 
-struct tlv_request_msg_head {
-    unsigned int phy_id;
+struct TlvRequestMsgHead {
+    unsigned int phyId;
     unsigned int type;
-    unsigned int module_type;
-    unsigned int total_bytes;
-    unsigned int send_bytes;
+    unsigned int moduleType;
+    unsigned int totalBytes;
+    unsigned int sendBytes;
     unsigned int offset;
 };
 
@@ -350,7 +350,7 @@ struct tlv_request_msg_head {
 #define QP_DEFAULT_MAX_ATTR_TIMEOUT       20
 #define QP_DEFAULT_MAX_ATTR_RETRY_CNT     7
 
-int ConverReturnCode(enum module_type module, int erroCode);
+int ConverReturnCode(enum ModuleType module, int erroCode);
 
 #endif
 

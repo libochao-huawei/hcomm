@@ -13,7 +13,7 @@
 
 #include "rs_ping_inner.h"
 
-struct rs_ping_pong_ops *RsPingRoceGetOps(void);
-struct rs_ping_pong_dfx *RsPingRoceGetDfx(void);
+struct RsPingPongOps *RsPingRoceGetOps(void);
+struct RsPingPongDfx *RsPingRoceGetDfx(void);
 
 #endif // RS_PING_ROCE_H

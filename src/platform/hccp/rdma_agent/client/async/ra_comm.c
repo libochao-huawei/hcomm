@@ -16,17 +16,17 @@
 
 HCCP_ATTRI_VISI_DEF int RaGetAsyncReqResult(void *reqHandle, int *reqResult)
 {
-    struct ra_request_handle *reqHandleTmp = NULL;
+    struct RaRequestHandle *reqHandleTmp = NULL;
 
     CHK_PRT_RETURN(reqHandle == NULL || reqResult == NULL, hccp_err("[get][async]req_handle or req_result is NULL"),
         ConverReturnCode(OTHERS, -EINVAL));
 
-    reqHandleTmp = (struct ra_request_handle *)reqHandle;
-    if (!reqHandleTmp->is_done){
+    reqHandleTmp = (struct RaRequestHandle *)reqHandle;
+    if (!reqHandleTmp->isDone){
         return ConverReturnCode(OTHERS, -EAGAIN);
     }
 
-    *reqResult = ConverReturnCode(reqHandleTmp->op_handle->op_module, reqHandleTmp->op_ret);
+    *reqResult = ConverReturnCode(reqHandleTmp->opHandle->opModule, reqHandleTmp->opRet);
     HdcAsyncDelResponse(reqHandleTmp);
     return 0;
 }

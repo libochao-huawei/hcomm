@@ -85,7 +85,7 @@ HcclResult TransportIbverbs::DeInit()
 
 HcclResult TransportIbverbs::DeRegOneMR(QpHandle& qpHandle, MemMsg& memMsg)
 {
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = memMsg.addr;
     HcclResult ret = HrtRaMrDereg(qpHandle, &mrInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -129,7 +129,7 @@ HcclResult TransportIbverbs::DeRegMR()
 HcclResult TransportIbverbs::DestroyQP(QpHandle& qpHandle)
 {
     if (qpHandle != nullptr) {
-        struct qp_attr attr{};
+        struct QpAttr attr{};
         CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
 
         g_qpn2IbversLinkMap_.Erase(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn));
@@ -242,17 +242,17 @@ HcclResult TransportIbverbs::GetQpAttr()
         HCCL_ERROR_CODE(HCCL_E_INTERNAL)), HCCL_E_INTERNAL);
     std::string logInfo = "create hccl transport:" + std::string(stackLogBuffer);
     for (u32 i = 0; i < combineQpHandles_.size(); i++){
-        struct qp_attr attr{};
+        struct QpAttr attr{};
         CHK_RET(hrtRaGetQpAttr(combineQpHandles_[i].qpHandle, &attr));
         HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]",
-            logInfo.c_str(), attr.qpn, attr.udp_sport, machinePara_.tc, machinePara_.sl);
+            logInfo.c_str(), attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
     }
     if (UseMultiQp()) {
         for (u32 i = 0; i < multiCombineQpHandles_.size(); i++){
-            struct qp_attr attr{};
+            struct QpAttr attr{};
             CHK_RET(hrtRaGetQpAttr(multiCombineQpHandles_[i].qpHandle, &attr));
             HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]",
-                logInfo.c_str(), attr.qpn, attr.udp_sport, machinePara_.tc, machinePara_.sl);
+                logInfo.c_str(), attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
         }
     } 
     return HCCL_SUCCESS;
@@ -561,16 +561,16 @@ HcclResult TransportIbverbs::GetNicHandle()
     return HCCL_SUCCESS;
 }
 
-inline static void MultiQpAdjustQpCapacity(struct qp_ext_attrs &attrs)
+inline static void MultiQpAdjustQpCapacity(struct QpExtAttrs &attrs)
 {
     constexpr int multiQpCapacityRatio = 2;
-    attrs.qp_attr.cap.max_send_wr /= multiQpCapacityRatio;
-    attrs.cq_attr.send_cq_depth /= multiQpCapacityRatio;
+    attrs.qpAttr.cap.max_send_wr /= multiQpCapacityRatio;
+    attrs.cqAttr.sendCqDepth /= multiQpCapacityRatio;
 }
 
 // 创建一个QP
 HcclResult TransportIbverbs::CreateOneQp(
-    s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, ai_qp_info &aiQpInfo, bool useAicpu, u32 udpSport)
+    s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, AiQpInfo &aiQpInfo, bool useAicpu, u32 udpSport)
 {
     bool isUseQpCreateWithAttrs = false;
     CHK_RET(IsUseQpCreateWithAttrs(isUseQpCreateWithAttrs, qpMode));
@@ -580,7 +580,7 @@ HcclResult TransportIbverbs::CreateOneQp(
         std::string(",localUserrank:") + std::to_string(machinePara_.localUserrank) +
         std::string(",localIpAddr: ") + std::string(machinePara_.localIpAddr.GetReadableAddress()) +
         std::string(",deviceLogicId:") + std::to_string(machinePara_.deviceLogicId);
-    struct qp_ext_attrs attrs{};
+    struct QpExtAttrs attrs{};
     // 判断是否为NORMALQP需要使用qpMode_; hostnic场景的qpmode也是NORMALQP
     if (useAicpu || qpMode_ == QPMode::NORMAL) {
         bool isWorkFlowLib = (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -590,18 +590,18 @@ HcclResult TransportIbverbs::CreateOneQp(
                             (machinePara_.deviceType == DevType::DEV_TYPE_910_93) &&
                             (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
         if (!UseMultiQp() && isAicpuLib) {
-            attrs.qp_attr.cap.max_send_wr = machinePara_.sockets.size() * DEFAULT_OFFLINE_MAX_SEND_WR;
+            attrs.qpAttr.cap.max_send_wr = machinePara_.sockets.size() * DEFAULT_OFFLINE_MAX_SEND_WR;
         } else if (UseMultiQp()) {
             MultiQpAdjustQpCapacity(attrs);
         }
         HCCL_DEBUG("qp set max_send_wr %u, socket size %u, isWorkFlowLib %d",
-            attrs.qp_attr.cap.max_send_wr, machinePara_.sockets.size(), isWorkFlowLib);
+            attrs.qpAttr.cap.max_send_wr, machinePara_.sockets.size(), isWorkFlowLib);
 
-        attrs.udp_sport = udpSport;
+        attrs.udpSport = udpSport;
         ret = hrtRaAiQpCreate(machinePara_.localDeviceId, nicRdmaHandle_, &attrs, &aiQpInfo, qpHandle);
         HCCL_DEBUG(
-            "ai_qp_addr:%llu db_index:%u, sq_index=%u", aiQpInfo.ai_qp_addr, aiQpInfo.db_index, aiQpInfo.sq_index);
-        qpInfo = qpInfo + std::string(",send_cq_depth:") + std::to_string(attrs.cq_attr.send_cq_depth);
+            "aiQpAddr:%llu db_index:%u, sq_index=%u", aiQpInfo.aiQpAddr, aiQpInfo.dbIndex, aiQpInfo.sqIndex);
+        qpInfo = qpInfo + std::string(",sendCqDepth:") + std::to_string(attrs.cqAttr.sendCqDepth);
     } else if (!isUseQpCreateWithAttrs && qpsPerConnection == HCCL_QPS_PER_CONNECTION_DEFAULT) {
         ret = HrtRaQpCreate(nicRdmaHandle_, QP_FLAG_RC, qpMode, qpHandle);
     } else if (!isUseQpCreateWithAttrs && qpsPerConnection != HCCL_QPS_PER_CONNECTION_DEFAULT) {
@@ -612,9 +612,9 @@ HcclResult TransportIbverbs::CreateOneQp(
         if (UseMultiQp()) {
             MultiQpAdjustQpCapacity(attrs);
         }
-        attrs.udp_sport = udpSport;
+        attrs.udpSport = udpSport;
         ret = hrtRaQpCreateWithAttrs(nicRdmaHandle_, &attrs, qpHandle);
-        qpInfo = qpInfo + std::string(",send_cq_depth:") + std::to_string(attrs.cq_attr.send_cq_depth);
+        qpInfo = qpInfo + std::string(",sendCqDepth:") + std::to_string(attrs.cqAttr.sendCqDepth);
     }
     
     RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007", vector<string>({ "resource_type", "resource_info" }),
@@ -630,7 +630,7 @@ HcclResult TransportIbverbs::CreateOneQp(
     // 配置RDMA Retry Cnt重传次数
     CHK_RET(SetQpAttrRetryCnt(qpHandle));
     // qpn map 插入
-    struct qp_attr attr{} ;
+    struct QpAttr attr{} ;
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
 
     g_qpn2IbversLinkMap_.Emplace(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn), this);
@@ -671,7 +671,7 @@ HcclResult TransportIbverbs::CreateMultiQp(s32 qpMode, u32 qpsPerConnection)
         // 创建qp
         for (auto &port : multiQpCfgSrcPorts) {
             QpHandle qpHandle = nullptr;
-            ai_qp_info tmpAiQpInfo{};
+            AiQpInfo tmpAiQpInfo{};
             CHK_RET(CreateOneQp(qpMode,
                 qpsPerConnection,
                 qpHandle,
@@ -688,7 +688,7 @@ HcclResult TransportIbverbs::CreateMultiQp(s32 qpMode, u32 qpsPerConnection)
     u32 udpSport = multiQpCfgSrcPorts.size() > 0 ? multiQpCfgSrcPorts[0] : 0;
     for (u32 i = 0; i < qpsPerConnection; i++) {
         QpHandle qpHandle = nullptr;
-        ai_qp_info tmpAiQpInfo{};
+        AiQpInfo tmpAiQpInfo{};
         CHK_RET(CreateOneQp(qpMode, qpsPerConnection, qpHandle, tmpAiQpInfo, machinePara_.isAicpuModeEn, udpSport));
         multiCombineQpHandles_.push_back(CombineQpHandle(qpHandle));
         combineAiQpInfos_.push_back(CombineQpInfo(tmpAiQpInfo));
@@ -876,16 +876,16 @@ HcclResult TransportIbverbs::Fence()
 }
 
 HcclResult TransportIbverbs::AddWqeList(void *dstMemPtr, const void *srcMemPtr, u64 srcMemSize,
-    WqeType wqeType, wr_aux_info &aux, std::vector<WqeInfo> &wqeInfoVec)
+    WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo> &wqeInfoVec)
 {
     WqeInfo wqeInfoTmp;
 
-    wqeInfoTmp.wqeData.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
-    wqeInfoTmp.wqeData.send_flags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
+    wqeInfoTmp.wqeData.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
+    wqeInfoTmp.wqeData.sendFlags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
     fence_ = false;
-    wqeInfoTmp.wqeData.mem_list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
-    wqeInfoTmp.wqeData.mem_list.len = srcMemSize;
-    wqeInfoTmp.wqeData.mem_list.lkey = 0;
+    wqeInfoTmp.wqeData.memList.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
+    wqeInfoTmp.wqeData.memList.len = srcMemSize;
+    wqeInfoTmp.wqeData.memList.lkey = 0;
 
     switch (wqeType) {
         case WqeType::WQE_TYPE_DATA:
@@ -917,7 +917,7 @@ HcclResult TransportIbverbs::AddWqeList(void *dstMemPtr, const void *srcMemPtr, 
 }
 
 HcclResult TransportIbverbs::ConstructPayLoadWqe(void *dstMemPtr, const void *src, u64 len,
-    WqeType wqeType, wr_aux_info &aux, std::vector<WqeInfo>& wqeInfoVec, u32 txSendDataTimes)
+    WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo>& wqeInfoVec, u32 txSendDataTimes)
 {
     HcclResult ret;
     // 发送数据Wqe
@@ -940,7 +940,7 @@ HcclResult TransportIbverbs::ConstructPayLoadWqe(void *dstMemPtr, const void *sr
 }
 
 HcclResult TransportIbverbs::TxPayLoad(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len,
-    WqeType wqeType, wr_aux_info &aux, std::vector<WqeInfo>& wqeInfoVec)
+    WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo>& wqeInfoVec)
 {
     void *dstMemPtr = nullptr;
     u64 dstMemSize = 0;
@@ -965,7 +965,7 @@ HcclResult TransportIbverbs::TxAsync(UserMemType dstMemType, u64 dstOffset,
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct wr_aux_info aux = {0};
+    struct WrAuxInfo aux = {0};
     HCCL_DEBUG("TX src[%p] len[%llu] dstOffset[%llu]", src, len, dstOffset);
 
     if (src != nullptr) {
@@ -981,11 +981,11 @@ HcclResult TransportIbverbs::TxWithReduce(UserMemType dstMemType, u64 dstOffset,
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct wr_aux_info aux = {0};
-    aux.data_type = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
-    aux.reduce_type = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.data_type == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduce_type == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+    struct WrAuxInfo aux = {0};
+    aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
+    aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
+    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
+        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
         HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
             GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
@@ -1003,11 +1003,11 @@ HcclResult TransportIbverbs::TxWithReduce(const std::vector<TxMemoryInfo> &txWit
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct wr_aux_info aux = {0};
-    aux.data_type = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
-    aux.reduce_type = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.data_type == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduce_type == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+    struct WrAuxInfo aux = {0};
+    aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
+    aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
+    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
+        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
         HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
             GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
@@ -1176,10 +1176,10 @@ HcclResult TransportIbverbs::TxSendDataAndNotifyWithSingleQP(
         } else {
             wqeInfoVec.back().wqeData.op = RA_WR_RDMA_WRITE_WITH_NOTIFY;
         }
-        wqeInfoVec.back().wqeData.aux.notify_offset = offset;
+        wqeInfoVec.back().wqeData.aux.notifyOffset = offset;
     } else {
         // 发送data notify同步信息
-        struct wr_aux_info aux = {0};
+        struct WrAuxInfo aux = {0};
         void *remoteNotifyaddr = remoteDataNotifyMsg_.addr;
         CHK_RET(AddWqeList(remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
             WqeType::WQE_TYPE_DATA_NOTIFY, aux, wqeInfoVec));
@@ -1212,8 +1212,8 @@ HcclResult TransportIbverbs::TxSendDataAndNotify(std::vector<WqeInfo> &wqeInfoVe
 {
     u32 maxLength = 0;
     for (u32 i = 0; i < wqeInfoVec.size(); i++) {
-        if (wqeInfoVec[i].wqeData.mem_list.len > maxLength) {
-            maxLength = wqeInfoVec[i].wqeData.mem_list.len;
+        if (wqeInfoVec[i].wqeData.memList.len > maxLength) {
+            maxLength = wqeInfoVec[i].wqeData.memList.len;
         }
     }
     
@@ -1254,21 +1254,21 @@ HcclResult TransportIbverbs::TxSendDataAndNotifyWithMultiQP(std::vector<WqeInfo>
     std::vector<std::vector<WqeInfo>> multiQpWqeInfoVct(actualMultiQpNum, wqeInfoVec);
     for (u32 i = 0; i < wqeInfoVec.size(); i++) {
         WqeInfo tmpWqeInfo = wqeInfoVec[i];
-        u32 curLen = tmpWqeInfo.wqeData.mem_list.len;
+        u32 curLen = tmpWqeInfo.wqeData.memList.len;
         std::vector<u32> splittedLen = RdmaLengthSplit(curLen, actualMultiQpNum);
-        uint64_t curSrcAddr = tmpWqeInfo.wqeData.mem_list.addr;
-        uint64_t curDstAddr = tmpWqeInfo.wqeData.dst_addr;
+        uint64_t curSrcAddr = tmpWqeInfo.wqeData.memList.addr;
+        uint64_t curDstAddr = tmpWqeInfo.wqeData.dstAddr;
         for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
-            multiQpWqeInfoVct[qpIndex][i].wqeData.mem_list.len = splittedLen[qpIndex];
-            multiQpWqeInfoVct[qpIndex][i].wqeData.mem_list.addr = curSrcAddr;
-            multiQpWqeInfoVct[qpIndex][i].wqeData.dst_addr = curDstAddr;
+            multiQpWqeInfoVct[qpIndex][i].wqeData.memList.len = splittedLen[qpIndex];
+            multiQpWqeInfoVct[qpIndex][i].wqeData.memList.addr = curSrcAddr;
+            multiQpWqeInfoVct[qpIndex][i].wqeData.dstAddr = curDstAddr;
             curSrcAddr += splittedLen[qpIndex];
             curDstAddr += splittedLen[qpIndex];
         }
     }
     // 给每个QP最后增加一个属于该QP的DataNotify
     for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
-        struct wr_aux_info aux = {0};
+        struct WrAuxInfo aux = {0};
         void *remoteNotifyaddr = multiQpDataNotifyRemoteMemMsg_[qpIndex].addr;
         CHK_RET(AddWqeList(remoteNotifyaddr, notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
             WqeType::WQE_TYPE_DATA_NOTIFY, aux, multiQpWqeInfoVct[qpIndex]));
@@ -1284,7 +1284,7 @@ HcclResult TransportIbverbs::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &
 {
     std::vector<WqeInfo> wqeInfoVec;
     wqeInfoVec.reserve(WQE_RESERVE_LENGTH);
-    struct wr_aux_info aux = {0};
+    struct WrAuxInfo aux = {0};
 
     for (auto& mem : txMems) {
         HCCL_DEBUG("TX src[%p] len[%llu] dstOffset[%llu]", mem.src, mem.len, mem.dstOffset);
@@ -1297,7 +1297,7 @@ HcclResult TransportIbverbs::TxAsync(std::vector<TxMemoryInfo>& txMems, Stream &
 }
 
 HcclResult TransportIbverbs::TxWqeList(std::vector<WqeInfo> &wqeInfoVec, Stream &stream,
-    std::vector<struct send_wr_rsp> &opRspVec, u32 multiQpIndex)
+    std::vector<struct SendWrRsp> &opRspVec, u32 multiQpIndex)
 {
     (void)stream;
     if (!IsTemplateMode()) {
@@ -1316,26 +1316,26 @@ HcclResult TransportIbverbs::TxWqeList(std::vector<WqeInfo> &wqeInfoVec, Stream 
 
     HCCL_DEBUG("rdma tx send wqes: ra qp sqe counter:%u, current qp idx:%u", sqeCounter_, currentQP_);
 
-    std::vector<send_wrlist_data_ext> wqelisDatatVec;
+    std::vector<SendWrlistDataExt> wqelisDatatVec;
     for (u32 index = 0; index < wqeInfoVec.size(); index++) {
         // 使能atomic write场景下，reduce的下一个notify的opcode要设置为atomic write
         u32& preWrOpcode = multiQpIndex == RDMA_INVALID_QP_INDEX ?
             combineQpHandles_[currentQP_].preWrOpcode : multiCombineQpHandles_[multiQpIndex].preWrOpcode;
         ModifyAtomicWriteAfterReduce(preWrOpcode, wqeInfoVec[index].wqeType, wqeInfoVec[index].wqeData.op,
-            wqeInfoVec[index].wqeData.ext.imm_data);
+            wqeInfoVec[index].wqeData.ext.immData);
 
         wqelisDatatVec.push_back(wqeInfoVec[index].wqeData);
     }
 
     u32 totalWqeCount = wqelisDatatVec.size();
-    struct send_wrlist_data_ext *wqelist = wqelisDatatVec.data();
-    struct send_wr_rsp *opRsp = opRspVec.data();
+    struct SendWrlistDataExt *wqelist = wqelisDatatVec.data();
+    struct SendWrRsp *opRsp = opRspVec.data();
 
     // HCCP会校验 zero byte messages 的内存地址是否已注册MR。对于 zero byte messages 不下发WR，将opRsp设置为特殊值。
     // 下发rdmasend task时检查该特殊值，如果zero byte message则不下发rdmasend task。
     bool batchSendWr = true;
     for (u32 i = 0; i < totalWqeCount; i++) {
-        if (wqelisDatatVec[i].mem_list.len == 0) {
+        if (wqelisDatatVec[i].memList.len == 0) {
             batchSendWr = false;
             break;
         }
@@ -1350,13 +1350,13 @@ HcclResult TransportIbverbs::TxWqeList(std::vector<WqeInfo> &wqeInfoVec, Stream 
         CHK_RET(SendWqeList(currentQp, totalWqeCount, wqelist, opRsp));
     } else {
         for (u32 i = 0; i < totalWqeCount; i++) {
-            if (wqelisDatatVec[i].mem_list.len > 0) {
+            if (wqelisDatatVec[i].memList.len > 0) {
                 CHK_RET(SendWqeList(currentQp, 1U, &wqelist[i], &opRsp[i]));
             } else {
-                opRsp[i].wqe_tmp.sq_index = INVALID_UINT;
-                opRsp[i].wqe_tmp.wqe_index = INVALID_UINT;
-                opRsp[i].db.db_index = INVALID_UINT;
-                opRsp[i].db.db_info = INVALID_U64;
+                opRsp[i].wqeTmp.sqIndex = INVALID_UINT;
+                opRsp[i].wqeTmp.wqeIndex = INVALID_UINT;
+                opRsp[i].db.dbIndex = INVALID_UINT;
+                opRsp[i].db.dbInfo = INVALID_U64;
             }
         }
     }
@@ -1364,8 +1364,8 @@ HcclResult TransportIbverbs::TxWqeList(std::vector<WqeInfo> &wqeInfoVec, Stream 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportIbverbs::SendWqeList(QpHandle qpHandle, u32 wqeNum, struct send_wrlist_data_ext *wqelist,
-    struct send_wr_rsp *opRsp)
+HcclResult TransportIbverbs::SendWqeList(QpHandle qpHandle, u32 wqeNum, struct SendWrlistDataExt *wqelist,
+    struct SendWrRsp *opRsp)
 {
     unsigned int completeNum = 0;
     HcclResult ret = HrtRaSendWrlistExt(qpHandle, wqelist, opRsp, wqeNum, &completeNum);
@@ -1380,30 +1380,30 @@ HcclResult TransportIbverbs::RdmaSendAsync(std::vector<WqeInfo> &wqeInfoVec, Str
 {
     HcclResult ret;
 
-    std::vector<struct send_wr_rsp> opRspVec(wqeInfoVec.size());
+    std::vector<struct SendWrRsp> opRspVec(wqeInfoVec.size());
     CHK_RET(TxWqeList(wqeInfoVec, stream, opRspVec, multiQpIndex));
 
-    std::vector<send_wrlist_data_ext> wqelistVec;
+    std::vector<SendWrlistDataExt> wqelistVec;
     for (u32 index = 0; index < wqeInfoVec.size(); index++) {
         wqelistVec.push_back(wqeInfoVec[index].wqeData);
     }
 
-    struct send_wr wr = {nullptr};
-    wr.buf_num = 1;
+    struct SendWr wr = {nullptr};
+    wr.bufNum = 1;
     wr.op = 0;
-    wr.send_flag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
+    wr.sendFlag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
     fence_ = false;
 
     if (useOneDoorbell && !IsTemplateMode()) {
         // 内存块不连续时，只敲最后一次doorbell
-        wr.buf_list = &wqelistVec.back().mem_list;
-        wr.dst_addr = static_cast<u64>(wqelistVec.back().dst_addr);
+        wr.bufList = &wqelistVec.back().memList;
+        wr.dstAddr = static_cast<u64>(wqelistVec.back().dstAddr);
         // 只敲一次doorbell时，len为所有非连续内存块长度总和+notify(4Bytes)
-        wr.buf_list[0].len = std::accumulate(wqelistVec.begin(), wqelistVec.end(), 0llu,
-            [](u64 acc, auto wqelist) { return acc + wqelist.mem_list.len; });
+        wr.bufList[0].len = std::accumulate(wqelistVec.begin(), wqelistVec.end(), 0llu,
+            [](u64 acc, auto wqelist) { return acc + wqelist.memList.len; });
 
-        const u32 dbIndex = static_cast<u32>(opRspVec.back().db.db_index);
-        const u64 dbInfo = static_cast<u64>(opRspVec.back().db.db_info);
+        const u32 dbIndex = static_cast<u32>(opRspVec.back().db.dbIndex);
+        const u64 dbInfo = static_cast<u64>(opRspVec.back().db.dbInfo);
         ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream, machinePara_.remoteWorldRank, isCapture_);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[TransportIbverbs][RdmaSendAsync][useOneDoorbell]errNo[0x%016llx] In lbv exp op base mode, "\
@@ -1413,12 +1413,12 @@ HcclResult TransportIbverbs::RdmaSendAsync(std::vector<WqeInfo> &wqeInfoVec, Str
     }
 
     for (u32 i = 0; i < wqeInfoVec.size(); i++) {
-        wr.buf_list = &wqelistVec[i].mem_list;
-        wr.dst_addr = static_cast<u64>(wqelistVec[i].dst_addr);
+        wr.bufList = &wqelistVec[i].memList;
+        wr.dstAddr = static_cast<u64>(wqelistVec[i].dstAddr);
 
         if (!IsTemplateMode()) {
-            u32 dbIndex = static_cast<u32>(opRspVec[i].db.db_index);
-            u64 dbInfo = static_cast<u64>(opRspVec[i].db.db_info);
+            u32 dbIndex = static_cast<u32>(opRspVec[i].db.dbIndex);
+            u64 dbInfo = static_cast<u64>(opRspVec[i].db.dbInfo);
 
             // op base 模式下的发送接口
             if (wqeInfoVec[i].wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA)) {
@@ -1435,16 +1435,16 @@ HcclResult TransportIbverbs::RdmaSendAsync(std::vector<WqeInfo> &wqeInfoVec, Str
         } else { // offline mode
             // 下沉模式
             if (wqeInfoVec[i].wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA)) {
-                ret = dispatcher_->RdmaSend(opRspVec[i].wqe_tmp.sq_index, opRspVec[i].wqe_tmp.wqe_index,
+                ret = dispatcher_->RdmaSend(opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex,
                     wr, stream, machinePara_.remoteWorldRank);
             } else {
-                ret = dispatcher_->RdmaSend(opRspVec[i].wqe_tmp.sq_index, opRspVec[i].wqe_tmp.wqe_index,
+                ret = dispatcher_->RdmaSend(opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex,
                     wr, stream, machinePara_.remoteWorldRank, wqeInfoVec[i].wqeDataOffset);
             }
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "\
                 "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-                opRspVec[i].wqe_tmp.sq_index, opRspVec[i].wqe_tmp.wqe_index, wqeInfoVec[i].wqeDataOffset), ret);
+                opRspVec[i].wqeTmp.sqIndex, opRspVec[i].wqeTmp.wqeIndex, wqeInfoVec[i].wqeDataOffset), ret);
         }
     }
     return HCCL_SUCCESS;
@@ -1453,18 +1453,18 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(std::vector<WqeInfo> &wqeInfoV
 {
     HcclResult ret;
 
-    std::vector<send_wrlist_data_ext> wqelistVec;
+    std::vector<SendWrlistDataExt> wqelistVec;
     for (u32 index = 0; index < wqeInfoVec.size(); index++) {
         wqelistVec.push_back(wqeInfoVec[index].wqeData);
     }
-    struct send_wr_rsp opRsp = {0};
-    struct send_wrlist_data_ext wr = {0};
+    struct SendWrRsp opRsp = {0};
+    struct SendWrlistDataExt wr = {0};
     for (u32 i = 0; i < wqeInfoVec.size(); i++) {
-        wr.mem_list.addr = wqelistVec[i].mem_list.addr;
-        wr.mem_list.len = wqelistVec[i].mem_list.len;
-        wr.dst_addr = static_cast<u64>(wqelistVec[i].dst_addr);
+        wr.memList.addr = wqelistVec[i].memList.addr;
+        wr.memList.len = wqelistVec[i].memList.len;
+        wr.dstAddr = static_cast<u64>(wqelistVec[i].dstAddr);
         wr.op = 0;
-        wr.send_flags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
+        wr.sendFlags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
         fence_ = false;
 
         if (wqeInfoVec[i].wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA)) {
@@ -1478,15 +1478,15 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(std::vector<WqeInfo> &wqeInfoV
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline " \
             "mode, rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-            opRsp.wqe_tmp.sq_index, opRsp.wqe_tmp.wqe_index, wqeInfoVec[i].wqeDataOffset), ret);
+            opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, wqeInfoVec[i].wqeDataOffset), ret);
     }
     return HCCL_SUCCESS;
 }
-HcclResult TransportIbverbs::RdmaSendAsync(struct send_wr &wr, Stream &stream, WqeType wqeType, u64 notifyOffset,
+HcclResult TransportIbverbs::RdmaSendAsync(struct SendWr &wr, Stream &stream, WqeType wqeType, u64 notifyOffset,
     u32 notifyId)
 {
     HcclResult ret;
-    struct send_wr_rsp opRsp = {0};
+    struct SendWrRsp opRsp = {0};
     if (!IsTemplateMode()) {
         currentQP_ = 0;
     } else {
@@ -1505,8 +1505,8 @@ HcclResult TransportIbverbs::RdmaSendAsync(struct send_wr &wr, Stream &stream, W
     CHK_RET(HrtRaSendWr(combineQpHandles_[currentQP_].qpHandle, &wr, &opRsp));
 
     if (!IsTemplateMode()) {
-        u32 dbIndex = static_cast<u32>(opRsp.db.db_index);
-        u64 dbInfo = static_cast<u64>(opRsp.db.db_info);
+        u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
+        u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
         if (wqeType == WqeType::WQE_TYPE_DATA) {
             ret = dispatcher_->RdmaSend(dbIndex, dbInfo, wr, stream,
                 machinePara_.remoteWorldRank, isCapture_);
@@ -1523,28 +1523,28 @@ HcclResult TransportIbverbs::RdmaSendAsync(struct send_wr &wr, Stream &stream, W
         }
     } else { // offline mode
         if (wqeType == WqeType::WQE_TYPE_DATA) {
-            ret = dispatcher_->RdmaSend(opRsp.wqe_tmp.sq_index, opRsp.wqe_tmp.wqe_index,
+            ret = dispatcher_->RdmaSend(opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex,
                 wr, stream, machinePara_.remoteWorldRank);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "\
-                "rdma send failed. sq_index[%u] wqe_index[%u]", HCCL_ERROR_CODE(ret), opRsp.wqe_tmp.sq_index,
-                opRsp.wqe_tmp.wqe_index), ret);
+                "rdma send failed. sq_index[%u] wqe_index[%u]", HCCL_ERROR_CODE(ret), opRsp.wqeTmp.sqIndex,
+                opRsp.wqeTmp.wqeIndex), ret);
         } else {
-            ret = dispatcher_->RdmaSend(opRsp.wqe_tmp.sq_index, opRsp.wqe_tmp.wqe_index,
+            ret = dispatcher_->RdmaSend(opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex,
                 wr, stream, machinePara_.remoteWorldRank, notifyOffset);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[TransportIbverbs][RdmaSendAsync]errNo[0x%016llx] In lbv exp offline mode, "\
                 "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-                opRsp.wqe_tmp.sq_index, opRsp.wqe_tmp.wqe_index, notifyOffset), ret);
+                opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, notifyOffset), ret);
         }
     }
     return HCCL_SUCCESS;
 }
-HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(struct send_wrlist_data_ext &wr, Stream &stream, WqeType wqeType,
+HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(struct SendWrlistDataExt &wr, Stream &stream, WqeType wqeType,
     u64 notifyOffset)
 {
     HcclResult ret;
-    struct send_wr_rsp opRsp = {0};
+    struct SendWrRsp opRsp = {0};
     if (wqeType == WqeType::WQE_TYPE_DATA) {
             ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
                 opRsp, stream, machinePara_.remoteWorldRank);
@@ -1556,7 +1556,7 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(struct send_wrlist_data_ext &w
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline mode, "\
         "rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
-        opRsp.wqe_tmp.sq_index, opRsp.wqe_tmp.wqe_index, notifyOffset), ret);
+        opRsp.wqeTmp.sqIndex, opRsp.wqeTmp.wqeIndex, notifyOffset), ret);
 
     return HCCL_SUCCESS;
 }
@@ -1593,17 +1593,17 @@ HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u
                                        Stream &stream, WqeType wqeType)
 {
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !useAtomicWrite_) {
-        struct sg_list list = {0};
-        struct send_wr wr = {nullptr};
+        struct SgList list = {0};
+        struct SendWr wr = {nullptr};
         // 构造wr信息
         list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
         list.len = srcMemSize;
 
-        wr.buf_list = &list;
-        wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-        wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
+        wr.bufList = &list;
+        wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+        wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
         wr.op = 0; /* RDMA_WRITE: 0 */
-        wr.send_flag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
+        wr.sendFlag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
         fence_ = false;
 
         // 获取notify偏移地址，对于发送数据时，偏移地址为0
@@ -1614,20 +1614,20 @@ HcclResult TransportIbverbs::TxSendWqe(void *dstMemPtr, const void *srcMemPtr, u
         // RDMA异步发送
         CHK_RET(RdmaSendAsync(wr, stream, wqeType, wqeDataOffset, notifyId));
     } else if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && useAtomicWrite_) {
-        struct wr_aux_info aux = {0};
+        struct WrAuxInfo aux = {0};
         std::vector<WqeInfo> wqeInfoVec;
         CHK_RET(AddWqeList(dstMemPtr, srcMemPtr, srcMemSize, wqeType, aux, wqeInfoVec));
         CHK_RET(RdmaSendAsync(wqeInfoVec, stream, false));
         HCCL_DEBUG("TxSendWqe useAtomicWrite[%d]", useAtomicWrite_);
     } else {
-        struct send_wrlist_data_ext wr = {0};
+        struct SendWrlistDataExt wr = {0};
         // 构造wr信息
-        wr.mem_list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
-        wr.mem_list.len = srcMemSize;
+        wr.memList.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
+        wr.memList.len = srcMemSize;
 
-        wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
+        wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
         wr.op = 0; /* RDMA_WRITE: 0 */
-        wr.send_flags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
+        wr.sendFlags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
         fence_ = false;
 
         // 获取notify偏移地址，对于发送数据时，偏移地址为0
@@ -1645,34 +1645,34 @@ HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemP
                                        Stream &stream)
 {
     if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && !useAtomicWrite_) {
-        struct sg_list list = {0};
-        struct send_wr wr = {nullptr};
+        struct SgList list = {0};
+        struct SendWr wr = {nullptr};
         // 构造wr信息
         list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
         list.len = srcMemSize;
-        wr.buf_list = &list;
-        wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-        wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(memMsg.addr));
+        wr.bufList = &list;
+        wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+        wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(memMsg.addr));
         wr.op = 0; /* RDMA_WRITE: 0 */
-        wr.send_flag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
+        wr.sendFlag = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
         fence_ = false;
 
         // RDMA异步发送
         CHK_RET(RdmaSendAsync(wr, stream, WqeType::WQE_TYPE_ACK_NOTIFY, memMsg.offset, memMsg.notifyId));
     } else if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE && useAtomicWrite_) {
-        struct wr_aux_info aux = {0};
+        struct WrAuxInfo aux = {0};
         std::vector<WqeInfo> wqeInfoVec;
         CHK_RET(AddWqeList(memMsg.addr, srcMemPtr, srcMemSize, WqeType::WQE_TYPE_ACK_NOTIFY, aux, wqeInfoVec));
         CHK_RET(RdmaSendAsync(wqeInfoVec, stream, false));
         HCCL_DEBUG("TxSendNotifyWqe useAtomicWrite[%d]", useAtomicWrite_);
     } else {
-        struct send_wrlist_data_ext wr = {0};
+        struct SendWrlistDataExt wr = {0};
         // 构造wr信息
-        wr.mem_list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
-        wr.mem_list.len = srcMemSize;
-        wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(memMsg.addr));
+        wr.memList.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
+        wr.memList.len = srcMemSize;
+        wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(memMsg.addr));
         wr.op = 0; /* RDMA_WRITE: 0 */
-        wr.send_flags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
+        wr.sendFlags = fence_ ? (RA_SEND_SIGNALED | RA_SEND_FENCE) : RA_SEND_SIGNALED;
         fence_ = false;
 
         // RDMA异步发送
@@ -1804,7 +1804,7 @@ HcclResult TransportIbverbs::CreateNotifyBuffer(std::shared_ptr<LocalIpcNotify> 
     HcclRtNotify notify = nullptr;
 
     /* 获取notify寄存器虚拟基地址、大小, 物理地址回传值为空 */
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     if (machinePara_.isAicpuModeEn || (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
         machinePara_.deviceType != localDeviceType)) {
         CHK_RET(HrtRaGetNotifyMrInfo(machinePara_.localDeviceId, nicRdmaHandle_, &mrInfo));
@@ -1909,7 +1909,7 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
             return HCCL_E_NOT_SUPPORT;
         }
     }
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = memPtr;
     mrInfo.size = memSize;
     mrInfo.access = access_;
@@ -1943,7 +1943,7 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
 HcclResult TransportIbverbs::RegCustomUserMemWithMsg(void *addr, u64 size, 
     MemMsg &memMsg, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize)
 {
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = addr;
     mrInfo.size = size;
     mrInfo.access = access_;
@@ -2133,7 +2133,7 @@ HcclResult TransportIbverbs::CreateNotifyValueBuffer()
     }
     lock.unlock();
 
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = notifyValueMem_[machinePara_.deviceLogicId].ptr();
     mrInfo.size = notifySize_;
     mrInfo.access = access_;
@@ -2192,7 +2192,7 @@ HcclResult TransportIbverbs::RxPrepare(Stream &stream)
 HcclResult TransportIbverbs::TxData(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len, Stream &stream)
 {
     std::vector<WqeInfo> wqeInfoVec;
-    struct wr_aux_info aux = {0};
+    struct WrAuxInfo aux = {0};
     HCCL_DEBUG("TX src[%p] len[%llu] dstOffset[%llu]", src, len, dstOffset);
 
     if (src != nullptr) {
@@ -2444,15 +2444,15 @@ HcclResult TransportIbverbs::GetAiQpInfo(std::vector<HcclQpInfoV2> &aiQpInfo)
 {
     aiQpInfo.resize(combineAiQpInfos_.size() + 1);
 
-    aiQpInfo[0].qpPtr   = combineAiQpInfo_.aiQpInfo.ai_qp_addr;
-    aiQpInfo[0].sqIndex = combineAiQpInfo_.aiQpInfo.sq_index;
-    aiQpInfo[0].dbIndex = combineAiQpInfo_.aiQpInfo.db_index;
+    aiQpInfo[0].qpPtr   = combineAiQpInfo_.aiQpInfo.aiQpAddr;
+    aiQpInfo[0].sqIndex = combineAiQpInfo_.aiQpInfo.sqIndex;
+    aiQpInfo[0].dbIndex = combineAiQpInfo_.aiQpInfo.dbIndex;
     HCCL_DEBUG("[TransportIbverbs][GetAiQpInfo] i[0] qpPtr[%llu] sqIndex[%u] dbIndex[%u]",
         aiQpInfo[0].qpPtr, aiQpInfo[0].sqIndex, aiQpInfo[0].dbIndex);
     for (u32 i = 1, j = 0; i < aiQpInfo.size(); i++, j++) {
-        aiQpInfo[i].qpPtr = combineAiQpInfos_[j].aiQpInfo.ai_qp_addr;
-        aiQpInfo[i].sqIndex = combineAiQpInfos_[j].aiQpInfo.sq_index;
-        aiQpInfo[i].dbIndex = combineAiQpInfos_[j].aiQpInfo.db_index;
+        aiQpInfo[i].qpPtr = combineAiQpInfos_[j].aiQpInfo.aiQpAddr;
+        aiQpInfo[i].sqIndex = combineAiQpInfos_[j].aiQpInfo.sqIndex;
+        aiQpInfo[i].dbIndex = combineAiQpInfos_[j].aiQpInfo.dbIndex;
         HCCL_DEBUG("[TransportIbverbs][GetAiQpInfo] i[%u] qpPtr[%llu] sqIndex[%u] dbIndex[%u]",
             i, aiQpInfo[i].qpPtr, aiQpInfo[i].sqIndex, aiQpInfo[i].dbIndex);
     }
@@ -2473,23 +2473,23 @@ HcclResult TransportIbverbs::GetAiRMAQueueInfo(std::vector<HcclAiRMAQueueInfo> &
     HCCL_INFO("[TransportIbverbs][GetAiRMAQueueInfo] localUserRank[%u], remoteUserrank[%u], sl[%u]",
         machinePara_.localUserrank, machinePara_.remoteUserrank, sl);
     aiRMAQueueInfo.resize(combineAiQpInfos_.size() + 1);
-    CopyAiWQInfo(aiRMAQueueInfo[0].sq, combineAiQpInfo_.aiQpInfo.data_plane_info.sq, DBMode::HW_DB, sl);
-    CopyAiWQInfo(aiRMAQueueInfo[0].rq, combineAiQpInfo_.aiQpInfo.data_plane_info.rq, DBMode::SW_DB, sl);
-    CopyAiCQInfo(aiRMAQueueInfo[0].scq, combineAiQpInfo_.aiQpInfo.data_plane_info.scq, DBMode::SW_DB);
-    CopyAiCQInfo(aiRMAQueueInfo[0].rcq, combineAiQpInfo_.aiQpInfo.data_plane_info.rcq, DBMode::SW_DB);
+    CopyAiWQInfo(aiRMAQueueInfo[0].sq, combineAiQpInfo_.aiQpInfo.dataPlaneInfo.sq, DBMode::HW_DB, sl);
+    CopyAiWQInfo(aiRMAQueueInfo[0].rq, combineAiQpInfo_.aiQpInfo.dataPlaneInfo.rq, DBMode::SW_DB, sl);
+    CopyAiCQInfo(aiRMAQueueInfo[0].scq, combineAiQpInfo_.aiQpInfo.dataPlaneInfo.scq, DBMode::SW_DB);
+    CopyAiCQInfo(aiRMAQueueInfo[0].rcq, combineAiQpInfo_.aiQpInfo.dataPlaneInfo.rcq, DBMode::SW_DB);
  
     // 预留多QP的能力; 当前主要是单QP场景
     for (u32 i = 1, j = 0; i < aiRMAQueueInfo.size(); i++, j++) {
-        CopyAiWQInfo(aiRMAQueueInfo[i].sq, combineAiQpInfos_[j].aiQpInfo.data_plane_info.sq, DBMode::HW_DB, sl);
-        CopyAiWQInfo(aiRMAQueueInfo[i].rq, combineAiQpInfos_[j].aiQpInfo.data_plane_info.rq, DBMode::SW_DB, sl);
-        CopyAiCQInfo(aiRMAQueueInfo[i].scq, combineAiQpInfos_[j].aiQpInfo.data_plane_info.scq, DBMode::SW_DB);
-        CopyAiCQInfo(aiRMAQueueInfo[i].rcq, combineAiQpInfos_[j].aiQpInfo.data_plane_info.rcq, DBMode::SW_DB);
+        CopyAiWQInfo(aiRMAQueueInfo[i].sq, combineAiQpInfos_[j].aiQpInfo.dataPlaneInfo.sq, DBMode::HW_DB, sl);
+        CopyAiWQInfo(aiRMAQueueInfo[i].rq, combineAiQpInfos_[j].aiQpInfo.dataPlaneInfo.rq, DBMode::SW_DB, sl);
+        CopyAiCQInfo(aiRMAQueueInfo[i].scq, combineAiQpInfos_[j].aiQpInfo.dataPlaneInfo.scq, DBMode::SW_DB);
+        CopyAiCQInfo(aiRMAQueueInfo[i].rcq, combineAiQpInfos_[j].aiQpInfo.dataPlaneInfo.rcq, DBMode::SW_DB);
     }
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *localAddr, u64 length, Stream &stream,
-    WqeType wqeType, struct wr_aux_info &aux)
+    WqeType wqeType, struct WrAuxInfo &aux)
 {
     // 单qp & 多qp
     std::vector<WqeInfo> wqeInfoVec;
@@ -2511,8 +2511,8 @@ HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *loc
 
     u32 maxLength = 0;
     for (u32 i = 0; i < wqeInfoVec.size(); i++) {
-        if (wqeInfoVec[i].wqeData.mem_list.len > maxLength) {
-            maxLength = wqeInfoVec[i].wqeData.mem_list.len;
+        if (wqeInfoVec[i].wqeData.memList.len > maxLength) {
+            maxLength = wqeInfoVec[i].wqeData.memList.len;
         }
     }
     
@@ -2524,14 +2524,14 @@ HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *loc
             std::vector<std::vector<WqeInfo>> multiQpWqeInfoVct(actualMultiQpNum, wqeInfoVec);
         for (u32 i = 0; i < wqeInfoVec.size(); i++) {
             WqeInfo tmpWqeInfo = wqeInfoVec[i];
-            u32 curLen = tmpWqeInfo.wqeData.mem_list.len;
+            u32 curLen = tmpWqeInfo.wqeData.memList.len;
             std::vector<u32> splittedLen = RdmaLengthSplit(curLen, actualMultiQpNum);
-            uint64_t curSrcAddr = tmpWqeInfo.wqeData.mem_list.addr;
-            uint64_t curDstAddr = tmpWqeInfo.wqeData.dst_addr;
+            uint64_t curSrcAddr = tmpWqeInfo.wqeData.memList.addr;
+            uint64_t curDstAddr = tmpWqeInfo.wqeData.dstAddr;
             for (u32 qpIndex = 0; qpIndex < actualMultiQpNum; qpIndex++) {
-                multiQpWqeInfoVct[qpIndex][i].wqeData.mem_list.len = splittedLen[qpIndex];
-                multiQpWqeInfoVct[qpIndex][i].wqeData.mem_list.addr = curSrcAddr;
-                multiQpWqeInfoVct[qpIndex][i].wqeData.dst_addr = curDstAddr;
+                multiQpWqeInfoVct[qpIndex][i].wqeData.memList.len = splittedLen[qpIndex];
+                multiQpWqeInfoVct[qpIndex][i].wqeData.memList.addr = curSrcAddr;
+                multiQpWqeInfoVct[qpIndex][i].wqeData.dstAddr = curDstAddr;
                 curSrcAddr += splittedLen[qpIndex];
                 curDstAddr += splittedLen[qpIndex];
             }
@@ -2554,18 +2554,18 @@ HcclResult TransportIbverbs::WriteCommon(const void *remoteAddr, const void *loc
 HcclResult TransportIbverbs::WriteAsync(
     struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream)
 {
-    struct wr_aux_info aux = {0};
+    struct WrAuxInfo aux = {0};
     return WriteCommon(remoteBuf.addr, localBuf.addr, remoteBuf.size, stream, WqeType::WQE_TYPE_DATA, aux);
 }
 
 HcclResult TransportIbverbs::WriteReduceAsync(struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf,
     const HcclDataType datatype, HcclReduceOp redOp, Stream &stream)
 {
-    struct wr_aux_info aux = {0};
-    aux.data_type = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
-    aux.reduce_type = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
-    if (aux.data_type == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
-        aux.reduce_type == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
+    struct WrAuxInfo aux = {0};
+    aux.dataType = RDMA_REDUCE_DATA_TYPE_TABLE[datatype];
+    aux.reduceType = RDMA_REDUCE_OP_TYPE_TABLE[redOp];
+    if (aux.dataType == static_cast<u32>(RdmaReduceDataType::RDMA_REDUCE_DATA_INVALID) ||
+        aux.reduceType == static_cast<u32>(RdmaReduceOpType::RDMA_REDUCE_OP_INVALID)) {
         HCCL_ERROR("unsupported data type [%s] or Reduce type [%s]",
             GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str());
         return HCCL_E_INTERNAL;
@@ -2583,7 +2583,7 @@ HcclResult TransportIbverbs::WriteSync(
 HcclResult TransportIbverbs::ReadAsync(
     struct Transport::Buffer &localBuf, struct Transport::Buffer &remoteBuf, Stream &stream)
 {
-    struct wr_aux_info aux = {0};
+    struct WrAuxInfo aux = {0};
     return WriteCommon(remoteBuf.addr, localBuf.addr, remoteBuf.size, stream, WqeType::WQE_TYPE_READ_DATA, aux);
 }
 
@@ -2651,7 +2651,7 @@ HcclResult TransportIbverbs::GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
             loop = (num % CQE_ARRAY_SIZE) ? (num / CQE_ARRAY_SIZE) : ((num / CQE_ARRAY_SIZE) - 1);
         }
 
-        struct cqe_err_info infolist[CQE_ARRAY_SIZE] = {};
+        struct CqeErrInfo infolist[CQE_ARRAY_SIZE] = {};
         u32 cqeNum = CQE_ARRAY_SIZE;
         for (u32 index = 0; index <= loop; index++) {
             cqeNum = (index == loop) ? (num - index * CQE_ARRAY_SIZE) : CQE_ARRAY_SIZE;
@@ -2663,7 +2663,7 @@ HcclResult TransportIbverbs::GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
             }
         }
     } else {
-        struct cqe_err_info infolist[1] = {};
+        struct CqeErrInfo infolist[1] = {};
         CHK_RET(hrtRaGetCqeErrInfo(devicePhyId, &infolist[0]));
         if (infolist[0].status == 0) {
             num = 0;
@@ -2678,7 +2678,7 @@ HcclResult TransportIbverbs::GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
     return HCCL_SUCCESS;
 }
 
-void TransportIbverbs::ProcessCqeInfo(const s32 deviceId, const struct cqe_err_info *infolist, const u32 cqeNum,
+void TransportIbverbs::ProcessCqeInfo(const s32 deviceId, const struct CqeErrInfo *infolist, const u32 cqeNum,
     std::vector<std::pair<TransportBase*, CqeInfo>> &infos)
 {
     for (u32 i = 0; i < cqeNum; i++) {

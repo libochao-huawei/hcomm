@@ -63,7 +63,7 @@ public:
     HcclResult GetNotifySize();
     HcclResult CreatSignalMesg();
     HcclResult ExchangeSignalMesg();
-    HcclResult DoorBellSend(const s32 qpMode, const send_wr_rsp &opRsp, void *stream = nullptr);
+    HcclResult DoorBellSend(const s32 qpMode, const SendWrRsp &opRsp, void *stream = nullptr);
     HcclResult DeleteNotifyValueBuffer();
     HcclResult RecordNotify(Stream &stream, RdmaNotifyOp type, u64 wrId);
 
@@ -160,7 +160,7 @@ private:
     HcclResult GetQpStatus(bool &completed);
     HcclResult QpConnect(bool &completed);
     HcclResult FlushSendQueue(bool &completed);
-    HcclResult RoceConnectSocket(socket_connect_info_t conn[], u32 num, bool &completed);
+    HcclResult RoceConnectSocket(SocketConnectInfoT conn[], u32 num, bool &completed);
     void GetTransportResourceInfo(const TransportResourceInfo &transportResourceInfo);
     HcclResult MrManagerInit();
     HcclResult MemBlocksManagerInit();

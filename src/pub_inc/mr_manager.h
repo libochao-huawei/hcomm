@@ -25,7 +25,7 @@ namespace hccl {
 using HcclMrInfo = struct TagHcclMrInfo {
     void *addr; /**< starting address of mr */
     unsigned long long size; /**< size of mr */
-    int access; /**< access of mr, reference to ra_access_flags */
+    int access; /**< access of mr, reference to RaAccessFlags */
     unsigned int lkey; /**< local addr access key */
 };
 
@@ -33,7 +33,7 @@ using MrInfo = struct TagMrInfo {
     void *addr; /**< starting address of mr */
     void *devVirAddr;
     unsigned long long size; /**< size of mr */
-    int access; /**< access of mr, reference to ra_access_flags */
+    int access; /**< access of mr, reference to RaAccessFlags */
     unsigned int lkey; /**< local addr access key */
     MrHandle mrHandle; /**< ibv_mr handle */
     int gloMemRef;
