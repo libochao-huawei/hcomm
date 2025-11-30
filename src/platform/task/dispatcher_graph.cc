@@ -351,7 +351,7 @@ HcclResult DispatcherGraph::InlineReduceAsync(const void *src, u64 dataCount, co
     return HCCL_SUCCESS;
 }
 
-HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
     u32 remoteUserRank, bool isCapture)
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
@@ -369,9 +369,9 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_
     // 调用回调来保存task信息
     if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {
         // 0x00000000FFFFFFFF usrrank位于notifyID的高32位
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.buf_list[0].addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dst_addr)),
-                            wr.buf_list[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
+        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
+                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
+                            wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
                             ctxIdx);
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();
@@ -385,9 +385,9 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.buf_list[0].addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dst_addr)),
-                            wr.buf_list[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
+        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
+                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
+                            wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_PAYLOAD,
                             ctxIdx);
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();
@@ -402,7 +402,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_
     return HCCL_SUCCESS;
 }
 
-HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
     u32 userRank, u64 offset, bool isCapture)
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
@@ -420,9 +420,9 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_
     // 调用回调来保存task信息
      if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {
         // 0x00000000FFFFFFFF usrrank位于notifyID的高32位
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.buf_list[0].addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dst_addr)),
-                            wr.buf_list[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
+        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
+                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
+                            wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
                             ctxIdx);
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();
@@ -436,9 +436,9 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_
     }
     if (GetExternalInputHcclEnableFfts() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         GetExternalInputTaskExceptionSwitch() == 1 && callback_ != nullptr) {
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.buf_list[0].addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dst_addr)),
-                            wr.buf_list[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
+        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
+                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
+                            wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, RdmaType::RDMA_SEND_NOTIFY,
                             ctxIdx);
         struct TaskPara taskPara;
         taskPara.stream = stream.ptr();

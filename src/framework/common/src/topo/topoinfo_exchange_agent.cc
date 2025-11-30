@@ -75,7 +75,7 @@ HcclResult TopoInfoExchangeAgent::Setup()
         ret = socket_->Send(&localRankHandle_, sizeof(localRankHandle_));
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[SendRankHandle]errNo[0x%016llx] rankID[%s] send localRankHandle to remote by"\
-            "client fd_handle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), localRankInfo_.rank, ret), ret);
+            "client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), localRankInfo_.rank, ret), ret);
  
         CHK_RET(RecvGrpLeaderInfo(socket_, grpLeaderInfo_));
         u32 grpIndex = localRankInfo_.rank / TOPO_MAX_GROUP_SIZE;
@@ -379,12 +379,12 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
             HcclResult ret = socket->Send(&agentBuf, sizeof(agentBuf));
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] agentID[%s] send local rank id to remote "\
-                    "by client fd_handle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), agentBuf, ret), ret);
+                    "by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), agentBuf, ret), ret);
 
             ret = socket->Send(&connSize_, sizeof(connSize_));
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] rank[%u] send local rank num[%u] to "\
-                    "remote by client fd_handle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER),
+                    "remote by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER),
                     localRankInfo_.rank, localRankInfo_.rankSize, ret), ret);
 
             HCCL_INFO("local rank[%u] get socket connection with server[%s] port[%u] success.",

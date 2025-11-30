@@ -21,19 +21,19 @@
 #include "adapter_hccp.h"
 #include "hashtable/universal_concurrent_map.h"
 
-inline void CopyAiWQInfo(struct HcclAiRMAWQ& dest, const struct ai_data_plane_wq& source, DBMode dbMode, u32 sl)
+inline void CopyAiWQInfo(struct HcclAiRMAWQ& dest, const struct AiDataPlaneWq& source, DBMode dbMode, u32 sl)
 {
     dest.wqn = source.wqn;
-    dest.bufAddr = source.buf_addr;
-    dest.wqeSize = source.wqebb_size;
+    dest.bufAddr = source.bufAddr;
+    dest.wqeSize = source.wqebbSize;
     dest.depth = source.depth;
-    dest.headAddr = source.head_addr;
-    dest.tailAddr = source.tail_addr;
+    dest.headAddr = source.headAddr;
+    dest.tailAddr = source.tailAddr;
     dest.dbMode = dbMode;
     if (dbMode == DBMode::SW_DB) {
-        dest.dbAddr = source.swdb_addr;
+        dest.dbAddr = source.swdbAddr;
     } else if (dbMode == DBMode::HW_DB) {
-        dest.dbAddr = source.db_reg;
+        dest.dbAddr = source.dbReg;
     }
     dest.sl = sl;
     HCCL_INFO("CopyAiWQInfo: wqn[%u] bufAddr[%p] wqeSize[%u] depth[%u] headAddr[%p] tailAddr[%p] dbMode[%u]",
@@ -41,19 +41,19 @@ inline void CopyAiWQInfo(struct HcclAiRMAWQ& dest, const struct ai_data_plane_wq
     return;
 }
  
-inline void CopyAiCQInfo(struct HcclAiRMACQ& dest, const ai_data_plane_cq& source, DBMode dbMode)
+inline void CopyAiCQInfo(struct HcclAiRMACQ& dest, const AiDataPlaneCq& source, DBMode dbMode)
 {
     dest.cqn = source.cqn;
-    dest.bufAddr = source.buf_addr;
-    dest.cqeSize = source.cqe_size;
+    dest.bufAddr = source.bufAddr;
+    dest.cqeSize = source.cqeSize;
     dest.depth = source.depth;
-    dest.headAddr = source.head_addr;
-    dest.tailAddr = source.tail_addr;
+    dest.headAddr = source.headAddr;
+    dest.tailAddr = source.tailAddr;
     dest.dbMode = dbMode;
     if (dbMode == DBMode::SW_DB) {
-        dest.dbAddr = source.swdb_addr;
+        dest.dbAddr = source.swdbAddr;
     } else if (dbMode == DBMode::HW_DB) {
-        dest.dbAddr = source.db_reg;
+        dest.dbAddr = source.dbReg;
     }
 
     HCCL_INFO("CopyAiCQInfo: cqn[%u] bufAddr[%p] cqeSize[%u] depth[%u] headAddr[%p] tailAddr[%p] dbMode[%u]",
@@ -74,7 +74,7 @@ enum class WqeType {
 };
 
 using WqeInfo = struct TagWqeInfo {
-    struct send_wrlist_data_ext wqeData;
+    struct SendWrlistDataExt wqeData;
     u64 wqeType;
     u64 wqeDataOffset;
     u32 notifyId;
@@ -92,10 +92,10 @@ struct CombineQpHandle {
 };
 
 struct CombineQpInfo {
-    struct ai_qp_info aiQpInfo;
+    struct AiQpInfo aiQpInfo;
     u32 preWrOpcode = INVALID_UINT; // 记录这个qp内最后一次下发的wr的opcode
     CombineQpInfo() {};
-    CombineQpInfo(struct ai_qp_info& aiQpInfo) : aiQpInfo(aiQpInfo) {};
+    CombineQpInfo(struct AiQpInfo& aiQpInfo) : aiQpInfo(aiQpInfo) {};
 };
 
 namespace {
@@ -272,8 +272,8 @@ protected:
 
     HcclResult GetWqeDataOffsetAndNotifyId(WqeType wqeType, u64 &wqeDataOffset, u32 &notifyId);
 
-    HcclResult SendWqeList(QpHandle qpHandle, u32 wqeNum, struct send_wrlist_data_ext *wqelist,
-        struct send_wr_rsp *opRsp);
+    HcclResult SendWqeList(QpHandle qpHandle, u32 wqeNum, struct SendWrlistDataExt *wqelist,
+        struct SendWrRsp *opRsp);
     bool IsSupportRdmaNotify();
     bool IsTemplateMode();
     void DestroySignal();
@@ -291,23 +291,23 @@ protected:
     HcclResult CreateNotifyVectorBuffer(std::vector<std::shared_ptr<LocalIpcNotify>>& notifyVector,
         u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     HcclResult CreateNotifyValueBuffer();
-    HcclResult CreateOneQp(s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, ai_qp_info &aiQpInfo,
+    HcclResult CreateOneQp(s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, AiQpInfo &aiQpInfo,
         bool useAicpu = false, u32 udpSport = 0);
     HcclResult AddWqeList(void *dstMemPtr, const void *srcMemPtr, u64 srcMemSize, WqeType wqeType,
-        wr_aux_info &aux, std::vector<WqeInfo> &wqeInfoVec);
+        WrAuxInfo &aux, std::vector<WqeInfo> &wqeInfoVec);
     virtual HcclResult GetMemInfo(UserMemType memType, void **dstMemPtr, u64 *dstMemSize);
     virtual HcclResult TxPayLoad(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len,
-        WqeType wqeType, wr_aux_info &aux, std::vector<WqeInfo>& wqeInfoVec);
+        WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo>& wqeInfoVec);
     virtual HcclResult TxSendDataAndNotifyWithSingleQP(std::vector<WqeInfo>& wqeInfoVec,
         Stream &stream, bool useOneDoorbell = false);
     virtual HcclResult TxSendDataAndNotify(std::vector<WqeInfo>& wqeInfoVec, Stream &stream, bool useOneDoorbell = false);
     virtual HcclResult TxWqeList(std::vector<WqeInfo> &wqeInfoVec, Stream &stream,
-	    std::vector<struct send_wr_rsp> &opRspVec, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
+	    std::vector<struct SendWrRsp> &opRspVec, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
     virtual HcclResult RdmaSendAsync(std::vector<WqeInfo> &wqeInfoVec, Stream &stream,
         bool useOneDoorbell = false, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
     HcclResult RdmaSendAsyncHostNIC(std::vector<WqeInfo> &wqeInfoVec, Stream &stream);
-    virtual HcclResult RdmaSendAsync(struct send_wr &wr, Stream &stream, WqeType wqeType, u64 notifyOffset, u32 notifyId);
-    HcclResult RdmaSendAsyncHostNIC(struct send_wrlist_data_ext &wr, Stream &stream, WqeType wqeType, u64 notifyOffset);
+    virtual HcclResult RdmaSendAsync(struct SendWr &wr, Stream &stream, WqeType wqeType, u64 notifyOffset, u32 notifyId);
+    HcclResult RdmaSendAsyncHostNIC(struct SendWrlistDataExt &wr, Stream &stream, WqeType wqeType, u64 notifyOffset);
 
     HcclResult GetLocalNotify(std::vector<HcclSignalInfo> &localNotify) override;
     HcclResult GetLocalRdmaNotify(std::vector<HcclSignalInfo> &rdmaNotify) override;
@@ -318,10 +318,10 @@ protected:
     HcclResult GetAiQpInfo(std::vector<HcclQpInfoV2> &aiQpInfo) override;
     HcclResult GetAiRMAQueueInfo(std::vector<HcclAiRMAQueueInfo> &aiRMAQueueInfo) override;
     HcclResult ConstructPayLoadWqe(void *dstMemPtr, const void *src, u64 len,
-        WqeType wqeType, wr_aux_info &aux, std::vector<WqeInfo>& wqeInfoVec, u32 txSendDataTimes);
+        WqeType wqeType, WrAuxInfo &aux, std::vector<WqeInfo>& wqeInfoVec, u32 txSendDataTimes);
     u32 GetActualQpNum(u32 maxLength);
     HcclResult WriteCommon(const void *remoteAddr, const void *localAddr, u64 length, Stream &stream,
-        WqeType wqeType, struct wr_aux_info &aux);
+        WqeType wqeType, struct WrAuxInfo &aux);
 
     virtual void ModifyAtomicWriteAfterReduce(u32 &preWrOpcode, u64 wqeType, u32 &opcode, u32 &immData);
 
@@ -380,7 +380,7 @@ protected:
     QPMode qpMode_{QPMode::INVALID}; // 是否为普通QP模式
 
 private:
-    static void ProcessCqeInfo(const s32 deviceId, const struct cqe_err_info *infolist, const u32 cqeNum,
+    static void ProcessCqeInfo(const s32 deviceId, const struct CqeErrInfo *infolist, const u32 cqeNum,
         std::vector<std::pair<TransportBase*, CqeInfo>> &infos);
     // bit[63:32] devicePhyId, bit[31:0] qpn
     static UniversalConcurrentMap<u64, TransportIbverbs*> g_qpn2IbversLinkMap_;

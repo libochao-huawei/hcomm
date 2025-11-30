@@ -54,7 +54,7 @@ public:
 
     HcclResult Test(HcclRequest requestHandle, s32 &flag, HcclStatus &compState);
 
-    HcclResult InitTransport(u32 role, HcclAddr &localAddr, socket_info_t &tmpInfo);
+    HcclResult InitTransport(u32 role, HcclAddr &localAddr, SocketInfoT &tmpInfo);
 
     HcclResult ResetCurrentErrorConnection(HcclCommConn *&newCommConn);
 
@@ -71,7 +71,7 @@ private:
 
     struct AcceptCommConn {
         HcclCommConn *newCommConn{ nullptr };  // comm句柄
-        socket_info_t socketInfo{};
+        SocketInfoT socketInfo{};
     };
 
     static constexpr u32 INIT_LOCAL_IP = 0;
@@ -93,9 +93,9 @@ private:
 
     HcclResult CheckDataType(const HcclDataType dataType);
 
-    HcclResult PrepareSocketInfoForServer(struct socket_info_t &socketInfo);
+    HcclResult PrepareSocketInfoForServer(struct SocketInfoT &socketInfo);
 
-    HcclResult GetSocket(struct socket_info_t &socketInfo);
+    HcclResult GetSocket(struct SocketInfoT &socketInfo);
 
     HcclResult PrepareConnectSocketInfoForClient(HcclAddr &bindAddr);
 
@@ -105,7 +105,7 @@ private:
 
     const HcclAddr &GetRemoteAddr() const;
 
-    HcclResult SocketForceClose(socket_info_t &socketInfo);
+    HcclResult SocketForceClose(SocketInfoT &socketInfo);
     void SetStartTime();
     void GetStartTime(std::chrono::time_point<std::chrono::steady_clock> &startTime);
 
@@ -116,8 +116,8 @@ private:
     HcclAddr localAddr_{};
     SocketHandle socketHandle_{ nullptr };
     RdmaHandle rdmaHandle_{ nullptr };
-    socket_connect_info_t connectInfo_{};
-    socket_info_t socketInfo_{};
+    SocketConnectInfoT connectInfo_{};
+    SocketInfoT socketInfo_{};
     std::unique_ptr<HeterogMemBlocksManager> memBlocksManager_;
     bool isListen_{ false };
     OpStatus connectState_{ OpStatus::START };

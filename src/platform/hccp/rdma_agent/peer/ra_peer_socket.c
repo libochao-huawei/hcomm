@@ -15,10 +15,10 @@
 #include "ra_peer.h"
 #include "ra_peer_socket.h"
 
-int RaPeerGetClientSocketErrInfo(unsigned int phyId, struct socket_connect_info_t conn[],
-    struct socket_err_info err[], unsigned int num)
+int RaPeerGetClientSocketErrInfo(unsigned int phyId, struct SocketConnectInfoT conn[],
+    struct SocketErrInfo err[], unsigned int num)
 {
-    struct socket_connect_info connOut[MAX_SOCKET_NUM] = {0};
+    struct SocketConnectInfo connOut[MAX_SOCKET_NUM] = {0};
     int ret;
 
     ret = RaGetSocketConnectInfo(conn, num, connOut, MAX_SOCKET_NUM);
@@ -36,10 +36,10 @@ int RaPeerGetClientSocketErrInfo(unsigned int phyId, struct socket_connect_info_
     return ret;
 }
 
-int RaPeerGetServerSocketErrInfo(unsigned int phyId, struct socket_listen_info_t conn[],
-        struct server_socket_err_info err[], unsigned int num)
+int RaPeerGetServerSocketErrInfo(unsigned int phyId, struct SocketListenInfoT conn[],
+        struct ServerSocketErrInfo err[], unsigned int num)
 {
-    struct socket_listen_info connOut[MAX_SOCKET_NUM] = {0};
+    struct SocketListenInfo connOut[MAX_SOCKET_NUM] = {0};
     int ret;
 
     ret = RaGetSocketListenInfo(conn, num, connOut, MAX_SOCKET_NUM);
@@ -57,10 +57,10 @@ int RaPeerGetServerSocketErrInfo(unsigned int phyId, struct socket_listen_info_t
     return ret;
 }
 
-int RaPeerSocketAcceptCreditAdd(unsigned int phyId, struct socket_listen_info_t conn[], unsigned int num,
+int RaPeerSocketAcceptCreditAdd(unsigned int phyId, struct SocketListenInfoT conn[], unsigned int num,
     unsigned int creditLimit)
 {
-    struct socket_listen_info rsConn[MAX_SOCKET_NUM] = {0};
+    struct SocketListenInfo rsConn[MAX_SOCKET_NUM] = {0};
     int ret;
 
     ret = RaGetSocketListenInfo(conn, num, rsConn, MAX_SOCKET_NUM);

@@ -49,7 +49,7 @@
 
 #define MAX_POLL_CQE_NUM 100
 
-struct process_ra_sign {
+struct ProcessRaSign {
     pid_t tgid;
     char sign[PROCESS_RA_SIGN_LENGTH];
 };
@@ -62,11 +62,11 @@ struct process_ra_sign {
 
 #define list_entry(n, type, member) container_of(n, type, member)
 
-struct ra_list_head {
-    struct ra_list_head *next, *prev;
+struct RaListHead {
+    struct RaListHead *next, *prev;
 };
 
-static inline void RA_INIT_LIST_HEAD(struct ra_list_head *list)
+static inline void RA_INIT_LIST_HEAD(struct RaListHead *list)
 {
     list->next = list;
     list->prev = list;
@@ -77,12 +77,12 @@ static inline void RA_INIT_LIST_HEAD(struct ra_list_head *list)
     (n) = list_entry((pos)->member.next, type, member);     \
 } while (0)
 
-static inline bool RaListEmpty(struct ra_list_head *head)
+static inline bool RaListEmpty(struct RaListHead *head)
 {
     return head->next == head;
 }
 
-static inline void ra_list_add_(struct ra_list_head *xnew, struct ra_list_head *prev, struct ra_list_head *next)
+static inline void ra_list_add_(struct RaListHead *xnew, struct RaListHead *prev, struct RaListHead *next)
 {
     next->prev = xnew;
     xnew->next = next;
@@ -90,125 +90,125 @@ static inline void ra_list_add_(struct ra_list_head *xnew, struct ra_list_head *
     prev->next = xnew;
 }
 
-static inline void RaListAddTail(struct ra_list_head *xnew, struct ra_list_head *head)
+static inline void RaListAddTail(struct RaListHead *xnew, struct RaListHead *head)
 {
     ra_list_add_(xnew, head->prev, head);
 }
 
-static inline void ra_list_del_(struct ra_list_head *prev, struct ra_list_head *next)
+static inline void ra_list_del_(struct RaListHead *prev, struct RaListHead *next)
 {
     next->prev = prev;
     prev->next = next;
 }
 
-static inline void RaListDel(struct ra_list_head *entry)
+static inline void RaListDel(struct RaListHead *entry)
 {
     ra_list_del_(entry->prev, entry->next);
 }
 
-struct ra_backup_info {
-    bool backup_flag;
-    struct rdev rdev_info;
+struct RaBackupInfo {
+    bool backupFlag;
+    struct rdev rdevInfo;
 };
 
-struct ra_cqe_err_info {
+struct RaCqeErrInfo {
     pthread_mutex_t mutex;
-    struct cqe_err_info info;
+    struct CqeErrInfo info;
 };
 
-enum rdma_lite_thread_status {
+enum RdmaLiteThreadStatus {
     LITE_THREAD_STATUS_DESTROY = 0,
     LITE_THREAD_STATUS_RUNNING = 1,
     LITE_THREAD_STATUS_FINISH_RUNNING = 2,
     LITE_THREAD_STATUS_SUSPEND = 3,
 };
 
-struct ra_rdma_handle {
-    unsigned int rdev_index;
-    struct rdev rdev_info;
-    struct ra_backup_info backup_info;
-    struct ra_rdma_ops *rdma_ops;
-    int support_lite;
-    struct rdma_lite_context *lite_ctx;
-    struct ra_list_head qp_list;
-    pthread_mutex_t rdev_mutex;
-    pthread_mutex_t cqe_err_cnt_mutex;
-    unsigned int cqe_err_cnt;
+struct RaRdmaHandle {
+    unsigned int rdevIndex;
+    struct rdev rdevInfo;
+    struct RaBackupInfo backupInfo;
+    struct RaRdmaOps *rdmaOps;
+    int supportLite;
+    struct rdma_lite_context *liteCtx;
+    struct RaListHead qpList;
+    pthread_mutex_t rdevMutex;
+    pthread_mutex_t cqeErrCntMutex;
+    unsigned int cqeErrCnt;
     pthread_t tid;
-    enum rdma_lite_thread_status thread_status;
-    bool disabled_lite_thread;
-    bool enabled_910a_lite;
-    unsigned int logic_devid;
-    int sensor_update_cnt;
-    uint64_t sensor_handle;
-    uint64_t qp_cnt;  // record the number of ra_qp_create_with_attrs function calls
-    bool enabled_2mb_lite;
+    enum RdmaLiteThreadStatus threadStatus;
+    bool disabledLiteThread;
+    bool enabled910aLite;
+    unsigned int logicDevid;
+    int sensorUpdateCnt;
+    uint64_t sensorHandle;
+    uint64_t qpCnt;  // record the number of ra_qp_create_with_attrs function calls
+    bool enabled2mbLite;
     uint8_t gid[HCCP_GID_RAW_LEN];
-    uint64_t notify_va;
-    uint64_t notify_size;
+    uint64_t notifyVa;
+    uint64_t notifySize;
 };
 
-struct ra_socket_handle {
-    int scope_id;
-    struct rdev rdev_info;
-    struct ra_socket_ops *socket_ops;
-    uint64_t close_cnt;      // record the number of ra_socket_batch_close function calls
-    uint64_t connect_cnt;    // record the number of ra_socket_batch_connect function calls
-    uint64_t abort_cnt;      // record the number of ra_socket_batch_abort function calls
+struct RaSocketHandle {
+    int scopeId;
+    struct rdev rdevInfo;
+    struct RaSocketOps *socketOps;
+    uint64_t closeCnt;      // record the number of ra_socket_batch_close function calls
+    uint64_t connectCnt;    // record the number of ra_socket_batch_connect function calls
+    uint64_t abortCnt;      // record the number of ra_socket_batch_abort function calls
 };
 
-struct ra_loopback_info {
-    struct ibv_cq *ib_send_cq;
-    struct ibv_cq *ib_recv_cq;
-    void *cq_context;
+struct RaLoopbackInfo {
+    struct ibv_cq *ibSendCq;
+    struct ibv_cq *ibRecvCq;
+    void *cqContext;
 };
 
-struct ra_qp_handle {
+struct RaQpHandle {
     unsigned int qpn;
-    int qp_mode;
+    int qpMode;
     int flag;
-    unsigned int phy_id;
-    unsigned int rdev_index;
-    struct ra_rdma_ops *rdma_ops; // only ra use
-    int support_lite;
-    struct rdma_lite_cq *send_lite_cq;
-    struct rdma_lite_cq *recv_lite_cq;
-    struct rdma_lite_qp *lite_qp;
-    struct lite_mr_info local_mr[RA_MR_MAX_NUM];
-    struct lite_mr_info rem_mr[RA_MR_MAX_NUM];
-    pthread_mutex_t qp_mutex;
-    struct ra_cqe_err_info cqe_err_info;
-    int db_index;
-    unsigned int send_wr_num;
-    unsigned int poll_cqe_num;
-    unsigned int recv_wr_num;
-    unsigned int poll_recv_cqe_num;
-    struct ra_list_head list;
-    struct ra_rdma_handle *rdma_handle;
-    struct rdma_lite_wc *lite_wc;
-    unsigned int mem_idx;
-    int sq_sig_all;
-    unsigned int udp_sport;
+    unsigned int phyId;
+    unsigned int rdevIndex;
+    struct RaRdmaOps *rdmaOps; // only ra use
+    int supportLite;
+    struct rdma_lite_cq *sendLiteCq;
+    struct rdma_lite_cq *recvLiteCq;
+    struct rdma_lite_qp *liteQp;
+    struct LiteMrInfo localMr[RA_MR_MAX_NUM];
+    struct LiteMrInfo remMr[RA_MR_MAX_NUM];
+    pthread_mutex_t qpMutex;
+    struct RaCqeErrInfo cqeErrInfo;
+    int dbIndex;
+    unsigned int sendWrNum;
+    unsigned int pollCqeNum;
+    unsigned int recvWrNum;
+    unsigned int pollRecvCqeNum;
+    struct RaListHead list;
+    struct RaRdmaHandle *rdmaHandle;
+    struct rdma_lite_wc *liteWc;
+    unsigned int memIdx;
+    int sqSigAll;
+    unsigned int udpSport;
     unsigned int psn;
-    unsigned int gid_idx;
-    unsigned int sq_depth; // only valid in RDMA Lite scenario
-    unsigned int bp_cnt; // only valid in RDMA Lite scenario
-    struct ra_loopback_info *loopback_info;
-    struct ra_qp_handle *loopback_qp_handle;
+    unsigned int gidIdx;
+    unsigned int sqDepth; // only valid in RDMA Lite scenario
+    unsigned int bpCnt; // only valid in RDMA Lite scenario
+    struct RaLoopbackInfo *loopbackInfo;
+    struct RaQpHandle *loopbackQpHandle;
 };
 
-struct ra_mr_handle {
+struct RaMrHandle {
     uint64_t addr;
 };
 
-enum get_ifaddrs_version {
+enum GetIfaddrsVersion {
     GET_IFADDRS_VERSION_1 = 1,
     GET_IFADDRS_VERSION_2,
     GET_IFADDRS_VERSION_3,
     GET_IFADDRS_MAX_VERSION,
 };
 
-enum ra_qp_status {
+enum RaQpStatus {
     RA_QP_STATUS_DISCONNECT = 0,
     RA_QP_STATUS_CONNECTED = 1,
     RA_QP_STATUS_TIMEOUT = 2,

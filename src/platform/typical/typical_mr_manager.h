@@ -23,8 +23,8 @@ constexpr uint32_t DEFAULT_MR_KEY = 0;
 class TypicalMrManager {
 public:
     static TypicalMrManager &GetInstance();
-    HcclResult RegisterMem(struct mr_info &mrInfo);                  // register MR
-    HcclResult DeRegisterMem(struct mr_info &mrInfo);                // unregister MR
+    HcclResult RegisterMem(struct MrInfoT &mrInfo);                  // register MR
+    HcclResult DeRegisterMem(struct MrInfoT &mrInfo);                // unregister MR
 
 private:
     TypicalMrManager();
@@ -39,7 +39,7 @@ private:
 
     RdmaHandle rdmaHandle_ = nullptr;
     std::mutex mrMapMutex_;
-    std::map<uint32_t, std::pair<struct mr_info, MrHandle>> regedMrMap_; // registered MR map
+    std::map<uint32_t, std::pair<struct MrInfoT, MrHandle>> regedMrMap_; // registered MR map
 };
 }  // namespace hccl
 #endif  // HCCL_TYPICAL_MR_MANAGER_H

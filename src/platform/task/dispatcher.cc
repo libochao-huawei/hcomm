@@ -764,7 +764,7 @@ HcclResult DispatcherPub::SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &sr
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult DispatcherPub::RdmaRecord(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherPub::RdmaRecord(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
     RdmaType rdmaType, u32 userRank, u64 offset, u32 notifyId)
 {
     HCCL_ERROR("does not support this interface.");
@@ -800,7 +800,7 @@ void HostNicCallbackSendWr(void *fnData)
     }
 
     hccl::TaskParaHost para(params->taskInfo.streamId, params->taskInfo.taskId,
-        params->wr.mem_list.len, duration, params->taskInfo.tag);
+        params->wr.memList.len, duration, params->taskInfo.tag);
     hccl::TaskPara taskPara(TaskType::TASK_HOST, para);
     taskPara.profilerType = ProfilerType::TASK_PROFILING;
     params->callback(params->callBackUserPtr, (void *)&taskPara, sizeof(struct TaskPara));
@@ -932,7 +932,7 @@ void StartHostNicTcpSendThread(void *fnData)
     }
 }
 
-HcclResult DispatcherPub::HostNicRdmaSend(QpHandle qpHandle, send_wrlist_data_ext &wr, send_wr_rsp &opRsp,
+HcclResult DispatcherPub::HostNicRdmaSend(QpHandle qpHandle, SendWrlistDataExt &wr, SendWrRsp &opRsp,
     hccl::Stream &stream, u32 userRank, u64 offset)
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
@@ -940,7 +940,7 @@ HcclResult DispatcherPub::HostNicRdmaSend(QpHandle qpHandle, send_wrlist_data_ex
     CHK_PTR_NULL(stream.ptr());
     (void)opRsp;
 
-    if (wr.mem_list.len == 0) {
+    if (wr.memList.len == 0) {
         // zero byte message 不需要进行通信
         return HCCL_SUCCESS;
     }
@@ -967,9 +967,9 @@ HcclResult DispatcherPub::HostNicRdmaSend(QpHandle qpHandle, send_wrlist_data_ex
 
     // 调用回调来保存task信息
     if (callback_ != nullptr) {
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.mem_list.addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dst_addr)),
-                            wr.mem_list.len, notifyID, hccl::LinkType::LINK_ROCE, rdmaType);
+        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.memList.addr)),
+                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
+                            wr.memList.len, notifyID, hccl::LinkType::LINK_ROCE, rdmaType);
         hccl::TaskPara taskPara;
         SetupTaskParaDma(taskPara, para, TaskType::TASK_RDMA, ProfilerType::TASK_EXCEPTION, stream, beginTime, false);
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
@@ -1140,7 +1140,7 @@ HcclResult DispatcherPub::DelHostNICTcpRecvTask(u32 streamID, u32 taskID)
     return HCCL_SUCCESS;
 }
 // 下沉模式下内部接口
-HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, HcclRtStream stream,
+HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, HcclRtStream stream,
                                 RdmaType rdmaType, u64 notifyID, bool isMainStream)
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
@@ -1153,9 +1153,9 @@ HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &
 
     // 调用回调来保存task信息
     if (callback_ != nullptr) {
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.buf_list[0].addr)),
-                                reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dst_addr)),
-                                wr.buf_list[0].len, notifyID, hccl::LinkType::LINK_ROCE, rdmaType);
+        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
+                                reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
+                                wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, rdmaType);
         hccl::TaskPara taskPara;
         SetupTaskParaDma(taskPara, para, TaskType::TASK_RDMA, stream, beginTime, isMainStream);
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
@@ -1171,7 +1171,7 @@ HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &
 }
 
 // 下沉模式下对外接口, 用于发送notify 信息
-HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, hccl::Stream &stream,
     u32 userRank, u64 offset)
 {
     u64 NotifyID =
@@ -1180,7 +1180,7 @@ HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &
 }
 
 // 下沉模式下对外接口, 用于发送payload 信息
-HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, hccl::Stream &stream,
     u32 userRank)
 {
     u64 NotifyID =
@@ -1189,7 +1189,7 @@ HcclResult DispatcherPub::RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &
 }
 
 // opbase 模式下内部接口
-HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, HcclRtStream stream,
+HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, HcclRtStream stream,
                                 RdmaType rdmaType, u64 notifyID, u64 offset, bool isMainStream)
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
@@ -1203,9 +1203,9 @@ HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr
     // 调用回调来保存task信息
     if (callback_ != nullptr) {
         notifyID = (notifyID << 32) | (offset & 0x00000000FFFFFFFF); // 0x00000000FFFFFFFF用于取offset的低32位
-        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.buf_list[0].addr)),
-                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dst_addr)),
-                            wr.buf_list[0].len, notifyID, hccl::LinkType::LINK_ROCE, rdmaType);
+        hccl::TaskParaDMA para(reinterpret_cast<void *>(static_cast<uintptr_t>(wr.bufList[0].addr)),
+                            reinterpret_cast<void *>(static_cast<uintptr_t>(wr.dstAddr)),
+                            wr.bufList[0].len, notifyID, hccl::LinkType::LINK_ROCE, rdmaType);
         hccl::TaskPara taskPara;
         SetupTaskParaDma(taskPara, para, TaskType::TASK_RDMA, stream, beginTime, isMainStream);
         callback_(callBackUserPtr_, (void *)&taskPara, sizeof(struct TaskPara));
@@ -1221,7 +1221,7 @@ HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr
 }
 
 // opbase 模式下对外接口，用于发送notify 信息
-HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
     u32 userRank, u64 offset, bool isCapture)
 {
     CHK_RET(RdmaSend(dbindex, dbinfo, wr, stream.ptr(), RdmaType::RDMA_SEND_NOTIFY, userRank, offset,
@@ -1231,7 +1231,7 @@ HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr
 }
 
 // opbase 模式下对外接口，用于发送payload 信息
-HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherPub::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
     u32 remoteUserRank, bool isCapture)
 {
     u64 offset = 0;

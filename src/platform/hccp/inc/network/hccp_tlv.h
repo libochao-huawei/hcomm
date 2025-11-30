@@ -16,19 +16,19 @@
 extern "C" {
 #endif
 
-enum tlv_module_type {
+enum TlvModuleType {
     TLV_MODULE_TYPE_NSLB,
     TLV_MODULE_TYPE_MAX,
 };
 
-struct tlv_init_info {
+struct TlvInitInfo {
     int version;
-    unsigned int phy_id;
-    unsigned int nic_position;
+    unsigned int phyId;
+    unsigned int nicPosition;
     unsigned int reserved[16U];
 };
 
-struct tlv_msg {
+struct TlvMsg {
     unsigned int type;
     unsigned int length;
     char *data;
@@ -45,7 +45,7 @@ struct tlv_msg {
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaTlvInit(struct tlv_init_info *initInfo, unsigned int moduleType,
+HCCP_ATTRI_VISI_DEF int RaTlvInit(struct TlvInitInfo *initInfo, unsigned int moduleType,
     unsigned int *bufferSize, void **tlvHandle);
 
 /**
@@ -68,7 +68,7 @@ HCCP_ATTRI_VISI_DEF int RaTlvDeinit(void *tlvHandle);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, struct tlv_msg *sendMsg, struct tlv_msg *recvMsg);
+HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
 
 #ifdef __cplusplus
 }

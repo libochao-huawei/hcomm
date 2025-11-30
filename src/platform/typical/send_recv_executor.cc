@@ -21,9 +21,9 @@ constexpr s32 HCCL_POLL_CQ_ONETIME = 1;
 constexpr u32 HCCL_POLL_CQ_INTERVAL = 100;
 constexpr u64 MAX_RDMA_WQE_SIZE = 2ULL * 1024 * 1024 * 1024; // RDMA最大WQE限制, 2G限制是RDMA导致
 
-struct mr_info AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
+struct MrInfoT AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 {
-    struct mr_info innerMrInfo;
+    struct MrInfoT innerMrInfo;
     innerMrInfo.addr = reinterpret_cast<void*>(ascendMrInfo->addr);
     innerMrInfo.size = ascendMrInfo->size;
     innerMrInfo.lkey = ascendMrInfo->key;
@@ -31,9 +31,9 @@ struct mr_info AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 }
 
 SendRecvExecutor::SendRecvExecutor(HcclRtStream stream, QpHandle qpHandle,
-    const struct mr_info& localWindowMem, const struct mr_info& remoteWindowMem,
-    const struct mr_info& localSyncMemPrepare, const struct mr_info& localSyncMemDone, const struct mr_info& localSyncMemAck,
-    const struct mr_info& remoteSyncMemPrepare, const struct mr_info& remoteSyncMemDone, const struct mr_info& remoteSyncMemAck,
+    const struct MrInfoT& localWindowMem, const struct MrInfoT& remoteWindowMem,
+    const struct MrInfoT& localSyncMemPrepare, const struct MrInfoT& localSyncMemDone, const struct MrInfoT& localSyncMemAck,
+    const struct MrInfoT& remoteSyncMemPrepare, const struct MrInfoT& remoteSyncMemDone, const struct MrInfoT& remoteSyncMemAck,
     u32 immData, const u64 chunkNum)
     : stream_(stream), qpHandle_(qpHandle), localWindowMem_(localWindowMem), remoteWindowMem_(remoteWindowMem),
     localSyncMemPrepare_(localSyncMemPrepare), localSyncMemDone_(localSyncMemDone), localSyncMemAck_(localSyncMemAck),
@@ -403,13 +403,13 @@ HcclResult SendRecvExecutor::ReceiveRunByPollCq(DeviceMem& receiveBuffer)
  
         void* localAddr = static_cast<u8 *>(localWindowMem_.addr) + offset;
         
-        std::vector<struct recv_wrlist_data> recvWrVec(1);
-        recvWrVec[0].wr_id = reinterpret_cast<u64>(localWindowMem_.addr);
-        recvWrVec[0].mem_list.addr = reinterpret_cast<u64>(localAddr);
-        recvWrVec[0].mem_list.len = sizePerRound;
-        recvWrVec[0].mem_list.lkey = localWindowMem_.lkey;
+        std::vector<struct RecvWrlistData> recvWrVec(1);
+        recvWrVec[0].wrId = reinterpret_cast<u64>(localWindowMem_.addr);
+        recvWrVec[0].memList.addr = reinterpret_cast<u64>(localAddr);
+        recvWrVec[0].memList.len = sizePerRound;
+        recvWrVec[0].memList.lkey = localWindowMem_.lkey;
  
-        struct recv_wrlist_data *recvWr = recvWrVec.data();
+        struct RecvWrlistData *recvWr = recvWrVec.data();
         u32 completeNum = 0;
         ret = hrtRaRecvWrlist(qpHandle_, recvWr, 1, &completeNum);
         if (ret == HCCL_SUCCESS && completeNum == 1) {
@@ -471,23 +471,23 @@ HcclResult SendRecvExecutor::ReceiveRun(DeviceMem& receiveBuffer)
 HcclResult SendRecvExecutor::RecordNotify(void *dstMemPtr, u32 rkey, const void *srcMemPtr, u32 lkey, u64 srcMemSize,
         uint32_t rdmaOp, int sendFlag)
 {
-    struct sg_list list = {0};
-    struct send_wr_v2 wr = {0};
+    struct SgList list = {0};
+    struct SendWrV2 wr = {0};
     // 构造wr信息
     list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(srcMemPtr));
     list.len = srcMemSize;
     list.lkey = lkey;
 
-    wr.buf_list = &list;
-    wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-    wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
+    wr.bufList = &list;
+    wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+    wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(dstMemPtr));
     wr.rkey = rkey;
     wr.op = rdmaOp;
-    wr.send_flag = sendFlag;
+    wr.sendFlag = sendFlag;
 
     HCCL_INFO("[SendRecvExecutor][RecordNotify] " \
         "Notify's dst addr[%p], local addr[%p], data's len[%u], remote mr key[%u], local mr key[%u]",
-        wr.dst_addr, wr.buf_list->addr, wr.buf_list->len, wr.rkey, wr.buf_list->lkey);
+        wr.dstAddr, wr.bufList->addr, wr.bufList->len, wr.rkey, wr.bufList->lkey);
 
     // RDMA异步发送
     CHK_RET(RdmaSendAsync(wr));
@@ -522,23 +522,23 @@ HcclResult SendRecvExecutor::PayLoad(const void *src, u64 dstOffset, u64 len)
 
         const void* txsrcMemPtr = reinterpret_cast<const void *>(reinterpret_cast<const char *>(src) +
             txSendDataOffset);
-        struct send_wr_v2 wr{};
+        struct SendWrV2 wr{};
         // 构造wr信息
-        wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-        wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(txdstMemPtr));
+        wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+        wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(txdstMemPtr));
         wr.rkey = remoteWindowMem_.lkey;
-        wr.send_flag = RA_SEND_SIGNALED;
+        wr.sendFlag = RA_SEND_SIGNALED;
         if(immData_ != 0) {
             wr.op = RA_WR_RDMA_WRITE_WITH_IMM;
-            wr.ext.imm_data = immData_;
+            wr.ext.immData = immData_;
         } else {
             wr.op = RA_WR_RDMA_WRITE;
         }
-        struct sg_list list = {0};
+        struct SgList list = {0};
         list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(txsrcMemPtr));
         list.len = txSendDataSize;
         list.lkey = localWindowMem_.lkey;
-        wr.buf_list = &list;
+        wr.bufList = &list;
         ret = RdmaSendAsync(wr);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[SendRecvExecutor][PayLoad]errNo[0x%016llx] In lbv exp, add wqe list failed."\
@@ -548,17 +548,17 @@ HcclResult SendRecvExecutor::PayLoad(const void *src, u64 dstOffset, u64 len)
     return HCCL_SUCCESS;
 }
 
-HcclResult SendRecvExecutor::RdmaSendAsync(struct send_wr_v2 &wr)
+HcclResult SendRecvExecutor::RdmaSendAsync(struct SendWrV2 &wr)
 {
     HcclResult ret = HCCL_SUCCESS;
-    struct send_wr_rsp opRsp = {0};
+    struct SendWrRsp opRsp = {0};
     HCCL_DEBUG("[SendRecvExecutor][RdmaSendAsync] dst_addr[%p], src_addr[%p], len[%u]",
-        wr.dst_addr, wr.buf_list->addr, wr.buf_list->len);
+        wr.dstAddr, wr.bufList->addr, wr.bufList->len);
 
     CHK_RET(HrtRaSendWrV2(qpHandle_, &wr, &opRsp, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
 
-    u32 dbIndex = static_cast<u32>(opRsp.db.db_index);
-    u64 dbInfo = static_cast<u64>(opRsp.db.db_info);
+    u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
+    u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
 
     if ((dbIndex == INVALID_UINT) && (dbInfo == INVALID_U64)) {
         // zero byte message 不需要下发rdma send task
@@ -652,18 +652,18 @@ HcclResult SendRecvExecutor::PayLoadMR(AscendMrInfo* putMRInfo, AscendMrInfo* re
         remoteAddr = remoteMRInfo->addr + offSet;
         byteChunkSize = remainingSize > MAX_RDMA_WQE_SIZE ? MAX_RDMA_WQE_SIZE : remainingSize;
         isLastSlice = remainingSize > MAX_RDMA_WQE_SIZE ? false : true;
-        struct sg_list list = {};
+        struct SgList list = {};
         list.addr = localAddr;
         list.len = byteChunkSize;
         list.lkey = putMRInfo->key;
-        struct send_wr_v2 wr = {};
-        wr.buf_list = &list;
-        wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-        wr.dst_addr = remoteAddr;
+        struct SendWrV2 wr = {};
+        wr.bufList = &list;
+        wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+        wr.dstAddr = remoteAddr;
         wr.rkey = remoteMRInfo->key;
         if (isLastMRtoPut && isLastSlice && immData_ != 0) {
             wr.op = RA_WR_RDMA_WRITE_WITH_IMM;
-            wr.ext.imm_data = immData_;
+            wr.ext.immData = immData_;
         } else {
             wr.op = RA_WR_RDMA_WRITE;
         }
@@ -675,23 +675,23 @@ HcclResult SendRecvExecutor::PayLoadMR(AscendMrInfo* putMRInfo, AscendMrInfo* re
     return HCCL_SUCCESS;
 }
 
-HcclResult SendRecvExecutor::MultiWqeOneDoorBellSend(bool isLastWr, u32& wrNum, struct send_wr_v2& wr)
+HcclResult SendRecvExecutor::MultiWqeOneDoorBellSend(bool isLastWr, u32& wrNum, struct SendWrV2& wr)
 {
     HcclResult ret = HCCL_SUCCESS;
     wrNum++;
     // 多个wqe生成一个cqe
     if (isLastWr || wrNum == wqePerDoorBell_) {
-        wr.send_flag = RA_SEND_SIGNALED;
+        wr.sendFlag = RA_SEND_SIGNALED;
     } else {
-        wr.send_flag = 0;
+        wr.sendFlag = 0;
     }
-    struct send_wr_rsp opRsp = {};
+    struct SendWrRsp opRsp = {};
     CHK_RET(HrtRaSendWrV2(qpHandle_, &wr, &opRsp, HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
     HCCL_DEBUG("[SendRecvExecutor][MultiWqeOneDoorBellSend] End SendWr, wr op[%d], localAddr[%p], remoteAddr[%p], "\
         "len[%llu], local key[%u], remote key[%u].", 
-        wr.op, wr.buf_list->addr, wr.dst_addr, wr.buf_list->len, wr.buf_list->lkey, wr.rkey);
+        wr.op, wr.bufList->addr, wr.dstAddr, wr.bufList->len, wr.bufList->lkey, wr.rkey);
 
-    if (static_cast<u32>(opRsp.db.db_index) == INVALID_UINT && static_cast<u64>(opRsp.db.db_info) == INVALID_U64) {
+    if (static_cast<u32>(opRsp.db.dbIndex) == INVALID_UINT && static_cast<u64>(opRsp.db.dbInfo) == INVALID_U64) {
         // zero byte message 不需要下发rdma send task
         HCCL_DEBUG("[SendRecvExecutor][MultiWqeOneDoorBellSend] dbIndex and dbInfo is invalid.");
         return HCCL_SUCCESS;
@@ -699,8 +699,8 @@ HcclResult SendRecvExecutor::MultiWqeOneDoorBellSend(bool isLastWr, u32& wrNum, 
 
     // 每下发wqePerDoorBell_个wr敲一次doorbell
     if (isLastWr || wrNum == wqePerDoorBell_) {
-        u32 dbIndex = static_cast<u32>(opRsp.db.db_index);
-        u64 dbInfo = static_cast<u64>(opRsp.db.db_info);
+        u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
+        u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
         HCCL_DEBUG("[SendRecvExecutor][MultiWqeOneDoorBellSend] Start RDMADBSend, dbIndex[%u], dbInfo[%llu], wrNum[%u], "\
         "isLastMR[%d].", dbIndex, dbInfo, wrNum, isLastWr);
         ret = hrtRDMADBSend(dbIndex, dbInfo, stream_);
@@ -736,13 +736,13 @@ HcclResult SendRecvExecutor::ProcessRCQ(AscendMrInfo* lastMRInfo)
         remainingSize -= MAX_RDMA_WQE_SIZE;
         offSet += MAX_RDMA_WQE_SIZE;
     }
-    std::vector<struct recv_wrlist_data> recvWrVec(1);
-    recvWrVec[0].wr_id = localAddr;
-    recvWrVec[0].mem_list.addr = localAddr + offSet;
-    recvWrVec[0].mem_list.len = remainingSize;
-    recvWrVec[0].mem_list.lkey = lastMRInfo->key;
+    std::vector<struct RecvWrlistData> recvWrVec(1);
+    recvWrVec[0].wrId = localAddr;
+    recvWrVec[0].memList.addr = localAddr + offSet;
+    recvWrVec[0].memList.len = remainingSize;
+    recvWrVec[0].memList.lkey = lastMRInfo->key;
 
-    struct recv_wrlist_data *recvWr = recvWrVec.data();
+    struct RecvWrlistData *recvWr = recvWrVec.data();
     u32 completeNum = 0;
     ret = hrtRaRecvWrlist(qpHandle_, recvWr, 1, &completeNum);
     if (ret == HCCL_SUCCESS && completeNum == 1) {

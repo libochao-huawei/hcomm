@@ -876,15 +876,15 @@ namespace hccl
         u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
         nslb_inithccp_info nslb_hccp;
         nslb_hccp.version = NSLBDP_HCCP_VERSION;
-        nslb_hccp.phy_id = devicePhyID;
+        nslb_hccp.phyId = devicePhyID;
         nslb_hccp.nic_posion = NSLBDP_HCCP_NICPOSION;
 
         u32 nslb_buffersize = 0;
         void *tlv_handle;
-        HCCL_INFO("H2DTlvInit HCCL nslb InitHccp version:[%u]-phy_id:[%u]-nic_posion:[%u] .",
-                  nslb_hccp.version, nslb_hccp.phy_id, nslb_hccp.nic_posion);
+        HCCL_INFO("H2DTlvInit HCCL nslb InitHccp version:[%u]-phyId:[%u]-nic_posion:[%u] .",
+                  nslb_hccp.version, nslb_hccp.phyId, nslb_hccp.nic_posion);
 
-        HcclResult ret = H2DTlvInit(reinterpret_cast<tlv_init_info *>(&nslb_hccp), MODULE_TYPE_NSLB, &nslb_buffersize, &tlv_handle);
+        HcclResult ret = H2DTlvInit(reinterpret_cast<TlvInitInfo *>(&nslb_hccp), MODULE_TYPE_NSLB, &nslb_buffersize, &tlv_handle);
         if (ret != HCCL_SUCCESS) {
             return ret;
         }

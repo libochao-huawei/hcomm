@@ -17,35 +17,35 @@
 #include "ra_rs_comm.h"
 #include "ra_hdc.h"
 
-union op_async_hdc_connect_data {
+union OpAsyncHdcConnectData {
     struct {
-        unsigned int phy_id;
-        unsigned int queue_size;
-        unsigned int thread_num;
+        unsigned int phyId;
+        unsigned int queueSize;
+        unsigned int threadNum;
         unsigned int resv[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int resv[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_async_hdc_close_data {
+union OpAsyncHdcCloseData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         unsigned int resv[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int resv[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-int RaHdcInitAsync(struct ra_init_config *cfg);
+int RaHdcInitAsync(struct RaInitConfig *cfg);
 int RaHdcDeinitAsync(unsigned int phyId);
 int RaHdcSendMsgAsync(unsigned int opcode, unsigned int phyId, char *data, unsigned int dataSize,
-    struct ra_request_handle *reqHandle);
-void HdcAsyncDelResponse(struct ra_request_handle *reqHandle);
-int RaHdcAsyncSaveSnapshot(unsigned int phyId, enum save_snapshot_action action);
+    struct RaRequestHandle *reqHandle);
+void HdcAsyncDelResponse(struct RaRequestHandle *reqHandle);
+int RaHdcAsyncSaveSnapshot(unsigned int phyId, enum SaveSnapshotAction action);
 int RaHdcAsyncRestoreSnapshot(unsigned int phyId);
 #endif // RA_HDC_ASYNC_H

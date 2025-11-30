@@ -26,7 +26,7 @@ extern "C" {
 
 typedef struct AscendQPInfoDef {
     uint32_t qpn;
-    uint32_t gid_idx;
+    uint32_t gidIdx;
     uint8_t gid[GID_LENGTH];
     uint32_t psn;
     uint32_t sq_depth;

@@ -57,7 +57,7 @@ using QueueDepthAttr = struct QueueDepthAttrDef { // 有效配置 128 - 32K
     u32 rqDepth{INVALID_UINT};
 };
 
-HcclResult hrtRaGetSingleSocketVnicIpInfo(u32 phy_id, DeviceIdType deviceIdType, u32 deviceId,
+HcclResult hrtRaGetSingleSocketVnicIpInfo(u32 phyId, DeviceIdType deviceIdType, u32 deviceId,
     hccl::HcclIpAddress &vnicIP);
 HcclResult hrtGetHostIf(
     std::vector<std::pair<std::string, hccl::HcclIpAddress>> &hostIfs, u32 devPhyId = 0); // key: if name, value ip addr
@@ -70,9 +70,9 @@ HcclResult hrtRaCtlEventHandle(s32 eventHandle, const FdHandle fdHandle, int opC
 
 HcclResult hrtRaWaitEventHandle(s32 eventHandle, std::vector<SocketEventInfo> &eventInfos, s32 timeOut,
     u32 maxEvents, u32 &eventsNum);
-HcclResult H2DTlvInit(struct tlv_init_info *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size,
+HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size,
     void **tlv_handle);
-HcclResult H2DTlvRequest(void *tlv_handle, struct tlv_msg *send_msg, struct tlv_msg *recv_msg);
+HcclResult H2DTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg);
 HcclResult H2DTlvDeinit(void **tlv_handle);
 HcclResult hrtRaDestroyEventHandle(s32 &eventHandle);
 

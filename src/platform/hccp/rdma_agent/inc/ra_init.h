@@ -16,9 +16,9 @@
 
 /* instance is used for ra_is_first_used and ra_is_last_used */
 typedef struct {
-    int ref_count;
+    int refCount;
     pthread_mutex_t mutex;
-} ra_instance;
+} RaInstance;
 
 void RaRdevSetHandle(unsigned int phyId, void *rdmaHandle);
 void RaRdevIncSendWrNum(void);

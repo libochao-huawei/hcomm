@@ -12,59 +12,59 @@
 #include "ra_rs_err.h"
 #include "ra_hdc_ping.h"
 
-int RaHdcPingInit(struct ra_ping_handle *pingHandle, struct ping_init_attr *initAttr,
-    struct ping_init_info *initInfo)
+int RaHdcPingInit(struct RaPingHandle *pingHandle, struct PingInitAttr *initAttr,
+    struct PingInitInfo *initInfo)
 {
-    unsigned int phyId = pingHandle->phy_id;
-    union op_ping_init_data pingData = { 0 };
+    unsigned int phyId = pingHandle->phyId;
+    union OpPingInitData pingData = { 0 };
     int ret;
 
-    ret = memcpy_s(&(pingData.tx_data.attr), sizeof(struct ping_init_attr), initAttr, sizeof(struct ping_init_attr));
+    ret = memcpy_s(&(pingData.txData.attr), sizeof(struct PingInitAttr), initAttr, sizeof(struct PingInitAttr));
     CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_ping]memcpy_s init_attr failed, ret(%d) phyId(%u)",
         ret, phyId), -ESAFEFUNC);
 
-    ret = RaHdcProcessMsg(RA_RS_PING_INIT, phyId, (char *)&pingData, sizeof(union op_ping_init_data));
+    ret = RaHdcProcessMsg(RA_RS_PING_INIT, phyId, (char *)&pingData, sizeof(union OpPingInitData));
     CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
 
-    ret = memcpy_s(initInfo, sizeof(struct ping_init_info), &(pingData.rx_data.info), sizeof(struct ping_init_info));
+    ret = memcpy_s(initInfo, sizeof(struct PingInitInfo), &(pingData.rxData.info), sizeof(struct PingInitInfo));
     CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_ping]memcpy_s init_info failed, ret(%d) phyId(%u)",
         ret, phyId), -ESAFEFUNC);
-    ret = memcpy_s(&(pingHandle->dev), sizeof(union ping_dev), &(initAttr->dev), sizeof(union ping_dev));
+    ret = memcpy_s(&(pingHandle->dev), sizeof(union PingDev), &(initAttr->dev), sizeof(union PingDev));
     CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_ping]memcpy_s dev info failed, ret(%d) phyId(%u)",
         ret, phyId), -ESAFEFUNC);
-    pingHandle->dev_index = pingData.rx_data.dev_index;
+    pingHandle->devIndex = pingData.rxData.devIndex;
 
     return 0;
 }
 
-STATIC void RaHdcPingInitRdev(struct ra_rs_dev_info *rdev, unsigned int phyId, unsigned int devIndex)
+STATIC void RaHdcPingInitRdev(struct RaRsDevInfo *rdev, unsigned int phyId, unsigned int devIndex)
 {
-    rdev->phy_id = phyId;
-    rdev->dev_index = devIndex;
+    rdev->phyId = phyId;
+    rdev->devIndex = devIndex;
 }
 
-int RaHdcPingTargetAdd(struct ra_ping_handle *pingHandle, struct ping_target_info target[], uint32_t num)
+int RaHdcPingTargetAdd(struct RaPingHandle *pingHandle, struct PingTargetInfo target[], uint32_t num)
 {
-    unsigned int phyId = pingHandle->phy_id;
-    union op_ping_add_data pingData;
+    unsigned int phyId = pingHandle->phyId;
+    union OpPingAddData pingData;
     unsigned int i;
     int ret;
 
     for (i = 0; i < num; i++) {
         if (pingHandle->protocol == PROTOCOL_RDMA) {
-            CHK_PRT_RETURN(target[i].local_info.rdma.udp_sport > MAX_PORT_NUM,
+            CHK_PRT_RETURN(target[i].localInfo.rdma.udpSport > MAX_PORT_NUM,
                 hccp_err("[add][ra_hdc_ping]udp_sport(%u) invaild, i(%u), phyId(%u)",
-                target[i].local_info.rdma.udp_sport, i, phyId), -EINVAL);
+                target[i].localInfo.rdma.udpSport, i, phyId), -EINVAL);
         }
 
         (void)memset_s(&pingData, sizeof(pingData), 0, sizeof(pingData));
-        RaHdcPingInitRdev(&pingData.tx_data.rdev, phyId, pingHandle->dev_index);
-        ret = memcpy_s(&(pingData.tx_data.target), sizeof(struct ping_target_info),
-            &(target[i]), sizeof(struct ping_target_info));
+        RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
+        ret = memcpy_s(&(pingData.txData.target), sizeof(struct PingTargetInfo),
+            &(target[i]), sizeof(struct PingTargetInfo));
         CHK_PRT_RETURN(ret, hccp_err("[add][ra_hdc_ping]memcpy_s target failed, ret(%d) i(%u) phyId(%u)",
             ret, i, phyId), -ESAFEFUNC);
-        ret = RaHdcProcessMsg(RA_RS_PING_ADD, phyId, (char *)&pingData, sizeof(union op_ping_add_data));
+        ret = RaHdcProcessMsg(RA_RS_PING_ADD, phyId, (char *)&pingData, sizeof(union OpPingAddData));
         CHK_PRT_RETURN(ret, hccp_err("[add][ra_hdc_ping]ra hdc message process failed ret(%d) i(%u) phy_id(%u)",
             ret, i, phyId), ret);
     }
@@ -72,27 +72,27 @@ int RaHdcPingTargetAdd(struct ra_ping_handle *pingHandle, struct ping_target_inf
     return 0;
 }
 
-int RaHdcPingTaskStart(struct ra_ping_handle *pingHandle, struct ping_task_attr *attr)
+int RaHdcPingTaskStart(struct RaPingHandle *pingHandle, struct PingTaskAttr *attr)
 {
-    union op_ping_start_data pingData = { 0 };
-    unsigned int phyId = pingHandle->phy_id;
+    union OpPingStartData pingData = { 0 };
+    unsigned int phyId = pingHandle->phyId;
     int ret;
 
-    RaHdcPingInitRdev(&pingData.tx_data.rdev, phyId, pingHandle->dev_index);
-    ret = memcpy_s(&(pingData.tx_data.attr), sizeof(struct ping_task_attr), attr, sizeof(struct ping_task_attr));
+    RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
+    ret = memcpy_s(&(pingData.txData.attr), sizeof(struct PingTaskAttr), attr, sizeof(struct PingTaskAttr));
     CHK_PRT_RETURN(ret, hccp_err("[start][ra_hdc_ping]memcpy_s attr failed, ret(%d), phyId(%u)",
         ret, phyId), -ESAFEFUNC);
 
-    ret = RaHdcProcessMsg(RA_RS_PING_START, phyId, (char *)&pingData, sizeof(union op_ping_start_data));
+    ret = RaHdcProcessMsg(RA_RS_PING_START, phyId, (char *)&pingData, sizeof(union OpPingStartData));
     CHK_PRT_RETURN(ret, hccp_err("[start][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
     return 0;
 }
 
-int RaHdcPingGetResults(struct ra_ping_handle *pingHandle, struct ping_target_result target[], uint32_t *num)
+int RaHdcPingGetResults(struct RaPingHandle *pingHandle, struct PingTargetResult target[], uint32_t *num)
 {
-    unsigned int phyId = pingHandle->phy_id;
-    union op_ping_results_data pingData;
+    unsigned int phyId = pingHandle->phyId;
+    union OpPingResultsData pingData;
     unsigned int totalNum = *num;
     unsigned int completeCnt = 0;
     unsigned int sendNum = 0;
@@ -102,43 +102,43 @@ int RaHdcPingGetResults(struct ra_ping_handle *pingHandle, struct ping_target_re
 
     while (completeCnt < totalNum) {
         (void)memset_s(&pingData, sizeof(pingData), 0, sizeof(pingData));
-        RaHdcPingInitRdev(&pingData.tx_data.rdev, phyId, pingHandle->dev_index);
+        RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
         sendNum = ((totalNum - completeCnt) >= RA_MAX_PING_TARGET_NUM) ?
             RA_MAX_PING_TARGET_NUM : (totalNum - completeCnt);
 
         // prepare tx data target
         for (i = 0; i < sendNum; i++) {
             j = i + completeCnt;
-            ret = memcpy_s(&(pingData.tx_data.target[i]), sizeof(struct ping_target_comm_info),
-                &(target[j].remote_info), sizeof(struct ping_target_comm_info));
+            ret = memcpy_s(&(pingData.txData.target[i]), sizeof(struct PingTargetCommInfo),
+                &(target[j].remoteInfo), sizeof(struct PingTargetCommInfo));
             if (ret) {
                 hccp_err("[get][ra_hdc_ping]memcpy_s remote_info failed, ret(%d), i(%u), j(%u), phyId(%u)",
                     ret, i, j, phyId);
                 goto out;
             }
         }
-        pingData.tx_data.num = sendNum;
+        pingData.txData.num = sendNum;
 
         ret = RaHdcProcessMsg(RA_RS_PING_GET_RESULTS, phyId, (char *)&pingData,
-            sizeof(union op_ping_results_data));
+            sizeof(union OpPingResultsData));
         // caller needs to retry, degrade log level
         if (ret == -EAGAIN) {
             hccp_warn("[get][ra_hdc_ping]ra hdc message process unsuccessful, ret(%d) phyId(%u)", ret, phyId);
             goto out;
         }
 
-        if (pingData.rx_data.num > sendNum) {
+        if (pingData.rxData.num > sendNum) {
             hccp_err("[get][ra_hdc_ping]rx_data.num[%u] is larger than send_num[%u], ret(%d) phyId(%u)",
-                pingData.rx_data.num, sendNum, ret, phyId);
+                pingData.rxData.num, sendNum, ret, phyId);
             ret = -EINVAL;
             goto out;
         }
 
         // prepare rx data target
-        for (i = 0; i < pingData.rx_data.num; i++) {
+        for (i = 0; i < pingData.rxData.num; i++) {
             j = i + completeCnt;
-            ret = memcpy_s(&(target[j].result), sizeof(struct ping_result_info),
-                &(pingData.rx_data.target[i]), sizeof(struct ping_result_info));
+            ret = memcpy_s(&(target[j].result), sizeof(struct PingResultInfo),
+                &(pingData.rxData.target[i]), sizeof(struct PingResultInfo));
             if (ret) {
                 hccp_err("[get][ra_hdc_ping]memcpy_s result failed, ret(%d), i(%u), j(%u), phyId(%u)",
                     ret, i, j, phyId);
@@ -147,7 +147,7 @@ int RaHdcPingGetResults(struct ra_ping_handle *pingHandle, struct ping_target_re
             }
         }
 
-        completeCnt += pingData.rx_data.num;
+        completeCnt += pingData.rxData.num;
         if (ret) {
             hccp_err("[get][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)", ret, phyId);
             goto out;
@@ -160,10 +160,10 @@ out:
     return ret;
 }
 
-int RaHdcPingTargetDel(struct ra_ping_handle *pingHandle, struct ping_target_comm_info target[], uint32_t num)
+int RaHdcPingTargetDel(struct RaPingHandle *pingHandle, struct PingTargetCommInfo target[], uint32_t num)
 {
-    unsigned int phyId = pingHandle->phy_id;
-    union op_ping_del_data pingData;
+    unsigned int phyId = pingHandle->phyId;
+    union OpPingDelData pingData;
     unsigned int completeCnt = 0;
     unsigned int sendNum = 0;
     unsigned int i = 0;
@@ -172,20 +172,20 @@ int RaHdcPingTargetDel(struct ra_ping_handle *pingHandle, struct ping_target_com
 
     while (completeCnt < num) {
         (void)memset_s(&pingData, sizeof(pingData), 0, sizeof(pingData));
-        RaHdcPingInitRdev(&pingData.tx_data.rdev, phyId, pingHandle->dev_index);
+        RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
         sendNum = ((num - completeCnt) >= RA_MAX_PING_TARGET_NUM) ? RA_MAX_PING_TARGET_NUM : (num - completeCnt);
 
         // prepare tx data target
         for (i = 0; i < sendNum; i++) {
             j = i + completeCnt;
-            ret = memcpy_s(&(pingData.tx_data.target[i]), sizeof(struct ping_target_comm_info),
-                &(target[j]), sizeof(struct ping_target_comm_info));
+            ret = memcpy_s(&(pingData.txData.target[i]), sizeof(struct PingTargetCommInfo),
+                &(target[j]), sizeof(struct PingTargetCommInfo));
             CHK_PRT_RETURN(ret, hccp_err("[del][ra_hdc_ping]memcpy_s target failed, ret(%d), i(%u) j(%u), phyId(%u)",
                 ret, i, j, phyId), -ESAFEFUNC);
         }
-        pingData.tx_data.num = sendNum;
+        pingData.txData.num = sendNum;
 
-        ret = RaHdcProcessMsg(RA_RS_PING_DEL, phyId, (char *)&pingData, sizeof(union op_ping_del_data));
+        ret = RaHdcProcessMsg(RA_RS_PING_DEL, phyId, (char *)&pingData, sizeof(union OpPingDelData));
         CHK_PRT_RETURN(ret, hccp_err("[del][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
             ret, phyId), ret);
         completeCnt += sendNum;
@@ -194,30 +194,30 @@ int RaHdcPingTargetDel(struct ra_ping_handle *pingHandle, struct ping_target_com
     return 0;
 }
 
-int RaHdcPingTaskStop(struct ra_ping_handle *pingHandle)
+int RaHdcPingTaskStop(struct RaPingHandle *pingHandle)
 {
-    union op_ping_stop_data pingData = { 0 };
-    unsigned int phyId = pingHandle->phy_id;
+    union OpPingStopData pingData = { 0 };
+    unsigned int phyId = pingHandle->phyId;
     int ret;
 
-    RaHdcPingInitRdev(&pingData.tx_data.rdev, phyId, pingHandle->dev_index);
+    RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
 
-    ret = RaHdcProcessMsg(RA_RS_PING_STOP, phyId, (char *)&pingData, sizeof(union op_ping_stop_data));
+    ret = RaHdcProcessMsg(RA_RS_PING_STOP, phyId, (char *)&pingData, sizeof(union OpPingStopData));
     CHK_PRT_RETURN(ret, hccp_err("[stop][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
 
     return 0;
 }
 
-int RaHdcPingDeinit(struct ra_ping_handle *pingHandle)
+int RaHdcPingDeinit(struct RaPingHandle *pingHandle)
 {
-    union op_ping_deinit_data pingData = { 0 };
-    unsigned int phyId = pingHandle->phy_id;
+    union OpPingDeinitData pingData = { 0 };
+    unsigned int phyId = pingHandle->phyId;
     int ret;
 
-    RaHdcPingInitRdev(&pingData.tx_data.rdev, phyId, pingHandle->dev_index);
+    RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
 
-    ret = RaHdcProcessMsg(RA_RS_PING_DEINIT, phyId, (char *)&pingData, sizeof(union op_ping_deinit_data));
+    ret = RaHdcProcessMsg(RA_RS_PING_DEINIT, phyId, (char *)&pingData, sizeof(union OpPingDeinitData));
     CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
         ret, phyId), ret);
 

@@ -70,7 +70,7 @@ public:
     HcclResult PsWorkerRaDeinit(u32 devId, const HcclIpAddress &ipAddr, u32 port);
     HcclResult InitRdmaHandle(u32 devId, const HcclIpAddress &ipAddr, bool disabledLiteThread = false,
         bool enable910ALite = false);
-    HcclResult PingMeshRaPingInit(u32 devLogicId, u32 devPhyId, ra_init_config *config);
+    HcclResult PingMeshRaPingInit(u32 devLogicId, u32 devPhyId, RaInitConfig *config);
     HcclResult PingMeshRaPingDeinit();
     bool GetRdmaLiteStatus();
     bool IsHasStartVnic();
@@ -87,7 +87,7 @@ public:
     HcclResult CreateNicSocketHandle(const HcclIpAddress &ipAddr);
     HcclResult StopNicSocketHandle(const HcclIpAddress &ipAddr);
 
-    HcclResult CreateRdmaHandle(const HcclIpAddress &ipAddr, bool isBackup, network_mode netMode, notify_type notifyType, HcclNetDevDeployment netDevDeployment);
+    HcclResult CreateRdmaHandle(const HcclIpAddress &ipAddr, bool isBackup, NetworkMode netMode, NotifyTypeT notifyType, HcclNetDevDeployment netDevDeployment);
     HcclResult StopRdmaHandle(const HcclIpAddress &ipAddr, HcclNetDevDeployment netDevDeployment);
 
     HcclResult CreateHostSocketHandle(const HcclIpAddress &ipAddr, SocketHandle &socketHandle);
@@ -96,8 +96,8 @@ public:
     // 地址转换
     HcclResult HcclIpAddressConvertHcclAddr(HcclAddress *hccladdr, HcclIpAddress *hcclIP);
     // 创建rdma时 需要获取Mode类型和type类型
-    HcclResult GetNotifyType(notify_type &notifyType) const;
-    void GetNetworkMode(network_mode &netMode) const;
+    HcclResult GetNotifyType(NotifyTypeT &notifyType) const;
+    void GetNetworkMode(NetworkMode &netMode) const;
     HcclResult OccupyIp(const HcclIpAddress &ipAddr, std::map<hccl::HcclIpAddress, IpSocket> &socketMap);
     HcclResult GetNicIp(uint32_t devicePhyId, HcclAddress** addr, uint32_t *len);
 
@@ -109,7 +109,7 @@ private:
     HcclResult TsdProcessOpen(bool hasBackup);
     HcclResult InitHostSocket(const HcclIpAddress &addr, SocketHandle &socketHandle) const;
     HcclResult InitDeviceSocket(u32 devicePhysicID, const HcclIpAddress &ipAddr, SocketHandle &socketHandle);
-    HcclResult InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipAddr, network_mode netMode, notify_type notifyType,
+    HcclResult InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipAddr, NetworkMode netMode, NotifyTypeT notifyType,
         RdmaHandle &rdmaHandle, bool disabledLiteThread = false, bool enable910ALite = false,
         HcclIpAddress ipAddrBackup = HcclIpAddress(0));
     HcclResult StartListenSocket(const SocketHandle socketHandle, u32 &port) const;
@@ -126,15 +126,15 @@ private:
 
     HcclResult CloseHccpSubProc();
     HcclResult CloseHccpProcess();
-    void GetDeviceRaInitConfig(ra_init_config &config);
+    void GetDeviceRaInitConfig(RaInitConfig &config);
 
     // 重构后的版本
     HcclResult PrepareInit(NICDeployment nicDeploy, u32 devicePhyId, s32 &ref);
     HcclResult GetTsdOpen(NICDeployment nicDeploy, bool hasBackup, bool &supportMultiProcHCCP);
-    HcclResult GetConfigAndRaInit(struct ra_init_config &config, bool isHdcV2, NICDeployment nicDeploy);
+    HcclResult GetConfigAndRaInit(struct RaInitConfig &config, bool isHdcV2, NICDeployment nicDeploy);
 
     HcclResult PrepareDeInit(s32 &ref, NICDeployment nicDeploy);
-    HcclResult GetConfigAndRaDeinit(struct ra_init_config &config, NICDeployment nicDeploy, bool &isMultiProc, bool hasBackup);
+    HcclResult GetConfigAndRaDeinit(struct RaInitConfig &config, NICDeployment nicDeploy, bool &isMultiProc, bool hasBackup);
 
     // device的rdma区分是否是rdmalite的模式, host不需要
     HcclResult RdmaSupportLite(RdmaHandle rdmaHandle);
@@ -155,7 +155,7 @@ private:
     std::map<HcclIpAddress, std::map<u32, Referenced>> IPPortListenRefMapDevice_;
     std::mutex raLock_;
     std::mutex hccpProcInfoMutex_;
-    notify_type notifyType_;
+    NotifyTypeT notifyType_;
     static NetworkManager* nmInstance[MAX_DEV_NUM];
     pid_t subPid_{ 0 };
     u32 vnicPort_ = HETEROG_CCL_PORT;

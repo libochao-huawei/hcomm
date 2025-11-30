@@ -33,7 +33,7 @@ TransportRemoteAccess::~TransportRemoteAccess()
 {
     HCCL_DEBUG("~TransportRemoteAccess Enter!");
     HcclResult ret;
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     /* 销毁本端mr */
     for (u32 idx = 0; idx < localRegMem_.size(); idx++) {
         mrInfo.addr = localRegMem_[idx];
@@ -103,7 +103,7 @@ HcclResult TransportRemoteAccess::MrRegister()
         HCCL_ERROR("[Register][Mr]local mem info to registe is empty!");
         return HCCL_E_PARA;
     }
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.access = access_;
     for (size_t idx = 0; idx < MemRegistInfos_.size(); idx++) {
         memPtr = reinterpret_cast<void *>(static_cast<uintptr_t>(MemRegistInfos_[idx].addr));
@@ -192,7 +192,7 @@ HcclResult TransportRemoteAccess::CreateNotifyValueBuffer()
             &notifyVaule, notifySize_, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     }
     lock.unlock();
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = notifyValueMem_[deviceLogicId_].ptr();
     mrInfo.size = notifySize_;
     mrInfo.access = access_;
@@ -253,11 +253,11 @@ HcclResult TransportRemoteAccess::RdmaDataTransport(const std::vector<HcomRemote
     CHK_PRT_RET(addrInfos.empty(), HCCL_ERROR("[Transport][RdmaData]addrInfos is empty!"), HCCL_E_PARA);
     u32 addressNum = addrInfos.size();
     // 构造wr信息
-    std::vector<struct send_wrlist_data_ext> wrVec(addressNum);
-    std::vector<struct send_wr_rsp> opRspVec(addressNum);
-    struct send_wrlist_data_ext *wr = wrVec.data();
-    struct send_wr_rsp *opRsp = opRspVec.data();
-    struct sg_list list = {0};
+    std::vector<struct SendWrlistDataExt> wrVec(addressNum);
+    std::vector<struct SendWrRsp> opRspVec(addressNum);
+    struct SendWrlistDataExt *wr = wrVec.data();
+    struct SendWrRsp *opRsp = opRspVec.data();
+    struct SgList list = {0};
     u64 length = addrInfos[0].length;
 
     HCCL_RUN_INFO("RdmaDataTransport begin, addressNum[%u], length[%u]", addressNum, length);
@@ -265,10 +265,10 @@ HcclResult TransportRemoteAccess::RdmaDataTransport(const std::vector<HcomRemote
         list.addr = static_cast<u64>(static_cast<uintptr_t>(addrInfos[idx].localAddr));
         list.len = addrInfos[idx].length;
 
-        wr[idx].mem_list = list;
-        wr[idx].dst_addr = static_cast<u64>(static_cast<uintptr_t>(addrInfos[idx].remoteAddr));
+        wr[idx].memList = list;
+        wr[idx].dstAddr = static_cast<u64>(static_cast<uintptr_t>(addrInfos[idx].remoteAddr));
         wr[idx].op = rdmaOp; /* RDMA_WRITE: 0  RDMA_READ: 4 */
-        wr[idx].send_flags = RA_SEND_SIGNALED;
+        wr[idx].sendFlags = RA_SEND_SIGNALED;
     }
     u32 nowIdex = 0;
     u32 singleCompleteNum = 0;
@@ -303,20 +303,20 @@ HcclResult TransportRemoteAccess::RdmaDataTransport(const std::vector<HcomRemote
 HcclResult TransportRemoteAccess::ReadRemoteNotifyBuffer()
 {
     HCCL_INFO("In TransportRemoteAccess ReadRemoteNotifyBuffer begin");
-    struct sg_list list = {0};
-    struct send_wr wr = {nullptr};
+    struct SgList list = {0};
+    struct SendWr wr = {nullptr};
 
     // 构造wr信息
     list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(ackNotifyMsg_.addr));
     list.len = remoteNotifyDataMsg_.len;
 
-    wr.buf_list = &list;
-    wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-    wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(remoteNotifyDataMsg_.addr));
+    wr.bufList = &list;
+    wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+    wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(remoteNotifyDataMsg_.addr));
     wr.op = RDMA_OP_READ; /* RDMA_WRITE: 0 */
-    wr.send_flag = RA_SEND_SIGNALED;
+    wr.sendFlag = RA_SEND_SIGNALED;
 
-    struct send_wr_rsp opRsp = {0};
+    struct SendWrRsp opRsp = {0};
     CHK_RET(HrtRaSendWr(handle_, &wr, &opRsp));
     HCCL_INFO("In TransportRemoteAccess ReadRemoteNotifyBuffer end");
     return HCCL_SUCCESS;

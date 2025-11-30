@@ -39,15 +39,15 @@ void TcpRecvTask::RecvDataCb(const FdHandle fdHandle)
 }
 
 // 将callback指针传给hccp
-HcclResult TcpRecvTask::Init(const socket_info_t socketInfo, void *transportPtr)
+HcclResult TcpRecvTask::Init(const SocketInfoT socketInfo, void *transportPtr)
 {
     std::unique_lock<std::mutex> lock(transportMapMutex_);
-    if (fdTransportMap_.count(socketInfo.fd_handle) == 0) {
-        fdTransportMap_[socketInfo.fd_handle] = transportPtr;
+    if (fdTransportMap_.count(socketInfo.fdHandle) == 0) {
+        fdTransportMap_[socketInfo.fdHandle] = transportPtr;
     }
     lock.unlock();
     if (initCount_ == 0) {
-        CHK_RET(hrtSetRecvDataCallback(socketInfo.socket_handle, reinterpret_cast<void *>(RecvDataCb)));
+        CHK_RET(hrtSetRecvDataCallback(socketInfo.socketHandle, reinterpret_cast<void *>(RecvDataCb)));
     }
     initCount_++;
     g_initFlag_ = true;

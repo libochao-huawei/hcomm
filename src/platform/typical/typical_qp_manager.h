@@ -20,10 +20,10 @@ namespace hccl {
 class TypicalQpManager {
 public:
     static TypicalQpManager& GetInstance();
-    HcclResult CreateQp(struct typical_qp& qpInfo);
-    HcclResult CreateQp(struct typical_qp& qpInfo, const QpConfigInfo& qpConfig);
-    HcclResult ModifyQp(struct typical_qp& localQpInfo, struct typical_qp& remoteQpInfo);
-    HcclResult DestroyQp(struct typical_qp& qpInfo);
+    HcclResult CreateQp(struct TypicalQp& qpInfo);
+    HcclResult CreateQp(struct TypicalQp& qpInfo, const QpConfigInfo& qpConfig);
+    HcclResult ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo);
+    HcclResult DestroyQp(struct TypicalQp& qpInfo);
     HcclResult GetQpHandleByQpn(u32 qpn, QpHandle& qpHandle);
 private:
     TypicalQpManager();
@@ -32,13 +32,13 @@ private:
     TypicalQpManager(TypicalQpManager&&) = delete;                  // Move construct
     TypicalQpManager& operator=(TypicalQpManager const&) = delete;  // Copy assign
     TypicalQpManager& operator=(TypicalQpManager &&) = delete;      // Move assign
-    HcclResult SetQpRdmaRetryCfg(struct typical_qp& qpInfo);
+    HcclResult SetQpRdmaRetryCfg(struct TypicalQp& qpInfo);
 
 private:
     RdmaHandle rdmaHandle_ = nullptr;
     const s32 QP_FLAG_RC = 0;      // flag: 0 = RC, 1= UD，其它预留
     const s32 OPBASE_QP_MODE = 2;  // 单算子模式的QP
-    std::map<u32, std::pair<struct typical_qp, QpHandle>> qpMap_{};
+    std::map<u32, std::pair<struct TypicalQp, QpHandle>> qpMap_{};
     std::mutex qpMutex_;
 };
 } // namespace hccl

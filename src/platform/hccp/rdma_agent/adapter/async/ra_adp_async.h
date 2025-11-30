@@ -17,18 +17,18 @@
 #include <unistd.h>
 #include "ascend_hal.h"
 
-struct ra_hdc_op_sec {
-    struct timeval t_last;
-    unsigned long long token_num;
-    unsigned int cfg_op_num;
-    bool is_async_op;
+struct RaHdcOpSec {
+    struct timeval tLast;
+    unsigned long long tokenNum;
+    unsigned int cfgOpNum;
+    bool isAsyncOp;
 };
 
-struct ra_hdc_async_info {
-    HDC_SESSION hdc_session;
-    pthread_mutex_t send_mutex;
-    struct ra_hdc_op_sec op_sec;
-    struct ra_hdc_thread_pool *pool;
+struct RaHdcAsyncInfo {
+    HDC_SESSION hdcSession;
+    pthread_mutex_t sendMutex;
+    struct RaHdcOpSec opSec;
+    struct RaHdcThreadPool *pool;
 };
 
 int RaHwAsyncInit(unsigned int chipId, pid_t pid);

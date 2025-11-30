@@ -15,35 +15,35 @@
 
 #define SHUTDOWN_SIGNAL 1U
 
-typedef int (*task_func_t)(unsigned int chipId, void *recvBuf, unsigned int recvLen);
+typedef int (*TaskFuncT)(unsigned int chipId, void *recvBuf, unsigned int recvLen);
 
-struct ra_hdc_task {
-    task_func_t func;
+struct RaHdcTask {
+    TaskFuncT func;
     struct {
-        unsigned int chip_id;
-        void *recv_buf;
-        unsigned int recv_len;
+        unsigned int chipId;
+        void *recvBuf;
+        unsigned int recvLen;
     } args;
 };
 
-struct ra_hdc_thread_pool {
-    struct ra_hdc_task *task_queue;
-    unsigned int queue_size;
+struct RaHdcThreadPool {
+    struct RaHdcTask *taskQueue;
+    unsigned int queueSize;
 
-    unsigned int task_num;
-    unsigned int queue_pi;
-    unsigned int queue_ci;
+    unsigned int taskNum;
+    unsigned int queuePi;
+    unsigned int queueCi;
 
-    pthread_t *worker_threads;
-    unsigned int thread_num;
-    pthread_mutex_t pool_mutex;
+    pthread_t *workerThreads;
+    unsigned int threadNum;
+    pthread_mutex_t poolMutex;
     pthread_cond_t condition;
 
     unsigned int shutdown;
 };
 
-struct ra_hdc_thread_pool *RaHdcPoolCreate(unsigned int queueSize, unsigned int threadNum);
-int RaHdcPoolDestroy(struct ra_hdc_thread_pool *pool);
-void RaHdcPoolAddTask(struct ra_hdc_thread_pool *pool, task_func_t func, unsigned int chipId, void *recvBuf,
+struct RaHdcThreadPool *RaHdcPoolCreate(unsigned int queueSize, unsigned int threadNum);
+int RaHdcPoolDestroy(struct RaHdcThreadPool *pool);
+void RaHdcPoolAddTask(struct RaHdcThreadPool *pool, TaskFuncT func, unsigned int chipId, void *recvBuf,
     unsigned int recvLen);
 #endif // RA_ADP_POOL_H

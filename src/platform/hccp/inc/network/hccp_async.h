@@ -34,7 +34,7 @@ HCCP_ATTRI_VISI_DEF int RaGetAsyncReqResult(void *reqHandle, int *reqResult);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct socket_connect_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct SocketConnectInfoT conn[], unsigned int num,
     void **reqHandle);
 
 /**
@@ -48,7 +48,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct socket_connect_info_t c
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct socket_listen_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct SocketListenInfoT conn[], unsigned int num,
     void **reqHandle);
 
 /**
@@ -62,7 +62,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct socket_listen_info_t con
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct socket_listen_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct SocketListenInfoT conn[], unsigned int num,
     void **reqHandle);
 
 /**
@@ -75,7 +75,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct socket_listen_info_t conn
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketBatchCloseAsync(struct socket_close_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketBatchCloseAsync(struct SocketCloseInfoT conn[], unsigned int num,
     void **reqHandle);
 
 /**

@@ -31,9 +31,9 @@ constexpr u32 DEVISOR_VALUE_FOUR = 4;
 constexpr u32 MAX_WQE_PER_DOORBELL = 300;
 constexpr u32 QP_QUEUE_DEPTH_MAX = 32768;
 constexpr u32 QP_QUEUE_DEPTH_MIN = 128;
-struct mr_info AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
+struct MrInfoT AscendMrInfo2MrInfo(AscendMrInfo* ascendMrInfo)
 {
-    struct mr_info innerMrInfo;
+    struct MrInfoT innerMrInfo;
     innerMrInfo.addr = reinterpret_cast<void*>(ascendMrInfo->addr);
     innerMrInfo.size = ascendMrInfo->size;
     innerMrInfo.lkey = ascendMrInfo->key;
@@ -45,16 +45,16 @@ HcclResult hcclCreateAscendQP(AscendQPInfo* ascendQPInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(ascendQPInfo);
-    struct typical_qp qpInfo;
+    struct TypicalQp qpInfo;
     CHK_RET(TypicalQpManager::GetInstance().CreateQp(qpInfo));
     ascendQPInfo->qpn = qpInfo.qpn;
-    ascendQPInfo->gid_idx = qpInfo.gid_idx;
+    ascendQPInfo->gidIdx = qpInfo.gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
         ascendQPInfo->gid[i] = qpInfo.gid[i];
     }
     ascendQPInfo->psn = qpInfo.psn;
     HCCL_INFO("hcclCreateAscendQP success! qpn %u, gid index %u, psn %u", ascendQPInfo->qpn,
-        ascendQPInfo->gid_idx, ascendQPInfo->psn);
+        ascendQPInfo->gidIdx, ascendQPInfo->psn);
 
     return HCCL_SUCCESS;
 }
@@ -78,17 +78,17 @@ HcclResult hcclCreateAscendQPWithAttr(AscendQPInfo* ascendQPInfo)
     CHK_RET(CheckDepth(ascendQPInfo->scq_depth));
     CHK_RET(CheckDepth(ascendQPInfo->rq_depth));
     CHK_RET(CheckDepth(ascendQPInfo->rcq_depth));
-    struct typical_qp qpInfo;
+    struct TypicalQp qpInfo;
     QpConfigInfo qpConfigInfo{ascendQPInfo->sq_depth, ascendQPInfo->rq_depth, ascendQPInfo->scq_depth, ascendQPInfo->rcq_depth};
     CHK_RET(TypicalQpManager::GetInstance().CreateQp(qpInfo, qpConfigInfo));
     ascendQPInfo->qpn = qpInfo.qpn;
-    ascendQPInfo->gid_idx = qpInfo.gid_idx;
+    ascendQPInfo->gidIdx = qpInfo.gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
         ascendQPInfo->gid[i] = qpInfo.gid[i];
     }
     ascendQPInfo->psn = qpInfo.psn;
     HCCL_INFO("hcclCreateAscendQP success! qpn[%u], gid index[%u], psn[%u], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u] ", ascendQPInfo->qpn,
-        ascendQPInfo->gid_idx, ascendQPInfo->psn, ascendQPInfo->sq_depth, ascendQPInfo->rq_depth, ascendQPInfo->scq_depth, ascendQPInfo->rcq_depth);
+        ascendQPInfo->gidIdx, ascendQPInfo->psn, ascendQPInfo->sq_depth, ascendQPInfo->rq_depth, ascendQPInfo->scq_depth, ascendQPInfo->rcq_depth);
 
     return HCCL_SUCCESS;
 }
@@ -123,9 +123,9 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
         HCCL_ERROR("[hcclModifyAscendQPEx]The value of tc[%u] is not a multiple of 4.",
         qpQos->tc), HCCL_E_PARA);    
 
-    struct typical_qp localQp;
+    struct TypicalQp localQp;
     localQp.qpn = localQPInfo->qpn;
-    localQp.gid_idx = localQPInfo->gid_idx;
+    localQp.gidIdx = localQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
         localQp.gid[i] = localQPInfo->gid[i];
     }
@@ -133,9 +133,9 @@ HcclResult hcclModifyAscendQPEx(AscendQPInfo* localQPInfo, AscendQPInfo* remoteQ
     localQp.sl = qpQos->sl;
     localQp.tc = qpQos->tc;
 
-    struct typical_qp remoteQp;
+    struct TypicalQp remoteQp;
     remoteQp.qpn = remoteQPInfo->qpn;
-    remoteQp.gid_idx = remoteQPInfo->gid_idx;
+    remoteQp.gidIdx = remoteQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
         remoteQp.gid[i] = remoteQPInfo->gid[i];
     }
@@ -149,9 +149,9 @@ HcclResult hcclDestroyAscendQP(AscendQPInfo* ascendQPInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(ascendQPInfo);
-    struct typical_qp qpInfo;
+    struct TypicalQp qpInfo;
     qpInfo.qpn = ascendQPInfo->qpn;
-    qpInfo.gid_idx = ascendQPInfo->gid_idx;
+    qpInfo.gidIdx = ascendQPInfo->gidIdx;
     for (uint32_t i = 0; i < GID_LENGTH; i++) {
         qpInfo.gid[i] = ascendQPInfo->gid[i];
     }
@@ -193,7 +193,7 @@ HcclResult hcclRegisterMem(AscendMrInfo* memInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(memInfo);
-    mr_info mrInfo = {};
+    MrInfoT mrInfo = {};
     mrInfo.addr = reinterpret_cast<void *>(static_cast<uintptr_t>(memInfo->addr));
     mrInfo.size = memInfo->size;
     mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
@@ -208,7 +208,7 @@ HcclResult hcclDeRegisterMem(AscendMrInfo* memInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(memInfo);
-    mr_info mrInfo = {};
+    MrInfoT mrInfo = {};
     mrInfo.addr = reinterpret_cast<void *>(static_cast<uintptr_t>(memInfo->addr));
     mrInfo.size = memInfo->size;
     mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
@@ -287,7 +287,7 @@ HcclResult HcclGetCqeErrInfoList(struct HcclErrCqeInfo *infoList, uint32_t *num)
     CHK_PTR_NULL(infoList);
     CHK_PTR_NULL(num);
     u32 arrLen = *num;
-    struct cqe_err_info errCqeList[arrLen];
+    struct CqeErrInfo errCqeList[arrLen];
     CHK_RET(RdmaResourceManager::GetInstance().GetCqeErrInfo(errCqeList, num));
 
     CHK_PRT_RET(*num > arrLen, HCCL_ERROR("[HcclGetCqeErrInfoList] GetCqeErrInfo num[%u] is larger than "
@@ -425,7 +425,7 @@ HcclResult hcclGetSyncMemRegKey(AscendMrInfo* memInfo)
     s32 deviceLogicId = 0;
     CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
     CHK_PTR_NULL(memInfo);
-    struct mr_info mrInfo{};
+    struct MrInfoT mrInfo{};
     CHK_RET(RdmaResourceManager::GetInstance().GetNotifyMrInfo(mrInfo));
     memInfo->key = mrInfo.lkey;
     HCCL_RUN_INFO("[hcclGetSyncMemRegKey] SyncMem addr[%p], size[%llu], key[%u].", memInfo->addr, memInfo->size, memInfo->key);

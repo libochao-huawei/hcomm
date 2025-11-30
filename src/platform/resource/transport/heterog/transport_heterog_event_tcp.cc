@@ -28,9 +28,9 @@ namespace hccl {
 
 // 因无法直接访问network的private路径下的ra_rs_comm.h中的socket_peer_info结构体
 struct socket_peer_info {
-    int phy_id;
+    int phyId;
     int fd;
-    void *socket_handle;
+    void *socketHandle;
 };
 
 constexpr s32 PROTOCOL_TYPE = 1;
@@ -317,7 +317,7 @@ HcclResult TransportHeterogEventTcp::SendNoBlock(const TransData &sendData, cons
         return HCCL_E_INTERNAL;
     }
     if (envelopeSize > 0) {
-        ret = hrtRaSocketNonBlockSendHeterog(initSM_.locInitInfo.socketInfo[0].fd_handle,
+        ret = hrtRaSocketNonBlockSendHeterog(initSM_.locInitInfo.socketInfo[0].fdHandle,
             (reinterpret_cast<u8 *>(&envelope) + envoffset), envelopeSize, &envSentSize);
         envoffset += envSentSize;
         if (ret == HCCL_E_NETWORK) {
@@ -337,7 +337,7 @@ HcclResult TransportHeterogEventTcp::SendNoBlock(const TransData &sendData, cons
         return HCCL_E_INTERNAL;
     }
     if (payloadSize > 0) {
-        ret = hrtRaSocketNonBlockSendHeterog(initSM_.locInitInfo.socketInfo[0].fd_handle,
+        ret = hrtRaSocketNonBlockSendHeterog(initSM_.locInitInfo.socketInfo[0].fdHandle,
             (reinterpret_cast<u8 *>(envelope.transData.srcBuf) + dataTranoffset), payloadSize, &dataSentSize);
         dataTranoffset += dataSentSize;
         if (ret == HCCL_E_NETWORK) {
@@ -356,12 +356,12 @@ HcclResult TransportHeterogEventTcp::Send(const TransData &sendData, const Trans
     TransportEndPointParam transportParam = epParam;
     HcclEnvelope envelope(1, transData, transportParam, 0, 0);
 
-    CHK_RET(hrtRaSocketBlockSend(initSM_.locInitInfo.socketInfo[0].fd_handle, &envelope,
+    CHK_RET(hrtRaSocketBlockSend(initSM_.locInitInfo.socketInfo[0].fdHandle, &envelope,
         sizeof(envelope)));
 
     if (envelope.transData.count > 0) {
         u64 payloadSize = envelope.transData.count * SIZE_TABLE[envelope.transData.dataType];
-        CHK_RET(hrtRaSocketBlockSend(initSM_.locInitInfo.socketInfo[0].fd_handle,
+        CHK_RET(hrtRaSocketBlockSend(initSM_.locInitInfo.socketInfo[0].fdHandle,
             reinterpret_cast<void *>(envelope.transData.srcBuf), payloadSize));
     }
     return HCCL_SUCCESS;
@@ -479,7 +479,7 @@ HcclResult TransportHeterogEventTcp::Imrecv(const TransData &recvData, HcclMessa
     CHK_RET(CheckRecvEnvelope(recvData, msg.envelope));
     CHK_RET(GenerateRecvRequest(recvData, msg, request));
 
-    CHK_RET(TcpRecvTask::GetRecvTaskInstance()->SetRecvTask(initSM_.locInitInfo.socketInfo[0].fd_handle, request));
+    CHK_RET(TcpRecvTask::GetRecvTaskInstance()->SetRecvTask(initSM_.locInitInfo.socketInfo[0].fdHandle, request));
     CHK_RET(FreeRecvMessage(msg));
     return HCCL_SUCCESS;
 }
@@ -500,7 +500,7 @@ HcclResult TransportHeterogEventTcp::Test(HcclRequestInfo &request, s32 &flag, H
 HcclResult TransportHeterogEventTcp::InitRecvCallback()
 {
     TcpRecvTask::GetRecvTaskInstance()->Init(initSM_.locInitInfo.socketInfo[0], this);
-    (void)hrtEpollCtlAdd(initSM_.locInitInfo.socketInfo[0].fd_handle, RA_EPOLLONESHOT);
+    (void)hrtEpollCtlAdd(initSM_.locInitInfo.socketInfo[0].fdHandle, RA_EPOLLONESHOT);
     return HCCL_SUCCESS;
 }
 
@@ -560,7 +560,7 @@ HcclResult TransportHeterogEventTcp::LoopStateProcess()
                 HCCL_ERROR("[LoopStateProcess]initSM_.locInitInfo.socketInfo is invalid!");
                 return HCCL_E_PARA;
             }
-            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fd_handle, initSM_.locInitInfo.checkFrame,
+            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.locInitInfo.checkFrame,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_RECV_CF));
             break;
@@ -569,7 +569,7 @@ HcclResult TransportHeterogEventTcp::LoopStateProcess()
                 HCCL_ERROR("[LoopStateProcess]initSM_.locInitInfo.socketInfo is invalid!");
                 return HCCL_E_PARA;
             }
-            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fd_handle, initSM_.remInitInfo.checkFrame,
+            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.remInitInfo.checkFrame,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_CHECK_CF));
             break;
@@ -707,7 +707,7 @@ HcclResult TransportHeterogEventTcp::BlockSend(const TransData &sendData, const 
     eventStatus.event = EPOLLOUT;
 
     // 当前只考虑一个连接
-    FdHandle fdHandle = initSM_.locInitInfo.socketInfo[0].fd_handle;
+    FdHandle fdHandle = initSM_.locInitInfo.socketInfo[0].fdHandle;
 
     bool envCompleted; // 信封数据是否完全发送成功
     bool tranCompleted; // 数据是否完全发送
@@ -742,7 +742,7 @@ HcclResult TransportHeterogEventTcp::BlockRecv(const TransData &recvData, bool m
 
     if (eventStatus.matched) {
         // 当前只考虑一个连接
-        fdHandle = initSM_.locInitInfo.socketInfo[0].fd_handle;
+        fdHandle = initSM_.locInitInfo.socketInfo[0].fdHandle;
     }
 
     void *recvBuffer = reinterpret_cast<void *>(recvData.dstBuf);
@@ -846,11 +846,11 @@ HcclResult TransportHeterogEventTcp::CreateEventHandle()
 HcclResult TransportHeterogEventTcp::AddEpollEvents()
 {
     for (int i = 0; i < LINK_NUM; i++) {
-        CHK_RET(hrtRaCtlEventHandle(sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fd_handle,
+        CHK_RET(hrtRaCtlEventHandle(sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
             EPOLL_CTL_ADD, HcclEpollEvent::HCCL_EPOLLOUT));
 
         lock_guard<mutex> lock(gRecvEpollEventInfo.epollEventFdMtx);
-        CHK_RET(hrtRaCtlEventHandle(gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fd_handle,
+        CHK_RET(hrtRaCtlEventHandle(gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
             EPOLL_CTL_ADD, HcclEpollEvent::HCCL_EPOLLIN));
     }
 
@@ -888,11 +888,11 @@ HcclResult TransportHeterogEventTcp::DestroyEventHandle()
 HcclResult TransportHeterogEventTcp::DelEpollEvents()
 {
     for (int i = 0; i < LINK_NUM; i++) {
-        CHK_RET(hrtRaCtlEventHandle(sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fd_handle,
+        CHK_RET(hrtRaCtlEventHandle(sendEpollEventInfo_.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
             EPOLL_CTL_DEL, HcclEpollEvent::HCCL_EPOLLOUT));
 
         lock_guard<mutex> lock(gRecvEpollEventInfo.epollEventFdMtx);
-        CHK_RET(hrtRaCtlEventHandle(gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fd_handle,
+        CHK_RET(hrtRaCtlEventHandle(gRecvEpollEventInfo.epollEventFd, initSM_.locInitInfo.socketInfo[i].fdHandle,
             EPOLL_CTL_DEL, HcclEpollEvent::HCCL_EPOLLIN));
     }
 

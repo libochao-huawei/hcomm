@@ -219,7 +219,7 @@ constexpr unsigned int  TLV_SEND_TYPE_TBL_ROOT_RANK = 7;
 
 struct nslb_inithccp_info {
     s32 version;
-    u32 phy_id;
+    u32 phyId;
     u32 nic_posion;
     u32 reserved[16U];
 };

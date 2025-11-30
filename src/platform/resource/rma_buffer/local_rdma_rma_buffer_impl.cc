@@ -106,7 +106,7 @@ HcclResult LocalRdmaRmaBufferImpl::Init()
     HCCL_DEBUG("[Init]addr[%p], size[%llu], devAddr[%p], memType[%d]", addr, size, devAddr, memType);
 
     // 内存注册
-    mr_info info = {};
+    MrInfoT info = {};
     info.size   = size;
     info.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
     info.addr   = devAddr;
@@ -195,7 +195,7 @@ HcclResult LocalRdmaRmaBufferImpl::Remap(void* addr, u64 length)
     CHK_PRT_RET(length == 0,
         HCCL_ERROR("[Remap]memorySize[%llu] must be greater than 0.", length), HCCL_E_PARA);
 
-    struct mem_remap_info info = {0};
+    struct MemRemapInfo info = {0};
     info.addr = addr;
     info.size = length;
     unsigned int num = 1;
