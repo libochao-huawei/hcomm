@@ -372,7 +372,7 @@ void CCLBufferManager::ReleaseAlltoAllvParaBuffer()
     outAlltoAllvParaBuffer_.free();
 }
 
-HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, u32 &size)
+HcclResult CCLBufferManager::GetIndependentOpCCLbuffer(void* &buffer, uint64_t &size)
 {
     if (inCCLbufferSize_ == 0) {
         HCCL_ERROR("[CCLBufferManager][GetIndependentOpCCLbuffer] inCCLbufferSize is 0");
