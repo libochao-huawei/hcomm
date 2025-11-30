@@ -10,6 +10,7 @@
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_nslbdp.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_nslb_md5.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccl_h2dtlv.cc
 )
 
 target_sources(hcomm PRIVATE

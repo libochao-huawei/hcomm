@@ -244,7 +244,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::InitHccp()
+    HcclResult HcclCommunicator::InitHccpChannel()
     {
         return HCCL_SUCCESS;
     }

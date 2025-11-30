@@ -18,8 +18,8 @@
 #include "ra_adp_tlv.h"
 
 struct RsTlvOps {
-    int (*tlvInit)(unsigned int moduleType, unsigned int phyId, unsigned int *bufferSize);
-    int (*tlvDeinit)(unsigned int moduleType, unsigned int phyId);
+    int (*tlvInit)(unsigned int phyId, unsigned int *bufferSize);
+    int (*tlvDeinit)(unsigned int phyId);
     int (*tlvRequest)(struct TlvRequestMsgHead *head, char *data);
 };
 
@@ -36,8 +36,7 @@ int RaRsTlvInit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBu
 
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvInitData), sizeof(struct MsgHead), rcvBufLen, opResult);
 
-    *opResult = gRaRsTlvOps.tlvInit(dataIn->txData.moduleType,
-        dataIn->txData.phyId, &dataOut->rxData.bufferSize);
+    *opResult = gRaRsTlvOps.tlvInit(dataIn->txData.phyId, &dataOut->rxData.bufferSize);
     CHK_PRT_RETURN(*opResult == -ENOTSUPP, hccp_warn("tlv_init unsuccessful ret[%d]", *opResult), 0);
     if (*opResult != 0) {
         hccp_err("tlv_init failed ret[%d]", *opResult);
@@ -52,7 +51,7 @@ int RaRsTlvDeinit(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcv
 
     HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpTlvDeinitData), sizeof(struct MsgHead), rcvBufLen, opResult);
 
-    *opResult = gRaRsTlvOps.tlvDeinit(dataIn->txData.moduleType, dataIn->txData.phyId);
+    *opResult = gRaRsTlvOps.tlvDeinit(dataIn->txData.phyId);
     if (*opResult != 0) {
         hccp_err("tlv_deinit failed ret[%d]", *opResult);
     }

@@ -339,7 +339,7 @@ public:
     HcclResult GetBlockDim(u32& blockDim);
     HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup);
-    HcclResult InitHccp();
+    HcclResult InitHccpChannel();
     std::vector<RankInfo> GetRankLists();
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
@@ -358,6 +358,9 @@ public:
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
+    HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;

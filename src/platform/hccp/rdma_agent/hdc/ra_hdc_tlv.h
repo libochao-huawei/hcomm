@@ -20,7 +20,6 @@
 union OpTlvInitData {
     struct {
         unsigned int phyId;
-        unsigned int moduleType;
         uint32_t reserved[RA_RSVD_NUM_61];
     } txData;
 
@@ -33,7 +32,6 @@ union OpTlvInitData {
 union OpTlvDeinitData {
     struct {
         unsigned int phyId;
-        unsigned int moduleType;
         uint32_t reserved[RA_RSVD_NUM_61];
     } txData;
 
@@ -56,5 +54,6 @@ union OpTlvRequestData {
 
 int RaHdcTlvInit(struct RaTlvHandle *tlvHandle);
 int RaHdcTlvDeinit(struct RaTlvHandle *tlvHandle);
-int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
+int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
+    struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
 #endif // RA_HDC_TLV_H

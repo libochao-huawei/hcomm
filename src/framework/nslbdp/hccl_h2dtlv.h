@@ -8,20 +8,35 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef RS_ADP_NSLB_H
-#define RS_ADP_NSLB_H
+#ifndef HCCL_H2DTLV_H
+#define HCCL_H2DTLV_H
 
-#include "rs_inner.h"
+#include <vector>
+#include <memory>
+#include <map>
+#include <mutex>
 
-#define NET_CO_PROCED (1987)
-#define NETCO_CFGFILE_PATH "/etc/hccl.cfg"
-#define NETCO_PORT_NUM_BASE 10
-#define CFG_VAL_LEN 16
+#include "hccl/base.h"
+#include "hccl_common.h"
+#include "hccl_comm_pub.h"
 
-#define NETCO_REQ_TYPE_INIT    9001
-#define NETCO_REQ_TYPE_DEINIT  9002
+namespace hccl {
 
-int RsNslbNetcoRequest(unsigned int phyId, struct RsNslbCb *nslbCb,
-    unsigned int type, char *data, unsigned int dataLen);
-int RsEpollNslbEventHandle(struct RsNslbCb *nslbCb, int fd, unsigned int events);
-#endif // RS_ADP_NSLB_H
+class hcclH2dTlv {
+public:
+    static hcclH2dTlv& GetInstance();
+    HcclResult InitHccpChannel(u32 devicePhyId);
+    void DeinitHccpChannel();
+    bool GetH2dTlvInitFlag();
+    unsigned int GetH2dTlvBufferSize();
+    void* GetH2dTlvHandle();
+    bool hcclH2dTlvInitFlag_ = false;
+    void* hcclH2dTlvHandle_;
+    unsigned int hcclH2dTlvBuffsize_ = 0;
+private:
+    hcclH2dTlv();
+    ~hcclH2dTlv();
+};
+
+}
+#endif /* HCCL_H2DTLV_H */
