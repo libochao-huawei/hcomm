@@ -21,9 +21,6 @@
 // ltm指定config路径
 #include "common/src/config.h"
 #include "../common/src/topo/topoinfo_detect.h"
-#ifndef OPEN_BUILD_PROJECT
-#include "op_base_v2.h"
-#endif
 using HcclOpInfoCtx = struct HcclInfoTag {
     HcclCommPtr pComm;
     hccl::HcclCommParams params;

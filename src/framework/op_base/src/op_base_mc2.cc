@@ -20,9 +20,6 @@
 #include "kernel_tiling/kernel_tiling.h"
 #include "param_check_pub.h"
 #include "hccl_tiling_msg.h"
-#ifndef OPEN_BUILD_PROJECT
-#include "op_base_v2.h"
-#endif
 
 using namespace std;
 using namespace hccl;
@@ -111,9 +108,7 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclAllocComResourceByTilingV2(comm, stream, Mc2Tiling, commContext));
-#endif
+
     if (*pVersion < MC2_TILING_VERSION || devType != DevType::DEV_TYPE_910_93) {
         return HcclCreateComResourceByComm(comm, streamMode, true, commContext, true, Mc2Tiling);
     }

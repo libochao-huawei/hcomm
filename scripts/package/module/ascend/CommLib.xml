@@ -53,16 +53,10 @@
     </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
-        <!-- <file value="libhcom_gradtune_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so;comop:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhcom_gradtune_opskernel_builder.so"/>
-        <file value="libhvd_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhvd_opskernel_builder.so;comop:lib64/plugin/opskernel/libhvd_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhvd_opskernel_builder.so"/>
-        <file value="libhcom_opskernel_builder.so" file_type="shared" dst_path="lib64/plugin/opskernel" install_path="$(TARGET_ENV)/lib64/plugin/opskernel" pkg_inner_softlink="compiler:lib64/plugin/opskernel/libhcom_opskernel_builder.so;comop:lib64/plugin/opskernel/libhcom_opskernel_builder.so;hcomm:lib64/plugin/opskernel/libhcom_opskernel_builder.so"/> -->
         <file value="libhcomm.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libhccl_fwk.so"/>
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>
-        <!-- <file value="libhccl_v2.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2.so;comop:lib64/libhccl_v2.so;hcomm:lib64/libhccl_v2.so" release_type="debug"/>
-        <file value="libhccl_v2_alg_frame.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_alg_frame.so;comop:lib64/libhccl_v2_alg_frame.so;hcomm:lib64/libhccl_v2_alg_frame.so" release_type="debug"/>
-        <file value="libhccl_v2_native_alg_repo.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_native_alg_repo.so;comop:lib64/libhccl_v2_native_alg_repo.so;hcomm:lib64/libhccl_v2_native_alg_repo.so" release_type="debug"/> -->
         <file value="dynamic_mul_int8_v80.o"/>
         <file value="dynamic_minimum_int8_v80.o"/>
         <file value="dynamic_maximum_int8_v80.o"/>
@@ -152,8 +146,6 @@
         <file value="hccl_ar_superkernel_float16.o"/>
         <file value="hccl_ar_superkernel_float32.o"/>
         <file value="hccl_ar_superkernel_bfloat16.o"/>
-        <!-- <file value="libhcom_executor.so" pkg_inner_softlink="comop:lib64/libhcom_executor.so;hcomm:lib64/libhcom_executor.so"/>
-        <file value="libhcom_graph_adaptor.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhcom_graph_adaptor.so;comop:lib64/libhcom_graph_adaptor.so;hcomm:lib64/libhcom_graph_adaptor.so"/> -->
         <!-- network -->
         <file value="libra.so" file_type="shared" install_type="run;devel;docker"/>
         <file value="libra_hdc.so" file_type="shared"/>

@@ -16,9 +16,6 @@
 #include "param_check_pub.h"
 #include "hccl_comm.h"
 #include "hccl_inner.h"
-#ifndef OPEN_BUILD_PROJECT
-#include "op_base_v2.h"
-#endif
 
 using namespace hccl;
 
@@ -148,11 +145,7 @@ HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
     // 入参合法性校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankSize);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    const char *socNamePtr = aclrtGetSocName();
-    CHK_PTR_NULL(socNamePtr);
-    HCCLV2_FUNC_RUN(HcclGetRankSizeV2(comm, rankSize), socNamePtr);
-#endif
+
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     u32 tmpRankSize = INVALID_VALUE_RANKSIZE;
     CHK_RET(hcclComm->GetRankSize(tmpRankSize));
@@ -167,11 +160,6 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
     // 入参合法性校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rank);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    const char *socNamePtr = aclrtGetSocName();
-    CHK_PTR_NULL(socNamePtr);
-    HCCLV2_FUNC_RUN(HcclGetRankIdV2(comm, rank), socNamePtr);
-#endif
 
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     u32 tmpRankId = INVALID_VALUE_RANKID;
