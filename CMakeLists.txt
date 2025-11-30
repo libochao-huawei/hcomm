@@ -73,6 +73,8 @@ set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
 if(ENABLE_TEST)
     include(cmake/config.cmake)
+    include(cmake/function.cmake)
+    include(cmake/intf_pub_llt_gccnative.cmake)
     add_subdirectory(test)
     return()
 endif()
