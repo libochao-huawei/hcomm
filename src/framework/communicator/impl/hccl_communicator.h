@@ -71,7 +71,7 @@ constexpr u32 CACHEMAP_MAXSIZE = 65536;
 constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
 constexpr u32 RDMA_NOTIFY_MAX_NUM = 8192;
-
+constexpr u32 COMM_LAYER_NUM_MAX = 2;
 struct RemoteRes {
     u64 inbufferSize;
     u64 outbufferSize;
@@ -430,6 +430,9 @@ public:
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
+    HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
     HcclTopoAttr GetTopoAttr();
     void ForceProf(bool isForce);
 private:
@@ -1021,7 +1024,7 @@ private:
     void *cclBuf_[AICPU_MAX_RANK_NUM]{};
     std::vector<RankInfo_t> rankGraph_;
     std::map<u32, TransportType> remoteTransportMap_;
-
+    uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};    
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;

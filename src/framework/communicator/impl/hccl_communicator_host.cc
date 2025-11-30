@@ -7945,4 +7945,45 @@ namespace hccl
     {
         return binHandle_;
     }
+        HcclResult HcclCommunicator::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            netLayer_[0] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
+            netLayer_[1] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1);
+            *netLayerNum = COMM_LAYER_NUM_MAX;
+        } else if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_310P3) {
+            netLayer_[0] =static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
+            *netLayerNum = 1;
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        if ((netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) ||
+            (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1))) {
+                *rankNum = userRankSize_;
+            }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType)
+    {
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) {
+                *topoType = HCCL_ALG_SWITCH | HCCL_ALG_RING;
+            } else if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1)) {
+                *topoType = HCCL_ALG_RING;
+            }
+        } else if (deviceType_ == DevType::DEV_TYPE_910B) {
+            if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) {
+                *topoType = HCCL_ALG_MESH;
+            }
+        } else if (deviceType_ == DevType::DEV_TYPE_310P3) {
+            if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) {
+                *topoType = HCCL_ALG_RING;
+            }
+        }
+        return HCCL_SUCCESS;
+    }
 }

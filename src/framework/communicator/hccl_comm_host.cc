@@ -198,4 +198,18 @@ namespace hccl
         std::string commId = GetIdentifier();
         return communicator_->IndOpTransportAlloc(tag, opCommTransport, transMem, isAicpuModeEn);
     }
+    HcclResult hcclComm::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        return communicator_->CommGetNetLayers(netLayers, netLayerNum);
+    }
+    
+    HcclResult hcclComm::CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        return communicator_->CommGetInstSizeByNetLayer(netLayer, rankNum);
+    }
+    
+    HcclResult hcclComm::CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType)
+    {
+        return communicator_->CommGetInstTopoTypeByNetLayer(netLayer, topoType);
+    }
 } // namespace hccl
