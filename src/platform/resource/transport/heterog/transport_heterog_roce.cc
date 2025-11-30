@@ -255,7 +255,7 @@ HcclResult TransportHeterogRoce::Iwrite(const TransData &sendData, const HcclEnv
             CHK_RET(RecordNotify(tmpStream, RdmaNotifyOp::SEND_NOTIFY, dataWriteWr_.wr_id));
         }
     } else {
-        struct sg_list list = {};
+        struct SgList list = {};
         u64 srcBufDevAddr = 0;
         CHK_RET(dataQpMrManager_->GetDevVirAddr(reinterpret_cast<void *>(sendData.srcBuf),
             static_cast<u64>(envelope.transData.count * SIZE_TABLE[envelope.transData.dataType]), srcBufDevAddr));
@@ -264,23 +264,23 @@ HcclResult TransportHeterogRoce::Iwrite(const TransData &sendData, const HcclEnv
         list.len = envelope.transData.count * SIZE_TABLE[envelope.transData.dataType];
         list.lkey = lkey;
 
-        struct send_wr_v2 wr{};
-        wr.wr_id = reinterpret_cast<uint64_t>(request);
-        HCCL_INFO("iwrite wr.wr_id[%llu]", wr.wr_id);
-        wr.buf_list = &list;
-        wr.buf_num = 1;
-        wr.dst_addr = static_cast<uint64_t>(envelope.transData.dstBuf);
+        struct SendWrV2 wr{};
+        wr.wrId = reinterpret_cast<uint64_t>(request);
+        HCCL_INFO("iwrite wr.wrId[%llu]", wr.wrId);
+        wr.bufList = &list;
+        wr.bufNum = 1;
+        wr.dstAddr = static_cast<uint64_t>(envelope.transData.dstBuf);
         wr.rkey = envelope.key;
         wr.op = static_cast<u32>(RdmaOp::OP_WRITE);
-        wr.send_flag = RA_SEND_FENCE;
-        struct send_wr_rsp opRsp = {0};
+        wr.sendFlag = RA_SEND_FENCE;
+        struct SendWrRsp opRsp = {0};
         CHK_RET(HrtRaSendWrV2(dataQpInfo_.qpHandle, &wr, &opRsp, GetWorkflowMode()));
         CHK_RET(DoorBellSend(dataQpInfo_.qpMode, opRsp));
 
         // 写notify
         if (deviceLogicId_ == HOST_DEVICE_ID) {
             Stream tmpStream(nullptr);
-            CHK_RET(RecordNotify(tmpStream, RdmaNotifyOp::SEND_NOTIFY, wr.wr_id));
+            CHK_RET(RecordNotify(tmpStream, RdmaNotifyOp::SEND_NOTIFY, wr.wrId));
         }
 
         s32 writeAndNotifyFlag = HCCL_TEST_INCOMPLETED;
@@ -337,7 +337,7 @@ HcclResult TransportHeterogRoce::Imrecv(const TransData &recvData, HcclMessageIn
             return HCCL_SUCCESS;
         }
 
-        struct sg_list list = {};
+        struct SgList list = {};
         u64 devAddr = 0;
         CHK_RET(dataQpMrManager_->GetDevVirAddr(reinterpret_cast<void *>(recvData.dstBuf),
             static_cast<u64>(recvData.count * SIZE_TABLE[recvData.dataType]), devAddr));
@@ -345,17 +345,17 @@ HcclResult TransportHeterogRoce::Imrecv(const TransData &recvData, HcclMessageIn
         list.len = envelope.transData.count * SIZE_TABLE[envelope.transData.dataType];
         list.lkey = lkey;
 
-        struct send_wr_v2 wr = {};
-        wr.wr_id = reinterpret_cast<uint64_t>(request);
+        struct SendWrV2 wr = {};
+        wr.wrId = reinterpret_cast<uint64_t>(request);
 
-        HCCL_INFO("Imrecv wr.wr_id[%llu]", wr.wr_id);
-        wr.buf_list = &list;
-        wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-        wr.dst_addr = static_cast<uint64_t>(envelope.transData.srcBuf);
+        HCCL_INFO("Imrecv wr.wrId[%llu]", wr.wrId);
+        wr.bufList = &list;
+        wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+        wr.dstAddr = static_cast<uint64_t>(envelope.transData.srcBuf);
         wr.rkey = envelope.key;
         wr.op = static_cast<u32>(RdmaOp::OP_READ);
-        wr.send_flag = RA_SEND_SIGNALED | RA_SEND_FENCE;
-        struct send_wr_rsp opRsp = {};
+        wr.sendFlag = RA_SEND_SIGNALED | RA_SEND_FENCE;
+        struct SendWrRsp opRsp = {};
         CHK_RET(HrtRaSendWrV2(dataQpInfo_.qpHandle, &wr, &opRsp, GetWorkflowMode()));
         CHK_RET(DoorBellSend(dataQpInfo_.qpMode, opRsp));
 
@@ -671,17 +671,17 @@ HcclResult TransportHeterogRoce::SendEnvelope(HcclEnvelope &envelopInfo, void *s
             GetDataTypeEnumStr(envelopInfo.transData.dataType).c_str(), envelopInfo.msn);
         CHK_RET(hrtIbvPostSend(tagQpInfo_.qp, &envelopeWr_, &badWr));
     } else {
-        struct sg_list list = {};
+        struct SgList list = {};
         list.addr = reinterpret_cast<uint64_t>(&envelopInfo);
         list.len = sizeof(envelopInfo);
         list.lkey = 0;
 
-        struct send_wr wr = {};
-        wr.buf_list = &list;
-        wr.buf_num = 1;
+        struct SendWr wr = {};
+        wr.bufList = &list;
+        wr.bufNum = 1;
         wr.op = static_cast<u32>(RdmaOp::OP_SEND);
-        wr.send_flag = RA_SEND_SIGNALED;
-        struct send_wr_rsp opRsp = {};
+        wr.sendFlag = RA_SEND_SIGNALED;
+        struct SendWrRsp opRsp = {};
         CHK_RET(HrtRaSendWr(tagQpInfo_.qpHandle, &wr, &opRsp));
         CHK_RET(DoorBellSend(tagQpInfo_.qpMode, opRsp, stream));
     }
@@ -762,8 +762,8 @@ HcclResult TransportHeterogRoce::IssueRecvWqe(struct ibv_qp *qp, u32 num)
     struct ibv_recv_wr rqWr[num];
     struct ibv_sge sgeList[num];
 
-    std::vector<struct recv_wrlist_data> recvWrVec(num);
-    struct recv_wrlist_data *recvWr = recvWrVec.data();
+    std::vector<struct RecvWrlistData> recvWrVec(num);
+    struct RecvWrlistData *recvWr = recvWrVec.data();
 
     if (!isHdcMode_ || tagQpInfo_.qpMode == NORMAL_QP_MODE) {
         for (int i = num - 1; i >= 0; i--) {
@@ -793,16 +793,16 @@ HcclResult TransportHeterogRoce::IssueRecvWqe(struct ibv_qp *qp, u32 num)
                 u64 uDevPtr = reinterpret_cast<uint64_t>(*iter) - hostAddrBegin_ +
                     reinterpret_cast<uint64_t>(deviceEvePtr_);
                 CHK_RET(GenerateRecvWrId(reinterpret_cast<void *>(uDevPtr), wrId));
-                recvWr[i].mem_list.addr = uDevPtr;
-                recvWr[i].mem_list.lkey = deviceEveLkey_;
+                recvWr[i].memList.addr = uDevPtr;
+                recvWr[i].memList.lkey = deviceEveLkey_;
             } else {
                 CHK_RET(GenerateRecvWrId(*iter, wrId));
-                recvWr[i].mem_list.addr = HostAddrToDev(reinterpret_cast<uint64_t>(*iter),
+                recvWr[i].memList.addr = HostAddrToDev(reinterpret_cast<uint64_t>(*iter),
                     hostAddrBegin_, devAddrBegin_);
-                recvWr[i].mem_list.lkey = blockMemLkey_;
+                recvWr[i].memList.lkey = blockMemLkey_;
             }
-            recvWr[i].wr_id = wrId;
-            recvWr[i].mem_list.len = MEM_BLOCK_SIZE;
+            recvWr[i].wrId = wrId;
+            recvWr[i].memList.len = MEM_BLOCK_SIZE;
             iter++;
         }
     }
@@ -983,8 +983,8 @@ HcclResult TransportHeterogRoce::DestroyCqAndQp()
 
 HcclResult TransportHeterogRoce::QpConnect(bool &completed)
 {
-    CHK_RET(HrtRaQpNonBlockConnectAsync(tagQpInfo_.qpHandle, initSM_.locInitInfo.socketInfo[0].fd_handle));
-    CHK_RET(HrtRaQpNonBlockConnectAsync(dataQpInfo_.qpHandle, initSM_.locInitInfo.socketInfo[1].fd_handle));
+    CHK_RET(HrtRaQpNonBlockConnectAsync(tagQpInfo_.qpHandle, initSM_.locInitInfo.socketInfo[0].fdHandle));
+    CHK_RET(HrtRaQpNonBlockConnectAsync(dataQpInfo_.qpHandle, initSM_.locInitInfo.socketInfo[1].fdHandle));
 
     completed = true;
     return HCCL_SUCCESS;
@@ -1022,7 +1022,7 @@ HcclResult TransportHeterogRoce::DeregMr(void *mem, u64 size, bool isTagQpHandle
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogRoce::RoceConnectSocket(socket_connect_info_t conn[], u32 num, bool &completed)
+HcclResult TransportHeterogRoce::RoceConnectSocket(SocketConnectInfoT conn[], u32 num, bool &completed)
 {
     if (initSM_.locInitInfo.role == CLIENT_ROLE_SOCKET) {
         return ConnectSocket(conn, num, completed);
@@ -1105,24 +1105,24 @@ HcclResult TransportHeterogRoce::LoopStateProcess()
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_SEND_CF));
             break;
         case ConnState::CONN_STATE_SEND_CF:
-            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fd_handle, initSM_.locInitInfo.checkFrame,
+            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.locInitInfo.checkFrame,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_RECV_CF));
             break;
         case ConnState::CONN_STATE_RECV_CF:
-            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fd_handle, initSM_.remInitInfo.checkFrame,
+            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fdHandle, initSM_.remInitInfo.checkFrame,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_CHECK_CF));
             break;
         case ConnState::CONN_STATE_CONNECT_ALL_SOCKET:
             testRet =
-                RoceConnectSocket(reinterpret_cast<socket_connect_info_t*>(initSM_.locInitInfo.socketConnInfo.data())
+                RoceConnectSocket(reinterpret_cast<SocketConnectInfoT*>(initSM_.locInitInfo.socketConnInfo.data())
                 + 1, initSM_.socketNum, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_GET_ALL_SOCKET));
             break;
         case ConnState::CONN_STATE_GET_ALL_SOCKET:
             testRet = GetSocket(initSM_.locInitInfo.role,
-            reinterpret_cast<struct socket_info_t*>(initSM_.locInitInfo.socketInfo.data()) + 1,
+            reinterpret_cast<struct SocketInfoT*>(initSM_.locInitInfo.socketInfo.data()) + 1,
             initSM_.socketNum, initSM_.completeNum, completed);
             testRet = ((testRet == HCCL_SUCCESS) && completed) ? CreatSignalMesg() : testRet;
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_CONNECT_QP));
@@ -1136,14 +1136,14 @@ HcclResult TransportHeterogRoce::LoopStateProcess()
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_SEND_STATUS));
             break;
         case ConnState::CONN_STATE_SEND_STATUS:
-            testRet = SocketSend(initSM_.locInitInfo.socketInfo[SOCKET_FOR_SENDRECV_QP].fd_handle,
+            testRet = SocketSend(initSM_.locInitInfo.socketInfo[SOCKET_FOR_SENDRECV_QP].fdHandle,
                 &(initSM_.locInitInfo.signal), initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_RECV_STATUS));
             break;
         case ConnState::CONN_STATE_RECV_STATUS:
-            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[SOCKET_FOR_SENDRECV_QP].fd_handle,
+            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[SOCKET_FOR_SENDRECV_QP].fdHandle,
                 &(initSM_.remInitInfo.signal), initSM_.size, initSM_.completeSize, completed);
-            fdHandle_ = initSM_.locInitInfo.socketInfo[SOCKET_FOR_SENDRECV_QP].fd_handle;
+            fdHandle_ = initSM_.locInitInfo.socketInfo[SOCKET_FOR_SENDRECV_QP].fdHandle;
             testRet = ((testRet == HCCL_SUCCESS) && completed && !isRawConn_) ? ExchangeSignalMesg() : testRet;
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_FLUSH_QUEUE));
             break;
@@ -1167,8 +1167,8 @@ HcclResult TransportHeterogRoce::LoopStateProcess()
 HcclResult TransportHeterogRoce::GetSocketInfos(std::vector<std::vector<HcclSocketInfo>> &socketInfos)
 {
     std::vector<HcclSocketInfo> hcclSocketInfo;
-    for (socket_info_t raSocketInfo : initSM_.locInitInfo.socketInfo) {
-        hcclSocketInfo.push_back({raSocketInfo.socket_handle, raSocketInfo.fd_handle});
+    for (SocketInfoT raSocketInfo : initSM_.locInitInfo.socketInfo) {
+        hcclSocketInfo.push_back({raSocketInfo.socketHandle, raSocketInfo.fdHandle});
     }
     socketInfos.push_back(hcclSocketInfo);
     return HCCL_SUCCESS;
@@ -1267,7 +1267,7 @@ HcclResult TransportHeterogRoce::CreateRdmaSignal(std::shared_ptr<LocalIpcNotify
     rdmaSignalInfo.len = notifySize_;
     rdmaSignalInfo.type = notifyType;
 
-    struct mr_info mrInfo = {};
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = rdmaSignalInfo.notifyAddr;
     mrInfo.size = rdmaSignalInfo.len;
     mrInfo.access = access_;
@@ -1355,7 +1355,7 @@ HcclResult TransportHeterogRoce::CreateNotifyValueBuffer()
             HCCL_E_MEMORY);
     }
 
-    struct mr_info mrInfo = {};
+    struct MrInfoT mrInfo = {};
     mrInfo.addr = notifyMem_.ptr();
     mrInfo.size = notifyValueSize_;
     mrInfo.access = access_;
@@ -1502,20 +1502,20 @@ HcclResult TransportHeterogRoce::RecordNotify(Stream &stream, RdmaNotifyOp type,
             notifyWriteWr_.wr_id);
         CHK_RET(hrtIbvPostSend(dataQpInfo_.qp, &notifyWriteWr_, &badWr));
     } else {
-        struct sg_list list = {};
+        struct SgList list = {};
         list.addr = static_cast<u64>(reinterpret_cast<uintptr_t>(notifyMem_.ptr()));
         list.len = notifyMemMsg_[static_cast<u32>(opType)].len;
         list.lkey = notifyMemMsg_[static_cast<u32>(MemType::NOTIFY_VALUE_MEM)].lkey;
 
-        struct send_wr_v2 wr{};
-        wr.wr_id = wrId;
-        wr.buf_list = &list;
-        wr.buf_num = 1; /* 此处list只有一个，设置为1 */
-        wr.dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(notifyMemMsg_[static_cast<u32>(opType)].addr));
+        struct SendWrV2 wr{};
+        wr.wrId = wrId;
+        wr.bufList = &list;
+        wr.bufNum = 1; /* 此处list只有一个，设置为1 */
+        wr.dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(notifyMemMsg_[static_cast<u32>(opType)].addr));
         wr.rkey = notifyMemMsg_[static_cast<u32>(opType)].rkey;
         wr.op = static_cast<u32>(RdmaOp::OP_WRITE); /* RDMA_WRITE: 0 */
-        wr.send_flag = RA_SEND_SIGNALED | RA_SEND_FENCE;
-        struct send_wr_rsp opRsp = {};
+        wr.sendFlag = RA_SEND_SIGNALED | RA_SEND_FENCE;
+        struct SendWrRsp opRsp = {};
         CHK_RET(HrtRaSendWrV2(dataQpInfo_.qpHandle, &wr, &opRsp, GetWorkflowMode()));
         CHK_RET(DoorBellSend(dataQpInfo_.qpMode, opRsp));
     }
@@ -1523,17 +1523,17 @@ HcclResult TransportHeterogRoce::RecordNotify(Stream &stream, RdmaNotifyOp type,
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogRoce::DoorBellSend(const s32 qpMode, const send_wr_rsp &opRsp, void *stream)
+HcclResult TransportHeterogRoce::DoorBellSend(const s32 qpMode, const SendWrRsp &opRsp, void *stream)
 {
     if (qpMode == OPBASE_QP_MODE || qpMode == OPBASE_QP_MODE_EXT || qpMode == OFFLINE_QP_MODE_EXT) {
         HCCL_DEBUG("entry PsRdmaDbSend");
-        u32 dbIndex = static_cast<u32>(opRsp.db.db_index);
-        u64 dbInfo = static_cast<u64>(opRsp.db.db_info);
+        u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
+        u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
         CHK_RET(PsRdmaDbSend(dbIndex, dbInfo, stream));
     } else {
         HCCL_DEBUG("entry hrtRDMASend");
-        u32 qpn = opRsp.wqe_tmp.sq_index;
-        u32 wqe_index = opRsp.wqe_tmp.wqe_index;
+        u32 qpn = opRsp.wqeTmp.sqIndex;
+        u32 wqe_index = opRsp.wqeTmp.wqeIndex;
         CHK_RET(hrtRDMASend(qpn, wqe_index, stream));
     }
 
@@ -1619,7 +1619,7 @@ HcclResult TransportHeterogRoce::PreHdcResource()
                 return HCCL_E_MEMORY;
             }
 
-            struct mr_info mrInfo = {nullptr};
+            struct MrInfoT mrInfo = {nullptr};
             mrInfo.addr = deviceEvePtr_;
             mrInfo.size = memSize;
             mrInfo.access = RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_WRITE | RA_ACCESS_REMOTE_READ;

@@ -55,17 +55,17 @@ private:
     HcclResult CalcRemoteLink();
     HcclResult PrepareSocket();
     HcclResult AddSocketWhiteList();
-    HcclResult GetRaSocket(const u32 role, const struct socket_info_t conn[], const u32 num);
+    HcclResult GetRaSocket(const u32 role, const struct SocketInfoT conn[], const u32 num);
     HcclResult CreateLinks();
     HcclResult CalcLinksRelation();
     HcclResult CalcLinksNum();
     HcclResult CreateInterClientLinks();
     HcclResult CreateInterServerLinks();
-    HcclResult DealSuccRasocket(s32 sockRet, const u32 role, const struct socket_info_t tmpConn[], const u32 num);
+    HcclResult DealSuccRasocket(s32 sockRet, const u32 role, const struct SocketInfoT tmpConn[], const u32 num);
     void PrintErrorConnection(const u32 role, const u32 num);
     HcclResult PrintErrorConnectionInfo(const std::map<HcclIpAddress, LinkStatus_t> &linkStatusMap, u32 role);
     HcclResult GetDstRank(std::map<u32, std::vector<HcclIpAddress>>& dstMap, const HcclIpAddress &dstIp, u32 &dstRank);
-    HcclResult CreateInterThread(const u32 role, const socket_info_t &socketInfo);
+    HcclResult CreateInterThread(const u32 role, const SocketInfoT &socketInfo);
     HcclResult InitDestTransport(const ErrContext &error_context, u32 role, const HcclIpAddress &nicIp,
         const u32 dstRank, const std::string &threadStr, FdHandle socketFdHandle, u32 *getThreadStatus);
     HcclResult GetNicByHandle(const SocketHandle socketHandle, HcclIpAddress &nicIp);
@@ -84,18 +84,18 @@ private:
 
     std::map<u32, std::vector<HcclIpAddress>> rankInfo_;  // rank 与 ip 地址的 map
     std::vector<MemRegisterAddr> addrInfos_;
-    std::vector<struct socket_wlist_info_t> wlistInfosVec_;
+    std::vector<struct SocketWlistInfoT> wlistInfosVec_;
     std::map<u32, std::vector<HcclIpAddress>> dstInterServerMap_;
     std::map<u32, std::vector<HcclIpAddress>> dstInterClientMap_;
-    std::map<u32, struct socket_info_t> serverConnsMap_;
-    std::map<u32, struct socket_info_t> clientConnsMap_;
+    std::map<u32, struct SocketInfoT> serverConnsMap_;
+    std::map<u32, struct SocketInfoT> clientConnsMap_;
     RaResourceInfo raResourceInfo_;
     std::vector<SocketHandle> nicSocketHandle_;
     std::string tag_;
     std::map<HcclIpAddress, LinkStatus_t> clientLinkStatus_;
     std::map<HcclIpAddress, LinkStatus_t> serverLinkStatus_;
 
-    std::vector<socket_info_t> raSockets_; // 保存建链成功的socket, 用于创建transport实例
+    std::vector<SocketInfoT> raSockets_; // 保存建链成功的socket, 用于创建transport实例
     std::vector<std::unique_ptr<std::thread>> linkThreads_;  // 建链所需线程
     u32 threadsApplyNum_;                                   // 线程使用计数器
     HcclDispatcher dispatcher_;

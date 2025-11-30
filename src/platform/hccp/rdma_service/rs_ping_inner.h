@@ -22,55 +22,55 @@
 #define RS_PING_PERIOD_TIME_USEC 10000
 #define RS_PING_PAYLOAD_HEADER_RESV_GRH 40U
 #define RS_PING_PAYLOAD_HEADER_MASK_SIZE 104U
-#define RS_PING_PAYLOAD_HEADER_RESV_CUSTOM sizeof(struct rs_ping_payload_header)
+#define RS_PING_PAYLOAD_HEADER_RESV_CUSTOM sizeof(struct RsPingPayloadHeader)
 
-enum rs_ping_thread_status {
+enum RsPingThreadStatus {
     RS_PING_THREAD_RESET = 0,
     RS_PING_THREAD_RUNNING = 1,
     RS_PING_THREAD_FINISH = 2
 };
 
-enum rs_ping_task_status {
+enum RsPingTaskStatus {
     RS_PING_TASK_RESET = 0,
     RS_PING_TASK_RUNNING = 1
 };
 
-struct rs_ping_mr_cb {
-    uint32_t payload_offset;
+struct RsPingMrCb {
+    uint32_t payloadOffset;
     uint64_t len;
 
     pthread_mutex_t mutex;
     uint64_t addr;
 
-    struct ibv_mr *ib_mr;
-    uint32_t sge_num;
-    struct ibv_sge *sge_list;
-    uint32_t sge_idx;
+    struct ibv_mr *ibMr;
+    uint32_t sgeNum;
+    struct ibv_sge *sgeList;
+    uint32_t sgeIdx;
 };
 
-struct rs_ping_cq_info {
+struct RsPingCqInfo {
     int depth;
-    int comp_vector;
-    struct ibv_cq *ib_cq;
-    uint32_t num_events;
-    int max_recv_wc_num;
+    int compVector;
+    struct ibv_cq *ibCq;
+    uint32_t numEvents;
+    int maxRecvWcNum;
 };
 
-struct rs_ping_local_qp_cb {
+struct RsPingLocalQpCb {
     struct ibv_comp_channel *channel;
-    struct rs_ping_cq_info send_cq;
-    struct rs_ping_cq_info recv_cq;
+    struct RsPingCqInfo sendCq;
+    struct RsPingCqInfo recvCq;
 
     uint32_t qkey;
-    struct ibv_qp_cap qp_cap;
-    uint32_t udp_sport;
-    struct ibv_qp *ib_qp;
+    struct ibv_qp_cap qpCap;
+    uint32_t udpSport;
+    struct ibv_qp *ibQp;
 
-    struct rs_ping_mr_cb send_mr_cb;
-    struct rs_ping_mr_cb recv_mr_cb;
+    struct RsPingMrCb sendMrCb;
+    struct RsPingMrCb recvMrCb;
 };
 
-enum rs_ping_pong_target_state {
+enum RsPingPongTargetState {
     RS_PING_PONG_TARGET_RESET = 0,
     RS_PING_PONG_TARGET_READY = 1,
     RS_PING_PONG_TARGET_FINISH = 2,
@@ -78,144 +78,144 @@ enum rs_ping_pong_target_state {
     RS_PING_PONG_TARGET_MAX
 };
 
-enum rs_ping_type {
+enum RsPingType {
     RS_PING_TYPE_ROCE_DETECT = 1,
     RS_PING_TYPE_ROCE_RESPONSE = 2,
     RS_PING_TYPE_URMA_DETECT = 3,
     RS_PING_TYPE_URMA_RESPONSE = 4
 };
 
-struct rs_ping_timestamp {
-    uint64_t tv_sec1;
-    uint64_t tv_usec1;
-    uint64_t tv_sec2;
-    uint64_t tv_usec2;
-    uint64_t tv_sec3;
-    uint64_t tv_usec3;
-    uint64_t tv_sec4;
-    uint64_t tv_usec4;
+struct RsPingTimestamp {
+    uint64_t tvSec1;
+    uint64_t tvUsec1;
+    uint64_t tvSec2;
+    uint64_t tvUsec2;
+    uint64_t tvSec3;
+    uint64_t tvUsec3;
+    uint64_t tvSec4;
+    uint64_t tvUsec4;
 };
 
-struct rs_ping_payload_header {
+struct RsPingPayloadHeader {
     int version;
-    enum rs_ping_type type;
-    struct ping_qp_info server;
-    struct ping_qp_info target;
-    struct rs_ping_timestamp timestamp;
-    uint32_t task_id;
+    enum RsPingType type;
+    struct PingQpInfo server;
+    struct PingQpInfo target;
+    struct RsPingTimestamp timestamp;
+    uint32_t taskId;
     uint8_t reserved[42U];
     uint16_t magic;
 };
 
-struct rs_pong_target_info {
-    struct ping_qp_info qp_info;
+struct RsPongTargetInfo {
+    struct PingQpInfo qpInfo;
     union {
         struct ibv_ah *ah;
     };
 
-    enum rs_ping_pong_target_state state;
+    enum RsPingPongTargetState state;
 
-    struct rs_list_head list;
+    struct RsListHead list;
     uint64_t uuid;
 };
 
-struct rs_ping_target_info {
-    char *payload_buffer;
-    uint32_t payload_size;
+struct RsPingTargetInfo {
+    char *payloadBuffer;
+    uint32_t payloadSize;
 
-    struct ping_qp_info qp_info;
+    struct PingQpInfo qpInfo;
     union {
         struct ibv_ah *ah;
     };
 
-    enum rs_ping_pong_target_state state;
+    enum RsPingPongTargetState state;
 
-    pthread_mutex_t trip_mutex;
-    struct ping_result_summary result_summary;
+    pthread_mutex_t tripMutex;
+    struct PingResultSummary resultSummary;
 
-    struct rs_list_head list;
+    struct RsListHead list;
     uint64_t uuid;
 };
 
-struct rs_ping_rdev_cb {
-    struct rs_ip_addr_info ip;
-    const char *dev_name;
-    unsigned char ib_port;
+struct RsPingRdevCb {
+    struct RsIpAddrInfo ip;
+    const char *devName;
+    unsigned char ibPort;
     union ibv_gid gid;
 
-    int dev_num;
-    struct ibv_device **dev_list;
-    int gid_idx;
-    struct ibv_context *ib_ctx;
-    struct ibv_pd *ib_pd;
+    int devNum;
+    struct ibv_device **devList;
+    int gidIdx;
+    struct ibv_context *ibCtx;
+    struct ibv_pd *ibPd;
 };
 
-struct rs_ping_ctx_cb {
-    enum protocol_type protocol;
-    struct rs_ping_pong_ops *ping_pong_ops;
-    struct rs_ping_pong_dfx *ping_pong_dfx;
+struct RsPingCtxCb {
+    enum ProtocolTypeT protocol;
+    struct RsPingPongOps *pingPongOps;
+    struct RsPingPongDfx *pingPongDfx;
     pthread_t tid;
-    int thread_status;
+    int threadStatus;
 
-    pthread_mutex_t ping_mutex;
-    struct rs_list_head ping_list;
-    unsigned int ping_num;
+    pthread_mutex_t pingMutex;
+    struct RsListHead pingList;
+    unsigned int pingNum;
 
-    pthread_mutex_t pong_mutex;
-    struct rs_list_head pong_list;
-    unsigned int pong_num;
+    pthread_mutex_t pongMutex;
+    struct RsListHead pongList;
+    unsigned int pongNum;
 
-    struct ping_local_comm_info comm_info;
-    unsigned int logic_devid;
-    unsigned int init_cnt;
+    struct PingLocalCommInfo commInfo;
+    unsigned int logicDevid;
+    unsigned int initCnt;
 
-    unsigned int dev_index;
-    pthread_mutex_t dev_mutex;
+    unsigned int devIndex;
+    pthread_mutex_t devMutex;
     union {
-        struct rs_ping_rdev_cb rdev_cb;
+        struct RsPingRdevCb rdevCb;
     };
 
     union {
-        struct rs_ping_local_qp_cb ping_qp;
+        struct RsPingLocalQpCb pingQp;
     };
 
     union {
-        struct rs_ping_local_qp_cb pong_qp;
+        struct RsPingLocalQpCb pongQp;
     };
 
-    int task_status;
-    struct ping_task_attr task_attr;
-    unsigned int task_id;
+    int taskStatus;
+    struct PingTaskAttr taskAttr;
+    unsigned int taskId;
 };
 
-struct rs_ping_pong_ops {
-    bool (*check_ping_fd)(struct rs_ping_ctx_cb *pingCb, int fd);
-    bool (*check_pong_fd)(struct rs_ping_ctx_cb *pingCb, int fd);
-    int (*init_ping_cb)(unsigned int phyId, struct ping_init_attr *attr, struct ping_init_info *info,
-        unsigned int *devIndex, struct rs_ping_ctx_cb *pingCb);
-    int (*ping_find_target_node)(struct rs_ping_ctx_cb *pingCb, struct ping_qp_info *target,
-        struct rs_ping_target_info **node);
-    int (*ping_alloc_target_node)(struct rs_ping_ctx_cb *pingCb, struct ping_target_info *target,
-        struct rs_ping_target_info **node);
-    void (*reset_recv_buffer)(struct rs_ping_ctx_cb *pingCb);
-    int (*ping_post_send)(struct rs_ping_ctx_cb *pingCb, struct rs_ping_target_info *target);
-    int (*ping_poll_scq)(struct rs_ping_ctx_cb *pingCb, struct rs_ping_target_info *target);
-    int (*ping_poll_rcq)(struct rs_ping_ctx_cb *pingCb, int *polledCnt, struct timeval *timestamp2);
-    void (*pong_handle_send)(struct rs_ping_ctx_cb *pingCb, int polledCnt, struct timeval *timestamp2);
-    void (*pong_poll_rcq)(struct rs_ping_ctx_cb *pingCb);
-    int (*get_target_result)(struct rs_ping_ctx_cb *pingCb, struct ping_target_comm_info *target,
-        struct ping_result_info *result);
-    void (*ping_free_target_node)(struct rs_ping_ctx_cb *pingCb, struct rs_ping_target_info *targetInfo);
-    void (*deinit_ping_cb)(unsigned int phyId, struct rs_ping_ctx_cb *pingCb);
+struct RsPingPongOps {
+    bool (*checkPingFd)(struct RsPingCtxCb *pingCb, int fd);
+    bool (*checkPongFd)(struct RsPingCtxCb *pingCb, int fd);
+    int (*initPingCb)(unsigned int phyId, struct PingInitAttr *attr, struct PingInitInfo *info,
+        unsigned int *devIndex, struct RsPingCtxCb *pingCb);
+    int (*pingFindTargetNode)(struct RsPingCtxCb *pingCb, struct PingQpInfo *target,
+        struct RsPingTargetInfo **node);
+    int (*pingAllocTargetNode)(struct RsPingCtxCb *pingCb, struct PingTargetInfo *target,
+        struct RsPingTargetInfo **node);
+    void (*resetRecvBuffer)(struct RsPingCtxCb *pingCb);
+    int (*pingPostSend)(struct RsPingCtxCb *pingCb, struct RsPingTargetInfo *target);
+    int (*pingPollScq)(struct RsPingCtxCb *pingCb, struct RsPingTargetInfo *target);
+    int (*pingPollRcq)(struct RsPingCtxCb *pingCb, int *polledCnt, struct timeval *timestamp2);
+    void (*pongHandleSend)(struct RsPingCtxCb *pingCb, int polledCnt, struct timeval *timestamp2);
+    void (*pongPollRcq)(struct RsPingCtxCb *pingCb);
+    int (*getTargetResult)(struct RsPingCtxCb *pingCb, struct PingTargetCommInfo *target,
+        struct PingResultInfo *result);
+    void (*pingFreeTargetNode)(struct RsPingCtxCb *pingCb, struct RsPingTargetInfo *targetInfo);
+    void (*deinitPingCb)(unsigned int phyId, struct RsPingCtxCb *pingCb);
 };
 
-struct rs_ping_pong_dfx {
-    void (*add_target_success)(struct ping_target_info *target, struct rs_ping_target_info *targetInfo);
-    void (*init_ping_cb_success)(unsigned int phyId, struct ping_init_attr *attr, unsigned int devIndex);
-    void (*ping_cannot_find_target_node)(unsigned int i, int ret, struct ping_target_comm_info target,
+struct RsPingPongDfx {
+    void (*addTargetSuccess)(struct PingTargetInfo *target, struct RsPingTargetInfo *targetInfo);
+    void (*initPingCbSuccess)(unsigned int phyId, struct PingInitAttr *attr, unsigned int devIndex);
+    void (*pingCannotFindTargetNode)(unsigned int i, int ret, struct PingTargetCommInfo target,
         unsigned int phyId);
 };
 
-uint32_t RsPingGetTripTime(struct rs_ping_timestamp *timestamp);
+uint32_t RsPingGetTripTime(struct RsPingTimestamp *timestamp);
 
 #endif // RS_PING_INNER_H

@@ -216,65 +216,65 @@ inline void TsdProcessOpenInit(rtNetServiceOpenArgs &openArgs, rtProcExtParam *e
 }
 
 inline void RpingInitAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize, u32 sl, u32 tc,
-                              ping_init_attr &initAttr)
+                              PingInitAttr &initAttr)
 {
     u32 maxWrDepth = nodeNum * WR_DEPTH_MULTIPLE;
     maxWrDepth = (maxWrDepth > DEFAULT_OPBASE_MAX_SEND_WR) ? DEFAULT_OPBASE_MAX_SEND_WR : maxWrDepth;
 
     initAttr.version = 0; // 暂时无用，默认给0
     initAttr.mode = NETWORK_OFFLINE; // net work mode 枚举值
-    initAttr.dev.rdma.phy_id = deviceId;
+    initAttr.dev.rdma.phyId = deviceId;
     initAttr.dev.rdma.family = ipAddr.GetFamily(); // AF_INET(ipv4) or AF_INET6(ipv6)
-    initAttr.dev.rdma.local_ip.addr = ipAddr.GetBinaryAddress().addr;
-    initAttr.dev.rdma.local_ip.addr6 = ipAddr.GetBinaryAddress().addr6;
-    initAttr.buffer_size = bufferSize == 0 ? (maxWrDepth * BYTE_PER_TARGET_DEFAULT) : bufferSize; // 发送接收缓存区大小
+    initAttr.dev.rdma.localIp.addr = ipAddr.GetBinaryAddress().addr;
+    initAttr.dev.rdma.localIp.addr6 = ipAddr.GetBinaryAddress().addr6;
+    initAttr.bufferSize = bufferSize == 0 ? (maxWrDepth * BYTE_PER_TARGET_DEFAULT) : bufferSize; // 发送接收缓存区大小
     initAttr.protocol = PROTOCOL_RDMA; // pingmesh支持兼容UB驱动，新增protocol字段
 
     // client的初始化信息
-    initAttr.client.rdma.cq_attr.send_cq_depth = maxWrDepth;
-    initAttr.client.rdma.cq_attr.recv_cq_depth = maxWrDepth;
-    initAttr.client.rdma.cq_attr.send_cq_comp_vector = 0; // 一组cqe组成的集合，这里给0
-    initAttr.client.rdma.cq_attr.recv_cq_comp_vector = 1; // 一组cqe组成的集合，这里给1
-    initAttr.client.rdma.qp_attr.cap.max_send_wr = maxWrDepth;
-    initAttr.client.rdma.qp_attr.cap.max_recv_wr = maxWrDepth;
-    initAttr.client.rdma.qp_attr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
-    initAttr.client.rdma.qp_attr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
-    initAttr.client.rdma.qp_attr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
-    initAttr.client.rdma.qp_attr.udp_sport = 0;
+    initAttr.client.rdma.cqAttr.sendCqDepth = maxWrDepth;
+    initAttr.client.rdma.cqAttr.recvCqDepth = maxWrDepth;
+    initAttr.client.rdma.cqAttr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
+    initAttr.client.rdma.cqAttr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
+    initAttr.client.rdma.qpAttr.cap.maxSendWr = maxWrDepth;
+    initAttr.client.rdma.qpAttr.cap.maxRecvWr = maxWrDepth;
+    initAttr.client.rdma.qpAttr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
+    initAttr.client.rdma.qpAttr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
+    initAttr.client.rdma.qpAttr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    initAttr.client.rdma.qpAttr.udpSport = 0;
 
     // server的初始化信息
-    initAttr.server.rdma.cq_attr.send_cq_depth = maxWrDepth;
-    initAttr.server.rdma.cq_attr.recv_cq_depth = maxWrDepth;
-    initAttr.server.rdma.cq_attr.send_cq_comp_vector = 0; // 一组cqe组成的集合，这里给0
-    initAttr.server.rdma.cq_attr.recv_cq_comp_vector = 1; // 一组cqe组成的集合，这里给1
-    initAttr.server.rdma.qp_attr.cap.max_send_wr = maxWrDepth;
-    initAttr.server.rdma.qp_attr.cap.max_recv_wr = maxWrDepth;
-    initAttr.server.rdma.qp_attr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
-    initAttr.server.rdma.qp_attr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
-    initAttr.server.rdma.qp_attr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
-    initAttr.server.rdma.qp_attr.udp_sport = 0;
+    initAttr.server.rdma.cqAttr.sendCqDepth = maxWrDepth;
+    initAttr.server.rdma.cqAttr.recvCqDepth = maxWrDepth;
+    initAttr.server.rdma.cqAttr.sendCqCompVector = 0; // 一组cqe组成的集合，这里给0
+    initAttr.server.rdma.cqAttr.recvCqCompVector = 1; // 一组cqe组成的集合，这里给1
+    initAttr.server.rdma.qpAttr.cap.maxSendWr = maxWrDepth;
+    initAttr.server.rdma.qpAttr.cap.maxRecvWr = maxWrDepth;
+    initAttr.server.rdma.qpAttr.cap.maxSendSge = DEFAULT_MAX_SEND_SGE;
+    initAttr.server.rdma.qpAttr.cap.maxRecvSge = DEFAULT_MAX_RECV_SGE;
+    initAttr.server.rdma.qpAttr.cap.maxInlineData = DEFAULT_MAX_INLINE_DATA;
+    initAttr.server.rdma.qpAttr.udpSport = 0;
 
     // ip协议信息
-    initAttr.comm_info.version = 0;
-    initAttr.comm_info.rdma.flow_label = 0;
-    initAttr.comm_info.rdma.hop_limit = HOP_MAX_TIMES;
-    initAttr.comm_info.rdma.qos_attr.sl = sl;
-    initAttr.comm_info.rdma.qos_attr.tc = tc;
+    initAttr.commInfo.version = 0;
+    initAttr.commInfo.rdma.flowLabel = 0;
+    initAttr.commInfo.rdma.hopLimit = HOP_MAX_TIMES;
+    initAttr.commInfo.rdma.qosAttr.sl = sl;
+    initAttr.commInfo.rdma.qosAttr.tc = tc;
 }
 
-inline HcclResult RpingTargetAttrInit(ping_target_info &target, RpingInput input, ping_qp_info *rdmainfo, bool isAddTarget)
+inline HcclResult RpingTargetAttrInit(PingTargetInfo &target, RpingInput input, PingQpInfo *rdmainfo, bool isAddTarget)
 {
-    target.remote_info.qp_info.version = rdmainfo->version;
-    target.remote_info.qp_info.rdma.gid = rdmainfo->rdma.gid;
-    target.remote_info.qp_info.rdma.qpn = rdmainfo->rdma.qpn;
-    target.remote_info.qp_info.rdma.qkey = rdmainfo->rdma.qkey;
-    target.remote_info.ip.addr = input.dip.GetBinaryAddress().addr;
-    target.remote_info.ip.addr6 = input.dip.GetBinaryAddress().addr6;
-    target.local_info.rdma.qos_attr.tc = input.tc;
-    target.local_info.rdma.qos_attr.sl = input.sl;
-    target.local_info.rdma.flow_label = 0;
-    target.local_info.rdma.hop_limit = HOP_MAX_TIMES;
-    target.local_info.rdma.udp_sport = input.srcPort;
+    target.remoteInfo.qpInfo.version = rdmainfo->version;
+    target.remoteInfo.qpInfo.rdma.gid = rdmainfo->rdma.gid;
+    target.remoteInfo.qpInfo.rdma.qpn = rdmainfo->rdma.qpn;
+    target.remoteInfo.qpInfo.rdma.qkey = rdmainfo->rdma.qkey;
+    target.remoteInfo.ip.addr = input.dip.GetBinaryAddress().addr;
+    target.remoteInfo.ip.addr6 = input.dip.GetBinaryAddress().addr6;
+    target.localInfo.rdma.qosAttr.tc = input.tc;
+    target.localInfo.rdma.qosAttr.sl = input.sl;
+    target.localInfo.rdma.flowLabel = 0;
+    target.localInfo.rdma.hopLimit = HOP_MAX_TIMES;
+    target.localInfo.rdma.udpSport = input.srcPort;
     if (!isAddTarget) { // 并非添加target的时候调用，不需要拷贝payload信息
         return HCCL_SUCCESS;
     }
@@ -295,7 +295,7 @@ inline HcclResult RpingTargetAttrInit(ping_target_info &target, RpingInput input
     return HCCL_SUCCESS;
 }
 
-inline void RpingResultInfoInit(ping_target_result *resultInfo, std::map<std::string, ping_qp_info> rdmaInfoMaps,
+inline void RpingResultInfoInit(PingTargetResult *resultInfo, std::map<std::string, PingQpInfo> rdmaInfoMaps,
     RpingInput *input, u32 targetNum)
 {
     for (u32 i = 0; i < targetNum; i++) {
@@ -303,27 +303,27 @@ inline void RpingResultInfoInit(ping_target_result *resultInfo, std::map<std::st
             HCCL_WARNING("[HCCN][RpingResultInfoInit]Target[%s] info doesn't exist.", input[i].dip.GetReadableIP());
             continue;
         }
-        ping_qp_info *rdmainfo = &rdmaInfoMaps[std::string(input[i].dip.GetReadableIP())];
-        resultInfo[i].remote_info.ip.addr = input[i].dip.GetBinaryAddress().addr;
-        resultInfo[i].remote_info.ip.addr6 = input[i].dip.GetBinaryAddress().addr6;
-        resultInfo[i].remote_info.qp_info.version = 0;
-        resultInfo[i].remote_info.qp_info.rdma.gid = rdmainfo->rdma.gid;
-        resultInfo[i].remote_info.qp_info.rdma.qpn = rdmainfo->rdma.qpn;
-        resultInfo[i].remote_info.qp_info.rdma.qkey = rdmainfo->rdma.qkey;
+        PingQpInfo *rdmainfo = &rdmaInfoMaps[std::string(input[i].dip.GetReadableIP())];
+        resultInfo[i].remoteInfo.ip.addr = input[i].dip.GetBinaryAddress().addr;
+        resultInfo[i].remoteInfo.ip.addr6 = input[i].dip.GetBinaryAddress().addr6;
+        resultInfo[i].remoteInfo.qpInfo.version = 0;
+        resultInfo[i].remoteInfo.qpInfo.rdma.gid = rdmainfo->rdma.gid;
+        resultInfo[i].remoteInfo.qpInfo.rdma.qpn = rdmainfo->rdma.qpn;
+        resultInfo[i].remoteInfo.qpInfo.rdma.qkey = rdmainfo->rdma.qkey;
 
         HCCL_INFO("[HCCN][RpingResultInfoInit]Target[%s] info init success.", input[i].dip.GetReadableIP());
     }
 }
 
-inline void GetResultFromReturnValue(ping_target_result *resultInfo, RpingOutput *output, u32 targetNum)
+inline void GetResultFromReturnValue(PingTargetResult *resultInfo, RpingOutput *output, u32 targetNum)
 {
     for (u32 i = 0; i < targetNum; i++) {
         output[i].state = resultInfo[i].result.state;
-        output[i].txPkt = resultInfo[i].result.summary.send_cnt;
-        output[i].rxPkt = resultInfo[i].result.summary.recv_cnt;
-        output[i].minRTT = resultInfo[i].result.summary.rtt_min;
-        output[i].maxRTT = resultInfo[i].result.summary.rtt_max;
-        output[i].avgRTT = resultInfo[i].result.summary.rtt_avg;
+        output[i].txPkt = resultInfo[i].result.summary.sendCnt;
+        output[i].rxPkt = resultInfo[i].result.summary.recvCnt;
+        output[i].minRTT = resultInfo[i].result.summary.rttMin;
+        output[i].maxRTT = resultInfo[i].result.summary.rttMax;
+        output[i].avgRTT = resultInfo[i].result.summary.rttAvg;
     }
 }
 
@@ -338,7 +338,7 @@ inline void LogRecordbyTimes(int &count)
 
 inline void RemoveMapInfo(RpingInput *input, u32 targetNum, 
                           std::map<std::string, std::shared_ptr<HcclSocket>> &socketMaps,
-                          std::map<std::string, ping_qp_info> &rdmaInfoMaps,
+                          std::map<std::string, PingQpInfo> &rdmaInfoMaps,
                           std::map<std::string, u32> &payloadLenMap)
 {
     for (u32 i = 0; i < targetNum; i++) {
@@ -348,7 +348,7 @@ inline void RemoveMapInfo(RpingInput *input, u32 targetNum,
     }
 }
 
-HcclResult PingMesh::RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, ping_init_info initInfo,
+HcclResult PingMesh::RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, PingInitInfo initInfo,
                                        std::shared_ptr<HcclSocket> socket)
 {
     // 给当前线程添加名字
@@ -404,7 +404,7 @@ HcclResult PingMesh::RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipA
     return HCCL_SUCCESS;
 }
 
-HcclResult PingMesh::RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAddress ipAddr, ping_init_info &recvInfo, u32 timeout)
+HcclResult PingMesh::RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAddress ipAddr, PingInitInfo &recvInfo, u32 timeout)
 {
     // 确认是否添加过该IP
     if (socketMaps_.find(std::string(ipAddr.GetReadableIP())) != socketMaps_.end()) {
@@ -515,7 +515,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     CHK_RET(hrtOpenNetService(&openArgs));
 
     // hccp侧初始化ping mesh资源
-    ra_init_config config = { devicePhyId_, static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE),
+    RaInitConfig config = { devicePhyId_, static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE),
         HDC_SERVICE_TYPE_RDMA_V2 };
     u32 rpingInterfaceVersion = 0;
     CHK_RET(NetworkManager::GetInstance(deviceLogicId_).PingMeshRaPingInit(deviceLogicId_, devicePhyId_, &config));
@@ -527,7 +527,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     }
     HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] init hccp success.", deviceId);
 
-    ping_init_attr initAttr{};
+    PingInitAttr initAttr{};
     void *pingHandle = nullptr;
     RpingInitAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
     CHK_RET(hrtRaPingInit(&initAttr, &initInfo_, &pingHandle));
@@ -629,21 +629,21 @@ HcclResult PingMesh::HccnRpingAddTarget(u32 deviceId, u32 targetNum, RpingInput 
     }
     HCCL_INFO("[HccnRpingAddTarget]deviceId %u, targetNum %u", deviceId, targetNum);
     HcclResult ret = HCCL_SUCCESS;
-    ping_target_info target[1] = { {0} }; // hccp侧只能一个一个处理，因此数组大小固定为1
+    PingTargetInfo target[1] = { {0} }; // hccp侧只能一个一个处理，因此数组大小固定为1
     for (u32 i = 0; i < targetNum; i++) {
-        ping_init_info recvInfo;
+        PingInitInfo recvInfo;
         ret = RpingRecvTargetInfo(netCtx_, input[i].port, input[i].dip, recvInfo, config->connectTimeout); 
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[HCCN][HccnRpingAddTarget]Target[%s] added failed because of error[%d].",
                 input[i].dip.GetReadableIP(), ret);
             break;
         }
-        ping_qp_info *rdmainfo = &(recvInfo.client);
+        PingQpInfo *rdmainfo = &(recvInfo.client);
         if (rdmaInfoMaps_.find(std::string(input[i].dip.GetReadableIP())) != rdmaInfoMaps_.end()) {
             HCCL_RUN_INFO("[HCCN][HccnRpingAddTarget]Target[%s] has already added.", input[i].dip.GetReadableIP());
             continue;
         }
-        rdmaInfoMaps_.insert(std::pair<std::string, ping_qp_info>(std::string(input[i].dip.GetReadableIP()), recvInfo.client));
+        rdmaInfoMaps_.insert(std::pair<std::string, PingQpInfo>(std::string(input[i].dip.GetReadableIP()), recvInfo.client));
 
         if (payloadLenMap_.find(std::string(input[i].dip.GetReadableIP())) != payloadLenMap_.end()) {
             HCCL_RUN_INFO("[HCCN][HccnRpingAddTarget]Target[%s] has already added.", input[i].dip.GetReadableIP());
@@ -687,7 +687,7 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
     HCCL_INFO("[HccnRpingRemoveTarget]deviceId %u, targetNum %u", deviceId, targetNum);
     // 调用hccp接口删除目标
     HcclResult ret = HCCL_SUCCESS;
-    ping_target_comm_info *target = new (std::nothrow) ping_target_comm_info[targetNum];
+    PingTargetCommInfo *target = new (std::nothrow) PingTargetCommInfo[targetNum];
     std::shared_ptr<HcclSocket> socket = nullptr;
     for (u32 i = 0; i < targetNum; i++) {
         // 删除链路
@@ -712,10 +712,10 @@ HcclResult PingMesh::HccnRpingRemoveTarget(u32 deviceId, u32 targetNum, RpingInp
             ret = HCCL_E_NOT_FOUND;
             break;
         }
-        ping_qp_info *rdmainfo = &rdmaInfoMaps_[std::string(input[i].dip.GetReadableIP())];
-        ping_target_info targetInfo { 0 };
+        PingQpInfo *rdmainfo = &rdmaInfoMaps_[std::string(input[i].dip.GetReadableIP())];
+        PingTargetInfo targetInfo { 0 };
         RpingTargetAttrInit(targetInfo, input[i], rdmainfo, false);
-        target[i] = targetInfo.remote_info;
+        target[i] = targetInfo.remoteInfo;
     }
     if (ret != HCCL_SUCCESS) {
         delete[] target;
@@ -777,19 +777,19 @@ HcclResult PingMesh::HccnRpingBatchPingStart(u32 deviceId, u32 pktNum, u32 inter
     }
 
     // 计算内存空间能否保存全部的payload信息，内存不足的话不可以发起ping请求
-    ping_buffer_info *bufferInfo = &(initInfo_.result);
+    PingBufferInfo *bufferInfo = &(initInfo_.result);
     u32 targetNum = rpingTargetNum_;
     u32 payloadLen = pktNum * PING_TOTAL_PAYLOAD_MAX_SIZE * targetNum;
-    if ((bufferInfo->buffer_size != 0) && (payloadLen >= bufferInfo->buffer_size)) {
+    if ((bufferInfo->bufferSize != 0) && (payloadLen >= bufferInfo->bufferSize)) {
         HCCL_ERROR("[HCCN][HccnRpingBatchPingStart]Buffer[%u] overflow threshold[%u], pktNum[%u], targetNum[%u].",
-        payloadLen, bufferInfo->buffer_size, pktNum, targetNum);
+        payloadLen, bufferInfo->bufferSize, pktNum, targetNum);
         return HCCL_E_MEMORY;
     }
 
-    ping_task_attr attr;
-    attr.packet_cnt = pktNum;
-    attr.packet_interval = interval;
-    attr.timeout_interval = timeout;
+    PingTaskAttr attr;
+    attr.packetCnt = pktNum;
+    attr.packetInterval = interval;
+    attr.timeoutInterval = timeout;
 
     CHK_RET(hrtRaPingTaskStart(pingHandle_, &attr));
     HCCL_INFO("[HCCN][HccnRpingBatchPingStart]pingmesh task is started on device[%u].", deviceId);
@@ -815,7 +815,7 @@ HcclResult PingMesh::HccnRpingGetResult(u32 deviceId, u32 targetNum, RpingInput 
 {
     CHK_PTR_NULL(input);
     CHK_PTR_NULL(output);
-    ping_target_result *resultInfo = new (std::nothrow) ping_target_result[targetNum];
+    PingTargetResult *resultInfo = new (std::nothrow) PingTargetResult[targetNum];
     CHK_PRT_RET(resultInfo == nullptr, HCCL_ERROR("[HCCN][HccnRpingGetResult]Alloc result memory failed."),
         HCCL_E_MEMORY);
     HCCL_INFO("[HCCN][HccnRpingGetResult]deviceId %u targetNum %u", deviceId, targetNum);
@@ -912,29 +912,29 @@ HcclResult PingMesh::HccnRpingGetPayload(u32 deviceId, void **payload, u32 *payl
         return HCCL_SUCCESS;
     }
     // 将payload信息从device拷贝到host
-    ping_buffer_info *bufferInfo = &(initInfo_.result);
-    CHK_PRT_RET(bufferInfo->buffer_size == 0,
+    PingBufferInfo *bufferInfo = &(initInfo_.result);
+    CHK_PRT_RET(bufferInfo->bufferSize == 0,
         HCCL_ERROR("[HCCN][HccnRpingGetPayload]no memory on device[%u] for payload.", deviceId), HCCL_E_MEMORY);
     // payload_为空时，需要为其申请内存资源
     if (payload_ == nullptr) {
-        payload_ = new (std::nothrow) u8[bufferInfo->buffer_size];
+        payload_ = new (std::nothrow) u8[bufferInfo->bufferSize];
         CHK_PRT_RET(payload_ == nullptr,
             HCCL_ERROR("[HCCN][HccnRpingGetPayload]Get payload from device[%u] failed.", deviceId), HCCL_E_MEMORY);
     }
     // 从device拷贝内存
     HcclResult ret =
-        hrtMemSyncCopyEx(payload_, bufferInfo->buffer_size, reinterpret_cast<void *>(bufferInfo->buffer_va),
-        bufferInfo->buffer_size, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST);
+        hrtMemSyncCopyEx(payload_, bufferInfo->bufferSize, reinterpret_cast<void *>(bufferInfo->bufferVa),
+        bufferInfo->bufferSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HCCN][HccnRpingGetPayload]Get payload from device[%u] failed, bufferSize[%u], bufferVa[%llu].", deviceId, 
-        bufferInfo->buffer_size, bufferInfo->buffer_va), ret);
+        bufferInfo->bufferSize, bufferInfo->bufferVa), ret);
     // 重填payload头
-    u32 payloadNum = bufferInfo->buffer_size / BYTE_PER_TARGET_DEFAULT;
+    u32 payloadNum = bufferInfo->bufferSize / BYTE_PER_TARGET_DEFAULT;
     u8 *payloadTmp = payload_;
     CHK_RET(HccnRpingRefillPayloadHead(payloadTmp, payloadNum));
 
     *payload = payload_;
-    *payloadLen = bufferInfo->buffer_size;
+    *payloadLen = bufferInfo->bufferSize;
     return HCCL_SUCCESS;
 }
 

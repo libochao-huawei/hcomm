@@ -567,8 +567,8 @@ HcclResult DispatcherAiCpu::RdmaSend(u32 dbindex, u64 dbinfo, hccl::Stream &stre
     dfxInfo->notifyId = INVALID_UINT; // 多个wr只敲一次doorbell的情况下，一般只会有一个notify
 
     uint32_t wrLen = 0; // 统计wr的总数据量
-    for (const WrInfo& wr : taskInfo.wrInfos) {
-        wrLen += wr.wrData.mem_list.len;
+    for (const WrInformation& wr : taskInfo.wrInfos) {
+        wrLen += wr.wrData.memList.len;
         dfxInfo->notifyId = (wr.notifyId != INVALID_UINT) ? wr.notifyId : dfxInfo->notifyId;
     }
 
@@ -583,7 +583,7 @@ HcclResult DispatcherAiCpu::RdmaSend(u32 dbindex, u64 dbinfo, hccl::Stream &stre
     return HCCL_SUCCESS;
 }
 
-HcclResult DispatcherAiCpu::RdmaRecord(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+HcclResult DispatcherAiCpu::RdmaRecord(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
     RdmaType rdmaType, u32 userRank, u64 offset, u32 notifyId)
 {
     return HCCL_SUCCESS;

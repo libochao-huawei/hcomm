@@ -382,12 +382,12 @@ HcclResult TransportRoce::Init()
 
     isInited_ = true;
 
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     hrtRaGetQpAttr(tagQpInfo_.qpHandle, &attr);
     HCCL_USER_CRITICAL_LOG("create hccl transport:communicator[%s], local rank[%u] ip[%s], remote rank[%u] ip[%s], "\
         "transporttype[%s], rdma qpn[%u], rdma qp sport[%u].", machinePara_.collectiveId.c_str(), machinePara_.localUserrank, 
         machinePara_.localIpAddr.GetReadableAddress(), machinePara_.remoteUserrank, machinePara_.remoteIpAddr.GetReadableAddress(),
-        GetLinkTypeEnumStr(GetLinkType()).c_str(), attr.qpn, attr.udp_sport);
+        GetLinkTypeEnumStr(GetLinkType()).c_str(), attr.qpn, attr.udpSport);
         
     return HCCL_SUCCESS;
 }

@@ -140,7 +140,7 @@ HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &
         HCCL_ERROR_CODE(HCCL_E_NETWORK), qpInfo.c_str(), ret),
         HCCL_E_NETWORK);
 
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
     s32 deviceId = 0;
     if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
@@ -151,7 +151,7 @@ HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &
 }
 
 HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
-    int qpMode, struct typical_qp* qpInfo, QpHandle &qpHandle)
+    int qpMode, struct TypicalQp* qpInfo, QpHandle &qpHandle)
 {
     std::string qpInfoStr = std::string("rdmaHandle:") + std::to_string(reinterpret_cast<intptr_t>(rdmaHandle)) + \
     std::string("flag:") + std::to_string(flag) + std::string("qpMode:") + std::to_string(qpMode) + \
@@ -176,7 +176,7 @@ HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct typical_qp* localQpInfo, struct typical_qp* remoteQpInfo)
+HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo, struct TypicalQp* remoteQpInfo)
 {
     std::string qpInfo = std::string("qpHandle:") + std::to_string(reinterpret_cast<intptr_t>(qpHandle)) + \
     std::string("localQpInfo:") + std::to_string(reinterpret_cast<intptr_t>(&localQpInfo)) + \
@@ -192,7 +192,7 @@ HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct typical_qp* localQpInf
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaTypicalSendWr(QpHandle handle, struct send_wr *wr, struct send_wr_rsp *opRsp)
+HcclResult hrtRaTypicalSendWr(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)
 {
     s32 ret = 0;
     auto startTime = std::chrono::steady_clock::now();
@@ -221,7 +221,7 @@ HcclResult hrtRaTypicalSendWr(QpHandle handle, struct send_wr *wr, struct send_w
 
 HcclResult HrtRaQpDestroy(QpHandle handle)
 {
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     CHK_RET(hrtRaGetQpAttr(handle, &attr));
     s32 deviceId = 0;
     if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
@@ -316,7 +316,7 @@ s32 hrtGetRaQpStatus(QpHandle handle, int *status)
     return DlRaFunction::GetInstance().dlRaGetQpStatus(handle, status);
 }
 
-HcclResult HrtRaMrReg(QpHandle handle, struct mr_info *mrInfo)
+HcclResult HrtRaMrReg(QpHandle handle, struct MrInfoT *mrInfo)
 {
     CHK_PTR_NULL(mrInfo);
     HCCL_DEBUG("ra mr reg: addr[%p], size[%llu], access[%d].", mrInfo->addr, mrInfo->size, mrInfo->access);
@@ -327,7 +327,7 @@ HcclResult HrtRaMrReg(QpHandle handle, struct mr_info *mrInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaMrDereg(QpHandle handle, struct mr_info *mrInfo)
+HcclResult HrtRaMrDereg(QpHandle handle, struct MrInfoT *mrInfo)
 {
     CHK_PTR_NULL(mrInfo);
     HCCL_INFO("ra mr dereg: qphandle[%p], addr[%p], size[%llu Byte], access[%d].",
@@ -339,7 +339,7 @@ HcclResult HrtRaMrDereg(QpHandle handle, struct mr_info *mrInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaRegGlobalMr(const RdmaHandle rdmaHandle, struct mr_info &mrInfo, MrHandle &mrHandle)
+HcclResult hrtRaRegGlobalMr(const RdmaHandle rdmaHandle, struct MrInfoT &mrInfo, MrHandle &mrHandle)
 {
     CHK_PTR_NULL(rdmaHandle);
     CHK_PTR_NULL(mrInfo.addr);
@@ -368,7 +368,7 @@ HcclResult hrtRaDeRegGlobalMr(const RdmaHandle rdmaHandle, MrHandle mrHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaSendWr(QpHandle handle, struct send_wr *wr, struct send_wr_rsp *opRsp)
+HcclResult HrtRaSendWr(QpHandle handle, struct SendWr *wr, struct SendWrRsp *opRsp)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
@@ -396,7 +396,7 @@ HcclResult HrtRaSendWr(QpHandle handle, struct send_wr *wr, struct send_wr_rsp *
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaSendWrV2(QpHandle handle, struct send_wr_v2 *wr, struct send_wr_rsp *opRsp, HcclWorkflowMode workflowMode)
+HcclResult HrtRaSendWrV2(QpHandle handle, struct SendWrV2 *wr, struct SendWrRsp *opRsp, HcclWorkflowMode workflowMode)
 {
     s32 ret = 0;
     auto startTime = std::chrono::steady_clock::now();
@@ -450,7 +450,7 @@ HcclResult hrtRaQpBatchModify(RdmaHandle rdmaHandle, QpHandle qpHandle[], unsign
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaSendWrlist(QpHandle handle, struct send_wrlist_data wr[], struct send_wr_rsp opRsp[],
+HcclResult HrtRaSendWrlist(QpHandle handle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
                            unsigned int sendNum, unsigned int *completeNum)
 {
     if (DlRaFunction::GetInstance().dlRaSendWrlist == nullptr) {
@@ -488,7 +488,7 @@ HcclResult HrtRaSendWrlist(QpHandle handle, struct send_wrlist_data wr[], struct
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             HCCL_ERROR("[Send][RaWr]ra wr list send async fail. return[%d], para: send_wrAddr[%p], dst_addr[%p],"\
-                " bufAddr[%p], bufLen[%u], opRspAddr[%p].", ret, wr, wr->dst_addr, wr->mem_list.addr, wr->mem_list.len, opRsp);
+                " bufAddr[%p], bufLen[%u], opRspAddr[%p].", ret, wr, wr->dstAddr, wr->memList.addr, wr->memList.len, opRsp);
             return HCCL_E_ROCE_TRANSFER; // 非-2/-11场景错误，不轮询，直接退出
         }
     }
@@ -496,16 +496,16 @@ HcclResult HrtRaSendWrlist(QpHandle handle, struct send_wrlist_data wr[], struct
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaSendWrlistExt(QpHandle handle, struct send_wrlist_data_ext wr[], struct send_wr_rsp opRsp[],
+HcclResult HrtRaSendWrlistExt(QpHandle handle, struct SendWrlistDataExt wr[], struct SendWrRsp opRsp[],
                               unsigned int sendNum, unsigned int *completeNum)
 {
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
     if (deviceType != DevType::DEV_TYPE_910B && deviceType != DevType::DEV_TYPE_910_93) {
-        vector<send_wrlist_data> wqeList(sendNum);
-        struct send_wrlist_data* data = wqeList.data();
+        vector<SendWrlistData> wqeList(sendNum);
+        struct SendWrlistData* data = wqeList.data();
         for (unsigned int i = 0; i < sendNum; i++) {
-            s32 sret = memcpy_s(&data[i], sizeof(send_wrlist_data), &wr[i], sizeof(send_wrlist_data));
+            s32 sret = memcpy_s(&data[i], sizeof(SendWrlistData), &wr[i], sizeof(SendWrlistData));
             CHK_PRT_RET(sret != EOK, HCCL_ERROR("[WqeList][Add]add wqe list, memcpy wqe failed. errorno[%d]", sret),
                 HCCL_E_MEMORY);
         }
@@ -560,7 +560,7 @@ HcclResult HrtRaSendWrlistExt(QpHandle handle, struct send_wrlist_data_ext wr[],
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaSendNormalWrlist(QpHandle handle, struct wr_info wr[], struct send_wr_rsp opRsp[],
+HcclResult HrtRaSendNormalWrlist(QpHandle handle, struct WrInfo wr[], struct SendWrRsp opRsp[],
                            unsigned int sendNum, unsigned int *completeNum)
 {
     if (UNLIKELY(DlRaFunction::GetInstance().dlRaSendWrlist == nullptr)) {
@@ -598,7 +598,7 @@ HcclResult HrtRaSendNormalWrlist(QpHandle handle, struct wr_info wr[], struct se
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             HCCL_ERROR("[Send][RaWr]ra wr list send async fail. return[%d], para: send_wrAddr[%p], dst_addr[%p],"\
-                " bufAddr[%p], bufLen[%u], opRspAddr[%p].", ret, wr, wr->dst_addr, wr->mem_list.addr, wr->mem_list.len, opRsp);
+                " bufAddr[%p], bufLen[%u], opRspAddr[%p].", ret, wr, wr->dstAddr, wr->memList.addr, wr->memList.len, opRsp);
             return HCCL_E_ROCE_TRANSFER; // 非-2/-11场景错误，不轮询，直接退出
         }
     }
@@ -633,11 +633,11 @@ HcclResult HrtRaGetNotifyBaseAddr(RdmaHandle handle, u64 *va, u64 *size, std::fu
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaGetNotifyMrInfo(u32 phy_id, RdmaHandle handle, struct mr_info *mrInfo)
+HcclResult HrtRaGetNotifyMrInfo(u32 phyId, RdmaHandle handle, struct MrInfoT *mrInfo)
 {
     s32 ret = 0;
     u32 getNotifyBaVersion = 0;
-    HcclResult vRet = hrtRaGetInterfaceVersion(phy_id, GET_NOTIFY_BA, &getNotifyBaVersion);
+    HcclResult vRet = hrtRaGetInterfaceVersion(phyId, GET_NOTIFY_BA, &getNotifyBaVersion);
     if (vRet != HCCL_SUCCESS || getNotifyBaVersion < GET_NOTIFY_BA_VERSION) {
         HCCL_ERROR("this package does not support HrtRaGetNotifyMrInfo for device, please change new package");
         return HCCL_E_NOT_SUPPORT;
@@ -664,7 +664,7 @@ HcclResult HrtRaGetNotifyMrInfo(u32 phy_id, RdmaHandle handle, struct mr_info *m
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaInit(struct ra_init_config *config)
+HcclResult HrtRaInit(struct RaInitConfig *config)
 {
     CHK_RET(DlRaFunction::GetInstance().DlRaFunctionInit());
     s32 ret = 0;
@@ -677,17 +677,17 @@ HcclResult HrtRaInit(struct ra_init_config *config)
         } else if (ret == HCCP_EAGAIN) {
             bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
             CHK_PRT_RET(bTimeout, HCCL_ERROR("[Init][Ra]errNo[0x%016llx] ra init timeout[%lld s]. return[%d], "\
-                "phy_id[%u], nic_position[%u], hdc_type[%d]", HCCL_ERROR_CODE(HCCL_E_TIMEOUT), timeout, ret,\
-                config->phy_id, config->nic_position, config->hdc_type), HCCL_E_TIMEOUT);
+                "phyId[%u], nicPosition[%u], hdcType[%d]", HCCL_ERROR_CODE(HCCL_E_TIMEOUT), timeout, ret,\
+                config->phyId, config->nicPosition, config->hdcType), HCCL_E_TIMEOUT);
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             if (ret == REPEAT_RAINIT_ERROR_CODE) {
-                HCCL_RUN_WARNING("ra init repeatedly, return. phy_id[%u] nic_position[%u] hdc_type[%d]",
-                    config->phy_id, config->nic_position, config->hdc_type);
+                HCCL_RUN_WARNING("ra init repeatedly, return. phyId[%u] nicPosition[%u] hdcType[%d]",
+                    config->phyId, config->nicPosition, config->hdcType);
                 return HCCL_E_PARA;
             }
-            HCCL_ERROR("[Init][Ra]errNo[0x%016llx] ra init fail ret[%d] phy_id[%u] nic_position[%u] hdc_type[%d]", \
-                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, config->phy_id, config->nic_position, config->hdc_type);
+            HCCL_ERROR("[Init][Ra]errNo[0x%016llx] ra init fail ret[%d] phyId[%u] nicPosition[%u] hdcType[%d]", \
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, config->phyId, config->nicPosition, config->hdcType);
             return HCCL_E_NETWORK;  // 非ra限速场景错误，不轮询。直接退出
         }
     }
@@ -721,16 +721,16 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
 
     CHK_PRT_RET(ret == HCCP_ELINKDOWN , HCCL_RUN_WARNING("ra rdma init need retry."), HCCL_E_AGAIN);
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
-        "params: mode[%d]. notifyType[%u] phy_id[%u] family[%d] s_addr[%u] ret[%d]", HCCL_ERROR_CODE(HCCL_E_INTERNAL),\
-        mode, notifyType, rdevInfo.phy_id, rdevInfo.family, rdevInfo.local_ip.addr.s_addr, ret), HCCL_E_INTERNAL);
+        "params: mode[%d]. notifyType[%u] phyId[%u] family[%d] s_addr[%u] ret[%d]", HCCL_ERROR_CODE(HCCL_E_INTERNAL),\
+        mode, notifyType, rdevInfo.phyId, rdevInfo.family, rdevInfo.localIp.addr.s_addr, ret), HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaRdmaInitWithAttr(struct rdev_init_info &init_info, const struct rdev &rdevInfo, RdmaHandle &rdmaHandle)
+HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rdev &rdevInfo, RdmaHandle &rdmaHandle)
 {
-    HCCL_INFO("mode:[%d], notify_type:[%u], enabled_910a_lite:[%d], disabled_lite_thread:[%d], enabled_2mb_lite:[%d]",
-        init_info.mode, init_info.notify_type, init_info.enabled_910a_lite, init_info.disabled_lite_thread,
-        init_info.enabled_2mb_lite);
+    HCCL_INFO("mode:[%d], NotifyTypeT:[%u], enabled910aLite:[%d], disabledLiteThread:[%d], enabled2mbLite:[%d]",
+        init_info.mode, init_info.notifyType, init_info.enabled910aLite, init_info.disabledLiteThread,
+        init_info.enabled2mbLite);
 
     s32 ret = DlRaFunction::GetInstance().dlRaRdmaInitWithAttr(init_info, rdevInfo, &rdmaHandle);
 
@@ -759,16 +759,16 @@ HcclResult HrtRaRdmaInitWithAttr(struct rdev_init_info &init_info, const struct 
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRdmaInitWithBackupAttr(struct rdev_init_info &init_info, struct rdev &rdevInfo,
+HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev &rdevInfo,
     struct rdev &backupRdevInfo, RdmaHandle &rdmaHandle)
 {
-    HCCL_INFO("[%s]mode:[%d], notify_type:[%u], enabled_910a_lite:[%d], disabled_lite_thread:[%d], "
-        "enabled_2mb_lite:[%d]", __func__, init_info.mode, init_info.notify_type, init_info.enabled_910a_lite,
-        init_info.disabled_lite_thread, init_info.enabled_2mb_lite);
+    HCCL_INFO("[%s]mode:[%d], NotifyTypeT:[%u], enabled910aLite:[%d], disabledLiteThread:[%d], "
+        "enabled2mbLite:[%d]", __func__, init_info.mode, init_info.notifyType, init_info.enabled910aLite,
+        init_info.disabledLiteThread, init_info.enabled2mbLite);
 
     // 获取版本号查看是否兼容
     u32 rdmainitBackupVersion = 0;
-    HcclResult vRet = hrtRaGetInterfaceVersion(rdevInfo.phy_id, RDEV_INIT_WITH_BACKUP, &rdmainitBackupVersion);
+    HcclResult vRet = hrtRaGetInterfaceVersion(rdevInfo.phyId, RDEV_INIT_WITH_BACKUP, &rdmainitBackupVersion);
     if (vRet != HCCL_SUCCESS || rdmainitBackupVersion < RDEV_INIT_WITH_BACKUP_SUP_VER) {
         HCCL_WARNING("this package does not support HrtRdmaInitWithBackupAttr, please change new package.");
         return HCCL_E_NOT_SUPPORT;
@@ -804,18 +804,18 @@ HcclResult HrtRdmaInitWithBackupAttr(struct rdev_init_info &init_info, struct rd
 HcclResult HrtRaRdmaInitRef(int mode, u32 notifyType, const struct rdev &rdevInfo, RdmaHandle &rdmaHandle)
 {
     lock_guard<mutex> lock(g_rdmaHandleInfo.handleMutex);
-    if (g_rdmaHandleInfo.handleMap.find(rdevInfo.local_ip.addr.s_addr) !=
+    if (g_rdmaHandleInfo.handleMap.find(rdevInfo.localIp.addr.s_addr) !=
         g_rdmaHandleInfo.handleMap.end()) {
         HCCL_DEBUG("The rdmaHandle[%p] corresponding to the ipAddr[%u] has been initialized.",
-            rdmaHandle, rdevInfo.local_ip.addr.s_addr);
+            rdmaHandle, rdevInfo.localIp.addr.s_addr);
 
-        rdmaHandle = g_rdmaHandleInfo.handleMap[rdevInfo.local_ip.addr.s_addr];
+        rdmaHandle = g_rdmaHandleInfo.handleMap[rdevInfo.localIp.addr.s_addr];
         g_rdmaHandleInfo.handleRef[rdmaHandle]++;
         return HCCL_SUCCESS;
     }
 
     CHK_RET(HrtRaRdmaInit(mode, notifyType, rdevInfo, rdmaHandle));
-    g_rdmaHandleInfo.handleMap[rdevInfo.local_ip.addr.s_addr] = rdmaHandle;
+    g_rdmaHandleInfo.handleMap[rdevInfo.localIp.addr.s_addr] = rdmaHandle;
     g_rdmaHandleInfo.handleRef[rdmaHandle] = FIRST_HANDLE_REF;
     return HCCL_SUCCESS;
 }
@@ -845,7 +845,7 @@ HcclResult HrtGetRdmaLiteStatus(RdmaHandle rdmaHandle, int *supportLite)
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaDeInit(struct ra_init_config *config)
+HcclResult HrtRaDeInit(struct RaInitConfig *config)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
@@ -857,12 +857,12 @@ HcclResult HrtRaDeInit(struct ra_init_config *config)
         } else if (ret == HCCP_EAGAIN) {
             bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
             CHK_PRT_RET(bTimeout, HCCL_ERROR("[DeInit][Ra]errNo[0x%016llx] ra deinit timeout[%lld s]. return[%d], "\
-                "phy_id[%u] nic_position[%u] hdc_type[%d]", HCCL_ERROR_CODE(HCCL_E_TIMEOUT), timeout, ret,\
-                config->phy_id, config->nic_position, config->hdc_type), HCCL_E_TIMEOUT);
+                "phyId[%u] nicPosition[%u] hdcType[%d]", HCCL_ERROR_CODE(HCCL_E_TIMEOUT), timeout, ret,\
+                config->phyId, config->nicPosition, config->hdcType), HCCL_E_TIMEOUT);
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
-            HCCL_ERROR("[DeInit][Ra]errNo[0x%016llx] ra deinit fail. ret[%d] phy_id[%u] nic_position[%u] hdc_type[%d]", \
-                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, config->phy_id, config->nic_position, config->hdc_type);
+            HCCL_ERROR("[DeInit][Ra]errNo[0x%016llx] ra deinit fail. ret[%d] phyId[%u] nicPosition[%u] hdcType[%d]", \
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, config->phyId, config->nicPosition, config->hdcType);
             return HCCL_E_NETWORK;  // 非ra限速场景错误，不轮询。直接退出
         }
     }
@@ -909,16 +909,16 @@ HcclResult hrtRaSocketInit(int mode, struct rdev rdevInfo, SocketHandle &socketH
     s32 ret = DlRaFunction::GetInstance().dlRaSocketInit(mode, rdevInfo, &socketHandle);
 
     CHK_PRT_RET(ret != 0 || (socketHandle == nullptr), HCCL_ERROR("[Init][RaSock]errNo[0x%016llx] "\
-        "ra socket init fail. params: mode[%d]. return: ret[%d] phy_id[%u] family[%d] s_addr[%u]",
-        HCCL_ERROR_CODE(HCCL_E_INTERNAL), mode, ret, rdevInfo.phy_id, rdevInfo.family, rdevInfo.local_ip.addr.s_addr),
+        "ra socket init fail. params: mode[%d]. return: ret[%d] phyId[%u] family[%d] s_addr[%u]",
+        HCCL_ERROR_CODE(HCCL_E_INTERNAL), mode, ret, rdevInfo.phyId, rdevInfo.family, rdevInfo.localIp.addr.s_addr),
         HCCL_E_INTERNAL);
 
     HCCL_INFO("socket init success, ip[%u] device id[%u], socketHandle[%p]",
-        rdevInfo.local_ip.addr.s_addr, rdevInfo.phy_id, socketHandle);
+        rdevInfo.localIp.addr.s_addr, rdevInfo.phyId, socketHandle);
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketInitV1(int mode, struct socket_init_info_t socket_init, SocketHandle &socketHandle)
+HcclResult hrtRaSocketInitV1(int mode, struct SocketInitInfoT socket_init, SocketHandle &socketHandle)
 {
     s32 ret = DlRaFunction::GetInstance().dlRaSocketInitV1(mode, socket_init, &socketHandle);
 
@@ -933,18 +933,18 @@ HcclResult hrtRaSocketInitV1(int mode, struct socket_init_info_t socket_init, So
 HcclResult hrtRaSocketInitRef(int mode, const struct rdev &rdevInfo, SocketHandle &socketHandle)
 {
     lock_guard<mutex> lock(g_socketHandleInfo.handleMutex);
-    if (g_socketHandleInfo.handleMap.find(rdevInfo.local_ip.addr.s_addr) !=
+    if (g_socketHandleInfo.handleMap.find(rdevInfo.localIp.addr.s_addr) !=
         g_socketHandleInfo.handleMap.end()) {
         HCCL_DEBUG("The socketHandle[%p] corresponding to the ipAddr[%u] has been initialized.",
-            socketHandle, rdevInfo.local_ip.addr.s_addr);
+            socketHandle, rdevInfo.localIp.addr.s_addr);
 
-        socketHandle = g_socketHandleInfo.handleMap[rdevInfo.local_ip.addr.s_addr];
+        socketHandle = g_socketHandleInfo.handleMap[rdevInfo.localIp.addr.s_addr];
         g_socketHandleInfo.handleRef[socketHandle]++;
         return HCCL_SUCCESS;
     }
 
     CHK_RET(hrtRaSocketInit(mode, rdevInfo, socketHandle));
-    g_socketHandleInfo.handleMap[rdevInfo.local_ip.addr.s_addr] = socketHandle;
+    g_socketHandleInfo.handleMap[rdevInfo.localIp.addr.s_addr] = socketHandle;
     g_socketHandleInfo.handleRef[socketHandle] = FIRST_HANDLE_REF;
     return HCCL_SUCCESS;
 }
@@ -984,7 +984,7 @@ HcclResult hrtRaSocketDeInitRef(SocketHandle &socketHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketNonBlockListenStart(struct socket_listen_info_t conn[], u32 num)
+HcclResult hrtRaSocketNonBlockListenStart(struct SocketListenInfoT conn[], u32 num)
 {
     CheckConnPort(conn, num);
     s32 ret = DlRaFunction::GetInstance().dlRaSocketListenStart(conn, num);
@@ -1007,7 +1007,7 @@ HcclResult hrtRaSocketNonBlockListenStart(struct socket_listen_info_t conn[], u3
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketAcceptCreditAdd(struct socket_listen_info_t conn[], u32 num, u32 creditLimit)
+HcclResult hrtRaSocketAcceptCreditAdd(struct SocketListenInfoT conn[], u32 num, u32 creditLimit)
 {
     s32 ret = 0;
     ret = DlRaFunction::GetInstance().dlRaSocketAcceptCreditAdd(conn, num, creditLimit);
@@ -1016,7 +1016,7 @@ HcclResult hrtRaSocketAcceptCreditAdd(struct socket_listen_info_t conn[], u32 nu
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketListenStart(struct socket_listen_info_t conn[], u32 num)
+HcclResult hrtRaSocketListenStart(struct SocketListenInfoT conn[], u32 num)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
@@ -1045,7 +1045,7 @@ HcclResult hrtRaSocketListenStart(struct socket_listen_info_t conn[], u32 num)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketListenStop(struct socket_listen_info_t conn[], u32 num)
+HcclResult hrtRaSocketListenStop(struct SocketListenInfoT conn[], u32 num)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
@@ -1080,7 +1080,7 @@ HcclResult hrtRaSocketListenStop(struct socket_listen_info_t conn[], u32 num)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketNonBlockBatchAbort(socket_connect_info_t  conn[], u32 num)
+HcclResult hrtRaSocketNonBlockBatchAbort(SocketConnectInfoT  conn[], u32 num)
 {
     CheckConnPort(conn, num);
     s32 ret = DlRaFunction::GetInstance().dlRaSocketBatchAbort(conn, num);
@@ -1092,8 +1092,8 @@ HcclResult hrtRaSocketNonBlockBatchAbort(socket_connect_info_t  conn[], u32 num)
         HCCL_ERROR("[hrtRaSocketNonBlockBatchAbort]errNo[0x%016llx] ra socket batch abort fail. "\
             "return[%d], num[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num);
         for (u32 idx = 0; idx < num; idx++) {
-            HCCL_ERROR("cur idx[%u] remote_ip[%u] port[%u] tag[%s]",
-                idx, conn[idx].remote_ip.addr.s_addr, conn[idx].port, conn[idx].tag);
+            HCCL_ERROR("cur idx[%u] remoteIp[%u] port[%u] tag[%s]",
+                idx, conn[idx].remoteIp.addr.s_addr, conn[idx].port, conn[idx].tag);
         }
         return HCCL_E_TCP_CONNECT;
     }
@@ -1126,7 +1126,7 @@ HcclResult IsSupportRaSocketAbort(bool& isSupportRaSocketAbort)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketNonBlockBatchConnect(socket_connect_info_t conn[], u32 num)
+HcclResult hrtRaSocketNonBlockBatchConnect(SocketConnectInfoT conn[], u32 num)
 {
     CheckConnPort(conn, num);
     s32 ret = DlRaFunction::GetInstance().dlRaSocketBatchConnect(conn, num);
@@ -1138,8 +1138,8 @@ HcclResult hrtRaSocketNonBlockBatchConnect(socket_connect_info_t conn[], u32 num
         HCCL_ERROR("[HrtRaQpNonBlockConnectAsync]errNo[0x%016llx] ra socket batch connect fail. "\
             "return[%d], num[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num);
         for (u32 idx = 0; idx < num; idx++) {
-            HCCL_ERROR("cur idx[%u] remote_ip[%u] port[%u] tag[%s]",
-                idx, conn[idx].remote_ip.addr.s_addr, conn[idx].port, conn[idx].tag);
+            HCCL_ERROR("cur idx[%u] remoteIp[%u] port[%u] tag[%s]",
+                idx, conn[idx].remoteIp.addr.s_addr, conn[idx].port, conn[idx].tag);
         }
         return HCCL_E_TCP_CONNECT;
     }
@@ -1147,7 +1147,7 @@ HcclResult hrtRaSocketNonBlockBatchConnect(socket_connect_info_t conn[], u32 num
     return HCCL_SUCCESS;
 }
 
-HcclResult SocketBatchConnect(socket_connect_info_t conn[], u32 num, std::function<bool()> needStop)
+HcclResult SocketBatchConnect(SocketConnectInfoT conn[], u32 num, std::function<bool()> needStop)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
@@ -1177,16 +1177,16 @@ HcclResult SocketBatchConnect(socket_connect_info_t conn[], u32 num, std::functi
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketBatchConnect(struct socket_connect_info_t conn[], u32 num, u32 maxLen, std::function<bool()> needStop)
+HcclResult hrtRaSocketBatchConnect(struct SocketConnectInfoT conn[], u32 num, u32 maxLen, std::function<bool()> needStop)
 {
     CHK_PTR_NULL(conn);
     CHK_PRT_RET((num > maxLen) || (num == 0), HCCL_ERROR("[hrtRaSocketBatchConnect][RaSocket]ra socket batch connect "\
         "para error, num[%u], maxLen[%u]",  num, maxLen), HCCL_E_PARA);
 
-    HCCL_INFO("batch connect, port[%u], remoteip[%x]", conn[0].port, conn[0].remote_ip);
+    HCCL_INFO("batch connect, port[%u], remoteip[%x]", conn[0].port, conn[0].remoteIp);
     // batchConnect函数指针。底层接口一次最多建链16条，超过16条调用多次batch connect
     u32 exeNum = 0;
-    socket_connect_info_t *connBase = conn;
+    SocketConnectInfoT *connBase = conn;
     while (num > 0) {
         exeNum = num > MAX_NUM_OF_BATCH_CONN ? MAX_NUM_OF_BATCH_CONN : num;
         CHK_RET(SocketBatchConnect(connBase, exeNum, needStop));
@@ -1197,10 +1197,10 @@ HcclResult hrtRaSocketBatchConnect(struct socket_connect_info_t conn[], u32 num,
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketBatchClose(struct socket_close_info_t conn[], u32 num, u32 maxLen)
+HcclResult hrtRaSocketBatchClose(struct SocketCloseInfoT conn[], u32 num, u32 maxLen)
 {
     CHK_PTR_NULL(conn);
-    HCCL_INFO("ra socket batch close fdhandle[%p]", conn->fd_handle);
+    HCCL_INFO("ra socket batch close fdhandle[%p]", conn->fdHandle);
     CHK_PRT_RET((num > maxLen) || (num == 0), HCCL_ERROR("[BatchClose][RaSocket]ra socket batch connect para error "\
         "num[%u], maxLen[%u]", num, maxLen), HCCL_E_PARA);
     s32 ret = 0;
@@ -1219,14 +1219,14 @@ HcclResult hrtRaSocketBatchClose(struct socket_close_info_t conn[], u32 num, u32
             HCCL_ERROR("[BatchClose][RaSocket]errNo[0x%016llx] ra socket batch close timeout[%d s], ret[%d], num[%u]",
                 HCCL_ERROR_CODE(HCCL_E_TIMEOUT), timeout, ret, num);
             for (u32 idx = 0; idx < num; idx++) {
-                HCCL_ERROR("cur idx[%u] disuse_linger[%d]", idx, conn[idx].disuse_linger);
+                HCCL_ERROR("cur idx[%u] disuseLinger[%d]", idx, conn[idx].disuseLinger);
             }
             return HCCL_E_TIMEOUT;
         } else {
             HCCL_ERROR("[BatchClose][RaSocket]errNo[0x%016llx] ra socket batch close fail. return[%d], num[%u]",\
                 HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret, num);
             for (u32 idx = 0; idx < num; idx++) {
-                HCCL_ERROR("cur idx[%u] disuse_linger[%d]", idx, conn[idx].disuse_linger);
+                HCCL_ERROR("cur idx[%u] disuseLinger[%d]", idx, conn[idx].disuseLinger);
             }
             return HCCL_E_TCP_CONNECT;  // 非ra限速场景错误，不轮询，直接退出
         }
@@ -1236,12 +1236,12 @@ HcclResult hrtRaSocketBatchClose(struct socket_close_info_t conn[], u32 num, u32
     return HCCL_SUCCESS;
 }
 
-s32 hrtRaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+s32 hrtRaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     return DlRaFunction::GetInstance().dlRaGetSockets(role, conn, num, connectedNum);
 }
 
-HcclResult hrtRaNonBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+HcclResult hrtRaNonBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     CHK_PTR_NULL(conn);
     CHK_PRT_RET(num == 0, HCCL_ERROR("[hrtRaBlockGetSockets]ra get rasocket para error, num[%d]", num), HCCL_E_PARA);
@@ -1254,8 +1254,8 @@ HcclResult hrtRaNonBlockGetSockets(u32 role, struct socket_info_t conn[], u32 nu
         HCCL_ERROR("[hrtRaNonBlockGetSockets]get ra socket error. role[%u], num[%u], ret[%d], connected num[%u]", \
             role, num, ret, *connectedNum);
         for (u32 idx = 0; idx < num; idx++) {
-            HCCL_ERROR("cur idx[%u] socket_handle[%u] s_addr[%u] tag[%s]", idx, conn[idx].socket_handle, 
-                conn[idx].remote_ip.addr.s_addr, conn[idx].tag);
+            HCCL_ERROR("cur idx[%u] socketHandle[%u] s_addr[%u] tag[%s]", idx, conn[idx].socketHandle, 
+                conn[idx].remoteIp.addr.s_addr, conn[idx].tag);
         }
         return HCCL_E_TCP_CONNECT;
     }
@@ -1263,7 +1263,7 @@ HcclResult hrtRaNonBlockGetSockets(u32 role, struct socket_info_t conn[], u32 nu
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaBlockGetSockets(u32 role, struct socket_info_t conn[], u32 num)
+HcclResult hrtRaBlockGetSockets(u32 role, struct SocketInfoT conn[], u32 num)
 {
     CHK_PTR_NULL(conn);
     CHK_PRT_RET(num == 0, HCCL_ERROR("[hrtRaBlockGetSockets]ra get rasocket para error"), HCCL_E_PARA);
@@ -1504,10 +1504,10 @@ HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, s
 
 HcclResult hrtGetHostIf(vector<pair<string, HcclIpAddress>> &hostIfs, u32 devPhyId)
 {
-    struct ra_get_ifattr config = {0};
-    config.phy_id = devPhyId;
-    config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
-    config.is_all = false;
+    struct RaGetIfattr config = {0};
+    config.phyId = devPhyId;
+    config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
+    config.isAll = false;
 
     u32 ifAddrNum = 0;
     CHK_RET(hrtGetIfNum(config, ifAddrNum));
@@ -1517,15 +1517,15 @@ HcclResult hrtGetHostIf(vector<pair<string, HcclIpAddress>> &hostIfs, u32 devPhy
         return HCCL_SUCCESS;
     }
 
-    struct interface_info *ifAddrInfos;
-    NEW_NOTHROW(ifAddrInfos, struct interface_info[ifAddrNum], return HCCL_E_MEMORY);
-    shared_ptr<struct interface_info> ifAddrInfoPtrs(ifAddrInfos, default_delete<struct interface_info[]>());
+    struct InterfaceInfo *ifAddrInfos;
+    NEW_NOTHROW(ifAddrInfos, struct InterfaceInfo[ifAddrNum], return HCCL_E_MEMORY);
+    shared_ptr<struct InterfaceInfo> ifAddrInfoPtrs(ifAddrInfos, default_delete<struct InterfaceInfo[]>());
 
-    s32 sRet = memset_s(ifAddrInfos, ifAddrNum * sizeof(interface_info), 0, ifAddrNum * sizeof(interface_info));
+    s32 sRet = memset_s(ifAddrInfos, ifAddrNum * sizeof(InterfaceInfo), 0, ifAddrNum * sizeof(InterfaceInfo));
     if (sRet != EOK) {
         HCCL_ERROR("[Get][HostIf]errNo[0x%016llx] memoryset ifAddrInfos to 0 failed. params: "\
             "dest[%p], dest_size[%zu Byte], count[%zu]", HCCL_ERROR_CODE(HCCL_E_SYSCALL), ifAddrInfos,
-            ifAddrNum * sizeof(interface_info), ifAddrNum * sizeof(interface_info));
+            ifAddrNum * sizeof(InterfaceInfo), ifAddrNum * sizeof(InterfaceInfo));
         return HCCL_E_SYSCALL;
     }
     CHK_RET(hrtGetIfAddress(config, ifAddrInfos, ifAddrNum));
@@ -1537,7 +1537,7 @@ HcclResult hrtGetHostIf(vector<pair<string, HcclIpAddress>> &hostIfs, u32 devPhy
         HcclIpAddress ipInfo(ifAddrInfos[i].family, temp);
         CHK_PRT_RET(ipInfo.IsInvalid(), HCCL_ERROR("ip is invalid."), HCCL_E_PARA);
         CHK_RET(ipInfo.SetIfName(ifAddrInfos[i].ifname));
-        CHK_RET(ipInfo.SetScopeID(ifAddrInfos[i].scope_id));
+        CHK_RET(ipInfo.SetScopeID(ifAddrInfos[i].scopeId));
         hostIfs.push_back({ifAddrInfos[i].ifname, ipInfo});
         HCCL_INFO("[Get][HostIf]hrtGetIfAddress: idx[%u] ifname[%s] ip[%s]",
             i, ifAddrInfos[i].ifname, ipInfo.GetReadableAddress());
@@ -1596,11 +1596,11 @@ HcclResult hrtRaSocketGetWhiteListStatus(u32 &enable)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketWhiteListAdd(SocketHandle socketHandle, struct socket_wlist_info_t whiteList[], u32 num)
+HcclResult hrtRaSocketWhiteListAdd(SocketHandle socketHandle, struct SocketWlistInfoT whiteList[], u32 num)
 {
     HCCL_INFO("add white list: num[%u].", num);
     for (u32 i = 0; i < num; i++) {
-        HCCL_DEBUG("add white list: idx[%u], remote_ip[%u], tag[%s].", i, whiteList[i].remote_ip.addr.s_addr,
+        HCCL_DEBUG("add white list: idx[%u], remoteIp[%u], tag[%s].", i, whiteList[i].remoteIp.addr.s_addr,
             whiteList[i].tag);
         s32 ret = DlRaFunction::GetInstance().dlRaSocketWhiteListAdd(socketHandle, whiteList + i, 1);
         CHK_PRT_RET(ret != 0,
@@ -1611,11 +1611,11 @@ HcclResult hrtRaSocketWhiteListAdd(SocketHandle socketHandle, struct socket_wlis
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketWhiteListDel(SocketHandle socketHandle, struct socket_wlist_info_t whiteList[], u32 num)
+HcclResult hrtRaSocketWhiteListDel(SocketHandle socketHandle, struct SocketWlistInfoT whiteList[], u32 num)
 {
     HCCL_DEBUG("delete white list: num[%u].", num);
     for (u32 i = 0; i < num; i++) {
-        HCCL_DEBUG("del white list: idx[%u], remote_ip[%u], tag[%s].", i, whiteList[i].remote_ip.addr.s_addr,
+        HCCL_DEBUG("del white list: idx[%u], remoteIp[%u], tag[%s].", i, whiteList[i].remoteIp.addr.s_addr,
             whiteList[i].tag);
         s32 ret = DlRaFunction::GetInstance().dlRaSocketWhiteListDel(socketHandle, whiteList + i, 1);
         CHK_PRT_RET(ret != 0,
@@ -1628,7 +1628,7 @@ HcclResult hrtRaSocketWhiteListDel(SocketHandle socketHandle, struct socket_wlis
 
 #endif
 
-HcclResult hrtGetIfNum(struct ra_get_ifattr &config, u32 &num)
+HcclResult hrtGetIfNum(struct RaGetIfattr &config, u32 &num)
 {
 #ifndef HCCD
     if (DlRaFunction::GetInstance().dlRaGetIfNum == nullptr) {
@@ -1646,7 +1646,7 @@ HcclResult hrtGetIfNum(struct ra_get_ifattr &config, u32 &num)
 #endif
 }
 
-HcclResult hrtGetIfAddress(struct ra_get_ifattr &config, struct interface_info ifaddrInfos[], u32 &num)
+HcclResult hrtGetIfAddress(struct RaGetIfattr &config, struct InterfaceInfo ifaddrInfos[], u32 &num)
 {
 #ifndef HCCD
     CHK_PRT_RET(num == 0, HCCL_ERROR("[Get][IfAddress]errNo[0x%016llx] ra get if address fail. input param num[%u] "\
@@ -1663,10 +1663,10 @@ HcclResult hrtGetIfAddress(struct ra_get_ifattr &config, struct interface_info i
 
 HcclResult hrtRaGetDeviceIP(u32 devicePhyId, vector<HcclIpAddress> &ipAddr)
 {
-    struct ra_get_ifattr config = {0};
-    config.phy_id = devicePhyId;
-    config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
-    config.is_all = false;
+    struct RaGetIfattr config = {0};
+    config.phyId = devicePhyId;
+    config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    config.isAll = false;
 
     u32 ifAddrNum = HCCL_DEVICE_NIC_NUM;
     CHK_RET(hrtGetIfNum(config, ifAddrNum));
@@ -1674,16 +1674,16 @@ HcclResult hrtRaGetDeviceIP(u32 devicePhyId, vector<HcclIpAddress> &ipAddr)
     HCCL_RUN_INFO("[Get][DeviceIP]hrtGetIfNum success. ifAddrNum[%u].", ifAddrNum);
 
     if (ifAddrNum == 0) {
-        HCCL_WARNING("[Get][DeviceIP]device has no ip information, phy_id[%u]", devicePhyId);
+        HCCL_WARNING("[Get][DeviceIP]device has no ip information, phyId[%u]", devicePhyId);
         return HCCL_SUCCESS;
     }
 
-    struct interface_info ifAddrInfos[HCCL_DEVICE_NIC_NUM];
-    s32 sRet = memset_s(ifAddrInfos, sizeof(interface_info) * HCCL_DEVICE_NIC_NUM, 0, \
-        sizeof(interface_info) * HCCL_DEVICE_NIC_NUM);
+    struct InterfaceInfo ifAddrInfos[HCCL_DEVICE_NIC_NUM];
+    s32 sRet = memset_s(ifAddrInfos, sizeof(InterfaceInfo) * HCCL_DEVICE_NIC_NUM, 0, \
+        sizeof(InterfaceInfo) * HCCL_DEVICE_NIC_NUM);
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Get][DeviceIP]errNo[0x%016llx] memoryset ifAddrInfos to 0 failed. params: "\
         "dest[%p], dest_size[%zu Byte], count[%zu]", HCCL_ERROR_CODE(HCCL_E_SYSCALL), ifAddrInfos,
-        sizeof(interface_info) * HCCL_DEVICE_NIC_NUM, sizeof(interface_info) * HCCL_DEVICE_NIC_NUM), HCCL_E_SYSCALL);
+        sizeof(InterfaceInfo) * HCCL_DEVICE_NIC_NUM, sizeof(InterfaceInfo) * HCCL_DEVICE_NIC_NUM), HCCL_E_SYSCALL);
 
     CHK_RET(hrtGetIfAddress(config, ifAddrInfos, ifAddrNum));
 
@@ -1698,7 +1698,7 @@ HcclResult hrtRaGetDeviceIP(u32 devicePhyId, vector<HcclIpAddress> &ipAddr)
         HcclIpAddress ipInfo(ifAddrInfos[i].family, temp);
         CHK_PRT_RET(ipInfo.IsInvalid(), HCCL_ERROR("ip is invalid."), HCCL_E_PARA);
         CHK_RET(ipInfo.SetIfName(ifAddrInfos[i].ifname));
-        CHK_RET(ipInfo.SetScopeID(ifAddrInfos[i].scope_id));
+        CHK_RET(ipInfo.SetScopeID(ifAddrInfos[i].scopeId));
         ipAddr.push_back(ipInfo);
         HCCL_RUN_INFO("[Get][DeviceIP]hrtGetIfAddress: idx[%u] ifname[%s] ip[%s]",
             i, ifAddrInfos[i].ifname, ipInfo.GetReadableAddress());
@@ -1727,10 +1727,10 @@ HcclResult hrtRaGetDeviceAllNicIP(vector<vector<HcclIpAddress>> &ipAddr)
         HCCL_ERROR("[Get][DeviceAllNicIP] is not supported on device type[%d]. Please check device type.", deviceType),
         HCCL_E_NOT_SUPPORT);
 
-    struct ra_get_ifattr config = {0};
-    config.phy_id = devicePhyId;
-    config.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
-    config.is_all = true;
+    struct RaGetIfattr config = {0};
+    config.phyId = devicePhyId;
+    config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
+    config.isAll = true;
 
     u32 nicNum = deviceType == DevType::DEV_TYPE_910_93 ? ALL_NIC_NUM_910_93 : ALL_NIC_NUM_910_A2;
     u32 maxNicIpNum = HCCL_DEVICE_NIC_NUM * nicNum;
@@ -1741,11 +1741,11 @@ HcclResult hrtRaGetDeviceAllNicIP(vector<vector<HcclIpAddress>> &ipAddr)
     HCCL_RUN_INFO("[Get][DeviceAllNicIP]hrtGetIfNum success. ifAddrNum[%u].", ifAddrNum);
 
     if (ifAddrNum == 0) {
-        HCCL_WARNING("[Get][DeviceAllNicIP]device has no ip information, phy_id[%u]", devicePhyId);
+        HCCL_WARNING("[Get][DeviceAllNicIP]device has no ip information, phyId[%u]", devicePhyId);
         return HCCL_SUCCESS;
     }
 
-    struct interface_info ifAddrInfos[HCCL_DEVICE_NIC_NUM * MAX_ALL_NIC_NUM] = {0};
+    struct InterfaceInfo ifAddrInfos[HCCL_DEVICE_NIC_NUM * MAX_ALL_NIC_NUM] = {0};
     CHK_RET(hrtGetIfAddress(config, ifAddrInfos, ifAddrNum));
     CHK_PRT_RET(ifAddrNum > maxNicIpNum,
         HCCL_ERROR("[Get][DeviceAllNicIP]hrtGetIfAddress fail. ifAddrNum[%u] should be below %u", ifAddrNum,
@@ -1759,7 +1759,7 @@ HcclResult hrtRaGetDeviceAllNicIP(vector<vector<HcclIpAddress>> &ipAddr)
         HcclIpAddress ipInfo(ifAddrInfos[i].family, temp);
         CHK_PRT_RET(ipInfo.IsInvalid(), HCCL_ERROR("ip is invalid."), HCCL_E_PARA);
         CHK_RET(ipInfo.SetIfName(ifAddrInfos[i].ifname));
-        CHK_RET(ipInfo.SetScopeID(ifAddrInfos[i].scope_id));
+        CHK_RET(ipInfo.SetScopeID(ifAddrInfos[i].scopeId));
         if (ifname2Index.find(ifAddrInfos[i].ifname) == ifname2Index.end()) {
             ifname2Index.emplace(ifAddrInfos[i].ifname, ipAddr.size());
             ipAddr.emplace_back(vector<HcclIpAddress>());
@@ -1805,20 +1805,20 @@ HcclResult GetIsSupSockBatchCloseImmed(u32 phyId, bool& isSupportBatchClose)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaCreateCq(RdmaHandle handle, struct cq_attr* attr)
+HcclResult hrtRaCreateCq(RdmaHandle handle, struct CqAttr* attr)
 {
     CHK_PTR_NULL(handle);
     CHK_PTR_NULL(attr);
-    CHK_PTR_NULL(attr->ib_send_cq);
-    CHK_PTR_NULL(attr->ib_recv_cq);
-    CHK_PTR_NULL(attr->qp_context);
-    HCCL_DEBUG("ra create cq: send_cq_depth[%d], recv_cq_depth[%d], send_cq_event_id[%d], recv_cq_event_id[%d]",
-               attr->send_cq_depth, attr->recv_cq_depth, attr->send_cq_event_id, attr->recv_cq_event_id);
+    CHK_PTR_NULL(attr->ibSendCq);
+    CHK_PTR_NULL(attr->ibRecvCq);
+    CHK_PTR_NULL(attr->qpContext);
+    HCCL_DEBUG("ra create cq: sendCqDepth[%d], recvCqDepth[%d], sendCqEventId[%d], recvCqEventId[%d]",
+               attr->sendCqDepth, attr->recvCqDepth, attr->sendCqEventId, attr->recvCqEventId);
     s32 ret = DlRaFunction::GetInstance().dlRaCreateCq(handle, attr);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Create][RaCq]errNo[0x%016llx] ra create cq fail. return[%d] "\
-        "send_cq_depth[%d], recv_cq_depth[%d], send_cq_event_id[%d], recv_cq_event_id[%d]",\
-        HCCL_ERROR_CODE(HCCL_E_INTERNAL), ret, attr->send_cq_depth, attr->recv_cq_depth, attr->send_cq_event_id,\
-        attr->recv_cq_event_id), HCCL_E_INTERNAL);
+        "sendCqDepth[%d], recvCqDepth[%d], sendCqEventId[%d], recvCqEventId[%d]",\
+        HCCL_ERROR_CODE(HCCL_E_INTERNAL), ret, attr->sendCqDepth, attr->recvCqDepth, attr->sendCqEventId,\
+        attr->recvCqEventId), HCCL_E_INTERNAL);
     return HCCL_SUCCESS;
 }
 
@@ -1826,23 +1826,23 @@ map<string, vector<CqInfo>> g_qpRecords;
 mutex g_qpRecordsMutex;
 HcclResult CreateCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
-    struct cq_attr attr;
-    attr.qp_context = &cq.context;
-    attr.ib_send_cq = &cq.sq;
-    attr.ib_recv_cq = &cq.rq;
-    attr.send_cq_depth = cq.depth;
-    attr.recv_cq_depth = cq.depth;
+    struct CqAttr attr;
+    attr.qpContext = &cq.context;
+    attr.ibSendCq = &cq.sq;
+    attr.ibRecvCq = &cq.rq;
+    attr.sendCqDepth = cq.depth;
+    attr.recvCqDepth = cq.depth;
 
-    attr.send_cq_event_id = cq.sqEvent;
-    attr.recv_cq_event_id = cq.rqEvent;
-    attr.send_channel = cq.sendChannel;
-    attr.recv_channel = cq.recvChannel;
-    attr.srq_context = cq.srqContext;
+    attr.sendCqEventId = cq.sqEvent;
+    attr.recvCqEventId = cq.rqEvent;
+    attr.sendChannel = cq.sendChannel;
+    attr.recvChannel = cq.recvChannel;
+    attr.srqContext = cq.srqContext;
     CHK_RET(hrtRaCreateCq(rdmaHandle, &attr));
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaDestroyCq(RdmaHandle handle, struct cq_attr* attr)
+HcclResult hrtRaDestroyCq(RdmaHandle handle, struct CqAttr* attr)
 {
     CHK_PTR_NULL(handle);
     CHK_PTR_NULL(attr);
@@ -1875,7 +1875,7 @@ HcclResult hrtRaNormalQpCreate(RdmaHandle handle, struct ibv_qp_init_attr* initA
         HCCL_ERROR_CODE(HCCL_E_INTERNAL), ret, initAttr->qp_type, initAttr->cap.max_inline_data, initAttr->cap.max_send_wr,
         initAttr->cap.max_send_sge, initAttr->cap.max_recv_wr, initAttr->cap.max_recv_sge), HCCL_E_INTERNAL);
 
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
     s32 deviceId = 0;
     if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
@@ -1890,7 +1890,7 @@ HcclResult hrtRaNormalQpCreate(RdmaHandle handle, struct ibv_qp_init_attr* initA
 
 HcclResult hrtRaNormalQpDestroy(QpHandle qpHandle)
 {
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
     s32 deviceId = 0;
     if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
@@ -1907,15 +1907,15 @@ HcclResult hrtRaNormalQpDestroy(QpHandle qpHandle)
 
 HcclResult DestroyCq(RdmaHandle rdmaHandle, CqInfo& cq)
 {
-    struct cq_attr attr;
-    attr.qp_context = &cq.context;
-    attr.ib_send_cq = &cq.sq;
-    attr.ib_recv_cq = &cq.rq;
+    struct CqAttr attr;
+    attr.qpContext = &cq.context;
+    attr.ibSendCq = &cq.sq;
+    attr.ibRecvCq = &cq.rq;
     CHK_RET(hrtRaDestroyCq(rdmaHandle, &attr));
     return HCCL_SUCCESS;
 }
 
-HcclResult ConstructQpAttrs(s32 qpMode, struct qp_ext_attrs &attrs, const QueueDepthAttr& qpDepth, bool isWorkFlowLib)
+HcclResult ConstructQpAttrs(s32 qpMode, struct QpExtAttrs &attrs, const QueueDepthAttr& qpDepth, bool isWorkFlowLib)
 {
     HCCL_INFO("[ConstructQpAttrs][qpDepth]sendCqDepth[%u], recvCqDepth[%u], sqDepth[%u], rqDepth[%u]", qpDepth.sendCqDepth, qpDepth.recvCqDepth,
         qpDepth.sqDepth, qpDepth.rqDepth);
@@ -1932,34 +1932,34 @@ HcclResult ConstructQpAttrs(s32 qpMode, struct qp_ext_attrs &attrs, const QueueD
         HCCL_ERROR("[CheckQpDepth]rqDepth[%u] is invalid, rqDepth should be power of 2 and in [%u, %u]",
         qpDepth.rqDepth, QP_DEPTH_MIN, QP_DEPTH_MAX);, HCCL_E_PARA);
 
-    attrs.qp_mode = qpMode;
+    attrs.qpMode = qpMode;
     attrs.version = QP_CREATE_WITH_ATTR_VERSION;
-    attrs.cq_attr.recv_cq_depth = (qpDepth.recvCqDepth == INVALID_UINT) ? DEFAULT_MAX_RECV_CQ_DEPTH : qpDepth.recvCqDepth;
-    attrs.qp_attr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
-    attrs.qp_attr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
-    attrs.qp_attr.cap.max_recv_wr = (qpDepth.rqDepth == INVALID_UINT) ? DEFAULT_MAX_RECV_WR : qpDepth.rqDepth;
-    attrs.qp_attr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
-    attrs.qp_attr.qp_type = IBV_QPT_RC;
+    attrs.cqAttr.recvCqDepth = (qpDepth.recvCqDepth == INVALID_UINT) ? DEFAULT_MAX_RECV_CQ_DEPTH : qpDepth.recvCqDepth;
+    attrs.qpAttr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
+    attrs.qpAttr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
+    attrs.qpAttr.cap.max_recv_wr = (qpDepth.rqDepth == INVALID_UINT) ? DEFAULT_MAX_RECV_WR : qpDepth.rqDepth;
+    attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    attrs.qpAttr.qp_type = IBV_QPT_RC;
 
     if (qpDepth.sqDepth == INVALID_UINT) {
         if (qpMode == OFFLINE_QP_MODE_EXT || isWorkFlowLib) {
-            attrs.qp_attr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
+            attrs.qpAttr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
         } else {
-            attrs.qp_attr.cap.max_send_wr = DEFAULT_OPBASE_MAX_SEND_WR;
+            attrs.qpAttr.cap.max_send_wr = DEFAULT_OPBASE_MAX_SEND_WR;
         }
     } else {
-        attrs.qp_attr.cap.max_send_wr = qpDepth.sqDepth;
+        attrs.qpAttr.cap.max_send_wr = qpDepth.sqDepth;
     }
     if (qpDepth.sendCqDepth == INVALID_UINT) {
-        attrs.cq_attr.send_cq_depth = DEFAULT_MAX_SEND_CQ_DEPTH;
+        attrs.cqAttr.sendCqDepth = DEFAULT_MAX_SEND_CQ_DEPTH;
         if (qpMode == OFFLINE_QP_MODE_EXT || qpMode == OFFLINE_QP_MODE || isWorkFlowLib) {
-            attrs.cq_attr.send_cq_depth = HCCL_SEND_CQ_DEPTH_DEFAULT;
+            attrs.cqAttr.sendCqDepth = HCCL_SEND_CQ_DEPTH_DEFAULT;
         }
     } else {
-        attrs.cq_attr.send_cq_depth = qpDepth.sendCqDepth;
+        attrs.cqAttr.sendCqDepth = qpDepth.sendCqDepth;
     }
-    HCCL_INFO("[ConstructQpAttrs][attr]send_cq_depth[%d], recv_cq_depth[%d], max_send_wr[%u], max_recv_wr[%u]", attrs.cq_attr.send_cq_depth,
-        attrs.cq_attr.recv_cq_depth, attrs.qp_attr.cap.max_send_wr, attrs.qp_attr.cap.max_recv_wr);
+    HCCL_INFO("[ConstructQpAttrs][attr]sendCqDepth[%d], recvCqDepth[%d], max_send_wr[%u], max_recv_wr[%u]", attrs.cqAttr.sendCqDepth,
+        attrs.cqAttr.recvCqDepth, attrs.qpAttr.cap.max_send_wr, attrs.qpAttr.cap.max_recv_wr);
     return HCCL_SUCCESS;
 }
 
@@ -1967,11 +1967,11 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
 {
     HCCL_INFO("CreateQp  qpMode[%d], isESMode[%d].", qpMode, isESMode);
     if (isESMode && (qpMode == OFFLINE_QP_MODE_EXT || qpMode == OPBASE_QP_MODE_EXT)) {
-        struct qp_ext_attrs attrs{};
+        struct QpExtAttrs attrs{};
         QueueDepthAttr qpDepth{};
         CHK_RET(ConstructQpAttrs(qpMode, attrs, qpDepth));
-        attrs.udp_sport = 0x0;
-        attrs.qp_attr.cap.max_send_wr = HETEROG_OFFLINE_EXT_MAX_SEND_WR;
+        attrs.udpSport = 0x0;
+        attrs.qpAttr.cap.max_send_wr = HETEROG_OFFLINE_EXT_MAX_SEND_WR;
         CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &attrs, qp.qpHandle));
     } else {
         CHK_RET(HrtRaQpCreate(rdmaHandle, flag, qpMode, qp.qpHandle));
@@ -2161,13 +2161,13 @@ HcclResult DestroyQpWithCq(const QpInfo& info, bool isHdcMode)
     return HCCL_SUCCESS;
 }
 
-HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct ai_qp_info &aiQpInfo, QpInfo &info, u32 devicePhyId)
+HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct AiQpInfo &aiQpInfo, QpInfo &info, u32 devicePhyId)
 {
-    struct qp_ext_attrs attrs{};
+    struct QpExtAttrs attrs{};
     QueueDepthAttr qpDepth{};
     CHK_RET(ConstructQpAttrs(info.qpMode, attrs, qpDepth, false));
-    attrs.qp_attr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
-    attrs.udp_sport = 0;
+    attrs.qpAttr.cap.max_send_wr = DEFAULT_OFFLINE_MAX_SEND_WR;
+    attrs.udpSport = 0;
 
     CHK_RET(hrtRaAiQpCreate(devicePhyId, rdmaHandle, &attrs, &aiQpInfo, info.qpHandle));
 
@@ -2175,11 +2175,11 @@ HcclResult CreateAiQp(RdmaHandle rdmaHandle, struct ai_qp_info &aiQpInfo, QpInfo
     CHK_RET(SetQpAttrTimeOut(info.qpHandle));
     CHK_RET(SetQpAttrRetryCnt(info.qpHandle));
 
-    info.qp = reinterpret_cast<struct ibv_qp *>(aiQpInfo.ai_qp_addr);
+    info.qp = reinterpret_cast<struct ibv_qp *>(aiQpInfo.aiQpAddr);
     CHK_PTR_NULL(info.qp);
 
-    info.sendCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.ai_scq_addr);
-    info.recvCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.ai_rcq_addr);
+    info.sendCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.aiScqAddr);
+    info.recvCq = reinterpret_cast<struct ibv_cq *>(aiQpInfo.aiRcqAddr);
 
     return HCCL_SUCCESS;
 }
@@ -2195,7 +2195,7 @@ HcclResult DestroyAiQp(const QpInfo &info)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSetQpAttrQos(QpHandle qpHandle, struct qos_attr &attr)
+HcclResult hrtRaSetQpAttrQos(QpHandle qpHandle, struct QosAttr &attr)
 {
     s32 ret = DlRaFunction::GetInstance().dlRaSetQpAttrQos(qpHandle, &attr);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Set][SqAttr]set qp attr qos failed tc[%u] sl[%u] ret[%d]",\
@@ -2221,7 +2221,7 @@ HcclResult hrtRaSetQpAttrRetryCnt(QpHandle qpHandle, u32 &retryCnt)
 
 HcclResult SetQpAttrQos(QpHandle qpHandle, u32 tc, u32 sl)
 {
-    struct qos_attr qosAttr = {0};
+    struct QosAttr qosAttr = {0};
     if (tc == HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET && sl == HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET) {
         qosAttr.tc = GetExternalInputRdmaTrafficClass();
         qosAttr.sl = GetExternalInputRdmaServerLevel();
@@ -2277,13 +2277,13 @@ HcclResult hrtRaDestroyCompChannel(RdmaHandle rdmaHandle, void *compChannel)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaGetCqeErrInfo(unsigned int phy_id, struct cqe_err_info *info)
+HcclResult hrtRaGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info)
 {
-    s32 ret = DlRaFunction::GetInstance().dlRaGetCqeErrInfo(phy_id, info);
+    s32 ret = DlRaFunction::GetInstance().dlRaGetCqeErrInfo(phyId, info);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[hrtRaGetCqeErrInfo]Get Cqe err info failed"), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
-HcclResult hrtRaGetCqeErrInfoList(RdmaHandle rdmaHandle, struct cqe_err_info *infolist, u32 *num)
+HcclResult hrtRaGetCqeErrInfoList(RdmaHandle rdmaHandle, struct CqeErrInfo *infolist, u32 *num)
 {
     CHK_PTR_NULL(rdmaHandle);
     CHK_PTR_NULL(DlRaFunction::GetInstance().dlRaGetCqeErrInfoList);
@@ -2340,7 +2340,7 @@ HcclResult IsSupportRaSendNormalWrlist(bool& isSupportRaSendNormalWrlist)
 }
  
 
-HcclResult hrtRaGetQpAttr(QpHandle qpHandle, struct qp_attr *attr)
+HcclResult hrtRaGetQpAttr(QpHandle qpHandle, struct QpAttr *attr)
 {
     s32 ret = DlRaFunction::GetInstance().dlRaGetQpAttr(qpHandle, attr);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("Get qpn info failed"), HCCL_E_NETWORK);
@@ -2349,14 +2349,14 @@ HcclResult hrtRaGetQpAttr(QpHandle qpHandle, struct qp_attr *attr)
 
 HcclResult hrtRaCreateSrq(RdmaHandle rdmaHandle, SrqInfo &srqInfo)
 {
-    struct srq_attr attr = {nullptr};
-    attr.ib_srq = &srqInfo.srq;
-    attr.ib_recv_cq = &srqInfo.srqCq;
-    attr.max_sge = MAX_RECV_SGE_NUM;
+    struct SrqAttr attr = {nullptr};
+    attr.ibSrq = &srqInfo.srq;
+    attr.ibRecvCq = &srqInfo.srqCq;
+    attr.maxSge = MAX_RECV_SGE_NUM;
     attr.context = &srqInfo.context;
-    attr.srq_event_id = srqInfo.srqEvent;
-    attr.srq_depth = srqInfo.srqDepth;
-    attr.cq_depth = MAX_CQ_DEPTH;
+    attr.srqEventId = srqInfo.srqEvent;
+    attr.srqDepth = srqInfo.srqDepth;
+    attr.cqDepth = MAX_CQ_DEPTH;
     s32 ret = DlRaFunction::GetInstance().dlRaCreateSrq(rdmaHandle, &attr);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Create][Srq]errNo[0x%016llx] ra create srq fail. "
         "return[%d], params: rdmaHandle[%p]", HCCL_ERROR_CODE(HCCL_E_NETWORK),
@@ -2367,9 +2367,9 @@ HcclResult hrtRaCreateSrq(RdmaHandle rdmaHandle, SrqInfo &srqInfo)
 
 HcclResult hrtRaDestroySrq(RdmaHandle rdmaHandle, SrqInfo &srqInfo)
 {
-    struct srq_attr attr = {nullptr};
+    struct SrqAttr attr = {nullptr};
     attr.context = &srqInfo.context;
-    attr.ib_srq = &srqInfo.srq;
+    attr.ibSrq = &srqInfo.srq;
     s32 ret = DlRaFunction::GetInstance().dlRaDestroyeSrq(rdmaHandle, &attr);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Destroy][Srq]errNo[0x%016llx] ra destroy normal qp fail. "
         "return[%d], params: rdmaHandle[%p]", HCCL_ERROR_CODE(HCCL_E_NETWORK),
@@ -2409,12 +2409,12 @@ HcclResult hrtRaWaitEventHandle(s32 eventHandle, std::vector<SocketEventInfo> &e
         HCCL_ERROR("driver package does not support hrtRaWaitEventHandle, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
-    std::vector<struct socket_event_info> raEventInfos(maxEvents);
+    std::vector<struct SocketEventInfoT> raEventInfos(maxEvents);
     s32 ret = DlRaFunction::GetInstance().dlRaWaitEventHandle(eventHandle, raEventInfos.data(), timeOut, maxEvents,
         &eventsNum);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("Wait event handle failed, ret is [%d]", ret), HCCL_E_NETWORK);
     for (u32 i = 0; i < eventsNum; i++) {
-        eventInfos[i].fdHandle = raEventInfos[i].fd_handle;
+        eventInfos[i].fdHandle = raEventInfos[i].fdHandle;
     }
     return HCCL_SUCCESS;
 }
@@ -2430,17 +2430,17 @@ HcclResult hrtRaDestroyEventHandle(s32 &eventHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, QpHandle &qpHandle)
+HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, QpHandle &qpHandle)
 {
     string qpInfo = string("rdmaHandle:[") + to_string(reinterpret_cast<intptr_t>(rdmaHandle)) + string("],qpHandle:[") +
-        to_string(reinterpret_cast<intptr_t>(&qpHandle)) + string("]; qp attr:[qpMode:") + to_string(attrs->qp_mode) +
-        string(",udp_sport:") + to_string(attrs->udp_sport) + string(",version:") + to_string(attrs->version) +
-        string(",mem_align:") + to_string(attrs->mem_align) + string("]; cq attr: [send_cq_depth:") +
-        to_string(attrs->cq_attr.send_cq_depth) + string(",recv_cq_depth:") + to_string(attrs->cq_attr.recv_cq_depth) +
-        string(",send_cq_comp_vector:") + to_string(attrs->cq_attr.send_cq_comp_vector) +
-        string(",recv_cq_comp_vector:") + to_string(attrs->cq_attr.recv_cq_comp_vector) + string(",cap.max_send_wr:") +
-        to_string(attrs->qp_attr.cap.max_send_wr) + string(",cap.max_recv_wr:") +
-        to_string(attrs->qp_attr.cap.max_recv_wr) + "]";
+        to_string(reinterpret_cast<intptr_t>(&qpHandle)) + string("]; qp attr:[qpMode:") + to_string(attrs->qpMode) +
+        string(",udpSport:") + to_string(attrs->udpSport) + string(",version:") + to_string(attrs->version) +
+        string(",memAlign:") + to_string(attrs->memAlign) + string("]; cq attr: [sendCqDepth:") +
+        to_string(attrs->cqAttr.sendCqDepth) + string(",recvCqDepth:") + to_string(attrs->cqAttr.recvCqDepth) +
+        string(",sendCqCompVector:") + to_string(attrs->cqAttr.sendCqCompVector) +
+        string(",recvCqCompVector:") + to_string(attrs->cqAttr.recvCqCompVector) + string(",cap.max_send_wr:") +
+        to_string(attrs->qpAttr.cap.max_send_wr) + string(",cap.max_recv_wr:") +
+        to_string(attrs->qpAttr.cap.max_recv_wr) + "]";
 
     s32 ret = DlRaFunction::GetInstance().dlRaQpCreateWithAttrs(rdmaHandle, attrs, &qpHandle);
     if (ret == ROCE_ENOMEM_RET && GetExternalInputRdmaFastPost()) {
@@ -2455,7 +2455,7 @@ HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *at
         HCCL_ERROR_CODE(HCCL_E_NETWORK), qpInfo.c_str(), ret),
         HCCL_E_NETWORK);
     
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
     s32 deviceId = 0;
     if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
@@ -2465,25 +2465,25 @@ HcclResult hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *at
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaAiQpCreate(u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs,
-    struct ai_qp_info *info, QpHandle &qpHandle)
+HcclResult hrtRaAiQpCreate(u32 phyId, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs,
+    struct AiQpInfo *info, QpHandle &qpHandle)
 {
     u32 aiQpCreateVersion = 0;
-    HcclResult vRet = hrtRaGetInterfaceVersion(phy_id, AI_QP_CREATE, &aiQpCreateVersion);
+    HcclResult vRet = hrtRaGetInterfaceVersion(phyId, AI_QP_CREATE, &aiQpCreateVersion);
     if (vRet != HCCL_SUCCESS || aiQpCreateVersion < AI_QP_CREATE_VERSION) {
         HCCL_ERROR("this package does not support hrtRaAiQpCreate for device, please change new package");
         return HCCL_E_NOT_SUPPORT;
     }
     s32 ret = DlRaFunction::GetInstance().dlRaAiQpCreate(rdmaHandle, attrs, info, &qpHandle);
 
-    string qpInfo = string("qp attr:[qpMode:") + to_string(attrs->qp_mode) +
-        string(",udp_sport:") + to_string(attrs->udp_sport) + string(",version:") + to_string(attrs->version) +
-        string(",mem_align:") + to_string(attrs->mem_align) + string("]; cq attr: [send_cq_depth:") +
-        to_string(attrs->cq_attr.send_cq_depth) + string(",recv_cq_depth:") + to_string(attrs->cq_attr.recv_cq_depth) +
-        string(",send_cq_comp_vector:") + to_string(attrs->cq_attr.send_cq_comp_vector) +
-        string(",recv_cq_comp_vector:") + to_string(attrs->cq_attr.recv_cq_comp_vector) + string(",cap.max_send_wr:") +
-        to_string(attrs->qp_attr.cap.max_send_wr) + string(",cap.max_recv_wr:") +
-        to_string(attrs->qp_attr.cap.max_recv_wr) + "]";
+    string qpInfo = string("qp attr:[qpMode:") + to_string(attrs->qpMode) +
+        string(",udpSport:") + to_string(attrs->udpSport) + string(",version:") + to_string(attrs->version) +
+        string(",memAlign:") + to_string(attrs->memAlign) + string("]; cq attr: [sendCqDepth:") +
+        to_string(attrs->cqAttr.sendCqDepth) + string(",recvCqDepth:") + to_string(attrs->cqAttr.recvCqDepth) +
+        string(",sendCqCompVector:") + to_string(attrs->cqAttr.sendCqCompVector) +
+        string(",recvCqCompVector:") + to_string(attrs->cqAttr.recvCqCompVector) + string(",cap.max_send_wr:") +
+        to_string(attrs->qpAttr.cap.max_send_wr) + string(",cap.max_recv_wr:") +
+        to_string(attrs->qpAttr.cap.max_recv_wr) + "]";
 
     CHK_OOM_RET(ret, qpInfo.c_str());
 
@@ -2494,7 +2494,7 @@ HcclResult hrtRaAiQpCreate(u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attr
             ret),
         HCCL_E_NETWORK);
 
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
     s32 deviceId = 0;
     if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
@@ -2502,12 +2502,12 @@ HcclResult hrtRaAiQpCreate(u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attr
     }
     PLF_CONFIG_DEBUG(PLF_RES,
         "Create Qp para: deviceId[%d] qpn[%u] sq_depth[%u] rq_depth[%u] scq_depth[%u] rcq_depth[%u]",
-        deviceId, attr.qpn, attrs->qp_attr.cap.max_send_wr, attrs->qp_attr.cap.max_recv_wr,
-        attrs->cq_attr.send_cq_depth, attrs->cq_attr.recv_cq_depth);
+        deviceId, attr.qpn, attrs->qpAttr.cap.max_send_wr, attrs->qpAttr.cap.max_recv_wr,
+        attrs->cqAttr.sendCqDepth, attrs->cqAttr.recvCqDepth);
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaRecvWrlist(QpHandle handle, struct recv_wrlist_data *wr, unsigned int recvNum,
+HcclResult hrtRaRecvWrlist(QpHandle handle, struct RecvWrlistData *wr, unsigned int recvNum,
     unsigned int *completeNum)
 {
     if (DlRaFunction::GetInstance().dlRaRecvWrlist == nullptr) {
@@ -2577,7 +2577,7 @@ HcclResult IsSuppportRaGetSocketVnicIps(bool& supportGetSocketVnicIp)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaGetSocketVnicIpInfos(u32 phy_id, enum id_type type, vector<u32> deviceIds,
+HcclResult hrtRaGetSocketVnicIpInfos(u32 phyId, enum IdType type, vector<u32> deviceIds,
     vector<HcclIpAddress> &vnicIPs)
 {
     u32 vnicIpNum = deviceIds.size();
@@ -2594,14 +2594,14 @@ HcclResult hrtRaGetSocketVnicIpInfos(u32 phy_id, enum id_type type, vector<u32> 
             HCCL_INFO("[hrtRaGetSocketVnicIpInfos] vnicInfoMap deviceIds[%u] found, Ip[%s]",
                 deviceIds[i], vnicIP.GetReadableAddress());
         } else {
-            struct ip_info vnicIpInfo;
-            s32 sRet = memset_s(&vnicIpInfo, sizeof(ip_info), 0, sizeof(ip_info));
+            struct IpInfo vnicIpInfo;
+            s32 sRet = memset_s(&vnicIpInfo, sizeof(IpInfo), 0, sizeof(IpInfo));
             CHK_PRT_RET(sRet != EOK,
                 HCCL_ERROR("[hrtRaGetSocketVnicIpInfos]errNo[0x%016llx] memset vnicIpInfo to 0 failed."
                 "params: dest[%p], dest_size[%zu], count[%zu]",
-                HCCL_ERROR_CODE(HCCL_E_SYSCALL), &vnicIpInfo, sizeof(ip_info), sizeof(ip_info)),
+                HCCL_ERROR_CODE(HCCL_E_SYSCALL), &vnicIpInfo, sizeof(IpInfo), sizeof(IpInfo)),
                 HCCL_E_SYSCALL);
-            s32 ret = DlRaFunction::GetInstance().dlRaGetSocketVnicIpInfos(phy_id, type, &deviceIds[i], 1, &vnicIpInfo);
+            s32 ret = DlRaFunction::GetInstance().dlRaGetSocketVnicIpInfos(phyId, type, &deviceIds[i], 1, &vnicIpInfo);
             CHK_PRT_RET(ret != 0,
                 HCCL_ERROR("[hrtRaGetSocketVnicIpInfo]errNo[0x%016llx] ra get VnicIpfail. ret[%d]",
                 HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), ret),
@@ -2622,7 +2622,7 @@ HcclResult hrtRaGetSocketVnicIpInfos(u32 phy_id, enum id_type type, vector<u32> 
     return HCCL_SUCCESS;
 }
 
-HcclResult H2DTlvInit(struct tlv_init_info *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size, void **tlv_handle)
+HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size, void **tlv_handle)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2638,7 +2638,7 @@ HcclResult H2DTlvInit(struct tlv_init_info *init_info, uint32_t tlv_handle_id, u
     return HCCL_SUCCESS;
 }
  
-HcclResult H2DTlvRequest(void *tlv_handle, struct tlv_msg *send_msg, struct tlv_msg *recv_msg)
+HcclResult H2DTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2675,7 +2675,7 @@ HcclResult H2DTlvDeinit(void **tlv_handle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaGetSingleSocketVnicIpInfo(u32 phy_id, DeviceIdType deviceIdType, u32 deviceId,
+HcclResult hrtRaGetSingleSocketVnicIpInfo(u32 phyId, DeviceIdType deviceIdType, u32 deviceId,
     HcclIpAddress &vnicIP)
 {
     bool supportGetSocketVnicIp = false;
@@ -2686,16 +2686,16 @@ HcclResult hrtRaGetSingleSocketVnicIpInfo(u32 phy_id, DeviceIdType deviceIdType,
     }
     std::vector<u32> deviceIds;
     vector<HcclIpAddress> vnicIPs;
-    id_type idType = static_cast<id_type>(deviceIdType);
+    IdType idType = static_cast<IdType>(deviceIdType);
     deviceIds.push_back(deviceId);
-    CHK_RET(hrtRaGetSocketVnicIpInfos(phy_id, idType, deviceIds, vnicIPs));
+    CHK_RET(hrtRaGetSocketVnicIpInfos(phyId, idType, deviceIds, vnicIPs));
     vnicIP = vnicIPs[0];
-    HCCL_INFO("Get available Vnic info success, phy_id[%u], deviceIdType[%d], deviceId[0x%x], Vnic ip[%s]", phy_id, idType, deviceId,
+    HCCL_INFO("Get available Vnic info success, phyId[%u], deviceIdType[%d], deviceId[0x%x], Vnic ip[%s]", phyId, idType, deviceId,
         vnicIP.GetReadableAddress());
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaPingInit(struct ping_init_attr *initAttr, struct ping_init_info *initInfo, void **pingHandle)
+HcclResult hrtRaPingInit(struct PingInitAttr *initAttr, struct PingInitInfo *initInfo, void **pingHandle)
 {
     if (DlRaFunction::GetInstance().dlRaPingInit == nullptr) {
         HCCL_ERROR("driver package does not support hrtRaPingInit, please change new package");
@@ -2717,7 +2717,7 @@ HcclResult hrtRaPingDeinit(void *pingHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaPingTargetAdd(void *pingHandle, struct ping_target_info target[], uint32_t num)
+HcclResult hrtRaPingTargetAdd(void *pingHandle, struct PingTargetInfo target[], uint32_t num)
 {
     if (DlRaFunction::GetInstance().dlRaPingTargetAdd == nullptr) {
         HCCL_ERROR("driver package does not support hrtRaPingTargetAdd, please change new package");
@@ -2728,7 +2728,7 @@ HcclResult hrtRaPingTargetAdd(void *pingHandle, struct ping_target_info target[]
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaPingTargetDel(void *pingHandle, struct ping_target_comm_info target[], uint32_t num)
+HcclResult hrtRaPingTargetDel(void *pingHandle, struct PingTargetCommInfo target[], uint32_t num)
 {
     if (DlRaFunction::GetInstance().dlRaPingTargetDel == nullptr) {
         HCCL_ERROR("driver package does not support hrtRaPingTargetDel, please change new package");
@@ -2739,7 +2739,7 @@ HcclResult hrtRaPingTargetDel(void *pingHandle, struct ping_target_comm_info tar
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaPingTaskStart(void *pingHandle, struct ping_task_attr *attr)
+HcclResult hrtRaPingTaskStart(void *pingHandle, struct PingTaskAttr *attr)
 {
     if (DlRaFunction::GetInstance().dlRaPingTaskStart == nullptr) {
         HCCL_ERROR("driver package does not support hrtRaPingTaskStart, please change new package");
@@ -2761,7 +2761,7 @@ HcclResult hrtRaPingTaskStop(void *pingHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaPingGetResults(void *pingHandle, struct ping_target_result target[], uint32_t *num)
+HcclResult hrtRaPingGetResults(void *pingHandle, struct PingTargetResult target[], uint32_t *num)
 {
     if (DlRaFunction::GetInstance().dlRaPingGetResults == nullptr) {
         HCCL_ERROR("driver package does not support hrtRaPingGetResults, please change new package");
@@ -2801,7 +2801,7 @@ HcclResult hrtRaIsLastUsed(s32 insId, bool &used)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaRdevGetPortStatus(RdmaHandle rdmaHandle, enum port_status *status)
+HcclResult hrtRaRdevGetPortStatus(RdmaHandle rdmaHandle, enum PortStatus *status)
 {
     CHK_PTR_NULL(rdmaHandle);
     CHK_SMART_PTR_NULL(DlRaFunction::GetInstance().dlRaRdevGetPortStatus);
@@ -2812,7 +2812,7 @@ HcclResult hrtRaRdevGetPortStatus(RdmaHandle rdmaHandle, enum port_status *statu
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct mem_remap_info info[], unsigned int num)
+HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct MemRemapInfo info[], unsigned int num)
 {
     CHK_PTR_NULL(rdmaHandle);
     if (UNLIKELY(DlRaFunction::GetInstance().dlRaRemapMr == nullptr)) {
@@ -2826,24 +2826,24 @@ HcclResult HrtRaRemapMr(RdmaHandle rdmaHandle, struct mem_remap_info info[], uns
     return HCCL_SUCCESS;
 }
 
-HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct typical_qp& qpInfo)
+HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpConfigInfo& qpConfig, QpHandle &qpHandle, struct TypicalQp& qpInfo)
 {
     HCCL_DEBUG("CreateQp qpMode[%d], sq_depth[%u], rq_depth[%u], scq_depth[%u], rcq_depth[%u], TC[%u], SL[%u], rdmaRetryCnt[%u], rdmaTimeOut[%u]",
-        qpMode, qpConfig.sq_depth, qpConfig.rq_depth, qpConfig.scq_depth, qpConfig.rcq_depth, qpInfo.tc, qpInfo.sl, qpInfo.retry_cnt,
-        qpInfo.retry_time);
+        qpMode, qpConfig.sq_depth, qpConfig.rq_depth, qpConfig.scq_depth, qpConfig.rcq_depth, qpInfo.tc, qpInfo.sl, qpInfo.retryCnt,
+        qpInfo.retryTime);
     
-    struct qp_ext_attrs ext_attrs{};
-    ext_attrs.qp_mode = qpMode;
-    ext_attrs.cq_attr.send_cq_depth = qpConfig.scq_depth;
-    ext_attrs.cq_attr.recv_cq_depth = qpConfig.rcq_depth;
-    ext_attrs.qp_attr.cap.max_send_wr = qpConfig.sq_depth;
-    ext_attrs.qp_attr.cap.max_recv_wr = qpConfig.rq_depth;
+    struct QpExtAttrs ext_attrs{};
+    ext_attrs.qpMode = qpMode;
+    ext_attrs.cqAttr.sendCqDepth = qpConfig.scq_depth;
+    ext_attrs.cqAttr.recvCqDepth = qpConfig.rcq_depth;
+    ext_attrs.qpAttr.cap.max_send_wr = qpConfig.sq_depth;
+    ext_attrs.qpAttr.cap.max_recv_wr = qpConfig.rq_depth;
     ext_attrs.version = QP_CREATE_WITH_ATTR_VERSION;
-    ext_attrs.qp_attr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
-    ext_attrs.qp_attr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
-    ext_attrs.qp_attr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
-    ext_attrs.qp_attr.qp_type = IBV_QPT_RC;
-    ext_attrs.udp_sport = 0x0;
+    ext_attrs.qpAttr.cap.max_inline_data = DEFAULT_MAX_INLINE_DATA;
+    ext_attrs.qpAttr.cap.max_send_sge = DEFAULT_MAX_SEND_SGE;
+    ext_attrs.qpAttr.cap.max_recv_sge = DEFAULT_MAX_RECV_SGE;
+    ext_attrs.qpAttr.qp_type = IBV_QPT_RC;
+    ext_attrs.udpSport = 0x0;
 
     s32 deviceLogicID = -1;
     u32 devicePhyId = 0;
@@ -2858,19 +2858,19 @@ HcclResult CreateQpWithDepthConfig(RdmaHandle rdmaHandle, s32 qpMode, const QpCo
     }
     CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &ext_attrs, qpHandle));
 
-    struct qp_attr attr{};
+    struct QpAttr attr{};
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
     qpInfo.qpn = attr.qpn;
-    qpInfo.gid_idx = attr.gid_idx;
+    qpInfo.gidIdx = attr.gidIdx;
     for (uint32_t i = 0; i < HCCP_GID_RAW_LEN; i++) {
         qpInfo.gid[i] = attr.gid[i];
     }
     qpInfo.psn = attr.psn;
-    HCCL_DEBUG("CreateQpWithDepthConfig qpn[%u], gid_idx[%u], psn[%u]", qpInfo.qpn, qpInfo.gid_idx, qpInfo.psn);
+    HCCL_DEBUG("CreateQpWithDepthConfig qpn[%u], gidIdx[%u], psn[%u]", qpInfo.qpn, qpInfo.gidIdx, qpInfo.psn);
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaGetTlsEnable(struct ra_info *info, bool *tlsEnable)
+HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
 {
     u32 tlsVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2889,10 +2889,10 @@ HcclResult HrtRaGetTlsEnable(struct ra_info *info, bool *tlsEnable)
 HcclResult SnapShotSaveAction(s32 networkMode, u32 devicePhyId, HcclSaveSnapShotAction action)
 {
     HCCL_INFO("%s networkMode[%d], devicePhyId[%u], action[%d]", __func__, networkMode, devicePhyId, action);
-    struct ra_info raInfo;
+    struct RaInfo raInfo;
     raInfo.mode = networkMode;
-    raInfo.phy_id = devicePhyId;
-    s32 ret = DlRaFunction::GetInstance().dlRaSaveSnapShot(&raInfo, static_cast<enum save_snapshot_action>(action));
+    raInfo.phyId = devicePhyId;
+    s32 ret = DlRaFunction::GetInstance().dlRaSaveSnapShot(&raInfo, static_cast<enum SaveSnapshotAction>(action));
     CHK_PRT_RET(ret != 0, HCCL_ERROR("%s errNo[0x%016llx] failed ret[%d], networkMode[%d], phyId[%u], action[%d]",
         __func__, HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, networkMode, devicePhyId, action), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
@@ -2901,9 +2901,9 @@ HcclResult SnapShotSaveAction(s32 networkMode, u32 devicePhyId, HcclSaveSnapShot
 HcclResult SnapShotRestoreAction(s32 networkMode, u32 devicePhyId)
 {
     HCCL_INFO("%s networkMode[%d], devicePhyId[%u]", __func__, networkMode, devicePhyId);
-    struct ra_info raInfo;
+    struct RaInfo raInfo;
     raInfo.mode = networkMode;
-    raInfo.phy_id = devicePhyId;
+    raInfo.phyId = devicePhyId;
     s32 ret = DlRaFunction::GetInstance().dlRaRestoreSnapShot(&raInfo);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("%s errNo[0x%016llx] failed ret[%d], networkMode[%d], phyId[%u]",
         __func__, HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, networkMode, devicePhyId), HCCL_E_NETWORK);

@@ -34,78 +34,78 @@
 /* bit position is 1:fault event;  bit position is 0:notify event(one time) */
 #define RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE_MASK (0U << RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE)
 
-struct dl_hal_ops {
-    int (*dl_devdrv_get_board_id)(unsigned int devId, unsigned int *boardId);
-    int (*dl_devdrv_get_vnic_ip)(unsigned int devId, unsigned int *ipAddr);
-    int (*dl_devdrv_get_vnic_ip_by_sdid)(unsigned int sdid, unsigned int *ipAddr);
+struct DlHalOps {
+    int (*dlDevdrvGetBoardId)(unsigned int devId, unsigned int *boardId);
+    int (*dlDevdrvGetVnicIp)(unsigned int devId, unsigned int *ipAddr);
+    int (*dlDevdrvGetVnicIpBySdid)(unsigned int sdid, unsigned int *ipAddr);
 
-    int (*dl_drv_get_dev_num)(unsigned int *numDev);
-    int (*dl_drv_get_local_dev_id_by_host_dev_id)(unsigned int devId, unsigned int* chipId);
-    int (*dl_drv_get_dev_id_by_local_dev_id)(unsigned int localDevId, unsigned int *devId);
-    int (*dl_drv_device_get_index_by_phy_id)(uint32_t phyId, uint32_t *devIndex);
-    int (*dl_drv_device_get_phy_id_by_index)(unsigned int devIndex, unsigned int *phyId);
-    drvError_t (*dl_hal_query_dev_pid)(struct halQueryDevpidInfo info, pid_t *devPid);
-    drvError_t (*dl_hal_mem_bind_sibling)(int hostPid, int aicpuPid, unsigned int vfid, unsigned int devId,
+    int (*dlDrvGetDevNum)(unsigned int *numDev);
+    int (*dlDrvGetLocalDevIdByHostDevId)(unsigned int devId, unsigned int* chipId);
+    int (*dlDrvGetDevIdByLocalDevId)(unsigned int localDevId, unsigned int *devId);
+    int (*dlDrvDeviceGetIndexByPhyId)(uint32_t phyId, uint32_t *devIndex);
+    int (*dlDrvDeviceGetPhyIdByIndex)(unsigned int devIndex, unsigned int *phyId);
+    drvError_t (*dlHalQueryDevPid)(struct halQueryDevpidInfo info, pid_t *devPid);
+    drvError_t (*dlHalMemBindSibling)(int hostPid, int aicpuPid, unsigned int vfid, unsigned int devId,
         unsigned int flag);
-    drvError_t (*dl_drv_query_process_host_pid)(int pid, unsigned int *chipId, unsigned int *vfid,
+    drvError_t (*dlDrvQueryProcessHostPid)(int pid, unsigned int *chipId, unsigned int *vfid,
         unsigned int *hostPid, unsigned int *cpType);
-    drvError_t (*dl_hal_mem_get_info_ex)(unsigned int devId, unsigned int type, struct MemInfo *info);
-    int (*dl_hal_grp_query)(GroupQueryCmdType cmd, void *inBuff, unsigned int inLen, void *outBuff,
+    drvError_t (*dlHalMemGetInfoEx)(unsigned int devId, unsigned int type, struct MemInfo *info);
+    int (*dlHalGrpQuery)(GroupQueryCmdType cmd, void *inBuff, unsigned int inLen, void *outBuff,
         unsigned int *outLen);
     // HDC
-    int (*dl_hal_hdc_get_session_attr)(HDC_SESSION session, int attr, int *value);
-    hdcError_t (*dl_drv_hdc_get_capacity)(struct drvHdcCapacity *capacity);
-    hdcError_t (*dl_drv_hdc_client_create)(HDC_CLIENT *client, int maxSessionNum, int serviceType, int flag);
-    hdcError_t (*dl_drv_hdc_client_destroy)(HDC_CLIENT client);
-    hdcError_t (*dl_drv_hdc_session_connect)(int peerNode, int peerDevid, HDC_CLIENT client, HDC_SESSION *session);
-    hdcError_t (*dl_hal_hdc_session_connect_ex)(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client,
+    int (*dlHalHdcGetSessionAttr)(HDC_SESSION session, int attr, int *value);
+    hdcError_t (*dlDrvHdcGetCapacity)(struct drvHdcCapacity *capacity);
+    hdcError_t (*dlDrvHdcClientCreate)(HDC_CLIENT *client, int maxSessionNum, int serviceType, int flag);
+    hdcError_t (*dlDrvHdcClientDestroy)(HDC_CLIENT client);
+    hdcError_t (*dlDrvHdcSessionConnect)(int peerNode, int peerDevid, HDC_CLIENT client, HDC_SESSION *session);
+    hdcError_t (*dlHalHdcSessionConnectEx)(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client,
         HDC_SESSION *session);
-    hdcError_t (*dl_drv_hdc_server_create)(int devid, int serviceType, HDC_SERVER *pServer);
-    hdcError_t (*dl_drv_hdc_server_destroy)(HDC_SERVER server);
-    hdcError_t (*dl_drv_hdc_session_accept)(HDC_SERVER server, HDC_SESSION *session);
-    hdcError_t (*dl_drv_hdc_session_close)(HDC_SESSION session);
-    hdcError_t (*dl_drv_hdc_free_msg)(struct drvHdcMsg *msg);
-    hdcError_t (*dl_drv_hdc_reuse_msg)(struct drvHdcMsg *msg);
-    hdcError_t (*dl_drv_hdc_add_msg_buffer)(struct drvHdcMsg *msg, char *pBuf, int len);
-    hdcError_t (*dl_drv_hdc_get_msg_buffer)(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen);
-    hdcError_t (*dl_hal_hdc_recv)(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, UINT64 flag,
+    hdcError_t (*dlDrvHdcServerCreate)(int devid, int serviceType, HDC_SERVER *pServer);
+    hdcError_t (*dlDrvHdcServerDestroy)(HDC_SERVER server);
+    hdcError_t (*dlDrvHdcSessionAccept)(HDC_SERVER server, HDC_SESSION *session);
+    hdcError_t (*dlDrvHdcSessionClose)(HDC_SESSION session);
+    hdcError_t (*dlDrvHdcFreeMsg)(struct drvHdcMsg *msg);
+    hdcError_t (*dlDrvHdcReuseMsg)(struct drvHdcMsg *msg);
+    hdcError_t (*dlDrvHdcAddMsgBuffer)(struct drvHdcMsg *msg, char *pBuf, int len);
+    hdcError_t (*dlDrvHdcGetMsgBuffer)(struct drvHdcMsg *msg, int index, char **pBuf, int *pLen);
+    hdcError_t (*dlHalHdcRecv)(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, UINT64 flag,
         int *recvBufCount, UINT32 timeout);
-    hdcError_t (*dl_hal_hdc_send)(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag, UINT32 timeout);
-    hdcError_t (*dl_drv_hdc_alloc_msg)(HDC_SESSION session, struct drvHdcMsg **ppMsg, int count);
-    hdcError_t (*dl_drv_hdc_set_session_reference)(HDC_SESSION session);
+    hdcError_t (*dlHalHdcSend)(HDC_SESSION session, struct drvHdcMsg *pMsg, UINT64 flag, UINT32 timeout);
+    hdcError_t (*dlDrvHdcAllocMsg)(HDC_SESSION session, struct drvHdcMsg **ppMsg, int count);
+    hdcError_t (*dlDrvHdcSetSessionReference)(HDC_SESSION session);
 
-    int (*dl_drv_get_process_sign)(struct process_sign *sign);
+    int (*dlDrvGetProcessSign)(struct process_sign *sign);
 
-    pid_t (*dl_drv_device_get_bare_tgid)(void);
+    pid_t (*dlDrvDeviceGetBareTgid)(void);
 
-    int (*dl_hal_notify_get_info)(uint32_t devId, uint32_t tsId, uint32_t type, uint32_t *val);
-    int (*dl_hal_mem_alloc)(void **pp, unsigned long long size, unsigned long long flag);
-    int (*dl_hal_mem_free)(void *pp);
-    int (*dl_hal_esched_submit_event)(uint32_t devId, struct event_summary *event);
+    int (*dlHalNotifyGetInfo)(uint32_t devId, uint32_t tsId, uint32_t type, uint32_t *val);
+    int (*dlHalMemAlloc)(void **pp, unsigned long long size, unsigned long long flag);
+    int (*dlHalMemFree)(void *pp);
+    int (*dlHalEschedSubmitEvent)(uint32_t devId, struct event_summary *event);
 
-    int (*dl_devdrv_set_user_config)(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize);
-    int (*dl_devdrv_clear_user_config)(uint32_t devid, const char *name);
-    int (*dl_hal_get_device_info)(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
+    int (*dlDevdrvSetUserConfig)(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize);
+    int (*dlDevdrvClearUserConfig)(uint32_t devid, const char *name);
+    int (*dlHalGetDeviceInfo)(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
 
-    int (*dl_hal_mem_ctl)(int type, void *paramValue, size_t paramValueSize, void *outValue, size_t *outSizeRet);
+    int (*dlHalMemCtl)(int type, void *paramValue, size_t paramValueSize, void *outValue, size_t *outSizeRet);
 
-    int (*dl_hal_bind_cgroup)(BIND_CGROUP_TYPE bindType);
-    int (*dl_drv_get_platform_info)(uint32_t* info);
+    int (*dlHalBindCgroup)(BIND_CGROUP_TYPE bindType);
+    int (*dlDrvGetPlatformInfo)(uint32_t* info);
 
-    int (*dl_hal_get_chip_info)(unsigned int devId, halChipInfo *chipInfo);
+    int (*dlHalGetChipInfo)(unsigned int devId, halChipInfo *chipInfo);
 
-    drvError_t (*dl_hal_sensor_node_register)(uint32_t devid, struct halSensorNodeCfg *cfg, uint64_t *handle);
-    drvError_t (*dl_hal_sensor_node_unregister)(uint32_t devid, uint64_t handle);
-    drvError_t (*dl_hal_sensor_node_update_state)(uint32_t devid, uint64_t handle, int val,
+    drvError_t (*dlHalSensorNodeRegister)(uint32_t devid, struct halSensorNodeCfg *cfg, uint64_t *handle);
+    drvError_t (*dlHalSensorNodeUnregister)(uint32_t devid, uint64_t handle);
+    drvError_t (*dlHalSensorNodeUpdateState)(uint32_t devid, uint64_t handle, int val,
         halGeneralEventType_t assertion);
 
-    int (*dl_hal_buff_alloc_align_ex)(uint64_t size, unsigned int align, unsigned long flag, int grpId, void **buff);
-    int (*dl_hal_buff_free)(void *buff);
+    int (*dlHalBuffAllocAlignEx)(uint64_t size, unsigned int align, unsigned long flag, int grpId, void **buff);
+    int (*dlHalBuffFree)(void *buff);
 
-    int (*dl_hal_esched_attach_device)(uint32_t devId);
-    int (*dl_hal_esched_create_grp)(uint32_t devId, uint32_t grpId, GROUP_TYPE type);
-    int (*dl_hal_esched_subscribe_event)(uint32_t devId, uint32_t grpId, uint32_t threadId, uint64_t eventBitmap);
-    int (*dl_hal_esched_wait_event)(uint32_t devId, uint32_t grpId,uint32_t threadId, int32_t timeout,
+    int (*dlHalEschedAttachDevice)(uint32_t devId);
+    int (*dlHalEschedCreateGrp)(uint32_t devId, uint32_t grpId, GROUP_TYPE type);
+    int (*dlHalEschedSubscribeEvent)(uint32_t devId, uint32_t grpId, uint32_t threadId, uint64_t eventBitmap);
+    int (*dlHalEschedWaitEvent)(uint32_t devId, uint32_t grpId,uint32_t threadId, int32_t timeout,
         struct event_info *event);
 };
 

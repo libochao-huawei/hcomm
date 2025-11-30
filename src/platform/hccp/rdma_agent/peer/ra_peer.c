@@ -38,29 +38,29 @@ void RaPeerMutexUnlock(unsigned int phyId)
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
 }
 
-int RaPeerSocketBatchClose(unsigned int devId, struct socket_close_info_t conn[], unsigned int num)
+int RaPeerSocketBatchClose(unsigned int devId, struct SocketCloseInfoT conn[], unsigned int num)
 {
     int ret;
     unsigned int i;
     int disuseLinger;
     unsigned int index = 0;
     unsigned int closeNum = 0;
-    struct rs_socket_close_info_t closeInfo[MAX_SOCKET_NUM];
+    struct RsSocketCloseInfoT closeInfo[MAX_SOCKET_NUM];
 
-    ret = memset_s(closeInfo, sizeof(struct rs_socket_close_info_t) * MAX_SOCKET_NUM, 0,
-                   sizeof(struct rs_socket_close_info_t) * MAX_SOCKET_NUM);
+    ret = memset_s(closeInfo, sizeof(struct RsSocketCloseInfoT) * MAX_SOCKET_NUM, 0,
+                   sizeof(struct RsSocketCloseInfoT) * MAX_SOCKET_NUM);
     CHK_PRT_RETURN(ret, hccp_err("[batch_close][ra_peer_socket]memset_s close_info failed, ret(%d)",
         ret), -ESAFEFUNC);
 
     for (i = 0; i < num; i++) {
-        if (conn[i].fd_handle != NULL) {
-            closeInfo[closeNum].fd = ((struct socket_peer_info *)(conn[i].fd_handle))->fd;
+        if (conn[i].fdHandle != NULL) {
+            closeInfo[closeNum].fd = ((struct SocketPeerInfo *)(conn[i].fdHandle))->fd;
             ++closeNum;
         }
     }
 
     // use attr disuse_linger of the fist conn as the common attr for all(0 by default)
-    disuseLinger = conn[0].disuse_linger;
+    disuseLinger = conn[0].disuseLinger;
 
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[devId]);
     RsSetCtx(devId);
@@ -73,17 +73,17 @@ int RaPeerSocketBatchClose(unsigned int devId, struct socket_close_info_t conn[]
 
 out:
     for (i = 0; i < num; i++) {
-        if (conn[i].fd_handle != NULL) {
-            free(conn[i].fd_handle);
-            conn[i].fd_handle = NULL;
+        if (conn[i].fdHandle != NULL) {
+            free(conn[i].fdHandle);
+            conn[i].fdHandle = NULL;
         }
     }
     return ret;
 }
 
-int RaPeerSocketBatchAbort(unsigned int devId, struct socket_connect_info_t conn[], unsigned int num)
+int RaPeerSocketBatchAbort(unsigned int devId, struct SocketConnectInfoT conn[], unsigned int num)
 {
-    struct socket_connect_info connOut[MAX_SOCKET_NUM];
+    struct SocketConnectInfo connOut[MAX_SOCKET_NUM];
     int ret = 0;
 
     ret = RaGetSocketConnectInfo(conn, num, connOut, MAX_SOCKET_NUM);
@@ -99,10 +99,10 @@ int RaPeerSocketBatchAbort(unsigned int devId, struct socket_connect_info_t conn
     return ret;
 }
 
-int RaPeerSocketBatchConnect(unsigned int devId, struct socket_connect_info_t conn[], unsigned int num)
+int RaPeerSocketBatchConnect(unsigned int devId, struct SocketConnectInfoT conn[], unsigned int num)
 {
     int ret;
-    struct socket_connect_info connOut[MAX_SOCKET_NUM];
+    struct SocketConnectInfo connOut[MAX_SOCKET_NUM];
 
     ret = RaGetSocketConnectInfo(conn, num, connOut, MAX_SOCKET_NUM);
     CHK_PRT_RETURN(ret, hccp_err("[batch_connect][ra_peer_socket]ra_hdc_get_socket_connect_info failed,"
@@ -111,7 +111,7 @@ int RaPeerSocketBatchConnect(unsigned int devId, struct socket_connect_info_t co
     /* In peer online mode the server port number is user-defined */
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[devId]);
     RsSetCtx(devId);
-    ret = RsSocketSetScopeId(devId, ((struct ra_socket_handle *)conn[0].socket_handle)->scope_id);
+    ret = RsSocketSetScopeId(devId, ((struct RaSocketHandle *)conn[0].socketHandle)->scopeId);
     if (ret != 0) {
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[devId]);
     }
@@ -126,9 +126,9 @@ int RaPeerSocketBatchConnect(unsigned int devId, struct socket_connect_info_t co
     return ret;
 }
 
-int RaPeerSocketListenStart(unsigned int devId, struct socket_listen_info_t conn[], unsigned int num)
+int RaPeerSocketListenStart(unsigned int devId, struct SocketListenInfoT conn[], unsigned int num)
 {
-    struct socket_listen_info rsConn[MAX_SOCKET_NUM] = {0};
+    struct SocketListenInfo rsConn[MAX_SOCKET_NUM] = {0};
     unsigned int i;
     int ret;
 
@@ -143,7 +143,7 @@ int RaPeerSocketListenStart(unsigned int devId, struct socket_listen_info_t conn
 
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[devId]);
     RsSetCtx(devId);
-    ret = RsSocketSetScopeId(devId, ((struct ra_socket_handle *)conn[0].socket_handle)->scope_id);
+    ret = RsSocketSetScopeId(devId, ((struct RaSocketHandle *)conn[0].socketHandle)->scopeId);
     if (ret != 0) {
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[devId]);
     }
@@ -172,9 +172,9 @@ int RaPeerSocketListenStart(unsigned int devId, struct socket_listen_info_t conn
     return ret;
 }
 
-int RaPeerSocketListenStop(unsigned int devId, struct socket_listen_info_t conn[], unsigned int num)
+int RaPeerSocketListenStop(unsigned int devId, struct SocketListenInfoT conn[], unsigned int num)
 {
-    struct socket_listen_info rsConn[MAX_SOCKET_NUM] = {0};
+    struct SocketListenInfo rsConn[MAX_SOCKET_NUM] = {0};
     unsigned int i;
     int ret;
 
@@ -199,27 +199,27 @@ int RaPeerSocketListenStop(unsigned int devId, struct socket_listen_info_t conn[
     return ret;
 }
 
-STATIC int RaPeerSetRsConnParam(struct socket_info_t conn[], unsigned int num,
-    struct socket_fd_data rsConn[], unsigned int rsNum)
+STATIC int RaPeerSetRsConnParam(struct SocketInfoT conn[], unsigned int num,
+    struct SocketFdData rsConn[], unsigned int rsNum)
 {
     int ret;
     unsigned int i;
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
 
     CHK_PRT_RETURN(num > rsNum, hccp_err("[set][ra_peer_rs_conn_param]num(%u) must smaller than rs_num(%u)",
         num, rsNum), -EINVAL);
 
     for (i = 0; i < num; i++) {
-        socketHandle = (struct ra_socket_handle *)conn[i].socket_handle;
-        rsConn[i].phy_id = socketHandle->rdev_info.phy_id;
-        rsConn[i].family = socketHandle->rdev_info.family;
+        socketHandle = (struct RaSocketHandle *)conn[i].socketHandle;
+        rsConn[i].phyId = socketHandle->rdevInfo.phyId;
+        rsConn[i].family = socketHandle->rdevInfo.family;
         rsConn[i].status = conn[i].status;
-        ret = memcpy_s(&(rsConn[i].local_ip), sizeof(union hccp_ip_addr), &(socketHandle->rdev_info.local_ip),
-            sizeof(union hccp_ip_addr));
+        ret = memcpy_s(&(rsConn[i].localIp), sizeof(union HccpIpAddr), &(socketHandle->rdevInfo.localIp),
+            sizeof(union HccpIpAddr));
         CHK_PRT_RETURN(ret, hccp_err("[set][ra_peer_rs_conn_param]memcpy_s local_ip failed, ret(%d)",
             ret), -ESAFEFUNC);
-        ret = memcpy_s(&(rsConn[i].remote_ip), sizeof(union hccp_ip_addr), &(conn[i].remote_ip),
-            sizeof(union hccp_ip_addr));
+        ret = memcpy_s(&(rsConn[i].remoteIp), sizeof(union HccpIpAddr), &(conn[i].remoteIp),
+            sizeof(union HccpIpAddr));
         CHK_PRT_RETURN(ret, hccp_err("[set][ra_peer_rs_conn_param]memcpy_s remote_ip failed, ret(%d)", ret), ret);
         ret = memcpy_s(rsConn[i].tag, sizeof(rsConn[i].tag), conn[i].tag, sizeof(conn[i].tag));
         CHK_PRT_RETURN(ret, hccp_err("[set][ra_peer_rs_conn_param]memcpy_s tag failed, ret(%d)", ret), -ESAFEFUNC);
@@ -227,35 +227,35 @@ STATIC int RaPeerSetRsConnParam(struct socket_info_t conn[], unsigned int num,
     return 0;
 }
 
-STATIC int RaPeerSetConnParam(struct socket_info_t conn[],
-    struct socket_fd_data rsConn[], unsigned int i, unsigned int sslEnable)
+STATIC int RaPeerSetConnParam(struct SocketInfoT conn[],
+    struct SocketFdData rsConn[], unsigned int i, unsigned int sslEnable)
 {
     int ret;
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
     
-    socketHandle = (struct ra_socket_handle *)conn[i].socket_handle;
-    socketHandle->rdev_info.phy_id = rsConn[i].phy_id;
+    socketHandle = (struct RaSocketHandle *)conn[i].socketHandle;
+    socketHandle->rdevInfo.phyId = rsConn[i].phyId;
 
-    ret = memcpy_s(&(socketHandle->rdev_info.local_ip), sizeof(union hccp_ip_addr),
-        &(rsConn[i].local_ip), sizeof(union hccp_ip_addr));
+    ret = memcpy_s(&(socketHandle->rdevInfo.localIp), sizeof(union HccpIpAddr),
+        &(rsConn[i].localIp), sizeof(union HccpIpAddr));
     CHK_PRT_RETURN(ret, hccp_err("[set][ra_peer_conn_param]memcpy_s local_ip failed, ret(%d)", ret), -ESAFEFUNC);
-    ret = memcpy_s(&(conn[i].remote_ip), sizeof(union hccp_ip_addr),
-        &(rsConn[i].remote_ip), sizeof(union hccp_ip_addr));
+    ret = memcpy_s(&(conn[i].remoteIp), sizeof(union HccpIpAddr),
+        &(rsConn[i].remoteIp), sizeof(union HccpIpAddr));
     CHK_PRT_RETURN(ret, hccp_err("[set][ra_peer_conn_param]memcpy_s remote_ip failed, ret(%d)", ret), -ESAFEFUNC);
 
-    if (conn[i].fd_handle != NULL) {
-        ((struct socket_peer_info *)conn[i].fd_handle)->phy_id = (int)rsConn[i].phy_id;
-        ((struct socket_peer_info *)conn[i].fd_handle)->fd = rsConn[i].fd;
-        ((struct socket_peer_info *)conn[i].fd_handle)->socket_handle = socketHandle;
-        ((struct socket_peer_info *)conn[i].fd_handle)->ssl_enable = sslEnable;
+    if (conn[i].fdHandle != NULL) {
+        ((struct SocketPeerInfo *)conn[i].fdHandle)->phyId = (int)rsConn[i].phyId;
+        ((struct SocketPeerInfo *)conn[i].fdHandle)->fd = rsConn[i].fd;
+        ((struct SocketPeerInfo *)conn[i].fdHandle)->socketHandle = socketHandle;
+        ((struct SocketPeerInfo *)conn[i].fdHandle)->sslEnable = sslEnable;
     }
     conn[i].status = rsConn[i].status;
     return 0;
 }
 
-int RaPeerGetSockets(unsigned int phyId, unsigned int role, struct socket_info_t conn[], unsigned int num)
+int RaPeerGetSockets(unsigned int phyId, unsigned int role, struct SocketInfoT conn[], unsigned int num)
 {
-    struct socket_fd_data rsConn[MAX_SOCKET_NUM] = {0};
+    struct SocketFdData rsConn[MAX_SOCKET_NUM] = {0};
     unsigned int sslEnable;
     int connectedNum;
     unsigned int i;
@@ -283,14 +283,14 @@ int RaPeerGetSockets(unsigned int phyId, unsigned int role, struct socket_info_t
 
     for (i = 0; i < num; i++) {
         if (rsConn[i].status == RS_SOCK_STATUS_OK) {
-            conn[i].fd_handle = (struct socket_peer_info *)calloc(1, sizeof(struct socket_peer_info));
-            if (conn[i].fd_handle == NULL) {
+            conn[i].fdHandle = (struct SocketPeerInfo *)calloc(1, sizeof(struct SocketPeerInfo));
+            if (conn[i].fdHandle == NULL) {
                 hccp_err("[get][ra_peer_sockets]socket handle calloc failed.");
                 ret = -ENOMEM;
                 goto err_out;
             }
         } else {
-            conn[i].fd_handle = NULL;
+            conn[i].fdHandle = NULL;
         }
 
         ret = RaPeerSetConnParam(conn, rsConn, i, sslEnable);
@@ -309,9 +309,9 @@ int RaPeerGetSockets(unsigned int phyId, unsigned int role, struct socket_info_t
 
 err_out:
     for (j = 0; j <= i; j++) {
-        if (conn[j].fd_handle != NULL) {
-            free(conn[j].fd_handle);
-            conn[j].fd_handle = NULL;
+        if (conn[j].fdHandle != NULL) {
+            free(conn[j].fdHandle);
+            conn[j].fdHandle = NULL;
         }
     }
 
@@ -324,8 +324,8 @@ int RaPeerSocketSend(unsigned int devId, const void *handle, const void *data, u
     int ret;
     unsigned int sslEnable;
 
-    fd = ((const struct socket_peer_info *)handle)->fd;
-    sslEnable = ((const struct socket_peer_info *)handle)->ssl_enable;
+    fd = ((const struct SocketPeerInfo *)handle)->fd;
+    sslEnable = ((const struct SocketPeerInfo *)handle)->sslEnable;
     if (sslEnable != RA_SSL_DISABLE) {
         PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[devId]);
         RsSetCtx(devId);
@@ -343,8 +343,8 @@ int RaPeerSocketRecv(unsigned int devId, const void *handle, void *data, unsigne
     int ret;
     unsigned int sslEnable;
 
-    fd = ((const struct socket_peer_info *)handle)->fd;
-    sslEnable = ((const struct socket_peer_info *)handle)->ssl_enable;
+    fd = ((const struct SocketPeerInfo *)handle)->fd;
+    sslEnable = ((const struct SocketPeerInfo *)handle)->sslEnable;
     if (sslEnable != RA_SSL_DISABLE) {
         PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[devId]);
         RsSetCtx(devId);
@@ -357,25 +357,25 @@ int RaPeerSocketRecv(unsigned int devId, const void *handle, void *data, unsigne
 }
 
 int RaPeerSocketWhiteListAdd(struct rdev rdevInfo,
-    struct socket_wlist_info_t whiteList[], unsigned int num)
+    struct SocketWlistInfoT whiteList[], unsigned int num)
 {
     int ret;
     unsigned int i;
     char netAddr[MAX_IP_LEN] = {0};
 
     for (i = 0; i < num; i++) {
-        CHK_PRT_RETURN(inet_ntop(rdevInfo.family, &whiteList[i].remote_ip, netAddr, sizeof(netAddr)) == NULL,
+        CHK_PRT_RETURN(inet_ntop(rdevInfo.family, &whiteList[i].remoteIp, netAddr, sizeof(netAddr)) == NULL,
             hccp_err("[add][ra_peer_socket_white_list]remote ip is invalid! i(%u)", i), -EINVAL);
     }
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phy_id]);
-    RsSetCtx(rdevInfo.phy_id);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phyId]);
+    RsSetCtx(rdevInfo.phyId);
     ret = RsSocketWhiteListAdd(rdevInfo, whiteList, num);
     if (ret) {
         hccp_err("[add][ra_peer_socket_white_list]rs_socket_white_list_add failed ret(%d).", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phyId]);
         return ret;
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phyId]);
     return ret;
 }
 
@@ -406,7 +406,7 @@ int RaPeerEpollCtlDel(const void *fdHandle)
     int fd = -1;
     int ret;
 
-    fd = ((const struct socket_peer_info *)fdHandle)->fd;
+    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
     ret = RsEpollCtlDel(fd);
     if (ret) {
         hccp_err("[ra_peer_epoll_ctl_del]rs_epoll_ctl_del failed ret(%d).", ret);
@@ -423,76 +423,76 @@ void RaPeerSetTcpRecvCallback(unsigned int phyId, const void *callback)
 }
 
 int RaPeerSocketWhiteListDel(struct rdev rdevInfo,
-    struct socket_wlist_info_t whiteList[], unsigned int num)
+    struct SocketWlistInfoT whiteList[], unsigned int num)
 {
     int ret;
     unsigned int i;
     char netAddr[MAX_IP_LEN] = {0};
 
     for (i = 0; i < num; i++) {
-        CHK_PRT_RETURN(inet_ntop(rdevInfo.family, &whiteList[i].remote_ip, netAddr, sizeof(netAddr)) == NULL,
+        CHK_PRT_RETURN(inet_ntop(rdevInfo.family, &whiteList[i].remoteIp, netAddr, sizeof(netAddr)) == NULL,
             hccp_err("[del][ra_peer_socket_white_list]remote ip is invalid! i(%u)", i), -EINVAL);
     }
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phy_id]);
-    RsSetCtx(rdevInfo.phy_id);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phyId]);
+    RsSetCtx(rdevInfo.phyId);
     ret = RsSocketWhiteListDel(rdevInfo, whiteList, num);
     if (ret) {
         hccp_err("[del][ra_peer_socket_white_list]ra socket listen stop failed ret(%d).", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phyId]);
     return ret;
 }
 
 int RaPeerSocketDeinit(struct rdev rdevInfo)
 {
     int ret;
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phy_id]);
-    RsSetCtx(rdevInfo.phy_id);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phyId]);
+    RsSetCtx(rdevInfo.phyId);
     ret = RsSocketDeinit(rdevInfo);
     if (ret) {
         hccp_err("[deinit][ra_peer_socket]rs_socket_deinit failed, ret(%d)", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phyId]);
         return ret;
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phyId]);
     return 0;
 }
 
-int RaPeerQpCreate(struct ra_rdma_handle *rdmaHandle, int flag, int qpMode, void **qpHandle)
+int RaPeerQpCreate(struct RaRdmaHandle *rdmaHandle, int flag, int qpMode, void **qpHandle)
 {
-    unsigned int phyId = rdmaHandle->rdev_info.phy_id;
-    struct ra_qp_handle *qpPeer = NULL;
-    struct rs_qp_resp qpResp = { 0 };
-    struct rs_qp_norm qpNorm = { 0 };
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *qpPeer = NULL;
+    struct RsQpResp qpResp = { 0 };
+    struct RsQpNorm qpNorm = { 0 };
     int ret;
 
-    qpPeer = (struct ra_qp_handle *)calloc(1, sizeof(struct ra_qp_handle));
+    qpPeer = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
     CHK_PRT_RETURN(qpPeer == NULL, hccp_err("[create][ra_peer_qp]qp_peer calloc failed."), -ENOMEM);
 
     qpNorm.flag = flag;
-    qpNorm.is_exp = 1;
-    qpNorm.is_ext = 0;
-    qpNorm.qp_mode = qpMode;
+    qpNorm.isExp = 1;
+    qpNorm.isExt = 0;
+    qpNorm.qpMode = qpMode;
 
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
     RsSetCtx(phyId);
-    ret = RsQpCreate(phyId, rdmaHandle->rdev_index, qpNorm, &qpResp);
+    ret = RsQpCreate(phyId, rdmaHandle->rdevIndex, qpNorm, &qpResp);
     if (ret) {
         hccp_err("[create][ra_peer_qp]ra open failed ret[%d]", ret);
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
         goto calloc_err;
     }
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
-    qpPeer->phy_id = phyId;
+    qpPeer->phyId = phyId;
     qpPeer->qpn = qpResp.qpn;
     qpPeer->psn = qpResp.psn;
-    qpPeer->gid_idx = qpResp.gid_idx;
+    qpPeer->gidIdx = qpResp.gidIdx;
     qpPeer->flag = flag;
-    qpPeer->qp_mode = qpMode;
-    qpPeer->rdev_index = rdmaHandle->rdev_index;
-    qpPeer->rdma_handle = rdmaHandle;
-    qpPeer->rdma_ops = rdmaHandle->rdma_ops;
+    qpPeer->qpMode = qpMode;
+    qpPeer->rdevIndex = rdmaHandle->rdevIndex;
+    qpPeer->rdmaHandle = rdmaHandle;
+    qpPeer->rdmaOps = rdmaHandle->rdmaOps;
 
     *qpHandle = qpPeer;
     return ret;
@@ -503,21 +503,21 @@ calloc_err:
     return ret;
 }
 
-int RaPeerQpCreateWithAttrs(struct ra_rdma_handle *rdmaHandle, struct qp_ext_attrs *extAttrs,
+int RaPeerQpCreateWithAttrs(struct RaRdmaHandle *rdmaHandle, struct QpExtAttrs *extAttrs,
     void **qpHandle)
 {
-    unsigned int phyId = rdmaHandle->rdev_info.phy_id;
-    struct rs_qp_norm_with_attrs qpNorm = { 0 };
-    struct rs_qp_resp_with_attrs qpResp = { 0 };
-    struct ra_qp_handle *qpPeer = NULL;
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RsQpNormWithAttrs qpNorm = { 0 };
+    struct RsQpRespWithAttrs qpResp = { 0 };
+    struct RaQpHandle *qpPeer = NULL;
     int ret;
 
-    qpPeer = (struct ra_qp_handle *)calloc(1, sizeof(struct ra_qp_handle));
+    qpPeer = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
     CHK_PRT_RETURN(qpPeer == NULL, hccp_err("[create][ra_peer_qp_with_attrs]qp_peer calloc failed."), -ENOMEM);
 
-    qpNorm.is_exp = 1;
-    qpNorm.is_ext = 0;
-    ret = memcpy_s(&qpNorm.ext_attrs, sizeof(struct qp_ext_attrs), extAttrs, sizeof(struct qp_ext_attrs));
+    qpNorm.isExp = 1;
+    qpNorm.isExt = 0;
+    ret = memcpy_s(&qpNorm.extAttrs, sizeof(struct QpExtAttrs), extAttrs, sizeof(struct QpExtAttrs));
     if (ret) {
         hccp_err("[create][ra_peer_qp_with_attrs]memcpy_s for ext_attrs failed ret[%d]", ret);
         ret = -ESAFEFUNC;
@@ -526,23 +526,23 @@ int RaPeerQpCreateWithAttrs(struct ra_rdma_handle *rdmaHandle, struct qp_ext_att
 
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
     RsSetCtx(phyId);
-    ret = RsQpCreateWithAttrs(phyId, rdmaHandle->rdev_index, &qpNorm, &qpResp);
+    ret = RsQpCreateWithAttrs(phyId, rdmaHandle->rdevIndex, &qpNorm, &qpResp);
     if (ret) {
         hccp_err("[create][ra_peer_qp_with_attrs]ra open failed ret[%d]", ret);
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
         goto calloc_err;
     }
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
-    qpPeer->phy_id = phyId;
+    qpPeer->phyId = phyId;
     qpPeer->qpn = qpResp.qpn;
     qpPeer->psn = qpResp.psn;
-    qpPeer->gid_idx = qpResp.gid_idx;
-    qpPeer->flag = extAttrs->qp_attr.qp_type == IBV_QPT_RC ? 0 : 1;
-    qpPeer->qp_mode = extAttrs->qp_mode;
-    qpPeer->rdev_index = rdmaHandle->rdev_index;
-    qpPeer->rdma_handle = rdmaHandle;
-    qpPeer->rdma_ops = rdmaHandle->rdma_ops;
-    qpPeer->udp_sport = extAttrs->udp_sport;
+    qpPeer->gidIdx = qpResp.gidIdx;
+    qpPeer->flag = extAttrs->qpAttr.qp_type == IBV_QPT_RC ? 0 : 1;
+    qpPeer->qpMode = extAttrs->qpMode;
+    qpPeer->rdevIndex = rdmaHandle->rdevIndex;
+    qpPeer->rdmaHandle = rdmaHandle;
+    qpPeer->rdmaOps = rdmaHandle->rdmaOps;
+    qpPeer->udpSport = extAttrs->udpSport;
 
     *qpHandle = qpPeer;
     return ret;
@@ -553,52 +553,52 @@ calloc_err:
     return ret;
 }
 
-int RaPeerMrReg(struct ra_qp_handle *qpPeer, struct mr_info *info)
+int RaPeerMrReg(struct RaQpHandle *qpPeer, struct MrInfoT *info)
 {
     int ret;
-    struct rdma_mr_reg_info mrRegInfo = {0};
+    struct RdmaMrRegInfo mrRegInfo = {0};
 
     mrRegInfo.addr = info->addr;
     mrRegInfo.len = info->size;
     mrRegInfo.access = info->access;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsMrReg(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, &mrRegInfo);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsMrReg(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, &mrRegInfo);
     if (ret) {
         hccp_err("[reg][ra_peer_mr]ra_reg_mr failed ret(%d)", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     info->lkey = mrRegInfo.lkey;
     info->rkey = mrRegInfo.rkey;
     return ret;
 }
 
-int RaPeerMrDereg(struct ra_qp_handle *qpPeer, struct mr_info *info)
+int RaPeerMrDereg(struct RaQpHandle *qpPeer, struct MrInfoT *info)
 {
     int ret;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsMrDereg(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, (char *)info->addr);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsMrDereg(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, (char *)info->addr);
     if (ret) {
         hccp_err("[dereg][ra_peer_mr]ra_de_reg_mr failed ret(%d)", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     return ret;
 }
 
-int RaPeerRegisterMr(struct ra_rdma_handle *rdmaPeer, struct mr_info *info, void **mrHandle)
+int RaPeerRegisterMr(struct RaRdmaHandle *rdmaPeer, struct MrInfoT *info, void **mrHandle)
 {
     int ret;
-    struct rdma_mr_reg_info mrRegInfo = {0};
+    struct RdmaMrRegInfo mrRegInfo = {0};
 
     mrRegInfo.addr = info->addr;
     mrRegInfo.len = info->size;
     mrRegInfo.access = info->access;
 
-    RsSetCtx(rdmaPeer->rdev_info.phy_id);
-    ret = RsRegisterMr(rdmaPeer->rdev_info.phy_id, rdmaPeer->rdev_index, &mrRegInfo, mrHandle);
+    RsSetCtx(rdmaPeer->rdevInfo.phyId);
+    ret = RsRegisterMr(rdmaPeer->rdevInfo.phyId, rdmaPeer->rdevIndex, &mrRegInfo, mrHandle);
     if (ret) {
         hccp_err("[ra_peer_register_mr]rs_register_mr failed ret(%d)", ret);
     }
@@ -607,11 +607,11 @@ int RaPeerRegisterMr(struct ra_rdma_handle *rdmaPeer, struct mr_info *info, void
     return ret;
 }
 
-int RaPeerDeregisterMr(struct ra_rdma_handle *rdmaPeer, void *mrHandle)
+int RaPeerDeregisterMr(struct RaRdmaHandle *rdmaPeer, void *mrHandle)
 {
     int ret;
 
-    RsSetCtx(rdmaPeer->rdev_info.phy_id);
+    RsSetCtx(rdmaPeer->rdevInfo.phyId);
     ret = RsDeregisterMr(mrHandle);
     if (ret) {
         hccp_err("[ra_peer_deregister_mr]rs_deregister_mr failed ret(%d)", ret);
@@ -619,75 +619,75 @@ int RaPeerDeregisterMr(struct ra_rdma_handle *rdmaPeer, void *mrHandle)
     return ret;
 }
 
-int RaPeerTypicalQpModify(struct ra_qp_handle *qpPeer, struct typical_qp *localQpInfo,
-    struct typical_qp *remoteQpInfo)
+int RaPeerTypicalQpModify(struct RaQpHandle *qpPeer, struct TypicalQp *localQpInfo,
+    struct TypicalQp *remoteQpInfo)
 {
     int ret;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsTypicalQpModify(qpPeer->phy_id, qpPeer->rdev_index, *localQpInfo, *remoteQpInfo,
-        &(qpPeer->udp_sport));
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsTypicalQpModify(qpPeer->phyId, qpPeer->rdevIndex, *localQpInfo, *remoteQpInfo,
+        &(qpPeer->udpSport));
     if (ret != 0) {
         hccp_err("[modify][ra_peer_qp]rs_typical_qp_modify failed ret(%d) phy_id(%u) qpn(%u)",
-            ret, qpPeer->phy_id, qpPeer->qpn);
+            ret, qpPeer->phyId, qpPeer->qpn);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     return ret;
 }
 
-int RaPeerQpConnectAsync(struct ra_qp_handle *qpPeer, const void *sockHandle)
+int RaPeerQpConnectAsync(struct RaQpHandle *qpPeer, const void *sockHandle)
 {
     int ret;
-    int fd = ((const struct socket_peer_info *)sockHandle)->fd;
+    int fd = ((const struct SocketPeerInfo *)sockHandle)->fd;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsQpConnectAsync(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, fd);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsQpConnectAsync(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, fd);
     if (ret) {
         hccp_err("[connect_async][ra_peer_qp]ra qp info sync failed socket fd(%d) ret(%d).", fd, ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     return ret;
 }
 
-int RaPeerGetQpStatus(struct ra_qp_handle *qpPeer, int *status)
+int RaPeerGetQpStatus(struct RaQpHandle *qpPeer, int *status)
 {
-    struct rs_qp_status_info qpInfo = { 0 };
+    struct RsQpStatusInfo qpInfo = { 0 };
     int ret;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsGetQpStatus(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, &qpInfo);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsGetQpStatus(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, &qpInfo);
     if (ret) {
         hccp_err("[get][ra_peer_qp_status]ra get qp status failed ret(%d).", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     *status = qpInfo.status;
     return ret;
 }
 
-STATIC int RaPeerLoopbackQpModifyPrepare(struct ra_qp_handle *qpHandle, struct typical_qp *qpInfo)
+STATIC int RaPeerLoopbackQpModifyPrepare(struct RaQpHandle *qpHandle, struct TypicalQp *qpInfo)
 {
     int ret = 0;
 
     qpInfo->qpn = qpHandle->qpn;
     qpInfo->psn = qpHandle->psn;
-    qpInfo->gid_idx = qpHandle->gid_idx;
-    qpInfo->retry_cnt = QP_DEFAULT_MAX_ATTR_RETRY_CNT;
-    qpInfo->retry_time = QP_DEFAULT_MAX_ATTR_TIMEOUT;
-    ret = memcpy_s(qpInfo->gid, sizeof(qpInfo->gid), qpHandle->rdma_handle->gid,
-        sizeof(qpHandle->rdma_handle->gid));
+    qpInfo->gidIdx = qpHandle->gidIdx;
+    qpInfo->retryCnt = QP_DEFAULT_MAX_ATTR_RETRY_CNT;
+    qpInfo->retryTime = QP_DEFAULT_MAX_ATTR_TIMEOUT;
+    ret = memcpy_s(qpInfo->gid, sizeof(qpInfo->gid), qpHandle->rdmaHandle->gid,
+        sizeof(qpHandle->rdmaHandle->gid));
     CHK_PRT_RETURN(ret != 0, hccp_err("memcpy_s gid failed, ret:%d, dst_len:%u, src_len:%d", ret,
-        sizeof(qpInfo->gid), qpHandle->rdma_handle->gid), -ESAFEFUNC);
+        sizeof(qpInfo->gid), qpHandle->rdmaHandle->gid), -ESAFEFUNC);
 
     return ret;
 }
 
-STATIC int RaPeerLoopbackQpModify(struct ra_qp_handle *qpHandle0, struct ra_qp_handle *qpHandle1)
+STATIC int RaPeerLoopbackQpModify(struct RaQpHandle *qpHandle0, struct RaQpHandle *qpHandle1)
 {
-    struct typical_qp qp0Info = {0};
-    struct typical_qp qp1Info = {0};
+    struct TypicalQp qp0Info = {0};
+    struct TypicalQp qp1Info = {0};
     int ret = 0;
 
     ret = RaPeerLoopbackQpModifyPrepare(qpHandle0, &qp0Info);
@@ -703,15 +703,15 @@ STATIC int RaPeerLoopbackQpModify(struct ra_qp_handle *qpHandle0, struct ra_qp_h
     return ret;
 }
 
-STATIC void RaPeerLoopbackSingleQpDestroy(struct ra_qp_handle *qpHandle)
+STATIC void RaPeerLoopbackSingleQpDestroy(struct RaQpHandle *qpHandle)
 {
-    struct ra_loopback_info *loopbackInfo = qpHandle->loopback_info;
-    struct ra_rdma_handle *rdmaHandle = qpHandle->rdma_handle;
-    struct cq_attr attr = {0};
+    struct RaLoopbackInfo *loopbackInfo = qpHandle->loopbackInfo;
+    struct RaRdmaHandle *rdmaHandle = qpHandle->rdmaHandle;
+    struct CqAttr attr = {0};
 
-    attr.qp_context = &(loopbackInfo->cq_context);
-    attr.ib_send_cq = &(loopbackInfo->ib_send_cq);
-    attr.ib_recv_cq = &(loopbackInfo->ib_recv_cq);
+    attr.qpContext = &(loopbackInfo->cqContext);
+    attr.ibSendCq = &(loopbackInfo->ibSendCq);
+    attr.ibRecvCq = &(loopbackInfo->ibRecvCq);
 
     (void)RaPeerNormalQpDestroy(qpHandle);
 
@@ -721,24 +721,24 @@ STATIC void RaPeerLoopbackSingleQpDestroy(struct ra_qp_handle *qpHandle)
     loopbackInfo = NULL;
 }
 
-STATIC int RaPeerLoopbackSingleQpCreate(struct ra_rdma_handle *rdmaHandle, struct ra_qp_handle **qpHandle,
+STATIC int RaPeerLoopbackSingleQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle **qpHandle,
     struct ibv_qp **qp)
 {
-    struct ra_loopback_info *loopbackInfo = NULL;
+    struct RaLoopbackInfo *loopbackInfo = NULL;
     struct ibv_qp_init_attr qpInitAttr = {0};
     struct ibv_qp_cap qpCap = {0};
-    struct cq_attr cqAttr = {0};
+    struct CqAttr cqAttr = {0};
     int ret = 0;
 
-    loopbackInfo = (struct ra_loopback_info *)calloc(1, sizeof(struct ra_loopback_info));
+    loopbackInfo = (struct RaLoopbackInfo *)calloc(1, sizeof(struct RaLoopbackInfo));
     CHK_PRT_RETURN(loopbackInfo == NULL, hccp_err("loopback_info calloc failed"),
         -ENOMEM);
 
-    cqAttr.qp_context = &(loopbackInfo->cq_context);
-    cqAttr.ib_send_cq = &(loopbackInfo->ib_send_cq);
-    cqAttr.ib_recv_cq = &(loopbackInfo->ib_recv_cq);
-    cqAttr.send_cq_depth = CQ_DEFAULT_MIN_SEND_DEPTH;
-    cqAttr.recv_cq_depth = CQ_DEFAULT_MIN_RECV_DEPTH;
+    cqAttr.qpContext = &(loopbackInfo->cqContext);
+    cqAttr.ibSendCq = &(loopbackInfo->ibSendCq);
+    cqAttr.ibRecvCq = &(loopbackInfo->ibRecvCq);
+    cqAttr.sendCqDepth = CQ_DEFAULT_MIN_SEND_DEPTH;
+    cqAttr.recvCqDepth = CQ_DEFAULT_MIN_RECV_DEPTH;
     ret = RaPeerCqCreate(rdmaHandle, &cqAttr);
     if (ret != 0) {
         hccp_err("ra_peer_cq_create failed, ret:%d", ret);
@@ -750,9 +750,9 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct ra_rdma_handle *rdmaHandle, struc
     qpCap.max_send_sge = QP_DEFAULT_MIN_CAP_SEND_SGE;
     qpCap.max_recv_sge = QP_DEFAULT_MIN_CAP_RECV_SGE;
     qpCap.max_inline_data = QP_DEFAULT_MAX_CAP_INLINE_DATA;
-    qpInitAttr.qp_context = *(cqAttr.qp_context);
-    qpInitAttr.send_cq = *(cqAttr.ib_send_cq);
-    qpInitAttr.recv_cq = *(cqAttr.ib_recv_cq);
+    qpInitAttr.qp_context = *(cqAttr.qpContext);
+    qpInitAttr.send_cq = *(cqAttr.ibSendCq);
+    qpInitAttr.recv_cq = *(cqAttr.ibRecvCq);
     qpInitAttr.qp_type = IBV_QPT_RC;
     qpInitAttr.cap = qpCap;
     ret = RaPeerNormalQpCreate(rdmaHandle, &qpInitAttr, (void **)qpHandle, (void **)qp);
@@ -760,7 +760,7 @@ STATIC int RaPeerLoopbackSingleQpCreate(struct ra_rdma_handle *rdmaHandle, struc
         hccp_err("ra_peer_normal_qp_create failed, ret:%d", ret);
         goto qp_create_err;
     }
-    (*qpHandle)->loopback_info = loopbackInfo;
+    (*qpHandle)->loopbackInfo = loopbackInfo;
     return ret;
 
 qp_create_err:
@@ -771,10 +771,10 @@ cq_create_err:
     return ret;
 }
 
-int RaPeerLoopbackQpCreate(struct ra_rdma_handle *rdmaHandle, struct loopback_qp_pair *qpPair, void **qpHandle)
+int RaPeerLoopbackQpCreate(struct RaRdmaHandle *rdmaHandle, struct LoopbackQpPair *qpPair, void **qpHandle)
 {
-    struct ra_qp_handle *qpHandle0 = NULL;
-    struct ra_qp_handle *qpHandle1 = NULL;
+    struct RaQpHandle *qpHandle0 = NULL;
+    struct RaQpHandle *qpHandle1 = NULL;
     struct ibv_qp *qp0 = NULL;
     struct ibv_qp *qp1 = NULL;
     int ret;
@@ -794,10 +794,10 @@ int RaPeerLoopbackQpCreate(struct ra_rdma_handle *rdmaHandle, struct loopback_qp
         goto qp_modify_err;
     }
 
-    qpPair->ibv_qp0 = qp0;
-    qpPair->ibv_qp1 = qp1;
-    qpHandle0->loopback_qp_handle = qpHandle1;
-    qpHandle1->loopback_qp_handle = qpHandle0;
+    qpPair->ibvQp0 = qp0;
+    qpPair->ibvQp1 = qp1;
+    qpHandle0->loopbackQpHandle = qpHandle1;
+    qpHandle1->loopbackQpHandle = qpHandle0;
     *qpHandle = qpHandle0;
     return ret;
 
@@ -808,33 +808,33 @@ qp1_create_err:
     return ret;
 }
 
-STATIC void RaPeerLoopbackQpDestroy(struct ra_qp_handle *qpHandle0)
+STATIC void RaPeerLoopbackQpDestroy(struct RaQpHandle *qpHandle0)
 {
-    struct ra_qp_handle *qpHandle1 = qpHandle0->loopback_qp_handle;
+    struct RaQpHandle *qpHandle1 = qpHandle0->loopbackQpHandle;
 
     RaPeerLoopbackSingleQpDestroy(qpHandle1);
     RaPeerLoopbackSingleQpDestroy(qpHandle0);
 }
 
-STATIC int RaPeerSingleQpDestroy(struct ra_qp_handle *qpPeer)
+STATIC int RaPeerSingleQpDestroy(struct RaQpHandle *qpPeer)
 {
     int ret = 0;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsQpDestroy(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsQpDestroy(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn);
     if (ret != 0) {
         hccp_err("[destroy][ra_peer_qp]destroy failed ret(%d)", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     free(qpPeer);
     qpPeer = NULL;
     return ret;
 }
 
-int RaPeerQpDestroy(struct ra_qp_handle *qpPeer)
+int RaPeerQpDestroy(struct RaQpHandle *qpPeer)
 {
-    if (qpPeer->loopback_qp_handle == NULL) {
+    if (qpPeer->loopbackQpHandle == NULL) {
         return RaPeerSingleQpDestroy(qpPeer);
     }
 
@@ -843,63 +843,63 @@ int RaPeerQpDestroy(struct ra_qp_handle *qpPeer)
     return 0;
 }
 
-int RaPeerSendWr(struct ra_qp_handle *qpPeer, struct send_wr *wr, struct send_wr_rsp *wrRsp)
+int RaPeerSendWr(struct RaQpHandle *qpPeer, struct SendWr *wr, struct SendWrRsp *wrRsp)
 {
     int ret;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsSendWr(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, wr, wrRsp);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsSendWr(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, wr, wrRsp);
     if (ret) {
         hccp_err("[send][ra_peer_wr]ra_send_wr failed ret(%d)", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     return ret;
 }
 
-int RaPeerSendWrlist(struct ra_qp_handle *qpHandle, struct send_wrlist_data wr[], struct send_wr_rsp opRsp[],
-    struct wrlist_send_complete_num wrlistNum)
+int RaPeerSendWrlist(struct RaQpHandle *qpHandle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
+    struct WrlistSendCompleteNum wrlistNum)
 {
     int ret;
     unsigned int completeCnt = 0;
     unsigned int sendCnt = 0;
-    struct rs_wrlist_base_info baseInfo;
-    struct wrlist_send_complete_num wrlistOnce;
+    struct RsWrlistBaseInfo baseInfo;
+    struct WrlistSendCompleteNum wrlistOnce;
     unsigned int compeletOnceCnt, i;
-    struct wr_info *wrList = NULL;
+    struct WrInfo *wrList = NULL;
 
-    baseInfo.phy_id = qpHandle->phy_id;
-    baseInfo.rdev_index = qpHandle->rdev_index;
+    baseInfo.phyId = qpHandle->phyId;
+    baseInfo.rdevIndex = qpHandle->rdevIndex;
     baseInfo.qpn = qpHandle->qpn;
-    baseInfo.key_flag = 0;
-    wrList = calloc(wrlistNum.send_num, sizeof(struct wr_info));
+    baseInfo.keyFlag = 0;
+    wrList = calloc(wrlistNum.sendNum, sizeof(struct WrInfo));
     CHK_PRT_RETURN(wrList == NULL, hccp_err("wr_list calloc failed."), -ENOMEM);
 
-    for (i = 0; i < wrlistNum.send_num; i++) {
+    for (i = 0; i < wrlistNum.sendNum; i++) {
         wrList[i].op = wr[i].op;
-        wrList[i].send_flags = wr[i].send_flags;
-        wrList[i].dst_addr = wr[i].dst_addr;
-        wrList[i].mem_list.addr = wr[i].mem_list.addr;
-        wrList[i].mem_list.len = wr[i].mem_list.len;
-        wrList[i].mem_list.lkey = wr[i].mem_list.lkey;
+        wrList[i].sendFlags = wr[i].sendFlags;
+        wrList[i].dstAddr = wr[i].dstAddr;
+        wrList[i].memList.addr = wr[i].memList.addr;
+        wrList[i].memList.len = wr[i].memList.len;
+        wrList[i].memList.lkey = wr[i].memList.lkey;
     }
 
-    while (sendCnt < wrlistNum.send_num) {
-        wrlistOnce.send_num = (wrlistNum.send_num - sendCnt) > MAX_WR_NUM ? MAX_WR_NUM :
-            (wrlistNum.send_num - sendCnt);
+    while (sendCnt < wrlistNum.sendNum) {
+        wrlistOnce.sendNum = (wrlistNum.sendNum - sendCnt) > MAX_WR_NUM ? MAX_WR_NUM :
+            (wrlistNum.sendNum - sendCnt);
 
-        PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[baseInfo.phy_id]);
-        RsSetCtx(baseInfo.phy_id);
-        ret = RsSendWrlist(baseInfo, &wrList[sendCnt], wrlistOnce.send_num, &opRsp[sendCnt],
+        PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[baseInfo.phyId]);
+        RsSetCtx(baseInfo.phyId);
+        ret = RsSendWrlist(baseInfo, &wrList[sendCnt], wrlistOnce.sendNum, &opRsp[sendCnt],
             &compeletOnceCnt);
         if (ret) {
-            hccp_err("[send][ra_peer_wrlist]ra_peer_send_wrlist failed ret[%d], send_num[%u], sendCnt[%u]", ret,
-                wrlistNum.send_num, sendCnt);
-            PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phy_id]);
+            hccp_err("[send][ra_peer_wrlist]ra_peer_send_wrlist failed ret[%d], sendNum[%u], sendCnt[%u]", ret,
+                wrlistNum.sendNum, sendCnt);
+            PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phyId]);
             goto alloc_wr_list_fail;
         }
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phy_id]);
-        sendCnt += wrlistOnce.send_num;
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phyId]);
+        sendCnt += wrlistOnce.sendNum;
         completeCnt += compeletOnceCnt;
     }
 
@@ -907,7 +907,7 @@ int RaPeerSendWrlist(struct ra_qp_handle *qpHandle, struct send_wrlist_data wr[]
         hccp_err("[send][ra_peer_wrlist]complete_cnt[%u] != send_cnt[%u]", completeCnt, sendCnt);
         ret = -EINVAL;
     } else {
-        *(wrlistNum.complete_num) = completeCnt;
+        *(wrlistNum.completeNum) = completeCnt;
     }
 
 alloc_wr_list_fail:
@@ -916,34 +916,34 @@ alloc_wr_list_fail:
     return ret;
 }
 
-int RaPeerGetNotifyBaseAddr(struct ra_rdma_handle *handle, unsigned long long *va, unsigned long long *size)
+int RaPeerGetNotifyBaseAddr(struct RaRdmaHandle *handle, unsigned long long *va, unsigned long long *size)
 {
-    struct mr_info info = { 0 };
+    struct MrInfoT info = { 0 };
     int ret;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[handle->rdev_info.phy_id]);
-    RsSetCtx(handle->rdev_info.phy_id);
-    ret = RsGetNotifyMrInfo(handle->rdev_info.phy_id, handle->rdev_index, &info);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[handle->rdevInfo.phyId]);
+    RsSetCtx(handle->rdevInfo.phyId);
+    ret = RsGetNotifyMrInfo(handle->rdevInfo.phyId, handle->rdevIndex, &info);
     if (ret) {
         hccp_err("[get][ra_peer_notify_base_addr]rs_get_notify_mr_info failed ret(%d)", ret);
     }
     *va = (unsigned long long)(uintptr_t)info.addr;
     *size = info.size;
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[handle->rdev_info.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[handle->rdevInfo.phyId]);
     return ret;
 }
 
-int RaPeerInit(struct ra_init_config *cfg, unsigned int whiteListStatus)
+int RaPeerInit(struct RaInitConfig *cfg, unsigned int whiteListStatus)
 {
     int ret;
 
-    hccp_info("[init][ra_peer]ra_peer_init phy_id[%d] start", cfg->phy_id);
+    hccp_info("[init][ra_peer]ra_peer_init phy_id[%d] start", cfg->phyId);
 
     /* In peer online mode chip id equals to phy id */
-    struct rs_init_config rsPeerOnlineCfg = {
-        .chip_id = cfg->phy_id,
-        .hccp_mode = cfg->nic_position,
-        .white_list_status = whiteListStatus,
+    struct RsInitConfig rsPeerOnlineCfg = {
+        .chipId = cfg->phyId,
+        .hccpMode = cfg->nicPosition,
+        .whiteListStatus = whiteListStatus,
     };
     ret = DlHalInit();
     if (ret) {
@@ -951,30 +951,30 @@ int RaPeerInit(struct ra_init_config *cfg, unsigned int whiteListStatus)
         return ret;
     }
 
-    int counter = __sync_fetch_and_add(&(gRaInitCounter[cfg->phy_id]), 1);
+    int counter = __sync_fetch_and_add(&(gRaInitCounter[cfg->phyId]), 1);
     if (counter > 0) {
-        PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[cfg->phy_id]);
-        RsSetCtx(cfg->phy_id);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phy_id]);
-        hccp_warn("ra peer has been init for device %u!", cfg->phy_id);
+        PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[cfg->phyId]);
+        RsSetCtx(cfg->phyId);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phyId]);
+        hccp_warn("ra peer has been init for device %u!", cfg->phyId);
         return 0;
     }
 
-    ret = pthread_mutex_init(&gRaPeerMutex[cfg->phy_id], NULL);
+    ret = pthread_mutex_init(&gRaPeerMutex[cfg->phyId], NULL);
     CHK_PRT_RETURN(ret, hccp_err("[init][ra_peer]pthread_mutex_init failed, ret(%d) phyId(%u)",
-        ret, cfg->phy_id), -ESYSFUNC);
+        ret, cfg->phyId), -ESYSFUNC);
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[cfg->phy_id]);
-    RsSetCtx(cfg->phy_id);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[cfg->phyId]);
+    RsSetCtx(cfg->phyId);
     ret = RsInit(&rsPeerOnlineCfg);
     if (ret) {
         hccp_err("[init][ra_peer]rs init failed(%d)", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phy_id]);
-        pthread_mutex_destroy(&gRaPeerMutex[cfg->phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phyId]);
+        pthread_mutex_destroy(&gRaPeerMutex[cfg->phyId]);
         return ret;
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phy_id]);
-    hccp_info("[init][ra_peer]ra_peer_init phy_id[%d] succ", cfg->phy_id);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phyId]);
+    hccp_info("[init][ra_peer]ra_peer_init phy_id[%d] succ", cfg->phyId);
     return ret;
 }
 
@@ -1003,42 +1003,42 @@ int RaPeerGetSecRandom(unsigned int *value)
     return ret;
 }
 
-int RaPeerDeinit(struct ra_init_config *cfg)
+int RaPeerDeinit(struct RaInitConfig *cfg)
 {
     int ret = 0;
 
-    hccp_info("[deinit][ra_peer]ra_peer_deinit phy_id[%d] start", cfg->phy_id);
+    hccp_info("[deinit][ra_peer]ra_peer_deinit phy_id[%d] start", cfg->phyId);
 
     /* In peer online mode chip id equals to phy id */
-    struct rs_init_config rsPeerOnlineCfg = {
-        .chip_id = cfg->phy_id,
-        .hccp_mode = cfg->nic_position,
-        .white_list_status = WHITE_LIST_ENABLE,
+    struct RsInitConfig rsPeerOnlineCfg = {
+        .chipId = cfg->phyId,
+        .hccpMode = cfg->nicPosition,
+        .whiteListStatus = WHITE_LIST_ENABLE,
     };
 
-    if (__sync_fetch_and_sub(&(gRaInitCounter[cfg->phy_id]), 1) > 1) {
+    if (__sync_fetch_and_sub(&(gRaInitCounter[cfg->phyId]), 1) > 1) {
         goto dl_deinit;
     }
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[cfg->phy_id]);
-    RsSetCtx(cfg->phy_id);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[cfg->phyId]);
+    RsSetCtx(cfg->phyId);
     ret = RsDeinit(&rsPeerOnlineCfg);
     // no need to destroy lock & return immediately for retry
     if (ret == -EAGAIN) {
         hccp_warn("[deinit][ra_peer]rs deinit unsuccessful(%d)", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phyId]);
         return ret;
     }
 
     if (ret) {
         hccp_err("[deinit][ra_peer]rs deinit failed(%d)", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phy_id]);
-    pthread_mutex_destroy(&gRaPeerMutex[cfg->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[cfg->phyId]);
+    pthread_mutex_destroy(&gRaPeerMutex[cfg->phyId]);
 
 dl_deinit:
     DlHalDeinit();
-    hccp_info("[deinit][ra_peer]ra_peer_deinit phy_id[%d] succ", cfg->phy_id);
+    hccp_info("[deinit][ra_peer]ra_peer_deinit phy_id[%d] succ", cfg->phyId);
     return ret;
 }
 
@@ -1057,7 +1057,7 @@ int RaPeerGetIfnum(unsigned int phyId, unsigned int *num)
     return ret;
 }
 
-int RaPeerGetIfaddrs(unsigned int phyId, struct interface_info interfaceInfos[], unsigned int *num)
+int RaPeerGetIfaddrs(unsigned int phyId, struct InterfaceInfo interfaceInfos[], unsigned int *num)
 {
     int ret;
     hccp_info("[get][ra_peer_ifaddrs] ra_peer_get_ifaddrs phy_id[%u] start", phyId);
@@ -1136,7 +1136,7 @@ int HostNotifyBaseAddrUninit(unsigned int phyId)
     int ret;
     unsigned long long va, size;
     unsigned int logicId = 0;
-    struct host_roce_notify_info notifyNode = {0};
+    struct HostRoceNotifyInfo notifyNode = {0};
 
     ret = DlDrvDeviceGetIndexByPhyId(phyId, &logicId);
     CHK_PRT_RETURN(ret, hccp_err("[uninit][base_addr]drvDeviceGetIndexByPhyId failed, ret(%d), phyId(%u)",
@@ -1145,7 +1145,7 @@ int HostNotifyBaseAddrUninit(unsigned int phyId)
     ret = RsNotifyCfgGet(phyId, &va, &size);
     CHK_PRT_RETURN(ret, hccp_err("[uninit][base_addr]rs_notify_cfg_get failed, ret(%d), phyId(%u)",
         ret, phyId), ret);
-    notifyNode.logic_id = logicId;
+    notifyNode.logicId = logicId;
     notifyNode.va = va;
     notifyNode.sz = size;
 
@@ -1184,118 +1184,118 @@ int NotifyBaseAddrUninit(unsigned int notifyType, unsigned int phyId)
 }
 
 int RaPeerRdevInit(
-    struct ra_rdma_handle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex)
+    struct RaRdmaHandle *rdmaHandle, unsigned int notifyType, struct rdev rdevInfo, unsigned int *rdevIndex)
 {
     int ret, retVal;
 
     hccp_run_info("[init][ra_peer_rdev]ra_peer_rdev_init phy_id[%d] notify_type[%u] physical device id[%u]",
-        rdevInfo.phy_id, notifyType, rdmaHandle->rdev_info.phy_id);
+        rdevInfo.phyId, notifyType, rdmaHandle->rdevInfo.phyId);
 
-    RsSetCtx(rdevInfo.phy_id);
-    ret = RaPeerNotifyBaseAddrInit(notifyType, rdevInfo.phy_id);
+    RsSetCtx(rdevInfo.phyId);
+    ret = RaPeerNotifyBaseAddrInit(notifyType, rdevInfo.phyId);
     CHK_PRT_RETURN(ret, hccp_err("[init][ra_peer_rdev] ra_peer_notify_base_addr_init failed[%d]", ret), ret);
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdevInfo.phyId]);
     ret = RsRdevInit(rdevInfo, notifyType, rdevIndex);
     if (ret) {
         hccp_err("[init][ra_peer_rdev] rs_rdev_init failed[%d]", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phyId]);
         goto notify_base_addr_uninit;
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdevInfo.phyId]);
 
     return 0;
 notify_base_addr_uninit:
-    retVal = NotifyBaseAddrUninit(notifyType, rdevInfo.phy_id);
+    retVal = NotifyBaseAddrUninit(notifyType, rdevInfo.phyId);
     CHK_PRT_RETURN(retVal, hccp_err("[init][ra_peer_rdev] notify_base_addr_uninit failed, ret(%d)",
         retVal), retVal);
     return ret;
 }
 
-int RaPeerRdevDeinit(struct ra_rdma_handle *rdmaHandle, unsigned int notifyType)
+int RaPeerRdevDeinit(struct RaRdmaHandle *rdmaHandle, unsigned int notifyType)
 {
     int ret;
 
-    hccp_info("[deinit][ra_peer_rdev]ra_peer_rdev_deinit phy_id[%d]", rdmaHandle->rdev_info.phy_id);
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
-    RsSetCtx(rdmaHandle->rdev_info.phy_id);
-    ret = RsRdevDeinit(rdmaHandle->rdev_info.phy_id, notifyType, rdmaHandle->rdev_index);
+    hccp_info("[deinit][ra_peer_rdev]ra_peer_rdev_deinit phy_id[%d]", rdmaHandle->rdevInfo.phyId);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
+    RsSetCtx(rdmaHandle->rdevInfo.phyId);
+    ret = RsRdevDeinit(rdmaHandle->rdevInfo.phyId, notifyType, rdmaHandle->rdevIndex);
     if (ret) {
         hccp_err("[deinit][ra_peer_rdev] rs_rdev_deinit failed[%d]", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
         return ret;
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
 
-    ret = NotifyBaseAddrUninit(notifyType, rdmaHandle->rdev_info.phy_id);
+    ret = NotifyBaseAddrUninit(notifyType, rdmaHandle->rdevInfo.phyId);
     CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_peer_rdev] notify_base_addr_uninit failed, ret(%d)", ret), ret);
 
     return 0;
 }
 
-int RaPeerSetTsqpDepth(struct ra_rdma_handle *rdmaHandle, unsigned int tempDepth, unsigned int *qpNum)
+int RaPeerSetTsqpDepth(struct RaRdmaHandle *rdmaHandle, unsigned int tempDepth, unsigned int *qpNum)
 {
     int ret;
-    hccp_info("[set][peer_set_tsqp_depth]ra_peer_set_tsqp_depth phy_id[%d]", rdmaHandle->rdev_info.phy_id);
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
-    RsSetCtx(rdmaHandle->rdev_info.phy_id);
-    ret = RsSetTsqpDepth(rdmaHandle->rdev_info.phy_id, rdmaHandle->rdev_index, tempDepth, qpNum);
+    hccp_info("[set][peer_set_tsqp_depth]ra_peer_set_tsqp_depth phy_id[%d]", rdmaHandle->rdevInfo.phyId);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
+    RsSetCtx(rdmaHandle->rdevInfo.phyId);
+    ret = RsSetTsqpDepth(rdmaHandle->rdevInfo.phyId, rdmaHandle->rdevIndex, tempDepth, qpNum);
     if (ret) {
         hccp_err("[set][peer_set_tsqp_depth] rs_set_tsqp_depth failed[%d]", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
         return ret;
     }
 
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
     return 0;
 }
 
-int RaPeerGetTsqpDepth(struct ra_rdma_handle *rdmaHandle, unsigned int *tempDepth, unsigned int *qpNum)
+int RaPeerGetTsqpDepth(struct RaRdmaHandle *rdmaHandle, unsigned int *tempDepth, unsigned int *qpNum)
 {
     int ret;
 
-    hccp_info("[get][peer_get_tsqp_depth]ra_peer_get_tsqp_depth phy_id[%d]", rdmaHandle->rdev_info.phy_id);
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
-    RsSetCtx(rdmaHandle->rdev_info.phy_id);
-    ret = RsGetTsqpDepth(rdmaHandle->rdev_info.phy_id, rdmaHandle->rdev_index, tempDepth, qpNum);
+    hccp_info("[get][peer_get_tsqp_depth]ra_peer_get_tsqp_depth phy_id[%d]", rdmaHandle->rdevInfo.phyId);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
+    RsSetCtx(rdmaHandle->rdevInfo.phyId);
+    ret = RsGetTsqpDepth(rdmaHandle->rdevInfo.phyId, rdmaHandle->rdevIndex, tempDepth, qpNum);
     if (ret) {
         hccp_err("[get][peer_set_tsqp_depth]rs_get_tsqp_depth failed[%d]", ret);
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
         return ret;
     }
 
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdev_info.phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[rdmaHandle->rdevInfo.phyId]);
     return ret;
 }
 
-int RaPeerRecvWrlist(struct ra_qp_handle *qpHandle, struct recv_wrlist_data *wr, unsigned int recvNum,
+int RaPeerRecvWrlist(struct RaQpHandle *qpHandle, struct RecvWrlistData *wr, unsigned int recvNum,
     unsigned int *completeNum)
 {
     int ret;
-    struct rs_wrlist_base_info baseInfo = {0};
+    struct RsWrlistBaseInfo baseInfo = {0};
     unsigned int completeCnt = 0;
     unsigned int recvCnt = 0;
     unsigned int recvNumPer;
     unsigned int compeletOnceCnt;
 
-    baseInfo.phy_id = qpHandle->phy_id;
-    baseInfo.rdev_index = qpHandle->rdev_index;
+    baseInfo.phyId = qpHandle->phyId;
+    baseInfo.rdevIndex = qpHandle->rdevIndex;
     baseInfo.qpn = qpHandle->qpn;
 
     while (recvCnt < recvNum) {
         recvNumPer = (recvNum - recvCnt) > MAX_WR_NUM ? MAX_WR_NUM :
             (recvNum - recvCnt);
 
-        PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[baseInfo.phy_id]);
-        RsSetCtx(baseInfo.phy_id);
+        PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[baseInfo.phyId]);
+        RsSetCtx(baseInfo.phyId);
         ret = RsRecvWrlist(baseInfo, &wr[recvCnt], recvNumPer, &compeletOnceCnt);
         if (ret) {
             hccp_err("[recv][peer_recv_wrlist]ra_peer_recv_wrlist failed ret[%d], recvCnt[%u], recvNumPer[%u]",
                 ret, recvCnt, recvNumPer);
-            PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phy_id]);
+            PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phyId]);
             return ret;
         }
-        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phy_id]);
+        PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[baseInfo.phyId]);
         recvCnt += recvNumPer;
         completeCnt += compeletOnceCnt;
     }
@@ -1307,25 +1307,25 @@ int RaPeerRecvWrlist(struct ra_qp_handle *qpHandle, struct recv_wrlist_data *wr,
     return 0;
 }
 
-int RaPeerGetQpContext(struct ra_qp_handle *qpPeer, void** qp, void** sendCq, void** recvCq)
+int RaPeerGetQpContext(struct RaQpHandle *qpPeer, void** qp, void** sendCq, void** recvCq)
 {
     int ret;
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsGetQpContext(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, qp, sendCq, recvCq);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsGetQpContext(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, qp, sendCq, recvCq);
     if (ret) {
         hccp_err("[get][rs_get_qp_context]ra_peer_get_qp_context failed ret(%d)", ret);
     }
     return ret;
 }
 
-int RaPeerCqCreate(struct ra_rdma_handle *rdmaHandle, struct cq_attr *attr)
+int RaPeerCqCreate(struct RaRdmaHandle *rdmaHandle, struct CqAttr *attr)
 {
     int ret;
-    unsigned int phyId = rdmaHandle->rdev_info.phy_id;
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
 
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
     RsSetCtx(phyId);
-    ret = RsCqCreate(phyId, rdmaHandle->rdev_index, attr);
+    ret = RsCqCreate(phyId, rdmaHandle->rdevIndex, attr);
     if (ret) {
         hccp_err("[create][ra_peer_cq_create]rs_cq_create failed ret[%d]", ret);
     }
@@ -1334,14 +1334,14 @@ int RaPeerCqCreate(struct ra_rdma_handle *rdmaHandle, struct cq_attr *attr)
     return ret;
 }
 
-int RaPeerCqDestroy(struct ra_rdma_handle *rdmaHandle, struct cq_attr *attr)
+int RaPeerCqDestroy(struct RaRdmaHandle *rdmaHandle, struct CqAttr *attr)
 {
     int ret;
-    unsigned int phyId = rdmaHandle->rdev_info.phy_id;
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
 
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
     RsSetCtx(phyId);
-    ret = RsCqDestroy(phyId, rdmaHandle->rdev_index, attr);
+    ret = RsCqDestroy(phyId, rdmaHandle->rdevIndex, attr);
     if (ret) {
         hccp_err("[destroy][ra_peer_cq_destroy]rs_cq_destroy failed ret[%d]", ret);
     }
@@ -1350,33 +1350,33 @@ int RaPeerCqDestroy(struct ra_rdma_handle *rdmaHandle, struct cq_attr *attr)
     return ret;
 }
 
-int RaPeerNormalQpCreate(struct ra_rdma_handle *rdmaHandle, struct ibv_qp_init_attr *qpInitAttr,
+int RaPeerNormalQpCreate(struct RaRdmaHandle *rdmaHandle, struct ibv_qp_init_attr *qpInitAttr,
     void **qpHandle, void **qp)
 {
-    unsigned int phyId = rdmaHandle->rdev_info.phy_id;
-    struct ra_qp_handle *qpPeer = NULL;
-    struct rs_qp_resp qpResp = { 0 };
+    unsigned int phyId = rdmaHandle->rdevInfo.phyId;
+    struct RaQpHandle *qpPeer = NULL;
+    struct RsQpResp qpResp = { 0 };
     int ret;
 
-    qpPeer = (struct ra_qp_handle *)calloc(1, sizeof(struct ra_qp_handle));
+    qpPeer = (struct RaQpHandle *)calloc(1, sizeof(struct RaQpHandle));
     CHK_PRT_RETURN(qpPeer == NULL, hccp_err("[create][ra_normal_peer_qp]normal_qp_peer calloc failed."), -ENOMEM);
 
     PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[phyId]);
     RsSetCtx(phyId);
-    ret = RsNormalQpCreate(phyId, rdmaHandle->rdev_index, qpInitAttr, &qpResp, qp);
+    ret = RsNormalQpCreate(phyId, rdmaHandle->rdevIndex, qpInitAttr, &qpResp, qp);
     if (ret) {
         hccp_err("[create][ra_normal_peer_qp]rs_normal_qp_create failed ret[%d]", ret);
         PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
         goto calloc_err;
     }
     PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[phyId]);
-    qpPeer->phy_id = phyId;
+    qpPeer->phyId = phyId;
     qpPeer->qpn = qpResp.qpn;
     qpPeer->psn = qpResp.psn;
-    qpPeer->gid_idx = qpResp.gid_idx;
-    qpPeer->rdev_index = rdmaHandle->rdev_index;
-    qpPeer->rdma_handle = rdmaHandle;
-    qpPeer->rdma_ops = rdmaHandle->rdma_ops;
+    qpPeer->gidIdx = qpResp.gidIdx;
+    qpPeer->rdevIndex = rdmaHandle->rdevIndex;
+    qpPeer->rdmaHandle = rdmaHandle;
+    qpPeer->rdmaOps = rdmaHandle->rdmaOps;
 
     *qpHandle = qpPeer;
     return ret;
@@ -1387,51 +1387,51 @@ calloc_err:
     return ret;
 }
 
-int RaPeerNormalQpDestroy(struct ra_qp_handle *qpPeer)
+int RaPeerNormalQpDestroy(struct RaQpHandle *qpPeer)
 {
     int ret;
 
-    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phy_id]);
-    RsSetCtx(qpPeer->phy_id);
-    ret = RsNormalQpDestroy(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn);
+    PEER_PTHREAD_MUTEX_LOCK(&gRaPeerMutex[qpPeer->phyId]);
+    RsSetCtx(qpPeer->phyId);
+    ret = RsNormalQpDestroy(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn);
     if (ret) {
         hccp_err("[destroy][ra_peer_normal_qp]ra close failed ret(%d)", ret);
     }
-    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phy_id]);
+    PEER_PTHREAD_MUTEX_UNLOCK(&gRaPeerMutex[qpPeer->phyId]);
     free(qpPeer);
     qpPeer = NULL;
     return ret;
 }
 
-int RaPeerSetQpAttrQos(struct ra_qp_handle *qpPeer, struct qos_attr *attr)
+int RaPeerSetQpAttrQos(struct RaQpHandle *qpPeer, struct QosAttr *attr)
 {
-    RsSetCtx(qpPeer->phy_id);
-    int ret = RsSetQpAttrQos(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, attr);
+    RsSetCtx(qpPeer->phyId);
+    int ret = RsSetQpAttrQos(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, attr);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_set_qp_attr_qos]rs_set_qp_attr_qos failed ret(%d)", ret), ret);
     return ret;
 }
 
-int RaPeerSetQpAttrTimeout(struct ra_qp_handle *qpPeer, unsigned int *timeout)
+int RaPeerSetQpAttrTimeout(struct RaQpHandle *qpPeer, unsigned int *timeout)
 {
-    RsSetCtx(qpPeer->phy_id);
-    int ret = RsSetQpAttrTimeout(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, timeout);
+    RsSetCtx(qpPeer->phyId);
+    int ret = RsSetQpAttrTimeout(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, timeout);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_set_qp_attr_timeout]rs_set_qp_attr_timeout failed ret(%d)", ret), ret);
     return ret;
 }
 
-int RaPeerSetQpAttrRetryCnt(struct ra_qp_handle *qpPeer, unsigned int *retryCnt)
+int RaPeerSetQpAttrRetryCnt(struct RaQpHandle *qpPeer, unsigned int *retryCnt)
 {
-    RsSetCtx(qpPeer->phy_id);
-    int ret = RsSetQpAttrRetryCnt(qpPeer->phy_id, qpPeer->rdev_index, qpPeer->qpn, retryCnt);
+    RsSetCtx(qpPeer->phyId);
+    int ret = RsSetQpAttrRetryCnt(qpPeer->phyId, qpPeer->rdevIndex, qpPeer->qpn, retryCnt);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_set_qp_attr_retry_cnt]rs_set_qp_attr_retry_cnt failed ret(%d)", ret), ret);
     return ret;
 }
 
-int RaPeerCreateCompChannel(struct ra_rdma_handle *rdmaHandle, void** compChannel)
+int RaPeerCreateCompChannel(struct RaRdmaHandle *rdmaHandle, void** compChannel)
 {
     int ret;
-    RsSetCtx(rdmaHandle->rdev_info.phy_id);
-    ret = RsCreateCompChannel(rdmaHandle->rdev_info.phy_id, rdmaHandle->rdev_index, compChannel);
+    RsSetCtx(rdmaHandle->rdevInfo.phyId);
+    ret = RsCreateCompChannel(rdmaHandle->rdevInfo.phyId, rdmaHandle->rdevIndex, compChannel);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_create_comp_channel]rs_create_comp_channel failed ret(%d)", ret), ret);
 
     return ret;
@@ -1447,25 +1447,25 @@ int RaPeerDestroyCompChannel(void* compChannel)
     return ret;
 }
 
-int RaPeerCreateSrq(struct ra_rdma_handle *rdmaHandle, struct srq_attr *attr)
+int RaPeerCreateSrq(struct RaRdmaHandle *rdmaHandle, struct SrqAttr *attr)
 {
     int ret;
 
     // 创建srq&srq cq
-    RsSetCtx(rdmaHandle->rdev_info.phy_id);
-    ret = RsCreateSrq(rdmaHandle->rdev_info.phy_id, rdmaHandle->rdev_index, attr);
+    RsSetCtx(rdmaHandle->rdevInfo.phyId);
+    ret = RsCreateSrq(rdmaHandle->rdevInfo.phyId, rdmaHandle->rdevIndex, attr);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_create_srq]rs_create_srq failed ret(%d)", ret), ret);
 
     return ret;
 }
 
-int RaPeerDestroySrq(struct ra_rdma_handle *rdmaHandle, struct srq_attr *attr)
+int RaPeerDestroySrq(struct RaRdmaHandle *rdmaHandle, struct SrqAttr *attr)
 {
     int ret;
 
     // 销毁srq&srq cq
-    RsSetCtx(rdmaHandle->rdev_info.phy_id);
-    ret = RsDestroySrq(rdmaHandle->rdev_info.phy_id, rdmaHandle->rdev_index, attr);
+    RsSetCtx(rdmaHandle->rdevInfo.phyId);
+    ret = RsDestroySrq(rdmaHandle->rdevInfo.phyId, rdmaHandle->rdevIndex, attr);
     CHK_PRT_RETURN(ret, hccp_err("[ra_peer_destroy_srq]rs_destroy_srq failed ret(%d)", ret), ret);
 
     return ret;
@@ -1491,7 +1491,7 @@ int RaPeerCtlEventHandle(int eventHandle, const void *fdHandle, int opcode, enum
     return ret;
 }
 
-int RaPeerWaitEventHandle(int eventHandle, struct socket_event_info *eventInfos, int timeout,
+int RaPeerWaitEventHandle(int eventHandle, struct SocketEventInfoT *eventInfos, int timeout,
     unsigned int maxevents, unsigned int *eventsNum)
 {
     int ret;

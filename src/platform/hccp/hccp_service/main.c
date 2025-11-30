@@ -24,13 +24,13 @@
 #include "dl_hal_function.h"
 
 #ifdef CONFIG_CGROUP
-typedef void (*sighandler_t)(int);
+typedef void (*SighandlerT)(int);
 
 STATIC int HccpAddToCgroup()
 {
     int ret;
     pid_t hccpPid;
-    sighandler_t oldHandler;
+    SighandlerT oldHandler;
     char cmd[HCCP_CMD_MAX_LEN] = {0};
 
     hccpPid = getpid();
@@ -65,25 +65,25 @@ STATIC int HccpChangeNumOfFile()
     return 0;
 }
 
-STATIC int HccpSetLogInfo(struct hccp_init_param *param)
+STATIC int HccpSetLogInfo(struct HccpInitParam *param)
 {
 #define HUNDREDS_DIGIT                 100
     int ret;
-    int enableEvent = param->log_level / HUNDREDS_DIGIT;
-    int level = param->log_level % HUNDREDS_DIGIT;
+    int enableEvent = param->logLevel / HUNDREDS_DIGIT;
+    int level = param->logLevel % HUNDREDS_DIGIT;
 #ifndef CONFIG_HCCP_LLT
     LogAttr logattr = {0};
 
     logattr.type = APPLICATION;
     logattr.pid = param->pid;
-    logattr.deviceId = param->backup_flag ? param->backup_chip_id : param->chip_id;
+    logattr.deviceId = param->backupFlag ? param->backupChipId : param->chipId;
     ret = dlog_setlevel(-1, level, enableEvent);
     CHK_PRT_RETURN(ret, hccp_err("hccp set log level failed, ret:%d, log level:%d, enableEvent:%d",
         ret, level, enableEvent), ret);
 
     ret = DlogSetAttr(logattr);
-    CHK_PRT_RETURN(ret, hccp_err("hccp set attr chip_id:%u, backup_flag:%d, backup_chip_id:%u failed, ret:%d",
-        param->chip_id, param->backup_flag, param->backup_chip_id, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("hccp set attr chip_id:%u, backupFlag:%d, backupChipId:%u failed, ret:%d",
+        param->chipId, param->backupFlag, param->backupChipId, ret), ret);
 #endif
     return 0;
 }
@@ -95,7 +95,7 @@ int llt_main(int argc, char *argv[])
 #endif
 {
     int ret;
-    struct hccp_init_param param = {0};
+    struct HccpInitParam param = {0};
     struct timeval start, end;
     float timeCost = 0.0;
 
@@ -125,29 +125,29 @@ int llt_main(int argc, char *argv[])
 
     RsGetCurTime(&start);
 
-    ret = HccpInit(param.chip_id, param.pid, param.hdc_type, param.white_list_status);
+    ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
-        ReportProcessStartUpErrorCode((uint32_t)param.logic_id, 0, (uint32_t)param.pid, 0, ERR_EJ1, ERR_LEN);
+        ReportProcessStartUpErrorCode((uint32_t)param.logicId, 0, (uint32_t)param.pid, 0, ERR_EJ1, ERR_LEN);
         hccp_err("hccp init error[%d]", ret);
         goto hccp_init_fail;
     }
 
     RsGetCurTime(&end);
     HccpTimeInterval(&end, &start, &timeCost);
-    hccp_run_info("hccp init ok cost [%f] ms logic_id[%d], tgid[%d]", timeCost, param.logic_id, param.pid);
+    hccp_run_info("hccp init ok cost [%f] ms logic_id[%d], tgid[%d]", timeCost, param.logicId, param.pid);
 
-    ret = SendStartUpFinishMsg((uint32_t)param.logic_id, 0, (uint32_t)param.pid, 0);
+    ret = SendStartUpFinishMsg((uint32_t)param.logicId, 0, (uint32_t)param.pid, 0);
     if (ret) {
         hccp_err("SendStartUpFinishMsg error[%d]", ret);
     }
 
-    ret = HccpDeinit(param.chip_id);
+    ret = HccpDeinit(param.chipId);
     if (ret) {
         hccp_err("hccp deinit error[%d]", ret);
         goto hccp_init_fail;
     }
 
-    hccp_run_info("hccp deinit ok! logic_id=%d", param.logic_id);
+    hccp_run_info("hccp deinit ok! logic_id=%d", param.logicId);
 
 hccp_init_fail:
 out:

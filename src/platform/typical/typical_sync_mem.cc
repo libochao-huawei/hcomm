@@ -161,7 +161,7 @@ HcclResult TypicalSyncMem::GetNotifyHandle(u64 notifyVa, HcclRtNotify &notifyHan
     return HCCL_E_PARA;
 }
 
-HcclResult TypicalSyncMem::GetNotifySrcMem(struct mr_info &mrInfo)
+HcclResult TypicalSyncMem::GetNotifySrcMem(struct MrInfoT &mrInfo)
 {
     CHK_PTR_NULL(notifySrcMrInfo_.addr);
     mrInfo.addr = notifySrcMrInfo_.addr;

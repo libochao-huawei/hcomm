@@ -44,7 +44,7 @@ private:
     mutable std::mutex commConnMtx_{};
     s32 defaultDevId_{ 0 };
     bool raInited_{ false };
-    ra_init_config raConfig_{ DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    RaInitConfig raConfig_{ DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
 
     std::mutex connectCommMapMtx_{};
     std::map<uint32_t, HcclConn> connectCommMap_{};

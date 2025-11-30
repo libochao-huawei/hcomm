@@ -40,8 +40,8 @@ HcclResult HcclCommConnMgr::InitRa()
 
     CHK_RET(DlRaFunction::GetInstance().DlRaFunctionInit());
 
-    raConfig_.phy_id = defaultDevId_; // 暂缺获取物理id的手段
-    raConfig_.nic_position = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
+    raConfig_.phyId = defaultDevId_; // 暂缺获取物理id的手段
+    raConfig_.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
     CHK_RET(HrtRaInit(&raConfig_));
 
     raInited_ = true;

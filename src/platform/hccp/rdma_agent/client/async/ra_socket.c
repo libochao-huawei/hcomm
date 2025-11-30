@@ -16,10 +16,10 @@
 #include "ra_hdc_async_socket.h"
 #include "ra_client_host.h"
 
-HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct socket_connect_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct SocketConnectInfoT conn[], unsigned int num,
     void **reqHandle)
 {
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
     char remoteIp[MAX_IP_LEN] = {0};
     char localIp[MAX_IP_LEN] = {0};
     unsigned int phyId;
@@ -33,11 +33,11 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct socket_connect_info_t c
         "must in range of (0, %u]", num, MAX_SOCKET_NUM), ConverReturnCode(SOCKET_OP, -EINVAL));
 
     for (i = 0; i < num; i++) {
-        socketHandle = (struct ra_socket_handle *)(conn[i].socket_handle);
+        socketHandle = (struct RaSocketHandle *)(conn[i].socketHandle);
         CHK_PRT_RETURN(socketHandle == NULL, hccp_err("[batch_connect][ra_socket]socket_handle is NULL"),
             ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        phyId = socketHandle->rdev_info.phy_id;
+        phyId = socketHandle->rdevInfo.phyId;
         CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[batch_connect][ra_socket]phy_id[%u]invalid, "
             "must in range of [0, %u)", phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(SOCKET_OP, -EINVAL));
 
@@ -45,28 +45,28 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchConnectAsync(struct socket_connect_info_t c
             hccp_err("[batch_connect][ra_socket]conn tag len(%d) more than max len(%u)",
             strlen(conn[i].tag), SOCK_CONN_TAG_SIZE), ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        ret = RaInetPton(socketHandle->rdev_info.family, socketHandle->rdev_info.local_ip, localIp, MAX_IP_LEN);
+        ret = RaInetPton(socketHandle->rdevInfo.family, socketHandle->rdevInfo.localIp, localIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret != 0, hccp_err("[batch_connect][ra_socket]ra_inet_pton for local_ip failed, ret(%d)", ret),
             ConverReturnCode(SOCKET_OP, ret));
 
-        ret = RaInetPton(socketHandle->rdev_info.family, conn[i].remote_ip, remoteIp, MAX_IP_LEN);
+        ret = RaInetPton(socketHandle->rdevInfo.family, conn[i].remoteIp, remoteIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret != 0, hccp_err("[batch_connect][ra_socket]ra_inet_pton for remote_ip failed, ret(%d)", ret),
             ConverReturnCode(SOCKET_OP, ret));
 
         hccp_run_info("Input parameters: [%u]th, phyId[%u], localIp[%s], remoteIp[%s], port[%u], tag[%s], cnt[%u]",
-            i, socketHandle->rdev_info.phy_id, localIp, remoteIp, conn[i].port, conn[i].tag,
-            socketHandle->connect_cnt);
+            i, socketHandle->rdevInfo.phyId, localIp, remoteIp, conn[i].port, conn[i].tag,
+            socketHandle->connectCnt);
     }
 
-    socketHandle->connect_cnt++;
+    socketHandle->connectCnt++;
     ret = RaHdcSocketBatchConnectAsync(phyId, conn, num, reqHandle);
     return ConverReturnCode(SOCKET_OP, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct socket_listen_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct SocketListenInfoT conn[], unsigned int num,
     void **reqHandle)
 {
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
     unsigned int phyId;
     unsigned int i = 0;
@@ -80,15 +80,15 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct socket_listen_info_t con
         ConverReturnCode(SOCKET_OP, -EINVAL));
 
     for (i = 0; i < num; i++) {
-        socketHandle = (struct ra_socket_handle *)(conn[i].socket_handle);
+        socketHandle = (struct RaSocketHandle *)(conn[i].socketHandle);
         CHK_PRT_RETURN(socketHandle == NULL, hccp_err("[listen_start][ra_socket]socket_handle is NULL"),
             ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        phyId = socketHandle->rdev_info.phy_id;
+        phyId = socketHandle->rdevInfo.phyId;
         CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[listen_start][ra_socket]phy_id[%u]invalid, "
             "must in range of [0, %u)", phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        ret = RaInetPton(socketHandle->rdev_info.family, socketHandle->rdev_info.local_ip, localIp, MAX_IP_LEN);
+        ret = RaInetPton(socketHandle->rdevInfo.family, socketHandle->rdevInfo.localIp, localIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret != 0, hccp_err("[listen_start][ra_socket]ra_inet_pton for server_ip failed, ret(%d)", ret),
             ConverReturnCode(SOCKET_OP, ret));
 
@@ -100,10 +100,10 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStartAsync(struct socket_listen_info_t con
     return ConverReturnCode(SOCKET_OP, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct socket_listen_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct SocketListenInfoT conn[], unsigned int num,
     void **reqHandle)
 {
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
     unsigned int phyId;
     unsigned int i = 0;
@@ -116,15 +116,15 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct socket_listen_info_t conn
         "must in range of (0, %u]", num, MAX_SOCKET_NUM), ConverReturnCode(SOCKET_OP, -EINVAL));
 
     for (i = 0; i < num; i++) {
-        socketHandle = (struct ra_socket_handle *)(conn[i].socket_handle);
+        socketHandle = (struct RaSocketHandle *)(conn[i].socketHandle);
         CHK_PRT_RETURN(socketHandle == NULL, hccp_err("[listen_stop][ra_socket]socket_handle is NULL"),
             ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        phyId = socketHandle->rdev_info.phy_id;
+        phyId = socketHandle->rdevInfo.phyId;
         CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[listen_stop][ra_socket]phy_id[%u]invalid, "
             "must in range of [0, %u)", phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        ret = RaInetPton(socketHandle->rdev_info.family, socketHandle->rdev_info.local_ip, localIp, MAX_IP_LEN);
+        ret = RaInetPton(socketHandle->rdevInfo.family, socketHandle->rdevInfo.localIp, localIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret != 0, hccp_err("[listen_stop][ra_socket]ra_inet_pton for server_ip failed, ret(%d)", ret),
             ConverReturnCode(SOCKET_OP, ret));
 
@@ -135,10 +135,10 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStopAsync(struct socket_listen_info_t conn
     return ConverReturnCode(SOCKET_OP, ret);
 }
 
-HCCP_ATTRI_VISI_DEF int RaSocketBatchCloseAsync(struct socket_close_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketBatchCloseAsync(struct SocketCloseInfoT conn[], unsigned int num,
     void **reqHandle)
 {
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
     char localIp[MAX_IP_LEN] = {0};
     unsigned int phyId;
     unsigned int i = 0;
@@ -151,23 +151,23 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchCloseAsync(struct socket_close_info_t conn[
         "must in range of (0, %u]", num, MAX_SOCKET_NUM), ConverReturnCode(SOCKET_OP, -EINVAL));
 
     for (i = 0; i < num; i++) {
-        socketHandle = (struct ra_socket_handle *)(conn[i].socket_handle);
+        socketHandle = (struct RaSocketHandle *)(conn[i].socketHandle);
         CHK_PRT_RETURN(socketHandle == NULL, hccp_err("[batch_close][ra_socket]socket_handle is NULL"),
             ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        phyId = socketHandle->rdev_info.phy_id;
+        phyId = socketHandle->rdevInfo.phyId;
         CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[batch_close][ra_socket]phy_id[%u]invalid, "
             "must in range of [0, %u)", phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(SOCKET_OP, -EINVAL));
 
-        ret = RaInetPton(socketHandle->rdev_info.family, socketHandle->rdev_info.local_ip, localIp, MAX_IP_LEN);
+        ret = RaInetPton(socketHandle->rdevInfo.family, socketHandle->rdevInfo.localIp, localIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret != 0, hccp_err("[batch_close][ra_socket]ra_inet_pton for local_ip failed, ret(%d)", ret),
             ConverReturnCode(SOCKET_OP, ret));
 
         hccp_run_info("Input parameters: [%u]th, phyId[%u], localIp[%s], cnt[%u]", i, phyId, localIp,
-            socketHandle->close_cnt);
+            socketHandle->closeCnt);
     }
 
-    socketHandle->close_cnt++;
+    socketHandle->closeCnt++;
     ret = RaHdcSocketBatchCloseAsync(phyId, conn, num, reqHandle);
     return ConverReturnCode(SOCKET_OP, ret);
 }
@@ -181,7 +181,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketSendAsync(const void *fdHandle, const void *data
         hccp_err("[send][ra_socket]fd_handle or data or sent_size or req_handle is NULL or size[%llu] is 0", size),
         ConverReturnCode(SOCKET_OP, -EINVAL));
 
-    ret = RaHdcSocketSendAsync((const struct socket_hdc_info *)fdHandle, data, size, sentSize, reqHandle);
+    ret = RaHdcSocketSendAsync((const struct SocketHdcInfo *)fdHandle, data, size, sentSize, reqHandle);
     return ConverReturnCode(SOCKET_OP, ret);
 }
 
@@ -194,6 +194,6 @@ HCCP_ATTRI_VISI_DEF int RaSocketRecvAsync(const void *fdHandle, void *data, unsi
         hccp_err("[recv][ra_socket]fd_handle or data or received_size or req_handle is NULL or size[%llu] is 0", size),
         ConverReturnCode(SOCKET_OP, -EINVAL));
 
-    ret = RaHdcSocketRecvAsync((const struct socket_hdc_info *)fdHandle, data, size, receivedSize, reqHandle);
+    ret = RaHdcSocketRecvAsync((const struct SocketHdcInfo *)fdHandle, data, size, receivedSize, reqHandle);
     return ConverReturnCode(SOCKET_OP, ret);
 }

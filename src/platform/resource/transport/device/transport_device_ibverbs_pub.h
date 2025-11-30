@@ -88,35 +88,35 @@ public:
     HcclResult Wait(u32 notifyIdx, Stream &stream, const u32 timeOut = NOTIFY_INVALID_WAIT_TIME) override;
 
     HcclResult AddWrList(void *dstMemPtr, const void *srcMemPtr, u64 srcMemSize, u32 srcKey, u32 dstKey,
-        WqeType wqeType, wr_aux_info &aux, std::vector<WrInfo> &wrInfoVec);
+        WqeType wqeType, WrAuxInfo &aux, std::vector<WrInformation> &wrInfoVec);
     HcclResult GetMemInfo(UserMemType memType, void **dstMemPtr, unsigned int *dstKey, u64 &dstMemSize);
     HcclResult TxPayLoad(UserMemType dstMemType, u64 dstOffset, const void *src, u64 len,
-        WqeType wqeType, wr_aux_info &aux, std::vector<WrInfo>& wrInfoVec);
-    HcclResult TxSendDataAndNotifyWithSingleQP(std::vector<WrInfo> &wrInfoVec,
+        WqeType wqeType, WrAuxInfo &aux, std::vector<WrInformation>& wrInfoVec);
+    HcclResult TxSendDataAndNotifyWithSingleQP(std::vector<WrInformation> &wrInfoVec,
         Stream &stream, bool useOneDoorbell = false);
-    HcclResult TxSendDataAndNotify(std::vector<WrInfo> &wrInfoVec, Stream &stream, bool useOneDoorbell = false);
-    HcclResult TxWrList(std::vector<WrInfo> &wrInfoVec, Stream &stream,
-        std::vector<struct send_wr_rsp> &opRspVec, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
+    HcclResult TxSendDataAndNotify(std::vector<WrInformation> &wrInfoVec, Stream &stream, bool useOneDoorbell = false);
+    HcclResult TxWrList(std::vector<WrInformation> &wrInfoVec, Stream &stream,
+        std::vector<struct SendWrRsp> &opRspVec, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
     HcclResult SendWrList(
-        u32 wrNum, WrInfo *wrlist, struct send_wr_rsp *opRsp, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
-    HcclResult SendWrlistExt(WrInfo wr[], struct send_wr_rsp opRsp[], unsigned int sendNum,
+        u32 wrNum, WrInformation *wrlist, struct SendWrRsp *opRsp, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
+    HcclResult SendWrlistExt(WrInformation wr[], struct SendWrRsp opRsp[], unsigned int sendNum,
         unsigned int *completeNum, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
-    HcclResult TxSendWrlistExt(WrInfo wrList[], u32 sendNum, struct send_wr_rsp opRsp[],
+    HcclResult TxSendWrlistExt(WrInformation wrList[], u32 sendNum, struct SendWrRsp opRsp[],
         unsigned int *completeNum, u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
-    HcclResult RdmaSendAsync(struct send_wr &wr, Stream &stream, WqeType wqeType, u64 notifyAddr, u32 notifyId) override;
-    HcclResult RdmaSendAsync(std::vector<WrInfo> &wqeInfoVec, Stream &stream, bool useOneDoorbell = false,
+    HcclResult RdmaSendAsync(struct SendWr &wr, Stream &stream, WqeType wqeType, u64 notifyAddr, u32 notifyId) override;
+    HcclResult RdmaSendAsync(std::vector<WrInformation> &wqeInfoVec, Stream &stream, bool useOneDoorbell = false,
         u32 multiQpIndex = RDMA_INVALID_QP_INDEX);
     HcclResult GetWrDataAddr(void *dstAddr, WqeType wqeType, u64 &wrDataAddr, u32 &notifyId);
     HcclResult TxSendWqe(void *dstMemPtr, u32 dstKey, const void *srcMemPtr, u32 srcKey,
         u64 srcMemSize, Stream &stream, WqeType wqeType);
 
     HcclResult ConstructPayLoadWqe(void *dstMemPtr, u32 dstKey, const void *src, u32 srcKey, u64 len,
-        WqeType wqeType, wr_aux_info &aux, std::vector<WrInfo> &wrInfoVec, u32 txSendDataTimes);
+        WqeType wqeType, WrAuxInfo &aux, std::vector<WrInformation> &wrInfoVec, u32 txSendDataTimes);
     HcclResult WriteCommon(const void *remoteAddr, const void *localAddr, u64 length, Stream &stream,
-        WqeType wqeType, struct wr_aux_info &aux);
+        WqeType wqeType, struct WrAuxInfo &aux);
     bool UseMultiQp();
     HcclResult TxSendDataAndNotifyWithMultiQP(
-        std::vector<WrInfo> &wqeInfoVec, u32 actualMultiQpNum, Stream &stream, bool useOneDoorbell);
+        std::vector<WrInformation> &wqeInfoVec, u32 actualMultiQpNum, Stream &stream, bool useOneDoorbell);
     u32 GetActualQpNum(u32 maxLength);
     HcclResult GetTransportId(u32 &id) override;
     static HcclResult HnsPostSend(const TransportDeviceNormalData &ibvData, struct MemDetails *localMems,

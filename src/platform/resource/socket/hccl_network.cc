@@ -93,9 +93,9 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
                     HCCL_ERROR("[NetDevContext][InitV2]rdmaFlag and protoType are not equal, please check the configuration.");
                     return  HCCL_E_PARA;
                 }
-                network_mode netMode;
+                NetworkMode netMode;
                 NetworkManager::GetInstance(deviceLogicId_).GetNetworkMode(netMode);
-                notify_type notifyType;
+                NotifyTypeT notifyType;
                 NetworkManager::GetInstance(deviceLogicId_).GetNotifyType(notifyType);
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateRdmaHandle(localIp_, isBackup_, netMode, notifyType, netDevDeployment_));
                 NetworkManager::GetInstance(deviceLogicId_).GetRdmaHandleByIpAddr(localIp_, handle_);
@@ -149,8 +149,8 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
             }
             case HCCL_PROTO_TYPE_ROCE:
             {
-                network_mode netMode = NETWORK_PEER_ONLINE;
-                notify_type notifyType = NOTIFY;
+                NetworkMode netMode = NETWORK_PEER_ONLINE;
+                NotifyTypeT notifyType = NOTIFY;
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateRdmaHandle(localIp_, isBackup_, netMode, notifyType, netDevDeployment_));
                 NetworkManager::GetInstance(deviceLogicId_).GetRdmaHandleByIpAddr(localIp_, handle_);
                 CHK_PTR_NULL(handle_);
@@ -318,7 +318,7 @@ HcclResult HcclNetDevGetPortStatus(HcclNetDevCtx netDevCtx, bool &portStatus)
     hccl::NetDevContext* pNetDevCtx = static_cast<hccl::NetDevContext *>(netDevCtx);
     u32 devicePhyId = static_cast<u32>(pNetDevCtx->GetPhyId());
     RdmaHandle rdmaHandle = nullptr;
-    enum port_status status;
+    enum PortStatus status;
     CHK_RET(HrtRaRdmaGetHandle(devicePhyId, rdmaHandle));
     CHK_RET(hrtRaRdevGetPortStatus(rdmaHandle, &status));
     portStatus = (status == PORT_STATUS_ACTIVE);
@@ -340,9 +340,9 @@ HcclResult HcclNetDevGetTlsStatus(HcclNetDevCtx netDevCtx, TlsStatus *tlsStatus)
     }
 
     u32 devicePhyId = static_cast<u32>(pNetDevCtx->GetPhyId());
-    struct ra_info raInfo;
+    struct RaInfo raInfo;
     raInfo.mode = static_cast<int>(pNetDevCtx->GetNicDeployment());
-    raInfo.phy_id = devicePhyId;
+    raInfo.phyId = devicePhyId;
     bool tlsEnable = false;
     HcclResult ret = HrtRaGetTlsEnable(&raInfo, &tlsEnable);
     if (ret == HCCL_E_NOT_SUPPORT) {

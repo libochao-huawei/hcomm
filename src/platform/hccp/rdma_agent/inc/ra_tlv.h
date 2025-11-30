@@ -13,16 +13,16 @@
 
 #include "hccp_tlv.h"
 
-struct ra_tlv_handle {
-    unsigned int module_type;
-    struct ra_tlv_ops *tlv_ops;
-    struct tlv_init_info init_info;
-    unsigned int buffer_size;
+struct RaTlvHandle {
+    unsigned int moduleType;
+    struct RaTlvOps *tlvOps;
+    struct TlvInitInfo initInfo;
+    unsigned int bufferSize;
 };
 
-struct ra_tlv_ops {
-    int (*ra_tlv_init)(struct ra_tlv_handle *tlvHandle);
-    int (*ra_tlv_deinit)(struct ra_tlv_handle *tlvHandle);
-    int (*ra_tlv_request)(struct ra_tlv_handle *tlvHandle, struct tlv_msg *sendMsg, struct tlv_msg *recvMsg);
+struct RaTlvOps {
+    int (*raTlvInit)(struct RaTlvHandle *tlvHandle);
+    int (*raTlvDeinit)(struct RaTlvHandle *tlvHandle);
+    int (*raTlvRequest)(struct RaTlvHandle *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
 };
 #endif // RA_TLV_H

@@ -35,15 +35,15 @@ struct HostNicTaskInfo {
 };
 struct RaSendWrParams {
     QpHandle qpHandle;
-    send_wrlist_data_ext wr;
-    send_wr_rsp opRsp;
+    SendWrlistDataExt wr;
+    SendWrRsp opRsp;
     HostNicTaskInfo taskInfo;
     void *dispatcherPtr = nullptr;
     HcclWorkflowMode workMode = HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED;
     LoadTaskCallBack callback = nullptr;
     void *callBackUserPtr = nullptr;
 
-    RaSendWrParams(QpHandle &qpHandle, send_wrlist_data_ext &wr, void *dispatcherPtr, u32 &streamId, u32 &taskId,
+    RaSendWrParams(QpHandle &qpHandle, SendWrlistDataExt &wr, void *dispatcherPtr, u32 &streamId, u32 &taskId,
         u64 &notifyID, HcclWorkflowMode &workMode, LoadTaskCallBack callback, void *callBackUserPtr)
         : qpHandle(qpHandle), wr(wr), dispatcherPtr(dispatcherPtr), workMode(workMode),
         callback(callback), callBackUserPtr(callBackUserPtr)
@@ -96,8 +96,8 @@ struct RaSocketParams {
     }
 };
 
-using WrInfo = struct TagWrInfo {
-    struct wr_info wrData;
+using WrInformation = struct TagWrInfo {
+    struct WrInfo wrData;
     u64 type; // 默认 WqeType::WQE_TYPE_DATA
     u64 wrDataAddr;
     u32 notifyId;
@@ -109,7 +109,7 @@ using WrInfo = struct TagWrInfo {
 struct RdmaTaskInfo {
     u32 remoteRank = INVALID_UINT;
     RdmaType rdmaType = RdmaType::RDMA_TYPE_RESERVED;
-    std::vector<WrInfo> wrInfos;
+    std::vector<WrInformation> wrInfos;
 };
 
 class DispatcherPub {
@@ -155,25 +155,25 @@ public:
 
     virtual HcclResult SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &src, hccl::Stream &stream,
         u32 remoteUserRank, hccl::LinkType inLinkType, u32 notifyId);
-    virtual HcclResult RdmaRecord(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    virtual HcclResult RdmaRecord(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         RdmaType rdmaType, u32 userRank, u64 offset, u32 notifyId);
 
     // 下沉模式下的发送接口
-    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, hccl::Stream &stream,
+    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, hccl::Stream &stream,
         u32 userRank = INVALID_VALUE_RANKID);
-    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, hccl::Stream &stream,
+    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, hccl::Stream &stream,
         u32 userRank, u64 offset);
 
     // op base 模式下的发送接口
-    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         u32 remoteUserRank = INVALID_VALUE_RANKID, bool isCapture = false);
-    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         u32 userRank, u64 offset, bool isCapture = false);
 
     virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, hccl::Stream &stream, RdmaTaskInfo &taskInfo);
 
     // host网卡模式下的rdma send
-    HcclResult HostNicRdmaSend(QpHandle qpHandle, send_wrlist_data_ext &wr, send_wr_rsp &opRsp,
+    HcclResult HostNicRdmaSend(QpHandle qpHandle, SendWrlistDataExt &wr, SendWrRsp &opRsp,
         hccl::Stream &stream, u32 userRank = INVALID_VALUE_RANKID, u64 offset = 0xFFFFFFFFFFFFFFFF);
     // host网卡模式下的tcp send
     HcclResult HostNicTcpSend(SocketHandle socketFdHandle, const void *socketBufferPtr, u64 socketBufferLen,
@@ -255,9 +255,9 @@ public:
     static bool IsProfSubscribeAdditionInfo();
 
 protected:
-    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
+    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, bool isMainStream = false);
-    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
+    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, u64 offset = 0, bool isMainStream = false);
     HcclResult SignalRecord(HcclRtNotify signal, HcclRtStream stream, u32 userRank, u64 offset = INVALID_U64,
         s32 stage = INVALID_VALUE_STAGE, bool isMainStream = false);

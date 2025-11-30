@@ -27,11 +27,11 @@
 #include "rs_drv_socket.h"
 #include "ssl_adp.h"
 
-int RsDrvSslBindFd(struct rs_conn_info *conn, int fd)
+int RsDrvSslBindFd(struct RsConnInfo *conn, int fd)
 {
     int ret;
     if (conn->ssl == NULL) {
-        conn->ssl = ssl_adp_new(gRsCb->client_ssl_ctx);
+        conn->ssl = ssl_adp_new(gRsCb->clientSslCtx);
         CHK_PRT_RETURN(conn->ssl == NULL, hccp_err("server ssl ctx alloc failed"), -ENOMEM);
     }
 
@@ -52,26 +52,26 @@ out:
     return -EINVAL;
 }
 
-int RsDrvConnect(int fd, struct rs_ip_addr_info *serverIp, struct rs_ip_addr_info *clientIp, uint16_t port)
+int RsDrvConnect(int fd, struct RsIpAddrInfo *serverIp, struct RsIpAddrInfo *clientIp, uint16_t port)
 {
     int ret;
     int errNo;
-    union rs_socketaddr clientAddr = { 0 };
+    union RsSocketaddr clientAddr = { 0 };
     socklen_t clientAddrLen = 0;
     uint16_t clientPort = 0;
 
-    hccp_info("IP(%s) port %d family %d fd:%d begin", serverIp->read_addr, port, clientIp->family, fd);
+    hccp_info("IP(%s) port %d family %d fd:%d begin", serverIp->readAddr, port, clientIp->family, fd);
     if (clientIp->family == AF_INET) {
         struct sockaddr_in addr = {0};
         addr.sin_family = clientIp->family;
         addr.sin_port = htons(port);
-        addr.sin_addr = serverIp->bin_addr.addr;
+        addr.sin_addr = serverIp->binAddr.addr;
         ret = connect(fd, &addr, sizeof(addr));
     } else {
         struct sockaddr_in6 addr = {0};
         addr.sin6_family = clientIp->family;
         addr.sin6_port = htons(port);
-        addr.sin6_addr = serverIp->bin_addr.addr6;
+        addr.sin6_addr = serverIp->binAddr.addr6;
         ret = connect(fd, &addr, sizeof(addr));
     }
 
@@ -86,7 +86,7 @@ int RsDrvConnect(int fd, struct rs_ip_addr_info *serverIp, struct rs_ip_addr_inf
          * otherwise it will directly return an error
          */
         hccp_warn("connect not success, need to try again! server IP:%s, port:%d, fd:%d, ret:%d, errNo:%d",
-            serverIp->read_addr, port, fd, ret, errNo);
+            serverIp->readAddr, port, fd, ret, errNo);
 
         return -errNo;
     }
@@ -95,14 +95,14 @@ out:
     clientAddrLen = (clientIp->family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
     getsockname(fd, (struct sockaddr *)&clientAddr, &clientAddrLen);
     clientPort =
-        (clientIp->family == AF_INET) ? ntohs(clientAddr.s_addr.sin_port) : ntohs(clientAddr.s_addr6.sin6_port);
+        (clientIp->family == AF_INET) ? ntohs(clientAddr.sAddr.sin_port) : ntohs(clientAddr.sAddr6.sin6_port);
 
     if ((clientPort < 60000) || (clientPort > 60015)) { // HCCL默认监听60000-60015端口,如client使用该端口，记录EVENT日志
         hccp_info("client connect success. client family %d addr %s:%u, server addr %s:%u, fd:%d", clientIp->family,
-            clientIp->read_addr, clientPort, serverIp->read_addr, port, fd);
+            clientIp->readAddr, clientPort, serverIp->readAddr, port, fd);
     } else {
         hccp_run_info("client connect success. client family %d addr %s:%u, server addr %s:%u, fd:%d",
-            clientIp->family, clientIp->read_addr, clientPort, serverIp->read_addr, port, fd);
+            clientIp->family, clientIp->readAddr, clientPort, serverIp->readAddr, port, fd);
     }
 
     return 0;
@@ -116,10 +116,10 @@ int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
     CHK_PRT_RETURN(fd < 0 || size == 0 || data == NULL, hccp_err("param error ! fd:%d < 0, size:%llu or data is NULL",
         fd, size), -EINVAL);
 
-    if (gRsCb->ssl_enable == RS_SSL_ENABLE) {
+    if (gRsCb->sslEnable == RS_SSL_ENABLE) {
 #ifdef CONFIG_SSL
         int err;
-        struct rs_conn_info *conn = NULL;
+        struct RsConnInfo *conn = NULL;
 
         ret = RsFd2conn(fd, &conn);
         CHK_PRT_RETURN(ret, hccp_err("fd to conn failed, ret:%d", ret), ret);
@@ -157,10 +157,10 @@ int RsDrvSocketRecv(int fd, void *data, uint64_t size, int flags)
     CHK_PRT_RETURN(fd < 0 || data == NULL || size == 0, hccp_err("param error ! fd:%d < 0 or data is NULL, size:%llu",
         fd, size), -EINVAL);
 
-    if (gRsCb->ssl_enable == RS_SSL_ENABLE) {
+    if (gRsCb->sslEnable == RS_SSL_ENABLE) {
 #ifdef CONFIG_SSL
         int err;
-        struct rs_conn_info *conn = NULL;
+        struct RsConnInfo *conn = NULL;
 
         ret = RsFd2conn(fd, &conn);
         CHK_PRT_RETURN(ret, hccp_warn("can not find conn for fd[%d], ret:%d, the local fd may have been closed ",
