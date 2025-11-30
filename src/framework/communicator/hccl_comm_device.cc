@@ -76,5 +76,19 @@ HcclResult hcclComm::IndOpTransportAlloc(const std::string &tag, OpCommTransport
 {
     return HCCL_SUCCESS;
 }
+HcclResult hcclComm::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType)
+{
+    return HCCL_SUCCESS;
+}
 }  // namespace hccl
  

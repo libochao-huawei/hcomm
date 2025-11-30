@@ -181,3 +181,52 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
     HCCL_INFO("HcclGetRankId success, rankIdPtr[%p], rankId[%u]", rank, tmpRankId);
     return HCCL_SUCCESS;
 }
+
+HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(netLayers);
+    CHK_PTR_NULL(netLayerNum);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->CommGetNetLayers(netLayers, netLayerNum);
+
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed to GetCommNetLayers ret[%d]", __func__, ret);
+        return ret;
+    }
+    HCCL_RUN_INFO("[%s] success, group[%s], netLayerNum size[%u]", __func__, hcclComm->GetIdentifier().c_str(), *netLayerNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, u32 *topoType)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(topoType);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->CommGetInstTopoTypeByNetLayer(netLayer, topoType);
+
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
+        return ret;
+    }
+    HCCL_RUN_INFO("[%s] success, group[%s], [%d]", __func__, hcclComm->GetIdentifier().c_str(), *topoType);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(rankNum);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->CommGetInstSizeByNetLayer(netLayer, rankNum);
+
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
+        return ret;
+    }
+    HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
+    return HCCL_SUCCESS;
+}
