@@ -26,7 +26,7 @@ extern int rs_socket_get_client_socket_err_info(struct socket_connect_info conn[
 extern int rs_socket_get_server_socket_err_info(struct socket_listen_info conn[], struct server_socket_err_info err[],
     unsigned int num);
 extern int rs_socket_accept_credit_add(struct socket_listen_info conn[], uint32_t num, unsigned int credit_limit);
-extern int ra_peer_socket_accept_credit_add(unsigned int phy_id, struct socket_listen_info_t conn[], unsigned int num,
+extern int ra_peer_socket_accept_credit_add(unsigned int phy_id, struct SocketListenInfoT conn[], unsigned int num,
     unsigned int credit_limit);
 
 unsigned int g_interface_version;
@@ -96,7 +96,7 @@ void tc_host()
 {
     dl_hal_init();
     int ret = 0;
-    struct rdev_init_info init_info = {0};
+    struct RdevInitInfo init_info = {0};
     struct rdev rdev_info = {0};
     rdev_info.phy_id = 0;
     rdev_info.family = AF_INET;
@@ -256,15 +256,15 @@ void tc_host()
     struct ra_rdma_ops rdma_ops;
  
     struct socket_hdc_info *hdc_socket_handle = calloc(1, sizeof(struct socket_hdc_info));
-    struct socket_connect_info_t conn[1];
+    struct SocketConnectInfoT conn[1];
     conn[0].socket_handle = NULL;
     ra_socket_batch_connect(&conn, 1);
     ra_socket_batch_close(&conn, 1);
 
     conn[0].socket_handle = socket_handle;
-    struct socket_info_t conn_tmp = {0};
-    struct socket_close_info_t close[1] = {0};
-    struct socket_listen_info_t listen[1];
+    struct SocketInfoT conn_tmp = {0};
+    struct SocketCloseInfoT close[1] = {0};
+    struct SocketListenInfoT listen[1];
 
     listen[0].socket_handle = NULL;
     ra_socket_listen_start(&listen, 1);
@@ -274,7 +274,7 @@ void tc_host()
     close[0].socket_handle = socket_handle;
     close[0].fd_handle = hdc_socket_handle;
 
-    struct socket_info_t socket_info[1] = {0};
+    struct SocketInfoT socket_info[1] = {0};
 
 	struct ra_init_config offline_config = {
 		.phy_id = 0,
@@ -444,12 +444,12 @@ void tc_host()
     struct ra_qp_handle *qp_handle_with_attr = NULL;
     struct ra_qp_handle *typical_qp_handle = NULL;
     struct ra_qp_handle *ai_qp_handle = NULL;
-    struct ai_qp_info info;
+    struct AiQpInfo info;
     ret = ra_qp_create_with_attrs(rdma_handle, NULL, &qp_handle_with_attr);
     EXPECT_INT_NE(0, ret);
     ret = ra_ai_qp_create(rdma_handle, NULL, &info, &ai_qp_handle);
     EXPECT_INT_NE(0, ret);
-    struct qp_ext_attrs ext_attrs;
+    struct QpExtAttrs ext_attrs;
     ext_attrs.version = 0;
     ret = ra_qp_create_with_attrs(rdma_handle, &ext_attrs, &qp_handle_with_attr);
     EXPECT_INT_NE(0, ret);
@@ -1241,7 +1241,7 @@ void tc_get_vnic_ip_infos(void)
     mocker_clean();
 }
 
-int ra_socket_batch_abort_stub(unsigned int phy_id, struct socket_connect_info_t conn[], unsigned int num)
+int ra_socket_batch_abort_stub(unsigned int phy_id, struct SocketConnectInfoT conn[], unsigned int num)
 {
     return 0;
 }
@@ -1250,7 +1250,7 @@ void tc_ra_socket_batch_abort(void)
 {
     int ret;
     unsigned int phy_id;
-    struct socket_connect_info_t conn = {0};
+    struct SocketConnectInfoT conn = {0};
     struct ra_socket_handle socket_handle = {0};
     struct ra_socket_ops socket_ops = {0};
 
@@ -1283,7 +1283,7 @@ void tc_ra_socket_batch_abort(void)
 void tc_ra_get_client_socket_err_info(void)
 {
     int ret = 0;
-    struct socket_connect_info_t conn[10] = {0};
+    struct SocketConnectInfoT conn[10] = {0};
     struct socket_err_info err[10] = {0};
     unsigned int num = 1;
     struct ra_socket_handle *socket_handle = NULL;
@@ -1323,7 +1323,7 @@ void tc_ra_get_client_socket_err_info(void)
 void tc_ra_get_server_socket_err_info(void)
 {
     int ret = 0;
-    struct socket_listen_info_t conn[10] = {0};
+    struct SocketListenInfoT conn[10] = {0};
     struct server_socket_err_info err[10] = {0};
     unsigned int num = 1;
     struct ra_socket_handle *socket_handle = NULL;
@@ -1362,7 +1362,7 @@ void tc_ra_get_server_socket_err_info(void)
 
 void tc_ra_socket_accept_credit_add(void)
 {
-    struct socket_listen_info_t conn[10] = {0};
+    struct SocketListenInfoT conn[10] = {0};
     struct ra_socket_handle socket_handle = {0};
     struct ra_socket_ops socket_ops = {0};
     int ret = 0;

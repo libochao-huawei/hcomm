@@ -188,7 +188,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_Init)
     .with(any())
     .will(invoke(stub_LoopStateProcess));
 
-    socket_info_t socket;
+    SocketInfoT socket;
     strcpy(socket.tag, "tag");
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socket);
     transportHeterogTcp->needRepoEvent_ = true;
@@ -284,7 +284,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_ReportRecvComp)
 
 TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_EnterStateProcess)
 {
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     ConnState nextState = ConnState::CONN_STATE_CONNECT_CHECK_SOCKET;
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
@@ -334,7 +334,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_LoopStateProcess)
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
     transportHeterogTcp->connState_ = ConnState::CONN_STATE_CONNECT_CHECK_SOCKET;
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
     MOCKER(hrtRaSocketBatchClose)
     .stubs()
@@ -412,7 +412,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_SendNoBlock)
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
 
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
     TransData sendData;
     TransportEndPointParam epParam;
@@ -549,7 +549,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_1951_infer_DelEpollEvents)
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
     s32 LINK_NUM = 1;
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
 
     HcclResult ret = transportHeterogTcp->DelEpollEvents();
@@ -571,7 +571,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_1951_infer_AddEpollEvents)
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
     s32 LINK_NUM = 1;
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
 
     HcclResult ret = transportHeterogTcp->AddEpollEvents();
@@ -588,7 +588,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_1951_infer_CreateEventHandle)
 
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
 
     transportHeterogTcp->sendEpollEventInfo_.epollEventFd = -1;
@@ -615,7 +615,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_1951_infer_AddFdMapping)
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
     socket_peer_info spInfo;
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     socketInfo.fd_handle = reinterpret_cast<void *>(&spInfo);
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
 }
@@ -629,7 +629,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_1951_infer_DestroyEventHandle)
 
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
 
     transportHeterogTcp->sendEpollEventInfo_.epollEventFd = 10;
@@ -724,7 +724,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockSend)
     sendData.count = 10;
     HcclRequestInfo* request;
     s32 waitTimeOut = 10;
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
 
     HcclResult ret = transportHeterogTcp->BlockSend(sendData, epParam, request, waitTimeOut);
@@ -877,7 +877,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, ut_transportTcp_BlockRecv)
     recvData.count = 0;
     bool matched = true;
     socket_peer_info spInfo;
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     socketInfo.fd_handle = reinterpret_cast<void *>(&spInfo);
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
     s32 waitTimeOut = 10;

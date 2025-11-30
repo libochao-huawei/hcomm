@@ -236,7 +236,7 @@ void* comm_p2p_errtask_handle1(void* para)
     innerpara_t_p2p* para_info = (innerpara_t_p2p*)para;
 
 
-    socket_listen_info_t sockListen;
+    SocketListenInfoT sockListen;
     hrtSetDevice(para_info->devicePhyId);
 	EXPECT_EQ(ret, HCCL_SUCCESS);
     ret = HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, para_info->devicePhyId, para_info->devicePhyId, false);

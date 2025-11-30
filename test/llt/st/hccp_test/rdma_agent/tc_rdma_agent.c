@@ -65,7 +65,7 @@ unsigned int g_interface_version = 0;
 extern void* dl_handle;
 extern int host_notify_base_addr_init(unsigned int phy_id);
 extern int host_notify_base_addr_uninit(unsigned int phy_id);
-extern int ra_peer_set_conn_param(struct socket_info_t conn[],
+extern int ra_peer_set_conn_param(struct SocketInfoT conn[],
     struct socket_fd_data rs_conn[], unsigned int i, int buf_size);
 extern int dl_drv_device_get_index_by_phy_id(uint32_t phyId, uint32_t *devIndex);
 extern int dl_hal_get_device_info(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
@@ -95,7 +95,7 @@ extern int ra_rdma_lite_destroy_qp(struct rdma_lite_qp *lite_qp);
 extern struct rdma_lite_qp *ra_rdma_lite_create_qp(struct rdma_lite_context *lite_ctx,
     struct rdma_lite_qp_attr *lite_qp_attr);
 extern int rs_socket_accept_credit_add(struct socket_listen_info conn[], uint32_t num, unsigned int credit_limit);
-extern int ra_peer_socket_accept_credit_add(unsigned int phy_id, struct socket_listen_info_t conn[], unsigned int num,
+extern int ra_peer_socket_accept_credit_add(unsigned int phy_id, struct SocketListenInfoT conn[], unsigned int num,
     unsigned int credit_limit);
 extern hdcError_t dl_hal_hdc_recv(HDC_SESSION session, struct drvHdcMsg *pMsg, int bufLen, UINT64 flag,
     int *recvBufCount, UINT32 timeout);
@@ -324,10 +324,10 @@ void tc_normal_offline()
 
     //struct ra_rdma_ops rdma_ops;
 
-	struct socket_listen_info_t listen[1];
-	struct socket_connect_info_t conn[1];
-	struct socket_close_info_t close[1] = {0};
-	struct socket_info_t socket_info[1];
+	struct SocketListenInfoT listen[1];
+	struct SocketConnectInfoT conn[1];
+	struct SocketCloseInfoT close[1] = {0};
+	struct SocketInfoT socket_info[1];
 
 	int qp_status = 0;
 	int access = 1<<1;
@@ -588,12 +588,12 @@ void tc_normal_offline()
     struct ra_qp_handle *qp_handle_with_attr = NULL;
     struct ra_qp_handle *ai_qp_handle = NULL;
     struct ra_qp_handle *typical_qp_handle = NULL;
-    struct ai_qp_info info;
+    struct AiQpInfo info;
     ret = ra_qp_create_with_attrs(rdma_handle, NULL, &qp_handle_with_attr);
     EXPECT_INT_NE(0, ret);
     ret = ra_ai_qp_create(rdma_handle, NULL, &info, &ai_qp_handle);
     EXPECT_INT_NE(0, ret);
-    struct qp_ext_attrs ext_attrs;
+    struct QpExtAttrs ext_attrs;
     ext_attrs.version = 0;
     ret = ra_qp_create_with_attrs(rdma_handle, &ext_attrs, &qp_handle_with_attr);
     EXPECT_INT_NE(0, ret);
@@ -923,10 +923,10 @@ void tc_normal_online()
 
 	struct mr_info mr_info;
 	int sock_fd = 0;
-	struct socket_listen_info_t listen[2];
-	struct socket_connect_info_t conn[2];
-	struct socket_close_info_t close[2] = {0};
-	struct socket_info_t socket_info[2];
+	struct SocketListenInfoT listen[2];
+	struct SocketConnectInfoT conn[2];
+	struct SocketCloseInfoT close[2] = {0};
+	struct SocketInfoT socket_info[2];
 	socket_info[0].fd_handle = &sock_fd;
 	int qp_status = 0;
 	int access = 1<<1;
@@ -1096,10 +1096,10 @@ void tc_peer()
     unsigned long pa = NULL;
     unsigned long va = NULL;
     struct qp_peer_info *qp_info = NULL;
-    struct socket_connect_info_t conn[1];
-    struct socket_listen_info_t listen[1];
-    struct socket_info_t info[1];
-    struct socket_close_info_t close[1] = {0};
+    struct SocketConnectInfoT conn[1];
+    struct SocketListenInfoT listen[1];
+    struct SocketInfoT info[1];
+    struct SocketCloseInfoT close[1] = {0};
     int sock_fd = 1;
     void *qp_handle_with_attr;
     int status = 0;
@@ -1128,7 +1128,7 @@ void tc_peer()
     struct ra_rdma_handle *rdma_handle = &rdma_handle_tmp;
     struct ra_socket_handle *socket_handle = &socket_handle_tmp;
     struct socket_hdc_info *hdc_socket_handle = calloc(1, sizeof(struct socket_hdc_info));
-    struct qp_ext_attrs ext_attrs;
+    struct QpExtAttrs ext_attrs;
     ext_attrs.version = QP_CREATE_WITH_ATTR_VERSION;
     ext_attrs.qp_mode = RA_RS_NOR_QP_MODE;
     unsigned int temp_depth = 128;
@@ -1488,7 +1488,7 @@ void tc_peer_fail()
     void *comp_channel = NULL;
     int ret;
 
-    struct socket_connect_info_t conn[1] = {0};
+    struct SocketConnectInfoT conn[1] = {0};
     mocker(ra_get_socket_connect_info, 5, -1);
     ra_peer_socket_batch_connect(0, conn, 0);
     mocker_clean();
@@ -1506,7 +1506,7 @@ void tc_peer_fail()
     EXPECT_INT_EQ(-2, ret);
     mocker_clean();
 
-    struct socket_close_info_t con[1] = {0};
+    struct SocketCloseInfoT con[1] = {0};
     mocker(memset_s, 5, -1);
     ra_peer_socket_batch_close(0, con, 0);
     mocker_clean();
@@ -1522,7 +1522,7 @@ void tc_peer_fail()
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    struct socket_listen_info_t conn_listen[1] = {0};
+    struct SocketListenInfoT conn_listen[1] = {0};
     conn_listen[0].port = 65536;
     ra_peer_socket_listen_start(0, conn_listen, 1);
     ra_peer_socket_listen_stop(0, conn_listen, 1);
@@ -1556,7 +1556,7 @@ void tc_peer_fail()
     ra_peer_socket_listen_start(0, conn_listen, 1);
     mocker_clean();
 
-    struct socket_info_t conn_p[1];
+    struct SocketInfoT conn_p[1];
     struct socket_fd_data rs_conn[1];
     // struct ra_socket_handle socket_handle;
     // socket_handle.rdev_info.phy_id = 0;
@@ -1578,7 +1578,7 @@ void tc_peer_fail()
     conn_p[0].fd_handle = NULL;
 
 
-    struct socket_info_t conn_s[1] = {0};
+    struct SocketInfoT conn_s[1] = {0};
     mocker(ra_peer_set_rs_conn_param, 5, -1);
     ra_peer_get_sockets(0, 0, conn_s, 1);
     mocker_clean();
@@ -1655,7 +1655,7 @@ void tc_peer_fail()
     void *qp_handle;
     void *qp_handle_with_attr;
     qp_handle_with_attr = NULL;
-    struct qp_ext_attrs ext_attrs;
+    struct QpExtAttrs ext_attrs;
     ra_peer_qp_create(&rdma_handle, 0, 0, &qp_handle);
     ret  = ra_peer_qp_create_with_attrs(&rdma_handle, &ext_attrs, &qp_handle_with_attr);
     EXPECT_INT_EQ(-ENOMEM, ret);
@@ -1767,7 +1767,7 @@ void tc_peer_fail()
 void tc_comm_fail()
 {
     struct ra_socket_handle socket_handle;
-    struct socket_connect_info_t conn[1];
+    struct SocketConnectInfoT conn[1];
     struct socket_connect_info rs_conn[1] ={0};
     char tag[SOCK_CONN_TAG_SIZE] = {0};
     socket_handle.rdev_info.phy_id = 0;
@@ -1779,7 +1779,7 @@ void tc_comm_fail()
     memcpy_s(conn[0].tag, SOCK_CONN_TAG_SIZE, tag, SOCK_CONN_TAG_SIZE);
 
 
-    struct socket_listen_info_t conn_listen[1];
+    struct SocketListenInfoT conn_listen[1];
     struct socket_listen_info rs_conn_listen[1] = {0};
     conn_listen[0].socket_handle = &socket_handle;
     conn_listen[0].port = 0;
@@ -1791,7 +1791,7 @@ void tc_comm_fail()
 
 
     struct socket_listen_info rs_conn_result[1];
-    struct socket_listen_info_t conn_result[1] = {0};
+    struct SocketListenInfoT conn_result[1] = {0};
     conn_result[0].socket_handle = &socket_handle;
     rs_conn_result[0].phase = 0;
     rs_conn_result[0].err = 0;
@@ -1810,7 +1810,7 @@ void tc_comm_fail()
     return;
 }
 
-extern int ra_assemble_sockets(union op_socket_info_data *socket_info_data, struct socket_info_t *conn,
+extern int ra_assemble_sockets(union op_socket_info_data *socket_info_data, struct SocketInfoT *conn,
     unsigned int num, const int sock_fd[], size_t sock_fd_len);
 void tc_hdc_fail_01()
 {
@@ -1820,7 +1820,7 @@ void tc_hdc_fail_01()
     ra_hdc_process_msg(0, 0, &data, 0);
     mocker_clean();
 
-    struct socket_connect_info_t conn[1];
+    struct SocketConnectInfoT conn[1];
     mocker(calloc, 5, NULL);
     ra_hdc_socket_batch_connect(0, conn, 0);
     mocker_clean();
@@ -1834,7 +1834,7 @@ void tc_hdc_fail_01()
     ra_hdc_socket_batch_connect(0, conn, 0);
     mocker_clean();
 
-    struct socket_listen_info_t conn_listen[1];
+    struct SocketListenInfoT conn_listen[1];
 
     mocker(ra_get_socket_listen_info, 5, -1);
     ra_hdc_socket_listen_start(0, conn_listen, 0);
@@ -1854,12 +1854,12 @@ void tc_hdc_fail_01()
     mocker_clean();
 
 
-    struct socket_info_t conn_info[1] = {0};
+    struct SocketInfoT conn_info[1] = {0};
     mocker(memcpy_s, 5, -1);
     ra_get_ip_and_tag_info(NULL, NULL, conn_info, 0);
     mocker_clean();
 
-    struct socket_info_t conn_s[1];
+    struct SocketInfoT conn_s[1];
     mocker(calloc, 5, NULL);
     ra_hdc_get_sockets(0, 0, conn_s, 0);
     mocker_clean();
@@ -2062,21 +2062,21 @@ void tc_host_fail()
     rdma_handle_t = NULL;
 
 
-    struct socket_connect_info_t conn_connect[1] = {0};
+    struct SocketConnectInfoT conn_connect[1] = {0};
     struct ra_socket_handle socket_handle_connect = {0};
     conn_connect[0].socket_handle = &socket_handle_connect;
     ra_socket_batch_connect(conn_connect, 1);
 
-    struct socket_close_info_t conn_close[1] = {0};
+    struct SocketCloseInfoT conn_close[1] = {0};
     conn_close[0].socket_handle = &socket_handle_connect;
     ra_socket_batch_close(conn_close, 1);
 
-    struct socket_listen_info_t conn_listen[1] = {0};
+    struct SocketListenInfoT conn_listen[1] = {0};
     conn_listen[0].socket_handle = &socket_handle_connect;
     ra_socket_listen_start(conn_listen, 1);
     ra_socket_listen_stop(conn_listen, 1);
 
-    struct socket_info_t conn[1] = {0};
+    struct SocketInfoT conn[1] = {0};
     conn[0].socket_handle = &socket_handle_connect;
     unsigned int connected_num = 0;
     ra_get_sockets(0, conn, 1, &connected_num);
@@ -3320,7 +3320,7 @@ void tc_ra_peer_destroy_event_handle()
 void tc_ra_peer_socket_batch_abort()
 {
     unsigned int dev_id;
-    struct socket_connect_info_t conn[4] = {0};
+    struct SocketConnectInfoT conn[4] = {0};
     int ret = 0;
 
     mocker(ra_get_socket_connect_info, 20, 1);
@@ -3920,7 +3920,7 @@ void tc_ra_rs_typical_qp_modify()
     out_buf = NULL;
 }
 
-int ra_socket_batch_abort_stub(unsigned int phy_id, struct socket_connect_info_t conn[], unsigned int num)
+int ra_socket_batch_abort_stub(unsigned int phy_id, struct SocketConnectInfoT conn[], unsigned int num)
 {
     return 0;
 }
@@ -3929,7 +3929,7 @@ void tc_ra_socket_batch_abort(void)
 {
     int ret;
     unsigned int phy_id;
-    struct socket_connect_info_t conn = {0};
+    struct SocketConnectInfoT conn = {0};
     struct ra_socket_handle socket_handle = {0};
     struct ra_socket_ops socket_ops = {0};
 
@@ -4257,7 +4257,7 @@ void rc_ra_hdc_lite_qp_create()
 void tc_ra_get_client_socket_err_info()
 {
     int ret = 0;
-    struct socket_connect_info_t conn[10] = {0};
+    struct SocketConnectInfoT conn[10] = {0};
     struct socket_err_info err[10] = {0};
     unsigned int num = 1;
     struct ra_socket_handle *socket_handle = NULL;
@@ -4297,7 +4297,7 @@ void tc_ra_get_client_socket_err_info()
 void tc_ra_get_server_socket_err_info()
 {
     int ret = 0;
-    struct socket_listen_info_t conn[10] = {0};
+    struct SocketListenInfoT conn[10] = {0};
     struct server_socket_err_info err[10] = {0};
     unsigned int num = 1;
     struct ra_socket_handle *socket_handle = NULL;
@@ -4336,7 +4336,7 @@ void tc_ra_get_server_socket_err_info()
 
 void tc_ra_socket_accept_credit_add(void)
 {
-    struct socket_listen_info_t conn[10] = {0};
+    struct SocketListenInfoT conn[10] = {0};
     struct ra_socket_handle socket_handle = {0};
     struct ra_socket_ops socket_ops = {0};
     int ret = 0;
@@ -4578,7 +4578,7 @@ void tc_ra_rs_socket_batch_abort()
 
 void tc_hdc_socket_batch_abort()
 {
-    struct socket_listen_info_t conn[1];
+    struct SocketListenInfoT conn[1];
     int ret;
     mocker_clean();
     mocker((stub_fn_t)calloc, 1, NULL);
@@ -4594,7 +4594,7 @@ void tc_hdc_socket_batch_abort()
 
 void tc_ra_hdc_socket_accept_credit_add()
 {
-    struct socket_listen_info_t conn[1];
+    struct SocketListenInfoT conn[1];
     int ret;
     mocker(ra_get_socket_listen_info, 1, -1);
     ret = ra_hdc_socket_accept_credit_add(1, conn, 1, 1);
@@ -4712,7 +4712,7 @@ void tc_ra_save_snapshot_pre()
     rdev_info.phy_id = 0;
     rdev_info.family = AF_INET;
     rdev_info.local_ip.addr.s_addr = 0;
-    struct rdev_init_info init_info = {0};
+    struct RdevInitInfo init_info = {0};
     init_info.disabled_lite_thread = false;
     init_info.mode = NETWORK_OFFLINE;
     init_info.notify_type = NOTIFY;
@@ -4757,7 +4757,7 @@ void tc_ra_save_snapshot_post()
     rdev_info.phy_id = 0;
     rdev_info.family = AF_INET;
     rdev_info.local_ip.addr.s_addr = 0;
-    struct rdev_init_info init_info = {0};
+    struct RdevInitInfo init_info = {0};
     init_info.disabled_lite_thread = false;
     init_info.mode = NETWORK_OFFLINE;
     init_info.notify_type = NOTIFY;
@@ -4930,8 +4930,8 @@ void tc_ra_hdc_uninit_async()
 void tc_ra_hdc_qp_create_with_attrs()
 {
     struct ra_rdma_handle rdma_handle = {0};
-    struct qp_ext_attrs ext_attrs = {0};
-    struct ai_qp_info info = {0};
+    struct QpExtAttrs ext_attrs = {0};
+    struct AiQpInfo info = {0};
     void *qp_handle = NULL;
     int ret = 0;
 

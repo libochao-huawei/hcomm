@@ -552,7 +552,7 @@ s32 stub_CommFactoryTest_hrtRaSocketNonBlockRecvHB(const FdHandle fdHandle, void
     return 0;
 }
 
-s32 stub_CommFactoryTest_hrtRaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+s32 stub_CommFactoryTest_hrtRaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {
