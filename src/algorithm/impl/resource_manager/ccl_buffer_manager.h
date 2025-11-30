@@ -57,7 +57,7 @@ public:
     void ReleaseAlltoAllvParaBuffer();
     HcclResult CleanCCLbuffer();
     HcclResult CleanAIVbuffer(void *bufferPtr);
-    HcclResult GetIndependentOpCCLbuffer(void* &buffer, u32 &size);
+    HcclResult GetIndependentOpCCLbuffer(void* &buffer, uint64_t &size);
 private:
     HcclResult CreateCCLbuffer(u64 size, DeviceMem &buffer);
     void* GetCCLbufferAddr(const DeviceMem &buffer);

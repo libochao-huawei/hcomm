@@ -11,7 +11,7 @@
 #include "comm_mem_manager.h"
 namespace hccl {
 
-void CommMemMgr::CommSetHcclBufferSize(uint32_t size)
+void CommMemMgr::CommSetHcclBufferSize(uint64_t size)
 {
     bufferManager_.InitCCLbuffer(size, 0);
 }
@@ -21,7 +21,7 @@ HcclResult CommMemMgr::GetHcclBuffer(CommBuffer *buffer)
     CHK_PTR_NULL(buffer);
     std::lock_guard<std::mutex> lock(bufferMutex_);
     void* temp = nullptr;
-    uint32_t tempSize = 0;
+    uint64_t tempSize = 0;
     HcclResult ret = bufferManager_.GetIndependentOpCCLbuffer(temp, tempSize);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[GetHcclBuffer] GetHcclBuffer failed"), ret);
     buffer->addr = temp;

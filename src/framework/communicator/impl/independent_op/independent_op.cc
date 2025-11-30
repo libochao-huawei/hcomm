@@ -42,7 +42,7 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commAicpuParam_.deviceLogicId = topoAttr.deviceLogicId;
     commAicpuParam_.devicePhyId = topoAttr.devicePhyId;
     commAicpuParam_.deviceType = static_cast<u32>(topoAttr.deviceType);
-    HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%u], deviceLogicId[%u], "
+    HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%llu], deviceLogicId[%u], "
         "devicePhyId[%u], deviceType[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
         cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId, commAicpuParam_.deviceType);
     return HCCL_SUCCESS;
