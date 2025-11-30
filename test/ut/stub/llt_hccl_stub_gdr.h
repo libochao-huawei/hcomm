@@ -78,7 +78,7 @@ struct sock_server
 struct send_wr_mgr
 {
     s8  wqe_set[WQE_MAX];
-    struct send_wr wq[WQE_MAX];
+    struct SendWr wq[WQE_MAX];
 };
 
 struct qp_info
