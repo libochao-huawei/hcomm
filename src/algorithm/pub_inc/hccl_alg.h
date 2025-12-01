@@ -70,6 +70,7 @@ public:
     HcclResult SetAivModeConfig(const bool aivMode); // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold); // 设置aicpu配置
+    HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     bool GetAicpuUnfoldConfig() const;
     bool GetAivModeConfig() const;
     HcclResult GetIsBridgeVector(std::vector<bool> &isBridgeVector);

@@ -25,6 +25,7 @@
 #include "hccl_socket_manager.h"
 #include "transport_pub.h"
 #include "topoinfo_struct.h"
+#include "comm_config_pub.h"
 namespace hccl {
 using RankId = u32;
 constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
@@ -200,7 +201,7 @@ public:
     HcclResult CheckOpInconsistentError(const std::string &identifier, HcclResult &result);
     HcclResult SetRankPortInfo(bool isUseRankPort, std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPorts,
         bool devPortSwitchOn);
-    std::vector<std::string> GetErrStatusVec();
+    std::vector<std::string> GetErrStatusVec(const std::string& group = HCCL_WORLD_GROUP);
     HcclResult GetQpnErr(const std::string &identifier, std::set<std::tuple<u32, u32, u32>> &qpErrSet);
     HcclResult BroadcastCqeErr(const std::string &identifier);
     HcclResult ClearAllCqeErr(const std::string &identifier);
@@ -211,7 +212,8 @@ public:
 private:
     Heartbeat() = default;
     ~Heartbeat();
-    HcclResult Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port);
+    HcclResult Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port,
+        const std::string& group = HCCL_WORLD_GROUP);
     HcclResult DeInit();
     HcclResult RegisterRanks(DevType devType, const RankInfo& locRank, std::vector<RankInfo>& rankInfos, const u32 port,
         const bool isNeedNic, const std::string& group = HCCL_WORLD_GROUP, bool isUsedRdmaLevel0 = false,
@@ -234,7 +236,7 @@ private:
     void ProcessExceptionEvent();
     void ProcessCqeErrInfo();
     void DelErrorSocket();
-    bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime);
+    bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string& group = HCCL_WORLD_GROUP);
     void MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<std::string> &errStatusVec);
     std::vector<std::string> PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents);
 	void StuckDetection(uint64_t &cnt, CounterStat &counterStat);

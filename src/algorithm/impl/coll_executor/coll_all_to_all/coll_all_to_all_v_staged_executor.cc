@@ -9,6 +9,7 @@
  */
 
 #include "coll_all_to_all_v_staged_executor.h"
+#include "comm_configer.h"
 namespace hccl {
 
 CollRunAlltoAllVStaged::CollRunAlltoAllVStaged(const HcclDispatcher dispatcher,
@@ -49,12 +50,13 @@ HcclResult CollRunAlltoAllVStaged::CalcStreamNum(u32& streamNum)
 {
     streamNum = 0U;
     if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode)) {
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_)) {
         streamNum = topoAttr_.meshAggregationRankSize - 1;
     } else {
         if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE || isAlltoAllZCopyMode_) {
-            if ((GetExternalInputHcclAlgoConfig()[0] != HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE ||
-                GetExternalInputHcclAlgoConfig()[1] != HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE) &&
+            std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(tag_);
+            if ((algoTypeArr[HCCL_ALGO_LEVEL_0] != HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE ||
+                algoTypeArr[HCCL_ALGO_LEVEL_1] != HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE) &&
                 const_cast<HcclTopoInfo &>(topoAttr_).pairLinkCounter[static_cast<u32>(
                     LinkTypeInServer::HCCS_SW_TYPE)] == 0 && topoAttr_.meshAggregationRankSize != 1) {
                     streamNum = topoAttr_.meshAggregationRankSize - MINORS_NUM_TWO;
@@ -128,7 +130,7 @@ HcclResult CollRunAlltoAllVStaged::CheckNeedRecreateComm(u64 lastScratchMemSize,
 HcclResult CollRunAlltoAllVStaged::CheckNeedCreateVirtualLinks(AlgResourceRequest &resourceRequest)
 {
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode);
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
     HCCL_DEBUG("[CollRunAlltoAllVStaged][CheckNeedCreateVirtualLinks] AllToAllMeshReadOnly[%d]," \
         "resourceRequest.streamNum[%u], GetExternalInputHcclEnableFfts()[%d], isAlltoAllZCopyMode_[%d]",
         alltoallMeshReadOnly, resourceRequest.streamNum, GetExternalInputHcclEnableFfts(), isAlltoAllZCopyMode_);
@@ -175,7 +177,7 @@ HcclResult CollRunAlltoAllVStaged::CalStagedAlltoallVCommInfo(TransportMemType i
 {
     // 将网卡初始化判断，提到上层调用，减少无必要的循环依赖。
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode);
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
 
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         !isAlltoAllZCopyMode_) { // 单算子 && BCopy模式
@@ -237,9 +239,10 @@ HcclResult CollRunAlltoAllVStaged::PrepareAlltoAllVStaged1(DeviceMem &sendBuf, D
         if (isOpBaseZCopy) { // 单算子 && ZCopy模式
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, execMem.inputMem, sendBuf, stream));
         }
+        std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(tag_);
         // 互联场景, alltoall暂不支持走fullmesh+pairwise
-        if ((GetExternalInputHcclAlgoConfig()[0] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE &&
-            GetExternalInputHcclAlgoConfig()[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE) ||
+        if ((algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE &&
+            algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE) ||
             const_cast<HcclTopoInfo &>(topoAttr_).pairLinkCounter[static_cast<u32>(LinkTypeInServer::HCCS_SW_TYPE)] != 0 ||
             topoAttr_.meshAggregationRankSize == 1) {
             HCCL_INFO("Running AllToAllV Staged Pairwise intra Server");
@@ -382,7 +385,7 @@ HcclResult CollRunAlltoAllVStaged::KernelRun(const OpParam &param, ExecMem &exec
     userRankInfo.userRank = topoAttr_.userRank;
     userRankInfo.userRankSize = topoAttr_.userRankSize;
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode);
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
 
     std::map<u32, std::list<OneSendRecvAddrInfo>> sendAddrInfosIntra;
     std::map<u32, std::list<OneSendRecvAddrInfo>> recvAddrInfosIntra;

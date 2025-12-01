@@ -575,8 +575,9 @@ HcclResult TransportRoceMem::WaitOpFence(const rtStream_t &stream)
     auto opType = static_cast<u32>(MemType::SEND_NOTIFY_MEM);
     hccl::Stream hcclStream(stream);
     DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcher_);
-    const u32 timeOut = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-        GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    const u32 timeOut = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ||
+        dispatcher->GetExecTimeOutSet() ?
+        dispatcher->GetExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
     HcclResult ret = LocalIpcNotify::Wait(hcclStream, dispatcher, remoteIsendDoneSignal_, INVALID_VALUE_STAGE,
         timeOut, localRankId_, remoteRankId_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,

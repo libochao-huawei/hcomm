@@ -185,7 +185,7 @@ private:
     static std::atomic<int> communicatorCount_;
 };
 
-using GetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID);
+using GetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID, const std::string& group);
 using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>;
 #ifdef __cplusplus
 extern "C" {

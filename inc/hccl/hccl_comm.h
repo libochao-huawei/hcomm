@@ -214,6 +214,11 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
     config->threadNum = HCCL_COMM_THREADNUM_CONFIG_NOT_SET;
     config->notifyNumPerThread = HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET;
     config->aclGraphZeroCopyEnable = 0;
+    config->hcclExecTimeOut = HCCL_COMM_EXECTIMEOUT_CONFIG_NOT_SET;
+    config->hcclAlgo[0] = '\0';
+    config->hcclRetryEnable[0] = '\0';
+    config->hcclRetryParams[0] = '\0';
+    config->hcclBufferName[0] = '\0';
 }
 
 /**

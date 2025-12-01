@@ -549,6 +549,10 @@ namespace hccl
     {
     }
 
+    void HcclCommunicator::UnRegisterToCommConfiger()
+    {
+    }
+
     HcclResult HcclCommunicator::SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr)
     {
         return HCCL_SUCCESS;
@@ -1291,6 +1295,11 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::SetAicpuUnfoldConfig(const bool aicpuUnfold)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SetExecTimeOutConfig(const s32 execTimeOut)
     {
         return HCCL_SUCCESS;
     }

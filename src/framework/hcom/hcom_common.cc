@@ -27,6 +27,7 @@
 #include "stream_pub.h"
 #include "mmpa/mmpa_api.h"
 #include "hcom_common.h"
+#include "comm_configer.h"
 
 #include "comm_base_pub.h"
 #include "coll_alg_utils.h"
@@ -1165,7 +1166,7 @@ HcclResult InitHcomMiscInfo(hccl::HcclCommParams &params, const char *rankTable)
     return HCCL_SUCCESS;
 }
 
-bool HcomCheckrtMemcpyAddrAsync(void)
+bool HcomCheckrtMemcpyAddrAsync(const std::string& group)
 {
     float counterVaule = 1.0f;
 
@@ -1221,7 +1222,7 @@ bool HcomCheckrtMemcpyAddrAsync(void)
     if (ret == HCCL_E_NOT_SUPPORT) {
         notSupportSecAddrCopyWithOffset = true;
     } else {
-        CHK_RET(hcclStreamSynchronize(stream.ptr()));
+        CHK_RET(hcclStreamSynchronize(stream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(group)));
     }
 
     g_notSupportSecAddrCopyWithOffset = notSupportSecAddrCopyWithOffset;
@@ -1268,9 +1269,10 @@ HcclResult HcomNormalInit(const char *rankTableM, const char *identify)
         CHK_PRT_BREAK(hrtGetDevice(&logicDevId) != HCCL_SUCCESS, , errorFlag = true);
         CHK_RET(hrtGetDeviceType(deviceType));
         // 为适配12包，做此修改
-        g_notSupportSecAddrCopyWithOffset = HcomCheckrtMemcpyAddrAsync();
+        g_notSupportSecAddrCopyWithOffset = HcomCheckrtMemcpyAddrAsync(identify);
 
-        ret = CfgGetClusterInfo(rankTableM, identify, hcomInfo.params, hcomInfo.rankTable, deviceType);
+        ret = CfgGetClusterInfo(rankTableM, identify, hcomInfo.params, hcomInfo.rankTable,
+            GetExternalInputInterSuperPodRetryEnable(), deviceType);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][Result]errNo[0x%016llx] cfg get ranktable[%p] info "\
             "error: identify[%s]", HCOM_ERROR_CODE(ret), rankTableM, identify), errorFlag = true);
 

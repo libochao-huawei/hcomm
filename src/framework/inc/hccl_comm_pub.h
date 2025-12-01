@@ -27,6 +27,7 @@
 #include "comm_config_pub.h"
 #include "transport_manager.h"
 #include "independent_op.h"
+#include "share_ccl_buffer_manager.h"
 
 namespace hccl {
 /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
@@ -37,7 +38,7 @@ class IHcclOneSidedService;
 
 class hcclComm {
 public:
-    explicit hcclComm(u64 inCCLbufferSize = 0, u64 outCCLbufferSize = 0, std::string identifier = "");
+    explicit hcclComm(u64 inCCLbufferSize = 0, u64 outCCLbufferSize = 0, std::string identifier = "", std::string cclBuffName = "");
     ~hcclComm();
 
     /**********************************************************************
@@ -230,6 +231,7 @@ public:
     HcclResult GetRankSize(u32 &rankSize);
     void ReleaseCommCCLbuffer() const;
     void RealeaseBarrierMemory();
+    HcclResult RealeaseShareCCLbuffer();
     HcclResult CreateCommCCLbuffer() const;
     HcclResult CreateIndirectCCLbuf();
     void ReleaseIndirectCCLbuf();
@@ -262,6 +264,7 @@ public:
         const HcomCollOpInfo &opInfo);
 
     std::string GetIdentifier();
+    std::string GetCCLbufferName();
     HcclResult CreateBarrierMemory();
     HcclResult ReleaseSubComms() const;
     HcclResult GetAlltoAllStagedWorkSpaceMemSize(u64 *sendCounts, u64 *sdispls,
@@ -316,6 +319,7 @@ public:
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
+    HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     u64 GetConfigInCCLbufferSize();     // 获取通信域配置的输入buffer大小
     u64 GetConfigOutCCLbufferSize();    // 获取通信域配置的输出buffer大小
     u32 GetRankTableCrc();
@@ -388,6 +392,7 @@ private:
     DeviceMem barrierOutMemory_;
     bool isFirstBarrier_;
     const std::string identifier_;
+    const std::string cclBuffName_;
     bool isHeterogComm_;
 
     bool isResetDevice_;

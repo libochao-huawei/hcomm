@@ -11,6 +11,7 @@
 #include "opretry_server.h"
 #include "externalinput_pub.h"
 #include "heartbeat.h"
+#include "comm_configer.h"
 
 namespace hccl {
 
@@ -176,7 +177,7 @@ HcclResult OpRetryServerHandleError::ProcessEvent(RetryContext* retryCtx)
 {
     const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_WAIT_CAN_RETRY_RANK);
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    u32 waitTime = GetExternalInputRetryHoldTime();
+    u32 waitTime = CommConfiger::GetInstance().GetCommConfigRetryHoldTime(retryCtx->group_);
     while (true) {
         CHK_PRT_RET(retryCtx->isServerStateWaitResume_, HCCL_RUN_INFO("[OpRetry][Server]switched state form wait handle error to wait resume"), HCCL_SUCCESS);
         // 判断是否超时

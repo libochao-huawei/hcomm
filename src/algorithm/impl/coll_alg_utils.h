@@ -36,7 +36,7 @@ bool IsSupportUnifiedMarch(const OpParam& param, const TopoType& topoType, u32 s
 bool IsAlltoAllvcSatisfyBufferSize(const OpParam& param, u32 userRankSize, u64 cclbufferSize);
 bool IsSupportDirectFullmeshForAlltoallv(const OpParam& param, DevType deviceType, bool useSuperPodMode, u32 serverNum,
     bool isSingleMeshAggregation, u32 userRankSize, u64 cclbufferSize);
-bool FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(DevType deviceType, u32 rankSize, bool useSuperPodMode);
+bool FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(DevType deviceType, u32 rankSize, bool useSuperPodMode, const std::string& identifier = HCCL_WORLD_GROUP);
 bool SatisfyIntraSuperPod(DevType deviceType, u32 rankSize, bool useSuperPodMode, u32 superPodNum = 1);
 bool HcclOpInplaceDefaultCase(const OpParam &param, u8 &isInplaceStatus);
 bool IsInputOutputOverlap(const OpParam &param, u64 inputDataSize, u64 outputDataSize, u8 &isInplaceStatus);
@@ -53,7 +53,7 @@ bool ExecutorSupportInPlace(OpParam &param, const std::string& algName, bool ret
     InplaceSupportRetryStatus &inPlaceSupportRetryStatus);
 bool FitRetryConditionforInPlaceOp(const HcclCMDType &opType, OpParam &param, const std::string& algName,
     u64 commInputSize, u32 userRankSize, bool retryEnable, InplaceSupportRetryStatus &inPlaceSupportRetryStatus);
-bool IsConfigAHCAlgo();
+bool IsConfigAHCAlgo(const std::string& identifier = HCCL_WORLD_GROUP);
 template<typename keyType>
 std::string GetAlgoString(const std::map<keyType, std::string>& levelMap, keyType key);
 std::string AlgTypeToStr(const AlgType algType);

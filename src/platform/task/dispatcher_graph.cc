@@ -76,13 +76,13 @@ HcclResult DispatcherGraph::LaunchTasksEx(Stream &stream, std::vector<Stream> &s
     // 配置notify wait 超时时间
     // 因为老版本用户设置HCCL_EXEC_TIMEOUT为0，hccl将0传递给rts,rts将0转换为1770s传递给硬件, 未达到永不超时效果，不符合预期；
     // 所以现版用户配置为0时，hccl转换成65535，rts识别到65535后会又会转换成0，去硬件设置永不超时
-    if (GetExternalInputHcclExecTimeOut() == 0) {
+    if (execTimeOut_  == 0) {
         timeout = FFTS_TIMEOUT_MAX;
     // 因为65535被当作永不超时处理，所以当用户配置65535时需要改变他的值，防止误错做成永不超时
-    } else if (GetExternalInputHcclExecTimeOut() == FFTS_TIMEOUT_MAX) {
+    } else if (execTimeOut_  == FFTS_TIMEOUT_MAX) {
         timeout = FFTS_TIMEOUT_MAX - 1;
     } else {
-        timeout = GetExternalInputHcclExecTimeOut();
+        timeout = execTimeOut_ ;
     }
     u32 ctxNum;
     CHK_RET(LaunchGraph(graphMgr_, stream.ptr(), fftsCtxsPtr, timeout, &ctxNum));

@@ -24,7 +24,8 @@ const u32 TOPO_EXCHANGE_SERVER_STATUS_RUNING = 1;
 const u32 TOPO_EXCHANGE_SERVER_STATUS_ERROR = 2;
 UniversalConcurrentMap<u32, volatile u32> TopoInfoDetect::g_topoExchangeServerStatus_;
 
-TopoInfoDetect::TopoInfoDetect() : deviceLogicID_(INVALID_INT), localRankInfo_(), clusterTopoInfo_()
+TopoInfoDetect::TopoInfoDetect() : deviceLogicID_(INVALID_INT), localRankInfo_(),
+    clusterTopoInfo_(), isInterSuperPodRetryEnable_(GetExternalInputInterSuperPodRetryEnable())
 {
 }
 
@@ -369,6 +370,7 @@ HcclResult TopoInfoDetect::SetupGroupMember(u32 rankSize, u32 myrank, const Hccl
     pTopoExchangeAgent_.reset(new (nothrow) TopoInfoExchangeAgent(rootIP, rootInfo.port,
         rootInfo.identifier, agentPortCtx_, localRankInfo_, groupSize, groupRank));
     CHK_SMART_PTR_NULL(pTopoExchangeAgent_);
+    CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
     CHK_RET(pTopoExchangeAgent_->SetupMember());
     CHK_RET(pTopoExchangeAgent_->GetClusterTopoInfo(clusterTopoInfo_));
  
@@ -497,6 +499,7 @@ HcclResult TopoInfoDetect::SetupAgent(u32 rankSize, u32 myrank, const HcclRootHa
         pTopoExchangeAgent_.reset(new (nothrow) TopoInfoExchangeAgent(rootIP, rootInfo.port,
             rootInfo.identifier, agentPortCtx_, localRankInfo_, rankHandle));
         CHK_SMART_PTR_NULL(pTopoExchangeAgent_);
+        CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
         CHK_RET(pTopoExchangeAgent_->Setup());
         CHK_RET(pTopoExchangeAgent_->GetGroupLeader(grpLeader_));
     } else {
@@ -509,6 +512,7 @@ HcclResult TopoInfoDetect::SetupAgent(u32 rankSize, u32 myrank, const HcclRootHa
         pTopoExchangeAgent_.reset(new (nothrow) TopoInfoExchangeAgent(rootIP, rootInfo.port,
             rootInfo.identifier, agentPortCtx_, localRankInfo_));
         CHK_SMART_PTR_NULL(pTopoExchangeAgent_);
+        CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
         CHK_RET(pTopoExchangeAgent_->Setup());
         CHK_RET(pTopoExchangeAgent_->GetClusterTopoInfo(clusterTopoInfo_));
     }
@@ -572,6 +576,7 @@ HcclResult TopoInfoDetect::SetupAgentByMasterInfo(HcclIpAddress &localHostIp, co
             break;
         }
 
+        CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
         ret = pTopoExchangeAgent_->SetupByMasterInfo();
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Setup][Agent]setup by masterInfo failed"),
             errorFlag = true);
@@ -689,6 +694,11 @@ HcclResult TopoInfoDetect::GetGroupLeader(HcclRankHandle &rankHandle)
     return HCCL_SUCCESS;
 }
 
+HcclResult TopoInfoDetect::SetIsInterSuperPodRetryEnable(bool isRetry)
+{
+    isInterSuperPodRetryEnable_ = isRetry;
+    return HCCL_SUCCESS;
+}
 
 HcclResult TopoInfoDetect::StartRootNetwork( const HcclIpAddress& hostIP, u32 &usePort)
 {
@@ -1006,7 +1016,7 @@ HcclResult TopoInfoDetect::GenerateLocalRankInfo(u32 rankSize, u32 rankID, HcclB
         // 此处不知道拓扑形态，无法判断是否需要backupIp，只能从硬件类型和重执行开关判断一下
         bool useSuperPodMode = false;
         CHK_RET(IsSuperPodMode(useSuperPodMode));
-        if (useSuperPodMode && GetExternalInputHcclAicpuUnfold() && GetExternalInputInterSuperPodRetryEnable()) {
+        if (useSuperPodMode && GetExternalInputHcclAicpuUnfold() && isInterSuperPodRetryEnable_) {
             CHK_RET(GetDeviceBackupNicInfo(localRankInfo));
         }
     }

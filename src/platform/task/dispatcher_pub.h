@@ -18,6 +18,7 @@
 #include "stream_pub.h"
 #include "dlprof_func.h"
 #include "externalinput_pub.h"
+#include "hccl_common.h"
 
 #ifdef CCL_LLT
     constexpr s64 HCCL_SDMA_MAX_COUNT_4GB = 0xC800000;  // llt模块编译时设置SDMA最大数据量为200M
@@ -200,6 +201,9 @@ public:
     HcclResult GetCallbackResult();
     HcclResult SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr);
     HcclResult GetNotifyMaxWaitTime();
+    HcclResult SetHcclExecTimeOut(s32 execTimeOut = NOTIFY_DEFAULT_WAIT_TIME);
+    s32 GetExecTimeOut();
+    bool GetExecTimeOutSet();
     virtual HcclResult SignalRecord(HcclRtNotify signal, hccl::Stream &stream, u32 userRank, u64 offset = INVALID_U64,
         s32 stage = INVALID_VALUE_STAGE, bool inchip = false, u64 signalAddr = INVALID_U64,
         u32 notifyId = INVALID_UINT);
@@ -290,6 +294,8 @@ protected:
     std::map<int32_t, void *> devMemMap_; // streamId和device内存的map
     std::mutex devMemMutex_;
     static bool isForce_; // 强制profiling上报或缓存
+    s32 execTimeOut_;
+    bool execTimeOutByConfig_;
 
 private:
     void SetupTaskParaDma(hccl::TaskPara& taskPara, hccl::TaskParaDMA& para, TaskType taskType,

@@ -16,6 +16,7 @@
 #include "opexecounter_pub.h"
 #include "hccl_communicator.h"
 #include "task_exception_handler_pub.h"
+#include "comm_configer.h"
 
 namespace hccl {
 constexpr u32 HEARTBEAT_INTERVAL = 1000; // 心跳帧发送周期为1000 ms
@@ -92,7 +93,7 @@ HcclResult Heartbeat::InitNic(const NicType nicType, const s32 devicePhyId, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port)
+HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port, const std::string& group)
  
 {
     HCCL_INFO("[%s] heartbeat Init begin.", __func__);
@@ -136,7 +137,8 @@ HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, 
     mapLock.unlock();
     uid_ = GetUId(locRank);
     nicDeploy_ = locRank.nicDeploy;
-    stuckDetectTime_ = std::max(GetInternalExecTimeOut() / HCCL_STUCK_DETECT_TIME_BASE,
+    s32 hcclExecTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(group);
+    stuckDetectTime_ = std::max(hcclExecTimeOut / HCCL_STUCK_DETECT_TIME_BASE,
         HCCL_STUCK_DETECT_TIME_MIN);
     startSendRecvTask_ = true;
     sendRecvThread_.reset(new (std::nothrow) std::thread(&Heartbeat::HeartbeatStatusMonitor, this));
@@ -222,7 +224,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
     }
 
     if (!initialized_) {
-        CHK_RET(Init(locRank, useSuperPodMode, isNeedNic, port));
+        CHK_RET(Init(locRank, useSuperPodMode, isNeedNic, port, group));
     }
 
     // 刷新uid_，防止不同通信域下serverId不一致问题
@@ -1194,11 +1196,12 @@ void Heartbeat::SetStatus(UIDType &crimer, UIDType &informer, HeartBeatStatus st
             GetHeartBeatStatusStr(status).c_str(), FormatUId(informer).c_str());
     }
 }
-bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime)
+bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string& group)
 {
     bool ret = false;
     s64 intervalTime = DURATION_US(curTime - event.TOARelative).count() / (TIME_S_TO_MS * ONE_MILLISECOND_OF_USLEEP);
-    s64 execTimeout = GetInternalExecTimeOut();
+    s32 hcclExecTimeout = CommConfiger::GetInstance().GetCommConfigExecTimeOut(group);
+    s64 execTimeout = hcclExecTimeout;
     s64 detectionTime = 0;
     switch (event.status) {
         case HeartBeatStatus::HEARTBEAT_LOST:
@@ -1288,14 +1291,14 @@ std::vector<std::string> Heartbeat::PrintEvents(std::map<HeartBeatStatus, std::q
     MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_INCONSISTENT], errStatusVec);
     return errStatusVec;
 }
-std::vector<std::string> Heartbeat::GetErrStatusVec()
+std::vector<std::string> Heartbeat::GetErrStatusVec(const std::string& group)
 {
     std::unique_lock<std::mutex> lock(ProcessLock_);
     HcclUs curTime = TIME_NOW();
     std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> keyEvents;
     while (errStatusQueue_.size() > 0) {
         auto &tmp = errStatusQueue_.front();
-        if (IsKeyEvent(tmp, curTime)) {  // 非关键事件不处理
+        if (IsKeyEvent(tmp, curTime, group)) {  // 非关键事件不处理
             keyEvents[tmp.status].push(tmp);
         }
         errStatusQueue_.pop();
@@ -1539,7 +1542,7 @@ void Heartbeat::OpRetryCQEHandle(const HcclNetDevCtx netDevCtx)
             return;
         }
         for (auto &info : infos) {
-            if (GetRetryEnable(info) && GetExternalInputInterSuperPodRetryEnable()) {
+            if (GetRetryEnable(info) && CommConfiger::GetInstance().GetCommConfigInterSuperPodRetryEnable(info.identifier)) {
                 SaveQpnForOpRetry(info);
             } else {
                 PrintAndBroadCastErrorCqe(info);
@@ -1595,7 +1598,8 @@ void Heartbeat::ProcessCqeErrInfoByNetDevCtx(const HcclIpAddress &nicIp)
     if (ret != HCCL_SUCCESS || infos.size() == 0) {
         return;
     }
-    if (GetRetryEnable(infos[0]) && GetExternalInputInterSuperPodRetryEnable()) {
+    if (GetRetryEnable(infos[0]) &&
+        CommConfiger::GetInstance().GetCommConfigInterSuperPodRetryEnable(infos[0].identifier)) {
         SaveQpnForOpRetry(infos[0]);
     } else {
         PrintAndBroadCastErrorCqe(infos[0]);
@@ -1877,9 +1881,9 @@ HcclResult SetRankPortInfo(s32 deviceLogicID, bool isUseRankPort, std::vector<u3
 }
 
 
-std::vector<std::string> GetErrStatusVec(s32 deviceLogicID)
+std::vector<std::string> GetErrStatusVec(s32 deviceLogicID, const std::string& group)
 {
-    return Heartbeat::GetInstance(deviceLogicID).GetErrStatusVec();
+    return Heartbeat::GetInstance(deviceLogicID).GetErrStatusVec(group);
 }
 
 __attribute__((constructor)) void HeartBeatCallBackInit()
