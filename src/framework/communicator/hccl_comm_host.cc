@@ -149,7 +149,9 @@ namespace hccl
         aclrtBinHandle binHandle = communicator_->GetBinHandle();
         HDCommunicateParams kfcControlTransferH2DParams;
         HDCommunicateParams kfcStatusTransferD2HParams;
+        std::function<bool()> getAicpuCommState = [this]() { return this->GetIndependentOp().GetAicpuCommState(); };
         CHK_RET(communicator_->GetHDCommunicate(kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
+        CHK_RET(communicator_->SetGetAicpuCommState(getAicpuCommState));
         CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle,
             kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
         return HCCL_SUCCESS;
