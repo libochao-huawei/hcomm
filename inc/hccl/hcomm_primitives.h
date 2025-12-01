@@ -300,6 +300,46 @@ extern HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode);
 
 /** @} */  // 批量下发设置接口
 
+/** @} */  // 数据面编程接口
+/** @} */  // 算子编程接口
+
+/**
+ * @brief 获取通信域并加锁
+ * @param[in] commId 通信域id
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern HcclResult HcommAcquireComm(const char* commId);
+
+/**
+ * @brief 释放通信域
+ * @param[in] commId 通信域id
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern HcclResult HcommReleaseComm(const char* commId);
+
+/**
+ * @brief 注册算子信息到通信域
+ * @param[in] commId 通信域id
+ * @param[in] opInfo 算子信息
+ * @param[in] size 算子信息的数据长度
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, u32 size);
+
+/**
+ * @brief 注册taskException算子信息解析函数
+ * @param[in] commId 通信域id
+ * @param[in] callback 解析算子信息并输出字符数组的回调函数
+ * @param[in] opInfo 算子信息存储的内存地址
+ * @param[in] size 算子信息存储的内存长度
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+typedef void (*HcommGetOpInfoCallback)(const void *opInfo, char *outPut, size_t size);
+extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

@@ -802,10 +802,10 @@ namespace hccl
                          __func__);
             return HCCL_SUCCESS;
         }
-        if (!GetMC2EnvFlag())
+        if (!GetMC2EnvFlag() && !isIndOpCommInit_)
         {
-            HCCL_INFO("[HcclCommunicator][%s]Not mc2 or aicpu environment, no needs to destroy the aicpu comm.",
-                      __func__);
+            HCCL_INFO("[HcclCommunicator][%s]Not mc2 or aicpu environment, isIndOpCommInit[%d], "\
+                "no needs to destroy the aicpu comm.", __func__, isIndOpCommInit_);
             return HCCL_SUCCESS;
         }
         KfcCommand destroyCmd = KfcCommand::kDestroyComm;
@@ -2814,5 +2814,4 @@ namespace hccl
                 __func__, tag.c_str(), algName.c_str());
         return HCCL_SUCCESS;
     }
-
 }

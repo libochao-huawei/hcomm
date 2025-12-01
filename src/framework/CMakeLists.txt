@@ -761,6 +761,11 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/aicpu
 
+        ${HCCL_BASE_DIR}/framework/device/
+        ${HCCL_BASE_DIR}/framework/device/common
+        ${HCCL_BASE_DIR}/framework/device/inc
+        ${HCCL_BASE_DIR}/framework/device/framework
+
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 

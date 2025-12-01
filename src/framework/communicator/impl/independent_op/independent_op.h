@@ -34,7 +34,8 @@ public:
 
     // 初始化资源管理器
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
-        const HcclTopoAttr &topoAttr, const aclrtBinHandle binHandle);
+        const HcclTopoAttr &topoAttr, const aclrtBinHandle binHandle, HDCommunicateParams &kfcControlTransferH2DParams,
+        HDCommunicateParams &kfcStatusTransferD2HParams);
     HcclResult SetChannelCallbacks(const ChannelManagerCallbacks& channelCallbacks);
 
     // 获取配置信息

@@ -1447,6 +1447,12 @@ namespace hccl
     {
         return nullptr;
     }
+    HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
+        HDCommunicateParams &kfcStatusTransferD2HParams)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
     {
         return HCCL_SUCCESS;
