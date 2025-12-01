@@ -20,6 +20,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mc2.cc
     # ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_GenRankTable.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_gert.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_platform.cc
     ${HCCL_LLT_ROOT}/stub/llt_stub_sec.c
     ${HCCL_LLT_ROOT}/stub/llt_mmpa_stub.c
     ${HCCL_LLT_ROOT}/stub/llt_stub_mm.c
@@ -62,6 +63,8 @@ set(EXCLUDE_PLATFORM_DEVICE_REGEX
     )
 list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
+list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/legacy/.*")
+list(FILTER PLATFORM_SOURCES EXCLUDE REGEX ".*src/platform/typical/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/.*")
 
 set(hccl_list
