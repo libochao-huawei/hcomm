@@ -30,7 +30,7 @@ public:
     }
 };
  
-TEST_F(HcclCommChannelTest, Ut_CommChannelCreate_When_Comm_Nullptr_Return_EPTR)
+TEST_F(HcclCommChannelTest, Ut_HcclChannelCreate_When_Comm_Nullptr_Return_EPTR)
 {
     RoCEAttr roceAttr;
     ChannelDesc desc[2] = {
@@ -39,6 +39,6 @@ TEST_F(HcclCommChannelTest, Ut_CommChannelCreate_When_Comm_Nullptr_Return_EPTR)
     };
 
     ChannelHandle channel;
-    HcclResult ret = CommChannelCreate(nullptr, "opTag", CommEngine::COMM_ENGINE_HOSTCPU, desc, 2, &channel);
+    HcclResult ret = HcclChannelCreate(nullptr, "opTag", CommEngine::COMM_ENGINE_HOSTCPU, desc, 2, &channel);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }

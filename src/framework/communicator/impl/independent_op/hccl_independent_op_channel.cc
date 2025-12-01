@@ -16,7 +16,7 @@
 
 using namespace hccl;
 
-HcclResult CommChannelCreate(HcclComm comm, const char *channelTag,
+HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag,
     CommEngine engine, const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
 {
     // 入参校验

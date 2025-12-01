@@ -23,7 +23,7 @@
 using namespace hccl;
 
 #ifndef CCL_KERNEL_AICPU
-HcclResult CommGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len)
+HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(graph);
@@ -32,7 +32,7 @@ HcclResult CommGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_
     auto& rankGraph = hcclComm->GetIndependentOp().GetRankGraph();
     HcclResult ret = rankGraph.GetRankGraphInfo(type, graph, len);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to CommGetRankGraph ret[%d]", __func__, ret);
+        HCCL_ERROR("[%s] Failed to HcclGetRankGraph ret[%d]", __func__, ret);
         return ret;
     }
     HCCL_RUN_INFO("[%s] success, group[%s], len[%u]", __func__, hcclComm->GetIdentifier().c_str(), *len);

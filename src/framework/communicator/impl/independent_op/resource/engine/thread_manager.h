@@ -27,7 +27,7 @@ public:
     ~ThreadMgr() = default;
     HcclResult HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
         uint32_t notifyNumPerThread, ThreadHandle *thread);
-    HcclResult CommAllocThreadResByStream(CommEngine engine,
+    HcclResult HcclAllocThreadResByStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
 
