@@ -1452,6 +1452,10 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
+    HcclResult HcclCommunicator::SetGetAicpuCommState(std::function<bool()> getAicpuCommState)
+    {
+        return HCCL_SUCCESS;
+    }
 
     HcclResult HcclCommunicator::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
     {

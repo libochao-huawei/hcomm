@@ -418,6 +418,7 @@ public:
     aclrtBinHandle GetBinHandle();
     HcclResult GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
         HDCommunicateParams &kfcStatusTransferD2HParams);
+    HcclResult SetGetAicpuCommState(std::function<bool()> getAicpuCommState);
 
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
@@ -1038,7 +1039,7 @@ private:
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;
-    bool isIndOpCommInit_{false};
+    std::function<bool()> getAicpuCommState_; // 获取自定义算子aicpu通信域是否初始化
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H

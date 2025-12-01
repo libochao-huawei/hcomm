@@ -7955,12 +7955,18 @@ namespace hccl
     HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
         HDCommunicateParams &kfcStatusTransferD2HParams)
     {
-        isIndOpCommInit_ = true;
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
         kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
-        HCCL_INFO("%s success, isIndOpCommInit_[%d]", __func__, isIndOpCommInit_);
+        HCCL_INFO("%s success, group[%s]", __func__, identifier_.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SetGetAicpuCommState(std::function<bool()> getAicpuCommState)
+    {
+        getAicpuCommState_ = getAicpuCommState;
+        HCCL_DEBUG("%s success, group[%s]", __func__, identifier_.c_str());
         return HCCL_SUCCESS;
     }
 
