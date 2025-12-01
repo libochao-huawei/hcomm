@@ -23,6 +23,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_stub_sec.c
     ${HCCL_LLT_ROOT}/stub/llt_mmpa_stub.c
     ${HCCL_LLT_ROOT}/stub/llt_stub_mm.c
+    ${HCCL_LLT_ROOT}/stub/llt_stub_platform.c
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
@@ -62,6 +63,8 @@ set(EXCLUDE_PLATFORM_DEVICE_REGEX
     )
 list(REMOVE_ITEM PLATFORM_SOURCES ${EXCLUDE_PLATFORM_DEVICE_REGEX})
 
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/platform/legacy/.*")
+list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/platform/typical/.*")
 list(FILTER FRAMEWORK_HOST_SOURCES EXCLUDE REGEX ".*src/framework/next/.*")
 
 set(hccl_list
