@@ -79,7 +79,7 @@ public:
     {
         opRingBufferIdx_ = opRingBufferIdx;
         HCCL_INFO("[DispatcherAiCpu][SetOpRingBufferIdx]DFX opRingBufferIdx: [%u]",
-        opRingBufferIdx);
+            opRingBufferIdx);
         return;
     }
 

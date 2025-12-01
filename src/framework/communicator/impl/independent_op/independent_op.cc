@@ -17,7 +17,8 @@ namespace hccl {
 IndependentOp::IndependentOp(){};
 
 HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
-    const HcclTopoAttr &topoAttr, aclrtBinHandle binHandle)
+    const HcclTopoAttr &topoAttr, aclrtBinHandle binHandle, HDCommunicateParams &kfcControlTransferH2DParams,
+    HDCommunicateParams &kfcStatusTransferD2HParams)
 {
     commEngine_ = commConfig.GetCommEngine();
     threadNum_ = commConfig.GetThreadNum();
@@ -42,6 +43,8 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commAicpuParam_.deviceLogicId = topoAttr.deviceLogicId;
     commAicpuParam_.devicePhyId = topoAttr.devicePhyId;
     commAicpuParam_.deviceType = static_cast<u32>(topoAttr.deviceType);
+    commAicpuParam_.kfcControlTransferH2DParams = kfcControlTransferH2DParams;
+    commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2HParams;
     HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%llu], deviceLogicId[%u], "
         "devicePhyId[%u], deviceType[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
         cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId, commAicpuParam_.deviceType);

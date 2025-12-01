@@ -10,6 +10,7 @@
 
 #include "hccl_dispatcher_ctx.h"
 #include "dispatcher_ctx.h"
+#include "dispatcher_aicpu_pub.h"
 static DispatcherCtxPtr gDispatcherCtx = nullptr;
 HcclResult CreateDispatcherCtx(DispatcherCtxPtr *ctx, u32 devPhyId)
 {
@@ -62,4 +63,15 @@ DispatcherCtxPtr GetDispatcherCtx()
 {
     HCCL_INFO("GetCtx");
     return gDispatcherCtx;
+}
+
+HcclResult SetDispatcherCtxOpIdx(u32 opRingBufferIdx)
+{
+    HCCL_INFO("%s start, %u", __func__, opRingBufferIdx);
+    hccl::DispatcherCtx* ctx_temp = reinterpret_cast<hccl::DispatcherCtx *>(GetDispatcherCtx());
+    CHK_PTR_NULL(ctx_temp);
+    hccl::DispatcherAiCpu* dispatcherPtr = reinterpret_cast<hccl::DispatcherAiCpu*>(ctx_temp->GetDispatcher());
+    CHK_PTR_NULL(dispatcherPtr);
+    dispatcherPtr->SetOpRingBufferIdx(opRingBufferIdx);
+    return HCCL_SUCCESS;
 }

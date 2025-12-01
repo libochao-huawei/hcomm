@@ -46,6 +46,8 @@ extern HcclResult SetDispatcherCtx(const DispatcherCtxPtr ctx);
  * @return 执行状态码 HcclResult
 */
 extern DispatcherCtxPtr GetDispatcherCtx();
+
+extern HcclResult SetDispatcherCtxOpIdx(u32 opRingBufferIdx);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

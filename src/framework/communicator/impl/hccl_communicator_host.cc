@@ -7945,7 +7945,20 @@ namespace hccl
     {
         return binHandle_;
     }
-        HcclResult HcclCommunicator::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+
+    HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
+        HDCommunicateParams &kfcStatusTransferD2HParams)
+    {
+        isIndOpCommInit_ = true;
+        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+        kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
+        kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
+        HCCL_INFO("%s success, isIndOpCommInit_[%d]", __func__, isIndOpCommInit_);
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
     {
         if (deviceType_ == DevType::DEV_TYPE_910_93) {
             netLayer_[0] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);

@@ -147,7 +147,11 @@ namespace hccl
         CHK_SMART_PTR_NULL(communicator_);
         HcclTopoAttr topoAttr = communicator_->GetTopoAttr();
         aclrtBinHandle binHandle = communicator_->GetBinHandle();
-        CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle));
+        HDCommunicateParams kfcControlTransferH2DParams;
+        HDCommunicateParams kfcStatusTransferD2HParams;
+        CHK_RET(communicator_->GetHDCommunicate(kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
+        CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle,
+            kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
         return HCCL_SUCCESS;
     }
     HcclResult hcclComm::InitIndependentOp()

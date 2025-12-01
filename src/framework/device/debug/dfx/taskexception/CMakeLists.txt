@@ -7,6 +7,10 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-add_subdirectory(trace)
-add_subdirectory(profiling)
-add_subdirectory(taskexception)
+set(src_list
+    task_exception.cc
+)
+
+target_sources(ccl_kernel PRIVATE
+    ${src_list}
+)
