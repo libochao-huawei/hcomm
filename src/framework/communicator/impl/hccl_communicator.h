@@ -435,6 +435,14 @@ public:
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
+    HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize);
     HcclTopoAttr GetTopoAttr();
     void ForceProf(bool isForce);
 private:
@@ -1024,9 +1032,9 @@ private:
 
     void *p2pCclBuf_[AICPU_MAX_RANK_NUM]{};
     void *cclBuf_[AICPU_MAX_RANK_NUM]{};
-    std::vector<RankInfo_t> rankGraph_;
     std::map<u32, TransportType> remoteTransportMap_;
-    uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};    
+    uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};
+    RankGraph rankGraph_;    
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;

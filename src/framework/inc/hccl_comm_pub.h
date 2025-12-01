@@ -361,6 +361,15 @@ public:
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
+    //rankgraph interface 
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
+    HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize);
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;

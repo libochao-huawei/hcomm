@@ -216,4 +216,39 @@ namespace hccl
     {
         return communicator_->CommGetInstTopoTypeByNetLayer(netLayer, topoType);
     }
+    HcclResult hcclComm::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        return communicator_->GetNetLayers(netLayers, netLayerNum);
+    }
+    
+    HcclResult hcclComm::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        return communicator_->GetInstSizeByNetLayer(netLayer, rankNum);
+    }
+    
+    HcclResult hcclComm::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
+    {
+        return communicator_->GetInstTopoTypeByNetLayer(netLayer, topoType);
+    }
+
+    HcclResult hcclComm::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+    {
+        return communicator_->GetInstRanksByNetLayer(netLayer, rankList, rankNum);
+    }
+    
+    HcclResult hcclComm::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+    {
+        return communicator_->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
+    }
+
+    HcclResult hcclComm::GetRankGraph(GraphType type, void **graph, uint32_t *len)
+    {
+        return communicator_->GetRankGraph(type, graph, len);
+    }
+
+    HcclResult hcclComm::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize)
+    {
+        return communicator_->GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
+    }
 } // namespace hccl
