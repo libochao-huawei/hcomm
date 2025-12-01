@@ -88,21 +88,21 @@ HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t noti
 }
 
 
-HcclResult CommLocalBareNotifyRecord(ThreadHandle thread, uint64_t dstNotifyId)
+HcclResult HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
-    HCCL_DEBUG("[CommLocalBareNotifyRecord]thread[%p], dstNotifyId[%u].", thread, dstNotifyId);
+    HCCL_DEBUG("[HcommInterOpNotifyRecordOnThread]thread[%p], dstNotifyId[%u].", thread, dstNotifyId);
     return HcclLocalBareNotifyRecord(stream, dstNotifyId);
 }
 
-HcclResult CommLocalBareNotifyWait(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
+HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
-    HCCL_DEBUG("[CommLocalBareNotifyWait]thread[%p], notifyId[%llu], timeOut[%u].",
+    HCCL_DEBUG("[HcommInterOpNotifyWaitOnThread]thread[%p], notifyId[%llu], timeOut[%u].",
         thread, notifyId, timeOut);
     return HcclLocalBareNotifyWait(stream, notifyId, timeOut);
 }
