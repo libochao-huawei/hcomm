@@ -20,7 +20,7 @@ TransportDeviceRoceMem::TransportDeviceRoceMem(const std::unique_ptr<NotifyPool>
     const HcclNetDevCtx &netDevCtx, const HcclDispatcher &dispatcher, AttrInfo &attrInfo, bool aicpuUnfoldMode,
     const HcclQpInfoV2 &qpInfo)
     : TransportMem(notifyPool, netDevCtx, dispatcher, attrInfo, aicpuUnfoldMode),
-    timeout_{std::chrono::seconds((attrInfo.timeout == INVALID_UINT) ? 0 : attrInfo.timeout)}, qpInfo_{qpInfo}
+    timeout_{std::chrono::microseconds((attrInfo.timeout == INVALID_UINT) ? 0 : attrInfo.timeout)}, qpInfo_{qpInfo}
 {
 }
 
@@ -231,16 +231,17 @@ HcclResult TransportDeviceRoceMem::PostSend(Stream &stream, u64 &dbInfo, struct 
                 wqeCount = 0;
                 wrDataLen = 0;
             } else {
-                CHK_PRT_RET(timeout_ == std::chrono::seconds(0),
+                CHK_PRT_RET(timeout_ == std::chrono::microseconds(0),
                     HCCL_ERROR("[PostSend] failed without retry, isRead[%u] remoteRankId[%u]", isRead, remoteRankId_),
                     ret);
-                auto elapsedTime = std::chrono::steady_clock::now() - startTime;
+                auto elapsedTime = std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::steady_clock::now() - startTime);
                 CHK_PRT_RET(elapsedTime >= timeout_,
-                    HCCL_ERROR("[PostSend] failed after timeout, elapsedTime[%lld] isRead[%u] remoteRankId[%u]",
+                    HCCL_ERROR("[PostSend] failed after timeout, elapsedTime[%lld us] isRead[%u] remoteRankId[%u]",
                         elapsedTime.count(), isRead, remoteRankId_),
                     ret);
                 if (retryCount % RETRY_DELAY_THRESH == 0) {
-                    HCCL_WARNING("[PostSend] retryCount[%u] after failed, elapsedTime[%lld] isRead[%u] "
+                    HCCL_WARNING("[PostSend] retryCount[%u] after failed, elapsedTime[%lld us] isRead[%u] "
                         "remoteRankId[%u]", retryCount, elapsedTime.count(), isRead, remoteRankId_);
                 }
                 SaluSleep(ONE_MILLISECOND_OF_USLEEP *

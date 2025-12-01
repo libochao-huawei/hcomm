@@ -74,7 +74,7 @@ private:
 
     const u64 MAX_RDMA_WQE_SIZE = 2ULL * 1024 * 1024 * 1024; // RDMA最大WQE限制, 2G限制是RDMA导致
     const u32 SEND_WR_LEN = 64;
-    const std::chrono::seconds timeout_;
+    const std::chrono::microseconds timeout_;
     HcclQpInfoV2 qpInfo_{};
 };
 }  // namespace hccl

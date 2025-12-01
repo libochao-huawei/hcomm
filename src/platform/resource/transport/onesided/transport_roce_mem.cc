@@ -17,6 +17,7 @@
 #include "dispatcher_pub.h"
 #include "hccl_network.h"
 #include "device_capacity.h"
+#include "externalinput.h"
 
 namespace hccl {
 using namespace std;
@@ -503,6 +504,8 @@ HcclResult TransportRoceMem::GetQpInfo(HcclQpInfoV2 &qpInfo)
     qpInfo.qpPtr = aiQpInfo_.aiQpAddr;    // reinterpret_cast<u64>(dataQpInfo_.qp)
     qpInfo.sqIndex = aiQpInfo_.sqIndex;
     qpInfo.dbIndex = aiQpInfo_.dbIndex;
+    qpInfo.retryCnt = static_cast<u16>(GetExternalInputRdmaRetryCnt());
+    qpInfo.retryTime = static_cast<u16>(GetExternalInputRdmaTimeOut());
     struct ibv_qp *qp = reinterpret_cast<struct ibv_qp *>(qpInfo.qpPtr);
     HCCL_DEBUG("[%s] qp=%p", __func__, qp);
     return HCCL_SUCCESS;
