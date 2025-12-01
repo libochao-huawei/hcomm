@@ -62,36 +62,47 @@ struct HcclAiRMAQueueInfo {
     struct HcclAiRMACQ rcq;
 };
 
+#pragma pack(push)
+#pragma pack(4)
 struct HcclQpInfoV2 {
     u64 qpPtr;
     u32 sqIndex;
     u32 dbIndex;
+    u16 retryCnt{0};
+    u16 retryTime{0};
 
-    HcclQpInfoV2() : qpPtr(0), sqIndex(0), dbIndex(0)
+    HcclQpInfoV2() : qpPtr(0), sqIndex(0), dbIndex(0), retryCnt(0), retryTime(0)
     {}
-    HcclQpInfoV2(const HcclQpInfoV2 &other) : qpPtr(other.qpPtr), sqIndex(other.sqIndex), dbIndex(other.dbIndex)
+    HcclQpInfoV2(const HcclQpInfoV2 &other) : qpPtr(other.qpPtr), sqIndex(other.sqIndex), dbIndex(other.dbIndex),
+        retryCnt(other.retryCnt), retryTime(other.retryTime)
     {}
-    HcclQpInfoV2(HcclQpInfoV2 &&other) : qpPtr(other.qpPtr), sqIndex(other.sqIndex), dbIndex(other.dbIndex)
+    HcclQpInfoV2(HcclQpInfoV2 &&other) : qpPtr(other.qpPtr), sqIndex(other.sqIndex), dbIndex(other.dbIndex),
+        retryCnt(other.retryCnt), retryTime(other.retryTime)
     {}
     HcclQpInfoV2 &operator=(const HcclQpInfoV2 &other)
     {
-        if(&other != this) {
+        if (&other != this) {
             qpPtr = other.qpPtr;
             sqIndex = other.sqIndex;
             dbIndex = other.dbIndex;
+            retryCnt = other.retryCnt;
+            retryTime = other.retryTime;
         }
         return *this;
     }
     HcclQpInfoV2 &operator=(HcclQpInfoV2 &&other)
     {
-        if(&other != this) {
+        if (&other != this) {
             qpPtr = other.qpPtr;
             sqIndex = other.sqIndex;
             dbIndex = other.dbIndex;
+            retryCnt = other.retryCnt;
+            retryTime = other.retryTime;
         }
         return *this;
     }
 };
+#pragma pack(pop)
 
 struct AddrKey {
     u64 addr = 0;

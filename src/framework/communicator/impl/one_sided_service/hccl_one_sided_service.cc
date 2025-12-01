@@ -1128,7 +1128,7 @@ HcclResult HcclOneSidedService::InitAicpuTilingDataBuf(const AicpuOneSideCommTil
     vDataPtr->commResParaAddr = reinterpret_cast<u64>(commResParaDevice_.ptr());
     vDataPtr->commResParaSize = commResParaDevice_.size();
     vDataPtr->rankSize = rankTable_->rankNum;
-    vDataPtr->linkTimeout = GetExternalInputHcclLinkTimeOut();
+    vDataPtr->linkTimeout = 0;  // deprecated; 改成在AICPU侧使用qpInfo里的配置计算
     vDataPtr->descNum = descNum + 1;    // signal
     vDataPtr->descDataLen = sizeof(HcclOneSideOpDescParam) * vDataPtr->descNum;
     vDataPtr->linkType = tilingInfo.useRdma ? static_cast<u8>(LinkType::LINK_ROCE) : static_cast<u8>(LinkType::LINK_HCCS);
