@@ -36,7 +36,8 @@ constexpr u32 HCCL_DEVICE_PORT_DEFAULT = 16666;
 constexpr u32 HCCL_BACKUP_DEVICE_PORT_DEFAULT = 16667;
 
 TopoinfoRanktableConcise::TopoinfoRanktableConcise(const std::string &rankTableM, const std::string &identify)
-    : TopoInfoRanktableParser(rankTableM, identify)
+    : TopoInfoRanktableParser(rankTableM, identify),
+    isInterSuperPodRetryEnable_(GetExternalInputInterSuperPodRetryEnable())
 {
 }
 
@@ -82,6 +83,12 @@ HcclResult TopoinfoRanktableConcise::GetClusterInfo(hccl::HcclCommParams &params
 {
     CHK_RET(GetClusterInfo(rankTable));
     CHK_RET(GetSelfClusterInfo(params));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TopoinfoRanktableConcise::SetIsInterSuperPodRetryEnable(bool isRetryEnable)
+{
+    isInterSuperPodRetryEnable_ = isRetryEnable;
     return HCCL_SUCCESS;
 }
 
@@ -486,7 +493,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleBackupDeviceIp(const nlohmann::jso
     RankInfo_t &rankinfo)
 {
     if (params_.deviceType != DevType::DEV_TYPE_910_93 || !GetExternalInputHcclAicpuUnfold()
-        || !GetExternalInputInterSuperPodRetryEnable()) {
+        || !isInterSuperPodRetryEnable_) {
         return HCCL_SUCCESS;
     }
     // 获取backup_device_ip（可能有多个）
@@ -644,7 +651,7 @@ HcclResult TopoinfoRanktableConcise::GetSingleBackupDevicePort(const nlohmann::j
 HcclResult TopoinfoRanktableConcise::VerifyBackupDeviceIpAndPort(std::vector<RankInfo_t> &rankList, u32 devIndex)
 {
     if (params_.deviceType != DevType::DEV_TYPE_910_93 || !GetExternalInputHcclAicpuUnfold()
-        || !GetExternalInputInterSuperPodRetryEnable()) {
+        || !isInterSuperPodRetryEnable_) {
         return HCCL_SUCCESS;
     }
     RankInfo_t &rankInfo = rankList[devIndex];

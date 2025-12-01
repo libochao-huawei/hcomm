@@ -379,6 +379,7 @@ public:
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv); // 设置aiv only模式配置
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
+    HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     bool GetAivModeConfig();  // 获取通信域粒度aiv模式配置
     bool GetConfigIsOnlyAivMode(); // 获取通信域粒度aiv only模式配置
     bool GetAicpuUnfoldConfig();  // 获取通信域粒度aicpu配置
@@ -495,6 +496,7 @@ private:
     HcclResult RegisterToHeartBeat();
     HcclResult RegisterToHeartBeat(u32 peerRankId, std::string &tag);
     void UnRegisterToHeartBeat();
+    void UnRegisterToCommConfiger();
     HcclResult MrManagerInit();
     HcclResult MrManagerDeInit();
     HcclResult InitRecvMsgAndRequestBuffer();
@@ -665,6 +667,8 @@ private:
     bool aivClearEnable_ = false;
     u32 blockDim_ = 0;
     std::map<OpParam, HcclCacheInfo> hcclCacheMap_; //存储aiv cache信息
+    std::string cclBuffName_;
+    bool isShareComm_ = false; // 是否共享cclbuffer
 private:
 
     bool IsAtomicInit();

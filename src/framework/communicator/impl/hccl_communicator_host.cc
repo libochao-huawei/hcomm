@@ -44,6 +44,7 @@
 #include "hccl_thread.h"
 #include "launch_aicpu.h"
 #include "order_launch/order_launch.h"
+#include "comm_configer.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -160,6 +161,7 @@ namespace hccl
         DeleteOpInfoToHeartBeat();
         AlgWrap::GetInstance().UnregisterAlgCallBack(identifier_);
         DetectConnectionAnomalies::GetInstance(deviceLogicId_).Deinit();
+        UnRegisterToCommConfiger();
 
         if (zeroCopyAclGraph_ != nullptr) {
             zeroCopyAclGraph_ = nullptr;
@@ -646,6 +648,8 @@ namespace hccl
         ranktableCrc_ = params.ranktableCrc;
         commConnections_ = params.commConnections;
         commPortConfig_ = params.commPortConfig;
+        cclBuffName_ = params.cclBuffName;
+        isShareComm_ = !cclBuffName_.empty();
 
         HCCL_DEBUG(
             " userRank_: %u realUserRank_: %u userRankSize_: %u deviceLogicId_: %u deviceType_: %u commWorkMode_: %u.",
@@ -1097,7 +1101,7 @@ namespace hccl
             agentParam.setTransportResumeStatusCallback = setTransportResumeStatusCallback;
             agentParam.getSwitchRanksCallback = getSwitchRanksCallback;
             agentParam.isEnableBackupLink = IsEnableBackupLink();
-            agentParam.isEnableSdmaRetry = GetExternalInputInterServerRetryEnable();
+            agentParam.isEnableSdmaRetry = commConfig_.GetConfigInterServerRetryEnable();
             agentParam.agentInfo = agentInfo;
 
             CHK_RET(opRetryManager_->RegisterOpRetryMachine(agentParam, userRankSize_, commConnections_.isRoot,
@@ -1172,7 +1176,7 @@ namespace hccl
     bool HcclCommunicator::IsEnableBackupLink()
     {
         return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetExternalInputHcclAicpuUnfold() &&
-               GetExternalInputInterSuperPodRetryEnable() && !devBackupIpAddr_[0].IsInvalid() && rtsSupportChangeLink_ &&
+               commConfig_.GetConfigInterSuperPodRetryEnable() && !devBackupIpAddr_[0].IsInvalid() && rtsSupportChangeLink_ &&
                !isDiffDeviceType_;
     }
 
@@ -1392,7 +1396,7 @@ namespace hccl
         if (SatisfyIntraSuperPod(deviceType_, userRankSize_, useSuperPodMode_, superPodNum_)) {
             streamNum = std::max(static_cast<u64>(userRankSize_ - 1u), streamNum);
         } else if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(deviceType_,
-                                                                      meshAggregationRankSize_, useSuperPodMode_)) {
+                                                                      meshAggregationRankSize_, useSuperPodMode_, identifier_)) {
             streamNum = std::max(static_cast<u64>(meshAggregationRankSize_ - 1u), streamNum);
         }
 
@@ -1878,7 +1882,7 @@ namespace hccl
                 "does not support create CCL Buffer.", __func__, identifier_.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
-        return cclBufferManager_.CreateCommCCLbuffer();
+        return cclBufferManager_.CreateCommCCLbuffer(cclBuffName_);
     }
 
     HcclResult HcclCommunicator::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbufferSize)
@@ -2176,6 +2180,11 @@ namespace hccl
             Heartbeat::GetInstance(deviceLogicId_).UnRegisterToHeartBeat(deviceType_, identifier_, tag);
         }
         Heartbeat::GetInstance(deviceLogicId_).UnRegisterToHeartBeat(deviceType_, identifier_);
+    }
+
+    void HcclCommunicator::UnRegisterToCommConfiger()
+    {
+        CommConfiger::GetInstance().UnRegisterToCommConfiger(identifier_);
     }
 
     HcclResult HcclCommunicator::SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr)
@@ -3781,7 +3790,7 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][RegressCalPreOp] Regression calls other operators and opType[%u]",
                   preMetaInfo->opType);
         CHK_RET(ExecOp(preMetaInfo->opType, preProcessOpParam));
-        CHK_RET(hcclStreamSynchronize(preProcessStream.ptr()));
+        CHK_RET(hcclStreamSynchronize(preProcessStream.ptr(), commConfig_.GetConfigExecTimeOut()));
         HCCL_DEBUG("[HcclCommunicator][RegressCalPreOp] preProcess tag[%s].", preProcessOpParam.tag.c_str());
         SetWorkflowMode(mode);
 
@@ -3936,7 +3945,7 @@ namespace hccl
         }
 
         ForceProf(opParam.isCapture);
-        opParam.supportZeroCopy = IsSupportZeroCopy(opParam);
+        opParam.supportZeroCopy = !commConfig_.GetConfigDeterministic() && IsSupportZeroCopy(opParam);
         opParam.aclGraphZeroCopyEnable = GetConfigAclGraphZeroCopyEnable();
         bool isInGraphCaptureZeroCopy = false;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
@@ -3945,7 +3954,9 @@ namespace hccl
         if (isInGraphCaptureZeroCopy && userRankSize_ > 1) {
             CHK_RET(CreateCommCCLbuffer());
         }
-
+        if (isShareComm_) {
+            CHK_RET(ShareCCLbufferMgr::GetInstance().CheckCCLbuffConflict(cclBuffName_, opParam.stream.id()));
+        }
         std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
         CHK_SMART_PTR_NULL(algOperator);
         // 算法选择
@@ -4178,7 +4189,9 @@ namespace hccl
         if (isInGraphCaptureZeroCopy && userRankSize_ > 1) {
             CHK_RET(CreateCommCCLbuffer());
         }
-
+        if (isShareComm_) {
+            CHK_RET(ShareCCLbufferMgr::GetInstance().CheckCCLbuffConflict(cclBuffName_, opParam.stream.id()));
+        }
         std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
         AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
         CHK_PTR_NULL(alltoAllOperator);
@@ -4283,7 +4296,7 @@ namespace hccl
             HCCL_INFO("resMap_ find this newTag[%s], and need to judge whether recreate comm [%d]", newTag.c_str(),
                       needRecreateAlltoallComm);
             if (needRecreateAlltoallComm) {
-                CHK_RET(hcclStreamSynchronize(opParam.stream.ptr()));
+                CHK_RET(hcclStreamSynchronize(opParam.stream.ptr(), commConfig_.GetConfigExecTimeOut()));
                 AlgResourceRequest resRequest;
                 CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
                 // alltoall算子重分配内存前需清除scratchMMem，防止内存泄漏
@@ -4886,8 +4899,8 @@ namespace hccl
     HcclResult HcclCommunicator::BuildOpRetryParam(const AlgResourceResponse &algResource, const std::string &newTag)
     {
         opResPara_.config.retryEnable = static_cast<u8>(retryEnable_);
-        opResPara_.config.retryHoldTime = GetExternalInputRetryHoldTime();
-        opResPara_.config.retryIntervalTime = GetExternalInputRetryIntervalTime();
+        opResPara_.config.retryHoldTime = commConfig_.GetConfigRetryHoldTime();
+        opResPara_.config.retryIntervalTime = commConfig_.GetConfigRetryIntervalTime();
         // aicpu和custom共用同一个opResPara_，aicpu初始化完成后，会修改h2d/d2h的指针，然后重新传给custom
         opResPara_.kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
         opResPara_.kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
@@ -5393,8 +5406,9 @@ namespace hccl
         }
         opResPara_.config.isSupportAtomicWrite = static_cast<u8>(isSupportAtomicWrite);
         opResPara_.config.notifyWaitTime =
-            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET)
-                ? GetInternalExecTimeOut()
+            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+            commConfig_.GetConfigExecTimeOutSet())
+                ? commConfig_.GetConfigExecTimeOut()
                 : NOTIFY_DEFAULT_WAIT_TIME;
         opResPara_.config.linkTimeOut = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
         opResPara_.config.retryEnable = static_cast<u8>(retryEnable_);
@@ -6246,10 +6260,11 @@ namespace hccl
         combinOparaPtr->config.deterministic = GetDeterministicConfig();
         // retryEnable 写入aicpu_ctx
         combinOparaPtr->config.retryEnable = static_cast<u8>(retryEnable_);
-        combinOparaPtr->config.retryHoldTime = GetExternalInputRetryHoldTime();
-        combinOparaPtr->config.retryIntervalTime = GetExternalInputRetryIntervalTime();
+        combinOparaPtr->config.retryHoldTime = commConfig_.GetConfigRetryHoldTime();
+        combinOparaPtr->config.retryIntervalTime = commConfig_.GetConfigRetryIntervalTime();
         combinOparaPtr->config.notifyWaitTime =
-            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ? GetInternalExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+            commConfig_.GetConfigExecTimeOutSet()) ? commConfig_.GetConfigExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
         combinOparaPtr->config.linkTimeOut = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
 
         combinOparaPtr->kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
@@ -6315,7 +6330,7 @@ namespace hccl
         CHK_RET(AiCpuKernelLaunch(tmpStream.ptr(), reinterpret_cast<u64>(commContext_.ptr()), kernelName));
         SetMC2EnvFlag();
         if (isOpbaseMode == true) {
-            CHK_RET(hcclStreamSynchronize(tmpStream.ptr()));
+            CHK_RET(hcclStreamSynchronize(tmpStream.ptr(), commConfig_.GetConfigExecTimeOut()));
         }
 
         *commContext = commContext_.ptr();
@@ -6404,7 +6419,7 @@ namespace hccl
         SetMC2EnvFlag();
         newTagResAlloced_.insert(newTag);
         // 图模多档位场景，需要保证执行序上优先下资源初始化的kernel
-        CHK_RET(hcclStreamSynchronize(aicpuStream));
+        CHK_RET(hcclStreamSynchronize(aicpuStream, commConfig_.GetConfigExecTimeOut()));
 
         if (IsEnableCustom()) {
             InitTask customInitTask = {0};
@@ -6421,7 +6436,7 @@ namespace hccl
             s32 customthreadId = SalGetTid();
             CHK_RET(ProfilingManagerPub::CallMsprofReportNodeInfo(customBeginTime, customEndTime, customProfName,
                                                                   customthreadId));
-            CHK_RET(hcclStreamSynchronize(aicpuStream));
+            CHK_RET(hcclStreamSynchronize(aicpuStream, commConfig_.GetConfigExecTimeOut()));
         }
 
         return HCCL_SUCCESS;
@@ -7068,7 +7083,8 @@ namespace hccl
         combinOparaPtr->winExpSize = EXP_BUFFER_SIZE;
         combinOparaPtr->config.deterministic = GetDeterministicConfig();
         combinOparaPtr->config.notifyWaitTime =
-            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ? GetInternalExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+            commConfig_.GetConfigExecTimeOutSet()) ? commConfig_.GetConfigExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
         hcclMc2Info_.groupName = hrtMsprofGetHashId(identifier_.c_str(), identifier_.length());
         combinOparaPtr->config.linkTimeOut = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
         hcclMc2Info_.rankSize = rankSize;
@@ -7394,6 +7410,13 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::SetExecTimeOutConfig(const s32 execTimeOut)
+    {
+        CHK_SMART_PTR_NULL(implAlg_);
+        CHK_RET(implAlg_->SetExecTimeOutConfig(execTimeOut));
+        return HCCL_SUCCESS;
+    }
+
     bool HcclCommunicator::GetAivModeConfig()
     {
         return commConfig_.GetConfigAivMode();
@@ -7625,7 +7648,7 @@ namespace hccl
         CHK_PRT_RET(!IsEnableBackupLink(), HCCL_RUN_WARNING("[HcclCommunicator][%s]Backup link is not enabled, "
                                                             "switch nic will not be prorcessed, comm identifier[%s], rank[%u], devType[%u], opretry enable[%u], "
                                                             "backup ip valid[%u], roce enable[%u].",
-                                                            __func__, identifier_.c_str(), userRank_, deviceType_, GetExternalInputHcclAicpuUnfold() && GetExternalInputInterSuperPodRetryEnable(), !devBackupIpAddr_[0].IsInvalid(), IsEnableRoce()),
+                                                            __func__, identifier_.c_str(), userRank_, deviceType_, GetExternalInputHcclAicpuUnfold() && commConfig_.GetConfigInterSuperPodRetryEnable(), !devBackupIpAddr_[0].IsInvalid(), IsEnableRoce()),
                     HCCL_SUCCESS);
         CHK_PRT_RET(resMap_.empty(), HCCL_ERROR("[HcclCommunicator][%s] "
                                                 "no collective operation has been executed in this communication[%s] on rank[%u], "

@@ -819,8 +819,11 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
     apiParam.remoteAddr = reinterpret_cast<u64>(remoteAddr) + dstOffset;
     apiParam.dataSize = len;
     apiParam.localAddr = reinterpret_cast<u64>(src);
-    apiParam.timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-         GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    apiParam.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        dispatcher_->GetExecTimeOutSet()) {
+        apiParam.timeout = dispatcher_->GetExecTimeOut();
+    }
     apiParam.localFlagAddr = reinterpret_cast<u64>(aicpuMem_.ptr());
     std::vector<HcclQpInfoV2> aiQpInfos;
     CHK_RET(GetAiQpInfo(aiQpInfos));
@@ -886,8 +889,11 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
     apiParam.remoteAddr = reinterpret_cast<u64>(remoteAddr) + srcOffset;
     apiParam.dataSize = len;
     apiParam.localAddr = reinterpret_cast<u64>(dst);
-    apiParam.timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-         GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    apiParam.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        dispatcher_->GetExecTimeOutSet()) {
+        apiParam.timeout = dispatcher_->GetExecTimeOut();
+    }
     apiParam.localFlagAddr = reinterpret_cast<u64>(aicpuMem_.ptr());
     std::vector<HcclQpInfoV2> aiQpInfos;
     CHK_RET(GetAiQpInfo(aiQpInfos));

@@ -12,6 +12,7 @@
 #define HCCL_DISPATCHER_VIRTUAL_PUB_H
  
 #include "dispatcher_pub.h"
+#include "hccl_common.h"
  
 namespace hccl {
 class DispatcherVirtural : public DispatcherPub {

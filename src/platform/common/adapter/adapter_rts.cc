@@ -1566,19 +1566,19 @@ HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, int32_t *status)
 }
 #endif
 
-s32 GetMsTimeFromExecTimeout()
+s32 GetMsTimeFromExecTimeout(s32 execTimeOut)
 {
     s64 timeOutMs = 0;
-    timeOutMs = (GetExternalInputHcclExecTimeOut() + HCCL_EXEC_TIME_OUT_OFFSET_S) * TIME_S_TO_MS;
+    timeOutMs = (execTimeOut  + HCCL_EXEC_TIME_OUT_OFFSET_S) * TIME_S_TO_MS;
     timeOutMs = (timeOutMs > 0x7FFFFFFF) ? 0x7FFFFFFF : timeOutMs;
     return static_cast<s32>(timeOutMs & (0x7FFFFFFF));
 }
 
-HcclResult hcclStreamSynchronize(HcclRtStream stream)
+HcclResult hcclStreamSynchronize(HcclRtStream stream, s32 execTimeOut)
 {
 #ifndef HCCD
     CHK_PTR_NULL(stream);
-    aclError ret = aclrtSynchronizeStreamWithTimeout(stream, GetMsTimeFromExecTimeout());
+    aclError ret = aclrtSynchronizeStreamWithTimeout(stream, GetMsTimeFromExecTimeout(execTimeOut));
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Synchronize][Stream]errNo[0x%016llx] rt "\
         "streamsynchronizewithtimeout fail. return[%d].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;

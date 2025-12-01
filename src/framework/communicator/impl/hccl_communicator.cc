@@ -148,7 +148,8 @@ namespace hccl
         HcclIpAddress localIp = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].hostIp : HcclIpAddress();
         bool isAivMode = GetAivModeConfig() || GetConfigIsOnlyAivMode();
         SetRetryEnable(deviceType_, superPodNum_, serverNum_, deviceNumPerAggregation_,
-            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_);
+            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_,
+            commConfig_.GetConfigInterServerRetryEnable(), commConfig_.GetConfigInterSuperPodRetryEnable());
         // 校验A+X单机双module场景下通信能否建立
         CHK_RET(CheckSingleServerComm(rankTable.rankList));
         // 解析rank和port的映射信息
@@ -297,11 +298,13 @@ namespace hccl
         }
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
         CHK_SMART_PTR_NULL(dispatcher_);
+        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
         CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_));
         CHK_PTR_NULL(dispatcherCtx_);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
+        CHK_RET(HcclSetExecTimeOut(vDispatcher_, commConfig_.GetConfigExecTimeOut()));
 
         (void)RegisterLoadTaskCallBack(dispatcher_, static_cast<void *>(profilerManager_.get()), TaskProfilerCallBack);
         // 此时要确保identify已经全部构造完成
@@ -473,7 +476,8 @@ namespace hccl
         HcclIpAddress localIp = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].hostIp : HcclIpAddress();
         bool isAivMode = GetAivModeConfig() || GetConfigIsOnlyAivMode();
         SetRetryEnable(deviceType_, superPodNum_, serverNum_, deviceNumPerAggregation_,
-            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_);
+            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_,
+            commConfig_.GetConfigInterServerRetryEnable(), commConfig_.GetConfigInterSuperPodRetryEnable());
         groupNicRanksPort_.resize(rankInfoList_.size(), HCCL_INVALID_PORT);
         if (nicRanksPort_.size())
         {
@@ -925,7 +929,7 @@ namespace hccl
         }
  
         CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
-        CHK_RET(hcclStreamSynchronize(stream.ptr()));
+        CHK_RET(hcclStreamSynchronize(stream.ptr(), commConfig_.GetConfigExecTimeOut()));
         CHK_RET(hrtMemSyncCopy(inAlltoAllvParaBuffer.ptr(), preMetaInfo->inputSize, preMetaInfo->inputData.data(),
                                preMetaInfo->inputSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         return HCCL_SUCCESS;

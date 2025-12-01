@@ -50,10 +50,10 @@ void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetA
 #endif // __cplusplus
 namespace hccl {
     namespace hccl_alg {
-        std::vector<std::string> GetErrStatusVec(s32 deviceLogicID)
+        std::vector<std::string> GetErrStatusVec(s32 deviceLogicID, const std::string& group = HCCL_WORLD_GROUP)
         {
             if (g_GetErrStatusVecCallBack != nullptr) {
-                return g_GetErrStatusVecCallBack(deviceLogicID);
+                return g_GetErrStatusVecCallBack(deviceLogicID, group);
             } else {
                 HCCL_RUN_WARNING("[GetErrStatusVec]g_GetErrStatusVecCallBack is nullptr.");
             }
@@ -593,9 +593,9 @@ string FFTSOpInfo::GetBaseInfoStr() // 防止tag字符串过长，base信息和p
 }
 TaskExceptionHandler::TaskExceptionHandler(u32 deviceLogicId) : ProfilerBase(deviceLogicId) {}
 TaskExceptionHandler::~TaskExceptionHandler() {}
-std::string GetAndPrintHeartbeatErr(rtExceptionInfo *exceptionInfo)
+std::string GetAndPrintHeartbeatErr(rtExceptionInfo *exceptionInfo, const std::string& group = HCCL_WORLD_GROUP)
 {
-    auto errStatusVec = hccl_alg::GetErrStatusVec(exceptionInfo->deviceid);
+    auto errStatusVec = hccl_alg::GetErrStatusVec(exceptionInfo->deviceid, group);
     std::string errMsg = "";
     int errSize = errStatusVec.size();
     if (errSize > 0) {
@@ -794,7 +794,7 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
     std::string tag(fftsOpInfo.tag.get());
 	DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo);
 	DealExceptionOpData(exceptionInfo, tag, true, index);
-	std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
+	std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
 	if (exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
 		RPT_INPUT_ERR(true,
 			"EI0002",
@@ -912,7 +912,7 @@ bool TaskExceptionHandler::DealExceptionOp(rtExceptionInfo *exceptionInfo)
     std::string tag(exceptionOpInfo.tag.get());
     DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo);
     DealExceptionOpData(exceptionInfo, tag, true, index);
-    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
+    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
     if (exceptionInfo->retcode == ACL_ERROR_RT_FFTS_PLUS_TIMEOUT) {
         RPT_INPUT_ERR(true,
             "EI0002",
@@ -1185,7 +1185,7 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
         DealExceptionGroupRank(exceptionInfo, exceptionTaskInfo.tag, false, groupRankContentInfo);
     }
     DealExceptionOpData(exceptionInfo, exceptionTaskInfo.tag, false, index);
-    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
+    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, exceptionTaskInfo.tag);
     if (exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
         RPT_INPUT_ERR(true,
             "EI0002",
@@ -1230,7 +1230,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo
                 exceptionTaskInfo.GetParaInfoStr().c_str(), exceptionTaskInfo.tag.c_str());
             PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent);
             PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage);
-            std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
+            std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
             RPT_INPUT_ERR(true,
                 "EI0002",
                 std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),

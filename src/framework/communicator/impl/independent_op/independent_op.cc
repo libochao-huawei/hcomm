@@ -11,6 +11,7 @@
 #include "independent_op.h"
 #include "launch_aicpu.h"
 #include "manager_common.h"
+#include "comm_configer.h"
 
 namespace hccl {
 
@@ -73,7 +74,7 @@ HcclResult IndependentOp::KernelLaunchAicpuCommInit()
 
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
         sizeof(commAicpuParam_), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
-    CHK_RET(hcclStreamSynchronize(localStream.ptr()));
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
 
     // 打印增加初始化对应的参数
     HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);

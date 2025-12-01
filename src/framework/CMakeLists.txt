@@ -27,6 +27,7 @@ message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
 add_library(hcomm  SHARED)
 
 set(hccl_include_list
+    ${HCCL_BASE_DIR}/../inc/hccl
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
@@ -243,6 +244,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/offload_stream_manager.cc
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/hccl_socket_manager.cc
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/queue_notify_manager.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
 
         ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy/comm_base.cc
         ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy/comm_ring.cc
@@ -548,6 +550,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         CCL_KERNEL_AICPU
     )
     target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/../inc/hccl
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${HCCL_BASE_DIR}/algorithm/base/inc
         ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -639,6 +642,7 @@ endif()
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/inner
         ${HCCL_BASE_DIR}/pub_inc/aicpu

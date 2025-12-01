@@ -565,6 +565,18 @@ bool TopoMatcher::GetAicpuUnfoldConfig() const
     return externalEnable_.aicpuUnfold;
 }
 
+HcclResult TopoMatcher::SetExecTimeOutConfig(const s32 execTimeOut)
+{
+    HCCL_INFO("[SetExecTimeOutConfig]execTimeOut is set to [%d]", execTimeOut);
+    externalEnable_.execTimeOut = execTimeOut;
+    return HCCL_SUCCESS;
+}
+ 
+s32 TopoMatcher::GetExecTimeOutConfig() const
+{
+    return externalEnable_.execTimeOut;
+}
+
 HcclResult TopoMatcher::GetGlobalSubGroups(const CommPlane level, std::vector<std::vector<std::vector<u32>>> &globalSubGroups)
 {
     globalSubGroups = topoInfo_.CommPlaneSubGroupVector[level];

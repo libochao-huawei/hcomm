@@ -20,6 +20,7 @@
 #include "ccl_buffer_manager.h"
 #include "acl/acl_rt.h"
 #include "launch_device.h"
+#include "comm_configer.h"
 #include "hccl_aiv.h"
 
 using namespace std;
@@ -554,9 +555,9 @@ HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSched
     return HCCL_SUCCESS;
 }
 
-u32 GetAivTimeout() {
-    u32 timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-        static_cast<u32>(std::ceil(GetExternalInputHcclExecTimeOut())) : AIV_TIMEOUT_DEFAULT;
+u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
+    u32 timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET || isSetByConfig) ?
+        static_cast<u32>(std::ceil(execTimeOut)) : AIV_TIMEOUT_DEFAULT;
 
     return timeout < AIV_TIMEOUT_MAX ? timeout : AIV_TIMEOUT_MAX;
 }
@@ -574,7 +575,8 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
     attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    attr[1].value.timeout = GetAivTimeout();
+    s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(comm);
+    attr[1].value.timeout = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(comm));
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
     cfg.numAttrs = AIV_ATTRNUM_THREE;
@@ -720,7 +722,8 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
     attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    attr[1].value.timeout = GetAivTimeout();
+    s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(topoArgs.identify);
+    attr[1].value.timeout = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(topoArgs.identify));
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
     cfg.numAttrs = AIV_ATTRNUM_THREE;

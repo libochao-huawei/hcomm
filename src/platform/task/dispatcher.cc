@@ -46,7 +46,8 @@ bool DispatcherPub::isForce_ = false;
 
 DispatcherPub::DispatcherPub(const s32 deviceLogicId)
     : deviceLogicId_(deviceLogicId), notifyWaitMode_(SyncMode::DEFAULT_TIMEWAITSYNCMODE),
-    hostNicTcpSendThreadState_(true), overflowAddr_(nullptr), setDeviceFlag_(false)
+    hostNicTcpSendThreadState_(true), overflowAddr_(nullptr), setDeviceFlag_(false),
+    execTimeOut_(NOTIFY_DEFAULT_WAIT_TIME), execTimeOutByConfig_(false)
 {
 }
 
@@ -192,6 +193,15 @@ HcclResult DispatcherPub::GetNotifyMaxWaitTime()
     return HCCL_SUCCESS;
 }
 
+s32 DispatcherPub::GetExecTimeOut()
+{
+    return execTimeOut_;
+}
+bool DispatcherPub::GetExecTimeOutSet()
+{
+    return execTimeOutByConfig_;
+}
+
 HcclResult DispatcherPub::Init()
 {
 #ifndef HCCD
@@ -211,7 +221,8 @@ HcclResult DispatcherPub::Init()
     graphMgr_ = GraphMgrInit();
     CHK_PTR_NULL(graphMgr_);
 
-    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) {
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        execTimeOutByConfig_) {
         notifyWaitMode_ = SyncMode::CONFIGURABLE_TIMEWAITSYNCMODE;
     }
 
@@ -286,7 +297,7 @@ u32 DispatcherPub::GetNotifyWaitTime(u32 timeOut)
     if (timeOut > 0 && timeOut <= notifyMaxWaitTime_) {
         notifyWaitTime = timeOut;
     } else if (notifyWaitMode_ == SyncMode::CONFIGURABLE_TIMEWAITSYNCMODE) {
-        notifyWaitTime = GetExternalInputHcclExecTimeOut();
+        notifyWaitTime = execTimeOut_;
     } else if (notifyWaitMode_ == SyncMode::UNLIMITED_TIMEWAITSYNCMODE) {
         notifyWaitTime = notifyMaxWaitTime_;
     } else {
@@ -334,6 +345,13 @@ HcclResult DispatcherPub::SetNotifyWaitMode(SyncMode notifyWaitMode)
 SyncMode DispatcherPub::GetNotifyWaitMode()
 {
     return notifyWaitMode_;
+}
+
+HcclResult DispatcherPub::SetHcclExecTimeOut(s32 execTimeOut)
+{
+    execTimeOut_ = execTimeOut;
+    execTimeOutByConfig_ = true;
+    return HCCL_SUCCESS;
 }
 
 HcclResult DispatcherPub::MemcpySync(void *dst, uint64_t destMax, const void *src, uint64_t count,

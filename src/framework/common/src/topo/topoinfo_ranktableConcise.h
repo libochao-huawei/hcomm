@@ -27,6 +27,7 @@ public:
     HcclResult GetSelfClusterInfo(HcclCommParams &params);
     HcclResult GetClusterInfo(hccl::HcclCommParams &params,
         hccl::RankTable_t &rankTable) override;
+    HcclResult SetIsInterSuperPodRetryEnable(bool isRetryEnable) override;
 protected:
 private:
     // 所有集群信息
@@ -63,6 +64,7 @@ private:
     HcclResult CheckSuperPodInfo(RankTable_t &clusterInfo) const;
 
     std::unordered_map<std::string, u32> devIp2ObjIndex_;
+    bool isInterSuperPodRetryEnable_;
 };
 }  // namespace hccl
 #endif  // TOPOINFO_RANKTABLEPARSER_VER1_H
