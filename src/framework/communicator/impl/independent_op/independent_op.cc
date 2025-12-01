@@ -35,7 +35,6 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     callbacks.kernelLaunchAicpuCommInit = [this]() { return this->KernelLaunchAicpuCommInit(); };
 
     CHK_PRT(engineResMgr_.Init(threadNum_, notifyNumPerThread_, commId_, binHandle, callbacks));
-    CHK_RET(rankgraph_.Init(rankTable, topoAttr));
     CHK_PRT(channelMgr_.Init(binHandle, topoAttr.userRank, callbacks));
 
     // Aicpu通信域初始化参数

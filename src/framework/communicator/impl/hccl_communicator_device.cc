@@ -1467,4 +1467,40 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
+
+    HcclResult HcclCommunicator::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize)
+    {
+        return HCCL_SUCCESS;
+    }
 }

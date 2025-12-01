@@ -309,9 +309,12 @@ namespace hccl
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
-
+        
         CHK_RET(InitOneSidedService(rankTable));
         CHK_RET(OrderLaunch::GetInstance(deviceLogicId_).RegisterOrderLaunch(identifier_));
+        HcclTopoAttr topoAttr;
+        attrCollector_.GetTopoAttr(topoAttr);
+        CHK_RET(rankGraph_.Init(rankTable, topoAttr));
         return HCCL_SUCCESS;
     }
 
@@ -336,6 +339,9 @@ namespace hccl
         CHK_RET(InitOpResPara());
         CHK_RET(RegisterRanksToDca());
         CHK_RET(OrderLaunch::GetInstance(deviceLogicId_).RegisterOrderLaunch(identifier_));
+        HcclTopoAttr topoAttr;
+        attrCollector_.GetTopoAttr(topoAttr);
+        CHK_RET(rankGraph_.Init(topoAttr));
         return HCCL_SUCCESS;
     }
 
@@ -7998,5 +8004,41 @@ namespace hccl
             }
         }
         return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        return rankGraph_.GetNetLayers(netLayers, netLayerNum);
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        return rankGraph_.GetInstSizeByNetLayer(netLayer, rankNum);
+    }
+    
+    HcclResult HcclCommunicator::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
+    {
+        return rankGraph_.GetInstTopoTypeByNetLayer(netLayer, topoType);
+    }
+
+    HcclResult HcclCommunicator::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+    {
+        return rankGraph_.GetInstRanksByNetLayer(netLayer, rankList, rankNum);
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+    {
+        return rankGraph_.GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
+    }
+
+    HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)
+    {
+        return rankGraph_.GetRankGraphInfo(type, graph, len);
+    }
+
+    HcclResult HcclCommunicator::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize)
+    {
+        return rankGraph_.GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
     }
 }

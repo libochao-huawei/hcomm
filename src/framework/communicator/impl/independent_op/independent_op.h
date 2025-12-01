@@ -53,10 +53,6 @@ public:
         return engineResMgr_;
     }
 
-    inline RankGraph& GetRankGraph() {
-        return rankgraph_;
-    }
-
     inline ContextManager& GetContextManager() {
         return contextMgr_;
     }
@@ -81,7 +77,6 @@ private:
     RegMemMgr regMemMgr_;
     CommMemMgr commMemMgr_;
     CommEngineResMgr engineResMgr_;
-    RankGraph rankgraph_;
     ContextManager contextMgr_;
     ChannelManager channelMgr_;
 
