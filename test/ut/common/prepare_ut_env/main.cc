@@ -51,7 +51,6 @@ TEST_F(UtPrepareEnv, hccl_prepare_ut_env)
     system("find /dev/shm/ -name 'hccl*' | xargs -i rm {}");    
     // void *ptr = malloc(1);
     // free(ptr);
-    // free(ptr);
     sleep(3);
     printf("prepare hccl st llt env finished\n");
     return;
