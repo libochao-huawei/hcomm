@@ -17,7 +17,6 @@
 #include "hccl_aiv.h"
 #include "workflow_pub.h"
 #include "ccl_buffer_manager.h"
-#include "aprof_pub.h"
 #include "prof_common.h"
 
 namespace hccl {
