@@ -367,7 +367,7 @@ STATIC void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events
 
 #ifdef CONFIG_TLV
     int ret;
-    ret = RsEpollNslbEventHandle(&rsCb->nslbCb, events->data.fd, events->events);
+    ret = RsEpollNslbEventHandle(&rsCb->tlvCb.nslbCb, events->data.fd, events->events);
     if (ret != -ENODEV) {
         hccp_info("the fd:%d is nslb event, no need to go on, ret:%d", events->data.fd, ret);
         return;
