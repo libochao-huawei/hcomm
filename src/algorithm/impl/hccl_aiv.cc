@@ -386,9 +386,9 @@ HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
         return HCCL_E_PARA;
     }
 
-    size_t mid = libPath.find("fwkacllib/lib64");
+    size_t mid = libPath.find("cann/lib64");
     if (mid == libPath.npos) {
-        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH lack fwkacllib/lib64");
+        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH lack cann/lib64");
 
         mmDlInfo info;
         mmDladdr(reinterpret_cast<void *>(RegisterKernel), &info);
@@ -408,7 +408,6 @@ HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
             HCCL_ERROR("[AIV][GetAivOpBinaryPath]get binary path failed");
             return HCCL_E_PARA;
         }
-        HCCL_DEBUG("[AIV][GetAivOpBinaryPath]op binary file path[%s]", binaryPath.c_str());
     } else {
         u32 diff;
         if (libPath.find(":", mid) == libPath.npos) {
@@ -432,6 +431,7 @@ HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
             HCCL_ERROR("[AIV][GetAivOpBinaryPath]devType[%u] is not supported", deviceType);
             return HCCL_E_NOT_SUPPORT;
     }
+    HCCL_INFO("[AIV][GetAivOpBinaryPath]op binary file path[%s]", binaryPath.c_str());
     return HCCL_SUCCESS;
 }
 
