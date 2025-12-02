@@ -141,8 +141,6 @@ HcclResult CollAllGatherVMeshAivSmallCountExecutor::KernelRun(const OpParam &par
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAllGatherVMeshAivSmallCountExecutor][KernelRun]AllGatherV aiv failed, return[%d]", ret), ret);
 
-    CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
-
     HCCL_INFO("[CollAllGatherVMeshAivSmallCountExecutor][KernelRun]AllGatherV aiv run success.");
     return HCCL_SUCCESS;
 }
