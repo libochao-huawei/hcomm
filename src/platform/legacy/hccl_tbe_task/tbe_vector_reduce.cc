@@ -443,9 +443,9 @@ HcclResult TbeVectorReduce::GetOpBinaryPath(std::string &binaryPath)
         HCCL_WARNING("ENV:LD_LIBRARY_PATH is not set");
     }
 
-    size_t mid = libPath.find("fwkacllib/lib64");
+    size_t mid = libPath.find("cann/lib64");
     if (mid == libPath.npos) {
-        HCCL_WARNING("ENV:LD_LIBRARY_PATH lack fwkacllib/lib64");
+        HCCL_WARNING("ENV:LD_LIBRARY_PATH lack cann/lib64");
 
         mmDlInfo info;
         mmDladdr(reinterpret_cast<void *>(HcclTbeTaskInit), &info);
@@ -465,7 +465,6 @@ HcclResult TbeVectorReduce::GetOpBinaryPath(std::string &binaryPath)
             HCCL_ERROR("[Get][OpBinaryPath]get binary path failed");
             return HCCL_E_PARA;
         }
-        HCCL_DEBUG("op binary file path[%s]", binaryPath.c_str());
     } else {
         u32 diff;
         if (libPath.find(":", mid) == libPath.npos) {
@@ -475,6 +474,7 @@ HcclResult TbeVectorReduce::GetOpBinaryPath(std::string &binaryPath)
         }
         binaryPath = libPath.substr(libPath.rfind(":", mid) + 1, diff - 1);
     }
+    HCCL_INFO("op binary file path[%s] libPath[%s]", binaryPath.c_str(), libPath.c_str());
     return HCCL_SUCCESS;
 }
 
