@@ -142,8 +142,6 @@ HcclResult CollReduceScatterVMeshAivSmallCountExecutor::KernelRun(const OpParam 
         HCCL_ERROR("[CollReduceScatterVMeshAivSmallCountExecutor][KernelRun]ReduceScatterV aiv failed, return[%d].",
         ret), ret);
 
-    CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
-
     HCCL_INFO("[CollReduceScatterVMeshAivSmallCountExecutor][KernelRun]ReduceScatterV aiv run success.");
     return HCCL_SUCCESS;
 }
