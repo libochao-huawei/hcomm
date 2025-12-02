@@ -218,6 +218,24 @@ void KfcCommandHandles::StopFunc(AicpuComContext *const ctx)
     HCCL_INFO("StopFunc Finish");
 }
 
+void KfcCommandHandles::ClearCq(AicpuComContext *const ctx)
+{
+    for (u32 i = 0; i < ctx->rankNum; i++) {
+        const HcclComStreamInfo &streamInfo = ctx->streamInfo[i];
+        HCCL_INFO("ClearFunc, sqid:%d", streamInfo.sqId);
+        if (ConfigSqStatusByType(ctx->devId, streamInfo.sqId, DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, 1) != HCCL_SUCCESS) {
+            (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kError, KfcError::kExec, 0);
+            return;
+        }
+        CqeQueryInput cqeQueryInput;
+        AicpuExecutorTracer::SetCqeQueryInput(ctx->devId, streamInfo, cqeQueryInput);
+        rtLogicCqReport_t report[AC_SQE_REV_MAX_CNT];
+        cqeQueryInput.cqeAddr = reinterpret_cast<uint8_t *>(report);  // 用于存放接收到的cq
+        rtLogicCqReport_t cqeException;
+        (void)CqReportRecv(cqeQueryInput, cqeException);
+    }
+}
+
 void KfcCommandHandles::ClearFunc(AicpuComContext *const ctx)
 {
     if (ctx->isStopLaunch) {
@@ -229,21 +247,7 @@ void KfcCommandHandles::ClearFunc(AicpuComContext *const ctx)
         }
         HCCL_INFO("ClearFunc, after APP_ABORT_TERMINATE_FINISH");
         // 使能sq,读清cq
-        for (u32 i = 0; i < ctx->rankNum; i++) {
-            const HcclComStreamInfo &streamInfo = ctx->streamInfo[i];
-            HCCL_INFO("ClearFunc, sqid:%d", streamInfo.sqId);
-            if (ConfigSqStatusByType(ctx->devId, streamInfo.sqId, DRV_SQCQ_PROP_SQ_DISABLE_TO_ENABLE, 1) !=
-                HCCL_SUCCESS) {
-                (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kError, KfcError::kExec, 0);
-                return;
-            }
-            CqeQueryInput cqeQueryInput;
-            AicpuExecutorTracer::SetCqeQueryInput(ctx->devId, streamInfo, cqeQueryInput);
-            rtLogicCqReport_t report[AC_SQE_REV_MAX_CNT];
-            cqeQueryInput.cqeAddr = reinterpret_cast<uint8_t *>(report);  // 用于存放接收到的cq
-            rtLogicCqReport_t cqeException;
-            (void)CqReportRecv(cqeQueryInput, cqeException);
-        }
+        ClearCq(ctx);
 
         // 清理dfxExtendInfo状态
         AicpuUpdatComContextMumber(offsetof(AicpuComContext, dfxExtendInfo.kfcStatus), DfxKfcStatus::kDefault);
@@ -267,10 +271,8 @@ void KfcCommandHandles::ClearFunc(AicpuComContext *const ctx)
                 (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kError, KfcError::kExec, 0);
                 return;
             }
-            HCCL_INFO("hccl aicpu reset stream buffer, sqid:%d head:%u tail:%u.",
-                ctx->streamInfo[i].sqId,
-                buff.sqHead,
-                buff.sqTail);
+            HCCL_INFO("hccl aicpu reset stream buffer, sqid:%d head:%u tail:%u.", ctx->streamInfo[i].sqId, buff.sqHead,
+                      buff.sqTail);
         }
         (void)AicpuHdcUtils::SetOpExecStatus(ctx->kfcStatusTransferD2H, KfcStatus::kClear, KfcError::kNone, 0);
     } else {
