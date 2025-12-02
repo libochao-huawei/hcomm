@@ -3,7 +3,7 @@ if(BUILD_OPEN_PROJECT)
     set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
 else()
     set(CRYP_DIR ${TOP_DIR}/hccl/src/platform/hccp/crypt)
-    set(TLV_DIR ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/tlv)
+    set(TLV_DIR ${TOP_DIR}/hcomm/src/platform/hccp/rdma_service/tlv)
 endif()
 
 set(rs_list
@@ -75,13 +75,13 @@ if(BUILD_OPEN_PROJECT)
 else()
     #头文件搜索路径
     target_include_directories(rs PRIVATE
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/network
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/private/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/private/network
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/hccl/src/platform/hccp/common
+        ${TOP_DIR}/hcomm/src/platform/hccp/common
         ${TOP_DIR}/hccl/src/platform/hccp/crypt/inc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/rdma-core/providers/hns
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_service/
+        ${TOP_DIR}/hcomm/src/platform/hccp/external_depends/rdma-core/providers/hns
     )
 endif()
 
