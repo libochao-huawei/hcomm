@@ -213,6 +213,7 @@ RS_ATTRI_VISI_DEF int RsPingHandleInit(unsigned int chipId, int hdcType, unsigne
         rsCb->pingCb.threadStatus = RS_PING_THREAD_RESET;
         (void)pthread_mutex_destroy(&rsCb->pingCb.pingMutex);
         (void)pthread_mutex_destroy(&rsCb->pingCb.pongMutex);
+        (void)pthread_mutex_destroy(&rsCb->pingCb.devMutex);
         return -ESYSFUNC;
     }
 

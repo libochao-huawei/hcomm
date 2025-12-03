@@ -27,12 +27,16 @@
 
 namespace hccl {
 
+constexpr unsigned int NSLBDP_ILLEGAL_TLVBUFFERSIZE = 0;
+constexpr unsigned int NSLBDP_ILLEGAL_MSGLENGTH = 0;
 constexpr unsigned int NSLBDP_TYPE_TBL_COMM_INFO = 1001;
 constexpr unsigned int NSLBDP_TYPE_TBL_OPER = 1002;
 constexpr unsigned int NSLBDP_TYPE_TBL_ADJ = 1003;
 constexpr unsigned int NSLBDP_TYPE_TBL_RANK = 1004;
 constexpr unsigned int NSLBDP_TYPE_TBL_RANK_DIST = 1005;
 constexpr unsigned int NSLBDP_TYPE_TBL_ROOT_RANK = 1006;
+constexpr unsigned int NSLBDP_TYPE_INIT_NETCO = 9001;
+constexpr unsigned int NSLBDP_TYPE_DEINIT_NETCO = 9002;
 
 constexpr u32 NSLBDP_RANKTOTALNUM_BLOCK_FIR = 1024; 
 constexpr u32 NSLBDP_RANKTOTALNUM_BLOCK_SEC = 2 * 1024; 
@@ -148,8 +152,8 @@ public:
     NslbDpCommConfigVal GetNslbDpCommConfig();
     HcclResult HcclSetGlobalRankTotalNum(u32 nRanks);
 
-    bool getHccpInitFlag();
-    HcclResult clearnHccpInitFlag();
+    bool GetInitNetCoFlag();
+    HcclResult ClearInitNetCoFlag();
     void InitCmmDesc(std::string &identifier_nslb);
     std::string GetCmmDesc();
     void SetDeviceType();
@@ -160,7 +164,7 @@ public:
     bool GetDeviceType();
     u64 GetGlobalCommTaskId();
     u32 GetGlobalCommNodeId();
-    u32 getBufferSize();
+    u32 GetTlvInitBufferSize();
     u8  GetGlobalCommLocalRankNum();
     u8  GetNslbOpType(HcclCMDType opType);
     u8  GetNslbLevel1AlgType(AlgTypeLevel1 algValue);
@@ -194,7 +198,7 @@ public:
     std::vector<uint8_t> serializeTLV_TableFir(NslbDpCommConfigInfo cominfo);
     HcclResult SendTableProc(u32 rank, u32 packetNum, NslbDpCommConfigVal cominfo);
     HcclResult SendTableFir(uint32_t rank);
-    HcclResult setHccpInfo(u32 buffer_size, void* tlv_handle);
+    HcclResult SetH2DTlvInitInfo(u32 buffer_size, void* tlv_handle);
     u32 ipToUint32(const std::string& ipAddress);
     HcclResult SendOpAndAdjTable();
     HcclResult SendRankTableOpAndAdj(NslbDpOperatorInfo &tab_f);
@@ -212,8 +216,10 @@ public:
     HcclResult SendRootRankTable();
     HcclResult SendRankTableRootRank(NslbDpRootRank &tab_f);
     std::vector<uint8_t> serializeTLV_TableRootRank(NslbDpRootRank &config);
+    HcclResult InitNetCo();
+    void DeinitNetCo();
     bool check910_93_ = false;
-    bool nslbdpIsInitHccp_ = false;
+    std::atomic<bool>nslbdpIsInitNetCo_ = {false};
     void* nslbdp_handle_;
     unsigned int nslbdp_buffsize_;
     std::string nslbdp_identifier_;

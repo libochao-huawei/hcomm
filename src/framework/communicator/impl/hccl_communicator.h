@@ -124,7 +124,7 @@ public:
         WorldGroupInfo &globalData);
 
     virtual HcclResult GetAlgType(AlgType &algType, HcclCMDType opType);
-    virtual HcclResult InitHccp();
+    virtual HcclResult InitHccpChannel();
     virtual std::vector<RankInfo> GetRankLists();
 
     virtual HcclResult GetDeviceNumPerAggregation(u32 &deviceNumPerAggregation);

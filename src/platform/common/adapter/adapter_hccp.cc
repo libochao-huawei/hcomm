@@ -2622,7 +2622,7 @@ HcclResult hrtRaGetSocketVnicIpInfos(u32 phyId, enum IdType type, vector<u32> de
     return HCCL_SUCCESS;
 }
 
-HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size, void **tlv_handle)
+HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t *buffer_size, void **tlv_handle)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2632,13 +2632,13 @@ HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uin
         return HCCL_E_NOT_SUPPORT;
     }
  
-    s32 ret = DlRaFunction::GetInstance().dlH2DTlvInit(init_info, tlv_handle_id, buffer_size, tlv_handle);
+    s32 ret = DlRaFunction::GetInstance().dlH2DTlvInit(init_info, buffer_size, tlv_handle);
     CHK_PRT_RET(ret != 0, HCCL_WARNING("[H2DTlvInit]errNo[0x%016llx] dlH2DTlvInit fail. "
             "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
  
-HcclResult H2DTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
+HcclResult H2DTlvRequest(void *tlv_handle, unsigned int module_type, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2653,13 +2653,13 @@ HcclResult H2DTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMs
         return HCCL_E_NOT_SUPPORT;
     }
  
-    s32 ret = DlRaFunction::GetInstance().dlH2DTlvRequest(tlv_handle, send_msg, recv_msg);
-    CHK_PRT_RET(ret != 0, HCCL_WARNING("[H2DTlvRequest]errNo[0x%016llx] dlH2DTlvRequest fail. "
-            "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    s32 ret = DlRaFunction::GetInstance().dlH2DTlvRequest(tlv_handle, module_type, send_msg, recv_msg);
+    CHK_PRT_RET(ret != 0, HCCL_WARNING("[H2DTlvRequest]errNo[0x%016llx] dlH2DTlvRequest fail. module_type[%u]"
+            "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), module_type, ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
  
-HcclResult H2DTlvDeinit(void **tlv_handle)
+HcclResult H2DTlvDeinit(void *tlv_handle)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0

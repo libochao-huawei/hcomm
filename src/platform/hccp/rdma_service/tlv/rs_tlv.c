@@ -12,11 +12,12 @@
 #include "securec.h"
 #include "hccp_tlv.h"
 #include "ra_rs_err.h"
+#include "ra_rs_comm.h"
 #include "rs_adp_nslb.h"
 #include "rs_inner.h"
 #include "rs_tlv.h"
 
-STATIC int RsGetNslbCb(uint32_t phyId, struct RsNslbCb **nslbCb)
+STATIC int RsGetTlvCb(uint32_t phyId, struct RsTlvCb **tlvCb)
 {
     struct rs_cb *rsCb = NULL;
     int ret;
@@ -24,70 +25,62 @@ STATIC int RsGetNslbCb(uint32_t phyId, struct RsNslbCb **nslbCb)
     ret = RsGetRsCb(phyId, &rsCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId(%u) invalid, ret(%d)", phyId, ret), ret);
 
-    *nslbCb = &rsCb->nslbCb;
+    *tlvCb = &rsCb->tlvCb;
     return 0;
 }
 
-STATIC int RsNslbInit(unsigned int phyId, unsigned int *bufferSize)
+RS_ATTRI_VISI_DEF int RsTlvInit(unsigned int phyId, unsigned int *bufferSize)
 {
-    struct RsNslbCb *nslbCb = NULL;
+    struct RsTlvCb *tlvCb = NULL;
     struct rs_cb *rsCb = NULL;
     int ret = 0;
 
+    CHK_PRT_RETURN(bufferSize == NULL, hccp_err("param error, buffer_size is NULL"), -EINVAL);
+
     ret = RsGetRsCb(phyId, &rsCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId(%u) invalid, ret(%d)", phyId, ret), ret);
-    nslbCb = &rsCb->nslbCb;
-    CHK_PRT_RETURN(nslbCb->netcoInitFlag, hccp_err("rs_nslb init repeat, phyId(%u)", phyId), -EINVAL);
+    tlvCb = &rsCb->tlvCb;
+    CHK_PRT_RETURN(tlvCb->initFlag, hccp_err("rs_tlv init repeat, phyId(%u)", phyId), -EINVAL);
 
-    nslbCb->rscb = rsCb;
-    nslbCb->phyId = phyId;
-    ret = pthread_mutex_init(&nslbCb->mutex, NULL);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_nslb mutex_init failed ret(%d)", ret), -ESYSFUNC);
+    tlvCb->phyId = phyId;
+    ret = pthread_mutex_init(&tlvCb->mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_tlv mutex_init failed ret(%d)", ret), -ESYSFUNC);
 
-    nslbCb->bufInfo.buf = (char *)calloc(RS_NSLB_BUFFER_SIZE, sizeof(char));
-    if (nslbCb->bufInfo.buf == NULL) {
-        hccp_err("rs_nslb calloc buf failed errno(%d)", errno);
-        (void)pthread_mutex_destroy(&nslbCb->mutex);
+    tlvCb->bufInfo.buf = (char *)calloc(RS_TLV_BUFFER_SIZE, sizeof(char));
+    if (tlvCb->bufInfo.buf == NULL) {
+        hccp_err("rs_tlv calloc buf failed errno(%d)", errno);
+        (void)pthread_mutex_destroy(&tlvCb->mutex);
         return -ENOMEM;
     }
 
-    ret = RsNslbNetcoInit(nslbCb);
-    if (ret == -ENOTSUPP) {
-        hccp_warn("rs_nslb_init unsuccessful, ret(%d) phyId(%u)", ret, phyId);
-        goto nslb_init_error;
-    } else if (ret != 0) {
-        hccp_err("rs_nslb_init failed, ret(%d) phyId(%u)", ret, phyId);
-        goto nslb_init_error;
-    }
-    nslbCb->bufInfo.bufferSize = RS_NSLB_BUFFER_SIZE;
-    *bufferSize = RS_NSLB_BUFFER_SIZE;
-    return 0;
+    tlvCb->initFlag = true;
+    tlvCb->bufInfo.bufferSize = RS_TLV_BUFFER_SIZE;
+    *bufferSize = RS_TLV_BUFFER_SIZE;
 
-nslb_init_error:
-    free(nslbCb->bufInfo.buf);
-    nslbCb->bufInfo.buf = NULL;
-    pthread_mutex_destroy(&nslbCb->mutex);
+    hccp_run_info("rs_tlv_init successful, phyId(%u) bufferSize(%u)", phyId, *bufferSize);
+
     return ret;
 }
 
-STATIC int RsNslbDeinit(unsigned int phyId)
+RS_ATTRI_VISI_DEF int RsTlvDeinit(unsigned int phyId)
 {
-    struct RsNslbCb *nslbCb = NULL;
+    struct RsTlvCb *tlvCb = NULL;
     int ret = 0;
 
-    ret = RsGetNslbCb(phyId, &nslbCb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_nslb_cb failed, ret(%d) phyId(%u)", ret, phyId), ret);
+    ret = RsGetTlvCb(phyId, &tlvCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_tlv_cb failed, ret(%d) phyId(%u)", ret, phyId), ret);
 
-    CHK_PRT_RETURN(!nslbCb->netcoInitFlag,
-        hccp_warn("rs_nslb not init or already deinit, phyId(%u)", phyId), 0);
+    CHK_PRT_RETURN(!tlvCb->initFlag,
+        hccp_warn("rs_tlv not init or already deinit, phyId(%u)", phyId), 0);
 
-    RS_PTHREAD_MUTEX_LOCK(&nslbCb->mutex);
-    RsNslbNetcoDeinit(nslbCb);
-    free(nslbCb->bufInfo.buf);
-    nslbCb->bufInfo.buf = NULL;
-    RS_PTHREAD_MUTEX_ULOCK(&nslbCb->mutex);
-    pthread_mutex_destroy(&nslbCb->mutex);
-    return 0;
+    RS_PTHREAD_MUTEX_LOCK(&tlvCb->mutex);
+    free(tlvCb->bufInfo.buf);
+    tlvCb->bufInfo.buf = NULL;
+    RS_PTHREAD_MUTEX_ULOCK(&tlvCb->mutex);
+    pthread_mutex_destroy(&tlvCb->mutex);
+
+    hccp_run_info("rs_tlv_deinit successful, phyId(%u)", phyId);
+    return ret;
 }
 
 STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMsgHead *head, char *data,
@@ -95,9 +88,13 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
 {
     int ret = 0;
 
+    *isSendFinish = false;
     CHK_PRT_RETURN(head->offset >= bufInfo->bufferSize,
-        hccp_err("[recv][rs_tlv]param error, offset >= bufferSize(%u), phyId(%u)",
+        hccp_err("[recv][rs_tlv]param error, offset(%u) >= bufferSize(%u), phyId(%u)",
         head->offset, bufInfo->bufferSize, head->phyId), -EINVAL);
+    CHK_PRT_RETURN(head->sendBytes > MAX_TLV_MSG_DATA_LEN,
+        hccp_err("[recv][rs_tlv]param error, sendBytes(%u) >= data size(%u), phyId(%u)",
+        head->sendBytes, MAX_TLV_MSG_DATA_LEN, head->phyId), -EINVAL);
     CHK_PRT_RETURN((head->offset + head->sendBytes) > head->totalBytes,
         hccp_err("[recv][rs_tlv]data overflow, offset(%u) + sendBytes(%u) > totalBytes(%u), phyId(%u)",
         head->offset, head->sendBytes, head->totalBytes, head->phyId), -EINVAL);
@@ -117,81 +114,34 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
     return 0;
 }
 
-STATIC int RsNslbRequest(struct TlvRequestMsgHead *head, char *data)
-{
-    struct RsNslbCb *nslbCb = NULL;
-    bool isSendFinish = false;
-    unsigned int recvLen = 0;
-    int ret = 0;
-
-    ret = RsGetNslbCb(head->phyId, &nslbCb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_nslb_cb failed, ret(%d) phyId(%u)", ret, head->phyId), ret);
-    CHK_PRT_RETURN(nslbCb->bufInfo.buf == NULL,
-        hccp_err("rs_nslb buf not initialized, phyId(%u)", head->phyId), -EINVAL);
-
-    RS_PTHREAD_MUTEX_LOCK(&nslbCb->mutex);
-    ret = RsTlvAssembleSendData(&nslbCb->bufInfo, head, data, &isSendFinish);
-    if (ret != 0) {
-        hccp_err("rs_tlv_assemble_send_data failed, ret(%d) phyId(%u)", ret, nslbCb->phyId);
-        goto nslb_request_release_lock;
-    }
-
-    if (!isSendFinish) {
-        goto nslb_request_release_lock;
-    }
-
-    recvLen = head->totalBytes;
-    ret = RsNslbNetcoRequest(nslbCb, head->type, nslbCb->bufInfo.buf, recvLen);
-nslb_request_release_lock:
-    RS_PTHREAD_MUTEX_ULOCK(&nslbCb->mutex);
-    return ret;
-}
-
-RS_ATTRI_VISI_DEF int RsTlvInit(unsigned int moduleType, unsigned int phyId, unsigned int *bufferSize)
-{
-    int ret = 0;
-
-    CHK_PRT_RETURN(bufferSize == NULL, hccp_err("param error, bufferSize is NULL"), -EINVAL);
-
-    switch(moduleType) {
-        case TLV_MODULE_TYPE_NSLB:
-            ret = RsNslbInit(phyId, bufferSize);
-            break;
-        default:
-            hccp_err("[init][rs_tlv]module type error, moduleType(%u) phyId(%u)", moduleType, phyId);
-            ret = -EINVAL;
-            break;
-    }
-
-    return ret;
-}
-
-RS_ATTRI_VISI_DEF int RsTlvDeinit(unsigned int moduleType, unsigned int phyId)
-{
-    int ret = 0;
-
-    switch(moduleType) {
-        case TLV_MODULE_TYPE_NSLB:
-            ret = RsNslbDeinit(phyId);
-            break;
-        default:
-            hccp_err("[deinit][rs_tlv]module type error, moduleType(%u) phyId(%u)", moduleType, phyId);
-            ret = -EINVAL;
-            break;
-    }
-
-    return ret;
-}
-
 RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
 {
+    struct RsTlvCb *tlvCb = NULL;
+    bool isSendFinish = false;
     int ret = 0;
 
     CHK_PRT_RETURN(head == NULL || data == NULL, hccp_err("param error, head or data is NULL"), -EINVAL);
 
+    ret = RsGetTlvCb(head->phyId, &tlvCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_tlv_cb failed, ret(%d) phyId(%u)", ret, head->phyId), ret);
+    CHK_PRT_RETURN(tlvCb->bufInfo.buf == NULL,
+        hccp_err("rs_tlv buf not initialized, phyId(%u)", head->phyId), -EINVAL);
+
+    RS_PTHREAD_MUTEX_LOCK(&tlvCb->mutex);
+    ret = RsTlvAssembleSendData(&tlvCb->bufInfo, head, data, &isSendFinish);
+    if (ret != 0) {
+        hccp_err("rs_tlv_assemble_send_data failed, ret(%d) phyId(%u)", ret, tlvCb->phyId);
+        goto tlv_request_release_lock;
+    }
+
+    if (!isSendFinish) {
+        goto tlv_request_release_lock;
+    }
+
     switch(head->moduleType) {
         case TLV_MODULE_TYPE_NSLB:
-            ret = RsNslbRequest(head, data);
+            ret = RsNslbNetcoRequest(head->phyId, &tlvCb->nslbCb,
+                    head->type, tlvCb->bufInfo.buf, head->totalBytes);
             break;
         default:
             hccp_err("[request][rs_tlv]module type error, moduleType(%u) phyId(%u)", head->moduleType, head->phyId);
@@ -199,5 +149,7 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
             break;
     }
 
+tlv_request_release_lock:
+    RS_PTHREAD_MUTEX_ULOCK(&tlvCb->mutex);
     return ret;
 }

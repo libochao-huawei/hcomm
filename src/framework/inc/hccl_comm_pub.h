@@ -339,7 +339,7 @@ public:
     HcclResult GetBlockDim(u32& blockDim);
     HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup);
-    HcclResult InitHccp();
+    HcclResult InitHccpChannel();
     std::vector<RankInfo> GetRankLists();
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
