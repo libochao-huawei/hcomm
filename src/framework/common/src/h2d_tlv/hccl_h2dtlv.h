@@ -36,7 +36,7 @@ public:
     void* GetH2dTlvHandle();
 private:
     std::atomic<bool>hcclH2dTlvInitFlag_ = {false};
-    void* hcclH2dTlvHandle_;
+    void* hcclH2dTlvHandle_ = nullptr;
     unsigned int hcclH2dTlvBuffsize_ = 0;
 };
 
