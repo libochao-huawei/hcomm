@@ -26,6 +26,9 @@
 #include "aicpu_init_param.h"
 
 namespace hccl {
+constexpr int32_t  HCCL_COMM_ENGINE_CONFIG_NOT_SET = -1;
+constexpr uint32_t HCCL_COMM_THREADNUM_CONFIG_NOT_SET = 0xffffffff;
+constexpr uint32_t HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET = 0xffffffff;
 
 class IndependentOp {
 public:

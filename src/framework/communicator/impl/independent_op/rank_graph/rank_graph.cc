@@ -27,6 +27,7 @@ HcclResult RankGraph::DevTypeToCommProtocol(DevType type, CommProtocol &protocol
     switch (type) {
         case DevType::DEV_TYPE_910B:
         case DevType::DEV_TYPE_910_93:
+        case DevType::DEV_TYPE_910:
             protocol = CommProtocol::COMM_PROTOCOL_ROCE;
             break;
         case DevType::DEV_TYPE_310P1:
@@ -36,9 +37,9 @@ HcclResult RankGraph::DevTypeToCommProtocol(DevType type, CommProtocol &protocol
         case DevType::DEV_TYPE_NOSOC:
             protocol = CommProtocol::COMM_PROTOCOL_TCP;
             break;
-        // 暂不支持DEV_TYPE_910 DEV_TYPE_910_95 
-        case DevType::DEV_TYPE_910:
         case DevType::DEV_TYPE_910_95:
+            protocol = CommProtocol::COMM_PROTOCOL_UB_CTP;
+            break;
         default:
             HCCL_ERROR("[RankGraph] Unknown comm devType: %d", type);
             return HCCL_E_PARA;

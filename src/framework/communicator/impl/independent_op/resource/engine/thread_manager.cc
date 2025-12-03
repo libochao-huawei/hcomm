@@ -12,6 +12,7 @@
 #include <cstring>
 #include "aicpu_launch_manager.h"
 #include "aicpu_operator_pub.h"
+#include "independent_op.h"
 
 namespace hccl {
 

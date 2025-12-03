@@ -135,10 +135,6 @@ const uint32_t HCCL_COMM_DEFAULT_OP_EXPANSION_MODE = 0;
 const uint32_t HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET = 0xffffffff;
 const int32_t HCCL_COMM_EXECTIMEOUT_CONFIG_NOT_SET = 0xffffffff;
-const int32_t  HCCL_COMM_ENGINE_CONFIG_NOT_SET = -1;
-const uint32_t HCCL_COMM_THREADNUM_CONFIG_NOT_SET = 0xffffffff;
-const uint32_t HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET = 0xffffffff;
-const uint32_t HCCL_COMM_CNT_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET = 0xffffffff;
 
 typedef struct HcclCommConfigDef {
     char reserved[HCCL_COMM_CONFIG_INFO_BYTES];
@@ -151,9 +147,6 @@ typedef struct HcclCommConfigDef {
     uint32_t hcclRdmaServiceLevel;
     uint32_t hcclWorldRankID;
     uint64_t hcclJobID;
-    int32_t commEngine;             ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
-    uint32_t threadNum;             ///< thread数量（新增）
-    uint32_t notifyNumPerThread;    ///< 每个thread的notify数量（新增）
     uint8_t aclGraphZeroCopyEnable; ///< 只有Reduce类算子(单算子和AclGraph下算法选择不一致)受此配置影响 0:默认值，关闭aclgraph零拷贝(结果与单算子一致优先) 1:开启aclgraph零拷贝(性能优先) 
     int32_t hcclExecTimeOut; // hccl执行超时时间
     char hcclAlgo[HCCL_COMM_ALGO_MAX_LENGTH];
