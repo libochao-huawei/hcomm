@@ -2106,13 +2106,13 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &tag)
+    HcclResult HcclCommunicator::AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &newTag)
     {
         if (Is310PDevice() || deviceType_ == DevType::DEV_TYPE_310P3 ||
             GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
             return HCCL_SUCCESS;
         }
-        return Heartbeat::GetInstance(deviceLogicId_).AddOpInfoToHeartBeat(identifier_, opInfo, tag);
+        return Heartbeat::GetInstance(deviceLogicId_).AddOpInfoToHeartBeat(identifier_, opInfo, newTag);
     }
 
     void HcclCommunicator::DeleteOpInfoToHeartBeat()
@@ -2180,12 +2180,6 @@ namespace hccl
     HcclResult HcclCommunicator::GetCqeError(HcclResult &result)
     {
         CHK_RET(Heartbeat::GetInstance(deviceLogicId_).CheckErrorCqe(identifier_, result));
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::GetOpInconsistentError(HcclResult &result)
-    {
-        CHK_RET(Heartbeat::GetInstance(deviceLogicId_).CheckOpInconsistentError(identifier_, result));
         return HCCL_SUCCESS;
     }
 
@@ -5415,7 +5409,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::RegisterDfxInfo(const OpParam &param, AlgType algType,
-                                                 const std::vector<Stream> &slaveStreams, bool isAiv, const std::string &tag)
+                                                 const std::vector<Stream> &slaveStreams, bool isAiv, const std::string &newTag)
     {
         u64 count = 0;
         HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
@@ -5441,7 +5435,7 @@ namespace hccl
             dataType = param.GetDataType();
         }
 
-        if (param.opType != HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
+        if (param.opType == HcclCMDType::HCCL_CMD_SEND || param.opType == HcclCMDType::HCCL_CMD_RECEIVE){ 
             OpInfoDesc opInfo;
             opInfo.opType = param.opType;
             opInfo.dataType = dataType;
@@ -5449,7 +5443,8 @@ namespace hccl
             opInfo.count = count;
             opInfo.root = param.root;
             opInfo.isValid = true;
-            AddOpInfoToHeartBeat(opInfo, tag);
+            memcpy_s(opInfo.identifier, newTag.length() + 1, newTag.c_str(), newTag.length() + 1);
+            AddOpInfoToHeartBeat(opInfo, newTag);
         }
 
         // task exception使用: 算子计数，算子入参信息(src/dst/datatype/reducetype)
