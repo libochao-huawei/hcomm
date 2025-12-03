@@ -53,7 +53,6 @@ HcclResult hcclH2dTlv::InitHccpChannel(u32 devicePhyId)
 
     HcclResult ret = H2DTlvInit(reinterpret_cast<TlvInitInfo *>(&nslbHccp), &tlvBuffersize, &tlvHandle);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("InitHccp channel failed ret:[%u].", ret);
         return ret;
     }
 
