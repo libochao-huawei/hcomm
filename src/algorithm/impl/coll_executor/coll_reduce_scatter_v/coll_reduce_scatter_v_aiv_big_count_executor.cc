@@ -156,8 +156,6 @@ HcclResult CollReduceScatterVAIVBigCountExecutor::KernelRun(const OpParam &param
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[CollReduceScatterVAIVBigCountExecutor][KernelRun]"
         "ReduceScatterV aiv failed, return[%d]", ret), ret);
 
-    CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
-
     HCCL_INFO("[CollReduceScatterVAIVBigCountExecutor][KernelRun]ReduceScatterV aiv run success.");
 
     return HCCL_SUCCESS;
