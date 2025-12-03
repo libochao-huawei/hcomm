@@ -456,7 +456,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
                 HCCL_ERROR_CODE(ret)), errorFlag = true);
         ret = opBaseHcom.pComm->InitHccpChannel();
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("HCCL try InitHccpChannel failed.");
+            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret);
         }
     } while (0);
 
@@ -1253,7 +1253,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
 
         ret = pComm->InitHccpChannel();
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("HCCL try InitHccpChannel failed.");
+            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret);
         }
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0) {
             DevType nslb_devType;
