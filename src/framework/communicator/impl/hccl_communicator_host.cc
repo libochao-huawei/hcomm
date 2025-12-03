@@ -7972,6 +7972,7 @@ namespace hccl
             netLayer_[0] =static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
             *netLayerNum = 1;
         }
+        *netLayers = netLayer_;
         return HCCL_SUCCESS;
     }
 
