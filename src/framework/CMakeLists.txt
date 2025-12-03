@@ -32,6 +32,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
     ${HCCL_BASE_DIR}/pub_inc/hccl
+    ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template
     ${HCCL_BASE_DIR}/algorithm/base/mc2_handler
@@ -99,6 +100,8 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+        ${HCCL_BASE_DIR}/platform/legacy/inc
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
 
         ${THIRD_PARTY_NLOHMANN_PATH}
 
@@ -646,6 +649,7 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/inner
         ${HCCL_BASE_DIR}/pub_inc/aicpu
+        ${HCCL_BASE_DIR}/pub_inc/new
 
         ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
 
@@ -677,6 +681,7 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/resource/transport/host/
         ${HCCL_BASE_DIR}/platform/resource/transport/
         ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
@@ -768,6 +773,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/platform/resource/transport/host/
         ${HCCL_BASE_DIR}/platform/resource/transport/
         ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique

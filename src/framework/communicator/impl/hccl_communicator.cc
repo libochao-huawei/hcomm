@@ -39,6 +39,7 @@
 #include "mmpa_api.h"
 #include "config_log.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "dispatcher_ctx.h"
 using namespace std;
 
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -296,11 +297,6 @@ namespace hccl
             // 不满足ffts+特性开启条件。
             SetFftsSwitch(false);
         }
-        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
-        CHK_SMART_PTR_NULL(dispatcher_);
-        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
-        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_));
-        CHK_PTR_NULL(dispatcherCtx_);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
@@ -329,6 +325,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitTransportManager()
     {
+        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
+        CHK_SMART_PTR_NULL(dispatcher_);
+        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
         std::vector<u32> &nicRanksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
         transportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
@@ -341,6 +340,23 @@ namespace hccl
         CHK_SMART_PTR_NULL(transportManager_);
         (void)transportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
         (void)transportManager_->SetIsStandardCard(isStandardCard_);
+
+        if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
+            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
+        }
+        CHK_PTR_NULL(dispatcherCtx_);
+        DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+        CHK_PTR_NULL(ctx);
+        indptOpTransportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
+            cclBufferManager_, socketManager_, ctx->GetDispatcher(), notifyPool_,
+            rankInfoList_, userRank_, identifier_,
+            deviceLogicId_, nicDeployment_, isHaveCpuRank_,
+            static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
+            isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
+            devIpAddr_, hostIp_, localVnicIp_, netDevCtxMap_)));
+        CHK_SMART_PTR_NULL(indptOpTransportManager_);
+        (void)indptOpTransportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
+        (void)indptOpTransportManager_->SetIsStandardCard(isStandardCard_);
         return HCCL_SUCCESS;
     }
 
@@ -1097,6 +1113,10 @@ namespace hccl
         if (transportManager_ != nullptr)
         {
             CHK_RET(transportManager_->SetStopFlag(value));
+        }
+
+        if (indptOpTransportManager_ != nullptr) {
+            CHK_RET(indptOpTransportManager_->SetStopFlag(value));
         }
 
         for (auto &entry : resMap_)

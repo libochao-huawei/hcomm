@@ -26,7 +26,7 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     notifyNumPerThread_ = commConfig.GetNotifyNumPerThread();
     cclBufferSize_ = commConfig.GetConfigBufferSize();
     commId_ = commConfig.GetConfigCommName();
-    commMemMgr_.CommSetHcclBufferSize(commConfig.GetConfigBufferSize());
+    commMemMgr_.CommSetHcclBufferSize(commConfig.GetConfigBufferSize() * 2);
     binHandle_ = binHandle;
 
     // aicpu侧初始化状态的回调函数

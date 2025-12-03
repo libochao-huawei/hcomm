@@ -122,7 +122,7 @@ void LocalCopyFfts(ThreadHandle thread) {
 
     ret = HcommLocalCopyOnThread(thread, &userInputMem, &cclInputMem, 1);
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
