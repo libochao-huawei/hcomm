@@ -1442,11 +1442,6 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
- 
-    HcclResult HcclCommunicator::GetOpInconsistentError(HcclResult &result)
-    {
-        return HCCL_SUCCESS;
-    }
 
     HcclTopoAttr HcclCommunicator::GetTopoAttr() 
     {
