@@ -15,7 +15,6 @@
 #include <mutex>
 #include <dlfcn.h>
 #include <hccl/hccl_types.h>
-#include "aprof_pub.h"
 #include "prof_common.h"
 #include "hccl/base.h"
 

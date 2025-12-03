@@ -10,7 +10,6 @@
 
 #include "profiling_manager_device.h"
 #include "aicpu_schedule/aicpu_context.h"
-#include "aprof_pub.h"
 #include "prof_common.h"
 #include "log.h"
 #include "sal_pub.h"
