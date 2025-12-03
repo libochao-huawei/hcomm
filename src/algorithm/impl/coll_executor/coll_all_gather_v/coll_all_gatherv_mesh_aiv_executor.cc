@@ -141,8 +141,6 @@ HcclResult AllGatherVMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &e
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AllGatherVMeshAivExecutor][KernelRun]AllGatherV aiv failed, return[%d]", ret), ret);
 
-    CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
-
     HCCL_INFO("[AllGatherVMeshAivExecutor][KernelRun]AllGatherV aiv run success.");
     return HCCL_SUCCESS;
 }
