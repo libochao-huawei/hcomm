@@ -99,7 +99,7 @@
  * the compiler that it must exist even if it (seems) unused.
  *
  * Example:
- *	// Even if this is unused, these are vital for debugging.
+ *	// Even if this is unused, these are vital for debug.
  *	static NEEDED int counter;
  *	static NEEDED void dump_counter(void)
  *	{
