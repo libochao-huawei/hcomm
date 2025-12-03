@@ -38,6 +38,7 @@
 #include "stream_utils.h"
 #include "config_log.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "hccl_one_sided_service.h"
 #include "launch_device.h"
 #include "hccl_communicator.h"
@@ -265,7 +266,7 @@ namespace hccl
             dispatcher_ = nullptr;
         }
         if (dispatcherCtx_ != nullptr) {
-            DestoryDispatcherCtx(dispatcherCtx_);
+            DestroyDispatcherCtx(dispatcherCtx_, identifier_.c_str());
             dispatcherCtx_ = nullptr;
         }
         if (vDispatcher_ != nullptr) {
@@ -875,42 +876,9 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::InitHccp()
+    HcclResult HcclCommunicator::InitHccpChannel()
     {
-        /* NSLB 填充  */
-        if (hcclNslbDp::GetInstance().getHccpInitFlag() == true) {
-            HCCL_INFO("hcclNslbDp getHccpInitFlag is init");
-            return HCCL_SUCCESS;
-        }
-
-        u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
-        nslb_inithccp_info nslb_hccp;
-        nslb_hccp.version = NSLBDP_HCCP_VERSION;
-        nslb_hccp.phyId = devicePhyID;
-        nslb_hccp.nic_posion = NSLBDP_HCCP_NICPOSION;
-
-        u32 nslb_buffersize = 0;
-        void *tlv_handle;
-        HCCL_INFO("H2DTlvInit HCCL nslb InitHccp version:[%u]-phyId:[%u]-nic_posion:[%u] .",
-            nslb_hccp.version, nslb_hccp.phyId, nslb_hccp.nic_posion);
-
-        HcclResult ret = H2DTlvInit(reinterpret_cast<TlvInitInfo *>(&nslb_hccp), MODULE_TYPE_NSLB, &nslb_buffersize, &tlv_handle);
-        if (ret != HCCL_SUCCESS) {
-            return ret;
-        }
-        if (nslb_buffersize == 0) {
-            HCCL_INFO("HCCL could not InitHccp nslb_hccp .nslb_buffersize:[%u].", nslb_buffersize);
-            return HCCL_E_NOT_SUPPORT;
-        }
-
-        hcclNslbDp::GetInstance().setHccpInfo(nslb_buffersize, tlv_handle);
-        if (tlv_handle == nullptr) {
-            HCCL_INFO("HCCL ndlbdp  InitHccp is null.");
-            return HCCL_E_NOT_SUPPORT;
-        }
-
-        HCCL_INFO("entry H2DTlvInit end");
-        return HCCL_SUCCESS;
+        return hcclH2dTlv::GetInstance().InitHccpChannel(devicePhyId_);
     }
 
     std::vector<RankInfo> HcclCommunicator::GetRankLists()
@@ -4134,7 +4102,7 @@ namespace hccl
             CHK_RET(algOperator->SetAivClearEnable(false));
             aivClearEnable_ = false;
         }
-        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().getHccpInitFlag() == true) {
+        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
             AdjInfo nslbAdjInfo = {};
             CHK_RET(algOperator->GetAdjInfo(algName, opParam, resMap_[newTag], nslbAdjInfo));
             NslbDp_CollectSendAdjTable(opType, opParam, algOperator->GetAlgType(), nslbAdjInfo);
@@ -4324,7 +4292,7 @@ namespace hccl
             }
         }
 
-        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().getHccpInitFlag() == true) {
+        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
             // 填充表2
             hcclNslbDp::GetInstance().GenerateOpAndAdjTable(opType, rootRank, srcLocalRankId, nslbAlg, nslb_identifier, count, rankSize);
             AdjInfo nslbAdjInfo = {};
@@ -7434,6 +7402,7 @@ namespace hccl
             HCCL_INFO("[%s]Set TC[%u] and SL[%u] for oneSidedService success.", __func__, trafficClass, serviceLevel);
         }
         transportManager_->SetQpQosAttr(trafficClass, serviceLevel);
+        indptOpTransportManager_->SetQpQosAttr(trafficClass, serviceLevel);
     }
 
     HcclResult HcclCommunicator::CheckExitWaitResumeState(bool &isChangedLink)
@@ -7942,9 +7911,9 @@ namespace hccl
         }
         
         StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
-        CHK_PTR_NULL(transportManager_);
+        CHK_PTR_NULL(indptOpTransportManager_);
         bool isIndOp = true;
-        HcclResult ret = transportManager_->Alloc(tag, transMem, opCommTransport, isAicpuModeEn, false, false,
+        HcclResult ret = indptOpTransportManager_->Alloc(tag, transMem, opCommTransport, isAicpuModeEn, false, false,
             HcclCMDType::HCCL_CMD_INVALID, false, isIndOp);
 
         if (ret != HCCL_SUCCESS) {
@@ -7998,6 +7967,7 @@ namespace hccl
             netLayer_[0] =static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
             *netLayerNum = 1;
         }
+        *netLayers = netLayer_;
         return HCCL_SUCCESS;
     }
 

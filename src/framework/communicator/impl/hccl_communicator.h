@@ -72,6 +72,7 @@ constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
 constexpr u32 RDMA_NOTIFY_MAX_NUM = 8192;
 constexpr u32 COMM_LAYER_NUM_MAX = 2;
+
 struct RemoteRes {
     u64 inbufferSize;
     u64 outbufferSize;
@@ -124,7 +125,7 @@ public:
         WorldGroupInfo &globalData);
 
     virtual HcclResult GetAlgType(AlgType &algType, HcclCMDType opType);
-    virtual HcclResult InitHccp();
+    virtual HcclResult InitHccpChannel();
     virtual std::vector<RankInfo> GetRankLists();
 
     virtual HcclResult GetDeviceNumPerAggregation(u32 &deviceNumPerAggregation);
@@ -897,6 +898,7 @@ private:
     std::unique_ptr<QueueNotifyManager> queueNotifyManagerRefac_ = { nullptr };
     std::unique_ptr<HcclSocketManager> socketManager_;
     std::unique_ptr<TransportManager> transportManager_ = { nullptr };
+    std::unique_ptr<TransportManager> indptOpTransportManager_ = { nullptr };
 
     std::unique_ptr<ZeroCopyMemoryAgent> zeroCopyMemoryAgent_ = { nullptr };
 

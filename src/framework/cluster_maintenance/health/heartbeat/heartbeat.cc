@@ -1174,6 +1174,7 @@ void Heartbeat::SetStatus(UIDType &crimer, UIDType &informer, HeartBeatStatus st
             FormatUId(informer).c_str());
     }
 }
+
 bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string& group)
 {
     bool ret = false;

@@ -1870,8 +1870,8 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     RsFreeHeterogTcpFdList(rscb);
 
 #ifdef CONFIG_TLV
-    if (rscb->nslbCb.netcoInitFlag) {
-        RsTlvDeinit(TLV_MODULE_TYPE_NSLB, rscb->nslbCb.phyId);
+    if (rscb->tlvCb.initFlag) {
+        RsTlvDeinit(rscb->tlvCb.phyId);
     }
 #endif
     pthread_mutex_destroy(&rscb->mutex);

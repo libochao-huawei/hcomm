@@ -164,6 +164,21 @@ bool AicpuKfcRpcServer::ReadValidMsg(T *rMsg, T *msg, uint8_t msgType, bool rese
     return true;
 }
 
+bool AicpuKfcRpcServer::CheckDebugMode(HcclMsg *rMsg)
+{
+    auto ctx = AicpuGetComContext();
+    if ((ctx->debugMode == MC2_DEBUG_PREPARE_TIMEOUT) &&
+        (rMsg->commType.msgType != ControlMsgType::HCCL_CMD_FINALIZE)) {
+        return false;
+    }
+
+    if ((ctx->debugMode == MC2_DEBUG_FINALIZE_TIMEOUT) &&
+        (rMsg->commType.msgType == ControlMsgType::HCCL_CMD_FINALIZE)) {
+        return false;
+    }
+    return true;
+}
+
 bool AicpuKfcRpcServer::ReadApiValidMsg(HcclMsg *rMsg, HcclMsg *msg, bool reset)
 {
 #ifdef __aarch64__
@@ -205,12 +220,8 @@ bool AicpuKfcRpcServer::ReadApiValidMsg(HcclMsg *rMsg, HcclMsg *msg, bool reset)
     if (reset) {
         msg->addMsg.v0Msg.valid = ~HCCL_MSG_VALID_MASK;
     }
-    auto ctx = AicpuGetComContext();
-    if ((ctx->debugMode == MC2_DEBUG_PREPARE_TIMEOUT) && (rMsg->commType.msgType != ControlMsgType::HCCL_CMD_FINALIZE)) {
-        return false;
-    }
 
-    if ((ctx->debugMode == MC2_DEBUG_FINALIZE_TIMEOUT) && (rMsg->commType.msgType == ControlMsgType::HCCL_CMD_FINALIZE)) {
+    if (!CheckDebugMode(rMsg)) {
         return false;
     }
 #ifdef __aarch64__

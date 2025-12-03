@@ -264,6 +264,11 @@ HcclResult CollScatterExecutor::Orchestrate(OpParam& param, AlgResourceResponse&
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollScatterExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
+
+    // Enforce task launch at the end of Orchestrate
+    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+
     HCCL_INFO("tag[%s] Scatter executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
