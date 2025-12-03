@@ -26,9 +26,6 @@ CommConfig::CommConfig(const std::string &commName)
       serviceLevel_(HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET),
       worldRankID_(0),
       jobID_(0),
-      commEngine_(HCCL_COMM_ENGINE_CONFIG_NOT_SET),
-      threadNum_(HCCL_COMM_THREADNUM_CONFIG_NOT_SET),
-      notifyNumPerThread_(HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET),
       aclGraphZeroCopyEnable_(0),
       onlyAivMode_(false),
       execTimeOut_(GetInternalExecTimeOut()),
@@ -116,9 +113,8 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
     HCCL_RUN_INFO("[Load] comm config info of [%s]: configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
         configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
-        ", commEngine[%u], threadNum[%u], notifyNumPerThread[%u],  execTimeOut[%u], bufferName[%s]",
-        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_,
-        commEngine_, threadNum_, notifyNumPerThread_, execTimeOut_, bufferName_.c_str());
+        ", execTimeOut[%u], bufferName[%s]",
+        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -175,9 +171,6 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
         // 版本大于等于5，支持配置TC，SL
         trafficClass_ = config.trafficClass;
         serviceLevel_ = config.serviceLevel;
-        commEngine_ = config.commEngine;
-        threadNum_ = config.threadNum;
-        notifyNumPerThread_ = config.notifyNumPerThread;
     }
 
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_SIX) {
@@ -185,7 +178,7 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
         worldRankID_ = config.worldRankID;
         jobID_ = config.jobID;
     }
- 
+
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_SEVEN) {
         // 版本大于等于7，支持配置AclGraph使能/去使能
         CHK_PRT_RET(config.aclGraphZeroCopyEnable > 1,
@@ -670,21 +663,6 @@ u32 CommConfig::GetConfigWorldRankID() const
 u64 CommConfig::GetConfigJobID() const
 {
     return jobID_;
-}
-
-int32_t CommConfig::GetCommEngine() const
-{
-    return commEngine_;
-}
-
-u32 CommConfig::GetThreadNum() const
-{
-    return threadNum_;
-}
-
-u32 CommConfig::GetNotifyNumPerThread() const
-{
-    return notifyNumPerThread_;
 }
 
 u8 CommConfig::GetConfigAclGraphZeroCopyEnable() const
