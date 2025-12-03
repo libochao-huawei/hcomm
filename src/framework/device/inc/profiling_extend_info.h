@@ -11,7 +11,6 @@
 #ifndef ASCEND_ACE_COMOP_HCCL_HCCL_AI_CPU_KERNEL_DFX_PROFILING_PROFILING_EXTEND_INFO_H_
 #define ASCEND_ACE_COMOP_HCCL_HCCL_AI_CPU_KERNEL_DFX_PROFILING_PROFILING_EXTEND_INFO_H_
 #include "hccl/base.h"
-#include "aprof_pub.h"
 #include "prof_common.h"
 class SqeInfo;
 class AicpuComContext;
