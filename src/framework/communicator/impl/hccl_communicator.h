@@ -230,8 +230,6 @@ public:
 
     virtual HcclResult GetCqeError(HcclResult &result);
 
-    virtual HcclResult GetOpInconsistentError(HcclResult &result);
-
     //  对内接口
     virtual HcclResult CheckDataType(const HcclDataType dataType, bool needReduce);
 
