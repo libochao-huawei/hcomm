@@ -37,15 +37,15 @@ using namespace hccl;
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen);
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum);
 
-class DispatcherAiCpu_ST : public testing::Test {
+class DispatcherAiCpu_UT : public testing::Test {
 protected:
     static void SetUpTestCase()
     {
-        std::cout << "DispatcherAiCpu_ST SetUP" << std::endl;
+        std::cout << "DispatcherAiCpu_UT SetUP" << std::endl;
     }
     static void TearDownTestCase()
     {
-        std::cout << "DispatcherAiCpu_ST TearDown" << std::endl;
+        std::cout << "DispatcherAiCpu_UT TearDown" << std::endl;
     }
     // Some expensive resource shared by all tests.
     virtual void SetUp()
@@ -79,10 +79,10 @@ protected:
     static u8 sq_addr[HCCL_SQE_SIZE * HCCL_SQE_MAX_CNT];
 };
 
-u8 DispatcherAiCpu_ST::sq_addr[HCCL_SQE_SIZE * HCCL_SQE_MAX_CNT] = {0};
+u8 DispatcherAiCpu_UT::sq_addr[HCCL_SQE_SIZE * HCCL_SQE_MAX_CNT] = {0};
 // 补充覆盖率
 #if 0
-TEST_F(DispatcherAiCpu_ST, st_DispatcherAiCpuLaunchTaskEx)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuLaunchTaskEx)
 {
     u32 streamNum = 7;
     Stream stream(streamInfo, true);
@@ -128,7 +128,7 @@ TEST_F(DispatcherAiCpu_ST, st_DispatcherAiCpuLaunchTaskEx)
 }
 #endif
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuSignalRecord)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuSignalRecord)
 {
     HcclSignalInfo notifyInfo;
     std::unique_ptr<QueueNotifyManager> queueNotifyManager = nullptr;
@@ -170,7 +170,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuSignalRecord)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuSignalWait)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuSignalWait)
 {
     HcclSignalInfo notifyInfo;
     std::unique_ptr<QueueNotifyManager> queueNotifyManager = nullptr;
@@ -212,7 +212,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuSignalWait)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuMemcpy)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuMemcpy)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;
@@ -230,7 +230,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuMemcpy)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuInlineReduceAsync)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuInlineReduceAsync)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;
@@ -248,7 +248,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuInlineReduceAsync)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuReduceAsync)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuReduceAsync)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;
@@ -269,7 +269,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuReduceAsync)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuTbeReduce_RdmaSend)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuTbeReduce_RdmaSend)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;
@@ -300,7 +300,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuTbeReduce_RdmaSend)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, st_DispatcherProfilingRdmaSend)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherProfilingRdmaSend)
 {
     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
     bool isL1On = dfx::ProfilingManager::IsProfL1On();
@@ -341,7 +341,7 @@ int32_t MsprofReportBatchAdditionalInfo(uint32_t agingFlag, const VOID_PTR data,
     return 0;
 }
 
-TEST_F(DispatcherAiCpu_ST, st_AdprofReportBatchAdditionalInfo)
+TEST_F(DispatcherAiCpu_UT, ut_AdprofReportBatchAdditionalInfo)
 {
     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
     bool isL1On = dfx::ProfilingManager::IsProfL1On();
@@ -371,7 +371,7 @@ TEST_F(DispatcherAiCpu_ST, st_AdprofReportBatchAdditionalInfo)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuGetPrivateMember)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuGetPrivateMember)
 {
     // TEST V2
     dispatcherAiCpu->aicpuInfo_.devType = DevType::DEV_TYPE_310P1;
@@ -396,7 +396,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuGetPrivateMember)
     EXPECT_EQ(HCCL_SUCCESS, ret);
 }
 
-TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuLaunchTask)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuLaunchTask)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 50;
@@ -414,7 +414,7 @@ TEST_F(DispatcherAiCpu_ST, ut_DispatcherAiCpuLaunchTask)
 }
 
 
-TEST_F(DispatcherAiCpu_ST, aicpu_prof_taskInfoReport)
+TEST_F(DispatcherAiCpu_UT, ut_aicpu_prof_taskInfoReport)
 {
     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
 
@@ -448,7 +448,7 @@ TEST_F(DispatcherAiCpu_ST, aicpu_prof_taskInfoReport)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(DispatcherAiCpu_ST, st_launchTask_rtsqfull)
+TEST_F(DispatcherAiCpu_UT, ut_launchTask_rtsqfull)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;
@@ -475,7 +475,7 @@ TEST_F(DispatcherAiCpu_ST, st_launchTask_rtsqfull)
     EXPECT_EQ(ret, HCCL_E_AGAIN);
 }
 
-TEST_F(DispatcherAiCpu_ST, st_DispatcherAiCpu_StreamSync)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpu_StreamSync)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;
@@ -504,7 +504,7 @@ TEST_F(DispatcherAiCpu_ST, st_DispatcherAiCpu_StreamSync)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(DispatcherAiCpu_ST, st_GetStreamSqeBufferAddr_2048)
+TEST_F(DispatcherAiCpu_UT, ut_GetStreamSqeBufferAddr_2048)
 {
     // sqe cnt != 0 && tailSqeIdx == 2048
     uint32_t sqHead = 0;
@@ -527,7 +527,7 @@ TEST_F(DispatcherAiCpu_ST, st_GetStreamSqeBufferAddr_2048)
     GlobalMockObject::verify();
 }
 
-TEST_F(DispatcherAiCpu_ST, st_aicpu_fine_granularity)
+TEST_F(DispatcherAiCpu_UT, ut_aicpu_fine_granularity)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 3;
@@ -549,7 +549,7 @@ TEST_F(DispatcherAiCpu_ST, st_aicpu_fine_granularity)
     EXPECT_EQ(HCCL_SUCCESS, ret);
 }
 
-TEST_F(DispatcherAiCpu_ST, st_DispatcherAiCpu_SignalRecord)
+TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpu_SignalRecord)
 {
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;

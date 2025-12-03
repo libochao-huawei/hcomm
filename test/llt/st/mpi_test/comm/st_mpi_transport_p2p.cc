@@ -1959,7 +1959,7 @@ TEST_F(MPI_Pcie_Test, st_data_plane_interface_p2p)
     notifyPool = nullptr;
     link = nullptr;
     if (ctx != nullptr) {
-        ret = DestoryDispatcherCtx(ctx);
+        ret = DestroyDispatcherCtx(ctx);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
     HcclNetCloseDev(portCtx);

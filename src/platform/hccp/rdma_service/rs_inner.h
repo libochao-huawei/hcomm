@@ -628,12 +628,17 @@ struct TlvBufInfo {
 };
 
 struct RsNslbCb {
-    struct rs_cb *rscb;
+    bool initFlag;
+    void *netcoCb;
+    pthread_mutex_t mutex;
+};
+
+struct RsTlvCb {
     unsigned int phyId;
     pthread_mutex_t mutex;
     struct TlvBufInfo bufInfo;
-    void *netcoCb;
-    bool netcoInitFlag;
+    bool initFlag;
+    struct RsNslbCb nslbCb;
 };
 
 /*
@@ -664,7 +669,7 @@ struct rs_cb {
 
     struct RsPingCtxCb pingCb;
 
-    struct RsNslbCb nslbCb;
+    struct RsTlvCb tlvCb;
 
     char buf[RS_BUF_SIZE];
     struct ProcessRsSign pRsSign;

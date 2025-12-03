@@ -37,6 +37,8 @@ class KfcCommandHandles {
 public:
     static void ClearFunc(AicpuComContext *const ctx);
     static void StopFunc(AicpuComContext *const ctx);
+private:
+    static void ClearCq(AicpuComContext *const ctx);
 };
 
 }

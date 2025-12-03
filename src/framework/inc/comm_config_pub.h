@@ -60,9 +60,6 @@ typedef struct CommConfigHandleDef {
     u32 serviceLevel;
     u32 worldRankID;
     u64 jobID;
-    int32_t commEngine;        ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
-    u32 threadNum;             ///< thread数量（新增）
-    u32 notifyNumPerThread;    ///< 每个thread的notify数量（新增）
     u8 aclGraphZeroCopyEnable; ///< 0:关闭aclgraph零拷贝 1:开启aclgraph零拷贝
     s32 execTimeOut;
     char hcclAlgo[COMM_ALGO_MAX_LENGTH];
@@ -90,9 +87,6 @@ public:
     u32 GetConfigServiceLevel() const;
     u32 GetConfigWorldRankID() const;
     u64 GetConfigJobID() const;
-    int32_t GetCommEngine() const;
-    u32 GetThreadNum() const;
-    u32 GetNotifyNumPerThread() const;
     u8 GetConfigAclGraphZeroCopyEnable() const; // 获取aclGraphZeroCopyEnable 的配置值，在ExecOp Zerocopy准备流程中使用
     s32 GetConfigExecTimeOut() const;
     bool GetConfigExecTimeOutSet() const;
@@ -136,9 +130,6 @@ private:
     u32 serviceLevel_;
     u32 worldRankID_;
     u64 jobID_;
-    int32_t commEngine_ = -1;
-    u32 threadNum_ = 0;
-    u32 notifyNumPerThread_ = 0;
     u8 aclGraphZeroCopyEnable_ = 0;     // 0:关闭aclgraph零拷贝 1:开启aclgraph零拷贝
     bool onlyAivMode_;
     s32 execTimeOut_;

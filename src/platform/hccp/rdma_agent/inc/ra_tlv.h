@@ -14,15 +14,16 @@
 #include "hccp_tlv.h"
 
 struct RaTlvHandle {
-    unsigned int moduleType;
     struct RaTlvOps *tlvOps;
     struct TlvInitInfo initInfo;
     unsigned int bufferSize;
+    pthread_mutex_t mutex;
 };
 
 struct RaTlvOps {
     int (*raTlvInit)(struct RaTlvHandle *tlvHandle);
     int (*raTlvDeinit)(struct RaTlvHandle *tlvHandle);
-    int (*raTlvRequest)(struct RaTlvHandle *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
+    int (*raTlvRequest)(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
+        struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
 };
 #endif // RA_TLV_H

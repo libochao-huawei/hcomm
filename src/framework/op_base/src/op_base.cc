@@ -27,6 +27,7 @@
 #include "../common/src/topo/topoinfo_detect.h"
 #include "../common/src/topo/topoinfo_ranktable_partition.h"
 #include "../common/src/state_guard.h"
+#include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "sal_pub.h"
 #include "profiling_manager_pub.h"
 #include "adapter_prof.h"
@@ -453,6 +454,10 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set group topo info error.",
                 HCCL_ERROR_CODE(ret)), errorFlag = true);
+        ret = opBaseHcom.pComm->InitHccpChannel();
+        if (ret != HCCL_SUCCESS) {
+            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret);
+        }
     } while (0);
 
     if (errorFlag) {
@@ -463,7 +468,8 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         *comm = nullptr;
         return ret;
     }
-    if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && opBaseHcom.pComm->InitHccp() == HCCL_SUCCESS) {
+    if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 &&
+        hcclNslbDp::GetInstance().InitNetCo() == HCCL_SUCCESS) {
         HCCL_INFO("HCCL try to entry SetGlobalRank_RankTableExit.");
         /* NSLB 填充 表1 表4 */
         CHK_RET(hcclNslbDp::GetInstance().SetCommInfo_RankTableExit(opBaseHcom.rankTable));
@@ -1139,7 +1145,6 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rootHandle);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][Flat]errNo[0x%016llx] " \
                 "setup flat topo detect error", HCCL_ERROR_CODE(ret)), errorFlag = true);
-
             ret = GetTopoDetectInfo(params, rankTable, localRankInfo, rootHandle, topoDetectAgent, topoDetectAgent);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][Flat]errNo[0x%016llx] setup " \
                 "GetTopoDetectInfo error", HCCL_ERROR_CODE(ret)), errorFlag = true);
@@ -1246,13 +1251,17 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] setGroupTopoInfo error", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
+        ret = pComm->InitHccpChannel();
+        if (ret != HCCL_SUCCESS) {
+            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret);
+        }
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0) {
             DevType nslb_devType;
             CHK_RET(hrtGetDeviceType(nslb_devType));
             if (nslb_devType == DevType::DEV_TYPE_910_93) {
                 hcclNslbDp::GetInstance().SetDeviceType();
             }
-            if (pComm->InitHccp() == HCCL_SUCCESS) {
+            if (hcclNslbDp::GetInstance().InitNetCo() == HCCL_SUCCESS) {
                 std::string identifier_nslb = commIdentifier;
                 hcclNslbDp::GetInstance().InitCmmDesc(identifier_nslb);
                 HCCL_INFO("nslb_InitCommRootInfo rankTable.rankList.size:[%zu], identifier_nslb[%s].",
@@ -2484,6 +2493,9 @@ HcclResult HcclCommDestroy(HcclComm comm)
     /* 关键状态记录 */
     HCCL_RUN_INFO("op_base comm destroy complete, take time [%lld]us, group[%s], deviceLogicId[%d].",
         DURATION_US(endut - startut), group.c_str(), deviceLogicId);
+
+    hcclNslbDp::GetInstance().DeinitNetCo();
+    hcclH2dTlv::GetInstance().DeinitHccpChannel();
     return HCCL_SUCCESS;
 }
 

@@ -626,7 +626,7 @@ TEST_F(DispatcherAiCpu_ST, st_data_plane_interface_aicpu)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     if (ctx != nullptr) {
-        ret = DestoryDispatcherCtx(ctx);
+        ret = DestroyDispatcherCtx(ctx);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
     GlobalMockObject::verify();

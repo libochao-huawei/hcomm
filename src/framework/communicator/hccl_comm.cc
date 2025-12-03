@@ -1378,11 +1378,11 @@ HcclResult hcclComm::SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup
     CHK_RET(communicator_->SwitchNic(nRanks, ranks, useBackup));
     return HCCL_SUCCESS;
 }
-HcclResult hcclComm::InitHccp()
+HcclResult hcclComm::InitHccpChannel()
 {
     /* 增加输出日志关键字 */
     HCCL_INFO("NslbDp try to init hccp ");
-    return communicator_->InitHccp();
+    return communicator_->InitHccpChannel();
 }
 
 std::vector<RankInfo> hcclComm::GetRankLists()

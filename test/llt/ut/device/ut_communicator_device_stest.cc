@@ -117,7 +117,7 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     hcclCommunicator.GetBandWidthPerNPU(0, bandWidth);
     hcclCommunicator.GetDeviceNumPerAggregation(buffer);
 
-    hcclCommunicator.InitHccp();
+    hcclCommunicator.InitHccpChannel();
 
     HcclReduceOp op = HCCL_REDUCE_SUM;
     hcclCommunicator.CheckReduceDataType(dataType, op);
