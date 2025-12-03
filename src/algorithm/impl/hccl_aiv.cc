@@ -378,45 +378,16 @@ HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
 {
     // 获取二进制文件路径
     std::string libPath;
-    char *getPath = getenv("LD_LIBRARY_PATH");
+    char *getPath = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, getPath);
     if (getPath != nullptr) {
         libPath = getPath;
     } else {
-        HCCL_ERROR("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH is not set");
-        return HCCL_E_PARA;
+        libPath = "/usr/local/Ascend/cann";
+        HCCL_WARNING("[GetOpBinaryPath]ENV:ASCEND_HOME_PATH is not set");
     }
-
-    size_t mid = libPath.find("cann/lib64");
-    if (mid == libPath.npos) {
-        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH lack cann/lib64");
-
-        mmDlInfo info;
-        mmDladdr(reinterpret_cast<void *>(RegisterKernel), &info);
-
-        CHK_PRT_RET(info.dli_fname == nullptr, HCCL_ERROR("[AIV][GetAivOpBinaryPath]get path of libhccl_alg.so failed"),
-            HCCL_E_UNAVAIL);
-
-        char resolvedPath[PATH_MAX];
-        if (realpath(info.dli_fname, resolvedPath) == nullptr) {
-            HCCL_ERROR("[AIV][GetAivOpBinaryPath]path %s is not a valid real path", info.dli_fname);
-            return HCCL_E_INTERNAL;
-        }
-        binaryPath = resolvedPath;
-        if (binaryPath.find("/libhccl_alg.so") != binaryPath.npos) {
-            binaryPath.erase(binaryPath.find("/libhccl_alg.so"));
-        } else {
-            HCCL_ERROR("[AIV][GetAivOpBinaryPath]get binary path failed");
-            return HCCL_E_PARA;
-        }
-    } else {
-        u32 diff;
-        if (libPath.find(":", mid) == libPath.npos) {
-            diff = libPath.length() - libPath.rfind(":", mid);
-        } else {
-            diff = libPath.find(":", mid) - libPath.rfind(":", mid);
-        }
-        binaryPath = libPath.substr(libPath.rfind(":", mid) + 1, diff - 1);
-    }
+    binaryPath = libPath + "/lib64";
+    HCCL_INFO("op binary file path[%s]", binaryPath.c_str());
 
     // 判断应该加载的文件
     switch (deviceType) {
