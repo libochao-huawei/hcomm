@@ -1322,6 +1322,7 @@ namespace hccl
     void HcclCommunicator::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
     {
         transportManager_->SetQpQosAttr(trafficClass, serviceLevel);
+        indptOpTransportManager_->SetQpQosAttr(trafficClass, serviceLevel);
     }
 
     HcclResult HcclCommunicator::CheckExitWaitResumeState(bool &isChangedLink)

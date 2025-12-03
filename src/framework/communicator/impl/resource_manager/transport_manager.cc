@@ -21,7 +21,7 @@ namespace hccl {
 
 TransportManager::TransportManager(CCLBufferManager &cclBufferManager,
                                    const std::unique_ptr<HcclSocketManager> &socketManager,
-                                   HcclDispatcher &dispatcher,
+                                   HcclDispatcher dispatcher,
                                    const std::unique_ptr<NotifyPool> &notifyPool,
                                    const std::vector<RankInfo> &rankInfoList,
                                    RankId userRank,
@@ -868,9 +868,6 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     if (isIndOp) {
         HCCL_DEBUG("userHostMem num[%llu], userDeviceMem num[%llu]", indOpMemd.userHostMem.size(), 
             indOpMemd.userDeviceMem.size());
-        if (dispatcher_) {
-            dispatcher_ = nullptr;
-        }
     }
     HCCL_INFO("[createLink para]tag[%s], rank[%u]-localUserrank[%u]-localIpAddr[%s], linkMode[%d] "
               "dst_rank[%u]-remoteUserrank[%u]-remote_ip_addr[%s], machineType[%d], serverId[%s], "

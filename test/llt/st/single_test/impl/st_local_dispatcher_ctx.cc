@@ -119,7 +119,7 @@ TEST_F(LocalCtxUt, CreateCtxAiCpuMode) {
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
     EXPECT_NE(ctxPtr->GetDispatcher(), nullptr);
     EXPECT_NE(GetDispatcherCtx(), nullptr);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -156,7 +156,7 @@ TEST_F(LocalCtxUt, CreateCtxFFTSMode) {
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
     EXPECT_NE(ctxPtr->GetDispatcher(), nullptr);
     EXPECT_NE(GetDispatcherCtx(), nullptr);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -193,7 +193,7 @@ TEST_F(LocalCtxUt, CreateCtxNorMalMode) {
     DispatcherCtx *ctxPtr = static_cast<DispatcherCtx *>(ctx);
     EXPECT_NE(ctxPtr->GetDispatcher(), nullptr);
     EXPECT_NE(GetDispatcherCtx(), nullptr);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -235,7 +235,7 @@ TEST_F(LocalCtxUt, LocalCopyAICpu) {
     ret = HcclLocalCopy(streamtemp, &dst, &src);
     EXPECT_EQ(HCCL_SUCCESS, ret);
     delete ptr;
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -275,7 +275,7 @@ TEST_F(LocalCtxUt, LocalCopyFfts) {
     ret = HcclLocalCopy(streamtemp, &dst, &src);
     EXPECT_EQ(HCCL_SUCCESS, ret);
     delete ptr;
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -315,7 +315,7 @@ TEST_F(LocalCtxUt, LocalCopyNormal) {
     ret = HcclLocalCopy(streamtemp, &dst, &src);
     EXPECT_EQ(HCCL_SUCCESS, ret);
     delete ptr;
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -354,7 +354,7 @@ TEST_F(LocalCtxUt, LocalCopyERR) {
     ret = HcclLocalCopy(streamtemp, &dst, &src);
     EXPECT_NE(HCCL_SUCCESS, ret);
     delete ptr;
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -401,7 +401,7 @@ TEST_F(LocalCtxUt, LocalCopyWithReduceNormal) {
     ret = HcclLocalCopyReduce(streamtemp, &dst, &src, reduceInfo);
     EXPECT_EQ(HCCL_SUCCESS, ret);
     delete ptr;
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -454,7 +454,7 @@ TEST_F(LocalCtxUt, LocalLaunchTaskExtendNormal) {
 
     ret = HcclLocalLaunchTaskExtend(streamtemp, subStreams);
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -504,7 +504,7 @@ TEST_F(LocalCtxUt, LocalInitTaskNormal) {
 
     ret = HcclLocalInitTask(streamtemp, true, "test");
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -552,7 +552,7 @@ TEST_F(LocalCtxUt, HcclLocalNotifyRecordNormal) {
     void *notify = static_cast<void *>(localNotifyPtr.get());
     ret = HcclLocalNotifyRecord(streamtemp, notify);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
 }
@@ -603,7 +603,7 @@ TEST_F(LocalCtxUt, HcclLocalWaitNormal) {
     void *notify = static_cast<void *>(localNotifyPtr.get());
     ret = HcclLocalNotifyWait(streamtemp, notify, INVALID_UINT);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = DestoryDispatcherCtx(ctx);
+    ret = DestroyDispatcherCtx(ctx);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 

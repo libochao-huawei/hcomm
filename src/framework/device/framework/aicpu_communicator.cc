@@ -31,6 +31,7 @@
 #include "aicpu_one_side_service.h"
 #include "notify_manager.h"
 #include <iomanip>
+#include "dispatcher_ctx.h"
 
 namespace hccl {
 constexpr u32 IPC_SIGNAL_MODULUS = 2;
@@ -81,6 +82,12 @@ HcclCommAicpu::~HcclCommAicpu()
         HcclDispatcherDestroy(dispatcher_);
         dispatcher_ = nullptr;
     }
+    if (dispatcherCtx_ != nullptr) {
+        DestroyDispatcherCtx(dispatcherCtx_, identifier_.c_str());
+        HCCL_DEBUG("[%s] destroy dispatcherCtx[%p] group[%s] success!", __func__, dispatcherCtx_, identifier_.c_str());
+        dispatcherCtx_ = nullptr;
+    }
+
     commPlaneVector_.clear();
     isBridgeVector_.clear();
     isIndOpCommInit_ = false;
@@ -4762,7 +4769,9 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_));
+    if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
+        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, identifier_.c_str()));
+    }
     CHK_PTR_NULL(dispatcherCtx_);
 
     CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
@@ -4783,8 +4792,9 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     // 最后拉起背景线程
     AicpuComContext *ctx = AicpuGetComContext();
     AicpuHcclProcess::CallMC2MaintenanceThread(ctx);
-    HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u]", __func__,
-        identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, notifySize_);
+    HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u], "
+        "dispatcherCtx[%p]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
+        topoInfo_.deviceType, notifySize_, dispatcherCtx_);
     return HCCL_SUCCESS;
 }
 
@@ -4896,8 +4906,10 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     std::shared_ptr<Transport> link;
     TransportPara para{};
     const std::unique_ptr<NotifyPool> notifyPool;
+    DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
-        TransportType::TRANS_TYPE_DEVICE_P2P, para, dispatcher_, notifyPool, machinePara, transDevP2pData));
+        TransportType::TRANS_TYPE_DEVICE_P2P, para, ctx->GetDispatcher(), notifyPool, machinePara, transDevP2pData));
     CHK_SMART_PTR_NULL(link);
     CHK_RET(link->Init()); // 初始化需要增加远端用户注册内存
 
@@ -5016,8 +5028,10 @@ HcclResult HcclCommAicpu::InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam
     TransportPara para{};
     para.timeout = linkTimeOut_; // 暂无法设置
     const std::unique_ptr<NotifyPool> notifyPool;
+    DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
-        TransportType::TRANS_TYPE_DEVICE_IBVERBS, para, dispatcher_, notifyPool,
+        TransportType::TRANS_TYPE_DEVICE_IBVERBS, para, ctx->GetDispatcher(), notifyPool,
             machinePara, TransportDeviceP2pData(), transDevIbverbsData));
     CHK_SMART_PTR_NULL(link);
     CHK_RET(link->Init()); // 初始化需要增加远端用户注册内存

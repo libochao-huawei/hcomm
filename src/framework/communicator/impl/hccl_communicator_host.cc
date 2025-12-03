@@ -266,7 +266,7 @@ namespace hccl
             dispatcher_ = nullptr;
         }
         if (dispatcherCtx_ != nullptr) {
-            DestoryDispatcherCtx(dispatcherCtx_);
+            DestroyDispatcherCtx(dispatcherCtx_, identifier_.c_str());
             dispatcherCtx_ = nullptr;
         }
         if (vDispatcher_ != nullptr) {
@@ -7407,6 +7407,7 @@ namespace hccl
             HCCL_INFO("[%s]Set TC[%u] and SL[%u] for oneSidedService success.", __func__, trafficClass, serviceLevel);
         }
         transportManager_->SetQpQosAttr(trafficClass, serviceLevel);
+        indptOpTransportManager_->SetQpQosAttr(trafficClass, serviceLevel);
     }
 
     HcclResult HcclCommunicator::CheckExitWaitResumeState(bool &isChangedLink)
@@ -7915,9 +7916,9 @@ namespace hccl
         }
         
         StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
-        CHK_PTR_NULL(transportManager_);
+        CHK_PTR_NULL(indptOpTransportManager_);
         bool isIndOp = true;
-        HcclResult ret = transportManager_->Alloc(tag, transMem, opCommTransport, isAicpuModeEn, false, false,
+        HcclResult ret = indptOpTransportManager_->Alloc(tag, transMem, opCommTransport, isAicpuModeEn, false, false,
             HcclCMDType::HCCL_CMD_INVALID, false, isIndOp);
 
         if (ret != HCCL_SUCCESS) {
