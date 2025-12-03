@@ -2494,8 +2494,6 @@ HcclResult HcclCommDestroy(HcclComm comm)
     HCCL_RUN_INFO("op_base comm destroy complete, take time [%lld]us, group[%s], deviceLogicId[%d].",
         DURATION_US(endut - startut), group.c_str(), deviceLogicId);
 
-    hcclNslbDp::GetInstance().DeinitNetCo();
-    hcclH2dTlv::GetInstance().DeinitHccpChannel();
     return HCCL_SUCCESS;
 }
 
