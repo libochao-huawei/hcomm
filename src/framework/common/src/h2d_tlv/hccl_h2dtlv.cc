@@ -64,13 +64,17 @@ HcclResult hcclH2dTlv::InitHccpChannel(u32 devicePhyId)
 
 void hcclH2dTlv::DeinitHccpChannel()
 {
+    if (hcclH2dTlvInitFlag_ == false) {
+        HCCL_INFO("Hccp channel is already deinit.");
+        return;
+    }
     if (hcclH2dTlvHandle_ == nullptr) {
         HCCL_INFO("Try to deinit hccp channel while hcclH2dTlvHandle_ is null.");
         return;
     }
     HcclResult ret = H2DTlvDeinit(hcclH2dTlvHandle_);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("DeInit hccp channel failed ret[%u].", ret);
+        HCCL_WARNING("DeInit hccp channel failed ret[%u].", ret);
         return;
     }
 
