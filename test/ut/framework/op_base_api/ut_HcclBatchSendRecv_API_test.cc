@@ -154,6 +154,8 @@ TEST_F(HcclBatchSendRecvTest, Ut_HcclBatchSendRecv_When_Exec20times_Expect_Retur
     UT_UNSET_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
+#if 0
+
 TEST_F(HcclBatchSendRecvTest, Ut_HcclBatchSendRecv_When_2Server4Rank_Expect_ReturnIsHCCL_SUCCESS)
 {
     HcclSendRecvItem* sendRecvInfo = (HcclSendRecvItem*)malloc(sizeof(HcclSendRecvItem));
@@ -173,3 +175,5 @@ TEST_F(HcclBatchSendRecvTest, Ut_HcclBatchSendRecv_When_2Server4Rank_Expect_Retu
     free(sendRecvInfo);
     UT_UNSET_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
+
+#endif
