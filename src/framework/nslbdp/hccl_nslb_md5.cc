@@ -14,6 +14,7 @@
 #include "sal_pub.h"
 #include "hccl_nslb_md5.h"
 
+
 namespace hccl {
 
 // 初始化常量
