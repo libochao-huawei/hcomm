@@ -82,7 +82,7 @@ HcclResult HcomGetAlltoAllvcStagedWorkSpaceMemSize(const char *group,
     std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo, u64 &memSize);
 HcclResult HcomGetAllReduceScratchSize(const char *group, const u32 count, const HcclDataType dataType,
     u64 &outScratchSize);
-HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, const std::vector<rtStream_t> &stream);
+HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, u32 graphId, const std::vector<rtStream_t> &stream);
 HcclResult HcomSetExecTimeOut(const char *execTimeOut);
 HcclResult HcomSetAlgorithm(const char* algo);
 HcclResult HcomSetDeterministic(u8 deterministic);

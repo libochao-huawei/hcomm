@@ -354,9 +354,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
         tilingData->syncMode, tilingData->root, tilingData->dstRank, tilingData->srcRank,
         tilingData->opType, tilingData->index, tilingData->length);
 
-    if (tilingData->isLaunchInOrder) {
-        CHK_RET(hcclCommAicpu->RecordHostOrder(tag, tilingData->isCapture));
-    }
+    CHK_RET(hcclCommAicpu->RecordHostOrder(commParam, tag, tilingData->orderLaunchMode));
 
     hccl::OpParam opParam;
     opParam.tag = tag;
@@ -478,7 +476,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     HcclUs startut = TIME_NOW();
     HcclResult ret = hcclCommAicpu->ExecOp(newTag, algName, opParam, commParam);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AicpuHcclProcess][AicpuRunRpcServerV2] newTag[%s] algName[%s]",
-        newTag.c_str(), algName.c_str()), ret);    
+        newTag.c_str(), algName.c_str()), ret);
     HcclUs endut = TIME_NOW();
     /* 关键状态记录 */
     std::string endInfo = "AicpuRunRpcServerV2:success,take time: " +

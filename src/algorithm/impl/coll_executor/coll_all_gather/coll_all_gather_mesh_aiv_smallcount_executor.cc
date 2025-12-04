@@ -73,7 +73,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u3
             blockDim_, blockDim), HCCL_E_PARA);
     } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         CHK_PRT_RET(blockDim_ < rankSize,
-            HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+            HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
             blockDim_, rankSize), HCCL_E_PARA);
         if (blockDim_ < blockDim) {
             blockDim = blockDim_ / rankSize * rankSize;

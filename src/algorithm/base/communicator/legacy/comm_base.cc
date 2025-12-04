@@ -209,15 +209,6 @@ HcclResult CommBase::CalcLink()
 
 u32 CommBase::GetSocketsPerLink()
 {
-    bool multiQpDevType = paraVector_[rank_].deviceType == DevType::DEV_TYPE_910B ||
-                paraVector_[rank_].deviceType  == DevType::DEV_TYPE_910_93;
-    if (GetExternalInputQpSrcPortConfigPath() != "" &&
-        GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && multiQpDevType) {
-        return 2; // 2：多QP方式下额外创建一个socket用于同步QP状态迁移完成状态
-    } else if (GetExternalInputQpsPerConnection() != HCCL_QPS_PER_CONNECTION_DEFAULT &&
-               GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && multiQpDevType) {
-        return 2; // 2：多QP方式下额外创建一个socket用于同步QP状态迁移完成状态
-    }
     return 1;
 }
 
@@ -298,7 +289,7 @@ HcclResult CommBase::SetRankMap()
     for (u32 index = 0; index < rankSize_; index++) {
         userRankMap_[index] = paraVector_[index].userRank;
 
-        if ((userRankMap_[index] >= 0) && (userRankSize_ > userRankMap_[index])) {
+        if (userRankSize_ > userRankMap_[index]) {
             rankMap_[userRankMap_[index]] = index;
         }
         HCCL_INFO("userRankMap: [%u] -> [%u]", index, paraVector_[index].worldRank);
@@ -645,7 +636,6 @@ HcclResult CommBase::CreateDestLink(const ErrContextPub &error_context, const Ma
             std::string err_str = "[Create][DestLink]Transport init error! IPC memory allocation failed due to "
                 "possible memory limit exceeded. Suggested solution: Use 3TB / (ranksize * 2) as the upper limit of "
                 "HCCL_BUFFSIZE.";
-            RPT_INPUT_ERR(true, "EI0009", std::vector<std::string>({"reason"}), std::vector<std::string>({err_str}));
             HCCL_ERROR("%s", err_str.c_str());
         }
         const std::string  CREATE_LINK_ERR = "[Create][DestLink]Create Dest error! creakLink para:rank[" + \
@@ -654,7 +644,6 @@ HcclResult CommBase::CreateDestLink(const ErrContextPub &error_context, const Ma
             std::to_string(dstRank) + "]-remoteUserrank[" + std::to_string(paraVector_[dstRank].worldRank) + \
             "]-remote_ip_addr[" + paraVector_[dstRank].serverId.c_str() + "]";
 
-        RPT_INPUT_ERR(true, "EI0009", std::vector<std::string>({"reason"}), std::vector<std::string>({CREATE_LINK_ERR}));
         HCCL_ERROR("[Create][DestLink]Transport init error! creakLink para:rank[%u]-localUserrank[%u]-localIpAddr[%s], "
                    "dst_rank[%u]-remoteUserrank[%u]-remote_ip_addr[%s], machineType[%d], serverId[%s], linkMode[%d], "
                    "shmDev_[%u], tag[%s]",
@@ -787,7 +776,7 @@ HcclResult CommBase::SetMachinePara(MachineType machineType, const std::string &
     machinePara.remoteSocketPort = paraVector_[dstRank].hostPort;
     machinePara.isAicpuModeEn = isAicpuModeEn_;
     machinePara.deviceLogicId = deviceLogicId_;
-    machinePara.srcPorts = std::vector<u32>(1, 0); /* 默认填充一个元素，0代表默认不配置 */
+    machinePara.srcPorts = std::vector<std::uint16_t>(1, 0); /* 默认填充一个元素，0代表默认不配置 */
     return HCCL_SUCCESS;
 }
 

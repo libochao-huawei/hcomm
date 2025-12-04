@@ -69,6 +69,7 @@ public:
     HcclResult ResetGraphCtx(bool enableCache, const std::string &key, bool useGraphConstructorV2 = false) override;
     HcclResult LaunchTasksEx(Stream &stream, std::vector<Stream> &subStreams) override;
     void SetNormalMode() override;
+	HcclResult SetMultiQpMode(bool multiQpMode) override;
     virtual HcclResult SignalRecord(Stream &stream, u64 notifyId) override;
     virtual HcclResult SignalWait(Stream &stream, u32 notifyId, u32 timeOut) override;
 
@@ -90,6 +91,7 @@ private:
     HcclResult GetNotifyDfxInfo(HcclRtNotify signal, u32 userRank, u64 &offset, u32 &remoteUserRank, u64 &notifyID);
     void *fftsCtxsPtr;
     bool disableFfts_;
+    bool multiQpMode_;
 };
 } // namespace hccl
 #endif // HCCL_DISPATCHER_FFTS_PUB_H

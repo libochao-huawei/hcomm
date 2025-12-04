@@ -148,27 +148,33 @@ struct ConnInfo {
     {}
 };
 
-using ErrQpnInfo = struct TagErrQpnInfo {
-    CqeInfo cqeInfo;
-    u32 qpn;
-    TagErrQpnInfo() {}
-    TagErrQpnInfo(const CqeInfo &cqeInfo, u32 qpn)
-        : cqeInfo(cqeInfo), qpn(qpn)
+struct LinkInfo {
+    std::string identifier;
+    RankId localRank;
+    std::string localServerId;
+    s32 localDevicePhyId;
+    RankId remoteRank;
+    std::string remoteServerId;
+    s32 remoteDevicePhyId;
+    LinkInfo() {}
+    LinkInfo(std::string &identifier, RankId localRank, std::string &localServerId, s32 localDevicePhyId,
+        RankId remoteRank, std::string &remoteServerId, s32 remoteDevicePhyId)
+        : identifier(identifier), localRank(localRank), localServerId(localServerId), localDevicePhyId(localDevicePhyId),
+        remoteRank(remoteRank), remoteServerId(remoteServerId), remoteDevicePhyId(remoteDevicePhyId)
     {}
-    bool operator<(const TagErrQpnInfo& other) const {
-        return qpn < other.qpn;
-    }
 };
 
 using ErrCqeInfo = struct TagErrCqeInfo {
     CqeInfo cqeInfo;
-    std::string identifier;
-    RankId remoteRank;
+    LinkInfo linkInfo;
     u32 qpn;
     TagErrCqeInfo() {}
-    TagErrCqeInfo(CqeInfo &cqeInfo, const std::string &identifier, RankId remoteRank, u32 qpn)
-        : cqeInfo(cqeInfo), identifier(identifier), remoteRank(remoteRank), qpn(qpn)
+    TagErrCqeInfo(CqeInfo &cqeInfo, LinkInfo &linkInfo, u32 qpn)
+        : cqeInfo(cqeInfo), linkInfo(linkInfo), qpn(qpn)
     {}
+    bool operator<(const TagErrCqeInfo& other) const {
+        return qpn < other.qpn;
+    }
 };
 
 class Heartbeat {
@@ -300,7 +306,7 @@ private:
     std::vector<u32> nicRanksPorts_;
     std::vector<u32> vnicRanksPorts_;
     std::vector<UIDType> errorSocket_;
-    std::map<std::string, std::map<u32, std::set<ErrQpnInfo>>> rankMapForRetryAgent;
+    std::map<std::string, std::map<u32, std::set<ErrCqeInfo>>> rankMapForRetryAgent;
     std::mutex qpnMapMutexForRetry_;
     std::map<std::string, bool> retryEnableTable_;
     std::mutex retryEnableMutex_;

@@ -52,6 +52,7 @@ using HcclOpMetaInfo = struct HcclOpMetaInfoDef {
     bool isAivMode = false;
     bool isEnableCache = true;
     u8 deterministic = 0;
+    bool preloadCopyOpt = false;
 
     static bool CheckEnableCache(const HcclOpMetaInfoDef &opMetaInfo)
     {
@@ -153,7 +154,7 @@ using HcclOpMetaInfo = struct HcclOpMetaInfoDef {
         u32 algolevel1Type = 0, HcclDataType dataType = HCCL_DATA_TYPE_RESERVED,
         ReduceType reduceType = ReduceType::INLINE_REDUCE, bool hugeData = false,
         bool isSmallCount = false, CopyPattern copyPattern = CopyPattern::BCOPY, bool dataSplit = false,
-        u8 deterministicConfig = 0, bool isAivModeConfig = false)
+        u8 deterministicConfig = 0, bool isAivModeConfig = false, bool preloadCopyFlag = false)
     {
         HcclOpMetaInfoDef meta;
         meta.opType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
@@ -167,6 +168,7 @@ using HcclOpMetaInfo = struct HcclOpMetaInfoDef {
         meta.dataSplit = dataSplit;
         meta.deterministic = deterministicConfig;
         meta.isAivMode = isAivModeConfig;
+        meta.preloadCopyOpt = preloadCopyFlag;
         return meta;
     }
 
@@ -278,7 +280,7 @@ using HcclOpMetaInfo = struct HcclOpMetaInfoDef {
                std::to_string(rootRank) + std::to_string(sliceNum) + std::to_string(static_cast<int>(dataType)) +
                isSmallCountStr + isDefaultPathStr + std::to_string(piplineSliceNum) + std::to_string(algolevel1Type) +
                std::to_string(static_cast<int>(copyPattern)) + dataSplitStr + isAivModeStr +
-               std::to_string(static_cast<int>(deterministic));
+               std::to_string(static_cast<int>(deterministic)) + std::to_string(static_cast<int>(preloadCopyOpt));
 #else
         return "";
 #endif

@@ -92,6 +92,10 @@ HcclResult __attribute__((weak)) HcomSelectAlgV2(s64 comm, const char *group, u6
 HcclResult __attribute__((weak)) HcomGraphSelectAlgV2(s64 comm, const char *group, u64 count, HcclDataType dataType,
     HcclReduceOp op, HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel);
 HcclResult __attribute__((weak)) HcomUnloadTaskV2(const std::string group, const char *tag);
+HcclResult __attribute__((weak)) HcomGetCommCCLBufferSizeV2();
+HcclResult __attribute__((weak)) HcclCommResetQosCfgV2();
+HcclResult __attribute__((weak)) HcomResetQosCfgV2();
+HcclResult __attribute__((weak)) HcclCommSetQosCfgV2();
 #ifdef __cplusplus
 }
 #endif // __cplusplus

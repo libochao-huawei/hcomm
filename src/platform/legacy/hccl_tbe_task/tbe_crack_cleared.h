@@ -47,8 +47,7 @@ private:
 
     std::map<std::string, nlohmann::json> opInfoMap_;
     std::mutex crackDataMutex_;
-    void *addrListDevPtr_;
-    bool initTilingDataHostPtr_;
+    void *addrListDevPtr_{nullptr};
     std::string binaryName_ = "";
 };
 } // namespace TbeReduce

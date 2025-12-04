@@ -134,6 +134,9 @@ private:
     HcclResult RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, PingInitInfo initInfo,
         std::shared_ptr<HcclSocket> socket);
     HcclResult RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAddress ipAddr, PingInitInfo &recvInfo, u32 timeout);
+    HcclResult StartSocketThread(u32 deviceId, HcclIpAddress ipAddr, u32 port);
+    HcclResult HccnCloseSubProc(u32 deviceId);
+    HcclResult HccnRaInit(u32 deviceId);
 public:
     PingMesh();
     ~PingMesh();

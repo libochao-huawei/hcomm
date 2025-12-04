@@ -238,6 +238,8 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
             HCCL_WARNING("level1:fullmesh algo is not suported. the config is ignored.");
+            algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
+            break;
         default:
             algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
             HCCL_INFO("server num[%u]: level1:default algo is set.", moduleNum);

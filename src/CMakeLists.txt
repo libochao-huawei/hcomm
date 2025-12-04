@@ -45,6 +45,7 @@ set(include_list
     ${HCCL_BASE_DIR}/inc/hccl
     ${HCCL_BASE_DIR}/inc/hccl/hccl
     ${HCCL_BASE_DIR}/pub_inc
+    ${HCCL_BASE_DIR}/pub_inc/aicpu/
     ${HCCL_BASE_DIR}/pkg_inc
     ${HCCL_BASE_DIR}/pub_inc/inner
     ${HCCL_BASE_DIR}/pub_inc/new
@@ -137,6 +138,7 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/common/
     ${HCCL_BASE_DIR}/platform/common/unique
     ${HCCL_BASE_DIR}/platform/common/buffer_manager
+    ${HCCL_BASE_DIR}/platform/common/unfold_cache
     ${HCCL_BASE_DIR}/platform/resource/transport
     ${HCCL_BASE_DIR}/platform/resource/transport/device
     ${HCCL_BASE_DIR}/platform/resource/transport/host

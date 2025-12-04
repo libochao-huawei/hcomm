@@ -179,6 +179,10 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclBarrierV2(comm, stream));
+#endif
+
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;
     HcclReduceOp op = HCCL_REDUCE_SUM;

@@ -105,6 +105,8 @@ HcclResult __attribute__((weak)) HcclGetRawCommHandle(const char *commName, Hccl
 HcclResult __attribute__((weak)) HcclSetConfigV2(HcclConfig config, HcclConfigValue configValue);
 
 HcclResult __attribute__((weak)) HcclGetConfigV2(HcclConfig config, HcclConfigValue *configValue);
+
+HcclResult __attribute__((weak)) HcclBarrierV2(HcclComm comm, aclrtStream stream);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

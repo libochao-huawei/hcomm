@@ -412,6 +412,10 @@ typedef enum aclrtLaunchKernelAttrId {
     ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT,
 } aclrtLaunchKernelAttrId;
 
+typedef struct {
+    uint32_t timeoutLow;
+    uint32_t timeoutHigh;
+} aclrtTimeoutUs;
 typedef union aclrtLaunchKernelAttrValue {
     uint8_t schemMode;
     uint32_t localMemorySize;
@@ -420,6 +424,7 @@ typedef union aclrtLaunchKernelAttrValue {
     uint8_t isBlockTaskPrefetch;
     uint8_t isDataDump;
     uint16_t timeout;
+    aclrtTimeoutUs timeoutUs;   // unit: us
     uint32_t rsv[4];
 } aclrtLaunchKernelAttrValue;
 
