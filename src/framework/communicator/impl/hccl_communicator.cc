@@ -39,6 +39,7 @@
 #include "mmpa_api.h"
 #include "config_log.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "dispatcher_ctx.h"
 using namespace std;
 
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -148,7 +149,8 @@ namespace hccl
         HcclIpAddress localIp = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].hostIp : HcclIpAddress();
         bool isAivMode = GetAivModeConfig() || GetConfigIsOnlyAivMode();
         SetRetryEnable(deviceType_, superPodNum_, serverNum_, deviceNumPerAggregation_,
-            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_);
+            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_,
+            commConfig_.GetConfigInterServerRetryEnable(), commConfig_.GetConfigInterSuperPodRetryEnable());
         // 校验A+X单机双module场景下通信能否建立
         CHK_RET(CheckSingleServerComm(rankTable.rankList));
         // 解析rank和port的映射信息
@@ -295,13 +297,10 @@ namespace hccl
             // 不满足ffts+特性开启条件。
             SetFftsSwitch(false);
         }
-        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
-        CHK_SMART_PTR_NULL(dispatcher_);
-        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_));
-        CHK_PTR_NULL(dispatcherCtx_);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
+        CHK_RET(HcclSetExecTimeOut(vDispatcher_, commConfig_.GetConfigExecTimeOut()));
 
         (void)RegisterLoadTaskCallBack(dispatcher_, static_cast<void *>(profilerManager_.get()), TaskProfilerCallBack);
         // 此时要确保identify已经全部构造完成
@@ -326,6 +325,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitTransportManager()
     {
+        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
+        CHK_SMART_PTR_NULL(dispatcher_);
+        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
         std::vector<u32> &nicRanksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
         transportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
@@ -338,6 +340,23 @@ namespace hccl
         CHK_SMART_PTR_NULL(transportManager_);
         (void)transportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
         (void)transportManager_->SetIsStandardCard(isStandardCard_);
+
+        if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
+            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
+        }
+        CHK_PTR_NULL(dispatcherCtx_);
+        DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+        CHK_PTR_NULL(ctx);
+        indptOpTransportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
+            cclBufferManager_, socketManager_, ctx->GetDispatcher(), notifyPool_,
+            rankInfoList_, userRank_, identifier_,
+            deviceLogicId_, nicDeployment_, isHaveCpuRank_,
+            static_cast<const void *>(&transportResInfo_), sizeof(transportResInfo_),
+            isUseRankPort_, isUsedRdmaLevel0_, nicRanksPorts, vnicRanksPorts, useSuperPodMode_,
+            devIpAddr_, hostIp_, localVnicIp_, netDevCtxMap_)));
+        CHK_SMART_PTR_NULL(indptOpTransportManager_);
+        (void)indptOpTransportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
+        (void)indptOpTransportManager_->SetIsStandardCard(isStandardCard_);
         return HCCL_SUCCESS;
     }
 
@@ -473,7 +492,8 @@ namespace hccl
         HcclIpAddress localIp = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].hostIp : HcclIpAddress();
         bool isAivMode = GetAivModeConfig() || GetConfigIsOnlyAivMode();
         SetRetryEnable(deviceType_, superPodNum_, serverNum_, deviceNumPerAggregation_,
-            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_);
+            isDiffDeviceType_, isAivMode, serverIp, localIp, retryEnable_,
+            commConfig_.GetConfigInterServerRetryEnable(), commConfig_.GetConfigInterSuperPodRetryEnable());
         groupNicRanksPort_.resize(rankInfoList_.size(), HCCL_INVALID_PORT);
         if (nicRanksPort_.size())
         {
@@ -802,10 +822,10 @@ namespace hccl
                          __func__);
             return HCCL_SUCCESS;
         }
-        if (!GetMC2EnvFlag())
+        if (!GetMC2EnvFlag() && (getAicpuCommState_ == nullptr || !getAicpuCommState_()))
         {
-            HCCL_INFO("[HcclCommunicator][%s]Not mc2 or aicpu environment, no needs to destroy the aicpu comm.",
-                      __func__);
+            HCCL_INFO("[HcclCommunicator][%s]Not mc2 or aicpu environment, "\
+                "no needs to destroy the aicpu comm.", __func__);
             return HCCL_SUCCESS;
         }
         KfcCommand destroyCmd = KfcCommand::kDestroyComm;
@@ -925,7 +945,7 @@ namespace hccl
         }
  
         CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
-        CHK_RET(hcclStreamSynchronize(stream.ptr()));
+        CHK_RET(hcclStreamSynchronize(stream.ptr(), commConfig_.GetConfigExecTimeOut()));
         CHK_RET(hrtMemSyncCopy(inAlltoAllvParaBuffer.ptr(), preMetaInfo->inputSize, preMetaInfo->inputData.data(),
                                preMetaInfo->inputSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         return HCCL_SUCCESS;
@@ -1093,6 +1113,10 @@ namespace hccl
         if (transportManager_ != nullptr)
         {
             CHK_RET(transportManager_->SetStopFlag(value));
+        }
+
+        if (indptOpTransportManager_ != nullptr) {
+            CHK_RET(indptOpTransportManager_->SetStopFlag(value));
         }
 
         for (auto &entry : resMap_)
@@ -2814,5 +2838,4 @@ namespace hccl
                 __func__, tag.c_str(), algName.c_str());
         return HCCL_SUCCESS;
     }
-
 }

@@ -83,6 +83,7 @@ public:
     static HcclResult ActiveRecordMain(u16 sqId);
     static HcclResult WaitMainStreamFinish(AicpuComContext *ctx);
     static HcclResult WaitFinishWhileLoop(AicpuComContext *ctx);
+    static HcclResult DealKfcCommand(AicpuComContext *ctx);
     static HcclResult CheckTaskTimeout(AicpuComContext *ctx, uint64_t startUsec);
     static void PrintTimeOutSqInfo(AicpuComContext *ctx, u64 timeThreshold);
     static HcclResult WorkSpacePrint(AicpuComContext *ctx);

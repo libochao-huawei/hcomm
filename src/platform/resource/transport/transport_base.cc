@@ -35,18 +35,6 @@ TransportBase::TransportBase(DispatcherPub *dispatcher,
     if (machinePara_.sockets.size() > 0) {
         defaultSocket_ = machinePara_.sockets[0];
     }
-#if ((defined (HCCD)) && (!defined (CCL_KERNEL_AICPU)))
-#else
-    if (dispatcher_ == nullptr) {
-        hccl::DispatcherCtx* ctx_temp = reinterpret_cast<hccl::DispatcherCtx *>(GetDispatcherCtx());
-        if (ctx_temp == nullptr || ctx_temp->GetDispatcher() == nullptr) {
-            HCCL_ERROR("Init IndOp dispatcher fail, ctx_temp or GetDispatcher is nullptr");
-        } else {
-            dispatcher_ = reinterpret_cast<DispatcherPub*>(ctx_temp->GetDispatcher());
-            HCCL_INFO("%s success", __func__);
-        }
-    }
-#endif
 }
 
 TransportBase::~TransportBase()

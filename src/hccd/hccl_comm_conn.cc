@@ -49,7 +49,7 @@ HcclCommConn::~HcclCommConn()
     }
     
     // 用户使用Connect()但是底层链路未建链成功场景使用abort强行停止
-    if (role_ == CLIENT_ROLE_SOCKET && socketInfo_.fd_handle == nullptr) {
+    if (role_ == CLIENT_ROLE_SOCKET && socketInfo_.fdHandle == nullptr) {
         ret = hrtRaSocketNonBlockBatchAbort(&connectInfo_, 1);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("hrtRaSocketNonBlockBatchAbort failed");
@@ -100,9 +100,9 @@ HcclResult HcclCommConn::Bind(HcclAddr &bindAddr)
         HcclIpAddress(localIpv4Addr).GetReadableIP(), localAddr_.info.tcp.port);
 
     struct rdev nicRdevInfo{};
-    nicRdevInfo.phy_id = devId_;
+    nicRdevInfo.phyId = devId_;
     nicRdevInfo.family = AF_INET;
-    nicRdevInfo.local_ip.addr.s_addr = localIpv4Addr;
+    nicRdevInfo.localIp.addr.s_addr = localIpv4Addr;
 
     if (socketHandle_ == nullptr) {
         ret = hrtRaSocketInitRef(NETWORK_PEER_ONLINE, nicRdevInfo, socketHandle_);
@@ -139,8 +139,8 @@ HcclResult HcclCommConn::Listen(int backLog)
     }
 
     CHK_PTR_NULL(socketHandle_);
-    struct socket_listen_info_t serverInfo;
-    serverInfo.socket_handle = socketHandle_;
+    struct SocketListenInfoT serverInfo;
+    serverInfo.socketHandle = socketHandle_;
     serverInfo.port = localAddr_.info.tcp.port;
     HCCL_RUN_INFO("HcclCommConn Listen localIpv4Addr[%s],  port[%u]",
         HcclIpAddress(localAddr_.info.tcp.ipv4Addr).GetReadableIP(), localAddr_.info.tcp.port);
@@ -155,8 +155,8 @@ HcclResult HcclCommConn::Listen(int backLog)
 
 HcclResult HcclCommConn::StopListen()
 {
-    struct socket_listen_info_t serverInfo;
-    serverInfo.socket_handle = socketHandle_;
+    struct SocketListenInfoT serverInfo;
+    serverInfo.socketHandle = socketHandle_;
     serverInfo.port = localAddr_.info.tcp.port;
     CHK_RET(hrtRaSocketListenStop(&serverInfo, 1));
     isListen_ = false;
@@ -192,9 +192,9 @@ HcclResult HcclCommConn::Accept(HcclAddr &acceptAddr, HcclCommConn *&acceptConn)
             HCCL_ERROR("HcclCommConn Accept GetSocket fail error[%d]", ret);
             return HCCL_E_TCP_CONNECT;
         } else if (ret == HCCL_SUCCESS) {
-            HCCL_RUN_INFO("Server Got new socket, ipv4Addr[%s] socket_handle[%p] fd_handle[%p]",
-                HcclIpAddress(acceptComConn.socketInfo.remote_ip.addr.s_addr).GetReadableIP(),
-                acceptComConn.socketInfo.socket_handle, acceptComConn.socketInfo.fd_handle);
+            HCCL_RUN_INFO("Server Got new socket, ipv4Addr[%s] socketHandle[%p] fdHandle[%p]",
+                HcclIpAddress(acceptComConn.socketInfo.remoteIp.addr.s_addr).GetReadableIP(),
+                acceptComConn.socketInfo.socketHandle, acceptComConn.socketInfo.fdHandle);
             acceptComConn.newCommConn = new(nothrow) HcclCommConn();
             CHK_PTR_NULL(acceptComConn.newCommConn);
             acceptComConn.newCommConn->SetStartTime();
@@ -217,7 +217,7 @@ HcclResult HcclCommConn::Accept(HcclAddr &acceptAddr, HcclCommConn *&acceptConn)
             break;
         } else if (ret != HCCL_E_AGAIN) {
             HCCL_RUN_WARNING("Accept Error Result[%d], Need Reset Conn ipv4Addr[%s]",
-                ret, HcclIpAddress(acceptComConn.socketInfo.remote_ip.addr.s_addr).GetReadableIP());
+                ret, HcclIpAddress(acceptComConn.socketInfo.remoteIp.addr.s_addr).GetReadableIP());
             CHK_RET(ResetCurrentErrorConnection(acceptComConn.newCommConn));
             isNeedCreditAdd = true;
             creditNum++;
@@ -230,7 +230,7 @@ HcclResult HcclCommConn::Accept(HcclAddr &acceptAddr, HcclCommConn *&acceptConn)
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count();
             if (duration > ACCEPT_MAX_TIME) {
                 HCCL_RUN_WARNING("accept time duration > %ums, Need Reset Conn ipv4Addr[%s]",
-                    ACCEPT_MAX_TIME, HcclIpAddress(acceptComConn.socketInfo.remote_ip.addr.s_addr).GetReadableIP());
+                    ACCEPT_MAX_TIME, HcclIpAddress(acceptComConn.socketInfo.remoteIp.addr.s_addr).GetReadableIP());
                 CHK_RET(ResetCurrentErrorConnection(acceptComConn.newCommConn));
                 isNeedCreditAdd = true;
                 creditNum++;
@@ -247,8 +247,8 @@ HcclResult HcclCommConn::Accept(HcclAddr &acceptAddr, HcclCommConn *&acceptConn)
 
     if (isNeedCreditAdd) {
         // 当建链成功、qp交换信息返回不可恢复错误、触发防吊死三种情况都需要进程accept credit add
-        struct socket_listen_info_t serverInfo;
-        serverInfo.socket_handle = socketHandle_;
+        struct SocketListenInfoT serverInfo;
+        serverInfo.socketHandle = socketHandle_;
         serverInfo.port = localAddr_.info.tcp.port;
         CHK_RET(hrtRaSocketAcceptCreditAdd(&serverInfo, 1, creditNum));
     }
@@ -283,19 +283,19 @@ const HcclAddr &HcclCommConn::GetRemoteAddr() const
     return remoteAddr_;
 }
 
-HcclResult HcclCommConn::PrepareSocketInfoForServer(struct socket_info_t &socketInfo)
+HcclResult HcclCommConn::PrepareSocketInfoForServer(struct SocketInfoT &socketInfo)
 {
     string linkTag = CONNECT_TAG + to_string(0) + "_" + to_string(localAddr_.info.tcp.ipv4Addr) +
         "_" + to_string(localAddr_.info.tcp.port);
 
-    socketInfo.socket_handle = socketHandle_;
-    socketInfo.fd_handle = nullptr;
+    socketInfo.socketHandle = socketHandle_;
+    socketInfo.fdHandle = nullptr;
     socketInfo.status = CONNECT_FAIL;
     CHK_SAFETY_FUNC_RET(strncpy_s(socketInfo.tag, SOCK_CONN_TAG_SIZE, linkTag.c_str(), linkTag.length() + 1));
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommConn::GetSocket(struct socket_info_t &socketInfo)
+HcclResult HcclCommConn::GetSocket(struct SocketInfoT &socketInfo)
 {
     u32 connectedNum = 0;
 
@@ -303,9 +303,9 @@ HcclResult HcclCommConn::GetSocket(struct socket_info_t &socketInfo)
     if (ret == HCCL_SUCCESS) {
         if (connectedNum == 0) {
             ret = HCCL_E_AGAIN;
-        } else if (connectedNum != 1 || socketInfo.status != CONNECT_OK || socketInfo.fd_handle == nullptr) {
+        } else if (connectedNum != 1 || socketInfo.status != CONNECT_OK || socketInfo.fdHandle == nullptr) {
             HCCL_ERROR("GetSocket fail linkTag linkTag[%s], connectedNum[%u] != 1, status[%d] != CONNECT_OK, "
-                "or fd_handle is nullptr", socketInfo.tag, connectedNum, socketInfo.status);
+                "or fdHandle is nullptr", socketInfo.tag, connectedNum, socketInfo.status);
             return HCCL_E_TCP_CONNECT;
         }
     }
@@ -325,15 +325,15 @@ HcclResult HcclCommConn::PrepareConnectSocketInfoForClient(HcclAddr &bindAddr)
     string linkTag = CONNECT_TAG + to_string(0) + "_" + to_string(remoteAddr_.info.tcp.ipv4Addr) +
         "_" + to_string(remoteAddr_.info.tcp.port);
 
-    connectInfo_.socket_handle = socketHandle_;
-    connectInfo_.remote_ip.addr = remoteIp.GetBinaryAddress().addr;
-    connectInfo_.remote_ip.addr6 = remoteIp.GetBinaryAddress().addr6;
+    connectInfo_.socketHandle = socketHandle_;
+    connectInfo_.remoteIp.addr = remoteIp.GetBinaryAddress().addr;
+    connectInfo_.remoteIp.addr6 = remoteIp.GetBinaryAddress().addr6;
     connectInfo_.port = remoteAddr_.info.tcp.port;
     CHK_SAFETY_FUNC_RET(strncpy_s(connectInfo_.tag, SOCK_CONN_TAG_SIZE, linkTag.c_str(), linkTag.length() + 1));
 
-    socketInfo_.socket_handle = socketHandle_;
-    socketInfo_.fd_handle = nullptr;
-    socketInfo_.remote_ip.addr.s_addr = remoteAddr_.info.tcp.ipv4Addr;
+    socketInfo_.socketHandle = socketHandle_;
+    socketInfo_.fdHandle = nullptr;
+    socketInfo_.remoteIp.addr.s_addr = remoteAddr_.info.tcp.ipv4Addr;
     socketInfo_.status = CONNECT_FAIL;
     CHK_SAFETY_FUNC_RET(strncpy_s(socketInfo_.tag, SOCK_CONN_TAG_SIZE, linkTag.c_str(), linkTag.length() + 1));
     return HCCL_SUCCESS;
@@ -396,7 +396,7 @@ HcclResult HcclCommConn::InitMemBlocksAndRecvWrMem()
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommConn::InitTransport(u32 role, HcclAddr &localAddr, socket_info_t &tmpInfo)
+HcclResult HcclCommConn::InitTransport(u32 role, HcclAddr &localAddr, SocketInfoT &tmpInfo)
 {
     if (transport_ != nullptr) {
         return transport_->CheckAndPushBuildLink();
@@ -405,13 +405,13 @@ HcclResult HcclCommConn::InitTransport(u32 role, HcclAddr &localAddr, socket_inf
     if (role == SERVER_ROLE_SOCKET) {
         role_ = role;
         localAddr_ = localAddr;
-        remoteAddr_.info.tcp.ipv4Addr = tmpInfo.remote_ip.addr.s_addr;
+        remoteAddr_.info.tcp.ipv4Addr = tmpInfo.remoteIp.addr.s_addr;
         remoteAddr_.info.tcp.port = 0; // 不感知对端端口号，默认填0
 
         struct rdev nicRdevInfo{};
-        nicRdevInfo.phy_id = devId_;
+        nicRdevInfo.phyId = devId_;
         nicRdevInfo.family = AF_INET;
-        nicRdevInfo.local_ip.addr.s_addr = localAddr_.info.tcp.ipv4Addr;
+        nicRdevInfo.localIp.addr.s_addr = localAddr_.info.tcp.ipv4Addr;
         CHK_RET(hrtRaSocketInitRef(NETWORK_PEER_ONLINE, nicRdevInfo, socketHandle_));
         CHK_RET(HrtRaRdmaInitRef(NETWORK_PEER_ONLINE, NO_USE, nicRdevInfo, rdmaHandle_));
     }
@@ -584,27 +584,27 @@ HcclResult HcclCommConn::CheckDataType(const HcclDataType dataType)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommConn::SocketForceClose(socket_info_t &socketInfo)
+HcclResult HcclCommConn::SocketForceClose(SocketInfoT &socketInfo)
 {
-    if (socketInfo.socket_handle == nullptr || socketInfo.fd_handle == nullptr) {
-        HCCL_ERROR("SocketForceClose socketInfo is invalid socket_handle[%p] fd_handle[%p]",
-            socketInfo.socket_handle, socketInfo.fd_handle);
+    if (socketInfo.socketHandle == nullptr || socketInfo.fdHandle == nullptr) {
+        HCCL_ERROR("SocketForceClose socketInfo is invalid socketHandle[%p] fdHandle[%p]",
+            socketInfo.socketHandle, socketInfo.fdHandle);
         return HCCL_E_PARA;
     }
 
-    socket_close_info_t conns[1]{};
-    conns[0].socket_handle = socketInfo.socket_handle;
-    conns[0].fd_handle = socketInfo.fd_handle;
-    conns[0].disuse_linger = static_cast<s32>(true);
+    SocketCloseInfoT conns[1]{};
+    conns[0].socketHandle = socketInfo.socketHandle;
+    conns[0].fdHandle = socketInfo.fdHandle;
+    conns[0].disuseLinger = static_cast<s32>(true);
 
     HcclResult ret = hrtRaSocketBatchClose(conns, 1);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("SocketForceClose ra socket batch close failed socket_handle[%p] fd_handle[%p]",
-            socketInfo.socket_handle, socketInfo.fd_handle);
+        HCCL_ERROR("SocketForceClose ra socket batch close failed socketHandle[%p] fdHandle[%p]",
+            socketInfo.socketHandle, socketInfo.fdHandle);
         return ret;
     }
-    socketInfo.socket_handle = nullptr;
-    socketInfo.fd_handle = nullptr;
+    socketInfo.socketHandle = nullptr;
+    socketInfo.fdHandle = nullptr;
     return HCCL_SUCCESS;
 }
 

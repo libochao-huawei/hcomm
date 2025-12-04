@@ -21,7 +21,7 @@ extern "C" {
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketBatchConnect(struct socket_connect_info_t conn[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaSocketBatchConnect(struct SocketConnectInfoT conn[], unsigned int num);
 
 /**
  * @ingroup libsocket
@@ -31,7 +31,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchConnect(struct socket_connect_info_t conn[]
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketBatchClose(struct socket_close_info_t conn[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaSocketBatchClose(struct SocketCloseInfoT conn[], unsigned int num);
 
 /**
  * @ingroup libsocket
@@ -41,7 +41,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchClose(struct socket_close_info_t conn[], un
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketBatchAbort(struct socket_connect_info_t conn[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaSocketBatchAbort(struct SocketConnectInfoT conn[], unsigned int num);
 
 /**
  * @ingroup libsocket
@@ -55,7 +55,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketBatchAbort(struct socket_connect_info_t conn[], 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketListenStart(struct socket_listen_info_t conn[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaSocketListenStart(struct SocketListenInfoT conn[], unsigned int num);
 
 /**
  * @ingroup libsocket
@@ -66,7 +66,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStart(struct socket_listen_info_t conn[], 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketListenStop(struct socket_listen_info_t conn[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaSocketListenStop(struct SocketListenInfoT conn[], unsigned int num);
 
 /**
  * @ingroup libsocket
@@ -79,7 +79,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketListenStop(struct socket_listen_info_t conn[], u
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetSockets(unsigned int role, struct socket_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaGetSockets(unsigned int role, struct SocketInfoT conn[], unsigned int num,
     unsigned int *connectedNum);
 
 /**
@@ -126,8 +126,8 @@ HCCP_ATTRI_VISI_DEF int RaSocketRecv(const void *fdHandle, void *data, unsigned 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetClientSocketErrInfo(struct socket_connect_info_t conn[],
-    struct socket_err_info err[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaGetClientSocketErrInfo(struct SocketConnectInfoT conn[],
+    struct SocketErrInfo err[], unsigned int num);
 
 /**
  * @ingroup libsocket
@@ -138,8 +138,8 @@ HCCP_ATTRI_VISI_DEF int RaGetClientSocketErrInfo(struct socket_connect_info_t co
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetServerSocketErrInfo(struct socket_listen_info_t conn[],
-    struct server_socket_err_info err[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaGetServerSocketErrInfo(struct SocketListenInfoT conn[],
+    struct ServerSocketErrInfo err[], unsigned int num);
 
 /**
  * @ingroup libsocket
@@ -206,7 +206,7 @@ HCCP_ATTRI_VISI_DEF int RaQpCreate(void *rdevHandle, int flag, int qpMode, void 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct qp_ext_attrs *extAttrs, void **qpHandle);
+HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct QpExtAttrs *extAttrs, void **qpHandle);
 
 /**
  * @ingroup librdma
@@ -219,7 +219,7 @@ HCCP_ATTRI_VISI_DEF int RaQpCreateWithAttrs(void *rdevHandle, struct qp_ext_attr
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaAiQpCreate(void *rdevHandle, struct qp_ext_attrs *attrs, struct ai_qp_info *info,
+HCCP_ATTRI_VISI_DEF int RaAiQpCreate(void *rdevHandle, struct QpExtAttrs *attrs, struct AiQpInfo *info,
     void **qpHandle);
 
 /**
@@ -232,7 +232,7 @@ HCCP_ATTRI_VISI_DEF int RaAiQpCreate(void *rdevHandle, struct qp_ext_attrs *attr
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaLoopbackQpCreate(void *rdevHandle, struct loopback_qp_pair *qpPair, void **qpHandle);
+HCCP_ATTRI_VISI_DEF int RaLoopbackQpCreate(void *rdevHandle, struct LoopbackQpPair *qpPair, void **qpHandle);
 
 /**
  * @ingroup librdma
@@ -268,7 +268,7 @@ HCCP_ATTRI_VISI_DEF int RaQpConnectAsync(void *qpHandle, const void *fdHandle);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaTypicalQpCreate(void *rdevHandle, int flag, int qpMode, struct typical_qp *qpInfo,
+HCCP_ATTRI_VISI_DEF int RaTypicalQpCreate(void *rdevHandle, int flag, int qpMode, struct TypicalQp *qpInfo,
     void **qpHandle);
 
 /**
@@ -281,8 +281,8 @@ HCCP_ATTRI_VISI_DEF int RaTypicalQpCreate(void *rdevHandle, int flag, int qpMode
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaTypicalQpModify(void *qpHandle, struct typical_qp *localQpInfo,
-    struct typical_qp *remoteQpInfo);
+HCCP_ATTRI_VISI_DEF int RaTypicalQpModify(void *qpHandle, struct TypicalQp *localQpInfo,
+    struct TypicalQp *remoteQpInfo);
 
 /**
  * @ingroup librdma
@@ -327,7 +327,7 @@ HCCP_ATTRI_VISI_DEF int RaDestroyCompChannel(const void *rdmaHandle, void *compC
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaCqCreate(void *rdevHandle, struct cq_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaCqCreate(void *rdevHandle, struct CqAttr *attr);
 
 /**
  * @ingroup librdma
@@ -338,7 +338,7 @@ HCCP_ATTRI_VISI_DEF int RaCqCreate(void *rdevHandle, struct cq_attr *attr);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaCqDestroy(void *rdevHandle, struct cq_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaCqDestroy(void *rdevHandle, struct CqAttr *attr);
 
 /**
  * @ingroup librdma
@@ -373,7 +373,7 @@ HCCP_ATTRI_VISI_DEF int RaNormalQpDestroy(void *qpHandle);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaMrReg(void *qpHandle, struct mr_info *info);
+HCCP_ATTRI_VISI_DEF int RaMrReg(void *qpHandle, struct MrInfoT *info);
 
 /**
  * @ingroup librdma
@@ -384,7 +384,7 @@ HCCP_ATTRI_VISI_DEF int RaMrReg(void *qpHandle, struct mr_info *info);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaMrDereg(void *qpHandle, struct mr_info *info);
+HCCP_ATTRI_VISI_DEF int RaMrDereg(void *qpHandle, struct MrInfoT *info);
 
 /**
  * @ingroup librdma
@@ -396,7 +396,7 @@ HCCP_ATTRI_VISI_DEF int RaMrDereg(void *qpHandle, struct mr_info *info);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRegisterMr(const void *rdmaHandle, struct mr_info *info, void **mrHandle);
+HCCP_ATTRI_VISI_DEF int RaRegisterMr(const void *rdmaHandle, struct MrInfoT *info, void **mrHandle);
 
 /**
  * @ingroup librdma
@@ -408,7 +408,7 @@ HCCP_ATTRI_VISI_DEF int RaRegisterMr(const void *rdmaHandle, struct mr_info *inf
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRemapMr(const void *rdmaHandle, struct mem_remap_info info[], unsigned int num);
+HCCP_ATTRI_VISI_DEF int RaRemapMr(const void *rdmaHandle, struct MemRemapInfo info[], unsigned int num);
 
 /**
  * @ingroup librdma
@@ -433,7 +433,7 @@ HCCP_ATTRI_VISI_DEF int RaDeregisterMr(const void *rdmaHandle, void *mrHandle);
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
 */
-HCCP_ATTRI_VISI_DEF int RaSendWr(void *qpHandle, struct send_wr *wr, struct send_wr_rsp *opRsp);
+HCCP_ATTRI_VISI_DEF int RaSendWr(void *qpHandle, struct SendWr *wr, struct SendWrRsp *opRsp);
 
 /**
  * @ingroup librdma
@@ -447,7 +447,7 @@ HCCP_ATTRI_VISI_DEF int RaSendWr(void *qpHandle, struct send_wr *wr, struct send
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
 */
-HCCP_ATTRI_VISI_DEF int RaSendWrV2(void *qpHandle, struct send_wr_v2 *wr, struct send_wr_rsp *opRsp);
+HCCP_ATTRI_VISI_DEF int RaSendWrV2(void *qpHandle, struct SendWrV2 *wr, struct SendWrRsp *opRsp);
 
 /**
  * @ingroup librdma
@@ -459,7 +459,7 @@ HCCP_ATTRI_VISI_DEF int RaSendWrV2(void *qpHandle, struct send_wr_v2 *wr, struct
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
 */
-HCCP_ATTRI_VISI_DEF int RaTypicalSendWr(void *qpHandle, struct send_wr *wr, struct send_wr_rsp *opRsp);
+HCCP_ATTRI_VISI_DEF int RaTypicalSendWr(void *qpHandle, struct SendWr *wr, struct SendWrRsp *opRsp);
 
 /**
  * @ingroup librdma
@@ -475,7 +475,7 @@ HCCP_ATTRI_VISI_DEF int RaTypicalSendWr(void *qpHandle, struct send_wr *wr, stru
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
 */
-HCCP_ATTRI_VISI_DEF int RaSendWrlist(void *qpHandle, struct send_wrlist_data wr[], struct send_wr_rsp opRsp[],
+HCCP_ATTRI_VISI_DEF int RaSendWrlist(void *qpHandle, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
     unsigned int sendNum, unsigned int *completeNum);
 
 /**
@@ -492,8 +492,8 @@ HCCP_ATTRI_VISI_DEF int RaSendWrlist(void *qpHandle, struct send_wrlist_data wr[
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
 */
-HCCP_ATTRI_VISI_DEF int RaSendWrlistExt(void *qpHandle, struct send_wrlist_data_ext wr[],
-    struct send_wr_rsp opRsp[], unsigned int sendNum, unsigned int *completeNum);
+HCCP_ATTRI_VISI_DEF int RaSendWrlistExt(void *qpHandle, struct SendWrlistDataExt wr[],
+    struct SendWrRsp opRsp[], unsigned int sendNum, unsigned int *completeNum);
 
 /**
  * @ingroup librdma
@@ -506,7 +506,7 @@ HCCP_ATTRI_VISI_DEF int RaSendWrlistExt(void *qpHandle, struct send_wrlist_data_
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSendNormalWrlist(void *qpHandle, struct wr_info wr[], struct send_wr_rsp opRsp[],
+HCCP_ATTRI_VISI_DEF int RaSendNormalWrlist(void *qpHandle, struct WrInfo wr[], struct SendWrRsp opRsp[],
     unsigned int sendNum, unsigned int *completeNum);
 
 /**
@@ -528,7 +528,7 @@ HCCP_ATTRI_VISI_DEF int RaGetNotifyBaseAddr(void *rdevHandle, unsigned long long
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetNotifyMrInfo(void *rdevHandle, struct mr_info *info);
+HCCP_ATTRI_VISI_DEF int RaGetNotifyMrInfo(void *rdevHandle, struct MrInfoT *info);
 
 /**
  * @ingroup libinit
@@ -538,7 +538,7 @@ HCCP_ATTRI_VISI_DEF int RaGetNotifyMrInfo(void *rdevHandle, struct mr_info *info
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaInit(struct ra_init_config *config);
+HCCP_ATTRI_VISI_DEF int RaInit(struct RaInitConfig *config);
 
 /**
  * @ingroup libcommon
@@ -549,7 +549,7 @@ HCCP_ATTRI_VISI_DEF int RaInit(struct ra_init_config *config);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetTlsEnable(struct ra_info *info, bool *tlsEnable);
+HCCP_ATTRI_VISI_DEF int RaGetTlsEnable(struct RaInfo *info, bool *tlsEnable);
 
 /**
  * @ingroup libcommon
@@ -562,7 +562,7 @@ HCCP_ATTRI_VISI_DEF int RaGetTlsEnable(struct ra_info *info, bool *tlsEnable);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetHccnCfg(struct ra_info *info, enum hccn_cfg_key key,
+HCCP_ATTRI_VISI_DEF int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key,
     char *value,unsigned int *valueLen);
 
 /**
@@ -573,7 +573,7 @@ HCCP_ATTRI_VISI_DEF int RaGetHccnCfg(struct ra_info *info, enum hccn_cfg_key key
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaDeinit(struct ra_init_config *config);
+HCCP_ATTRI_VISI_DEF int RaDeinit(struct RaInitConfig *config);
 
 /**
  * @ingroup libinit
@@ -597,7 +597,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketInit(int mode, struct rdev rdevInfo, void **sock
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketInitV1(int mode, struct socket_init_info_t socketInit, void **socketHandle);
+HCCP_ATTRI_VISI_DEF int RaSocketInitV1(int mode, struct SocketInitInfoT socketInit, void **socketHandle);
 
 /**
  * @ingroup libinit
@@ -632,7 +632,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevInit(int mode, unsigned int notifyType, struct rde
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRdevInitV2(struct rdev_init_info initInfo, struct rdev rdevInfo, void **rdmaHandle);
+HCCP_ATTRI_VISI_DEF int RaRdevInitV2(struct RdevInitInfo initInfo, struct rdev rdevInfo, void **rdmaHandle);
 
 /**
  * @ingroup libinit
@@ -645,7 +645,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevInitV2(struct rdev_init_info initInfo, struct rdev
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRdevInitWithBackup(struct rdev_init_info *initInfo, struct rdev *rdevInfo,
+HCCP_ATTRI_VISI_DEF int RaRdevInitWithBackup(struct RdevInitInfo *initInfo, struct rdev *rdevInfo,
     struct rdev *backupRdevInfo, void **rdmaHandle);
 
 /**
@@ -698,7 +698,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketGetWhiteListStatus(unsigned int *enable);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketWhiteListAdd(void *socketHandle, struct socket_wlist_info_t whiteList[],
+HCCP_ATTRI_VISI_DEF int RaSocketWhiteListAdd(void *socketHandle, struct SocketWlistInfoT whiteList[],
     unsigned int num);
 
 /**
@@ -711,7 +711,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketWhiteListAdd(void *socketHandle, struct socket_w
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketWhiteListDel(void *socketHandle, struct socket_wlist_info_t whiteList[],
+HCCP_ATTRI_VISI_DEF int RaSocketWhiteListDel(void *socketHandle, struct SocketWlistInfoT whiteList[],
     unsigned int num);
 
 /**
@@ -726,7 +726,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketWhiteListDel(void *socketHandle, struct socket_w
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketAcceptCreditAdd(struct socket_listen_info_t conn[], unsigned int num,
+HCCP_ATTRI_VISI_DEF int RaSocketAcceptCreditAdd(struct SocketListenInfoT conn[], unsigned int num,
     unsigned int creditLimit);
 
 /**
@@ -738,7 +738,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketAcceptCreditAdd(struct socket_listen_info_t conn
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetIfnum(struct ra_get_ifattr *config, unsigned int *num);
+HCCP_ATTRI_VISI_DEF int RaGetIfnum(struct RaGetIfattr *config, unsigned int *num);
 
 /**
  * @ingroup libinit
@@ -750,7 +750,7 @@ HCCP_ATTRI_VISI_DEF int RaGetIfnum(struct ra_get_ifattr *config, unsigned int *n
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetIfaddrs(struct ra_get_ifattr *config, struct interface_info interfaceInfos[],
+HCCP_ATTRI_VISI_DEF int RaGetIfaddrs(struct RaGetIfattr *config, struct InterfaceInfo interfaceInfos[],
     unsigned int *num);
 
 /**
@@ -765,8 +765,8 @@ HCCP_ATTRI_VISI_DEF int RaGetIfaddrs(struct ra_get_ifattr *config, struct interf
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSocketGetVnicIpInfos(unsigned int phyId, enum id_type type, unsigned int ids[],
-    unsigned int num, struct ip_info infos[]);
+HCCP_ATTRI_VISI_DEF int RaSocketGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[],
+    unsigned int num, struct IpInfo infos[]);
 
 /**
  * @ingroup libcommon
@@ -816,7 +816,7 @@ HCCP_ATTRI_VISI_DEF int RaGetTsqpDepth(void *rdevHandle, unsigned int *tempDepth
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRdevGetPortStatus(void *rdmaHandle, enum port_status *status);
+HCCP_ATTRI_VISI_DEF int RaRdevGetPortStatus(void *rdmaHandle, enum PortStatus *status);
 
 /**
  * @ingroup librdma
@@ -830,7 +830,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevGetPortStatus(void *rdmaHandle, enum port_status *
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRecvWrlist(void *qpHandle, struct recv_wrlist_data *wr, unsigned int recvNum,
+HCCP_ATTRI_VISI_DEF int RaRecvWrlist(void *qpHandle, struct RecvWrlistData *wr, unsigned int recvNum,
     unsigned int *completeNum);
 
 /**
@@ -867,7 +867,7 @@ HCCP_ATTRI_VISI_DEF int RaGetQpContext(void* qpHandle, void** qp, void** sendCq,
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSetQpAttrQos(void *qpHandle, struct qos_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaSetQpAttrQos(void *qpHandle, struct QosAttr *attr);
 
 /**
  * @ingroup librdma
@@ -899,7 +899,7 @@ HCCP_ATTRI_VISI_DEF int RaSetQpAttrRetryCnt(void *qpHandle, unsigned int *retryC
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetCqeErrInfo(unsigned int phyId, struct cqe_err_info *info);
+HCCP_ATTRI_VISI_DEF int RaGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);
 
 /**
  * @ingroup librdma
@@ -911,7 +911,7 @@ HCCP_ATTRI_VISI_DEF int RaGetCqeErrInfo(unsigned int phyId, struct cqe_err_info 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRdevGetCqeErrInfoList(void *rdmaHandle, struct cqe_err_info *infoList,
+HCCP_ATTRI_VISI_DEF int RaRdevGetCqeErrInfoList(void *rdmaHandle, struct CqeErrInfo *infoList,
     unsigned int *num);
 
 /**
@@ -923,7 +923,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevGetCqeErrInfoList(void *rdmaHandle, struct cqe_err
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaGetQpAttr(void *qpHandle, struct qp_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaGetQpAttr(void *qpHandle, struct QpAttr *attr);
 
 /**
  * @ingroup librdma
@@ -934,7 +934,7 @@ HCCP_ATTRI_VISI_DEF int RaGetQpAttr(void *qpHandle, struct qp_attr *attr);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaCreateSrq(const void *rdmaHandle, struct srq_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaCreateSrq(const void *rdmaHandle, struct SrqAttr *attr);
 
 /**
  * @ingroup librdma
@@ -943,7 +943,7 @@ HCCP_ATTRI_VISI_DEF int RaCreateSrq(const void *rdmaHandle, struct srq_attr *att
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaDestroySrq(const void *rdmaHandle, struct srq_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaDestroySrq(const void *rdmaHandle, struct SrqAttr *attr);
 
 /**
  * @ingroup libsocket
@@ -978,7 +978,7 @@ HCCP_ATTRI_VISI_DEF int RaCtlEventHandle(int eventHandle, const void *fdHandle, 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaWaitEventHandle(int eventHandle, struct socket_event_info *eventInfos, int timeout,
+HCCP_ATTRI_VISI_DEF int RaWaitEventHandle(int eventHandle, struct SocketEventInfoT *eventInfos, int timeout,
     unsigned int maxevents, unsigned int *eventsNum);
 
 /**
@@ -1022,7 +1022,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevGetHandle(unsigned int phyId, void **rdmaHandle);
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct ra_info *info, enum save_snapshot_action action);
+HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct RaInfo *info, enum SaveSnapshotAction action);
 
 /**
  * @ingroup libcommon
@@ -1032,7 +1032,7 @@ HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct ra_info *info, enum save_snapshot_
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct ra_info *info);
+HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct RaInfo *info);
 #ifdef __cplusplus
 }
 #endif

@@ -38,11 +38,11 @@ CommRemoteAccess::~CommRemoteAccess()
             }
         }
     }
-    struct socket_close_info_t socketCloseInfo = {0};
+    struct SocketCloseInfoT socketCloseInfo = {0};
     for (u32 i = 0; i < raSockets_.size(); i++) {
-        socketCloseInfo.socket_handle = raSockets_[i].socket_handle; // 带入设备ID为物理ID
-        socketCloseInfo.fd_handle = raSockets_[i].fd_handle;
-        if ((raSockets_[i].socket_handle != nullptr) && (raSockets_[i].fd_handle != nullptr)) {
+        socketCloseInfo.socketHandle = raSockets_[i].socketHandle; // 带入设备ID为物理ID
+        socketCloseInfo.fdHandle = raSockets_[i].fdHandle;
+        if ((raSockets_[i].socketHandle != nullptr) && (raSockets_[i].fdHandle != nullptr)) {
             ret = hrtRaSocketBatchClose(&socketCloseInfo, 1); /* 销毁已经创建的socket */
             if (ret != HCCL_SUCCESS) {
                 HCCL_WARNING("~CommRemoteAccess:socket batch close fail! ret=%d", ret);
@@ -238,21 +238,21 @@ HcclResult CommRemoteAccess::PrepareSocket()
     u32 dstInterServerNum = dstInterServerMap_.size() * raResourceInfo_.nicSocketMap.size();
     HCCL_INFO("socket batch connect dstInterServerNum[%u]", dstInterServerNum);
     if (dstInterServerNum > 0) {
-        std::vector<struct socket_connect_info_t> conns(dstInterServerNum);
-        struct socket_connect_info_t *conn = conns.data();
-        s32 sRet = memset_s(conn, sizeof(struct socket_connect_info_t) * dstInterServerNum, 0,
-                            sizeof(struct socket_connect_info_t) * dstInterServerNum);
+        std::vector<struct SocketConnectInfoT> conns(dstInterServerNum);
+        struct SocketConnectInfoT *conn = conns.data();
+        s32 sRet = memset_s(conn, sizeof(struct SocketConnectInfoT) * dstInterServerNum, 0,
+                            sizeof(struct SocketConnectInfoT) * dstInterServerNum);
         CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Prepare][Socket]memory set failed, return[%d]. params:"
             "destMaxSize[%zu], c[%d], count[%zu]", sRet,
-            sizeof(struct socket_connect_info_t) * dstInterServerNum, 0,
-            sizeof(struct socket_connect_info_t) * dstInterServerNum), HCCL_E_MEMORY);
+            sizeof(struct SocketConnectInfoT) * dstInterServerNum, 0,
+            sizeof(struct SocketConnectInfoT) * dstInterServerNum), HCCL_E_MEMORY);
 
         u32 loop = 0;
         for (auto iter = dstInterServerMap_.begin(); iter != dstInterServerMap_.end(); iter++) {
             for (u32 idx = 0; idx < nicSocketHandle_.size() && idx < (iter->second).size(); idx++) {
-                conn[loop].remote_ip.addr = (iter->second)[idx].GetBinaryAddress().addr;
-                conn[loop].remote_ip.addr6 = (iter->second)[idx].GetBinaryAddress().addr6;
-                conn[loop].socket_handle = nicSocketHandle_[idx];
+                conn[loop].remoteIp.addr = (iter->second)[idx].GetBinaryAddress().addr;
+                conn[loop].remoteIp.addr6 = (iter->second)[idx].GetBinaryAddress().addr6;
+                conn[loop].socketHandle = nicSocketHandle_[idx];
                 conn[loop].port = HETEROG_CCL_PORT;
                 if (nicSocketHandle_[idx] == nullptr) {
                     HCCL_ERROR("[Prepare][Socket]index[%u] nicSocketHandle_ is null", idx);
@@ -278,9 +278,9 @@ HcclResult CommRemoteAccess::PrepareSocket()
 HcclResult CommRemoteAccess::AddSocketWhiteList()
 {
     // 当前rank作为server端socket白名单下发动作
-    struct socket_wlist_info_t wlistInfo = {0};
+    struct SocketWlistInfoT wlistInfo = {0};
     for (auto iter = dstInterClientMap_.begin(); iter != dstInterClientMap_.end(); iter++) {
-        wlistInfo.conn_limit = NIC_SOCKET_CONN_LIMIT;
+        wlistInfo.connLimit = NIC_SOCKET_CONN_LIMIT;
         s32 sRet = memcpy_s(&wlistInfo.tag[0], sizeof(wlistInfo.tag) - 1, tag_.c_str(), tag_.size());
         if (sRet != EOK) {
             HCCL_ERROR("[Add][Socket]memory copy failed. errorno[%d]: dest size[%zu], src[%s],"
@@ -289,8 +289,8 @@ HcclResult CommRemoteAccess::AddSocketWhiteList()
             return HCCL_E_MEMORY;
         }
         for (u32 idx = 0; idx < (iter->second).size(); idx++) {
-            wlistInfo.remote_ip.addr = iter->second[idx].GetBinaryAddress().addr;
-            wlistInfo.remote_ip.addr6 = iter->second[idx].GetBinaryAddress().addr6;
+            wlistInfo.remoteIp.addr = iter->second[idx].GetBinaryAddress().addr;
+            wlistInfo.remoteIp.addr6 = iter->second[idx].GetBinaryAddress().addr6;
             wlistInfosVec_.push_back(wlistInfo);
         }
     }
@@ -350,14 +350,14 @@ HcclResult CommRemoteAccess::CreateInterServerLinks()
     // 获取当前rank作为client端时，获取所有server端的socket
     u32 dstInterServerNum = dstInterServerMap_.size() * nicSocketHandle_.size();
     if (dstInterServerNum > 0) {
-        std::vector<struct socket_info_t> cliConns(dstInterServerNum);
-        struct socket_info_t *cliConn = cliConns.data();
-        s32 sRet = memset_s(cliConn, sizeof(struct socket_info_t) * dstInterServerNum, 0,
-                            sizeof(struct socket_info_t) * dstInterServerNum);
+        std::vector<struct SocketInfoT> cliConns(dstInterServerNum);
+        struct SocketInfoT *cliConn = cliConns.data();
+        s32 sRet = memset_s(cliConn, sizeof(struct SocketInfoT) * dstInterServerNum, 0,
+                            sizeof(struct SocketInfoT) * dstInterServerNum);
         CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Create][InterServerLinks]memory set failed. return[%d]."
             "params: destMaxSize[%zu], c[%d], count[%zu]", sRet,
-            sizeof(struct socket_info_t) * dstInterServerNum, 0, \
-            sizeof(struct socket_info_t) * dstInterServerNum), HCCL_E_MEMORY);
+            sizeof(struct SocketInfoT) * dstInterServerNum, 0, \
+            sizeof(struct SocketInfoT) * dstInterServerNum), HCCL_E_MEMORY);
         // 构建socket_info_t信息，用于获取fd_socket_handle
         u32 connLoop = 0;
         for (auto iter = dstInterServerMap_.begin(); iter != dstInterServerMap_.end(); iter++) {
@@ -366,9 +366,9 @@ HcclResult CommRemoteAccess::CreateInterServerLinks()
                 "params:destMaxSize[%zu], count[%zu]", sRet, sizeof(cliConn[connLoop].tag), tag_.size()),
                 HCCL_E_MEMORY);
             for (u32 idx = 0; idx < nicSocketHandle_.size(); idx++) {
-                cliConn[connLoop].socket_handle = nicSocketHandle_[idx];
-                cliConn[connLoop].remote_ip.addr = iter->second[idx].GetBinaryAddress().addr;
-                cliConn[connLoop].remote_ip.addr6 = iter->second[idx].GetBinaryAddress().addr6;
+                cliConn[connLoop].socketHandle = nicSocketHandle_[idx];
+                cliConn[connLoop].remoteIp.addr = iter->second[idx].GetBinaryAddress().addr;
+                cliConn[connLoop].remoteIp.addr6 = iter->second[idx].GetBinaryAddress().addr6;
                 /* 插入建链状态的指示 */
                 LinkStatus_t linkInfo;
                 linkInfo.userRank = iter->first;
@@ -387,7 +387,7 @@ HcclResult CommRemoteAccess::CreateInterServerLinks()
     return HCCL_SUCCESS;
 }
 
-HcclResult CommRemoteAccess::GetRaSocket(const u32 role, const struct socket_info_t conn[], const u32 num)
+HcclResult CommRemoteAccess::GetRaSocket(const u32 role, const struct SocketInfoT conn[], const u32 num)
 {
     HCCL_INFO("get sockets para: socket role[%u], socket num[%u]", role, num);
     auto startTime = std::chrono::steady_clock::now();
@@ -403,13 +403,13 @@ HcclResult CommRemoteAccess::GetRaSocket(const u32 role, const struct socket_inf
                 role, rank_, left, timeout);
             return HCCL_E_TIMEOUT;
         }
-        std::vector<struct socket_info_t> conns(left);
-        struct socket_info_t *tmpConn = conns.data();
-        s32 sret = memcpy_s(tmpConn, sizeof(struct socket_info_t) * left,
-                            conn + (num - left), sizeof(struct socket_info_t) * left);
+        std::vector<struct SocketInfoT> conns(left);
+        struct SocketInfoT *tmpConn = conns.data();
+        s32 sret = memcpy_s(tmpConn, sizeof(struct SocketInfoT) * left,
+                            conn + (num - left), sizeof(struct SocketInfoT) * left);
         CHK_PRT_RET(sret != EOK, HCCL_ERROR("[Get][RaSocket]memcpy failed. errorno[%d], params:"
-            "destMaxSize[%zu], count[%zu]", sret, sizeof(struct socket_info_t) * left,
-            sizeof(struct socket_info_t) * left), HCCL_E_MEMORY);
+            "destMaxSize[%zu], count[%zu]", sret, sizeof(struct SocketInfoT) * left,
+            sizeof(struct SocketInfoT) * left), HCCL_E_MEMORY);
         u32 connectedNum = 0;
         sockRet = hrtRaGetSockets(role, tmpConn, left, &connectedNum);
         if ((connectedNum == 0 && sockRet == 0) || (sockRet == SOCK_EAGAIN)) {
@@ -449,14 +449,14 @@ HcclResult CommRemoteAccess::CreateInterClientLinks()
     u32 dstInterClientNum = dstInterClientMap_.size() * nicSocketHandle_.size();
     HCCL_INFO("dstInterClientNum[%u]", dstInterClientNum);
     if (dstInterClientNum > 0) {
-        std::vector<struct socket_info_t> srvConns(dstInterClientNum);
-        struct socket_info_t *srvConn = srvConns.data();
-        s32 sRet = memset_s(srvConn, sizeof(struct socket_info_t) * dstInterClientNum, 0,
-                            sizeof(struct socket_info_t) * dstInterClientNum);
+        std::vector<struct SocketInfoT> srvConns(dstInterClientNum);
+        struct SocketInfoT *srvConn = srvConns.data();
+        s32 sRet = memset_s(srvConn, sizeof(struct SocketInfoT) * dstInterClientNum, 0,
+                            sizeof(struct SocketInfoT) * dstInterClientNum);
         CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Create][InterClientLinks]memory set failed. return[%d]."
             "params: destMaxSize[%zu], c[%d], count[%zu]", sRet,
-            sizeof(struct socket_info_t) * dstInterClientNum, 0, \
-            sizeof(struct socket_info_t) * dstInterClientNum), HCCL_E_MEMORY);
+            sizeof(struct SocketInfoT) * dstInterClientNum, 0, \
+            sizeof(struct SocketInfoT) * dstInterClientNum), HCCL_E_MEMORY);
         u32 loop = 0;
         for (u32 interIndex = 0; interIndex < dstInterClientMap_.size(); interIndex++) {
             sRet = memcpy_s(&srvConn[loop].tag[0], sizeof(srvConn[loop].tag) - 1, tag_.c_str(), tag_.size());
@@ -466,7 +466,7 @@ HcclResult CommRemoteAccess::CreateInterClientLinks()
                     sRet, sizeof(srvConn[loop].tag),\
                     tag_.size()), HCCL_E_MEMORY);
             for (u32 idx = 0; idx < nicSocketHandle_.size(); idx++) {
-                srvConn[loop].socket_handle = nicSocketHandle_[idx];
+                srvConn[loop].socketHandle = nicSocketHandle_[idx];
                 loop++;
             }
         }
@@ -586,17 +586,17 @@ HcclResult CommRemoteAccess::GetDstRank(std::map<u32, std::vector<HcclIpAddress>
     return HCCL_E_NOT_FOUND;
 }
 
-HcclResult CommRemoteAccess::CreateInterThread(const u32 role, const socket_info_t &socketInfo)
+HcclResult CommRemoteAccess::CreateInterThread(const u32 role, const SocketInfoT &socketInfo)
 {
     // 线程命名，CommRemoteTerL代表CommRemote Inter Link
     std::string threadStr = "RemoteThrd_" + std::to_string(threadsApplyNum_);
     HcclIpAddress nicIp;
     u32 dstRank = 0;
     threadsStatus_[threadsApplyNum_] = 1;
-    CHK_RET(GetNicByHandle(socketInfo.socket_handle, nicIp));
+    CHK_RET(GetNicByHandle(socketInfo.socketHandle, nicIp));
     HcclInAddr temp;
-    temp.addr = socketInfo.remote_ip.addr;
-    temp.addr6 = socketInfo.remote_ip.addr6;
+    temp.addr = socketInfo.remoteIp.addr;
+    temp.addr6 = socketInfo.remoteIp.addr6;
     HcclIpAddress remoteIP(rankInfo_[rank_][0].GetFamily(), temp);
     CHK_PRT_RET(remoteIP.IsInvalid(), HCCL_ERROR("ip is invalid."), HCCL_E_PARA);
     workflowMode_ = GetWorkflowMode();
@@ -604,14 +604,14 @@ HcclResult CommRemoteAccess::CreateInterThread(const u32 role, const socket_info
         CHK_RET(GetDstRank(dstInterClientMap_, remoteIP, dstRank));
         linkThreads_[threadsApplyNum_].reset(
             new (std::nothrow) std::thread(&CommRemoteAccess::InitDestTransport, this, hrtErrMGetErrorContext(), role,
-                                nicIp, dstRank, threadStr, socketInfo.fd_handle, &threadsStatus_[threadsApplyNum_]));
+                                nicIp, dstRank, threadStr, socketInfo.fdHandle, &threadsStatus_[threadsApplyNum_]));
     }
 
     if (role == CLIENT_ROLE_SOCKET) {
         CHK_RET(GetDstRank(dstInterServerMap_, remoteIP, dstRank));
         linkThreads_[threadsApplyNum_].reset(
             new (std::nothrow) std::thread(&CommRemoteAccess::InitDestTransport, this, hrtErrMGetErrorContext(), role,
-                                nicIp, dstRank, threadStr, socketInfo.fd_handle, &threadsStatus_[threadsApplyNum_]));
+                                nicIp, dstRank, threadStr, socketInfo.fdHandle, &threadsStatus_[threadsApplyNum_]));
     }
     bool check = !linkThreads_[threadsApplyNum_];
     CHK_PRT_RET(check, HCCL_ERROR("[Create][InterThread]link threads[%u] reset failed.", threadsApplyNum_),
@@ -621,15 +621,15 @@ HcclResult CommRemoteAccess::CreateInterThread(const u32 role, const socket_info
 }
 
 HcclResult CommRemoteAccess::DealSuccRasocket(s32 sockRet, const u32 role,
-    const struct socket_info_t tmpConn[], const u32 num)
+    const struct SocketInfoT tmpConn[], const u32 num)
 {
     HCCL_DEBUG("CommRemoteAccess DealSuccRasocketNum[%u]", num);
     u32 socketsCnt = static_cast<u32>(sockRet);
     u32 loop = 0;
     for (u32 i = 0; i < num; i++) {
         HcclInAddr temp;
-        temp.addr = tmpConn[i].remote_ip.addr;
-        temp.addr6 = tmpConn[i].remote_ip.addr6;
+        temp.addr = tmpConn[i].remoteIp.addr;
+        temp.addr6 = tmpConn[i].remoteIp.addr6;
         HcclIpAddress remoteIP(rankInfo_[rank_][0].GetFamily(), temp);
         CHK_PRT_RET(remoteIP.IsInvalid(), HCCL_ERROR("ip is invalid."), HCCL_E_PARA);
         if (tmpConn[i].status == SOCKET_CONNECT_OK) {

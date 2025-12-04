@@ -471,6 +471,7 @@ set(aicpu_kfc_list_open
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/topo/topoinfo_parse.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/topo/hccl_whitelist.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/exception/exception_handler.cc
+    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/h2d_tlv/hccl_h2dtlv.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/thread/threads_guard.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/onesided_memory_management/global_mem_manager.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/onesided_memory_management/global_mem_record.cc

@@ -378,6 +378,36 @@ bool AicpuKfcUtils::NeedRecordTimeTaken(const AicpuComContext &ctx)
     return IsDebugModeEquals(ctx, MC2_DEBUG_TIME_TAKEN) || dfx::ProfilingManager::GetProfL1State();
 }
 
+void AicpuKfcUtils::PrintApiStats(HcclMsgArea *hcclMsgArea, const s32 logLevel)
+{
+    const auto &apiStats = hcclMsgArea->apiStats;
+    std::stringstream ssCommitStats;
+    for (u32 i = 0; i < sizeof(apiStats.commitStats) / sizeof(apiStats.commitStats[0]); ++i) {
+        ssCommitStats << apiStats.commitStats[i].cnt << ",";
+    }
+    HCCL_LOG_BY_LEVEL(logLevel, "apiCommitStats: %s", ssCommitStats.str().c_str());
+
+    std::stringstream ssWaitStats;
+    for (u32 i = 0; i < sizeof(apiStats.waitStats) / sizeof(apiStats.waitStats[0]); ++i) {
+        ssWaitStats << apiStats.waitStats[i].cnt << ",";
+    }
+    HCCL_LOG_BY_LEVEL(logLevel, "apiWaitStats: %s", ssWaitStats.str().c_str());
+
+    std::stringstream ssMsgStats;
+    for (u32 i = 0; i < sizeof(apiStats.msgStats) / sizeof(apiStats.msgStats[0]); ++i) {
+        ssMsgStats << apiStats.msgStats[i].cnt << ",";
+    }
+    HCCL_LOG_BY_LEVEL(logLevel, "apiMsgStats: %s", ssMsgStats.str().c_str());
+
+    std::stringstream ssSnapshots;
+    const u64 cnt = apiStats.snapshots[0].cnt;
+    const u64 start = (cnt > HCCL_API_SNAPSHOTS_CNT ? cnt - HCCL_API_SNAPSHOTS_CNT : 0UL);
+    for (u64 i = start; i < cnt; ++i) {
+        ssSnapshots << apiStats.snapshots[i % HCCL_API_SNAPSHOTS_CNT + 1UL].cnt << ",";
+    }
+    HCCL_LOG_BY_LEVEL(logLevel, "apiSnapshots(%llu-%llu): %s", start + 1UL, cnt, ssSnapshots.str().c_str());
+}
+
 void AicpuKfcUtils::PrintAllHcclMsgArea(HcclMsgArea *hcclMsgArea, u32 rankSize, bool errorFlag)
 {
     const s32 logLevel = (errorFlag ? DLOG_ERROR : HCCL_DLOG_DEFAULT);
@@ -406,37 +436,15 @@ void AicpuKfcUtils::PrintAllHcclMsgArea(HcclMsgArea *hcclMsgArea, u32 rankSize, 
         ssCommitCnt << msg.commitTurnCnt[i].cnt << ",";
     }
     HCCL_LOG_BY_LEVEL(logLevel, "commitTurnCnt: %s", ssCommitCnt.str().c_str());
+
     std::stringstream ssFinishCnt;
     for (uint32_t i = 0; i < HCCL_MSG_CNT; ++i) {
         ssFinishCnt << msg.finishedTurnCnt[i].cnt << ",";
     }
     HCCL_LOG_BY_LEVEL(logLevel, "finishedTurnCnt: %s", ssFinishCnt.str().c_str());
-    const auto &apiStats = hcclMsgArea->apiStats;
-    std::stringstream ssCommitStats;
-    for (u32 i = 0; i < sizeof(apiStats.commitStats) / sizeof(apiStats.commitStats[0]); ++i) {
-        ssCommitStats << apiStats.commitStats[i].cnt << ",";
-    }
-    HCCL_LOG_BY_LEVEL(logLevel, "apiCommitStats: %s", ssCommitStats.str().c_str());
 
-    std::stringstream ssWaitStats;
-    for (u32 i = 0; i < sizeof(apiStats.waitStats) / sizeof(apiStats.waitStats[0]); ++i) {
-        ssWaitStats << apiStats.waitStats[i].cnt << ",";
-    }
-    HCCL_LOG_BY_LEVEL(logLevel, "apiWaitStats: %s", ssWaitStats.str().c_str());
+    PrintApiStats(hcclMsgArea, logLevel);
 
-    std::stringstream ssMsgStats;
-    for (u32 i = 0; i < sizeof(apiStats.msgStats) / sizeof(apiStats.msgStats[0]); ++i) {
-        ssMsgStats << apiStats.msgStats[i].cnt << ",";
-    }
-    HCCL_LOG_BY_LEVEL(logLevel, "apiMsgStats: %s", ssMsgStats.str().c_str());
-
-    std::stringstream ssSnapshots;
-    const u64 cnt = apiStats.snapshots[0].cnt;
-    const u64 start = (cnt > HCCL_API_SNAPSHOTS_CNT ? cnt - HCCL_API_SNAPSHOTS_CNT : 0UL);
-    for (u64 i = start; i < cnt; ++i) {
-        ssSnapshots << apiStats.snapshots[i % HCCL_API_SNAPSHOTS_CNT + 1UL].cnt << ",";
-    }
-    HCCL_LOG_BY_LEVEL(logLevel, "apiSnapshots(%llu-%llu): %s", start + 1UL, cnt, ssSnapshots.str().c_str());
     HCCL_LOG_BY_LEVEL(logLevel, "********* msgArea %p end print **********", hcclMsgArea);
 }
 

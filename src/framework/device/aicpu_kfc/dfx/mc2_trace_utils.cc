@@ -101,6 +101,88 @@ HcclResult MC2TraceUtils::InitTraceStrHandle()
     return HCCL_SUCCESS;
 }
 
+void MC2TraceUtils::SetHcclKFCTilingDataOne()
+{
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "sendOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "recvOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailSendOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailRecvOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "sendCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "recvCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailSendCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailRecvCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "totalCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "turnNum", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailNum", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "stride", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "workspaceOff", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "notifyOff", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "notifyBeginCnt", TRACE_STRUCT_FIELD_TYPE_UINT16,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "notifyEndCnt", TRACE_STRUCT_FIELD_TYPE_UINT16,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "useBufferType", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "funID", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "dataType", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "groupNum", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reuseMode", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+}
+
+void MC2TraceUtils::SetHcclKFCTilingDataTwo()
+{
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commType", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reduceOp", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commOrder", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "waitPolicy", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "rspPolicy", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "exitPolicy", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commAlg", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "taskType", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "debugMode", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "stepSize", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "sendArgIndex", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "recvArgIndex", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commOutArgIndex", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "hasCommOut", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reverse", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reserve2", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+}
+
 HcclResult MC2TraceUtils::InitTaskAndTilingDataHandle()
 {
     uint16_t taskAndTilingDataMsgNum = GetMsgNum(sizeof(KFCtaskAndTilingTraceData));
@@ -119,80 +201,8 @@ HcclResult MC2TraceUtils::InitTaskAndTilingDataHandle()
         TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
     g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tilingData", TRACE_STRUCT_FIELD_TYPE_UINT64,
         TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "sendOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "recvOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailSendOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailRecvOff", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "sendCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "recvCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailSendCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailRecvCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "totalCnt", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "turnNum", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "tailNum", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "stride", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "workspaceOff", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "notifyOff", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "notifyBeginCnt", TRACE_STRUCT_FIELD_TYPE_UINT16,
-        TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "notifyEndCnt", TRACE_STRUCT_FIELD_TYPE_UINT16,
-        TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "useBufferType", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "funID", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "dataType", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "groupNum", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reuseMode", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commType", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reduceOp", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commOrder", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "waitPolicy", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "rspPolicy", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "exitPolicy", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commAlg", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "taskType", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "debugMode", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "stepSize", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "sendArgIndex", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "recvArgIndex", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "commOutArgIndex", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "hasCommOut", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reverse", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceKFCtaskAndTilingTraceDataSt, "reserve2", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    SetHcclKFCTilingDataOne();
+    SetHcclKFCTilingDataTwo();
     g_traceStructSetAttr(g_traceKFCtaskAndTilingTraceDataSt, 0, &attr);
     g_traceTaskAndTilingDataHandle = g_traceCreateWithAttr(TRACER_TYPE_SCHEDULE, "KFCtaskAndTilingTraceData", &attr);
     if (g_traceTaskAndTilingDataHandle < 0) {
@@ -259,48 +269,53 @@ HcclResult MC2TraceUtils::InitAicpuComDataHandle()
     return HCCL_SUCCESS;
 }
 
+void MC2TraceUtils::SetTraceMsgInfo()
+{
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "commType", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "opType", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "sendBuffer", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "recvBuffer", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "count", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "strideLen", TRACE_STRUCT_FIELD_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 8); // 8 uint64
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "hcclDataType", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "valid", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "isLast", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "funID", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "sendCnt", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "rcvCnt", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "everyTurnRsp", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "everyTurnWait", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "totalTurnCnt", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "useBufferType", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceMsgInfoSt, "winOffset", TRACE_STRUCT_ARRAY_TYPE_UINT64,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 8); // 8 uint64
+    g_traceStructItemArraySet(g_traceMsgInfoSt, "res", TRACE_STRUCT_ARRAY_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 2); // 1 uint8 2 2*uint8
+}
+
 HcclResult MC2TraceUtils::InitMsgInfoHandle()
 {
     uint16_t msgInfoNum = GetMsgNum(sizeof(AivAicpuOpParam));
     TraceAttr attr = {0};
     attr = {false, msgInfoNum, sizeof(AivAicpuOpParam), nullptr};
     g_traceMsgInfoSt = g_traceStructEntryCreate("AivAicpuOpParam");
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "commType", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "opType", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "sendBuffer", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "recvBuffer", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_HEX, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "count", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_DEC, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "strideLen", TRACE_STRUCT_FIELD_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_DEC, 8); // 8 uint64
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "hcclDataType", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "valid", TRACE_STRUCT_FIELD_TYPE_UINT32,
-        TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "isLast", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "funID", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "sendCnt", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "rcvCnt", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "everyTurnRsp", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "everyTurnWait", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "totalTurnCnt", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "useBufferType", TRACE_STRUCT_FIELD_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-    g_traceStructItemFieldSet(g_traceMsgInfoSt, "winOffset", TRACE_STRUCT_ARRAY_TYPE_UINT64,
-        TRACE_STRUCT_SHOW_MODE_DEC, 8); // 8 uint64
-    g_traceStructItemArraySet(g_traceMsgInfoSt, "res", TRACE_STRUCT_ARRAY_TYPE_UINT8,
-        TRACE_STRUCT_SHOW_MODE_DEC, 2); // 1 uint8 2 2*uint8
+    MC2TraceUtils::SetTraceMsgInfo();
     g_traceStructSetAttr(g_traceMsgInfoSt, 0, &attr);
     g_traceMsgInfoHandle = g_traceCreateWithAttr(TRACER_TYPE_SCHEDULE, "AivAicpuOpParam", &attr);
     if (g_traceMsgInfoHandle < 0) {
@@ -316,6 +331,52 @@ HcclResult MC2TraceUtils::InitMsgInfoHandle()
     return HCCL_SUCCESS;
 }
 
+void MC2TraceUtils::SetTraceSqeBatchInfo()
+{
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr1High", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr1Low", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr2High", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr2Low", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "sqeHeadIdx", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "notifyId", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "length", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "partId", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "remoteRank", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "dataType", TRACE_STRUCT_FIELD_TYPE_UINT32,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "streamId", TRACE_STRUCT_FIELD_TYPE_UINT16,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "eventId", TRACE_STRUCT_FIELD_TYPE_UINT16,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "taskId", TRACE_STRUCT_FIELD_TYPE_UINT16,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "condValue", TRACE_STRUCT_FIELD_TYPE_UINT16,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "isLast", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "opCode", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "sqeNum", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "type", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "subType", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "valid", TRACE_STRUCT_FIELD_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
+    g_traceStructItemArraySet(g_traceSqeBatchInfoSt, "reverse", TRACE_STRUCT_ARRAY_TYPE_UINT8,
+                              TRACE_STRUCT_SHOW_MODE_DEC, 10); // 1 uint8 10 10*uint8
+}
+
 HcclResult MC2TraceUtils::InitSqeBatchInfoHandle()
 {
     uint16_t sqeBatchInfoMsgNum = GetMsgNum(sizeof(SqeBatchInfo));
@@ -323,48 +384,7 @@ HcclResult MC2TraceUtils::InitSqeBatchInfoHandle()
     attr = {false, sqeBatchInfoMsgNum, sizeof(SqeBatchInfo), nullptr};
     g_traceSqeBatchInfoSt = g_traceStructEntryCreate("SqeBatchInfo");
     for (uint32_t i = 0; i < MAX_SQE_BATCH_SIZE; i++) {
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr1High", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr1Low", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr2High", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "addr2Low", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_HEX, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "sqeHeadIdx", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "notifyId", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "length", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "partId", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "remoteRank", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "dataType", TRACE_STRUCT_FIELD_TYPE_UINT32,
-            TRACE_STRUCT_SHOW_MODE_DEC, 4); // 4 uint32
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "streamId", TRACE_STRUCT_FIELD_TYPE_UINT16,
-            TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "eventId", TRACE_STRUCT_FIELD_TYPE_UINT16,
-            TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "taskId", TRACE_STRUCT_FIELD_TYPE_UINT16,
-            TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "condValue", TRACE_STRUCT_FIELD_TYPE_UINT16,
-            TRACE_STRUCT_SHOW_MODE_DEC, 2); // 2 uint16
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "isLast", TRACE_STRUCT_FIELD_TYPE_UINT8,
-            TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "opCode", TRACE_STRUCT_FIELD_TYPE_UINT8,
-            TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "sqeNum", TRACE_STRUCT_FIELD_TYPE_UINT8,
-            TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "type", TRACE_STRUCT_FIELD_TYPE_UINT8,
-            TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "subType", TRACE_STRUCT_FIELD_TYPE_UINT8,
-            TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-        g_traceStructItemFieldSet(g_traceSqeBatchInfoSt, "valid", TRACE_STRUCT_FIELD_TYPE_UINT8,
-            TRACE_STRUCT_SHOW_MODE_DEC, 1); // 1 uint8
-        g_traceStructItemArraySet(g_traceSqeBatchInfoSt, "reverse", TRACE_STRUCT_ARRAY_TYPE_UINT8,
-            TRACE_STRUCT_SHOW_MODE_DEC, 10); // 1 uint8 10 10*uint8
+        SetTraceSqeBatchInfo();
     }
     g_traceStructSetAttr(g_traceSqeBatchInfoSt, 0, &attr);
     g_traceSqeBatchInfoHandle = g_traceCreateWithAttr(TRACER_TYPE_SCHEDULE, "SqeBatchInfo", &attr);
@@ -396,33 +416,8 @@ HcclResult MC2TraceUtils::InitTraceHandle()
     return HCCL_SUCCESS;
 }
 
-HcclResult MC2TraceUtils::InitFuncHandle()
+HcclResult MC2TraceUtils::GetTraceFunc(const std::string &traceName)
 {
-    std::string traceName = g_isAtrace ? "Atrace" : "Utrace";
-    HCCL_INFO("Start mmDlsym %s funcHandle", traceName.c_str());
-    g_traceCreateWithAttr = reinterpret_cast<TraceCreateWithAttrFunc>(
-        mmDlsym(g_soHandle, std::string(traceName + "CreateWithAttr").c_str()));
-    CHK_PRT_RET(g_traceCreateWithAttr == nullptr, HCCL_ERROR("Get g_traceCreateWithAttr error: %s", mmDlerror()),
-        HCCL_E_SYSCALL);
-    g_traceGetHandle = reinterpret_cast<TraceGetHandleFunc>(
-        mmDlsym(g_soHandle, std::string(traceName + "GetHandle").c_str()));
-    CHK_PRT_RET(g_traceGetHandle == nullptr, HCCL_ERROR("Get g_traceGetHandle error: %s", mmDlerror()),
-        HCCL_E_SYSCALL);
-    g_traceSubmit = reinterpret_cast<TraceSubmitFunc>(
-        mmDlsym(g_soHandle, std::string(traceName + "Submit").c_str()));
-    CHK_PRT_RET(g_traceSubmit == nullptr, HCCL_ERROR("Get g_traceSubmit error: %s", mmDlerror()), HCCL_E_SYSCALL);
-    g_traceEventCreate = reinterpret_cast<TraceEventCreateFunc>(
-        mmDlsym(g_soHandle, std::string(traceName + "EventCreate").c_str()));
-    CHK_PRT_RET(g_traceEventCreate == nullptr, HCCL_ERROR("Get g_traceEventCreate error: %s", mmDlerror()),
-        HCCL_E_SYSCALL);
-    g_traceEventDestroy = reinterpret_cast<TraceEventDestroyFunc>(
-        mmDlsym(g_soHandle, std::string(traceName + "EventDestroy").c_str()));
-    CHK_PRT_RET(g_traceEventDestroy == nullptr, HCCL_ERROR("Get g_traceEventDestroy error: %s", mmDlerror()),
-        HCCL_E_SYSCALL);
-    g_traceHandleDestroy = reinterpret_cast<TraceHandleDestroyFunc>(
-        mmDlsym(g_soHandle, std::string(traceName + "Destroy").c_str()));
-    CHK_PRT_RET(g_traceHandleDestroy == nullptr, HCCL_ERROR("Get g_traceHandleDestroy error: %s", mmDlerror()),
-        HCCL_E_SYSCALL);
     g_traceEventBindTrace = reinterpret_cast<TraceEventBindTraceFunc>(
         mmDlsym(g_soHandle, std::string(traceName + "EventBindTrace").c_str()));
     CHK_PRT_RET(g_traceEventBindTrace == nullptr, HCCL_ERROR("Get g_traceEventBindTrace error: %s", mmDlerror()),
@@ -455,6 +450,37 @@ HcclResult MC2TraceUtils::InitFuncHandle()
         mmDlsym(g_soHandle, std::string(traceName + "StructEntryDestroy").c_str()));
     CHK_PRT_RET(g_traceStructEntryDestroy == nullptr,
         HCCL_ERROR("Get g_traceStructEntryDestroy error: %s", mmDlerror()), HCCL_E_SYSCALL);
+    return HCCL_SUCCESS;
+}
+
+HcclResult MC2TraceUtils::InitFuncHandle()
+{
+    std::string traceName = g_isAtrace ? "Atrace" : "Utrace";
+    HCCL_INFO("Start mmDlsym %s funcHandle", traceName.c_str());
+    g_traceCreateWithAttr = reinterpret_cast<TraceCreateWithAttrFunc>(
+        mmDlsym(g_soHandle, std::string(traceName + "CreateWithAttr").c_str()));
+    CHK_PRT_RET(g_traceCreateWithAttr == nullptr, HCCL_ERROR("Get g_traceCreateWithAttr error: %s", mmDlerror()),
+        HCCL_E_SYSCALL);
+    g_traceGetHandle = reinterpret_cast<TraceGetHandleFunc>(
+        mmDlsym(g_soHandle, std::string(traceName + "GetHandle").c_str()));
+    CHK_PRT_RET(g_traceGetHandle == nullptr, HCCL_ERROR("Get g_traceGetHandle error: %s", mmDlerror()),
+        HCCL_E_SYSCALL);
+    g_traceSubmit = reinterpret_cast<TraceSubmitFunc>(
+        mmDlsym(g_soHandle, std::string(traceName + "Submit").c_str()));
+    CHK_PRT_RET(g_traceSubmit == nullptr, HCCL_ERROR("Get g_traceSubmit error: %s", mmDlerror()), HCCL_E_SYSCALL);
+    g_traceEventCreate = reinterpret_cast<TraceEventCreateFunc>(
+        mmDlsym(g_soHandle, std::string(traceName + "EventCreate").c_str()));
+    CHK_PRT_RET(g_traceEventCreate == nullptr, HCCL_ERROR("Get g_traceEventCreate error: %s", mmDlerror()),
+        HCCL_E_SYSCALL);
+    g_traceEventDestroy = reinterpret_cast<TraceEventDestroyFunc>(
+        mmDlsym(g_soHandle, std::string(traceName + "EventDestroy").c_str()));
+    CHK_PRT_RET(g_traceEventDestroy == nullptr, HCCL_ERROR("Get g_traceEventDestroy error: %s", mmDlerror()),
+        HCCL_E_SYSCALL);
+    g_traceHandleDestroy = reinterpret_cast<TraceHandleDestroyFunc>(
+        mmDlsym(g_soHandle, std::string(traceName + "Destroy").c_str()));
+    CHK_PRT_RET(g_traceHandleDestroy == nullptr, HCCL_ERROR("Get g_traceHandleDestroy error: %s", mmDlerror()),
+        HCCL_E_SYSCALL);
+    CHK_RET(GetTraceFunc(traceName));
     return HCCL_SUCCESS;
 }
 

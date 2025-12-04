@@ -59,6 +59,7 @@ public:
     HcclResult GetConnection(std::shared_ptr<HcclSocket> &socket);
     HcclResult GetGroupLeader(HcclRankHandle &rankHandle);
     HcclResult SendGroupLeaderPortInfo(std::shared_ptr<HcclSocket> socket,  HcclRankHandle &rankHandle);
+    HcclResult SetIsInterSuperPodRetryEnable(bool isInterSuperPodRetryEnable);
 
 private:
     HcclResult DetectClusterTopoInfo(std::shared_ptr<HcclSocket> socket, RankTable_t &clusterTopoInfo);
@@ -106,6 +107,7 @@ private:
     std::shared_ptr<HcclSocket> socket_;
     u32 connSize_;
     u32 connRank_;
+    bool isRetry_;
 };
 }  // namespace hccl
 

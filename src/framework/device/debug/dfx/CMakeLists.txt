@@ -9,3 +9,4 @@
 # -----------------------------------------------------------------------------------------------------------
 add_subdirectory(trace)
 add_subdirectory(profiling)
+add_subdirectory(taskexception)

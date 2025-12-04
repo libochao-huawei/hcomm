@@ -41,22 +41,22 @@ enum {
     HCCP_ARGC_NUM = 7,
 };
 
-struct hccp_init_param {
-    int logic_id;
-    unsigned int chip_id;
+struct HccpInitParam {
+    int logicId;
+    unsigned int chipId;
     int pid;
-    int log_level;
-    int hdc_type;
-    unsigned int white_list_status;
-    bool backup_flag;
-    unsigned int backup_chip_id;
+    int logLevel;
+    int hdcType;
+    unsigned int whiteListStatus;
+    bool backupFlag;
+    unsigned int backupChipId;
 };
 
-struct param_handle {
-    int (*opt_handle)(const char *, struct hccp_init_param *);
-    bool is_default_required;
-    int opt_val;
+struct ParamHandle {
+    int (*optHandle)(const char *, struct HccpInitParam *);
+    bool isDefaultRequired;
+    int optVal;
 };
 
-int HccpParamParse(int argc, char *argv[], struct hccp_init_param *param);
+int HccpParamParse(int argc, char *argv[], struct HccpInitParam *param);
 #endif // PARAM_H

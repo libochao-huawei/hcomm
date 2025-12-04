@@ -432,7 +432,7 @@ namespace hccl
                       multiSuperPodDiffServerNumMode_);
 
         // 计算最大公约数
-        if (!IsConfigAHCAlgo() && !multiModuleDiffDeviceNumMode_ && multiSuperPodDiffServerNumMode_)
+        if (!IsConfigAHCAlgo(identifier_) && !multiModuleDiffDeviceNumMode_ && multiSuperPodDiffServerNumMode_)
         {
             gcdServerNumPerSuperPod_ = CalGCD(superPodServerNumVec);
             multiSuperPodDiffServerNumMode_ = false; // 取公约数不存在server数不一致场景

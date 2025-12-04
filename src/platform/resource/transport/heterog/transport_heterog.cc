@@ -49,7 +49,7 @@ HcclResult TransportHeterog::Init(u32 localUserRank, u32 remoteUserRank)
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterog::Init(socket_info_t &socketInfo, RdmaHandle rdmaHandle, MrHandle mrHandle)
+HcclResult TransportHeterog::Init(SocketInfoT &socketInfo, RdmaHandle rdmaHandle, MrHandle mrHandle)
 {
     return HCCL_SUCCESS;
 }
@@ -261,11 +261,11 @@ HcclResult TransportHeterog::ProbeNothing(s32 &flag, HcclMessageInfo *&msg, Hccl
 
 HcclResult TransportHeterog::AddSocketWhiteList(string& tag)
 {
-    std::vector<socket_wlist_info_t> whiteList(1);
+    std::vector<SocketWlistInfoT> whiteList(1);
     constexpr u32 connLimit = 4096;
-    whiteList[0].remote_ip.addr = peerIp_.GetBinaryAddress().addr;
-    whiteList[0].remote_ip.addr6 = peerIp_.GetBinaryAddress().addr6;
-    whiteList[0].conn_limit = connLimit;
+    whiteList[0].remoteIp.addr = peerIp_.GetBinaryAddress().addr;
+    whiteList[0].remoteIp.addr6 = peerIp_.GetBinaryAddress().addr6;
+    whiteList[0].connLimit = connLimit;
     CHK_SAFETY_FUNC_RET(memcpy_s(&whiteList[0].tag, sizeof(whiteList[0].tag), tag.c_str(), tag.size() + 1));
 
     CHK_RET(hrtRaSocketWhiteListAdd(nicSocketHandle_, whiteList.data(), SINGLE_WHITE_LIST_NUM));
@@ -283,10 +283,10 @@ HcclResult TransportHeterog::PrepareSocketInfo(s32 type, s32 linkNum, const stri
         string tag = transTag_ + "_" + to_string(i) + "_";
         if (initSM_.locInitInfo.role == CLIENT_ROLE_SOCKET) {
             tag += clientTag;
-            socket_connect_info_t tmpConnInfo;
-            tmpConnInfo.socket_handle = nicSocketHandle_;
-            tmpConnInfo.remote_ip.addr = peerAddr.addr;
-            tmpConnInfo.remote_ip.addr6 = peerAddr.addr6;
+            SocketConnectInfoT tmpConnInfo;
+            tmpConnInfo.socketHandle = nicSocketHandle_;
+            tmpConnInfo.remoteIp.addr = peerAddr.addr;
+            tmpConnInfo.remoteIp.addr6 = peerAddr.addr6;
             tmpConnInfo.port = peerPort_;
             CHK_SAFETY_FUNC_RET(strncpy_s(tmpConnInfo.tag, SOCK_CONN_TAG_SIZE, tag.c_str(), tag.length() + 1));
             initSM_.locInitInfo.socketConnInfo.emplace_back(tmpConnInfo);
@@ -295,11 +295,11 @@ HcclResult TransportHeterog::PrepareSocketInfo(s32 type, s32 linkNum, const stri
         }
 
         HCCL_INFO("link[%d] tag[%s]", i, tag.c_str());
-        socket_info_t tmpInfo;
-        tmpInfo.socket_handle = nicSocketHandle_;
-        tmpInfo.fd_handle = nullptr;
-        tmpInfo.remote_ip.addr = peerAddr.addr;
-        tmpInfo.remote_ip.addr6 = peerAddr.addr6;
+        SocketInfoT tmpInfo;
+        tmpInfo.socketHandle = nicSocketHandle_;
+        tmpInfo.fdHandle = nullptr;
+        tmpInfo.remoteIp.addr = peerAddr.addr;
+        tmpInfo.remoteIp.addr6 = peerAddr.addr6;
         tmpInfo.status = CONNECT_FAIL;
         CHK_SAFETY_FUNC_RET(strncpy_s(tmpInfo.tag, SOCK_CONN_TAG_SIZE, tag.c_str(), tag.length() + 1));
         initSM_.locInitInfo.socketInfo.emplace_back(tmpInfo);
@@ -366,25 +366,25 @@ HcclResult TransportHeterog::InitTransportConnect(s32 type, u32 role, s32 linkNu
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterog::ConnectSocket(socket_connect_info_t conn[], u32 num, bool &completed)
+HcclResult TransportHeterog::ConnectSocket(SocketConnectInfoT conn[], u32 num, bool &completed)
 {
     HcclResult ret = hrtRaSocketNonBlockBatchConnect(conn, num);
     completed = (ret == HCCL_SUCCESS);
     return ret;
 }
 
-HcclResult TransportHeterog::GetSocket(u32 role, struct socket_info_t info[], u32 num, u32 &connectedNum,
+HcclResult TransportHeterog::GetSocket(u32 role, struct SocketInfoT info[], u32 num, u32 &connectedNum,
     bool &completed)
 {
     HcclResult ret = HCCL_SUCCESS;
     for (u32 i = 0; i < num; i++) {
         if (info[i].status == CONNECT_FAIL) {
-            socket_info_t tmpInfo = info[i];
+            SocketInfoT tmpInfo = info[i];
             u32 tmpNum = 0;
             ret = hrtRaNonBlockGetSockets(role, &tmpInfo, 1, &tmpNum);
-            if (ret == HCCL_SUCCESS && tmpNum == 1 && tmpInfo.status == CONNECT_OK && tmpInfo.fd_handle != nullptr) {
+            if (ret == HCCL_SUCCESS && tmpNum == 1 && tmpInfo.status == CONNECT_OK && tmpInfo.fdHandle != nullptr) {
                 info[i].status = CONNECT_OK;
-                info[i].fd_handle = tmpInfo.fd_handle;
+                info[i].fdHandle = tmpInfo.fdHandle;
                 connectedNum += 1;
             } else if (ret == HCCL_E_AGAIN) {
                 continue;
@@ -452,15 +452,15 @@ HcclResult TransportHeterog::SocketRecv(const FdHandle fdHandle, void *data, u64
 HcclResult TransportHeterog::SocketClose()
 {
     u32 closeConnCount = 0;
-    socket_close_info_t conns[MAX_LINK_NUM]{};
+    SocketCloseInfoT conns[MAX_LINK_NUM]{};
     CHK_PRT_RET(initSM_.locInitInfo.socketInfo.size() > MAX_LINK_NUM,
         HCCL_ERROR("locInitInfo.socketInfo size can't exceed MAX_LINK_NUM, size[%d]",
         initSM_.locInitInfo.socketInfo.size()), HCCL_E_PARA);
     for (size_t i = 0; i < initSM_.locInitInfo.socketInfo.size(); i++) {
-        if (initSM_.locInitInfo.socketInfo[i].fd_handle != nullptr) {
-            conns[i].socket_handle = nicSocketHandle_;
-            conns[i].fd_handle = initSM_.locInitInfo.socketInfo[i].fd_handle;
-            conns[i].disuse_linger = static_cast<s32>(forceClose_);
+        if (initSM_.locInitInfo.socketInfo[i].fdHandle != nullptr) {
+            conns[i].socketHandle = nicSocketHandle_;
+            conns[i].fdHandle = initSM_.locInitInfo.socketInfo[i].fdHandle;
+            conns[i].disuseLinger = static_cast<s32>(forceClose_);
             closeConnCount++;
         }
     }

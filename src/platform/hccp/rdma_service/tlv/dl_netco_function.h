@@ -13,11 +13,11 @@
 
 #include "netco_api.h"
 
-struct rs_netco_ops {
-    void *(*rs_netco_init)(int epollfd, NetCoIpPortArg ipPortArg);
-    void (*rs_netco_deinit)(void *co);
-    unsigned int (*rs_netco_event_dispatch)(void *co, int fd, unsigned int curEvents);
-    int (*rs_netco_tbl_add_upd)(void *netcoHandle, unsigned int type, char *data, unsigned int dataLen);
+struct RsNetcoOps {
+    void *(*rsNetcoInit)(int epollfd, NetCoIpPortArg ipPortArg);
+    void (*rsNetcoDeinit)(void *co);
+    unsigned int (*rsNetcoEventDispatch)(void *co, int fd, unsigned int curEvents);
+    int (*rsNetcoTblAddUpd)(void *netcoHandle, unsigned int type, char *data, unsigned int dataLen);
 };
 
 void RsNslbApiDeinit(void);

@@ -12,11 +12,11 @@
 #define RS_LIST_H
 #include <ccan/list.h>
 
-struct rs_list_head {
-    struct rs_list_head *next, *prev;
+struct RsListHead {
+    struct RsListHead *next, *prev;
 };
 
-static inline void RS_INIT_LIST_HEAD(struct rs_list_head *list)
+static inline void RS_INIT_LIST_HEAD(struct RsListHead *list)
 {
     list->next = list;
     list->prev = list;
@@ -27,14 +27,14 @@ static inline void RS_INIT_LIST_HEAD(struct rs_list_head *list)
     (n) = list_entry((pos)->member.next, type, member);         \
 } while (0)
 
-static inline bool RsListEmpty(struct rs_list_head *head)
+static inline bool RsListEmpty(struct RsListHead *head)
 {
     return head->next == head;
 }
 
-static inline void __rs_list_add(struct rs_list_head *xnew,
-                                 struct rs_list_head *prev,
-                                 struct rs_list_head *next)
+static inline void __rs_list_add(struct RsListHead *xnew,
+                                 struct RsListHead *prev,
+                                 struct RsListHead *next)
 {
     next->prev = xnew;
     xnew->next = next;
@@ -42,18 +42,18 @@ static inline void __rs_list_add(struct rs_list_head *xnew,
     prev->next = xnew;
 }
 
-static inline void RsListAddTail(struct rs_list_head *xnew, struct rs_list_head *head)
+static inline void RsListAddTail(struct RsListHead *xnew, struct RsListHead *head)
 {
     __rs_list_add(xnew, head->prev, head);
 }
 
-static inline void __rs_list_del(struct rs_list_head *prev, struct rs_list_head *next)
+static inline void __rs_list_del(struct RsListHead *prev, struct RsListHead *next)
 {
     next->prev = prev;
     prev->next = next;
 }
 
-static inline void RsListDel(struct rs_list_head *entry)
+static inline void RsListDel(struct RsListHead *entry)
 {
     __rs_list_del(entry->prev, entry->next);
 }

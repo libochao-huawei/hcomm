@@ -443,7 +443,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, st_TransportHeterogRoce_Imrecv)
     HcclIpAddress invalidIp;
     TransportHeterogRoce transport("test_ta", invalidIp, invalidIp, 18000, 0, transportResourceInfo);
     struct InitStateMachine initSM;
-    socket_info_t tmpSocketInfo;
+    SocketInfoT tmpSocketInfo;
     initSM.locInitInfo.socketInfo.push_back(tmpSocketInfo);
     std::string tag = "name";
     strncpy_s(tmpSocketInfo.tag, SOCK_CONN_TAG_SIZE, tag.c_str(), tag.length() + 1);
@@ -1073,7 +1073,7 @@ TEST_F(MPI_TRANSPORT_HETEROG_ROCE_TEST, st_TransportHeterogRoce_QpConnect)
     unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
     // unique_ptr<TransportHeterogEventRoce> transport(new (nothrow) TransportHeterogEventRoce("test_collective", 0, 1, 18000, 0, transportResourceInfo));
     TransportHeterogEventRoce *transportHandle = transport.get();
-    socket_info_t socketInfo1;
+    SocketInfoT socketInfo1;
     transport->initSM_.locInitInfo.socketInfo.push_back(socketInfo1);
     transport->initSM_.locInitInfo.socketInfo.push_back(socketInfo1);
     transport->initSM_.locInitInfo.socketInfo.push_back(socketInfo1);

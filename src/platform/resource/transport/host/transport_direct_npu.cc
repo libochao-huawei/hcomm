@@ -128,7 +128,7 @@ void TransportDirectNpu::UnloadAICPUKernel(void)
     
 HcclResult TransportDirectNpu::DeRegOneMR(QpHandle& qpHandle, MemMsg& memMsg)
 {
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = memMsg.addr;
     HcclResult ret = HrtRaMrDereg(qpHandle, &mrInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -168,7 +168,7 @@ HcclResult TransportDirectNpu::DestroyQpVct(std::vector<QpHandle>& qpHandles)
     HcclResult ret;
     for (u32 i = 0; i < qpHandles.size(); i++) {
         if (qpHandles[i] != nullptr) {
-            struct qp_attr attr{};
+            struct QpAttr attr{};
             CHK_RET(hrtRaGetQpAttr(qpHandles[i], &attr));
 
             g_qpn2IbversLinkMap_.Erase(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn));
@@ -268,10 +268,10 @@ HcclResult TransportDirectNpu::GetQpAttr()
         HCCL_ERROR_CODE(HCCL_E_INTERNAL)), HCCL_E_INTERNAL);
     std::string logInfo = "create hccl transport:" + std::string(stackLogBuffer);
     for (u32 i = 0; i < qpHandles_.size(); i++){
-        struct qp_attr attr{};
+        struct QpAttr attr{};
         hrtRaGetQpAttr(qpHandles_[i], &attr);
         HCCL_USER_CRITICAL_LOG("%s, rdma qpn[%u], rdma qp sport[%u], rdma TC[%u], rdma SL[%u]",
-            logInfo.c_str(), attr.qpn, attr.udp_sport, machinePara_.tc, machinePara_.sl);
+            logInfo.c_str(), attr.qpn, attr.udpSport, machinePara_.tc, machinePara_.sl);
     }
 
     return HCCL_SUCCESS;
@@ -412,7 +412,7 @@ HcclResult TransportDirectNpu::GetNicHandle()
 
 // 创建一个QP
 HcclResult TransportDirectNpu::CreateOneQp(
-    s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, ai_qp_info &aiQpInfo, bool useAicpu, u32 udpSport)
+    s32 qpMode, u32 qpsPerConnection, QpHandle &qpHandle, AiQpInfo &aiQpInfo, bool useAicpu, u32 udpSport)
 {
     bool isUseQpCreateWithAttrs = false;
     CHK_RET(IsUseQpCreateWithAttrs(isUseQpCreateWithAttrs, qpMode));
@@ -422,7 +422,7 @@ HcclResult TransportDirectNpu::CreateOneQp(
         std::string(",localUserrank:") + std::to_string(machinePara_.localUserrank) +
         std::string(",localIpAddr: ") + std::string(machinePara_.localIpAddr.GetReadableAddress()) +
         std::string(",deviceLogicId:") + std::to_string(machinePara_.deviceLogicId);
-    struct qp_ext_attrs attrs{};
+    struct QpExtAttrs attrs{};
     // 判断是否为NORMALQP需要使用qpMode_; hostnic场景的qpmode也是NORMALQP
     if (useAicpu || qpMode_ == QPMode::NORMAL) {
         bool isWorkFlowLib = (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -433,16 +433,16 @@ HcclResult TransportDirectNpu::CreateOneQp(
                             (machinePara_.deviceType == DevType::DEV_TYPE_910_93) &&
                             (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
         if (isAicpuLib) {
-            attrs.qp_attr.cap.max_send_wr = machinePara_.sockets.size() * DEFAULT_OFFLINE_MAX_SEND_WR;
+            attrs.qpAttr.cap.max_send_wr = machinePara_.sockets.size() * DEFAULT_OFFLINE_MAX_SEND_WR;
         }
         HCCL_DEBUG("qp set max_send_wr %u, socket size %u, isWorkFlowLib %d",
-            attrs.qp_attr.cap.max_send_wr, machinePara_.sockets.size(), isWorkFlowLib);
+            attrs.qpAttr.cap.max_send_wr, machinePara_.sockets.size(), isWorkFlowLib);
 
-        attrs.udp_sport = udpSport;
+        attrs.udpSport = udpSport;
         ret = hrtRaAiQpCreate(machinePara_.localDeviceId, nicRdmaHandle_, &attrs, &aiQpInfo, qpHandle);
         HCCL_DEBUG(
-            "ai_qp_addr:%llu db_index:%u, sq_index=%u", aiQpInfo.ai_qp_addr, aiQpInfo.db_index, aiQpInfo.sq_index);
-        qpInfo = qpInfo + std::string(",send_cq_depth:") + std::to_string(attrs.cq_attr.send_cq_depth);
+            "aiQpAddr:%llu db_index:%u, sq_index=%u", aiQpInfo.aiQpAddr, aiQpInfo.dbIndex, aiQpInfo.sqIndex);
+        qpInfo = qpInfo + std::string(",sendCqDepth:") + std::to_string(attrs.cqAttr.sendCqDepth);
     } else if (!isUseQpCreateWithAttrs && qpsPerConnection == HCCL_QPS_PER_CONNECTION_DEFAULT) {
         ret = HrtRaQpCreate(nicRdmaHandle_, QP_FLAG_RC, qpMode, qpHandle);
     } else if (!isUseQpCreateWithAttrs && qpsPerConnection != HCCL_QPS_PER_CONNECTION_DEFAULT) {
@@ -450,9 +450,9 @@ HcclResult TransportDirectNpu::CreateOneQp(
         return HCCL_E_PARA;
     } else {
         CHK_RET(ConstructQpAttrs(qpMode, attrs, machinePara_.queueDepthAttr));
-        attrs.udp_sport = udpSport;
+        attrs.udpSport = udpSport;
         ret = hrtRaQpCreateWithAttrs(nicRdmaHandle_, &attrs, qpHandle);
-        qpInfo = qpInfo + std::string(",send_cq_depth:") + std::to_string(attrs.cq_attr.send_cq_depth);
+        qpInfo = qpInfo + std::string(",sendCqDepth:") + std::to_string(attrs.cqAttr.sendCqDepth);
     }
 
     RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007", vector<string>({ "resource_type", "resource_info" }),
@@ -468,7 +468,7 @@ HcclResult TransportDirectNpu::CreateOneQp(
     // 配置RDMA Retry Cnt重传次数
     CHK_RET(SetQpAttrRetryCnt(qpHandle));
     // qpn map 插入
-    struct qp_attr attr{} ;
+    struct QpAttr attr{} ;
     CHK_RET(hrtRaGetQpAttr(qpHandle, &attr));
 
     g_qpn2IbversLinkMap_.Emplace(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn), this);
@@ -698,7 +698,7 @@ HcclResult TransportDirectNpu::RegUserMem(MemType memType, u8*& exchangeDataPtr,
             return HCCL_E_NOT_SUPPORT;
         }
     }
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = memPtr;
     mrInfo.size = memSize;
     mrInfo.access = access_;
@@ -819,8 +819,11 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
     apiParam.remoteAddr = reinterpret_cast<u64>(remoteAddr) + dstOffset;
     apiParam.dataSize = len;
     apiParam.localAddr = reinterpret_cast<u64>(src);
-    apiParam.timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-         GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    apiParam.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        dispatcher_->GetExecTimeOutSet()) {
+        apiParam.timeout = dispatcher_->GetExecTimeOut();
+    }
     apiParam.localFlagAddr = reinterpret_cast<u64>(aicpuMem_.ptr());
     std::vector<HcclQpInfoV2> aiQpInfos;
     CHK_RET(GetAiQpInfo(aiQpInfos));
@@ -886,8 +889,11 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
     apiParam.remoteAddr = reinterpret_cast<u64>(remoteAddr) + srcOffset;
     apiParam.dataSize = len;
     apiParam.localAddr = reinterpret_cast<u64>(dst);
-    apiParam.timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-         GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    apiParam.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        dispatcher_->GetExecTimeOutSet()) {
+        apiParam.timeout = dispatcher_->GetExecTimeOut();
+    }
     apiParam.localFlagAddr = reinterpret_cast<u64>(aicpuMem_.ptr());
     std::vector<HcclQpInfoV2> aiQpInfos;
     CHK_RET(GetAiQpInfo(aiQpInfos));
@@ -976,15 +982,15 @@ HcclResult TransportDirectNpu::GetAiQpInfo(std::vector<HcclQpInfoV2> &aiQpInfo)
 {
     aiQpInfo.resize(aiQpInfos_.size() + 1);
 
-    aiQpInfo[0].qpPtr   = aiQpInfo_.ai_qp_addr;
-    aiQpInfo[0].sqIndex = aiQpInfo_.sq_index;
-    aiQpInfo[0].dbIndex = aiQpInfo_.db_index;
+    aiQpInfo[0].qpPtr   = aiQpInfo_.aiQpAddr;
+    aiQpInfo[0].sqIndex = aiQpInfo_.sqIndex;
+    aiQpInfo[0].dbIndex = aiQpInfo_.dbIndex;
     HCCL_DEBUG("[TransportDirectNpu][GetAiQpInfo] i[0] qpPtr[%llu] sqIndex[%u] dbIndex[%u]",
         aiQpInfo[0].qpPtr, aiQpInfo[0].sqIndex, aiQpInfo[0].dbIndex);
     for (u32 i = 1, j = 0; i < aiQpInfo.size(); i++, j++) {
-        aiQpInfo[i].qpPtr = aiQpInfos_[j].ai_qp_addr;
-        aiQpInfo[i].sqIndex = aiQpInfos_[j].sq_index;
-        aiQpInfo[i].dbIndex = aiQpInfos_[j].db_index;
+        aiQpInfo[i].qpPtr = aiQpInfos_[j].aiQpAddr;
+        aiQpInfo[i].sqIndex = aiQpInfos_[j].sqIndex;
+        aiQpInfo[i].dbIndex = aiQpInfos_[j].dbIndex;
         HCCL_DEBUG("[TransportDirectNpu][GetAiQpInfo] i[%u] qpPtr[%llu] sqIndex[%u] dbIndex[%u]",
             i, aiQpInfo[i].qpPtr, aiQpInfo[i].sqIndex, aiQpInfo[i].dbIndex);
     }
@@ -1022,7 +1028,7 @@ HcclResult TransportDirectNpu::GetTransportErrorCqe(const HcclNetDevCtx netDevCt
             loop = (num % CQE_ARRAY_SIZE) ? (num / CQE_ARRAY_SIZE) : ((num / CQE_ARRAY_SIZE) - 1);
         }
 
-        struct cqe_err_info infolist[CQE_ARRAY_SIZE] = {};
+        struct CqeErrInfo infolist[CQE_ARRAY_SIZE] = {};
         u32 cqeNum = CQE_ARRAY_SIZE;
         for (u32 index = 0; index <= loop; index++) {
             cqeNum = (index == loop) ? (num - index * CQE_ARRAY_SIZE) : CQE_ARRAY_SIZE;
@@ -1034,7 +1040,7 @@ HcclResult TransportDirectNpu::GetTransportErrorCqe(const HcclNetDevCtx netDevCt
             }
         }
     } else {
-        struct cqe_err_info infolist[1] = {};
+        struct CqeErrInfo infolist[1] = {};
         CHK_RET(hrtRaGetCqeErrInfo(devicePhyId, &infolist[0]));
         if (infolist[0].status == 0) {
             num = 0;
@@ -1049,7 +1055,7 @@ HcclResult TransportDirectNpu::GetTransportErrorCqe(const HcclNetDevCtx netDevCt
     return HCCL_SUCCESS;
 }
 
-void TransportDirectNpu::ProcessCqeInfo(const s32 deviceId, const struct cqe_err_info *infolist, const u32 cqeNum,
+void TransportDirectNpu::ProcessCqeInfo(const s32 deviceId, const struct CqeErrInfo *infolist, const u32 cqeNum,
     std::vector<std::pair<TransportBase*, CqeInfo>> &infos)
 {
     for (u32 i = 0; i < cqeNum; i++) {

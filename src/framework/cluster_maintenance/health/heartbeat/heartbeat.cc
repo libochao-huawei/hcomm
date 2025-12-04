@@ -16,6 +16,7 @@
 #include "opexecounter_pub.h"
 #include "hccl_communicator.h"
 #include "task_exception_handler_pub.h"
+#include "comm_configer.h"
 
 namespace hccl {
 constexpr u32 HEARTBEAT_INTERVAL = 1000; // 心跳帧发送周期为1000 ms
@@ -27,8 +28,7 @@ constexpr u32 EVENT_MAX_CNT = 5000;  // 防止内存泄漏，同时不能太短�
 constexpr u32 THROUND_MILS = 1000;   // 1000ms
 constexpr u32 OPINFO_QUEUE_MAX_SIZE = 65536;   // 算子下发校验队列最大算子个数，防止内存占用
 constexpr u32 MAX_SENDBUFF_SIZE = 3072;  // SendBuff[dst] 最大数量
-constexpr u32 SR_TAG_MAP_MAX_NUM = 65536;
-constexpr u32 HBFRAME_SEND_LOOP_MAX_NUM = 120;
+
 constexpr s32 HCCL_STUCK_DETECT_TIME_MIN = 60; // 卡住检测最短时间
 constexpr s32 HCCL_STUCK_DETECT_TIME_BASE = 3; // 卡住检测时间为execTime/3
 Heartbeat &Heartbeat::GetInstance(s32 deviceLogicID)
@@ -57,8 +57,6 @@ Heartbeat::~Heartbeat()
     opInfoQueue_.clear();
     opInfoMap_.clear();
     recvOpInfoList_.clear();
-    inconsistentOpMap_.clear();
-    srTagMap_.clear();
 }
 
 bool Heartbeat::IsEnableBackupLink()
@@ -92,7 +90,7 @@ HcclResult Heartbeat::InitNic(const NicType nicType, const s32 devicePhyId, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port)
+HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port, const std::string& group)
  
 {
     HCCL_INFO("[%s] heartbeat Init begin.", __func__);
@@ -136,7 +134,8 @@ HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, 
     mapLock.unlock();
     uid_ = GetUId(locRank);
     nicDeploy_ = locRank.nicDeploy;
-    stuckDetectTime_ = std::max(GetInternalExecTimeOut() / HCCL_STUCK_DETECT_TIME_BASE,
+    s32 hcclExecTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(group);
+    stuckDetectTime_ = std::max(hcclExecTimeOut / HCCL_STUCK_DETECT_TIME_BASE,
         HCCL_STUCK_DETECT_TIME_MIN);
     startSendRecvTask_ = true;
     sendRecvThread_.reset(new (std::nothrow) std::thread(&Heartbeat::HeartbeatStatusMonitor, this));
@@ -222,7 +221,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
     }
 
     if (!initialized_) {
-        CHK_RET(Init(locRank, useSuperPodMode, isNeedNic, port));
+        CHK_RET(Init(locRank, useSuperPodMode, isNeedNic, port, group));
     }
 
     // 刷新uid_，防止不同通信域下serverId不一致问题
@@ -838,7 +837,7 @@ HcclResult Heartbeat::GetConnectRank(const RankInfo &locRank, std::vector<RankIn
     return HCCL_SUCCESS;
 }
 
-void Heartbeat::AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &paramTag)
+void Heartbeat::AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &newTag)
 {
     if (!opInfo.isValid || opInfo.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
         // 若当前opInfo为无效值或者为batchsendrecv算子时，无需添加
@@ -848,12 +847,11 @@ void Heartbeat::AddOpInfo(const std::string &identifier, const OpInfoDesc &opInf
     OpInfoDesc opInfoTmp = opInfo;
     std::string tag;
     if (opInfo.opType == HcclCMDType::HCCL_CMD_SEND || opInfo.opType == HcclCMDType::HCCL_CMD_RECEIVE) {
-        RegisterSROpIdentifier(identifier, paramTag);
-        tag = paramTag;
+        tag = newTag;
     } else {
         tag = identifier;
     }
-    std::lock_guard<std::mutex> lock(opInfoQueueMutex_);
+    std::unique_lock<std::mutex> lock(opInfoQueueMutex_);
 
     auto opInfoIndexIter = opInfoIndexMap_.find(tag);
     if (opInfoIndexIter == opInfoIndexMap_.end()) {
@@ -862,33 +860,30 @@ void Heartbeat::AddOpInfo(const std::string &identifier, const OpInfoDesc &opInf
     } else {
         opInfoTmp.index = ++(opInfoIndexIter->second);
     }
-    opInfoQueue_.push_back(std::make_pair(tag, opInfoTmp));
-    HCCL_INFO("[Heartbeat][%s]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], index[%llu] add success", 
-        __func__, opInfoTmp.opType, opInfoTmp.dataType, opInfoTmp.reduceOp, opInfoTmp.count, opInfoTmp.root, tag.c_str(), opInfoTmp.index);
+    opInfoQueue_.push_back(opInfoTmp);
+    HCCL_DEBUG("[Heartbeat][AddOpInfo]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], index[%llu] add success", 
+        opInfoTmp.opType, opInfoTmp.dataType, opInfoTmp.reduceOp, opInfoTmp.count, opInfoTmp.root, opInfoTmp.identifier, opInfoTmp.index);
 
     // 限制发送队列的长度，防止内存逐渐溢出
-    if (opInfoQueue_.size() > OPINFO_QUEUE_MAX_SIZE) {
+    while (opInfoQueue_.size() > OPINFO_QUEUE_MAX_SIZE) {
         opInfoQueue_.pop_front();
-        HCCL_WARNING("[%s] The front element is removed from the opInfoQueue, size is over %llu.", __func__, OPINFO_QUEUE_MAX_SIZE);
     }
     return ;
 }
 
-void Heartbeat::GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo)
+OpInfoDesc Heartbeat::GetOneOpInfo()
 {
     // 从发送队列中获取一个opInfo发送给对端
     std::unique_lock<std::mutex> lock(opInfoQueueMutex_);
     if (opInfoQueue_.empty()) {
         static OpInfoDesc defaultOpInfo;
-        opInfo = defaultOpInfo;
-        return ;
+        return defaultOpInfo;
     }
-    auto opInfoPair = opInfoQueue_.front();
+    OpInfoDesc opInfo = opInfoQueue_.front();
     opInfoQueue_.pop_front();
     lock.unlock();
 
-    tag = opInfoPair.first;
-    opInfo = opInfoPair.second;
+    std::string tag = std::string(opInfo.identifier);
     std::unique_lock<std::mutex> mapLock(opInfoMapMutex_);
     if (opInfoMap_.find(tag) == opInfoMap_.end()) {
         std::map<u64, OpInfoDesc> opInfoList;
@@ -905,82 +900,38 @@ void Heartbeat::GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo)
         opInfoMap_[tag].erase(smallIt);
     }
 
-    HCCL_INFO("[Heartbeat][%s]tag[%s], opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], index[%llu] get success", 
-        __func__, tag.c_str(), opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.index);
-    return ;
+    HCCL_DEBUG("[Heartbeat][GetOneOpInfo]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], index[%llu] get success", 
+        opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.identifier, opInfo.index);
+    return opInfo;
 }
 
-void Heartbeat::GetSendOpInfoList(OpInfoTagQueueFrame &opInfoTagQueueFrame)
+void Heartbeat::GetSendOpInfoList(std::vector<OpInfoDesc> &opInfoList)
 {
-    while (opInfoQueueForSend_.size() < OPINFO_TAG_QUEUE_NUM * OPINFO_SEND_NUM_BY_TAG) {
-        OpInfoDesc opInfo;
-        std::string tag;
-        GetOneOpInfo(tag, opInfo);
+    for (auto i = 0u; i < OPINFO_SEND_NUM; i++) {
+        OpInfoDesc opInfo = GetOneOpInfo();
         if (opInfo.isValid) {
-            opInfoQueueForSend_.push_back(std::make_pair(tag, opInfo));
-        } else {
-            break;
+            opInfoList.push_back(opInfo);
         }
-    }
-    
-    HCCL_DEBUG("[%s] opInfoQueueForSend_.size[%d] begin", __func__, opInfoQueueForSend_.size());
-    auto &opInfoTagQueue = opInfoTagQueueFrame.opInfoTagQueue;
-    for (auto iter = opInfoQueueForSend_.begin(); iter != opInfoQueueForSend_.end(); ) {
-        bool isAdd = false;
-        for (u32 index = 0; index < OPINFO_TAG_QUEUE_NUM; index++) {
-            // 当前 index 对应的 opInfoTagQueue 为未初始化状态
-            if (strncmp(opInfoTagQueue[index].identifier, "\0", ROOTINFO_INDENTIFIER_MAX_LENGTH) == 0) {
-                memcpy_s(opInfoTagQueue[index].identifier, iter->first.size() + 1, iter->first.c_str(), iter->first.size() + 1);
-                opInfoTagQueue[index].opInfoList[opInfoTagQueue[index].opInfoNum] = iter->second;
-                opInfoTagQueue[index].opInfoNum++;
-                isAdd = true;
-                HCCL_DEBUG("[%s]opInfoTagQueue[%d] add success identifier[%s] ", __func__, index, opInfoTagQueue[index].identifier);
-                break;
-            } 
-            // 当前 index 对应的 opInfoTagQueue 已经被某个tag 的算子占用
-            else if (strncmp(opInfoTagQueue[index].identifier, iter->first.c_str(), ROOTINFO_INDENTIFIER_MAX_LENGTH) == 0) {
-                if (opInfoTagQueue[index].opInfoNum < OPINFO_SEND_NUM_BY_TAG) {
-                    opInfoTagQueue[index].opInfoList[opInfoTagQueue[index].opInfoNum] = iter->second;
-                    opInfoTagQueue[index].opInfoNum++;
-                    isAdd = true;
-                    HCCL_DEBUG("[%s]opInfoTagQueue[%d] has exists and add success identifier[%s] ", __func__, index, opInfoTagQueue[index].identifier);
-                    break;
-                }
-            }
-        }
-        if (isAdd) {
-            iter = opInfoQueueForSend_.erase(iter);
-        } else {
-            iter++;//opInfoQueueForSend_ 残留数据会被保存到下一轮 GetSendOpInfoList
-        }
-    }
-    HCCL_DEBUG("[%s]opInfoQueueForSend_.size[%d] end", __func__, opInfoQueueForSend_.size());
-    HCCL_DEBUG("[%s]DISPLAY opInfoTagQueue ", __func__);
-    for (u32 index = 0; index < OPINFO_TAG_QUEUE_NUM; index++) {
-        HCCL_DEBUG("[%s]opInfoTagQueue[%d].opInfoNum == %d", __func__, index, opInfoTagQueue[index].opInfoNum);
     }
     return ;
 }
 
-void Heartbeat::SaveOpInfo(const OpInfoTagQueueFrame &opInfoTagQueueFrame, UIDType &src)
+void Heartbeat::SaveOpInfo(OpInfoDesc opInfoList[], UIDType &src)
 {
-    const auto &opInfoTagQueue = opInfoTagQueueFrame.opInfoTagQueue;
-    for (u32 index = 0; index < OPINFO_TAG_QUEUE_NUM; index ++) {
-        std::string tag = std::string(opInfoTagQueue[index].identifier);
-        for (u32 num = 0; num < opInfoTagQueue[index].opInfoNum; num++) {
-            std::unique_lock<std::mutex> lock(opInfoMapMutex_);
-            // 保存接收到的opInfo到接收队列中
-            auto &opInfo = opInfoTagQueue[index].opInfoList[num];
-            recvOpInfoList_.push_back(std::make_tuple(opInfo, tag, src));
-            HCCL_INFO("[Heartbeat][%s]tag[%s], opType[%d], dataType[%d], reduce[%d], count[%u], root[%d], index[%llu] get success", 
-                __func__, tag.c_str(), opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.index);
+    for (auto index = 0u; index < OPINFO_SEND_NUM; index++) {
+        auto &opInfo = opInfoList[index];
+        if (!opInfo.isValid) {
+            return ;
+        }
+        // 保存接收到的opInfo到接收队列中
+        std::unique_lock<std::mutex> lock(opInfoMapMutex_);
+        recvOpInfoList_.push_back(std::make_pair(opInfo, src));
+        HCCL_DEBUG("[Heartbeat][SaveOpInfo]opType[%d], dataType[%d], reduce[%d], count[%u], root[%d], tag[%s], index[%llu] get success", 
+            opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.identifier, opInfo.index);
+        while (recvOpInfoList_.size() > OPINFO_QUEUE_MAX_SIZE) {
+            recvOpInfoList_.pop_front();
         }
     }
-    std::unique_lock<std::mutex> lock(opInfoMapMutex_);
-    while (recvOpInfoList_.size() > OPINFO_QUEUE_MAX_SIZE) { // 可能存在误丢
-        recvOpInfoList_.pop_front();
-    }
-
     return ;
 }
 
@@ -1019,21 +970,18 @@ void Heartbeat::CheckRecvOpInfoList()
     // 校验接收队列中接收到的opInfo
     std::unique_lock<std::mutex> lock(opInfoMapMutex_);
     for (auto it = recvOpInfoList_.begin(); it != recvOpInfoList_.end(); ) {
-        const auto &opInfoRecv = std::get<0>(*it);
-        const auto &identifier = std::get<1>(*it);
-        const auto &uid = std::get<2>(*it);
+        auto identifier = std::string(it->first.identifier);
         auto opInfoIndexMap = opInfoMap_.find(identifier);
         if (opInfoIndexMap == opInfoMap_.end()) {
             ++it;
-            HCCL_INFO("[Heartbeat]check recv not fount. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
+            HCCL_DEBUG("[Heartbeat]check recv not fount. identifier[%s] index[%u]", identifier.c_str(), it->first.index);
             continue;
         }
 
-        if (opInfoIndexMap->second.find(opInfoRecv.index) != opInfoIndexMap->second.end()) {
-            const auto &opInfo = opInfoIndexMap->second[opInfoRecv.index];
-            if (!CheckIsSameOp(opInfo, opInfoRecv)) {
-                // 当算子不匹配时，记录并打印ERROR日志并广播下发不一致错误给其他节点
-                AddInconsistentOpRecord(identifier, opInfo, opInfoRecv);
+        if (opInfoIndexMap->second.find(it->first.index) != opInfoIndexMap->second.end()) {
+            const auto &opInfo = opInfoIndexMap->second[it->first.index];
+            if (!CheckIsSameOp(opInfo, it->first)) {
+                // 当算子不匹配时，打印ERROR日志并广播下发不一致错误给其他节点
                 char localInfo[LOG_TMPBUF_SIZE];
                 s32 ret = snprintf_s(localInfo, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
                                     "node[%s] optype[%s] dataType[%s] reduceOp[%s] count[%d] root[%d]",
@@ -1043,18 +991,19 @@ void Heartbeat::CheckRecvOpInfoList()
                 char remoteInfo[LOG_TMPBUF_SIZE];
                 ret = snprintf_s(remoteInfo, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
                                 "node[%s] optype[%s] dataType[%s] reduceOp[%s] count[%d] root[%d]",
-                                FormatUId(uid).c_str(), GetCMDTypeEnumStr(opInfoRecv.opType).c_str(), GetDataTypeEnumStr(opInfoRecv.dataType).c_str(),
-                                GetReduceOpEnumStr(opInfoRecv.reduceOp).c_str(), opInfoRecv.count, opInfoRecv.root);
+                                FormatUId(it->second).c_str(), GetCMDTypeEnumStr(it->first.opType).c_str(), GetDataTypeEnumStr(it->first.dataType).c_str(),
+                                GetReduceOpEnumStr(it->first.reduceOp).c_str(), it->first.count, it->first.root);
                 CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
 
                 RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
-                    std::vector<std::string>({ identifier, std::to_string(opInfoRecv.index), std::string(localInfo), std::string(remoteInfo) }));
+                    std::vector<std::string>({ identifier, std::to_string(it->first.index), std::string(localInfo), std::string(remoteInfo) }));
                 HCCL_ERROR("[Heartbeat]check opinfo inconsistent. identifier[%s] index[%u], "
-                                "local(%s); remote(%s)", identifier.c_str(), opInfoRecv.index, localInfo, remoteInfo);
+                                "local(%s); remote(%s)", identifier.c_str(), it->first.index, localInfo, remoteInfo);
                 SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_INCONSISTENT);
             } else {
-                HCCL_INFO("[Heartbeat]check opinfo success. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
+                HCCL_DEBUG("[Heartbeat]check opinfo success. identifier[%s] index[%u]", identifier.c_str(), it->first.index);
             }
+
             // 校验完成后删除收到的opInfo
             it = recvOpInfoList_.erase(it);
         } else {
@@ -1065,60 +1014,90 @@ void Heartbeat::CheckRecvOpInfoList()
     return ;
 }
 
-HcclResult Heartbeat::SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status, const OpInfoTagQueueFrame &opInfoTagQueueFrame)
+void Heartbeat::AddopInfoListToSendFrame(UIDType &dst, HeartBeatFrame &bf, const std::vector<OpInfoDesc> &opInfoList, bool &hasValidOpInfo)
+{
+    auto index = 0;
+    for (const auto &opInfo : opInfoList) {
+        std::string identifierStr = std::string(opInfo.identifier);
+        // 只有当前的对端dst在OpInfo的通信域中，才把opInfo发送给对端做校验
+        if (groupMap_.find(identifierStr) != groupMap_.end()) {
+            if (groupMap_[identifierStr].find(dst) != groupMap_[identifierStr].end()) {
+                bf.opInfoList[index] = opInfo;
+                index++;
+                hasValidOpInfo = true;
+                HCCL_DEBUG("[Heartbeat][%s]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], index[%llu] get success", 
+                    __func__, opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.identifier, opInfo.index);
+            } else {
+                HCCL_DEBUG("[Heartbeat][%s]dst[%s] is not in groupMap_", __func__, dst.id);
+            }
+        } else {
+            HCCL_DEBUG("[Heartbeat][%s]identifier[%s] is not in groupMap_", __func__, identifierStr.c_str());
+        }
+    }
+    return ;
+}
+
+HcclResult Heartbeat::SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status, const std::vector<OpInfoDesc> &opInfoList)
 {
     HeartBeatFrame bf(uid_, dst, crimer, informer, status);
-    bf.opInfoTagQueueFrame = opInfoTagQueueFrame;
- 
+    bool hasValidOpInfo = false;
+    AddopInfoListToSendFrame(dst, bf, opInfoList, hasValidOpInfo);
     if (rankId2SocketMap_[dst].sendBuffer.size() > 0) {
-        if (status != HeartBeatStatus::HEARTBEAT_OK && rankId2SocketMap_[dst].sendBuffer.size() < MAX_SENDBUFF_SIZE) {
+        if ((status != HeartBeatStatus::HEARTBEAT_OK || hasValidOpInfo) && rankId2SocketMap_[dst].sendBuffer.size() < MAX_SENDBUFF_SIZE) {
             rankId2SocketMap_[dst].sendBuffer.push(bf);
         }
+        while (rankId2SocketMap_[dst].sendBuffer.size() > 0) {
+            HeartBeatFrame hbf = rankId2SocketMap_[dst].sendBuffer.front();
+            u64 sendDis = sizeof(HeartBeatFrame) - rankId2SocketMap_[dst].restSize;
+            u64 compSize = 0;
+            HcclResult ret = rankId2SocketMap_[dst].socket->ISend(
+                reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(&hbf) + sendDis),
+                rankId2SocketMap_[dst].restSize,
+                compSize);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
+            if (rankId2SocketMap_[dst].restSize == compSize) {
+                rankId2SocketMap_[dst].sendBuffer.pop();
+                rankId2SocketMap_[dst].restSize = sizeof(HeartBeatFrame);
+                HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
+                    FormatUId(uid_).c_str(),
+                    FormatUId(dst).c_str(),
+                    FormatUId(crimer).c_str(),
+                    FormatUId(informer).c_str(),
+                    status);
+            } else {
+                rankId2SocketMap_[dst].restSize = rankId2SocketMap_[dst].restSize - compSize;
+                break;
+                // continue;
+            }
+        }
     } else {
-        rankId2SocketMap_[dst].sendBuffer.push(bf);
-        rankId2SocketMap_[dst].restSize = sizeof(HeartBeatFrame);
-    }
-    //查询到某个Dst的发送缓冲数据量 
-    HCCL_INFO("[%s]rankId2SocketMap_[%s].sendBuffer.size(%llu) ", __func__,
-        FormatUId(dst).c_str(), rankId2SocketMap_[dst].sendBuffer.size());
-
-    u32 unCompletedCount = 0;//已经发送的loop次数
-    while (rankId2SocketMap_[dst].sendBuffer.size() > 0) {
-        HeartBeatFrame hbf = rankId2SocketMap_[dst].sendBuffer.front();
-        u64 sendDis = sizeof(HeartBeatFrame) - rankId2SocketMap_[dst].restSize;
         u64 compSize = 0;
-        HcclResult ret = rankId2SocketMap_[dst].socket->ISend(
-            reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(&hbf) + sendDis),
-            rankId2SocketMap_[dst].restSize, compSize);
+        u32 expectSize = sizeof(HeartBeatFrame);
+        HcclResult ret = rankId2SocketMap_[dst].socket->ISend(&bf, expectSize, compSize);
         if (ret != HCCL_SUCCESS) {
             return ret;
         }
-        if (rankId2SocketMap_[dst].restSize == compSize) {
-            rankId2SocketMap_[dst].sendBuffer.pop();
-            rankId2SocketMap_[dst].restSize = sizeof(HeartBeatFrame);
-            HCCL_INFO("[Heartbeat][%s] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
-                __func__,
+        if (compSize == expectSize) {
+            HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
                 FormatUId(uid_).c_str(),
                 FormatUId(dst).c_str(),
                 FormatUId(crimer).c_str(),
                 FormatUId(informer).c_str(),
                 status);
         } else {
-            HCCL_DEBUG("[Heartbeat][SendFrame] Send Not Complete, from [%s] to [%s] about [%s] by [%s] status[%d], expectSize[%u], compSize[%u]",
+            HCCL_WARNING("[Heartbeat][SendFrame] Send Not Complete, from [%s] to [%s] about [%s] by [%s] status[%d], expectSize[%u], compSize[%u], opInfoSize[%d]",
                 FormatUId(uid_).c_str(),
                 FormatUId(dst).c_str(),
                 FormatUId(crimer).c_str(),
                 FormatUId(informer).c_str(),
-                status, rankId2SocketMap_[dst].restSize, compSize);
-            rankId2SocketMap_[dst].restSize = rankId2SocketMap_[dst].restSize - compSize;
-            unCompletedCount++;
-            SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);// 100us
-            // 限制发送的循环此时，避免在send流程里死循环
-            if (unCompletedCount > HBFRAME_SEND_LOOP_MAX_NUM) { 
-                break;//120个loop约30毫秒
-            }
+                status, expectSize, compSize, sizeof(OpInfoDesc));
+            rankId2SocketMap_[dst].restSize = expectSize - compSize;
+            rankId2SocketMap_[dst].sendBuffer.push(bf);
         }
     }
+
     return HCCL_SUCCESS;
 }
 
@@ -1132,7 +1111,6 @@ HcclResult Heartbeat::RecvFrame(UIDType &src)
         HcclResult retVal = rankId2SocketMap_[src].socket->IRecv(&bf, expectSize, compSize);
         if (retVal == HCCL_SUCCESS && compSize > 0) {
             rankId2SocketMap_[src].recvBuffer.PushSeg(reinterpret_cast<u8 *>(&bf), compSize);
-            // 标识当前Recvbuf中已经存放了一个完整的帧
             if (rankId2SocketMap_[src].recvBuffer.Size() >= expectSize) {
                 rankId2SocketMap_[src].recvBuffer.GetSeg(reinterpret_cast<u8 *>(&bf), expectSize);
                 rankId2SocketMap_[src].recvBuffer.PopSeg(expectSize);
@@ -1171,7 +1149,7 @@ HcclResult Heartbeat::ParseFrame(HeartBeatFrame &bf, UIDType &src)
         SetStatus(bf.crimer, bf.informer, bf.status);
     }
 
-    SaveOpInfo(bf.opInfoTagQueueFrame, src);
+    SaveOpInfo(bf.opInfoList, src);
     return HCCL_SUCCESS;
 }
 
@@ -1189,16 +1167,20 @@ void Heartbeat::SetStatus(UIDType &crimer, UIDType &informer, HeartBeatStatus st
         if (errStatusQueue_.size() > EVENT_MAX_CNT) {
             errStatusQueue_.pop();
         }
-        HCCL_RUN_INFO("[HCCL_TRACE]local rank [%s]: crimer rank [%s] status[%s] by informer rank [%s]",
-            FormatUId(uid_).c_str(), FormatUId(crimer).c_str(),
-            GetHeartBeatStatusStr(status).c_str(), FormatUId(informer).c_str());
+        HCCL_RUN_INFO("[HCCL_TRACE]rank [%s]: rank [%s] status[%s] by rank [%s]",
+            FormatUId(uid_).c_str(),
+            FormatUId(crimer).c_str(),
+            GetHeartBeatStatusStr(status).c_str(),
+            FormatUId(informer).c_str());
     }
 }
-bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime)
+
+bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string& group)
 {
     bool ret = false;
     s64 intervalTime = DURATION_US(curTime - event.TOARelative).count() / (TIME_S_TO_MS * ONE_MILLISECOND_OF_USLEEP);
-    s64 execTimeout = GetInternalExecTimeOut();
+    s32 hcclExecTimeout = CommConfiger::GetInstance().GetCommConfigExecTimeOut(group);
+    s64 execTimeout = hcclExecTimeout;
     s64 detectionTime = 0;
     switch (event.status) {
         case HeartBeatStatus::HEARTBEAT_LOST:
@@ -1288,14 +1270,14 @@ std::vector<std::string> Heartbeat::PrintEvents(std::map<HeartBeatStatus, std::q
     MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_INCONSISTENT], errStatusVec);
     return errStatusVec;
 }
-std::vector<std::string> Heartbeat::GetErrStatusVec()
+std::vector<std::string> Heartbeat::GetErrStatusVec(const std::string& group)
 {
     std::unique_lock<std::mutex> lock(ProcessLock_);
     HcclUs curTime = TIME_NOW();
     std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> keyEvents;
     while (errStatusQueue_.size() > 0) {
         auto &tmp = errStatusQueue_.front();
-        if (IsKeyEvent(tmp, curTime)) {  // 非关键事件不处理
+        if (IsKeyEvent(tmp, curTime, group)) {  // 非关键事件不处理
             keyEvents[tmp.status].push(tmp);
         }
         errStatusQueue_.pop();
@@ -1308,12 +1290,13 @@ void Heartbeat::ProcessExceptionEvent()
     while (errRankQueue_.size() > 0) {
         UIDType cur = errRankQueue_.front();
         rankId2StatusMap_[cur].needBroadcast = false;
-        OpInfoTagQueueFrame opInfoTagQueueFrame;
+        std::vector<OpInfoDesc> opInfoList;
+        GetSendOpInfoList(opInfoList);
         for (auto iterRem = rankId2SocketMap_.begin(); iterRem != rankId2SocketMap_.end(); iterRem++) {
             UIDType rem = iterRem->first;
             if (rem != rankId2StatusMap_[cur].informer &&
                 rankId2StatusMap_[rem].status == HeartBeatStatus::HEARTBEAT_OK) {
-                (void)SendFrame(rem, cur, rankId2StatusMap_[cur].informer, rankId2StatusMap_[cur].status, opInfoTagQueueFrame);
+                (void)SendFrame(rem, cur, rankId2StatusMap_[cur].informer, rankId2StatusMap_[cur].status, opInfoList);
             }
         }
         errRankQueue_.pop();
@@ -1353,6 +1336,7 @@ void Heartbeat::HeartbeatStatusMonitor()
 {
     // 给当前线程添加名字
     SetThreadName("Hccl_HeartBeat");
+
     u32 count = 0;
     if (deviceLogicId_ != static_cast<u32>(HOST_DEVICE_ID)) {
         hrtSetDevice(deviceLogicId_);
@@ -1365,12 +1349,10 @@ void Heartbeat::HeartbeatStatusMonitor()
         CreateHBLinksAsync();
         ProcessLock_.lock();
         count++;
-        HCCL_INFO("[%s] local[%s] opInfoQueue size[%d]", __func__, FormatUId(uid_).c_str(), opInfoQueue_.size());
         if (count >= HEARTBEAT_COUNT) {
             count = 0;
-            OpInfoTagQueueFrame opInfoTagQueueFrame;
-            GetSendOpInfoList(opInfoTagQueueFrame);
-            
+            std::vector<OpInfoDesc> opInfoList;
+            GetSendOpInfoList(opInfoList);
             for (auto iter = rankId2SocketMap_.begin(); iter != rankId2SocketMap_.end(); iter++) {
                 UIDType rem = iter->first;
                 HCCL_DEBUG(
@@ -1380,7 +1362,7 @@ void Heartbeat::HeartbeatStatusMonitor()
                     uid_,
                     uid_,
                     (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK,
-                    opInfoTagQueueFrame);
+                    opInfoList);
                 ret == HCCL_E_INTERNAL ? errorSocket_.push_back(rem) : void(0);
             }
             DelErrorSocket();
@@ -1400,13 +1382,13 @@ void Heartbeat::HeartbeatStatusMonitor()
                 SetStatus(rem, uid_, HeartBeatStatus::HEARTBEAT_LOST);
             }
         }
-        CheckRecvOpInfoList(); //校验频率 50ms 一次
+        CheckRecvOpInfoList();
         DelErrorSocket();
         StuckDetection(cnt, counterStat);
         ProcessExceptionEvent();
         ProcessLock_.unlock();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL)); // 50ms 
+        std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL));
     }
     linkThreadRunning_ = false;
     std::unique_lock<std::mutex> connInfoLock(hbLinkConnInfoMtx_);
@@ -1539,7 +1521,7 @@ void Heartbeat::OpRetryCQEHandle(const HcclNetDevCtx netDevCtx)
             return;
         }
         for (auto &info : infos) {
-            if (GetRetryEnable(info) && GetExternalInputInterSuperPodRetryEnable()) {
+            if (GetRetryEnable(info) && CommConfiger::GetInstance().GetCommConfigInterSuperPodRetryEnable(info.identifier)) {
                 SaveQpnForOpRetry(info);
             } else {
                 PrintAndBroadCastErrorCqe(info);
@@ -1595,7 +1577,8 @@ void Heartbeat::ProcessCqeErrInfoByNetDevCtx(const HcclIpAddress &nicIp)
     if (ret != HCCL_SUCCESS || infos.size() == 0) {
         return;
     }
-    if (GetRetryEnable(infos[0]) && GetExternalInputInterSuperPodRetryEnable()) {
+    if (GetRetryEnable(infos[0]) &&
+        CommConfiger::GetInstance().GetCommConfigInterSuperPodRetryEnable(infos[0].identifier)) {
         SaveQpnForOpRetry(infos[0]);
     } else {
         PrintAndBroadCastErrorCqe(infos[0]);
@@ -1758,55 +1741,6 @@ HcclResult Heartbeat::CheckErrorCqe(const std::string &identifier, HcclResult &r
     return HCCL_SUCCESS;
 }
 
-void Heartbeat::RegisterSROpIdentifier(const std::string &identifier, const std::string &paramTag)
-{
-    // SR算子通信域映射关系注册
-    std::lock_guard<std::mutex> lock(srTagMutex_);
-    if (srTagMap_.size() > SR_TAG_MAP_MAX_NUM) {
-        srTagMap_.erase(srTagMap_.begin());
-    }
-
-    auto iter = srTagMap_.find(paramTag);
-    if (iter == srTagMap_.end()) {
-        srTagMap_.insert(std::make_pair(paramTag, identifier));
-    }
-}
-
-void Heartbeat::AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo)
-{
-    std::lock_guard<std::mutex> lock(inconsistentOpMutex_);
-    if(localOpInfo.opType == HcclCMDType::HCCL_CMD_SEND || localOpInfo.opType == HcclCMDType::HCCL_CMD_RECEIVE) {
-        auto iter = srTagMap_.find(identifier);
-        if (iter == srTagMap_.end()) {
-            HCCL_ERROR("[%s] SR tag[%s] may have already been deleted due to prolonged storage time", __func__, identifier.c_str());
-            return;
-        }
-
-        auto search = inconsistentOpMap_.find(iter->second);//SR tag
-        if (search == inconsistentOpMap_.end()) {
-            inconsistentOpMap_.insert(std::make_pair(iter->second, true));
-            HCCL_INFO("[%s] save record SR[%s] identifier[%s] index[%d]", __func__, identifier.c_str() , iter->second.c_str(), localOpInfo.index);
-        }
-    } else {
-        auto search = inconsistentOpMap_.find(identifier);//AR identifier
-        if (search == inconsistentOpMap_.end()) {
-            inconsistentOpMap_.insert(std::make_pair(identifier, true));
-            HCCL_INFO("[%s] save record identifier[%s] index[%d]", __func__, identifier.c_str(), localOpInfo.index);
-        }
-    }
-}
-
-HcclResult  Heartbeat::CheckOpInconsistentError(const std::string &identifier, HcclResult &result)
-{
-    std::lock_guard<std::mutex> lock(inconsistentOpMutex_);
-    auto search = inconsistentOpMap_.find(identifier);
-    if (search != inconsistentOpMap_.end()) {
-        result = HCCL_E_PARA;
-        HCCL_ERROR("[%s]find inconsistent op error [%d], in comm [%s]", __func__, result, identifier.c_str());
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult Heartbeat::SetRankPortInfo(bool isUseRankPort,
     std::vector<u32> &nicRanksPorts, std::vector<u32> &vnicRanksPorts, bool devPortSwitchOn)
 {
@@ -1877,9 +1811,9 @@ HcclResult SetRankPortInfo(s32 deviceLogicID, bool isUseRankPort, std::vector<u3
 }
 
 
-std::vector<std::string> GetErrStatusVec(s32 deviceLogicID)
+std::vector<std::string> GetErrStatusVec(s32 deviceLogicID, const std::string& group)
 {
-    return Heartbeat::GetInstance(deviceLogicID).GetErrStatusVec();
+    return Heartbeat::GetInstance(deviceLogicID).GetErrStatusVec(group);
 }
 
 __attribute__((constructor)) void HeartBeatCallBackInit()

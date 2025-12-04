@@ -27,7 +27,7 @@ public:
     HcclResult AllocSyncMem(int32_t **ptr);
     HcclResult FreeSyncMem(int32_t *ptr);
     HcclResult GetNotifyHandle(u64 notifyVa, HcclRtNotify &notifyHandle);
-    HcclResult GetNotifySrcMem(struct mr_info &mrInfo);
+    HcclResult GetNotifySrcMem(struct MrInfoT &mrInfo);
 
 private:
     TypicalSyncMem();
@@ -45,7 +45,7 @@ private:
     HcclResult FreeAllSyncMem();
 
     RdmaHandle rdmaHandle_ = nullptr;
-    struct mr_info notifySrcMrInfo_;
+    struct MrInfoT notifySrcMrInfo_;
     MrHandle notifySrcMrHandle_;
     std::mutex syncMemMapMutex_;
     DeviceMem srcDevMem_;

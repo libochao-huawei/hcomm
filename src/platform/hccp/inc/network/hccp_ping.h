@@ -16,52 +16,52 @@
 extern "C" {
 #endif
 
-struct qp_cap {
-    uint32_t max_send_wr;
-    uint32_t max_recv_wr;
-    uint32_t max_send_sge;
-    uint32_t max_recv_sge;
-    uint32_t max_inline_data;
+struct QpCap {
+    uint32_t maxSendWr;
+    uint32_t maxRecvWr;
+    uint32_t maxSendSge;
+    uint32_t maxRecvSge;
+    uint32_t maxInlineData;
 };
 
-union ping_qp_attr {
+union PingQpAttr {
     struct {
-        struct cq_ext_attr cq_attr;
+        struct CqExtAttr cqAttr;
         struct {
-            struct qp_cap cap;
-            uint32_t udp_sport;
+            struct QpCap cap;
+            uint32_t udpSport;
             uint32_t reserved[4U];
-        } qp_attr;
+        } qpAttr;
         uint32_t reserved[4U];
     } rdma;
 };
 
-struct ping_local_comm_info {
+struct PingLocalCommInfo {
     int version;
     union {
         struct {
-            uint32_t flow_label;
-            uint8_t hop_limit;
-            struct qos_attr qos_attr;
-            uint32_t udp_sport;
+            uint32_t flowLabel;
+            uint8_t hopLimit;
+            struct QosAttr qosAttr;
+            uint32_t udpSport;
             uint32_t reserved[7U];
         } rdma;
     };
 };
 
-union ping_dev {
+union PingDev {
     struct rdev rdma;
 };
 
-struct ping_init_attr {
+struct PingInitAttr {
     int version;
     int mode;
-    union ping_dev dev;
-    struct ping_local_comm_info comm_info;
-    union ping_qp_attr client;
-    union ping_qp_attr server;
-    uint32_t buffer_size;
-    enum protocol_type protocol;
+    union PingDev dev;
+    struct PingLocalCommInfo commInfo;
+    union PingQpAttr client;
+    union PingQpAttr server;
+    uint32_t bufferSize;
+    enum ProtocolTypeT protocol;
     union {
         struct {
             uint32_t reserved[31U];
@@ -69,11 +69,11 @@ struct ping_init_attr {
     };
 };
 
-struct ping_qp_info {
+struct PingQpInfo {
     int version;
     union {
         struct {
-            union hccp_gid gid;
+            union HccpGid gid;
             uint32_t qpn;
             uint32_t qkey;
             uint32_t reserved[4U];
@@ -81,83 +81,83 @@ struct ping_qp_info {
     };
 };
 
-struct ping_buffer_info {
+struct PingBufferInfo {
     // all result buffer
-    uint64_t buffer_va;
-    uint32_t buffer_size;
+    uint64_t bufferVa;
+    uint32_t bufferSize;
     // each payload offset & header size
-    uint32_t payload_offset;
-    uint32_t header_size;
+    uint32_t payloadOffset;
+    uint32_t headerSize;
 };
 
-struct ping_init_info {
+struct PingInitInfo {
     int version;
-    struct ping_qp_info client;
-    struct ping_qp_info server;
-    struct ping_buffer_info result;
+    struct PingQpInfo client;
+    struct PingQpInfo server;
+    struct PingBufferInfo result;
     uint32_t reserved[32U];
 };
 
-struct ping_task_attr {
-    uint32_t packet_cnt;
-    uint32_t packet_interval;
-    uint32_t timeout_interval;
+struct PingTaskAttr {
+    uint32_t packetCnt;
+    uint32_t packetInterval;
+    uint32_t timeoutInterval;
 };
 
 #define PING_TOTAL_PAYLOAD_MAX_SIZE 2048U
 #define PING_USER_PAYLOAD_MAX_SIZE 1500U
 
-struct ping_payload_info {
+struct PingPayloadInfo {
     char buffer[PING_USER_PAYLOAD_MAX_SIZE];
     uint32_t size;
 };
 
-struct ping_target_comm_info {
+struct PingTargetCommInfo {
     union {
-        union hccp_ip_addr ip;
+        union HccpIpAddr ip;
     };
-    struct ping_qp_info qp_info;
+    struct PingQpInfo qpInfo;
 };
 
-struct ping_target_info {
+struct PingTargetInfo {
     int version;
-    struct ping_local_comm_info local_info;
-    struct ping_target_comm_info remote_info;
-    struct ping_payload_info payload;
+    struct PingLocalCommInfo localInfo;
+    struct PingTargetCommInfo remoteInfo;
+    struct PingPayloadInfo payload;
     uint32_t reserved[16U];
 };
 
-enum ping_result_state {
+enum PingResultState {
     PING_RESULT_STATE_NOT_FOUND = 0,
     PING_RESULT_STATE_INVALID = 1,
     PING_RESULT_STATE_VALID = 2,
     PING_RESULT_STATE_MAX
 };
 
-struct ping_result_summary {
+struct PingResultSummary {
     int version;
-    struct ping_task_attr task_attr;
+    struct PingTaskAttr taskAttr;
 
-    uint32_t rtt_min; /**< tv_usec */
-    uint32_t rtt_max; /**< tv_usec */
-    uint32_t rtt_avg; /**< tv_usec */
+    uint32_t rttMin; /**< tv_usec */
+    uint32_t rttMax; /**< tv_usec */
+    uint32_t rttAvg; /**< tv_usec */
 
-    uint32_t send_cnt;
-    uint32_t recv_cnt;
-    uint32_t timeout_cnt;
+    uint32_t sendCnt;
+    uint32_t recvCnt;
+    uint32_t timeoutCnt;
 
-    uint32_t task_id;
+    uint32_t taskId;
     uint32_t reserved[31U];
 };
 
-struct ping_result_info {
-    enum ping_result_state state;
-    struct ping_result_summary summary;
+struct PingResultInfo {
+    enum PingResultState state;
+    struct PingResultSummary summary;
 };
 
-struct ping_target_result {
-    struct ping_target_comm_info remote_info;
-    struct ping_result_info result;
+struct PingTargetResult {
+    struct PingTargetCommInfo remoteInfo;
+    struct PingResultInfo result;
 };
 
 /**
@@ -170,7 +170,7 @@ struct ping_target_result {
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaPingInit(struct ping_init_attr *initAttr, struct ping_init_info *initInfo,
+HCCP_ATTRI_VISI_DEF int RaPingInit(struct PingInitAttr *initAttr, struct PingInitInfo *initInfo,
     void **pingHandle);
 
 /**
@@ -183,7 +183,7 @@ HCCP_ATTRI_VISI_DEF int RaPingInit(struct ping_init_attr *initAttr, struct ping_
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct ping_target_info target[], uint32_t num);
+HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct PingTargetInfo target[], uint32_t num);
 
 /**
  * @ingroup librdma
@@ -194,7 +194,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct ping_target_inf
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaPingTaskStart(void *pingHandle, struct ping_task_attr *attr);
+HCCP_ATTRI_VISI_DEF int RaPingTaskStart(void *pingHandle, struct PingTaskAttr *attr);
 
 /**
  * @ingroup librdma
@@ -206,7 +206,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTaskStart(void *pingHandle, struct ping_task_attr 
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaPingGetResults(void *pingHandle, struct ping_target_result target[], uint32_t *num);
+HCCP_ATTRI_VISI_DEF int RaPingGetResults(void *pingHandle, struct PingTargetResult target[], uint32_t *num);
 
 /**
  * @ingroup librdma
@@ -218,7 +218,7 @@ HCCP_ATTRI_VISI_DEF int RaPingGetResults(void *pingHandle, struct ping_target_re
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaPingTargetDel(void *pingHandle, struct ping_target_comm_info target[], uint32_t num);
+HCCP_ATTRI_VISI_DEF int RaPingTargetDel(void *pingHandle, struct PingTargetCommInfo target[], uint32_t num);
 
 /**
  * @ingroup librdma

@@ -91,9 +91,8 @@ HcclResult HrtHnsIbvExpPostSend(struct ibv_qp *qp, struct ibv_send_wr *wr, struc
     }
 
     s32 ret = DlHnsFunction::GetInstance().dlHnsIbvExpPostSend(qp, wr, badWr, expRsp);
-    if (ret == -ENOENT || ret == -EAGAIN || ret == -ENOMEM || ret == ENOENT || ret == EAGAIN || ret == ENOMEM) {
-        return HCCL_E_AGAIN;
-    }
+    CHK_PRT_RET(ret == -ENOENT || ret == -EAGAIN || ret == -ENOMEM || ret == ENOENT || ret == EAGAIN || ret == ENOMEM,
+        HCCL_WARNING("HrtHnsIbvExpPostSend failed. errno:%d", ret), HCCL_E_AGAIN);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("HrtHnsIbvExpPostSend failed. errno:%d", ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }

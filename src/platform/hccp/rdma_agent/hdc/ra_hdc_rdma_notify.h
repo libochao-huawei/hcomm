@@ -18,48 +18,48 @@
 #define RA_MEM_PHY_BIT              14
 #define RA_MEM_TYPE_HBM             (0x1 << RA_MEM_PHY_BIT)
 
-union op_get_notify_ba_data {
+union OpGetNotifyBaData {
     struct {
-        unsigned int phy_id;
-        unsigned int rdev_index;
+        unsigned int phyId;
+        unsigned int rdevIndex;
         unsigned int qpn;
         unsigned long long rsvd[RA_RSVD_NUM_2];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned long long va;
         int access;
         unsigned int lkey;
         unsigned long long size;
-    } rx_data;
+    } rxData;
 };
 
-union op_notify_cfg_set_data {
+union OpNotifyCfgSetData {
     struct {
-        unsigned int phy_id;
+        unsigned int phyId;
         unsigned long long va;
         unsigned long long size;
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_notify_cfg_get_data {
+union OpNotifyCfgGetData {
     struct {
-        unsigned int phy_id;
-    } tx_data;
+        unsigned int phyId;
+    } txData;
 
     struct {
         unsigned long long va;
         unsigned long long size;
         unsigned int rsvd[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-int RaHdcGetNotifyBaseAddr(struct ra_rdma_handle *rdmaHandle, unsigned long long *va, unsigned long long *size);
-int RaHdcGetNotifyMrInfo(struct ra_rdma_handle *rdmaHandle, struct mr_info *info);
+int RaHdcGetNotifyBaseAddr(struct RaRdmaHandle *rdmaHandle, unsigned long long *va, unsigned long long *size);
+int RaHdcGetNotifyMrInfo(struct RaRdmaHandle *rdmaHandle, struct MrInfoT *info);
 int RaHdcNotifyCfgSet(unsigned int phyId, unsigned long long va, unsigned long long size);
 int RaHdcNotifyCfgGet(unsigned int phyId, unsigned long long *va, unsigned long long *size);
 #endif // RA_HDC_RDMA_NOTIFY_H

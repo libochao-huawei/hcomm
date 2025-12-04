@@ -246,24 +246,6 @@ struct OpParam {
             case HcclCMDType::HCCL_CMD_REDUCE_SCATTER:
                 return std::tie(opType, DataDes.count, DataDes.dataType, reduceType, tag, aivCoreLimit, deterministic, isCapture) < 
                     std::tie(other.opType, other.DataDes.count, other.DataDes.dataType, other.reduceType, other.tag, other.aivCoreLimit, other.deterministic, other.isCapture);
-            case HcclCMDType::HCCL_CMD_ALLGATHER_V:
-                if (opType < other.opType) return false;
-                if (opType > other.opType) return true;
-                if (memcmp(VDataDes.counts, other.VDataDes.counts, rankSize * sizeof(u64)) <0) return false;
-                if (memcmp(VDataDes.counts, other.VDataDes.counts, rankSize * sizeof(u64)) >0) return true;
-                if (memcmp(VDataDes.displs, other.VDataDes.displs, rankSize * sizeof(u64)) <0) return false;
-                if (memcmp(VDataDes.displs, other.VDataDes.displs, rankSize * sizeof(u64)) >0) return true;
-                return std::tie(inputSize, VDataDes.dataType, tag, aivCoreLimit, deterministic, isCapture) < 
-                    std::tie(other.inputSize, other.VDataDes.dataType, other.tag, other.aivCoreLimit, other.deterministic, other.isCapture);
-            case HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V:
-                if (opType < other.opType) return false;
-                if (opType > other.opType) return true;
-                if (memcmp(VDataDes.counts, other.VDataDes.counts, rankSize * sizeof(u64)) <0) return false;
-                if (memcmp(VDataDes.counts, other.VDataDes.counts, rankSize * sizeof(u64)) >0) return true;
-                if (memcmp(VDataDes.displs, other.VDataDes.displs, rankSize * sizeof(u64)) <0) return false;
-                if (memcmp(VDataDes.displs, other.VDataDes.displs, rankSize * sizeof(u64)) >0) return true;
-                return std::tie(outputSize, VDataDes.dataType, reduceType, tag, aivCoreLimit, deterministic, isCapture) < 
-                    std::tie(other.outputSize, other.VDataDes.dataType, other.reduceType, other.tag, other.aivCoreLimit, other.deterministic, other.isCapture);
             default:
                 break;
         }

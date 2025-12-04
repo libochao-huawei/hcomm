@@ -29,25 +29,25 @@ STATIC int HccpParamParseId(const char *input, int *id)
     return 0;
 }
 
-STATIC int HccpParseLogicId(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseLogicId(const char *input, struct HccpInitParam *param)
 {
     unsigned int devNum;
     int ret;
 
     ret = DlDrvGetDevNum(&devNum);
     CHK_PRT_RETURN(ret, hccp_err("get dev num failed, ret %d", ret), ret);
-    ret = HccpParamParseId(input, &param->logic_id);
+    ret = HccpParamParseId(input, &param->logicId);
     CHK_PRT_RETURN(ret, hccp_err("hccp_param_parse_id failed"), ret);
 
-    ret = DlDrvDeviceGetPhyIdByIndex(param->logic_id, &(param->chip_id));
-    CHK_PRT_RETURN(ret != 0 || param->chip_id >= devNum || param->chip_id > HCCP_MAX_CHIP_ID,
-        hccp_err("get chip id failed, ret:%d, chip_id:%u, devNum:%u", ret, param->chip_id, devNum), -EINVAL);
+    ret = DlDrvDeviceGetPhyIdByIndex(param->logicId, &(param->chipId));
+    CHK_PRT_RETURN(ret != 0 || param->chipId >= devNum || param->chipId > HCCP_MAX_CHIP_ID,
+        hccp_err("get chip id failed, ret:%d, chipId:%u, devNum:%u", ret, param->chipId, devNum), -EINVAL);
 
-    hccp_info("logic_id from TSD is [%d], chip_id[%u]", param->logic_id, param->chip_id);
+    hccp_info("logic_id from TSD is [%d], chipId[%u]", param->logicId, param->chipId);
     return 0;
 }
 
-STATIC int HccpParsePid(const char *input, struct hccp_init_param *param)
+STATIC int HccpParsePid(const char *input, struct HccpInitParam *param)
 {
     int ret;
 
@@ -59,53 +59,53 @@ STATIC int HccpParsePid(const char *input, struct hccp_init_param *param)
     return 0;
 }
 
-STATIC int HccpParsePidSign(const char *input, struct hccp_init_param *param)
+STATIC int HccpParsePidSign(const char *input, struct HccpInitParam *param)
 {
     // no need to parse pid sign, skip
     return 0;
 }
 
-STATIC int HccpParseLogLevel(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseLogLevel(const char *input, struct HccpInitParam *param)
 {
     int ret;
 
-    ret = HccpParamParseId(input, &param->log_level);
+    ret = HccpParamParseId(input, &param->logLevel);
     CHK_PRT_RETURN(ret, hccp_err("hccp parse log level failed, ret[%d]", ret), ret);
-    hccp_info("log_level from TSD is [%d]", param->log_level);
+    hccp_info("log_level from TSD is [%d]", param->logLevel);
     return 0;
 }
 
-STATIC int HccpParseHdcType(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseHdcType(const char *input, struct HccpInitParam *param)
 {
     int ret;
 
-    ret = HccpParamParseId(input, &param->hdc_type);
-    if (ret != 0 || (param->hdc_type != HDC_SERVICE_TYPE_RDMA && param->hdc_type != HDC_SERVICE_TYPE_RDMA_V2)) {
+    ret = HccpParamParseId(input, &param->hdcType);
+    if (ret != 0 || (param->hdcType != HDC_SERVICE_TYPE_RDMA && param->hdcType != HDC_SERVICE_TYPE_RDMA_V2)) {
         hccp_warn("parse hdcType unsuccessful ret:%d or hdc_type[%d] invalid. set to default hdc_type[%d]",
-            ret, param->hdc_type, HDC_SERVICE_TYPE_RDMA);
-        param->hdc_type = HDC_SERVICE_TYPE_RDMA;
+            ret, param->hdcType, HDC_SERVICE_TYPE_RDMA);
+        param->hdcType = HDC_SERVICE_TYPE_RDMA;
     }
 
-    hccp_info("hdc_type from TSD is [%d]", param->hdc_type);
+    hccp_info("hdc_type from TSD is [%d]", param->hdcType);
     return 0;
 }
 
-STATIC int HccpParseWhiteListStatus(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseWhiteListStatus(const char *input, struct HccpInitParam *param)
 {
     int ret;
 
-    ret = HccpParamParseId(input, (int *)&param->white_list_status);
+    ret = HccpParamParseId(input, (int *)&param->whiteListStatus);
     if (ret != 0) {
-        param->white_list_status = WHITE_LIST_ENABLE;
-        hccp_warn("parse whiteListStatus unsuccessful ret:%d. set to default [%u]", ret, param->white_list_status);
+        param->whiteListStatus = WHITE_LIST_ENABLE;
+        hccp_warn("parse whiteListStatus unsuccessful ret:%d. set to default [%u]", ret, param->whiteListStatus);
     }
 
-    param->white_list_status = (param->white_list_status != 0) ? WHITE_LIST_ENABLE : WHITE_LIST_DISABLE;
-    hccp_info("white_list_status from TSD is [%u]", param->white_list_status);
+    param->whiteListStatus = (param->whiteListStatus != 0) ? WHITE_LIST_ENABLE : WHITE_LIST_DISABLE;
+    hccp_info("white_list_status from TSD is [%u]", param->whiteListStatus);
     return 0;
 }
 
-STATIC int HccpParseBackupPhyid(const char *input, struct hccp_init_param *param)
+STATIC int HccpParseBackupPhyid(const char *input, struct HccpInitParam *param)
 {
     unsigned int backupPhyId = 0;
     int ret;
@@ -116,18 +116,18 @@ STATIC int HccpParseBackupPhyid(const char *input, struct hccp_init_param *param
         return 0;
     }
 
-    ret = DlDrvGetLocalDevIdByHostDevId(backupPhyId, &param->backup_chip_id);
+    ret = DlDrvGetLocalDevIdByHostDevId(backupPhyId, &param->backupChipId);
     if (ret != 0) {
         hccp_warn("dl_drv_get_local_dev_id_by_host_dev_id unsuccessful ret:%d, backupPhyId:%u", ret, backupPhyId);
         return 0;
     }
 
-    hccp_info("backup_phy_id from TSD is [%u], backup_chip_id[%u]", backupPhyId, param->backup_chip_id);
-    param->backup_flag = true;
+    hccp_info("backup_phy_id from TSD is [%u], backupChipId[%u]", backupPhyId, param->backupChipId);
+    param->backupFlag = true;
     return 0;
 }
 
-int HccpParamParse(int argc, char *argv[], struct hccp_init_param *param)
+int HccpParamParse(int argc, char *argv[], struct HccpInitParam *param)
 {
     static struct option longOpts[] = {
         {DEVID_PREFIX, required_argument, NULL, HCCP_ARGC_DEV},
@@ -139,7 +139,7 @@ int HccpParamParse(int argc, char *argv[], struct hccp_init_param *param)
         {BACKUP_PHYID_PREFIX, required_argument, NULL, HCCP_ARGC_BACKUP_PHYID},
         {0, no_argument, NULL, HCCP_ARGC_NUM},
     };
-    static struct param_handle paramHandles[] = {
+    static struct ParamHandle paramHandles[] = {
         {HccpParseLogicId, true, HCCP_ARGC_DEV},
         {HccpParsePid, true, HCCP_ARGC_PID},
         {HccpParsePidSign, false, HCCP_ARGC_PID_SIGN},
@@ -155,9 +155,9 @@ int HccpParamParse(int argc, char *argv[], struct hccp_init_param *param)
     int ret;
 
     // set default attr
-    param->hdc_type = HDC_SERVICE_TYPE_RDMA;
-    param->white_list_status = WHITE_LIST_ENABLE;
-    param->backup_flag = false;
+    param->hdcType = HDC_SERVICE_TYPE_RDMA;
+    param->whiteListStatus = WHITE_LIST_ENABLE;
+    param->backupFlag = false;
 
     while (getopt_long(argc, argv, optstring, longOpts, &optIdx) != -1) {
         // unrecognized option, skip to parse
@@ -165,16 +165,16 @@ int HccpParamParse(int argc, char *argv[], struct hccp_init_param *param)
             continue;
         }
 
-        CHK_PRT_RETURN(optIdx < 0 || optIdx >= HCCP_ARGC_NUM || paramHandles[optIdx].opt_handle == NULL,
+        CHK_PRT_RETURN(optIdx < 0 || optIdx >= HCCP_ARGC_NUM || paramHandles[optIdx].optHandle == NULL,
             hccp_err("opt_idx:%d invalid, valid range[0, %d), errno:%d", optIdx, HCCP_ARGC_NUM, errno),-EINVAL);
 
-        CHK_PRT_RETURN(paramHandles[optIdx].opt_val != optIdx, hccp_err("opt_val:%d != opt_idx:%d",
-            paramHandles[optIdx].opt_val, optIdx), -EINVAL);
+        CHK_PRT_RETURN(paramHandles[optIdx].optVal != optIdx, hccp_err("opt_val:%d != opt_idx:%d",
+            paramHandles[optIdx].optVal, optIdx), -EINVAL);
 
-        ret = paramHandles[optIdx].opt_handle(optarg, param);
+        ret = paramHandles[optIdx].optHandle(optarg, param);
         CHK_PRT_RETURN(ret != 0, hccp_err("parse param failed, optIdx:%d, ret:%d", optIdx, ret), ret);
 
-        if (paramHandles[optIdx].is_default_required) {
+        if (paramHandles[optIdx].isDefaultRequired) {
             requiredCnt++;
         }
     }

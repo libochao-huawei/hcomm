@@ -19,9 +19,9 @@
 #include "ra_adp_pool.h"
 #include "ra_adp_async.h"
 
-struct ra_hdc_async_info gHdcAsync[RA_MAX_PHY_ID_NUM] = { 0 };
-struct ra_hdc_init_para gHdcAsyncInitPara = { 0 };
-struct rs_pthread_info gRaAsyncThreadInfo = { 0 };
+struct RaHdcAsyncInfo gHdcAsync[RA_MAX_PHY_ID_NUM] = { 0 };
+struct RaHdcInitPara gHdcAsyncInitPara = { 0 };
+struct RsPthreadInfo gRaAsyncThreadInfo = { 0 };
 
 int RaHwAsyncInit(unsigned int chipId, pid_t pid)
 {
@@ -30,16 +30,16 @@ int RaHwAsyncInit(unsigned int chipId, pid_t pid)
     ret = pthread_mutex_init(&gHdcAsyncInitPara.mutex, NULL);
     CHK_PRT_RETURN(ret != 0, hccp_err("g_hdc_async_init_para mutex_init failed ret %d", ret), -ESYSFUNC);
 
-    gHdcAsyncInitPara.chip_id = chipId;
-    gHdcAsyncInitPara.host_tgid = pid;
+    gHdcAsyncInitPara.chipId = chipId;
+    gHdcAsyncInitPara.hostTgid = pid;
 
-    ret = pthread_mutex_init(&gHdcAsync[chipId].send_mutex, NULL);
+    ret = pthread_mutex_init(&gHdcAsync[chipId].sendMutex, NULL);
     if (ret != 0) {
         hccp_err("send_mutex mutex_init failed ret %d", ret);
         pthread_mutex_destroy(&gHdcAsyncInitPara.mutex);
         return -ESYSFUNC;
     }
-    RaHdcInitOpSec(&gHdcAsync[chipId].op_sec, BUCKET_DEPTH, true);
+    RaHdcInitOpSec(&gHdcAsync[chipId].opSec, BUCKET_DEPTH, true);
     return 0;
 }
 
@@ -52,7 +52,7 @@ STATIC int RaHdcHandleSendPkt(unsigned int chipId, void *recvBuf, unsigned int r
 
     RsSetCtx(chipId);
 
-    ret = RaHandle(&gHdcAsync[chipId].op_sec, recvBuf, recvLen, (char **)&sendBuf, &sendLen, &closeSession);
+    ret = RaHandle(&gHdcAsync[chipId].opSec, recvBuf, recvLen, (char **)&sendBuf, &sendLen, &closeSession);
     if (ret != 0) {
         hccp_err("ra_handle failed, ret:%d", ret);
         goto out;
@@ -73,17 +73,17 @@ out:
 
 STATIC void RaAsyncHandlePkt(unsigned int chipId, void *recvBuf, unsigned int recvLen)
 {
-    struct msg_head *recvMsgHead = (struct msg_head *)recvBuf;
+    struct MsgHead *recvMsgHead = (struct MsgHead *)recvBuf;
     bool closeSession = false;
 
     // should handle RA_RS_HDC_SESSION_CLOSE on recv thread
-    if (recvLen < sizeof(struct msg_head) || recvMsgHead->opcode == RA_RS_HDC_SESSION_CLOSE) {
+    if (recvLen < sizeof(struct MsgHead) || recvMsgHead->opcode == RA_RS_HDC_SESSION_CLOSE) {
         closeSession = true;
     }
     if (closeSession) {
         (void)RaHdcHandleSendPkt(chipId, recvBuf, recvLen);
         RA_PTHREAD_MUTEX_LOCK(&gHdcAsyncInitPara.mutex);
-        gHdcAsyncInitPara.connect_status = HDC_UNCONNECTED;
+        gHdcAsyncInitPara.connectStatus = HDC_UNCONNECTED;
         RA_PTHREAD_MUTEX_UNLOCK(&gHdcAsyncInitPara.mutex);
         return;
     }
@@ -94,7 +94,7 @@ STATIC void RaAsyncHandlePkt(unsigned int chipId, void *recvBuf, unsigned int re
 
 STATIC void *RaAsyncPthread(void *arg)
 {
-    unsigned int chipId = gHdcAsyncInitPara.chip_id;
+    unsigned int chipId = gHdcAsyncInitPara.chipId;
     unsigned int recvLen = 0;
     void *recvBuf = NULL;
     int ret;
@@ -105,21 +105,21 @@ STATIC void *RaAsyncPthread(void *arg)
     (void)prctl(PR_SET_NAME, (unsigned long)"hccp_ra_async");
 
     RA_PTHREAD_MUTEX_LOCK(&gHdcAsyncInitPara.mutex);
-    gHdcAsyncInitPara.thread_status = THREAD_RUNNING;
+    gHdcAsyncInitPara.threadStatus = THREAD_RUNNING;
     RA_PTHREAD_MUTEX_UNLOCK(&gHdcAsyncInitPara.mutex);
 
-    RsGetCurTime(&gRaAsyncThreadInfo.last_check_time);
-    ret = strncpy_s((char *)gRaAsyncThreadInfo.pthread_name, sizeof(gRaAsyncThreadInfo.pthread_name),
+    RsGetCurTime(&gRaAsyncThreadInfo.lastCheckTime);
+    ret = strncpy_s((char *)gRaAsyncThreadInfo.pthreadName, sizeof(gRaAsyncThreadInfo.pthreadName),
         "ra_async_thread", strlen("ra_async_thread"));
     CHK_PRT_RETURN(ret != 0, hccp_err("strncpy_s pthread name failed, ret[%d]", ret), NULL);
 
-    hccp_run_info("pthread[%s] is alive!", gRaAsyncThreadInfo.pthread_name);
+    hccp_run_info("pthread[%s] is alive!", gRaAsyncThreadInfo.pthreadName);
     while (1) {
-        if (gHdcAsyncInitPara.thread_status == THREAD_DESTROYING) {
+        if (gHdcAsyncInitPara.threadStatus == THREAD_DESTROYING) {
             break;
         }
 
-        if (gHdcAsyncInitPara.connect_status != HDC_CONNECTED) {
+        if (gHdcAsyncInitPara.connectStatus != HDC_CONNECTED) {
             usleep(THREAD_SLEEP_TIME);
             continue;
         }
@@ -136,17 +136,17 @@ STATIC void *RaAsyncPthread(void *arg)
 
     hccp_info("thread [%d] is out, cleaning resources", getpid());
     RA_PTHREAD_MUTEX_LOCK(&gHdcAsyncInitPara.mutex);
-    gHdcAsyncInitPara.thread_status = THREAD_HALT;
+    gHdcAsyncInitPara.threadStatus = THREAD_HALT;
     RA_PTHREAD_MUTEX_UNLOCK(&gHdcAsyncInitPara.mutex);
-    RA_PTHREAD_MUTEX_LOCK(&gHdcAsync[chipId].send_mutex);
-    RaHdcCloseSession(&gHdcAsync[chipId].hdc_session);
-    RA_PTHREAD_MUTEX_UNLOCK(&gHdcAsync[chipId].send_mutex);
+    RA_PTHREAD_MUTEX_LOCK(&gHdcAsync[chipId].sendMutex);
+    RaHdcCloseSession(&gHdcAsync[chipId].hdcSession);
+    RA_PTHREAD_MUTEX_UNLOCK(&gHdcAsync[chipId].sendMutex);
     return NULL;
 }
 
 STATIC void RaHwAsyncHdcInit(void *arg)
 {
-    unsigned int chipId = gHdcAsyncInitPara.chip_id;
+    unsigned int chipId = gHdcAsyncInitPara.chipId;
     pthread_t tidp;
     int ret;
 
@@ -159,7 +159,7 @@ STATIC void RaHwAsyncHdcInit(void *arg)
     (void)prctl(PR_SET_NAME, (unsigned long)"hccp_hw_async");
 
     hccp_info("chip_id(%u)", chipId);
-    gHdcAsyncInitPara.hdc_flag = 1;
+    gHdcAsyncInitPara.hdcFlag = 1;
 
     ret = pthread_create(&tidp, NULL, (void *)RaAsyncPthread, NULL);
     if (ret != 0) {
@@ -168,22 +168,22 @@ STATIC void RaHwAsyncHdcInit(void *arg)
     }
 
     while (1) {
-        if (gHdcAsyncInitPara.connect_status != HDC_UNCONNECTED) {
+        if (gHdcAsyncInitPara.connectStatus != HDC_UNCONNECTED) {
             usleep(HDC_ACCEPT_SLEEP_TIME);
             continue;
         }
-        ret = RaHdcSessionAccept(chipId, &gHdcAsync[chipId].hdc_session, (int)gHdcAsyncInitPara.host_tgid);
+        ret = RaHdcSessionAccept(chipId, &gHdcAsync[chipId].hdcSession, (int)gHdcAsyncInitPara.hostTgid);
         if (ret != 0) {
-            gHdcAsyncInitPara.hdc_flag = 0;
+            gHdcAsyncInitPara.hdcFlag = 0;
             return;
         }
         // should continue to accept: host_tgid != g_hdc_async_init_para.host_tgid
-        if (ret == 0 && gHdcAsync[chipId].hdc_session == NULL) {
+        if (ret == 0 && gHdcAsync[chipId].hdcSession == NULL) {
             continue;
         }
 
         RA_PTHREAD_MUTEX_LOCK(&gHdcAsyncInitPara.mutex);
-        gHdcAsyncInitPara.connect_status = HDC_CONNECTED;
+        gHdcAsyncInitPara.connectStatus = HDC_CONNECTED;
         RA_PTHREAD_MUTEX_UNLOCK(&gHdcAsyncInitPara.mutex);
         return;
     }
@@ -191,29 +191,29 @@ STATIC void RaHwAsyncHdcInit(void *arg)
 
 void RaHwAsyncDeinit(void)
 {
-   pthread_mutex_destroy(&gHdcAsync[gHdcAsyncInitPara.chip_id].send_mutex);
+   pthread_mutex_destroy(&gHdcAsync[gHdcAsyncInitPara.chipId].sendMutex);
    pthread_mutex_destroy(&gHdcAsyncInitPara.mutex);
 }
 
 int RaRsAsyncHdcSessionConnect(char *inBuf, char *outBuf, int *outLen, int *opResult, int rcvBufLen)
 {
-    union op_async_hdc_connect_data *asyncData = NULL;
+    union OpAsyncHdcConnectData *asyncData = NULL;
     int timeout = RA_THREAD_TRY_TIME;
     unsigned int phyId = 0;
     pthread_t tidp;
     int ret;
 
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union op_async_hdc_connect_data), sizeof(struct msg_head), rcvBufLen,
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpAsyncHdcConnectData), sizeof(struct MsgHead), rcvBufLen,
         opResult);
-    asyncData = (union op_async_hdc_connect_data *)(inBuf + sizeof(struct msg_head));
-    HCCP_CHECK_PARAM_LEN_RET_HOST(asyncData->tx_data.queue_size, 0, MAX_POOL_QUEUE_SIZE, opResult);
-    HCCP_CHECK_PARAM_LEN_RET_HOST(asyncData->tx_data.thread_num, 0, MAX_POOL_THREAD_NUM, opResult);
+    asyncData = (union OpAsyncHdcConnectData *)(inBuf + sizeof(struct MsgHead));
+    HCCP_CHECK_PARAM_LEN_RET_HOST(asyncData->txData.queueSize, 0, MAX_POOL_QUEUE_SIZE, opResult);
+    HCCP_CHECK_PARAM_LEN_RET_HOST(asyncData->txData.threadNum, 0, MAX_POOL_THREAD_NUM, opResult);
 
-    phyId = gHdcAsyncInitPara.chip_id;
-    gHdcAsync[phyId].pool = RaHdcPoolCreate(asyncData->tx_data.queue_size, asyncData->tx_data.thread_num);
+    phyId = gHdcAsyncInitPara.chipId;
+    gHdcAsync[phyId].pool = RaHdcPoolCreate(asyncData->txData.queueSize, asyncData->txData.threadNum);
     if (gHdcAsync[phyId].pool == NULL) {
-        hccp_err("ra_hdc_pool_create failed, queue_size:%u thread_num:%u phyId:%u",
-            asyncData->tx_data.queue_size, asyncData->tx_data.thread_num, asyncData->tx_data.phy_id);
+        hccp_err("ra_hdc_pool_create failed, queueSize:%u threadNum:%u phyId:%u",
+            asyncData->txData.queueSize, asyncData->txData.threadNum, asyncData->txData.phyId);
         *opResult = -ESYSFUNC;
         return 0;
     }
@@ -228,13 +228,13 @@ int RaRsAsyncHdcSessionConnect(char *inBuf, char *outBuf, int *outLen, int *opRe
     }
 
     // will block until time out: RA_THREAD_TRY_TIME * RA_THREAD_SLEEP_TIME us
-    while (gHdcAsyncInitPara.hdc_flag != 1 && timeout > 0) {
+    while (gHdcAsyncInitPara.hdcFlag != 1 && timeout > 0) {
         usleep(RA_THREAD_SLEEP_TIME);
         timeout--;
     }
 
-    if (gHdcAsyncInitPara.hdc_flag == 0 || timeout <= 0) {
-        hccp_err("HDC server thread create timeout, flag %d, timeout %d", gHdcAsyncInitPara.hdc_flag, timeout);
+    if (gHdcAsyncInitPara.hdcFlag == 0 || timeout <= 0) {
+        hccp_err("HDC server thread create timeout, flag %d, timeout %d", gHdcAsyncInitPara.hdcFlag, timeout);
         *opResult = -ESRCH;
         RaHdcPoolDestroy(gHdcAsync[phyId].pool);
         gHdcAsync[phyId].pool = NULL;
@@ -250,14 +250,14 @@ int RaRsAsyncHdcSessionClose(char *inBuf, char *outBuf, int *outLen, int *opResu
     int tryAgain = HDC_TRY_TIME;
     unsigned int phyId = 0;
 
-    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union op_async_hdc_close_data), sizeof(struct msg_head), rcvBufLen,
+    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union OpAsyncHdcCloseData), sizeof(struct MsgHead), rcvBufLen,
         opResult);
 
     RA_PTHREAD_MUTEX_LOCK(&gHdcAsyncInitPara.mutex);
-    gHdcAsyncInitPara.thread_status = THREAD_DESTROYING;
+    gHdcAsyncInitPara.threadStatus = THREAD_DESTROYING;
     RA_PTHREAD_MUTEX_UNLOCK(&gHdcAsyncInitPara.mutex);
 
-    while ((gHdcAsyncInitPara.thread_status != THREAD_HALT) && tryAgain != 0) {
+    while ((gHdcAsyncInitPara.threadStatus != THREAD_HALT) && tryAgain != 0) {
         usleep(HDC_USLEEP_TIME);
         tryAgain--;
     }
@@ -266,7 +266,7 @@ int RaRsAsyncHdcSessionClose(char *inBuf, char *outBuf, int *outLen, int *opResu
         hccp_warn("hdc async message thread quit timeout");
     }
 
-    phyId = gHdcAsyncInitPara.chip_id;
+    phyId = gHdcAsyncInitPara.chipId;
     RaHdcPoolDestroy(gHdcAsync[phyId].pool);
     gHdcAsync[phyId].pool = NULL;
     *opResult = 0;

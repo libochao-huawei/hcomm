@@ -255,6 +255,11 @@ HcclResult TopoInfoRanktableParser::LoadFileInit(std::string &rankTableM)
     return HCCL_SUCCESS;
 }
 
+HcclResult TopoInfoRanktableParser::SetIsInterSuperPodRetryEnable(bool isRetryEnable)
+{
+    return HCCL_SUCCESS;
+}
+
 HcclResult TopoInfoRanktableParser::GetRanktableVersion(std::string &version)
 {
     /* 查找json对象中是否有该属性, 不存在的属性不能直接访问 */

@@ -61,9 +61,9 @@ public:
     HcclResult InlineReduceAsync(const void *src, u64 dataCount, const HcclDataType datatype, HcclReduceOp redOp,
         Stream &stream, void *dst, u32 remoteUserRank = INVALID_VALUE_RANKID,
         hccl::LinkType inLinkType = hccl::LinkType::LINK_ONCHIP) override;
-    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         u32 remoteUserRank = INVALID_VALUE_RANKID, bool isCapture = false) override;
-    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream, u32 userRank,
+    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream, u32 userRank,
         u64 offset, bool isCapture = false) override;
 
     HcclResult ResetGraphCtx(bool enableCache, const std::string &key, bool useGraphConstructorV2 = false) override;

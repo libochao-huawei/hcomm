@@ -10,7 +10,7 @@
 #include "securec.h"
 #include "ut_dispatch.h"
 #include "rs.h"
-extern int ra_peer_set_conn_param(struct socket_info_t conn[],
+extern int ra_peer_set_conn_param(struct SocketInfoT conn[],
     struct socket_fd_data rs_conn[], unsigned int i, int buf_size);
 extern int ra_rdev_init_check_ip(int mode, struct rdev rdev_info, char local_ip[]);
 extern int ra_peer_loopback_qp_create(struct ra_rdma_handle *rdma_handle, struct loopback_qp_pair *qp_pair,
@@ -64,10 +64,10 @@ void tc_peer()
     unsigned long pa = 0;
     unsigned long va = 0;
     struct qp_peer_info *qp_info = NULL;
-    struct socket_connect_info_t conn[1];
-    struct socket_listen_info_t listen[1];
-    struct socket_info_t info[1];
-    struct socket_close_info_t close[1] = {0};
+    struct SocketConnectInfoT conn[1];
+    struct SocketListenInfoT listen[1];
+    struct SocketInfoT info[1];
+    struct SocketCloseInfoT close[1] = {0};
     int sock_fd = 1;
     void *qp_handle;
     void *qp_handle_with_attr;
@@ -100,7 +100,7 @@ void tc_peer()
     conn[0].socket_handle = socket_handle;
     close[0].socket_handle = socket_handle;
     info[0].socket_handle = socket_handle;
-    struct qp_ext_attrs ext_attrs;
+    struct QpExtAttrs ext_attrs;
     ext_attrs.version = QP_CREATE_WITH_ATTR_VERSION;
     ext_attrs.qp_mode = RA_RS_NOR_QP_MODE;
 
@@ -271,7 +271,7 @@ void tc_peer()
     //EXPECT_INT_EQ(-ENODEV, ret);
     //mocker_clean();
 
-    struct socket_connect_info_t connect_err_rs[1] = { 0 };
+    struct SocketConnectInfoT connect_err_rs[1] = { 0 };
     connect_err_rs[0].socket_handle = socket_handle;
     mocker((stub_fn_t)rs_socket_batch_connect, 10, -1);
     ret = ra_peer_socket_batch_connect(0, connect_err_rs, 1);
@@ -281,7 +281,7 @@ void tc_peer()
     EXPECT_INT_EQ(-2, ret);
     mocker_clean();
 
-    struct socket_listen_info_t listen_err_rs[1] = {0};
+    struct SocketListenInfoT listen_err_rs[1] = {0};
     listen_err_rs[0].socket_handle = socket_handle;
     mocker((stub_fn_t)rs_socket_listen_start, 10, -1);
     ret = ra_peer_socket_listen_start(0, listen_err_rs, 1);
@@ -291,7 +291,7 @@ void tc_peer()
     EXPECT_INT_EQ(-2, ret);
     mocker_clean();
 
-    struct socket_listen_info_t listen_err_rs2[1];
+    struct SocketListenInfoT listen_err_rs2[1];
     listen_err_rs2[0].socket_handle = socket_handle;
     listen_err_rs2[0].port = 0;
     mocker((stub_fn_t)rs_socket_listen_stop, 10, -1);
@@ -299,7 +299,7 @@ void tc_peer()
     EXPECT_INT_EQ(-1, ret);
     mocker_clean();
 
-    struct socket_info_t info_err_rs[1];
+    struct SocketInfoT info_err_rs[1];
     info_err_rs[0].socket_handle = socket_handle;
     info_err_rs[0].fd_handle = NULL;
     mocker((stub_fn_t)calloc, 10, NULL);
@@ -312,7 +312,7 @@ void tc_peer()
     EXPECT_INT_EQ(1, ret);
     mocker_clean();
 
-    struct socket_info_t info_err_rs2[1];
+    struct SocketInfoT info_err_rs2[1];
     info_err_rs2[0].socket_handle = socket_handle;
     info_err_rs2[0].fd_handle = NULL;
     mocker((stub_fn_t)memcpy_s, 10, -1);
@@ -320,7 +320,7 @@ void tc_peer()
     EXPECT_INT_EQ(-ESAFEFUNC, ret);
     mocker_clean();
 
-    struct socket_info_t info_err_rs3[1];
+    struct SocketInfoT info_err_rs3[1];
     info_err_rs3[0].socket_handle = socket_handle;
     info_err_rs3[0].fd_handle = NULL;
     mocker_ret((stub_fn_t)memcpy_s, 0, 1, 1);
@@ -328,7 +328,7 @@ void tc_peer()
     EXPECT_INT_EQ(1, ret);
     mocker_clean();
 
-    struct socket_info_t  info_err_rs4[1];
+    struct SocketInfoT  info_err_rs4[1];
     info_err_rs4[0].socket_handle = socket_handle;
     info_err_rs4[0].fd_handle = NULL;
     mocker((stub_fn_t)rs_get_sockets, 10, 0);
@@ -440,7 +440,7 @@ void tc_peer()
     //EXPECT_INT_EQ(-1, ret);
     //mocker_clean();
 
-    struct socket_info_t info_rs[1];
+    struct SocketInfoT info_rs[1];
     info_rs[0].socket_handle = socket_handle;
 
     ret = ra_peer_get_sockets(0, 0, info_rs, 1);
@@ -464,7 +464,7 @@ void tc_peer()
     ret = ra_peer_qp_destroy(qp_handle);
     EXPECT_INT_EQ(0, ret);
 
-    struct socket_close_info_t close_rs[1] = {0};
+    struct SocketCloseInfoT close_rs[1] = {0};
     close_rs[0].fd_handle = info_rs[0].fd_handle;
     close_rs[0].socket_handle = socket_handle;
     mocker((stub_fn_t)rs_socket_batch_close, 10, -1);
@@ -496,7 +496,7 @@ void tc_peer_fail()
     struct ra_socket_handle socket_handle;
     socket_handle.rdev_info.phy_id = 0;
     socket_handle.rdev_info.family = 0;
-    struct socket_connect_info_t conn[1];
+    struct SocketConnectInfoT conn[1];
     conn[0].socket_handle = &socket_handle;
     conn[0].port = 0;
     struct socket_connect_info rs_conn[1] = {0};
@@ -504,7 +504,7 @@ void tc_peer_fail()
     ra_get_socket_connect_info(conn, 1, rs_conn, 2);
     mocker_clean();
 
-    struct socket_listen_info_t conn_listen[1];
+    struct SocketListenInfoT conn_listen[1];
     struct socket_listen_info rs_conn_listen[1];
     conn_listen[0].phase = 0;
     conn_listen[0].err = 0;
@@ -525,7 +525,7 @@ void tc_peer_fail()
     mocker_clean();
 
 
-    struct socket_listen_info_t conn_listen_info[1] = {0};
+    struct SocketListenInfoT conn_listen_info[1] = {0};
     conn_listen_info[0].port  = 0;
     conn_listen_info[0].socket_handle = &socket_handle;
     mocker((stub_fn_t)ra_get_socket_listen_info, 10, 0);

@@ -11,7 +11,14 @@
 #ifndef HCCL_COMM_CONFIG_PUB_H
 #define HCCL_COMM_CONFIG_PUB_H
 
+#include "hccl_common.h"
+#include "common.h"
+
 constexpr u32 COMM_CONFIG_MAGIC_WORD = 0xf0f0f0f0;  // Magic word值，用于校验传入的配置结构体是否已经被初始化
+constexpr uint32_t COMM_ALGO_MAX_LENGTH = 1600; // hccl algo max length
+constexpr uint32_t COMM_RETRY_ENABLE_MAX_LENGTH = 50; // hccl_retry_enable max length
+constexpr uint32_t COMM_RETRY_PARAMS_MAX_LENGTH = 128; // hccl_retry_params max length
+constexpr int32_t COMM_EXECTIMEOUT_CONFIG_NOT_SET = 0xffffffff;
 
 enum CommConfigVersion {
     COMM_CONFIG_VERSION_ONE = 1,
@@ -20,7 +27,9 @@ enum CommConfigVersion {
     COMM_CONFIG_VERSION_FOUR = 4,
     COMM_CONFIG_VERSION_FIVE = 5,
     COMM_CONFIG_VERSION_SIX = 6,
-    COMM_CONFIG_VERSION_SEVEN = 7                       // 当前支持的最高版本
+    COMM_CONFIG_VERSION_SEVEN = 7,
+    COMM_CONFIG_VERSION_EIGHT = 8,    
+    COMM_CONFIG_VERSION_NINE = 9                  // 当前支持的最高版本
 };
 
 enum CommConfigOpExpansion {
@@ -51,10 +60,12 @@ typedef struct CommConfigHandleDef {
     u32 serviceLevel;
     u32 worldRankID;
     u64 jobID;
-    int32_t commEngine;        ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
-    u32 threadNum;             ///< thread数量（新增）
-    u32 notifyNumPerThread;    ///< 每个thread的notify数量（新增）
     u8 aclGraphZeroCopyEnable; ///< 0:关闭aclgraph零拷贝 1:开启aclgraph零拷贝
+    s32 execTimeOut;
+    char hcclAlgo[COMM_ALGO_MAX_LENGTH];
+    char hcclRetryEnable[COMM_RETRY_ENABLE_MAX_LENGTH]; // hccl_retry_enable
+    char hcclRetryParams[COMM_RETRY_PARAMS_MAX_LENGTH]; // hccl_retry_params
+    char bufferName[BUFFER_NAME_MAX_LENGTH];    // cclbuffer名称
 } CommConfigHandle;
 
 namespace hccl {
@@ -76,12 +87,22 @@ public:
     u32 GetConfigServiceLevel() const;
     u32 GetConfigWorldRankID() const;
     u64 GetConfigJobID() const;
-    int32_t GetCommEngine() const;
-    u32 GetThreadNum() const;
-    u32 GetNotifyNumPerThread() const;
     u8 GetConfigAclGraphZeroCopyEnable() const; // 获取aclGraphZeroCopyEnable 的配置值，在ExecOp Zerocopy准备流程中使用
+    s32 GetConfigExecTimeOut() const;
+    bool GetConfigExecTimeOutSet() const;
+    std::vector<HcclAlgoType> GetConfigHcclAlgo(HcclCMDType opType = HcclCMDType::HCCL_CMD_ALL);
+    bool GetConfigIntraServerRetryEnable() const;
+    bool GetConfigInterServerRetryEnable() const;
+    bool GetConfigInterSuperPodRetryEnable() const;
+    u32 GetConfigRetryMaxCnt() const;
+    u32 GetConfigRetryHoldTime() const;
+    u32 GetConfigRetryIntervalTime() const;
+    HcclResult SetConfigExecTimeOut(s32 execTimeOut);
+    const std::string& GetConfigBufferName() const;
 
 private:
+    void InitAlgoConfig();
+    void InitRetryEnable();
     HcclResult CheckMagicWord(const CommConfigHandle& config);      // 检查Magic Word是否合法
     HcclResult SetConfigByVersion(const CommConfigHandle& config);  // 根据版本号读取配置，保证兼容性
 
@@ -90,6 +111,14 @@ private:
     HcclResult SetConfigCommName(const CommConfigHandle& config);       // 设置通信域名称
     HcclResult SetConfigUdi(const CommConfigHandle& config);  // 设置UDI
     HcclResult SetConfigOpExpansionMode(const CommConfigHandle& config);  // 设置AIV和AICPU, 在310P和A3中AICPU展开
+    HcclResult SetConfigExecTimeout(const CommConfigHandle &config);  // 设置HCCL执行超时时间
+    HcclResult SetConfigHcclAlgo(const CommConfigHandle &config);  // 设置HCCL_ALGO
+    HcclResult SetConfigHcclRetryEnable(const CommConfigHandle &config);  // 设置retry_enable
+    HcclResult SetConfigHcclRetryParams(const CommConfigHandle &config);  // 设置retry_params
+    HcclResult SetSpecificAlgTypeConfig(std::vector<std::string> &algos);
+    HcclResult SplitRetryEnable(const std::string &retryConfig, std::vector<std::string> &retryEnables);
+    HcclResult SetConfigRetryEnable(const std::vector<std::string> &retryEnables);
+    HcclResult SetConfigBufferName(const CommConfigHandle& config);    // 设置通信Buffer名称
 
     u64 bufferSize_;        // CCL buffer大小配置，单位B
     u8 deterministic_;      // 确定性计算配置：0-关闭，1-开启确定性（不支持规约保序），2-开启确定性&规约保序，其他数字暂时保留
@@ -101,11 +130,16 @@ private:
     u32 serviceLevel_;
     u32 worldRankID_;
     u64 jobID_;
-    int32_t commEngine_ = -1;
-    u32 threadNum_ = 0;
-    u32 notifyNumPerThread_ = 0;
     u8 aclGraphZeroCopyEnable_ = 0;     // 0:关闭aclgraph零拷贝 1:开启aclgraph零拷贝
     bool onlyAivMode_;
+    s32 execTimeOut_;
+    bool execTimeOutSetByConfig_;
+    std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfig_;
+    bool retryEnable_[HCCL_RETRY_ENABLE_LEVEL_NUM];
+    u32 retryMaxCnt_;          // 重执行最大尝试次数，配置范围[0,60000]，默认值为3
+    u32 retryHoldTime_;
+    u32 retryIntervalTime_;    // 重执行间隔时间，配置范围[0,3600000]，默认值1000
+    std::string bufferName_;    // CCL buffer名称
 };
 }
 #endif /* HCCL_COMM_CONFIG_PUB_H */

@@ -47,7 +47,7 @@ TypicalQpManager& TypicalQpManager::GetInstance()
     return qpInstance[MAX_MODULE_DEVICE_NUM];
 }
 
-HcclResult TypicalQpManager::CreateQp(struct typical_qp& qpInfo)
+HcclResult TypicalQpManager::CreateQp(struct TypicalQp& qpInfo)
 {
     HcclResult ret = HCCL_SUCCESS;
     QpHandle qpHandle = nullptr;
@@ -60,7 +60,7 @@ HcclResult TypicalQpManager::CreateQp(struct typical_qp& qpInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult TypicalQpManager::CreateQp(struct typical_qp& qpInfo, const QpConfigInfo& qpConfig)
+HcclResult TypicalQpManager::CreateQp(struct TypicalQp& qpInfo, const QpConfigInfo& qpConfig)
 {
     HcclResult ret = HCCL_SUCCESS;
     QpHandle qpHandle = nullptr;
@@ -73,7 +73,7 @@ HcclResult TypicalQpManager::CreateQp(struct typical_qp& qpInfo, const QpConfigI
     return HCCL_SUCCESS;
 }
 
-HcclResult TypicalQpManager::ModifyQp(struct typical_qp& localQpInfo, struct typical_qp& remoteQpInfo)
+HcclResult TypicalQpManager::ModifyQp(struct TypicalQp& localQpInfo, struct TypicalQp& remoteQpInfo)
 {
     CHK_PRT_RET((localQpInfo.qpn == 0 || remoteQpInfo.qpn == 0),
         HCCL_ERROR("[TypicalQpManager][ModifyQp] the qpinfo is wrong, qpn is 0."), HCCL_E_PARA);
@@ -88,7 +88,7 @@ HcclResult TypicalQpManager::ModifyQp(struct typical_qp& localQpInfo, struct typ
     return HCCL_SUCCESS;
 }
 
-HcclResult TypicalQpManager::DestroyQp(struct typical_qp& qpInfo)
+HcclResult TypicalQpManager::DestroyQp(struct TypicalQp& qpInfo)
 {
     CHK_PRT_RET((qpInfo.qpn == 0), HCCL_ERROR("[TypicalQpManager][DestroyQp] The qpinfo is wrong, qpn is 0."),
         HCCL_E_PARA);
@@ -102,12 +102,12 @@ HcclResult TypicalQpManager::DestroyQp(struct typical_qp& qpInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult TypicalQpManager::SetQpRdmaRetryCfg(struct typical_qp& qpInfo)
+HcclResult TypicalQpManager::SetQpRdmaRetryCfg(struct TypicalQp& qpInfo)
 {
-    qpInfo.retry_cnt = GetExternalInputRdmaRetryCnt();
-    qpInfo.retry_time = GetExternalInputRdmaTimeOut();
+    qpInfo.retryCnt = GetExternalInputRdmaRetryCnt();
+    qpInfo.retryTime = GetExternalInputRdmaTimeOut();
     HCCL_INFO("[TypicalQpManager][SetQpCreateBaseInfo] Qpinfo is setted, tc is %u, sl is %u, retry cnt is %u, "\
-        "retry time is %u", qpInfo.tc, qpInfo.sl, qpInfo.retry_cnt, qpInfo.retry_time);
+        "retry time is %u", qpInfo.tc, qpInfo.sl, qpInfo.retryCnt, qpInfo.retryTime);
     return HCCL_SUCCESS;
 }
 

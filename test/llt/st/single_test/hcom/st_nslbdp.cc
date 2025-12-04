@@ -154,7 +154,7 @@ TEST_F(STnslbdpTest, hccl_prepare_ut_env)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclCommunicator comm;
-    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::InitHccp)
+    MOCKER_CPP_VIRTUAL(comm, &HcclCommunicator::InitHccpChannel)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -349,7 +349,7 @@ TEST_F(STnslbdpTest, st_init_hccp)
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comms[0]);
     std::string groupName = hcclComm->GetIdentifier();
     hcclNslbDp::GetInstance().clearnHccpInitFlag();
-    hcclComm->InitHccp();
+    hcclComm->InitHccpChannel();
     hcclComm->GetRankLists();
     u32 bufferSize = hcclNslbDp::GetInstance().getBufferSize();
     HCCL_INFO("bufferSize = %u", bufferSize);
@@ -651,7 +651,7 @@ TEST_F(STnslbdpTest, st_collect_table2_910b)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclCommunicator impl2;
-    MOCKER_CPP_VIRTUAL(impl2, &HcclCommunicator::InitHccp)
+    MOCKER_CPP_VIRTUAL(impl2, &HcclCommunicator::InitHccpChannel)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 
@@ -750,7 +750,7 @@ TEST_F(STnslbdpTest, st_Initconfig_nslb)
     .will(returnValue(HCCL_SUCCESS));
 
     HcclCommunicator impl2;
-    MOCKER_CPP_VIRTUAL(impl2, &HcclCommunicator::InitHccp)
+    MOCKER_CPP_VIRTUAL(impl2, &HcclCommunicator::InitHccpChannel)
     .expects(atMost(1))
     .will(returnValue(HCCL_SUCCESS));
 

@@ -71,9 +71,13 @@ HcclResult CollReduceExecutor::Orchestrate(OpParam& param, AlgResourceResponse& 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollReduceExecutor][Orchestrate]errNo[0x%016llx]reduce excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
+
+    // Enforce task launch at the end of Orchestrate
+    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+
     HCCL_INFO("tag[%s], Reduce executor orchestrate success, take time [%lld]us.", tag_.c_str(),
         DURATION_US(TIME_NOW() - startut));
-
     return HCCL_SUCCESS;
 }
 

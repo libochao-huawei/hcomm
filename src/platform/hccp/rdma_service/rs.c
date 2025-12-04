@@ -62,7 +62,7 @@ static struct rs_cb *RsGetCurRsCb(void)
     return NULL;
 }
 
-struct opcode_interface_info gInterfaceInfoList[] = {
+struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     // outer opcode version: 1.0
     {RA_RS_SOCKET_CONN, 2},
     {RA_RS_SOCKET_CLOSE, 2},
@@ -189,7 +189,7 @@ RS_ATTRI_VISI_DEF void HccpTimeInterval(struct timeval *endTime, struct timeval 
     return;
 }
 
-RS_ATTRI_VISI_DEF void RsHeartbeatAlivePrint(struct rs_pthread_info *pthreadInfo)
+RS_ATTRI_VISI_DEF void RsHeartbeatAlivePrint(struct RsPthreadInfo *pthreadInfo)
 {
     float timeCost = 0.0;
     struct timeval now;
@@ -200,10 +200,10 @@ RS_ATTRI_VISI_DEF void RsHeartbeatAlivePrint(struct rs_pthread_info *pthreadInfo
     }
 
     RsGetCurTime(&now);
-    HccpTimeInterval(&now, &pthreadInfo->last_check_time, &timeCost);
+    HccpTimeInterval(&now, &pthreadInfo->lastCheckTime, &timeCost);
     if (timeCost >= RS_HEARTBEAT_TIME || timeCost <= 0) {
-        hccp_info("pthread[%s] is alive!", pthreadInfo->pthread_name);
-        RsGetCurTime(&pthreadInfo->last_check_time);
+        hccp_info("pthread[%s] is alive!", pthreadInfo->pthreadName);
+        RsGetCurTime(&pthreadInfo->lastCheckTime);
     }
 
     return;
@@ -218,7 +218,7 @@ int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag)
         return -ENODEV;
     }
 
-    if (chipId == gRsCb->chip_id) {
+    if (chipId == gRsCb->chipId) {
         *rsCb = gRsCb;
         return 0;
     }
@@ -236,10 +236,10 @@ int RsGetHccpMode(unsigned int chipId)
 
     ret = RsDev2rscb(chipId, &rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed(%d)", ret), ret);
-    return (int)rsCb->hccp_mode;
+    return (int)rsCb->hccpMode;
 }
 
-int RsDev2conncb(uint32_t chipId, struct rs_conn_cb **connCb)
+int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb)
 {
     int ret;
     struct rs_cb *rsCb = NULL;
@@ -247,20 +247,20 @@ int RsDev2conncb(uint32_t chipId, struct rs_conn_cb **connCb)
     ret = RsDev2rscb(chipId, &rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed(%d)", ret), ret);
 
-    *connCb = &(rsCb->conn_cb);
+    *connCb = &(rsCb->connCb);
 
     return 0;
 }
 
-int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb)
+int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
 {
-    struct rs_rdev_cb *rdevCbTmp = NULL;
-    struct rs_rdev_cb *rdevCbTmp2 = NULL;
+    struct RsRdevCb *rdevCbTmp = NULL;
+    struct RsRdevCb *rdevCbTmp2 = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rsCb->rdev_list, list, struct rs_rdev_cb);
-    for (; (&rdevCbTmp->list) != &rsCb->rdev_list;
-        rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct rs_rdev_cb, list)) {
-        if (rdevCbTmp->rdev_index == rdevIndex) {
+    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rsCb->rdevList, list, struct RsRdevCb);
+    for (; (&rdevCbTmp->list) != &rsCb->rdevList;
+        rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct RsRdevCb, list)) {
+        if (rdevCbTmp->rdevIndex == rdevIndex) {
             *rdevCb = rdevCbTmp;
             return 0;
         }
@@ -272,7 +272,7 @@ int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct rs_rdev_cb **
     return -ENODEV;
 }
 
-int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb)
+int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb **rdevCb)
 {
     int ret;
     struct rs_cb *rsCb = NULL;
@@ -286,12 +286,12 @@ int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct rs_rdev_cb
     return 0;
 }
 
-int RsFd2conn(int fd, struct rs_conn_info **conn)
+int RsFd2conn(int fd, struct RsConnInfo **conn)
 {
     struct rs_cb *rsCb = NULL;
-    struct rs_conn_info *connTmp = NULL;
-    struct rs_conn_info *connTmp2 = NULL;
-    struct rs_list_head *head = NULL;
+    struct RsConnInfo *connTmp = NULL;
+    struct RsConnInfo *connTmp2 = NULL;
+    struct RsListHead *head = NULL;
 
     if (gRsCb != NULL) {
         rsCb = gRsCb;
@@ -300,30 +300,30 @@ int RsFd2conn(int fd, struct rs_conn_info **conn)
         return -ENODEV;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&rsCb->conn_cb.conn_mutex);
-    head = &rsCb->conn_cb.server_conn_list;
-    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct rs_conn_info);
+    RS_PTHREAD_MUTEX_LOCK(&rsCb->connCb.connMutex);
+    head = &rsCb->connCb.serverConnList;
+    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
     for (; &connTmp->list != head;
-        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct rs_conn_info, list)) {
+        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
         if (connTmp->connfd == fd) {
             *conn = connTmp;
-            RS_PTHREAD_MUTEX_ULOCK(&rsCb->conn_cb.conn_mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
             return 0;
         }
     }
 
-    head = &rsCb->conn_cb.client_conn_list;
-    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct rs_conn_info);
+    head = &rsCb->connCb.clientConnList;
+    RS_LIST_GET_HEAD_ENTRY(connTmp, connTmp2, head, list, struct RsConnInfo);
     for (; &connTmp->list != head;
-        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct rs_conn_info, list)) {
+        connTmp = connTmp2, connTmp2 = list_entry(connTmp2->list.next, struct RsConnInfo, list)) {
         if (connTmp->connfd == fd) {
             *conn = connTmp;
-            RS_PTHREAD_MUTEX_ULOCK(&rsCb->conn_cb.conn_mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
             return 0;
         }
     }
 
-    RS_PTHREAD_MUTEX_ULOCK(&rsCb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&rsCb->connCb.connMutex);
 
     hccp_warn("cannot find conn node for fd:%d!", fd);
     *conn = NULL;
@@ -331,20 +331,20 @@ int RsFd2conn(int fd, struct rs_conn_info **conn)
     return -ENODEV;
 }
 
-STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct rs_init_config *cfg)
+STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct RsInitConfig *cfg)
 {
     int ret;
     int err;
 
     RS_CHECK_POINTER_NULL_RETURN_INT(cfg);
     RS_CHECK_POINTER_NULL_RETURN_INT(rscb);
-    rscb->chip_id = cfg->chip_id;
-    rscb->hccp_mode = cfg->hccp_mode;
-    rscb->conn_cb.rscb = rscb;
+    rscb->chipId = cfg->chipId;
+    rscb->hccpMode = cfg->hccpMode;
+    rscb->connCb.rscb = rscb;
 
     ret = pthread_mutex_init(&rscb->mutex, NULL);
     CHK_PRT_RETURN(ret, hccp_err("rscb mutex_init failed ret %d!, normal ret 0", ret), -ESYSFUNC);
-    ret = pthread_mutex_init(&rscb->conn_cb.conn_mutex, NULL);
+    ret = pthread_mutex_init(&rscb->connCb.connMutex, NULL);
     if (ret) {
         hccp_err("conn_cb mutex_init failed ret %d, normal ret 0!", ret);
         err = pthread_mutex_destroy(&rscb->mutex);
@@ -354,18 +354,18 @@ STATIC int RsPthreadMutexInit(struct rs_cb *rscb, struct rs_init_config *cfg)
 
     hccp_info("mutex init ok");
 
-    RS_INIT_LIST_HEAD(&rscb->conn_cb.listen_list);
-    RS_INIT_LIST_HEAD(&rscb->conn_cb.server_accept_list);
-    RS_INIT_LIST_HEAD(&rscb->conn_cb.client_conn_list);
-    RS_INIT_LIST_HEAD(&rscb->conn_cb.server_conn_list);
-    RS_INIT_LIST_HEAD(&rscb->conn_cb.white_list);
-    RS_INIT_LIST_HEAD(&rscb->rdev_list);
-    RS_INIT_LIST_HEAD(&rscb->heterog_tcp_fd_list);
-    rscb->conn_cb.wlist_enable = cfg->white_list_status;
+    RS_INIT_LIST_HEAD(&rscb->connCb.listenList);
+    RS_INIT_LIST_HEAD(&rscb->connCb.serverAcceptList);
+    RS_INIT_LIST_HEAD(&rscb->connCb.clientConnList);
+    RS_INIT_LIST_HEAD(&rscb->connCb.serverConnList);
+    RS_INIT_LIST_HEAD(&rscb->connCb.whiteList);
+    RS_INIT_LIST_HEAD(&rscb->rdevList);
+    RS_INIT_LIST_HEAD(&rscb->heterogTcpFdList);
+    rscb->connCb.wlistEnable = cfg->whiteListStatus;
     return 0;
 }
 
-STATIC int RsGetChipLogicId(unsigned int chipId, enum network_mode hccpMode, unsigned int *logicId)
+STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsigned int *logicId)
 {
     int ret = 0;
 
@@ -386,7 +386,7 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     float timeCost = 0.0;
     int ret;
 
-    ret = RsGetChipLogicId(rscb->chip_id, rscb->hccp_mode, &rscb->logic_id);
+    ret = RsGetChipLogicId(rscb->chipId, rscb->hccpMode, &rscb->logicId);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_logic_id failed, ret[%d]", ret), ret);
 
 #ifdef CONFIG_SSL
@@ -429,9 +429,9 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
 
     // deinit resources in rs_epoll_connect_handle_init
     // deinit epoll thread, send event to eventfd to waking up epoll handle thread
-    ret = (int)write(rscb->conn_cb.eventfd, &event, sizeof(eventfd_t));
+    ret = (int)write(rscb->connCb.eventfd, &event, sizeof(eventfd_t));
     if (ret != sizeof(eventfd_t)) {
-        hccp_warn("eventfd_write unsuccessful(0x%x), chipId:%u, errno:%d", ret, rscb->chip_id, errno);
+        hccp_warn("eventfd_write unsuccessful(0x%x), chipId:%u, errno:%d", ret, rscb->chipId, errno);
     }
     while (((rscb->state & RS_STATE_HALT) == 0) && (tryAgain != 0)) {
         usleep(RS_USLEEP_TIME);
@@ -443,22 +443,22 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
     rscb->state &= ~RS_STATE_HALT;
 
     // deinit connect thread, already been RS_CONN_EXIT_FLAG, no need to change conn_flag
-    if (rscb->conn_flag != RS_CONN_EXIT_FLAG) {
-        rscb->conn_flag = 0;
+    if (rscb->connFlag != RS_CONN_EXIT_FLAG) {
+        rscb->connFlag = 0;
     }
     tryAgain = RS_TRY_TIME;
-    while ((rscb->conn_flag != RS_CONN_EXIT_FLAG) && (tryAgain != 0)) {
+    while ((rscb->connFlag != RS_CONN_EXIT_FLAG) && (tryAgain != 0)) {
         usleep(RS_USLEEP_TIME);
         tryAgain--;
     }
     if (tryAgain == 0) {
-        hccp_warn("try_again exhausted, connect thread quit unsuccessful, rscb conn_flag:%d", rscb->conn_flag);
+        hccp_warn("try_again exhausted, connect thread quit unsuccessful, rscb connFlag:%d", rscb->connFlag);
     }
 
     RsDestroyEpoll(rscb);
 }
 
-RS_ATTRI_VISI_DEF int RsInit(struct rs_init_config *cfg)
+RS_ATTRI_VISI_DEF int RsInit(struct RsInitConfig *cfg)
 {
     struct rs_cb *rscb = NULL;
     int ret;
@@ -470,13 +470,13 @@ RS_ATTRI_VISI_DEF int RsInit(struct rs_init_config *cfg)
         return ret;
     }
 
-    int counter = __sync_fetch_and_add(&(gInitCounter[cfg->chip_id]), 1);
+    int counter = __sync_fetch_and_add(&(gInitCounter[cfg->chipId]), 1);
     if (counter > 0) {
-        hccp_warn("rs has been init for device %u!", cfg->chip_id);
+        hccp_warn("rs has been init for device %u!", cfg->chipId);
         return 0;
     }
-    ret = RsDev2rscb(cfg->chip_id, &rscb, true);
-    CHK_PRT_RETURN(ret == 0, hccp_err("rs_cb exist for device %u! do NOT init it again!", cfg->chip_id), -EEXIST);
+    ret = RsDev2rscb(cfg->chipId, &rscb, true);
+    CHK_PRT_RETURN(ret == 0, hccp_err("rs_cb exist for device %u! do NOT init it again!", cfg->chipId), -EEXIST);
 
     rscb = calloc(1, sizeof(struct rs_cb));
     CHK_PRT_RETURN(rscb == NULL, hccp_err("calloc rscb failed"), -ENOMEM);
@@ -491,35 +491,35 @@ RS_ATTRI_VISI_DEF int RsInit(struct rs_init_config *cfg)
     if (ret != 0) {
         hccp_err("rs init rscb configure failed,ret:%d", ret);
         pthread_mutex_destroy(&rscb->mutex);
-        pthread_mutex_destroy(&rscb->conn_cb.conn_mutex);
+        pthread_mutex_destroy(&rscb->connCb.connMutex);
         goto pthread_mutex_err;
     }
 
-    rscb->fd_map = calloc(1, sizeof(void*) * RS_MAX_FD_NUM);
-    if (rscb->fd_map == NULL) {
+    rscb->fdMap = calloc(1, sizeof(void*) * RS_MAX_FD_NUM);
+    if (rscb->fdMap == NULL) {
         hccp_err("no memory for fd_map");
         ret = -ENOMEM;
         goto fd_map_err;
     }
 
-    ret = getifaddrs(&rscb->ifaddr_list);
+    ret = getifaddrs(&rscb->ifaddrList);
     if (ret != 0) {
         hccp_err("getifaddrs failed, ret:%d", ret);
         goto getifaddrs_err;
     }
 
-    gRsCbList[cfg->chip_id] = gRsCb;
+    gRsCbList[cfg->chipId] = gRsCb;
 
-    hccp_run_info("rs init success, chipId[%u]", cfg->chip_id);
+    hccp_run_info("rs init success, chipId[%u]", cfg->chipId);
     return 0;
 
 getifaddrs_err:
-    free(rscb->fd_map);
-    rscb->fd_map = NULL;
+    free(rscb->fdMap);
+    rscb->fdMap = NULL;
 
 fd_map_err:
     pthread_mutex_destroy(&rscb->mutex);
-    pthread_mutex_destroy(&rscb->conn_cb.conn_mutex);
+    pthread_mutex_destroy(&rscb->connCb.connMutex);
     RsDeinitRscbCfg(rscb);
 
 pthread_mutex_err:
@@ -537,11 +537,11 @@ RS_ATTRI_VISI_DEF int RsGetTlsEnable(unsigned int phyId, bool *tlsEnable)
     ret = RsGetRsCb(phyId, &rsCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId(%u) invalid, ret(%d)", phyId, ret), ret);
 
-    *tlsEnable = (rsCb->ssl_enable == 0) ? false : true;
+    *tlsEnable = (rsCb->sslEnable == 0) ? false : true;
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum hccn_cfg_key key, char *value,
+RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char *value,
     unsigned int *valueLen)
 {
 #define HCCN_CFGFILE_PATH "/etc/hccl.cfg"
@@ -613,7 +613,7 @@ RS_ATTRI_VISI_DEF int RsBindHostpid(unsigned int chipId, pid_t pid)
     // save host_pid for later setup sharemem
     ret = RsDev2rscb(chipId, &rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed, ret:%d, chipId:%u", ret, chipId), -ENODEV);
-    rsCb->host_pid = pid;
+    rsCb->hostPid = pid;
 
     return 0;
 }
@@ -622,7 +622,7 @@ RS_ATTRI_VISI_DEF int RsBindHostpid(unsigned int chipId, pid_t pid)
 STATIC int RsSetRscbGrpId(struct rs_cb *rsCb, unsigned int devId)
 {
     GrpQueryGroupIdInfo grpQueryOut = {0};
-    unsigned int chipId = rsCb->chip_id;
+    unsigned int chipId = rsCb->chipId;
     GrpQueryGroupId grpQueryIn = {0};
     struct MemInfo memInfo = {0};
     unsigned int outLen;
@@ -646,7 +646,7 @@ STATIC int RsSetRscbGrpId(struct rs_cb *rsCb, unsigned int devId)
     grpId = (unsigned int)grpQueryOut.groupId;
 
     // set grp_id
-    rsCb->grp_id = grpId;
+    rsCb->grpId = grpId;
 
     hccp_dbg("query group id success, chipId:%u devId:%u grpId:%u grp_name:%s", chipId, devId, grpId,
         grpQueryIn.grpName);
@@ -684,7 +684,7 @@ STATIC int RsBindSibling(struct rs_cb *rsCb, int hostPid, unsigned int vfId, uns
         return -EINVAL;
     }
 
-    rsCb->aicpu_pid = aicpuPid;
+    rsCb->aicpuPid = aicpuPid;
     hccp_dbg("dl_hal_mem_bind_sibling success, total retry cnt:%d", i);
 
     return 0;
@@ -692,15 +692,15 @@ STATIC int RsBindSibling(struct rs_cb *rsCb, int hostPid, unsigned int vfId, uns
 
 int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyid)
 {
-    unsigned int chipId = rsCb->chip_id;
-    pid_t pid = rsCb->host_pid;
+    unsigned int chipId = rsCb->chipId;
+    pid_t pid = rsCb->hostPid;
     int64_t deviceInfo = 0;
     unsigned int logicId;
     int ret;
 
     // setup sharemem or skipped already, no need to setup again
-    if (rsCb->grp_setup_flag) {
-        hccp_dbg("grp_setup_flag:%d grp_id:%u chip_id:%u", rsCb->grp_setup_flag, rsCb->grp_id, chipId);
+    if (rsCb->grpSetupFlag) {
+        hccp_dbg("grp_setup_flag:%d grp_id:%u chip_id:%u", rsCb->grpSetupFlag, rsCb->grpId, chipId);
         return 0;
     }
 
@@ -712,7 +712,7 @@ int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyi
     // not 910b/910_93 and not protocol udma, skip to setup share mem
     if (DlHalPlatGetChip((uint64_t)deviceInfo) != CHIP_TYPE_910B_910_93) {
         hccp_info("logic_id:%u chip_id:%u protocol:%d skip to setup share mem", logicId, chipId, rsCb->protocol);
-        rsCb->grp_setup_flag = true;
+        rsCb->grpSetupFlag = true;
         return 0;
     }
 
@@ -734,14 +734,14 @@ int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyi
     CHK_PRT_RETURN(ret, hccp_err("rs_set_rscb_grp_id failed, ret:%d logicId:%u chipId:%u", ret, logicId, chipId),
         ret);
 
-    rsCb->grp_setup_flag = true;
+    rsCb->grpSetupFlag = true;
     return 0;
 }
 #endif
 
 STATIC int RsCompareIpGid(struct rdev rdevInfo, union ibv_gid *gid)
 {
-    return RsDrvCompareIpGid(rdevInfo.family, rdevInfo.local_ip, gid);
+    return RsDrvCompareIpGid(rdevInfo.family, rdevInfo.localIp, gid);
 }
 
 int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx)
@@ -781,83 +781,83 @@ int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPor
     return 0;
 }
 
-STATIC int RsGetDevRdevIndex(struct rs_rdev_cb *rdevCb, unsigned int *rdevIndex, int index)
+STATIC int RsGetDevRdevIndex(struct RsRdevCb *rdevCb, unsigned int *rdevIndex, int index)
 {
 #ifdef CUSTOM_INTERFACE
     struct roce_dev_data rdevData = {0};  //lint !e565
     int retVal;
     RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
     /*lint -e132*/
-    rdevCb->dev_name = RsIbvGetDeviceName(rdevCb->dev_list[index]);  //lint !e101
-    retVal = RsRoceGetRoceDevData(rdevCb->dev_name, &rdevData); //lint !e101
+    rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);  //lint !e101
+    retVal = RsRoceGetRoceDevData(rdevCb->devName, &rdevData); //lint !e101
     /*lint +e132*/
     if (retVal) {
-        hccp_err("rs_roce_get_roce_dev_data failed, retVal:%d, dev_name:%s", retVal, rdevCb->dev_name);
+        hccp_err("rs_roce_get_roce_dev_data failed, retVal:%d, devName:%s", retVal, rdevCb->devName);
         RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
         return retVal;
     }
     *rdevIndex = rdevData.rdev_index; // rdev_index is same to port_id
-    rdevCb->rdev_index = *rdevIndex;
+    rdevCb->rdevIndex = *rdevIndex;
     RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
 #endif
     return 0;
 }
 
-STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct rs_rdev_cb *rdevCb, unsigned int *rdevIndex, int index)
+STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, unsigned int *rdevIndex, int index)
 {
-    struct rs_rdev_cb *rdevCbTmp2 = NULL;
-    struct rs_rdev_cb *rdevCbTmp = NULL;
+    struct RsRdevCb *rdevCbTmp2 = NULL;
+    struct RsRdevCb *rdevCbTmp = NULL;
     unsigned int tmpRdevIndex = 0;
 
     RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
-    rdevCb->dev_name = RsIbvGetDeviceName(rdevCb->dev_list[index]);
-    if (rdevCb->dev_name == NULL) {
+    rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);
+    if (rdevCb->devName == NULL) {
         hccp_err("rs_ibv_get_device_name failed, errno:%d", errno);
         RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
         return -EINVAL;
     }
 
-    struct rs_ip_addr_info localIp;
-    int ret = RsConvertIpAddr(rdevInfo.family, &rdevInfo.local_ip, &localIp);
+    struct RsIpAddrInfo localIp;
+    int ret = RsConvertIpAddr(rdevInfo.family, &rdevInfo.localIp, &localIp);
     if (ret != 0) {
         hccp_err("convert(ntop) ip failed, ret:%d", ret);
         RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
         return ret;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rdevCb->rs_cb->rdev_list, list, struct rs_rdev_cb);
-    for (; (&rdevCbTmp->list) != &rdevCb->rs_cb->rdev_list;
-        rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct rs_rdev_cb, list)) {
-        tmpRdevIndex = rdevCbTmp->rdev_index;
-        if (!RsCompareIpAddr(&rdevCbTmp->local_ip, &localIp)) {
+    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rdevCb->rs_cb->rdevList, list, struct RsRdevCb);
+    for (; (&rdevCbTmp->list) != &rdevCb->rs_cb->rdevList;
+        rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct RsRdevCb, list)) {
+        tmpRdevIndex = rdevCbTmp->rdevIndex;
+        if (!RsCompareIpAddr(&rdevCbTmp->localIp, &localIp)) {
             *rdevIndex = tmpRdevIndex;
-            rdevCb->rdev_index = *rdevIndex;
-            rdevCb->local_ip = localIp;
+            rdevCb->rdevIndex = *rdevIndex;
+            rdevCb->localIp = localIp;
             RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
             return 0;
         }
     }
 
     *rdevIndex = tmpRdevIndex + 1;
-    rdevCb->rdev_index = *rdevIndex;
-    rdevCb->local_ip = localIp;
+    rdevCb->rdevIndex = *rdevIndex;
+    rdevCb->localIp = localIp;
     RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
     return 0;
 }
 
-STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct rs_rdev_cb *rdevCb, unsigned int *rdevIndex)
+STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, unsigned int *rdevIndex)
 {
     struct ibv_context *ibCtxTmp = NULL;
     int gidIndex = -1;
     int ret;
     int i;
 
-    for (i = 0; (i < rdevCb->dev_num) && (rdevCb->dev_list[i] != NULL); ++i) {  //lint !e101
-        ibCtxTmp = RsIbvOpenDevice(rdevCb->dev_list[i]);
+    for (i = 0; (i < rdevCb->devNum) && (rdevCb->devList[i] != NULL); ++i) {  //lint !e101
+        ibCtxTmp = RsIbvOpenDevice(rdevCb->devList[i]);
         CHK_PRT_RETURN(ibCtxTmp == NULL, hccp_err("ibv_open_device failed !"), -ENODEV);
-        ret = RsQueryGid(rdevInfo, ibCtxTmp, rdevCb->ib_port, &gidIndex);
+        ret = RsQueryGid(rdevInfo, ibCtxTmp, rdevCb->ibPort, &gidIndex);
         if (ret == 0) {
-            if (rdevCb->rs_cb->hccp_mode == NETWORK_PEER_ONLINE) {
+            if (rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE) {
                 ret = RsGetHostRdevIndex(rdevInfo, rdevCb, rdevIndex, i);
             } else {
                 ret = RsGetDevRdevIndex(rdevCb, rdevIndex, i);
@@ -867,7 +867,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct rs_rdev_cb *rdevC
                 RsIbvCloseDevice(ibCtxTmp);
                 return ret;
             }
-            rdevCb->ib_ctx = ibCtxTmp;
+            rdevCb->ibCtx = ibCtxTmp;
             return 0;
         } else if (ret == -EEXIST) {
             RsIbvCloseDevice(ibCtxTmp);
@@ -878,8 +878,8 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct rs_rdev_cb *rdevC
         }
     }
 
-    CHK_PRT_RETURN(i == rdevCb->dev_num, hccp_err("can not find ib_ctx for phy_id[%u] local_ip[0x%x] in dev_list!",
-        rdevInfo.phy_id, rdevInfo.local_ip.addr.s_addr), -EEXIST);
+    CHK_PRT_RETURN(i == rdevCb->devNum, hccp_err("can not find ib_ctx for phy_id[%u] local_ip[0x%x] in dev_list!",
+        rdevInfo.phyId, rdevInfo.localIp.addr.s_addr), -EEXIST);
     return 0;
 }
 
@@ -897,7 +897,7 @@ int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb)
     return 0;
 }
 
-STATIC int RsGetSqDepthAndQpMaxNum(struct rs_rdev_cb *rdevCb, unsigned int rdevIndex)
+STATIC int RsGetSqDepthAndQpMaxNum(struct RsRdevCb *rdevCb, unsigned int rdevIndex)
 {
 #ifdef CUSTOM_INTERFACE
     int ret;
@@ -905,19 +905,19 @@ STATIC int RsGetSqDepthAndQpMaxNum(struct rs_rdev_cb *rdevCb, unsigned int rdevI
     unsigned int tempDepth = 0;
     unsigned int sqDepth = 0;
 
-    ret = RsRoceGetTsqpDepth(rdevCb->dev_name, rdevIndex, &tempDepth, &qpMaxNum, &sqDepth);
-    CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret:%d, dev_name:%s, rdevIndex:%u", ret,
-        rdevCb->dev_name, rdevIndex), ret);
+    ret = RsRoceGetTsqpDepth(rdevCb->devName, rdevIndex, &tempDepth, &qpMaxNum, &sqDepth);
+    CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret:%d, devName:%s, rdevIndex:%u", ret,
+        rdevCb->devName, rdevIndex), ret);
 
-    rdevCb->tx_depth = sqDepth;
-    rdevCb->rx_depth = sqDepth;
-    rdevCb->qp_max_num = qpMaxNum;
+    rdevCb->txDepth = sqDepth;
+    rdevCb->rxDepth = sqDepth;
+    rdevCb->qpMaxNum = qpMaxNum;
     hccp_run_info("qp_max_num:%u, sqDepth:%u", qpMaxNum, sqDepth);
 #endif
     return 0;
 }
 
-STATIC int RsSetupPdAndNotify(struct rs_rdev_cb *rdevCb)
+STATIC int RsSetupPdAndNotify(struct RsRdevCb *rdevCb)
 {
     int ret;
 
@@ -932,28 +932,28 @@ STATIC int RsSetupPdAndNotify(struct rs_rdev_cb *rdevCb)
 
     return 0;
 dealloc_pd:
-    RsIbvDeallocPd(rdevCb->ib_pd);
+    RsIbvDeallocPd(rdevCb->ibPd);
     return ret;
 }
 
-STATIC int RsRdevCbInfoInit(struct rdev rdevInfo, struct rs_cb *rsCb, struct rs_rdev_cb *rdevCb)
+STATIC int RsRdevCbInfoInit(struct rdev rdevInfo, struct rs_cb *rsCb, struct RsRdevCb *rdevCb)
 {
     int ret;
 
-    rdevCb->ib_port = RS_PORT_DEF;
+    rdevCb->ibPort = RS_PORT_DEF;
     rdevCb->rs_cb = rsCb;
-    rdevCb->notify_va_base = rsCb->notify_va_base;
-    rdevCb->notify_size = rsCb->notify_size;
+    rdevCb->notifyVaBase = rsCb->notifyVaBase;
+    rdevCb->notifySize = rsCb->notifySize;
 
-    rdevCb->local_ip.family = (uint32_t)rdevInfo.family;
-    rdevCb->local_ip.bin_addr = rdevInfo.local_ip;
-    ret = RsInetNtop(rdevInfo.family, &(rdevInfo.local_ip), rdevCb->local_ip.read_addr, RS_MAX_IP_LEN);
+    rdevCb->localIp.family = (uint32_t)rdevInfo.family;
+    rdevCb->localIp.binAddr = rdevInfo.localIp;
+    ret = RsInetNtop(rdevInfo.family, &(rdevInfo.localIp), rdevCb->localIp.readAddr, RS_MAX_IP_LEN);
     CHK_PRT_RETURN(ret, hccp_err("rs_inet_ntop failed, ret %d", ret), -EINVAL);
 
     return 0;
 }
 
-STATIC int RsRdevCbInit(struct rdev rdevInfo, struct rs_rdev_cb *rdevCb, struct rs_cb *rsCb,
+STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs_cb *rsCb,
     unsigned int *rdevIndex)
 {
     int ret;
@@ -961,19 +961,19 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct rs_rdev_cb *rdevCb, struct 
     ret = RsRdevCbInfoInit(rdevInfo, rsCb, rdevCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_rdev_cb_info_init failed, ret %d", ret), ret);
 
-    ret = pthread_mutex_init(&rdevCb->rdev_mutex, NULL);
+    ret = pthread_mutex_init(&rdevCb->rdevMutex, NULL);
     CHK_PRT_RETURN(ret, hccp_err("rdev_cb mutex_init failed ret %d!, normal ret 0", ret), -ESYSFUNC);
 
-    ret = pthread_mutex_init(&rdevCb->cqe_err_cnt_mutex, NULL);
+    ret = pthread_mutex_init(&rdevCb->cqeErrCntMutex, NULL);
     if (ret) {
         hccp_err("rdev_cb cqe_err_cnt_mutex init failed ret %d!, normal ret 0", ret);
         goto destroy_rdev_mutex;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rdev_mutex);
-    RS_INIT_LIST_HEAD(&rdevCb->qp_list);
-    RS_INIT_LIST_HEAD(&rdevCb->typical_mr_list);
-    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rdev_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rdevMutex);
+    RS_INIT_LIST_HEAD(&rdevCb->qpList);
+    RS_INIT_LIST_HEAD(&rdevCb->typicalMrList);
+    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rdevMutex);
 
     ret = RsGetIbCtxAndRdevIndex(rdevInfo, rdevCb, rdevIndex);
     if (ret) {
@@ -988,7 +988,7 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct rs_rdev_cb *rdevCb, struct 
     }
 
 #ifdef CUSTOM_INTERFACE
-    ret = RsRoceMmapAiDbReg(rdevCb->ib_ctx, (unsigned int)rdevCb->rs_cb->aicpu_pid);
+    ret = RsRoceMmapAiDbReg(rdevCb->ibCtx, (unsigned int)rdevCb->rs_cb->aicpuPid);
     if (ret) {
         hccp_err("rs_roce_mmap_ai_db_reg failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
         goto close_dev;
@@ -1005,24 +1005,24 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct rs_rdev_cb *rdevCb, struct 
 
 unmmap_ai_db:
 #ifdef CUSTOM_INTERFACE
-    (void)RsRoceUnmmapAiDbReg(rdevCb->ib_ctx);
+    (void)RsRoceUnmmapAiDbReg(rdevCb->ibCtx);
 #endif
 close_dev:
-    RsIbvCloseDevice(rdevCb->ib_ctx);
+    RsIbvCloseDevice(rdevCb->ibCtx);
 destroy_cqe_mutex:
-    pthread_mutex_destroy(&rdevCb->cqe_err_cnt_mutex);
+    pthread_mutex_destroy(&rdevCb->cqeErrCntMutex);
 destroy_rdev_mutex:
-    pthread_mutex_destroy(&rdevCb->rdev_mutex);
+    pthread_mutex_destroy(&rdevCb->rdevMutex);
     return ret;
 }
 
-STATIC int RsSensorNodeRegister(unsigned int hccpMode, unsigned int phyId, struct rs_rdev_cb *rdevCb)
+STATIC int RsSensorNodeRegister(unsigned int hccpMode, unsigned int phyId, struct RsRdevCb *rdevCb)
 {
     struct halSensorNodeCfg cfg = { 0 };
     int ret;
 
-    rdevCb->sensor_handle = 0;
-    rdevCb->sensor_update_cnt = 0;
+    rdevCb->sensorHandle = 0;
+    rdevCb->sensorUpdateCnt = 0;
     // some non-hdc scenarios don't have corresponding API, skip to register sensor node
     if (hccpMode != NETWORK_OFFLINE) {
         return 0;
@@ -1038,31 +1038,31 @@ STATIC int RsSensorNodeRegister(unsigned int hccpMode, unsigned int phyId, struc
     cfg.SensorType = RDMA_CQE_ERR_SENSOR_TYPE;
     cfg.AssertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_MASK;
     cfg.DeassertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE_MASK;
-    ret = DlHalSensorNodeRegister(rdevCb->logic_devid, &cfg, &rdevCb->sensor_handle);
+    ret = DlHalSensorNodeRegister(rdevCb->logicDevid, &cfg, &rdevCb->sensorHandle);
     if (ret) {
-        hccp_err("[init][rs_rdev]dl_hal_sensor_node_register failed, phyId(%u), logic_devid(%u), ret(%d)",
-            phyId, rdevCb->logic_devid, ret);
+        hccp_err("[init][rs_rdev]dl_hal_sensor_node_register failed, phyId(%u), logicDevid(%u), ret(%d)",
+            phyId, rdevCb->logicDevid, ret);
         return ret;
     }
 
     return 0;
 }
 
-STATIC void RsSensorNodeUnregister(struct rs_rdev_cb *rdevCb)
+STATIC void RsSensorNodeUnregister(struct RsRdevCb *rdevCb)
 {
     // no need to unregister sensor node
-    if (rdevCb->sensor_handle == 0) {
+    if (rdevCb->sensorHandle == 0) {
         return;
     }
 
-    (void)DlHalSensorNodeUnregister(rdevCb->logic_devid, rdevCb->sensor_handle);
+    (void)DlHalSensorNodeUnregister(rdevCb->logicDevid, rdevCb->sensorHandle);
 }
 
-STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct rs_backup_info backupInfo,
+STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo backupInfo,
     unsigned int notifyType, unsigned int *rdevIndex)
 {
-    unsigned int phyId = rdevInfo.phy_id;
-    struct rs_rdev_cb *rdevCb = NULL;
+    unsigned int phyId = rdevInfo.phyId;
+    struct RsRdevCb *rdevCb = NULL;
     struct rs_cb *rsCb = NULL;
     int ret;
 
@@ -1077,46 +1077,46 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct rs_backup_info 
         goto get_rs_cb_fail;
     }
 
-    rdevCb = calloc(1, sizeof(struct rs_rdev_cb));
+    rdevCb = calloc(1, sizeof(struct RsRdevCb));
     if (rdevCb == NULL) {
         hccp_err("calloc for rdev_cb failed");
         ret = -ENOMEM;
         goto get_rs_cb_fail;
     }
 
-    ret = rsGetLocalDevIDByHostDevID(phyId, &rdevCb->logic_devid);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &rdevCb->logicDevid);
     if (ret) {
         hccp_err("[init][rs_rdev]rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)", phyId, ret);
         goto free_rs_cb;
     }
 
-    rdevCb->backup_info.backup_flag = backupInfo.backup_flag;
-    (void)memcpy_s(&rdevCb->backup_info.rdev_info, sizeof(struct rdev),
-        &backupInfo.rdev_info, sizeof(struct rdev));
+    rdevCb->backupInfo.backupFlag = backupInfo.backupFlag;
+    (void)memcpy_s(&rdevCb->backupInfo.rdevInfo, sizeof(struct rdev),
+        &backupInfo.rdevInfo, sizeof(struct rdev));
 #ifdef CUSTOM_INTERFACE
     // setup sharemem for aicpu rdma unfold
-    ret = RsSetupSharemem(rsCb, rdevCb->backup_info.backup_flag, rdevCb->backup_info.rdev_info.phy_id);
+    ret = RsSetupSharemem(rsCb, rdevCb->backupInfo.backupFlag, rdevCb->backupInfo.rdevInfo.phyId);
     if (ret != 0) {
         hccp_err("[init][rs_rdev]rs_setup_sharemem failed, phyId(%u), ret(%d)", phyId, ret);
         goto free_rs_cb;
     }
 #endif
 
-    rdevCb->notify_type = notifyType;
-    rdevCb->dev_list = RsIbvGetDeviceList(&(rdevCb->dev_num));
-    if (rdevCb->dev_list == NULL || rdevCb->dev_num == 0) {
-        hccp_err("dev_list is NULL, or dev_num[%d] is 0", rdevCb->dev_num);
+    rdevCb->notifyType = notifyType;
+    rdevCb->devList = RsIbvGetDeviceList(&(rdevCb->devNum));
+    if (rdevCb->devList == NULL || rdevCb->devNum == 0) {
+        hccp_err("dev_list is NULL, or devNum[%d] is 0", rdevCb->devNum);
         ret = -EINVAL;
         goto free_rs_cb;
     }
 
-    ret = RsSensorNodeRegister(rsCb->hccp_mode, phyId, rdevCb);
+    ret = RsSensorNodeRegister(rsCb->hccpMode, phyId, rdevCb);
     if (ret != 0) {
         hccp_err("[init][rs_rdev]rs_sensor_node_register failed, phyId(%u), ret(%d)", phyId, ret);
         goto free_dev_list;
     }
 
-    hccp_info("ibv_get_device_list phy_id[%d] dev_num[%d]", phyId, rdevCb->dev_num);
+    hccp_info("ibv_get_device_list phy_id[%d] dev_num[%d]", phyId, rdevCb->devNum);
 
     ret = RsRdevCbInit(rdevInfo, rdevCb, rsCb, rdevIndex);
     if (ret) {
@@ -1126,15 +1126,15 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct rs_backup_info 
     }
 
     RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
-    RsListAddTail(&rdevCb->list, &rsCb->rdev_list);
+    RsListAddTail(&rdevCb->list, &rsCb->rdevList);
     RS_PTHREAD_MUTEX_ULOCK(&rsCb->mutex);
 
-    hccp_run_info("rdev init success, phyId:%u, localIp:0x%x, rdevIndex:%u", phyId, rdevInfo.local_ip.addr.s_addr,
+    hccp_run_info("rdev init success, phyId:%u, localIp:0x%x, rdevIndex:%u", phyId, rdevInfo.localIp.addr.s_addr,
         *rdevIndex);
     return 0;
 
 free_dev_list:
-    RsIbvFreeDeviceList(rdevCb->dev_list);
+    RsIbvFreeDeviceList(rdevCb->devList);
 free_rs_cb:
     free(rdevCb);
     rdevCb = NULL;
@@ -1146,33 +1146,33 @@ get_rs_cb_fail:
 RS_ATTRI_VISI_DEF int RsRdevInitWithBackup(struct rdev rdevInfo, struct rdev backupRdevInfo,
     unsigned int notifyType, unsigned int *rdevIndex)
 {
-    struct rs_backup_info backupInfo = { 0 };
+    struct RsBackupInfo backupInfo = { 0 };
 
-    backupInfo.backup_flag = true;
-    (void)memcpy_s(&backupInfo.rdev_info, sizeof(struct rdev), &backupRdevInfo, sizeof(struct rdev));
+    backupInfo.backupFlag = true;
+    (void)memcpy_s(&backupInfo.rdevInfo, sizeof(struct rdev), &backupRdevInfo, sizeof(struct rdev));
 
     return RsRdevInitWithBackupInfo(rdevInfo, backupInfo, notifyType, rdevIndex);
 }
 
 RS_ATTRI_VISI_DEF int RsRdevInit(struct rdev rdevInfo, unsigned int notifyType, unsigned int *rdevIndex)
 {
-    struct rs_backup_info backupInfo = { 0 };
+    struct RsBackupInfo backupInfo = { 0 };
 
     return RsRdevInitWithBackupInfo(rdevInfo, backupInfo, notifyType, rdevIndex);
 }
 
 STATIC void RsDestroyQpList(unsigned int phyId, unsigned int rdevIndex,
-    struct rs_rdev_cb *rdevCb, struct rs_qp_cb *qpCb, struct rs_qp_cb *qpCb2)
+    struct RsRdevCb *rdevCb, struct RsQpCb *qpCb, struct RsQpCb *qpCb2)
 {
     int ret;
 
-    if (!RsListEmpty(&rdevCb->qp_list)) {
+    if (!RsListEmpty(&rdevCb->qpList)) {
         hccp_warn("qp list do not empty!");
-        RS_LIST_GET_HEAD_ENTRY(qpCb, qpCb2, &rdevCb->qp_list, list, struct rs_qp_cb);
-        for (; (&qpCb->list) != &rdevCb->qp_list;
-            qpCb = qpCb2, qpCb2 = list_entry(qpCb2->list.next, struct rs_qp_cb, list)) {
-            hccp_info("qpn[%u] will be destroyed", qpCb->ib_qp->qp_num);
-            ret = RsQpDestroy(phyId, rdevIndex, qpCb->ib_qp->qp_num);
+        RS_LIST_GET_HEAD_ENTRY(qpCb, qpCb2, &rdevCb->qpList, list, struct RsQpCb);
+        for (; (&qpCb->list) != &rdevCb->qpList;
+            qpCb = qpCb2, qpCb2 = list_entry(qpCb2->list.next, struct RsQpCb, list)) {
+            hccp_info("qpn[%u] will be destroyed", qpCb->ibQp->qp_num);
+            ret = RsQpDestroy(phyId, rdevIndex, qpCb->ibQp->qp_num);
             if (ret) {
                 hccp_err("rs_qp_destroy failed, ret:%d", ret);
                 return;
@@ -1183,22 +1183,22 @@ STATIC void RsDestroyQpList(unsigned int phyId, unsigned int rdevIndex,
     return;
 }
 
-STATIC void RsFreeTypicalMrCb(struct rs_rdev_cb *devCb)
+STATIC void RsFreeTypicalMrCb(struct RsRdevCb *devCb)
 {
-    struct rs_list_head *typicalMrList = &devCb->typical_mr_list;
-    struct rs_mr_cb *mrCurr = NULL;
-    struct rs_mr_cb *mrNext = NULL;
+    struct RsListHead *typicalMrList = &devCb->typicalMrList;
+    struct RsMrCb *mrCurr = NULL;
+    struct RsMrCb *mrNext = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->rdev_mutex);
-    RS_LIST_GET_HEAD_ENTRY(mrCurr, mrNext, typicalMrList, list, struct rs_mr_cb);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rdevMutex);
+    RS_LIST_GET_HEAD_ENTRY(mrCurr, mrNext, typicalMrList, list, struct RsMrCb);
     for (; (&mrCurr->list) != typicalMrList;
-        mrCurr = mrNext, mrNext = list_entry(mrNext->list.next, struct rs_mr_cb, list)) {
-        (void)RsDrvMrDereg(mrCurr->ib_mr);
+        mrCurr = mrNext, mrNext = list_entry(mrNext->list.next, struct RsMrCb, list)) {
+        (void)RsDrvMrDereg(mrCurr->ibMr);
         RsListDel(&mrCurr->list);
         free(mrCurr);
         mrCurr = NULL;
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->rdev_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rdevMutex);
 
     hccp_info("rs_free_typical_mr_cb is succ");
 }
@@ -1207,9 +1207,9 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 {
     int ret;
     unsigned int chipId;
-    struct rs_rdev_cb *rdevCb = NULL;
-    struct rs_qp_cb *qpCb = NULL;
-    struct rs_qp_cb *qpCb2 = NULL;
+    struct RsRdevCb *rdevCb = NULL;
+    struct RsQpCb *qpCb = NULL;
+    struct RsQpCb *qpCb2 = NULL;
 
     hccp_info("rdev deinit start, phyId:%u, rdevIndex:%u", phyId, rdevIndex);
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phyId), -EINVAL);
@@ -1220,38 +1220,38 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
         chipId, ret), ret);
 
-    if (rdevCb->notify_type != NO_USE && rdevCb->notify_mr != NULL) {
-        ret = RsDrvMrDereg(rdevCb->notify_mr);
+    if (rdevCb->notifyType != NO_USE && rdevCb->notifyMr != NULL) {
+        ret = RsDrvMrDereg(rdevCb->notifyMr);
         if (ret) {
             hccp_err("rs_drv_mr_dereg failed, ret %d", ret);
         }
     }
 
-    hccp_info("poll_cqe_num[%d]", rdevCb->poll_cqe_num);
+    hccp_info("poll_cqe_num[%d]", rdevCb->pollCqeNum);
 
     RsDestroyQpList(phyId, rdevIndex, rdevCb, qpCb, qpCb2);
 
     RsFreeTypicalMrCb(rdevCb);
 
 #ifdef CUSTOM_INTERFACE
-    (void)RsRoceUnmmapAiDbReg(rdevCb->ib_ctx);
+    (void)RsRoceUnmmapAiDbReg(rdevCb->ibCtx);
 #endif
 
-    RsIbvDeallocPd(rdevCb->ib_pd);
+    RsIbvDeallocPd(rdevCb->ibPd);
 
-    RsIbvCloseDevice(rdevCb->ib_ctx);
+    RsIbvCloseDevice(rdevCb->ibCtx);
 
 #ifdef CUSTOM_INTERFACE
     RsCloseBackupIbCtx(rdevCb);
 #endif
 
-    pthread_mutex_destroy(&rdevCb->cqe_err_cnt_mutex);
+    pthread_mutex_destroy(&rdevCb->cqeErrCntMutex);
 
-    pthread_mutex_destroy(&rdevCb->rdev_mutex);
+    pthread_mutex_destroy(&rdevCb->rdevMutex);
 
     RsSensorNodeUnregister(rdevCb);
 
-    RsIbvFreeDeviceList(rdevCb->dev_list);
+    RsIbvFreeDeviceList(rdevCb->devList);
 
     RS_PTHREAD_MUTEX_LOCK(&gRsCb->mutex);
 
@@ -1264,7 +1264,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     return 0;
 }
 
-STATIC void RsHeterogTcpFreeFdNode(struct rs_heterog_tcp_fd_info *fdNode)
+STATIC void RsHeterogTcpFreeFdNode(struct RsHeterogTcpFdInfo *fdNode)
 {
     int fd;
 
@@ -1273,14 +1273,14 @@ STATIC void RsHeterogTcpFreeFdNode(struct rs_heterog_tcp_fd_info *fdNode)
     RsListDel(&fdNode->list);
     free(fdNode);
     fdNode = NULL;
-    gRsCb->fd_map[fd] = NULL;
+    gRsCb->fdMap[fd] = NULL;
     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
 }
 
 /*lint -e429 */
 RS_ATTRI_VISI_DEF int RsEpollCtlAdd(const void *fdHandle, enum RaEpollEvent event)
 {
-    struct rs_heterog_tcp_fd_info *fdNode = NULL;
+    struct RsHeterogTcpFdInfo *fdNode = NULL;
     unsigned int tmpEvent = event;
     int fd = RS_FD_INVALID;
     int ret;
@@ -1302,16 +1302,16 @@ RS_ATTRI_VISI_DEF int RsEpollCtlAdd(const void *fdHandle, enum RaEpollEvent even
         }
     }
     tmpEvent = tmpEvent | EPOLLRDHUP;
-    fdNode = calloc(1, sizeof(struct rs_heterog_tcp_fd_info));
+    fdNode = calloc(1, sizeof(struct RsHeterogTcpFdInfo));
     CHK_PRT_RETURN(fdNode == NULL, hccp_err("no memory for fd_node"), -ENOMEM);
 
-    fd = ((const struct socket_peer_info *)fdHandle)->fd;
+    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
     fdNode->fd = fd;
     RS_PTHREAD_MUTEX_LOCK(&gRsCb->mutex);
-    RsListAddTail(&fdNode->list, &gRsCb->heterog_tcp_fd_list);
-    gRsCb->fd_map[fd] = fdHandle;
+    RsListAddTail(&fdNode->list, &gRsCb->heterogTcpFdList);
+    gRsCb->fdMap[fd] = fdHandle;
     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
-    ret = RsEpollCtl(gRsCb->conn_cb.epollfd, EPOLL_CTL_ADD, fd, tmpEvent);
+    ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_ADD, fd, tmpEvent);
     if (ret != 0) {
         hccp_err("[rs_epoll_ctl_add]rs_epoll_ctl failed ret(%d), fd:%d, event:%u", ret, fd, event);
         goto out;
@@ -1340,7 +1340,7 @@ RS_ATTRI_VISI_DEF int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent even
     }
 
     tmpEvent = tmpEvent | EPOLLRDHUP;
-    fd = ((const struct socket_peer_info *)fdHandle)->fd;
+    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
 
     if (gRsCb == NULL) {
         gRsCb = RsGetCurRsCb();
@@ -1350,7 +1350,7 @@ RS_ATTRI_VISI_DEF int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent even
         }
     }
 
-    ret = RsEpollCtl(gRsCb->conn_cb.epollfd, EPOLL_CTL_MOD, fd, tmpEvent);
+    ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_MOD, fd, tmpEvent);
     CHK_PRT_RETURN(ret, hccp_err("[rs_epoll_ctl_mod]rs_epoll_ctl failed ret(%d), fd:%d, event:%u",
         ret, fd, event), ret);
     return 0;
@@ -1359,8 +1359,8 @@ RS_ATTRI_VISI_DEF int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent even
 RS_ATTRI_VISI_DEF int RsEpollCtlDel(int fd)
 {
     int ret;
-    struct rs_heterog_tcp_fd_info *fdNode = NULL;
-    struct rs_heterog_tcp_fd_info *fdNode1 = NULL;
+    struct RsHeterogTcpFdInfo *fdNode = NULL;
+    struct RsHeterogTcpFdInfo *fdNode1 = NULL;
 
     if (gRsCb == NULL) {
         gRsCb = RsGetCurRsCb();
@@ -1369,9 +1369,9 @@ RS_ATTRI_VISI_DEF int RsEpollCtlDel(int fd)
             return -EINVAL;
         }
     }
-    RS_LIST_GET_HEAD_ENTRY(fdNode, fdNode1, &gRsCb->heterog_tcp_fd_list, list, struct rs_heterog_tcp_fd_info);
-    for (; (&fdNode->list) != &gRsCb->heterog_tcp_fd_list;
-        fdNode = fdNode1, fdNode1 = list_entry(fdNode1->list.next, struct rs_heterog_tcp_fd_info, list)) {
+    RS_LIST_GET_HEAD_ENTRY(fdNode, fdNode1, &gRsCb->heterogTcpFdList, list, struct RsHeterogTcpFdInfo);
+    for (; (&fdNode->list) != &gRsCb->heterogTcpFdList;
+        fdNode = fdNode1, fdNode1 = list_entry(fdNode1->list.next, struct RsHeterogTcpFdInfo, list)) {
         if (fdNode->fd == fd) {
             // 删除节点
             RsHeterogTcpFreeFdNode(fdNode);
@@ -1381,7 +1381,7 @@ RS_ATTRI_VISI_DEF int RsEpollCtlDel(int fd)
     }
 
     // 为了兼容epoll不同版本，这里加EPOLLIN参数
-    ret = RsEpollCtl(gRsCb->conn_cb.epollfd, EPOLL_CTL_DEL, fd, EPOLLIN);
+    ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_DEL, fd, EPOLLIN);
     CHK_PRT_RETURN(ret, hccp_err("[rs_epoll_ctl_del]rs_epoll_ctl failed ret(%d), fd:%d", ret, fd), ret);
     return 0;
 }
@@ -1392,23 +1392,23 @@ RS_ATTRI_VISI_DEF void RsSetTcpRecvCallback(const void *callback)
         hccp_err("param error, gRsCb is NULL");
         return;
     }
-    gRsCb->tcp_recv_callback = (void (*)(const void *))callback;
+    gRsCb->tcpRecvCallback = (void (*)(const void *))callback;
 }
 
-STATIC void RsFreeAcceptOneNode(struct rs_cb *rscb, struct rs_accept_info *accept)
+STATIC void RsFreeAcceptOneNode(struct rs_cb *rscb, struct RsAcceptInfo *accept)
 {
     int ret;
 
-    ret = RsEpollCtl(rscb->conn_cb.epollfd, EPOLL_CTL_DEL, accept->conn_fd, EPOLLIN);
+    ret = RsEpollCtl(rscb->connCb.epollfd, EPOLL_CTL_DEL, accept->connFd, EPOLLIN);
     if (ret) {
-        hccp_err("epoll ctl del fd %d failed, ret:%d", accept->conn_fd, ret);
+        hccp_err("epoll ctl del fd %d failed, ret:%d", accept->connFd, ret);
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rscb->connCb.connMutex);
     RsListDel(&accept->list);
-    RS_PTHREAD_MUTEX_ULOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&rscb->connCb.connMutex);
 
-    if (rscb->ssl_enable == RS_SSL_ENABLE) {
+    if (rscb->sslEnable == RS_SSL_ENABLE) {
         if (accept->ssl == NULL) {
             hccp_warn("[Server] accept->ssl is NULL, it maybe has not establish tls link");
         } else {
@@ -1418,11 +1418,11 @@ STATIC void RsFreeAcceptOneNode(struct rs_cb *rscb, struct rs_accept_info *accep
         }
     }
 
-    RS_CLOSE_RETRY_FOR_EINTR(ret, accept->conn_fd);
+    RS_CLOSE_RETRY_FOR_EINTR(ret, accept->connFd);
 
-    hccp_info("free accept_server IP:%s, port:%d, conn_fd:%d", accept->server_ip_addr.read_addr,
-        accept->sock_port, accept->conn_fd);
-    accept->conn_fd = RS_FD_INVALID;
+    hccp_info("free accept_server IP:%s, port:%d, connFd:%d", accept->serverIpAddr.readAddr,
+        accept->sockPort, accept->connFd);
+    accept->connFd = RS_FD_INVALID;
 
     free(accept);
     accept = NULL;
@@ -1430,14 +1430,14 @@ STATIC void RsFreeAcceptOneNode(struct rs_cb *rscb, struct rs_accept_info *accep
 
 STATIC void RsFreeAccpetList(struct rs_cb *rscb)
 {
-    struct rs_accept_info *accept = NULL;
-    struct rs_accept_info *accept2 = NULL;
+    struct RsAcceptInfo *accept = NULL;
+    struct RsAcceptInfo *accept2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.server_accept_list)) {
+    if (!RsListEmpty(&rscb->connCb.serverAcceptList)) {
         hccp_warn("Server accept list do not empty!");
-        RS_LIST_GET_HEAD_ENTRY(accept, accept2, &rscb->conn_cb.server_accept_list, list, struct rs_accept_info);
-        for (; (&accept->list) != &rscb->conn_cb.server_accept_list;
-            accept = accept2, accept2 = list_entry(accept2->list.next, struct rs_accept_info, list)) {
+        RS_LIST_GET_HEAD_ENTRY(accept, accept2, &rscb->connCb.serverAcceptList, list, struct RsAcceptInfo);
+        for (; (&accept->list) != &rscb->connCb.serverAcceptList;
+            accept = accept2, accept2 = list_entry(accept2->list.next, struct RsAcceptInfo, list)) {
             RsFreeAcceptOneNode(rscb, accept);
             accept = NULL;
         }
@@ -1446,16 +1446,16 @@ STATIC void RsFreeAccpetList(struct rs_cb *rscb)
     return ;
 }
 
-STATIC void RsFreeDesignatedAccpetNode(struct rs_cb *rscb, struct rs_ip_addr_info *localIp)
+STATIC void RsFreeDesignatedAccpetNode(struct rs_cb *rscb, struct RsIpAddrInfo *localIp)
 {
-    struct rs_accept_info *accept = NULL;
-    struct rs_accept_info *accept2 = NULL;
+    struct RsAcceptInfo *accept = NULL;
+    struct RsAcceptInfo *accept2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.server_accept_list)) {
-        RS_LIST_GET_HEAD_ENTRY(accept, accept2, &rscb->conn_cb.server_accept_list, list, struct rs_accept_info);
-        for (; (&accept->list) != &rscb->conn_cb.server_accept_list;
-            accept = accept2, accept2 = list_entry(accept2->list.next, struct rs_accept_info, list)) {
-            if (!RsCompareIpAddr(&accept->server_ip_addr, localIp)) {
+    if (!RsListEmpty(&rscb->connCb.serverAcceptList)) {
+        RS_LIST_GET_HEAD_ENTRY(accept, accept2, &rscb->connCb.serverAcceptList, list, struct RsAcceptInfo);
+        for (; (&accept->list) != &rscb->connCb.serverAcceptList;
+            accept = accept2, accept2 = list_entry(accept2->list.next, struct RsAcceptInfo, list)) {
+            if (!RsCompareIpAddr(&accept->serverIpAddr, localIp)) {
                 RsFreeAcceptOneNode(rscb, accept);
                 accept = NULL;
             }
@@ -1465,15 +1465,15 @@ STATIC void RsFreeDesignatedAccpetNode(struct rs_cb *rscb, struct rs_ip_addr_inf
     return;
 }
 
-STATIC void RsFreeConnOneNode(struct rs_cb *rscb, struct rs_conn_info *conn)
+STATIC void RsFreeConnOneNode(struct rs_cb *rscb, struct RsConnInfo *conn)
 {
     int ret;
 
-    RS_PTHREAD_MUTEX_LOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rscb->connCb.connMutex);
     RsListDel(&conn->list);
-    RS_PTHREAD_MUTEX_ULOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&rscb->connCb.connMutex);
 
-    if (rscb->ssl_enable == RS_SSL_ENABLE) {
+    if (rscb->sslEnable == RS_SSL_ENABLE) {
         if (conn->ssl == NULL) {
             hccp_warn("[Client] conn->ssl is NULL, it maybe has not establish tls link");
         } else {
@@ -1486,7 +1486,7 @@ STATIC void RsFreeConnOneNode(struct rs_cb *rscb, struct rs_conn_info *conn)
     RS_CLOSE_RETRY_FOR_EINTR(ret, conn->connfd);
 
     hccp_info("free for conn IP:%s, port:%d, connfd:%d, state:%u",
-        conn->client_ip.read_addr, conn->port, conn->connfd, conn->state);
+        conn->clientIp.readAddr, conn->port, conn->connfd, conn->state);
 
     conn->connfd = RS_FD_INVALID;
     conn->state = RS_CONN_STATE_RESET;
@@ -1497,14 +1497,14 @@ STATIC void RsFreeConnOneNode(struct rs_cb *rscb, struct rs_conn_info *conn)
 
 STATIC void RsFreeClientConnList(struct rs_cb *rscb)
 {
-    struct rs_conn_info *conn = NULL;
-    struct rs_conn_info *conn2 = NULL;
+    struct RsConnInfo *conn = NULL;
+    struct RsConnInfo *conn2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.client_conn_list)) {
+    if (!RsListEmpty(&rscb->connCb.clientConnList)) {
         hccp_warn("Client conn node do not empty!");
-        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->conn_cb.client_conn_list, list, struct rs_conn_info);
-        for (; (&conn->list) != &rscb->conn_cb.client_conn_list;
-            conn = conn2, conn2 = list_entry(conn2->list.next, struct rs_conn_info, list)) {
+        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->connCb.clientConnList, list, struct RsConnInfo);
+        for (; (&conn->list) != &rscb->connCb.clientConnList;
+            conn = conn2, conn2 = list_entry(conn2->list.next, struct RsConnInfo, list)) {
             RsFreeConnOneNode(rscb, conn);
             conn = NULL;
         }
@@ -1513,17 +1513,17 @@ STATIC void RsFreeClientConnList(struct rs_cb *rscb)
     return;
 }
 
-STATIC void RsFreeDesignatedClientConnNode(struct rs_cb *rscb, struct rs_ip_addr_info *localIp)
+STATIC void RsFreeDesignatedClientConnNode(struct rs_cb *rscb, struct RsIpAddrInfo *localIp)
 {
-    struct rs_conn_info *conn = NULL;
-    struct rs_conn_info *conn2 = NULL;
+    struct RsConnInfo *conn = NULL;
+    struct RsConnInfo *conn2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.client_conn_list)) {
-        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->conn_cb.client_conn_list, list, struct rs_conn_info);
-        for (; (&conn->list) != &rscb->conn_cb.client_conn_list;
-            conn = conn2, conn2 = list_entry(conn2->list.next, struct rs_conn_info, list)) {
-            if (!RsCompareIpAddr(&conn->client_ip, localIp)) {
-                hccp_warn("Client conn node for IP[%s] do not empty!", localIp->read_addr);
+    if (!RsListEmpty(&rscb->connCb.clientConnList)) {
+        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->connCb.clientConnList, list, struct RsConnInfo);
+        for (; (&conn->list) != &rscb->connCb.clientConnList;
+            conn = conn2, conn2 = list_entry(conn2->list.next, struct RsConnInfo, list)) {
+            if (!RsCompareIpAddr(&conn->clientIp, localIp)) {
+                hccp_warn("Client conn node for IP[%s] do not empty!", localIp->readAddr);
                 RsFreeConnOneNode(rscb, conn);
                 conn = NULL;
             }
@@ -1535,14 +1535,14 @@ STATIC void RsFreeDesignatedClientConnNode(struct rs_cb *rscb, struct rs_ip_addr
 
 STATIC void RsFreeServerConnList(struct rs_cb *rscb)
 {
-    struct rs_conn_info *conn = NULL;
-    struct rs_conn_info *conn2 = NULL;
+    struct RsConnInfo *conn = NULL;
+    struct RsConnInfo *conn2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.server_conn_list)) {
+    if (!RsListEmpty(&rscb->connCb.serverConnList)) {
         hccp_warn("Server conn node do not empty!");
-        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->conn_cb.server_conn_list, list, struct rs_conn_info);
-        for (; (&conn->list) != &rscb->conn_cb.server_conn_list;
-            conn = conn2, conn2 = list_entry(conn2->list.next, struct rs_conn_info, list)) {
+        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->connCb.serverConnList, list, struct RsConnInfo);
+        for (; (&conn->list) != &rscb->connCb.serverConnList;
+            conn = conn2, conn2 = list_entry(conn2->list.next, struct RsConnInfo, list)) {
             RsFreeConnOneNode(rscb, conn);
             conn = NULL;
         }
@@ -1551,17 +1551,17 @@ STATIC void RsFreeServerConnList(struct rs_cb *rscb)
     return;
 }
 
-STATIC void RsFreeDesignatedServerConnNode(struct rs_cb *rscb, struct rs_ip_addr_info *localIp)
+STATIC void RsFreeDesignatedServerConnNode(struct rs_cb *rscb, struct RsIpAddrInfo *localIp)
 {
-    struct rs_conn_info *conn = NULL;
-    struct rs_conn_info *conn2 = NULL;
+    struct RsConnInfo *conn = NULL;
+    struct RsConnInfo *conn2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.server_conn_list)) {
-        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->conn_cb.server_conn_list, list, struct rs_conn_info);
-        for (; (&conn->list) != &rscb->conn_cb.server_conn_list;
-            conn = conn2, conn2 = list_entry(conn2->list.next, struct rs_conn_info, list)) {
-            if (!RsCompareIpAddr(&conn->server_ip, localIp)) {
-                hccp_warn("Server conn node for IP[%s] do not empty!", localIp->read_addr);
+    if (!RsListEmpty(&rscb->connCb.serverConnList)) {
+        RS_LIST_GET_HEAD_ENTRY(conn, conn2, &rscb->connCb.serverConnList, list, struct RsConnInfo);
+        for (; (&conn->list) != &rscb->connCb.serverConnList;
+            conn = conn2, conn2 = list_entry(conn2->list.next, struct RsConnInfo, list)) {
+            if (!RsCompareIpAddr(&conn->serverIp, localIp)) {
+                hccp_warn("Server conn node for IP[%s] do not empty!", localIp->readAddr);
                 RsFreeConnOneNode(rscb, conn);
                 conn = NULL;
             }
@@ -1570,26 +1570,26 @@ STATIC void RsFreeDesignatedServerConnNode(struct rs_cb *rscb, struct rs_ip_addr
     return;
 }
 
-STATIC void RsFreeListenOneNode(struct rs_cb *rscb, struct rs_listen_info *listen)
+STATIC void RsFreeListenOneNode(struct rs_cb *rscb, struct RsListenInfo *listen)
 {
     int ret;
 
-    ret = RsEpollCtl(rscb->conn_cb.epollfd, EPOLL_CTL_DEL, listen->listen_fd, EPOLLIN);
+    ret = RsEpollCtl(rscb->connCb.epollfd, EPOLL_CTL_DEL, listen->listenFd, EPOLLIN);
     if (ret) {
-        hccp_err("delete from epoll failed, ret:%d, epollfd:%d, listen_fd:%d", ret, rscb->conn_cb.epollfd,
-            listen->listen_fd);
+        hccp_err("delete from epoll failed, ret:%d, epollfd:%d, listenFd:%d", ret, rscb->connCb.epollfd,
+            listen->listenFd);
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rscb->connCb.connMutex);
     RsListDel(&listen->list);
-    RS_PTHREAD_MUTEX_ULOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&rscb->connCb.connMutex);
 
-    RS_CLOSE_RETRY_FOR_EINTR(ret, listen->listen_fd);
+    RS_CLOSE_RETRY_FOR_EINTR(ret, listen->listenFd);
 
-    hccp_info("free Listen IP:%s, port:%d, listen_fd:%d, state:%u",
-        listen->server_ip_addr.read_addr, ntohs(listen->sock_port), listen->listen_fd, listen->state);
+    hccp_info("free Listen IP:%s, port:%d, listenFd:%d, state:%u",
+        listen->serverIpAddr.readAddr, ntohs(listen->sockPort), listen->listenFd, listen->state);
 
-    listen->listen_fd = RS_FD_INVALID;
+    listen->listenFd = RS_FD_INVALID;
     listen->state = RS_CONN_STATE_RESET;
 
     free(listen);
@@ -1597,14 +1597,14 @@ STATIC void RsFreeListenOneNode(struct rs_cb *rscb, struct rs_listen_info *liste
 
 STATIC void RsFreeListenList(struct rs_cb *rscb)
 {
-    struct rs_listen_info *listen = NULL;
-    struct rs_listen_info *listen2 = NULL;
+    struct RsListenInfo *listen = NULL;
+    struct RsListenInfo *listen2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.listen_list)) {
+    if (!RsListEmpty(&rscb->connCb.listenList)) {
         hccp_warn("Server listen node do not empty!");
-        RS_LIST_GET_HEAD_ENTRY(listen, listen2, &rscb->conn_cb.listen_list, list, struct rs_listen_info);
-        for (; (&listen->list) != &rscb->conn_cb.listen_list;
-            listen = listen2, listen2 = list_entry(listen2->list.next, struct rs_listen_info, list)) {
+        RS_LIST_GET_HEAD_ENTRY(listen, listen2, &rscb->connCb.listenList, list, struct RsListenInfo);
+        for (; (&listen->list) != &rscb->connCb.listenList;
+            listen = listen2, listen2 = list_entry(listen2->list.next, struct RsListenInfo, list)) {
             RsFreeListenOneNode(rscb, listen);
             listen = NULL;
         }
@@ -1613,16 +1613,16 @@ STATIC void RsFreeListenList(struct rs_cb *rscb)
     return;
 }
 
-STATIC void RsFreeDesignatedListenNode(struct rs_cb *rscb, struct rs_ip_addr_info *localIp)
+STATIC void RsFreeDesignatedListenNode(struct rs_cb *rscb, struct RsIpAddrInfo *localIp)
 {
-    struct rs_listen_info *listen = NULL;
-    struct rs_listen_info *listen2 = NULL;
+    struct RsListenInfo *listen = NULL;
+    struct RsListenInfo *listen2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.listen_list)) {
-        RS_LIST_GET_HEAD_ENTRY(listen, listen2, &rscb->conn_cb.listen_list, list, struct rs_listen_info);
-        for (; (&listen->list) != &rscb->conn_cb.listen_list;
-            listen = listen2, listen2 = list_entry(listen2->list.next, struct rs_listen_info, list)) {
-            if (!RsCompareIpAddr(&listen->server_ip_addr, localIp)) {
+    if (!RsListEmpty(&rscb->connCb.listenList)) {
+        RS_LIST_GET_HEAD_ENTRY(listen, listen2, &rscb->connCb.listenList, list, struct RsListenInfo);
+        for (; (&listen->list) != &rscb->connCb.listenList;
+            listen = listen2, listen2 = list_entry(listen2->list.next, struct RsListenInfo, list)) {
+            if (!RsCompareIpAddr(&listen->serverIpAddr, localIp)) {
                 RsFreeListenOneNode(rscb, listen);
                 listen = NULL;
             }
@@ -1632,50 +1632,50 @@ STATIC void RsFreeDesignatedListenNode(struct rs_cb *rscb, struct rs_ip_addr_inf
     return;
 }
 
-STATIC void RsWhiteListNodeFree(struct rs_cb *rscb, struct rs_white_list *wlist)
+STATIC void RsWhiteListNodeFree(struct rs_cb *rscb, struct RsWhiteList *wlist)
 {
-    struct rs_white_list_info *wlistNode = NULL;
-    struct rs_white_list_info *wlistNode1 = NULL;
+    struct RsWhiteListInfo *wlistNode = NULL;
+    struct RsWhiteListInfo *wlistNode1 = NULL;
 
-    if (!RsListEmpty(&wlist->white_list)) {
-        RS_LIST_GET_HEAD_ENTRY(wlistNode, wlistNode1, &wlist->white_list, list, struct rs_white_list_info);
-        for (; (&wlistNode->list) != &wlist->white_list;
+    if (!RsListEmpty(&wlist->whiteList)) {
+        RS_LIST_GET_HEAD_ENTRY(wlistNode, wlistNode1, &wlist->whiteList, list, struct RsWhiteListInfo);
+        for (; (&wlistNode->list) != &wlist->whiteList;
             wlistNode = wlistNode1, wlistNode1 = list_entry(wlistNode1->list.next,
-                struct rs_white_list_info, list)) {
-            RS_PTHREAD_MUTEX_LOCK(&rscb->conn_cb.conn_mutex);
+                struct RsWhiteListInfo, list)) {
+            RS_PTHREAD_MUTEX_LOCK(&rscb->connCb.connMutex);
             RsListDel(&wlistNode->list);
-            RS_PTHREAD_MUTEX_ULOCK(&rscb->conn_cb.conn_mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&rscb->connCb.connMutex);
 
-            hccp_info("free White list client IP:%s, tag:%s", wlistNode->client_ip.read_addr, wlistNode->tag);
+            hccp_info("free White list client IP:%s, tag:%s", wlistNode->clientIp.readAddr, wlistNode->tag);
             free(wlistNode);
             wlistNode = NULL;
         }
     }
 }
 
-STATIC void RsFreeWhiteOneNode(struct rs_cb *rscb, struct rs_white_list *wlist)
+STATIC void RsFreeWhiteOneNode(struct rs_cb *rscb, struct RsWhiteList *wlist)
 {
     RsWhiteListNodeFree(rscb, wlist);
 
-    RS_PTHREAD_MUTEX_LOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rscb->connCb.connMutex);
     RsListDel(&wlist->list);
-    RS_PTHREAD_MUTEX_ULOCK(&rscb->conn_cb.conn_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&rscb->connCb.connMutex);
 
-    hccp_info("White list server IP:%s", wlist->server_ip.read_addr);
+    hccp_info("White list server IP:%s", wlist->serverIp.readAddr);
     free(wlist);
     wlist = NULL;
 }
 
 STATIC void RsFreeWhiteList(struct rs_cb *rscb)
 {
-    struct rs_white_list *wlist = NULL;
-    struct rs_white_list *wlist2 = NULL;
+    struct RsWhiteList *wlist = NULL;
+    struct RsWhiteList *wlist2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.white_list)) {
+    if (!RsListEmpty(&rscb->connCb.whiteList)) {
         hccp_warn("Server white list do not empty!");
-        RS_LIST_GET_HEAD_ENTRY(wlist, wlist2, &rscb->conn_cb.white_list, list, struct rs_white_list);
-        for (; (&wlist->list) != &rscb->conn_cb.white_list;
-            wlist = wlist2, wlist2 = list_entry(wlist2->list.next, struct rs_white_list, list)) {
+        RS_LIST_GET_HEAD_ENTRY(wlist, wlist2, &rscb->connCb.whiteList, list, struct RsWhiteList);
+        for (; (&wlist->list) != &rscb->connCb.whiteList;
+            wlist = wlist2, wlist2 = list_entry(wlist2->list.next, struct RsWhiteList, list)) {
             RsFreeWhiteOneNode(rscb, wlist);
             wlist = NULL;
         }
@@ -1684,16 +1684,16 @@ STATIC void RsFreeWhiteList(struct rs_cb *rscb)
     return;
 }
 
-STATIC void RsFreeDesignatedWhiteNode(struct rs_cb *rscb, struct rs_ip_addr_info *localIp)
+STATIC void RsFreeDesignatedWhiteNode(struct rs_cb *rscb, struct RsIpAddrInfo *localIp)
 {
-    struct rs_white_list *wlist = NULL;
-    struct rs_white_list *wlist2 = NULL;
+    struct RsWhiteList *wlist = NULL;
+    struct RsWhiteList *wlist2 = NULL;
 
-    if (!RsListEmpty(&rscb->conn_cb.white_list)) {
-        RS_LIST_GET_HEAD_ENTRY(wlist, wlist2, &rscb->conn_cb.white_list, list, struct rs_white_list);
-        for (; (&wlist->list) != &rscb->conn_cb.white_list;
-            wlist = wlist2, wlist2 = list_entry(wlist2->list.next, struct rs_white_list, list)) {
-            if (!RsCompareIpAddr(&wlist->server_ip, localIp)) {
+    if (!RsListEmpty(&rscb->connCb.whiteList)) {
+        RS_LIST_GET_HEAD_ENTRY(wlist, wlist2, &rscb->connCb.whiteList, list, struct RsWhiteList);
+        for (; (&wlist->list) != &rscb->connCb.whiteList;
+            wlist = wlist2, wlist2 = list_entry(wlist2->list.next, struct RsWhiteList, list)) {
+            if (!RsCompareIpAddr(&wlist->serverIp, localIp)) {
                 RsFreeWhiteOneNode(rscb, wlist);
                 wlist = NULL;
             }
@@ -1703,7 +1703,7 @@ STATIC void RsFreeDesignatedWhiteNode(struct rs_cb *rscb, struct rs_ip_addr_info
     return;
 }
 
-STATIC void RsFreeSocketList(struct rs_cb *rscb, struct rs_ip_addr_info *localIp)
+STATIC void RsFreeSocketList(struct rs_cb *rscb, struct RsIpAddrInfo *localIp)
 {
     RsFreeDesignatedAccpetNode(rscb, localIp);
     RsFreeDesignatedClientConnNode(rscb, localIp);
@@ -1720,7 +1720,7 @@ STATIC void RsFreeSocketList(struct rs_cb *rscb, struct rs_ip_addr_info *localIp
 RS_ATTRI_VISI_DEF int RsSocketDeinit(struct rdev rdevInfo)
 {
     int ret;
-    unsigned int phyId = rdevInfo.phy_id;
+    unsigned int phyId = rdevInfo.phyId;
     unsigned int chipId;
     struct rs_cb *rscb = NULL;
 
@@ -1734,13 +1734,13 @@ RS_ATTRI_VISI_DEF int RsSocketDeinit(struct rdev rdevInfo)
 
     if (rdevInfo.family == AF_INET) {
         unsigned int *localIp = NULL;
-        localIp = &(rdevInfo.local_ip.addr.s_addr);
+        localIp = &(rdevInfo.localIp.addr.s_addr);
         ret = RsSocketNodeid2vnic(*localIp, localIp);
         hccp_info("socket deinit local IP is 0x%llx, ret:%d", *localIp, ret);
     }
 
-    struct rs_ip_addr_info localIp;
-    RsConvertIpAddr(rdevInfo.family, &rdevInfo.local_ip, &localIp);
+    struct RsIpAddrInfo localIp;
+    RsConvertIpAddr(rdevInfo.family, &rdevInfo.localIp, &localIp);
 
     ret = RsDev2rscb(chipId, &rscb, false);
     CHK_PRT_RETURN(ret, hccp_err("get rscb failed for chip_id:%u, ret:%d", chipId, ret), -ENODEV);
@@ -1748,27 +1748,27 @@ RS_ATTRI_VISI_DEF int RsSocketDeinit(struct rdev rdevInfo)
     RS_PTHREAD_MUTEX_LOCK(&rscb->mutex);
     RsFreeSocketList(rscb, &localIp);
     RS_PTHREAD_MUTEX_ULOCK(&rscb->mutex);
-    hccp_run_info("socket deinit success, phyId:%u, localIp:%s", phyId, localIp.read_addr);
+    hccp_run_info("socket deinit success, phyId:%u, localIp:%s", phyId, localIp.readAddr);
     return 0;
 }
 
 STATIC void RsFreeRdevList(struct rs_cb *rsCb)
 {
-    struct rs_rdev_cb *rdevCbCurr = NULL;
-    struct rs_rdev_cb *rdevCbNext = NULL;
+    struct RsRdevCb *rdevCbCurr = NULL;
+    struct RsRdevCb *rdevCbNext = NULL;
     unsigned int phyId = 0;
     int ret;
 
-    ret = rsGetDevIDByLocalDevID(rsCb->chip_id, &phyId);
+    ret = rsGetDevIDByLocalDevID(rsCb->chipId, &phyId);
     if (ret != 0) {
-        hccp_err("chip_id[%u] invalid, ret %d", rsCb->chip_id, ret);
+        hccp_err("chip_id[%u] invalid, ret %d", rsCb->chipId, ret);
         return;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(rdevCbCurr, rdevCbNext, &rsCb->rdev_list, list, struct rs_rdev_cb);
-    for (; (&rdevCbCurr->list) != &rsCb->rdev_list;
-        rdevCbCurr = rdevCbNext, rdevCbNext = list_entry(rdevCbNext->list.next, struct rs_rdev_cb, list)) {
-        ret = RsRdevDeinit(phyId, rdevCbCurr->notify_type, rdevCbCurr->rdev_index);
+    RS_LIST_GET_HEAD_ENTRY(rdevCbCurr, rdevCbNext, &rsCb->rdevList, list, struct RsRdevCb);
+    for (; (&rdevCbCurr->list) != &rsCb->rdevList;
+        rdevCbCurr = rdevCbNext, rdevCbNext = list_entry(rdevCbNext->list.next, struct RsRdevCb, list)) {
+        ret = RsRdevDeinit(phyId, rdevCbCurr->notifyType, rdevCbCurr->rdevIndex);
         if (ret != 0) {
             hccp_err("rs_rdev_deinit failed, ret:%d, phyId:%u", ret, phyId);
         }
@@ -1784,7 +1784,7 @@ STATIC void RsFreeUdevList(struct rs_cb *rsCb)
 
 STATIC void RsFreeDevList(struct rs_cb *rsCb)
 {
-    if (RsListEmpty(&rsCb->rdev_list)) {
+    if (RsListEmpty(&rsCb->rdevList)) {
         return;
     }
 
@@ -1802,14 +1802,14 @@ STATIC void RsFreeDevList(struct rs_cb *rsCb)
 
 STATIC void RsFreeHeterogTcpFdList(struct rs_cb *rsCb)
 {
-    struct rs_heterog_tcp_fd_info *fdNode = NULL;
-    struct rs_heterog_tcp_fd_info *fdNode1 = NULL;
+    struct RsHeterogTcpFdInfo *fdNode = NULL;
+    struct RsHeterogTcpFdInfo *fdNode1 = NULL;
 
-    if (!RsListEmpty(&rsCb->heterog_tcp_fd_list)) {
+    if (!RsListEmpty(&rsCb->heterogTcpFdList)) {
         hccp_warn("heterog_tcp_fd_list do not empty!");
-        RS_LIST_GET_HEAD_ENTRY(fdNode, fdNode1, &rsCb->heterog_tcp_fd_list, list, struct rs_heterog_tcp_fd_info);
-        for (; (&fdNode->list) != &rsCb->heterog_tcp_fd_list;
-            fdNode = fdNode1, fdNode1 = list_entry(fdNode1->list.next, struct rs_heterog_tcp_fd_info, list)) {
+        RS_LIST_GET_HEAD_ENTRY(fdNode, fdNode1, &rsCb->heterogTcpFdList, list, struct RsHeterogTcpFdInfo);
+        for (; (&fdNode->list) != &rsCb->heterogTcpFdList;
+            fdNode = fdNode1, fdNode1 = list_entry(fdNode1->list.next, struct RsHeterogTcpFdInfo, list)) {
             hccp_info(">>>>>fd_node->fd:%d", fdNode->fd);
             // 删除节点
             RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
@@ -1839,19 +1839,19 @@ STATIC void RsListFree(struct rs_cb *rscb)
 
 STATIC void RsSslFree(struct rs_cb *rscb)
 {
-    if (rscb->ssl_enable == RS_SSL_ENABLE) {
-        if (rscb->skid_subject_cb != NULL) {
-            if (memset_s(rscb->skid_subject_cb, sizeof(struct rs_cert_skid_subject_cb), 0,
-                sizeof(struct rs_cert_skid_subject_cb))) {
+    if (rscb->sslEnable == RS_SSL_ENABLE) {
+        if (rscb->skidSubjectCb != NULL) {
+            if (memset_s(rscb->skidSubjectCb, sizeof(struct RsCertSkidSubjectCb), 0,
+                sizeof(struct RsCertSkidSubjectCb))) {
                 hccp_warn("memset_s for skid_subject_cb unsuccessful");
             }
-            free(rscb->skid_subject_cb);
-            rscb->skid_subject_cb = NULL;
+            free(rscb->skidSubjectCb);
+            rscb->skidSubjectCb = NULL;
         }
-        ssl_adp_ctx_free(rscb->server_ssl_ctx);
-        rscb->server_ssl_ctx = NULL;
-        ssl_adp_ctx_free(rscb->client_ssl_ctx);
-        rscb->client_ssl_ctx = NULL;
+        ssl_adp_ctx_free(rscb->serverSslCtx);
+        rscb->serverSslCtx = NULL;
+        ssl_adp_ctx_free(rscb->clientSslCtx);
+        rscb->clientSslCtx = NULL;
     }
 }
 
@@ -1860,22 +1860,22 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     RS_PTHREAD_MUTEX_LOCK(&rscb->mutex);
     RsListFree(rscb);
 
-    free(rscb->fd_map);
-    rscb->fd_map = NULL;
-    freeifaddrs(rscb->ifaddr_list);
-    rscb->ifaddr_list = NULL;
+    free(rscb->fdMap);
+    rscb->fdMap = NULL;
+    freeifaddrs(rscb->ifaddrList);
+    rscb->ifaddrList = NULL;
     RS_PTHREAD_MUTEX_ULOCK(&rscb->mutex);
     RsFreeDevList(rscb);
     RsSslFree(rscb);
     RsFreeHeterogTcpFdList(rscb);
 
 #ifdef CONFIG_TLV
-    if (rscb->nslb_cb.netco_init_flag) {
-        RsTlvDeinit(TLV_MODULE_TYPE_NSLB, rscb->nslb_cb.phy_id);
+    if (rscb->tlvCb.initFlag) {
+        RsTlvDeinit(rscb->tlvCb.phyId);
     }
 #endif
     pthread_mutex_destroy(&rscb->mutex);
-    pthread_mutex_destroy(&rscb->conn_cb.conn_mutex);
+    pthread_mutex_destroy(&rscb->connCb.connMutex);
     RsDestroyEpoll(rscb);
 
     free(rscb);
@@ -1883,7 +1883,7 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     gRsCb = NULL;
 }
 
-RS_ATTRI_VISI_DEF int RsDeinit(struct rs_init_config *cfg)
+RS_ATTRI_VISI_DEF int RsDeinit(struct RsInitConfig *cfg)
 {
     int ret;
     eventfd_t event;
@@ -1892,21 +1892,21 @@ RS_ATTRI_VISI_DEF int RsDeinit(struct rs_init_config *cfg)
 
     CHK_PRT_RETURN(cfg == NULL, hccp_err("param error, cfg is NULL"), -EINVAL);
 
-    chipId = cfg->chip_id;
+    chipId = cfg->chipId;
     if (__sync_fetch_and_sub(&(gInitCounter[chipId]), 1) > 1) {
         return 0;
     }
-    if (rscb && (chipId == rscb->chip_id)) {
+    if (rscb && (chipId == rscb->chipId)) {
         event = 1;
         /* send event to eventfd to waking up epoll handle thread */
-        ret = (int)write(rscb->conn_cb.eventfd, &event, sizeof(eventfd_t));
+        ret = (int)write(rscb->connCb.eventfd, &event, sizeof(eventfd_t));
         CHK_PRT_RETURN(ret != sizeof(eventfd_t), hccp_err("eventfd_write failed(0x%x), chipId:%u, errno:%d",
             ret, chipId, errno), -EFILEOPER);
 
-        hccp_info("epoll wait up ok, rscb->conn_flag:%d", rscb->conn_flag);
+        hccp_info("epoll wait up ok, rscb->connFlag:%d", rscb->connFlag);
         // already been RS_CONN_EXIT_FLAG, no need to change conn_flag
-        if (rscb->conn_flag != RS_CONN_EXIT_FLAG) {
-            rscb->conn_flag = 0;
+        if (rscb->connFlag != RS_CONN_EXIT_FLAG) {
+            rscb->connFlag = 0;
         }
         int tryAgain = RS_TRY_TIME;
         while (((rscb->state & RS_STATE_HALT) == 0) && tryAgain > 0) {
@@ -1919,7 +1919,7 @@ RS_ATTRI_VISI_DEF int RsDeinit(struct rs_init_config *cfg)
         }
 
         tryAgain = RS_TRY_TIME;
-        while ((rscb->conn_flag != RS_CONN_EXIT_FLAG) && tryAgain > 0) {
+        while ((rscb->connFlag != RS_CONN_EXIT_FLAG) && tryAgain > 0) {
             usleep(RS_USLEEP_TIME);
             tryAgain--;
         }
@@ -1955,7 +1955,7 @@ RS_ATTRI_VISI_DEF int RsGetVnicIp(unsigned int phyId, unsigned int *vnicIp)
     return 0;
 }
 
-STATIC int RsGetVnicIpInfo(unsigned int phyId, unsigned int id, enum id_type type, struct ip_info *info)
+STATIC int RsGetVnicIpInfo(unsigned int phyId, unsigned int id, enum IdType type, struct IpInfo *info)
 {
     int64_t deviceInfo = 0;
     unsigned int vnicIp;
@@ -1985,8 +1985,8 @@ STATIC int RsGetVnicIpInfo(unsigned int phyId, unsigned int id, enum id_type typ
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int RsGetVnicIpInfos(unsigned int phyId, enum id_type type, unsigned int ids[], unsigned int num,
-    struct ip_info infos[])
+RS_ATTRI_VISI_DEF int RsGetVnicIpInfos(unsigned int phyId, enum IdType type, unsigned int ids[], unsigned int num,
+    struct IpInfo infos[])
 {
     unsigned int i;
     int ret;
@@ -2031,7 +2031,7 @@ int rsGetLocalDevIDByHostDevID(unsigned int phyId, unsigned int *chipId)
 {
     CHK_PRT_RETURN(gRsCb == NULL, hccp_warn("No device initialized !"), -ENODEV);
 
-    if (gRsCb->hccp_mode == NETWORK_PEER_ONLINE) {
+    if (gRsCb->hccpMode == NETWORK_PEER_ONLINE) {
         *chipId = phyId;
         return 0;
     } else {
@@ -2043,7 +2043,7 @@ int rsGetDevIDByLocalDevID(unsigned int chipId, unsigned int *phyId)
 {
     CHK_PRT_RETURN(gRsCb == NULL, hccp_warn("No device initialized !"), -ENODEV);
 
-    if (gRsCb->hccp_mode == NETWORK_PEER_ONLINE) {
+    if (gRsCb->hccpMode == NETWORK_PEER_ONLINE) {
         *phyId = chipId;
         return 0;
     } else {
@@ -2052,17 +2052,17 @@ int rsGetDevIDByLocalDevID(unsigned int chipId, unsigned int *phyId)
 }
 
 RS_ATTRI_VISI_DEF int RsSetQpAttrQos(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
-    struct qos_attr *attr)
+    struct QosAttr *attr)
 {
     int ret;
-    struct rs_qp_cb *qpCb = NULL;
+    struct RsQpCb *qpCb = NULL;
 
     RS_QP_PARA_CHECK(phyId);
     ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
     CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
-    qpCb->qos_attr.tc = attr->tc;
-    qpCb->qos_attr.sl = attr->sl;
+    qpCb->qosAttr.tc = attr->tc;
+    qpCb->qosAttr.sl = attr->sl;
 
     hccp_info("set qp qos attr: qpn[%u] tc[%u] sl[%u]", qpn, attr->tc, attr->sl);
     return 0;
@@ -2072,7 +2072,7 @@ RS_ATTRI_VISI_DEF int RsSetQpAttrTimeout(unsigned int phyId, unsigned int rdevIn
     unsigned int *timeout)
 {
     int ret;
-    struct rs_qp_cb *qpCb = NULL;
+    struct RsQpCb *qpCb = NULL;
 
     RS_QP_PARA_CHECK(phyId);
     ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
@@ -2088,19 +2088,19 @@ RS_ATTRI_VISI_DEF int RsSetQpAttrRetryCnt(unsigned int phyId, unsigned int rdevI
     unsigned int *retryCnt)
 {
     int ret;
-    struct rs_qp_cb *qpCb = NULL;
+    struct RsQpCb *qpCb = NULL;
 
     RS_QP_PARA_CHECK(phyId);
     ret = RsQpn2qpcb(phyId, rdevIndex, qpn, &qpCb);
     CHK_PRT_RETURN(ret || qpCb == NULL, hccp_err("get qp cb failed qpn %u, ret %d", qpn, ret), ret);
 
-    qpCb->retry_cnt = *retryCnt;
+    qpCb->retryCnt = *retryCnt;
 
     hccp_info("set qp qos attr: qpn[%u] retry_cnt[%u]", qpn, *retryCnt);
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int RsGetCqeErrInfo(struct cqe_err_info *info)
+RS_ATTRI_VISI_DEF int RsGetCqeErrInfo(struct CqeErrInfo *info)
 {
     int ret;
 
@@ -2111,7 +2111,7 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfo(struct cqe_err_info *info)
 
 RS_ATTRI_VISI_DEF int RsGetCqeErrInfoNum(unsigned int phyId, unsigned int rdevIdx, unsigned int *num)
 {
-    struct rs_rdev_cb *rdevCb = NULL;
+    struct RsRdevCb *rdevCb = NULL;
     unsigned int chipId;
     int ret;
 
@@ -2123,17 +2123,17 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoNum(unsigned int phyId, unsigned int rdevId
     CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
         chipId, ret), ret);
 
-    *num = rdevCb->cqe_err_cnt;
+    *num = rdevCb->cqeErrCnt;
 
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevIdx, struct cqe_err_info *info,
+RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevIdx, struct CqeErrInfo *info,
     unsigned int *num)
 {
-    struct rs_qp_cb *qpCbCurr = NULL;
-    struct rs_qp_cb *qpCbNext = NULL;
-    struct rs_rdev_cb *rdevCb = NULL;
+    struct RsQpCb *qpCbCurr = NULL;
+    struct RsQpCb *qpCbNext = NULL;
+    struct RsRdevCb *rdevCb = NULL;
     unsigned int cqeErrIdx = 0;
     unsigned int numTmp = *num;
     unsigned int chipId;
@@ -2147,24 +2147,24 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevI
     CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
         chipId, ret), ret);
 
-    if (RsListEmpty(&rdevCb->qp_list)) {
+    if (RsListEmpty(&rdevCb->qpList)) {
         *num = 0;
         return 0;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(qpCbCurr, qpCbNext, &rdevCb->qp_list, list, struct rs_qp_cb);
-    for (; (&qpCbCurr->list) != &rdevCb->qp_list;
-        qpCbCurr = qpCbNext, qpCbNext = list_entry(qpCbNext->list.next, struct rs_qp_cb, list)) {
-        if (qpCbCurr->cqe_err_info.info.status != 0) {
-            RS_PTHREAD_MUTEX_LOCK(&qpCbCurr->cqe_err_info.mutex);
-            info[cqeErrIdx].status = qpCbCurr->cqe_err_info.info.status;
-            info[cqeErrIdx].qpn = qpCbCurr->cqe_err_info.info.qpn;
-            info[cqeErrIdx].time = qpCbCurr->cqe_err_info.info.time;
-            qpCbCurr->cqe_err_info.info.status = 0;
-            RS_PTHREAD_MUTEX_ULOCK(&qpCbCurr->cqe_err_info.mutex);
-            RS_PTHREAD_MUTEX_LOCK(&qpCbCurr->rdev_cb->cqe_err_cnt_mutex);
-            qpCbCurr->rdev_cb->cqe_err_cnt--;
-            RS_PTHREAD_MUTEX_ULOCK(&qpCbCurr->rdev_cb->cqe_err_cnt_mutex);
+    RS_LIST_GET_HEAD_ENTRY(qpCbCurr, qpCbNext, &rdevCb->qpList, list, struct RsQpCb);
+    for (; (&qpCbCurr->list) != &rdevCb->qpList;
+        qpCbCurr = qpCbNext, qpCbNext = list_entry(qpCbNext->list.next, struct RsQpCb, list)) {
+        if (qpCbCurr->cqeErrInfo.info.status != 0) {
+            RS_PTHREAD_MUTEX_LOCK(&qpCbCurr->cqeErrInfo.mutex);
+            info[cqeErrIdx].status = qpCbCurr->cqeErrInfo.info.status;
+            info[cqeErrIdx].qpn = qpCbCurr->cqeErrInfo.info.qpn;
+            info[cqeErrIdx].time = qpCbCurr->cqeErrInfo.info.time;
+            qpCbCurr->cqeErrInfo.info.status = 0;
+            RS_PTHREAD_MUTEX_ULOCK(&qpCbCurr->cqeErrInfo.mutex);
+            RS_PTHREAD_MUTEX_LOCK(&qpCbCurr->rdevCb->cqeErrCntMutex);
+            qpCbCurr->rdevCb->cqeErrCnt--;
+            RS_PTHREAD_MUTEX_ULOCK(&qpCbCurr->rdevCb->cqeErrCntMutex);
             cqeErrIdx++;
             if (cqeErrIdx == numTmp) {
                 break;
@@ -2221,14 +2221,14 @@ RS_ATTRI_VISI_DEF int RsCtlEventHandle(int eventHandle, const void *fdHandle, in
     }
 
     tmpEvent = tmpEvent | EPOLLRDHUP;
-    fd = ((const struct socket_peer_info *)fdHandle)->fd;
+    fd = ((const struct SocketPeerInfo *)fdHandle)->fd;
 
     ret = RsEpollCtlFdHandle(eventHandle, opcode, fd, tmpEvent, (void*)fdHandle);
     CHK_PRT_RETURN(ret, hccp_err("[rs_ctl_event_handle]rs_epoll_ctl_fd_handle failed ret(%d), fd:%d", ret, fd), ret);
     return 0;
 }
 
-RS_ATTRI_VISI_DEF int RsWaitEventHandle(int eventHandle, struct socket_event_info *eventInfos,
+RS_ATTRI_VISI_DEF int RsWaitEventHandle(int eventHandle, struct SocketEventInfoT *eventInfos,
     int timeout, unsigned int maxevents, unsigned int *eventsNum)
 {
     int ret;
@@ -2274,32 +2274,32 @@ RS_ATTRI_VISI_DEF int RsDestroyEventHandle(int *eventHandle)
     return 0;
 }
 
-int RsQueryMrCb(struct rs_rdev_cb *devCb, uint64_t addr, struct rs_mr_cb **mrCb,
-                   struct rs_list_head *mrList)
+int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb,
+                   struct RsListHead *mrList)
 {
-    struct rs_mr_cb *mrCurr = NULL;
-    struct rs_mr_cb *mrNext = NULL;
+    struct RsMrCb *mrCurr = NULL;
+    struct RsMrCb *mrNext = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->rdev_mutex);
-    RS_LIST_GET_HEAD_ENTRY(mrCurr, mrNext, mrList, list, struct rs_mr_cb);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rdevMutex);
+    RS_LIST_GET_HEAD_ENTRY(mrCurr, mrNext, mrList, list, struct RsMrCb);
     for (; (&mrCurr->list) != mrList;
-        mrCurr = mrNext, mrNext = list_entry(mrNext->list.next, struct rs_mr_cb, list)) {
-        if ((mrCurr->mr_info.addr <= addr) && (addr < mrCurr->mr_info.addr + mrCurr->mr_info.len)) {
+        mrCurr = mrNext, mrNext = list_entry(mrNext->list.next, struct RsMrCb, list)) {
+        if ((mrCurr->mrInfo.addr <= addr) && (addr < mrCurr->mrInfo.addr + mrCurr->mrInfo.len)) {
             *mrCb = mrCurr;
-            RS_PTHREAD_MUTEX_ULOCK(&devCb->rdev_mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->rdevMutex);
             return 0;
         }
     }
 
     *mrCb = NULL;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->rdev_mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rdevMutex);
 
     hccp_info("cannot find mrcb for addr@0x%lx !", addr);
 
     return -ENODEV;
 }
 
-STATIC int RsGetLinuxVersion(struct rs_linux_version_info *verInfo)
+STATIC int RsGetLinuxVersion(struct RsLinuxVersionInfo *verInfo)
 {
 #define LINUX_VERSION_MAX_CHAR 1024
 #define LINUX_VERSION_TYPE_NUM 3
@@ -2346,7 +2346,7 @@ RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value)
 #define SEC_LINUX_VERSION_MAJOR 5
 #define SEC_LINUX_VERSION_MINOR 18
 #define SEC_LINUX_VERSION_PATCH 0
-    struct rs_linux_version_info verInfo = {0};
+    struct RsLinuxVersionInfo verInfo = {0};
     int ret;
 
     ret = RsGetLinuxVersion(&verInfo);

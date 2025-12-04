@@ -172,12 +172,12 @@ void GetNotify(std::vector<HcclSignalInfo> &notify)
     GetNotifyInfo(notifyInfo);
     notify.push_back(notifyInfo);
 }
-void GetQpInfo(std::vector<HcclQpInfoV2> &aiQpInfo)
+void GetQpInfo(std::vector<HcclQpInfoV2> &AiQpInfo)
 {
-    aiQpInfo.resize(1);
-    aiQpInfo[0].qpPtr = addr_;
-    aiQpInfo[0].sqIndex = sqIndex_;
-    aiQpInfo[0].dbIndex = dbIndex_;
+    AiQpInfo.resize(1);
+    AiQpInfo[0].qpPtr = addr_;
+    AiQpInfo[0].sqIndex = sqIndex_;
+    AiQpInfo[0].dbIndex = dbIndex_;
     addr_ += size_;
     sqIndex_++;
     dbIndex_++;
@@ -243,9 +243,9 @@ HcclResult GetRemoteNotify(TransportBase *This, std::vector<HcclSignalInfo> &loc
     return HCCL_SUCCESS;
 }
 
-HcclResult GetAiQpInfo(TransportBase *This, std::vector<HcclQpInfoV2> &aiQpInfo)
+HcclResult GetAiQpInfo(TransportBase *This, std::vector<HcclQpInfoV2> &AiQpInfo)
 {
-    GetQpInfo(aiQpInfo);
+    GetQpInfo(AiQpInfo);
     return HCCL_SUCCESS;
 }
 HcclResult GetChipId(TransportBase *This, s64 &chipId)

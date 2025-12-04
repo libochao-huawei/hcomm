@@ -19,9 +19,11 @@
 #include "hccl_comm_pub.h"
 
 HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &identify, hccl::HcclCommParams &params,
-    hccl::RankTable_t &rankTable, DevType deviceType = DevType::DEV_TYPE_310P1);
+    hccl::RankTable_t &rankTable, bool isInterSuperPodRetryEnable = GetExternalInputInterSuperPodRetryEnable(),
+    DevType deviceType = DevType::DEV_TYPE_310P1);
 HcclResult CfgGetClusterInfoWithoutDev(const std::string &rankTableM, const std::string &identify,
-    hccl::HcclCommParams &params, hccl::RankTable_t &rankTable);
+    hccl::HcclCommParams &params, hccl::RankTable_t &rankTable,
+    bool isInterSuperPodRetryEnable = GetExternalInputInterSuperPodRetryEnable());
 HcclResult CheckRankTableConfigInfo(const std::vector<hccl::RankInfo_t> &rankList, u32 deviceNum, u32 serverNum);
 HcclResult ShowRanktableConfigInfo(const bool cloudFlag, hccl::HcclCommParams &params,
     hccl::RankTable_t &rankTable);
@@ -48,7 +50,9 @@ HcclResult GetSuperPodNum(const std::vector<hccl::RankInfo_t> &rankList, u32 &su
 HcclResult GetSuperPodNum(const std::vector<hccl::RankInfo> &rankList, u32 &superPodNum);
 void SetRetryEnable(DevType deviceType, const u32 &superPodNum, const u32 &serverNum,
     const u32 &deviceNumPerAggregation, const bool &isDiffDeviceType, bool isAivMode,
-    hccl::HcclIpAddress &serverIp, hccl::HcclIpAddress &localIp, bool &retryEnable);
+    hccl::HcclIpAddress &serverIp, hccl::HcclIpAddress &localIp, bool &retryEnable,
+    bool isInterServerRetry = GetExternalInputInterServerRetryEnable(),
+    bool isInterSuperPodRetry = GetExternalInputInterSuperPodRetryEnable());
 HcclResult AddOneSidedIdentifier(const std::string &identifier);
 bool IsOneSidedIdentifier(const std::string &identifier);
 HcclResult DeleteOneSidedIdentifier(const std::string &identifier);

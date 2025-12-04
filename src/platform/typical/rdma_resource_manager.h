@@ -24,9 +24,9 @@ public:
     HcclResult Init();
     HcclResult DeInit();
     HcclResult GetRdmaHandle(RdmaHandle& rdmaHandle);
-    HcclResult GetCqeErrInfo(struct cqe_err_info *infoList, u32 *num);
+    HcclResult GetCqeErrInfo(struct CqeErrInfo *infoList, u32 *num);
     HcclResult GetCqeErrInfoByQpn(u32 qpn, struct HcclErrCqeInfo *errCqeList, u32 *num);
-    HcclResult GetNotifyMrInfo(struct mr_info& mrInfo);
+    HcclResult GetNotifyMrInfo(struct MrInfoT& mrInfo);
 private:
     RdmaResourceManager();
     ~RdmaResourceManager();
@@ -42,11 +42,11 @@ private:
     u32 port_{MAX_VALUE_U32};
     RdmaHandle rdmaHandle_{};
     std::mutex cqeErrMapMutex_;
-    std::map<u32, std::queue<struct cqe_err_info>> cqeErrPerQP_{}; //key:qp, value:cqe_err_info queue
+    std::map<u32, std::queue<struct CqeErrInfo>> cqeErrPerQP_{}; //key:qp, value:cqe_err_info queue
     MrHandle mrHandle_{};
     u64 notifyBaseVa_ = 0;
     u64 notifyTotalSize_ = 0;
-    struct mr_info notifyMrInfo_{};
+    struct MrInfoT notifyMrInfo_{};
 };
 
 }  // namespace hccl

@@ -82,6 +82,7 @@ public:
         hccl::RankTable_t &rankTable);
     HcclResult GetRanktableVersion(std::string &version);
     HcclResult LoadFileInit(std::string &rankTableM);
+    virtual HcclResult SetIsInterSuperPodRetryEnable(bool isRetryEnable);
 protected:
 
     nlohmann::json fileContent_;  // json文件的内容

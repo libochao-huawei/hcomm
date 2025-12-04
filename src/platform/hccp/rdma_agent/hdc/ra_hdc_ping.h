@@ -18,100 +18,100 @@
 
 #define RA_MAX_PING_TARGET_NUM 16
 
-union op_ping_init_data {
+union OpPingInitData {
     struct {
-        struct ping_init_attr attr;
+        struct PingInitAttr attr;
         uint32_t reserved[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
-        unsigned int dev_index;
-        struct ping_init_info info;
+        unsigned int devIndex;
+        struct PingInitInfo info;
         uint32_t reserved[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_ping_add_data {
+union OpPingAddData {
     struct {
-        struct ra_rs_dev_info rdev;
-        struct ping_target_info target;
+        struct RaRsDevInfo rdev;
+        struct PingTargetInfo target;
         uint32_t reserved[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         uint32_t reserved[RA_RSVD_NUM_64];
-    } rx_data;
+    } rxData;
 };
 
-union op_ping_start_data {
+union OpPingStartData {
     struct {
-        struct ra_rs_dev_info rdev;
-        struct ping_task_attr attr;
+        struct RaRsDevInfo rdev;
+        struct PingTaskAttr attr;
         uint32_t reserved[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         uint32_t reserved[RA_RSVD_NUM_64];
-    } rx_data;
+    } rxData;
 };
 
-union op_ping_results_data {
+union OpPingResultsData {
     struct {
-        struct ra_rs_dev_info rdev;
+        struct RaRsDevInfo rdev;
         unsigned int num;
-        struct ping_target_comm_info target[RA_MAX_PING_TARGET_NUM];
+        struct PingTargetCommInfo target[RA_MAX_PING_TARGET_NUM];
         uint32_t reserved[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int num;
-        struct ping_result_info target[RA_MAX_PING_TARGET_NUM];
+        struct PingResultInfo target[RA_MAX_PING_TARGET_NUM];
         uint32_t reserved[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-union op_ping_del_data {
+union OpPingDelData {
     struct {
-        struct ra_rs_dev_info rdev;
+        struct RaRsDevInfo rdev;
         unsigned int num;
-        struct ping_target_comm_info target[RA_MAX_PING_TARGET_NUM];
+        struct PingTargetCommInfo target[RA_MAX_PING_TARGET_NUM];
         uint32_t reserved[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         unsigned int num;
         uint32_t reserved[RA_RSVD_NUM_16];
-    } rx_data;
+    } rxData;
 };
 
-union op_ping_stop_data {
+union OpPingStopData {
     struct {
-        struct ra_rs_dev_info rdev;
+        struct RaRsDevInfo rdev;
         uint32_t reserved[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         uint32_t reserved[RA_RSVD_NUM_64];
-    } rx_data;
+    } rxData;
 };
 
-union op_ping_deinit_data {
+union OpPingDeinitData {
     struct {
-        struct ra_rs_dev_info rdev;
+        struct RaRsDevInfo rdev;
         uint32_t reserved[RA_RSVD_NUM_4];
-    } tx_data;
+    } txData;
 
     struct {
         uint32_t reserved[RA_RSVD_NUM_4];
-    } rx_data;
+    } rxData;
 };
 
-int RaHdcPingInit(struct ra_ping_handle *pingHandle, struct ping_init_attr *initAttr,
-    struct ping_init_info *initInfo);
-int RaHdcPingTargetAdd(struct ra_ping_handle *pingHandle, struct ping_target_info target[], uint32_t num);
-int RaHdcPingTaskStart(struct ra_ping_handle *pingHandle, struct ping_task_attr *attr);
-int RaHdcPingGetResults(struct ra_ping_handle *pingHandle, struct ping_target_result target[], uint32_t *num);
-int RaHdcPingTargetDel(struct ra_ping_handle *pingHandle, struct ping_target_comm_info target[], uint32_t num);
-int RaHdcPingTaskStop(struct ra_ping_handle *pingHandle);
-int RaHdcPingDeinit(struct ra_ping_handle *pingHandle);
+int RaHdcPingInit(struct RaPingHandle *pingHandle, struct PingInitAttr *initAttr,
+    struct PingInitInfo *initInfo);
+int RaHdcPingTargetAdd(struct RaPingHandle *pingHandle, struct PingTargetInfo target[], uint32_t num);
+int RaHdcPingTaskStart(struct RaPingHandle *pingHandle, struct PingTaskAttr *attr);
+int RaHdcPingGetResults(struct RaPingHandle *pingHandle, struct PingTargetResult target[], uint32_t *num);
+int RaHdcPingTargetDel(struct RaPingHandle *pingHandle, struct PingTargetCommInfo target[], uint32_t num);
+int RaHdcPingTaskStop(struct RaPingHandle *pingHandle);
+int RaHdcPingDeinit(struct RaPingHandle *pingHandle);
 #endif // RA_HDC_PING_H

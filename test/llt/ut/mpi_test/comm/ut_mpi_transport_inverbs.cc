@@ -2910,7 +2910,7 @@ TEST_F(MPI_Link_Ibv_Test, st_data_plane_interface_rdma)
     /* 让dispatcher在link之后析构 */
     link = nullptr;
     if (ctx != nullptr) {
-        ret = DestoryDispatcherCtx(ctx);
+        ret = DestroyDispatcherCtx(ctx);
         EXPECT_EQ(ret, HCCL_SUCCESS);
     }
     TsdClose(1);

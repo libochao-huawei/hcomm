@@ -683,11 +683,11 @@ HcclResult HccdImplPml::DeinitHeterogRaResource()
 
 HcclResult HccdImplPml::InitHeterogRecvExecutor() const
 {
-    std::vector<socket_wlist_info_t> whiteList(userRankSize_);
+    std::vector<SocketWlistInfoT> whiteList(userRankSize_);
     for (u32 i = 0; i < rankInfoList_.size(); i++) {
-        whiteList[i].remote_ip.addr = rankInfoList_[i].nicIp[0].GetBinaryAddress().addr;
-        whiteList[i].remote_ip.addr6 = rankInfoList_[i].nicIp[0].GetBinaryAddress().addr6;
-        whiteList[i].conn_limit = CONN_LIMIT;
+        whiteList[i].remoteIp.addr = rankInfoList_[i].nicIp[0].GetBinaryAddress().addr;
+        whiteList[i].remoteIp.addr6 = rankInfoList_[i].nicIp[0].GetBinaryAddress().addr6;
+        whiteList[i].connLimit = CONN_LIMIT;
     }
 
     RaResourceInfo raResourceInfo;

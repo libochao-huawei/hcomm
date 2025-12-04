@@ -18,6 +18,7 @@
 #include "stream_pub.h"
 #include "dlprof_func.h"
 #include "externalinput_pub.h"
+#include "hccl_common.h"
 
 #ifdef CCL_LLT
     constexpr s64 HCCL_SDMA_MAX_COUNT_4GB = 0xC800000;  // llt模块编译时设置SDMA最大数据量为200M
@@ -35,15 +36,15 @@ struct HostNicTaskInfo {
 };
 struct RaSendWrParams {
     QpHandle qpHandle;
-    send_wrlist_data_ext wr;
-    send_wr_rsp opRsp;
+    SendWrlistDataExt wr;
+    SendWrRsp opRsp;
     HostNicTaskInfo taskInfo;
     void *dispatcherPtr = nullptr;
     HcclWorkflowMode workMode = HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED;
     LoadTaskCallBack callback = nullptr;
     void *callBackUserPtr = nullptr;
 
-    RaSendWrParams(QpHandle &qpHandle, send_wrlist_data_ext &wr, void *dispatcherPtr, u32 &streamId, u32 &taskId,
+    RaSendWrParams(QpHandle &qpHandle, SendWrlistDataExt &wr, void *dispatcherPtr, u32 &streamId, u32 &taskId,
         u64 &notifyID, HcclWorkflowMode &workMode, LoadTaskCallBack callback, void *callBackUserPtr)
         : qpHandle(qpHandle), wr(wr), dispatcherPtr(dispatcherPtr), workMode(workMode),
         callback(callback), callBackUserPtr(callBackUserPtr)
@@ -96,8 +97,8 @@ struct RaSocketParams {
     }
 };
 
-using WrInfo = struct TagWrInfo {
-    struct wr_info wrData;
+using WrInformation = struct TagWrInfo {
+    struct WrInfo wrData;
     u64 type; // 默认 WqeType::WQE_TYPE_DATA
     u64 wrDataAddr;
     u32 notifyId;
@@ -109,7 +110,7 @@ using WrInfo = struct TagWrInfo {
 struct RdmaTaskInfo {
     u32 remoteRank = INVALID_UINT;
     RdmaType rdmaType = RdmaType::RDMA_TYPE_RESERVED;
-    std::vector<WrInfo> wrInfos;
+    std::vector<WrInformation> wrInfos;
 };
 
 class DispatcherPub {
@@ -155,25 +156,25 @@ public:
 
     virtual HcclResult SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &src, hccl::Stream &stream,
         u32 remoteUserRank, hccl::LinkType inLinkType, u32 notifyId);
-    virtual HcclResult RdmaRecord(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    virtual HcclResult RdmaRecord(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         RdmaType rdmaType, u32 userRank, u64 offset, u32 notifyId);
 
     // 下沉模式下的发送接口
-    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, hccl::Stream &stream,
+    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, hccl::Stream &stream,
         u32 userRank = INVALID_VALUE_RANKID);
-    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, hccl::Stream &stream,
+    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, hccl::Stream &stream,
         u32 userRank, u64 offset);
 
     // op base 模式下的发送接口
-    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         u32 remoteUserRank = INVALID_VALUE_RANKID, bool isCapture = false);
-    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, hccl::Stream &stream,
+    virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, hccl::Stream &stream,
         u32 userRank, u64 offset, bool isCapture = false);
 
     virtual HcclResult RdmaSend(u32 dbindex, u64 dbinfo, hccl::Stream &stream, RdmaTaskInfo &taskInfo);
 
     // host网卡模式下的rdma send
-    HcclResult HostNicRdmaSend(QpHandle qpHandle, send_wrlist_data_ext &wr, send_wr_rsp &opRsp,
+    HcclResult HostNicRdmaSend(QpHandle qpHandle, SendWrlistDataExt &wr, SendWrRsp &opRsp,
         hccl::Stream &stream, u32 userRank = INVALID_VALUE_RANKID, u64 offset = 0xFFFFFFFFFFFFFFFF);
     // host网卡模式下的tcp send
     HcclResult HostNicTcpSend(SocketHandle socketFdHandle, const void *socketBufferPtr, u64 socketBufferLen,
@@ -200,6 +201,9 @@ public:
     HcclResult GetCallbackResult();
     HcclResult SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr);
     HcclResult GetNotifyMaxWaitTime();
+    HcclResult SetHcclExecTimeOut(s32 execTimeOut = NOTIFY_DEFAULT_WAIT_TIME);
+    s32 GetExecTimeOut();
+    bool GetExecTimeOutSet();
     virtual HcclResult SignalRecord(HcclRtNotify signal, hccl::Stream &stream, u32 userRank, u64 offset = INVALID_U64,
         s32 stage = INVALID_VALUE_STAGE, bool inchip = false, u64 signalAddr = INVALID_U64,
         u32 notifyId = INVALID_UINT);
@@ -255,9 +259,9 @@ public:
     static bool IsProfSubscribeAdditionInfo();
 
 protected:
-    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct send_wr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
+    HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, bool isMainStream = false);
-    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct send_wr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
+    HcclResult RdmaSend(u32 dbindex, u64 dbinfo, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, u64 offset = 0, bool isMainStream = false);
     HcclResult SignalRecord(HcclRtNotify signal, HcclRtStream stream, u32 userRank, u64 offset = INVALID_U64,
         s32 stage = INVALID_VALUE_STAGE, bool isMainStream = false);
@@ -290,6 +294,8 @@ protected:
     std::map<int32_t, void *> devMemMap_; // streamId和device内存的map
     std::mutex devMemMutex_;
     static bool isForce_; // 强制profiling上报或缓存
+    s32 execTimeOut_;
+    bool execTimeOutByConfig_;
 
 private:
     void SetupTaskParaDma(hccl::TaskPara& taskPara, hccl::TaskParaDMA& para, TaskType taskType,

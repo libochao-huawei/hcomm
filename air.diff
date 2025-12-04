@@ -1,0 +1,857 @@
+From decc0d57a5b7a4d0fe6758f9e7ad8e75e42755ae Mon Sep 17 00:00:00 2001
+
+
+---
+ .../ge_plugin/common/hcom_log.h               |  29 ++++
+ .../ge_plugin/common/hcom_op_utils.cc         |  25 ++--
+ .../ge_plugin/hcom/hcom_all_reduce_fusion.cc  |  25 ++--
+ .../ge_plugin/hcom/hcom_allgather_fusion.cc   |  17 ++-
+ .../ge_plugin/hcom/hcom_alltoallvc_fusion.cc  |  17 ++-
+ .../ge_plugin/hcom/hcom_graph_mc2.cc          |  53 ++++++-
+ .../ge_plugin/hcom/hcom_graph_mc2.h           |   3 +
+ .../ge_plugin/hcom/hcom_graph_optimizer.cc    | 133 ++++++++++++------
+ .../ge_plugin/hcom/hcom_graph_optimizer.h     |   4 -
+ .../ge_plugin/hcom/hcom_graph_superkernel.cc  |  19 ++-
+ .../ge_plugin/hcom/hcom_graph_superkernel.h   |   2 +-
+ .../ge_plugin/hcom/hcom_ops_kernel_builder.cc |  43 ++++++
+ .../ge_plugin/hcom/hcom_ops_kernel_builder.h  |   1 +
+ .../hcom/hcom_ops_kernel_info_store.cc        |  17 ++-
+ .../hcom/hcom_reducescatter_fusion.cc         |  17 ++-
+ .../hcom/lowering/hcom_build_graph.cc         |   1 +
+ .../hcom/lowering/hcom_build_graph.h          |   1 +
+ .../hcom/lowering/hcom_launch_kernel.cc       |  27 ++--
+ .../ge_plugin/hcom_plugin.cc                  |   6 +-
+ 19 files changed, 325 insertions(+), 115 deletions(-)
+
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_log.h b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_log.h
+index c4e2db13e0..6146fafff9 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_log.h
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_log.h
+@@ -25,6 +25,35 @@
+ #define T_DESC(_msg, _y) ((_y) ? true : false)
+ #endif
+ 
++/* 对关键报错日志提供多级检索关键字 */
++/* 一级检索关键字 */
++const std::string LOG_KEYWORDS_TASK_EXEC = "TaskExecStage";               // 算子执行阶段异常
++const std::string LOG_KEYWORDS_INIT_GROUP = "InitGroupStage";             // 通信域初始化阶段异常
++const std::string LOG_KEYWORDS_INIT_CHANNEL = "InitChannelStage";
++const std::string LOG_KEYWORDS_LINK_INFO = "LinkInfo";
++ 
++/* 二级检索关键字 */
++const std::string LOG_KEYWORDS_TIMEOUT = "Timeout";                       // 算子执行阶段超时
++const std::string LOG_KEYWORDS_RUN_FAILED = "RunFailed";                  // 算子执行阶段失败，如SDMA ERROR
++const std::string LOG_KEYWORDS_HEARTBEAT_EVETN = "HeartbeatAbnormal";     // 算子执行阶段心跳异常事件
++const std::string LOG_KEYWORDS_ENV_CONFIG = "EnvConfig";                  // 环境变量配置异常
++const std::string LOG_KEYWORDS_RANKTABLE_CONFIG = "RanktableConfig";      // ranktable读取失败
++const std::string LOG_KEYWORDS_RANKTABLE_CHECK = "RanktableCheck";        // ranktable校验失败
++const std::string LOG_KEYWORDS_RANKTABLE_DETECT = "RanktableDetect";      // ranktable协商失败
++const std::string LOG_KEYWORDS_PARAMETER_CONFLICT = "ParameterConflict";  // 参数不一致
++const std::string LOG_KEYWORDS_VERSION_CONFLICT = "VersionConflict";      // HCCL版本不一致
++const std::string LOG_KEYWORDS_INVALID_ARGUMENT= "InvalidArgument";       // 外部入参非法
++const std::string LOG_KEYWORDS_RESOURCE = "Resource";
++const std::string LOG_KEYWORDS_NOT_SUPPORTED = "Not Supported";
++
++HcclResult __attribute__((weak)) HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len);
++HcclResult __attribute__((weak)) HcomSelectAlg(s64 comm, const char *group, u64 count,
++    HcclDataType dataType, HcclReduceOp op, HcclCMDType opType, int32_t aivCoreLimit,
++    bool &ifAiv, char *algName);
++HcclResult __attribute__((weak)) HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
++        char *algName, u32 *blockDim);
++HcclResult __attribute__((weak)) HcomGetCommCCLBufferSize(const char *group, uint64_t &size);
++
+ #if T_DESC("日志处理适配", true)
+ 
+ enum class HcclSubModuleID {
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_op_utils.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_op_utils.cc
+index 017dc92c4a..60afe2d576 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_op_utils.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/common/hcom_op_utils.cc
+@@ -531,17 +531,13 @@ HcclResult HcomOpUtils::CheckAlltoAllvcRank(const ge::Node &node, const int64_t
+       HCCL_E_PARA);
+ 
+   if (rankId != alltoallvcRank) {
+-    REPORT_PREDEFINED_ERR_MSG("EI0003", std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
+-                              std::vector<const char *>({"CheckAlltoAllvcRank", "rankId",
+-                                                         std::to_string(rankId).c_str(), "please check rankId"}));
+-    ;
+-  }
+-
+-  CHK_PRT_RET(rankId != alltoallvcRank,
+-              HCCL_ERROR("errNo[0x%016llx] AlltoAllvc rank is invalid. "
+-                         "rank value %u, expect %u",
+-                         HCOM_ERROR_CODE(HCCL_E_PARA), alltoallvcRank, rankId),
+-              HCCL_E_PARA);
++      REPORT_PREDEFINED_ERR_MSG("EI0003", std::vector<const char*>({"ccl_op", "parameter", "value", "tips"}),\
++          std::vector<const char*>({"CheckAlltoAllvcRank", "rankId", std::to_string(rankId).c_str(),
++          "please check rankId"}));;
++  }  
++  CHK_PRT_RET(rankId != alltoallvcRank, HCCL_ERROR("[%s][%s]errNo[0x%016llx] AlltoAllvc rank is invalid. " \
++      "rank value %u, expect %u", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
++      alltoallvcRank, rankId), HCCL_E_PARA);
+   return HCCL_SUCCESS;
+ }
+ 
+@@ -609,7 +605,12 @@ HcclResult HcomOpUtils::GetAivCoreLimit(const ge::OpDescPtr &op, const std::stri
+       CHK_RET(SalStrToInt(aivNumStr, HCCL_BASE_DECIMAL, aivNum));
+       HCCL_INFO("[HcomOpUtils][GetAivCoreLimit]node [%s] optype [%s] opVectorCoreNum [%u]", op->GetName().c_str(),
+                 sCollectiveType.c_str(), aivNum);
+-      aivCoreLimit = aivNum > 0 ? aivNum : aivCoreLimit;
++      if(aivNum == 0) {
++          HCCL_ERROR("[HcomOpUtils][GetAivCoreLimit] node [%s] optype [%s] opVectorCoreNum 0 is illegel",
++              op->GetName().c_str(), sCollectiveType.c_str());
++          return HCCL_E_PARA;
++      }
++      aivCoreLimit = aivNum;
+     }
+   } else {  // 算子级配置没有时尝试用GE全局配置
+     std::string hardwareInfoStr;
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_all_reduce_fusion.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_all_reduce_fusion.cc
+index 07955cc004..a1508f7e26 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_all_reduce_fusion.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_all_reduce_fusion.cc
+@@ -183,11 +183,11 @@ HcclResult HcomAllReduceFusion::GetFusionOps(ge::ComputeGraph &graph, FusionInfo
+     }
+ 
+     if (opDescPtr->GetType() == HCCL_KERNEL_OP_TYPE_ALLREDUCE) {
+-      ret = GetFusionOpInfo(nodePtr, fusionInfos);
+-      CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("get fusion ops by group failed. ret[%d]", ret), ret);
++        ret = GetFusionOpInfo(nodePtr, fusionInfos);
++        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("get fusion ops by group failed. ret[%d]", ret), ret);
+     }
+-  }
+-  return HCCL_SUCCESS;
++    }
++    return HCCL_SUCCESS;
+ }
+ 
+ HcclResult HcomAllReduceFusion::GetFusionOption(const ge::NodePtr &nodePtr, FusionOption &fusionOption) {
+@@ -227,12 +227,17 @@ HcclResult HcomAllReduceFusion::GetFusionOption(const ge::NodePtr &nodePtr, Fusi
+       break;
+     default:
+       string fusionValue = std::to_string(fusionOption.fusionAttr);
+-      REPORT_PREDEFINED_ERR_MSG("EI0003", std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
+-                                std::vector<const char *>({"HcomAllReduceFusion", "fusion", fusionValue.c_str(),
+-                                                           "please check fusion setting"}));
+-      HCCL_ERROR("[Get][FusionOption]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld ~ %lld",
+-                 HCOM_ERROR_CODE(HCCL_E_PARA), nodeName.c_str(), fusionOption.fusionAttr, HCOM_ATTR_FUSION_MIN,
+-                 HCOM_ATTR_FUSION_MAX);
++      REPORT_PREDEFINED_ERR_MSG("EI0003", 
++      std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
++      std::vector<const char *>({"HcomAllReduceFusion", "fusion", fusionValue.c_str(), "please check fusion setting"}));
++      HCCL_ERROR("[%s][%s]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld ~ %lld",
++                LOG_KEYWORDS_TASK_EXEC.c_str(),
++                LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
++                HCOM_ERROR_CODE(HCCL_E_PARA),
++                nodeName.c_str(),
++                fusionOption.fusionAttr,
++                HCOM_ATTR_FUSION_MIN,
++                HCOM_ATTR_FUSION_MAX);
+       return HCCL_E_PARA;
+   }
+ 
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_allgather_fusion.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_allgather_fusion.cc
+index c8f06881de..7015dd967f 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_allgather_fusion.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_allgather_fusion.cc
+@@ -140,12 +140,17 @@ HcclResult HcomAllGatherFusion::GetFusionOption(const ge::NodePtr &nodePtr, Fusi
+       break;
+     default:
+       string fusionValue = std::to_string(fusionOption.fusionAttr);
+-      REPORT_PREDEFINED_ERR_MSG("EI0003", std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
+-                                std::vector<const char *>({"HcomAllGatherFusion", "fusion", fusionValue.c_str(),
+-                                                           "please check fusion setting"}));
+-      HCCL_ERROR("[Get][FusionOption]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld or %lld",
+-                 HCOM_ERROR_CODE(HCCL_E_PARA), nodeName.c_str(), fusionOption.fusionAttr, HCOM_ATTR_FUSION_NO_FUSION,
+-                 HCOM_ATTR_FUSION_BY_FUSION_ID);
++      REPORT_PREDEFINED_ERR_MSG("EI0003", 
++      std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
++      std::vector<const char *>({"HcomAllGatherFusion", "fusion", fusionValue.c_str(), "please check fusion setting"}));
++      HCCL_ERROR("[%s][%s]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld or %lld",
++                LOG_KEYWORDS_TASK_EXEC.c_str(),
++                LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
++                HCOM_ERROR_CODE(HCCL_E_PARA),
++                nodeName.c_str(),
++                fusionOption.fusionAttr,
++                HCOM_ATTR_FUSION_NO_FUSION,
++                HCOM_ATTR_FUSION_BY_FUSION_ID);
+       return HCCL_E_PARA;
+   }
+ 
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_alltoallvc_fusion.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_alltoallvc_fusion.cc
+index 5ea45ec0f3..79b1d8547f 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_alltoallvc_fusion.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_alltoallvc_fusion.cc
+@@ -139,12 +139,17 @@ HcclResult HcomAlltoAllVCFusion::GetFusionOption(const ge::NodePtr &nodePtr, Fus
+       break;
+     default:
+       string fusionValue = std::to_string(fusionOption.fusionAttr);
+-      REPORT_PREDEFINED_ERR_MSG("EI0003", std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
+-                                std::vector<const char *>({"HcomAlltoAllVCFusion", "fusion", fusionValue.c_str(),
+-                                                           "please check fusion setting"}));
+-      HCCL_ERROR("[Get][FusionOption]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld or %lld",
+-                 HCOM_ERROR_CODE(HCCL_E_PARA), nodeName.c_str(), fusionOption.fusionAttr, HCOM_ATTR_FUSION_NO_FUSION,
+-                 HCOM_ATTR_FUSION_BY_FUSION_ID);
++      REPORT_PREDEFINED_ERR_MSG("EI0003", 
++      std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
++      std::vector<const char *>({"HcomAlltoAllVCFusion", "fusion", fusionValue.c_str(), "please check fusion setting"}));
++      HCCL_ERROR("[%s][%s]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld or %lld",
++                LOG_KEYWORDS_TASK_EXEC.c_str(),
++                LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
++                HCOM_ERROR_CODE(HCCL_E_PARA),
++                nodeName.c_str(),
++                fusionOption.fusionAttr,
++                HCOM_ATTR_FUSION_NO_FUSION,
++                HCOM_ATTR_FUSION_BY_FUSION_ID);
+       return HCCL_E_PARA;
+   }
+ 
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.cc
+index 8c2c073c80..66bef5aa25 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.cc
+@@ -69,6 +69,12 @@ rtStream_t HcomGetStreamByOpDesc(const ge::OpDescPtr &opdesc) {
+ }
+ 
+ void *HcomGetContext(const rtStream_t stream, const void *tilingData, const char *groupName) {
++#ifndef OPEN_BUILD_PROJECT    
++  DevType devType = HcomGetDeviceType();
++  if(devType == DevType::DEV_TYPE_910_95){
++      return HcomGetContextV2(stream, tilingData, groupName);
++  }
++#endif  
+   HcclComm commHandle = nullptr;
+   HcclResult ret = HcomGetCommHandleByGroup(groupName, &commHandle);
+   CHK_PRT_RET(ret != HCCL_SUCCESS || commHandle == nullptr,
+@@ -104,6 +110,43 @@ void *HcomGetContext(const rtStream_t stream, const void *tilingData, const char
+             groupName, context);
+   return context;
+ }
++ 
++#ifndef OPEN_BUILD_PROJECT
++void *HcomGetContextV2(const rtStream_t stream, const void *tilingData, const char *groupName)
++{
++    HcclComm com = nullptr;
++    HcclResult ret= HcomGetCommHandleByGroup(groupName, &com);
++
++    void *context = nullptr;
++    if (tilingData != nullptr) {
++        ret = HcclAllocComResourceByTiling(com, stream, const_cast<void *>(tilingData), &context);
++    } else {
++        uint64_t streamMode = 0;
++        CHK_PRT_RET(hrtStreamGetMode(stream, &streamMode) != HCCL_SUCCESS,
++            HCCL_ERROR("Failed to get stream mode."), nullptr);
++        ret = HcomCreateComResourceByComm(com, streamMode, true, &context);
++    }
++    CHK_PRT_RET(ret != HCCL_SUCCESS || context == nullptr,
++        HCCL_ERROR("Failed to create ComResource by tiling, errNo[0x%016llx].", HCCL_ERROR_CODE(ret)),
++        nullptr);
++
++  ge::HcomTopoInfo::TopoInfo topoInfo;
++  CHK_PRT_RET(!ge::HcomTopoInfo::Instance().TryGetGroupTopoInfo(groupName, topoInfo),
++              HCCL_ERROR("Failed to get topo info for group %s.", groupName), nullptr);
++
++  rtStream_t opstream;
++  ret = HcomGetAicpuOpStreamNotify(groupName, &opstream, 1, &topoInfo.notify_handle);
++  CHK_PRT_RET(ret != HCCL_SUCCESS,
++              HCCL_ERROR("Failed to get Aicpu Op Stream Notify, errNo[0x%016llx].", HCCL_ERROR_CODE(ret)), nullptr);
++
++  HCCL_INFO("Set notify %p to group %s.", topoInfo.notify_handle, groupName);
++  ge::HcomTopoInfo::Instance().SetGroupTopoInfo(groupName, topoInfo);
++
++  HCCL_INFO("Create context(%s) for group %s successfully, address %p.", (tilingData != nullptr ? "v2" : "v1"),
++            groupName, context);
++  return context;
++}
++#endif
+ 
+ HcclResult GetCountFromOpDesc(const ge::OpDescPtr &op, const std::string &sCollectiveType, HcclDataType dataType,
+                               u64 &count, u32 rankSize) {
+@@ -159,11 +202,16 @@ ge::graphStatus HcomCreateComResourceMC2(const ge::OpDescPtr &opdesc, std::vecto
+   HCCL_INFO("Tiling version of op %s is %u.", opdesc->GetName().c_str(), version);
+ 
+   for (const auto group : groups) {
++    HCCL_INFO("HcomCreateComResourceMC2 group is %s.", group.c_str());
++    if (group.empty()) {
++        HCCL_RUN_INFO("[HcomCreateComResourceMC2] group is empty, push nullptr to context.");
++        contexts.push_back(nullptr);
++        continue;
++    }
+     void *context = HcomGetContext(stream, reinterpret_cast<const void *>(tilingData.c_str()), group.c_str());
+     CHK_PRT_RET(context == nullptr, HCCL_ERROR("Failed to create ComResource by tiling."), ge::GRAPH_FAILED);
+     contexts.push_back(context);
+   }
+-
+   return ge::GRAPH_SUCCESS;
+ }
+ REG_HIDDEN_INPUTS_FUNC(ge::HiddenInputsType::HCOM, HcomCreateComResource);
+@@ -178,7 +226,8 @@ ge::graphStatus HcomCreateComResource(const ge::OpDescPtr &opdesc, std::vector<v
+     HCCL_INFO("Select HcomCreateComResourceMC2.");
+     gRet = HcomCreateComResourceMC2(opdesc, contexts);
+   } else {
+-    HCCL_WARNING("[HcomCreateComResource] HcomCreateComResource failed, opType[%d] not support MC2", opType);
++    HCCL_ERROR("[HcomCreateComResource]HcomCreateComResource failed, opType[%d] not support MC2, sCollectiveType[%s]",
++            opType, sCollectiveType.c_str());
+   }
+   return gRet;
+ }
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.h b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.h
+index 3ab0a62e34..709e320c04 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.h
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_mc2.h
+@@ -23,6 +23,9 @@ HcclResult GetCountFromOpDesc(const ge::OpDescPtr &op, const std::string &sColle
+                               u64 &count, u32 rankSize);
+ ge::graphStatus HcomCreateComResourceMC2(const ge::OpDescPtr &opdesc, std::vector<void *> &contexts);
+ ge::graphStatus HcomCreateComResource(const ge::OpDescPtr &opdesc, std::vector<void *> &contexts);
++#ifndef OPEN_BUILD_PROJECT 
++void *HcomGetContextV2(const rtStream_t stream, const void *tilingData, const char *groupName);
++#endif
+ }  // namespace hccl
+ 
+ #endif /* HCOM_GRAPH_MC2 */
+\ No newline at end of file
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.cc
+index d01776c036..79e22b3246 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.cc
+@@ -39,11 +39,48 @@ HcomGraphOptimizer::HcomGraphOptimizer()
+ 
+ HcomGraphOptimizer::~HcomGraphOptimizer() {}
+ 
+-std::map<HcclCMDType, std::pair<std::string, std::string>> AivSuperKernelMap = {
+-    {HcclCMDType::HCCL_CMD_ALLTOALL, {"/hccl_a2a_superkernel", "sk_alltoall"}},
+-    {HcclCMDType::HCCL_CMD_ALLGATHER, {"/hccl_ag_superkernel", "sk_allgather"}},
+-    {HcclCMDType::HCCL_CMD_REDUCE_SCATTER, {"/hccl_rs_superkernel", "sk_reducescatter"}},
+-    {HcclCMDType::HCCL_CMD_ALLREDUCE, {"/hccl_ar_superkernel", "sk_allreduce"}},
++std::map<std::string, std::pair<std::string, std::string>> AivAlltoAllSuperKernelMap = {
++    {"AlltoAllMeshAivSmallCountExecutor", {"/hccl_a2a_superkernel",  "sk_alltoall"}},
++    {"AlltoAllMeshAivExecutor", {"/hccl_a2a_superkernel", "sk_alltoall"}},
++    {"AlltoAllMeshAivFor91093Executor", {"/hccl_sk_a2a_crossnode",  "sk_alltoall_crossnode"}},
++};
++ 
++std::map<std::string, std::pair<std::string, std::string>> AivAllGatherSuperKernelMap = {
++    {"AllGatherMeshAivSmallCountExecutor", {"/hccl_ag_superkernel",  "sk_allgather"}},
++    {"AllGatherMeshAivExecutor", {"/hccl_ag_superkernel", "sk_allgather"}},
++    {"AllGatherMeshAivFor91093Executor", {"/hccl_sk_ag_crossnode",  "sk_allgather_crossnode"}},
++};
++ 
++std::map<std::string, std::pair<std::string, std::string>> AivReduceScatterSuperKernelMap = {
++    {"ReduceScatterMeshAivSmallCountExecutor", {"/hccl_rs_superkernel",  "sk_reducescatter"}},
++    {"ReduceScatterMeshAivExecutor", {"/hccl_rs_superkernel",  "sk_reducescatter"}},
++    {"ReduceScatterMeshAivFor91093Executor", {"/hccl_sk_rs_crossnode",  "sk_reducescatter_crossnode"}},
++};
++ 
++std::map<std::string, std::pair<std::string, std::string>> AivReduceScatterSuperKernelDeterMap = {
++    {"ReduceScatterMeshAivFor91093Executor", {"/hccl_sk_rs_deter",  "sk_reducescatter_deter"}},
++};
++ 
++std::map<std::string, std::pair<std::string, std::string>> AivAllReduceSuperKernelMap = {
++    {"AllReduceMeshAivSmallCountExecutor", {"/hccl_ar_superkernel",  "sk_allreduce"}},
++    {"AllReduceMeshAivExecutor", {"/hccl_ar_superkernel",  "sk_allreduce"}},
++    {"AllReduceMeshAivFor91093Executor", {"/hccl_sk_ar_deter",  "sk_allreduce_deter"}},
++};
++ 
++std::map<std::string, std::pair<std::string, std::string>> AivAllReduceSuperKernelDeterMap = {
++    {"AllReduceMeshAivFor91093Executor", {"/hccl_sk_ar_deter",  "sk_allreduce_deter"}},
++};
++ 
++std::map<HcclCMDType, std::map<std::string, std::pair<std::string, std::string>>> AivSuperKernelMap = {
++    {HcclCMDType::HCCL_CMD_ALLTOALL, AivAlltoAllSuperKernelMap},
++    {HcclCMDType::HCCL_CMD_ALLGATHER, AivAllGatherSuperKernelMap},
++    {HcclCMDType::HCCL_CMD_REDUCE_SCATTER, AivReduceScatterSuperKernelMap},
++    {HcclCMDType::HCCL_CMD_ALLREDUCE, AivAllReduceSuperKernelMap},
++};
++ 
++std::map<HcclCMDType, std::map<std::string, std::pair<std::string, std::string>>> AivSuperKernelDeterMap = {
++    {HcclCMDType::HCCL_CMD_REDUCE_SCATTER, AivReduceScatterSuperKernelDeterMap},
++    {HcclCMDType::HCCL_CMD_ALLREDUCE, AivAllReduceSuperKernelDeterMap},
+ };
+ 
+ ge::Status HcomGraphOptimizer::Initialize(const std::map<std::string, std::string> &options,
+@@ -715,7 +752,7 @@ HcclResult HcomGraphOptimizer::SetSuperKernelScopeAttr(ge::ComputeGraph &graph)
+     auto iter = HCCL_OPTYPE_NAME_MAP.find(sCollectiveType);
+     HcclCMDType opType = (iter != HCCL_OPTYPE_NAME_MAP.end()) ? iter->second : HcclCMDType::HCCL_CMD_INVALID;
+ 
+-    bool isSupportOP = HCCL_SUPER_KERNEL_OP_TYPE_MAP.find(opType) != HCCL_SUPER_KERNEL_OP_TYPE_MAP.end();
++    bool isSupportOP = AivSuperKernelMap.find(opType) != AivSuperKernelMap.end();
+     u8 deterministic = DETERMINISTIC_DISABLE;
+     CHK_RET(GetDeterministic(deterministic));
+     if (!isSupportOP || optionFeatureBaseRefreshable_ == 1 || deterministic != DETERMINISTIC_DISABLE) {
+@@ -750,7 +787,9 @@ HcclResult HcomGraphOptimizer::SetSuperKernelScopeAttr(ge::ComputeGraph &graph)
+     if (opType == HcclCMDType::HCCL_CMD_ALLREDUCE || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER) {
+       CHK_RET(HcomOpUtils::GetReduction(opDescPtr, reduction));
+     }
+-    CHK_RET(HcomSelectAlg(comm, group.c_str(), count, dataType, reduction, opType, &ifAiv, algName, true));
++    u32 aivCoreLimit;
++    CHK_RET(HcomOpUtils::GetAivCoreLimit(opDescPtr, sCollectiveType, aivCoreLimit));
++    CHK_RET(HcomSelectAlg(comm, group.c_str(), count, dataType, reduction, opType, aivCoreLimit, ifAiv, algName));
+     /* 判断获取出来的算子模式是否是AIV，如果不是，则将此算子的superkernel属性置为空 */
+     if (!ifAiv) {
+       HCCL_INFO("no support aiv, del superKernelScope attr");
+@@ -761,48 +800,52 @@ HcclResult HcomGraphOptimizer::SetSuperKernelScopeAttr(ge::ComputeGraph &graph)
+       std::string binPath;
+       std::string funcName;
+       CHK_RET(SKGetAlgPath(opType, binPath));
+-      auto it = AivSuperKernelMap.find(opType);
+-      if (it != AivSuperKernelMap.end()) {
+-        // 写入bin路径和算法名称
+-        std::string binFilePath = binPath + it->second.first + "_" + GetDataTypeEnumStr(dataType) + ".o";
+-        ge::AttrUtils::SetStr(opDescPtr, "bin_file_path", binFilePath);
+-        ge::AttrUtils::SetStr(opDescPtr, "hcom_bin_file_path", binFilePath);
+-        funcName = it->second.second;
+-        ge::AttrUtils::SetStr(opDescPtr, "hcom_func_name", funcName + "_" + GetDataTypeEnumStr(dataType));
++      bool isDeterOptype = (opType == HCCL_CMD_ALLREDUCE || opType == HCCL_CMD_REDUCE_SCATTER);
++      u8 deterministic = DETERMINISTIC_DISABLE;
++      CHK_RET(GetDeterministic(deterministic));
++      if (deterministic != DETERMINISTIC_DISABLE && isDeterOptype) {
++        auto itMap = AivSuperKernelDeterMap.find(opType); 
++        auto it = (itMap -> second).find(algName);
++        if (it != (itMap -> second).end()) {
++            std::string binFilePath = binPath + it->second.first +".o";
++            ge::AttrUtils::SetStr(opDescPtr, "bin_file_path", binFilePath);
++            ge::AttrUtils::SetStr(opDescPtr, "hcom_bin_file_path", binFilePath);
++            funcName = it->second.second;
++            ge::AttrUtils::SetStr(opDescPtr, "hcom_func_name", funcName);
++        } else {
++            HCCL_WARNING("no support aiv, del superKernelScope attr");
++            opDescPtr->DelAttr("_super_kernel_scope");
++        }
+       } else {
+-        HCCL_INFO("no support aiv, del superKernelScope attr");
+-        opDescPtr->DelAttr("_super_kernel_scope");
++        auto itMap = AivSuperKernelMap.find(opType); 
++        auto it = (itMap -> second).find(algName);
++        if (it != (itMap -> second).end()) {
++            if (std::string(algName).find("91093") == std::string::npos) {
++                std::string binFilePath = binPath + it->second.first + "_" + GetDataTypeEnumStr(dataType) + ".o";
++                ge::AttrUtils::SetStr(opDescPtr, "bin_file_path", binFilePath);
++                ge::AttrUtils::SetStr(opDescPtr, "hcom_bin_file_path", binFilePath);
++                funcName = it->second.second;
++                ge::AttrUtils::SetStr(opDescPtr, "hcom_func_name", funcName + "_" + GetDataTypeEnumStr(dataType));
++            } else {
++                std::string binFilePath = binPath + it->second.first +".o";
++                ge::AttrUtils::SetStr(opDescPtr, "bin_file_path", binFilePath);
++                ge::AttrUtils::SetStr(opDescPtr, "hcom_bin_file_path", binFilePath);
++                funcName = it->second.second;
++                ge::AttrUtils::SetStr(opDescPtr, "hcom_func_name", funcName);
++            }
++        } else {
++            HCCL_WARNING("no support aiv, del superKernelScope attr");
++            opDescPtr->DelAttr("_super_kernel_scope");
++        }
+       }
+ 
+-      u32 aivCoreLimit = 0;
+-      CHK_RET(HcomOpUtils::GetAivCoreLimit(opDescPtr, sCollectiveType, aivCoreLimit));
+-      CHK_PRT_RET(aivCoreLimit < rankSize,
+-                  HCCL_ERROR("[Get][SetSuperKernelScopeAttr]aivCoreLimit[%u] is less than rankSize[%u]", aivCoreLimit,
+-                             rankSize),
+-                  HCCL_E_PARA);
++    // 将BlockDim包装成Hcom层接口，层层下发参数，到Hccl communictor里计算结果并返回到这一层。
++    u32 blockDim;
++    CHK_RET(HcomCalcAivCoreNum(group.c_str(), opType, count, dataType, aivCoreLimit, algName, &blockDim));
++    ge::AttrUtils::SetInt(opDescPtr, "hcom_block_dim", blockDim);
+ 
+-      // 将BlockDim包装成Hcom层接口，层层下发参数，到Hccl communictor里计算结果并返回到这一层。
+-      u32 originBlockDim;
+-      CHK_RET(HcomCalcAivCoreNum(group.c_str(), opType, count, dataType, algName, &originBlockDim));
+-
+-      u32 blockDim = min(aivCoreLimit, originBlockDim);
+-      if (aivCoreLimit < originBlockDim) {
+-        blockDim = aivCoreLimit / rankSize * rankSize;
+-      }
+-      HCCL_INFO("[HcomGraphOptimizer][SetSuperKernelScopeAttr] rankSize[%u] aivCoreLimit[%u] blockDim[%u]", rankSize,
+-                aivCoreLimit, blockDim);
+-
+-      if (opDescPtr->GetType() == HCCL_KERNEL_OP_TYPE_ALLREDUCE) {  // allreduce现在不支持多核，固定ranksize核
+-        ge::AttrUtils::SetInt(opDescPtr, "hcom_block_dim", rankSize);
+-      } else if (opDescPtr->GetType() == HCCL_KERNEL_OP_TYPE_REDUCESCATTER) {
+-        CHK_PRT_RET(aivCoreLimit < originBlockDim,
+-                    HCCL_ERROR("[Get][SetSuperKernelScopeAttr]aivCoreLimit[%u] is less than need[%u]", aivCoreLimit,
+-                               originBlockDim),
+-                    HCCL_E_PARA);
+-        ge::AttrUtils::SetInt(opDescPtr, "hcom_block_dim", originBlockDim);
+-      } else {
+-        ge::AttrUtils::SetInt(opDescPtr, "hcom_block_dim", blockDim);
+-      }
++    HCCL_INFO("[HcomGraphOptimizer][SetSuperKernelScopeAttr] rankSize[%u] aivCoreLimit[%u] blockDim[%u]",
++        rankSize, aivCoreLimit, blockDim);
+     }
+   }
+ 
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.h b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.h
+index b4600e9bf4..adc66edb17 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.h
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_optimizer.h
+@@ -26,10 +26,6 @@ constexpr std::int64_t HCCL_FORMAT_PAIRED_INPUT_OUTPUT = 2;  // 输入输出地
+ 
+ using GroupParaLabel = std::map<std::string, std::string>;
+ 
+-const std::set<HcclCMDType> HCCL_SUPER_KERNEL_OP_TYPE_MAP = {
+-    HcclCMDType::HCCL_CMD_ALLREDUCE, HcclCMDType::HCCL_CMD_ALLGATHER, HcclCMDType::HCCL_CMD_REDUCE_SCATTER,
+-    HcclCMDType::HCCL_CMD_ALLTOALL};
+-
+ class HcomGraphOptimizer : public ge::GraphOptimizer {
+  public:
+   HcomGraphOptimizer();
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.cc
+index 386d7cb81e..8b720abb6b 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.cc
+@@ -20,7 +20,7 @@
+ 
+ namespace hccl {
+ /* superkernel temp code start */
+-bool GetAddrFromDesc(const ge::OpDescPtr &op, int64_t &inputAddr, int64_t &outputAddr) {
++bool GetAddrFromDesc(const ge::OpDescPtr &op, int64_t &inputAddr, int64_t &outputAddr, int64_t &workSpaceAddr) {
+   bool bRet = false;
+   if (ge::AttrUtils::HasAttr(op, "_skn_hcom_input_addr")) {
+     bRet = ge::AttrUtils::GetInt(op, "_skn_hcom_input_addr", inputAddr);
+@@ -34,6 +34,12 @@ bool GetAddrFromDesc(const ge::OpDescPtr &op, int64_t &inputAddr, int64_t &outpu
+       return false;
+     }
+   }
++  if (ge::AttrUtils::HasAttr(op, "_skn_hcom_ws_addr")) {
++      bRet = ge::AttrUtils::GetInt(op, "_skn_hcom_ws_addr", workSpaceAddr);
++      if (!bRet) {
++        return false;
++      }
++  }
+   return bRet;
+ }
+ 
+@@ -84,8 +90,14 @@ ge::graphStatus HcomGetSuperKernelHiddenInputs(const ge::OpDescPtr &opdesc, std:
+   // get algName
+   int64_t input;
+   int64_t output;
++  int64_t workspace;
+   // get inputPtr, outputPtr
+-  GetAddrFromDesc(opdesc, input, output);
++  GetAddrFromDesc(opdesc, input, output, workspace);
++  std::vector<rtStream_t> hcclStreamList;
++  if(opdesc->GetWorkspaceBytes().size() != 0) {
++      CHK_RET(SetWorkspaceResource(cTag, group.c_str(), hcclStreamList,
++          reinterpret_cast<void*>(workspace), opdesc->GetWorkspaceBytes()[0]));
++  }
+ 
+   u32 aivCoreLimit = 0;
+   CHK_RET(HcomOpUtils::GetAivCoreLimit(opdesc, sCollectiveType, aivCoreLimit));
+@@ -116,7 +128,8 @@ ge::graphStatus HcomCreateSuperkernelResource(const ge::OpDescPtr &opdesc, std::
+   auto iter = HCCL_OPTYPE_NAME_MAP.find(sCollectiveType);
+   HcclCMDType opType = (iter != HCCL_OPTYPE_NAME_MAP.end()) ? iter->second : HcclCMDType::HCCL_CMD_INVALID;
+   if (opType == HcclCMDType::HCCL_CMD_INVALID) {
+-    HCCL_WARNING("[HcomCreateSuperkernelResource] Try get superkernel hidden input fail, opType is invalid.");
++    HCCL_ERROR("[HcomCreateSuperkernelResource]Try get superkernel hidden input fail, opType is invalid, sCollectiveType[%s].",
++            sCollectiveType.c_str());
+   } else {
+     HCCL_INFO("Select HcomGetSuperKernelHiddenInputs.");
+     gRet = HcomGetSuperKernelHiddenInputs(opdesc, contexts);
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.h b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.h
+index a4c7aa823e..140b160117 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.h
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_graph_superkernel.h
+@@ -14,7 +14,7 @@
+ #include "graph/op_desc.h"
+ 
+ namespace hccl {
+-bool GetAddrFromDesc(const ge::OpDescPtr &op, int64_t &inputAddr, int64_t &outputAddr);
++bool GetAddrFromDesc(const ge::OpDescPtr &op, int64_t &inputAddr, int64_t &outputAddr, int64_t &workSpaceAddr);
+ bool GetGraphIdFromDesc(const ge::OpDescPtr &op, int32_t &graphId);
+ ge::graphStatus HcomGetSuperKernelHiddenInputs(const ge::OpDescPtr &opdesc, std::vector<void *> &contexts);
+ ge::graphStatus HcomCreateSuperkernelResource(const ge::OpDescPtr &opdesc, std::vector<void *> &contexts);
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.cc
+index fcd6c67bb6..89cc303c9e 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.cc
+@@ -357,7 +357,50 @@ HcclResult HcomOpsKernelBuilder::HcomCalcOpRunningParam(ge::Node &node) {
+               HCCL_ERROR("[Calc][OpRunningParam]errNo[0x%016llx] set op[%s] atomic input index failed.", ret,
+                          hcomOpParam.opType),
+               HCCL_E_INTERNAL);
++  CHK_RET(SetAttachedStreamInfoList(node, sGroup));
++  return HCCL_SUCCESS;
++}
+ 
++HcclResult HcomOpsKernelBuilder::SetAttachedStreamInfoList(ge::Node &node, const string &group)
++{
++  const u32 STREAM_CONFIG_NAME = 0;
++  const u32 STREAM_CONFIG_REUSE_KEY = 1;
++  const u32 STREAM_CONFIG_STREAM_NAMED_ATTRS = 2;
++
++  ge::GeAttrValue::NAMED_ATTRS attachedGraphStream;
++  ge::GeAttrValue::NAMED_ATTRS attachedGroupStream;
++  // 多个通信域都用同一条图粒度的流；每个通信域用一条流
++  const std::vector<std::tuple<std::string, std::  string, ge::GeAttrValue::NAMED_ATTRS*>> streamConfigs = {
++    std::make_tuple(std::string("hccl_attached_graph_stream"), std::string("hccl_attached_graph_stream"), &attachedGraphStream),
++    std::make_tuple(std::string("hccl_attached_group_stream"), std::string("hccl_attached_group_stream") + group, &attachedGroupStream)
++  };
++
++  // 目前HCCL是否必须要申请从流，真表示如果从流申请失败则失败
++  bool required = true;
++  std::vector<ge::GeAttrValue::NAMED_ATTRS> attachedStreamInfo;
++
++  // 添加附属从流暂时规避superKernel场景
++  std::string superKernel;
++  CHK_RET(GetSuperKernelFromDesc(node.GetOpDesc(), superKernel));
++  HCCL_INFO("%s SPK, superkernel is %s", __func__, superKernel.c_str());
++  if (superKernel == "") {
++    for (auto& config : streamConfigs) {
++      std::string name = std::get<STREAM_CONFIG_NAME>(config);
++      std::string reuseKey = std::get<STREAM_CONFIG_REUSE_KEY>(config);
++      ge::GeAttrValue::NAMED_ATTRS& streamAttr = *std::get<STREAM_CONFIG_STREAM_NAMED_ATTRS>(config);
++
++      (void)ge::AttrUtils::SetStr(streamAttr, ge::ATTR_NAME_ATTACHED_RESOURCE_NAME, name);
++      (void)ge::AttrUtils::SetStr(streamAttr, ge::ATTR_NAME_ATTACHED_RESOURCE_REUSE_KEY, reuseKey);
++      (void)ge::AttrUtils::SetBool(streamAttr, ge::ATTR_NAME_ATTACHED_RESOURCE_REQUIRED_FLAG, required);
++      (void)ge::AttrUtils::SetBool(streamAttr, ge::ATTR_NAME_ATTACHED_RESOURCE_FORCE_REUSE, true);  // true 表示强制主流复用
++
++      HCCL_INFO("[HcomOpsKernelBuilder][SetAttachedStreamInfoList] name[%s], reuse_key[%s], required[%d], nodeName[%s], groupId[%s].",
++              name.c_str(), reuseKey.c_str(), required, node.GetName().c_str(), group.c_str());
++
++      attachedStreamInfo.emplace_back(streamAttr);
++    }
++    ge::AttrUtils::SetListNamedAttrs(node.GetOpDesc(), ge::ATTR_NAME_ATTACHED_STREAM_INFO_LIST, attachedStreamInfo);
++  }
+   return HCCL_SUCCESS;
+ }
+ 
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.h b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.h
+index aa5ffac135..ab329449da 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.h
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_builder.h
+@@ -66,6 +66,7 @@ class HcomOpsKernelBuilder : public HCCLOpsKernelBuilder {
+   HcclResult GetNeedMapRankFromDesc(const ge::OpDescPtr &op, bool &needMapRank);
+   HcclResult GenerateTaskPrivateDef(const ge::Node &node, HCCL_KERNEL_INFO_PRIVATE_DEF &privateDefBuf,
+                                     domi::TaskDef &taskDef, const std::string sCollectiveType);
++  HcclResult SetAttachedStreamInfoList(ge::Node &node, const std::string &group);  // 设置附属从流信息
+ };
+ }  // namespace hccl
+ #endif  // GE_OPS_KERNEL_INFO_H
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_info_store.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_info_store.cc
+index 3c9920a454..e758e3fd53 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_info_store.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_ops_kernel_info_store.cc
+@@ -336,14 +336,15 @@ HcclResult HcomOpsKernelInfoStore::CheckCommunicatorValidity(const char *group,
+   HcclComm commHandle;
+   if (!isCommunicatorValid && (HcomGetCommHandleByGroup(group, &commHandle) != HCCL_SUCCESS)) {
+     REPORT_PREDEFINED_ERR_MSG(
+-        "EI0004", std::vector<const char *>({"error_reason", "ranktable_path"}),
++        "EI0004", 
++        std::vector<const char *>({"error_reason", "ranktable_path"}),
+         std::vector<const char *>({"No valid RankTable found, Please Check RankTable Path or Master Info ENV"
+                                    " config or hccl initialization has been called before call this function",
+                                    "The ranktable path "
+                                    "configured in the training can be found in the plogs."}));
+-    HCCL_ERROR(
+-        "No valid communicator found, please check the RankTable Path or Master Info config or hccl "
+-        "initialization has been called before call this function");
++    HCCL_ERROR("[%s][%s]No valid communicator found, please check the RankTable Path or Master Info config or hccl "
++                   "initialization has been called before call this function",
++            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CONFIG.c_str());
+     return HCCL_E_PARA;
+   }
+ 
+@@ -611,7 +612,7 @@ HcclResult HcomOpsKernelInfoStore::CleanIntervalMemoryOpKernel(const ge::GETaskI
+     CHK_RET(GetCountFromTaskInfo(hcclInfo, count));
+     CHK_RET(GetDataTypeFromTaskInfo(task, dataType));
+     CHK_RET(GetReduceTypeFromTaskInfo(hcclInfo, reduceType));
+-    CHK_RET(HcomSelectAlg(comm, group.c_str(), count, dataType, reduceType, opType, &ifAiv, algName));
++    CHK_RET(HcomSelectAlg(comm, group.c_str(), count, dataType, reduceType, opType, 48, ifAiv, algName));
+ 
+     if (crackNum == 0 || (crackNum == 1 && ifAiv)) {
+       HCCL_WARNING("[CleanIntervalMemoryOpKernel]The number of tensors to be cleared is 0.");
+@@ -2403,15 +2404,17 @@ HcclResult HcomOpsKernelInfoStore::SetAttachedStream(const ge::GETaskInfo &task)
+   std::string group;
+   int64_t comm = 0;
+   CHK_RET(GetCommFromTaskInfo(task, comm));
++  HCCL_KERNEL_INFO_PRIVATE_DEF *privateDefBuf = reinterpret_cast<HCCL_KERNEL_INFO_PRIVATE_DEF *>(task.privateDef);
+   rtStream_t *streamPtr = const_cast<rtStream_t *>(task.rt_attached_streams.data());
+   s32 streamNum = task.rt_attached_streams.size();
++  uint32_t graphId = privateDefBuf->graphId;
+   if (comm == static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
+     CHK_RET(GetGroupFromTaskInfo(task, group));
+-    CHK_RET(HcomSetAttachedStream(group.c_str(), streamPtr, streamNum));
++    CHK_RET(HcomSetAttachedStream(group.c_str(), graphId, streamPtr, streamNum));
+   } else {
+     char *groupname = nullptr;
+     CHK_RET(GetGroupNameByOpBaseHcom(comm, &groupname));
+-    CHK_RET(HcomSetAttachedStream(groupname, streamPtr, streamNum));
++    CHK_RET(HcomSetAttachedStream(groupname, graphId, streamPtr, streamNum));
+   }
+ 
+   return HCCL_SUCCESS;
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_reducescatter_fusion.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_reducescatter_fusion.cc
+index 540c30650f..74cd5da05b 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_reducescatter_fusion.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/hcom_reducescatter_fusion.cc
+@@ -206,12 +206,17 @@ HcclResult HcomReduceScatterFusion::GetFusionOption(const ge::NodePtr &nodePtr,
+       break;
+     default:
+       string fusionValue = std::to_string(fusionOption.fusionAttr);
+-      REPORT_PREDEFINED_ERR_MSG("EI0003", std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
+-                                std::vector<const char *>({"HcomReduceScatterFusion", "fusion", fusionValue.c_str(),
+-                                                           "please check fusion setting"}));
+-      HCCL_ERROR("[Get][FusionOption]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld or %lld",
+-                 HCOM_ERROR_CODE(HCCL_E_PARA), nodeName.c_str(), fusionOption.fusionAttr, HCOM_ATTR_FUSION_NO_FUSION,
+-                 HCOM_ATTR_FUSION_BY_FUSION_ID);
++      REPORT_PREDEFINED_ERR_MSG("EI0003", 
++      std::vector<const char *>({"ccl_op", "parameter", "value", "tips"}),
++      std::vector<const char *>({"HcomReduceScatterFusion", "fusion", fusionValue.c_str(), "please check fusion setting"}));
++      HCCL_ERROR("[%s][%s]errNo[0x%016llx] node[%s] fusion[%lld] is incorrect, should be %lld or %lld",
++                LOG_KEYWORDS_TASK_EXEC.c_str(),
++                LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
++                HCOM_ERROR_CODE(HCCL_E_PARA),
++                nodeName.c_str(),
++                fusionOption.fusionAttr,
++                HCOM_ATTR_FUSION_NO_FUSION,
++                HCOM_ATTR_FUSION_BY_FUSION_ID);
+       return HCCL_E_PARA;
+   }
+ 
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.cc
+index b48a2f7c56..0159cf3675 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.cc
+@@ -119,6 +119,7 @@ HcclResult GenerateHcomOpArg(const ge::NodePtr &node, struct HcomOpAttr &opAttr)
+   opAttr.opType = iter->second;
+   auto opDesc = node->GetOpDesc();
+   CHK_RET(HcomOpUtils::GetDataType(opDesc, opAttr.dataType));
++  CHK_RET(HcomOpUtils::GetAivCoreLimit(opDesc, opDesc->GetType(), opAttr.aivCoreLimit));
+ 
+   std::string sGroup;
+   CHK_RET(HcomOpUtils::GetGroup(opDesc, sGroup));
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.h b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.h
+index 7dc3d88dcb..87e4e89152 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.h
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_build_graph.h
+@@ -82,6 +82,7 @@ struct HcomReduceOpAttr {
+ struct HcomOpAttr {
+   HcomOpType opType = HcomOpType::HCOM_RECEIVE;
+   HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
++  u32 aivCoreLimit = 0;
+   char group[GROUP_NAME_MAX_LEN + 1];
+   union {
+     HcomAllGatherOpAttr allgather;
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_launch_kernel.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_launch_kernel.cc
+index 187f17431f..88c45f1071 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_launch_kernel.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom/lowering/hcom_launch_kernel.cc
+@@ -93,10 +93,10 @@ HcclResult HcomLaunchAllGatherKernel(const HcomOpInputStruct *inputStruct, std::
+ #endif
+   HcomOpLaunchArgs launchArgs = inputStruct->launchArgs;
+   HcclComm hcclComm = inputStruct->hcclComm;
+-  uint64_t count = inputStruct->count;
+-
+-  CHK_RET(
+-      HcomHcclAllGather(inputAddrs[0], outputAddrs[0], count, launchArgs.opAttr.dataType, hcclComm, launchArgs.stream));
++  uint64_t count = inputStruct->count;  
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));  
++  CHK_RET(HcomHcclAllGather(inputAddrs[0], outputAddrs[0], count,
++      launchArgs.opAttr.dataType, hcclComm, launchArgs.stream));
+   return HCCL_SUCCESS;
+ }
+ 
+@@ -159,6 +159,8 @@ HcclResult HcomLaunchAllGatherVKernel(const HcomOpInputStruct *inputStruct, std:
+   const void *recvDisplsPtr = static_cast<const void *>(recvDispls.data());
+   const void *recvcountsPtr = static_cast<const void *>(recvcounts);
+ 
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));
++
+   CHK_RET(HcomHcclAllGatherV(inputAddrs[0], inputStruct->sendCount, outputAddrs[0], recvcountsPtr, recvDisplsPtr,
+                              launchArgs.opAttr.dataType, hcclComm, launchArgs.stream));
+   return HCCL_SUCCESS;
+@@ -293,6 +295,7 @@ HcclResult HcomLaunchAllReduceKernel(const HcomOpInputStruct *inputStruct, std::
+   HcomOpLaunchArgs launchArgs = inputStruct->launchArgs;
+   std::vector<uint64_t> inputsCount = inputStruct->inputsCount;
+   HcclComm hcclComm = inputStruct->hcclComm;
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));
+   uint32_t inputOffset = 0;
+   for (uint32_t i = 0; i < sliceIdxs.size(); i++) {
+     if (sliceIdxs[i] == 1) {
+@@ -422,7 +425,7 @@ HcclResult HcomLaunchBroadcastKernel(const HcomOpInputStruct *inputStruct, std::
+   HcomOpLaunchArgs launchArgs = inputStruct->launchArgs;
+   HcclComm hcclComm = inputStruct->hcclComm;
+   uint64_t count = inputStruct->count;
+-
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));
+   CHK_RET(HcomHcclBroadcast(inputAddrs[0], count, launchArgs.opAttr.dataType, launchArgs.opAttr.op.broadcast.root,
+                             hcclComm, launchArgs.stream));
+   return HCCL_SUCCESS;
+@@ -491,7 +494,7 @@ HcclResult HcomLaunchReduceScatterKernel(const HcomOpInputStruct *inputStruct, s
+   HcomOpLaunchArgs launchArgs = inputStruct->launchArgs;
+   HcclComm hcclComm = inputStruct->hcclComm;
+   uint64_t count = inputStruct->count;
+-
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));
+   CHK_RET(HcomHcclReduceScatter(inputAddrs[0], outputAddrs[0], count, launchArgs.opAttr.dataType,
+                                 launchArgs.opAttr.op.reducescatter.reduction, hcclComm, launchArgs.stream));
+   return HCCL_SUCCESS;
+@@ -530,7 +533,7 @@ HcclResult HcomLaunchReduceScatterVKernel(const HcomOpInputStruct *inputStruct,
+   }
+   const void *sendDisplsPtr = static_cast<const void *>(sendDispls.data());
+   const void *sendCountsPtr = static_cast<const void *>(sendCounts);
+-
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));
+   CHK_RET(HcomHcclReduceScatterV(inputAddrs[0], sendCountsPtr, sendDisplsPtr, outputAddrs[0], inputStruct->recvCount,
+                                  launchArgs.opAttr.dataType, launchArgs.opAttr.op.reducescatterv.reduction, hcclComm,
+                                  launchArgs.stream));
+@@ -593,7 +596,7 @@ HcclResult HcomLaunchAllToAllVKernel(const HcomOpInputStruct *inputStruct, std::
+ #endif
+   HcomOpLaunchArgs launchArgs = inputStruct->launchArgs;
+   HcclComm hcclComm = inputStruct->hcclComm;
+-
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));
+   CHK_RET(HcomHcclAlltoAllV(inputAddrs[0], inputAddrs[1], inputAddrs[INPUT_INDEX_2], launchArgs.opAttr.dataType,
+                             outputAddrs[0], inputAddrs[INPUT_INDEX_3], inputAddrs[INPUT_INDEX_4],
+                             launchArgs.opAttr.op.alltoallv.recvType, hcclComm, launchArgs.stream));
+@@ -650,7 +653,7 @@ HcclResult HcomLaunchAllToAllVCKernel(const HcomOpInputStruct *inputStruct, std:
+ #endif
+   HcomOpLaunchArgs launchArgs = inputStruct->launchArgs;
+   HcclComm hcclComm = inputStruct->hcclComm;
+-
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));  
+   CHK_RET(HcomHcclAlltoAllVC(inputAddrs[0], inputAddrs[1], launchArgs.opAttr.dataType, outputAddrs[0],
+                              launchArgs.opAttr.dataType, hcclComm, launchArgs.stream));
+   return HCCL_SUCCESS;
+@@ -699,7 +702,7 @@ HcclResult HcomLaunchAllToAllKernel(const HcomOpInputStruct *inputStruct, std::v
+                                     std::vector<void *> &outputAddrs) {
+   HcomOpLaunchArgs launchArgs = inputStruct->launchArgs;
+   HcclComm hcclComm = inputStruct->hcclComm;
+-
++  CHK_RET(HcomSetAivCoreLimit(launchArgs.opAttr.group, launchArgs.opAttr.aivCoreLimit));
+   CHK_RET(HcomHcclAlltoAll(inputAddrs[0], inputStruct->sendCount, launchArgs.opAttr.dataType, outputAddrs[0],
+                            inputStruct->recvCount, launchArgs.opAttr.dataType, hcclComm, launchArgs.stream));
+   return HCCL_SUCCESS;
+@@ -904,11 +907,11 @@ std::vector<std::string> PrintLaunchArgs(const gert::KernelContext *context) {
+  * 注册kernel函数，提供kernel函数的执行原型
+  * **********************************************************************
+  */
+-ge::graphStatus PrepareHcomKernel(gert::KernelContext *context) {
++ge::graphStatus PrepareHcomKernel(gert::KernelContext *context) {   
+   // 获取算子输入输出资源
+   HcomOpLaunchArgs launchArgs;
+   if (GetHcomOpLaunchArgs(context, launchArgs) != HCCL_SUCCESS) {
+-    HCCL_ERROR("PrepareHcomKernel: get hcom op launch args failed.");
++  HCCL_ERROR("PrepareHcomKernel: get hcom op launch args failed.");
+     return ge::GRAPH_FAILED;
+   }
+ 
+diff --git a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom_plugin.cc b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom_plugin.cc
+index bc1c96c978..4ec17f30d0 100644
+--- a/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom_plugin.cc
++++ b/compiler/engines/hccl_engine/hcom_graph_adaptor/ge_plugin/hcom_plugin.cc
+@@ -368,7 +368,11 @@ HcclResult HcomPlugin::HcomSetGroupToTopoInfo(const char *group, uint32_t rankSi
+         topoInfo.topo_level_descs[netLayer[i]].comm_sets = static_cast<uint32_t>(topoType);
+         topoInfo.topo_level_descs[netLayer[i]].rank_size = gRankSize;
+     }
+-
++    uint64_t localWindowSize;
++    CHK_RET(HcomGetCommCCLBufferSize(group, localWindowSize));
++    topoInfo.local_window_size = localWindowSize;
++    HCCL_RUN_INFO("[Set][GroupTopoInfo]localWindowSize[%lu]", localWindowSize);
++    
+     uint32_t retInstance = ge::HcomTopoInfo::Instance().SetGroupTopoInfo(group, topoInfo);
+     if (retInstance != ge::GRAPH_SUCCESS) {
+         HCCL_ERROR("[Set][GroupTopoInfo]errNo[0x%016llx] SetGroupTopoInfo error, group[%s], rankSize[%u].", retInstance,
+-- 
+2.45.2.huawei.10
+

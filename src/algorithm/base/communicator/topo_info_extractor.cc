@@ -15,6 +15,7 @@
 #include "comm_base_pub.h"
 #include "hccl_impl_pub.h"
 #include "coll_alg_param.h"
+#include "comm_configer.h"
 
 
 namespace hccl {
@@ -1129,9 +1130,11 @@ void TopoInfoExtractor::GetCommPlaneVector(std::vector<std::vector<std::vector<R
 
 void TopoInfoExtractor::InitAHCConfig()
 {
+    CommConfiger& commConfiger = CommConfiger::GetInstance();
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
-        isConfigAHC_ = (GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
-                        GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
+        HcclAlgoType algoType = commConfiger.GetCommConfigAlgoConfig(identifier_, static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_1];
+        isConfigAHC_ = (algoType == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
+                        algoType == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
         if (isConfigAHC_) {
             HCCL_INFO("[InitAHCConfig] set AHC alg, opType[%u]", opType);
             break;
@@ -1139,7 +1142,8 @@ void TopoInfoExtractor::InitAHCConfig()
     }
 
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {  //没配置算法的情况下默认会走AHC嘛？  给测试用
-        isConfigNULL_ = GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
+        HcclAlgoType algoType = commConfiger.GetCommConfigAlgoConfig(identifier_, static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_0];
+        isConfigNULL_ = algoType == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
         if (isConfigNULL_) {
             HCCL_INFO("[InitAHCConfig] set NULL alg, opType[%u]", opType);
             break;

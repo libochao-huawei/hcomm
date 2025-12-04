@@ -20,6 +20,7 @@
 #include "stream_utils.h"
 #include "launch_aicpu.h"
 #include "launch_device.h"
+#include "comm_configer.h"
 
 namespace hccl {
 using namespace std;
@@ -570,7 +571,8 @@ HcclResult HcclOneSidedService::DeInit()
     if (aicpuUnfoldMode_) {
         std::unique_lock<std::mutex> guard{g_launchMutex};
         CHK_RET(OrchestrateAicpu(0, HcclCMDType::HCCL_CMD_BATCH_GET, nullptr, nullptr, 0, g_launchStream->ptr()));
-        CHK_RET(hcclStreamSynchronize(g_launchStream->ptr()));
+        CHK_RET(hcclStreamSynchronize(g_launchStream->ptr(),
+            CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_)));
         g_launchStreamRef--;
         if (g_launchStreamRef == 0) {
             HCCL_INFO("[HcclOneSidedService][DeInit] destroy launchStream[%u]", g_launchStream->id());
@@ -1049,7 +1051,7 @@ HcclResult HcclOneSidedService::AicpuInitKernelLaunch()
         char kernelName[64] = "RunAicpuKfcResInitV2";
         CHK_RET(AicpuAclKernelLaunch(stream, reinterpret_cast<void *>(&initTask), sizeof(initTask),
                                         binHandle_, kernelName, true, timeOut));
-        CHK_RET(hcclStreamSynchronize(stream));
+        CHK_RET(hcclStreamSynchronize(stream, CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_)));
         HCCL_RUN_INFO("[AicpuInitKernelLaunch] launch in launchStream[%u], execStream[%u]", g_launchStream->id(),
             execStream_.id());
     }
@@ -1128,7 +1130,7 @@ HcclResult HcclOneSidedService::InitAicpuTilingDataBuf(const AicpuOneSideCommTil
     vDataPtr->commResParaAddr = reinterpret_cast<u64>(commResParaDevice_.ptr());
     vDataPtr->commResParaSize = commResParaDevice_.size();
     vDataPtr->rankSize = rankTable_->rankNum;
-    vDataPtr->linkTimeout = GetExternalInputHcclLinkTimeOut();
+    vDataPtr->linkTimeout = 0;  // deprecated; 改成在AICPU侧使用qpInfo里的配置计算
     vDataPtr->descNum = descNum + 1;    // signal
     vDataPtr->descDataLen = sizeof(HcclOneSideOpDescParam) * vDataPtr->descNum;
     vDataPtr->linkType = tilingInfo.useRdma ? static_cast<u8>(LinkType::LINK_ROCE) : static_cast<u8>(LinkType::LINK_HCCS);
@@ -1200,7 +1202,9 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
 {
     u64 commContext = 0ULL;
     u16 timeOut = static_cast<u16>((GetExternalInputHcclExecTimeoutSet() !=
-        HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ? GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME);
+        HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(identifier_)) ?
+        CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_) : NOTIFY_DEFAULT_WAIT_TIME);
     CHK_RET(AicpuAclKernelLaunch(stream, reinterpret_cast<void *>(&commContext),
         sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
     HCCL_DEBUG("[HcclOneSidedService][AicpuUnfoldKernelLaunchV2] exec succ.");

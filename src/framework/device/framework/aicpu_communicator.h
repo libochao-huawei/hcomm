@@ -41,6 +41,7 @@
 #include "hccl_thread.h"
 #include "new/hccl_dispatcher_ctx.h"
 #include "aicpu_init_param.h"
+#include "task_exception.h"
 
 namespace hccl {
 
@@ -144,8 +145,10 @@ public:
     HcclResult FlushUtraceInfo();
     std::string GetExcuteOp();
     void HandleCqeException(hccl::Stream &stream, bool isReadClear);
+    void HandleIndOpCqe();
     static void ResetErrMsgReport() { errMessageReport_ = true; };
     void PrintTaskExceptionAllComm();
+    HcclResult PrintTaskExceptionAllThreads();
     bool GetOpRetryEnable();
     void SetZeroCopyEnable(bool enable);
     bool IsTaskExceptionForHccs();
@@ -169,9 +172,13 @@ public:
     HcclResult AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam);
 
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
+    bool GetIsInitIndOp() { return isIndOpCommInit_; };
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
+
+    HcclResult RegisterOpInfo(void* opInfo, u32 size);
+    HcclResult RegOpTaskException(HcommGetOpInfoCallback callback);
 
 private:
     HcclResult SetHrtWorkMode(const HcclOpResParam *commParam);
@@ -528,11 +535,13 @@ private:
     AicpuKfcHandler kfcHandlers_[static_cast<size_t>(AicpuKfcHandlerType::kMax)]{};
 
     // 独立算子
+    bool isIndOpCommInit_ = false; // 独立算子流程通信域是否初始化
     DispatcherCtxPtr dispatcherCtx_{nullptr};
     std::unordered_map<std::string, ChannelHandle> channelHandleMap_;
     std::unordered_map<ChannelHandle, std::shared_ptr<Transport>> linkMap_;
     std::vector<std::shared_ptr<HcclThread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
+    TaskException taskExecption_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__

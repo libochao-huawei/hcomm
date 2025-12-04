@@ -169,7 +169,7 @@ class TransportManager {
 public:
     TransportManager(CCLBufferManager &cclBufferManager,
         const std::unique_ptr<HcclSocketManager> &socketManager_,
-        HcclDispatcher &dispatcher,
+        HcclDispatcher dispatcher,
         const std::unique_ptr<NotifyPool> &notifyPool,
         const std::vector<RankInfo> &rankInfoList,
         RankId userRank,
@@ -271,7 +271,7 @@ private:
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;
     const std::unique_ptr<HcclSocketManager> &socketManager_;
-    HcclDispatcher &dispatcher_;
+    HcclDispatcher dispatcher_;
     const std::unique_ptr<NotifyPool> &notifyPool_;
     const std::vector<RankInfo> &rankInfoList_;
     RankId userRank_;

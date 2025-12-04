@@ -1255,7 +1255,7 @@ void tc_rs_qp_create()
 #define RS_QP_TX_DEPTH_ONLINE 4096
 #define RS_QP_TX_DEPTH                      8191
 #define RS_QP_TX_DEPTH_OFFLINE 128
-void prepare_ext_attrs(int qpMode, struct qp_ext_attrs *extAttrs)
+void prepare_ext_attrs(int qpMode, struct QpExtAttrs *extAttrs)
 {
     extAttrs->qp_mode = qpMode;
     // cq attr
