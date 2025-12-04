@@ -38,20 +38,20 @@ HcclResult TransportHeterogRawRoce::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogRawRoce::Init(socket_info_t &socketInfo, RdmaHandle rdmaHandle, MrHandle mrHandle)
+HcclResult TransportHeterogRawRoce::Init(SocketInfoT &socketInfo, RdmaHandle rdmaHandle, MrHandle mrHandle)
 {
-    CHK_PTR_NULL(socketInfo.socket_handle);
-    CHK_PTR_NULL(socketInfo.fd_handle);
+    CHK_PTR_NULL(socketInfo.socketHandle);
+    CHK_PTR_NULL(socketInfo.fdHandle);
     CHK_PTR_NULL(rdmaHandle);
     CHK_PTR_NULL(mrHandle);
-    HCCL_INFO("TransportHeterogRawRoce Init start socket_handle[%p] fd_handle[%p] rdmaHandle[%p] mrHandle[%p]",
-        socketInfo.socket_handle, socketInfo.fd_handle, rdmaHandle, mrHandle);
+    HCCL_INFO("TransportHeterogRawRoce Init start socketHandle[%p] fdHandle[%p] rdmaHandle[%p] mrHandle[%p]",
+        socketInfo.socketHandle, socketInfo.fdHandle, rdmaHandle, mrHandle);
 
     mrManager_ = static_cast<MrManager *>(mrHandle);
     nicRdmaHandle_ = rdmaHandle;
-    nicSocketHandle_ = socketInfo.socket_handle;
+    nicSocketHandle_ = socketInfo.socketHandle;
 
-    socket_connect_info_t tmpConnInfo{};
+    SocketConnectInfoT tmpConnInfo{};
     tmpConnInfo.port = HETEROG_CCL_PORT;
     initSM_.locInitInfo.socketConnInfo.emplace_back(tmpConnInfo);
     initSM_.locInitInfo.socketInfo.emplace_back(socketInfo);
@@ -164,12 +164,12 @@ HcclResult TransportHeterogRawRoce::LoopStateProcess()
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_SEND_TAG_QP_INFO));
             break;
         case ConnState::CONN_STATE_SEND_TAG_QP_INFO:
-            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fd_handle, &localTagModifyInfo_,
+            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fdHandle, &localTagModifyInfo_,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_RECV_TAG_QP_INFO));
             break;
         case ConnState::CONN_STATE_RECV_TAG_QP_INFO:
-            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fd_handle, &remoteTagModifyInfo_,
+            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fdHandle, &remoteTagModifyInfo_,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_MODIFY_TAG_QP));
             break;
@@ -182,12 +182,12 @@ HcclResult TransportHeterogRawRoce::LoopStateProcess()
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_SEND_DATA_QP_INFO));
             break;
         case ConnState::CONN_STATE_SEND_DATA_QP_INFO:
-            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fd_handle, &localDataModifyInfo_,
+            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fdHandle, &localDataModifyInfo_,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_RECV_DATA_QP_INFO));
             break;
         case ConnState::CONN_STATE_RECV_DATA_QP_INFO:
-            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fd_handle, &remoteDataModifyInfo_,
+            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fdHandle, &remoteDataModifyInfo_,
                 initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_MODIFY_DATA_QP));
             break;
@@ -196,12 +196,12 @@ HcclResult TransportHeterogRawRoce::LoopStateProcess()
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_SEND_STATUS));
             break;
         case ConnState::CONN_STATE_SEND_STATUS:
-            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fd_handle,
+            testRet = SocketSend(initSM_.locInitInfo.socketInfo[0].fdHandle,
                 &(initSM_.locInitInfo.signal), initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_RECV_STATUS));
             break;
         case ConnState::CONN_STATE_RECV_STATUS:
-            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fd_handle,
+            testRet = SocketRecv(initSM_.locInitInfo.socketInfo[0].fdHandle,
                 &(initSM_.remInitInfo.signal), initSM_.size, initSM_.completeSize, completed);
             CHK_RET(TryTransition(testRet, completed, ConnState::CONN_STATE_COMPLETE));
             break;
@@ -213,19 +213,19 @@ HcclResult TransportHeterogRawRoce::LoopStateProcess()
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogRawRoce::PrepareModifyInfo(struct qp_attr &qpAttr, struct typical_qp &typicalQpInfo)
+HcclResult TransportHeterogRawRoce::PrepareModifyInfo(struct QpAttr &qpAttr, struct TypicalQp &typicalQpInfo)
 {
     typicalQpInfo.qpn = qpAttr.qpn;
     typicalQpInfo.psn = qpAttr.psn;
-    typicalQpInfo.gid_idx = qpAttr.gid_idx;
+    typicalQpInfo.gidIdx = qpAttr.gidIdx;
     typicalQpInfo.tc = GetExternalInputRdmaTrafficClass();
     typicalQpInfo.sl = GetExternalInputRdmaServerLevel();
-    typicalQpInfo.retry_cnt = GetExternalInputRdmaRetryCnt();
-    typicalQpInfo.retry_time = GetExternalInputRdmaTimeOut();
+    typicalQpInfo.retryCnt = GetExternalInputRdmaRetryCnt();
+    typicalQpInfo.retryTime = GetExternalInputRdmaTimeOut();
     CHK_SAFETY_FUNC_RET(memcpy_s(typicalQpInfo.gid, HCCP_GID_RAW_LEN , qpAttr.gid, HCCP_GID_RAW_LEN ));
-    HCCL_INFO("TransportHeterogRawRoce ModifyInfo qpn[%u] psn[%u] gid_idxp[%u] gid[%p] tc[%u] sl[%u] retry_cnt[%u]"
-        "retry_time[%u]", typicalQpInfo.qpn, typicalQpInfo.psn, typicalQpInfo.gid_idx, typicalQpInfo.gid,
-        typicalQpInfo.tc, typicalQpInfo.sl, typicalQpInfo.retry_cnt, typicalQpInfo.retry_time);
+    HCCL_INFO("TransportHeterogRawRoce ModifyInfo qpn[%u] psn[%u] gid_idxp[%u] gid[%p] tc[%u] sl[%u] retryCnt[%u]"
+        "retryTime[%u]", typicalQpInfo.qpn, typicalQpInfo.psn, typicalQpInfo.gidIdx, typicalQpInfo.gid,
+        typicalQpInfo.tc, typicalQpInfo.sl, typicalQpInfo.retryCnt, typicalQpInfo.retryTime);
 
     return HCCL_SUCCESS;
 }
@@ -286,32 +286,32 @@ HcclResult TransportHeterogRawRoce::ImrecvScatter(void *buf[], int count[], int 
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportHeterogRawRoce::GetQpAttr(QpHandle &qpHandle, struct qp_attr *attr, bool &completed)
+HcclResult TransportHeterogRawRoce::GetQpAttr(QpHandle &qpHandle, struct QpAttr *attr, bool &completed)
 {
     HcclResult ret = hrtRaGetQpAttr(qpHandle, attr);
     if (ret == HCCL_SUCCESS) {
         completed = true;
     } else {
-        HCCL_ERROR("GetQpAttr fail qpHandle[%p] qpn[%u] udp_sport[%u] psn[%u] gid_idx[%u] gid[%p] completed[%u]",
-        qpHandle, attr->qpn, attr->udp_sport, attr->psn, attr->gid_idx, attr->gid, completed);
+        HCCL_ERROR("GetQpAttr fail qpHandle[%p] qpn[%u] udpSport[%u] psn[%u] gidIdx[%u] gid[%p] completed[%u]",
+        qpHandle, attr->qpn, attr->udpSport, attr->psn, attr->gidIdx, attr->gid, completed);
     }
     return ret;
 }
 
-HcclResult TransportHeterogRawRoce::TypicalQpModify(QpHandle &qpHandle, struct typical_qp* localQpInfo,
-    struct typical_qp* remoteQpInfo, bool &completed)
+HcclResult TransportHeterogRawRoce::TypicalQpModify(QpHandle &qpHandle, struct TypicalQp* localQpInfo,
+    struct TypicalQp* remoteQpInfo, bool &completed)
 {
     HcclResult ret = hrtRaTypicalQpModify(qpHandle, localQpInfo, remoteQpInfo);
     if (ret == HCCL_SUCCESS) {
         completed = true;
     } else if (ret != HCCL_E_AGAIN) {
         HCCL_ERROR("hrtRaTypicalQpModify fail qpHandle[%p] completed[%u]"
-            "local: qpn[%u] psn[%u] gid_idx[%u] gid[%p] tc[%u] sl[%u] retry_cnt[%u] retry_time[%u]"
-            "remote: qpn[%u] psn[%u] gid_idx[%u] gid[%p] tc[%u] sl[%u]  retry_cnt[%u] retry_time[%u] ",
-            qpHandle, completed, localQpInfo->qpn, localQpInfo->psn, localQpInfo->gid_idx, localQpInfo->gid,
-            localQpInfo->tc, localQpInfo->sl, localQpInfo->retry_cnt, localQpInfo->retry_time,
-            remoteQpInfo->qpn, remoteQpInfo->psn, remoteQpInfo->gid_idx, remoteQpInfo->gid, remoteQpInfo->tc,
-            remoteQpInfo->sl, remoteQpInfo->retry_cnt, remoteQpInfo->retry_time);
+            "local: qpn[%u] psn[%u] gidIdx[%u] gid[%p] tc[%u] sl[%u] retryCnt[%u] retryTime[%u]"
+            "remote: qpn[%u] psn[%u] gidIdx[%u] gid[%p] tc[%u] sl[%u]  retryCnt[%u] retryTime[%u] ",
+            qpHandle, completed, localQpInfo->qpn, localQpInfo->psn, localQpInfo->gidIdx, localQpInfo->gid,
+            localQpInfo->tc, localQpInfo->sl, localQpInfo->retryCnt, localQpInfo->retryTime,
+            remoteQpInfo->qpn, remoteQpInfo->psn, remoteQpInfo->gidIdx, remoteQpInfo->gid, remoteQpInfo->tc,
+            remoteQpInfo->sl, remoteQpInfo->retryCnt, remoteQpInfo->retryTime);
     }
     return ret;
 }

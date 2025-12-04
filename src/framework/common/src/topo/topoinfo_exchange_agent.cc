@@ -17,6 +17,7 @@
 #include "sal_pub.h"
 #include "device_capacity.h"
 #include "preempt_port_manager.h"
+#include "comm_configer.h"
 
 namespace hccl {
 constexpr s32 DEVICE_LOGIC_ID_LENGTH = 4;
@@ -28,7 +29,8 @@ TopoInfoExchangeAgent::TopoInfoExchangeAgent(HcclIpAddress &serverIp, u32 server
       identifier_(identifier),
       localRankInfo_(localRankInfo),
       clusterTopoInfo_(),
-      netDevCtx_(netDevCtx)
+      netDevCtx_(netDevCtx),
+      isRetry_(GetExternalInputInterSuperPodRetryEnable())
 {}
 
 TopoInfoExchangeAgent::TopoInfoExchangeAgent(HcclIpAddress &serverIp, u32 serverPort, std::string identifier,
@@ -40,7 +42,8 @@ TopoInfoExchangeAgent::TopoInfoExchangeAgent(HcclIpAddress &serverIp, u32 server
       clusterTopoInfo_(),
       netDevCtx_(netDevCtx),
       connSize_(connSize),
-      connRank_(connRank)
+      connRank_(connRank),
+      isRetry_(GetExternalInputInterSuperPodRetryEnable())
 {}
 
 TopoInfoExchangeAgent::TopoInfoExchangeAgent(HcclIpAddress &serverIp, u32 serverPort, std::string identifier,
@@ -51,12 +54,19 @@ TopoInfoExchangeAgent::TopoInfoExchangeAgent(HcclIpAddress &serverIp, u32 server
       localRankInfo_(localRankInfo),
       localRankHandle_(rankInfo),
       clusterTopoInfo_(),
-      netDevCtx_(netDevCtx)
+      netDevCtx_(netDevCtx),
+      isRetry_(GetExternalInputInterSuperPodRetryEnable())
 {}
 
 TopoInfoExchangeAgent::~TopoInfoExchangeAgent()
 {
     Teardown();
+}
+
+HcclResult TopoInfoExchangeAgent::SetIsInterSuperPodRetryEnable(bool isInterSuperPodRetryEnable)
+{
+    isRetry_ = isInterSuperPodRetryEnable;
+    return HCCL_SUCCESS;
 }
 
 HcclResult TopoInfoExchangeAgent::Setup()
@@ -75,7 +85,7 @@ HcclResult TopoInfoExchangeAgent::Setup()
         ret = socket_->Send(&localRankHandle_, sizeof(localRankHandle_));
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[SendRankHandle]errNo[0x%016llx] rankID[%s] send localRankHandle to remote by"\
-            "client fd_handle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), localRankInfo_.rank, ret), ret);
+            "client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), localRankInfo_.rank, ret), ret);
  
         CHK_RET(RecvGrpLeaderInfo(socket_, grpLeaderInfo_));
         u32 grpIndex = localRankInfo_.rank / TOPO_MAX_GROUP_SIZE;
@@ -379,12 +389,12 @@ HcclResult TopoInfoExchangeAgent::GetConnection(HcclIpAddress &serverIp, u32 por
             HcclResult ret = socket->Send(&agentBuf, sizeof(agentBuf));
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] agentID[%s] send local rank id to remote "\
-                    "by client fd_handle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), agentBuf, ret), ret);
+                    "by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), agentBuf, ret), ret);
 
             ret = socket->Send(&connSize_, sizeof(connSize_));
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[Get][Connection]errNo[0x%016llx] rank[%u] send local rank num[%u] to "\
-                    "remote by client fd_handle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER),
+                    "remote by client fdHandle failed, ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER),
                     localRankInfo_.rank, localRankInfo_.rankSize, ret), ret);
 
             HCCL_INFO("local rank[%u] get socket connection with server[%s] port[%u] success.",
@@ -617,7 +627,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterDeviceIP(const RankTable_t &clust
 
 HcclResult TopoInfoExchangeAgent::VerifyClusterBackupDeviceIP(RankTable_t &clusterInfo)
 {
-    if (localRankInfo_.deviceType != DevType::DEV_TYPE_910_93 || !GetExternalInputInterSuperPodRetryEnable()) {
+    if (localRankInfo_.deviceType != DevType::DEV_TYPE_910_93 || !isRetry_) {
         // 未开启重执行，则无需 backup device ip
         return HCCL_SUCCESS;
     }

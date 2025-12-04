@@ -425,7 +425,7 @@ HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 
     for (uint32_t i = 0; i < targetNum; i++) {
         ConvertResultState(output[i].state, result[i].state);
-        if (output[i].state != ping_result_state::PING_RESULT_STATE_VALID) {
+        if (output[i].state != PingResultState::PING_RESULT_STATE_VALID) {
             HCCL_INFO("[HccnRpingGetResult]Target[%d]'s state is not valid, state[%d].", i, output[i].state);
             continue;
         }

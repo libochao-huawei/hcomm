@@ -16,10 +16,10 @@
 #define RS_MAX_IP_LEN       64          // IP地址(IPv4：点分十进制，IPv6 十六进制字符串)最大长度
 #define IPV6_S6_ADDR_SIZE   16          // IPv6 have 16 u6_addr8
 
-struct rs_ip_addr_info {
+struct RsIpAddrInfo {
     uint32_t family;
-    union hccp_ip_addr bin_addr;
-    char read_addr[RS_MAX_IP_LEN];
+    union HccpIpAddr binAddr;
+    char readAddr[RS_MAX_IP_LEN];
 };
 
 #endif // RS_COMMON_INNER_H

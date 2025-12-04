@@ -18,7 +18,7 @@ static pthread_mutex_t gRdmaLiteApiLock = PTHREAD_MUTEX_INITIALIZER;
 void *gRdmaLiteApiHandle = NULL;
 int gRdmaLiteApiRefcnt = 0;
 #ifndef HNS_ROCE_LLT
-struct ra_rdma_lite_ops gRdmaLiteOps;
+struct RaRdmaLiteOps gRdmaLiteOps;
 #else
 struct ra_rdma_lite_ops g_rdma_lite_ops = {
     .ra_rdma_lite_alloc_ctx = rdma_lite_alloc_context,
@@ -59,75 +59,75 @@ STATIC int RaHdcOpenRdmaLiteSo(void)
 #ifndef HNS_ROCE_LLT
 static int RaRdmaLiteControlPlaneApiInit(void)
 {
-    gRdmaLiteOps.ra_rdma_lite_alloc_ctx = (struct rdma_lite_context* (*)(u8 phyId, struct dev_cap_info *cap))
+    gRdmaLiteOps.raRdmaLiteAllocCtx = (struct rdma_lite_context* (*)(u8 phyId, struct dev_cap_info *cap))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_alloc_context");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_alloc_ctx, "rdma_lite_alloc_context", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteAllocCtx, "rdma_lite_alloc_context", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_free_ctx = (void (*)(struct rdma_lite_context *liteCtx))
+    gRdmaLiteOps.raRdmaLiteFreeCtx = (void (*)(struct rdma_lite_context *liteCtx))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_free_context");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_free_ctx, "rdma_lite_free_context", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteFreeCtx, "rdma_lite_free_context", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_init_mem_pool = (int (*)(struct rdma_lite_context *liteCtx,
+    gRdmaLiteOps.raRdmaLiteInitMemPool = (int (*)(struct rdma_lite_context *liteCtx,
         struct rdma_lite_mem_attr * liteMemAttr)) dlsym(gRdmaLiteApiHandle, "rdma_lite_init_mem_pool");
-    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_init_mem_pool, "rdma_lite_init_mem_pool");
+    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteInitMemPool, "rdma_lite_init_mem_pool");
 
-    gRdmaLiteOps.ra_rdma_lite_deinit_mem_pool = (int (*)(struct rdma_lite_context *liteCtx, u32 memIdx))
+    gRdmaLiteOps.raRdmaLiteDeinitMemPool = (int (*)(struct rdma_lite_context *liteCtx, u32 memIdx))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_deinit_mem_pool");
-    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_deinit_mem_pool, "rdma_lite_deinit_mem_pool");
+    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteDeinitMemPool, "rdma_lite_deinit_mem_pool");
 
-    gRdmaLiteOps.ra_rdma_lite_create_cq = (struct rdma_lite_cq* (*)(struct rdma_lite_context * liteCtx,
+    gRdmaLiteOps.raRdmaLiteCreateCq = (struct rdma_lite_cq* (*)(struct rdma_lite_context * liteCtx,
         struct rdma_lite_cq_attr * liteCqAttr)) dlsym(gRdmaLiteApiHandle, "rdma_lite_create_cq");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_create_cq, "rdma_lite_create_cq", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteCreateCq, "rdma_lite_create_cq", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_destroy_cq = (int (*)(struct rdma_lite_cq * liteCq))
+    gRdmaLiteOps.raRdmaLiteDestroyCq = (int (*)(struct rdma_lite_cq * liteCq))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_destroy_cq");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_destroy_cq, "rdma_lite_destroy_cq", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteDestroyCq, "rdma_lite_destroy_cq", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_create_qp = (struct rdma_lite_qp* (*)(struct rdma_lite_context * liteCtx,
+    gRdmaLiteOps.raRdmaLiteCreateQp = (struct rdma_lite_qp* (*)(struct rdma_lite_context * liteCtx,
         struct rdma_lite_qp_attr * liteQpAttr)) dlsym(gRdmaLiteApiHandle, "rdma_lite_create_qp");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_create_qp, "rdma_lite_create_qp", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteCreateQp, "rdma_lite_create_qp", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_destroy_qp = (int (*)(struct rdma_lite_qp * liteQp))
+    gRdmaLiteOps.raRdmaLiteDestroyQp = (int (*)(struct rdma_lite_qp * liteQp))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_destroy_qp");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_destroy_qp, "rdma_lite_destroy_qp", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteDestroyQp, "rdma_lite_destroy_qp", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_set_qp_sl = (int (*)(struct rdma_lite_qp * liteQp, int sl))
+    gRdmaLiteOps.raRdmaLiteSetQpSl = (int (*)(struct rdma_lite_qp * liteQp, int sl))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_set_qp_sl");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_set_qp_sl, "rdma_lite_set_qp_sl", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteSetQpSl, "rdma_lite_set_qp_sl", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_clean_qp = (int (*)(struct rdma_lite_qp *liteQp))
+    gRdmaLiteOps.raRdmaLiteCleanQp = (int (*)(struct rdma_lite_qp *liteQp))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_clean_qp");
-    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_clean_qp, "rdma_lite_clean_qp");
+    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteCleanQp, "rdma_lite_clean_qp");
 
-    gRdmaLiteOps.ra_rdma_lite_restore_snapshot = (int (*)(struct rdma_lite_context *liteCtx))
+    gRdmaLiteOps.raRdmaLiteRestoreSnapshot = (int (*)(struct rdma_lite_context *liteCtx))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_restore_snapshot");
-    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_restore_snapshot, "rdma_lite_restore_snapshot");
+    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteRestoreSnapshot, "rdma_lite_restore_snapshot");
 
-    gRdmaLiteOps.ra_rdma_lite_get_api_version = (unsigned int (*)(void))
+    gRdmaLiteOps.raRdmaLiteGetApiVersion = (unsigned int (*)(void))
         dlsym(gRdmaLiteApiHandle, "rdma_lite_get_api_version");
-    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_get_api_version, "rdma_lite_get_api_version");
+    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLiteGetApiVersion, "rdma_lite_get_api_version");
 
     return 0;
 }
 
 static int RaRdmaLiteDataPlaneApiInit(void)
 {
-    gRdmaLiteOps.ra_rdma_lite_post_send = (int (*)(struct rdma_lite_qp * liteQp, struct rdma_lite_send_wr * wr,
+    gRdmaLiteOps.raRdmaLitePostSend = (int (*)(struct rdma_lite_qp * liteQp, struct rdma_lite_send_wr * wr,
         struct rdma_lite_send_wr * *badWr, struct rdma_lite_post_send_attr * attr,
         struct rdma_lite_post_send_resp * resp)) dlsym(gRdmaLiteApiHandle, "rdma_lite_post_send");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_post_send, "rdma_lite_post_send", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLitePostSend, "rdma_lite_post_send", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_post_recv = (int (*)(struct rdma_lite_qp * liteQp, struct rdma_lite_recv_wr * wr,
+    gRdmaLiteOps.raRdmaLitePostRecv = (int (*)(struct rdma_lite_qp * liteQp, struct rdma_lite_recv_wr * wr,
         struct rdma_lite_recv_wr * *badWr)) dlsym(gRdmaLiteApiHandle, "rdma_lite_post_recv");
-    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_post_recv, "rdma_lite_post_recv");
+    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLitePostRecv, "rdma_lite_post_recv");
 
-    gRdmaLiteOps.ra_rdma_lite_poll_cq = (int (*)(struct rdma_lite_cq * liteCq, int numEntries,
+    gRdmaLiteOps.raRdmaLitePollCq = (int (*)(struct rdma_lite_cq * liteCq, int numEntries,
         struct rdma_lite_wc *liteWc)) dlsym(gRdmaLiteApiHandle, "rdma_lite_poll_cq");
-    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_poll_cq, "rdma_lite_poll_cq", gRdmaLiteApiLock);
+    DL_API_RET_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLitePollCq, "rdma_lite_poll_cq", gRdmaLiteApiLock);
 
-    gRdmaLiteOps.ra_rdma_lite_poll_cq_v2 = (int (*)(struct rdma_lite_cq * liteCq, int numEntries,
+    gRdmaLiteOps.raRdmaLitePollCqV2 = (int (*)(struct rdma_lite_cq * liteCq, int numEntries,
         struct rdma_lite_wc_v2 *liteWc)) dlsym(gRdmaLiteApiHandle, "rdma_lite_poll_cq_v2");
-    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.ra_rdma_lite_poll_cq_v2, "rdma_lite_poll_cq_v2");
+    DL_API_PTR_IS_NULL_CHECK(gRdmaLiteOps.raRdmaLitePollCqV2, "rdma_lite_poll_cq_v2");
     return 0;
 }
 #endif
@@ -187,175 +187,175 @@ DL_ATTRI_VISI_DEF void RaHdcRdmaLiteApiDeinit(void)
 
 struct rdma_lite_context *RaRdmaLiteAllocCtx(u8 phyId, struct dev_cap_info *cap)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_alloc_ctx == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteAllocCtx == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_alloc_ctx is null");
         return NULL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_alloc_ctx(phyId, cap);
+    return gRdmaLiteOps.raRdmaLiteAllocCtx(phyId, cap);
 }
 
 void RaRdmaLiteFreeCtx(struct rdma_lite_context *liteCtx)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_free_ctx == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteFreeCtx == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_free_ctx is null");
         return;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_free_ctx(liteCtx);
+    return gRdmaLiteOps.raRdmaLiteFreeCtx(liteCtx);
 }
 
 struct rdma_lite_cq *RaRdmaLiteCreateCq(struct rdma_lite_context *liteCtx, struct rdma_lite_cq_attr *liteCqAttr)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_create_cq == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteCreateCq == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_create_cq is null");
         return NULL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_create_cq(liteCtx, liteCqAttr);
+    return gRdmaLiteOps.raRdmaLiteCreateCq(liteCtx, liteCqAttr);
 }
 
 int RaRdmaLiteDestroyCq(struct rdma_lite_cq *liteCq)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_destroy_cq == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteDestroyCq == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_destroy_cq is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_destroy_cq(liteCq);
+    return gRdmaLiteOps.raRdmaLiteDestroyCq(liteCq);
 }
 
 int RaRdmaLitePollCq(struct rdma_lite_cq *liteCq, int numEntries, struct rdma_lite_wc *liteWc)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_poll_cq == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLitePollCq == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_poll_cq is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_poll_cq(liteCq, numEntries, liteWc);
+    return gRdmaLiteOps.raRdmaLitePollCq(liteCq, numEntries, liteWc);
 }
 
 int RaRdmaLitePollCqV2(struct rdma_lite_cq *liteCq, int numEntries, struct rdma_lite_wc_v2 *liteWc)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_poll_cq_v2 == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLitePollCqV2 == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_poll_cq_v2 is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_poll_cq_v2(liteCq, numEntries, liteWc);
+    return gRdmaLiteOps.raRdmaLitePollCqV2(liteCq, numEntries, liteWc);
 }
 
 struct rdma_lite_qp *RaRdmaLiteCreateQp(struct rdma_lite_context *liteCtx, struct rdma_lite_qp_attr *liteQpAttr)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_create_qp == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteCreateQp == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_create_qp is null");
         return NULL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_create_qp(liteCtx, liteQpAttr);
+    return gRdmaLiteOps.raRdmaLiteCreateQp(liteCtx, liteQpAttr);
 }
 
 int RaRdmaLiteDestroyQp(struct rdma_lite_qp *liteQp)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_destroy_qp == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteDestroyQp == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_destroy_qp is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_destroy_qp(liteQp);
+    return gRdmaLiteOps.raRdmaLiteDestroyQp(liteQp);
 }
 
 int RaRdmaLitePostSend(struct rdma_lite_qp *liteQp, struct rdma_lite_send_wr *wr,
     struct rdma_lite_send_wr **badWr, struct rdma_lite_post_send_attr *attr, struct rdma_lite_post_send_resp *resp)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_post_send == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLitePostSend == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_post_send is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_post_send(liteQp, wr, badWr, attr, resp);
+    return gRdmaLiteOps.raRdmaLitePostSend(liteQp, wr, badWr, attr, resp);
 }
 
 int RaRdmaLitePostRecv(struct rdma_lite_qp *liteQp, struct rdma_lite_recv_wr *wr,
     struct rdma_lite_recv_wr **badWr)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_post_recv == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLitePostRecv == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_post_recv is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_post_recv(liteQp, wr, badWr);
+    return gRdmaLiteOps.raRdmaLitePostRecv(liteQp, wr, badWr);
 }
 
 int RaRdmaLiteSetQpSl(struct rdma_lite_qp *liteQp, unsigned char sl)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_set_qp_sl == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteSetQpSl == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_set_qp_sl is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_set_qp_sl(liteQp, sl);
+    return gRdmaLiteOps.raRdmaLiteSetQpSl(liteQp, sl);
 }
 
 int RaRdmaLiteCleanQp(struct rdma_lite_qp *liteQp)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_clean_qp == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteCleanQp == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_clean_qp is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_clean_qp(liteQp);
+    return gRdmaLiteOps.raRdmaLiteCleanQp(liteQp);
 }
 
 int RaRdmaLiteInitMemPool(struct rdma_lite_context *liteCtx, struct rdma_lite_mem_attr *liteMemAttr)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_init_mem_pool == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteInitMemPool == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_init_mem_pool is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_init_mem_pool(liteCtx, liteMemAttr);
+    return gRdmaLiteOps.raRdmaLiteInitMemPool(liteCtx, liteMemAttr);
 }
 
 int RaRdmaLiteDeinitMemPool(struct rdma_lite_context *liteCtx, u32 memIdx)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_deinit_mem_pool == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteDeinitMemPool == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("ra_rdma_lite_deinit_mem_pool is null");
         return -EINVAL;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_deinit_mem_pool(liteCtx, memIdx);
+    return gRdmaLiteOps.raRdmaLiteDeinitMemPool(liteCtx, memIdx);
 }
 
 int RaRdmaLiteRestoreSnapshot(struct rdma_lite_context *liteCtx)
 {
-    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.ra_rdma_lite_restore_snapshot == NULL) {
+    if (gRdmaLiteApiHandle == NULL || gRdmaLiteOps.raRdmaLiteRestoreSnapshot == NULL) {
 #ifndef HNS_ROCE_LLT
         hccp_err("driver package may not support ra_rdma_lite_restore_snapshot interface, please change new one");
         return -ENOTSUPP;
 #endif
     }
-    return gRdmaLiteOps.ra_rdma_lite_restore_snapshot(liteCtx);
+    return gRdmaLiteOps.raRdmaLiteRestoreSnapshot(liteCtx);
 }
 
 unsigned int RaRdmaLiteGetApiVersion(void)
 {
-    if (gRdmaLiteApiHandle != NULL && gRdmaLiteOps.ra_rdma_lite_get_api_version != NULL) {
-        return gRdmaLiteOps.ra_rdma_lite_get_api_version();
+    if (gRdmaLiteApiHandle != NULL && gRdmaLiteOps.raRdmaLiteGetApiVersion != NULL) {
+        return gRdmaLiteOps.raRdmaLiteGetApiVersion();
     }
 
     return 0;

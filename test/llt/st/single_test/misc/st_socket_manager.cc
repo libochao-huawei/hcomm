@@ -67,7 +67,7 @@ s32 stub_SocketManagerTest_hrtRaSocketNonBlockRecvHB(const FdHandle fdHandle, vo
     return 0;
 }
 
-s32 stub_SocketManagerTest_hrtRaGetSockets(u32 role, struct socket_info_t conn[], u32 num, u32 *connectedNum)
+s32 stub_SocketManagerTest_hrtRaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
 {
     static std::vector<int> fdHandle;
     for (int i = 0; i < num; i++) {

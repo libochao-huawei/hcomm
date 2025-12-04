@@ -38,12 +38,14 @@
 #include "stream_utils.h"
 #include "config_log.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "hccl_one_sided_service.h"
 #include "launch_device.h"
 #include "hccl_communicator.h"
 #include "hccl_thread.h"
 #include "launch_aicpu.h"
 #include "order_launch/order_launch.h"
+#include "comm_configer.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -160,6 +162,7 @@ namespace hccl
         DeleteOpInfoToHeartBeat();
         AlgWrap::GetInstance().UnregisterAlgCallBack(identifier_);
         DetectConnectionAnomalies::GetInstance(deviceLogicId_).Deinit();
+        UnRegisterToCommConfiger();
 
         if (zeroCopyAclGraph_ != nullptr) {
             zeroCopyAclGraph_ = nullptr;
@@ -263,7 +266,7 @@ namespace hccl
             dispatcher_ = nullptr;
         }
         if (dispatcherCtx_ != nullptr) {
-            DestoryDispatcherCtx(dispatcherCtx_);
+            DestroyDispatcherCtx(dispatcherCtx_, identifier_.c_str());
             dispatcherCtx_ = nullptr;
         }
         if (vDispatcher_ != nullptr) {
@@ -309,9 +312,12 @@ namespace hccl
         CHK_RET(InitHDCommunicate());
         CHK_RET(InitOpRetry());
         CHK_RET(InitOpResPara());
-
+        
         CHK_RET(InitOneSidedService(rankTable));
         CHK_RET(OrderLaunch::GetInstance(deviceLogicId_).RegisterOrderLaunch(identifier_));
+        HcclTopoAttr topoAttr;
+        attrCollector_.GetTopoAttr(topoAttr);
+        CHK_RET(rankGraph_.Init(rankTable, topoAttr));
         return HCCL_SUCCESS;
     }
 
@@ -336,6 +342,9 @@ namespace hccl
         CHK_RET(InitOpResPara());
         CHK_RET(RegisterRanksToDca());
         CHK_RET(OrderLaunch::GetInstance(deviceLogicId_).RegisterOrderLaunch(identifier_));
+        HcclTopoAttr topoAttr;
+        attrCollector_.GetTopoAttr(topoAttr);
+        CHK_RET(rankGraph_.Init(topoAttr));
         return HCCL_SUCCESS;
     }
 
@@ -640,6 +649,8 @@ namespace hccl
         ranktableCrc_ = params.ranktableCrc;
         commConnections_ = params.commConnections;
         commPortConfig_ = params.commPortConfig;
+        cclBuffName_ = params.cclBuffName;
+        isShareComm_ = !cclBuffName_.empty();
 
         HCCL_DEBUG(
             " userRank_: %u realUserRank_: %u userRankSize_: %u deviceLogicId_: %u deviceType_: %u commWorkMode_: %u.",
@@ -865,42 +876,9 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::InitHccp()
+    HcclResult HcclCommunicator::InitHccpChannel()
     {
-        /* NSLB 填充  */
-        if (hcclNslbDp::GetInstance().getHccpInitFlag() == true) {
-            HCCL_INFO("hcclNslbDp getHccpInitFlag is init");
-            return HCCL_SUCCESS;
-        }
-
-        u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
-        nslb_inithccp_info nslb_hccp;
-        nslb_hccp.version = NSLBDP_HCCP_VERSION;
-        nslb_hccp.phy_id = devicePhyID;
-        nslb_hccp.nic_posion = NSLBDP_HCCP_NICPOSION;
-
-        u32 nslb_buffersize = 0;
-        void *tlv_handle;
-        HCCL_INFO("H2DTlvInit HCCL nslb InitHccp version:[%u]-phy_id:[%u]-nic_posion:[%u] .",
-                  nslb_hccp.version, nslb_hccp.phy_id, nslb_hccp.nic_posion);
-
-        HcclResult ret = H2DTlvInit(reinterpret_cast<tlv_init_info *>(&nslb_hccp), MODULE_TYPE_NSLB, &nslb_buffersize, &tlv_handle);
-        if (ret != HCCL_SUCCESS) {
-            return ret;
-        }
-        if (nslb_buffersize == 0) {
-            HCCL_INFO("HCCL could not InitHccp nslb_hccp .nslb_buffersize:[%u].", nslb_buffersize);
-            return HCCL_E_NOT_SUPPORT;
-        }
-
-        hcclNslbDp::GetInstance().setHccpInfo(nslb_buffersize, tlv_handle);
-        if (tlv_handle == nullptr) {
-            HCCL_INFO("HCCL ndlbdp  InitHccp is null.");
-            return HCCL_E_NOT_SUPPORT;
-        }
-
-        HCCL_INFO("entry H2DTlvInit end");
-        return HCCL_SUCCESS;
+        return hcclH2dTlv::GetInstance().InitHccpChannel(devicePhyId_);
     }
 
     std::vector<RankInfo> HcclCommunicator::GetRankLists()
@@ -1091,7 +1069,7 @@ namespace hccl
             agentParam.setTransportResumeStatusCallback = setTransportResumeStatusCallback;
             agentParam.getSwitchRanksCallback = getSwitchRanksCallback;
             agentParam.isEnableBackupLink = IsEnableBackupLink();
-            agentParam.isEnableSdmaRetry = GetExternalInputInterServerRetryEnable();
+            agentParam.isEnableSdmaRetry = commConfig_.GetConfigInterServerRetryEnable();
             agentParam.agentInfo = agentInfo;
 
             CHK_RET(opRetryManager_->RegisterOpRetryMachine(agentParam, userRankSize_, commConnections_.isRoot,
@@ -1166,7 +1144,7 @@ namespace hccl
     bool HcclCommunicator::IsEnableBackupLink()
     {
         return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetExternalInputHcclAicpuUnfold() &&
-               GetExternalInputInterSuperPodRetryEnable() && !devBackupIpAddr_[0].IsInvalid() && rtsSupportChangeLink_ &&
+               commConfig_.GetConfigInterSuperPodRetryEnable() && !devBackupIpAddr_[0].IsInvalid() && rtsSupportChangeLink_ &&
                !isDiffDeviceType_;
     }
 
@@ -1386,7 +1364,7 @@ namespace hccl
         if (SatisfyIntraSuperPod(deviceType_, userRankSize_, useSuperPodMode_, superPodNum_)) {
             streamNum = std::max(static_cast<u64>(userRankSize_ - 1u), streamNum);
         } else if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(deviceType_,
-                                                                      meshAggregationRankSize_, useSuperPodMode_)) {
+                                                                      meshAggregationRankSize_, useSuperPodMode_, identifier_)) {
             streamNum = std::max(static_cast<u64>(meshAggregationRankSize_ - 1u), streamNum);
         }
 
@@ -1872,7 +1850,7 @@ namespace hccl
                 "does not support create CCL Buffer.", __func__, identifier_.c_str());
             return HCCL_E_NOT_SUPPORT;
         }
-        return cclBufferManager_.CreateCommCCLbuffer();
+        return cclBufferManager_.CreateCommCCLbuffer(cclBuffName_);
     }
 
     HcclResult HcclCommunicator::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbufferSize)
@@ -2128,13 +2106,13 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &tag)
+    HcclResult HcclCommunicator::AddOpInfoToHeartBeat(const OpInfoDesc &opInfo, const std::string &newTag)
     {
         if (Is310PDevice() || deviceType_ == DevType::DEV_TYPE_310P3 ||
             GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
             return HCCL_SUCCESS;
         }
-        return Heartbeat::GetInstance(deviceLogicId_).AddOpInfoToHeartBeat(identifier_, opInfo, tag);
+        return Heartbeat::GetInstance(deviceLogicId_).AddOpInfoToHeartBeat(identifier_, opInfo, newTag);
     }
 
     void HcclCommunicator::DeleteOpInfoToHeartBeat()
@@ -2172,6 +2150,11 @@ namespace hccl
         Heartbeat::GetInstance(deviceLogicId_).UnRegisterToHeartBeat(deviceType_, identifier_);
     }
 
+    void HcclCommunicator::UnRegisterToCommConfiger()
+    {
+        CommConfiger::GetInstance().UnRegisterToCommConfiger(identifier_);
+    }
+
     HcclResult HcclCommunicator::SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr)
     {
         CHK_RET(HcclSetGlobalWorkSpace(dispatcher_, globalWorkSpaceAddr));
@@ -2197,12 +2180,6 @@ namespace hccl
     HcclResult HcclCommunicator::GetCqeError(HcclResult &result)
     {
         CHK_RET(Heartbeat::GetInstance(deviceLogicId_).CheckErrorCqe(identifier_, result));
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult HcclCommunicator::GetOpInconsistentError(HcclResult &result)
-    {
-        CHK_RET(Heartbeat::GetInstance(deviceLogicId_).CheckOpInconsistentError(identifier_, result));
         return HCCL_SUCCESS;
     }
 
@@ -3775,7 +3752,7 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][RegressCalPreOp] Regression calls other operators and opType[%u]",
                   preMetaInfo->opType);
         CHK_RET(ExecOp(preMetaInfo->opType, preProcessOpParam));
-        CHK_RET(hcclStreamSynchronize(preProcessStream.ptr()));
+        CHK_RET(hcclStreamSynchronize(preProcessStream.ptr(), commConfig_.GetConfigExecTimeOut()));
         HCCL_DEBUG("[HcclCommunicator][RegressCalPreOp] preProcess tag[%s].", preProcessOpParam.tag.c_str());
         SetWorkflowMode(mode);
 
@@ -3930,7 +3907,7 @@ namespace hccl
         }
 
         ForceProf(opParam.isCapture);
-        opParam.supportZeroCopy = IsSupportZeroCopy(opParam);
+        opParam.supportZeroCopy = !commConfig_.GetConfigDeterministic() && IsSupportZeroCopy(opParam);
         opParam.aclGraphZeroCopyEnable = GetConfigAclGraphZeroCopyEnable();
         bool isInGraphCaptureZeroCopy = false;
         zeroCopyAclGraph_->SetRetryEnable(retryEnable_);
@@ -3939,7 +3916,9 @@ namespace hccl
         if (isInGraphCaptureZeroCopy && userRankSize_ > 1) {
             CHK_RET(CreateCommCCLbuffer());
         }
-
+        if (isShareComm_) {
+            CHK_RET(ShareCCLbufferMgr::GetInstance().CheckCCLbuffConflict(cclBuffName_, opParam.stream.id()));
+        }
         std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
         CHK_SMART_PTR_NULL(algOperator);
         // 算法选择
@@ -4123,7 +4102,7 @@ namespace hccl
             CHK_RET(algOperator->SetAivClearEnable(false));
             aivClearEnable_ = false;
         }
-        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().getHccpInitFlag() == true) {
+        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
             AdjInfo nslbAdjInfo = {};
             CHK_RET(algOperator->GetAdjInfo(algName, opParam, resMap_[newTag], nslbAdjInfo));
             NslbDp_CollectSendAdjTable(opType, opParam, algOperator->GetAlgType(), nslbAdjInfo);
@@ -4172,7 +4151,9 @@ namespace hccl
         if (isInGraphCaptureZeroCopy && userRankSize_ > 1) {
             CHK_RET(CreateCommCCLbuffer());
         }
-
+        if (isShareComm_) {
+            CHK_RET(ShareCCLbufferMgr::GetInstance().CheckCCLbuffConflict(cclBuffName_, opParam.stream.id()));
+        }
         std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
         AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
         CHK_PTR_NULL(alltoAllOperator);
@@ -4277,7 +4258,7 @@ namespace hccl
             HCCL_INFO("resMap_ find this newTag[%s], and need to judge whether recreate comm [%d]", newTag.c_str(),
                       needRecreateAlltoallComm);
             if (needRecreateAlltoallComm) {
-                CHK_RET(hcclStreamSynchronize(opParam.stream.ptr()));
+                CHK_RET(hcclStreamSynchronize(opParam.stream.ptr(), commConfig_.GetConfigExecTimeOut()));
                 AlgResourceRequest resRequest;
                 CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
                 // alltoall算子重分配内存前需清除scratchMMem，防止内存泄漏
@@ -4311,7 +4292,7 @@ namespace hccl
             }
         }
 
-        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().getHccpInitFlag() == true) {
+        if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
             // 填充表2
             hcclNslbDp::GetInstance().GenerateOpAndAdjTable(opType, rootRank, srcLocalRankId, nslbAlg, nslb_identifier, count, rankSize);
             AdjInfo nslbAdjInfo = {};
@@ -4880,8 +4861,8 @@ namespace hccl
     HcclResult HcclCommunicator::BuildOpRetryParam(const AlgResourceResponse &algResource, const std::string &newTag)
     {
         opResPara_.config.retryEnable = static_cast<u8>(retryEnable_);
-        opResPara_.config.retryHoldTime = GetExternalInputRetryHoldTime();
-        opResPara_.config.retryIntervalTime = GetExternalInputRetryIntervalTime();
+        opResPara_.config.retryHoldTime = commConfig_.GetConfigRetryHoldTime();
+        opResPara_.config.retryIntervalTime = commConfig_.GetConfigRetryIntervalTime();
         // aicpu和custom共用同一个opResPara_，aicpu初始化完成后，会修改h2d/d2h的指针，然后重新传给custom
         opResPara_.kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
         opResPara_.kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
@@ -5387,8 +5368,9 @@ namespace hccl
         }
         opResPara_.config.isSupportAtomicWrite = static_cast<u8>(isSupportAtomicWrite);
         opResPara_.config.notifyWaitTime =
-            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET)
-                ? GetInternalExecTimeOut()
+            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+            commConfig_.GetConfigExecTimeOutSet())
+                ? commConfig_.GetConfigExecTimeOut()
                 : NOTIFY_DEFAULT_WAIT_TIME;
         opResPara_.config.linkTimeOut = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
         opResPara_.config.retryEnable = static_cast<u8>(retryEnable_);
@@ -5427,7 +5409,7 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::RegisterDfxInfo(const OpParam &param, AlgType algType,
-                                                 const std::vector<Stream> &slaveStreams, bool isAiv, const std::string &tag)
+                                                 const std::vector<Stream> &slaveStreams, bool isAiv, const std::string &newTag)
     {
         u64 count = 0;
         HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
@@ -5453,7 +5435,7 @@ namespace hccl
             dataType = param.GetDataType();
         }
 
-        if (param.opType != HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
+        if (param.opType == HcclCMDType::HCCL_CMD_SEND || param.opType == HcclCMDType::HCCL_CMD_RECEIVE){ 
             OpInfoDesc opInfo;
             opInfo.opType = param.opType;
             opInfo.dataType = dataType;
@@ -5461,7 +5443,8 @@ namespace hccl
             opInfo.count = count;
             opInfo.root = param.root;
             opInfo.isValid = true;
-            AddOpInfoToHeartBeat(opInfo, tag);
+            memcpy_s(opInfo.identifier, newTag.length() + 1, newTag.c_str(), newTag.length() + 1);
+            AddOpInfoToHeartBeat(opInfo, newTag);
         }
 
         // task exception使用: 算子计数，算子入参信息(src/dst/datatype/reducetype)
@@ -6240,10 +6223,11 @@ namespace hccl
         combinOparaPtr->config.deterministic = GetDeterministicConfig();
         // retryEnable 写入aicpu_ctx
         combinOparaPtr->config.retryEnable = static_cast<u8>(retryEnable_);
-        combinOparaPtr->config.retryHoldTime = GetExternalInputRetryHoldTime();
-        combinOparaPtr->config.retryIntervalTime = GetExternalInputRetryIntervalTime();
+        combinOparaPtr->config.retryHoldTime = commConfig_.GetConfigRetryHoldTime();
+        combinOparaPtr->config.retryIntervalTime = commConfig_.GetConfigRetryIntervalTime();
         combinOparaPtr->config.notifyWaitTime =
-            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ? GetInternalExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+            commConfig_.GetConfigExecTimeOutSet()) ? commConfig_.GetConfigExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
         combinOparaPtr->config.linkTimeOut = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
 
         combinOparaPtr->kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
@@ -6309,7 +6293,7 @@ namespace hccl
         CHK_RET(AiCpuKernelLaunch(tmpStream.ptr(), reinterpret_cast<u64>(commContext_.ptr()), kernelName));
         SetMC2EnvFlag();
         if (isOpbaseMode == true) {
-            CHK_RET(hcclStreamSynchronize(tmpStream.ptr()));
+            CHK_RET(hcclStreamSynchronize(tmpStream.ptr(), commConfig_.GetConfigExecTimeOut()));
         }
 
         *commContext = commContext_.ptr();
@@ -6398,7 +6382,7 @@ namespace hccl
         SetMC2EnvFlag();
         newTagResAlloced_.insert(newTag);
         // 图模多档位场景，需要保证执行序上优先下资源初始化的kernel
-        CHK_RET(hcclStreamSynchronize(aicpuStream));
+        CHK_RET(hcclStreamSynchronize(aicpuStream, commConfig_.GetConfigExecTimeOut()));
 
         if (IsEnableCustom()) {
             InitTask customInitTask = {0};
@@ -6415,7 +6399,7 @@ namespace hccl
             s32 customthreadId = SalGetTid();
             CHK_RET(ProfilingManagerPub::CallMsprofReportNodeInfo(customBeginTime, customEndTime, customProfName,
                                                                   customthreadId));
-            CHK_RET(hcclStreamSynchronize(aicpuStream));
+            CHK_RET(hcclStreamSynchronize(aicpuStream, commConfig_.GetConfigExecTimeOut()));
         }
 
         return HCCL_SUCCESS;
@@ -7062,7 +7046,8 @@ namespace hccl
         combinOparaPtr->winExpSize = EXP_BUFFER_SIZE;
         combinOparaPtr->config.deterministic = GetDeterministicConfig();
         combinOparaPtr->config.notifyWaitTime =
-            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ? GetInternalExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+            (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+            commConfig_.GetConfigExecTimeOutSet()) ? commConfig_.GetConfigExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
         hcclMc2Info_.groupName = hrtMsprofGetHashId(identifier_.c_str(), identifier_.length());
         combinOparaPtr->config.linkTimeOut = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
         hcclMc2Info_.rankSize = rankSize;
@@ -7388,6 +7373,13 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::SetExecTimeOutConfig(const s32 execTimeOut)
+    {
+        CHK_SMART_PTR_NULL(implAlg_);
+        CHK_RET(implAlg_->SetExecTimeOutConfig(execTimeOut));
+        return HCCL_SUCCESS;
+    }
+
     bool HcclCommunicator::GetAivModeConfig()
     {
         return commConfig_.GetConfigAivMode();
@@ -7410,6 +7402,7 @@ namespace hccl
             HCCL_INFO("[%s]Set TC[%u] and SL[%u] for oneSidedService success.", __func__, trafficClass, serviceLevel);
         }
         transportManager_->SetQpQosAttr(trafficClass, serviceLevel);
+        indptOpTransportManager_->SetQpQosAttr(trafficClass, serviceLevel);
     }
 
     HcclResult HcclCommunicator::CheckExitWaitResumeState(bool &isChangedLink)
@@ -7619,7 +7612,7 @@ namespace hccl
         CHK_PRT_RET(!IsEnableBackupLink(), HCCL_RUN_WARNING("[HcclCommunicator][%s]Backup link is not enabled, "
                                                             "switch nic will not be prorcessed, comm identifier[%s], rank[%u], devType[%u], opretry enable[%u], "
                                                             "backup ip valid[%u], roce enable[%u].",
-                                                            __func__, identifier_.c_str(), userRank_, deviceType_, GetExternalInputHcclAicpuUnfold() && GetExternalInputInterSuperPodRetryEnable(), !devBackupIpAddr_[0].IsInvalid(), IsEnableRoce()),
+                                                            __func__, identifier_.c_str(), userRank_, deviceType_, GetExternalInputHcclAicpuUnfold() && commConfig_.GetConfigInterSuperPodRetryEnable(), !devBackupIpAddr_[0].IsInvalid(), IsEnableRoce()),
                     HCCL_SUCCESS);
         CHK_PRT_RET(resMap_.empty(), HCCL_ERROR("[HcclCommunicator][%s] "
                                                 "no collective operation has been executed in this communication[%s] on rank[%u], "
@@ -7918,9 +7911,9 @@ namespace hccl
         }
         
         StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
-        CHK_PTR_NULL(transportManager_);
+        CHK_PTR_NULL(indptOpTransportManager_);
         bool isIndOp = true;
-        HcclResult ret = transportManager_->Alloc(tag, transMem, opCommTransport, isAicpuModeEn, false, false,
+        HcclResult ret = indptOpTransportManager_->Alloc(tag, transMem, opCommTransport, isAicpuModeEn, false, false,
             HcclCMDType::HCCL_CMD_INVALID, false, isIndOp);
 
         if (ret != HCCL_SUCCESS) {
@@ -7946,4 +7939,100 @@ namespace hccl
         return binHandle_;
     }
 
+    HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
+        HDCommunicateParams &kfcStatusTransferD2HParams)
+    {
+        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+        kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
+        kfcStatusTransferD2HParams = kfcStatusTransferD2H_->GetCommunicateParams();
+        HCCL_INFO("%s success, group[%s]", __func__, identifier_.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SetGetAicpuCommState(std::function<bool()> getAicpuCommState)
+    {
+        getAicpuCommState_ = getAicpuCommState;
+        HCCL_DEBUG("%s success, group[%s]", __func__, identifier_.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            netLayer_[0] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
+            netLayer_[1] = static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1);
+            *netLayerNum = COMM_LAYER_NUM_MAX;
+        } else if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_310P3) {
+            netLayer_[0] =static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0);
+            *netLayerNum = 1;
+        }
+        *netLayers = netLayer_;
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        if ((netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) ||
+            (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1))) {
+                *rankNum = userRankSize_;
+            }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType)
+    {
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) {
+                *topoType = HCCL_ALG_SWITCH | HCCL_ALG_RING;
+            } else if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L1)) {
+                *topoType = HCCL_ALG_RING;
+            }
+        } else if (deviceType_ == DevType::DEV_TYPE_910B) {
+            if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) {
+                *topoType = HCCL_ALG_MESH;
+            }
+        } else if (deviceType_ == DevType::DEV_TYPE_310P3) {
+            if (netLayer == static_cast<uint32_t>(HcclTopoLevel::HCCL_TOPO_L0)) {
+                *topoType = HCCL_ALG_RING;
+            }
+        }
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        return rankGraph_.GetNetLayers(netLayers, netLayerNum);
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        return rankGraph_.GetInstSizeByNetLayer(netLayer, rankNum);
+    }
+    
+    HcclResult HcclCommunicator::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
+    {
+        return rankGraph_.GetInstTopoTypeByNetLayer(netLayer, topoType);
+    }
+
+    HcclResult HcclCommunicator::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+    {
+        return rankGraph_.GetInstRanksByNetLayer(netLayer, rankList, rankNum);
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+    {
+        return rankGraph_.GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
+    }
+
+    HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)
+    {
+        return rankGraph_.GetRankGraphInfo(type, graph, len);
+    }
+
+    HcclResult HcclCommunicator::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize)
+    {
+        return rankGraph_.GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
+    }
 }

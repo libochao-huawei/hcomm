@@ -13,26 +13,26 @@
 #include "securec.h"
 #include "ra_rs_err.h"
 
-int RaGetSocketConnectInfo(const struct socket_connect_info_t conn[], unsigned int num,
-    struct socket_connect_info rsConn[], unsigned int rsNum)
+int RaGetSocketConnectInfo(const struct SocketConnectInfoT conn[], unsigned int num,
+    struct SocketConnectInfo rsConn[], unsigned int rsNum)
 {
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
     unsigned int i;
     int ret;
 
     CHK_PRT_RETURN(num > rsNum || num > MAX_SOCKET_NUM || conn == NULL || rsConn == NULL, hccp_err("[get]"
         "[ra_socket_connect_info]num(%u) > rs_num(%u) or conn or rs_conn is NULL, invalid", num, rsNum), -EINVAL);
     for (i = 0; i < num; i++) {
-        socketHandle = (struct ra_socket_handle *)conn[i].socket_handle;
-        rsConn[i].phy_id = socketHandle->rdev_info.phy_id;
-        rsConn[i].family = socketHandle->rdev_info.family;
+        socketHandle = (struct RaSocketHandle *)conn[i].socketHandle;
+        rsConn[i].phyId = socketHandle->rdevInfo.phyId;
+        rsConn[i].family = socketHandle->rdevInfo.family;
         rsConn[i].port = conn[i].port;
-        ret = memcpy_s(&(rsConn[i].local_ip), sizeof(union hccp_ip_addr),
-            &(socketHandle->rdev_info.local_ip), sizeof(union hccp_ip_addr));
+        ret = memcpy_s(&(rsConn[i].localIp), sizeof(union HccpIpAddr),
+            &(socketHandle->rdevInfo.localIp), sizeof(union HccpIpAddr));
         CHK_PRT_RETURN(ret, hccp_err("[get][ra_socket_connect_info]memcpy_s for local_ip failed, ret(%d)",
             ret), -ESAFEFUNC);
-        ret = memcpy_s(&(rsConn[i].remote_ip), sizeof(union hccp_ip_addr),
-            &(conn[i].remote_ip), sizeof(union hccp_ip_addr));
+        ret = memcpy_s(&(rsConn[i].remoteIp), sizeof(union HccpIpAddr),
+            &(conn[i].remoteIp), sizeof(union HccpIpAddr));
         CHK_PRT_RETURN(ret, hccp_err("[get][ra_socket_connect_info]memcpy_s for remote_ip failed, ret(%d)",
             ret), -ESAFEFUNC);
         ret = memcpy_s(rsConn[i].tag, SOCK_CONN_TAG_SIZE, conn[i].tag, SOCK_CONN_TAG_SIZE);
@@ -42,12 +42,12 @@ int RaGetSocketConnectInfo(const struct socket_connect_info_t conn[], unsigned i
     return 0;
 }
 
-int RaGetSocketListenInfo(const struct socket_listen_info_t conn[], unsigned int num,
-    struct socket_listen_info rsConn[], unsigned int rsNum)
+int RaGetSocketListenInfo(const struct SocketListenInfoT conn[], unsigned int num,
+    struct SocketListenInfo rsConn[], unsigned int rsNum)
 {
     unsigned int i;
     int ret;
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
 
     CHK_PRT_RETURN(num > rsNum || num > MAX_SOCKET_NUM || conn == NULL || rsConn == NULL, hccp_err("[get]"
         "[ra_socket_listen_info]num(%u) > rs_num(%u), or conn or rsConn is NULL, invalid", num, rsNum), -EINVAL);
@@ -55,22 +55,22 @@ int RaGetSocketListenInfo(const struct socket_listen_info_t conn[], unsigned int
     for (i = 0; i < num; i++) {
         rsConn[i].phase = conn[i].phase;
         rsConn[i].err = conn[i].err;
-        socketHandle = (struct ra_socket_handle *)conn[i].socket_handle;
-        rsConn[i].phy_id = socketHandle->rdev_info.phy_id;
-        rsConn[i].family = socketHandle->rdev_info.family;
+        socketHandle = (struct RaSocketHandle *)conn[i].socketHandle;
+        rsConn[i].phyId = socketHandle->rdevInfo.phyId;
+        rsConn[i].family = socketHandle->rdevInfo.family;
         rsConn[i].port = conn[i].port;
-        ret = memcpy_s(&(rsConn[i].local_ip), sizeof(union hccp_ip_addr),
-            &(socketHandle->rdev_info.local_ip), sizeof(union hccp_ip_addr));
+        ret = memcpy_s(&(rsConn[i].localIp), sizeof(union HccpIpAddr),
+            &(socketHandle->rdevInfo.localIp), sizeof(union HccpIpAddr));
         CHK_PRT_RETURN(ret, hccp_err("[get][ra_socket_listen_info]memcpy_s for local_ip failed, ret(%d)",
             ret), -ESAFEFUNC);
     }
     return 0;
 }
 
-int RaGetSocketListenResult(const struct socket_listen_info rsConn[], unsigned int rsNum,
-    struct socket_listen_info_t conn[], unsigned int num)
+int RaGetSocketListenResult(const struct SocketListenInfo rsConn[], unsigned int rsNum,
+    struct SocketListenInfoT conn[], unsigned int num)
 {
-    struct ra_socket_handle *socketHandle = NULL;
+    struct RaSocketHandle *socketHandle = NULL;
     unsigned int i;
     int ret;
 
@@ -81,11 +81,11 @@ int RaGetSocketListenResult(const struct socket_listen_info rsConn[], unsigned i
         conn[i].phase = rsConn[i].phase;
         conn[i].err = rsConn[i].err;
         conn[i].port = rsConn[i].port;
-        socketHandle = (struct ra_socket_handle *)conn[i].socket_handle;
-        socketHandle->rdev_info.phy_id = rsConn[i].phy_id;
-        socketHandle->rdev_info.family = rsConn[i].family;
-        ret = memcpy_s(&(socketHandle->rdev_info.local_ip), sizeof(union hccp_ip_addr),
-            &(rsConn[i].local_ip), sizeof(union hccp_ip_addr));
+        socketHandle = (struct RaSocketHandle *)conn[i].socketHandle;
+        socketHandle->rdevInfo.phyId = rsConn[i].phyId;
+        socketHandle->rdevInfo.family = rsConn[i].family;
+        ret = memcpy_s(&(socketHandle->rdevInfo.localIp), sizeof(union HccpIpAddr),
+            &(rsConn[i].localIp), sizeof(union HccpIpAddr));
         CHK_PRT_RETURN(ret, hccp_err("[get][ra_socket_listen_result]memcpy_s for local_ip failed, ret(%d)",
             ret), -ESAFEFUNC);
     }

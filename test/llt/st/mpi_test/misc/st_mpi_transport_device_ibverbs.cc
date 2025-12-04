@@ -818,7 +818,7 @@ TEST_F(MPI_TRANSPORT_DEVICE_IBVERBS_TEST, st_transport_ibverbs_all_test)
     MemDetails memDetails;
     linktmp->GetLocalMemDetails(UserMemType::INPUT_MEM, memDetails);
     linktmp->GetLocalMemDetails(UserMemType::MEM_RESERVED, memDetails);
-    struct ai_qp_info qpInfo;
+    struct AiQpInfo qpInfo;
     qpInfo.ai_qp_addr = 0x12345678;
     qpInfo.sq_index = 0;
     qpInfo.db_index = 1;
@@ -827,7 +827,7 @@ TEST_F(MPI_TRANSPORT_DEVICE_IBVERBS_TEST, st_transport_ibverbs_all_test)
     v2[0].qpPtr = 0x100;
     v2[0].sqIndex = 2;
     linktmp->combineAiQpInfos_.resize(1);
-    linktmp->combineAiQpInfos_[0].aiQpInfo = qpInfo;
+    linktmp->combineAiQpInfos_[0].AiQpInfo = qpInfo;
     linktmp->TxDone(stream);
     linktmp->RxDone(stream);
     linktmp->PostFinAck(stream);
@@ -942,7 +942,7 @@ TEST_F(MPI_TRANSPORT_DEVICE_IBVERBS_TEST, st_transport_ibverbs_aicpu_test)
     linktmp->ParseReceivedExchangeData();
 
     QpHandle qpHandle;
-    ai_qp_info qpInfo;
+    AiQpInfo qpInfo;
     linktmp->CreateOneQp(2, 2, qpHandle, qpInfo, true);
     MemType memType =MemType::DATA_NOTIFY_MEM;
     u8* exchangeDataPtr = nullptr;
@@ -985,8 +985,8 @@ TEST_F(MPI_TRANSPORT_DEVICE_IBVERBS_TEST, st_transport_base_all_test)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     link_->GetLocalNotifyValueAddrKey(rdmaNotifyAddr);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    std::vector<HcclQpInfoV2> aiQpInfo;
-    link_->GetAiQpInfo(aiQpInfo);
+    std::vector<HcclQpInfoV2> AiQpInfo;
+    link_->GetAiQpInfo(AiQpInfo);
     s64 chipId = 1;
     link_->GetChipId(chipId);
     EXPECT_EQ(ret, HCCL_SUCCESS);

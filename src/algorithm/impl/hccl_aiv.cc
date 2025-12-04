@@ -20,6 +20,7 @@
 #include "ccl_buffer_manager.h"
 #include "acl/acl_rt.h"
 #include "launch_device.h"
+#include "comm_configer.h"
 #include "hccl_aiv.h"
 
 using namespace std;
@@ -377,46 +378,16 @@ HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
 {
     // 获取二进制文件路径
     std::string libPath;
-    char *getPath = getenv("LD_LIBRARY_PATH");
+    char *getPath = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, getPath);
     if (getPath != nullptr) {
         libPath = getPath;
     } else {
-        HCCL_ERROR("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH is not set");
-        return HCCL_E_PARA;
+        libPath = "/usr/local/Ascend/cann";
+        HCCL_WARNING("[GetOpBinaryPath]ENV:ASCEND_HOME_PATH is not set");
     }
-
-    size_t mid = libPath.find("fwkacllib/lib64");
-    if (mid == libPath.npos) {
-        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:LD_LIBRARY_PATH lack fwkacllib/lib64");
-
-        mmDlInfo info;
-        mmDladdr(reinterpret_cast<void *>(RegisterKernel), &info);
-
-        CHK_PRT_RET(info.dli_fname == nullptr, HCCL_ERROR("[AIV][GetAivOpBinaryPath]get path of libhccl_alg.so failed"),
-            HCCL_E_UNAVAIL);
-
-        char resolvedPath[PATH_MAX];
-        if (realpath(info.dli_fname, resolvedPath) == nullptr) {
-            HCCL_ERROR("[AIV][GetAivOpBinaryPath]path %s is not a valid real path", info.dli_fname);
-            return HCCL_E_INTERNAL;
-        }
-        binaryPath = resolvedPath;
-        if (binaryPath.find("/libhccl_alg.so") != binaryPath.npos) {
-            binaryPath.erase(binaryPath.find("/libhccl_alg.so"));
-        } else {
-            HCCL_ERROR("[AIV][GetAivOpBinaryPath]get binary path failed");
-            return HCCL_E_PARA;
-        }
-        HCCL_DEBUG("[AIV][GetAivOpBinaryPath]op binary file path[%s]", binaryPath.c_str());
-    } else {
-        u32 diff;
-        if (libPath.find(":", mid) == libPath.npos) {
-            diff = libPath.length() - libPath.rfind(":", mid);
-        } else {
-            diff = libPath.find(":", mid) - libPath.rfind(":", mid);
-        }
-        binaryPath = libPath.substr(libPath.rfind(":", mid) + 1, diff - 1);
-    }
+    binaryPath = libPath + "/lib64";
+    HCCL_INFO("op binary file path[%s]", binaryPath.c_str());
 
     // 判断应该加载的文件
     switch (deviceType) {
@@ -431,6 +402,7 @@ HcclResult GetAivOpBinaryPath(DevType deviceType, std::string &binaryPath)
             HCCL_ERROR("[AIV][GetAivOpBinaryPath]devType[%u] is not supported", deviceType);
             return HCCL_E_NOT_SUPPORT;
     }
+    HCCL_INFO("[AIV][GetAivOpBinaryPath]op binary file path[%s]", binaryPath.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -554,9 +526,9 @@ HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSched
     return HCCL_SUCCESS;
 }
 
-u32 GetAivTimeout() {
-    u32 timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-        static_cast<u32>(std::ceil(GetExternalInputHcclExecTimeOut())) : AIV_TIMEOUT_DEFAULT;
+u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
+    u32 timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET || isSetByConfig) ?
+        static_cast<u32>(std::ceil(execTimeOut)) : AIV_TIMEOUT_DEFAULT;
 
     return timeout < AIV_TIMEOUT_MAX ? timeout : AIV_TIMEOUT_MAX;
 }
@@ -574,7 +546,8 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
     attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    attr[1].value.timeout = GetAivTimeout();
+    s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(comm);
+    attr[1].value.timeout = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(comm));
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
     cfg.numAttrs = AIV_ATTRNUM_THREE;
@@ -720,7 +693,8 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
     attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
-    attr[1].value.timeout = GetAivTimeout();
+    s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(topoArgs.identify);
+    attr[1].value.timeout = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(topoArgs.identify));
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
     cfg.numAttrs = AIV_ATTRNUM_THREE;

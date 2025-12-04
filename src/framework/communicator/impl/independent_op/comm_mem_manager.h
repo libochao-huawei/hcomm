@@ -37,7 +37,7 @@ public:
     ~CommMemMgr() = default;
 
      // cclbuffer内存
-    void CommSetHcclBufferSize(uint32_t size);
+    void CommSetHcclBufferSize(uint64_t size);
     HcclResult GetHcclBuffer(CommBuffer *buffer);
     
     // 用户注册/反注册内存

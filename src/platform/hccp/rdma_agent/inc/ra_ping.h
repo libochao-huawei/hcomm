@@ -15,28 +15,28 @@
 #include "hccp_ping.h"
 #include "hccp_common.h"
 
-struct ra_ping_handle {
-    enum protocol_type protocol;
-    union ping_dev dev;
-    uint32_t buffer_size;
+struct RaPingHandle {
+    enum ProtocolTypeT protocol;
+    union PingDev dev;
+    uint32_t bufferSize;
 
-    struct ra_ping_ops *ping_ops;
+    struct RaPingOps *pingOps;
     pthread_mutex_t mutex;
-    uint32_t task_cnt;
-    uint32_t target_cnt;
+    uint32_t taskCnt;
+    uint32_t targetCnt;
 
-    uint32_t dev_index;
-    unsigned int phy_id;
+    uint32_t devIndex;
+    unsigned int phyId;
 };
 
-struct ra_ping_ops {
-    int (*ra_ping_init)(struct ra_ping_handle *pingHandle, struct ping_init_attr *initAttr,
-        struct ping_init_info *initInfo);
-    int (*ra_ping_target_add)(struct ra_ping_handle *pingHandle, struct ping_target_info target[], uint32_t num);
-    int (*ra_ping_task_start)(struct ra_ping_handle *pingHandle, struct ping_task_attr *attr);
-    int (*ra_ping_get_results)(struct ra_ping_handle *pingHandle, struct ping_target_result target[], uint32_t *num);
-    int (*ra_ping_target_del)(struct ra_ping_handle *pingHandle, struct ping_target_comm_info target[], uint32_t num);
-    int (*ra_ping_task_stop)(struct ra_ping_handle *pingHandle);
-    int (*ra_ping_deinit)(struct ra_ping_handle *pingHandle);
+struct RaPingOps {
+    int (*raPingInit)(struct RaPingHandle *pingHandle, struct PingInitAttr *initAttr,
+        struct PingInitInfo *initInfo);
+    int (*raPingTargetAdd)(struct RaPingHandle *pingHandle, struct PingTargetInfo target[], uint32_t num);
+    int (*raPingTaskStart)(struct RaPingHandle *pingHandle, struct PingTaskAttr *attr);
+    int (*raPingGetResults)(struct RaPingHandle *pingHandle, struct PingTargetResult target[], uint32_t *num);
+    int (*raPingTargetDel)(struct RaPingHandle *pingHandle, struct PingTargetCommInfo target[], uint32_t num);
+    int (*raPingTaskStop)(struct RaPingHandle *pingHandle);
+    int (*raPingDeinit)(struct RaPingHandle *pingHandle);
 };
 #endif // RA_PING_H

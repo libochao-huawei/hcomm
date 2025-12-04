@@ -25,9 +25,9 @@ class SendRecvExecutor {
 public:
     // Send/Recv场景
     SendRecvExecutor(HcclRtStream stream, QpHandle qpHandle,
-    const struct mr_info& localWindowMem, const struct mr_info& remoteWindowMem,
-    const struct mr_info& localSyncMemPrepare, const struct mr_info& localSyncMemDone, const struct mr_info& localSyncMemAck,
-    const struct mr_info& remoteSyncMemPrepare, const struct mr_info& remoteSyncMemDone, const struct mr_info& remoteSyncMemAck,
+    const struct MrInfoT& localWindowMem, const struct MrInfoT& remoteWindowMem,
+    const struct MrInfoT& localSyncMemPrepare, const struct MrInfoT& localSyncMemDone, const struct MrInfoT& localSyncMemAck,
+    const struct MrInfoT& remoteSyncMemPrepare, const struct MrInfoT& remoteSyncMemDone, const struct MrInfoT& remoteSyncMemAck,
     u32 immData, const u64 chunkNum = HCCL_CHUNK_NUM);
     // BatchPut场景
     SendRecvExecutor(HcclRtStream stream, QpHandle qpHandle, AscendSendRecvLinkInfo* linkInfo);
@@ -56,28 +56,28 @@ private:
         uint32_t rdmaOp = RA_WR_RDMA_WRITE, int sendFlag = RA_SEND_SIGNALED);
     HcclResult WaitSignal(HcclRtSignal signal);
     HcclResult PayLoad(const void *src, u64 dstOffset, u64 len);
-    HcclResult RdmaSendAsync(struct send_wr_v2 &wr);
+    HcclResult RdmaSendAsync(struct SendWrV2 &wr);
     HcclResult MemcpyAsyncD2D(hccl::DeviceMem &dst, const hccl::DeviceMem &src, hccl::Stream &stream);
     HcclResult PayLoadMR(AscendMrInfo* putMRInfo, AscendMrInfo* remoteMRInfo, u32& wrNum,
         bool isLastMRtoPut = false);
     HcclResult ProcessRCQ(AscendMrInfo* lastMRInfo);
-    HcclResult MultiWqeOneDoorBellSend(bool isLastWr, u32& wrNum, struct send_wr_v2& wr);
+    HcclResult MultiWqeOneDoorBellSend(bool isLastWr, u32& wrNum, struct SendWrV2& wr);
     HcclResult WaitSignalUnlimitedTime(HcclRtSignal signal);
 private:
     HcclRtStream stream_;
     QpHandle qpHandle_;
-    struct mr_info localWindowMem_{};
-    struct mr_info remoteWindowMem_{};
+    struct MrInfoT localWindowMem_{};
+    struct MrInfoT remoteWindowMem_{};
 
-    struct mr_info localSyncMemPrepare_;
-    struct mr_info localSyncMemDone_;
-    struct mr_info localSyncMemAck_;
+    struct MrInfoT localSyncMemPrepare_;
+    struct MrInfoT localSyncMemDone_;
+    struct MrInfoT localSyncMemAck_;
 
-    struct mr_info remoteSyncMemPrepare_;
-    struct mr_info remoteSyncMemDone_;
-    struct mr_info remoteSyncMemAck_;
+    struct MrInfoT remoteSyncMemPrepare_;
+    struct MrInfoT remoteSyncMemDone_;
+    struct MrInfoT remoteSyncMemAck_;
 
-    struct mr_info notifySrcMem_;
+    struct MrInfoT notifySrcMem_;
 
     HcclRtSignal prepareNotify_ = nullptr;
     HcclRtSignal ackNotify_ = nullptr;
@@ -89,7 +89,7 @@ private:
     SyncMode notifyWaitMode_;
     u32 wqePerDoorBell_ = 10;
 
-    struct mr_info remoteNotifyValueMem_;
+    struct MrInfoT remoteNotifyValueMem_;
 };
 }  // namespace hccl
 

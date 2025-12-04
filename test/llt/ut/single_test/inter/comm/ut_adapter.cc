@@ -561,7 +561,7 @@ TEST_F(RuntimeTest, test_hrtRaQpDestroy)
 TEST_F(RuntimeTest, test_hrtRaRdmaInitWithAttr)
 {
     int rdma = 0;
-    struct rdev_init_info init_info {0};
+    struct RdevInitInfo init_info {0};
     struct rdev rdevInfo {};
     RdmaHandle rdmaHandle = &rdma;
     int ret = HrtRaRdmaInitWithAttr(init_info, rdevInfo, rdmaHandle);
@@ -769,7 +769,7 @@ TEST_F(RuntimeTest, test_adapter_interface_pre_exec)
     .stubs()
     .will(returnValue(0));
 
-    struct socket_info_t conn10[2];
+    struct SocketInfoT conn10[2];
     hrtRaBlockGetSockets(0, conn10, 2);
     GlobalMockObject::verify();
 }
@@ -783,7 +783,7 @@ TEST_F(RuntimeTest, test_hrtRaSocketListenStop_nodev)
     .stubs()
     .will(returnValue(SOCK_ENODEV));
 
-    socket_listen_info_t sockListen;
+    SocketListenInfoT sockListen;
     ret = hrtRaSocketListenStop(&sockListen, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
@@ -1149,7 +1149,7 @@ TEST_F(RuntimeTest, ut_ra_socket_listen_stop_timeout)
     .expects(once())
     .will(returnValue(0));
 
-    socket_listen_info_t sockListen;
+    SocketListenInfoT sockListen;
     ret = hrtRaSocketListenStop(&sockListen, 1);
     EXPECT_EQ(ret, HCCL_E_TIMEOUT);
     GlobalMockObject::verify();
@@ -1158,7 +1158,7 @@ TEST_F(RuntimeTest, ut_ra_socket_listen_stop_timeout)
 TEST_F(RuntimeTest, ut_hrtRaSocketNonBlockBatchConnect)
 {
     HcclResult ret = HCCL_SUCCESS;
-    socket_connect_info_t conn;
+    SocketConnectInfoT conn;
     u32 num = 1;
     ret = DlRaFunction::GetInstance().DlRaFunctionInit();
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -1198,7 +1198,7 @@ TEST_F(RuntimeTest, ut_ra_socket_batch_close_timeout)
     .expects(once())
     .will(returnValue(0));
 
-    socket_close_info_t sockConn;
+    SocketCloseInfoT sockConn;
     ret = hrtRaSocketBatchClose(&sockConn, 1, 1);
     EXPECT_EQ(ret, HCCL_E_TIMEOUT);
     GlobalMockObject::verify();
@@ -1208,7 +1208,7 @@ TEST_F(RuntimeTest, ut_hrtRaNonBlockGetSockets)
 {
     HcclResult ret = HCCL_SUCCESS;
     u32 role = 0;
-    socket_info_t conn;
+    SocketInfoT conn;
     u32 num = 1;
     u32 connectedNum = 0;
     ret = DlRaFunction::GetInstance().DlRaFunctionInit();
@@ -1275,7 +1275,7 @@ TEST_F(RuntimeTest, ut_ra_socket_listen_stop_error)
     .stubs()
     .will(returnValue(SOCK_EADDRINUSE));
 
-    socket_listen_info_t sockListen;
+    SocketListenInfoT sockListen;
     ret = hrtRaSocketListenStop(&sockListen, 1);
     EXPECT_EQ(ret, HCCL_E_TCP_CONNECT);
     GlobalMockObject::verify();
@@ -1414,7 +1414,7 @@ TEST_F(RuntimeTest, ut_hrtRaSocketListenStart)
         .will(returnValue(HCCL_E_AGAIN))
         .then(returnValue(0));
 
-    socket_listen_info_t sockListen;
+    SocketListenInfoT sockListen;
     ret = hrtRaSocketListenStart(&sockListen, 1);
 }
 
@@ -1427,7 +1427,7 @@ TEST_F(RuntimeTest, ut_rt_ra_socket_batch_connect)
         .will(returnValue(SOCK_EAGAIN))
         .then(returnValue(0));
 
-    socket_connect_info_t sockConn;
+    SocketConnectInfoT sockConn;
     ret = hrtRaSocketBatchConnect(&sockConn, 1, 1);
 }
 
@@ -1537,7 +1537,7 @@ TEST_F(RuntimeTest, ut_ra_socket_listen_start_timeout)
     MOCKER(ra_socket_listen_start)
     .stubs()
     .will(returnValue(128205));
-    socket_listen_info_t sockListen1;
+    SocketListenInfoT sockListen1;
     ret = hrtRaSocketNonBlockListenStart(&sockListen1, 1);
     EXPECT_EQ(ret, HCCL_E_UNAVAIL);
 

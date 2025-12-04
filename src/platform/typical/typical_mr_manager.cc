@@ -41,7 +41,7 @@ TypicalMrManager::~TypicalMrManager()
     }
 }
 
-HcclResult TypicalMrManager::RegisterMem(struct mr_info &mrInfo)
+HcclResult TypicalMrManager::RegisterMem(struct MrInfoT &mrInfo)
 {
     HCCL_DEBUG("[TypicalMrManager][RegisterMem]MR register start, addr[%llu], MR size[%llu].",
         mrInfo.addr, mrInfo.size);
@@ -77,7 +77,7 @@ HcclResult TypicalMrManager::RegisterMem(struct mr_info &mrInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult TypicalMrManager::DeRegisterMem(struct mr_info &mrInfo)
+HcclResult TypicalMrManager::DeRegisterMem(struct MrInfoT &mrInfo)
 {
     HCCL_DEBUG("[TypicalMrManager][DeRegisterMem]MR deregister start, addr[%llu], size[%llu], key[%lu].",
         mrInfo.addr, mrInfo.size, mrInfo.lkey);

@@ -29,97 +29,97 @@
 
 #define HDC_LITE_DEFAULT_WR_ID 0
 
-struct lite_send_wr {
-    struct send_wr wr;
+struct LiteSendWr {
+    struct SendWr wr;
     union {
-        struct wr_aux_info aux;
-        struct wr_ext_info ext;
+        struct WrAuxInfo aux;
+        struct WrExtInfo ext;
     };
 };
 
-union op_lite_support_data {
+union OpLiteSupportData {
     struct {
-        unsigned int phy_id;
-        unsigned int rdev_index;
+        unsigned int phyId;
+        unsigned int rdevIndex;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
-        int support_lite;
-    } rx_data;
+        int supportLite;
+    } rxData;
 };
 
-union op_lite_rdev_cap_data {
+union OpLiteRdevCapData {
     struct {
-        unsigned int phy_id;
-        unsigned int rdev_index;
+        unsigned int phyId;
+        unsigned int rdevIndex;
         unsigned int rsvd;
-    } tx_data;
+    } txData;
 
     struct {
-        struct lite_rdev_cap_resp resp;
-    } rx_data;
+        struct LiteRdevCapResp resp;
+    } rxData;
 };
 
-union op_lite_qp_cq_attr_data {
+union OpLiteQpCqAttrData {
     struct {
-        unsigned int phy_id;
-        unsigned int rdev_index;
+        unsigned int phyId;
+        unsigned int rdevIndex;
         unsigned int qpn;
-    } tx_data;
+    } txData;
 
     struct {
-        struct lite_qp_cq_attr_resp resp;
-    } rx_data;
+        struct LiteQpCqAttrResp resp;
+    } rxData;
 };
 
-union op_lite_mem_attr_data {
+union OpLiteMemAttrData {
     struct {
-        unsigned int phy_id;
-        unsigned int rdev_index;
+        unsigned int phyId;
+        unsigned int rdevIndex;
         unsigned int qpn;
-    } tx_data;
+    } txData;
 
     struct {
-        struct lite_mem_attr_resp resp;
-    } rx_data;
+        struct LiteMemAttrResp resp;
+    } rxData;
 };
 
-union op_lite_connected_info_data {
+union OpLiteConnectedInfoData {
     struct {
-        unsigned int phy_id;
-        unsigned int rdev_index;
+        unsigned int phyId;
+        unsigned int rdevIndex;
         unsigned int qpn;
-    } tx_data;
+    } txData;
 
     struct {
-        struct lite_connected_info_resp resp;
-    } rx_data;
+        struct LiteConnectedInfoResp resp;
+    } rxData;
 };
 
-int RaHdcLiteQpCreate(struct ra_rdma_handle *rdmaHandle, struct ra_qp_handle *qpHdc,
+int RaHdcLiteQpCreate(struct RaRdmaHandle *rdmaHandle, struct RaQpHandle *qpHdc,
     struct rdma_lite_qp_cap *cap);
-void RaHdcLiteQpDestroy(struct ra_qp_handle *qpHdc);
-int RaHdcLiteInit(struct ra_rdma_handle *rdmaHandle, unsigned int phyId, unsigned int rdevIndex);
-void RaHdcLiteDeinit(struct ra_rdma_handle *rdmaHandle);
-int RaHdcLiteSendWr(struct ra_qp_handle *qpHdc, struct lite_send_wr *wr, struct send_wr_rsp *opRsp,
+void RaHdcLiteQpDestroy(struct RaQpHandle *qpHdc);
+int RaHdcLiteInit(struct RaRdmaHandle *rdmaHandle, unsigned int phyId, unsigned int rdevIndex);
+void RaHdcLiteDeinit(struct RaRdmaHandle *rdmaHandle);
+int RaHdcLiteSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
     unsigned long long wrId);
-int RaHdcLiteTypicalSendWr(struct ra_qp_handle *qpHdc, struct lite_send_wr *wr, struct send_wr_rsp *opRsp,
+int RaHdcLiteTypicalSendWr(struct RaQpHandle *qpHdc, struct LiteSendWr *wr, struct SendWrRsp *opRsp,
     unsigned long long wrId);
-int RaHdcLiteGetConnectedInfo(struct ra_qp_handle *qpHdc);
-int RaHdcLiteSendWrlist(struct ra_qp_handle *qpHdc, struct send_wrlist_data wr[], struct send_wr_rsp opRsp[],
-    struct wrlist_send_complete_num wrlistNum);
-int RaHdcLiteSendWrlistExt(struct ra_qp_handle *qpHdc, struct send_wrlist_data_ext wr[],
-    struct send_wr_rsp opRsp[], struct wrlist_send_complete_num wrlistNum);
-int RaHdcLiteSendNormalWrlist(struct ra_qp_handle *qpHdc, struct wr_info wr[], struct send_wr_rsp opRsp[],
-    struct wrlist_send_complete_num wrlistNum);
-int RaHdcLiteRecvWrlist(struct ra_qp_handle *qpHdc, struct recv_wrlist_data *wr, unsigned int recvNum,
+int RaHdcLiteGetConnectedInfo(struct RaQpHandle *qpHdc);
+int RaHdcLiteSendWrlist(struct RaQpHandle *qpHdc, struct SendWrlistData wr[], struct SendWrRsp opRsp[],
+    struct WrlistSendCompleteNum wrlistNum);
+int RaHdcLiteSendWrlistExt(struct RaQpHandle *qpHdc, struct SendWrlistDataExt wr[],
+    struct SendWrRsp opRsp[], struct WrlistSendCompleteNum wrlistNum);
+int RaHdcLiteSendNormalWrlist(struct RaQpHandle *qpHdc, struct WrInfo wr[], struct SendWrRsp opRsp[],
+    struct WrlistSendCompleteNum wrlistNum);
+int RaHdcLiteRecvWrlist(struct RaQpHandle *qpHdc, struct RecvWrlistData *wr, unsigned int recvNum,
     unsigned int *completeNum);
-int RaHdcLitePollCq(struct ra_qp_handle *qpHdc, bool isSendCq, unsigned int numEntries,
+int RaHdcLitePollCq(struct RaQpHandle *qpHdc, bool isSendCq, unsigned int numEntries,
     struct rdma_lite_wc_v2 *liteWc);
 int RaHdcLiteInitCqeErrInfo(unsigned int phyId);
 void RaHdcLiteDeinitCqeErrInfo(unsigned int phyId);
-void RaHdcLiteGetCqeErrInfo(unsigned int phyId, struct cqe_err_info *info);
-int RaHdcLiteGetCqeErrInfoList(struct ra_rdma_handle *rdmaHandle, struct cqe_err_info *infoList,
+void RaHdcLiteGetCqeErrInfo(unsigned int phyId, struct CqeErrInfo *info);
+int RaHdcLiteGetCqeErrInfoList(struct RaRdmaHandle *rdmaHandle, struct CqeErrInfo *infoList,
     unsigned int *num);
 #endif // RA_HDC_LITE_H

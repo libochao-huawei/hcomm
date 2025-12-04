@@ -244,7 +244,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::InitHccp()
+    HcclResult HcclCommunicator::InitHccpChannel()
     {
         return HCCL_SUCCESS;
     }
@@ -546,6 +546,10 @@ namespace hccl
     }
 
     void HcclCommunicator::UnRegisterToHeartBeat()
+    {
+    }
+
+    void HcclCommunicator::UnRegisterToCommConfiger()
     {
     }
 
@@ -1295,6 +1299,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::SetExecTimeOutConfig(const s32 execTimeOut)
+    {
+        return HCCL_SUCCESS;
+    }
+
     bool HcclCommunicator::GetAivModeConfig()
     {
         return false;
@@ -1313,6 +1322,7 @@ namespace hccl
     void HcclCommunicator::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
     {
         transportManager_->SetQpQosAttr(trafficClass, serviceLevel);
+        indptOpTransportManager_->SetQpQosAttr(trafficClass, serviceLevel);
     }
 
     HcclResult HcclCommunicator::CheckExitWaitResumeState(bool &isChangedLink)
@@ -1433,11 +1443,6 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
- 
-    HcclResult HcclCommunicator::GetOpInconsistentError(HcclResult &result)
-    {
-        return HCCL_SUCCESS;
-    }
 
     HcclTopoAttr HcclCommunicator::GetTopoAttr() 
     {
@@ -1446,5 +1451,65 @@ namespace hccl
     aclrtBinHandle HcclCommunicator::GetBinHandle()
     {
         return nullptr;
+    }
+    HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
+        HDCommunicateParams &kfcStatusTransferD2HParams)
+    {
+        return HCCL_SUCCESS;
+    }
+    HcclResult HcclCommunicator::SetGetAicpuCommState(std::function<bool()> getAicpuCommState)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+    {
+        return HCCL_SUCCESS;
+    }
+    
+    HcclResult HcclCommunicator::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetRankGraph(GraphType type, void **graph, uint32_t *len)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize)
+    {
+        return HCCL_SUCCESS;
     }
 }

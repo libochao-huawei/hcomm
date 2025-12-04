@@ -15,7 +15,7 @@
 
 void *gNetcoApiHandle = NULL;
 #ifndef CA_CONFIG_LLT
-struct rs_netco_ops gNetcoOps;
+struct RsNetcoOps gNetcoOps;
 #else
 struct rs_netco_ops g_netco_ops = {
     .rs_netco_init = Net_CoInitFactory,
@@ -56,21 +56,21 @@ STATIC void RsCloseNetcoSo(void)
 STATIC int RsNetcoTblApiInit(void)
 {
 #ifndef CA_CONFIG_LLT
-    gNetcoOps.rs_netco_init = (void *(*)(int, NetCoIpPortArg))
+    gNetcoOps.rsNetcoInit = (void *(*)(int, NetCoIpPortArg))
         HccpDlsym(gNetcoApiHandle, "Net_CoInitFactory");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_init, "Net_CoInitFactory");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoInit, "Net_CoInitFactory");
 
-    gNetcoOps.rs_netco_deinit = (void (*)(void *))
+    gNetcoOps.rsNetcoDeinit = (void (*)(void *))
         HccpDlsym(gNetcoApiHandle, "NET_CoDestruct");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_deinit, "NET_CoDestruct");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoDeinit, "NET_CoDestruct");
 
-    gNetcoOps.rs_netco_event_dispatch = (unsigned int (*)(void *, int, unsigned int))
+    gNetcoOps.rsNetcoEventDispatch = (unsigned int (*)(void *, int, unsigned int))
         HccpDlsym(gNetcoApiHandle, "NET_CoFdEventDispatch");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_event_dispatch, "NET_CoFdEventDispatch");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoEventDispatch, "NET_CoFdEventDispatch");
 
-    gNetcoOps.rs_netco_tbl_add_upd = (int (*)(void *, unsigned int, char *, unsigned int))
+    gNetcoOps.rsNetcoTblAddUpd = (int (*)(void *, unsigned int, char *, unsigned int))
         HccpDlsym(gNetcoApiHandle, "NET_CoTblAddUpd");
-    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rs_netco_tbl_add_upd, "NET_CoTblAddUpd");
+    DL_API_RET_IS_NULL_CHECK(gNetcoOps.rsNetcoTblAddUpd, "NET_CoTblAddUpd");
 #endif
     return 0;
 }
@@ -113,44 +113,44 @@ void RsNslbApiDeinit(void)
 
 void *RsNetcoInit(int epollfd, NetCoIpPortArg ipPortArg)
 {
-    if (gNetcoOps.rs_netco_init == NULL) {
+    if (gNetcoOps.rsNetcoInit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_init is null");
         return NULL;
 #endif
     }
-    return gNetcoOps.rs_netco_init(epollfd, ipPortArg);
+    return gNetcoOps.rsNetcoInit(epollfd, ipPortArg);
 }
 
 void RsNetcoDeinit(void *co)
 {
-    if (gNetcoOps.rs_netco_deinit == NULL) {
+    if (gNetcoOps.rsNetcoDeinit == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_deinit is null");
         return;
 #endif
     }
-    return gNetcoOps.rs_netco_deinit(co);
+    return gNetcoOps.rsNetcoDeinit(co);
 }
 
 unsigned int RsNetcoEventDispatch(void *co, int fd, unsigned int curEvents)
 {
-    if (gNetcoOps.rs_netco_event_dispatch == NULL) {
+    if (gNetcoOps.rsNetcoEventDispatch == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_event_dispatch is null");
         return -EINVAL;
 #endif
     }
-    return gNetcoOps.rs_netco_event_dispatch(co, fd, curEvents);
+    return gNetcoOps.rsNetcoEventDispatch(co, fd, curEvents);
 }
 
 int RsNetcoTblAddUpd(void *netcoHandle, unsigned int type, char *data, unsigned int dataLen)
 {
-    if (gNetcoOps.rs_netco_tbl_add_upd == NULL) {
+    if (gNetcoOps.rsNetcoTblAddUpd == NULL) {
 #ifndef CA_CONFIG_LLT
         hccp_err("rs_netco_tbl_add_upd is null");
         return -EINVAL;
 #endif
     }
-    return gNetcoOps.rs_netco_tbl_add_upd(netcoHandle, type, data, dataLen);
+    return gNetcoOps.rsNetcoTblAddUpd(netcoHandle, type, data, dataLen);
 }

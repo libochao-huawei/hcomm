@@ -27,10 +27,12 @@ message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
 add_library(hcomm  SHARED)
 
 set(hccl_include_list
+    ${HCCL_BASE_DIR}/../inc/hccl
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
     ${HCCL_BASE_DIR}/pub_inc/hccl
+    ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template
     ${HCCL_BASE_DIR}/algorithm/base/mc2_handler
@@ -53,6 +55,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/common/src/topo
     ${HCCL_BASE_DIR}/framework/common/src/task
     ${HCCL_BASE_DIR}/framework/common/src/exception
+    ${HCCL_BASE_DIR}/framework/common/src/h2d_tlv
     ${HCCL_BASE_DIR}/framework/common/src/thread
     ${HCCL_BASE_DIR}/framework/common/src/h2d_dto
     ${HCCL_BASE_DIR}/framework/common/src/onesided_memory_management
@@ -97,6 +100,8 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+        ${HCCL_BASE_DIR}/platform/legacy/inc
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
 
         ${THIRD_PARTY_NLOHMANN_PATH}
 
@@ -243,6 +248,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/offload_stream_manager.cc
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/hccl_socket_manager.cc
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/queue_notify_manager.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
 
         ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy/comm_base.cc
         ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy/comm_ring.cc
@@ -548,6 +554,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         CCL_KERNEL_AICPU
     )
     target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/../inc/hccl
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${HCCL_BASE_DIR}/algorithm/base/inc
         ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -639,9 +646,11 @@ endif()
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/../inc/hccl
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/inner
         ${HCCL_BASE_DIR}/pub_inc/aicpu
+        ${HCCL_BASE_DIR}/pub_inc/new
 
         ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
 
@@ -665,6 +674,7 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/resource/transport/host/
         ${HCCL_BASE_DIR}/platform/resource/transport/
         ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
@@ -749,6 +759,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/platform/resource/transport/host/
         ${HCCL_BASE_DIR}/platform/resource/transport/
         ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
@@ -760,6 +771,11 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/aicpu
+
+        ${HCCL_BASE_DIR}/framework/device/
+        ${HCCL_BASE_DIR}/framework/device/common
+        ${HCCL_BASE_DIR}/framework/device/inc
+        ${HCCL_BASE_DIR}/framework/device/framework
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/

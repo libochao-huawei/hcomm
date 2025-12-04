@@ -29,7 +29,7 @@ class CCLBufferManager {
 public:
     CCLBufferManager();
     ~CCLBufferManager();
-    HcclResult CreateCommCCLbuffer();
+    HcclResult CreateCommCCLbuffer(const std::string &bufferName = "");
     HcclResult CreateCommAIVbuffer(bool useOpbaseFlag);
     HcclResult CreateCommInfoAIVbuffer();
     HcclResult ReleaseCommCCLbuffer();
@@ -57,7 +57,7 @@ public:
     void ReleaseAlltoAllvParaBuffer();
     HcclResult CleanCCLbuffer();
     HcclResult CleanAIVbuffer(void *bufferPtr);
-    HcclResult GetIndependentOpCCLbuffer(void* &buffer, u32 &size);
+    HcclResult GetIndependentOpCCLbuffer(void* &buffer, uint64_t &size);
 private:
     HcclResult CreateCCLbuffer(u64 size, DeviceMem &buffer);
     void* GetCCLbufferAddr(const DeviceMem &buffer);
@@ -76,6 +76,7 @@ private:
     DeviceMem inAivOffloadbuffer_ = DeviceMem();
     DeviceMem outAivOffloadbuffer_ = DeviceMem();
     DeviceMem aivCommInfoBuffer_ = DeviceMem(); // 单算子使用固定内存如CCL建链，每个通信域只使用一块内存，不需要注册
+    bool isShareCCLbuffer_ = false; // cclbuffer是否为通信域共享buffer
 };
 } // namespace hccl
 

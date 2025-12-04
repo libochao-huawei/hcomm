@@ -25,6 +25,7 @@
 #include "./topo/topoinfo_roletableParser.h"
 #include "comm.h"
 #include "externalinput_pub.h"
+#include "comm_configer.h"
 
 using namespace std;
 using namespace hccl;
@@ -33,7 +34,7 @@ std::set<std::string> g_oneSidedIdentifierSet;
 std::mutex g_oneSidedIdentifierMutex;
 
 HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &identify, hccl::HcclCommParams &params,
-    hccl::RankTable_t &rankTable, DevType deviceType)
+    hccl::RankTable_t &rankTable, bool isInterSuperPodRetryEnable, DevType deviceType)
 {
     TopoInfoRanktableParser myTopoRanktable(rankTableM, identify);
     CHK_RET(myTopoRanktable.Init());
@@ -44,6 +45,7 @@ HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &i
     if (rankTable.version.compare(HCCL_CLUSTER_VERSION) == 0 ||
         rankTable.version.compare(SUPERPOD_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableConcise(rankTableM, identify));
+        pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableHeterog(rankTableM, identify, deviceType));
     } else if (rankTable.version.compare("Standard") == 0) {
@@ -82,7 +84,7 @@ HcclResult CfgGetClusterInfo(const std::string &rankTableM, const std::string &i
 }
 
 HcclResult CfgGetClusterInfoWithoutDev(const std::string &rankTableM, const std::string &identify,
-    hccl::HcclCommParams &params, hccl::RankTable_t &rankTable)
+    hccl::HcclCommParams &params, hccl::RankTable_t &rankTable, bool isInterSuperPodRetryEnable)
 {
     TopoInfoRanktableParser myTopoRanktable(rankTableM, identify);
     CHK_RET(myTopoRanktable.Init());
@@ -92,6 +94,7 @@ HcclResult CfgGetClusterInfoWithoutDev(const std::string &rankTableM, const std:
     std::unique_ptr<TopoInfoRanktableParser> pTopoRanktable = nullptr;
     if (rankTable.version.compare(HCCL_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableConcise(rankTableM, identify));
+        pTopoRanktable->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable);
     } else if (rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
         pTopoRanktable.reset(new (std::nothrow) TopoinfoRanktableHeterog(rankTableM, identify));
     } else if (rankTable.version.compare("Standard") == 0) {
@@ -543,15 +546,16 @@ HcclResult CfgGetRoleTableInfo(const std::string &rankTableM, RoleTableInfo &rol
 
 void SetRetryEnable(DevType deviceType, const u32 &superPodNum, const u32 &serverNum,
     const u32 &deviceNumPerAggregation, const bool &isDiffDeviceType, bool isAivMode,
-    hccl::HcclIpAddress &serverIp, hccl::HcclIpAddress &localIp, bool &retryEnable)
+    hccl::HcclIpAddress &serverIp, hccl::HcclIpAddress &localIp, bool &retryEnable,
+    bool isInterServerRetry, bool isInterSuperPodRetry)
 {
     retryEnable = false;
     if (deviceType != DevType::DEV_TYPE_910_93 || isDiffDeviceType) {
         retryEnable = false;
     } else if (superPodNum > 1) { // L2重执行
-        retryEnable = GetExternalInputInterSuperPodRetryEnable() || GetExternalInputInterServerRetryEnable();
+        retryEnable = isInterSuperPodRetry  || isInterServerRetry;
     } else if (serverNum > 1) { // L1重执行
-        retryEnable = GetExternalInputInterServerRetryEnable();
+        retryEnable = isInterServerRetry;
     }
 
     if (retryEnable && isAivMode) {

@@ -49,6 +49,7 @@ public:
     HcclResult GetAgentListenSocket(HcclSocketPortConfig &commPortConfig);
     HcclResult GenerateRootInfo(const HcclIpAddress &hostIP, u32 hostPort, u32 devicePhysicID, HcclRootHandle &rootInfo);
     HcclResult GetGroupLeader(HcclRankHandle &rankHandle);
+    HcclResult SetIsInterSuperPodRetryEnable(bool isRetry);
 
 protected:
 private:
@@ -107,6 +108,7 @@ private:
     std::shared_ptr<TopoInfoExchangeServer> pTopoExchangeServer_{nullptr};
     std::unique_ptr<std::thread> exchangeServerThreadPtr_{nullptr};
     HcclRankHandle grpLeader_;
+    bool isInterSuperPodRetryEnable_;
 };
 }  // namespace hccl
 #endif /* TOPOINFO_DETECT_H */

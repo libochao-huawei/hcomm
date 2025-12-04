@@ -35,6 +35,7 @@ public:
     static int GetRecvCnt(AicpuComContext *ctx);
     static bool IsDebugModeEquals(const AicpuComContext &ctx, const uint8_t Mode);
     static bool NeedRecordTimeTaken(const AicpuComContext &ctx);
+    static void PrintApiStats(HcclApi::HcclMsgArea *hcclMsgArea, const s32 logLevel);
     static void PrintAllHcclMsgArea(HcclApi::HcclMsgArea *hcclMsgArea, u32 rankSize, bool errorFlag = false);
     static void PrintAllHcclMsgAreaForMulti(HcclApi::HcclMsgArea *hcclMsgArea, bool errorFlag = false);
     static uint32_t GenXor(HcclApi::HcclMsg *msg);

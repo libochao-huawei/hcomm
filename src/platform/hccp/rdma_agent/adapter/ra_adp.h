@@ -30,26 +30,26 @@
 #define RECV_BUF_LEN_INVALID 3
 #define HCCP_RUN_CPU_CORE 0
 
-struct ra_hdc_server {
-    HDC_SERVER hdc_server;
-    HDC_SESSION hdc_session;
-    struct ra_hdc_op_sec op_sec;
+struct RaHdcServer {
+    HDC_SERVER hdcServer;
+    HDC_SESSION hdcSession;
+    struct RaHdcOpSec opSec;
 };
 
-struct ra_hdc_init_para {
-    unsigned int chip_id;
-    pid_t host_tgid;
+struct RaHdcInitPara {
+    unsigned int chipId;
+    pid_t hostTgid;
     pthread_mutex_t mutex;
-    unsigned int hdc_flag;
-    unsigned int connect_status;
-    unsigned int thread_status;  /* 0: sleep or init; 1: running; 2: destroying */
-    char pid_sign[PROCESS_RA_SIGN_LENGTH];
+    unsigned int hdcFlag;
+    unsigned int connectStatus;
+    unsigned int threadStatus;  /* 0: sleep or init; 1: running; 2: destroying */
+    char pidSign[PROCESS_RA_SIGN_LENGTH];
 };
 
-struct ra_op_handle {
+struct RaOpHandle {
     unsigned int opcode;
-    int (*op_handle)(char *, char *, int *, int *, int);
-    unsigned int data_size;
+    int (*opHandle)(char *, char *, int *, int *, int);
+    unsigned int dataSize;
 };
 
 #define RA_ADP_ATTRI_VISI_DEF __attribute__ ((visibility ("default")))
@@ -86,13 +86,13 @@ RA_ADP_ATTRI_VISI_DEF int HccpDeinit(unsigned int chipId);
     }           \
 } while (0)
 
-void RaHdcInitOpSec(struct ra_hdc_op_sec *opSec, unsigned long long tokenNum, bool isAsyncOp);
+void RaHdcInitOpSec(struct RaHdcOpSec *opSec, unsigned long long tokenNum, bool isAsyncOp);
 int RaHdcSessionAccept(unsigned int chipId, HDC_SESSION *session, int initHostTgid);
-int RaHdcAsyncRecvPkt(struct ra_hdc_async_info *asyncInfo, unsigned int chipId, void **recvBuf,
+int RaHdcAsyncRecvPkt(struct RaHdcAsyncInfo *asyncInfo, unsigned int chipId, void **recvBuf,
     unsigned int *recvLen);
-int RaHandle(struct ra_hdc_op_sec *opSec, char *recvBuf, int rcvBufLen, char **sendBuf, int *sndBufLen,
+int RaHandle(struct RaHdcOpSec *opSec, char *recvBuf, int rcvBufLen, char **sendBuf, int *sndBufLen,
     unsigned int *closeSession);
-int RaHdcAsyncSendPkt(struct ra_hdc_async_info *asyncInfo, unsigned int chipId, void *sendBuf,
+int RaHdcAsyncSendPkt(struct RaHdcAsyncInfo *asyncInfo, unsigned int chipId, void *sendBuf,
     unsigned int sendLen);
 void RaHdcCloseSession(HDC_SESSION *session);
 #endif // RA_ADP_HW_H

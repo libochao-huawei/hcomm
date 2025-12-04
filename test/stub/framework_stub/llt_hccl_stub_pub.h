@@ -104,13 +104,13 @@ extern int ra_get_cqe_err_info(unsigned int phy_id, struct cqe_err_info *info);
 extern int ra_get_qp_attr(void *qp_handle, struct qp_attr *attr);
 extern int ra_create_srq(const void*, struct srq_attr *);
 extern int ra_destroy_srq(const void*, struct srq_attr *);
-extern int ra_qp_create_with_attrs(void *rdev_handle, struct qp_ext_attrs *ext_attrs, void **qp_handle);
-extern int ra_ai_qp_create(void *rdma_handle, struct qp_ext_attrs *qp_attrs, struct ai_qp_info *info, void **qpHandle);
+extern int ra_qp_create_with_attrs(void *rdev_handle, struct QpExtAttrs *ext_attrs, void **qp_handle);
+extern int ra_ai_qp_create(void *rdma_handle, struct QpExtAttrs *qp_attrs, struct AiQpInfo *info, void **qpHandle);
 extern int ra_rdev_get_support_lite(void *rdma_handle, int *support_lite);
 extern int ra_typical_qp_create(void *rdev_handle, int flag, int qp_mode, struct typical_qp *qp_info, void **qp_handle);
 extern int ra_typical_qp_modify(void *rdev_handle, struct typical_qp *local_qp_info, struct typical_qp *remote_qp_info);
 extern int ra_typical_send_wr(void *qp_handle, struct send_wr *wr, struct send_wr_rsp *op_rsp);
-extern int ra_socket_accept_credit_add(struct socket_listen_info_t conn[], unsigned int num, unsigned int creditLimit);
+extern int ra_socket_accept_credit_add(struct SocketListenInfoT conn[], unsigned int num, unsigned int creditLimit);
 extern int stub_ibv_ext_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr,
 	struct ibv_send_wr **bad_wr, struct ibv_post_send_ext_attr *ext_attr,
 	struct ibv_post_send_ext_resp *ext_resp);

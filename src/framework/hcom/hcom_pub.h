@@ -112,10 +112,10 @@ HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum);
 HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
 #endif
 HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum, s32 deviceNumPerServer,
-    DevType devType, u32 &taskNum);
-HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType, u64 &streamNum);
-HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum);
-HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum, s32 &serverNum);
+    DevType devType, u32 &taskNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType, u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum, s32 &serverNum, const std::string& group = HCCL_WORLD_GROUP);
 HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devType);
 HcclResult GetServerAndDevNumFromGroupList(const u32 *groupList, u32 groupListSize, const std::string rankTableString,
     DevType devType, s32 &serverNum, s32 &deviceNumPerServer, bool &multiModuleDiffDeviceNumMode);

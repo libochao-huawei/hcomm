@@ -188,6 +188,12 @@ HcclResult HcclAlg::SetAicpuUnfoldConfig(const bool aicpuUnfold)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclAlg::SetExecTimeOutConfig(const s32 execTimeOut)
+{
+    CHK_RET(topoMatcher_->SetExecTimeOutConfig(execTimeOut));
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclAlg::GetRankVecInfo(std::vector<std::vector<std::vector<u32>>> &serverAndsuperPodToRank)
 {
     CHK_RET(topoInfoEx_->GetRankVecInfo(serverAndsuperPodToRank));
@@ -248,6 +254,7 @@ HcclResult HcclAlg::InitExternalEnable(HcclExternalEnable& externalEnable)
     externalEnable.dumpDebug = GetExternalInputHcclDumpDebug();
     externalEnable.aivMode = GetExternalInputHcclAivMode();
     externalEnable.aicpuUnfold = GetExternalInputHcclAicpuUnfold();
+    externalEnable.execTimeOut = GetInternalExecTimeOut();
     return HCCL_SUCCESS;
 }
 

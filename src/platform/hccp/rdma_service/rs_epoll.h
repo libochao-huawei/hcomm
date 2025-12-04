@@ -39,6 +39,6 @@ int RsEpollWaitHandle(int eventHandle, struct epoll_event *events, int timeout, 
     unsigned int *eventsNum);
 int RsEpollEventListenInHandle(struct rs_cb *rsCb, int fd);
 int RsEpollEventQpMrInHandle(struct rs_cb *rsCb, int fd);
-int RsSocketCopyConnInfo(struct rs_conn_info *connTmp, struct rs_conn_info *conn);
-int RsWhiteListCheckValid(unsigned int chipId, struct rs_conn_cb *connCb, struct rs_conn_info *conn);
+int RsSocketCopyConnInfo(struct RsConnInfo *connTmp, struct RsConnInfo *conn);
+int RsWhiteListCheckValid(unsigned int chipId, struct RsConnCb *connCb, struct RsConnInfo *conn);
 #endif // RS_EPOLL_H

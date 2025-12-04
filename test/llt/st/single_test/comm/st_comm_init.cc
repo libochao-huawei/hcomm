@@ -375,7 +375,7 @@ TEST_F(CommInitTest, st_transport_ibverbs_createoneqp_not_set_config)
     IbvPtr.reset(new TransportIbverbs(dispatcher, notifyPool, machinePara, timeout));
 
     QpHandle qpHandle;
-    ai_qp_info qpinfo;
+    AiQpInfo qpinfo;
     IbvPtr->CreateOneQp(4, 1, qpHandle, qpinfo, false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -424,7 +424,7 @@ TEST_F(CommInitTest, st_transport_ibverbs_createoneqp_by_config_file)
     IbvPtr.reset(new TransportIbverbs(dispatcher, notifyPool, machinePara, timeout));
 
     QpHandle qpHandle;
-    ai_qp_info qpinfo;
+    AiQpInfo qpinfo;
     IbvPtr->CreateOneQp(4, 2, qpHandle, qpinfo, false);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 

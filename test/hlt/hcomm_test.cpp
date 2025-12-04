@@ -133,7 +133,7 @@ HcclResult __attribute__((weak)) HcclCommDestroy(HcclComm comm);
     void __attribute__((weak)) HcclCommConfigInit(HcclCommConfig *config);
 HcclResult __attribute__((weak)) HcclAllocThreadRes(
     HcclComm comm, CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *thread);
-HcclResult __attribute__((weak)) CommChannelCreate(HcclComm comm, const char *channelTag, CommEngine engine,
+HcclResult __attribute__((weak)) HcclChannelCreate(HcclComm comm, const char *channelTag, CommEngine engine,
     const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
 HcclResult __attribute__((weak))
     HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
@@ -221,7 +221,7 @@ HcclResult HcclAllocThreadRes(
     std::cout << "[MOCK] HcclAllocThreadRes threads=" << threadNum << " notify=" << notifyNumPerThread << std::endl;
     return 0;
 }
-HcclResult CommChannelCreate(HcclComm comm, const char *channelTag, CommEngine engine,
+HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag, CommEngine engine,
     const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
 {
     std::lock_guard<std::mutex> lk(g_mock_mtx);
@@ -234,7 +234,7 @@ HcclResult CommChannelCreate(HcclComm comm, const char *channelTag, CommEngine e
         ch->size = channelDescList ? channelDescList[i].size : 0;
         channelList[i] = reinterpret_cast<ChannelHandle>(ch);
     }
-    std::cout << "[MOCK] CommChannelCreate tag=" << (channelTag ? channelTag : "(null)") << " count=" << listNum
+    std::cout << "[MOCK] HcclChannelCreate tag=" << (channelTag ? channelTag : "(null)") << " count=" << listNum
               << std::endl;
     return 0;
 }
@@ -557,11 +557,11 @@ public:
         // create channel handles vector
         channels_.resize(peers, 0);
 
-        // call CommChannelCreate
-        HcclResult rc = CommChannelCreate(comm_, "p2p_channel", commEngine, descs.data(),
+        // call HcclChannelCreate
+        HcclResult rc = HcclChannelCreate(comm_, "p2p_channel", commEngine, descs.data(),
             static_cast<uint32_t>(descs.size()), channels_.data());
         if (rc != 0) {
-            LOG(ERROR, "%s CommChannelCreate failed, ret[%d]", __func__, rc);
+            LOG(ERROR, "%s HcclChannelCreate failed, ret[%d]", __func__, rc);
             return true;
         }
         LOG(INFO, "%s success, peers[%u]", __func__, peers);
@@ -766,7 +766,7 @@ bool test_alloc_host_notify(const Config &cfg)
 }
 REGISTER_HCCL_TEST(alloc_host_notify, test_alloc_host_notify);
 
-// test: 测试两卡CommChannelCreate, 需同时拉起两个进程
+// test: 测试两卡HcclChannelCreate, 需同时拉起两个进程
 // rank_0进程: hcomm_test --cluster_info test/hlt/ranktable-2p.json --rank 0 --test channel_create --engine 2
 // rank_1进程: hcomm_test --cluster_info test/hlt/ranktable-2p.json --rank 1 --test channel_create --engine 2
 bool test_channel_create(const Config &cfg)
@@ -783,7 +783,7 @@ bool test_channel_create(const Config &cfg)
 }
 REGISTER_HCCL_TEST(channel_create, test_channel_create);
 
-// test: 测试host展开下，两卡HcclAllocThreadRes+CommChannelCreate+Write+Read, 需同时拉起两个进程
+// test: 测试host展开下，两卡HcclAllocThreadRes+HcclChannelCreate+Write+Read, 需同时拉起两个进程
 bool test_host_write_read(const Config &cfg)
 {
     LOG(INFO, "%s start", __func__);

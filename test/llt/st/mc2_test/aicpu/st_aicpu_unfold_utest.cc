@@ -54,6 +54,7 @@
 #include "adapter_rts.h"
 #include "adapter_trace.h"
 #include "transport_device_ibverbs_pub.h"
+#include "transport_device_roce_mem.h"
 #include "aicpu_kfc/common/aicpu_kfc_utils.h"
 #include "aicpu_one_side_service.h"
 #include "dlhns_function.h"
@@ -2472,12 +2473,14 @@ TEST_F(AicpuUnfold_ST, test_aicpuHcclProcess_HandleOneSideService)
     HcclResult ret;
     constexpr u32 itemNum = 2;
     std::string commId = "one_side_st_test";
+    const u32 remoteRankId = 1;
     u32 dynamicDataSize = sizeof(OpTilingOneSideCommDataDes) + itemNum * sizeof(HcclOneSideOpDescParam);
     void *tempPtr = malloc(sizeof(OpTilingData) + dynamicDataSize);
     uint8_t *tilingPtr = static_cast<uint8_t *>(tempPtr);
     OpTilingData* opTilingData = reinterpret_cast<OpTilingData*>(tilingPtr);
     memcpy(opTilingData->tag, commId.data(), commId.length() + 1);
     opTilingData->opType = static_cast<u8>(HcclCMDType::HCCL_CMD_BATCH_PUT);
+    opTilingData->dstRank = remoteRankId;
     auto *oneSideCommDataDes = reinterpret_cast<OpTilingOneSideCommDataDes*>(tilingPtr + sizeof(OpTilingData));
     oneSideCommDataDes->commResParaSize = sizeof(HcclOneSideCommResParam);
     DeviceMem commResParaDevice = DeviceMem::alloc(sizeof(HcclOneSideCommResParam));
@@ -2497,7 +2500,9 @@ TEST_F(AicpuUnfold_ST, test_aicpuHcclProcess_HandleOneSideService)
     qp.state = ibv_qp_state::IBV_QPS_RTR;
 	qp.qp_type = ibv_qp_type::IBV_QPT_RC;
     transportData->qpInfo.qpPtr = reinterpret_cast<u64>(&qp);
-    oneSideCommDataDes->linkTimeout = 10;
+    transportData->qpInfo.retryTime = 20;
+    transportData->qpInfo.retryCnt = 3;
+    oneSideCommDataDes->linkTimeout = 0;    // deprecated
     oneSideCommDataDes->linkType = static_cast<u8>(LinkType::LINK_ROCE);
     oneSideCommDataDes->finalize = false;
     oneSideCommDataDes->descNum = itemNum;
@@ -2564,8 +2569,9 @@ TEST_F(AicpuUnfold_ST, test_aicpuHcclProcess_HandleOneSideService)
     EXPECT_EQ(ret, HCCL_SUCCESS);   // retry success
 
     auto service = HcclOneSideServiceAicpu::services_.begin()->second;
-    service->linkTimeout_ = INVALID_UINT;
-    service->rdmaLinks_.clear();    // recreate transport
+    auto transport = std::dynamic_pointer_cast<TransportDeviceRoceMem>(service->rdmaLinks_[remoteRankId]);
+    std::chrono::microseconds *timeout = const_cast<std::chrono::microseconds *>(&(transport->timeout_));
+    *timeout = std::chrono::microseconds(0);
     DlHnsFunction::GetInstance().dlHnsIbvExpPostSend = [](
         struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **badWr, struct WrExpRsp *expRsp) {
             static u32 count = 0;
@@ -2577,7 +2583,8 @@ TEST_F(AicpuUnfold_ST, test_aicpuHcclProcess_HandleOneSideService)
     ret = AicpuHcclProcess::HandleOneSideService(opTilingData);
     EXPECT_EQ(ret, HCCL_E_AGAIN);   // no retry with invalid timeout
 
-    service->linkTimeout_ = 1;      // 1s
+    transportData->qpInfo.retryTime = 17;
+    transportData->qpInfo.retryCnt = 3;
     service->rdmaLinks_.clear();    // recreate transport
     DlHnsFunction::GetInstance().dlHnsIbvExpPostSend = [](
         struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv_send_wr **badWr, struct WrExpRsp *expRsp) {
@@ -3999,7 +4006,7 @@ HcclResult stub_hrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHan
 }
 
 HcclResult stub_hrtRaAiQpCreate(
-    u32 phy_id, RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, struct ai_qp_info *info1, QpHandle &qpHandle)
+    u32 phy_id, RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, struct AiQpInfo *info1, QpHandle &qpHandle)
 {
     static u32 qpn = 0;
     StubQpInfo *info = new StubQpInfo();
@@ -4011,7 +4018,7 @@ HcclResult stub_hrtRaAiQpCreate(
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct qp_ext_attrs *attrs, QpHandle &qpHandle)
+HcclResult stub_hrtRaQpCreateWithAttrs(RdmaHandle rdmaHandle, struct QpExtAttrs *attrs, QpHandle &qpHandle)
 {
     static u32 qpn = 0;
     StubQpInfo *info = new StubQpInfo();
@@ -4063,8 +4070,8 @@ TEST_F(AicpuUnfold_ST, st_MultiQp_useSingleQp)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaMrReg).stubs().will(returnValue(HCCL_SUCCESS));
-    struct qp_ext_attrs;
-    ai_qp_info aiQpInfo;
+    struct QpExtAttrs;
+    AiQpInfo aiQpInfo;
     char aiapaddr[4];
     aiQpInfo.ai_qp_addr = reinterpret_cast<std::uintptr_t>(&aiapaddr);
     aiQpInfo.db_index = 1;
@@ -4543,8 +4550,8 @@ TEST_F(AicpuUnfold_ST, st_MultiQp_32Qp_3Notify)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtRaMrReg).stubs().will(returnValue(HCCL_SUCCESS));
-    struct qp_ext_attrs;
-    ai_qp_info aiQpInfo;
+    struct QpExtAttrs;
+    AiQpInfo aiQpInfo;
     char aiapaddr[4];
     aiQpInfo.ai_qp_addr = reinterpret_cast<std::uintptr_t>(&aiapaddr);
     aiQpInfo.db_index = 1;

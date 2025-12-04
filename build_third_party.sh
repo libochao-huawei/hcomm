@@ -7,6 +7,7 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+#!/bin/bash
 
 set -e
 BASEPATH=$(cd "$(dirname $0)"; pwd)
@@ -58,22 +59,11 @@ download_and_compile() {
     mk_dir "${OUTPUT_PATH}/pkg"
     mk_dir "${OUTPUT_PATH}/json"
     mk_dir "${OUTPUT_PATH}/gtest_shared"
-
-    # cmake
-    if [ -z "${ASCEND_INSTALL_PATH}" ]; then
-      echo "Not set ASCEND_INSTALL_PATH"
-      # exit 1;
-    fi
-
-    # SOURCE_PATH="${ASCEND_INSTALL_PATH}/opensdk/opensdk/cmake"
-    # cp -r "${SOURCE_PATH}" "${OUTPUT_PATH}"
-    # if [ $? -ne 0]; then
-    #   echo "Failed to get cmake"
-    #   exit 1
-    # fi
+    mk_dir "${OUTPUT_PATH}/mpich_shared"
+    cpu_cores=$(lscpu | grep 'CPU(s):' | awk '{print$2}')
 
     # Downloading json
-    wget -O "${OUTPUT_PATH}/pkg/json_include.zip" https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip
+    wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/json_include.zip" https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip
     if [ $? -ne 0 ]; then
       echo "Failed to download json files"
       exit 1;
@@ -86,7 +76,7 @@ download_and_compile() {
     fi
 
     # Downloading gtest
-    wget -O "${OUTPUT_PATH}/pkg/googletest-1.14.0.tar.gz" https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz
+    wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/googletest-1.14.0.tar.gz" https://gitcode.com/cann-src-third-party/googletest/releases/download/v1.14.0/googletest-1.14.0.tar.gz
     if [ $? -ne 0 ]; then
       echo "Failed to download gtest files"
       exit 1;
@@ -122,6 +112,41 @@ download_and_compile() {
     echo "All operations completed successfully!"
 }
 
+download_mockcpp() {
+  MOCKCPP_PKG_URL="https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7.zip"
+  MOCKCPP_PATCH_URL="https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7_py3.patch"
+
+  # 下载
+  wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/mockcpp-2.7.zip" ${MOCKCPP_PKG_URL}
+  wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/mockcpp-2.7.patch" ${MOCKCPP_PATCH_URL}
+
+  # 解压
+  unzip "${OUTPUT_PATH}/pkg/mockcpp-2.7.zip" -d "${OUTPUT_PATH}/mockcpp_shared"
+
+  # 补丁
+  cd ${OUTPUT_PATH}/mockcpp_shared/mockcpp-2.7
+  patch -p1 < ${OUTPUT_PATH}/pkg/mockcpp-2.7.patch
+}
+
+build_mockcpp() {
+  sudo apt-get install libboost-dev -y
+
+  cd "${OUTPUT_PATH}/mockcpp_shared/mockcpp-2.7/"
+
+  cmake -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack" \
+        -DCMAKE_C_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack" \
+        -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF \
+        -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH}/mockcpp_shared \
+        -DCMAKE_INSTALL_LIBDIR=lib64 \
+        -DBUILD_TESTING=OFF \
+        -DBUILD_SHARED_LIBS=ON
+
+  make && make install
+
+  cd "${OUTPUT_PATH}/mockcpp_shared"
+  ln -s lib64 lib
+}
+
 main() {
   checkopts "$@"
 
@@ -132,6 +157,11 @@ main() {
     echo "script failed.";
     exit 1;
   fi
+
+  # 下载、编译 mockcpp
+  download_mockcpp
+  build_mockcpp
+
   echo "---------------- script finished ----------------"
 }
 

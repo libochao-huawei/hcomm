@@ -268,7 +268,7 @@ TEST_F(MPI_TRANSPORT_DEVICE_IBVERBS_TEST, ut_transport_direct_npu_test)
     linktmp->GetMemInfo(memType, &dstMemPtr, &dstKey);
 
     QpHandle qpHandle;
-    ai_qp_info qpInfo;
+    AiQpInfo qpInfo;
     linktmp->CreateOneQp(2, 2, qpHandle, qpInfo, true);
     MemType memType1 = MemType::DATA_NOTIFY_MEM;
     u8* exchangeDataPtr = nullptr;

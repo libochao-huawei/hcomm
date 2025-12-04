@@ -137,7 +137,7 @@
 
 #define RS_CLOSE_TIMEOUT    5
 
-enum ca_ptye {
+enum CaPtye {
     RS_EQPT_CA = 0,
     RS_ROOT_CA
 };
@@ -148,12 +148,12 @@ enum ca_ptye {
 #define RS_EQPT_CERTS_PATH_LEN 256
 #define RS_CA_CERTS_PATH_LEN 256
 
-struct rs_cert_info {
-    char cert_info[RS_SSL_CERT_LEN];
+struct RsCertInfo {
+    char certInfo[RS_SSL_CERT_LEN];
 };
 
-struct rs_certs {
-    struct rs_cert_info certs[RS_SSL_MAX_CERT_NUM];
+struct RsCerts {
+    struct RsCertInfo certs[RS_SSL_MAX_CERT_NUM];
 };
 
 #define HCCP_NEW_CERTS_CB1_INDEX    0
@@ -163,9 +163,9 @@ struct rs_certs {
 #define MAX_CERT_NUM_IN_CB          8
 #define RS_SSL_NEW_CERT_CB_NUM 4
 
-struct cert_file {
-    const char *end_file;
-    const char *ca_file;
+struct CertFile {
+    const char *endFile;
+    const char *caFile;
 };
 
 #define TLS_MAGIC_WORDS_LEN 8
@@ -174,13 +174,13 @@ struct cert_file {
 #define TLS_MAGIC_WORDS "1234567"
 #define X509_VERIFY_SUCC 1
 
-struct rs_sec_para {
-    unsigned char in_buf[RS_SSL_PRI_LEN];
-    unsigned int in_buf_size;
-    unsigned char in_salt[TLS_SALT_MAX_LEN];
-    unsigned int in_salt_size;
-    unsigned char out_buf[RS_SSL_PRI_LEN];
-    unsigned int out_buf_size;
+struct RsSecPara {
+    unsigned char inBuf[RS_SSL_PRI_LEN];
+    unsigned int inBufSize;
+    unsigned char inSalt[TLS_SALT_MAX_LEN];
+    unsigned int inSaltSize;
+    unsigned char outBuf[RS_SSL_PRI_LEN];
+    unsigned int outBufSize;
 };
 
 #define RS_CLOSE_RETRY_FOR_EINTR(ret, fd) do { \
@@ -258,8 +258,8 @@ struct rs_sec_para {
     } \
 } while (0)
 
-struct rs_vnic_info {
-    uint32_t vnic_flag;
+struct RsVnicInfo {
+    uint32_t vnicFlag;
     uint32_t role;
 };
 
@@ -271,13 +271,13 @@ struct rs_vnic_info {
 #define RS_MIN_TEMPTH_DEPTH 8
 #define RS_MAX_TEMPTH_DEPTH 4096
 
-enum rs_cmd_opcode {
+enum RsCmdOpcode {
     RS_CMD_QP_INFO = 0x12345678,
     RS_CMD_MR_INFO = 0x12345687,
     RS_CMD_LEN_INFO = 0x12345867,
 };
 
-struct rs_mr_info {
+struct RsMrInfo {
     uint32_t cmd;    /* MUST be the first element */
 
     uint32_t rkey;
@@ -290,35 +290,35 @@ struct rs_mr_info {
 /*
  * mr_cb also used to sync to remote
  */
-struct rs_mr_cb {
-    struct rs_mr_info mr_info;   /* MUST be the first element */
+struct RsMrCb {
+    struct RsMrInfo mrInfo;   /* MUST be the first element */
 
-    uint64_t wr_id;
+    uint64_t wrId;
     uint32_t state;
 
-    struct ibv_mr *ib_mr;
-    struct rs_rdev_cb *dev_cb;
-    struct rs_qp_cb *qp_cb;
-    struct rs_list_head list;
+    struct ibv_mr *ibMr;
+    struct RsRdevCb *devCb;
+    struct RsQpCb *qpCb;
+    struct RsListHead list;
 };
 
-struct rs_qp_info {
+struct RsQpInfo {
     uint32_t cmd;    /* MUST be the first element */
 
     int lid;
     int qpn;
     int psn;
-    int gid_idx;
+    int gidIdx;
     union ibv_gid gid;
-    struct rs_mr_info notify_mr;
+    struct RsMrInfo notifyMr;
 };
 
-struct rs_qp_len_info {
+struct RsQpLenInfo {
     uint32_t cmd;
     uint32_t len;
 };
 
-enum rs_conn_state {
+enum RsConnState {
     RS_CONN_STATE_RESET,
     RS_CONN_STATE_INIT,
     RS_CONN_STATE_BIND,
@@ -341,18 +341,18 @@ enum rs_conn_state {
 
 #define FD_USED_FOR_QP_EXCHANGE 1
 
-struct rs_conn_info {
-    struct rs_ip_addr_info server_ip;
-    struct rs_ip_addr_info client_ip;
+struct RsConnInfo {
+    struct RsIpAddrInfo serverIp;
+    struct RsIpAddrInfo clientIp;
     uint16_t port;
-    int scope_id;
+    int scopeId;
 
     int connfd;
     SSL *ssl;
     uint32_t state;  /* refer to enum rs_conn_state */
-    struct timeval start_time;
-    struct timeval end_time;
-    bool is_got;
+    struct timeval startTime;
+    struct timeval endTime;
+    bool isGot;
 
     /*
      * HCCL need classify the connection according by the tag.
@@ -360,191 +360,191 @@ struct rs_conn_info {
      * Server return the tag to HCCL
      */
     char tag[SOCK_CONN_TAG_SIZE + SOCK_CONN_DEV_ID_SIZE];
-    uint32_t tag_sync_time;
-    uint32_t tag_eintr_time;
+    uint32_t tagSyncTime;
+    uint32_t tagEintrTime;
 
-    struct socket_err_info err_info;
+    struct SocketErrInfo errInfo;
 
-    struct rs_list_head list;
+    struct RsListHead list;
 };
 
 #define RS_BUF_SIZE 2048
 #define RS_SOCK_LISTEN_PARALLEL_NUM 16384
 
-enum listen_fd_state {
+enum ListenFdState {
     LISTEN_FD_STATE_ADDED = 0,
     LISTEN_FD_STATE_DELETED = 1,
 };
 
-struct rs_listen_info {
-    struct rs_ip_addr_info server_ip_addr;
-    struct rs_ip_addr_info client_ip_addr;
-    uint16_t sock_port;
+struct RsListenInfo {
+    struct RsIpAddrInfo serverIpAddr;
+    struct RsIpAddrInfo clientIpAddr;
+    uint16_t sockPort;
 
-    int listen_fd;
+    int listenFd;
     uint32_t state;  /* refer to enum rs_conn_state */
     int counter;
 
-    int last_accept_errno; /* last accept errno, avoid log flush */
-    struct socket_err_info err_info;
+    int lastAcceptErrno; /* last accept errno, avoid log flush */
+    struct SocketErrInfo errInfo;
 
-    bool accept_credit_flag;
-    pthread_mutex_t accept_credit_mutex;
-    enum listen_fd_state fd_state;
-    unsigned int accept_credit_limit;
+    bool acceptCreditFlag;
+    pthread_mutex_t acceptCreditMutex;
+    enum ListenFdState fdState;
+    unsigned int acceptCreditLimit;
 
-    struct rs_list_head list;
+    struct RsListHead list;
 };
 
-struct rs_accept_info {
-    struct rs_ip_addr_info server_ip_addr;
-    struct rs_ip_addr_info client_ip_addr;
-    uint16_t sock_port;
-    int conn_fd;
+struct RsAcceptInfo {
+    struct RsIpAddrInfo serverIpAddr;
+    struct RsIpAddrInfo clientIpAddr;
+    uint16_t sockPort;
+    int connFd;
     SSL *ssl;
     uint32_t state;
 
-    struct rs_list_head list;
+    struct RsListHead list;
 };
 
-struct rs_white_list {
-    struct rs_ip_addr_info server_ip;
-    struct rs_list_head white_list;
-    struct rs_list_head list;
+struct RsWhiteList {
+    struct RsIpAddrInfo serverIp;
+    struct RsListHead whiteList;
+    struct RsListHead list;
 };
 
-struct rs_white_list_info {
-    struct rs_ip_addr_info client_ip;
-    unsigned int conn_limit;
+struct RsWhiteListInfo {
+    struct RsIpAddrInfo clientIp;
+    unsigned int connLimit;
     char tag[SOCK_CONN_TAG_SIZE];
-    struct rs_list_head list;
+    struct RsListHead list;
 };
 
-struct rs_heterog_tcp_fd_info {
+struct RsHeterogTcpFdInfo {
     int fd;
-    struct rs_list_head list;
+    struct RsListHead list;
 };
 
-struct rs_cqe_err_info {
+struct RsCqeErrInfo {
     pthread_mutex_t mutex;
-    struct cqe_err_info info;
+    struct CqeErrInfo info;
 };
 
-struct rs_conn_cb {
-    struct rs_ip_addr_info local_ip_addr;
-    unsigned int wlist_enable;
+struct RsConnCb {
+    struct RsIpAddrInfo localIpAddr;
+    unsigned int wlistEnable;
     int eventfd;
     int epollfd;
-    int scope_id;
+    int scopeId;
 
-    pthread_mutex_t conn_mutex;
+    pthread_mutex_t connMutex;
     struct rs_cb *rscb;
-    struct socket_err_info epoll_err_info;
+    struct SocketErrInfo epollErrInfo;
 
-    struct rs_list_head listen_list;
-    struct rs_list_head server_accept_list;
-    struct rs_list_head server_conn_list;
-    struct rs_list_head client_conn_list;
-    struct rs_list_head white_list;
+    struct RsListHead listenList;
+    struct RsListHead serverAcceptList;
+    struct RsListHead serverConnList;
+    struct RsListHead clientConnList;
+    struct RsListHead whiteList;
 };
 
-struct rs_qp_cb {
-    struct rs_rdev_cb *rdev_cb;
-    struct ibv_pd *ib_pd;
-    struct ibv_qp *ib_qp;
+struct RsQpCb {
+    struct RsRdevCb *rdevCb;
+    struct ibv_pd *ibPd;
+    struct ibv_qp *ibQp;
 
-    int eq_num;
+    int eqNum;
     struct ibv_comp_channel *channel;
-    struct ibv_cq *ib_send_cq;
-    int send_cq_depth;
-    struct ibv_cq *ib_recv_cq;
-    int recv_cq_depth;
-    struct rs_cq_context *srq_context;
-    int num_recv_cq_events;
-    int num_send_cq_events;
+    struct ibv_cq *ibSendCq;
+    int sendCqDepth;
+    struct ibv_cq *ibRecvCq;
+    int recvCqDepth;
+    struct RsCqContext *srqContext;
+    int numRecvCqEvents;
+    int numSendCqEvents;
 
-    unsigned int tx_depth;
-    unsigned int send_sge_num;
-    unsigned int rx_depth;
-    unsigned int recv_sge_num;
+    unsigned int txDepth;
+    unsigned int sendSgeNum;
+    unsigned int rxDepth;
+    unsigned int recvSgeNum;
 
-    unsigned int send_wr_num;
-    unsigned int recv_wr_num;
+    unsigned int sendWrNum;
+    unsigned int recvWrNum;
 
-    int sq_index;
-    int db_index;
-    int qp_mode;
-    struct rs_qp_info qp_info_lo;
-    struct rs_qp_info qp_info_rem;
+    int sqIndex;
+    int dbIndex;
+    int qpMode;
+    struct RsQpInfo qpInfoLo;
+    struct RsQpInfo qpInfoRem;
 
-    struct rs_conn_info *conn_info;
+    struct RsConnInfo *connInfo;
     int state;
-    struct timeval start_time;
-    struct timeval end_time;
-    char qp_mr_buf[RS_BUF_SIZE];
-    unsigned int remain_size;
+    struct timeval startTime;
+    struct timeval endTime;
+    char qpMrBuf[RS_BUF_SIZE];
+    unsigned int remainSize;
 
-    pthread_mutex_t qp_mutex;
+    pthread_mutex_t qpMutex;
 
-    int mr_num;
-    struct rs_list_head list;
-    struct rs_list_head mr_list;
-    struct rs_list_head rem_mr_list;
-    int is_exp;
+    int mrNum;
+    struct RsListHead list;
+    struct RsListHead mrList;
+    struct RsListHead remMrList;
+    int isExp;
 
-    uint32_t send_len;
-    uint32_t recv_len;
-    uint32_t expect_len;
+    uint32_t sendLen;
+    uint32_t recvLen;
+    uint32_t expectLen;
 
-    struct event_summary *send_event;
-    struct event_summary *recv_event;
+    struct event_summary *sendEvent;
+    struct event_summary *recvEvent;
 
-    struct qos_attr qos_attr;
+    struct QosAttr qosAttr;
 
     unsigned int timeout;
-    unsigned int retry_cnt;
+    unsigned int retryCnt;
 
-    struct lite_qp_cq_attr_resp qp_resp;
+    struct LiteQpCqAttrResp qpResp;
 
-    struct lite_mem_attr_resp mem_resp;
-    int mem_align; // 0,1:4KB, 2:2MB
-    uint32_t udp_sport;
+    struct LiteMemAttrResp memResp;
+    int memAlign; // 0,1:4KB, 2:2MB
+    uint32_t udpSport;
 
-    unsigned int ai_op_support;
-    unsigned int grp_id;
-    unsigned int cq_cstm_flag;
+    unsigned int aiOpSupport;
+    unsigned int grpId;
+    unsigned int cqCstmFlag;
 
-    struct rs_cqe_err_info cqe_err_info;
+    struct RsCqeErrInfo cqeErrInfo;
 };
 
-enum rs_cq_create_mode {
+enum RsCqCreateMode {
     RS_NORMAL_CQ_CREATE = 0,
     RS_SRQ_CQ_CREATE,
     RS_SQ_CQ_CREATE,
 };
 
-struct rs_cq_create_attr {
-    struct rs_rdev_cb *rdev_cb;
-    int eq_num;
-    int cq_depth;
-    int cq_event_id;
-    struct ibv_cq *ib_cq;
+struct RsCqCreateAttr {
+    struct RsRdevCb *rdevCb;
+    int eqNum;
+    int cqDepth;
+    int cqEventId;
+    struct ibv_cq *ibCq;
     struct ibv_comp_channel *channel;
     struct event_summary *event;
 };
 
-struct rs_cq_context {
-    struct rs_rdev_cb *rdev_cb;
-    int eq_num;
-    int cq_create_mode;
-    struct ibv_cq *ib_send_cq;
-    struct ibv_cq *ib_recv_cq;
-    struct ibv_cq *ib_srq_cq;
+struct RsCqContext {
+    struct RsRdevCb *rdevCb;
+    int eqNum;
+    int cqCreateMode;
+    struct ibv_cq *ibSendCq;
+    struct ibv_cq *ibRecvCq;
+    struct ibv_cq *ibSrqCq;
     struct ibv_comp_channel *channel;
-    struct event_summary *send_event;
-    struct event_summary *recv_event;
-    struct rs_cq_context *srq_context;
-    int num_recv_cq_events;
+    struct event_summary *sendEvent;
+    struct event_summary *recvEvent;
+    struct RsCqContext *srqContext;
+    int numRecvCqEvents;
 };
 
 #define RS_PORT_DEF     1
@@ -554,86 +554,91 @@ struct rs_cq_context {
 #define RS_STATE_READY 2
 #define RS_STATE_HALT 4
 
-struct rs_akid {
-    char akid_name[RS_KID_MAX_LENGTH];
+struct RsAkid {
+    char akidName[RS_KID_MAX_LENGTH];
 };
 
-struct rs_issuer {
-    char issuer_name[RS_KID_MAX_LENGTH];
+struct RsIssuer {
+    char issuerName[RS_KID_MAX_LENGTH];
 };
 
-struct rs_cert_akid_issuer_cb {
-    struct rs_akid akids[RS_SSL_MAX_ALL_CERT_NUM];
-    struct rs_issuer issers[RS_SSL_MAX_ALL_CERT_NUM];
+struct RsCertAkidIssuerCb {
+    struct RsAkid akids[RS_SSL_MAX_ALL_CERT_NUM];
+    struct RsIssuer issers[RS_SSL_MAX_ALL_CERT_NUM];
 };
 
-struct rs_skid {
-    char skid_name[RS_KID_MAX_LENGTH];
+struct RsSkid {
+    char skidName[RS_KID_MAX_LENGTH];
 };
 
-struct rs_subject {
-    char subject_name[RS_KID_MAX_LENGTH];
+struct RsSubject {
+    char subjectName[RS_KID_MAX_LENGTH];
 };
 
-struct rs_cert_skid_subject_cb {
-    struct rs_skid skids[RS_SSL_MAX_ALL_CERT_NUM];
-    struct rs_subject subjects[RS_SSL_MAX_ALL_CERT_NUM];
+struct RsCertSkidSubjectCb {
+    struct RsSkid skids[RS_SSL_MAX_ALL_CERT_NUM];
+    struct RsSubject subjects[RS_SSL_MAX_ALL_CERT_NUM];
 };
 
-struct rs_rdev_cb {
+struct RsRdevCb {
     struct rs_cb *rs_cb;
-    unsigned int rdev_index;
-    struct rs_ip_addr_info local_ip;
-    int dev_num;
-    const char *dev_name;
-    int poll_cqe_num;
-    unsigned char ib_port;
-    unsigned int qp_cnt;
-    unsigned int qp_max_num;
-    unsigned int tx_depth;
-    unsigned int rx_depth;
-    unsigned int notify_type;
-    unsigned long long notify_pa_base;
-    unsigned long long notify_va_base;
-    unsigned long long notify_size;
-    int notify_access;
-    unsigned int logic_devid;
-    int sensor_update_cnt;
-    uint64_t sensor_handle;
-    unsigned int cqe_err_cnt;
-    pthread_mutex_t cqe_err_cnt_mutex;
+    unsigned int rdevIndex;
+    struct RsIpAddrInfo localIp;
+    int devNum;
+    const char *devName;
+    int pollCqeNum;
+    unsigned char ibPort;
+    unsigned int qpCnt;
+    unsigned int qpMaxNum;
+    unsigned int txDepth;
+    unsigned int rxDepth;
+    unsigned int notifyType;
+    unsigned long long notifyPaBase;
+    unsigned long long notifyVaBase;
+    unsigned long long notifySize;
+    int notifyAccess;
+    unsigned int logicDevid;
+    int sensorUpdateCnt;
+    uint64_t sensorHandle;
+    unsigned int cqeErrCnt;
+    pthread_mutex_t cqeErrCntMutex;
 
-    pthread_mutex_t rdev_mutex;
+    pthread_mutex_t rdevMutex;
 
-    struct ibv_mr *notify_mr;
-    struct ibv_pd *ib_pd;
-    struct ibv_context *ib_ctx;
-    struct ibv_device **dev_list;
+    struct ibv_mr *notifyMr;
+    struct ibv_pd *ibPd;
+    struct ibv_context *ibCtx;
+    struct ibv_device **devList;
 
-    struct rs_list_head qp_list;
-    struct rs_list_head typical_mr_list;
-    struct rs_list_head list;
+    struct RsListHead qpList;
+    struct RsListHead typicalMrList;
+    struct RsListHead list;
 
-    int support_lite;
+    int supportLite;
     struct {
-        bool backup_flag;
-        struct rdev rdev_info;
-        struct ibv_context *ib_ctx;
-    } backup_info;
+        bool backupFlag;
+        struct rdev rdevInfo;
+        struct ibv_context *ibCtx;
+    } backupInfo;
 };
 
-struct tlv_buf_info {
-    unsigned int buffer_size;
+struct TlvBufInfo {
+    unsigned int bufferSize;
     char *buf;
 };
 
-struct rs_nslb_cb {
-    struct rs_cb *rscb;
-    unsigned int phy_id;
+struct RsNslbCb {
+    bool initFlag;
+    void *netcoCb;
     pthread_mutex_t mutex;
-    struct tlv_buf_info buf_info;
-    void *netco_cb;
-    bool netco_init_flag;
+};
+
+struct RsTlvCb {
+    unsigned int phyId;
+    pthread_mutex_t mutex;
+    struct TlvBufInfo bufInfo;
+    bool initFlag;
+    struct RsNslbCb nslbCb;
 };
 
 /*
@@ -641,93 +646,93 @@ struct rs_nslb_cb {
  * for multi processor(device) in SMP system, each device have it's own rs_cb
  */
 struct rs_cb {
-    uint32_t chip_id;
-    uint32_t hccp_mode;
-    unsigned int logic_id;
-    enum protocol_type protocol;
+    uint32_t chipId;
+    uint32_t hccpMode;
+    unsigned int logicId;
+    enum ProtocolTypeT protocol;
 
     pthread_mutex_t mutex;
 
-    sem_t connect_trig_sem;
+    sem_t connectTrigSem;
     uint32_t state;
-    uint32_t ssl_enable;
-    SSL_CTX *server_ssl_ctx;
-    SSL_CTX *client_ssl_ctx;
-    struct rs_cert_skid_subject_cb *skid_subject_cb;
+    uint32_t sslEnable;
+    SSL_CTX *serverSslCtx;
+    SSL_CTX *clientSslCtx;
+    struct RsCertSkidSubjectCb *skidSubjectCb;
 
-    int conn_flag;
-    struct rs_conn_cb conn_cb;
+    int connFlag;
+    struct RsConnCb connCb;
 
-    unsigned int dev_cnt;
-    struct rs_list_head rdev_list;
-    struct rs_list_head heterog_tcp_fd_list;
+    unsigned int devCnt;
+    struct RsListHead rdevList;
+    struct RsListHead heterogTcpFdList;
 
-    struct rs_ping_ctx_cb ping_cb;
+    struct RsPingCtxCb pingCb;
 
-    struct rs_nslb_cb nslb_cb;
+    struct RsTlvCb tlvCb;
 
     char buf[RS_BUF_SIZE];
-    struct process_rs_sign p_rs_sign;
+    struct ProcessRsSign pRsSign;
 
-    unsigned long long notify_va_base;
-    unsigned long long notify_size;
+    unsigned long long notifyVaBase;
+    unsigned long long notifySize;
 
-    void (*tcp_recv_callback)(const void *fdHandle);
-    const void **fd_map;
+    void (*tcpRecvCallback)(const void *fdHandle);
+    const void **fdMap;
 
-    struct ifaddrs *ifaddr_list;
+    struct ifaddrs *ifaddrList;
 
-    pid_t aicpu_pid;
-    unsigned int grp_id;
-    pid_t host_pid;
-    bool grp_setup_flag;
+    pid_t aicpuPid;
+    unsigned int grpId;
+    pid_t hostPid;
+    bool grpSetupFlag;
 };
 
-enum rs_hardware_type {
+enum RsHardwareType {
     RS_HARDWARE_SERVER,
     RS_HARDWARE_PCIE,
     RS_HARDWARE_2DIE,
     RS_HARDWARE_UNKNOWN,
 };
 
-union rs_socketaddr {
-    struct sockaddr_in s_addr;
-    struct sockaddr_in6 s_addr6;
+union RsSocketaddr {
+    struct sockaddr_in sAddr;
+    struct sockaddr_in6 sAddr6;
 };
 
-struct rs_socketaddr_info {
+struct RsSocketaddrInfo {
     int family;
-    union rs_socketaddr addr;
+    union RsSocketaddr addr;
 };
 
-int RsQpInfoSync(struct rs_qp_cb *qpCb);
+int RsQpInfoSync(struct RsQpCb *qpCb);
 int RsSetDevice(int devId);
-int RsSocketConnectAsync(struct rs_conn_info *conn, struct rs_cb *rscb);
-int RsGetSocketConnectState(struct rs_conn_info *conn);
-int RsAllocConnNode(struct rs_conn_info **conn, unsigned short serverPort);
+int RsSocketConnectAsync(struct RsConnInfo *conn, struct rs_cb *rscb);
+int RsGetSocketConnectState(struct RsConnInfo *conn);
+int RsAllocConnNode(struct RsConnInfo **conn, unsigned short serverPort);
 
 extern __thread struct rs_cb *gRsCb;
 
 int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
 int RsGetHccpMode(unsigned int chipId);
-int RsDev2conncb(uint32_t chipId, struct rs_conn_cb **connCb);
-int RsFd2conn(int fd, struct rs_conn_info **conn);
+int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb);
+int RsFd2conn(int fd, struct RsConnInfo **conn);
 int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag);
-int RsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct rs_qp_cb **qpCb);
-int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb);
-int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct rs_rdev_cb **rdevCb);
+int RsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qpCb);
+int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
+int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 void RsAccpetListNodeFree(struct rs_cb *rscb);
-int RsWlistCheckConnAdd(struct rs_cb *rsCb, struct rs_conn_info* connTmp);
-void ShowConnNode(struct rs_list_head *listHead);
-enum ibv_mtu RsDrvSetMtu(struct rs_qp_cb *qpCb);
-enum rs_hardware_type RsGetDeviceType(unsigned int phyId);
+int RsWlistCheckConnAdd(struct rs_cb *rsCb, struct RsConnInfo* connTmp);
+void ShowConnNode(struct RsListHead *listHead);
+enum ibv_mtu RsDrvSetMtu(struct RsQpCb *qpCb);
+enum RsHardwareType RsGetDeviceType(unsigned int phyId);
 
-int RsConvertIpAddr(int family, union hccp_ip_addr *ipAddr, struct rs_ip_addr_info *ip);
-bool RsCompareIpAddr(struct rs_ip_addr_info *a, struct rs_ip_addr_info *b);
+int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
+bool RsCompareIpAddr(struct RsIpAddrInfo *a, struct RsIpAddrInfo *b);
 #ifdef CUSTOM_INTERFACE
 int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyid);
 #endif
-int RsQueryMrCb(struct rs_rdev_cb *devCb, uint64_t addr, struct rs_mr_cb **mrCb, struct rs_list_head *mrList);
+int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb, struct RsListHead *mrList);
 int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
 int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
 int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);

@@ -77,7 +77,7 @@ HcclResult HrtDevMalloc(void **devPtr, u64 size);
 HcclResult hrtStreamDestroy(rtStream_t stream);
 HcclResult hrtStreamCreate(aclrtStream *stream);
 HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint32_t flags);
-s32 GetMsTimeFromExecTimeout();
+s32 GetMsTimeFromExecTimeout(s32 execTimeOut);
 #endif
 
 #if T_DESC("event 同步机制", true)

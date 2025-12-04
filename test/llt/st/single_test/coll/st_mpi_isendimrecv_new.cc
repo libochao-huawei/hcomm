@@ -740,8 +740,8 @@ TEST_F(MPI_ISENDIRECV_TEST, st_TransportHeterogRoce_LoopStateProcess)
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogRoce> transport(new (nothrow) TransportHeterogRoce("test_collective", invalidIp, invalidIp, 18000, 0, transportResourceInfo));
     TransportHeterogRoce *transportHandle = transport.get();
-    socket_connect_info_t socketConnectInfo;
-    socket_info_t socketInfo;
+    SocketConnectInfoT socketConnectInfo;
+    SocketInfoT socketInfo;
     transportHandle->connState_ = ConnState::CONN_STATE_CONNECT_CHECK_SOCKET;
     transportHandle->initSM_.locInitInfo.socketConnInfo.push_back(socketConnectInfo);
     transportHandle->initSM_.locInitInfo.socketConnInfo.push_back(socketConnectInfo);

@@ -225,7 +225,7 @@ void tc_ra_socket_batch_connect_async_normal()
 {
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
-    struct socket_connect_info_t conn[1] = {0};
+    struct SocketConnectInfoT conn[1] = {0};
     int ret = 0;
 
     conn[0].socket_handle = (void *)&socket_handle;
@@ -246,7 +246,7 @@ void tc_ra_socket_batch_connect_async_fail()
 {
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
-    struct socket_connect_info_t conn[1] = {0};
+    struct SocketConnectInfoT conn[1] = {0};
     int ret = 0;
 
     conn[0].socket_handle = (void *)&socket_handle;
@@ -273,7 +273,7 @@ void tc_ra_socket_listen_start_async_normal()
 {
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
-    struct socket_listen_info_t conn[1] = {0};
+    struct SocketListenInfoT conn[1] = {0};
     int ret = 0;
 
     conn[0].socket_handle = (void *)&socket_handle;
@@ -294,7 +294,7 @@ void tc_ra_socket_listen_start_async_fail()
 {
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
-    struct socket_listen_info_t conn[1] = {0};
+    struct SocketListenInfoT conn[1] = {0};
     int ret = 0;
 
     conn[0].socket_handle = (void *)&socket_handle;
@@ -320,7 +320,7 @@ void tc_ra_socket_listen_stop_async_normal()
 {
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
-    struct socket_listen_info_t conn[1] = {0};
+    struct SocketListenInfoT conn[1] = {0};
 
     conn[0].socket_handle = (void *)&socket_handle;
 
@@ -339,7 +339,7 @@ void tc_ra_socket_listen_stop_async_fail()
 {
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
-    struct socket_listen_info_t conn[1] = {0};
+    struct SocketListenInfoT conn[1] = {0};
     int ret = 0;
 
     conn[0].socket_handle = (void *)&socket_handle;
@@ -366,7 +366,7 @@ void tc_ra_socket_batch_close_async_normal()
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
     struct socket_hdc_info fd_handle = {0};
-    struct socket_close_info_t conn[1] = {0};
+    struct SocketCloseInfoT conn[1] = {0};
     int ret = 0;
 
     conn[0].socket_handle = (void *)&socket_handle;
@@ -389,7 +389,7 @@ void tc_ra_socket_batch_close_async_fail()
     struct ra_request_handle *req_handle = NULL;
     struct ra_socket_handle socket_handle = {0};
     struct socket_hdc_info fd_handle = {0};
-    struct socket_close_info_t conn[1] = {0};
+    struct SocketCloseInfoT conn[1] = {0};
     int ret = 0;
 
     conn[0].socket_handle = (void *)&socket_handle;

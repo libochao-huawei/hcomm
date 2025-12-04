@@ -130,6 +130,12 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclAlg::SetExecTimeOutConfig(const s32 execTimeOut)
+    {
+        (void) execTimeOut;
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclAlg::GetRankVecInfo(std::vector<std::vector<std::vector<u32>>> &serverAndsuperPodToRank)
     {
         (void) serverAndsuperPodToRank;

@@ -116,7 +116,7 @@ HcclResult RdmaResourceManager::DeInit()
     return HCCL_SUCCESS;
 }
 
-HcclResult RdmaResourceManager::GetCqeErrInfo(struct cqe_err_info *infoList, u32 *num)
+HcclResult RdmaResourceManager::GetCqeErrInfo(struct CqeErrInfo *infoList, u32 *num)
 {
     CHK_PTR_NULL(rdmaHandle_);
     return hrtRaGetCqeErrInfoList(rdmaHandle_, infoList, num);
@@ -128,7 +128,7 @@ HcclResult RdmaResourceManager::GetCqeErrInfoByQpn(u32 qpn, struct HcclErrCqeInf
     u32 qpnNum = RETRY_CQE_ARRAY_SIZE;
     u32 listLen = *num;
     std::unique_lock<std::mutex> lock(cqeErrMapMutex_);
-    struct cqe_err_info cqeErrInfolist[qpnNum] = {};
+    struct CqeErrInfo cqeErrInfolist[qpnNum] = {};
     CHK_RET(hrtRaGetCqeErrInfoList(rdmaHandle_, cqeErrInfolist, &qpnNum));
     for (u32 i = 0; i < qpnNum; i++) {
         u32 errQpn = cqeErrInfolist[i].qpn;
@@ -165,7 +165,7 @@ HcclResult RdmaResourceManager::GetCqeErrInfoByQpn(u32 qpn, struct HcclErrCqeInf
     return HCCL_SUCCESS;
 }
 
-HcclResult RdmaResourceManager::GetNotifyMrInfo(struct mr_info& mrInfo)
+HcclResult RdmaResourceManager::GetNotifyMrInfo(struct MrInfoT& mrInfo)
 {
     CHK_PTR_NULL(rdmaHandle_);
     mrInfo.lkey = notifyMrInfo_.lkey;

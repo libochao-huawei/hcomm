@@ -16,6 +16,7 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
+#include "comm_configer.h"
 
 constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
@@ -330,9 +331,10 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
-        HcclAlgoType algType = GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
-        bool setPipelineAlgo = ((algType == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
-             (algType == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN));
+        HcclAlgoType configAlgTypeLevel2 = CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier_,
+            HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
+        bool setPipelineAlgo = ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
+             (configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN));
         if (superPodNum_ > 1 && userRankSize_ / superPodNum_ > 1 && setPipelineAlgo) {
             algName = "AllGatherRingZerocopyPipelineExecutor";      // 连续数据通信+额外的数据交换，Level2和level0+1并发流水
             algType_.algoLevel2 = AlgTypeLevel2::ALG_LEVEL2_PIPELINE;

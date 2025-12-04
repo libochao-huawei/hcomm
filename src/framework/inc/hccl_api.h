@@ -895,7 +895,7 @@ extern HcclResult HcclExchangeMem(HcclComm comm, const EndPoint *srcEndPoint, co
  * @param notifyType 
  * @param notifyHandleList
  * @return HcclResult 
- * @warning  需要考虑是否带tag? 2、需要确认安全校验等方案 3、CommEngine commEngine,NotifyType notifyType是否要加？
+ * @warning  需要考虑是否带tag? 2、需要确认安全校验等方案 3、CommEngine commEngine,NotifyTypeT notifyType是否要加？
  */
 extern HcclResult HcclFreeNotify(HcclComm comm, NotifyHandle *notifyHandleList, uint32_t notifyNum);
 /** @} */  // 通信引擎资源管理
@@ -1238,6 +1238,19 @@ extern HcclResult HixlCSClientGetLinks(void *clientHandle, CommLink **linkList, 
  */
 // extern HcclResult HixlCSClientChannelGetStatus(void *clientHandle, const ChannelHandle *channelList,
 //     uint32_t listNum, int32_t *statusList);
+
+/**
+ * @brief 查询通信通道的状态
+ * @param[in] comm 通信域句柄 
+ * @param[in] channelList 通道句柄列表
+ * @param[in] listNum 列表数量
+ * @param[out] statusList 返回状态列表，0表示成功
+ * @return HcclResult 执行结果状态码
+ * @note 非阻塞接口
+ * @warning  statusList是否改成枚举？
+ */
+extern HcclResult HcclChannelGetStatus(HcclComm comm, const ChannelHandle *channelList, uint32_t listNum,
+    int32_t *statusList);
 
 /**
  * @brief 获取channel中全部的交换获得的远端内存信息

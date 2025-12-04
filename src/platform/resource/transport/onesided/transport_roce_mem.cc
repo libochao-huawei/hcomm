@@ -17,6 +17,7 @@
 #include "dispatcher_pub.h"
 #include "hccl_network.h"
 #include "device_capacity.h"
+#include "externalinput.h"
 
 namespace hccl {
 using namespace std;
@@ -361,24 +362,24 @@ HcclResult TransportRoceMem::TransportRdmaWithType(
         byteSizeChunk = remainingBytes > MAX_RDMA_WQE_SIZE ? MAX_RDMA_WQE_SIZE : remainingBytes;
         std::shared_ptr<RemoteRdmaRmaBuffer> remoteRdmaRmaBuffer = dynamic_pointer_cast<RemoteRdmaRmaBuffer>(remoteRmaBufferSlice.rmaBuffer);
         std::shared_ptr<LocalRdmaRmaBuffer> localRdmaRmaBuffer = dynamic_pointer_cast<LocalRdmaRmaBuffer>(localRmaBufferSlice.rmaBuffer);
-        struct wr_info wr[WR_NUM];
-        wr[0].wr_id = sendWrHandle.fetch_add(1,std::memory_order_relaxed);
-        wr[0].mem_list.addr = localStartAddr;
-        wr[0].mem_list.len = byteSizeChunk;
-        wr[0].mem_list.lkey = localRdmaRmaBuffer->GetKey();
-        wr[0].dst_addr = remoteStartAddr;
+        struct WrInfo wr[WR_NUM];
+        wr[0].wrId = sendWrHandle.fetch_add(1,std::memory_order_relaxed);
+        wr[0].memList.addr = localStartAddr;
+        wr[0].memList.len = byteSizeChunk;
+        wr[0].memList.lkey = localRdmaRmaBuffer->GetKey();
+        wr[0].dstAddr = remoteStartAddr;
         wr[0].rkey = remoteRdmaRmaBuffer->GetKey();
         wr[0].op = static_cast<u32>(rdmaOp);
-        wr[0].send_flags = RA_SEND_SIGNALED;
+        wr[0].sendFlags = RA_SEND_SIGNALED;
 
-        struct send_wr_rsp opRsp[WR_NUM];
+        struct SendWrRsp opRsp[WR_NUM];
 
-        HCCL_DEBUG("Op type[%d], wr.wr_id[%llu], src addr[%p], dest addr[%p], len[%u]",
+        HCCL_DEBUG("Op type[%d], wr.wrId[%llu], src addr[%p], dest addr[%p], len[%u]",
             rdmaOp,
-            wr[0].wr_id,
+            wr[0].wrId,
             localRmaBufferSlice.addr,
             remoteRmaBufferSlice.addr,
-            wr[0].mem_list.len);
+            wr[0].memList.len);
         u32 completeNum = 0;
         CHK_RET(HrtRaSendNormalWrlist(dataQpInfo_.qpHandle, wr, opRsp, WR_NUM, &completeNum));
         CHK_RET(DoorBellSend(dataQpInfo_.qpMode, wr[0], opRsp[0], stream));
@@ -479,30 +480,32 @@ HcclResult TransportRoceMem::AddOpFence(const rtStream_t &stream)
 {
     CHK_RET(CheckRaSendNormalWrlistSupport());
     auto opType = static_cast<u32>(MemType::SEND_NOTIFY_MEM);
-    struct wr_info wr[WR_NUM];
-    wr[0].wr_id = sendWrHandle.fetch_add(1,std::memory_order_relaxed);
-    wr[0].mem_list.addr = reinterpret_cast<uint64_t>(rdmaSignal_[0].addr);
-    wr[0].mem_list.len = notifyMemMsg_[opType].len;
-    wr[0].mem_list.lkey = rdmaSignal_[0].lkey;
-    wr[0].dst_addr = static_cast<u64>(reinterpret_cast<uintptr_t>(notifyMemMsg_[opType].addr));
+    struct WrInfo wr[WR_NUM];
+    wr[0].wrId = sendWrHandle.fetch_add(1,std::memory_order_relaxed);
+    wr[0].memList.addr = reinterpret_cast<uint64_t>(rdmaSignal_[0].addr);
+    wr[0].memList.len = notifyMemMsg_[opType].len;
+    wr[0].memList.lkey = rdmaSignal_[0].lkey;
+    wr[0].dstAddr = static_cast<u64>(reinterpret_cast<uintptr_t>(notifyMemMsg_[opType].addr));
     wr[0].rkey = notifyMemMsg_[opType].rkey;
     wr[0].op = static_cast<u32>(RdmaOp::OP_READ);
-    wr[0].send_flags = RA_SEND_SIGNALED | RA_SEND_FENCE;
+    wr[0].sendFlags = RA_SEND_SIGNALED | RA_SEND_FENCE;
     u32 completeNum = 0;
-    struct send_wr_rsp opRsp[WR_NUM];
+    struct SendWrRsp opRsp[WR_NUM];
     CHK_RET(HrtRaSendNormalWrlist(dataQpInfo_.qpHandle, wr, opRsp, WR_NUM, &completeNum));
     CHK_RET(DoorBellSend(dataQpInfo_.qpMode, wr[0], opRsp[0], stream));
     CHK_RET(WaitOpFence(stream));
-    HCCL_DEBUG("[AddOpFence] wr.wr_id[%llu], local addr[%p], remote addr[%p], len[%u], lkey[%u], rkey[%u]", wr[0].wr_id,
-        rdmaSignal_[0].addr, notifyMemMsg_[opType].addr, wr[0].mem_list.len, wr[0].mem_list.lkey, wr[0].rkey);
+    HCCL_DEBUG("[AddOpFence] wr.wrId[%llu], local addr[%p], remote addr[%p], len[%u], lkey[%u], rkey[%u]", wr[0].wrId,
+        rdmaSignal_[0].addr, notifyMemMsg_[opType].addr, wr[0].memList.len, wr[0].memList.lkey, wr[0].rkey);
     return HCCL_SUCCESS;
 }
 
 HcclResult TransportRoceMem::GetQpInfo(HcclQpInfoV2 &qpInfo)
 {
-    qpInfo.qpPtr = aiQpInfo_.ai_qp_addr;    // reinterpret_cast<u64>(dataQpInfo_.qp)
-    qpInfo.sqIndex = aiQpInfo_.sq_index;
-    qpInfo.dbIndex = aiQpInfo_.db_index;
+    qpInfo.qpPtr = aiQpInfo_.aiQpAddr;    // reinterpret_cast<u64>(dataQpInfo_.qp)
+    qpInfo.sqIndex = aiQpInfo_.sqIndex;
+    qpInfo.dbIndex = aiQpInfo_.dbIndex;
+    qpInfo.retryCnt = static_cast<u16>(GetExternalInputRdmaRetryCnt());
+    qpInfo.retryTime = static_cast<u16>(GetExternalInputRdmaTimeOut());
     struct ibv_qp *qp = reinterpret_cast<struct ibv_qp *>(qpInfo.qpPtr);
     HCCL_DEBUG("[%s] qp=%p", __func__, qp);
     return HCCL_SUCCESS;
@@ -572,8 +575,9 @@ HcclResult TransportRoceMem::WaitOpFence(const rtStream_t &stream)
     auto opType = static_cast<u32>(MemType::SEND_NOTIFY_MEM);
     hccl::Stream hcclStream(stream);
     DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcher_);
-    const u32 timeOut = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-        GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    const u32 timeOut = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ||
+        dispatcher->GetExecTimeOutSet() ?
+        dispatcher->GetExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
     HcclResult ret = LocalIpcNotify::Wait(hcclStream, dispatcher, remoteIsendDoneSignal_, INVALID_VALUE_STAGE,
         timeOut, localRankId_, remoteRankId_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -714,7 +718,7 @@ HcclResult TransportRoceMem::CreateRdmaSignal(
     HCCL_INFO("notifyBaseVa=0x%llx, notifyTotalSize=0x%x, notifyOffset=0x%llx, notifyVa=0x%llx",
         notifyBaseVa, notifyTotalSize, notifyOffset, notifyVa);
 
-    struct mr_info mrInfo = {};
+    struct MrInfoT mrInfo = {};
     CHK_RET(HrtRaGetNotifyMrInfo(devicePhyId_, nicRdmaHandle_, &mrInfo));
     rdmaSignalInfo.lkey = mrInfo.lkey;
 
@@ -737,7 +741,7 @@ HcclResult TransportRoceMem::CreateNotifyValueBuffer()
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
     }
 
-    struct mr_info mrInfo = {nullptr};
+    struct MrInfoT mrInfo = {nullptr};
     mrInfo.addr = notifyMem_.ptr();
     mrInfo.size = notifySize_;
     mrInfo.access = access_;
@@ -752,22 +756,22 @@ HcclResult TransportRoceMem::CreateNotifyValueBuffer()
 }
 
 HcclResult TransportRoceMem::DoorBellSend(
-    const s32 qpMode,  wr_info &sendWrInfo, const send_wr_rsp &opRsp, rtStream_t stream)
+    const s32 qpMode,  WrInfo &sendWrInfo, const SendWrRsp &opRsp, rtStream_t stream)
 {
-    struct send_wr sendwr;
-    sendwr.buf_list = &sendWrInfo.mem_list;
-    sendwr.buf_num = 1; /* 此处list只有一个，设置为1 */
-    sendwr.dst_addr = sendWrInfo.dst_addr;
+    struct SendWr sendwr;
+    sendwr.bufList = &sendWrInfo.memList;
+    sendwr.bufNum = 1; /* 此处list只有一个，设置为1 */
+    sendwr.dstAddr = sendWrInfo.dstAddr;
     sendwr.rkey = sendWrInfo.rkey;
     sendwr.op = sendWrInfo.op;
-    sendwr.send_flag = sendWrInfo.send_flags;
-    u32 dbIndex = static_cast<u32>(opRsp.db.db_index);
-    u64 dbInfo = static_cast<u64>(opRsp.db.db_info);
+    sendwr.sendFlag = sendWrInfo.sendFlags;
+    u32 dbIndex = static_cast<u32>(opRsp.db.dbIndex);
+    u64 dbInfo = static_cast<u64>(opRsp.db.dbInfo);
     CHK_RET(RdmaDbSend(dbIndex, dbInfo, sendwr, stream));
     return HCCL_SUCCESS;
 }
 
-HcclResult TransportRoceMem::RdmaDbSend(u32 dbindex, u64 dbinfo, const struct send_wr &sendWr, rtStream_t stream)
+HcclResult TransportRoceMem::RdmaDbSend(u32 dbindex, u64 dbinfo, const struct SendWr &sendWr, rtStream_t stream)
 {
     hccl::Stream hcclStream(stream);
     DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcher_);

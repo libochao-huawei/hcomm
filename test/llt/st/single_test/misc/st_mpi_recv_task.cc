@@ -106,7 +106,7 @@ TEST_F(MPI_RecvTask_Test, st_recv_task_init)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
 
-    socket_info_t socketInfo;
+    SocketInfoT socketInfo;
     void* transportPtr = nullptr;
     TcpRecvTask::GetRecvTaskInstance()->initCount_ = 0;
     std::unique_lock<std::mutex> lock(TcpRecvTask::GetRecvTaskInstance()->transportMapMutex_);

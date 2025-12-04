@@ -111,7 +111,7 @@ enum WhiteListStatus {
 
 class PingMesh {
 private:
-    ping_init_info initInfo_ {};                   // 初始化信息
+    PingInitInfo initInfo_ {};                   // 初始化信息
     void *pingHandle_ = nullptr;                   // 记录hccp侧的pingmesh句柄
     std::shared_ptr<HcclSocket> socket_ = nullptr; // 记录server端的socket信息，用于建立rdma链路
     HcclIpAddress *ipAddr_ = nullptr;              // 记录device的ip信息
@@ -119,7 +119,7 @@ private:
     RpingState rpingState_ = RpingState::UNINIT;   // 记录client状态
     int rpingTargetNum_ = 0;                       // 记录client目标数量
     std::map<std::string, std::shared_ptr<HcclSocket>> socketMaps_;  // 记录client端的socket信息
-    std::map<std::string, ping_qp_info> rdmaInfoMaps_;    // 记录target的rdma信息
+    std::map<std::string, PingQpInfo> rdmaInfoMaps_;    // 记录target的rdma信息
     std::unique_ptr<std::thread> connThread_;      // server端等待socket建链的背景线程
     HcclNetDevCtx netCtx_ = nullptr;               // 记录网络上下文信息
     std::shared_ptr<HDCommunicate> hdcD2H_ = nullptr; // 从device侧获取数据的接口
@@ -131,9 +131,9 @@ private:
     bool isUsePayload_ = false;
     std::map<std::string, u32> payloadLenMap_;     // 记录自定义payload的长度
  
-    HcclResult RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, ping_init_info initInfo,
+    HcclResult RpingSendInitInfo(u32 deviceId, u32 port, HcclIpAddress ipAddr, PingInitInfo initInfo,
         std::shared_ptr<HcclSocket> socket);
-    HcclResult RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAddress ipAddr, ping_init_info &recvInfo, u32 timeout);
+    HcclResult RpingRecvTargetInfo(void *clientNetCtx, u32 port, HcclIpAddress ipAddr, PingInitInfo &recvInfo, u32 timeout);
 public:
     PingMesh();
     ~PingMesh();

@@ -226,7 +226,7 @@ void tc_hdc_deinit_fail()
 
 void tc_hdc_socket_batch_connect()
 {
-    struct socket_connect_info_t conn[1];
+    struct SocketConnectInfoT conn[1];
     mocker_clean();
     tc_hdc_test_env_init();
 
@@ -256,7 +256,7 @@ void tc_hdc_socket_batch_connect()
 
 void tc_hdc_socket_batch_close()
 {
-    struct socket_close_info_t conn[1] = {0};
+    struct SocketCloseInfoT conn[1] = {0};
     conn[0].fd_handle = calloc(sizeof(struct socket_hdc_info), 1);
     ((struct socket_hdc_info *)conn[0].fd_handle)->fd = 0;
     ((struct socket_hdc_info *)conn[0].fd_handle)->phy_id = 0;
@@ -288,7 +288,7 @@ void tc_hdc_socket_batch_close()
 void tc_hdc_socket_listen_start()
 {
     int ret;
-    struct socket_listen_info_t conn[1];
+    struct SocketListenInfoT conn[1];
     mocker_clean();
     tc_hdc_test_env_init();
     mocker((stub_fn_t)ra_hdc_process_msg, 5, 0);
@@ -323,7 +323,7 @@ void tc_hdc_socket_listen_start()
 
 void tc_hdc_socket_batch_abort()
 {
-    struct socket_listen_info_t conn[1];
+    struct SocketListenInfoT conn[1];
 
     mocker_clean();
     tc_hdc_test_env_init();
@@ -348,7 +348,7 @@ void tc_hdc_socket_batch_abort()
 
 void tc_hdc_socket_listen_stop()
 {
-    struct socket_listen_info_t conn[1];
+    struct SocketListenInfoT conn[1];
     mocker_clean();
     tc_hdc_test_env_init();
     int ret = ra_hdc_socket_listen_stop(g_devid, conn, 1);
@@ -375,7 +375,7 @@ void tc_hdc_socket_listen_stop()
 
 void tc_hdc_get_sockets()
 {
-    struct socket_info_t conn[1];
+    struct SocketInfoT conn[1];
     conn[0].fd_handle = NULL;
     conn[0].socket_handle = calloc(sizeof(struct ra_socket_handle), 1);
     mocker_clean();
@@ -2368,8 +2368,8 @@ void tc_ra_hdc_tlv_request()
 void tc_ra_hdc_qp_create_with_attrs()
 {
     struct ra_rdma_handle rdma_handle = {0};
-    struct qp_ext_attrs ext_attrs = {0};
-    struct ai_qp_info info = {0};
+    struct QpExtAttrs ext_attrs = {0};
+    struct AiQpInfo info = {0};
     void *qp_handle = NULL;
     int ret = 0;
 
