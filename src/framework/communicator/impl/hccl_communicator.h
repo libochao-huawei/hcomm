@@ -738,6 +738,7 @@ private:
     u32 GetLocalNicPort(NicType nicType);
     std::string GetSupportDataType(bool needReduce);
     HcclResult InitHDCommunicate();
+    bool GetSupportHDCommunicate();
     HcclResult InitOpRetry();
     HcclResult InitOpResPara();
     bool IsSupportZeroCopy(const OpParam &opParam);

@@ -7942,6 +7942,10 @@ namespace hccl
     HcclResult HcclCommunicator::GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
         HDCommunicateParams &kfcStatusTransferD2HParams)
     {
+        if (GetSupportHDCommunicate() == false) {
+            HCCL_WARNING("%s not support HDCommunicate, skip", __func__);
+            return HCCL_SUCCESS;
+        }
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         kfcControlTransferH2DParams = kfcControlTransferH2D_->GetCommunicateParams();
