@@ -74,6 +74,7 @@ private:
     HcclResult GetNotifySize();
     HcclResult RecoverNotifyMsg(MemMsg *remoteRdmaSignal, u64 signalNum);
     HcclResult ConnectImpl(s32 timeoutSec);
+    HcclResult ConnectImplWithTimeout(s32 timeoutSec);
     HcclResult GetQpStatus();
     HcclResult QpConnect();
     HcclResult CreateRdmaSignal(
