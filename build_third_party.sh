@@ -62,19 +62,6 @@ download_and_compile() {
     mk_dir "${OUTPUT_PATH}/mpich_shared"
     cpu_cores=$(lscpu | grep 'CPU(s):' | awk '{print$2}')
 
-    # # cmake
-    # if [ -z "${ASCEND_INSTALL_PATH}" ]; then
-    #   echo "Not set ASCEND_INSTALL_PATH"
-    #   exit 1;
-    # fi
-
-    # SOURCE_PATH="${ASCEND_INSTALL_PATH}/opensdk/opensdk/cmake"
-    # cp -r "${SOURCE_PATH}" "${OUTPUT_PATH}"
-    # if [ $? -ne 0]; then
-    #   echo "Failed to get cmake"
-    #   exit 1
-    # fi
-
     # Downloading json
     wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/json_include.zip" https://gitcode.com/cann-src-third-party/json/releases/download/v3.11.3/include.zip
     if [ $? -ne 0 ]; then
@@ -122,42 +109,42 @@ download_and_compile() {
     cd "${OUTPUT_PATH}/gtest_shared"
     ln -s lib64 lib
 
-    # Downloading mockcpp
-    wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/mockcpp-2.7.zip" https://gitee.com/sinojelly/mockcpp/repository/archive/v2.7.zip
-    if [ $? -ne 0 ]; then
-      echo "Failed to download mockcpp files"
-      exit 1;
-    fi
-
-    unzip "${OUTPUT_PATH}/pkg/mockcpp-2.7.zip" -d "${OUTPUT_PATH}/mockcpp_shared"
-    if [ $? -ne 0 ]; then
-      echo "Failed to extract mockcpp files"
-      exit 1;
-    fi
-
-    cd "${OUTPUT_PATH}/mockcpp_shared/mockcpp-v2.7/"
-    cmake -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack" \
-          -DCMAKE_C_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack" \
-          -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF \
-          -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH}/mockcpp_shared \
-          -DCMAKE_INSTALL_LIBDIR=lib64 \
-          -DBUILD_TESTING=OFF \
-          -DBUILD_SHARED_LIBS=ON
-    if [ $? -ne 0 ]; then
-      echo "Failed to configure mockcpp with cmake"
-      exit 1;
-    fi
-
-    make && make install
-    if [ $? -ne 0 ]; then
-      echo "Failed to install mockcpp"
-      exit 1;
-    fi
-
-    cd "${OUTPUT_PATH}/mockcpp_shared"
-    ln -s lib64 lib
-
     echo "All operations completed successfully!"
+}
+
+download_mockcpp() {
+  MOCKCPP_PKG_URL="https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7.zip"
+  MOCKCPP_PATCH_URL="https://gitcode.com/cann-src-third-party/mockcpp/releases/download/v2.7-h2/mockcpp-2.7_py3.patch"
+
+  # 下载
+  wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/mockcpp-2.7.zip" ${MOCKCPP_PKG_URL}
+  wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/mockcpp-2.7.patch" ${MOCKCPP_PATCH_URL}
+
+  # 解压
+  unzip "${OUTPUT_PATH}/pkg/mockcpp-2.7.zip" -d "${OUTPUT_PATH}/mockcpp_shared"
+
+  # 补丁
+  cd ${OUTPUT_PATH}/mockcpp_shared/mockcpp-2.7
+  patch -p1 < ${OUTPUT_PATH}/pkg/mockcpp-2.7.patch
+}
+
+build_mockcpp() {
+  sudo apt-get install libboost-dev -y
+
+  cd "${OUTPUT_PATH}/mockcpp_shared/mockcpp-2.7/"
+
+  cmake -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack" \
+        -DCMAKE_C_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0 -O2 -D_FORTIFY_SOURCE=2 -fPIC -fstack-protector-all -Wl,-z,relro,-z,now,-z,noexecstack" \
+        -DBUILD_32_BIT_TARGET_BY_64_BIT_COMPILER=OFF \
+        -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH}/mockcpp_shared \
+        -DCMAKE_INSTALL_LIBDIR=lib64 \
+        -DBUILD_TESTING=OFF \
+        -DBUILD_SHARED_LIBS=ON
+
+  make && make install
+
+  cd "${OUTPUT_PATH}/mockcpp_shared"
+  ln -s lib64 lib
 }
 
 main() {
@@ -170,6 +157,11 @@ main() {
     echo "script failed.";
     exit 1;
   fi
+
+  # 下载、编译 mockcpp
+  download_mockcpp
+  build_mockcpp
+
   echo "---------------- script finished ----------------"
 }
 
