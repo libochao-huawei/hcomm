@@ -1,7 +1,7 @@
 /* CC0 (Public domain) - see LICENSE.CC0 file for details */
 #ifndef CCAN_STR_H
 #define CCAN_STR_H
-#include "config.h"
+// #include "config.h"
 #include <string.h>
 #include <stdbool.h>
 #include <limits.h>
