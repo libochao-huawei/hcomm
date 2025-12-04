@@ -1,23 +1,4 @@
 From f8109a5ecfb1729bbdc22d4671288e26b04cc240 Mon Sep 17 00:00:00 2001
-From: w00602603 <w00602603@huawei.com>
-Date: Thu, 27 Nov 2025 23:14:19 +0800
-Subject: [PATCH] DTS:AR11113333
-
-Description:test
-
-Team:OTHERS
-Feature or Bugfix:Feature
-
-Change-Id: I5d6ef6c86c037aec47b5705910139ffa238c3fd5
-Signed-off-by: w00602603 w00602603@huawei.com
-Signed-off-by: z00877118 <z00877118@huawei.com>
-Signed-off-by: w00602603 <w00602603@huawei.com>
-Signed-off-by: l00956135 <l00956135@huawei.com>
-Signed-off-by: z30073595 <z30073595@huawei.com>
-Signed-off-by: z00958272 <z00958272@huawei.com>
-Signed-off-by: w00617706 <w00617706@huawei.com>
-Signed-off-by: dichengduo <dichengduo@h-partners.com>
-Signed-off-by: j00943496 <j00943496@huawei.com>
 ---
  pkg_inc/hccl/hcom.h                           |  11 +-
  src/CMakeLists.txt                            |   2 +

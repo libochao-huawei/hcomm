@@ -1,14 +1,6 @@
 From decc0d57a5b7a4d0fe6758f9e7ad8e75e42755ae Mon Sep 17 00:00:00 2001
-From: l30032501 <luokangkang1@huawei.com>
-Date: Sat, 29 Nov 2025 17:02:16 +0800
-Subject: [PATCH] DTS:AR11113333 Description:test
 
-Team:OTHERS
-Feature or Bugfix:Feature
 
-Change-Id: I5d6ef6c86c037aec47b5705910139ffa238c3fd5
-Signed-off-by: dichengduo <dichengduo@h-partners.com>
-Signed-off-by: z00958272 <z00958272@huawei.com>
 ---
  .../ge_plugin/common/hcom_log.h               |  29 ++++
  .../ge_plugin/common/hcom_op_utils.cc         |  25 ++--
