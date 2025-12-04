@@ -78,8 +78,8 @@ std::shared_ptr<TransportMem> TransportMem::Create(TpType tpType, const HcclQpIn
     switch (tpType) {
         case TpType::ROCE_DEVICE:
 #ifdef CCL_KERNEL
-            // transportMemPtr = std::make_unique<TransportDeviceRoceMem>(notifyPool, netDevCtx, dispatcher, attrInfo,
-            //     false, qpInfo); // aicpuUnfoldMode is set by host
+            transportMemPtr = std::make_unique<TransportDeviceRoceMem>(notifyPool, netDevCtx, dispatcher, attrInfo,
+                false, qpInfo); // aicpuUnfoldMode is set by host
 #else
             HCCL_ERROR("[TransportMem] ROCE_DEVICE Only running on the AICPU");
 #endif
