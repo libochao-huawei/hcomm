@@ -344,6 +344,11 @@ HcclResult DlRaFunction::DlRaFunctionSocketInit()
 
     dlRaRestoreSnapShot = (int(*)(struct RaInfo*))HcclDlsym(handle_, "RaRestoreSnapshot");
     CHK_SMART_PTR_NULL(dlRaRestoreSnapShot);
+    
+    dlRaGetHccnCfg = (int (*)(struct RaInfo*, enum HccnCfgKey, char*, int*))HcclDlsym(handle_, "RaGetHccnCfg");
+    if (dlRaGetHccnCfg == nullptr) {
+        HCCL_WARNING("dlRaGetHccnCfg is nullptr, can not use RaGetHccnCfg");
+    }
     return HCCL_SUCCESS;
 }
 

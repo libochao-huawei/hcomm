@@ -21,8 +21,9 @@ public:
     ~CollAllReduceMeshAivFor91093Executor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
-    HcclResult MyCalBlockDim(u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID);
+    HcclResult CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;
     HcclResult PrepareCommInfoToDevice(AlgResourceResponse& algResource) override;
+    HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;
     HcclResult CalcScratchMemSize(u64&) override;
 
 private:

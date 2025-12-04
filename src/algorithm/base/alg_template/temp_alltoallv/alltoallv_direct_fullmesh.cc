@@ -1055,12 +1055,12 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
         }
 
         for (u32 step = 0; step < totalStep; step++) {
-            u32 leftRankSize = devNumInlocalPod_ - 1; // leftRankSize中去掉本卡
-            for (u32 roundIdx = 0; roundIdx < commRounds_ && leftRankSize > 0; roundIdx++) {
+            u32 currentLeftRankSize = devNumInlocalPod_ - 1; // leftRankSize中去掉本卡
+            for (u32 roundIdx = 0; roundIdx < commRounds_ && currentLeftRankSize > 0; roundIdx++) {
                 CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
-                u32 groupRankSize = (leftRankSize > sdmaConcurrentNum_) ? sdmaConcurrentNum_ : leftRankSize;
-                CHK_RET(RunSDMATasks(roundIdx, step, groupRankSize, leftRankSize));
-                leftRankSize -= groupRankSize;
+                u32 groupRankSize = (currentLeftRankSize > sdmaConcurrentNum_) ? sdmaConcurrentNum_ : currentLeftRankSize;
+                CHK_RET(RunSDMATasks(roundIdx, step, groupRankSize, currentLeftRankSize));
+                currentLeftRankSize -= groupRankSize;
                 CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, sdmaSubStream_));
             }
         }

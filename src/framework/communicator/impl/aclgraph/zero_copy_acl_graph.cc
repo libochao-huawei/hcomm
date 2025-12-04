@@ -18,7 +18,6 @@ ZeroCopyAclGraph::ZeroCopyAclGraph() : tagResourceIndex_(0), retryEnable_(false)
     algoSet_.insert(HcclCMDType::HCCL_CMD_REDUCE);
     algoSet_.insert(HcclCMDType::HCCL_CMD_ALLTOALL);
     algoSet_.insert(HcclCMDType::HCCL_CMD_ALLTOALLV);
-    algoSet_.insert(HcclCMDType::HCCL_CMD_SCATTER);
     algoSet_.insert(HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
     algoSet_.insert(HcclCMDType::HCCL_CMD_SEND);
     algoSet_.insert(HcclCMDType::HCCL_CMD_RECEIVE);

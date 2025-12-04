@@ -50,6 +50,12 @@ enum class HcclSaveSnapShotAction {
     HCCL_SAVE_SNAPSHOT_ACTION_POST_PROCESSING = 1,
 };
 
+enum class HccnCfgKeyT {
+    HCCN_UDP_PORT_MODE = 0,
+    HCCN_MULTI_QP_COUNT = 1,
+    HCCN_MULTI_QP_UDP_PORTS = 2
+};
+
 using QueueDepthAttr = struct QueueDepthAttrDef { // 有效配置 128 - 32K
     u32 sendCqDepth{INVALID_UINT};
     u32 recvCqDepth{INVALID_UINT};
@@ -77,6 +83,7 @@ HcclResult hrtRaDestroyEventHandle(s32 &eventHandle);
 
 HcclResult SnapShotSaveAction(s32 networkMode, u32 devicePhyId, HcclSaveSnapShotAction action);
 HcclResult SnapShotRestoreAction(s32 networkMode, u32 devicePhyId);
+HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT key, std::string& value);
 #endif
 
 #endif

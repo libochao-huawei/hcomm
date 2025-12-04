@@ -635,6 +635,18 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/pub_inc
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+
+        ${HCCL_BASE_DIR}/platform/
+        ${HCCL_BASE_DIR}/platform/inc/
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
+        ${HCCL_BASE_DIR}/platform/resource/transport/host/
+        ${HCCL_BASE_DIR}/platform/resource/transport/
+        ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/task
+        ${HCCL_BASE_DIR}/platform/common
+        ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
     )
 
     target_link_directories(ccl_kernel PRIVATE
@@ -678,6 +690,7 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
 
         ${HCCL_BASE_DIR}/inc
         ${HCCL_BASE_DIR}/hdcs

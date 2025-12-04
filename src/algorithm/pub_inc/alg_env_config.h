@@ -76,5 +76,5 @@ HcclResult CheckAlgoConfigValid(std::vector<std::string> &algos, bool& anyCommon
 
 HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::string> &algos);
 
-const s32 GetInternalExecTimeOut();
+s32 GetInternalExecTimeOut();
 #endif // HCCL_ALG_ENV_CONFIG_H

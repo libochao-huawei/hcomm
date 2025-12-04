@@ -488,14 +488,16 @@ HcclResult TransportHeterog::CheckConsistentFrame()
 
     bool bIsDiff = false;
     if (remoteRankTableCrc != localRankTableCrc) {
-        RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
-            std::vector<std::string>({
-                transTag_, "ranktable CRC",
-                std::to_string(localRankTableCrc),
-                std::to_string(remoteRankTableCrc)
-            }));
-        HCCL_ERROR("[CheckConsistentFrame][CompareCrcInfo]errNo[0x%016llx] ranktable CRC check failed, crcValue[%u],"
-            "receive crcvalue[%u].", HCCL_ERROR_CODE(HCCL_E_INTERNAL), localRankTableCrc,
+        RPT_INPUT_ERR(true,
+            "EI0005",
+            std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
+            std::vector<std::string>(
+                {transTag_, "ranktable CRC", std::to_string(localRankTableCrc), std::to_string(remoteRankTableCrc)}));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] ranktable CRC check failed, crcValue[%u], receive crcvalue[%u].",
+            LOG_KEYWORDS_INIT_CHANNEL.c_str(),
+            LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
+            HCCL_ERROR_CODE(HCCL_E_INTERNAL),
+            localRankTableCrc,
             remoteRankTableCrc);
         bIsDiff = true;
     }

@@ -619,11 +619,11 @@ HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address)
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
         std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
 
-    CHK_PRT_RET((ret != ACL_SUCCESS), HCCL_ERROR("[Malloc][Mem]errNo[0x%016llx] aclrtMalloc failed, "\
-        "return[%d], para: devPtrAddr[%p], size[%llu Byte], isTsMem[%d].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret,
-        *devPtr, size, isTsMem), HCCL_E_RUNTIME);
-    PLF_CONFIG_INFO(PLF_RES, "Malloc DevMem para: deviceId[%d] policy[0x%x] devPtr[%p] size[%llu Byte] "\
-        "level2Address[%u], isTsMem[%d].", deviceId, policy, *devPtr, size, level2Address, isTsMem);
+    CHK_PRT_RET((ret != ACL_SUCCESS), HCCL_ERROR("[%s][%s]errNo[0x%016llx] rtMalloc failed, "\
+        "return[%d], para: devPtrAddr[%p], size[%llu Byte].", LOG_KEYWORDS_INIT_GROUP.c_str(),
+        LOG_KEYWORDS_RESOURCE.c_str(), HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *devPtr, size), HCCL_E_RUNTIME);
+    PLF_CONFIG_INFO(PLF_RES, "Malloc DevMem para: deviceId[%d] devPtr[%p] size[%llu Byte] "\
+        "level2Address[%u]", deviceId, *devPtr, size, level2Address);
     return HCCL_SUCCESS;
 #else
     // 参数有效性检查
@@ -1169,8 +1169,9 @@ HcclResult hrtMallocHost(void **hostPtr, u64 size)
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
         std::vector<std::string>({"HostMemory", std::string("size:") + std::to_string(size)}));
 
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Malloc][Host]errNo[0x%016llx] rt malloc host fail. return[%d], "\
-        "para: hostPtr[%p], size[%llu Byte].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *hostPtr, size), HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] rt malloc host fail. return[%d], "\
+        "para: hostPtr[%p], size[%llu Byte].", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(),
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *hostPtr, size), HCCL_E_RUNTIME);
     PLF_CONFIG_DEBUG(PLF_RES, "Malloc HostMem para: hostPtr[%p], size[%llu Byte]", *hostPtr, size);
     return HCCL_SUCCESS;
 }
@@ -1266,8 +1267,9 @@ HcclResult hrtEventCreate(aclrtEvent *event)
         std::vector<std::string>({"event", "null"}));
 
     HCCL_DEBUG("Call aclrtCreateEvent, return value[%d], para: event[%p]", ret, *event);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Create][Event]errNo[0x%016llx] rt event create, return[%d], "\
-        "event[%p]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, event), HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] rt event create, return[%d], "\
+        "event[%p]", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), HCCL_ERROR_CODE(HCCL_E_RUNTIME),
+        ret, event), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtEventCreate]Does not support this interface.");

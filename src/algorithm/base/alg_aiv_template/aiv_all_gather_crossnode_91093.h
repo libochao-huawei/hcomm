@@ -58,13 +58,6 @@ __aicore__ inline void AivAllGatherCrossNode91093::Process(GM_ADDR buffIn0, GM_A
     uint64_t curCount;
     uint64_t curBlockOffset;
 
-    // Case1：当做不了multi-core并行搬运数据时(rankSize过大)，使用最后一个aiv做localcopy
-    // Case2：当能做multi-core并行时，使用targetrank为本rank的aivs做localcopy
-    bool isFirstLocalCopyCores = (rankSize_ > HALF_MAX_BLOCK_DIM && block_idx == block_num - 1) || (rankSize_ <= HALF_MAX_BLOCK_DIM && targetRanks[0] == rank_);
-    
-    // 只有Case1需要做最后的localcopy；对于Case2，它的localcopy已经夹在ccl->outout中了
-    bool isSecondLocalCopyCore = (rankSize_ > HALF_MAX_BLOCK_DIM && block_idx == block_num - 1);
-
     for (uint32_t loop = 0; loop < bufferLoopNum; loop++) {
         if (loop == bufferLoopNum - 1) { // 最后一轮ccl填充
             curCount = countTail;
@@ -76,13 +69,13 @@ __aicore__ inline void AivAllGatherCrossNode91093::Process(GM_ADDR buffIn0, GM_A
 
         PipeBarrier<PIPE_ALL>();
 
-        if (isFirstLocalCopyCores) {
+        if (localCopyCores) {
             CpGM2GM(cclGMSelf + curBlockOffset, inputGM + curOffset + curBlockOffset, curCount);
             PipeBarrier<PIPE_ALL>();
         }
         
         // 首次卡间同步，多等一（Case1/2目标核做完localcopy后告知其他卡所有remotecopy的核它完成了）
-        SingleRecordBatchWait(curTag, buffersOut, isFirstLocalCopyCores);
+        SingleRecordBatchWait(curTag, buffersOut, localCopyCores);
 
         PipeBarrier<PIPE_ALL>();
 
@@ -101,15 +94,10 @@ __aicore__ inline void AivAllGatherCrossNode91093::Process(GM_ADDR buffIn0, GM_A
 
         if (loop != bufferLoopNum - 1) {
             // 卡内核间同步，避免下一轮last core做localcopy时抢跑
-            BatchRecordSingleWaitCoreLevel(curTag, isFirstLocalCopyCores);
-
+            BatchRecordSingleWaitCoreLevel(curTag,localCopyCores);
             curTag += 1;
             curOffset += bufferCount;
-        }
-    }
-
-    if (isSecondLocalCopyCore) {
-        CpGM2GM(outputGM + rank_ * len, inputGM, len);
+	    }
     }
 }
 
@@ -121,7 +109,7 @@ __aicore__ inline void aiv_all_gather_crossnode_91093(KERNEL_ARGS_DEF_A3)
     // 每张卡的CCLBuffer大小为bufferSize; bufferSize中能装下的数据个数为bufferCount
     uint64_t bufferCount = (uint64_t) bufferSize / sizeof(T);
     
-    op.Init<T>(buffOut0, rank, rankSize, bufferCount, len, reduceOp, tag, true);
+    op.Init<T>(buffOut0, rank, rankSize, bufferCount, len, reduceOp, tag, step, true);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, SIZE_OF_INT32, isEnableCounter);
     op.HeadCounter();
     op.Process<T>(buffIn0, buffOut0, buffOut1, input, output, tag, bufferCount, len);

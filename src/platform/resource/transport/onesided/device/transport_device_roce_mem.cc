@@ -186,7 +186,6 @@ HcclResult TransportDeviceRoceMem::BatchOp(Stream &stream, const std::vector<Mem
         std::vector<MemDetails> localMemList;
         std::vector<MemDetails> remoteMemList;
         CHK_RET(FillMemDetails(localMemList, remoteMemList, localMem, remoteMem));
-        wqeCount += localMemList.size();
         CHK_RET(BatchPostSend(stream, dbInfo, localMemList, remoteMemList, isRead, fence, wqeCount, wrDataLen));
         if (wqeCount >= MAX_RDMA_WQE_NUM) {
             CHK_RET(DoorBellSend(stream, dbInfo, wrDataLen, fence));
@@ -210,6 +209,7 @@ HcclResult TransportDeviceRoceMem::BatchPostSend(Stream &stream, u64 &dbInfo, st
         CHK_RET(PostSend(stream, dbInfo, &(localMemList[sendWrCount]), &(remoteMemList[sendWrCount]), wrCount,
             isRead, fence, wqeCount, wrDataLen));
         sendWrCount += wrCount;
+        wqeCount += wrCount;
     }
     return HCCL_SUCCESS;
 }
@@ -225,8 +225,9 @@ HcclResult TransportDeviceRoceMem::PostSend(Stream &stream, u64 &dbInfo, struct 
         RdmaOp opCode = isRead ? RdmaOp::OP_READ : RdmaOp::OP_WRITE;
         ret = RdmaPostSend(dbInfo, localMems, remoteMems, memNum, opCode, fence);
         if (ret == HCCL_E_AGAIN) {
-            if (retryCount == 0) {
-                HCCL_WARNING("[PostSend] retry with DoorBellSend, isRead[%u] remoteRankId[%u]", isRead, remoteRankId_);
+            if ((retryCount == 0) && (wqeCount != 0)) {
+                HCCL_WARNING("[PostSend] retry with DoorBellSend, isRead[%u] remoteRankId[%u] wqeCount[%u]", isRead,
+                    remoteRankId_, wqeCount);
                 CHK_RET(DoorBellSend(stream, dbInfo, wrDataLen, fence));
                 wqeCount = 0;
                 wrDataLen = 0;
@@ -253,6 +254,9 @@ HcclResult TransportDeviceRoceMem::PostSend(Stream &stream, u64 &dbInfo, struct 
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[PostSend] HnsPostSend failed[%u], isRead[%u] remoteRankId[%u]", ret, isRead, remoteRankId_),
             ret);
+        if (retryCount != 0) {
+            HCCL_INFO("[PostSend] retry success, isRead[%u] remoteRankId[%u]", isRead, remoteRankId_);
+        }
     }
     return HCCL_SUCCESS;
 }
@@ -267,8 +271,8 @@ HcclResult TransportDeviceRoceMem::RdmaPostSend(u64 &dbInfo, MemDetails *localMe
         HCCL_ERROR("[TransportDeviceRoceMem][RdmaPostSend] buffer size is:%u over SEND_WR_LEN: %u", memNum, SEND_WR_LEN),
         HCCL_E_PARA);
     const u32 last = memNum - 1;
-    struct ibv_send_wr sendWr[SEND_WR_LEN] = {};
-    struct ibv_sge  sge[SEND_WR_LEN] = {};
+    struct ibv_send_wr sendWr[SEND_WR_LEN] = {0};
+    struct ibv_sge  sge[SEND_WR_LEN] = {0};
     for (u32 index = 0; index < memNum; index++) {
         // 设置WR的SGE
         sge[index].addr   = localMems[index].addr;
@@ -291,7 +295,7 @@ HcclResult TransportDeviceRoceMem::RdmaPostSend(u64 &dbInfo, MemDetails *localMe
     }
 
     struct ibv_send_wr *badWr = nullptr;
-    struct WrExpRsp exp_rsp = {};
+    struct WrExpRsp exp_rsp = {0};
     struct ibv_qp *qp = reinterpret_cast<struct ibv_qp *>(qpInfo_.qpPtr);
     CHK_PTR_NULL(qp);
     HCCL_DEBUG("[TransportDeviceRoceMem][RdmaPostSend] qp=%p, handle=%u, qp_num=%u, qp_type=%d, qp_stat=%d", qp,

@@ -33,12 +33,12 @@ HcclResult UnRegisterAivKernel()
     return HCCL_SUCCESS;
 }
 
-HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, u32 deterministic)
+HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, AivAlgArgs algArgs)
 {
     (void) cclBuffersOut;
     (void) resourceArgs;
     (void) topoArgs;
-    (void) deterministic;
+    (void) algArgs;
     return HCCL_SUCCESS;
 }
 

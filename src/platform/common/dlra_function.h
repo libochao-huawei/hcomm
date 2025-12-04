@@ -150,6 +150,7 @@ public:
     std::function<int(struct RaInfo *info, bool *tls_enable)> dlRaRaGetTlsEnable;
     std::function<int(struct RaInfo *info, enum SaveSnapshotAction action)> dlRaSaveSnapShot;
     std::function<int(struct RaInfo *info)> dlRaRestoreSnapShot;
+    std::function<int(struct RaInfo *info, enum HccnCfgKey ext_attrs, char* value, int *value_len)> dlRaGetHccnCfg;
 protected:
 private:
     friend Init;

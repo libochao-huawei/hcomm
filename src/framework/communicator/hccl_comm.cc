@@ -998,15 +998,15 @@ HcclResult hcclComm::GetRankSize(u32 &rankSize)
 }
 
 HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
-    HcclReduceOp op, bool &ifAiv, std::string &algName, bool isSuperKernel)
+    HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
 {
-    return communicator_->HcclSelectAlg(opType, count, dataType, op, ifAiv, algName, isSuperKernel);
+    return communicator_->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
 }
 
-HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType,
+HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim)
 {
-    return communicator_->HcclCalcBlockDim(opType, count, dataType, algName, blockDim);
+    return communicator_->HcclCalcBlockDim(opType, count, dataType, aivCoreLimit, algName, blockDim);
 }
 
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
@@ -1082,9 +1082,9 @@ HcclResult hcclComm::SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::SetAttachedStream(const std::vector<rtStream_t> &streams)
+HcclResult hcclComm::SetAttachedStream(u32 graphId, const std::vector<rtStream_t> &streams)
 {
-    CHK_RET(communicator_->SetAttachedStream(streams));
+    CHK_RET(communicator_->SetAttachedStream(graphId, streams));
     return HCCL_SUCCESS;
 }
 
@@ -1237,6 +1237,12 @@ HcclResult hcclComm::GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::GetCommUserMemSize(uint64_t &size)
+{
+    HcclResult ret = communicator_->GetCommUserMemSize(size);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_INFO("[%s]call trace: hcclRet -> %d", __func__, ret), ret);
+    return HCCL_SUCCESS;
+}
 HcclResult hcclComm::SetDeterministicConfig(const u8 deterministic)
 {
     CHK_RET(communicator_->SetDeterministicConfig(deterministic));
