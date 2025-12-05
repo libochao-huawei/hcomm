@@ -88,11 +88,16 @@ typedef enum {
     HCCL_DATA_TYPE_FP64 = 10,    /**< fp64 */
     HCCL_DATA_TYPE_BFP16 = 11,    /**< bfp16 */
     HCCL_DATA_TYPE_INT128 = 12,   /**< int128 */
+    HCCL_DATA_TYPE_HIF8 = 14,     /**< experimental */
+    HCCL_DATA_TYPE_FP8E4M3 = 15,  /**< experimental */
+    HCCL_DATA_TYPE_FP8E5M2 = 16,  /**< experimental */
+    HCCL_DATA_TYPE_FP8E8M0 = 17,  /**< experimental */
     HCCL_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcclDataType;
 
 typedef enum {
     HCCL_DETERMINISTIC = 0,     /**< 0: non-deterministic, 1: deterministic */
+    HCCL_ACCELERATOR,           /**< experimental */
     HCCL_CONFIG_RESERVED
 } HcclConfig;
 
