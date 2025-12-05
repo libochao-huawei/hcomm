@@ -161,10 +161,14 @@ constexpr aclDataType DT_MAP_TABLE[HCCL_DATA_TYPE_RESERVED + 1] = {
     ACL_DT_UNDEFINED  /* HCCL_DATA_TYPE_RESERVED */
 };
 
+constexpr aclrtReduceKind ACL_RT_MEMCPY_INVALID = static_cast<aclrtReduceKind>(-1);
+
 constexpr aclrtReduceKind RK_MAP_TABLE[HCCL_REDUCE_RESERVED + 1] = {
     ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM, /* HCCL_REDUCE_SUM = 0 */
+    ACL_RT_MEMCPY_INVALID,            /* HCCL_REDUCE_PROD = 1 */
     ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX, /* HCCL_REDUCE_MAX = 2 */
     ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN, /* HCCL_REDUCE_MIN = 3 */
+    ACL_RT_MEMCPY_INVALID,            /* HCCL_REDUCE_RESERVED = 4 */
 };
 
 enum aicpuNotifySqeType { NOTIFY_RECORD = 0, NOTIFY_WAIT = 1 };
