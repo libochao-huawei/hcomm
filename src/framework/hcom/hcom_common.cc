@@ -990,8 +990,11 @@ HcclResult HcomDestroy(void)
             if (hcomInfo.rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
                 CHK_RET(hrtGetDeviceIndexByPhyId(hcomInfo.params.logicDevId, logicId));
             }
-            CHK_RET(hrtSetDevice(logicId));
-            HCCL_INFO("[HcomDestroy][SetDeviceId]logicDevId[%u]", logicId);
+            s32 deviceId = 0;
+            if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+                CHK_RET(hrtSetDevice(logicId));
+                HCCL_INFO("[HcomDestroy][SetDeviceId]logicDevId[%u]", logicId);
+            }
         }
 
         HCCL_INFO("[Destroy][Result]hcomInfo[%u].pComm destroy.", i);
