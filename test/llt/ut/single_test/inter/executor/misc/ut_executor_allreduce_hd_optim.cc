@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -212,7 +212,7 @@ TEST_F(AllReduceHDOptimTest, run_async_45)
 
 TEST_F(AllReduceHDOptimTest, AllReduceHDOptim_Constructor)
 {
-    // »ñÈ¡Ä£°åÊµÀý
+    // ï¿½ï¿½È¡Ä£ï¿½ï¿½Êµï¿½ï¿½
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_REDUCE_HD_OPTIM, dispatcher);
 	EXPECT_NE(tempAlg, nullptr);
@@ -227,15 +227,15 @@ TEST_F(AllReduceHDOptimTest, AllReduceHDOptim_Constructor)
     u32 userRank = 0;
     HcomCollOpInfo opInfo{0};
 
-	// µ÷ÓÃÐÂÔöµÄprepare
+	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½prepare
     s32 ret = tempAlg->Prepare(
         reduceAttrBitMap, meshStreams, meshSignal, meshSignalAux, userRank, &opInfo, aicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-	// ×ª»»×ÓÀàÖ¸Õë
+	// ×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
     AllReduceHDOptim *alg = dynamic_cast<AllReduceHDOptim *>(tempAlg.get());
 
-	// Ð£Ñé³ÉÔ±±äÁ¿
+	// Ð£ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½
     EXPECT_EQ(alg->reduceAttr_, reduceAttrBitMap);
     EXPECT_EQ(alg->userRank_, userRank);
     EXPECT_EQ(alg->opInfo_, &opInfo);
