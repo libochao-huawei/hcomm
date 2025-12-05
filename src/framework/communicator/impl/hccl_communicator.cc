@@ -326,6 +326,15 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitTransportManager()
     {
+        // 根据设备ID创建dispatcher
+        if ((deviceType_ == DevType::DEV_TYPE_910B) && GetExternalInputHcclEnableFfts()) {
+            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetExternalInputHcclAicpuUnfold(),
+                HCCL_RUN_INFO("Will use ffts mode."));
+        } else {
+            // 不满足ffts+特性开启条件。
+            SetFftsSwitch(false);
+        }
+
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
         CHK_SMART_PTR_NULL(dispatcher_);
         CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
@@ -558,11 +567,18 @@ namespace hccl
         return moduleNum_;
     }
 
+    bool HcclCommunicator::GetSupportHDCommunicate()
+    {
+        HCCL_INFO("%s aicpuUnfold[%d], deviceType_[%d], isHaveCpuRank_[%d]",
+            __func__, GetExternalInputHcclAicpuUnfold(), deviceType_, isHaveCpuRank_);
+        return (GetExternalInputHcclAicpuUnfold() == true) ||
+            ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
+            Is310P3Common(isHaveCpuRank_, deviceType_));
+    }
+
     HcclResult HcclCommunicator::InitHDCommunicate()
     {
-        if ((GetExternalInputHcclAicpuUnfold() == true) ||
-            ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
-             Is310P3Common(isHaveCpuRank_, deviceType_)))
+        if (GetSupportHDCommunicate())
         {
             // 初始化aicpu进程host-device共享内存
             EXECEPTION_CATCH((kfcControlTransferH2D_ =
