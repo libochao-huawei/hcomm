@@ -12,7 +12,7 @@ set(HCCL_CODE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
 message(STATUS "${HCCL_CODE_ROOT}/src/platform/common/ *******************************************")
 set(HCCL_LLT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
-set(include_list
+set(UT_COMMON_INCLUDE_LIST
     # # hccl/src目录下头文件
     ${HCCL_CODE_ROOT}/
     ${HCCL_CODE_ROOT}/src
@@ -205,7 +205,6 @@ set(include_list
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
 
-    ${THIRD_PARTY_NLOHMANN_PATH}
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
@@ -215,3 +214,5 @@ set(include_list
 add_subdirectory(stub)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(platform/resource/dispatcher)
+add_subdirectory(framework/communicator)
+add_subdirectory(framework/op_base_api)

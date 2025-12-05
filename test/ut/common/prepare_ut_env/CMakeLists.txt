@@ -13,7 +13,7 @@ set(hccl_ut_prepare_env_list
 add_executable(hccl_ut_prepare_env  ${hccl_ut_prepare_env_list})
 
 target_include_directories(hccl_ut_prepare_env  PRIVATE
-    ${include_list}
+    ${UT_COMMON_INCLUDE_LIST}
 )
 
 target_compile_options(hccl_ut_prepare_env   PRIVATE 
