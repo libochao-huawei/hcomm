@@ -297,6 +297,14 @@ namespace hccl
             // 不满足ffts+特性开启条件。
             SetFftsSwitch(false);
         }
+        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
+        CHK_SMART_PTR_NULL(dispatcher_);
+        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
+
+        if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
+            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
+        }
+        CHK_PTR_NULL(dispatcherCtx_);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
@@ -325,18 +333,6 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitTransportManager()
     {
-        // 根据设备ID创建dispatcher
-        if ((deviceType_ == DevType::DEV_TYPE_910B) && GetExternalInputHcclEnableFfts()) {
-            CHK_PRT_CONT(GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !GetExternalInputHcclAicpuUnfold(),
-                HCCL_RUN_INFO("Will use ffts mode."));
-        } else {
-            // 不满足ffts+特性开启条件。
-            SetFftsSwitch(false);
-        }
-
-        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
-        CHK_SMART_PTR_NULL(dispatcher_);
-        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
         std::vector<u32> &nicRanksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
         transportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
@@ -350,10 +346,6 @@ namespace hccl
         (void)transportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
         (void)transportManager_->SetIsStandardCard(isStandardCard_);
 
-        if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
-            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
-        }
-        CHK_PTR_NULL(dispatcherCtx_);
         DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
         CHK_PTR_NULL(ctx);
         indptOpTransportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(

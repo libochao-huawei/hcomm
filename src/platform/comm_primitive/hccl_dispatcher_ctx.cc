@@ -140,13 +140,17 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
     if (LIKELY(FindDispatcherByCommId(&otherCtx, commId))) {
         DeleteDispatcherByCommId(commId);
     } else {
-        DeleteCommIdByDispatcherCtx(ctx);
-        HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s]", ctx, commId);
+        bool hasFound = DeleteCommIdByDispatcherCtx(ctx);
+        if (!hasFound) {
+            HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], it may have be destroied", ctx, commId);
+            return HCCL_SUCCESS;
+        }
+        HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], just destroy", ctx, commId);
     }
     hccl::DispatcherCtx *Ctx_tmp = reinterpret_cast<hccl::DispatcherCtx*>(ctx);
     HcclResult ret = Ctx_tmp->Destroy();
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateCtx] CTX Destroy fail");
+        HCCL_ERROR("[DestoryCtx] CTX Destroy fail");
     }
     delete Ctx_tmp;
     ctx = nullptr;
