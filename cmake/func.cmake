@@ -102,7 +102,7 @@ function(pack_targets_and_files)
             -D _STAGING_DIR=${staging_dir}
             ${manifest_arg}
             -D "_ITEMS=$<JOIN:${src_items},;>"
-            -P "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/_pack_stage.cmake"
+            -P "${CMAKE_CURRENT_LIST_DIR}/cmake/_pack_stage.cmake"
         COMMAND ${CMAKE_COMMAND} -E tar "czf" "${ARG_OUTPUT}" .
         WORKING_DIRECTORY ${staging_dir}
         DEPENDS ${ARG_TARGETS} ${staging_dir}
