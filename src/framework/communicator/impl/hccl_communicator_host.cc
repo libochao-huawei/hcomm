@@ -296,6 +296,8 @@ namespace hccl
         CHK_RET(InitDebug());
         CHK_RET(InitNotifyManager());
         CHK_RET(InitStreamManager());
+        CHK_RET(InitProfiler());
+        CHK_RET(InitDispatcher());
         CHK_RET(InitTransportManager());
         CHK_RET(InitMemoryManager());
         CHK_RET(InitCombinOpara());
@@ -1023,10 +1025,6 @@ namespace hccl
         CHK_RET(attrCollector_.CheckLocalRankInfo());
         CHK_RET(attrCollector_.CalAndSetMeshAggRankSize());
         meshAggregationRankSize_ = attrCollector_.GetMeshAggregationRankSize();
-
-        CHK_RET(InitProfiler());
-
-        CHK_RET(InitDispatcher());
 
         // 初始化计数任务
         CHK_RET(OpExeCounter::GetInstance(deviceLogicId_).InitCounter());
