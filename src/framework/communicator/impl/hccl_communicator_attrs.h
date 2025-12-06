@@ -127,7 +127,6 @@ private:
     HcclResult InitTopoInfo(const RankTable_t &rankTable);
     HcclResult InitTopoInfo(const std::vector<RankInfo> &rankList); // For Subgroup
     HcclResult SetInterModeInSuperPod();
-    HcclResult CheckSingleServerComm(const std::vector<RankInfo_t> &rankList) const;
     HcclResult SetRankInfoList(const RankTable_t &rankTable);
     HcclResult CheckRankTable(const RankTable_t &rankTable, const ServRankInfo &servRankInfo);
     HcclResult CheckDevPhyId(const s32 &devicePhyId) const;

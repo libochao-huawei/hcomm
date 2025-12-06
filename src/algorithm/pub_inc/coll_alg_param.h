@@ -257,6 +257,7 @@ struct AlgDesc {
     bool isZeroCopy = false;
     bool isAivMode = false;
     bool isAivCrossNode = false;
+    bool isLastSelect = false;
     s32 deterministic = -1;     // -1:invalid，0:disable，1:enable，2:strict
     s32 aivTagNum = 1;
     AlgType algType;
@@ -268,6 +269,8 @@ struct AlgDesc {
 };
 
 struct ResourceLimit {
+    bool ifLimit = false;
+    u32 aivCoreLimit = 0;
 };
 
 }   // namespace hccl

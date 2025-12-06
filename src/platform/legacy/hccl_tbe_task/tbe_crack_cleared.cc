@@ -22,9 +22,7 @@
 namespace TbeReduce {
 using namespace std;
 
-TbeCrackCleard::TbeCrackCleard()
-    : addrListDevPtr_(nullptr), initTilingDataHostPtr_(false)
-{}
+TbeCrackCleard::TbeCrackCleard() {}
 
 TbeCrackCleard::~TbeCrackCleard()
 {
@@ -134,7 +132,7 @@ HcclResult TbeCrackCleard::Run(const std::vector<std::int64_t> &crackAddr, const
             return HCCL_SUCCESS;
         }
 
-    if (!initTilingDataHostPtr_) {
+    if (tilingDataHostPtr_ == nullptr) {
         tilingDataHostPtr_ = new (std::nothrow) char[(crackAddr.size() + 1) * MEMSET_CRACK_TILING_DATA_MAX_SZIE];
         CHK_PTR_NULL(tilingDataHostPtr_);
     }

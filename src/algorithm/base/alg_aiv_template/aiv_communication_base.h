@@ -159,6 +159,7 @@ constexpr uint64_t AIV_ALL_REDUCE_DETER_SMALL_SIZE = 1 * 1024 * 1024;
 constexpr uint64_t AIV_ALL_REDUCE_DETER_MID_SIZE = 8 * 1024 * 1024;
 constexpr uint64_t AIV_REDUCE_SCATTER_DETER_SMALL_SIZE = 1 * 1024 * 1024;
 constexpr uint64_t AIV_REDUCE_SCATTER_DETER_MID_SIZE = 8 * 1024 * 1024;
+constexpr uint64_t AIV_REDUCE_SCATTER_BIG_SIZE = 190 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_TINY_SIZE = 28 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_SMALL_SIZE = 112 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_MID_SIZE = 448 * 1024;
@@ -664,8 +665,7 @@ template<typename T>
 __aicore__ inline void AivCommBase::CpGM2GM(__gm__ T *outputGM, __gm__ T *inputGM, uint64_t count, bool atomic,
     uint32_t atomicOp)
 {
-    AIV_INFO("[AivCommBase::CpGM2GM][CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu], tag is [%d]",
-            outputGM, inputGM, count, tag_);
+    AIV_INFO("[CpGM2GM]outputGM is [%p], inputGM is [%p], count is [%llu] ", outputGM, inputGM, count);
     GlobalTensor<T> inputGT;
     inputGT.SetGlobalBuffer(inputGM, count);
     GlobalTensor<T> outputGT;

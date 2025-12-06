@@ -15,6 +15,7 @@
 #include "adapter_prof.h"
 #include "profiling_manager.h"
 #include "profiler_manager_impl.h"
+#include "stream_utils.h"
 
 namespace hccl {
 ProfilerManagerImpl::ProfilerManagerImpl(s32 devicePhyId, s32 deviceLogicId, u32 realUserRank)
@@ -306,11 +307,16 @@ void ProfilerManagerImpl::HandleGraphLaunchTask(struct TaskPara *taskPara)
 {
     if (GetIfProfile()) {
         auto &profilingManager = hccl::ProfilingManager::Instance();
-        if (!profilingManager.GetFftsLaunchApiState() || ProfilingManagerPub::GetThreadCaptureStatus()) {
+        rtModel_t rtModel = nullptr;
+        bool isCapture = false;
+        HcclResult retCapture = GetStreamCaptureInfo(taskPara->stream, rtModel, isCapture);
+        CHK_PRT_CONT(retCapture != HCCL_SUCCESS,
+            HCCL_ERROR("Get capture status error. return[%d], capture model", retCapture));
+        if (!profilingManager.GetFftsLaunchApiState() || isCapture) {
             // 上报批量下发的ContextId信息
             (void)profilingManager.CallMsprofReportContextIdInfo((taskPara->graphLaunch.ctxNum - 1));
 
-            if (!profilingManager.GetTaskApiState() || ProfilingManagerPub::GetThreadCaptureStatus()) {
+            if (!profilingManager.GetTaskApiState() || isCapture) {
                 // 上报编排的task(memcpy\notify等) addition Info
                 profilingManager.ReportStoragedFftsInfo();
             }

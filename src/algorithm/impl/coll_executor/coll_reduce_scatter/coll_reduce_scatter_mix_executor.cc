@@ -90,11 +90,6 @@ HcclResult CollReduceScatterMixExecutor::CalcStreamNum(u32& streamNum)
 
 bool CollReduceScatterMixExecutor::IsHugeData(const u64 curSize, OpParam *param)
 {
-    // 多QP哈希散列开启且RDMA通信下，强制刷新子图
-    if (GetExternalInputQpsPerConnection() != HCCL_QPS_PER_CONNECTION_DEFAULT) {
-        return true;
-    }
-
     const u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
     u64 curCount = curSize / SIZE_TABLE[param->DataDes.dataType];

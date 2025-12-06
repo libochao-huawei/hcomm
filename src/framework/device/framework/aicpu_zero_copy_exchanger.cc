@@ -58,6 +58,35 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuZeroCopyExchanger::PrepareRemoteMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& inputMemRanges, std::vector<OpUnfoldMemRange>& outputMemRanges) const {
+    HCCL_DEBUG("[AicpuZeroCopyExchanger][PrepareRemoteMemRanges] prepare remote input/output memory ranges");
+
+    const uint32_t rankSize = inputMemRanges.size(); // 获取通信域内的rank数量
+    for (std::set<u32>::const_iterator constIter = current_->remoteRanks.cbegin(); constIter != current_->remoteRanks.cend(); ++constIter) {
+        const uint32_t remoteRank = *constIter; // 对端在通信域内的rank id
+        if (UNLIKELY(remoteRank >= rankSize)) {
+            HCCL_ERROR("[AicpuZeroCopyExchanger][PrepareRemoteMemRanges] remoteRank %u >= rankSize %u", remoteRank, rankSize);
+            return HCCL_E_INTERNAL;
+        }
+
+        HCCL_DEBUG("[AicpuZeroCopyExchanger][PrepareRemoteMemRanges] prepare memory range of remote rank %u", remoteRank);
+
+        // 更新remote input memory range
+        OpUnfoldMemRange& remoteInputMemRange = inputMemRanges[remoteRank];
+        remoteInputMemRange.isValid = true;
+        remoteInputMemRange.baseAddr = inAddrs_[remoteRank % deviceNumPerAggregation_];
+        remoteInputMemRange.memSize = inputSize;
+
+        // 更新remote output memory range
+        OpUnfoldMemRange& remoteOutputMemRange = outputMemRanges[remoteRank];
+        remoteOutputMemRange.isValid = true;
+        remoteOutputMemRange.baseAddr = outAddrs_[remoteRank % deviceNumPerAggregation_];
+        remoteOutputMemRange.memSize = outputSize;
+    }
+
+    return HCCL_SUCCESS;
+}
+
 bool AicpuZeroCopyExchanger::IsAllIpcAddressValid()
 {
     // 目前只判断所有的共享内存是否Ok，映射部分校验放到后面check

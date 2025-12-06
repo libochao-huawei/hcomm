@@ -32,6 +32,15 @@ constexpr u32 BYTE_IPV4_SHIFT_IN_GID = 12; // ipv4地址相比于gid首地址的
 constexpr u32 RPING_PAYLOAD_REFILL_LEN = 136; // payload头需要重填的长度
 constexpr u32 RPING_PAYLOAD_RSVD_LEN = 44;    // payload头需要清零的长度
 
+enum class RpingInitState {
+    HCCL_INIT_SUCCESS,
+    HCCL_TSD_NEED_CLOSE,
+    HCCL_RA_NEED_DEINIT,
+    HCCL_RAPING_NEED_DEINIT,
+    HCCL_NET_NEED_CLOSE,
+    RESERVED
+};
+
 PingMesh::PingMesh()
 {}
 
@@ -482,6 +491,44 @@ inline RpingLinkState ConvertHcclSocketStatus(HcclSocketStatus socketStatus)
     return status;
 }
 
+HcclResult PingMesh::HccnRaInit(u32 deviceId)
+{
+    RaInitConfig config = { devicePhyId_, static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE),
+        HDC_SERVICE_TYPE_RDMA_V2 };
+    u32 rpingInterfaceVersion = 0;
+    CHK_RET(NetworkManager::GetInstance(deviceLogicId_).PingMeshRaPingInit(deviceLogicId_, devicePhyId_, &config));
+    CHK_RET(hrtRaGetInterfaceVersion(devicePhyId_, RPING_INTERFACE_OPCODE, &rpingInterfaceVersion));
+    if (rpingInterfaceVersion < RPING_INTERFACE_VERSION) {
+        HCCL_ERROR("[HCCN][HccnRpingInit]this package[%u] does not support rpingInterface for device.",
+            rpingInterfaceVersion);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] init hccp success.", deviceId);
+    return HCCL_SUCCESS;
+}
+
+HcclResult PingMesh::HccnCloseSubProc(u32 deviceId)
+{
+    hrtCloseNetService();
+    HCCL_INFO("[HCCN][HccnRpingDeinit]Device[%u] close hccp process success.", deviceId);
+    return HCCL_SUCCESS;
+}
+
+HcclResult PingMesh::StartSocketThread(u32 deviceId, HcclIpAddress ipAddr, u32 port)
+{
+    socket_ = std::make_shared<HcclSocket>(netCtx_, port);
+    // 初始化socket并启动侦听
+    CHK_RET(socket_->Init());
+    CHK_RET(SetTcpMode(true));
+    CHK_RET(socket_->Listen());
+    HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] starts listen port[%u].", deviceId, port);
+    // 等待客户端建链
+    connThread_.reset(new (std::nothrow)
+                          std::thread(&PingMesh::RpingSendInitInfo, this, deviceId, port, ipAddr, initInfo_, socket_));
+    CHK_SMART_PTR_NULL(connThread_);
+    return HCCL_SUCCESS;
+}
+
 HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr, u32 port, u32 nodeNum, u32 bufferSize,
     u32 sl, u32 tc)
 {
@@ -513,40 +560,67 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     CHK_RET(DlTdtFunction::GetInstance().DlTdtFunctionHeterogInit());
     
     CHK_RET(hrtOpenNetService(&openArgs));
+    HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] open process success", deviceId);
 
-    // hccp侧初始化ping mesh资源
-    RaInitConfig config = { devicePhyId_, static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE),
-        HDC_SERVICE_TYPE_RDMA_V2 };
-    u32 rpingInterfaceVersion = 0;
-    CHK_RET(NetworkManager::GetInstance(deviceLogicId_).PingMeshRaPingInit(deviceLogicId_, devicePhyId_, &config));
-    CHK_RET(hrtRaGetInterfaceVersion(devicePhyId_, RPING_INTERFACE_OPCODE, &rpingInterfaceVersion));
-    if (rpingInterfaceVersion < RPING_INTERFACE_VERSION) {
-        HCCL_ERROR("[HCCN][HccnRpingInit]this package[%u] does not support rpingInterface for device.",
-            rpingInterfaceVersion);
-        return HCCL_E_NOT_SUPPORT;
-    }
-    HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] init hccp success.", deviceId);
-
-    PingInitAttr initAttr{};
+    RpingInitState status = RpingInitState::HCCL_INIT_SUCCESS;
+    HcclResult ret;
     void *pingHandle = nullptr;
-    RpingInitAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
-    CHK_RET(hrtRaPingInit(&initAttr, &initInfo_, &pingHandle));
-    HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] init success.", deviceId);
+    do {
+        // hccp侧初始化ping mesh资源
+        ret = HccnRaInit(deviceId);
+        if (ret != HCCL_SUCCESS) {
+            status = RpingInitState::HCCL_TSD_NEED_CLOSE;
+            HCCL_ERROR("[HCCN][HccnRpingInit]HccnRaInit fail, deviceId[%u] ret[%d].", deviceId, ret);
+            break;
+        }
 
-    // 建链并发送初始化信息
-    CHK_RET(HcclNetOpenDev(&netCtx_, NicType::DEVICE_NIC_TYPE, devicePhyId_, deviceLogicId_, ipAddr));
-    CHK_PTR_NULL(netCtx_);
-    socket_ = std::make_shared<HcclSocket>(netCtx_, port);
-    // 初始化socket并启动侦听
-    CHK_RET(socket_->Init());
-    CHK_RET(SetTcpMode(true));
-    CHK_RET(socket_->Listen());
-    HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] starts listen port[%u].", deviceId, port);
-    // 等待客户端建链
-    connThread_.reset(new (std::nothrow)
-                          std::thread(&PingMesh::RpingSendInitInfo, this, deviceId, port, ipAddr, initInfo_, socket_));
-    CHK_SMART_PTR_NULL(connThread_);
+        PingInitAttr initAttr{};
+        RpingInitAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr);
+        ret = hrtRaPingInit(&initAttr, &initInfo_, &pingHandle);
+        if (ret != HCCL_SUCCESS) {
+            status = RpingInitState::HCCL_RA_NEED_DEINIT;
+            HCCL_ERROR("[HCCN][HccnRpingInit]hrtRaPingInit fail, deviceId[%u] ret[%d].", deviceId, ret);
+            break;
+        }
+        HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] init success.", deviceId);
 
+        // 建链并发送初始化信息
+        ret = HcclNetOpenDev(&netCtx_, NicType::DEVICE_NIC_TYPE, devicePhyId_, deviceLogicId_, ipAddr);
+        if (ret != HCCL_SUCCESS || netCtx_ == nullptr) {
+            status = RpingInitState::HCCL_RAPING_NEED_DEINIT;
+            HCCL_ERROR("[HCCN][HccnRpingInit]HcclNetOpenDev fail, deviceId[%u] ret[%d] netCtx_[%p].", deviceId, ret, netCtx_);
+            break;
+        }
+
+        ret = StartSocketThread(deviceId, ipAddr, port);
+        if (ret != HCCL_SUCCESS) {
+            status = RpingInitState::HCCL_NET_NEED_CLOSE;
+            HCCL_ERROR("[HCCN][HccnRpingInit]StartSocketThread fail, deviceId[%u] port[%d].", deviceId, port);
+            break;
+        }
+    } while(0);
+
+    switch (status) {
+        case RpingInitState::HCCL_INIT_SUCCESS: break;
+        case RpingInitState::HCCL_NET_NEED_CLOSE: {
+            if (netCtx_ != nullptr) {
+                HcclNetCloseDev(netCtx_);
+                netCtx_ = nullptr;
+            }
+        }
+        case RpingInitState::HCCL_RAPING_NEED_DEINIT: {
+            (void)hrtRaPingDeinit(pingHandle_);
+        }
+        case RpingInitState::HCCL_RA_NEED_DEINIT: {
+            (void)NetworkManager::GetInstance(static_cast<s32>(deviceId)).PingMeshRaPingDeinit();
+        }
+        case RpingInitState::HCCL_TSD_NEED_CLOSE: {
+            (void)HccnCloseSubProc(deviceId);
+        }
+        default:
+            HCCL_ERROR("[HCCN][HccnRpingInit]HccnRpingInit ret[%d], status[%d].", ret, status);
+            return ret;
+    }
     // 绑定信息
     pingHandle_ = pingHandle;
     rpingState_ = RpingState::INITED;
@@ -609,8 +683,7 @@ HcclResult PingMesh::HccnRpingDeinit(u32 deviceId)
 
     // 关闭hccp进程
     CHK_RET(NetworkManager::GetInstance(static_cast<s32>(deviceId)).PingMeshRaPingDeinit());
-    CHK_RET(hrtCloseNetService());
-    HCCL_INFO("[HCCN][HccnRpingDeinit]Device[%u] close hccp process success.", deviceId);
+    CHK_RET(HccnCloseSubProc(deviceId));
     isDeinited_ = true;
     rpingState_ = RpingState::UNINIT;
     return HCCL_SUCCESS;

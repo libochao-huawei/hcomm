@@ -22,7 +22,7 @@ constexpr u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
 namespace hccl {
 DispatcherGraph::DispatcherGraph(const s32 deviceLogicId)
-    : DispatcherPub(deviceLogicId), fftsCtxsPtr(nullptr), disableFfts_(true)
+    : DispatcherPub(deviceLogicId), fftsCtxsPtr(nullptr), disableFfts_(true), multiQpMode_(false)
 {}
 
 DispatcherGraph::~DispatcherGraph()
@@ -33,6 +33,13 @@ void DispatcherGraph::SetNormalMode()
     disableFfts_ = true;
 }
 
+HcclResult DispatcherGraph::SetMultiQpMode(bool multiQpMode)
+{
+    multiQpMode_ = multiQpMode;
+    HCCL_DEBUG("[MultiQp][DispatcherGraph::SetMultiQpMode] [%d]", multiQpMode);
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult DispatcherGraph::ResetGraphCtx(bool enableCache, const std::string &key, bool useGraphConstructorV2)
 {
     disableFfts_ = false;
@@ -40,11 +47,10 @@ HcclResult DispatcherGraph::ResetGraphCtx(bool enableCache, const std::string &k
         HCCL_DEBUG("ffts task is disabled.");
         disableFfts_ = true;
     } else {
-        if (GetExternalInputQpSrcPortConfigPath() != "") {
-            enableCache = false;
-        } else if (GetExternalInputQpsPerConnection() != HCCL_QPS_PER_CONNECTION_DEFAULT) {
+        if (multiQpMode_) {
             enableCache = false;
         }
+        
         std::string sKey = key;
         if (UNLIKELY(!enableCache)) {
             // 当enableCache使能时,key传空值，用来区分当enableCache

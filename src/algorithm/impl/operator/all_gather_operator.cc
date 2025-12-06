@@ -234,7 +234,7 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
             isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
-    HCCL_INFO("[SelectAlgfor910B] AllGather SelectAlgfor910B is algName [%s], current mode is [%u].", algName.c_str(), workflowMode_);
+    HCCL_INFO("[SelectAlgfor910B] AllGather SelectAlgfor910B is algName [%s], current mode is [%u]", algName.c_str(), workflowMode_);
     return HCCL_SUCCESS;
 }
 
@@ -287,7 +287,8 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool isAivMode = topoMatcher_->GetAivModeConfig()
                     && IsSupportAIVCopy(param.DataDes.dataType)
                     && (isAivSingleNode || isAivCrossNode)
-                    && !retryEnable_;
+                    && !retryEnable_
+                    && !multiModuleDiffDeviceNumMode_;
     if (isAivMode) {
         if (isAivCrossNode) {
             algName = "AllGatherMeshAivFor91093Executor"; 
@@ -297,7 +298,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         } else {
             algName = "AllGatherMeshAivExecutor"; 
         }
-        HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s]", algName.c_str());
+        HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }  
     bool smallCountOptimSingleServer = (serverNum_ == 1) &&

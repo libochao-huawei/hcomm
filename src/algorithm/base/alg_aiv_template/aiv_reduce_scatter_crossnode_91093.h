@@ -46,25 +46,20 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
     uint32_t bufferLoopNum = (len + avgBufferCount - 1) / avgBufferCount;
 
     SyncFunc<HardEvent::MTE2_S>();
-
     for (uint32_t i = 0; i < numTargets; i++) {
         uint32_t curIdx = i * 4;
         buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
         buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
     }
 
-    // Case1：当做不了multi-core并行搬运数据时(rankSize过大)，使用最后一个aiv做localcopy
-    // Case2：当能做multi-core并行时，使用targetrank为本rank的aivs做localcopy
-    bool isLocalCopyCores = (rankSize_ > HALF_MAX_BLOCK_DIM && block_idx == block_num - 1) || (rankSize_ <= HALF_MAX_BLOCK_DIM && targetRanks[0] == rank_);
-
     // RS需要先保证input->output完成，再做remote copy进行原子累加
-    if (isLocalCopyCores) {
+    if (localCopyCores) {
         CpGM2GM(outputGM + blockOffset, inputGM + rank_ * len + blockOffset, countPerCore);
         PipeBarrier<PIPE_ALL>();
     }
 
     // localcopy后的卡内核间同步，多等一（Case1/2目标核做完localcopy后告知本卡其他核）
-    SingleRecordBatchWaitCoreLevel(tag, isLocalCopyCores);
+    SingleRecordBatchWaitCoreLevel(tag, localCopyCores);
 
     int32_t curTag = (tag << TAG_MOVE_LEFT_BITS);
     uint64_t curOffset = 0;
@@ -79,29 +74,31 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
             curCount = countMid;
             curBlockOffset = blockOffsetMid;
         }
-
         PipeBarrier<PIPE_ALL>();
 
         // localcopy
-        for (uint32_t i = 0; i < numTargets && targetRanks[i] != rank_; i++) {
-            uint64_t localSendOffset = len * targetRanks[i];
-            uint64_t localRecvOffset = avgBufferCount * targetRanks[i];
-            CpGM2GM(cclGMSelf + localRecvOffset + curBlockOffset, inputGM + localSendOffset + curOffset + curBlockOffset, curCount);
+        for (uint32_t i = 0; i < numTargets; i++) {
+            if ( targetRanks[i]!=rank_){
+                uint64_t localSendOffset = len * targetRanks[i];
+                uint64_t localRecvOffset = avgBufferCount * targetRanks[i];
+                CpGM2GM(cclGMSelf + localRecvOffset + curBlockOffset, inputGM + localSendOffset + curOffset + curBlockOffset, curCount);
+            }
         }
 
         PipeBarrier<PIPE_ALL>();
 
         // 首次卡间同步
-        BatchRecordWait(curTag, buffersOut);
+         BatchRecordWait(curTag, buffersOut);
 
         PipeBarrier<PIPE_ALL>();
 
         // 读对端ccl到usrout
-        for (uint32_t i = 0; i < numTargets && targetRanks[i] != rank_; i++) {
-            __gm__ T *cclGMOther = (__gm__ T *)(buffersIn[i]);
-
-            uint64_t remoteSendOffset = avgBufferCount * rank_;
-            CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMOther + remoteSendOffset + curBlockOffset, curCount, true, reduceOp_);
+        for (uint32_t i = 0; i < numTargets; i++) {
+            if ( targetRanks[i]!=rank_){
+                __gm__ T *cclGMOther = (__gm__ T *)(buffersIn[i]);
+                uint64_t remoteSendOffset = avgBufferCount * rank_;
+                CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMOther + remoteSendOffset + curBlockOffset, curCount, true, reduceOp_);
+            }
         }
 
         PipeBarrier<PIPE_ALL>();
@@ -122,7 +119,7 @@ __aicore__ inline void aiv_reduce_scatter_crossnode_91093(KERNEL_ARGS_DEF_A3)
     // 每张卡的CCLBuffer大小为bufferSize，平均分给ranksize块，每块的大小
     uint64_t avgBufferCount = (uint64_t) bufferSize / rankSize / sizeof(T);
 
-    op.Init<T>(buffOut0, rank, rankSize, avgBufferCount, len, reduceOp, tag, true);
+    op.Init<T>(buffOut0, rank, rankSize, avgBufferCount, len, reduceOp, tag, step, true);
     op.InitOpCounter(headCountMem, tailCountMem, addOneMem, SIZE_OF_INT32, isEnableCounter);
     op.HeadCounter();
     op.Process<T>(buffIn0, buffOut0, buffOut1, input, output, tag, avgBufferCount, len);

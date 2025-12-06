@@ -31,6 +31,13 @@ constexpr u32 POS_DATA_PLANE_MODE_HOST  = 0;    // HOST调度RoCE模式
 constexpr u32 POS_DATA_PLANE_MODE_AICPU = 1;    // AICPU直调RoCE模式
 constexpr u32 POS_DATA_PLANE_MODE_AIV   = 2;    // AIV直调RoCE模式
 }
+
+enum class AicpuNotifyMode : u32 {
+    OPBASE_MODE = 0,    // 单算子场景
+    ACLGRAPH_MODE = 1,   // Aclgraph 场景
+    HCOM_MODE = 2  // 图下沉场景
+};
+
 struct HcclStreamInfo {
     s32 streamIds;
     u32 sqIds;
@@ -225,6 +232,7 @@ constexpr u32 TOP_HIERARCHICAL_CONF_TEMPLATE_TYPE_LOCATION = 0xFFFF0000;
 constexpr u32 TOP_COMM_RING_LOCATION = 0;
 constexpr u32 TAG_MAX_LENGTH = 256;
 constexpr u32 AICPU_OP_NOTIFY_MAX_NUM = 2;
+constexpr u32 AICPU_ORDER_NOTIFY_MAX_NUM = 3;
 constexpr u32 AICPU_MAX_RANK_NUM = 128 * 1024;
 constexpr u32 MAX_RANK_NUM_A3 = 768;
 constexpr u32 HCOMID_MAX_LENGTH = 256;
@@ -662,7 +670,8 @@ struct HcclOpResParam {
     u32 userMemType = 0;                             // 0:CCL Buffer; 1:user Mem
 
     HcclStreamParam aicpuOrderStreamParam; // 按序下发的stream
-    HcclSignalInfo aicpuOrderNotify;  // 按序下发的notify
+    u64 aicpuOrderNotifyAddr;
+    u64 aicpuOrderNotifySize;
 };
 
 struct OpTilingData {
@@ -697,7 +706,7 @@ struct OpTilingData {
     u64 length;   // 可变长度数据区长度
     u64 customDataLength;    // 用户自定义预留可变长度数据区长度，预期在aicpu侧做数据块校验
     u8 isCapture = 0; // 算子是否aclgraph模式
-    u8 isLaunchInOrder = 0; // 是否使用按序下发
+    u8 orderLaunchMode = 0; // 对应AicpuNotifyMode的枚举值
 
     /* 不同算子，长度不同，依据opType决定选择使用
     * (1)batchsendrcv
@@ -788,5 +797,4 @@ struct OpTilingOneSideCommDataDes {
     u64 descDataLen;        // TLV: T is opType in OpTilingData, L is descDataLen
     u64 desc[];             // desc的占位
 };
-
 #endif

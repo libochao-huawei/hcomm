@@ -234,7 +234,7 @@ public:
 
     bool supportDataReceivedAck{false};
     bool isAicpuModeEn{false};
-    std::vector<u32> srcPorts; // 多qp配置的源端口号
+    std::vector<std::uint16_t> srcPorts; // 多qp配置的源端口号
     u32 notifyNum{0};
     QPMode qpMode{QPMode::INVALID}; // 是否为普通QP模式
     u32 tc { HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET };

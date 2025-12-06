@@ -20,6 +20,7 @@
 #include <securec.h>
 #include <unistd.h>
 
+#include "adapter_error_manager_pub.h"
 #include "driver/ascend_hal.h"
 #include "adapter_rts.h"
 #include "adapter_hccp_common.h"
@@ -502,8 +503,14 @@ HcclResult FindLocalHostIP(std::vector<std::pair<std::string, hccl::HcclIpAddres
                 return HCCL_SUCCESS;
             }
         }
-        HCCL_ERROR("[Find][LocalHostIP]ip [%s] of [%s] is not found in the nic list.", tmpIp.GetReadableAddress(),
-            ipModleInfo.c_str());
+        std::string errormessage = "ip [" + std::string(tmpIp.GetReadableAddress()) + "] of [" + ipModleInfo +
+                                   "] is not found in the nic list.";
+        HCCL_ERROR("[%s][%s]%s",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), errormessage.c_str());
+        RPT_ENV_ERR(true,
+            "EI0001",
+            std::vector<std::string>({"env", "tips"}),
+            std::vector<std::string>({"HCCL_SOCKET_IFNAME", errormessage}));
         return HCCL_E_NOT_FOUND;
     } else if (!GetExternalInputHcclSocketIfName().configIfNames.empty()) {
         // 使用Host网卡名和环境变量HCCL_SOCKET_IFNAME配置的网卡名进行比较
@@ -516,12 +523,20 @@ HcclResult FindLocalHostIP(std::vector<std::pair<std::string, hccl::HcclIpAddres
                     hcclSocketIfnameStr += ",";
                 }
             }
-    
-            HCCL_ERROR("[%s]set ifname to [%s] by HCCL_SOCKET_IFNAME, but not found in the environment, ifnames in the environment is as follows",
-                __func__, hcclSocketIfnameStr.c_str());
+            std::string errormessage =
+                "set ifname to [" + hcclSocketIfnameStr +
+                "] by HCCL_SOCKET_IFNAME, but not found in the environment, ifnames in the environment is as follows";
+            HCCL_ERROR("[%s][%s]%s",
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_ENV_CONFIG.c_str(), errormessage.c_str());
+            RPT_ENV_ERR(true,
+                "EI0001",
+                std::vector<std::string>({"env", "tips"}),
+                std::vector<std::string>({"HCCL_SOCKET_IFNAME", errormessage}));
             for (auto &ifInfo : ifInfos) {
-                HCCL_ERROR("[Get][LocalServerId]get host ip fail by socket Ifname. name[%s] ip[%s]",
-                    ifInfo.first.c_str(), ifInfo.second.GetReadableAddress());
+                HCCL_ERROR("[%s][%s]get host ip fail by socket Ifname. name[%s] ip[%s]",
+                    LOG_KEYWORDS_INIT_GROUP.c_str(),
+                    LOG_KEYWORDS_ENV_CONFIG.c_str(), ifInfo.first.c_str(),
+                    ifInfo.second.GetReadableAddress());
             }
             return HCCL_E_NOT_FOUND;
         }

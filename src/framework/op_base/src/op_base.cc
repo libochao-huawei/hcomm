@@ -581,7 +581,13 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
 
     AddOneSidedIdentifier(identifier);
 
-    CHK_RET(InitCommClusterInfo(rankTableM, rank, commConfig, oneSidedHCom, comm));
+    ret = InitCommClusterInfo(rankTableM, rank, commConfig, oneSidedHCom, comm);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[Init][HcclCommInitClusterInfoMemConfig] InitCommClusterInfo failed");
+        DeleteOneSidedIdentifier(identifier);
+        DeInitOneSidedHcomInfo(deviceLogicId, identifier);
+        return ret;
+    }
 
     g_oneSidedCommSet.insert(*comm);
 
@@ -1499,9 +1505,7 @@ HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue)
     CHK_PTR_NULL(configValue);
     if (config == HCCL_DETERMINISTIC) {
     #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-        const char *socNamePtr = aclrtGetSocName();
-        CHK_PTR_NULL(socNamePtr);
-        HCCLV2_FUNC_RUN(HcclGetConfigV2(config, configValue), socNamePtr);
+        HCCLV2_FUNC_RUN(HcclGetConfigV2(config, configValue));
     #endif
         configValue->value = static_cast<int32_t>(GetExternalInputHcclDeterministicV2());
         HCCL_INFO("[HcclGetConfig] HCCL_DETERMINISTIC is [%d]", configValue->value);
@@ -3766,6 +3770,9 @@ HcclResult HcclCommRegister(HcclComm comm, void* addr, uint64_t size, void **han
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->RegisterCommUserMem(addr, size, handle));
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(hcclComm->GetRankSize(rankSize));
+    CHK_RET(HcomSetGroupTopoInfo(hcclComm->GetIdentifier().c_str(), rankSize));
     HCCL_RUN_INFO("[%s]Register mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
         hcclComm->GetIdentifier().c_str(), *handle, size);
     return HCCL_SUCCESS;
@@ -3778,6 +3785,9 @@ HcclResult HcclCommDeregister(HcclComm comm, void* handle)
     CHK_PTR_NULL(handle);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->DeregisterCommUserMem(handle));
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(hcclComm->GetRankSize(rankSize));
+    CHK_RET(HcomSetGroupTopoInfo(hcclComm->GetIdentifier().c_str(), rankSize));
     HCCL_RUN_INFO("[%s]Deregister mem success, group[%s], handle ptr[%p]", __func__,
         hcclComm->GetIdentifier().c_str(), handle);
     return HCCL_SUCCESS;

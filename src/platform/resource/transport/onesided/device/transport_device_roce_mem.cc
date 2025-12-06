@@ -271,8 +271,8 @@ HcclResult TransportDeviceRoceMem::RdmaPostSend(u64 &dbInfo, MemDetails *localMe
         HCCL_ERROR("[TransportDeviceRoceMem][RdmaPostSend] buffer size is:%u over SEND_WR_LEN: %u", memNum, SEND_WR_LEN),
         HCCL_E_PARA);
     const u32 last = memNum - 1;
-    struct ibv_send_wr sendWr[SEND_WR_LEN] = {};
-    struct ibv_sge  sge[SEND_WR_LEN] = {};
+    struct ibv_send_wr sendWr[SEND_WR_LEN] = {0};
+    struct ibv_sge  sge[SEND_WR_LEN] = {0};
     for (u32 index = 0; index < memNum; index++) {
         // 设置WR的SGE
         sge[index].addr   = localMems[index].addr;
@@ -295,7 +295,7 @@ HcclResult TransportDeviceRoceMem::RdmaPostSend(u64 &dbInfo, MemDetails *localMe
     }
 
     struct ibv_send_wr *badWr = nullptr;
-    struct WrExpRsp exp_rsp = {};
+    struct WrExpRsp exp_rsp = {0};
     struct ibv_qp *qp = reinterpret_cast<struct ibv_qp *>(qpInfo_.qpPtr);
     CHK_PTR_NULL(qp);
     HCCL_DEBUG("[TransportDeviceRoceMem][RdmaPostSend] qp=%p, handle=%u, qp_num=%u, qp_type=%d, qp_stat=%d", qp,

@@ -212,7 +212,7 @@ TEST_F(AllReduceHDOptimTest, run_async_45)
 
 TEST_F(AllReduceHDOptimTest, AllReduceHDOptim_Constructor)
 {
-    // ï¿½ï¿½È¡Ä£ï¿½ï¿½Êµï¿½ï¿½
+    // »ñÈ¡Ä£°åÊµÀý
     std::unique_ptr<AlgTemplateBase> tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_REDUCE_HD_OPTIM, dispatcher);
 	EXPECT_NE(tempAlg, nullptr);
@@ -227,15 +227,15 @@ TEST_F(AllReduceHDOptimTest, AllReduceHDOptim_Constructor)
     u32 userRank = 0;
     HcomCollOpInfo opInfo{0};
 
-	// ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½prepare
+	// µ÷ÓÃÐÂÔöµÄprepare
     s32 ret = tempAlg->Prepare(
         reduceAttrBitMap, meshStreams, meshSignal, meshSignalAux, userRank, &opInfo, aicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-	// ×ªï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö¸ï¿½ï¿½
+	// ×ª»»×ÓÀàÖ¸Õë
     AllReduceHDOptim *alg = dynamic_cast<AllReduceHDOptim *>(tempAlg.get());
 
-	// Ð£ï¿½ï¿½ï¿½Ô±ï¿½ï¿½ï¿½ï¿½
+	// Ð£Ñé³ÉÔ±±äÁ¿
     EXPECT_EQ(alg->reduceAttr_, reduceAttrBitMap);
     EXPECT_EQ(alg->userRank_, userRank);
     EXPECT_EQ(alg->opInfo_, &opInfo);

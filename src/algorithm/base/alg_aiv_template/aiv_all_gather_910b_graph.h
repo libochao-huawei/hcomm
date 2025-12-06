@@ -46,7 +46,7 @@ __aicore__ inline void AivAllGatherBigGraph910B::Process(GM_ADDR input, GM_ADDR 
         pipe_barrier(PIPE_ALL);
         CpGM2GM(outputGm + targetRank * avgLengthPerSlice, cclGmOther, avgLengthPerSlice);
         pipe_barrier(PIPE_ALL);
-        // 通知对端数据已经拉走(写对端add)
+        // 通知对端数据已经拉走
         Record(tag, targetRank, AivNotifyType::DataSignal);
         Wait(tag, targetRank, AivNotifyType::DataSignal);
     }            

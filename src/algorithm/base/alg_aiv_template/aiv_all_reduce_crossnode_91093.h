@@ -1,12 +1,13 @@
-/*
- * Copyright (c) 2024-2025 Huawei Technologies Co., Ltd. All Rights Reserved.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 
 #include "aiv_communication_base.h"
 #include "aiv_crossnode_91093_base.h"
@@ -155,7 +156,7 @@ __aicore__ inline void AivAllReduceCrossnode91093::Process(GM_ADDR buffIn0, GM_A
         if (loop == bufferLoopNum - 1) { // 最后一轮ccl填充
             curCount = countTail;
             curBlockOffset = blockOffsetTail;
-            curGroupCount = groupTail_; // Tail 最后一轮 
+            curGroupCount = groupTail_; // Tail 最后一轮
 
             curCountLast = countTailLast_;
             curBlockOffsetLast = blockOffsetTailLast_;
@@ -232,7 +233,7 @@ __aicore__ inline void AivAllReduceCrossnode91093::Process(GM_ADDR buffIn0, GM_A
             RecordNv1(curTag, buffersOut[i], false, AivNotifyType::Done); // 告诉对端已经拿来数据了
         }
 
-        for (uint32_t i = 0; i < numTargets; i++) { 
+        for (uint32_t i = 0; i < numTargets; i++) {
             if(targetRanks[i] == rank_) {
                 PipeBarrier<PIPE_ALL>();
                 Wait1vN(curTag * rankSize_, CommPattern::interRank, true, AivNotifyType::Done); // 等待n个对端拿走数据

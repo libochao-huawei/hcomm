@@ -88,7 +88,7 @@ public:
         aclrtBinHandle binHandle, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle);
 
 protected:
-    char *tilingDataHostPtr_;
+    char *tilingDataHostPtr_{nullptr};
     std::vector<char *> binaryDataPtrVec_;
     std::map<std::string, aclrtBinHandle> binaryLoadMap_;
     std::mutex stubFuncMutex_;

@@ -91,6 +91,7 @@ extern "C" {
     HcclResult HcclSetOpRingBufferIdx(HcclDispatcher dispatcherPtr, const u32 opRingBufferIdx);
     HcclResult ForceProfOn(HcclDispatcher &dispatcherPtr, bool isForce);
     HcclResult HcclSetExecTimeOut(HcclDispatcher dispatcherPtr, s32 execTimeOut = NOTIFY_DEFAULT_WAIT_TIME);
+    HcclResult SetMultiQpMode(HcclDispatcher dispatcherPtr, bool multiQpMode);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

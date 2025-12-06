@@ -50,8 +50,7 @@ HcclResult HcclOneSidedConn::Connect(const std::string &commIdentifier, s32 time
 {
     const auto startTime = TIME_NOW();
     if (aicpuUnfoldMode_) {
-        transportDataDevice_ = DeviceMem::alloc(sizeof(TransportDeviceNormalData));
-        CHK_PTR_NULL(transportDataDevice_.ptr());
+        CHK_RET(DeviceMem::alloc(transportDataDevice_, sizeof(TransportDeviceNormalData)));
     }
     // 创建socket用于交换数据
     std::string newTag;
