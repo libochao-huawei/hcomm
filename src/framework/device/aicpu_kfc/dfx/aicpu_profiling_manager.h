@@ -11,7 +11,6 @@
 #ifndef __AICPU_PROFILING_MANAGER_H__
 #define __AICPU_PROFILING_MANAGER_H__
 
-#include "aprof_pub.h"
 #include "prof_common.h"
 #include "common/aicpu_hccl_def.h"
 
