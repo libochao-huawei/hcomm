@@ -33,8 +33,12 @@ TbeCrackCleard::~TbeCrackCleard()
 
 HcclResult TbeCrackCleard::CrackInit()
 {
-    CHK_PRT_RET(isInit_, HCCL_INFO("TbeVectorReduce had been initialized"), HCCL_SUCCESS);
+    std::unique_lock<std::mutex> lock(initMutex_);
+    CHK_PRT_RET(isInit_, HCCL_INFO("TbeCrackCleard had been initialized"), HCCL_SUCCESS);
+
     CHK_RET(GetDeviceType(deviceType_));
+    HCCL_INFO("TbeCrackCleard Init get device type[%u]", deviceType_);
+
     switch (deviceType_) {
         case LegacyDevType::DEV_TYPE_910:
             CrackInitOpInfoMap910A();
@@ -61,6 +65,8 @@ HcclResult TbeCrackCleard::CrackInit()
 
 HcclResult TbeCrackCleard::CrackDeInit()
 {
+    std::unique_lock<std::mutex> lock(deInitMutex_);
+    HCCL_INFO("TbeCrackCleard Deinit");
     if (isDeInit_) {
         HCCL_INFO("tbe crack cleard has deinit");
         return HCCL_SUCCESS;
@@ -96,6 +102,9 @@ HcclResult TbeCrackCleard::CrackDeInit()
         tilingDataHostPtr_ = nullptr;
     }
     for (auto iter = opNameStubFuncsMap_.begin(); iter != opNameStubFuncsMap_.end(); iter++) {
+        if (iter->second == nullptr) {
+            continue;
+        }
         free(iter->second);
         iter->second = nullptr;
     }
