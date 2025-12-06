@@ -298,7 +298,7 @@ private:
     std::mutex ProcessLock_;
     u32 deviceLogicId_;
     u32 deviceBackupLogicId_;
-    std::map<std::string, std::set<HcclIpAddress>> remoteIpMap;
+    std::map<std::string, std::set<ErrCqeInfo>> remoteIpMap;
     std::set<u32> qpnDissociativeSet;
     std::mutex remoteIpMutex_;
     bool isUseRankPort_{ false };

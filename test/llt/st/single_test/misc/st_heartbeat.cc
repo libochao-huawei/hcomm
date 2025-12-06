@@ -824,8 +824,8 @@ TEST_F(HeartBeatTest, st_CheckErrorCqe)
 
 TEST_F(HeartBeatTest, st_CheckErrorCqe1)
 {
-    std::set<HcclIpAddress> s1;
-    s1.insert(HcclIpAddress(1684515008));
+    std::set<ErrCqeInfo> s1;
+    s1.insert(ErrCqeInfo());
     Heartbeat::GetInstance(0).remoteIpMap.insert(std::make_pair("test1", s1));
     HcclResult result = HCCL_SUCCESS;
     Heartbeat::GetInstance(0).CheckErrorCqe("test1", result);

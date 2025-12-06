@@ -1468,21 +1468,15 @@ void Heartbeat::PrintAndBroadCastErrorCqe(const ErrCqeInfo &info)
             info.cqeInfo.status, now->tm_year + TIME_FROM_1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
             now->tm_min, now->tm_sec, static_cast<u32>(info.cqeInfo.time.tv_usec), errorLinkLogBuffer);
     }
-    RPT_INPUT_ERR(true, "EI0013",
-        std::vector<std::string>(
-        { "localServerId", "localDeviceId", "localDeviceIp", "remoteServerId", "remoteDeviceId", "remoteDeviceIp" }),
-        std::vector<std::string>({ info.linkInfo.localServerId, std::to_string(info.linkInfo.localDevicePhyId),
-        std::string(nicIp_.GetReadableAddress()), info.linkInfo.remoteServerId,
-        std::to_string(info.linkInfo.remoteDevicePhyId), std::string(info.cqeInfo.remoteIp.GetReadableAddress()) }));
 
     std::unique_lock<std::mutex> lock(remoteIpMutex_);
     auto search = remoteIpMap.find(info.linkInfo.identifier);
     if (search != remoteIpMap.end()) {
-        remoteIpMap[info.linkInfo.identifier].insert(info.cqeInfo.remoteIp);
+        remoteIpMap[info.linkInfo.identifier].insert(info);
     } else {
-        std::set<HcclIpAddress> remoteIpSet;
-        remoteIpSet.insert(info.cqeInfo.remoteIp);
-        remoteIpMap.insert(std::pair<std::string, std::set<HcclIpAddress>>(info.linkInfo.identifier, remoteIpSet));
+        std::set<ErrCqeInfo> remoteInfoSet;
+        remoteInfoSet.insert(info);
+        remoteIpMap.insert(std::pair<std::string, std::set<ErrCqeInfo>>(info.linkInfo.identifier, remoteInfoSet));
     }
 }
 
@@ -1734,8 +1728,11 @@ HcclResult Heartbeat::CheckErrorCqe(const std::string &identifier, HcclResult &r
         result = HCCL_E_REMOTE;
         HCCL_ERROR("[Heartbeat]find cqe error [%d], in comm [%s]", result, identifier.c_str());
         for (auto &it : search->second) {
-            HCCL_ERROR("[Heartbeat]find cqe error, localIP[%s], remoteIP[%s]", nicIp_.GetReadableAddress(),
-                it.GetReadableAddress());
+            HCCL_ERROR("[Heartbeat]find cqe error, localIP[%s], remoteIP[%s]",
+                nicIp_.GetReadableAddress(), it.cqeInfo.remoteIp.GetReadableAddress());
+            RPT_INPUT_ERR(true, "EI0013", std::vector<std::string>({ "localServerId", "localDeviceId", "localDeviceIp", "remoteServerId", "remoteDeviceId", "remoteDeviceIp" }),
+                std::vector<std::string>({ it.linkInfo.localServerId, std::to_string(it.linkInfo.localDevicePhyId), std::string(nicIp_.GetReadableAddress()),
+                                           it.linkInfo.remoteServerId, std::to_string(it.linkInfo.remoteDevicePhyId), std::string(it.cqeInfo.remoteIp.GetReadableAddress()) }));
         }
     }
     lock.unlock();
