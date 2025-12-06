@@ -1015,7 +1015,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1042,7 +1042,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1067,7 +1067,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1092,7 +1092,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1117,7 +1117,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1142,7 +1142,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1168,7 +1168,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1193,7 +1193,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1218,7 +1218,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1243,7 +1243,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1269,7 +1269,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1294,7 +1294,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1319,7 +1319,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1344,7 +1344,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1369,7 +1369,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1395,7 +1395,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1420,7 +1420,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1445,7 +1445,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1470,7 +1470,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1495,7 +1495,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1520,7 +1520,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1545,7 +1545,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1570,7 +1570,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1595,7 +1595,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1620,7 +1620,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1645,7 +1645,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1670,7 +1670,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1696,7 +1696,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1721,7 +1721,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1746,7 +1746,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1771,7 +1771,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/${CMAKE_HOST_SYSTEM_PROCESSOR}-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1804,7 +1804,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1837,7 +1837,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1870,7 +1870,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1903,7 +1903,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
@@ -1936,7 +1936,7 @@ else()
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/basic_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/simt_api/
             -I${ASCEND_CANN_PACKAGE_PATH}/aarch64-linux/include/micro_api/
-            -I${TOP_DIR}/hcomm/inc/hccl/
+            -I${TOP_DIR}/hcomm/include/hccl/
             -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
             -I${TILING_GEN_DIR}
             -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm

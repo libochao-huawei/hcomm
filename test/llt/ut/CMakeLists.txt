@@ -90,8 +90,7 @@ else()
         # inc目录下头文件
         ${TOP_DIR}/inc
         ${TOP_DIR}/ace/comop/inc
-        ${TOP_DIR}/hcomm/inc/hccl
-        ${TOP_DIR}/hcomm/inc/hccl/hccl
+        ${TOP_DIR}/hcomm/include/hccl
 		${TOP_DIR}/hcomm/pkg_inc
 		${TOP_DIR}/hcomm/pkg_inc/hccl
         ${TOP_DIR}/graphengine/inc
@@ -204,9 +203,8 @@ else()
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
 
-        ${HCCL_CODE_ROOT}/inc/
-        ${HCCL_CODE_ROOT}/inc/hccl
-        ${HCCL_CODE_ROOT}/inc/hccl/hccl
+        ${HCCL_CODE_ROOT}/include/
+        ${HCCL_CODE_ROOT}/include/hccl
 		${HCCL_CODE_ROOT}/pkg_inc
 		${HCCL_CODE_ROOT}/pkg_inc/hccl
         ${HCCL_CODE_ROOT}/src/pub_inc
