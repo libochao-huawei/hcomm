@@ -64,9 +64,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
     ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
 
-    ${HCCL_CODE_ROOT}/inc/
-    ${HCCL_CODE_ROOT}/inc/hccl
-    ${HCCL_CODE_ROOT}/inc/hccl/hccl
+    ${HCCL_CODE_ROOT}/include/
+    ${HCCL_CODE_ROOT}/include/hccl
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/src/pub_inc

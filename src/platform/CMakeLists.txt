@@ -12,7 +12,7 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 if(BUILD_OPEN_PROJECT)
     message(STATUS "open CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
     set(HCCL_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
-    set(HCCL_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl/hccl)
+    set(HCCL_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../include/hccl)
     message(STATUS "open HCCL_INC_DIR = ${HCCL_INC_DIR}")
     set(HCCL_OPEN_CODE_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
     set(HCCL_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../)
@@ -68,9 +68,8 @@ if(BUILD_OPEN_PROJECT)
         LOG_CPP)
 
     target_include_directories(hccl_plf PRIVATE
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl/
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl/
         ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/pub_inc

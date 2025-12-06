@@ -87,9 +87,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_LLT_ROOT}/stub
 
     ${HCCL_CODE_ROOT}/src/framework/common/src
-    ${HCCL_CODE_ROOT}/inc/
-    ${HCCL_CODE_ROOT}/inc/hccl/
-    ${HCCL_CODE_ROOT}/inc/hccl/hccl
+    ${HCCL_CODE_ROOT}/include/
+    ${HCCL_CODE_ROOT}/include/hccl/
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/externel_depends/tsch
@@ -154,19 +153,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/resource/mem
     ${HCCL_CODE_ROOT}/src/platform/task/
     ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
-    ${HCCL_CODE_ROOT}/src/hccl
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/comm/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/executor/component/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/impl
-    ${HCCL_CODE_ROOT}/src/hdcs
-    ${HCCL_CODE_ROOT}/src/hccl/op_base/src
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/common
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/heterog_cpu
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/rpc
     ${HCCL_CODE_ROOT}/src/hccd
-    ${HCCL_CODE_ROOT}/src/hcom/src/
-    ${HCCL_CODE_ROOT}/src/hcom/src/gradient_segment
 
     ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
 

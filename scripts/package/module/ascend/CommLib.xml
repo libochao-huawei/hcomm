@@ -15,7 +15,7 @@
         <path value="opp/built-in/op_impl/aicpu/kernel"/>
         <path value="opp/built-in/op_impl/aicpu/config"/>
     </dir_info>
-    <file_info value="include" copy_type="source" src_path="hcomm/inc/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
+    <file_info value="include" copy_type="source" src_path="hcomm/include/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccl_comm.h"/>
         <file value="hccl_types.h"/>
         <file value="hccl_ctrl_plane.h"/>
