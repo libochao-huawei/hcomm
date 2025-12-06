@@ -136,6 +136,8 @@ private:
     std::unordered_map<TilingInputInfo, void *, TilingHashFuc> tilingDataMap_;
     std::mutex globalWorkSpaceAddrMutex_;
     std::vector<void *> globalWorkSpaceAddr_;
+    std::mutex deInitMutex_;
+    std::mutex initMutex_;
 };
 } // namespace TbeReduce
 

@@ -49,6 +49,8 @@ private:
     std::mutex crackDataMutex_;
     void *addrListDevPtr_{nullptr};
     std::string binaryName_ = "";
+    std::mutex deInitMutex_;
+    std::mutex initMutex_;
 };
 } // namespace TbeReduce
 #endif
