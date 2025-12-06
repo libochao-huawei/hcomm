@@ -148,13 +148,14 @@ public:
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaDMA &para) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &para) override;
-    HcclResult Save(u32 &streamID, u32 &taskID, const TaskParaAiv &para) override;
+    HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &para) override;
     HcclResult Save(u32 &streamID, u32 &taskID) override;
     HcclResult SaveToLog(const TaskParaHost &paraHost) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) override;
+    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &para) override;
     static void Callback(rtExceptionInfo *exceptionInfo);
     HcclResult Run(const StepData &stepData) override;
     HcclResult Flush() override;
