@@ -976,10 +976,15 @@ HcclResult HcclOneSidedService::OrchestrateAicpu(RankId remoteRankId, HcclCMDTyp
     tilingInfo.floatOverflowMode = floatOverflowMode;
     const u64 dynamicDataSize = CalcTilingDynamicDataSize(cmdType, descNum);
     CHK_RET(InitAicpuTilingDataBuf(tilingInfo, remoteRankId, conn, desc, descNum, dynamicDataSize));
-    std::string kernelName = "RunAicpuRpcSrvLaunchV2";
+    // 根据算子类型，获取 Aicpu Kernel 名称
+    auto iter = HCOM_CMD_TYPE_STR_MAP.find(cmdType);
+    CHK_PRT_RET((iter == HCOM_CMD_TYPE_STR_MAP.end()),
+        HCCL_ERROR("[%s] RunAicpuRpcSrvLaunchV2 kernel not found, cmdType=[%d]", __func__, static_cast<int>(cmdType)),
+        HCCL_E_INTERNAL);
+    std::string kernelName = std::string("RunAicpuRpcSrvLaunchV2") + "_" + iter->second;
     HcclResult ret = AicpuKernelLaunch(conn, kernelName, tilingInfo, sizeof(struct OpTilingData) + dynamicDataSize);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[OrchestrateAicpu] aicpu unfold launch kernel failed. ret[%u], "
-        "desc[%p] descNum[%u] cmdType[%u] tag[%s]", ret, desc, descNum, cmdType, identifier_.c_str()), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[OrchestrateAicpu] aicpu unfold launch kernel[%s] failed. ret[%u], "
+        "desc[%p] descNum[%u] cmdType[%u] tag[%s]", kernelName.c_str(), ret, desc, descNum, cmdType, identifier_.c_str()), ret);
     return HCCL_SUCCESS;
 }
 

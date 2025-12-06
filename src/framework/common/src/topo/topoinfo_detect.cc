@@ -620,8 +620,11 @@ HcclResult TopoInfoDetect::ReadHostSocketWhitelist(vector<HcclIpAddress> &whitel
         "but HCCL_WHITELIST_FILE is not set or not exist" }));
 
     CHK_PRT_RET((GetExternalInputHcclWhiteListFile().length() == 0),
-        HCCL_ERROR("[Read][HostSocketWhitelist]environmental variable HCCL_WHITELIST_DISABLE is [0], "\
-        "but HCCL_WHITELIST_FILE is not set or not exist"), HCCL_E_PARA);
+        HCCL_ERROR("[%s][%s]environmental variable HCCL_WHITELIST_DISABLE is [0], "
+                   "but HCCL_WHITELIST_FILE is not set or not exist",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str()),
+        HCCL_E_PARA);
 
     // 文件路径在处理外部输入时已经做过合法性判断, 无需再次校验
     HcclResult ret =
@@ -635,12 +638,20 @@ HcclResult TopoInfoDetect::ReadHostSocketWhitelist(vector<HcclIpAddress> &whitel
         std::vector<std::string>({ "HCCL_WHITELIST_FILE", WhiteFileError}));
           
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Read][HostSocketWhitelist]hccl whitelist load config file[%s] failed. ret[%u].",
-            GetExternalInputHcclWhiteListFile().c_str(), ret), ret);
+        HCCL_ERROR("[%s][%s]hccl whitelist load config file[%s] failed. ret[%u].",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            GetExternalInputHcclWhiteListFile().c_str(),
+            ret),
+        ret);
     CHK_RET(HcclWhitelist::GetInstance().GetHostWhiteList(whitelist));
 
-    CHK_PRT_RET(whitelist.empty(), HCCL_ERROR("[Read][HostSocketWhitelist]whitelist file[%s] have no valid host ip.",
-        GetExternalInputHcclWhiteListFile().c_str()), HCCL_E_UNAVAIL);
+    CHK_PRT_RET(whitelist.empty(),
+        HCCL_ERROR("[%s][%s]whitelist file[%s] have no valid host ip.",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            GetExternalInputHcclWhiteListFile().c_str()),
+        HCCL_E_UNAVAIL);
     HCCL_INFO("get host socket whitelist success. there are %zu host ip in the whitelist.", whitelist.size());
     return HCCL_SUCCESS;
 }

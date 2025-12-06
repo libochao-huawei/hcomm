@@ -16,6 +16,7 @@
 #include "hccl/hccl_types.h"
 #include "stream_pub.h"
 #include "hccl_common.h"
+#include "local_notify.h"
 
 namespace hccl {
 class OrderLaunch {
@@ -24,9 +25,13 @@ public:
     HcclResult RegisterOrderLaunch(const std::string &group);
     HcclResult UnRegisterOrderLaunch(const std::string &group);
 
-    HcclResult GetOrderStream(const std::string &group, StreamType streamType, Stream &stream);
-    void Lock();
-    void UnLock();
+    HcclResult AclgraphLaunchInOrder(std::string &group, const Stream& kernelStream, u64 modelId, rtModel_t rtModel,
+        std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
+    HcclResult OpbaseLaunchInOrder(std::string &group, const Stream& kernelStream,
+        std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
+    HcclResult HcomLaunchInOrder(std::string &group, const Stream& kernelStream, u32 graphId,
+        std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
+    HcclResult SetHcomStream(u32 graphId, const Stream& hcomAttachedStream);
 
 private:
     OrderLaunch();
@@ -34,8 +39,12 @@ private:
 
     std::mutex streamMutex_;
     std::unordered_set<std::string> groupSet_; // 记录已经初始化过的group
-    std::map<StreamType, Stream> streamMap_;
+    std::unique_ptr<Stream> opbaseStream_;
+    std::unordered_map<u64, Stream> aclgraphStreamMap_;
+    std::unordered_map<u32, Stream> hcomStreamMap_;
     bool initialized_ = false;
+    HcclResult LaunchInOrder(std::string &group, const Stream &kernelStream, const Stream &hostOrderStream,
+        std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
 };
 }
 #endif

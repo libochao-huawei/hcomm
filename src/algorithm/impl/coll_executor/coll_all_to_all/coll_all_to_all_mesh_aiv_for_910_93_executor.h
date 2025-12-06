@@ -22,6 +22,7 @@ public:
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;
+    HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;
     HcclResult PrepareCommInfoToDevice(AlgResourceResponse& algResource) override;
 private:
     /* *************** 资源计算 *************** */

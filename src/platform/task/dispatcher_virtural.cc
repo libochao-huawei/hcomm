@@ -10,6 +10,7 @@
  
 #include "dispatcher_virtural.h"
 #include "externalinput_pub.h"
+#include "hccl_tbe_task.h"
  
 namespace hccl {
 DispatcherVirtural::DispatcherVirtural(const s32 deviceLogicId)
@@ -20,9 +21,26 @@ DispatcherVirtural::~DispatcherVirtural() {}
 
 HcclResult DispatcherVirtural::Init()
 {
+#ifndef HCCD
+    if (deviceLogicId_ == HOST_DEVICE_ID) {
+        return HCCL_SUCCESS;
+    }
+
+    aclrtContext ctx = nullptr;
+    CHK_RET(hrtCtxGetCurrent(&ctx));
+    if (ctx == nullptr) {
+        CHK_RET(hrtSetDevice(deviceLogicId_));
+        setDeviceFlag_ = true;
+    }
+
+    CHK_RET(HcclTbeTaskInit(deviceLogicId_));
+#else
+    HCCL_ERROR("does not support this interface.");
+    return HCCL_E_PARA;
+#endif
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult DispatcherVirtural::SignalRecord(HcclRtNotify signal, Stream &stream, u32 userRank, u64 offset, s32 stage,
     bool inchip, u64 signalAddr, u32 notifyId)
 {

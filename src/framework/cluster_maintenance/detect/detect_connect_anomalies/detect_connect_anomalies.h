@@ -100,7 +100,9 @@ private:
     HcclResult ConstructErrorInfo(std::shared_ptr<HcclSocket> &tempSocket, RankInfo &localRankInfo, RankInfo &remoteRankInfo);
     HcclResult CreateClient(struct ErrInfo errInfo);
     HcclResult processWhiteList(const HcclIpAddress &ipAddr, HcclIpAddress &localIpAddr, std::shared_ptr<HcclSocket> socket, NicType nicType);
-    void PrintDetectInfo(const char *localServerId, s32 localDeviceId, DetectInfo &detectInfo);
+    HcclResult WaitForDectect();
+    HcclResult ProcessDetectionResults();
+    std::string PrintDetectInfo(const char *localServerId, s32 localDeviceId, const DetectInfo &detectInfo);
     void ThreadDestroy();
     ~DetectConnectionAnomalies() = default;
     DetectConnectionAnomalies() = default;
@@ -147,6 +149,9 @@ private:
     std::atomic<int> errorCount_{0};
     std::vector<std::unique_ptr<std::thread>> linkClientThreads_; // 保存client拉起的线程
     Referenced initRef_;
+    std::chrono::steady_clock::time_point startTime;
+    std::mutex time_mutex;
+    std::mutex print_mutex;
 };
 }
 

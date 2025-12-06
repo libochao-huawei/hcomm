@@ -34,6 +34,7 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mesh_graph_pipeline_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_aiv_deter_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_aiv_deter_small_executor.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mesh_opbase_small_count_deterministic_executor.cc
 )
 
 target_sources(hccl_alg PRIVATE

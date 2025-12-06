@@ -258,6 +258,11 @@ public:
 
     static bool IsProfSubscribeAdditionInfo();
 
+    virtual HcclResult SetMultiQpMode(bool multiQpMode)
+    {
+        return HCCL_SUCCESS;
+    }
+
 protected:
     HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, bool isMainStream = false);

@@ -14,6 +14,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <cmath>
+#include <limits>
 #include "mmpa_api.h"
 #include "adapter_rts_common.h"
 #include "workflow_pub.h"
@@ -46,13 +47,6 @@ constexpr u32 AIV_FLAG_AREA_SIZE = 1024 * 1024;
 
 constexpr u32 AIV_ATTRNUM_THREE = 3;
 
-enum class KernelArgsType {
-    ARGS_TYPE_SERVER = 0, // kernel参数为单机内
-    ARGS_TYPE_SUPERPOD = 1, // kernel参数包含多机，当前仅A3 AlltoAllV跨机场景
-    ARGS_TYPE_A3_CROSSNODE = 2, // kernel参数为A3跨机
-    ARGS_TYPE_DEFAULT
-};
-
 using AivKernelInfo = struct AivKernelInfoDef {
     const char* kernelName;
     HcclCMDType cmdType;
@@ -79,12 +73,12 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_reduce_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT32},
     {"aiv_all_reduce_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_reduce_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    {"aiv_all_reduce_cn_float", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_reduce_cn_half", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_reduce_cn_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_reduce_cn_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_reduce_cn_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_reduce_cn_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
+    {"aiv_all_reduce_cn_float", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_half", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_int16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_int32_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_int8_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_reduce_cn_bfloat16_t", HcclCMDType::HCCL_CMD_ALLREDUCE, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
     // alltoall alltoallvc
     {"aiv_all_to_all_vc_half", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_FP16},
     {"aiv_all_to_all_vc_int16_t", HcclCMDType::HCCL_CMD_ALLTOALLVC, HcclDataType::HCCL_DATA_TYPE_INT16},
@@ -141,12 +135,12 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_reduce_scatter_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT32},
     {"aiv_reduce_scatter_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_reduce_scatter_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    {"aiv_reduce_scatter_cn_float", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_reduce_scatter_cn_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_reduce_scatter_cn_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_reduce_scatter_cn_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_reduce_scatter_cn_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_reduce_scatter_cn_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
+    {"aiv_reduce_scatter_cn_float", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_int16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_int32_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_int8_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_reduce_scatter_cn_bfloat16_t", HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
     // reducescatterv
     {"aiv_reduce_scatter_v_float", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_FP32},
     {"aiv_reduce_scatter_v_half", HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V, HcclDataType::HCCL_DATA_TYPE_FP16},
@@ -164,15 +158,15 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_all_gather_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT8},
     {"aiv_all_gather_uint8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT8},
     {"aiv_all_gather_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_BFP16},
-    {"aiv_all_gather_cn_half", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_float", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_int32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_uint32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT32, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_uint8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
-    {"aiv_all_gather_cn_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
+    {"aiv_all_gather_cn_half", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT16, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_float", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_FP32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint32_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT32, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_int8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_INT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_uint8_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_UINT8, KernelArgsType::ARGS_TYPE_SIMPLE},
+    {"aiv_all_gather_cn_bfloat16_t", HcclCMDType::HCCL_CMD_ALLGATHER, HcclDataType::HCCL_DATA_TYPE_BFP16, KernelArgsType::ARGS_TYPE_SIMPLE},
      // allgatherv
     {"aiv_all_gather_v_half", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_FP16},
     {"aiv_all_gather_v_int16_t", HcclCMDType::HCCL_CMD_ALLGATHER_V, HcclDataType::HCCL_DATA_TYPE_INT16},
@@ -195,7 +189,7 @@ static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     {"aiv_broadcast_bfloat16_t", HcclCMDType::HCCL_CMD_BROADCAST, HcclDataType::HCCL_DATA_TYPE_BFP16},
     // 同步
     {"hccl_aiv_sync", HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED},
-    {"hccl_aiv_sync_cn", HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_A3_CROSSNODE},
+    {"hccl_aiv_sync_cn", HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_SIMPLE},
 };
 
 using AivKernelArgs = struct AivKernelArgsDef {
@@ -349,18 +343,17 @@ using AivKernelArgsV3 = struct AivKernelArgsV3Def {
     u32 root;
     s32 tag; 
     bool isOpBase;
-    u32 serverNum;
-    u32 devType;
+    s32 step;
     u32 deterministic;
 
    AivKernelArgsV3Def(void** buffIn, void** buffOut, const void* input, const void* output, u32 rank,
         u32 rankSize, u64 len, u32 dataType, u32 reduceOp, u32 root, s32 tag, bool isOpBase = true,
-        u64 bufferSize = 200 * 1024 * 1024, u32 serverNum = 1, u32 devType = 2, void* headCounterAddr = nullptr,
+        u64 bufferSize = 200 * 1024 * 1024, s32 step = 0, void* headCounterAddr = nullptr,
         void* tailCounterAddr = nullptr, void* addOneAddr = nullptr,
         bool isEnableCounter = false, u32 deterministic = 0)
         : input(input), output(output), rank(rank), rankSize(rankSize), len(len), dataType(dataType),
         reduceOp(reduceOp), root(root), tag(tag), isOpBase(isOpBase),
-        serverNum(serverNum), devType(devType), deterministic(deterministic)
+        step(step), deterministic(deterministic)
     {
         massArgs[0] = reinterpret_cast<u64>(buffIn[0]);
         massArgs[1] = reinterpret_cast<u64>(buffIn[1]);
@@ -517,24 +510,39 @@ HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSched
     aclError aclRet = aclrtGetOpTimeOutInterval(&interval);
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("aclrtGetOpTimeOutInterval get timeout interval failed, ret[%d]",
         aclRet), HCCL_E_RUNTIME);
-    double intervalMs = interval / 1000.0;
+
     // NPU超时范围(1, 254) * interval
-    minNpuSchedTimeout = static_cast<u64>(round(1 * intervalMs));
-    maxNpuSchedTimeout = static_cast<u64>(round(254 * intervalMs));
-    HCCL_RUN_INFO("GetMinAndMaxNpuSchedTimeOut minNpuSchedTimeout[%u]ms, maxNpuSchedTimeout[%u]ms",
+    minNpuSchedTimeout = 1 * interval;
+    maxNpuSchedTimeout = 254 * interval;
+    HCCL_INFO("GetMinAndMaxNpuSchedTimeOut minNpuSchedTimeout[%u]us, maxNpuSchedTimeout[%u]us.",
         minNpuSchedTimeout, maxNpuSchedTimeout);
     return HCCL_SUCCESS;
 }
 
 u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
-    u32 timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET || isSetByConfig) ?
-        static_cast<u32>(std::ceil(execTimeOut)) : AIV_TIMEOUT_DEFAULT;
+    u32 timeout = AIV_TIMEOUT_DEFAULT_US;
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET || isSetByConfig) {
+        double timeoutUs = execTimeOut * TIME_S_TO_US;
+        if (timeoutUs > static_cast<double>(std::numeric_limits<u32>::max())) {
+            HCCL_INFO("[GetAivTimeout]Get input timeout[%.2f] is out of valid range.", timeoutUs);
+            return AIV_TIMEOUT_MAX_US;
+        }
+        u32 timeoutUsInt = static_cast<u32>(timeoutUs);
+        u64 minNpuSchedTimeout = 0;
+        u64 maxNpuSchedTimeout = 0;
+        CHK_RET(GetMinAndMaxNpuSchedTimeOut(minNpuSchedTimeout, maxNpuSchedTimeout));
+        timeout = (timeoutUsInt < minNpuSchedTimeout) ? minNpuSchedTimeout
+                    : (timeoutUsInt > maxNpuSchedTimeout) ? maxNpuSchedTimeout
+                    : timeoutUsInt;
+        HCCL_INFO("[GetAivTimeout]timeout[%u]us, minNpuSchedTimeout[%u]us, maxNpuSchedTimeout[%u]us.",
+            timeout, minNpuSchedTimeout, maxNpuSchedTimeout);
+    }
 
-    return timeout < AIV_TIMEOUT_MAX ? timeout : AIV_TIMEOUT_MAX;
+    return timeout < AIV_TIMEOUT_MAX_US ? timeout : AIV_TIMEOUT_MAX_US;
 }
 
-HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stream, s32 step, u32 serverNum, u32 devType,
-                const std::string& comm, u32 blockDim, u32 deterministic=0)
+HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stream, s32 step, const std::string& comm, u32 blockDim,
+    KernelArgsType argsType, const AivTopoArgs &topoArgs)
 {
     uint64_t beginTime = 0;
     SetAivProfilingInfoBeginTime(beginTime);
@@ -545,25 +553,25 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
     aclrtLaunchKernelAttr attr[AIV_ATTRNUM_THREE];
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
-    attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US;
     s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(comm);
-    attr[1].value.timeout = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(comm));
+    attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(comm));
+    attr[1].value.timeoutUs.timeoutHigh = 0;
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
     cfg.numAttrs = AIV_ATTRNUM_THREE;
     cfg.attrs = attr;
 
-    if (devType == static_cast<u32>(DevType::DEV_TYPE_910_93) && (serverNum > 1 || deterministic==1)) {
+    if (argsType != KernelArgsType::ARGS_TYPE_SERVER || (topoArgs.devType == DevType::DEV_TYPE_910_93 && topoArgs.serverNum > 1)) {
         flagAddr = static_cast<u8 *>(cclBuffersOut[0]);
         AivKernelArgsV3 aivKernelArgs {
             cclBuffersOut, cclBuffersOut, nullptr, nullptr, rank, rankSize, 0,
-            HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclReduceOp::HCCL_REDUCE_RESERVED, 0, step,
-            false, 0, serverNum, devType, nullptr, nullptr, nullptr, false, deterministic
+            HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclReduceOp::HCCL_REDUCE_RESERVED, 0, step
         };
 
         aclrtFuncHandle funcHandle;
         ret = GetKernelFunc(funcHandle, GetStubFunc(HcclCMDType::HCCL_CMD_INVALID,
-            HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_A3_CROSSNODE));
+            HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_SIMPLE));
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
             "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
@@ -575,10 +583,8 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
         flagAddr = static_cast<u8 *>(cclBuffersOut[rank]);
         AivKernelArgs aivKernelArgs {
             cclBuffersOut, cclBuffersOut, nullptr, nullptr, rank, rankSize, 0,
-            HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclReduceOp::HCCL_REDUCE_RESERVED, 0, step,
-            false, 0, 0, false, serverNum, devType
+            HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclReduceOp::HCCL_REDUCE_RESERVED, 0, step
         };
-        aivKernelArgs.deterministic = deterministic;
 
         aclrtFuncHandle funcHandle;
         ret = GetKernelFunc(funcHandle, GetStubFunc(HcclCMDType::HCCL_CMD_INVALID,
@@ -601,21 +607,20 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
     taskParaGeneral.aiv = taskParaAiv;
 
     AlgWrap::GetInstance().TaskAivProfiler(comm, taskParaGeneral);
+
     return HCCL_SUCCESS;
 }
 
-HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs,
-    u32 deterministic)
+HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, AivAlgArgs algArgs)
 {
     u32 rank = topoArgs.rank;
     u32 rankSize = topoArgs.rankSize;
-    u32 serverNum = topoArgs.serverNum;
-    u32 devType = static_cast<u32>(topoArgs.devType); 
-    CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, 1, serverNum, devType,
-        topoArgs.identify, resourceArgs.blockDim, deterministic));
+    CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, 1, 
+        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs));
 
     u8* flagAddr;
-    if (topoArgs.devType == DevType::DEV_TYPE_910_93 && (serverNum > 1 || deterministic == 1) ) {
+    if (algArgs.argsType != KernelArgsType::ARGS_TYPE_SERVER || 
+        (topoArgs.devType == DevType::DEV_TYPE_910_93 && topoArgs.serverNum > 1)) {
         flagAddr = static_cast<u8 *>(cclBuffersOut[0]);
     } else {
         flagAddr = static_cast<u8 *>(cclBuffersOut[rank]);
@@ -626,8 +631,8 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
 
     CHK_RET(hrtMemAsyncCopy(flagMem.ptr(), AIV_FLAG_AREA_SIZE, zeroMem.ptr(), AIV_FLAG_AREA_SIZE,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, resourceArgs.stream));
-    CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, RESET_TAIL_SYNC_TAG, serverNum, devType,
-        topoArgs.identify, resourceArgs.blockDim, deterministic));
+    CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, RESET_TAIL_SYNC_TAG,
+        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs));
     HCCL_INFO("[AIV][ClearAivSyncBuf] clearaiv done.");
     return HCCL_SUCCESS;
 }
@@ -674,27 +679,17 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
         resourceArgs.buffersOut[RANK_TWO], resourceArgs.buffersOut[RANK_THREE], resourceArgs.buffersOut[RANK_FOUR],
         resourceArgs.buffersOut[RANK_FIVE], resourceArgs.buffersOut[RANK_SIX], resourceArgs.buffersOut[RANK_SEVEN]);
 
-    KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER;
-
-    bool isLimitCmdType = (opArgs.cmdType == HcclCMDType::HCCL_CMD_ALLREDUCE) || (opArgs.cmdType == HcclCMDType::HCCL_CMD_ALLGATHER) ||
-     (opArgs.cmdType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
-    bool ifMultiServer91093 = topoArgs.devType == DevType::DEV_TYPE_910_93 && (topoArgs.serverNum > 1 || algArgs.deterministic == 1);
-    if (ifMultiServer91093) {
-        if (isLimitCmdType) {
-            argsType = KernelArgsType::ARGS_TYPE_A3_CROSSNODE;
-        } else if (opArgs.cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
-            argsType = KernelArgsType::ARGS_TYPE_SUPERPOD;
-        }
-    }
+    KernelArgsType argsType = algArgs.argsType;
 
     HcclResult ret = HcclResult::HCCL_E_PARA;
     aclrtLaunchKernelCfg cfg;
     aclrtLaunchKernelAttr attr[AIV_ATTRNUM_THREE];
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
-    attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US;
     s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(topoArgs.identify);
-    attr[1].value.timeout = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(topoArgs.identify));
+    attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(topoArgs.identify));
+    attr[1].value.timeoutUs.timeoutHigh = 0;
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
     cfg.numAttrs = AIV_ATTRNUM_THREE;
@@ -711,9 +706,9 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
 
     TaskAivProfilerWrap(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo,
-        ifMultiServer91093 ? resourceArgs.buffersOut[0]: resourceArgs.buffersOut[topoArgs.rank]);
+        (algArgs.argsType != KernelArgsType::ARGS_TYPE_SERVER) ? resourceArgs.buffersOut[0]: resourceArgs.buffersOut[topoArgs.rank]);
     if (resourceArgs.aivTag == TAG_RESET_COUNT) {
-        ClearAivSyncBuf(resourceArgs.buffersOut, resourceArgs, topoArgs, algArgs.deterministic);
+        ClearAivSyncBuf(resourceArgs.buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][ExecuteKernelLaunchInner] errNo[0x%016llx] rtKernelLaunch aiv fail, "
@@ -729,14 +724,11 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs, const AivTopoArgs &topoA
     CHK_PTR_NULL(resourceArgs.buffersIn);
     CHK_PTR_NULL(resourceArgs.buffersOut);
 
-    bool isLimitCmdType = (opArgs.cmdType == HcclCMDType::HCCL_CMD_ALLREDUCE) || (opArgs.cmdType == HcclCMDType::HCCL_CMD_ALLGATHER) ||
-     (opArgs.cmdType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
-    if (topoArgs.devType == DevType::DEV_TYPE_910_93 && (topoArgs.serverNum > 1 || algArgs.deterministic==1) && isLimitCmdType) {
+    if (algArgs.argsType == KernelArgsType::ARGS_TYPE_SIMPLE) {
         AivKernelArgsV3 aivKernelArgs {
             resourceArgs.buffersIn, resourceArgs.buffersOut, opArgs.input, opArgs.output,
             topoArgs.rank, topoArgs.rankSize, opArgs.count, opArgs.dataType, opArgs.op, opArgs.root, resourceArgs.aivTag,
-            opArgs.isOpBase, resourceArgs.bufferSize, topoArgs.serverNum,
-            static_cast<u32>(topoArgs.devType), reinterpret_cast<void*>(aivProfilingInfo.counter.headCountMem),
+            opArgs.isOpBase, resourceArgs.bufferSize, algArgs.step, reinterpret_cast<void*>(aivProfilingInfo.counter.headCountMem),
             reinterpret_cast<void*>(aivProfilingInfo.counter.tailCountMem), reinterpret_cast<void*>(aivProfilingInfo.counter.addOneMem),
             aivProfilingInfo.counter.isEnableCounter, algArgs.deterministic
         };

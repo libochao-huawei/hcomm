@@ -102,12 +102,13 @@ public:
     virtual HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaDMA &para) = 0;
     virtual HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &para) = 0;
     virtual HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &para) = 0;
-    virtual HcclResult Save(u32 &streamID, u32 &taskID, const TaskParaAiv &para) = 0;
+    virtual HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &para) = 0;
     virtual HcclResult Save(u32 &streamID, u32 &taskID) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &para) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &para) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &para) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) = 0;
+    virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) = 0;
     virtual HcclResult SaveToLog(const TaskParaHost &paraHost) = 0;
 
 protected:

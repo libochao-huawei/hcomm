@@ -159,8 +159,8 @@ template<typename T>
 __aicore__ inline void aiv_reduce_scatter_91093_smalldata(KERNEL_ARGS_DEF)
 {
     AivReduceScatterSmall91093 op;
-    op.isSmall_ = (len * sizeof(T) <= AIV_A3_REDUCE_SCATTER_GRAPH_GUIYI_SIZE && 
-            rankSize <= MAX_BLOCK_DIM / BLOCK_DIM_FOUR_PER_RANK_A3);
+    op.isSmall_ = (len * sizeof(T) <= ((block_num / rankSize) < BLOCK_DIM_FOUR_PER_RANK_A3 ? 
+        (block_num / rankSize) : BLOCK_DIM_FOUR_PER_RANK_A3) * AIV_REDUCE_SCATTER_BIG_SIZE);
     op.Init(KERNEL_CLASS_INIT, !op.isSmall_);
     op.HeadCounter();
     op.Process<T>(input, output, len, tag);

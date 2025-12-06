@@ -45,6 +45,7 @@ set(include_list
     ${HCCL_BASE_DIR}/inc/hccl
     ${HCCL_BASE_DIR}/inc/hccl/hccl
     ${HCCL_BASE_DIR}/pub_inc
+    ${HCCL_BASE_DIR}/pub_inc/aicpu/
     ${HCCL_BASE_DIR}/pkg_inc
     ${HCCL_BASE_DIR}/pub_inc/inner
     ${HCCL_BASE_DIR}/pub_inc/new
@@ -137,6 +138,7 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/common/
     ${HCCL_BASE_DIR}/platform/common/unique
     ${HCCL_BASE_DIR}/platform/common/buffer_manager
+    ${HCCL_BASE_DIR}/platform/common/unfold_cache
     ${HCCL_BASE_DIR}/platform/resource/transport
     ${HCCL_BASE_DIR}/platform/resource/transport/device
     ${HCCL_BASE_DIR}/platform/resource/transport/host
@@ -378,15 +380,6 @@ else()
         ${TOP_DIR}/inc/aicpu/tsd
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/runtime/include/external
-        ${TOP_DIR}/runtime/include/external/acl
-        ${TOP_DIR}/runtime/include/driver
-        ${TOP_DIR}/runtime/pkg_inc
-        ${TOP_DIR}/runtime/pkg_inc/runtime
-        ${TOP_DIR}/runtime/pkg_inc/profiling
-        ${TOP_DIR}/runtime/pkg_inc/trace
-        ${TOP_DIR}/runtime/pkg_inc/base
-        ${TOP_DIR}/runtime/pkg_inc/aicpu
-        ${TOP_DIR}/runtime/src/runtime/platform/inc
         ${TOP_DIR}/inc/external
         ${TOP_DIR}/inc/aicpu/
         ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
@@ -402,13 +395,9 @@ else()
         ${TOP_DIR}/metadef/inc/external
     
         ${TOP_DIR}/open_source/json/include
-        ${TOP_DIR}/hcomm/pkg_inc
-        ${TOP_DIR}/hcomm/pkg_inc/hccl
         ${TOP_DIR}/hcomm/src/
         ${TOP_DIR}/hcomm/src/inc/hccl/                          # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/inc/hccl/hccl                      # ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${TOP_DIR}/hcomm/src/platform
-        ${TOP_DIR}/hcomm/src/platform/legacy/inc/
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
@@ -418,15 +407,6 @@ else()
         ${TOP_DIR}/inc/aicpu/tsd
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/runtime/include/external
-        ${TOP_DIR}/runtime/include/external/acl
-        ${TOP_DIR}/runtime/include/driver
-        ${TOP_DIR}/runtime/pkg_inc
-        ${TOP_DIR}/runtime/pkg_inc/runtime
-        ${TOP_DIR}/runtime/pkg_inc/profiling
-        ${TOP_DIR}/runtime/pkg_inc/trace
-        ${TOP_DIR}/runtime/pkg_inc/base
-        ${TOP_DIR}/runtime/pkg_inc/aicpu
-        ${TOP_DIR}/runtime/src/runtime/platform/inc
         ${TOP_DIR}/inc/external
         ${TOP_DIR}/inc/aicpu/
         ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
@@ -442,13 +422,9 @@ else()
         ${TOP_DIR}/metadef/inc/external
 
         ${TOP_DIR}/open_source/json/include
-        ${TOP_DIR}/hcomm/pkg_inc
-        ${TOP_DIR}/hcomm/pkg_inc/hccl
         ${TOP_DIR}/hcomm/src/
         ${TOP_DIR}/hcomm/src/inc/hccl/                           # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/inc/hccl/hccl                       # ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${TOP_DIR}/hcomm/src/platform
-        ${TOP_DIR}/hcomm/src/platform/legacy/inc/
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
@@ -491,6 +467,7 @@ target_compile_options(ccl_kernel_plf PRIVATE
     -O3
     -std=c++14
     -D_FORTIFY_SOURCE=2 -O2
+    $<$<CONFIG:Debug>:-g>
 )
 
 # 给ccl_kernel_plf_a添加编译选项
@@ -505,6 +482,7 @@ target_compile_options(ccl_kernel_plf_a PRIVATE
     -ftrapv
     -D_FORTIFY_SOURCE=2 -O2
     -fPIC
+    $<$<CONFIG:Debug>:-g>
 )
 # 为ccl_kernel_plf添加编译定义
 target_compile_definitions(ccl_kernel_plf PRIVATE

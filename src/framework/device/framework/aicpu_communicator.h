@@ -35,6 +35,7 @@
 #include "hccl_trace_info.h"
 #include "aicpu_share_data_manager.h"
 #include "read_write_lock.h"
+#include "op_unfold_cache.h"
 #include "hccl_api.h"
 #include "channel_param.h"
 #include "aicpu_launch_manager.h"
@@ -161,7 +162,8 @@ public:
     HcclResult ResumeChangeLink();
     HcclResult ParseHierarchicalAlgOption(u32 *ahcConfInfo);
     void RegisterKfcHandler(AicpuKfcHandlerType type, AicpuKfcHandler cb) { kfcHandlers_[static_cast<size_t>(type)] = cb; }
-    HcclResult RecordHostOrder(const std::string& tag, bool isCapture); // kernel占到核后，通知host侧
+    HcclResult RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, u8 orderLaunchMode); // kernel占到核后，通知host侧
+	HcclResult RegisterProfCallBack();
     // 独立算子专用
     HcclResult SetChannelP2pNotify(TransportDeviceP2pData &transDevP2pData, u64 &p2pNotifyNum, 
         HcclChannelP2p &channelP2p);
@@ -186,7 +188,6 @@ private:
     HcclResult InitSlaveStreamObjs(const HcclOpResParam *commParam);
     HcclResult InitLocalNotifyObj(const HcclOpResParam *commParam);
     HcclResult InitOpNotifyObj(const HcclOpResParam *commParam);
-    HcclResult InitOrderNotifyObj(const HcclOpResParam *commParam);
     HcclResult StreamRestore(u32 streamId); // 将流资源映射到custom进程
     HcclResult ParseTlvToVector(u64 srcTlv, u64 srcTlvTotalLength,
         std::vector<std::vector<std::vector<u32>>> &vectorInfo);
@@ -396,6 +397,15 @@ private:
     HcclResult GenTaskExceptionInfo(u8 sqeType, hccl::Stream &stream, u32 head);
     HcclResult InvokeKfcHandler(AicpuKfcHandlerType type, const std::vector<u64> args);
 
+    // 算子展开的动态缓存
+    HcclResult InitOpUnfoldCache();
+    HcclResult LookupOpUnfoldCache(const OpParam &param, bool& needExecute, bool& isCacheMiss);
+    HcclResult ClearOpUnfoldCacheEntry(const OpParam &param);
+    HcclResult GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key);
+    HcclResult PrepareUserMemRanges(const OpParam &param, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
+    HcclResult IsInplace(const OpParam &param, bool& isInplace);
+    HcclResult ParseOpParamForCache(const OpParam &param, HcclDataType& sendType, HcclDataType& recvType, uint64_t& inputSize, uint64_t& outputSize);
+
     std::unordered_map<s32, u32> opExecIndexMap_;
 
     // 管理aicpu和custom进程共享的数据
@@ -411,7 +421,7 @@ private:
 
     std::vector<std::shared_ptr<LocalNotify>> localNotifies_;  // 主从流之间同步的notify
     std::vector<std::shared_ptr<LocalNotify>> opNotifies_;     // host与device间同步的notify
-    std::shared_ptr<LocalNotify> orderNotify_;
+    std::vector<std::shared_ptr<LocalNotify>> orderNotifies_{AICPU_ORDER_NOTIFY_MAX_NUM, nullptr};  // 按序下发的notify
     std::unordered_set<u32> notifysToObj_;                     // 从context的资源构造为LocalNotify对象去重
 
     std::unordered_map<std::string, std::shared_ptr<DeviceMem>> tagScratchMem_;  // 本地scratchmem
@@ -533,6 +543,10 @@ private:
     std::mutex preemptMutexForResMap_;
     static bool errMessageReport_;
     AicpuKfcHandler kfcHandlers_[static_cast<size_t>(AicpuKfcHandlerType::kMax)]{};
+
+	// 算子展开的动态缓存
+    OpUnfoldCache *opUnfoldCachePtr_ = nullptr;
+    size_t opUnfoldIdx_ = 0; // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
 
     // 独立算子
     bool isIndOpCommInit_ = false; // 独立算子流程通信域是否初始化

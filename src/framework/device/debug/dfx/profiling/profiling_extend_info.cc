@@ -131,14 +131,26 @@ void ProfilingExtendInfoHelper::InitHcclInfo(MsprofAicpuHcclTaskInfo &msprofAicp
 
 void ProfilingExtendInfoHelper::InitProfItemId()
 {
-    if (AdprofGetHashId == nullptr) {
-        HCCL_INFO("AdprofGetHashId is null, InitProfItemId just return");
-        return;
-    }
-    for (const auto taskType : kfcTaskTypes) {
-        // index保证是有效的
-        g_taskHashIds[static_cast<uint64_t>(taskType)] =
-            AdprofGetHashId(hccl::GetProfTaskOpName(taskType).c_str(), hccl::GetProfTaskOpName(taskType).length());
+    if (MsprofReportBatchAdditionalInfo == nullptr) {
+        if (AdprofGetHashId == nullptr) {
+            HCCL_INFO("AdprofGetHashId is null, InitProfItemId just return");
+            return;
+        }
+        for (const auto taskType : kfcTaskTypes) {
+            // index保证是有效的
+            g_taskHashIds[static_cast<uint64_t>(taskType)] =
+                AdprofGetHashId(hccl::GetProfTaskOpName(taskType).c_str(), hccl::GetProfTaskOpName(taskType).length());
+            }
+    } else {
+        if (MsprofStr2Id == nullptr) {
+            HCCL_INFO("MsprofStr2Id is null, InitProfItemId just return");
+            return;
+        }
+        for (const auto taskType : kfcTaskTypes) {
+            // index保证是有效的
+            g_taskHashIds[static_cast<uint64_t>(taskType)] =
+                MsprofStr2Id(hccl::GetProfTaskOpName(taskType).c_str(), hccl::GetProfTaskOpName(taskType).length());
+        }
     }
     return;
 }

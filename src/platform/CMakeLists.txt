@@ -27,6 +27,7 @@ add_library(hccl_plf  SHARED)
 
 set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/aicpu/
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/inner
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/new
 
@@ -37,6 +38,7 @@ set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/common/
     ${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/unfold_cache
     ${CMAKE_CURRENT_SOURCE_DIR}/common/p2p_mgmt
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unique
     ${CMAKE_CURRENT_SOURCE_DIR}/common/misc/network_manager

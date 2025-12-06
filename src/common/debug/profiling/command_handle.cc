@@ -10,6 +10,7 @@
 
 #include "command_handle.h"
 #include "profiling_manager.h"
+#include "aprof_pub.h"
 #include "prof_common.h"
 
 namespace hccl {

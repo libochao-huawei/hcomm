@@ -105,10 +105,6 @@ bool CollAllReduceMixExecutor::IsSmallData(const u64 totalSize, const u64 curSiz
 
 bool CollAllReduceMixExecutor::IsHugeData(const u64 curSize)
 {
-    // 多QP哈希散列开启且RDMA通信下，强制刷新子图
-    if (GetExternalInputQpsPerConnection() != HCCL_QPS_PER_CONNECTION_DEFAULT) {
-        return true;
-    }
     bool hugeData = curSize / topoAttr_.deviceNumPerAggregation / HCCL_INTERNODE_MAX_DATA_RATE > RDMA_SEND_MAX_SIZE ||
         curSize > SDMA_SEND_MAX_SIZE;
     return hugeData;

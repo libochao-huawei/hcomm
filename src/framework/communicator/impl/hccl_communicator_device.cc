@@ -384,12 +384,12 @@ namespace hccl
         3. 创建和分配资源
     */
     HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
-                                               HcclReduceOp op, bool &ifAiv, std::string &algName, bool isSuperKernel)
+                                               HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType,
+    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
                                                   std::string &algName, u32 &blockDim)
     {
         return HCCL_SUCCESS;
@@ -835,6 +835,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::AllocAndGetStreamContextBuff(u32 streamId, u64 &addr, u64 &size)
     {
         return HCCL_SUCCESS;
@@ -846,6 +851,11 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::BuildAicpuCustomParam()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify()
     {
         return HCCL_SUCCESS;
     }
@@ -1140,6 +1150,7 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
+
     void HcclCommunicator::UnloadAICPUKernel(void)
     {
         return;
@@ -1330,16 +1341,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::LaunchInOrder(Stream& hostOrderStream, u32 timeOut)
-    {
-        return HCCL_SUCCESS;
-    }
-
-    bool HcclCommunicator::GetIsLaunchInOrder(bool isCapture)
-    {
-        return false;
-    }
-
     HcclResult HcclCommunicator::SetMemoryRange(void *baseVirPtr, size_t size, size_t alignment, uint64_t flags)
     {
         return HCCL_SUCCESS;
@@ -1364,6 +1365,16 @@ namespace hccl
                                                    ChangeLinkInfo &changeLinkInfo)
     {
         return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SetAttachedStream(u32 graphId, const std::vector<rtStream_t> &streams)
+    {
+        return HCCL_SUCCESS;
+    }
+    
+    u8 HcclCommunicator::GetOrderLaunchMode (bool isCapture) 
+    {
+        return 0;
     }
 
     HcclResult HcclCommunicator::SetRemoteRankLinkInfo(std::unordered_map<u32, bool> &switchRanks,
@@ -1443,7 +1454,6 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
-
     HcclTopoAttr HcclCommunicator::GetTopoAttr() 
     {
         return {};
@@ -1471,7 +1481,6 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
-
     HcclResult HcclCommunicator::CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType)
     {
         return HCCL_SUCCESS;
@@ -1486,7 +1495,7 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
-    
+
     HcclResult HcclCommunicator::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
     {
         return HCCL_SUCCESS;
@@ -1509,6 +1518,11 @@ namespace hccl
 
     HcclResult HcclCommunicator::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::DeInitTransportMem()
     {
         return HCCL_SUCCESS;
     }
