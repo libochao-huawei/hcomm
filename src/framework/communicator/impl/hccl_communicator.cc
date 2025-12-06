@@ -1419,7 +1419,7 @@ namespace hccl
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
              hccl::ProfilingManagerPub::GetAddtionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
-             !hccl::ProfilingManagerPub::GetThreadCaptureStatus())
+             !param.isCapture)
         {
             return HCCL_SUCCESS;
         }

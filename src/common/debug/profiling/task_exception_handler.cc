@@ -1540,8 +1540,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     return HCCL_SUCCESS;
 }
 
-
-HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const TaskParaAiv &para)
+HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &para)
 {
     u32 maxDeviceNum;
     CHK_RET(GetMaxDevNum(maxDeviceNum));
@@ -1550,7 +1549,7 @@ HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const TaskPara
             deviceLogicId_, maxDeviceNum), HCCL_E_INTERNAL);
 
     std::string tag;
-    CHK_RET(ProfilerBase::GetTagByStream(streamID, tag));
+    CHK_RET(ProfilerBase::GetTagByStream(captureStreamID, tag));
     u32 index = 0;
     ProfilerBase::GetSubmittedOpCnt(index);
     TaskInfo tmpTaskInfo(streamID, taskID, tag, para);
@@ -1559,6 +1558,11 @@ HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const TaskPara
     CHK_RET(InsertRankInfo(tag));
     CHK_RET(InsertOpData(tag));
     return HCCL_SUCCESS;
+}
+
+HcclResult TaskExceptionHandler::Save(u32 streamID, u32 taskID, const TaskParaAiv &para)
+{
+    return Save(streamID, streamID, taskID, para);
 }
 
 HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &para)

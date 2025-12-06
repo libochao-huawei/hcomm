@@ -949,6 +949,12 @@ void ProfilingManager::SetThreadCaptureStatus(s32 threadID, bool isCapture)
 bool ProfilingManager::GetThreadCaptureStatus()
 {
     // 返回当前线程的capture状态
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_310P1 || devType == DevType::DEV_TYPE_310P3) {
+        return false;
+    }
+    
     s32 threadID = SalGetTid();
     std::unique_lock<std::mutex> lockMap(captureStatusMapMutex_);
     if (captureStatusThreadIDMap_.count(threadID) == 0) {
