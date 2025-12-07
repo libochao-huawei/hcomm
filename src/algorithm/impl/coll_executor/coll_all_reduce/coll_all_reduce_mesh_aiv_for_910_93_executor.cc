@@ -122,13 +122,8 @@ HcclResult CollAllReduceMeshAivFor91093Executor::GetAivExecParam(const OpParam& 
     execMem.inputPtr = param.inputPtr;
     execMem.outputPtr = param.outputPtr;
 
-    execMem.inputMem = algRes.aivInputMem;
-    if(topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE){
-        // 图模式确定性
-        execMem.inputMem = algRes.scratchMem;
-    } else{
-        execMem.inputMem = algRes.paramInputMem;
-    }
+    execMem.inputMem = algRes.scratchMem;
+    
     execMem.outputMem = algRes.aivOutputMem;
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);
 
