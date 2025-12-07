@@ -452,6 +452,8 @@ __aicore__ inline void AivCrossNode91093Base::InitSuperKernel(GM_ADDR hiddenInpu
         useDoubleBuffer_ = false;
     }
 
+    blockGroup_ = rankSize_ > blockdim_ ? blockdim_ : rankSize_;
+    
     InitSetCheckClearArgsTensor();
     InitOffset();
 }
