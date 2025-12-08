@@ -53,12 +53,16 @@ if(BUILD_OPEN_PROJECT)
 endif()
 
 target_compile_options(hccp_service.bin PRIVATE
-    -Werror -Wall -fPIC -rdynamic -fvisibility=hidden -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11
+    -Werror -Wall -fPIC -fPIE -rdynamic -fvisibility=hidden -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(hccp_service.bin PRIVATE
     -Wl,-Bsymbolic -Wl,--no-undefined -rdynamic
+    -Wl,-z,now
+    -pie
+    $<$<CONFIG:Release>:-s>
 )
 
 target_compile_definitions(hccp_service.bin PRIVATE
