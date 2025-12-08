@@ -591,7 +591,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                     && ((isOpbase && (dataSizePerRank <= AIV_ALL_REDUCE_A3_ENTRY_SIZE || isOnlyAiv)) || !isOpbase)
                     && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE)
                     && (!retryEnable_)
-                    && multiModuleDiffDeviceNumMode_;
+                    && !multiModuleDiffDeviceNumMode_;
 
     if (isSupportAivDeter){
         algName = "AllReduceMeshAivFor91093Executor";
