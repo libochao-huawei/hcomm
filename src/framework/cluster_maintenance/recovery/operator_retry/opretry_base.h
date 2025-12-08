@@ -20,7 +20,6 @@
 #include "hccl_common.h"
 
 namespace hccl {
-extern bool g_isRdmaError;
 constexpr u32 OP_RETRY_MAX_CNT = 3;
 constexpr u32 OP_RETRY_WAIT_AICPU_TIMEOUT = 5; // 等待Aicpu的时长, 单位s
 constexpr u32 OP_RETRY_POLL_AICPU_ERROR_INTERVAL = 1; // 正常状态轮询Aicpu错误码的间隔, 单位s

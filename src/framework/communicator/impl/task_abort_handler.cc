@@ -52,8 +52,6 @@ int32_t ProcessTaskAbortHandleCallback(int32_t  devId, aclrtDeviceTaskAbortStage
                     HCCL_ERROR("[NsRecovery][suspend] NsRecovery suspend timeOut"),
                     static_cast<int>(TaskAbortResult::TaskAbort_TimeOut));
             }
-            g_isRdmaError = false;
-            HCCL_INFO("ProcessTaskAbortHandleCallback set g_isRdmaError false");
         } else if (stage == ACL_RT_DEVICE_TASK_ABORT_POST) {
             for (size_t i = 0; i < commVector.size(); i++) {
                 std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
@@ -81,8 +79,6 @@ int32_t ProcessTaskAbortHandleCallback(int32_t  devId, aclrtDeviceTaskAbortStage
                 }
                 HCCL_DEBUG("[NsRecovery]finish suspend success");
             }
-            g_isRdmaError = false;
-            HCCL_INFO("ProcessTaskAbortHandleCallback set g_isRdmaError false");
         } else if (stage == ACL_RT_DEVICE_TASK_ABORT_POST) {
             for (size_t i = 0; i < commVector.size(); i++) {
                 ret = commVector[i]->Clean();

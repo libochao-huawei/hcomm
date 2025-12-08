@@ -217,10 +217,6 @@ HcclResult OpRetryManager::SetRetryStateToWaitResume(const std::string &group, b
                 break;
             }
         }
-        if (g_isRdmaError) {
-            serverOpRetry[group].retryCtx->isRdmaError = true;
-            HCCL_INFO("[OpRetryManager][SetRetryStateToWaitResume]group[%s], set server rdmaError to true.", group.c_str());
-        }
         serverOpRetry[group].retryCtx->SetEnableSendRecv(true);
     }
     HCCL_INFO("[OpRetryManager][SetRetryStateToWaitResume]group[%s], set state to wait resume success", group.c_str());
@@ -246,9 +242,7 @@ HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool is
             HCCL_ERROR("[OpRetryManager][ExitWaitResumeState]group[%s], server exit wait resume state timeout", group.c_str());
             return HCCL_E_TIMEOUT;
         }
-        if (serverOpRetry[group].retryCtx->isRdmaError) {
-            isChangedLink = true;
-        }
+        isChangedLink = true;
     }
     while (agentOpRetry_.find(group) != agentOpRetry_.end() && agentOpRetry_[group].retryCtx->GetRetryState() != RETRY_STATE_AGENT_RUNNING) {
         std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
