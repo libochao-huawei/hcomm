@@ -230,7 +230,6 @@ const std::map<AlgTypeLevel1, std::string> HCCL_ALGO_LEVEL1_NAME_MAP = {
     {AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE, "AHC_BROKE"},
     {AlgTypeLevel1::ALG_LEVEL1_NB, "NB"},
     {AlgTypeLevel1::ALG_LEVEL1_RESERVED, "null"},
-    {AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE, "CP"},
 };
 
 const std::map<AlgTypeLevel2, std::string> HCCL_ALGO_LEVEL2_NAME_MAP = {
