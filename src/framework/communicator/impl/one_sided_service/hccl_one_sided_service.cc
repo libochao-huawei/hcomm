@@ -1210,7 +1210,7 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
         HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
         CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(identifier_)) ?
         CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_) : NOTIFY_DEFAULT_WAIT_TIME);
-    CHK_RET(AicpuAclKernelLaunch(stream, reinterpret_cast<void *>(&commContext),
+    CHK_RET(AicpuAclKernelLaunchV2(stream, reinterpret_cast<void *>(&commContext),
         sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
     HCCL_DEBUG("[HcclOneSidedService][AicpuUnfoldKernelLaunchV2] exec succ.");
     return HCCL_SUCCESS;
