@@ -153,7 +153,7 @@ HcclResult HcclCommAicpu::InitOpUnfoldCache()
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, bool& needExecute, bool& isCacheMiss)
+HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, const AlgResourceResponse &algResource, bool& needExecute, bool& isCacheMiss)
 {
     needExecute = true;
     isCacheMiss = false;
@@ -196,7 +196,7 @@ HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, bool& needEx
             // 准备 memory ranges
             std::vector<OpUnfoldMemRange> userInputMemRanges;
             std::vector<OpUnfoldMemRange> userOutputMemRanges;
-            CHK_RET(PrepareUserMemRanges(param, userInputMemRanges, userOutputMemRanges));
+            CHK_RET(PrepareUserMemRanges(param, algResource, userInputMemRanges, userOutputMemRanges));
 
             // 查找算子展开的动态缓存
             HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] look up op-unfold cache for key %s", opUnfoldKey.getKeyString().c_str());
@@ -274,7 +274,7 @@ HcclResult HcclCommAicpu::GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges)
+HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges)
 {
     const uint32_t rankSize = GetRankSize();
     HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare %u user input/output memory ranges for op-unfold cache", rankSize);
@@ -293,7 +293,7 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, std::vector
     // 设置当前rank的input/output usermem addr
     const uint32_t curRank = topoInfo_.userRank; // NOTE: 不应该使用param.srcRank (某些算子始终为0)
     CHK_PRT_RET(curRank >= rankSize, HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] invalid curRank %u >= rankSize %u", curRank, rankSize), HCCL_E_INTERNAL);
-    HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare memory range of current rank %u", curRank);
+    HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user memory range of current rank %u", curRank);
     OpUnfoldMemRange& curUserInputMemRange = userInputMemRanges[curRank];
     curUserInputMemRange.isValid = true;
     curUserInputMemRange.baseAddr = reinterpret_cast<uint64_t>(param.inputPtr);
@@ -312,8 +312,76 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, std::vector
             HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] opType[%u] should not use zero copy", opType), HCCL_E_INTERNAL);
 
         // 直接传入local rank's input/output size用于remote ranks' memory ranges
-        HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare memory ranges of other remote ranks");
+        HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user memory ranges of other remote ranks");
         CHK_RET(ZeroCopyExchanger_->PrepareRemoteMemRanges(inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
+    } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+        HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] check transport resource for potential user memory of remote ranks");
+
+        // 遍历所有transport信息, 更新remote ranks' user input/output memory ranges
+        for (size_t planeIdx = 0; planeIdx < algResource.opTransportResponse.size(); ++planeIdx) {
+            const LevelNSubCommTransport& subCommTransport = algResource.opTransportResponse[planeIdx];
+            for (size_t commIdx = 0; commIdx < subCommTransport.size(); ++commIdx) {
+                const SingleSubCommTransport& commTransport = subCommTransport[commIdx];
+
+                // 注意: 假设SingleSubCommTransport中的transportRequests和links是一一对应的
+                const std::vector<TransportRequest>& transportRequests = commTransport.transportRequests;
+                const std::vector<LINK>& links = commTransport.links;
+                HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] planeIdx[%u] commIdx[%u] links.size[%u]", planeIdx, commIdx, links.size());
+                CHK_PRT_RET(transportRequests.size() != links.size(),
+                    HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] transportRequests.size[%u] != links.size[%u]", transportRequests.size(), links.size()),
+                    HCCL_E_INTERNAL);
+
+                // 遍历每个remote rank对应的link信息
+                for (size_t reqIdx = 0; reqIdx < transportRequests.size(); ++reqIdx) {
+                    const TransportRequest& curReq = transportRequests[reqIdx];
+                    if (curReq.isValid) {
+                        if (curReq.remoteUserRank == curRank) { // 本rank无需从link获取user memory range
+                            continue;
+                        } else if (curReq.remoteUserRank == INVALID_VALUE_RANKID) { // 本rank无需从link获取user memory range
+                            continue;
+                        }
+
+                        CHK_PRT_RET(curReq.remoteUserRank >= rankSize, HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] invalid remoteRank %u >= rankSize %u", curReq.remoteUserRank, rankSize), HCCL_E_INTERNAL);
+
+                        // 获取curRank与remoteRank之间的LINK
+                        const LINK& curLink = links[reqIdx];
+                        CHK_PTR_NULL(curLink);
+
+                        // 获取user input memory range if any
+                        if (curReq.inputMemType == TransportMemType::PARAM_INPUT) {
+                            // 获取remoteRank的user input memory baseaddr
+                            void *remoteUserInputBaseAddr = nullptr;
+                            CHK_RET(curLink->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
+                            CHK_PTR_NULL(remoteUserInputBaseAddr);
+
+                            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user input of remoteRank[%u] for graph mode; baseAddr[0x%016llx]", curReq.remoteUserRank, remoteUserInputBaseAddr);
+
+                            // 设置remoteRank对应的user input memory range
+                            OpUnfoldMemRange& remoteUserInputMemRange = userInputMemRanges[curReq.remoteUserRank];
+                            remoteUserInputMemRange.isValid = true;
+                            remoteUserInputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserInputBaseAddr);
+                            remoteUserInputMemRange.memSize = inputSize;
+                        }
+
+                        // 获取user output memory range if any
+                        if (curReq.outputMemType == TransportMemType::PARAM_OUTPUT) {
+                            // 获取remoteRank的user output memory baseaddr
+                            void *remoteUserOutputBaseAddr = nullptr;
+                            CHK_RET(curLink->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
+                            CHK_PTR_NULL(remoteUserOutputBaseAddr);
+
+                            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user output of remoteRank[%u] for graph mode; baseAddr[0x%016llx]", curReq.remoteUserRank, remoteUserOutputBaseAddr);
+
+                            // 设置remoteRank对应的user output memory range
+                            OpUnfoldMemRange& remoteUserOutputMemRange = userOutputMemRanges[curReq.remoteUserRank];
+                            remoteUserOutputMemRange.isValid = true;
+                            remoteUserOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserOutputBaseAddr);
+                            remoteUserOutputMemRange.memSize = outputSize;
+                        }
+                    } // curReq.isValid
+                } // Each TransportRequest
+            } // Each SingleSubCommTransport
+        } // Each LevelNSubCommTransport
     }
 
     // 打印debug信息
@@ -3411,7 +3479,7 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
     // 检查算子展开的动态缓存, 确认是否可以跳过算子展开
     bool needExecute = true;
     bool isCacheMiss = false;
-    CHK_RET(LookupOpUnfoldCache(param, needExecute, isCacheMiss));
+    CHK_RET(LookupOpUnfoldCache(param, algResource, needExecute, isCacheMiss));
 
     // 根据needExecute有条件的执行算子展开
     // 需要算子执行的场景: (i) 图模式 (无cache instance); (ii) uncacheable算子; (iii) cache miss
