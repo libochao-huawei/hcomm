@@ -765,7 +765,7 @@ int hal_kernel_svm_query_devpid_by_pfn(u64 pfn, int *devpid);
 /**
  * @ingroup driver
  * @brief  Increment the reference count of the physical page by 1
- * @attention Ascend910C is not supported
+ * @attention 910_93 is not supported
  * @param [in]  pid: target process id.
  * @param [in]  va: starting virtual address.
  * @param [in]  nr_pages: number of pages from start to pin
@@ -778,7 +778,7 @@ int hal_kernel_svm_get_user_pages(int pid, u64 va, u32 nr_pages, void **pages, b
 /**
  * @ingroup driver
  * @brief  Decrement the reference count of the physical page by 1
- * @attention Ascend910C is not supported
+ * @attention 910_93 is not supported
  * @param [in]  nr_pages: number of pages from start to pin
  * @param [in]  is_remap_addr: if the VMA's vm_flags has the VM_PFNMAP bit set.
  * @param [out]  pages: array that receives pointers to the pages pinned.
