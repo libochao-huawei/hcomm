@@ -79,8 +79,6 @@ class PlatformInfoManager {
   uint32_t UpdateRuntimePlatformInfosByDevice(const uint32_t &device_id, PlatFormInfos &platform_infos);
 
   uint32_t InitRuntimePlatformInfos(const std::string &SoCVersion);
-
-  uint32_t GetPlatFormInfosLite(SocVersion soc_version, PlatFormInfosLite &platform_infos_lite);
  private:
   PlatformInfoManager();
   ~PlatformInfoManager();
@@ -179,8 +177,6 @@ class PlatformInfoManager {
   PlatFormInfos runtime_platform_infos_;
 
   std::map<uint32_t, PlatFormInfos> runtime_device_platform_infos_map_;
-
-  std::array<PlatFormInfosLite, TOTAL_SOC_COUNT> platform_infos_lite_vec_;
 };
 }  // namespace fe
 
