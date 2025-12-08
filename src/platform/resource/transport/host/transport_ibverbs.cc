@@ -1900,13 +1900,15 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
     mrInfo.addr = memPtr;
     mrInfo.size = memSize;
     mrInfo.access = access_;
-    for (u32 i = 0; i < combineQpHandles_.size(); i++) {
-        CHK_RET(HrtRaMrReg(combineQpHandles_[i].qpHandle, &mrInfo));
-    }
+    if (mrInfo.size != 0) {
+        for (u32 i = 0; i < combineQpHandles_.size(); i++) {
+            CHK_RET(HrtRaMrReg(combineQpHandles_[i].qpHandle, &mrInfo));
+        }
 
-    if (UseMultiQp()) {
-        for (u32 i = 0; i < qpsPerConnection_; i++) {
-            CHK_RET(HrtRaMrReg(multiCombineQpHandles_[i].qpHandle, &mrInfo));
+        if (UseMultiQp()) {
+            for (u32 i = 0; i < qpsPerConnection_; i++) {
+                CHK_RET(HrtRaMrReg(multiCombineQpHandles_[i].qpHandle, &mrInfo));
+            }
         }
     }
 
