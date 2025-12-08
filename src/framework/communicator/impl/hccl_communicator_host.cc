@@ -6912,7 +6912,7 @@ namespace hccl
         }
         u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
             (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
-        HcclResult ret = AicpuAclKernelLaunch(stm, reinterpret_cast<void *>(&context), sizeof(context),
+        HcclResult ret = AicpuAclKernelLaunchV2(stm, reinterpret_cast<void *>(&context), sizeof(context),
             binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[HcclCommunicator][AicpuUnfoldKernelLaunchV2]isCustom[%d] binHandle[%p]",
