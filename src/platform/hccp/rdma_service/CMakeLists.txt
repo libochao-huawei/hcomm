@@ -98,15 +98,17 @@ if((("${PRODUCT}" STREQUAL "ascend910B") OR ("${PRODUCT}" STREQUAL "ascend")) AN
     )
 endif()
 
-
 target_compile_options(rs PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -Wfloat-equal
     -Wextra -Wno-unused-parameter -std=gnu11
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
 )
 
 target_link_options(rs PRIVATE
     -Wl,-Bsymbolic -Wl,--exclude-libs,ALL
+    -Wl,-z,now
+    $<$<CONFIG:Release>:-s>
     # -rdynamic -Wl,--no-undefined
 )
 

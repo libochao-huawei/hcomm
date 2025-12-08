@@ -67,7 +67,13 @@ endif()
 
 target_compile_options(ra_peer PRIVATE
     -Werror -std=gnu11 -fno-common -Wfloat-equal -Wextra
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
+)
+
+target_link_options(ra_peer PRIVATE
+    -Wl,-z,now
+    $<$<CONFIG:Release>:-s>
 )
 
 if(BUILD_OPEN_PROJECT)

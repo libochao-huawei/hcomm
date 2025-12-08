@@ -71,10 +71,16 @@ endif()
 
 target_compile_options(ra PRIVATE
     -Werror -fvisibility=hidden -fno-strict-aliasing -fsigned-char -fno-common -std=gnu11 -Wextra
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
 )
 
 target_compile_definitions(ra PRIVATE
+)
+
+target_link_options(ra PRIVATE
+    -Wl,-z,now
+    $<$<CONFIG:Release>:-s>
 )
 
 if(BUILD_OPEN_PROJECT)
