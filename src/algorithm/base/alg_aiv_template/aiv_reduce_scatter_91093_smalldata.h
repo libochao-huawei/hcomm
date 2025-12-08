@@ -172,8 +172,8 @@ __aicore__ inline void sk_reduce_scatter_91093_smalldata(SUPERKERNEL_ARGS_DEF)
 {
     AivReduceScatterSmall91093 op;
     op.Init(SUPERKERNEL_CLASS_INIT, AIV_A3_REDUCE_SCATTER_GRAPH_GUIYI_SIZE);
-    op.isSmall_ = (op.len_ * op.unitSize_ <= AIV_A3_REDUCE_SCATTER_GRAPH_GUIYI_SIZE &&
-        op.rankSize_ <= MAX_BLOCK_DIM / BLOCK_DIM_FOUR_PER_RANK_A3);
+    op.isSmall_ = (op.len_ * op.unitSize_ <= ((op.blockdim_ / op.rankSize_) < BLOCK_DIM_FOUR_PER_RANK_A3 ? 
+        (op.blockdim_ / op.rankSize_) : BLOCK_DIM_FOUR_PER_RANK_A3) * AIV_REDUCE_SCATTER_BIG_SIZE);
     #ifdef HCCL_DTYPE_INT8
         op.Process<int8_t>(input, output, op.len_, op.tag_);
     #elif defined HCCL_DTYPE_INT16

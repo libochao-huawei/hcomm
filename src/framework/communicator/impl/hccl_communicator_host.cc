@@ -3935,13 +3935,15 @@ namespace hccl
     HcclResult HcclCommunicator::ExecOp(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
         std::string tag = opParam.tag;
-        u32 aivCoreLimit = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ? blockDim_ : 0;
+        u32 aivCoreLimit = blockDim_;
         //单机AIV场景下cache复用，提升下发性能
         if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-            aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &aivCoreLimit);
-            CHK_PRT_RET(acl_ret != ACL_SUCCESS,
-                HCCL_ERROR("[HcclCommunicator][ExecOp] aclrtGetResInCurrentThread failed, ret=[%d]", acl_ret),
-                HCCL_E_PARA);
+            if (aivCoreLimit == 0) {
+                aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &aivCoreLimit);
+                CHK_PRT_RET(acl_ret != ACL_SUCCESS,
+                    HCCL_ERROR("[HcclCommunicator][ExecOp] aclrtGetResInCurrentThread failed, ret=[%d]", acl_ret),
+                    HCCL_E_PARA);
+            }
             opParam.deterministic = implAlg_->GetDeterministicConfig();
             opParam.aivCoreLimit = aivCoreLimit;
             auto it = hcclCacheMap_.find(opParam);
@@ -4172,13 +4174,15 @@ namespace hccl
     HcclResult HcclCommunicator::ExecOpAlltoAll(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
         std::string tag = opParam.tag;
-        u32 aivCoreLimit = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ? blockDim_ : 0;
+        u32 aivCoreLimit = blockDim_;
         //单机AIV场景下cache复用，提升下发性能
         if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-            aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &aivCoreLimit);
-            CHK_PRT_RET(acl_ret != ACL_SUCCESS,
-                HCCL_ERROR("[HcclCommunicator][ExecOpAlltoAll] aclrtGetResInCurrentThread failed, ret=[%d]", acl_ret),
-                HCCL_E_PARA);
+            if (aivCoreLimit == 0) {
+                aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &aivCoreLimit);
+                CHK_PRT_RET(acl_ret != ACL_SUCCESS,
+                    HCCL_ERROR("[HcclCommunicator][ExecOpAlltoAll] aclrtGetResInCurrentThread failed, ret=[%d]", acl_ret),
+                    HCCL_E_PARA);
+            }
             opParam.deterministic = implAlg_->GetDeterministicConfig();
             opParam.aivCoreLimit = aivCoreLimit;
             auto it = hcclCacheMap_.find(opParam);

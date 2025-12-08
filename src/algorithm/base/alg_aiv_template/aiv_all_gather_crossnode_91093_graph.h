@@ -67,10 +67,10 @@ __aicore__ inline void AivAllGatherCrossNodeGraph91093::Process(GM_ADDR buffOut0
         syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
         workLocal = syncQue.AllocTensor<int32_t>();
         Barrier(buffersOut, 1);
-        SyncAll(syncGlobal, workLocal);
+        SyncAll(syncGlobal, workLocal, blockdim_);
         ClearGM();
         Barrier(buffersOut, 2);
-        SyncAll(syncGlobalSecond, workLocal);
+        SyncAll(syncGlobalSecond, workLocal, blockdim_);
 	    syncQue.FreeTensor(workLocal);
         PipeBarrier<PIPE_ALL>();
     }

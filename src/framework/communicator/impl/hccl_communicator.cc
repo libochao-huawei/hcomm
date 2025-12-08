@@ -2816,8 +2816,6 @@ namespace hccl
 
     HcclResult HcclCommunicator::SetAivCoreLimit(u32 aivCoreLimit)
     {
-        CHK_PRT_RET(aivCoreLimit == 0,
-            HCCL_ERROR("[HcclCommunicator][SetAivCoreLimit] aivCoreLimit[%u] invalid", aivCoreLimit), HCCL_E_PARA);
         blockDim_ = aivCoreLimit;
         return HCCL_SUCCESS;
     }
