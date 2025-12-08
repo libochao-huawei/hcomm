@@ -55,7 +55,6 @@ const std::map<HcclAlgoType, std::string> HcclAlgoTypeMap = {
     {HcclAlgoType::HCCL_ALGO_TYPE_NB, "NB"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NULL, "null"},
     {HcclAlgoType::HCCL_ALGO_TYPE_NA, "NA"},
-    {HcclAlgoType::HCCL_ALGO_TYPE_CONTINUOUS_PIPELINE, "CP"},
 };
 
 HcclResult ResetAlgEnvConfigInitState();
