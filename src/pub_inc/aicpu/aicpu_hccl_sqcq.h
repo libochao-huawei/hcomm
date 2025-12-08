@@ -125,6 +125,8 @@ constexpr u64 STARS_EVENT_TABLE_OFFSET = 0x10000ULL;
 constexpr u32 RT_SDMA_COMPERR = 0x9; // A3 sdma error类型为0x9时，表示写拷贝发生超时代答，或者数据搬移时地址译码错误
 constexpr u32 RT_SDMA_COMPDATAERR = 0xa; // A3 sdma error类型为0xa时，表示读拷贝发生超时代答，或者读HBM返回ERROR
 constexpr u32 RT_SDMA_DATAERR = 0x8; // A3 sdma error类型为0x8时，表示读HBM返回ERROR
+constexpr uint16_t TS_ERROR_RETRY_CONSTRAINT = 1000; // 重执行失败，约束是算子不一致或者inplace算子不支持
+constexpr uint16_t TS_ERROR_AICPU_SDMA = 1001; // AICPU算子失败，sqe类型为SDMA是，上报给aicpu的框架错误码
 
 constexpr u32 AC_SQE_REV_MAX_CNT = 32U;  // 910B平台下调用halCqReportRecv接口最大能够接收的个数
 constexpr uint32_t MAX_REPORT_CNT = 256U;

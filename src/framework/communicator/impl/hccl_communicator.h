@@ -58,7 +58,6 @@
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
 
-extern bool g_isRdmaError;
 constexpr u32 COMM_MAX_WORK_SPACE_SIZE = 16 * 1024 * 1024; // 默认16MB
 constexpr u32 INPUT = 0;
 constexpr u32 OUTPUT = 1;
