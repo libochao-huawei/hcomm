@@ -127,7 +127,7 @@ SECUREC_API const char *GetHwSecureCVersion(unsigned short *verNumber);
 /*
  * Description: The memset_s function copies the value of c (converted to an unsigned char) into each of
  * the first count characters of the object pointed to by dest.
- * Parameter: dest - destination address
+ * Parameter: dest - destination address.
  * Parameter: destMax - The maximum length of destination buffer
  * Parameter: c - the value to be copied
  * Parameter: count - copies count bytes of value to dest
@@ -146,9 +146,9 @@ SECUREC_API errno_t memset_s(void *dest, size_t destMax, int c, size_t count);
 /*
  * Description: The memmove_s function copies n characters from the object pointed to by src
  * into the object pointed to by dest.
- * Parameter: dest - destination  address
+ * Parameter: dest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer
- * Parameter: src - source address
+ * Parameter: src - source address.
  * Parameter: count - copies count bytes from the src
  * Return:    EOK if there was no runtime-constraint violation
  */
@@ -159,9 +159,9 @@ SECUREC_API errno_t memmove_s(void *dest, size_t destMax, const void *src, size_
 /*
  * Description: The memcpy_s function copies n characters from the object pointed to
  * by src into the object pointed to by dest.
- * Parameter: dest - destination  address
+ * Parameter: dest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer
- * Parameter: src - source address
+ * Parameter: src - source address.
  * Parameter: count - copies count bytes from the  src
  * Return:    EOK if there was no runtime-constraint violation
  */
@@ -172,9 +172,9 @@ SECUREC_API errno_t memcpy_s(void *dest, size_t destMax, const void *src, size_t
 /*
  * Description: The strcpy_s function copies the string pointed to by strSrc (including
  * the terminating null character) into the array pointed to by strDest
- * Parameter: strDest - destination  address
+ * Parameter: strDest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating null character)
- * Parameter: strSrc - source address
+ * Parameter: strSrc - source address.
  * Return:    EOK if there was no runtime-constraint violation
  */
 SECUREC_API errno_t strcpy_s(char *strDest, size_t destMax, const char *strSrc);
@@ -184,9 +184,9 @@ SECUREC_API errno_t strcpy_s(char *strDest, size_t destMax, const char *strSrc);
 /*
  * Description: The strncpy_s function copies not more than n successive characters (not including
  * the terminating null character) from the array pointed to by strSrc to the array pointed to by strDest.
- * Parameter: strDest - destination  address
+ * Parameter: strDest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating null character)
- * Parameter: strSrc - source  address
+ * Parameter: strSrc - source  address.
  * Parameter: count - copies count characters from the src
  * Return:    EOK if there was no runtime-constraint violation
  */
@@ -197,9 +197,9 @@ SECUREC_API errno_t strncpy_s(char *strDest, size_t destMax, const char *strSrc,
 /*
  * Description: The strcat_s function appends a copy of the string pointed to by strSrc (including
  * the terminating null character) to the end of the string pointed to by strDest.
- * Parameter: strDest - destination  address
+ * Parameter: strDest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating null wide character)
- * Parameter: strSrc - source address
+ * Parameter: strSrc - source address.
  * Return:    EOK if there was no runtime-constraint violation
  */
 SECUREC_API errno_t strcat_s(char *strDest, size_t destMax, const char *strSrc);
@@ -210,9 +210,9 @@ SECUREC_API errno_t strcat_s(char *strDest, size_t destMax, const char *strSrc);
  * Description: The strncat_s function appends not more than n successive characters (not including
  * the terminating null character)
  * from the array pointed to by strSrc to the end of the string pointed to by strDest.
- * Parameter: strDest - destination address
+ * Parameter: strDest - destination address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating null character)
- * Parameter: strSrc - source address
+ * Parameter: strSrc - source address.
  * Parameter: count - copies count characters from the src
  * Return:    EOK if there was no runtime-constraint violation
  */
@@ -391,7 +391,7 @@ SECUREC_API char *strtok_s(char *strToken, const char *strDelimit, char **contex
 /*
  * Description: The gets_s function reads at most one less than the number of characters specified
  * by destMax from the stream pointed to by stdin, into the array pointed to by buffer
- * Parameter: buffer - destination address
+ * Parameter: buffer - destination address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating null character)
  * Return:    buffer if there was no runtime-constraint violation,If an error occurred Return: NULL.
  */
@@ -403,9 +403,9 @@ SECUREC_API char *gets_s(char *buffer, size_t destMax);
 /*
  * Description: The wmemcpy_s function copies n successive wide characters from the object pointed to
  * by src into the object pointed to by dest.
- * Parameter: dest - destination  address
+ * Parameter: dest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer
- * Parameter: src - source address
+ * Parameter: src - source address.
  * Parameter: count - copies count wide characters from the  src
  * Return:    EOK if there was no runtime-constraint violation
  */
@@ -416,9 +416,9 @@ SECUREC_API errno_t wmemcpy_s(wchar_t *dest, size_t destMax, const wchar_t *src,
 /*
  * Description: The wmemmove_s function copies n successive wide characters from the object
  * pointed to by src into the object pointed to by dest.
- * Parameter: dest - destination  address
+ * Parameter: dest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer
- * Parameter: src - source address
+ * Parameter: src - source address.
  * Parameter: count - copies count wide characters from the  src
  * Return:    EOK if there was no runtime-constraint violation
  */
@@ -429,9 +429,9 @@ SECUREC_API errno_t wmemmove_s(wchar_t *dest, size_t destMax, const wchar_t *src
 /*
  * Description: The wcscpy_s function copies the wide string pointed to by strSrc(including the terminating
  * null wide character) into the array pointed to by strDest
- * Parameter: strDest - destination address
+ * Parameter: strDest - destination address.
  * Parameter: destMax - The maximum length of destination buffer
- * Parameter: strSrc - source address
+ * Parameter: strSrc - source address.
  * Return:    EOK if there was no runtime-constraint violation
  */
 SECUREC_API errno_t wcscpy_s(wchar_t *strDest, size_t destMax, const wchar_t *strSrc);
@@ -441,9 +441,9 @@ SECUREC_API errno_t wcscpy_s(wchar_t *strDest, size_t destMax, const wchar_t *st
 /*
  * Description: The wcsncpy_s function copies not more than n successive wide characters (not including the
  * terminating null wide character) from the array pointed to by strSrc to the array pointed to by strDest
- * Parameter: strDest - destination address
+ * Parameter: strDest - destination address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating wide character)
- * Parameter: strSrc - source address
+ * Parameter: strSrc - source address.
  * Parameter: count - copies count wide characters from the src
  * Return:    EOK if there was no runtime-constraint violation
  */
@@ -454,9 +454,9 @@ SECUREC_API errno_t wcsncpy_s(wchar_t *strDest, size_t destMax, const wchar_t *s
 /*
  * Description: The wcscat_s function appends a copy of the wide string pointed to by strSrc (including the
  * terminating null wide character) to the end of the wide string pointed to by strDest
- * Parameter: strDest - destination  address
+ * Parameter: strDest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating wide character)
- * Parameter: strSrc - source address
+ * Parameter: strSrc - source address.
  * Return:    EOK if there was no runtime-constraint violation
  */
 SECUREC_API errno_t wcscat_s(wchar_t *strDest, size_t destMax, const wchar_t *strSrc);
@@ -467,9 +467,9 @@ SECUREC_API errno_t wcscat_s(wchar_t *strDest, size_t destMax, const wchar_t *st
  * Description: The wcsncat_s function appends not more than n successive wide characters (not including the
  * terminating null wide character) from the array pointed to by strSrc to the end of the wide string pointed to
  * by strDest.
- * Parameter: strDest - destination  address
+ * Parameter: strDest - destination  address.
  * Parameter: destMax - The maximum length of destination buffer(including the terminating wide character)
- * Parameter: strSrc - source  address
+ * Parameter: strSrc - source  address.
  * Parameter: count - copies count wide characters from the  src
  * Return:    EOK if there was no runtime-constraint violation
  */

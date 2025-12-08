@@ -941,8 +941,6 @@ s32 sal_thread_is_running(sal_thread_t thread)
 {
     thread_info_t *ti;
     pthread_t id = (pthread_t)(uintptr_t)thread;
-
-    /* begin l00218090 2017/12/26 DTS2017122611186 多线程时，出现段错误 */
     s32 threadIsRunning = SAL_FALSE;
 
     /* 先搜索SAL维护的线程列表, 针对找到的线程进行确认 */
@@ -965,14 +963,12 @@ s32 sal_thread_is_running(sal_thread_t thread)
     }
 
     SAL_UNLOCK();
-
-    /* end l00218090 2017/12/26 DTS2017122611186 多线程时，出现段错误 */
     return threadIsRunning;
 }
 
 /*
  * 函 数 名  : sal_thread_show
- * 功能描述  : 打印所有子线程信息,调试函数
+ * 功能描述  : 打印所有子线程信息,调测函数
  * 输入参数  : void
  * 输出参数  : 无
  * 返 回 值  :
@@ -1388,7 +1384,7 @@ HcclResult sal_manage_class::sal_thread_info_pop(u32 pos, thread_info_t **ti)
  * 返 回 值  : void
  * 其它说明  :
               注册进程退出时的回调函数
-              接管SIGINT信号(ctrl+c)和SIGTERM信号(普通kill),触发exit操作,走正常的全局资源回收流程,
+              接管SIGINT信号和SIGTERM信号(普通kill),触发exit操作,走正常的全局资源回收流程,
               通过 __run_exit_handlers 依次调用析构函数及通过atexit等注册的回调函数
               全局对象 sequence_excute 构造函数中调用
  * 修改历史      :
