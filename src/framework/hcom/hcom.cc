@@ -3979,8 +3979,8 @@ HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMall
             CHK_RET(HcomGetHccsLinkNum(group, &numHccsLink));
         }
         if ((withoutImplCompile || !(rankSize == NUM_SIZE_TWO  && numHccsLink == NUM_SIZE_TWO))) {
-            *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
-                    static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
+            // 所有形态切换子包后，改用acl_mem类型
+            *memType = RT_MEMORY_P2P_DDR;
         }
     }
 
