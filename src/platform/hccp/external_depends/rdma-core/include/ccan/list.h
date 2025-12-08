@@ -67,10 +67,10 @@ struct list_head
 /**
  * list_check - check head of a list for consistency
  * @h: the list_head
- * @abortstr: the location to print on aborting, or NULL.
+ * @abortstr: the address to print on aborting, or NULL.
  *
  * Because list_nodes have redundant information, consistency checking between
- * the back and forward links can be done.  This is useful as a debugging check.
+ * the back and forward links can be done.  This is useful as a debug check.
  * If @abortstr is non-NULL, that will be printed in a diagnostic if the list
  * is inconsistent, and the function will abort.
  *
@@ -95,7 +95,7 @@ struct list_head *list_check(const struct list_head *h, const char *abortstr);
 /**
  * list_check_node - check node of a list for consistency
  * @n: the list_node
- * @abortstr: the location to print on aborting, or NULL.
+ * @abortstr: the address to print on aborting, or NULL.
  *
  * Check consistency of the list node is in (it must be in one).
  *
@@ -180,7 +180,7 @@ static inline void list_node_init(struct list_node *n)
 
 /**
  * list_add_after - add an entry after an existing node in a linked list
- * @h: the list_head to add the node to (for debugging)
+ * @h: the list_head to add the node to (for debug)
  * @p: the existing list_node to add the node after
  * @n: the new list_node to add to the list.
  *
@@ -231,7 +231,7 @@ static inline void list_add_(struct list_head *h,
 
 /**
  * list_add_before - add an entry before an existing node in a linked list
- * @h: the list_head to add the node to (for debugging)
+ * @h: the list_head to add the node to (for debug)
  * @p: the existing list_node to add the node before
  * @n: the new list_node to add to the list.
  *

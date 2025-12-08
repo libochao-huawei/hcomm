@@ -255,7 +255,7 @@ def build_sign(item_size_set, image_dir, sign_tool_path, sign_tmp_path, davinci_
     for file in sign_dict["cms"]:
         # 如果没配置sign_alg属性，默认使用RSA_PSS算法签名
         file_with_path = os.path.join(image_dir, file)
-        # windows平台调试跟linux平台路径分隔符不一样，实际使用中需要替换 TODO
+        # windows平台调测跟linux平台路径分隔符不一样，实际使用中需要替换 TODO
         relative_path = file_with_path.replace(("{}" + PATH_SEPARATOR).format(product_delivery_path), "")
         # 临时目录下同层架子目录，包含文件名的完整路径
         file_sign_des = os.path.realpath(os.path.join(sign_tmp_path, relative_path))

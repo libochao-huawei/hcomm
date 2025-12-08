@@ -855,7 +855,7 @@ int hal_kernel_get_hardware_info(unsigned int phy_id, devdrv_hardware_info_t *ha
 * @ingroup driver
 * @brief   This interface is used to get physical base address, only called in device side.
 * @param [in]  phy_id : Physical device id
-* @param [in]  offset : address
+* @param [in]  offset : address.
 * @return   address containing the offset of the physical base address, ULLONG_MAX if fail
 */
 unsigned long long hal_kernel_get_dev_phy_base_addr(unsigned int phy_id, unsigned long long offset);
@@ -1116,9 +1116,9 @@ enum txatu_user_module_type {
 * @brief   This interface is used to add TXATU in device
 * @param [in]  udevid: unified device id in device
 * @param [in]  type: txatu_user_module_type
-* @param [in]  host_phy_addr: host physical address
+* @param [in]  host_phy_addr: host physical address.
 * @param [in]  host_addr_size: host physical address size
-* @param [out]  device_phy_addr: device physical address
+* @param [out]  device_phy_addr: device physical address.
 * @return   0 Success, others for fail
 * @note Support: Ascend910_95/Ascend910_96
 */

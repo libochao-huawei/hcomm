@@ -199,7 +199,7 @@ typedef struct rt_event_stub_s
 {
     sal_sem_t sem;
     sal_mutex_t mutex;
-    void* event_handler;  // 用于调试定位时识别不同的event
+    void* event_handler;  // 用于调测定位时识别不同的event
     rt_event_share_info_stub_t *event_share_info;
 } rt_event_stub_t;
 

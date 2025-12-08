@@ -586,7 +586,7 @@ RTS_API rtError_t rtSetExceptCallback(rtErrorCallback callback);
  * @ingroup profiling_base
  * @brief get binary device base address, called by profiling
  * @param [in]  handle  program handle
- * @param [out] deviceBase   device base address
+ * @param [out] deviceBase   device base address.
  * @return RT_ERROR_NONE for ok
  * @return ACL_ERROR_RT_PARAM_INVALID for error input
  */
