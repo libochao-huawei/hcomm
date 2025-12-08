@@ -409,7 +409,7 @@ TEST_F(STnslbdpTest, ut_checklevel1_910b)
     EXPECT_EQ(typel1, hccl::NSLB_ALGO_TYPE_AHC);
 }
 
-TEST_F(STnslbdpTest, ut_checklevel2_910c)
+TEST_F(STnslbdpTest, ut_checklevel2_910_93)
 {
     u8 typel2 = 0;
     AlgTypeLevel2 algValue = AlgTypeLevel2::ALG_LEVEL2_WHOLE_RING;
@@ -796,7 +796,7 @@ TEST_F(STnslbdpTest, ut_Initconfig_nslb)
 }
 
 #if 0 //执行失败
-TEST_F(STnslbdpTest, ut_collect_ahc_table2_910C)
+TEST_F(STnslbdpTest, ut_collect_ahc_table2_910_93)
 {
     MOCKER(H2DTlvRequest)
     .stubs()
@@ -849,7 +849,7 @@ TEST_F(STnslbdpTest, ut_collect_ahc_table2_910C)
 }
 
 
-TEST_F(STnslbdpTest, ut_collect_ahc_table3_910C)
+TEST_F(STnslbdpTest, ut_collect_ahc_table3_910_93)
 {
     MOCKER(H2DTlvRequest)
     .stubs()
