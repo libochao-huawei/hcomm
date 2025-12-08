@@ -11,16 +11,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fstream>
-#include "gtest/gtest.h"
+#include <gtest/gtest.h>
+
 #include "comm.h"
-#include "env_config.h"
+#include "../../stub/llt_hccl_stub_pub.h"
 
 GTEST_API_ int main(int argc, char **argv) {
-    printf("Running main() from gtest_main.cc--------------------------------------------\n");
+    printf("Running main() from gtest_main.cc\n");
+    setTargetPort(16452, 31114);
     testing::InitGoogleTest(&argc, argv);
-    sleep(100);
-    printf("Running main() from gtest_main.cc+++++++++++++++++++++++++++++++++++++++++++\n");
     setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
-    // InitEnvParam();
     return RUN_ALL_TESTS();
 }

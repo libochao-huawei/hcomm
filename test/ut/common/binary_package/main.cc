@@ -9,18 +9,38 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <fstream>
+#include <errno.h>
 #include "gtest/gtest.h"
-#include "comm.h"
-#include "env_config.h"
 
-GTEST_API_ int main(int argc, char **argv) {
-    printf("Running main() from gtest_main.cc--------------------------------------------\n");
-    testing::InitGoogleTest(&argc, argv);
-    sleep(100);
-    printf("Running main() from gtest_main.cc+++++++++++++++++++++++++++++++++++++++++++\n");
-    setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
-    // InitEnvParam();
-    return RUN_ALL_TESTS();
+GTEST_API_ int main(int argc, char **argv)
+{
+  printf("Running main() from gtest_main.cc\n");
+  testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}
+
+using namespace std;
+class UtPrepareEnv : public testing::Test
+{
+protected:
+    static void SetUpTestCase()
+    {
+    }
+    static void TearDownTestCase()
+    {
+    }
+    // Some expensive resource shared by all tests.
+    virtual void SetUp()
+    {
+    }
+    virtual void TearDown()
+    {
+    }
+};
+
+TEST_F(UtPrepareEnv, hccl_insight_package)
+{
+    printf("hccl_insight binary package start\n");
+    printf("hccl_insight binary package finished\n");
+    return;
 }
