@@ -2880,35 +2880,35 @@ DLLEXPORT void *drvHdcMallocEx(enum drvHdcMemType mem_type, void *addr, unsigned
 * @brief Release memory
 * @attention null
 * @param [in]  mem_type  : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcFreeEx(enum drvHdcMemType mem_type, void *buf);
 /**
 * @ingroup driver
-* @brief Map DMA address
+* @brief Map DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @param [in]  devid : Device id
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcDmaMap(enum drvHdcMemType mem_type, void *buf, int devid);
 /**
 * @ingroup driver
-* @brief UnMap DMA address
+* @brief UnMap DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcDmaUnMap(enum drvHdcMemType mem_type, void *buf);
 /**
 * @ingroup driver
-* @brief ReMap DMA address
+* @brief ReMap DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @param [in]  devid : Device id
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
@@ -3026,7 +3026,7 @@ DLLEXPORT hdcError_t halHdcRecvEx(HDC_SESSION session, struct drvHdcMsg *pMsg, i
 /**
 * @ingroup driver
 * @brief Session copy-free fast sending interface, applications need to apply for memory through hdc in advance
-* @attention Need to apply for memory through hdc in advance. And after the send function returns, the src address
+* @attention Need to apply for memory through hdc in advance. And after the send function returns, the src address.
 * cannot be reused directly. It must wait for the peer to receive it.
 * @param [in]  session    : Specify in which session
 * @param [in]  msg : Send and receive information

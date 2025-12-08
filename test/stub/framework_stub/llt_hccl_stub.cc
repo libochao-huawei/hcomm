@@ -1985,7 +1985,7 @@ drvError_t drvRegisterExitHandler(void (*handler)(int signum))
     struct sigaction sa_exit;   /*包含信号处理动作的结构体*/\
     sa_exit.sa_handler = handler; /*指定信号处理函数*/
     sigemptyset(&sa_exit.sa_mask);
-    sigaction(SIGINT, &sa_exit, NULL);   /* 注册SIGINT信号, 对应 Ctrl+C */
+    sigaction(SIGINT, &sa_exit, NULL);   /* 注册SIGINT信号 */
     sigaction(SIGTERM, &sa_exit, NULL);   /* 注册SIGINT信号, 对应 普通kill */
     return DRV_ERROR_NONE;
 }

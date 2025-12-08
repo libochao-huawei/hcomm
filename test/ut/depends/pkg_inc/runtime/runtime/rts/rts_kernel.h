@@ -555,7 +555,7 @@ RTS_API rtError_t rtsLaunchHostFunc(rtStream_t stm, const rtCallback_t callBackF
 
 /**
  * @ingroup rt_kernel
- * @brief Get Bin dev address
+ * @brief Get Bin dev address.
  * @param [in] binHandle    bin handle
  * @param [out] bin         bin addr
  * @param [out] binSize     bin size

@@ -1674,7 +1674,7 @@ ACL_FUNC_VISIBILITY aclError aclrtMemcpy(void *dst,
  * @par Function
  *  The memory to be initialized is on the Host or device side,
  *  and the system determines whether
- *  it is host or device according to the address
+ *  it is host or device according to the address.
  *
  * @param devPtr [IN]    Starting address of memory
  * @param maxCount [IN]  Max length of destination address memory
@@ -1807,7 +1807,7 @@ ACL_FUNC_VISIBILITY aclError aclrtMemcpy2dAsync(void *dst,
 * @par Function
  *  The memory to be initialized is on the Host or device side,
  *  and the system determines whether
- *  it is host or device according to the address
+ *  it is host or device according to the address.
  *
 * @param devPtr [IN]      destination address pointer
 * @param maxCount [IN]    Max length of destination address memory
@@ -2693,9 +2693,9 @@ ACL_FUNC_VISIBILITY aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtB
                                                      aclrtBinHandle *binHandle);
 /**
  * @ingroup AscendCL
- * @brief Get Bin dev address
+ * @brief Get Bin dev address.
  * @param [in] binHandle  bin handle
- * @param [out] binAddr  bin address
+ * @param [out] binAddr  bin address.
  * @param [out] binSize  bin size
  * @retval ACL_SUCCESS the function is successfully executed.
  * @retval OtherValues Failure
@@ -3387,7 +3387,7 @@ ACL_FUNC_VISIBILITY aclError aclrtSetBufUserData(aclrtMbuf buf, const void *data
 
 /**
  * @ingroup AscendCL
- * @brief get data buf address
+ * @brief get data buf address.
  * @param buf [in]       aclrtMbuf
  * @param dataPtr [out]  pointer to the data ptr which is acquired from aclrtMbuf
  * @param size [out]     pointer to the size
@@ -4158,7 +4158,7 @@ ACL_FUNC_VISIBILITY aclError aclrtLaunchHostFunc(aclrtStream stream, aclrtHostFu
 
 /**
  * @ingroup AscendCL
- * @brief get kernel sync address
+ * @brief get kernel sync address.
  * @param [out] addr  kernel sync addr
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
@@ -4265,7 +4265,7 @@ ACL_FUNC_VISIBILITY aclError aclrtCmoGetDescSize(size_t *size);
 /**
  * @ingroup AscendCL
  * @brief set cmo desc
- * @param cmoDesc [IN]      cmo desc address
+ * @param cmoDesc [IN]      cmo desc address.
  * @param src [IN]      source address ptr
  * @param size [IN]       src mem Length
  * @retval ACL_SUCCESS The function is successfully executed.

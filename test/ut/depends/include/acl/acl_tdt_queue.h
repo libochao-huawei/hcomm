@@ -267,7 +267,7 @@ ACL_FUNC_VISIBILITY aclError acltdtFreeBuf(acltdtBuf buf);
 
 /**
  * @ingroup AscendCL
- * @brief get data buf address
+ * @brief get data buf address.
  *
  * @param buf [IN] acltdtBuf
  * @param dataPtr [OUT] pointer to the data ptr which is acquired from acltdtBuf
