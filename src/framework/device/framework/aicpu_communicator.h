@@ -399,10 +399,10 @@ private:
 
     // 算子展开的动态缓存
     HcclResult InitOpUnfoldCache();
-    HcclResult LookupOpUnfoldCache(const OpParam &param, bool& needExecute, bool& isCacheMiss);
+    HcclResult LookupOpUnfoldCache(const OpParam &param, const AlgResourceResponse &algResource, bool& needExecute, bool& isCacheMiss);
     HcclResult ClearOpUnfoldCacheEntry(const OpParam &param);
     HcclResult GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key);
-    HcclResult PrepareUserMemRanges(const OpParam &param, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
+    HcclResult PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
     HcclResult IsInplace(const OpParam &param, bool& isInplace);
     HcclResult ParseOpParamForCache(const OpParam &param, HcclDataType& sendType, HcclDataType& recvType, uint64_t& inputSize, uint64_t& outputSize);
 
