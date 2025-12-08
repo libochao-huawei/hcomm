@@ -48,7 +48,6 @@ constexpr u32 MODULE_NUM_FOUR = 4;
 namespace hccl
 {
     static std::mutex g_hcomInitMutex;
-    bool g_isRdmaError = false;
     std::mutex HcclCommunicator::linkResMapMutex_;
     std::unordered_map<Transport *, LinkInfo> HcclCommunicator::linkResMap_;
     constexpr u32 MEMORY_CAPACITY = 256 * 1024;
@@ -2251,8 +2250,7 @@ namespace hccl
                     // isPortSatisfy表示当前对端使用的主备网口是否和changeLinkInfo一致
                     bool isPortSatisfy = (remoteRankPortMap.find(transportRemoteRank) != remoteRankPortMap.end() &&
                         remoteRankPortMap.find(transportRemoteRank)->second == isUseDefault);
-                    bool isChangeLink = (isChangeLinkMap.find(transportRemoteRank) != isChangeLinkMap.end() &&
-                                        isChangeLinkMap.find(transportRemoteRank)->second);
+                    bool isChangeLink = (isChangeLinkMap.find(transportRemoteRank) != isChangeLinkMap.end());
                     HCCL_INFO("[SetTransportStatus]remoteRank[%u], isUseDefault[%d], isValid[%d], "
                                 "isPortSatisfy[%d], isChangeLink[%d]",
                                 transportRemoteRank, isUseDefault, isValid, isPortSatisfy, isChangeLink);
