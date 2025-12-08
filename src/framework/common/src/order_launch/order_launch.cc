@@ -87,44 +87,27 @@ HcclResult OrderLaunch::AclgraphLaunchInOrder(std::string &group, const Stream& 
         HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
         return HCCL_E_PARA;
     }
-    // 释放map中非capture状态的流，如果找到符合条件的流（非 capture 状态且 modelId 匹配），就直接复用该流，不再继续遍历和申请新流
-    Stream* hostOrderStream = nullptr;
-    std::vector<decltype(aclgraphStreamMap_)::iterator> toErase;
 
+    Stream* hostOrderStream = nullptr;
     for (auto it = aclgraphStreamMap_.begin(); it != aclgraphStreamMap_.end(); ++it) {
         if (it->first == modelId) {
             hostOrderStream = &(it->second);
             CHK_PTR_NULL(hostOrderStream);
-            HCCL_RUN_INFO("[%s] reuse existing modelId[%llu] streamId[%u]",
+            HCCL_INFO("[%s] reuse existing modelId[%llu] streamId[%u]",
                         __func__, modelId, hostOrderStream->id());
-            continue;
+            break;
         }
-
-        rtModel_t tempRtModel = nullptr;
-        bool isCapture = false;
-        HcclResult retCapture = GetStreamCaptureInfo(it->second.ptr(), tempRtModel, isCapture);
-        if (retCapture == HCCL_SUCCESS && !isCapture) {
-            HCCL_RUN_INFO("[%s] mark modelId[%llu] streamId[%u] for erasure",
-                        __func__, it->first, it->second.id());
-            toErase.push_back(it);
-        }
-    }
-    // 释放流，如果在上面的循环中直接释放可能会导致hostOrderStream指针悬空
-    for (auto it : toErase) {
-        HCCL_RUN_INFO("[%s] erase modelId[%llu] streamId[%u] from map",
-                    __func__, it->first, it->second.id());
-        aclgraphStreamMap_.erase(it);
     }
 
     if (hostOrderStream == nullptr) {
         aclgraphStreamMap_[modelId] = Stream(StreamType::STREAM_TYPE_ONLINE);
         hostOrderStream = &(aclgraphStreamMap_[modelId]);
-        HCCL_RUN_INFO("[%s] modelId[%llu] group[%s] alloc streamId[%u]",
+        HCCL_INFO("[%s] modelId[%llu] group[%s] alloc streamId[%u]",
                     __func__, modelId, group.c_str(), hostOrderStream->id());
         CHK_PTR_NULL(hostOrderStream);
         CHK_RET(AddStreamToModel(hostOrderStream->ptr(), rtModel));
     }
-    HCCL_DEBUG("[%s] group[%s], modelId[%llu], streamId[%u]", __func__, group.c_str(), modelId, hostOrderStream->id());
+    HCCL_INFO("[%s] group[%s], modelId[%llu], streamId[%u]", __func__, group.c_str(), modelId, hostOrderStream->id());
     CHK_RET(LaunchInOrder(group, kernelStream, *hostOrderStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
@@ -141,11 +124,11 @@ HcclResult OrderLaunch::OpbaseLaunchInOrder(std::string &group, const Stream& ke
     Stream hostOrderStream;
     if (opbaseStream_ == nullptr) {
         EXECEPTION_CATCH(opbaseStream_ = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE), return HCCL_E_PTR);
-        HCCL_RUN_INFO("[%s] group[%s] alloc streamId[%u]", __func__, group.c_str(), opbaseStream_->id());
+        HCCL_INFO("[%s] group[%s] alloc streamId[%u]", __func__, group.c_str(), opbaseStream_->id());
     }
     hostOrderStream = *opbaseStream_;
     CHK_PTR_NULL(hostOrderStream.ptr());
-    HCCL_DEBUG("[%s] group[%s], streamId[%u]", __func__, group.c_str(), hostOrderStream.id());
+    HCCL_INFO("[%s] group[%s], streamId[%u]", __func__, group.c_str(), hostOrderStream.id());
     CHK_RET(LaunchInOrder(group, kernelStream, hostOrderStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
@@ -165,7 +148,7 @@ HcclResult OrderLaunch::HcomLaunchInOrder(std::string &group, const Stream& kern
     }
     hostOrderStream = hcomStreamMap_[graphId];
     CHK_PTR_NULL(hostOrderStream.ptr());
-    HCCL_DEBUG("[%s] group[%s], graphId[%u], streamId[%u]", __func__, group.c_str(), graphId, hostOrderStream.id());
+    HCCL_INFO("[%s] group[%s], graphId[%u], streamId[%u]", __func__, group.c_str(), graphId, hostOrderStream.id());
     CHK_RET(LaunchInOrder(group, kernelStream, hostOrderStream, notify0, notify1, timeOut));
     return HCCL_SUCCESS;
 }
