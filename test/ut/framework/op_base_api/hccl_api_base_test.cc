@@ -10,6 +10,24 @@
 
 #include "hccl_api_base_test.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+typedef enum tagRtClearStep {
+    RT_STREAM_STOP = 0,
+    RT_STREAM_CLEAR,
+} rtClearStep_t;
+
+rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
+{
+    return 0;
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 void Ut_Device_Set(int devId) {
     HcclResult ret = hrtSetDevice(devId);
     EXPECT_EQ(ret, HCCL_SUCCESS);

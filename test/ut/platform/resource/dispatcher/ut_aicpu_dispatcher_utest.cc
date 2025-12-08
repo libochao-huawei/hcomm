@@ -37,6 +37,24 @@ using namespace hccl;
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen);
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum);
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+typedef enum tagRtClearStep {
+    RT_STREAM_STOP = 0,
+    RT_STREAM_CLEAR,
+} rtClearStep_t;
+
+rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
+{
+    return 0;
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 class DispatcherAiCpu_UT : public testing::Test {
 protected:
     static void SetUpTestCase()
