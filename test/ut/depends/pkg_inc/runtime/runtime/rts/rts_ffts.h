@@ -15,9 +15,9 @@
 extern "C" {
 #endif
 /**
- * @brief get kernel inter core sync address
+ * @brief get kernel inter core sync address.
  *
- * @param addr inter core sync address
+ * @param addr inter core sync address.
  * @param len buffer len
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input

@@ -296,7 +296,7 @@ ACL_FUNC_VISIBILITY aclError aclDestroyDataBuffer(const aclDataBuffer *dataBuffe
  *
  * @param dataBuffer [OUT]    pointer to aclDataBuffer
  * @li The old data need to be released by the user, otherwise it may occur memory leak leakage
- *  call aclGetDataBufferAddr interface to get old data address
+ *  call aclGetDataBufferAddr interface to get old data address.
  *  call aclrtFree interface to release memory
  *
  * @param data [IN]    pointer to new data
@@ -319,7 +319,7 @@ ACL_FUNC_VISIBILITY aclError aclUpdateDataBuffer(aclDataBuffer *dataBuffer, void
  *
  * @param dataBuffer [IN]    pointer to the data of aclDataBuffer
  *
- * @retval data address
+ * @retval data address.
  */
 ACL_FUNC_VISIBILITY void *aclGetDataBufferAddr(const aclDataBuffer *dataBuffer);
 

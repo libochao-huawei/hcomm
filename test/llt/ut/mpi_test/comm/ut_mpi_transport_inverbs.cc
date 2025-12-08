@@ -2216,7 +2216,7 @@ TEST_F(MPI_Link_Ibv_Test, ut_mpi_link_exp_multi_v81)
     machine_para.remoteDeviceId = 0;
     machine_para.inputMem = inputMem;
     machine_para.outputMem = outputMem;
-    machine_para.deviceType = DevType::DEV_TYPE_910B;//1981
+    machine_para.deviceType = DevType::DEV_TYPE_910B;
     machine_para.tag = "my tag";
     machine_para.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
 
@@ -2424,7 +2424,7 @@ TEST_F(MPI_Link_Ibv_Test, ut_mpi_link_exp_multi_msg_v81)
     machine_para.remoteDeviceId = 0;
     machine_para.inputMem = inputMem;
     machine_para.outputMem = outputMem;
-    machine_para.deviceType = DevType::DEV_TYPE_910B;//1981
+    machine_para.deviceType = DevType::DEV_TYPE_910B;
     machine_para.tag = "my tag";
     machine_para.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
 

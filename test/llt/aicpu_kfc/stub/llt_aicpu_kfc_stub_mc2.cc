@@ -140,7 +140,7 @@ drvError_t StubhalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t info
 {
     if (g_stubDevType == DevType::DEV_TYPE_910B) { // 910B
         *value = DEVDRV_PLATFORM_CLOUD_V2_B1;
-    } else if (g_stubDevType == DevType::DEV_TYPE_310P1 || g_stubDevType == DevType::DEV_TYPE_310P3) { // 1951
+    } else if (g_stubDevType == DevType::DEV_TYPE_310P1 || g_stubDevType == DevType::DEV_TYPE_310P3) { 
         *value = DEVDRV_PLATFORM_ASCEND310P;
     } else if (g_stubDevType == DevType::DEV_TYPE_910_93) {
         *value = DEVDRV_PLATFORM_CLOUD_V3;

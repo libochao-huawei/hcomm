@@ -145,7 +145,7 @@ enum HccnCfgKey {
 
 /**
  * @ingroup libinit
- * ip address
+ * ip address.
  */
 union HccpIpAddr {
     struct in_addr addr;

@@ -852,7 +852,7 @@ int hal_kernel_get_hardware_info(unsigned int phy_id, devdrv_hardware_info_t *ha
 * @ingroup driver
 * @brief   This interface is used to get physical base address, only called in device side.
 * @param [in]  phy_id : Physical device id
-* @param [in]  offset : address
+* @param [in]  offset : address.
 * @return   address containing the offset of the physical base address, ULLONG_MAX if fail
 */
 unsigned long long hal_kernel_get_dev_phy_base_addr(unsigned int phy_id, unsigned long long offset);
