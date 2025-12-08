@@ -76,6 +76,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
             groupName, blockDim), tag.c_str());
     }
+    hcclComm->SetAivCoreLimit(0);
     return HCCL_SUCCESS;
 }
 

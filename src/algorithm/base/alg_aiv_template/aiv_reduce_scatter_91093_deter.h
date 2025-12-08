@@ -146,10 +146,10 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
     if (clearEnable_ == 1) {
         workLocal = syncQue.AllocTensor<int32_t>();
         Barrier(buffersOut, 1);
-        SyncAll(syncGlobal, workLocal);
+        SyncAll(syncGlobal, workLocal, blockdim_);
         ClearGM();
         Barrier(buffersOut, 2);
-        SyncAll(syncGlobalSecond, workLocal);
+        SyncAll(syncGlobalSecond, workLocal, blockdim_);
 	    syncQue.FreeTensor(workLocal);
         PipeBarrier<PIPE_ALL>();
     }
@@ -214,7 +214,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
 	
         // 卡内每个核同步一次
         PipeBarrier<PIPE_ALL>();
-        SyncAll(syncGlobal, workLocal);
+        SyncAll(syncGlobal, workLocal, blockdim_);
         PipeBarrier<PIPE_ALL>();
         
         // step3.2 归约为numReduce份数据的reduce
@@ -261,7 +261,7 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
         // 尾同步 
         if(bufferLoopNum > 1){
             PipeBarrier<PIPE_ALL>();
-            SyncAll(syncGlobalSecond, workLocal);
+            SyncAll(syncGlobalSecond, workLocal, blockdim_);
             PipeBarrier<PIPE_ALL>();
         }
 
