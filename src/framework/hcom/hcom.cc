@@ -1784,22 +1784,26 @@ HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataTyp
 #endif
 
 HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
+    HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, count, dataType, op, opType, ifAiv, algName, false));
 #endif
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
+    std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
         hccl::hcclComm* hcclHcomComm = reinterpret_cast<hccl::hcclComm*>(comm);
-        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, algName));
+        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
         std::shared_ptr<hccl::hcclComm> hcclComm;
         CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
-        CHK_RET(hcclComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, algName));
+        CHK_RET(hcclComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     }
+    int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomSelectAlg][algName]memcpy failed. ret[%d],"
+        "params:destMaxSize[%zu],count[%zu]", sret, ALG_NAME_MAX_LEN, (tempAlgName.length() + 1)), HCCL_E_PARA);
 
     SetWorkflowMode(lastWorkflowMode);
     return HCCL_SUCCESS;
