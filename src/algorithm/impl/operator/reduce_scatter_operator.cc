@@ -447,7 +447,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB); // 涉及ROCE平面
 
-    isHccsPlusSio = false; //待1520出版本
+    isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
     } else if (multiModuleDiffDeviceNumMode_) {

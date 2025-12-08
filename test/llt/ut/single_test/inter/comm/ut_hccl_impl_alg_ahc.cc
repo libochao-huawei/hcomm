@@ -1427,7 +1427,7 @@ TEST_F(HcclImplAlgTestAHCAllreduce, ut_AICPU_AHC_Default_91093)
 }
 
 // 910B 不同拓扑 AHC 执行流程
-TEST_F(HcclImplAlgTestAHCAllreduce, ut_AHC_Mesh_910C){
+TEST_F(HcclImplAlgTestAHCAllreduce, ut_AHC_Mesh_910_93){
     HcclResult ret = HCCL_SUCCESS;
     std::string tag = "test";
     DeviceMem inputMem = DeviceMem::alloc(4096);
