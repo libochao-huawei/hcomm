@@ -1815,7 +1815,7 @@ DLLEXPORT DV_OFF_ONLINE DVresult drvMemSmmuQuery(DVdevice device, UINT32 *SSID);
  * of the current process L2buff and the corresponding PTE
  * @attention 1. It can only be called once during initialization, and a page will be created internally, and multiple
  * calls are prohibited; it is released when the process exits.
- * @attention: Ascend910_95 and Ascend910C are not supported
+ * @attention: Ascend910_95 and 910_93 are not supported
  * @param [in] device:  unsigned shaping, device id, this value is not used in offline scenarios
  * @param [out] l2buff:  double pointer, returns a pointer to the starting virtual address of the L2buff
  * @param [out] pte: reserved param
@@ -1829,7 +1829,7 @@ DLLEXPORT DV_OFF_ONLINE DVresult drvMemAllocL2buffAddr(DVdevice device, void **l
 /**
  * @ingroup driver
  * @brief Release L2buff address space, should be used in conjunction with drvMemAllocL2buffAddr
- * @attention: Ascend910_95 and Ascend910C are not supported
+ * @attention: Ascend910_95 and 910_93 are not supported
  * @param [in] device:  unsigned shaping, device id, this value is not used in offline scenarios
  * @param [in] l2buff:  pointer to the starting virtual address space of L2buff
  * @return DRV_ERROR_INVALID_HANDLE : Parameter error, pointer is empty
