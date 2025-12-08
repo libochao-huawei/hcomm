@@ -18,6 +18,20 @@
 #include "opretry_server.h"
 #include "opretry_base.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+typedef enum tagRtClearStep {
+    RT_STREAM_STOP = 0,
+    RT_STREAM_CLEAR,
+} rtClearStep_t;
+
+extern rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step);
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 namespace {
 HcclResult StreamClear(HcclRtStream stream, HcclRtStreamClearStep step)
 {
@@ -25,11 +39,11 @@ HcclResult StreamClear(HcclRtStream stream, HcclRtStreamClearStep step)
 
     aclError  ret;
     if (step == HcclRtStreamClearStep::HCCL_STREAM_STOP) {
-        ret = aclrtStreamStop(stream);
-        HCCL_DEBUG("[StreamClear]Call aclrtStreamStop, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
+        ret = rtStreamClear(stream, rtClearStep_t::RT_STREAM_STOP);
+        HCCL_INFO("[StreamClear]Call rtStreamClear, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
     } else {
-        ret = aclrtStreamStop(stream);
-        HCCL_DEBUG("[StreamClear]Call aclrtStreamStop, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
+        ret = rtStreamClear(stream, rtClearStep_t::RT_STREAM_CLEAR);
+        HCCL_INFO("[StreamClear]Call rtStreamClear, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
     }
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[StreamClear]errNo[0x%016llx]Failed to clear stream. "
         "ret[%d], param: stream[%p], step[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, stream, step), HCCL_E_RUNTIME);
