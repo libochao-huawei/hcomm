@@ -1196,7 +1196,7 @@ struct res_addr_info {
     processType_t target_proc_type;
     enum res_addr_type res_type;
     unsigned int res_id;             /* corresponding resource id if res_type is NOTIFY or CNT_NOTIFY */
-    unsigned int flag;               /* default is 0, ascend910B and ascend910C with NOTIFY is TSDRV_FLAG_SHR_ID_SHADOW. */
+    unsigned int flag;               /* default is 0, ascend910B and 910_93 with NOTIFY is TSDRV_FLAG_SHR_ID_SHADOW. */
     unsigned int rudevid;            /* remote unify devid, rudevid is valid when the flag is TSDRV_FLAG_SHR_ID_SHADOW */
     unsigned int rsv[RES_ADDR_INFO_RSV_LEN];  /* default is 0 */
 };
