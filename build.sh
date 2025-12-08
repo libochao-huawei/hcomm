@@ -28,7 +28,7 @@ CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
 CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/add_header_sign.py"
 ENABLE_SIGN="false"
-VERSION_INFO="8.5.0.0.B010"
+VERSION_INFO="8.5.0"
 
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
