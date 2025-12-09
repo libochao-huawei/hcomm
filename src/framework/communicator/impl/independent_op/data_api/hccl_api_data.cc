@@ -75,16 +75,16 @@ HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandl
     return HcclLocalNotifyRecord(stream, notify);
 }
 
-HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
+HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout)
 {
-    HCCL_DEBUG("[HcommInterThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeOut[%u].", thread, notifyIdx, timeOut);
+    HCCL_DEBUG("[HcommInterThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeout[%u].", thread, notifyIdx, timeout);
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
     LocalNotify *notify = GetNotify(thread, notifyIdx);
     CHK_PTR_NULL(notify);
 
-    return HcclLocalNotifyWait(stream, notify, timeOut);
+    return HcclLocalNotifyWait(stream, notify, timeout);
 }
 
 

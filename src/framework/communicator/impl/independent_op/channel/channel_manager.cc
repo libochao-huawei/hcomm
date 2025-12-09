@@ -384,8 +384,8 @@ HcclResult ChannelManager::BuildOpRemoteChannelRoceResParam(const LINK &link, Hc
     if ((signalInfos.size() != notifyAddrKey.size()) || (signalInfos.size() < RDMA_NOTIFY_MIN_NUM) ||
         (signalInfos.size() > RDMA_NOTIFY_MAX_NUM) || (notifyAddrKey.size() < RDMA_NOTIFY_MIN_NUM) ||
         (notifyAddrKey.size() > RDMA_NOTIFY_MAX_NUM) ||
-        ((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) ||
-        ((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection)) {
+        (((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) != 0) ||
+        (((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection)) != 0) {
         return HCCL_E_INTERNAL;
     }
     u64 notifyNum = (notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) / linkRoce.qpsPerConnection - static_cast<u32>(linkRoce.qpsPerConnection > 1);
