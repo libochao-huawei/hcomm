@@ -217,6 +217,7 @@ target_compile_options(hccd PRIVATE
     -Werror
     -Wall
     -fno-common
+    -fstack-protector-strong
     -fno-strict-aliasing
     -pipe
     -O3
@@ -227,6 +228,13 @@ target_compile_options(hccd PRIVATE
 #hccd 编译宏
 target_compile_definitions(hccd PRIVATE
     HCCD
+)
+
+target_link_options(hccd PRIVATE
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
 )
 
 if(BUILD_OPEN_PROJECT)
