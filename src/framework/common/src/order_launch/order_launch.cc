@@ -173,6 +173,7 @@ HcclResult OrderLaunch::HcomLaunchInOrder(std::string &group, const Stream& kern
 HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelStream, const Stream &hostOrderStream,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut) 
 {
+#ifndef CCL_KERNEL_AICPU
     aclError ret = ACL_SUCCESS;
     ret = aclrtWaitAndResetNotify(notify0->ptr(), kernelStream.ptr(), timeOut);
     CHK_PRT_RET(ret != ACL_SUCCESS,
@@ -193,6 +194,7 @@ HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelSt
         __func__, ret, notify1->notifyId_, hostOrderStream.id(), timeOut), HCCL_E_RUNTIME);
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
         __func__, notify1->notifyId_, hostOrderStream.id(), timeOut);
+#endif
     return HCCL_SUCCESS;
 }
 }
