@@ -563,7 +563,7 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
     ret = FileReadCfg(HCCN_CFGFILE_PATH, (int)phyId, keyName[key], value, bufLen);
 #endif
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_READ_FILE_ERR,
-        hccp_run_warn("get hccn cfg file unsuccessful, ret(%d)", ret), -ENOENT);
+        hccp_run_warn("get hccn cfg file unsuccessful, ret(%d)", ret), 0);
     CHK_PRT_RETURN(ret == FILE_OPT_NO_MEM_ERR,
         hccp_err("value_len > buf_len[%d], ret(%d)", bufLen, ret), -ENOMEM);
     CHK_PRT_RETURN(ret != 0, hccp_run_warn("get hccn cfg [%s] unsuccessful, ret(%d)",
