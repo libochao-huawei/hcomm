@@ -176,9 +176,7 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
 {
     CHK_PTR_NULL(commHandle);
     CHK_PTR_NULL(group);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclGetRawCommHandle(group, commHandle));
-#endif
+
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
@@ -417,14 +415,6 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
     }
     // 入参合法性校验 END
     std::vector<u32> ranks(rankIds, rankIds + rankNum);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(
-        [&]() -> HcclResult {
-            CHK_RET(HcomCreateGroupImplV2(group, rankNum, ranks));
-            CHK_RET(HcomSetGroupTopoInfo(group, rankNum));
-            return HCCL_SUCCESS;
-        }());
-#endif
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm == nullptr &&
         ((g_hcomCallBackGroupIsInit != nullptr) && (!(g_hcomCallBackGroupIsInit(hcomInfo))))) {
@@ -542,9 +532,6 @@ HcclResult HcomDestroyGroup(const char *group)
             LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomDestroyGroupImplV2(group));
-#endif
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
 
     if (hcomInfo.pComm == nullptr &&
@@ -724,9 +711,6 @@ HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomGetWorldRankFromGroupRankV2(group, groupRank, worldRank));
-#endif
     if (groupRank >= hcomInfo.params.totalRanks) {
         HCCL_ERROR("[Get][WorldRank]errNo[0x%016llx] groupRank[%u] is out of range[0-%u]",
             HCOM_ERROR_CODE(HCCL_E_PARA), groupRank, hcomInfo.params.totalRanks);
@@ -763,9 +747,6 @@ HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomGetGroupRankFromWorldRankV2(worldRank, group, groupRank));
-#endif
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     if (worldRank >= hcomInfo.params.totalRanks) {
         HCCL_ERROR("[Get][GroupRank]errNo[0x%016llx] world[%u] rank is invalid", HCOM_ERROR_CODE(HCCL_E_PARA),
@@ -899,9 +880,6 @@ HcclResult HcomGetRankSize(const char *group, u32 *rankSize)
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomGetRankSizeV2(group, rankSize));
-#endif
     std::shared_ptr<hccl::hcclComm> hcclComm;
     if (group != nullptr && HcclGetCommHandle(group, hcclComm) == HCCL_SUCCESS) {
         CHK_RET(hcclComm->GetRankSize(*rankSize));
@@ -954,9 +932,6 @@ HcclResult HcomDestroyOneDevice(HcomInfo &hcomInfo)
 
 HcclResult HcomDestroy(void)
 {
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomDestroyV2());
-#endif
     std::unique_lock<std::mutex> lock(g_destroyDeviceLock);
     for (u32 i = 0; i <= MAX_MODULE_DEVICE_NUM; i++) {
         HcomInfo &hcomInfo = HcomGetCtxHomInfoById(i);
@@ -1371,16 +1346,6 @@ HcclResult HcomInitByFile(const char *rankTablePath, const char *identify)
 
     CHK_PTR_NULL(rankTablePath);
     CHK_PTR_NULL(identify);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(
-        [&]() -> HcclResult {
-            CHK_RET(HcomInitByFileV2(rankTablePath, identify));
-            u32 rankNum = 0;
-            CHK_RET(HcomGetRankSize(HCCL_WORLD_GROUP, &rankNum));
-            CHK_RET(HcomSetGroupTopoInfo(HCCL_WORLD_GROUP, rankNum));
-            return HCCL_SUCCESS;
-        }());
-#endif
 
     HcclUs startut = TIME_NOW();
     HcclResult ret = HCCL_SUCCESS;
@@ -1457,7 +1422,7 @@ HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetInCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
- 
+
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->GetInCCLbuffer(*buffer, *size));

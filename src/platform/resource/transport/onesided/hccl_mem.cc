@@ -12,7 +12,6 @@
 #include "hccl_network.h"
 #include "remote_ipc_rma_buffer.h"
 #include "remote_rdma_rma_buffer.h"
-#include "hccl_mem_v2.h"
 
 using namespace hccl;
 
@@ -201,11 +200,7 @@ HcclResult HcclMemReg(HcclNetDev netDev, const HcclMem *mem, HcclBuf *buf)
     CHK_PRT_RET((mem->type != HCCL_MEM_TYPE_DEVICE) && (mem->type != HCCL_MEM_TYPE_HOST),
         HCCL_ERROR("[HcclMemReg]memoryType[%d] must be device or host", mem->type), HCCL_E_PARA);
     CHK_PRT_RET(mem->size == 0, HCCL_ERROR("[HcclMemReg]memory size[%lld] is invalid", mem->size), HCCL_E_PARA);
-#ifndef OPEN_BUILD_PROJECT
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemRegV2(netDev, mem, buf);}
-#endif
+
     NetDevContext *netDevCtx = static_cast<NetDevContext *>(netDev);
     if (netDevCtx->GetNicType() == NicType::VNIC_TYPE) {
         return HcclMemRegIpc(netDevCtx, mem, buf);
@@ -220,11 +215,6 @@ HcclResult HcclMemDereg(const HcclBuf *buf)
     CHK_PTR_NULL(buf->addr);
     CHK_PTR_NULL(buf->handle);
     CHK_PRT_RET(buf->len == 0U, HCCL_ERROR("[HcclMemDereg]buf size[%llu] is invalid", buf->len), HCCL_E_PARA);
-#ifndef OPEN_BUILD_PROJECT
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemDeregV2(buf);}
-#endif
 
     RmaBuffer *rmaBuffer = static_cast<RmaBuffer *>(buf->handle);
     NetDevContext *netDevCtx = static_cast<NetDevContext *>(const_cast<void *>(rmaBuffer->GetNetDevCtx()));
@@ -258,11 +248,6 @@ HcclResult HcclMemExport(HcclBuf *buf, char **outDesc, uint64_t *outDescLen)
     CHK_PTR_NULL(buf->addr);
     CHK_PTR_NULL(buf->handle);
     CHK_PRT_RET(buf->len == 0U, HCCL_ERROR("[HcclMemExport]buf size[%llu] is invalid", buf->len), HCCL_E_PARA);
-#ifndef OPEN_BUILD_PROJECT
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemExportV2(buf, outDesc, outDescLen);}
-#endif
 
     RmaBuffer *rmaBuffer = static_cast<RmaBuffer *>(buf->handle);
     if (rmaBuffer->GetRmaType() == RmaType::IPC_RMA) {
@@ -318,11 +303,7 @@ HcclResult HcclMemImport(const char *description, uint32_t descLen, bool isRemot
     CHK_PRT_RET(descLen > TRANSPORT_EMD_ESC_SIZE,
         HCCL_ERROR("[HcclMemImport]descLen[%u] is larger than limit[%u] ", descLen, TRANSPORT_EMD_ESC_SIZE), HCCL_E_PARA);
     if (isRemote == false) {HCCL_WARNING("[HcclMemImport]isRemote[%d] is invalid", isRemote);}
-#ifndef OPEN_BUILD_PROJECT
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemImportV2(description, descLen, isRemote, outBuf, netDevCtx);}
-#endif
+
     std::string tempDesc = std::string(description, descLen);
     u8 rmaType = static_cast<unsigned char>(description[0]);
     switch (rmaType) {
@@ -371,11 +352,7 @@ HcclResult HcclMemClose(HcclBuf *buf)
     CHK_PTR_NULL(buf);
     CHK_PTR_NULL(buf->handle);
     RmaBuffer *rmaBuffer = static_cast<RmaBuffer *>(buf->handle);
-#ifndef OPEN_BUILD_PROJECT
-    DevType devType;
-    CHK_RET(hrtGetDeviceType(devType));
-    if (devType == DevType::DEV_TYPE_910_95) {return HcclMemCloseV2(buf);}
-#endif
+
      if (rmaBuffer->GetRmaType() == RmaType::IPC_RMA) {
         HCCL_INFO("[HcclMemClose][Ipc] CloseMem");
         RemoteIpcRmaBuffer *tempRemoteBufferPtr = static_cast<RemoteIpcRmaBuffer *>(buf->handle);

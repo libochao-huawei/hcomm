@@ -36,9 +36,6 @@
 #include "error_codes/rt_error_codes.h"
 #include "mmpa_api.h"
 #include "op_base.h"
-#ifndef OPEN_BUILD_PROJECT
-#include "op_base_v2.h"
-#endif
 
 using namespace std;
 using namespace hccl;

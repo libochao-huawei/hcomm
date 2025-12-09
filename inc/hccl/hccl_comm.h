@@ -274,17 +274,6 @@ extern HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr);
  */
 extern HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
 
-#ifndef OPEN_BUILD_PROJECT
-/**
- * @brief Comm accelerator set/get
- * @param comm A pointer identifying the communication resource based on.
- * @param config A struct identifying the Config
- * @param configValue An interger identifying the identify for the config.
- */
-extern HcclResult HcclSetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue configValue);
-extern HcclResult HcclGetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue *configValue);
-#endif
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus

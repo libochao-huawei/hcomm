@@ -40,7 +40,6 @@
 #define roce_run_info(fmt, ...)  DRV_NOTICE(HAL_MODULE_TYPE_NET, fmt, ##__VA_ARGS__)
 #else
 #ifdef LOG_HOST
-#ifdef OPEN_BUILD_PROJECT
 int32_t CheckLogLevel(int32_t moduleId, int32_t logLevel) __attribute((weak));
 int32_t CheckLogLevelForC(int32_t moduleId, int32_t logLevel) __attribute((weak));
 void DlogRecordForC(int32_t moduleId, int32_t level, const char *fmt, ...) __attribute((weak));
@@ -48,13 +47,6 @@ void DlogRecord(int32_t moduleId, int32_t level, const char *fmt, ...) __attribu
 #define HCCPDlogForC(moduleId, level, fmt, ...) do {                                \
     DlogRecord(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);  \
 } while (0)
-#else
-#define HCCPDlogForC(moduleId, level, fmt, ...) do {                                            \
-    if (CheckLogLevel(moduleId, level) == 1) {                                                  \
-        DlogRecord(moduleId, level, "[%s:%d]" fmt, __FILE__, __LINE__, ##__VA_ARGS__);          \
-    }                                                                                           \
-} while (0)
-#endif
 
 /* HCCP module */
 #define hccp_err(fmt, args...)  HCCPDlogForC(HCCP, ERROR_LEVEL, "tid:%d,%s : " fmt, \
