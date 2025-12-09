@@ -49,7 +49,12 @@ static HcclResult HcclMemRegIpc(NetDevContext *netDevCtx, const HcclMem *mem, Hc
     buf->handle = static_cast<void *>(rmaBufferPtr);
     if (resultPair.second) {
         HcclResult ret = localBuffer->Init();
-        CHK_PRT_RET((ret != HCCL_SUCCESS), HCCL_ERROR("[HcclMemRegIpc]localbuffer init failed %d.", ret), ret);
+        if (ret != HCCL_SUCCESS) {
+            // 此分支中一定删除成功
+            localRmaBufferMgr->Del(tempKey);
+            HCCL_ERROR("[HcclMemRegRoce]localbuffer init failed %d.", ret);
+            return ret;
+        }
         HCCL_INFO("[HcclMemRegIpc]Register memory success! Add key {%p, %llu}", mem->addr, size);
         return HCCL_SUCCESS;
     } else {  // 内存再次注册时
@@ -111,7 +116,12 @@ static HcclResult HcclMemRegRoce(NetDevContext *netDevCtx, const HcclMem *mem, H
     buf->handle = static_cast<void *>(rmaBufferPtr);
     if (resultPair.second) {
         HcclResult ret = localBuffer->Init();
-        CHK_PRT_RET((ret != HCCL_SUCCESS), HCCL_ERROR("[HcclMemRegRoce]localbuffer init failed %d.", ret), ret);
+        if (ret != HCCL_SUCCESS) {
+            // 此分支中一定删除成功
+            localRmaBufferMgr->Del(tempKey);
+            HCCL_ERROR("[HcclMemRegRoce]localbuffer init failed %d.", ret);
+            return ret;
+        }
         HCCL_INFO("[HcclMemRegRoce]Register memory success! Add key {%p, %llu}", mem->addr, size);
         return HCCL_SUCCESS;
     } else {  // 内存再次注册时
