@@ -231,10 +231,10 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::RunAlgLev
             param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0), 0,
             reduceAttr, algResResp_->slaveStreams, algResResp_->notifiesMain, algResResp_->notifiesAux,
             topoAttr_.userRank, &opInfo));
+        HCCL_INFO("ReduceScatter smallcount deterministic: using hd stage algo inter-server.");
     } else {
         level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
-        HCCL_INFO("ReduceScatter smallcount deterministic: using nhr algo inter-server.");
         CHK_SMART_PTR_NULL(level0TempAlg);
         CHK_RET(level0TempAlg->Prepare(reduceAttr, false));
         u64 ringSize = reduceScatterMeshInput.size() / level0CommInfo.localRankSize;
@@ -242,6 +242,7 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::RunAlgLev
         CHK_RET(level0TempAlg->Prepare(reduceScatterMeshInput, reduceScatterMeshInput, reduceScatterMeshOutput, ringCount,
                                        param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, std::vector<Slice>(0), serverSliceOffset));
         level0TempAlg->CloseBarrier();
+        HCCL_INFO("ReduceScatter smallcount deterministic: using nhr algo inter-server.");
     }
     CHK_RET(level0TempAlg->RegisterProfiler(
         (level0CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level0CommInfo.localRank,

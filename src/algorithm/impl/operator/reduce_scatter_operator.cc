@@ -275,7 +275,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
                 algName = "ReduceScatterMeshOpbasePipelineExecutor";
             } else if (!isSingleMeshAggregation_ && topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE && 
-                dataSize <= HCCL_SMALL_COUNT_128_KB &&
+                dataSize <= HCCL_SMALL_COUNT_512_KB &&
                 IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(), cclBufferManager_.GetOutCCLbuffer().ptr(),
                     param.DataDes.dataType, param.reduceType)) {
                 algName = "ReduceScatterMeshOpbaseSmallCountDeterministicExecutor";
