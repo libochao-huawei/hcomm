@@ -166,7 +166,7 @@ HcclResult HcclOneSidedConn::GetMemType(const char *description, RmaMemType &mem
         sizeof(void*)        // devAddr
     };
     // 计算偏移量
-    size_t offset = std::accumulate(skip_sizes.begin(), skip_sizes.end(), 0);
+    size_t offset = std::accumulate(skip_sizes.begin(), skip_sizes.end(), 0u);
     // 定位到 memType 的位置
     iss.seekg(offset);
     iss.read(reinterpret_cast<char_t *>(&memType), sizeof(memType));
