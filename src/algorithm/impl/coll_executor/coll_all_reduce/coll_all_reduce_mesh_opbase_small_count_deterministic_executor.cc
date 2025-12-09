@@ -83,6 +83,28 @@ HcclResult CollAllReduceMeshOpbaseSmallCountDeterministicExecutor::CalcLevel0Com
     return HCCL_SUCCESS;
 }
 
+HcclResult CollAllReduceMeshOpbaseSmallCountDeterministicExecutor::CalcLevel1CommInfo(TransportMemType inputType,
+    TransportMemType outputType, std::vector<LevelNSubCommTransport>& opTransport)
+{
+    HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] start", __func__, tag_.c_str());
+    CommParaInfo commParaLevel1(COMM_LEVEL1, CommType::COMM_TAG_MAX);
+    if (IsPowerOfTwo(topoAttr_.moduleNum) || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
+        commParaLevel1.commType = CommType::COMM_TAG_HALVING_DOUBLING;
+        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc HDCommInfo", __func__, tag_.c_str());
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
+        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;
+        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc NHRCommInfo", __func__, tag_.c_str());
+    } else {
+        commParaLevel1.commType = CommType::COMM_TAG_RING_INNER;
+        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc RingCommInfo", __func__, tag_.c_str());
+    }
+    commParaLevel1.forceRdma = false;
+    CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel1, opTransport[commParaLevel1.commPlane], inputType, outputType));
+    HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc CommInfo Finish", __func__, tag_.c_str());
+
+    return HCCL_SUCCESS;
+}
+
 u64 CollAllReduceMeshOpbaseSmallCountDeterministicExecutor::CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize)
 {
     u64 maxCountPerLoop;
@@ -123,32 +145,39 @@ HcclResult CollAllReduceMeshOpbaseSmallCountDeterministicExecutor::KernelRun(con
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, param.DataDes.dataType, param.reduceType);
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
     u64 curSize = execMem.count * unitSize; // 单位：字节
+    // Run level0
     if (IsPowerOfTwo(level0CommInfo.localRankSize)) {
         // userin->cclin
         DeviceMem userInMem(execMem.inputPtr, curSize);
         DeviceMem cclInMem = execMem.inputMem.range(0, curSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, cclInMem, userInMem, const_cast<Stream&>(param.stream)));
         CHK_RET(RunDoublingSingleLevel(param, reduceAttr, execMem, level0CommInfo));
+        HCCL_INFO("allreduce small count deterministic: using doubling algo intra-server.");
     } else {
         HcomCollOpInfo opInfo = {
             "", execMem.inputPtr, execMem.inputMem.ptr(), execMem.count, param.DataDes.dataType, param.root, param.reduceType};
         CHK_RET(RunReduceBcastSingleLevel(param, opInfo, reduceAttr, execMem, level0CommInfo));
+        HCCL_INFO("allreduce small count deterministic: using reduce bcast algo intra-server.");
     }
-
-    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD && IsPowerOfTwo(level1CommInfo.localRankSize)) {
+    // Run level1
+    if (IsPowerOfTwo(level1CommInfo.localRankSize)) {
         CHK_RET(RunDoublingSingleLevel(param, reduceAttr, execMem, level1CommInfo));
+        HCCL_INFO("allreduce small count deterministic: using doubling algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
         CHK_RET(RunTempLevel1(TemplateType::TEMPLATE_ALL_REDUCE_RECURSIVE_HALVING_DOUBLING, param, reduceAttr, execMem, 
             level1CommInfo));
+        HCCL_INFO("allreduce small count deterministic: using rhd algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         CHK_RET(RunTempLevel1(TemplateType::TEMPLATE_ALL_REDUCE_NHR, param, reduceAttr, execMem, level1CommInfo));
+        HCCL_INFO("allreduce small count deterministic: using nhr algo inter-server.");
     } else {
         // ring
         CHK_RET(RunTempLevel1(TemplateType::TEMPLATE_ALL_REDUCE_RING, param, reduceAttr, execMem, level1CommInfo));
+        HCCL_INFO("allreduce small count deterministic: using default ring algo inter-server.");
     }
     DeviceMem dstMem(execMem.outputPtr, curSize);
     DeviceMem srcMem;
-    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD && IsPowerOfTwo(level1CommInfo.localRankSize)) {
+    if (IsPowerOfTwo(level1CommInfo.localRankSize)) {
         // cclin->userout
         srcMem = execMem.inputMem.range(0, curSize);
     } else {
