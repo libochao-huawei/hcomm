@@ -552,8 +552,10 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
             algName = "AllReduceMeshOneshotLoopExecutor";
         }
     } else {
+        u64 dataSize = param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
+        // 单算子 + 确定性 + 数据量小于512kB
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-            !isSingleMeshAggregation_ && countType == HcclDataCountType::HCCL_COUNT_SMALL && 
+            !isSingleMeshAggregation_ && dataSize <= HCCL_SMALL_COUNT_512_KB && 
             IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
             algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
         }
