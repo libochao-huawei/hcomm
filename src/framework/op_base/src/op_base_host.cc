@@ -35,9 +35,6 @@
 #include "error_codes/rt_error_codes.h"
 #include "mmpa_api.h"
 #include "op_base.h"
-#ifndef OPEN_BUILD_PROJECT
-#include "op_base_v2.h"
-#endif
 
 using namespace std;
 using namespace hccl;
@@ -93,9 +90,6 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
                   std::vector<std::string>({"HcclAllReduceInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclAllReduceInnerV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
-#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -178,11 +172,7 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     s32 threadID = SalGetTid();
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
-
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclBarrierV2(comm, stream));
-#endif
-
+    
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;
     HcclReduceOp op = HCCL_REDUCE_SUM;
