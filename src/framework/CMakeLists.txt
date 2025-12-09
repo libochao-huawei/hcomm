@@ -542,10 +542,18 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         -Wfloat-equal
         -Wall
         -fno-common
+        -fstack-protector-strong
         -fno-strict-aliasing
         -pipe
         -O3
         -std=c++14
+    )
+
+    target_link_options(ccl_kernel PRIVATE
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
     )
 
     target_compile_definitions(ccl_kernel PRIVATE
