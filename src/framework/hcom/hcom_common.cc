@@ -191,6 +191,7 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
         *commHandle = static_cast<HcclComm>(hcclComm.get());
         return HCCL_SUCCESS;
     }
+    lock.unlock();
 
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     *commHandle = static_cast<HcclComm>(hcclComm.get());
