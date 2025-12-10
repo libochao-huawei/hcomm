@@ -5311,12 +5311,6 @@ aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t bloc
     return ACL_SUCCESS;
 }
 
-rtError_t rtFftsPlusTaskLaunchWithFlag(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rtStream_t stm,
-                                               uint32_t flag)
-{
-    return RT_ERROR_NONE;
-}
-
 const char *aclrtGetSocName()
 {
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {
