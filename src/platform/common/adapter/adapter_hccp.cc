@@ -2882,6 +2882,7 @@ HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
     s32 ret = DlRaFunction::GetInstance().dlRaRaGetTlsEnable(info, tlsEnable);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[HrtRaGetTlsEnable]errNo[0x%016llx] "
         "failed ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    HCCL_INFO("HrtRaGetTlsEnable phyId[%u], tlsEnable[%d]", info->phyId, *tlsEnable);
     return HCCL_SUCCESS;
 }
 
