@@ -865,7 +865,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
 
     // 获取每个超节点内的serverId
     std::map<std::string, std::set<std::string>> superPodSrvIdMap; // super_pod_id -> serverId
-    std::map<std::string, std::set<u32>> superPodSdidMap; // super_pod_id -> superDeviceId
+    std::map<std::string, std::unordered_map<u32, u32>> superPodSdidMap; // super_pod_id -> superDeviceId
     for (u32 i = 0; i < rankInfo.size(); i++) {
         std::string errormessage = "superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) + "] or superPod[" +
                                    rankInfo[i].superPodId + "] in rank[" + std::to_string(rankInfo[i].rankId) +
@@ -895,21 +895,23 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterSuperPodInfo(const std::vector<Ra
 
         auto it = superPodSdidMap.find(rankInfo[i].superPodId);
         if (it == superPodSdidMap.end()) {
-            std::set<u32> superDeviceIdSet;
-            superDeviceIdSet.insert(rankInfo[i].superDeviceId);
+	        std::unordered_map<u32, u32> superDeviceIdSet;
+            superDeviceIdSet.insert({rankInfo[i].superDeviceId, rankInfo[i].rankId});
             superPodSdidMap.insert({rankInfo[i].superPodId, superDeviceIdSet});
         } else if (it->second.find(rankInfo[i].superDeviceId) == it->second.end()) {
-            it->second.insert(rankInfo[i].superDeviceId);
+            it->second.insert({rankInfo[i].superDeviceId, rankInfo[i].rankId});
         } else {
-            errormessage = "superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) + "] in superPod[" + it->first +
-                           "] is already exist.";
+            errormessage = "devices have same superDeviceId[" + std::to_string(rankInfo[i].superDeviceId) +
+				"] in superPod[" + it->first + "]. Current device info: serverId[" + rankInfo[i].serverId +
+				"], rankId[" + std::to_string(rankInfo[i].rankId) + "], group[" + rankInfo[i].groupName +
+				"]. Another device info: rankId[" + std::to_string(it->second[rankInfo[i].superDeviceId]) + "].";
             // 超节点内superDeviceId在超节点内唯一
             RPT_INPUT_ERR(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
                 "EI0014",
                 std::vector<std::string>({"error_reason"}),
                 std::vector<std::string>({errormessage}));
             CHK_PRT_RET(it->second.find(rankInfo[i].superDeviceId) != it->second.end(),
-                HCCL_ERROR("[%s][%s]superDeviceId[0x%x] in superPod[%s] is already exist.",
+                HCCL_ERROR("[%s][%s]%s",
                     LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
                     errormessage.c_str()),
