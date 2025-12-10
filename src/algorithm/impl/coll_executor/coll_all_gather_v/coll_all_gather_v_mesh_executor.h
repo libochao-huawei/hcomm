@@ -25,6 +25,8 @@ namespace hccl
         HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport> &opTransport) override;
         HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
                                       std::vector<LevelNSubCommTransport> &opTransport) override;
+        HcclResult CalcLevel1CommInfo(TransportMemType inputType, TransportMemType outputType,
+            std::vector<LevelNSubCommTransport>& opTransport) override;
         HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
 
         /* *************** 算法编排 *************** */

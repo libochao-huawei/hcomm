@@ -766,6 +766,7 @@ TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_pipeline)
     Checker checker;
     HcclResult ret;
     ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
  
 TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_ring)
@@ -795,11 +796,12 @@ TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_ring)
     Checker checker;
     HcclResult ret;
     ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
  
 TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_nb)
 {
-    setenv("HCCL_ALGO", "level0:NA;level1:nb", 1);
+    setenv("HCCL_ALGO", "level0:NA;level1:NB", 1);
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -824,11 +826,12 @@ TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_nb)
     Checker checker;
     HcclResult ret;
     ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
  
 TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_nhr)
 {
-    setenv("HCCL_ALGO", "level0:NA;level1:nhr", 1);
+    setenv("HCCL_ALGO", "level0:NA;level1:NHR", 1);
     MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
     RankTable_For_LLT gen;
     TopoMeta topoMeta;
@@ -853,4 +856,35 @@ TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_nhr)
     Checker checker;
     HcclResult ret;
     ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllGatherVTest, all_gather_v_910B_graph_mesh_set_alg_not_support)
+{
+    setenv("HCCL_ALGO", "level0:NA;level1:H-D_R", 1);
+    MOCKER(GetExternalInputHcclAivMode).stubs().will(returnValue(true));
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 8, 2);
+
+    vector<u64> counts{10000, 20000, 30000, 40000, 30000, 20000, 10000, 20000, 100, 200, 300, 400, 300, 200, 100, 200};
+    vector<u64> displs{0};
+    for (auto i = 1; i < counts.size(); ++i) {
+            displs.emplace_back(displs[i - 1] + counts[i - 1]);
+    }
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER_V;
+    checkerOpParam.tag = "AllGatherV";
+    checkerOpParam.opMode = CheckerOpMode::OFFLOAD;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.VDataDes.counts = counts;
+    checkerOpParam.VDataDes.displs = displs;
+    checkerOpParam.VDataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
+    checkerOpParam.algName = "AllGatherVMeshExecutor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
