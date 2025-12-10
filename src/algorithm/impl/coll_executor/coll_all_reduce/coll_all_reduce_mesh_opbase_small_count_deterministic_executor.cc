@@ -91,12 +91,12 @@ HcclResult CollAllReduceMeshOpbaseSmallCountDeterministicExecutor::CalcLevel1Com
     if (IsPowerOfTwo(topoAttr_.moduleNum) || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
         commParaLevel1.commType = CommType::COMM_TAG_HALVING_DOUBLING;
         HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc HDCommInfo", __func__, tag_.c_str());
-    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
-        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;
-        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc NHRCommInfo", __func__, tag_.c_str());
-    } else {
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
         commParaLevel1.commType = CommType::COMM_TAG_RING_INNER;
         HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc RingCommInfo", __func__, tag_.c_str());
+    } else {
+        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;
+        HCCL_INFO("[%s][CalcLevel1CommInfo]tag[%s] Calc NHRCommInfo", __func__, tag_.c_str());
     }
     commParaLevel1.forceRdma = false;
     CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel1, opTransport[commParaLevel1.commPlane], inputType, outputType));
@@ -167,13 +167,13 @@ HcclResult CollAllReduceMeshOpbaseSmallCountDeterministicExecutor::KernelRun(con
         CHK_RET(RunTempLevel1(TemplateType::TEMPLATE_ALL_REDUCE_RECURSIVE_HALVING_DOUBLING, param, reduceAttr, execMem, 
             level1CommInfo));
         HCCL_INFO("allreduce small count deterministic: using rhd algo inter-server.");
-    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
-        CHK_RET(RunTempLevel1(TemplateType::TEMPLATE_ALL_REDUCE_NHR, param, reduceAttr, execMem, level1CommInfo));
-        HCCL_INFO("allreduce small count deterministic: using nhr algo inter-server.");
-    } else {
-        // ring
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
         CHK_RET(RunTempLevel1(TemplateType::TEMPLATE_ALL_REDUCE_RING, param, reduceAttr, execMem, level1CommInfo));
         HCCL_INFO("allreduce small count deterministic: using default ring algo inter-server.");
+    } else {
+        // 默认nhr
+        CHK_RET(RunTempLevel1(TemplateType::TEMPLATE_ALL_REDUCE_NHR, param, reduceAttr, execMem, level1CommInfo));
+        HCCL_INFO("allreduce small count deterministic: using nhr algo inter-server.");
     }
     DeviceMem dstMem(execMem.outputPtr, curSize);
     DeviceMem srcMem;
