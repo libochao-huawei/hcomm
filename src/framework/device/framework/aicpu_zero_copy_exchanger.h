@@ -29,8 +29,8 @@ public:
 
     HcclResult ExchangeAddress(const std::string &tag, void *localInput, void *localOutput, AlgResourceResponse *algResResponse);
 
-    // 将每个remote rank对应的input/output addr暴露给HcclCommAicpu, 为OpUnfoldCache做准备
-    HcclResult PrepareRemoteMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& inputMemRanges, std::vector<OpUnfoldMemRange>& outputMemRanges) const;
+    // 将每个remote rank对应的user input/output addr暴露给HcclCommAicpu, 为OpUnfoldCache做准备
+    HcclResult PrepareRemoteUserMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges) const;
 
     // yxg-debug 提供提前退出的方法退出阻塞接口
 private:

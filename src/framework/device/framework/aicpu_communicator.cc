@@ -306,14 +306,14 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
     // 针对zero copy, 设置remote rank的input/output usermem addr
     if (param.isZeroCopy) {
         // 注意: 只有非V类算子可能使用zero copy (因此假设remote ranks' input/output size与local rank相同)
-        // 注意: 而V类算子一定是buffer copy (否则PrepareRemoteMemRanges需要额外的输入作为remote ranks' input/output size)
+        // 注意: 而V类算子一定是buffer copy (否则PrepareRemoteUserMemRanges需要额外的输入作为remote ranks' input/output size)
         const HcclCMDType opType = param.opType;
         CHK_PRT_RET(opType == HCCL_CMD_ALLTOALLV || opType == HCCL_CMD_ALLTOALLVC || opType == HCCL_CMD_ALLGATHER_V || opType == HCCL_CMD_REDUCE_SCATTER_V || opType == HCCL_CMD_HALF_ALLTOALLV,
             HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] opType[%u] should not use zero copy", opType), HCCL_E_INTERNAL);
 
         // 直接传入local rank's input/output size用于remote ranks' memory ranges
         HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user memory ranges of other remote ranks");
-        CHK_RET(ZeroCopyExchanger_->PrepareRemoteMemRanges(inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
+        CHK_RET(ZeroCopyExchanger_->PrepareRemoteUserMemRanges(inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
     } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
         HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] check transport resource for potential user memory of remote ranks");
 
@@ -387,8 +387,13 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
     // 打印debug信息
     if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
         for (size_t rankId = 0; rankId < userInputMemRanges.size(); ++rankId) {
-            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] userInputMemRanges[%u] isValid: %d, baseAddr: 0x%016llx, memSize: %llu", rankId, userInputMemRanges[rankId].isValid, userInputMemRanges[rankId].baseAddr, userInputMemRanges[rankId].memSize);
-            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] userOutputMemRanges[%u] isValid: %d, baseAddr: 0x%016llx, memSize: %llu", rankId, userOutputMemRanges[rankId].isValid, userOutputMemRanges[rankId].baseAddr, userOutputMemRanges[rankId].memSize);
+            const OpUnfoldMemRange& userInputMemRange = userInputMemRanges[rankId];
+            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] userInputMemRanges[%u] isValid: %d, baseAddr: 0x%016llx, memSize: %llu, endAddr: 0x%016llx",
+                rankId, userInputMemRange.isValid, userInputMemRange.baseAddr, userInputMemRange.memSize, userInputMemRange.baseAddr + userInputMemRange.memSize);
+
+            const OpUnfoldMemRange& userOutputMemRange = userOutputMemRanges[rankId];
+            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] userOutputMemRanges[%u] isValid: %d, baseAddr: 0x%016llx, memSize: %llu, endAddr: 0x%016llx",
+                rankId, userOutputMemRange.isValid, userOutputMemRange.baseAddr, userOutputMemRange.memSize, userOutputMemRange.baseAddr + userOutputMemRange.memSize);
         }
     }
 
@@ -420,11 +425,11 @@ HcclResult HcclCommAicpu::IsInplace(const OpParam &param, bool& isInplace)
 
     if (inputStart <= outputEnd && outputStart <= inputEnd) {
         isInplace = true;
-        HCCL_INFO("[HcclCommAicpu][IsInplace] input[%u, %u] is overlapping with output[%u, %u]",
+        HCCL_INFO("[HcclCommAicpu][IsInplace] input[0x%016llx, 0x%016llx] is overlapping with output[0x%016llx, 0x%016llx]",
             inputStart, inputEnd, outputStart, outputEnd);
     } else {
         isInplace = false;
-        HCCL_INFO("[HcclCommAicpu][IsInplace] input[%u, %u] is not overlapping with output[%u, %u]",
+        HCCL_INFO("[HcclCommAicpu][IsInplace] input[0x%016llx, 0x%016llx] is not overlapping with output[0x%016llx, 0x%016llx]",
             inputStart, inputEnd, outputStart, outputEnd);
     }
 

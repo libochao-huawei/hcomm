@@ -58,29 +58,43 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuZeroCopyExchanger::PrepareRemoteMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& inputMemRanges, std::vector<OpUnfoldMemRange>& outputMemRanges) const {
-    HCCL_DEBUG("[AicpuZeroCopyExchanger][PrepareRemoteMemRanges] prepare remote input/output memory ranges");
+HcclResult AicpuZeroCopyExchanger::PrepareRemoteUserMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges) const {
+    // 注意: 不能直接使用inAddrs_和outAddrs_, 保存的是remote ranks' user input/output memory在远端的virtual addr
+    // 需要使用current_->links中的input/output memory, 才是remote ranks' user input/output memory在本端的virtual addr
 
-    const uint32_t rankSize = inputMemRanges.size(); // 获取通信域内的rank数量
-    for (std::set<u32>::const_iterator constIter = current_->remoteRanks.cbegin(); constIter != current_->remoteRanks.cend(); ++constIter) {
-        const uint32_t remoteRank = *constIter; // 对端在通信域内的rank id
-        if (UNLIKELY(remoteRank >= rankSize)) {
-            HCCL_ERROR("[AicpuZeroCopyExchanger][PrepareRemoteMemRanges] remoteRank %u >= rankSize %u", remoteRank, rankSize);
-            return HCCL_E_INTERNAL;
-        }
+    HCCL_INFO("[AicpuZeroCopyExchanger][PrepareRemoteUserMemRanges] prepare remote input/output memory ranges");
 
-        HCCL_DEBUG("[AicpuZeroCopyExchanger][PrepareRemoteMemRanges] prepare memory range of remote rank %u", remoteRank);
+    const uint32_t rankSize = userInputMemRanges.size(); // 获取通信域内的rank数量
+    const std::vector<LINK>& links = current_->links;
+    for (size_t linkIdx = 0; linkIdx < links.size(); ++linkIdx) {
+        const LINK& curLink = links[linkIdx];
 
-        // 更新remote input memory range
-        OpUnfoldMemRange& remoteInputMemRange = inputMemRanges[remoteRank];
+        // 对端在通信域内的rank id
+        const uint32_t remoteRank = curLink->GetRemoteRank();
+        CHK_PRT_RET(remoteRank >= rankSize, HCCL_ERROR("[AicpuZeroCopyExchanger][PrepareRemoteUserMemRanges] remoteRank %u >= rankSize %u", remoteRank, rankSize), HCCL_E_INTERNAL);
+
+        HCCL_INFO("[AicpuZeroCopyExchanger][PrepareRemoteUserMemRanges] prepare memory range of remote rank %u", remoteRank);
+
+        // 获取remote user input memory addr
+        void *remoteUserInputBaseAddr = nullptr;
+        CHK_RET(curLink->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
+        CHK_PTR_NULL(remoteUserInputBaseAddr);
+
+        // 更新remote user input memory range
+        OpUnfoldMemRange& remoteInputMemRange = userInputMemRanges[remoteRank];
         remoteInputMemRange.isValid = true;
-        remoteInputMemRange.baseAddr = inAddrs_[remoteRank % deviceNumPerAggregation_];
+        remoteInputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserInputBaseAddr);
         remoteInputMemRange.memSize = inputSize;
 
-        // 更新remote output memory range
-        OpUnfoldMemRange& remoteOutputMemRange = outputMemRanges[remoteRank];
+        // 获取remote user output memory addr
+        void *remoteUserOutputBaseAddr = nullptr;
+        CHK_RET(curLink->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
+        CHK_PTR_NULL(remoteUserOutputBaseAddr);
+
+        // 更新remote user output memory range
+        OpUnfoldMemRange& remoteOutputMemRange = userOutputMemRanges[remoteRank];
         remoteOutputMemRange.isValid = true;
-        remoteOutputMemRange.baseAddr = outAddrs_[remoteRank % deviceNumPerAggregation_];
+        remoteOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserOutputBaseAddr);
         remoteOutputMemRange.memSize = outputSize;
     }
 
