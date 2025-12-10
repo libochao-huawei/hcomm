@@ -596,6 +596,7 @@ set(algorithm_open_cc PRIVATE
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_mem.cc
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/offload_stream_manager.cc
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/ccl_buffer_manager.cc
+    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_mem.cc
 )
 
