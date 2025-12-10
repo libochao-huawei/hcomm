@@ -64,6 +64,8 @@ void DetectConnectionAnomalies::AddIpQueue(RankInfo &localRankInfo, RankInfo &re
     // 检查设备类型是否支持
     if (localRankInfo.deviceType != DevType::DEV_TYPE_910_93 && localRankInfo.deviceType != DevType::DEV_TYPE_910B) {
         HCCL_WARNING("[AddIpQueue] not support deviceType[%d]", localRankInfo.deviceType);
+        RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
+        std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT}));
         return;
     }
 
