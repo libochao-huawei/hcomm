@@ -579,8 +579,8 @@ HcclResult TopoinfoRanktableConcise::GetSingleDevicePort(const nlohmann::json &d
         rankinfo.deviceInfo.port = HCCL_INVALID_PORT;
         HCCL_INFO("[Get][SingleDevicePort]deviceIndex[%u], devicePhyId[%u], 'device_port' in ranktable is not set. "
             "Multi-process may not be supported for device nic.", objIndex, rankinfo.deviceInfo.devicePhyId);
-        return HCCL_SUCCESS;
         params_.commPortConfig.devPortSwitchOn = false; // 不启用用户指定的port作为device网卡通信的port
+        return HCCL_SUCCESS;
     } else {
         CHK_RET(SalStrToULong(strDevPort, HCCL_BASE_DECIMAL, rankinfo.deviceInfo.port));
         CHK_PRT_RET(rankinfo.deviceInfo.port == HCCL_SOCKET_PORT_RANGE_AUTO,

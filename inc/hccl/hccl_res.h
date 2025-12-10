@@ -120,8 +120,6 @@ typedef struct {
 /// HCCL算子标识最大长度（字节）
 const uint32_t HCCL_OP_TAG_LEN_MAX = 255;
 
-
-
 /**
  * @name 通信内存获取
  * @{
@@ -136,7 +134,6 @@ const uint32_t HCCL_OP_TAG_LEN_MAX = 255;
  *          3、未来可扩展增加CommGetMemType接口
  */
 extern HcclResult HcclGetHcclBuffer(HcclComm comm, CommBuffer *buffer);
-
 
 /**
  * @defgroup 通信引擎资源管理
@@ -193,7 +190,6 @@ extern HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread, C
 extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
     NotifyType notifyType, uint32_t notifyNum, NotifyHandle **notifyHandleList);
 
-
 /** @} */  // 通信引擎资源管理
 
 /**
@@ -222,8 +218,6 @@ extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
 extern HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag,
     CommEngine engine, const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
 
-
-
 /**
  * @brief 获取通道通知数量
  * @param[in] channel 通道句柄
@@ -242,7 +236,6 @@ extern HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, 
  * @warning
  */
 extern HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer);
-
 
  /**
  * @defgroup 通信引擎上下文管理接口（编程控制面可选接口）

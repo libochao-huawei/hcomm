@@ -11,7 +11,6 @@
 #include "plugin_runner.h"
 #include "adapter_rts_common.h"
 #include "externalinput_pub.h"
-#include "acl/error_codes/rt_error_codes.h"
 
 using namespace hccl;
 PluginRunner::PluginRunner(ProfilerBase *profiler) : profiler_(profiler) {}
