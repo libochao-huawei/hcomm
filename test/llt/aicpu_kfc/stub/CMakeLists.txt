@@ -636,6 +636,7 @@ set(aicpu_kfc_list_open
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/resource_manager/op_base_stream_manager.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/resource_manager/hccl_socket_manager.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/resource_manager/stream_active_manager.cc
+    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
 
     # hccl/hccl/algorithm/impl/coll_executor
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/algorithm/impl/coll_executor/coll_executor_base.cc
