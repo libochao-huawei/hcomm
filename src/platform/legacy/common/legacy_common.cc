@@ -238,10 +238,13 @@ HcclResult FftsPlusTaskLaunchWithFlag(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rt
 {
     CHK_PTR_NULL(fftsPlusTaskInfo);
     CHK_PTR_NULL(stm);
+    uintptr_t input[2];    // fftsplus task下发时需要输入2个参数，0：task info，1：stream handle
+    input[0] = reinterpret_cast<uintptr_t>(fftsPlusTaskInfo);
+    input[1] = reinterpret_cast<uintptr_t>(stm);
 
-    rtError_t  ret = rtFftsPlusTaskLaunchWithFlag(fftsPlusTaskInfo, stm, RT_GNL_CTRL_TYPE_FFTS_PLUS); // 2: fftsplus task有2个input
+    rtError_t ret = rtGeneralCtrl(input, 2, RT_GNL_CTRL_TYPE_FFTS_PLUS); // 2: fftsplus task有2个input
 
-    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[FftsPlusTaskLaunchWithFlag]rt ffts launch failed."),
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[FftsPlusTaskLaunchWithFlag]rt ffts launch failed, ret[%d]", ret),
         HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
