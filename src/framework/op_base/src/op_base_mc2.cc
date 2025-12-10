@@ -112,7 +112,6 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-    const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     string commIdentifier = hcclComm->GetIdentifier();
     HCCL_INFO("[%s]commIdentifier[%s]", __func__, commIdentifier.c_str());
     string cclBufferName = hcclComm->GetCCLbufferName();
