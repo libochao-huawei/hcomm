@@ -164,6 +164,7 @@ set(adaption_to_test_list
 
     # 依赖开源仓的代码
     ${HCCL_OPEN_CODE_ALGORITHM}/impl/resource_manager/ccl_buffer_manager.cc
+    ${HCCL_OPEN_CODE_ALGORITHM}/impl/resource_manager/share_ccl_buffer_manager.cc
     ${HCCL_OPEN_CODE_ALGORITHM}/impl/resource_manager/stream_active_manager.cc
     ${HCCL_OPEN_CODE_COMMON}/debug/profiling/profiler_base.cc
     ${HCCL_OPEN_CODE_COMMON}/debug/config/config_log.cc

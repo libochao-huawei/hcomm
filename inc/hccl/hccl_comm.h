@@ -215,7 +215,6 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
     config->hcclAlgo[0] = '\0';
     config->hcclRetryEnable[0] = '\0';
     config->hcclRetryParams[0] = '\0';
-    config->hcclBufferName[0] = '\0';
 }
 
 /**

@@ -121,7 +121,7 @@ typedef struct HcclRootInfoDef {
 
 const uint32_t HCCL_COMM_CONFIG_INFO_BYTES = 24;
 const uint32_t HCCL_COMM_CONFIG_MAGIC_WORD = 0xf0f0f0f0;
-const uint32_t HCCL_COMM_CONFIG_VERSION = 9;
+const uint32_t HCCL_COMM_CONFIG_VERSION = 8;
 const uint32_t HCCL_COMM_DEFAULT_BUFFSIZE = 200;
 const uint32_t HCCL_COMM_BUFFSIZE_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_DEFAULT_DETERMINISTIC = 0;
@@ -148,7 +148,6 @@ typedef struct HcclCommConfigDef {
     char hcclAlgo[HCCL_COMM_ALGO_MAX_LENGTH];
     char hcclRetryEnable[HCCL_COMM_RETRY_ENABLE_MAX_LENGTH];
     char hcclRetryParams[HCCL_COMM_RETRY_PARAMS_MAX_LENGTH];
-    char hcclBufferName[BUFFER_NAME_MAX_LENGTH];
 } HcclCommConfig;
 
 typedef enum {
@@ -163,7 +162,6 @@ typedef enum {
     HCCL_COMM_CONFIG_EXEC_TIMEOUT = 8,
     HCCL_COMM_CONFIG_ALGO = 9,
     HCCL_COMM_CONFIG_RETRY = 10,
-    HCCL_COMM_CONFIG_BUFFER_NAME = 11,
     HCCL_COMM_CONFIG_RESERVED
 } HcclCommConfigCapability;
 
