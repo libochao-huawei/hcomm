@@ -137,11 +137,12 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
     u32 rankId = INVALID_VALUE_RANKID;
     if (IsAllDigit(identify_.c_str()) != HCCL_SUCCESS ||
         SalStrToULong(identify_, HCCL_BASE_DECIMAL, rankId) != HCCL_SUCCESS) {
-        RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}),
-            std::vector<std::string>({ "The rank_id"+ identify_ +" must be an digit."}));
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] rank_id[%s] is invalid",
-            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), identify_.c_str());
-        return HCCL_E_PARA;
+	    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+		    std::vector<std::string>({"CheckRankID", "rank_id", identify_.c_str(),
+		                            "The rank_id must be an digit."}));
+	    HCCL_ERROR("[%s][%s]errNo[0x%016llx] rank_id[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
+		    LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), identify_.c_str());
+	    return HCCL_E_PARA;
     }
 
     // 校验rank id合法性
