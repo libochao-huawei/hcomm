@@ -16,6 +16,7 @@
 #include <array>
 #include <list>
 #include <functional>
+#include "rt_external.h"
 #include "acl/acl_rt.h"
 #include "profiler_base_pub.h"
 #include "aicpu_operator_pub.h"

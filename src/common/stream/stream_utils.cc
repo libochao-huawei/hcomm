@@ -13,6 +13,7 @@
 #include <functional>
 #include "log.h"
 #include "rt_external.h"
+#include "error_codes/rt_error_codes.h"
 #include "workflow_pub.h"
 
 static const std::unordered_map<int, std::function<void(bool&)>> captureStatusHandlers = {

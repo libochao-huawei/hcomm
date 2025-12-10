@@ -11,7 +11,6 @@
 #ifndef EXCEPTION_HANDLER_H
 #define EXCEPTION_HANDLER_H
 
-#include <exception>
 #include <stdexcept>
 #include <string>
 #include <hccl/hccl_types.h>
