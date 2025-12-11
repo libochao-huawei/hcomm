@@ -18,6 +18,9 @@ HcclResult ExceptionHandler::HandleException(const char* functionName)
     try {
         // 重新抛出当前捕获的异常
         throw;
+    } catch (const HcclException& e) {
+        HCCL_ERROR("%s: HcclException, what: %s, code: %d", functionName, e.what(), e.code());
+        return e.code();
     } catch (const out_of_range& e) {
         HCCL_ERROR("%s: Out of range error, what: %s", functionName, e.what());
         return HCCL_E_NOT_FOUND;
@@ -55,6 +58,9 @@ void ExceptionHandler::ThrowIfErrorCode(HcclResult errorCode, const string &errS
             break;
         case HCCL_E_RUNTIME:
             throw runtime_error(prefix + ", Error: Runtime error, " + suffix);
+            break;
+        case HCCL_E_PARA:
+            throw HcclException(errorCode, prefix + ", Error: hccl special error, " + suffix);
             break;
         default:
             throw runtime_error(prefix + ", Error: Default error code, " + suffix);

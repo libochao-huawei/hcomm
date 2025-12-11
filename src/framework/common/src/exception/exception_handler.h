@@ -49,6 +49,23 @@ public:
     static void ThrowIfErrorCode(HcclResult errorCode, const std::string &errString, const char* fileName,
         s32 lineNum, const char* functionName);
 };
+
+// HCCL异常码类，用于识别特定HCCL错误码
+class HcclException : public std::exception {
+public:
+    HcclException(HcclResult code, const std::string &msg)
+        : code_(code), msg_(msg) {}
+
+    HcclResult code() const { return code_; }
+
+    const char* what() const noexcept override {
+        return msg_.c_str();
+    }
+
+private:
+    HcclResult code_;
+    std::string msg_;
+};
 }
 
 #endif
