@@ -13,7 +13,53 @@
 #include "rs_drv_socket.h"
 
 #define RS_MAX_VNIC_NUM 16
+#define RS_VNIC_MAX 128
+#define RS_VNIC_FLAG 1
+#define RS_MAX_SOCKET_NUM 16
+#define RS_MAX_WLIST_NUM 16
+#define RS_SOCK_LISTEN_PARALLEL_NUM 16384
+#define RS_WLIST_VALID_FLAG_SIZE   6
+#define RS_CLOSE_TIMEOUT    5
+#define RS_INTERFACE_LEN    5
+#define RS_INTERFACE_BOND_LEN    6
+#define RS_INTERFACE_ETH_PREFIX_LEN 3
+#define RS_INTERFACE_BOND_PREFIX_LEN 4
+/* pcie card boardid rule: GPIO[75:73]=0x000 */
+#define RS_BOARDID_PCIE_CARD_MASK        0xE00
+#define RS_BOARDID_PCIE_CARD_MASK_VALUE  0x0
+#define RS_BOARDID_AI_SERVER_MODULE  0x0
+#define RS_BOARDID_ARM_SERVER_AG     0x20
+#define RS_BOARDID_ARM_POD     0x30
+#define RS_BOARDID_X86_16P     0x50
+#define RS_BOARDID_ARM_SERVER_2DIE    0xB0
 
+#define RS_SOCKET_PARA_CHECK(num, conn) do { \
+    if (((num) <= 0) || ((num) > RS_MAX_SOCKET_NUM) || ((conn) == NULL)) { \
+        hccp_err("rs socket param error ! number:%d", num); \
+        return (-EINVAL); \
+    } \
+} while (0)
+
+enum RsHardwareType {
+    RS_HARDWARE_SERVER,
+    RS_HARDWARE_PCIE,
+    RS_HARDWARE_2DIE,
+    RS_HARDWARE_UNKNOWN,
+};
+
+struct RsVnicInfo {
+    uint32_t vnicFlag;
+    uint32_t role;
+};
+
+int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
+enum RsHardwareType RsGetDeviceType(unsigned int phyId);
+int RsSocketConnectAsync(struct RsConnInfo *conn, struct rs_cb *rscb);
+int RsGetSocketConnectState(struct RsConnInfo *conn);
+int RsAllocConnNode(struct RsConnInfo **conn, unsigned short serverPort);
+void ShowConnNode(struct RsListHead *listHead);
+int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
+bool RsCompareIpAddr(struct RsIpAddrInfo *a, struct RsIpAddrInfo *b);
 int RsInetNtop(int family, union HccpIpAddr *ip, char readAddr[], unsigned int len);
 void RsSocketSaveErrInfo(int action, int errNo, struct SocketErrInfo *errInfo);
 #endif // RS_SOCKET_H
