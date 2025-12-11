@@ -3,6 +3,7 @@ set(BASIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 set(TLV_DIR ${BASIC_PATH}/rdma_agent/adapter/tlv)
 set(ra_adp_list
     ra_adp.c
+    ra_adp_socket.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_pool.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_async.c
 )
@@ -14,8 +15,6 @@ list(APPEND ra_adp_list
     ${TLV_DIR}/ra_adp_tlv.c
 )
 endif()
-
-
 
 #编译目标
 add_library(ra_adp SHARED
