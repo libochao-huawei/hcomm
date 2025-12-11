@@ -16,6 +16,7 @@
 #include <string>
 
 #include "hccl_types.h"
+#include "workflow_pub.h"
 
 namespace hccl {
 
@@ -26,7 +27,7 @@ struct OpUnfoldKey{
     explicit OpUnfoldKey();
     explicit OpUnfoldKey(const OpUnfoldKey& other); // 拷贝构造函数 (make_pair需要)
 
-    HcclResult Init(const HcclCMDType curOpType, const HcclDataType curDataType, const HcclReduceOp curReduceType, const bool curIsZeroCopy, const uint64_t curInputSize, const bool curIsInplacePreSync);
+    HcclResult Init(const HcclCMDType curOpType, const HcclDataType curDataType, const HcclReduceOp curReduceType, const bool curIsZeroCopy, const uint64_t curInputSize, const bool curIsInplacePreSync, const HcclWorkflowMode curWorkflowMode);
 
     // 用于debug
     std::string getKeyString() const;
@@ -45,6 +46,9 @@ struct OpUnfoldKey{
 
     // ReduceScatter和AllReduce在开启重执行、in-place update、userMem < HcclBuffSize的时候，会触发前同步 (与正常算子展开逻辑不同)
     bool isInplacePreSync;
+
+    // 是否为图模式 (可能存在同一个通信域下的同一个算子, 既执行图模式又执行单算子模式下的算法)
+    HcclWorkflowMode workflowMode; // 0: 图模式; 1: 单算子模式
 };
 
 }; // namespace hccl
@@ -60,16 +64,17 @@ struct hash<hccl::OpUnfoldKey> {
         std::hash<uint8_t> hashUint8;
         std::hash<uint64_t> hashUint64;
 
-        // 假设opType/dataType/reduceType不会超过256个
+        // 假设opType/dataType/reduceType <= 255
         const size_t opTypeHashValue = hashUint8(static_cast<uint8_t>(key.opType));
         const size_t dataTypeHashValue = hashUint8(static_cast<uint8_t>(key.dataType));
         const size_t reduceTypeHashValue = hashUint8(static_cast<uint8_t>(key.reduceType));
 
         const size_t isZeroCopyHashValue = hashBool(key.isZeroCopy);
-
         const size_t inputSizeHashValue = hashUint64(key.inputSize);
-
         const size_t isInplacePreSyncHashValue = hashBool(key.isInplacePreSync);
+
+        // 假设workflowMode <= 255
+        const size_t workflowModeHashValue = hashUint8(static_cast<uint8_t>(key.workflowMode));
 
         // 简单的哈希混合
         size_t hashValue = opTypeHashValue;
@@ -78,6 +83,7 @@ struct hash<hccl::OpUnfoldKey> {
         hashValue ^= isZeroCopyHashValue;
         hashValue ^= inputSizeHashValue;
         hashValue ^= isInplacePreSyncHashValue;
+        hashValue ^= workflowModeHashValue;
 
         return hashValue;
     }

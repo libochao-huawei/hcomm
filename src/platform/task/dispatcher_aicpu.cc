@@ -9,6 +9,7 @@
  */
 
 #include <memory>
+#include "config_plf_log.h"
 #include "hccl_common.h"
 #include "stream_pub.h"
 #include "rt_external.h"
@@ -378,16 +379,17 @@ HcclResult DispatcherAiCpu::LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const st
         CHK_RET(entryPtr->UpdateAndGetSqeArray(arrayIdx, userInputMemRanges, userOutputMemRanges, mainStream, slaveStreams, opRingBufferIdx_, sqeCount, &sqeArray, &sqeTypeArray, &sqeDfxInfoArray, &streamPtr, largestSqeIdxes));
 
         // 打印缓存并下发的SQE内容for debug
-        if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_DEBUG))) {
-            HCCL_DEBUG("[DispatcherAicpu][LaunchNewTask] dump content of %uth cached SQE array with %u cached SQEs and stream id %u", arrayIdx, sqeCount, streamPtr->GetHcclStreamInfo().actualStreamId);
+        // 设置HCCL_DEBUG_CONFIG="task", 或者设置ASCEND_GLOBAL_LOG_LEVEL=0
+        if ((UNLIKELY(GetExternalInputDebugConfig() & PLF_TASK)) || UNLIKELY(HcclCheckLogLevel(HCCL_LOG_DEBUG))) {
+            PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] dump content of %uth cached SQE array with %u cached SQEs and stream id %u", arrayIdx, sqeCount, streamPtr->GetHcclStreamInfo().actualStreamId);
             for (size_t sqeIdx = 0; sqeIdx < sqeCount; ++sqeIdx) {
                 uint8_t *sqePtr = sqeArray + sqeIdx * HCCL_SQE_SIZE;
                 const uint8_t sqeType = sqeTypeArray[sqeIdx];
-                HCCL_DEBUG("[DispatcherAicpu][LaunchNewTask] %uth cached SQE", sqeIdx);
+                PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] %uth cached SQE", sqeIdx);
                 CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
 
                 const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
-                HCCL_DEBUG("[DispatcherAicpu][LaunchNewTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
+                PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchNewTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
                     dfxinfo.remoteRank, dfxinfo.opRingBufferIdx, dfxinfo.notifyId);
             }
         }
@@ -595,9 +597,10 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
             sqeContextBuffer->dfxInfo + (tailSqeIdx - cnt + left), (cnt - left) * sizeof(AicpuDfxInfo)));
     }
     // 打印算子展开下发的SQE内容for debug
-    if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_DEBUG))) {
+    // 设置HCCL_DEBUG_CONFIG="task", 或者设置ASCEND_GLOBAL_LOG_LEVEL=0
+        if ((UNLIKELY(GetExternalInputDebugConfig() & PLF_TASK)) || UNLIKELY(HcclCheckLogLevel(HCCL_LOG_DEBUG))) {
         const int32_t streamId = stream.GetHcclStreamInfo().actualStreamId;
-        HCCL_DEBUG("[DispatcherAicpu][LaunchTask] dump content of %u dispatched SQEs with stream id %u", cnt, streamId);
+        PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] dump content of %u dispatched SQEs with stream id %u", cnt, streamId);
 
         uint8_t *sqeArray = sqeContextBuffer->localBuff + (tailSqeIdx - cnt) * HCCL_SQE_SIZE;
         uint8_t *sqeTypeArray = sqeContextBuffer->sqeType + (tailSqeIdx - cnt);
@@ -607,15 +610,15 @@ HcclResult DispatcherAiCpu::LaunchTask(Stream &stream, bool isBlockLaunch)
             const uint8_t sqeType = sqeTypeArray[sqeIdx];
             if (sqeType == SqeType::FLIP_PLACEHOLDER_SQE) {
                 const rtStarsPlaceHolderSqe_t *placeholderSqePtr = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqeArray + sqeIdx * HCCL_SQE_SIZE);
-                HCCL_DEBUG("[DispatcherAicpu][LaunchTask] %uth dispatched SQE (placeholder) header.type[%u] taskid[%u]", sqeIdx, placeholderSqePtr->header.type, placeholderSqePtr->header.taskId);
+                PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] %uth dispatched SQE (placeholder) header.type[%u] taskid[%u]", sqeIdx, placeholderSqePtr->header.type, placeholderSqePtr->header.taskId);
             } else {
-                HCCL_DEBUG("[DispatcherAicpu][LaunchTask] %uth dispatched SQE", sqeIdx);
+                PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] %uth dispatched SQE", sqeIdx);
             }
             
             CHK_RET(OpUnfoldCache::DumpSqeContent(sqePtr, sqeType));
 
             const AicpuDfxInfo& dfxinfo = sqeDfxInfoArray[sqeIdx];
-            HCCL_DEBUG("[DispatcherAicpu][LaunchTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
+            PLF_CONFIG_DEBUG(PLF_TASK, "[DispatcherAicpu][LaunchTask] AicpuDfxInfo: remoteRank[%u] opRingBufferIdx[%u] notifyId[%u]",
                 dfxinfo.remoteRank, dfxinfo.opRingBufferIdx, dfxinfo.notifyId);
         }
     }

@@ -278,7 +278,7 @@ HcclResult HcclCommAicpu::GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key)
     UNUSED_PARAM(recvType);
 
     // 设置key for op-unfold cache
-    CHK_RET(key.Init(param.opType, sendType, param.reduceType, param.isZeroCopy, inputSize, algOpContext_.opRetryHandler.isInplacePreSync));
+    CHK_RET(key.Init(param.opType, sendType, param.reduceType, param.isZeroCopy, inputSize, algOpContext_.opRetryHandler.isInplacePreSync, GetWorkflowMode()));
 
     return HCCL_SUCCESS;
 }

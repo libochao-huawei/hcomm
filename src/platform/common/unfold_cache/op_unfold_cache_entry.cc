@@ -265,7 +265,7 @@ namespace hccl {
                     return HCCL_E_NOT_SUPPORT;
                 }
                 case SqeType::FLIP_PLACEHOLDER_SQE: {
-                    HCCL_DEBUG("[OpUnfoldCacheEntry][MemcpySqeArray] placeholder should not be cached, sqeType[%u] tmpSqeIdx[%u] cacheSqeIdx[%u]", sqeType, tmpSqeIdx, cacheSqeIdx);
+                    HCCL_ERROR("[OpUnfoldCacheEntry][MemcpySqeArray] placeholder should not be cached, sqeType[%u] tmpSqeIdx[%u] cacheSqeIdx[%u]", sqeType, tmpSqeIdx, cacheSqeIdx);
                     return HCCL_E_INTERNAL;
                 }
                 default: {
@@ -361,7 +361,7 @@ namespace hccl {
             uint8_t sqeType = (*sqeTypeArrayPtr)[sqeIdx];
             const RefreshAddrInfo& srcRefreshAddrInfo = srcRefreshAddrInfoArray[sqeIdx];
             const RefreshAddrInfo& dstRefreshAddrInfo = dstRefreshAddrInfoArray[sqeIdx];
-            HCCL_DEBUG("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update %uth cached SQE with sqeType[%u] srcRefreshAddrInfo[rankid[%u], memType[%u]] dstRefreshAddrInfoArray[rankid[%u], memType[%u]] curTaskId[%u]",
+            HCCL_DEBUG("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update %uth cached SQE: sqeType[%u] srcRefreshAddrInfo[rankid[%u], memType[%u]] dstRefreshAddrInfoArray[rankid[%u], memType[%u]] curTaskId[%u]",
                 sqeIdx, sqeType, srcRefreshAddrInfo.rankId, srcRefreshAddrInfo.memType, dstRefreshAddrInfo.rankId, dstRefreshAddrInfo.memType, curTaskId);
 
             // 根据SQE type进行对应刷新 (task id始终要刷新; addr相关字段有条件刷新)
@@ -447,7 +447,7 @@ namespace hccl {
                     return HCCL_E_NOT_SUPPORT;
                 }
                 case SqeType::FLIP_PLACEHOLDER_SQE: {
-                    HCCL_DEBUG("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] placeholder should not be cached, sqeType[%u] sqeIdx[%u]", sqeType, sqeIdx);
+                    HCCL_ERROR("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] placeholder should not be cached, sqeType[%u] sqeIdx[%u]", sqeType, sqeIdx);
                     return HCCL_E_INTERNAL;
                 }
                 default: {
