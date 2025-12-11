@@ -236,7 +236,8 @@ extern HcclResult HcclCommResume(HcclComm comm);
  * @param alignment Memory range alignment, now only support 0
  * @param flags The flag of this memory range, now only support 0
  */
-extern HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
+extern HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, 
+                                         size_t alignment, uint64_t flags);
 
 /**
  * @brief Unset the virtual memory range to HCCL communicator
@@ -254,7 +255,8 @@ extern HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr);
  * @param handle the physical memory hande
  * @param flags the flag of physical memory, now only support 0
  */
-extern HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, size_t offset, aclrtDrvMemHandle handle, uint64_t flags);
+extern HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, size_t offset, 
+                                             aclrtDrvMemHandle handle, uint64_t flags);
 
 /**
  * @brief Deactivate memory.
