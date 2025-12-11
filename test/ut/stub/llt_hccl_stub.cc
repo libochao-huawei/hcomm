@@ -1061,6 +1061,24 @@ aclError aclrtNotifyBatchReset(aclrtNotify *notifies, size_t num)
     return ACL_SUCCESS;
 }
 
+rtError_t rtNotifyGetAddrOffset(rtNotify_t notify, uint64_t* devAddrOffset)
+{
+    if (notify == nullptr || devAddrOffset == nullptr) {
+        HCCL_ERROR("parameter error : notify[%p], devAddrOffset[%p]",
+            notify, devAddrOffset);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+    
+    rt_notify_t* ipc_notify = (rt_notify_t*)notify;
+    if (nullptr == ipc_notify->ipc_notify_shm) {
+        HCCL_ERROR("parameter error : notify_shm[%p]", ipc_notify->ipc_notify_shm);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+    
+    *devAddrOffset = (u64)&ipc_notify->ipc_notify_shm->record_cnt[ipc_notify->notify_id];
+    return RT_ERROR_NONE;
+}
+
 aclError aclrtStreamStop(aclrtStream stream)
 {
     return ACL_SUCCESS;

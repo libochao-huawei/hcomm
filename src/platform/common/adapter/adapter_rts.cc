@@ -1369,27 +1369,6 @@ HcclResult hrtGetNotifySize(u32 &notifySize)
 #endif
 }
 
-HcclResult hrtCalNotifyOffset(const u32 notifyId, const u32 notifySize, u64 &notifyOffset)
-{
-#ifndef HCCD
-    DevType deviceType;
-    CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType == DevType::DEV_TYPE_910B || deviceType == DevType::DEV_TYPE_910_93) {
-        constexpr u32 NOTIFY_NUM_PER_SLICE = 512;
-        constexpr u32 NOTIFY_NUM_SLICE_SIZE = 64 * 1024;
-        notifyOffset = (notifyId % NOTIFY_NUM_PER_SLICE) * notifySize +
-            (notifyId / NOTIFY_NUM_PER_SLICE) * NOTIFY_NUM_SLICE_SIZE;
-    } else {
-        HCCL_INFO("[hrtCalNotifyOffset] Not A2 or A3, use the default calculation method.");
-        notifyOffset = notifyId * notifySize;
-    }
-    return HCCL_SUCCESS;
-#else
-    HCCL_ERROR("[hrtCalNotifyOffset]Does not support this interface.");
-    return HCCL_E_NOT_SUPPORT;
-#endif
-}
-
 HcclResult hrtNotifyGetOffset(HcclRtNotify notify, u64 &offset)
 {
 #ifndef HCCD
@@ -1405,20 +1384,8 @@ HcclResult hrtNotifyGetOffset(HcclRtNotify notify, u64 &offset)
         return HCCL_SUCCESS;
     };
 
-    auto getNotifyOffsetFuncPtr = [](HcclRtNotify notify, u64 &offset) -> s32 {
-        u32 notifyId;
-        aclError ret = aclrtGetNotifyId(notify, &notifyId);
-        CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[hrtNotifyGetOffset] call aclrtGetNotifyId failed, "
-            "notify[%p], offset[%llu], ret[%d]", notify, offset, ret), HCCL_E_RUNTIME);
-
-        u32 notifySize;
-        CHK_RET(hrtGetNotifySize(notifySize));
-        CHK_RET(hrtCalNotifyOffset(notifyId, notifySize, offset));
-        HCCL_INFO("notify id[%u] get offset[%llu]", notifyId, offset);
-        return HCCL_SUCCESS;
-    };
-
-    REPLACE_NOTIFY_WITH_EVENT(getNotifyOffsetFuncPtr(notify, offset), getEventOffsetFuncPtr(notify, offset));
+    REPLACE_NOTIFY_WITH_EVENT(rtNotifyGetAddrOffset(notify, reinterpret_cast<uint64_t *>(&offset)),
+                                  getEventOffsetFuncPtr(notify, offset));
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtNotifyGetOffset]Does not support this interface.");
