@@ -25,9 +25,8 @@ public:
                                         AivAicpuOpParam *msg, u64 tilingBase);
     static HcclResult RunRpcServerApi(AicpuComContext *ctx, AicpuKfcRpcServer &rpc, u64 tilingBase = 0UL);
     static HcclResult AicpuRunRpcServerForApi(AicpuComContext *ctx, u64 tilingBase);
-    static HcclResult AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const HcclApi::Mc2InitTilingInner *tilingData);
-    static HcclResult AicpuRunRpcServerForMC2(KFCTaskV2 *task);
-    static HcclResult CheckNsStopLaunchStatus(uint32_t groupNum);
+    static u32 AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const HcclApi::Mc2InitTilingInner *tilingData);
+    static u32 AicpuRunRpcServerForMC2(KFCTaskV2 *task);
 
 private:
     friend class AicpuKfcDeprecatedProcess;
