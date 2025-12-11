@@ -2195,7 +2195,6 @@ HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &a
             algResResponse->paramOutputMem.ptr(), algResResponse->paramOutputMem.size());
     }
 
-    UpdateOpRingBufferIdx();
     hcclOpExecIndex_ = CalculateOpExecIndex(opParam, localUserRank_);
     HcclResult ret = Orchestrate(newTag, algName, opParam, executor, *algResResponse, commParam);
     if (ret != HCCL_SUCCESS) {
@@ -2373,6 +2372,7 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, const HcclOpResParam *commParam)
 {
     // 算子下发信息记录在共享内存区
+    UpdateOpRingBufferIdx();
     CHK_RET(aicpuShareData_.RecordOpInfo(newTag, param, (isDeviceMode_ ? mc2OpIndex_ : hcclOpExecIndex_),
                                          localUserRank_, isCustom_));
     CHK_RET(UpdateProfReportStartSqeIdx());
