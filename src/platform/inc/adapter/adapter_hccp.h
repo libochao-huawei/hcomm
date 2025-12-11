@@ -244,6 +244,11 @@ HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size,
 
 s32 hrtRaSocketRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 
+HcclResult IsSupportHdcAsync(bool &isSupportHdcAsync);
+s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize, void **reqHandle);
+s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *receivedSize, void **reqHandle);
+s32 hrtRaSocketGetAsyncReqResult(void *reqHandle, s32 *reqResult);
+
 HcclResult hrtEpollCtlAdd(const FdHandle fdHandle, RaEpollEvent event);
 HcclResult hrtEpollCtlMod(const FdHandle fdHandle, RaEpollEvent event);
 HcclResult hrtEpollCtlDel(const FdHandle fdHandle);

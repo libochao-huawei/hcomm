@@ -112,14 +112,8 @@ HcclResult stub_ZeroCopyMemoryAgentSt_Send(hccl::HcclSocket * socket, const void
     return HCCL_SUCCESS;
 }
 
-HcclResult stub_ZeroCopyMemoryAgentSt_IRecv(hccl::HcclSocket *socket, void *recvBuf, u32 recvBufLen, u64 &compSize)
+HcclResult ZeroCopyMemoryAgentRecv(hccl::HcclSocket *socket, void *recvBuf, u32 recvBufLen, u64 &compSize)
 {
-    std::unique_lock<std::mutex> lock(stub_ZeroCopyMemoryAgentUt_mutex);
-    while (exchangeDataForAck_.empty()) {
-        compSize = 0;
-        lock.unlock();
-        return HCCL_SUCCESS;
-    }
     RequestType requestType = RequestType::RESERVED;
     std::vector<u8> temp = exchangeDataForAck_.front();
     exchangeDataForAck_.pop();
@@ -282,8 +276,17 @@ HcclResult stub_ZeroCopyMemoryAgentSt_IRecv(hccl::HcclSocket *socket, void *recv
             compSize = temp.size();
         }
     }
-    lock.unlock();
     return HCCL_SUCCESS;
+}
+
+HcclResult stub_ZeroCopyMemoryAgent_IRecv(hccl::HcclSocket *socket, void *recvBuf, u32 recvBufLen, u64 &compSize)
+{
+    std::unique_lock<std::mutex> lock(stub_ZeroCopyMemoryAgentUt_mutex);
+    while (exchangeDataForAck_.empty()) {
+        compSize = 0;
+        return HCCL_SUCCESS;
+    }
+    return ZeroCopyMemoryAgentRecv(socket, recvBuf, recvBufLen, compSize);
 }
 
 s32 stub_SocketManagerTest_hrtRaGetSockets(u32 role, struct SocketInfoT conn[], u32 num, u32 *connectedNum)
@@ -343,7 +346,7 @@ s32 stub_SocketManagerTest_hrtRaSocketNonBlockRecvHB(const FdHandle fdHandle, vo
     return 0;
 }
 
-class ZeroCopyMemoryAgentSt : public testing::Test
+class ZeroCopyMemoryAgentUt : public testing::Test
 {
 protected:
     static void SetUpTestCase()
@@ -434,12 +437,12 @@ rtError_t aclrtMemImportFromShareableHandle_stub(uint64_t shareableHandle, int32
     return ACL_SUCCESS;
 }
 
-TEST_F(ZeroCopyMemoryAgentSt, ut_agent_test)
+TEST_F(ZeroCopyMemoryAgentUt, ut_agent_test)
 {
     MOCKER(GetIsSupSockBatchCloseImmed).stubs().will(invoke(stub_SocketManagerTest_GetIsSupSockBatchCloseImmed));
     u32 interfaceVersion = 1;
     MOCKER(hrtRaGetInterfaceVersion)
-        .expects(atMost(1))
+        .expects(atMost(2))
         .with(any(), any(), outBoundP(&interfaceVersion))
         .will(returnValue(HCCL_SUCCESS));
     HcclResult ret;
@@ -449,7 +452,7 @@ TEST_F(ZeroCopyMemoryAgentSt, ut_agent_test)
         .stubs()
         .with(any())
         .will(invoke(stub_ZeroCopyMemoryAgentSt_Send));
-    MOCKER_CPP(&HcclSocket::IRecv).stubs().will(invoke(stub_ZeroCopyMemoryAgentSt_IRecv));
+    MOCKER_CPP(&HcclSocket::IRecv).stubs().will(invoke(stub_ZeroCopyMemoryAgent_IRecv));
     MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
     MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
     std::unique_ptr<HcclSocketManager> socketManager;
@@ -497,7 +500,7 @@ TEST_F(ZeroCopyMemoryAgentSt, ut_agent_test)
     HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0);
 }
 
-TEST_F(ZeroCopyMemoryAgentSt, ut_agent_wait_timeout)
+TEST_F(ZeroCopyMemoryAgentUt, ut_agent_wait_timeout)
 {
     std::unique_ptr<HcclSocketManager> socketManager;
     socketManager.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0));
@@ -515,4 +518,270 @@ TEST_F(ZeroCopyMemoryAgentSt, ut_agent_wait_timeout)
 
     agent.reqMsgCounter_[static_cast<int>(RequestType::SET_MEMORY_RANGE)] = 1;
     EXPECT_NE(agent.WaitForAllRemoteComplete(RequestType::SET_MEMORY_RANGE), HCCL_SUCCESS);
+}
+
+HcclResult stub_ZeroCopyMemoryAgent_SendAsync(hccl::HcclSocket *socket, const void *data, u64 size,
+    u64 *sentSize, void **reqHandle)
+{
+    std::unique_lock<std::mutex> lock(stub_ZeroCopyMemoryAgentUt_mutex);
+    std::vector<u8> temp;
+    temp.resize(size);
+    memcpy_s(temp.data(), size, data, size);
+    exchangeDataForAck_.push(temp);
+    *sentSize = size;
+    *reqHandle = (void*)0x01;
+    return HCCL_SUCCESS;
+}
+
+HcclResult stub_ZeroCopyMemoryAgent_RecvAsync(hccl::HcclSocket *socket, void *recvBuf, u64 recvBufLen,
+    u64 *receivedSize, void **reqHandle)
+{
+    *reqHandle = (void*)0x02;
+    std::unique_lock<std::mutex> lock(stub_ZeroCopyMemoryAgentUt_mutex);
+    while (exchangeDataForAck_.empty()) {
+        *receivedSize = 0;
+        return HCCL_SUCCESS;
+    }
+    u64 compSize = 0;
+    HcclResult ret = ZeroCopyMemoryAgentRecv(socket, recvBuf, recvBufLen, compSize);
+    *receivedSize = compSize;
+    return ret;
+}
+
+HcclResult stub_ZeroCopyMemoryAgent_GetAsyncReqResult(hccl::HcclSocket *socket, void *reqHandle, HcclResult &reqResult)
+{
+    reqResult = HCCL_SUCCESS;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(ZeroCopyMemoryAgentUt, Ut_AgentFunc_When_UseAsyncSocketApi_ExpectNorm)
+{
+    MOCKER(GetIsSupSockBatchCloseImmed).stubs().will(invoke(stub_SocketManagerTest_GetIsSupSockBatchCloseImmed));
+    u32 interfaceVersion = 1;
+    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(2))
+    .with(any(), any(), outBoundP(&interfaceVersion))
+    .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret; 
+
+    MOCKER(HcclSocket::IsSupportAsync).stubs().will(returnValue(true));
+    MOCKER_CPP(&HcclSocket::SendAsync).stubs().will(invoke(stub_ZeroCopyMemoryAgent_SendAsync));
+    MOCKER_CPP(&HcclSocket::RecvAsync).stubs().will(invoke(stub_ZeroCopyMemoryAgent_RecvAsync));
+    MOCKER_CPP(&HcclSocket::GetAsyncReqResult).stubs().will(invoke(stub_ZeroCopyMemoryAgent_GetAsyncReqResult));
+
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+    std::unique_ptr<HcclSocketManager> socketManager;
+    socketManager.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0));
+    std::string commTag = "SocketManagerTest";
+    bool isInterLink = false;
+    u32 socketsPerLink = 1;
+    NicType socketType = NicType::VNIC_TYPE;
+    HcclSocketRole localRole = HcclSocketRole::SOCKET_ROLE_SERVER;
+    HcclIpAddress localIPs(0x01);
+    ret = HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::vector<RankInfo> rank_vector;
+    get_ranks_1server_2dev(rank_vector);
+    ZeroCopyMemoryAgent agent(socketManager, 0, 0, localIPs, rank_vector, 0, true,"ZeroCopyMemoryAgentTest");
+    EXPECT_EQ(agent.Init(), HCCL_SUCCESS);
+    MOCKER(aclrtReserveMemAddress).stubs().will(invoke(aclrtReserveMemAddress_stub));
+    MOCKER(aclrtMemImportFromShareableHandle).stubs().will(invoke(aclrtMemImportFromShareableHandle_stub));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+
+    EXPECT_EQ(agent.SetMemoryRange(reinterpret_cast<void *>(reinterpret_cast<u64>(vir_ptr_map[0].data())), lenth, alignment, flags),
+        HCCL_SUCCESS);
+    EXPECT_EQ(agent.ActivateCommMemory(reinterpret_cast<void *>(reinterpret_cast<u64>(vir_ptr_map[0].data())),
+                lenth, 0,
+                reinterpret_cast<void *>(reinterpret_cast<u64>(vir_ptr_map[3].data())), flags),
+        HCCL_SUCCESS);
+    EXPECT_EQ(agent.DeactivateCommMemory(reinterpret_cast<void *>(reinterpret_cast<u64>(vir_ptr_map[0].data()))),
+        HCCL_SUCCESS);
+    EXPECT_EQ(agent.UnsetMemoryRange(reinterpret_cast<void *>(reinterpret_cast<u64>(vir_ptr_map[0].data()))),
+        HCCL_SUCCESS);
+
+    EXPECT_EQ(agent.BarrierClose(), HCCL_SUCCESS);
+    EXPECT_EQ(agent.DeInit(), HCCL_SUCCESS);
+    agent.mapDevPhyIdconnectedSockets_.clear();
+    HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0);
+}
+
+TEST_F(ZeroCopyMemoryAgentUt, Ut_RequestBatchSendAsync_When_CombineAckAndReq_ExpectNorm)
+{
+    MOCKER(GetIsSupSockBatchCloseImmed).stubs().will(invoke(stub_SocketManagerTest_GetIsSupSockBatchCloseImmed));
+    u32 interfaceVersion = 1;
+    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(2))
+    .with(any(), any(), outBoundP(&interfaceVersion))
+    .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret; 
+
+    MOCKER(HcclSocket::IsSupportAsync).stubs().will(returnValue(true));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+    std::unique_ptr<HcclSocketManager> socketManager;
+    socketManager.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0));
+    std::string commTag = "SocketManagerTest";
+    bool isInterLink = false;
+    u32 socketsPerLink = 1;
+    NicType socketType = NicType::VNIC_TYPE;
+    HcclSocketRole localRole = HcclSocketRole::SOCKET_ROLE_SERVER;
+    HcclIpAddress localIPs(0x01);
+    ret = HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::vector<RankInfo> rank_vector;
+    get_ranks_1server_2dev(rank_vector);
+    ZeroCopyMemoryAgent agent(socketManager, 0, 0, localIPs, rank_vector, 0, true,"ZeroCopyMemoryAgentTest");
+
+    MOCKER_CPP(&ZeroCopyMemoryAgent::InitInnerThread).stubs().will(returnValue(HCCL_SUCCESS));
+    EXPECT_EQ(agent.Init(), HCCL_SUCCESS);
+    MOCKER(aclrtReserveMemAddress).stubs().will(invoke(aclrtReserveMemAddress_stub));
+    MOCKER(aclrtMemImportFromShareableHandle).stubs().will(invoke(aclrtMemImportFromShareableHandle_stub));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+
+    MOCKER_CPP(&HcclSocket::SendAsync).stubs().will(returnValue(HCCL_SUCCESS));
+    agent.sendMgrs_[1].AddRequest(true, agent.exchangeDataForAck_[1]);
+    agent.sendMgrs_[1].AddRequest(false, agent.exchangeDataForSend_);
+    agent.RequestBatchSendAsync();
+    EXPECT_FALSE(agent.sendMgrs_[1].hasReq_[0].load());
+    EXPECT_TRUE(agent.sendMgrs_[1].hasReq_[1].load());
+    EXPECT_EQ(agent.sendMgrs_[1].reqDataSize_, 128U);
+
+    EXPECT_EQ(agent.DeInit(), HCCL_SUCCESS);
+    agent.mapDevPhyIdconnectedSockets_.clear();
+    HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0);
+}
+
+TEST_F(ZeroCopyMemoryAgentUt, Ut_RequestBatchSendAsync_When_SocketSendFailed_ExpectTryMore)
+{
+    MOCKER(GetIsSupSockBatchCloseImmed).stubs().will(invoke(stub_SocketManagerTest_GetIsSupSockBatchCloseImmed));
+    u32 interfaceVersion = 1;
+    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(2))
+    .with(any(), any(), outBoundP(&interfaceVersion))
+    .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret; 
+
+    MOCKER(HcclSocket::IsSupportAsync).stubs().will(returnValue(true));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+    std::unique_ptr<HcclSocketManager> socketManager;
+    socketManager.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0));
+    std::string commTag = "SocketManagerTest";
+    bool isInterLink = false;
+    u32 socketsPerLink = 1;
+    NicType socketType = NicType::VNIC_TYPE;
+    HcclSocketRole localRole = HcclSocketRole::SOCKET_ROLE_SERVER;
+    HcclIpAddress localIPs(0x01);
+    ret = HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::vector<RankInfo> rank_vector;
+    get_ranks_1server_2dev(rank_vector);
+    ZeroCopyMemoryAgent agent(socketManager, 0, 0, localIPs, rank_vector, 0, true,"ZeroCopyMemoryAgentTest");
+
+    MOCKER_CPP(&ZeroCopyMemoryAgent::InitInnerThread).stubs().will(returnValue(HCCL_SUCCESS));
+    EXPECT_EQ(agent.Init(), HCCL_SUCCESS);
+    MOCKER(aclrtReserveMemAddress).stubs().will(invoke(aclrtReserveMemAddress_stub));
+    MOCKER(aclrtMemImportFromShareableHandle).stubs().will(invoke(aclrtMemImportFromShareableHandle_stub));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+
+    // SendAsync调用失败场景
+    MOCKER_CPP(&HcclSocket::SendAsync).stubs().will(returnValue(HCCL_E_NETWORK));
+    agent.sendMgrs_[1].AddRequest(false, agent.exchangeDataForSend_);
+    agent.sendMgrs_[1].reqDataSize_ = 0;
+    agent.sendMgrs_[1].sentSize_ = 0;
+    agent.RequestBatchSendAsync();
+    EXPECT_FALSE(agent.sendMgrs_[1].hasReq_[0].load());
+    EXPECT_TRUE(agent.sendMgrs_[1].hasReq_[1].load());
+    EXPECT_EQ(agent.sendMgrs_[1].reqDataSize_, 64U);
+    EXPECT_EQ(agent.sendMgrs_[1].sentSize_, 0);
+
+    // SendAsync后，GetResult表明send失败场景
+    HcclResult sendReqRet = HCCL_E_TCP_TRANSFER;
+    MOCKER_CPP(&HcclSocket::GetAsyncReqResult).stubs()
+    .with(any(), outBound(sendReqRet))
+    .will(returnValue(HCCL_E_AGAIN))
+    .then(returnValue(HCCL_SUCCESS));
+    agent.sendMgrs_[1].AddRequest(false, agent.exchangeDataForSend_);
+    // 构造SendAsync的结果
+    void *handle = (void*)0x01;
+    agent.sendMgrs_[1].lastSendSize_ = 0;
+    agent.sendMgrs_[1].sentSize_ = 0;
+    agent.sendMgrs_[1].reqDataSize_ = 64;
+    agent.sendMgrs_[1].lastSendHandle_ = handle;
+    agent.CheckBatchSendAsyncResult();
+    EXPECT_EQ(agent.sendMgrs_[1].lastSendHandle_, handle);
+
+    agent.CheckBatchSendAsyncResult();
+    EXPECT_FALSE(agent.sendMgrs_[1].hasReq_[0].load());
+    EXPECT_TRUE(agent.sendMgrs_[1].hasReq_[1].load());
+    EXPECT_EQ(agent.sendMgrs_[1].reqDataSize_, 64U);
+    EXPECT_EQ(agent.sendMgrs_[1].sentSize_, 0);
+    EXPECT_EQ(agent.sendMgrs_[1].lastSendSize_, 0);
+    EXPECT_EQ(agent.sendMgrs_[1].lastSendHandle_, nullptr);
+
+    EXPECT_EQ(agent.DeInit(), HCCL_SUCCESS);
+    agent.mapDevPhyIdconnectedSockets_.clear();
+    HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0);
+}
+
+TEST_F(ZeroCopyMemoryAgentUt, Ut_RequestBatchRecvAsync_When_SocketRecvFailed_ExpectTryMore)
+{
+    MOCKER(GetIsSupSockBatchCloseImmed).stubs().will(invoke(stub_SocketManagerTest_GetIsSupSockBatchCloseImmed));
+    u32 interfaceVersion = 1;
+    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(2))
+    .with(any(), any(), outBoundP(&interfaceVersion))
+    .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret; 
+
+    MOCKER(HcclSocket::IsSupportAsync).stubs().will(returnValue(true));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+    std::unique_ptr<HcclSocketManager> socketManager;
+    socketManager.reset(new (std::nothrow) HcclSocketManager(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, 0));
+    std::string commTag = "SocketManagerTest";
+    bool isInterLink = false;
+    u32 socketsPerLink = 1;
+    NicType socketType = NicType::VNIC_TYPE;
+    HcclSocketRole localRole = HcclSocketRole::SOCKET_ROLE_SERVER;
+    HcclIpAddress localIPs(0x01);
+    ret = HcclNetInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    std::vector<RankInfo> rank_vector;
+    get_ranks_1server_2dev(rank_vector);
+    ZeroCopyMemoryAgent agent(socketManager, 0, 0, localIPs, rank_vector, 0, true,"ZeroCopyMemoryAgentTest");
+
+    MOCKER_CPP(&ZeroCopyMemoryAgent::InitInnerThread).stubs().will(returnValue(HCCL_SUCCESS));
+    EXPECT_EQ(agent.Init(), HCCL_SUCCESS);
+    MOCKER(aclrtReserveMemAddress).stubs().will(invoke(aclrtReserveMemAddress_stub));
+    MOCKER(aclrtMemImportFromShareableHandle).stubs().will(invoke(aclrtMemImportFromShareableHandle_stub));
+    MOCKER(aclrtMapMem).stubs().will(returnValue(ACL_SUCCESS));
+    MOCKER(aclrtUnmapMem).stubs().will(returnValue(ACL_SUCCESS));
+
+    // RecvAsync后，GetResult表明Recv失败场景
+    void *handle = (void*)0x02;
+    MOCKER_CPP(&HcclSocket::RecvAsync).stubs()
+    .with(any(), any(), any(), outBoundP(&handle))
+    .will(returnValue(HCCL_SUCCESS));
+    agent.recvMgrs_[1].recvIndex_ = 0;
+    agent.recvMgrs_[1].lastRecvSize_ = 0;
+    agent.RequestBatchRecvAsync();
+    EXPECT_EQ(agent.recvMgrs_[1].lastRecvHandle_, handle);
+    EXPECT_EQ(agent.recvMgrs_[1].lastRecvSize_, 0);
+  
+    HcclResult recvReqRet = HCCL_E_TCP_TRANSFER;
+    MOCKER_CPP(&HcclSocket::GetAsyncReqResult).stubs()
+    .with(any(), outBound(recvReqRet))
+    .will(returnValue(HCCL_E_AGAIN))
+    .then(returnValue(HCCL_SUCCESS));
+    agent.CheckBatchRecvAsyncResult();
+    EXPECT_EQ(agent.recvMgrs_[1].recvIndex_, 0);
+    EXPECT_EQ(agent.recvMgrs_[1].lastRecvHandle_, handle);
+    agent.CheckBatchRecvAsyncResult();
+    EXPECT_EQ(agent.recvMgrs_[1].recvIndex_, 0);
+    EXPECT_EQ(agent.recvMgrs_[1].lastRecvHandle_, nullptr);
+
+    EXPECT_EQ(agent.DeInit(), HCCL_SUCCESS);
+    agent.mapDevPhyIdconnectedSockets_.clear();
+    HcclNetDeInit(NICDeployment::NIC_DEPLOYMENT_DEVICE, 0, 0);
 }

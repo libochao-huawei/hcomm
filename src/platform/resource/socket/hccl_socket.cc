@@ -496,6 +496,75 @@ HcclResult HcclSocket::IRecv(void *recvBuf, u32 recvBufLen, u64& compSize)
     return HCCL_SUCCESS; // EAGAIN和success都要返回HCCL_SUCCESS
 }
 
+HcclResult HcclSocket::SendAsync(const void *data, u64 size, u64 *sentSize, void **reqHandle)
+{
+    CHK_PTR_NULL(fdHandle_);
+    CHK_PTR_NULL(data);
+    CHK_PTR_NULL(sentSize);
+    CHK_PTR_NULL(reqHandle);
+    CHK_PRT_RET((size == 0) || (size > MAX_MSG_STR_LEN),
+        HCCL_ERROR("[SendAsync]send size[%d] is 0 or large than %d", size, MAX_MSG_STR_LEN), HCCL_E_PARA);
+
+    s32 ret = hrtRaSocketSendAsync(fdHandle_, data, size, sentSize, reqHandle);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    }
+
+    if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    }
+    HCCL_ERROR("[SendAsync]RaSocketSendAsync failed, data[%p] size[%llu] ret[%d]", data, size, ret);
+    return HCCL_E_NETWORK;
+}
+
+HcclResult HcclSocket::RecvAsync(void *recvBuf, u64 recvBufLen, u64 *receivedSize, void **reqHandle)
+{
+    CHK_PTR_NULL(fdHandle_);
+    CHK_PTR_NULL(recvBuf);
+    CHK_PTR_NULL(receivedSize);
+    CHK_PTR_NULL(reqHandle);
+    CHK_PRT_RET(recvBufLen == 0, HCCL_ERROR("[RecvAsync]recvBufLen is 0"), HCCL_E_PARA);
+
+    s32 ret = hrtRaSocketRecvAsync(fdHandle_, recvBuf, recvBufLen, receivedSize, reqHandle);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    }
+
+    if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    }
+    HCCL_ERROR("[RecvAsync]RaSocketRecvAsync failed, recvBuf[%p] recvBufLen[%llu] ret[%d]", recvBuf, recvBufLen, ret);
+    return HCCL_E_NETWORK;
+}
+
+HcclResult HcclSocket::GetAsyncReqResult(void *reqHandle, HcclResult &reqResult)
+{
+    CHK_PTR_NULL(reqHandle);
+    s32 asyncReqRet = 0;
+    s32 ret = hrtRaSocketGetAsyncReqResult(reqHandle, &asyncReqRet);
+    if (ret == 0) {
+        reqResult = (asyncReqRet == 0) ? HCCL_SUCCESS : (asyncReqRet == SOCK_EAGAIN ? HCCL_E_AGAIN : HCCL_E_TCP_TRANSFER);
+        return HCCL_SUCCESS;
+    }
+
+    if (ret == OTHERS_EAGAIN) {
+        return HCCL_E_AGAIN;
+    }
+    HCCL_ERROR("[GetAsyncReqResult]RaSocketGetAsyncReqResult failed, ret[%d]", ret);
+    return HCCL_E_NETWORK;
+}
+
+// static
+bool HcclSocket::IsSupportAsync()
+{
+    bool isSupportRaSocketAsync = false;
+    HcclResult ret = IsSupportHdcAsync(isSupportRaSocketAsync);
+    if (ret != HCCL_SUCCESS) {  // 失败时默认不支持异步收发
+        HCCL_WARNING("[IsSupportAsync] IsSupportHdcAsync failed ret[%d]", ret);
+    }
+    return isSupportRaSocketAsync;
+}
+
 std::string HcclSocket::GetTag() const
 {
     return tag_;

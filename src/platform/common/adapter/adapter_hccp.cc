@@ -112,6 +112,9 @@ constexpr u32 TYPICAL_QP_MODIFY_VERSION = 2; // 支持QP解耦socket建链版本
 constexpr u32 SOCKET_ABORT = 97; // opcode: RA_RS_SOCKET_ABORT 
 constexpr u32 SOCKET_ABORT_VERSION = 1; // 支持socket abort的版本号
 
+constexpr u32 RS_INIT = 15; // opcode: RA_RS_INIT
+constexpr u32 RS_INIT_SUPPORT_ASYNC_VERSION = 2; // 支持socket async的版本号
+
 constexpr u32 ROCE_ENOMEM_RET = 328100; // 创建qp时由于内存不足的错误返回值
 
 template <typename T>
@@ -1499,6 +1502,56 @@ HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, s
     }
     HCCL_DEBUG("ra socket receive finished");
     return HCCL_SUCCESS;
+}
+
+HcclResult IsSupportHdcAsync(bool &isSupportHdcAsync)
+{
+    isSupportHdcAsync = false;
+    s32 deviceLogicID = -1;
+    u32 devicePhyId = 0;
+    CHK_RET(hrtGetDevice(&deviceLogicID));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicID), devicePhyId));
+    u32 version = 0;
+ 
+    // 获取版本号查看是否兼容
+    HcclResult ret = hrtRaGetInterfaceVersion(devicePhyId, RS_INIT, &version);
+    CHK_PRT_RET(ret == HCCL_E_NETWORK, HCCL_ERROR("[IsSupportHdcAsync]hrtRaGetInterfaceVersion "\
+        "failed, interface[%u]", RS_INIT), ret);
+    if (ret == HCCL_E_NOT_SUPPORT) {
+        HCCL_WARNING("this package does not support hrtRaGetInterfaceVersion, please change new package");
+        return HCCL_SUCCESS;
+    }
+ 
+    if (version >= RS_INIT_SUPPORT_ASYNC_VERSION) {
+        isSupportHdcAsync = true;
+    }
+
+    HCCL_INFO("[IsSupportHdcAsync] isSupportHdcAsync[%d], version[%d]", isSupportHdcAsync, version);
+    return HCCL_SUCCESS;
+}
+
+s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize, void **reqHandle)
+{
+    if (DlRaFunction::GetInstance().dlRaSocketSendAsync == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaSocketSendAsync(fdHandle, data, size, sentSize, reqHandle);
+}
+
+s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *receivedSize, void **reqHandle)
+{
+    if (DlRaFunction::GetInstance().dlRaSocketRecvAsync == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaSocketRecvAsync(fdHandle, data, size, receivedSize, reqHandle);
+}
+
+s32 hrtRaSocketGetAsyncReqResult(void *reqHandle, s32 *reqResult)
+{
+    if (DlRaFunction::GetInstance().dlRaGetAsyncReqResult == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaGetAsyncReqResult(reqHandle, reqResult);
 }
 
 HcclResult hrtGetHostIf(vector<pair<string, HcclIpAddress>> &hostIfs, u32 devPhyId)

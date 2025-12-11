@@ -1615,3 +1615,44 @@ TEST_F(RuntimeTest, st_hrtCtxGetCurrent_null_ctx)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(ctx, nullptr);
 }
+
+TEST_F(RuntimeTest, St_IsSupportRaSocketAsync_When_RaSocketSupportAsync_Expect_True)
+{
+    MOCKER(hrtGetDevice).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().will(returnValue(HCCL_SUCCESS));
+
+    u32 configVersion = 2;
+    MOCKER(hrtRaGetInterfaceVersion).expects(atMost(1)).will(invoke(stub_hrtRaGetInterfaceVersion1));
+
+    bool isSupportHdcAsync;
+    HcclResult ret = IsSupportHdcAsync(isSupportHdcAsync);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_TRUE(isSupportHdcAsync);
+}
+
+TEST_F(RuntimeTest, St_IsSupportRaSocketAsync_When_RaSocketNotSupportAsync_Expect_False)
+{
+    MOCKER(hrtGetDevice).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(hrtGetDevicePhyIdByIndex).stubs().will(returnValue(HCCL_SUCCESS));
+
+    u32 configVersion = 1;
+    MOCKER(hrtRaGetInterfaceVersion).stubs()
+    .with(any(), any(), outBoundP(&configVersion))
+    .will(returnValue(HCCL_E_NETWORK))
+    .then(returnValue(HCCL_E_NOT_SUPPORT))
+    .then(returnValue(HCCL_SUCCESS));
+
+    bool isSupportHdcAsync;
+    HcclResult ret = IsSupportHdcAsync(isSupportHdcAsync);
+    EXPECT_EQ(ret, HCCL_E_NETWORK);
+    EXPECT_FALSE(isSupportHdcAsync);
+
+    ret = IsSupportHdcAsync(isSupportHdcAsync);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_FALSE(isSupportHdcAsync);
+
+    ret = IsSupportHdcAsync(isSupportHdcAsync);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_FALSE(isSupportHdcAsync);
+}
+

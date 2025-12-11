@@ -85,6 +85,11 @@ public:
     HcclResult ISend(void *data, u64 size, u64& compSize);
     HcclResult IRecv(void *recvBuf, u32 recvBufLen, u64& compSize);
 
+    static bool IsSupportAsync();
+    HcclResult SendAsync(const void *data, u64 size, u64 *sentSize, void **reqHandle);
+    HcclResult RecvAsync(void *recvBuf, u64 recvBufLen, u64 *receivedSize, void **reqHandle);
+    HcclResult GetAsyncReqResult(void *reqHandle, HcclResult &reqResult);
+
     HcclResult AddWhiteList(std::vector<SocketWlistInfo> &wlistInfoVec);
     HcclResult DelWhiteList(std::vector<SocketWlistInfo> &wlistInfoVec);
 
