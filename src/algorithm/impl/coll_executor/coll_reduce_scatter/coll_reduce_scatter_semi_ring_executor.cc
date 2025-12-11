@@ -78,6 +78,11 @@ HcclResult CollReduceScatterSemiRingExecutor::DoubleRingMidCountReduceScatter(
     const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> multRingsUserMemSlice, const bool retryEnable)
 {
+    (void) tag;
+    (void) baseOffset;
+    (void) opInfo;
+    (void) multRingsSliceZero;
+    (void) retryEnable;
     HCCL_CONFIG_INFO(HCCL_ALG,
         "[CollReduceScatterSemiRingExecutor] DoubleRingMidCountReduceScatter starts.");
     

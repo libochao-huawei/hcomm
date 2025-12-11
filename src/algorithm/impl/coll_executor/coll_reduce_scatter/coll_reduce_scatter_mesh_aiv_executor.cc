@@ -166,14 +166,14 @@ HcclResult CollReduceScatterMeshAivExecutor::Orchestrate(OpParam& param, AlgReso
         HCCL_ERROR("[CollReduceScatterMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], ReduceScatter executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
  
 HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllReduce aiv enter.", __func__);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] ReduceScatter aiv enter.", __func__);
  
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
@@ -219,13 +219,13 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][KernelRun]AllReduce aiv failed, return[%d]", ret),
+        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][KernelRun]ReduceScatter aiv failed, return[%d]", ret),
         ret);
 
     ExtraArgs extraArgs;
     CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
  
-    HCCL_INFO("[CollReduceScatterMeshAivExecutor][KernelRun]AllReduce aiv run success.");
+    HCCL_INFO("[CollReduceScatterMeshAivExecutor][KernelRun]ReduceScatter aiv run success.");
     return HCCL_SUCCESS;
 }
  

@@ -467,6 +467,7 @@ HcclResult AlltoAllOperator::CheckNeedRecreateComm(const std::string& algName, c
 
 bool AlltoAllOperator::IsA3PipelineCondition(const OpParam& param)
 {
+    (void) param;
     return false;
 }
 

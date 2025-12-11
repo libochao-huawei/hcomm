@@ -306,7 +306,6 @@ bool IsHcclOpInplace(const HcclCMDType &opType, const OpParam &param, u32 userRa
         case HcclCMDType::HCCL_CMD_RECEIVE:
             isInplaceStatus = 0;
             return false;
-            break;
         case HcclCMDType::HCCL_CMD_ALLREDUCE:
             inputDataSize = param.DataDes.count * unitSize;
             outputDataSize = param.DataDes.count * unitSize;
@@ -395,6 +394,7 @@ bool ExecutorNoSupportDMAReduce(const std::string& algName)
 bool ExecutorSupportInPlace(OpParam &param, const std::string& algName, bool retryEnable,
     InplaceSupportRetryStatus &inPlaceSupportRetryStatus)
 {
+    (void) param;
     // case 2.2
     if (ExecutorOnlySupportDMAReduce(algName)) {
         if (retryEnable) {

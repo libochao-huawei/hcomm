@@ -71,6 +71,7 @@ HcclResult CollBroadCastRingZerocopyExecutor::DoubleRingScatter(const std::strin
     const u64 count, const HcclDataType dataType, const std::vector<std::vector<Slice> > multRingsSliceZero,
     u32 root, Stream stream, HcomCollOpInfo *opInfo, const u64 baseOffset)
 {
+    (void) tag;
     HCCL_INFO("[BroadCastOperator][CollBroadCastRingZerocopyExecutor] DoubleRingScatter starts");
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0RingCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
@@ -388,6 +389,7 @@ HcclResult CollBroadCastRingZerocopyExecutor::DoubleRingAllGather(
     Stream stream, s32 profStage, const u64 baseOffset, HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> multRingsUserMemSlice)
 {
+    (void) tag;
     HCCL_INFO("[CollBroadCastRingZerocopyExecutor][DoubleRingAllGather] DoubleRingAllGather starts");
  
     // 拿到ring环映射关系

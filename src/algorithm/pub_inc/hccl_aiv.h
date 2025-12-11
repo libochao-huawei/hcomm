@@ -245,7 +245,7 @@ HcclResult ReadBinFile(const std::string& fileName, std::string& buffer);
 HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, s8* stubFunc);
 
 void SetAivProfilingInfoBeginTime(AivProfilingInfo& aivProfilingInfo);
-void SetAivProfilingInfoBeginTime(uint64_t& oneTime);
+void SetAivProfilingInfoBeginTime(uint64_t& beginTime);
 }
 
 #endif // HCCL_AIV_H

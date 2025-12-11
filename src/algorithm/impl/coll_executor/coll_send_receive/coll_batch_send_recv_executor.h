@@ -18,7 +18,7 @@ class CollBatchSendRecvExecutor : public CollCommExecutor {
 public:
     CollBatchSendRecvExecutor(const HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher);
     ~CollBatchSendRecvExecutor() = default;
-    HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
+    HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algResource) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
     // 增量建链资源计算接口
     HcclResult CalcIncreLinkRequest(const OpParam& param, std::set<u32>& ranksLinked, AlgResourceRequest& resourceRequest, bool& needIncreLink)

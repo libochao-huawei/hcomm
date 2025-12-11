@@ -86,6 +86,7 @@ HcclResult CollAllReduceRingZerocopyExecutor::DoubleRingReduceScatter(const std:
     s32 profStage, const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> multRingsUserMemSlice)
 {
+    (void) tag;
     HCCL_INFO("[CollAlignedAllReduceDoubleRingFor91093Executor][DoubleRingReduceScatter] DoubleRingReduceScatter starts");
 
     u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
@@ -413,6 +414,7 @@ HcclResult CollAllReduceRingZerocopyExecutor::DoubleRingAllGather(
     Stream stream, s32 profStage, const u64 baseOffset, HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> multRingsUserMemSlice)
 {
+    (void) tag;
     HCCL_INFO("[CollAllReduceRingZerocopyExecutor][DoubleRingAllGather] DoubleRingAllGather starts");
 
     // 拿到ring环映射关系

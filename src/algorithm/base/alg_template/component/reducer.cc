@@ -229,6 +229,7 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
 HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<Transport> &link,
     const std::vector<ReducerMemoryInfo> &reducerMems, u32 notifyIdx, Stream &stream, DstMemType resultMem) const
 {
+    (void) resultMem;
     CHK_PTR_NULL(stream.ptr());
     CHK_SMART_PTR_NULL(link);
 

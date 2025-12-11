@@ -1341,6 +1341,7 @@ HcclResult CollCommExecutor::MultiStreamReduceScatterMeshAtomic(const std::strin
     const std::vector<Slice> &dataSliceVct, Stream &stream,
     const CommPlane commLevelIndex, const u64 baseOffset, HcomCollOpInfo *opInfo)
 {
+    (void) tag;
     u32 unitSize = SIZE_TABLE[dataType];
 
     u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
@@ -1387,6 +1388,7 @@ HcclResult CollCommExecutor::MultiStreamReduceScatterMesh(const std::string &tag
     const std::vector<std::vector<Slice>>& multStreamsSlice, Stream stream,
     const CommPlane commLevelIndex, const u64 baseOffset)
 {
+    (void) tag;
     HcclResult ret = HCCL_SUCCESS;
     u64 streamNum = multStreamsSlice.size();
     HCCL_INFO("MultiStreamReduceScatterMesh streamNum[%llu]", streamNum);

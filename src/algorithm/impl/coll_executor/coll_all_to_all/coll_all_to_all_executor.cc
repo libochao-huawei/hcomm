@@ -409,9 +409,9 @@ bool CollAlltoAllExecutor::HasMassTasks(std::vector<SendRecvInfo> &allMeshAggreg
     return (maxTasks > massThreshold);
 }
 
-HcclResult CollAlltoAllExecutor::SetVirtualDispatcher(const HcclDispatcher vDispatcher)
+HcclResult CollAlltoAllExecutor::SetVirtualDispatcher(const HcclDispatcher virtualDispatcher)
 {
-    vDispatcher_ = vDispatcher;
+    vDispatcher_ = virtualDispatcher;
     return HCCL_SUCCESS;
 }
 

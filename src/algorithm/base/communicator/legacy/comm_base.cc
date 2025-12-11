@@ -29,7 +29,7 @@ CommBase::CommBase(const std::string &collectiveId, const u32 userRank, const u3
     const bool isUsedRdmaLevel0, const void* transportResourceInfoAddr, size_t transportResourceInfoSize,
     const std::string &tag, const NICDeployment nicDeployInner,
     bool isAlltoAllCommMesh, const bool useOneDoorbell, const bool isAicpuModeEn, const u32 rankRoot,
-    bool isHaveCpuRank, bool useSuperPodMode, DeviceMem expMem)
+    const bool isHaveCpuRank, const bool useSuperPodMode, DeviceMem expMem)
     : linkDummy_(nullptr), collectiveId_(collectiveId), userRank_(userRank),
       userRankSize_(userRankSize), rank_(rank), rankSize_(rankSize), paraVector_(paraVector),
       transportType_(rankSize, TransportType::TRANS_TYPE_RESERVED),

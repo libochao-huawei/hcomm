@@ -346,6 +346,7 @@ HcclResult ReduceScatterRingConcurrentDirect::ReducerRun(const HcclDispatcher di
 HcclResult ReduceScatterRingConcurrentDirect::RunMainStream(const u32 step, std::vector<Slice> txSliceVector,
     std::vector<Slice> rxSliceVector, const u32 rank, const u32 rankSize)
 {
+    (void) rank;
     CHK_RET(leftLink_->TxAck(stream_));
     CHK_RET(rightLink_->RxAck(stream_));
     u32 sliceSize = slices_.size() / rankSize;
@@ -396,6 +397,7 @@ HcclResult ReduceScatterRingConcurrentDirect::RunMainStream(const u32 step, std:
 HcclResult ReduceScatterRingConcurrentDirect::RunSubStream(const u32 step, std::vector<Slice> subSliceVector,
     std::vector<Slice> cclSliceVector, const u32 rank, const u32 rankSize)
 {
+    (void) rank;
     if (!isSdma_) {
         CHK_RET(LocalNotify::Post(subStreams_[0], dispatcher_, mainSignals_[0], profilerInput_.stage));
         CHK_RET(LocalNotify::Wait(subStreams_[0], dispatcher_, subSignals_[0], profilerInput_.stage));

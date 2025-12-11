@@ -20,7 +20,7 @@
 namespace hccl {
 
 TopoMatcher::TopoMatcher(const std::vector<std::vector<std::vector<u32>>> CommPlaneRanks,
-                         std::vector<bool> isBridgeVector,
+                         const std::vector<bool> isBridgeVector,
                          HcclTopoInfo &topoInfo,
                          HcclAlgoInfo &algoInfo,
                          HcclExternalEnable &externalEnable,

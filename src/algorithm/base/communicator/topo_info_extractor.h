@@ -60,7 +60,7 @@ public:
     HcclResult SetTopoDefaultInfoFor8P();
     HcclResult GetIsUsedRdmaMap(std::unordered_map<u32, bool> &isUsedRdmaMap);
     HcclResult GetCommPlaneRanks(std::vector<std::vector<std::vector<u32>>> &CommPlaneRanks);
-    void GetCommPlaneVector(std::vector<std::vector<std::vector<RankInfo>>> &commPlaneVector_);
+    void GetCommPlaneVector(std::vector<std::vector<std::vector<RankInfo>>> &commPlaneVector);
     void GetIsBridgeVector(std::vector<bool> &isBridgeVector);
     void InitAHCConfig();
     void AHCCommSubgroupInit();

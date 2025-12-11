@@ -164,7 +164,7 @@ using SetRankPortInfoCallBack =
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-void RegisterHeartBeatCallBack(RegisterToHeartBeatCallBack, UnRegisterToHeartBeatCallBack, SetRankPortInfoCallBack);
+void RegisterHeartBeatCallBack(RegisterToHeartBeatCallBack p1, UnRegisterToHeartBeatCallBack p2, SetRankPortInfoCallBack p3);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

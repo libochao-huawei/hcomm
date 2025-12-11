@@ -21,6 +21,7 @@ CollRunAlltoAllVStaged::CollRunAlltoAllVStaged(const HcclDispatcher dispatcher,
 HcclResult CollRunAlltoAllVStaged::ParallelTaskLoaderProcess(const std::string &tag, Stream &stream,
     SubCommInfo &level0CommInfo, std::vector<Stream> &ringStreams)
 {
+    (void) tag;
     u32 streamIndex;
     std::vector<Stream *> streamsPtr;
     streamsPtr.resize(ringStreams.size() + 1);
@@ -131,7 +132,7 @@ HcclResult CollRunAlltoAllVStaged::CheckNeedCreateVirtualLinks(AlgResourceReques
 {
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
         topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
-    HCCL_DEBUG("[CollRunAlltoAllVStaged][CheckNeedCreateVirtualLinks] AllToAllMeshReadOnly[%d]," \
+    HCCL_DEBUG("[CollRunAlltoAllVStaged][CheckNeedCreateVirtualLinks] AllToAllVMeshReadOnly[%d]," \
         "resourceRequest.streamNum[%u], GetExternalInputHcclEnableFfts()[%d], isAlltoAllZCopyMode_[%d]",
         alltoallMeshReadOnly, resourceRequest.streamNum, GetExternalInputHcclEnableFfts(), isAlltoAllZCopyMode_);
     if (!alltoallMeshReadOnly && (resourceRequest.streamNum != 0) && (!GetExternalInputHcclEnableFfts())
@@ -175,6 +176,8 @@ HcclResult CollRunAlltoAllVStaged::CalStagedAlltoallVCommInfo(TransportMemType i
     TransportMemType outputType,
     std::vector<LevelNSubCommTransport>& opTransport)
 {
+    (void) inputType;
+    (void) outputType;
     // 将网卡初始化判断，提到上层调用，减少无必要的循环依赖。
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
         topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
@@ -221,6 +224,7 @@ HcclResult CollRunAlltoAllVStaged::PrepareAlltoAllVStaged1(DeviceMem &sendBuf, D
     Stream &stream, const std::string &tag, std::unique_ptr<AlgTemplateBase> &alltoallLevel0,
     ExecMem &execMem)
 {
+    (void) tag;
     // opbase BCopy 不支持fullmesh算法，因此不必做算法选择
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         !isAlltoAllZCopyMode_) { // 单算子 && Buffer拷贝模式
@@ -356,6 +360,7 @@ HcclResult CollRunAlltoAllVStaged::PrepareAlltoAllVStaged2(DeviceMem &recvBuf, D
     Stream &stream, const std::string &tag, std::unique_ptr<AlgTemplateBase> &alltoallLevel1,
     ExecMem &execMem)
 {
+    (void) tag;
     alltoallLevel1 = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_ALL_2_ALL_V_STAGED_PAIRWISE, dispatcher_);
     CHK_SMART_PTR_NULL(alltoallLevel1);
@@ -376,7 +381,7 @@ HcclResult CollRunAlltoAllVStaged::PrepareAlltoAllVStaged2(DeviceMem &recvBuf, D
 
 HcclResult CollRunAlltoAllVStaged::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVStaged][KernelRun] AllToAll staged starts");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVStaged][KernelRun] AllToAllV staged starts");
     CHK_PRT_RET(topoAttr_.userRankSize % topoAttr_.meshAggregationRankSize != 0,
         HCCL_ERROR("userRankSize[%u] is not an Integer multiple of MeshAggregation Dev Num[%u]",
         topoAttr_.userRankSize, topoAttr_.meshAggregationRankSize), HCCL_E_PARA);
@@ -438,7 +443,7 @@ HcclResult CollRunAlltoAllVStaged::KernelRun(const OpParam &param, ExecMem &exec
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, algResResp_->paramOutputMem, srcMem, const_cast<Stream&>(param.stream)));
     }
 
-    HCCL_INFO("[CollRunAlltoAllVStaged][kernelRun] AllToAll staged ends");
+    HCCL_INFO("[CollRunAlltoAllVStaged][kernelRun] AllToAllV staged ends");
     return HCCL_SUCCESS;
 }
 

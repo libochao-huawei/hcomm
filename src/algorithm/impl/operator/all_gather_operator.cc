@@ -76,6 +76,7 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
 
 HcclResult AllGatherOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
+    (void) param;
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[AllGatherOperator][SelectAlgforMix]only support NHR in AlgoLevel1 yet, "\
@@ -105,6 +106,7 @@ HcclResult AllGatherOperator::SelectAlgfor310P3(const OpParam& param, std::strin
 
 HcclResult AllGatherOperator::SelectAlgfor910A(const OpParam& param, std::string& algName)
 {
+    (void) param;
     bool isMeshTopo = topoType_ == TopoType::TOPO_TYPE_4P_MESH || topoType_ == TopoType::TOPO_TYPE_2P_MESH;
     bool isRingTopo = topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING || topoType_ == TopoType::TOPO_TYPE_8P_RING;
 

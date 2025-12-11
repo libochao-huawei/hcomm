@@ -102,6 +102,7 @@ HcclResult HcclAlg::Init(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, bool is
 
 std::unique_ptr<CollAlgOperator> HcclAlg::GetAlgOperator(const HcclCMDType &opType, HcclWorkflowMode workflowMode)
 {
+    (void) workflowMode;
     if (!topoMatcher_) {
         HCCL_ERROR("[HcclAlg][GetAlgOperator] topoMatcher ptr is null, get algorithm operator failed.");
         return nullptr;
