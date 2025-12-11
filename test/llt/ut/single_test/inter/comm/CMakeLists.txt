@@ -39,6 +39,7 @@ set(hccl_utest_inter_comm_list
     ut_hccl_impl_alg_double_ring_concurrent_allreduce.cc
     ut_allgather_mix_op_base.cc
     ut_comm_init.cc
+    ut_socket.cc
 )
 add_executable(hccl_utest_inter_comm  ${hccl_utest_inter_comm_list})
 

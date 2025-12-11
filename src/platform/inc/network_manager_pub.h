@@ -146,6 +146,7 @@ private:
     bool isRdmaLiteEn_ = false;
     bool isRaInitRepeated_ = false;
     bool isRaDeInit_ = false;
+    bool isEnableHdcAsync_ = false;
     RaResourceInfo raResourceInfo_;
     Referenced deviceNicInitRef_;
     Referenced hostNicInitRef_;

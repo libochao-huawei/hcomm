@@ -39,6 +39,7 @@ set(hccl_stest_comm_list
     st_hccl_impl_alg_double_ring_concurrent_allreduce.cc
     st_allgather_mix_op_base.cc
     st_comm_init.cc
+    st_socket.cc
 )
 add_executable(hccl_stest_comm  ${hccl_stest_comm_list})
 

@@ -15,6 +15,7 @@ namespace hccl
 {
     HcclResult ZeroCopyAddressMgr::InitRingBuffer()
     {
+        std::lock_guard<std::mutex> guard(processRingBufferLock_);
         if (ringBuffer_.ptr() != nullptr)
         {
             return HCCL_SUCCESS;
