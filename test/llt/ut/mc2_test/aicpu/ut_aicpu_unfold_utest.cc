@@ -1006,7 +1006,7 @@ TEST_F(AicpuUnfold_UT, GetSdmaLinksByRankAndTag_HcclPlusSio)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -1797,7 +1797,7 @@ TEST_F(AicpuUnfold_UT, init_aicpucom)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu* hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu,nullptr);
@@ -1900,7 +1900,7 @@ TEST_F(AicpuUnfold_UT, st_GetAlgResponseRes)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -2032,7 +2032,7 @@ TEST_F(AicpuUnfold_UT, calcResRequest)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -2086,7 +2086,7 @@ TEST_F(AicpuUnfold_UT, orchestrate)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -2143,7 +2143,7 @@ TEST_F(AicpuUnfold_UT, orchestrate_RunAlltoAllVTwoLevelPipeline_a2a)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -2205,7 +2205,7 @@ TEST_F(AicpuUnfold_UT, orchestrate_RunAlltoAllVTwoLevelPipeline_a2avc)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -2267,7 +2267,7 @@ TEST_F(AicpuUnfold_UT, orchestrate_RunAlltoAllVTwoLevelPipeline_a2av)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -3083,7 +3083,7 @@ TEST_F(AicpuUnfold_UT, aicpu_prof_test_init)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu* hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu,nullptr);
@@ -3445,7 +3445,7 @@ TEST_F(AicpuUnfold_UT, aicpu_prof_test_init_false)
     initTask.context = uint64_t(&paramTask);
     std::string group = paramTask.hcomId;
     hccl::HcclCommAicpu* hcclCommAicpu;
-    ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu,nullptr);
@@ -4446,7 +4446,7 @@ TEST_F(AicpuUnfold_UT, st_MultiQp_useSingleQp)
         initTask.context = uint64_t(paramTask);
         std::string group = paramTask->hcomId;
         hccl::HcclCommAicpu *hcclCommAicpu;
-        ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+        ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
         EXPECT_EQ(ret, HCCL_SUCCESS);
         hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
         DispatcherAiCpu *pDispatcher = new (std::nothrow) DispatcherAiCpu(0);
@@ -4928,7 +4928,7 @@ TEST_F(AicpuUnfold_UT, st_MultiQp_32Qp_3Notify)
        initTask.context = uint64_t(paramTask);
        std::string group = paramTask->hcomId;
        hccl::HcclCommAicpu *hcclCommAicpu;
-       ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+       ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
        EXPECT_EQ(ret, HCCL_SUCCESS);
        hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
        DispatcherAiCpu *pDispatcher = new (std::nothrow) DispatcherAiCpu(0);
@@ -5557,7 +5557,7 @@ TEST_F(AicpuUnfold_UT, st_aicpu_getcomm)
 {
     std::string group = "hccl_world_group";
     hccl::HcclCommAicpu* hcclCommAicpu;
-    HcclResult ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+    HcclResult ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
     EXPECT_NE(hcclCommAicpu, nullptr);
@@ -5582,7 +5582,7 @@ TEST_F(AicpuUnfold_UT, st_log_aicpuCoreExhausted)
 
     for (string& group : groups) {
         hccl::HcclCommAicpu* hcclCommAicpu;
-        HcclResult ret = AicpuHcclProcess::AicpuCreateCommbyGroup(group, &hcclCommAicpu);
+        HcclResult ret = AicpuHcclProcess::AcquireAicpuComm(group, &hcclCommAicpu);
         EXPECT_EQ(ret, HCCL_SUCCESS);
 
         hcclCommAicpu->identifier_ = group;
