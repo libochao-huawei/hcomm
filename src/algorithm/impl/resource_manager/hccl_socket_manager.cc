@@ -635,7 +635,6 @@ void HcclSocketManager::PrintErrorConnection(HcclSocketRole localRole,
     std::map <u32, std::vector<std::shared_ptr<HcclSocket> > > &rankSocketsMap,
     std::map<u32, u32> &dstRankToUserRank, TlsStatus &tlsStatus) const
 {
-
     // 原实现中，打印输出了一个num，而实际调用中，这个num都是1，所以当前删除了
     HCCL_ERROR("   _________________________LINK_ERROR_INFO___________________________");
     HCCL_ERROR("   |  comm error, device[%d] ", deviceLogicId_);

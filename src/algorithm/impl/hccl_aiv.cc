@@ -511,9 +511,10 @@ HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSched
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("aclrtGetOpTimeOutInterval get timeout interval failed, ret[%d]",
         aclRet), HCCL_E_RUNTIME);
 
+    constexpr u64 MAX_INTERVAL = 254;
     // NPU超时范围(1, 254) * interval
     minNpuSchedTimeout = 1 * interval;
-    maxNpuSchedTimeout = 254 * interval;
+    maxNpuSchedTimeout = MAX_INTERVAL * interval;
     HCCL_INFO("GetMinAndMaxNpuSchedTimeOut minNpuSchedTimeout[%u]us, maxNpuSchedTimeout[%u]us.",
         minNpuSchedTimeout, maxNpuSchedTimeout);
     return HCCL_SUCCESS;

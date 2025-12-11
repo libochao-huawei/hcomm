@@ -254,6 +254,7 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1ForMeshTopo(c
 
 HcclResult CollReduceScatterVDeterExecutor::CalReduceScatterVSliceData(const OpParam &param, u32 level0RankSize, u32 level1RankSize, std::vector<Slice> &dataSlices)
 {
+    (void) level0RankSize;
     u32 unitSize = SIZE_TABLE[param.VDataDes.dataType];
     std::vector<Slice> slices;
     const auto curCounts = static_cast<u64*>(param.VDataDes.counts);

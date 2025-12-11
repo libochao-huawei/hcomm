@@ -207,6 +207,7 @@ HcclResult CollReduceScatterMixExecutor::CalLevel1DataSegsSlice(
     const ExecMem &execMem, const u32 &commIndex,
     u32 sliceNum, u32 level1RankSize, std::vector<Slice> &level1DataSegsSlice)
 {
+    (void) sliceNum;
     for (u32 i = 0; i < level1RankSize; i++) {
         Slice sliceTemp;
         u32 level1UserRank;

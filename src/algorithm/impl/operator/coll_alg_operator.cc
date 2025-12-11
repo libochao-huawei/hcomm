@@ -925,6 +925,8 @@ HcclResult CollAlgOperator::AHCAlgSelect(AlgTypeLevel1 &algType, std::vector<std
 HcclResult CollAlgOperator::AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
     std::map<AHCConcOpType, TemplateType> &ahcAlgOption, AHCAlgSelectParam &ahcAlgSelectParam)
 {
+    (void) algType;
+    (void) ahcAlgSelectParam;
     AHCConcOpType ahcConcOpType;
     //一层组间拼接时，分组数大于设定阈值则修改默认算法为NHR
     if(globalSubGroups[0].size() <= AHC_LEVEL0_GROUP_SIZE_THRESHOLD ) {

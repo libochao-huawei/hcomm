@@ -199,8 +199,9 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::KernelRun(const OpParam &param, 
 
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
         // 兜底算法，单机也可能走这里
+        constexpr u32 TWO_SERVER_NUM = 2;
         if (topoArgs.serverNum == 1) {
-            topoArgs.serverNum = 2;
+            topoArgs.serverNum = TWO_SERVER_NUM;
         }
         if (aivClearEnable_) {
             ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);

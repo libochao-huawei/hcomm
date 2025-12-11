@@ -26,7 +26,7 @@ protected:
     /* *************** 算法编排 *************** */
     // Broadcast Loop Executor公共接口
     HcclResult RunLoop(OpParam &param, AlgResourceResponse &algRes);
-    HcclResult GetSliceNum(const u64 totalSize, const bool isSmallData, u64& sliceNum);
+    HcclResult GetSliceNum(const u64 size, const bool isSmallData, u64& sliceNum);
     bool IsBroadcastSmallData(u64 size, u64 totalSize);
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
     virtual u64 CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize);

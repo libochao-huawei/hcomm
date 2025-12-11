@@ -55,7 +55,7 @@ public:
     HcclResult PrepareCommInfoToDevice(const std::string& algName, AlgResourceResponse& algResource);
     virtual HcclResult GetAdjInfo(const std::string& algName, OpParam& param, AlgResourceResponse& algResource, AdjInfo& nslbAdjInfo);
     // batchsendrecv判断是否需要增量建链
-    HcclResult CalcIncreLinkRequest(const std::string& algName, const OpParam& param, std::set<u32>& ranksLinked,
+    HcclResult CalcIncreLinkRequest(const std::string& algName, const OpParam& param, std::set<u32>& ranksHasLinked,
         AlgResourceRequest& resourceRequest, bool& needIncreLink);
     AlgType GetAlgType();
     void SetLegacyHcclImpl(std::unique_ptr<hcclImpl> &impl);

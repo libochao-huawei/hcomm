@@ -180,7 +180,6 @@ public:
     uint64_t len_;
     int32_t blockdim_;
     
-
     TPipe pipe;
 
     TQueBind<QuePosition::VECIN, QuePosition::VECOUT, 1> inOutQue;

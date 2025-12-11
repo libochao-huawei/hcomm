@@ -170,6 +170,7 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
 
 HcclResult AllReduceOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
+    (void) param;
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[AllReduceOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
@@ -243,6 +244,7 @@ HcclResult AllReduceOperator::SelectAlgfor310P3(const OpParam& param, std::strin
 
 HcclResult AllReduceOperator::SelectAlgfor310PHelper(const OpParam& param, std::string& algName)
 {
+    (void) param;
     algName = "AllReduceReducePlusBcast";
     HCCL_INFO("[SelectAlgfor310PHelper] AllReduce SelectAlgfor310PHelper is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
@@ -498,18 +500,18 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
     return HCCL_SUCCESS;
 }
 
-HcclResult AllReduceOperator::MeshTopoSelector(std::string& algName, u64 dataSize)
+HcclResult AllReduceOperator::MeshTopoSelector(std::string& algName, u64 unitSize)
 {
     // 单算子选择逻辑
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        if (dataSize <= HCCL_SMALL_COUNT_256_KB) {
+        if (unitSize <= HCCL_SMALL_COUNT_256_KB) {
             algName = "AllReduceMeshSmallCountExecutor";
         } else {
             algName = "AllReduceMeshOpbaseLoopExecutor";
         }
     // 图模式选择逻辑
     } else {
-        if (dataSize  <= HCCL_SMALL_COUNT_GRAPH_64_KB) {
+        if (unitSize  <= HCCL_SMALL_COUNT_GRAPH_64_KB) {
             algName = "AllReduceMeshSmallCountExecutor";
         } else {
             algName = "AllReduceMeshExecutor";

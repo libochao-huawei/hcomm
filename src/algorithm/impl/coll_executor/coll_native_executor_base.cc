@@ -250,12 +250,12 @@ HcclResult CollNativeExecutorBase::AddSubStreamToProfiling()
 }
 
 
-HcclResult CollNativeExecutorBase::CheckCommSize(const CommPlane levelIndex, const u32 expectedSize)
+HcclResult CollNativeExecutorBase::CheckCommSize(const CommPlane levelIndex, const u32 subLevelIndex)
 {
-    if (algResResp_->opTransportResponse[levelIndex].size() < expectedSize) {
+    if (algResResp_->opTransportResponse[levelIndex].size() < subLevelIndex) {
         HCCL_ERROR("[CollNativeExecutorBase][CheckCommSize]tag[%s], levelIndex[%u], " \
             "ring size[%zu] is less than expected[%u]",
-            tag_.c_str(), levelIndex, algResResp_->opTransportResponse[levelIndex].size(), expectedSize);
+            tag_.c_str(), levelIndex, algResResp_->opTransportResponse[levelIndex].size(), subLevelIndex);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -370,6 +370,7 @@ HcclResult CollNativeExecutorBase::GenerateRecordWaitStreams(
 HcclResult CollNativeExecutorBase::HoldAllRanksOnCurrentOp(
     OpParam &param, ExecMem &execMem, PrepareData &prepareData, std::vector<LINK> links)
 {
+    (void) param;
     u32 subStreamsNum = (*prepareData.subStreamsPtr).size();
     u32 signalNum = (*prepareData.signalPtr).size();
     u32 signalAuxNum = (*prepareData.signalAuxPtr).size();

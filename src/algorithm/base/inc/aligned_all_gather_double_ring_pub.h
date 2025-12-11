@@ -48,7 +48,7 @@ private:
         const u32 txSliceIdx, const u32 rxSliceIdx,
         std::vector<TxMemoryInfo> &txMems, std::vector<RxMemoryInfo> &rxMems,
         std::vector<DeviceMem> &localSrcMems, std::vector<DeviceMem> &localDstMems);
-    HcclResult RunAllGather(u32 rank, u32 rankSize);
+    HcclResult RunAllGather(const u32 rank, const u32 rankSize);
     HcclResult ExecEmptyTasks();
     HcclResult MainRecordSub();
     HcclResult SubWaitMain();

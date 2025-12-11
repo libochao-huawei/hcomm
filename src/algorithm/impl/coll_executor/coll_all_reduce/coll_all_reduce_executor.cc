@@ -56,7 +56,7 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollAllReduceExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor level0 ReduceScatter failed",
+            HCCL_ERROR("[CollAllReduceExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor level0 failed",
                 HCCL_ERROR_CODE(ret)), ret);
 
         // 在Level1和Level2执行RunLoop

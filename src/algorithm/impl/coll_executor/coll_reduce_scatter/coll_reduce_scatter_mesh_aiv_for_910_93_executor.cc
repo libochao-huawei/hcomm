@@ -99,6 +99,8 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::CalcScratchMemSize(u64& scr
 
 HcclResult CollReduceScatterMeshAivFor91093Executor::CalBlockDimDeter(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
+    (void) dataSize;
+    (void) cmdType;
     // Step1. Calculate the best block dimension
     u32 bestBlockDim = (rankSize < MAX_BLOCK_DIM ? rankSize : MAX_BLOCK_DIM);
     u32 minBlockDim = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, BLOCK_DIM_FACTOR_TWO);

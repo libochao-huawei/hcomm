@@ -87,7 +87,7 @@ u64 CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CalcLoopMaxCount
     return maxCountPerLoop;
 }
 
-bool CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::IsHugeData(const u64 curSize, OpParam *para)
+bool CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::IsHugeData(const u64 curSize, OpParam *param)
 {
     bool hugeData = (curSize * topoAttr_.userRankSize / HCCL_INTERNODE_MAX_DATA_RATE > RDMA_SEND_MAX_SIZE) ||
                     (curSize > SDMA_SEND_MAX_SIZE);

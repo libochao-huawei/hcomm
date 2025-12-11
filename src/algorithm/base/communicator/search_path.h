@@ -7,6 +7,8 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#ifndef SEARCH_PATH_H
+#define SEARCH_PATH_H
 
 class SearchPath {
 public:
@@ -84,3 +86,4 @@ private:
     {14, {15, 0, 2, 4, 6, 8, 10, 12}},
     {15, {14, 1, 3, 5, 7, 9, 11, 13}}};
 };
+#endif

@@ -92,6 +92,7 @@ HcclResult ReduceScatterOperator::SelectAlg(const std::string& tag, const OpPara
 
 HcclResult ReduceScatterOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
+    (void) param;
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[ReduceScatterOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
