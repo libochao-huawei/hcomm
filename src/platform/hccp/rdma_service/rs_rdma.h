@@ -16,4 +16,23 @@
 #define NOTIFY_NUM_MAX_V3     1048576
 #define WRITE_NOTIFY_OFFSET_MASK  0xffffff
 #define WRITE_NOTIFY_VALUE_RECORD 0x1000000
+#define RS_MR_NUM_MAX 256
+#define RS_QP_TX_DEPTH_OFFLINE 128
+#define RS_QP_RX_DEPTH_OFFLINE 128
+#define RS_QP_TX_DEPTH_ONLINE 4096
+#define RS_QP_RX_DEPTH_ONLINE 4096
+#define RS_QP_TX_DEPTH 8191
+#define RS_QP_32K_DEPTH 32767
+#define RS_QP_TX_DEPTH_PEER_ONLINE 4096    // host RDMA adapt
+#define RS_ROCE_4_SL 4
+#define RS_QP_NUM_MAX 8192
+#define RS_SGLIST_LEN_MAX 2147483648
+#define RS_MIN_TEMPTH_DEPTH 8
+#define RS_MAX_TEMPTH_DEPTH 4096
+#define RS_MR_STATE_SYNCED  1
+
+struct RsQpLenInfo {
+    uint32_t cmd;
+    uint32_t len;
+};
 #endif // RS_RDMA_H

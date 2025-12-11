@@ -27,6 +27,7 @@
 
 #define DEFAULT_ACCESS_FLAG (IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE | IBV_ACCESS_REMOTE_READ | \
     IBV_ACCESS_REMOTE_ATOMIC)
+#define RS_SGLIST_MAX       16
 
 void RsDrvPollCqHandle(struct RsQpCb *qpCb);
 void RsDrvPollSrqCqHandle(struct RsQpCb *qpCb);
