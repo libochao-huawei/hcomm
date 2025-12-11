@@ -92,7 +92,8 @@ HcclCommAicpu::~HcclCommAicpu()
 
     commPlaneVector_.clear();
     isBridgeVector_.clear();
-    isIndOpCommInit_ = false;
+    indOpCommInitialized_ = false;
+    initialized_ = false;
 
     // 释放算子展开的动态缓存 (if any)
     if (opUnfoldCachePtr_ != nullptr) {
@@ -105,6 +106,12 @@ HcclCommAicpu::~HcclCommAicpu()
 
 HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
 {
+    if (initialized_) {
+        HCCL_RUN_INFO("[%s][Init]Group[%s] already initialized, skip reinit", __func__,
+            identifier_.c_str());
+        return HCCL_SUCCESS;
+    }
+
     CHK_PTR_NULL(commParam);
     identifier_ = commParam->hcomId;
     isCustom_ = isCustom;
@@ -138,6 +145,8 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(RegisterProfCallBack());
     InitCommInfoStatus(true);
     SetCommInfoStreamStatus(true);
+
+    initialized_ = true;
 
     HCCL_RUN_INFO("[HcclCommAicpu][Init] group[%s] success!", identifier_.c_str());
     return HCCL_SUCCESS;
@@ -5144,6 +5153,12 @@ HcclResult HcclCommAicpu::RefreshCommResponseTransportRes(std::map<u32, bool> &r
 
 HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
+    if (indOpCommInitialized_) {
+        HCCL_RUN_INFO("[%s][InitAicpuIndOp]Group[%s] already initialized, skip reinit", __func__,
+            identifier_.c_str());
+        return HCCL_SUCCESS;
+    }
+
     topoInfo_.deviceLogicId = commAicpuParam->deviceLogicId;
     topoInfo_.devicePhyId = commAicpuParam->devicePhyId;
     topoInfo_.deviceType = static_cast<DevType>(commAicpuParam->deviceType);
@@ -5177,11 +5192,12 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
 
-    isIndOpCommInit_ = true;
-
     // 最后拉起背景线程
     AicpuComContext *ctx = AicpuGetComContext();
     AicpuHcclProcess::CallMC2MaintenanceThread(ctx);
+
+    indOpCommInitialized_ = true;
+    
     HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u], "
         "dispatcherCtx[%p]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
         topoInfo_.deviceType, notifySize_, dispatcherCtx_);

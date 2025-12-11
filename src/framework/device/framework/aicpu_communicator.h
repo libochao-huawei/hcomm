@@ -174,7 +174,7 @@ public:
     HcclResult AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam);
 
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
-    bool GetIsInitIndOp() { return isIndOpCommInit_; };
+    bool GetIsInitIndOp() { return indOpCommInitialized_; };
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
     HcclResult NotifyFree(NotifyMgrAicpuParam *param);
     HcclResult NotifyAlloc(NotifyMgrAicpuParam *param);
@@ -548,8 +548,10 @@ private:
     OpUnfoldCache *opUnfoldCachePtr_ = nullptr;
     size_t opUnfoldIdx_ = 0; // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
 
+    bool initialized_{ false };
+
     // 独立算子
-    bool isIndOpCommInit_ = false; // 独立算子流程通信域是否初始化
+    bool indOpCommInitialized_{ false }; // 独立算子流程通信域是否初始化
     DispatcherCtxPtr dispatcherCtx_{nullptr};
     std::unordered_map<std::string, ChannelHandle> channelHandleMap_;
     std::unordered_map<ChannelHandle, std::shared_ptr<Transport>> linkMap_;
