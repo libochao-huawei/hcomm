@@ -82,6 +82,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
 
 thread_local s32 g_hcclDeviceId = INVALID_INT;
 std::mutex g_opHcomInfosMutex{};
+std::mutex g_opHcomOneSideMutex{};
 HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];
 
 HcclResult HcclGetDeviceId(void)
@@ -2446,9 +2447,11 @@ HcclResult HcclCommDestroy(HcclComm comm)
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
     CHK_RET(ResetDevice(hcclComm));
 
+    std::unique_lock<std::mutex> oneSideLock(g_opHcomOneSideMutex);
     if (IsOneSidedComm(comm)) {
         return HcclOneSidedCommDestroy(comm, deviceLogicId, startut);
     }
+    oneSideLock.unlock();
 
     HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
     string group;
