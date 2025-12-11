@@ -505,7 +505,6 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
-        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
@@ -517,7 +516,6 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
-        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
