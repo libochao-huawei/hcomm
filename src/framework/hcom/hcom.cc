@@ -41,6 +41,7 @@ using namespace hccl;
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
     HcclDataType dataType)
 {
+    CHK_PTR_NULL(hcclComm);
     auto &profilingManager = hccl::ProfilingManager::Instance();
     AlgType algType;
     if(cmdType == HcclCMDType::HCCL_CMD_RECEIVE || cmdType == HcclCMDType::HCCL_CMD_SEND){
@@ -220,7 +221,7 @@ HcclResult GenerateRootInfo(HcclRootHandle &rootInfo)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomGenerteRanktable(std::string &rankTableM, std::string &rankId)
+HcclResult HcomGenerateRanktable(std::string &rankTableM, std::string &rankId)
 {
     s32 logicDevId = 0;
     u32 devPhyId = 0;
@@ -244,7 +245,7 @@ HcclResult HcomGenerteRanktable(std::string &rankTableM, std::string &rankId)
     CHK_RET(hrtGetDeviceType(devType));
     bool retryEnable = devType == DevType::DEV_TYPE_910_93 &&
         (GetExternalInputInterServerRetryEnable() || GetExternalInputInterSuperPodRetryEnable());
-    HCCL_INFO("[HcomGenerteRanktable] retryEnable is [%d]", retryEnable);
+    HCCL_INFO("[HcomGenerateRanktable] retryEnable is [%d]", retryEnable);
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
 
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
@@ -313,7 +314,7 @@ HcclResult HcomInitByMasterInfo(const char *masterIp, const char *masterPort, co
 
     CHK_RET(InitExternalInput()); // 生成ranktable前需要提前感知部分配置
     CHK_RET(InitEnvConfig());
-    ret = HcomGenerteRanktable(rankTableM, identify);
+    ret = HcomGenerateRanktable(rankTableM, identify);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcomInitByMasterInfo]errNo[0x%016llx] masterIp[%s], masterPort[%s], "
         "masterDeviceId[%s] rankSize[%s] deviceId[%d] load rankTable error.", HCCL_ERROR_CODE(HCCL_E_INTERNAL),
         masterIp, masterPort,  masterDeviceId, rankSize, logicDevId), HCCL_E_INTERNAL);
@@ -972,6 +973,7 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
 
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dataType, u32 root,
     s64 opBaseHcom, rtStream_t stream)
 {
@@ -1018,6 +1020,7 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
 
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u64 count,
     HcclDataType dataType, HcclReduceOp op, s64 opBaseHcom, rtStream_t stream)
 {
@@ -1063,6 +1066,7 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
 
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDataType dataType,
     u32 destRank, u32 srTag, s64 opBaseHcom, rtStream_t stream)
 {
@@ -1109,6 +1113,7 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
 
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, HcclDataType dataType,
     u32 srcRank, u32 srTag, s64 opBaseHcom, rtStream_t stream)
 {
@@ -1154,6 +1159,7 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
 
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphGetAlltoAllStagedWorkSpaceMemSize(s64 opBaseHcom, u64 *sendCounts, u64 *sdispls,
     HcclDataType sendType, u64 *recvCounts, u64 *rdispls, HcclDataType recvType, u64 &memSize)
 {
@@ -1170,12 +1176,13 @@ HcclResult HcclCommGraphGetAlltoAllStagedWorkSpaceMemSize(s64 opBaseHcom, u64 *s
         recvCounts, rdispls, recvType, memSize));
     return HCCL_SUCCESS;
 }
+
 HcclResult HcclCommGraphSetWorkspaceResource(const std::string &tag, s64 opBaseHcom, std::vector<rtStream_t> stream,
     void *memPtr, u64 maxSize)
 {
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
-
+    CHK_PTR_NULL(memPtr);
     CHK_RET(hcclComm->SetWorkspaceResource(tag, memPtr, maxSize, stream));
     return HCCL_SUCCESS;
 }
@@ -1426,7 +1433,7 @@ HcclResult HcomCreateGroupImplHeterog(const std::string &group, const std::vecto
     HcclUs startut = TIME_NOW();
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     std::string rankId;
-    for (u32 i = 0; i < rankIds.size(); i++) {
+    for (size_t i = 0; i < rankIds.size(); i++) {
         if (i < rankIds.size() - 1) {
             rankId += to_string(rankIds[i]) + ',';
         } else if (i == rankIds.size() - 1) {
@@ -1449,6 +1456,7 @@ HcclResult HcomCreateGroupImplHeterog(const std::string &group, const std::vecto
     if (hcomInfo.hcomGroupMap.find(group) != hcomInfo.hcomGroupMap.end()) {
         HCCL_ERROR("[Create][Group]errNo[0x%016llx] group[%s] is already exist", HCOM_ERROR_CODE(HCCL_E_PARA),
             group.c_str());
+        groupParaLock.unlock();
         return HCCL_E_PARA;
     }
     groupParaLock.unlock();
@@ -1490,7 +1498,7 @@ HcclResult HcomAbortGroup(const char *group)
         HCCL_ERROR("[Destroy][Group]hcomInfo.pComm is null, "
                    "please check if the initialize process is called."),
         HCCL_E_PTR);
-
+    CHK_PTR_NULL(group);
     HCCL_RUN_INFO("Entry-HcomAbortGroup : group[%s]", group);
     CHK_RET(DestroyFlag(group, true));
     u32 ref = 0;
@@ -1518,6 +1526,7 @@ HcclResult HcomDestroyGroupImplHeterog(const std::string &group)
     if (iter == hcomInfo.hcomGroupMap.end()) {
         HCCL_ERROR("[Destroy][Group]errNo[0x%016llx] group[%s] is not exist", HCOM_ERROR_CODE(HCCL_E_PARA),
             group.c_str());
+        groupParaLock.unlock();
         return HCCL_E_PARA;
     }
 
@@ -1539,6 +1548,7 @@ bool HcomCallBackGroupIsInitHeterog(HcomInfo &hcomInfo)
 
 HcclResult GetRankListHeterog(u32 rankNum, const u32 *rankIds, HcclGroupParams &params)
 {
+    CHK_PTR_NULL(rankIds);
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     std::vector<RankInfo_t> rankList;
     params.totalRanks = rankNum;
@@ -1837,6 +1847,9 @@ HcclResult HcomGetAllReduceScratchSize(const char *group, const u32 count, const
 
 HcclResult HcomGetCCLBufferAvailableSize(u64 &size)
 {
+    CHK_PRT_RET(GetExternalInputCCLBuffSize() < CCL_COMM_INBUFFER_UNALIGNED_RESERVE_SIZE,
+        HCCL_ERROR("GetExternalInputCCLBuffSize() - CCL_COMM_INBUFFER_UNALIGNED_RESERVE_SIZE less than 0"),
+        HCCL_E_PARA);
     size = GetExternalInputCCLBuffSize() - CCL_COMM_INBUFFER_UNALIGNED_RESERVE_SIZE;
     return HCCL_SUCCESS;
 }
@@ -2378,6 +2391,7 @@ HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr,
 HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globalWorkSpaceAddr)
 {
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
+    CHK_PTR_NULL(hcclComm);
     CHK_RET(hcclComm->SetGlobalWorkSpace(globalWorkSpaceAddr));
     return HCCL_SUCCESS;
 }
@@ -2423,7 +2437,7 @@ HcclResult HcclCommSupportDeterministicOptim(s64 opBaseHcom, bool &isDeterminist
 
 std::vector<u64> GenerateSendCountMatrix(u64 count, u32 rankSize)
 {
-    std::vector<u64> sendCountMatrix(rankSize * rankSize, count);
+    std::vector<u64> sendCountMatrix(static_cast<u64>(rankSize) * static_cast<u64>(rankSize), count);
     return sendCountMatrix;
 }
 

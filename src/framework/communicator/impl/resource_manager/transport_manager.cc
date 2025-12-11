@@ -456,7 +456,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                 linkIdx++;
             }
 
-            for (u32 index = 0; index < linkThreads.size(); index++) {
+            for (size_t index = 0; index < linkThreads.size(); index++) {
                 if (linkThreads[index] == nullptr || !linkThreads[index]->joinable()) {
                     continue;
                 }

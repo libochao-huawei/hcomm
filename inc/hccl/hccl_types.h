@@ -149,7 +149,7 @@ typedef struct HcclCommConfigDef {
 } HcclCommConfig;
 
 typedef enum {
-    HCCL_COMM_CONFIG_BUFFER_SIZE= 0,
+    HCCL_COMM_CONFIG_BUFFER_SIZE = 0,
     HCCL_COMM_CONFIG_DETERMINISTIC = 1,
     HCCL_COMM_CONFIG_COMM_NAME = 2,
     HCCL_COMM_CONFIG_OP_EXPANSION_MODE = 3,
