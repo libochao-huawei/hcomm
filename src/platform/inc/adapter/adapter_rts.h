@@ -87,7 +87,6 @@ HcclResult hrtStreamWaitEvent(aclrtStream stream, aclrtEvent event);
 HcclResult hrtEventQuery(aclrtEvent event);
 
 HcclResult hrtGetNotifySize(u32 &notifySize);
-HcclResult hrtCalNotifyOffset(const u32 notifyId, const u32 notifySize, u64 &notifyOffset);
 HcclResult hrtNotifyGetOffset(HcclRtNotify notify, u64 &offset);
 HcclResult hrtNotifyWaitWithTimeOut(rtNotify_t notify, rtStream_t stream, uint32_t timeOut);
 HcclResult hrtNotifyRecord(rtNotify_t notify, rtStream_t stream);
