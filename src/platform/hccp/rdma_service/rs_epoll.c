@@ -28,7 +28,7 @@
 #include "ra_rs_err.h"
 #include "rs_drv_rdma.h"
 #include "dl_hal_function.h"
-#include "rs_drv_rdma.h"
+#include "rs_drv_socket.h"
 #include "rs_socket.h"
 #ifdef CONFIG_TLV
 #include "rs_adp_nslb.h"
