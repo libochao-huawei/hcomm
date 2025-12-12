@@ -1,3 +1,4 @@
+#!/bin/bash
 # -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -135,7 +136,7 @@ function build_test() {
         LIBRARY_DIR="${LIBRARY_DIR}${ASCEND_HOME_PATH}/../../latest/opensdk/opensdk/gtest_shared/lib64:"
     fi
 
-    GCC_MAJOR=`gcc -dumpversion | cut -d. -f1`
+    GCC_MAJOR=$(gcc -dumpversion | cut -d. -f1)
     if [ "${ASAN}" == "true" ];then
         ARCH=$(uname -m)
         if [[ $ARCH == "x86_64" || $ARCH == "i386" || $ARCH == "i686" ]]; then
@@ -495,7 +496,7 @@ elif [ "${FULL_MODE}" == "true" ]; then
     cd .. & cd ${BUILD_DIR}
     CUSTOM_OPTION="${CURRENT_CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
-    rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
+    [ -n "${BUILD_DEVICE_DIR}" ] && [ -n "${BUILD_HCCD_DIR}" ] && rm -rf ${BUILD_DEVICE_DIR} ${BUILD_HCCD_DIR}
 else
     CUSTOM_OPTION="${CUSTOM_OPTION} -DDEVICE_MODE=OFF -DPRODUCT=ascend -DPRODUCT_SIDE=host -DUSE_ALOG=1"
     build_package
