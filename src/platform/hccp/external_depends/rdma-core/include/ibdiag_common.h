@@ -9,7 +9,7 @@
  *
  * The code snippet comes from linux-rdma project
  * 
- * Copyright (c) 2018 Mellanox Technologies, Ltd.  All rights reserved.
+ * Copyright (c) 2006-2007 The Regents of the University of Califotnia.
  * 
  *           OpenIB.org BSD license (MIT variant)
  * 
