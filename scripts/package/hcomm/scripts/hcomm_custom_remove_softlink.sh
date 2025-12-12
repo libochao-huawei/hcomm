@@ -1,6 +1,7 @@
 #!/bin/bash
 # Perform custom remove softlink script for hcomm package
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+set -e
 
 while true; do
     case "$1" in

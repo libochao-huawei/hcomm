@@ -1,6 +1,7 @@
 #!/bin/bash
 # Perform common functions for hcomm package
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+set -e
 
 create_compiler_atc_fwkacllib_softlink() {
     local install_path="$1"

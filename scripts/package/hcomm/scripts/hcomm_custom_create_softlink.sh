@@ -1,6 +1,7 @@
 #!/bin/bash
 # Perform custom create softlink script for hcomm package
 # Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+set -e
 
 curpath=$(dirname $(readlink -f "$0"))
 common_func_path="${curpath}/common_func.inc"
