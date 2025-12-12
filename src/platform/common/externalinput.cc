@@ -1712,15 +1712,14 @@ HcclResult CollectRetryEnableFromConfig(const std::vector<std::string> &retryEna
 HcclResult ParseRetryEnable()
 {
 #ifndef CCL_KERNEL_AICPU
-    // level1 默认都设置成true
-    g_externalInput.hcclRetryConfig[HCCL_RETRY_ENABLE_LEVEL_0] = false;
-    g_externalInput.hcclRetryConfig[HCCL_RETRY_ENABLE_LEVEL_1] = true;
-    g_externalInput.hcclRetryConfig[HCCL_RETRY_ENABLE_LEVEL_2] = false;
+    // 默认都设置成false
+    for (u32 level = 0; level < HCCL_RETRY_ENABLE_LEVEL_NUM; ++level) {
+        g_externalInput.hcclRetryConfig[level] = false;
+    }
     std::string hcclRetryEnable = GET_ENV(MM_ENV_HCCL_OP_RETRY_ENABLE);
     if (hcclRetryEnable == "EmptyString") {
         HCCL_RUN_INFO(
-            "[ParseRetryEnable] HCCL_OP_RETRY_ENABLE is not set. The retryEnable of all levels is set to "
-            "L1:1, L2:0.");
+            "[ParseRetryEnable] HCCL_OP_RETRY_ENABLE is not set. The retryEnable of all levels is set to false.");
         return HCCL_SUCCESS;
     }
     // 去除空格
@@ -1728,8 +1727,7 @@ HcclResult ParseRetryEnable()
     retryConfig.erase(std::remove(retryConfig.begin(), retryConfig.end(), ' '), retryConfig.end());
 
     if (retryConfig.empty()) {
-        HCCL_RUN_INFO("[ParseRetryEnable] Hccl retry config is empty. The retryEnable of all levels is set to "
-                      "L1:1, L2:0.");
+        HCCL_RUN_INFO("[ParseRetryEnable] Hccl retry config is empty. The retryEnable of all levels is set to false.");
         return HCCL_SUCCESS;
     }
 
