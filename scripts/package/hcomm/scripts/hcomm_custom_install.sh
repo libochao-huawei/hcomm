@@ -1,7 +1,6 @@
 #!/bin/bash
 # Perform custom_install script for hcomm package
 # Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
-set -e
 
 sourcedir="$PWD/hcomm"
 curpath=$(dirname $(readlink -f "$0"))

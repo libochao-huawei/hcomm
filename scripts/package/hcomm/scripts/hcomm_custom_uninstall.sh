@@ -1,7 +1,6 @@
 #!/bin/bash
 # Perform custom uninstall script for hcomm package
 # Copyright (c) Huawei Technologies Co., Ltd. 2022. All rights reserved.
-set -e
 
 curpath=$(dirname $(readlink -f "$0"))
 unset PYTHONPATH
