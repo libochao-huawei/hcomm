@@ -29,6 +29,7 @@
 #include "rs_epoll.h"
 #include "rs_tls.h"
 #include "ssl_adp.h"
+#include "rs_drv_socket.h"
 #include "rs_socket.h"
 #include "dl_ibverbs_function.h"
 #include "dl_hal_function.h"

@@ -24,7 +24,6 @@
 #include "rs.h"
 #include "ra_rs_err.h"
 #include "rs_inner.h"
-#include "rs_drv_socket.h"
 #include "rs_epoll.h"
 #include "dl_ibverbs_function.h"
 #include "rs_drv_rdma.h"
