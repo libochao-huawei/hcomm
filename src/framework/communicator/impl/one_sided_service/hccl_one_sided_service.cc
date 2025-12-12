@@ -31,7 +31,6 @@ std::mutex HcclOneSidedService::regMutex_;
 
 std::unique_ptr<Stream> g_launchStream = nullptr;
 std::mutex g_launchMutex;
-u64 g_launchStreamRef = 0;
 
 HcclOneSidedService::HcclOneSidedService(unique_ptr<HcclSocketManager> &socketManager,
     unique_ptr<NotifyPool> &notifyPool)
@@ -312,16 +311,14 @@ HcclResult HcclOneSidedService::SetupRemoteRankInfo(RankId remoteRankId, HcclRan
 
 HcclResult HcclOneSidedService::CreateLaunchStream()
 {
-    std::unique_lock<std::mutex> guard{g_launchMutex};
-    if (g_launchStream == nullptr) {
-        constexpr u32 streamMode = 1;   // 使能遇错即停
-        EXECEPTION_CATCH(g_launchStream = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE),
-            return HCCL_E_PTR);
-        CHK_PTR_NULL(g_launchStream.get());
-        HCCL_INFO("[HcclOneSidedService][CreateLaunchStream] launchStream[%u]", g_launchStream->id());
-        CHK_RET(hrtStreamSetMode(g_launchStream->ptr(), streamMode));
-    }
-    g_launchStreamRef++;
+    g_launchStream = nullptr;
+    constexpr u32 streamMode = 1;   // 使能遇错即停
+    EXECEPTION_CATCH(g_launchStream = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE),
+        return HCCL_E_PTR);
+    CHK_PTR_NULL(g_launchStream);
+    CHK_PTR_NULL(g_launchStream->ptr());
+    HCCL_INFO("[HcclOneSidedService][CreateLaunchStream] launchStream[%u]", g_launchStream->id());
+    CHK_RET(hrtStreamSetMode(g_launchStream->ptr(), streamMode));
     return HCCL_SUCCESS;
 }
 
@@ -339,7 +336,6 @@ HcclResult HcclOneSidedService::InitAicpuUnfoldMode()
         (netDevRdmaCtx_ != nullptr), aicpuUnfoldMode_);
     if (aicpuUnfoldMode_) {
         CHK_PRT(LoadAICPUKernel());
-        CHK_RET(CreateLaunchStream());
         CHK_RET(AicpuResourceInit());       // 初始化service粒度资源
         CHK_RET(AicpuInitKernelLaunch());
     }
@@ -570,14 +566,12 @@ HcclResult HcclOneSidedService::DeInit()
 {
     if (aicpuUnfoldMode_) {
         std::unique_lock<std::mutex> guard{g_launchMutex};
+        CHK_RET(CreateLaunchStream());
         CHK_RET(OrchestrateAicpu(0, HcclCMDType::HCCL_CMD_BATCH_GET, nullptr, nullptr, 0, g_launchStream->ptr()));
         CHK_RET(hcclStreamSynchronize(g_launchStream->ptr(),
             CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_)));
-        g_launchStreamRef--;
-        if (g_launchStreamRef == 0) {
-            HCCL_INFO("[HcclOneSidedService][DeInit] destroy launchStream[%u]", g_launchStream->id());
-            g_launchStream = nullptr;
-        }
+        HCCL_INFO("[HcclOneSidedService][DeInit] destroy launchStream[%u]", g_launchStream->id());
+        g_launchStream = nullptr;
     }
 
     // 检查是否还绑定着全局内存
@@ -1040,10 +1034,9 @@ HcclResult HcclOneSidedService::ReportProfilingCommInfo(const Stream &kfcStream,
 HcclResult HcclOneSidedService::AicpuInitKernelLaunch()
 {
     const u64 beginTime = hrtMsprofSysCycleTime();
+
     {
         std::unique_lock<std::mutex> guard{g_launchMutex};
-        rtStream_t stream = g_launchStream->ptr();
-
         struct InitTask
         {
             u64 context; // A矩阵地址，通信在前时为sendbuffer
@@ -1054,11 +1047,13 @@ HcclResult HcclOneSidedService::AicpuInitKernelLaunch()
         initTask.isCustom = false;
         u16 timeOut = 0;
         char kernelName[64] = "RunAicpuKfcResInitV2";
-        CHK_RET(AicpuAclKernelLaunch(stream, reinterpret_cast<void *>(&initTask), sizeof(initTask),
+        CHK_RET(CreateLaunchStream());
+        CHK_RET(AicpuAclKernelLaunch(g_launchStream->ptr(), reinterpret_cast<void *>(&initTask), sizeof(initTask),
                                         binHandle_, kernelName, true, timeOut));
-        CHK_RET(hcclStreamSynchronize(stream, CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_)));
+        CHK_RET(hcclStreamSynchronize(g_launchStream->ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_)));
         HCCL_RUN_INFO("[AicpuInitKernelLaunch] launch in launchStream[%u], execStream[%u]", g_launchStream->id(),
             execStream_.id());
+        g_launchStream = nullptr;
     }
 
     const u64 endTime = hrtMsprofSysCycleTime();
