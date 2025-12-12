@@ -1,7 +1,6 @@
 #!/bin/bash
 # Perform uninstall for hcomm package
 # Copyright (c) Huawei Technologies Co., Ltd. 2021. All rights reserved.
-set -e
 
 username="$(id -un)"
 usergroup="$(id -gn)"
