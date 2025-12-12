@@ -376,7 +376,7 @@ HcclResult CollAllReduceExecutor::PrepareSliceDataWithAlignSize(u64 totalSize, u
     CHK_PRT_RET((sliceNum == 0), HCCL_ERROR("[Prepare][SliceData]data slice prepare, sliceNum is 0"), HCCL_E_PARA);
     u64 tempPerSlice = (totalSize + sliceNum - 1) / sliceNum; /* 1是为了向上取整 */
     u64 sizePerSlice = AlgTemplateBase::RoundUpWithDivisor(tempPerSlice, alignSize);
-    HCCL_DEBUG("total_size:%llu sliceNum:%u temp_per_ring:%llu size_per_ring:%llu", totalSize, sliceNum, tempPerSlice,
+    HCCL_DEBUG("total_size:%llu sliceNum:%u temp_per_ring:%llu size_per_ring:%llu.", totalSize, sliceNum, tempPerSlice,
         sizePerSlice);
     u64 residueSize = totalSize;
     u32 i = 0;
@@ -385,11 +385,12 @@ HcclResult CollAllReduceExecutor::PrepareSliceDataWithAlignSize(u64 totalSize, u
         temp.size = sliceSize;
         temp.offset = totalSize - residueSize + piplineOffset;
         i++;
-        CHK_PRT_RET((sliceSize <= 0), HCCL_ERROR("[Prepare][SliceData]data_slice_prepare sliceSize[%llu]", sliceSize),
+        CHK_PRT_RET((sliceSize <= 0), HCCL_ERROR("[Prepare][SliceData]data_slice_prepare sliceSize[%llu].", sliceSize),
             HCCL_E_PARA);
         residueSize -= sliceSize;
         dataSlice.push_back(temp);
     }
+    HCCL_DEBUG("[%s] PrepareSliceDataWithAlignSize for data_slice_prepare", __func__);
     while (i < sliceNum) {
         temp.size = 0;
         temp.offset = totalSize + piplineOffset;

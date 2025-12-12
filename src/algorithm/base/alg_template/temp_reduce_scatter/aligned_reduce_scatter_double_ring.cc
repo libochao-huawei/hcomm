@@ -605,6 +605,8 @@ HcclResult AlignedReduceScatterDoubleRing::RunReduceScatter(const u32 rank, cons
     u32 txSliceIdxSub  = (rank + rankSize - 1) % rankSize;
     u32 rxSliceIdxSub  = (rank + rankSize - DMA_REDUCE_TWO_OFFSET) % rankSize;
     u32 subSliceIdxSub = (rank + rankSize - DMA_REDUCE_THREE_OFFSET) % rankSize;
+    HCCL_DEBUG("[RunReduceScatter]txSliceIdxSub is [%u], rxSliceIdxSub is [%u], subSliceIdxSub is [%u]",
+        txSliceIdxSub, rxSliceIdxSub, subSliceIdxSub);
     // 主环初始indexes
     u32 txSliceIdxMain  = (rankSize - rank - 1 + rankSize) % rankSize;
     u32 rxSliceIdxMain  = (rankSize - rank - DMA_REDUCE_TWO_OFFSET + rankSize) % rankSize;
@@ -616,8 +618,8 @@ HcclResult AlignedReduceScatterDoubleRing::RunReduceScatter(const u32 rank, cons
         std::vector<ReducerMemoryInfo> rxReduceMemsMain;
         std::vector<SenderMemoryInfo> txReduceMemsSub;
         std::vector<ReducerMemoryInfo> rxReduceMemsSub;
-        std::vector<DeviceMem> localSrcMemsMain;
         std::vector<DeviceMem> localDstMemsMain;
+        std::vector<DeviceMem> localSrcMemsMain;
         std::vector<DeviceMem> localSrcMemsSub;
         std::vector<DeviceMem> localDstMemsSub;
         CHK_RET(PreRunStreams(step, rankSize,
@@ -628,12 +630,12 @@ HcclResult AlignedReduceScatterDoubleRing::RunReduceScatter(const u32 rank, cons
         CHK_RET(RunAllStreams(step, rankSize, txReduceMemsMain, rxReduceMemsMain, txReduceMemsSub, rxReduceMemsSub,
             localSrcMemsMain, localDstMemsMain, localSrcMemsSub, localDstMemsSub));
         // 更新索引
-        subSliceIdxSub = (subSliceIdxSub + rankSize - 1) % rankSize;
         txSliceIdxSub  = (txSliceIdxSub + rankSize - 1) % rankSize;
         rxSliceIdxSub  = (rxSliceIdxSub + rankSize - 1) % rankSize;
-        subSliceIdxMain = (subSliceIdxMain + rankSize - 1) % rankSize;
+        subSliceIdxSub = (subSliceIdxSub + rankSize - 1) % rankSize;
         txSliceIdxMain  = (txSliceIdxMain + rankSize - 1) % rankSize;
         rxSliceIdxMain  = (rxSliceIdxMain + rankSize - 1) % rankSize;
+        subSliceIdxMain = (subSliceIdxMain + rankSize - 1) % rankSize;
     }
     // 从环主流通知主环主流通信完成
     CHK_RET(SubRecordMain());

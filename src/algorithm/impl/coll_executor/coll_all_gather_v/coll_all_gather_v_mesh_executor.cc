@@ -302,6 +302,7 @@ HcclResult CollAllGatherVMeshExecutor::CalcCurCountsAndCurDisplsMultiModule(cons
     curDispls = std::vector<u64>(displs.size(), 0);
     auto allocatableCount = maxTotalCount;
 
+    HCCL_DEBUG("CalcCurCountsAndCurDisplsMultiModule begin");
     // 先设置本轮的displacements，等于入参displs
     std::copy(displs.begin(), displs.end(), curDispls.begin());
 
@@ -312,7 +313,7 @@ HcclResult CollAllGatherVMeshExecutor::CalcCurCountsAndCurDisplsMultiModule(cons
             std::count_if(countsLeft.begin(), countsLeft.end(), [](const u64 count) { return count != 0; });
         if (nonZeroCount == 0) {
             finished = true;
-            HCCL_INFO("[%s] Calc CurCountsAndCurDispls for multiModule finish.", __func__);
+            HCCL_INFO("[%s] Calc CurCountsAndCurDispls for multiModule finish", __func__);
             return HCCL_SUCCESS;
         }
         // 计算每个rank可以分到多少count
@@ -320,6 +321,7 @@ HcclResult CollAllGatherVMeshExecutor::CalcCurCountsAndCurDisplsMultiModule(cons
         if (perRankCount == 0) {
             break;
         }
+        HCCL_DEBUG("[%s] Calc CurCountsAndCurDispls for perRankCount finish", __func__);
         for (auto i = 0U; i < countsLeft.size(); ++i) {
             const auto curCount = countsLeft[i] < perRankCount ? countsLeft[i] : perRankCount;
             allocatableCount -= curCount;

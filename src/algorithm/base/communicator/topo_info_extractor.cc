@@ -1427,6 +1427,7 @@ std::vector<std::vector<u32>> GetRingsOrderForAnyPath(u32 ranksSize, TopoType to
         multiRingOrder.push_back(tmpLevel00);
     }
     // 打印多个环
+    HCCL_DEBUG("[GetRingsOrderForAnyPath]print rings:");
     for (size_t i = 0; i < multiRingOrder.size(); i++) {
         auto ring = multiRingOrder[i];
         std::ostringstream stringRepresentation;
@@ -1435,7 +1436,7 @@ std::vector<std::vector<u32>> GetRingsOrderForAnyPath(u32 ranksSize, TopoType to
         }
         std::string ringString = stringRepresentation.str();
         const char *charRing = ringString.c_str();
-        HCCL_INFO("[GetRingsOrderByRdmaSdmaConcurrent] The No.%zu ring: %s", i, charRing);
+        HCCL_INFO("[GetRingsOrderByRdmaSdmaConcurrent] The No.%zu ring: %s.", i, charRing);
     }
     return multiRingOrder;
 }
