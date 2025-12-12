@@ -1154,8 +1154,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::Suspend()
     {
-        CHK_RET(Suspend(kfcControlTransferH2D_, kfcStatusTransferD2H_));
-        return HCCL_SUCCESS;
+        return Suspend(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
     HcclResult HcclCommunicator::Suspend(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
@@ -1212,8 +1211,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::StopExec()
     {
-        CHK_RET(StopExec(kfcControlTransferH2D_, kfcStatusTransferD2H_));
-        return HCCL_SUCCESS;
+        return StopExec(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
     HcclResult HcclCommunicator::StopExec(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
@@ -1276,8 +1274,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::Clean()
     {
-        CHK_RET(Clean(kfcControlTransferH2D_, kfcStatusTransferD2H_));
-        return HCCL_SUCCESS;
+        return Clean(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
     HcclResult HcclCommunicator::Clean(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
