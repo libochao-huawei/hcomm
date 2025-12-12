@@ -281,6 +281,7 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpPara
 
     u32 level0RankSize = level0CommInfo.localRankSize;
     u32 level1RankSize = level1CommInfo.localRankSize;
+    HCCL_DEBUG("RunReduceScattervLevel1 begin");
     /* ******************第一步: 机间reducescatter *******************************/
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, dataType, param.reduceType);
     std::unique_ptr<AlgTemplateBase> level1TempAlg;
@@ -289,17 +290,17 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpPara
             TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr));
-        HCCL_INFO("reducescatterv mesh: using ring algo inter-server.");
+        HCCL_INFO("reducescatterv mesh: using ring algo inter-server");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
-        HCCL_INFO("reducescatterv mesh: using nonuniform-bruck algo inter-server.");
+        HCCL_INFO("reducescatterv mesh: using nonuniform-bruck algo inter-server");
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr)); 
     } else { 
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
-        HCCL_INFO("reducescatterv mesh: using nhr algo inter-server.");
+        HCCL_INFO("reducescatterv mesh: using nhr algo inter-server");
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
         level1TempAlg->CloseBarrier();

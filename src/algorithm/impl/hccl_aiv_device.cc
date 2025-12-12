@@ -103,8 +103,8 @@ void SetAivProfilingInfoBeginTime(AivProfilingInfo& aivProfilingInfo)
     return;
 }
 
-void SetAivProfilingInfoBeginTime(uint64_t& oneTime){
-    (void) oneTime;
+void SetAivProfilingInfoBeginTime(uint64_t& beginTime){
+    (void) beginTime;
     return;
 }
 
