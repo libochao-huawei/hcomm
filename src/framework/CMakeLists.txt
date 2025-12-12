@@ -713,7 +713,6 @@ if(NOT BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         c_sec
         ccl_kernel_plf
-        unified_dlog
         mmpa
         -Wl,--as-needed
         -lrt
