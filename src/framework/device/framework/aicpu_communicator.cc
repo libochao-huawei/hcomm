@@ -5192,11 +5192,11 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
     }
 
-    // 最后拉起背景线程
+    indOpCommInitialized_ = true;
+
+    // 在indOpCommInitialized_变为true后拉起背景线程
     AicpuComContext *ctx = AicpuGetComContext();
     AicpuHcclProcess::CallMC2MaintenanceThread(ctx);
-
-    indOpCommInitialized_ = true;
     
     HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u], "
         "dispatcherCtx[%p]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
