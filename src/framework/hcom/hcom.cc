@@ -82,6 +82,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
     }
     uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
     CHK_RET(profilingManager.CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType, groupName));
+    hcclComm->SetAivCoreLimit(0);
     HCCL_DEBUG("CallMsprofReportHostApi success, cmdType[%d], count[%llu], dataType[%d], algType[%d], groupName[%llu]",
         cmdType, count, dataType, algType.algoLevel0, groupName);
     return HCCL_SUCCESS;

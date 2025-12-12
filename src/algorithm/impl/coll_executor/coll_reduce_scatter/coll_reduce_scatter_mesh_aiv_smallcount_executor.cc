@@ -69,11 +69,11 @@ HcclResult CollReduceScatterMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim
 
     u32 bestBlockDim = blockDim;
     CHK_PRT_RET(blockDim_ < rankSize && topoAttr_.deviceType == DevType::DEV_TYPE_910_93,
-        HCCL_ERROR("[CollReduceScatterMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        HCCL_ERROR("[CollReduceScatterMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     
     CHK_PRT_RET(blockDim_ < bestBlockDim && topoAttr_.deviceType != DevType::DEV_TYPE_910_93,
-        HCCL_ERROR("[CollReduceScatterMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        HCCL_ERROR("[CollReduceScatterMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, bestBlockDim), HCCL_E_PARA);
 
     if (blockDim_ < bestBlockDim) {

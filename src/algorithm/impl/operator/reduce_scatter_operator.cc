@@ -469,7 +469,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
             HcclCMDType::HCCL_CMD_REDUCE_SCATTER)[HCCL_ALGO_LEVEL_2];
         if ((superPodNum_ > 1) && (userRankSize_ / superPodNum_ > 1) &&
             ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
-             (configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) && (dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN))) {
+             ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) && (dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN)))) {
             // 单算子, 超节点数大于1， 每个超节点的rank数大于1
             algName = "ReduceScatterRingZerocopyExchangePipelineExecutor";  // 连续数据通信+数据交换+Pipeline
             algType_.algoLevel2 = AlgTypeLevel2::ALG_LEVEL2_PIPELINE;
