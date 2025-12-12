@@ -42,7 +42,7 @@ HcclResult MemMappingManager::GetDevVA(s32 deviceLogicID, void *addr, u64 size, 
 
     CHK_RET(MapMem(deviceLogicID, addr, size, devVA));
     HCCL_INFO("[MemMappingManager][GetDevVA]addr[%p] size[%llu] mapping success, devVa[%p]",
-        addr, size, &devVA);
+        addr, size, devVA);
     return HCCL_SUCCESS;
 }
 

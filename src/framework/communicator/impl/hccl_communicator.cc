@@ -363,6 +363,11 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitMemoryManager()
     {
+        if (IsOneSidedIdentifier(identifier_)) {
+            HCCL_INFO("[%s] comm[%s] is one sided comm, skip InitMemoryManager", __func__, identifier_.c_str());
+            return HCCL_SUCCESS;
+        }
+
         CHK_RET(MrManagerInit());
         // server数量不为1且非TCP模式时初始化RDMA资源
         if (serverNum_ != SINGLE_SERVER_NUM && !GetExternalInputHcclIsTcpMode())
