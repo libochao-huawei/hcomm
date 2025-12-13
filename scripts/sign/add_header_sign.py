@@ -261,8 +261,8 @@ def build_sign(item_size_set, sign_file_dir, sign_tool_path, sign_tmp_path, root
     cmd = ''
     for file in sign_dict["cms"]:
         # 如果没配置sign_alg属性，默认使用RSA_PSS算法签名
-        file_with_path = os.path.join(image_dir, file)
-        # windows平台调测跟linux平台路径分隔符不一样，实际使用中需要替换
+        file_with_path = os.path.join(sign_file_dir, file)
+        # windows平台调试跟linux平台路径分隔符不一样，实际使用中需要替换
         relative_path = file_with_path.replace(("{}" + PATH_SEPARATOR).format(product_delivery_path), "")
         # 临时目录下同层架子目录，包含文件名的完整路径
         file_sign_des = os.path.realpath(os.path.join(sign_tmp_path, relative_path))
@@ -322,7 +322,7 @@ def add_bios_esbc_header(root_dir, item_size_set, sign_file_dir):
         input_file = os.path.join(sign_file_dir, input_filename)
 
         if conf_item.nvcnt:
-            cmd = f'{os.environ["HI_PYTHON"]} {os.path.join(bios_esbc_header_tool_path, "esbc_header.py")}'
+            cmd = f'sudo {os.environ["HI_PYTHON"]} {os.path.join(bios_esbc_header_tool_path, "esbc_header.py")}'
             # 用esbc_header.py工具脚本添加esbc头
             cmd += f" -raw_img {input_file} -out_img {input_file}"
             cmd += f" -version {conf_item.version} -nvcnt {conf_item.nvcnt} -tag {conf_item.tag}"
@@ -353,8 +353,8 @@ def convert_der_file(crl_file: str, der_file: str) -> int:
         # 调用 openssl 转换
         cmd = f"openssl crl -in {crl_file} -outform DER -out {der_file}"
         result = subprocess.getstatusoutput(cmd)
-        if result.returncode != 0:
-            print(f"[ERROR] OpenSSL conversion failed: {result.stderr.strip()}")
+        if result[0] != 0:
+            print(f"[ERROR] OpenSSL conversion failed: {result[1]}")
             return 1
         # print(f"[INFO] DER file created at: {der_output_path}")
         return 0
@@ -414,7 +414,7 @@ def add_bios_header(item_size_set, sign_file_dir, bios_tool_path, sign_tool_path
         sign_file = os.path.realpath(os.path.join(sign_tmp_path, relative_path))
         sign_path = os.path.dirname(sign_file)
 
-        cmd = "{} {}".format(os.environ["HI_PYTHON"], os.path.join(bios_tool_path, "image_pack.py"))
+        cmd = "sudo {} {}".format(os.environ["HI_PYTHON"], os.path.join(bios_tool_path, "image_pack.py"))
         add_cmd = conf_item.additional
         # 镜像绑定cms签名,用image_pack.py工具脚本绑定cms签名信息
         if add_sign != "true" or conf_item.type == '':
@@ -477,7 +477,6 @@ def check_params(params):
 def _define_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser()
     parser.add_argument('sign_file_dir', help='device release dir')
-    parser.add_argument('root_dir', help='project source root')
     parser.add_argument('sign_flag', help='sign flag', default='false')
     parser.add_argument('--bios_check_cfg', help='default bios_check_cfg.xml', default='bios_check_cfg.xml')
     # 签名版本信息，编译传入
@@ -500,13 +499,15 @@ def main(argv=None):
     parser = _define_parser()
     args = parser.parse_args()
     sign_file_dir = args.sign_file_dir
-    root_dir = args.root_dir
     add_sign = args.sign_flag
     bios_check_cfg = args.bios_check_cfg if args.bios_check_cfg else 'bios_check_cfg.xml'
     version = args.version
     # 如果add_sign是false，则直接返回，加头&签名均不执行
     if add_sign == "false":
         return 0
+    # 将MY_PATH的父目录赋值给root_dir
+    root_dir = os.path.dirname(os.path.dirname(MY_PATH))
+
     # 需要签名的文件清单
     config_file = os.path.join(root_dir, bios_check_cfg)
     COMM_LOG.cilog_info(THIS_FILE_NAME, "config_file=" + config_file)
