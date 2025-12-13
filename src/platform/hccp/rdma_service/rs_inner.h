@@ -36,6 +36,7 @@
 #include "tls.h"
 #include "hccp_common.h"
 #include "hccp_ping.h"
+#include "rs_rdma_inner.h"
 #include "rs_common_inner.h"
 #include "rs_ping_inner.h"
 #include "rs.h"
@@ -44,16 +45,6 @@
 /* priority of algos and forbid unsafety algos */
 #define CHIPER_LIST "ECDHE-RSA-AES256-GCM-SHA384:\
     !RC2:!RC4:!MD2:!MD4:!MD5:!DES:!3DES:!SHA1:!BLOWFISH:!CBC:!ECB:!ADH:!LOW:!PSK:!SRP:!DSS:!eNULL:!aNULL:!EXP:@STRENGTH"
-
-#define RS_WC_NUM 16384
-#define RS_QP_ATTR_MIN_RNR_TIMER 12
-#define RS_QP_ATTR_TIMEOUT 16
-#define RS_QP_ATTR_RETRY_CNT 7
-#define RS_QP_ATTR_RNR_RETRY 7
-#define RS_QP_ATTR_MAX_SEND_SGE 8
-#define RS_QP_ATTR_GID_LEN 16
-#define RS_MAX_RD_ATOMIC_NUM                128
-#define RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE    16      // host RDMA adapt
 
 #define RS_USLEEP_TIME 20000
 #define RS_RECV_MAX_TIME (1000.0 * 5) // ms
@@ -197,20 +188,6 @@ struct RsSecPara {
 
 #define RS_FD_INVALID       (-1)
 
-enum RsCmdOpcode {
-    RS_CMD_QP_INFO = 0x12345678,
-    RS_CMD_MR_INFO = 0x12345687,
-    RS_CMD_LEN_INFO = 0x12345867,
-};
-
-struct RsMrInfo {
-    uint32_t cmd;    /* MUST be the first element */
-
-    uint32_t rkey;
-    uint64_t addr;
-    uint64_t len;
-};
-
 /*
  * mr_cb also used to sync to remote
  */
@@ -282,8 +259,6 @@ struct RsConnInfo {
 
     struct RsListHead list;
 };
-
-#define RS_BUF_SIZE 2048
 
 enum ListenFdState {
     LISTEN_FD_STATE_ADDED = 0,
