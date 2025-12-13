@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  * 
- * The code snippet comes from Fletcherjiang project.
+ * The code snippet comes from Cann project.
  * 
  * Copyright 2019-2020 Huawei Technologies Co., Ltd
  * 
