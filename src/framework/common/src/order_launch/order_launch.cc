@@ -82,6 +82,8 @@ HcclResult OrderLaunch::SetHcomStream(u32 graphId, const Stream& hcomAttachedStr
 HcclResult OrderLaunch::AclgraphLaunchInOrder(std::string &group, const Stream& kernelStream, u64 modelId,
     rtModel_t rtModel, std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
+    HCCL_INFO("AclgraphLaunchInOrder skip");
+    return HCCL_SUCCESS;
     std::unique_lock<std::mutex> mapLock(streamMutex_);
     if (groupSet_.find(group) == groupSet_.end()) {
         HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
