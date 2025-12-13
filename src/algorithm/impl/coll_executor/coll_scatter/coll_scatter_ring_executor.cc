@@ -91,6 +91,7 @@ HcclResult CollScatterRingExecutor::KernelRun(const OpParam &param, ExecMem &exe
     std::unique_ptr<AlgTemplateBase> level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
     CHK_SMART_PTR_NULL(level0TempAlg);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL0", __func__);
 
     // 偏移需要带入prepare
     u32 rootRankLevel0 = 0;
