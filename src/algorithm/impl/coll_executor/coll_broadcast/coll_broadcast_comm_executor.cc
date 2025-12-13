@@ -92,30 +92,32 @@ HcclResult CollBroadcastCommExecutor::KernelRun(const OpParam &param, ExecMem &e
         if (curSize <= NHR_BCAST_SMALL_SIZE) {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_BROADCAST_NHR_ONESHOT, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_BROADCAST_NHR_ONESHOT in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         } else {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_BROADCAST_NHR, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_BROADCAST_NHR in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         }
-        HCCL_INFO("broadcast comm: using nhr algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
         isUsedRegister = true;
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_BROADCAST_NHR_V1,
             dispatcher_);
-        HCCL_INFO("broadcast comm: using nhr_v1 algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_BROADCAST_NHR_V1 in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         if (ShouldUseBinaryBroadcastOfNB(curSize, combinedCommInfo.localRankSize, topoAttr_.userRankSize,
                 topoAttr_.deviceNumPerAggregation)) {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_BROADCAST_NB_BINARY, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_BROADCAST_NB_BINARY in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         } else {
             tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_BROADCAST_NB, dispatcher_);
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_BROADCAST_NB in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
         }
-        HCCL_INFO("broadcast comm: using nonuniform-bruck algo inter-server.");
     } else {
         tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_BROADCAST_RING, dispatcher_);
-        HCCL_INFO("broadcast comm: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_BROADCAST_RING in COMM_COMBINE/COMM_COMBINE_ORDER", __func__);
     }
     CHK_SMART_PTR_NULL(tempAlg);
 
