@@ -9,7 +9,12 @@
  *
  * The code snippet comes from linux-rdma project
  * 
- * Copyright (c) 2018 Mellanox Technologies, Ltd.  All rights reserved.
+ * Copyright (c) 2006-2007 The Regents of the University of California.
+ * Copyright (c) 2004-2009 Voltaire Inc. All rights reserved.
+ * Copyright (c) 2002-2010 Mellanox Technologies LTD. All rights reserved.
+ * Copyright (c) 1996-2003 Intel Corporation. All rights reserved.
+ * Copyright (c) 2009 HNR Consulting. All rights reserved.
+ * Copyright (c) 2011 Lawrence Livermore National Security. All rights reserved.
  * 
  *           OpenIB.org BSD license (MIT variant)
  * 
