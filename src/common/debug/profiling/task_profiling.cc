@@ -231,7 +231,7 @@ HcclResult TaskProfiling::Run(const TaskData &taskData, bool isCapture)
     std::unique_lock<std::mutex> lock(mutex_);
 
     std::unique_lock<std::mutex> streamLock(streamMutex_[deviceLogicId_]);
-    if (streamPlaneMap_[deviceLogicId_].find(taskData.streamID) == streamPlaneMap_[deviceLogicId_].end()) {
+    if (streamRecordInfoMap_[deviceLogicId_].find(taskData.streamID) == streamRecordInfoMap_[deviceLogicId_].end()) {
         // 找不到对应的tag则认为该stream不参与profiling, 返回SUCCESS
         HCCL_DEBUG("streamID[%u] not found in profiler", taskData.streamID);
         hcclReportData.tag = "unknow";
@@ -239,8 +239,9 @@ HcclResult TaskProfiling::Run(const TaskData &taskData, bool isCapture)
         hcclReportData.groupName = "unknow";
         hcclReportData.profInfo.workFlowMode = 0;
     } else {
-        hcclReportData.tag = streamTagMap_[deviceLogicId_][taskData.streamID];
-        hcclReportData.profInfo.planeID = streamPlaneMap_[deviceLogicId_][taskData.streamID];
+        StreamRecordInfo &streamInfo = streamRecordInfoMap_[deviceLogicId_][taskData.streamID];
+        hcclReportData.tag = streamInfo.tag;
+        hcclReportData.profInfo.planeID = streamInfo.planeId;
         hcclReportData.groupName = tagGroupMap_[deviceLogicId_][hcclReportData.tag];
         hcclReportData.profInfo.workFlowMode = static_cast<uint32_t>(tagModeMap_[deviceLogicId_][hcclReportData.tag]);
     }
@@ -334,16 +335,17 @@ HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, co
 
     std::unique_lock<std::mutex> streamLock(streamMutex_[deviceLogicId_]);
 
-    if (streamPlaneMap_[deviceLogicId_].find(captureStreamID) == streamPlaneMap_[deviceLogicId_].end()) {
+    if (streamRecordInfoMap_[deviceLogicId_].find(streamID) == streamRecordInfoMap_[deviceLogicId_].end()) {
         // 找不到对应的tag则认为该stream不参与profiling, 返回SUCCESS
-        HCCL_DEBUG("streamID[%u] not found in profiler", captureStreamID);
+        HCCL_DEBUG("streamID[%u] not found in profiler", streamID);
         hcclReportData.tag = "unknow";
         hcclReportData.profInfo.planeID = 0;
         hcclReportData.groupName = "unknow";
         hcclReportData.profInfo.workFlowMode = 0;
     } else {
-        hcclReportData.tag = streamTagMap_[deviceLogicId_][captureStreamID];
-        hcclReportData.profInfo.planeID = streamPlaneMap_[deviceLogicId_][captureStreamID];
+        StreamRecordInfo &streamInfo = streamRecordInfoMap_[deviceLogicId_][streamID];
+        hcclReportData.tag = streamInfo.tag;
+        hcclReportData.profInfo.planeID = streamInfo.planeId;
         hcclReportData.groupName = tagGroupMap_[deviceLogicId_][hcclReportData.tag];
         hcclReportData.profInfo.workFlowMode = static_cast<uint32_t>(tagModeMap_[deviceLogicId_][hcclReportData.tag]);
     }

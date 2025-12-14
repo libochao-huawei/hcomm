@@ -79,44 +79,44 @@ const u64 HCCL_MODULE_ID = 5;
 
 /* 预定义日志宏, 便于使用 */
 #define HCCL_DEBUG(format, ...) do { \
-    if (UNLIKELY(TbeHcclCheckLogLevel(HCCL_LOG_DEBUG))) { \
+    if (UNLIKELY(CheckLogLevel(HCCL, HCCL_LOG_DEBUG))) { \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_DEBUG, format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_INFO(format, ...) do { \
-    if (UNLIKELY(TbeHcclCheckLogLevel(HCCL_LOG_INFO))) { \
+    if (UNLIKELY(CheckLogLevel(HCCL, HCCL_LOG_INFO))) { \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_INFO, format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_WARNING(format, ...) do { \
-    if (UNLIKELY(TbeHcclCheckLogLevel(HCCL_LOG_WARN))) { \
+    if (UNLIKELY(CheckLogLevel(HCCL, HCCL_LOG_WARN))) { \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_WARN, format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_ERROR(format, ...) do { \
-    if (LIKELY(TbeHcclCheckLogLevel(HCCL_LOG_ERROR))) { \
+    if (LIKELY(CheckLogLevel(HCCL, HCCL_LOG_ERROR))) { \
         HCCL_ERROR_LOG_PRINT(format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 /* 运行日志 */
 #define HCCL_RUN_INFO(format, ...) do { \
-    if (LIKELY(TbeHcclCheckLogLevel(HCCL_LOG_INFO, HCCL | RUN_LOG_MASK))) { \
+    if (LIKELY(CheckLogLevel(HCCL | RUN_LOG_MASK, HCCL_LOG_INFO))) { \
         HCCL_RUN_LOG_PRINT(format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_RUN_WARNING(format, ...) do { \
-    if (LIKELY(TbeHcclCheckLogLevel(HCCL_LOG_WARN, HCCL | RUN_LOG_MASK))) { \
+    if (LIKELY(CheckLogLevel(HCCL | RUN_LOG_MASK, HCCL_LOG_WARN))) { \
         HCCL_LOG_PRINT(HCCL | RUN_LOG_MASK, HCCL_LOG_WARN, format, ##__VA_ARGS__); \
     } \
 } while(0)
 
 #define HCCL_USER_CRITICAL_LOG(format, ...) do { \
-    if (LIKELY(TbeHcclCheckLogLevel(HCCL_LOG_INFO, HCCL | RUN_LOG_MASK))) { \
+    if (LIKELY(CheckLogLevel(HCCL | RUN_LOG_MASK, HCCL_LOG_INFO))) { \
         HCCL_RUN_LOG_PRINT(format, ##__VA_ARGS__); \
     } \
 } while(0)
@@ -279,7 +279,7 @@ const u64 HCCL_MODULE_ID = 5;
         const char* configName = #config;                                                     \
         LOG_FUNC(HCCL | RUN_LOG_MASK, HCCL_LOG_INFO, "[%s:%d] [%u] [%s]: " format,            \
             __FILE__, __LINE__, syscall(SYS_gettid), configName, ##__VA_ARGS__);              \
-    } else if (UNLIKELY(TbeHcclCheckLogLevel(HCCL_LOG_INFO))) {                                  \
+    } else if (UNLIKELY(CheckLogLevel(HCCL, HCCL_LOG_INFO))) {                                  \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_INFO, format, ##__VA_ARGS__);                           \
     }                                                                                         \
 } while(0)
@@ -289,7 +289,7 @@ const u64 HCCL_MODULE_ID = 5;
         const char* configName = #config;                                                     \
         LOG_FUNC(HCCL | RUN_LOG_MASK, HCCL_LOG_INFO, "[%s:%d] [%u] [%s]: " format,            \
             __FILE__, __LINE__, syscall(SYS_gettid), configName, ##__VA_ARGS__);              \
-    } else if (UNLIKELY(TbeHcclCheckLogLevel(HCCL_LOG_DEBUG))) {                                 \
+    } else if (UNLIKELY(CheckLogLevel(HCCL, HCCL_LOG_DEBUG))) {                                 \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_DEBUG, format, ##__VA_ARGS__);                          \
     }                                                                                         \
 } while(0)

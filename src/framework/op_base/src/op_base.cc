@@ -55,7 +55,7 @@ const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
 thread_local map<std::string, shared_ptr<TopoInfoDetect>> g_topoDetectServerPtrMap;
 
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, std::string tag)
+    HcclDataType dataType, const std::string &tag)
 {
     if (GetIfProfile()) {
         AlgType algType;
