@@ -388,13 +388,12 @@ HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
 
 bool AlltoAllOperator::JudgeIfNeedPreProcessAndGetParam(const OpParam& param,
     std::unique_ptr<PreProcessMetaInfo> &preMetaInfo)
-{
-    bool useA3Pipeline = IsA3PipelineCondition(param);
-    bool useA2AAiv = IsSatisfyAlltoAllAivCondition(param);
-    bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
+{    
+    if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && (IsSatisfyAlltoAllAivCondition(param) == false)) {
+        bool useA3Pipeline = IsA3PipelineCondition(param);
+        bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
             isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize());
-    bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition();
-    if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && !useA2AAiv) {
+        bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition();
         if (!useA3Pipeline && (useDirectFullmesh || useContinuousPipeline || param.aicpuUnfoldMode)) {
             return false;
         }

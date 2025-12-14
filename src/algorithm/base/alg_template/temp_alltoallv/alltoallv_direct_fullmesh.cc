@@ -126,6 +126,9 @@ HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
     // 一半的CCLOut用来发送RDMA数据，另一半用来接收RDMA数据，因此需要除以2
     rdmaDataBlockSize_ = cclOutMem_.size() / std::max(1u, rdmaConcurrentNum_) / 2;
 
+    u64 maxRecvLen = CalMaxRecvLen();
+    isHugeData_ = std::max(maxSendLen, maxRecvLen) > std::min(sdmaDataBlockSize_, rdmaDataBlockSize_);
+
     return HCCL_SUCCESS;
 }
 
@@ -138,6 +141,19 @@ std::string AlltoAllVDirectFullMesh::GetStreamIndexString()
         res += std::to_string(streamIndex) + ", ";
     }
     return res;
+}
+
+u64 AlltoAllVDirectFullMesh::CalMaxRecvLen()
+{
+    u64 maxRecvLen = 0;
+    const SendRecvInfo& localSendRecvInfo = *localSendRecvInfoPtr_;
+
+    for (u32 dstRank = 0; dstRank < localSendRecvInfo.recvLength.size(); dstRank++) {
+        maxRecvLen = std::max(maxRecvLen, localSendRecvInfo.recvLength[dstRank]);
+    }
+
+    HCCL_DEBUG("[AlltoAllVDirectFullMesh][CalMaxRecvLen] maxRecvLen[%llu]", maxRecvLen);
+    return maxRecvLen;
 }
 
 u64 AlltoAllVDirectFullMesh::CalcMaxSendLen()
@@ -1105,7 +1121,9 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
     CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
 
     if (devNumInlocalPod_ > 1) {
-        CHK_RET(RunSDMA(opMeta));
+        HcclOpMetaInfoDef opMetaSdma = HcclOpMetaInfo::GetOneForAllToAllV(
+            CopyPattern::ZCOPY, cclInMem_.size(), isHugeData_, !isBigCount_);
+        CHK_RET(RunSDMA(opMetaSdma));
     }
 
     if (totalRdmaRankNum_ > 0) {

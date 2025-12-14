@@ -38,6 +38,7 @@ using HcclOpMetaInfo = struct HcclOpMetaInfoDef {
     bool isRootRank = false;
     bool isSmallCount = false;
     uint32_t rootRank = INVALID_UINT;
+    uint32_t KEY_SIZE = 100;
     bool isDefaultPath = true; // 是否为默认子图路径
     ReduceType reduceType = ReduceType::INLINE_REDUCE;
     CopyPattern copyPattern = CopyPattern::BCOPY;
@@ -205,13 +206,15 @@ using HcclOpMetaInfo = struct HcclOpMetaInfoDef {
         return meta;
     }
 
-    static HcclOpMetaInfoDef GetOneForAllToAllV(CopyPattern copyPattern, u64 dataSize, bool hugeData = false)
+    static HcclOpMetaInfoDef GetOneForAllToAllV(CopyPattern copyPattern, u64 dataSize,
+        bool hugeData = false, bool isSmallCount = false)
     {
         HcclOpMetaInfoDef meta;
         meta.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
         meta.copyPattern = copyPattern;
         meta.alltoallvSendDataSize = dataSize;
         meta.hugeData = hugeData;
+        meta.isSmallCount = isSmallCount;  // 是否小数据
         meta.isEnableCache = CheckEnableCache(meta);
         return meta;
     }
@@ -271,16 +274,38 @@ using HcclOpMetaInfo = struct HcclOpMetaInfoDef {
     std::string GetCacheKey() const
     {
 #ifndef CCL_KERNEL_AICPU
-        std::string isRootRankStr = isRootRank ? "1" : "0";
-        std::string isSmallCountStr = isSmallCount ? "1" : "0";
-        std::string isDefaultPathStr = isDefaultPath ? "1" : "0";
-        std::string dataSplitStr = dataSplit ? "1" : "0";
-        std::string isAivModeStr = isAivMode ? "1" : "0";
-        return std::to_string(static_cast<int>(opType)) + isRootRankStr + std::to_string(static_cast<int>(reduceType)) +
-               std::to_string(rootRank) + std::to_string(sliceNum) + std::to_string(static_cast<int>(dataType)) +
-               isSmallCountStr + isDefaultPathStr + std::to_string(piplineSliceNum) + std::to_string(algolevel1Type) +
-               std::to_string(static_cast<int>(copyPattern)) + dataSplitStr + isAivModeStr +
-               std::to_string(static_cast<int>(deterministic)) + std::to_string(static_cast<int>(preloadCopyOpt));
+        std::string key;
+        key.reserve(KEY_SIZE);
+        key.append(std::to_string(static_cast<int>(opType)));
+        key.append(1, '_');
+        key.append(1, isRootRank ? '1' : '0');
+        key.append(1, '_');
+        key.append(std::to_string(static_cast<int>(reduceType)));
+        key.append(1, '_');
+        key.append(std::to_string(rootRank));
+        key.append(1, '_');
+        key.append(std::to_string(sliceNum));
+        key.append(1, '_');
+        key.append(std::to_string(static_cast<int>(dataType)));
+        key.append(1, '_');
+        key.append(1, isSmallCount ? '1' : '0');
+        key.append(1, '_');
+        key.append(1, isDefaultPath ? '1' : '0');
+        key.append(1, '_');
+        key.append(std::to_string(piplineSliceNum));
+        key.append(1, '_');
+        key.append(std::to_string(algolevel1Type));
+        key.append(1, '_');
+        key.append(std::to_string(static_cast<int>(copyPattern)));
+        key.append(1, '_');
+        key.append(1, dataSplit ? '1' : '0');
+        key.append(1, '_');
+        key.append(1, isAivMode ? '1' : '0');
+        key.append(1, '_');
+        key.append(std::to_string(deterministic));
+        key.append(1, '_');
+        key.append(std::to_string(preloadCopyOpt));
+        return key;
 #else
         return "";
 #endif

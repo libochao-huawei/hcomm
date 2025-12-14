@@ -15,7 +15,6 @@
  
 using namespace std;
  
-namespace GraphMgr {
 FftsCtxProvider::FftsCtxProvider()
 {
 }
@@ -30,7 +29,7 @@ HcclFftsContextsInfo *FftsCtxProvider::GetFftsCtx(const char *key, uint32_t keyL
 {
     CHK_PRT_RET(key == nullptr, HCCL_ERROR("GetGraphCtx key is nullpty"), nullptr);
     std::string sKey(key, keyLen);
-    HCCL_INFO("GetFftsCtx key[%s] sKey[%s] useGraphConstructorV2_[%u]",
+    HCCL_INFO("GetFftsCtx key[%s] sKey[%s] useGraphConstructorV2[%u]",
         key, sKey.c_str(), useGraphConstructorV2);
     HcclResult ret = LegacyParseDebugConfig();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("GetFftsCtx LegacyParseDebugConfig failed"), nullptr);
@@ -43,4 +42,3 @@ HcclFftsContextsInfo *FftsCtxProvider::GetFftsCtx(const char *key, uint32_t keyL
     }
     return &fftsCtxMap_[sKey];
 }
-} // namespace GraphMgr

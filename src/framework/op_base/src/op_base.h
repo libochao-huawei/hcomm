@@ -53,7 +53,7 @@ HcclOpInfoCtx &GetHcclOpInfoCtx(void);
 HcclResult InitOtherInfo(hccl::HcclCommParams &params, const char *rankTable);
 
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, std::string tag);
+    HcclDataType dataType, const std::string &tag);
 
 HcclResult ReduceScatterLoop(const std::string &tag, void *inputPtr, void *outputPtr, const u64 &count,
     HcclDataType dataType, HcclReduceOp op, hccl::hcclComm *hcclComm, rtStream_t stream);

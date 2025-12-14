@@ -2982,7 +2982,6 @@ namespace hccl
 
         bool isCapture = StreamIsCapture(stream);
 
-        Stream streamObj(stream);
         CHK_RET(callbackTask_->CallbackRegStream(stream));
 
         // 生成sendCountMatrix矩阵，alltoall的底层实现走alltoallvc
@@ -2997,7 +2996,7 @@ namespace hccl
         opParam.All2AllDataDes.sendCount = sendCount;
         opParam.All2AllDataDes.recvCount = recvCount;
         opParam.All2AllDataDes.sendCountMatrix = static_cast<void *>(sendCountMatrix.data());
-        opParam.stream = streamObj;
+        opParam.stream = Stream(stream);
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALL;
         opParam.aicpuUnfoldMode = false;
         opParam.isCapture = isCapture;
@@ -4173,7 +4172,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::ExecOpAlltoAll(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
-        std::string tag = opParam.tag;
+        std::string &tag = opParam.tag;
         u32 aivCoreLimit = blockDim_;
         //单机AIV场景下cache复用，提升下发性能
         if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
@@ -4244,29 +4243,18 @@ namespace hccl
         }
 
         newTag += !opParam.isCapture ? "" : "_Capture";
-        bool supportAicpuAlg = algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllDirectFullmesh" ||
-                               algName == "RunAlltoAllVTwoLevelPipeline" || algName == "RunAlltoAllVContinuousPipeline";
-        bool supportAlg = ((algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllVTwoLevelPipeline") &&
-                              opParam.aicpuUnfoldMode) || algName == "RunAlltoAllDirectFullmesh";
+        auto isSupportAlg = [&](const std::string &algName, bool aicpuUnfoldMode) -> bool {
+            return ((algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllVTwoLevelPipeline") && aicpuUnfoldMode) ||
+                (algName == "RunAlltoAllDirectFullmesh");
+        };
         bool isOpbaseMode = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
-        if ((supportAlg) || (isOpbaseMode && userRankSize_ > 1)) {
+        if ((isOpbaseMode && userRankSize_ > 1) || (isSupportAlg(algName, opParam.aicpuUnfoldMode))) {
             CHK_RET(CreateCommCCLbuffer());
         }
-
-        u32 srcLocalRankId = userRank_;
-        u32 rootRank = opParam.root;
-        if (opParam.root == INVALID_VALUE_RANKID) {
-            rootRank = 0;
-        }
-        std::string nslb_identifier = identifier_;
-        HCCL_INFO("NSLBDP-SWK NslbDp_CollectOperTable nslb_identifier[%s] .", nslb_identifier.c_str());
-        u32 rankSize = userRankSize_;
-        u64 count = opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType];
-
         // 资源创建
         // aiv算法不需要申请host侧的从流
         bool isNeedHostSlaveStream = algDesc.isAivMode ? false : true;
-        if ((resMap_.find(newTag) != resMap_.end()) && opParam.isCapture)
+        if (opParam.isCapture && (resMap_.find(newTag) != resMap_.end()))
         {
             auto resTmp = resMap_[newTag];
             ++captureCnt_;
@@ -4333,23 +4321,31 @@ namespace hccl
                 CHK_RET(CalcTinySendRecvMem(opParam, resMap_[newTag], tinySendRecvMem));
             }
         }
-        /* NSLB 填充 表  */
-        AlgType nslbAlgType = algOperator->GetAlgType();
-        AlgTypeLevel1 algValue = nslbAlgType.algoLevel1;
-        uint8_t nslbAlg = hcclNslbDp::GetInstance().GetNslbLevel1AlgType(algValue);
-
-        if (algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllDirectFullmesh") {
-            nslbAlg = NSLBDP_PAIRWISE;
-            if (deviceType_ == DevType::DEV_TYPE_910_93) {
-                nslbAlg = NSLB_ALGO_TYPE_FULLMESH;
-            }
-        }
+        auto &algRes = resMap_[newTag];
 
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && hcclNslbDp::GetInstance().GetInitNetCoFlag() == true) {
+            /* NSLB 填充 表  */
+            u32 srcLocalRankId = userRank_;
+            u32 rootRank = (opParam.root == INVALID_VALUE_RANKID) ? 0 : opParam.root;
+            AlgType nslbAlgType = algOperator->GetAlgType();
+            AlgTypeLevel1 algValue = nslbAlgType.algoLevel1;
+            uint8_t nslbAlg = hcclNslbDp::GetInstance().GetNslbLevel1AlgType(algValue);
+
+            if (algName == "RunAlltoAllVFullMesh" || algName == "RunAlltoAllDirectFullmesh") {
+                nslbAlg = NSLBDP_PAIRWISE;
+                if (deviceType_ == DevType::DEV_TYPE_910_93) {
+                    nslbAlg = NSLB_ALGO_TYPE_FULLMESH;
+                }
+            }
+
+            std::string nslb_identifier = identifier_;
+            HCCL_INFO("NSLBDP-SWK NslbDp_CollectOperTable nslb_identifier[%s] .", nslb_identifier.c_str());
+            u32 rankSize = userRankSize_;
+            u64 count = opParam.All2AllDataDes.sendCount * SIZE_TABLE[opParam.All2AllDataDes.sendType];
             // 填充表2
             hcclNslbDp::GetInstance().GenerateOpAndAdjTable(opType, rootRank, srcLocalRankId, nslbAlg, nslb_identifier, count, rankSize);
             AdjInfo nslbAdjInfo = {};
-            CHK_RET(algOperator->GetAdjInfo(algName, opParam, resMap_[newTag], nslbAdjInfo));
+            CHK_RET(algOperator->GetAdjInfo(algName, opParam, algRes, nslbAdjInfo));
             HCCL_INFO("[NSLBDP-WEN]-nslbAdjInfosize[%u]-algName[%s]-rankSize[%u]-commDesc[%s]..",
                           nslbAdjInfo.dstRankNum, algName.c_str(), userRankSize_, identifier_.c_str());
             // 填充表3
@@ -4374,11 +4370,20 @@ namespace hccl
         }
 
         auto algType = algOperator->GetAlgType();
-        CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg, tag));
+        CHK_RET(RegisterDfxInfo(opParam, algType, algRes.slaveStreams, selectAivAlg, tag));
         // 头计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, HEAD, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         // 算法执行
-        if (opParam.aicpuUnfoldMode && supportAicpuAlg) {
+        auto isSupportAicpuAlg = [](const std::string &algName) {
+            static const std::set<std::string> aicpuAlgs = {
+                "RunAlltoAllVFullMesh",
+                "RunAlltoAllDirectFullmesh",
+                "RunAlltoAllVTwoLevelPipeline",
+                "RunAlltoAllVContinuousPipeline"
+            };
+            return aicpuAlgs.count(algName) > 0;
+        };
+        if (opParam.aicpuUnfoldMode && isSupportAicpuAlg(algName)) {
             isInplaceStatus_ = 0;
             inPlaceSupportRetryStatus_ = InplaceSupportRetryStatus::INPLACE_STATUS_END;
             // algOperator->SupportRetryWithInplaceCheck 依赖 algOperator->SetRetryEnable 才能正确返回是否支持inplace
@@ -4388,16 +4393,16 @@ namespace hccl
             HCCL_INFO("[HcclCommunicator][ExecOp] aicpu Unfold mode algType[%s], inplaceSupportRetry_[%d], opType[%d], "
                       "isInplaceStatus_[%d], inPlaceSupportRetryStatus_[%d]",
                       AlgTypeToStr(algType).c_str(), inplaceSupportRetry_, opType, isInplaceStatus_, inPlaceSupportRetryStatus_);
-            CHK_RET(OrchestrateAicpu(opType, algName, opParam, resMap_[newTag], newTag, algType, isCustom));
+            CHK_RET(OrchestrateAicpu(opType, algName, opParam, algRes, newTag, algType, isCustom));
         } else {
             // HOST展开aclgraph场景，capture从流
             if (!selectAivAlg) {
-                CHK_RET(CaptureSlaveStreams(opParam.stream.ptr(), resMap_[newTag].slaveStreams));
+                CHK_RET(CaptureSlaveStreams(opParam.stream.ptr(), algRes.slaveStreams));
             }
             OpCounterInfo opCounter;
             CHK_RET(GetOpCountInfo(opCounter));
             CHK_RET(algOperator->SetOpCounter(opCounter));
-            CHK_RET(algOperator->Orchestrate(algName, opParam, resMap_[newTag]));
+            CHK_RET(algOperator->Orchestrate(algName, opParam, algRes));
             // for profiling, blockDim upload
             CHK_RET(algOperator->GetBlockDim(blockDim_));
             if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
@@ -4406,7 +4411,7 @@ namespace hccl
         }
         // 尾计数
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
-        CHK_RET(UnRegisterDfxInfo(opParam, resMap_[newTag].slaveStreams));
+        CHK_RET(UnRegisterDfxInfo(opParam, algRes.slaveStreams));
         if (selectAivAlg) {
             CHK_RET(algOperator->SetAivClearEnable(false));
             aivClearEnable_ = false;

@@ -291,7 +291,7 @@ protected:
     bool hostNicTcpSendThreadState_;
     std::mutex hostNicMutex_;
     void* overflowAddr_;
-    void *graphMgr_{nullptr};
+    void *fftsPubInfo_{nullptr};
     bool setDeviceFlag_;
     uint32_t notifyMaxWaitTime_;
     LoadTaskCallBack callback_{nullptr};

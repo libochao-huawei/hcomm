@@ -74,9 +74,9 @@ DispatcherPub::~DispatcherPub()
     }
     lock.unlock();
 
-    if (graphMgr_ != nullptr) {
-        GraphMgrDeInit(graphMgr_);
-        graphMgr_ = nullptr;
+    if (fftsPubInfo_ != nullptr) {
+        GraphMgrDeInit(fftsPubInfo_);
+        fftsPubInfo_ = nullptr;
     }
 #endif
 
@@ -218,8 +218,8 @@ HcclResult DispatcherPub::Init()
 
     CHK_RET(HcclTbeTaskInit(deviceLogicId_));
 
-    graphMgr_ = GraphMgrInit();
-    CHK_PTR_NULL(graphMgr_);
+    fftsPubInfo_ = GraphMgrInit();
+    CHK_PTR_NULL(fftsPubInfo_);
 
     if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
         execTimeOutByConfig_) {
