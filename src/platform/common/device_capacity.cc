@@ -198,7 +198,7 @@ bool IsOverFlowInfNanMode()
     if (ret != HCCL_SUCCESS) {
         HCCL_WARNING("[impl][IsOverFlowInfNanMode] GetDeviceSatMode failed");
     }
-    return (!GetExternalInputHcclDumpDebug()) && (floatOverflowMode == ACL_RT_OVERFLOW_MODE_UNDEF);
+    return (!GetExternalInputHcclDumpDebug()) && (floatOverflowMode == ACL_RT_OVERFLOW_MODE_INFNAN);
 }
 
 bool Is310PDevice()
