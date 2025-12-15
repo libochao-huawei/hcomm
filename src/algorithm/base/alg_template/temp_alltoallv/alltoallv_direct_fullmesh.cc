@@ -1125,9 +1125,7 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
     CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
 
     if (devNumInlocalPod_ > 1) {
-        HcclOpMetaInfoDef opMetaSdma = HcclOpMetaInfo::GetOneForAllToAllV(
-            CopyPattern::ZCOPY, cclInMem_.size(), isHugeData_, !isBigCount_);
-        CHK_RET(RunSDMA(opMetaSdma));
+        CHK_RET(RunSDMA(opMeta));
     }
 
     if (totalRdmaRankNum_ > 0) {
