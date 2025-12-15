@@ -152,7 +152,8 @@ HcclResult AllReduceHDOptim::RunPreCopy(u32 rank, u32 rankSize, const std::vecto
             void *remMemPtr = nullptr;
             CHK_RET(links[neighCur]->GetRemoteMem(UserMemType::OUTPUT_MEM, &remMemPtr));
             dst = DeviceMem::create(static_cast<u8 *>(remMemPtr), totalSize);
-            CHK_RET(HcclReduceAsync(dispatcher_,
+            CHK_RET(HcclReduceAsync(
+                dispatcher_,
                 static_cast<void *>(src.ptr()),
                 count_,
                 dataType_,

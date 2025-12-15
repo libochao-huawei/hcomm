@@ -45,6 +45,7 @@ HcclResult ReduceOperator::SelectAlg(const std::string &tag, const OpParam &para
         || algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_HD)) {
         std::string appendTag = "";
         u32 serverNumPerSuperPod = superPodNum_ == 0 ? moduleNum_ : moduleNum_ / superPodNum_;
+        HCCL_DEBUG("[ReduceOperator][SelectAlg]serverNumPerSuperPod is %u", serverNumPerSuperPod);
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
             u32 part1Size = FACTOR_TWO * (serverNumPerSuperPod - (1 << static_cast<u32>(log2(serverNumPerSuperPod))));
             u32 rootId = param.root / deviceNumPerAggregation_ % serverNumPerSuperPod;

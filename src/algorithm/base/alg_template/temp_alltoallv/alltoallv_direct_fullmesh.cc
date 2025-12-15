@@ -506,6 +506,7 @@ HcclResult AlltoAllVDirectFullMesh::SdmaMainStreamWait(u32 step, u32 roundIdx)
             if (sendRank == userRank_) {
                 continue;
             }
+            HCCL_DEBUG("[AlltoAllVDirectFullMesh]recvRank is %u, sendRank is %u", recvRank, sendRank);
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
             if (step < readInfo.size()) {
                 HCCL_DEBUG("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] userRank [%u], recvRank[%u], "

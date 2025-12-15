@@ -48,6 +48,7 @@ HcclResult ReduceRing::RunAsync(const u32 rank, const u32 rankSize,
         return ret;
     }
 
+    HCCL_DEBUG("[ReduceRing][RunAsync]rankSize is %u", rankSize);
     // 创建reducer & sender
     senderInfo_.reset(new (std::nothrow) Sender(dataType_, reductionOp_, reduceAttr_));
     CHK_SMART_PTR_NULL(senderInfo_);

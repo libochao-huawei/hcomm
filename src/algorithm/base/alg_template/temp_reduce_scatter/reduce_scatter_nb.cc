@@ -56,6 +56,7 @@ HcclResult ReduceScatterNB::RunAsync(const u32 rank, const u32 rankSize, const s
 
         // 生成std::vector<Slice> slices_
         u64 sliceSize = count_ * unitSize;
+        HCCL_DEBUG("[ReduceScatterNB][RunAsync]sliceSize is %llu", sliceSize);
 
         for (u32 i = 0; i < rankSize; i++) {
             slices_[i].size = sliceSize;

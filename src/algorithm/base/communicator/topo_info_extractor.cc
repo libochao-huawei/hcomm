@@ -1070,6 +1070,7 @@ HcclResult TopoInfoExtractor::GetIsUsedRdmaMap(std::unordered_map<u32, bool> &is
         } else if (rankData_.serverIdx != dstRank.serverIdx) { // 不跨超节点, 跨server场景
             isInterServer = true;
         } else { // 同server, PCIE互连场景
+            HCCL_DEBUG("[TopoInfoExtractor]GetIsUsedRdmaMap for interServer");
             auto it = deviceLinkTypeMap_.find(dstRank.devicePhyId);
             CHK_PRT_RET(it == deviceLinkTypeMap_.end(),
                 HCCL_ERROR("can't find devicePhyId[%d] in deviceLinkTypeMap_", dstRank.devicePhyId),

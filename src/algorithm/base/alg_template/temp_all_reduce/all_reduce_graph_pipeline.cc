@@ -227,6 +227,7 @@ HcclResult AllReduceGraphPipeline::RunAsync()
                 CHK_RET(ExecuteBarrier(prevInterLink, nextInterLink));
             }
         }
+        HCCL_DEBUG("[AllReducePipeline][RunAsync]step %u runAllGatherInterServer success", step);
         CHK_RET(RunAllGatherIntraServer(step));
         CHK_RET(SubRecordMain());
         CHK_RET(MainWaitSub());
