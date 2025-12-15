@@ -18,7 +18,6 @@
 #include "config_log.h"
 #include "sal_pub.h"
 #include "../../../algorithm/pub_inc/common.h"
-#include "acl/error_codes/rt_error_codes.h"
 #include "task_exception_handler.h"
 #include "adump_api.h"
 

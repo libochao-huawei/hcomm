@@ -11,8 +11,7 @@
 #ifndef THREADS_GUARD_H
 #define THREADS_GUARD_H
 
-#include<vector>
-#include<thread>
+#include <vector>
 
 namespace hccl {
 
