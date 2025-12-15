@@ -93,6 +93,7 @@ HcclResult TopoInfoExtractor::SetRankMap()
     // 构建由UserRank到子通信域的映射
     subCommRank2UserRank_.resize(static_cast<u32>(COMM_LEVEL_RESERVED));
     userRank2subCommRank_.resize(static_cast<u32>(COMM_LEVEL_RESERVED));
+    HCCL_DEBUG("[TopoInfoExtractor]SetRankMap begin");
 
     for (u32 levelIndex = 0; levelIndex < CommPlaneVector_.size(); levelIndex++) {
         u32 ringSize = CommPlaneVector_[levelIndex].size();
@@ -894,6 +895,7 @@ HcclResult TopoInfoExtractor::SetMultiLevel0(u32 ringNum)
 {
     std::vector<u32> tmpLevel0Order;
     u32 moduleIdx = 0;
+    RankInfo tempRankData;
     CHK_RET(GetModuleIdx(rankData_, moduleIdx));
     auto iterRank = serverToRank_.find(moduleIdx); // 查询本rank所在服务器
     bool check = (iterRank == serverToRank_.end());
@@ -902,7 +904,6 @@ HcclResult TopoInfoExtractor::SetMultiLevel0(u32 ringNum)
 
     // 维护topo输出的信息
     std::string outLogInfo = "";
-    RankInfo tempRankData;
     for (u32 ringIndex = 0; ringIndex < ringNum; ringIndex++) {
         tmpLevel0Order = multiLevel0Order_[ringIndex]; // 获取每一个环的设备物理ID排序
         std::vector<RankInfo> tmpLevel0Vector;
@@ -1342,8 +1343,8 @@ bool CompareWithUserRankAscend(const RankInfo &left, const RankInfo &right)
 bool CheckSdmaWithRohTopo(const std::vector<u32> &nicList, std::vector<u32> &topoList)
 {
     std::vector<u32> tmpNicList(nicList);
-    std::sort(tmpNicList.begin(), tmpNicList.end());
     SearchPath searchPath;
+    std::sort(tmpNicList.begin(), tmpNicList.end());
     topoList = searchPath.Search(tmpNicList);
     if (topoList.empty()) {
         return false;

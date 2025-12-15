@@ -584,6 +584,8 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
             if (sendRank == userRank_) {
                 continue;
             }
+            HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd]recvRank is %u, sendRank is %u",
+                recvRank, sendRank);
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
             const std::vector<SendDataBlock>& sendInfo = subStreamSendInfo_[sendRank];
             Stream& currStream = sdmaSubStream_[streamIndex];
@@ -840,6 +842,8 @@ HcclResult AlltoAllVDirectFullMesh::SendRecvRdmaData(u32 dstRank, u32 srcRank, s
         u64 recvDstOffset = (srcRank % rdmaConcurrentNum_ + rdmaConcurrentNum_) * rdmaDataBlockSize_;
         void* dstPtr = static_cast<u8 *>(cclOutMem_.ptr()) + recvDstOffset;
         u64 recvSrcOffset = (userRank_ % rdmaConcurrentNum_) * rdmaDataBlockSize_;
+        HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvRdmaData]recvSrcOffset is %llu, recvDstOffset is %llu",
+                recvSrcOffset, recvDstOffset);
         CHK_RET(recvTransport->RxAsync(UserMemType::OUTPUT_MEM, recvSrcOffset, dstPtr,
             recvInfo[curStep].recvLen, strem));
         if ((round == lastRdmaRoundIdx_) && (index == lastRdmaDstRanksIdx_) && (curStep == lastRdmaStep_) &&

@@ -183,8 +183,7 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
  
     u32 localRank = level0CommInfo.localRank;
     u32 localRankSize = level0CommInfo.localRankSize;
-    HCCL_DEBUG("[CollReduceScatterMeshAivExecutor][KernelRun] userRank [%d] localRank [%d]",
-        topoAttr_.userRank, localRank);
+    HCCL_DEBUG("[CollReduceScatterMeshAivExecutor][KernelRun] userRank [%d] localRank [%d]", topoAttr_.userRank, localRank);
  
     for (u32 i = 0; i < localRankSize; i++) {
         if (i != localRank) {
@@ -195,8 +194,9 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
             buffersOut[i] = execMem.outputMem.ptr();
         }
     }
-
+    u32 blockDim;
     bool isOpbase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    HCCL_DEBUG("[CollReduceScatterMeshAivExecutor][KernelRun]isOpbase is %d", isOpbase);
 
     AivOpArgs opArgs {
             HcclCMDType::HCCL_CMD_REDUCE_SCATTER, execMem.inputPtr, execMem.outputPtr, execMem.count,
@@ -204,14 +204,13 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType};
     topoArgs.identify = algoAttr_.identifier;
-    u32 blockDim;
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
-    AivAlgArgs algArgs {};
     struct AivProfilingInfo aivProfilingInfo;
+    AivAlgArgs algArgs {};
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
         ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);

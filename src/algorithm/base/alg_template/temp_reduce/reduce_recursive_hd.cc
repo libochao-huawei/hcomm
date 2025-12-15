@@ -154,6 +154,7 @@ HcclResult ReduceRecursiveHalvingDoubling::ReduceScatterInBlock(u32 rank, u32 ra
     u32 rankInBlock = 0;
 
     u32 rootFlag = (root_ >= part1Size_) ? 0 : root_;
+    HCCL_DEBUG("[ReduceRecursiveHalvingDoubling][ReduceScatterInBlock]rootFlag is %u, rankInBlock is %u", rootFlag, rankInBlock);
     // 需要根据root判断，让root节点必然参加reducescatter,在第一部分的rank若与root奇偶性不同，直接返回
     if (rank < part1Size_ && (rank % 2) != (rootFlag % 2)) {     // 模2判断奇偶性，本rank处于第一部分，奇偶性与root不同
         return HCCL_SUCCESS;

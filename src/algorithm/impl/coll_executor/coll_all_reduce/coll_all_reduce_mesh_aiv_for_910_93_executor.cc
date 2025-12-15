@@ -253,10 +253,10 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
     };
     AivAlgArgs algArgs {};
     algArgs.argsType = KernelArgsType::ARGS_TYPE_SIMPLE;
+    struct AivProfilingInfo aivProfilingInfo;
     if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE){
         algArgs.deterministic = 1;
     }
-    struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
         ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);

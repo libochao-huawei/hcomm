@@ -26,8 +26,8 @@ private:
     HcclResult KernelRunIntraServerPreProcess();
     HcclResult KernelRunInterServerPostProcess(const OpParam &param, const ExecMem &execMem) override;
 
-    HcclResult CalcLevel0DataSlices(const OpParam &param, const ExecMem &execMem, std::vector<Slice> &dataSegsSlice) override;
     HcclResult KernelRunInterServerPreProcess(const OpParam &param, const ExecMem &execMem) override;
+    HcclResult CalcLevel0DataSlices(const OpParam &param, const ExecMem &execMem, std::vector<Slice> &dataSegsSlice) override;
 };
 
 } // namespace hccl

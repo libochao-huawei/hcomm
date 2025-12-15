@@ -225,8 +225,8 @@ using AivKernelArgs = struct AivKernelArgsDef {
         : input(input), output(output), rank(rank), rankSize(rankSize), len(len), dataType(dataType),
         reduceOp(reduceOp), root(root), tag(tag), isOpBase(isOpBase), bufferSize(bufferSize), aivRdmaStep(aivRdmaStep),
         useAivRdmaSmall(useAivRdmaSmall), serverNum(serverNum), devType(devType), headCounterAddr(headCounterAddr),
-        tailCounterAddr(tailCounterAddr), addOneAddr(addOneAddr), counterMemSize(counterMemSize), isEnableCounter(isEnableCounter),
-        deterministic(deterministic)
+        tailCounterAddr(tailCounterAddr), addOneAddr(addOneAddr), counterMemSize(counterMemSize),
+        isEnableCounter(isEnableCounter), deterministic(deterministic)
     {
         for (u32 i = 0; i < MAX_RANK_SIZE; i++) {
             buffersIn[i] = (u8 *) buffIn[i];
@@ -266,15 +266,15 @@ using AivExtraKernelArgs = struct AivExtraKernelArgsDef {
         u64 bufferSize = 200 * 1024 * 1024, s32 aivRdmaStep = -1, bool useAivRdmaSmall = false, u32 serverNum = 1,
         u32 devType = 2, void* headCounterAddr = nullptr, void* tailCounterAddr = nullptr, void* addOneAddr = nullptr,
         u32 counterMemSize = 0, bool isEnableCounter = false, u32 deterministic = 0, const ExtraArgs* extraArgsPtr = nullptr)
-        : input(input), output(output), rank(rank), rankSize(rankSize), len(len), dataType(dataType),
-        reduceOp(reduceOp), root(root), tag(tag), isOpBase(isOpBase), bufferSize(bufferSize), aivRdmaStep(aivRdmaStep),
+        : input(input), output(output), rank(rank), rankSize(rankSize), len(len), dataType(dataType), reduceOp(reduceOp), 
+        root(root), tag(tag), isOpBase(isOpBase), bufferSize(bufferSize), aivRdmaStep(aivRdmaStep),
         useAivRdmaSmall(useAivRdmaSmall), serverNum(serverNum), devType(devType), headCounterAddr(headCounterAddr),
         tailCounterAddr(tailCounterAddr), addOneAddr(addOneAddr), counterMemSize(counterMemSize), isEnableCounter(isEnableCounter),
         deterministic(deterministic)
     {
         for (u32 i = 0; i < MAX_RANK_SIZE; i++) {
-            buffersIn[i] = (u8 *) buffIn[i];
             buffersOut[i] = (u8 *) buffOut[i];
+            buffersIn[i] = (u8 *) buffIn[i];
         }
         if (extraArgsPtr != nullptr) {
             extraArgs = *extraArgsPtr;

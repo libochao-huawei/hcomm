@@ -382,6 +382,7 @@ HcclResult CommBase::CreateIntraThread(const u32 role, u32 dstRank,
                 MachineType::MACHINE_SERVER_TYPE, paraVector_[rank_].serverId, dstRank, threadStr, sockets));
     }
 
+    HCCL_DEBUG("[CommBase][CreateIntraThread]role is %u", role);
     if (role == CLIENT_ROLE_SOCKET) {
         linkThreads_[threadsRapplyNum_].reset(
             new (std::nothrow) std::thread(&CommBase::CreateDestLink, this, hrtErrMGetErrorContextPub(),
@@ -458,7 +459,7 @@ HcclResult CommBase::CreateInterLinks()
             HCCL_ERROR("[Create][InterLinks] create inter thread failed, socket role[CLIENT_ROLE_SOCKET] "),
             ret);
     }
-
+    HCCL_DEBUG("[CommBase][CreateInterLinks]create inter thread success");
     for (auto &sockets : serverSocketsMap) {
         ret = CreateInterThread(SERVER_ROLE_SOCKET, sockets.first, sockets.second);
         CHK_PRT_RET(ret != HCCL_SUCCESS,

@@ -73,6 +73,7 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
             DeviceMem dstMem = DeviceMem::create(static_cast<u8 *>(algRes.paramOutputMem.ptr()) + slice.offset, slice.size);
             DeviceMem srcMem = DeviceMem::create(static_cast<u8 *>(algRes.paramInputMem.ptr()) + slice.offset, slice.size);
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, param.stream));
+            HCCL_DEBUG("[CollAllReduceExecutor][Orchestrate]AllReduce RunLoop success");
         }
 
         ret = KernelRunIntraServerPost(param, execMem);
@@ -103,7 +104,7 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
             const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
     }
 
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
+    HCCL_INFO("[CollAllReduceExecutor]tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -195,8 +196,8 @@ HcclResult CollAllReduceExecutor::RunLoop(OpParam &param, AlgResourceResponse &a
             param.tag.c_str(), topoAttr_.userRankSize, maxCountPerLoop);
         return HCCL_E_PARA;
     }
-    HCCL_DEBUG("[CollAllReduceExecutor][RunLoop]tag[%s], userRankSize is [%u], maxCountPerLoop is [%llu].",
-        param.tag.c_str(), topoAttr_.userRankSize, maxCountPerLoop);
+    HCCL_DEBUG("[CollAllReduceExecutor][RunLoop]tag[%s], maxCountPerLoop is [%lu], userRankSize is [%lu].",
+        param.tag.c_str(), maxCountPerLoop, topoAttr_.userRankSize);
 
     u64 totalCount;
     if (desc_.isZeroCopy) {     // 对零拷贝场景而言，只在Server间通信切循环

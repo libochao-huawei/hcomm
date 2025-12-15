@@ -142,6 +142,7 @@ HcclResult CollReduceScatterVAIVBigCountExecutor::KernelRun(const OpParam &param
     u32 blockDim;
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
+    HCCL_DEBUG("[CollReduceScatterVAIVBigCountExecutor][KernelRun]blockDim is [%u]", blockDim_);
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };

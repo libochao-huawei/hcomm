@@ -123,6 +123,7 @@ HcclResult CollReduceScatterRingZerocopyExecutor::SemiRingReduceScatter(
         algResResp_->paramInputMem, algResResp_->paramOutputMem, inputMem,
         outputMem, count, algResResp_->slaveStreams, algResResp_->notifiesMain,
         algResResp_->notifiesAux, dataType, reductionOp, multRingsUserMemSlice, reduceAttr));
+    HCCL_DEBUG("[CollReduceScatterSemiRingExecutor][DoubleRingMidCountReduceScatter]reduceAttr is %llu", reduceAttr);
 
     HcclResult ret = executor->RegisterProfiler(
         ((COMM_INDEX_0 + 1) << PROF_RINGINDEX_OFFSET_OF_PLANEID) +

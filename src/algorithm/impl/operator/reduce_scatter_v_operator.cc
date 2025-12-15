@@ -26,8 +26,8 @@ ReduceScatterVOperator::~ReduceScatterVOperator()
 {
 }
 
-HcclResult ReduceScatterVOperator::SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
-    std::string& newTag)
+HcclResult ReduceScatterVOperator::SelectAlg(const std::string& tag, const OpParam& param,
+    std::string& algName, std::string& newTag)
 {
     HcclResult ret;
 

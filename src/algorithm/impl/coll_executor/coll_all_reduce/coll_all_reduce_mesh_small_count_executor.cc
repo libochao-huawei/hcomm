@@ -141,7 +141,7 @@ HcclResult CollAllReduceMeshSmallCountExecutor::Orchestrate(OpParam& param, AlgR
             const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
     }
 
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
+    HCCL_INFO("[CollAllReduceMeshSmallCountExecutor]tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }

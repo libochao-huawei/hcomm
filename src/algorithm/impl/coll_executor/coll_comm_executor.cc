@@ -1036,6 +1036,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatterConcurrent(const std::string 
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(reduceAttr, opInfo, topoAttr_.userRank, subStreamsInOneRing,
                         mainSignalsInOneRing, subSignalsInOneRing, rankOrder, userMemInputSlices, isSdma));
+                    HCCL_DEBUG("[MultiRingReduceScatterConcurrent]run in COMM_LEVEL0 ends");
                 } else {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
@@ -1043,6 +1044,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatterConcurrent(const std::string 
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(reduceAttr));
                 }
+                HCCL_DEBUG("[MultiRingReduceScatterConcurrent]run in COMM_LEVEL0 ends");
                 CHK_SMART_PTR_NULL(tempAlg);
 
                 ret = LocalNotify::Wait(algResResp_->slaveStreams[ringIndex], dispatcher_,
