@@ -10,6 +10,7 @@
 
 #include "heartbeat.h"
 #include <set>
+#include <tuple>
 #include "device_capacity.h"
 #include "externalinput_pub.h"
 #include "env_config.h"
@@ -560,7 +561,6 @@ HcclResult Heartbeat::UnRegisterRanks(const std::string &group)
                 }
                 HCCL_INFO("[%s]group[%s] socket erase remote:%s", __func__, group.c_str(), FormatUId(rem).c_str());
                 rankId2SocketMap_.erase(rem);
-                rankId2LinkStatusMap_.erase(rem);
             }
             HCCL_INFO("[%s]group[%s] status erase remote:%s", __func__, group.c_str(), FormatUId(rem).c_str());
         }
@@ -1302,33 +1302,43 @@ void Heartbeat::ProcessExceptionEvent()
 
 void Heartbeat::CreateHBLinksAsync()
 {
-    std::lock_guard<std::mutex> infoLock(hbLinkConnInfoMtx_);
+    std::unique_lock<std::mutex> infoLock(hbLinkConnInfoMtx_);
     if (hbLinkConnInfo_.empty()) {
         return;
+        infoLock.unlock();
     }
     linkThreadRunning_ = true;
+    std::queue<std::tuple<std::string, UIDType, ConnInfo>> connInfoQueue;
     for (auto &pair : hbLinkConnInfo_) {
         const std::string &groupName = pair.first;
         auto &groupConnInfoQueue = pair.second;
         while (!groupConnInfoQueue.empty()) {
-            const UIDType &remUid = groupConnInfoQueue.front().first;
-            ConnInfo &connInfo = groupConnInfoQueue.front().second;
-            auto it = linkThreadMap_.find(remUid);
-            if (it != linkThreadMap_.end() && it->second->joinable()) {
-                it->second->join();
-                HCCL_INFO("[CreateHBLinksAsync] Heartbeat link thread has been joined. Group[%s], remote uid[%s].",
-                    groupName.c_str(), FormatUId(remUid).c_str());
-            }
-            linkThreadMap_[remUid].reset(
-                new (std::nothrow) std::thread(&Heartbeat::CreateLinkWithRemote, this, groupName, remUid, connInfo));
-            if (linkThreadMap_[remUid] == nullptr) {
-                HCCL_RUN_WARNING("Group[%s] establish rank[%s] to rank[%s] heartbeat connection failed. Reason: "
-                    "create thread failed.",
-                    groupName.c_str(), FormatUId(uid_).c_str(), FormatUId(remUid).c_str());
-            }
+            connInfoQueue.push(std::make_tuple(groupName, groupConnInfoQueue.front().first, 
+                groupConnInfoQueue.front().second));
             groupConnInfoQueue.pop();
         }
     }
+    infoLock.unlock();
+    while (!connInfoQueue.empty()) {
+        const std::string groupName = std::get<0>(connInfoQueue.front());
+        const UIDType &remUid = std::get<1>(connInfoQueue.front());
+        ConnInfo &connInfo = std::get<2>(connInfoQueue.front());
+        auto it = linkThreadMap_.find(remUid);
+        if (it != linkThreadMap_.end() && it->second->joinable()) {
+            it->second->join();
+            HCCL_INFO("[CreateHBLinksAsync] Heartbeat link thread has been joined. Group[%s], remote uid[%s].",
+                groupName.c_str(), FormatUId(remUid).c_str());
+        }
+        linkThreadMap_[remUid].reset(
+            new (std::nothrow) std::thread(&Heartbeat::CreateLinkWithRemote, this, groupName, remUid, connInfo));
+        if (linkThreadMap_[remUid] == nullptr) {
+            HCCL_RUN_WARNING("Group[%s] establish rank[%s] to rank[%s] heartbeat connection failed. Reason: "
+                "create thread failed.",
+                groupName.c_str(), FormatUId(uid_).c_str(), FormatUId(remUid).c_str());
+        }
+        connInfoQueue.pop();
+    }
+    return;
 }
 
 void Heartbeat::HeartbeatStatusMonitor()
@@ -1388,7 +1398,6 @@ void Heartbeat::HeartbeatStatusMonitor()
         std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL));
     }
     linkThreadRunning_ = false;
-    std::unique_lock<std::mutex> connInfoLock(hbLinkConnInfoMtx_);
     // 在心跳进程结束之前join所有的建链线程
     for (auto &pair : linkThreadMap_) {
         if (pair.second != nullptr && pair.second->joinable()) {
@@ -1396,7 +1405,6 @@ void Heartbeat::HeartbeatStatusMonitor()
             HCCL_INFO("[HeartbeatStatusMonitor] thread has joined. Remote uid is [%s]", FormatUId(pair.first).c_str());
         }
     }
-    connInfoLock.unlock();
 
     if (deviceLogicId_ != static_cast<u32>(HOST_DEVICE_ID)) {
         hrtResetDevice(deviceLogicId_);
