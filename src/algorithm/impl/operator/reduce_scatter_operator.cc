@@ -298,7 +298,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
         }
         if (algName.empty()) {
             if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && moduleNum_ > 1 &&
-                deviceNumPerAggregation_ > 1 &&
+                deviceNumPerAggregation_ > 1 && topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE &&
                 IsMultiMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType) &&
                 (dataSize > HCCL_SMALL_COUNT_1_MB || moduleNum_ <= MODULE_NUM_FOUR ||
                     algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE)) {
