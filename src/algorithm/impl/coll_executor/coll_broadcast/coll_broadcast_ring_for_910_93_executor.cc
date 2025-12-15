@@ -22,14 +22,14 @@ CollBroadCastRingFor91093::CollBroadCastRingFor91093(const HcclDispatcher dispat
     } else {
         DMAReduceFlag_ = false;
     }
-    desc_.level1SupportedAlgos = {
-        AlgTypeLevel1::ALG_LEVEL1_NHR,
-        AlgTypeLevel1::ALG_LEVEL1_NB
-    };
     desc_.level2SupportedAlgos = {
         AlgTypeLevel2::ALG_LEVEL2_NHR,
         AlgTypeLevel2::ALG_LEVEL2_NB,
         AlgTypeLevel2::ALG_LEVEL2_HD
+    };
+    desc_.level1SupportedAlgos = {
+        AlgTypeLevel1::ALG_LEVEL1_NHR,
+        AlgTypeLevel1::ALG_LEVEL1_NB
     };
 }
 
@@ -38,6 +38,7 @@ HcclResult CollBroadCastRingFor91093::CalcStreamNum(u32& streamNum)
     u32 totalStreamNum = 0U;
     u32 ringFactor = (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) ? (LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE) :
         (LEVEL0_PLANE_NUM_IN_NPRING_SINGLE);
+    HCCL_DEBUG("[CollBroadCastRingFor91093][CalcStreamNum]ringFactor is [%u]", ringFactor);
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         totalStreamNum = ringFactor * STREAM_NUM_FOR_DMAREDUCE_ONE_RING;
     } else {
@@ -71,6 +72,7 @@ HcclResult CollBroadCastRingFor91093::CalcLevel0CommInfo(TransportMemType inputT
 HcclResult CollBroadCastRingFor91093::CalcLevel2CommInfo(TransportMemType inputType, TransportMemType outputType,
     std::vector<LevelNSubCommTransport>& opTransport)
 {
+    HCCL_DEBUG("[CollBroadCastRingFor91093][CalcLevel2CommInfo]cal for level2CommInfo");
     CommParaInfo commParaLevel2(COMM_LEVEL2, CommType::COMM_TAG_MAX, root_);
     if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
         commParaLevel2.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;

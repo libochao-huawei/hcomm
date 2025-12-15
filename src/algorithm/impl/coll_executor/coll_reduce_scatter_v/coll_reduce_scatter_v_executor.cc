@@ -90,6 +90,7 @@ HcclResult CollReduceScatterVExecutor::RunLoop(OpParam &param, AlgResourceRespon
 
     const HcclDataType dataType = param.VDataDes.dataType;
     const u32 unitSize = SIZE_TABLE[dataType];
+    HCCL_DEBUG("[CollReduceScatterVExecutor][RunLoop]unitSize is %u", unitSize);
     u8 *curInputPtr = static_cast<u8 *>(param.inputPtr);
     u8 *curOutputPtr = static_cast<u8 *>(param.outputPtr);
     CHK_PTR_NULL(curInputPtr);

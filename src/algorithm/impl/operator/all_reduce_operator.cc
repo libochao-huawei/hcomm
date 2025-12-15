@@ -138,7 +138,7 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     } else {
-        HCCL_ERROR("[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
+        HCCL_ERROR("[AllReduceOperator][SelectAlg] device type[%d] is out of range for selector.", deviceType_);
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,

@@ -202,6 +202,7 @@ HcclResult CollReduceScatterMeshAivSmallCountExecutor::KernelRun(const OpParam &
     u32 blockDim;
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
+    HCCL_DEBUG("[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]blockDim is [%u]", blockDim_);
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };

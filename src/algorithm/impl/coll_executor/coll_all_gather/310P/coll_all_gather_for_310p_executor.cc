@@ -71,7 +71,7 @@ HcclResult CollAllGatherFor310PExecutor::KernelRun(const OpParam &param, ExecMem
         PROF_STAGE_0, HCCL_EXEC_STEP_NOT_SET, param.stream));
 
     CHK_RET(RunTemplate(tempAlg, level0CommInfo));
-    HCCL_INFO("AllGather for 310P run success");
+    HCCL_INFO("[CollAllGatherFor310PExecutor]AllGather for 310P run success");
 
     return HCCL_SUCCESS;
 }

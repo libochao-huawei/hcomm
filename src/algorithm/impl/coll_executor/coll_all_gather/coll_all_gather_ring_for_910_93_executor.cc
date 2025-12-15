@@ -89,15 +89,16 @@ HcclResult CollAllGatherRingFor91093Executor::CalcLevel2CommInfo(TransportMemTyp
     }
 
     CommParaInfo commParaLevel2(COMM_LEVEL2, CommType::COMM_TAG_MAX);
+    HCCL_DEBUG("[CollAllGatherRingFor91093Executor][CalcLevel2CommInfo]Level2CommInfo start set");
     if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NHR) {
         commParaLevel2.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;
-        HCCL_INFO("[%s]Calc NHRCommInfo", __func__);
+        HCCL_INFO("[%s]Calc NHRCommInfo.", __func__);
     } else if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_NB) {
         commParaLevel2.commType = CommType::COMM_TAG_NONUNIFORM_BRUCK;
-        HCCL_INFO("[%s]Calc NBCommInfo", __func__);
+        HCCL_INFO("[%s]Calc NBCommInfo.", __func__);
     } else {
         commParaLevel2.commType = CommType::COMM_TAG_RING_INNER;
-        HCCL_INFO("[%s]Calc RingCommInfo", __func__);
+        HCCL_INFO("[%s]Calc RingCommInfo.", __func__);
     }
     CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel2, opTransport[COMM_LEVEL2], inputType, outputType));
     return HCCL_SUCCESS;

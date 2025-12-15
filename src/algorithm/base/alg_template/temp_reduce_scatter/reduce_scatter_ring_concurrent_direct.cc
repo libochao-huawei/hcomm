@@ -52,6 +52,7 @@ HcclResult ReduceScatterRingConcurrentDirect::RunAsync(const u32 rank, const u32
         CHK_RET(OneRankMemcpy());
         return HCCL_SUCCESS;
     }
+    HCCL_DEBUG("ReduceScatterRingConcurrentDirect starts: rank[%u]", rank);
     // 收集本地mem信息
     CHK_RET(InitSenderReducer());
 
@@ -122,12 +123,12 @@ HcclResult ReduceScatterRingConcurrentDirect::OneRankMemcpy()
         if (opInfo_->outputAddr != nullptr) {
             // opInfo_->outputAddr != nullptr指示要将输出发送至user output
             u64 stepOffset = slices_[ringsOrder_[0]].offset;
-            HCCL_DEBUG("Memcpy operation: stream[main], rank[%u] starts to rcv offset[%llu], size[%llu] at userMemOut_",
+            HCCL_DEBUG("[Memcpy operation] stream[main], rank[%u] starts to rcv offset[%llu], size[%llu] at userMemOut_",
                 userRank_, stepOffset, dstSlice.size);
             dst = DeviceMem::create(static_cast<u8 *>(opInfo_->outputAddr) + stepOffset, dstSlice.size);
         } else {
             // opInfo_->outputAddr == nullptr指示要将输出发送至CCL buffer
-            HCCL_DEBUG("Memcpy operation: stream[main], rank[%u] starts to rcv offset[%llu], size[%llu] at outputMem_",
+            HCCL_DEBUG("[Memcpy operation] stream[main], rank[%u] starts to rcv offset[%llu], size[%llu] at outputMem_",
                 userRank_, dstSlice.offset, dstSlice.size);
             dst = outputMem_.range(dstSlice.offset, dstSlice.size);
         }

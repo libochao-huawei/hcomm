@@ -32,11 +32,11 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
     if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         ExecMem execMem;
         execMem.count = count;
+        execMem.scratchMem = algRes.scratchMem;
         execMem.inputPtr = param.inputPtr;
         execMem.outputPtr = param.outputPtr;
         execMem.inputMem = algRes.paramInputMem;
         execMem.outputMem = algRes.paramOutputMem;
-        execMem.scratchMem = algRes.scratchMem;
         ret = KernelRun(param, execMem);
         if (algOpContext_.opRetryHandler.isPostSync == true) {
             // post Sync
@@ -271,6 +271,8 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
         DeviceMem dstMem = DeviceMem::create(execMem.outputPtr, curSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, param.stream));
     }
+    HCCL_DEBUG("[CollReduceScatterExecutor][RunLoopInner]inputMem ptr is [%p], outputMem ptr is [%p]",
+        execMem.inputMem.ptr(), execMem.outputMem.ptr());
 
     if (!is310P3Common_) {
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));

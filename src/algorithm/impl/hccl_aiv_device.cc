@@ -77,9 +77,9 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs, const AivTopoArgs &topoA
     (void) algArgs;
     (void) topoArgs;
     (void) extraArgs;
-    (void) aivProfilingInfo;
     (void) opArgs;
     (void) resourceArgs;
+    (void) aivProfilingInfo;
     return HCCL_SUCCESS;
 }
 

@@ -90,8 +90,8 @@ HcclResult CollAllReduceMidCountAivRdmaExecutor::Orchestrate(OpParam& param, Alg
     ExecMem execMem;
     execMem.count = param.DataDes.count;
     execMem.inputPtr = param.inputPtr;
-    execMem.outputPtr = param.outputPtr;
     execMem.inputMem = algRes.aivInputMem;
+    execMem.outputPtr = param.outputPtr;
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         execMem.outputMem = algRes.cclOutputMem;
     } else {

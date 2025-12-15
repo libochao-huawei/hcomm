@@ -81,7 +81,7 @@ HcclResult CollAllGatherMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     } else {
         blockDim = rankSize * BLOCK_DIM_FACTOR_FOUR;
     }
-
+    HCCL_DEBUG("[CollAllGatherMeshAivFor91093Executor][CalBlockDim]aivCore at least is [%u]", minBlockDim);
     u32 bestBlockDim = blockDim;
     blockDim = blockDim_ < blockDim ? blockDim_: blockDim;
 

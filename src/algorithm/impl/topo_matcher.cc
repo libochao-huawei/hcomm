@@ -330,6 +330,7 @@ const u32 TopoMatcher::GetSubCollectiveRank(const std::vector<u32> &vecPara) con
     // 在vecPara数据中，查询本user rank，查询到的vec下标就是rank值
     u32 tmpRank = INVALID_VALUE_RANKID;
 
+    HCCL_DEBUG("[TopoMatcher]GetSubCollectiveRank begins.");
     for (u32 rankIndex = 0; rankIndex < vecPara.size(); rankIndex++) {
         if (userRank_ == vecPara[rankIndex]) {
             tmpRank = rankIndex;

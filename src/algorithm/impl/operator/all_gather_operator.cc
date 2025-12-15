@@ -54,7 +54,7 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     }  else {
-        HCCL_ERROR("[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
+        HCCL_ERROR("[AllGatherSelector][SelectAlg] device type[%d] is out of range for selector.", deviceType_);
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -66,11 +66,12 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else {
         AlgTypeLevel1 algType1 = algType_.algoLevel1;
         auto level1Iter = HCCL_ALGO_LEVEL1_NAME_MAP.find(algType1);
-        CHK_PRT_RET(level1Iter == HCCL_ALGO_LEVEL1_NAME_MAP.end(), HCCL_ERROR("level1: algType1[%u] is invalid.",
-            algType1), HCCL_E_INTERNAL);
+        CHK_PRT_RET(level1Iter == HCCL_ALGO_LEVEL1_NAME_MAP.end(), 
+                    HCCL_ERROR("[[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
         newTag = tag + level1Iter->second + algName;
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
+    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag);
     return ret;
 }
 

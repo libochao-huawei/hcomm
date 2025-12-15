@@ -551,8 +551,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGather(float delay, u64 sendCurS
         // the (RHD_FACTOR_TWO * moduleNum_ - RHD_FACTOR_ONE) / moduleNum_ is equal to 1 + (moduleNum_ -1) / moduleNum_
         hdCost = ceil(log2(moduleNum_)) * delay +
                  static_cast<double>(RHD_FACTOR_TWO * moduleNum_ - RHD_FACTOR_ONE) / moduleNum_ *
-                 sendCurSize * userRankSize_ / bandWidth *
-                 SECOND2MICROSECOND;
+                 sendCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
     }
 
     // compare cost among NHR, HD and Ring
@@ -569,6 +568,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGatherV(float delay, u64 sendCur
                       static_cast<double>(steps) / moduleNum_ * sendCurSize * userRankSize_ / bandWidth *
                       SECOND2MICROSECOND;
 
+    HCCL_DEBUG("[%s] CollAlgOperator for SelectAlgoTypeForAllGatherV", __func__);
     // theoretical time cost of NHR
     double nhrCost = ceil(log2(moduleNum_)) * delay +
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *

@@ -73,8 +73,8 @@ HcclResult AllReduceChunkMesh::SubRecordMain()
 HcclResult AllReduceChunkMesh::PrepareSlice(
     u64 dataCount, u32 unitSize, u32 sliceNum, std::vector<Slice> &dataSlice)
 {
-    Slice temp;
     u64 totalSize = dataCount * unitSize;
+    Slice temp;
     dataSlice.clear();
     dataSlice.reserve(sliceNum);
     if (sliceNum == 0) {

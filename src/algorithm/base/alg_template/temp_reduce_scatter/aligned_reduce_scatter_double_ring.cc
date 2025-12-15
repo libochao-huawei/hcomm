@@ -146,6 +146,7 @@ HcclResult AlignedReduceScatterDoubleRing::OneRankMemcpy()
                 CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, subStreams_[0]));
             }
         }
+        HCCL_DEBUG("[AlignedReduceScatterDoubleRing][OneRankMemcpy] ringIndex[%u] Memcpy success", ringIndex);
     }
     CHK_RET(SubRecordMain()); // 从流通知主流通信完成
     CHK_RET(MainWaitSub());   // 主流等待从流通知
