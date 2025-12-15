@@ -259,6 +259,7 @@ HcclResult ReduceScatterPipeline::GetNslbAdjInfo(const u32 rank, const u32 rankS
 {
     u32 ringNextRank = (rank + 1) % rankSize;
     LINK nslbNext = links[ringNextRank];
+    HCCL_DEBUG("[ReduceScatterPipeline]GetNslbAdjInfo starts");
 
     // Pipeline 步长合并 等同于 ring
     NslbDpAdjInfo adjInfoStep = {0};

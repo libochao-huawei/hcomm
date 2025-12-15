@@ -476,6 +476,7 @@ HcclResult ReduceScatterRing::ReduceScatterSlicesPrep(u32 rankSize, u32 nicSize)
         }
         rankSliceLists_.push_back(sliceList);
     }
+    HCCL_DEBUG("[ReduceScatterRing]ReduceScatterSlicesPrep success");
     return HCCL_SUCCESS;
 }
 

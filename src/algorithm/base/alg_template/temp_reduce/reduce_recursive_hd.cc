@@ -335,11 +335,13 @@ HcclResult ReduceRecursiveHalvingDoubling::GetNslbAdjInfo(const u32 rank, const 
         while ((rankSize >> (stepNum + 1)) != 0) {
             stepNum++;
         }
+        HCCL_DEBUG("[ReduceRecursiveHalvingDoubling]GetNslbAdjInfo start");
         for (u32 step = 0; step < stepNum; step++) {
             u32 peerRankBitmask = 1 << (stepNum - step - 1);
             u32 peerRank = rank ^ peerRankBitmask;
             NslbDpAdjInfo adjInfoStep = {0};
             u32 remoteuserRank = links[peerRank]->GetRemoteRank();
+            HCCL_DEBUG("[ReduceRecursiveHalvingDoubling]now step %u, remoteuserRank is %u", step, remoteuserRank);
             adjInfoStep.dstLocalRankId = remoteuserRank;
             adjInfoStep.phaseId = step + 1;
             adjInfoStep.rev = 0;

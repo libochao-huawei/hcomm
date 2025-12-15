@@ -165,6 +165,7 @@ HcclResult CollBroadCastRingZerocopyExecutor::KernelRunInterServer(const OpParam
     std::vector<Slice> level0Datalices;
     CHK_RET(AlgTemplateBase::PrepareSliceData(param.DataDes.count, perDataSize, level0RankSize_, 0, level0Datalices));
     u64 level1DataSize = execMem.count * perDataSize;
+    HCCL_DEBUG("[BroadCastOperator][CollBroadCastRingZerocopyExecutor]level1DataSize is %llu", level1DataSize);
     DeviceMem dstMem = execMem.inputMem.range(0, level1DataSize);
     DeviceMem srcMem = DeviceMem::create(static_cast<u8 *>(execMem.inputPtr) + level0Datalices[level0Rank_].offset,
                                          level1DataSize);

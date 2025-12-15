@@ -104,6 +104,7 @@ HcclResult CollBroadcastMeshExecutor::KernelRun(const OpParam &param, ExecMem &e
         HCCL_INFO("broadcast mesh: using nhr_v1 algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         const u32 level1RankSize = level1CommInfo.localRankSize;
+        HCCL_DEBUG("[CollBroadcastMeshExecutor][KernelRun]level1RankSize is %u", level1RankSize);
         if (ShouldUseBinaryBroadcastOfNB(curSize / topoAttr_.deviceNumPerAggregation, level1RankSize,
                 topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation)) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(

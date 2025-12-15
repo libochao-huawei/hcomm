@@ -678,6 +678,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForBroadcast(float delay, u64 curSize,
 HcclResult CollAlgOperator::SelectAlgoTypeForReduce(float delay, u64 curSize, float bandWidth,
     AlgTypeLevel1 &algType)
 {
+    HCCL_DEBUG("[CollAlgOperator]SelectAlgoTypeForReduce start");
     auto steps = moduleNum_ - 1;
     // theoretical time cost of Ring
     double ringCost = DOUBLE_SUB_HCCLCMD * static_cast<double>(steps) * delay +

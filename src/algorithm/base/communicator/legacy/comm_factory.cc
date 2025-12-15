@@ -284,6 +284,7 @@ HcclResult CommFactory::CreateCommRing(const std::string &tag, const DeviceMem &
         }
 
         u32 rank = GetSubCollectiveRank(commPlaneVec[ringIndex]);
+        HCCL_DEBUG("[CommFactory][CreateCommRing]rank is %u", rank);
         if (rank == INVALID_VALUE_RANKID) {
             continue;
         }

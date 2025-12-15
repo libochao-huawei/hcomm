@@ -450,8 +450,8 @@ HcclResult AlignedReduceScatterDoubleRing::ReducerRun(const u32 ringIndex, const
         if (reduceMem.localsrc != reduceMem.localdst) {
             ret = HcclD2DMemcpyAsync(dispatcher, reduceMem.localdst, reduceMem.localsrc, stream);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[Reducer][Run]memcpy_async localSrc[%p] localDst[%p] failed", reduceMem.localsrc.ptr(),
-                reduceMem.localdst.ptr()),
+                HCCL_ERROR("[AlignedReduceScatterDoubleRing][Run]memcpy_async localSrc[%p] localDst[%p] failed",
+                reduceMem.localsrc.ptr(), reduceMem.localdst.ptr()),
                 ret);
         }
     } else {
@@ -568,10 +568,8 @@ HcclResult AlignedReduceScatterDoubleRing::PreRunStreams(
     std::vector<ReducerMemoryInfo> &rxReduceMemsMain,
     std::vector<SenderMemoryInfo> &txReduceMemsSub,
     std::vector<ReducerMemoryInfo> &rxReduceMemsSub,
-    std::vector<DeviceMem> &localSrcMemsMain,
-    std::vector<DeviceMem> &localDstMemsMain,
-    std::vector<DeviceMem> &localSrcMemsSub,
-    std::vector<DeviceMem> &localDstMemsSub)
+    std::vector<DeviceMem> &localSrcMemsMain, std::vector<DeviceMem> &localDstMemsMain,
+    std::vector<DeviceMem> &localSrcMemsSub, std::vector<DeviceMem> &localDstMemsSub)
 {
     CHK_RET(PrepareDeviceMems(step, ALIGNED_MAIN_RING_INDEX, rankSize,
         txSliceIdxMain, rxSliceIdxMain, subSliceIdxMain,

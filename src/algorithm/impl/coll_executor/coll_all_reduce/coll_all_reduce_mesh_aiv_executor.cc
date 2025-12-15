@@ -207,6 +207,7 @@ HcclResult CollAllReduceMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
     topoArgs.identify = algoAttr_.identifier;
+    HCCL_DEBUG("[CollAllReduceMeshAivExecutor][KernelRun]blockDim is %u", blockDim_);
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };

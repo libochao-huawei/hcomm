@@ -228,6 +228,7 @@ HcclResult AllGatherPipeline::RunAsync()
 HcclResult AllGatherPipeline::GetNslbAdjInfo(const u32 rank, const u32 rankSize,
                                          const std::vector<LINK> &links, AdjInfo& nslbAdjInfo)
 {
+    HCCL_DEBUG("[AllGatherPipeline]GetNslbAdjInfo start");
     u32 ringNextRank = (rank + 1) % rankSize;
     LINK nslbNext = links[ringNextRank];
     CHK_SMART_PTR_NULL(nslbNext);

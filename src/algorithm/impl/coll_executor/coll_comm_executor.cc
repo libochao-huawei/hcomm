@@ -1720,6 +1720,7 @@ std::vector<std::vector<Slice> > CollCommExecutor::PrepareMultiRingSlice(const s
         return mutliRingsSlices;
     }
     u32 chunkSize = ringRanks / nicList.size();
+    HCCL_DEBUG("[CollCommExecutor][PrepareMultiRingSlice]chunkSize is %u", chunkSize);
     (void) NicSendSizeCal(mutliSegsSlices, ringCount, chunkSize, nicList, tag);
     std::vector<u32> rankList;
     std::vector<Slice> singleRingSlices;

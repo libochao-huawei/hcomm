@@ -31,7 +31,7 @@ void InitDebugConfigByValue(u64 config);
 #define HCCL_CONFIG_INFO(config, format,...) do {                                             \
     if (UNLIKELY(hccl::GetDebugConfig() & config)) {                        \
         const char* configName = #config;                                                     \
-        LOG_FUNC(HCCL | RUN_LOG_MASK, HCCL_LOG_INFO, "[%s:%d] [%u] [%s]: " format,            \
+        LOG_FUNC((static_cast<u32>(HCCL)) | RUN_LOG_MASK, HCCL_LOG_INFO, "[%s:%d] [%u] [%s]: " format,            \
             __FILE__, __LINE__, syscall(SYS_gettid), configName, ##__VA_ARGS__);              \
     } else if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {                                  \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_INFO, format, ##__VA_ARGS__);                           \
@@ -41,7 +41,7 @@ void InitDebugConfigByValue(u64 config);
 #define HCCL_CONFIG_DEBUG(config, format,...) do {                                            \
     if (UNLIKELY(hccl::GetDebugConfig() & config)) {                        \
         const char* configName = #config;                                                     \
-        LOG_FUNC(HCCL | RUN_LOG_MASK, HCCL_LOG_INFO, "[%s:%d] [%u] [%s]: " format,            \
+        LOG_FUNC((static_cast<u32>(HCCL)) | RUN_LOG_MASK, HCCL_LOG_INFO, "[%s:%d] [%u] [%s]: " format,            \
             __FILE__, __LINE__, syscall(SYS_gettid), configName, ##__VA_ARGS__);              \
     } else if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_DEBUG))) {                                 \
         HCCL_LOG_PRINT(HCCL, HCCL_LOG_DEBUG, format, ##__VA_ARGS__);                          \
