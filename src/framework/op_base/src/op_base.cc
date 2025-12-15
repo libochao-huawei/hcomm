@@ -3062,7 +3062,6 @@ HcclResult ReduceLoop(const std::string &tag, void *inputPtr, void *outputPtr, c
         CHK_RET(hrtMemAsyncCopy(commInputPtr, curSize, curInputPtr, curSize,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream));
 
-
         /* 入参的正确性由HCCL确保 */
         ret = hcclComm->Reduce(tag, commInputPtr, commOutputPtr, curCount, dataType, op, root, stream);
         CHK_PRT_RET(ret != HCCL_SUCCESS,

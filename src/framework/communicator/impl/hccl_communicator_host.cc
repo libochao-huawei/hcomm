@@ -8064,7 +8064,6 @@ namespace hccl
         bool isIndOp = true;
         HcclResult ret = indptOpTransportManager_->Alloc(tag, transMem, opCommTransport, isAicpuModeEn, false, false,
             HcclCMDType::HCCL_CMD_INVALID, false, isIndOp);
-
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed to alloc transport, tag[%s], isAicpuModeEn[%d], ret[%d]",
                 __func__, tag, isAicpuModeEn, ret);
