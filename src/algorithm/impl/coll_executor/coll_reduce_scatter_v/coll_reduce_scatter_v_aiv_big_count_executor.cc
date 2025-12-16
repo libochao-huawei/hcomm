@@ -142,6 +142,7 @@ HcclResult CollReduceScatterVAIVBigCountExecutor::KernelRun(const OpParam &param
     u32 blockDim;
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
+    HCCL_DEBUG("[CollReduceScatterVAIVBigCountExecutor][KernelRun]blockDim is [%u]", blockDim_);
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
@@ -155,8 +156,6 @@ HcclResult CollReduceScatterVAIVBigCountExecutor::KernelRun(const OpParam &param
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[CollReduceScatterVAIVBigCountExecutor][KernelRun]"
         "ReduceScatterV aiv failed, return[%d]", ret), ret);
-
-    CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
 
     HCCL_INFO("[CollReduceScatterVAIVBigCountExecutor][KernelRun]ReduceScatterV aiv run success.");
 

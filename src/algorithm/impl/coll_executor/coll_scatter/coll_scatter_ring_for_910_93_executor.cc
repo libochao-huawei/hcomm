@@ -189,15 +189,15 @@ HcclResult CollScatterRingFor91093Executor::KernelRunLevel1(const OpParam &param
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_NB, dispatcher_);
-            HCCL_INFO("scatter ring: using nonuniform-bruck algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_NB in COMM_LEVEL1", __func__);
         } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_NHR, dispatcher_);
-            HCCL_INFO("scatter ring: using nonuniform-hierarchical-ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_NHR in COMM_LEVEL1", __func__);
         } else {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
-            HCCL_INFO("scatter ring: using ring algo inter-server.");
+            HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL1", __func__);
         }
         CHK_SMART_PTR_NULL(level1TempAlg);
 

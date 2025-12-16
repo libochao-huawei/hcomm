@@ -216,8 +216,8 @@ HcclResult MultiRootScatterRing::MidScatterChunk(u32 rank, u32 rankSize, u32 sli
     u32 rxSliceIndex = rankSliceLists_[rank][sliceIdx + 1];
     u32 txSliceIndex = rankSliceLists_[rank][sliceIdx];
     u64 rxScatterOffset = slices_[rxSliceIndex].offset;
-    u64 rxScatterResult = slices_[rxSliceIndex].size;
     u64 txScatterOffset = slices_[txSliceIndex].offset;
+    u64 rxScatterResult = slices_[rxSliceIndex].size;
     u64 txScatterResult = slices_[txSliceIndex].size;
     // 判断当前rank是否需要接收第sliceIdx+1个元素, 得到前一个rank的发送序列，判断当前发送的slice是否在该序列中
     std::vector<u32> preRankSlices(rankSliceLists_[(rank - 1 + rankSize) % rankSize]);

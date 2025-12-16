@@ -1082,6 +1082,29 @@ bool TaskOrchestrator::IsTaskExceptionForHccs(AicpuComContext *ctx)
     return false;
 }
 
+HcclResult TaskOrchestrator::DealKfcCommand(AicpuComContext *ctx)
+{
+    KfcCommand cmd = KfcCommand::kNone;
+    CHK_RET(AicpuHdcUtils::GetOpExecCtrlCmd(ctx->kfcControlTransferH2D, cmd));
+    if (cmd == KfcCommand::kStopLaunch) {
+        HCCL_WARNING("hccl aicpu stop wait finish, for recv stop launch cmd");
+        return HCCL_E_SUSPENDING;
+    } else if ((cmd == KfcCommand::NsStopLaunch) && (ctx->commOpenStatus == true) && (ctx->endStopLaunch == false)) {
+        HCCL_WARNING("N second stop Launch for recv stop launch cmd.");
+        AicpuUpdatComContextMumber(offsetof(AicpuComContext, isStopLaunch), true);
+        AicpuUpdatComContextMumber(offsetof(AicpuComContext, endStopLaunch), true);
+        return HCCL_E_SUSPENDING;
+    } else if (cmd == KfcCommand::kDestroyComm) {
+        HCCL_WARNING("hccl aicpu stop wait finish, for recv destroy comm cmd");
+        return HCCL_E_SUSPENDING;
+    } else if (cmd == KfcCommand::kExit) {
+        HCCL_ERROR("hccl aicpu stop wait finish, for recv exit cmd.");
+        return HCCL_E_INTERNAL;
+    }
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult TaskOrchestrator::WaitFinishWhileLoop(AicpuComContext *ctx)
 {
     static uint32_t logHead = UINT32_MAX;
@@ -1106,24 +1129,7 @@ HcclResult TaskOrchestrator::WaitFinishWhileLoop(AicpuComContext *ctx)
             }
         }
 
-        KfcCommand cmd = KfcCommand::kNone;
-        CHK_RET(AicpuHdcUtils::GetOpExecCtrlCmd(ctx->kfcControlTransferH2D, cmd));
-        if (cmd == KfcCommand::kStopLaunch) {
-            HCCL_WARNING("hccl aicpu stop wait finish, for recv stop launch cmd");
-            return HCCL_E_SUSPENDING;
-        } else if ((cmd == KfcCommand::NsStopLaunch) && (ctx->commOpenStatus == true) && (ctx->endStopLaunch == false)) {
-            HCCL_WARNING("N second stop Launch for recv stop launch cmd.");
-            AicpuUpdatComContextMumber(offsetof(AicpuComContext, isStopLaunch), true);
-            AicpuUpdatComContextMumber(offsetof(AicpuComContext, endStopLaunch), true);
-            return HCCL_E_SUSPENDING;
-        } else if (cmd == KfcCommand::kDestroyComm) {
-            HCCL_WARNING("hccl aicpu stop wait finish, for recv destroy comm cmd");
-            return HCCL_E_SUSPENDING;
-        } else if (cmd == KfcCommand::kExit) {
-            HCCL_ERROR("hccl aicpu stop wait finish, for recv exit cmd.");
-            return HCCL_E_INTERNAL;
-        }
-
+        CHK_RET(DealKfcCommand(ctx));
         CHK_RET(QuerySqStatusByType(ctx->devId, sqId, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
         if (loopCnt > 10000) { // 10000 is max loop cnt
             uint32_t overflowFlag = 0;

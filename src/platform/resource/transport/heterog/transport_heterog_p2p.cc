@@ -471,7 +471,7 @@ HcclResult TransportHeterogP2P::RxDataSignal(Stream &stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     HcclResult ret = sendReadyNotify_->Wait(stream, dispatcher_, INVALID_VALUE_STAGE,
-        static_cast<u32>(GetExternalInputHcclExecTimeOut()));
+        static_cast<u32>(dispatcher_->GetExecTimeOut()));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportHeterogP2P][RxDataSignal]errNo[0x%016llx]In rx data signal, signal wait failed.",
         HCCL_ERROR_CODE(ret)), ret);
@@ -492,7 +492,7 @@ HcclResult TransportHeterogP2P::RxAck(Stream &stream)
 {
     CHK_PRT_RET((connectState_ != TRANSPORT_CONNECT_STATE_DONE), HCCL_ERROR("transport is not ready"), HCCL_E_PARA);
     HcclResult ret = sendDoneNotify_->Wait(stream, dispatcher_, INVALID_VALUE_STAGE,
-        static_cast<u32>(GetExternalInputHcclExecTimeOut()));
+        static_cast<u32>(dispatcher_->GetExecTimeOut()));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportHeterogP2P][RxAck]errNo[0x%016llx]In rx ack signal, signal wait failed.",
         HCCL_ERROR_CODE(ret)), ret);
@@ -585,7 +585,7 @@ HcclResult TransportHeterogP2P::RxAsync(std::vector<RxMemoryInfo>& rxMems, Strea
 
     /* 等待send_ready_signal事件 */
     HcclResult ret = sendReadyNotify_->Wait(stream, dispatcher_, INVALID_VALUE_STAGE,
-        static_cast<u32>(GetExternalInputHcclExecTimeOut()));
+        static_cast<u32>(dispatcher_->GetExecTimeOut()));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportHeterogP2P][RxAsync]errNo[0x%016llx]In rx async, signal wait failed.",
         HCCL_ERROR_CODE(ret)), ret);

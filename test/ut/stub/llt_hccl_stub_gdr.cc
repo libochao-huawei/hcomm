@@ -757,7 +757,7 @@ int RaSocketSend(const void* handle, const void* data, u64 size, u64 *sentSize)/
     return 0;
 }
 
-int RaTlvInit(struct TlvInitInfo *init_info, unsigned int module_type, unsigned int *buffer_size, void **tlv_handle)
+int RaTlvInit(struct TlvInitInfo *init_info, unsigned int *buffer_size, void **tlv_handle)
 {
     return 0;
 }
@@ -767,7 +767,7 @@ int RaTlvDeinit(void *tlv_handle)
     return 0;
 }
  
-int RaTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
+int RaTlvRequest(void *tlv_handle, unsigned int module_type, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
 {
     return 0;
 }
@@ -2927,11 +2927,6 @@ int RaSocketWhiteListDel(void *socket_handle, struct SocketWlistInfoT white_list
 aclError aclrtDeviceEnablePeerAccess(int32_t devIdDes, u32 flag)
 {
     return ACL_SUCCESS;
-}
-
-rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val)
-{
-    return RT_ERROR_NONE;
 }
 
 aclError aclrtDeviceDisablePeerAccess(int32_t devicePhyId)

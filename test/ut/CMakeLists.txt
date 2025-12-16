@@ -36,6 +36,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique/
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
+    ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
     ${HCCL_CODE_ROOT}/src/platform/inc/
     ${HCCL_CODE_ROOT}/src/platform/inc/adapter
@@ -63,9 +64,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
     ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
 
-    ${HCCL_CODE_ROOT}/inc/
-    ${HCCL_CODE_ROOT}/inc/hccl
-    ${HCCL_CODE_ROOT}/inc/hccl/hccl
+    ${HCCL_CODE_ROOT}/include/
+    ${HCCL_CODE_ROOT}/include/hccl
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/src/pub_inc
@@ -181,7 +181,10 @@ set(UT_COMMON_INCLUDE_LIST
 
     # hccl_next include
     # tbe头文件
-    ${CMAKE_BINARY_DIR}/hcomm_utils/host/include/legacy
+    ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/common/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/graph_ctx_mgr/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/inc/
 
     # hcce头文件
     ${HCCL_CODE_ROOT}/src/engines/hcclengine/inc
@@ -214,5 +217,7 @@ set(UT_COMMON_INCLUDE_LIST
 add_subdirectory(stub)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(platform/resource/dispatcher)
+add_subdirectory(platform/resource/notify)
+add_subdirectory(platform/resource/transport)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/op_base_api)

@@ -4,7 +4,7 @@
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-# INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
@@ -44,7 +44,7 @@ target_link_directories(hccl_utest_framework_communicator PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 target_link_libraries(hccl_utest_framework_communicator PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -lpthread
     hccl_llt

@@ -9,6 +9,7 @@
  */
 
 #include <chrono>
+#include "comm_configer.h"
 #include "externalinput_pub.h"
 #include "opretry_manager.h"
 #include "adapter_pub.h"
@@ -17,6 +18,20 @@
 #include "opretry_server.h"
 #include "opretry_base.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+typedef enum tagRtClearStep {
+    RT_STREAM_STOP = 0,
+    RT_STREAM_CLEAR,
+} rtClearStep_t;
+
+extern rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step);
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 namespace {
 HcclResult StreamClear(HcclRtStream stream, HcclRtStreamClearStep step)
 {
@@ -24,11 +39,11 @@ HcclResult StreamClear(HcclRtStream stream, HcclRtStreamClearStep step)
 
     aclError  ret;
     if (step == HcclRtStreamClearStep::HCCL_STREAM_STOP) {
-        ret = aclrtStreamStop(stream);
-        HCCL_DEBUG("[StreamClear]Call aclrtStreamStop, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
+        ret = rtStreamClear(stream, rtClearStep_t::RT_STREAM_STOP);
+        HCCL_INFO("[StreamClear]Call rtStreamClear, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
     } else {
-        ret = aclrtStreamStop(stream);
-        HCCL_DEBUG("[StreamClear]Call aclrtStreamStop, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
+        ret = rtStreamClear(stream, rtClearStep_t::RT_STREAM_CLEAR);
+        HCCL_INFO("[StreamClear]Call rtStreamClear, ret[%d], param: stream[%p], step[%d]", ret, stream, step);
     }
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[StreamClear]errNo[0x%016llx]Failed to clear stream. "
         "ret[%d], param: stream[%p], step[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, stream, step), HCCL_E_RUNTIME);
@@ -163,7 +178,7 @@ HcclResult OpRetryBase::CheckRetryInfo(RetryContext &retryCtx)
 
         CHK_RET(CheckOpName(retryInfo, retryInfoStand));
         // 校验重传次数
-        CHK_RET(CheckMaxRetryCnt(retryInfo));
+        CHK_RET(CheckMaxRetryCnt(retryInfo, retryCtx.group_));
         // 校验链路状态
         CHK_RET(CheckLinkStates(retryInfo));
     }
@@ -210,10 +225,10 @@ HcclResult OpRetryBase::CheckOpName(const RetryInfo &retryInfo1, const RetryInfo
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryBase::CheckMaxRetryCnt(const RetryInfo &retryInfo)
+HcclResult OpRetryBase::CheckMaxRetryCnt(const RetryInfo &retryInfo, const std::string& identifier)
 {
     u32 retryCount = retryInfo.opInfo.execStatus.retryInfo.retryCount;
-    u32 retryMaxCnt = GetExternalInputRetryMaxCnt();
+    u32 retryMaxCnt = CommConfiger::GetInstance().GetCommConfigRetryMaxCnt(identifier);
     if (retryCount >= retryMaxCnt) {
         HCCL_ERROR("[OpRetry][CheckMaxRetryCnt]hccl aicpu can not retry, the retryCnt[%u] of rank[%u] with IpInfo[%s] "\
             "exceeds the MaxCnt[%u]", retryCount, retryInfo.rankId, retryInfo.dfxIpInfo, retryMaxCnt);

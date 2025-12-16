@@ -9,9 +9,6 @@
  */
 
 #include <atomic>
-#include <algorithm>
-#include <arpa/inet.h>
-#include <fstream>
 #include <fcntl.h>
 #include <unistd.h>
 #include <hccl/hccl_types.h>
@@ -28,6 +25,7 @@
 #include "adapter_rts_common.h"
 #include "adapter_hccp_common.h"
 #include "hccl_nslb_md5.h"
+#include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "hccl_nslbdp.h"
 
 namespace hccl {
@@ -75,29 +73,28 @@ bool hcclNslbDp::GetDeviceType()
     return is91093;
 }
 
-HcclResult hcclNslbDp::setHccpInfo(u32 buffer_size, void* tlv_handle)
+HcclResult hcclNslbDp::SetH2DTlvInitInfo(u32 buffer_size, void* tlv_handle)
 {
-    HCCL_DEBUG("[NSLB-DP] try to set hccp info.");
+    HCCL_DEBUG("[NSLB-DP] try to set tlvinit info.");
     nslbdp_buffsize_ = buffer_size;
     nslbdp_handle_ = tlv_handle;
-    nslbdpIsInitHccp_ = true;
-    HCCL_INFO("[NSLB-DP] set hccp info buffer_size:[%u].", buffer_size);
+    nslbdpIsInitNetCo_ = true;
+    HCCL_INFO("[NSLB-DP] set tlvinit info buffer_size:[%u].", buffer_size);
     return HCCL_SUCCESS;
 }
 
-bool hcclNslbDp::getHccpInitFlag()
+bool hcclNslbDp::GetInitNetCoFlag()
 {
-    bool nslbdp_IsInitHccp = nslbdpIsInitHccp_;
-    return nslbdp_IsInitHccp;
+    return nslbdpIsInitNetCo_;
 }
 
-HcclResult hcclNslbDp::clearnHccpInitFlag()
+HcclResult hcclNslbDp::ClearInitNetCoFlag()
 {
-    nslbdpIsInitHccp_ = false;
+    nslbdpIsInitNetCo_ = false;
     return HCCL_SUCCESS;
 }
 
-u32 hcclNslbDp::getBufferSize()
+u32 hcclNslbDp::GetTlvInitBufferSize()
 {
     u32 nslbdpBuffsize = nslbdp_buffsize_;
     return nslbdpBuffsize;
@@ -154,14 +151,14 @@ u32 hcclNslbDp::GetGlobalCommRankTotalNum()
     return hcclNslbDpGlobalCommInfo_.rankTotalNum;
 }
 
-//获取 l4SPortId
+/* 获取 l4SPortId */
 u32 hcclNslbDp::Getl4SPortId()
 {
     u32 NslbDpL4SPortId = hcclNslbDpL4SPortId_;
     return NslbDpL4SPortId;
 }
 
-//切分identifier字段
+/* 切分identifier字段 */
 void hcclNslbDp::SplitString(const std::string& identifier, std::vector<std::string>& splitInfo,
     const std::string& frag)
 {
@@ -179,7 +176,7 @@ void hcclNslbDp::SplitString(const std::string& identifier, std::vector<std::str
     return;
 }
 
-// 将IP转换成U32值
+/* 将IP转换成U32值 */
 u32 hcclNslbDp::ipToUint32(const std::string& ipAddress)
 {
     struct sockaddr_in sa;
@@ -187,7 +184,7 @@ u32 hcclNslbDp::ipToUint32(const std::string& ipAddress)
     return ntohl(sa.sin_addr.s_addr); // Convert to host byte order
 }
 
-/*执行send 流程*/
+/* 执行send 流程 */
 HcclResult hcclNslbDp::SendCommRankTable(uint32_t rank, NslbDpCommConfigVal globalCommInfo)
 {
     HCCL_DEBUG("[NSLB-DP] entry to send TBL_COMM_INFO");
@@ -263,7 +260,7 @@ bool hcclNslbDp::CheckAhcSupport(u8 algType, std::string identifier)
     return true;
 }
 
-// 读配置文件的场景与正常创建通信域场景下填充通信域信息表（表一）
+/* 读配置文件的场景与正常创建通信域场景下填充通信域信息表（表一） */
 void hcclNslbDp::SetGlobalCommRankTable_RootInfo(const RankTable_t &rankTable, const HcclBasicRankInfo &localRankInfo,
     const std::vector<RankInfo> &rankLists, const std::string& identifier, u32 nRanks, u32 rank)
 {
@@ -345,7 +342,7 @@ void hcclNslbDp::SetGlobalCommRankTable_RootInfo(const RankTable_t &rankTable, c
         hcclNslbDpCommConfig_.size());
 }
 
-//填充表5
+/* 填充表5 */
 void hcclNslbDp::SetGlobalDisRankTable(const HcclBasicRankInfo &rankTable)
 {
     HCCL_INFO("[NSLB-DP] Try to collect NSLBDP_TYPE_TBL_RANK_DIST");
@@ -370,7 +367,7 @@ void hcclNslbDp::SetGlobalDisRankTable(const HcclBasicRankInfo &rankTable)
     HCCL_DEBUG("[NSLB-DP] SetGlobalDisRankTable npuIp:[%u].", hcclNslbDpGlobalDisRankVal_.npuIp);
 }
 
-//check 是否是多机场景
+/* check 是否是多机场景 */
 bool hcclNslbDp::CheckMultiMachine(const RankTable_t rankTable)
 {
     HCCL_DEBUG("[NSLB-DP] check device is multi machine");
@@ -419,7 +416,7 @@ bool hcclNslbDp::CheckMultiMachine(const RankTable_t rankTable)
     return bIsMultiMachine;
 }
 
-//无ranktable场景， 子通信域场景表1 赋值
+/* 无ranktable场景， 子通信域场景表1 赋值 */
 HcclResult hcclNslbDp::SetCommInfo_NoRankTable(const hccl::RankTable_t rankTable, std::string identifier)
 {
     HCCL_DEBUG("[NSLB-DP] Try to collect NSLBDP_TYPE_TBL_COMM_INFO for no RankTable");
@@ -473,7 +470,7 @@ HcclResult hcclNslbDp::SetCommInfo_NoRankTable(const hccl::RankTable_t rankTable
     return HCCL_SUCCESS;
 }
 
-//有ranktable场景， 表1 赋值
+/* 有ranktable场景， 表1 赋值 */
 HcclResult hcclNslbDp::SetCommInfo_RankTableExit(RankTable_t rankTable)
 {
     HCCL_DEBUG("[NSLB-DP] Entry SetCommInfo for RankTable exit");
@@ -536,7 +533,7 @@ HcclResult hcclNslbDp::SetCommInfo_RankTableExit(RankTable_t rankTable)
     return HCCL_SUCCESS;
 }
 
-//有ranktable场景， 表4 赋值
+/* 有ranktable场景，表4赋值 */
 HcclResult hcclNslbDp::SetGlobalRank_RankTableExit(const hccl::RankTable_t  rankTable)
 {
     u64 taskId = GetGlobalCommTaskId();
@@ -581,7 +578,7 @@ HcclResult hcclNslbDp::SetGlobalRank_RankTableExit(const hccl::RankTable_t  rank
     return HCCL_SUCCESS;
 }
 
-//拼接 l4SPortId
+/* 拼接 l4SPortId */
 HcclResult hcclNslbDp::GetNslbDpl4SPortId(u32 rankSize, u8 algType, u16 *l4SPortId)
 {
     u16 priFlag = NSLBDP_PRIVATE_PORT;
@@ -611,7 +608,7 @@ HcclResult hcclNslbDp::GetNslbDpl4SPortId(u32 rankSize, u8 algType, u16 *l4SPort
     return HCCL_SUCCESS;
 }
 
-// 表6赋值
+/* 表6赋值 */
 HcclResult hcclNslbDp::SetNslbDpRootRank(HcclCMDType opType, u32 rootRank, std::string identifier, u8 algType)
 {
     HCCL_DEBUG("[NSLB-DP] try to collect NSLBDP_TYPE_TBL_ROOT_RANK");
@@ -680,7 +677,7 @@ HcclResult hcclNslbDp::SetNslbDpRootRank(HcclCMDType opType, u32 rootRank, std::
     return HCCL_SUCCESS;
 }
 
-// AlgType 的转换
+/* AlgType 的转换 */
 u8 hcclNslbDp::GetNslbLevel1AlgType(AlgTypeLevel1 algValue)
 {
     HCCL_DEBUG("[NSLB-DP] try to switch Level1 type to nslbtype");
@@ -714,7 +711,7 @@ u8 hcclNslbDp::GetNslbLevel1AlgType(AlgTypeLevel1 algValue)
     }
 }
 
-// Level2 的 AlgType 转换
+/* Level2 的 AlgType 转换 */
 u8 hcclNslbDp::GetNslbLevel2AlgType(AlgTypeLevel2 algValue)
 {
     HCCL_DEBUG("[NSLB-DP] try to switch Level2 type to nslbtype");
@@ -739,7 +736,7 @@ u8 hcclNslbDp::GetNslbLevel2AlgType(AlgTypeLevel2 algValue)
     }
 }
 
-// opType 的转换
+/* opType 的转换 */
 u8 hcclNslbDp::GetNslbOpType(HcclCMDType opType)
 {
     HCCL_DEBUG("[NSLB-DP] try to get nslb optype");
@@ -788,7 +785,7 @@ u8 hcclNslbDp::GetNslbOpType(HcclCMDType opType)
     }
 }
 
-//获取通信量的前4bit
+/* 获取通信量的前4bit */
 u64 hcclNslbDp::GetNslbDpFirstFourBit(u8 opType, u8 algType)
 {
     u64 firstFourBit = 0;
@@ -805,7 +802,7 @@ u64 hcclNslbDp::GetNslbDpFirstFourBit(u8 opType, u8 algType)
     return firstFourBit;
 }
 
-//校验算法的一致性
+/* 校验算法的一致性 */
 bool hcclNslbDp::CheckAlgoConsistency(HcclCMDType opType, std::string& algName)
 {
     if (opType == HcclCMDType::HCCL_CMD_ALLREDUCE) {
@@ -861,13 +858,13 @@ bool hcclNslbDp::CheckSupportOptype(HcclCMDType opType)
     return true;
 }
 
-// 写算法算子表--表3
+/* 写算法算子表--表3 */
 HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRankId, u32 rootRank, 
             u8 algType, std::string identifier, AdjInfo nslbAdjInfo)
 {
     std::string nslbIdentifier = identifier;
     int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
-    if (countUnderScores == 3) {
+    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
         size_t lastUnderScoreIndex = identifier.rfind('_');
         nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
     }
@@ -987,7 +984,7 @@ bool hcclNslbDp::CheckCommDescExit(NslbDpOperatorInfo &OperatorInfo)
 void hcclNslbDp::fullcommDescInitTime(std::string identifier, NslbDpOperatorInfo &OperatorInfo)
 {
     int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
-    if (countUnderScores == 3) {
+    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
         /* 此时认为通信域描述信息中包含时间戳 */
         size_t lastUnderScoreIndex = identifier.rfind('_');
         std::string nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
@@ -1014,7 +1011,6 @@ bool hcclNslbDp::CheckSameOperatorVal(size_t operSize, NslbDpOperatorInfo &Opera
     if (operSize >= num) {
         return false;
     }
-    // 保留         hcclNslbDpOperatorVal_[operSize].commInitTime == OperatorInfo.commInitTime &&
     if (hcclNslbDpOperatorVal_[operSize].taskId == OperatorInfo.taskId &&
         hcclNslbDpOperatorVal_[operSize].rootRank == rootRank &&
         hcclNslbDpOperatorVal_[operSize].oper == OperatorInfo.oper &&
@@ -1025,7 +1021,7 @@ bool hcclNslbDp::CheckSameOperatorVal(size_t operSize, NslbDpOperatorInfo &Opera
     return false;
 }
 
-// 写算法算子表--表2
+/* 写算法算子表--表2 */
 HcclResult hcclNslbDp::GenerateOpAndAdjTable(HcclCMDType opType, u32 rootRank, u32 srcLocalRankId, u8 algType,
     std::string identifier, u64 count, u32 rankSize)
 {
@@ -1091,7 +1087,7 @@ HcclResult hcclNslbDp::GenerateOpAndAdjTable(HcclCMDType opType, u32 rootRank, u
     return HCCL_SUCCESS;
 }
 
-/*根将表1 序列化处理*/
+/* 根将表1 序列化处理 */
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableFir(NslbDpCommConfigInfo cominfo) 
 {
     HCCL_DEBUG("[NSLB-DP] entry serializeTLV TBL_COMM_INFO beg");
@@ -1196,7 +1192,7 @@ void hcclNslbDp::fullCommConfigInfo(NslbDpCommConfigInfo &tab_f, NslbDpCommConfi
     }
 }
 
-/*根据表1 中的rank数量进行分片处理*/
+/* 根据表1 中的rank数量进行分片处理 */
 HcclResult hcclNslbDp::SendTableProc(u32 rank, u32 packetNum, NslbDpCommConfigVal cominfo)
 {
     if (packetNum - 1 < rank) {
@@ -1246,7 +1242,7 @@ HcclResult hcclNslbDp::SendTableProc(u32 rank, u32 packetNum, NslbDpCommConfigVa
     return HCCL_SUCCESS;
 }
 
-/*遍历表1 执行send 流程*/
+/* 遍历表1 执行send 流程 */
 HcclResult hcclNslbDp::SendTableFir(uint32_t rank)
 {
     size_t size = hcclNslbDpCommConfig_.size();
@@ -1275,7 +1271,7 @@ HcclResult hcclNslbDp::SendTableFir(uint32_t rank)
 
 HcclResult hcclNslbDp::SendRankTable(NslbDpCommConfigInfo tab_f)
 {
-    if (getHccpInitFlag() == false) {
+    if (GetInitNetCoFlag() == false) {
         return HCCL_SUCCESS;
     }
 
@@ -1296,15 +1292,15 @@ HcclResult hcclNslbDp::SendRankTable(NslbDpCommConfigInfo tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_COMM_INFO;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
-	HCCL_INFO("!!!!!!!!!!hccl send Table 1 to hccp. ret(%d)!!!!!!!!!!\n", ret);
-
+	HCCL_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_TBL_COMM_INFO(1001) to hccp. ret(%d)\n", ret);
     return HCCL_SUCCESS;
 }
 
 
-/*根将表2 序列化处理*/
+/* 根将表2 序列化处理 */
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableOpAndAdj(NslbDpOperatorInfo &info) 
 {
     HCCL_DEBUG("[NSLB-DP] ndlbdp entry serializeTLV TableOpAndAdj.");
@@ -1353,10 +1349,10 @@ std::vector<uint8_t> hcclNslbDp::serializeTLV_TableOpAndAdj(NslbDpOperatorInfo &
 }
 
 
-/*执行send 流程*/
+/* 执行send 流程 */
 HcclResult hcclNslbDp::SendRankTableOpAndAdj(NslbDpOperatorInfo &tab_f)
 {
-    if (getHccpInitFlag() == false) {
+    if (GetInitNetCoFlag() == false) {
         return HCCL_SUCCESS;
     }
     HCCL_DEBUG("[NSLB-DP] ndlbdp entry SendRankTableOpAndAdj.");
@@ -1370,15 +1366,16 @@ HcclResult hcclNslbDp::SendRankTableOpAndAdj(NslbDpOperatorInfo &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_OPER;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
-	HCCL_INFO("!!!!!!!!!!hccl send Table 2 to hccp. ret(%d)!!!!!!!!!!\n", ret);
+	HCCL_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_TBL_OPER(1002) to hccp. ret(%d)\n", ret);
 
     return HCCL_SUCCESS;
 }
 
 
-/*遍历表2 执行send 流程*/
+/* 遍历表2 执行send 流程 */
 HcclResult hcclNslbDp::SendOpAndAdjTable()
 {
     HCCL_DEBUG("[NSLB-DP] ndlbdp entry SendOpAndAdjTable.");
@@ -1408,7 +1405,7 @@ HcclResult hcclNslbDp::SendOpAndAdjTable()
 }
 
 
-/*根将表3 序列化处理*/
+/* 根将表3 序列化处理 */
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableAlgorithmInfo(NslbDpAlgorithmTlv &info) 
 {
     HCCL_DEBUG("[NSLB-DP] entry serializeTLV_TableAlgorithmInfo.");
@@ -1474,7 +1471,7 @@ std::vector<uint8_t> hcclNslbDp::serializeTLV_TableAlgorithmInfo(NslbDpAlgorithm
 
 HcclResult hcclNslbDp::SendRankTableAlgorithmInfo(NslbDpAlgorithmTlv &tab_f)
 {
-    if (getHccpInitFlag() == false) {
+    if (GetInitNetCoFlag() == false) {
         return HCCL_SUCCESS;
     }
     std::vector<uint8_t> tlvData = serializeTLV_TableAlgorithmInfo(tab_f);
@@ -1487,13 +1484,14 @@ HcclResult hcclNslbDp::SendRankTableAlgorithmInfo(NslbDpAlgorithmTlv &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_ADJ;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
-	HCCL_INFO("!!!!!!!!!!hccl send Table 3 to hccp. ret(%d)!!!!!!!!!!\n", ret);
+    HCCL_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_TBL_ADJ(1003) to hccp. ret(%d)\n", ret);
     return HCCL_SUCCESS;
 }
 
-/*遍历表3 执行send 流程*/
+/* 遍历表3 执行send 流程 */
 HcclResult hcclNslbDp::SendAlgorithmInfoTable()
 {
     u32 size = hcclNslbDpAlgorithmInfo_.size();
@@ -1534,8 +1532,7 @@ HcclResult hcclNslbDp::SendAlgorithmInfoTable()
     return HCCL_SUCCESS;
 }
 
-
-// 序列化表4
+/* 序列化表4 */
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableGlobalRankInfo(NslbDpGlobalRankInfo &info)
 {
     HCCL_DEBUG("[NSLB-DP] entry serializeTLV_TableGlobalRankInfo.");
@@ -1612,10 +1609,9 @@ std::vector<uint8_t> hcclNslbDp::serializeTLV_TableGlobalRankInfo(NslbDpGlobalRa
 }
 
 
-// 发送Rank表信息
 HcclResult hcclNslbDp::SendRankTableGlobalRank(NslbDpGlobalRankInfo &tab_f)
 {
-    if (getHccpInitFlag() == false) {
+    if (GetInitNetCoFlag() == false) {
         return HCCL_SUCCESS;
     }
     std::vector<uint8_t> tlvData = serializeTLV_TableGlobalRankInfo(tab_f);
@@ -1627,9 +1623,10 @@ HcclResult hcclNslbDp::SendRankTableGlobalRank(NslbDpGlobalRankInfo &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_RANK;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
-    HCCL_INFO("!!!!!!!!!!hccl send Table 4 to hccp. ret(%d)!!!!!!!!!!\n", ret);
+    HCCL_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_TBL_RANK(1004) to hccp. ret(%d)\n", ret);
 
     return HCCL_SUCCESS;
 }
@@ -1659,7 +1656,7 @@ void hcclNslbDp::fullCommonGlobalRankInfo(NslbDpGlobalRankInfo tab_f, NslbDpGlob
     return;
 }
 
-/*根据表4 中的rank数量进行分片处理*/
+/* 根据表4 中的rank数量进行分片处理 */
 HcclResult hcclNslbDp::SendTableGlobalRankProc(uint32_t rank, uint32_t packetNum, NslbDpGlobalRankVal &cominfo)
 {
     HCCL_INFO("[NSLB-DP] entry SendTableGlobalRankProc packetNum:[%u]", packetNum);
@@ -1699,7 +1696,7 @@ HcclResult hcclNslbDp::SendTableGlobalRankProc(uint32_t rank, uint32_t packetNum
     return HCCL_SUCCESS;
 }
 
-// 根据rankNum的总数做分片发送流程
+/* 根据rankNum的总数做分片发送流程 */
 HcclResult hcclNslbDp::SendGlobalRankTable(uint32_t rank)
 {
     HCCL_DEBUG("[NSLB-DP] try to send GlobalRankTable.");
@@ -1722,7 +1719,7 @@ HcclResult hcclNslbDp::SendGlobalRankTable(uint32_t rank)
     return HCCL_SUCCESS;
 }
 
-// 序列化表5
+/* 序列化表5 */
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableGlobalDisRankVal(NslbDpGlobalDisRankVal &info)
 {
     HCCL_DEBUG("[NSLB-DP] entry serializeTLV_TableGlobalDisRankVal.");
@@ -1731,27 +1728,27 @@ std::vector<uint8_t> hcclNslbDp::serializeTLV_TableGlobalDisRankVal(NslbDpGlobal
     // 处理 taskId
     uint64_t netTaskId = htobe64(info.taskId);
     tlvData.resize(tlvData.size() + sizeof(netTaskId));
-    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netTaskId), sizeof(netTaskId), &netTaskId, sizeof(netTaskId));
+    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netTaskId), sizeof(netTaskId),
+        &netTaskId, sizeof(netTaskId));
 
-    // 保留 tlvData.insert(tlvData.end(), reinterpret_cast<const uint8_t*>(&netTaskId), reinterpret_cast<const uint8_t*>(&netTaskId) + sizeof(netTaskId));
     // 处理 npuIp
     uint32_t netNpuIp = htonl(info.npuIp);
     tlvData.resize(tlvData.size() + sizeof(netNpuIp));
-    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netNpuIp), sizeof(netNpuIp), &netNpuIp, sizeof(netNpuIp));
+    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netNpuIp), sizeof(netNpuIp),
+        &netNpuIp, sizeof(netNpuIp));
 
-    // 保留 tlvData.insert(tlvData.end(), reinterpret_cast<const uint8_t*>(&netNpuIp), reinterpret_cast<const uint8_t*>(&netNpuIp) + sizeof(netNpuIp));
     // 处理 serverIp
     uint32_t netServerIp = htonl(info.serverIp);
     tlvData.resize(tlvData.size() + sizeof(netServerIp));
-    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netServerIp), sizeof(netServerIp), &netServerIp, sizeof(netServerIp));
+    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netServerIp), sizeof(netServerIp),
+        &netServerIp, sizeof(netServerIp));
 
-    // 保留 tlvData.insert(tlvData.end(), reinterpret_cast<const uint8_t*>(&netServerIp), reinterpret_cast<const uint8_t*>(&netServerIp) + sizeof(netServerIp));
     // 处理 nodeId
     uint32_t netNodeId = htonl(info.nodeId);
     tlvData.resize(tlvData.size() + sizeof(netNodeId));
-    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netNodeId), sizeof(netNodeId), &netNodeId, sizeof(netNodeId));
+    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netNodeId), sizeof(netNodeId),
+        &netNodeId, sizeof(netNodeId));
 
-    // 保留 tlvData.insert(tlvData.end(), reinterpret_cast<const uint8_t*>(&netNodeId), reinterpret_cast<const uint8_t*>(&netNodeId) + sizeof(netNodeId));
     // 处理 localRankNum
     tlvData.push_back(info.localRankNum);
 
@@ -1761,17 +1758,16 @@ std::vector<uint8_t> hcclNslbDp::serializeTLV_TableGlobalDisRankVal(NslbDpGlobal
     // 处理 rankTotalNum
     uint32_t netRankTotalNum = htonl(info.rankTotalNum);
     tlvData.resize(tlvData.size() + sizeof(netRankTotalNum));
-    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netRankTotalNum), sizeof(netRankTotalNum), &netRankTotalNum, sizeof(netRankTotalNum));
+    (void)memcpy_s(tlvData.data() + tlvData.size() - sizeof(netRankTotalNum), sizeof(netRankTotalNum),
+        &netRankTotalNum, sizeof(netRankTotalNum));
 
-    // 保留 tlvData.insert(tlvData.end(), reinterpret_cast<const uint8_t*>(&netRankTotalNum), reinterpret_cast<const uint8_t*>(&netRankTotalNum) + sizeof(netRankTotalNum));
     return tlvData;
 }
 
-
-// 发送Rank表信息
+/* 发送GlobalDisRank表信息 */
 HcclResult hcclNslbDp::SendRankTableGlobalDisRankVal(NslbDpGlobalDisRankVal &tab_f)
 {
-    if (getHccpInitFlag() == false) {
+    if (GetInitNetCoFlag() == false) {
         return HCCL_SUCCESS;
     }
     std::vector<uint8_t> tlvData = serializeTLV_TableGlobalDisRankVal(tab_f);
@@ -1783,14 +1779,15 @@ HcclResult hcclNslbDp::SendRankTableGlobalDisRankVal(NslbDpGlobalDisRankVal &tab
     sendMsg.type = NSLBDP_TYPE_TBL_RANK_DIST;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
-    HCCL_INFO("!!!!!!!!!!hccl send Table NSLBDP_TYPE_TBL_RANK_DIST to hccp. ret(%d)!!!!!!!!!!\n", ret);
+    HCCL_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_TBL_RANK_DIST(1005) to hccp. ret(%d)\n", ret);
     return HCCL_SUCCESS;
 }
 
 
-// 遍历表5 执行send流程
+/* 遍历表5 执行send流程 */
 HcclResult hcclNslbDp::SendGlobalDisRankTable()
 {
     HCCL_DEBUG("[NSLB-DP] ndlbdp entry serializeTLV_TableGlobalDisRankVal.");
@@ -1810,8 +1807,7 @@ HcclResult hcclNslbDp::SendGlobalDisRankTable()
     return HCCL_SUCCESS;
 }
 
-
-// 序列化表6
+/* 序列化表6 */
 std::vector<uint8_t> hcclNslbDp::serializeTLV_TableRootRank(NslbDpRootRank &config)
 {
     HCCL_DEBUG("[NSLB-DP] ndlbdp entry serializeTLV_TableRootRank.");
@@ -1860,11 +1856,10 @@ std::vector<uint8_t> hcclNslbDp::serializeTLV_TableRootRank(NslbDpRootRank &conf
     return tlvData;
 }
 
-
-// 发送Rank表信息
+/* 发送Rank表到netco */
 HcclResult hcclNslbDp::SendRankTableRootRank(NslbDpRootRank &tab_f)
 {
-    if (getHccpInitFlag() == false) {
+    if (GetInitNetCoFlag() == false) {
         return HCCL_SUCCESS;
     }
     std::vector<uint8_t> tlvData = serializeTLV_TableRootRank(tab_f);
@@ -1877,14 +1872,15 @@ HcclResult hcclNslbDp::SendRankTableRootRank(NslbDpRootRank &tab_f)
     sendMsg.type = NSLBDP_TYPE_TBL_ROOT_RANK;
     sendMsg.length = datlen;
     sendMsg.data.assign(tlvData.begin(), tlvData.end());
-    s32 ret = H2DTlvRequest(nslbdp_handle_, reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    s32 ret = H2DTlvRequest(nslbdp_handle_, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
 
-    HCCL_INFO("!!!!!!!!!!hccl send Table 6 to hccp. ret(%d)!!!!!!!!!!\n", ret);
+    HCCL_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_TBL_ROOT_RANK(1006) to hccp. ret(%d)\n", ret);
     return HCCL_SUCCESS;
 }
 
 
-// 遍历表6 执行send流程
+/* 遍历表6 执行send流程 */
 HcclResult hcclNslbDp::SendRootRankTable()
 {
     HCCL_DEBUG("[NSLB-DP] entry SendRootRankTable.");
@@ -1910,4 +1906,78 @@ HcclResult hcclNslbDp::SendRootRankTable()
 
     return HCCL_SUCCESS;
 }
+
+/* 初始化NetCo通道 */
+HcclResult hcclNslbDp::InitNetCo()
+{
+    if (hcclH2dTlv::GetInstance().GetH2dTlvInitFlag() != true) {
+        HCCL_INFO("Check GetH2dTlvInitFlag is not success");
+        return HCCL_SUCCESS;
+    }
+    /* 避免二次初始化 */
+    if (GetInitNetCoFlag() == true) {
+        HCCL_INFO("Get getHccpInitFlag is true");
+        return HCCL_SUCCESS;
+    }
+    if (hcclH2dTlv::GetInstance().GetH2dTlvBufferSize() == NSLBDP_ILLEGAL_TLVBUFFERSIZE) {
+        /* 异常场景处理 */
+        HCCL_INFO("Check H2dTlvBufferSize equal 0.");
+        ClearInitNetCoFlag();
+        return HCCL_E_NOT_SUPPORT;
+    }
+    if (hcclH2dTlv::GetInstance().GetH2dTlvHandle() == nullptr) {
+        HCCL_ERROR("Check InitNetCo handle is null.");
+        ClearInitNetCoFlag();
+        return HCCL_E_NOT_SUPPORT;
+    }
+    u32 nslbBuffersize = hcclH2dTlv::GetInstance().GetH2dTlvBufferSize();
+    void *tlvHandle = hcclH2dTlv::GetInstance().GetH2dTlvHandle();
+    nslb_msg sendMsg;
+    nslb_msg recvMsg;
+    sendMsg.type = NSLBDP_TYPE_INIT_NETCO;
+    sendMsg.length = NSLBDP_ILLEGAL_MSGLENGTH;
+
+    /* init/deinit 场景date信息默认填成数字0，hccp不关注此字段，但数据不能为NULL */
+    std::vector<uint8_t> tlvData;
+    tlvData.push_back(0);
+    sendMsg.data.assign(tlvData.begin(), tlvData.end());
+    s32 ret = H2DTlvRequest(tlvHandle, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    HCCL_RUN_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_INIT_NETCO(9001) to hccp. ret(%d)\n", ret);
+    if (ret != 0) {
+        return HCCL_E_NOT_SUPPORT;
+    }
+    /* 数据转存 */
+    SetH2DTlvInitInfo(nslbBuffersize, tlvHandle);
+    HCCL_DEBUG("Entry InitNetCo end");
+    return HCCL_SUCCESS;
+}
+
+/* 去初始化NetCo通道 */
+void hcclNslbDp::DeinitNetCo()
+{
+    if (GetInitNetCoFlag() == false) {
+        return;
+    }
+    if (hcclH2dTlv::GetInstance().GetH2dTlvBufferSize() == NSLBDP_ILLEGAL_TLVBUFFERSIZE) {
+        return;
+    }
+    if (hcclH2dTlv::GetInstance().GetH2dTlvHandle() == nullptr) {
+        return;
+    }
+    nslb_msg sendMsg;
+    nslb_msg recvMsg;
+    sendMsg.type = NSLBDP_TYPE_DEINIT_NETCO;
+    sendMsg.length = NSLBDP_ILLEGAL_MSGLENGTH;
+    /* init/deinit 场景date信息默认填成数字0，hccp不关注此字段，但数据不能为NULL */
+    std::vector<uint8_t> tlvData;
+    tlvData.push_back(0);
+    sendMsg.data.assign(tlvData.begin(), tlvData.end());
+    s32 ret = H2DTlvRequest(nslbdp_handle_, MODULE_TYPE_NSLB,
+        reinterpret_cast<TlvMsg*>(&sendMsg), reinterpret_cast<TlvMsg*>(&recvMsg));
+    HCCL_RUN_INFO("[NSLBDP-SENDTABLE] hccl send table NSLBDP_TYPE_DEINIT_NETCO(9002) to hccp. ret(%d)\n", ret);
+    ClearInitNetCoFlag();
+    return;
+}
+
 }

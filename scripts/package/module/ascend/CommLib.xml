@@ -15,7 +15,7 @@
         <path value="opp/built-in/op_impl/aicpu/kernel"/>
         <path value="opp/built-in/op_impl/aicpu/config"/>
     </dir_info>
-    <file_info value="include" copy_type="source" src_path="hcomm/inc/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
+    <file_info value="include" copy_type="source" src_path="hcomm/include/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccl_comm.h"/>
         <file value="hccl_types.h"/>
         <file value="hccl_ctrl_plane.h"/>
@@ -46,10 +46,6 @@
     </file_info>
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
-        <file value="libaicpu_custom.json"/>
-    </file_info>
-    <file_info value="aicpu_custom" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440" optional="true">
-        <file value="libaicpu_custom.so"/>
     </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
@@ -146,6 +142,12 @@
         <file value="hccl_ar_superkernel_float16.o"/>
         <file value="hccl_ar_superkernel_float32.o"/>
         <file value="hccl_ar_superkernel_bfloat16.o"/>
+        <file value="hccl_sk_rs_deter.o"/>
+        <file value="hccl_sk_ar_deter.o"/>
+        <file value="hccl_sk_ar_crossnode.o"/>
+        <file value="hccl_sk_rs_crossnode.o"/>
+        <file value="hccl_sk_ag_crossnode.o"/>
+        <file value="hccl_sk_a2a_crossnode.o"/>
         <!-- network -->
         <file value="libra.so" file_type="shared" install_type="run;devel;docker"/>
         <file value="libra_hdc.so" file_type="shared"/>

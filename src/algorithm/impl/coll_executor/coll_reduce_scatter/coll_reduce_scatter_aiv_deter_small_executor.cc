@@ -65,7 +65,7 @@ HcclResult CollReduceScatterAivDeterSmallExecutor::CalBlockDim(u32& blockDim, u3
 
     u32 bestBlockDim = blockDim;
     CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_ERROR("[CollReduceScatterAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        HCCL_ERROR("[CollReduceScatterAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / rankSize * rankSize;

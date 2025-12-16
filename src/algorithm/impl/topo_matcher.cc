@@ -20,7 +20,7 @@
 namespace hccl {
 
 TopoMatcher::TopoMatcher(const std::vector<std::vector<std::vector<u32>>> CommPlaneRanks,
-                         std::vector<bool> isBridgeVector,
+                         const std::vector<bool> isBridgeVector,
                          HcclTopoInfo &topoInfo,
                          HcclAlgoInfo &algoInfo,
                          HcclExternalEnable &externalEnable,
@@ -330,6 +330,7 @@ const u32 TopoMatcher::GetSubCollectiveRank(const std::vector<u32> &vecPara) con
     // 在vecPara数据中，查询本user rank，查询到的vec下标就是rank值
     u32 tmpRank = INVALID_VALUE_RANKID;
 
+    HCCL_DEBUG("[TopoMatcher]GetSubCollectiveRank begins.");
     for (u32 rankIndex = 0; rankIndex < vecPara.size(); rankIndex++) {
         if (userRank_ == vecPara[rankIndex]) {
             tmpRank = rankIndex;
@@ -563,6 +564,18 @@ HcclResult TopoMatcher::SetAicpuUnfoldConfig(const bool aicpuUnfold)
 bool TopoMatcher::GetAicpuUnfoldConfig() const
 {
     return externalEnable_.aicpuUnfold;
+}
+
+HcclResult TopoMatcher::SetExecTimeOutConfig(const s32 execTimeOut)
+{
+    HCCL_INFO("[SetExecTimeOutConfig]execTimeOut is set to [%d]", execTimeOut);
+    externalEnable_.execTimeOut = execTimeOut;
+    return HCCL_SUCCESS;
+}
+ 
+s32 TopoMatcher::GetExecTimeOutConfig() const
+{
+    return externalEnable_.execTimeOut;
 }
 
 HcclResult TopoMatcher::GetGlobalSubGroups(const CommPlane level, std::vector<std::vector<std::vector<u32>>> &globalSubGroups)

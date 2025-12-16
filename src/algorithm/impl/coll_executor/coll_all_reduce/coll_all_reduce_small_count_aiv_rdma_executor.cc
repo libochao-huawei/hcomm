@@ -139,6 +139,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::InterServerHDOneshot(const Op
     u32 &outputOffset, u64 sliceCount, u32 dbOffset, u32 interRankSize, u32 interRankId, bool isOpbase,
     std::vector<LINK> &interLinks)
 {
+    (void) isOpbase;
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, param.DataDes.dataType, param.reduceType);
     HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][InterServerHDOneshot]reduceAttr is [%llu].", reduceAttr);
     std::unique_ptr<Sender> senderInfo;

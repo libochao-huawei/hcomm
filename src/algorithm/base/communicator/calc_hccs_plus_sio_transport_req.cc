@@ -50,6 +50,7 @@ HcclResult CalcHccsPlusSioTransportReq::CalcTransportRequest(const std::string &
             return HCCL_SUCCESS;
         }
 
+        HCCL_DEBUG("[CalcHccsPlusSioTransportReq][CalcTransportRequest]rankSize is %u", rankSize);
         for (u32 rankIndex = 0; rankIndex < rankSize; rankIndex++) {
             TransportRequest &tmpTransport = subCommTransport.transportRequests[rankIndex];
             if (rankIndex != rank) {

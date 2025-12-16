@@ -43,11 +43,11 @@ HcclResult CommEngineResMgr::HcclAllocThreadRes(CommEngine engine, uint32_t thre
     return threadMgr_->HcclAllocThreadRes(engine, threadNum, notifyNumPerThread, thread);
 }
 
-HcclResult CommEngineResMgr::CommAllocThreadResByStream(CommEngine engine,
+HcclResult CommEngineResMgr::HcclAllocThreadResByStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
 {
     CHK_SMART_PTR_NULL(threadMgr_);
-    return threadMgr_->CommAllocThreadResByStream(engine, stream, notifyNum, thread);
+    return threadMgr_->HcclAllocThreadResByStream(engine, stream, notifyNum, thread);
 }
 
 HcclResult CommEngineResMgr::HcclGetNotifyNumInThread(ThreadHandle thread, CommEngine engine, uint32_t *notifyNum)

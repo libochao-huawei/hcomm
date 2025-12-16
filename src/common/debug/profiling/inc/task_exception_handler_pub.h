@@ -16,10 +16,36 @@
 #include <array>
 #include <list>
 #include <functional>
+#include "rt_external.h"
 #include "acl/acl_rt.h"
 #include "profiler_base_pub.h"
 #include "aicpu_operator_pub.h"
 namespace hccl {
+inline void PrintBaseErrorLog(const std::string &stageErrInfo, const std::string &baseInfo)
+{
+    HCCL_ERROR("%sTask run failed, base information is %s", stageErrInfo.c_str(), baseInfo.c_str());
+}
+
+inline void PrintParaErrorLog(const std::string &stageErrInfo, const std::string &paraInfoStr, const std::string &tag)
+{
+    HCCL_ERROR("%sTask run failed, para information is %s, tag[%s].", stageErrInfo.c_str(), paraInfoStr.c_str(), tag.c_str());
+}
+
+inline void PrintOpDataErrorLog(const std::string &stageErrInfo, const std::string &opDataContent)
+{
+    HCCL_ERROR("%sTask run failed, opData information is %s", stageErrInfo.c_str(), opDataContent.c_str());
+}
+
+inline void PrintGroupErrorLog(const std::string &stageErrInfo, const std::string &groupRankContent, const std::string &tag)
+{
+    HCCL_ERROR("%sTask run failed, groupRank information is %s, tag[%s].", stageErrInfo.c_str(), groupRankContent.c_str(), tag.c_str());
+}
+
+inline void PrintContextErrorLog(const std::string &stageErrInfo, const std::string &ctxBaseInfo)
+{
+    HCCL_ERROR("%sTask run failed, context base information is %s", stageErrInfo.c_str(), ctxBaseInfo.c_str());
+}
+
 struct ParaDMA {
     const void *src;
     const void *dst;
@@ -123,13 +149,14 @@ public:
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaDMA &para) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &para) override;
-    HcclResult Save(u32 &streamID, u32 &taskID, const TaskParaAiv &para) override;
+    HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &para) override;
     HcclResult Save(u32 &streamID, u32 &taskID) override;
     HcclResult SaveToLog(const TaskParaHost &paraHost) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) override;
+    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &para) override;
     static void Callback(rtExceptionInfo *exceptionInfo);
     HcclResult Run(const StepData &stepData) override;
     HcclResult Flush() override;
@@ -142,28 +169,28 @@ private:
     HcclResult InsertRankInfo(std::string &tag) const;
     HcclResult InsertOpData(std::string &tag) const;
     static void DumpAivPrintWorkSpace(const std::shared_ptr<std::deque<TaskInfo>> &taskQue);
-    static void PrintTaskContextInfo(const std::shared_ptr<std::vector<CtxInfo>> &taskList, u32 contextId);
-    static void PrintTaskContextInfo(const std::shared_ptr<std::deque<TaskInfo>> &taskQue);
+    static void PrintTaskContextInfo(const std::shared_ptr<std::vector<CtxInfo>> &taskList, u32 contextId, std::string &stageErrInfo);
+    static void PrintTaskContextInfo(const std::shared_ptr<std::deque<TaskInfo>> &taskQue, std::string &stageErrInfo);
     static void PrintTaskAivBuffer(const std::shared_ptr<std::deque<TaskInfo>> &taskQue);
     static void PrintTaskAivInfo(const std::shared_ptr<std::deque<TaskInfo>> &taskQue);
     static HcclResult PrintCommAivInfo();
     static void ParseTaskSyncFlag(s32 *flagMem, u32 flagMemSize, u32 rankSize, u32 rank, u32 index);
     static std::string SerializeSyncFlag(s32 *buf, u32 num, u32 interval);
-    static void PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPlus);
+    static void PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPlus, std::string &stageErrInfo);
     static void TimeStruct2Str(struct timeval &tv, std::string &opDataContent);
     static bool DealExceptionOp(rtExceptionInfo *exceptionInfo);
     static bool DealExceptionTask(rtExceptionInfo *exceptionInfo);
     static bool DealExceptionCtx(rtExceptionInfo *exceptionInfo);
     static bool DealExceptionOpData(rtExceptionInfo *exceptionInfo, std::string &tag, bool isFftsPlus,
-        u32 index);
+        u32 index, std::string &stageErrInfo);
     static bool DealExceptionGroupRank(rtExceptionInfo *exceptionInfo, std::string &tag, bool isFftsPlus,
-        std::string &groupRankContentInfo);
+        std::string &groupRankContentInfo, std::string &stageErrInfo);
     static bool FindAndValidateContext(rtExceptionInfo *exceptionInfo);
-    static bool ProcessContext(rtExceptionInfo *exceptionInfo);
+    static bool ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo);
     static void PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo, bool &isExistAicpuError);
     static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo,
-        std::string &groupRankContent);
-    static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage);
+        std::string &groupRankContent, std::string &stageErrInfo);
+    static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, std::string &stageErrInfo);
     static std::array<std::map<int, std::shared_ptr<std::deque<TaskInfo>>>, \
         MAX_MODULE_DEVICE_NUM> taskMap;
     static std::array<std::mutex, MAX_MODULE_DEVICE_NUM> taskMapMutex;
@@ -185,7 +212,7 @@ private:
     static std::atomic<int> communicatorCount_;
 };
 
-using GetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID);
+using GetErrStatusVecCallBack = std::vector<std::string> (*)(s32 deviceLogicID, const std::string& group);
 using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>;
 #ifdef __cplusplus
 extern "C" {

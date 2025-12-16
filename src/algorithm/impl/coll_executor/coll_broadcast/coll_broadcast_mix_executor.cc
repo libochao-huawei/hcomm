@@ -27,8 +27,8 @@ HcclResult CollBroadCastMix::CalcStreamNum(u32& streamNum)
     if (topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
         totalStreamNum = topoAttr_.deviceNumPerAggregation;
     } else if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
-        totalStreamNum = (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING ? LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE :
-            LEVEL0_PLANE_NUM_IN_NPRING_SINGLE);
+        totalStreamNum = (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING ?
+                                        LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE : LEVEL0_PLANE_NUM_IN_NPRING_SINGLE);
         if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             totalStreamNum *= STREAM_NUM_FOR_DMAREDUCE_ONE_RING;
         }
@@ -111,8 +111,8 @@ HcclResult CollBroadCastMix::KernelRun(const OpParam &param, ExecMem &execMem)
         }
 
         HcomCollOpInfo *scatterOpInfoPtr = nullptr;
-        HcomCollOpInfo scatterOpInfo = {
-            "", execMem.inputPtr, nullptr, param.DataDes.count, param.DataDes.dataType, param.root};
+        HcomCollOpInfo scatterOpInfo = 
+            {"", execMem.inputPtr, nullptr, param.DataDes.count, param.DataDes.dataType, param.root};
 
         if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
             scatterOpInfoPtr = &scatterOpInfo;

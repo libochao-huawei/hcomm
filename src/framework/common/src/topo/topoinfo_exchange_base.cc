@@ -68,7 +68,9 @@ HcclResult TopoInfoExchangeBase::SendClusterInfo(std::shared_ptr<HcclSocket> soc
 
 void TopoInfoExchangeBase::PrintRecvFailReasons(std::shared_ptr<HcclSocket> socket, HcclResult ret)
 {
-    HCCL_ERROR("[TopoInfoExchangeBase][%s]receive msg length from fdhandle failed, ret[%d]", __func__, ret);
+    HCCL_ERROR("[%s][%s]receive msg length from fdhandle failed, ret[%d]",
+        LOG_KEYWORDS_INIT_GROUP.c_str(),
+        LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), ret);
     HCCL_ERROR("Current rank get socket with server[%s] success, but wait for recv rankTable from server failed, maybe due to following reasons:",
         socket->GetRemoteIp().GetReadableIP());
     HCCL_ERROR("1. client wait for recv timeout, please check [ERROR] info in server[%s], wheather all ranks were executed to create the communication",
@@ -82,9 +84,16 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
     const u32 recvBufferLimit = 10 * 1024 * 1024; // 10 * 1024 * 1024 = 10MB
     u32 msgLen = 0;
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
+    if (ret == HCCL_E_TIMEOUT) {
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({BLOCK_RECV_TIMEOUT_REASON}));
+    }
     CHK_PRT_RET(ret != HCCL_SUCCESS, PrintRecvFailReasons(socket, ret), HCCL_E_INTERNAL);
-    CHK_PRT_RET(((msgLen == 0) || (msgLen > recvBufferLimit)), HCCL_ERROR("[Recv][ClusterInfoMsg]receive msg "\
-        "length[%u] from fdhandle failed, msg length is beyond [1 ~ %u].", msgLen, recvBufferLimit), HCCL_E_INTERNAL);
+    CHK_PRT_RET(((msgLen == 0) || (msgLen > recvBufferLimit)), HCCL_ERROR("[%s][%s]receive msg "\
+        "length[%u] from fdhandle failed, msg length is beyond [1 ~ %u].",LOG_KEYWORDS_INIT_GROUP.c_str(),
+        LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), msgLen, recvBufferLimit), HCCL_E_INTERNAL);
 
     u32 recvBufferLen = msgLen + 1;
     HostMem recvMsg = HostMem::alloc(recvBufferLen);
@@ -92,10 +101,18 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
     char *recvMsgBuf = static_cast<char *>(recvMsg.ptr());
 
     s32 sRet = memset_s(recvMsgBuf, recvBufferLen, 0, recvBufferLen);
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Recv][ClusterInfoMsg]sockBuff memset failed"), HCCL_E_MEMORY);
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[%s][%s]sockBuff memset failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
+        LOG_KEYWORDS_RANKTABLE_DETECT.c_str()), HCCL_E_MEMORY);
     ret = socket->Recv(recvMsgBuf, msgLen);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Recv][ClusterInfoMsg]receive from fdhandle failed ,ret[%d]",
-        ret), HCCL_E_INTERNAL);
+    if (ret == HCCL_E_TIMEOUT) {
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({BLOCK_RECV_TIMEOUT_REASON}));
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]receive from fdhandle failed ,ret[%d]", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), ret),
+        HCCL_E_INTERNAL);
     nlohmann::json jClusterJson;
     CHK_RET(parseJsonBuff(recvMsgBuf, recvBufferLen, jClusterJson));
 
@@ -115,8 +132,17 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> 
 
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
         logicDevId == static_cast<s32>(GetExternalInputMasterInfo().serverDeviceId));
-    if (!isRoot && jClusterJson.find("fault_type") != jClusterJson.end() && jClusterJson.find("fault_info") != jClusterJson.end()) {
-        HCCL_ERROR("[Recv][ClusterInfoMsg] TopoDetect ERROR occur !!! fault_type[%s], fault_info[%s]", jClusterJson["fault_type"].dump().c_str(), jClusterJson["fault_info"].dump().c_str());
+    if (!isRoot && jClusterJson.find("fault_type") != jClusterJson.end() &&
+        jClusterJson.find("fault_info") != jClusterJson.end()) {
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({RANKTABLE_DETECT_RECV_FAULT_REASON}));
+        HCCL_ERROR("[%s][%s] TopoDetect ERROR occur !!! fault_type[%s], fault_info[%s]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_DETECT.c_str(),
+            jClusterJson["fault_type"].dump().c_str(),
+            jClusterJson["fault_info"].dump().c_str());
     }
 
     ret = Json2Struct(jClusterJson, clusterInfo);
@@ -130,8 +156,17 @@ HcclResult TopoInfoExchangeBase::RecvClusterInfo(std::shared_ptr<HcclSocket> soc
     CHK_RET(RecvClusterInfoMsg(socket, clusterInfo));
     if (isByMasterInfo_) {
         u32 indentify = 0;
-        CHK_PRT_RET(socket->Recv(reinterpret_cast<char *>(&indentify), sizeof(indentify)) != HCCL_SUCCESS,
-            HCCL_ERROR("[Recv][ClusterInfoMsg]receive indentify from fdhandle failed"), HCCL_E_INTERNAL);
+        auto ret = socket->Recv(reinterpret_cast<char *>(&indentify), sizeof(indentify));
+        if (ret == HCCL_E_TIMEOUT) {
+            RPT_INPUT_ERR(true,
+                "EI0015",
+                std::vector<std::string>({"error_reason"}),
+                std::vector<std::string>({BLOCK_RECV_TIMEOUT_REASON}));
+        }
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[%s][%s] receive indentify from fdhandle failed", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_DETECT.c_str()),
+            HCCL_E_INTERNAL);
         identifierNum_ = indentify;
     }
     currentStep_++;
@@ -143,10 +178,20 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
     const u32 recvBufferLimit = 10 * 1024 * 1024; // 10 * 1024 * 1024 = 10MB
     u32 msgLen = 0;
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
+    if (ret == HCCL_E_TIMEOUT) {
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({BLOCK_RECV_TIMEOUT_REASON}));
+    }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Recv][ClusterInfoMsg]receive msg length from fdhandle failed, ret[%d]", ret), HCCL_E_INTERNAL);
-    CHK_PRT_RET(((msgLen == 0) || (msgLen > recvBufferLimit)), HCCL_ERROR("[Recv][ClusterInfoMsg]receive msg length "\
-        "from fdhandle failed, msg length is beyond [1 ~ %u].", recvBufferLimit), HCCL_E_INTERNAL);
+        HCCL_ERROR("[%s][%s] receive msg length from fdhandle failed, ret[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), ret),
+        HCCL_E_INTERNAL);
+    CHK_PRT_RET(((msgLen == 0) || (msgLen > recvBufferLimit)), HCCL_ERROR("[%s][%s]receive msg length "\
+        "from fdhandle failed, msg length is beyond [1 ~ %u].",LOG_KEYWORDS_INIT_GROUP.c_str(),
+        LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), recvBufferLimit), HCCL_E_INTERNAL);
 
     u32 recvBufferLen = msgLen + 1;
     HostMem recvMsg = HostMem::alloc(recvBufferLen);
@@ -156,9 +201,16 @@ HcclResult TopoInfoExchangeBase::RecvClusterJson(std::shared_ptr<HcclSocket> soc
     s32 sRet = memset_s(recvMsgBuf, recvBufferLen, 0, recvBufferLen);
     CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Recv][ClusterInfoMsg]sockBuff memset failed"), HCCL_E_MEMORY);
     ret = socket->Recv(recvMsgBuf, msgLen);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Recv][ClusterInfoMsg]receive from fdhandle failed ,ret[%d]",
-        ret), HCCL_E_INTERNAL);
-
+    if (ret == HCCL_E_TIMEOUT) {
+        RPT_INPUT_ERR(true,
+            "EI0015",
+            std::vector<std::string>({"error_reason"}),
+            std::vector<std::string>({BLOCK_RECV_TIMEOUT_REASON}));
+    }
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s] receive from fdhandle failed ,ret[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), ret), HCCL_E_INTERNAL);
     CHK_RET(parseJsonBuff(recvMsgBuf, recvBufferLen, jClusterJson));
 
     return HCCL_SUCCESS;

@@ -17,6 +17,7 @@
 #include "aiv_reduce_scatter_crossnode_91093.h"
 #include "aiv_reduce_scatter_crossnode_91093_graph.h"
 #include "aiv_reduce_scatter_91093_deter.h"
+#include "aiv_all_reduce_crossnode_91093.h"
 #include "aiv_all_reduce_91093_deter.h"
 #include "aiv_sync_91093.h"
 
@@ -30,7 +31,11 @@ static const struct FunLevelKType kernel_name##_kernel_type_section __attribute_
 // aiv allreduce
 #define AIV_ALL_REDUCE_KERNEL_BATCH_DEF_A3(type) \
 extern "C" __global__ __aicore__ void aiv_all_reduce_cn_##type(KERNEL_ARGS_DEF_A3) { \
-    return aiv_all_reduce_91093_deter<type>(KERNEL_ARGS_CALL_A3); \
+    if(deterministic != 0) { \
+        return aiv_all_reduce_91093_deter<type>(KERNEL_ARGS_CALL_A3); \
+    } else { \
+        return aiv_all_reduce_crossnode_91093<type>(KERNEL_ARGS_CALL_A3); \
+    } \
 } \
 EXPORT_AIV_META_INFO(aiv_all_reduce_cn_##type)
 

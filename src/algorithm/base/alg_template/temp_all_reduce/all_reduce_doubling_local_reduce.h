@@ -31,6 +31,8 @@ private:
 
     HcclResult SimpleCheck(const u32 rank, const u32 rankSize, const std::vector<LINK> &links);
     HcclResult RunAllReduce(const u32 rank, const u32 rankSize, const std::vector<LINK> &links);
+    HcclResult RunAllReduceSDMA(const LINK& link, DeviceMem& localCclOutMem, u64 totalSize);
+    HcclResult RunAllReduceRDMA(const LINK& link, DeviceMem& localCclInMem, DeviceMem& localCclOutMem);
 };
 }  // namespace hccl
 

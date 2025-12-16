@@ -18,7 +18,7 @@
 #include "rt_external.h"
 #include "hccl/base.h"
 #include "private_types.h"
-#include "acl/error_codes/rt_error_codes.h"
+
 #if T_DESC("test", true)
 #if T_DESC("Device管理", true)
 
@@ -31,8 +31,12 @@ HcclResult hrtCtxCreate(aclrtContext *createCtx, uint32_t flags, int32_t devId);
 HcclResult hrtCtxDestroy(aclrtContext destroyCtx);
 HcclResult hrtDeviceGetBareTgid(s32 *pid);
 
-HcclResult hrtGetPairPhyDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s64 *pValue);
+HcclResult hrtGetPairDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s32 infoType, s64 *pValue);
+HcclResult hrtGetPairPhyDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s32 infoType, s64 *pValue,
+                                    rtGetPairPhyDevicesInfoPtr funcPtr);
 HcclResult hrtGetPhyDeviceInfo(u32 devicePhysicId, s32 moduleType, s32 infoType, s64 &value);
+HcclResult hrtGetPairDeviceLinkTypeRaw(u32 phyDevId, u32 otherPhyDevId, s32 infoType, s64 *pValue);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -77,7 +81,7 @@ HcclResult HrtDevMalloc(void **devPtr, u64 size);
 HcclResult hrtStreamDestroy(rtStream_t stream);
 HcclResult hrtStreamCreate(aclrtStream *stream);
 HcclResult hrtStreamCreateWithFlags(aclrtStream *stream, int32_t priority, uint32_t flags);
-s32 GetMsTimeFromExecTimeout();
+s32 GetMsTimeFromExecTimeout(s32 execTimeOut);
 #endif
 
 #if T_DESC("event 同步机制", true)
@@ -96,9 +100,16 @@ HcclResult hrtNotifyGetPhyInfoExt(rtNotify_t notify, rtNotifyPhyInfo *notifyInfo
 #endif
 
 #if T_DESC("EnableP2P", true)
-HcclResult hrtEnableP2P(u32 peerDevPhyId);
-HcclResult hrtDisableP2P(u32 peerDevPhyId);
-HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, int32_t *status);
+
+typedef enum tagRtPhyDeviceInfoType {
+    RT_PHY_INFO_TYPE_CHIPTYPE = 0,
+    RT_PHY_INFO_TYPE_MASTER_ID
+} rtPhyDeviceInfoType_t;
+
+HcclResult hrtEnableP2P(u32 deviceLogicId, u32 devicePhyId);
+HcclResult hrtDisableP2P(u32 deviceLogicId, u32 devicePhyId);
+HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status);
+
 #endif
 #if T_DESC("RtsTaskCallBack", true)
 HcclResult hrtUnSubscribeReport(uint64_t threadId, aclrtStream &stream);

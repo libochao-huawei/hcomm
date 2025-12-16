@@ -30,6 +30,7 @@ HcclResult AllGatherRing::TxVector(const LINK &link, const std::vector<Slice> &t
             srcMem.ptr(), txSlice.size});
     }
     CHK_RET(link->TxAsync(txMems, stream_));
+    HCCL_DEBUG("[AllGatherRing]TxVector for txMems success");
     return HCCL_SUCCESS;
 }
 
@@ -78,7 +79,7 @@ HcclResult AllGatherRing::RunAsync(const u32 rank, const u32 rankSize, const std
         }
         return HCCL_SUCCESS;
     }
-
+HCCL_DEBUG("[AllGatherRing][RunAsync] AllGather Ring begins");
     // 获取ring algorithm所需的通信连接
     u32 ringPrevRank = (rank + rankSize - 1) % rankSize;
     u32 ringNextRank = (rank + 1) % rankSize;
@@ -155,6 +156,7 @@ HcclResult AllGatherRing::RunAllGather(u32 rank, u32 rankSize, const std::vector
     u32 sliceSize = outputSlices.size() / rankSize;
     u32 rxSliceIndex = ForwordRank(rank, rankSize, 1);
     u32 txSliceIndex = rank;
+    HCCL_DEBUG("[AllGatherRing][RunAllGather]sliceSize is %u, rxSliceIndex is %u", sliceSize, rxSliceIndex);
     for (u32 i = 0; i < rankSize - 1; i++) {
         HCCL_DEBUG("rank[%u] round[%u] will tx_ack  outputslice[%u].offset is[%llu] size[%llu]",
             rank, i, rxSliceIndex, outputSlices[rxSliceIndex].offset, outputSlices[rxSliceIndex].size);
@@ -353,6 +355,7 @@ HcclResult AllGatherRing::AllGatherSlicesPrep(u32 rankSize, u32 nicSize)
                 }
             }
         }
+        HCCL_DEBUG("[AllGatherRing][AllGatherSlicesPrep]rankIdx now is [%u]", rankIdx);
         rankSliceLists_.push_back(sliceList);
     }
     return HCCL_SUCCESS;
@@ -361,10 +364,10 @@ HcclResult AllGatherRing::AllGatherSlicesPrep(u32 rankSize, u32 nicSize)
 HcclResult AllGatherRing::GetNslbAdjInfo(const u32 rank, const u32 rankSize,
                                          const std::vector<LINK> &links, AdjInfo& nslbAdjInfo)
 {
+    NslbDpAdjInfo adjInfoStep = {0};
     u32 ringNextRank = (rank + 1) % rankSize;
     LINK nslbNext = links[ringNextRank];
 
-    NslbDpAdjInfo adjInfoStep = {0};
     nslbAdjInfo.dstRankNum = 1;
     adjInfoStep.dstLocalRankId = nslbNext->GetRemoteRank();
     adjInfoStep.phaseId = 1;

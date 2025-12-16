@@ -45,13 +45,13 @@ private:
     HcclResult KernelRunInterServer(const OpParam &param, ExecMem &execMem) override;
     HcclResult KernelRunIntraServerPost(const OpParam &param, ExecMem &execMem) override;
 
+    std::vector<std::vector<Slice>> level0MultiRingDataSlices_;
     u32 level0Rank_ = INVALID_VALUE_RANKID;
     u32 level1Rank_ = INVALID_VALUE_RANKID;
     u32 level2Rank_ = INVALID_VALUE_RANKID;
     u32 level0RankSize_ = INVALID_VALUE_RANKSIZE;
     u32 level1RankSize_ = INVALID_VALUE_RANKSIZE;
     u32 level2RankSize_ = INVALID_VALUE_RANKSIZE;
-    std::vector<std::vector<Slice>> level0MultiRingDataSlices_;
 };
 
 } // namespace hccl

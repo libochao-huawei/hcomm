@@ -46,6 +46,7 @@ void AlltoAllVStagedCalculator::CalcWorkSpaceMemSize(const AlltoAllUserRankInfo 
     workspaceMemSize = 0;
     u32 meshAggregationIndex = userRankInfo.userRank / meshAggregationRankSize;
     u32 meshAggregationRankBegin = meshAggregationIndex * meshAggregationRankSize;
+    HCCL_DEBUG("[AlltoAllVStagedCalculator][CalcWorkSpaceMemSize]meshAggregationRankBegin is %u", meshAggregationRankBegin);
     for (u32 infoIndex = userRankInfo.userRank % meshAggregationRankSize; infoIndex < userRankInfo.userRankSize;
         infoIndex += meshAggregationRankSize) {
         for (u32 k = meshAggregationRankBegin; k < meshAggregationRankBegin + meshAggregationRankSize; k++) {

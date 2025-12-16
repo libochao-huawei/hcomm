@@ -255,8 +255,6 @@ TEST_F(HcclReduceScatterVTest, Ut_HcclReduceScatterV_When_Exec20times_Expect_Ret
     UT_UNSET_SENDBUFV_RECVBUF_COMM_STREAM(comm, stream);
 }
 
-#if 0
-
 TEST_F(HcclReduceScatterVTest, Ut_HcclReduceScatterV_When_2Server4Rank_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUFV_RECVBUF_COUNT(HCCL_COM_DATA_SIZE,
@@ -272,5 +270,3 @@ TEST_F(HcclReduceScatterVTest, Ut_HcclReduceScatterV_When_2Server4Rank_Expect_Re
 
     UT_UNSET_SENDBUFV_RECVBUF_COMM_STREAM(comm, stream);
 }
-
-#endif

@@ -198,7 +198,7 @@ HcclResult CollNativeExecutorBase::PrintTransportRequest(AlgResourceRequest& res
             u32 rankSize = subCommTransport.transportRequests.size();
             for (u32 rankIndex = 0; rankIndex < rankSize; rankIndex++) {
                 if (subCommTransport.transportRequests[rankIndex].isValid == true) {
-                    HCCL_INFO("[CollNativeExecutorBase][CalcResRequest]" \
+                    HCCL_INFO("[CollNativeExecutorBase][PrintTransportRequest]" \
                         "levelIndex[%u], ringIndex[%u], rankIndex[%u], userRank[%u], remoteRank[%u], isUsedRdma[%d]",
                         levelIndex, ringIndex, rankIndex, subCommTransport.transportRequests[rankIndex].localUserRank,
                         subCommTransport.transportRequests[rankIndex].remoteUserRank,
@@ -250,12 +250,12 @@ HcclResult CollNativeExecutorBase::AddSubStreamToProfiling()
 }
 
 
-HcclResult CollNativeExecutorBase::CheckCommSize(const CommPlane levelIndex, const u32 expectedSize)
+HcclResult CollNativeExecutorBase::CheckCommSize(const CommPlane levelIndex, const u32 subLevelIndex)
 {
-    if (algResResp_->opTransportResponse[levelIndex].size() < expectedSize) {
+    if (algResResp_->opTransportResponse[levelIndex].size() < subLevelIndex) {
         HCCL_ERROR("[CollNativeExecutorBase][CheckCommSize]tag[%s], levelIndex[%u], " \
             "ring size[%zu] is less than expected[%u]",
-            tag_.c_str(), levelIndex, algResResp_->opTransportResponse[levelIndex].size(), expectedSize);
+            tag_.c_str(), levelIndex, algResResp_->opTransportResponse[levelIndex].size(), subLevelIndex);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -370,6 +370,7 @@ HcclResult CollNativeExecutorBase::GenerateRecordWaitStreams(
 HcclResult CollNativeExecutorBase::HoldAllRanksOnCurrentOp(
     OpParam &param, ExecMem &execMem, PrepareData &prepareData, std::vector<LINK> links)
 {
+    (void) param;
     u32 subStreamsNum = (*prepareData.subStreamsPtr).size();
     u32 signalNum = (*prepareData.signalPtr).size();
     u32 signalAuxNum = (*prepareData.signalAuxPtr).size();
@@ -660,6 +661,11 @@ HcclResult CollNativeExecutorBase::InplaceOpSync(OpParam &param, ExecMem &execMe
     HCCL_INFO("[CollNativeExecutorBase][InplaceOpSync] The op with algOpContext_.opRetryHandler.isInplacePreSync[%d] "
         "or algOpContext_.opRetryHandler.isPostSync[%d] ends.",
         algOpContext_.opRetryHandler.isInplacePreSync, algOpContext_.opRetryHandler.isPostSync);
+    
+    CHK_RET(LaunchTaskExtend(dispatcher_,
+        const_cast<Stream &>(param.stream),
+        const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
+    
     return HCCL_SUCCESS;
 }
 

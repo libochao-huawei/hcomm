@@ -27,6 +27,7 @@
 #include "../common/src/topo/topoinfo_detect.h"
 #include "../common/src/topo/topoinfo_ranktable_partition.h"
 #include "../common/src/state_guard.h"
+#include "../common/src/h2d_tlv/hccl_h2dtlv.h"
 #include "sal_pub.h"
 #include "profiling_manager_pub.h"
 #include "adapter_prof.h"
@@ -40,6 +41,7 @@
 #include "mmpa_api.h"
 #include "aicpu_operator_pub.h"
 #include "../nslbdp/hccl_nslbdp.h"
+#include "comm_configer.h"
 
 #define DOUBLE_SIZE 2
 
@@ -53,7 +55,7 @@ const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
 thread_local map<std::string, shared_ptr<TopoInfoDetect>> g_topoDetectServerPtrMap;
 
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, std::string tag)
+    HcclDataType dataType, const std::string &tag)
 {
     if (GetIfProfile()) {
         AlgType algType;
@@ -74,11 +76,13 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
             groupName, blockDim), tag.c_str());
     }
+    hcclComm->SetAivCoreLimit(0);
     return HCCL_SUCCESS;
 }
 
 thread_local s32 g_hcclDeviceId = INVALID_INT;
 std::mutex g_opHcomInfosMutex{};
+std::mutex g_opHcomOneSideMutex{};
 HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];
 
 HcclResult HcclGetDeviceId(void)
@@ -355,7 +359,7 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
     const std::string commIdentifier = commConfig.GetConfigCommName();
     opBaseHcom.pComm.reset(
         new (std::nothrow) hccl::hcclComm(
-            commConfig.GetConfigBufferSize(), commConfig.GetConfigBufferSize(), commIdentifier));
+            commConfig.GetConfigBufferSize(), commConfig.GetConfigBufferSize(), commIdentifier, commConfig.GetConfigBufferName()));
     CHK_PTR_NULL(opBaseHcom.pComm);
 
     /* --------------初始化------------------------- */
@@ -373,7 +377,8 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] init work flow mode error.",
                 HCCL_ERROR_CODE(ret)), errorFlag = true);
 
-        ret = CfgGetClusterInfo(rankTableM, to_string(rank), opBaseHcom.params, opBaseHcom.rankTable);
+        ret = CfgGetClusterInfo(rankTableM, to_string(rank), opBaseHcom.params, opBaseHcom.rankTable,
+            commConfig.GetConfigInterSuperPodRetryEnable());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx]"\
                 "info error:rank[%u]", HCCL_ERROR_CODE(ret), rank), errorFlag = true);
@@ -418,6 +423,12 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set aicpu error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
+        /* 设置HcclExecTimeOut */
+        ret = opBaseHcom.pComm->SetExecTimeOutConfig(commConfig.GetConfigExecTimeOut());
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set execTimeOut error.", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+
         ret = ShowRanktableConfigInfo(opBaseHcom.cloudFlag, opBaseHcom.params,
             opBaseHcom.rankTable);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
@@ -452,7 +463,8 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         *comm = nullptr;
         return ret;
     }
-    if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 && opBaseHcom.pComm->InitHccp() == HCCL_SUCCESS) {
+    if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0 &&
+        hcclNslbDp::GetInstance().InitNetCo() == HCCL_SUCCESS) {
         HCCL_INFO("HCCL try to entry SetGlobalRank_RankTableExit.");
         /* NSLB 填充 表1 表4 */
         CHK_RET(hcclNslbDp::GetInstance().SetCommInfo_RankTableExit(opBaseHcom.rankTable));
@@ -560,7 +572,13 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
 
     AddOneSidedIdentifier(identifier);
 
-    CHK_RET(InitCommClusterInfo(rankTableM, rank, commConfig, oneSidedHCom, comm));
+    ret = InitCommClusterInfo(rankTableM, rank, commConfig, oneSidedHCom, comm);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[Init][HcclCommInitClusterInfoMemConfig] InitCommClusterInfo failed");
+        DeleteOneSidedIdentifier(identifier);
+        DeInitOneSidedHcomInfo(deviceLogicId, identifier);
+        return ret;
+    }
 
     g_oneSidedCommSet.insert(*comm);
 
@@ -644,7 +662,7 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
 
     std::shared_ptr<hccl::hcclComm> pComm;
     pComm.reset(new (std::nothrow) hccl::hcclComm(
-            commConfig.GetConfigBufferSize(), commConfig.GetConfigBufferSize(), commIdentifier));
+            commConfig.GetConfigBufferSize(), commConfig.GetConfigBufferSize(), commIdentifier, commConfig.GetConfigBufferName()));
     CHK_PTR_NULL(pComm);
 
     bool errorFlag = false;
@@ -702,6 +720,12 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
         ret = pComm->SetAicpuUnfoldConfig(commConfig.GetConfigAicpuUnfold());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[%s]errNo[0x%016llx] set aicpu error.", __func__, HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        
+        /* 设置HcclExecTimeOut */
+        ret = pComm->SetExecTimeOutConfig(commConfig.GetConfigExecTimeOut());
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set execTimeOut error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         ret = InitWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -1066,17 +1090,19 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
     do {
         RankConsistentcyChecker::GetInstance().SetCheckCannVersionSwitch(true); // 打开CANN软件版本校验开关
         pComm.reset(new hccl::hcclComm(commConfig.GetConfigBufferSize(), commConfig.GetConfigBufferSize(),
-            commIdentifier));
+            commIdentifier, commConfig.GetConfigBufferName()));
         CHK_SMART_PTR_NULL(pComm);
 
         std::shared_ptr<TopoInfoDetect> topoDetectAgent;
         EXECEPTION_CATCH((topoDetectAgent = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
+        topoDetectAgent->SetIsInterSuperPodRetryEnable(commConfig.GetConfigInterSuperPodRetryEnable());
         // 32k 作为agent开启阈值
         if (nRanks > TOPO_HIERARCHICAL_ENABLE_THRESHOLD ) {
             HCCL_RUN_INFO("[Init][CommRootInfo][Hierarchical]nRanks[%u] entry hierarchical topo detect.", nRanks);
 
             std::shared_ptr<TopoInfoDetect> topoDetectMember;
             EXECEPTION_CATCH((topoDetectMember = std::make_shared<TopoInfoDetect>()), return HCCL_E_MEMORY);
+            topoDetectMember->SetIsInterSuperPodRetryEnable(commConfig.GetConfigInterSuperPodRetryEnable());
 
             HcclRankHandle groupLeader;
             ret = SetupHierarchical(nRanks, rank, rootHandle, topoDetectAgent, topoDetectMember, groupLeader);
@@ -1092,7 +1118,6 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             ret = topoDetectAgent->SetupAgent(nRanks, rank, rootHandle, rootHandle);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][Flat]errNo[0x%016llx] " \
                 "setup flat topo detect error", HCCL_ERROR_CODE(ret)), errorFlag = true);
-
             ret = GetTopoDetectInfo(params, rankTable, localRankInfo, rootHandle, topoDetectAgent, topoDetectAgent);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfo][Flat]errNo[0x%016llx] setup " \
                 "GetTopoDetectInfo error", HCCL_ERROR_CODE(ret)), errorFlag = true);
@@ -1105,7 +1130,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         DevType devType;
         CHK_RET(hrtGetDeviceType(devType));
         bool retryEnable = devType == DevType::DEV_TYPE_910_93 && !commConfig.GetConfigAivMode() && (
-            GetExternalInputInterServerRetryEnable() || GetExternalInputInterSuperPodRetryEnable());
+            commConfig.GetConfigInterServerRetryEnable() || commConfig.GetConfigInterSuperPodRetryEnable());
         HCCL_INFO("[InitCommRootInfo] retryEnable is [%d]", retryEnable);
         if (retryEnable) {
             EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectAgent.insert({ rootHandle.identifier, topoDetectAgent }),
@@ -1176,6 +1201,13 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] set SetIndependentOpConfig error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
+        
+        /* 设置HcclExecTimeOut */
+        ret = pComm->SetExecTimeOutConfig(commConfig.GetConfigExecTimeOut());
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] set execTimeOut error.", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+
         // 初始化完成的comm指针赋给出参
         *comm = pComm.get();
         std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
@@ -1198,7 +1230,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             if (nslb_devType == DevType::DEV_TYPE_910_93) {
                 hcclNslbDp::GetInstance().SetDeviceType();
             }
-            if (pComm->InitHccp() == HCCL_SUCCESS) {
+            if (hcclNslbDp::GetInstance().InitNetCo() == HCCL_SUCCESS) {
                 std::string identifier_nslb = commIdentifier;
                 hcclNslbDp::GetInstance().InitCmmDesc(identifier_nslb);
                 HCCL_INFO("nslb_InitCommRootInfo rankTable.rankList.size:[%zu], identifier_nslb[%s].",
@@ -2312,14 +2344,16 @@ HcclResult HcclCommDestroy(HcclComm comm)
     }
     hcclComm->DeinitZeroCopyMemoryAgent();
     HCCL_RUN_INFO("[HcclCommDestroy] comm state is %s", HcclCommStateToString(state));
-
+    CHK_RET(hcclComm->RealeaseShareCCLbuffer());
     CHK_RET(hcclComm->SetStopFlag(true));
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
     CHK_RET(ResetDevice(hcclComm));
 
+    std::unique_lock<std::mutex> oneSideLock(g_opHcomOneSideMutex);
     if (IsOneSidedComm(comm)) {
         return HcclOneSidedCommDestroy(comm, deviceLogicId, startut);
     }
+    oneSideLock.unlock();
 
     HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
     string group;
@@ -2361,6 +2395,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
     /* 关键状态记录 */
     HCCL_RUN_INFO("op_base comm destroy complete, take time [%lld]us, group[%s], deviceLogicId[%d].",
         DURATION_US(endut - startut), group.c_str(), deviceLogicId);
+
     return HCCL_SUCCESS;
 }
 
@@ -2920,7 +2955,6 @@ HcclResult ReduceLoop(const std::string &tag, void *inputPtr, void *outputPtr, c
 
         CHK_RET(hrtMemAsyncCopy(commInputPtr, curSize, curInputPtr, curSize,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream));
-
 
         /* 入参的正确性由HCCL确保 */
         ret = hcclComm->Reduce(tag, commInputPtr, commOutputPtr, curCount, dataType, op, root, stream);
@@ -3614,6 +3648,9 @@ HcclResult HcclCommRegister(HcclComm comm, void* addr, uint64_t size, void **han
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->RegisterCommUserMem(addr, size, handle));
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(hcclComm->GetRankSize(rankSize));
+    CHK_RET(HcomSetGroupTopoInfo(hcclComm->GetIdentifier().c_str(), rankSize));
     HCCL_RUN_INFO("[%s]Register mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
         hcclComm->GetIdentifier().c_str(), *handle, size);
     return HCCL_SUCCESS;
@@ -3626,6 +3663,9 @@ HcclResult HcclCommDeregister(HcclComm comm, void* handle)
     CHK_PTR_NULL(handle);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->DeregisterCommUserMem(handle));
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(hcclComm->GetRankSize(rankSize));
+    CHK_RET(HcomSetGroupTopoInfo(hcclComm->GetIdentifier().c_str(), rankSize));
     HCCL_RUN_INFO("[%s]Deregister mem success, group[%s], handle ptr[%p]", __func__,
         hcclComm->GetIdentifier().c_str(), handle);
     return HCCL_SUCCESS;

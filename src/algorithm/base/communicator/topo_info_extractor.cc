@@ -15,6 +15,7 @@
 #include "comm_base_pub.h"
 #include "hccl_impl_pub.h"
 #include "coll_alg_param.h"
+#include "comm_configer.h"
 
 
 namespace hccl {
@@ -92,6 +93,7 @@ HcclResult TopoInfoExtractor::SetRankMap()
     // 构建由UserRank到子通信域的映射
     subCommRank2UserRank_.resize(static_cast<u32>(COMM_LEVEL_RESERVED));
     userRank2subCommRank_.resize(static_cast<u32>(COMM_LEVEL_RESERVED));
+    HCCL_DEBUG("[TopoInfoExtractor]SetRankMap begin");
 
     for (u32 levelIndex = 0; levelIndex < CommPlaneVector_.size(); levelIndex++) {
         u32 ringSize = CommPlaneVector_[levelIndex].size();
@@ -893,6 +895,7 @@ HcclResult TopoInfoExtractor::SetMultiLevel0(u32 ringNum)
 {
     std::vector<u32> tmpLevel0Order;
     u32 moduleIdx = 0;
+    RankInfo tempRankData;
     CHK_RET(GetModuleIdx(rankData_, moduleIdx));
     auto iterRank = serverToRank_.find(moduleIdx); // 查询本rank所在服务器
     bool check = (iterRank == serverToRank_.end());
@@ -901,7 +904,6 @@ HcclResult TopoInfoExtractor::SetMultiLevel0(u32 ringNum)
 
     // 维护topo输出的信息
     std::string outLogInfo = "";
-    RankInfo tempRankData;
     for (u32 ringIndex = 0; ringIndex < ringNum; ringIndex++) {
         tmpLevel0Order = multiLevel0Order_[ringIndex]; // 获取每一个环的设备物理ID排序
         std::vector<RankInfo> tmpLevel0Vector;
@@ -1068,6 +1070,7 @@ HcclResult TopoInfoExtractor::GetIsUsedRdmaMap(std::unordered_map<u32, bool> &is
         } else if (rankData_.serverIdx != dstRank.serverIdx) { // 不跨超节点, 跨server场景
             isInterServer = true;
         } else { // 同server, PCIE互连场景
+            HCCL_DEBUG("[TopoInfoExtractor]GetIsUsedRdmaMap for interServer");
             auto it = deviceLinkTypeMap_.find(dstRank.devicePhyId);
             CHK_PRT_RET(it == deviceLinkTypeMap_.end(),
                 HCCL_ERROR("can't find devicePhyId[%d] in deviceLinkTypeMap_", dstRank.devicePhyId),
@@ -1129,9 +1132,11 @@ void TopoInfoExtractor::GetCommPlaneVector(std::vector<std::vector<std::vector<R
 
 void TopoInfoExtractor::InitAHCConfig()
 {
+    CommConfiger& commConfiger = CommConfiger::GetInstance();
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
-        isConfigAHC_ = (GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
-                        GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
+        HcclAlgoType algoType = commConfiger.GetCommConfigAlgoConfig(identifier_, static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_1];
+        isConfigAHC_ = (algoType == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
+                        algoType == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
         if (isConfigAHC_) {
             HCCL_INFO("[InitAHCConfig] set AHC alg, opType[%u]", opType);
             break;
@@ -1139,7 +1144,8 @@ void TopoInfoExtractor::InitAHCConfig()
     }
 
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {  //没配置算法的情况下默认会走AHC嘛？  给测试用
-        isConfigNULL_ = GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
+        HcclAlgoType algoType = commConfiger.GetCommConfigAlgoConfig(identifier_, static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_0];
+        isConfigNULL_ = algoType == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
         if (isConfigNULL_) {
             HCCL_INFO("[InitAHCConfig] set NULL alg, opType[%u]", opType);
             break;
@@ -1338,8 +1344,8 @@ bool CompareWithUserRankAscend(const RankInfo &left, const RankInfo &right)
 bool CheckSdmaWithRohTopo(const std::vector<u32> &nicList, std::vector<u32> &topoList)
 {
     std::vector<u32> tmpNicList(nicList);
-    std::sort(tmpNicList.begin(), tmpNicList.end());
     SearchPath searchPath;
+    std::sort(tmpNicList.begin(), tmpNicList.end());
     topoList = searchPath.Search(tmpNicList);
     if (topoList.empty()) {
         return false;
@@ -1423,6 +1429,7 @@ std::vector<std::vector<u32>> GetRingsOrderForAnyPath(u32 ranksSize, TopoType to
         multiRingOrder.push_back(tmpLevel00);
     }
     // 打印多个环
+    HCCL_DEBUG("[GetRingsOrderForAnyPath]print rings:");
     for (size_t i = 0; i < multiRingOrder.size(); i++) {
         auto ring = multiRingOrder[i];
         std::ostringstream stringRepresentation;
@@ -1431,7 +1438,7 @@ std::vector<std::vector<u32>> GetRingsOrderForAnyPath(u32 ranksSize, TopoType to
         }
         std::string ringString = stringRepresentation.str();
         const char *charRing = ringString.c_str();
-        HCCL_INFO("[GetRingsOrderByRdmaSdmaConcurrent] The No.%zu ring: %s", i, charRing);
+        HCCL_INFO("[GetRingsOrderByRdmaSdmaConcurrent] The No.%zu ring: %s.", i, charRing);
     }
     return multiRingOrder;
 }

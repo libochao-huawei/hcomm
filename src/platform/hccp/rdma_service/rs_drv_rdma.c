@@ -17,6 +17,7 @@
 #include "securec.h"
 #include "rs.h"
 #include "ra_rs_err.h"
+#include "rs_rdma_inner.h"
 #include "rs_inner.h"
 #include "rs_socket.h"
 #include "verbs_exp.h"

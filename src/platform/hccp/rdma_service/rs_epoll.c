@@ -28,7 +28,7 @@
 #include "ra_rs_err.h"
 #include "rs_drv_rdma.h"
 #include "dl_hal_function.h"
-#include "rs_drv_rdma.h"
+#include "rs_drv_socket.h"
 #include "rs_socket.h"
 #ifdef CONFIG_TLV
 #include "rs_adp_nslb.h"
@@ -367,7 +367,7 @@ STATIC void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events
 
 #ifdef CONFIG_TLV
     int ret;
-    ret = RsEpollNslbEventHandle(&rsCb->nslbCb, events->data.fd, events->events);
+    ret = RsEpollNslbEventHandle(&rsCb->tlvCb.nslbCb, events->data.fd, events->events);
     if (ret != -ENODEV) {
         hccp_info("the fd:%d is nslb event, no need to go on, ret:%d", events->data.fd, ret);
         return;

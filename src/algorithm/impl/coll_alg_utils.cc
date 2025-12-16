@@ -12,6 +12,7 @@
 #include "workflow_pub.h"
 #include "stream_utils.h"
 #include "coll_alg_utils.h"
+#include "comm_configer.h"
 
 namespace hccl {
 
@@ -105,13 +106,16 @@ bool SatisfyIntraSuperPod(DevType deviceType, u32 rankSize, bool useSuperPodMode
     return (isDevice91093 && rankSizeSupport && isHCCS && isSingleSuperPod && isOpbase);
 }
 
-bool FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(DevType deviceType, u32 rankSize, bool useSuperPodMode)
+bool FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(DevType deviceType, u32 rankSize, bool useSuperPodMode,
+    const std::string& identifier)
 {
     bool rankSizeSupport = (rankSize <= MAX_ALLTOALL_MESH_ALGO_RANK_INTRA_MESH);
     bool isDevice91093 = (deviceType == DevType::DEV_TYPE_910_93);
+    std::vector<HcclAlgoType> algoTypeArr =
+                CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier, HcclCMDType::HCCL_CMD_ALLTOALL);
     bool twoLevelIntraUseMesh =
-        (GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL)[0] == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH &&
-        GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL)[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
+        (algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH &&
+        algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
     bool isHCCS = !GetExternalInputInterHccsDisable() && useSuperPodMode;
     HCCL_DEBUG("[FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition]isDevice91093 %u twoLevelIntraUseMesh %u isHCCS %u",
         isDevice91093, twoLevelIntraUseMesh, isHCCS);
@@ -124,16 +128,18 @@ bool FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(DevType deviceType, u3
     return (isDevice91093 && twoLevelIntraUseMesh && rankSizeSupport && isHCCS);
 }
 
-bool IsConfigAHCAlgo()
+bool IsConfigAHCAlgo(const std::string& identifier)
 {
     const std::set<HcclCMDType> hcclSupportAHCOpSet = {
         HcclCMDType::HCCL_CMD_ALLREDUCE, HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclCMDType::HCCL_CMD_ALLGATHER
     };
  
     for (const auto& opType : hcclSupportAHCOpSet) {
+        HcclAlgoType algoConfigLevel1 =
+                CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier, opType)[HCCL_ALGO_LEVEL_1];
         bool isConfigAHC =
-            (GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
-            GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
+            (algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
+            algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
         if (isConfigAHC) {
             return true;
         }
@@ -300,7 +306,6 @@ bool IsHcclOpInplace(const HcclCMDType &opType, const OpParam &param, u32 userRa
         case HcclCMDType::HCCL_CMD_RECEIVE:
             isInplaceStatus = 0;
             return false;
-            break;
         case HcclCMDType::HCCL_CMD_ALLREDUCE:
             inputDataSize = param.DataDes.count * unitSize;
             outputDataSize = param.DataDes.count * unitSize;
@@ -389,6 +394,7 @@ bool ExecutorNoSupportDMAReduce(const std::string& algName)
 bool ExecutorSupportInPlace(OpParam &param, const std::string& algName, bool retryEnable,
     InplaceSupportRetryStatus &inPlaceSupportRetryStatus)
 {
+    (void) param;
     // case 2.2
     if (ExecutorOnlySupportDMAReduce(algName)) {
         if (retryEnable) {

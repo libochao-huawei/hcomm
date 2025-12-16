@@ -14,6 +14,7 @@
 #include "externalinput_pub.h"
 #include "workflow_pub.h"
 #include "adapter_rts_common.h"
+#include "share_ccl_buffer_manager.h"
 
 namespace hccl {
 CCLBufferManager::CCLBufferManager()
@@ -25,7 +26,9 @@ CCLBufferManager::CCLBufferManager()
 
 CCLBufferManager::~CCLBufferManager()
 {
-    ReleaseCommCCLbuffer();
+    if (!isShareCCLbuffer_) {
+        ReleaseCommCCLbuffer();
+    }
     ReleaseAlltoAllvParaBuffer();
     ReleaseCommAIVbuffer();
 }
@@ -47,7 +50,7 @@ HcclResult CCLBufferManager::CreateCCLbuffer(u64 size, DeviceMem &buffer)
     return HCCL_SUCCESS;
 }
 
-HcclResult CCLBufferManager::CreateCommCCLbuffer()
+HcclResult CCLBufferManager::CreateCommCCLbuffer(const std::string &bufferName)
 {
     if (inCCLbufferSize_ == 0) {
         inCCLbufferSize_ = GetExternalInputCCLBuffSize();
@@ -61,8 +64,14 @@ HcclResult CCLBufferManager::CreateCommCCLbuffer()
  
     if (cclBuffer_.ptr() == nullptr) {
         u64 totalSize = inCCLbufferSize_ + outCCLbufferSize_ + winExpBufferSize_;
-        CHK_RET(CreateCCLbuffer(totalSize, cclBuffer_));
-        CHK_RET(hrtMemSet(cclBuffer_.ptr(), totalSize, totalSize));
+        // buffername非空则申请共享cclbuffer
+        if (!bufferName.empty()) {
+            CHK_RET(ShareCCLbufferMgr::GetInstance().CreateShareCCLbuffer(bufferName, totalSize, cclBuffer_));
+            isShareCCLbuffer_ = true;
+        } else {
+            CHK_RET(CreateCCLbuffer(totalSize, cclBuffer_));
+            CHK_RET(hrtMemSet(cclBuffer_.ptr(), totalSize, totalSize));
+        }
     }
  
     if (inCCLbuffer_.ptr() == nullptr) {
@@ -72,12 +81,13 @@ HcclResult CCLBufferManager::CreateCommCCLbuffer()
     if (outCCLbuffer_.ptr() == nullptr) {
         outCCLbuffer_ = DeviceMem::create(static_cast<u8 *>(cclBuffer_.ptr()) + inCCLbufferSize_, outCCLbufferSize_);
     }
- 
+    
     if (winExpBuffer_.ptr() == nullptr) {
         winExpBuffer_ = DeviceMem::create(static_cast<u8 *>(cclBuffer_.ptr()) + inCCLbufferSize_ + outCCLbufferSize_, 
             winExpBufferSize_);
     }
- 
+    HCCL_INFO("[CreateCommCCLbuffer] create cclbuffer, inPtr[%p], outPtr[%p], winExpPtr[%p], isSharebuffer[%d]",
+        inCCLbuffer_.ptr(), outCCLbuffer_.ptr(), winExpBuffer_.ptr(), isShareCCLbuffer_);
     return HCCL_SUCCESS;
 }
 

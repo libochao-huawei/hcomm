@@ -75,11 +75,15 @@ HcclResult CollReduceScatterMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rank
     }
 
     u32 bestBlockDim = blockDim;
-    CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+    CHK_PRT_RET(blockDim_ < rankSize && topoAttr_.deviceType == DevType::DEV_TYPE_910_93,
+        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
+    
+    CHK_PRT_RET(blockDim_ < bestBlockDim && topoAttr_.deviceType != DevType::DEV_TYPE_910_93,
+        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        blockDim_, bestBlockDim), HCCL_E_PARA);
 
-    if (blockDim_ < blockDim) {
+    if (blockDim_ < bestBlockDim) {
         blockDim = blockDim_ / rankSize * rankSize;
     }
 
@@ -130,7 +134,7 @@ HcclResult CollReduceScatterMeshAivExecutor::GetAivExecParam(const OpParam& para
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollReduceScatterMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
- 
+    
     HCCL_INFO("tag[%s], ReduceScatter executor getalgexecparam success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
@@ -162,14 +166,14 @@ HcclResult CollReduceScatterMeshAivExecutor::Orchestrate(OpParam& param, AlgReso
         HCCL_ERROR("[CollReduceScatterMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], ReduceScatter executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
  
 HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] AllReduce aiv enter.", __func__);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] ReduceScatter aiv enter.", __func__);
  
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
@@ -179,8 +183,7 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
  
     u32 localRank = level0CommInfo.localRank;
     u32 localRankSize = level0CommInfo.localRankSize;
-    HCCL_DEBUG("[CollReduceScatterMeshAivExecutor][KernelRun] userRank [%d] localRank [%d]",
-        topoAttr_.userRank, localRank);
+    HCCL_DEBUG("[CollReduceScatterMeshAivExecutor][KernelRun] userRank [%d] localRank [%d]", topoAttr_.userRank, localRank);
  
     for (u32 i = 0; i < localRankSize; i++) {
         if (i != localRank) {
@@ -191,8 +194,9 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
             buffersOut[i] = execMem.outputMem.ptr();
         }
     }
-
+    u32 blockDim;
     bool isOpbase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    HCCL_DEBUG("[CollReduceScatterMeshAivExecutor][KernelRun]isOpbase is %d", isOpbase);
 
     AivOpArgs opArgs {
             HcclCMDType::HCCL_CMD_REDUCE_SCATTER, execMem.inputPtr, execMem.outputPtr, execMem.count,
@@ -200,14 +204,13 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType};
     topoArgs.identify = algoAttr_.identifier;
-    u32 blockDim;
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
-    AivAlgArgs algArgs {};
     struct AivProfilingInfo aivProfilingInfo;
+    AivAlgArgs algArgs {};
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
         ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
@@ -215,13 +218,13 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][KernelRun]AllReduce aiv failed, return[%d]", ret),
+        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][KernelRun]ReduceScatter aiv failed, return[%d]", ret),
         ret);
 
     ExtraArgs extraArgs;
     CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
  
-    HCCL_INFO("[CollReduceScatterMeshAivExecutor][KernelRun]AllReduce aiv run success.");
+    HCCL_INFO("[CollReduceScatterMeshAivExecutor][KernelRun]ReduceScatter aiv run success.");
     return HCCL_SUCCESS;
 }
  

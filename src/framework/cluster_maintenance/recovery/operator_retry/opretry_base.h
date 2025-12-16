@@ -17,9 +17,9 @@
 #include "hccl_op_retry_pub.h"
 #include "hdc_pub.h"
 #include "exception_handler.h"
+#include "hccl_common.h"
 
 namespace hccl {
-extern bool g_isRdmaError;
 constexpr u32 OP_RETRY_MAX_CNT = 3;
 constexpr u32 OP_RETRY_WAIT_AICPU_TIMEOUT = 5; // 等待Aicpu的时长, 单位s
 constexpr u32 OP_RETRY_POLL_AICPU_ERROR_INTERVAL = 1; // 正常状态轮询Aicpu错误码的间隔, 单位s
@@ -159,7 +159,7 @@ private:
     HcclResult Recv(std::shared_ptr<HcclSocket> socket, void *data, u64 size);
 
     HcclResult CheckOpName(const RetryInfo &opInfo1, const RetryInfo &opInfo2); // 校验算子一致
-    HcclResult CheckMaxRetryCnt(const RetryInfo &retryInfo); // 校验重执行次数
+    HcclResult CheckMaxRetryCnt(const RetryInfo &retryInfo, const std::string& identifier = HCCL_WORLD_GROUP); // 校验重执行次数
     HcclResult CheckLinkStates(const RetryInfo &retryInfo); // 校验link状态
     bool enableSendRecv = true;
 };

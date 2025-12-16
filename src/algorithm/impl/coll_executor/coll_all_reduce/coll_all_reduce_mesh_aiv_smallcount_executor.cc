@@ -131,8 +131,8 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::Orchestrate(OpParam& param, A
     tag_ = param.tag;
     algResResp_ = &algRes;
 
-    HcclResult ret = HCCL_SUCCESS;
     ExecMem execMem;
+    HcclResult ret = HCCL_SUCCESS;
     execMem.count = param.DataDes.count;
     execMem.inputPtr = param.inputPtr;
     execMem.outputPtr = param.outputPtr;
@@ -196,6 +196,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::KernelRun(const OpParam &para
     AivAlgArgs algArgs {};
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
+    HCCL_DEBUG("[CollAllReduceMeshAivSmallCountExecutor][KernelRun]blockDim is %u", blockDim_);
     if (aivClearEnable_) {
         ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
     }

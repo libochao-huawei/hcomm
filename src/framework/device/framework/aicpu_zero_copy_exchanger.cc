@@ -58,6 +58,49 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuZeroCopyExchanger::PrepareRemoteUserMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges) const {
+    // 注意: 不能直接使用inAddrs_和outAddrs_, 保存的是remote ranks' user input/output memory在远端的virtual addr
+    // 需要使用current_->links中的input/output memory, 才是remote ranks' user input/output memory在本端的virtual addr
+
+    HCCL_INFO("[AicpuZeroCopyExchanger][PrepareRemoteUserMemRanges] prepare remote input/output memory ranges");
+
+    const uint32_t rankSize = userInputMemRanges.size(); // 获取通信域内的rank数量
+    const std::vector<LINK>& links = current_->links;
+    for (size_t linkIdx = 0; linkIdx < links.size(); ++linkIdx) {
+        const LINK& curLink = links[linkIdx];
+
+        // 对端在通信域内的rank id
+        const uint32_t remoteRank = curLink->GetRemoteRank();
+        CHK_PRT_RET(remoteRank >= rankSize, HCCL_ERROR("[AicpuZeroCopyExchanger][PrepareRemoteUserMemRanges] remoteRank %u >= rankSize %u", remoteRank, rankSize), HCCL_E_INTERNAL);
+
+        HCCL_INFO("[AicpuZeroCopyExchanger][PrepareRemoteUserMemRanges] prepare memory range of remote rank %u", remoteRank);
+
+        // 获取remote user input memory addr
+        void *remoteUserInputBaseAddr = nullptr;
+        CHK_RET(curLink->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
+        CHK_PTR_NULL(remoteUserInputBaseAddr);
+
+        // 更新remote user input memory range
+        OpUnfoldMemRange& remoteInputMemRange = userInputMemRanges[remoteRank];
+        remoteInputMemRange.isValid = true;
+        remoteInputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserInputBaseAddr);
+        remoteInputMemRange.memSize = inputSize;
+
+        // 获取remote user output memory addr
+        void *remoteUserOutputBaseAddr = nullptr;
+        CHK_RET(curLink->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
+        CHK_PTR_NULL(remoteUserOutputBaseAddr);
+
+        // 更新remote user output memory range
+        OpUnfoldMemRange& remoteOutputMemRange = userOutputMemRanges[remoteRank];
+        remoteOutputMemRange.isValid = true;
+        remoteOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserOutputBaseAddr);
+        remoteOutputMemRange.memSize = outputSize;
+    }
+
+    return HCCL_SUCCESS;
+}
+
 bool AicpuZeroCopyExchanger::IsAllIpcAddressValid()
 {
     // 目前只判断所有的共享内存是否Ok，映射部分校验放到后面check

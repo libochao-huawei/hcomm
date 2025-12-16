@@ -29,6 +29,7 @@
 #include "rs_epoll.h"
 #include "rs_tls.h"
 #include "ssl_adp.h"
+#include "rs_drv_socket.h"
 #include "rs_socket.h"
 #include "dl_ibverbs_function.h"
 #include "dl_hal_function.h"
@@ -563,7 +564,7 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
     ret = FileReadCfg(HCCN_CFGFILE_PATH, (int)phyId, keyName[key], value, bufLen);
 #endif
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_READ_FILE_ERR,
-        hccp_run_warn("get hccn cfg file unsuccessful, ret(%d)", ret), -ENOENT);
+        hccp_run_warn("get hccn cfg file unsuccessful, ret(%d)", ret), 0);
     CHK_PRT_RETURN(ret == FILE_OPT_NO_MEM_ERR,
         hccp_err("value_len > buf_len[%d], ret(%d)", bufLen, ret), -ENOMEM);
     CHK_PRT_RETURN(ret != 0, hccp_run_warn("get hccn cfg [%s] unsuccessful, ret(%d)",
@@ -1870,8 +1871,8 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     RsFreeHeterogTcpFdList(rscb);
 
 #ifdef CONFIG_TLV
-    if (rscb->nslbCb.netcoInitFlag) {
-        RsTlvDeinit(TLV_MODULE_TYPE_NSLB, rscb->nslbCb.phyId);
+    if (rscb->tlvCb.initFlag) {
+        RsTlvDeinit(rscb->tlvCb.phyId);
     }
 #endif
     pthread_mutex_destroy(&rscb->mutex);

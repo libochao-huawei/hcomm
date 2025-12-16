@@ -50,10 +50,10 @@ void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetA
 #endif // __cplusplus
 namespace hccl {
     namespace hccl_alg {
-        std::vector<std::string> GetErrStatusVec(s32 deviceLogicID)
+        std::vector<std::string> GetErrStatusVec(s32 deviceLogicID, const std::string& group = HCCL_WORLD_GROUP)
         {
             if (g_GetErrStatusVecCallBack != nullptr) {
-                return g_GetErrStatusVecCallBack(deviceLogicID);
+                return g_GetErrStatusVecCallBack(deviceLogicID, group);
             } else {
                 HCCL_RUN_WARNING("[GetErrStatusVec]g_GetErrStatusVecCallBack is nullptr.");
             }
@@ -593,9 +593,9 @@ string FFTSOpInfo::GetBaseInfoStr() // 防止tag字符串过长，base信息和p
 }
 TaskExceptionHandler::TaskExceptionHandler(u32 deviceLogicId) : ProfilerBase(deviceLogicId) {}
 TaskExceptionHandler::~TaskExceptionHandler() {}
-std::string GetAndPrintHeartbeatErr(rtExceptionInfo *exceptionInfo)
+std::string GetAndPrintHeartbeatErr(rtExceptionInfo *exceptionInfo, const std::string& group = HCCL_WORLD_GROUP)
 {
-    auto errStatusVec = hccl_alg::GetErrStatusVec(exceptionInfo->deviceid);
+    auto errStatusVec = hccl_alg::GetErrStatusVec(exceptionInfo->deviceid, group);
     std::string errMsg = "";
     int errSize = errStatusVec.size();
     if (errSize > 0) {
@@ -616,11 +616,11 @@ std::string GetAndPrintHeartbeatErr(rtExceptionInfo *exceptionInfo)
     }
     return errMsg;
 }
-void TaskExceptionHandler::PrintTaskContextInfo(const std::shared_ptr<std::vector<CtxInfo>> &taskList, u32 contextId)
+void TaskExceptionHandler::PrintTaskContextInfo(const std::shared_ptr<std::vector<CtxInfo>> &taskList, u32 contextId, std::string &stageErrInfo)
 {
-    HCCL_ERROR("FFTS+ run failed, context sequence before error task is "
+    HCCL_ERROR("%sTask run failed, context sequence before error task is "
         "[NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), Memcpy:M(rank), Reduce: R(rank), "
-        "InlineReduce:IR(rank), RDMASend:RS(rank,id)]:");
+        "InlineReduce:IR(rank), RDMASend:RS(rank,id)]:", stageErrInfo.c_str());
     std::string taskContextInfo = "";
     u32 startIndex = (contextId > TASK_CONTEXT_SIZE) ? (contextId - TASK_CONTEXT_SIZE) : 0;
     for (; startIndex < contextId; startIndex++) {
@@ -671,7 +671,7 @@ void TaskExceptionHandler::TimeStruct2Str(struct timeval &tv, std::string &opDat
 
     return;
 }
-void TaskExceptionHandler::PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPlus)
+void TaskExceptionHandler::PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPlus, std::string &stageErrInfo)
 {
     stringstream opDataStr;
     opDataStr << "src" << "[0x"
@@ -700,14 +700,12 @@ void TaskExceptionHandler::PrintOpDataInfo(OpDataInfo &opDataInfo, bool isFftsPl
     opDataContent += GetDataTypeEnumStr(opDataInfo.dataType);
     opDataContent += "].";
 
-    std::string titleStr = isFftsPlus ? "[TaskExceptionHandler][Callback]FFTS+ run failed" :
-        "[TaskExceptionHandler][Callback]Task run failed";
-    HCCL_ERROR("%s, opData information is %s", titleStr.c_str(), opDataContent.c_str());
+    PrintOpDataErrorLog(stageErrInfo, opDataContent);
     return;
 }
 
 bool TaskExceptionHandler::DealExceptionOpData(rtExceptionInfo *exceptionInfo, std::string &tag, bool isFftsPlus,
-    u32 index)
+    u32 index, std::string &stageErrInfo)
 {
     bool opDataFound = false;
     std::unique_lock<std::mutex> lock(tagOpDataMapMutex[exceptionInfo->deviceid]);
@@ -730,12 +728,12 @@ bool TaskExceptionHandler::DealExceptionOpData(rtExceptionInfo *exceptionInfo, s
         return false;
     }
 
-    PrintOpDataInfo(opDataInfo, isFftsPlus);
+    PrintOpDataInfo(opDataInfo, isFftsPlus, stageErrInfo);
     return true;
 }
 
 bool TaskExceptionHandler::DealExceptionGroupRank(rtExceptionInfo *exceptionInfo, std::string &tag,
-    bool isFftsPlus, std::string &groupRankContentInfo)
+    bool isFftsPlus, std::string &groupRankContentInfo, std::string &stageErrInfo)
 {
     std::unique_lock<std::mutex> lock(groupRankMapMutex[exceptionInfo->deviceid]);
     auto groupRankIt = groupRankMap[exceptionInfo->deviceid].find(tag);
@@ -763,13 +761,10 @@ bool TaskExceptionHandler::DealExceptionGroupRank(rtExceptionInfo *exceptionInfo
     groupRankContent += "], rankId[";
     groupRankContent += std::to_string((groupRankIt->second.second)->rankId);
     groupRankContent += peerRankStr;
-    groupRankContent += "].";
+    groupRankContent += "]";
     groupRankContentInfo = groupRankContent;
 
-    std::string titleStr = isFftsPlus ? "[TaskExceptionHandler][Callback]FFTS+ run failed" :
-        "[TaskExceptionHandler][Callback]Task run failed";
-    HCCL_ERROR("%s, groupRank information is %s",
-        titleStr.c_str(), groupRankContent.c_str());
+    PrintGroupErrorLog(stageErrInfo, groupRankContent, tag);
     return true;
 }
 
@@ -785,16 +780,20 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
 	auto fftsOpInfo = *(queIt->front().first);
     auto exceptionCtxInfo = (*(queIt->front().second))[0];
 
-    if (!ProcessContext(exceptionInfo)) {
+    auto logKeywordL2 = exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+    auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+
+    if (!ProcessContext(exceptionInfo, stageErrInfo)) {
         return false;
     }
 
 	u32 index = fftsOpInfo.index;
 	std::string groupRankContentInfo = "";
     std::string tag(fftsOpInfo.tag.get());
-	DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo);
-	DealExceptionOpData(exceptionInfo, tag, true, index);
-	std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
+
+	DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo, stageErrInfo);
+	DealExceptionOpData(exceptionInfo, tag, true, index, stageErrInfo);
+	std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
 	if (exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
 		RPT_INPUT_ERR(true,
 			"EI0002",
@@ -805,7 +804,17 @@ bool TaskExceptionHandler::DealExceptionCtx(rtExceptionInfo *exceptionInfo)
 				groupRankContentInfo.c_str()
 			})
 		);
-	}
+	} else if (exceptionCtxInfo.taskType == TaskType::TASK_SDMA || exceptionCtxInfo.taskType == TaskType::TASK_REDUCE_INLINE) {
+		RPT_INPUT_ERR(true,
+			"EI0012",
+			std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+			std::vector<std::string>({
+				std::to_string(exceptionCtxInfo.GetCtxRemoteUserRank()),
+				exceptionCtxInfo.GetCtxBaseInfoStr().c_str(), (exceptionCtxInfo.GetCtxParaInfoStr() + errMsg).c_str(),
+				groupRankContentInfo.c_str()
+			})
+		);
+    }
     return true;
 }
 
@@ -831,7 +840,7 @@ bool TaskExceptionHandler::FindAndValidateContext(rtExceptionInfo *exceptionInfo
     return true;
 }
 
-bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo)
+bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::string &stageErrInfo)
 {
     auto mapIt = opCtxInfo[exceptionInfo->deviceid].find(exceptionInfo->streamid);
 	auto &queIt = mapIt->second;
@@ -845,12 +854,11 @@ bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo)
             fftsOpInfo = *(queIt->back().first);
             if (exceptionInfo->expandInfo.u.fftsPlusInfo.contextId == unvalidCtxid) {
                 // 子图任务粒度下，RTS返回的异常task不包含contexId时的处理，约定contextId为65535。只记录算子信息
-                HCCL_WARNING("[TaskExceptionHandler][Callback]FFTS+ ctx run failed, unvalid contexid," \
-                    "base opInformation is %s", fftsOpInfo.GetBaseInfoStr().c_str());
-            } else if (exceptionInfo->expandInfo.u.fftsPlusInfo.contextId < 0 ||
-                exceptionInfo->expandInfo.u.fftsPlusInfo.contextId >= queIt->back().second->size()) {
-                HCCL_ERROR("[TaskExceptionHandler][Callback]FFTS+ ctx run failed, contextId[%u] is out of vector "
-                    "size[%zu], base opInformation is %s",
+                HCCL_WARNING("%sTask run failed, unvalid contexid," \
+                    "base opInformation is %s", stageErrInfo.c_str(), fftsOpInfo.GetBaseInfoStr().c_str());
+            } else if (exceptionInfo->expandInfo.u.fftsPlusInfo.contextId >= queIt->back().second->size()) {
+                HCCL_ERROR("%sTask run failed, contextId[%u] is out of vector "
+                    "size[%zu], base opInformation is %s", stageErrInfo.c_str(), 
                     exceptionInfo->expandInfo.u.fftsPlusInfo.contextId, queIt->back().second->size(),
                     fftsOpInfo.GetBaseInfoStr().c_str());
             } else {
@@ -868,17 +876,14 @@ bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo)
     }
 
     if (exceptionCtxInfo.taskType == TaskType::TASK_NOTIFY_WAIT) { // 只在出错task为NotifyWait时打印前序task序列
-        PrintTaskContextInfo(queIt->back().second, exceptionInfo->expandInfo.u.fftsPlusInfo.contextId);
+        PrintTaskContextInfo(queIt->back().second, exceptionInfo->expandInfo.u.fftsPlusInfo.contextId, stageErrInfo);
     }
 
     queIt->clear();
 
-    HCCL_ERROR("[TaskExceptionHandler][Callback]FFTS+ run failed, op information is %s",
-        fftsOpInfo.GetBaseInfoStr().c_str());
-    HCCL_ERROR("[TaskExceptionHandler][Callback]FFTS+ run failed, context base information is %s",
-        exceptionCtxInfo.GetCtxBaseInfoStr().c_str());
-    HCCL_ERROR("[TaskExceptionHandler][Callback]FFTS+ run failed, context para information is %s, tag[%s].",
-        exceptionCtxInfo.GetCtxParaInfoStr().c_str(), fftsOpInfo.tag.get());
+    PrintBaseErrorLog(stageErrInfo, fftsOpInfo.GetBaseInfoStr());
+    PrintContextErrorLog(stageErrInfo, exceptionCtxInfo.GetCtxBaseInfoStr());
+    PrintParaErrorLog(stageErrInfo, exceptionCtxInfo.GetCtxParaInfoStr(), std::string(fftsOpInfo.tag.get()));
 
     return true;
 }
@@ -905,14 +910,17 @@ bool TaskExceptionHandler::DealExceptionOp(rtExceptionInfo *exceptionInfo)
         return false;
     }
     queIt->clear();
-    HCCL_ERROR("[TaskExceptionHandler][%s]FFTS+ run failed, base information is %s", __func__,
-        exceptionOpInfo.GetBaseInfoStr().c_str());
+
+    auto logKeywordL2 = exceptionInfo->retcode == ACL_ERROR_RT_FFTS_PLUS_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+    auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_HOST + "]";
+
+    PrintBaseErrorLog(stageErrInfo, exceptionOpInfo.GetBaseInfoStr());
     u32 index = exceptionOpInfo.index;
     std::string groupRankContentInfo = "";
     std::string tag(exceptionOpInfo.tag.get());
-    DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo);
-    DealExceptionOpData(exceptionInfo, tag, true, index);
-    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
+    DealExceptionGroupRank(exceptionInfo, tag, true, groupRankContentInfo, stageErrInfo);
+    DealExceptionOpData(exceptionInfo, tag, true, index, stageErrInfo);
+    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
     if (exceptionInfo->retcode == ACL_ERROR_RT_FFTS_PLUS_TIMEOUT) {
         RPT_INPUT_ERR(true,
             "EI0002",
@@ -924,11 +932,11 @@ bool TaskExceptionHandler::DealExceptionOp(rtExceptionInfo *exceptionInfo)
     return true;
 }
 
-void TaskExceptionHandler::PrintTaskContextInfo(const std::shared_ptr<std::deque<TaskInfo>> &taskQue)
+void TaskExceptionHandler::PrintTaskContextInfo(const std::shared_ptr<std::deque<TaskInfo>> &taskQue, std::string &stageErrInfo)
 {
-    HCCL_ERROR("Task run failed, context sequence before error task is "
+    HCCL_ERROR("%sTask run failed, context sequence before error task is "
         "[NotifyRecord:NR(rank,id), NotifyWait:NW(rank,id), Memcpy:M(rank), Reduce: R(rank), "
-        "InlineReduce:IR(rank), RDMASend:RS(rank,id)]:");
+        "InlineReduce:IR(rank), RDMASend:RS(rank,id)]:", stageErrInfo.c_str());
     std::string taskContextInfo = "";
     u32 startIndex = (taskQue->size() > TASK_CONTEXT_SIZE) ? (taskQue->size() - TASK_CONTEXT_SIZE) : 0;
     for (; startIndex < taskQue->size(); startIndex++) {
@@ -943,12 +951,12 @@ void TaskExceptionHandler::PrintTaskContextInfo(const std::shared_ptr<std::deque
         }
         taskStr += "),";
         if (taskContextInfo.size() + taskStr.size() >= TASK_CONTEXT_INFO_SIZE) {
-            HCCL_ERROR("%s ...", taskContextInfo.c_str());
+            HCCL_ERROR("%s%s ...", stageErrInfo.c_str(), taskContextInfo.c_str());
             taskContextInfo = "";
         }
         taskContextInfo += taskStr;
     }
-    HCCL_ERROR("%s end.", taskContextInfo.c_str());
+    HCCL_ERROR("%s%s end.", stageErrInfo.c_str(),taskContextInfo.c_str());
     return;
 }
 
@@ -1161,6 +1169,21 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
     CHK_PRT_RET(PrintCommAivInfo(),
         HCCL_ERROR("[TaskExceptionHandler] PrintCommAivInfo failed."), false);
 
+    std::string logKeywordL2;
+    std::string logKeywordL3;
+
+    if (exceptionTaskInfo.isAlgInfo) {
+        // aiv场景若根据retCode是否为ACL_ERROR_RT_VECTOR_CORE_TIMEOUT判断是否为超时报错
+        logKeywordL2 = exceptionInfo->retcode == ACL_ERROR_RT_VECTOR_CORE_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+        logKeywordL3 = LOG_KEYWORDS_AIV;
+    } else {
+        // 非aiv场景根据当前报错的taskType是否为TASK_NOTIFY_WAIT判断是否为超时报错
+        logKeywordL2 = exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+        logKeywordL3 = LOG_KEYWORDS_HOST_TS;
+    }
+
+    auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + logKeywordL3 + "]";
+
     if (exceptionTaskInfo.isAlgInfo){
         PrintTaskAivBuffer(queIt);
         PrintTaskAivInfo(queIt);
@@ -1168,25 +1191,23 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
     }else if(exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) { 
         queIt->pop_back();
         // 只在出错task为NotifyWait时打印前序task序列
-        PrintTaskContextInfo(queIt);
+        PrintTaskContextInfo(queIt, stageErrInfo);
     }
 
     queIt->clear();
-    HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
+    HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
     // 防止tag字符串过长， 信息分开打印
-    HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, base information is %s", __func__,
-        exceptionTaskInfo.GetBaseInfoStr().c_str());
-    HCCL_ERROR("[TaskExceptionHandler][%s]Task run failed, para information is %s, tag[%s].", __func__,
-        exceptionTaskInfo.GetParaInfoStr().c_str(), exceptionTaskInfo.tag.c_str());
+    PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetBaseInfoStr());
+    PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfoStr(), exceptionTaskInfo.tag);
     u32 index = exceptionTaskInfo.index;
     std::string groupRankContentInfo = "";
     if (!exceptionTaskInfo.isAlgInfo){
         // AlgInfo时不打印group rank等信息
-        DealExceptionGroupRank(exceptionInfo, exceptionTaskInfo.tag, false, groupRankContentInfo);
+        DealExceptionGroupRank(exceptionInfo, exceptionTaskInfo.tag, false, groupRankContentInfo, stageErrInfo);
     }
-    DealExceptionOpData(exceptionInfo, exceptionTaskInfo.tag, false, index);
-    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
-    if (exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
+    DealExceptionOpData(exceptionInfo, exceptionTaskInfo.tag, false, index, stageErrInfo);
+    std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, exceptionTaskInfo.tag);
+    if (logKeywordL2 == LOG_KEYWORDS_TIMEOUT) {
         RPT_INPUT_ERR(true,
             "EI0002",
             std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
@@ -1195,6 +1216,16 @@ bool TaskExceptionHandler::DealExceptionTask(rtExceptionInfo *exceptionInfo)
                 exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(),
                 groupRankContentInfo.c_str()})
         );
+    } else {
+		RPT_INPUT_ERR(true,
+			"EI0012",
+			std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+			std::vector<std::string>({
+				std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
+				exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(),
+				groupRankContentInfo.c_str()
+			})
+		);
     }
     return true;
 }
@@ -1222,22 +1253,34 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo
             u32 index = 0;
             TaskParaNotify para(static_cast<u64>(errorMessage.notifyId), errorMessage.stage, errorMessage.remoteUserRank);
             TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, tag, errorMessage.taskType, errorMessage.algType, index, para);
-            HCCL_ERROR("[TaskExceptionHandler][Callback][HOST]Task from HCCL run failed.");
+            auto logKeywordL2 = exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
+            auto stageErrInfo = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + logKeywordL2 + "][" + LOG_KEYWORDS_AICPU + "]";
+            HCCL_ERROR("%sTask from HCCL run failed.", stageErrInfo.c_str());
             // 防止tag字符串过长， 信息分开打印
-            HCCL_ERROR("[TaskExceptionHandler][Callback][HOST]Task run failed, base information is %s",
-                exceptionTaskInfo.GetBaseInfoStr().c_str());
-            HCCL_ERROR("[TaskExceptionHandler][Callback][HOST]Task run failed, para information is %s, tag[%s].",
-                exceptionTaskInfo.GetParaInfoStr().c_str(), exceptionTaskInfo.tag.c_str());
-            PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent);
-            PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage);
-            std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo);
-            RPT_INPUT_ERR(true,
-                "EI0002",
-                std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
-                std::vector<std::string>({
-                    std::to_string(exceptionTaskInfo.GetRemoteUserRank()), exceptionTaskInfo.GetBaseInfoStr().c_str(),
-                    (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(), groupRankContent.c_str()})
+            PrintBaseErrorLog(stageErrInfo, exceptionTaskInfo.GetBaseInfoStr());
+            PrintParaErrorLog(stageErrInfo, exceptionTaskInfo.GetParaInfoStr(), exceptionTaskInfo.tag);
+            PrintGroupErrorMessage(errorMessage, exceptionTaskInfo, groupRankContent, stageErrInfo);
+            PrintOpDataErrorMessage(exceptionInfo->deviceid, errorMessage, stageErrInfo);
+            std::string errMsg = GetAndPrintHeartbeatErr(exceptionInfo, tag);
+            if (exceptionTaskInfo.taskType == TaskType::TASK_NOTIFY_WAIT) {
+                RPT_INPUT_ERR(true,
+                    "EI0002",
+                    std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                    std::vector<std::string>({
+                        std::to_string(exceptionTaskInfo.GetRemoteUserRank()),
+                        exceptionTaskInfo.GetBaseInfoStr().c_str(), (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(),
+                        ""})
                 );
+            } else if (exceptionTaskInfo.taskType == TaskType::TASK_SDMA || exceptionTaskInfo.taskType == TaskType::TASK_REDUCE_INLINE) {
+                RPT_INPUT_ERR(true,
+                    "EI0012",
+                    std::vector<std::string>({"remote_rankid", "base_information", "task_information", "group_rank_content"}),
+                    std::vector<std::string>({
+                        std::to_string(exceptionTaskInfo.GetRemoteUserRank()), exceptionTaskInfo.GetBaseInfoStr().c_str(),
+                        (exceptionTaskInfo.GetParaInfoStr() + errMsg).c_str(), groupRankContent.c_str()})
+                    );
+            }
+
             lock.lock();
             g_commHadCallbackArray[exceptionInfo->deviceid] = true;
         }
@@ -1248,7 +1291,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo *exceptionInfo
 }
 
 void TaskExceptionHandler::PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo,
-    string &groupRankContent)
+    string &groupRankContent, string &stageErrInfo)
 {
     std::string groupUdi;
     std::string groupName = std::string(errorMessage.group);
@@ -1266,12 +1309,11 @@ void TaskExceptionHandler::PrintGroupErrorMessage(ErrorMessageReport &errorMessa
     groupRankContent += std::to_string(errorMessage.remoteUserRank);
     groupRankContent += "]";
 
-    HCCL_ERROR("[TaskExceptionHandler][Callback][HOST]Task run failed, group information is %s, tag[%s].",
-        groupRankContent.c_str(), exceptionTaskInfo.tag.c_str());
+    PrintGroupErrorLog(stageErrInfo, groupRankContent, exceptionTaskInfo.tag);
     return;
 }
 
-void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage)
+void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo)
 {
     stringstream opDataStr;
     opDataStr << "src" << "[0x"
@@ -1299,8 +1341,7 @@ void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageRep
     opDataContent += GetDataTypeEnumStr(errorMessage.dataType);
     opDataContent += "].";
 
-    HCCL_ERROR("[TaskExceptionHandler][Callback][HOST]Task run failed, opData information is %s",
-        opDataContent.c_str());
+    PrintOpDataErrorLog(stageErrInfo, opDataContent);
     return;
 }
 
@@ -1499,8 +1540,7 @@ HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 tas
     return HCCL_SUCCESS;
 }
 
-
-HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const TaskParaAiv &para)
+HcclResult TaskExceptionHandler::Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &para)
 {
     u32 maxDeviceNum;
     CHK_RET(GetMaxDevNum(maxDeviceNum));
@@ -1509,7 +1549,7 @@ HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const TaskPara
             deviceLogicId_, maxDeviceNum), HCCL_E_INTERNAL);
 
     std::string tag;
-    CHK_RET(ProfilerBase::GetTagByStream(streamID, tag));
+    CHK_RET(ProfilerBase::GetTagByStream(captureStreamID, tag));
     u32 index = 0;
     ProfilerBase::GetSubmittedOpCnt(index);
     TaskInfo tmpTaskInfo(streamID, taskID, tag, para);
@@ -1518,6 +1558,11 @@ HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, const TaskPara
     CHK_RET(InsertRankInfo(tag));
     CHK_RET(InsertOpData(tag));
     return HCCL_SUCCESS;
+}
+
+HcclResult TaskExceptionHandler::Save(u32 streamID, u32 taskID, const TaskParaAiv &para)
+{
+    return Save(streamID, streamID, taskID, para);
 }
 
 HcclResult TaskExceptionHandler::Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &para)

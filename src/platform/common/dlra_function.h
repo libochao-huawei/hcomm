@@ -144,13 +144,13 @@ public:
     std::function<int(int ins_id)> dlRaIsLastUsed{};
     std::function<int(RdmaHandle rdmaHandle, enum PortStatus *status)> dlRaRdevGetPortStatus{};
     std::function<int(RdmaHandle rdmaHandle, struct MemRemapInfo info[], unsigned int num)> dlRaRemapMr{};
-    std::function<int(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size,
-        void **tlv_handle)>  dlH2DTlvInit;
+    std::function<int(struct TlvInitInfo *init_info, uint32_t *buffer_size, void **tlv_handle)>  dlH2DTlvInit;
     std::function<int(void *tlv_handle)>  dlH2DTlvDeinit;
-    std::function<int(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)>  dlH2DTlvRequest;
+    std::function<int(void *tlv_handle, unsigned int module_type, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)>  dlH2DTlvRequest;
     std::function<int(struct RaInfo *info, bool *tls_enable)> dlRaRaGetTlsEnable;
     std::function<int(struct RaInfo *info, enum SaveSnapshotAction action)> dlRaSaveSnapShot;
     std::function<int(struct RaInfo *info)> dlRaRestoreSnapShot;
+    std::function<int(struct RaInfo *info, enum HccnCfgKey ext_attrs, char* value, int *value_len)> dlRaGetHccnCfg;
 protected:
 private:
     friend Init;

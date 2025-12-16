@@ -45,7 +45,6 @@ __aicore__ inline void AivAllGatherSmall910B::Process(GM_ADDR input, GM_ADDR out
         // 卡间同步
         pipe_barrier(PIPE_ALL);
         Record1vN(tag, CommPattern::interRank, AivNotifyType::DataSignal, 0, ifPingpong);
-        AIV_ERROR(false, "[ASSERT] tag is [%d]\n", tag);
         CpGM2GM(outputGM + count * rank_, cclGMSelf, count);
     }
 }

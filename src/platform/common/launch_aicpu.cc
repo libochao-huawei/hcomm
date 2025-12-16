@@ -14,11 +14,14 @@
 #include "launch_aicpu.h"
 #include "log.h"
 #include "mmpa_api.h"
+#include "mem_host_pub.h"
 
 
 using namespace std;
 
 namespace hccl {
+static thread_local HostMem g_aicpuKernelBinV2;
+
 HcclResult InitKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
     void *initTaskAddr, u32 initTaskSize, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle)
 {
@@ -132,7 +135,60 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
     constexpr u32 blockDim = 1;
     aclError aclRet = aclrtLaunchKernelWithConfig(funcHandle, blockDim, stm, &cfg, argsHandle, nullptr);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed", ret), HCCL_E_OPEN_FILE_FAILURE);
+                HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed", ret), HCCL_E_RUNTIME);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
+                                  aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
+                                  void *tilingDataPtr, u32 tilingDataSize) {
+    if (binHandle == nullptr) {
+        HCCL_ERROR("binHandle is nullptr, no need to launch aicpu kernel, binHandle[%p]", binHandle);
+        return HCCL_E_PTR;
+    }
+    CHK_PRT_RET((addr == nullptr || size == 0), HCCL_ERROR("[AicpuAclKernelLaunch]param is invalid, contextAddr[%p], "
+                                                           "size[%u], kernelName[%s]", addr, size, kernelName.c_str()
+    ), HCCL_E_PARA);
+    aclrtFuncHandle funcHandle;
+    aclError aclRet = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
+    CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
+                                                  "kernelName[%s]", aclRet, kernelName.c_str()), HCCL_E_RUNTIME);
+    // !isInitTask LaunchTask {u64 context, TillingData data}
+    u64 hostBufferSize = isInitTask ? size : sizeof(u64) + tilingDataSize;
+    if (g_aicpuKernelBinV2.size() < hostBufferSize) {
+        g_aicpuKernelBinV2.free();
+	    g_aicpuKernelBinV2 = HostMem::alloc(hostBufferSize, false);
+	    if (g_aicpuKernelBinV2.ptr() == nullptr) {
+		    HCCL_ERROR("[AicpuAclKernelLaunchV2] alloc memory failed");
+		    return HCCL_E_MEMORY;
+	    }
+    }
+    if (isInitTask) {
+        auto memRet = memcpy_s(reinterpret_cast<void *>(g_aicpuKernelBinV2.ptr()), hostBufferSize, addr, hostBufferSize);
+        CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
+                    HCCL_E_INTERNAL);
+    } else {
+        auto memRet = memcpy_s(reinterpret_cast<void *>(g_aicpuKernelBinV2.ptr()), sizeof(u64), addr, sizeof(u64));
+        CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
+                    HCCL_E_INTERNAL);
+        memRet = memcpy_s(
+            reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(g_aicpuKernelBinV2.ptr()) + sizeof(u64)),
+            hostBufferSize - sizeof(u64), tilingDataPtr, tilingDataSize);
+        CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
+                    HCCL_E_INTERNAL);
+    }
+    aclrtLaunchKernelCfg cfg;
+    aclrtLaunchKernelAttr attr;
+    attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+    attr.value.timeout = timeOut;
+    cfg.numAttrs = 1;
+    cfg.attrs = &attr;
+    constexpr u32 blockDim = 1;
+    aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, blockDim, stm, &cfg, g_aicpuKernelBinV2.ptr(), hostBufferSize,
+                                                    nullptr, 0);
+    CHK_PRT_RET(aclRet != ACL_SUCCESS,
+                HCCL_ERROR("[aclrtLaunchKernelWithHostArgs]errNo[0x%016llx] launch kernel failed", aclRet),
+	    HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
 

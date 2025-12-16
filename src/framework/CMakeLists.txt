@@ -27,10 +27,12 @@ message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
 add_library(hcomm  SHARED)
 
 set(hccl_include_list
+    ${HCCL_BASE_DIR}/../include/hccl
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
     ${HCCL_BASE_DIR}/pub_inc/hccl
+    ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template
     ${HCCL_BASE_DIR}/algorithm/base/mc2_handler
@@ -53,6 +55,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/common/src/topo
     ${HCCL_BASE_DIR}/framework/common/src/task
     ${HCCL_BASE_DIR}/framework/common/src/exception
+    ${HCCL_BASE_DIR}/framework/common/src/h2d_tlv
     ${HCCL_BASE_DIR}/framework/common/src/thread
     ${HCCL_BASE_DIR}/framework/common/src/h2d_dto
     ${HCCL_BASE_DIR}/framework/common/src/onesided_memory_management
@@ -90,13 +93,14 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/new/
         ${HCCL_BASE_DIR}/inc
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+        ${HCCL_BASE_DIR}/platform/legacy/inc
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
 
         ${THIRD_PARTY_NLOHMANN_PATH}
 
@@ -137,8 +141,7 @@ if(BUILD_OPEN_PROJECT)
     )
 else()
     target_include_directories(hcomm PRIVATE
-        ${TOP_DIR}/hcomm/inc/hccl/hccl/             # ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${TOP_DIR}/hcomm/inc/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/algorithm/pub_inc
         ${TOP_DIR}/abl/msprof/inc                           # experiment/msprof/
         ${TOP_DIR}/ace/npuruntime/inc                       # experiment/runtime/
@@ -190,6 +193,7 @@ target_compile_definitions(hcomm PRIVATE
 
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(hcomm
+            $<BUILD_INTERFACE:intf_pub>
             -Wl,--no-as-needed
             c_sec
             unified_dlog
@@ -243,6 +247,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/offload_stream_manager.cc
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/hccl_socket_manager.cc
         ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/queue_notify_manager.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
 
         ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy/comm_base.cc
         ${HCCL_BASE_DIR}/algorithm/base/communicator/legacy/comm_ring.cc
@@ -536,11 +541,18 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         -Wfloat-equal
         -Wall
         -fno-common
+        -fstack-protector-strong
         -fno-strict-aliasing
         -pipe
         -O3
         -std=c++14
-        $<$<CONFIG:Debug>:-g>
+    )
+
+    target_link_options(ccl_kernel PRIVATE
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
     )
 
     target_compile_definitions(ccl_kernel PRIVATE
@@ -548,6 +560,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         CCL_KERNEL_AICPU
     )
     target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/../include/hccl
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${HCCL_BASE_DIR}/algorithm/base/inc
         ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -628,6 +641,18 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/pub_inc
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+
+        ${HCCL_BASE_DIR}/platform/
+        ${HCCL_BASE_DIR}/platform/inc/
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
+        ${HCCL_BASE_DIR}/platform/resource/transport/host/
+        ${HCCL_BASE_DIR}/platform/resource/transport/
+        ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/task
+        ${HCCL_BASE_DIR}/platform/common
+        ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
     )
 
     target_link_directories(ccl_kernel PRIVATE
@@ -639,15 +664,16 @@ endif()
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/inner
         ${HCCL_BASE_DIR}/pub_inc/aicpu
+        ${HCCL_BASE_DIR}/pub_inc/new
 
         ${HCCL_BASE_DIR}/hccl/hccl_comm/wrapper/notify/
 
         ${TOP_DIR}/inc
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/inc/external
         ${TOP_DIR}/metadef/inc/external
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/metadef/pkg_inc
@@ -658,6 +684,15 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
         ${TOP_DIR}/abl/adump/inc/adump
         ${TOP_DIR}/abl/atrace/inc/utrace
+        ${TOP_DIR}/runtime/include/external
+        ${TOP_DIR}/runtime/include/external/acl
+        ${TOP_DIR}/runtime/pkg_inc
+        ${TOP_DIR}/runtime/pkg_inc/runtime
+        ${TOP_DIR}/runtime/pkg_inc/profiling
+        ${TOP_DIR}/runtime/pkg_inc/trace
+        ${TOP_DIR}/runtime/pkg_inc/base
+        ${TOP_DIR}/runtime/pkg_inc/aicpu
+        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
         ${HCCL_BASE_DIR}/platform/
         ${HCCL_BASE_DIR}/platform/inc/
         ${HCCL_BASE_DIR}/platform/inc/adapter
@@ -665,23 +700,22 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/resource/transport/host/
         ${HCCL_BASE_DIR}/platform/resource/transport/
         ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
 
-        ${HCCL_BASE_DIR}/inc
-        ${HCCL_BASE_DIR}/hdcs
-        ${HCCL_BASE_DIR}/hccl/hccl_comm/inc
-        ${HCCL_BASE_DIR}/hccl/op_base/src
-        ${HCCL_BASE_DIR}/hccl_heterog/common
-        ${HCCL_BASE_DIR}/hccl_heterog/heterog_cpu
-        ${HCCL_BASE_DIR}/hccl_heterog/rpc
-        ${HCCL_BASE_DIR}/hccl/hccl_comm/executor/component/inc
-        ${HCCL_BASE_DIR}/hccl/hccl_comm/impl/
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
 	    ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCCL_BASE_DIR}/framework
+        ${HCCL_BASE_DIR}/framework/common
+        ${HCCL_BASE_DIR}/framework/common/src
+        ${HCCL_BASE_DIR}/framework/common/src/mgr
+        ${HCCL_BASE_DIR}/framework/communicator
+        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
     )
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
@@ -695,7 +729,6 @@ if(NOT BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         c_sec
         ccl_kernel_plf
-        unified_dlog
         mmpa
         -Wl,--as-needed
         -lrt
@@ -749,17 +782,22 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/platform/resource/transport/host/
         ${HCCL_BASE_DIR}/platform/resource/transport/
         ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
         ${hccl_include_list}
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl/
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/aicpu
+
+        ${HCCL_BASE_DIR}/framework/device/
+        ${HCCL_BASE_DIR}/framework/device/common
+        ${HCCL_BASE_DIR}/framework/device/inc
+        ${HCCL_BASE_DIR}/framework/device/framework
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -815,6 +853,7 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             set(CCL_KERNEL_PLF_PATH ccl_kernel_plf)
         endif()
         target_link_libraries(ccl_kernel PRIVATE
+            $<BUILD_INTERFACE:intf_pub>
             -Wl,--no-as-needed
             ascend_hal
             c_sec

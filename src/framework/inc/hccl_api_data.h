@@ -28,8 +28,6 @@ extern "C" {
  * @{
  */
 
-
-
 /**
  * @brief 本地同步操作
  * @param[in] thread 线程句柄
@@ -68,7 +66,6 @@ extern HcclResult CommFence(ThreadHandle thread, ChannelHandle channel);
  */
 extern HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp, uint32_t remoteNotifyIdx);
-
 
 #ifdef __cplusplus
 }

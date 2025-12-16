@@ -12,7 +12,7 @@ set(CMAKE_VERBOSE_MAKEFILE on)
 if(BUILD_OPEN_PROJECT)
     message(STATUS "open CMAKE_CURRENT_SOURCE_DIR = ${CMAKE_CURRENT_SOURCE_DIR}")
     set(HCCL_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
-    set(HCCL_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl/hccl)
+    set(HCCL_INC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../include/hccl)
     message(STATUS "open HCCL_INC_DIR = ${HCCL_INC_DIR}")
     set(HCCL_OPEN_CODE_BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../)
     set(HCCL_THIRD_PARTY_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../)
@@ -27,6 +27,7 @@ add_library(hccl_plf  SHARED)
 
 set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/aicpu/
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/inner
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/new
 
@@ -37,6 +38,7 @@ set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/common/
     ${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/unfold_cache
     ${CMAKE_CURRENT_SOURCE_DIR}/common/p2p_mgmt
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unique
     ${CMAKE_CURRENT_SOURCE_DIR}/common/misc/network_manager
@@ -66,9 +68,8 @@ if(BUILD_OPEN_PROJECT)
         LOG_CPP)
 
     target_include_directories(hccl_plf PRIVATE
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl/
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl/
         ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/pub_inc
@@ -169,6 +170,7 @@ target_include_directories(hccl_plf PRIVATE
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(hccl_plf
     PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         -Wl,--no-as-needed
         c_sec
         unified_dlog

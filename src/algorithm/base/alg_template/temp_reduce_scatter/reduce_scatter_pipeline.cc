@@ -130,6 +130,7 @@ HcclResult ReduceScatterPipeline::RunAsync()
     LINK nextInterLink = interLinks_[nextInterRankId];
     // 当前使用3块DMAMem buffer
     u32 dmaMemSliceNum = dmaMem_.size();
+    HCCL_DEBUG("RunAsync begin.");
 
     for (u32 step = 0; step < interRankSize_; step ++) {
         u32 begin = 0;
@@ -142,6 +143,7 @@ HcclResult ReduceScatterPipeline::RunAsync()
         }
         // server内做SDMA的reduce
         u64 remoteOffset = (step % dmaMemSliceNum) * blockSize_;
+        HCCL_DEBUG("[RunAsync]remoteOffset is [%llu]", remoteOffset);
         CHK_RET(RunIntraServer(step, remoteOffset));
         CHK_RET(SubRecordMain(begin));
         CHK_RET(MainWaitSub(begin));
@@ -257,6 +259,7 @@ HcclResult ReduceScatterPipeline::GetNslbAdjInfo(const u32 rank, const u32 rankS
 {
     u32 ringNextRank = (rank + 1) % rankSize;
     LINK nslbNext = links[ringNextRank];
+    HCCL_DEBUG("[ReduceScatterPipeline]GetNslbAdjInfo starts");
 
     // Pipeline 步长合并 等同于 ring
     NslbDpAdjInfo adjInfoStep = {0};

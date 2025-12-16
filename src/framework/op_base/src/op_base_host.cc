@@ -57,7 +57,11 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus &captureStat
     }
     if (captureStatus == ACL_MODEL_RI_CAPTURE_STATUS_ACTIVE) {
         isCapture = true;
-        modelId = reinterpret_cast<uint64_t>(rtModel);  // 使用 rtModel 的地址作为 modelId
+        uint32_t mdlId;
+        rtError_t rtRet = rtModelGetId(rtModel, &mdlId);
+        CHK_PRT_RET(rtRet != RT_ERROR_NONE,
+                    HCCL_ERROR("[%s]rtGet stream get model id fail. return[%d]", __func__, rtRet), HCCL_E_RUNTIME);
+        modelId = static_cast<uint64_t>(mdlId);
     }
 
     return HCCL_SUCCESS;
@@ -172,7 +176,7 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     s32 threadID = SalGetTid();
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
-
+    
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;
     HcclReduceOp op = HCCL_REDUCE_SUM;

@@ -38,15 +38,13 @@ struct TlvMsg {
  * @ingroup libinit
  * @brief Rdma_agent tlv initialization
  * @param init_info [IN] tlv init info
- * @param module_type [IN] tlv module type
  * @param buffer_size [OUT] tlv buffer size
  * @param tlv_handle [OUT] tlv handle info
  * @see ra_tlv_deinit
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaTlvInit(struct TlvInitInfo *initInfo, unsigned int moduleType,
-    unsigned int *bufferSize, void **tlvHandle);
+HCCP_ATTRI_VISI_DEF int RaTlvInit(struct TlvInitInfo *initInfo, unsigned int *bufferSize, void **tlvHandle);
 
 /**
  * @ingroup libinit
@@ -62,13 +60,14 @@ HCCP_ATTRI_VISI_DEF int RaTlvDeinit(void *tlvHandle);
  * @ingroup libcommon
  * @brief Rdma_agent tlv request process
  * @param tlv_handle [IN] tlv handle info
+ * @param module_type [IN] tlv module type
  * @param send_msg [IN] tlv message to send
  * @param recv_msg [OUT] tlv message to receive
  * @see ra_tlv_init
  * @retval #zero Success
  * @retval #non-zero Failure
 */
-HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
+HCCP_ATTRI_VISI_DEF int RaTlvRequest(void *tlvHandle, unsigned int moduleType, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg);
 
 #ifdef __cplusplus
 }

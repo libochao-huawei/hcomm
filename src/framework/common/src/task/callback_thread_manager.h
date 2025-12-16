@@ -11,11 +11,8 @@
 #ifndef CALLBACK_THREAD_MANAGER_H
 #define CALLBACK_THREAD_MANAGER_H
 
-#include <string>
 #include <map>
-#include <unordered_map>
 #include <mutex>
-#include <atomic>
 #include "hccl/base.h"
 
 namespace hccl {

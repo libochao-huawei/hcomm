@@ -72,6 +72,30 @@ HcclResult CollAllGatherVMeshExecutor::CalcLevel0CommInfo(TransportMemType input
     return HCCL_SUCCESS;
 }
 
+HcclResult CollAllGatherVMeshExecutor::CalcLevel1CommInfo(TransportMemType inputType,
+    TransportMemType outputType,
+    std::vector<LevelNSubCommTransport>& opTransport)
+{
+    HCCL_INFO("[CollAllGatherVMeshExecutor][CalcLevel1CommInfo]tag[%s] start", tag_.c_str());
+    CommParaInfo commParaLevel1(COMM_LEVEL1, CommType::COMM_TAG_MAX);
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING || (topoAttr_.isDiffDeviceModule && topoAttr_.serverNum == 1)) {
+        commParaLevel1.commType = CommType::COMM_TAG_RING_INNER;
+        HCCL_INFO("[CollAllGatherVMeshExecutor][CalcLevel1CommInfo]tag[%s] Calc RingCommInfo", tag_.c_str());
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
+        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_BRUCK;
+        HCCL_INFO("[CollAllGatherVMeshExecutor][CalcLevel1CommInfo]tag[%s] Calc NBCommInfo", tag_.c_str());
+    } else {
+        commParaLevel1.commType = CommType::COMM_TAG_NONUNIFORM_HIERARCHICAL_RING;
+        HCCL_INFO("[CollAllGatherVMeshExecutor][CalcLevel1CommInfo]tag[%s] Calc NHRCommInfo", tag_.c_str());
+    }
+    commParaLevel1.forceRdma = false;
+    CHK_RET(CalcCommPlaneInfo(tag_, commParaLevel1, opTransport[commParaLevel1.commPlane], inputType, outputType));
+
+    HCCL_INFO("[CollAllGatherVMeshExecutor][COMM_LEVEL1]tag[%s] Calc CommInfo Finish", tag_.c_str());
+
+    return HCCL_SUCCESS;
+}
+
 u64 CollAllGatherVMeshExecutor::CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize)
 {
     u64 maxCountPerLoop;
@@ -156,16 +180,17 @@ HcclResult CollAllGatherVMeshExecutor::RunLevel1(const OpParam &param, ExecMem &
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
         HCCL_INFO("allgatherv mesh: using ring algo inter-server.");
-    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
-        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-            TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-        level1TempAlg->CloseBarrier();
-        HCCL_INFO("allgatherv mesh: using nhr algo inter-server.");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
         HCCL_INFO("allgatherv mesh: using nonuniform-bruck algo inter-server.");
-    }
+    } else {
+        //使用nhr作为兜底算法
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
+        level1TempAlg->CloseBarrier();
+        HCCL_INFO("allgatherv mesh: using nhr algo inter-server.");
+    } 
     CHK_SMART_PTR_NULL(level1TempAlg);
 
     u32 perDataSize = SIZE_TABLE[param.VDataDes.dataType];
@@ -277,6 +302,7 @@ HcclResult CollAllGatherVMeshExecutor::CalcCurCountsAndCurDisplsMultiModule(cons
     curDispls = std::vector<u64>(displs.size(), 0);
     auto allocatableCount = maxTotalCount;
 
+    HCCL_DEBUG("CalcCurCountsAndCurDisplsMultiModule begin");
     // 先设置本轮的displacements，等于入参displs
     std::copy(displs.begin(), displs.end(), curDispls.begin());
 
@@ -287,7 +313,7 @@ HcclResult CollAllGatherVMeshExecutor::CalcCurCountsAndCurDisplsMultiModule(cons
             std::count_if(countsLeft.begin(), countsLeft.end(), [](const u64 count) { return count != 0; });
         if (nonZeroCount == 0) {
             finished = true;
-            HCCL_INFO("[%s] Calc CurCountsAndCurDispls for multiModule finish.", __func__);
+            HCCL_INFO("[%s] Calc CurCountsAndCurDispls for multiModule finish", __func__);
             return HCCL_SUCCESS;
         }
         // 计算每个rank可以分到多少count
@@ -295,6 +321,7 @@ HcclResult CollAllGatherVMeshExecutor::CalcCurCountsAndCurDisplsMultiModule(cons
         if (perRankCount == 0) {
             break;
         }
+        HCCL_DEBUG("[%s] Calc CurCountsAndCurDispls for perRankCount finish", __func__);
         for (auto i = 0U; i < countsLeft.size(); ++i) {
             const auto curCount = countsLeft[i] < perRankCount ? countsLeft[i] : perRankCount;
             allocatableCount -= curCount;

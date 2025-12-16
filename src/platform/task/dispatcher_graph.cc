@@ -22,7 +22,7 @@ constexpr u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
 namespace hccl {
 DispatcherGraph::DispatcherGraph(const s32 deviceLogicId)
-    : DispatcherPub(deviceLogicId), fftsCtxsPtr(nullptr), disableFfts_(true)
+    : DispatcherPub(deviceLogicId), fftsCtxsPtr(nullptr), disableFfts_(true), multiQpMode_(false)
 {}
 
 DispatcherGraph::~DispatcherGraph()
@@ -33,6 +33,13 @@ void DispatcherGraph::SetNormalMode()
     disableFfts_ = true;
 }
 
+HcclResult DispatcherGraph::SetMultiQpMode(bool multiQpMode)
+{
+    multiQpMode_ = multiQpMode;
+    HCCL_DEBUG("[MultiQp][DispatcherGraph::SetMultiQpMode] [%d]", multiQpMode);
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult DispatcherGraph::ResetGraphCtx(bool enableCache, const std::string &key, bool useGraphConstructorV2)
 {
     disableFfts_ = false;
@@ -40,11 +47,10 @@ HcclResult DispatcherGraph::ResetGraphCtx(bool enableCache, const std::string &k
         HCCL_DEBUG("ffts task is disabled.");
         disableFfts_ = true;
     } else {
-        if (GetExternalInputQpSrcPortConfigPath() != "") {
-            enableCache = false;
-        } else if (GetExternalInputQpsPerConnection() != HCCL_QPS_PER_CONNECTION_DEFAULT) {
+        if (multiQpMode_) {
             enableCache = false;
         }
+        
         std::string sKey = key;
         if (UNLIKELY(!enableCache)) {
             // 当enableCache使能时,key传空值，用来区分当enableCache
@@ -53,9 +59,9 @@ HcclResult DispatcherGraph::ResetGraphCtx(bool enableCache, const std::string &k
         HCCL_INFO("useGraphConstructorV2[%d] sKey[%s] length[%u] key[%s]",
             useGraphConstructorV2, sKey.c_str(), sKey.length(), key.c_str());
         if (useGraphConstructorV2) {
-            fftsCtxsPtr = GetGraphCtxV2(graphMgr_, sKey.c_str(), sKey.length());
+            fftsCtxsPtr = GetGraphCtxV2(fftsPubInfo_, sKey.c_str(), sKey.length());
         } else {
-            fftsCtxsPtr = GetGraphCtx(graphMgr_, sKey.c_str(), sKey.length());
+            fftsCtxsPtr = GetGraphCtx(fftsPubInfo_, sKey.c_str(), sKey.length());
         }
         CHK_PTR_NULL(fftsCtxsPtr);
         disableFfts_ = false;
@@ -76,16 +82,16 @@ HcclResult DispatcherGraph::LaunchTasksEx(Stream &stream, std::vector<Stream> &s
     // 配置notify wait 超时时间
     // 因为老版本用户设置HCCL_EXEC_TIMEOUT为0，hccl将0传递给rts,rts将0转换为1770s传递给硬件, 未达到永不超时效果，不符合预期；
     // 所以现版用户配置为0时，hccl转换成65535，rts识别到65535后会又会转换成0，去硬件设置永不超时
-    if (GetExternalInputHcclExecTimeOut() == 0) {
+    if (execTimeOut_  == 0) {
         timeout = FFTS_TIMEOUT_MAX;
     // 因为65535被当作永不超时处理，所以当用户配置65535时需要改变他的值，防止误错做成永不超时
-    } else if (GetExternalInputHcclExecTimeOut() == FFTS_TIMEOUT_MAX) {
+    } else if (execTimeOut_  == FFTS_TIMEOUT_MAX) {
         timeout = FFTS_TIMEOUT_MAX - 1;
     } else {
-        timeout = GetExternalInputHcclExecTimeOut();
+        timeout = execTimeOut_ ;
     }
     u32 ctxNum;
-    CHK_RET(LaunchGraph(graphMgr_, stream.ptr(), fftsCtxsPtr, timeout, &ctxNum));
+    CHK_RET(LaunchGraph(fftsPubInfo_, stream.ptr(), fftsCtxsPtr, timeout, &ctxNum));
     disableFfts_ = true;
     // 调用回调来保存task信息
     if (callback_ != nullptr) {
@@ -159,7 +165,7 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
         return DispatcherPub::SignalRecord(signal, stream, userRank, offset, stage, inchip);
     }
     u32 ctxIdx;
-    CHK_RET(GraphAddRecordTask(graphMgr_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
+    CHK_RET(GraphAddRecordTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
     if (!inchip && ctxIdx > 0) {
         CHK_RET(SignalTaskParaSave(signal, stream, userRank, INVALID_UINT,
                 offset, stage, TaskType::TASK_NOTIFY_RECORD, beginTime, ctxIdx));
@@ -184,7 +190,7 @@ HcclResult DispatcherGraph::SignalWait(HcclRtNotify signal, Stream &stream, u32 
         return DispatcherPub::SignalWait(signal, stream, userRank, remoteUserRank, stage, inchip, notifyId, timeOut);
     }
     u32 ctxIdx;
-    CHK_RET(GraphAddWaitTask(graphMgr_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
+    CHK_RET(GraphAddWaitTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
     if (!inchip && ctxIdx > 0) {
         CHK_RET(SignalTaskParaSave(signal, stream, userRank, remoteUserRank,
                 INVALID_U64, stage, TaskType::TASK_NOTIFY_WAIT, beginTime, ctxIdx));
@@ -220,7 +226,7 @@ HcclResult DispatcherGraph::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
         __func__, dst.ptr(), dst.size(), src.ptr(), src.size(), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE,
         inLinkType, remoteUserRank, stream.id());
     u32 ctxIdx;
-    CHK_RET(GraphAddMemcpyTask(graphMgr_, fftsCtxsPtr, stream.id(), dst.ptr(), src.ptr(), src.size(), &ctxIdx));
+    CHK_RET(GraphAddMemcpyTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), dst.ptr(), src.ptr(), src.size(), &ctxIdx));
     // 调用回调来保存task信息
     if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {
         hccl::TaskParaDMA para(src.ptr(), dst.ptr(), src.size(), inLinkType, remoteUserRank,
@@ -270,7 +276,7 @@ HcclResult DispatcherGraph::ReduceAsync(const void *src, void *dst, u64 dataCoun
     }
 
     u32 ctxIdx = 0;
-    CHK_RET(GraphAddReduceTask(graphMgr_, fftsCtxsPtr, stream.id(), dst, src, dataCount, datatype,
+    CHK_RET(GraphAddReduceTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), dst, src, dataCount, datatype,
         redOp, &ctxIdx));
     // 调用回调来保存 task 信息
     if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {
@@ -317,7 +323,7 @@ HcclResult DispatcherGraph::InlineReduceAsync(const void *src, u64 dataCount, co
             __func__, src, dst, dataCount, GetDataTypeEnumStr(datatype).c_str(), GetReduceOpEnumStr(redOp).c_str(),
             inLinkType, remoteUserRank, stream.id());
     u32 ctxIdx = 0;
-    CHK_RET(GraphAddInlineReduceTask(graphMgr_, fftsCtxsPtr, stream.id(), dst, src, dataCount, datatype,
+    CHK_RET(GraphAddInlineReduceTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), dst, src, dataCount, datatype,
         redOp, &ctxIdx));
 
     // 调用回调来保存 task 信息
@@ -365,7 +371,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         __func__, dbindex, dbinfo, notifyID, remoteUserRank, stream.id(), isCapture);
 
     u32 ctxIdx = 0;
-    CHK_RET(GraphAddRdmaSendTask(graphMgr_, fftsCtxsPtr, stream.id(), dbindex, dbinfo, isCapture, &ctxIdx));
+    CHK_RET(GraphAddRdmaSendTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), dbindex, dbinfo, isCapture, &ctxIdx));
     // 调用回调来保存task信息
     if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {
         // 0x00000000FFFFFFFF usrrank位于notifyID的高32位
@@ -416,7 +422,7 @@ HcclResult DispatcherGraph::RdmaSend(u32 dbindex, u64 dbinfo, const struct SendW
         __func__, dbindex, dbinfo, notifyID, userRank, offset, stream.id());
 
     u32 ctxIdx = 0;
-    CHK_RET(GraphAddRdmaSendTask(graphMgr_, fftsCtxsPtr, stream.id(), dbindex, dbinfo, isCapture, &ctxIdx));
+    CHK_RET(GraphAddRdmaSendTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), dbindex, dbinfo, isCapture, &ctxIdx));
     // 调用回调来保存task信息
      if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {
         // 0x00000000FFFFFFFF usrrank位于notifyID的高32位
@@ -474,7 +480,7 @@ HcclResult DispatcherGraph::VectorReduce(const void *src1, const void *src2, u64
         HCCL_ERROR("[DispatcherGraph][VectorReduce] does not support this interface.");
         return HCCL_E_PARA;
 #endif
-        GraphAddVectorReduceArgs(graphMgr_, args.argsHandle);
+        GraphAddVectorReduceArgs(fftsPubInfo_, args.argsHandle);
     }
     CHK_RET(SetGraphDescVectorReduce(src1, dst, count, args.addrListDevMem, args.funcAddr,
         args.blockDim, dataType, redOp, stream));
@@ -517,7 +523,7 @@ HcclResult DispatcherGraph::SetGraphTailVectorReduceDescSdma(void *devMem, const
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
     u32 ctxIdx = 0;
-    CHK_RET(GraphAddTailVectorReduceTask(graphMgr_, fftsCtxsPtr, stream.id(), devMem, tailSrc, count, &ctxIdx));
+    CHK_RET(GraphAddTailVectorReduceTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), devMem, tailSrc, count, &ctxIdx));
 
     // 调用回调来保存 task 信息
     if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {
@@ -555,7 +561,7 @@ HcclResult DispatcherGraph::SetGraphDescVectorReduce(const void *src, const void
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
     u32 ctxIdx = 0;
-    CHK_RET(GraphAddVectorReduceTask(graphMgr_, fftsCtxsPtr, stream.id(), count, addrListDevMemPtr,
+    CHK_RET(GraphAddVectorReduceTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), count, addrListDevMemPtr,
         funcAddr, blockDim, &ctxIdx));
 
     // 调用回调来保存 task 信息
@@ -613,7 +619,7 @@ HcclResult DispatcherGraph::TailVectorReduce(const void *tailSrc1, const void *t
         HCCL_ERROR("[DispatcherGraph][VectorReduce] does not support this interface.");
         return HCCL_E_PARA;
 #endif
-        GraphAddVectorReduceArgs(graphMgr_, args.argsHandle);
+        GraphAddVectorReduceArgs(fftsPubInfo_, args.argsHandle);
     }
     u64 dataCount = tailCount * SIZE_TABLE[dataType];
 
@@ -652,7 +658,7 @@ HcclResult DispatcherGraph::SignalRecord(Stream &stream, u64 notifyId)
         return DispatcherPub::SignalRecord(stream, notifyId);
     }
 
-    CHK_RET(GraphAddRecordTaskById(graphMgr_, fftsCtxsPtr, static_cast<u32>(notifyId), stream.id()));
+    CHK_RET(GraphAddRecordTaskById(fftsPubInfo_, fftsCtxsPtr, static_cast<u32>(notifyId), stream.id()));
 
     if (HcclCheckLogLevel(HCCL_LOG_INFO) || (GetExternalInputDebugConfig() & PLF_TASK)) {
         PLF_CONFIG_INFO(PLF_TASK,
@@ -667,7 +673,7 @@ HcclResult DispatcherGraph::SignalWait(Stream &stream, u32 notifyId, u32 timeOut
     if (UNLIKELY(disableFfts_)) {
         return DispatcherPub::SignalWait(stream, notifyId, timeOut);
     }
-    CHK_RET(GraphAddWaitTaskById(graphMgr_, fftsCtxsPtr, static_cast<u32>(notifyId), stream.id()));
+    CHK_RET(GraphAddWaitTaskById(fftsPubInfo_, fftsCtxsPtr, static_cast<u32>(notifyId), stream.id()));
 
     if (HcclCheckLogLevel(HCCL_LOG_INFO) || (GetExternalInputDebugConfig() & PLF_TASK)) {
         PLF_CONFIG_INFO(PLF_TASK,

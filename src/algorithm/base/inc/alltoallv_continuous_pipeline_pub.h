@@ -1,12 +1,12 @@
-/*
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 1.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef ALLTOALL_V_CONTINUOUS_PIPELINE_PUB_H
 #define ALLTOALL_V_CONTINUOUS_PIPELINE_PUB_H
@@ -144,7 +144,7 @@ private:
     // 刷新某个rank的receive info，counts-[count]，displ+[count]
     HcclResult UpdateLocalRecvInfo(const u32 sourceRank, const u64 count);
 
-    HcclWorkflowMode workMode_;
+    HcclWorkflowMode workMode_ = HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED;
 
     DeviceMem inBuffer_;
     DeviceMem outBuffer_;
@@ -187,7 +187,7 @@ private:
     std::vector<u64> inBufferDataSize_; // 记录在in buffer里每个分块目前存放的数据大小
 
     bool needCollectInfo_{false}; // 是否需要先收集其他module的counts信息
-    const SendRecvInfo* localSendRecvInfoPtr_;
+    const SendRecvInfo* localSendRecvInfoPtr_ = nullptr;
     std::vector<std::vector<u64>> intraRecvCounts_; // 记录module内所有卡的recv counts
 
     std::vector<u64> localSendCounts_;
@@ -197,7 +197,7 @@ private:
 
     std::vector<u32> flagAreaRefreshData_;
 
-    u32 waitFlagTimeoutSec_;   // 等待Flag的超时时间，单位秒
+    u32 waitFlagTimeoutSec_{0};   // 等待Flag的超时时间，单位秒
 
     u32 flagAreaRefreshFlag{0}; // 标识flag区域已经被刷0，避免刷0的任务还没执行，下发态kernel就开始轮询
     u32 flagAreaRefreshValue{1};

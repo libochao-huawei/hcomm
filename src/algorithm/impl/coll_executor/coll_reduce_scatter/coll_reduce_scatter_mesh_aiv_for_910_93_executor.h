@@ -22,6 +22,7 @@ public:
     ~CollReduceScatterMeshAivFor91093Executor() override = default;
  
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
+    HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;
     HcclResult PrepareCommInfoToDevice(AlgResourceResponse& algResource) override;
     HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
 

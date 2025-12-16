@@ -23,7 +23,7 @@ struct RaRequestHandle {
     void *recvBuf;
     unsigned int recvLen;
     int opRet;
-    bool isDone;
+    volatile bool isDone;
 
     unsigned int devIndex;
     void *privData;

@@ -102,6 +102,10 @@ HcclResult CollReduceScatterRingZerocopyExecutor::SemiRingReduceScatter(
     const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> multRingsUserMemSlice)
 {
+    (void) tag;
+    (void) multRingsSliceZero;
+    (void) baseOffset;
+    (void) opInfo;
     HCCL_INFO("[CollReduceScatterRingZerocopyExecutor][SemiRingReduceScatter] SemiRingReduceScatter starts");
     
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
@@ -119,6 +123,7 @@ HcclResult CollReduceScatterRingZerocopyExecutor::SemiRingReduceScatter(
         algResResp_->paramInputMem, algResResp_->paramOutputMem, inputMem,
         outputMem, count, algResResp_->slaveStreams, algResResp_->notifiesMain,
         algResResp_->notifiesAux, dataType, reductionOp, multRingsUserMemSlice, reduceAttr));
+    HCCL_DEBUG("[CollReduceScatterSemiRingExecutor][DoubleRingMidCountReduceScatter]reduceAttr is %llu", reduceAttr);
 
     HcclResult ret = executor->RegisterProfiler(
         ((COMM_INDEX_0 + 1) << PROF_RINGINDEX_OFFSET_OF_PLANEID) +
@@ -141,6 +146,7 @@ HcclResult CollReduceScatterRingZerocopyExecutor::RunIntraSeverReduceScatter(
     const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> &multRingsUserMemSlice, const bool disableDMAReduce)
 {
+    (void) disableDMAReduce;
     if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
         CHK_RET(MultiRingReduceScatter(tag, inputMem, outputMem, count, dataType, reductionOp,
             multRingsSliceZero, stream, profStage, baseOffset, opInfo, multRingsUserMemSlice));

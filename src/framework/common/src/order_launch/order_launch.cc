@@ -10,6 +10,12 @@
 
 #include "order_launch.h"
 #include "log.h"
+#include "acl/acl_base.h"
+#include "acl/acl_rt.h"
+#include "config_log.h"
+#include "hccl_communicator.h"
+#include "stream_utils.h"
+#include "hccl_types.h"
 
 namespace hccl {
 OrderLaunch &OrderLaunch::GetInstance(s32 deviceLogicID)
@@ -30,7 +36,9 @@ OrderLaunch::~OrderLaunch()
     std::unique_lock<std::mutex> mapLock(streamMutex_);
     initialized_ = false;
     groupSet_.clear();
-    streamMap_.clear();
+    opbaseStream_.reset();
+    aclgraphStreamMap_.clear();
+    hcomStreamMap_.clear();
 }
 
 HcclResult OrderLaunch::RegisterOrderLaunch(const std::string &group)
@@ -56,38 +64,122 @@ HcclResult OrderLaunch::UnRegisterOrderLaunch(const std::string &group)
 
     groupSet_.erase(group);
     if (groupSet_.empty()) { // 没有注册的通信域，销毁全局的流
-        streamMap_.clear();
+        opbaseStream_.reset();
+        aclgraphStreamMap_.clear();
+        hcomStreamMap_.clear();
     }
     HCCL_INFO("%s success, group[%s]", __func__, group.c_str());
     return HCCL_SUCCESS;
 }
 
-HcclResult OrderLaunch::GetOrderStream(const std::string &group, StreamType streamType, Stream &stream)
+HcclResult OrderLaunch::SetHcomStream(u32 graphId, const Stream& hcomAttachedStream)
 {
     std::unique_lock<std::mutex> mapLock(streamMutex_);
-    if (groupSet_.find(group) == groupSet_.end()) {
-        HCCL_ERROR("%s fail, group[%s] has not been registered", __func__, group.c_str());
-        return HCCL_E_PARA;
-    }
-
-    if (streamMap_.find(streamType) == streamMap_.end()) {
-        streamMap_[streamType] = Stream(streamType);
-        HCCL_RUN_INFO("%s alloc streamId[%u], streamType[%d]", __func__, streamMap_[streamType].id(), streamType);
-    }
-
-    stream = streamMap_[streamType];
-    CHK_PTR_NULL(stream.ptr());
-    HCCL_DEBUG("%s group[%s], streamId[%u], streamType[%d]", __func__, group.c_str(), stream.id(), streamType);
+    hcomStreamMap_[graphId] = hcomAttachedStream;
     return HCCL_SUCCESS;
 }
 
-void OrderLaunch::Lock()
+HcclResult OrderLaunch::AclgraphLaunchInOrder(std::string &group, const Stream& kernelStream, u64 modelId,
+    rtModel_t rtModel, std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
-    streamMutex_.lock();
+    HCCL_INFO("AclgraphLaunchInOrder skip");
+    return HCCL_SUCCESS;
+    std::unique_lock<std::mutex> mapLock(streamMutex_);
+    if (groupSet_.find(group) == groupSet_.end()) {
+        HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
+        return HCCL_E_PARA;
+    }
+
+    Stream* hostOrderStream = nullptr;
+    for (auto it = aclgraphStreamMap_.begin(); it != aclgraphStreamMap_.end(); ++it) {
+        if (it->first == modelId) {
+            hostOrderStream = &(it->second);
+            CHK_PTR_NULL(hostOrderStream);
+            HCCL_INFO("[%s] reuse existing modelId[%llu] streamId[%u]",
+                        __func__, modelId, hostOrderStream->id());
+            break;
+        }
+    }
+
+    if (hostOrderStream == nullptr) {
+        aclgraphStreamMap_[modelId] = Stream(StreamType::STREAM_TYPE_ONLINE);
+        hostOrderStream = &(aclgraphStreamMap_[modelId]);
+        HCCL_INFO("[%s] modelId[%llu] group[%s] alloc streamId[%u]",
+                    __func__, modelId, group.c_str(), hostOrderStream->id());
+        CHK_PTR_NULL(hostOrderStream);
+        CHK_RET(AddStreamToModel(hostOrderStream->ptr(), rtModel));
+    }
+    HCCL_INFO("[%s] group[%s], modelId[%llu], streamId[%u]", __func__, group.c_str(), modelId, hostOrderStream->id());
+    CHK_RET(LaunchInOrder(group, kernelStream, *hostOrderStream, notify0, notify1, timeOut));
+    return HCCL_SUCCESS;
 }
 
-void OrderLaunch::UnLock()
+HcclResult OrderLaunch::OpbaseLaunchInOrder(std::string &group, const Stream& kernelStream,
+    std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
-    streamMutex_.unlock();
+    std::unique_lock<std::mutex> mapLock(streamMutex_);
+    if (groupSet_.find(group) == groupSet_.end()) {
+        HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
+        return HCCL_E_PARA;
+    }
+    // 申请控制流
+    Stream hostOrderStream;
+    if (opbaseStream_ == nullptr) {
+        EXECEPTION_CATCH(opbaseStream_ = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE), return HCCL_E_PTR);
+        HCCL_INFO("[%s] group[%s] alloc streamId[%u]", __func__, group.c_str(), opbaseStream_->id());
+    }
+    hostOrderStream = *opbaseStream_;
+    CHK_PTR_NULL(hostOrderStream.ptr());
+    HCCL_INFO("[%s] group[%s], streamId[%u]", __func__, group.c_str(), hostOrderStream.id());
+    CHK_RET(LaunchInOrder(group, kernelStream, hostOrderStream, notify0, notify1, timeOut));
+    return HCCL_SUCCESS;
+}
+
+HcclResult OrderLaunch::HcomLaunchInOrder(std::string &group, const Stream& kernelStream, u32 graphId,
+    std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
+{
+    std::unique_lock<std::mutex> mapLock(streamMutex_);
+    if (groupSet_.find(group) == groupSet_.end()) {
+        HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
+        return HCCL_E_PARA;
+    }
+    Stream hostOrderStream;
+    if (hcomStreamMap_.find(graphId) == hcomStreamMap_.end()) {
+        HCCL_ERROR("[%s] graphId[%u] group[%s] stream not found", __func__, graphId, group.c_str());
+        return HCCL_E_NOT_FOUND;
+    }
+    hostOrderStream = hcomStreamMap_[graphId];
+    CHK_PTR_NULL(hostOrderStream.ptr());
+    HCCL_INFO("[%s] group[%s], graphId[%u], streamId[%u]", __func__, group.c_str(), graphId, hostOrderStream.id());
+    CHK_RET(LaunchInOrder(group, kernelStream, hostOrderStream, notify0, notify1, timeOut));
+    return HCCL_SUCCESS;
+}
+
+HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelStream, const Stream &hostOrderStream,
+    std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut) 
+{
+#ifndef CCL_KERNEL_AICPU
+    aclError ret = ACL_SUCCESS;
+    ret = aclrtWaitAndResetNotify(notify0->ptr(), kernelStream.ptr(), timeOut);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[%s] aclrtWaitAndResetNotify failed, ret[%d], notifyId[%u], streamId[%d], timeOut[%d s]",
+        __func__, ret, notify0->notifyId_, kernelStream.id(), timeOut), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
+        __func__, notify0->notifyId_, kernelStream.id(), timeOut);
+
+    ret = aclrtRecordNotify(notify0->ptr(), hostOrderStream.ptr());
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s] aclrtRecordNotify failed, ret[%d], notifyId[%u], streamId[%d]",
+        __func__, ret, notify0->notifyId_, hostOrderStream.id()), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtRecordNotify para: notifyId[%u], streamId[%d]",
+        __func__, notify0->notifyId_, hostOrderStream.id());
+
+    ret = aclrtWaitAndResetNotify(notify1->ptr(), hostOrderStream.ptr(), timeOut);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[%s] aclrtWaitAndResetNotify failed, ret[%d], notifyId[%u], streamId[%d], timeOut[%d s]",
+        __func__, ret, notify1->notifyId_, hostOrderStream.id(), timeOut), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
+        __func__, notify1->notifyId_, hostOrderStream.id(), timeOut);
+#endif
+    return HCCL_SUCCESS;
 }
 }

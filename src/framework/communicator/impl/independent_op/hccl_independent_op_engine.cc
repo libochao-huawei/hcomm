@@ -68,7 +68,7 @@ HcclResult HcclAllocThreadRes(HcclComm comm, CommEngine engine, uint32_t threadN
     return HCCL_SUCCESS;
 }
 
-HcclResult CommAllocThreadResByStream(HcclComm comm, CommEngine engine,
+HcclResult HcclAllocThreadResByStream(HcclComm comm, CommEngine engine,
     aclrtStream stream, uint32_t notifyNum, ThreadHandle *thread)
 {
     CHK_PTR_NULL(comm);
@@ -80,13 +80,13 @@ HcclResult CommAllocThreadResByStream(HcclComm comm, CommEngine engine,
     HCCL_RUN_INFO("Entry-%s:comm[%s] engine[%u] notifyNum[%u] stream[%p]",
         __func__, commId.c_str(), engine, notifyNum, stream);
     auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
-    HcclResult ret = engineResMgr.CommAllocThreadResByStream(engine, stream, notifyNum, thread);
+    HcclResult ret = engineResMgr.HcclAllocThreadResByStream(engine, stream, notifyNum, thread);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CommAllocThreadResByStream] Failed to create thread for engine[%d]", engine);
+        HCCL_ERROR("[HcclAllocThreadResByStream] Failed to create thread for engine[%d]", engine);
         return ret;
     }
 
-    HCCL_INFO("[CommAllocThreadResByStream] Allocated thread for engine[%d], stream[%p], notifyNum[%u]",
+    HCCL_INFO("[HcclAllocThreadResByStream] Allocated thread for engine[%d], stream[%p], notifyNum[%u]",
               engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }

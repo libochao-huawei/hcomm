@@ -357,7 +357,7 @@ enum HcclAddrType {
 
 /**
  * @ingroup HcclAddr
- * @brief Hccl communication address
+ * @brief Hccl communication address.
  */
 typedef struct {
     HcclAddrType type;

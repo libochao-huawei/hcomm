@@ -47,6 +47,7 @@ HcclResult CalcMeshTransportReq::CalcTransportRequest(const std::string &tag, Tr
         SingleSubCommTransport &subCommTransport = commTransport[ringIndex];
         subCommTransport.transportRequests.resize(rankSize);
         // 只有一张卡时不需要建链
+        HCCL_DEBUG("[CalcMeshTransportReq]Calc for transportRequest");
         if (rankSize == HCCL_RANK_SIZE_EQ_ONE) {
             HCCL_INFO("comm base needn't to create links, rankSize_[%u].", rankSize);
             return HCCL_SUCCESS;

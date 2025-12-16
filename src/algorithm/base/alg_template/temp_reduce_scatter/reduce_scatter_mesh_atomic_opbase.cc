@@ -110,6 +110,7 @@ HcclResult ReduceScatterMeshDirect::RunAsync(const u32 rank, const u32 rankSize,
     CHK_RET(SubWaitMain());
 
     // 每个stream只负责一个对端的交互
+    HCCL_DEBUG("[ReduceScatterMeshDirect][RunAsync]rankSize is %u", rankSize);
     for (u32 round = 1; round < rankSize; round++) {
         u32 dstRank = (round + rank) % rankSize;
         const LINK &dstLink = links[dstRank];
