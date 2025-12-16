@@ -515,7 +515,7 @@ HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSched
     // NPU超时范围(1, 254) * interval
     minNpuSchedTimeout = 1 * interval;
     maxNpuSchedTimeout = MAX_INTERVAL * interval;
-    HCCL_INFO("GetMinAndMaxNpuSchedTimeOut minNpuSchedTimeout[%u]us, maxNpuSchedTimeout[%u]us.",
+    HCCL_INFO("GetMinAndMaxNpuSchedTimeOut minNpuSchedTimeout[%llu]us, maxNpuSchedTimeout[%llu]us.",
         minNpuSchedTimeout, maxNpuSchedTimeout);
     return HCCL_SUCCESS;
 }
@@ -535,7 +535,7 @@ u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
         timeout = (timeoutUsInt < minNpuSchedTimeout) ? minNpuSchedTimeout
                     : (timeoutUsInt > maxNpuSchedTimeout) ? maxNpuSchedTimeout
                     : timeoutUsInt;
-        HCCL_INFO("[GetAivTimeout]timeout[%u]us, minNpuSchedTimeout[%u]us, maxNpuSchedTimeout[%u]us.",
+        HCCL_INFO("[GetAivTimeout]timeout[%u]us, minNpuSchedTimeout[%llu]us, maxNpuSchedTimeout[%llu]us.",
             timeout, minNpuSchedTimeout, maxNpuSchedTimeout);
     }
 

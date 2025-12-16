@@ -102,7 +102,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::GetAivExecParam(const OpParam& p
     
     u32 localRank = level0CommInfo.localRank;
     u32 localRankSize = level0CommInfo.localRankSize;
-    HCCL_DEBUG("[CollAlltoAllMeshAivFor91093Executor][GetAivExecParam] userRank [%d] localRank [%d]",
+    HCCL_DEBUG("[CollAlltoAllMeshAivFor91093Executor][GetAivExecParam] userRank [%u] localRank [%u]",
         topoAttr_.userRank, localRank);
 
     args.buffersIn[0] = execMem.inputMem.ptr();
