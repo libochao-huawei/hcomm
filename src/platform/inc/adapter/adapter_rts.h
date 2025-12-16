@@ -18,7 +18,7 @@
 #include "rt_external.h"
 #include "hccl/base.h"
 #include "private_types.h"
-#include "acl/error_codes/rt_error_codes.h"
+
 #if T_DESC("test", true)
 #if T_DESC("Device管理", true)
 

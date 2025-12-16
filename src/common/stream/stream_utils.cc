@@ -58,7 +58,10 @@ HcclResult AddStreamToModel(rtStream_t stream, rtModel_t &rtModel)
 
 HcclResult GetModelId(aclmdlRI &rtModel, u64 &modelId)
 {
-    // 使用 rtModel 的地址作为 modelId
-    modelId = reinterpret_cast<uint64_t>(rtModel);
+    uint32_t mdlId;
+    rtError_t rtRet = rtModelGetId(rtModel, &mdlId);
+    CHK_PRT_RET(rtRet != RT_ERROR_NONE,
+                HCCL_ERROR("[%s]rtGet stream get model id fail. return[%d]", __func__, rtRet), HCCL_E_RUNTIME);
+    modelId = static_cast<uint64_t>(mdlId);
     return HCCL_SUCCESS;
 }
