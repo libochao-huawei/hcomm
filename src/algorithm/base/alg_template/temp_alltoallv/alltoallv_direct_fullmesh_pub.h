@@ -53,7 +53,7 @@ private:
         const std::vector<std::vector<std::pair<u32,u32>>> &partialCommRankSet);
     HcclResult LocalCopy();
     HcclResult RunGroupFullMeshAlltoall(u32 roundIdx, u32 step);
-    HcclResult RunSDMA(HcclOpMetaInfoDef &opMeta);
+    HcclResult RunSDMA();
     HcclResult RunSDMATasks(u32 roundIdx, u32 step, u32 groupRankSize, u32 leftRankSize);
     HcclResult RunSDMAFineGrained(u32 totalStep, HcclOpMetaInfoDef& opMeta);
 
@@ -81,6 +81,7 @@ private:
     HcclResult SdmaMainStreamPost(u32 step, u32 roundIdx);
     HcclResult RdmaPostSync(Stream& stream);
     HcclResult SetPostSyncTasks(u32 step, u32 roundIdx);
+    void CheckIsHaveZeroLength();
 
     Stream mainStream_;
     u32 userRank_;
@@ -97,6 +98,7 @@ private:
     HcclCMDType opType_;
     bool isBigCount_{false};
     bool isHugeData_{false};
+    bool isHaveZeroLength_{false};
 
     DeviceMem userInput_;
     DeviceMem userOutput_;
