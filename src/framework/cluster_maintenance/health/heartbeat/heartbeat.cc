@@ -1305,7 +1305,6 @@ void Heartbeat::CreateHBLinksAsync()
     std::unique_lock<std::mutex> infoLock(hbLinkConnInfoMtx_);
     if (hbLinkConnInfo_.empty()) {
         return;
-        infoLock.unlock();
     }
     linkThreadRunning_ = true;
     std::queue<std::tuple<std::string, UIDType, ConnInfo>> connInfoQueue;
