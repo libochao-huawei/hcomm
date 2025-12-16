@@ -1867,14 +1867,19 @@ HcclResult HcclCommAicpu::ReAllocTransportResource(const std::string &newTag, Al
                     receivedAcks_[transportRequest.remoteUserRank] = singleSubCommTransport.supportDataReceivedAck;
                     bool isBackup = remoteRankPortMap.find(transportRequest.remoteUserRank) != remoteRankPortMap.end() &&
                         !remoteRankPortMap[transportRequest.remoteUserRank];
-                        bool isSecondBuild = false;
-                        bool isBatchSendRecv =  newTag.find("BatchSendRecv") != std::string::npos;
-                        if (transportRequest.isUsedRdma && isBatchSendRecv &&
-                            bsrTansportRank.find(transportRequest.remoteUserRank) != bsrTansportRank.end()){
-                            //仅在batchsendrecv rdma下发的时候需要第二次刷新，实际第一次下发都刷好了，第二次就是get一下
-                            isSecondBuild = true;
-                        }
-                        bsrTansportRank.insert(transportRequest.remoteUserRank);
+                    bool isSecondBuild = false;
+                    bool isBatchSendRecv =  newTag.find("BatchSendRecv") != std::string::npos;
+                    if (transportRequest.isUsedRdma && isBatchSendRecv &&
+                        bsrTansportRank.find(transportRequest.remoteUserRank) != bsrTansportRank.end()){
+                        //仅在batchsendrecv rdma下发的时候需要第二次刷新，实际第一次下发都刷好了，第二次就是get一下
+                        isSecondBuild = true;
+                    }
+                    // A3 bsr远端是DirectNpu 链路的话则跳过
+                    if ((param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
+                        (param.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        continue;
+                    }
+                    bsrTansportRank.insert(transportRequest.remoteUserRank);
                     CHK_RET(CreateLink(newTag, transportRequest, commParam, singleSubCommTransport.links.back(),
                         transportRequest.notifyNum, isBackup, isSecondBuild));
                 }
@@ -1962,6 +1967,11 @@ HcclResult HcclCommAicpu::IncreAllocTransportResource(const std::string &newTag,
                         bsrTansportRank.find(transportRequest.remoteUserRank) != bsrTansportRank.end()){
                         //仅仅在batchsendrecv rdma下发的时候需要第二次刷新，实际第一次下发都刷好了，第二次就是get一下
                         isSecondBuild = true;
+                    }
+                    // A3 bsr远端是DirectNpu 链路的话则跳过
+                    if ((opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
+                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        continue;
                     }
                     bsrTansportRank.insert(transportRequest.remoteUserRank);
                     CHK_RET(CreateLink(newTag, transportRequest, commParam, respSingleSubComm.links[rankIndex],
