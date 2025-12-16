@@ -44,7 +44,7 @@ target_link_directories(hccl_utest_framework_communicator PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 target_link_libraries(hccl_utest_framework_communicator PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -lpthread
     hccl_llt
