@@ -266,7 +266,7 @@ target_compile_options(hccl_llt   PRIVATE
 )
 
 target_link_libraries(hccl_llt  PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     -lrt
     -ldl
 )

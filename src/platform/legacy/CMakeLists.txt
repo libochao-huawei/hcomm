@@ -117,6 +117,7 @@ target_link_options(hccl_legacy PRIVATE
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(hccl_legacy
     PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         -Wl,--no-as-needed
         c_sec
         unified_dlog
