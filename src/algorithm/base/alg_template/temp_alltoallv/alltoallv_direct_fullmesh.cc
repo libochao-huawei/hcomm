@@ -64,6 +64,24 @@ HcclResult AlltoAllVDirectFullMesh::GenerateSubStreamInfo(const std::vector<Stre
     return HCCL_SUCCESS;
 }
 
+void AlltoAllVDirectFullMesh::CheckIsHaveZeroLength()
+{
+    for (auto iter : localSendRecvInfoPtr_->sendLength) {
+        if (iter == 0) {
+            isHaveZeroLength_ = true;
+            return;
+        }
+    }
+
+    for (auto iter : localSendRecvInfoPtr_->recvLength) {
+        if (iter == 0) {
+            isHaveZeroLength_ = true;
+            break;
+        }
+    }
+    return;
+}
+
 HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
 {
     mainStream_ = param.stream;
@@ -71,6 +89,7 @@ HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
     userRankSize_ = param.userRankSize;
     links_ = *param.linksPtr;
     localSendRecvInfoPtr_ = param.localSendRecvInfoPtr;
+    CheckIsHaveZeroLength();
     devNumInlocalPod_ = param.devNumInlocalPod;
     rankIdxInPod_ = param.rankIdxInPod;
     opType_ = param.opType;
@@ -1051,9 +1070,11 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMAFineGrained(u32 totalStep, HcclOpMeta
     return HCCL_SUCCESS;
 }
 
-HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
+HcclResult AlltoAllVDirectFullMesh::RunSDMA()
 {
     u32 totalStep = CalcNumSubStep();
+    HcclOpMetaInfoDef opMeta = HcclOpMetaInfo::GetOneForAllToAllV(
+        CopyPattern::ZCOPY, cclInMem_.size(), ((totalStep != 1) || isHaveZeroLength_), !isBigCount_);
     lastStep_ = totalStep - 1;
     // 计算每个rank分组fullmesh后需要通信的轮次，向上取整
     commRounds_ = (devNumInlocalPod_ + sdmaConcurrentNum_ - 1) / sdmaConcurrentNum_;
@@ -1126,7 +1147,7 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
     CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
 
     if (devNumInlocalPod_ > 1) {
-        CHK_RET(RunSDMA(opMeta));
+        CHK_RET(RunSDMA());
     }
 
     if (totalRdmaRankNum_ > 0) {
