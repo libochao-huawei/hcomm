@@ -255,7 +255,7 @@ __aicore__ inline void AivCrossNode91093Base::CalCountAndBlockOffset(uint64_t le
 
     count = CalActualCount(blockIdxInGroup, sliceCount, avgLengthPerSlice, tailLength);
     blockOffset = blockIdxInGroup * avgLengthPerSlice;
-    AIV_INFO("count %u, blockOffset %u", count, blockOffset);
+    AIV_INFO("count %llu, blockOffset %llu", count, blockOffset);
 }
 
 __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanks()

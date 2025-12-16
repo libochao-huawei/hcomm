@@ -307,7 +307,7 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpPara
     }
 
     std::vector<Slice> slices;
-    CalReduceScatterVSliceData(param, level0RankSize, level1RankSize, slices);
+    CHK_RET(CalReduceScatterVSliceData(param, level0RankSize, level1RankSize, slices));
   
     CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.outputMem, 0,
         dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, slices));
@@ -345,7 +345,7 @@ HcclResult CollReduceScatterVDeterExecutor::KernelRun(const OpParam &param, Exec
         }
         srcMem = execMem.scratchMem.range(minBiasOffset_ * topoAttr_.userRank * unitSize, dataSize);// Opbase: CO/Sr->UO
     } else { // 处理 Nx1 场景的图模式
-        RunReduceScattervLevel1(param, execMem, level0CommInfo);
+        CHK_RET(RunReduceScattervLevel1(param, execMem, level0CommInfo));
         srcMem = execMem.inputMem.range(curDispls[topoAttr_.userRank] * unitSize, dataSize);// Offload:UI->UO
     }
 
