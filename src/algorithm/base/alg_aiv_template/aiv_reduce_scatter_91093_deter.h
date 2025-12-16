@@ -58,11 +58,11 @@ __aicore__ inline void AivReduceScatter91093Deter::InitDataCopyOffset(uint64_t p
     // 当rankSize小于等于总aiv核数时，根据ranksize和数据量大小选择使用多个aiv服务一个对端（多核并行），只需一次通信
     } else {
         numTargets = 1;
-        blockNumPerGroup = block_num / rankSize_; // 多少个aiv服务一个rank
-        targetRanks[0] = block_idx / blockNumPerGroup;
+        blockNumPerGroup = blockdim_ / rankSize_; // 多少个aiv服务一个rank
+        targetRanks[0] = GetBlockIdx() / blockNumPerGroup;
 
         uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
-        blockIdxInGroup = block_idx % blockNumPerGroup;
+        blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
 
         if (len <= perRankBufferCount) { // ccl够用，只需要搬一轮的情况
             countMid = 0;
