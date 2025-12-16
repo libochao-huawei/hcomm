@@ -1193,9 +1193,26 @@ HcclResult ParseCclBufferSize()
     return HCCL_SUCCESS;
 }
 
-void SetIfProfile(bool ifProfile)
+HcclResult ParseSymmetricMemoryStride()
 {
-    g_ifProf = ifProfile; 
+    std::string symmetricMemoryStrideEnv = GET_ENV(MM_ENV_HCCL_SYMMETRIC_MEM_STRIDE);
+    if (symmetricMemoryStrideEnv == "EmptyString") {
+        g_externalInput.symmetricMemoryStride = SYMMETRIC_MEM_STRIDE_DEFAULT;
+        HCCL_RUN_INFO("HCCL_SYMMETRIC_MEM_STRIDE set by default to [%u]GB", g_externalInput.symmetricMemoryStride);
+        return HCCL_SUCCESS;
+    }
+
+    // 校验环境变量长度
+    bool isEnvLenValid = CheckEnvLen(symmetricMemoryStrideEnv.c_str(), MAX_LEN_OF_DIGIT_ENV);
+    CHK_PRT_RET(!isEnvLenValid,
+        HCCL_ERROR("[Parse][SymmetricMemoryStride]errNo[0x%016llx] Invalid SymmetricMemoryStride env len,"
+        "len is bigger than [%u]. errorno[%d]",
+        HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA),
+        HCCL_E_PARA);
+
+    u32 symmetricMemoryStride = SYMMETRIC_MEM_STRIDE_DEFAULT;
+    CHK_RET(IsAllDigit(symmetricMemoryStrideEnv.c_str()));
+    HcclResult ret = SalStrToULong(symmetricMemoryStrideEnv, HCCL_BASE_DECIMAL, symmetricMemoryStride);
 }
 
 const bool& GetIfProfile()
@@ -1736,6 +1753,11 @@ const u64& GetExternalInputCCLBuffSize()
 {
     return g_externalInput.cclBufferSize;
 }
+
+const u32& GetExternalInputSymmetricMemoryStride()
+{
+    return g_externalInput.symmetricMemoryStride;
+}   
 
 const HcclExecTimeoutSet& GetExternalInputHcclExecTimeoutSet()
 {

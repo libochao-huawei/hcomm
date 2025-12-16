@@ -54,6 +54,7 @@
 #include "independent_op.h"
 #include "comm_config_pub.h"
 #include "new/hccl_dispatcher_ctx.h"
+#include "symmetric_memory.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
@@ -432,6 +433,8 @@ public:
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
     HcclTopoAttr GetTopoAttr();
     void ForceProf(bool isForce);
+    HcclResult RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags);
+    HcclResult DeregisterWindow(HcclWindow winHandle);
 private:
 
     bool IsEnableRoce();
@@ -1025,6 +1028,8 @@ private:
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;
+
+    std::unique_ptr<SymmetricMemory> symmetricMemory_;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H

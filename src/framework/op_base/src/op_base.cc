@@ -3730,6 +3730,34 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     HCCL_RUN_INFO("CommGetCCLBufSizeCfg success, comm[%s], size[%u]", hcclComm->GetIdentifier().c_str(), buffSize);
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclCommWindowRegister(HcclComm comm, void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(ptr);
+    CHK_PTR_NULL(winHandle);
+    CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->RegisterWindow(ptr, size, winHandle, flags));
+    HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
+        hcclComm->GetIdentifier().c_str(), *winHandle, size);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommWindowDeRegister(HcclComm comm, HcclWindow winHandle)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(winHandle);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->DeregisterWindow(winHandle));
+    HCCL_RUN_INFO("[%s]WindowDeregister mem success, group[%s], handle ptr[%p]", __func__,
+        hcclComm->GetIdentifier().c_str(), winHandle);
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

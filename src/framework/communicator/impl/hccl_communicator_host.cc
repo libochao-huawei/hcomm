@@ -101,7 +101,7 @@ namespace hccl
           loopBackIp_(HcclIpAddress(COMM_LOOPBACK_IP)), profilingInitiated_(false), callbackThreadId_(INVALID_U64),
           role_(SERVER_ROLE_SOCKET), mrManagerInit_(false),
           isHostUseDevNic_(false),
-          isAllRankSamePlane_(false), serverNum_(0), moduleNum_(0)
+          isAllRankSamePlane_(false), serverNum_(0), moduleNum_(0), symmetricMemory_(SymmetricMemory()), 
     {
         mrManager_.reset(new (std::nothrow) MrManager());
         if (mrManager_ == nullptr) {
@@ -312,6 +312,7 @@ namespace hccl
 
         CHK_RET(InitOneSidedService(rankTable));
         CHK_RET(OrderLaunch::GetInstance(deviceLogicId_).RegisterOrderLaunch(identifier_));
+        CHK_RET(InitSymmetricMemory());
         return HCCL_SUCCESS;
     }
 
@@ -336,6 +337,7 @@ namespace hccl
         CHK_RET(InitOpResPara());
         CHK_RET(RegisterRanksToDca());
         CHK_RET(OrderLaunch::GetInstance(deviceLogicId_).RegisterOrderLaunch(identifier_));
+        CHK_RET(InitSymmetricMemory());
         return HCCL_SUCCESS;
     }
 
@@ -7944,5 +7946,13 @@ namespace hccl
     aclrtBinHandle HcclCommunicator::GetBinHandle()
     {
         return binHandle_;
+    }
+
+    HcclResult HcclCommunicator::InitSymmetricMemory()
+    {
+        symmetricMemory_ = std::make_unique<SymmetricMemory>(commHandle_, userRank_, userRankSize_, 
+            GetExternalInputSymmetricMemoryStride(), devicePhyId_);
+        CHK_SMART_PTR_NULL(symmetricMemory_);
+        return HCCL_SUCCESS;
     }
 }

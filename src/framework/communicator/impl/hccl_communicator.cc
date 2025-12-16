@@ -446,6 +446,16 @@ namespace hccl
         ForceProfOn(dispatcher_, isForce);    
     }
 
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+    {
+        return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);
+    }
+
+    HcclResult HcclCommunicator::DeregisterWindow(HcclWindow winHandle)
+    {
+        return symmetricMemory_->DeregisterSymmetricMem(winHandle);
+    }
+
     HcclResult HcclCommunicator::InitRankInfoSubGroup(const std::vector<RankInfo> &rankList,
                                                       WorldGroupInfo &groupCommonData)
     {

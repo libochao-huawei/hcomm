@@ -272,6 +272,27 @@ extern HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr);
  */
 extern HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
 
+/**
+ * @brief Register a memory window for HCCL communication.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param ptr A pointer identifying the user memory address.
+ * @param size A size_t identifying the size of memory window.
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param flags The flag of this memory window, now only support 0
+ * @return HcclResult
+ */
+extern HcclResult HcclCommWindowRegister(HcclComm comm, void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags);
+
+/**
+ * @brief Deregister a memory window for HCCL communication.
+ *
+ * @param comm A pointer identifying the communication resource based on.
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @return HcclResult
+ */
+extern HcclResult HcclCommWindowDeRegister(HcclComm comm, HcclWindow winHandle);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus

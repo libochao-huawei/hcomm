@@ -1387,5 +1387,18 @@ HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle, flags));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::DeregisterWindow(HcclWindow winHandle)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->DeregisterWindow(winHandle));
+    return HCCL_SUCCESS;
+}
 
 }  // namespace hccl

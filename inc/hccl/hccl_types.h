@@ -61,6 +61,11 @@ typedef void *HcclComm;
 typedef void *HcclConn;
 
 /**
+ * @brief handle to HCCL Window
+ */
+typedef void *HcclWindow;
+
+/**
  * @brief HCCL Reduction opperation
  */
 typedef enum {
