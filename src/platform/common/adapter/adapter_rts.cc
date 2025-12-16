@@ -11,8 +11,6 @@
 #include <dlog_pub.h>
 #include <securec.h>
 
-#include "rt_external.h"
-#include "acl/error_codes/rt_error_codes.h"
 #include "driver/ascend_hal.h"
 #include "externalinput_pub.h"
 #include "log.h"
@@ -23,7 +21,6 @@
 #include "device_capacity.h"
 #include "config_plf_log.h"
 #include "adapter_rts.h"
-#include "rt_external.h"
 
 using namespace hccl;
 using namespace std;
@@ -1615,11 +1612,11 @@ HcclResult PrintMemoryAttr(const void *memAddr)
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
-HcclResult hrtRegTaskFailCallbackByModule(aclrtExceptionInfoCallback callback)
+HcclResult hrtRegTaskFailCallbackByModule(rtTaskFailCallback callback)
 {
 #ifndef HCCD
-    aclError ret = aclrtSetExceptionInfoCallback(callback);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Reg][TaskFailCallback]errNo[0x%016llx] rt reg taskFailCallback "\
+    rtError_t ret = rtRegTaskFailCallbackByModule("HCCL", callback);
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Reg][TaskFailCallback]errNo[0x%016llx] rt reg taskFailCallback "\
         "fail. return[%d], para: callback[%p].", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, callback), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else

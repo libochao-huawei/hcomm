@@ -276,7 +276,7 @@ extern HcclResult HcommReleaseComm(const char* commId);
  * @return HcclResult 执行结果状态码
  * @note 当前仅支持AICPU模式
  */
-extern HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, u32 size);
+extern HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, uint32_t size);
 
 /**
  * @brief 注册taskException算子信息解析函数

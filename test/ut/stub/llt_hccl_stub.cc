@@ -315,9 +315,9 @@ aclError aclrtCreateStream(aclrtStream *stream)
  * @param [out] NA
  * @return RT_ERROR_NONE for ok
  */
-aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback)
+rtError_t rtRegTaskFailCallbackByModule(const char_t *moduleName, rtTaskFailCallback callback)
 {
-    string tmpStr = "ASCENDCL";
+    string tmpStr = string(moduleName);
     std::unique_lock<std::mutex> lock(taskFailCallbackMapMutex);
     taskFailCallbackMap.clear();
     taskFailCallbackMap.insert({tmpStr, callback});
@@ -5341,4 +5341,9 @@ const char *aclrtGetSocName()
         return "Ascend310P3";
     }
     return "Ascend910";
+}
+
+rtError_t rtModelGetId(rtModel_t mdl, uint32_t *modelId)
+{
+    return RT_ERROR_NONE;
 }
