@@ -83,7 +83,7 @@ HcclResult CollAllGatherMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     }
     HCCL_DEBUG("[CollAllGatherMeshAivFor91093Executor][CalBlockDim]aivCore at least is [%u]", minBlockDim);
     u32 bestBlockDim = blockDim;
-    blockDim = blockDim_ < blockDim ? blockDim_: blockDim;
+    blockDim = blockDim_ < rankSize ? blockDim_ : (blockDim_ < blockDim ? blockDim_ / rankSize * rankSize : blockDim);
 
     CHK_PRT_RET(blockDim < minBlockDim,
         HCCL_ERROR("[CollAllGatherMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
@@ -200,7 +200,7 @@ HcclResult CollAllGatherMeshAivFor91093Executor::KernelRun(const OpParam &param,
 
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType, algoAttr_.identifier };
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * sizeof(opArgs.dataType)));
+    CHK_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * SIZE_TABLE[opArgs.dataType]));
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
