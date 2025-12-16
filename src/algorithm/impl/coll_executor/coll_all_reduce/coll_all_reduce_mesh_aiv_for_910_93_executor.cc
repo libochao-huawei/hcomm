@@ -245,7 +245,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType, algoAttr_.identifier};
 
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * sizeof(opArgs.dataType)));
+    CHK_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * SIZE_TABLE[opArgs.dataType]));
     blockDim_ = blockDim;
 
     AivResourceArgs resourceArgs {
