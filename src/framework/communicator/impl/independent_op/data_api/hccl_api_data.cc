@@ -29,7 +29,7 @@ void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }
 
-int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
+HcclResult HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
@@ -44,8 +44,8 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
     return HcclLocalCopy(stream, &dstBuf, &srcBuf);
 }
 
-int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t count,
-    HcommDataType dataType, HcommReduceOp reduceOp)
+HcclResult HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t count,
+    HcclDataType dataType, HcclReduceOp reduceOp)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
@@ -54,7 +54,7 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
 
     HcclBuf srcBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
     HcclBuf dstBuf{dst, count * SIZE_TABLE[dataType], nullptr};
-    HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
+    HcclReduceInfo reduceInfo{dataType, reduceOp};
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -62,7 +62,7 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
     return HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
 }
 
-int32_t HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
+HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
 {
     HCCL_DEBUG("[HcommInterThreadNotifyRecordOnThread]thread[%llu], dstThread[%p], dstNotifyIdx[%u].", thread, dstThread, dstNotifyIdx);
     AddThread(thread);
@@ -75,7 +75,7 @@ int32_t HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle d
     return HcclLocalNotifyRecord(stream, notify);
 }
 
-int32_t HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
+HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
 {
     HCCL_DEBUG("[HcommInterThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeOut[%u].", thread, notifyIdx, timeOut);
     AddThread(thread);
@@ -88,7 +88,7 @@ int32_t HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyI
 }
 
 
-int32_t HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
+HcclResult HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
@@ -97,7 +97,7 @@ int32_t HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotify
     return HcclLocalBareNotifyRecord(stream, dstNotifyId);
 }
 
-int32_t HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
+HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
@@ -135,7 +135,7 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
     return HcclTaskLaunch(streams.data(), threadNum);
 }
 
-int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
+HcclResult HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
@@ -151,8 +151,8 @@ int32_t HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst
     return HcclRemoteWrite(stream, reinterpret_cast<void*>(channel), &rmtBuf, &locBuf);
 }
 
-int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp)
+HcclResult HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+    uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp)
 {
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
@@ -162,7 +162,7 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
 
     HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
     HcclBuf rmtBuf{dst, count * SIZE_TABLE[dataType], nullptr};
-    HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
+    HcclReduceInfo reduceInfo{dataType, reduceOp};
 
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -186,7 +186,7 @@ HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel,
     return HcclRemoteWriteReduceWithNotify(stream, reinterpret_cast<void*>(channel), &rmtBuf, &locBuf, reduceInfo,
         remoteNotifyIdx);
 }
-int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+HcclResult HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx)
 {
     CHK_PTR_NULL(src);
@@ -201,7 +201,7 @@ int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel,
     return HcclRemoteWriteWithNotify(stream, reinterpret_cast<void*>(channel), &rmtBuf, &locBuf, remoteNotifyIdx);
 }
 
-int32_t HcommReadOnThread(
+HcclResult HcommReadOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len)
 {
     CHK_PTR_NULL(dst);
@@ -236,7 +236,7 @@ HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, v
     return HcclRemoteReadReduce(stream, reinterpret_cast<void*>(channel), &locBuf, &rmtBuf, reduceInfo);
 }
 
-int32_t HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
+HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
 {
     HCCL_DEBUG("[HcommNotifyRecordOnThread]thread[%llu], channel[%llu], remoteNotifyIdx[%u].",
         thread, channel, remoteNotifyIdx);
@@ -248,7 +248,7 @@ int32_t HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, co
     return HcclRemoteNotifyRecord(stream, reinterpret_cast<void*>(channel), remoteNotifyIdx);
 }
 
-int32_t HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
     HCCL_DEBUG("[HcommNotifyWaitOnThread]thread[%llu], channel[%llu], localNotifyIdx[%u], timeout[%u].",
         thread, channel, localNotifyIdx, timeout);
@@ -267,13 +267,13 @@ HcclResult CommFence(ThreadHandle thread, ChannelHandle channel) // 控制前后
     return HcclRemoteFence(stream, reinterpret_cast<void*>(channel), false);
 }
 
-int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
+HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode)
 {
     HCCL_DEBUG("HcommSetLaunchMode launchTag[%s]", launchTag);
     return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
 }
 
-int32_t HcommAcquireComm(const char* commId)
+HcclResult HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
 #ifdef CCL_KERNEL_AICPU
@@ -286,7 +286,7 @@ int32_t HcommAcquireComm(const char* commId)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommReleaseComm(const char* commId)
+HcclResult HcommReleaseComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
 #ifdef CCL_KERNEL_AICPU
@@ -299,7 +299,7 @@ int32_t HcommReleaseComm(const char* commId)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommRegisterOpInfo(const char* commId, void* opInfo, u32 size)
+HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, u32 size)
 {
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(opInfo);
@@ -313,7 +313,7 @@ int32_t HcommRegisterOpInfo(const char* commId, void* opInfo, u32 size)
     return HCCL_SUCCESS;
 }
 
-int32_t HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback)
+HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback)
 {
     CHK_PTR_NULL(commId);
 #ifdef CCL_KERNEL_AICPU
