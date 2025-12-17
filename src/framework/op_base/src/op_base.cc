@@ -1310,7 +1310,8 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclCommInitRootInfoV2(nRanks, rootInfo, rank, comm, identifier));
+    std::string fooidentifier;
+    HCCLV2_FUNC_RUN(HcclCommInitRootInfoV2(nRanks, rootInfo, rank, comm, fooidentifier));
 #endif
     CHK_SMART_PTR_NULL(rootInfo);
     HcclRootHandle rootHandle;
