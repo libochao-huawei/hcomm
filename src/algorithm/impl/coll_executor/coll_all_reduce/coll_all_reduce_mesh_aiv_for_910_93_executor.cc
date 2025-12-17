@@ -97,7 +97,11 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     // Step2. Compare User Given blockDim_ with bestBlockDim
     blockDim = bestBlockDim;
     if (blockDim_ < blockDim) {
-        blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
+        if (blockDim_ > rankSize) {
+            blockDim = blockDim_ / rankSize * rankSize;
+        } else {
+            blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
+        }
     }
 
     CHK_PRT_RET(blockDim < minBlockDim,
