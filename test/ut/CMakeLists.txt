@@ -179,12 +179,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/utils
     ${HCCL_CODE_ROOT}/src/framework/device/framework
 
-    # hccl_next include
-    # tbe头文件
-    ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/common/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/graph_ctx_mgr/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/inc/
+    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
 
     # hcce头文件
     ${HCCL_CODE_ROOT}/src/engines/hcclengine/inc

@@ -225,11 +225,7 @@ target_include_directories(hccl_llt  PRIVATE
     # proto.h头文件
     ${CMAKE_BINARY_DIR}/proto/hccl_llt
 
-    # tbe头文件
-    ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/common/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/graph_ctx_mgr/
-    ${HCCL_CODE_ROOT}/src/platform/legacy/inc/
+    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
 
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
