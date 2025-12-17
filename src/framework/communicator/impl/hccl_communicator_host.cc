@@ -1607,7 +1607,9 @@ namespace hccl
             param.DataDes.dataType = dataType;
         }
 
-        CHK_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit));
+        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         SetWorkflowMode(originWorkflowMode);
         return HCCL_SUCCESS;
     }
@@ -1675,7 +1677,9 @@ namespace hccl
         // gettag
         HCCL_INFO("SPK, rank %llu.", userRank_);
         u32 blockDim;
-        CHK_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit));
+        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
         aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
         aivSuperKernelArgs.blockdim = blockDim;

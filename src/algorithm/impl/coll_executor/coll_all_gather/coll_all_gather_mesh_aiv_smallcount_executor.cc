@@ -69,11 +69,11 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u3
     u32 bestBlockDim = blockDim;
     if (isOpBase || topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
         CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
             blockDim_, blockDim), HCCL_E_PARA);
     } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         CHK_PRT_RET(blockDim_ < rankSize,
-            HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
             blockDim_, rankSize), HCCL_E_PARA);
         if (blockDim_ < blockDim) {
             blockDim = blockDim_ / rankSize * rankSize;
@@ -192,7 +192,9 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::KernelRun(const OpParam &para
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType, algoAttr_.identifier};
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag

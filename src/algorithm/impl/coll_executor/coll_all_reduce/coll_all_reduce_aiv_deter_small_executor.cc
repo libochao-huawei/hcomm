@@ -66,7 +66,7 @@ HcclResult CollAllReduceAivDeterSmallExecutor::CalBlockDim(u32& blockDim, u32 ra
 
     u32 bestBlockDim = blockDim;
     CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_ERROR("[CollAllReduceAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_WARNING("[CollAllReduceAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / rankSize * rankSize;
@@ -141,7 +141,9 @@ HcclResult CollAllReduceAivDeterSmallExecutor::KernelRun(const OpParam &param, E
     
     u64 dataSize = SIZE_TABLE[param.DataDes.dataType] * execMem.count;
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize, dataSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, dataSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
