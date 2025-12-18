@@ -22,6 +22,7 @@
 #include "hccl/base.h"
 #include "rank_consistentcy_checker.h"
 #include "param_check_pub.h"
+#include "comm_configer.h"
 
 #include "../common/src/topo/topoinfo_detect.h"
 #include "profiling_manager.h"
@@ -51,6 +52,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
     }
     uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
     CHK_RET(profilingManager.CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType, groupName));
+    hcclComm->SetAivCoreLimit(0);
     HCCL_DEBUG("CallMsprofReportHostApi success, cmdType[%d], count[%llu], dataType[%d], algType[%d], groupName[%llu]",
         cmdType, count, dataType, algType.algoLevel0, groupName);
     return HCCL_SUCCESS;
@@ -90,11 +92,12 @@ HcclResult HcomInit(const char *rankTableM, const char *identify, WorkMode commW
             CHK_PRT_BREAK(hrtGetDevice(&logicDevId) != HCCL_SUCCESS, , errorFlag = true);
             CHK_RET(hrtGetDeviceType(deviceType));
             // 为适配12包，做此修改
-            (void)HcomCheckrtMemcpyAddrAsync();
+            (void)HcomCheckrtMemcpyAddrAsync(identify);
         } else {
             deviceType = DevType::DEV_TYPE_NOSOC;
         }
-        ret = CfgGetClusterInfo(rankTableM, identify, hcomInfo.params, hcomInfo.rankTable, deviceType);
+        ret = CfgGetClusterInfo(rankTableM, identify, hcomInfo.params, hcomInfo.rankTable,
+            GetExternalInputInterSuperPodRetryEnable(), deviceType);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][Result]errNo[0x%016llx] cfg get ranktable[%p] info "\
             "error: identify[%s]", HCOM_ERROR_CODE(ret), rankTableM, identify), errorFlag = true);
 
@@ -123,12 +126,6 @@ HcclResult HcomInit(const char *rankTableM, const char *identify, WorkMode commW
         ret = hcomInfo.pComm->init(hcomInfo.params, commConfig, hcomInfo.rankTable);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][Result]errNo[0x%016llx] hcclComm init error", HCOM_ERROR_CODE(ret)),
-            errorFlag = true);
-
-        /* 设置独立算子参数 */
-        ret = hcomInfo.pComm->SetIndependentOpConfig(commConfig, hcomInfo.rankTable);
-        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Init][Result]errNo[0x%016llx] set SetIndependentOpConfig error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         group = hcomInfo.pComm->GetIdentifier().c_str();
@@ -431,7 +428,6 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
         GetDataTypeEnumStr(dataType).c_str(), recvCounts, rdispls, strGroup.c_str(), streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(sendBuf));
     CHK_RET(PrintMemoryAttr(recvBuf));
-
     CHK_RET(HcomCheckOpParam(tag, 0, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -491,7 +487,6 @@ HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 c
         strGroup.c_str(), streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
-
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -697,7 +692,6 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
         GetReduceOpEnumStr(op).c_str(), strGroup.c_str(), streamId);
     CHK_RET(PrintMemoryAttr(sendBuf));
     CHK_RET(PrintMemoryAttr(recvBuf));
-
     CHK_RET(HcomCheckOpParam(tag, 0, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -1322,7 +1316,6 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
         std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
         std::vector<std::string>({ "HcomGetLocalRankSize", "localRankSize", "nullptr", "please check localRankSize" }));
     CHK_PTR_NULL(localRankSize);
-
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
         *localRankSize = 1;
@@ -1333,13 +1326,14 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
         "please check if the initialize process is called."), HCCL_E_PTR);
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003",
+        std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
         std::vector<std::string>({ "HcomGetLocalRankSize",
         "group",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
         "please check group name" }));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Get][LocalRankSize]errNo[0x%016llx] get local ranksize " \
-        "group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get local ranksize " \
+        "group name is invalid", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
 
@@ -1370,13 +1364,14 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003",
+        std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
         std::vector<std::string>({ "HcomGetRankId",
         "group",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
         "please check group name" }));
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Get][RankId]errNo[0x%016llx] get_rank_id group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get_rank_id group name is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_PRT_RET(hcomInfo.pComm == nullptr, HCCL_ERROR("[Get][RankId]hcomInfo.pComm is null, "\
@@ -1398,7 +1393,6 @@ HcclResult HcomGetLocalRankId(const char *group, u32 *localRankId)
         *localRankId = 0;
         return HCCL_SUCCESS;
     }
-
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_PRT_RET(hcomInfo.pComm == nullptr, HCCL_ERROR("[Get][LocalRankId]hcomInfo.pComm is null, "\
         "please check if the initialize process is called."), HCCL_E_PTR);
@@ -1659,24 +1653,21 @@ HcclResult GetGradientSegment(const std::string &group, const struct model_featu
     return ret;
 }
 
-HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
-    HcclDataType dataType, HcclReduceOp op, HcclCMDType opType,
-    bool *ifAiv, char *algName, bool isSuperKernel)
+HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
+    HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
-
     std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
         hccl::hcclComm* hcclHcomComm = reinterpret_cast<hccl::hcclComm*>(comm);
-        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, dataType, op, *ifAiv, tempAlgName));
+        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
         std::shared_ptr<hccl::hcclComm> hcclComm;
         CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
-        CHK_RET(hcclComm->HcclSelectAlg(opType, count, dataType, op, *ifAiv, tempAlgName, isSuperKernel));
+        CHK_RET(hcclComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     }
-
     int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomSelectAlg][algName]memcpy failed. ret[%d],"
         "params:destMaxSize[%zu],count[%zu]", sret, ALG_NAME_MAX_LEN, (tempAlgName.length() + 1)), HCCL_E_PARA);
@@ -1685,14 +1676,14 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType,
+HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *blockDim)
 {
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     std::string algNam(algName);
-    CHK_RET(hcclComm->HcclCalcBlockDim(opType, count, dataType, algNam, *blockDim));
+    CHK_RET(hcclComm->HcclCalcBlockDim(opType, count, dataType, aivCoreLimit, algNam, *blockDim));
 
     return HCCL_SUCCESS;
 }
@@ -1869,30 +1860,28 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomSetAttachedStream(const char *group, const rtStream_t *stream, s32 len)
+HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len)
 {
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
-
     std::shared_ptr<hccl::hcclComm> hcclComm = nullptr;
     std::vector<rtStream_t> rtStream(stream, stream + len);
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
-        CHK_RET(hcclComm->SetAttachedStream(rtStream));
+        CHK_RET(hcclComm->SetAttachedStream(graphId, rtStream));
     } else {
         // HcclCommBase 场景暂是不支持设置附属从流
         HCCL_WARNING("[HcomSetAttachedStream] HcclCommBase now don't support set attached stream");
         return HCCL_SUCCESS;
     }
-
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, const std::vector<rtStream_t> &stream)
+HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, u32 graphId, const std::vector<rtStream_t> &stream)
 {
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
-    CHK_RET(hcclComm->SetAttachedStream(stream));
+    CHK_RET(hcclComm->SetAttachedStream(graphId, stream));
 
     return HCCL_SUCCESS;
 }
@@ -2544,6 +2533,23 @@ HcclResult HcomGetTopoDesc(const char *group, HcclTopoDescs *topoDescs, uint32_t
     return HCCL_SUCCESS;
 }
 
+HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size)
+{
+    CHK_PTR_NULL(group);
+    std::shared_ptr<hcclComm> hcclComm;
+    CHK_RET(HcomGetCommByGroup(group, hcclComm));
+    HcclResult ret = hcclComm->GetCommUserMemSize(size);
+    CHK_PRT_RET(ret == HCCL_SUCCESS, HCCL_INFO("[%s]get comm ccl buffer size from user mem size", __func__), ret);
+    if (0 == hcclComm->GetConfigInCCLbufferSize()) {
+        size = GetExternalInputCCLBuffSize();
+        HCCL_INFO("[%s]get comm ccl buffer size from external input", __func__);
+    } else {
+        size = hcclComm->GetConfigInCCLbufferSize();
+        HCCL_INFO("[%s]get comm ccl buffer size from comm config", __func__);
+    }
+    return HCCL_SUCCESS;
+}
+
 bool HcomIsNormalComm(const char *group)
 {
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
@@ -2574,7 +2580,7 @@ HcclResult HcomSetAivCoreLimit(const char *group, u32 aivCoreLimit)
 {
     CHK_PRT_RET(aivCoreLimit == 0,
         HCCL_ERROR("[HcomSetAivCoreLimit] aivCoreLimit[%u] invalid", aivCoreLimit), HCCL_E_PARA);
-
+  
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->SetAivCoreLimit(aivCoreLimit));
@@ -2762,7 +2768,8 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
         hcomOpParam->rankSize = deviceNumPerServer;
     }
 
-    CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, devType, streamNum));
+    std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
+    CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, devType, streamNum, group));
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
     CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
@@ -2791,7 +2798,8 @@ HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devTyp
     return HCCL_SUCCESS;
 }
 
-HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType, u64 &streamNum)
+HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType,
+    u64 &streamNum, const std::string& group)
 {
     switch (devType) {
         case DevType::DEV_TYPE_310P1:
@@ -2804,7 +2812,7 @@ HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 de
         case DevType::DEV_TYPE_910:
         case DevType::DEV_TYPE_910_95: 
         case DevType::DEV_TYPE_910_93: {
-            CHK_RET(GetStremNumOfflineByDev(devType, hcclOpType, serverNum, deviceNumPerServer, streamNum));
+            CHK_RET(GetStremNumOfflineByDev(devType, hcclOpType, serverNum, deviceNumPerServer, streamNum, group));
             break;
         }
 
@@ -2818,7 +2826,7 @@ HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 de
     return HCCL_SUCCESS;
 }
 
-HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum)
+HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum, const std::string& group)
 {
     if (hcclOpType == HcclCMDType::HCCL_CMD_SEND || hcclOpType == HcclCMDType::HCCL_CMD_RECEIVE) {
         streamNum = 0;
@@ -2826,9 +2834,9 @@ HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpTyp
     }
 
     if (devType == DevType::DEV_TYPE_910 && deviceNumPerServer == HCCL_DEVICE_NUM_EIGHT) {
-        CHK_RET(GetSubStreamNum(devType, deviceNumPerServer, streamNum, serverNum));
+        CHK_RET(GetSubStreamNum(devType, deviceNumPerServer, streamNum, serverNum, group));
     } else if (devType == DevType::DEV_TYPE_910_93) {
-        CHK_RET(GetSubStreamNum(devType, deviceNumPerServer, streamNum, serverNum));
+        CHK_RET(GetSubStreamNum(devType, deviceNumPerServer, streamNum, serverNum, group));
     } else {
         streamNum = deviceNumPerServer > HCCL_DEVICE_NUM_ONE ? deviceNumPerServer - MINUS_MESH_STREAM_NUM : 0;
     }
@@ -2837,12 +2845,12 @@ HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpTyp
     return HCCL_SUCCESS;
 }
 
-HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum, s32 &serverNum)
+HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum, s32 &serverNum, const std::string& group)
 {
     if (devType == DevType::DEV_TYPE_910B) {
         constexpr u64 maxStream = 6;
         streamNum = std::min(maxStream, static_cast<u64>(deviceNum) - MINUS_MESH_STREAM_NUM);
-        if (GetExternalInputHcclAlgoConfig()[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) {
+        if (CommConfiger::GetInstance().GetCommConfigAlgoConfig(group)[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) {
             streamNum = static_cast<u64>(deviceNum);
         }
     } else if (devType == DevType::DEV_TYPE_910_93) {
@@ -2864,7 +2872,7 @@ HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum
 
     if (SatisfyIntraSuperPod(devType, deviceNum, true)) {
         streamNum = std::max(static_cast<u64>(deviceNum - 1u), streamNum);
-    } else if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(devType, deviceNum * serverNum, true)) {
+    } else if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(devType, deviceNum * serverNum, true, group)) {
         streamNum = std::max(static_cast<u64>(deviceNum * serverNum - 1u), streamNum);
     }
 
@@ -2996,8 +3004,10 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
     u32 count = hcomOpParam->count;
     std::string sCollectiveType(hcomOpParam->opType);
 
-    bool UseOneLayerAlltoAllv = (GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALLV)[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
-        GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALLV)[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
+    std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
+    std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(group, HcclCMDType::HCCL_CMD_ALLTOALLV);
+    bool UseOneLayerAlltoAllv = (algoTypeArr[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
+        algoTypeArr[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
 
     // 是否需要额外申请scratch mem
     if (hcclOpType == HCCL_CMD_REDUCE_SCATTER_V) {
@@ -3528,7 +3538,7 @@ HcclResult GetBetweenServersStep(s32 serverNum, u32 &commStep)
 }
 
 HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum, s32 deviceNumPerServer,
-    DevType devType, u32 &taskNum)
+    DevType devType, u32 &taskNum, const std::string& group)
 {
     taskNum = 0;
     u32 commStep = 0;
@@ -3546,8 +3556,9 @@ HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum,
         } else if (sCollectiveType == HCCL_KERNEL_OP_TYPE_ALLTOALL ||
                    sCollectiveType == HCCL_KERNEL_OP_TYPE_ALLTOALLV ||
                    sCollectiveType == HCCL_KERNEL_OP_TYPE_ALLTOALLVC) {
-            bool useOneLevelAlgorithm = (GetExternalInputHcclAlgoConfig()[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
-                GetExternalInputHcclAlgoConfig()[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
+            std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(group);
+            bool useOneLevelAlgorithm = (algoTypeArr[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
+                algoTypeArr[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
             s32 meshNum = (devType == DevType::DEV_TYPE_910) ? serverNum * 2 : serverNum;
             commStep = useOneLevelAlgorithm ? ((meshNum - 1) * deviceNumPerServer) : (meshNum - 1);
             taskNum = ALLTOALL_DEFAULT_COM_STEP * commStep;
@@ -3626,8 +3637,9 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
                 CHK_RET(GetIntraComTaskNum(sCollectiveType, deviceNumPerServer, streamNum,
                     algType, intraTaskNum, totalSize));
                 // 获取Server间通信task数量, 从stream没有server间task
+                std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
                 CHK_RET(GetInterComTaskNum(sCollectiveType, serverNum, deviceNumPerServer, devType,
-                    interTaskNum));
+                    interTaskNum, group));
             }
 
             // 计算通信task
@@ -3698,8 +3710,8 @@ HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMall
             CHK_RET(HcomGetHccsLinkNum(group, &numHccsLink));
         }
         if ((withoutImplCompile || !(rankSize == NUM_SIZE_TWO  && numHccsLink == NUM_SIZE_TWO))) {
-            *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
-                    static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
+            // 所有形态切换子包后，改用acl_mem类型
+            *memType = RT_MEMORY_P2P_DDR;
         }
     }
 

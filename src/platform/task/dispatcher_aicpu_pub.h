@@ -20,6 +20,8 @@
 #include "aicpu/aicpu_hccl_sqcqv1.h"
 #include "aicpu/aicpu_hccl_sqcqv2.h"
 
+#include "op_unfold_cache.h"
+
 namespace hccl {
 using AddOneNotifyWaitSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, uint8_t *, const dfx::DfxTimeOutConfig &);
 using AddOneRecordSqe = void(*)(uint16_t, uint16_t, u64, const uint8_t *, uint8_t *);
@@ -62,6 +64,10 @@ public:
     HcclResult LaunchAllTasks() override;
 
     HcclResult RdmaSend(u32 dbindex, u64 dbinfo, hccl::Stream &stream, RdmaTaskInfo &taskInfo) override;
+    // 新增接口用于算子展开的动态缓存
+    HcclResult ClearLaunchContext(); // 当前算子展开不需要使用动态缓存
+    HcclResult SetLaunchContext(const OpUnfoldKey& key, OpUnfoldCache *cachePtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges); // 设置launch context, 在LaunchTask时用于算子展开动态缓存的admission
+    HcclResult LaunchNewTask(OpUnfoldCacheEntry *entryPtr, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams); // 缓存命中时, 使用缓存中的SQE信息下发给RTSQ
 
     HcclResult LaunchTask(Stream &stream, bool isBlockLaunch);
     HcclResult TbeReduceAsync(const void *src1, const void *src2, u64 count, const HcclDataType datatype,
@@ -79,7 +85,7 @@ public:
     {
         opRingBufferIdx_ = opRingBufferIdx;
         HCCL_INFO("[DispatcherAiCpu][SetOpRingBufferIdx]DFX opRingBufferIdx: [%u]",
-        opRingBufferIdx);
+            opRingBufferIdx);
         return;
     }
 
@@ -119,6 +125,10 @@ public:
     dfx::DfxTimeOutConfig dfxTimeOutConfig_ = {0};
     uint32_t opRingBufferIdx_ = 0;
 private:
+    // 新增接口用于算子展开的动态缓存
+    HcclResult WaitRtsq(Stream& stream, const size_t& sqeCount, const bool isBlockLaunch); // 等待RTSQ直到有sqeCount的SQE的空间 (与LaunchTask中相同的逻辑)
+    HcclResult MemcpyRtsq(Stream& stream, const size_t sqeCount, const uint8_t *sqeArray, const uint8_t *sqeTypeArray, const AicpuDfxInfo *sqeDfxInfoArray); // 将动态缓存中更新后的SQE的相关信息下发到RTSQ中
+
     HcclResult AddFlipTask(Stream &stream);
     HcclResult GetStreamSqeBufferAddr(hccl::Stream &stream, uint8_t *&sqeBufferAddr, uint8_t *&sqeTypeAddr,
         uint8_t *&sqeDfxInfoAddr, uint16_t &taskId);
@@ -145,6 +155,14 @@ private:
 
     std::unordered_map<s32, Stream> streamMap_; // 保存下过task的stream
     u64 notifySize_ = 0;
+
+    // Launch context用于算子展开的动态缓存
+    // 注意: cachePtr_初始化为空, needAddSqe_初始化为false, 即暂无算子展开的动态缓存
+    OpUnfoldKey key_; // 当前展开算子的标识符
+    OpUnfoldCache *cachePtr_ = nullptr; // 算子展开的动态缓存
+    std::vector<OpUnfoldMemRange> userInputMemRanges_; // 当前算子展开执行时, 通信域内各rank分配的user input memory range
+    std::vector<OpUnfoldMemRange> userOutputMemRanges_; // 当前算子展开执行时, 通信域内各rank分配的user output memory range
+    bool needAddSqe_ = false;
 };
 } // namespace hccl
 #endif // HCCL_DISPATCHER_AICPU_PUB_H

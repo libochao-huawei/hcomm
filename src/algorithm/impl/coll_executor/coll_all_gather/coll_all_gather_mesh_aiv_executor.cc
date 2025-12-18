@@ -75,7 +75,7 @@ HcclResult CollAllGatherMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize
 
     u32 bestBlockDim = blockDim;
     CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_ERROR("[CollAllGatherMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        HCCL_ERROR("[CollAllGatherMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / rankSize * rankSize;
@@ -112,7 +112,7 @@ HcclResult CollAllGatherMeshAivExecutor::Orchestrate(OpParam& param, AlgResource
         HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], AllGather executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -167,7 +167,7 @@ HcclResult CollAllGatherMeshAivExecutor::GetAivExecParam(const OpParam& param, A
  
 HcclResult CollAllGatherMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_INFO("[CollAllGatherMeshAivExecutor][KernelRun]AllReduce aiv enter.");
+    HCCL_INFO("[CollAllGatherMeshAivExecutor][KernelRun]AllGather aiv enter.");
  
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
@@ -211,13 +211,13 @@ HcclResult CollAllGatherMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivExecutor][KernelRun]AllReduce aiv failed, return[%d]", ret),
+        HCCL_ERROR("[CollAllGatherMeshAivExecutor][KernelRun]AllGather aiv failed, return[%d]", ret),
         ret);
 
     ExtraArgs extraArgs;
     CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
  
-    HCCL_INFO("[CollAllGatherMeshAivExecutor][KernelRun]AllReduce aiv run success.");
+    HCCL_INFO("[CollAllGatherMeshAivExecutor][KernelRun]AllGather aiv run success.");
     return HCCL_SUCCESS;
 }
  

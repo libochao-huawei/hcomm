@@ -219,19 +219,19 @@ HcclResult TaskProfiling::Run(const StepData &stepData)
     return HCCL_SUCCESS;
 }
 
-HcclResult TaskProfiling::Run(const TaskData &taskData)
+HcclResult TaskProfiling::Run(const TaskData &taskData, bool isCapture)
 {
     HCCLReportData hcclReportData{};
     auto &profilingManager = hccl::ProfilingManager::Instance();
     HcclResult is_subscribe = profilingManager.GetAddtionInfoState();
     if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-    !hccl::ProfilingManagerPub::GetThreadCaptureStatus()) {
+    !isCapture) {
         return HCCL_SUCCESS;
     }
     std::unique_lock<std::mutex> lock(mutex_);
 
     std::unique_lock<std::mutex> streamLock(streamMutex_[deviceLogicId_]);
-    if (streamPlaneMap_[deviceLogicId_].find(taskData.streamID) == streamPlaneMap_[deviceLogicId_].end()) {
+    if (streamRecordInfoMap_[deviceLogicId_].find(taskData.streamID) == streamRecordInfoMap_[deviceLogicId_].end()) {
         // 找不到对应的tag则认为该stream不参与profiling, 返回SUCCESS
         HCCL_DEBUG("streamID[%u] not found in profiler", taskData.streamID);
         hcclReportData.tag = "unknow";
@@ -239,8 +239,9 @@ HcclResult TaskProfiling::Run(const TaskData &taskData)
         hcclReportData.groupName = "unknow";
         hcclReportData.profInfo.workFlowMode = 0;
     } else {
-        hcclReportData.tag = streamTagMap_[deviceLogicId_][taskData.streamID];
-        hcclReportData.profInfo.planeID = streamPlaneMap_[deviceLogicId_][taskData.streamID];
+        StreamRecordInfo &streamInfo = streamRecordInfoMap_[deviceLogicId_][taskData.streamID];
+        hcclReportData.tag = streamInfo.tag;
+        hcclReportData.profInfo.planeID = streamInfo.planeId;
         hcclReportData.groupName = tagGroupMap_[deviceLogicId_][hcclReportData.tag];
         hcclReportData.profInfo.workFlowMode = static_cast<uint32_t>(tagModeMap_[deviceLogicId_][hcclReportData.tag]);
     }
@@ -276,7 +277,7 @@ HcclResult TaskProfiling::Run(const std::string &opName, const std::string &tag)
 HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &paraReduce)
 {
     TaskData taskData(captureStreamID, taskID, taskType, paraReduce);
-    Run(taskData);
+    Run(taskData, true);
     return HCCL_SUCCESS;
 }
 
@@ -290,7 +291,7 @@ HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, TaskType &taskType, c
 HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &paraDMA)
 {
     TaskData taskData(captureStreamID, taskID, taskType, paraDMA);
-    Run(taskData);
+    Run(taskData, true);
     return HCCL_SUCCESS;
 }
 
@@ -304,7 +305,7 @@ HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, TaskType &taskType, c
 HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &paraNotify)
 {
     TaskData taskData(captureStreamID, taskID, taskType, paraNotify);
-    Run(taskData);
+    Run(taskData, true);
     return HCCL_SUCCESS;
 }
 
@@ -320,21 +321,21 @@ HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID)
     return HCCL_SUCCESS;
 }
 
-
-HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, const TaskParaAiv &paraAiv) 
+HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) 
 {   
     HCCLReportData hcclReportData{};
     auto &profilingManager = hccl::ProfilingManager::Instance();
     HcclResult is_subscribe = profilingManager.GetAddtionInfoState();
+    bool isCapture = (captureStreamID != streamID);
     if (is_subscribe && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-        !hccl::ProfilingManagerPub::GetThreadCaptureStatus()) {
+        !isCapture) {
         return HCCL_SUCCESS;
     }
     std::unique_lock<std::mutex> lock(mutex_);
 
     std::unique_lock<std::mutex> streamLock(streamMutex_[deviceLogicId_]);
 
-    if (streamPlaneMap_[deviceLogicId_].find(streamID) == streamPlaneMap_[deviceLogicId_].end()) {
+    if (streamRecordInfoMap_[deviceLogicId_].find(streamID) == streamRecordInfoMap_[deviceLogicId_].end()) {
         // 找不到对应的tag则认为该stream不参与profiling, 返回SUCCESS
         HCCL_DEBUG("streamID[%u] not found in profiler", streamID);
         hcclReportData.tag = "unknow";
@@ -342,8 +343,9 @@ HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, const TaskParaAiv &pa
         hcclReportData.groupName = "unknow";
         hcclReportData.profInfo.workFlowMode = 0;
     } else {
-        hcclReportData.tag = streamTagMap_[deviceLogicId_][streamID];
-        hcclReportData.profInfo.planeID = streamPlaneMap_[deviceLogicId_][streamID];
+        StreamRecordInfo &streamInfo = streamRecordInfoMap_[deviceLogicId_][streamID];
+        hcclReportData.tag = streamInfo.tag;
+        hcclReportData.profInfo.planeID = streamInfo.planeId;
         hcclReportData.groupName = tagGroupMap_[deviceLogicId_][hcclReportData.tag];
         hcclReportData.profInfo.workFlowMode = static_cast<uint32_t>(tagModeMap_[deviceLogicId_][hcclReportData.tag]);
     }
@@ -363,13 +365,18 @@ HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID, const TaskParaAiv &pa
     hcclReportData.profInfo.groupName =
         hrtMsprofGetHashId(hcclReportData.groupName.c_str(), hcclReportData.groupName.length());
 
-    HCCL_DEBUG("ReportMsprofData:streamID[%u] tag[%s][%llu] group[%s][%llu]", streamID,
+    HCCL_DEBUG("ReportMsprofData:streamID[%u] tag[%s][%llu] group[%s][%llu]", captureStreamID,
         hcclReportData.tag.c_str(), hcclReportData.profInfo.cclTag, hcclReportData.groupName.c_str(),
         hcclReportData.profInfo.groupName);
 
     DumpReportDataInfo(hcclReportData.type, hcclReportData.profInfo);
     CHK_RET(ReportMsprofData(hcclReportData));
     return HCCL_SUCCESS;
+}
+
+HcclResult TaskProfiling::Save(u32 streamID, u32 taskID, const TaskParaAiv &paraAiv)
+{
+    return Save(streamID, streamID, taskID, paraAiv);
 }
 
 HcclResult TaskProfiling::Save(u32 &streamID, u32 &taskID)

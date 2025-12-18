@@ -330,6 +330,8 @@ HcclResult hcclImpl::CreateComm(const std::string &tag, DeviceMem &inputMem, Dev
     std::unique_ptr<CommInfo> &commInfo, u32 root, bool isP2p, bool isAicpuModeEn, bool isBatchSendRecv,
     bool meshSinglePlane, bool aivMode, std::set<u32> batchSendRecvtargetRanks)
 {
+    (void) batchSendRecvtargetRanks;
+    (void) isBatchSendRecv;
     // Comm资源的唯一性，由上层调用保证
     // tag 多线程并行调度时唯一标识，不能为空
     CHK_PRT_RET(tag.empty(), HCCL_ERROR("[Create][Comm]errNo[0x%016llx] tag is empty", HCCL_ERROR_CODE(HCCL_E_PARA)),

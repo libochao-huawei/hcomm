@@ -73,8 +73,8 @@ HcclResult AllReduceChunkMesh::SubRecordMain()
 HcclResult AllReduceChunkMesh::PrepareSlice(
     u64 dataCount, u32 unitSize, u32 sliceNum, std::vector<Slice> &dataSlice)
 {
-    Slice temp;
     u64 totalSize = dataCount * unitSize;
+    Slice temp;
     dataSlice.clear();
     dataSlice.reserve(sliceNum);
     if (sliceNum == 0) {
@@ -350,6 +350,7 @@ HcclResult AllReduceChunkMesh::RunAllGather(u32 rank, u32 rankSize, const std::v
 
         CHK_RET(links[dstRank]->TxDataSignal(subStream));
         CHK_RET(links[dstRank]->RxDataSignal(subStream));
+        HCCL_DEBUG("[AllReduceChunkMesh]round %u success");
     }
 
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, emptyDst, emptySrc, stream_));

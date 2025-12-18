@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2021. All rights reserved.
- * Description: mem.h
- * Create: 2020-01-01
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef CCE_RUNTIME_RT_EXTERNAL_MEM_H
@@ -14,6 +18,108 @@
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+/**
+ * @ingroup dvrt_mem
+ * @brief memory type
+ */
+#define RT_MEMORY_DEFAULT (0x0U)   // default memory on device
+#define RT_MEMORY_HBM (0x2U)       // HBM memory on device
+#define RT_MEMORY_RDMA_HBM (0x3U)  // RDMA-HBM memory on device
+#define RT_MEMORY_DDR (0x4U)       // DDR memory on device
+#define RT_MEMORY_SPM (0x8U)       // shared physical memory on device
+#define RT_MEMORY_P2P_HBM (0x10U)  // HBM memory on other 4P device
+#define RT_MEMORY_P2P_DDR (0x11U)  // DDR memory on other device
+#define RT_MEMORY_DDR_NC (0x20U)   // DDR memory of non-cache
+#define RT_MEMORY_TS (0x40U)       // Used for Ts memory
+#define RT_MEMORY_TS_4G (0x40U)    // Used for Ts memory(only 51)
+#define RT_MEMORY_HOST (0x81U)     // Memory on host
+#define RT_MEMORY_SVM (0x90U)      // Memory for SVM
+#define RT_MEMORY_HOST_SVM (0x90U) // Memory for host SVM
+#define RT_MEMORY_RESERVED (0x100U)
+
+// MEMORY_UB (0x1U << 15U) It has been occupied by GE/FE. Do not use it.
+#define RT_MEMORY_L1 (0x1U << 16U)
+#define RT_MEMORY_L2 (0x1U << 17U)
+
+/**
+ * @ingroup dvrt_mem
+ * @brief memory info type for rtMemGetInfoByType
+ */
+#define RT_MEM_INFO_TYPE_DDR_SIZE          (0x1U)   // DDR memory type 
+#define RT_MEM_INFO_TYPE_HBM_SIZE          (0x2U)   // HBM memory type
+#define RT_MEM_INFO_TYPE_DDR_P2P_SIZE      (0x3U)   // DDR P2P memory type
+#define RT_MEM_INFO_TYPE_HBM_P2P_SIZE      (0x4U)   // HBM P2P memory type
+#define RT_MEM_INFO_TYPE_ADDR_CHECK        (0x5U)   // check addr
+#define RT_MEM_INFO_TYPE_CTRL_NUMA_INFO    (0x6U)   // query device ctrl numa id config
+#define RT_MEM_INFO_TYPE_AI_NUMA_INFO      (0x7U)   // query device ai numa id config
+#define RT_MEM_INFO_TYPE_BAR_NUMA_INFO     (0x8U)   // query device bar numa id config
+#define RT_MEM_INFO_TYPE_SVM_GRP_INFO      (0x9U)   // query device svm group info
+#define RT_MEM_INFO_TYPE_UB_TOKEN_INFO     (0xAU)   // query device ub token info
+#define RT_MEM_INFO_TYPE_SYS_NUMA_INFO     (0xBU)   // query device sys numa id config
+#define RT_MEM_INFO_TYPE_MAX               (0xCU)   // max type
+
+/**
+ * @ingroup dvrt_mem
+ * @brief memory Policy
+ */
+#define RT_MEMORY_POLICY_NONE (0x0U)                     // Malloc mem prior huge page, then default page
+#define RT_MEMORY_POLICY_HUGE_PAGE_FIRST (0x400U)    // Malloc mem prior huge page, then default page, 0x1U << 10U
+#define RT_MEMORY_POLICY_HUGE_PAGE_ONLY (0x800U)     // Malloc mem only use huge page, 0x1U << 11U
+#define RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY (0x1000U)  // Malloc mem only use default page, 0x1U << 12U
+// Malloc mem prior huge page, then default page, for p2p, 0x1U << 13U
+#define RT_MEMORY_POLICY_HUGE_PAGE_FIRST_P2P (0x2000U)
+#define RT_MEMORY_POLICY_HUGE_PAGE_ONLY_P2P (0x4000U)     // Malloc mem only use huge page, use for p2p, 0x1U << 14U
+#define RT_MEMORY_POLICY_DEFAULT_PAGE_ONLY_P2P (0x8000U)  // Malloc mem only use default page, use for p2p, 0x1U << 15U
+#define RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY (0x10000U)   // Malloc mem only use 1G huge page, 0x1U << 16U
+#define RT_MEMORY_POLICY_HUGE1G_PAGE_ONLY_P2P (0x20000U)   // Malloc mem only use 1G huge page, use for p2p, 0x1U << 17U
+
+/**
+ * @ingroup dvrt_mem
+ * @brief memory attribute
+ */
+#define RT_MEMORY_ATTRIBUTE_DEFAULT (0x0U)
+// memory read only attribute, now only dvpp memory support.
+#define RT_MEMORY_ATTRIBUTE_READONLY (0x100000U)    // Malloc readonly, 1<<20.
+
+#define MEM_ALLOC_TYPE_BIT (0x3FFU)  // mem type bit in <0, 9>
+
+/**
+ * @ingroup dvrt_mem
+ * @brief virt mem type
+ */
+#define RT_MEM_DVPP (0x0U)
+#define RT_MEM_DEV (0x4000000U) // MEM_DEV, 1<<26.
+
+#define RT_MEMORY_ALIGN_SIZE_BIT (27U) // mem align bit in <27, 31>
+#define RT_MEMORY_ALIGN_SIZE_MASK (0xf8000000U)
+
+/**
+ * @ingroup dvrt_mem
+ * @brief (memory type | memory Policy) or (RT_MEM_INFO_xxx)
+ */
+typedef uint32_t rtMemType_t;
+
+/**
+ * @ingroup dvrt_mem
+ * @brief memory advise type
+ */
+#define RT_MEMORY_ADVISE_EXE (0x02U)
+#define RT_MEMORY_ADVISE_THP (0x04U)
+#define RT_MEMORY_ADVISE_PLE (0x08U)
+#define RT_MEMORY_ADVISE_PIN (0x16U)
+
+
+/**
+ * @ingroup dvrt_mem
+ * @brief memory type mask for RT_MEM_INFO_TYPE_ADDR_CHECK
+ */
+#define RT_MEM_MASK_SVM_TYPE    (0x1U)
+#define RT_MEM_MASK_DEV_TYPE    (0x2U)
+#define RT_MEM_MASK_HOST_TYPE   (0x4U)
+#define RT_MEM_MASK_DVPP_TYPE   (0x8U)
+#define RT_MEM_MASK_HOST_AGENT_TYPE (0x10U)
+#define RT_MEM_MASK_RSVD_TYPE   (0x20U)
 
 typedef struct tagInitFlowGwInfo {
     const char_t *groupName;
@@ -781,6 +887,271 @@ typedef struct {    // use for rtMallocAttrValue
  * @return RT_ERROR_INVALID_VALUE for error input
  */
 RTS_API rtError_t rtMemAlloc(void **devPtr, uint64_t size, rtMallocPolicy policy, rtMallocAdvise advise, rtMallocConfig_t *cfg);
+
+#define RT_MQ_MAX_NAME_LEN 128 // same as driver's
+#define RT_MQ_DEPTH_MIN 2U
+#define RT_MQ_MODE_PUSH 1
+#define RT_MQ_MODE_PULL 2
+#define RT_MQ_MODE_DEFAULT RT_MQ_MODE_PUSH
+#define RT_EVENT_SUMMARY_RSV 4
+#define RT_EVENT_MAX_MSG_LEN  128
+#define RT_MQ_LOCAL_QUEUE_DEPLOY  1U
+#define RT_MQ_CLIENT_QUEUE_DEPLOY 0U
+
+typedef struct tagMemQueueAttr {
+    char_t name[RT_MQ_MAX_NAME_LEN];
+    uint32_t depth;
+    uint32_t workMode;
+    uint32_t flowCtrlDropTime;
+    bool flowCtrlFlag;
+    bool overWriteFlag;
+    uint32_t deployType : 1;
+    uint32_t resv : 31;
+} rtMemQueueAttr_t;
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief create mbuf queue
+ * @param [in] devId   the logical device id
+ * @param [in] queAttr   attribute of queue
+ * @param [out] qid  queue id
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueCreate(int32_t devId, const rtMemQueueAttr_t *queAttr, uint32_t *qid);
+
+typedef enum tagMemQueueSetCmdType {
+    RT_MQ_QUEUE_SET_WORK_MODE,
+    RT_MQ_QUEUE_ENABLE_LOCAL_QUEUE,
+    RT_MQ_QUEUE_SET_CMD_MAX,
+} rtMemQueueSetCmdType;
+
+typedef struct tagMemQueueSetInputPara {
+    void *inBuff;
+    uint32_t inLen;
+} rtMemQueueSetInputPara;
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief mbuf queue set
+ * @param [in] devId   the logical device id
+ * @param [in] cmd     cmd type of queue set
+ * @param [in] input   input param of queue set
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueSet(int32_t devId, rtMemQueueSetCmdType cmd, const rtMemQueueSetInputPara *input);
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief destroy mbuf queue
+ * @param [in] devId   the logical device id
+ * @param [in] qid  queue id
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueDestroy(int32_t devId, uint32_t qid);
+
+/**
+* @ingroup rt_mem_queue
+* @brief  queue reset
+* @attention null
+* @param [in] qid: qid
+* @param [in] devId: logic devid
+* @return 0 for success, others for fail
+**/
+RTS_API rtError_t rtMemQueueReset(int32_t devId, uint32_t qid);
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief enqueue memBuf
+ * @param [in] devId   the logical device id
+ * @param [in] qid  queue id
+ * @param [in] memBuf   enqueue memBuf
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueEnQueue(int32_t devId, uint32_t qid, void *memBuf);
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief dequeue memBuf
+ * @param [in] devId   the logical device id
+ * @param [in] qid  queue id
+ * @param [out] memBuf   dequeue memBuf
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueDeQueue(int32_t devId, uint32_t qid, void **memBuf);
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief enqueu peek
+ * @param [in] devId   the logical device id
+ * @param [in] qid  queue id
+ * @param [out] bufLen   length of mbuf in queue
+ * @param [in] timeout  peek timeout  (ms), -1: wait all the time until peeking success
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueuePeek(int32_t devId, uint32_t qid, size_t *bufLen, int32_t timeout);
+
+/**
+* @ingroup rtBufEventTrigger
+* @brief buf event trigger
+* @param [in] name, group name
+* @return   0 for success, others for fail
+*/
+RTS_API rtError_t rtBufEventTrigger(const char_t *name);
+
+typedef struct tagMemQueueBuffInfo {
+    void *addr;
+    size_t len;
+} rtMemQueueBuffInfo;
+
+typedef struct tagMemQueueBuff {
+    void *contextAddr;
+    size_t contextLen;
+    rtMemQueueBuffInfo *buffInfo;
+    uint32_t buffCount;
+} rtMemQueueBuff_t;
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief enqueu  buff
+ * @param [in] devId   the logical device id
+ * @param [in] qid  queue id
+ * @param [in] inBuf   enqueue buff
+ * @param [in] timeout  enqueue timeout  (ms), -1: wait all the time until enqueue success
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueEnQueueBuff(int32_t devId, uint32_t qid, rtMemQueueBuff_t *inBuf, int32_t timeout);
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief enqueu  buff
+ * @param [in] devId   the logical device id
+ * @param [in] qid  queue id
+ * @param [out] outBuf   dequeue buff
+ * @param [in] timeout  dequeue timeout  (ms), -1: wait all the time until dequeue success
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueDeQueueBuff(int32_t devId, uint32_t qid, rtMemQueueBuff_t *outBuf, int32_t timeout);
+
+typedef struct tagMemQueueInfo {
+    int32_t id;
+    int32_t size;
+    uint32_t depth;
+    int32_t status;
+} rtMemQueueInfo_t;
+
+/**
+ * @ingroup rt_mem_queue
+ * @brief query current queue info
+ * @param [in] devId   the logical device id
+ * @param [in] qid  queue id
+ * @param [out] queInfo   current queue info
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtMemQueueQueryInfo(int32_t devId, uint32_t qid, rtMemQueueInfo_t *queInfo);
+
+typedef enum tagMemQueueQueryCmd {
+    RT_MQ_QUERY_QUE_ATTR_OF_CUR_PROC = 0, // input is qid(4bytes), output is rtMemQueueShareAttr_t
+    RT_MQ_QUERY_QUES_OF_CUR_PROC = 1,
+    RT_MQ_QUERY_CMD_MAX = 2
+} rtMemQueueQueryCmd_t;
+
+/**
+* @ingroup rt_mem_queue
+* @brief  query queue status
+* @param [in] devId: the logical device id
+* @param [in] cmd: query cmd
+* @param [in] inBuff: input buff
+* @param [in] inLen: the length of input
+* @param [in|out] outBuff: output buff
+* @param [in|out] outLen: the length of output
+* @return RT_ERROR_NONE for ok
+*/
+RTS_API rtError_t rtMemQueueQuery(int32_t devId, rtMemQueueQueryCmd_t cmd, const void *inBuff, uint32_t inLen,
+    void *outBuff, uint32_t *outLen);
+
+typedef struct tagMemQueueShareAttr {
+    uint32_t manage : 1;
+    uint32_t read : 1;
+    uint32_t write : 1;
+    uint32_t rsv : 29;
+} rtMemQueueShareAttr_t;
+
+/**
+* @ingroup rt_mem_queue
+* @brief  grant queue
+* @param [in] devId: logic devid
+* @param [in] qid: queue id
+* @param [in] pid: pid
+* @param [in] attr: queue share attr
+* @return RT_ERROR_NONE for ok
+*/
+RTS_API rtError_t rtMemQueueGrant(int32_t devId, uint32_t qid, int32_t pid, rtMemQueueShareAttr_t *attr);
+
+/**
+* @ingroup rt_mem_queue
+* @brief  attach queue
+* @param [in] devId: logic devid
+* @param [in] qid: queue id
+* @param [in] timeOut: timeOut
+* @return RT_ERROR_NONE for ok
+*/
+RTS_API rtError_t rtMemQueueAttach(int32_t devId, uint32_t qid, int32_t timeOut);
+
+/**
+ * @ingroup dvrt_mem
+ * @brief alloc device memory for dvpp, support set flag
+ * @param [in|out] devPtr   memory pointer
+ * @param [in] size   memory size
+ * @param [in] flag   mem flag, can use mem attribute set read only.
+ * @param [in] moduleid alloc memory module id
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ * @return others is error
+ */
+RTS_API rtError_t rtDvppMallocWithFlag(void **devPtr, uint64_t size, uint32_t flag, const uint16_t moduleId);
+
+/**
+ * @ingroup dvrt_mem
+ * @brief memory copy type
+ */
+typedef enum tagRtMemcpyKind {
+    RT_MEMCPY_HOST_TO_HOST = 0,  // host to host
+    RT_MEMCPY_HOST_TO_DEVICE,    // host to device
+    RT_MEMCPY_DEVICE_TO_HOST,    // device to host
+    RT_MEMCPY_DEVICE_TO_DEVICE,  // device to device, 1P && P2P
+    RT_MEMCPY_MANAGED,           // managed memory
+    RT_MEMCPY_ADDR_DEVICE_TO_DEVICE,
+    RT_MEMCPY_HOST_TO_DEVICE_EX, // host  to device ex (only used for 8 bytes)
+    RT_MEMCPY_DEVICE_TO_HOST_EX, // device to host ex
+    RT_MEMCPY_DEFAULT,           // auto infer copy dir
+    RT_MEMCPY_RESERVED,
+} rtMemcpyKind_t;
+
+/**
+ * @ingroup dvrt_mem for mbuff
+ * @brief synchronized memcpy
+ * @param [in] dst     destination address pointer
+ * @param [in] destMax length of destination address memory
+ * @param [in] src   source address pointer
+ * @param [in] cnt   the number of byte to copy
+ * @param [in] kind   memcpy type
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtMemcpyEx(void *dst, uint64_t destMax, const void *src, uint64_t cnt, rtMemcpyKind_t kind);
+
+/**
+ * @ingroup dvrt_mem
+ * @brief synchronized memcpy
+ * @param [in] dst     destination address pointer
+ * @param [in] destMax length of destination address memory
+ * @param [in] src   source address pointer
+ * @param [in] cnt   the number of byte to copy
+ * @param [in] kind  memcpy type
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtMemcpy(void *dst, uint64_t destMax, const void *src, uint64_t cnt, rtMemcpyKind_t kind);
 
 #if defined(__cplusplus)
 }

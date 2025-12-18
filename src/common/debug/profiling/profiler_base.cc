@@ -16,9 +16,7 @@
 #include "coll_alg_utils.h"
 
 using namespace hccl;
-std::array<std::map<s32, s32>, MAX_MODULE_DEVICE_NUM> ProfilerBase::streamPlaneMap_;
-std::array<std::map<s32, const std::string>, MAX_MODULE_DEVICE_NUM> ProfilerBase::streamTagMap_;
-std::array<std::map<s32, AlgType>, MAX_MODULE_DEVICE_NUM> ProfilerBase::streamAlgTypeMap_;
+std::array<std::map<s32, StreamRecordInfo>, MAX_MODULE_DEVICE_NUM> ProfilerBase::streamRecordInfoMap_;
 std::array<std::map<const std::string, const std::string>, MAX_MODULE_DEVICE_NUM> ProfilerBase::tagGroupMap_;
 std::array<std::map<const std::string, const HcclWorkflowMode>, MAX_MODULE_DEVICE_NUM> ProfilerBase::tagModeMap_;
 std::array<std::map<const std::string, GroupRankInfo>, MAX_MODULE_DEVICE_NUM> ProfilerBase::groupRankMap_;
@@ -46,7 +44,7 @@ ProfilerBase::ProfilerBase(u32 deviceLogicId) : deviceLogicId_(deviceLogicId) {}
 
 ProfilerBase::~ProfilerBase() {}
 
-HcclResult ProfilerBase::AddStream(s32 streamID, const std::string &tag, s32 planeID, AlgType algType)
+HcclResult ProfilerBase::AddStream(s32 streamID, const std::string &tag, s32 planeID, const AlgType &algType)
 {
     s32 deviceLogicId = -1;
     CHK_RET(hrtGetDevice(&deviceLogicId));
@@ -59,23 +57,7 @@ HcclResult ProfilerBase::AddStream(s32 streamID, const std::string &tag, s32 pla
         planeID, AlgTypeToStr(algType).c_str(), deviceLogicId);
     {
         std::unique_lock<std::mutex> lock(streamMutex_[deviceLogicId]);
-
-        if (streamTagMap_[deviceLogicId].find(streamID) != streamTagMap_[deviceLogicId].end() ||
-            streamPlaneMap_[deviceLogicId].find(streamID) != streamPlaneMap_[deviceLogicId].end() ||
-            streamAlgTypeMap_[deviceLogicId].find(streamID) != streamAlgTypeMap_[deviceLogicId].end()) {
-            HCCL_DEBUG("streamID[%d] already exist, oldTag[%s], oldPlaneId[%d]", streamID,
-                streamTagMap_[deviceLogicId][streamID].c_str(), streamPlaneMap_[deviceLogicId][streamID]);
-            streamTagMap_[deviceLogicId].erase(streamID);
-            streamPlaneMap_[deviceLogicId].erase(streamID);
-            streamAlgTypeMap_[deviceLogicId].erase(streamID);
-            streamTagMap_[deviceLogicId].insert(std::make_pair<s32 &, const std::string &>(streamID, tag));
-            streamPlaneMap_[deviceLogicId][streamID] = planeID;
-            streamAlgTypeMap_[deviceLogicId][streamID] = algType;
-            return HCCL_SUCCESS;
-        }
-        streamTagMap_[deviceLogicId].insert(std::make_pair<s32 &, const std::string &>(streamID, tag));
-        streamPlaneMap_[deviceLogicId][streamID] = planeID;
-        streamAlgTypeMap_[deviceLogicId][streamID] = algType;
+        streamRecordInfoMap_[deviceLogicId][streamID] = StreamRecordInfo(planeID, algType, tag);
     }
     return HCCL_SUCCESS;
 }
@@ -93,11 +75,9 @@ HcclResult ProfilerBase::DelStream(s32 streamID)
     {
         std::unique_lock<std::mutex> lock(streamMutex_[deviceLogicId]);
         HCCL_DEBUG("DelStream: streamID[%d] tag[%s], planeId[%d], algType[%s], deviceLogicId[%d]", streamID,
-            streamTagMap_[deviceLogicId][streamID].c_str(), streamPlaneMap_[deviceLogicId][streamID],
-            AlgTypeToStr(streamAlgTypeMap_[deviceLogicId][streamID]).c_str(), deviceLogicId);
-        streamTagMap_[deviceLogicId].erase(streamID);
-        streamPlaneMap_[deviceLogicId].erase(streamID);
-        streamAlgTypeMap_[deviceLogicId].erase(streamID);
+            streamRecordInfoMap_[deviceLogicId][streamID].tag.c_str(), streamRecordInfoMap_[deviceLogicId][streamID].planeId,
+            AlgTypeToStr(streamRecordInfoMap_[deviceLogicId][streamID].algType).c_str(), deviceLogicId);
+        streamRecordInfoMap_[deviceLogicId].erase(streamID);
     }
     return HCCL_SUCCESS;
 }
@@ -115,23 +95,15 @@ HcclResult ProfilerBase::AddTag(const std::string &tag, const std::string &group
     HCCL_DEBUG("AddTag: tag[%s] group[%s] deviceLogicId[%d] aivGroupIndexMap_ %d", tag.c_str(), group.c_str(), deviceLogicId, aivGroupIndexMap_[deviceLogicId][group]);
     {
         std::unique_lock<std::mutex> lock(streamMutex_[deviceLogicId]);
-        tagGroupMap_[deviceLogicId].insert(std::make_pair<const std::string &, const std::string &>(tag, group));
-        tagModeMap_[deviceLogicId].insert(std::make_pair<const std::string &,
-            const HcclWorkflowMode &>(tag, workFlowMode));
-        if (isAiv) {
-            aivGroupIndexMap_[deviceLogicId][group]++;
-        } else if (isSendRecv == false) {
-            groupIndexMap_[deviceLogicId][group]++;
-        } else {
-            sendRecvGroupIndexMap_[deviceLogicId][group]++;
-        }
+        tagGroupMap_[deviceLogicId].emplace(tag, group);
+        tagModeMap_[deviceLogicId].emplace(tag, workFlowMode);
+        auto &targetMap = isAiv ? aivGroupIndexMap_[deviceLogicId] :
+            (isSendRecv ? sendRecvGroupIndexMap_[deviceLogicId] : groupIndexMap_[deviceLogicId]);
+        const auto &emplaceResult = targetMap.emplace(group, 0);
+        auto &it = emplaceResult.first;
+        it->second++;
+        index_[deviceLogicId] = it->second;
         isSendRecv_[deviceLogicId] = isSendRecv;
-        if (isAiv) {
-            index_[deviceLogicId] = aivGroupIndexMap_[deviceLogicId][group];
-        } else {
-            index_[deviceLogicId] =
-                isSendRecv ? sendRecvGroupIndexMap_[deviceLogicId][group] : groupIndexMap_[deviceLogicId][group];
-        }
         HCCL_DEBUG("IndexMap: tag[%s] group[%s] groupIndexMap_[%d]:%u sendRecvGroupIndexMap_[%d]:%u AivGroupIndexMap_[%d] %u", tag.c_str(), group.c_str(),
             deviceLogicId, groupIndexMap_[deviceLogicId][group], deviceLogicId, sendRecvGroupIndexMap_[deviceLogicId][group], deviceLogicId, aivGroupIndexMap_[deviceLogicId][group]);
     }
@@ -254,9 +226,10 @@ HcclResult ProfilerBase::GetTagByStream(u32 &streamID, std::string &tag)
         "than maxDeviceNum[%u]", deviceLogicId, maxDeviceNum), HCCL_E_INTERNAL);
 
     std::unique_lock<std::mutex> lock(streamMutex_[deviceLogicId]);
-    CHK_PRT_RET(streamTagMap_[deviceLogicId].find(streamID) == streamTagMap_[deviceLogicId].end(),
-        HCCL_DEBUG("stream id[%u] not found in profiler.", streamID), HCCL_SUCCESS);
-    tag = streamTagMap_[deviceLogicId][streamID];
+    auto &streamMap = streamRecordInfoMap_[deviceLogicId];
+    auto it = streamMap.find(streamID);
+    CHK_PRT_RET((it == streamMap.end()), HCCL_DEBUG("stream id[%u] not found in profiler.", streamID), HCCL_SUCCESS);
+    tag = it->second.tag;
     return HCCL_SUCCESS;
 }
 
@@ -272,9 +245,10 @@ HcclResult ProfilerBase::GetAlgTypeByStream(u32 &streamID, AlgType &algType)
         HCCL_E_INTERNAL);
 
     std::unique_lock<std::mutex> lock(streamMutex_[deviceLogicId]);
-    CHK_PRT_RET(streamAlgTypeMap_[deviceLogicId].find(streamID) == streamAlgTypeMap_[deviceLogicId].end(),
-        HCCL_DEBUG("[GetAlgTypeByStream] stream id[%u] not found in profiler.", streamID), HCCL_SUCCESS);
-    algType = streamAlgTypeMap_[deviceLogicId][streamID];
+    auto &streamMap = streamRecordInfoMap_[deviceLogicId];
+    auto it = streamMap.find(streamID);
+    CHK_PRT_RET((it == streamMap.end()), HCCL_DEBUG("[GetAlgTypeByStream] stream id[%u] not found in profiler.", streamID), HCCL_SUCCESS);
+    algType = it->second.algType;
     return HCCL_SUCCESS;
 }
 

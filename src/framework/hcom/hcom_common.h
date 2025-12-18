@@ -113,7 +113,7 @@ void HcomGroupCallbackFuncInstall(HcclResult (*p1)(const std::string &, const st
     bool (*p2)(HcomInfo &), HcclResult (*p3)(const std::string &), HcclResult (*p4)(HcomInfo &));
 HcclResult DestroyFlag(const char *group, bool flag);
 HcclResult HcomQueryGroupRef(const char *group, u32 &groupRef);
-bool HcomCheckrtMemcpyAddrAsync(void);
+bool HcomCheckrtMemcpyAddrAsync(const std::string& group = HCCL_WORLD_GROUP);
 HcclResult HcomGetbackloggedByGroup(const char *group, std::vector<u32> &groupRanks, s32 &groupSize);
 HcomInfo& HcomGetCtxHomInfo(void);
 

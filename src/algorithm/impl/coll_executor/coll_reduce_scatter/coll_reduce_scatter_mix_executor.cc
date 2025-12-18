@@ -73,6 +73,7 @@ HcclResult CollReduceScatterMixExecutor::CalcStreamNum(u32& streamNum)
     u32 totalStreamNum = 0; 
     if (topoAttr_.deviceType == DevType::DEV_TYPE_910B) { // mesh
         totalStreamNum = topoAttr_.deviceNumPerAggregation;
+        HCCL_DEBUG("[CollReduceScatterMixExecutor][CalcStreamNum]totalStreamNum is %u", totalStreamNum);
     } else if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93) { // dbring
         totalStreamNum = (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING ? LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE :
             LEVEL0_PLANE_NUM_IN_NPRING_SINGLE);
@@ -90,11 +91,6 @@ HcclResult CollReduceScatterMixExecutor::CalcStreamNum(u32& streamNum)
 
 bool CollReduceScatterMixExecutor::IsHugeData(const u64 curSize, OpParam *param)
 {
-    // 多QP哈希散列开启且RDMA通信下，强制刷新子图
-    if (GetExternalInputQpsPerConnection() != HCCL_QPS_PER_CONNECTION_DEFAULT) {
-        return true;
-    }
-
     const u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
     u64 curCount = curSize / SIZE_TABLE[param->DataDes.dataType];
@@ -212,6 +208,7 @@ HcclResult CollReduceScatterMixExecutor::CalLevel1DataSegsSlice(
     const ExecMem &execMem, const u32 &commIndex,
     u32 sliceNum, u32 level1RankSize, std::vector<Slice> &level1DataSegsSlice)
 {
+    (void) sliceNum;
     for (u32 i = 0; i < level1RankSize; i++) {
         Slice sliceTemp;
         u32 level1UserRank;
@@ -240,7 +237,7 @@ HcclResult CollReduceScatterMixExecutor::KernelRun(const OpParam &param, ExecMem
     SubCommInfo level1CommInfo = GetSubCommInfo(COMM_LEVEL1, commIndex);
     u32 serverIndex = level1CommInfo.localRank;
     u32 level1RankSize = level1CommInfo.localRankSize;
-    HCCL_DEBUG("inputSize=%llu, level0RankSize=%u, commIndex=%u, level1RankSize=%u, serverIndex=%u",
+    HCCL_DEBUG("ReduceScatterMixExecutor inputSize=%llu, level0RankSize=%u,commIndex=%u, level1RankSize=%u, serverIndex=%u",
         execMem.inputMem.size(), level0RankSize, commIndex, level1RankSize, serverIndex);
 
     HcomCollOpInfo opInfo = {"", execMem.inputPtr, execMem.outputPtr, param.DataDes.count, param.DataDes.dataType,

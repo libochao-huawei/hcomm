@@ -126,12 +126,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    // 910B A+X 在RDMA未启用情况下，两模块间的device数目需要一致且两模块中使用的卡都在同一平面上
-    HcclResult HcclCommunicatorAttrs::CheckSingleServerComm(const std::vector<RankInfo_t> &rankList) const
-    {
-        return HCCL_SUCCESS;
-    }
-
     HcclResult HcclCommunicatorAttrs::SetRankInfoList(const RankTable_t &rankTable)
     {
         return HCCL_SUCCESS;

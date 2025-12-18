@@ -13,6 +13,7 @@
 #include "mem_device_pub.h"
 #include "notify_manager.h"
 #include "launch_aicpu.h"
+#include "comm_configer.h"
 #include <iomanip>
 
 namespace hccl {
@@ -116,7 +117,7 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<HcclTh
         HCCL_ERROR("[AicpuLaunchMgr][%s] KernelLaunch failed, return [%d].", __func__, ret), ret);
 
     // Step 4. 等待流完成，localStream生命周期随函数结束自动销毁
-    CHK_RET(hcclStreamSynchronize(localStream.ptr()));
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(commId)));
 
     // Step 5. 返回device侧句柄
     CHK_RET(hrtMemSyncCopy(hostHandle.get(), handleLen, opParam.deviceHandle, handleLen,
@@ -152,8 +153,7 @@ HcclResult AicpuLaunchMgr::LaunchNotifyKernel(NotifyMgrAicpuParam &opParam, aclr
     HcclResult ret = KernelLaunchAicpuCustom(opParam, "RunAicpuIndOpNotify", localStream.ptr(), binCustomHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuLaunchMgr][LaunchNotifyKernel] KernelLaunch failed, ret[%d]", ret), ret);
-
-    CHK_RET(hcclStreamSynchronize(localStream.ptr()));
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(opParam.hcomId)));
     return HCCL_SUCCESS;
 }
 

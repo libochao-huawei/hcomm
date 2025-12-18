@@ -52,8 +52,7 @@ HcclResult ReduceScatterRing::RunVectorDestRducer(const LINK &link, const std::v
     for (u32 i = 0; i < rxSlices.size(); i++) {
         DeviceMem dstMem = inputMem_.range(rxSlices[i].offset, rxSlices[i].size);
         DeviceMem srcMemTemp = scratchMem_.range(rxSlicetemp[i].offset, rxSlicetemp[i].size);
-        HCCL_DEBUG("rcv offset[%llu], size[%llu] ,then reduce with "
-            "offset[%llu] size[%llu] ",
+        HCCL_DEBUG("rcv offset[%llu], size[%llu] ,then reduce with offset[%llu] size[%llu] ",
             rxSlicetemp[i].offset, rxSlicetemp[i].size, rxSlices[i].offset, rxSlices[i].size);
         rxReduceMems.emplace_back(ReducerMemoryInfo{baseOffset_ + rxSlices[i].offset, dstMem, dstMem, srcMemTemp});
     }
@@ -103,6 +102,7 @@ HcclResult ReduceScatterRing::RunAsync(const u32 rank, const u32 rankSize, const
         if (inputMem_ != outputMem_) {
             return HcclD2DMemcpyAsync(dispatcher_, outputMem_, inputMem_, stream_);
         }
+        HCCL_DEBUG("[ReduceScatterRing]rankSize is 1, RunAsync success");
         return HCCL_SUCCESS;
     }
 
@@ -124,6 +124,7 @@ HcclResult ReduceScatterRing::RunAsync(const u32 rank, const u32 rankSize, const
     CHK_SMART_PTR_NULL(linkLeft_);
 
     u32 ringNextRank = (rank + 1) % rankSize;
+    HCCL_DEBUG("[ReduceScatterRing][RunAsync]ringPrevRank is %u, ringNextRank is %u", ringPrevRank, ringNextRank);
     linkRight_ = links[ringNextRank];
     CHK_SMART_PTR_NULL(linkRight_);
 
@@ -186,6 +187,7 @@ HcclResult ReduceScatterRing::RunReduceScatter(const u32 rank, const u32 rankSiz
             rank, inputSlices.size(), rankSize), HCCL_E_INTERNAL);
 
     bRetSize = (outputSlices.size() < rankSize);
+    HCCL_DEBUG("[Run][ReduceScatter]ReduceScatterRing for bRetSize is %d", bRetSize);
     CHK_PRT_RET(bRetSize,
         HCCL_ERROR("[Run][ReduceScatter]rank[%u] outputslice size[%llu] is less than rank size[%u]",
             rank, outputSlices.size(), rankSize), HCCL_E_INTERNAL);
@@ -215,7 +217,7 @@ HcclResult ReduceScatterRing::RunReduceScatter(const u32 rank, const u32 rankSiz
     }
     ret = RunVectorSourceReducer(linkRight_, txInputSegsSlice, txOutputSegsSlice); // NotifyRecord
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Run][ReduceScatter]rank[%u] txSliceIndex[%u] Reducer src run failed", rank, txSliceIndex), ret);
+        HCCL_ERROR("[Run][ReduceScatter]rank[%u] txSliceIndex[%u] Reducer src run failed.", rank, txSliceIndex), ret);
 
     // 本rank既当reduce源, 也当reduce操作的目的
     for (u32 i = 0; i < (rankSize - 2); i++) { // 中间rank_size - 2次传输
@@ -227,6 +229,7 @@ HcclResult ReduceScatterRing::RunReduceScatter(const u32 rank, const u32 rankSiz
 
         std::vector<Slice> rxInputSegsSlice;
         std::vector<Slice> rxOutputSegsSlice;
+        HCCL_DEBUG("[ReduceScatterRing]RunReduceScatter for sliceSize is %u", sliceSize);
         for (u32 j = 0; j < sliceSize; j++) {
             rxInputSegsSlice.push_back(inputSlices[rxSliceIndex * sliceSize + j]);
             rxOutputSegsSlice.push_back(outputSlices[rxSliceIndex * sliceSize + j]);
@@ -473,6 +476,7 @@ HcclResult ReduceScatterRing::ReduceScatterSlicesPrep(u32 rankSize, u32 nicSize)
         }
         rankSliceLists_.push_back(sliceList);
     }
+    HCCL_DEBUG("[ReduceScatterRing]ReduceScatterSlicesPrep success");
     return HCCL_SUCCESS;
 }
 

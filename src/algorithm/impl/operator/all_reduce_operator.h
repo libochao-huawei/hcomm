@@ -49,7 +49,7 @@ private:
 
     HcclResult DeterministicSelector(const OpParam& param, std::string& algName);
 
-    HcclResult NonDeterministicSelector(const OpParam& param, std::string& algName, u64 unitSize);
+    HcclResult NonDeterministicSelector(const OpParam& param, std::string& algName, u64 dataSize);
 
     HcclDataCountType GetCountTypeForDeterAllReduce(const u64 count, const HcclDataType dataType);
 

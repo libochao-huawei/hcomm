@@ -2,7 +2,7 @@
 if(BUILD_OPEN_PROJECT)
     set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../comm)
 else()
-    set(BASE_DIR "${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm")
+    set(BASE_DIR "${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm")
 endif()
 
 set(ra_peer_list
@@ -53,21 +53,27 @@ if(BUILD_OPEN_PROJECT)
 else()
     #添加头文件搜索路径
     target_include_directories(ra_peer PRIVATE
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/network
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/private/network
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/inc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_service
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/private/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/inc
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_service
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm
-        ${TOP_DIR}/hccl/src/platform/hccp/common
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/host_lite
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm
+        ${TOP_DIR}/hcomm/src/platform/hccp/common
+        ${TOP_DIR}/hcomm/src/platform/hccp/external_depends/host_lite
     )
 endif()
 
 
 target_compile_options(ra_peer PRIVATE
     -Werror -std=gnu11 -fno-common -Wfloat-equal -Wextra
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
+)
+
+target_link_options(ra_peer PRIVATE
+    -Wl,-z,now
+    $<$<CONFIG:Release>:-s>
 )
 
 if(BUILD_OPEN_PROJECT)

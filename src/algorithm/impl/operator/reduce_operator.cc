@@ -45,16 +45,19 @@ HcclResult ReduceOperator::SelectAlg(const std::string &tag, const OpParam &para
         || algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_HD)) {
         std::string appendTag = "";
         u32 serverNumPerSuperPod = superPodNum_ == 0 ? moduleNum_ : moduleNum_ / superPodNum_;
+        HCCL_DEBUG("[ReduceOperator][SelectAlg]serverNumPerSuperPod is %u", serverNumPerSuperPod);
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {
             u32 part1Size = FACTOR_TWO * (serverNumPerSuperPod - (1 << static_cast<u32>(log2(serverNumPerSuperPod))));
             u32 rootId = param.root / deviceNumPerAggregation_ % serverNumPerSuperPod;
             appendTag += "L1_" + std::to_string((rootId >= part1Size) || ((rootId % FACTOR_TWO) == 0));
         }
+        HCCL_DEBUG("[ReduceOperator]SelectAlg for algoLevel1");
         if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_HD) {
             u32 part1Size = FACTOR_TWO * (superPodNum_ - (1 << static_cast<u32>(log2(superPodNum_))));
             u32 rootId = param.root / deviceNumPerAggregation_ / serverNumPerSuperPod;
             appendTag += (appendTag.empty() ? "L2_" : "_L2_") + std::to_string((rootId >= part1Size) || ((rootId % FACTOR_TWO) == 0));
         }
+        HCCL_DEBUG("[ReduceOperator][SelectAlg]tag is [%s]", tag);
         newTag = newTag + '_' + appendTag;
         if (GetExternalInputHcclEnableEntryLog() && param.opBaseAtraceInfo != nullptr) {
             CHK_RET(param.opBaseAtraceInfo->SavealgtypeTraceInfo(appendTag, param.tag));
@@ -68,7 +71,7 @@ HcclResult ReduceOperator::SelectAlg(const std::string &tag, const OpParam &para
     } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     } else {
-        HCCL_ERROR("[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
+        HCCL_ERROR("ReduceOperator[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -86,6 +89,7 @@ HcclResult ReduceOperator::SelectAlg(const std::string &tag, const OpParam &para
 
 HcclResult ReduceOperator::SelectAlgfor910A(const OpParam& param, std::string& algName)
 {
+    (void) param;
     bool isMeshTopo = topoType_ == TopoType::TOPO_TYPE_4P_MESH || topoType_ == TopoType::TOPO_TYPE_2P_MESH;
     bool isRingTopo = topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING || topoType_ == TopoType::TOPO_TYPE_8P_RING;
 
@@ -103,6 +107,7 @@ HcclResult ReduceOperator::SelectAlgfor910A(const OpParam& param, std::string& a
 
 HcclResult ReduceOperator::SelectAlgfor910B(const OpParam& param, std::string& algName)
 {
+    (void) param;
     bool isMeshTopo = topoType_ == TopoType::TOPO_TYPE_NP_MESH || topoType_ == TopoType::TOPO_TYPE_4P_MESH ||
         topoType_ == TopoType::TOPO_TYPE_2P_MESH || topoType_ == TopoType::TOPO_TYPE_1P_MESH;
     bool isRingTopo = topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING;

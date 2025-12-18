@@ -9,6 +9,7 @@
  */
 
 #include "coll_all_to_all_mesh_aiv_for_910_93_executor.h"
+#include <algorithm>
 
 namespace hccl {
 
@@ -68,16 +69,62 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 r
     // A3超节点内多机场景，block_num需要为偶数
     blockDim = (rankSize < MAX_BLOCK_DIM ? rankSize + rankSize % BLOCK_DIM_FACTOR_TWO : MAX_BLOCK_DIM);
     u32 bestBlockDim = blockDim;
+    u32 minBlockDim = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, BLOCK_DIM_FACTOR_TWO);
 
-    CHK_PRT_RET(blockDim_ < BLOCK_DIM_FACTOR_TWO,
-        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at lest need 2.",
-        blockDim_), HCCL_E_PARA);
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
     }
 
+    CHK_PRT_RET(blockDim < minBlockDim,
+        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        blockDim_, minBlockDim),
+        HCCL_E_PARA);
+
     HCCL_INFO("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
         blockDim, blockDim_, bestBlockDim);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollAlltoAllMeshAivFor91093Executor::GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args)
+{
+    HcclUs startut = TIME_NOW();
+    tag_ = param.tag;
+    algResResp_ = &algRes;
+ 
+    HcclResult ret = HCCL_SUCCESS;
+    ExecMem execMem;
+    execMem.count = param.DataDes.count;
+    execMem.inputPtr = param.inputPtr;
+    execMem.outputPtr = param.outputPtr;
+    execMem.inputMem = algRes.paramInputMem; 
+    execMem.outputMem = algRes.aivOutputMem;
+    SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);
+    
+    u32 localRank = level0CommInfo.localRank;
+    u32 localRankSize = level0CommInfo.localRankSize;
+    HCCL_DEBUG("[CollAlltoAllMeshAivFor91093Executor][GetAivExecParam] userRank [%u] localRank [%u]",
+        topoAttr_.userRank, localRank);
+
+    args.buffersIn[0] = execMem.inputMem.ptr();
+    args.buffersOut[0] = execMem.outputMem.ptr();
+    constexpr u32 BUFFER_IDX_ONE = 1;
+    args.buffersOut[BUFFER_IDX_ONE] =  algRes.aivCommInfoMem.ptr(); // 通信域信息  
+
+    args.rank = localRank;
+    args.rankSize = localRankSize;
+    args.len = execMem.count;
+    args.dataType = param.All2AllDataDes.sendType;
+    args.unitSize = SIZE_TABLE[param.All2AllDataDes.sendType];
+    args.reduceOp = param.reduceType;
+
+    HCCL_INFO("SPK [CollAlltoAllMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
+
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+            "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
+ 
+    HCCL_INFO("tag[%s], AlltoAll executor getalgexecparam success, take time [%lld]us.",
+        param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -150,13 +197,21 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::KernelRun(const OpParam &param, 
         param.All2AllDataDes.sendType, HCCL_REDUCE_RESERVED, 0, isOpbase
     };
 
-    if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
-    }
-
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-        ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);       
+        // 兜底算法，单机也可能走这里
+        constexpr u32 TWO_SERVER_NUM = 2;
+        if (topoArgs.serverNum == 1) {
+            topoArgs.serverNum = TWO_SERVER_NUM;
+        }
+        if (aivClearEnable_) {
+            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
+        }
+        ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     } else {
+        algArgs.argsType = KernelArgsType::ARGS_TYPE_SUPERPOD;
+        if (aivClearEnable_) {
+            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
+        }
         ExtraArgsV2 extraArgs;
         if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
             for (u32 i = 0; i < localRankSize; i++) {

@@ -82,7 +82,7 @@ HcclResult HcomGetAlltoAllvcStagedWorkSpaceMemSize(const char *group,
     std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo, u64 &memSize);
 HcclResult HcomGetAllReduceScratchSize(const char *group, const u32 count, const HcclDataType dataType,
     u64 &outScratchSize);
-HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, const std::vector<rtStream_t> &stream);
+HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, u32 graphId, const std::vector<rtStream_t> &stream);
 HcclResult HcomSetExecTimeOut(const char *execTimeOut);
 HcclResult HcomSetAlgorithm(const char* algo);
 HcclResult HcomSetDeterministic(u8 deterministic);
@@ -108,10 +108,10 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit);
 HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32 &deviceNumPerServer, const s32 &serverNum,
     bool multiModuleDiffDeviceNumMode, u32 &taskNum, DevType devType);
 HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum, s32 deviceNumPerServer,
-    DevType devType, u32 &taskNum);
-HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType, u64 &streamNum);
-HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum);
-HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum, s32 &serverNum);
+    DevType devType, u32 &taskNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType, u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum, s32 &serverNum, const std::string& group = HCCL_WORLD_GROUP);
 HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devType);
 HcclResult GetServerAndDevNumFromGroupList(const u32 *groupList, u32 groupListSize, const std::string rankTableString,
     DevType devType, s32 &serverNum, s32 &deviceNumPerServer, bool &multiModuleDiffDeviceNumMode);

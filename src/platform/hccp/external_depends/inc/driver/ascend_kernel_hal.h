@@ -765,7 +765,7 @@ int hal_kernel_svm_query_devpid_by_pfn(u64 pfn, int *devpid);
 /**
  * @ingroup driver
  * @brief  Increment the reference count of the physical page by 1
- * @attention Ascend910C is not supported
+ * @attention 910_93 is not supported
  * @param [in]  pid: target process id.
  * @param [in]  va: starting virtual address.
  * @param [in]  nr_pages: number of pages from start to pin
@@ -778,7 +778,7 @@ int hal_kernel_svm_get_user_pages(int pid, u64 va, u32 nr_pages, void **pages, b
 /**
  * @ingroup driver
  * @brief  Decrement the reference count of the physical page by 1
- * @attention Ascend910C is not supported
+ * @attention 910_93 is not supported
  * @param [in]  nr_pages: number of pages from start to pin
  * @param [in]  is_remap_addr: if the VMA's vm_flags has the VM_PFNMAP bit set.
  * @param [out]  pages: array that receives pointers to the pages pinned.
@@ -855,7 +855,7 @@ int hal_kernel_get_hardware_info(unsigned int phy_id, devdrv_hardware_info_t *ha
 * @ingroup driver
 * @brief   This interface is used to get physical base address, only called in device side.
 * @param [in]  phy_id : Physical device id
-* @param [in]  offset : address
+* @param [in]  offset : address.
 * @return   address containing the offset of the physical base address, ULLONG_MAX if fail
 */
 unsigned long long hal_kernel_get_dev_phy_base_addr(unsigned int phy_id, unsigned long long offset);
@@ -1116,9 +1116,9 @@ enum txatu_user_module_type {
 * @brief   This interface is used to add TXATU in device
 * @param [in]  udevid: unified device id in device
 * @param [in]  type: txatu_user_module_type
-* @param [in]  host_phy_addr: host physical address
+* @param [in]  host_phy_addr: host physical address.
 * @param [in]  host_addr_size: host physical address size
-* @param [out]  device_phy_addr: device physical address
+* @param [out]  device_phy_addr: device physical address.
 * @return   0 Success, others for fail
 * @note Support: Ascend910_95/Ascend910_96
 */

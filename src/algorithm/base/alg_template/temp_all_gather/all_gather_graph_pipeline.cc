@@ -48,6 +48,7 @@ HcclResult AllGatherGraphPipeline::Prepare(HcomCollOpInfo *opInfo, u32 userRank,
     // streamId[1:intraRankSize]: intraRankSize-1个intra执行
     subStream_ = subStream;
 
+    HCCL_DEBUG("[AllGatherGraphPipeline]prepare for userRank is %u, memSliceCount is %llu", userRank_, memSliceCount_);
     intraRankSize_ = level0CommInfo.localRankSize;
     interRankSize_ = level1CommInfo.localRankSize;
     intraRankId_ = level0CommInfo.localRank;
@@ -203,6 +204,7 @@ HcclResult AllGatherGraphPipeline::RunAsync()
             }
         }
 
+        HCCL_DEBUG("[AllGatherGraphPipeline][RunAsync]now step is %u, intraRankSize is %u", step, intraRankSize_);
         for (u32 i = 1; i < intraRankSize_; i++) {
             u32 remIntraRankId = (intraRankId_ + i) % intraRankSize_;
             CHK_RET(intraLinks_[remIntraRankId]->TxAck(subStream_[i]));  // ackrecord

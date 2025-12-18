@@ -120,8 +120,6 @@ typedef struct {
 /// HCCL算子标识最大长度（字节）
 const uint32_t HCCL_OP_TAG_LEN_MAX = 255;
 
-
-
 /**
  * @name 通信内存获取
  * @{
@@ -136,7 +134,6 @@ const uint32_t HCCL_OP_TAG_LEN_MAX = 255;
  *          3、未来可扩展增加CommGetMemType接口
  */
 extern HcclResult HcclGetHcclBuffer(HcclComm comm, CommBuffer *buffer);
-
 
 /**
  * @defgroup 通信引擎资源管理
@@ -166,7 +163,7 @@ extern HcclResult HcclAllocThreadRes(HcclComm comm, CommEngine engine, uint32_t 
  * @param[out] thread 返回的线程句柄
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult CommAllocThreadResByStream(HcclComm comm, CommEngine engine,
+extern HcclResult HcclAllocThreadResByStream(HcclComm comm, CommEngine engine,
     aclrtStream stream, uint32_t notifyNum, ThreadHandle *thread);
 
 /**
@@ -193,7 +190,6 @@ extern HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread, C
 extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
     NotifyType notifyType, uint32_t notifyNum, NotifyHandle **notifyHandleList);
 
-
 /** @} */  // 通信引擎资源管理
 
 /**
@@ -219,21 +215,8 @@ extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
  * 6.资源描述相同时，key相同情况下已有资源，则复用该资源返回，不重新创建（ps：host展开场景下 ，jetty不能复用）
  * @warning
  */
-extern HcclResult CommChannelCreate(HcclComm comm, const char *channelTag,
+extern HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag,
     CommEngine engine, const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
-
-/**
- * @brief 查询通信通道的状态
- * @param[in] comm 通信域句柄 
- * @param[in] channelList 通道句柄列表
- * @param[in] listNum 列表数量
- * @param[out] statusList 返回状态列表，0表示成功
- * @return HcclResult 执行结果状态码
- * @note 非阻塞接口
- * @warning  statusList是否改成枚举？
- */
-extern HcclResult HcclChannelGetStatus(HcclComm comm, const ChannelHandle *channelList, uint32_t listNum,
-    int32_t *statusList);
 
 /**
  * @brief 获取通道通知数量
@@ -253,7 +236,6 @@ extern HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, 
  * @warning
  */
 extern HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer);
-
 
  /**
  * @defgroup 通信引擎上下文管理接口（编程控制面可选接口）
@@ -276,7 +258,7 @@ extern HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel,
  *       3、通信库基于通信域+opTag为key存储ctx地址
  * @warning
  */
-extern HcclResult CommCreateEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx);
+extern HcclResult HcclCreateEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx);
 
 /**
  * @brief 获取算子通信引擎上下文
@@ -291,7 +273,7 @@ extern HcclResult CommCreateEngineCtx(HcclComm comm, const char *engineTag, Comm
  * @note 使用者可先查询ctx是否已存在，再决定是否重新申请ctx地址
  * @warning 可以考虑将两个Ctx接口一起优化下
  */
-extern HcclResult CommGetEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx);
+extern HcclResult HcclGetEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx);
 
 #ifdef __cplusplus
 }

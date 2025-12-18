@@ -23,6 +23,7 @@ public:
  
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult PrepareCommInfoToDevice(AlgResourceResponse& algResource) override;
+    HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;
 private:
     /* *************** 资源计算 *************** */
     HcclResult CalcStreamNum(u32& streamNum) override;

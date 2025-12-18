@@ -23,9 +23,9 @@ AllGatherRingConcurrentDirect::~AllGatherRingConcurrentDirect()
 }
 
 HcclResult AllGatherRingConcurrentDirect::Prepare(HcomCollOpInfo *opInfo, const u32 userRank,
-    std::vector<Stream> &subStreams, const std::vector<std::shared_ptr<LocalNotify>> &mainSignals,
-    const std::vector<std::shared_ptr<LocalNotify>> &subSignals, const std::vector<u32> &ringsOrder,
-    const std::vector<Slice> &userMemSlices, bool isSdma)
+std::vector<Stream> &subStreams, const std::vector<std::shared_ptr<LocalNotify>> &mainSignals,
+    const std::vector<std::shared_ptr<LocalNotify>> &subSignals,
+    const std::vector<u32> &ringsOrder, const std::vector<Slice> &userMemSlices, bool isSdma)
 {
     opInfo_ = opInfo;
     userRank_ = userRank;
@@ -120,6 +120,7 @@ HcclResult AllGatherRingConcurrentDirect::OneRankMemcpy()
             src = inputMem_.range(srcSlice.offset, srcSlice.size);
         }
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, stream_));
+        HCCL_DEBUG("[AllGatherRingConcurrentDirect][OneRankMemcpy]sliceIdx[%u] for Memcpy success", sliceIdx);
     }
 
     return HCCL_SUCCESS;

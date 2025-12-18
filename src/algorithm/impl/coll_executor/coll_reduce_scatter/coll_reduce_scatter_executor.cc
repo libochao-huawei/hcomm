@@ -32,11 +32,11 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
     if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         ExecMem execMem;
         execMem.count = count;
+        execMem.scratchMem = algRes.scratchMem;
         execMem.inputPtr = param.inputPtr;
         execMem.outputPtr = param.outputPtr;
         execMem.inputMem = algRes.paramInputMem;
         execMem.outputMem = algRes.paramOutputMem;
-        execMem.scratchMem = algRes.scratchMem;
         ret = KernelRun(param, execMem);
         if (algOpContext_.opRetryHandler.isPostSync == true) {
             // post Sync
@@ -97,6 +97,13 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
+
+    // Enforce task launch at the end of Orchestrate
+    if (!is310P3Common_) {
+        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+        CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+    }
+
     HCCL_INFO("tag[%s], ReduceScatter executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
@@ -198,6 +205,9 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
     u64 curSize = execMem.count * unitSize; // 单位：字节
     CHK_PRT_RET((execMem.count == 0),
         HCCL_ERROR("[CollReduceScatterExecutor][RunLoopInner]In OP_BASE curCount is zero."), HCCL_E_PARA);
+        
+    // 不开启dma消减，且通信buffer足够大时，将user in到ccl的拷贝任务合并成一个
+    const bool preloadCopyOpt = (!DMAReduceFlag_) && (param.DataDes.count == execMem.count);
 
     if (!is310P3Common_) {
         /* 设置子图复用标志 */
@@ -207,7 +217,7 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
         bool dataSplit = false;
         u8 deterministic = topoMatcher_->GetExternalInputHcclDeterministic();
         auto opMeta = HcclOpMetaInfo::GetOneForReduceScatter(autoSelectedAlgTypeLevel1, param.DataDes.dataType,
-            reduceType, hugeData, smallData, CopyPattern::BCOPY, dataSplit, deterministic, false);
+            reduceType, hugeData, smallData, CopyPattern::BCOPY, dataSplit, deterministic, false, preloadCopyOpt);
 
         CHK_RET(InitTask(dispatcher_, param.stream, opMeta.isEnableCache, opMeta.GetCacheKey()));
     }
@@ -225,12 +235,20 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
     if (!DMAReduceFlag_) {   // 如果使用in CCL buffer，需要将user buffer in中的结果拷贝到CCL buffer in
         DeviceMem dstMem;
         DeviceMem srcMem;
-        for (u32 i = 0; i < topoAttr_.userRankSize; i++) {
-            // 拷贝input上每个slice的数据到中转内存，源端每个slice的size固定为output的size
-            dstMem = execMem.inputMem.range(curSize * i, curSize);
-            srcMem = DeviceMem::create(static_cast<u8 *>(execMem.inputPtr) + param.DataDes.count * unitSize * i,
-                curSize);
+        if (preloadCopyOpt) {
+            // 中转内存大小足够时，一次性搬完
+            const u64 copySize = param.DataDes.count * unitSize * topoAttr_.userRankSize;
+            dstMem = execMem.inputMem.range(0, copySize);
+            srcMem = DeviceMem::create(static_cast<u8 *>(execMem.inputPtr), copySize);
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, param.stream));
+        } else {
+            for (u32 i = 0; i < topoAttr_.userRankSize; i++) {
+                // 拷贝input上每个slice的数据到中转内存，源端每个slice的size固定为output的size
+                dstMem = execMem.inputMem.range(curSize * i, curSize);
+                srcMem = DeviceMem::create(static_cast<u8 *>(execMem.inputPtr) + param.DataDes.count * unitSize * i,
+                    curSize);
+                CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, param.stream));
+            }
         }
     }
 
@@ -242,9 +260,9 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollReduceScatterExecutor][RunLoopInner]errNo[0x%016llx]kernel run error, tag[%s], " \
-        "inputMem ptr[%p], outputMem ptr[%p], count[%llu], dataType[%d], reduce op type[%d]",
+        "inputMem ptr[%p], outputMem ptr[%p], count[%llu], dataType[%d], reduce op type[%d], preloadCopyOpt[%d]",
         HCCL_ERROR_CODE(ret), param.tag.c_str(), execMem.inputMem.ptr(), execMem.outputMem.ptr(),
-        execMem.count, param.DataDes.dataType, param.reduceType),
+        execMem.count, param.DataDes.dataType, param.reduceType, preloadCopyOpt),
         ret);
 
     if (!DMAReduceFlag_) {
@@ -253,6 +271,8 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
         DeviceMem dstMem = DeviceMem::create(execMem.outputPtr, curSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, param.stream));
     }
+    HCCL_DEBUG("[CollReduceScatterExecutor][RunLoopInner]inputMem ptr is [%p], outputMem ptr is [%p]",
+        execMem.inputMem.ptr(), execMem.outputMem.ptr());
 
     if (!is310P3Common_) {
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));

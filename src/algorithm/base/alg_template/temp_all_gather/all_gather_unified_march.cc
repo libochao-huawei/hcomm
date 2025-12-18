@@ -90,6 +90,7 @@ HcclResult AllGatherUnifiedMarch::NotifyNeighborsStart(LINK& prevIntraLink, LINK
     // 图模式保持使用Post/Wait接口
     if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         for (u32 neighborRankId = 0; neighborRankId < neighbors; neighborRankId++) {
+            HCCL_DEBUG("[AllGatherUnifiedMarch][NotifyNeighborsStart]neighborRankId is %u", neighborRankId);
             // notify是否越界由平台侧保证
             if (neighborRankId == 0) {
                 CHK_RET(nextIntralLink->Post(notifyIdx_, subStreams_[neighborRankId])); // AckRecord
@@ -134,6 +135,7 @@ HcclResult AllGatherUnifiedMarch::NotifyNeighborsStart(LINK& prevIntraLink, LINK
 
 HcclResult AllGatherUnifiedMarch::NotifyNeighborsEnd(LINK& prevIntraLink, LINK& nextIntralLink, u32 neighbors)
 {
+    HCCL_DEBUG("[AllGatherUnifiedMarch]NotifyNeighborsEnd start.");
     for (u32 neighborRankId = 0; neighborRankId < neighbors; neighborRankId++) {
         if (neighborRankId == 0) {
             CHK_RET(prevIntraLink->TxDataSignal(subStreams_[neighborRankId]));      // DataRecord
@@ -152,8 +154,8 @@ HcclResult AllGatherUnifiedMarch::NotifyNeighborsEnd(LINK& prevIntraLink, LINK& 
 HcclResult AllGatherUnifiedMarch::RunSingleStep(u32 ringPrevRank, u32 ringNextRank, u32 step, u32 totalStep)
 {
     LINK prevIntraLink = links_[ringPrevRank];
-    CHK_SMART_PTR_NULL(prevIntraLink);
     LINK nextIntralLink = links_[ringNextRank];
+    CHK_SMART_PTR_NULL(prevIntraLink);
     CHK_SMART_PTR_NULL(nextIntralLink);
     u32 neighbors = (ringPrevRank == ringNextRank) ? NEIGHBORS_NUM_ONE : NEIGHBORS_NUM_TWO;
     CHK_RET(NotifyNeighborsStart(prevIntraLink, nextIntralLink, neighbors));

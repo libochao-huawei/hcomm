@@ -164,8 +164,8 @@ HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007",
         std::vector<std::string>({"resource_type", "resource_info"}), std::vector<std::string>({"qp", qpInfoStr}));
 
-    CHK_PRT_RET(ret != 0 || (qpHandle == nullptr), HCCL_ERROR("[Create][RaQp]errNo[0x%016llx] ra qp create fail. "\
-        "params: flag[%d], qpMode[%d]. return: ret[%d]", \
+    CHK_PRT_RET(ret != 0 || (qpHandle == nullptr), HCCL_ERROR("[%s][%s]errNo[0x%016llx] ra qp create fail. "\
+        "params: flag[%d], qpMode[%d]. return: ret[%d]", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), 
         HCCL_ERROR_CODE(HCCL_E_NETWORK), flag, qpMode, ret), HCCL_E_NETWORK);
 
     s32 deviceId = 0;
@@ -186,9 +186,10 @@ HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo
     RPT_ENV_ERR(ret != 0, "EI0007",
         std::vector<std::string>({"resource_type", "resource_info"}), std::vector<std::string>({"qp", qpInfo}));
 
-    CHK_PRT_RET(ret == ROCE_EOPENSRC , HCCL_RUN_WARNING("ra qp modify need retry."), HCCL_E_AGAIN);
-    CHK_PRT_RET(ret != 0 , HCCL_ERROR("[modify][RaQp]errNo[0x%016llx] ra qp modify fail. return: ret[%d]", \
-        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    CHK_PRT_RET(ret == ROCE_EOPENSRC , HCCL_RUN_WARNING("[%s][%s]ra qp modify need retry.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()), HCCL_E_AGAIN);
+    CHK_PRT_RET(ret != 0 , HCCL_ERROR("[%s][%s]errNo[0x%016llx] ra qp modify fail. return: ret[%d]", \
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
 
@@ -1471,8 +1472,6 @@ HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, s
                 "size[%llu Byte], recvSize[%llu Byte] timeout[%lld s]. Peerrank did not send the data in time. " \
                 "Check whether the peerrank is abnormal.", \
                 HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeout);
-            RPT_INPUT_ERR(true, "EI0006", vector<string>({"reason"}), \
-                vector<string>({BLOCK_RECV_TIMEOUT_REASON}));
             return HCCL_E_TIMEOUT;
         }
         rtRet = DlRaFunction::GetInstance().dlRaSocketRecv(fdHandle,
@@ -2622,7 +2621,7 @@ HcclResult hrtRaGetSocketVnicIpInfos(u32 phyId, enum IdType type, vector<u32> de
     return HCCL_SUCCESS;
 }
 
-HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size, void **tlv_handle)
+HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t *buffer_size, void **tlv_handle)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2632,13 +2631,13 @@ HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uin
         return HCCL_E_NOT_SUPPORT;
     }
  
-    s32 ret = DlRaFunction::GetInstance().dlH2DTlvInit(init_info, tlv_handle_id, buffer_size, tlv_handle);
+    s32 ret = DlRaFunction::GetInstance().dlH2DTlvInit(init_info, buffer_size, tlv_handle);
     CHK_PRT_RET(ret != 0, HCCL_WARNING("[H2DTlvInit]errNo[0x%016llx] dlH2DTlvInit fail. "
             "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
  
-HcclResult H2DTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
+HcclResult H2DTlvRequest(void *tlv_handle, unsigned int module_type, struct TlvMsg *send_msg, struct TlvMsg *recv_msg)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2653,13 +2652,13 @@ HcclResult H2DTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMs
         return HCCL_E_NOT_SUPPORT;
     }
  
-    s32 ret = DlRaFunction::GetInstance().dlH2DTlvRequest(tlv_handle, send_msg, recv_msg);
-    CHK_PRT_RET(ret != 0, HCCL_WARNING("[H2DTlvRequest]errNo[0x%016llx] dlH2DTlvRequest fail. "
-            "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    s32 ret = DlRaFunction::GetInstance().dlH2DTlvRequest(tlv_handle, module_type, send_msg, recv_msg);
+    CHK_PRT_RET(ret != 0, HCCL_WARNING("[H2DTlvRequest]errNo[0x%016llx] dlH2DTlvRequest fail. module_type[%u]"
+            "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), module_type, ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
  
-HcclResult H2DTlvDeinit(void **tlv_handle)
+HcclResult H2DTlvDeinit(void *tlv_handle)
 {
     u32 tlvVersion = 0;
     u32 phyId = 0;  // phyId无实际意义，这里直接传入0
@@ -2883,6 +2882,7 @@ HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
     s32 ret = DlRaFunction::GetInstance().dlRaRaGetTlsEnable(info, tlsEnable);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[HrtRaGetTlsEnable]errNo[0x%016llx] "
         "failed ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    HCCL_INFO("HrtRaGetTlsEnable phyId[%u], tlsEnable[%d]", info->phyId, *tlsEnable);
     return HCCL_SUCCESS;
 }
 
@@ -2907,5 +2907,72 @@ HcclResult SnapShotRestoreAction(s32 networkMode, u32 devicePhyId)
     s32 ret = DlRaFunction::GetInstance().dlRaRestoreSnapShot(&raInfo);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("%s errNo[0x%016llx] failed ret[%d], networkMode[%d], phyId[%u]",
         __func__, HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, networkMode, devicePhyId), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT key, std::string &value)
+{
+    u32 raGetHccnCfg = 0;
+    HcclResult vRet = hrtRaGetInterfaceVersion(devicePhyId, GET_HCCH_CFG, &raGetHccnCfg);
+    static bool isPrintWarning = false;
+    if (vRet != HCCL_SUCCESS || raGetHccnCfg < GET_HCCH_CFG_VERSION ||
+        UNLIKELY(DlRaFunction::GetInstance().dlRaGetHccnCfg == nullptr)) {
+        if (!isPrintWarning) {
+            HCCL_WARNING("[HrtRaGetHccnCfg] this package does not support HrtRaGetHccnCfg for device, "
+                         "please change new package ret[%d], version[%lu]",
+                static_cast<int>(vRet),
+                raGetHccnCfg);
+            isPrintWarning = true;
+        }
+        return HCCL_SUCCESS;
+    }
+    struct RaInfo raInfo;
+    raInfo.mode = networkMode;
+    raInfo.phyId = devicePhyId;
+
+    HccnCfgKey hccnKey{HccnCfgKey::HCCN_CFG_UDP_PORT_MODE};
+    switch (key) {
+        case HccnCfgKeyT::HCCN_UDP_PORT_MODE:
+            hccnKey = HccnCfgKey::HCCN_CFG_UDP_PORT_MODE;
+            break;
+        case HccnCfgKeyT::HCCN_MULTI_QP_COUNT:
+            hccnKey = HccnCfgKey::HCCN_CFG_MULTI_QP_COUNT;
+            break;
+        case HccnCfgKeyT::HCCN_MULTI_QP_UDP_PORTS:
+            hccnKey = HccnCfgKey::HCCN_CFG_MULTI_QP_UDP_PORTS;
+            break;
+        default:
+            HCCL_ERROR("[HrtRaGetHccnCfg]not support key[%d]", key);
+            return HCCL_E_PARA;
+    }
+
+    constexpr std::uint32_t READ_MAX_LEN = 1024 * 2;
+    std::vector<char> buffer(READ_MAX_LEN);
+    int actualLen = static_cast<int>(buffer.size());
+    s32 ret = DlRaFunction::GetInstance().dlRaGetHccnCfg(&raInfo, hccnKey, buffer.data(), &actualLen);
+    if (ret == 0 && actualLen == 0) {  // 文件不存在的话 HCCP长度返回0,且ret为0
+        HCCL_WARNING("[HrtRaGetHccnCfg] device networkMode[%d] with phyId[%u], "
+                     "get hccn config key[%d] info is empty. Possible reasons: "
+                     "1. Device not need to use multi_qp/nslb-dp settings. "
+                     "  2. In this package, hccn_tool not support multi_qp/nslb-dp settings. "
+                     "  3. The right key not exist in device's config file or key's value is empty.",
+            networkMode,
+            devicePhyId,
+            key);
+        value.assign(buffer.data(), actualLen);
+        return HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(ret != 0,  // 其他
+        HCCL_ERROR("[HrtRaGetHccnCfg]errNo[0x%016llx] error occurred."
+                   " networkMode[%d], devicePhyId[%u], key[%d], return: ret[%d]",
+            HCCL_ERROR_CODE(HCCL_E_NETWORK),
+            networkMode,
+            devicePhyId,
+            key,
+            ret),
+        HCCL_E_NETWORK);
+    value.assign(buffer.data(), actualLen != 0 && buffer[actualLen - 1] == '\0' ? actualLen - 1 : actualLen);
+    HCCL_DEBUG("[HrtRaGetHccnCfg]devicePhyId[%u] key[%d], value[%s], value len[%d]",devicePhyId, key, value.c_str(),
+                actualLen);
     return HCCL_SUCCESS;
 }

@@ -59,3 +59,4 @@ target_sources(hccd PRIVATE
 add_subdirectory(adapter)
 add_subdirectory(misc)
 add_subdirectory(p2p_mgmt)
+add_subdirectory(unfold_cache)

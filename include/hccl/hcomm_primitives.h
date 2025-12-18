@@ -16,8 +16,6 @@
 #include <arpa/inet.h>
 #include "acl/acl_rt.h"
 
-// #include "hccl_res.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -123,7 +121,7 @@ extern HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32
  * @param[in] dstNotifyId 通知id
  * @return 执行状态码 HcclResult
  */
-extern HcclResult CommLocalBareNotifyRecord(ThreadHandle thread, uint64_t dstNotifyId);
+extern HcclResult HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId);
 
 /**
  * @brief 等待通知事件（消费者）
@@ -132,37 +130,8 @@ extern HcclResult CommLocalBareNotifyRecord(ThreadHandle thread, uint64_t dstNot
  * @param[in] timeOut 超时时间
  * @return 执行状态码 HcclResult
  */
-extern HcclResult CommLocalBareNotifyWait(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
+extern HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
 /** @} */  // 本地通知
-
-/**
- * @name 算子间同步和值通知
- * @{
- * @note 应用于一个通信引擎算子与另一个通信引擎算子或引擎算子外的同步通知
- */
-
-/**
- * @brief 算子间记录通知
- * 
- * @param[in] thread 线程句柄
- * @param[in] notifyHandle 通知标识
- * @return HcclResult 执行结果状态码
- * @warning  怎么区分基于内存的、rtNotify、rtEvent的？需要分别对应新的接口？
- * 或者这个notifyId改为signalId，signalId增加标识区分类别。
- */
-extern HcclResult HcommInterOpNotifyRecordOnThread(ThreadHandle thread, NotifyHandle notifyHandle);
-
-/**
- * @brief 算子间等待通知
- * 
- * @param[in] thread 线程句柄
- * @param[in] notifyHandle 通知标识
- * @param[in] timeout 超时时间(毫秒)
- * @return HcclResult 执行结果状态码
- */
-extern HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, NotifyHandle notifyHandle, uint32_t timeout);
-
-/** @} */ // 算子间同步和值通知
 
 /**
  * @name 数据读写相关
@@ -263,26 +232,6 @@ extern HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle c
 extern HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
 /** @} */  // 通知
 
-
-/**
- * @name channel同步
- * @{
- */
-
-/**
- * @brief 通信通道级同步操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @return HcclResult 执行结果状态码
- * @note 确保该通道上此前的所有任务都已经执行完成
- * @warning
- */
-extern HcclResult HcommChannelFence(ThreadHandle thread, ChannelHandle channel);
-
-/** @} */  // channel同步
-
-
-
 /**
  * @defgroup 批量下发设置接口
  * @{
@@ -300,9 +249,48 @@ extern HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode);
 
 /** @} */  // 批量下发设置接口
 
+/** @} */  // 数据面编程接口
+/** @} */  // 算子编程接口
+
+/**
+ * @brief 获取通信域并加锁
+ * @param[in] commId 通信域id
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern HcclResult HcommAcquireComm(const char* commId);
+
+/**
+ * @brief 释放通信域
+ * @param[in] commId 通信域id
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern HcclResult HcommReleaseComm(const char* commId);
+
+/**
+ * @brief 注册算子信息到通信域
+ * @param[in] commId 通信域id
+ * @param[in] opInfo 算子信息
+ * @param[in] size 算子信息的数据长度
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+extern HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, uint32_t size);
+
+/**
+ * @brief 注册taskException算子信息解析函数
+ * @param[in] commId 通信域id
+ * @param[in] callback 解析算子信息并输出字符数组的回调函数
+ * @param[in] opInfo 算子信息存储的内存地址
+ * @param[in] size 算子信息存储的内存长度
+ * @return HcclResult 执行结果状态码
+ * @note 当前仅支持AICPU模式
+ */
+typedef void (*HcommGetOpInfoCallback)(const void *opInfo, char *outPut, size_t size);
+extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
-
 
 #endif

@@ -43,6 +43,8 @@ public:
 
     virtual HcclResult SelectAlg(const std::string& tag,
         const OpParam& param, std::string& algName, std::string& newTag);
+    virtual HcclResult SelectAlg(const std::string& tag,
+        const OpParam& param, std::string& algName, std::string& newTag, const ResourceLimit &limit);
     HcclResult SelectAlg(const std::string& tag, const OpParam &param, const ResourceLimit &limit,
         std::string &algName, AlgDesc &algDesc, std::string &newTag);
     virtual HcclResult CalcResRequest(const std::string& algName,
@@ -53,7 +55,7 @@ public:
     HcclResult PrepareCommInfoToDevice(const std::string& algName, AlgResourceResponse& algResource);
     virtual HcclResult GetAdjInfo(const std::string& algName, OpParam& param, AlgResourceResponse& algResource, AdjInfo& nslbAdjInfo);
     // batchsendrecv判断是否需要增量建链
-    HcclResult CalcIncreLinkRequest(const std::string& algName, const OpParam& param, std::set<u32>& ranksLinked,
+    HcclResult CalcIncreLinkRequest(const std::string& algName, const OpParam& param, std::set<u32>& ranksHasLinked,
         AlgResourceRequest& resourceRequest, bool& needIncreLink);
     AlgType GetAlgType();
     void SetLegacyHcclImpl(std::unique_ptr<hcclImpl> &impl);
@@ -61,7 +63,7 @@ public:
     HcclResult SetRetryEnable(bool retryEnable);
     HcclResult GetAivExecParam(std::string& algName, const OpParam& param,
         AlgResourceResponse& algRes, AivSuperKernelArgs &args);
-    HcclResult CalBlockDim(std::string& algName, const OpParam& param, u32 &blockDim);
+    HcclResult CalBlockDim(std::string& algName, const OpParam& param, u32 &blockDim, int32_t aivCoreLimit = 0);
     HcclResult SetAivClearEnable(bool aivClearEnable);
     bool SupportRetryWithInplaceCheck(
         const HcclCMDType &opType, OpParam &param, std::string& algName, u8 &isInplaceStatus,
@@ -151,6 +153,8 @@ private:
         AlgTypeLevel1 &algType);
     HcclResult SelectAlgoTypeForReduce(float delay, u64 curSize, float bandWidth,
         AlgTypeLevel1 &algType);
+    HcclResult SelectAlgFor91093WithCoreLimit(const OpParam &param, const ResourceLimit &limit,
+        std::string &algName);
 
     HcclResult AppendTag(const AlgTypeLevel1 &algTypeLevel1, std::string &tag);
     HcclResult SelectAlgoForComm(HcclCMDType hcclCMDType, float delay, u64 curSize, float bandWidth,

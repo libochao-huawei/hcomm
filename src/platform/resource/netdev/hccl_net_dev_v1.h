@@ -16,8 +16,6 @@
 #include "hccl_net_dev_defs.h"
 #include <stdint.h>
 
-// ltm 此处宏定义存在问题会导致OPEN_BUILD_PROJECT情况下HcclNetDevOpenV1未定义
-// #ifndef OPEN_BUILD_PROJECT
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -29,7 +27,6 @@ HcclResult HcclNetDevGetNicAddrV1(int32_t devicePhyId, HcclAddress **addr, uint3
 
 #ifdef __cplusplus
 }
-#endif
-// #endif // __cplusplus
+#endif // __cplusplus
 
 #endif  // HCCL_NET_DEV_V1_H

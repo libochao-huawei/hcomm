@@ -50,6 +50,12 @@ enum class HcclSaveSnapShotAction {
     HCCL_SAVE_SNAPSHOT_ACTION_POST_PROCESSING = 1,
 };
 
+enum class HccnCfgKeyT {
+    HCCN_UDP_PORT_MODE = 0,
+    HCCN_MULTI_QP_COUNT = 1,
+    HCCN_MULTI_QP_UDP_PORTS = 2
+};
+
 using QueueDepthAttr = struct QueueDepthAttrDef { // 有效配置 128 - 32K
     u32 sendCqDepth{INVALID_UINT};
     u32 recvCqDepth{INVALID_UINT};
@@ -70,14 +76,14 @@ HcclResult hrtRaCtlEventHandle(s32 eventHandle, const FdHandle fdHandle, int opC
 
 HcclResult hrtRaWaitEventHandle(s32 eventHandle, std::vector<SocketEventInfo> &eventInfos, s32 timeOut,
     u32 maxEvents, u32 &eventsNum);
-HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t tlv_handle_id, uint32_t *buffer_size,
-    void **tlv_handle);
-HcclResult H2DTlvRequest(void *tlv_handle, struct TlvMsg *send_msg, struct TlvMsg *recv_msg);
-HcclResult H2DTlvDeinit(void **tlv_handle);
+HcclResult H2DTlvInit(struct TlvInitInfo *init_info, uint32_t *buffer_size, void **tlv_handle);
+HcclResult H2DTlvRequest(void *tlv_handle, unsigned int module_type, struct TlvMsg *send_msg, struct TlvMsg *recv_msg);
+HcclResult H2DTlvDeinit(void *tlv_handle);
 HcclResult hrtRaDestroyEventHandle(s32 &eventHandle);
 
 HcclResult SnapShotSaveAction(s32 networkMode, u32 devicePhyId, HcclSaveSnapShotAction action);
 HcclResult SnapShotRestoreAction(s32 networkMode, u32 devicePhyId);
+HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT key, std::string& value);
 #endif
 
 #endif

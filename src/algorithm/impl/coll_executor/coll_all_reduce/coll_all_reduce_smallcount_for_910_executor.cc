@@ -14,7 +14,7 @@ namespace hccl {
 CollAllReduceSmallCountFor910Executor::CollAllReduceSmallCountFor910Executor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher) : CollAllReduceExecutor(dispatcher, topoMatcher)
 {
-    DMAReduceFlag_ = false;
+    DMAReduceFlag_ = true;
 }
 
 HcclResult CollAllReduceSmallCountFor910Executor::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
@@ -80,16 +80,25 @@ HcclResult CollAllReduceSmallCountFor910Executor::Orchestrate(OpParam& param, Al
     u64 totalSize = execMem.count * unitSize; // 单位：字节
 
     DeviceMem inMem(execMem.inputPtr, totalSize);
-    DeviceMem outCommMem = execMem.outputMem.range(0, totalSize);
-    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, outCommMem, inMem, param.stream));
+    DeviceMem inCommMem = execMem.inputMem.range(0, totalSize);
+    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, inCommMem, inMem, param.stream));
     HCCL_DEBUG("[CollAllReduceSmallCountFor910Executor][RunLoop]copy from user in to ccl out.");
     HcclResult ret = KernelRun(param, execMem);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAllReduceMeshSmallCountExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
     DeviceMem outMem(execMem.outputPtr, totalSize);
-    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, outMem, outCommMem, param.stream));
+    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, outMem, inCommMem, param.stream));
     HCCL_DEBUG("[CollAllReduceSmallCountFor910Executor][RunLoop]copy from ccl out to usr out.");
+
+    // Enforce task launch at the end of Orchestrate
+    if (!is310P3Common_) {
+        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+        CHK_RET(LaunchTaskExtend(dispatcher_,
+            const_cast<Stream &>(param.stream),
+            const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
+    }
+
     HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;

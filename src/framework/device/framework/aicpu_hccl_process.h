@@ -37,7 +37,7 @@ public:
     static void CopyCtxInfo(AicpuComContext *ctx);
     static void CopyCtxForBackGroundDfx(const AicpuComContext *ctx);
     static DevType AicpuGetInnerDevType();
-    static HcclResult AicpuCreateCommbyGroup(const std::string &group, hccl::HcclCommAicpu **aicpuCommPtr);
+    static HcclResult AcquireAicpuComm(const std::string &group, hccl::HcclCommAicpu **aicpuCommPtr);
     static HcclResult HandleOneSideService(const OpTilingData *tilingData);
     static HcclResult InitAsyncFlag(const uint32_t* lFlagAddr, const uint32_t* rFlagAddr,
         hccl::Transport::Buffer *localFlagBufforCheck, hccl::Transport::Buffer *localFlagBufforWrite,

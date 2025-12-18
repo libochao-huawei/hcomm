@@ -14,15 +14,15 @@
 #include "stream_pub.h"
 #include "hccl_common.h"
 #include "common/aicpu_hccl_def.h"
-#include "aprof_pub.h"
 #include "prof_common.h"
 
 extern "C" {
 __attribute__((weak)) int32_t AdprofReportBatchAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length);
 __attribute__((weak)) int32_t MsprofReportBatchAdditionalInfo(uint32_t agingFlag, const VOID_PTR data, uint32_t length);
 __attribute__((weak)) int32_t AdprofReportAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length);
-__attribute__((weak)) int32_t MsprofReportAdditionalInfo(uint32_t nonPersistantFlag, const VOID_PTR data, uint32_t length);
+__attribute__((weak)) int32_t MsprofReportAdditionalInfo(uint32_t agingFlag, const VOID_PTR data, uint32_t length);
 __attribute__((weak)) int32_t AdprofCheckFeatureIsOn(uint64_t feature);
+__attribute__((weak)) int32_t MsprofRegisterCallback(uint32_t moduleId, ProfCommandHandle handle);
 __attribute__((weak)) uint64_t AdprofGetHashId(const char *hashInfo, size_t length);
 __attribute__((weak)) uint64_t MsprofStr2Id(const char *hashInfo, size_t length);
 };
@@ -49,6 +49,8 @@ public:
     /* AICPU profiling*/
     static bool IsProfL1On();
     static bool IsProfL0On();
+    static void SetProL0On(bool val);
+    static void SetProL1On(bool val);
     static bool IsL1fromOffToOn();
     static HcclResult ReportTaskInfo(s32 streamId, void* ctxPtr);
     static HcclResult ReportHcclOpInfo(MsprofAicpuHCCLOPInfo& hcclOpInfo, std::string &algTypeStr);

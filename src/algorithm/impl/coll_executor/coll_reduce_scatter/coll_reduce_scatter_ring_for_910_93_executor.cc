@@ -204,8 +204,8 @@ bool CollReduceScatterRingFor91093Executor::IsHugeData(const u64 curSize, OpPara
 HcclResult CollReduceScatterRingFor91093Executor::RunIntraSeverReduceScatter(
     const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,
     const u64 count, const HcclDataType &dataType, const HcclReduceOp &reductionOp,
-    const std::vector<std::vector<Slice>> &multRingsSliceZero, const Stream &stream, s32 profStage,
-    const u64 baseOffset, const HcomCollOpInfo *opInfo,
+    const std::vector<std::vector<Slice>> &multRingsSliceZero, const Stream &stream,
+    s32 profStage, const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> &multRingsUserMemSlice, const bool disableDMAReduce)
 {
     CHK_RET(MultiRingReduceScatter(tag, inputMem, outputMem, count, dataType, reductionOp,
@@ -670,6 +670,7 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
                 level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_AHC_BROKE, dispatcher_);
                 HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_AHC_BROKE in COMM_LEVEL1", __func__);
             }
+            HCCL_DEBUG("[CollReduceScatterRingFor91093Executor]runAsync for COMM_LEVEL1 ends");
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(execMem.count, globalSubGroups, ahcAlgOption));
             CHK_RET(level1TempAlg->Prepare(reduceAttr));
@@ -773,6 +774,7 @@ HcclResult CollReduceScatterRingFor91093Executor::SelectTempAlg(std::unique_ptr<
 {
     bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
+    HCCL_DEBUG("[CollReduceScatterRingFor91093Executor]SelectTempAlg begins");
     if (isSelectAHC) {
         CommPlane commPlaneLevel1 = COMM_LEVEL1_AHC;
         // 获取通信域分组信息

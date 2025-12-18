@@ -81,6 +81,7 @@ HcclResult ReduceScatterHccsSio::SubRecordMain()
 HcclResult ReduceScatterHccsSio::RunInterDieOpBase(
     const u32 rank, const LINK &link, const u32 srcDMAMemSliceId, u32 unitSize)
 {
+    (void) rank;
     void *remMemPtr = nullptr;
     // 获取远端的commoutMem
     CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remMemPtr));

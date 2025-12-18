@@ -227,6 +227,7 @@ HcclResult AllReduceGraphPipeline::RunAsync()
                 CHK_RET(ExecuteBarrier(prevInterLink, nextInterLink));
             }
         }
+        HCCL_DEBUG("[AllReducePipeline][RunAsync]step %u runAllGatherInterServer success", step);
         CHK_RET(RunAllGatherIntraServer(step));
         CHK_RET(SubRecordMain());
         CHK_RET(MainWaitSub());
@@ -245,6 +246,7 @@ HcclResult AllReduceGraphPipeline::Prepare(const HcomCollOpInfo *opInfo, DeviceM
     memSliceSize_ = sliceCount_ * unitSize_;
     lastSliceCount_ = count - sliceCount_ * (level0CommInfo.localRankSize * level1CommInfo.localRankSize - 1);
     lastSliceSize_ = lastSliceCount_ * unitSize_;
+    HCCL_DEBUG("[%s] PrepareSliceDataWithAlignSize for data_slice_prepare", __func__);
 
     usrInMem_ = opInfo->inputAddr;
     usrOutMem_ = opInfo->outputAddr;

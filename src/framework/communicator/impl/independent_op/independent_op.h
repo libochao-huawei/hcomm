@@ -26,6 +26,9 @@
 #include "aicpu_init_param.h"
 
 namespace hccl {
+constexpr int32_t  HCCL_COMM_ENGINE_CONFIG_NOT_SET = -1;
+constexpr uint32_t HCCL_COMM_THREADNUM_CONFIG_NOT_SET = 0xffffffff;
+constexpr uint32_t HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET = 0xffffffff;
 
 class IndependentOp {
 public:
@@ -34,7 +37,8 @@ public:
 
     // 初始化资源管理器
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
-        const HcclTopoAttr &topoAttr, const aclrtBinHandle binHandle);
+        const HcclTopoAttr &topoAttr, const aclrtBinHandle binHandle, HDCommunicateParams &kfcControlTransferH2DParams,
+        HDCommunicateParams &kfcStatusTransferD2HParams);
     HcclResult SetChannelCallbacks(const ChannelManagerCallbacks& channelCallbacks);
 
     // 获取配置信息
@@ -50,10 +54,6 @@ public:
 
     inline CommEngineResMgr& GetCommEngineResMgr() {
         return engineResMgr_;
-    }
-
-    inline RankGraph& GetRankGraph() {
-        return rankgraph_;
     }
 
     inline ContextManager& GetContextManager() {
@@ -80,7 +80,6 @@ private:
     RegMemMgr regMemMgr_;
     CommMemMgr commMemMgr_;
     CommEngineResMgr engineResMgr_;
-    RankGraph rankgraph_;
     ContextManager contextMgr_;
     ChannelManager channelMgr_;
 

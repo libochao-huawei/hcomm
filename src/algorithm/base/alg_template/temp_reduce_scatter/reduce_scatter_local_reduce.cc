@@ -41,7 +41,7 @@ HcclResult ReduceScatterLocalReduce::Prepare(DeviceMem &inputMem, DeviceMem &out
 
 HcclResult ReduceScatterLocalReduce::MainRecordSub(u32 streamNum)
 {
-    u32 totalTask = streamNum < 0 ? meshSignalAuxPtr_->size() : streamNum;
+    u32 totalTask = streamNum;
     CHK_PRT_RET((totalTask > meshSignalAuxPtr_->size()),
         HCCL_ERROR("[ReduceScatterLocalReduce][MainRecordSub]totalTask[%u] is over range of meshSignalAux[%zu]",
         totalTask, meshSignalAuxPtr_->size()), HCCL_E_PARA);
@@ -54,7 +54,7 @@ HcclResult ReduceScatterLocalReduce::MainRecordSub(u32 streamNum)
 
 HcclResult ReduceScatterLocalReduce::SubWaitMain(u32 streamNum)
 {
-    u32 totalTask = streamNum < 0 ? meshSignalAuxPtr_->size() : streamNum;
+    u32 totalTask = streamNum;
     CHK_PRT_RET((totalTask > meshSignalAuxPtr_->size() || totalTask > meshStreams_.size()),
         HCCL_ERROR("[ReduceScatterLocalReduce][SubWaitMain]totalTask[%u] is over range of meshSignalAux[%zu]" \
         "or meshStreams_[%zu]", totalTask, meshSignalAuxPtr_->size(), meshStreams_.size()), HCCL_E_PARA);
@@ -67,7 +67,7 @@ HcclResult ReduceScatterLocalReduce::SubWaitMain(u32 streamNum)
 
 HcclResult ReduceScatterLocalReduce::MainWaitSub(u32 streamNum)
 {
-    u32 totalTask = streamNum < 0 ? meshSignalPtr_->size() : streamNum;
+    u32 totalTask = streamNum;
     CHK_PRT_RET((totalTask > meshSignalPtr_->size()),
         HCCL_ERROR("[ReduceScatterLocalReduce][MainWaitSub]totalTask[%u] is over range of meshSignal[%zu]",
         totalTask, meshSignalPtr_->size()), HCCL_E_PARA);
@@ -79,7 +79,7 @@ HcclResult ReduceScatterLocalReduce::MainWaitSub(u32 streamNum)
 
 HcclResult ReduceScatterLocalReduce::SubRecordMain(u32 streamNum)
 {
-    u32 totalTask = streamNum < 0 ? meshSignalPtr_->size(): streamNum;
+    u32 totalTask = streamNum;
     CHK_PRT_RET((totalTask > meshSignalPtr_->size() || totalTask > meshStreams_.size()),
         HCCL_ERROR("[ReduceScatterLocalReduce][SubWaitMain]totalTask[%u] is over range of meshSignal[%zu]" \
         "or meshStreams_[%zu]", totalTask, meshSignalPtr_->size(), meshStreams_.size()), HCCL_E_PARA);

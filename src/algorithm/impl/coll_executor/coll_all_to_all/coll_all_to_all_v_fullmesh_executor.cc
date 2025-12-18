@@ -54,6 +54,8 @@ HcclResult CollRunAlltoAllVFullMesh::CalAlltoAllFullMeshCommInfo(TransportMemTyp
     TransportMemType outputType,
     std::vector<LevelNSubCommTransport>& opTransport)
 {
+    (void) inputType;
+    (void) outputType;
      // A+X单机双module启用下，未使能RDMA不能进行一层pairWise。
     bool isDifModule = topoAttr_.serverNum == 1 && topoAttr_.isDiffDeviceModule &&
         topoAttr_.userRankSize > HCCL_ALLTOALLV_P2P_SIZE;
@@ -87,7 +89,7 @@ HcclResult CollRunAlltoAllVFullMesh::CalcCommInfo(std::vector<LevelNSubCommTrans
 
 HcclResult CollRunAlltoAllVFullMesh::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVFullMesh][KernelRun] AllToAll fullmesh start");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVFullMesh][KernelRun] AllToAllV fullmesh start");
     bool opbaseCopyMode = workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         isAlltoAllZCopyMode_;
 

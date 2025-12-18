@@ -95,55 +95,104 @@ HcclResult ResetEnvConfigInitState()
 HcclResult InitEnvParam()
 {
     HcclResult ret = ParseHostSocketPortRange();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env", "tips"}),
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_HOST_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[InitEnvParam]errNo[0x%016llx] In init environtment param, parse "
-            "HCCL_HOST_SOCKET_PORT_RANGE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+                   "HCCL_HOST_SOCKET_PORT_RANGE failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = ParseNpuSocketPortRange();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env", "tips"}),
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_NPU_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[InitEnvParam]errNo[0x%016llx] In init environtment param, parse "
-            "HCCL_NPU_SOCKET_PORT_RANGE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+                   "HCCL_NPU_SOCKET_PORT_RANGE failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = ParseDFSConfig();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env", "tips"}),
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_DFS_CONFIG", "Please check whether the DFS config is valid."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[InitEnvParam]errNo[0x%016llx] In init environtment param, parse "
-            "HCCL_DFS_CONFIG failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+                   "HCCL_DFS_CONFIG failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = g_envConfig.ParseRDMATrafficClass();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env", "tips"}),
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_TC", "Value range[0, 255], Must be a multiple of 4"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[InitEnvParam]errNo[0x%016llx] In init environtment param, parse "
-            "HCCL_RDMA_TC failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+                   "HCCL_RDMA_TC failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = g_envConfig.ParseRDMAServerLevel();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env", "tips"}),
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_SL", "Value range[0, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[InitEnvParam]errNo[0x%016llx] In init environtment param, parse "
-            "HCCL_RDMA_SL failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+                   "HCCL_RDMA_SL failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = InitDebugConfigByEnv();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env", "tips"}),
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_DEBUG_CONFIG", "Please check whether the env is valid"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[InitEnvParam]errNo[0x%016llx] In init environtment param, parse "
-        "HCCL_DEBUG_CONFIG failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+                   "HCCL_DEBUG_CONFIG failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析算法配置
     ret = ParseHcclAlgo();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env", "tips"}),
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_ALGO",
             "expect: level0:NA;level1:<algo> or <op0>=level0:NA;level1:<algo0>/<op1>=level0:NA;level1:<algo1>"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "
-            "hccl algorithm config failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
+                   "hccl algorithm config failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
     return HCCL_SUCCESS;
 }
 
@@ -567,6 +616,7 @@ HcclResult ParseLibraryPath(std::string &cannPath)
         HCCL_ERROR("[ParseLibraryPath]ENV:LD_LIBRARY_PATH is not set");
         return HCCL_E_PARA;
     } else {
+        HCCL_INFO("ParseLibraryPath]getPath[%s]", getPath.c_str());
         cannPath = getPath;
     }
     return HCCL_SUCCESS;

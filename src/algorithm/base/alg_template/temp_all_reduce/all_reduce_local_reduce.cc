@@ -216,7 +216,7 @@ HcclResult AllReduceLocalReduce::RunReduceScatter(u32 rank, u32 rankSize, const 
         CHK_RET(links[dstRank]->TxAck(subStream));
         CHK_RET(links[dstRank]->RxAck(subStream));
     }
-
+    HCCL_DEBUG("[ReduceScatterMeshLocalReduce] D2DMemcpy start");
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, emptyDst, emptySrc, stream_));
 
     CHK_RET(SubRecordMain());

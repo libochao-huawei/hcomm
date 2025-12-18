@@ -27,6 +27,7 @@
 #include "comm_config_pub.h"
 #include "transport_manager.h"
 #include "independent_op.h"
+#include "share_ccl_buffer_manager.h"
 
 namespace hccl {
 /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
@@ -37,7 +38,7 @@ class IHcclOneSidedService;
 
 class hcclComm {
 public:
-    explicit hcclComm(u64 inCCLbufferSize = 0, u64 outCCLbufferSize = 0, std::string identifier = "");
+    explicit hcclComm(u64 inCCLbufferSize = 0, u64 outCCLbufferSize = 0, std::string identifier = "", std::string cclBuffName = "");
     ~hcclComm();
 
     /**********************************************************************
@@ -230,6 +231,7 @@ public:
     HcclResult GetRankSize(u32 &rankSize);
     void ReleaseCommCCLbuffer() const;
     void RealeaseBarrierMemory();
+    HcclResult RealeaseShareCCLbuffer();
     HcclResult CreateCommCCLbuffer() const;
     HcclResult CreateIndirectCCLbuf();
     void ReleaseIndirectCCLbuf();
@@ -244,8 +246,8 @@ public:
     HcclResult GetIndirectInCCLbuf(void* &ptr, u64 &size);
     HcclResult GetIndirectOutCCLbuf(void* &ptr, u64 &size);
     HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
-        HcclReduceOp op, bool &ifAiv, std::string &algName, bool isSuperKernel = false);
-    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType,
+        HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
+    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim);
     HcclResult HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
         HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
@@ -262,6 +264,7 @@ public:
         const HcomCollOpInfo &opInfo);
 
     std::string GetIdentifier();
+    std::string GetCCLbufferName();
     HcclResult CreateBarrierMemory();
     HcclResult ReleaseSubComms() const;
     HcclResult GetAlltoAllStagedWorkSpaceMemSize(u64 *sendCounts, u64 *sdispls,
@@ -278,7 +281,7 @@ public:
     HcclResult HcclTest(HcclRequest hcclRequest, s32 &flag, HcclStatus &compState) const;
     // 获取溢出Flag内存传给RTS
     HcclResult SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr);
-    HcclResult SetAttachedStream(const std::vector<rtStream_t> &streams);
+    HcclResult SetAttachedStream(u32 graphId, const std::vector<rtStream_t> &streams);
     // 获取rdma with reduce算子溢出的task信息，然后清除
     HcclResult GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDumpInfo);
     HcclResult SupportDeterministicOptim(bool &isDeterministicOptim);
@@ -297,7 +300,6 @@ public:
     bool IsNeedResetDevice();
     HcclResult ResetDeviceEnable();
     HcclResult CommCheckErrorCqe(HcclResult &result);
-    HcclResult CommCheckOpInconsistentError(HcclResult &result);
     HcclResult SaveTraceInfo(std::string &logInfo);
     HcclResult AllocComResourceByTiling(const std::string &algConfig, void *param);
     HcclResult CreateCommResource(const std::string &tag, rtStream_t aiCpuStream, bool isOpbaseMode,
@@ -312,10 +314,12 @@ public:
     HcclResult GetAiCpuNotifyData(HcclRtNotify notifyHandle, HcclSignalInfo &notifyInfo);
     HcclResult AddAiCpuNotify(HcclRtNotify *notifyHandle);
     HcclResult GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize);
+    HcclResult GetCommUserMemSize(uint64_t &size);
     HcclResult SetDeterministicConfig(const u8 deterministic);  // 设置确定性计算配置
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
+    HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     u64 GetConfigInCCLbufferSize();     // 获取通信域配置的输入buffer大小
     u64 GetConfigOutCCLbufferSize();    // 获取通信域配置的输出buffer大小
     u32 GetRankTableCrc();
@@ -339,7 +343,7 @@ public:
     HcclResult GetBlockDim(u32& blockDim);
     HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup);
-    HcclResult InitHccp();
+    HcclResult InitHccpChannel();
     std::vector<RankInfo> GetRankLists();
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
@@ -358,6 +362,18 @@ public:
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
+    HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
+    //rankgraph interface 
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
+    HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize);
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -376,6 +392,7 @@ private:
     DeviceMem barrierOutMemory_;
     bool isFirstBarrier_;
     const std::string identifier_;
+    const std::string cclBuffName_;
     bool isHeterogComm_;
 
     bool isResetDevice_;

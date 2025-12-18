@@ -108,6 +108,7 @@ HcclResult AllGatherVMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &e
         if (i != localRank) {
             CHK_RET(outerCommInfo.links[i]->GetRemoteMem(UserMemType::INPUT_MEM, &(buffersIn[i])));
             CHK_RET(outerCommInfo.links[i]->GetRemoteMem(UserMemType::OUTPUT_MEM, &(buffersOut[i])));
+            HCCL_DEBUG("[AllGatherVMeshAivExecutor][KernelRun] localRank [%u]", localRank);
         } else {
             buffersIn[i] = execMem.inputMem.ptr();
             buffersOut[i] = execMem.outputMem.ptr();
@@ -118,6 +119,7 @@ HcclResult AllGatherVMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &e
     }
     
     bool isOpbase = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    HCCL_DEBUG("[AllGatherVMeshAivExecutor][KernelRun] isOpbase [%d]", isOpbase);
     AivOpArgs opArgs {
         HcclCMDType::HCCL_CMD_ALLGATHER_V, execMem.inputPtr, execMem.outputPtr, extraArgs.maxCount,
         param.VDataDes.dataType, param.reduceType, param.root, isOpbase
@@ -127,6 +129,7 @@ HcclResult AllGatherVMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &e
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
     topoArgs.identify = algoAttr_.identifier;
+    HCCL_DEBUG("[AllGatherVMeshAivExecutor][KernelRun] blockDim_ [%u]", blockDim_);
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
@@ -140,8 +143,6 @@ HcclResult AllGatherVMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &e
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AllGatherVMeshAivExecutor][KernelRun]AllGatherV aiv failed, return[%d]", ret), ret);
-
-    CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, false));
 
     HCCL_INFO("[AllGatherVMeshAivExecutor][KernelRun]AllGatherV aiv run success.");
     return HCCL_SUCCESS;

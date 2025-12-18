@@ -58,7 +58,6 @@
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
 
-extern bool g_isRdmaError;
 constexpr u32 COMM_MAX_WORK_SPACE_SIZE = 16 * 1024 * 1024; // 默认16MB
 constexpr u32 INPUT = 0;
 constexpr u32 OUTPUT = 1;
@@ -66,11 +65,12 @@ const std::string COMM_LOOPBACK_IP = "127.0.0.1";
 constexpr u8 INPLACE_PRESYNC_STATUS_SEVEN = 7;
 constexpr u32 NSLBDP_HCCP_VERSION = 1;
 constexpr u32 NSLBDP_HCCP_NICPOSION = 1;
-constexpr u32 AICPU_LOCAL_NOTIFY_SIZE = 4; // aicpu场景本地控制时序的notify数量，对应枚举：enum AicpuLocalNotifyIdx
+constexpr u32 AICPU_LOCAL_NOTIFY_SIZE = 8; // aicpu场景本地控制时序的notify数量，对应枚举：enum AicpuLocalNotifyIdx
 constexpr u32 CACHEMAP_MAXSIZE = 65536;
 constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
 constexpr u32 RDMA_NOTIFY_MAX_NUM = 8192;
+constexpr u32 COMM_LAYER_NUM_MAX = 2;
 
 struct RemoteRes {
     u64 inbufferSize;
@@ -124,7 +124,7 @@ public:
         WorldGroupInfo &globalData);
 
     virtual HcclResult GetAlgType(AlgType &algType, HcclCMDType opType);
-    virtual HcclResult InitHccp();
+    virtual HcclResult InitHccpChannel();
     virtual std::vector<RankInfo> GetRankLists();
 
     virtual HcclResult GetDeviceNumPerAggregation(u32 &deviceNumPerAggregation);
@@ -229,8 +229,6 @@ public:
 
     virtual HcclResult GetCqeError(HcclResult &result);
 
-    virtual HcclResult GetOpInconsistentError(HcclResult &result);
-
     //  对内接口
     virtual HcclResult CheckDataType(const HcclDataType dataType, bool needReduce);
 
@@ -251,9 +249,9 @@ public:
     virtual bool Is310PDuoCard();
 
     HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
-        HcclReduceOp op, bool &ifAiv, std::string &algName, bool isSuperKernel = false);
+        HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
 
-    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType,
+    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim);
 
     HcclResult HcclGetAlgExecParam(const std::string &tag, HcclCMDType opType, u64 count, void *inputPtr, void *outputPtr,
@@ -325,7 +323,7 @@ public:
     HcclResult SetClearAivSyncBuf(bool aivClearEnable);
 
     HcclResult SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr);
-    HcclResult SetAttachedStream(const std::vector<rtStream_t> &streams);
+    HcclResult SetAttachedStream(u32 graphId, const std::vector<rtStream_t> &streams);
     // 获得rdma with reduce算子溢出的task信息后清除
     HcclResult GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDumpInfo);
 
@@ -367,7 +365,7 @@ public:
     HcclResult KernelLaunchChooseAicpuOrCustom(void *inputPtr, void *outputPtr, const rtStream_t stm, u64 addr,
         void* tilingDataPtr, u32 tilingDataSize, const std::string &kernelName, HcclWorkflowMode mode,
         const std::string &tag, bool isCustom);
-
+    HcclResult InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode);
 
     virtual HcclResult Mc2AiCpuStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
     HcclResult Mc2AiCpuInitStreamAllocAndGet(u32 streamMode, rtStream_t &aiCpuStream);
@@ -379,6 +377,7 @@ public:
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv); // 设置aiv only模式配置
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
+    HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     bool GetAivModeConfig();  // 获取通信域粒度aiv模式配置
     bool GetConfigIsOnlyAivMode(); // 获取通信域粒度aiv only模式配置
     bool GetAicpuUnfoldConfig();  // 获取通信域粒度aicpu配置
@@ -416,10 +415,14 @@ public:
     HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, 
         TransportIOMem& transMem, bool isAicpuModeEn);
     aclrtBinHandle GetBinHandle();
+    HcclResult GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
+        HDCommunicateParams &kfcStatusTransferD2HParams);
+    HcclResult SetGetAicpuCommState(std::function<bool()> getAicpuCommState);
 
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);
     HcclResult ExchangeCommUserMem(void* handle, std::vector<u32>& peerRanks);
+    HcclResult GetCommUserMemSize(uint64_t &size);
     HcclResult GetCacheMap(std::unique_ptr<CollAlgOperator>& algOperator, OpParam& opParam,
         AlgType& algType, bool selectAivAlg, std::string& newTag);
     HcclResult ExecOpCache(HcclCMDType opType, OpParam &opParam, HcclCacheInfo& cacheInfo);
@@ -430,6 +433,17 @@ public:
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
     HcclResult GetRemoteCCLBuf(uint32_t remoteRank, void **addr, uint64_t *size);
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
+    HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
+    HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
+    HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
+    HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
+    HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
+    HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+    HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
+    HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+        CommLink **linkList, uint32_t *listSize);
     HcclTopoAttr GetTopoAttr();
     void ForceProf(bool isForce);
 private:
@@ -481,8 +495,10 @@ private:
     HcclResult RegisterToHeartBeat();
     HcclResult RegisterToHeartBeat(u32 peerRankId, std::string &tag);
     void UnRegisterToHeartBeat();
+    void UnRegisterToCommConfiger();
     HcclResult MrManagerInit();
     HcclResult MrManagerDeInit();
+    HcclResult DeInitTransportMem();
     HcclResult InitRecvMsgAndRequestBuffer();
     HcclResult InitMemBlocksAndRecvWrMem();
     HcclResult PrintOpbaseKeyTraceInfo(void);
@@ -519,6 +535,7 @@ private:
     HcclResult SetDynamicTilingDataAlltoallvc(const OpParam &opParam, HostMem &dynamicDataMem);
     HcclResult SetDynamicTilingDataV(const OpParam &opParam, HostMem &dynamicDataMem);
     HcclResult GetReportHcclMC2Info(const Stream &kfcStream, const std::vector<Stream> &aicpuStreams);
+    u8 GetOrderLaunchMode (bool isCapture);
 
     HcclResult ReAllocTransports(const std::string &tag, const std::string &newTag);
     HcclResult SetTransportStatusImpl(OpCommTransport &opCommTransport, bool statusStop,
@@ -651,6 +668,8 @@ private:
     bool aivClearEnable_ = false;
     u32 blockDim_ = 0;
     std::map<OpParam, HcclCacheInfo> hcclCacheMap_; //存储aiv cache信息
+    std::string cclBuffName_;
+    bool isShareComm_ = false; // 是否共享cclbuffer
 private:
 
     bool IsAtomicInit();
@@ -721,6 +740,7 @@ private:
     u32 GetLocalNicPort(NicType nicType);
     std::string GetSupportDataType(bool needReduce);
     HcclResult InitHDCommunicate();
+    bool GetSupportHDCommunicate();
     HcclResult InitOpRetry();
     HcclResult InitOpResPara();
     bool IsSupportZeroCopy(const OpParam &opParam);
@@ -750,6 +770,7 @@ private:
     HcclResult BuildOpTopoResParam(
         const std::string &algName, const AlgResourceResponse &algResource);
     HcclResult BuildAicpuCustomParam();
+    HcclResult BuildAicpuOrderLaunchNotify();
     HcclResult BuildOpRemoteResParam(const AlgResourceResponse &algResource, const std::string &newTag,
         const HcclCMDType opType, bool isRetry = false);
     HcclResult BuildOpResParam(const std::string &algName, const AlgResourceResponse &algResource,
@@ -823,9 +844,6 @@ private:
     HcclResult CheckSetRetryStateToWaitResume();
     HcclResult CheckExitWaitResumeState(bool &isChangedLink);
 
-    HcclResult LaunchInOrder(Stream& hostOrderStream, u32 timeOut);
-    bool GetIsLaunchInOrder(bool isCapture);
-
     bool isOnlyAiv_{false};
     HcclIpAddress loopBackIp_;
     bool profilingInitiated_;
@@ -881,6 +899,7 @@ private:
     std::unique_ptr<QueueNotifyManager> queueNotifyManagerRefac_ = { nullptr };
     std::unique_ptr<HcclSocketManager> socketManager_;
     std::unique_ptr<TransportManager> transportManager_ = { nullptr };
+    std::unique_ptr<TransportManager> indptOpTransportManager_ = { nullptr };
 
     std::unique_ptr<ZeroCopyMemoryAgent> zeroCopyMemoryAgent_ = { nullptr };
 
@@ -956,13 +975,17 @@ private:
     std::atomic<HcclCommState> state_{HcclCommState::IDLE};
     std::unordered_map<std::string, std::string> newTagToTagMap_;
     static std::mutex linkResMapMutex_;
-    static std::unordered_map<Transport*, std::pair<std::string, u32>> linkResMap_;
+    static std::unordered_map<Transport*, LinkInfo> linkResMap_;
     std::shared_ptr<HostMem> transDevIbverbsDataMem_ = nullptr;
     bool isA2MC2MultiServer_{false};
     bool isA2MC2IntraHie_{false};
     DeviceMem ibverbsDataBuffer_;
     std::list<DeviceMem> ibverbsLocalNotify_;
     std::list<DeviceMem> ibverbsRemoteNotify_;
+
+    // 按序下发notify的工作区
+    DeviceMem aicpuOrderNotifyAddr_;
+    u32 graphId_;
 
     // alltoallv
     HostMem hostCollectBuffer_;
@@ -1010,21 +1033,20 @@ private:
     bool needCheckBackupNic_ { false };
     bool switchNicWaitingResult_ { false };
     u32 captureCnt_ = 0;
-
-    OpCommTransport userMemTransport_;
-
     bool isUserMemRegisted_ { false };    // 是否已注册user Mem，与ccl buffer互斥
     std::unordered_map<void*, std::shared_ptr<DeviceMem>> userMemMap_;  //  key: window handle, value: window ptr
+	OpCommTransport userMemTransport_;
     std::vector<LINK> channelLinks_{};
 
     void *p2pCclBuf_[AICPU_MAX_RANK_NUM]{};
     void *cclBuf_[AICPU_MAX_RANK_NUM]{};
-    std::vector<RankInfo_t> rankGraph_;
     std::map<u32, TransportType> remoteTransportMap_;
-
+    uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};
+    RankGraph rankGraph_;    
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;
+    std::function<bool()> getAicpuCommState_; // 获取自定义算子aicpu通信域是否初始化
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H

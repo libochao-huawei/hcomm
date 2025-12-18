@@ -22,14 +22,15 @@
 #include "coll_alg_utils.h"
 #include "env_config.h"
 #include "independent_op.h"
+#include "comm_configer.h"
 
 namespace hccl {
 RankTable_t g_hcclDefaultRankTable;
 
-hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identifier)
+hcclComm::hcclComm(u64 inCCLbufferSize, u64 outCCLbufferSize, std::string identifier, std::string bufferName)
     : barrierSendBuf(nullptr), barrierRecvBuf(nullptr),
       inCCLbufferSize_(inCCLbufferSize), outCCLbufferSize_(outCCLbufferSize),
-      deviceType_(DevType::DEV_TYPE_COUNT), isFirstBarrier_(true), identifier_(identifier), isHeterogComm_(false),
+      deviceType_(DevType::DEV_TYPE_COUNT), isFirstBarrier_(true), identifier_(identifier), cclBuffName_(bufferName), isHeterogComm_(false),
       isResetDevice_(false), isSpecialType_(false), communicator_(nullptr)
 {
     indirectInCCLbuffer_ = DeviceMem();
@@ -66,6 +67,12 @@ void hcclComm::RealeaseBarrierMemory()
 {
     barrierInMemory_.free();
     barrierOutMemory_.free();
+}
+
+HcclResult hcclComm::RealeaseShareCCLbuffer()
+{
+    CHK_RET(ShareCCLbufferMgr::GetInstance().FreeShareCCLbuffer(cclBuffName_));
+    return HCCL_SUCCESS;
 }
 
 void hcclComm::UpdateIsHaveCpuRank(const RankTable_t &rankTable)
@@ -109,15 +116,22 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
         return HCCL_E_PARA;
     }
     params.identifier = identifier_;
+    params.cclBuffName = cclBuffName_;
+
+    /* 设置commConfig单例 */
+    HcclResult ret = CommConfiger::GetInstance().SetCommConfig(commConfig, identifier_);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[hcclComm][init]errNo[0x%016llx] set commConfiger failed.",
+        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
 
     CHK_RET(communicator_->AtomicInitSet());                  /* 初始化竞争, 只允许被初始化一次 */
-    HcclResult ret = communicator_->Init(params, rankTable);  /* 初始化实例, 失败则重新开放初始化竞争 */
+    ret = communicator_->Init(params, rankTable);  /* 初始化实例, 失败则重新开放初始化竞争 */
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclComm][Init]errNo[0x%016llx] hccl initialize failed", HCCL_ERROR_CODE(ret));
         communicator_->AtomicInitClear();
         return ret;
     }
-
+    CHK_RET(ShareCCLbufferMgr::GetInstance().RecordShareCCLbuffer(cclBuffName_));
     if (params.totalRanks != 1 ) {
         CHK_RET(communicator_->InitCCLbuffer(inCCLbufferSize_, outCCLbufferSize_));
     }
@@ -156,9 +170,15 @@ HcclResult hcclComm::init(HcclCommParams &params, const CommConfig &commConfig, 
 
     params.identifier = identifier_;
 
+    /* 设置commConfig单例 */
+    HcclResult ret = CommConfiger::GetInstance().SetCommConfig(commConfig, identifier_);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[hcclComm][init]errNo[0x%016llx] set commConfiger failed.",
+        HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+
     CHK_RET(communicator_->CheckDeviceType(params.deviceType));                /* 芯片类型检查 */
     CHK_RET(communicator_->AtomicInitSet());                                 /* 初始化竞争, 只允许被初始化一次 */
-    HcclResult ret = communicator_->Init(params, rankList, groupCommonData); /* 初始化实例, 失败则重新开放初始化竞争 */
+    ret = communicator_->Init(params, rankList, groupCommonData); /* 初始化实例, 失败则重新开放初始化竞争 */
     if (ret != HCCL_SUCCESS) {
         communicator_->AtomicInitClear();
         HCCL_ERROR("[HcclComm][Init]errNo[0x%016llx] hccl initialize failed", HCCL_ERROR_CODE(ret));
@@ -887,17 +907,15 @@ std::string hcclComm::GetIdentifier()
     return identifier_;
 }
 
+std::string hcclComm::GetCCLbufferName()
+{
+    return cclBuffName_;
+}
+
 HcclResult hcclComm::CommCheckErrorCqe(HcclResult &result)
 {
     CHK_RET(communicator_->GetCqeError(result));
 
-    return HCCL_SUCCESS;
-}
-
-HcclResult hcclComm::CommCheckOpInconsistentError(HcclResult &result)
-{
-    CHK_RET(communicator_->GetOpInconsistentError(result));
- 
     return HCCL_SUCCESS;
 }
 
@@ -980,15 +998,15 @@ HcclResult hcclComm::GetRankSize(u32 &rankSize)
 }
 
 HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
-    HcclReduceOp op, bool &ifAiv, std::string &algName, bool isSuperKernel)
+    HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
 {
-    return communicator_->HcclSelectAlg(opType, count, dataType, op, ifAiv, algName, isSuperKernel);
+    return communicator_->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
 }
 
-HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType,
+HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim)
 {
-    return communicator_->HcclCalcBlockDim(opType, count, dataType, algName, blockDim);
+    return communicator_->HcclCalcBlockDim(opType, count, dataType, aivCoreLimit, algName, blockDim);
 }
 
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
@@ -1064,9 +1082,9 @@ HcclResult hcclComm::SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::SetAttachedStream(const std::vector<rtStream_t> &streams)
+HcclResult hcclComm::SetAttachedStream(u32 graphId, const std::vector<rtStream_t> &streams)
 {
-    CHK_RET(communicator_->SetAttachedStream(streams));
+    CHK_RET(communicator_->SetAttachedStream(graphId, streams));
     return HCCL_SUCCESS;
 }
 
@@ -1219,6 +1237,12 @@ HcclResult hcclComm::GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::GetCommUserMemSize(uint64_t &size)
+{
+    HcclResult ret = communicator_->GetCommUserMemSize(size);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_INFO("[%s]call trace: hcclRet -> %d", __func__, ret), ret);
+    return HCCL_SUCCESS;
+}
 HcclResult hcclComm::SetDeterministicConfig(const u8 deterministic)
 {
     CHK_RET(communicator_->SetDeterministicConfig(deterministic));
@@ -1240,6 +1264,12 @@ HcclResult hcclComm::SetOnlyAivModeConfig(const bool isOnlyAiv)
 HcclResult hcclComm::SetAicpuUnfoldConfig(const bool aicpuUnfold)
 {
     CHK_RET(communicator_->SetAicpuUnfoldConfig(aicpuUnfold));
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::SetExecTimeOutConfig(const s32 execTimeOut)
+{
+    CHK_RET(communicator_->SetExecTimeOutConfig(execTimeOut));
     return HCCL_SUCCESS;
 }
 
@@ -1354,11 +1384,11 @@ HcclResult hcclComm::SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup
     CHK_RET(communicator_->SwitchNic(nRanks, ranks, useBackup));
     return HCCL_SUCCESS;
 }
-HcclResult hcclComm::InitHccp()
+HcclResult hcclComm::InitHccpChannel()
 {
     /* 增加输出日志关键字 */
     HCCL_INFO("NslbDp try to init hccp ");
-    return communicator_->InitHccp();
+    return communicator_->InitHccpChannel();
 }
 
 std::vector<RankInfo> hcclComm::GetRankLists()

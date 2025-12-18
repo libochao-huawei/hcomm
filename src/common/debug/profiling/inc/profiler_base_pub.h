@@ -67,6 +67,24 @@ struct OpDataInfo {
     struct timeval tv{0};
 };
 
+struct StreamRecordInfo {
+    s32 planeId;
+    AlgType algType;
+    std::string tag;
+    StreamRecordInfo() = default;
+    StreamRecordInfo(s32 plane, const AlgType &type, const std::string &strTag) : planeId(plane), algType(type), tag(strTag) {}
+    StreamRecordInfo(const StreamRecordInfo &that) : planeId(that.planeId), algType(that.algType), tag(that.tag) {}
+    StreamRecordInfo &operator=(const StreamRecordInfo &that)
+    {
+        if (&that != this) {
+            planeId = that.planeId;
+            algType = that.algType;
+            tag = that.tag;
+        }
+        return *this;
+    }
+};
+
 class ProfilerBase {
 public:
     /* * 输出文本时, 获取op, dataType的字符串以及单位数据长度的数组 */
@@ -79,7 +97,7 @@ public:
 
     virtual HcclResult Run(const StepData &stepData) = 0;
     virtual HcclResult Flush() = 0;
-    static HcclResult AddStream(s32 streamID, const std::string &tag, s32 planeID, AlgType algType);
+    static HcclResult AddStream(s32 streamID, const std::string &tag, s32 planeID, const AlgType &algType);
     static HcclResult DelStream(s32 streamID);
     static HcclResult AddTag(const std::string &tag, const std::string &group, const HcclWorkflowMode &workFlowMode,
         bool isSendRecv = false, bool isAiv = false);
@@ -102,18 +120,17 @@ public:
     virtual HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaDMA &para) = 0;
     virtual HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &para) = 0;
     virtual HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &para) = 0;
-    virtual HcclResult Save(u32 &streamID, u32 &taskID, const TaskParaAiv &para) = 0;
+    virtual HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &para) = 0;
     virtual HcclResult Save(u32 &streamID, u32 &taskID) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &para) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &para) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &para) = 0;
     virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) = 0;
+    virtual HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) = 0;
     virtual HcclResult SaveToLog(const TaskParaHost &paraHost) = 0;
 
 protected:
-    static std::array<std::map<s32, s32>, MAX_MODULE_DEVICE_NUM> streamPlaneMap_;
-    static std::array<std::map<s32, const std::string>, MAX_MODULE_DEVICE_NUM> streamTagMap_;
-    static std::array<std::map<s32, AlgType>, MAX_MODULE_DEVICE_NUM> streamAlgTypeMap_;
+    static std::array<std::map<s32, StreamRecordInfo>, MAX_MODULE_DEVICE_NUM> streamRecordInfoMap_;
     static std::array<std::map<const std::string, const std::string>, MAX_MODULE_DEVICE_NUM> tagGroupMap_;
     static std::array<std::map<const std::string, const HcclWorkflowMode>, MAX_MODULE_DEVICE_NUM> tagModeMap_;
     static std::array<std::mutex, MAX_MODULE_DEVICE_NUM> streamMutex_;

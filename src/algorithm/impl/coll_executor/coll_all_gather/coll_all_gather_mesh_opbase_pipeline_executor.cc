@@ -117,7 +117,7 @@ HcclResult CollAllGatherMeshOpbasePipelineExecutor::Getlevel1CommRank(SubCommInf
     CHK_RET(CheckCommSize(COMM_LEVEL1, commIndex + 1));
 
     level1CommInfo = GetSubCommInfo(COMM_LEVEL1, commIndex);
-
+    HCCL_DEBUG("[CollAllGatherMeshOpbasePipelineExecutor]Getlevel1CommRank for level1CommInfo");
     return HCCL_SUCCESS;
 }
 

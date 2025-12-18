@@ -12,6 +12,7 @@
 #include "log.h"
 #include "hccl/base.h"
 #include "coll_alg_utils.h"
+#include "comm_configer.h"
 
 namespace hccl {
 
@@ -58,11 +59,19 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
     AlgTypeLevel0 algType0 = AlgTypeLevel0::ALG_LEVEL0_RESERVED;
     AlgTypeLevel1 algType1 = AlgTypeLevel1::ALG_LEVEL1_RESERVED;
     AlgTypeLevel2 algType2 = AlgTypeLevel2::ALG_LEVEL2_RESERVED; // 第2层拓扑算法, 待梳理后考虑是否和第0层、第1层算法归一
+    
+    CommConfiger& commConfiger = CommConfiger::GetInstance();
+    HcclAlgoType algoConfigLevel0 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
+                                    [HCCL_ALGO_LEVEL_0];
+    HcclAlgoType algoConfigLevel1 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
+                                    [HCCL_ALGO_LEVEL_1];
+    HcclAlgoType algoConfigLevel2 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
+                                    [HCCL_ALGO_LEVEL_2];
 
-    bool isConfigAHC = (GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
-                        GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
+    bool isConfigAHC = (algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
+                        algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
 
-    bool isConfigNULL = GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
+    bool isConfigNULL = algoConfigLevel0 == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
 
     HCCL_INFO("[Set][AlgType] isConfigAHC[%u] isConfigNULL[%u] multiModuleDiffDeviceNumMode[%u] multiSuperPodDiffServerNumMode[%u]",
         isConfigAHC, isConfigNULL, topoAttr_.multiModuleDiffDeviceNumMode, topoAttr_.multiSuperPodDiffServerNumMode);
@@ -73,9 +82,9 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
     } else if (!topoAttr_.multiModuleDiffDeviceNumMode && topoAttr_.multiSuperPodDiffServerNumMode &&
                (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_ALLREDUCE ||
                 opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER || opType == HcclCMDType::HCCL_CMD_ALL)) {
-        CHK_RET(SetAlgoLevel0(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_0], algType0));
+        CHK_RET(SetAlgoLevel0(algoConfigLevel0, algType0));
         CHK_RET(SetAlgoLevel1(HcclAlgoType::HCCL_ALGO_TYPE_AHC, moduleNum, algType1, opType));
-        CHK_RET(SetAlgoLevel2(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_2], algType2));
+        CHK_RET(SetAlgoLevel2(algoConfigLevel2, algType2));
         algType[opType].algoLevel0 = algType0;
         algType[opType].algoLevel1 = algType1;
         if (!topoAttr_.isStandardCard && deviceType != DevType::DEV_TYPE_910B && !topoAttr_.isDiffDeviceType) {
@@ -90,14 +99,14 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
                 && deviceType == DevType::DEV_TYPE_910_93 && (opType == HcclCMDType::HCCL_CMD_ALLTOALL
                 || opType == HcclCMDType::HCCL_CMD_ALLTOALLV || opType == HcclCMDType::HCCL_CMD_ALLTOALLVC)) {
         // A3 ALLTOALL非对称拓扑
-        CHK_RET(SetAlgoLevel0(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_0], algType0));
-        CHK_RET(SetAlgoLevel1(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1], moduleNum, algType1, opType));
-        CHK_RET(SetAlgoLevel2(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_2], algType2));
+        CHK_RET(SetAlgoLevel0(algoConfigLevel0, algType0));
+        CHK_RET(SetAlgoLevel1(algoConfigLevel1, moduleNum, algType1, opType));
+        CHK_RET(SetAlgoLevel2(algoConfigLevel2, algType2));
         algType[opType].algoLevel0 = algType0;
         algType[opType].algoLevel1 = algType1;
         algType[opType].algoLevel2 = algType2;
-        if (GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT &&
-            GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) {
+        if (algoConfigLevel0 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT &&
+            algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) {
             algType[opType].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING;
             algType[opType].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING;
             isAlgoLevel1Default_[opType] = false;
@@ -111,8 +120,8 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
         algType[opType].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING;
         algType[opType].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING;
         isAlgoLevel1Default_[opType] = false;
-        if (GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_0] != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT ||
-            GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1] != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) {
+        if (algoConfigLevel0 != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT ||
+            algoConfigLevel1 != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) {
             HCCL_WARNING("multiModuleDiffDeviceNumMode[%d], multiSuperPodDiffServerNumMode_[%d], algorithm type [%d] is selected by force.", \
                          topoAttr_.multiModuleDiffDeviceNumMode, topoAttr_.multiSuperPodDiffServerNumMode, algType[opType].algoLevel0);
         }
@@ -121,9 +130,9 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
         algType[opType].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_STAR;
         algType[opType].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_STAR;
     } else {
-        CHK_RET(SetAlgoLevel0(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_0], algType0));
-        CHK_RET(SetAlgoLevel1(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_1], moduleNum, algType1, opType));
-        CHK_RET(SetAlgoLevel2(GetExternalInputHcclAlgoConfig(opType)[HCCL_ALGO_LEVEL_2], algType2));
+        CHK_RET(SetAlgoLevel0(algoConfigLevel0, algType0));
+        CHK_RET(SetAlgoLevel1(algoConfigLevel1, moduleNum, algType1, opType));
+        CHK_RET(SetAlgoLevel2(algoConfigLevel2, algType2));
         algType[opType].algoLevel0 = algType0;
         algType[opType].algoLevel1 = algType1;
         algType[opType].algoLevel2 = algType2;
@@ -170,6 +179,7 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
     switch (algoConfig) {
         case HcclAlgoType::HCCL_ALGO_TYPE_HDR:
             algType = AlgTypeLevel1::ALG_LEVEL1_HD;
+            HCCL_INFO("server num[%u]: level1:hdr algo is set.", moduleNum);
             break;
         case HcclAlgoType::HCCL_ALGO_TYPE_RING:
             algType = AlgTypeLevel1::ALG_LEVEL1_RING;
@@ -195,6 +205,7 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
                 break;
             } else {
                 algType = AlgTypeLevel1::ALG_LEVEL1_AHC;
+                HCCL_INFO("server num[%u]: level1:ahc algo is set.", moduleNum);
                 return HCCL_SUCCESS;
             }
         case HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE:
@@ -209,6 +220,7 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
                 break;
             } else {
                 algType = AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE;
+                HCCL_INFO("server num[%u]: level1:ahc broke algo is set.", moduleNum);
                 return HCCL_SUCCESS;
             }
         case HcclAlgoType::HCCL_ALGO_TYPE_NB:
@@ -219,15 +231,14 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             HCCL_INFO("server num[%u]: level1:pipeline algo is set.", moduleNum);
             break;
-        case HcclAlgoType::HCCL_ALGO_TYPE_CONTINUOUS_PIPELINE:
-            algType = AlgTypeLevel1::ALG_LEVEL1_CONTINUOUS_PIPELINE;
-            HCCL_INFO("server num[%u]: level1:CP algo is set.", moduleNum);
-            break;
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
             HCCL_WARNING("level1:fullmesh algo is not suported. the config is ignored.");
+            algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
+            break;
         default:
             algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
+            HCCL_INFO("server num[%u]: level1:default algo is set.", moduleNum);
             break;
     }
 

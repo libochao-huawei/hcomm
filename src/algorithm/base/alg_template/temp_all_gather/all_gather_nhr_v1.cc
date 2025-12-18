@@ -53,6 +53,7 @@ HcclResult AllGatherNHRV1::RunAsync(const u32 rank, const u32 rankSize, const st
         slices_.resize(rankSize);
         inputSlices.resize(rankSize);
         u64 sliceSize = count_ * unitSize;
+        HCCL_DEBUG("[AllGatherNHRV1][RunAsync]sliceSize is %llu, rankSize is %u", sliceSize, rankSize);
         for (u32 i = 0; i < rankSize; i++) {
             slices_[i].size = sliceSize;
             slices_[i].offset = sliceSize * i;

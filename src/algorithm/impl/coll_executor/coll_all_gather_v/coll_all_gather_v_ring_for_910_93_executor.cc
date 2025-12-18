@@ -131,10 +131,10 @@ HcclResult CollAllGatherVRingFor91093Executor::PrepareUserMemSlices(std::vector<
     (void) multRingsSlice;
     const auto *counts = static_cast<u64 *>(param.VDataDes.counts);
     const auto *displs = static_cast<u64 *>(param.VDataDes.displs);
+    std::vector<Slice> dataSegsSlice;
     const u32 level0RankSize = level0CommInfo.localRankSize;
     const u32 level1RankSize = level1CommInfo.localRankSize;
     const u32 level2RankSize = level2CommInfo.localRankSize;
-    std::vector<Slice> dataSegsSlice;
     for (u32 k = 0; k < level0RankSize; k++) {  // 根据数据量计算每个环上数据的偏移和大小
         for (u32 i = 0; i < level2RankSize; i++) {
             for (u32 j = 0; j < level1RankSize; j++) {

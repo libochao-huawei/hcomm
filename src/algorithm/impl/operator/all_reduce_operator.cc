@@ -138,7 +138,7 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     } else {
-        HCCL_ERROR("[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
+        HCCL_ERROR("[AllReduceOperator][SelectAlg] device type[%d] is out of range for selector.", deviceType_);
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -170,6 +170,7 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
 
 HcclResult AllReduceOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
+    (void) param;
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[AllReduceOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
@@ -243,6 +244,7 @@ HcclResult AllReduceOperator::SelectAlgfor310P3(const OpParam& param, std::strin
 
 HcclResult AllReduceOperator::SelectAlgfor310PHelper(const OpParam& param, std::string& algName)
 {
+    (void) param;
     algName = "AllReduceReducePlusBcast";
     HCCL_INFO("[SelectAlgfor310PHelper] AllReduce SelectAlgfor310PHelper is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
@@ -498,18 +500,18 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
     return HCCL_SUCCESS;
 }
 
-HcclResult AllReduceOperator::MeshTopoSelector(std::string& algName, u64 dataSize)
+HcclResult AllReduceOperator::MeshTopoSelector(std::string& algName, u64 unitSize)
 {
     // 单算子选择逻辑
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        if (dataSize <= HCCL_SMALL_COUNT_256_KB) {
+        if (unitSize <= HCCL_SMALL_COUNT_256_KB) {
             algName = "AllReduceMeshSmallCountExecutor";
         } else {
             algName = "AllReduceMeshOpbaseLoopExecutor";
         }
     // 图模式选择逻辑
     } else {
-        if (dataSize  <= HCCL_SMALL_COUNT_GRAPH_64_KB) {
+        if (unitSize  <= HCCL_SMALL_COUNT_GRAPH_64_KB) {
             algName = "AllReduceMeshSmallCountExecutor";
         } else {
             algName = "AllReduceMeshExecutor";
@@ -544,12 +546,20 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
     // 确定性图和单算子归一流程
     HcclDataCountType countType = GetCountTypeForDeterAllReduce(param.DataDes.count, param.DataDes.dataType);
     if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
-        if (countType <= HcclDataCountType::HCCL_COUNT_SMALL) {
+        if (countType == HcclDataCountType::HCCL_COUNT_SMALL) {
             algName = "AllReduceMeshSmallCountExecutor";
         } else if (countType == HcclDataCountType::HCCL_COUNT_MEDIUM) {
             algName = "AllReduceMeshMidCountLoopExecutor";
-        } else {
+        } else { 
             algName = "AllReduceMeshOneshotLoopExecutor";
+        }
+    } else {
+        u64 dataSize = param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
+        // 单算子 + 确定性 + 数据量小于512kB
+        if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
+            !isSingleMeshAggregation_ && dataSize <= HCCL_SMALL_COUNT_512_KB && 
+            IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
+            algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
         }
     }
     return HCCL_SUCCESS;
@@ -576,14 +586,16 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                         && ((topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) || (serverNum_ > 1))
                         && (dataSize < HCCL_SMALL_COUNT_8_MB)
                         && (!retryEnable_)
-                        && userRankSize_ > 1;
+                        && userRankSize_ > 1
+                        && !multiModuleDiffDeviceNumMode_;
 
     bool isAivMode = (topoMatcher_->GetAivModeConfig() && !isBarrierOp)
                     && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                     && serverNum_ == 1
                     && ((isOpbase && (dataSizePerRank <= AIV_ALL_REDUCE_A3_ENTRY_SIZE || isOnlyAiv)) || !isOpbase)
                     && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE)
-                    && (!retryEnable_);
+                    && (!retryEnable_)
+                    && !multiModuleDiffDeviceNumMode_;
 
     if (isSupportAivDeter){
         algName = "AllReduceMeshAivFor91093Executor";
@@ -651,12 +663,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                 "default is algType=NHR.");
         }
         if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
-            s32 HCCS_PORT_NUM_910_93_7 = 7;
-            if (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) {
-                algName = "AllReduceFastDoubleRingFor91093Executor";
-            } else {
-                algName = "AlignedAllReduceDoubleRingFor91093Executor";
-            }
+            algName = "AllReduceFastDoubleRingFor91093Executor";
         } else if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
             algName = "AllReduceRingFor91093Executor";
         } else {

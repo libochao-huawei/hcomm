@@ -30,12 +30,6 @@ static int gHalApiRefcnt = 0;
 
 static void DlHalApiInit(void)
 {
-    gHalOps.dlDevdrvGetBoardId = (int (*)(unsigned int devId, unsigned int *boardId))
-        AscendHalDlsym(gHalApiHandle, "devdrv_get_board_id");
-
-    gHalOps.dlDevdrvGetVnicIp = (int (*)(unsigned int devId, unsigned int *ipAddr))
-        AscendHalDlsym(gHalApiHandle, "devdrv_get_vnic_ip");
-
     gHalOps.dlDrvGetDevNum = (int (*)(unsigned int *numDev))
         AscendHalDlsym(gHalApiHandle, "drvGetDevNum");
 
@@ -122,12 +116,6 @@ static void DlHalApiInit(void)
     gHalOps.dlHalEschedSubmitEvent = (int (*)(uint32_t devId, struct event_summary *event))
         AscendHalDlsym(gHalApiHandle, "halEschedSubmitEvent");
 
-    gHalOps.dlDevdrvSetUserConfig = (int (*)(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize))
-        AscendHalDlsym(gHalApiHandle, "devdrv_set_user_config");
-
-    gHalOps.dlDevdrvClearUserConfig = (int (*)(uint32_t devid, const char *name))
-        AscendHalDlsym(gHalApiHandle, "devdrv_clear_user_config");
-
     gHalOps.dlHalGetDeviceInfo = (int (*)(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value))
         AscendHalDlsym(gHalApiHandle, "halGetDeviceInfo");
 
@@ -152,9 +140,6 @@ static void DlHalApiInit(void)
     gHalOps.dlHalHdcSessionConnectEx =
         (hdcError_t (*)(int peerNode, int peerDevid, int peerPid, HDC_CLIENT client, HDC_SESSION *pSession))
             AscendHalDlsym(gHalApiHandle, "halHdcSessionConnectEx");
-
-    gHalOps.dlDevdrvGetVnicIpBySdid = (int (*)(unsigned int sdid, unsigned int *ipAddr))
-        AscendHalDlsym(gHalApiHandle, "devdrv_get_vnic_ip_by_sdid");
 
     gHalOps.dlHalMemBindSibling =
         (drvError_t (*)(int hostPid, int aicpuPid, unsigned int vfid, unsigned int devId, unsigned int flag))
@@ -247,27 +232,6 @@ int DlHalInit(void)
     pthread_mutex_unlock(&gHalApiLock);
     roce_info("dl_hal_init success!");
     return 0;
-}
-
-int DlDevdrvGetBoardId(unsigned int devId, unsigned int *boardId)
-{
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvGetBoardId, "dl_devdrv_get_board_id");
-
-    return gHalOps.dlDevdrvGetBoardId(devId, boardId);
-}
-
-int DlDevdrvGetVnicIp(unsigned int devId, unsigned int *ipAddr)
-{
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvGetVnicIp, "dl_devdrv_get_vnic_ip");
-
-    return gHalOps.dlDevdrvGetVnicIp(devId, ipAddr);
-}
-
-int DlDevdrvGetVnicIpBySdid(unsigned int sdid, unsigned int *ipAddr)
-{
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvGetVnicIpBySdid, "dl_devdrv_get_vnic_ip_by_sdid");
-
-    return gHalOps.dlDevdrvGetVnicIpBySdid(sdid, ipAddr);
 }
 
 int DlDrvGetDevNum(unsigned int *numDev)
@@ -515,40 +479,6 @@ int DlHalEschedSubmitEvent(uint32_t devId, struct event_summary *event)
     DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalEschedSubmitEvent, "dl_hal_esched_submit_event");
 
     return gHalOps.dlHalEschedSubmitEvent(devId, event);
-}
-
-int DlDevdrvSetUserConfig(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize)
-{
-    int ret;
-
-    ret = DlHalInit();
-    if (ret) {
-        roce_err("dl_hal_init failed, ret:%d", ret);
-        return ret;
-    }
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvSetUserConfig, "dl_devdrv_set_user_config");
-
-    ret = gHalOps.dlDevdrvSetUserConfig(devid, name, buf, bufSize);
-    DlHalDeinit();
-
-    return ret;
-}
-
-int DlDevdrvClearUserConfig(uint32_t devid, const char *name)
-{
-    int ret;
-
-    ret = DlHalInit();
-    if (ret) {
-        roce_err("dl_hal_init failed, ret:%d", ret);
-        return ret;
-    }
-    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlDevdrvClearUserConfig, "dl_devdrv_clear_user_config");
-
-    ret = gHalOps.dlDevdrvClearUserConfig(devid, name);
-    DlHalDeinit();
-
-    return ret;
 }
 
 int DlHalMemCtl(int type, void *paramValue, size_t paramValueSize, void *outValue, size_t *outSizeRet)

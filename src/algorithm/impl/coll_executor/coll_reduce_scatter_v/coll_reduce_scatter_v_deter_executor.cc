@@ -254,6 +254,7 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1ForMeshTopo(c
 
 HcclResult CollReduceScatterVDeterExecutor::CalReduceScatterVSliceData(const OpParam &param, u32 level0RankSize, u32 level1RankSize, std::vector<Slice> &dataSlices)
 {
+    (void) level0RankSize;
     u32 unitSize = SIZE_TABLE[param.VDataDes.dataType];
     std::vector<Slice> slices;
     const auto curCounts = static_cast<u64*>(param.VDataDes.counts);
@@ -280,6 +281,7 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpPara
 
     u32 level0RankSize = level0CommInfo.localRankSize;
     u32 level1RankSize = level1CommInfo.localRankSize;
+    HCCL_DEBUG("RunReduceScattervLevel1 begin");
     /* ******************第一步: 机间reducescatter *******************************/
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, dataType, param.reduceType);
     std::unique_ptr<AlgTemplateBase> level1TempAlg;
@@ -288,24 +290,24 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpPara
             TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr));
-        HCCL_INFO("reducescatterv mesh: using ring algo inter-server.");
+        HCCL_INFO("reducescatterv mesh: using ring algo inter-server");
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
             level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_REDUCESCATTER_NB, dispatcher_);
-        HCCL_INFO("reducescatterv mesh: using nonuniform-bruck algo inter-server.");
+        HCCL_INFO("reducescatterv mesh: using nonuniform-bruck algo inter-server");
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr)); 
     } else { 
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_REDUCESCATTER_NHR, dispatcher_);
-        HCCL_INFO("reducescatterv mesh: using nhr algo inter-server.");
+        HCCL_INFO("reducescatterv mesh: using nhr algo inter-server");
         CHK_SMART_PTR_NULL(level1TempAlg);
         CHK_RET(level1TempAlg->Prepare(reduceAttr, false));
         level1TempAlg->CloseBarrier();
     }
 
     std::vector<Slice> slices;
-    CalReduceScatterVSliceData(param, level0RankSize, level1RankSize, slices);
+    CHK_RET(CalReduceScatterVSliceData(param, level0RankSize, level1RankSize, slices));
   
     CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.outputMem, 0,
         dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, slices));
@@ -343,7 +345,7 @@ HcclResult CollReduceScatterVDeterExecutor::KernelRun(const OpParam &param, Exec
         }
         srcMem = execMem.scratchMem.range(minBiasOffset_ * topoAttr_.userRank * unitSize, dataSize);// Opbase: CO/Sr->UO
     } else { // 处理 Nx1 场景的图模式
-        RunReduceScattervLevel1(param, execMem, level0CommInfo);
+        CHK_RET(RunReduceScattervLevel1(param, execMem, level0CommInfo));
         srcMem = execMem.inputMem.range(curDispls[topoAttr_.userRank] * unitSize, dataSize);// Offload:UI->UO
     }
 

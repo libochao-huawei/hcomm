@@ -111,8 +111,8 @@ HcclResult NetworkManager::GetNicIp(uint32_t devicePhyId, HcclAddress** addr, ui
 HcclResult NetworkManager::TsdProcessOpen(bool hasBackup)
 {
     s32 locaLogDevid = 0;
-    if (hasBackup) {
-        hrtGetDevice(&locaLogDevid);
+    hrtGetDevice(&locaLogDevid);
+    if (locaLogDevid != deviceLogicId_) {
         hrtSetDevice(deviceLogicId_);
     }
     // 校验是否为新版本驱动，旧版本驱动不支持配置backupPhyId，报错返回
@@ -159,7 +159,8 @@ HcclResult NetworkManager::TsdProcessOpen(bool hasBackup)
             "devicePhyId_[%u], deviceLogicId_[%d], deviceBackUpPhyId[%u], hasBackup[%u]",
             __func__, subPid_, devicePhyId_, deviceLogicId_, deviceBackUpPhyId, hasBackup);
     }
-    if (hasBackup) {
+
+    if (locaLogDevid != deviceLogicId_) {
         hrtSetDevice(locaLogDevid);
     }
     return HCCL_SUCCESS;
@@ -470,8 +471,16 @@ HcclResult NetworkManager::CloseHccpProcess()
 {
     std::unique_lock<std::mutex> lock(hccpProcInfoMutex_);
     if (isTsdProcessOpen_ == true) {
+        s32 locaLogDevid = 0;
+        hrtGetDevice(&locaLogDevid);
+        if (locaLogDevid != deviceLogicId_) {
+            hrtSetDevice(deviceLogicId_);
+        }
         CHK_RET(hrtCloseNetService());
         isTsdProcessOpen_ = false;
+        if (locaLogDevid != deviceLogicId_) {
+            hrtSetDevice(locaLogDevid);
+        }
     }
     return HCCL_SUCCESS;
 }
@@ -1499,7 +1508,16 @@ HcclResult NetworkManager::CloseHccpSubProc()
     }
     HCCL_INFO("NetworkManager ProcessCloseSubProcList HDC devicePhyId[%u], deviceLogicId_[%d], subPid[%lld]",
         devicePhyId_, deviceLogicId_, static_cast<s64>(subPid_));
+    s32 locaLogDevid = 0;
+    hrtGetDevice(&locaLogDevid);
+    if (locaLogDevid != deviceLogicId_) {
+        hrtSetDevice(deviceLogicId_);
+    }
     CHK_RET(hrtCloseNetService());
+
+    if (locaLogDevid != deviceLogicId_) {
+        hrtSetDevice(locaLogDevid);
+    }
     subPid_ = 0;
 
     return HCCL_SUCCESS;

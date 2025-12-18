@@ -8,7 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <climits>
 #include "read_write_lock_base.h"
+#include "log.h"
 
 void ReadWriteLockBase::readLock()
 {

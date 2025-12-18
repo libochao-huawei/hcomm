@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <iomanip>
 #include "aicpu_communicator.h"
 #include "dispatcher.h"
 #include "aicpu_hccl_process.h"
@@ -30,7 +31,10 @@
 #include "config_log.h"
 #include "aicpu_one_side_service.h"
 #include "notify_manager.h"
-#include <iomanip>
+#include "dispatcher_aicpu.h"
+#include "dlprof_function.h"
+#include "profiling_command_handle.h"
+#include "dispatcher_ctx.h"
 
 namespace hccl {
 constexpr u32 IPC_SIGNAL_MODULUS = 2;
@@ -65,7 +69,6 @@ bool HcclCommAicpu::errMessageReport_ = true;
         }                                                                      \
     } while (0)
 
-
 HcclCommAicpu::HcclCommAicpu()
 {
     HCCL_RUN_INFO("Construct HcclCommAicpu complete.");
@@ -81,13 +84,34 @@ HcclCommAicpu::~HcclCommAicpu()
         HcclDispatcherDestroy(dispatcher_);
         dispatcher_ = nullptr;
     }
+    if (dispatcherCtx_ != nullptr) {
+        DestroyDispatcherCtx(dispatcherCtx_, identifier_.c_str());
+        HCCL_DEBUG("[%s] destroy dispatcherCtx[%p] group[%s] success!", __func__, dispatcherCtx_, identifier_.c_str());
+        dispatcherCtx_ = nullptr;
+    }
+
     commPlaneVector_.clear();
     isBridgeVector_.clear();
+    indOpCommInitialized_ = false;
+    initialized_ = false;
+
+    // 释放算子展开的动态缓存 (if any)
+    if (opUnfoldCachePtr_ != nullptr) {
+        delete opUnfoldCachePtr_;
+        opUnfoldCachePtr_ = nullptr;
+    }
+
     HCCL_RUN_INFO("Destruct HcclCommAicpu group[%s] success!", identifier_.c_str());
 }
 
 HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
 {
+    if (initialized_) {
+        HCCL_RUN_INFO("[%s][Init]Group[%s] already initialized, skip reinit", __func__,
+            identifier_.c_str());
+        return HCCL_SUCCESS;
+    }
+
     CHK_PTR_NULL(commParam);
     identifier_ = commParam->hcomId;
     isCustom_ = isCustom;
@@ -100,7 +124,6 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitCclbuffer(commParam));
     CHK_RET(InitTopoInfo(commParam));
     CHK_RET(InitOpNotifyObj(commParam));
-    CHK_RET(InitOrderNotifyObj(commParam));
     CHK_RET(HcclDispatcherAicpuInit(&dispatcher_,devId_, DispatcherType::DISPATCHER_AICPU));
     CHK_RET(RegisterProfilingCallback());
     CHK_RET(InitLocalNotifyObj(commParam));
@@ -118,9 +141,337 @@ HcclResult HcclCommAicpu::Init(const HcclOpResParam *commParam, bool isCustom)
     CHK_RET(InitZeroCopyExchanger(commParam));
     CHK_RET(InitOpCounter(commParam->opCounterInfo));
     CHK_RET(InitUtraceInfo(commParam));
+    CHK_RET(InitOpUnfoldCache());
+    CHK_RET(RegisterProfCallBack());
     InitCommInfoStatus(true);
     SetCommInfoStreamStatus(true);
+
+    initialized_ = true;
+
     HCCL_RUN_INFO("[HcclCommAicpu][Init] group[%s] success!", identifier_.c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::InitOpUnfoldCache()
+{
+    // 在单算子和图模式下创建算子展开的动态缓存
+    HCCL_INFO("[HcclCommAicpu][InitOpUnfoldCache] WorkflowMode[%u]: create cache for operator unfolding", GetWorkflowMode());
+    opUnfoldCachePtr_ = (new (std::nothrow) OpUnfoldCache());
+    CHK_PTR_NULL(opUnfoldCachePtr_);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, const AlgResourceResponse &algResource, bool& needExecute, bool& isCacheMiss)
+{
+    needExecute = true;
+    isCacheMiss = false;
+
+    // 如果存在算子展开的动态缓存, 即单算子模式
+    if (opUnfoldCachePtr_ != nullptr) {
+        // Dump main stream and slave streams addr and id for debug
+        HCCL_DEBUG("[HcclCommAicpu][LookupOpUnfoldCache] mainStream with streamId[%u] and id[%u]", mainStream_.GetHcclStreamInfo().actualStreamId, mainStream_.id());
+        for (size_t i = 0; i < slaveStreams_.size(); ++i) {
+            Stream &slaveStream = slaveStreams_[i];
+            HCCL_DEBUG("[HcclCommAicpu][LookupOpUnfoldCache] %uth slaveStream with streamId[%u] and id[%u]", i, slaveStream.GetHcclStreamInfo().actualStreamId, slaveStream.id());
+        }
+
+        HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] opUnfoldCachePtr_ is not null (enable cache for operator unfolding)");
+
+        // 根据算子类型判断是否需要cache
+        const HcclCMDType opType = param.opType;
+        bool needCache = OpUnfoldCache::NeedCache(opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
+        if (needCache) { // 屏蔽inplace场景
+            bool isInplace = false;
+            CHK_RET(IsInplace(param, isInplace));
+            if (isInplace) {
+                HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] inplace case does not support cache for now");
+                needCache = false;
+            }
+        }
+
+        // Cacheable算子
+        if (needCache) {
+            // 将streams中已有的task强制下发, 放置cache缓存跟算子编排无关的SQE
+            // 注意: cache miss需要先强制下发, 避免缓存和算子展开无关的SQE; cache hit也需要强制下发, 否则LaunchNewTask只会下发cache里的, 而不会下发stream里的
+            CHK_PTR_NULL(dispatcher_);
+            CHK_RET(reinterpret_cast<DispatcherPub*>(dispatcher_)->LaunchTasksEx(mainStream_, slaveStreams_));
+
+            // 准备key
+            OpUnfoldKey opUnfoldKey;
+            CHK_RET(GetOpUnfoldKey(param, opUnfoldKey));
+            HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] prepare key[%s] for op-unfold cache", opUnfoldKey.getKeyString().c_str());
+
+            // 准备 memory ranges
+            std::vector<OpUnfoldMemRange> userInputMemRanges;
+            std::vector<OpUnfoldMemRange> userOutputMemRanges;
+            CHK_RET(PrepareUserMemRanges(param, algResource, userInputMemRanges, userOutputMemRanges));
+
+            // 查找算子展开的动态缓存
+            HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] look up op-unfold cache for key %s", opUnfoldKey.getKeyString().c_str());
+            OpUnfoldCacheEntry *entryPtr = nullptr;
+            CHK_RET(opUnfoldCachePtr_->FindEntry(opUnfoldKey, &entryPtr));
+            if (entryPtr != nullptr) { // Cache hit
+                HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] cache hit for key %s", opUnfoldKey.getKeyString().c_str());
+
+                // 刷新缓存的SQE并直接下发到RTSQ
+                CHK_PTR_NULL(dispatcher_);
+                CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcher_))->LaunchNewTask(entryPtr, userInputMemRanges, userOutputMemRanges, mainStream_, slaveStreams_));
+
+                // 不需要执行算子展开的具体编排
+                needExecute = false;
+            } else { // Cache miss
+                HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] cache miss for key %s", opUnfoldKey.getKeyString().c_str());
+
+                // 设置launch context, enable DispatcherAicpu在下发SQE时去执行cache admission
+                CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcher_))->SetLaunchContext(opUnfoldKey, opUnfoldCachePtr_, userInputMemRanges, userOutputMemRanges));
+
+                isCacheMiss = true;
+            }
+        }
+    } else { // 图模式
+        HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] opUnfoldCachePtr_ is null (disable cache for operator unfolding)");
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::ClearOpUnfoldCacheEntry(const OpParam &param)
+{
+    // 清理当前aicpu算子对应的cache entry, 避免异常状态下，cache命中
+    if (opUnfoldCachePtr_ != nullptr) {
+        // 根据算子类型判断是否需要cache
+        const HcclCMDType opType = param.opType;
+        bool needCache = OpUnfoldCache::NeedCache(opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
+        if (needCache) { // 屏蔽inplace场景
+            bool isInplace = false;
+            CHK_RET(IsInplace(param, isInplace));
+            if (isInplace) {
+                HCCL_INFO("[HcclCommAicpu][ClearOpUnfoldCacheEntry] inplace case does not support cache for now");
+                needCache = false;
+            }
+        }
+
+        // Cacheable算子
+        if (needCache) {
+            // 准备key
+            OpUnfoldKey opUnfoldKey;
+            CHK_RET(GetOpUnfoldKey(param, opUnfoldKey));
+
+            // 清理cache entry if any
+            HCCL_RUN_INFO("[HcclCommAicpu][ClearOpUnfoldCacheEntry] try to clear cache entry for key[%s]", opUnfoldKey.getKeyString().c_str());
+            CHK_RET(opUnfoldCachePtr_->ClearEntry(opUnfoldKey));
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::GetOpUnfoldKey(const OpParam &param, OpUnfoldKey& key)
+{
+    // 准备data type和count
+    HcclDataType sendType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
+    HcclDataType recvType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
+    uint64_t inputSize = 0;
+    uint64_t outputSize = 0;
+    CHK_RET(ParseOpParamForCache(param, sendType, recvType, inputSize, outputSize));
+    UNUSED_PARAM(recvType);
+
+    // 设置key for op-unfold cache
+    CHK_RET(key.Init(param.opType, sendType, param.reduceType, param.isZeroCopy, inputSize, algOpContext_.opRetryHandler.isInplacePreSync, GetWorkflowMode()));
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges)
+{
+    const uint32_t rankSize = GetRankSize();
+    HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare %u user input/output memory ranges for op-unfold cache", rankSize);
+
+    // 准备memory ranges
+    userInputMemRanges.resize(rankSize);
+    userOutputMemRanges.resize(rankSize);
+
+    // 准备input/output size
+    HcclDataType sendType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
+    HcclDataType recvType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
+    uint64_t inputSize = 0;
+    uint64_t outputSize = 0;
+    CHK_RET(ParseOpParamForCache(param, sendType, recvType, inputSize, outputSize));
+
+    // 设置当前rank的input/output usermem addr
+    const uint32_t curRank = topoInfo_.userRank; // NOTE: 不应该使用param.srcRank (某些算子始终为0)
+    CHK_PRT_RET(curRank >= rankSize, HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] invalid curRank %u >= rankSize %u", curRank, rankSize), HCCL_E_INTERNAL);
+    HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user memory range of current rank %u", curRank);
+    OpUnfoldMemRange& curUserInputMemRange = userInputMemRanges[curRank];
+    curUserInputMemRange.isValid = true;
+    curUserInputMemRange.baseAddr = reinterpret_cast<uint64_t>(param.inputPtr);
+    curUserInputMemRange.memSize = inputSize; // NOTE: 不应该使用param.inputSize (alltoall类始终为0)
+    OpUnfoldMemRange& curUserOutputMemRange = userOutputMemRanges[curRank];
+    curUserOutputMemRange.isValid = true;
+    curUserOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(param.outputPtr);
+    curUserOutputMemRange.memSize = outputSize; // NOTE: 不应该使用param.outputSize (alltoall类始终为0)
+
+    // 针对zero copy, 设置remote rank的input/output usermem addr
+    if (param.isZeroCopy) {
+        // 注意: 只有非V类算子可能使用zero copy (因此假设remote ranks' input/output size与local rank相同)
+        // 注意: 而V类算子一定是buffer copy (否则PrepareRemoteUserMemRanges需要额外的输入作为remote ranks' input/output size)
+        const HcclCMDType opType = param.opType;
+        CHK_PRT_RET(opType == HCCL_CMD_ALLTOALLV || opType == HCCL_CMD_ALLTOALLVC || opType == HCCL_CMD_ALLGATHER_V || opType == HCCL_CMD_REDUCE_SCATTER_V || opType == HCCL_CMD_HALF_ALLTOALLV,
+            HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] opType[%u] should not use zero copy", opType), HCCL_E_INTERNAL);
+
+        // 直接传入local rank's input/output size用于remote ranks' memory ranges
+        HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user memory ranges of other remote ranks");
+        CHK_RET(ZeroCopyExchanger_->PrepareRemoteUserMemRanges(inputSize, outputSize, userInputMemRanges, userOutputMemRanges));
+    } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+        HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] check transport resource for potential user memory of remote ranks");
+
+        // 遍历所有transport信息, 更新remote ranks' user input/output memory ranges
+        for (size_t planeIdx = 0; planeIdx < algResource.opTransportResponse.size(); ++planeIdx) {
+            const LevelNSubCommTransport& subCommTransport = algResource.opTransportResponse[planeIdx];
+            for (size_t commIdx = 0; commIdx < subCommTransport.size(); ++commIdx) {
+                const SingleSubCommTransport& commTransport = subCommTransport[commIdx];
+
+                // 注意: 假设SingleSubCommTransport中的transportRequests和links是一一对应的
+                const std::vector<TransportRequest>& transportRequests = commTransport.transportRequests;
+                const std::vector<LINK>& links = commTransport.links;
+                HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] planeIdx[%u] commIdx[%u] links.size[%u]", planeIdx, commIdx, links.size());
+                CHK_PRT_RET(transportRequests.size() != links.size(),
+                    HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] transportRequests.size[%u] != links.size[%u]", transportRequests.size(), links.size()),
+                    HCCL_E_INTERNAL);
+
+                // 遍历每个remote rank对应的link信息
+                for (size_t reqIdx = 0; reqIdx < transportRequests.size(); ++reqIdx) {
+                    const TransportRequest& curReq = transportRequests[reqIdx];
+                    if (curReq.isValid) {
+                        if (curReq.remoteUserRank == curRank) { // 本rank无需从link获取user memory range
+                            continue;
+                        } else if (curReq.remoteUserRank == INVALID_VALUE_RANKID) { // 本rank无需从link获取user memory range
+                            continue;
+                        }
+
+                        CHK_PRT_RET(curReq.remoteUserRank >= rankSize, HCCL_ERROR("[HcclCommAicpu][PrepareUserMemRanges] invalid remoteRank %u >= rankSize %u", curReq.remoteUserRank, rankSize), HCCL_E_INTERNAL);
+
+                        // 获取curRank与remoteRank之间的LINK
+                        const LINK& curLink = links[reqIdx];
+                        CHK_PTR_NULL(curLink);
+
+                        // 获取user input memory range if any
+                        if (curReq.inputMemType == TransportMemType::PARAM_INPUT) {
+                            // 获取remoteRank的user input memory baseaddr
+                            void *remoteUserInputBaseAddr = nullptr;
+                            CHK_RET(curLink->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
+                            CHK_PTR_NULL(remoteUserInputBaseAddr);
+
+                            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user input of remoteRank[%u] for graph mode; baseAddr[0x%016llx]", curReq.remoteUserRank, remoteUserInputBaseAddr);
+
+                            // 设置remoteRank对应的user input memory range
+                            OpUnfoldMemRange& remoteUserInputMemRange = userInputMemRanges[curReq.remoteUserRank];
+                            remoteUserInputMemRange.isValid = true;
+                            remoteUserInputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserInputBaseAddr);
+                            remoteUserInputMemRange.memSize = inputSize;
+                        }
+
+                        // 获取user output memory range if any
+                        if (curReq.outputMemType == TransportMemType::PARAM_OUTPUT) {
+                            // 获取remoteRank的user output memory baseaddr
+                            void *remoteUserOutputBaseAddr = nullptr;
+                            CHK_RET(curLink->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
+                            CHK_PTR_NULL(remoteUserOutputBaseAddr);
+
+                            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] prepare user output of remoteRank[%u] for graph mode; baseAddr[0x%016llx]", curReq.remoteUserRank, remoteUserOutputBaseAddr);
+
+                            // 设置remoteRank对应的user output memory range
+                            OpUnfoldMemRange& remoteUserOutputMemRange = userOutputMemRanges[curReq.remoteUserRank];
+                            remoteUserOutputMemRange.isValid = true;
+                            remoteUserOutputMemRange.baseAddr = reinterpret_cast<uint64_t>(remoteUserOutputBaseAddr);
+                            remoteUserOutputMemRange.memSize = outputSize;
+                        }
+                    } // curReq.isValid
+                } // Each TransportRequest
+            } // Each SingleSubCommTransport
+        } // Each LevelNSubCommTransport
+    }
+
+    // 打印debug信息
+    if (UNLIKELY(HcclCheckLogLevel(HCCL_LOG_INFO))) {
+        for (size_t rankId = 0; rankId < userInputMemRanges.size(); ++rankId) {
+            const OpUnfoldMemRange& userInputMemRange = userInputMemRanges[rankId];
+            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] userInputMemRanges[%u] isValid: %d, baseAddr: 0x%016llx, memSize: %llu, endAddr: 0x%016llx",
+                rankId, userInputMemRange.isValid, userInputMemRange.baseAddr, userInputMemRange.memSize, userInputMemRange.baseAddr + userInputMemRange.memSize);
+
+            const OpUnfoldMemRange& userOutputMemRange = userOutputMemRanges[rankId];
+            HCCL_INFO("[HcclCommAicpu][PrepareUserMemRanges] userOutputMemRanges[%u] isValid: %d, baseAddr: 0x%016llx, memSize: %llu, endAddr: 0x%016llx",
+                rankId, userOutputMemRange.isValid, userOutputMemRange.baseAddr, userOutputMemRange.memSize, userOutputMemRange.baseAddr + userOutputMemRange.memSize);
+        }
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::IsInplace(const OpParam &param, bool& isInplace)
+{
+    // 准备input/output size
+    HcclDataType sendType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
+    HcclDataType recvType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
+    uint64_t inputSize = 0;
+    uint64_t outputSize = 0;
+    CHK_RET(ParseOpParamForCache(param, sendType, recvType, inputSize, outputSize));
+    UNUSED_PARAM(sendType);
+    UNUSED_PARAM(recvType);
+
+    if (inputSize == 0 || outputSize == 0) {
+        isInplace = false;
+        HCCL_INFO("[HcclCommAicpu][IsInplace] inputSize[%u] is not overlapping with outputSize[%u]",
+            inputSize, outputSize);
+        return HCCL_SUCCESS;
+    }
+
+    const uint64_t inputStart = reinterpret_cast<uint64_t>(param.inputPtr);
+    const uint64_t inputEnd = inputStart + inputSize - 1;
+    const uint64_t outputStart = reinterpret_cast<uint64_t>(param.outputPtr);
+    const uint64_t outputEnd = outputStart + outputSize - 1;
+
+    if (inputStart <= outputEnd && outputStart <= inputEnd) {
+        isInplace = true;
+        HCCL_INFO("[HcclCommAicpu][IsInplace] input[0x%016llx, 0x%016llx] is overlapping with output[0x%016llx, 0x%016llx]",
+            inputStart, inputEnd, outputStart, outputEnd);
+    } else {
+        isInplace = false;
+        HCCL_INFO("[HcclCommAicpu][IsInplace] input[0x%016llx, 0x%016llx] is not overlapping with output[0x%016llx, 0x%016llx]",
+            inputStart, inputEnd, outputStart, outputEnd);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::ParseOpParamForCache(const OpParam &param, HcclDataType& sendType, HcclDataType& recvType, uint64_t& inputSize, uint64_t& outputSize)
+{
+    // 注意: 由于ParseOpParamForCache前已经做过NeedCache检查, 这里不再做重复检验
+
+    const HcclCMDType opType = param.opType;
+    const uint32_t rankSize = GetRankSize();
+
+    // 准备data type和count
+    // NOTE: 非V类算子 (DataRes), V类算子 (VDataDes), All2All类算子 (All2AllDataDes), batch类算子 (BatchSendRecvDataDes/BatchWriteDataDes)
+    if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) { // alltoall算子
+        // 注意: sendType和recvType一定相同
+        sendType = param.All2AllDataDes.sendType;
+        recvType = param.All2AllDataDes.recvType;
+
+        // 注意: 对于alltoall算子, inputSize和outputSize一定相同 (但不能直接使用param.input/outputSize, alltoall算子不会设置这两个字段)
+        inputSize = param.All2AllDataDes.sendCount * rankSize * SIZE_TABLE[sendType];
+        outputSize = inputSize; // 注意: 不能使用param.All2AllDataDes.recvCount * rankSize * SIZE_TABLE[recvType], 因为alltoall使用sendCount来表示send/recvCount, 而recvCount本身为0
+    } else { // 非V类算子
+        sendType = param.DataDes.dataType;
+        recvType = param.DataDes.dataType;
+        inputSize = param.inputSize;
+        outputSize = param.outputSize;
+    }
+
+    HCCL_DEBUG("[HcclCommAicpu][ParseOpParamForCache] opType[%u] rankSize[%u] sendType[%u] recvType[%u] inputSize[%u] outputSize[%u]",
+        opType, rankSize, sendType, recvType, inputSize, outputSize);
+
     return HCCL_SUCCESS;
 }
 
@@ -215,12 +566,12 @@ HcclResult HcclCommAicpu::InitOpRetry(const HcclOpResParam *commParam)
         retryHoldTime_,
         retryIntervalTime_);
 
-    if (commParam->kfcControlTransferH2DParams.buffLen != 0) {
+    if (commParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
         CHK_RET(kfcControlTransferH2D_->InitDevice(commParam->kfcControlTransferH2DParams));
     }
-    if (commParam->kfcStatusTransferD2HParams.buffLen != 0) {
+    if (commParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
         EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
         CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
         CHK_RET(kfcStatusTransferD2H_->InitDevice(commParam->kfcStatusTransferD2HParams));
@@ -302,6 +653,17 @@ HcclResult HcclCommAicpu::RegisterDispatcherCallback()
     return HcclSetOpExecStatusCallback(dispatcher_, checkOpExecStatusCallback);
 }
 
+HcclResult HcclCommAicpu::RegisterProfCallBack() {
+    if (MsprofRegisterCallback != nullptr) {
+        HCCL_INFO("RegisterProfCallBack not null");
+        int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
+        CHK_PRT_RET((ret != 0), HCCL_ERROR("[%s] failed. ret = [%d]", ret), HCCL_E_PARA);
+    } else {
+        HCCL_INFO("RegisterProfCallBack is null");
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::GetSuspendingFlag(HcclComSuspendingFlag &flag)
 {
     CHK_RET(AicpuHdcUtils::GetSuspendingStatus(kfcControlTransferH2D_, flag));
@@ -328,7 +690,9 @@ HcclResult HcclCommAicpu::SaveTraceInfo(std::string &logInfo)
 
 HcclResult HcclCommAicpu::FlushUtraceInfo()
 {
-    CHK_RET(UtraceInfo_->Flush());
+    if (GetCommInfoStatus()) {
+        CHK_RET(UtraceInfo_->Flush());
+    }
     return HCCL_SUCCESS;
 }
 
@@ -446,13 +810,25 @@ HcclResult HcclCommAicpu::NotifyWait(void)
     }
 }
 
-HcclResult HcclCommAicpu::RecordHostOrder(const std::string& tag, bool isCapture)
+// 按照算子模式来Post对应的Notify
+HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, u8 orderLaunchMode)
 {
-    HCCL_INFO("%s group[%s] tag[%s] isDeviceMode[%d] isCapture[%d] mode[%d] streamId[%d] notifyId[%d]",
-        __func__, identifier_.c_str(), tag.c_str(), isDeviceMode_, isCapture, GetWorkflowMode(), orderStream_.id(),
-        orderNotify_->notifyId_);
+    if (orderNotifies_[orderLaunchMode] == nullptr) {
+        std::shared_ptr<LocalNotify> notify;
+        HcclSignalInfo *aicpuOrderNotify = reinterpret_cast<HcclSignalInfo*>(static_cast<u64>(commParam->aicpuOrderNotifyAddr) +
+            (sizeof(HcclSignalInfo) * orderLaunchMode));
 
-    CHK_RET(LocalNotify::Post(orderStream_, dispatcher_, orderNotify_));
+        HcclResult ret = InitAndVerifySingleSignal(*aicpuOrderNotify, notify);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] check localRes noftify failed, resId[%u], group[%s]",
+            __func__, aicpuOrderNotify->resId, identifier_.c_str()), ret);
+        orderNotifies_[orderLaunchMode] = notify;
+        HCCL_INFO("%s success, group[%s], resId[%u]", __func__, identifier_.c_str(), aicpuOrderNotify->resId);
+    }
+
+    HCCL_INFO("%s group[%s] tag[%s] isDeviceMode[%d] orderLaunchMode[%d] mode[%d] streamId[%d] notifyId[%d]",
+            __func__, identifier_.c_str(), tag.c_str(), isDeviceMode_, orderLaunchMode, GetWorkflowMode(), orderStream_.id(),
+            orderNotifies_[orderLaunchMode]->notifyId_);
+    CHK_RET(LocalNotify::Post(orderStream_, dispatcher_, orderNotifies_[orderLaunchMode]));
     CHK_RET(LaunchTask(dispatcher_, const_cast<Stream &>(orderStream_)));
     return HCCL_SUCCESS;
 }
@@ -565,15 +941,6 @@ HcclResult HcclCommAicpu::InitOpNotifyObj(const HcclOpResParam *commParam)
     }
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(commParam->localRes.aicpuOpNotify[0].devId, &devId_));
     HCCL_INFO("[HcclCommAicpu][InitOpNotifyObj] success, group[%s]", identifier_.c_str());
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclCommAicpu::InitOrderNotifyObj(const HcclOpResParam *commParam)
-{
-    HcclResult ret = InitAndVerifySingleSignal(commParam->aicpuOrderNotify, orderNotify_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("%s check localRes op noftify failed, resId[%u], group[%s]",
-        __func__, commParam->aicpuOrderNotify.resId, identifier_.c_str()), ret);
-    HCCL_INFO("%s success, group[%s], resId[%u]", __func__, identifier_.c_str(), commParam->aicpuOrderNotify.resId);
     return HCCL_SUCCESS;
 }
 
@@ -940,7 +1307,7 @@ HcclResult HcclCommAicpu::CheckNotifyOrQPMaxNum(u64 &existNum, const u64 &MaxNum
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommAicpu::SetTransportMachinePara(MachinePara &machinePara, u32 &rankId, 
+HcclResult HcclCommAicpu::SetTransportMachinePara(MachinePara &machinePara, u32 &rankId,
     const std::string &newTag, TransportLinkType linkType)
 {
     machinePara.linkAttribute = 0x03; /* 0x03同时支持目的端和源端发起 */
@@ -1500,14 +1867,19 @@ HcclResult HcclCommAicpu::ReAllocTransportResource(const std::string &newTag, Al
                     receivedAcks_[transportRequest.remoteUserRank] = singleSubCommTransport.supportDataReceivedAck;
                     bool isBackup = remoteRankPortMap.find(transportRequest.remoteUserRank) != remoteRankPortMap.end() &&
                         !remoteRankPortMap[transportRequest.remoteUserRank];
-                        bool isSecondBuild = false;
-                        bool isBatchSendRecv =  newTag.find("BatchSendRecv") != std::string::npos;
-                        if (transportRequest.isUsedRdma && isBatchSendRecv &&
-                            bsrTansportRank.find(transportRequest.remoteUserRank) != bsrTansportRank.end()){
-                            //仅在batchsendrecv rdma下发的时候需要第二次刷新，实际第一次下发都刷好了，第二次就是get一下
-                            isSecondBuild = true;
-                        }
-                        bsrTansportRank.insert(transportRequest.remoteUserRank);
+                    bool isSecondBuild = false;
+                    bool isBatchSendRecv =  newTag.find("BatchSendRecv") != std::string::npos;
+                    if (transportRequest.isUsedRdma && isBatchSendRecv &&
+                        bsrTansportRank.find(transportRequest.remoteUserRank) != bsrTansportRank.end()){
+                        //仅在batchsendrecv rdma下发的时候需要第二次刷新，实际第一次下发都刷好了，第二次就是get一下
+                        isSecondBuild = true;
+                    }
+                    // A3 bsr远端是DirectNpu 链路的话则跳过
+                    if ((param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
+                        (param.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        continue;
+                    }
+                    bsrTansportRank.insert(transportRequest.remoteUserRank);
                     CHK_RET(CreateLink(newTag, transportRequest, commParam, singleSubCommTransport.links.back(),
                         transportRequest.notifyNum, isBackup, isSecondBuild));
                 }
@@ -1595,6 +1967,11 @@ HcclResult HcclCommAicpu::IncreAllocTransportResource(const std::string &newTag,
                         bsrTansportRank.find(transportRequest.remoteUserRank) != bsrTansportRank.end()){
                         //仅仅在batchsendrecv rdma下发的时候需要第二次刷新，实际第一次下发都刷好了，第二次就是get一下
                         isSecondBuild = true;
+                    }
+                    // A3 bsr远端是DirectNpu 链路的话则跳过
+                    if ((opParam.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
+                        (opParam.BatchSendRecvDataDes.isDirectRemoteRank[transportRequest.remoteUserRank])) {
+                        continue;
                     }
                     bsrTansportRank.insert(transportRequest.remoteUserRank);
                     CHK_RET(CreateLink(newTag, transportRequest, commParam, respSingleSubComm.links[rankIndex],
@@ -1837,7 +2214,6 @@ HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &a
             algResResponse->paramOutputMem.ptr(), algResResponse->paramOutputMem.size());
     }
 
-    UpdateOpRingBufferIdx();
     hcclOpExecIndex_ = CalculateOpExecIndex(opParam, localUserRank_);
     HcclResult ret = Orchestrate(newTag, algName, opParam, executor, *algResResponse, commParam);
     if (ret != HCCL_SUCCESS) {
@@ -2015,6 +2391,7 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
     std::unique_ptr<CollExecutorBase> &executor, AlgResourceResponse &algResource, const HcclOpResParam *commParam)
 {
     // 算子下发信息记录在共享内存区
+    UpdateOpRingBufferIdx();
     CHK_RET(aicpuShareData_.RecordOpInfo(newTag, param, (isDeviceMode_ ? mc2OpIndex_ : hcclOpExecIndex_),
                                          localUserRank_, isCustom_));
     CHK_RET(UpdateProfReportStartSqeIdx());
@@ -2098,7 +2475,7 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                     algName, param, executor, algResource, state, errorCode, beginSqePos, endSqePos, retryCnt);
                 if (ret == HCCL_E_SUSPENDING && isDeviceMode_ && retryEnable_) {
                     return HCCL_E_SUSPENDING;
-                } 
+                }
                 break;
             case HcclOpExecFSM::HCCL_OP_EXEC_FSM_WAIT_END:
                 ret = HcclOpExecFsmWaitEndProcess(param, algResource, state, errorCode, retryCnt, param.tag, beginSqePos);
@@ -2141,6 +2518,7 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                 }
                 break;
             case HcclOpExecFSM::HCCL_OP_EXEC_FSM_RETRY:
+                CHK_RET(ClearOpUnfoldCacheEntry(param)); // 重执行前清理当前算子展开的SQE缓存 (if any), 防止命中非完整的cache
                 ret = HcclOpExecFsmRetryProcess(algName, param, executor, algResource, state, errorCode, retryCnt,
                     beginSqePos, endSqePos);
                 break;
@@ -2166,6 +2544,7 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
                 return HcclOpExecFsmEndProcess(retryCnt);
             case HcclOpExecFSM::HCCL_OP_EXEC_STOP_LAUNCH:
                 HCCL_DEBUG("[NsRecovery][AICPU] stop the kernel");
+                CHK_RET(ClearOpUnfoldCacheEntry(param)); // 停止前清理当前算子展开的SQE缓存 (if any), 防止host侧重新展开该算子并命中非完整的cache (例如step快恢)
                 if (!needsResponseStopLaunch_) {
                     return HCCL_E_SUSPENDING;
                 } else {
@@ -2510,8 +2889,8 @@ HcclResult HcclCommAicpu::HcclOpExecFsmStoppedProcess(HcclOpExecFSM &fsmState, K
             rsErrorCode = TS_ERROR_RETRY_CONSTRAINT;
             CHK_PRT(SendTaskExceptionByMBox(rsErrorCode));
             HCCL_ERROR("[OpRetry][AICPU][HcclOpExecFsmStoppedProcess]hccl aicpu exec fsm stop by inplace error.");
-            CHK_PRT_RET(param.isInplaceError, 
-                    HCCL_RUN_INFO("[OpRetry][AICPU][HcclOpExecFsmStoppedProcess]return HCCL_E_OPRETRY_FAIL"), 
+            CHK_PRT_RET(param.isInplaceError,
+                    HCCL_RUN_INFO("[OpRetry][AICPU][HcclOpExecFsmStoppedProcess]return HCCL_E_OPRETRY_FAIL"),
                     HCCL_E_OPRETRY_FAIL);
         } else if (isPollutedZeroCopyOp(param)) {
             errorCode = KfcError::kExecConstraint;
@@ -2526,7 +2905,7 @@ HcclResult HcclCommAicpu::HcclOpExecFsmStoppedProcess(HcclOpExecFSM &fsmState, K
         }
         return HCCL_SUCCESS;
     }
-    
+
     uint32_t sqHead = 0xFFFFFFFF;
     CHK_RET(QuerySqStatusByType(devId_, mainStream_.sqId(), DRV_SQCQ_PROP_SQ_HEAD, sqHead));
     if (sqHead == endSqePos) {
@@ -2574,7 +2953,7 @@ void HcclCommAicpu::NsCommClean()
 {
     // 等待drv任务停止
     if ((DeviceQuery(devId_, ts::APP_ABORT_TERMINATE_FINISH, 0U) != HCCL_SUCCESS) ||
-        (CleanStreamFunc() != HCCL_SUCCESS) || (HcclOneSideServiceAicpu::CleanAllStreamFunc() != HCCL_SUCCESS) || 
+        (CleanStreamFunc() != HCCL_SUCCESS) || (HcclOneSideServiceAicpu::CleanAllStreamFunc() != HCCL_SUCCESS) ||
         (ResetSqBuff() != HCCL_SUCCESS)) {
         (void)aicpuHdc_.SetOpExecStatus(kfcStatusTransferD2H_, KfcStatus::kError, KfcError::kExec, 0);
         HCCL_ERROR("[NsRecovery][AICPU]stream terminate failed");
@@ -2948,6 +3327,18 @@ HcclResult HcclCommAicpu::HcclOpExecFsmEndProcess(uint32_t retryCnt)
     return ret;
 }
 
+HcclResult HcclCommAicpu::PrintTaskExceptionAllThreads()
+{
+    // 非独立算子场景，跳过
+    CHK_PRT_RET(!GetIsInitIndOp(),
+        HCCL_RUN_INFO("[%s] IndOp group[%s] not init, skip", __func__, identifier_.c_str()), HCCL_SUCCESS);
+
+    for (auto &thread : threads_) {
+        CHK_RET(taskExecption_.PrintTaskException(*(thread->GetStream())));
+    }
+    return HCCL_SUCCESS;
+}
+
 void HcclCommAicpu::PrintTaskExceptionAllComm()
 {
     ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
@@ -2956,16 +3347,17 @@ void HcclCommAicpu::PrintTaskExceptionAllComm()
 
     // 先打印本通信域的taskException
     (void)PrintTaskExceptionAllStreams();
+    (void)PrintTaskExceptionAllThreads();
 
     // 再打印其他通信域的taskException
     std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
     (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
     for (auto &commInfo : aicpuCommInfo) {
         hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
-        // 通信域资源已经释放，或轮询的是当前通信域，已经打印过taskException
-        if (hcclAicpu == nullptr || !hcclAicpu->GetCommInfoStatus() || hcclAicpu->identifier_ == identifier_) {
+        if (hcclAicpu == nullptr || hcclAicpu->identifier_ == identifier_) {
             continue;
         }
+        (void)hcclAicpu->PrintTaskExceptionAllThreads();
         (void)hcclAicpu->PrintTaskExceptionAllStreams();
     }
     rwlock.readUnlock();
@@ -3083,6 +3475,7 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
     HcclResult ret = HCCL_SUCCESS;
     // task的尾指针，已便重执行stop时判断是否已执行该task，如果该task已执行完成则可支持通信重执行
     CHK_RET(QuerySqStatusByType(devId_, mainStream_.sqId(), DRV_SQCQ_PROP_SQ_TAIL, beginSqePos));
+
     const bool retryForBatchSndRcv = (param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV && retryEnable_);
     if (retryForBatchSndRcv) {
         CHK_RET(QueryBatchSendRecvPairBeginPos());
@@ -3102,14 +3495,49 @@ HcclResult HcclCommAicpu::OrchestrateHcclOp(const std::string &algName, OpParam 
         }
     }
 
-    // executor设置AlgOpContext
-    CHK_RET(executor->SetAlgOpContext(algOpContext_));
-    (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
-    ret = executor->Orchestrate(param, algResource);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HcclCommAicpu][Orchestrate]executor process failed algName[%s], ret = %u", algName.c_str(), ret);
-        printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
-        return ret;
+    // 打印当前展开的算子信息
+    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] opUnfoldIdx_[%u] opType[%d] curRank[%u] rankSize[%u]", opUnfoldIdx_, param.opType, topoInfo_.userRank, GetRankSize());
+    HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] inputPtr[0x%016llx] inputSize[%u] outputPtr[0x%016llx] outputSize[%u]", param.inputPtr, param.inputSize, param.outputPtr, param.outputSize);
+    opUnfoldIdx_ += 1;
+
+    // 检查算子展开的动态缓存, 确认是否可以跳过算子展开
+    bool needExecute = true;
+    bool isCacheMiss = false;
+    CHK_RET(LookupOpUnfoldCache(param, algResource, needExecute, isCacheMiss));
+
+    // 根据needExecute有条件的执行算子展开
+    // 需要算子执行的场景: (i) 图模式 (无cache instance); (ii) uncacheable算子; (iii) cache miss
+    if (needExecute) {
+        // executor设置AlgOpContext
+        CHK_RET(executor->SetAlgOpContext(algOpContext_));
+        (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {});
+        ret = executor->Orchestrate(param, algResource);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[HcclCommAicpu][Orchestrate]executor process failed algName[%s], ret = %u", algName.c_str(), ret);
+            printTaskExceptionForErr_ |= (ret == HCCL_E_AGAIN);
+            return ret;
+        }
+
+        // Cache miss会设置launch context to enable cache admission -> 需要清理launch context
+        if (isCacheMiss) {
+            // 清理launch context, DispatcherAicpu不会再admit当前算子后续展开的SQE
+            CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcher_))->ClearLaunchContext());
+
+            // 一定是单算子模式
+            CHK_PTR_NULL(opUnfoldCachePtr_);
+
+            // 准备key
+            OpUnfoldKey opUnfoldKey;
+            CHK_RET(GetOpUnfoldKey(param, opUnfoldKey));
+
+            // 根据cache中的streamid计算是主流还是第几个从流
+            OpUnfoldCacheEntry *entryPtr = nullptr;
+            CHK_RET(opUnfoldCachePtr_->FindEntry(opUnfoldKey, &entryPtr));
+            if (entryPtr != nullptr) { // Cache miss后刚刚admit的cache entry
+                HCCL_INFO("[HcclCommAicpu][OrchestrateHcclOp] calculate stream seq idxes for a newly-admitted entry of key %s", opUnfoldKey.getKeyString().c_str());
+                CHK_RET(entryPtr->CalcStreamSeqIdxes(mainStream_, slaveStreams_));
+            }
+        }
     }
 
     // batchsendrecv算子拆分为多轮执行，只有第一个step和最后一个step需要和主stream交互
@@ -3278,7 +3706,7 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
             HCCL_RUN_INFO("[HcclCommAicpu][WaitFinishWhileLoop]CheckOpExecStatus exception, ret[%u]", ret), ret);
 
         CHK_RET(QuerySqStatusByType(devId_, sqId, DRV_SQCQ_PROP_SQ_HEAD, sqHead));
-        if ((param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) && 
+        if ((param.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) &&
             (retryEnable_) && (sqHead != beginSqePos) && (!excuteOpId_.isBsrTaskStart)) {
             //更新D2H通道里的信息opid中isBsrTaskStart = true
             excuteOpId_.isBsrTaskStart = true;
@@ -3286,7 +3714,7 @@ HcclResult HcclCommAicpu::WaitFinishWhileLoop(Stream &mainStream, std::vector<St
                 KfcError::kNone, 0);
             CHK_PRT_RET(ret1 != HCCL_SUCCESS, HCCL_ERROR("update OpExecStatus failed, ret:%u", ret1), ret1);
             HCCL_INFO("[HcclCommAicpu][WaitFinishWhileLoop]bsr start task is completed. devId:%d sqid:%d, head:%u,"
-                "beginSqePos[%u] group[%s] tag[%s]", 
+                "beginSqePos[%u] group[%s] tag[%s]",
                 devId_, sqId, sqHead, beginSqePos, identifier_.c_str(), tag.c_str());
         }
         uint64_t curUsec = GetCurCpuTimestamp();
@@ -3556,6 +3984,10 @@ HcclResult HcclCommAicpu::UpdateSuspendStatus(const OpParam &param, HcclOpExecFS
             CHK_RET(UpdateOpExecStatus(fsmState, KfcStatus::kStoplaunch, errorCode, retryCnt));
         }
         fsmState = HcclOpExecFSM::HCCL_OP_EXEC_FSM_STOPPING;
+    } else {
+        HCCL_RUN_INFO("[HcclCommAicpu][UpdateSuspendStatus] aicpu force stop in launch loop; needsResponseStopLaunch_[%u] retryEnable_[%u]",
+            needsResponseStopLaunch_, retryEnable_);
+        fsmState = HcclOpExecFSM::HCCL_OP_EXEC_STOP_LAUNCH;
     }
     return HCCL_SUCCESS;
 }
@@ -3972,34 +4404,34 @@ HcclResult HcclCommAicpu::GetBsrTransportQpn( const HcclSendRecvItem *sendrecvPa
 
     if ((sendRecvType == HcclSendRecvType::HCCL_SEND && remoteRank < localRank) ||
         (sendRecvType == HcclSendRecvType::HCCL_RECV && remoteRank > localRank)) {
-        commIndex = COMM_INDEX_0; 
+        commIndex = COMM_INDEX_0;
     } else {
         commIndex = COMM_INDEX_1;
     }
-    CHK_PRT_RET(commIndex >= algResource.opTransportResponse[COMM_COMBINE_ORDER].size(), 
+    CHK_PRT_RET(commIndex >= algResource.opTransportResponse[COMM_COMBINE_ORDER].size(),
         HCCL_ERROR("[GetBsrTransportQpn] batchsendrecv op commIndex[%u] is larger than "\
         "opTransportResponse size[%zu]",
         commIndex, algResource.opTransportResponse[COMM_COMBINE_ORDER].size()), HCCL_E_PARA);
     SingleSubCommTransport &commCombined =
         static_cast<SingleSubCommTransport&>(algResource.opTransportResponse[COMM_COMBINE_ORDER][commIndex]);
 
-    CHK_PRT_RET(sendrecvPair->remoteRank >= commCombined.userRank2subCommRank.size(), 
+    CHK_PRT_RET(sendrecvPair->remoteRank >= commCombined.userRank2subCommRank.size(),
         HCCL_ERROR("[GetBsrTransportQpn]batchsendrecv op remoteUserRank[%u] is larger than "\
         "userRank2subCommRank map size[%zu]",
         sendrecvPair->remoteRank, commCombined.userRank2subCommRank.size()), HCCL_E_PARA);
 
-    u32 rank = commCombined.userRank2subCommRank[sendrecvPair->remoteRank]; 
-    CHK_PRT_RET(rank >= commCombined.links.size(), 
+    u32 rank = commCombined.userRank2subCommRank[sendrecvPair->remoteRank];
+    CHK_PRT_RET(rank >= commCombined.links.size(),
         HCCL_ERROR("[GetBsrTransportQpn] batchsendrecv op remoteUserRank[%u], get rank[%u]," \
         "the size of combinedComm links is [%zu]", sendrecvPair->remoteRank, rank, commCombined.links.size()),
         HCCL_E_PARA);
     targetLink = commCombined.links[rank];
 
-    CHK_SMART_PTR_NULL(targetLink); 
+    CHK_SMART_PTR_NULL(targetLink);
     if (targetLink->GetLinkType() == LinkType::LINK_ROCE){
         CHK_RET(targetLink->GetTransportId(qpn));
     }
-    HCCL_DEBUG("[HcclCommAicpu][GetBsrTransportQpn] localrank=[%u] remoteuserRank=[%u] remoteRank=[%u],sendrecvType=[%d] qpn =[%u], comindex [%u]", 
+    HCCL_DEBUG("[HcclCommAicpu][GetBsrTransportQpn] localrank=[%u] remoteuserRank=[%u] remoteRank=[%u],sendrecvType=[%d] qpn =[%u], comindex [%u]",
        topoInfo_.userRank, sendrecvPair->remoteRank, remoteRank, sendrecvPair->sendRecvType, qpn, commIndex);
     return HCCL_SUCCESS;
 }
@@ -4228,7 +4660,7 @@ HcclResult HcclCommAicpu::ParseHierarchicalAlgOption(u32 *ahcConfInfo)
 {
     u32  algOptionSize= ahcConfInfo[TOP_HIERARCHICAL_CONF_lENGTH_INDEX];
     if (algOptionSize >= (TOP_HIERARCHICAL_CONF_SIZE-1)) {
-        HCCL_ERROR("[HcclCommAicpu][ParseHierarchicalAlgOption] hierarchicalAlgOption size[%lu]  exceed maxsize[%lu]", 
+        HCCL_ERROR("[HcclCommAicpu][ParseHierarchicalAlgOption] hierarchicalAlgOption size[%lu]  exceed maxsize[%lu]",
             algOptionSize, (TOP_HIERARCHICAL_CONF_SIZE-1));
         return HCCL_E_INTERNAL;
     }
@@ -4254,7 +4686,7 @@ void HcclCommAicpu::PollCqeException(hccl::Stream &stream, bool isReadClear, rtL
 {
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
     // 以下条件满足其中之一，进行Poll CQE：1、AICPU/Custom读清CQ   2、AICPU进程读取CQ信息
-    bool isPollCqe = isReadClear || !isCustom_;
+    bool isPollCqe = true;
     while (isPollCqe) {
         LogControl logControl(false, retryEnable_); // 使能重执行场景，修改ERROR->RUN_WARNING，析构时自动恢复
         CqeQueryInput cqeQueryInput;
@@ -4272,7 +4704,7 @@ void HcclCommAicpu::ExchangeCqeContext(hccl::Stream &stream, rtLogicCqReport_t &
 {
     HcclResult ret = HCCL_SUCCESS;
     // aicpu进程把读取到的异常cq，写入共享内存
-    if (!isCustom_ && cqeStatus == dfx::CqeStatus::kCqeException) {
+    if (cqeStatus == dfx::CqeStatus::kCqeException) {
         ret = stream.SetCqeContext(ErrCqeContext(static_cast<u32>(cqeStatus), cqeException.taskId,
             cqeException.errorCode, cqeException.sqeType));
     }
@@ -4315,10 +4747,7 @@ void HcclCommAicpu::HandleCqeException(hccl::Stream &stream, bool isReadClear)
                              cqeCtx.errorCode == RT_SDMA_DATAERR;
         bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
 
-        // 统一AICPU进程中进行故障上报
-        if (!isCustom_) {
-            ReportErrCqe(stream, cqeCtx);
-        }
+        ReportErrCqe(stream, cqeCtx);
 
         // 标记发生ErrCqe的流
         hccl::CqeExceptionStatus cqeExceptionStatus =
@@ -4410,6 +4839,67 @@ HcclResult HcclCommAicpu::SendTaskExceptionByMBox(const uint16_t &rsErrorCode)
     CHK_RET(hccl_plf::SendTaskExceptionByMBox(localDeviceId, opNotifies_[1]->notifyId_, notifyInfo.tsId,
         userStreamId_, rsErrorCode));
     return HCCL_SUCCESS;
+}
+
+void HcclCommAicpu::HandleIndOpCqe()
+{
+    std::unique_lock<std::mutex> lock(queryCqeMutex_);
+
+    for (auto &thread : threads_) {
+        Stream stream = *thread->GetStream();
+        // 流上已有异常信息，不再重复读取
+        if (GetStreamCqeExceptionStatus(stream) != CqeExceptionStatus::kNone) {
+            continue;
+        }
+
+        // poll cqe信息
+        rtLogicCqReport_t cqeException;
+        CqeQueryInput cqeQueryInput;
+        dfx_tracer::ExecutorTracer::SetCqeQueryInput(GetDevId(), stream.GetHcclStreamInfo(), cqeQueryInput);
+        constexpr u32 reportSize = 256;
+        rtLogicCqReport_t streamReport[reportSize];
+        cqeQueryInput.cqeAddr = reinterpret_cast<uint8_t *>(streamReport);  // 用于存放接收到的cq
+        CqeStatus cqeStatus = CqReportRecv(cqeQueryInput, cqeException);
+        // 未读取到异常信息，返回
+        if (cqeStatus == dfx::CqeStatus::kDefault) {
+            continue;
+        }
+
+        const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
+        u32 head = 0;
+        u32 tail = 0;
+        QuerySqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_HEAD, head);
+        QuerySqStatusByType(devId_, streamInfo.sqId, DRV_SQCQ_PROP_SQ_TAIL, tail);
+
+        // 打印taskException信息
+        if (cqeStatus == dfx::CqeStatus::kCqeException) {
+            if (cqeException.sqeType == RT_STARS_SQE_TYPE_PLACE_HOLDER) {
+                PrintTaskExceptionAllComm(); // 超时场景打印所有通信域的taskException
+                PrintAicpuCommExecStatus();
+            } else {
+                taskExecption_.PrintTaskExceptionByTaskId(cqeException.sqeType, cqeException.taskId, stream, tail);
+            }
+        }
+
+        // 打印重执行提示信息
+        bool isSdmaTypeErr = cqeStatus == dfx::CqeStatus::kCqeException &&
+                             cqeException.sqeType == RT_STARS_SQE_TYPE_SDMA;
+        bool isCompDataErr = cqeException.errorCode == RT_SDMA_COMPDATAERR ||
+                             cqeException.errorCode == RT_SDMA_COMPERR;
+        bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
+        if (isSdmaCompDataErr) {
+            HCCL_RUN_INFO("[OpRetry][AICPU]group[%s] can not retry, IndOp unsupport opRetry", identifier_.c_str());
+        }
+
+        // 标记发生ErrCqe的流
+        hccl::CqeExceptionStatus cqeExceptionStatus =
+            isSdmaCompDataErr ? hccl::CqeExceptionStatus::kSdmaErr : hccl::CqeExceptionStatus::kOther;
+        SetStreamCqeExceptionStatus(stream, cqeExceptionStatus);
+
+        HCCL_ERROR("Exception happened, group %s, streamId %u, sqid %d, cqeStatus %d, sqetype %u, errorCode %u, "
+            "head %u, tail %u", identifier_.c_str(), stream.id(), streamInfo.sqId, cqeStatus, cqeException.sqeType,
+            cqeException.errorCode, head, tail);
+    }
 }
 
 HcclResult HcclCommAicpu::RefreshLinkForSwitchNic(const std::string &newTag, const TransportRequest &transportRequest,
@@ -4673,11 +5163,16 @@ HcclResult HcclCommAicpu::RefreshCommResponseTransportRes(std::map<u32, bool> &r
 
 HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
 {
+    if (indOpCommInitialized_) {
+        HCCL_RUN_INFO("[%s][InitAicpuIndOp]Group[%s] already initialized, skip reinit", __func__,
+            identifier_.c_str());
+        return HCCL_SUCCESS;
+    }
+
     topoInfo_.deviceLogicId = commAicpuParam->deviceLogicId;
     topoInfo_.devicePhyId = commAicpuParam->devicePhyId;
     topoInfo_.deviceType = static_cast<DevType>(commAicpuParam->deviceType);
     identifier_ = std::string(commAicpuParam->hcomId);
-    threads_.reserve(LOCAL_STREAM_MAX_NUM);
     notifys_.reserve(LOCAL_NOTIFY_MAX_NUM);
     if (topoInfo_.deviceType == DevType::DEV_TYPE_910_93 || topoInfo_.deviceType == DevType::DEV_TYPE_910B) {
         notifySize_ = NOTIFY_SIZE_FOUR;
@@ -4689,11 +5184,33 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
-    CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_));
+    if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
+        CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, identifier_.c_str()));
+    }
     CHK_PTR_NULL(dispatcherCtx_);
 
-    HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u]", __func__,
-        identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, notifySize_);
+    CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
+
+    if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
+        EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(kfcControlTransferH2D_);
+        CHK_RET(kfcControlTransferH2D_->InitDevice(commAicpuParam->kfcControlTransferH2DParams));
+    }
+    if (commAicpuParam->kfcStatusTransferD2HParams.buffLen != 0 && kfcStatusTransferD2H_ == nullptr) {
+        EXECEPTION_CATCH((kfcStatusTransferD2H_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(kfcStatusTransferD2H_);
+        CHK_RET(kfcStatusTransferD2H_->InitDevice(commAicpuParam->kfcStatusTransferD2HParams));
+    }
+
+    indOpCommInitialized_ = true;
+
+    // 在indOpCommInitialized_变为true后拉起背景线程
+    AicpuComContext *ctx = AicpuGetComContext();
+    AicpuHcclProcess::CallMC2MaintenanceThread(ctx);
+    
+    HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u], "
+        "dispatcherCtx[%p]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
+        topoInfo_.deviceType, notifySize_, dispatcherCtx_);
     return HCCL_SUCCESS;
 }
 
@@ -4741,7 +5258,7 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
 
 HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam)
 {
-    if (commParam->engine != COMM_ENGINE_AICPU && 
+    if (commParam->engine != COMM_ENGINE_AICPU &&
         commParam->engine != COMM_ENGINE_AICPU_TS) {
         HCCL_ERROR("[HcclCommAicpu][%s] engine type[%d] is not supported", __func__, commParam->engine);
         return HCCL_E_PARA;
@@ -4770,7 +5287,7 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
 HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex)
 {
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
-    std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" + 
+    std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" +
         std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(CommProtocol::COMM_PROTOCOL_HCCS);
     HCCL_INFO("%s channelKey[%s]", __func__, channelKey.c_str());
     if (channelHandleMap_.find(channelKey) != channelHandleMap_.end()) {
@@ -4805,8 +5322,10 @@ HcclResult HcclCommAicpu::InitP2pChannel(HcclIndOpChannelRemoteResV3 *commParam,
     std::shared_ptr<Transport> link;
     TransportPara para{};
     const std::unique_ptr<NotifyPool> notifyPool;
+    DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
-        TransportType::TRANS_TYPE_DEVICE_P2P, para, dispatcher_, notifyPool, machinePara, transDevP2pData));
+        TransportType::TRANS_TYPE_DEVICE_P2P, para, ctx->GetDispatcher(), notifyPool, machinePara, transDevP2pData));
     CHK_SMART_PTR_NULL(link);
     CHK_RET(link->Init()); // 初始化需要增加远端用户注册内存
 
@@ -4870,13 +5389,13 @@ HcclResult HcclCommAicpu::SetChannelP2pNotify(TransportDeviceP2pData &transDevP2
 HcclResult HcclCommAicpu::InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex)
 {
     HcclIndOpChannelRemoteResV2 &remoteResV2 = commParam->remoteResV2[channelIndex];
-    std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" + 
+    std::string channelKey = std::string(commParam->channelTag) + ":" + std::to_string(commParam->engine) + ":" +
         std::to_string(remoteResV2.remoteRank) + ":" + std::to_string(CommProtocol::COMM_PROTOCOL_ROCE);
     if (channelHandleMap_.find(channelKey) != channelHandleMap_.end()) {
         HCCL_ERROR("[%s]the channel has existed.", __func__);
         return HCCL_E_INTERNAL;
     }
-    
+
     HcclChannelRoce &channelRoce = remoteResV2.channelRoce;
     if (channelRoce.localNotifyList == 0) {
         HCCL_ERROR("[%s]the Channel is invalid",__func__);
@@ -4925,8 +5444,10 @@ HcclResult HcclCommAicpu::InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam
     TransportPara para{};
     para.timeout = linkTimeOut_; // 暂无法设置
     const std::unique_ptr<NotifyPool> notifyPool;
+    DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
+    CHK_PTR_NULL(ctx);
     link.reset(new (std::nothrow) Transport(
-        TransportType::TRANS_TYPE_DEVICE_IBVERBS, para, dispatcher_, notifyPool,
+        TransportType::TRANS_TYPE_DEVICE_IBVERBS, para, ctx->GetDispatcher(), notifyPool,
             machinePara, TransportDeviceP2pData(), transDevIbverbsData));
     CHK_SMART_PTR_NULL(link);
     CHK_RET(link->Init()); // 初始化需要增加远端用户注册内存
@@ -4938,7 +5459,7 @@ HcclResult HcclCommAicpu::InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam
     // 恢复出的channelHandle回填到commParam中
     ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
     channelList[channelIndex] = channelHandle;
-    
+
     return HCCL_SUCCESS;
 }
 
@@ -5059,6 +5580,22 @@ HcclResult HcclCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)
 
     HCCL_INFO("[HcclCommAicpu][%s] comm identifier[%s], free notifys num[%u] success",
             __func__, hcomId.c_str(), notifyNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::RegisterOpInfo(void* opInfo, u32 size)
+{
+    CHK_RET(SetDispatcherCtx(dispatcherCtx_));
+    CHK_RET(taskExecption_.RegisterOpInfo(opInfo, size));
+    u32 opIdx = taskExecption_.GetOpRingBufferIdx();
+    CHK_RET(SetDispatcherCtxOpIdx(opIdx));
+    HCCL_INFO("%s success, group[%s], opRingBufferId[%u]", __func__, identifier_.c_str(), opIdx);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::RegOpTaskException(HcommGetOpInfoCallback callback)
+{
+    CHK_RET(taskExecption_.RegisterOpInfoCallback(callback));
     return HCCL_SUCCESS;
 }
 }  // namespace hccl

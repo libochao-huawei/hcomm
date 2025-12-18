@@ -70,14 +70,15 @@ public:
     HcclResult SetAivModeConfig(const bool aivMode); // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold); // 设置aicpu配置
+    HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     bool GetAicpuUnfoldConfig() const;
     bool GetAivModeConfig() const;
     HcclResult GetIsBridgeVector(std::vector<bool> &isBridgeVector);
     HcclResult GetRankVecInfo(std::vector<std::vector<std::vector<u32>>> &serverAndsuperPodToRank);
-    HcclResult GetCommPlaneRanks(std::vector<std::vector<std::vector<u32>>> &CommPlaneRanks);
+    HcclResult GetCommPlaneRanks(std::vector<std::vector<std::vector<u32>>> &commPlaneRanks);
     void GetCommPlaneVector(std::vector<std::vector<std::vector<RankInfo>>> &commPlaneVector);
     HcclResult GetIsUsedRdmaMap(std::unordered_map<u32, bool> &isUsedRdmaMap);
-    HcclResult GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &GetCommPlaneSubGroupVector);
+    HcclResult GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &commPlaneSubGroupVector);
     HcclResult GetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgOption);
 
     __attribute__((weak)) std::unique_ptr<CollAlgOperator> GetAlgOperator(const HcclCMDType &opType,
