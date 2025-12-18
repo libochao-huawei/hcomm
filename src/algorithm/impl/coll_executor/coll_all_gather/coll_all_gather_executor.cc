@@ -30,7 +30,7 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
 
     HcclResult ret = HCCL_SUCCESS;
     // 图模式和单卡场景下不需要Loop
-    if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if ((param.supportSymmetricMemory && !desc_.isZeroCopy) || (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE)) {
         u64 countSize = count * SIZE_TABLE[dataType];
         u64 totalSize = CalcTotalCount(param) * SIZE_TABLE[dataType];
         ExecMem execMem;
