@@ -1473,7 +1473,11 @@ namespace hccl
             return HCCL_SUCCESS;
         }
 
-        if (opParam.isZeroCopy)
+        // if (opParam.supportSymmetricMemory) {
+        //     resRequest.scratchMemSize = AlignUp(resRequest.scratchMemSize, 2 * 1024 * 1024);
+        // }
+
+        if (opParam.isZeroCopy) // 目前对称内存还没有走这个分支 ？？？？？？？？？？？？？？？？？？
         {
             if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER)
             {
@@ -1492,13 +1496,18 @@ namespace hccl
         }
         else
         {
-            if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER)
+            if (OpParam.supportSymmetricMemory) {
+                CHK_RET(DeviceMem::alloc(algResResponse.scratchMem, (resRequest.scratchMemSize / (2 * 1024 * 1024)) + (2 * 1024 * 1024)));
+            }
+            else if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER)
             {
                 DeviceMem tmpBuffer;
                 CHK_RET(DeviceMem::alloc(tmpBuffer, resRequest.scratchMemSize + CCE_REDUCE_ALIGN_SIZE));
+                
                 // cce reduce地址32字节对齐，截取32字节对齐后的内存地址
                 u32 addOffset = (reinterpret_cast<uintptr_t>(tmpBuffer.ptr())) % CCE_REDUCE_ALIGN_SIZE;
                 algResResponse.scratchMem = addOffset == 0 ? tmpBuffer.range(addOffset, cclBufferManager_.GetInCCLbufferSize()) : tmpBuffer.range(CCE_REDUCE_ALIGN_SIZE - addOffset, cclBufferManager_.GetInCCLbufferSize());
+                // algResResponse.scratchMem = addOffset == 0 ? tmpBuffer.range(addOffset, resRequest.scratchMemSize) : tmpBuffer.range(CCE_REDUCE_ALIGN_SIZE - addOffset, resRequest.scratchMemSize);
                 deviceResOrigMem_.emplace_back(std::move(tmpBuffer));
             }
             else
@@ -1703,6 +1712,10 @@ namespace hccl
         opTilingData->isInplacePreSync = static_cast<u8>(isInplacePreSync_);
         opTilingData->isPostSync = static_cast<u8>(isPostSync_);
         opTilingData->userStreamId = opParam.stream.id();
+        opTilingData->inputSymWindow = reinterpret_cast<u64>(opParam.inputSymWindow);
+        opTilingData->inputOffset = opParam.inputOffset;
+        opTilingData->outputSymWindow = reinterpret_cast<u64>(opParam.outputSymWindow);
+        opTilingData->outputOffset = opParam.outputOffset;
         return HCCL_SUCCESS;
     }
 
