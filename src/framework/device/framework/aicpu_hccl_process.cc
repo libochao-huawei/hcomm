@@ -401,6 +401,10 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     opParam.reduceType = static_cast<HcclReduceOp>(tilingData->reduceType);
     opParam.stream = hcclCommAicpu->GetMainStream();
     opParam.syncMode = static_cast<SyncMode>(tilingData->syncMode);
+    opParam.inputSymWindow = reinterpret_cast<void *>(tilingData->inputSymWindow);
+    opParam.inputOffset = tilingData->inputOffset;
+    opParam.outputSymWindow = reinterpret_cast<void *>(tilingData->outputSymWindow);
+    opParam.outputOffset = tilingData->outputOffset;
 
     hcclCommAicpu->UpdateNotifyWaitTimeOut(opParam.syncMode, commParam->config.notifyWaitTime);
 
@@ -410,6 +414,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     opParam.srcRank = tilingData->srcRank;
     opParam.opType = static_cast<HcclCMDType>(tilingData->opType);
     opParam.isZeroCopy = tilingData->isZeroCopy;
+    opParam.supportSymmetricMemory = tilingData->isSymmetricMemory;
     opParam.index = tilingData->index;
     opParam.isCapture = tilingData->isCapture;
     opParam.aicpuCacheEnable = tilingData->aicpuCacheEnable;
