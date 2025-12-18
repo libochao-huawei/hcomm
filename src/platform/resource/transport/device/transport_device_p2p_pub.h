@@ -26,6 +26,8 @@ public:
     HcclResult Init() override;
 
     HcclResult UpdateRemoteAddr(void *remoteIn, void *remoteOut) override;
+    HcclResult UpdateRemoteInAddr(void *remoteIn) override;
+    HcclResult UpdateRemoteOutAddr(void *remoteOut) override;
 protected:
     HcclResult SignalRecord(std::shared_ptr<RemoteNotify> &remoteSignal, u64 remoteSignalAddr, u64 remoteSignalOffset,
         Stream &stream) override;
