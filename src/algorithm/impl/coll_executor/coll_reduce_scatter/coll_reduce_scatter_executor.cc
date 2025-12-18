@@ -30,7 +30,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
     HcclResult ret = HCCL_SUCCESS;
     bool needLaunchAtTheEnd = !is310P3Common_; // 是否需要在Orchestrate()结束时launch任务
     // 图模式和单卡场景下不需要Loop
-    if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if ((param.supportSymmetricMemory && !desc_.isZeroCopy) || (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE)) {
         ExecMem execMem;
         execMem.count = count;
         execMem.scratchMem = algRes.scratchMem;
@@ -38,6 +38,8 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         execMem.outputPtr = param.outputPtr;
         execMem.inputMem = algRes.paramInputMem;
         execMem.outputMem = algRes.paramOutputMem;
+        HCCL_INFO("[CollReduceScatterExecutor][Orchestrate] tag[%s] Graph mode or single device run KernelRun directly. scratchMem size[%llu], ptr[%p], count[%llu], inputPtr[%p], outputPtr[%p], inputMem size[%llu], outputMem size[%llu]",
+            param.tag.c_str(), execMem.scratchMem.size(), execMem.scratchMem.ptr(), execMem.count, execMem.inputPtr, execMem.outputPtr, execMem.inputMem.size(), execMem.outputMem.size());
         ret = KernelRun(param, execMem);
         if (algOpContext_.opRetryHandler.isPostSync == true) {
             // post Sync
