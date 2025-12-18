@@ -61,6 +61,19 @@ typedef void *HcclComm;
 typedef void *HcclConn;
 
 /**
+ * @brief handle to HCCL Window
+ */
+typedef void *CommSymWindow;
+
+/**
+ * @brief Symmetric Memory Flag
+ */
+typedef enum {
+    HCCL_WIN_DEFAULT = 0,       /**< 先不支持，预留 */
+    HCCL_WIN_COLL_SYMMETRIC = 1 /**< 启用对称内存 */
+} symmetricMemoryFlag;
+
+/**
  * @brief HCCL Reduction operation
  */
 typedef enum {
@@ -132,6 +145,7 @@ const uint32_t HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET = 0xffffffff;
 const int32_t HCCL_COMM_EXECTIMEOUT_CONFIG_NOT_SET = 0xffffffff;
 // 0xffffffff表示用户未配置QoS
 const uint32_t HCCL_COMM_QOS_CONFIG_NOT_SET = 0xffffffff;
+const uint64_t HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE = 16ULL;
 
 typedef struct HcclCommConfigDef {
     char reserved[HCCL_COMM_CONFIG_INFO_BYTES];
@@ -151,6 +165,7 @@ typedef struct HcclCommConfigDef {
     char hcclRetryParams[HCCL_COMM_RETRY_PARAMS_MAX_LENGTH];
     char hcclBufferName[BUFFER_NAME_MAX_LENGTH];
     uint32_t hcclQos;
+    uint64_t hcclSymWinMaxMemSizePerRank; // 对称内存预留VA大小, 单位GB
 } HcclCommConfig;
 
 typedef enum {
