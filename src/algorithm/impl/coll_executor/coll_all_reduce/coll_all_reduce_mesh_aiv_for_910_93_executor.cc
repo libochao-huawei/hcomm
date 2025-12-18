@@ -7,16 +7,13 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
- 
+
 #include "coll_all_reduce_mesh_aiv_for_910_93_executor.h"
 
 namespace hccl {
 
-constexpr u32 BUFFER_DIVIDE = 2;
-constexpr u32 MAX_TARGET_NUM = 20;
-
 CollAllReduceMeshAivFor91093Executor::CollAllReduceMeshAivFor91093Executor(const HcclDispatcher dispatcher,
-    std::unique_ptr<TopoMatcher> &topoMatcher): 
+    std::unique_ptr<TopoMatcher> &topoMatcher):
     CollAllReduceExecutor(dispatcher, topoMatcher)
 {
     DMAReduceFlag_ = false;
@@ -24,7 +21,7 @@ CollAllReduceMeshAivFor91093Executor::CollAllReduceMeshAivFor91093Executor(const
     desc_.isAivCrossNode = true;
     desc_.deterministic = 1;
 }
- 
+
 HcclResult CollAllReduceMeshAivFor91093Executor::CalcStreamNum(u32& streamNum)
 {
     streamNum = 0; // AIV通信不需要申请从流
@@ -32,7 +29,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalcStreamNum(u32& streamNum)
         tag_.c_str(), streamNum);
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult CollAllReduceMeshAivFor91093Executor::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
 {
     TransportMemType inputType = TransportMemType::RESERVED;
@@ -41,7 +38,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalcCommInfo(std::vector<LevelN
     CHK_RET(CalcLevel0CommInfo(inputType, outputType, opTransport));
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult CollAllReduceMeshAivFor91093Executor::CalcTransportMemType(TransportMemType &inputType,
     TransportMemType &outputType)
 {
@@ -60,7 +57,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalcLevel0CommInfo(TransportMem
     CommParaInfo commCombinePara(COMM_COMBINE_ORDER, CommType::COMM_TAG_MESH);
     commCombinePara.meshSinglePlane = true;
     CHK_RET(CalcCommPlaneInfo(tag_, commCombinePara, opTransport[COMM_COMBINE_ORDER], inputType, outputType));
- 
+
     LevelNSubCommTransport &commTransportLevel0 = opTransport[COMM_COMBINE_ORDER];
     for (u32 subCommIndex = 0; subCommIndex < commTransportLevel0.size(); subCommIndex++) {
         for (auto &transportRequest : commTransportLevel0[subCommIndex].transportRequests) {
@@ -88,31 +85,73 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalcScratchMemSize(u64& scratch
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllReduceMeshAivFor91093Executor::MyCalBlockDim(u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
     // Step1. Calculate the best block dimension
     u32 bestBlockDim = (rankSize < MAX_BLOCK_DIM ? rankSize : MAX_BLOCK_DIM);
-    u32 minBlockDim = (rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM;
-
-    // Step2. Compare User Given blockDim_ with bestBlockDim 
-    u32 tmpBlockDim = bestBlockDim;
-    u32 originUserLimit = blockDim_;
-
-    CHK_PRT_RET(blockDim_ < BLOCK_DIM_FACTOR_TWO,
-        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][MyCalBlockDim]aivCore[%u] is invalid, at lest need 2.",
-        blockDim_), HCCL_E_PARA);
-
-    if (blockDim_ < tmpBlockDim) {
-        tmpBlockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
+    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE && rankSize <= MAX_RANK_SIZE) {
+        bestBlockDim = BLOCK_DIM_THREE_PER_RANK_A3 * rankSize; // 非确定性卡数较少时，使用三倍核提升性能
     }
-    if (tmpBlockDim < minBlockDim){
-        HCCL_ERROR("[collAllReduceMeshAivFor91093Executor][MyCalBlockDim] limit[%u], at least[%u]", originUserLimit, minBlockDim);
-        return HCCL_E_PARA;
+    u32 minBlockDim = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, BLOCK_DIM_FACTOR_TWO);
+
+    // Step2. Compare User Given blockDim_ with bestBlockDim
+    blockDim = bestBlockDim;
+    if (blockDim_ < blockDim) {
+        blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
     }
-    
-    blockDim_ = tmpBlockDim;
+
+    CHK_PRT_RET(blockDim < minBlockDim,
+        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        blockDim_, minBlockDim),
+        HCCL_E_PARA);
+
     HCCL_INFO("[CollAllReduceMeshAivFor91093Executor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim_, originUserLimit, bestBlockDim);
+        blockDim, blockDim_, bestBlockDim);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollAllReduceMeshAivFor91093Executor::GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args)
+{
+    HcclUs startut = TIME_NOW();
+    tag_ = param.tag;
+    algResResp_ = &algRes;
+
+    HcclResult ret = HCCL_SUCCESS;
+    ExecMem execMem;
+    execMem.count = param.DataDes.count;
+    execMem.inputPtr = param.inputPtr;
+    execMem.outputPtr = param.outputPtr;
+
+    execMem.inputMem = algRes.scratchMem;
+    
+    execMem.outputMem = algRes.aivOutputMem;
+    SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);
+
+    u32 localRank = level0CommInfo.localRank;
+    u32 localRankSize = level0CommInfo.localRankSize;
+    HCCL_DEBUG("[CollAllReduceMeshAivFor91093Executor][GetAivExecParam] userRank [%d] localRank [%d]",
+        topoAttr_.userRank, localRank);
+
+    args.buffersIn[0] = execMem.inputMem.ptr();
+    args.buffersOut[0] = execMem.outputMem.ptr();
+    constexpr u32 BUFFER_IDX_ONE = 1;
+    args.buffersOut[BUFFER_IDX_ONE] =  algRes.aivCommInfoMem.ptr(); // 通信域信息
+
+    args.rank = localRank;
+    args.rankSize = localRankSize;
+    args.len = execMem.count;
+    args.dataType = param.DataDes.dataType;
+    args.unitSize = SIZE_TABLE[param.DataDes.dataType];
+    args.reduceOp = param.reduceType;
+
+    HCCL_INFO("SPK [CollAllReduceMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
+
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+            "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
+
+    HCCL_INFO("tag[%s], AllReduce executor getalgexecparam success, take time [%lld]us.",
+        param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
 
@@ -157,7 +196,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::Orchestrate(OpParam& param, Alg
     HcclUs startut = TIME_NOW();
     tag_ = param.tag;
     algResResp_ = &algRes;
- 
+
     ExecMem execMem;
     execMem.count = param.DataDes.count;
     execMem.inputPtr = param.inputPtr;
@@ -167,26 +206,26 @@ HcclResult CollAllReduceMeshAivFor91093Executor::Orchestrate(OpParam& param, Alg
         algRes.scratchMem : algRes.cclInputMem);
     execMem.outputMem = algRes.aivOutputMem;
     HcclResult ret = KernelRun(param, execMem);
- 
+
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
- 
+
     HCCL_INFO("tag[%s], allreduce executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] allreduce aiv enter.", __func__);
- 
+
     CHK_RET(CheckCommSize(COMM_COMBINE_ORDER, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_COMBINE_ORDER, COMM_INDEX_0);
 
     void *buffersIn[MAX_RANK_SIZE];
     void *buffersOut[MAX_RANK_SIZE];
- 
+
     u32 localRank = level0CommInfo.localRank;
     u32 localRankSize = level0CommInfo.localRankSize;
     HCCL_DEBUG("[CollAllReduceMeshAivFor91093Executor][KernelRun] userRank [%d] localRank [%d]",
@@ -205,19 +244,22 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType, algoAttr_.identifier};
 
-    CHK_RET(MyCalBlockDim(localRankSize, opArgs.count * sizeof(opArgs.dataType)));
+    u32 blockDim;
+    CHK_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * SIZE_TABLE[opArgs.dataType]));
+    blockDim_ = blockDim;
 
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.argsType = KernelArgsType::ARGS_TYPE_SIMPLE;
+    struct AivProfilingInfo aivProfilingInfo;
     if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE){
         algArgs.deterministic = 1;
     }
-    struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs.deterministic);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
@@ -227,11 +269,11 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
 
     ExtraArgs extraArgs;
     CHK_RET(SetOpCache(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo, true));
- 
+
     HCCL_INFO("[CollAllReduceMeshAivFor91093Executor][KernelRun]allreduce aiv run success.");
     return HCCL_SUCCESS;
 }
- 
+
 REGISTER_EXEC("AllReduceMeshAivFor91093Executor", AllReduceMeshAivFor91093, CollAllReduceMeshAivFor91093Executor);
- 
+
 } // namespace hccl

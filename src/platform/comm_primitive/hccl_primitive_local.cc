@@ -19,9 +19,10 @@
 
 HcclResult GetPubDispatcher(hccl::DispatcherPub** dispatcherPtr)
 {
-    CHK_PTR_NULL(GetDispatcherCtx());
-    hccl::DispatcherCtx* ctx_temp = reinterpret_cast<hccl::DispatcherCtx *>(GetDispatcherCtx());
-    CHK_PTR_NULL(ctx_temp);
+    DispatcherCtxPtr ctx = nullptr;
+    CHK_RET(AcquireDispatcherCtx(&ctx));
+    CHK_PTR_NULL(ctx);
+    hccl::DispatcherCtx* ctx_temp = reinterpret_cast<hccl::DispatcherCtx *>(ctx);
     CHK_PTR_NULL(ctx_temp->GetDispatcher());
     *dispatcherPtr = reinterpret_cast<hccl::DispatcherPub*>(ctx_temp->GetDispatcher());
     CHK_PTR_NULL(*dispatcherPtr);

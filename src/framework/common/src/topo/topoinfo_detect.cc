@@ -24,7 +24,8 @@ const u32 TOPO_EXCHANGE_SERVER_STATUS_RUNING = 1;
 const u32 TOPO_EXCHANGE_SERVER_STATUS_ERROR = 2;
 UniversalConcurrentMap<u32, volatile u32> TopoInfoDetect::g_topoExchangeServerStatus_;
 
-TopoInfoDetect::TopoInfoDetect() : deviceLogicID_(INVALID_INT), localRankInfo_(), clusterTopoInfo_()
+TopoInfoDetect::TopoInfoDetect() : deviceLogicID_(INVALID_INT), localRankInfo_(),
+    clusterTopoInfo_(), isInterSuperPodRetryEnable_(GetExternalInputInterSuperPodRetryEnable())
 {
 }
 
@@ -369,6 +370,7 @@ HcclResult TopoInfoDetect::SetupGroupMember(u32 rankSize, u32 myrank, const Hccl
     pTopoExchangeAgent_.reset(new (nothrow) TopoInfoExchangeAgent(rootIP, rootInfo.port,
         rootInfo.identifier, agentPortCtx_, localRankInfo_, groupSize, groupRank));
     CHK_SMART_PTR_NULL(pTopoExchangeAgent_);
+    CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
     CHK_RET(pTopoExchangeAgent_->SetupMember());
     CHK_RET(pTopoExchangeAgent_->GetClusterTopoInfo(clusterTopoInfo_));
  
@@ -497,6 +499,7 @@ HcclResult TopoInfoDetect::SetupAgent(u32 rankSize, u32 myrank, const HcclRootHa
         pTopoExchangeAgent_.reset(new (nothrow) TopoInfoExchangeAgent(rootIP, rootInfo.port,
             rootInfo.identifier, agentPortCtx_, localRankInfo_, rankHandle));
         CHK_SMART_PTR_NULL(pTopoExchangeAgent_);
+        CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
         CHK_RET(pTopoExchangeAgent_->Setup());
         CHK_RET(pTopoExchangeAgent_->GetGroupLeader(grpLeader_));
     } else {
@@ -509,6 +512,7 @@ HcclResult TopoInfoDetect::SetupAgent(u32 rankSize, u32 myrank, const HcclRootHa
         pTopoExchangeAgent_.reset(new (nothrow) TopoInfoExchangeAgent(rootIP, rootInfo.port,
             rootInfo.identifier, agentPortCtx_, localRankInfo_));
         CHK_SMART_PTR_NULL(pTopoExchangeAgent_);
+        CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
         CHK_RET(pTopoExchangeAgent_->Setup());
         CHK_RET(pTopoExchangeAgent_->GetClusterTopoInfo(clusterTopoInfo_));
     }
@@ -572,6 +576,7 @@ HcclResult TopoInfoDetect::SetupAgentByMasterInfo(HcclIpAddress &localHostIp, co
             break;
         }
 
+        CHK_RET(pTopoExchangeAgent_->SetIsInterSuperPodRetryEnable(isInterSuperPodRetryEnable_));
         ret = pTopoExchangeAgent_->SetupByMasterInfo();
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Setup][Agent]setup by masterInfo failed"),
             errorFlag = true);
@@ -615,8 +620,11 @@ HcclResult TopoInfoDetect::ReadHostSocketWhitelist(vector<HcclIpAddress> &whitel
         "but HCCL_WHITELIST_FILE is not set or not exist" }));
 
     CHK_PRT_RET((GetExternalInputHcclWhiteListFile().length() == 0),
-        HCCL_ERROR("[Read][HostSocketWhitelist]environmental variable HCCL_WHITELIST_DISABLE is [0], "\
-        "but HCCL_WHITELIST_FILE is not set or not exist"), HCCL_E_PARA);
+        HCCL_ERROR("[%s][%s]environmental variable HCCL_WHITELIST_DISABLE is [0], "
+                   "but HCCL_WHITELIST_FILE is not set or not exist",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str()),
+        HCCL_E_PARA);
 
     // 文件路径在处理外部输入时已经做过合法性判断, 无需再次校验
     HcclResult ret =
@@ -630,12 +638,20 @@ HcclResult TopoInfoDetect::ReadHostSocketWhitelist(vector<HcclIpAddress> &whitel
         std::vector<std::string>({ "HCCL_WHITELIST_FILE", WhiteFileError}));
           
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Read][HostSocketWhitelist]hccl whitelist load config file[%s] failed. ret[%u].",
-            GetExternalInputHcclWhiteListFile().c_str(), ret), ret);
+        HCCL_ERROR("[%s][%s]hccl whitelist load config file[%s] failed. ret[%u].",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            GetExternalInputHcclWhiteListFile().c_str(),
+            ret),
+        ret);
     CHK_RET(HcclWhitelist::GetInstance().GetHostWhiteList(whitelist));
 
-    CHK_PRT_RET(whitelist.empty(), HCCL_ERROR("[Read][HostSocketWhitelist]whitelist file[%s] have no valid host ip.",
-        GetExternalInputHcclWhiteListFile().c_str()), HCCL_E_UNAVAIL);
+    CHK_PRT_RET(whitelist.empty(),
+        HCCL_ERROR("[%s][%s]whitelist file[%s] have no valid host ip.",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            GetExternalInputHcclWhiteListFile().c_str()),
+        HCCL_E_UNAVAIL);
     HCCL_INFO("get host socket whitelist success. there are %zu host ip in the whitelist.", whitelist.size());
     return HCCL_SUCCESS;
 }
@@ -689,6 +705,11 @@ HcclResult TopoInfoDetect::GetGroupLeader(HcclRankHandle &rankHandle)
     return HCCL_SUCCESS;
 }
 
+HcclResult TopoInfoDetect::SetIsInterSuperPodRetryEnable(bool isRetry)
+{
+    isInterSuperPodRetryEnable_ = isRetry;
+    return HCCL_SUCCESS;
+}
 
 HcclResult TopoInfoDetect::StartRootNetwork( const HcclIpAddress& hostIP, u32 &usePort)
 {
@@ -1006,7 +1027,7 @@ HcclResult TopoInfoDetect::GenerateLocalRankInfo(u32 rankSize, u32 rankID, HcclB
         // 此处不知道拓扑形态，无法判断是否需要backupIp，只能从硬件类型和重执行开关判断一下
         bool useSuperPodMode = false;
         CHK_RET(IsSuperPodMode(useSuperPodMode));
-        if (useSuperPodMode && GetExternalInputHcclAicpuUnfold() && GetExternalInputInterSuperPodRetryEnable()) {
+        if (useSuperPodMode && GetExternalInputHcclAicpuUnfold() && isInterSuperPodRetryEnable_) {
             CHK_RET(GetDeviceBackupNicInfo(localRankInfo));
         }
     }

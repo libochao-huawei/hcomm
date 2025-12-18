@@ -68,6 +68,7 @@ private:
     void CalcAllgatherBuffer(AivAicpuOpParam *outMsg) const;
     void CalcAllreduceBuffer(AivAicpuOpParam *outMsg) const;
     void CalcReduceScatterBuffer(AivAicpuOpParam *outMsg) const;
+    bool CheckDebugMode(HcclApi::HcclMsg *rMsg);
 
 private:
     struct RpcMsgBody {

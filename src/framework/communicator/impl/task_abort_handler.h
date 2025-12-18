@@ -12,7 +12,7 @@
 #define HCCL_TASK_ABORT_HANDLER_H
 #include "task_abort_handler_pub.h"
 #include "adapter_rts_common.h"
-int32_t ProcessTaskAbortHandleCallback(int32_t devId, aclrtDeviceTaskAbortStage stage, uint32_t timeout, void *args);
+int32_t ProcessTaskAbortHandleCallback(int32_t deviceLogicId, aclrtDeviceTaskAbortStage stage, uint32_t timeout, void *args);
 enum class TaskAbortResult {
     TaskAbort_Success = 0,  // taskabortSuccess
     TaskAbort_Fail = 1,     // taskabortFail

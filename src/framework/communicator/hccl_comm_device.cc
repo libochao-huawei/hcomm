@@ -76,5 +76,54 @@ HcclResult hcclComm::IndOpTransportAlloc(const std::string &tag, OpCommTransport
 {
     return HCCL_SUCCESS;
 }
+HcclResult hcclComm::CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType)
+{
+    return HCCL_SUCCESS;
+}
+HcclResult hcclComm::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetRankGraph(GraphType type, void **graph, uint32_t *len)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult hcclComm::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+    CommLink **linkList, uint32_t *listSize)
+{
+    return HCCL_SUCCESS;
+}
 }  // namespace hccl
  

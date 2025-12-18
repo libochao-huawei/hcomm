@@ -87,6 +87,7 @@ HcclResult AllGatherSlimRing::RunAsync(const u32 rank, const u32 rankSize, const
         if (inputMem_ != outputMem_) {
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, outputMem_, inputMem_, stream_));
         }
+        HCCL_DEBUG("[AllGatherSlimRing]rankSize is 1, RunAsync success");
         return HCCL_SUCCESS;
     }
 
@@ -142,7 +143,7 @@ HcclResult AllGatherSlimRing::RunAsync(const u32 rank, const u32 rankSize, const
 HcclResult AllGatherSlimRing::RunAllGather(u32 rank, u32 rankSize, const std::vector<Slice> &outputSlices)
 {
     if (outputSlices.size() < rankSize) {
-        HCCL_ERROR("[Run][AllGather]rank[%u] OutputSlice Size is less than rank size", rank);
+        HCCL_ERROR("[Run][AllGather]rank[%u] OutputSlice Size is less than rank size.", rank);
         return HCCL_E_INTERNAL;
     }
     HcclResult ret = HCCL_SUCCESS;
@@ -153,8 +154,8 @@ HcclResult AllGatherSlimRing::RunAllGather(u32 rank, u32 rankSize, const std::ve
     u32 txSliceIndex = rank;
     for (u32 i = 0; i < rankSize - 1; i++) {
         // reduce目的操作
-        std::vector<Slice> txSegsSlice;
         std::vector<Slice> rxSegsSlice;
+        std::vector<Slice> txSegsSlice;
         for (u32 j = 0; j < sliceSize; j++) {
             txSegsSlice.push_back(outputSlices[txSliceIndex * sliceSize + j]);
             rxSegsSlice.push_back(outputSlices[rxSliceIndex * sliceSize + j]);

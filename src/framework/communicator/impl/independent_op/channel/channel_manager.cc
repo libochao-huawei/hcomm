@@ -11,6 +11,7 @@
 #include "adapter_rts_common.h"
 #include "log.h"
 #include "externalinput.h"
+#include "comm_configer.h"
 #include "launch_aicpu.h"
 #include <unordered_set>
 #include <string>
@@ -383,8 +384,8 @@ HcclResult ChannelManager::BuildOpRemoteChannelRoceResParam(const LINK &link, Hc
     if ((signalInfos.size() != notifyAddrKey.size()) || (signalInfos.size() < RDMA_NOTIFY_MIN_NUM) ||
         (signalInfos.size() > RDMA_NOTIFY_MAX_NUM) || (notifyAddrKey.size() < RDMA_NOTIFY_MIN_NUM) ||
         (notifyAddrKey.size() > RDMA_NOTIFY_MAX_NUM) ||
-        ((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) ||
-        ((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection)) {
+        (((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) != 0) ||
+        (((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection)) != 0) {
         return HCCL_E_INTERNAL;
     }
     u64 notifyNum = (notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) / linkRoce.qpsPerConnection - static_cast<u32>(linkRoce.qpsPerConnection > 1);
@@ -596,7 +597,7 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
 
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&customInitTask),
         sizeof(customInitTask), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
-    CHK_RET(hcclStreamSynchronize(localStream.ptr()));
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(tag)));
 
     // 将device侧的channelList拷贝回host侧的channelList
     CHK_RET(hrtMemSyncCopy(channelList, listNum * sizeof(ChannelHandle),

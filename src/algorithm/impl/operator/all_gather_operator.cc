@@ -16,6 +16,7 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
+#include "comm_configer.h"
 
 constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
@@ -53,7 +54,7 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     }  else {
-        HCCL_ERROR("[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
+        HCCL_ERROR("[AllGatherSelector][SelectAlg] device type[%d] is out of range for selector.", deviceType_);
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -65,16 +66,18 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else {
         AlgTypeLevel1 algType1 = algType_.algoLevel1;
         auto level1Iter = HCCL_ALGO_LEVEL1_NAME_MAP.find(algType1);
-        CHK_PRT_RET(level1Iter == HCCL_ALGO_LEVEL1_NAME_MAP.end(), HCCL_ERROR("level1: algType1[%u] is invalid.",
-            algType1), HCCL_E_INTERNAL);
+        CHK_PRT_RET(level1Iter == HCCL_ALGO_LEVEL1_NAME_MAP.end(), 
+                    HCCL_ERROR("[[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
         newTag = tag + level1Iter->second + algName;
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
+    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag);
     return ret;
 }
 
 HcclResult AllGatherOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
+    (void) param;
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[AllGatherOperator][SelectAlgforMix]only support NHR in AlgoLevel1 yet, "\
@@ -104,6 +107,7 @@ HcclResult AllGatherOperator::SelectAlgfor310P3(const OpParam& param, std::strin
 
 HcclResult AllGatherOperator::SelectAlgfor910A(const OpParam& param, std::string& algName)
 {
+    (void) param;
     bool isMeshTopo = topoType_ == TopoType::TOPO_TYPE_4P_MESH || topoType_ == TopoType::TOPO_TYPE_2P_MESH;
     bool isRingTopo = topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING || topoType_ == TopoType::TOPO_TYPE_8P_RING;
 
@@ -233,7 +237,7 @@ HcclResult AllGatherOperator::SelectAlgfor910B(const OpParam& param, std::string
             isSingleMeshAggregation_, multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
-    HCCL_INFO("[SelectAlgfor910B] AllGather SelectAlgfor910B is algName [%s], current mode is [%u].", algName.c_str(), workflowMode_);
+    HCCL_INFO("[SelectAlgfor910B] AllGather SelectAlgfor910B is algName [%s], current mode is [%u]", algName.c_str(), workflowMode_);
     return HCCL_SUCCESS;
 }
 
@@ -286,7 +290,8 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool isAivMode = topoMatcher_->GetAivModeConfig()
                     && IsSupportAIVCopy(param.DataDes.dataType)
                     && (isAivSingleNode || isAivCrossNode)
-                    && !retryEnable_;
+                    && !retryEnable_
+                    && !multiModuleDiffDeviceNumMode_;
     if (isAivMode) {
         if (isAivCrossNode) {
             algName = "AllGatherMeshAivFor91093Executor"; 
@@ -296,7 +301,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         } else {
             algName = "AllGatherMeshAivExecutor"; 
         }
-        HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s]", algName.c_str());
+        HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }  
     bool smallCountOptimSingleServer = (serverNum_ == 1) &&
@@ -316,7 +321,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
     bool isHccsPlusSio = userRankSize_ == 2 && pairLinkCounter_[static_cast<u32>(LinkTypeInServer::SIO_TYPE)] == 2 &&
                          pairLinkCounter_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)] == 0;
-    isHccsPlusSio = false; //待1520出版本
+    isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "AllGatherHccsSioExecutor";
     } else if (multiModuleDiffDeviceNumMode_) {
@@ -330,9 +335,10 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
-        HcclAlgoType algType = GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
-        bool setPipelineAlgo = ((algType == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
-             (algType == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN));
+        HcclAlgoType configAlgTypeLevel2 = CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier_,
+            HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
+        bool setPipelineAlgo = ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
+             (configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN));
         if (superPodNum_ > 1 && userRankSize_ / superPodNum_ > 1 && setPipelineAlgo) {
             algName = "AllGatherRingZerocopyPipelineExecutor";      // 连续数据通信+额外的数据交换，Level2和level0+1并发流水
             algType_.algoLevel2 = AlgTypeLevel2::ALG_LEVEL2_PIPELINE;

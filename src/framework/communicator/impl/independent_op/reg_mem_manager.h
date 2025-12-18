@@ -10,11 +10,6 @@
 
 #ifndef REG_MEM_MANAGER_H
 #define REG_MEM_MANAGER_H
-#include <string>
-#include <unordered_map>
-#include <memory>
-#include <mutex>
-#include "hccl_api.h"
 
 namespace hccl {
 
@@ -27,6 +22,5 @@ private:
 };
 
 }
-
 
 #endif

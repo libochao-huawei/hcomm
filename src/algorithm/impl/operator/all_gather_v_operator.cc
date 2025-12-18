@@ -33,7 +33,7 @@ HcclResult AllGatherVOperator::SelectAlg(const std::string& tag, const OpParam& 
                                         std::string& newTag)
 {
     HcclResult ret;
-
+    HCCL_DEBUG("[%s] SelectAlg begins", __func__);
     if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     } else if (deviceType_ == DevType::DEV_TYPE_910B) {
@@ -162,6 +162,7 @@ HcclResult AllGatherVOperator::SelectAlgfor910B(const OpParam& param, std::strin
 
 HcclResult AllGatherVOperator::SelectAlgfor310P3(const OpParam& param, std::string& algName)
 {
+    (void) param;
     CHK_PRT_RET(userRankSize_ > MAX_310P_RANK_SIZE,
         HCCL_ERROR("[AllGatherVOperator][SelectAlgfor310P3]rankSize[%u] is not supported.AllGatherV does not support the"
         "scenario where the rankSize is greater than 4.", userRankSize_), HCCL_E_NOT_SUPPORT);

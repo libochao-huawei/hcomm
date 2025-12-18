@@ -21,6 +21,7 @@
 // ltm指定config路径
 #include "common/src/config.h"
 #include "../common/src/topo/topoinfo_detect.h"
+
 using HcclOpInfoCtx = struct HcclInfoTag {
     HcclCommPtr pComm;
     hccl::HcclCommParams params;
@@ -50,7 +51,7 @@ HcclOpInfoCtx &GetHcclOpInfoCtx(void);
 HcclResult InitOtherInfo(hccl::HcclCommParams &params, const char *rankTable);
 
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, std::string tag);
+    HcclDataType dataType, const std::string &tag);
 
 HcclResult ReduceScatterLoop(const std::string &tag, void *inputPtr, void *outputPtr, const u64 &count,
     HcclDataType dataType, HcclReduceOp op, hccl::hcclComm *hcclComm, rtStream_t stream);

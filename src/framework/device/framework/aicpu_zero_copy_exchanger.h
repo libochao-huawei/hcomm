@@ -19,6 +19,7 @@
 #include "aicpu_operator_pub.h"
 #include "coll_alg_param.h"
 #include "zero_copy/zero_copy_address_mgr.h"
+#include "op_unfold_cache_entry.h"
 
 namespace hccl {
 class AicpuZeroCopyExchanger {
@@ -27,6 +28,9 @@ public:
     ~AicpuZeroCopyExchanger();
 
     HcclResult ExchangeAddress(const std::string &tag, void *localInput, void *localOutput, AlgResourceResponse *algResResponse);
+
+    // 将每个remote rank对应的user input/output addr暴露给HcclCommAicpu, 为OpUnfoldCache做准备
+    HcclResult PrepareRemoteUserMemRanges(const uint32_t inputSize, const uint32_t outputSize, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges) const;
 
     // yxg-debug 提供提前退出的方法退出阻塞接口
 private:

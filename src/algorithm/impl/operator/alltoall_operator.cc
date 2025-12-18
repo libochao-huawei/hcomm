@@ -18,6 +18,7 @@
 #include "coll_alg_op_registry.h"
 #include "coll_all_to_all_executor.h"
 #include "hccl_aiv.h"
+#include "comm_configer.h"
 
 namespace hccl {
 
@@ -234,9 +235,11 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         return HCCL_SUCCESS; // alltoall aiv不需要后面操作，直接返回
     }
 
+    std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().
+                                            GetCommConfigAlgoConfig(identifier_, HcclCMDType::HCCL_CMD_ALLTOALL);
     bool useOneLevelAlgorithm =
-        GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL)[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
-        GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL)[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE;
+        algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
+        algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE;
         // 用户配置打平 alltoall
 
     CHK_PRT_RET(deviceType_ == DevType::DEV_TYPE_310P3 && userRankSize_ > MAX_310P_RANK_SIZE,
@@ -386,12 +389,11 @@ HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
 bool AlltoAllOperator::JudgeIfNeedPreProcessAndGetParam(const OpParam& param,
     std::unique_ptr<PreProcessMetaInfo> &preMetaInfo)
 {
-    bool useA3Pipeline = IsA3PipelineCondition(param);
-    bool useA2AAiv = IsSatisfyAlltoAllAivCondition(param);
-    bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
+    if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && (IsSatisfyAlltoAllAivCondition(param) == false)) {
+        bool useA3Pipeline = IsA3PipelineCondition(param);
+        bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
             isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize());
-    bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition();
-    if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && !useA2AAiv) {
+        bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition();
         if (!useA3Pipeline && (useDirectFullmesh || useContinuousPipeline || param.aicpuUnfoldMode)) {
             return false;
         }
@@ -464,6 +466,7 @@ HcclResult AlltoAllOperator::CheckNeedRecreateComm(const std::string& algName, c
 
 bool AlltoAllOperator::IsA3PipelineCondition(const OpParam& param)
 {
+    (void) param;
     return false;
 }
 

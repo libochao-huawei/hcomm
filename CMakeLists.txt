@@ -72,15 +72,16 @@ set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
 set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
 if(ENABLE_TEST)
-    include(cmake/utils.cmake)
     include(cmake/config.cmake)
     include(cmake/function.cmake)
-    include(cmake/intf_pub_llt_gccnative.cmake)
+    include(cmake/intf_pub_gccnative.cmake)
+    include(cmake/utils.cmake)
     add_subdirectory(test)
     return()
 endif()
 
 if(BUILD_OPEN_PROJECT)
+    include(cmake/intf_pub_gccnative.cmake)
     include(cmake/third_party/openssl.cmake)
     include(cmake/third_party/json.cmake)
     include(cmake/utils.cmake)
@@ -91,15 +92,15 @@ if(BUILD_OPEN_PROJECT)
     add_subdirectory(python)
 
     set(HCCL_HEAD
-        inc/hccl/hccl_comm.h
-        inc/hccl/hccl_types.h
-        inc/hccl/hccl_ctrl_plane.h
+        include/hccl/hccl_comm.h
+        include/hccl/hccl_types.h
+        include/hccl/hccl_ctrl_plane.h
         src/pub_inc/hccn_rping.h
-        inc/hccl/hccl_mem_defs.h
-        inc/hccl/hccl_rank_graph.h
-        inc/hccl/hccl_rankgraph.h
-        inc/hccl/hccl_res.h
-        inc/hccl/hcomm_primitives.h
+        include/hccl/hccl_mem_defs.h
+        include/hccl/hccl_rank_graph.h
+        include/hccl/hccl_rankgraph.h
+        include/hccl/hccl_res.h
+        include/hccl/hcomm_primitives.h
     )
 
     set(HCCL_JSON

@@ -228,6 +228,7 @@ HcclResult AllReduceLocalReduceBcast::RunAllReduceBDReduceReceive(u32 rank, u32 
 
     CHK_RET(SubRecordMain());
     CHK_RET(MainWaitSub());
+    HCCL_DEBUG("[AllReduceLocalReduceBcast]RunAllReduceBDReduceReceive success");
     return HCCL_SUCCESS;
 }
 

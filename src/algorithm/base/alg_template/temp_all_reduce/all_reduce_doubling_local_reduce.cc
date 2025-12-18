@@ -93,26 +93,52 @@ HcclResult AllReduceDoublingLocalReduce::RunAllReduce(const u32 rank, const u32 
         u32 neighbor = rank ^ (1 << step);
         const LINK &link = links[neighbor];
         CHK_PTR_NULL(link);
+        if (link->GetLinkType() == LinkType::LINK_ROCE) {
+            CHK_RET(RunAllReduceRDMA(link, localCclInMem, localCclOutMem));
+        } else {
+            CHK_RET(RunAllReduceSDMA(link, localCclOutMem, totalSize));
+        }
 
-        // 前同步
-        CHK_RET(link->TxAck(stream_));
-        CHK_RET(link->RxAck(stream_));
-
-        // 从对端的cclOut读到本端的cclIn
-        void *remMemPtr = nullptr;
-        CHK_RET(link->GetRemoteMem(UserMemType::OUTPUT_MEM, &remMemPtr));
-        DeviceMem remoteCclOutMem = DeviceMem::create(remMemPtr, totalSize);
-        CHK_RET(HcclD2DMemcpyAsync(dispatcher_, localCclInMem, remoteCclOutMem, stream_, link->GetRemoteRank(),
-            link->GetLinkType()));
-
-        // 尾同步
-        CHK_RET(link->TxDataSignal(stream_));
-        CHK_RET(link->RxDataSignal(stream_));
-
-        // 从本端的cclIn Reduce到本端的cclOut
-        CHK_RET(HcclReduceAsync(dispatcher_, localCclInMem.ptr(), count_, dataType_, reductionOp_, stream_,
-            localCclOutMem.ptr(), INVALID_VALUE_RANKID, LinkType::LINK_ONCHIP, reduceAttr_));
+        // 从本端的cclout Reduce到本端的cclIn
+        CHK_RET(HcclReduceAsync(dispatcher_, localCclOutMem.ptr(), count_, dataType_, reductionOp_, stream_,
+            localCclInMem.ptr(), INVALID_VALUE_RANKID, LinkType::LINK_ONCHIP, reduceAttr_));
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult AllReduceDoublingLocalReduce::RunAllReduceSDMA(const LINK& link, DeviceMem& localCclOutMem, u64 totalSize)
+{
+    // 前同步
+    CHK_RET(link->TxAck(stream_));
+    CHK_RET(link->RxAck(stream_));
+
+    // 从对端的cclIn读到本端的cclOut
+    void *remMemPtr = nullptr;
+    CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remMemPtr));
+    DeviceMem remoteCclInMem = DeviceMem::create(remMemPtr, totalSize);
+    CHK_RET(HcclD2DMemcpyAsync(dispatcher_, localCclOutMem, remoteCclInMem, stream_, link->GetRemoteRank(),
+        link->GetLinkType()));
+
+    // 尾同步
+    CHK_RET(link->TxDataSignal(stream_));
+    CHK_RET(link->RxDataSignal(stream_));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AllReduceDoublingLocalReduce::RunAllReduceRDMA(const LINK& link, DeviceMem& localCclInMem, 
+    DeviceMem& localCclOutMem)
+{
+    // 前同步
+    CHK_RET(link->TxAck(stream_));
+    CHK_RET(link->RxAck(stream_));
+
+    // RdmaSend + Record
+    CHK_RET(link->TxAsync(UserMemType::OUTPUT_MEM, 0, localCclInMem.ptr(), localCclInMem.size(), stream_));
+    // wait
+    CHK_RET(link->RxAsync(UserMemType::INPUT_MEM, 0, localCclOutMem.ptr(), localCclOutMem.size(), stream_)) ;
+    // 后同步
+    CHK_RET(link->PostFinAck(stream_));
+    CHK_RET(link->WaitFinAck(stream_));
     return HCCL_SUCCESS;
 }
 REGISTER_TEMPLATE(TemplateType::TEMPLATE_ALL_REDUCE_DOUBLING_LOCAL_REDUCE, AllReduceDoublingLocalReduce);

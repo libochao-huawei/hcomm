@@ -97,6 +97,7 @@ using HcclExternalEnable = struct HcclExternalEnableDef {
     bool aivMode;
     bool aicpuUnfold;
     bool isOnlyAiv;
+    s32 execTimeOut;
 
     HcclExternalEnableDef()
         : enableFfts(1),
@@ -106,7 +107,8 @@ using HcclExternalEnable = struct HcclExternalEnableDef {
         interHccsDisable(0),
         aivMode(false),
         aicpuUnfold(false),
-        isOnlyAiv(false)
+        isOnlyAiv(false),
+        execTimeOut(GetInternalExecTimeOut())
     {}
 };
 
@@ -122,8 +124,8 @@ public:
                          HcclExternalEnable& externalEnable,
                          std::vector<std::vector<std::vector<u32>>>& serverAndsuperPodToRank);
     HcclResult CalcCommPlaneInfo(const std::string &tag, const CommParaInfo &commParaInfo,
-        std::vector<SingleSubCommTransport> &commTransport, TransportMemType inPutMemType,
-        TransportMemType outPutMemType);
+        std::vector<SingleSubCommTransport> &commTransport, TransportMemType inputMemType,
+        TransportMemType outputMemType);
     HcclTopoInfo GetTopoInfo();
     HcclAlgoInfo GetAlgoInfo();
     u32 GetExternalInputHcclEnableFfts();
@@ -143,9 +145,11 @@ public:
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
     bool GetIsOnlyAivConfig() const;
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);
+    HcclResult SetExecTimeOutConfig(const s32 execTimeOut);
     u8 GetDeterministicConfig() const;
     bool GetAivModeConfig() const;
     bool GetAicpuUnfoldConfig() const;
+    s32 GetExecTimeOutConfig() const;
     HcclResult GetGlobalSubGroups(const CommPlane level, std::vector<std::vector<std::vector<u32>>> &globalSubGroups);
     HcclResult SetGlobalSubGroups(const CommPlane level, std::vector<std::vector<std::vector<u32>>> &globalSubGroups);
     HcclResult GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &commPlaneSubGroupVector);

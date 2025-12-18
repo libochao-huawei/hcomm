@@ -47,9 +47,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
     }
 
     KFCTaskComm *task = reinterpret_cast<KFCTaskComm *>(args);
-    HCCL_INFO("RunAicpuRpcSrvLaunchV2 KFCTask task %p, context %p, tilingData %p", task, task->context, task->tilingData);
-
-    OpTilingData *tilingData = reinterpret_cast<OpTilingData *>(task->tilingData);
+    OpTilingData *tilingData = reinterpret_cast<OpTilingData *>(reinterpret_cast<std::uintptr_t>(task) + sizeof(u64));
     if (tilingData == nullptr) {
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 tilingData args is null.");
         return HCCL_E_PARA;
@@ -65,6 +63,7 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 context args is null.");
         return HCCL_E_PARA;
     }
+    HCCL_INFO("RunAicpuRpcSrvLaunchV2 KFCTask task %p, context %p, tilingData %p", task, commParam, tilingData);
 
     std::string group = commParam->hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);

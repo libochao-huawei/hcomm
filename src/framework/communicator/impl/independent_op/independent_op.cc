@@ -11,20 +11,22 @@
 #include "independent_op.h"
 #include "launch_aicpu.h"
 #include "manager_common.h"
+#include "comm_configer.h"
 
 namespace hccl {
 
 IndependentOp::IndependentOp(){};
 
 HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
-    const HcclTopoAttr &topoAttr, aclrtBinHandle binHandle)
+    const HcclTopoAttr &topoAttr, aclrtBinHandle binHandle, HDCommunicateParams &kfcControlTransferH2DParams,
+    HDCommunicateParams &kfcStatusTransferD2HParams)
 {
-    commEngine_ = commConfig.GetCommEngine();
-    threadNum_ = commConfig.GetThreadNum();
-    notifyNumPerThread_ = commConfig.GetNotifyNumPerThread();
+    commEngine_ = HCCL_COMM_ENGINE_CONFIG_NOT_SET;
+    threadNum_ = HCCL_COMM_THREADNUM_CONFIG_NOT_SET;
+    notifyNumPerThread_ = HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET;
     cclBufferSize_ = commConfig.GetConfigBufferSize();
     commId_ = commConfig.GetConfigCommName();
-    commMemMgr_.CommSetHcclBufferSize(commConfig.GetConfigBufferSize());
+    commMemMgr_.CommSetHcclBufferSize(commConfig.GetConfigBufferSize() * 2);
     binHandle_ = binHandle;
 
     // aicpu侧初始化状态的回调函数
@@ -34,7 +36,6 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     callbacks.kernelLaunchAicpuCommInit = [this]() { return this->KernelLaunchAicpuCommInit(); };
 
     CHK_PRT(engineResMgr_.Init(threadNum_, notifyNumPerThread_, commId_, binHandle, callbacks));
-    CHK_RET(rankgraph_.Init(rankTable, topoAttr));
     CHK_PRT(channelMgr_.Init(binHandle, topoAttr.userRank, callbacks));
 
     // Aicpu通信域初始化参数
@@ -42,6 +43,8 @@ HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, c
     commAicpuParam_.deviceLogicId = topoAttr.deviceLogicId;
     commAicpuParam_.devicePhyId = topoAttr.devicePhyId;
     commAicpuParam_.deviceType = static_cast<u32>(topoAttr.deviceType);
+    commAicpuParam_.kfcControlTransferH2DParams = kfcControlTransferH2DParams;
+    commAicpuParam_.kfcStatusTransferD2HParams = kfcStatusTransferD2HParams;
     HCCL_INFO("[IndependentOp][%s] Hcom[%s] threadNum[%u], notifyPerThread[%u], cclBufferSize[%llu], deviceLogicId[%u], "
         "devicePhyId[%u], deviceType[%u]", __func__, commId_.c_str(), threadNum_, notifyNumPerThread_,
         cclBufferSize_, commAicpuParam_.deviceLogicId, commAicpuParam_.devicePhyId, commAicpuParam_.deviceType);
@@ -71,7 +74,7 @@ HcclResult IndependentOp::KernelLaunchAicpuCommInit()
 
     CHK_RET(AicpuAclKernelLaunch(localStream.ptr(), reinterpret_cast<void *>(&commAicpuParam_),
         sizeof(commAicpuParam_), binHandle_, kernelName, true, NOTIFY_DEFAULT_WAIT_TIME));
-    CHK_RET(hcclStreamSynchronize(localStream.ptr()));
+    CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut("")));
 
     // 打印增加初始化对应的参数
     HCCL_RUN_INFO("[%s] KernelLaunchAicpuCommInit Success", __func__);

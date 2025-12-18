@@ -33,7 +33,7 @@ private:
     HcclResult GetInitializedNeighborLinks(const u32 rank, const u32 rankSize, const std::vector<LINK> &links);
     HcclResult SetSlices(const u32 rank, const u32 rankSize);
     HcclResult RunInitStep(const u32 rank, const u32 rankSize);
-    HcclResult RunAllGather(u32 rank, u32 rankSize);
+    HcclResult RunAllGather(const u32 rank, const u32 rankSize);
     HcclResult RunAllGatherPartOne(const u32 sliceSize, const u32 step, const u32 txSliceIdx);
     HcclResult RunAllGatherPartTwo(const u32 sliceSize, const u32 step, const u32 txSliceIdx,
             const u32 rxSliceIdx, const u32 rankSize);

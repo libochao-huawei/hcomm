@@ -86,6 +86,10 @@ HcclResult CollAllGatherRingZerocopyExecutor::SemiRingAllGather(
     const Stream &stream, s32 profStage, const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> &multRingsUserMemSlice)
 {    
+    (void) multRingsSliceZero;
+    (void) tag;
+    (void) baseOffset;
+    (void) opInfo;
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
     SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
 

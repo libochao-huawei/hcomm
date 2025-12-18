@@ -4,7 +4,7 @@
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-# INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(HCCL_CODE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
@@ -87,9 +87,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_LLT_ROOT}/stub
 
     ${HCCL_CODE_ROOT}/src/framework/common/src
-    ${HCCL_CODE_ROOT}/inc/
-    ${HCCL_CODE_ROOT}/inc/hccl/
-    ${HCCL_CODE_ROOT}/inc/hccl/hccl
+    ${HCCL_CODE_ROOT}/include/
+    ${HCCL_CODE_ROOT}/include/hccl/
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
     ${HCCL_CODE_ROOT}/externel_depends/tsch
@@ -136,6 +135,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique
+    ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
     ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
     ${HCCL_CODE_ROOT}/src/platform/inc
     ${HCCL_CODE_ROOT}/src/platform/inc/adapter
@@ -153,19 +153,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/resource/mem
     ${HCCL_CODE_ROOT}/src/platform/task/
     ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
-    ${HCCL_CODE_ROOT}/src/hccl
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/comm/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/executor/component/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/impl
-    ${HCCL_CODE_ROOT}/src/hdcs
-    ${HCCL_CODE_ROOT}/src/hccl/op_base/src
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/common
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/heterog_cpu
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/rpc
     ${HCCL_CODE_ROOT}/src/hccd
-    ${HCCL_CODE_ROOT}/src/hcom/src/
-    ${HCCL_CODE_ROOT}/src/hcom/src/gradient_segment
 
     ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
 
@@ -237,8 +225,7 @@ target_include_directories(hccl_llt  PRIVATE
     # proto.h头文件
     ${CMAKE_BINARY_DIR}/proto/hccl_llt
 
-    # tbe头文件
-    ${CMAKE_BINARY_DIR}/hcomm_utils/host/include/legacy
+    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
 
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
@@ -275,7 +262,7 @@ target_compile_options(hccl_llt   PRIVATE
 )
 
 target_link_libraries(hccl_llt  PRIVATE
-    $<BUILD_INTERFACE:intf_llt_pub>
+    $<BUILD_INTERFACE:intf_pub>
     -lrt
     -ldl
 )

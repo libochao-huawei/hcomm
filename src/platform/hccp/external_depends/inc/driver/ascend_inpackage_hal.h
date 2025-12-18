@@ -117,7 +117,7 @@ int devdrv_get_board_id(unsigned int dev_id, unsigned int *board_id);
  * @attention This function is only can be called by components in driver of device,
  *  if the components is not in driver of device, don't use this function.
  * @param [in] dev_id phy_id in host
- * @param [out] ip_addr vnic ip address
+ * @param [out] ip_addr vnic ip address.
  * @return  0  success, return others fail
  */
 int devdrv_get_vnic_ip(unsigned int dev_id, unsigned int *ip_addr);
@@ -128,7 +128,7 @@ int devdrv_get_vnic_ip(unsigned int dev_id, unsigned int *ip_addr);
  * @attention This function is only can be called by components in driver of device,
  *  if the components is not in driver of device, don't use this function.
  * @param [in] sdid super pod SDID
- * @param [out] ip_addr vnic ip address
+ * @param [out] ip_addr vnic ip address.
  * @return  0  success, return others fail
  */
 int devdrv_get_vnic_ip_by_sdid(unsigned int sdid, unsigned int *ip_addr);

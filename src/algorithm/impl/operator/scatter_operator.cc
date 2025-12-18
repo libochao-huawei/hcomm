@@ -52,11 +52,13 @@ HcclResult ScatterOperator::SelectAlg(const std::string& tag, const OpParam& par
             u32 rootId = param.root / deviceNumPerAggregation_ % serverNumPerSuperPod;
             appendTag += "L1_" + std::to_string((rootId >= part1Size) || ((rootId % FACTOR_TWO) == 0));
         }
+        HCCL_DEBUG("[ScatterOperator]SelectAlg for algoLevel1");
         if (algType_.algoLevel2 == AlgTypeLevel2::ALG_LEVEL2_HD) {
             u32 part1Size = FACTOR_TWO * (superPodNum_ - (1 << static_cast<u32>(log2(superPodNum_))));
             u32 rootId = param.root / deviceNumPerAggregation_ / serverNumPerSuperPod;
             appendTag += (appendTag.empty() ? "L2_" : "_L2_") + std::to_string((rootId >= part1Size) || ((rootId % FACTOR_TWO) == 0));
         }
+        HCCL_DEBUG("[ScatterOperator][SelectAlg]tag is [%s]", tag);
         newTag = newTag + '_' + appendTag;
         if (GetExternalInputHcclEnableEntryLog() && param.opBaseAtraceInfo != nullptr) {
             CHK_RET(param.opBaseAtraceInfo->SavealgtypeTraceInfo(appendTag, param.tag));

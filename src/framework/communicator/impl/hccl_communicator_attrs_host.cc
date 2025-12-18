@@ -432,7 +432,7 @@ namespace hccl
                       multiSuperPodDiffServerNumMode_);
 
         // 计算最大公约数
-        if (!IsConfigAHCAlgo() && !multiModuleDiffDeviceNumMode_ && multiSuperPodDiffServerNumMode_)
+        if (!IsConfigAHCAlgo(identifier_) && !multiModuleDiffDeviceNumMode_ && multiSuperPodDiffServerNumMode_)
         {
             gcdServerNumPerSuperPod_ = CalGCD(superPodServerNumVec);
             multiSuperPodDiffServerNumMode_ = false; // 取公约数不存在server数不一致场景
@@ -515,53 +515,6 @@ namespace hccl
         if (deviceType == DevType::DEV_TYPE_910_93)
         {
             CHK_RET(hrtGetHccsPortNum(deviceLogicId_, hccsPortNum_));
-        }
-        return HCCL_SUCCESS;
-    }
-
-    // 910B A+X 在RDMA未启用情况下，两模块间的device数目需要一致且两模块中使用的卡都在同一平面上
-    HcclResult HcclCommunicatorAttrs::CheckSingleServerComm(const std::vector<RankInfo_t> &rankList) const
-    {
-        if (serverNum_ == 1 && moduleNum_ == HCCL_MODULE_NUM_TWO && GetExternalInputIntraRoceSwitch() == 0)
-        {
-            std::vector<u32> devIdList0;
-            std::vector<u32> devIdList1;
-            for (RankInfo_t rankInfo : rankList)
-            {
-                if (rankInfo.deviceInfo.devicePhyId == HOST_DEVICE_ID)
-                {
-                    HCCL_ERROR("[Check][SingleServerComm]not support cpu rank");
-                    return HCCL_E_NOT_SUPPORT;
-                }
-                if (rankInfo.deviceInfo.devicePhyId < DEVICE_PER_MODULE)
-                {
-                    devIdList0.push_back(rankInfo.deviceInfo.devicePhyId);
-                }
-                else
-                {
-                    devIdList1.push_back(rankInfo.deviceInfo.devicePhyId);
-                }
-            }
-            std::sort(devIdList0.begin(), devIdList0.end());
-            std::sort(devIdList1.begin(), devIdList1.end());
-
-            if (devIdList0.size() != devIdList1.size())
-            {
-                HCCL_ERROR("[Check][SingleServerComm]errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                           "deviceNum in module0:[%d] not equal to deviceNum in module1:[%d]",
-                           HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0.size(), devIdList1.size());
-                return HCCL_E_NOT_SUPPORT;
-            }
-            for (size_t i = 0; i < devIdList0.size(); i++)
-            {
-                if (devIdList0[i] % DEVICE_PER_MODULE != devIdList1[i] % DEVICE_PER_MODULE)
-                {
-                    HCCL_ERROR("[Check][SingleServerComm]errNo[0x%016llx]. In A+X serverNum_[%d], moduleNum_[%d] case: "
-                               "deviceId[%d] in module0 and deviceId[%d] in module1 are not on the same plane",
-                               HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), serverNum_, moduleNum_, devIdList0[i], devIdList1[i]);
-                    return HCCL_E_NOT_SUPPORT;
-                }
-            }
         }
         return HCCL_SUCCESS;
     }
@@ -749,15 +702,13 @@ namespace hccl
         {
             const std::string devnumError("devNum must be divisible by 8, or equal to 1, 2 or 4, please check devNum");
             RPT_ENV_ERR(true,
-                        "EI0004",
-                        std::vector<std::string>({"error_reason", "ranktable_path"}),
-                        std::vector<std::string>({devnumError,
-                                                  "The ranktable path configured in the training can be "
-                                                  "found in the plogs."}));
+                        "EI0014",
+                        std::vector<std::string>({"error_reason"}),
+                        std::vector<std::string>({devnumError}));
 
-            HCCL_ERROR("[Check][DevCount]errNo[0x%016llx] devNum[%u] devNum must be divisible by 8, or equal to 1, 2 or 4",
-                       HCCL_ERROR_CODE(HCCL_E_PARA),
-                       devNum);
+            HCCL_ERROR("[%s][%s]errNo[0x%016llx] devNum[%u] devNum must be divisible by 8, or equal to 1, 2 or 4",
+                    LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(),
+                    HCCL_ERROR_CODE(HCCL_E_PARA), devNum);
             return HCCL_E_PARA;
         }
         return HCCL_SUCCESS;

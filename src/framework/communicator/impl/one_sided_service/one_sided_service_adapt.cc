@@ -64,23 +64,41 @@ static HcclResult AddDescTraceInfo(hccl::hcclComm* hcclComm, HcclOneSideOpDesc* 
 
 HcclResult HcclRemapRegistedMemory(HcclComm *comm, HcclMem *memInfoArray, u64 commSize, u64 arraySize)
 {
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-    std::vector<std::string>({"HcclRemapRegistedMemory", "comm", "nullptr", "please check comm"}));
+    RPT_INPUT_ERR(comm == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>({"HcclRemapRegistedMemory", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
-    RPT_INPUT_ERR(memInfoArray == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    RPT_INPUT_ERR(memInfoArray == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcclRemapRegistedMemory", "memInfoArray", "nullptr", "please check memInfoArray"}));
     CHK_PTR_NULL(memInfoArray);
 
-    RPT_INPUT_ERR(commSize <= ONE_SIDE_HOST_MEM_ZERO, "EI0003", std::vector<std::string>(
-        {"ccl_op", "parameter", "value", "tips"}), std::vector<std::string>({"HcclRemapRegistedMemory", "commSize", \
-        "less than or equal to 0", "please check commSize"}));
-    CHK_PRT_RET(commSize <= ONE_SIDE_HOST_MEM_ZERO, HCCL_ERROR("[HcclRemapRegistedMemory]commSize[%llu] is invalid, "\
-        "please check commSize", commSize), HCCL_E_PARA);
-    RPT_INPUT_ERR(arraySize <= ONE_SIDE_HOST_MEM_ZERO, "EI0003", std::vector<std::string>(
-        {"ccl_op", "parameter", "value", "tips"}), std::vector<std::string>({"HcclRemapRegistedMemory", "arraySize", \
-        "less than or equal to 0", "please check arraySize"}));
-    CHK_PRT_RET(arraySize <= ONE_SIDE_HOST_MEM_ZERO, HCCL_ERROR("[HcclRemapRegistedMemory]arraySize[%llu] is invalid, "\
-        "please check arraySize", arraySize), HCCL_E_PARA);
+    RPT_INPUT_ERR(commSize <= ONE_SIDE_HOST_MEM_ZERO,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcclRemapRegistedMemory", "commSize", "less than or equal to 0", "please check commSize"}));
+    CHK_PRT_RET(commSize <= ONE_SIDE_HOST_MEM_ZERO,
+        HCCL_ERROR("[%s][%s]commSize[%llu] is invalid, "
+                   "please check commSize",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            commSize),
+        HCCL_E_PARA);
+    RPT_INPUT_ERR(arraySize <= ONE_SIDE_HOST_MEM_ZERO,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcclRemapRegistedMemory", "arraySize", "less than or equal to 0", "please check arraySize"}));
+    CHK_PRT_RET(arraySize <= ONE_SIDE_HOST_MEM_ZERO,
+        HCCL_ERROR("[%s][%s]arraySize[%llu] is invalid, "
+                   "please check arraySize",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            arraySize),
+        HCCL_E_PARA);
 
     IHcclOneSidedService *service = nullptr;
     for (u64 i = 0; i < commSize; i++) {
@@ -191,28 +209,45 @@ HcclResult HcclExchangeMemDesc(HcclComm comm, u32 remoteRank, HcclMemDescs* loca
 {
     EXCEPTION_HANDLE_BEGIN
         // 参数校验和适配
-        RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    RPT_INPUT_ERR(comm == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcclExchangeMemDesc", "comm", "nullptr", "please check comm"}));
-        CHK_PTR_NULL(comm);
-        RPT_INPUT_ERR(local == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclExchangeMemDesc", "local memory description", "nullptr", "please check params"}));
-        CHK_PTR_NULL(local);
-        RPT_INPUT_ERR(remote == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclExchangeMemDesc", "remote memory description", "nullptr", "please check params"}));
-        CHK_PTR_NULL(remote);
-        RPT_INPUT_ERR(actualNum == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(local == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcclExchangeMemDesc", "local memory description", "nullptr", "please check params"}));
+    CHK_PTR_NULL(local);
+    RPT_INPUT_ERR(remote == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcclExchangeMemDesc", "remote memory description", "nullptr", "please check params"}));
+    CHK_PTR_NULL(remote);
+    RPT_INPUT_ERR(actualNum == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcclExchangeMemDesc", "actualNum", "nullptr", "please check params"}));
-        CHK_PTR_NULL(actualNum);
+    CHK_PTR_NULL(actualNum);
 
-        // timeout = 0 表示使用HCCL_CONNECT_TIMEOUT超时时间，timeout=-1 永不超时，其他为合法值
-        const auto timeoutIsInvalid = timeout <= -2;
-        RPT_INPUT_ERR(timeoutIsInvalid, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-            std::vector<std::string>({"HcclExchangeMemDesc", "timeout", std::to_string(timeout),
-                "please check timeout, it should be -1(never timeout) or any integer greater than or equal 0."}));
-        CHK_PRT_RET(timeoutIsInvalid,
-            HCCL_ERROR("[HcclExchangeMemDesc] The parameter timeout[%d s] is invalid. It should be -1(never timeout) or any "
-                    "integer greater than or equal 0.", timeout),
-            HCCL_E_PARA);
+    // timeout = 0 表示使用HCCL_CONNECT_TIMEOUT超时时间，timeout=-1 永不超时，其他为合法值
+    const auto timeoutIsInvalid = timeout <= -2;
+    RPT_INPUT_ERR(timeoutIsInvalid,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>({"HcclExchangeMemDesc",
+            "timeout",
+            std::to_string(timeout),
+            "please check timeout, it should be -1(never timeout) or any integer greater than or equal 0."}));
+    CHK_PRT_RET(timeoutIsInvalid,
+        HCCL_ERROR("[%s][%s] The parameter timeout[%d s] is invalid. It should be -1(never timeout) or any "
+                   "integer greater than or equal 0.",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            timeout),
+        HCCL_E_PARA);
 
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
@@ -239,15 +274,22 @@ HcclResult HcclEnableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc, HcclMe
 {
     EXCEPTION_HANDLE_BEGIN
         // 参数校验和适配
-        RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    RPT_INPUT_ERR(comm == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcclEnableMemAccess", "comm", "nullptr", "please check comm"}));
-        CHK_PTR_NULL(comm);
-        RPT_INPUT_ERR(remoteMemDesc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclEnableMemAccess", "remote memory description", "nullptr", "please check params"}));
-        CHK_PTR_NULL(remoteMemDesc);
-        RPT_INPUT_ERR(remoteMem == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(remoteMemDesc == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcclEnableMemAccess", "remote memory description", "nullptr", "please check params"}));
+    CHK_PTR_NULL(remoteMemDesc);
+    RPT_INPUT_ERR(remoteMem == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcclEnableMemAccess", "remoteMem Param error", "nullptr", "please check params"}));
-        CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(remoteMem);
 
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
@@ -268,13 +310,17 @@ HcclResult HcclDisableMemAccess(HcclComm comm, HcclMemDesc* remoteMemDesc)
 {
     EXCEPTION_HANDLE_BEGIN
         // 参数校验和适配
-        RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
+    RPT_INPUT_ERR(comm == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcclEnableMemAccess", "comm", "nullptr", "please check comm"}));
-        CHK_PTR_NULL(comm);
-        RPT_INPUT_ERR(remoteMemDesc == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclEnableMemAccess", "remote memory description", "nullptr", "please check params"}));
-        CHK_PTR_NULL(remoteMemDesc);
-
+    CHK_PTR_NULL(comm);
+    RPT_INPUT_ERR(remoteMemDesc == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcclEnableMemAccess", "remote memory description", "nullptr", "please check params"}));
+    CHK_PTR_NULL(remoteMemDesc);
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         std::string commIdentifier = hcclComm->GetIdentifier();
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteMemDescPtr[%p]", __func__, commIdentifier.c_str(), remoteMemDesc);
@@ -418,9 +464,14 @@ inline static HcclResult HcclMemHandleParamCheck(void *memHandle, const std::str
     std::stringstream ss;
     ss << std::hex << std::uppercase << reinterpret_cast<uintptr_t>(memHandle);
     const std::string hexStr = ss.str();
-    RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+    RPT_INPUT_ERR(true,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({funcName, "memHandle", hexStr, "please check memHandle"}));
-    HCCL_ERROR("[HcclMemHandleParamCheck][%s] The parameter memHandle[%p] is invalid.", funcName.c_str(), memHandle);
+    HCCL_ERROR("[%s][%s] The parameter memHandle[%p] is invalid.",
+        LOG_KEYWORDS_TASK_EXEC.c_str(),
+        LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+        memHandle);
     return HCCL_E_PARA;
 }
 
@@ -536,8 +587,11 @@ HcclResult HcclCommPrepare(HcclComm comm, const HcclPrepareConfig* prepareConfig
     RPT_INPUT_ERR(timeoutIsInvalid, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
     std::vector<std::string>({"HcclCommPrepare", "prepareConfig", std::to_string(timeout), "please check timeout"}));
     CHK_PRT_RET(timeoutIsInvalid,
-        HCCL_ERROR("[HcclCommPrepare] The parameter timeout[%d s] is invalid. It should be -1(never timeout) or any "
-                   "integer greater than or equal 0.", timeout),
+        HCCL_ERROR("[%s][%s]The parameter timeout[%d s] is invalid. It should be -1(never timeout) or any "
+                   "integer greater than or equal 0.",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            timeout),
         HCCL_E_PARA);
 
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);

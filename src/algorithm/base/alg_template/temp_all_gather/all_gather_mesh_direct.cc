@@ -138,6 +138,7 @@ HcclResult AllgatherMeshDirect::RunAsync(const u32 rank, const u32 rankSize, con
         CHK_RET(links[dstRank]->RxAck(subStream));
     }
 
+    HCCL_DEBUG("[AllgatherMeshDirect]runAsync now rankSize is %u", rankSize);
     CHK_RET(SubRecordMain());
     CHK_RET(MainWaitSub());
 

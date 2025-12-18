@@ -53,9 +53,13 @@ HcclResult CollAlltoAllExecutor::Orchestrate(OpParam& param, AlgResourceResponse
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollRunAlltoAllVFullMesh][Orchestrate]errNo[0x%016llx]excutor run failed",
             HCCL_ERROR_CODE(ret)), ret);
+
+    // Enforce task launch at the end of Orchestrate
+    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+
     HCCL_INFO("tag[%s], AlltoAll executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
-
     return HCCL_SUCCESS;
 }
 
@@ -405,9 +409,9 @@ bool CollAlltoAllExecutor::HasMassTasks(std::vector<SendRecvInfo> &allMeshAggreg
     return (maxTasks > massThreshold);
 }
 
-HcclResult CollAlltoAllExecutor::SetVirtualDispatcher(const HcclDispatcher vDispatcher)
+HcclResult CollAlltoAllExecutor::SetVirtualDispatcher(const HcclDispatcher virtualDispatcher)
 {
-    vDispatcher_ = vDispatcher;
+    vDispatcher_ = virtualDispatcher;
     return HCCL_SUCCESS;
 }
 

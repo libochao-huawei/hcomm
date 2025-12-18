@@ -111,7 +111,7 @@ extern HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank);
  * @note 外部使用rankGraph，但不能释放rankGraph内存
  * @warning
  */
-HcclResult CommGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len);
+extern HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len);
 
 /**
  * @brief 给定通信域，返回该通信域的rank数量
@@ -222,18 +222,6 @@ extern HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRan
     CommLink **linkList, uint32_t *listSize);
 
 /**
- * @brief 获取通信域中的rank图
- * 
- * @param[in] comm 通信域
- * @param[in] graphType rank图类型
- * @param[out] rankGraph rank图数据地址
- * @param[out] size rank图数据大小
- * @return HcclResult 执行结果状态码
- * @note 外部使用rankGraph，但不能释放rankGraph内存
- */
-extern HcclResult HcclGetRankGraph(HcclComm comm, RankGraphType graphType, void **rankGraph, uint32_t *size);
-
-/**
  * @brief 给定通信域和netLayer，返回本Rank所在的netInstance中的所有ranks
  * @param[in] comm 通信域
  * @param[in] netLayer 通信网络层次
@@ -265,7 +253,9 @@ extern HcclResult HcclGetRankGraph(HcclComm comm, RankGraphType graphType, void 
  */
 extern HcclResult HcclGetInstRanksByNetLayer(HcclComm comm,
     uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
-
+extern HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
+extern HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
+extern HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, u32 *topoType);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

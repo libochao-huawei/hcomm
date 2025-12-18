@@ -208,12 +208,12 @@ HcclResult HcclCommunicatorAttrs::CheckSuperDeviceId(const RankTable_t &rankTabl
             CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
                 HcclRtDeviceInfoType::HCCL_INFO_TYPE_SDID, drvSuperDeviceID));
             if (superDeviceId_ != static_cast<u32>(drvSuperDeviceID)) {
-                RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({ "error_reason", "ranktable_path" }),
-                    std::vector<std::string>({ "the 'super_device_id' in the ranktable is invalid",
-                    "Please check the 'super_device_id' in ranktable" }));
-                HCCL_ERROR("[Check][SuperDeviceId]errNo[0x%016llx] super_device_id is invalid, " \
-                    "expect value [0x%x], ranktable config vaule [0x%x]",
-                    HCOM_ERROR_CODE(HCCL_E_PARA), drvSuperDeviceID, superDeviceId_);
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
+                    std::vector<std::string>({ "the 'super_device_id' in the ranktable is invalid" }));
+                HCCL_ERROR("[%s][%s]errNo[0x%016llx] super_device_id is invalid, " \
+                    "expect value [0x%x], ranktable config vaule [0x%x]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+                    LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), drvSuperDeviceID,
+                    superDeviceId_);
                 return HCCL_E_PARA;
             }
             break;
@@ -319,6 +319,15 @@ HcclResult HcclCommunicatorAttrs::InitRankInfo(const RankTable_t &rankTable)
     CHK_RET(SetLocalRankInfo());
     // 解析rank和port的映射信息
     CHK_RET(SetRanksPort(rankTable.rankList));
+
+    // 通过关键字打印通信域及本端的rank关键信息，方便在日志中直接检索
+    HCCL_RUN_INFO("[%s]identifier[%s] rankSize[%u] serverNum[%u] moduleNum[%u] superPodNum[%u] "
+        "multiModuleDiffDeviceNumMode[%u] multiSuperPodDiffServerNumMode[%u]",
+        LOG_KEYWORDS_COMMUNICATOR.c_str(), identifier_.c_str(), userRankSize_, serverNum_, moduleNum_, superPodNum_,
+        multiModuleDiffDeviceNumMode_, multiSuperPodDiffServerNumMode_);
+    HCCL_RUN_INFO("[%s]userRank[%u] hostIp[%s] devicePhyId[%u] server[%s] deviceIp[%s] superPodId[%s] useSuperPodMode[%d] isStandardCard[%d]",
+        LOG_KEYWORDS_LOCALRANK.c_str(), userRank_, hostIp_.GetReadableAddress(), devicePhyId_, serverId_.c_str(),
+        devIpAddr_.empty() ? "" : devIpAddr_[0].GetReadableAddress(), superPodId_.c_str(), useSuperPodMode_, isStandardCard_);
 
     interServer_ = rankTable.serverNum > 1; // serverNum为1时，不进行roce初始化
     nicDeployment_ = rankTable.nicDeploy;

@@ -18,7 +18,7 @@
 
 namespace hccl{
 
-typedef void (*TaskCallBack)(void *userPtr, void *param, u32 length);
+using TaskCallBack = void (*)(void *userPtr, void *param, u32 length);
 
 struct TaskParaAiv{
     HcclCMDType cmdType;

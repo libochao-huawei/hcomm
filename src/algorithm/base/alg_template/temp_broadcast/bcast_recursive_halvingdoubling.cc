@@ -395,6 +395,7 @@ HcclResult BcastRecursiveHalvingDoubling::GetNslbAdjInfo(const u32 rank, const u
         nslbAdjInfo.nsAdjInfo.push_back(adjInfoStep);
     }
     nslbAdjInfo.dstRankNum = nslbAdjInfo.nsAdjInfo.size();
+    HCCL_DEBUG("[BcastRecursiveHalvingDoubling]dstRankNum is %u", nslbAdjInfo.dstRankNum);
 
     if(nslbAdjInfo.nsAdjInfo.size() == 0) {
         return HCCL_SUCCESS;

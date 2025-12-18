@@ -14,9 +14,10 @@
 #include "hccl_common.h"
 #include "dtype_common.h"
 #include "acl/acl_rt.h"
+#include "rt_external.h"
 
 #if T_DESC("stream管理", true)
-HcclResult hcclStreamSynchronize(HcclRtStream stream);
+HcclResult hcclStreamSynchronize(HcclRtStream stream, s32 execTimeOut = NOTIFY_DEFAULT_WAIT_TIME);
 HcclResult hrtStreamSetMode(HcclRtStream stream, const uint64_t stmMode);
 HcclResult hrtStreamGetMode(HcclRtStream const stream, uint64_t *const stmMode);
 HcclResult hrtGetStreamId(HcclRtStream stream, s32 &streamId);
@@ -114,7 +115,7 @@ HcclResult hrtGetHccsPortNum(u32 deviceLogicId, s32 &num);
 HcclResult hrtGetTaskIdAndStreamID(u32 &taskId, u32 &streamId);
  
 #if T_DESC("RtsTaskExceptionHandler", true)
-HcclResult hrtRegTaskFailCallbackByModule(aclrtExceptionInfoCallback callback);
+HcclResult hrtRegTaskFailCallbackByModule(rtTaskFailCallback callback);
 HcclResult hrtGetStreamAvailableNum(u32 &maxStrCount);
 #endif
 

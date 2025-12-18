@@ -203,6 +203,7 @@ HcclResult AllGatherPipeline::RunAsync()
                 HCCL_MIN_SLICE_ALIGN_910B;
             DeviceMem src = DeviceMem::create(static_cast<u8 *>(remDMAMemPtr) + remoteOffsetByte, memSliceSize);
             DeviceMem dst = DeviceMem::create(dstAddr, memSliceSize);
+            HCCL_DEBUG("[AllGatherPipeline][RunAsync]remoteOffsetByte is %llu", remoteOffsetByte);
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, subStream_[i],
                 intraLinks_[remIntraRankId]->GetRemoteRank(), intraLinks_[remIntraRankId]->GetLinkType()));
             CHK_RET(intraLinks_[remIntraRankId]->TxDataSignal(subStream_[i])); // data record
@@ -227,6 +228,7 @@ HcclResult AllGatherPipeline::RunAsync()
 HcclResult AllGatherPipeline::GetNslbAdjInfo(const u32 rank, const u32 rankSize,
                                          const std::vector<LINK> &links, AdjInfo& nslbAdjInfo)
 {
+    HCCL_DEBUG("[AllGatherPipeline]GetNslbAdjInfo start");
     u32 ringNextRank = (rank + 1) % rankSize;
     LINK nslbNext = links[ringNextRank];
     CHK_SMART_PTR_NULL(nslbNext);

@@ -1,4 +1,4 @@
-/**
+/* *
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -6,29 +6,30 @@
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
- */
+  */
 
 #include "heartbeat.h"
 #include <set>
+#include <tuple>
 #include "device_capacity.h"
 #include "externalinput_pub.h"
 #include "env_config.h"
 #include "opexecounter_pub.h"
 #include "hccl_communicator.h"
 #include "task_exception_handler_pub.h"
+#include "comm_configer.h"
 
 namespace hccl {
-constexpr u32 HEARTBEAT_INTERVAL = 1000; // 心跳帧发送周期为1000 ms
+constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
 constexpr u32 HEARTBEAT_COUNT = HEARTBEAT_INTERVAL / BROADCAST_INTERVAL; // 心跳帧发送间隔数
 constexpr u32 BASE_NUMBER = 2;
 constexpr u32 RETRY_CQE_ARRAY_SIZE = 128; // 重执行时获取的CQE数组的最大数量，最大128
-constexpr u32 JITTER_TIME = 300;  // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差
-constexpr u32 EVENT_MAX_CNT = 5000;  // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
-constexpr u32 THROUND_MILS = 1000;   // 1000ms
-constexpr u32 OPINFO_QUEUE_MAX_SIZE = 65536;   // 算子下发校验队列最大算子个数，防止内存占用
-constexpr u32 MAX_SENDBUFF_SIZE = 3072;  // SendBuff[dst] 最大数量
-constexpr u32 SR_TAG_MAP_MAX_NUM = 65536;
-constexpr u32 HBFRAME_SEND_LOOP_MAX_NUM = 120;
+constexpr u32 JITTER_TIME = 300; // 关键事件允许的误差事件范围±300s。误差来源：EVENT和NOTIFY差异、传播耗时、计时误差
+constexpr u32 EVENT_MAX_CNT = 5000;          // 防止内存泄漏，同时不能太短，防止正常事件被冲掉
+constexpr u32 THROUND_MILS = 1000;           // 1000ms
+constexpr u32 OPINFO_QUEUE_MAX_SIZE = 65536; // 算子下发校验队列最大算子个数，防止内存占用
+constexpr u32 MAX_SENDBUFF_SIZE = 3072;      // SendBuff[dst] 最大数量
+
 constexpr s32 HCCL_STUCK_DETECT_TIME_MIN = 60; // 卡住检测最短时间
 constexpr s32 HCCL_STUCK_DETECT_TIME_BASE = 3; // 卡住检测时间为execTime/3
 Heartbeat &Heartbeat::GetInstance(s32 deviceLogicID)
@@ -57,8 +58,6 @@ Heartbeat::~Heartbeat()
     opInfoQueue_.clear();
     opInfoMap_.clear();
     recvOpInfoList_.clear();
-    inconsistentOpMap_.clear();
-    srTagMap_.clear();
 }
 
 bool Heartbeat::IsEnableBackupLink()
@@ -79,8 +78,7 @@ HcclResult Heartbeat::InitNic(const NicType nicType, const s32 devicePhyId, cons
 
     if (!isBackUp) {
         std::shared_ptr<HcclSocket> tempSocket;
-        EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(
-            nicCtx, port)), return HCCL_E_PTR);
+        EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(nicCtx, port)), return HCCL_E_PTR);
         CHK_RET(tempSocket->Init());
         CHK_RET(tempSocket->Listen());
 
@@ -92,8 +90,9 @@ HcclResult Heartbeat::InitNic(const NicType nicType, const s32 devicePhyId, cons
     return HCCL_SUCCESS;
 }
 
-HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port)
- 
+HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port,
+    const std::string &group)
+
 {
     HCCL_INFO("[%s] heartbeat Init begin.", __func__);
     devicePhyId_ = locRank.devicePhyId;
@@ -124,24 +123,24 @@ HcclResult Heartbeat::Init(const RankInfo& locRank, const bool useSuperPodMode, 
         u32 backupPort = HCCL_INVALID_PORT; // 不初始化备用网卡上的Socket
         if (locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
             netDevCtxMap_.find(backupNicIp_) == netDevCtxMap_.end()) {
-            CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_, deviceBackupLogicId_,
-                backupNicIp_, backupPort, true));
+            CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_, deviceBackupLogicId_, backupNicIp_,
+                backupPort, true));
         }
     }
     if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST &&
-            netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
+        netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
         u32 hostPort = GetHostPort(devicePhyId_);
         CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
     }
     mapLock.unlock();
     uid_ = GetUId(locRank);
     nicDeploy_ = locRank.nicDeploy;
-    stuckDetectTime_ = std::max(GetInternalExecTimeOut() / HCCL_STUCK_DETECT_TIME_BASE,
-        HCCL_STUCK_DETECT_TIME_MIN);
+    s32 hcclExecTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(group);
+    stuckDetectTime_ = std::max(hcclExecTimeOut / HCCL_STUCK_DETECT_TIME_BASE, HCCL_STUCK_DETECT_TIME_MIN);
     startSendRecvTask_ = true;
     sendRecvThread_.reset(new (std::nothrow) std::thread(&Heartbeat::HeartbeatStatusMonitor, this));
     CHK_SMART_PTR_NULL(sendRecvThread_);
-    lostThreshold_ = 30;  // 心跳丢失阈值为30s
+    lostThreshold_ = 30; // 心跳丢失阈值为30s
     initialized_ = true;
     isDeInit_ = false;
     HCCL_INFO("[%s] heartbeat Init end, stuckDetectTime[%d s].", __func__, stuckDetectTime_);
@@ -165,7 +164,8 @@ HcclResult Heartbeat::DeInit()
             if (iter->second.socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER) {
                 CHK_PRT_RET(listenSocketMap_.find(iter->second.socket->GetLocalIp()) == listenSocketMap_.end(),
                     HCCL_ERROR("ip[%s] listenSocketMap is not found",
-                    iter->second.socket->GetLocalIp().GetReadableAddress()), HCCL_E_NOT_FOUND);
+                    iter->second.socket->GetLocalIp().GetReadableAddress()),
+                    HCCL_E_NOT_FOUND);
                 listenSocketMap_[iter->second.socket->GetLocalIp()]->DelWhiteList(iter->second.wlistInfosVec);
             }
             iter->second.socket->Close();
@@ -198,8 +198,8 @@ HcclResult Heartbeat::PrepareConnect(ConnInfo &info)
     CHK_SMART_PTR_NULL(info.socket);
     if (info.socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER) {
         CHK_PRT_RET(listenSocketMap_.find(info.socket->GetLocalIp()) == listenSocketMap_.end(),
-            HCCL_ERROR("ip[%s] listenSocketMap is not found",
-            info.socket->GetLocalIp().GetReadableAddress()), HCCL_E_NOT_FOUND);
+            HCCL_ERROR("ip[%s] listenSocketMap is not found", info.socket->GetLocalIp().GetReadableAddress()),
+            HCCL_E_NOT_FOUND);
         CHK_RET(listenSocketMap_[info.socket->GetLocalIp()]->AddWhiteList(info.wlistInfosVec));
     } else {
         if (info.socket->GetStatus() != HcclSocketStatus::SOCKET_OK) {
@@ -210,11 +210,11 @@ HcclResult Heartbeat::PrepareConnect(ConnInfo &info)
     return HCCL_SUCCESS;
 }
 
-HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, std::vector<RankInfo> &rankInfos, const u32 port,
-    const bool isNeedNic, const std::string &group, bool useSuperPodMode, bool isUsedRdma)
+HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, std::vector<RankInfo> &rankInfos,
+    const u32 port, const bool isNeedNic, const std::string &group, bool useSuperPodMode, bool isUsedRdma)
 {
-    HCCL_INFO("[%s] group[%s] isUsedRdma[%d], isNeedNic[%d], RegisterRanks Start.", __func__,
-        group.c_str(), isUsedRdma, isNeedNic);
+    HCCL_INFO("[%s] group[%s] isUsedRdma[%d], isNeedNic[%d], RegisterRanks Start.", __func__, group.c_str(), isUsedRdma,
+        isNeedNic);
     auto iter = groupMap_.find(group);
     if (iter != groupMap_.end()) {
         HCCL_INFO("group[%s] has Registered, skip.", group.c_str());
@@ -222,7 +222,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
     }
 
     if (!initialized_) {
-        CHK_RET(Init(locRank, useSuperPodMode, isNeedNic, port));
+        CHK_RET(Init(locRank, useSuperPodMode, isNeedNic, port, group));
     }
 
     // 刷新uid_，防止不同通信域下serverId不一致问题
@@ -258,21 +258,21 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
             CHK_RET(hrtGetDeviceIndexByPhyId(deviceBackUpPhyId_, deviceBackupLogicId_));
             if (locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE &&
                 netDevCtxMap_.find(backupNicIp_) == netDevCtxMap_.end()) {
-                CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_, deviceBackupLogicId_,
-                    backupNicIp_, backupPort, true));
+                CHK_RET(InitNic(NicType::DEVICE_NIC_TYPE, deviceBackUpPhyId_, deviceBackupLogicId_, backupNicIp_,
+                    backupPort, true));
             }
         }
     }
 
     if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST &&
-            netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
+        netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
         u32 hostPort = GetHostPort(devicePhyId_);
         CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
     }
     mapLock.unlock();
 
     std::unique_lock<std::mutex> lock(ProcessLock_);
-    for (const auto& remRank : rankInfos) {
+    for (const auto remRank : rankInfos) {
         UIDType rem = GetUId(remRank);
         rankId2StatusMap_.insert(rem, Status());
         groupMap_[group].insert(std::make_pair(rem, NO_CONN));
@@ -281,9 +281,9 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
     lock.unlock();
 
     if (!GetExternalInputHcclHeartBeatEnable()) {
-        HCCL_RUN_INFO("[Heartbeat][%s] Enable HcclHeartBeatLink is [%d]. It's unnecessary to "\
-            "register Ranks. Group[%s] isUsedRdma[%d], netDevCtxMap size[%llu]", __func__,
-            GetExternalInputHcclHeartBeatEnable(), group.c_str(), isUsedRdma, netDevCtxMap_.size());
+        HCCL_RUN_INFO("[Heartbeat][%s] Enable HcclHeartBeatLink is [%d]. It's unnecessary to "
+            "register Ranks. Group[%s] isUsedRdma[%d], netDevCtxMap size[%llu]",
+            __func__, GetExternalInputHcclHeartBeatEnable(), group.c_str(), isUsedRdma, netDevCtxMap_.size());
         return HCCL_SUCCESS;
     }
 
@@ -291,7 +291,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
     CHK_RET(GetConnectRank(locRank, rankInfos, needConnectRank, useSuperPodMode, isUsedRdma));
 
     std::unique_lock<std::mutex> linkInfolock(hbLinkConnInfoMtx_);
-    for(auto& item : needConnectRank) {
+    for (auto &item : needConnectRank) {
         if (item.second.newConn == true) {
             hbLinkConnInfo_[group].push(std::move(item));
         }
@@ -299,23 +299,21 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo& locRank, st
     linkInfolock.unlock();
 
     lock.lock();
-    for(auto& item : needConnectRank) {
+    for (auto &item : needConnectRank) {
         if (item.second.newConn == true) {
             rankId2LinkStatusMap_[item.first] = HBLinkStatus::HEARTBEAT_LINK_BUILDING;
         } else if (groupMap_[group].find(item.first) == groupMap_[group].end() ||
-        (groupMap_[group].count(item.first) && groupMap_[group][item.first] == NO_CONN)) {
+            (groupMap_[group].count(item.first) && groupMap_[group][item.first] == NO_CONN)) {
             rankId2SocketMap_.ref(item.first);
-            HCCL_RUN_INFO("group:[%s], establish rank[%s] to rank[%s] heartbeat connection success.",
-                group.c_str(),
-                FormatUId(uid_).c_str(),
-                FormatUId(item.first).c_str());
+            HCCL_RUN_INFO("group:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", group.c_str(),
+                FormatUId(uid_).c_str(), FormatUId(item.first).c_str());
             groupMap_[group][item.first] = HAS_CONN;
         }
     }
     lock.unlock();
 
-    HCCL_INFO("[%s]group[%s] isUsedRdma[%d], netDevCtxMap size[%llu], RegisterRanks Completed", __func__,
-        group.c_str(), isUsedRdma, netDevCtxMap_.size());
+    HCCL_INFO("[%s]group[%s] isUsedRdma[%d], netDevCtxMap size[%llu], RegisterRanks Completed", __func__, group.c_str(),
+        isUsedRdma, netDevCtxMap_.size());
     return HCCL_SUCCESS;
 }
 
@@ -341,7 +339,7 @@ void Heartbeat::CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo ne
     }
     auto HEART_CREATE_LINK_TIMEOUT = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
     auto startTime = std::chrono::steady_clock::now();
-    while(linkThreadRunning_) {
+    while (linkThreadRunning_) {
         if ((std::chrono::steady_clock::now() - startTime) >= HEART_CREATE_LINK_TIMEOUT) {
             HCCL_RUN_WARNING("establish rank[%s] to rank[%s] heartbeat connection failed. Reason: get rasocket timeout,"
                 "timeout[%llds], the HCCL_CONNECT_TIMEOUT may be insufficient. Group[%s].",
@@ -375,9 +373,12 @@ void Heartbeat::CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo ne
         needConnectRank.newConn = false;
         rankId2SocketMap_.insert(rem, needConnectRank);
         // 心跳socket建链完成后，需要立即及激活其心跳收发能力
-        if (rankId2SocketMap_[rem].recvBuffer.Init(2 * sizeof(HeartBeatFrame)) != HCCL_SUCCESS) { // 2倍帧长，确报不会溢出
-            HCCL_RUN_WARNING("establish rank[%s] to rank[%s] heartbeat connection failed. Reason: socket recv buffer init"
-                "failed. Group[%s].", FormatUId(uid_).c_str(), FormatUId(rem).c_str(), group.c_str());
+        if (rankId2SocketMap_[rem].recvBuffer.Init(2 * sizeof(HeartBeatFrame)) !=
+            HCCL_SUCCESS) { // 2倍帧长，确报不会溢出
+            HCCL_RUN_WARNING(
+                "establish rank[%s] to rank[%s] heartbeat connection failed. Reason: socket recv buffer init"
+                "failed. Group[%s].",
+                FormatUId(uid_).c_str(), FormatUId(rem).c_str(), group.c_str());
             rankId2SocketMap_.erase(rem);
             lock.unlock();
             break;
@@ -385,8 +386,8 @@ void Heartbeat::CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo ne
         rankId2LinkStatusMap_[rem] = HBLinkStatus::HEARTBEAT_LINK_COMPLETED;
         groupMap_[group][rem] = HAS_CONN;
         lock.unlock();
-        HCCL_RUN_INFO("group:[%s], establish rank[%s] to rank[%s] heartbeat connection success.",
-            group.c_str(), FormatUId(uid_).c_str(), FormatUId(rem).c_str());
+        HCCL_RUN_INFO("group:[%s], establish rank[%s] to rank[%s] heartbeat connection success.", group.c_str(),
+            FormatUId(uid_).c_str(), FormatUId(rem).c_str());
         break;
     }
     if (deviceLogicId_ != static_cast<u32>(HOST_DEVICE_ID)) {
@@ -406,7 +407,7 @@ void Heartbeat::RegisterRetryInfo(const std::string &commIdentifier, bool retryE
             HCCL_INFO("[%s]register identifier[%s] retryEnable[%d] has been registered", __func__,
                 commIdentifier.c_str(), search->second);
         } else {
-            retryEnableTable_.insert({commIdentifier, retryEnable});
+            retryEnableTable_.insert({ commIdentifier, retryEnable });
             HCCL_RUN_INFO("[%s]register identifier[%s] retryEnable[%d]", __func__, commIdentifier.c_str(), retryEnable);
         }
     }
@@ -415,22 +416,24 @@ void Heartbeat::RegisterRetryInfo(const std::string &commIdentifier, bool retryE
         std::lock_guard<std::mutex> backupEnablelock(backupEnableMutex_);
         if (backupEnableTable_.find(commIdentifier) == backupEnableTable_.end()) {
             backupEnableTable_.insert(commIdentifier);
-            HCCL_RUN_INFO("[%s]register identifier[%s] backupEnable[%d]", __func__, commIdentifier.c_str(), backupEnable);
+            HCCL_RUN_INFO("[%s]register identifier[%s] backupEnable[%d]", __func__, commIdentifier.c_str(),
+                backupEnable);
         }
     }
     return;
 }
 HcclResult Heartbeat::RegisterToHeartBeat(u32 userRank, DevType devType, std::vector<RankInfo> &rankInfoList,
-    const u32 port, const bool isNeedNic, const std::string &commIdentifier, bool useSuperPodMode, bool isUsedRdmaLevel0,
-    bool retryEnable, bool backupEnable)
+    const u32 port, const bool isNeedNic, const std::string &commIdentifier, bool useSuperPodMode,
+    bool isUsedRdmaLevel0, bool retryEnable, bool backupEnable)
 {
     if (Is310PDevice() || devType == DevType::DEV_TYPE_310P3) {
         return HCCL_SUCCESS;
     }
 
     CHK_PRT_RET(rankInfoList.size() == 1,
-        HCCL_WARNING("[RegisterToHeartBeat]Identifier[%s] rankSize[%llu] needn't to register.",
-        commIdentifier.c_str(), rankInfoList.size()), HCCL_SUCCESS);
+        HCCL_WARNING("[RegisterToHeartBeat]Identifier[%s] rankSize[%llu] needn't to register.", commIdentifier.c_str(),
+        rankInfoList.size()),
+        HCCL_SUCCESS);
 
     RankInfo locRank;
     for (auto rank : rankInfoList) {
@@ -441,13 +444,14 @@ HcclResult Heartbeat::RegisterToHeartBeat(u32 userRank, DevType devType, std::ve
     }
 
     RegisterRetryInfo(commIdentifier, retryEnable, backupEnable);
-    
-    CHK_RET(RegisterRanks(devType, locRank, rankInfoList, port, isNeedNic, commIdentifier, useSuperPodMode, isUsedRdmaLevel0));
+
+    CHK_RET(RegisterRanks(devType, locRank, rankInfoList, port, isNeedNic, commIdentifier, useSuperPodMode,
+        isUsedRdmaLevel0));
     return HCCL_SUCCESS;
 }
 
 HcclResult Heartbeat::RegisterToHeartBeat(u32 userRank, DevType devType, std::vector<RankInfo> &rankInfoList,
-    const u32 port, const bool isNeedNic, u32 peerRankId, const std::string &commIdentifier, const std::string& tag,
+    const u32 port, const bool isNeedNic, u32 peerRankId, const std::string &commIdentifier, const std::string &tag,
     bool useSuperPodMode, bool isUsedRdmaLevel0, bool retryEnable, bool backupEnable)
 {
     if (Is310PDevice() || devType == DevType::DEV_TYPE_310P3 ||
@@ -457,8 +461,9 @@ HcclResult Heartbeat::RegisterToHeartBeat(u32 userRank, DevType devType, std::ve
     }
 
     CHK_PRT_RET(rankInfoList.size() == 1,
-        HCCL_WARNING("[RegisterToHeartBeat]Identifier[%s] rankSize[%llu] needn't to register.",
-        commIdentifier.c_str(), rankInfoList.size()), HCCL_SUCCESS);
+        HCCL_WARNING("[RegisterToHeartBeat]Identifier[%s] rankSize[%llu] needn't to register.", commIdentifier.c_str(),
+        rankInfoList.size()),
+        HCCL_SUCCESS);
 
     RankInfo locRank;
     std::vector<RankInfo> peerRankInfoList;
@@ -485,7 +490,8 @@ HcclResult Heartbeat::RegisterToHeartBeat(u32 userRank, DevType devType, std::ve
     return HCCL_SUCCESS;
 }
 
-HcclResult Heartbeat::AddOpInfoToHeartBeat(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &newTag)
+HcclResult Heartbeat::AddOpInfoToHeartBeat(const std::string &identifier, const OpInfoDesc &opInfo,
+    const std::string &newTag)
 {
     AddOpInfo(identifier, opInfo, newTag);
     return HCCL_SUCCESS;
@@ -495,7 +501,7 @@ HcclResult Heartbeat::DeleteOpInfoToHeartBeat(const std::string &identifier, con
 {
     std::string tag;
     if (newTag != "") {
-         tag = newTag;
+        tag = newTag;
     } else {
         tag = identifier;
     }
@@ -523,11 +529,11 @@ HcclResult Heartbeat::UnRegisterRanks(const std::string &group)
     {
         std::unique_lock<std::mutex> lock(ProcessLock_);
 
-        for (const auto& rem : remInQueue) {
+        for (const auto &rem : remInQueue) {
             if (rankId2LinkStatusMap_[rem] == HBLinkStatus::HEARTBEAT_LINK_BUILDING) {
                 rankId2LinkStatusMap_[rem] = HBLinkStatus::HEARTBEAT_LINK_NOT_START;
-                HCCL_INFO("[%s] group[%s] rem[%s] is in hbLinkConnInfo deque. Status change to not start",  
-                    __func__, group.c_str(), FormatUId(rem).c_str());
+                HCCL_INFO("[%s] group[%s] rem[%s] is in hbLinkConnInfo deque. Status change to not start", __func__,
+                    group.c_str(), FormatUId(rem).c_str());
             }
         }
         auto iter = groupMap_.find(group);
@@ -536,24 +542,25 @@ HcclResult Heartbeat::UnRegisterRanks(const std::string &group)
             return HCCL_SUCCESS;
         }
 
-        for (const auto& remRank : groupMap_[group]) {
+        for (const auto remRank : groupMap_[group]) {
             UIDType rem = remRank.first;
             rankId2StatusMap_.erase(rem);
             if (remRank.second == HAS_CONN) {
                 if (rankId2SocketMap_.count(rem) == 1) {
                     if (rankId2SocketMap_[rem].socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER) {
                         CHK_PRT_RET(listenSocketMap_.find(rankId2SocketMap_[rem].socket->GetLocalIp()) ==
-                            listenSocketMap_.end(), HCCL_ERROR("ip[%s] listenSocketMap is not found",
-                            rankId2SocketMap_[rem].socket->GetLocalIp().GetReadableAddress()), HCCL_E_NOT_FOUND);
+                            listenSocketMap_.end(),
+                            HCCL_ERROR("ip[%s] listenSocketMap is not found",
+                            rankId2SocketMap_[rem].socket->GetLocalIp().GetReadableAddress()),
+                            HCCL_E_NOT_FOUND);
                         listenSocketMap_[rankId2SocketMap_[rem].socket->GetLocalIp()]->DelWhiteList(
                             rankId2SocketMap_[rem].wlistInfosVec);
                     }
                     rankId2SocketMap_[rem].socket->Close();
                     rankId2LinkStatusMap_[rem] = HBLinkStatus::HEARTBEAT_LINK_NOT_START;
                 }
-                HCCL_INFO("[%s]group[%s] socket erase remote:%s",  __func__, group.c_str(), FormatUId(rem).c_str());
+                HCCL_INFO("[%s]group[%s] socket erase remote:%s", __func__, group.c_str(), FormatUId(rem).c_str());
                 rankId2SocketMap_.erase(rem);
-                rankId2LinkStatusMap_.erase(rem);
             }
             HCCL_INFO("[%s]group[%s] status erase remote:%s", __func__, group.c_str(), FormatUId(rem).c_str());
         }
@@ -594,15 +601,10 @@ void Heartbeat::UnRegisterToHeartBeat(DevType devType, const std::string &commId
 UIDType Heartbeat::GetUId(const RankInfo &rankInfo) const
 {
     UIDType uid;
-    s32 ret = snprintf_s(uid.id,
-        sizeof(uid.id),
-        sizeof(uid.id) - 1,
-        "%s%s%s",
-        rankInfo.serverId.c_str(),
-        "/",
+    s32 ret = snprintf_s(uid.id, sizeof(uid.id), sizeof(uid.id) - 1, "%s%s%s", rankInfo.serverId.c_str(), "/",
         std::to_string(rankInfo.devicePhyId).c_str());
     if (ret == -1) {
-        HCCL_WARNING("[Heartbeat][%s] snprintf_s failed",  __func__);
+        HCCL_WARNING("[Heartbeat][%s] snprintf_s failed", __func__);
     }
     return uid;
 }
@@ -633,7 +635,8 @@ HcclResult Heartbeat::GetConnInfo(RankInfo &remRank, bool useSuperPodMode, HcclS
         std::unique_lock<std::mutex> lock(ProcessLock_);
         if (rankId2LinkStatusMap_.find(rem) == rankId2LinkStatusMap_.end()) {
             rankId2LinkStatusMap_[rem] = HBLinkStatus::HEARTBEAT_LINK_NOT_START;
-        } else if (rankId2LinkStatusMap_[rem] == HBLinkStatus::HEARTBEAT_LINK_BUILDING || rankId2LinkStatusMap_[rem] == HBLinkStatus::HEARTBEAT_LINK_COMPLETED ) {
+        } else if (rankId2LinkStatusMap_[rem] == HBLinkStatus::HEARTBEAT_LINK_BUILDING ||
+            rankId2LinkStatusMap_[rem] == HBLinkStatus::HEARTBEAT_LINK_COMPLETED) {
             newConn = false;
         }
     }
@@ -667,7 +670,7 @@ HcclResult Heartbeat::GetConnInfo(RankInfo &remRank, bool useSuperPodMode, HcclS
         locNicIp = HcclIpAddress(localDeviceId);
         CHK_RET(hrtRaGetSingleSocketVnicIpInfo(devicePhyId_, deviceIdType, localDeviceId, locNicIp));
         // 获取远端vnic ip
-        remNicIp =  HcclIpAddress(remoteDeviceId);
+        remNicIp = HcclIpAddress(remoteDeviceId);
         CHK_RET(hrtRaGetSingleSocketVnicIpInfo(devicePhyId_, deviceIdType, remoteDeviceId, remNicIp));
     }
 
@@ -691,15 +694,14 @@ HcclResult Heartbeat::GetConnInfo(RankInfo &remRank, bool useSuperPodMode, HcclS
     if (role == HcclSocketRole::SOCKET_ROLE_SERVER) {
         SocketWlistInfo wlistInfo;
         wlistInfo.connLimit = 1;
-        CHK_SAFETY_FUNC_RET(memcpy_s(&wlistInfo.tag[0],sizeof(wlistInfo.tag), tag.c_str(), tag.size() + 1));
+        CHK_SAFETY_FUNC_RET(memcpy_s(&wlistInfo.tag[0], sizeof(wlistInfo.tag), tag.c_str(), tag.size() + 1));
 
         wlistInfo.remoteIp.addr = remNicIp.GetBinaryAddress().addr;
         wlistInfo.remoteIp.addr6 = remNicIp.GetBinaryAddress().addr6;
         conn.wlistInfosVec.push_back(wlistInfo);
     }
 
-    EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(tag,
-        devCtx, remNicIp, port, role)), return HCCL_E_PTR);
+    EXECEPTION_CATCH((tempSocket = std::make_shared<HcclSocket>(tag, devCtx, remNicIp, port, role)), return HCCL_E_PTR);
     CHK_RET(tempSocket->Init());
 
     conn.socket = tempSocket;
@@ -708,23 +710,21 @@ HcclResult Heartbeat::GetConnInfo(RankInfo &remRank, bool useSuperPodMode, HcclS
     return HCCL_SUCCESS;
 }
 
-void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperPodMode, u32 index,
-    u32 nextOrPrevIndex, HcclSocketType& type)
+void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperPodMode, u32 index, u32 nextOrPrevIndex,
+    HcclSocketType &type)
 {
     // 910_93 Type要动态改一下 1. 同server vnic 2. 不同server 超结点内vnic 超结点间nic
     auto locRank = rankInfos[index];
     auto rankInfo = rankInfos[nextOrPrevIndex];
     bool localUseSuporPodModel = useSuperPodMode && locRank.superPodId.empty() == false;
-    bool needSuperModeHb =
-        localUseSuporPodModel && useSuperPodMode && rankInfo.superPodId.empty() == false;
+    bool needSuperModeHb = localUseSuporPodModel && useSuperPodMode && rankInfo.superPodId.empty() == false;
     if (needSuperModeHb) {
-        if (locRank.serverId == rankInfo.serverId) {  // serverId相同表示同超结点同server
+        if (locRank.serverId == rankInfo.serverId) { // serverId相同表示同超结点同server
             type = HcclSocketType::SOCKET_VNIC;
-        } else if (locRank.superPodId == rankInfo.superPodId) {  // 同超结点
-            type = (GetExternalInputInterHccsDisable() == true)
-                        ? HcclSocketType::SOCKET_NIC
-                        : HcclSocketType::SOCKET_VNIC;
-        } else {  // 表示不同超结点
+        } else if (locRank.superPodId == rankInfo.superPodId) { // 同超结点
+            type =
+                (GetExternalInputInterHccsDisable() == true) ? HcclSocketType::SOCKET_NIC : HcclSocketType::SOCKET_VNIC;
+        } else { // 表示不同超结点
             type = HcclSocketType::SOCKET_NIC;
         }
     }
@@ -746,31 +746,27 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
     u32 connCount = connVec.size();
     if (connCount <= 1) {
         HCCL_INFO("nothing need to connect");
-    } else if (connCount == 2) {  // 2个rank, 只需建链一条连接
+    } else if (connCount == 2) { // 2个rank, 只需建链一条连接
         u32 nextIndex = connVec[(index + 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
             GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type);
         }
-        HCCL_INFO("[GetSamePlaneConnInfo]local rank[%u], remote rank[%u], type[%d]",
-            worldRank,
-            rankInfos[nextIndex].worldRank,
-            type);
+        HCCL_INFO("[GetSamePlaneConnInfo]local rank[%u], remote rank[%u], type[%d]", worldRank,
+            rankInfos[nextIndex].worldRank, type);
         if (index == 0) {
-            CHK_RET(GetConnInfo(rankInfos[nextIndex], useSuperPodMode, HcclSocketRole::SOCKET_ROLE_CLIENT,
-                type, needConnectRank));
+            CHK_RET(GetConnInfo(rankInfos[nextIndex], useSuperPodMode, HcclSocketRole::SOCKET_ROLE_CLIENT, type,
+                needConnectRank));
         } else {
-            CHK_RET(GetConnInfo(rankInfos[nextIndex], useSuperPodMode, HcclSocketRole::SOCKET_ROLE_SERVER,
-                type, needConnectRank));
+            CHK_RET(GetConnInfo(rankInfos[nextIndex], useSuperPodMode, HcclSocketRole::SOCKET_ROLE_SERVER, type,
+                needConnectRank));
         }
     } else {
         u32 nextIndex = connVec[(index + 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
             GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type);
         }
-        HCCL_INFO("[GetSamePlaneConnInfo][nextIndex]local rank[%u], remote rank[%u], type[%d]",
-            worldRank,
-            rankInfos[nextIndex].worldRank,
-            type);
+        HCCL_INFO("[GetSamePlaneConnInfo][nextIndex]local rank[%u], remote rank[%u], type[%d]", worldRank,
+            rankInfos[nextIndex].worldRank, type);
         CHK_RET(GetConnInfo(rankInfos[nextIndex], useSuperPodMode, HcclSocketRole::SOCKET_ROLE_CLIENT, type,
             needConnectRank));
 
@@ -778,12 +774,10 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
         if (devType == DevType::DEV_TYPE_910_93) {
             GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, prevIndex, type);
         }
-        HCCL_INFO("[GetSamePlaneConnInfo][prevIndex]local rank[%u], remote rank[%u], type[%d]",
-            worldRank,
-            rankInfos[prevIndex].worldRank,
-            type);
-        CHK_RET(GetConnInfo(rankInfos[prevIndex], useSuperPodMode, HcclSocketRole::SOCKET_ROLE_SERVER,
-            type, needConnectRank));
+        HCCL_INFO("[GetSamePlaneConnInfo][prevIndex]local rank[%u], remote rank[%u], type[%d]", worldRank,
+            rankInfos[prevIndex].worldRank, type);
+        CHK_RET(GetConnInfo(rankInfos[prevIndex], useSuperPodMode, HcclSocketRole::SOCKET_ROLE_SERVER, type,
+            needConnectRank));
     }
 
     return HCCL_SUCCESS;
@@ -803,7 +797,7 @@ HcclResult Heartbeat::GetConnectRank(const RankInfo &locRank, std::vector<RankIn
             devVec.push_back(std::make_pair(rankInfo.devicePhyId, index));
         }
         if (rankInfo.devicePhyId == locRank.devicePhyId) {
-            serVec.push_back(std::make_pair(rankInfo.serverId , index));
+            serVec.push_back(std::make_pair(rankInfo.serverId, index));
         }
     }
     // server内单环dev排布, 为兼容310P(devId为0, 2, 4...), 扩展为16
@@ -829,8 +823,8 @@ HcclResult Heartbeat::GetConnectRank(const RankInfo &locRank, std::vector<RankIn
 
     HcclSocketType devSocketType =
         ((devType == DevType::DEV_TYPE_910B) && isUsedRdma) ? HcclSocketType::SOCKET_NIC : HcclSocketType::SOCKET_VNIC;
-    CHK_RET(GetSamePlaneConnInfo(devSocketType, devVec, locDevId, rankInfos, needConnectRank,
-        useSuperPodMode, worldRank));
+    CHK_RET(
+        GetSamePlaneConnInfo(devSocketType, devVec, locDevId, rankInfos, needConnectRank, useSuperPodMode, worldRank));
 
     auto nodeId = locRank.serverId;
     CHK_RET(GetSamePlaneConnInfo(HcclSocketType::SOCKET_NIC, serVec, nodeId, rankInfos, needConnectRank,
@@ -838,22 +832,21 @@ HcclResult Heartbeat::GetConnectRank(const RankInfo &locRank, std::vector<RankIn
     return HCCL_SUCCESS;
 }
 
-void Heartbeat::AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &paramTag)
+void Heartbeat::AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &newTag)
 {
     if (!opInfo.isValid || opInfo.opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV) {
         // 若当前opInfo为无效值或者为batchsendrecv算子时，无需添加
-        return ;
+        return;
     }
     // 添加一个opInfo到发送队列中
     OpInfoDesc opInfoTmp = opInfo;
     std::string tag;
     if (opInfo.opType == HcclCMDType::HCCL_CMD_SEND || opInfo.opType == HcclCMDType::HCCL_CMD_RECEIVE) {
-        RegisterSROpIdentifier(identifier, paramTag);
-        tag = paramTag;
+        tag = newTag;
     } else {
         tag = identifier;
     }
-    std::lock_guard<std::mutex> lock(opInfoQueueMutex_);
+    std::unique_lock<std::mutex> lock(opInfoQueueMutex_);
 
     auto opInfoIndexIter = opInfoIndexMap_.find(tag);
     if (opInfoIndexIter == opInfoIndexMap_.end()) {
@@ -862,33 +855,32 @@ void Heartbeat::AddOpInfo(const std::string &identifier, const OpInfoDesc &opInf
     } else {
         opInfoTmp.index = ++(opInfoIndexIter->second);
     }
-    opInfoQueue_.push_back(std::make_pair(tag, opInfoTmp));
-    HCCL_INFO("[Heartbeat][%s]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], index[%llu] add success", 
-        __func__, opInfoTmp.opType, opInfoTmp.dataType, opInfoTmp.reduceOp, opInfoTmp.count, opInfoTmp.root, tag.c_str(), opInfoTmp.index);
+    opInfoQueue_.push_back(opInfoTmp);
+    HCCL_DEBUG("[Heartbeat][AddOpInfo]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], "
+               "index[%llu] add success",
+        opInfoTmp.opType, opInfoTmp.dataType, opInfoTmp.reduceOp, opInfoTmp.count, opInfoTmp.root, opInfoTmp.identifier,
+        opInfoTmp.index);
 
     // 限制发送队列的长度，防止内存逐渐溢出
-    if (opInfoQueue_.size() > OPINFO_QUEUE_MAX_SIZE) {
+    while (opInfoQueue_.size() > OPINFO_QUEUE_MAX_SIZE) {
         opInfoQueue_.pop_front();
-        HCCL_WARNING("[%s] The front element is removed from the opInfoQueue, size is over %llu.", __func__, OPINFO_QUEUE_MAX_SIZE);
     }
-    return ;
+    return;
 }
 
-void Heartbeat::GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo)
+OpInfoDesc Heartbeat::GetOneOpInfo()
 {
     // 从发送队列中获取一个opInfo发送给对端
     std::unique_lock<std::mutex> lock(opInfoQueueMutex_);
     if (opInfoQueue_.empty()) {
         static OpInfoDesc defaultOpInfo;
-        opInfo = defaultOpInfo;
-        return ;
+        return defaultOpInfo;
     }
-    auto opInfoPair = opInfoQueue_.front();
+    OpInfoDesc opInfo = opInfoQueue_.front();
     opInfoQueue_.pop_front();
     lock.unlock();
 
-    tag = opInfoPair.first;
-    opInfo = opInfoPair.second;
+    std::string tag = std::string(opInfo.identifier);
     std::unique_lock<std::mutex> mapLock(opInfoMapMutex_);
     if (opInfoMap_.find(tag) == opInfoMap_.end()) {
         std::map<u64, OpInfoDesc> opInfoList;
@@ -905,83 +897,42 @@ void Heartbeat::GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo)
         opInfoMap_[tag].erase(smallIt);
     }
 
-    HCCL_INFO("[Heartbeat][%s]tag[%s], opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], index[%llu] get success", 
-        __func__, tag.c_str(), opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.index);
-    return ;
+    HCCL_DEBUG("[Heartbeat][GetOneOpInfo]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], "
+               "index[%llu] get success",
+        opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.identifier, opInfo.index);
+    return opInfo;
 }
 
-void Heartbeat::GetSendOpInfoList(OpInfoTagQueueFrame &opInfoTagQueueFrame)
+void Heartbeat::GetSendOpInfoList(std::vector<OpInfoDesc> &opInfoList)
 {
-    while (opInfoQueueForSend_.size() < OPINFO_TAG_QUEUE_NUM * OPINFO_SEND_NUM_BY_TAG) {
-        OpInfoDesc opInfo;
-        std::string tag;
-        GetOneOpInfo(tag, opInfo);
+    for (auto i = 0u; i < OPINFO_SEND_NUM; i++) {
+        OpInfoDesc opInfo = GetOneOpInfo();
         if (opInfo.isValid) {
-            opInfoQueueForSend_.push_back(std::make_pair(tag, opInfo));
-        } else {
-            break;
+            opInfoList.push_back(opInfo);
         }
     }
-    
-    HCCL_DEBUG("[%s] opInfoQueueForSend_.size[%d] begin", __func__, opInfoQueueForSend_.size());
-    auto &opInfoTagQueue = opInfoTagQueueFrame.opInfoTagQueue;
-    for (auto iter = opInfoQueueForSend_.begin(); iter != opInfoQueueForSend_.end(); ) {
-        bool isAdd = false;
-        for (u32 index = 0; index < OPINFO_TAG_QUEUE_NUM; index++) {
-            // 当前 index 对应的 opInfoTagQueue 为未初始化状态
-            if (strncmp(opInfoTagQueue[index].identifier, "\0", ROOTINFO_INDENTIFIER_MAX_LENGTH) == 0) {
-                memcpy_s(opInfoTagQueue[index].identifier, iter->first.size() + 1, iter->first.c_str(), iter->first.size() + 1);
-                opInfoTagQueue[index].opInfoList[opInfoTagQueue[index].opInfoNum] = iter->second;
-                opInfoTagQueue[index].opInfoNum++;
-                isAdd = true;
-                HCCL_DEBUG("[%s]opInfoTagQueue[%d] add success identifier[%s] ", __func__, index, opInfoTagQueue[index].identifier);
-                break;
-            } 
-            // 当前 index 对应的 opInfoTagQueue 已经被某个tag 的算子占用
-            else if (strncmp(opInfoTagQueue[index].identifier, iter->first.c_str(), ROOTINFO_INDENTIFIER_MAX_LENGTH) == 0) {
-                if (opInfoTagQueue[index].opInfoNum < OPINFO_SEND_NUM_BY_TAG) {
-                    opInfoTagQueue[index].opInfoList[opInfoTagQueue[index].opInfoNum] = iter->second;
-                    opInfoTagQueue[index].opInfoNum++;
-                    isAdd = true;
-                    HCCL_DEBUG("[%s]opInfoTagQueue[%d] has exists and add success identifier[%s] ", __func__, index, opInfoTagQueue[index].identifier);
-                    break;
-                }
-            }
-        }
-        if (isAdd) {
-            iter = opInfoQueueForSend_.erase(iter);
-        } else {
-            iter++;//opInfoQueueForSend_ 残留数据会被保存到下一轮 GetSendOpInfoList
-        }
-    }
-    HCCL_DEBUG("[%s]opInfoQueueForSend_.size[%d] end", __func__, opInfoQueueForSend_.size());
-    HCCL_DEBUG("[%s]DISPLAY opInfoTagQueue ", __func__);
-    for (u32 index = 0; index < OPINFO_TAG_QUEUE_NUM; index++) {
-        HCCL_DEBUG("[%s]opInfoTagQueue[%d].opInfoNum == %d", __func__, index, opInfoTagQueue[index].opInfoNum);
-    }
-    return ;
+    return;
 }
 
-void Heartbeat::SaveOpInfo(const OpInfoTagQueueFrame &opInfoTagQueueFrame, UIDType &src)
+void Heartbeat::SaveOpInfo(OpInfoDesc opInfoList[], UIDType &src)
 {
-    const auto &opInfoTagQueue = opInfoTagQueueFrame.opInfoTagQueue;
-    for (u32 index = 0; index < OPINFO_TAG_QUEUE_NUM; index ++) {
-        std::string tag = std::string(opInfoTagQueue[index].identifier);
-        for (u32 num = 0; num < opInfoTagQueue[index].opInfoNum; num++) {
-            std::unique_lock<std::mutex> lock(opInfoMapMutex_);
-            // 保存接收到的opInfo到接收队列中
-            auto &opInfo = opInfoTagQueue[index].opInfoList[num];
-            recvOpInfoList_.push_back(std::make_tuple(opInfo, tag, src));
-            HCCL_INFO("[Heartbeat][%s]tag[%s], opType[%d], dataType[%d], reduce[%d], count[%u], root[%d], index[%llu] get success", 
-                __func__, tag.c_str(), opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.index);
+    for (auto index = 0u; index < OPINFO_SEND_NUM; index++) {
+        auto &opInfo = opInfoList[index];
+        if (!opInfo.isValid) {
+            return;
+        }
+        // 保存接收到的opInfo到接收队列中
+        std::unique_lock<std::mutex> lock(opInfoMapMutex_);
+        recvOpInfoList_.push_back(std::make_pair(opInfo, src));
+        HCCL_DEBUG("[Heartbeat][SaveOpInfo]opType[%d], dataType[%d], reduce[%d], count[%u], root[%d], tag[%s], "
+                   "index[%llu] get success",
+            opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root, opInfo.identifier,
+            opInfo.index);
+        while (recvOpInfoList_.size() > OPINFO_QUEUE_MAX_SIZE) {
+            recvOpInfoList_.pop_front();
         }
     }
-    std::unique_lock<std::mutex> lock(opInfoMapMutex_);
-    while (recvOpInfoList_.size() > OPINFO_QUEUE_MAX_SIZE) { // 可能存在误丢
-        recvOpInfoList_.pop_front();
-    }
-
-    return ;
+    return;
 }
 
 bool Heartbeat::CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo)
@@ -997,8 +948,7 @@ bool Heartbeat::CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoDesc &r
     } else if (localOpInfo.opType != remoteOpInfo.opType) {
         return false;
     }
-    if (localOpInfo.dataType != remoteOpInfo.dataType ||
-        localOpInfo.reduceOp != remoteOpInfo.reduceOp ||
+    if (localOpInfo.dataType != remoteOpInfo.dataType || localOpInfo.reduceOp != remoteOpInfo.reduceOp ||
         localOpInfo.root != remoteOpInfo.root) {
         return false;
     }
@@ -1006,11 +956,11 @@ bool Heartbeat::CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoDesc &r
         localOpInfo.opType != HcclCMDType::HCCL_CMD_ALLTOALLV &&
         localOpInfo.opType != HcclCMDType::HCCL_CMD_ALLTOALLVC &&
         localOpInfo.opType != HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
-            // 仅对数据量均等的算子进行校验数据量count
-            if (localOpInfo.count != remoteOpInfo.count) {
-                return false;
-            }
+        // 仅对数据量均等的算子进行校验数据量count
+        if (localOpInfo.count != remoteOpInfo.count) {
+            return false;
         }
+    }
     return true;
 }
 
@@ -1018,43 +968,47 @@ void Heartbeat::CheckRecvOpInfoList()
 {
     // 校验接收队列中接收到的opInfo
     std::unique_lock<std::mutex> lock(opInfoMapMutex_);
-    for (auto it = recvOpInfoList_.begin(); it != recvOpInfoList_.end(); ) {
-        const auto &opInfoRecv = std::get<0>(*it);
-        const auto &identifier = std::get<1>(*it);
-        const auto &uid = std::get<2>(*it);
+    for (auto it = recvOpInfoList_.begin(); it != recvOpInfoList_.end();) {
+        auto identifier = std::string(it->first.identifier);
         auto opInfoIndexMap = opInfoMap_.find(identifier);
         if (opInfoIndexMap == opInfoMap_.end()) {
             ++it;
-            HCCL_INFO("[Heartbeat]check recv not fount. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
+            HCCL_DEBUG("[Heartbeat]check recv not fount. identifier[%s] index[%u]", identifier.c_str(),
+                it->first.index);
             continue;
         }
 
-        if (opInfoIndexMap->second.find(opInfoRecv.index) != opInfoIndexMap->second.end()) {
-            const auto &opInfo = opInfoIndexMap->second[opInfoRecv.index];
-            if (!CheckIsSameOp(opInfo, opInfoRecv)) {
-                // 当算子不匹配时，记录并打印ERROR日志并广播下发不一致错误给其他节点
-                AddInconsistentOpRecord(identifier, opInfo, opInfoRecv);
+        if (opInfoIndexMap->second.find(it->first.index) != opInfoIndexMap->second.end()) {
+            const auto &opInfo = opInfoIndexMap->second[it->first.index];
+            if (!CheckIsSameOp(opInfo, it->first)) {
+                // 当算子不匹配时，打印ERROR日志并广播下发不一致错误给其他节点
                 char localInfo[LOG_TMPBUF_SIZE];
                 s32 ret = snprintf_s(localInfo, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                    "node[%s] optype[%s] dataType[%s] reduceOp[%s] count[%d] root[%d]",
-                                    FormatUId(uid_).c_str(), GetCMDTypeEnumStr(opInfo.opType).c_str(), GetDataTypeEnumStr(opInfo.dataType).c_str(),
-                                    GetReduceOpEnumStr(opInfo.reduceOp).c_str(), opInfo.count, opInfo.root);
+                    "node[%s] optype[%s] dataType[%s] reduceOp[%s] count[%d] root[%d]", FormatUId(uid_).c_str(),
+                    GetCMDTypeEnumStr(opInfo.opType).c_str(), GetDataTypeEnumStr(opInfo.dataType).c_str(),
+                    GetReduceOpEnumStr(opInfo.reduceOp).c_str(), opInfo.count, opInfo.root);
                 CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
                 char remoteInfo[LOG_TMPBUF_SIZE];
                 ret = snprintf_s(remoteInfo, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                                "node[%s] optype[%s] dataType[%s] reduceOp[%s] count[%d] root[%d]",
-                                FormatUId(uid).c_str(), GetCMDTypeEnumStr(opInfoRecv.opType).c_str(), GetDataTypeEnumStr(opInfoRecv.dataType).c_str(),
-                                GetReduceOpEnumStr(opInfoRecv.reduceOp).c_str(), opInfoRecv.count, opInfoRecv.root);
+                    "node[%s] optype[%s] dataType[%s] reduceOp[%s] count[%d] root[%d]", FormatUId(it->second).c_str(),
+                    GetCMDTypeEnumStr(it->first.opType).c_str(), GetDataTypeEnumStr(it->first.dataType).c_str(),
+                    GetReduceOpEnumStr(it->first.reduceOp).c_str(), it->first.count, it->first.root);
                 CHK_PRT_CONT(ret == -1, HCCL_ERROR("Failed to build log info"));
 
-                RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
-                    std::vector<std::string>({ identifier, std::to_string(opInfoRecv.index), std::string(localInfo), std::string(remoteInfo) }));
-                HCCL_ERROR("[Heartbeat]check opinfo inconsistent. identifier[%s] index[%u], "
-                                "local(%s); remote(%s)", identifier.c_str(), opInfoRecv.index, localInfo, remoteInfo);
+                RPT_INPUT_ERR(true, "EI0005",
+                    std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
+                    std::vector<std::string>(
+                    { identifier, std::to_string(it->first.index), std::string(localInfo), std::string(remoteInfo) }));
+                
+                HCCL_ERROR("[%s][%s]check opinfo inconsistent. identifier[%s] index[%u], local(%s); remote(%s)",
+                    LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(), identifier.c_str(),
+                    it->first.index, localInfo, remoteInfo);
                 SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_INCONSISTENT);
             } else {
-                HCCL_INFO("[Heartbeat]check opinfo success. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
+                HCCL_DEBUG("[Heartbeat]check opinfo success. identifier[%s] index[%u]", identifier.c_str(),
+                    it->first.index);
             }
+
             // 校验完成后删除收到的opInfo
             it = recvOpInfoList_.erase(it);
         } else {
@@ -1062,63 +1016,89 @@ void Heartbeat::CheckRecvOpInfoList()
             ++it;
         }
     }
-    return ;
+    return;
 }
 
-HcclResult Heartbeat::SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status, const OpInfoTagQueueFrame &opInfoTagQueueFrame)
+void Heartbeat::AddopInfoListToSendFrame(UIDType &dst, HeartBeatFrame &bf, const std::vector<OpInfoDesc> &opInfoList,
+    bool &hasValidOpInfo)
+{
+    auto index = 0;
+    for (const auto &opInfo : opInfoList) {
+        std::string identifierStr = std::string(opInfo.identifier);
+        // 只有当前的对端dst在OpInfo的通信域中，才把opInfo发送给对端做校验
+        if (groupMap_.find(identifierStr) != groupMap_.end()) {
+            if (groupMap_[identifierStr].find(dst) != groupMap_[identifierStr].end()) {
+                bf.opInfoList[index] = opInfo;
+                index++;
+                hasValidOpInfo = true;
+                HCCL_DEBUG("[Heartbeat][%s]opType[%d], dataType[%d], reduce[%d], count[%llu], root[%d], tag[%s], "
+                           "index[%llu] get success",
+                    __func__, opInfo.opType, opInfo.dataType, opInfo.reduceOp, opInfo.count, opInfo.root,
+                    opInfo.identifier, opInfo.index);
+            } else {
+                HCCL_DEBUG("[Heartbeat][%s]dst[%s] is not in groupMap_", __func__, dst.id);
+            }
+        } else {
+            HCCL_DEBUG("[Heartbeat][%s]identifier[%s] is not in groupMap_", __func__, identifierStr.c_str());
+        }
+    }
+    return;
+}
+
+HcclResult Heartbeat::SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status,
+    const std::vector<OpInfoDesc> &opInfoList)
 {
     HeartBeatFrame bf(uid_, dst, crimer, informer, status);
-    bf.opInfoTagQueueFrame = opInfoTagQueueFrame;
- 
+    bool hasValidOpInfo = false;
+    AddopInfoListToSendFrame(dst, bf, opInfoList, hasValidOpInfo);
     if (rankId2SocketMap_[dst].sendBuffer.size() > 0) {
-        if (status != HeartBeatStatus::HEARTBEAT_OK && rankId2SocketMap_[dst].sendBuffer.size() < MAX_SENDBUFF_SIZE) {
+        if ((status != HeartBeatStatus::HEARTBEAT_OK || hasValidOpInfo) &&
+            rankId2SocketMap_[dst].sendBuffer.size() < MAX_SENDBUFF_SIZE) {
             rankId2SocketMap_[dst].sendBuffer.push(bf);
         }
+        while (rankId2SocketMap_[dst].sendBuffer.size() > 0) {
+            HeartBeatFrame hbf = rankId2SocketMap_[dst].sendBuffer.front();
+            u64 sendDis = sizeof(HeartBeatFrame) - rankId2SocketMap_[dst].restSize;
+            u64 compSize = 0;
+            HcclResult ret = rankId2SocketMap_[dst].socket->ISend(
+                reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(&hbf) + sendDis), rankId2SocketMap_[dst].restSize,
+                compSize);
+            if (ret != HCCL_SUCCESS) {
+                return ret;
+            }
+            if (rankId2SocketMap_[dst].restSize == compSize) {
+                rankId2SocketMap_[dst].sendBuffer.pop();
+                rankId2SocketMap_[dst].restSize = sizeof(HeartBeatFrame);
+                HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
+                    FormatUId(uid_).c_str(), FormatUId(dst).c_str(), FormatUId(crimer).c_str(),
+                    FormatUId(informer).c_str(), status);
+            } else {
+                rankId2SocketMap_[dst].restSize = rankId2SocketMap_[dst].restSize - compSize;
+                break;
+                // continue;
+            }
+        }
     } else {
-        rankId2SocketMap_[dst].sendBuffer.push(bf);
-        rankId2SocketMap_[dst].restSize = sizeof(HeartBeatFrame);
-    }
-    //查询到某个Dst的发送缓冲数据量 
-    HCCL_INFO("[%s]rankId2SocketMap_[%s].sendBuffer.size(%llu) ", __func__,
-        FormatUId(dst).c_str(), rankId2SocketMap_[dst].sendBuffer.size());
-
-    u32 unCompletedCount = 0;//已经发送的loop次数
-    while (rankId2SocketMap_[dst].sendBuffer.size() > 0) {
-        HeartBeatFrame hbf = rankId2SocketMap_[dst].sendBuffer.front();
-        u64 sendDis = sizeof(HeartBeatFrame) - rankId2SocketMap_[dst].restSize;
         u64 compSize = 0;
-        HcclResult ret = rankId2SocketMap_[dst].socket->ISend(
-            reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(&hbf) + sendDis),
-            rankId2SocketMap_[dst].restSize, compSize);
+        u32 expectSize = sizeof(HeartBeatFrame);
+        HcclResult ret = rankId2SocketMap_[dst].socket->ISend(&bf, expectSize, compSize);
         if (ret != HCCL_SUCCESS) {
             return ret;
         }
-        if (rankId2SocketMap_[dst].restSize == compSize) {
-            rankId2SocketMap_[dst].sendBuffer.pop();
-            rankId2SocketMap_[dst].restSize = sizeof(HeartBeatFrame);
-            HCCL_INFO("[Heartbeat][%s] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
-                __func__,
-                FormatUId(uid_).c_str(),
-                FormatUId(dst).c_str(),
-                FormatUId(crimer).c_str(),
-                FormatUId(informer).c_str(),
+        if (compSize == expectSize) {
+            HCCL_DEBUG("[Heartbeat][SendFrame] Send Success, from [%s] to [%s] about [%s] by [%s] status[%d]",
+                FormatUId(uid_).c_str(), FormatUId(dst).c_str(), FormatUId(crimer).c_str(), FormatUId(informer).c_str(),
                 status);
         } else {
-            HCCL_DEBUG("[Heartbeat][SendFrame] Send Not Complete, from [%s] to [%s] about [%s] by [%s] status[%d], expectSize[%u], compSize[%u]",
-                FormatUId(uid_).c_str(),
-                FormatUId(dst).c_str(),
-                FormatUId(crimer).c_str(),
-                FormatUId(informer).c_str(),
-                status, rankId2SocketMap_[dst].restSize, compSize);
-            rankId2SocketMap_[dst].restSize = rankId2SocketMap_[dst].restSize - compSize;
-            unCompletedCount++;
-            SaluSleep(ONE_HUNDRED_MICROSECOND_OF_USLEEP);// 100us
-            // 限制发送的循环此时，避免在send流程里死循环
-            if (unCompletedCount > HBFRAME_SEND_LOOP_MAX_NUM) { 
-                break;//120个loop约30毫秒
-            }
+            HCCL_WARNING("[Heartbeat][SendFrame] Send Not Complete, from [%s] to [%s] about [%s] by [%s] status[%d], "
+                         "expectSize[%u], compSize[%u], opInfoSize[%d]",
+                FormatUId(uid_).c_str(), FormatUId(dst).c_str(), FormatUId(crimer).c_str(), FormatUId(informer).c_str(),
+                status, expectSize, compSize, sizeof(OpInfoDesc));
+            rankId2SocketMap_[dst].restSize = expectSize - compSize;
+            rankId2SocketMap_[dst].sendBuffer.push(bf);
         }
     }
+
     return HCCL_SUCCESS;
 }
 
@@ -1132,7 +1112,6 @@ HcclResult Heartbeat::RecvFrame(UIDType &src)
         HcclResult retVal = rankId2SocketMap_[src].socket->IRecv(&bf, expectSize, compSize);
         if (retVal == HCCL_SUCCESS && compSize > 0) {
             rankId2SocketMap_[src].recvBuffer.PushSeg(reinterpret_cast<u8 *>(&bf), compSize);
-            // 标识当前Recvbuf中已经存放了一个完整的帧
             if (rankId2SocketMap_[src].recvBuffer.Size() >= expectSize) {
                 rankId2SocketMap_[src].recvBuffer.GetSeg(reinterpret_cast<u8 *>(&bf), expectSize);
                 rankId2SocketMap_[src].recvBuffer.PopSeg(expectSize);
@@ -1155,11 +1134,8 @@ HcclResult Heartbeat::ParseFrame(HeartBeatFrame &bf, UIDType &src)
     }
 
     HCCL_DEBUG("[Heartbeat][RecvFrame] Recv Success, from [%s] to [%s] about [%s] by [%s] state[%d]",
-        FormatUId(bf.src).c_str(),
-        FormatUId(bf.dst).c_str(),
-        FormatUId(bf.crimer).c_str(),
-        FormatUId(bf.informer).c_str(),
-        bf.status);
+        FormatUId(bf.src).c_str(), FormatUId(bf.dst).c_str(), FormatUId(bf.crimer).c_str(),
+        FormatUId(bf.informer).c_str(), bf.status);
 
     // 能够收到进程卡住表示心跳是正常的
     if (bf.status == HeartBeatStatus::HEARTBEAT_OK || bf.status == HeartBeatStatus::HEARTBEAT_STUCK) {
@@ -1171,7 +1147,7 @@ HcclResult Heartbeat::ParseFrame(HeartBeatFrame &bf, UIDType &src)
         SetStatus(bf.crimer, bf.informer, bf.status);
     }
 
-    SaveOpInfo(bf.opInfoTagQueueFrame, src);
+    SaveOpInfo(bf.opInfoList, src);
     return HCCL_SUCCESS;
 }
 
@@ -1189,16 +1165,18 @@ void Heartbeat::SetStatus(UIDType &crimer, UIDType &informer, HeartBeatStatus st
         if (errStatusQueue_.size() > EVENT_MAX_CNT) {
             errStatusQueue_.pop();
         }
-        HCCL_RUN_INFO("[HCCL_TRACE]local rank [%s]: crimer rank [%s] status[%s] by informer rank [%s]",
-            FormatUId(uid_).c_str(), FormatUId(crimer).c_str(),
-            GetHeartBeatStatusStr(status).c_str(), FormatUId(informer).c_str());
+        HCCL_RUN_INFO("[%s][%s]local rank [%s]: crimer rank [%s] status[%s] by informer rank [%s]",
+            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), FormatUId(uid_).c_str(),
+            FormatUId(crimer).c_str(), GetHeartBeatStatusStr(status).c_str(), FormatUId(informer).c_str());
     }
 }
-bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime)
+
+bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string &group)
 {
     bool ret = false;
     s64 intervalTime = DURATION_US(curTime - event.TOARelative).count() / (TIME_S_TO_MS * ONE_MILLISECOND_OF_USLEEP);
-    s64 execTimeout = GetInternalExecTimeOut();
+    s32 hcclExecTimeout = CommConfiger::GetInstance().GetCommConfigExecTimeOut(group);
+    s64 execTimeout = hcclExecTimeout;
     s64 detectionTime = 0;
     switch (event.status) {
         case HeartBeatStatus::HEARTBEAT_LOST:
@@ -1210,14 +1188,14 @@ bool Heartbeat::IsKeyEvent(HeartBeatFrame &event, HcclUs curTime)
             detectionTime = 0;
             break;
         case HeartBeatStatus::HEARTBEAT_STUCK:
-            detectionTime = 2 * stuckDetectTime_;  // 最长探测时间为2倍的卡住检测时间
+            detectionTime = 2 * stuckDetectTime_; // 最长探测时间为2倍的卡住检测时间
             break;
         case HeartBeatStatus::HEARTBEAT_NOTIFY:
         default:
-            return false;  // 当前不支持的事件，不做处理和展现
+            return false; // 当前不支持的事件，不做处理和展现
     }
     ret = ((execTimeout - intervalTime - detectionTime) < JITTER_TIME) &&
-          ((intervalTime + detectionTime - execTimeout) < JITTER_TIME);
+        ((intervalTime + detectionTime - execTimeout) < JITTER_TIME);
     return ret;
 }
 
@@ -1228,11 +1206,12 @@ void Heartbeat::MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<st
         std::string crimerStr = FormatUId(tmp.crimer);
         std::string informerStr = FormatUId(tmp.informer);
 
-        std::string headStr = "Cluster Exception Location[IP/ID]:[";
+        std::string headStr = "[" + LOG_KEYWORDS_TASK_EXEC + "][" + LOG_KEYWORDS_HEARTBEAT_EVETN + "]" +
+            "Cluster Exception Location[IP/ID]:[";
 
         time_t tm = std::chrono::system_clock::to_time_t(tmp.TOASystem);
         std::string timeStr(ctime(&tm));
-        if (!timeStr.empty()) {  // ctime()函数自带换行符，需要去掉
+        if (!timeStr.empty()) { // ctime()函数自带换行符，需要去掉
             timeStr.pop_back();
         }
         timeStr = ", Arrival Time:[" + timeStr + "]";
@@ -1288,14 +1267,14 @@ std::vector<std::string> Heartbeat::PrintEvents(std::map<HeartBeatStatus, std::q
     MakeErrMsg(keyEvents[HeartBeatStatus::HEARTBEAT_INCONSISTENT], errStatusVec);
     return errStatusVec;
 }
-std::vector<std::string> Heartbeat::GetErrStatusVec()
+std::vector<std::string> Heartbeat::GetErrStatusVec(const std::string &group)
 {
     std::unique_lock<std::mutex> lock(ProcessLock_);
     HcclUs curTime = TIME_NOW();
     std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> keyEvents;
     while (errStatusQueue_.size() > 0) {
         auto &tmp = errStatusQueue_.front();
-        if (IsKeyEvent(tmp, curTime)) {  // 非关键事件不处理
+        if (IsKeyEvent(tmp, curTime, group)) { // 非关键事件不处理
             keyEvents[tmp.status].push(tmp);
         }
         errStatusQueue_.pop();
@@ -1308,79 +1287,88 @@ void Heartbeat::ProcessExceptionEvent()
     while (errRankQueue_.size() > 0) {
         UIDType cur = errRankQueue_.front();
         rankId2StatusMap_[cur].needBroadcast = false;
-        OpInfoTagQueueFrame opInfoTagQueueFrame;
+        std::vector<OpInfoDesc> opInfoList;
+        GetSendOpInfoList(opInfoList);
         for (auto iterRem = rankId2SocketMap_.begin(); iterRem != rankId2SocketMap_.end(); iterRem++) {
             UIDType rem = iterRem->first;
             if (rem != rankId2StatusMap_[cur].informer &&
                 rankId2StatusMap_[rem].status == HeartBeatStatus::HEARTBEAT_OK) {
-                (void)SendFrame(rem, cur, rankId2StatusMap_[cur].informer, rankId2StatusMap_[cur].status, opInfoTagQueueFrame);
+                (void)SendFrame(rem, cur, rankId2StatusMap_[cur].informer, rankId2StatusMap_[cur].status, opInfoList);
             }
         }
         errRankQueue_.pop();
     }
 }
 
-void Heartbeat::CreateHBLinksAsync() {
-    std::lock_guard<std::mutex> infoLock(hbLinkConnInfoMtx_);
+void Heartbeat::CreateHBLinksAsync()
+{
+    std::unique_lock<std::mutex> infoLock(hbLinkConnInfoMtx_);
     if (hbLinkConnInfo_.empty()) {
         return;
     }
     linkThreadRunning_ = true;
-    for (auto& pair : hbLinkConnInfo_) {
-        const std::string& groupName = pair.first;
-        auto& groupConnInfoQueue = pair.second;
+    std::queue<std::tuple<std::string, UIDType, ConnInfo>> connInfoQueue;
+    for (auto &pair : hbLinkConnInfo_) {
+        const std::string &groupName = pair.first;
+        auto &groupConnInfoQueue = pair.second;
         while (!groupConnInfoQueue.empty()) {
-            const UIDType& remUid = groupConnInfoQueue.front().first;
-            ConnInfo& connInfo = groupConnInfoQueue.front().second;
-            auto it = linkThreadMap_.find(remUid);
-            if (it != linkThreadMap_.end() && it->second->joinable()) {
-                it->second->join();
-                HCCL_INFO("[CreateHBLinksAsync] Heartbeat link thread has been joined. Group[%s], remote uid[%s].",
-                    groupName.c_str(), FormatUId(remUid).c_str());
-            }
-            linkThreadMap_[remUid].reset(new (std::nothrow) 
-                std::thread(&Heartbeat::CreateLinkWithRemote, this, groupName, remUid, connInfo));
-            if (linkThreadMap_[remUid] == nullptr) {
-                HCCL_RUN_WARNING("Group[%s] establish rank[%s] to rank[%s] heartbeat connection failed. Reason: "
-                    "create thread failed.", groupName.c_str(), FormatUId(uid_).c_str(), FormatUId(remUid).c_str());
-            }
+            connInfoQueue.push(std::make_tuple(groupName, groupConnInfoQueue.front().first, 
+                groupConnInfoQueue.front().second));
             groupConnInfoQueue.pop();
         }
     }
+    infoLock.unlock();
+    while (!connInfoQueue.empty()) {
+        const std::string groupName = std::get<0>(connInfoQueue.front());
+        const UIDType &remUid = std::get<1>(connInfoQueue.front());
+        ConnInfo &connInfo = std::get<2>(connInfoQueue.front());
+        auto it = linkThreadMap_.find(remUid);
+        if (it != linkThreadMap_.end() && it->second->joinable()) {
+            it->second->join();
+            HCCL_INFO("[CreateHBLinksAsync] Heartbeat link thread has been joined. Group[%s], remote uid[%s].",
+                groupName.c_str(), FormatUId(remUid).c_str());
+        }
+        linkThreadMap_[remUid].reset(
+            new (std::nothrow) std::thread(&Heartbeat::CreateLinkWithRemote, this, groupName, remUid, connInfo));
+        if (linkThreadMap_[remUid] == nullptr) {
+            HCCL_RUN_WARNING("Group[%s] establish rank[%s] to rank[%s] heartbeat connection failed. Reason: "
+                "create thread failed.",
+                groupName.c_str(), FormatUId(uid_).c_str(), FormatUId(remUid).c_str());
+        }
+        connInfoQueue.pop();
+    }
+    return;
 }
 
 void Heartbeat::HeartbeatStatusMonitor()
 {
     // 给当前线程添加名字
     SetThreadName("Hccl_HeartBeat");
+
     u32 count = 0;
     if (deviceLogicId_ != static_cast<u32>(HOST_DEVICE_ID)) {
         hrtSetDevice(deviceLogicId_);
     }
     uint64_t cnt = 0;
     HcclResult ret;
-    auto counterStat = CounterStat();    
+    auto counterStat = CounterStat();
     InitStuckDetection(counterStat);
     while (startSendRecvTask_) {
         CreateHBLinksAsync();
         ProcessLock_.lock();
         count++;
-        HCCL_INFO("[%s] local[%s] opInfoQueue size[%d]", __func__, FormatUId(uid_).c_str(), opInfoQueue_.size());
         if (count >= HEARTBEAT_COUNT) {
             count = 0;
-            OpInfoTagQueueFrame opInfoTagQueueFrame;
-            GetSendOpInfoList(opInfoTagQueueFrame);
-            
+            std::vector<OpInfoDesc> opInfoList;
+            GetSendOpInfoList(opInfoList);
             for (auto iter = rankId2SocketMap_.begin(); iter != rankId2SocketMap_.end(); iter++) {
                 UIDType rem = iter->first;
-                HCCL_DEBUG(
-                    "rank[%s] Try to Send HeartBeat to rank[%s]", FormatUId(uid_).c_str(), FormatUId(rem).c_str());
+                HCCL_DEBUG("rank[%s] Try to Send HeartBeat to rank[%s]", FormatUId(uid_).c_str(),
+                    FormatUId(rem).c_str());
                 rankId2SocketMap_[rem].lostNum++;
-                ret = SendFrame(rem,
-                    uid_,
-                    uid_,
+                ret = SendFrame(rem, uid_, uid_,
                     (counterStat.issueCnt != 0) ? HeartBeatStatus::HEARTBEAT_STUCK : HeartBeatStatus::HEARTBEAT_OK,
-                    opInfoTagQueueFrame);
+                    opInfoList);
                 ret == HCCL_E_INTERNAL ? errorSocket_.push_back(rem) : void(0);
             }
             DelErrorSocket();
@@ -1400,24 +1388,22 @@ void Heartbeat::HeartbeatStatusMonitor()
                 SetStatus(rem, uid_, HeartBeatStatus::HEARTBEAT_LOST);
             }
         }
-        CheckRecvOpInfoList(); //校验频率 50ms 一次
+        CheckRecvOpInfoList();
         DelErrorSocket();
         StuckDetection(cnt, counterStat);
         ProcessExceptionEvent();
         ProcessLock_.unlock();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL)); // 50ms 
+        std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL));
     }
     linkThreadRunning_ = false;
-    std::unique_lock<std::mutex> connInfoLock(hbLinkConnInfoMtx_);
     // 在心跳进程结束之前join所有的建链线程
-    for (auto& pair : linkThreadMap_) {
+    for (auto &pair : linkThreadMap_) {
         if (pair.second != nullptr && pair.second->joinable()) {
-            pair.second->join(); 
+            pair.second->join();
             HCCL_INFO("[HeartbeatStatusMonitor] thread has joined. Remote uid is [%s]", FormatUId(pair.first).c_str());
         }
     }
-    connInfoLock.unlock();
 
     if (deviceLogicId_ != static_cast<u32>(HOST_DEVICE_ID)) {
         hrtResetDevice(deviceLogicId_);
@@ -1432,11 +1418,8 @@ void Heartbeat::InitStuckDetection(CounterStat &counterStat)
 
 void Heartbeat::StuckDetection(uint64_t &cnt, CounterStat &counterStat)
 {
-    HCCL_DEBUG("cnt: %d, isNeedDetect: %d, issueCnt:%llu, interTimes:%d",
-        cnt,
-        counterStat.isNeedDetect,
-        counterStat.issueCnt,
-        counterStat.couterPrintInter);
+    HCCL_DEBUG("cnt: %d, isNeedDetect: %d, issueCnt:%llu, interTimes:%d", cnt, counterStat.isNeedDetect,
+        counterStat.issueCnt, counterStat.couterPrintInter);
     cnt++;
     HcclResult ret = HCCL_SUCCESS;
     if (counterStat.isNeedDetect && cnt % counterStat.couterPrintInter == 0) {
@@ -1448,17 +1431,16 @@ void Heartbeat::StuckDetection(uint64_t &cnt, CounterStat &counterStat)
             if (ret == HCCL_SUCCESS && counterStat.newCounter.first == counterStat.oldCounter.first &&
                 counterStat.newCounter.first == counterStat.oldCounter.second &&
                 counterStat.newCounter.first == counterStat.newCounter.second) {
-                HCCL_RUN_INFO("[HCCL_TRACE]rank:%s, count of currently executed operators:%d",
-                    FormatUId(uid_).c_str(),
+                HCCL_RUN_INFO("[HCCL_TRACE]rank:%s, count of currently executed operators:%d", FormatUId(uid_).c_str(),
                     counterStat.newCounter.first);
-                counterStat.couterPrintInter *= (BASE_NUMBER << counterStat.issueCnt);  // 检测卡住后，把检测周期放长
+                counterStat.couterPrintInter *= (BASE_NUMBER << counterStat.issueCnt); // 检测卡住后，把检测周期放长
                 counterStat.issueCnt++;
             } else {
                 // 检测不卡之后，检测间隔恢复到默认间隔
                 counterStat.couterPrintInter = stuckDetectTime_ * THROUND_MILS / BROADCAST_INTERVAL;
                 counterStat.issueCnt = 0;
             }
-            counterStat.oldCounter = counterStat.newCounter;  // 更新旧的计数器
+            counterStat.oldCounter = counterStat.newCounter; // 更新旧的计数器
         }
     }
 }
@@ -1474,33 +1456,34 @@ void Heartbeat::PrintAndBroadCastErrorCqe(const ErrCqeInfo &info)
     SetStatus(uid_, uid_, HeartBeatStatus::HEARTBEAT_CQE_ERR);
     tmpt = static_cast<time_t>(info.cqeInfo.time.tv_sec);
     now = localtime(&tmpt);
+
+    char errorLinkLogBuffer[LOG_TMPBUF_SIZE];
+    s32 stringRet = snprintf_s(errorLinkLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+        "localInfo{server[%s],deviceId[%d],deviceIp[%s]}, remoteIP{server[%s],deviceId[%d],deviceIp[%s]}",
+        info.linkInfo.localServerId.c_str(), info.linkInfo.localDevicePhyId, nicIp_.GetReadableAddress(),
+        info.linkInfo.remoteServerId.c_str(), info.linkInfo.remoteDevicePhyId,
+        info.cqeInfo.remoteIp.GetReadableAddress());
+    CHK_PRT_CONT(stringRet == -1, HCCL_ERROR("[Create][DestLink]Transport init error! Failed to build log info"));
+
     if (now == nullptr) {
-        HCCL_ERROR("[Heartbeat]localtime fail, cqe error status[%u],"
-            "localIP[%s], remoteIP:[%s]", info.cqeInfo.status, nicIp_.GetReadableAddress(),
-            info.cqeInfo.remoteIp.GetReadableAddress());
+        HCCL_ERROR("[%s][%s][%s]localtime fail, cqe error status[%u], %s", LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(), info.cqeInfo.status,
+            errorLinkLogBuffer);
     } else {
-        HCCL_ERROR("[Heartbeat]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u],"
-                "localIP[%s], remoteIP:[%s]",
-            info.cqeInfo.status,
-            now->tm_year + TIME_FROM_1900,
-            now->tm_mon + 1,
-            now->tm_mday,
-            now->tm_hour,
-            now->tm_min,
-            now->tm_sec,
-            static_cast<u32>(info.cqeInfo.time.tv_usec),
-            nicIp_.GetReadableAddress(),
-            info.cqeInfo.remoteIp.GetReadableAddress());
+        HCCL_ERROR("[%s][%s][%s]cqe error status[%u], time:[%04u-%02d-%02d %02d:%0d:%02d.%06u], %s",
+            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_HEARTBEAT_EVETN.c_str(), LOG_KEYWORDS_CQE_ERROR.c_str(),
+            info.cqeInfo.status, now->tm_year + TIME_FROM_1900, now->tm_mon + 1, now->tm_mday, now->tm_hour,
+            now->tm_min, now->tm_sec, static_cast<u32>(info.cqeInfo.time.tv_usec), errorLinkLogBuffer);
     }
 
     std::unique_lock<std::mutex> lock(remoteIpMutex_);
-    auto search = remoteIpMap.find(info.identifier);
+    auto search = remoteIpMap.find(info.linkInfo.identifier);
     if (search != remoteIpMap.end()) {
-        remoteIpMap[info.identifier].insert(info.cqeInfo.remoteIp);
+        remoteIpMap[info.linkInfo.identifier].insert(info);
     } else {
-        std::set<HcclIpAddress> remoteIpSet;
-        remoteIpSet.insert(info.cqeInfo.remoteIp);
-        remoteIpMap.insert(std::pair<std::string, std::set<HcclIpAddress>>(info.identifier, remoteIpSet));
+        std::set<ErrCqeInfo> remoteInfoSet;
+        remoteInfoSet.insert(info);
+        remoteIpMap.insert(std::pair<std::string, std::set<ErrCqeInfo>>(info.linkInfo.identifier, remoteInfoSet));
     }
 }
 
@@ -1511,19 +1494,19 @@ void Heartbeat::SaveQpnForOpRetry(const ErrCqeInfo &info)
     }
 
     HCCL_RUN_INFO("[Heartbeat][SaveQpnForOpRetry]receive a cqe error [%u][%u], dstrank[%u] identifier[%s]",
-            info.cqeInfo.status, info.qpn, info.remoteRank, info.identifier.c_str());
-    auto identiSearch = rankMapForRetryAgent.find(info.identifier);
+        info.cqeInfo.status, info.qpn, info.linkInfo.remoteRank, info.linkInfo.identifier.c_str());
+    auto identiSearch = rankMapForRetryAgent.find(info.linkInfo.identifier);
     if (identiSearch != rankMapForRetryAgent.end()) {
-        auto rankSearch = identiSearch->second.find(info.remoteRank);
+        auto rankSearch = identiSearch->second.find(info.linkInfo.remoteRank);
         if (rankSearch != identiSearch->second.end()) {
-            (*rankSearch).second.insert(ErrQpnInfo(info.cqeInfo, info.qpn));
+            (*rankSearch).second.insert(info);
         } else {
-            identiSearch->second.insert({info.remoteRank, {ErrQpnInfo(info.cqeInfo, info.qpn)}});
+            identiSearch->second.insert({ info.linkInfo.remoteRank, { info } });
         }
     } else {
-        std::map<u32, std::set<ErrQpnInfo>> rankExtendMap;
-        rankExtendMap[info.remoteRank] = {ErrQpnInfo(info.cqeInfo, info.qpn)};
-        rankMapForRetryAgent.insert(std::make_pair(info.identifier, rankExtendMap));
+        std::map<u32, std::set<ErrCqeInfo>> rankExtendMap;
+        rankExtendMap[info.linkInfo.remoteRank] = {info};
+        rankMapForRetryAgent.insert(std::make_pair(info.linkInfo.identifier, rankExtendMap));
     }
 }
 
@@ -1539,7 +1522,8 @@ void Heartbeat::OpRetryCQEHandle(const HcclNetDevCtx netDevCtx)
             return;
         }
         for (auto &info : infos) {
-            if (GetRetryEnable(info) && GetExternalInputInterSuperPodRetryEnable()) {
+            if (GetRetryEnable(info) &&
+                CommConfiger::GetInstance().GetCommConfigInterSuperPodRetryEnable(info.linkInfo.identifier)) {
                 SaveQpnForOpRetry(info);
             } else {
                 PrintAndBroadCastErrorCqe(info);
@@ -1552,7 +1536,7 @@ void Heartbeat::OpRetryCQEHandle(const HcclNetDevCtx netDevCtx)
 bool Heartbeat::GetRetryEnable(const ErrCqeInfo &info)
 {
     std::lock_guard<std::mutex> retryEnablelock(retryEnableMutex_);
-    auto search = retryEnableTable_.find(info.identifier);
+    auto search = retryEnableTable_.find(info.linkInfo.identifier);
     if (search != retryEnableTable_.end()) {
         return search->second;
     }
@@ -1595,7 +1579,8 @@ void Heartbeat::ProcessCqeErrInfoByNetDevCtx(const HcclIpAddress &nicIp)
     if (ret != HCCL_SUCCESS || infos.size() == 0) {
         return;
     }
-    if (GetRetryEnable(infos[0]) && GetExternalInputInterSuperPodRetryEnable()) {
+    if (GetRetryEnable(infos[0]) &&
+        CommConfiger::GetInstance().GetCommConfigInterSuperPodRetryEnable(infos[0].linkInfo.identifier)) {
         SaveQpnForOpRetry(infos[0]);
     } else {
         PrintAndBroadCastErrorCqe(infos[0]);
@@ -1615,17 +1600,18 @@ void Heartbeat::ProcessCqeErrInfo()
 void Heartbeat::DelErrorSocket()
 {
     for (auto rem : errorSocket_) {
-        HCCL_RUN_INFO(
-            "rank[%s] Try to Send/recv HeartBeat to rank[%s]", FormatUId(uid_).c_str(), FormatUId(rem).c_str());
+        HCCL_RUN_INFO("rank[%s] Try to Send/recv HeartBeat to rank[%s]", FormatUId(uid_).c_str(),
+            FormatUId(rem).c_str());
         rankId2StatusMap_.erase(rem);
-        if(rankId2SocketMap_.has(rem)) {
+        if (rankId2SocketMap_.has(rem)) {
             if (rankId2SocketMap_[rem].socket->GetLocalRole() == HcclSocketRole::SOCKET_ROLE_SERVER &&
                 listenSocketMap_.find(rankId2SocketMap_[rem].socket->GetLocalIp()) != listenSocketMap_.end()) {
                 listenSocketMap_[rankId2SocketMap_[rem].socket->GetLocalIp()]->DelWhiteList(
                     rankId2SocketMap_[rem].wlistInfosVec);
             }
             rankId2SocketMap_[rem].socket->Close();
-            while (rankId2SocketMap_.erase(rem)) {};
+            while (rankId2SocketMap_.erase(rem)) {
+            };
         }
     }
     errorSocket_.clear();
@@ -1640,9 +1626,9 @@ HcclResult Heartbeat::GetQpnErr(const std::string &identifier, std::set<std::tup
         return HCCL_SUCCESS;
     }
     if (search->second.size() > 0) {
-        for (auto iter: search->second) {
+        for (auto iter : search->second) {
             u32 dstRank = iter.first;
-            for (auto qpnInfo: iter.second){
+            for (auto qpnInfo : iter.second) {
                 u32 status = qpnInfo.cqeInfo.status;
                 qpErrSet.insert(std::make_tuple(dstRank, status, qpnInfo.qpn));
             }
@@ -1660,9 +1646,9 @@ HcclResult Heartbeat::BroadcastCqeErr(const std::string &identifier)
     if (search != rankMapForRetryAgent.end()) {
         if (search->second.size() > 0) {
             cqeSize = search->second.size();
-            for (auto &qpInfo: search->second) {
-                for (auto qpnset:qpInfo.second) {
-                    PrintAndBroadCastErrorCqe(ErrCqeInfo(qpnset.cqeInfo, identifier, qpInfo.first, qpnset.qpn));
+            for (auto &qpInfo : search->second) {
+                for (auto qpnset : qpInfo.second) {
+                    PrintAndBroadCastErrorCqe(qpnset);
                     HCCL_RUN_INFO("[BroadcastCqeErr][item]remoteIp[%s] remoteRank[%u] status[%u] qpn[%u]",
                         qpnset.cqeInfo.remoteIp.GetReadableAddress(), qpInfo.first, qpnset.cqeInfo.status, qpnset.qpn);
                 }
@@ -1671,12 +1657,12 @@ HcclResult Heartbeat::BroadcastCqeErr(const std::string &identifier)
         }
     }
     // 查询剩余量，一般为0
-    HCCL_RUN_INFO("[Heartbeat][BroadcastCqeErr]clear qpn err size from [%u] to [%u], identifier[%s] ",
-        cqeSize, search->second.size(), identifier.c_str());
+    HCCL_RUN_INFO("[Heartbeat][BroadcastCqeErr]clear qpn err size from [%u] to [%u], identifier[%s] ", cqeSize,
+        search->second.size(), identifier.c_str());
     return HCCL_SUCCESS;
 }
 
-/* 非点对点通信 重执行成功后进行调用*/
+/* 非点对点通信 重执行成功后进行调用 */
 HcclResult Heartbeat::ClearAllCqeErr(const std::string &identifier)
 {
     std::unique_lock<std::mutex> qpnMaplock(qpnMapMutexForRetry_);
@@ -1689,16 +1675,16 @@ HcclResult Heartbeat::ClearAllCqeErr(const std::string &identifier)
         }
     }
     // 查询剩余量，一般为0
-    HCCL_RUN_INFO("[Heartbeat][ClearAllCqeErr]clear qpn err size from [%u] to [%u], identifier[%s]",
-        cqeSize, search->second.size(), identifier.c_str());
+    HCCL_RUN_INFO("[Heartbeat][ClearAllCqeErr]clear qpn err size from [%u] to [%u], identifier[%s]", cqeSize,
+        search->second.size(), identifier.c_str());
     return HCCL_SUCCESS;
 }
 /* 点对点通信 重执行成功后进行调用
-*/
+ */
 HcclResult Heartbeat::ClearCqeErr(const std::string &identifier, u32 remoteRank, u32 qpn)
 {
-    HCCL_RUN_INFO("[Heartbeat][ClearCqeErr] identifier[%s] remoteRank[%u] qpn[%u].", 
-        identifier.c_str(), remoteRank, qpn);
+    HCCL_RUN_INFO("[Heartbeat][ClearCqeErr] identifier[%s] remoteRank[%u] qpn[%u].", identifier.c_str(), remoteRank,
+        qpn);
     std::unique_lock<std::mutex> qpnMaplock(qpnMapMutexForRetry_);
     const auto &search = rankMapForRetryAgent.find(identifier);
     if (search == rankMapForRetryAgent.end()) {
@@ -1707,13 +1693,13 @@ HcclResult Heartbeat::ClearCqeErr(const std::string &identifier, u32 remoteRank,
 
     auto &ranksearch = rankMapForRetryAgent[identifier];
     // 删除指定通信域内的固定 remoteRank 固定qpn的cqe err
-    if (ranksearch.find(remoteRank) != ranksearch.end()){
-        if (ranksearch[remoteRank].size() == 1){
-            //remotrank只有一个qpn err，直接删除map
+    if (ranksearch.find(remoteRank) != ranksearch.end()) {
+        if (ranksearch[remoteRank].size() == 1) {
+            // remotrank只有一个qpn err，直接删除map
             ranksearch.erase(remoteRank);
             HCCL_RUN_INFO("[ClearCqeErr][qpnClear] clear dstRank[%u] qpn[%u] now", remoteRank, qpn);
-        } else if (ranksearch[remoteRank].size() > 1){
-            for (auto iter = ranksearch[remoteRank].begin(); iter !=ranksearch[remoteRank].end();) {
+        } else if (ranksearch[remoteRank].size() > 1) {
+            for (auto iter = ranksearch[remoteRank].begin(); iter != ranksearch[remoteRank].end();) {
                 if (iter->qpn == qpn) {
                     iter = ranksearch[remoteRank].erase(iter);
                     HCCL_RUN_INFO("[ClearCqeErr][qpnClear] clear dstRank[%u] qpn[%u] now", remoteRank, qpn);
@@ -1737,7 +1723,7 @@ HcclResult Heartbeat::CheckErrorCqe(const std::string &identifier, HcclResult &r
     std::unique_lock<std::mutex> lock(remoteIpMutex_);
     auto search = remoteIpMap.find(identifier);
     if (search == remoteIpMap.end()) {
-        if (qpnDissociativeSet.size()!=0) { // 如果没有发生error cqe异常的通信域，则确认是否存在游离(Destroy)qpn
+        if (qpnDissociativeSet.size() != 0) { // 如果没有发生error cqe异常的通信域，则确认是否存在游离(Destroy)qpn
             HCCL_ERROR("[Heartbeat]find cqe error [%d] num[%llu] dissociative. maybe its qp has already been destroyed",
                 result, qpnDissociativeSet.size());
             qpnDissociativeSet.clear();
@@ -1750,7 +1736,10 @@ HcclResult Heartbeat::CheckErrorCqe(const std::string &identifier, HcclResult &r
         HCCL_ERROR("[Heartbeat]find cqe error [%d], in comm [%s]", result, identifier.c_str());
         for (auto &it : search->second) {
             HCCL_ERROR("[Heartbeat]find cqe error, localIP[%s], remoteIP[%s]",
-                nicIp_.GetReadableAddress(), it.GetReadableAddress());
+                nicIp_.GetReadableAddress(), it.cqeInfo.remoteIp.GetReadableAddress());
+            RPT_INPUT_ERR(true, "EI0013", std::vector<std::string>({ "localServerId", "localDeviceId", "localDeviceIp", "remoteServerId", "remoteDeviceId", "remoteDeviceIp" }),
+                std::vector<std::string>({ it.linkInfo.localServerId, std::to_string(it.linkInfo.localDevicePhyId), std::string(nicIp_.GetReadableAddress()),
+                                           it.linkInfo.remoteServerId, std::to_string(it.linkInfo.remoteDevicePhyId), std::string(it.cqeInfo.remoteIp.GetReadableAddress()) }));
         }
     }
     lock.unlock();
@@ -1758,57 +1747,8 @@ HcclResult Heartbeat::CheckErrorCqe(const std::string &identifier, HcclResult &r
     return HCCL_SUCCESS;
 }
 
-void Heartbeat::RegisterSROpIdentifier(const std::string &identifier, const std::string &paramTag)
-{
-    // SR算子通信域映射关系注册
-    std::lock_guard<std::mutex> lock(srTagMutex_);
-    if (srTagMap_.size() > SR_TAG_MAP_MAX_NUM) {
-        srTagMap_.erase(srTagMap_.begin());
-    }
-
-    auto iter = srTagMap_.find(paramTag);
-    if (iter == srTagMap_.end()) {
-        srTagMap_.insert(std::make_pair(paramTag, identifier));
-    }
-}
-
-void Heartbeat::AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo)
-{
-    std::lock_guard<std::mutex> lock(inconsistentOpMutex_);
-    if(localOpInfo.opType == HcclCMDType::HCCL_CMD_SEND || localOpInfo.opType == HcclCMDType::HCCL_CMD_RECEIVE) {
-        auto iter = srTagMap_.find(identifier);
-        if (iter == srTagMap_.end()) {
-            HCCL_ERROR("[%s] SR tag[%s] may have already been deleted due to prolonged storage time", __func__, identifier.c_str());
-            return;
-        }
-
-        auto search = inconsistentOpMap_.find(iter->second);//SR tag
-        if (search == inconsistentOpMap_.end()) {
-            inconsistentOpMap_.insert(std::make_pair(iter->second, true));
-            HCCL_INFO("[%s] save record SR[%s] identifier[%s] index[%d]", __func__, identifier.c_str() , iter->second.c_str(), localOpInfo.index);
-        }
-    } else {
-        auto search = inconsistentOpMap_.find(identifier);//AR identifier
-        if (search == inconsistentOpMap_.end()) {
-            inconsistentOpMap_.insert(std::make_pair(identifier, true));
-            HCCL_INFO("[%s] save record identifier[%s] index[%d]", __func__, identifier.c_str(), localOpInfo.index);
-        }
-    }
-}
-
-HcclResult  Heartbeat::CheckOpInconsistentError(const std::string &identifier, HcclResult &result)
-{
-    std::lock_guard<std::mutex> lock(inconsistentOpMutex_);
-    auto search = inconsistentOpMap_.find(identifier);
-    if (search != inconsistentOpMap_.end()) {
-        result = HCCL_E_PARA;
-        HCCL_ERROR("[%s]find inconsistent op error [%d], in comm [%s]", __func__, result, identifier.c_str());
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult Heartbeat::SetRankPortInfo(bool isUseRankPort,
-    std::vector<u32> &nicRanksPorts, std::vector<u32> &vnicRanksPorts, bool devPortSwitchOn)
+HcclResult Heartbeat::SetRankPortInfo(bool isUseRankPort, std::vector<u32> &nicRanksPorts,
+    std::vector<u32> &vnicRanksPorts, bool devPortSwitchOn)
 {
     isUseRankPort_ = isUseRankPort;
     nicRanksPorts_ = nicRanksPorts;
@@ -1827,8 +1767,8 @@ u32 Heartbeat::GetPort(HcclSocketType type, u32 remoteUserRank, u32 remoteDevice
 {
     u32 port = HCCL_INVALID_PORT;
     if (isUseRankPort_) {
-        if (devPortSwitchOn_ && type == HcclSocketType::SOCKET_VNIC
-            && remoteUserRank < vnicRanksPorts_.size() && vnicRanksPorts_[remoteUserRank] != HCCL_INVALID_PORT) {
+        if (devPortSwitchOn_ && type == HcclSocketType::SOCKET_VNIC && remoteUserRank < vnicRanksPorts_.size() &&
+            vnicRanksPorts_[remoteUserRank] != HCCL_INVALID_PORT) {
             port = vnicRanksPorts_[remoteUserRank];
             HCCL_INFO("[Heartbeat][GetPort] use vnic ranks port[%u]", port);
         } else if (remoteUserRank < nicRanksPorts_.size() && nicRanksPorts_[remoteUserRank] != HCCL_INVALID_PORT) {
@@ -1853,22 +1793,21 @@ u32 Heartbeat::GetHostPort(s32 devicePhyId)
 }
 
 HcclResult RegisterToHeartBeat(s32 deviceLogicID, u32 userRank, DevType devType, std::vector<RankInfo> &rankInfoList,
-    const u32 port, const bool isNeedNic, u32 peerRankId, const std::string &commIdentifier, const std::string& tag,
+    const u32 port, const bool isNeedNic, u32 peerRankId, const std::string &commIdentifier, const std::string &tag,
     bool useSuperPodMode, bool isUsedRdmaLevel0)
 {
-    return peerRankId == INVALID_VALUE_RANKID ?
-        Heartbeat::GetInstance(deviceLogicID).RegisterToHeartBeat(userRank, devType, rankInfoList, port, isNeedNic,
-        commIdentifier, useSuperPodMode, isUsedRdmaLevel0) :
-        Heartbeat::GetInstance(deviceLogicID).RegisterToHeartBeat(userRank, devType, rankInfoList, port, isNeedNic,
-        peerRankId, commIdentifier, tag, useSuperPodMode, isUsedRdmaLevel0);
+    return peerRankId == INVALID_VALUE_RANKID ? Heartbeat::GetInstance(deviceLogicID)
+                                                    .RegisterToHeartBeat(userRank, devType, rankInfoList, port,
+        isNeedNic, commIdentifier, useSuperPodMode, isUsedRdmaLevel0) :
+                                                Heartbeat::GetInstance(deviceLogicID)
+                                                    .RegisterToHeartBeat(userRank, devType, rankInfoList, port,
+        isNeedNic, peerRankId, commIdentifier, tag, useSuperPodMode, isUsedRdmaLevel0);
 }
 
-void UnRegisterRanks(s32 deviceLogicID, DevType devType, const std::string &commIdentifier,
-    const std::string &tag)
+void UnRegisterRanks(s32 deviceLogicID, DevType devType, const std::string &commIdentifier, const std::string &tag)
 {
-    return tag.empty() ?
-        Heartbeat::GetInstance(deviceLogicID).UnRegisterToHeartBeat(devType, commIdentifier) :
-        Heartbeat::GetInstance(deviceLogicID).UnRegisterToHeartBeat(devType, commIdentifier, tag);
+    return tag.empty() ? Heartbeat::GetInstance(deviceLogicID).UnRegisterToHeartBeat(devType, commIdentifier) :
+                         Heartbeat::GetInstance(deviceLogicID).UnRegisterToHeartBeat(devType, commIdentifier, tag);
 }
 
 HcclResult SetRankPortInfo(s32 deviceLogicID, bool isUseRankPort, std::vector<u32> &ranksPort)
@@ -1877,9 +1816,9 @@ HcclResult SetRankPortInfo(s32 deviceLogicID, bool isUseRankPort, std::vector<u3
 }
 
 
-std::vector<std::string> GetErrStatusVec(s32 deviceLogicID)
+std::vector<std::string> GetErrStatusVec(s32 deviceLogicID, const std::string &group)
 {
-    return Heartbeat::GetInstance(deviceLogicID).GetErrStatusVec();
+    return Heartbeat::GetInstance(deviceLogicID).GetErrStatusVec(group);
 }
 
 __attribute__((constructor)) void HeartBeatCallBackInit()
@@ -1887,4 +1826,4 @@ __attribute__((constructor)) void HeartBeatCallBackInit()
     RegisterHeartBeatCallBack(RegisterToHeartBeat, UnRegisterRanks, SetRankPortInfo);
     RegisterGetErrStatusVecCallBack(GetErrStatusVec);
 }
-}  // namespace hccl
+} // namespace hccl

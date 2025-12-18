@@ -28,6 +28,7 @@
 #include "common/aicpu_kfc_tiling_utils.h"
 #include "coll_batch_write_executor.h"
 #include "dfx/aicpu_profiling_manager.h"
+#include "read_write_lock.h"
 
 using namespace hccl;
 using namespace HcclApi;
@@ -36,50 +37,51 @@ ANONYMOUS_NAMESPACE_BEGIN
 static constexpr uint64_t KERNEL_TIMEOUT = 16 * 60;
 static constexpr uint64_t LOGCOUNT_PRINT_TIMEOUT = 10000;
 struct TimeOutCheckInfo {
-    bool msgFlag[MAX_COMM_CTX_NUM];
     u64 kernelStartTime;
-    u64 msgStartTime[MAX_COMM_CTX_NUM];
-    uint32_t invalidMsgCount[MAX_COMM_CTX_NUM];
+    std::unordered_map<u32, bool> msgFlag;
+    std::unordered_map<u32, u64> msgStartTime;
+    std::unordered_map<u32, u32> invalidMsgCount;
 };
-thread_local TimeOutCheckInfo g_timeOutInfoInst = {{false, false, false}, 0, {0, 0, 0}, {0, 0, 0}};
-void SetMsgEnableFlag(int groupIdx, bool flag) {
+thread_local TimeOutCheckInfo g_timeOutInfoInst{};
+void SetMsgEnableFlag(u32 groupIdx, bool flag) {
     g_timeOutInfoInst.msgFlag[groupIdx] = flag;
 }
 
-bool CheckMsgEnableFlag(int groupIdx) {
+bool CheckMsgEnableFlag(u32 groupIdx) {
+    if (g_timeOutInfoInst.msgFlag.find(groupIdx) == g_timeOutInfoInst.msgFlag.end()) {
+        return false;
+    }
     return g_timeOutInfoInst.msgFlag[groupIdx];
 }
 
-void SetMsgStartTime(int groupIdx) {
+void SetMsgStartTime(u32 groupIdx) {
     g_timeOutInfoInst.msgStartTime[groupIdx] = GetCurCpuTimestamp();
+}
+
+u64 GetMsgStartTime(u32 groupIdx) {
+    if (g_timeOutInfoInst.msgStartTime.find(groupIdx) == g_timeOutInfoInst.msgStartTime.end()) {
+        return 0UL;
+    }
+    return g_timeOutInfoInst.msgStartTime[groupIdx];
 }
 
 void SetKernelStartTime(void) {
     g_timeOutInfoInst.kernelStartTime = GetCurCpuTimestamp();
 }
 
-void AddMsgInValidCount(uint32_t idx) {
-    g_timeOutInfoInst.invalidMsgCount[idx]++;
+void AddMsgInValidCount(u32 groupIdx) {
+    g_timeOutInfoInst.invalidMsgCount[groupIdx]++;
 }
 
-void ClearMsgInValidCount(uint32_t idx) {
-    g_timeOutInfoInst.invalidMsgCount[idx] = 0;
+void ClearMsgInValidCount(u32 groupIdx) {
+    g_timeOutInfoInst.invalidMsgCount[groupIdx] = 0;
 }
 
-uint32_t GetMsgInValidCount(uint32_t idx) {
-    return g_timeOutInfoInst.invalidMsgCount[idx];
-}
-
-static std::unordered_map<std::string, int32_t> g_commIdMap;
-void InsertComIdMap(uint32_t groupIdx, const std::string &hcomId) {
-    g_commIdMap[hcomId] = groupIdx;
-}
-
-int32_t GetComGroupIdx(const std::string &hcomId) {
-    if (g_commIdMap.find(hcomId) == g_commIdMap.end()) {
-        return -1;
+uint32_t GetMsgInValidCount(u32 groupIdx) {
+    if (g_timeOutInfoInst.invalidMsgCount.find(groupIdx) == g_timeOutInfoInst.invalidMsgCount.end()) {
+        return 0U;
     }
-    return g_commIdMap[hcomId];
+    return g_timeOutInfoInst.invalidMsgCount[groupIdx];
 }
 
 struct CommInstMgr {
@@ -87,35 +89,70 @@ struct CommInstMgr {
     hccl::HcclCommAicpu *hcclCommAicpu;
     AicpuKfcRpcServerV2 rpcServer;
 };
-static CommInstMgr g_commInst[MAX_COMM_CTX_NUM];
-HcclResult InsertCommInst(uint32_t idx, hccl::HcclCommAicpu *comm, HcclOpResParam *resParam) {
-    if (idx >= MAX_COMM_CTX_NUM) {
-        return HCCL_E_DRV;
+
+struct KfcGroupIndexInfo {
+    ReadWriteLockBase mutex;
+    u32 nextId{0U};
+    std::unordered_map<std::string, int32_t> groupNameToId{};
+    std::unordered_map<int32_t, CommInstMgr> instMap{};
+} g_commIdMap;
+
+int32_t InsertComIdMap(const std::string &group) {
+    ReadWriteLock rwlock(g_commIdMap.mutex);
+    rwlock.writeLock();
+    if (g_commIdMap.groupNameToId.find(group) == g_commIdMap.groupNameToId.end()) {
+        HCCL_INFO("Insert group %s at index %u.", group.c_str(), g_commIdMap.nextId);
+        g_commIdMap.groupNameToId[group] = g_commIdMap.nextId++;
+    } else {
+        HCCL_INFO("Group %s is already at index %u.", group.c_str(), g_commIdMap.groupNameToId[group]);
     }
-    g_commInst[idx].resParam = resParam;
-    g_commInst[idx].hcclCommAicpu = comm;
+    rwlock.writeUnlock();
+    return g_commIdMap.groupNameToId[group];
+}
+
+int32_t GetComGroupIdx(const std::string &group) {
+    ReadWriteLock rwlock(g_commIdMap.mutex);
+    rwlock.readLock();
+    int32_t idx;
+    if (g_commIdMap.groupNameToId.find(group) == g_commIdMap.groupNameToId.end()) {
+        HCCL_ERROR("Failed to find group %s in index map.", group.c_str());
+        idx = -1;
+    } else {
+        idx = g_commIdMap.groupNameToId[group];
+    }
+    rwlock.readUnlock();
+    return idx;
+}
+
+HcclResult InsertCommInst(uint32_t idx, hccl::HcclCommAicpu *comm, HcclOpResParam *resParam)
+{
+    g_commIdMap.instMap[idx].resParam = resParam;
+    g_commIdMap.instMap[idx].hcclCommAicpu = comm;
     return HCCL_SUCCESS;
 }
 
-hccl::HcclCommAicpu *GetCommAicpuCommInst(uint32_t idx) {
-    if (idx >= MAX_COMM_CTX_NUM) {
+hccl::HcclCommAicpu *GetCommAicpuCommInst(uint32_t idx)
+{
+    if (g_commIdMap.instMap.find(idx) == g_commIdMap.instMap.end()) {
         return nullptr;
     }
-    return g_commInst[idx].hcclCommAicpu;
+    return g_commIdMap.instMap[idx].hcclCommAicpu;
 }
 
-HcclOpResParam *GetCommAicpuResInst(uint32_t idx) {
-    if (idx >= MAX_COMM_CTX_NUM) {
+HcclOpResParam *GetCommAicpuResInst(uint32_t idx)
+{
+    if (g_commIdMap.instMap.find(idx) == g_commIdMap.instMap.end()) {
         return nullptr;
     }
-    return g_commInst[idx].resParam;
+    return g_commIdMap.instMap[idx].resParam;
 }
 
-AicpuKfcRpcServerV2 *GetCommRpcServer(uint32_t idx) {
-    if (idx >= MAX_COMM_CTX_NUM) {
+AicpuKfcRpcServerV2 *GetCommRpcServer(uint32_t idx)
+{
+    if (g_commIdMap.instMap.find(idx) == g_commIdMap.instMap.end()) {
         return nullptr;
     }
-    return &g_commInst[idx].rpcServer;
+    return &(g_commIdMap.instMap[idx].rpcServer);
 }
 
 static uint8_t g_expectPrepareId[MAX_QUE_NUM];
@@ -135,24 +172,35 @@ struct CommInfoCtx {
     std::string tag;
 };
 static std::unordered_map<std::string, std::unordered_map<u8, CommInfoCtx>> g_commTypeInfoMap;
+static ReadWriteLockBase g_mutexForTypeInfoMap;
 void SetCommInfoCtx(const std::string &groupName, u8 commType, const CommInfoCtx &ctx)
 {
+    ReadWriteLock rwlock(g_mutexForTypeInfoMap);
+    rwlock.writeLock();
     g_commTypeInfoMap[groupName][commType] = ctx;
+    rwlock.writeUnlock();
 }
 
 HcclResult GetCommInfoCtx(const std::string &commName, u8 commType, CommInfoCtx &ctx)
 {
+    ReadWriteLock rwlock(g_mutexForTypeInfoMap);
+    rwlock.readLock();
     const auto groupIter = g_commTypeInfoMap.find(commName);
     if (groupIter == g_commTypeInfoMap.end()) {
+        HCCL_ERROR("Failed to find group %s in type info map.", commName.c_str());
+        rwlock.readUnlock();
         return HCCL_E_INTERNAL;
     }
 
     const auto commIter = groupIter->second.find(commType);
     if (commIter == groupIter->second.end()) {
+        HCCL_ERROR("Failed to find type %u in map for group %s.", static_cast<u32>(commType), commName.c_str());
+        rwlock.readUnlock();
         return HCCL_E_INTERNAL;
     }
 
     ctx = commIter->second;
+    rwlock.readUnlock();
     return HCCL_SUCCESS;
 }
 
@@ -485,9 +533,20 @@ bool CheckNsCommand(hccl::HcclCommAicpu *comm) {
     return true;
 }
 
-bool GetOpRetryEnable(uint32_t groupNum)
+HcclResult CheckNsStopLaunchStatus(const std::vector<u32> &groupIds)
 {
-    for (uint32_t i = 0; i < groupNum; i++) {
+    for (const auto i: groupIds) {
+        hccl::HcclCommAicpu *comm = GetCommAicpuCommInst(i);
+        if (comm != nullptr && comm->GetNsStopLaunchStatus()) {
+            return HCCL_E_SUSPENDING;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
+bool GetOpRetryEnable(const std::vector<u32> &groupIds)
+{
+    for (const auto i: groupIds) {
         hccl::HcclCommAicpu *comm = GetCommAicpuCommInst(i);
         if (comm == nullptr || !comm->GetOpRetryEnable()) {
             return false;
@@ -572,10 +631,10 @@ HcclResult RpcServerPreCheck(AicpuKfcRpcServerV2 *rpc, hccl::HcclCommAicpu *comm
 }
 
 static constexpr u64 BARRIER_TIMEOUT = static_cast<u64>(NSEC_PER_SEC) * 60UL;
-HcclResult BarrierProcess(u32 groupIdx, u32 queueId, BarrierStatus &status)
+HcclResult BarrierProcess(u32 groupIdx, u32 localGroupIdx, u32 queueId, BarrierStatus &status)
 {
     AicpuKfcRpcServerV2 *rpc = GetCommRpcServer(groupIdx);
-    BarrierInfo *barrierInfos = rpc->GetBarrierInfoByGroupIdx(groupIdx);
+    BarrierInfo *barrierInfos = rpc->GetBarrierInfoByGroupIdx(localGroupIdx);
     BarrierStatus &selfFlag = barrierInfos[queueId].status;
     if (selfFlag == BarrierStatus::NO_BARRIER) {
         barrierInfos[queueId].lastTimeStamp = GetCurCpuTimestamp();
@@ -603,7 +662,7 @@ HcclResult BarrierProcess(u32 groupIdx, u32 queueId, BarrierStatus &status)
                         HCCL_ERROR("[%s]Failed to wait in block %u, finish count %u.",
                                    __func__, HcclAicpuUtils::GetBlockIdx(), barrierFinishCnt),
                         HCCL_E_AGAIN);
-            rpc->ClearBarrierStatus(groupIdx, start, barrierFinishCnt);
+            rpc->ClearBarrierStatus(localGroupIdx, start, barrierFinishCnt);
             barrierFinishCnt = 0U;
             return HCCL_SUCCESS;
         }
@@ -632,15 +691,18 @@ void FinalizeProcess(u32 queueIdx, hccl::HcclCommAicpu &commAicpu, AicpuKfcRpcSe
     SetExpectPrepareId(queueIdx, 0U);
 }
 
-HcclResult AddTaskForGroupSyncMsg(hccl::HcclCommAicpu *commAicpu, CommonHcclMsg *hcclMsg, AicpuKfcRpcServerV2* rpcServer,
-                                  uint32_t groupIdx)
+HcclResult AddTaskForGroupSyncMsg(const std::vector<u32> &groupIds, u32 localGroupIdx, CommonHcclMsg *hcclMsg)
 {
-    if (static_cast<uint32_t>(hcclMsg->commDepGroupID) == groupIdx) {
+    if (static_cast<uint32_t>(hcclMsg->commDepGroupID) == localGroupIdx) {
         HCCL_ERROR("InterHcclGroupSync must be used for cross-domain synchronization, group id %d",
                    hcclMsg->commDepGroupID);
         return HCCL_E_INTERNAL;
     }
-    AicpuKfcRpcServerV2* rpcServerDep = GetCommRpcServer(hcclMsg->commDepGroupID);
+
+    CHK_PRT_RET(static_cast<size_t>(hcclMsg->commDepGroupID) >= groupIds.size(),
+                HCCL_ERROR("Invalid group id %d.", hcclMsg->commDepGroupID), HCCL_E_INTERNAL);
+
+    AicpuKfcRpcServerV2 *rpcServerDep = GetCommRpcServer(groupIds[hcclMsg->commDepGroupID]);
     if (rpcServerDep == nullptr) {
         HCCL_ERROR("get rpc server failed, group id %d", hcclMsg->commDepGroupID);
         return HCCL_E_INTERNAL;
@@ -655,6 +717,12 @@ HcclResult AddTaskForGroupSyncMsg(hccl::HcclCommAicpu *commAicpu, CommonHcclMsg 
         HCCL_INFO("%s comm group %d idx %d is not ready", __func__, hcclMsg->commDepGroupID, hcclMsg->commDepHandleID);
         return HCCL_E_UNAVAIL;
     }
+
+    const u32 groupIdx = groupIds[localGroupIdx];
+    hccl::HcclCommAicpu *commAicpu = GetCommAicpuCommInst(groupIdx);
+    AicpuKfcRpcServerV2 *rpcServer = GetCommRpcServer(groupIdx);
+    CHK_PRT_RET(commAicpu == nullptr || rpcServer == nullptr,
+                HCCL_ERROR("Invalid group index %u.", groupIdx), HCCL_E_INTERNAL);
     rpcServer->SetNeedRetryFlag(false);
     CHK_RET(rpcServer->AddCcoreWait(commAicpu->GetDispatcher(), waitAddr, static_cast<uint32_t>(turnNum),
                                     &(commAicpu->GetMainStream()), false));
@@ -980,10 +1048,11 @@ HcclResult AddTaskForHcclMsgV2(hccl::HcclCommAicpu *comm, AicpuKfcRpcServerV2 *r
     return HCCL_SUCCESS;
 }
 
-HcclResult RunRpcServerLoopProcess(u32 groupIdx, bool &finalizeFlag)
+HcclResult RunRpcServerLoopProcess(const std::vector<u32> &groupIds, u32 localGroupIdx, bool &finalizeFlag)
 {
     HcclMsg hcclMsg;
     CommonHcclMsg commonHcclMsg;
+    const u32 groupIdx = groupIds[localGroupIdx];
     AicpuKfcRpcServerV2 *rpc = GetCommRpcServer(groupIdx);
     HcclCommAicpu *comm = GetCommAicpuCommInst(groupIdx);
     HcclOpResParam *commParam = GetCommAicpuResInst(groupIdx);
@@ -1008,8 +1077,8 @@ HcclResult RunRpcServerLoopProcess(u32 groupIdx, bool &finalizeFlag)
             }
 
             BarrierStatus status = BarrierStatus::NO_BARRIER;
-            if (BarrierProcess(groupIdx, i, status) != HCCL_SUCCESS) {
-                rpc->DumpBarrierInfo(groupIdx, comm->GetSlaveStream()[i].sqId(), comm->GetDevId());
+            if (BarrierProcess(groupIdx, localGroupIdx, i, status) != HCCL_SUCCESS) {
+                rpc->DumpBarrierInfo(localGroupIdx, comm->GetSlaveStream()[i].sqId(), comm->GetDevId());
                 rpc->PrintAllHcclMsgArea(commParam->rankSize);
                 return HCCL_E_INTERNAL;
             }
@@ -1025,9 +1094,9 @@ HcclResult RunRpcServerLoopProcess(u32 groupIdx, bool &finalizeFlag)
                     return HCCL_E_INTERNAL;
                 }
                 AddMsgInValidCount(groupIdx);
-                if (GetMsgInValidCount(groupIdx) % LOGCOUNT_PRINT_TIMEOUT == 0) {
-                    HCCL_DEBUG("Fail to get msg, addr is %p, queue %u, msgPos %u, group %s",
-                               msgLists[i], i, currMsgPos, comm->GetGroupName().c_str());
+                if (GetMsgInValidCount(groupIdx) == LOGCOUNT_PRINT_TIMEOUT) {
+                    HCCL_WARNING("Fail to get msg, addr is %p, queue %u, msgPos %u, group %s",
+                                 msgLists[i], i, currMsgPos, comm->GetGroupName().c_str());
                 }
                 if (rpc->IsPrintLog()) {
                     LogControl logControl(false, true);
@@ -1036,6 +1105,10 @@ HcclResult RunRpcServerLoopProcess(u32 groupIdx, bool &finalizeFlag)
                 continue;
             }
 
+            if (GetMsgInValidCount(groupIdx) > LOGCOUNT_PRINT_TIMEOUT) {
+                HCCL_WARNING("Msg channel restores, addr is %p, queue %u, msgPos %u, group %s",
+                             msgLists[i], i, currMsgPos, comm->GetGroupName().c_str());
+            }
             SetMsgStartTime(groupIdx);
             ClearMsgInValidCount(groupIdx);
             SetMsgEnableFlag(groupIdx, true);
@@ -1047,7 +1120,7 @@ HcclResult RunRpcServerLoopProcess(u32 groupIdx, bool &finalizeFlag)
                 FinalizeProcess(i, *comm, *rpc);
                 continue;
             } else if (commonHcclMsg.commType == HcclCMDType::HCCL_CMD_INTER_GROUP_SYNC) {
-                ret = AddTaskForGroupSyncMsg(comm, &commonHcclMsg, rpc, groupIdx);
+                ret = AddTaskForGroupSyncMsg(groupIds, localGroupIdx, &commonHcclMsg);
                 if (ret == HCCL_E_UNAVAIL) {
                     SetMsgEnableFlag(groupIdx, false);
                     rpc->SetNeedRetryFlag(true);
@@ -1056,7 +1129,7 @@ HcclResult RunRpcServerLoopProcess(u32 groupIdx, bool &finalizeFlag)
                     return ret;
                 }
             } else if (commonHcclMsg.commType == HcclCMDType::HCCL_CMD_BARRIER) {
-                rpc->GetBarrierInfoByGroupIdx(groupIdx)[i].status = BarrierStatus::SELF_BARRIER;
+                rpc->GetBarrierInfoByGroupIdx(localGroupIdx)[i].status = BarrierStatus::SELF_BARRIER;
             } else {
                 ret = rpc->ProcessExpectPrepareMsg(commonHcclMsg.seqNum, GetExpectPrepareId(i));
                 if (ret == HCCL_E_UNAVAIL) {
@@ -1113,19 +1186,20 @@ void ResetRestartParam(RestartParam &restartParam)
     }
 }
 
-HcclResult RestartProcessConsulation(RestartParam &restartParam, bool &finalizeAllEnd, bool *finalizeMask, u32 groupNum)
+HcclResult RestartProcessConsulation(RestartParam &restartParam, bool &finalizeAllEnd, bool *finalizeMask,
+                                     std::vector<u32> groupIds)
 {
-    for (uint32_t i = 0; i < groupNum; i++) {
+    for (size_t i = 0U; i < groupIds.size(); ++i) {
         if (restartParam.consultationResult[i]) {
             continue;
         }
-        hccl::HcclCommAicpu *comm = GetCommAicpuCommInst(i);
+        hccl::HcclCommAicpu *comm = GetCommAicpuCommInst(groupIds[i]);
         if (comm == nullptr) {
             HCCL_ERROR("Failed to obtain the AICPU communication domain pointer."
                        "Check whether the parameters are correct.");
             return HCCL_E_PARA;
         }
-        std::string newTag = GetNewTag(i);
+        std::string newTag = GetNewTag(groupIds[i]);
         HcclResult ret = AicpuKfcRetryProcess::RetryProcess(*comm, restartParam, i);
         if (ret == HCCL_SUCCESS) {
             if (restartParam.consultationResult[i]) {
@@ -1140,19 +1214,19 @@ HcclResult RestartProcessConsulation(RestartParam &restartParam, bool &finalizeA
     }
 
     // 全部协商重执行完成
-    if (restartParam.consultationAllEnd >= groupNum) {
+    if (restartParam.consultationAllEnd >= groupIds.size()) {
         HCCL_RUN_INFO("[MC2][AICPU]MC2 restart process all group success, reset param and write restart");
         SetExpectPrepareId(0U, 0U);
         ResetRestartParam(restartParam);
         finalizeAllEnd = false;
-        for (uint32_t i = 0; i < groupNum; i++) {
+        for (size_t i = 0U; i < groupIds.size(); ++i) {
             // 重置结束标志
             finalizeMask[i] = false;
             // 重置rpc
-            AicpuKfcRpcServerV2 *rpc = GetCommRpcServer(i);
+            AicpuKfcRpcServerV2 *rpc = GetCommRpcServer(groupIds[i]);
             rpc->Reset();
             rpc->WriteRestartFlag();
-            SetMsgStartTime(i);
+            SetMsgStartTime(groupIds[i]);
             HCCL_INFO("MC2 restart process reset rpc param end. groupIndex = %u", i);
         }
         SetKernelStartTime();
@@ -1160,8 +1234,8 @@ HcclResult RestartProcessConsulation(RestartParam &restartParam, bool &finalizeA
     return HCCL_SUCCESS;
 }
 
-void RecordReportStatus(uint32_t groupNum, dfx::ReportStatus status) {
-    for (uint32_t i = 0; i < groupNum; i++) {
+void RecordReportStatus(const std::vector<u32> &groupIds, dfx::ReportStatus status) {
+    for (const auto i: groupIds) {
         hccl::HcclCommAicpu *comm = GetCommAicpuCommInst(i);
         if (comm != nullptr) {
             comm->RecordReportStatus(status);
@@ -1169,15 +1243,15 @@ void RecordReportStatus(uint32_t groupNum, dfx::ReportStatus status) {
     }
 }
 
-bool CheckMsgTimeOut(void) {
+bool CheckMsgTimeOut(const std::vector<u32> &groupIds) {
     if ((GetCurCpuTimestamp() - g_timeOutInfoInst.kernelStartTime) >
         static_cast<unsigned long long>(NSEC_PER_SEC * KERNEL_TIMEOUT)) {
         HCCL_ERROR("Kernel Execute TimeOut %lus...", KERNEL_TIMEOUT);
         return true;
     }
     int timeoutFlag = 0;
-    for (int idx = 0; idx < MAX_COMM_CTX_NUM; idx++) {
-        if (CheckMsgEnableFlag(idx) && (GetCurCpuTimestamp() - g_timeOutInfoInst.msgStartTime[idx]) >
+    for (u32 idx: groupIds) {
+        if (CheckMsgEnableFlag(idx) && (GetCurCpuTimestamp() - GetMsgStartTime(idx)) >
             static_cast<unsigned long long>(NSEC_PER_SEC * KERNEL_TIMEOUT)) {
             HCCL_ERROR("comm group idx %d ReadValidMsg timeout %lus... ", idx, KERNEL_TIMEOUT);
             timeoutFlag++;
@@ -1189,9 +1263,9 @@ bool CheckMsgTimeOut(void) {
     return false;
 }
 
-HcclResult SetNsOpStatus(uint32_t groupNum, bool state)
+HcclResult SetNsOpStatus(const std::vector<u32> &groupIds, bool state)
 {
-    for (uint32_t i = 0; i < groupNum; i++) {
+    for (const auto i: groupIds) {
         hccl::HcclCommAicpu *comm = GetCommAicpuCommInst(i);
         if (comm != nullptr) {
             comm->SetNsOpStatus(state);
@@ -1200,22 +1274,22 @@ HcclResult SetNsOpStatus(uint32_t groupNum, bool state)
     return HCCL_SUCCESS;
 }
 
-HcclResult RunRpcServerInnerProcessV2(uint32_t groupNum)
+HcclResult RunRpcServerInnerProcessV2(const std::vector<u32> &groupIds)
 {
-    const bool retryEnable = GetOpRetryEnable(groupNum);
+    const bool retryEnable = GetOpRetryEnable(groupIds);
     RestartParam restartParam;
     auto opStartTime = std::chrono::steady_clock::now();
     bool finalizeMask[MAX_COMM_CTX_NUM] = {false, false, false};
     SetKernelStartTime();
     AicpuKfcProf::GetCurrentAicpuProf()->commInitEndTime = GetCurCpuTimestamp(true);
-    if (AicpuKfcProcess::CheckNsStopLaunchStatus(groupNum) != HCCL_SUCCESS) {
+    if (CheckNsStopLaunchStatus(groupIds) != HCCL_SUCCESS) {
         HCCL_WARNING("the op should not be launched in the suspending status");
         return HCCL_E_SUSPENDING;
     }
-    CHK_RET(SetNsOpStatus(groupNum, true));
+    CHK_RET(SetNsOpStatus(groupIds, true));
     while (true) {
         bool finishFlag = true;
-        for (uint32_t i = 0; i < groupNum; i++) {
+        for (uint32_t i = 0; i < groupIds.size(); i++) {
             if (finalizeMask[i]) {
                 continue;
             }
@@ -1223,15 +1297,16 @@ HcclResult RunRpcServerInnerProcessV2(uint32_t groupNum)
             if (restartParam.restartFlag) {
                 continue;
             }
-            HcclResult res = RunRpcServerLoopProcess(i, finalizeMask[i]);
+            HcclResult res = RunRpcServerLoopProcess(groupIds, i, finalizeMask[i]);
             if (res == HCCL_E_SUSPENDING) {
-                HcclCommAicpu *comm = GetCommAicpuCommInst(i);
                 if (retryEnable) {
                     restartParam.restartFlag = true;
                     break;
-                } else if (comm->GetNsStopLaunchStatus()) {
+                }
+                HcclCommAicpu *comm = GetCommAicpuCommInst(groupIds[i]);
+                if (comm != nullptr && comm->GetNsStopLaunchStatus()) {
                     finalizeMask[i] = true;
-                    AicpuKfcRpcServerV2 *rpc = GetCommRpcServer(i);
+                    AicpuKfcRpcServerV2 *rpc = GetCommRpcServer(groupIds[i]);
                     rpc->SetNeedRetryFlag(false);
                     comm->SetCommRecoveryFlag(true);
                     (void)comm->BackGroundSetStatus(KfcStatus::kStoplaunch);
@@ -1246,11 +1321,11 @@ HcclResult RunRpcServerInnerProcessV2(uint32_t groupNum)
         }
 
         if (restartParam.restartFlag && HcclAicpuUtils::GetBlockIdx() == 0U) {
-            HcclResult res = RestartProcessConsulation(restartParam, finishFlag, finalizeMask, groupNum);
+            HcclResult res = RestartProcessConsulation(restartParam, finishFlag, finalizeMask, groupIds);
             if (res != HCCL_SUCCESS) {
                 HCCL_ERROR("[MC2][AICPU]MC2 restart process failed, restartCnt = %u, res = %u",
                            restartParam.restartCnt, res);
-                RecordReportStatus(groupNum, dfx::ReportStatus::kRetryFail);
+                RecordReportStatus(groupIds, dfx::ReportStatus::kRetryFail);
                 return res;
             }
         }
@@ -1258,19 +1333,19 @@ HcclResult RunRpcServerInnerProcessV2(uint32_t groupNum)
         if (finishFlag) {
             HCCL_INFO("RPC server process ends.");
             AicpuKfcProf::GetCurrentAicpuProf()->receiveFinalizeTime = GetCurCpuTimestamp(true);
-            CHK_RET(SetNsOpStatus(groupNum, false));
+            CHK_RET(SetNsOpStatus(groupIds, false));
             if (restartParam.restartCnt > 0) {
                 auto opEndTime = std::chrono::steady_clock::now();
                 auto duration = std::chrono::duration_cast<std::chrono::seconds>(opEndTime - opStartTime).count();
                 HCCL_RUN_INFO("[MC2][AICPU]MC2 restart exec success, restartCnt = %u, take time = %ld s", restartParam.restartCnt, duration);
-                RecordReportStatus(groupNum, dfx::ReportStatus::kRetrySuccess);
+                RecordReportStatus(groupIds, dfx::ReportStatus::kRetrySuccess);
             }
             return HCCL_SUCCESS;
         }
         // 消息超时或总执行时间超时
-        if (CheckMsgTimeOut()) {
+        if (CheckMsgTimeOut(groupIds)) {
             HCCL_ERROR("RPC server process Timeout.");
-            for (uint32_t i = 0; i < groupNum; i++) {
+            for (uint32_t i: groupIds) {
                 AicpuKfcRpcServerV2 *rpc = GetCommRpcServer(i);
                 HcclOpResParam *commParam = GetCommAicpuResInst(i);
                 if (rpc != nullptr && commParam != nullptr) {
@@ -1283,7 +1358,7 @@ HcclResult RunRpcServerInnerProcessV2(uint32_t groupNum)
     return HCCL_SUCCESS;
 }
 
-HcclResult RunRpcServerApiV2(void *tilingData, uint32_t groupNum)
+HcclResult RunRpcServerApiV2(void *tilingData, const std::vector<u32> &groupIds)
 {
     // 待适配 startthread DFX
     uint32_t commNum = MC2TilingGetHcommCnt(tilingData);
@@ -1311,7 +1386,7 @@ HcclResult RunRpcServerApiV2(void *tilingData, uint32_t groupNum)
         SetCommInfoCtx(std::string(cfg->groupName), static_cast<u8>(cfg->opType),
                        CommInfoCtx{algType, curAlgName, curTag});
     }
-    CHK_RET(RunRpcServerInnerProcessV2(groupNum));
+    CHK_RET(RunRpcServerInnerProcessV2(groupIds));
     return HCCL_SUCCESS;
 }
 
@@ -1393,7 +1468,7 @@ HcclResult KfcClearCommitTurn(const std::vector<u64> &args)
     return HCCL_SUCCESS;
 }
 
-HcclResult PrepareHcommInstance(u32 idx, HcclOpResParam *commParam, const Mc2InitTilingInner *tiling = nullptr)
+HcclResult PrepareHcommInstance(HcclOpResParam *commParam, const Mc2InitTilingInner *tiling = nullptr)
 {
     const std::string &group = commParam->hcomId;
     hccl::HcclCommAicpu *hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
@@ -1411,12 +1486,16 @@ HcclResult PrepareHcommInstance(u32 idx, HcclOpResParam *commParam, const Mc2Ini
                 HCCL_ERROR("Exist errors before, cqeStatus:%d, pollStatus:%d, group[%s]",
                            dfxInfo->cqeStatus, dfxInfo->pollStatus, group.c_str()), HCCL_E_INTERNAL);
 
-    AicpuKfcRpcServerV2 *rpcServer = GetCommRpcServer(idx);
+    const u32 groupIdx = InsertComIdMap(group);
+    HcclResult ret = InsertCommInst(groupIdx, hcclCommAicpu, commParam);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("Failed to insert comm inst."), HCCL_E_INTERNAL);
+
+    AicpuKfcRpcServerV2 *rpcServer = GetCommRpcServer(groupIdx);
     CHK_PRT_RET(rpcServer == nullptr,
-                HCCL_ERROR("RunAicpuRpcSrvLaunchV2 get rpc inst error idx %d group [%s]", idx, group.c_str()),
+                HCCL_ERROR("RunAicpuRpcSrvLaunchV2 get rpc inst error idx %d group [%s]", groupIdx, group.c_str()),
                 HCCL_E_INTERNAL);
 
-    HcclResult ret = rpcServer->Init(commParam->mc2WorkSpace, tiling);
+    ret = rpcServer->Init(commParam->mc2WorkSpace, tiling);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("Failed to init for group [%s]", group.c_str()), HCCL_E_INTERNAL);
 
     hcclCommAicpu->SetIsDeviceMode(true);
@@ -1441,11 +1520,6 @@ HcclResult PrepareHcommInstance(u32 idx, HcclOpResParam *commParam, const Mc2Ini
                                           AicpuKfcProf::SetKfcTimeLine(KfcTimeLine::SEND_SQE_FINISH_TIME);
                                           return HCCL_SUCCESS;
                                       });
-    ret = InsertCommInst(idx, hcclCommAicpu, commParam);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("Failed to insert comm inst."), HCCL_E_INTERNAL);
-
-    InsertComIdMap(idx, group);
-    HCCL_INFO("Insert group %s at index %u.", group.c_str(), idx);
     return HCCL_SUCCESS;
 }
 ANONYMOUS_NAMESPACE_END
@@ -1703,14 +1777,14 @@ HcclResult AicpuKfcProcess::AicpuRunRpcServerForApi(AicpuComContext *ctx, u64 ti
     }
 }
 
-HcclResult AicpuKfcProcess::AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const Mc2InitTilingInner *tilingData)
+u32 AicpuKfcProcess::AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const Mc2InitTilingInner *tilingData)
 {
     static std::atomic<bool> initFlag(false);
     if (HcclAicpuUtils::GetBlockNum() <= 1U || !initFlag.exchange(true)) {
         for (u64 i = 0UL; i < task->ctxNum; i++) {
             HcclOpResParam *ctx = reinterpret_cast<HcclOpResParam *>(task->context[i]);
             HcclAicpuUtils::PrintHcclOpResParam(ctx);
-            CHK_PRT_RET(PrepareHcommInstance(i, ctx, tilingData) != HCCL_SUCCESS,
+            CHK_PRT_RET(PrepareHcommInstance(ctx, tilingData) != HCCL_SUCCESS,
                         AicpuHcclProcess::AicpuReleaseCommbyGroup(ctx->hcomId),
                         HCCL_E_INTERNAL);
         }
@@ -1719,7 +1793,12 @@ HcclResult AicpuKfcProcess::AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const Mc2
                 HCCL_ERROR("[%s]Timeout during instance preparation.", __func__),
                 HCCL_E_INTERNAL);
 
-    HcclResult ret = RunRpcServerInnerProcessV2(static_cast<u32>(task->ctxNum));
+    std::vector<u32> groupIds{};
+    for (u64 i = 0UL; i < task->ctxNum; i++) {
+        HcclOpResParam *ctx = reinterpret_cast<HcclOpResParam *>(task->context[i]);
+        groupIds.emplace_back(GetComGroupIdx(ctx->hcomId));
+    }
+    HcclResult ret = RunRpcServerInnerProcessV2(groupIds);
     CHK_PRT_RET(AicpuKfcUtils::ThreadBarrier(BARRIER_TIMEOUT) != HCCL_SUCCESS,
                 HCCL_ERROR("[%s]Timeout during instance finalize.", __func__),
                 HCCL_E_INTERNAL);
@@ -1730,34 +1809,33 @@ HcclResult AicpuKfcProcess::AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const Mc2
             AicpuHcclProcess::AicpuReleaseCommbyGroup(ctx->hcomId);
         }
         initFlag = false;
+        if (CheckNsStopLaunchStatus(groupIds) == HCCL_E_SUSPENDING) {
+            HCCL_INFO("mc2 opp is suspended");
+            return AICPUSUSPENDING_ERROR;
+        }
     }
     return ret;
 }
 
-HcclResult AicpuKfcProcess::AicpuRunRpcServerForMC2(KFCTaskV2 *task)
+u32 AicpuKfcProcess::AicpuRunRpcServerForMC2(KFCTaskV2 *task)
 {
     HcclOpResParam *commParam[MAX_COMM_CTX_NUM]{};
+    std::vector<u32> groupIds{};
     for (int i = 0; i < static_cast<int>(task->ctxNum); i++) {
         commParam[i] = reinterpret_cast<HcclOpResParam *>(task->context[i]);
-        CHK_RET(PrepareHcommInstance(i, commParam[i]));
+        CHK_RET(PrepareHcommInstance(commParam[i]));
+        groupIds.emplace_back(GetComGroupIdx(commParam[i]->hcomId));
     }
-    HcclResult ret = RunRpcServerApiV2(reinterpret_cast<void *>(task->tilingData), static_cast<uint32_t>(task->ctxNum));
+    HcclResult ret = RunRpcServerApiV2(reinterpret_cast<void *>(task->tilingData), groupIds);
     for (int i = 0; i < static_cast<int>(task->ctxNum); i++) {
         std::string group = commParam[i]->hcomId;
         AicpuHcclProcess::AicpuReleaseCommbyGroup(group);
     }
-    return ret;
-}
-
-HcclResult AicpuKfcProcess::CheckNsStopLaunchStatus(uint32_t groupNum)
-{
-    for (uint32_t i = 0; i < groupNum; i++) {
-        hccl::HcclCommAicpu *comm = GetCommAicpuCommInst(i);
-        if (comm != nullptr && comm->GetNsStopLaunchStatus()) {
-            return HCCL_E_SUSPENDING;
-        }
+    if (CheckNsStopLaunchStatus(groupIds) == HCCL_E_SUSPENDING) {
+        HCCL_INFO("mc2 opp is suspended");
+        return AICPUSUSPENDING_ERROR;
     }
-    return HCCL_SUCCESS;
+    return ret;
 }
 
 HcclResult AicpuKfcProcess::AicpuCcOpExe(AivAicpuOpParam *commParam, AivAicpuOpParam *commParamNext,

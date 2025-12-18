@@ -216,7 +216,7 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
         HCCL_WARNING("Current package doesn't have dlRaRemapMr, please check!");
     }
 
-    dlH2DTlvInit = (int(*)(struct TlvInitInfo *, uint32_t, uint32_t *, void**))HcclDlsym(handle_, "RaTlvInit");
+    dlH2DTlvInit = (int(*)(struct TlvInitInfo *, uint32_t *, void**))HcclDlsym(handle_, "RaTlvInit");
     if (dlH2DTlvInit == nullptr) {
         HCCL_WARNING("Current package doesn't have dlH2DTlvInit, please check!");
     }
@@ -224,7 +224,7 @@ HcclResult DlRaFunction::DlRaFunctionRdmaInit()
     if (dlH2DTlvDeinit == nullptr) {
         HCCL_WARNING("Current package doesn't have dlH2DTlvDeinit, please check!");
     }
-    dlH2DTlvRequest = (int(*)(void *, struct TlvMsg[],  struct TlvMsg[]))HcclDlsym(handle_, "RaTlvRequest");
+    dlH2DTlvRequest = (int(*)(void *, unsigned int, struct TlvMsg[],  struct TlvMsg[]))HcclDlsym(handle_, "RaTlvRequest");
     if (dlH2DTlvRequest == nullptr) {
         HCCL_WARNING("Current package doesn't have H2DTlvRequest, please check!");
     }
@@ -344,6 +344,11 @@ HcclResult DlRaFunction::DlRaFunctionSocketInit()
 
     dlRaRestoreSnapShot = (int(*)(struct RaInfo*))HcclDlsym(handle_, "RaRestoreSnapshot");
     CHK_SMART_PTR_NULL(dlRaRestoreSnapShot);
+    
+    dlRaGetHccnCfg = (int (*)(struct RaInfo*, enum HccnCfgKey, char*, int*))HcclDlsym(handle_, "RaGetHccnCfg");
+    if (dlRaGetHccnCfg == nullptr) {
+        HCCL_WARNING("dlRaGetHccnCfg is nullptr, can not use RaGetHccnCfg");
+    }
     return HCCL_SUCCESS;
 }
 

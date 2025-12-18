@@ -24,8 +24,7 @@ private:
     void ParseParam(const OpParam& param) override;
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcLevel0CommInfo(TransportMemType inputType,
-        TransportMemType outputType,
+    HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
 

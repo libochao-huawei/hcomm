@@ -25,13 +25,13 @@
 #include "hccl_socket_manager.h"
 #include "transport_pub.h"
 #include "topoinfo_struct.h"
+#include "comm_config_pub.h"
 namespace hccl {
 using RankId = u32;
 constexpr u32 BROADCAST_INTERVAL = 50; // 背景线程执行周期为50 ms
 constexpr u32 STUCK_INTERVAL = 300000; // 5min监控一次,默认 300000 ms
 constexpr u32 STUCK_COUNT = STUCK_INTERVAL / BROADCAST_INTERVAL;
-constexpr u32 OPINFO_SEND_NUM_BY_TAG = 500;   // 一次心跳帧发送的算子信息个数
-constexpr u32 OPINFO_TAG_QUEUE_NUM = 10;   // 一次心跳帧发送的算子信息个数
+constexpr u32 OPINFO_SEND_NUM = 16;   // 一次心跳帧发送的算子信息个数
 
 using UIDType = struct HcclHeartBeatUid {
     char id[512] = {0}; // ip[IP_ADDRESS_BUFFER_LEN] + ifname[MAX_INTERFACE_NAME_LEN] + devid 最大不超过512字节
@@ -107,23 +107,14 @@ struct OpInfoDesc {
     HcclCMDType opType = HcclCMDType::HCCL_CMD_INVALID;
     HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED;
     HcclReduceOp reduceOp = HcclReduceOp::HCCL_REDUCE_RESERVED;
-    uint32_t root = 0;
     uint64_t count = 0;
+    uint32_t root = 0;
+    char identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH] = "\0";
     uint64_t index = 0;
     bool isValid = false;
 };
 
-struct OpInfoTagQueue {
-    OpInfoDesc opInfoList[OPINFO_SEND_NUM_BY_TAG];
-    char identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    u32 opInfoNum = 0;
-};
-
-struct OpInfoTagQueueFrame {
-    OpInfoTagQueue opInfoTagQueue[OPINFO_TAG_QUEUE_NUM];//10个
-};
-
-struct HeartBeatFrame { 
+struct HeartBeatFrame {
     UIDType src;
     UIDType dst;
     UIDType crimer;
@@ -131,7 +122,7 @@ struct HeartBeatFrame {
     HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
     HcclUs TOARelative; // time of arrival (Relative)
     HcclSystemTime TOASystem; // time of arrival (System)
-    OpInfoTagQueueFrame opInfoTagQueueFrame;
+    OpInfoDesc opInfoList[OPINFO_SEND_NUM];
     HeartBeatFrame() {}
     HeartBeatFrame(UIDType &crimer, UIDType &informer, HeartBeatStatus status, HcclUs TOARelativeIn,
         HcclSystemTime TOASystemIn)
@@ -157,27 +148,33 @@ struct ConnInfo {
     {}
 };
 
-using ErrQpnInfo = struct TagErrQpnInfo {
-    CqeInfo cqeInfo;
-    u32 qpn;
-    TagErrQpnInfo() {}
-    TagErrQpnInfo(const CqeInfo &cqeInfo, u32 qpn)
-        : cqeInfo(cqeInfo), qpn(qpn)
+struct LinkInfo {
+    std::string identifier;
+    RankId localRank;
+    std::string localServerId;
+    s32 localDevicePhyId;
+    RankId remoteRank;
+    std::string remoteServerId;
+    s32 remoteDevicePhyId;
+    LinkInfo() {}
+    LinkInfo(std::string &identifier, RankId localRank, std::string &localServerId, s32 localDevicePhyId,
+        RankId remoteRank, std::string &remoteServerId, s32 remoteDevicePhyId)
+        : identifier(identifier), localRank(localRank), localServerId(localServerId), localDevicePhyId(localDevicePhyId),
+        remoteRank(remoteRank), remoteServerId(remoteServerId), remoteDevicePhyId(remoteDevicePhyId)
     {}
-    bool operator<(const TagErrQpnInfo& other) const {
-        return qpn < other.qpn;
-    }
 };
 
 using ErrCqeInfo = struct TagErrCqeInfo {
     CqeInfo cqeInfo;
-    std::string identifier;
-    RankId remoteRank;
+    LinkInfo linkInfo;
     u32 qpn;
     TagErrCqeInfo() {}
-    TagErrCqeInfo(CqeInfo &cqeInfo, const std::string &identifier, RankId remoteRank, u32 qpn)
-        : cqeInfo(cqeInfo), identifier(identifier), remoteRank(remoteRank), qpn(qpn)
+    TagErrCqeInfo(CqeInfo &cqeInfo, LinkInfo &linkInfo, u32 qpn)
+        : cqeInfo(cqeInfo), linkInfo(linkInfo), qpn(qpn)
     {}
+    bool operator<(const TagErrCqeInfo& other) const {
+        return qpn < other.qpn;
+    }
 };
 
 class Heartbeat {
@@ -197,10 +194,9 @@ public:
     // 非点对点通信，解开注册
     void UnRegisterToHeartBeat(DevType devType, const std::string &commIdentifier, const std::string &tag);
     HcclResult CheckErrorCqe(const std::string &identifier, HcclResult &result);
-    HcclResult CheckOpInconsistentError(const std::string &identifier, HcclResult &result);
     HcclResult SetRankPortInfo(bool isUseRankPort, std::vector<u32> &ranksPort, std::vector<u32> &vnicRanksPorts,
         bool devPortSwitchOn);
-    std::vector<std::string> GetErrStatusVec();
+    std::vector<std::string> GetErrStatusVec(const std::string& group = HCCL_WORLD_GROUP);
     HcclResult GetQpnErr(const std::string &identifier, std::set<std::tuple<u32, u32, u32>> &qpErrSet);
     HcclResult BroadcastCqeErr(const std::string &identifier);
     HcclResult ClearAllCqeErr(const std::string &identifier);
@@ -211,7 +207,8 @@ public:
 private:
     Heartbeat() = default;
     ~Heartbeat();
-    HcclResult Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port);
+    HcclResult Init(const RankInfo& locRank, const bool useSuperPodMode, const bool isNeedNic, const u32 port,
+        const std::string& group = HCCL_WORLD_GROUP);
     HcclResult DeInit();
     HcclResult RegisterRanks(DevType devType, const RankInfo& locRank, std::vector<RankInfo>& rankInfos, const u32 port,
         const bool isNeedNic, const std::string& group = HCCL_WORLD_GROUP, bool isUsedRdmaLevel0 = false,
@@ -226,7 +223,7 @@ private:
         ConnInfo>& needConnectRank, bool isUsedRdmaLevel0, bool isUsedRdma = false);
     UIDType GetUId(const RankInfo& rankInfo) const;
     std::string FormatUId(const UIDType& uid) const;
-    HcclResult SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status, const OpInfoTagQueueFrame &opInfoTagQueueFrame);
+    HcclResult SendFrame(UIDType &dst, UIDType &crimer, UIDType &informer, HeartBeatStatus status, const std::vector<OpInfoDesc> &opInfoList);
     HcclResult RecvFrame(UIDType &src);
     HcclResult ParseFrame(HeartBeatFrame& bf, UIDType &src);
     void SetStatus(UIDType &crimer, UIDType &informer, HeartBeatStatus status, bool needBroadcast = true);
@@ -234,7 +231,7 @@ private:
     void ProcessExceptionEvent();
     void ProcessCqeErrInfo();
     void DelErrorSocket();
-    bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime);
+    bool IsKeyEvent(HeartBeatFrame &event, HcclUs curTime, const std::string& group = HCCL_WORLD_GROUP);
     void MakeErrMsg(std::queue<HeartBeatFrame> &keyEvents, std::vector<std::string> &errStatusVec);
     std::vector<std::string> PrintEvents(std::map<HeartBeatStatus, std::queue<HeartBeatFrame>> &keyEvents);
 	void StuckDetection(uint64_t &cnt, CounterStat &counterStat);
@@ -255,14 +252,12 @@ private:
     void CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo needConnectRank);
     void CreateHBLinksAsync();
     void AddOpInfo(const std::string &identifier, const OpInfoDesc &opInfo, const std::string &newTag);
-    void GetOneOpInfo(std::string &tag, OpInfoDesc &opInfo);
-    void GetSendOpInfoList(OpInfoTagQueueFrame &opInfoTagQueueFrame);
-    void SaveOpInfo(const OpInfoTagQueueFrame &opInfoTagQueueFrame, UIDType &src);
+    OpInfoDesc GetOneOpInfo();
+    void GetSendOpInfoList(std::vector<OpInfoDesc> &opInfoList);
+    void SaveOpInfo(OpInfoDesc opInfoList[], UIDType &src);
     bool CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo);
     void CheckRecvOpInfoList();
     void AddopInfoListToSendFrame(UIDType &dst, HeartBeatFrame &bf, const std::vector<OpInfoDesc> &opInfoList, bool &hasValidOpInfo);
-    void RegisterSROpIdentifier(const std::string &identifier, const std::string &newTag);
-    void AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo);
     struct Status {
         HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
         UIDType informer;
@@ -303,7 +298,7 @@ private:
     std::mutex ProcessLock_;
     u32 deviceLogicId_;
     u32 deviceBackupLogicId_;
-    std::map<std::string, std::set<HcclIpAddress>> remoteIpMap;
+    std::map<std::string, std::set<ErrCqeInfo>> remoteIpMap;
     std::set<u32> qpnDissociativeSet;
     std::mutex remoteIpMutex_;
     bool isUseRankPort_{ false };
@@ -311,7 +306,7 @@ private:
     std::vector<u32> nicRanksPorts_;
     std::vector<u32> vnicRanksPorts_;
     std::vector<UIDType> errorSocket_;
-    std::map<std::string, std::map<u32, std::set<ErrQpnInfo>>> rankMapForRetryAgent;
+    std::map<std::string, std::map<u32, std::set<ErrCqeInfo>>> rankMapForRetryAgent;
     std::mutex qpnMapMutexForRetry_;
     std::map<std::string, bool> retryEnableTable_;
     std::mutex retryEnableMutex_;
@@ -321,17 +316,12 @@ private:
     std::map<HcclIpAddress, HcclNetDevCtx> netDevCtxMap_;
     std::map<HcclIpAddress, std::shared_ptr<HcclSocket>> listenSocketMap_;
     s32 stuckDetectTime_;
-    std::mutex opInfoQueueMutex_;
-    std::deque<std::pair<std::string, OpInfoDesc>> opInfoQueue_;
-    std::deque<std::pair<std::string, OpInfoDesc>> opInfoQueueForSend_;
+    std::deque<OpInfoDesc> opInfoQueue_;
     std::unordered_map<std::string, u64> opInfoIndexMap_;
-    std::mutex opInfoMapMutex_;
     std::unordered_map<std::string, std::map<u64, OpInfoDesc>> opInfoMap_;
-    std::list<std::tuple<OpInfoDesc, std::string, UIDType>> recvOpInfoList_;
-    std::mutex inconsistentOpMutex_;
-    std::map<std::string, bool> inconsistentOpMap_;
-    std::mutex srTagMutex_;
-    std::map<std::string, std::string> srTagMap_;//SR算子tag->identifier映射
+    std::mutex opInfoQueueMutex_;
+    std::mutex opInfoMapMutex_;
+    std::list<std::pair<OpInfoDesc, UIDType>> recvOpInfoList_;
 };
 } // namespace hccl
 

@@ -23,12 +23,13 @@ public:
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaDMA &paraDMA) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &paraReduce) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &paraNotify) override;
-    HcclResult Save(u32 &streamID, u32 &taskID, const TaskParaAiv &paraAiv) override;
+    HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) override;
     HcclResult Save(u32 &streamID, u32 &taskID) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &paraDMA) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &paraReduce) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &paraNotify) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) override;
+    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) override;
     uint32_t GetTaskName(TaskType taskType) const;
     HcclResult Run(const StepData &stepData) override;
     HcclResult GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDumpInfoVector);

@@ -259,6 +259,7 @@ HcclResult CollBatchSendRecvRetryExecutor::CalcRecvSlices(AlgResourceResponse& a
     CHK_PTR_NULL(curOutputPtr);
     u32 unitSize = SIZE_TABLE[sendRecvItem->dataType];
     u64 maxCountPerLoop = CalcRecvLoopMaxCount(const_cast<DeviceMem&>(algRes.cclOutputMem), unitSize);
+    HCCL_DEBUG("[CollBatchSendRecvRetryExecutor][CalcSendSlices]maxCountPerLoop is %llu", maxCountPerLoop);
 
     for (u64 countLeft = sendRecvItem->count, curCount = 0, curOffset = 0; countLeft > 0;
         countLeft -= curCount) {

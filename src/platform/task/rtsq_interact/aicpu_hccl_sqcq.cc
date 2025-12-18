@@ -397,6 +397,8 @@ uint16_t SwitchSdmaCqeErrCodeToTsErrCode(u32 cqeErrCode){
             return TS_ERROR_SDMA_POISON_ERROR;
         case RT_SDMA_DATAERR:
             return TS_ERROR_SDMA_DDRC_ERROR;
+        case TS_ERROR_RETRY_CONSTRAINT:
+            return TS_ERROR_RETRY_CONSTRAINT;
         default:
             return TS_ERROR_HCCL_OTHER_ERROR;
     }

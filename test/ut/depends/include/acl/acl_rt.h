@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "acl_base.h"
 #include "acl_rt_allocator.h"
 
@@ -422,11 +423,22 @@ typedef enum aclrtLaunchKernelAttrId {
     ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE = 1,
     ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE = 2,
     ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE = 3,
-    ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
-    ACL_RT_LAUNCH_KERNEL_ATTR_BLOCK_TASK_PREFETCH,
-    ACL_RT_LAUNCH_KERNEL_ATTR_DATA_DUMP,
-    ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT,
+    ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET = 4,
+    ACL_RT_LAUNCH_KERNEL_ATTR_BLOCK_TASK_PREFETCH = 5,
+    ACL_RT_LAUNCH_KERNEL_ATTR_DATA_DUMP = 6,
+    ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT = 7,
+    // ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT and ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US cannot be carried at the same time
+    ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US = 8,
 } aclrtLaunchKernelAttrId;
+
+/**
+ * @ingroup rts_kernel
+ * @brief kernel launch option timeout value
+ */
+typedef struct {
+    uint32_t timeoutLow;  // low  32bit
+    uint32_t timeoutHigh; // high 32bit
+} aclrtTimeoutUs;
 
 typedef union aclrtLaunchKernelAttrValue {
     uint8_t schemMode;
@@ -435,7 +447,8 @@ typedef union aclrtLaunchKernelAttrValue {
     uint32_t blockDimOffset;
     uint8_t isBlockTaskPrefetch;
     uint8_t isDataDump;
-    uint16_t timeout;
+    uint16_t timeout;   // unit: s
+    aclrtTimeoutUs timeoutUs; // unit: us
     uint32_t rsv[4];
 } aclrtLaunchKernelAttrValue;
 
@@ -453,12 +466,14 @@ typedef enum {
     ACL_STREAM_ATTR_FAILURE_MODE         = 1,
     ACL_STREAM_ATTR_FLOAT_OVERFLOW_CHECK = 2,
     ACL_STREAM_ATTR_USER_CUSTOM_TAG      = 3,
+    ACL_STREAM_ATTR_CACHE_OP_INFO        = 4,
 } aclrtStreamAttr;
 
 typedef union {
     uint64_t failureMode;
     uint32_t overflowSwitch;
     uint32_t userCustomTag;
+    uint32_t cacheOpInfoSwitch;
     uint32_t reserve[4];
 } aclrtStreamAttrValue;
 
@@ -641,6 +656,10 @@ typedef enum {
 } aclrtDeviceState;
 
 typedef void (*aclrtDeviceStateCallback)(int32_t deviceId, aclrtDeviceState state, void *args);
+
+typedef struct {
+    char bytes[16];
+} aclrtUuid;
 
 typedef enum {
     ACL_RT_STREAM_STATE_CREATE_POST = 1,
@@ -1599,6 +1618,38 @@ ACL_FUNC_VISIBILITY aclError aclrtFreeHost(void *hostPtr);
 
 /**
  * @ingroup AscendCL
+ * @brief free device memory with device synchronize
+ *
+ * @par Function
+ *  can only free memory allocated through the aclrtMalloc interface
+ *
+ * @param  devPtr [IN]  Pointer to memory to be freed
+ *
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ *
+ * @see aclrtMalloc
+ */
+ACL_FUNC_VISIBILITY aclError aclrtFreeWithDevSync(void *devPtr);
+
+/**
+ * @ingroup AscendCL
+ * @brief free host memory with device synchronize
+ *
+ * @par Function
+ *  can only free memory allocated through the aclrtMallocHost interface
+ *
+ * @param  hostPtr [IN]   free memory pointer
+ *
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ *
+ * @see aclrtMallocHost
+ */
+ACL_FUNC_VISIBILITY aclError aclrtFreeHostWithDevSync(void *hostPtr);
+
+/**
+ * @ingroup AscendCL
  * @brief synchronous memory replication between host and device
  *
  * @param dst [IN]       destination address pointer
@@ -1623,7 +1674,7 @@ ACL_FUNC_VISIBILITY aclError aclrtMemcpy(void *dst,
  * @par Function
  *  The memory to be initialized is on the Host or device side,
  *  and the system determines whether
- *  it is host or device according to the address
+ *  it is host or device according to the address.
  *
  * @param devPtr [IN]    Starting address of memory
  * @param maxCount [IN]  Max length of destination address memory
@@ -1756,7 +1807,7 @@ ACL_FUNC_VISIBILITY aclError aclrtMemcpy2dAsync(void *dst,
 * @par Function
  *  The memory to be initialized is on the Host or device side,
  *  and the system determines whether
- *  it is host or device according to the address
+ *  it is host or device according to the address.
  *
 * @param devPtr [IN]      destination address pointer
 * @param maxCount [IN]    Max length of destination address memory
@@ -2642,9 +2693,9 @@ ACL_FUNC_VISIBILITY aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtB
                                                      aclrtBinHandle *binHandle);
 /**
  * @ingroup AscendCL
- * @brief Get Bin dev address
+ * @brief Get Bin dev address.
  * @param [in] binHandle  bin handle
- * @param [out] binAddr  bin address
+ * @param [out] binAddr  bin address.
  * @param [out] binSize  bin size
  * @retval ACL_SUCCESS the function is successfully executed.
  * @retval OtherValues Failure
@@ -2886,7 +2937,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetStreamAvailableNum(uint32_t *streamCount);
  * @param [in] stream       stream handle
  * @param [in] stmAttrType  stream attribute type, which value can be:
  *                             ACL_STREAM_ATTR_FAILURE_MODE, ACL_STREAM_ATTR_FLOAT_OVERFLOW_CHECK
- *                             or ACL_STREAM_ATTR_USER_CUSTOM_TAG
+ *                             or ACL_STREAM_ATTR_USER_CUSTOM_TAG, ACL_STREAM_ATTR_CACHE_OP_INFO
  * @param [in] value        stream attribute value
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
@@ -2900,7 +2951,7 @@ ACL_FUNC_VISIBILITY aclError aclrtSetStreamAttribute(aclrtStream stream, aclrtSt
  * @param [in] stream       stream handle
  * @param [in] stmAttrType  stream attribute type, which value can be:
  *                             ACL_STREAM_ATTR_FAILURE_MODE, ACL_STREAM_ATTR_FLOAT_OVERFLOW_CHECK
- *                             or ACL_STREAM_ATTR_USER_CUSTOM_TAG
+ *                             or ACL_STREAM_ATTR_USER_CUSTOM_TAG, ACL_STREAM_ATTR_CACHE_OP_INFO
  * @param [out] value       stream attribute value
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
@@ -3028,6 +3079,17 @@ ACL_FUNC_VISIBILITY aclError aclrtDeviceGetStreamPriorityRange(int32_t *leastPri
  */
 ACL_FUNC_VISIBILITY aclError aclrtGetDeviceCapability(int32_t deviceId, aclrtDevFeatureType devFeatureType,
     int32_t *value);
+
+/**
+ * @ingroup AscendCL
+ * @brief get uuid of device by device id
+ * @param [in] deviceId        device id
+ * @param [out] uuid           16-byte Universally Unique Identifier for 
+ *                              globally unique identification of an NPU device.
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclrtDeviceGetUuid(int32_t deviceId, aclrtUuid *uuid);
 
 /**
  * @ingroup AscendCL
@@ -3325,7 +3387,7 @@ ACL_FUNC_VISIBILITY aclError aclrtSetBufUserData(aclrtMbuf buf, const void *data
 
 /**
  * @ingroup AscendCL
- * @brief get data buf address
+ * @brief get data buf address.
  * @param buf [in]       aclrtMbuf
  * @param dataPtr [out]  pointer to the data ptr which is acquired from aclrtMbuf
  * @param size [out]     pointer to the size
@@ -4096,7 +4158,7 @@ ACL_FUNC_VISIBILITY aclError aclrtLaunchHostFunc(aclrtStream stream, aclrtHostFu
 
 /**
  * @ingroup AscendCL
- * @brief get kernel sync address
+ * @brief get kernel sync address.
  * @param [out] addr  kernel sync addr
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
@@ -4203,7 +4265,7 @@ ACL_FUNC_VISIBILITY aclError aclrtCmoGetDescSize(size_t *size);
 /**
  * @ingroup AscendCL
  * @brief set cmo desc
- * @param cmoDesc [IN]      cmo desc address
+ * @param cmoDesc [IN]      cmo desc address.
  * @param src [IN]      source address ptr
  * @param size [IN]       src mem Length
  * @retval ACL_SUCCESS The function is successfully executed.
@@ -4332,6 +4394,18 @@ ACL_FUNC_VISIBILITY aclError aclrtRepairError(int32_t deviceId, const aclrtError
  */
 ACL_FUNC_VISIBILITY aclError aclrtMemSetAccess(void *virPtr, size_t size, aclrtMemAccessDesc *desc, size_t count);
 
+/**
+ * @ingroup AscendCL
+ * @brief This command is used to get access to a reversed virtual address range for the other device.
+ * @param [in] virPtr    the va that has been mapped to device memory.
+ * @param [in] location  va location, when type is device, id is devid.
+ * @param [in] flag      access type.
+ *
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclrtMemGetAccess(void *virPtr, aclrtMemLocation *location, uint64_t *flag);
+
 typedef enum aclrtProcessState {
     ACL_RT_PROCESS_STATE_RUNNING = 0,
     ACL_RT_PROCESS_STATE_LOCKED,
@@ -4357,18 +4431,6 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessUnlock();
 
 /**
  * @ingroup AscendCL
- * @brief get the process state of the npu process
- *
- * @param state [OUT] the process state of the NPU process, the possible values of state are as fallows:
- *                    ACL_RT_PROCESS_STATE_RUNNING : Default process state.
- *                    ACL_RT_PROCESS_STATE_LOCKED : aclrt api locks are taken, so further aclrt api calls whill block.
- * @retval ACL_SUCCESS The function is successfully executed.
- * @retval OtherValues success.
- */
-ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessGetState(aclrtProcessState *state);
-
-/**
- * @ingroup AscendCL
  * @brief backup the NPU process
  *
  * @retval ACL_SUCCESS The function is successfully executed.
@@ -4384,6 +4446,18 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessBackup();
  * @retval
 */
 ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessRestore();
+
+/**
+ * @ingroup AscendCL
+ * @brief cache last task shape data for profilling in aclgraph
+ *
+ * @param [in] infoPtr  cache data ptr
+ * @param [in] infoSize cache data size
+ *
+ * @retval ACL_SUCCESS The function is successfully executed.
+ * @retval OtherValues Failure.
+ */
+ACL_FUNC_VISIBILITY aclError aclrtCacheLastTaskOpInfo(const void * const infoPtr, const size_t infoSize);
 
 #ifdef __cplusplus
 }

@@ -82,6 +82,7 @@ HcclResult CollBroadcastSmallCountExecutor::KernelRun(const OpParam &param, Exec
 
     std::unique_ptr<AlgTemplateBase> level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
         TemplateType::TEMPLATE_BROADCAST_HD, dispatcher_);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_BROADCAST_HD in COMM_LEVEL0", __func__);
     CHK_SMART_PTR_NULL(level0TempAlg);
 
     u32 rootRank = 0;

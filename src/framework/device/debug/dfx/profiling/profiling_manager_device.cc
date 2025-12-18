@@ -10,12 +10,12 @@
 
 #include "profiling_manager_device.h"
 #include "aicpu_schedule/aicpu_context.h"
-#include "aprof_pub.h"
 #include "prof_common.h"
 #include "log.h"
 #include "sal_pub.h"
 #include "common/aicpu_sqe_context.h"
 #include "common/aicpu_hccl_common.h"
+#include "dlprof_function.h"
 
 namespace {
 static constexpr u32 aging = 1;
@@ -36,10 +36,19 @@ constexpr std::uint32_t HCCLINFO_REPORT_BATCH_NUM = 2;
 
 bool ProfilingManager::IsProfOn(uint64_t feature)
 {
-    if (AdprofCheckFeatureIsOn == nullptr) {
-        return false;
+    if (MsprofReportBatchAdditionalInfo == nullptr) {
+        if (AdprofCheckFeatureIsOn == nullptr) {
+            return false;
+        }
+        return AdprofCheckFeatureIsOn(feature) > 0;
+    } else {
+        if (feature == ADPROF_TASK_TIME_L1) {
+            return isL1Open_;
+        } else if (feature == ADPROF_TASK_TIME_L0) {
+            return isL0Open_;
+        }
     }
-    return AdprofCheckFeatureIsOn(feature) > 0;
+    return false;
 }
 
 bool ProfilingManager::IsL1fromOffToOn()
@@ -71,6 +80,18 @@ bool ProfilingManager::IsProfL0On()
     return false;
 }
 
+void ProfilingManager::SetProL1On(bool val)
+{
+    HCCL_INFO("[%s] val = [%d]", __func__, val);
+    isL1Open_ = val;
+}
+
+void ProfilingManager::SetProL0On(bool val)
+{
+    HCCL_INFO("[%s] val = [%d]", __func__, val);
+    isL0Open_ = val;
+}
+
 bool ProfilingManager::GetProfL0State()
 {
     if (!isL0Open_) {
@@ -96,12 +117,25 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfo(uint32_t type, uint64_
     reporterData.dataLen = len;
     reporterData.timeStamp = timeStamp;
     s32 sret = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
-    CHK_PRT_RET(sret != EOK, HCCL_ERROR("memcpy failed. errorno[%d]:", sret), HCCL_E_MEMORY);
+    CHK_PRT_RET(sret != EOK, 
+            HCCL_ERROR("memcpy failed. errorno:[%d] level:[%hu] type:[%u] threadId:[%u] len:[%u] timeStamp:[%llu]",
+                sret, reporterData.level, type, reporterData.threadId, len, timeStamp), 
+            HCCL_E_MEMORY);
     HCCL_DEBUG("CallMsprofReportAdditionInfo, AdditionInfoType[%u]", type);
-    CHK_PTR_NULL(AdprofReportAdditionalInfo);
-    CHK_PRT_RET(AdprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo)) != 0,
-        HCCL_ERROR("AdprofReportAdditionalInfo failed."),
-        HCCL_E_INTERNAL);
+        if (MsprofReportBatchAdditionalInfo == nullptr) {
+        CHK_PTR_NULL(AdprofReportAdditionalInfo);
+        int32_t ret = AdprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo));
+        CHK_PRT_RET(ret != 0,
+            HCCL_ERROR("AdprofReportAdditionalInfo failed. ret = [%d]", ret),
+            HCCL_E_INTERNAL);
+    } else {
+        CHK_PTR_NULL(MsprofReportAdditionalInfo);
+        int32_t ret = MsprofReportAdditionalInfo(aging, &reporterData, sizeof(MsprofAdditionalInfo));
+        CHK_PRT_RET(ret != 0,
+            HCCL_ERROR("MsprofReportAdditionalInfo failed. ret = [%d]", ret),
+            HCCL_E_INTERNAL);
+    }
+
     HCCL_DEBUG("CallMsprofReportAdditionInfo with additionInfoType[%u] successfully", type);
     return HCCL_SUCCESS;
 }
@@ -203,6 +237,7 @@ HcclResult ProfilingManager::ReportHcclOpInfo(MsprofAicpuHCCLOPInfo& hcclOpInfo,
     if (!GetProfL0State()) {
         return HCCL_SUCCESS;
     }
+    CHK_PTR_NULL(aicpu::GetTaskAndStreamId);
     uint64_t taskId = 0U;
     uint32_t streamId = 0;
     if (AicpuGetStreamId == nullptr || AicpuGetTaskId == nullptr) {
@@ -232,6 +267,7 @@ HcclResult ProfilingManager::ReportMainStreamTask(hccl::Stream& stream, uint16_t
     if (!GetProfL0State()) {
         return HCCL_SUCCESS;
     }
+    CHK_PTR_NULL(aicpu::GetTaskAndStreamId);
     uint64_t aicpuKernelTaskId = 0U;
     uint32_t aicpuKernelStreamId = 0;
     if (AicpuGetStreamId == nullptr || AicpuGetTaskId == nullptr) {

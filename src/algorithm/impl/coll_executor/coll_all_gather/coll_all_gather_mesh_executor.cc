@@ -83,6 +83,7 @@ HcclResult CollAllGatherMeshExecutor::KernelRun(const OpParam &param, ExecMem &e
     SubCommInfo level1CommInfo = GetSubCommInfo(COMM_LEVEL1, commIndex);
     u32 serverIndex = level1CommInfo.localRank;
 
+    HCCL_DEBUG("[CollAllGatherMeshExecutor][KernelRun]serverIndex is %u, commIndex is %u", serverIndex, commIndex);
     u64 inputMemSize = execMem.inputMem.size();
     u64 baseOffset = serverIndex * inputMemSize * level0RankSize;
     u64 level0Offset = commIndex * inputMemSize;

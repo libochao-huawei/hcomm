@@ -32,7 +32,7 @@ static CollExecutorBase *DefaultExecCreator(const HcclDispatcher dispatcher, std
 class CollAlgExecRegistry {
 public:
     static CollAlgExecRegistry &Instance();
-    HcclResult Register(const std::string &tag, const CollExecCreator &collAlgExecCreator);
+    HcclResult Register(const std::string &tag, const CollExecCreator &collExecCreator);
     std::unique_ptr<CollExecutorBase> GetAlgExec(const std::string &tag, const HcclDispatcher dispatcher,
                                                  std::unique_ptr<TopoMatcher> &topoMatcher);
 

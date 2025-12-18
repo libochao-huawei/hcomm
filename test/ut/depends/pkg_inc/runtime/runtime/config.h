@@ -23,7 +23,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #ifndef CCE_RUNTIME_CONFIG_H
 #define CCE_RUNTIME_CONFIG_H
 

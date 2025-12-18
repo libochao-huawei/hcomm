@@ -2,8 +2,8 @@ if(BUILD_OPEN_PROJECT)
     set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../comm)
     set(ASYNC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/async)
 else()
-    set(BASE_DIR "${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm")
-    set(ASYNC_DIR "${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/hdc/async")
+    set(BASE_DIR "${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm")
+    set(ASYNC_DIR "${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/hdc/async")
 endif()
 
 set(ra_hdc_list ra_hdc.c
@@ -64,26 +64,32 @@ if(BUILD_OPEN_PROJECT)
 else()
     target_include_directories(ra_hdc PRIVATE
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/network
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/private/network
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/inc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_service
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/hdc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/hdc/async
-        ${TOP_DIR}/hccl/src/platform/hccp/common/
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/host_lite
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/rdma-core/providers/hns
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/private/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/inc
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_service
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/hdc
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/hdc/async
+        ${TOP_DIR}/hcomm/src/platform/hccp/common/
+        ${TOP_DIR}/hcomm/src/platform/hccp/external_depends/host_lite
+        ${TOP_DIR}/hcomm/src/platform/hccp/external_depends/rdma-core/providers/hns
     )
 endif()
 
 target_compile_options(ra_hdc PRIVATE
     -Werror -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11 -Wextra
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
 )
 
 target_compile_definitions(ra_hdc PRIVATE
 
+)
+
+target_link_options(ra_hdc PRIVATE
+    -Wl,-z,now
+    $<$<CONFIG:Release>:-s>
 )
 
 if(BUILD_OPEN_PROJECT)

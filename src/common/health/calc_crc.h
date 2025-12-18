@@ -11,7 +11,6 @@
 #ifndef CALC_CRC_H
 #define CALC_CRC_H
 
-#include <string>
 #include <hccl/hccl_types.h>
 #include "hccl/base.h"
 

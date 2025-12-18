@@ -56,6 +56,26 @@ __aicore__ inline void AivAll2AllGraph91093::Process(GM_ADDR buffOut0, GM_ADDR c
 
     PipeBarrier<PIPE_ALL>();
 
+    if (clearEnable_ == 1) {
+        TQue<AscendC::TPosition::VECIN, 1> syncQue;
+        GlobalTensor<int32_t> syncGlobal;
+        GlobalTensor<int32_t> syncGlobalSecond;
+        uint32_t syncBufferSize = blockdim_ * 32;
+        LocalTensor<int32_t> workLocal;
+
+        pipe.InitBuffer(syncQue, 1, syncBufferSize);
+        syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
+        syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
+        workLocal = syncQue.AllocTensor<int32_t>();
+        Barrier(buffersOut, 1);
+        SyncAll(syncGlobal, workLocal, blockdim_);
+        ClearGM();
+        Barrier(buffersOut, 2);
+        SyncAll(syncGlobalSecond, workLocal, blockdim_);
+	    syncQue.FreeTensor(workLocal);
+        PipeBarrier<PIPE_ALL>();
+    }
+
     // 首同步
     BatchRecordWait(tag, buffersOut);
 
@@ -73,7 +93,7 @@ __aicore__ inline void AivAll2AllGraph91093::Process(GM_ADDR buffOut0, GM_ADDR c
     BatchRecordWait(tag, buffersOut, AivNotifyType::DataSignal);
 
     // 最后一个核做localcopy
-    if (block_idx == block_num - 1) {
+    if (GetBlockIdx() == blockdim_ - 1) {
         CpGM2GM(outputGM + rank_ * len, inputGM + rank_ * len, len);
     }
 }
@@ -87,4 +107,32 @@ __aicore__ inline void aiv_all_to_all_91093_graph(KERNEL_ARGS_DEF)
     op.HeadCounter();
     op.Process<T>(buffOut0, buffOut1, input, output, tag, len);
     op.TailCounter();
+}
+
+__aicore__ inline void sk_all_to_all_crossnode(SUPERKERNEL_ARGS_DEF)
+{
+    AivAll2AllGraph91093 op;
+    
+    op.InitSuperKernel(hiddenInput, true);
+
+    op.CalcNumTargetsAndTargetRanks();
+    if (op.dataType_ == HcclDataType::HCCL_DATA_TYPE_INT8) {
+        op.Process<int8_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HcclDataType::HCCL_DATA_TYPE_INT16) {
+        op.Process<int16_t>( op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ ==HCCL_DATA_TYPE_INT32) {
+        op.Process<int32_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_FP16) {
+        op.Process<half>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_FP32) {
+        op.Process<float>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_BFP16) {
+        op.Process<bfloat16_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_UINT8) {
+        op.Process<uint8_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_UINT16) {
+        op.Process<uint16_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    } else {
+        op.Process<uint32_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
+    }
 }
