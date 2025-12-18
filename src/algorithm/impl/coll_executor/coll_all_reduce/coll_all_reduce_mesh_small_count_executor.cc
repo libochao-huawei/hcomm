@@ -25,6 +25,7 @@ void CollAllReduceMeshSmallCountExecutor::ParseParam(const OpParam& param)
     tag_ = param.tag;
     totalSize_ = param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
     aicpuUnfoldMode_ = param.aicpuUnfoldMode;
+    symmetricMemory_ = param.supportSymmetricMemory;
 }
 
 bool CollAllReduceMeshSmallCountExecutor::CalcScratchMemFlag(const u64 totalSize)
@@ -36,7 +37,7 @@ bool CollAllReduceMeshSmallCountExecutor::CalcScratchMemFlag(const u64 totalSize
         topoAttr_.deviceNumPerAggregation < DEVICE_EIGHT &&
         totalSize <= HCCL_SMALL_COUNT_GRAPH_64_KB;
     return workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
-        (isDeter910B || topoAttr_.deviceType == DevType::DEV_TYPE_910_93);
+        ((isDeter910B || topoAttr_.deviceType == DevType::DEV_TYPE_910_93) || (symmetricMemory_ || topoAttr_.deviceType == DevType::DEV_TYPE_910_93));
 }
 
 HcclResult CollAllReduceMeshSmallCountExecutor::CalcScratchMemSize(u64& scratchMemSize)
@@ -83,7 +84,7 @@ HcclResult CollAllReduceMeshSmallCountExecutor::CalcCommInfo(std::vector<LevelNS
 HcclResult CollAllReduceMeshSmallCountExecutor::CalcTransportMemType(TransportMemType &inputType,
     TransportMemType &outputType)
 {
-    if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !symmetricMemory_) {
         inputType = TransportMemType::CCL_INPUT;
         outputType = TransportMemType::CCL_OUTPUT;
     } else {
@@ -195,7 +196,7 @@ HcclResult CollAllReduceMeshSmallCountExecutor::KernelRun(const OpParam &param, 
             TemplateType::TEMPLATE_ALL_REDUCE_REDUCE_BCAST, dispatcher_);
         HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_REDUCE_BCAST in COMM_LEVEL0", __func__);
     } else if (topoAttr_.deviceNumPerAggregation == DEVICE_EIGHT) {
-        if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE || aicpuUnfoldMode_) {
+        if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE || symmetricMemory_ || aicpuUnfoldMode_) {
             level0TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_REDUCE_DOUBLING, 
                 dispatcher_);
             HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_REDUCE_DOUBLING in COMM_LEVEL0", __func__);
