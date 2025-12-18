@@ -155,7 +155,7 @@ AicpuKfcRpcServerV2 *GetCommRpcServer(uint32_t idx)
     return &(g_commIdMap.instMap[idx].rpcServer);
 }
 
-static uint8_t g_expectPrepareId[MAX_QUE_NUM];
+static thread_local uint8_t g_expectPrepareId[MAX_QUE_NUM];
 void SetExpectPrepareId(uint8_t queueId, uint8_t msgId)
 {
     g_expectPrepareId[queueId] = msgId;
