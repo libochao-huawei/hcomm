@@ -466,6 +466,21 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
+    } if (isSupportInlineReduce && (param.supportSymmetricMemory)) {
+        const u32 SEVER_NUM_FOUR = 4;
+        constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
+        HcclAlgoType configAlgTypeLevel2 = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_REDUCE_SCATTER)[HCCL_ALGO_LEVEL_2];
+        if ((superPodNum_ > 1) && (userRankSize_ / superPodNum_ > 1) &&
+            ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
+             ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) && (dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN)))) {
+            // 单算子, 超节点数大于1， 每个超节点的rank数大于1
+            algName = "ReduceScatterRingZerocopyExchangePipelineExecutor";  // 连续数据通信+数据交换+Pipeline
+            algType_.algoLevel2 = AlgTypeLevel2::ALG_LEVEL2_PIPELINE;
+        } else if (serverNum_ < SEVER_NUM_FOUR || isAHCAlgo) {
+            algName = "ReduceScatterRingZerocopyExecutor";      // 非连续数据通信（限制Server数，避免数据切太碎）
+        } else {
+            algName = "ReduceScatterRingZerocopyExchangeExecutor";      // 连续数据通信+数据交换（AHC不支持）
+        }
     } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
          algName = "ReduceScatterComm";
     } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
@@ -478,7 +493,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         (smallCountOptimMultiServer && isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] * serverNum_ <= smallCountMultiServerThreshold))) {
         algName = "ReduceScatterDeterExecutor";
-    } else if (param.supportZeroCopy && isSupportInlineReduce &&    // 不申请scratch ==> 不支持非InlineReduce
+    } else if (isSupportInlineReduce && (param.supportSymmetricMemory || param.supportZeroCopy) &&    // isSupportInlineReduce：不申请scratch ==> 不支持非InlineReduce
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;

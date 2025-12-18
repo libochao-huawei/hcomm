@@ -337,6 +337,20 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "AllGatherHccsSioExecutor";
+    } if (param.supportSymmetricMemory) {
+        const u32 SEVER_NUM_FOUR = 4;
+        constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
+        HcclAlgoType configAlgTypeLevel2 = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
+        bool setPipelineAlgo = ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
+             (configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN));
+        if (superPodNum_ > 1 && userRankSize_ / superPodNum_ > 1 && setPipelineAlgo) {
+            algName = "AllGatherRingZerocopyPipelineExecutor";      // 连续数据通信+额外的数据交换，Level2和level0+1并发流水
+            algType_.algoLevel2 = AlgTypeLevel2::ALG_LEVEL2_PIPELINE;
+        } else if (serverNum_ < SEVER_NUM_FOUR || isAHCAlgo) {
+            algName = "AllGatherRingZerocopyExecutor";      // 非连续数据通信（限制Server数，避免数据切太碎）
+        } else {
+            algName = "AllGatherRingZerocopyExchangeExecutor";      // 连续数据通信+额外的数据交换（AHC不支持）
+        }
     } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
          algName = "AllGatherComm";
     } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
@@ -352,7 +366,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
     } else if (smallCountOptimMultiServer || smallCountOptimSingleServer) {
         algName = "AllGatherSmallCount";
-    } else if (param.supportZeroCopy &&
+    } else if ((param.supportSymmetricMemory || param.supportZeroCopy) &&
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;

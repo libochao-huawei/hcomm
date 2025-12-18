@@ -659,7 +659,9 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
 
-    if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
+    if (param.supportSymmetricMemory) {
+        algName = "AllReduceRingZerocopyExecutor";
+    } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceComm";
     } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceARSFor91093Executor";
@@ -668,7 +670,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
     } else if (smallCountOptimSingleServer) {
         algName = "AllReduceMeshSmallCountExecutor";
-    } else if (param.supportZeroCopy &&
+    } else if ((param.supportSymmetricMemory || param.supportZeroCopy) &&
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize > HCCL_MID_COUNT_16_MB * serverNum_)) {
         algName = "AllReduceRingZerocopyExecutor";
     } else {
