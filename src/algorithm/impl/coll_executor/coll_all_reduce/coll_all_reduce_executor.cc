@@ -27,7 +27,7 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
     bool needLaunchAtTheEnd = !is310P3Common_; // 是否需要在Orchestrate()结束时launch任务
 
     // 图模式和单卡场景下不需要Loop
-    if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if ((param.supportSymmetricMemory && !desc_.isZeroCopy) || (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE)) {
         ExecMem execMem;
         execMem.count = param.DataDes.count;
         execMem.inputPtr = param.inputPtr;
