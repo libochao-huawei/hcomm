@@ -93,7 +93,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor91093(const OpParam& param, std::
             if (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) {
                 algName = "ReduceScatterVFastDoubleRingFor91093Executor";
             } else {
-                algName = "AlignedReduceScatterDoubleRingFor91093Executor";
+                algName = "AlignedReduceScatterVDoubleRingFor91093Executor";
             }
         } else {
             HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support topoType_[%u]", topoType_);
