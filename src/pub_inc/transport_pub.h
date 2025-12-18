@@ -647,6 +647,8 @@ public:
     HcclResult SetStopFlag(bool value);
     HcclResult Fence();
     HcclResult UpdateRemoteAddr(void *remoteIn, void *remoteOut);
+    HcclResult UpdateRemoteInAddr(void *remoteIn);
+    HcclResult UpdateRemoteOutAddr(void *remoteOut);
     static HcclResult GetTransportErrorCqe(const HcclNetDevCtx netDevCtx,
         std::vector<std::pair<Transport*, CqeInfo>> &infos, u32 &num);
     inline TransportType GetTransportType() const

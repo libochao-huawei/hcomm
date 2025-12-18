@@ -1021,6 +1021,18 @@ HcclResult TransportBase::UpdateRemoteAddr(void *remoteIn, void *remoteOut)
     return HCCL_E_NOT_SUPPORT;
 }
 
+HcclResult TransportBase::UpdateRemoteInAddr(void *remoteIn)
+{
+    static_cast<void>(remoteIn);
+    return HCCL_E_NOT_SUPPORT;
+}
+
+HcclResult TransportBase::UpdateRemoteOutAddr(void *remoteOut)
+{
+    static_cast<void>(remoteOut);
+    return HCCL_E_NOT_SUPPORT;
+}
+
 HcclResult TransportBase::WriteAsync(
     struct Transport::Buffer &remoteBuf, struct Transport::Buffer &localBuf, Stream &stream)
 {
