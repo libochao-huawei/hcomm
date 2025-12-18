@@ -82,6 +82,7 @@ static s32 chip_type_stub[256] = {0}; /*最大为16，下面不再做判断*/
 /*----------------------------------------------*
  * 常量定义                                     *
  *----------------------------------------------*/
+constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -2048,6 +2049,16 @@ aclError aclrtReserveMemAddress(void **virPtr, size_t size, size_t alignment, vo
     return ACL_SUCCESS;;
 }
 
+aclError aclrtReserveMemAddressNoUCMemory(void **virPtr, size_t size, size_t alignment, void *expectPtr, uint64_t flags)
+{
+    (void)virPtr;
+    (void)size;
+    (void)alignment;
+    (void)expectPtr;
+    (void)flags;
+    return ACL_SUCCESS;;
+}
+
 aclError aclrtReleaseMemAddress(void *virPtr)
 {
     (void)virPtr;
@@ -2056,6 +2067,32 @@ aclError aclrtReleaseMemAddress(void *virPtr)
 
 aclError aclrtFreePhysical(aclrtDrvMemHandle handle)
 {
+    (void)handle;
+    return ACL_SUCCESS;
+}
+
+aclError aclrtMallocPhysical(aclrtDrvMemHandle *handle, size_t size, const aclrtPhysicalMemProp *prop, uint64_t flags)
+{
+    (void)handle;
+    (void)size;
+    (void)prop;
+    (void)flags;
+    return ACL_SUCCESS;
+}
+
+aclError aclrtMemGetAllocationGranularity(aclrtPhysicalMemProp *prop, aclrtMemGranularityOptions option, size_t *granularity)
+{
+    (void)prop;
+    (void)option;
+    if(granularity != nullptr) {
+        *granularity = 2097152;
+    }
+    return ACL_SUCCESS;
+}
+
+aclError aclrtMemRetainAllocationHandle(void *virPtr, aclrtDrvMemHandle *handle)
+{
+    (void)virPtr;
     (void)handle;
     return ACL_SUCCESS;
 }
@@ -5403,4 +5440,34 @@ rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
 {
     *status = 1;
     return RT_ERROR_NONE;
+}
+
+rtError_t aclrtMemExportToShareableHandleV2(aclrtDrvMemHandle handle, uint64_t flags,  aclrtMemSharedHandleType shareType, void *shareableHandle)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t aclrtMemSetPidToShareableHandleV2(void *shareableHandle, aclrtMemSharedHandleType shareType, int32_t *pid, size_t pidNum)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t aclrtMemImportFromShareableHandleV2(void *shareableHandle, aclrtMemSharedHandleType shareType, uint64_t flags, aclrtDrvMemHandle *handle)
+{
+    return RT_ERROR_NONE;
+}
+
+aclError aclrtMemGetAddressRange(void *ptr, void **baseUserVa, size_t *baseVaSize)
+{
+    (void)ptr;
+    (void)baseUserVa;
+    (void)baseVaSize;
+    return ACL_SUCCESS;
+}
+
+aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, size_t *total)
+{
+    *total = 64 * GIGABYTE_TO_BYTE;
+    *free = 50 * GIGABYTE_TO_BYTE;
+    return ACL_SUCCESS;
 }

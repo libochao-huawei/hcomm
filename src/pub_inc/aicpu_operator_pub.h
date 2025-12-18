@@ -709,6 +709,11 @@ struct OpTilingData {
     s32 userStreamId;
     u32 ahcConfInfo[TOP_HIERARCHICAL_CONF_SIZE] = {0};
     uint8_t aicpuCacheEnable = 0; // 是否开启aicpu cache
+    u8 isSymmetricMemory = 0;
+    u64 inputSymWindow;
+    u64 inputOffset = 0;
+    u64 outputSymWindow;
+    u64 outputOffset = 0;
 
     /******************可变长度数据区，如需新增字段请在这之前增加*******************/
     u64 length;   // 可变长度数据区长度
