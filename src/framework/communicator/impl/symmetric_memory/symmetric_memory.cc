@@ -221,7 +221,7 @@ HcclResult SymmetricMemory::EnsureInit() {
     return initResult_;
 }
 
-HcclResult SymmetricMemory::SymmetricMemory::Init() 
+HcclResult SymmetricMemory::Init() 
 {
     // 0. 检查Pimpl是否构造成功
     CHK_SMART_PTR_NULL(vaAllocator_);
@@ -255,7 +255,10 @@ HcclResult SymmetricMemory::SymmetricMemory::Init()
         HCCL_ERROR("[SymmetricMemory][Init] Stride %u is not a multiple of granularity %zu.", stride_, granularity_);
         return HCCL_E_PARA;
     }
-    
+
+    size_t targetStartTB = 40ULL * 1024ULL * 1024ULL * 1024ULL * 1024ULL;
+    void* hintPtr = reinterpret_cast<void*>(targetStartTB);
+    //aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0);
     // 默认大页对齐
     if (aclrtReserveMemAddress(&heapBase_, totalHeapSize, 0, nullptr, 1) != ACL_SUCCESS) {
         HCCL_ERROR("[SymmetricMemory][Init] aclrtReserveMemAddress failed to reserve %zu bytes. stride: %u, rankSize: %u.",
@@ -297,14 +300,14 @@ void* SymmetricMemory::AllocSymmetricMem(size_t size)
     HcclResult ret = HcclMemAlloc(&ptr, size);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[SymmetricMemory][AllocSymmetricMem] HcclMemAlloc failed for size[%u].", size);
-        return NULL;
+        return nullptr;
     }
 
     ret = RegisterSymmetricMem(ptr, size, &devWin);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[SymmetricMemory][AllocSymmetricMem] RegisterSymmetricMem failed for ptr[%p], size[%u].", ptr, size);
         (void)HcclMemFree(ptr);
-        return NULL;
+        return nullptr;
     }
     return devWin;
 }
@@ -388,7 +391,7 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
 
     void* baseUserVa = ptr;
     size_t baseVaSize = size;
-    // if(aclrtMemGetAddressRange(ptr, baseUserVa, &baseVaSize) != 0) {
+    // if(aclrtMemGetAddressRange(ptr, &baseUserVa, &baseVaSize) != 0) {
     //     HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] aclrtMemGetAddressRange failed for ptr[%p], size[%zu]. ", ptr, size);
     //     return HCCL_E_PARA;
     // }
