@@ -56,6 +56,7 @@
 #include "comm_config_pub.h"
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
+#include "symmetric_memory/symmetric_memory.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
@@ -477,6 +478,10 @@ public:
     HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
     HcclResult GroupSubstreamsSync();
     void SetReleaseChannel(std::function<HcclResult()> releaseChannel);
+    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
+    HcclResult DeregisterWindow(CommSymWindow winHandle);
+    HcclResult InitSymmetricMemory();
+    HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 private:
 
     bool IsEnableRoce();
@@ -776,6 +781,7 @@ private:
     bool GetSupportHDCommunicate();
     HcclResult InitOpRetry();
     HcclResult InitOpResPara();
+    bool IsSupportSymmetricMemory(HcclCMDType opType, OpParam &opParam);
     bool IsSupportZeroCopy(const OpParam &opParam);
     HcclResult PrepareZeroCopy(const std::string &algName, const AlgDesc &algDesc, OpParam &opParam);
     HcclResult UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &algResource);
@@ -1120,6 +1126,8 @@ private:
     std::function<bool()> getAicpuCommState_; // 获取自定义算子aicpu通信域是否初始化
     bool isInvalidComm_ { false };
     std::function<HcclResult()> releaseChannel_ = nullptr;
+    std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
+    std::unique_ptr<SymmetricMemory> symmetricMemory_;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
