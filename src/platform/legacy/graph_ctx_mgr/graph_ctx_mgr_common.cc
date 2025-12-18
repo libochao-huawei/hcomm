@@ -176,9 +176,7 @@ HcclResult GraphAddRecordTask(void *fftsPubInfo, void *ctx, uint32_t streamId, v
             }
         }
     }
-    if (CheckLogLevel(HCCL, HCCL_LOG_INFO) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
-        PLF_CONFIG_INFO(PLF_TASK, "%s para: taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex - 1);
-    }
+    PLF_CONFIG_INFO(PLF_TASK, "%s para: taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex - 1);
     return HCCL_SUCCESS;
 }
 
@@ -207,9 +205,7 @@ HcclResult GraphAddWaitTask(void *fftsPubInfo, void *ctx, uint32_t streamId, voi
             // 卡内notify使用successor间依赖关系替代
         }
     }
-    if (CheckLogLevel(HCCL, HCCL_LOG_INFO) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
-        PLF_CONFIG_INFO(PLF_TASK, "%s para: taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex - 1);
-    }
+    PLF_CONFIG_INFO(PLF_TASK, "%s para: taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex - 1);
     return HCCL_SUCCESS;
 }
 
