@@ -599,6 +599,20 @@ HcclResult Transport::UpdateRemoteAddr(void *remoteIn, void *remoteOut)
     return pimpl_->UpdateRemoteAddr(remoteIn, remoteOut);
 }
 
+HcclResult Transport::UpdateRemoteInAddr(void *remoteIn)
+{
+    CHK_PTR_NULL(pimpl_);
+    CHK_PTR_NULL(remoteIn);
+    return pimpl_->UpdateRemoteInAddr(remoteIn);
+}
+
+HcclResult Transport::UpdateRemoteOutAddr(void *remoteOut)
+{
+    CHK_PTR_NULL(pimpl_);
+    CHK_PTR_NULL(remoteOut);
+    return pimpl_->UpdateRemoteOutAddr(remoteOut);
+}
+
 std::vector<u8> Transport::GetExchangeInfo()
 {
     if (UNLIKELY(pimpl_ == nullptr)) {

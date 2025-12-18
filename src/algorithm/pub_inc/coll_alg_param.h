@@ -109,6 +109,7 @@ struct AlgResourceRequest {
     DeviceMode mode = DeviceMode::HOST;     // 用于区分是host模式，还是aicpu模式
     OpCommTransport opTransport;
     bool isInGraphCaptureZeroCopy = false;
+    // bool isZeroCopyAlg = false;
     void Describe()
     {
         HCCL_DEBUG("[AlgResourceRequest], scratchMemSize[%u], streamNum[%u], notifyNum[%u], aivBufferRequest[%llu], "
@@ -213,6 +214,11 @@ struct OpParam {
     u32 nRecv = 0;
     u32 iSend = 0; // index of send
     u32 iRecv = 0; // index of recv
+    bool supportSymmetricMemory = false;
+    void* inputSymWindow = nullptr;
+    u64 inputOffset = 0;
+    void* outputSymWindow = nullptr;
+    u64 outputOffset = 0;
 
     inline HcclDataType GetDataType() const
     {
