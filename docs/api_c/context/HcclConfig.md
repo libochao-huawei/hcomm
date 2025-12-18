@@ -22,8 +22,8 @@ typedef enum {
 
     此参数仅在如下型号中支持配置：
 
-    -   Ascend 910C
-    -   Ascend 910B
+    -   Atlas A3 训练系列产品/Atlas A3 推理系列产品
+    -   Atlas A2 训练系列产品/Atlas A2 推理系列产品
 
 -   HCCL\_CONFIG\_RESERVED：预留参数。
 
