@@ -16,6 +16,6 @@ value为[HcclConfig](HcclConfig.md#ZH-CN_TOPIC_0000002519007963)中“HCCL\_DETE
 
 此参数仅在如下型号中支持配置：
 
--   Ascend 910C
--   Ascend 910B
+-   Atlas A3 训练系列产品/Atlas A3 推理系列产品
+-   Atlas A2 训练系列产品/Atlas A2 推理系列产品
 
