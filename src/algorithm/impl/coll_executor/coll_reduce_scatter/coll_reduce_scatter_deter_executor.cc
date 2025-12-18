@@ -26,16 +26,21 @@ void CollReduceScatterDeterExecutor::ParseParam(const OpParam& param)
     tag_ = param.tag;
 
     // 是否需要scratch memory 选中确定性计算Executor，其他条件必定满足，只需区分是否为图模式
-    scratchMemFlag_ = (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    scratchMemFlag_ = (param.supportSymmetricMemory || workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
 
     // 记录图模式总数据量
     totalSize_ = topoAttr_.userRankSize * param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
+    HCCL_INFO("[CollReduceScatterDeterExecutor][ParseParam] tag[%s] totalSize[%llu], topoAttr_.userRankSize[%u], count[%llu], dataType[%d]",
+        tag_.c_str(), totalSize_, topoAttr_.userRankSize, param.DataDes.count, param.DataDes.dataType);
     aicpuUnfoldMode_ = param.aicpuUnfoldMode;
+    symmetricMemory_ = param.supportSymmetricMemory;
 }
 
 HcclResult CollReduceScatterDeterExecutor::CalcScratchMemSize(u64& scratchMemSize)
 {
     if (scratchMemFlag_) { // 确定性计算只有图模式需要scratch memory
+        HCCL_INFO("[CollReduceScatterDeterExecutor][CalcScratchMemSize] tag[%s] totalSize[%llu]",
+            tag_.c_str(), totalSize_);
         scratchMemSize = totalSize_;
     } else {
         scratchMemSize = 0U;
@@ -48,6 +53,7 @@ HcclResult CollReduceScatterDeterExecutor::CalcScratchMemSize(u64& scratchMemSiz
 HcclResult CollReduceScatterDeterExecutor::CalcStreamNum(u32& streamNum)
 {
     u32 totalStreamNum = 0U;
+    // TODO ????
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
         totalStreamNum = topoAttr_.deviceNumPerAggregation - 1U;
     } else {
@@ -74,7 +80,7 @@ HcclResult CollReduceScatterDeterExecutor::CalcCommInfo(std::vector<LevelNSubCom
 HcclResult CollReduceScatterDeterExecutor::CalcTransportMemType(TransportMemType &inputType,
     TransportMemType &outputType)
 {
-    if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) && !symmetricMemory_) {
         inputType = TransportMemType::CCL_INPUT;
         if (scratchMemFlag_) {
             outputType = TransportMemType::SCRATCH;
@@ -113,7 +119,7 @@ u64 CollReduceScatterDeterExecutor::CalcLoopMaxCount(const u32 unitSize)
 {
     u64 maxCountPerLoop;
     bool isLocalReduce91073 = ((((topoAttr_.userRankSize & (topoAttr_.userRankSize - 1)) != 0) ||
-        aicpuUnfoldMode_ || (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB)) 
+        aicpuUnfoldMode_ || ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) || symmetricMemory_)) 
         && (topoAttr_.deviceType == DevType::DEV_TYPE_910_93)) && (topoAttr_.serverNum == 1);
 
     bool isLocalReduce910B = ((totalSize_ > HCCL_SMALL_COUNT_32_KB) ||
@@ -170,9 +176,15 @@ HcclResult CollReduceScatterDeterExecutor::KernelRun(const OpParam &param, ExecM
     HcomCollOpInfo opInfo = {"", execMem.inputPtr, execMem.outputPtr, param.DataDes.count, param.DataDes.dataType,
         param.root, param.reduceType};
 
-    bool isLocalReduce91073 = ((((topoAttr_.userRankSize & (topoAttr_.userRankSize - 1)) != 0) ||
-        aicpuUnfoldMode_ || (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB)) 
+    bool isLocalReduce91073 = (
+        (
+        ((topoAttr_.userRankSize & (topoAttr_.userRankSize - 1)) != 0) ||
+        aicpuUnfoldMode_ || 
+        ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) || symmetricMemory_)
+        ) 
         && (topoAttr_.deviceType == DevType::DEV_TYPE_910_93)) && (topoAttr_.serverNum == 1);
+    HCCL_CONFIG_INFO(HCCL_ALG, "[%s] topoAttr_.deviceType[%u], userRankSize[%u], serverNum[%u], workflowMode[%u], aicpuUnfoldMode_[%u]", 
+            __func__, topoAttr_.deviceType, topoAttr_.userRankSize, topoAttr_.serverNum, workflowMode_, aicpuUnfoldMode_);
 
     bool isLocalReduce910B = ((param.DataDes.count * unitSize > HCCL_SMALL_COUNT_32_KB) ||
         (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ||
@@ -190,6 +202,7 @@ HcclResult CollReduceScatterDeterExecutor::KernelRun(const OpParam &param, ExecM
     }
 
     CHK_SMART_PTR_NULL(level0TempAlg);
+    HCCL_INFO("[CollReduceScatterDeterExecutor] level0TempAlg, scratchMemSize[%llu], scratchMemPtr[%p]", execMem.scratchMem.size(), execMem.scratchMem.ptr());
     CHK_RET(level0TempAlg->Prepare(execMem.inputMem, execMem.scratchMem, execMem.outputMem, execMem.count,
         param.DataDes.dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, dataSegsSlice, 0,
         reduceAttr, algResResp_->slaveStreams, algResResp_->notifiesMain, algResResp_->notifiesAux,

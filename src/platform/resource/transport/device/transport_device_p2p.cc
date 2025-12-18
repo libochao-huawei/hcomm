@@ -77,6 +77,18 @@ HcclResult TransportDeviceP2p::UpdateRemoteAddr(void *remoteIn, void *remoteOut)
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportDeviceP2p::UpdateRemoteInAddr(void *remoteIn)
+{
+    this->remoteInputPtr_ = remoteIn;
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDeviceP2p::UpdateRemoteOutAddr(void *remoteOut)
+{
+    this->remoteOutputPtr_ = remoteOut;
+    return HCCL_SUCCESS;
+}
+
 extern "C" {
 drvError_t __attribute__((weak)) halResAddrMap(unsigned int devId, struct res_addr_info *res_info,
     unsigned long *va, unsigned int *len);

@@ -177,9 +177,11 @@ HcclResult ReduceScatterLocalReduce::RunReduceScatter(u32 rank, u32 rankSize, co
     u64 alignSize = totalSize;
     CHK_RET(CalAlign(totalSize, rankSize, alignSize));
     u64 offset = (opInfo_-> count) * unitSize;
-    DeviceMem UserMemIn = DeviceMem::create(opInfo_->inputAddr, offset * rankSize);
-    DeviceMem CommMemOut = DeviceMem::create(outputMem_.ptr(), outputMem_.size());
-    DeviceMem UserMemOut = DeviceMem::create(opInfo_->outputAddr, totalSize);
+    HCCL_INFO("[ReduceScatterLocalReduce][RunReduceScatter] rank[%u], totalSize[%llu], alignSize[%llu], offset[%llu], opInfo count[%llu], unitSize[%llu]",
+        rank, totalSize, alignSize, offset, opInfo_-> count, unitSize);
+    DeviceMem UserMemIn = DeviceMem::create(opInfo_->inputAddr, offset * rankSize); // 用户input
+    DeviceMem CommMemOut = DeviceMem::create(outputMem_.ptr(), outputMem_.size()); 
+    DeviceMem UserMemOut = DeviceMem::create(opInfo_->outputAddr, totalSize); // 用户output
 
     DeviceMem src;
     DeviceMem dst;
@@ -217,6 +219,8 @@ HcclResult ReduceScatterLocalReduce::RunReduceScatter(u32 rank, u32 rankSize, co
 
         dst = DeviceMem::create(static_cast<u8 *>(remMemPtr) + alignSize * (round - 1) + slices_[dstRank].offset,
             totalSize);
+        HCCL_INFO("[ReduceScatterLocalReduce][RunReduceScatter] rank[%u] dstRank[%u] dst ptr[%p], totalSize[%llu], offset[%llu]",
+            rank, dstRank, dst.ptr(), totalSize, offset);
         src = UserMemIn.range(offset * dstRank, totalSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, subStream,
             links[dstRank]->GetRemoteRank(), links[dstRank]->GetLinkType()));
@@ -251,6 +255,8 @@ HcclResult ReduceScatterLocalReduce::RunLocalReduce(u32 rank, u32 rankSize)
     DeviceMem dst;
     DeviceMem emptySrc = CommMemOut.range(0, 0);
     DeviceMem emptyDst = CommMemOut.range(0, 0);
+    HCCL_INFO("[ReduceScatterLocalReduce][RunLocalReduce] rank[%u], totalSize[%llu], alignSize[%llu], outputMem size[%llu], outputMemPtr[%p], slice offset[%llu]",
+        rank, totalSize, alignSize, outputMem_.size(), outputMem_.ptr(), slices_[rank].offset);
     if (rankPower < rankSize) {
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, emptyDst, emptySrc, stream_));
         CHK_RET(MainRecordSub(rankSize - rankPower - 1));

@@ -61,6 +61,19 @@ typedef void *HcclComm;
 typedef void *HcclConn;
 
 /**
+ * @brief handle to HCCL Window
+ */
+typedef void *CommSymWindow;
+
+/**
+ * @brief Symmetric Memory Flag
+ */
+typedef enum {
+    HCCL_WIN_DEFAULT = 0,       /**< 先不支持，预留 */
+    HCCL_WIN_COLL_SYMMETRIC = 1 /**< 启用对称内存 */
+} symmetricMemoryFlag;
+
+/**
  * @brief HCCL Reduction operation
  */
 typedef enum {
@@ -120,7 +133,7 @@ typedef struct HcclRootInfoDef {
 
 const uint32_t HCCL_COMM_CONFIG_INFO_BYTES = 24;
 const uint32_t HCCL_COMM_CONFIG_MAGIC_WORD = 0xf0f0f0f0;
-const uint32_t HCCL_COMM_CONFIG_VERSION = 9;
+const uint32_t HCCL_COMM_CONFIG_VERSION = 10;
 const uint32_t HCCL_COMM_DEFAULT_BUFFSIZE = 200;
 const uint32_t HCCL_COMM_BUFFSIZE_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_DEFAULT_DETERMINISTIC = 0;
@@ -130,6 +143,7 @@ const uint32_t HCCL_COMM_DEFAULT_OP_EXPANSION_MODE = 0;
 const uint32_t HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET = 0xffffffff;
 const int32_t HCCL_COMM_EXECTIMEOUT_CONFIG_NOT_SET = 0xffffffff;
+const uint64_t HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE = 16ULL;
 
 typedef struct HcclCommConfigDef {
     char reserved[HCCL_COMM_CONFIG_INFO_BYTES];
@@ -148,6 +162,7 @@ typedef struct HcclCommConfigDef {
     char hcclRetryEnable[HCCL_COMM_RETRY_ENABLE_MAX_LENGTH];
     char hcclRetryParams[HCCL_COMM_RETRY_PARAMS_MAX_LENGTH];
     char hcclBufferName[BUFFER_NAME_MAX_LENGTH];
+    uint64_t hcclSymWinMaxMemSizePerRank; // 对称内存预留VA大小, 单位GB
 } HcclCommConfig;
 
 typedef enum {
