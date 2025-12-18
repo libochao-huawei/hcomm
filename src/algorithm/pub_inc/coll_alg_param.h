@@ -213,6 +213,11 @@ struct OpParam {
     u32 nRecv = 0;
     u32 iSend = 0; // index of send
     u32 iRecv = 0; // index of recv
+    bool supportSymmetricMemory = false;
+    void* inputSymWindow = nullptr;
+    u64 inputOffset = 0;
+    void* outputSymWindow = nullptr;
+    u64 outputOffset = 0;
 
     inline HcclDataType GetDataType() const
     {
