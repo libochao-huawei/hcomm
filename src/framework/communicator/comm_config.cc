@@ -33,7 +33,8 @@ CommConfig::CommConfig(const std::string &commName)
       retryMaxCnt_(GetExternalInputRetryMaxCnt()),
       retryHoldTime_(GetExternalInputRetryHoldTime()),
       retryIntervalTime_(GetExternalInputRetryIntervalTime()),
-      bufferName_("")
+      bufferName_(""),
+      symmetricMemoryStride_(HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE)
 {
     InitAlgoConfig();
     InitRetryEnable();
@@ -54,7 +55,9 @@ CommConfig::CommConfig()
       execTimeOutSetByConfig_(false),
       retryMaxCnt_(GetExternalInputRetryMaxCnt()),
       retryHoldTime_(GetExternalInputRetryHoldTime()),
-      retryIntervalTime_(GetExternalInputRetryIntervalTime())
+      retryIntervalTime_(GetExternalInputRetryIntervalTime()),
+      bufferName_(""),
+      symmetricMemoryStride_(HCCL_DEFAULT_SYMMETRIC_MEMORY_STRIDE)
 {
     InitAlgoConfig();
     InitRetryEnable();
@@ -113,8 +116,8 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
     HCCL_RUN_INFO("[Load] comm config info of [%s]: configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
         configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
-        ", execTimeOut[%u]s, bufferName[%s]",
-        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str());
+        ", execTimeOut[%u]s, bufferName[%s], symmetricMemoryStride[%llu]",
+        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str(), symmetricMemoryStride_);
     return HCCL_SUCCESS;
 }
 
@@ -139,18 +142,18 @@ HcclResult CommConfig::CheckMagicWord(const CommConfigHandle &config)
 
 HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
 {
-    if (config.info.version > CommConfigVersion::COMM_CONFIG_VERSION_EIGHT) {
+    if (config.info.version > CommConfigVersion::COMM_CONFIG_VERSION_TEN) {
         // 传入的config的版本高于当前版本，警告不支持的配置项将被忽略
         HCCL_WARNING("[SetConfigByVersion] The version of provided config[%u] is higher than the current version[%u], "
             "unsupported configuration will be ignored.",
             config.info.version,
-            CommConfigVersion::COMM_CONFIG_VERSION_EIGHT);
-    } else if (config.info.version < CommConfigVersion::COMM_CONFIG_VERSION_EIGHT) {
+            CommConfigVersion::COMM_CONFIG_VERSION_TEN);
+    } else if (config.info.version < CommConfigVersion::COMM_CONFIG_VERSION_TEN) {
         // 传入的config的版本低于当前版本，警告高版本支持的配置项将被忽略
         HCCL_WARNING("[SetConfigByVersion] The version of provided config[%u] is lower than the current version[%u], "
             "configurations supported by later versions will be ignored.",
             config.info.version,
-            CommConfigVersion::COMM_CONFIG_VERSION_EIGHT);
+            CommConfigVersion::COMM_CONFIG_VERSION_TEN);
     }
 
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_ONE) {
@@ -214,6 +217,11 @@ HcclResult CommConfig::SetConfigByVersion(const CommConfigHandle &config)
     if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_NINE) {
         // 版本大于等于9
         CHK_RET(SetConfigBufferName(config));
+    }
+
+    if (config.info.version >= CommConfigVersion::COMM_CONFIG_VERSION_TEN) {
+        // 版本大于等于10，支持配置对称内存每个rank的预留VA大小
+        symmetricMemoryStride_ = config.symmetricMemoryStride;
     }
     HCCL_INFO("NSLBDP-VERSION config.info.version = [%u] .", config.info.version);
     return HCCL_SUCCESS;
@@ -623,7 +631,7 @@ HcclResult CommConfig::SetSpecificAlgTypeConfig(std::vector<std::string> &algos)
         algoConfig_[HcclCMDType::HCCL_CMD_ALLTOALL];
     return HCCL_SUCCESS;
 }
- 
+
 HcclResult CommConfig::SetConfigExecTimeOut(s32 execTimeOut)
 {
     execTimeOut_ = execTimeOut;
@@ -743,5 +751,10 @@ u32 CommConfig::GetConfigRetryIntervalTime() const
 const std::string& CommConfig::GetConfigBufferName() const
 {
     return bufferName_;
+}
+
+u64 CommConfig::GetConfigSymmetricMemoryStride() const
+{
+    return symmetricMemoryStride_;
 }
 }

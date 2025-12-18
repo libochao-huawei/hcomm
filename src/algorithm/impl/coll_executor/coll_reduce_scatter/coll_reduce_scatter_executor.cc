@@ -30,7 +30,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
     HcclResult ret = HCCL_SUCCESS;
     bool needLaunchAtTheEnd = !is310P3Common_; // 是否需要在Orchestrate()结束时launch任务
     // 图模式和单卡场景下不需要Loop
-    if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+    if ((param.supportSymmetricMemory && !desc_.isZeroCopy) || (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE)) {
         ExecMem execMem;
         execMem.count = count;
         execMem.scratchMem = algRes.scratchMem;
@@ -39,6 +39,8 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         execMem.inputMem = algRes.paramInputMem;
         execMem.outputMem = algRes.paramOutputMem;
         ret = KernelRun(param, execMem);
+        HCCL_INFO("[CollReduceScatterExecutor][Orchestrate] tag[%s] Graph mode or single device run KernelRun directly.",
+            param.tag.c_str());
         if (algOpContext_.opRetryHandler.isPostSync == true) {
             // post Sync
             CHK_RET(RetryPostSync(param, execMem));
