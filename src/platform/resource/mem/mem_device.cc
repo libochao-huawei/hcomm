@@ -10,6 +10,9 @@
 
 #include "mem_device.h"
 #include "adapter_rts.h"
+#include <execinfo.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 namespace hccl {
 DeviceMem::DeviceMem(void *ptr, u64 size, bool owner) : ptr_(ptr), size_(size), owner_(owner)
@@ -122,7 +125,30 @@ DeviceMem DeviceMem::range(u64 offset, u64 size) const
         return mem;
     }
     if ((offset + size) > size_){
+        // ================== 新增代码开始 ==================
         HCCL_ERROR("DeviceMem request range[%llu] is out of size_[%llu]", offset+size, size_);
+        
+        // 定义最大栈深度，例如 32 层
+        const int MAX_STACK_SIZE = 32;
+        void* buffer[MAX_STACK_SIZE];
+        
+        // 获取当前调用栈
+        int stack_depth = backtrace(buffer, MAX_STACK_SIZE);
+        
+        // 将地址转换为符号字符串
+        char** strings = backtrace_symbols(buffer, stack_depth);
+        
+        if (strings != NULL) {
+            HCCL_ERROR("=== Call Stack Trace Start ===");
+            for (int i = 0; i < stack_depth; i++) {
+                // 打印每一层堆栈信息
+                HCCL_ERROR("[%02d] %s", i, strings[i]);
+            }
+            HCCL_ERROR("=== Call Stack Trace End ===");
+            ::free(strings); // 别忘了释放内存
+        }
+        // ================== 新增代码结束 ==================
+
         return mem;
     }
     mem = DeviceMem(static_cast<void *>(static_cast<s8 *>(ptr_) + offset), size, false);
