@@ -202,13 +202,9 @@ u32 RunKernelAicpuServerV2(void *args[], HcclCommParamDesc *desc, void *tilingDa
     }
     HCCL_INFO("Start launch RunAicpuInnerKfcSrvLaunch");
     AicpuKfcProf::GetCurrentAicpuProf()->workCnt = 0;
-    auto ret = AicpuKfcProcess::AicpuRunRpcServerForMC2(&task);
-    if (AicpuKfcProcess::CheckNsStopLaunchStatus(desc->groupNum) == HCCL_E_SUSPENDING) {
-        HCCL_INFO("mc2 opp is suspended");
-        return AICPUSUSPENDING_ERROR;
-    }
+    const u32 ret = AicpuKfcProcess::AicpuRunRpcServerForMC2(&task);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("Server runs failed.");
+        HCCL_ERROR("Server runs failed, error code %u.", ret);
         return ret;
     }
     CHK_RET(KfcProf(launchEntryTime, task));
@@ -360,13 +356,8 @@ u32 RunAicpuApiRpcSrvLaunchV2(void *args[], HcclCommParamDesc *desc)
     if (AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_PRINT_MSG) || AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_PRINT_BUFF)) {
         HCCL_RUN_INFO("Server start, MC2 opIdx:%lu", aicpuOpIdx);
     }
-    HCCL_INFO("Start launch %s, aicpuOpIdx %lu", __func__, aicpuOpIdx);
-    auto ret = AicpuKfcProcess::AicpuRunRpcServerForMC2V2(&task, tilingData);
-    if (AicpuKfcProcess::CheckNsStopLaunchStatus(desc->groupNum) == HCCL_E_SUSPENDING) {
-        HCCL_INFO("mc2 opp is suspended");
-        return AICPUSUSPENDING_ERROR;
-    }
-
+    HCCL_INFO("Start %s, aicpuOpIdx %lu", __func__, aicpuOpIdx);
+    const u32 ret = AicpuKfcProcess::AicpuRunRpcServerForMC2V2(&task, tilingData);
     if (ret != HCCL_SUCCESS) {
         AicpuKfcUtils::PrintTilingData(*tilingData, true);
         HCCL_ERROR("[%s] aicpuOpIdx %lu", __func__, aicpuOpIdx);
@@ -378,7 +369,7 @@ u32 RunAicpuApiRpcSrvLaunchV2(void *args[], HcclCommParamDesc *desc)
     const u32 totalQueueNum = tilingData->commBlockNum * tilingData->queueNum;
     const u32 turnOffset = blockIdx * (totalQueueNum / blockNum) + std::min(blockIdx, totalQueueNum % blockNum);
     CHK_RET(KfcProf(launchEntryTime, task, turnOffset));
-    HCCL_INFO("end %s", __func__);
+    HCCL_INFO("End %s, aicpuOpIdx %lu", __func__, aicpuOpIdx);
     return 0;
 }
 

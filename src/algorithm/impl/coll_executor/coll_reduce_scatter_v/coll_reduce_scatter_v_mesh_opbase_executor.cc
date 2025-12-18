@@ -130,6 +130,7 @@ HcclResult CollReduceScatterVMeshOpbaseExecutor::CalcCurCountsAndCurDisplsMultiM
         if (perRankCount == 0) {
             break;
         }
+        HCCL_DEBUG("[CollReduceScatterVMeshOpbaseExecutor]Calc for perRankCount start");
         for (auto i = 0U; i < countsLeft.size(); ++i) {
             const auto curCount = countsLeft[i] < perRankCount ? countsLeft[i] : perRankCount;
             allocatableCount -= curCount;

@@ -17,10 +17,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #组件间对外头文件目录
 add_library(hccl_headers INTERFACE)
 target_include_directories(hccl_headers INTERFACE
-    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/inc>
-    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/inc/hccl>
-    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/inc/hccl/hccl>
-    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/inc/hccl>
+    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/include>
+    $<BUILD_INTERFACE:${TOP_DIR}/hcomm/include/hccl>
     $<INSTALL_INTERFACE:include>
     $<INSTALL_INTERFACE:include/hccl>
     $<INSTALL_INTERFACE:include/hccl/external>
@@ -41,22 +39,10 @@ add_library(hccd  SHARED)
 
 #需要编译的文件list
 set(include_list
-    ${HCCL_BASE_DIR}/inc
-    ${HCCL_BASE_DIR}/inc/hccl
-    ${HCCL_BASE_DIR}/inc/hccl/hccl
     ${HCCL_BASE_DIR}/pub_inc
-    ${HCCL_BASE_DIR}/pkg_inc
+    ${HCCL_BASE_DIR}/pub_inc/aicpu/
     ${HCCL_BASE_DIR}/pub_inc/inner
     ${HCCL_BASE_DIR}/pub_inc/new
-
-    ${HCCL_BASE_DIR}/hdcs
-    ${HCCL_BASE_DIR}/hccl/hccl_comm/inc
-    ${HCCL_BASE_DIR}/hccl/op_base/src
-    ${HCCL_BASE_DIR}/hccl_heterog/common
-    ${HCCL_BASE_DIR}/hccl_heterog/heterog_cpu
-    ${HCCL_BASE_DIR}/hccl_heterog/rpc
-    ${HCCL_BASE_DIR}/hccl/hccl_comm/executor/component/inc
-    ${HCCL_BASE_DIR}/hccl/hccl_comm/impl/
 
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -129,7 +115,6 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
     ${HCCL_BASE_DIR}/framework/op_base/src/
 
-    # ${HCCL_BASE_DIR}/platform/
     ${HCCL_BASE_DIR}/platform/inc
     ${HCCL_BASE_DIR}/platform/inc/adapter
     ${HCCL_BASE_DIR}/platform/inc/adapter/hccd
@@ -137,6 +122,7 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/common/
     ${HCCL_BASE_DIR}/platform/common/unique
     ${HCCL_BASE_DIR}/platform/common/buffer_manager
+    ${HCCL_BASE_DIR}/platform/common/unfold_cache
     ${HCCL_BASE_DIR}/platform/resource/transport
     ${HCCL_BASE_DIR}/platform/resource/transport/device
     ${HCCL_BASE_DIR}/platform/resource/transport/host
@@ -147,9 +133,7 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/ping_mesh
     ${HCCL_BASE_DIR}/platform/resource/socket
     ${HCCL_BASE_DIR}/platform/task
-    #${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
-    ${CMAKE_BINARY_DIR}/hcomm_utils/host/include/legacy
-    ${HCCL_BASE_DIR}/platform/aiv_communication
+    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
     ${HCCL_BASE_DIR}/platform/typical
 )
 
@@ -159,12 +143,10 @@ if(BUILD_OPEN_PROJECT)
         OPEN_BUILD_PROJECT)
 
     target_include_directories(hccd PRIVATE
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl/
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/../pkg_inc/hccl
-        ${HCCL_BASE_DIR}/../pub_inc
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
@@ -210,8 +192,7 @@ else()
 
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/hcomm/
-        ${TOP_DIR}/hcomm/inc/hccl/hccl/             # ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${TOP_DIR}/hcomm/inc/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/pkg_inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
@@ -236,6 +217,7 @@ target_compile_options(hccd PRIVATE
     -Werror
     -Wall
     -fno-common
+    -fstack-protector-strong
     -fno-strict-aliasing
     -pipe
     -O3
@@ -246,6 +228,13 @@ target_compile_options(hccd PRIVATE
 #hccd 编译宏
 target_compile_definitions(hccd PRIVATE
     HCCD
+)
+
+target_link_options(hccd PRIVATE
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
 )
 
 if(BUILD_OPEN_PROJECT)
@@ -292,9 +281,8 @@ if(BUILD_OPEN_PROJECT)
         OPEN_BUILD_PROJECT)
 
     target_include_directories(ccl_kernel_plf PRIVATE
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl/
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/pub_inc
@@ -329,9 +317,8 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_include_directories(ccl_kernel_plf_a PRIVATE
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl/
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc
         ${HCCL_BASE_DIR}/../pkg_inc/hccl
         ${HCCL_BASE_DIR}/pub_inc
@@ -394,8 +381,7 @@ else()
     
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/hcomm/src/
-        ${TOP_DIR}/hcomm/src/inc/hccl/                          # ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${TOP_DIR}/hcomm/src/inc/hccl/hccl                      # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/src/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
@@ -421,8 +407,7 @@ else()
 
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/hcomm/src/
-        ${TOP_DIR}/hcomm/src/inc/hccl/                           # ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${TOP_DIR}/hcomm/src/inc/hccl/hccl                       # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/src/include/hccl/                       # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
@@ -520,7 +505,6 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
-        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
@@ -532,7 +516,6 @@ if(BUILD_OPEN_PROJECT)
         c_sec
         aicpu_sharder
         mmpa
-        unified_dlog
         -Wl,--as-needed
         -lrt
         -ldl
@@ -611,6 +594,7 @@ set(algorithm_open_cc PRIVATE
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_mem.cc
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/offload_stream_manager.cc
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/ccl_buffer_manager.cc
+    ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/share_ccl_buffer_manager.cc
     ${HCCL_BASE_DIR}/algorithm/impl/resource_manager/workspace_mem.cc
 )
 

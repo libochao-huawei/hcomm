@@ -58,14 +58,14 @@ HcclResult CollBroadcastExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         execMem.outputMem = algRes.paramOutputMem;
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor level0 ReduceScatter failed",
+            HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]Broadcast excutor level0 failed",
                 HCCL_ERROR_CODE(ret)), ret);
 
         // 在Level1和Level2执行RunLoop
         if (topoAttr_.serverNum > 1) {
             ret = RunLoop(param, algRes);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]AllReduce executor runloop failed. RunLoop",
+                HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]Broadcast executor runloop failed. RunLoop",
                     HCCL_ERROR_CODE(ret)), ret);
         } else {        // 单机场景，数据直接从UserInput搬到UserOutput
             std::vector<Slice> level0Datalices;

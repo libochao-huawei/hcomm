@@ -12,6 +12,7 @@
 #include "dispatcher_ctx.h"
 #include "dispatcher_aicpu_pub.h"
 #include <unordered_map>
+#include "adapter_rts_common.h"
 
 // 多个通信域能并发跑通信算子，一个通信域只绑定一个dispatch_ctx线程变量
 // 若不用通信域绑定线程变量，需要创建默认dispatch_ctx
@@ -63,7 +64,7 @@ HcclResult BindDispatcherCtxWithComm(DispatcherCtxPtr ctx, const char* commId)
     std::string commIdkey = std::string(commId);
     auto it = g_ctx.find(commIdkey);
     if (it != g_ctx.end()) {
-        HCCL_ERROR("[%s] commId[%s] has been bound", __func__, commIdkey.c_str());
+        HCCL_WARNING("[%s] commId[%s] has been bound", __func__, commIdkey.c_str());
         return HCCL_E_PARA;
     }
     g_ctx[commIdkey] = ctx;
@@ -125,9 +126,9 @@ bool DeleteCommIdByDispatcherCtx(DispatcherCtxPtr ctx)
 // 不分成两个接口，防止重复释放
 HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
 {
-    HCCL_INFO("[DestoryCtx] Destory Ctx, ctx[%p] commId[%s]", ctx, commId);
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(ctx);
+    HCCL_INFO("[DestoryCtx] Destory Ctx, ctx[%p] commId[%s]", ctx, commId);
     if (gDispatcherCtx == ctx) {
         gDispatcherCtx = nullptr;
     } else {
@@ -140,13 +141,17 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
     if (LIKELY(FindDispatcherByCommId(&otherCtx, commId))) {
         DeleteDispatcherByCommId(commId);
     } else {
-        DeleteCommIdByDispatcherCtx(ctx);
-        HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s]", ctx, commId);
+        bool hasFound = DeleteCommIdByDispatcherCtx(ctx);
+        if (!hasFound) {
+            HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], it may have be destroied", ctx, commId);
+            return HCCL_SUCCESS;
+        }
+        HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], just destroy", ctx, commId);
     }
     hccl::DispatcherCtx *Ctx_tmp = reinterpret_cast<hccl::DispatcherCtx*>(ctx);
     HcclResult ret = Ctx_tmp->Destroy();
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[CreateCtx] CTX Destroy fail");
+        HCCL_ERROR("[DestoryCtx] CTX Destroy fail");
     }
     delete Ctx_tmp;
     ctx = nullptr;
@@ -166,11 +171,11 @@ HcclResult SetDispatcherCtx(const DispatcherCtxPtr ctx)
 // 获取当前设置的线程变量dispatcherCtx，必须先调用CreateDispatcherCtx
 DispatcherCtxPtr GetDispatcherCtx(const char* commId)
 {
-    HCCL_DEBUG("[%s], commId[%s]", __func__, commId);
     if (UNLIKELY(commId == nullptr)) {
         HCCL_ERROR("[%s] get dispatcher fail, commId is nullptr", __func__);
         return nullptr;
     }
+    HCCL_DEBUG("[%s], commId[%s]", __func__, commId);
     if (LIKELY((gDispatcherCtx != nullptr))) {
         HCCL_INFO("[%s], gDispatcherCtx[%p] exsist, commId[%s]", __func__, gDispatcherCtx, commId);
         return gDispatcherCtx;
@@ -192,5 +197,34 @@ HcclResult SetDispatcherCtxOpIdx(u32 opRingBufferIdx)
     hccl::DispatcherAiCpu* dispatcherPtr = reinterpret_cast<hccl::DispatcherAiCpu*>(ctx_temp->GetDispatcher());
     CHK_PTR_NULL(dispatcherPtr);
     dispatcherPtr->SetOpRingBufferIdx(opRingBufferIdx);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AcquireDispatcherCtx(DispatcherCtxPtr *ctx, const char* commId)
+{
+    CHK_PTR_NULL(commId);
+    DispatcherCtxPtr ctxPtr = GetDispatcherCtx(commId);
+    if (ctxPtr != nullptr) {
+        *ctx = ctxPtr;
+        HCCL_INFO("[AcquireCtx] CTX get success, ctx[%p] commId[%s]", *ctx, commId);
+        return HCCL_SUCCESS;
+    }
+    s32 deviceLogicId = 0;
+    CHK_RET(hrtGetDevice(&deviceLogicId));
+    u32 devPhyId = INVALID_UINT;
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, devPhyId));
+    CHK_PRT_RET(devPhyId == INVALID_UINT, HCCL_ERROR("[CreateCtx] devPhyId invalid"), HCCL_E_PARA);
+    CHK_PTR_NULL(ctx);
+    hccl::DispatcherCtx *Ctx_tmp = new (std::nothrow) hccl::DispatcherCtx(devPhyId);
+    CHK_PTR_NULL(Ctx_tmp);
+    HcclResult ret = Ctx_tmp->Init();
+    if (ret != HCCL_SUCCESS) {
+        delete Ctx_tmp;
+        HCCL_ERROR("[AcquireCtx] CTX init fail");
+        return ret;
+    }
+    *ctx = Ctx_tmp;
+    gDispatcherCtx = Ctx_tmp;
+    HCCL_INFO("[AcquireCtx] CTX create success, ctx[%p] commId[%s]", *ctx, commId);
     return HCCL_SUCCESS;
 }

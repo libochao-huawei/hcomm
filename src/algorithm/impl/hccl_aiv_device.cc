@@ -33,12 +33,12 @@ HcclResult UnRegisterAivKernel()
     return HCCL_SUCCESS;
 }
 
-HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, u32 deterministic)
+HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs, const AivTopoArgs &topoArgs, AivAlgArgs algArgs)
 {
     (void) cclBuffersOut;
     (void) resourceArgs;
     (void) topoArgs;
-    (void) deterministic;
+    (void) algArgs;
     return HCCL_SUCCESS;
 }
 
@@ -77,9 +77,9 @@ HcclResult ExecuteKernelLaunch(const AivOpArgs &opArgs, const AivTopoArgs &topoA
     (void) algArgs;
     (void) topoArgs;
     (void) extraArgs;
-    (void) aivProfilingInfo;
     (void) opArgs;
     (void) resourceArgs;
+    (void) aivProfilingInfo;
     return HCCL_SUCCESS;
 }
 
@@ -103,8 +103,8 @@ void SetAivProfilingInfoBeginTime(AivProfilingInfo& aivProfilingInfo)
     return;
 }
 
-void SetAivProfilingInfoBeginTime(uint64_t& oneTime){
-    (void) oneTime;
+void SetAivProfilingInfoBeginTime(uint64_t& beginTime){
+    (void) beginTime;
     return;
 }
 

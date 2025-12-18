@@ -30,9 +30,8 @@ private:
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
 
     /* *************** 算法编排 *************** */
-    HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
-    
     bool meshSinglePlane_ = false;
+    HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;    
 };
 
 } // namespace hccl

@@ -111,8 +111,8 @@ HcclResult NetworkManager::GetNicIp(uint32_t devicePhyId, HcclAddress** addr, ui
 HcclResult NetworkManager::TsdProcessOpen(bool hasBackup)
 {
     s32 locaLogDevid = 0;
-    if (hasBackup) {
-        hrtGetDevice(&locaLogDevid);
+    hrtGetDevice(&locaLogDevid);
+    if (locaLogDevid != deviceLogicId_) {
         hrtSetDevice(deviceLogicId_);
     }
     // 校验是否为新版本驱动，旧版本驱动不支持配置backupPhyId，报错返回
@@ -159,7 +159,8 @@ HcclResult NetworkManager::TsdProcessOpen(bool hasBackup)
             "devicePhyId_[%u], deviceLogicId_[%d], deviceBackUpPhyId[%u], hasBackup[%u]",
             __func__, subPid_, devicePhyId_, deviceLogicId_, deviceBackUpPhyId, hasBackup);
     }
-    if (hasBackup) {
+
+    if (locaLogDevid != deviceLogicId_) {
         hrtSetDevice(locaLogDevid);
     }
     return HCCL_SUCCESS;
@@ -304,6 +305,14 @@ HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFla
         HCCL_DEBUG("[%s]hdcType is set to HDC_SERVICE_TYPE_RDMA_V2, hasBackup[%d], nicDeploy[%d], "
             "devicePhyId[%u], deviceLogicId_[%d]", __func__, hasBackup, nicDeploy, devicePhyId_, deviceLogicId_);
     }
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_93 && nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
+        isEnableHdcAsync_ = true;
+        config.enableHdcAsync = true;
+    }
+    HCCL_INFO("[%s]config.phyId[%u], config.nicPosition[%u], config.hdcType[%d], config.enableHdcAsync[%d]",
+        __func__, config.phyId, config.nicPosition, config.hdcType, config.enableHdcAsync);
     HcclResult ret = HrtRaInit(&config);
     RPT_CALL_ERR(ret != HCCL_SUCCESS,
         "ra init failed,return[%d] devicePhyId_[%u], nicPosition[%u]", ret, devicePhyId_,
@@ -470,8 +479,16 @@ HcclResult NetworkManager::CloseHccpProcess()
 {
     std::unique_lock<std::mutex> lock(hccpProcInfoMutex_);
     if (isTsdProcessOpen_ == true) {
+        s32 locaLogDevid = 0;
+        hrtGetDevice(&locaLogDevid);
+        if (locaLogDevid != deviceLogicId_) {
+            hrtSetDevice(deviceLogicId_);
+        }
         CHK_RET(hrtCloseNetService());
         isTsdProcessOpen_ = false;
+        if (locaLogDevid != deviceLogicId_) {
+            hrtSetDevice(locaLogDevid);
+        }
     }
     return HCCL_SUCCESS;
 }
@@ -545,7 +562,7 @@ HcclResult NetworkManager::DeInit(NICDeployment nicDeploy, bool resetDeviceFlag,
         return HCCL_E_INTERNAL;
     }
 
-    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, isEnableHdcAsync_ };
     config.nicPosition = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
     config.phyId = devicePhyId_;
 
@@ -1266,7 +1283,7 @@ HcclResult NetworkManager::Destroy()
     HCCL_DEBUG("Destroy call HrtRaDeInit.");
     if (deviceNicInitRef_.Count() != 0 && !isRaDeInit_) {
         HCCL_WARNING("device Nic is not deinit when NetworkManager Destroy. ref[%d]", deviceNicInitRef_.Count());
-        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, isEnableHdcAsync_ };
         GetDeviceRaInitConfig(config);
         config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
         if (HrtRaDeInit(&config) != HCCL_SUCCESS) {
@@ -1278,7 +1295,7 @@ HcclResult NetworkManager::Destroy()
     }
     if (hostNicInitRef_.Count() != 0) {
         HCCL_WARNING("host Nic is not deinit when NetworkManager Destroy. ref[%d]", hostNicInitRef_.Count());
-        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, isEnableHdcAsync_ };
         config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
         config.phyId = devicePhyId_;
         if (HrtRaDeInit(&config) != HCCL_SUCCESS) {
@@ -1499,7 +1516,16 @@ HcclResult NetworkManager::CloseHccpSubProc()
     }
     HCCL_INFO("NetworkManager ProcessCloseSubProcList HDC devicePhyId[%u], deviceLogicId_[%d], subPid[%lld]",
         devicePhyId_, deviceLogicId_, static_cast<s64>(subPid_));
+    s32 locaLogDevid = 0;
+    hrtGetDevice(&locaLogDevid);
+    if (locaLogDevid != deviceLogicId_) {
+        hrtSetDevice(deviceLogicId_);
+    }
     CHK_RET(hrtCloseNetService());
+
+    if (locaLogDevid != deviceLogicId_) {
+        hrtSetDevice(locaLogDevid);
+    }
     subPid_ = 0;
 
     return HCCL_SUCCESS;

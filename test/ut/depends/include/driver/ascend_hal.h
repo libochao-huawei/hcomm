@@ -1,13 +1,28 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
-
+ /**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ * 
+ * The code snippet comes from Cann project.
+ * 
+ * Copyright 2012-2019 Huawei Technologies Co., Ltd
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 #ifndef __ASCEND_HAL_H__
 #define __ASCEND_HAL_H__
@@ -2865,35 +2880,35 @@ DLLEXPORT void *drvHdcMallocEx(enum drvHdcMemType mem_type, void *addr, unsigned
 * @brief Release memory
 * @attention null
 * @param [in]  mem_type  : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcFreeEx(enum drvHdcMemType mem_type, void *buf);
 /**
 * @ingroup driver
-* @brief Map DMA address
+* @brief Map DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @param [in]  devid : Device id
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcDmaMap(enum drvHdcMemType mem_type, void *buf, int devid);
 /**
 * @ingroup driver
-* @brief UnMap DMA address
+* @brief UnMap DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcDmaUnMap(enum drvHdcMemType mem_type, void *buf);
 /**
 * @ingroup driver
-* @brief ReMap DMA address
+* @brief ReMap DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @param [in]  devid : Device id
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
@@ -3011,7 +3026,7 @@ DLLEXPORT hdcError_t halHdcRecvEx(HDC_SESSION session, struct drvHdcMsg *pMsg, i
 /**
 * @ingroup driver
 * @brief Session copy-free fast sending interface, applications need to apply for memory through hdc in advance
-* @attention Need to apply for memory through hdc in advance. And after the send function returns, the src address
+* @attention Need to apply for memory through hdc in advance. And after the send function returns, the src address.
 * cannot be reused directly. It must wait for the peer to receive it.
 * @param [in]  session    : Specify in which session
 * @param [in]  msg : Send and receive information

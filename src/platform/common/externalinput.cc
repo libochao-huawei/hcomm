@@ -73,82 +73,151 @@ HcclResult InitEnvVarParam()
 {
     // 解析hccl connect timeout 超时时间
     HcclResult ret = ParseLinkConnTimeOut();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({ "env", "tips" }),
-        std::vector<std::string>({ "HCCL_CONNECT_TIMEOUT", "it should be a number greater than or "
-        "equal to 120s and less than or equal to 7200s" }));
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_CONNECT_TIMEOUT",
+            "it should be a number greater than or "
+            "equal to 120s and less than or equal to 7200s"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse link "\
-            "time out failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse link "
+                   "time out failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析hccl execute timeout 超时时间
     // 环境变量的解析在options解析之后, 如果options中配置了hccl execute timeout, 则不解析环境变量中的hccl execute timeout
     if (g_externalInput.execTimeOutSet != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_SET_BY_OPTIONS) {
         ret = ParseExecTimeOut();
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-                "execute time out failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+            HCCL_ERROR(
+                "[%s][%s]errNo[0x%016llx] In init env variable param, parse execute time out failed. errorno[%d]",
+                LOG_KEYWORDS_INIT_GROUP.c_str(),
+                LOG_KEYWORDS_ENV_CONFIG.c_str(),
+                HCCL_ERROR_CODE(ret),
+                ret),
+            ret);
     }
 
     // 解析server内通信方式
     ret = ParseIntraLinkType();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({ "env", "tips" }),
-        std::vector<std::string>({ "HCCL_INTRA_PCIE_ENABLE or HCCL_INTRA_ROCE_ENABLE",
-        "Check whether HCCL_INTRA_PCIE_ENABLE or HCCL_INTRA_ROCE_ENABLE is set correctly"}));
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_INTRA_PCIE_ENABLE or HCCL_INTRA_ROCE_ENABLE",
+            "Check whether HCCL_INTRA_PCIE_ENABLE or HCCL_INTRA_ROCE_ENABLE is set correctly"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse intra "\
-            "comm type failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse intra "
+                   "comm type failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析profiling 配置
     ret = ParseProfilingConfig();
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"PROFILING_MODE", "Check whether PROFILING_MODE is set correctly"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse profiling "\
-            "config failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse profiling "
+                   "config failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析whitelist switch配置
     ret = ParseHcclWhitelistSwitch();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_WHITELIST_DISABLE", "It must be 0 or 1."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "whitelist switch failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse whitelist switch failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析whitelist file配置
     ret = ParseHcclWhitelistFilePath();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_WHITELIST_FILE", "Please check env config"}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, "\
-        "parse whitelist file failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, "
+                   "parse whitelist file failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析rootinfo IF配置
     ret = ParseHcclIfIp();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_IF_IP", "it should be \"ip[%ifname]\""}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "rootInfo network interface failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse rootInfo network interface failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析Host Socket IfName配置
     ret = ParseHcclSocketIfName();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_SOCKET_IFNAME", "Please check env config"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "host interface name failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse host interface name failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = ParseHcclSocketFamily();
-    RPT_ENV_ERR(ret, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_SOCKET_FAMILY", "it should be \"AF_INET or AF_INET6\""}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "hccl socket family config failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse hccl socket family config failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析BASE端口
     ret = ParseHcclIfBasePort();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_IF_BASE_PORT", "Value range[1024,65520]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "IF base port config failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse IF base port config failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析Cann版本
     // CANN版本的校验不影响HCCL业务，所以解析过程中不返回错误
@@ -156,151 +225,278 @@ HcclResult InitEnvVarParam()
 
     // 解析RDMATrafficClass
     ret = ParseRDMATrafficClass();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_TC", "Value range[0, 255], Must be a multiple of 4"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_RDMA_TC failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_TC failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析RDMAServerLevel
     ret = ParseRDMAServerLevel();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_SL", "Value range[0, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_RDMA_SL failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_SL failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析RDMATimeOut
     std::pair<u32, u32> rdmaTimeOutRange;
     ret = ParseRDMATimeOut(rdmaTimeOutRange);
     std::string vaildRange =
         "Value range[" + std::to_string(rdmaTimeOutRange.first) + " ," + std::to_string(rdmaTimeOutRange.second) + "]";
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_TIMEOUT", vaildRange}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_RDMA_TIMEOUT failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_TIMEOUT failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析RDMARetryCnt
     ret = ParseRDMARetryCnt();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_RETRY_CNT", "Value range[1, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_RDMA_RETRY_CNT failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_RETRY_CNT failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析cclbufersize
     ret = ParseCclBufferSize();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_BUFFSIZE", "Value should be equal to or greater than 1(MB)."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_BUFFSIZE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_BUFFSIZE failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析hcclDeterministic,是否为确定性计算
     ret = ParseDeterministic();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_DETERMINISTIC", "Value should be true ,false or strict."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_DETERMINISTIC failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_DETERMINISTIC failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析ffts+模式（子任务粒度）下task_exception_handler开关
     ret = ParseTaskExceptionSwitch();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_DIAGNOSE_ENABLE", "It must be 0 or 1."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_DIAGNOSE_ENABLE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_DIAGNOSE_ENABLE failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析Entry日志开关
     ret = ParseEntryLogEnable();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_ENTRY_LOG_ENABLE", "It must be 0 or 1."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_ENTRY_LOG_ENABLE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_ENTRY_LOG_ENABLE failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析超节点内节点间链路选择开关
     ret = ParseInterLinkType();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_INTER_HCCS_DISABLE", "Value should be true or false."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_INTER_HCCS_DISABLE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_INTER_HCCS_DISABLE failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = ParseOpExpansion();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
-        std::vector<std::string>({"HCCL_OP_EXPANSION_MODE", "it should be \"AI_CPU\""}));
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_OP_EXPANSION_MODE",
+            "Atlas A3 supports AI_CPU and AIV; Atlas A2 supports AIV, HOST, and HOST_TS; " \
+            "Atlas 300I supports AI_CPU and HOST. For detailed information, " \
+            "please refer to the relevant documentation."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_OP_EXPANSION_MODE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_OP_EXPANSION_MODE failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析rank 间的QP个数
     ret = ParseRdmaQpsPerConnection();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
-        std::vector<std::string>({"HCCL_RDMA_QPS_PER_CONNECTION", "The allowed value range is [1, 32], "\
-        "but the recommended value range is [1, 8]."}));
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_RDMA_QPS_PER_CONNECTION",
+            "The allowed value range is [1, 32], "
+            "but the recommended value range is [1, 8]."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_RDMA_QPS_PER_CONNECTION(range[1,32]) failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, "
+                   "parse HCCL_RDMA_QPS_PER_CONNECTION(range[1,32]) failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析rank 间多QP切分门限
     ret = ParseMultiQpThreshold();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_MULTI_QP_THRESHOLD", "It should be larger than 0, less than 8193(KB)."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_MULTI_QP_THRESHOLD(range[1,8192]) failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
+                   "HCCL_MULTI_QP_THRESHOLD(range[1,8192]) failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
 #ifndef CCL_KERNEL_AICPU
     // 解析重执行设置
     ret = ParseRetryEnable();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_OP_RETRY_ENABLE", "Value should be 0 or 1."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_OP_RETRY_ENABLE failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_OP_RETRY_ENABLE failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 #endif
 
 #ifndef CCL_KERNEL_AICPU
     // 解析重执行最大尝试次数 重执行间隔时间 首次重执行等待时间 */
     ret = ParseRetryParams();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
-        std::vector<std::string>({"HCCL_OP_RETRY_PARAMS", "value format must be: \"MaxCnt:cnt,HoldTime:time,IntervalTime:time\"."\
-        "cnt range is [1, 10], time range is [0, 60000]"}));
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_OP_RETRY_PARAMS",
+            "value format must be: \"MaxCnt:cnt,HoldTime:time,IntervalTime:time\"."
+            "cnt range is [1, 10], time range is [0, 60000]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_OP_RETRY_PARAMS failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_OP_RETRY_PARAMS failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 #endif
 
     ret = ParseLogicSuperPodId();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_LOGIC_SUPERPOD_ID", "length must be less than 128"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_LOGIC_SUPERPOD_ID failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_LOGIC_SUPERPOD_ID failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     ret = ParseRdmaFastPost();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT", "Value should be true or false."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, parse "\
-            "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse "
+                   "HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析多QP源端口号配置文件路径
     ret = ParseMultiQpSrcPortConfigPath();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_QP_PORT_CONFIG_PATH", "Please check env config"}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, "\
-        "parse MultiQpSrcPortConfigPath failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
-    
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, "
+                   "parse MultiQpSrcPortConfigPath failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
+
     // 解析ParseDebugConfig
     ret = ParseDebugConfig();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS, "EI0001", std::vector<std::string>({"env","tips"}),\
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_DEBUG_CONFIG", "Please check whether the env is valid"}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][EnvVarParam]errNo[0x%016llx] In init env variable param, "\
-        "parse HCCL_DEBUG_CONFIG failed. errorno[%d]", HCCL_ERROR_CODE(ret), ret), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, "
+                   "parse HCCL_DEBUG_CONFIG failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     return HCCL_SUCCESS;
 }
@@ -338,6 +534,7 @@ bool IsValidExecTimeOutMs(const std::string &execTimeOutStr)
 
     return true;
 }
+
 HcclResult ParseExecTimeOut()
 {
     std::string execTimeOutEnv = GET_ENV(MM_ENV_HCCL_EXEC_TIMEOUT);
@@ -352,6 +549,7 @@ HcclResult ParseExecTimeOut()
     CHK_PRT_RET(!isEnvLenValid,
         HCCL_ERROR("[Parse][ExecuteTimeOut]errNo[0x%016llx] Invalid ExecuteTimeOut env len, len is bigger than "\
             "[%u]. errorno[%d]", HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
+    
     CHK_RET(SetHccLExecTimeOut(execTimeOutEnv.c_str(), HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_SET_BY_ENV));
 
     return HCCL_SUCCESS;
@@ -430,7 +628,7 @@ HcclResult ParseDeterministic()
     } else {
         g_externalInput.hcclDeterministic = DETERMINISTIC_DISABLE;
     }
-    HCCL_RUN_INFO("HCCL_DETERMINISTIC set by environment to [%s], hcclDeterministic[%u]", 
+    HCCL_RUN_INFO("HCCL_DETERMINISTIC set by environment to [%s], hcclDeterministic[%u]",
         hcclDeterministicEnv.c_str(), g_externalInput.hcclDeterministic);
     return HCCL_SUCCESS;
 }
@@ -774,8 +972,8 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
                 "than or equal to 2147483647s"
             }));
         CHK_PRT_RET(flag,
-            HCCL_ERROR("[Parse][HcclExecTimeOut]ExecTimeOut[%s] is invalid. except: [0, %d]",
-            execTimeOutStr, HCCL_EXEC_TIME_OUT_S_910_93), HCCL_E_PARA);
+            HCCL_ERROR("[%s][%s]ExecTimeOut[%s] is invalid. except: [0, %d]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+                LOG_KEYWORDS_ENV_CONFIG.c_str(), execTimeOutStr, HCCL_EXEC_TIME_OUT_S_910_93), HCCL_E_PARA);
     } else {
         // 非910B和910_93算子超时时间范围1s-17340s
         flag = (ret !=  HCCL_SUCCESS || (execTimeOut <= 0) || (execTimeOut > HCCL_EXEC_TIME_OUT_S));
@@ -786,8 +984,12 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
             "HCCL_EXEC_TIMEOUT", "it should be a number greater than or equal to 1s and less than or equal to 17340s"
             }));
         CHK_PRT_RET(flag,
-            HCCL_ERROR("[Parse][HcclExecTimeOut]ExecTimeOut[%s] is invalid. except: [1, %d]",
-            execTimeOutStr, HCCL_EXEC_TIME_OUT_S), HCCL_E_PARA);
+            HCCL_ERROR("[%s][%s]ExecTimeOut[%s] is invalid. except: [1, %d]",
+                LOG_KEYWORDS_INIT_GROUP.c_str(),
+                LOG_KEYWORDS_ENV_CONFIG.c_str(),
+                execTimeOutStr,
+                HCCL_EXEC_TIME_OUT_S),
+            HCCL_E_PARA);
         s32 intPart = static_cast<s32>(execTimeOut / HCCL_INTEVAL_EXEC_TIME_OUT_S);
         intPart = (intPart == 0) ? 1 : intPart;
         execTimeOut = intPart * HCCL_INTEVAL_EXEC_TIME_OUT_S;
@@ -819,20 +1021,38 @@ HcclResult SetMasterInfo(const string &masterIp, const string &masterPort, const
     HcclResult ret = HCCL_SUCCESS;
     ret = g_externalInput.masterInfo.serverIp.SetReadableAddress(masterIp);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[Parse][MasterInfo]masterIp address[CM_CHIEF_IP][%s] is invalid.", masterIp.c_str());
-        RPT_ENV_ERR(ret, "EI0001", std::vector<std::string>({"env","tips"}),\
-            std::vector<std::string>({"CM_CHIEF_IP", "it should be an available ip."}));
+        std::string errormessage =
+            "masterIp address[CM_CHIEF_IP][" + masterIp + "] is invalid, it should be an available ip.";
+        RPT_ENV_ERR(ret,
+            "EI0001",
+            std::vector<std::string>({"env", "tips"}),
+            std::vector<std::string>({"CM_CHIEF_IP", errormessage}));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] %s errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCOM_ERROR_CODE(ret),
+            errormessage.c_str(),
+            ret);
         return HCCL_E_PARA;
     }
 
     ret = IsAllDigit(masterPort.c_str());
     ret = (ret == HCCL_SUCCESS) ? SalStrToULong(masterPort, HCCL_BASE_DECIMAL, g_externalInput.masterInfo.port) : ret;
     if (ret != HCCL_SUCCESS || g_externalInput.masterInfo.port > HOST_PORT_MAX) {
-        HCCL_ERROR("[Parse][HcclMasterInfo] option masterPort[CM_CHIEF_PORT] error, errNo[0x%016llx] masterPort[%s] " \
-            "portRange[%u,%u]", HCOM_ERROR_CODE(ret), masterPort.c_str(), PORT_MIN, HOST_PORT_MAX);
-        RPT_ENV_ERR(HCCL_E_PARA, "EI0001", std::vector<std::string>({ "env", "tips" }),
-            std::vector<std::string>({"CM_CHIEF_PORT", "it should be a unsigned number less than the max port num"}));
-            return HCCL_E_PARA;
+        std::string errormessage = "masterPort[" + masterPort + "] portRange[" + std::to_string(PORT_MIN) + "," +
+                                   std::to_string(HOST_PORT_MAX) + "].";
+        RPT_ENV_ERR(HCCL_E_PARA,
+            "EI0001",
+            std::vector<std::string>({"env", "tips"}),
+            std::vector<std::string>(
+                {"CM_CHIEF_PORT", errormessage + " it should be a unsigned number less than the max port num"}));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] option masterPort[CM_CHIEF_PORT] error, %s errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCOM_ERROR_CODE(ret),
+            errormessage.c_str(),
+            ret);
+        return HCCL_E_PARA;
     }
 
     ret = IsAllDigit(masterDeviceId.c_str());
@@ -841,12 +1061,19 @@ HcclResult SetMasterInfo(const string &masterIp, const string &masterPort, const
     u32 maxDeviceNum;
     CHK_RET(GetMaxDevNum(maxDeviceNum));
     if (ret != HCCL_SUCCESS || g_externalInput.masterInfo.serverDeviceId >= maxDeviceNum) {
-        HCCL_ERROR("[Parse][HcclMasterInfo]option master device id[CM_CHIEF_DEVICE] error, errNo[0x%016llx] "
-            "masterDeviceId[%s]", HCOM_ERROR_CODE(ret), masterDeviceId.c_str());
-        RPT_ENV_ERR(HCCL_E_PARA, "EI0001", std::vector<std::string>({ "env", "tips" }),
+        RPT_ENV_ERR(HCCL_E_PARA,
+            "EI0001",
+            std::vector<std::string>({"env", "tips"}),
             std::vector<std::string>({"CM_CHIEF_DEVICE",
-                "it should be a unsigned number less than the max device num"}));
-            return HCCL_E_PARA;
+                "masterDeviceId[" + masterDeviceId + "],it should be a unsigned number less than the max device num"}));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] option master device id[CM_CHIEF_DEVICE] error, masterDeviceId[%s]"
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCOM_ERROR_CODE(ret),
+            masterDeviceId.c_str(),
+            ret);
+        return HCCL_E_PARA;
     }
 
     if (rankIp.size() == 0) {
@@ -854,9 +1081,17 @@ HcclResult SetMasterInfo(const string &masterIp, const string &masterPort, const
     } else {
         ret = g_externalInput.masterInfo.agentIp.SetReadableAddress(rankIp);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[Parse][MasterInfo]masterIp agent address[CM_WORKER_IP][%s] is invalid.", rankIp.c_str());
-            RPT_ENV_ERR(HCCL_E_PARA, "EI0001", std::vector<std::string>({"env","tips"}),\
-                std::vector<std::string>({"CM_WORKER_IP", "it should be an available ip."}));
+            RPT_ENV_ERR(HCCL_E_PARA,
+                "EI0001",
+                std::vector<std::string>({"env", "tips"}),
+                std::vector<std::string>({"CM_WORKER_IP",
+                    "masterIp agent address[" + rankIp + "]is invalid, it should be an available ip."}));
+            HCCL_ERROR("[%s][%s]errNo[0x%016llx] masterIp agent address[CM_WORKER_IP][%s] is invalid. errorno[%d]",
+                LOG_KEYWORDS_INIT_GROUP.c_str(),
+                LOG_KEYWORDS_ENV_CONFIG.c_str(),
+                HCOM_ERROR_CODE(ret),
+                rankIp.c_str(),
+                ret);
             return HCCL_E_PARA;
         }
     }
@@ -1195,7 +1430,7 @@ HcclResult ParseCclBufferSize()
 
 void SetIfProfile(bool ifProfile)
 {
-    g_ifProf = ifProfile; 
+    g_ifProf = ifProfile;
 }
 
 const bool& GetIfProfile()
@@ -1437,6 +1672,9 @@ HcclResult CollectRetryEnableFromConfig(const std::vector<std::string> &retryEna
         }
         std::string orginalLevel = retryEnableLevel.substr(0, found);
         std::string orginalRetryEnable = retryEnableLevel.substr(found + 1);
+        if (orginalLevel == "L0") {
+           HCCL_RUN_WARNING("[CollectRetryEnableFromConfig] L0 config does not take effect"); 
+        }
         // 检查是否存在重复配置level
         auto iterCountRetryLevel = countHcclRetryLevelMap.find(orginalLevel);
         if (iterCountRetryLevel == countHcclRetryLevelMap.end()) {
@@ -1445,7 +1683,7 @@ HcclResult CollectRetryEnableFromConfig(const std::vector<std::string> &retryEna
             return HCCL_E_PARA;
         }
         if (countHcclRetryLevelMap[orginalLevel] == 1) {
-            HCCL_ERROR("[CollectRetryEnableFromConfig] Retry config level[%s] is repeated, expect: L0:0, L1:0, L2:0",
+            HCCL_ERROR("[CollectRetryEnableFromConfig] Retry config level[%s] is repeated, expect: L1:0, L2:0",
                 orginalLevel.c_str());
             return HCCL_E_PARA;
         }
@@ -1474,15 +1712,14 @@ HcclResult CollectRetryEnableFromConfig(const std::vector<std::string> &retryEna
 HcclResult ParseRetryEnable()
 {
 #ifndef CCL_KERNEL_AICPU
-    // level1 默认都设置成true
-    g_externalInput.hcclRetryConfig[HCCL_RETRY_ENABLE_LEVEL_0] = false;
-    g_externalInput.hcclRetryConfig[HCCL_RETRY_ENABLE_LEVEL_1] = true;
-    g_externalInput.hcclRetryConfig[HCCL_RETRY_ENABLE_LEVEL_2] = false;
+    // 默认都设置成false
+    for (u32 level = 0; level < HCCL_RETRY_ENABLE_LEVEL_NUM; ++level) {
+        g_externalInput.hcclRetryConfig[level] = false;
+    }
     std::string hcclRetryEnable = GET_ENV(MM_ENV_HCCL_OP_RETRY_ENABLE);
     if (hcclRetryEnable == "EmptyString") {
         HCCL_RUN_INFO(
-            "[ParseRetryEnable] HCCL_OP_RETRY_ENABLE is not set. The retryEnable of all levels is set to "
-            "L0:0, L1:1, L2:0.");
+            "[ParseRetryEnable] HCCL_OP_RETRY_ENABLE is not set. The retryEnable of all levels is set to false.");
         return HCCL_SUCCESS;
     }
     // 去除空格
@@ -1490,8 +1727,7 @@ HcclResult ParseRetryEnable()
     retryConfig.erase(std::remove(retryConfig.begin(), retryConfig.end(), ' '), retryConfig.end());
 
     if (retryConfig.empty()) {
-        HCCL_RUN_INFO("[ParseRetryEnable] Hccl retry config is empty. The retryEnable of all levels is set to "
-                      "L0:0, L1:1, L2:0.");
+        HCCL_RUN_INFO("[ParseRetryEnable] Hccl retry config is empty. The retryEnable of all levels is set to false.");
         return HCCL_SUCCESS;
     }
 
@@ -1499,7 +1735,7 @@ HcclResult ParseRetryEnable()
     HcclResult ret = SplitHcclRetryEnable(retryConfig, retryEnables);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollectRetryEnableFromConfig] Hccl retry config[%s] is invalid. "
-                   "expect: L0:0, L1:0, L2:0",
+                   "expect: L1:0, L2:0",
             retryConfig.c_str()),
         ret);
 

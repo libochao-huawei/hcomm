@@ -218,6 +218,7 @@ HcclResult NetDevContext::DeinitV2()
 void NetDevContext::SetTlsStatus(TlsStatus tlsStatus)
 {
     tlsStatus_ = tlsStatus;
+    HCCL_INFO("[NetDevContext][SetTlsStatus]devicePhyId[%d], set tlsStatus[%d]", devicePhyId_, tlsStatus);
     return;
 }
 
@@ -347,8 +348,10 @@ HcclResult HcclNetDevGetTlsStatus(HcclNetDevCtx netDevCtx, TlsStatus *tlsStatus)
     HcclResult ret = HrtRaGetTlsEnable(&raInfo, &tlsEnable);
     if (ret == HCCL_E_NOT_SUPPORT) {
         pNetDevCtx->SetTlsStatus(TlsStatus::UNKNOWN);
+    } else if(tlsEnable) {
+        pNetDevCtx->SetTlsStatus(TlsStatus::ENABLE);
     } else {
-        pNetDevCtx->SetTlsStatus(tlsEnable ? TlsStatus::ENABLE : TlsStatus::DISABLE);
+        pNetDevCtx->SetTlsStatus(TlsStatus::DISABLE);
     }
     *tlsStatus = pNetDevCtx->GettlsStatus();
     pNetDevCtx->SetIsNotNeedGetTlsStatus(true);

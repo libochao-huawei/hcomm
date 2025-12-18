@@ -592,11 +592,11 @@ void HcclSocketManager::PrintSocketsInfo(const std::string &localRole,
         if (tempSocket->GetStatus() != HcclSocketStatus::SOCKET_OK) {
             std::string connectStatus;
             TransformSocketStatus(tempSocket->GetStatus(), connectStatus);
-            HCCL_ERROR("   |  %s(%u)   |  %u  |   %s(%u)   |  %u  | %s | %s |   %s  |",
+            HCCL_ERROR("   |  %s(%u)   |  %u  |   %s(%u)   |  %u  | %s | %s |   %s  | %s",
                 tempSocket->GetRemoteIp().GetReadableAddress(),
                 rank, tempSocket->GetRemotePort(),
                 tempSocket->GetLocalIp().GetReadableAddress(), userRank_, tempSocket->GetLocalPort(),
-                localRole.c_str(), connectStatus.c_str(), sTlsStatus.c_str());
+                localRole.c_str(), connectStatus.c_str(), sTlsStatus.c_str(), LOG_KEYWORDS_LINK_INFO.c_str());
         }
     }
 }
@@ -635,9 +635,6 @@ void HcclSocketManager::PrintErrorConnection(HcclSocketRole localRole,
     std::map <u32, std::vector<std::shared_ptr<HcclSocket> > > &rankSocketsMap,
     std::map<u32, u32> &dstRankToUserRank, TlsStatus &tlsStatus) const
 {
-    RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
-        std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON}));
-
     // 原实现中，打印输出了一个num，而实际调用中，这个num都是1，所以当前删除了
     HCCL_ERROR("   _________________________LINK_ERROR_INFO___________________________");
     HCCL_ERROR("   |  comm error, device[%d] ", deviceLogicId_);
@@ -815,8 +812,6 @@ HcclResult HcclSocketManager::WaitLinkEstablish(std::shared_ptr<HcclSocket> sock
             HCCL_ERROR("[Wait][LinkEstablish]wait socket establish timeout, role[%u] rank[%u] timeout[%lld s]",
                 static_cast<u32>(socket->GetLocalRole()), userRank_, timeoutSec);
             socket->SetStatus(HcclSocketStatus::SOCKET_TIMEOUT);
-            RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
-                std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON}));
             return HCCL_E_TIMEOUT;
         }
         HcclSocketStatus status = socket->GetStatus();
@@ -847,6 +842,8 @@ HcclResult HcclSocketManager::WaitLinksEstablishCompleted(HcclSocketRole localRo
     std::map <u32, std::vector<std::shared_ptr<HcclSocket> > > &socketsMap, std::map<u32, u32> &dstRankToUserRank,
     RankInfo &loaclRankInfo, RankInfo &remoteRankInfo, const HcclNetDevCtx &netDevCtx)
 {
+    (void) loaclRankInfo;
+    (void) remoteRankInfo;
     HcclResult ret = WaitLinksEstablishCompleted(localRole, socketsMap);
     if (ret != HCCL_SUCCESS) {
         TlsStatus tlsStatus = TlsStatus::UNKNOWN;

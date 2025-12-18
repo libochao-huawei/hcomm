@@ -88,6 +88,7 @@ TbeVectorReduce::~TbeVectorReduce()
 
 HcclResult TbeVectorReduce::Init()
 {
+    std::unique_lock<std::mutex> lock(initMutex_);
     CHK_PRT_RET(isInit_, HCCL_INFO("TbeVectorReduce had been initialized"), HCCL_SUCCESS);
 
     CHK_RET(GetDeviceType(deviceType_));
@@ -125,6 +126,8 @@ HcclResult TbeVectorReduce::Init()
 
 HcclResult TbeVectorReduce::DeInit()
 {
+    std::unique_lock<std::mutex> lock(deInitMutex_);
+    HCCL_INFO("TbeVectorReduce Deinit");
     if (isDeInit_) {
         HCCL_INFO("tbe vector reduce has deinit");
         return HCCL_SUCCESS;
@@ -164,6 +167,9 @@ HcclResult TbeVectorReduce::DeInit()
     tilingDataMap_.clear();
 
     for (auto iter = opNameStubFuncsMap_.begin(); iter != opNameStubFuncsMap_.end(); iter++) {
+        if (iter->second == nullptr) {
+            continue;
+        }
         free(iter->second);
         iter->second = nullptr;
     }

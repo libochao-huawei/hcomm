@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -504,7 +504,7 @@ static nlohmann::json rank_table_910_2server_4rank_new =
     };
 
 // ranktable 910 8p
-static nlohmann::json rank_table_910D_1server_8rank = nlohmann::json::object({
+static nlohmann::json rank_table_910_95_1server_8rank = nlohmann::json::object({
     {"version", "2.0"},
     {"rank_count", "4"},
     {"rank_list", nlohmann::json::array({

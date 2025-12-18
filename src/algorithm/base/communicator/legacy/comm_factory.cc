@@ -48,6 +48,7 @@ CommFactory::CommFactory(const std::string &identifier, const u32 userRank, cons
       isUsedInterHccsMode_(isUsedInterHccsMode),
       useSuperPodMode_(useSuperPodMode)
 {
+    (void) meshAggregationRankSize;
 }
 
 CommFactory::~CommFactory()
@@ -88,6 +89,8 @@ HcclResult CommFactory::Init()
 HcclResult CommFactory::CheckCommPara(const std::string &tag, const DeviceMem &inputMem, const DeviceMem &outputMem,
     const CommParaInfo &commParaInfo)
 {
+    (void) inputMem;
+    (void) outputMem;
     CHK_PRT_RET(commParaInfo.commPlane >= COMM_LEVEL_RESERVED,
         HCCL_ERROR("[Check][CommPara]tag[%s], commPlane[%d] is invalid, is out of range [0, %d]",
             tag.c_str(), commParaInfo.commPlane, COMM_LEVEL_RESERVED - 1), HCCL_E_PARA);
@@ -281,6 +284,7 @@ HcclResult CommFactory::CreateCommRing(const std::string &tag, const DeviceMem &
         }
 
         u32 rank = GetSubCollectiveRank(commPlaneVec[ringIndex]);
+        HCCL_DEBUG("[CommFactory][CreateCommRing]rank is %u", rank);
         if (rank == INVALID_VALUE_RANKID) {
             continue;
         }

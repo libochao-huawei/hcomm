@@ -20,7 +20,7 @@ public:
     ~AllGatherHccsSio() override;
 
     HcclResult Prepare(SubCommInfo &outerCommInfoHccs, SubCommInfo &outerCommInfoSio, DeviceMem &usrInMem,
-        DeviceMem &usrOutMem, u64 totalCount, const HcclDataType dataType, const Stream &mainStream,
+        DeviceMem &usrOutMem, u64 count, const HcclDataType dataType, const Stream &mainStream,
         std::vector<Stream> &meshStreams, std::vector<std::shared_ptr<LocalNotify>> &meshSignal,
         std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux, u32 userRank, HcomCollOpInfo *opInfo);
     HcclResult RunAsync(const u32 rank, const u32 rankSize, const std::vector<LINK> &links) override;

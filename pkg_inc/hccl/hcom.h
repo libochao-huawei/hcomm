@@ -313,10 +313,14 @@ HcclResult HcomGetSplitStrategy(const char *group, const struct model_feature *f
 
 bool HcomFindGroup(const char *group);
 
-HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, bool *ifAiv, char *algName, bool isSuperKernel=false);
+#define TEMP_WEAK_DEF 1
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType,
+HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
+    HcclDataType dataType, HcclReduceOp op, HcclCMDType opType, int32_t aivCoreLimit,
+    bool &ifAiv, char *algName);
+
+
+HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *blockDim);
 
 HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,
@@ -332,7 +336,7 @@ HcclResult HcomUnloadTask(const char *group, const char *tag);
 
 HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable);
 
-HcclResult HcomSetAttachedStream(const char *group, const rtStream_t *stream, s32 len);
+HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len);
 
 HcclResult HcomSupportDeterministicOptim(const char *group, bool *isDeterministicOptim);
 
@@ -368,6 +372,7 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
                         const char *group, rtStream_t stream, const char *tag);
 HcclResult HcomGetHcclComm(int64_t comm, std::string &group);
 HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *group, char *sTag);
+HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

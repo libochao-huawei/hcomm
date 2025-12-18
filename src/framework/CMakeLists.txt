@@ -27,11 +27,10 @@ message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
 add_library(hcomm  SHARED)
 
 set(hccl_include_list
-    ${HCCL_BASE_DIR}/../inc/hccl
+    ${HCCL_BASE_DIR}/../include/hccl
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
-    ${HCCL_BASE_DIR}/pub_inc/hccl
     ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template
@@ -92,10 +91,8 @@ if(BUILD_OPEN_PROJECT)
     target_include_directories(hcomm PRIVATE
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/new/
-        ${HCCL_BASE_DIR}/inc
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/platform/common
@@ -142,8 +139,7 @@ if(BUILD_OPEN_PROJECT)
     )
 else()
     target_include_directories(hcomm PRIVATE
-        ${TOP_DIR}/hcomm/inc/hccl/hccl/             # ${ASCEND_CANN_PACKAGE_PATH}/include
-        ${TOP_DIR}/hcomm/inc/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/algorithm/pub_inc
         ${TOP_DIR}/abl/msprof/inc                           # experiment/msprof/
         ${TOP_DIR}/ace/npuruntime/inc                       # experiment/runtime/
@@ -542,6 +538,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         -Wfloat-equal
         -Wall
         -fno-common
+        -fstack-protector-strong
         -fno-strict-aliasing
         -pipe
         -O3
@@ -549,12 +546,19 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         $<$<CONFIG:Debug>:-g>
     )
 
+    target_link_options(ccl_kernel PRIVATE
+    -Wl,-z,relro
+    -Wl,-z,now
+    -Wl,-z,noexecstack
+    $<$<CONFIG:Release>:-s>
+)
+
     target_compile_definitions(ccl_kernel PRIVATE
         HCCD
         CCL_KERNEL_AICPU
     )
     target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/../inc/hccl
+        ${HCCL_BASE_DIR}/../include/hccl
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${HCCL_BASE_DIR}/algorithm/base/inc
         ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -635,6 +639,18 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/pub_inc
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+
+        ${HCCL_BASE_DIR}/platform/
+        ${HCCL_BASE_DIR}/platform/inc/
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
+        ${HCCL_BASE_DIR}/platform/resource/transport/host/
+        ${HCCL_BASE_DIR}/platform/resource/transport/
+        ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/task
+        ${HCCL_BASE_DIR}/platform/common
+        ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
     )
 
     target_link_directories(ccl_kernel PRIVATE
@@ -646,7 +662,7 @@ endif()
 
 if(NOT BUILD_OPEN_PROJECT)
     target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/../inc/hccl
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/inner
         ${HCCL_BASE_DIR}/pub_inc/aicpu
@@ -678,16 +694,8 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/task
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
+        ${HCCL_BASE_DIR}/platform/common/unfold_cache
 
-        ${HCCL_BASE_DIR}/inc
-        ${HCCL_BASE_DIR}/hdcs
-        ${HCCL_BASE_DIR}/hccl/hccl_comm/inc
-        ${HCCL_BASE_DIR}/hccl/op_base/src
-        ${HCCL_BASE_DIR}/hccl_heterog/common
-        ${HCCL_BASE_DIR}/hccl_heterog/heterog_cpu
-        ${HCCL_BASE_DIR}/hccl_heterog/rpc
-        ${HCCL_BASE_DIR}/hccl/hccl_comm/executor/component/inc
-        ${HCCL_BASE_DIR}/hccl/hccl_comm/impl/
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
 	    ${HCCL_BASE_DIR}/../pkg_inc/
@@ -705,7 +713,6 @@ if(NOT BUILD_OPEN_PROJECT)
         -Wl,--no-as-needed
         c_sec
         ccl_kernel_plf
-        unified_dlog
         mmpa
         -Wl,--as-needed
         -lrt
@@ -764,9 +771,8 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
         ${hccl_include_list}
-        ${HCCL_BASE_DIR}/../inc
-        ${HCCL_BASE_DIR}/../inc/hccl
-        ${HCCL_BASE_DIR}/../inc/hccl/hccl/
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
         ${HCCL_BASE_DIR}/pub_inc

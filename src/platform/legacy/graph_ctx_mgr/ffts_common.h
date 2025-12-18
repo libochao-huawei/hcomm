@@ -22,7 +22,6 @@
 #include "hccl/base.h"
 #include "rt_external.h"
 
-namespace GraphMgr {
 enum class HcclFftsTaskType : s32 {
     RESERVED = -1,
     INCHIP_NOTIFY_RECORD = 0,
@@ -43,18 +42,18 @@ constexpr s32 PRE_LINE_SUCCESSORNUM = 8; // 每行打印的successor num
 constexpr u32 HCCL_TASK_SUCCESSOR_NUM = 2;
 constexpr u16 CONTEXT_MAX_NUM = 128;
 constexpr s64 HCCL_DMA_MAX_COUNT_4GB = 0x100000000;
-constexpr u32 INVALID_UINT = 0xFFFFFFFF;
-constexpr u64 INVALID_U64 = 0xFFFFFFFFFFFFFFFF;
-constexpr u32 HCCL_FFTS_CAPACITY = 65535;           // FFTS+子图最大容量
+constexpr u32 LEGACY_INVALID_UINT = 0xFFFFFFFF;
+constexpr u64 LEGACY_INVALID_U64 = 0xFFFFFFFFFFFFFFFF;
+constexpr u32 LEGACY_HCCL_FFTS_CAPACITY = 65535;           // FFTS+子图最大容量
 constexpr uint32_t SDMA_FP32_ATOMIC_ADD_SQE = 0x1E71;
 constexpr uint32_t SDMA_FP32_ATOMIC_MOVE_SQE = 0x1E70;
 
 using HcclFfftsTaskInfo = struct HcclFfftsTaskDef {
-    u32 taskIndex = INVALID_UINT;
+    u32 taskIndex = LEGACY_INVALID_UINT;
     HcclFftsTaskType taskType = HcclFftsTaskType::RESERVED;
-    u32 ctxId = INVALID_UINT;
-    s32 streamId = INVALID_UINT;
-    u32 notifyId = INVALID_UINT;
+    u32 ctxId = LEGACY_INVALID_UINT;
+    s32 streamId = LEGACY_INVALID_UINT;
+    u32 notifyId = LEGACY_INVALID_UINT;
     u32 predCnt = 0;
     u32 successorNum = 0;
     u32 successorList[HCCL_TASK_SUCCESSOR_NUM] = {0};
@@ -148,5 +147,4 @@ using HcclFftsContextsInfo = struct HcclFftsCtxsDef {
         taskInfos.resize(100); // 100: 默认可存放task个数, 可动态扩张
     }
 };
-}
 #endif // !FFTS_COMMON_H

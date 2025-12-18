@@ -51,6 +51,8 @@ HcclResult AlignedAllGatherDoubleRing::RunAsync(const u32 rank, const u32 rankSi
     // 填充slice_
     CHK_RET(SetSlices(rank, rankSize));
 
+    HCCL_DEBUG("[AlignedAllGatherDoubleRing]RunAsync begins");
+
     // 运行all-gather, ring算法
     CHK_RET(RunAllGather(rank, rankSize));
 

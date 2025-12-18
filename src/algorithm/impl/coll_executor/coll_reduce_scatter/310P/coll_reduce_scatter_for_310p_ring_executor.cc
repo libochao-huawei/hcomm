@@ -79,6 +79,7 @@ HcclResult CollReduceScatterFor310PRingExecutor::KernelRun(const OpParam &param,
         PROF_STAGE_0, HCCL_EXEC_STEP_NOT_SET, param.stream));
 
     CHK_RET(RunTemplate(tempAlg, level0CommInfo));
+    HCCL_DEBUG("[CollReduceScatterFor310PRingExecutor][KernelRun] 310p ReduceScatter success");
     return HCCL_SUCCESS;
 }
 

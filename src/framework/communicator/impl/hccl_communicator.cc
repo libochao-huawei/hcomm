@@ -40,6 +40,7 @@
 #include "config_log.h"
 #include "../nslbdp/hccl_nslbdp.h"
 #include "dispatcher_ctx.h"
+#include "launch_device.h"
 using namespace std;
 
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -47,9 +48,8 @@ constexpr u32 MODULE_NUM_FOUR = 4;
 namespace hccl
 {
     static std::mutex g_hcomInitMutex;
-    bool g_isRdmaError = false;
     std::mutex HcclCommunicator::linkResMapMutex_;
-    std::unordered_map<Transport *, std::pair<std::string, RankId>> HcclCommunicator::linkResMap_;
+    std::unordered_map<Transport *, LinkInfo> HcclCommunicator::linkResMap_;
     constexpr u32 MEMORY_CAPACITY = 256 * 1024;
     constexpr u32 WAIT_PREPARE_SLEEP_TIME = 5000;
     constexpr u32 SINGLE_SERVER_NUM = 1;
@@ -297,6 +297,14 @@ namespace hccl
             // 不满足ffts+特性开启条件。
             SetFftsSwitch(false);
         }
+        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
+        CHK_SMART_PTR_NULL(dispatcher_);
+        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
+
+        if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
+            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
+        }
+        CHK_PTR_NULL(dispatcherCtx_);
 
         CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_VIRTURAL, devicePhyId_, &vDispatcher_));
         CHK_SMART_PTR_NULL(vDispatcher_);
@@ -325,9 +333,6 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitTransportManager()
     {
-        CHK_RET(HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, devicePhyId_, &dispatcher_));
-        CHK_SMART_PTR_NULL(dispatcher_);
-        CHK_RET(HcclSetExecTimeOut(dispatcher_, commConfig_.GetConfigExecTimeOut()));
         std::vector<u32> &nicRanksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
         std::vector<u32> &vnicRanksPorts = groupVnicRanksPort_.empty() ? vnicRanksPort_ : groupVnicRanksPort_;
         transportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
@@ -341,10 +346,6 @@ namespace hccl
         (void)transportManager_->SetPortConfig(commPortConfig_.devPortSwitchOn);
         (void)transportManager_->SetIsStandardCard(isStandardCard_);
 
-        if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
-            CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devicePhyId_, identifier_.c_str()));
-        }
-        CHK_PTR_NULL(dispatcherCtx_);
         DispatcherCtx *ctx = static_cast<DispatcherCtx *>(dispatcherCtx_);
         CHK_PTR_NULL(ctx);
         indptOpTransportManager_.reset(static_cast<TransportManager *>(new (std::nothrow) TransportManager(
@@ -362,6 +363,11 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitMemoryManager()
     {
+        if (IsOneSidedIdentifier(identifier_)) {
+            HCCL_INFO("[%s] comm[%s] is one sided comm, skip InitMemoryManager", __func__, identifier_.c_str());
+            return HCCL_SUCCESS;
+        }
+
         CHK_RET(MrManagerInit());
         // server数量不为1且非TCP模式时初始化RDMA资源
         if (serverNum_ != SINGLE_SERVER_NUM && !GetExternalInputHcclIsTcpMode())
@@ -462,7 +468,7 @@ namespace hccl
     }
 
     void HcclCommunicator::ForceProf(bool isForce) {
-        ForceProfOn(dispatcher_, isForce);    
+        ForceProfOn(dispatcher_, isForce);
     }
 
     HcclResult HcclCommunicator::InitRankInfoSubGroup(const std::vector<RankInfo> &rankList,
@@ -557,11 +563,18 @@ namespace hccl
         return moduleNum_;
     }
 
+    bool HcclCommunicator::GetSupportHDCommunicate()
+    {
+        HCCL_INFO("%s aicpuUnfold[%d], deviceType_[%d], isHaveCpuRank_[%d]",
+            __func__, GetExternalInputHcclAicpuUnfold(), deviceType_, isHaveCpuRank_);
+        return (GetExternalInputHcclAicpuUnfold() == true) ||
+            ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
+            Is310P3Common(isHaveCpuRank_, deviceType_));
+    }
+
     HcclResult HcclCommunicator::InitHDCommunicate()
     {
-        if ((GetExternalInputHcclAicpuUnfold() == true) ||
-            ((deviceType_ == DevType::DEV_TYPE_910_93) || (deviceType_ == DevType::DEV_TYPE_910B) ||
-             Is310P3Common(isHaveCpuRank_, deviceType_)))
+        if (GetSupportHDCommunicate())
         {
             // 初始化aicpu进程host-device共享内存
             EXECEPTION_CATCH((kfcControlTransferH2D_ =
@@ -900,25 +913,6 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::SetAttachedStream(const std::vector<rtStream_t> &streams)
-    {
-        // 在图模式下，通信使用的附属从流可能不同，所以这里直接刷新所有
-        attachedStreams_.clear();
-
-        for (auto &s : streams)
-        {
-            if (s != nullptr)
-            {
-                HCCL_DEBUG("[HcclCommunicator][SetAttachedStream] stream ptr [%p]", s);
-                attachedStreams_.push_back(Stream(s, false));
-            }
-        }
-
-        HCCL_INFO("[HcclCommunicator][SetAttachedStream] input streams[%llu] actual streams[%llu]",
-                  streams.size(), attachedStreams_.size());
-        return HCCL_SUCCESS;
-    }
-
     HcclResult HcclCommunicator::SetInfoToDevice(const OpParam &opParam,
                                                  const std::unique_ptr<PreProcessMetaInfo> &preMetaInfo,
                                                  const HcclWorkflowMode &mode, Stream &stream)
@@ -943,7 +937,7 @@ namespace hccl
             outCCLbuffer = cclBufferManager_.GetOutCCLbuffer();
             expBuffer = cclBufferManager_.GetCommExpBuffer();
         }
- 
+
         CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
         CHK_RET(hcclStreamSynchronize(stream.ptr(), commConfig_.GetConfigExecTimeOut()));
         CHK_RET(hrtMemSyncCopy(inAlltoAllvParaBuffer.ptr(), preMetaInfo->inputSize, preMetaInfo->inputData.data(),
@@ -1087,7 +1081,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::SetAicpuCommEngine(bool isAicpuCommEngine)
     {
-        HCCL_INFO("SetAicpuCommEngine isAicpuCommEngine[%u]", isAicpuCommEngine);
+        HCCL_INFO("SetAicpuCommEngine isAicpuCommEngine_[%u]", isAicpuCommEngine);
         isAicpuCommEngine_ = isAicpuCommEngine;
         return HCCL_SUCCESS;
     }
@@ -1160,8 +1154,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::Suspend()
     {
-        CHK_RET(Suspend(kfcControlTransferH2D_, kfcStatusTransferD2H_));
-        return HCCL_SUCCESS;
+        return Suspend(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
     HcclResult HcclCommunicator::Suspend(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
@@ -1218,8 +1211,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::StopExec()
     {
-        CHK_RET(StopExec(kfcControlTransferH2D_, kfcStatusTransferD2H_));
-        return HCCL_SUCCESS;
+        return StopExec(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
     HcclResult HcclCommunicator::StopExec(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
@@ -1282,8 +1274,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::Clean()
     {
-        CHK_RET(Clean(kfcControlTransferH2D_, kfcStatusTransferD2H_));
-        return HCCL_SUCCESS;
+        return Clean(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
     HcclResult HcclCommunicator::Clean(std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H)
@@ -1429,7 +1420,7 @@ namespace hccl
         if (((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) &&
              hccl::ProfilingManagerPub::GetAddtionInfoState() &&
              hccl::ProfilingManagerPub::GetTaskApiState()) &&
-             !hccl::ProfilingManagerPub::GetThreadCaptureStatus())
+             !param.isCapture)
         {
             return HCCL_SUCCESS;
         }
@@ -2217,7 +2208,7 @@ namespace hccl
                     {
                         continue;
                     }
-                    CHK_RET(ResumeTransportsImplForChange(resMapIt.second.opTransportResponse, 
+                    CHK_RET(ResumeTransportsImplForChange(resMapIt.second.opTransportResponse,
                                                             remoteRankPortMap, isChangeLinkMap, true));
                     CHK_RET(ResumeTransportsImplForChange(resMapIt.second.opTransportResponseBackUp,
                                                             remoteRankPortMap, isChangeLinkMap, false));
@@ -2228,8 +2219,8 @@ namespace hccl
                     CHK_RET(BuildOpRemoteResParam(resMapIt.second, resMapIt.first, HcclCMDType::HCCL_CMD_ALL, true));
                     CHK_RET(CopyHostOpResToDeviceParam(resMapIt.first));
                 }
-            } 
-            else 
+            }
+            else
             {
                 for (auto &resMapIt: resMap_)
                 {
@@ -2245,28 +2236,27 @@ namespace hccl
         }
         return HCCL_SUCCESS;
     }
- 
-    HcclResult HcclCommunicator::ResumeTransportsImplForChange(OpCommTransport &opCommTransport, const std::map<u32, bool> &remoteRankPortMap, 
+
+    HcclResult HcclCommunicator::ResumeTransportsImplForChange(OpCommTransport &opCommTransport, const std::map<u32, bool> &remoteRankPortMap,
                                                                 const std::map<u32, bool> &isChangeLinkMap, bool isUseDefault)
     {
             // 借轨的resume阶段
-        for (auto &levelNSubCommTransport: opCommTransport) 
+        for (auto &levelNSubCommTransport: opCommTransport)
         {
-            for (auto &singleSubCommTransport: levelNSubCommTransport) 
+            for (auto &singleSubCommTransport: levelNSubCommTransport)
             {
-                for (u32 i = 0; i < singleSubCommTransport.transportRequests.size(); i++) 
+                for (u32 i = 0; i < singleSubCommTransport.transportRequests.size(); i++)
                 {
                     u32 transportRemoteRank = singleSubCommTransport.transportRequests[i].remoteUserRank;
                     bool isValid = singleSubCommTransport.transportRequests[i].isValid;
                     // isPortSatisfy表示当前对端使用的主备网口是否和changeLinkInfo一致
                     bool isPortSatisfy = (remoteRankPortMap.find(transportRemoteRank) != remoteRankPortMap.end() &&
                         remoteRankPortMap.find(transportRemoteRank)->second == isUseDefault);
-                    bool isChangeLink = (isChangeLinkMap.find(transportRemoteRank) != isChangeLinkMap.end() &&
-                                        isChangeLinkMap.find(transportRemoteRank)->second);
+                    bool isChangeLink = (isChangeLinkMap.find(transportRemoteRank) != isChangeLinkMap.end());
                     HCCL_INFO("[SetTransportStatus]remoteRank[%u], isUseDefault[%d], isValid[%d], "
                                 "isPortSatisfy[%d], isChangeLink[%d]",
                                 transportRemoteRank, isUseDefault, isValid, isPortSatisfy, isChangeLink);
-                    if (isValid && isPortSatisfy && isChangeLink) 
+                    if (isValid && isPortSatisfy && isChangeLink)
                     {
                         CHK_RET(SetSignalTransport(singleSubCommTransport, i, false));
                     }
@@ -2275,7 +2265,7 @@ namespace hccl
         }
         return HCCL_SUCCESS;
     }
- 
+
     HcclResult HcclCommunicator::ResumeTransportsImpl(OpCommTransport &opCommTransport,
         const std::map<u32, bool> &remoteRankPortMap, bool isUseDefault, bool statusStop)
     {
@@ -2472,8 +2462,13 @@ namespace hccl
                     if (transports.links[i] != nullptr &&
                         transports.links[i]->GetTransportType() == TransportType::TRANS_TYPE_IBV_EXP)
                     {
-                        linkResMap_.emplace(transports.links[i].get(),
-                                            std::make_pair(identifier_, transports.transportRequests[i].remoteUserRank));
+                        auto remoteRank = transports.transportRequests[i].remoteUserRank;
+                        std::string localServerId = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].serverId : "";
+                        s32 localDevicePhyId = rankInfoList_.size() > userRank_ ? rankInfoList_[userRank_].devicePhyId : -1;
+                        std::string remoteServerId = rankInfoList_.size() > remoteRank ? rankInfoList_[remoteRank].serverId : "";
+                        s32 remoteDevicePhyId = rankInfoList_.size() > remoteRank ? rankInfoList_[remoteRank].devicePhyId : -1;
+                        LinkInfo linkInfo(identifier_, userRank_, localServerId, localDevicePhyId, remoteRank, remoteServerId, remoteDevicePhyId);
+                        linkResMap_.emplace(transports.links[i].get(), linkInfo);
                     }
                 }
             }
@@ -2501,7 +2496,7 @@ namespace hccl
             if (iter != linkResMap_.end())
             {
                 CHK_RET((info.first)->GetTransportId(qpn));
-                infos.push_back(ErrCqeInfo(info.second, iter->second.first, iter->second.second, qpn));
+                infos.push_back(ErrCqeInfo(info.second, iter->second, qpn));
             }
             else
             {
@@ -2535,7 +2530,7 @@ namespace hccl
 
         CHK_RET(AllocAndClearHostMem(sizeof(TransportDeviceNormalData) * rankSize, transDevIbverbsDataMem_));
         TransportDeviceNormalData *transDevIbverbsData = reinterpret_cast<TransportDeviceNormalData*>(transDevIbverbsDataMem_->ptr());
-        
+
         for (u32 i = 0; i < rankSize; i++)
         {
             auto &data = transDevIbverbsData[i];
@@ -2821,8 +2816,6 @@ namespace hccl
 
     HcclResult HcclCommunicator::SetAivCoreLimit(u32 aivCoreLimit)
     {
-        CHK_PRT_RET(aivCoreLimit == 0,
-            HCCL_ERROR("[HcclCommunicator][SetAivCoreLimit] aivCoreLimit[%u] invalid", aivCoreLimit), HCCL_E_PARA);
         blockDim_ = aivCoreLimit;
         return HCCL_SUCCESS;
     }
@@ -2832,10 +2825,20 @@ namespace hccl
         CHK_PRT_RET((ALGCFG_TO_NAME.find(algConfig) == ALGCFG_TO_NAME.end()),
             HCCL_ERROR("[%s] invalid algConfig=[%s]", __func__, algConfig.c_str()),
             HCCL_E_PARA);
-    
+
         algName = ALGCFG_TO_NAME[algConfig];
         HCCL_INFO("[%s] tag=[%s], algName=[%s]",
                 __func__, tag.c_str(), algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GetCommUserMemSize(uint64_t &size)
+    {
+        if (!isUserMemRegisted_ || userMemMap_.empty()) {
+            HCCL_INFO("[HcclCommunicator][%s] get comm user mem size failed", __func__);
+            return HCCL_E_NOT_FOUND;
+        }
+        size = userMemMap_.begin()->second->size();
         return HCCL_SUCCESS;
     }
 }

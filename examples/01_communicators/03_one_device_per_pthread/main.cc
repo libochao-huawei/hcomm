@@ -104,6 +104,7 @@ int Sample(void *arg)
     ACLCHECK(aclrtFree(recvBuf));          // 释放 Device 侧内存
     ACLCHECK(aclrtFreeHost(hostBuf));      // 释放 Host 侧内存
     ACLCHECK(aclrtDestroyStream(stream));  // 销毁任务流
+    ACLCHECK(aclrtResetDevice(ctx->device));     // 重置设备，释放设备资源
     return 0;
 }
 
@@ -140,5 +141,6 @@ int main()
     // 释放资源
     ACLCHECK(aclrtFreeHost(rootInfoBuf));  // 释放 Host 内存
     ACLCHECK(aclFinalize());               // 设备去初始化
+    ACLCHECK(aclrtResetDevice(rootRank));     // 重置设备，释放设备资源
     return 0;
 }

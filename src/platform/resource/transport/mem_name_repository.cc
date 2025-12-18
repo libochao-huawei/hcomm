@@ -85,6 +85,7 @@ HcclResult MemNameRepository::SetIpcMem(void *ptr, u64 size, u8 *name, u32 nameL
     ipcMemInfo.ptr = ptr;
     ipcMemInfo.size = size;
     ipcMemInfo.isSioToHccs = false;
+    alignPtrMap_.insert(std::make_pair(ipcMemInfo, ipcMemInfo));
 
     //在SetNameMap中查找memName,若未找到则插入
     ret = FindIpcMem(ipcMemInfo, name, nameLen);

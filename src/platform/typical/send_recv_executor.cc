@@ -794,21 +794,26 @@ HcclResult SendRecvExecutor::OneSideBatchPutMR(u32 num, AscendMrInfo* putMRList,
     CHK_RET(TypicalSyncMem::GetInstance().GetNotifyHandle(reinterpret_cast<u64>(localSyncMemAck_.addr),
         ackNotify_));
     CHK_PTR_NULL(ackNotify_);
-    HCCL_INFO("[SendRecvExecutor][OneSideBatchPutMR] notifySize[%u], notifyWaitMode[%d], "\
+    HCCL_INFO("[OneSideBatchPutMR] notifySize[%u], notifyWaitMode[%d], "\
         "ackNotify[%p], remoteNotifyValueMem addr[%p], remoteNotifyValueMem len[%llu], remoteNotifyValueMem key[%u], wqePerDoorBell[%u]",
         notifySize_, notifyWaitMode_, ackNotify_, remoteNotifyValueMem_.addr, remoteNotifyValueMem_.size, remoteNotifyValueMem_.lkey, wqePerDoorBell_);
 
     u32 sendWrNum = 0;
     for (u32 i = 0; i < num; i++){
-        CHK_RET(PayLoadMR(putMRList + i, remoteMRList + i, sendWrNum));
+        if (i != num - 1) {
+            CHK_RET(PayLoadMR(putMRList + i, remoteMRList + i, sendWrNum));
+        } else {
+            // 最后一组数据特殊处理，发送立即数
+            CHK_RET(PayLoadMR(putMRList + i, remoteMRList + i, sendWrNum, true));
+        }
     }
 
     HcclResult ret = RecordNotify(remoteNotifyValueMem_.addr, remoteNotifyValueMem_.lkey, localSyncMemAck_.addr, localSyncMemAck_.lkey,
         notifySize_, RA_WR_RDMA_READ, RA_SEND_SIGNALED | RA_SEND_FENCE);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[SendRecvExecutor][OneSideBatchPutMR] Record ack failed"), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[OneSideBatchPutMR] Record ack failed"), ret);
  
     ret = WaitSignal(ackNotify_);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[SendRecvExecutor][OneSideBatchPutMR] Wait ack failed"), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[OneSideBatchPutMR] Wait ack failed"), ret);
  
     return ret;
 }

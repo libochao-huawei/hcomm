@@ -75,10 +75,10 @@ public:
     bool GetAivModeConfig() const;
     HcclResult GetIsBridgeVector(std::vector<bool> &isBridgeVector);
     HcclResult GetRankVecInfo(std::vector<std::vector<std::vector<u32>>> &serverAndsuperPodToRank);
-    HcclResult GetCommPlaneRanks(std::vector<std::vector<std::vector<u32>>> &CommPlaneRanks);
+    HcclResult GetCommPlaneRanks(std::vector<std::vector<std::vector<u32>>> &commPlaneRanks);
     void GetCommPlaneVector(std::vector<std::vector<std::vector<RankInfo>>> &commPlaneVector);
     HcclResult GetIsUsedRdmaMap(std::unordered_map<u32, bool> &isUsedRdmaMap);
-    HcclResult GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &GetCommPlaneSubGroupVector);
+    HcclResult GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &commPlaneSubGroupVector);
     HcclResult GetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgOption);
 
     __attribute__((weak)) std::unique_ptr<CollAlgOperator> GetAlgOperator(const HcclCMDType &opType,

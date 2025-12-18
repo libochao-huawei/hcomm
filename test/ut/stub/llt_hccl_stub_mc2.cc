@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -204,7 +204,7 @@ drvError_t StubhalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t info
 {
     if (g_stubDevType == DevType::DEV_TYPE_910B) { // 910B
         *value = DEVDRV_PLATFORM_CLOUD_V2_B1;
-    } else if (g_stubDevType == DevType::DEV_TYPE_310P1 || g_stubDevType == DevType::DEV_TYPE_310P3) { // 1951
+    } else if (g_stubDevType == DevType::DEV_TYPE_310P1 || g_stubDevType == DevType::DEV_TYPE_310P3) { 
         *value = DEVDRV_PLATFORM_ASCEND310P;
     } else if (g_stubDevType == DevType::DEV_TYPE_910_93) {
         *value = DEVDRV_PLATFORM_CLOUD_V3;

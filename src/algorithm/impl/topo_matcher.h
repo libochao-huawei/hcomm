@@ -124,8 +124,8 @@ public:
                          HcclExternalEnable& externalEnable,
                          std::vector<std::vector<std::vector<u32>>>& serverAndsuperPodToRank);
     HcclResult CalcCommPlaneInfo(const std::string &tag, const CommParaInfo &commParaInfo,
-        std::vector<SingleSubCommTransport> &commTransport, TransportMemType inPutMemType,
-        TransportMemType outPutMemType);
+        std::vector<SingleSubCommTransport> &commTransport, TransportMemType inputMemType,
+        TransportMemType outputMemType);
     HcclTopoInfo GetTopoInfo();
     HcclAlgoInfo GetAlgoInfo();
     u32 GetExternalInputHcclEnableFfts();

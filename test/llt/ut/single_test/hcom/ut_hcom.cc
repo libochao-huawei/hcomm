@@ -4429,7 +4429,7 @@ TEST_F(HcomTest, should_return_substream_num_when_910b_allgather_graph_pipeline_
     EXPECT_EQ(streamNum, comm.userRankSize_ / comm.moduleNum_);
 }
 
-TEST_F(HcomTest, should_return_substream_num_when_910c_graph_allgather_pipeline)
+TEST_F(HcomTest, should_return_substream_num_when_910_93_graph_allgather_pipeline)
 {
     HcclCommunicator comm;
     comm.deviceType_ = DevType::DEV_TYPE_910_93;

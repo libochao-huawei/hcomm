@@ -259,7 +259,9 @@ HcclResult HcclAicpuUtils::PostSend(const u32 lKey, const u32 rKey, const struct
 }
 
 u32 HcclAicpuUtils::GetBlockNum(u32 defaultVal) {
-    if (aicpu::GetBlockNum != nullptr) {
+    if (AicpuGetBlockNum != nullptr) {
+        return AicpuGetBlockNum();
+    } else if (aicpu::GetBlockNum != nullptr) {
         return aicpu::GetBlockNum();
     } else {
         return defaultVal;
@@ -267,9 +269,11 @@ u32 HcclAicpuUtils::GetBlockNum(u32 defaultVal) {
 }
 
 u32 HcclAicpuUtils::GetBlockIdx() {
-    if (aicpu::GetBlockIdx != nullptr) {
-        return aicpu::GetBlockIdx();
-    } else {
-        return 0U;
-    }
+    u32 res = 0U;
+    if (AicpuGetBlockIdx != nullptr) {
+        res = AicpuGetBlockIdx();
+    } else if (aicpu::GetBlockIdx != nullptr) {
+        res =  aicpu::GetBlockIdx();
+    } 
+    return res;
 }

@@ -95,7 +95,7 @@ public:
     HcclResult MultiStreamReduceScatterMeshAtomic(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,
                                                   const u64 count, const HcclDataType dataType,
                                                   const HcclReduceOp reductionOp,
-                                                  const std::vector<Slice> &dataSlice,
+                                                  const std::vector<Slice> &dataSliceVct,
                                                   Stream &stream,
                                                   const CommPlane commLevelIndex,
                                                   const u64 baseOffset = 0, HcomCollOpInfo *opInfo = nullptr);

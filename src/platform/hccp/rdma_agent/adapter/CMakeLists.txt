@@ -3,6 +3,7 @@ set(BASIC_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../)
 set(TLV_DIR ${BASIC_PATH}/rdma_agent/adapter/tlv)
 set(ra_adp_list
     ra_adp.c
+    ra_adp_socket.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_pool.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_async.c
 )
@@ -14,8 +15,6 @@ list(APPEND ra_adp_list
     ${TLV_DIR}/ra_adp_tlv.c
 )
 endif()
-
-
 
 #编译目标
 add_library(ra_adp SHARED
@@ -71,6 +70,7 @@ endif()
 #编译选项
 target_compile_options(ra_adp PRIVATE
     -Werror -fvisibility=hidden -fsigned-char -fno-common -fno-strict-aliasing -std=gnu11
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
 )
 
@@ -78,6 +78,8 @@ target_link_options(ra_adp PRIVATE
     -Wl,-Bsymbolic
     -rdynamic
     -Wl,--no-undefined
+    -Wl,-z,now
+    $<$<CONFIG:Release>:-s>
 )
 
 #链接动态库

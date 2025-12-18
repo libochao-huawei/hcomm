@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -535,7 +535,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_Connect)
     GlobalMockObject::verify();
 }
 
-TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_DelEpollEvents)
+TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_infer_DelEpollEvents)
 {
     MOCKER(hrtRaCtlEventHandle)
     .stubs()
@@ -557,7 +557,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_DelEpollEvents)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_AddEpollEvents)
+TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_infer_AddEpollEvents)
 {
     MOCKER(hrtRaCtlEventHandle)
     .stubs()
@@ -579,7 +579,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_AddEpollEvents)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_CreateEventHandle)
+TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_infer_CreateEventHandle)
 {
     MOCKER(hrtRaCreateEventHandle)
     .stubs()
@@ -610,7 +610,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_CreateEventHandle)
     GlobalMockObject::verify();
 }
 
-TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_AddFdMapping)
+TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_infer_AddFdMapping)
 {
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));
@@ -620,7 +620,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_AddFdMapping)
     transportHeterogTcp->initSM_.locInitInfo.socketInfo.push_back(socketInfo);
 }
 
-TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_DestroyEventHandle)
+TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_infer_DestroyEventHandle)
 {
     MOCKER(hrtRaDestroyEventHandle)
     .stubs()
@@ -653,7 +653,7 @@ TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_DestroyEventHandle)
     GlobalMockObject::verify();
 }
 
-TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_1951_infer_WaitEvents)
+TEST_F(MPI_TRANSPORT_TCP_TEST, st_transportTcp_infer_WaitEvents)
 {
     HcclIpAddress invalidIp;
     unique_ptr<TransportHeterogEventTcp> transportHeterogTcp(new (nothrow) TransportHeterogEventTcp("test_collective", invalidIp, invalidIp, 18000, 0, 0, transportResourceInfo));

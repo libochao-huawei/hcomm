@@ -73,6 +73,13 @@ public:
         dlRaSocketSend;
     std::function<int(const FdHandle fdHandle, void *data, unsigned long long size,
         unsigned long long *received_size)> dlRaSocketRecv;
+
+    std::function<int(const FdHandle fdHandle, const void *data, unsigned long long size,
+        unsigned long long *sentSize, void **reqHandle)> dlRaSocketSendAsync;
+    std::function<int(const FdHandle fdHandle, void *data, unsigned long long size,
+        unsigned long long *receivedSize, void **reqHandle)> dlRaSocketRecvAsync;
+    std::function<int(void *reqHandle, int *reqResult)> dlRaGetAsyncReqResult;
+
     std::function<int(unsigned int enable)> dlRaSocketSetWhiteListStatus;
     std::function<int(unsigned int *enable)> dlRaSocketGetWhiteListStatus;
     std::function<int(SocketHandle handle, struct SocketWlistInfoT whiteList[], unsigned int num)> \
@@ -150,6 +157,7 @@ public:
     std::function<int(struct RaInfo *info, bool *tls_enable)> dlRaRaGetTlsEnable;
     std::function<int(struct RaInfo *info, enum SaveSnapshotAction action)> dlRaSaveSnapShot;
     std::function<int(struct RaInfo *info)> dlRaRestoreSnapShot;
+    std::function<int(struct RaInfo *info, enum HccnCfgKey ext_attrs, char* value, int *value_len)> dlRaGetHccnCfg;
 protected:
 private:
     friend Init;

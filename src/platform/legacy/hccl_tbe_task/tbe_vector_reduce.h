@@ -88,7 +88,7 @@ public:
         aclrtBinHandle binHandle, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle);
 
 protected:
-    char *tilingDataHostPtr_;
+    char *tilingDataHostPtr_{nullptr};
     std::vector<char *> binaryDataPtrVec_;
     std::map<std::string, aclrtBinHandle> binaryLoadMap_;
     std::mutex stubFuncMutex_;
@@ -136,6 +136,8 @@ private:
     std::unordered_map<TilingInputInfo, void *, TilingHashFuc> tilingDataMap_;
     std::mutex globalWorkSpaceAddrMutex_;
     std::vector<void *> globalWorkSpaceAddr_;
+    std::mutex deInitMutex_;
+    std::mutex initMutex_;
 };
 } // namespace TbeReduce
 

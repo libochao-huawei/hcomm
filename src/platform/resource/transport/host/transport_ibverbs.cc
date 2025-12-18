@@ -520,8 +520,7 @@ void TransportIbverbs::ModifyAtomicWriteAfterReduce(u32 &preWrOpcode, u64 wqeTyp
 
 u32 TransportIbverbs::GetQpsPerConnection()
 {
-    u32 externalQps =
-        GetExternalInputQpSrcPortConfigPath() == "" ? GetExternalInputQpsPerConnection() : machinePara_.srcPorts.size();
+    u32 externalQps = std::max(static_cast<u32>(machinePara_.srcPorts.size()), 1U);
     s32 qpMode = GetQpMode();
     if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         externalQps != HCCL_QPS_PER_CONNECTION_DEFAULT) {
@@ -620,8 +619,9 @@ HcclResult TransportIbverbs::CreateOneQp(
     RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007", vector<string>({ "resource_type", "resource_info" }),
         vector<string>({ "qp", qpInfo }));
 
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Create][Qp]create qp failed, "\
-        "localDeviceId[%d], qpMode[%d]", machinePara_.localDeviceId, qpMode), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]create qp failed, localDeviceId[%d], qpMode[%d]",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode),
+        HCCL_E_ROCE_CONNECT);
 
     // 表示没有通过config配置，则使用环境变量配置
     CHK_RET(SetQpAttrQos(qpHandle, machinePara_.tc, machinePara_.sl));
@@ -635,7 +635,7 @@ HcclResult TransportIbverbs::CreateOneQp(
 
     g_qpn2IbversLinkMap_.Emplace(((static_cast<u64>(machinePara_.localDeviceId) << DEV_PHY_ID_BIT) | attr.qpn), this);
 
-    HCCL_DEBUG("ra qp create success.");
+    HCCL_DEBUG("ra qp create success, use input udpSport[%u].", udpSport);
     return HCCL_SUCCESS;
 }
 
@@ -652,7 +652,7 @@ HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创
     // 原来是 machinePara_.socketFdHandles 换成 machinePara_.sockets
     for (u32 i = 0; i < socketNum; i++) {
         QpHandle qpHandle = nullptr;
-        u32 udpSport = machinePara_.srcPorts.size() > 0 ? machinePara_.srcPorts[0] : 0;
+        u32 udpSport = machinePara_.srcPorts.empty()? 0 : machinePara_.srcPorts[0];
         CHK_RET(CreateOneQp(qpMode, HCCL_QPS_PER_CONNECTION_DEFAULT, qpHandle, combineAiQpInfo_.aiQpInfo,
             machinePara_.isAicpuModeEn, udpSport));
         CombineQpHandle tmpCombineQpHandle;
@@ -665,11 +665,10 @@ HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创
 HcclResult TransportIbverbs::CreateMultiQp(s32 qpMode, u32 qpsPerConnection)
 {
     // 配置了多qp源端口号时的处理流程
-    std::vector<u32> &multiQpCfgSrcPorts = machinePara_.srcPorts;
-    if (multiQpCfgSrcPorts.size() > 1) {
-        HCCL_DEBUG("[TransportIbverbs][CreateMultiQp]use config file create qps.");
+    if (machinePara_.srcPorts.size() > 0) {
+        HCCL_DEBUG("[TransportIbverbs][CreateMultiQp]use Multi qp create qps.");
         // 创建qp
-        for (auto &port : multiQpCfgSrcPorts) {
+        for (const auto &port : machinePara_.srcPorts) {
             QpHandle qpHandle = nullptr;
             AiQpInfo tmpAiQpInfo{};
             CHK_RET(CreateOneQp(qpMode,
@@ -680,18 +679,6 @@ HcclResult TransportIbverbs::CreateMultiQp(s32 qpMode, u32 qpsPerConnection)
             multiCombineQpHandles_.push_back(CombineQpHandle(qpHandle));
             combineAiQpInfos_.push_back(CombineQpInfo(tmpAiQpInfo));
         }
-        return HCCL_SUCCESS;
-    }
-
-    // 未配置多qp源端口号的处理流程
-    HCCL_DEBUG("[TransportIbverbs][CreateMultiQp]use default way create qps.");
-    u32 udpSport = multiQpCfgSrcPorts.size() > 0 ? multiQpCfgSrcPorts[0] : 0;
-    for (u32 i = 0; i < qpsPerConnection; i++) {
-        QpHandle qpHandle = nullptr;
-        AiQpInfo tmpAiQpInfo{};
-        CHK_RET(CreateOneQp(qpMode, qpsPerConnection, qpHandle, tmpAiQpInfo, machinePara_.isAicpuModeEn, udpSport));
-        multiCombineQpHandles_.push_back(CombineQpHandle(qpHandle));
-        combineAiQpInfos_.push_back(CombineQpInfo(tmpAiQpInfo));
     }
     HCCL_DEBUG("ra multi-qp creation success.");
     return HCCL_SUCCESS;
@@ -1913,13 +1900,15 @@ HcclResult TransportIbverbs::RegUserMem(MemType memType, u8*& exchangeDataPtr, u
     mrInfo.addr = memPtr;
     mrInfo.size = memSize;
     mrInfo.access = access_;
-    for (u32 i = 0; i < combineQpHandles_.size(); i++) {
-        CHK_RET(HrtRaMrReg(combineQpHandles_[i].qpHandle, &mrInfo));
-    }
+    if (mrInfo.size != 0) {
+        for (u32 i = 0; i < combineQpHandles_.size(); i++) {
+            CHK_RET(HrtRaMrReg(combineQpHandles_[i].qpHandle, &mrInfo));
+        }
 
-    if (UseMultiQp()) {
-        for (u32 i = 0; i < qpsPerConnection_; i++) {
-            CHK_RET(HrtRaMrReg(multiCombineQpHandles_[i].qpHandle, &mrInfo));
+        if (UseMultiQp()) {
+            for (u32 i = 0; i < qpsPerConnection_; i++) {
+                CHK_RET(HrtRaMrReg(multiCombineQpHandles_[i].qpHandle, &mrInfo));
+            }
         }
     }
 

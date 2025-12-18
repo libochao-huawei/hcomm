@@ -60,6 +60,10 @@ HcclResult CollAllGatherSemiRingExecutor::DoubleRingMidCountAllGather(
     const Stream &stream, s32 profStage, const u64 baseOffset, const HcomCollOpInfo *opInfo,
     const std::vector<std::vector<Slice>> &multRingsUserMemSlice)
 {
+    (void) multRingsSliceZero;
+    (void) baseOffset;
+    (void) opInfo;
+    (void) tag;
     HCCL_CONFIG_INFO(HCCL_ALG,
         "[CollAllGatherSemiRingExecutor][KernelRun]CollAllGatherSemiRingExecutor starts.");
     

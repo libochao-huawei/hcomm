@@ -315,9 +315,9 @@ aclError aclrtCreateStream(aclrtStream *stream)
  * @param [out] NA
  * @return RT_ERROR_NONE for ok
  */
-aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback)
+rtError_t rtRegTaskFailCallbackByModule(const char_t *moduleName, rtTaskFailCallback callback)
 {
-    string tmpStr = "ASCENDCL";
+    string tmpStr = string(moduleName);
     std::unique_lock<std::mutex> lock(taskFailCallbackMapMutex);
     taskFailCallbackMap.clear();
     taskFailCallbackMap.insert({tmpStr, callback});
@@ -1059,6 +1059,24 @@ aclError aclrtQueryEventStatus(aclrtEvent event, aclrtEventRecordedStatus *statu
 aclError aclrtNotifyBatchReset(aclrtNotify *notifies, size_t num)
 {
     return ACL_SUCCESS;
+}
+
+rtError_t rtNotifyGetAddrOffset(rtNotify_t notify, uint64_t* devAddrOffset)
+{
+    if (notify == nullptr || devAddrOffset == nullptr) {
+        HCCL_ERROR("parameter error : notify[%p], devAddrOffset[%p]",
+            notify, devAddrOffset);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+    
+    rt_notify_t* ipc_notify = (rt_notify_t*)notify;
+    if (nullptr == ipc_notify->ipc_notify_shm) {
+        HCCL_ERROR("parameter error : notify_shm[%p]", ipc_notify->ipc_notify_shm);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+    
+    *devAddrOffset = (u64)&ipc_notify->ipc_notify_shm->record_cnt[ipc_notify->notify_id];
+    return RT_ERROR_NONE;
 }
 
 aclError aclrtStreamStop(aclrtStream stream)
@@ -2098,7 +2116,7 @@ drvError_t drvRegisterExitHandler(void (*handler)(int signum))
     struct sigaction sa_exit;   /*包含信号处理动作的结构体*/\
     sa_exit.sa_handler = handler; /*指定信号处理函数*/
     sigemptyset(&sa_exit.sa_mask);
-    sigaction(SIGINT, &sa_exit, NULL);   /* 注册SIGINT信号, 对应 Ctrl+C */
+    sigaction(SIGINT, &sa_exit, NULL);   /* 注册SIGINT信号 */
     sigaction(SIGTERM, &sa_exit, NULL);   /* 注册SIGINT信号, 对应 普通kill */
     return DRV_ERROR_NONE;
 }
@@ -5311,12 +5329,6 @@ aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t bloc
     return ACL_SUCCESS;
 }
 
-rtError_t rtFftsPlusTaskLaunchWithFlag(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rtStream_t stm,
-                                               uint32_t flag)
-{
-    return RT_ERROR_NONE;
-}
-
 const char *aclrtGetSocName()
 {
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {
@@ -5329,4 +5341,9 @@ const char *aclrtGetSocName()
         return "Ascend310P3";
     }
     return "Ascend910";
+}
+
+rtError_t rtModelGetId(rtModel_t mdl, uint32_t *modelId)
+{
+    return RT_ERROR_NONE;
 }

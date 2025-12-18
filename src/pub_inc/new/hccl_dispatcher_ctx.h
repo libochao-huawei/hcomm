@@ -59,6 +59,8 @@ extern DispatcherCtxPtr GetDispatcherCtx(const char* commId = DEFAULT_DISPATCH_N
 extern bool FindDispatcherByCommId(DispatcherCtxPtr *ctx, const char* commId = DEFAULT_DISPATCH_NAME);
 
 extern HcclResult SetDispatcherCtxOpIdx(u32 opRingBufferIdx);
+
+extern HcclResult AcquireDispatcherCtx(DispatcherCtxPtr *ctx, const char* commId = DEFAULT_DISPATCH_NAME);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

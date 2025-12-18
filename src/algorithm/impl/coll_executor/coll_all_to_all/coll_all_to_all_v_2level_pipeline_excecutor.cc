@@ -130,20 +130,20 @@ HcclOpMetaInfo CollRunAlltoAllVTwoLevelPipeline::GetOpMeta(HcclCMDType opType, c
         opMeta = HcclOpMetaInfo::GetOneForAllToAllV((isAlltoAllZCopyMode_ ?
             CopyPattern::ZCOPY : CopyPattern::BCOPY), algResResp_->paramInputMem.size(), hugeData || alltoallPingPong);
     }
-    HCCL_DEBUG("[CollRunAlltoAllVTwoLevelPipeline][GetOpMeta] Get OpMeta for AllToAll pipeline success.");
+    HCCL_DEBUG("[CollRunAlltoAllVTwoLevelPipeline][GetOpMeta] Get OpMeta for AllToAllV pipeline success.");
     return opMeta;
 }
 
 HcclResult CollRunAlltoAllVTwoLevelPipeline::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVTwoLevelPipeline][KernelRun] AllToAll two level pipeline start");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVTwoLevelPipeline][KernelRun] AllToAllV two level pipeline start");
 
     bool cclEnough = true;
     if ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE || topoAttr_.deviceType == DevType::DEV_TYPE_910_93)
         && GetAlltoall2LevelPipelineMaxScratchSize910B(allMeshAggregationSendRecvInfo_) > execMem.inputMem.size()) {
         cclEnough = false;
     }
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVTwoLevelPipeline][KernelRun] AllToAll pipeline run %s algo",
+    HCCL_CONFIG_INFO(HCCL_ALG, "[CollRunAlltoAllVTwoLevelPipeline][KernelRun] AllToAllV pipeline run %s algo",
         cclEnough ? "cclEnough" : "ping pong");
     A2aPipelineMemory a2aPipelineMemory;
     a2aPipelineMemory.userInput = algResResp_->paramInputMem;
@@ -175,7 +175,7 @@ HcclResult CollRunAlltoAllVTwoLevelPipeline::KernelRun(const OpParam &param, Exe
         const_cast<Stream&>(param.stream), algResResp_->slaveStreams,
         algResResp_->notifiesMain, algResResp_->notifiesAux, allMeshAggregationSendRecvInfo_, workflowMode_));
     CHK_RET(alltoallPipe->RunAsync());
-    HCCL_INFO("[CollRunAlltoAllVTwoLevelPipeline][kernelRun] AllToAll two level pipeline exec end");
+    HCCL_INFO("[CollRunAlltoAllVTwoLevelPipeline][kernelRun] AllToAllV two level pipeline exec end");
     return HCCL_SUCCESS;
 }
 

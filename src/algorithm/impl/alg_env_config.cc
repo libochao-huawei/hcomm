@@ -253,7 +253,7 @@ HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::st
     return HCCL_SUCCESS;
 }
 
-const s32 GetInternalExecTimeOut()
+s32 GetInternalExecTimeOut()
 {
     double timeout = GetExternalInputHcclExecTimeOut();
     // 向上取整获取s32秒级超时时间

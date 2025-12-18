@@ -15,35 +15,37 @@
 #include "log.h"
 #include "env_config.h"
 #include "mmpa_api.h"
-
+#include "mem_host_pub.h"
 
 using namespace std;
 
 namespace hccl {
+static thread_local HostMem g_aicpuKernelBinV2;
+
 HcclResult InitKernelArgsPrepare(aclrtBinHandle binHandle, const std::string &kernelName,
     void *initTaskAddr, u32 initTaskSize, aclrtFuncHandle &funcHandle, aclrtArgsHandle &argsHandle)
 {
     aclError ret = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName:%s",
+                HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName[%s]",
                             ret, kernelName.c_str()),
                 HCCL_E_RUNTIME);
 
     ret = aclrtKernelArgsInit(funcHandle, &argsHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName:%s", ret, kernelName.c_str()),
+                HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName[%s]", ret, kernelName.c_str()),
                 HCCL_E_RUNTIME);
 
     aclrtParamHandle paraHandle;
     ret = aclrtKernelArgsAppend(argsHandle, initTaskAddr, initTaskSize, &paraHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size %u, kernelName:%s", ret,
+                HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size %u, kernelName[%s]", ret,
                             initTaskSize, kernelName.c_str()),
                 HCCL_E_RUNTIME);
 
     ret = aclrtKernelArgsFinalize(argsHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName:%s", ret,
+                HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName[%s]", ret,
                             kernelName.c_str()),
                 HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
@@ -54,25 +56,25 @@ HcclResult TaskCommKernelArgsPrepare(aclrtBinHandle binHandle, const std::string
     aclrtArgsHandle &argsHandle)
 {
     CHK_PRT_RET((tilingDataPtr == nullptr || tilingDataSize == 0),
-        HCCL_ERROR("[TaskCommKernelArgsPrepare]param is invalid,tilingDataPtr[%p], tilingDataSize[%llu], kernelName:%s",
+        HCCL_ERROR("[TaskCommKernelArgsPrepare]param is invalid,tilingDataPtr[%p], tilingDataSize[%u], kernelName[%s]",
         tilingDataPtr, tilingDataSize, kernelName.c_str()), HCCL_E_PARA);
 
     aclError aclRet = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName:%s",
+                HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, kernelName[%s]",
                             aclRet, kernelName.c_str()),
                 HCCL_E_RUNTIME);
 
     aclRet = aclrtKernelArgsInit(funcHandle, &argsHandle);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName:%s", aclRet,
+                HCCL_ERROR("[aclrtKernelArgsInit]errNo[0x%016llx] args init failed, kernelName[%s]", aclRet,
                 kernelName.c_str()), HCCL_E_RUNTIME);
     // 拼凑aicpu侧KFCTaskComm结构体
     // 1、先存放HcclOpResParam的context指针
     aclrtParamHandle paraHandle;
     aclRet = aclrtKernelArgsAppend(argsHandle, contextAddr, contextSize, &paraHandle);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size %u, kernelName:%s",
+                HCCL_ERROR("[aclrtKernelArgsAppend]errNo[0x%016llx] args append failed, append size[%u], kernelName[%s]",
                 aclRet, contextSize, kernelName.c_str()), HCCL_E_RUNTIME);
     // 2、再将OpTilingData的tilingData指针拼凑，并将tilingData的hostMem给rts进行H2D
     void *dataAddr;
@@ -84,12 +86,12 @@ HcclResult TaskCommKernelArgsPrepare(aclrtBinHandle binHandle, const std::string
     aclRet = aclrtKernelArgsGetPlaceHolderBuffer(argsHandle, paraHandle, tilingDataSize, &dataAddr);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
                 HCCL_ERROR("[aclrtKernelArgsGetPlaceHolderBuffer]errNo[0x%016llx] args get place holder buffer failed,"
-                "tilingDataSize %u", aclRet, tilingDataSize), HCCL_E_RUNTIME);
+                "tilingDataSize[%u]", aclRet, tilingDataSize), HCCL_E_RUNTIME);
     CHK_SAFETY_FUNC_RET(memcpy_s(dataAddr, tilingDataSize, tilingDataPtr, tilingDataSize));
 
     aclRet = aclrtKernelArgsFinalize(argsHandle);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName:%s", aclRet,
+                HCCL_ERROR("[aclrtKernelArgsFinalize]errNo[0x%016llx] args finalize failed, kernelName[%s]", aclRet,
                             kernelName.c_str()),
                 HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
@@ -104,7 +106,7 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
         return HCCL_E_PTR;
     }
     CHK_PRT_RET((addr == nullptr || size == 0),
-        HCCL_ERROR("[AicpuAclKernelLaunch]param is invalid,contextAddr[%p], size[%llu], kernelName:%s",
+        HCCL_ERROR("[AicpuAclKernelLaunch]param is invalid, contextAddr[%p], size[%u], kernelName[%s]",
         addr, size, kernelName.c_str()), HCCL_E_PARA);
 
     aclrtFuncHandle funcHandle;
@@ -113,15 +115,14 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
     if (isInitTask) {
         ret = InitKernelArgsPrepare(binHandle, kernelName, addr, size, funcHandle, argsHandle);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-                    HCCL_ERROR("[InitKernelArgsPrepare]errNo[0x%016llx]init args prepare failed, kernelName:%s", ret,
-                                kernelName.c_str()),
-                    HCCL_E_RUNTIME);
+            HCCL_ERROR("[InitKernelArgsPrepare]errNo[0x%016llx]init args prepare failed, kernelName[%s], "
+                "contextAddr[%p], size[%u]", ret, kernelName.c_str(), addr, size), HCCL_E_RUNTIME);
     } else {
         ret = TaskCommKernelArgsPrepare(binHandle, kernelName, addr, size, tilingDataPtr, tilingDataSize, funcHandle,
                                         argsHandle);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-                    HCCL_ERROR("[TaskCommKernelArgsPrepare]errNo[0x%016llx]taskComm args prepare failed, kernelName:%s",
-                    ret, kernelName.c_str()), HCCL_E_RUNTIME);
+            HCCL_ERROR("[TaskCommKernelArgsPrepare]errNo[0x%016llx]taskCOmm args prepare failed, kernelName[%s], "
+                "contextAddr[%p], size[%u]", ret, kernelName.c_str(), addr, size), HCCL_E_RUNTIME);
     }
 
     aclrtLaunchKernelCfg cfg;
@@ -133,8 +134,61 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
     constexpr u32 blockDim = 1;
     aclError aclRet = aclrtLaunchKernelWithConfig(funcHandle, blockDim, stm, &cfg, argsHandle, nullptr);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
-                HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed", ret), HCCL_E_OPEN_FILE_FAILURE);
+                HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed", ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
+}
+
+HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
+                                  aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
+                                  void *tilingDataPtr, u32 tilingDataSize) {
+  if (binHandle == nullptr) {
+    HCCL_ERROR("binHandle is nullptr, no need to launch aicpu kernel, binHandle[%p]", binHandle);
+    return HCCL_E_PTR;
+  }
+  CHK_PRT_RET((addr == nullptr || size == 0), HCCL_ERROR("[AicpuAclKernelLaunch]param is invalid, contextAddr[%p], "
+                                                         "size[%u], kernelName[%s]", addr, size, kernelName.c_str()
+  ), HCCL_E_PARA);
+  aclrtFuncHandle funcHandle;
+  aclError aclRet = aclrtBinaryGetFunction(binHandle, kernelName.c_str(), &funcHandle);
+  CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[aclrtBinaryGetFunction]errNo[0x%016llx] get func handle failed, "
+                                                "kernelName[%s]", aclRet, kernelName.c_str()), HCCL_E_RUNTIME);
+  // !isInitTask LaunchTask {u64 context, TillingData data}
+  u64 hostBufferSize = isInitTask ? size : sizeof(u64) + tilingDataSize;
+  if (g_aicpuKernelBinV2.size() < hostBufferSize) {
+    g_aicpuKernelBinV2.free();
+    g_aicpuKernelBinV2 = HostMem::alloc(hostBufferSize, false);
+	if (g_aicpuKernelBinV2.ptr() == nullptr) {
+		HCCL_ERROR("[AicpuAclKernelLaunchV2] alloc memory failed");
+		return HCCL_E_MEMORY;
+	}
+  }
+  if (isInitTask) {
+    auto memRet = memcpy_s(reinterpret_cast<void *>(g_aicpuKernelBinV2.ptr()), hostBufferSize, addr, hostBufferSize);
+    CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
+                HCCL_E_INTERNAL);
+  } else {
+    auto memRet = memcpy_s(reinterpret_cast<void *>(g_aicpuKernelBinV2.ptr()), sizeof(u64), addr, sizeof(u64));
+    CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
+                HCCL_E_INTERNAL);
+    memRet = memcpy_s(
+        reinterpret_cast<void *>(reinterpret_cast<std::uintptr_t>(g_aicpuKernelBinV2.ptr()) + sizeof(u64)),
+                      hostBufferSize - sizeof(u64), tilingDataPtr, tilingDataSize);
+    CHK_PRT_RET(memRet != EOK, HCCL_ERROR("[AicpuAclKernelLaunchV2]memcpy_s failed,return[%d]", memRet),
+                HCCL_E_INTERNAL);
+  }
+  aclrtLaunchKernelCfg cfg;
+  aclrtLaunchKernelAttr attr;
+  attr.id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT;
+  attr.value.timeout = timeOut;
+  cfg.numAttrs = 1;
+  cfg.attrs = &attr;
+  constexpr u32 blockDim = 1;
+  aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, blockDim, stm, &cfg, g_aicpuKernelBinV2.ptr(), hostBufferSize,
+                                                  nullptr, 0);
+  CHK_PRT_RET(aclRet != ACL_SUCCESS,
+              HCCL_ERROR("[aclrtLaunchKernelWithHostArgs]errNo[0x%016llx] launch kernel failed", aclRet),
+			  HCCL_E_RUNTIME);
+  return HCCL_SUCCESS;
 }
 
 HcclResult GetKernelFilePath(std::string &binaryPath)

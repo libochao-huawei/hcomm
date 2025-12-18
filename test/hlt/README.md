@@ -1,6 +1,6 @@
 # HCCL FWK 测试框架用户指南
 
-本文档介绍了如何使用和扩展基于 `HcclFwkTest` 的单文件测试框架，主要以操作步骤和代码示例的形式，覆盖构建、运行、常见调试方法，以及如何`添加新的资源创建`和`组合测试用例`。
+本文档介绍了如何使用和扩展基于 `HcclFwkTest` 的单文件测试框架，主要以操作步骤和代码示例的形式，覆盖构建、运行、常见调测方法，以及如何`添加新的资源创建`和`组合测试用例`。
 
 ## 概述
 
@@ -122,14 +122,14 @@
 
 * 所有关键步骤无错误返回则代表 `success`。
 
-## 常见问题与调试建议
+## 常见问题与调测建议
 
 * **comm init 失败**：检查 `cluster_info`（文件路径或 JSON）是否正确；rank 是否在 rank table 范围内；真实环境下确认 HCCL/ACL 库路径与 ABI 匹配。
 * **device 设置失败（ACL）**：确认 `aclInit` 成功并且 `aclrtSetDevice(rank)` 的 device id 在节点上存在。
 * **Channel 创建失败**：不同 HCCL SDK 的 `ChannelDesc` 字段可能不同。请根据真实头文件调整 `setup_channel_pair()` 中的填充逻辑（remote address / memHandle / flags）。
 * **内存分配失败**：在真实环境优先使用 `aclrtMalloc`，若使用 host fallback，请确保对齐与大小合理。
 * **多进程协调问题**：真实测试通常由集群 launcher 启动，确认各进程的 `--cluster_info` / `RANK_ID` 与 rank table 一致。
-* **若要调试 mock**：`Mock` 模式会打印模拟行为，方便定位参数解析、流程顺序问题。
+* **若要调测 mock**：`Mock` 模式会打印模拟行为，方便定位参数解析、流程顺序问题。
 
 ## 如何新增测试用例
 

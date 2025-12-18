@@ -100,6 +100,7 @@ HcclResult SendReceive::ReceiveRunAsync()
     }
     CHK_SMART_PTR_NULL(transLink_);
 
+    HCCL_DEBUG("[SendReceive][ReceiveRunAsync]ReceiveRunAsync begins");
     u64 sizePerRound = 0;
     u64 sizePerSlice = chunkSize_;
     u64 length = outputMem_.size();
