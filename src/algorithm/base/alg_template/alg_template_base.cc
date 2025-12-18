@@ -58,6 +58,8 @@ HcclResult ExecutorBase::Prepare(DeviceMem &inputMem, DeviceMem &outputMem, Devi
     /* 相对用户基地址偏移 */
     baseOffset_ = baseOffset;
 
+    HCCL_INFO("[ExecutorBase][Prepare] baseOffset_ is %llu, outputMem size is %llu", baseOffset_, outputMem_.size());
+
     if (slices.size() > 0) {
         slices_.resize(slices.size());
         slices_ = slices;
