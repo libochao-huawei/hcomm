@@ -218,6 +218,8 @@ public:
     bool GetStopFlag();
     virtual HcclResult Fence();
     virtual HcclResult UpdateRemoteAddr(void *remoteIn, void *remoteOut);
+    virtual HcclResult UpdateRemoteInAddr(void *remoteIn);
+    virtual HcclResult UpdateRemoteOutAddr(void *remoteOut);
 
     std::vector<u8> &GetExchangeInfo()
     {

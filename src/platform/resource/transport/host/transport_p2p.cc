@@ -340,6 +340,9 @@ HcclResult TransportP2p::ConstructExchangeForSend()
             CHK_RET(ConstructIpcMemInfoForSend(ipcMem.ptr(), ipcMem.size(), exchangeDataPtr, exchangeDataBlankSize));
         }
         if (!isMemInclude_) {
+            HCCL_INFO("[TransportP2p][ConstructExchangeForSend] is not mem include, outputMem addr[%p], size[%llu], "\
+                "inputMem addr[%p], size[%llu]", machinePara_.outputMem.ptr(), machinePara_.outputMem.size(),
+                machinePara_.inputMem.ptr(), machinePara_.inputMem.size());
             CHK_RET(ConstructIpcMemInfoForSend(machinePara_.outputMem.ptr(), machinePara_.outputMem.size(), exchangeDataPtr,
                 exchangeDataBlankSize));
             CHK_RET(ConstructIpcMemInfoForSend(machinePara_.inputMem.ptr(), machinePara_.inputMem.size(), exchangeDataPtr,
@@ -410,8 +413,7 @@ HcclResult TransportP2p::ConstructIpcMemInfoForSend(void *ptr, u64 size, u8 *&ex
               ->SetIpcMem(ptr, size, memName.ipcName, HCCL_IPC_MEM_NAME_LEN, memOffset, recvPid_, recvSdid_, isSioToHccs_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Send][IpcMemMesg]errNo[0x%016llx], In send ipc mesg, get para mem name failed. "\
-        "mem addr[%p] local rank[%u]", HCCL_ERROR_CODE(ret), machinePara_.outputMem.ptr(),
-        machinePara_.localUserrank), ret);
+        "mem addr[%p] local rank[%u]", HCCL_ERROR_CODE(ret), ptr, machinePara_.localUserrank), ret);
 
     // 设置ipc mem属性，指定通信链路从sio切换至hccs
     if (isSioToHccs_) {
@@ -718,7 +720,7 @@ HcclResult TransportP2p::ParseReceivedExchangeData()
         }
     }
     //将本端和远端的Mem都打印。
-    HCCL_INFO("[TransportP2p][ParseReceivedExchangeData]remoteOutputPtr_[%p], remoteOutputSize_[%llu], "\
+    HCCL_INFO("liliguo [TransportP2p][ParseReceivedExchangeData]remoteOutputPtr_[%p], remoteOutputSize_[%llu], "\
               "remoteInputPtr_[%p], remoteInputSize_[%llu]",
               remoteOutputPtr_, remoteOutputSize_, remoteInputPtr_, remoteInputSize_);
 
