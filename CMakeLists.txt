@@ -80,7 +80,6 @@ if(ENABLE_TEST)
 endif()
 
 if(BUILD_OPEN_PROJECT)
-    include(cmake/intf_pub_gccnative.cmake)
     include(cmake/third_party/openssl.cmake)
     include(cmake/third_party/json.cmake)
     include(cmake/utils.cmake)

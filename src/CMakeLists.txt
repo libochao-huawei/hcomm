@@ -239,7 +239,6 @@ target_link_options(hccd PRIVATE
 
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(hccd
-        $<BUILD_INTERFACE:intf_pub>
         -Wl,--no-as-needed
         c_sec
         mmpa
@@ -502,7 +501,6 @@ target_link_options(ccl_kernel_plf_a PRIVATE
 # 将库文件链接到目标ccl_kernel_plf  ccl_kernel_plf_a
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(ccl_kernel_plf
-        $<BUILD_INTERFACE:intf_pub>
         -Wl,--no-as-needed
         c_sec
         aicpu_sharder
@@ -514,7 +512,6 @@ if(BUILD_OPEN_PROJECT)
     )
 
     target_link_libraries(ccl_kernel_plf_a
-        $<BUILD_INTERFACE:intf_pub>
         -Wl,--no-as-needed
         c_sec
         aicpu_sharder
