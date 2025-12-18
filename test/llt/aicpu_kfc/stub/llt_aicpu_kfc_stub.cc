@@ -8,10 +8,9 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-
-
 #include <driver/ascend_hal.h>
-#include "rt_external.h"
+#include <runtime/rt.h>
+#include <cce/hccl_api.h>
 #include <hccl/base.h>
 #include <hccl/hccl_types.h>
 #include <securec.h>
@@ -25,6 +24,8 @@
 #include <fcntl.h>           /* For O_* constants */
 #include <arpa/inet.h>
 #include <time.h>
+#include <runtime/base.h>
+#include <runtime/dev.h>
 #include <map>
 
 #include <stdlib.h>
@@ -32,23 +33,27 @@
 #include <mutex>
 #include <utility>
 
-#include "llt_hccl_stub.h"
-#include "llt_hccl_stub_gdr.h"
-#include "llt_hccl_stub_profiling_plugin.h"
-#include "llt_hccl_stub_fp16.h"
+#include "llt_aicpu_kfc_stub.h"
+#include "llt_aicpu_kfc_stub_gdr.h"
+#include "llt_aicpu_kfc_stub_profiling_plugin.h"
+#include "llt_aicpu_kfc_stub_fp16.h"
 
 #include "adapter_rts.h"
 #include "adapter_hal.h"
 
+#include <runtime/kernel.h>
 #include "runtime/rt_error_codes.h"
 #include "mmpa_api.h"
+#include "hdds_base.h"
+#include "aicpu_sharder.h" // aicpu sharding
 
 #include "hccl_socket.h"
 #include "hccl_socket_manager.h"
-#include "dlog_pub.h"
+#include "slog_api.h"
+#include "slog.h"
+#include "ts_api.h"
 #include "acl/acl_rt.h"
-#include "adapter_tdt.h"
-#include "acl/acl_rt.h"
+#include "runtime/rts/rts_kernel.h"
 
 /*----------------------------------------------*
  * 外部变量说明                                 *
@@ -82,7 +87,6 @@ static s32 chip_type_stub[256] = {0}; /*最大为16，下面不再做判断*/
 /*----------------------------------------------*
  * 常量定义                                     *
  *----------------------------------------------*/
-constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -95,7 +99,7 @@ static std::mutex taskFailCallbackMapMutex;
 static std::mutex taskAbortCallbackMapMutex;
 static std::mutex isExecutedMutex;
 static std::map<string, rtTaskFailCallback> taskFailCallbackMap;
-static std::map<string, aclrtDeviceTaskAbortCallback> taskAbortCallbackMap;
+static std::map<string, rtTaskAbortCallBack> taskAbortCallbackMap;
 s32 log_level_get_stub(){
     return stub_log_level;
 }
@@ -118,9 +122,9 @@ string get_log_str_from_type_stub(s32          type)
         case DLOG_ERROR:
             str = "[ERROR]";
             break;
-        // case DLOG_EVENT:
-        //     str = "[EVENT]";
-        //     break;
+        case DLOG_EVENT:
+            str = "[EVENT]";
+            break;
         default:
             break;
     }
@@ -267,6 +271,15 @@ int dlog_setlevel(int moduleId, int level, int enableEvent)
     return 0;
 }
 
+/**
+ * @ingroup dvrt_stream
+ * @brief create stream instance
+ * @param [in|out] stream   created stream
+ * @param [in] priority   stream priority
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream handle
+ * @return ACL_ERROR_RT_PARAM_INVALID for error input priority
+ */
 rtError_t rtStreamCreate(rtStream_t* stream, int32_t priority)
 {
     // Mod for optimize runtime Stub by l on 2018-01-11 Below
@@ -284,31 +297,6 @@ rtError_t rtStreamCreate(rtStream_t* stream, int32_t priority)
     return RT_ERROR_NONE;
 }
 /**
- * @ingroup dvrt_stream
- * @brief create stream instance
- * @param [in|out] stream   created stream
- * @param [in] priority   stream priority
- * @return RT_ERROR_NONE for ok
- * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream handle
- * @return ACL_ERROR_RT_PARAM_INVALID for error input priority
- */
-aclError aclrtCreateStream(aclrtStream *stream)
-{
-    // Mod for optimize runtime Stub by l on 2018-01-11 Below
-    stream_class* rtstream;
-    s32 device_id;
-    aclrtGetDevice(&device_id);
-    if ((rtstream = new(std::nothrow) stream_class(device_id)) == nullptr) {
-        return ACL_ERROR_RT_MEMORY_ALLOCATION;
-    }
-    // 记录当前设备信息
-    rtstream->current_dev = current_dev;
-
-    *stream = (rtStream_t)rtstream;
-    // Mod for optimize runtime Stub by l on 2018-01-11 Above
-    return ACL_SUCCESS;
-}
-/**
  * @ingroup dvrt_base
  * @brief register callback for fail task
  * @param [in] uniName unique register name, can't be null
@@ -316,15 +304,15 @@ aclError aclrtCreateStream(aclrtStream *stream)
  * @param [out] NA
  * @return RT_ERROR_NONE for ok
  */
-rtError_t rtRegTaskFailCallbackByModule(const char_t *moduleName, rtTaskFailCallback callback)
+aclError aclrtSetExceptionInfoCallback(aclrtExceptionInfoCallback callback)
 {
-    string tmpStr = string(moduleName);
+    string tmpStr = "ASCENDCL";
     std::unique_lock<std::mutex> lock(taskFailCallbackMapMutex);
     taskFailCallbackMap.clear();
     taskFailCallbackMap.insert({tmpStr, callback});
     return ACL_SUCCESS;
 }
-aclError aclrtSetDeviceTaskAbortCallback(const char_t *moduleName, aclrtDeviceTaskAbortCallback callback, void *args)
+rtError_t rtSetTaskAbortCallBack(const char *moduleName, rtTaskAbortCallBack callback, void *args)
 {
     string tmpStr(moduleName);
     void *p = nullptr;
@@ -333,13 +321,7 @@ aclError aclrtSetDeviceTaskAbortCallback(const char_t *moduleName, aclrtDeviceTa
     taskAbortCallbackMap.insert({tmpStr, callback});
     return RT_ERROR_NONE;
 }
-
-aclError aclrtGetLogicDevIdByPhyDevId(const int32_t phyDevId, int32_t *const logicDevId)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtNotifyResetAll()
+rtError_t rtResourceClean(int32_t devId, rtIdType_t type)
 {
     return RT_ERROR_NONE;
 }
@@ -373,9 +355,9 @@ rtError_t rtGetMaxStreamAndTask(uint32_t streamType, uint32_t *maxStrCount, uint
  * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream handle
  * @return ACL_ERROR_RT_PARAM_INVALID for error input priority
  */
-aclError aclrtCreateStreamWithConfig(aclrtStream *stream, uint32_t priority, uint32_t flag)
+rtError_t rtStreamCreateWithFlags(rtStream_t * stream, int32_t priority, uint32_t flags)
 {
-    return aclrtCreateStream(stream);
+    return rtStreamCreate(stream, priority);
 }
 
 aclError aclrtSetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue *value)
@@ -384,11 +366,6 @@ aclError aclrtSetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType
 }
 
 aclError aclrtGetStreamAttribute(aclrtStream stream, aclrtStreamAttr stmAttrType, aclrtStreamAttrValue *value)
-{
-    return ACL_SUCCESS;
-}
-
-aclError aclrtGetStreamAvailableNum(uint32_t *streamCount)
 {
     return ACL_SUCCESS;
 }
@@ -474,35 +451,9 @@ void* rtIpcOpenBasePtrLookup(const void *ptr)
     return nullptr;
 }
 
-/**
- * @ingroup dvrt_stream
- * @brief destroy stream instance.
- * @param [in] stream   the stream to destroy
- * @return RT_ERROR_NONE for ok
- * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream handle
- */
-aclError aclrtDestroyStream(aclrtStream stream)
-{
-    // Mod for optimize runtime Stub by l on 2018-01-11 Below
-    stream_class* rtstream = NULL;
-    rtstream = (stream_class*)stream;
-    if (NULL != rtstream)
-    {
-        delete rtstream;
-        rtstream = NULL;
-    }
-    std::unique_lock<std::mutex> lock(g_tidStreamMapMutex);
-    g_tidStreamMap.clear();
-    lock.unlock();
-
-    // Mod for optimize runtime Stub by l on 2018-01-11 Above
-
-    return ACL_SUCCESS;
-}
-
 aclError aclrtDestroyStreamForce(aclrtStream stream)
 {
-    return aclrtDestroyStream(stream);
+    return rtStreamDestroy(stream);
 }
 
 /**
@@ -556,16 +507,16 @@ rtError_t rtGetTaskIdAndStreamID(uint32_t *taskId, uint32_t *streamId)
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream or event handle
  */
-aclError aclrtSynchronizeStream(aclrtStream stream)
+rtError_t rtStreamSynchronize(rtStream_t stream)
 {
     stream_class* rtstream = NULL;
     rtstream = (stream_class*)stream;
     rtstream->stream_synchronize();
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
-aclError aclrtSynchronizeStreamWithTimeout(aclrtStream stream, int32_t timeout) {
-    return aclrtSynchronizeStream(stream);
+rtError_t rtStreamSynchronizeWithTimeout(rtStream_t stream, int32_t timeout) {
+    return rtStreamSynchronize(stream);
 }
 
 static u32 modelCallBackStub = 0; // 0:host网卡 1：HVD
@@ -575,30 +526,15 @@ aclError aclrtActiveStream(aclrtStream activeStream, aclrtStream stream)
 }
 
 int rtModelFake = 0;
-aclError aclmdlRICaptureGetInfo(aclrtStream stream, aclmdlRICaptureStatus *status, aclmdlRI *modelRI)
+rtError_t rtStreamGetCaptureInfo(rtStream_t stm, rtStreamCaptureStatus *status,
+                                 rtModel_t *captureMdl)
 {   
-    *modelRI = &rtModelFake;
-    return ACL_SUCCESS;
+    *captureMdl = &rtModelFake;
+    return RT_ERROR_NONE;
 }
 
-aclError aclmdlRICaptureThreadExchangeMode(aclmdlRICaptureMode *mode)
-{
-    return ACL_SUCCESS;
-}
-
-aclError aclrtBinaryLoadFromData(const void *data, size_t length,
-    const aclrtBinaryLoadOptions *options, aclrtBinHandle *binHandle)
-{
-    static int i = 0;
-    *binHandle = &i;
-    return ACL_SUCCESS;
-}
-
-aclError aclrtGetFunctionAddr(aclrtFuncHandle funcHandle, void **aicAddr, void **aivAddr)
-{
-    static int i = 0;
-    *aivAddr = &i;
-    return ACL_SUCCESS;
+rtError_t rtModelGetId(rtModel_t mdl, uint32_t *modelId){
+    return RT_ERROR_NONE;
 }
 
 rtError_t rtStreamAddToModel(rtStream_t stm, rtModel_t captureMdl)
@@ -627,6 +563,7 @@ aclError aclrtLaunchCallback(aclrtCallback fn, void *userData, aclrtCallbackBloc
     return ACL_SUCCESS;
 }
 
+// std::map<uint64_t, std::vector<void *>> g_tidStreamMap;
 
 aclError aclrtSubscribeReport(uint64_t threadId, aclrtStream stream)
 {
@@ -688,10 +625,66 @@ aclError aclrtResetEvent(aclrtEvent event, aclrtStream stream)
     return ACL_SUCCESS;
 }
 
-aclError aclrtCreateEventWithFlag(aclrtEvent *event, uint32_t flag)
+rtError_t rtEventCreateWithFlag(rtEvent_t* event, uint32_t flag)
 {
     return aclrtCreateEvent(event);
 }
+/**
+ * @ingroup dvrt_stream
+ * @brief switch to the corresponding stream according to the contents of the ptr
+ * @param [in] ptr  Determine the address where the value of the true and false branches is located
+ * @param [in] condition switch condition
+ * @param [in] value  switch value
+ * @param [in] true_stream  Stream that needs to be activated when the value is non-zero
+ * @param [in] stream input stream to init task
+ * @return RT_ERROR_NONE for complete
+ * @return ACL_ERROR_RT_PARAM_INVALID for error input
+ * @return RT_ERROR_INVALID_RESOURCE_HANDLE for invalid resource handle
+ * @return RT_ERROR_INVALID_DEVICE for invalid device handle
+ * @return ERROR_RECYCLE for switching task init failed or submit failed
+ */
+rtError_t rtStreamSwitchEx(void *ptr,  rtCondition_t condition, void *value_ptr,
+                           rtStream_t true_stream, rtStream_t stream, rtSwitchDataType_t dataType)
+{
+    stream_class* rtstream = NULL;
+    rtstream = (stream_class*)true_stream;
+    stream_class* rtstreamMain = (stream_class*)stream;
+    s64 mem_value;
+    s64 mem_value2;
+    if (dataType == RT_SWITCH_INT32) {
+        mem_value = *static_cast<s32*>(ptr);
+        mem_value2 = *static_cast<s32*>(value_ptr);
+    } else {
+        mem_value = *static_cast<s64*>(ptr);
+        mem_value2 = *static_cast<s64*>(value_ptr);
+    }
+    switch (condition) {
+        case RT_EQUAL :
+            if (mem_value == mem_value2) {
+                rtstream->set_stream_enabled(true);
+                rtstreamMain->set_stream_enabled(false);
+            }
+            else {
+                rtstream->set_stream_enabled(false);
+                rtstreamMain->set_stream_enabled(true);
+            }
+            break;
+        case RT_NOT_EQUAL:
+            if (mem_value != mem_value2) {
+                rtstream->set_stream_enabled(true);
+                rtstreamMain->set_stream_enabled(false);
+            }
+            else {
+                rtstream->set_stream_enabled(false);
+                rtstreamMain->set_stream_enabled(true);
+            }
+            break;
+        default:
+            break;
+    }
+    return RT_ERROR_NONE;
+}
+
 
 rtError_t rtModelBindStream(rtModel_t model, rtStream_t stream, uint32_t flag)
 {
@@ -714,25 +707,30 @@ rtError_t rtModelCreate(rtModel_t *model, uint32_t flag)
     *model = (rtModel_t)1;
     return RT_ERROR_NONE;
 }
-aclError aclrtGetDeviceCount(uint32_t *count);
+rtError_t rtGetDeviceCount(int32_t* count);
 
 
 /*****************************************************************************
- 函 数 名  : aclrtGetDeviceCount
+ 函 数 名  : rtGetDeviceCount
  功能描述  : 获取设备数量
- 输入参数  : uint32_t *count
+ 输入参数  : int32_t *count
  输出参数  : 无
- 返 回 值  : aclError
+ 返 回 值  : rtError_t
  调用函数  :
  被调函数  :
 
+ 修改历史      :
+  1.日    期   : 2017年12月9日
+    作    者   : p00335137
+    修改内容   : 新生成函数
+
 *****************************************************************************/
-aclError aclrtGetDeviceCount(uint32_t *count)
+rtError_t rtGetDeviceCount( int32_t* count )
 {
     /*打桩函数先默认设备上芯片数量为8*/
     *count = 8;
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
 rtError_t rtSetDeviceV2(int32_t device, rtDeviceMode deviceMode)
@@ -757,9 +755,9 @@ rtError_t rtSetDeviceV2(int32_t device, rtDeviceMode deviceMode)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-aclError aclrtSetDevice( int32_t deviceId )
+aclError aclrtSetDevice( int32_t device )
 {
-    current_dev = deviceId;
+    current_dev = device;
     return ACL_SUCCESS;
 }
 
@@ -813,6 +811,12 @@ aclError aclrtGetDevice( int32_t* device )
     return ACL_SUCCESS;
 }
 
+rtError_t rtGetDeviceMode(rtDeviceMode *deviceMode)
+{
+    *deviceMode = current_devMode;
+    return RT_ERROR_NONE;
+}
+
 rtError_t rtGetDie( int32_t* die )
 {
     *die = current_die;
@@ -831,42 +835,72 @@ aclError aclrtSetCurrentContext(aclrtContext ctx)
     return ACL_SUCCESS;
 }
 
-aclError aclrtGetDevicesTopo(uint32_t devId, uint32_t otherDevId, uint64_t *value)
+rtError_t rtGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *value)
 {
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {
 
         if ((devId / 8)  != (otherDevId / 8)) {
-            *value = ACL_RT_DEVS_TOPOLOGY_PIX; // PXI
+            *value = 1; // PXI
         } else {
-            *value = ACL_RT_DEVS_TOPOLOGY_HCCS; // HCCS
+            *value = 0; // HCCS
         }
     }
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910_93))
     {
         // 0-1 2-3 4-5 6-7
-        int32_t diff = static_cast<int32_t>(devId) - static_cast<int32_t>(otherDevId);
-        if ((abs(diff) == 1) && ((devId + otherDevId) % 4 == 1)) {
-            *value = ACL_RT_DEVS_TOPOLOGY_SIO;     // SIO
+        if ((abs(devId - otherDevId) == 1) && ((devId + otherDevId) % 4 == 1)) {
+            *value = 5;     // SIO
         } else {
-            *value = ACL_RT_DEVS_TOPOLOGY_HCCS_SW;     // HCCS_SW
+            *value = 6;     // HCCS_SW
         }
-        return ACL_SUCCESS;
+        return RT_ERROR_NONE;
     }
 
     if ( (gBoardId == 0x1E ||  gIsVM == 1 ) || (devId / 4)  != (otherDevId / 4)) // 若当前为标卡/虚拟机/非同一clustor
     {
-        *value = ACL_RT_DEVS_TOPOLOGY_PIX; // PXI
+        *value = 1; // PXI
     } else {
-        *value = ACL_RT_DEVS_TOPOLOGY_HCCS; // HCCS
+        *value = 0; // HCCS
     }
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
-aclError aclrtGetDeviceSatMode(aclrtFloatOverflowMode * floatOverflowMode)
+rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *value)
 {
-    *floatOverflowMode = ACL_RT_OVERFLOW_MODE_INFNAN;
-    return ACL_SUCCESS;
+    if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {
+
+        if ((devId / 8)  != (otherDevId / 8)) {
+            *value = 1; // PXI
+        } else {
+            *value = 0; // HCCS
+        }
+    }
+    if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910_93))
+    {
+        // 0-1 2-3 4-5 6-7
+        if ((abs(devId - otherDevId) == 1) && ((devId + otherDevId) % 4 == 1)) {
+            *value = 5;     // SIO
+        } else {
+            *value = 6;     // HCCS_SW
+        }
+        return RT_ERROR_NONE;
+    }
+
+    if ( (gBoardId == 0x1E ||  gIsVM == 1 ) || (devId / 4)  != (otherDevId / 4)) // 若当前为标卡/虚拟机/非同一clustor
+    {
+        *value = 1; // PXI
+    } else {
+        *value = 0; // HCCS
+    }
+
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtGetDeviceSatMode(rtFloatOverflowMode_t * floatOverflowMode)
+{
+    *floatOverflowMode = RT_OVERFLOW_MODE_INFNAN;
+    return RT_ERROR_NONE;
 }
 
 aclError aclrtSetDeviceSatMode(aclrtFloatOverflowMode mode)
@@ -875,15 +909,15 @@ aclError aclrtSetDeviceSatMode(aclrtFloatOverflowMode mode)
 }
 
 /*****************************************************************************
- 函 数 名  : aclrtMemcpyAsync
+ 函 数 名  : rtMemcpyAsync
  功能描述  : 异步内存拷贝
  输入参数  : void *dst
              void *src
              uint64_t count
-             aclrtMemcpyKind kind
-             aclrtStream stream
+             rtMemcpyKind_t kind
+             rtStream_t stream
  输出参数  : 无
- 返 回 值  : aclError
+ 返 回 值  : rtError_t
  调用函数  :
  被调函数  :
 
@@ -893,11 +927,10 @@ aclError aclrtSetDeviceSatMode(aclrtFloatOverflowMode mode)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-aclError aclrtMemcpyAsync(
-    void *dst, size_t destMax, const void *src, size_t count, aclrtMemcpyKind kind, aclrtStream stream)
+rtError_t rtMemcpyAsync( void* dst, uint64_t destMax,const void* src, uint64_t count, rtMemcpyKind_t kind, rtStream_t stream )
 {
     /*拷贝类型检测*/
-    if ((kind < ACL_MEMCPY_HOST_TO_HOST) || (kind > ACL_MEMCPY_DEVICE_TO_DEVICE))
+    if ((kind < RT_MEMCPY_HOST_TO_HOST) || (kind > RT_MEMCPY_DEVICE_TO_DEVICE))
     {
         return ACL_ERROR_RT_PARAM_INVALID;
     }
@@ -922,39 +955,64 @@ aclError aclrtMemcpyAsync(
     rtstream->push_task(&stream_task);
     // Mod for optimize runtime Stub by l on 2018-01-11 Above
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
-aclError aclrtMemcpyAsyncWithOffset(void **dst, size_t destMax, size_t dstDataOffset, const void **src,
-    size_t cnt, size_t srcDataOffset, aclrtMemcpyKind kind, aclrtStream stm)
+rtError_t rtMemcpyAsyncWithoutCheckKind( void* dst, uint64_t destMax,const void* src, uint64_t count, rtMemcpyKind_t kind, rtStream_t stream )
 {
- 
-    std::cout << "aclrtMemcpyAsyncWithOffset rtStream_t: " << stm << std::endl;
-    if ((!dst) || (!src) || (kind != ACL_MEMCPY_INNER_DEVICE_TO_DEVICE))
+    /*拷贝类型检测*/
+    if ((kind < RT_MEMCPY_HOST_TO_HOST) || (kind > RT_MEMCPY_DEVICE_TO_DEVICE))
+    {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    if ((!dst) || (!src))
+    {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    /*桩函数中不管kind，都统一使用memcpy完成*/
+    // Mod for optimize runtime Stub by l on 2018-01-11 Below
+    // 将asynchronous Memcpy任务，压入任务队列
+    stream_class* rtstream = nullptr;
+    rtstream = (stream_class*)stream;
+
+    stream_task_t stream_task;
+    stream_task.task_type = TASK_TYPE_MEMCPY;
+    stream_task.stream_para.memcpystruct.dst = dst;
+    stream_task.stream_para.memcpystruct.src = (void*)src;
+    stream_task.stream_para.memcpystruct.count = count;
+
+    rtstream->push_task(&stream_task);
+    // Mod for optimize runtime Stub by l on 2018-01-11 Above
+
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtMemcpyD2DAddrAsync(void *dst, uint64_t destMax, uint64_t destOffset, const void *src, uint64_t count,
+                            uint64_t srcOffset, rtStream_t stream)
+{
+
+    std::cout << "rtMemcpyD2DAddrAsync rtStream_t: " << stream << std::endl; // TODO
+    if ((!dst) || (!src))
     {
         return ACL_ERROR_RT_PARAM_INVALID;
     }
 
     stream_class* rtstream = nullptr;
-    rtstream = (stream_class*)stm;
+    rtstream = (stream_class*)stream;
 
-    std::cout << "aclrtMemcpyAsyncWithOffset stream_class*: " << rtstream << std::endl;
+    std::cout << "rtMemcpyD2DAddrAsync stream_class*: " << rtstream << std::endl; // TODO
 
     stream_task_t stream_task;
     stream_task.task_type = TASK_TYPE_MEMCPY;
-    stream_task.stream_para.memcpystruct.dst = *dst;
-    stream_task.stream_para.memcpystruct.src = (void*)(*src);
-    stream_task.stream_para.memcpystruct.count = cnt;
+    stream_task.stream_para.memcpystruct.dst = dst;
+    stream_task.stream_para.memcpystruct.src = (void*)src;
+    stream_task.stream_para.memcpystruct.count = count;
 
     rtstream->push_task(&stream_task);
 
     return RT_ERROR_NONE;
-}
-
-aclError aclrtDevicePeerAccessStatus(int32_t deviceId, int32_t peerDeviceId, int32_t *status)
-{
-    *status = 1;
-    return ACL_SUCCESS;
 }
 
 /*****************************************************************************
@@ -977,12 +1035,12 @@ aclError aclrtCreateEvent(aclrtEvent *event)
     /*
     1、原来的event机制需要使用者确保先下发record然后再下发wait。新的event机制没有这种限制，与notify流程类似。故打桩直接使用notify机制
     2、event为软件资源，与device无关。为了复用notify已有机制，不关注device id默认填0。*/
-    return aclrtCreateNotify((aclrtNotify *)event, 0UL);
+    return rtNotifyCreate(0, (rtNotify_t *)event);
 }
 
 aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
 {
-    return aclrtCreateNotify((aclrtNotify *)event, 0UL);
+    return rtNotifyCreate(0, (rtNotify_t *)event);
 }
 
 aclError aclrtGetEventId(aclrtEvent event, uint32_t *eventId)
@@ -1068,32 +1126,9 @@ aclError aclrtNotifyBatchReset(aclrtNotify *notifies, size_t num)
     return ACL_SUCCESS;
 }
 
-rtError_t rtNotifyGetAddrOffset(rtNotify_t notify, uint64_t* devAddrOffset)
+rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
 {
-    if (notify == nullptr || devAddrOffset == nullptr) {
-        HCCL_ERROR("parameter error : notify[%p], devAddrOffset[%p]",
-            notify, devAddrOffset);
-        return ACL_ERROR_RT_PARAM_INVALID;
-    }
-    
-    rt_notify_t* ipc_notify = (rt_notify_t*)notify;
-    if (nullptr == ipc_notify->ipc_notify_shm) {
-        HCCL_ERROR("parameter error : notify_shm[%p]", ipc_notify->ipc_notify_shm);
-        return ACL_ERROR_RT_PARAM_INVALID;
-    }
-    
-    *devAddrOffset = (u64)&ipc_notify->ipc_notify_shm->record_cnt[ipc_notify->notify_id];
-    return RT_ERROR_NONE;
-}
-
-aclError aclrtStreamStop(aclrtStream stream)
-{
-    return ACL_SUCCESS;
-}
- 
-aclError aclrtStreamAbort(aclrtStream stream)
-{
-    return ACL_SUCCESS;
+    return  RT_ERROR_NONE;
 }
 
 s32 sal_close_name_map(void* name_map)
@@ -1119,7 +1154,7 @@ s32 sal_create_name_map(const char* name, rt_name_map_stub_t** name_map)
     char mapped_name[SAL_DMEM_UNIQUE_ID_BYTES] = {0};
     ret = snprintf_s(mapped_name, SAL_DMEM_UNIQUE_ID_BYTES, SAL_DMEM_UNIQUE_ID_BYTES - 1,
                             "%s%s", SAL_DMEM_UNIQUE_ID_PREFIX, name);
-    if (ret == -1)
+    if (-1 == ret)
     {
         HCCL_ERROR("snprintf_s failed[%d]", ret);
         return SAL_E_MEMORY;
@@ -1129,7 +1164,7 @@ s32 sal_create_name_map(const char* name, rt_name_map_stub_t** name_map)
     rt_name_map_stub_t* name_map_ptr =
         (rt_name_map_stub_t*)sal_share_memory_create(mapped_name, (sizeof(rt_name_map_stub_t)));
 
-    if ( name_map_ptr == NULL )
+    if ( NULL == name_map_ptr )
     {
         HCCL_ERROR("create share memory %s failed", mapped_name);
         return SAL_E_PARA;
@@ -1141,14 +1176,14 @@ s32 sal_create_name_map(const char* name, rt_name_map_stub_t** name_map)
 }
 
 /*****************************************************************************
- 函 数 名  : aclrtMallocWithCfg & aclrtMallocForTaskScheduler
+ 函 数 名  : rtMalloc
  功能描述  : 设备内存申请
  输入参数  : void **devPtr
              uint64_t size
-             aclrtMemMallocPolicy policy
-             aclrtMallocConfig *cfg
+             rtMemType_t type
+             uint16_t moudleId
  输出参数  : 无
- 返 回 值  : aclError
+ 返 回 值  : rtError_t
  调用函数  :
  被调函数  :
 
@@ -1161,13 +1196,7 @@ s32 sal_create_name_map(const char* name, rt_name_map_stub_t** name_map)
     修改内容   : 桩函数中rtMalloc申请共享内存，以便rtIpcSetMemoryName等跨进程操作
 
 *****************************************************************************/
-
-aclError aclrtMallocForTaskScheduler(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
-{
-    return aclrtMallocWithCfg(devPtr, size, policy, cfg);
-}
-
-aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
+rtError_t rtMalloc( void** devPtr, uint64_t size, rtMemType_t type , uint16_t moudleId)
 {
     char my_unique_id[SAL_UNIQUE_ID_BYTES];
     char mem_name[SAL_DMEM_UNIQUE_ID_BYTES];
@@ -1177,17 +1206,15 @@ aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy pol
         return ACL_ERROR_RT_PARAM_INVALID;
     }
 
-    if (policy > ACL_MEM_ACCESS_USER_SPACE_READONLY)
+    if (RT_MEMORY_RESERVED <= type)
     {
         return ACL_ERROR_RT_PARAM_INVALID;
     }
 
-    if (cfg == nullptr || cfg->numAttrs == 0 || cfg->attrs == nullptr ||
-        cfg->attrs->attr != ACL_RT_MEM_ATTR_MODULE_ID || cfg->attrs->value.moduleId != HCCL)
+    if (moudleId != HCCL)
     {
         return ACL_ERROR_RT_PARAM_INVALID;
     }
-
     /* 通过uniqueid的方式，申请桩函数设备内存的名字 */
     s32 ret = SalGetUniqueId(my_unique_id);
 
@@ -1201,28 +1228,30 @@ aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy pol
     ret = snprintf_s(mem_name, SAL_DMEM_UNIQUE_ID_BYTES, SAL_DMEM_UNIQUE_ID_BYTES - 1,
                             "%s%s", SAL_DMEM_UNIQUE_ID_PREFIX, my_unique_id);
 
-    if (ret == -1)
+    if (-1 == ret)
     {
         HCCL_ERROR("snprintf_s failed[%d]", ret);
+        // return RT_ERROR_INVALID_MEMCPY_DIRECTION;
         return ACL_ERROR_RT_CONTEXT_NULL;
     }
 
     /* 封装的共享内存结构自带了管理信息,返回值是管理信息后的有效存储空间 */
     void* shm_buf = (void*)sal_share_memory_create(mem_name, size);
 
-    if (shm_buf == nullptr)
+    if (NULL == shm_buf)
     {
         HCCL_ERROR("sal_share_memory_create failed, device_memory_share_info is NULL");
         return ACL_ERROR_RT_MEMORY_ALLOCATION;
     }
 
-    HCCL_DEBUG("aclrtMallocWithCfg sal_share_memory_create[%s] OK", mem_name);
+    HCCL_DEBUG("rtMalloc sal_share_memory_create[%s] OK", mem_name);
 
     *devPtr = shm_buf;
-    rtIpcBasePtrAdd(shm_buf, size);
 
-    return ACL_SUCCESS;
+    rtIpcBasePtrAdd(shm_buf, size);
+    return RT_ERROR_NONE;
 }
+
 
 /*****************************************************************************
  函 数 名  : aclrtFree
@@ -1328,7 +1357,7 @@ aclError aclrtMallocHostWithCfg(void **hostPtr, uint64_t size, aclrtMallocConfig
 
     *hostPtr = buf;
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
 /*****************************************************************************
@@ -1344,7 +1373,7 @@ aclError aclrtMallocHostWithCfg(void **hostPtr, uint64_t size, aclrtMallocConfig
       1. 2018年7月18日      创建
 
 *****************************************************************************/
-aclError aclrtFreeHost( void* hostPtr )
+rtError_t aclrtFreeHost( void* hostPtr )
 {
     if (!hostPtr)
     {
@@ -1353,7 +1382,35 @@ aclError aclrtFreeHost( void* hostPtr )
 
     free(hostPtr);
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
+}
+
+/*****************************************************************************
+ 函 数 名  : rtMallocHostSharedMemory
+ 功能描述  :
+ 输入参数  :
+ 输出参数  : 无
+ 返 回 值  :
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史  :
+      1. 2022年12月20日      创建
+
+*****************************************************************************/
+rtError_t rtMallocHostSharedMemory(rtMallocHostSharedMemoryIn *in,
+                                   rtMallocHostSharedMemoryOut *out)
+{
+  out->ptr = new uint8_t[in->size];
+  out->devPtr = new uint8_t[in->size];
+  return RT_ERROR_NONE;
+}
+
+rtError_t rtFreeHostSharedMemory(rtFreeHostSharedMemoryIn *in)
+{
+  delete[] (uint8_t*)in->ptr;
+  delete[] (uint8_t*)in->devPtr;
+  return RT_ERROR_NONE;
 }
 
 #ifdef __cplusplus
@@ -1527,44 +1584,6 @@ aclError aclrtIpcMemGetExportKey(void *ptr, size_t byteCount, char *name, size_t
 }
 
 /*****************************************************************************
- 函 数 名  : rtIpcCloseMemory
- 功能描述  : 关闭通过rtIpcOpenMemory打开的共享内存
- 输入参数  : void* ptr
- 输出参数  : 无
- 返 回 值  : rtError_t
- 调用函数  :
- 被调函数  :
-
- 修改历史      :
-  1.日    期   : 2018年6月26日
-    作    者   : liubanglan
-    修改内容   : 新生成函数
-
-*****************************************************************************/
-rtError_t rtIpcCloseMemory(const void* ptr)
-{
-    void *baseptr = rtIpcOpenBasePtrLookup(ptr);
-    if (baseptr == nullptr)
-    {
-        HCCL_ERROR("rtIpcOpenBasePtrLookup failed ret[%p]", ptr);
-        return RT_ERROR_NONE;
-    }
-    share_mem_t* shm_head = (share_mem_t*)((char*) baseptr - offsetof(share_mem_t, user_data));
-    u32 openCnt = __sync_fetch_and_sub(&(shm_head->open_ref_cnt), 1);
-     if (openCnt == 1) {
-        /* 通过共享内存名称在本进程关闭桩函数共享设备内存 */
-        sal_share_memory_destroy((void*)baseptr);
-
-        /* 销毁IPC memory 白名单相关的共享内存*/
-        DestroyIpcMemShm();
-
-        rtIpcOpenBasePtrErase(baseptr);
-     }
-
-    return RT_ERROR_NONE;
-}
-
-/*****************************************************************************
  函 数 名  : rtIpcDestroyMemoryName
  功能描述  : 销毁共享名称
  输入参数  : void* ptr
@@ -1580,29 +1599,14 @@ rtError_t rtIpcCloseMemory(const void* ptr)
     修改内容   : 新生成函数
 
 *****************************************************************************/
-std::unordered_map<std::string, void*> g_ipcName2Ptr;
-std::mutex ipcNameMapLock;
-aclError aclrtIpcMemClose(const char *key)
+rtError_t rtIpcDestroyMemoryName(const char *name)
 {
     //暂时不改现有rtIpcSetMemoryName 实现，此处不销毁，在close 时销毁
-    if (!key)
+    if (!name)
     {
         return ACL_ERROR_RT_PARAM_INVALID;
     }
-    std::unique_lock<std::mutex> lock(ipcNameMapLock);
-    auto iter = g_ipcName2Ptr.find(key);
-    if (iter == g_ipcName2Ptr.end()) {
-        HCCL_ERROR("[aclrtIpcMemClose]key[%s] is not found, g_ipcName2Ptr size[%zu]", key, g_ipcName2Ptr.size());
-        return ACL_ERROR_RT_PARAM_INVALID;
-    }
-
-    void *ptr = iter->second;
-    if (rtIpcCloseMemory(ptr) != RT_ERROR_NONE) {
-        HCCL_ERROR("[aclrtIpcMemClose]rtIpcCloseMemory failed, ptr[%p], key[%s]", ptr, key);
-        return ACL_ERROR_RT_PARAM_INVALID;
-    }
-    g_ipcName2Ptr.erase(iter);
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
 /*****************************************************************************
@@ -1690,10 +1694,9 @@ aclError aclrtIpcMemSetImportPid(const char *key, int32_t *pid, size_t num)
     return ACL_SUCCESS;
 }
 
-aclError aclrtIpcMemImportPidInterServer(const char *name, aclrtServerPid *serverPids, size_t num)
+rtError_t rtSetIpcMemorySuperPodPid(const char *name, u32 peerSdid, s32 peerPid[], int num)
 {
-    const aclrtServerPid &rtServerPid = *serverPids;
-    return aclrtIpcMemSetImportPid(name, rtServerPid.pid, rtServerPid.num);
+    return aclrtIpcMemSetImportPid(name, peerPid, static_cast<size_t>(num));
 }
 
 /*****************************************************************************
@@ -1726,7 +1729,7 @@ aclError aclrtIpcMemImportByKey(void **ptr, const char *name, uint64_t flag)
     int j = 0;
     for (i=0; i < IPC_SHM_MEM_NUM_MAX; i++) {
         if (!strcmp(shm_buf->memNode[i].ipcName, name)) {
-            s32 pid = 0;
+            u32 pid = 0;
             SalGetBareTgid(&pid);    // 当前进程id
             for (j=0; j < IPC_SHM_PID_NUM_MAX; j++) {
                 if (shm_buf->memNode[i].pid[j] == pid) {
@@ -1759,7 +1762,7 @@ if (ret != SAL_OK)
     return ACL_ERROR_RT_MEMORY_ALLOCATION;
 }
 
-/* 如果此时打开的name_map内没有内容，说明没有执行过rtIpcSetMemoryName*/
+/* 如果此时打开的name_map内没有内容，说明没有执行过rtIpcSetMemoryName,TODO */
 if (0 == name_map_ptr->valid_flag)
 {
     HCCL_ERROR("name[%s] not set, open failed", name);
@@ -1811,11 +1814,49 @@ else
 }
 
 /*****************************************************************************
- 函 数 名  : 获取页表大小
- 功能描述  : aclrtPointerGetAttributes 获取指针属性
+ 函 数 名  : rtIpcCloseMemory
+ 功能描述  : 关闭通过rtIpcOpenMemory打开的共享内存
  输入参数  : void* ptr
  输出参数  : 无
- 返 回 值  : aclError
+ 返 回 值  : rtError_t
+ 调用函数  :
+ 被调函数  :
+
+ 修改历史      :
+  1.日    期   : 2018年6月26日
+    作    者   : liubanglan
+    修改内容   : 新生成函数
+
+*****************************************************************************/
+rtError_t rtIpcCloseMemory(const void* ptr)
+{
+    void *baseptr = rtIpcOpenBasePtrLookup(ptr);
+    if (baseptr == nullptr)
+    {
+        HCCL_ERROR("rtIpcOpenBasePtrLookup failed ret[%p]", ptr);
+        return RT_ERROR_NONE;
+    }
+    share_mem_t* shm_head = (share_mem_t*)((char*) baseptr - offsetof(share_mem_t, user_data));
+    u32 openCnt = __sync_fetch_and_sub(&(shm_head->open_ref_cnt), 1);
+     if (openCnt == 1) {
+        /* 通过共享内存名称在本进程关闭桩函数共享设备内存 */
+        sal_share_memory_destroy((void*)baseptr);
+
+        /* 销毁IPC memory 白名单相关的共享内存*/
+        DestroyIpcMemShm();
+
+        rtIpcOpenBasePtrErase(baseptr);
+     }
+
+    return RT_ERROR_NONE;
+}
+
+/*****************************************************************************
+ 函 数 名  : 获取页表大小
+ 功能描述  : rtPointerGetAttributes 获取指针属性
+ 输入参数  : void* ptr
+ 输出参数  : 无
+ 返 回 值  : rtError_t
  调用函数  :
  被调函数  :
 
@@ -1825,28 +1866,12 @@ else
     修改内容   : 新生成函数
 
 *****************************************************************************/
-aclError aclrtPointerGetAttributes(const void *ptr, aclrtPtrAttributes *attributes)
+rtError_t rtPointerGetAttributes(rtPointerAttributes_t *attributes, const void *ptr)
 {
     //桩函数固定反回2M的页表大小
     attributes->pageSize = 1;
 
-    return ACL_SUCCESS;
-}
-
-aclError aclrtHostRegister(void *ptr, uint64_t size, aclrtHostRegisterType type, void **devPtr)
-{
-    *devPtr = ptr;
-    return ACL_SUCCESS;
-}
-
-aclError aclrtHostUnregister(void *ptr)
-{
-    return ACL_SUCCESS;
-}
-
-aclError aclrtGetOpTimeOutInterval(uint64_t *interval)
-{
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
 rtError_t rtMemPrefetchToDevice(void *ptr, uint64_t size, int32_t advise)
@@ -1854,9 +1879,30 @@ rtError_t rtMemPrefetchToDevice(void *ptr, uint64_t size, int32_t advise)
 return RT_ERROR_NONE;
 }
 
+rtError_t rtMemcpyAsyncWithCfgV2(void *dst, uint64_t dest_max, const void *src, uint64_t count,
+                                 rtMemcpyKind_t kind, rtStream_t stm, const rtTaskCfgInfo_t *cfgInfo)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtReduceAsyncWithCfgV2(void *dst, uint64_t destMax, const void *src, uint64_t cnt,
+    rtRecudeKind_t kind, rtDataType_t type, rtStream_t stm, const rtTaskCfgInfo_t *cfgInfo)
+{
+
+    return RT_ERROR_NONE;
+}
+
 #ifdef __cplusplus
 } // extern "C"
 #endif
+
+QosErrorCode QosGetStreamEngineQos(QosStreamType label, QosEngineType engine, const std::string &op,
+                                   int devId, QosConfig* info)
+{
+    info->qos = 0xFFFFU;
+    info->mpamId = 0xFFFFU;
+    return QosErrorCode::QOS_SUCCESS;
+}
 
 bool Adx::AdumpIsDumpEnable(Adx::DumpType type)
 {
@@ -2017,17 +2063,6 @@ void rtSetCommonPidMode(bool state)
     g_isCommonPidMode = state;
 }
 
-aclError aclrtDeviceGetBareTgid(s32 *pid)
-{
-    if (g_isCommonPidMode == false) {
-        *pid = syscall(SYS_gettid);
-    } else {
-        *pid = getpid();
-    }
-
-    return RT_ERROR_NONE;
-}
-
 rtError_t rtDeviceGetBareTgid(u32 *pid)
 {
     if (g_isCommonPidMode == false) {
@@ -2049,50 +2084,24 @@ aclError aclrtReserveMemAddress(void **virPtr, size_t size, size_t alignment, vo
     return ACL_SUCCESS;;
 }
 
-aclError aclrtReserveMemAddressNoUCMemory(void **virPtr, size_t size, size_t alignment, void *expectPtr, uint64_t flags)
-{
-    (void)virPtr;
-    (void)size;
-    (void)alignment;
-    (void)expectPtr;
-    (void)flags;
-    return ACL_SUCCESS;;
-}
-
 aclError aclrtReleaseMemAddress(void *virPtr)
 {
     (void)virPtr;
     return ACL_SUCCESS;
 }
 
-aclError aclrtFreePhysical(aclrtDrvMemHandle handle)
+rtError_t rtMallocPhysical(void **handle, size_t size, rtDrvMemProp_t *prop, uint64_t flags)
 {
-    (void)handle;
-    return ACL_SUCCESS;
-}
-
-aclError aclrtMallocPhysical(aclrtDrvMemHandle *handle, size_t size, const aclrtPhysicalMemProp *prop, uint64_t flags)
-{
+    // void
     (void)handle;
     (void)size;
     (void)prop;
     (void)flags;
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
-aclError aclrtMemGetAllocationGranularity(aclrtPhysicalMemProp *prop, aclrtMemGranularityOptions option, size_t *granularity)
+aclError aclrtFreePhysical(aclrtDrvMemHandle handle)
 {
-    (void)prop;
-    (void)option;
-    if(granularity != nullptr) {
-        *granularity = 2097152;
-    }
-    return ACL_SUCCESS;
-}
-
-aclError aclrtMemRetainAllocationHandle(void *virPtr, aclrtDrvMemHandle *handle)
-{
-    (void)virPtr;
     (void)handle;
     return ACL_SUCCESS;
 }
@@ -2171,31 +2180,37 @@ int setDevPhyId(uint32_t devIndex)
     return DRV_ERROR_NONE;
 }
 
-aclError aclrtGetPhyDevIdByLogicDevId(int32_t logicDevId, int32_t *const phyDevId)
+rtError_t rtGetDevicePhyIdByIndex(uint32_t devIndex, uint32_t *phyId)
 {
     if (gBoardId == 0x2000) {
-        *phyDevId = logicDevId * 2;
-        return ACL_SUCCESS;
+        *phyId = devIndex*2;
+        return RT_ERROR_NONE;
     }
 
-    *phyDevId = logicDevId;
+    *phyId = devIndex;
     if (gDevPhyId) {
-        *phyDevId = static_cast<int32_t>(gDevPhyId);
+        *phyId = gDevPhyId;
     }
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
-rtError_t rtsGetLogicDevIdByPhyDevId(int32_t phyDevId, int32_t *const logicDevId)
+rtError_t rtGetDeviceIndexByPhyId(u32 phyId, u32* devIndex)
 {
     if (gBoardId == 0x2000) {
-        *logicDevId = phyDevId / 2;
-        return ACL_SUCCESS;
+        *devIndex = phyId/2;
+        return RT_ERROR_NONE;
     }
-    *logicDevId = phyDevId;
+    *devIndex = phyId;
     if (gDevPhyId) {
-        *logicDevId = static_cast<int32_t>(gDevPhyId);
+        *devIndex = gDevPhyId;
     }
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtGetVisibleDeviceIdByLogicDeviceId(const int32_t logicDeviceId, int32_t *visibleDeviceId)
+{
+    *visibleDeviceId = logicDeviceId;
+    return RT_ERROR_NONE;
 }
 
 rtError_t rtGetSocVersion(char *chipVer, u32 maxLen)
@@ -2396,15 +2411,15 @@ namespace cce
 
 #if 1 //Cloud迭代1新增桩函数
 /*****************************************************************************
- 函 数 名  : aclrtReduceAsync
+ 函 数 名  : rtReduceAsync
  功能描述  : 跨V80的inline reduce操作, 仅V80支持
  输入参数  : void *dst  :本地数据输入地址
              void *src  :远端数据输入地址
              u64 count  :数据字节数
-             aclrtReduceKind kind    :规约类型
-             aclDataType type      :数据类型
+             rtRecudeKind_t kind    :规约类型
+             rtDataType_t type      :数据类型
  输出参数  : void *dst  :结果数据输出地址
- 返 回 值  : aclError
+ 返 回 值  : rtError_t
  调用函数  :
  被调函数  :
 
@@ -2414,8 +2429,7 @@ namespace cce
     修改内容   : 新生成函数
 
 *****************************************************************************/
-aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduceKind kind, aclDataType type,
-    aclrtStream stream, void *reserve)
+rtError_t rtReduceAsync(void* dst, uint64_t destMax,const void* src, uint64_t count, rtRecudeKind_t kind, rtDataType_t type, rtStream_t stream)
 {
     cce::ccStatus_t cce_status;
     cce::ccReduceOp_t op;
@@ -2423,7 +2437,7 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
 
     switch (kind)
     {
-        case ACL_RT_MEMCPY_SDMA_AUTOMATIC_SUM:
+        case RT_MEMCPY_SDMA_AUTOMATIC_ADD:
             op = cce::CCE_RED_OP_SUM;
             break;
 
@@ -2437,23 +2451,23 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
     cce::ccDataType_t ccDataType;
     switch (type)
     {
-        case ACL_FLOAT:
+        case RT_DATA_TYPE_FP32:
             data_unit_size = sizeof(float);
             ccDataType = cce::CC_DATA_FLOAT;
             break;
-        case ACL_FLOAT16:
+        case RT_DATA_TYPE_FP16:
             data_unit_size = 2; // sizeof(fp16)
             ccDataType = cce::CC_DATA_HALF;
             break;
-        case ACL_INT16:
+        case RT_DATA_TYPE_INT16:
             ccDataType = cce::CC_DATA_INT16;
             data_unit_size = 2; // sizeof(int16)
             break;
-        case ACL_INT32:
+        case RT_DATA_TYPE_INT32:
             ccDataType = cce::CC_DATA_INT32;
             data_unit_size = 4; // sizeof(int16)
             break;
-        case ACL_INT8:
+        case RT_DATA_TYPE_INT8:
             if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B) ||
                chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910_93)) {
                 ccDataType = cce::CC_DATA_INT8;
@@ -2480,7 +2494,65 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
         return ACL_ERROR_RT_DRV_INTERNAL_ERROR;
     }
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtReduceAsyncV2(void* dst, uint64_t destMax,const void* src, uint64_t count, rtRecudeKind_t kind, rtDataType_t type,
+    rtStream_t stream, void * overflowAddr)
+{
+    cce::ccStatus_t cce_status;
+    cce::ccReduceOp_t op;
+    s32 data_unit_size = 0;
+
+    switch (kind)
+    {
+        case RT_MEMCPY_SDMA_AUTOMATIC_ADD:
+            op = cce::CCE_RED_OP_SUM;
+            break;
+
+        default:/*inline reduce 目前只支持sum*/
+        {
+            HCCL_ERROR("Not support the vector reduce red_op[%d].", kind);
+            return ACL_ERROR_RT_PARAM_INVALID;
+        }
+    }
+
+    cce::ccDataType_t ccDataType;
+    switch (type)
+    {
+        case RT_DATA_TYPE_FP32:
+            data_unit_size = sizeof(float);
+            ccDataType = cce::CC_DATA_FLOAT;
+            break;
+        case RT_DATA_TYPE_FP16:
+            data_unit_size = 2; // sizeof(fp16)
+            ccDataType = cce::CC_DATA_HALF;
+            break;
+        case RT_DATA_TYPE_INT16:
+            ccDataType = cce::CC_DATA_INT16;
+            data_unit_size = 2; // sizeof(int16)
+            break;
+        default:
+        {
+            HCCL_ERROR("Not support the vector reduce type[%d].", type);
+            return ACL_ERROR_RT_PARAM_INVALID;
+        }
+    }
+
+    uint32_t data_cnt = count / data_unit_size;
+
+    cce_status = cce::ccVectorReduce(src, dst, data_cnt,
+                                     ccDataType,
+                                     op,
+                                     stream, dst);
+
+    if (cce::CC_STATUS_SUCCESS != cce_status)
+    {
+        HCCL_ERROR("cce::ccVectorReduce run error, ret = %d", cce_status);
+        return ACL_ERROR_RT_DRV_INTERNAL_ERROR;
+    }
+
+    return RT_ERROR_NONE;
 }
 
 /**
@@ -2508,6 +2580,16 @@ aclError aclrtMemset(void *devPtr, size_t maxCount, int32_t value, size_t count)
     return -1;
   }
   return ACL_SUCCESS;
+}
+
+rtError_t rtNotifyCreateWithFlag(int32_t device, rtNotify_t *notify, uint32_t flag)
+{
+    return rtNotifyCreate(device, notify);
+}
+
+rtError_t rtIpcOpenNotifyWithFlag(rtNotify_t *notify, const char_t *name, uint32_t flag)
+{
+    return rtIpcOpenNotify(notify, name);
 }
 
 rtError_t rtNotifyGetPhyInfo(rtNotify_t notify, uint32_t *phyDevId, uint32_t *tsId)
@@ -2569,6 +2651,11 @@ rtError_t DestroyIpcNotifyShm () {
 }
 
 
+rtError_t rtIpcIntNotice(const rtIpcIntNoticeInfo_t * const, rtStream_t)
+{
+    return RT_ERROR_NONE;
+}
+
 class event_deque
 {
     public:
@@ -2585,21 +2672,18 @@ class event_deque
 };
 event_deque g_eventQueue;
 std::mutex g_eventQueueMutex;
-aclError aclrtCreateNotify(aclrtNotify *notify, uint64_t flag)
+rtError_t rtNotifyCreate(int32_t device, rtNotify_t *notify)
 {
-    int32_t device;
-    aclError rtRet = aclrtGetDevice(&device);
+
     if (device < 0 || notify == nullptr) {
         HCCL_ERROR("parameter invalid : dev_id[%d], notify[%p]", device, notify);
         return ACL_ERROR_RT_PARAM_INVALID;
     }
-    if (rtRet != ACL_SUCCESS) {
-        HCCL_ERROR("Get device failed[%d]", rtRet);
-        return rtRet;
-    }
+
+    s32 ret = 0;
 
     char ipc_notify_shm_name[NOTIFY_SHM_NAME_LEN] = {0};
-    s32 ret = snprintf_s(ipc_notify_shm_name, NOTIFY_SHM_NAME_LEN, NOTIFY_SHM_NAME_LEN - 1,
+    ret = snprintf_s(ipc_notify_shm_name, NOTIFY_SHM_NAME_LEN, NOTIFY_SHM_NAME_LEN - 1,
                        "%s-%d-%d", "hccl-notify-stub", getpid(), device);
     if (ret == -1) {
         HCCL_ERROR("snprintf_s failed[%d]", ret);
@@ -2655,10 +2739,10 @@ aclError aclrtCreateNotify(aclrtNotify *notify, uint64_t flag)
     ipc_notify->ipc_notify_shm = (rt_shm_notify_t*)notify_shm;
     HCCL_DEBUG("notify_id[%llu], device[%d]", notify_id, device);
     *notify = ipc_notify;
-    HCCL_DEBUG("aclrtCreateNotify: create notify[%p]", ipc_notify);
+    HCCL_DEBUG("rtNotifyCreate: create notify[%p]", ipc_notify);
     std::unique_lock<std::mutex> lock(g_eventQueueMutex);
     g_eventQueue.eventQueue.push_back(*notify);
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
 aclError aclrtDestroyNotify(aclrtNotify notify)
@@ -2721,6 +2805,25 @@ aclError aclrtRecordNotify(aclrtNotify notify, aclrtStream stream)
     return ACL_SUCCESS;
 }
 
+rtError_t rtNotifyWait(rtNotify_t notify, rtStream_t stream)
+{
+    if (nullptr == notify || nullptr == stream) {
+        HCCL_ERROR("parameter error : notify[%p], stream[%p]", notify, stream);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    // 压入任务队列
+    stream_class* rtstream = NULL;
+    rtstream = (stream_class*)stream;
+
+    stream_task_t stream_task;
+    stream_task.task_type = TASK_TYPE_NOTIFY_WAIT;
+    stream_task.stream_para.notify = (rt_notify_t*)notify;
+    rtstream->push_task(&stream_task);
+
+    return  RT_ERROR_NONE;
+}
+
 aclError aclrtWaitAndResetNotify(aclrtNotify notify, aclrtStream stream, uint32_t timeout)
 {
     if (nullptr == notify || nullptr == stream || !timeout) {
@@ -2743,22 +2846,19 @@ aclError aclrtWaitAndResetNotify(aclrtNotify notify, aclrtStream stream, uint32_
 #define INFO_TYPE_SDID 26
 #define INFO_TYPE_SERVER_ID 27
 #define INFO_TYPE_SUPPER_POD_ID 29
-
-aclError aclrtGetDeviceInfo(uint32_t deviceId, aclrtDevAttr attr, int64_t *value)
+rtError_t rtGetDeviceInfo(uint32_t deviceId, int32_t moduleType, int32_t infoType, int64_t *value)
 {
-    if (attr == ACL_DEV_ATTR_PHY_CHIP_ID) {
+    if(moduleType == RT_MODULE_TYPE_SYSTEM && infoType == RT_INFO_TYPE_PHY_CHIP_ID) {
         *value = deviceId;
-    } else if (attr == ACL_DEV_ATTR_AICORE_CORE_NUM || attr == ACL_DEV_ATTR_VECTOR_CORE_NUM) {
+    } else if ((moduleType == RT_MODULE_TYPE_AICORE || moduleType == RT_MODULE_TYPE_VECTOR_CORE) && infoType == INFO_TYPE_CORE_NUM) {
         *value = 32;
-    } else if (attr == ACL_DEV_ATTR_SUPER_POD_DEVIDE_ID || attr == ACL_DEV_ATTR_SUPER_POD_SERVER_ID ||
-               attr == ACL_DEV_ATTR_SUPER_POD_ID) {
+    } else if (moduleType == RT_MODULE_TYPE_SYSTEM && infoType == INFO_TYPE_SDID ||
+        infoType == INFO_TYPE_SERVER_ID || infoType == INFO_TYPE_SUPPER_POD_ID) {
         *value = 1;
-    } else if (attr = ACL_DEV_ATTR_SMP_ID) {
-        *value = 0;
     } else {
         return 1;
     }
-    return ACL_SUCCESS;
+    return  RT_ERROR_NONE;
 }
 
 rtError_t  rtGetNotifyAddress(rtNotify_t notify, uint64_t * const notifyAddres)
@@ -2825,10 +2925,8 @@ aclError aclrtNotifyGetExportKey(aclrtNotify notify, char *name, size_t len, uin
     return ACL_SUCCESS;
 }
 
-aclError aclrtNotifySetImportPid(aclrtNotify notify, int32_t *pid, size_t num)
+rtError_t rtSetIpcNotifyPid(const char *name, int32_t pid[], int num)
 {
-    rt_notify_t *ipcNotify = static_cast<rt_notify_t*>(notify);
-    const char *name = ipcNotify->ipc_notify_shm->ipc_notify_shm_name;
     if (name == NULL) {
         HCCL_ERROR("parameter error : name[%p], pid[%p], num[%d]",
             name, pid, num);
@@ -2855,11 +2953,11 @@ aclError aclrtNotifySetImportPid(aclrtNotify notify, int32_t *pid, size_t num)
             // 当前未存储Name  与PID 映射关系, 则保存当前的PID
             sal_strncpy(shm_buf->notifyNode[i].ipcName, HCCL_IPC_MEM_NAME_LEN, name, HCCL_IPC_MEM_NAME_LEN);
             shm_buf->notifyNode[i].pid = pid[0];
-            HCCL_DEBUG("aclrtNotifySetImportPid name[%s] ,pid[%d]", name, pid[0]);
+            HCCL_DEBUG("rtSetIpcNotifyPid name[%s] ,pid[%d]", name, pid[0]);
             break;
         }
     }
-    HCCL_DEBUG("after aclrtNotifySetImportPid i = %d", i);
+    HCCL_DEBUG("after rtSetIpcNotifyPid i = %d", i);
     /*释放进程间互斥锁*/
     while(!__sync_bool_compare_and_swap(&(shm_buf->ref_cnt), 1, 0));
 
@@ -2869,16 +2967,15 @@ aclError aclrtNotifySetImportPid(aclrtNotify notify, int32_t *pid, size_t num)
         return ACL_ERROR_RT_MEMORY_ALLOCATION;
     }
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
 }
 
-aclError aclrtNotifySetImportPidInterServer(aclrtNotify notify, aclrtServerPid *serverPids, size_t num)
+rtError_t rtSetIpcNotifySuperPodPid(const char *name, u32 peerSdid, s32 peerPid)
 {
-    const aclrtServerPid &serverPid = *serverPids;
-    return aclrtNotifySetImportPid(notify, serverPid.pid, serverPid.num);
+    return rtSetIpcNotifyPid(name, &peerPid, 1);
 }
 
-aclError aclrtNotifyImportByKey(aclrtNotify *notify, const char *name, uint64_t flag)
+rtError_t rtIpcOpenNotify(rtNotify_t* notify, const char *name)
 {
     if (nullptr == notify || nullptr == name) {
         HCCL_ERROR("parameter error : notify[%p], name[%p]", notify, name);
@@ -2895,7 +2992,7 @@ aclError aclrtNotifyImportByKey(aclrtNotify *notify, const char *name, uint64_t 
         //根据name 进行索引，先较对name，再较对pid
         if (!strcmp(shm_buf->notifyNode[i].ipcName, name)) {
             HCCL_INFO("notifyNode[%d], name[%s] pid[%d]", i, name, shm_buf->notifyNode[i].pid);
-            s32 pid = 0;
+            u32 pid = 0;
             SalGetBareTgid(&pid);    // 当前进程id
             if (shm_buf->notifyNode[i].pid == pid) {
                 break;
@@ -2904,7 +3001,7 @@ aclError aclrtNotifyImportByKey(aclrtNotify *notify, const char *name, uint64_t 
     }
     // 未找到NAME
     if(i == IPC_SHM_NOTIFY_NUM_MAX) {
-        HCCL_ERROR("aclrtNotifyImportByKey error , can't find name[%s]", name);
+        HCCL_ERROR("rtIpcOpenNotify error , can't find name[%s]", name);
         DestroyIpcNotifyShm();
         return ACL_ERROR_RT_PARAM_INVALID;
     }
@@ -2942,7 +3039,7 @@ aclError aclrtNotifyImportByKey(aclrtNotify *notify, const char *name, uint64_t 
     *notify = (rt_notify_t*)ipc_notify;
 
     HCCL_DEBUG("notify_id[%llu], device[%d]", ipc_notify->notify_id, notify_shm->device_id);
-    return ACL_SUCCESS;
+    return  RT_ERROR_NONE;
 }
 
 rtError_t rtNotifyGetAddr(rtNotify_t notify, uint64_t* host_PA, uint64_t* device_PA)
@@ -2964,20 +3061,52 @@ rtError_t rtNotifyGetAddr(rtNotify_t notify, uint64_t* host_PA, uint64_t* device
 
     return RT_ERROR_NONE;
 }
+
+rtError_t rtNotifyGetAddrOffset(rtNotify_t notify, uint64_t* devAddrOffset)
+{
+    if (notify == nullptr || devAddrOffset == nullptr) {
+        HCCL_ERROR("parameter error : notify[%p], devAddrOffset[%p]",
+            notify, devAddrOffset);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    rt_notify_t* ipc_notify = (rt_notify_t*)notify;
+    if (nullptr == ipc_notify->ipc_notify_shm) {
+        HCCL_ERROR("parameter error : notify_shm[%p]", ipc_notify->ipc_notify_shm);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    *devAddrOffset = (u64)&ipc_notify->ipc_notify_shm->record_cnt[ipc_notify->notify_id];
+    return RT_ERROR_NONE;
+}
 #endif
 
-aclError aclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, aclrtMemcpyKind kind)
+rtError_t rtMemcpy(void *dst, uint64_t destMax,const void *src, uint64_t count, rtMemcpyKind_t kind)
 {
-    aclError ret;
+    rtError_t ret;
 
-    ret = (aclError)memcpy_s(dst, count, src, count);
+    ret = (rtError_t)memcpy_s(dst, count, src, count);
 
     if (ret)
     {
         return ACL_ERROR_RT_PARAM_INVALID;
     }
 
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtMemcpyEx(void *dst, uint64_t destMax,const void *src, uint64_t count, rtMemcpyKind_t kind)
+{
+    rtError_t ret;
+
+    ret = (rtError_t)memcpy_s(dst, count, src, count);
+
+    if (ret)
+    {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    return RT_ERROR_NONE;
 }
 
 rtError_t rtRDMASend_stub(u32 wqe_index, struct cn_info* cn, rtStream_t stream)
@@ -2999,9 +3128,118 @@ rtError_t rtRDMASend_stub(u32 wqe_index, struct cn_info* cn, rtStream_t stream)
     return RT_ERROR_NONE;
 }
 
+rtError_t rtDevBinaryRegister(const rtDevBinary_t *bin, void **handle)
+{
+    void* ptr;
+    ptr = const_cast<void*>(bin->data);
+    *handle = ptr;
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtDevBinaryUnRegister(void *handle)
+{
+    return RT_ERROR_NONE;
+}
+
 rtError_t rtMetadataRegister(void *handle, const char *metadata)
 {
     return RT_ERROR_NONE;
+}
+
+rtError_t rtFunctionRegister(void *binHandle, const void *stubFunc, const char *stubName, const void *devFunc,
+                                     uint32_t funcMode)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtKernelLaunch(const void *stubFunc, uint32_t numBlocks, void *args, uint32_t argsSize,
+                                 rtSmDesc_t *smDesc, rtStream_t stream)
+{
+    int32_t count;
+    cce::ccDataType_t opDataType;
+    cce::ccReduceOp_t opComputeType;
+    string opName = (char *)stubFunc;
+    void** args0 = (void**)args;
+
+    char* tilingData = (char*)*(args0 + 3);
+    int32_t* countPtr = reinterpret_cast<int32_t*>(tilingData);
+
+    // Mod for optimize runtime Stub by l on 2018-01-11 Below
+    stream_class* rtstream = NULL;
+    rtstream = (stream_class*)stream;
+    if (opName.find("add") != opName.npos) {
+        opComputeType = cce::CCE_RED_OP_SUM;
+    } else if (opName.find("mul") != opName.npos) {
+        opComputeType = cce::CCE_RED_OP_PROD;
+    } else if (opName.find("minimum") != opName.npos) {
+        opComputeType = cce::CCE_RED_OP_Min;
+    } else if (opName.find("maximum") != opName.npos) {
+        opComputeType = cce::CCE_RED_OP_MAX;
+    }
+
+    if (opName.find("float16") != opName.npos) {
+        opDataType = cce::CC_DATA_HALF;
+    } else if (opName.find("float32") != opName.npos) {
+        opDataType = cce::CC_DATA_FLOAT;
+    } else if (opName.find("int32") != opName.npos) {
+        opDataType = cce::CC_DATA_INT32;
+    } else if (opName.find("int8") != opName.npos) {
+        opDataType = cce::CC_DATA_INT8;
+    }
+    if (!*args0 || !*(args0+1) || !(args0+2))
+    {
+        return cce::CC_STATUS_RESERVED;
+    }
+
+    if (opDataType >= cce::CC_DATA_RESERVED)
+    {
+        return cce::CC_STATUS_RESERVED;
+    }
+
+    if (opComputeType >= cce::CCE_RED_OP_RESERVED)
+    {
+        return cce::CC_STATUS_RESERVED;
+    }
+    if (opDataType != cce::CC_DATA_INT8) {
+        count = *(countPtr + 1);
+    } else {
+        count = *(countPtr);
+    }
+    char targetChipVer[CHIP_VERSION_MAX_LEN] = {0};
+    rtGetSocVersion(targetChipVer, CHIP_VERSION_MAX_LEN);
+    if (!strcmp(targetChipVer, "Ascend910"))
+    {
+        if ((opDataType == cce::CC_DATA_HALF || opDataType == cce::CC_DATA_FLOAT) &&
+            (opComputeType == cce::CCE_RED_OP_SUM || opComputeType == cce::CCE_RED_OP_PROD)) {
+            count = *(countPtr);
+            HCCL_INFO("JSH count80 f16f32 %d", count);
+        }
+    }
+
+    // 将vector reduce任务，压入任务队列
+    stream_task_t stream_task;
+    stream_task.task_type = TASK_TYPE_REDUCE;
+    stream_task.stream_para.reducestruct.src1 = *args0;
+    stream_task.stream_para.reducestruct.src2 = *(args0+1);
+    stream_task.stream_para.reducestruct.count_reduce = count;
+    stream_task.stream_para.reducestruct.datatype = opDataType;
+    stream_task.stream_para.reducestruct.op = opComputeType;
+    stream_task.stream_para.reducestruct.dst_reduce = *(args0+2);
+
+    rtstream->push_task(&stream_task);
+    HCCL_INFO("src1[%p], src2[%p], count[%lld], dataType[%d], opType[%d], dst[%p]", *args0, *(args0+1), count,
+              opDataType, opComputeType, *(args0+2));
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+                                   rtStream_t stm, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo) {
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtAicpuKernelLaunchWithFlag(const rtKernelLaunchNames_t *launchNames, uint32_t numBlocks,
+    const rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc, rtStream_t stm, uint32_t flags) {
+  return RT_ERROR_NONE;
 }
 
 // Add for optimize runtime Stub by l on 2018-01-11 Below
@@ -3039,7 +3277,7 @@ void* threadfun(void* p)
 
     if (iRet)
     {
-        HCCL_WARNING("[STUB] Thread Handler Return Failed[%d]", iRet);
+        HCCL_WARNING("[STUB] Thread Handler Return Fail[%d]", iRet);
     }
 
     iRet = pcthread->update_thread_state(THREAD_STATE_STOPED);
@@ -4198,7 +4436,7 @@ rtError_t stream_class::notify_wait(rt_notify_t* notify)
 rtError_t stream_class::rdma_send(u32 wqe_index, void* cnn)
 {
     struct cn_info* con_info = (struct cn_info* )cnn;
-    struct SendWr* wqe = &(con_info->qp.send_mr_mgr.wq[wqe_index]);
+    struct send_wr* wqe = &(con_info->qp.send_mr_mgr.wq[wqe_index]);
 
     while ((con_info->qp.local_qp_msg_ptr->cnt != con_info->qp.remote_qp_msg_ptr->rsp_cnt) && (con_info->qp.send_mr_mgr.wqe_set[wqe_index])
         ||(!(con_info->qp.send_mr_mgr.wqe_set[wqe_index]))) {
@@ -4208,21 +4446,21 @@ rtError_t stream_class::rdma_send(u32 wqe_index, void* cnn)
     }
 
     con_info->qp.local_qp_msg_ptr->cmd = QP_CMD_WRITE_DATA;
-    con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr = (void*)wqe->dstAddr;
-    con_info->qp.local_qp_msg_ptr->msg.write_info.len =wqe->bufList->len;
+    con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr = (void*)wqe->dst_addr;
+    con_info->qp.local_qp_msg_ptr->msg.write_info.len =wqe->buf_list->len;
     con_info->qp.local_qp_msg_ptr->msg.write_info.op = wqe->op;
-    HCCL_INFO("wqe_index:%d qp.local_qp_msg_ptr.dstAddr[0x%0x] qp write_info.len[%d] wqe_op[%d] local[0x%0x] wqe_dstAddr[0x%0x]",
-            wqe_index, (u64)(con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), con_info->qp.local_qp_msg_ptr->msg.write_info.len, wqe->op, wqe->bufList->addr,
-            wqe->dstAddr);
+    HCCL_INFO("wqe_index:%d qp.local_qp_msg_ptr.dst_addr[0x%0x] qp write_info.len[%d] wqe_op[%d] local[0x%0x] wqe_dst_addr[0x%0x]",
+            wqe_index, (u64)(con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), con_info->qp.local_qp_msg_ptr->msg.write_info.len, wqe->op, wqe->buf_list->addr,
+            wqe->dst_addr);
     HcclResult ret;
     if (wqe->op == 0) {
-        HCCL_INFO("data[0][%f], wqe->bufList->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->bufList->addr)));
-        ret = sal_memcpy(&(con_info->qp.local_qp_msg_ptr->msg.write_info.data[0]), QP_MSG_MAX_SIZE, (void*)wqe->bufList->addr, wqe->bufList->len);
-        HCCL_INFO("data[0][%f], wqe->bufList->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->bufList->addr)));
+        HCCL_INFO("data[0][%f], wqe->buf_list->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->buf_list->addr)));
+        ret = sal_memcpy(&(con_info->qp.local_qp_msg_ptr->msg.write_info.data[0]), QP_MSG_MAX_SIZE, (void*)wqe->buf_list->addr, wqe->buf_list->len);
+        HCCL_INFO("data[0][%f], wqe->buf_list->addr[%f]", (float)con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], *((float*)(wqe->buf_list->addr)));
     } else if (wqe->op == 4){
-        void * ptrTmp = (void*)wqe->bufList->addr;
-        HCCL_INFO("[TMP] ptrTmp[%p]  notifyData[%d] Length[%d]", ptrTmp, con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], wqe->bufList->len);
-        ret = sal_memcpy((void*)wqe->bufList->addr, QP_MSG_MAX_SIZE, (con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), wqe->bufList->len);
+        void * ptrTmp = (void*)wqe->buf_list->addr;
+        HCCL_INFO("[TMP] ptrTmp[%p]  notifyData[%d] Length[%d]", ptrTmp, con_info->qp.local_qp_msg_ptr->msg.write_info.data[0], wqe->buf_list->len);
+        ret = sal_memcpy((void*)wqe->buf_list->addr, QP_MSG_MAX_SIZE, (con_info->qp.local_qp_msg_ptr->msg.write_info.dst_addr), wqe->buf_list->len);
     } else {
         HCCL_ERROR("rdma send: sal memcpy error");
         return ACL_ERROR_RT_PARAM_INVALID;
@@ -4232,8 +4470,8 @@ rtError_t stream_class::rdma_send(u32 wqe_index, void* cnn)
         return ACL_ERROR_RT_PARAM_INVALID;
     }
     con_info->qp.local_qp_msg_ptr->cnt++;
-    wqe->bufList->len = 0;
-    wqe->bufList->addr = 0;
+    wqe->buf_list->len = 0;
+    wqe->buf_list->addr = 0;
     con_info->qp.send_mr_mgr.wqe_set[wqe_index] = false;/*本wqe已发送，故标记为空*/
 
     return RT_ERROR_NONE;
@@ -4656,25 +4894,12 @@ int32_t UtraceSetGlobalAttr(const TraceGlobalAttr *attr)
     return 0;
 }
 
-int32_t AtraceSetGlobalAttr(const TraceGlobalAttr *attr)
-{
-    (void)(attr);
-    return 0;
-}
-
 typedef enum TracerType {
     TRACER_TYPE_SCHEDULE   = 0,
     TRACER_TYPE_PROGRESS   = 1,
     TRACER_TYPE_STATISTICS = 2,
     TRACER_TYPE_MAX,
 } TracerType;
-
-int32_t AtraceSave(TracerType tracerType, bool syncFlag)
-{
-    (void)(tracerType);
-    (void)(syncFlag);
-    return 0;
-}
 
 int32_t UtraceSave(TracerType tracerType, bool syncFlag)
 {
@@ -4704,91 +4929,92 @@ int stub_ibv_exp_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv
 namespace hccl
 {
 std::map<std::string, void*> dlRaFuntionPtrMap = {
-    {"RaQpCreate", (void*)&RaQpCreate},
-    {"RaGetQpContext", (void*)&RaGetQpContext},
-    {"RaGetTsqpDepth", (void*)&RaGetTsqpDepth},
-    {"RaSetTsqpDepth", (void*)&RaSetTsqpDepth},
-    {"RaQpDestroy", (void*)&RaQpDestroy},
-    {"RaQpConnectAsync", (void*)&RaQpConnectAsync},
-    {"RaGetQpStatus", (void*)&RaGetQpStatus},
-    {"RaDeinit", (void*)&RaDeinit},
-    {"RaGetNotifyBaseAddr", (void*)&RaGetNotifyBaseAddr},
-    {"RaGetSockets", (void*)&RaGetSockets},
-    {"RaInit", (void*)&RaInit},
-    {"RaIsFirstUsed", (void*)&ra_is_first_used},
-    {"RaIsLastUsed", (void*)&ra_is_last_used},
-    {"RaMrDereg", (void*)&RaMrDereg},
-    {"RaMrReg", (void*)&RaMrReg},
-    {"RaRegisterMr", (void*)&RaRegisterMr},
-    {"RaDeregisterMr", (void*)&RaDeregisterMr},
-    {"RaRdevDeinit", (void*)&RaRdevDeinit},
-    {"RaRdevInit", (void*)&RaRdevInit},
-    {"RaRdevInitV2", (void*)&RaRdevInitV2},
-    {"RaRdevInitWithBackup", (void*)&RaRdevInitWithBackup},
-    {"RaSendWr", (void*)&RaSendWr},
-    {"RaSendWrlist", (void*)&RaSendWrlist},
-    {"RaSendWrlistExt", (void*)&RaSendWrlistExt},
-    {"RaSocketBatchClose", (void*)&RaSocketBatchClose},
-    {"RaSocketBatchConnect", (void*)&RaSocketBatchConnect},
-    {"RaSocketBatchAbort", (void*)&RaSocketBatchAbort},
-    {"RaSocketDeinit", (void*)&RaSocketDeinit},
-    {"RaSocketInit", (void*)&RaSocketInit},
-    {"RaSocketInitV1", (void*)&RaSocketInitV1},
-    {"RaSocketListenStart", (void*)&RaSocketListenStart},
-    {"RaSocketListenStop", (void*)&RaSocketListenStop},
-    {"RaSocketRecv", (void*)&RaSocketRecv},
-    {"RaSocketSend", (void*)&RaSocketSend},
-    {"RaSocketSetWhiteListStatus", (void*)&RaSocketSetWhiteListStatus},
-    {"RaSocketGetWhiteListStatus", (void*)&RaSocketGetWhiteListStatus},
-    {"RaSocketWhiteListAdd", (void*)&RaSocketWhiteListAdd},
-    {"RaSocketWhiteListDel", (void*)&RaSocketWhiteListDel},
-    {"RaGetIfnum", (void*)&RaGetIfnum},
-    {"RaGetIfaddrs", (void*)&RaGetIfaddrs},
-    {"RaGetInterfaceVersion", (void*)&RaGetInterfaceVersion},
-    {"RaEpollCtlAdd", (void*)&RaEpollCtlAdd},
-    {"RaEpollCtlMod", (void*)&RaEpollCtlMod},
-    {"RaEpollCtlDel", (void*)&RaEpollCtlDel},
-    {"RaSetTcpRecvCallback", (void*)&RaSetTcpRecvCallback},
-    {"RaCqCreate", (void*)&RaCqCreate},
-    {"RaCqDestroy", (void*)&RaCqDestroy},
-    {"RaNormalQpCreate", (void*)&RaNormalQpCreate},
-    {"RaNormalQpDestroy", (void*)&RaNormalQpDestroy},
-    {"RaSetQpAttrQos", (void*)&RaSetQpAttrQos},
-    {"RaSetQpAttrTimeout", (void*)&RaSetQpAttrTimeout},
-    {"RaSetQpAttrRetryCnt", (void*)&RaSetQpAttrRetryCnt},
-    {"RaCreateCompChannel", (void*)&RaCreateCompChannel},
-    {"RaDestroyCompChannel", (void*)&RaDestroyCompChannel},
-    {"RaGetCqeErrInfo", (void*)&RaGetCqeErrInfo},
-    {"RaRdevGetCqeErrInfoList", (void*)&RaRdevGetCqeErrInfoList},
-    {"RaGetQpAttr", (void*)&RaGetQpAttr},
-    {"RaCreateSrq", (void*)&RaCreateSrq},
-    {"RaDestroySrq", (void*)&RaDestroySrq},
-    {"RaQpCreateWithAttrs", (void*)&RaQpCreateWithAttrs},
-    {"RaAiQpCreate", (void*)&RaAiQpCreate},
-    {"RaSendWrV2", (void*)&RaSendWrV2},
-    {"RaSendNormalWrlist", (void*)&RaSendNormalWrlist},
-    {"RaPollCq", (void*)&RaPollCq},
-    {"RaRecvWrlist", (void*)&RaRecvWrlist},
-    {"RaSocketGetVnicIpInfos", (void*)&RaSocketGetVnicIpInfos},
-    {"RaRdevGetSupportLite", (void*)&RaRdevGetSupportLite},
-    {"RaCreateEventHandle", (void*)&RaCreateEventHandle},
-    {"RaCtlEventHandle", (void*)&RaCtlEventHandle},
-    {"RaWaitEventHandle", (void*)&RaWaitEventHandle},
-    {"RaDestroyEventHandle", (void*)&RaDestroyEventHandle},
-    {"RaQpBatchModify", (void*)&RaQpBatchModify},
-    {"RaGetNotifyMrInfo", (void*)&RaGetNotifyMrInfo},
-    {"RaTypicalQpCreate", (void*)&RaTypicalQpCreate},
-    {"RaTypicalQpModify", (void*)&RaTypicalQpModify},
-    {"RaTypicalSendWr", (void*)&RaTypicalSendWr},
-    {"RaRdevGetPortStatus", (void*)&RaRdevGetPortStatus},
-    {"RaSocketAcceptCreditAdd", (void*)&RaSocketAcceptCreditAdd},
-    {"RaRemapMr", (void*)&RaRemapMr},
-    {"RaTlvInit", (void*)&RaTlvInit},
-    {"RaTlvDeinit", (void*)&RaTlvDeinit},
-    {"RaTlvRequest", (void*)&RaTlvRequest},
-    {"RaGetTlsEnable", (void*)&RaGetTlsEnable},
-    {"RaSaveSnapshot", (void*)&RaSaveSnapshot},
-    {"RaRestoreSnapshot", (void*)&RaRestoreSnapshot},
+    {"ra_qp_create", (void*)&ra_qp_create},
+    {"ra_get_qp_context", (void*)&ra_get_qp_context},
+    {"ra_get_tsqp_depth", (void*)&ra_get_tsqp_depth},
+    {"ra_set_tsqp_depth", (void*)&ra_set_tsqp_depth},
+    {"ra_qp_destroy", (void*)&ra_qp_destroy},
+    {"ra_qp_connect_async", (void*)&ra_qp_connect_async},
+    {"ra_get_qp_status", (void*)&ra_get_qp_status},
+    {"ra_deinit", (void*)&ra_deinit},
+    {"ra_get_notify_base_addr", (void*)&ra_get_notify_base_addr},
+    {"ra_get_sockets", (void*)&ra_get_sockets},
+    {"ra_init", (void*)&ra_init},
+    {"ra_is_first_used", (void*)&ra_is_first_used},
+    {"ra_is_last_used", (void*)&ra_is_last_used},
+    {"ra_mr_dereg", (void*)&ra_mr_dereg},
+    {"ra_mr_reg", (void*)&ra_mr_reg},
+    {"ra_register_mr", (void*)&ra_register_mr},
+    {"ra_deregister_mr", (void*)&ra_deregister_mr},
+    {"ra_rdev_deinit", (void*)&ra_rdev_deinit},
+    {"ra_rdev_init", (void*)&ra_rdev_init},
+    {"ra_rdev_init_v2", (void*)&ra_rdev_init_v2},
+    {"ra_rdev_init_with_backup", (void*)&ra_rdev_init_with_backup},
+    {"ra_send_wr", (void*)&ra_send_wr},
+    {"ra_send_wrlist", (void*)&ra_send_wrlist},
+    {"ra_send_wrlist_ext", (void*)&ra_send_wrlist_ext},
+    {"ra_socket_batch_close", (void*)&ra_socket_batch_close},
+    {"ra_socket_batch_connect", (void*)&ra_socket_batch_connect},
+    {"ra_socket_batch_abort", (void*)&ra_socket_batch_abort},
+    {"ra_socket_deinit", (void*)&ra_socket_deinit},
+    {"ra_socket_init", (void*)&ra_socket_init},
+    {"ra_socket_init_v1", (void*)&ra_socket_init_v1},
+    {"ra_socket_listen_start", (void*)&ra_socket_listen_start},
+    {"ra_socket_listen_stop", (void*)&ra_socket_listen_stop},
+    {"ra_socket_recv", (void*)&ra_socket_recv},
+    {"ra_socket_send", (void*)&ra_socket_send},
+    {"ra_socket_set_white_list_status", (void*)&ra_socket_set_white_list_status},
+    {"ra_socket_get_white_list_status", (void*)&ra_socket_get_white_list_status},
+    {"ra_socket_white_list_add", (void*)&ra_socket_white_list_add},
+    {"ra_socket_white_list_del", (void*)&ra_socket_white_list_del},
+    {"ra_get_ifnum", (void*)&ra_get_ifnum},
+    {"ra_get_ifaddrs", (void*)&ra_get_ifaddrs},
+    {"ra_get_interface_version", (void*)&ra_get_interface_version},
+    {"ra_epoll_ctl_add", (void*)&ra_epoll_ctl_add},
+    {"ra_epoll_ctl_mod", (void*)&ra_epoll_ctl_mod},
+    {"ra_epoll_ctl_del", (void*)&ra_epoll_ctl_del},
+    {"ra_set_tcp_recv_callback", (void*)&ra_set_tcp_recv_callback},
+    {"ra_cq_create", (void*)&ra_cq_create},
+    {"ra_cq_destroy", (void*)&ra_cq_destroy},
+    {"ra_normal_qp_create", (void*)&ra_normal_qp_create},
+    {"ra_normal_qp_destroy", (void*)&ra_normal_qp_destroy},
+    {"ra_set_qp_attr_qos", (void*)&ra_set_qp_attr_qos},
+    {"ra_set_qp_attr_timeout", (void*)&ra_set_qp_attr_timeout},
+    {"ra_set_qp_attr_retry_cnt", (void*)&ra_set_qp_attr_retry_cnt},
+    {"ra_create_comp_channel", (void*)&ra_create_comp_channel},
+    {"ra_destroy_comp_channel", (void*)&ra_destroy_comp_channel},
+    {"ra_get_cqe_err_info", (void*)&ra_get_cqe_err_info},
+    {"ra_rdev_get_cqe_err_info_list", (void*)&ra_rdev_get_cqe_err_info_list},
+    {"ra_get_qp_attr", (void*)&ra_get_qp_attr},
+    {"ra_create_srq", (void*)&ra_create_srq},
+    {"ra_destroy_srq", (void*)&ra_destroy_srq},
+    {"ra_qp_create_with_attrs", (void*)&ra_qp_create_with_attrs},
+    {"ra_ai_qp_create", (void*)&ra_ai_qp_create},
+    {"ra_send_wr_v2", (void*)&ra_send_wr_v2},
+    {"ra_send_normal_wrlist", (void*)&ra_send_normal_wrlist},
+    {"ra_poll_cq", (void*)&ra_poll_cq},
+    {"ra_recv_wrlist", (void*)&ra_recv_wrlist},
+    {"ra_socket_get_vnic_ip_infos", (void*)&ra_socket_get_vnic_ip_infos},
+    {"ra_rdev_get_support_lite", (void*)&ra_rdev_get_support_lite},
+    {"ra_create_event_handle", (void*)&ra_create_event_handle},
+    {"ra_ctl_event_handle", (void*)&ra_ctl_event_handle},
+    {"ra_wait_event_handle", (void*)&ra_wait_event_handle},
+    {"ra_destroy_event_handle", (void*)&ra_destroy_event_handle},
+    {"ra_qp_batch_modify", (void*)&ra_qp_batch_modify},
+    {"ra_get_notify_mr_info", (void*)&ra_get_notify_mr_info},
+    {"ra_typical_qp_create", (void*)&ra_typical_qp_create},
+    {"ra_typical_qp_modify", (void*)&ra_typical_qp_modify},
+    {"ra_typical_send_wr", (void*)&ra_typical_send_wr},
+    //{"ra_get_device_capability", (void*)&ra_get_device_capability}
+    {"ra_rdev_get_port_status", (void*)&ra_rdev_get_port_status},
+    {"ra_socket_accept_credit_add", (void*)&ra_socket_accept_credit_add},
+    {"ra_remap_mr", (void*)&ra_remap_mr},
+    {"ra_tlv_init", (void*)&ra_tlv_init},
+    {"ra_tlv_deinit", (void*)&ra_tlv_deinit},
+    {"ra_tlv_request", (void*)&ra_tlv_request},
+    {"ra_get_tls_enable", (void*)&ra_get_tls_enable},
+    {"ra_save_snapshot", (void*)&ra_save_snapshot},
+    {"ra_restore_snapshot", (void*)&ra_restore_snapshot},
 };
 
 std::map<std::string, void*> dlTdtFuntionPtrMap = {
@@ -4813,6 +5039,7 @@ std::map<std::string, void *> dlHalFuntionPtrMap = {
     {"halGrpQuery", (void *)&halGrpQuery},
     {"drvGetDevNum", (void *)&drvGetDevNum},
     {"halGetDeviceInfo", (void *)&halGetDeviceInfo},
+    {"rtIpcIntNotice", (void *)&rtIpcIntNotice},
     {"halEschedQueryInfo", (void *)&halEschedQueryInfo},
     {"drvGetPlatformInfo", (void *)&drvGetPlatformInfo},
     {"halGetChipInfo", (void *)&halGetChipInfo},
@@ -4839,22 +5066,24 @@ std::map<std::string, void*> dlHddsFuntionPtrMap = {
     {"GetBatchPsIds", (void*)&GetBatchPsIds}
 };
 
+std::map<std::string, void*> dlQosFuntionPtrMap = {
+    {"QosGetStreamEngineQos", (void*)&QosGetStreamEngineQos},
+};
+
 std::map<std::string, void*> dlProfFuntionPtrMap = {
     {"MsprofRegisterCallback", (void*)&MsprofRegisterCallback},
     {"MsprofRegTypeInfo", (void*)&MsprofRegTypeInfo},
     {"MsprofReportApi", (void*)&MsprofReportApi},
     {"MsprofReportCompactInfo", (void*)&MsprofReportCompactInfo},
     {"MsprofReportAdditionalInfo", (void*)&MsprofReportAdditionalInfo},
-    {"MsprofStr2Id", (void*)&MsprofStr2Id},
+    {"MsprofGetHashId", (void*)&MsprofGetHashId},
     {"MsprofSysCycleTime", (void*)&MsprofSysCycleTime}
 };
 
 std::map<std::string, void*> dlAtraceFuntionPtrMap = {
     {"AtraceDestroy", (void*)&AtraceDestroy},
     {"AtraceSubmit", (void*)&AtraceSubmit},
-    {"AtraceCreateWithAttr", (void*)&AtraceCreateWithAttr},
-    {"AtraceSetGlobalAttr", (void*)&AtraceSetGlobalAttr},
-    {"AtraceSave", (void*)&AtraceSave}
+    {"AtraceCreateWithAttr", (void*)&AtraceCreateWithAttr}
 };
 
 std::map<std::string, void*> dlUtraceFuntionPtrMap = {
@@ -4875,6 +5104,7 @@ static int dlTdtHandle;
 static int dlHalHandle;
 static int dlIbvHandle;
 static int dlHddsHandle;
+static int dlqosHandle;
 static int dlProfHandle;
 static int dlAtraceHandle;
 static int dlUtraceHandle;
@@ -4895,6 +5125,8 @@ void* __HcclDlopenSub(const char *libName, int mode)
         return &dlIbvHandle;
     } else if (LibName == "libhdds_base.so") {
         return &dlHddsHandle;
+    } else if (LibName == "libqos_manager.so") {
+        return &dlqosHandle;
     } else if (LibName == "libprofapi.so") {
         return &dlProfHandle;
     } else if (LibName == "libascend_trace.so") {
@@ -4912,17 +5144,6 @@ void* __HcclDlopenSub(const char *libName, int mode)
     return nullptr;
 
 }
-
-HcclResult __hrtOpenNetServiceSub(rtNetServiceOpenArgs *openArgs)
-{
-    return HCCL_SUCCESS;
-}
- 
-HcclResult __hrtCloseNetServiceSub()
-{
-    return HCCL_SUCCESS;
-}
-
 
 int __HcclDlcloseSub(void* handle)
 {
@@ -4944,6 +5165,8 @@ void* __HcclDlsymSub(void* handle, const char* funcName)
         return dlIbvFuntionPtrMap[tempName];
     } else if(handle == &dlHddsHandle) {
         return dlHddsFuntionPtrMap[tempName];
+    } else if(handle == &dlqosHandle) {
+        return dlQosFuntionPtrMap[tempName];
     } else if(handle == &dlProfHandle) {
         return dlProfFuntionPtrMap[tempName];
     } else if(handle == &dlAtraceHandle) {
@@ -4962,19 +5185,38 @@ void* __HcclDlsymSub(void* handle, const char* funcName)
 strong_alias(__HcclDlopenSub, HcclDlopen);
 strong_alias(__HcclDlcloseSub, HcclDlclose);
 strong_alias(__HcclDlsymSub, HcclDlsym);
-strong_alias(__hrtOpenNetServiceSub, hrtOpenNetService);
-strong_alias(__hrtCloseNetServiceSub, hrtCloseNetService);
 }
+
+const std::unordered_map<std::string, DevType> SOC_VER_CONVERT{
+    {"Ascend310P1", DevType::DEV_TYPE_310P1},
+    {"Ascend310P3", DevType::DEV_TYPE_310P3},
+    {"Ascend310P5", DevType::DEV_TYPE_310P3},
+    {"Ascend310P7", DevType::DEV_TYPE_310P3},
+    {"Ascend910", DevType::DEV_TYPE_910},
+    {"Ascend910A", DevType::DEV_TYPE_910},
+    {"Ascend910B", DevType::DEV_TYPE_910},
+    {"Ascend910ProA", DevType::DEV_TYPE_910},
+    {"Ascend910ProB", DevType::DEV_TYPE_910},
+    {"Ascend910PremiumA", DevType::DEV_TYPE_910},
+    {"Ascend910B1", DevType::DEV_TYPE_910B},
+    {"Ascend910B2", DevType::DEV_TYPE_910B},
+    {"Ascend910B2C", DevType::DEV_TYPE_910B},
+    {"Ascend910B3", DevType::DEV_TYPE_910B},
+    {"Ascend910B4", DevType::DEV_TYPE_910B},
+    {"Ascend910_9391", DevType::DEV_TYPE_910_93},
+    {"Ascend910_9381", DevType::DEV_TYPE_910_93},
+    {"Ascend910_9372", DevType::DEV_TYPE_910_93},
+    {"nosoc", DevType::DEV_TYPE_NOSOC}};
 
 HcclResult __hrtGetDeviceTypeStub(DevType &devType)
 {
 #ifndef HCCD
-    std::string socName;
-    CHK_RET(hrtGetSocVer(socName));
-    auto iter = SOC_VER_CONVERT.find(socName);
+    s8 targetChipVer[CHIP_VERSION_MAX_LEN] = {0};
+    CHK_RET(hrtGetSocVer(targetChipVer, CHIP_VERSION_MAX_LEN));
+    auto iter = SOC_VER_CONVERT.find(reinterpret_cast<char *>(targetChipVer));
     if (iter == SOC_VER_CONVERT.end()) {
         HCCL_ERROR("[Get][DeviceType]errNo[0x%016llx] rtGetSocVersion get illegal chipver, chip_ver[%s].", \
-            HCCL_ERROR_CODE(HCCL_E_RUNTIME), socName.c_str());
+            HCCL_ERROR_CODE(HCCL_E_RUNTIME), targetChipVer);
         return HCCL_E_RUNTIME;
     }
     devType = iter->second;
@@ -4999,6 +5241,12 @@ HcclResult __hrtGetDeviceStub(s32 *deviceLogicId)
         return HCCL_SUCCESS;
     }
     rtError_t ret = 0;
+    // if (deviceType == DevType::DEV_TYPE_910B || deviceType == DevType::DEV_TYPE_910_93) {
+    //     ret = rtGetDeviceMode(&g_devMode);
+    //     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Get][Device]errNo[0x%016llx] rtGet device mode fail, "\
+    //         "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
+    //         HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, *deviceLogicId), HCCL_E_RUNTIME);
+    // }
     ret = aclrtGetDevice(deviceLogicId);
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_WARNING("[Get][Device]errNo[0x%016llx] rtGet device fail, "\
         "please make sure that device is set. return[%d], para:deviceLogicId[%d]",
@@ -5022,15 +5270,12 @@ HcclResult __hrtGetDevicePhyIdByIndexStub(u32 deviceLogicId, u32 &devicePhyId, b
         return HCCL_SUCCESS;
     }
 
-    s32 logicDevId = static_cast<s32>(deviceLogicId);
-    s32 phyDevId;
-    aclError ret = aclrtGetPhyDevIdByLogicDevId(logicDevId, &phyDevId);
-    if (ret != ACL_SUCCESS) {
+    rtError_t ret = rtGetDevicePhyIdByIndex(deviceLogicId, &devicePhyId);
+    if (ret != RT_ERROR_NONE) {
         HCCL_ERROR("[Get][DevicePhyId]errNo[0x%016llx] rtGet device PhyId by index failed, return[%d], "\
-            "para: devIndex[%d], phyId[%d]", HCCL_ERROR_CODE(HCCL_E_DRV), ret, logicDevId, phyDevId);
+            "para: devIndex[%u], phyId[%u]", HCCL_ERROR_CODE(HCCL_E_DRV), ret, deviceLogicId, devicePhyId);
         return HCCL_E_RUNTIME;
     }
-    devicePhyId = static_cast<u32>(phyDevId);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtGetDevicePhyIdByIndex]The helper does not support this interface.");
@@ -5053,6 +5298,11 @@ enum callHccl {
     HcclOpKernelLogFp32,
     HcclOpKernelLogVariable,
 };
+
+int32_t mmDladdr(void *addr, mmDlInfo *info)
+{
+    return 0;
+}
 
 #ifdef __cplusplus
 }  // extern "C"
@@ -5130,14 +5380,20 @@ rtError_t rtStreamGetCqid(const rtStream_t stm, uint32_t *cqId, uint32_t *logicC
 }
 
 void ParallelFor(int64_t total, int64_t perUnitSize,
-    const std::function<void(int64_t, int64_t)> &work)
+    const aicpu::SharderWork &work)
 {
     return;
 }
 
-aclError aclrtCtxGetFloatOverflowAddr(void **overflowAddr) {
+rtError_t rtCtxGetOverflowAddr(void **overflowAddr) {
   *overflowAddr = (void *)0x1;
-  return ACL_SUCCESS;
+  return RT_ERROR_NONE;
+}
+
+rtError_t rtKernelGetAddrAndPrefCnt(void *hdl, const uint64_t tilingKey, const void * const stubFunc,
+                                            const uint32_t flag, void **addr, uint32_t *prefetchCnt)
+{
+    return RT_ERROR_NONE;
 }
 rtError_t rtGetDevArgsAddr(rtStream_t stm, rtArgsEx_t *argsInfo, void **devArgsAddr, void **argsHandle)
 {
@@ -5297,9 +5553,14 @@ HcclResult CreateIntraExchanger(const std::string& commTag, HcclNetDevCtx portCt
  * @return RT_ERROR_INVALID_VALUE for error input
  * @return RT_ERROR_DRV_ERR for driver error
 */
-aclError aclrtIpcMemSetAttr(const char *key, aclrtIpcMemAttrType type, uint64_t attr)
+rtError_t rtIpcSetMemoryAttr(const char *name, uint32_t type, uint64_t attr)
 {
-    return ACL_SUCCESS;
+    return RT_ERROR_NONE;
+}
+
+int tsDevSendMsgAsync(unsigned int devId, unsigned int tsId, char *msg, unsigned int msgLen, unsigned int handleId)
+{
+    return DRV_ERROR_NONE;
 }
 
 aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
@@ -5365,25 +5626,50 @@ aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream,
-                                       aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
-                                       aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
+aclError aclrtMallocWithCfg(void **devPtr, size_t size, aclrtMemMallocPolicy policy, aclrtMallocConfig *cfg)
 {
+    char my_unique_id[SAL_UNIQUE_ID_BYTES];
+    char mem_name[SAL_DMEM_UNIQUE_ID_BYTES];
+
+    if (!devPtr)
+    {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    /* 通过uniqueid的方式，申请桩函数设备内存的名字 */
+    s32 ret = SalGetUniqueId(my_unique_id);
+
+    if (ret != SAL_OK)
+    {
+        HCCL_ERROR("Generate sal_unique_id failed[%d]", ret);
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
+
+    /* UniqueID添加HCCL-mem-的前缀 */
+    ret = snprintf_s(mem_name, SAL_DMEM_UNIQUE_ID_BYTES, SAL_DMEM_UNIQUE_ID_BYTES - 1,
+                            "%s%s", SAL_DMEM_UNIQUE_ID_PREFIX, my_unique_id);
+
+    if (-1 == ret)
+    {
+        HCCL_ERROR("snprintf_s failed[%d]", ret);
+        return ACL_ERROR_RT_CONTEXT_NULL;
+    }
+
+    /* 封装的共享内存结构自带了管理信息,返回值是管理信息后的有效存储空间 */
+    void* shm_buf = (void*)sal_share_memory_create(mem_name, size);
+
+    if (nullptr == shm_buf)
+    {
+        HCCL_ERROR("sal_share_memory_create failed, device_memory_share_info is NULL");
+        return ACL_ERROR_RT_MEMORY_ALLOCATION;
+    }
+
+    HCCL_DEBUG("aclrtMallocWithCfg sal_share_memory_create[%s] OK", mem_name);
+
+    *devPtr = shm_buf;
+
     return ACL_SUCCESS;
 }
-
-
-aclError aclrtSnapShotCallbackRegister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback, void *args)
-{
-    return ACL_SUCCESS;
-}
-
-
-aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback)
-{
-    return ACL_SUCCESS;
-}
-
 
 const char *aclrtGetSocName()
 {
@@ -5399,75 +5685,46 @@ const char *aclrtGetSocName()
     return "Ascend910";
 }
 
-ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr) 
+aclError aclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, aclrtMemcpyKind kind)
 {
-    sal_memcpy(versionStr, sizeof("8.5.0"), "8.5.0", sizeof("8.5.0"));
-    return ACL_SUCCESS; 
-}
+    aclError ret;
 
-ACL_FUNC_VISIBILITY aclError aclsysGetVersionNum(char* pkgNname, int32_t* versionNum)
-{
-    *versionNum = 80500;
+    ret = (aclError)memcpy_s(dst, count, src, count);
+    if (ret)
+    {
+        return ACL_ERROR_RT_PARAM_INVALID;
+    }
     return ACL_SUCCESS;
 }
 
-rtError_t rtModelGetId(rtModel_t mdl, uint32_t *modelId)
+rtError_t rtsLaunchKernelWithHostArgs(rtFuncHandle funcHandle, uint32_t numBlocks, rtStream_t stm, rtKernelLaunchCfg_t *cfg,
+    void *hostArgs, uint32_t argsSize, rtPlaceHolderInfo_t *placeHolderArray, uint32_t placeHolderNum)
 {
     return RT_ERROR_NONE;
 }
 
-rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val)
+aclError aclmdlRICaptureThreadExchangeMode(aclmdlRICaptureMode *mode)
 {
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *val)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtEnableP2P(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t flag)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
-{
-    *status = 1;
-    return RT_ERROR_NONE;
-}
-
-rtError_t aclrtMemExportToShareableHandleV2(aclrtDrvMemHandle handle, uint64_t flags,  aclrtMemSharedHandleType shareType, void *shareableHandle)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t aclrtMemSetPidToShareableHandleV2(void *shareableHandle, aclrtMemSharedHandleType shareType, int32_t *pid, size_t pidNum)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t aclrtMemImportFromShareableHandleV2(void *shareableHandle, aclrtMemSharedHandleType shareType, uint64_t flags, aclrtDrvMemHandle *handle)
-{
-    return RT_ERROR_NONE;
-}
-
-aclError aclrtMemGetAddressRange(void *ptr, void **baseUserVa, size_t *baseVaSize)
-{
-    (void)ptr;
-    (void)baseUserVa;
-    (void)baseVaSize;
     return ACL_SUCCESS;
 }
 
-aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, size_t *total)
+aclError aclrtGetDeviceInfo(uint32_t deviceId, aclrtDevAttr attr, int64_t *value)
 {
-    *total = 64 * GIGABYTE_TO_BYTE;
-    *free = 50 * GIGABYTE_TO_BYTE;
+    *value = 1;
+    return ACL_SUCCESS;
+}
+
+aclError aclrtBinaryLoadFromData(const void *data, size_t length,
+    const aclrtBinaryLoadOptions *options, aclrtBinHandle *binHandle)
+{
+    static int i = 0;
+    *binHandle = &i;
+    return ACL_SUCCESS;
+}
+
+aclError aclrtGetFunctionAddr(aclrtFuncHandle funcHandle, void **aicAddr, void **aivAddr)
+{
+    static int i = 0;
+    *aivAddr = &i;
     return ACL_SUCCESS;
 }
