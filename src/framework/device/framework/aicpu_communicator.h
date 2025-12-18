@@ -153,6 +153,7 @@ public:
     HcclResult PrintTaskExceptionAllThreads();
     bool GetOpRetryEnable();
     void SetZeroCopyEnable(bool enable);
+    void SetSymmetricMemoryEnable(bool enable);
     bool IsTaskExceptionForHccs();
     static u32 HcclGetWaitStopExecCmdTimeout();
     u32 HcclGetWaitRetryCmdTimeout(uint32_t retryCnt);
@@ -412,6 +413,9 @@ private:
     HcclResult IsInplace(const OpParam &param, bool& isInplace);
     HcclResult ParseOpParamForCache(const OpParam &param, HcclDataType& sendType, HcclDataType& recvType, uint64_t& inputSize, uint64_t& outputSize);
 
+    //对称内存
+    HcclResult PrepareSymmetricMemory(const OpParam &param, OpCommTransport &opTransportResponse);
+
     std::unordered_map<s32, u32> opExecIndexMap_;
 
     // 管理aicpu和custom进程共享的数据
@@ -535,6 +539,7 @@ private:
     std::map<u32, u32> bsrRecvIndexMap_;
 
     bool isZeroCopy_{false};
+    bool isSymmetricMemory_{false};
     hccl::AlgOpContext algOpContext_;
     std::unique_ptr<HcclTraceInfo> UtraceInfo_;
     // taskException

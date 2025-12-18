@@ -676,10 +676,10 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     } else if (useHostComm || smallCountOptimMultiServer || smallCountOptimMultiPod) {
         algName = "AllReduceComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-    } else if (smallCountOptimSingleServer) {
+    } else if (!param.supportSymmetricMemory && smallCountOptimSingleServer) {
         algName = "AllReduceMeshSmallCountExecutor";
-    } else if (param.supportZeroCopy &&
-        (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize > HCCL_MID_COUNT_16_MB * serverNum_)) {
+    } else if (param.supportSymmetricMemory || (param.supportZeroCopy &&
+        (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize > HCCL_MID_COUNT_16_MB * serverNum_))) {
         algName = "AllReduceRingZerocopyExecutor";
     } else {
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {

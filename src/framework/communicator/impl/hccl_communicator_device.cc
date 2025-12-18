@@ -1590,4 +1590,20 @@ namespace hccl
     {
         return cclBufferManager_;
     }
+
+    HcclResult HcclCommunicator::InitSymmetricMemory()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::DeregisterWindow(HcclWindow winHandle)
+    {
+        return HCCL_SUCCESS;
+    }
+
 }

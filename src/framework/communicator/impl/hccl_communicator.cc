@@ -1703,6 +1703,10 @@ namespace hccl
         opTilingData->isInplacePreSync = static_cast<u8>(isInplacePreSync_);
         opTilingData->isPostSync = static_cast<u8>(isPostSync_);
         opTilingData->userStreamId = opParam.stream.id();
+        opTilingData->inputWindow = reinterpret_cast<u64>(opParam.inputWindow);
+        opTilingData->inputOffset = opParam.inputOffset;
+        opTilingData->outputWindow = reinterpret_cast<u64>(opParam.outputWindow);
+        opTilingData->outputOffset = opParam.outputOffset;
         return HCCL_SUCCESS;
     }
 
