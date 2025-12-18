@@ -1,4 +1,4 @@
-# # HCCL API \(c\)
+# HCCL API \(c\)
 
 -   [通信域管理](通信域管理.md)
     -   [HcclCommInitClusterInfo](HcclCommInitClusterInfo.md)
