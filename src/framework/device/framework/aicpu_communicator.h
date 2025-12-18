@@ -161,6 +161,7 @@ public:
     HcclResult PrintTaskExceptionAllThreads();
     bool GetOpRetryEnable();
     void SetZeroCopyEnable(bool enable);
+    void SetSymmetricMemoryEnable(bool enable);
     bool IsTaskExceptionForHccs();
     u32 HcclGetWaitStopExecCmdTimeout();
     u32 HcclGetWaitRetryCmdTimeout(uint32_t retryCnt);
@@ -423,6 +424,11 @@ private:
     void InsertMonitorData(Stream &stream, HcclUs &curTime, u32 sqHead, uint16_t taskId, uint8_t type);
     bool IsNeedRefreshMonitorData(AicpuStreamMontior &streamMontior, HcclUs &curTime, uint32_t remoteRank,
         uint16_t taskId, u32 sqHead, u32 sqTail, uint8_t type);
+    //对称内存
+    HcclResult PrepareSymmetricMemory(const OpParam &param, OpCommTransport &opTransportResponse);
+    HcclResult PrepareSymmetricMemRanges(const AlgResourceResponse &algResource, uint64_t inputSize, uint64_t outputSize,
+                                        std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
+
     std::unordered_map<s32, u32> opExecIndexMap_;
 
     // 管理aicpu和custom进程共享的数据
@@ -547,6 +553,7 @@ private:
     std::map<u32, AicpuStreamMontior> streamTaskMonitor_;
 
     bool isZeroCopy_{false};
+    bool isSymmetricMemory_{false};
     hccl::AlgOpContext algOpContext_;
     std::unique_ptr<HcclTraceInfo> UtraceInfo_;
     // taskException

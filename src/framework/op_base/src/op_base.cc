@@ -4593,6 +4593,72 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     HCCL_RUN_INFO("CommGetCCLBufSizeCfg success, comm[%s], size[%u]", hcclComm->GetIdentifier().c_str(), buffSize);
     return HCCL_SUCCESS;
 }
+
+std::unordered_map<CommSymWindow, HcclComm> winHandle2comm;
+std::mutex g_winHandleMtx; // 保护 winHandle2comm
+
+HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(winHandle);
+    CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
+    if (flag == HCCL_WIN_COLL_SYMMETRIC) {
+        hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
+        HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
+            hcclComm->GetIdentifier().c_str(), *winHandle, size);
+        {
+            std::lock_guard<std::mutex> lock(g_winHandleMtx);
+            winHandle2comm[*winHandle] = comm;
+        }
+    } else if (flag == HCCL_WIN_DEFAULT) {
+        HCCL_ERROR("[HcclCommSymWinRegister]flag: 0 is not supported yet.");
+        return HCCL_E_PARA;
+    }else {
+        HCCL_ERROR("[HcclCommSymWinRegister]Invalid flag[%u], must be 0 or 1", flag);
+        return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
+{
+    // 入参校验
+    CHK_PTR_NULL(winHandle);
+    HcclComm comm = nullptr;
+    std::lock_guard<std::mutex> lock(g_winHandleMtx);
+    auto it = winHandle2comm.find(winHandle);
+    if (it == winHandle2comm.end()) {
+        HCCL_ERROR("[HcclCommSymWinDeregister]Window handle[%p] is not registered.", winHandle);
+        return HCCL_E_PARA;
+    }
+    comm = it->second;
+    CHK_PTR_NULL(comm);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->DeregisterWindow(winHandle));
+    winHandle2comm.erase(it);
+    HCCL_RUN_INFO("[%s]WindowDeregister mem success, group[%s]", __func__, hcclComm->GetIdentifier().c_str());
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+{
+    // 入参校验
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(ptr);
+    CHK_PTR_NULL(winHandle);
+    CHK_PTR_NULL(offset);
+    CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    CHK_RET(hcclComm->GetCommSymWin(ptr, size, winHandle, offset));
+    HCCL_RUN_INFO("[%s]GetCommSymWin success, group[%s], handle ptr[%p], offset[%llu], size[%llu]", __func__,
+        hcclComm->GetIdentifier().c_str(), *winHandle, *offset, size);
+    return HCCL_SUCCESS;
+}
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
