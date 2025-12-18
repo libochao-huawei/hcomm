@@ -56,6 +56,7 @@
 #include "comm_config_pub.h"
 #include "new/hccl_dispatcher_ctx.h"
 #include "rank_graph.h"
+#include "symmetric_memory/symmetric_memory.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
@@ -480,6 +481,10 @@ public:
 
     void SetHcclQos(u32 hcclQos);
  	u32 GetHcclQos();
+    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
+    HcclResult DeregisterWindow(CommSymWindow winHandle);
+    HcclResult InitSymmetricMemory();
+    HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 private:
 
     bool IsEnableRoce();
@@ -779,6 +784,7 @@ private:
     bool GetSupportHDCommunicate();
     HcclResult InitOpRetry();
     HcclResult InitOpResPara();
+    bool IsSupportSymmetricMemory(HcclCMDType opType, OpParam &opParam);
     bool IsSupportZeroCopy(const OpParam &opParam);
     HcclResult PrepareZeroCopy(const std::string &algName, const AlgDesc &algDesc, OpParam &opParam);
     HcclResult UpdateZeroCopy(const OpParam &opParam, const AlgResourceResponse &algResource);
@@ -1125,6 +1131,8 @@ private:
     std::function<HcclResult()> releaseChannel_ = nullptr;
     
     u32 hcclQos_ = EnvConfig::HCCL_QOS_DEFAULT;
+    std::shared_ptr<SymmetricMemoryAgent> symmetricMemoryAgent_;
+    std::unique_ptr<SymmetricMemory> symmetricMemory_;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
