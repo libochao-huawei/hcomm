@@ -177,9 +177,11 @@ HcclResult ReduceScatterLocalReduce::RunReduceScatter(u32 rank, u32 rankSize, co
     u64 alignSize = totalSize;
     CHK_RET(CalAlign(totalSize, rankSize, alignSize));
     u64 offset = (opInfo_-> count) * unitSize;
-    DeviceMem UserMemIn = DeviceMem::create(opInfo_->inputAddr, offset * rankSize);
-    DeviceMem CommMemOut = DeviceMem::create(outputMem_.ptr(), outputMem_.size());
-    DeviceMem UserMemOut = DeviceMem::create(opInfo_->outputAddr, totalSize);
+    HCCL_INFO("[ReduceScatterLocalReduce][RunReduceScatter] rank[%u], totalSize[%llu], alignSize[%llu], offset[%llu], opInfo count[%llu], unitSize[%llu]",
+        rank, totalSize, alignSize, offset, opInfo_-> count, unitSize);
+    DeviceMem UserMemIn = DeviceMem::create(opInfo_->inputAddr, offset * rankSize); // 用户input
+    DeviceMem CommMemOut = DeviceMem::create(outputMem_.ptr(), outputMem_.size()); 
+    DeviceMem UserMemOut = DeviceMem::create(opInfo_->outputAddr, totalSize); // 用户output
 
     DeviceMem src;
     DeviceMem dst;
@@ -202,6 +204,7 @@ HcclResult ReduceScatterLocalReduce::RunReduceScatter(u32 rank, u32 rankSize, co
     CHK_RET(SubRecordMain(rankSize - base));
     CHK_RET(MainWaitSub(rankSize - base));
 
+    HCCL_INFO("liliguo [ReduceScatterLocalReduce][RunReduceScatter] rank[%u] finish0 communication, emptyDst ptr[%p], emptySrc ptr[%p]", rank, emptyDst.ptr(), emptySrc.ptr());
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, emptyDst, emptySrc, stream_));
 
     CHK_RET(MainRecordSub(meshStreams_.size()));
@@ -218,6 +221,7 @@ HcclResult ReduceScatterLocalReduce::RunReduceScatter(u32 rank, u32 rankSize, co
         dst = DeviceMem::create(static_cast<u8 *>(remMemPtr) + alignSize * (round - 1) + slices_[dstRank].offset,
             totalSize);
         src = UserMemIn.range(offset * dstRank, totalSize);
+        HCCL_INFO("liliguo [ReduceScatterLocalReduce][RunReduceScatter] rank[%u] dstRank[%u] src ptr[%p], dst ptr[%p] totalSize[%llu]", rank, dstRank, src.ptr(), dst.ptr(), totalSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, subStream,
             links[dstRank]->GetRemoteRank(), links[dstRank]->GetLinkType()));
 
@@ -228,11 +232,14 @@ HcclResult ReduceScatterLocalReduce::RunReduceScatter(u32 rank, u32 rankSize, co
     src = UserMemIn.range(offset * rank, totalSize);
     dst = UserMemOut.range(0, totalSize);
     Stream &subStream = (meshStreams_.size() > 0) ? meshStreams_[meshStreams_.size() - 1] : stream_;
+    HCCL_INFO("liliguo [ReduceScatterLocalReduce][RunReduceScatter] rank[%u] self copy src ptr[%p], dst ptr[%p], totalSize[%llu]",
+        rank, src.ptr(), dst.ptr(), totalSize);
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dst, src, subStream));
 
     CHK_RET(SubRecordMain(meshStreams_.size()));
     CHK_RET(MainWaitSub(meshStreams_.size()));
 
+    HCCL_INFO("liliguo [ReduceScatterLocalReduce][RunReduceScatter] rank[%u] finish, emptyDst ptr[%p], emptySrc ptr[%p]", rank, emptyDst.ptr(), emptySrc.ptr());
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, emptyDst, emptySrc, stream_));
     return HCCL_SUCCESS;
 }
@@ -251,6 +258,9 @@ HcclResult ReduceScatterLocalReduce::RunLocalReduce(u32 rank, u32 rankSize)
     DeviceMem dst;
     DeviceMem emptySrc = CommMemOut.range(0, 0);
     DeviceMem emptyDst = CommMemOut.range(0, 0);
+    HCCL_INFO("liliguo [ReduceScatterLocalReduce][RunLocalReduce] rank[%u], totalSize[%llu], alignSize[%llu], CommMemOut size[%llu], CommMemOut[%p], "
+        "slice offset[%llu], UserMemOutSize[%llu], UserMemOut[%p]",
+        rank, totalSize, alignSize, outputMem_.size(), outputMem_.ptr(), slices_[rank].offset, UserMemOut.size(), UserMemOut.ptr());
     if (rankPower < rankSize) {
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, emptyDst, emptySrc, stream_));
         CHK_RET(MainRecordSub(rankSize - rankPower - 1));
@@ -280,12 +290,15 @@ HcclResult ReduceScatterLocalReduce::RunLocalReduce(u32 rank, u32 rankSize)
             Stream &subStream = (add == 0) ? stream_ : meshStreams_[add - 1];
             src = CommMemOut.range(alignSize * (add + rankPower -1), totalSize);
             dst = (add == 0) ? UserMemOut.range(0, totalSize): CommMemOut.range(alignSize * (add - 1), totalSize);
+            HCCL_INFO("liliguo [ReduceScatterLocalReduce][RunLocalReduce] rank[%u] round[%u] add[%u] src ptr[%p], dst ptr[%p], totalSize[%llu]",
+                rank, round, add, src.ptr(), dst.ptr(), totalSize);
             CHK_RET(HcclReduceAsync(dispatcher_, static_cast<void *>(src.ptr()), count_, dataType_, reductionOp_,
                 subStream, static_cast<void *>(dst.ptr()),
                 INVALID_VALUE_RANKID, LinkType::LINK_ONCHIP, INLINE_REDUCE_BIT));
         }
         CHK_RET(SubRecordMain(rankPower - 1));
         CHK_RET(MainWaitSub(rankPower - 1));
+        HCCL_INFO("liliguo [ReduceScatterLocalReduce][RunLocalReduce] rank[%u] round[%u] finish, emptyDst ptr[%p], emptySrc ptr[%p]", rank, round, emptyDst.ptr(), emptySrc.ptr());
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, emptyDst, emptySrc, stream_));
     }
     return HCCL_SUCCESS;
