@@ -28,7 +28,7 @@ CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
 CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/add_header_sign.py"
 ENABLE_SIGN="false"
-VERSION_INFO="8.5.0.0.B010"
+VERSION_INFO="8.5.0"
 
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
@@ -416,11 +416,11 @@ if [ "${BUILD_AARCH}" == "true" ];then
 fi
 
 if [ "${ASAN}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_ASAN=true"
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_ASAN=ON"
 fi
 
 if [ "${COV}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=true"
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=ON"
 fi
 
 if [ -n "${ascend_package_path}" ];then

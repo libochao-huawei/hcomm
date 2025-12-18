@@ -154,6 +154,7 @@ HcclResult ReduceRecursiveHalvingDoubling::ReduceScatterInBlock(u32 rank, u32 ra
     u32 rankInBlock = 0;
 
     u32 rootFlag = (root_ >= part1Size_) ? 0 : root_;
+    HCCL_DEBUG("[ReduceRecursiveHalvingDoubling][ReduceScatterInBlock]rootFlag is %u, rankInBlock is %u", rootFlag, rankInBlock);
     // 需要根据root判断，让root节点必然参加reducescatter,在第一部分的rank若与root奇偶性不同，直接返回
     if (rank < part1Size_ && (rank % 2) != (rootFlag % 2)) {     // 模2判断奇偶性，本rank处于第一部分，奇偶性与root不同
         return HCCL_SUCCESS;
@@ -334,11 +335,13 @@ HcclResult ReduceRecursiveHalvingDoubling::GetNslbAdjInfo(const u32 rank, const 
         while ((rankSize >> (stepNum + 1)) != 0) {
             stepNum++;
         }
+        HCCL_DEBUG("[ReduceRecursiveHalvingDoubling]GetNslbAdjInfo start");
         for (u32 step = 0; step < stepNum; step++) {
             u32 peerRankBitmask = 1 << (stepNum - step - 1);
             u32 peerRank = rank ^ peerRankBitmask;
             NslbDpAdjInfo adjInfoStep = {0};
             u32 remoteuserRank = links[peerRank]->GetRemoteRank();
+            HCCL_DEBUG("[ReduceRecursiveHalvingDoubling]now step %u, remoteuserRank is %u", step, remoteuserRank);
             adjInfoStep.dstLocalRankId = remoteuserRank;
             adjInfoStep.phaseId = step + 1;
             adjInfoStep.rev = 0;

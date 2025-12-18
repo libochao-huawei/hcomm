@@ -64,6 +64,24 @@ HcclResult AlltoAllVDirectFullMesh::GenerateSubStreamInfo(const std::vector<Stre
     return HCCL_SUCCESS;
 }
 
+void AlltoAllVDirectFullMesh::CheckIsHaveZeroLength()
+{
+    for (auto iter : localSendRecvInfoPtr_->sendLength) {
+        if (iter == 0) {
+            isHaveZeroLength_ = true;
+            return;
+        }
+    }
+
+    for (auto iter : localSendRecvInfoPtr_->recvLength) {
+        if (iter == 0) {
+            isHaveZeroLength_ = true;
+            break;
+        }
+    }
+    return;
+}
+
 HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
 {
     mainStream_ = param.stream;
@@ -71,6 +89,7 @@ HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
     userRankSize_ = param.userRankSize;
     links_ = *param.linksPtr;
     localSendRecvInfoPtr_ = param.localSendRecvInfoPtr;
+    CheckIsHaveZeroLength();
     devNumInlocalPod_ = param.devNumInlocalPod;
     rankIdxInPod_ = param.rankIdxInPod;
     opType_ = param.opType;
@@ -126,6 +145,9 @@ HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
     // 一半的CCLOut用来发送RDMA数据，另一半用来接收RDMA数据，因此需要除以2
     rdmaDataBlockSize_ = cclOutMem_.size() / std::max(1u, rdmaConcurrentNum_) / 2;
 
+    u64 maxRecvLen = CalMaxRecvLen();
+    isHugeData_ = std::max(maxSendLen, maxRecvLen) > std::min(sdmaDataBlockSize_, rdmaDataBlockSize_);
+
     return HCCL_SUCCESS;
 }
 
@@ -138,6 +160,19 @@ std::string AlltoAllVDirectFullMesh::GetStreamIndexString()
         res += std::to_string(streamIndex) + ", ";
     }
     return res;
+}
+
+u64 AlltoAllVDirectFullMesh::CalMaxRecvLen()
+{
+    u64 maxRecvLen = 0;
+    const SendRecvInfo& localSendRecvInfo = *localSendRecvInfoPtr_;
+
+    for (u32 dstRank = 0; dstRank < localSendRecvInfo.recvLength.size(); dstRank++) {
+        maxRecvLen = std::max(maxRecvLen, localSendRecvInfo.recvLength[dstRank]);
+    }
+
+    HCCL_DEBUG("[AlltoAllVDirectFullMesh][CalMaxRecvLen] maxRecvLen[%llu]", maxRecvLen);
+    return maxRecvLen;
 }
 
 u64 AlltoAllVDirectFullMesh::CalcMaxSendLen()
@@ -490,6 +525,7 @@ HcclResult AlltoAllVDirectFullMesh::SdmaMainStreamWait(u32 step, u32 roundIdx)
             if (sendRank == userRank_) {
                 continue;
             }
+            HCCL_DEBUG("[AlltoAllVDirectFullMesh]recvRank is %u, sendRank is %u", recvRank, sendRank);
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
             if (step < readInfo.size()) {
                 HCCL_DEBUG("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] userRank [%u], recvRank[%u], "
@@ -568,6 +604,8 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
             if (sendRank == userRank_) {
                 continue;
             }
+            HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd]recvRank is %u, sendRank is %u",
+                recvRank, sendRank);
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
             const std::vector<SendDataBlock>& sendInfo = subStreamSendInfo_[sendRank];
             Stream& currStream = sdmaSubStream_[streamIndex];
@@ -824,6 +862,8 @@ HcclResult AlltoAllVDirectFullMesh::SendRecvRdmaData(u32 dstRank, u32 srcRank, s
         u64 recvDstOffset = (srcRank % rdmaConcurrentNum_ + rdmaConcurrentNum_) * rdmaDataBlockSize_;
         void* dstPtr = static_cast<u8 *>(cclOutMem_.ptr()) + recvDstOffset;
         u64 recvSrcOffset = (userRank_ % rdmaConcurrentNum_) * rdmaDataBlockSize_;
+        HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvRdmaData]recvSrcOffset is %llu, recvDstOffset is %llu",
+                recvSrcOffset, recvDstOffset);
         CHK_RET(recvTransport->RxAsync(UserMemType::OUTPUT_MEM, recvSrcOffset, dstPtr,
             recvInfo[curStep].recvLen, strem));
         if ((round == lastRdmaRoundIdx_) && (index == lastRdmaDstRanksIdx_) && (curStep == lastRdmaStep_) &&
@@ -1030,9 +1070,11 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMAFineGrained(u32 totalStep, HcclOpMeta
     return HCCL_SUCCESS;
 }
 
-HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
+HcclResult AlltoAllVDirectFullMesh::RunSDMA()
 {
     u32 totalStep = CalcNumSubStep();
+    HcclOpMetaInfoDef opMeta = HcclOpMetaInfo::GetOneForAllToAllV(
+        CopyPattern::ZCOPY, cclInMem_.size(), ((totalStep != 1) || isHaveZeroLength_), !isBigCount_);
     lastStep_ = totalStep - 1;
     // 计算每个rank分组fullmesh后需要通信的轮次，向上取整
     commRounds_ = (devNumInlocalPod_ + sdmaConcurrentNum_ - 1) / sdmaConcurrentNum_;
@@ -1055,12 +1097,12 @@ HcclResult AlltoAllVDirectFullMesh::RunSDMA(HcclOpMetaInfoDef &opMeta)
         }
 
         for (u32 step = 0; step < totalStep; step++) {
-            u32 leftRankSize = devNumInlocalPod_ - 1; // leftRankSize中去掉本卡
-            for (u32 roundIdx = 0; roundIdx < commRounds_ && leftRankSize > 0; roundIdx++) {
+            u32 currentLeftRankSize = devNumInlocalPod_ - 1; // leftRankSize中去掉本卡
+            for (u32 roundIdx = 0; roundIdx < commRounds_ && currentLeftRankSize > 0; roundIdx++) {
                 CHK_RET(InitTask(dispatcher_, mainStream_, opMeta.isEnableCache, opMeta.GetCacheKey()));
-                u32 groupRankSize = (leftRankSize > sdmaConcurrentNum_) ? sdmaConcurrentNum_ : leftRankSize;
-                CHK_RET(RunSDMATasks(roundIdx, step, groupRankSize, leftRankSize));
-                leftRankSize -= groupRankSize;
+                u32 groupRankSize = (currentLeftRankSize > sdmaConcurrentNum_) ? sdmaConcurrentNum_ : currentLeftRankSize;
+                CHK_RET(RunSDMATasks(roundIdx, step, groupRankSize, currentLeftRankSize));
+                currentLeftRankSize -= groupRankSize;
                 CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, sdmaSubStream_));
             }
         }
@@ -1105,7 +1147,7 @@ HcclResult AlltoAllVDirectFullMesh::RunAsync()
     CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, rdmaSubStreams_));
 
     if (devNumInlocalPod_ > 1) {
-        CHK_RET(RunSDMA(opMeta));
+        CHK_RET(RunSDMA());
     }
 
     if (totalRdmaRankNum_ > 0) {

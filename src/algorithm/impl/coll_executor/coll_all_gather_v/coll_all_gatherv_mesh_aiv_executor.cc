@@ -53,7 +53,7 @@ HcclResult AllGatherVMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[AllGatherVMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[AllGatherVMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
         blockDim_, blockDim), HCCL_E_PARA);
     
     HCCL_INFO("[AllGatherVMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -108,6 +108,7 @@ HcclResult AllGatherVMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &e
         if (i != localRank) {
             CHK_RET(outerCommInfo.links[i]->GetRemoteMem(UserMemType::INPUT_MEM, &(buffersIn[i])));
             CHK_RET(outerCommInfo.links[i]->GetRemoteMem(UserMemType::OUTPUT_MEM, &(buffersOut[i])));
+            HCCL_DEBUG("[AllGatherVMeshAivExecutor][KernelRun] localRank [%u]", localRank);
         } else {
             buffersIn[i] = execMem.inputMem.ptr();
             buffersOut[i] = execMem.outputMem.ptr();
@@ -118,15 +119,19 @@ HcclResult AllGatherVMeshAivExecutor::KernelRun(const OpParam &param, ExecMem &e
     }
     
     bool isOpbase = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    HCCL_DEBUG("[AllGatherVMeshAivExecutor][KernelRun] isOpbase [%d]", isOpbase);
     AivOpArgs opArgs {
         HcclCMDType::HCCL_CMD_ALLGATHER_V, execMem.inputPtr, execMem.outputPtr, extraArgs.maxCount,
         param.VDataDes.dataType, param.reduceType, param.root, isOpbase
     };
     AivTopoArgs topoArgs { localRank, localRankSize };
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     topoArgs.identify = algoAttr_.identifier;
+    HCCL_DEBUG("[AllGatherVMeshAivExecutor][KernelRun] blockDim_ [%u]", blockDim_);
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };

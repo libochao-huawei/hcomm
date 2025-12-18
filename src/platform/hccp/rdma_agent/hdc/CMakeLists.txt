@@ -79,11 +79,17 @@ endif()
 
 target_compile_options(ra_hdc PRIVATE
     -Werror -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11 -Wextra
+    -fstack-protector-strong
     $<$<CONFIG:Debug>:-g>
 )
 
 target_compile_definitions(ra_hdc PRIVATE
 
+)
+
+target_link_options(ra_hdc PRIVATE
+    -Wl,-z,now
+    $<$<CONFIG:Release>:-s>
 )
 
 if(BUILD_OPEN_PROJECT)

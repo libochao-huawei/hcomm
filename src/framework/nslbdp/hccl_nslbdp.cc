@@ -864,7 +864,7 @@ HcclResult hcclNslbDp::GetAlgAdjacencyTable(HcclCMDType opType, u32 srcLocalRank
 {
     std::string nslbIdentifier = identifier;
     int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
-    if (countUnderScores == 3) {
+    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
         size_t lastUnderScoreIndex = identifier.rfind('_');
         nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);
     }
@@ -984,7 +984,7 @@ bool hcclNslbDp::CheckCommDescExit(NslbDpOperatorInfo &OperatorInfo)
 void hcclNslbDp::fullcommDescInitTime(std::string identifier, NslbDpOperatorInfo &OperatorInfo)
 {
     int countUnderScores = std::count(identifier.begin(), identifier.end(), '_');
-    if (countUnderScores == 3) {
+    if (countUnderScores == NSLBDP_UNDERDCORES_COUNT) {
         /* 此时认为通信域描述信息中包含时间戳 */
         size_t lastUnderScoreIndex = identifier.rfind('_');
         std::string nslbIdentifier = identifier.substr(0, lastUnderScoreIndex);

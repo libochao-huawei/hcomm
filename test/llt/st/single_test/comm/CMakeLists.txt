@@ -4,7 +4,7 @@
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-# INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(hccl_stest_comm_list
@@ -39,6 +39,7 @@ set(hccl_stest_comm_list
     st_hccl_impl_alg_double_ring_concurrent_allreduce.cc
     st_allgather_mix_op_base.cc
     st_comm_init.cc
+    st_socket.cc
 )
 add_executable(hccl_stest_comm  ${hccl_stest_comm_list})
 

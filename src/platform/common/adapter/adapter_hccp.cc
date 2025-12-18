@@ -112,6 +112,9 @@ constexpr u32 TYPICAL_QP_MODIFY_VERSION = 2; // 支持QP解耦socket建链版本
 constexpr u32 SOCKET_ABORT = 97; // opcode: RA_RS_SOCKET_ABORT 
 constexpr u32 SOCKET_ABORT_VERSION = 1; // 支持socket abort的版本号
 
+constexpr u32 RS_INIT = 15; // opcode: RA_RS_INIT
+constexpr u32 RS_INIT_SUPPORT_ASYNC_VERSION = 2; // 支持socket async的版本号
+
 constexpr u32 ROCE_ENOMEM_RET = 328100; // 创建qp时由于内存不足的错误返回值
 
 template <typename T>
@@ -164,8 +167,8 @@ HcclResult hrtRaTypicalQpCreate(RdmaHandle rdmaHandle, int flag,
     RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007",
         std::vector<std::string>({"resource_type", "resource_info"}), std::vector<std::string>({"qp", qpInfoStr}));
 
-    CHK_PRT_RET(ret != 0 || (qpHandle == nullptr), HCCL_ERROR("[Create][RaQp]errNo[0x%016llx] ra qp create fail. "\
-        "params: flag[%d], qpMode[%d]. return: ret[%d]", \
+    CHK_PRT_RET(ret != 0 || (qpHandle == nullptr), HCCL_ERROR("[%s][%s]errNo[0x%016llx] ra qp create fail. "\
+        "params: flag[%d], qpMode[%d]. return: ret[%d]", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), 
         HCCL_ERROR_CODE(HCCL_E_NETWORK), flag, qpMode, ret), HCCL_E_NETWORK);
 
     s32 deviceId = 0;
@@ -186,9 +189,10 @@ HcclResult hrtRaTypicalQpModify(QpHandle qpHandle, struct TypicalQp* localQpInfo
     RPT_ENV_ERR(ret != 0, "EI0007",
         std::vector<std::string>({"resource_type", "resource_info"}), std::vector<std::string>({"qp", qpInfo}));
 
-    CHK_PRT_RET(ret == ROCE_EOPENSRC , HCCL_RUN_WARNING("ra qp modify need retry."), HCCL_E_AGAIN);
-    CHK_PRT_RET(ret != 0 , HCCL_ERROR("[modify][RaQp]errNo[0x%016llx] ra qp modify fail. return: ret[%d]", \
-        HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    CHK_PRT_RET(ret == ROCE_EOPENSRC , HCCL_RUN_WARNING("[%s][%s]ra qp modify need retry.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()), HCCL_E_AGAIN);
+    CHK_PRT_RET(ret != 0 , HCCL_ERROR("[%s][%s]errNo[0x%016llx] ra qp modify fail. return: ret[%d]", \
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
     return HCCL_SUCCESS;
 }
 
@@ -1471,8 +1475,6 @@ HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, s
                 "size[%llu Byte], recvSize[%llu Byte] timeout[%lld s]. Peerrank did not send the data in time. " \
                 "Check whether the peerrank is abnormal.", \
                 HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeout);
-            RPT_INPUT_ERR(true, "EI0006", vector<string>({"reason"}), \
-                vector<string>({BLOCK_RECV_TIMEOUT_REASON}));
             return HCCL_E_TIMEOUT;
         }
         rtRet = DlRaFunction::GetInstance().dlRaSocketRecv(fdHandle,
@@ -1500,6 +1502,56 @@ HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, s
     }
     HCCL_DEBUG("ra socket receive finished");
     return HCCL_SUCCESS;
+}
+
+HcclResult IsSupportHdcAsync(bool &isSupportHdcAsync)
+{
+    isSupportHdcAsync = false;
+    s32 deviceLogicID = -1;
+    u32 devicePhyId = 0;
+    CHK_RET(hrtGetDevice(&deviceLogicID));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicID), devicePhyId));
+    u32 version = 0;
+ 
+    // 获取版本号查看是否兼容
+    HcclResult ret = hrtRaGetInterfaceVersion(devicePhyId, RS_INIT, &version);
+    CHK_PRT_RET(ret == HCCL_E_NETWORK, HCCL_ERROR("[IsSupportHdcAsync]hrtRaGetInterfaceVersion "\
+        "failed, interface[%u]", RS_INIT), ret);
+    if (ret == HCCL_E_NOT_SUPPORT) {
+        HCCL_WARNING("this package does not support hrtRaGetInterfaceVersion, please change new package");
+        return HCCL_SUCCESS;
+    }
+ 
+    if (version >= RS_INIT_SUPPORT_ASYNC_VERSION) {
+        isSupportHdcAsync = true;
+    }
+
+    HCCL_INFO("[IsSupportHdcAsync] isSupportHdcAsync[%d], version[%d]", isSupportHdcAsync, version);
+    return HCCL_SUCCESS;
+}
+
+s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize, void **reqHandle)
+{
+    if (DlRaFunction::GetInstance().dlRaSocketSendAsync == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaSocketSendAsync(fdHandle, data, size, sentSize, reqHandle);
+}
+
+s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *receivedSize, void **reqHandle)
+{
+    if (DlRaFunction::GetInstance().dlRaSocketRecvAsync == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaSocketRecvAsync(fdHandle, data, size, receivedSize, reqHandle);
+}
+
+s32 hrtRaSocketGetAsyncReqResult(void *reqHandle, s32 *reqResult)
+{
+    if (DlRaFunction::GetInstance().dlRaGetAsyncReqResult == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaGetAsyncReqResult(reqHandle, reqResult);
 }
 
 HcclResult hrtGetHostIf(vector<pair<string, HcclIpAddress>> &hostIfs, u32 devPhyId)
@@ -2883,6 +2935,7 @@ HcclResult HrtRaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
     s32 ret = DlRaFunction::GetInstance().dlRaRaGetTlsEnable(info, tlsEnable);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[HrtRaGetTlsEnable]errNo[0x%016llx] "
         "failed ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    HCCL_INFO("HrtRaGetTlsEnable phyId[%u], tlsEnable[%d]", info->phyId, *tlsEnable);
     return HCCL_SUCCESS;
 }
 
@@ -2907,5 +2960,72 @@ HcclResult SnapShotRestoreAction(s32 networkMode, u32 devicePhyId)
     s32 ret = DlRaFunction::GetInstance().dlRaRestoreSnapShot(&raInfo);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("%s errNo[0x%016llx] failed ret[%d], networkMode[%d], phyId[%u]",
         __func__, HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, networkMode, devicePhyId), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HrtRaGetHccnCfg(s32 networkMode, u32 devicePhyId, enum HccnCfgKeyT key, std::string &value)
+{
+    u32 raGetHccnCfg = 0;
+    HcclResult vRet = hrtRaGetInterfaceVersion(devicePhyId, GET_HCCH_CFG, &raGetHccnCfg);
+    static bool isPrintWarning = false;
+    if (vRet != HCCL_SUCCESS || raGetHccnCfg < GET_HCCH_CFG_VERSION ||
+        UNLIKELY(DlRaFunction::GetInstance().dlRaGetHccnCfg == nullptr)) {
+        if (!isPrintWarning) {
+            HCCL_WARNING("[HrtRaGetHccnCfg] this package does not support HrtRaGetHccnCfg for device, "
+                         "please change new package ret[%d], version[%lu]",
+                static_cast<int>(vRet),
+                raGetHccnCfg);
+            isPrintWarning = true;
+        }
+        return HCCL_SUCCESS;
+    }
+    struct RaInfo raInfo;
+    raInfo.mode = networkMode;
+    raInfo.phyId = devicePhyId;
+
+    HccnCfgKey hccnKey{HccnCfgKey::HCCN_CFG_UDP_PORT_MODE};
+    switch (key) {
+        case HccnCfgKeyT::HCCN_UDP_PORT_MODE:
+            hccnKey = HccnCfgKey::HCCN_CFG_UDP_PORT_MODE;
+            break;
+        case HccnCfgKeyT::HCCN_MULTI_QP_COUNT:
+            hccnKey = HccnCfgKey::HCCN_CFG_MULTI_QP_COUNT;
+            break;
+        case HccnCfgKeyT::HCCN_MULTI_QP_UDP_PORTS:
+            hccnKey = HccnCfgKey::HCCN_CFG_MULTI_QP_UDP_PORTS;
+            break;
+        default:
+            HCCL_ERROR("[HrtRaGetHccnCfg]not support key[%d]", key);
+            return HCCL_E_PARA;
+    }
+
+    constexpr std::uint32_t READ_MAX_LEN = 1024 * 2;
+    std::vector<char> buffer(READ_MAX_LEN);
+    int actualLen = static_cast<int>(buffer.size());
+    s32 ret = DlRaFunction::GetInstance().dlRaGetHccnCfg(&raInfo, hccnKey, buffer.data(), &actualLen);
+    if (ret == 0 && actualLen == 0) {  // 文件不存在的话 HCCP长度返回0,且ret为0
+        HCCL_WARNING("[HrtRaGetHccnCfg] device networkMode[%d] with phyId[%u], "
+                     "get hccn config key[%d] info is empty. Possible reasons: "
+                     "1. Device not need to use multi_qp/nslb-dp settings. "
+                     "  2. In this package, hccn_tool not support multi_qp/nslb-dp settings. "
+                     "  3. The right key not exist in device's config file or key's value is empty.",
+            networkMode,
+            devicePhyId,
+            key);
+        value.assign(buffer.data(), actualLen);
+        return HCCL_SUCCESS;
+    }
+    CHK_PRT_RET(ret != 0,  // 其他
+        HCCL_ERROR("[HrtRaGetHccnCfg]errNo[0x%016llx] error occurred."
+                   " networkMode[%d], devicePhyId[%u], key[%d], return: ret[%d]",
+            HCCL_ERROR_CODE(HCCL_E_NETWORK),
+            networkMode,
+            devicePhyId,
+            key,
+            ret),
+        HCCL_E_NETWORK);
+    value.assign(buffer.data(), actualLen != 0 && buffer[actualLen - 1] == '\0' ? actualLen - 1 : actualLen);
+    HCCL_DEBUG("[HrtRaGetHccnCfg]devicePhyId[%u] key[%d], value[%s], value len[%d]",devicePhyId, key, value.c_str(),
+                actualLen);
     return HCCL_SUCCESS;
 }

@@ -179,7 +179,7 @@ u32 AicpuHcclProcess::AicpuRpcResInitV2(HcclOpResParam *commParam, bool isCustom
     hccl::HcclCommAicpu *commAicpu = nullptr;
     HcclResult ret = HCCL_SUCCESS;
     std::string group = commParam->hcomId;
-    CHK_RET(AicpuCreateCommbyGroup(group, &commAicpu));
+    CHK_RET(AcquireAicpuComm(group, &commAicpu));
     if (commAicpu == nullptr) {
         HCCL_ERROR("[AicpuHcclProcess][AicpuRpcResInitV2]commAicpu is null group[%s]", group.c_str());
         return 1U;
@@ -200,39 +200,59 @@ u32 AicpuHcclProcess::AicpuRpcResInitV2(HcclOpResParam *commParam, bool isCustom
     return 0;
 }
 
-HcclResult AicpuHcclProcess::AicpuCreateCommbyGroup(const std::string &group, hccl::HcclCommAicpu **aicpuCommPtr)
+HcclResult AicpuHcclProcess::AcquireAicpuComm(const std::string &group, HcclCommAicpu **aicpuCommPtr)
 {
     ReadWriteLock rwlock(g_commAicpuInfo.commAicpuMapMutex);
     rwlock.writeLock();
+    
+    // 查找是否已存在该group的通信实例
     auto iter = g_commAicpuInfo.commMap.find(group);
-    if (iter == g_commAicpuInfo.commMap.end()) {
-        std::shared_ptr<hccl::HcclCommAicpu> aicpuComm;
-        try {
-            aicpuComm = std::make_shared<hccl::HcclCommAicpu>();
-        } catch (std::exception& e) {
-            HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
-            rwlock.writeUnlock();
-            return HCCL_E_PTR;
-        }
-
-        if (UNLIKELY(!aicpuComm)) {
-            HCCL_ERROR("[%s]errNo[0x%016llx] aicpuComm is nullptr", __func__, HCCL_ERROR_CODE(HCCL_E_PTR));
-            rwlock.writeUnlock();
-            return HCCL_E_PTR;
-        }
-
-        g_commAicpuInfo.commMap[group] = {aicpuComm, false};
-        HCCL_INFO("[%s]Create new comm group [%s]", __func__, group.c_str());
-        *aicpuCommPtr = aicpuComm.get();
+    if (iter != g_commAicpuInfo.commMap.end()) {
+        *aicpuCommPtr = iter->second.first.get();
+        HCCL_INFO("[%s]Reuse existing comm group [%s]", __func__, group.c_str());
         rwlock.writeUnlock();
         return HCCL_SUCCESS;
     }
+    
+    // 未找到则创建新实例
+    std::shared_ptr<HcclCommAicpu> aicpuComm;
+    try {
+        aicpuComm = std::make_shared<HcclCommAicpu>();
+    } catch (std::exception& e) {
+        HCCL_ERROR("[%s]Failed, exception caught:%s", __func__, e.what());
+        rwlock.writeUnlock();
+        return HCCL_E_PTR;
+    }
+    
+    if (UNLIKELY(!aicpuComm)) {
+        HCCL_ERROR("[%s]errNo[0x%016llx] aicpuComm is nullptr", __func__, HCCL_ERROR_CODE(HCCL_E_PTR));
+        rwlock.writeUnlock();
+        return HCCL_E_PTR;
+    }
 
-    HCCL_ERROR(
-        "[AicpuHcclProcess][%s]errNo[0x%016llx] Repeated initialization comm resource group[%s]",
-        __func__, HCCL_ERROR_CODE(HCCL_E_INTERNAL), group.c_str());
+    // 将新实例加入映射表
+    g_commAicpuInfo.commMap[group] = { aicpuComm, false };
+    *aicpuCommPtr = aicpuComm.get();
+    HCCL_INFO("[%s]Created new comm group [%s]", __func__, group.c_str());
     rwlock.writeUnlock();
-    return HCCL_E_INTERNAL;
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam)
+{
+    hccl::HcclCommAicpu *commAicpu = nullptr;
+    HcclResult ret = HCCL_SUCCESS;
+    std::string group = commAicpuParam->hcomId;
+    CHK_RET(AcquireAicpuComm(group, &commAicpu));
+    if (commAicpu == nullptr) {
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpCommInit]commAicpu is null group[%s]", group.c_str());
+        return HCCL_E_PTR;
+    }
+    ret = commAicpu->InitAicpuIndOp(commAicpuParam);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpCommInit]errNo[0x%016llx] Failed to init independent op comm group[%s]",
+        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+    return HCCL_SUCCESS;
 }
 
 ReadWriteLockBase& AicpuHcclProcess::AicpuGetCommMutex()
@@ -354,9 +374,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
         tilingData->syncMode, tilingData->root, tilingData->dstRank, tilingData->srcRank,
         tilingData->opType, tilingData->index, tilingData->length);
 
-    if (tilingData->isLaunchInOrder) {
-        CHK_RET(hcclCommAicpu->RecordHostOrder(tag, tilingData->isCapture));
-    }
+    CHK_RET(hcclCommAicpu->RecordHostOrder(commParam, tag, tilingData->orderLaunchMode));
 
     hccl::OpParam opParam;
     opParam.tag = tag;
@@ -478,7 +496,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     HcclUs startut = TIME_NOW();
     HcclResult ret = hcclCommAicpu->ExecOp(newTag, algName, opParam, commParam);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AicpuHcclProcess][AicpuRunRpcServerV2] newTag[%s] algName[%s]",
-        newTag.c_str(), algName.c_str()), ret);    
+        newTag.c_str(), algName.c_str()), ret);
     HcclUs endut = TIME_NOW();
     /* 关键状态记录 */
     std::string endInfo = "AicpuRunRpcServerV2:success,take time: " +
@@ -557,24 +575,6 @@ HcclResult AicpuHcclProcess::InitAsyncFlag(const uint32_t* lFlagAddr, const uint
     }
     return HCCL_SUCCESS;
 }
-
-HcclResult AicpuHcclProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam)
-{
-    hccl::HcclCommAicpu *commAicpu = nullptr;
-    HcclResult ret = HCCL_SUCCESS;
-    std::string group = commAicpuParam->hcomId;
-    CHK_RET(AicpuCreateCommbyGroup(group, &commAicpu));
-    if (commAicpu == nullptr) {
-        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpCommInit]commAicpu is null group[%s]", group.c_str());
-        return HCCL_E_PTR;
-    }
-    ret = commAicpu->InitAicpuIndOp(commAicpuParam);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpCommInit]errNo[0x%016llx] Failed to init independent op comm group[%s]",
-        HCCL_ERROR_CODE(ret), group.c_str()), ret);
-    return HCCL_SUCCESS;
-}
-
 
 HcclResult AicpuHcclProcess::AicpuIndOpThreadInit(ThreadMgrAicpuParam *param)
 {

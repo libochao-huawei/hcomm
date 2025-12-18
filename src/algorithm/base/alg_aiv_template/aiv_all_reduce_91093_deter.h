@@ -67,11 +67,11 @@ __aicore__ inline void AivAllReduce91093Deter::InitDataCopyOffset(uint64_t perRa
     // 当rankSize小于等于总aiv核数时，根据ranksize和数据量大小选择使用多个aiv服务一个对端（多核并行），只需一次通信
     } else {
         numTargets = 1;
-        blockNumPerGroup = block_num / rankSize_; // 多少个aiv服务一个rank
-        targetRanks[0] = block_idx / blockNumPerGroup;
+        blockNumPerGroup = blockdim_ / rankSize_; // 多少个aiv服务一个rank
+        targetRanks[0] = GetBlockIdx() / blockNumPerGroup;
 
         uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
-        blockIdxInGroup = block_idx % blockNumPerGroup;
+        blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
 
         if (len <= halfBufferCount) { // ccl够用，只需要搬一轮的情况
             countMid = 0;
@@ -134,7 +134,8 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
     TQue<AscendC::TPosition::VECIN, 1> syncQue;
     GlobalTensor<int32_t> syncGlobal;
     GlobalTensor<int32_t> syncGlobalSecond;
-    uint32_t syncBufferSize = block_num * 32;
+    uint32_t syncBufferSize = blockdim_ * 32;
+    LocalTensor<int32_t> workLocal;
 
     pipe.InitBuffer(syncQue, 1, syncBufferSize);
     syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
@@ -161,6 +162,18 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
         uint32_t curIdx = i * 4;
         buffersIn[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx));
         buffersOut[i] = (GM_ADDR)(bufferArgsTensor.GetValue(curIdx + 1));
+    }
+    PipeBarrier<PIPE_ALL>();
+
+    if (clearEnable_ == 1) {
+        workLocal = syncQue.AllocTensor<int32_t>();
+        Barrier(buffersOut, 1);
+        SyncAll(syncGlobal, workLocal, blockdim_);
+        ClearGM();
+        Barrier(buffersOut, 2);
+        SyncAll(syncGlobalSecond, workLocal, blockdim_);
+	    syncQue.FreeTensor(workLocal);
+        PipeBarrier<PIPE_ALL>();
     }
 
     int32_t curTag = (tag << TAG_MOVE_LEFT_BITS);
@@ -193,7 +206,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
             curGroupCountLast = curGroupCount;
         }
 
-        LocalTensor<int32_t> workLocal = syncQue.AllocTensor<int32_t>();
+        workLocal = syncQue.AllocTensor<int32_t>();
         // step1 本端 input -> 本端 ccl 
         for (uint32_t i = 0; i < numTargets; i++) {
             uint64_t recvOffset = avgBufferCount * targetRanks[i];
@@ -248,17 +261,17 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
 
         // 卡内每个核同步一次
         PipeBarrier<PIPE_ALL>();
-        SyncAll(syncGlobal, workLocal);
+        SyncAll(syncGlobal, workLocal, blockdim_);
         PipeBarrier<PIPE_ALL>();
 
         // step3.2 归约为numReduce份数据的reduce
         uint32_t numReduce = rankSize_ < usedBlockNum_ ? rankSize_ : usedBlockNum_;
-        if (block_idx < numReduce && block_idx != 0){
+        if (GetBlockIdx() < numReduce && GetBlockIdx() != 0){
             uint64_t dataNum = curGroupCount;
             if (rank_ == rankSize_ - 1){
                 dataNum = curGroupCountLast;
             }
-            int x = block_idx;
+            int x = GetBlockIdx();
             int64_t multiple = GetDeterministicRankOffset(x);
             int64_t target = x - multiple;
     
@@ -305,7 +318,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
         // 尾同步 
         if (bufferLoopNum > 1){
             PipeBarrier<PIPE_ALL>();
-            SyncAll(syncGlobalSecond, workLocal);
+            SyncAll(syncGlobalSecond, workLocal, blockdim_);
             PipeBarrier<PIPE_ALL>();
         }
 
@@ -332,4 +345,35 @@ __aicore__ inline void aiv_all_reduce_91093_deter(KERNEL_ARGS_DEF_A3)
     op.HeadCounter();
     op.Process<T>(buffIn0, buffOut0, buffOut1, input, output, tag, halfBufferCount, avgBufferCount, len);
     op.TailCounter();
+}
+
+
+__aicore__ inline void sk_all_reduce_deter(SUPERKERNEL_ARGS_DEF)
+{    
+    AivAllReduce91093Deter op;
+    
+    op.InitSuperKernel(hiddenInput, false);
+    // 每张卡的CCLBuffer大小为bufferSize, 平均分给ranksize*2块，每块的大小为avgBufferCount
+    uint64_t avgBufferCount = (op.len_ + op.rankSize_-1)/op.rankSize_;
+    uint64_t halfBufferCount = avgBufferCount * op.rankSize_;
+   
+    if (op.dataType_ == HcclDataType::HCCL_DATA_TYPE_INT8) {
+        op.InitDataCopyOffset<int8_t>(avgBufferCount, op.len_, op.len_);
+        op.Process<int8_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
+    } else if (op.dataType_ == HcclDataType::HCCL_DATA_TYPE_INT16) {
+        op.InitDataCopyOffset<int16_t>(avgBufferCount, op.len_, op.len_);
+        op.Process<int16_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
+    } else if (op.dataType_ ==HCCL_DATA_TYPE_INT32) {
+        op.InitDataCopyOffset<int32_t>(avgBufferCount, op.len_, op.len_);
+        op.Process<int32_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount,  op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_FP16) {
+        op.InitDataCopyOffset<half>(avgBufferCount, op.len_, op.len_);
+        op.Process<half>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
+    } else if (op.dataType_ == HCCL_DATA_TYPE_FP32) {
+        op.InitDataCopyOffset<float>(avgBufferCount, op.len_, op.len_);
+        op.Process<float>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
+    } else {
+        op.InitDataCopyOffset<bfloat16_t>(avgBufferCount, op.len_, op.len_);
+        op.Process<bfloat16_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
+    }  
 }

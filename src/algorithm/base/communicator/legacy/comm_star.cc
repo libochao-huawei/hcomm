@@ -88,7 +88,7 @@ HcclResult CommStar::MakeClientInfo(const u32 dstRank, RankInfo &dstRankInfo, bo
 
         auto iter = dstInterClientMap_.find(dstRank);
         bool check = (iter != dstInterClientMap_.end());
-        CHK_PRT_RET(check, HCCL_ERROR("[Make][ClientInfo]dstRank[%u] already exists in dst inter client map. ",
+        CHK_PRT_RET(check, HCCL_ERROR("[Make][ClientInfo]dstRank[%u] already exists in dst inter client map",
             dstRank), HCCL_E_PARA);
         dstInterClientMap_.insert(std::make_pair(dstRank, tempLinkInfo));
     } else {
@@ -127,6 +127,7 @@ HcclResult CommStar::MakeServerInfo(const u32 dstRank, RankInfo &dstRankInfo, bo
     } else {
         dstIntraServerVec_.push_back(dstRank);
     }
+    HCCL_DEBUG("[CommStar]MakeServerInfo success");
     return HCCL_SUCCESS;
 }
 

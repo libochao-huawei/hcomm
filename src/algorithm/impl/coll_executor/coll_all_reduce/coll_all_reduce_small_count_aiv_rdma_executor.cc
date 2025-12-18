@@ -95,7 +95,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalBlockDim(u32& blockDim, u3
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[CollAllReduceSmallCountAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollAllReduceSmallCountAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -139,6 +139,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::InterServerHDOneshot(const Op
     u32 &outputOffset, u64 sliceCount, u32 dbOffset, u32 interRankSize, u32 interRankId, bool isOpbase,
     std::vector<LINK> &interLinks)
 {
+    (void) isOpbase;
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, param.DataDes.dataType, param.reduceType);
     HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][InterServerHDOneshot]reduceAttr is [%llu].", reduceAttr);
     std::unique_ptr<Sender> senderInfo;
@@ -238,7 +239,9 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::KernelRun(const OpParam &para
     };
     topoArgs.identify = algoAttr_.identifier;
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, intraRankSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, intraRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag

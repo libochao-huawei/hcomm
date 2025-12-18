@@ -22,7 +22,7 @@ namespace hccl {
 class WorkspaceResourceImpl;
 class WorkspaceResource {
 public:
-    WorkspaceResource(u32 devicePhyId, s32 deviceLogicId, CCLBufferManager *cclBufferManagerPt = nullptr);
+    WorkspaceResource(u32 devicePhyId, s32 deviceLogicId, CCLBufferManager *cclBufferManagerPtr = nullptr);
     ~WorkspaceResource();
 
     HcclResult GetWorkspaceMemSize(const std::string &opType, u64 count,

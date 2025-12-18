@@ -12,293 +12,10 @@
 #include "legacy_common.h"
 #include "ffts_ctx_provider.h"
  
-namespace GraphMgr {
 using namespace std;
 
-GraphCtxMgr::GraphCtxMgr()
-{
-}
- 
-GraphCtxMgr::~GraphCtxMgr()
-{
-    argsHandleList_.clear();
-}
-
-void *GraphCtxMgr::GetGraphCtx(const char *key, uint32_t keyLen)
-{
-    useGraphConstructorV2_ = false;
-    return fftsCtxProvider.GetFftsCtx(key, keyLen, false);
-}
-
-void *GraphCtxMgr::GetGraphCtxV2(const char *key, uint32_t keyLen)
-{
-    useGraphConstructorV2_ = true;
-    return fftsCtxProvider.GetFftsCtx(key, keyLen, false);
-}
-
-HcclResult GraphCtxMgr::LaunchGraph(void *streamPtr, void *ctx, uint32_t timeout, uint32_t *ctxNum)
-{
-    timeout_ = timeout;
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    if (useGraphConstructorV2_) {
-        // 首次构图的时候如果流上的inchipWait后面没有ctx, 会实例化一个新的placeholder用来占位
-        // 构图完成, 后续重复执行这张图的时候需要跳过这些占位的ctx
-        HCCL_DEBUG("refreshIndex:%u, inchipwaitPlaceHolderNum:%u, expasionSuccessorCtxNum:%u", fftsCtxsPtr->refreshIndex,
-            fftsCtxsPtr->inchipwaitPlaceHolderNum, fftsCtxsPtr->expasionSuccessorCtxNum);
-        if (fftsCtxsPtr->completed) {
-            fftsCtxsPtr->refreshIndex += fftsCtxsPtr->inchipwaitPlaceHolderNum;
-            fftsCtxsPtr->refreshIndex += fftsCtxsPtr->expasionSuccessorCtxNum;
-        }
-    }
-
-    if (!fftsCtxsPtr->completed) {
-        if (useGraphConstructorV2_) {
-            CHK_RET(GroupTasksByStreamId(fftsCtxsPtr));
-            // 更新wait的后续ctxId的时候, 如果发现wait后面没有ctx, 会在wait后增加一个占位的ctx
-            CHK_RET(UpdateInchipNotifyCtxID(fftsCtxsPtr));
-            CHK_RET(BuildOriginalGraph(fftsCtxsPtr));
-            CHK_RET(BuildFFTSGraph(fftsCtxsPtr));
-            CHK_RET(AddCtxExpasionSuccessor(fftsCtxsPtr));
-        }
-        fftsCtxsPtr->ctxNum = fftsCtxsPtr->refreshIndex;
-        fftsCtxsPtr->completed = true;
-    }
-
-    if (useGraphConstructorV2_) {
-        for (auto &streamLastIndex : fftsCtxsPtr->lastThreadIndex) {
-            streamLastIndex.second = 0;
-        }
-    }
-
-    if (fftsCtxsPtr->refreshIndex != fftsCtxsPtr->ctxNum) {
-        HCCL_ERROR("ffts context num is invaild, expected:%u, actual:%u.", fftsCtxsPtr->ctxNum,
-            fftsCtxsPtr->refreshIndex);
-        return HCCL_E_PARA;
-    }
-
-    if (fftsCtxsPtr->ctxNum == 0) {
-        *ctxNum = fftsCtxsPtr->ctxNum;
-        HCCL_INFO("ffts context num is 0, will not submit this context.");
-        return HCCL_SUCCESS;
-    }
-
-    if (fftsCtxsPtr->ctxNum > HCCL_FFTS_CAPACITY) {
-        HCCL_ERROR("[GraphCtxMgr][LaunchTasksEx] CtxNum[%u] exceeds the limit of FFTS+ graph.", fftsCtxsPtr->ctxNum);
-        return HCCL_E_NOT_SUPPORT;
-    }
-
-    fftsCtxsPtr->refreshIndex = 0;
-    rtFftsPlusSqe_t fftsPlusSqe = {};
-    ConstructFftsSqe(fftsPlusSqe, fftsCtxsPtr);
-
-    rtFftsPlusTaskInfo_t task = {};
-    task.argsHandleInfoNum = 0;
-    task.argsHandleInfoPtr = nullptr;
-    ConstructFftsTask(task, fftsPlusSqe, fftsCtxsPtr);
-    PrintFFTSDebugDetails(fftsPlusSqe, task, fftsCtxsPtr);
-    CHK_RET(FftsPlusTaskLaunchWithFlag(&task, streamPtr, 0));
-    *ctxNum = fftsCtxsPtr->ctxNum;
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddRecordTask(void *ctx, uint32_t streamId, void *signal, bool inchip, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        if (inchip) {
-            u32 notifyID = 0;
-            CHK_RET(GetNotifyID(signal, &notifyID));
-            CHK_RET(InitFftsSuccessorStart(notifyID, streamId, fftsCtxsPtr));
-        } else {
-            CHK_RET(InitFftsDescNotifyRecordRemote(signal, streamId, fftsCtxsPtr));
-            *ctxIdx = fftsCtxsPtr->refreshIndex;
-        }
-    } else {
-        if (!inchip) {
-            SkipFftsRefresh(streamId, fftsCtxsPtr);
-            *ctxIdx = fftsCtxsPtr->refreshIndex;
-        } else {
-            // V2的构图逻辑下, 这个片内的notify record如果是当前流第一个task, 会实例化一个空task作为附着点, 需要跳过
-            if (useGraphConstructorV2_ && fftsCtxsPtr->lastThreadIndex[streamId] == 0) {
-                HCCL_DEBUG("cur stream first task is inchip notify record, need skip, ctxId[%u]", fftsCtxsPtr->refreshIndex);
-                fftsCtxsPtr->refreshIndex++;
-                fftsCtxsPtr->lastThreadIndex[streamId] = fftsCtxsPtr->refreshIndex;
-            }
-        }
-    }
-    if (TbeHcclCheckLogLevel(HCCL_LOG_INFO) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
-        PLF_CONFIG_INFO(PLF_TASK, "%s para: taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex - 1);
-    }
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddWaitTask(void *ctx, uint32_t streamId, void *signal, bool inchip, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        if (inchip) {
-            u32 notifyID = 0;
-            CHK_RET(GetNotifyID(signal, &notifyID));
-            CHK_RET(InitFftsSuccessorEnd(notifyID, streamId, fftsCtxsPtr));
-        } else {
-            CHK_RET(InitFftsDescNotifyWait(signal, streamId, fftsCtxsPtr));
-            *ctxIdx = fftsCtxsPtr->refreshIndex;
-        }
-    } else {
-        if (!inchip) {
-            SkipFftsRefresh(streamId, fftsCtxsPtr);
-            *ctxIdx = fftsCtxsPtr->refreshIndex;
-        } else {
-            // 卡内notify使用successor间依赖关系替代
-        }
-    }
-    if (TbeHcclCheckLogLevel(HCCL_LOG_INFO) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
-        PLF_CONFIG_INFO(PLF_TASK, "%s para: taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex - 1);
-    }
-    return HCCL_SUCCESS;
-}
-
-
-HcclResult GraphCtxMgr::GraphAddMemcpyTask(void *ctx, uint32_t streamId, void *dstAddr, void *srcAddr,
-    uint64_t size, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    PLF_CONFIG_INFO(PLF_TASK, "%s para:taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsDescMemcpy(fftsCtxsPtr, streamId, dstAddr, srcAddr, size));
-    } else {
-        CHK_RET(RefreshFftsDescMemcpy(fftsCtxsPtr, streamId, dstAddr, srcAddr, size));
-    }
-    *ctxIdx = fftsCtxsPtr->refreshIndex;
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddReduceTask(void *ctx, uint32_t streamId, void *dstAddr, const void *srcAddr, uint64_t dataCount,
-        const HcclDataType datatype, HcclReduceOp redOp, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    PLF_CONFIG_INFO(PLF_TASK, "%s para:taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsDescSdmaReduce(fftsCtxsPtr, streamId, dstAddr, srcAddr, dataCount, datatype,
-            redOp));
-    } else {
-        CHK_RET(RefreshFftsDescSdmaReduce(fftsCtxsPtr, streamId, dstAddr, srcAddr, dataCount, datatype,
-            redOp));
-    }
-    *ctxIdx = fftsCtxsPtr->refreshIndex;
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddInlineReduceTask(void *ctx, uint32_t streamId, void *dstAddr, const void *srcAddr,
-    uint64_t dataCount, const HcclDataType datatype, HcclReduceOp redOp, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    PLF_CONFIG_INFO(PLF_TASK, "%s para:taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsDescSdmaReduce(fftsCtxsPtr, streamId, dstAddr, srcAddr, dataCount, datatype,
-            redOp));
-    } else {
-        CHK_RET(RefreshFftsDescSdmaReduce(fftsCtxsPtr, streamId, dstAddr, srcAddr, dataCount, datatype,
-            redOp));
-    }
-    *ctxIdx = fftsCtxsPtr->refreshIndex;
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddRdmaSendTask(void *ctx, uint32_t streamId, u32 dbindex, u64 dbinfo,
-    bool isCapture, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    PLF_CONFIG_INFO(PLF_TASK, "%s para:taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsDescRdmaSend(fftsCtxsPtr, streamId, dbindex, dbinfo, isCapture));
-    } else {
-        CHK_RET(RefreshFftsDescRdmaSend(fftsCtxsPtr, streamId, dbindex, dbinfo, isCapture));
-    }
-    *ctxIdx = fftsCtxsPtr->refreshIndex;
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddTailVectorReduceTask(void *ctx, uint32_t streamId, void *dst, const void *src,
-    u64 cnt, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsDescSdma(fftsCtxsPtr, streamId, dst, src, cnt, SDMA_FP32_ATOMIC_MOVE_SQE));
-    } else {
-        CHK_RET(RefreshFftsDescSdma(fftsCtxsPtr, streamId, dst, src, cnt, SDMA_FP32_ATOMIC_MOVE_SQE));
-    }
-    *ctxIdx = fftsCtxsPtr->refreshIndex;
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddVectorReduceTask(void *ctx, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, uint32_t *ctxIdx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsDescVectorReduce(fftsCtxsPtr, streamId, count, addrListDevMemPtr, funcAddr, blockDim));
-    } else {
-        CHK_RET(RefreshFftsDescVectorReduce(fftsCtxsPtr, streamId, count, addrListDevMemPtr, funcAddr, blockDim));
-    }
-    *ctxIdx = fftsCtxsPtr->refreshIndex;
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddVectorReduceArgs(void *argsHandle)
-{
-    argsHandleList_.push_back(argsHandle);
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddRecordTaskById(void *ctx, uint32_t streamId, u32 notifyID)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsSuccessorStart(notifyID, streamId, fftsCtxsPtr));
-    } else {
-        // V2的构图逻辑下, 这个片内的notify record如果是当前流第一个task, 会实例化一个空task作为附着点, 需要跳过
-        if (useGraphConstructorV2_ && fftsCtxsPtr->lastThreadIndex[streamId] == 0) {
-            HCCL_DEBUG("cur stream first task is inchip notify record, need skip, ctxId[%u]", fftsCtxsPtr->refreshIndex);
-            fftsCtxsPtr->refreshIndex++;
-            fftsCtxsPtr->lastThreadIndex[streamId] = fftsCtxsPtr->refreshIndex;
-        }
-    }
-    PLF_CONFIG_INFO(PLF_TASK, "%s para:taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex);
-    return HCCL_SUCCESS;
-}
-
-HcclResult GraphCtxMgr::GraphAddWaitTaskById(void *ctx, uint32_t streamId, u32 notifyID)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsSuccessorEnd(notifyID, streamId, fftsCtxsPtr));
-    } else {
-        // 卡内notify使用successor间依赖关系替代
-    }
-    PLF_CONFIG_INFO(PLF_TASK, "%s para:taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex);
-    return HCCL_SUCCESS;
-}
-
-void GraphCtxMgr::GraphDump(void *ctx)
-{
-    HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
-    rtFftsPlusSqe_t fftsPlusSqe = {};
-    ConstructFftsSqe(fftsPlusSqe, fftsCtxsPtr);
-
-    rtFftsPlusTaskInfo_t task = {};
-    task.argsHandleInfoNum = 0;
-    task.argsHandleInfoPtr = nullptr;
-    ConstructFftsTask(task, fftsPlusSqe, fftsCtxsPtr);
-    PrintFFTSDebugDetails(fftsPlusSqe, task, fftsCtxsPtr);
-    if (useGraphConstructorV2_) {
-        PrintOriginalGraph(fftsCtxsPtr);
-    }
-    return;
-}
-
-HcclResult GraphCtxMgr::InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim)
+HcclResult InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
+    void *funcAddr, uint32_t blockDim, bool useGraphConstructorV2)
 {
     EnsureFftsContextsSize(fftsCtxsPtr);
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
@@ -308,7 +25,7 @@ HcclResult GraphCtxMgr::InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxs
 
     ConstructFftsAicAivCtx(count, addrListDevMemPtr, funcAddr, blockDim, ctx, true);
 
-    if (useGraphConstructorV2_) {
+    if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::REDUCE_TBE, fftsCtxsPtr));
     } else {
         CHK_RET(UpdataFftsDescRelationship(streamId, fftsCtxsPtr));
@@ -319,8 +36,8 @@ HcclResult GraphCtxMgr::InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxs
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim)
+HcclResult RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
+    void *funcAddr, uint32_t blockDim, bool useGraphConstructorV2)
 {
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
     rtFftsPlusAicAivCtx_t *ctx = reinterpret_cast<rtFftsPlusAicAivCtx_t *>(&comCtx);
@@ -331,56 +48,46 @@ HcclResult GraphCtxMgr::RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsC
     }
 
     ConstructFftsAicAivCtx(count, addrListDevMemPtr, funcAddr, blockDim, ctx, false);
-
     fftsCtxsPtr->refreshIndex++;
-    UpdateLastThreadIndex(streamId, fftsCtxsPtr);
+    UpdateLastThreadIndex(streamId, fftsCtxsPtr, useGraphConstructorV2);
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFftsAicAivCtx(int count, void *addrListDevMemPtr, void *funcAddr, uint32_t blockDim,
+HcclResult ConstructFftsAicAivCtx(int count, void *addrListDevMemPtr, void *funcAddr, uint32_t blockDim,
     rtFftsPlusAicAivCtx_t *ctx, bool isInit)
 {
     if (isInit) {
         ctx->successorNum = 0;
         ctx->aten = 0;
-
         ctx->prefetchConfig = 0;
         ctx->predCntInit = 0;
         ctx->predCnt = 0;
-
         ctx->prefetchOnceBitmap = 0;
         ctx->res6 = 0;
         ctx->prefetchEnableBitmap = 0;
-
         ctx->threadId = 0;
         ctx->threadDim = 1;
-
         ctx->res12 = 0;
         ctx->res13 = 0;
     }
     ctx->contextType = (count == 0) ? RT_CTX_TYPE_LABEL : RT_CTX_TYPE_AIV;
-
     const u64 u64HighMask = 0xffffffff00000000;
     const u64 u64LowMask = 0x00000000ffffffff;
     const u32 shift = 32;
-
     ctx->nonTailBlockdim = blockDim;
     ctx->tailBlockdim = blockDim;
-
     ctx->taskParamPtrBaseL = reinterpret_cast<u64>(addrListDevMemPtr) & u64LowMask;
     ctx->taskParamPtrBaseH = (reinterpret_cast<u64>(addrListDevMemPtr) & u64HighMask) >> shift;
-
     ctx->nonTailTaskStartPcL = reinterpret_cast<u64>(funcAddr) & u64LowMask;
     ctx->nonTailTaskStartPcH = (reinterpret_cast<u64>(funcAddr) & u64HighMask) >> shift;
-
     ctx->tailTaskStartPcL = reinterpret_cast<u64>(funcAddr) & u64LowMask;
     ctx->tailTaskStartPcH = (reinterpret_cast<u64>(funcAddr) & u64HighMask) >> shift;
 
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::InitFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, u32 dbindex, u64 dbinfo,
-    bool isCapture)
+HcclResult InitFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, u32 dbindex, u64 dbinfo,
+    bool useGraphConstructorV2, bool isCapture)
 {
     EnsureFftsContextsSize(fftsCtxsPtr);
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
@@ -390,7 +97,7 @@ HcclResult GraphCtxMgr::InitFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr,
 
     CHK_RET(ConstructFftsWriteValueCtx(dbindex, dbinfo, ctx, isCapture));
 
-    if (useGraphConstructorV2_) {
+    if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::RDMA_SEND, fftsCtxsPtr));
     } else {
         CHK_RET(UpdataFftsDescRelationship(streamId, fftsCtxsPtr));
@@ -401,8 +108,8 @@ HcclResult GraphCtxMgr::InitFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr,
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, u32 dbindex, u64 dbinfo,
-    bool isCapture)
+HcclResult RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, u32 dbindex, u64 dbinfo,
+    bool useGraphConstructorV2, bool isCapture)
 {
     const u64 u64HighMask = 0xffffffff00000000;
     const u64 u64LowMask = 0x00000000ffffffff;
@@ -423,7 +130,7 @@ HcclResult GraphCtxMgr::RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsP
         ctx->contextType = RT_CTX_TYPE_LABEL;
         ctx->writeAddressBaseL = 0;
         ctx->writeAddressBaseH = 0;
-        SkipFftsRefresh(streamId, fftsCtxsPtr);
+        SkipFftsRefresh(streamId, fftsCtxsPtr, useGraphConstructorV2);
         return HCCL_SUCCESS;
     }
 
@@ -457,11 +164,11 @@ HcclResult GraphCtxMgr::RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsP
     }
 
     fftsCtxsPtr->refreshIndex++;
-    UpdateLastThreadIndex(streamId, fftsCtxsPtr);
+    UpdateLastThreadIndex(streamId, fftsCtxsPtr, useGraphConstructorV2);
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFftsWriteValueCtx(u32 dbindex, u64 dbinfo, rtFftsPlusWriteValueCtx_t *ctx, bool isCapture)
+HcclResult ConstructFftsWriteValueCtx(u32 dbindex, u64 dbinfo, rtFftsPlusWriteValueCtx_t *ctx, bool isCapture)
 {
     const u64 u64HighMask = 0xffffffff00000000;
     const u64 u64LowMask = 0x00000000ffffffff;
@@ -508,7 +215,7 @@ HcclResult GraphCtxMgr::ConstructFftsWriteValueCtx(u32 dbindex, u64 dbinfo, rtFf
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::GetSqDepth(u32 dbindex, u32& sqDepth)
+HcclResult GetSqDepth(u32 dbindex, u32& sqDepth)
 {
     const u32 HCCL_SQ_DEPTH_SHIFT = 12;
     const u32 HCCL_SQ_DEPTH_MASK = 0x0000000f;
@@ -520,33 +227,33 @@ HcclResult GraphCtxMgr::GetSqDepth(u32 dbindex, u32& sqDepth)
     return HCCL_SUCCESS;
 }
 
-bool GraphCtxMgr::IsInvalidRdmaParam(u32 dbindex, u64 dbinfo)
+bool IsInvalidRdmaParam(u32 dbindex, u64 dbinfo)
 {
-    return dbindex == INVALID_UINT && dbinfo == INVALID_U64;
+    return dbindex == LEGACY_INVALID_UINT && dbinfo == LEGACY_INVALID_U64;
 }
 
-HcclResult GraphCtxMgr::InitFftsDescSdmaReduce(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
-    uint64_t cnt, const HcclDataType datatype, HcclReduceOp redOp)
+HcclResult InitFftsDescSdmaReduce(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
+    uint64_t cnt, const HcclDataType datatype, HcclReduceOp redOp, bool useGraphConstructorV2)
 {
     FftsSdmaSqeHeader sdmaSqeHeader;
     CHK_RET(GetSdmaSqeHeader(datatype, redOp, sdmaSqeHeader));
 
     CHK_RET(InitFftsDescSdma(fftsCtxsPtr, streamId, dst, src, cnt * LEGACY_SIZE_TABLE[datatype],
-        sdmaSqeHeader.word));
+        sdmaSqeHeader.word, useGraphConstructorV2));
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::RefreshFftsDescSdmaReduce(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
-    uint64_t cnt, const HcclDataType datatype, HcclReduceOp redOp)
+HcclResult RefreshFftsDescSdmaReduce(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
+    uint64_t cnt, const HcclDataType datatype, HcclReduceOp redOp, bool useGraphConstructorV2)
 {
     FftsSdmaSqeHeader sdmaSqeHeader;
     CHK_RET(GetSdmaSqeHeader(datatype, redOp, sdmaSqeHeader));
     CHK_RET(RefreshFftsDescSdma(fftsCtxsPtr, streamId, dst, src, cnt * LEGACY_SIZE_TABLE[datatype],
-        sdmaSqeHeader.word));
+        sdmaSqeHeader.word, useGraphConstructorV2));
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::GetSdmaSqeHeader(const HcclDataType &datatype, const HcclReduceOp &redOp,
+HcclResult GetSdmaSqeHeader(const HcclDataType &datatype, const HcclReduceOp &redOp,
     FftsSdmaSqeHeader &sdmaSqeHeader)
 {
     sdmaSqeHeader.word = 0;
@@ -582,8 +289,8 @@ HcclResult GraphCtxMgr::GetSdmaSqeHeader(const HcclDataType &datatype, const Hcc
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::InitFftsDescSdma(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
-    u64 cnt, u32 sdmaSqeHeader)
+HcclResult InitFftsDescSdma(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
+    u64 cnt, u32 sdmaSqeHeader, bool useGraphConstructorV2)
 {
     uint64_t spiltLoop = 0;
     uint64_t addrOffset = 0;
@@ -608,7 +315,7 @@ HcclResult GraphCtxMgr::InitFftsDescSdma(HcclFftsContextsInfo *&fftsCtxsPtr, s32
         rtFftsPlusSdmaCtx_t* ctx = reinterpret_cast<rtFftsPlusSdmaCtx_t*>(&comCtx);
 
         ConstructFftsSdmaCtx(dstSplit, srcSplit, contSplit, sdmaSqeHeader, ctx, true);
-        if (useGraphConstructorV2_) {
+        if (useGraphConstructorV2) {
             CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::SDMA, fftsCtxsPtr));
         } else {
             CHK_RET(UpdataFftsDescRelationship(streamId, fftsCtxsPtr));
@@ -620,8 +327,8 @@ HcclResult GraphCtxMgr::InitFftsDescSdma(HcclFftsContextsInfo *&fftsCtxsPtr, s32
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::RefreshFftsDescSdma(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
-    u64 cnt, u32 sdmaSqeHeader)
+HcclResult RefreshFftsDescSdma(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dst, const void *src,
+    u64 cnt, u32 sdmaSqeHeader, bool useGraphConstructorV2)
 {
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
     rtFftsPlusSdmaCtx_t* ctx = reinterpret_cast<rtFftsPlusSdmaCtx_t*>(&comCtx);
@@ -634,11 +341,11 @@ HcclResult GraphCtxMgr::RefreshFftsDescSdma(HcclFftsContextsInfo *&fftsCtxsPtr, 
     ConstructFftsSdmaCtx(dst, src, cnt, sdmaSqeHeader, ctx, false);
 
     fftsCtxsPtr->refreshIndex++;
-    UpdateLastThreadIndex(streamId, fftsCtxsPtr);
+    UpdateLastThreadIndex(streamId, fftsCtxsPtr, useGraphConstructorV2);
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFftsSdmaCtx(void *dst, const void *src, u64 cnt, u32 sdmaSqeHeader,
+HcclResult ConstructFftsSdmaCtx(void *dst, const void *src, u64 cnt, u32 sdmaSqeHeader,
     rtFftsPlusSdmaCtx_t *ctx, bool isInit)
 {
     if (isInit) {
@@ -681,23 +388,26 @@ HcclResult GraphCtxMgr::ConstructFftsSdmaCtx(void *dst, const void *src, u64 cnt
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::InitFftsDescMemcpy(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dstAddr, void *srcAddr,
-    uint64_t size)
+HcclResult InitFftsDescMemcpy(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dstAddr, void *srcAddr,
+    uint64_t size, bool useGraphConstructorV2)
 {
-    CHK_RET(InitFftsDescSdma(fftsCtxsPtr, streamId, dstAddr, srcAddr, size, SDMA_FP32_ATOMIC_MOVE_SQE));
+    CHK_RET(InitFftsDescSdma(fftsCtxsPtr, streamId, dstAddr, srcAddr, size, SDMA_FP32_ATOMIC_MOVE_SQE,
+        useGraphConstructorV2));
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::RefreshFftsDescMemcpy(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dstAddr, void *srcAddr,
-    uint64_t size)
+HcclResult RefreshFftsDescMemcpy(HcclFftsContextsInfo *&fftsCtxsPtr, s32 streamId, void *dstAddr, void *srcAddr,
+    uint64_t size, bool useGraphConstructorV2)
 {
-    CHK_RET(RefreshFftsDescSdma(fftsCtxsPtr, streamId, dstAddr, srcAddr, size, SDMA_FP32_ATOMIC_MOVE_SQE));
+    CHK_RET(RefreshFftsDescSdma(fftsCtxsPtr, streamId, dstAddr, srcAddr, size, SDMA_FP32_ATOMIC_MOVE_SQE,
+        useGraphConstructorV2));
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::InitFftsSuccessorEnd(u32 notifyID, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult InitFftsSuccessorEnd(u32 notifyID, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr,
+    bool useGraphConstructorV2)
 {
-    if (useGraphConstructorV2_) {
+    if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::INCHIP_NOTIFY_WAIT, fftsCtxsPtr, notifyID));
     } else {
         if (fftsCtxsPtr->unassignedSuccessorEnd.find(streamId) == fftsCtxsPtr->unassignedSuccessorEnd.end()) {
@@ -709,7 +419,8 @@ HcclResult GraphCtxMgr::InitFftsSuccessorEnd(u32 notifyID, s32 streamId, HcclFft
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::InitFftsDescNotifyWait(void *signal, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult InitFftsDescNotifyWait(void *signal, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr,
+    bool useGraphConstructorV2)
 {
     EnsureFftsContextsSize(fftsCtxsPtr);
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
@@ -718,7 +429,7 @@ HcclResult GraphCtxMgr::InitFftsDescNotifyWait(void *signal, s32 streamId, HcclF
     rtFftsPlusNotifyCtx_t* ctx = reinterpret_cast<rtFftsPlusNotifyCtx_t*>(&comCtx);
 
     ConstructFFtsNotifyWaitCtx(signal, ctx);
-    if (useGraphConstructorV2_) {
+    if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::REMOTE_NOTIFY_WAIT, fftsCtxsPtr));
     } else {
         CHK_RET(UpdataFftsDescRelationship(streamId, fftsCtxsPtr));
@@ -728,7 +439,7 @@ HcclResult GraphCtxMgr::InitFftsDescNotifyWait(void *signal, s32 streamId, HcclF
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFftsNotifyCtx(u32 notifyID, uint16_t contextType, rtFftsPlusNotifyCtx_t* ctx)
+HcclResult ConstructFftsNotifyCtx(u32 notifyID, uint16_t contextType, rtFftsPlusNotifyCtx_t* ctx)
 {
     ctx->contextType = contextType;
     ctx->successorNum = 0;
@@ -744,15 +455,15 @@ HcclResult GraphCtxMgr::ConstructFftsNotifyCtx(u32 notifyID, uint16_t contextTyp
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFFtsNotifyWaitCtx(void *signal, rtFftsPlusNotifyCtx_t* ctx)
+HcclResult ConstructFFtsNotifyWaitCtx(void *signal, rtFftsPlusNotifyCtx_t* ctx)
 {
     u32 notifyID = 0;
     CHK_RET(GetNotifyID(signal, &notifyID));
     return ConstructFftsNotifyCtx(notifyID, RT_CTX_TYPE_NOTIFY_WAIT, ctx);
 }
 
-HcclResult GraphCtxMgr::InitFftsDescNotifyRecordRemote(void *signal, s32 streamId,
-    HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId,
+    HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2)
 {
     EnsureFftsContextsSize(fftsCtxsPtr);
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
@@ -762,7 +473,7 @@ HcclResult GraphCtxMgr::InitFftsDescNotifyRecordRemote(void *signal, s32 streamI
 
     CHK_RET(ConstructFftsNotifyRecordRemoteCtx(signal, ctx));
 
-    if (useGraphConstructorV2_) {
+    if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::REMOTE_NOTIFY_RECORD, fftsCtxsPtr));
     } else {
         CHK_RET(UpdataFftsDescRelationship(streamId, fftsCtxsPtr));
@@ -773,7 +484,7 @@ HcclResult GraphCtxMgr::InitFftsDescNotifyRecordRemote(void *signal, s32 streamI
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::UpdataFftsDescRelationship(s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult UpdataFftsDescRelationship(s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     if (fftsCtxsPtr->refreshIndex > 0) {
         u32 lastThreadPreIndex = fftsCtxsPtr->lastThreadIndex[streamId];
@@ -814,7 +525,7 @@ HcclResult GraphCtxMgr::UpdataFftsDescRelationship(s32 streamId, HcclFftsContext
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx)
+HcclResult ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx)
 {
     const u64 u64HighMask = 0xffffffff00000000;
     const u64 u64LowMask = 0x00000000ffffffff;
@@ -845,7 +556,7 @@ HcclResult GraphCtxMgr::ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsP
     return HCCL_SUCCESS;
 }
 
-void GraphCtxMgr::EnsureFftsContextsSize(HcclFftsContextsInfo *&fftsCtxsPtr)
+void EnsureFftsContextsSize(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     if (fftsCtxsPtr->refreshIndex >= fftsCtxsPtr->contexts.size()) {
         fftsCtxsPtr->contexts.resize(fftsCtxsPtr->contexts.size() * 2);     // context空间不足，申请当前context num的2倍
@@ -853,9 +564,10 @@ void GraphCtxMgr::EnsureFftsContextsSize(HcclFftsContextsInfo *&fftsCtxsPtr)
     return;
 }
 
-HcclResult GraphCtxMgr::InitFftsSuccessorStart(u32 notifyID, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult InitFftsSuccessorStart(u32 notifyID, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr,
+    bool useGraphConstructorV2)
 {
-    if (useGraphConstructorV2_) {
+    if (useGraphConstructorV2) {
         // 片内signal record前没有ctx, 需要插入一个空task作为附着点
         if (fftsCtxsPtr->lastThreadIndex[streamId] == 0) {
             CHK_RET(InitFftsPlaceHolder(streamId, fftsCtxsPtr));
@@ -885,7 +597,7 @@ HcclResult GraphCtxMgr::InitFftsSuccessorStart(u32 notifyID, s32 streamId, HcclF
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::AddCtxExpasionSuccessor(HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult AddCtxExpasionSuccessor(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     for (auto& elem : fftsCtxsPtr->ctxExpasionSuccessorMap) {
         u32 ctxId = elem.first;
@@ -906,7 +618,7 @@ HcclResult GraphCtxMgr::AddCtxExpasionSuccessor(HcclFftsContextsInfo *&fftsCtxsP
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::AddExpasionEdgeCtx(u32 preCtxId, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult AddExpasionEdgeCtx(u32 preCtxId, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     PLF_CONFIG_INFO(PLF_TASK, "AddExpasionEdgeCtx para: preCtxId[%u], replaceCtxId[%u]", preCtxId, fftsCtxsPtr->refreshIndex);
     EnsureFftsContextsSize(fftsCtxsPtr);
@@ -929,7 +641,7 @@ HcclResult GraphCtxMgr::AddExpasionEdgeCtx(u32 preCtxId, HcclFftsContextsInfo *&
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::BuildFFTSGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult BuildFFTSGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     CHK_RET(FindInDegree0Task(fftsCtxsPtr));
     fftsCtxsPtr->isVisitedTasks.resize(fftsCtxsPtr->refreshTaskIndex, std::vector<bool>(fftsCtxsPtr->refreshTaskIndex, false));
@@ -951,7 +663,7 @@ HcclResult GraphCtxMgr::BuildFFTSGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::AddDependencyEdge(u32 preCtxId, u32 afterCtxId, u32 preTaskIndex,
+HcclResult AddDependencyEdge(u32 preCtxId, u32 afterCtxId, u32 preTaskIndex,
     u32 afterTaskIndex, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     if (preCtxId == afterCtxId) {
@@ -1008,7 +720,7 @@ HcclResult GraphCtxMgr::AddDependencyEdge(u32 preCtxId, u32 afterCtxId, u32 preT
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::TraverseEdges(u32 curTaskIndex, u32 nextTaskIndex, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult TraverseEdges(u32 curTaskIndex, u32 nextTaskIndex, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     if (curTaskIndex >= fftsCtxsPtr->refreshTaskIndex || nextTaskIndex >= fftsCtxsPtr->refreshTaskIndex) {
         HCCL_ERROR("[GraphCtxMgr][TraverseEdges] curTaskIndex[%u] or nextTaskIndex[%u] is bigger than taskNum[%u]",
@@ -1062,7 +774,7 @@ HcclResult GraphCtxMgr::TraverseEdges(u32 curTaskIndex, u32 nextTaskIndex, HcclF
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::FindInDegree0Task(HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult FindInDegree0Task(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     bool isExistInDegree0 = false;
     for (u32 i = 0; i < fftsCtxsPtr->refreshTaskIndex; i++) {
@@ -1079,10 +791,10 @@ HcclResult GraphCtxMgr::FindInDegree0Task(HcclFftsContextsInfo *&fftsCtxsPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::PrintFFTSDebugDetails(rtFftsPlusSqe_t &fftsPlusSqe, rtFftsPlusTaskInfo_t &task,
+HcclResult PrintFFTSDebugDetails(rtFftsPlusSqe_t &fftsPlusSqe, rtFftsPlusTaskInfo_t &task,
     HcclFftsContextsInfo *&fftsCtxsPtr)
 {
-    if (TbeHcclCheckLogLevel(HCCL_LOG_DEBUG) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
+    if (CheckLogLevel(HCCL, HCCL_LOG_DEBUG) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
         PLF_CONFIG_DEBUG(PLF_TASK, "-------------------------------");
         PLF_CONFIG_DEBUG(PLF_TASK, "totalContextNum:0x%04x", fftsPlusSqe.totalContextNum);
         PLF_CONFIG_DEBUG(PLF_TASK, "readyContextNum:0x%04x", fftsPlusSqe.readyContextNum);
@@ -1112,9 +824,9 @@ HcclResult GraphCtxMgr::PrintFFTSDebugDetails(rtFftsPlusSqe_t &fftsPlusSqe, rtFf
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::PrintOriginalGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult PrintOriginalGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
-    if (TbeHcclCheckLogLevel(HCCL_LOG_DEBUG) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
+    if (CheckLogLevel(HCCL, HCCL_LOG_DEBUG) || (GetExterInputDebugConfigLegacy() & PLF_TASK)) {
         PLF_CONFIG_DEBUG(PLF_TASK, "[PrintOriginalGraph] totalTaskNum:%08x", fftsCtxsPtr->refreshTaskIndex);
         for (u32 i = 0; i < fftsCtxsPtr->refreshTaskIndex; i++) {
             auto& taskInfo =  fftsCtxsPtr->taskInfos[i];
@@ -1147,36 +859,37 @@ HcclResult GraphCtxMgr::PrintOriginalGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFftsSqe(rtFftsPlusSqe_t &fftsPlusSqe, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult ConstructFftsSqe(u32 timeout, rtFftsPlusSqe_t &fftsPlusSqe, HcclFftsContextsInfo *&fftsCtxsPtr,
+    std::vector<void *> &argsHandleList)
 {
     fftsPlusSqe.fftsType = RT_FFTS_PLUS_TYPE;
     fftsPlusSqe.totalContextNum = static_cast<uint16_t>(fftsCtxsPtr->ctxNum);
     fftsPlusSqe.readyContextNum = 1;
     fftsPlusSqe.preloadContextNum = (fftsPlusSqe.totalContextNum <= CONTEXT_MAX_NUM ?\
         fftsPlusSqe.totalContextNum : CONTEXT_MAX_NUM);
-    fftsPlusSqe.timeout = timeout_;
+    fftsPlusSqe.timeout = timeout;
     // 标识通信task，优化调度性能 (RTS要求带AIV/AIC任务的是 0x5B, 否则是0x5A)
-    fftsPlusSqe.subType = argsHandleList_.empty() ? 0x5A : 0x5B;
+    fftsPlusSqe.subType = argsHandleList.empty() ? 0x5A : 0x5B;
     fftsPlusSqe.subType = 0x5A;
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::ConstructFftsTask(rtFftsPlusTaskInfo_t &task, rtFftsPlusSqe_t &fftsPlusSqe,
-    HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult ConstructFftsTask(rtFftsPlusTaskInfo_t &task, rtFftsPlusSqe_t &fftsPlusSqe,
+    HcclFftsContextsInfo *&fftsCtxsPtr, std::vector<void *> &argsHandleList)
 {
     task.fftsPlusSqe = &fftsPlusSqe;
     task.descBuf = fftsCtxsPtr->contexts.data();
     task.descBufLen = sizeof(rtFftsPlusComCtx_t) * fftsCtxsPtr->ctxNum;
     task.descAddrType = 0;
-    if (!argsHandleList_.empty()) {
-        task.argsHandleInfoNum = argsHandleList_.size();
-        task.argsHandleInfoPtr = argsHandleList_.data();
-        argsHandleList_.clear();
+    if (!argsHandleList.empty()) {
+        task.argsHandleInfoNum = argsHandleList.size();
+        task.argsHandleInfoPtr = argsHandleList.data();
+        argsHandleList.clear();
     }
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::GroupTasksByStreamId(HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult GroupTasksByStreamId(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     // 把task按照stream分开
     for (auto x : fftsCtxsPtr->lastTaskIndex) {
@@ -1191,7 +904,7 @@ HcclResult GraphCtxMgr::GroupTasksByStreamId(HcclFftsContextsInfo *&fftsCtxsPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::UpdateInchipNotifyCtxID(HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult UpdateInchipNotifyCtxID(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     // 更新片内notify的ctxID
     // 1. inchipNotifyRecord: 更新为前序的ctxID
@@ -1222,7 +935,7 @@ HcclResult GraphCtxMgr::UpdateInchipNotifyCtxID(HcclFftsContextsInfo *&fftsCtxsP
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::FindInchipRecordPreCtx(const std::vector<HcclFfftsTaskInfo>& taskList, u32 index,
+HcclResult FindInchipRecordPreCtx(const std::vector<HcclFfftsTaskInfo>& taskList, u32 index,
     HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     const HcclFfftsTaskInfo& curTask = taskList[index];
@@ -1256,7 +969,7 @@ HcclResult GraphCtxMgr::FindInchipRecordPreCtx(const std::vector<HcclFfftsTaskIn
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::FindInchipWaitAfterCtx(const std::vector<HcclFfftsTaskInfo>& taskList, u32 index,
+HcclResult FindInchipWaitAfterCtx(const std::vector<HcclFfftsTaskInfo>& taskList, u32 index,
     bool& isPlaceHolderWait, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     const HcclFfftsTaskInfo& curTask = taskList[index];
@@ -1290,7 +1003,7 @@ HcclResult GraphCtxMgr::FindInchipWaitAfterCtx(const std::vector<HcclFfftsTaskIn
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::InitFftsPlaceHolder(s32 streamID, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult InitFftsPlaceHolder(s32 streamID, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     PLF_CONFIG_INFO(PLF_TASK, "PlaceHolder para: streamId[%d], ctxId[%u], taskIndex[%u]", streamID, fftsCtxsPtr->refreshIndex,
         fftsCtxsPtr->refreshTaskIndex);
@@ -1308,7 +1021,7 @@ HcclResult GraphCtxMgr::InitFftsPlaceHolder(s32 streamID, HcclFftsContextsInfo *
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::InitTaskAndUpdateDependencies(s32 streamID, HcclFftsTaskType taskType,
+HcclResult InitTaskAndUpdateDependencies(s32 streamID, HcclFftsTaskType taskType,
     HcclFftsContextsInfo *&fftsCtxsPtr, u32 notfiyId)
 {
     // 更新当前流的上一个ctx和当前ctx的依赖关系
@@ -1330,7 +1043,7 @@ HcclResult GraphCtxMgr::InitTaskAndUpdateDependencies(s32 streamID, HcclFftsTask
     return HCCL_SUCCESS;
 }
 
-void GraphCtxMgr::EnsureFftsTaskInfosSize(HcclFftsContextsInfo *&fftsCtxsPtr)
+void EnsureFftsTaskInfosSize(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     if (fftsCtxsPtr->refreshTaskIndex >= fftsCtxsPtr->taskInfos.size()) {
         fftsCtxsPtr->taskInfos.resize(fftsCtxsPtr->taskInfos.size() * 2);     // taskInfos空间不足，申请当前taskInfos的2倍
@@ -1338,7 +1051,7 @@ void GraphCtxMgr::EnsureFftsTaskInfosSize(HcclFftsContextsInfo *&fftsCtxsPtr)
     return;
 }
 
-HcclResult GraphCtxMgr::InitFftsDescTaskInfo(s32 streamID, HcclFftsTaskType taskType, 
+HcclResult InitFftsDescTaskInfo(s32 streamID, HcclFftsTaskType taskType, 
     HcclFftsContextsInfo *&fftsCtxsPtr, u32 notfiyId)
 {
     EnsureFftsTaskInfosSize(fftsCtxsPtr);
@@ -1354,7 +1067,7 @@ HcclResult GraphCtxMgr::InitFftsDescTaskInfo(s32 streamID, HcclFftsTaskType task
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::GraphCtxMgrTaskRelationship(s32 streamID, HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult GraphCtxMgrTaskRelationship(s32 streamID, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     if (fftsCtxsPtr->refreshTaskIndex > 0) {
         u32 lastTaskPreIndex = fftsCtxsPtr->lastTaskIndex[streamID];
@@ -1368,7 +1081,7 @@ HcclResult GraphCtxMgr::GraphCtxMgrTaskRelationship(s32 streamID, HcclFftsContex
     return HCCL_SUCCESS;
 }
 
-HcclResult GraphCtxMgr::BuildOriginalGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
+HcclResult BuildOriginalGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     // 逐个流扫描, 把原始task 流间的依赖序画出来
     for(auto& streamInfo : fftsCtxsPtr->streamTaskMap) {
@@ -1390,14 +1103,14 @@ HcclResult GraphCtxMgr::BuildOriginalGraph(HcclFftsContextsInfo *&fftsCtxsPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult  GraphCtxMgr::AssociateWaitToRecord(const HcclFfftsTaskInfo& curTask, s32 curStreamId,
+HcclResult  AssociateWaitToRecord(const HcclFfftsTaskInfo& curTask, s32 curStreamId,
     bool& isRecordFound, HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     for (auto& otherStream : fftsCtxsPtr->streamTaskMap) {
         if (otherStream.first != curStreamId) {
             for (auto& otherTask : otherStream.second) {
                 if (otherTask.taskType == HcclFftsTaskType::INCHIP_NOTIFY_RECORD && otherTask.notifyId == curTask.notifyId) {
-                    otherTask.notifyId = INVALID_UINT;
+                    otherTask.notifyId = LEGACY_INVALID_UINT;
                     if (fftsCtxsPtr->taskInfos[otherTask.taskIndex].successorNum >= HCCL_TASK_SUCCESSOR_NUM) {
                         HCCL_ERROR("[AssociateWaitToRecord] task successor exceed [%d], curStreamId[%d] curTaskIndex[%u] otherStreamId[%d] otherTaskIndex[%u]",
                             HCCL_TASK_SUCCESSOR_NUM, curStreamId, curTask.taskIndex, otherStream.first, otherTask.taskIndex);
@@ -1418,6 +1131,4 @@ HcclResult  GraphCtxMgr::AssociateWaitToRecord(const HcclFfftsTaskInfo& curTask,
         }
     }
     return HCCL_SUCCESS;
-}
-
 }

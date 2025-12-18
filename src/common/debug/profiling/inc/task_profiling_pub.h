@@ -281,20 +281,21 @@ public:
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaDMA &paraDMA) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaReduce &paraReduce) override;
     HcclResult Save(u32 &streamID, u32 &taskID, TaskType &taskType, const TaskParaNotify &paraNotify) override;
-    HcclResult Save(u32 &streamID, u32 &taskID, const TaskParaAiv &paraAiv) override;
+    HcclResult Save(u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) override;
     HcclResult Save(u32 &streamID, u32 &taskID) override;
     HcclResult SaveToLog(const TaskParaHost &paraHost) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaDMA &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaReduce &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, TaskType &taskType, const TaskParaNotify &para) override;
     HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID) override;
+    HcclResult Save(u32 captureStreamID, u32 streamID, u32 taskID, const TaskParaAiv &paraAiv) override;
 
     static void DumpReportDataInfo(uint32_t type, const MsprofHcclInfo &profInfo);
 
     static HcclResult ReportMsprofData(HCCLReportData &hcclReportData);
 protected:
 private:
-    HcclResult Run(const TaskData &taskData);
+    HcclResult Run(const TaskData &taskData, bool isCapture = false);
     u64 TimestampNanosecond() const;
 
     HcclResult Report(struct ProfReporterData &data);

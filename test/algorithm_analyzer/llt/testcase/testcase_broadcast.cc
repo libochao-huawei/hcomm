@@ -260,7 +260,7 @@ TEST_F(BroadcastTest, broadcastring_BroadcastNHRV1)
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
 
-TEST_F(BroadcastTest, broadcastring_910C_BroadcastNHRV1)
+TEST_F(BroadcastTest, broadcastring_910_93_BroadcastNHRV1)
 {
     RankTable_For_LLT gen;
     TopoMeta topoMeta;

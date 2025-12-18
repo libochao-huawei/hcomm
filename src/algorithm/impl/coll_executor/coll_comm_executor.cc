@@ -1036,6 +1036,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatterConcurrent(const std::string 
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(reduceAttr, opInfo, topoAttr_.userRank, subStreamsInOneRing,
                         mainSignalsInOneRing, subSignalsInOneRing, rankOrder, userMemInputSlices, isSdma));
+                    HCCL_DEBUG("[MultiRingReduceScatterConcurrent]run in COMM_LEVEL0 ends");
                 } else {
                     tempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
                         TemplateType::TEMPLATE_REDUCESCATTER_RING, dispatcher_);
@@ -1043,6 +1044,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatterConcurrent(const std::string 
                     CHK_SMART_PTR_NULL(tempAlg);
                     CHK_RET(tempAlg->Prepare(reduceAttr));
                 }
+                HCCL_DEBUG("[MultiRingReduceScatterConcurrent]run in COMM_LEVEL0 ends");
                 CHK_SMART_PTR_NULL(tempAlg);
 
                 ret = LocalNotify::Wait(algResResp_->slaveStreams[ringIndex], dispatcher_,
@@ -1341,6 +1343,7 @@ HcclResult CollCommExecutor::MultiStreamReduceScatterMeshAtomic(const std::strin
     const std::vector<Slice> &dataSliceVct, Stream &stream,
     const CommPlane commLevelIndex, const u64 baseOffset, HcomCollOpInfo *opInfo)
 {
+    (void) tag;
     u32 unitSize = SIZE_TABLE[dataType];
 
     u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
@@ -1387,6 +1390,7 @@ HcclResult CollCommExecutor::MultiStreamReduceScatterMesh(const std::string &tag
     const std::vector<std::vector<Slice>>& multStreamsSlice, Stream stream,
     const CommPlane commLevelIndex, const u64 baseOffset)
 {
+    (void) tag;
     HcclResult ret = HCCL_SUCCESS;
     u64 streamNum = multStreamsSlice.size();
     HCCL_INFO("MultiStreamReduceScatterMesh streamNum[%llu]", streamNum);
@@ -1705,8 +1709,8 @@ std::vector<std::vector<Slice> > CollCommExecutor::PrepareMultiRingSlice(const s
     u32 ringRanks = multiRingsOrder[0].size(); // 获取单个 ring 上设备的数量
 
     // 将数每块据切分为 ringCount 份
-    HcclResult ret;
     mutliSegsSlices.reserve(dataSegsSlice.size());
+    HcclResult ret;
     if (avoidCceRewrite) {
         ret = MutliSegSlicePrepareAvoidCceRewrite(dataSegsSlice, mutliSegsSlices, ringCount);
     } else {
@@ -1716,10 +1720,11 @@ std::vector<std::vector<Slice> > CollCommExecutor::PrepareMultiRingSlice(const s
         return mutliRingsSlices;
     }
     u32 chunkSize = ringRanks / nicList.size();
+    HCCL_DEBUG("[CollCommExecutor][PrepareMultiRingSlice]chunkSize is %u", chunkSize);
     (void) NicSendSizeCal(mutliSegsSlices, ringCount, chunkSize, nicList, tag);
-    std::vector<std::vector<u32>> ringRankList;
-    std::vector<Slice> singleRingSlices;
     std::vector<u32> rankList;
+    std::vector<Slice> singleRingSlices;
+    std::vector<std::vector<u32>> ringRankList;
 
     ringRankList.reserve(ringCount);
     singleRingSlices.reserve(ringRanks);
@@ -1746,8 +1751,8 @@ std::vector<std::vector<Slice> > CollCommExecutor::PrepareMultiRingSlice(const s
 
     ret = SetRingNics(tag, ringRankList);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[Prepare][MultiRingSlice]set nics in ring failed, ret[%u]", ret);
         std::vector<std::vector<Slice> > emptySlice;
+        HCCL_ERROR("[Prepare][MultiRingSlice]set nics in ring failed, ret[%u]", ret);
         return emptySlice;
     }
     return mutliRingsSlices;

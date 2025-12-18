@@ -1,4 +1,4 @@
-/**
+ /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
@@ -6,6 +6,22 @@
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
+ * 
+ * The code snippet comes from Ascend project.
+ * 
+ * Copyright 2019-2020 Huawei Technologies Co., Ltd
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 #ifndef PLATFORM_INFO_H
@@ -63,8 +79,6 @@ class PlatformInfoManager {
   uint32_t UpdateRuntimePlatformInfosByDevice(const uint32_t &device_id, PlatFormInfos &platform_infos);
 
   uint32_t InitRuntimePlatformInfos(const std::string &SoCVersion);
-
-  uint32_t GetPlatFormInfosLite(SocVersion soc_version, PlatFormInfosLite &platform_infos_lite);
  private:
   PlatformInfoManager();
   ~PlatformInfoManager();
@@ -163,8 +177,6 @@ class PlatformInfoManager {
   PlatFormInfos runtime_platform_infos_;
 
   std::map<uint32_t, PlatFormInfos> runtime_device_platform_infos_map_;
-
-  std::array<PlatFormInfosLite, TOTAL_SOC_COUNT> platform_infos_lite_vec_;
 };
 }  // namespace fe
 

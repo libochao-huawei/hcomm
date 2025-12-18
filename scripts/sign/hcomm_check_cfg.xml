@@ -22,7 +22,7 @@
 -->
 
 <hcomm_check_cfg>
-    <item input="cann-hcomm-compat.tar.gz" output="cann-hcomm-compat.tar.gz" type="cms" sign_alg="PSS" additional="-D --pss" tag="ascend_aicpu" nvcnt="0"></item>
-    <item input="aicpu_hcomm.tar.gz" output="aicpu_hcomm.tar.gz" type="cms" sign_alg="PSS" additional="-D --pss" tag="ascend_aicpu" nvcnt="0"></item>
-    <item input="cann-hccd-compat.tar.gz" output="cann-hccd-compat.tar.gz" type="cms" sign_alg="PSS" additional="-D --pss" tag="ascend_aicpu" nvcnt="0"></item>
+    <item input="cann-hcomm-compat.tar.gz" output="cann-hcomm-compat.tar.gz" type="cms" sign_alg="PSS" tag="ascend_aicpu" nvcnt="0"></item>
+    <item input="aicpu_hcomm.tar.gz" output="aicpu_hcomm.tar.gz" type="cms" sign_alg="PSS" tag="ascend_aicpu" nvcnt="0"></item>
+    <item input="cann-hccd-compat.tar.gz" output="cann-hccd-compat.tar.gz" type="cms" sign_alg="PSS" tag="ascend_aicpu" nvcnt="0"></item>
 </hcomm_check_cfg>

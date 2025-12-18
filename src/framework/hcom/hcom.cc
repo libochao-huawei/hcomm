@@ -82,6 +82,7 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
     }
     uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
     CHK_RET(profilingManager.CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType, groupName));
+    hcclComm->SetAivCoreLimit(0);
     HCCL_DEBUG("CallMsprofReportHostApi success, cmdType[%d], count[%llu], dataType[%d], algType[%d], groupName[%llu]",
         cmdType, count, dataType, algType.algoLevel0, groupName);
     return HCCL_SUCCESS;
@@ -1431,13 +1432,14 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
         "please check if the initialize process is called."), HCCL_E_PTR);
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003",
+        std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
         std::vector<std::string>({ "HcomGetLocalRankSize",
         "group",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
         "please check group name" }));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Get][LocalRankSize]errNo[0x%016llx] get local ranksize " \
-        "group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get local ranksize " \
+        "group name is invalid", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
 
@@ -1468,13 +1470,14 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
 
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
-        "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
+        "EI0003",
+        std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
         std::vector<std::string>({ "HcomGetRankId",
         "group",
         { group, strnlen(group, GROUP_NAME_MAX_LEN + 1) },
         "please check group name" }));
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Get][RankId]errNo[0x%016llx] get_rank_id group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get_rank_id group name is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     // HcomGetRankIdV2
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
@@ -1781,27 +1784,24 @@ HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataTyp
 }
 #endif
 
-HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
-    HcclDataType dataType, HcclReduceOp op, HcclCMDType opType,
-    bool *ifAiv, char *algName, bool isSuperKernel)
+HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
+    HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, count, dataType, op, opType, ifAiv, algName, isSuperKernel));
+    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, count, dataType, op, opType, ifAiv, algName, false));
 #endif
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
-
     std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
         hccl::hcclComm* hcclHcomComm = reinterpret_cast<hccl::hcclComm*>(comm);
-        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, dataType, op, *ifAiv, tempAlgName));
+        CHK_RET(hcclHcomComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
         std::shared_ptr<hccl::hcclComm> hcclComm;
         CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
-        CHK_RET(hcclComm->HcclSelectAlg(opType, count, dataType, op, *ifAiv, tempAlgName, isSuperKernel));
+        CHK_RET(hcclComm->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     }
-
     int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomSelectAlg][algName]memcpy failed. ret[%d],"
         "params:destMaxSize[%zu],count[%zu]", sret, ALG_NAME_MAX_LEN, (tempAlgName.length() + 1)), HCCL_E_PARA);
@@ -1810,14 +1810,14 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType,
+HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *blockDim)
 {
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     std::string algNam(algName);
-    CHK_RET(hcclComm->HcclCalcBlockDim(opType, count, dataType, algNam, *blockDim));
+    CHK_RET(hcclComm->HcclCalcBlockDim(opType, count, dataType, aivCoreLimit, algNam, *blockDim));
 
     return HCCL_SUCCESS;
 }
@@ -1838,7 +1838,7 @@ HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, vo
 HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 dataSize, HcclDataType dataType, HcclCMDType optype)
 {
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomGetWorkspaceSubStreamNumV2(group, streamNum, dataSize, optype));
+    HCCLV2_FUNC_RUN(HcomGetWorkspaceSubStreamNumV2(group, streamNum, dataSize, dataType, optype));
 #endif
     std::shared_ptr<hccl::hcclComm> hcclComm{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
@@ -2010,30 +2010,28 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomSetAttachedStream(const char *group, const rtStream_t *stream, s32 len)
+HcclResult HcomSetAttachedStream(const char *group, u32 graphId, const rtStream_t *stream, s32 len)
 {
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
-
     std::shared_ptr<hccl::hcclComm> hcclComm = nullptr;
     std::vector<rtStream_t> rtStream(stream, stream + len);
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
-        CHK_RET(hcclComm->SetAttachedStream(rtStream));
+        CHK_RET(hcclComm->SetAttachedStream(graphId, rtStream));
     } else {
         // HcclCommBase 场景暂是不支持设置附属从流
         HCCL_WARNING("[HcomSetAttachedStream] HcclCommBase now don't support set attached stream");
         return HCCL_SUCCESS;
     }
-
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, const std::vector<rtStream_t> &stream)
+HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, u32 graphId, const std::vector<rtStream_t> &stream)
 {
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_PTR_NULL(hcclComm);
-    CHK_RET(hcclComm->SetAttachedStream(stream));
+    CHK_RET(hcclComm->SetAttachedStream(graphId, stream));
 
     return HCCL_SUCCESS;
 }
@@ -2741,6 +2739,26 @@ HcclResult HcomGetTopoDesc(const char *group, HcclTopoDescs *topoDescs, uint32_t
         return HCCL_E_PTR;
     }
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size)
+{
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomGetCommCCLBufferSizeV2());
+#endif
+    CHK_PTR_NULL(group);
+    std::shared_ptr<hcclComm> hcclComm;
+    CHK_RET(HcomGetCommByGroup(group, hcclComm));
+    HcclResult ret = hcclComm->GetCommUserMemSize(size);
+    CHK_PRT_RET(ret == HCCL_SUCCESS, HCCL_INFO("[%s]get comm ccl buffer size from user mem size", __func__), ret);
+    if (0 == hcclComm->GetConfigInCCLbufferSize()) {
+        size = GetExternalInputCCLBuffSize();
+        HCCL_INFO("[%s]get comm ccl buffer size from external input", __func__);
+    } else {
+        size = hcclComm->GetConfigInCCLbufferSize();
+        HCCL_INFO("[%s]get comm ccl buffer size from comm config", __func__);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -3962,8 +3980,8 @@ HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMall
             CHK_RET(HcomGetHccsLinkNum(group, &numHccsLink));
         }
         if ((withoutImplCompile || !(rankSize == NUM_SIZE_TWO  && numHccsLink == NUM_SIZE_TWO))) {
-            *memType = static_cast<int>(ACL_MEM_TYPE_LOW_BAND_WIDTH) |
-                    static_cast<int>(ACL_MEM_MALLOC_NORMAL_ONLY_P2P);
+            // 所有形态切换子包后，改用acl_mem类型
+            *memType = RT_MEMORY_P2P_DDR;
         }
     }
 

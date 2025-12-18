@@ -111,6 +111,7 @@ HcclResult ReduceScatterHalvingDoubling::RunDestRducer(const LINK &link,
                                                        const HcclDispatcher dispatcher,
                                                        const Slice &rxSlice, const DstMemType reduceDst)
 {
+    (void) reduceDst;
     DeviceMem rxMem = scratchMem_.range(rxSlice.offset, rxSlice.size);
     HCCL_DEBUG("rx_mem.offset[%llu],base_offset[%llu],rx_slice.size[%llu]",
         rxSlice.offset, baseOffset_, rxSlice.size);

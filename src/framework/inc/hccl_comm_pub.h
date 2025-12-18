@@ -246,8 +246,8 @@ public:
     HcclResult GetIndirectInCCLbuf(void* &ptr, u64 &size);
     HcclResult GetIndirectOutCCLbuf(void* &ptr, u64 &size);
     HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
-        HcclReduceOp op, bool &ifAiv, std::string &algName, bool isSuperKernel = false);
-    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType,
+        HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
+    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim);
     HcclResult HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
         HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
@@ -281,7 +281,7 @@ public:
     HcclResult HcclTest(HcclRequest hcclRequest, s32 &flag, HcclStatus &compState) const;
     // 获取溢出Flag内存传给RTS
     HcclResult SetGlobalWorkSpace(std::vector<void *> &globalWorkSpaceAddr);
-    HcclResult SetAttachedStream(const std::vector<rtStream_t> &streams);
+    HcclResult SetAttachedStream(u32 graphId, const std::vector<rtStream_t> &streams);
     // 获取rdma with reduce算子溢出的task信息，然后清除
     HcclResult GetandClearOverFlowTasks(std::vector<HcclDumpInfo> &hcclDumpInfo);
     HcclResult SupportDeterministicOptim(bool &isDeterministicOptim);
@@ -314,6 +314,7 @@ public:
     HcclResult GetAiCpuNotifyData(HcclRtNotify notifyHandle, HcclSignalInfo &notifyInfo);
     HcclResult AddAiCpuNotify(HcclRtNotify *notifyHandle);
     HcclResult GetTopoDesc(HcclTopoDescs *topoDescs, uint32_t topoSize);
+    HcclResult GetCommUserMemSize(uint64_t &size);
     HcclResult SetDeterministicConfig(const u8 deterministic);  // 设置确定性计算配置
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);

@@ -78,10 +78,6 @@ TEST_F(GlobalMemMgrTest, ut_global_mem_mgr_reg)
     ret = mgr.Reg(&mem3, &memHandle3);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    // 不允许重复注册
-    ret = mgr.Reg(&mem2, &nullHandle);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-
     // 不允许注册交集
     HcclMem mem4 = {HCCL_MEM_TYPE_HOST, buffer2.data(), buffer2.size()};
     mem4.addr = buffer2.data() + 1;

@@ -11,11 +11,11 @@
 #ifndef ALLTOALL_PIPELINE_BASE_PUB_H
 #define ALLTOALL_PIPELINE_BASE_PUB_H
 
-#include <cstring>
 #include <vector>
 #include <memory>
 #include <list>
 #include <hccl/hccl_types.h>
+#include <cstring>
 #include "hccl/base.h"
 #include "externalinput_pub.h"
 #include "mem_device_pub.h"

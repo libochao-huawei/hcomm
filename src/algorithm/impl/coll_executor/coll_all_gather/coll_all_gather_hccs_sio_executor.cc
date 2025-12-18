@@ -19,41 +19,6 @@ CollAllGatherHccsSioExecutor::CollAllGatherHccsSioExecutor(const HcclDispatcher 
     DMAReduceFlag_ = true;
 }
  
-u64 CollAllGatherHccsSioExecutor::CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize)
-{
-    // 中转内存单次最多能够接受的output count
-    u64 maxCountPerLoop = cclBuffSize / HCCL_MIN_SLICE_ALIGN
-        * HCCL_MIN_SLICE_ALIGN / unitSize;
-    HCCL_INFO("[CollAllGatherHccsSioExecutor][CalcLoopMaxCount]" \
-        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize.", maxCountPerLoop);
-    return maxCountPerLoop;
-}
- 
-HcclResult CollAllGatherHccsSioExecutor::CalcTransportMemType(TransportMemType &inputType,
-    TransportMemType &outputType)
-{
-    if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        inputType = TransportMemType::CCL_INPUT;
-        outputType = TransportMemType::CCL_OUTPUT;
-    } else {
-        inputType = TransportMemType::PARAM_INPUT;
-        outputType = TransportMemType::PARAM_OUTPUT;
-    }
- 
-    HCCL_INFO("[CollAllGatherHccsSioExecutor][CalcTransportMemType]" \
-        "tag[%s] inputType[%d], outputType[%d]", tag_.c_str(), inputType, outputType);
-    return HCCL_SUCCESS;
-}
- 
-HcclResult CollAllGatherHccsSioExecutor::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
-{
-    TransportMemType inputType = TransportMemType::RESERVED;
-    TransportMemType outputType = TransportMemType::RESERVED;
-    CHK_RET(CalcTransportMemType(inputType, outputType));
-    CHK_RET(CalcLevel0CommInfo(inputType, outputType, opTransport));
-    return HCCL_SUCCESS;
-}
-
 HcclResult CollAllGatherHccsSioExecutor::CalcStreamNum(u32& streamNum)
 {
     u32 totalStreamNum = topoAttr_.deviceNumPerAggregation + 1U;
@@ -65,7 +30,26 @@ HcclResult CollAllGatherHccsSioExecutor::CalcStreamNum(u32& streamNum)
  
     return HCCL_SUCCESS;
 }
+
+u64 CollAllGatherHccsSioExecutor::CalcLoopMaxCount(const u64 cclBuffSize, const u32 unitSize)
+{
+    // 中转内存单次最多能够接受的output count
+    u64 maxCountPerLoop = cclBuffSize / HCCL_MIN_SLICE_ALIGN
+        * HCCL_MIN_SLICE_ALIGN / unitSize;
+    HCCL_INFO("[CollAllGatherHccsSioExecutor][CalcLoopMaxCount]" \
+        "using default maxCountPerLoop[%llu] as CCLBuffSize / unitSize.", maxCountPerLoop);
+    return maxCountPerLoop;
+}
  
+HcclResult CollAllGatherHccsSioExecutor::CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport)
+{
+    TransportMemType inputType = TransportMemType::RESERVED;
+    TransportMemType outputType = TransportMemType::RESERVED;
+    CHK_RET(CalcTransportMemType(inputType, outputType));
+    CHK_RET(CalcLevel0CommInfo(inputType, outputType, opTransport));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollAllGatherHccsSioExecutor::CalcLevel0CommInfo(TransportMemType inputType,
     TransportMemType outputType, std::vector<LevelNSubCommTransport>& opTransport)
 {
@@ -81,6 +65,22 @@ HcclResult CollAllGatherHccsSioExecutor::CalcLevel0CommInfo(TransportMemType inp
                 transportRequest.notifyNum);
         }
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollAllGatherHccsSioExecutor::CalcTransportMemType(TransportMemType &inputType,
+    TransportMemType &outputType)
+{
+    if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+        inputType = TransportMemType::CCL_INPUT;
+        outputType = TransportMemType::CCL_OUTPUT;
+    } else {
+        inputType = TransportMemType::PARAM_INPUT;
+        outputType = TransportMemType::PARAM_OUTPUT;
+    }
+ 
+    HCCL_INFO("[CollAllGatherHccsSioExecutor][CalcTransportMemType]" \
+        "tag[%s] inputType[%d], outputType[%d]", tag_.c_str(), inputType, outputType);
     return HCCL_SUCCESS;
 }
  

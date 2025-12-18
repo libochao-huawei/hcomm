@@ -395,32 +395,47 @@ bool RankConsistentcyChecker::CompareCrcInfo(const std::string &tag, HcclCRCInfo
 void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const std::string &tag, const std::string &paraName,
     const std::string &localPara, const std::string &remotePara)
 {
-    RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
-        std::vector<std::string>({ tag, paraName, localPara, remotePara }));
-    HCCL_ERROR(
-        "[RankConsistentcyChecker][ReportCmdInfoCheckFailed]CMD information %s check fail. local[%s], remote[%s]",
-        paraName.c_str(), localPara.c_str(), remotePara.c_str());
+    RPT_INPUT_ERR(true,
+        "EI0005",
+        std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
+        std::vector<std::string>({tag, paraName, localPara, remotePara}));
+    HCCL_ERROR("[%s][%s]CMD information %s check fail. local[%s], remote[%s]",
+        LOG_KEYWORDS_INIT_CHANNEL.c_str(),
+        LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
+        paraName.c_str(),
+        localPara.c_str(),
+        remotePara.c_str());
 }
 
 void RankConsistentcyChecker::ReportCmdInfoCheckFailed(const std::string &tag, const std::string &paraName,
     uint32_t localPara, uint32_t remotePara)
 {
-    RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
-        std::vector<std::string>({ tag, paraName, std::to_string(localPara), std::to_string(remotePara) }));
-    HCCL_ERROR(
-        "[RankConsistentcyChecker][ReportCmdInfoCheckFailed]CMD information %s check fail. local[%u], remote[%u]",
-        paraName.c_str(), localPara, remotePara);
+    RPT_INPUT_ERR(true,
+        "EI0005",
+        std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
+        std::vector<std::string>({tag, paraName, std::to_string(localPara), std::to_string(remotePara)}));
+    HCCL_ERROR("[%s][%s]CMD information %s check fail. local[%u], remote[%u]",
+        LOG_KEYWORDS_INIT_CHANNEL.c_str(),
+        LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
+        paraName.c_str(),
+        localPara,
+        remotePara);
 }
 
 void RankConsistentcyChecker::ReportCrcCheckFailed(const std::string &tag, HcclCrcRecordType crcType,
     const uint32_t localCrc, const uint32_t remoteCrc)
 {
     const auto crcTypeStr = GetCRCTypeEnumStr(crcType);
-    RPT_INPUT_ERR(true, "EI0005", std::vector<std::string>({ "tag", "para_name", "local_para", "remote_para" }),
-        std::vector<std::string>({ tag, crcTypeStr, std::to_string(localCrc), std::to_string(remoteCrc) }));
-    HCCL_ERROR(
-        "[RankConsistentcyChecker][ReportCrcCheckFailed]CRC for %s check fail. local[%u], remote[%u]",
-        crcTypeStr.c_str(), localCrc, remoteCrc);
+    RPT_INPUT_ERR(true,
+        "EI0005",
+        std::vector<std::string>({"tag", "para_name", "local_para", "remote_para"}),
+        std::vector<std::string>({tag, crcTypeStr, std::to_string(localCrc), std::to_string(remoteCrc)}));
+    HCCL_ERROR("[%s][%s]CRC for %s check fail. local[%u], remote[%u]",
+        LOG_KEYWORDS_INIT_CHANNEL.c_str(),
+        LOG_KEYWORDS_PARAMETER_CONFLICT.c_str(),
+        crcTypeStr.c_str(),
+        localCrc,
+        remoteCrc);
 }
 
 void RankConsistentcyChecker::CompareCmdInfo(HcclCheckInfo &checkInfo, HcclCheckInfo &checkInfoRecv)
@@ -527,9 +542,9 @@ bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckIn
         } else if (localCannVersion != remoteCannVersion) { // cann版本信息读取成功，且版本不一致
             RPT_INPUT_ERR(true, "EI0008", std::vector<std::string>({"tag", "local_version", "remote_version"}),
                 std::vector<std::string>({checkInfo.cmdInfo.tag, localCannVersion, remoteCannVersion}));
-            HCCL_ERROR("[RankConsistentcyChecker][CompareFrame] errNo[0x%016llx] Inconsistent CANN Versions. "
-                "local_version %s, remote_version %s.", HCCL_ERROR_CODE(HCCL_E_INTERNAL),
-                checkInfo.version, checkInfoRecv.version);
+            HCCL_ERROR("[%s][%s] errNo[0x%016llx] Inconsistent HCCL Versions. local_version %s, remote_version %s.",
+                LOG_KEYWORDS_INIT_CHANNEL.c_str(), LOG_KEYWORDS_VERSION_CONFLICT.c_str(),
+                HCCL_ERROR_CODE(HCCL_E_INTERNAL), checkInfo.version, checkInfoRecv.version);
             bIsDiff = true;
         }
     }

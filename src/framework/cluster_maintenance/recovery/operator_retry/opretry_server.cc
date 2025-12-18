@@ -344,7 +344,6 @@ HcclResult OpRetryServerRunning::ParaseErrorCode(RetryContext* retryCtx, HcclAge
         }
         case KfcError::kRdma:
             retryCtx->isRdmaError = true;
-            g_isRdmaError = true;
         case KfcError::kExecConstraint:
         case KfcError::kSdma: { // 处理ERROR
             nextState = RETRY_STATE_CMD_STOP_AICPU;
@@ -833,19 +832,7 @@ HcclResult SwitchNicServerCheckAllSwitchRanks::ProcessEvent(RetryContext *retryC
 
 HcclResult OpRetryServerWaitResume::ProcessEvent(RetryContext *retryCtx)
 {
-    if (!retryCtx->isServerStateWaitResume_ && !retryCtx->isRdmaError) {
-        for (auto &it : retryCtx->serverSockets_) {
-            const u32 &agentId = it.first;
-            RetryCommandInfo commandInfo;
-            commandInfo.command = RESUME_CMD_RUNNING;
-            CHK_RET(IssueCommandWithOpId(it.second.socket, commandInfo));
-            HCCL_RUN_INFO("[OpRetry][Server][Resume]rank[%u] send resume running", agentId);
-        }
-        CHK_RET(CreateOpRetryServerByState(RETRY_STATE_SERVER_RUNNING, retryCtx));
-        HCCL_RUN_INFO("[OpRetry][Server]OpRetryServerWaitResume, set state to running");
-        return HCCL_SUCCESS;
-    }
-    if (!retryCtx->isServerStateWaitResume_ && retryCtx->isRdmaError) {
+    if (!retryCtx->isServerStateWaitResume_) {
         for (auto &it : retryCtx->serverSockets_) {
             const u32 &agentId = it.first;
             RetryCommandInfo commandInfo;

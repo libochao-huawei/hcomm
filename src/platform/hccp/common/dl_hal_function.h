@@ -19,7 +19,7 @@
 #include "ascend_hal_error.h"
 #include "ascend_hal_define.h"
 
-// device info, see devdrv_hardware_version
+// device info, see hardware_version
 #define VER_BIN5            5
 #define VER_BIN8            8
 #define GET_CHIP_OFFSET     8
@@ -35,10 +35,6 @@
 #define RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE_MASK (0U << RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE)
 
 struct DlHalOps {
-    int (*dlDevdrvGetBoardId)(unsigned int devId, unsigned int *boardId);
-    int (*dlDevdrvGetVnicIp)(unsigned int devId, unsigned int *ipAddr);
-    int (*dlDevdrvGetVnicIpBySdid)(unsigned int sdid, unsigned int *ipAddr);
-
     int (*dlDrvGetDevNum)(unsigned int *numDev);
     int (*dlDrvGetLocalDevIdByHostDevId)(unsigned int devId, unsigned int* chipId);
     int (*dlDrvGetDevIdByLocalDevId)(unsigned int localDevId, unsigned int *devId);
@@ -83,8 +79,6 @@ struct DlHalOps {
     int (*dlHalMemFree)(void *pp);
     int (*dlHalEschedSubmitEvent)(uint32_t devId, struct event_summary *event);
 
-    int (*dlDevdrvSetUserConfig)(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize);
-    int (*dlDevdrvClearUserConfig)(uint32_t devid, const char *name);
     int (*dlHalGetDeviceInfo)(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
 
     int (*dlHalMemCtl)(int type, void *paramValue, size_t paramValueSize, void *outValue, size_t *outSizeRet);
@@ -111,10 +105,6 @@ struct DlHalOps {
 
 int DlHalInit(void);
 void DlHalDeinit(void);
-
-int DlDevdrvGetBoardId(unsigned int devId, unsigned int *boardId);
-int DlDevdrvGetVnicIp(unsigned int devId, unsigned int *ipAddr);
-int DlDevdrvGetVnicIpBySdid(unsigned int sdid, unsigned int *ipAddr);
 
 int DlDrvGetDevNum(unsigned int *numDev);
 int DlDrvGetLocalDevIdByHostDevId(unsigned int devId, unsigned int* chipId);
@@ -159,10 +149,7 @@ int DlHalMemAlloc(void **pp, unsigned long long size, unsigned long long flag);
 int DlHalMemFree(void *pp);
 int DlHalEschedSubmitEvent(uint32_t devId, struct event_summary *event);
 
-int DlDevdrvSetUserConfig(uint32_t devid, const char *name, uint8_t *buf, uint32_t bufSize);
-int DlDevdrvClearUserConfig(uint32_t devid, const char *name);
-
-// device info, see devdrv_hardware_version
+// device info, see hardware_version
 int DlHalGetDeviceInfo(uint32_t devId, int32_t moduleType, int32_t infoType, int64_t *value);
 
 static inline uint32_t DlHalPlatGetVer(uint64_t deviceInfo)

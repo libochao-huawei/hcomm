@@ -15,7 +15,6 @@
 #include <memory>
 #include "ffts_common.h"
  
-namespace GraphMgr {
 class FftsCtxProvider {
 public:
     FftsCtxProvider();
@@ -27,6 +26,4 @@ private:
     std::unordered_map<std::string, HcclFftsContextsInfo> fftsCtxMapV2_;
     std::unique_ptr<HcclFftsContextsInfo> alwaysNewFftsCtx_;
 };
- 
-}  // namespace GraphMgr
 #endif

@@ -187,11 +187,10 @@ HcclResult TopoInfoParse::CheckInterServerDeviceId()
                 continue;
             }
             if (!rs.second) {
-                RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({ "error_reason", "ranktable_path" }),
-                    std::vector<std::string>({ "device id repeat for one server. Please check ranktable",
-                    "The ranktable path configured in the training can be found in the plogs." }));
-                HCCL_ERROR("[Check][DeviceId]errNo[0x%016llx] check ranklist[%u], device id repeat for one server",
-                    HCOM_ERROR_CODE(HCCL_E_PARA), it->userRank);
+                RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}),
+                    std::vector<std::string>({ "device id repeat for one server. Please check ranktable"}));
+                HCCL_ERROR("[%s][%s]errNo[0x%016llx] check ranklist[%u], device id repeat for one server",
+                    LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), it->userRank);
                 return HCCL_E_PARA;
             }
         } else {
@@ -303,13 +302,12 @@ HcclResult TopoInfoParse::CheckServerInnerRankInfo()
         }
         if (HCCL_AISERVER_VAILD_4P_RANKS.find(serverInnerDeviceInfo) == HCCL_AISERVER_VAILD_4P_RANKS.end()) {
             std::string errorManager =
-                "The number of selected devices on the current server is 4. Please check the devices "
+                "The number of selected devices on the current server is 4. Please check the devices " \
                 "selected in ranktable.";
             errorManager += selectedDevice;
-            RPT_INPUT_ERR(true, "EI0004", std::vector<std::string>({ "error_reason", "ranktable_path" }),
-                std::vector<std::string>({ errorManager, "The ranktable path configured "
-                "in the training can be found in the plogs." }));
-            HCCL_ERROR("%s", errorManager.c_str());
+            RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason"}),
+                std::vector<std::string>({ errorManager}));
+            HCCL_ERROR("[%s][%s] %s", LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), errorManager.c_str());
             return HCCL_E_PARA;
         }
         HCCL_DEBUG("%s", selectedDevice.c_str());

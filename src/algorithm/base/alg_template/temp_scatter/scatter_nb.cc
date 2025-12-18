@@ -217,6 +217,7 @@ HcclResult ScatterNB::GetNslbAdjInfo(const u32 rank, const u32 rankSize,
     if (links.size() < rankSize) {
         return HCCL_SUCCESS;
     }
+    HCCL_DEBUG("[ScatterNB]GetNslbAdjInfo start");
     u32 nSteps  = 0;
     for(u32 temp = rankSize - 1; temp != 0; temp >>= 1, ++nSteps){}
 
@@ -225,9 +226,11 @@ HcclResult ScatterNB::GetNslbAdjInfo(const u32 rank, const u32 rankSize,
         if (deltaRoot >= u32(1 << step)) {
             continue;
         }
+        HCCL_DEBUG("[ScatterNB]now step is %u start", step);
         if (step != nSteps - 1 || deltaRoot < (rankSize - (1 << step))) {
             u32 deltaRank = 1 << step;
             u32 sendTo =(rank + deltaRank) % rankSize;
+            HCCL_DEBUG("[ScatterNB]sendTo is %u", sendTo);
             LINK linkRight = links[sendTo];
             CHK_SMART_PTR_NULL(linkRight);
 

@@ -158,7 +158,7 @@ HcclResult CollAlltoAllVContinuousPipeline::Orchestrate(OpParam& param, AlgResou
 
 HcclResult CollAlltoAllVContinuousPipeline::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAlltoAllVContinuousPipeline][KernelRun] alltoall npu direct start.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAlltoAllVContinuousPipeline][KernelRun] AllToAllV npu direct start.");
 
     // 获取通信域
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));

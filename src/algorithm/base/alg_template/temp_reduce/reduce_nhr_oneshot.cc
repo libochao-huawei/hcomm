@@ -43,6 +43,7 @@ HcclResult ReduceNHROneshot::RunAsync(const u32 rank, const u32 rankSize, const 
         if (inputMem_ != outputMem_) {
             return HcclD2DMemcpyAsync(dispatcher_, outputMem_, inputMem_, stream_);
         }
+        HCCL_DEBUG("[ReduceNHROneshot]RunAsync for rankSize is 1 success");
         return HCCL_SUCCESS;
     }
 

@@ -11,7 +11,6 @@
 #include "plugin_runner.h"
 #include "adapter_rts_common.h"
 #include "externalinput_pub.h"
-#include "acl/error_codes/rt_error_codes.h"
 
 using namespace hccl;
 PluginRunner::PluginRunner(ProfilerBase *profiler) : profiler_(profiler) {}
@@ -112,15 +111,23 @@ void PluginRunner::operator () (const TaskParaHost &paraHost) const
 
 void PluginRunner::operator () (rtStream_t stream, const TaskParaAiv &paraAiv) const
 {
-    u32 taskID = 0;
-    u32 streamID = 0;
-    HcclResult ret;
-
-    ret = hrtGetTaskIdAndStreamID(taskID, streamID);
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[PluginRunner][Operator]rtGet task id and stream id fail. return[%d]", ret),);
-
-    if (profiler_ != nullptr) {
-        profiler_->Save(streamID, taskID, paraAiv);
+    u32 threadLastTaskID = 0;
+    u32 threadLastStreamID = 0;
+    s32 streamID = 0;
+    HcclResult result;
+    bool isCapture = false;
+    CHK_PRT(isStreamCapture(stream, isCapture));
+    result = hrtGetTaskIdAndStreamID(threadLastTaskID, threadLastStreamID);
+    CHK_PRT_RET(result != HCCL_SUCCESS,
+            HCCL_ERROR("[PluginRunner][Operator]rtGet task id and stream id fail. return[%d]", result),);
+    CHK_PRT_RET(profiler_ == nullptr, HCCL_WARNING("profiler_ is nullptr"),);
+    if (isCapture) {
+        result = hrtGetStreamId(stream, streamID);
+        CHK_PRT_RET(result != HCCL_SUCCESS,
+            HCCL_ERROR("[PluginRunner][Operator]rtGet stream id fail. return[%d]", result),);
+        u32 castStreamID = static_cast<u32>(streamID);
+        profiler_->Save(castStreamID, threadLastStreamID, threadLastTaskID, paraAiv);
+    } else {
+        profiler_->Save(threadLastStreamID, threadLastTaskID, paraAiv);
     }
 }

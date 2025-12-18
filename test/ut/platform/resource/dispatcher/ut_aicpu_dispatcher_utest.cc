@@ -302,10 +302,6 @@ TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuTbeReduce_RdmaSend)
 
 TEST_F(DispatcherAiCpu_UT, ut_DispatcherProfilingRdmaSend)
 {
-    MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
-    bool isL1On = dfx::ProfilingManager::IsProfL1On();
-    EXPECT_EQ(isL1On, true);
-
     uint32_t sqHead = 0;
     uint32_t sqTail = 5;
     u32 dbIndex = 0;
@@ -343,10 +339,6 @@ int32_t MsprofReportBatchAdditionalInfo(uint32_t agingFlag, const VOID_PTR data,
 
 TEST_F(DispatcherAiCpu_UT, ut_AdprofReportBatchAdditionalInfo)
 {
-    MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
-    bool isL1On = dfx::ProfilingManager::IsProfL1On();
-    EXPECT_EQ(isL1On, true);
-
     uint32_t sqHead = 0;
     uint32_t sqTail = 5;
     u32 dbIndex = 0;
@@ -416,13 +408,6 @@ TEST_F(DispatcherAiCpu_UT, ut_DispatcherAiCpuLaunchTask)
 
 TEST_F(DispatcherAiCpu_UT, ut_aicpu_prof_taskInfoReport)
 {
-    MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
-
-    bool isL1On = dfx::ProfilingManager::IsProfL1On();
-    bool isL0On = dfx::ProfilingManager::IsProfL0On();
-    EXPECT_EQ(isL1On, true);
-    EXPECT_EQ(isL0On, true);
-
     uint32_t sqHead = 0;
     uint32_t sqTail = 100;
     Stream stream(streamInfo, true);

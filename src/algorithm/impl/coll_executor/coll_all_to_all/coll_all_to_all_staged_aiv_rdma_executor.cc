@@ -95,7 +95,7 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::CalBlockDim(u32& blockDim, u32 
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[CollRunAlltoAllStagedAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollRunAlltoAllStagedAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollRunAlltoAllStagedAivRdmaExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -123,7 +123,9 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::RunAlltoAllStaged1InAIV(const O
     };
     topoArgs.identify = algoAttr_.identifier;
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, outerCommInfo_.localRankSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, outerCommInfo_.localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag
@@ -131,6 +133,7 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::RunAlltoAllStaged1InAIV(const O
     AivAlgArgs algArgs {0};
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
+    HCCL_DEBUG("[CollRunAlltoAllStagedAivRdmaExecutor]RunAlltoAllStaged1InAIV for blockDim is %u", blockDim_);
     if (aivClearEnable_) {
         ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs);
     }

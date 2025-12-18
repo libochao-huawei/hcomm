@@ -83,7 +83,7 @@ __aicore__ inline void AivAllGatherBig910B::MemcpyWithFlagWrap(__gm__ T *cclGmSe
 
         uint64_t curProcessedOffset = processedBatchCount * UB_DB_DATA_BATCH_SIZE / sizeof(T);
         CpGM2GM(cclGmSelf + curProcessedOffset, cclGmOther + curProcessedOffset, curSize / sizeof(T));
-
+        PipeBarrier<PIPE_ALL>();
         processedBatchCount = preparedBatchCount;
     }
 }
@@ -109,18 +109,18 @@ __aicore__ inline void AivAllGatherBig910B::Process(GM_ADDR input, GM_ADDR outpu
         if (block_idx == rank_) {
             CpGM2GMWithFlagWrap(cclGmSelf, inputGm, avgLengthPerSlice, rank_, 8, tag);
             // 所有对端都取走数据
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             Wait1vN((rankSize_ - 1) * tag, CommPattern::intraRank, true);
         } else {
             MemcpyWithFlagWrap(outputGm + outputOffset, cclGmOther, len, targetRank, tag);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             Record(tag, targetRank, AivNotifyType::DataSignal);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             Wait(tag, targetRank, AivNotifyType::DataSignal);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
             //是否要加清零的参数
             RecordNv1(tag, rank_);
-            pipe_barrier(PIPE_ALL);
+            PipeBarrier<PIPE_ALL>();
         }
     } else {
         CpGM2GM(outputGm + rank_ * totalLen, inputGm, avgLengthPerSlice);
@@ -145,21 +145,21 @@ __aicore__ inline void AivAllGatherBig910B::ProcessSingleRanksizeCore(GM_ADDR in
     int32_t outputOffset = targetRank * totalLen;
     if (block_idx == rank_) {
         CpGM2GMWithFlagWrap(cclGmSelf, inputGm, avgLengthPerSlice, rank_, 8, tag);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
         CpGM2GM(outputGm + rank_ * totalLen, inputGm, avgLengthPerSlice);
         // 所有对端都取走数据
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
         Wait1vN((rankSize_ - 1) * tag, CommPattern::intraRank, true);
     } else {
         MemcpyWithFlagWrap(outputGm + outputOffset, cclGmOther, len, targetRank, tag);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
         Record(tag, targetRank, AivNotifyType::DataSignal);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
         Wait(tag, targetRank, AivNotifyType::DataSignal);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
         //是否要加清零的参数
         RecordNv1(tag, rank_);
-        pipe_barrier(PIPE_ALL);
+        PipeBarrier<PIPE_ALL>();
     }
     return;
 }

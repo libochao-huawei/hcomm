@@ -62,14 +62,15 @@ HcclResult AlltoallvContinuousPipeline::PrepareSendRecvInfo( std::vector<SendRec
 HcclResult AlltoallvContinuousPipeline::PrepareTopoInfo(const u32 userRank, const SubCommInfo &level0CommInfo,
     const SubCommInfo &level1CommInfo)
 {
+    constexpr u32 MIN_RANKSIZE = 2;
     interRankSize_ = level1CommInfo.localRankSize;
-    CHK_PRT_RET(interRankSize_ < 2,
+    CHK_PRT_RET(interRankSize_ < MIN_RANKSIZE,
         HCCL_ERROR("[AlltoallvContinuousPipeline][PrepareTopoInfo] Unexpected inter rank size[%u], which should >= 2.",
             interRankSize_),
         HCCL_E_PARA);
 
     intraRankSize_ = level0CommInfo.localRankSize;
-    CHK_PRT_RET(intraRankSize_ < 2,
+    CHK_PRT_RET(intraRankSize_ < MIN_RANKSIZE,
         HCCL_ERROR("[AlltoallvContinuousPipeline][PrepareTopoInfo] Unexpected intra rank size[%u], which should >= 2.",
             intraRankSize_),
         HCCL_E_PARA);

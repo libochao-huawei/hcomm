@@ -258,6 +258,11 @@ public:
 
     static bool IsProfSubscribeAdditionInfo();
 
+    virtual HcclResult SetMultiQpMode(bool multiQpMode)
+    {
+        return HCCL_SUCCESS;
+    }
+
 protected:
     HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, bool isMainStream = false);
@@ -286,7 +291,7 @@ protected:
     bool hostNicTcpSendThreadState_;
     std::mutex hostNicMutex_;
     void* overflowAddr_;
-    void *graphMgr_{nullptr};
+    void *fftsPubInfo_{nullptr};
     bool setDeviceFlag_;
     uint32_t notifyMaxWaitTime_;
     LoadTaskCallBack callback_{nullptr};

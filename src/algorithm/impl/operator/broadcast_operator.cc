@@ -53,7 +53,7 @@ HcclResult BroadCastOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     } else {
-        HCCL_ERROR("[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
+        HCCL_ERROR("BroadCastOperator[SelectAlg] device type[%d] is out of range for selector.", deviceType_);
         return HCCL_E_NOT_SUPPORT;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -78,6 +78,7 @@ HcclResult BroadCastOperator::SelectAlg(const std::string& tag, const OpParam& p
             u32 rootId = param.root / deviceNumPerAggregation_ / serverNumPerSuperPod;
             appendTag += (appendTag.empty() ? "L2_" : "_L2_") + std::to_string((rootId >= part1Size) || ((rootId % FACTOR_TWO) == 0));
         }
+        HCCL_DEBUG("[BroadCastOperator][SelectAlg]tag is [%s]", tag);
         newTag = newTag + '_' + appendTag;
         if (GetExternalInputHcclEnableEntryLog() && param.opBaseAtraceInfo != nullptr) {
             CHK_RET(param.opBaseAtraceInfo->SavealgtypeTraceInfo(appendTag, param.tag));
@@ -89,12 +90,14 @@ HcclResult BroadCastOperator::SelectAlg(const std::string& tag, const OpParam& p
             algType1), HCCL_E_INTERNAL);
         newTag = tag + level1Iter->second + algName;
     }
+    HCCL_DEBUG("[%s] SelectAlg for newTag", __func__);
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
     return ret;
 }
 
 HcclResult BroadCastOperator::SelectAlgforMix(const OpParam& param, std::string& algName)
 {
+    (void) param;
     if (gcdDeviceNumPerAggregation_ > 1) {
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
         HCCL_WARNING("[BroadCastOperator][SelectAlgforMix] only support NHR in AlgoLevel1 yet, "\
@@ -113,6 +116,7 @@ HcclResult BroadCastOperator::SelectAlgforMix(const OpParam& param, std::string&
 
 HcclResult BroadCastOperator::SelectAlgfor310P3(const OpParam& param, std::string& algName)
 {
+    (void) param;
     algName = "BroadCastCommFor310P";
     HCCL_INFO("[SelectAlgfor310P3] broadcast SelectAlgfor310P3 is algName [%s]", algName.c_str());
     return HCCL_SUCCESS;
@@ -127,6 +131,7 @@ HcclResult BroadCastOperator::SelectAlgfor310P(const OpParam& param, std::string
 
 HcclResult BroadCastOperator::SelectAlgfor910A(const OpParam& param, std::string& algName)
 {
+    (void) param;
     bool isMeshTopo = topoType_ == TopoType::TOPO_TYPE_4P_MESH || topoType_ == TopoType::TOPO_TYPE_2P_MESH;
     bool isRingTopo = topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING || topoType_ == TopoType::TOPO_TYPE_8P_RING;
 

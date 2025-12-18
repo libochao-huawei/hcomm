@@ -52,10 +52,8 @@ const std::string HCCL_ALLTOALL = "ALLTOALL";
 const std::string HCCL_ALLTOALLV = "ALLTOALLV";
 const std::string HCCL_ALLTOALLVC = "ALLTOALLVC";
 
-thread_local map<std::string, shared_ptr<TopoInfoDetect>> g_topoDetectServerPtrMap;
-
 HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, std::string tag)
+    HcclDataType dataType, const std::string &tag)
 {
     if (GetIfProfile()) {
         AlgType algType;
@@ -76,11 +74,13 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
             groupName, blockDim), tag.c_str());
     }
+    hcclComm->SetAivCoreLimit(0);
     return HCCL_SUCCESS;
 }
 
 thread_local s32 g_hcclDeviceId = INVALID_INT;
 std::mutex g_opHcomInfosMutex{};
+std::mutex g_opHcomOneSideMutex{};
 HcclOpInfoCtx g_opHcomInfos[MAX_MODULE_DEVICE_NUM + 1];
 
 HcclResult HcclGetDeviceId(void)
@@ -454,10 +454,6 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set group topo info error.",
                 HCCL_ERROR_CODE(ret)), errorFlag = true);
-        ret = opBaseHcom.pComm->InitHccpChannel();
-        if (ret != HCCL_SUCCESS) {
-            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret);
-        }
     } while (0);
 
     if (errorFlag) {
@@ -581,7 +577,13 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
 
     AddOneSidedIdentifier(identifier);
 
-    CHK_RET(InitCommClusterInfo(rankTableM, rank, commConfig, oneSidedHCom, comm));
+    ret = InitCommClusterInfo(rankTableM, rank, commConfig, oneSidedHCom, comm);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[Init][HcclCommInitClusterInfoMemConfig] InitCommClusterInfo failed");
+        DeleteOneSidedIdentifier(identifier);
+        DeInitOneSidedHcomInfo(deviceLogicId, identifier);
+        return ret;
+    }
 
     g_oneSidedCommSet.insert(*comm);
 
@@ -967,10 +969,10 @@ HcclResult HcclGetCommHandle(const char *commName, std::shared_ptr<hccl::hcclCom
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetCommConnections(const HcclRootHandle &rootHandle, HcclCommConnections &commConnections)
+HcclResult HcclGetCommConnections(const std::string &identifier, HcclCommConnections &commConnections)
 {
     HcclOpInfoCtx& opBaseInfo = GetHcclOpInfoCtx();
-    auto iterServer = opBaseInfo.hcclCommTopoInfoDetectServer.find(rootHandle.identifier);
+    auto iterServer = opBaseInfo.hcclCommTopoInfoDetectServer.find(identifier);
     if (iterServer == opBaseInfo.hcclCommTopoInfoDetectServer.end()) {
         commConnections.isRoot = false;
     } else {
@@ -978,9 +980,9 @@ HcclResult HcclGetCommConnections(const HcclRootHandle &rootHandle, HcclCommConn
         CHK_RET(iterServer->second->GetServerConnections(commConnections.serverConnections));
     }
 
-    auto iterAgent = opBaseInfo.hcclCommTopoInfoDetectAgent.find(rootHandle.identifier);
+    auto iterAgent = opBaseInfo.hcclCommTopoInfoDetectAgent.find(identifier);
     if (iterAgent == opBaseInfo.hcclCommTopoInfoDetectAgent.end()) {
-        HCCL_ERROR("hccl get agent connections failed, rootHandle.identifier=%s", rootHandle.identifier);
+        HCCL_ERROR("hccl get agent connections failed, identifier=%s", identifier.c_str());
         return HCCL_E_PARA;
     } else {
         CHK_RET(iterAgent->second->GetAgentConnection(commConnections.agentConnection));
@@ -1114,6 +1116,12 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
     RankTable_t rankTable;
     HcclBasicRankInfo localRankInfo;
 
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    bool retryEnable = devType == DevType::DEV_TYPE_910_93 && !commConfig.GetConfigAivMode() && (
+        commConfig.GetConfigInterServerRetryEnable() || commConfig.GetConfigInterSuperPodRetryEnable());
+    HCCL_INFO("[InitCommRootInfo] retryEnable is [%d]", retryEnable);
+
     do {
         RankConsistentcyChecker::GetInstance().SetCheckCannVersionSwitch(true); // 打开CANN软件版本校验开关
         pComm.reset(new hccl::hcclComm(commConfig.GetConfigBufferSize(), commConfig.GetConfigBufferSize(),
@@ -1154,15 +1162,10 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
 
         CHK_RET(DisplayRanktableInfo(rankTable));
 
-        DevType devType;
-        CHK_RET(hrtGetDeviceType(devType));
-        bool retryEnable = devType == DevType::DEV_TYPE_910_93 && !commConfig.GetConfigAivMode() && (
-            commConfig.GetConfigInterServerRetryEnable() || commConfig.GetConfigInterSuperPodRetryEnable());
-        HCCL_INFO("[InitCommRootInfo] retryEnable is [%d]", retryEnable);
         if (retryEnable) {
-            EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectAgent.insert({ rootHandle.identifier, topoDetectAgent }),
+            EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectAgent.insert({ commIdentifier, topoDetectAgent }),
                 return HCCL_E_MEMORY);
-            ret = HcclGetCommConnections(rootHandle, params.commConnections);
+            ret = HcclGetCommConnections(commIdentifier, params.commConnections);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][RootInfo]HcclGetCommConnections failed."),
                 errorFlag = true);
         } else {
@@ -1251,10 +1254,6 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
             HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] setGroupTopoInfo error", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
-        ret = pComm->InitHccpChannel();
-        if (ret != HCCL_SUCCESS) {
-            HCCL_WARNING("InitHccp channel unsuccessful ret:[%u].", ret);
-        }
         if (hcclNslbDp::GetInstance().GetGlobalCommTaskId() != 0) {
             DevType nslb_devType;
             CHK_RET(hrtGetDeviceType(nslb_devType));
@@ -1274,6 +1273,20 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         }
     } while (0);
 
+    std::string defaultIdentifier = rootHandle.identifier;
+    bool serverExist = opBaseHcom.hcclCommTopoInfoDetectServer.find(defaultIdentifier)
+        != opBaseHcom.hcclCommTopoInfoDetectServer.end();
+    if (defaultIdentifier.compare(commIdentifier) != 0 && retryEnable && serverExist) {
+        EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.insert({commIdentifier,
+            opBaseHcom.hcclCommTopoInfoDetectServer[defaultIdentifier]}), return HCCL_E_MEMORY);
+        EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.erase(defaultIdentifier), return HCCL_E_MEMORY);
+        HCCL_INFO("[InitCommRootInfo] replace key of topoDetectServer from [%s] to [%s]",
+            defaultIdentifier.c_str(), commIdentifier.c_str());
+    } else if (!retryEnable && serverExist) {
+        EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectServer.erase(defaultIdentifier), return HCCL_E_MEMORY);
+        HCCL_INFO("[InitCommRootInfo] close topoDetectServer identifier[%s]", commIdentifier.c_str());
+    }
+
     if (errorFlag) {
         HCCL_ERROR("[InitCommRootInfo]Init failed, return[0x%016llx], rankNum[%u], rank[%u], "\
             "rootInfo identifier[%s], server[%s], logicDevId[%d]", HCCL_ERROR_CODE(ret), nRanks, rank,
@@ -1289,8 +1302,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank,
-                                     HcclComm *comm, string &identifier)
+HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, HcclComm *comm)
 {
     HcclResult ret = HCCL_SUCCESS;
     HcclUs startut = TIME_NOW();
@@ -1298,7 +1310,8 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
 #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclCommInitRootInfoV2(nRanks, rootInfo, rank, comm, identifier));
+    std::string fooidentifier;
+    HCCLV2_FUNC_RUN(HcclCommInitRootInfoV2(nRanks, rootInfo, rank, comm, fooidentifier));
 #endif
     CHK_SMART_PTR_NULL(rootInfo);
     HcclRootHandle rootHandle;
@@ -1307,7 +1320,6 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
         "params:destMaxSize[%u], count[%u]", sRet, sizeof(HcclRootHandle),
         sizeof(HcclRootHandle)), HCCL_E_MEMORY);
     rootHandle.identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH - 1] = '\0';
-    identifier = rootHandle.identifier;
 
     CHK_PRT_RET((nRanks == 0), HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] nRanks[%u] should "\
         "be greater than 0.", HCCL_ERROR_CODE(HCCL_E_PARA), nRanks), HCCL_E_PARA);
@@ -1356,16 +1368,12 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
 HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, HcclComm *comm)
 {
     HcclResult ret = HCCL_SUCCESS;
-    string identifier;
-    ret = HcclCommInitRootInfoInner(nRanks, rootInfo, rank, comm, identifier);
-    if (g_topoDetectServerPtrMap.find(identifier) != g_topoDetectServerPtrMap.end()) {
-        g_topoDetectServerPtrMap[identifier] = nullptr;
-    }
+    ret = HcclCommInitRootInfoInner(nRanks, rootInfo, rank, comm);
     return ret;
 }
 
 HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank,
-    const HcclCommConfig *config, HcclComm *comm, string &identifier)
+    const HcclCommConfig *config, HcclComm *comm)
 {
     HcclResult ret = HCCL_SUCCESS;
     HcclUs startut = TIME_NOW();
@@ -1382,7 +1390,6 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
         "params:destMaxSize[%u], count[%u]", sRet, sizeof(HcclRootHandle),
         sizeof(HcclRootHandle)), HCCL_E_MEMORY);
     rootHandle.identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH - 1] = '\0';
-    identifier = rootHandle.identifier;
 
     // 检查配置参数是否为空
     RPT_INPUT_ERR(config == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
@@ -1448,11 +1455,7 @@ HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootI
     const HcclCommConfig *config, HcclComm *comm)
 {
     HcclResult ret = HCCL_SUCCESS;
-    string identifier;
-    ret = HcclCommInitRootInfoConfigInner(nRanks, rootInfo, rank, config, comm, identifier);
-    if (g_topoDetectServerPtrMap.find(identifier) != g_topoDetectServerPtrMap.end()) {
-        g_topoDetectServerPtrMap[identifier] = nullptr;
-    }
+    ret = HcclCommInitRootInfoConfigInner(nRanks, rootInfo, rank, config, comm);
     return ret;
 }
 
@@ -1499,9 +1502,7 @@ HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue)
     CHK_PTR_NULL(configValue);
     if (config == HCCL_DETERMINISTIC) {
     #if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-        const char *socNamePtr = aclrtGetSocName();
-        CHK_PTR_NULL(socNamePtr);
-        HCCLV2_FUNC_RUN(HcclGetConfigV2(config, configValue), socNamePtr);
+        HCCLV2_FUNC_RUN(HcclGetConfigV2(config, configValue));
     #endif
         configValue->value = static_cast<int32_t>(GetExternalInputHcclDeterministicV2());
         HCCL_INFO("[HcclGetConfig] HCCL_DETERMINISTIC is [%d]", configValue->value);
@@ -2449,9 +2450,11 @@ HcclResult HcclCommDestroy(HcclComm comm)
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
     CHK_RET(ResetDevice(hcclComm));
 
+    std::unique_lock<std::mutex> oneSideLock(g_opHcomOneSideMutex);
     if (IsOneSidedComm(comm)) {
         return HcclOneSidedCommDestroy(comm, deviceLogicId, startut);
     }
+    oneSideLock.unlock();
 
     HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
     string group;
@@ -3061,7 +3064,6 @@ HcclResult ReduceLoop(const std::string &tag, void *inputPtr, void *outputPtr, c
 
         CHK_RET(hrtMemAsyncCopy(commInputPtr, curSize, curInputPtr, curSize,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, stream));
-
 
         /* 入参的正确性由HCCL确保 */
         ret = hcclComm->Reduce(tag, commInputPtr, commOutputPtr, curCount, dataType, op, root, stream);
@@ -3766,6 +3768,9 @@ HcclResult HcclCommRegister(HcclComm comm, void* addr, uint64_t size, void **han
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->RegisterCommUserMem(addr, size, handle));
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(hcclComm->GetRankSize(rankSize));
+    CHK_RET(HcomSetGroupTopoInfo(hcclComm->GetIdentifier().c_str(), rankSize));
     HCCL_RUN_INFO("[%s]Register mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
         hcclComm->GetIdentifier().c_str(), *handle, size);
     return HCCL_SUCCESS;
@@ -3778,6 +3783,9 @@ HcclResult HcclCommDeregister(HcclComm comm, void* handle)
     CHK_PTR_NULL(handle);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->DeregisterCommUserMem(handle));
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(hcclComm->GetRankSize(rankSize));
+    CHK_RET(HcomSetGroupTopoInfo(hcclComm->GetIdentifier().c_str(), rankSize));
     HCCL_RUN_INFO("[%s]Deregister mem success, group[%s], handle ptr[%p]", __func__,
         hcclComm->GetIdentifier().c_str(), handle);
     return HCCL_SUCCESS;

@@ -30,6 +30,7 @@ void CollReduceScatterMeshExecutor::ParseParam(const OpParam& param)
     meshSinglePlane_ = (topoAttr_.deviceType == DevType::DEV_TYPE_910B) &&
         topoMatcher_->GetExternalInputHcclDeterministic() == DETERMINISTIC_DISABLE &&
         isInlineReduce && (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+        HCCL_DEBUG("[CollReduceScatterMeshExecutor][ParseParam]meshSinglePlane is %d", meshSinglePlane_);
 
     // 是否需要scratch memory
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&

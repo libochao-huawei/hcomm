@@ -98,8 +98,8 @@ HcclResult CollAllReduceRingExecutor::KernelRun(const OpParam &param, ExecMem &e
     u32 perDataSize = 0;
     CHK_RET(SalGetDataTypeSize(param.DataDes.dataType, perDataSize));
 
-    std::vector<Slice> dataSegsSlice; // 数据分成ranksize份，每份的起始偏移和大小
     std::vector<std::vector<Slice> > multRingsSliceZero; // 数据基于该rank上环0的偏移
+    std::vector<Slice> dataSegsSlice; // 数据分成ranksize份，每份的起始偏移和大小
     u32 ringNum = (topoType_ == TopoType::TOPO_TYPE_8P_RING) ? LEVEL0_PLANE_NUM_IN_8PRING :
         LEVEL0_PLANE_NUM_IN_NPRING_SINGLE;
 
@@ -145,6 +145,7 @@ HcclResult CollAllReduceRingExecutor::KernelRun(const OpParam &param, ExecMem &e
     bool isMultiNic = topoType_ == TopoType::TOPO_TYPE_8P_RING && nicList.size() != DEVICE_EIGHT;
     std::vector<u32>::iterator iterNic = std::find(nicList.begin(), nicList.end(), topoAttr_.devicePhyId);
     bool innRunRet = isMultiNic && (iterNic == nicList.end());
+    HCCL_DEBUG("[CollAllReduceRingExecutor][KernelRun]isMultiNic is %d, innRunRet is %d", isMultiNic, innRunRet);
     if (!innRunRet) { // 满足以下条件, 不做server间通信: 1. 8P ring的拓扑 2. 网口不满配 3. 当前device不出网口
         CHK_RET(CheckCommSize(COMM_LEVEL1, commIndex + 1));
         SubCommInfo level1CommInfo = GetSubCommInfo(COMM_LEVEL1, commIndex);

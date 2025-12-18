@@ -288,3 +288,10 @@ HcclResult HcclSetExecTimeOut(HcclDispatcher dispatcherPtr, s32 execTimeOut)
     CHK_RET(reinterpret_cast<DispatcherPub*>(dispatcherPtr)->SetHcclExecTimeOut(execTimeOut));
     return HCCL_SUCCESS;
 }
+HcclResult SetMultiQpMode(HcclDispatcher dispatcherPtr, bool multiQpMode)
+{
+    CHK_PTR_NULL(dispatcherPtr);
+
+    CHK_RET(reinterpret_cast<DispatcherPub*>(dispatcherPtr)->SetMultiQpMode(multiQpMode));
+    return HCCL_SUCCESS;
+}

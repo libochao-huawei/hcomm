@@ -11,15 +11,8 @@
 #ifndef READ_WRITE_LOCK_BASE_H
 #define READ_WRITE_LOCK_BASE_H
 
-#include <iostream>
-#include <thread>
 #include <mutex>
 #include <condition_variable>
-#include <vector>
-#include <chrono>
-#include <iomanip>
-#include <climits>
-#include "log.h"
 
 class ReadWriteLockBase {
 public:
