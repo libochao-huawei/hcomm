@@ -63,7 +63,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u3
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollAllReduceMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollAllReduceMeshAivSmallCountExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -188,7 +188,9 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::KernelRun(const OpParam &para
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType, algoAttr_.identifier};
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag

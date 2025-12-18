@@ -76,11 +76,11 @@ HcclResult CollReduceScatterMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rank
 
     u32 bestBlockDim = blockDim;
     CHK_PRT_RET(blockDim_ < rankSize && topoAttr_.deviceType == DevType::DEV_TYPE_910_93,
-        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_WARNING("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     
     CHK_PRT_RET(blockDim_ < bestBlockDim && topoAttr_.deviceType != DevType::DEV_TYPE_910_93,
-        HCCL_ERROR("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_WARNING("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, bestBlockDim), HCCL_E_PARA);
 
     if (blockDim_ < bestBlockDim) {
@@ -204,7 +204,9 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType};
     topoArgs.identify = algoAttr_.identifier;
-    CHK_RET(CalBlockDim(blockDim, localRankSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
