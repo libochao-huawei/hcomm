@@ -135,6 +135,7 @@ protected:
     bool is310P3Common_ = false;
     bool aicpuUnfoldMode_ = false;
     HcclWorkflowMode workflowMode_;
+    bool symmetricMemory_ = false;
 };
 std::vector<std::vector<u32>> GetARSRingsOrder(u32 ranksSize, TopoType topoType, std::vector<u32> &RingList);
 }
