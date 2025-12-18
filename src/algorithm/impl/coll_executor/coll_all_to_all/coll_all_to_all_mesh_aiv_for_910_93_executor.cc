@@ -76,7 +76,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 r
     }
 
     CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_WARNING("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, minBlockDim),
         HCCL_E_PARA);
 
@@ -183,7 +183,9 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::KernelRun(const OpParam &param, 
 
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType };
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     topoArgs.identify = algoAttr_.identifier;
     AivResourceArgs resourceArgs {
