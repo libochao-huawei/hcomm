@@ -111,7 +111,7 @@ def create_group(group, rank_num, rank_ids)
 
 ## 调用示例<a name="section1221995817532"></a>
 
-```bash
+```python
 from hccl.manage.api import create_group
 create_group("myGroup", 4, [0, 1, 2, 3])
 ```

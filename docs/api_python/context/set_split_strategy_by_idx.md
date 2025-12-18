@@ -85,7 +85,7 @@ def set_split_strategy_by_idx(idxList, group="hccl_world_group")
 
 ## 调用示例<a name="section1221995817532"></a>
 
-```bash
+```python
 from hccl.split.api import *
 set_split_strategy_by_idx([20, 100, 159], "group")
 ```

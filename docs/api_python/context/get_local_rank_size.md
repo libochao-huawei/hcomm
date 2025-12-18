@@ -73,7 +73,7 @@ int类型，返回device所在服务器内的local rank数量。
 
 ## 调用示例<a name="section1221995817532"></a>
 
-```bash
+```python
 from hccl.manage.api import create_group
 from hccl.manage.api import get_local_rank_size
 create_group("myGroup", 4, [0, 1, 2, 3])  

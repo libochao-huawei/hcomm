@@ -83,7 +83,7 @@ def set_split_strategy_by_size(dataSizeList, group="hccl_world_group")
 
 ## 调用示例<a name="section1221995817532"></a>
 
-```bash
+```python
 from hccl.split.api import *
 set_split_strategy_by_size([60, 20, 20], "group")
 ```

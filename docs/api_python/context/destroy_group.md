@@ -73,7 +73,7 @@ def destroy_group(group)
 
 ## 调用示例<a name="section1221995817532"></a>
 
-```bash
+```python
 from hccl.manage.api import create_group
 from hccl.manage.api import destroy_group
 create_group("myGroup", 4, [0, 1, 2, 3])
