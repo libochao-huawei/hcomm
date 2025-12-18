@@ -11,6 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <cstdint>
 #include "launch_aicpu.h"
 #include "log.h"
 #include "env_config.h"
