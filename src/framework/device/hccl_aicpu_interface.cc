@@ -71,8 +71,10 @@ __attribute__((visibility("default"))) uint32_t RunAicpuRpcSrvLaunchV2(void *arg
         HCCL_ERROR("RunAicpuRpcSrvLaunchV2 get Hcclcomm error group[%s], tag[%s]", commParam->hcomId, tilingData->tag);
         return HCCL_E_INTERNAL;
     }
-    HCCL_INFO("[RunAicpuRpcSrvLaunchV2] isZeroCopy [%d], workflowMode[%d]", tilingData->isZeroCopy, tilingData->workflowMode);
+    HCCL_INFO("[RunAicpuRpcSrvLaunchV2] isZeroCopy [%d], isSymmetricMemory [%d], workflowMode[%d]",
+        tilingData->isZeroCopy, tilingData->isSymmetricMemory, tilingData->workflowMode);
     hcclCommAicpu->SetZeroCopyEnable(tilingData->isZeroCopy);
+    hcclCommAicpu->SetSymmetricMemoryEnable(tilingData->isSymmetricMemory);
     DfxExtendInfo* dfxInfo = hcclCommAicpu->GetDfxExtendInfo();
     if ((dfxInfo->cqeStatus != dfx::CqeStatus::kDefault) ||
         (dfxInfo->pollStatus == PollStatus::kStopAsException)) {
