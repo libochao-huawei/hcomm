@@ -311,7 +311,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && !GetExternalInputInterHccsDisable();
     bool smallCountOptimMultiServer = SmallCountOptimMultiServer(param);
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB); // 涉及ROCE平面
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
 
     // AHC 算法选择逻辑
     bool isAHCAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
