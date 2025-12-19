@@ -141,8 +141,13 @@ HcclResult TbeCrackCleard::Run(const std::vector<std::int64_t> &crackAddr, const
             return HCCL_SUCCESS;
         }
 
-    if (tilingDataHostPtr_ == nullptr) {
-        tilingDataHostPtr_ = new (std::nothrow) char[(crackAddr.size() + 1) * MEMSET_CRACK_TILING_DATA_MAX_SZIE];
+    uint64_t requiredSize = (crackAddr.size() + 1) * MEMSET_CRACK_TILING_DATA_MAX_SZIE;
+    if (tilingDataHostSize_ < requiredSize) {
+        if (tilingDataHostPtr_ != nullptr) {
+            delete[] tilingDataHostPtr_;
+        }
+        tilingDataHostPtr_ = new (std::nothrow) char[requiredSize];
+        tilingDataHostSize_ = requiredSize;
         CHK_PTR_NULL(tilingDataHostPtr_);
     }
 
