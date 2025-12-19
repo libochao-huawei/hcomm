@@ -27,7 +27,7 @@ CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
 CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/add_header_sign.py"
-ENABLE_SIGN="false"
+ENABLE_SIGN="true"
 VERSION_INFO="8.5.0"
 
 BUILD_FWK_HLT="false"
