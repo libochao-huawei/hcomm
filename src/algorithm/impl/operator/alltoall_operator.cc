@@ -388,12 +388,13 @@ HcclResult AlltoAllOperator::PreparePreOpParam(OpParam& preProcessOpParam,
 
 bool AlltoAllOperator::JudgeIfNeedPreProcessAndGetParam(const OpParam& param,
     std::unique_ptr<PreProcessMetaInfo> &preMetaInfo)
-{    
-    if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && (IsSatisfyAlltoAllAivCondition(param) == false)) {
-        bool useA3Pipeline = IsA3PipelineCondition(param);
-        bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
+{
+    bool useA3Pipeline = IsA3PipelineCondition(param);
+    bool useA2AAiv = IsSatisfyAlltoAllAivCondition(param);
+    bool useDirectFullmesh = IsSupportDirectFullmeshForAlltoallv(param, deviceType_, useSuperPodMode_, serverNum_,
             isSingleMeshAggregation_, userRankSize_, cclBufferManager_.GetInCCLbufferSize());
-        bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition();
+    bool useContinuousPipeline = IsSatisfyAlltoallContinuousPipelineCondition();
+    if ((param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) && !useA2AAiv) {
         if (!useA3Pipeline && (useDirectFullmesh || useContinuousPipeline || param.aicpuUnfoldMode)) {
             return false;
         }
@@ -510,8 +511,7 @@ bool AlltoAllOperator::IsSatisfyAlltoAllAivCondition(const OpParam& param)
                     && IsSupportAIVCopy(param.All2AllDataDes.sendType)
                     && userRankSize_ > 1
                     && isBufferEnough
-                    && !retryEnable_
-                    && !multiModuleDiffDeviceNumMode_;
+                    && !retryEnable_;
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isSupportAiv) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
