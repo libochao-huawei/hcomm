@@ -35,6 +35,11 @@ else()
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
 endif()
 
+if (ORION_MODE)
+    set(ORION_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/../../ace/comop/hccl/orion)
+    set(HCOMM_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/..)
+endif()
+
 add_library(hccd  SHARED)
 
 #需要编译的文件list

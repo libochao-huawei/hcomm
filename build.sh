@@ -22,6 +22,8 @@ COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 FULL_MODE="true"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
+ORION_MODE="false"
+ORION_PATH="${CURRENT_DIR}/../ace/comop/hccl/orion"
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
@@ -39,6 +41,11 @@ ENABLE_UT="off"
 ENABLE_ST="off"
 CMAKE_BUILD_TYPE="Debug"
 ASCEND_3RD_LIB_PATH="${CURRENT_DIR}/output/third_party"
+HCOMM_LIB_NAME="libhcomm.so"
+INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
+ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
+ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" release_type=\"debug\"/>"
+ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -272,6 +279,56 @@ function run_ut() {
   fi
 }
 
+function xml_add_orion_so() {
+    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
+        echo "error:file $INSTALL_XML_FILE not exist."
+        exit 1
+    fi
+
+    strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO")
+    not_found=()
+    for str in "${strings[@]}"; do
+        if ! grep -q "$str" "$INSTALL_XML_FILE"; then
+            not_found+=("$str")
+        fi
+    done
+
+    if [[ ${#not_found[@]} -eq 0 ]]; then
+        echo "orion lib has been existed in $INSTALL_XML_FILE"
+        return
+    fi
+
+    insert_content=""
+    for str in "${not_found[@]}"; do
+        insert_content+="$str"$'
+        '
+    done
+
+    temp_file=$(mktemp)
+    while IFS= read -r line; do
+        echo "$line" >> "$temp_file"
+        if [[ "$line" == *"$HCOMM_LIB_NAME"* ]]; then
+            echo "$insert_content" >> "$temp_file"
+        fi
+    done < "$INSTALL_XML_FILE"
+    mv "$temp_file" "$INSTALL_XML_FILE"
+}
+
+function xml_delete_orion_so() {
+    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
+        echo "error:file $INSTALL_XML_FILE not exist."
+        exit 1
+    fi
+
+    temp_file=$(mktemp)
+    while IFS= read -r line; do
+        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$INSTALL_XML_FILE"
+    mv "$temp_file" "$INSTALL_XML_FILE"
+}
+
 while [[ $# -gt 0 ]]; do
     case $1 in
     -j*)
@@ -409,6 +466,13 @@ fi
 
 if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
+fi
+
+if [ -e "$ORION_PATH" ];then
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DORION_MODE=ON"
+    xml_add_orion_so
+else
+    xml_delete_orion_so
 fi
 
 if [ "${BUILD_AARCH}" == "true" ];then

@@ -13,7 +13,7 @@
 
 #include "hcom_pub.h"
 #include "hccl_comm_pub.h"
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "hcom_private_v2.h"
 #endif
 HcclResult GetGroupRankInfo(const char *group, RankInfoType rankType, u32 inPara, u32 *outPara);

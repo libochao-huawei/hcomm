@@ -53,9 +53,6 @@
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>
-        <!-- <file value="libhccl_v2.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2.so;comop:lib64/libhccl_v2.so;hcomm:lib64/libhccl_v2.so" release_type="debug"/>
-        <file value="libhccl_v2_alg_frame.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_alg_frame.so;comop:lib64/libhccl_v2_alg_frame.so;hcomm:lib64/libhccl_v2_alg_frame.so" release_type="debug"/>
-        <file value="libhccl_v2_native_alg_repo.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_native_alg_repo.so;comop:lib64/libhccl_v2_native_alg_repo.so;hcomm:lib64/libhccl_v2_native_alg_repo.so" release_type="debug"/> -->
         <file value="dynamic_mul_int8_v80.o"/>
         <file value="dynamic_minimum_int8_v80.o"/>
         <file value="dynamic_maximum_int8_v80.o"/>

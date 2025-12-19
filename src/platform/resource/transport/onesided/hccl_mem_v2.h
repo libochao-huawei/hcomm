@@ -15,7 +15,7 @@
 #include "hccl_mem_defs.h"
 #include <stdint.h>
 
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

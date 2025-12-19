@@ -10,7 +10,7 @@
 
 #ifndef HCCL_ONE_SIDED_SERVICE_ADAPT_V2_H
 #define HCCL_ONE_SIDED_SERVICE_ADAPT_V2_H
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus

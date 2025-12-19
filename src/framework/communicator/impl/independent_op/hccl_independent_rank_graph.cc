@@ -16,7 +16,7 @@
 #include "param_check_pub.h"
 #include "hccl_comm.h"
 #include "hccl_inner.h"
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "op_base_v2.h"
 #endif
 
@@ -62,7 +62,11 @@ HcclResult HcclGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLa
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(netLayers);
     CHK_PTR_NULL(netLayerNum);
-
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclGetNetLayersV2(comm, netLayers, netLayerNum), socNamePtr);
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = hcclComm->GetNetLayers(netLayers, netLayerNum);
     if (ret != HCCL_SUCCESS) {
@@ -92,7 +96,11 @@ HcclResult HcclGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
-
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclGetNetLayersV2(comm, netLayers, netLayerNum), socNamePtr);
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = hcclComm->GetInstSizeByNetLayer(netLayer, rankNum);
     if (ret != HCCL_SUCCESS) {
@@ -141,7 +149,7 @@ HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
     // 入参合法性校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankSize);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     const char *socNamePtr = aclrtGetSocName();
     CHK_PTR_NULL(socNamePtr);
     HCCLV2_FUNC_RUN(HcclGetRankSizeV2(comm, rankSize), socNamePtr);
@@ -160,7 +168,7 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
     // 入参合法性校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rank);
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     const char *socNamePtr = aclrtGetSocName();
     CHK_PTR_NULL(socNamePtr);
     HCCLV2_FUNC_RUN(HcclGetRankIdV2(comm, rank), socNamePtr);
@@ -180,7 +188,11 @@ HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLa
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(netLayers);
     CHK_PTR_NULL(netLayerNum);
-
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclGetNetLayersV2(comm, netLayers, netLayerNum), socNamePtr);
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = hcclComm->CommGetNetLayers(netLayers, netLayerNum);
     if (ret != HCCL_SUCCESS) {
@@ -191,11 +203,15 @@ HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLa
     return HCCL_SUCCESS;
 }
 
-HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, u32 *topoType)
+HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *topoType)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(topoType);
-
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclGetInstTopoTypeByNetLayerV2(comm, netLayers, netLayerNum), socNamePtr);
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = hcclComm->CommGetInstTopoTypeByNetLayer(netLayer, topoType);
     if (ret != HCCL_SUCCESS) {
@@ -210,7 +226,11 @@ HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
-
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclGetInstSizeByNetLayerV2(comm, netLayers, netLayerNum), socNamePtr);
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = hcclComm->CommGetInstSizeByNetLayer(netLayer, rankNum);
     if (ret != HCCL_SUCCESS) {

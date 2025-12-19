@@ -22,6 +22,11 @@ else()
     set(INSTALL_CCL_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
 endif()
 
+if(ORION_MODE)
+    set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
+    set(HCCL_NEXT_CODE_ROOT ${ORION_REAL_PATH}/../whole/hccl_next)
+endif()
+
 message(STATUS "HCCL_OPEN_CODE_BASE_DIR = ${HCCL_OPEN_CODE_BASE_DIR}")
 message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
 add_library(hcomm  SHARED)
@@ -84,9 +89,16 @@ target_include_directories(hcomm PRIVATE
 )
 
 if(BUILD_OPEN_PROJECT)
-    target_compile_definitions(hcomm PRIVATE
-        OPEN_BUILD_PROJECT
-        LOG_CPP)
+    if(ORION_MODE)
+        target_compile_definitions(hcomm PRIVATE
+            ORION_MODE
+            OPEN_BUILD_PROJECT
+            LOG_CPP)
+    else()
+        target_compile_definitions(hcomm PRIVATE
+            OPEN_BUILD_PROJECT
+            LOG_CPP)
+    endif()
 
     target_include_directories(hcomm PRIVATE
         ${HCCL_BASE_DIR}/pub_inc
@@ -226,7 +238,7 @@ message(STATUS "framework KERNEL_MODE=${KERNEL_MODE}")
 message(STATUS "framework BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "framework ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
     add_library(ccl_kernel  SHARED)
 
     set(CCL_KERNEL_SRC_LIST
@@ -552,13 +564,23 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     -Wl,-z,noexecstack
     $<$<CONFIG:Release>:-s>
 )
+    
+    if(ORION_MODE)
+        target_compile_definitions(ccl_kernel PRIVATE
+            HCCD
+            CCL_KERNEL_AICPU
+            ORION_MODE
+        )
+    else()
+        target_compile_definitions(ccl_kernel PRIVATE
+            HCCD
+            CCL_KERNEL_AICPU
+        )
+    endif()
 
-    target_compile_definitions(ccl_kernel PRIVATE
-        HCCD
-        CCL_KERNEL_AICPU
-    )
-    target_include_directories(ccl_kernel PRIVATE
+    set(CCL_KERNEL_INCLUDE_LIST
         ${HCCL_BASE_DIR}/../include/hccl
+        ${HCCL_BASE_DIR}/pub_inc
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${HCCL_BASE_DIR}/algorithm/base/inc
         ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -651,11 +673,92 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
         ${HCCL_BASE_DIR}/platform/common/unfold_cache
+
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${HCCL_BASE_DIR}/platform/
+        ${HCCL_BASE_DIR}/platform/inc/
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
+        ${HCCL_BASE_DIR}/platform/resource/transport/host/
+        ${HCCL_BASE_DIR}/platform/resource/transport/
+        ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
+        ${HCCL_BASE_DIR}/platform/task
+        ${HCCL_BASE_DIR}/platform/common
+        ${HCCL_BASE_DIR}/platform/common/unique
+        ${hccl_include_list}
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
+        ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCCL_BASE_DIR}/pub_inc
+        ${HCCL_BASE_DIR}/pub_inc/aicpu
+
+        ${HCCL_BASE_DIR}/framework/device/
+        ${HCCL_BASE_DIR}/framework/device/common
+        ${HCCL_BASE_DIR}/framework/device/inc
+        ${HCCL_BASE_DIR}/framework/device/framework
+
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+
+        # ascendc
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${THIRD_PARTY_NLOHMANN_PATH}
     )
 
-    target_link_directories(ccl_kernel PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+    target_include_directories(ccl_kernel PRIVATE
+        ${CCL_KERNEL_INCLUDE_LIST}
     )
+
+    if(ORION_MODE)
+        FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT}/*)
+
+        foreach (dir ${sources_list})
+            IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "hccl/orion") AND (NOT ${dir} MATCHES "hccl/orion/mdpi"))
+                target_include_directories(ccl_kernel PRIVATE ${dir})
+            endif()
+        endforeach()
+
+        FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${HCCL_NEXT_CODE_ROOT})
+        foreach (dir ${open_dir_list})
+            IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "whole/hccl_next"))
+                target_include_directories(ccl_kernel PRIVATE ${dir})
+            endif()
+        endforeach()
+
+        add_subdirectory(${ORION_REAL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/orion)
+        add_dependencies(hcomm hccl_v2)
+        target_link_libraries(hcomm
+            hccl_v2
+        )
+    endif()
 
     add_subdirectory(device)
 endif()
@@ -757,61 +860,6 @@ if(NOT KERNEL_MODE)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
-    target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
-        ${HCCL_BASE_DIR}/platform/
-        ${HCCL_BASE_DIR}/platform/inc/
-        ${HCCL_BASE_DIR}/platform/inc/adapter
-        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
-        ${HCCL_BASE_DIR}/platform/resource/transport/host/
-        ${HCCL_BASE_DIR}/platform/resource/transport/
-        ${HCCL_BASE_DIR}/platform/resource/notify/
-        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
-        ${HCCL_BASE_DIR}/platform/task
-        ${HCCL_BASE_DIR}/platform/common
-        ${HCCL_BASE_DIR}/platform/common/unique
-        ${hccl_include_list}
-        ${HCCL_BASE_DIR}/../include
-        ${HCCL_BASE_DIR}/../include/hccl
-        ${HCCL_BASE_DIR}/../pkg_inc/
-        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
-        ${HCCL_BASE_DIR}/pub_inc
-        ${HCCL_BASE_DIR}/pub_inc/aicpu
-
-        ${HCCL_BASE_DIR}/framework/device/
-        ${HCCL_BASE_DIR}/framework/device/common
-        ${HCCL_BASE_DIR}/framework/device/inc
-        ${HCCL_BASE_DIR}/framework/device/framework
-
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
-
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
-
-        # ascendc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-
-        ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
-        ${THIRD_PARTY_NLOHMANN_PATH}
-        )
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
         target_compile_definitions(ccl_kernel PRIVATE

@@ -107,7 +107,7 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit);
 // hcce资源计算相关
 HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32 &deviceNumPerServer, const s32 &serverNum,
     bool multiModuleDiffDeviceNumMode, u32 &taskNum, DevType devType);
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum);
 HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
 #endif
@@ -156,9 +156,9 @@ HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic);
 
 HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm,
     std::string& group, std::string &sTag);
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel);
+    HcclCMDType opType, bool *ifAiv, char *algName, bool isSuperKernel);
 #endif
 
 #ifdef __cplusplus
