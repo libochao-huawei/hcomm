@@ -64,6 +64,7 @@ using HcclAlgoAttr = struct HcclAlgoAttrDef {
     std::string collectiveId;
     NICDeployment nicDeployment;
     WorkMode commWorkMode;
+    std::map<HcclCMDType, std::vector<HcclAlgoType>> commAlgoConfig;
 
     HcclAlgoAttrDef()
         : isHaveCpuRank(false),
@@ -74,7 +75,16 @@ using HcclAlgoAttr = struct HcclAlgoAttrDef {
         collectiveId(""),
         nicDeployment(NICDeployment::NIC_DEPLOYMENT_DEVICE),
         commWorkMode(WorkMode::HCCL_MODE_NORMAL)
-    {}
+    {
+        SetDefaultAlgo();
+    }
+    void SetDefaultAlgo()
+    {
+        for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
+            commAlgoConfig[static_cast<HcclCMDType>(opType)] =
+                std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+        }
+    }
 };
 
 struct HcclTopoAttr {

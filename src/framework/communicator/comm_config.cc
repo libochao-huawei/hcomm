@@ -704,6 +704,11 @@ std::vector<HcclAlgoType> CommConfig::GetConfigHcclAlgo(HcclCMDType opType)
 {
     return algoConfig_[opType];
 }
+
+const std::map<HcclCMDType, std::vector<HcclAlgoType>>& CommConfig::GetConfigHcclAlgoMap() const
+{
+    return algoConfig_;
+}
  
 bool CommConfig::GetConfigIntraServerRetryEnable() const
 {
