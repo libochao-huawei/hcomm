@@ -462,7 +462,7 @@ HcclResult ConstructFFtsNotifyWaitCtx(void *signal, rtFftsPlusNotifyCtx_t* ctx)
     return ConstructFftsNotifyCtx(notifyID, RT_CTX_TYPE_NOTIFY_WAIT, ctx);
 }
 
-HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId,
+HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId, u64 signalAddr,
     HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2)
 {
     EnsureFftsContextsSize(fftsCtxsPtr);
@@ -471,7 +471,7 @@ HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId,
 
     rtFftsPlusWriteValueCtx_t* ctx = reinterpret_cast<rtFftsPlusWriteValueCtx_t*>(&comCtx);
 
-    CHK_RET(ConstructFftsNotifyRecordRemoteCtx(signal, ctx));
+    CHK_RET(ConstructFftsNotifyRecordRemoteCtx(signal, ctx, signalAddr));
 
     if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::REMOTE_NOTIFY_RECORD, fftsCtxsPtr));
@@ -525,13 +525,15 @@ HcclResult UpdataFftsDescRelationship(s32 streamId, HcclFftsContextsInfo *&fftsC
     return HCCL_SUCCESS;
 }
 
-HcclResult ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx)
+HcclResult ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx, u64 signalAddr)
 {
     const u64 u64HighMask = 0xffffffff00000000;
     const u64 u64LowMask = 0x00000000ffffffff;
     const u32 shift = 32;
-    u64 notifyAddr = 0;
-    CHK_RET(NotifyGetAddr(signal, &notifyAddr));
+    u64 notifyAddr = signalAddr;
+    if (notifyAddr == LEGACY_INVALID_U64) {
+        CHK_RET(NotifyGetAddr(signal, &notifyAddr));
+    }
     ctx->contextType = RT_CTX_TYPE_WRITE_VALUE;
     ctx->successorNum = 0;
     ctx->aten = 0;
