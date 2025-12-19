@@ -112,6 +112,7 @@ target_link_options(hccl_legacy PRIVATE
     -Wl,-z,now
     -Wl,-z,noexecstack
     -Wl,--build-id=none
+    -s
 )
  
 if(BUILD_OPEN_PROJECT)

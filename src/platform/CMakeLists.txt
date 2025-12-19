@@ -160,6 +160,7 @@ target_link_options(hccl_plf PRIVATE
     -Wl,-z,now
     -Wl,-z,noexecstack
     -Wl,--build-id=none
+    $<$<CONFIG:Release>:-s>
 )
 
 #头文件搜索路径
