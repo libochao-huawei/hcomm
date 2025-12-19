@@ -88,7 +88,7 @@ typedef enum {
     HCCL_DATA_TYPE_FP64 = 10,    /**< fp64 */
     HCCL_DATA_TYPE_BFP16 = 11,    /**< bfp16 */
     HCCL_DATA_TYPE_INT128 = 12,   /**< int128 */
-#ifndef OPEN_BUILD_PROJECT
+#if !defined (OPEN_BUILD_PROJECT) || defined (ORION_MODE)
     HCCL_DATA_TYPE_HIF8 = 14,     /**< hif8 */
     HCCL_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
     HCCL_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
@@ -99,7 +99,7 @@ typedef enum {
 
 typedef enum {
     HCCL_DETERMINISTIC = 0,     /**< 0: non-deterministic, 1: deterministic */
-#ifndef OPEN_BUILD_PROJECT
+#if !defined (OPEN_BUILD_PROJECT) || defined (ORION_MODE)
     HCCL_ACCELERATOR,           /**< 0: default, 1: CCU, 2: AIV, 3: AICPU_TS, 4: HOSTCPU_TS, 5: AICPU */
 #endif
     HCCL_CONFIG_RESERVED

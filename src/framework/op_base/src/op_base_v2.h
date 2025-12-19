@@ -14,7 +14,9 @@
 extern "C" {
 #endif  // __cplusplus
 
-HcclResult __attribute__((weak)) HcclCommDestroyV2(HcclComm comm);
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
+HcclResult HcclCommDestroyV2(HcclComm comm);
+#endif
 
 HcclResult __attribute__((weak)) HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, HcclComm *comm);
 
@@ -107,6 +109,16 @@ HcclResult __attribute__((weak)) HcclSetConfigV2(HcclConfig config, HcclConfigVa
 HcclResult __attribute__((weak)) HcclGetConfigV2(HcclConfig config, HcclConfigValue *configValue);
 
 HcclResult __attribute__((weak)) HcclBarrierV2(HcclComm comm, aclrtStream stream);
+
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+HcclResult __attribute__((weak)) HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
+
+HcclResult __attribute__((weak)) HcclGetInstSizeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
+
+HcclResult __attribute__((weak)) HcclGetInstTopoTypeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *topoType);
+
+HcclResult __attribute__((weak)) CommGetCCLBufSizeCfgV2(HcclComm comm, uint64_t *cclBufSize);
+#endif
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

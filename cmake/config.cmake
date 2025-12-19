@@ -75,6 +75,7 @@ set(HOST_STUBS
     unified_dlog
     mmpa
     ascendcl
+    tsdclient
 )
 endif()
 

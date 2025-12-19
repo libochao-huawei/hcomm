@@ -19,7 +19,7 @@ HcclResult HcclNetDevOpen(const HcclNetDevInfos *info, HcclNetDev *netDev)
 {
     CHK_PTR_NULL(netDev);
     CHK_PTR_NULL(info);
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_910_95) {
@@ -34,7 +34,7 @@ HcclResult HcclNetDevClose(HcclNetDev netDev)
     // 先销毁设备
     CHK_PTR_NULL(netDev);
 
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_910_95) {
@@ -49,7 +49,7 @@ HcclResult HcclNetDevGetAddr(HcclNetDev netDev, HcclAddress *addr)
     CHK_PTR_NULL(netDev);
     CHK_PTR_NULL(addr);
 
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_910_95) {
@@ -63,7 +63,7 @@ HcclResult HcclNetDevGetBusAddr(HcclDeviceId dstDevId, HcclAddress *busAddr)
 {
     CHK_PTR_NULL(busAddr);
 
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_910_95) {
@@ -78,7 +78,7 @@ HcclResult HcclNetDevGetNicAddr(int32_t devicePhyId, HcclAddress **addr, uint32_
     CHK_PTR_NULL(addrNum);
     CHK_PTR_NULL(addr);
 
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if (devType == DevType::DEV_TYPE_910_95) {

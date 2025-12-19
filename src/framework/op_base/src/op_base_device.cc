@@ -36,7 +36,7 @@
 #include "error_codes/rt_error_codes.h"
 #include "mmpa_api.h"
 #include "op_base.h"
-#ifndef OPEN_BUILD_PROJECT
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "op_base_v2.h"
 #endif
 
