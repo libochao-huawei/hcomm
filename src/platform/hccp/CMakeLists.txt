@@ -7,6 +7,10 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+
+# HCCP2.0
+set(HCOMM_ORION ${CMAKE_CURRENT_SOURCE_DIR}/../../../drivers/network/orion/hcomm_dev)
+
 if(BUILD_OPEN_PROJECT)
     if (DEVICE_MODE)
         add_subdirectory(stub_tsd)

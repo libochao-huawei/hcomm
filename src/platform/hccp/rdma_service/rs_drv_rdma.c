@@ -467,7 +467,7 @@ enum ibv_mtu RsDrvSetMtu(struct RsQpCb *qpCb)
 #ifndef CA_CONFIG_LLT
     currMtu = portAttr.active_mtu;
 #else
-    curr_mtu = IBV_MTU_1024;
+    currMtu = IBV_MTU_1024;
 #endif
 
     return currMtu;
@@ -587,7 +587,7 @@ STATIC int RsOpenBackupIbCtx(struct RsRdevCb *rdevCb)
         }
     }
 
-    CHK_PRT_RETURN(i == rdevCb->devNum, hccp_err("can not find ib_ctx for phy_id[%u] local_ip[0x%x] in dev_list!",
+    CHK_PRT_RETURN(i == rdevCb->devNum, hccp_err("can not find ib_ctx for phyId[%u] local_ip[0x%x] in dev_list!",
         rdevInfo.phyId, rdevInfo.localIp.addr.s_addr), -EEXIST);
     return 0;
 }

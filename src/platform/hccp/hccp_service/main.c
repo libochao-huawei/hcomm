@@ -125,12 +125,13 @@ int llt_main(int argc, char *argv[])
 
     RsGetCurTime(&start);
 
+#ifndef CONFIG_CONTEXT
     ret = RsApiInit();
     if (ret != 0) {
-        hccp_err("rs_api_init error[%d]", ret);
+        hccp_err("RsApiInit error[%d]", ret);
         goto out;
     }
-
+#endif
     ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
         ReportProcessStartUpErrorCode((uint32_t)param.logicId, 0, (uint32_t)param.pid, 0, ERR_EJ1, ERR_LEN);
@@ -156,7 +157,9 @@ int llt_main(int argc, char *argv[])
     hccp_run_info("hccp deinit ok! logic_id=%d", param.logicId);
 
 hccp_init_fail:
-    RsApiDeinit(); 
+#ifndef CONFIG_CONTEXT
+    RsApiDeinit();
+#endif
 out:
     DlHalDeinit();
     return ret;

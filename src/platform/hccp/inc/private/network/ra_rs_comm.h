@@ -122,6 +122,9 @@ enum OpType {
     RA_RS_GET_SEC_RANDOM = 99,
     RA_RS_GET_HCCN_CFG = 100,
     RA_RS_TYPICAL_MR_REG = 101,
+    RA_RS_CTX_QP_DESTROY_BATCH = 102,
+    RA_RS_CTX_QUERY_QP_BATCH = 103,
+    RA_RS_GET_EID_BY_IP = 104,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode
@@ -352,6 +355,12 @@ struct TlvRequestMsgHead {
 #define QP_DEFAULT_MAX_ATTR_RETRY_CNT     7
 
 int ConverReturnCode(enum ModuleType module, int erroCode);
+
+static inline void ra_rs_set_dev_info(struct RaRsDevInfo *dev_info, unsigned int phy_id, unsigned int dev_index)
+{
+    dev_info->phyId = phy_id;
+    dev_info->devIndex = dev_index;
+}
 
 #endif
 

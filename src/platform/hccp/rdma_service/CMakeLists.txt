@@ -34,6 +34,24 @@ list(APPEND rs_list
 )
 endif()
 
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
+list(APPEND rs_list
+        ${HCOMM_ORION}/rdma_service/ctx/dl_ccu_function.c
+        ${HCOMM_ORION}/rdma_service/ctx/dl_urma_function.c
+        ${HCOMM_ORION}/rdma_service/ctx/rs_ccu.c
+        ${HCOMM_ORION}/rdma_service/ctx/rs_ctx.c
+        ${HCOMM_ORION}/rdma_service/ctx/rs_esched.c
+        ${HCOMM_ORION}/rdma_service/ctx/rs_ub.c
+)
+
+target_compile_definitions(rs PRIVATE
+    TGID_VA
+    CONFIG_V121
+    CONFIG_CONTEXT
+)
+endif()
+
 add_library(rs  SHARED ${rs_list})
 
 if(BUILD_OPEN_PROJECT)
@@ -67,6 +85,12 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
         ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
+
+        # HCCP2.0
+        ${HCOMM_ORION}/inc/network/
+        ${HCOMM_ORION}/rdma_service/ctx/
+        ${HCOMM_ORION}/external_depends/ccu/
+        ${HCOMM_ORION}/external_depends/ubengine/
     )
 
     target_link_directories(rs PRIVATE

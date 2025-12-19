@@ -60,7 +60,7 @@ void RaRdevSaveNotifyMr(struct RaRdmaHandle *rdmaHandle, int ret, uint64_t va, u
 STATIC void RaRdevCheckNotifyMr(struct RaRdmaHandle *rdmaHandle, uint64_t va, uint64_t size)
 {
     if ((rdmaHandle->notifyVa <= (va + size)) && (va <= (rdmaHandle->notifyVa + rdmaHandle->notifySize))) {
-        hccp_run_warn("[check][ra_mr]phy_id:%u notify{va:0x%llx size:0x%llx} overlap input{va:0x%llx size:0x%llx}",
+        hccp_run_warn("[check][ra_mr]phyId:%u notify{va:0x%llx size:0x%llx} overlap input{va:0x%llx size:0x%llx}",
             rdmaHandle->rdevInfo.phyId, rdmaHandle->notifyVa, rdmaHandle->notifySize, va, size);
     }
 }

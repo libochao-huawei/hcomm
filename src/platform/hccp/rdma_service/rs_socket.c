@@ -145,7 +145,7 @@ STATIC int rs_socket_fill_wlist_by_phyID(unsigned int chipId, struct SocketWlist
         ret = DlHalGetDeviceInfo(phyId, MODULE_TYPE_SYSTEM, INFO_TYPE_VNIC_IP, &deviceInfo);
         CHK_PRT_RETURN(ret, hccp_err("dl_hal_get_device_info failed, ret(%d) tagTemp phyId(%u)", ret, phyId), ret);
         vnicIp = (unsigned int)deviceInfo;
-        hccp_dbg("chip_id:%u phy_id:%u vnic_ip:%u", chipId, phyId, vnicIp);
+        hccp_dbg("chip_id:%u phyId:%u vnic_ip:%u", chipId, phyId, vnicIp);
         whiteListNode->remoteIp.addr.s_addr = vnicIp;
     }
     return 0;
@@ -640,7 +640,7 @@ static int RsSocketInitListen(struct SocketListenInfo *conn, uint32_t i, struct 
     }
 
     ret = rsGetLocalDevIDByHostDevID(conn[i].phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id invalid, ret %d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId invalid, ret %d", ret), ret);
 
     ret = RsDev2conncb(chipId, connCb);
     CHK_PRT_RETURN(ret, hccp_err("get conncb from dev failed, ret:%d", ret), ret);
@@ -775,7 +775,7 @@ RS_ATTRI_VISI_DEF int RsSocketListenStart(struct SocketListenInfo conn[], uint32
         ret = RsEpollCtl(connCb->epollfd, EPOLL_CTL_ADD, listenFd, EPOLLIN);
         if (ret) {
             errNo = ret;
-            hccp_err("rs_epoll_ctl for epollfd[%d] listen_fd[%d]failed, errno:%d", connCb->epollfd, listenFd, errNo);
+            hccp_err("RsEpollCtl for epollfd[%d] listen_fd[%d]failed, errno:%d", connCb->epollfd, listenFd, errNo);
             goto bind_err_handle;
         }
 
@@ -863,7 +863,7 @@ RS_ATTRI_VISI_DEF int RsSocketListenStop(struct SocketListenInfo conn[], uint32_
             hccp_info("listen [%d] IP 0x%llx, ret_vnic %d", i, *localIp, ret);
         }
         ret = rsGetLocalDevIDByHostDevID(conn[i].phyId, &chipId);
-        CHK_PRT_RETURN(ret, hccp_err("phy_id invalid, ret %d", ret), ret);
+        CHK_PRT_RETURN(ret, hccp_err("phyId invalid, ret %d", ret), ret);
         ret = RsDev2conncb(chipId, &connCb);
         // degrade log level, make it consistent with inner call
         CHK_PRT_RETURN(ret != 0, hccp_warn("get conncb from dev unsuccessful(%d)!", ret), -ENODEV);
@@ -1266,9 +1266,10 @@ err_socket_create:
 
 int RsSocketConnectAsync(struct RsConnInfo *conn, struct rs_cb *rscb)
 {
-    int ret = 0;
-    unsigned int chipId = rscb->chipId;
     uint32_t sslEnable = rscb->sslEnable;
+    unsigned int chipId = rscb->chipId;
+    int ret = 0;
+
     RS_CHECK_POINTER_NULL_WITH_RET(conn);
     switch (conn->state) {
         case RS_CONN_STATE_RESET:
@@ -1434,7 +1435,7 @@ RS_ATTRI_VISI_DEF int RsSocketBatchConnect(struct SocketConnectInfo conn[], uint
         }
         ret = rsGetLocalDevIDByHostDevID(conn[i].phyId, &chipId);
         if (ret) {
-            hccp_err("phy_id invalid, ret %d", ret);
+            hccp_err("phyId invalid, ret %d", ret);
             goto conn_node_err_handle;
         }
 
@@ -1792,7 +1793,7 @@ RS_ATTRI_VISI_DEF int RsGetSockets(uint32_t role, struct SocketFdData conn[], ui
     }
 
     ret = rsGetLocalDevIDByHostDevID(conn->phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id invalid, ret %d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId invalid, ret %d", ret), ret);
 
     ret = RsDev2conncb(chipId, &connCb);
     CHK_PRT_RETURN(ret, hccp_err("get conncb from dev failed! ret(%d)", ret), -ENODEV);
@@ -2083,7 +2084,7 @@ RS_ATTRI_VISI_DEF int RsSocketWhiteListAdd(struct rdev rdevInfo, struct SocketWl
         rdevInfo.phyId, serverIp.readAddr, num, rdevInfo.family), -EINVAL);
 
     ret = rsGetLocalDevIDByHostDevID(rdevInfo.phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id invalid, ret %d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId invalid, ret %d", ret), ret);
 
     for (i = 0; i < num; ++i) {
         CHK_PRT_RETURN(strnlen(whiteList[i].tag, SOCK_CONN_TAG_SIZE) >= SOCK_CONN_TAG_SIZE,
@@ -2159,7 +2160,7 @@ RS_ATTRI_VISI_DEF int RsSocketWhiteListDel(struct rdev rdevInfo,
         -EINVAL);
 
     ret = rsGetLocalDevIDByHostDevID(rdevInfo.phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id invalid, ret %d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId invalid, ret %d", ret), ret);
 
     for (i = 0; i < num; ++i) {
         CHK_PRT_RETURN(strlen(whiteList[i].tag) >= SOCK_CONN_TAG_SIZE, hccp_err("white_list tag len:%u more than"
@@ -2407,7 +2408,7 @@ RS_ATTRI_VISI_DEF int RsSocketSetScopeId(unsigned int devId, int scopeId)
     unsigned int chipId;
     struct RsConnCb *connCb = NULL;
     ret = rsGetLocalDevIDByHostDevID(devId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id invalid, ret %d", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId invalid, ret %d", ret), ret);
 
     ret = RsDev2conncb(chipId, &connCb);
     CHK_PRT_RETURN(ret, hccp_err("get conncb from dev failed, ret:%d", ret), ret);

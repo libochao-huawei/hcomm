@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-
 #define HCCP_ATTRI_VISI_DEF __attribute__ ((visibility ("default")))
 
 /**
@@ -112,6 +111,7 @@ enum NetworkMode {
  */
 enum ProtocolTypeT {
     PROTOCOL_RDMA = 0,
+    PROTOCOL_UDMA,
     PROTOCOL_UNSUPPORT,
 };
 
@@ -145,7 +145,7 @@ enum HccnCfgKey {
 
 /**
  * @ingroup libinit
- * ip address.
+ * ip address
  */
 union HccpIpAddr {
     struct in_addr addr;
@@ -291,7 +291,7 @@ enum RaSendFlags {
     RA_SEND_FENCE = 1 << 0, /**< RDMA operation with fence */
     RA_SEND_SIGNALED = 1 << 1, /**< RDMA operation with signaled */
     RA_SEND_SOLICITED = 1 << 2, /**< RDMA operation with solicited */
-    RA_SEND_INLINE = 1 << 3, /**< RDMA operation with inline */
+    RA_SEND_INLINE = 1 << 3, /**< RDMA operation with*/
 };
 
 /**
@@ -425,7 +425,7 @@ enum RaAccessFlags {
  * @ingroup librdma
  * wqe template info
  */
-struct WqeInfo {
+struct WqeInfoT {
     unsigned int sqIndex; /**< index of sq */
     unsigned int wqeIndex; /**< index of wqe */
 };
@@ -445,7 +445,7 @@ struct DbInfo {
  */
 struct SendWrRsp {
     union {
-        struct WqeInfo wqeTmp; /**< wqe template info */
+        struct WqeInfoT wqeTmp; /**< wqe template info */
         struct DbInfo db; /**< doorbell info */
     };
 };
@@ -657,6 +657,7 @@ enum SaveSnapshotAction {
     SAVE_SNAPSHOT_ACTION_POST_PROCESSING = 1,
     SAVE_SNAPSHOT_ACTION_MAX,
 };
+
 #ifdef __cplusplus
 }
 #endif
