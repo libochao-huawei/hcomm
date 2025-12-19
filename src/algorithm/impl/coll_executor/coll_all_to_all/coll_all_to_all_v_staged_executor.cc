@@ -9,7 +9,6 @@
  */
 
 #include "coll_all_to_all_v_staged_executor.h"
-#include "comm_configer.h"
 namespace hccl {
 
 CollRunAlltoAllVStaged::CollRunAlltoAllVStaged(const HcclDispatcher dispatcher,
@@ -51,11 +50,11 @@ HcclResult CollRunAlltoAllVStaged::CalcStreamNum(u32& streamNum)
 {
     streamNum = 0U;
     if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_)) {
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL))) {
         streamNum = topoAttr_.meshAggregationRankSize - 1;
     } else {
         if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE || isAlltoAllZCopyMode_) {
-            std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(tag_);
+            std::vector<HcclAlgoType> algoTypeArr = topoMatcher_->GetAlgoConfig();
             if ((algoTypeArr[HCCL_ALGO_LEVEL_0] != HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE ||
                 algoTypeArr[HCCL_ALGO_LEVEL_1] != HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE) &&
                 const_cast<HcclTopoInfo &>(topoAttr_).pairLinkCounter[static_cast<u32>(
@@ -131,7 +130,7 @@ HcclResult CollRunAlltoAllVStaged::CheckNeedRecreateComm(u64 lastScratchMemSize,
 HcclResult CollRunAlltoAllVStaged::CheckNeedCreateVirtualLinks(AlgResourceRequest &resourceRequest)
 {
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL));
     HCCL_DEBUG("[CollRunAlltoAllVStaged][CheckNeedCreateVirtualLinks] AllToAllVMeshReadOnly[%d]," \
         "resourceRequest.streamNum[%u], GetExternalInputHcclEnableFfts()[%d], isAlltoAllZCopyMode_[%d]",
         alltoallMeshReadOnly, resourceRequest.streamNum, GetExternalInputHcclEnableFfts(), isAlltoAllZCopyMode_);
@@ -180,7 +179,7 @@ HcclResult CollRunAlltoAllVStaged::CalStagedAlltoallVCommInfo(TransportMemType i
     (void) outputType;
     // 将网卡初始化判断，提到上层调用，减少无必要的循环依赖。
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL));
 
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         !isAlltoAllZCopyMode_) { // 单算子 && BCopy模式
@@ -243,7 +242,7 @@ HcclResult CollRunAlltoAllVStaged::PrepareAlltoAllVStaged1(DeviceMem &sendBuf, D
         if (isOpBaseZCopy) { // 单算子 && ZCopy模式
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, execMem.inputMem, sendBuf, stream));
         }
-        std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().GetCommConfigAlgoConfig(tag_);
+        std::vector<HcclAlgoType> algoTypeArr = topoMatcher_->GetAlgoConfig();
         // 互联场景, alltoall暂不支持走fullmesh+pairwise
         if ((algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE &&
             algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE) ||
@@ -390,7 +389,7 @@ HcclResult CollRunAlltoAllVStaged::KernelRun(const OpParam &param, ExecMem &exec
     userRankInfo.userRank = topoAttr_.userRank;
     userRankInfo.userRankSize = topoAttr_.userRankSize;
     bool alltoallMeshReadOnly = FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(topoAttr_.deviceType,
-        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, tag_);
+        topoAttr_.userRankSize, topoAttr_.useSuperPodMode, topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL));
 
     std::map<u32, std::list<OneSendRecvAddrInfo>> sendAddrInfosIntra;
     std::map<u32, std::list<OneSendRecvAddrInfo>> recvAddrInfosIntra;

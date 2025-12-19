@@ -572,10 +572,23 @@ HcclResult TopoMatcher::SetExecTimeOutConfig(const s32 execTimeOut)
     externalEnable_.execTimeOut = execTimeOut;
     return HCCL_SUCCESS;
 }
+
+HcclResult TopoMatcher::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap)
+{
+    for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
+        externalEnable_.algoConfig[static_cast<HcclCMDType>(opType)] = algoMap.at(static_cast<HcclCMDType>(opType));
+    }
+    return HCCL_SUCCESS;
+}
  
 s32 TopoMatcher::GetExecTimeOutConfig() const
 {
     return externalEnable_.execTimeOut;
+}
+
+std::vector<HcclAlgoType> TopoMatcher::GetAlgoConfig(HcclCMDType opType)
+{
+    return externalEnable_.algoConfig[opType];
 }
 
 HcclResult TopoMatcher::GetGlobalSubGroups(const CommPlane level, std::vector<std::vector<std::vector<u32>>> &globalSubGroups)

@@ -28,8 +28,13 @@ public:
 
     // 对外接口
     HcclResult Init(HcclCommParams &params, const RankTable_t &rankTable);
+    HcclResult Init(HcclCommParams &params, const RankTable_t &rankTable,
+        const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap);
     HcclResult Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
         WorldGroupInfo &globalData);
+    HcclResult Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
+        WorldGroupInfo &groupCommonData,
+        const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap);
 
     // Instance for external use
     HcclResult CalAndSetMeshAggRankSize();
@@ -219,6 +224,7 @@ private:
     std::vector<u32> groupVnicRanksPort_;
     std::vector<RankInfo> worldRankInfoList_;
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> rankDevicePhyIdNicInfoMap_;
+    std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfigMap_{};
 };
 }  // end namespace hccl
 #endif

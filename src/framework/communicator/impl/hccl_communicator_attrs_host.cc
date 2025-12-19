@@ -25,9 +25,28 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const RankTable_t &rankTable,
+        const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap)
+    {
+        algoConfigMap_ = algoConfigMap;
+        CHK_RET(InitCommParams(params));
+        CHK_RET(InitRankInfo(rankTable));
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
                                            WorldGroupInfo &groupCommonData)
     {
+        CHK_RET(InitCommParams(params));
+        CHK_RET(InitRankInfoSubGroup(rankList, groupCommonData));
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
+                                           WorldGroupInfo &groupCommonData,
+                                           const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap)
+    {
+        algoConfigMap_ = algoConfigMap;
         CHK_RET(InitCommParams(params));
         CHK_RET(InitRankInfoSubGroup(rankList, groupCommonData));
         return HCCL_SUCCESS;
@@ -432,7 +451,7 @@ namespace hccl
                       multiSuperPodDiffServerNumMode_);
 
         // 计算最大公约数
-        if (!IsConfigAHCAlgo(identifier_) && !multiModuleDiffDeviceNumMode_ && multiSuperPodDiffServerNumMode_)
+        if (!IsConfigAHCAlgo(algoConfigMap_) && !multiModuleDiffDeviceNumMode_ && multiSuperPodDiffServerNumMode_)
         {
             gcdServerNumPerSuperPod_ = CalGCD(superPodServerNumVec);
             multiSuperPodDiffServerNumMode_ = false; // 取公约数不存在server数不一致场景
@@ -1029,6 +1048,7 @@ namespace hccl
         algoAttr.collectiveId = collectiveId_;
         algoAttr.nicDeployment = nicDeployment_;
         algoAttr.commWorkMode = commWorkMode_;
+        algoAttr.commAlgoConfig = algoConfigMap_;
     }
 
     u32 HcclCommunicatorAttrs::GetLocalNicPort(NicType nicType)

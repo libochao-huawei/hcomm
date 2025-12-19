@@ -509,9 +509,13 @@ TEST_F(CommFactoryTest, ut_init_with_err_rank_size)
     topoInfoExt->meshAggregationRankSize_ = MESH_AGGREGATION_RANK_SIZE_910;
     comm_factory.reset(new CommFactory(collective_id_tmp, userRank, user_rank_size, dispatcher, nullptr, netDevCtxMap, topoInfoExt, true,
         TopoType::TOPO_TYPE_8P_RING, DevType::DEV_TYPE_910, rank_vector));
-
-
-    ret = topoInfoExt->Init();
+    
+    std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfig;
+    for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
+        algoConfig[static_cast<HcclCMDType>(opType)] =
+            std::vector<HcclAlgoType>(4, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+    }
+    ret = topoInfoExt->Init(algoConfig);
     EXPECT_NE(ret, HCCL_SUCCESS);
     HcclNetCloseDev(nicPortCtx[0]);
     netDevCtxMap.clear();

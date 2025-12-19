@@ -18,7 +18,6 @@
 #include "coll_alg_op_registry.h"
 #include "coll_all_to_all_executor.h"
 #include "hccl_aiv.h"
-#include "comm_configer.h"
 
 namespace hccl {
 
@@ -235,8 +234,7 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         return HCCL_SUCCESS; // alltoall aiv不需要后面操作，直接返回
     }
 
-    std::vector<HcclAlgoType> algoTypeArr = CommConfiger::GetInstance().
-                                            GetCommConfigAlgoConfig(identifier_, HcclCMDType::HCCL_CMD_ALLTOALL);
+    std::vector<HcclAlgoType> algoTypeArr = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL);
     bool useOneLevelAlgorithm =
         algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
         algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE;
