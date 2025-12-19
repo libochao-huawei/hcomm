@@ -29,7 +29,6 @@
 #include "rs_epoll.h"
 #include "rs_tls.h"
 #include "ssl_adp.h"
-#include "rs_drv_socket.h"
 #include "rs_socket.h"
 #include "dl_ibverbs_function.h"
 #include "dl_hal_function.h"
@@ -39,16 +38,24 @@
 #include "hccp_tlv.h"
 #include "rs_tlv.h"
 #endif
+#ifdef CONFIG_CONTEXT
+#include "ra_rs_ctx.h"
+#include "rs_ccu.h"
+#include "rs_ctx.h"
+#include "rs_esched.h"
+#include "rs_ub.h"
+#include "rs_ctx_inner.h"
+#endif
 
 __thread struct rs_cb *gRsCb = NULL;  //lint !e17
 struct rs_cb *gRsCbList[RS_MAX_DEV_NUM] = {0};  //lint !e17
 int gInitCounter[RS_MAX_DEV_NUM] = {0};
 
-/* set current phy_id g_rs_cb */
+/* set current phyId g_rs_cb */
 void RsSetCtx(unsigned int phyId)
 {
     gRsCb = gRsCbList[phyId];
-    hccp_dbg("[rs_set_ctx], phyId[%u], gRsCb[%p]", phyId, gRsCb);
+    hccp_dbg("[RsSetCtx], phyId[%u], gRsCb[%p]", phyId, gRsCb);
 }
 
 /* get current g_rs_cb */
@@ -144,6 +151,34 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_SEC_RANDOM, 1},
     {RA_RS_GET_HCCN_CFG, 1},
     {RA_RS_GET_ROCE_API_VERSION, 0},
+
+#ifdef CONFIG_CONTEXT
+    {RA_RS_GET_DEV_EID_INFO_NUM, 1},
+    {RA_RS_GET_DEV_EID_INFO_LIST, 1},
+    {RA_RS_CTX_INIT, 1},
+    {RA_RS_CTX_DEINIT, 1},
+    {RA_RS_GET_EID_BY_IP, 1},
+    {RA_RS_GET_TP_INFO_LIST, 1},
+    {RA_RS_CTX_TOKEN_ID_ALLOC, 1},
+    {RA_RS_CTX_TOKEN_ID_FREE, 1},
+    {RA_RS_LMEM_REG, 1},
+    {RA_RS_LMEM_UNREG, 1},
+    {RA_RS_RMEM_IMPORT, 1},
+    {RA_RS_RMEM_UNIMPORT, 1},
+    {RA_RS_CTX_CHAN_CREATE, 1},
+    {RA_RS_CTX_CHAN_DESTROY, 1},
+    {RA_RS_CTX_CQ_CREATE, 1},
+    {RA_RS_CTX_CQ_DESTROY, 1},
+    {RA_RS_CTX_QP_CREATE, 1},
+    {RA_RS_CTX_QP_DESTROY, 1},
+    {RA_RS_CTX_QP_IMPORT, 1},
+    {RA_RS_CTX_QP_UNIMPORT, 1},
+    {RA_RS_CTX_QP_BIND, 1},
+    {RA_RS_CTX_QP_UNBIND, 1},
+    {RA_RS_CTX_BATCH_SEND_WR, 1},
+    {RA_RS_CUSTOM_CHANNEL, 1},
+    {RA_RS_CTX_UPDATE_CI, 1},
+#endif
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 1},
@@ -279,7 +314,7 @@ int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb *
     struct rs_cb *rsCb = NULL;
 
     ret = RsDev2rscb(chipId, &rsCb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed for chip_id:%u, ret:%d", chipId, ret), -ENODEV);
+    CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed for chipId:%u, ret:%d", chipId, ret), -ENODEV);
 
     ret = RsGetRdevCb(rsCb, rdevIndex, rdevCb);
     CHK_PRT_RETURN(ret, hccp_err("rs_get_rdev_cb failed!, ret %d, rdevIndex %u", ret, rdevIndex), ret);
@@ -376,7 +411,7 @@ STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsi
     }
 
     ret = DlDrvDeviceGetIndexByPhyId(chipId, logicId);
-    CHK_PRT_RETURN(ret != 0, hccp_err("hal get logic_id failed, chipId[%u], ret[%d]", chipId, ret), -ENODEV);
+    CHK_PRT_RETURN(ret != 0, hccp_err("hal get logicId failed, chipId[%u], ret[%d]", chipId, ret), -ENODEV);
 
     return 0;
 }
@@ -389,6 +424,20 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 
     ret = RsGetChipLogicId(rscb->chipId, rscb->hccpMode, &rscb->logicId);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_logic_id failed, ret[%d]", ret), ret);
+
+#ifdef CONFIG_CONTEXT
+#ifdef CUSTOM_INTERFACE
+    ret = rs_get_chip_protocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_protocol failed, ret[%d]", ret), ret);
+    ret = rs_ctx_api_init(rscb->hccpMode, rscb->protocol);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_ctx_api_init failed, ret[%d]", ret), ret);
+    ret = rs_esched_init(rscb);
+    if (ret != 0) {
+        hccp_err("rs_esched_init chipId[%u] logic_devid[%u] failed, ret=%d", rscb->chipId, rscb->logicId, ret);
+        goto esched_init_err;
+    }
+#endif
+#endif
 
 #ifdef CONFIG_SSL
     ret = rs_ssl_init(rscb);
@@ -415,6 +464,13 @@ create_pthread_err:
     rs_ssl_deinit(rscb);
 ssl_init_err:
 #endif
+#ifdef CONFIG_CONTEXT
+#ifdef CUSTOM_INTERFACE
+    rs_esched_deinit(rscb->protocol);
+esched_init_err:
+    (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+#endif
+#endif
     return ret;
 }
 
@@ -423,6 +479,13 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
     int tryAgain = RS_TRY_TIME;
     eventfd_t event = 1;
     int ret;
+
+#ifdef CONFIG_CONTEXT
+#ifdef CUSTOM_INTERFACE
+    rs_esched_deinit(rscb->protocol);
+    (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+#endif
+#endif
 
 #ifdef CONFIG_SSL
     rs_ssl_deinit(rscb);
@@ -536,7 +599,7 @@ RS_ATTRI_VISI_DEF int RsGetTlsEnable(unsigned int phyId, bool *tlsEnable)
 
     CHK_PRT_RETURN(tlsEnable == NULL, hccp_err("param err, tlsEnable is NULL"), -EINVAL);
     ret = RsGetRsCb(phyId, &rsCb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId(%u) invalid, ret(%d)", phyId, ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId(%u) invalid, ret(%d)", phyId, ret), ret);
 
     *tlsEnable = (rsCb->sslEnable == 0) ? false : true;
     return 0;
@@ -547,9 +610,9 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
 {
 #define HCCN_CFGFILE_PATH "/etc/hccl.cfg"
     const char *keyName[HCCN_CFG_KEY_INVALID] = {"udp_port_mode", "multi_qp_count", "multi_qp_udp_ports"};
-    int ret = FILE_OPT_INNER_PARAM_ERR;
     unsigned int valLen = 0;
     unsigned int bufLen;
+    int ret = 0;
 
     CHK_PRT_RETURN(value == NULL || valueLen == NULL, hccp_err("param err, value or valueLen is NULL"), -EINVAL);
     CHK_PRT_RETURN(key >= HCCN_CFG_KEY_INVALID,
@@ -560,9 +623,7 @@ RS_ATTRI_VISI_DEF int RsGetHccnCfg(unsigned int phyId, enum HccnCfgKey key, char
         hccp_err("param err, bufLen should >= [%d]", HCCN_CFG_MSG_DATA_LEN), -EINVAL);
 
     *valueLen = 0;
-#ifdef CONFIG_TLV
     ret = FileReadCfg(HCCN_CFGFILE_PATH, (int)phyId, keyName[key], value, bufLen);
-#endif
     CHK_PRT_RETURN(ret == FILE_OPT_INNER_PARAM_ERR || ret == FILE_OPT_SYS_READ_FILE_ERR,
         hccp_run_warn("get hccn cfg file unsuccessful, ret(%d)", ret), 0);
     CHK_PRT_RETURN(ret == FILE_OPT_NO_MEM_ERR,
@@ -701,7 +762,7 @@ int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyi
 
     // setup sharemem or skipped already, no need to setup again
     if (rsCb->grpSetupFlag) {
-        hccp_dbg("grp_setup_flag:%d grp_id:%u chip_id:%u", rsCb->grpSetupFlag, rsCb->grpId, chipId);
+        hccp_dbg("grp_setup_flag:%d grp_id:%u chipId:%u", rsCb->grpSetupFlag, rsCb->grpId, chipId);
         return 0;
     }
 
@@ -711,8 +772,8 @@ int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyi
     CHK_PRT_RETURN(ret != 0, hccp_err("dl_hal_get_device_info failed, ret:%d logicId:%u chipId:%u",
         ret, logicId, chipId), ret);
     // not 910b/910_93 and not protocol udma, skip to setup share mem
-    if (DlHalPlatGetChip((uint64_t)deviceInfo) != CHIP_TYPE_910B_910_93) {
-        hccp_info("logic_id:%u chip_id:%u protocol:%d skip to setup share mem", logicId, chipId, rsCb->protocol);
+    if (DlHalPlatGetChip((uint64_t)deviceInfo) != CHIP_TYPE_910B_910_93 && rsCb->protocol != PROTOCOL_UDMA) {
+        hccp_info("logicId:%u chipId:%u protocol:%d skip to setup share mem", logicId, chipId, rsCb->protocol);
         rsCb->grpSetupFlag = true;
         return 0;
     }
@@ -879,7 +940,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
         }
     }
 
-    CHK_PRT_RETURN(i == rdevCb->devNum, hccp_err("can not find ib_ctx for phy_id[%u] local_ip[0x%x] in dev_list!",
+    CHK_PRT_RETURN(i == rdevCb->devNum, hccp_err("can not find ib_ctx for phyId[%u] local_ip[0x%x] in dev_list!",
         rdevInfo.phyId, rdevInfo.localIp.addr.s_addr), -EEXIST);
     return 0;
 }
@@ -889,9 +950,9 @@ int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb)
     unsigned int chipId;
     int ret;
 
-    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phyId), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phyId:%u", phyId), -EINVAL);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     ret = RsDev2rscb(chipId, rsCb, false);
     CHK_PRT_RETURN(ret, hccp_err("get rs_cb failed, ret:%d", ret), -ENODEV);
@@ -1070,11 +1131,11 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
     RS_CHECK_POINTER_NULL_RETURN_INT(rdevIndex);
 
     ret = RsApiInit();
-    CHK_PRT_RETURN(ret, hccp_err("rs_api_init failed! ret[%d]", ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("RsApiInit failed! ret[%d]", ret), ret);
 
     ret = RsGetRsCb(phyId, &rsCb);
     if (ret) {
-        hccp_err("rs_get_rs_cb failed, phyId[%u] invalid, ret %d", phyId, ret);
+        hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret);
         goto get_rs_cb_fail;
     }
 
@@ -1098,7 +1159,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
     // setup sharemem for aicpu rdma unfold
     ret = RsSetupSharemem(rsCb, rdevCb->backupInfo.backupFlag, rdevCb->backupInfo.rdevInfo.phyId);
     if (ret != 0) {
-        hccp_err("[init][rs_rdev]rs_setup_sharemem failed, phyId(%u), ret(%d)", phyId, ret);
+        hccp_err("[init][rs_rdev]RsSetupSharemem failed, phyId(%u), ret(%d)", phyId, ret);
         goto free_rs_cb;
     }
 #endif
@@ -1117,7 +1178,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
         goto free_dev_list;
     }
 
-    hccp_info("ibv_get_device_list phy_id[%d] dev_num[%d]", phyId, rdevCb->devNum);
+    hccp_info("ibv_get_device_list phyId[%d] dev_num[%d]", phyId, rdevCb->devNum);
 
     ret = RsRdevCbInit(rdevInfo, rdevCb, rsCb, rdevIndex);
     if (ret) {
@@ -1213,12 +1274,12 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     struct RsQpCb *qpCb2 = NULL;
 
     hccp_info("rdev deinit start, phyId:%u, rdevIndex:%u", phyId, rdevIndex);
-    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phyId), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phyId:%u", phyId), -EINVAL);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
-    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chipId[%u] failed, ret %d",
         chipId, ret), ret);
 
     if (rdevCb->notifyType != NO_USE && rdevCb->notifyMr != NULL) {
@@ -1314,7 +1375,7 @@ RS_ATTRI_VISI_DEF int RsEpollCtlAdd(const void *fdHandle, enum RaEpollEvent even
     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
     ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_ADD, fd, tmpEvent);
     if (ret != 0) {
-        hccp_err("[rs_epoll_ctl_add]rs_epoll_ctl failed ret(%d), fd:%d, event:%u", ret, fd, event);
+        hccp_err("[rs_epoll_ctl_add]RsEpollCtl failed ret(%d), fd:%d, event:%u", ret, fd, event);
         goto out;
     }
     return 0;
@@ -1352,7 +1413,7 @@ RS_ATTRI_VISI_DEF int RsEpollCtlMod(const void *fdHandle, enum RaEpollEvent even
     }
 
     ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_MOD, fd, tmpEvent);
-    CHK_PRT_RETURN(ret, hccp_err("[rs_epoll_ctl_mod]rs_epoll_ctl failed ret(%d), fd:%d, event:%u",
+    CHK_PRT_RETURN(ret, hccp_err("[rs_epoll_ctl_mod]RsEpollCtl failed ret(%d), fd:%d, event:%u",
         ret, fd, event), ret);
     return 0;
 }
@@ -1383,7 +1444,7 @@ RS_ATTRI_VISI_DEF int RsEpollCtlDel(int fd)
 
     // 为了兼容epoll不同版本，这里加EPOLLIN参数
     ret = RsEpollCtl(gRsCb->connCb.epollfd, EPOLL_CTL_DEL, fd, EPOLLIN);
-    CHK_PRT_RETURN(ret, hccp_err("[rs_epoll_ctl_del]rs_epoll_ctl failed ret(%d), fd:%d", ret, fd), ret);
+    CHK_PRT_RETURN(ret, hccp_err("[rs_epoll_ctl_del]RsEpollCtl failed ret(%d), fd:%d", ret, fd), ret);
     return 0;
 }
 
@@ -1726,9 +1787,9 @@ RS_ATTRI_VISI_DEF int RsSocketDeinit(struct rdev rdevInfo)
     struct rs_cb *rscb = NULL;
 
     hccp_info("rs socket deinit start, phyId:%u", phyId);
-    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phy_id:%u", phyId), -EINVAL);
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phyId:%u", phyId), -EINVAL);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     CHK_PRT_RETURN((rdevInfo.family != AF_INET) && (rdevInfo.family != AF_INET6),
         hccp_err("family[%d] invalid", rdevInfo.family), -EPROTONOSUPPORT);
@@ -1744,7 +1805,7 @@ RS_ATTRI_VISI_DEF int RsSocketDeinit(struct rdev rdevInfo)
     RsConvertIpAddr(rdevInfo.family, &rdevInfo.localIp, &localIp);
 
     ret = RsDev2rscb(chipId, &rscb, false);
-    CHK_PRT_RETURN(ret, hccp_err("get rscb failed for chip_id:%u, ret:%d", chipId, ret), -ENODEV);
+    CHK_PRT_RETURN(ret, hccp_err("get rscb failed for chipId:%u, ret:%d", chipId, ret), -ENODEV);
 
     RS_PTHREAD_MUTEX_LOCK(&rscb->mutex);
     RsFreeSocketList(rscb, &localIp);
@@ -1762,7 +1823,7 @@ STATIC void RsFreeRdevList(struct rs_cb *rsCb)
 
     ret = rsGetDevIDByLocalDevID(rsCb->chipId, &phyId);
     if (ret != 0) {
-        hccp_err("chip_id[%u] invalid, ret %d", rsCb->chipId, ret);
+        hccp_err("chipId[%u] invalid, ret %d", rsCb->chipId, ret);
         return;
     }
 
@@ -1778,10 +1839,25 @@ STATIC void RsFreeRdevList(struct rs_cb *rsCb)
     return;
 }
 
+#ifdef CONFIG_CONTEXT
 STATIC void RsFreeUdevList(struct rs_cb *rsCb)
 {
+    struct rs_ub_dev_cb *udev_cb_curr = NULL;
+    struct rs_ub_dev_cb *udev_cb_next = NULL;
+    int ret;
+
+    RS_LIST_GET_HEAD_ENTRY(udev_cb_curr, udev_cb_next, &rsCb->rdevList, list, struct rs_ub_dev_cb);
+    for (; (&udev_cb_curr->list) != &rsCb->rdevList;
+        udev_cb_curr = udev_cb_next, udev_cb_next = list_entry(udev_cb_next->list.next, struct rs_ub_dev_cb, list)) {
+        ret = rs_ub_ctx_deinit(udev_cb_curr);
+        if (ret != 0) {
+            hccp_err("rs_ub_ctx_deinit failed, ret:%d", ret);
+        }
+    }
+
     return;
 }
+#endif
 
 STATIC void RsFreeDevList(struct rs_cb *rsCb)
 {
@@ -1794,6 +1870,11 @@ STATIC void RsFreeDevList(struct rs_cb *rsCb)
         case PROTOCOL_RDMA:
             RsFreeRdevList(rsCb);
             break;
+#ifdef CONFIG_CONTEXT
+        case PROTOCOL_UDMA:
+            RsFreeUdevList(rsCb);
+            break;
+#endif
         default:
             hccp_err("protocol[%d] not support", rsCb->protocol);
             break;
@@ -1879,6 +1960,13 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     pthread_mutex_destroy(&rscb->connCb.connMutex);
     RsDestroyEpoll(rscb);
 
+#ifdef CONFIG_CONTEXT
+#ifdef CUSTOM_INTERFACE
+    rs_esched_deinit(rscb->protocol);
+    (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+#endif
+#endif
+
     free(rscb);
     rscb = NULL;
     gRsCb = NULL;
@@ -1931,7 +2019,7 @@ RS_ATTRI_VISI_DEF int RsDeinit(struct RsInitConfig *cfg)
         gRsCbList[chipId] = NULL;
         DlHalDeinit();
 
-        hccp_run_info("rs_deinit chip_id[%u] ok", chipId);
+        hccp_run_info("rs_deinit chipId[%u] ok", chipId);
 
         return 0;
     }
@@ -1945,12 +2033,12 @@ RS_ATTRI_VISI_DEF int RsGetVnicIp(unsigned int phyId, unsigned int *vnicIp)
     int64_t deviceInfo = 0;
     int ret;
 
-    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phy_id:%u >= [%d], is invalid", phyId,
+    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phyId:%u >= [%d], is invalid", phyId,
         RS_MAX_DEV_NUM), -EINVAL);
     CHK_PRT_RETURN(vnicIp == NULL, hccp_err("vnic_ip is null!"), -EINVAL);
 
     ret = DlHalGetDeviceInfo(phyId, MODULE_TYPE_SYSTEM, INFO_TYPE_VNIC_IP, &deviceInfo);
-    CHK_PRT_RETURN(ret != 0, hccp_err("phy_id:%u dl_hal_get_device_info failed! ret:%d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("phyId:%u dl_hal_get_device_info failed! ret:%d", phyId, ret), ret);
 
     *vnicIp = (unsigned int)deviceInfo;
     return 0;
@@ -1965,14 +2053,14 @@ STATIC int RsGetVnicIpInfo(unsigned int phyId, unsigned int id, enum IdType type
     // get vnic ip by id with different type
     if (type == PHY_ID_VNIC_IP) {
         ret = DlHalGetDeviceInfo(id, MODULE_TYPE_SYSTEM, INFO_TYPE_VNIC_IP, &deviceInfo);
-        CHK_PRT_RETURN(ret != 0, hccp_err("cur_phy_id:%u dl_hal_get_device_info failed! phy_id:%u ret:%d",
+        CHK_PRT_RETURN(ret != 0, hccp_err("cur_phy_id:%u dl_hal_get_device_info failed! phyId:%u ret:%d",
             phyId, id, ret), ret);
     } else if (type == SDID_VNIC_IP) {
         ret = DlHalGetDeviceInfo(id, MODULE_TYPE_SYSTEM, INFO_TYPE_SPOD_VNIC_IP, &deviceInfo);
-        CHK_PRT_RETURN(ret != 0, hccp_err("phy_id:%u dl_hal_get_device_info failed! sdid:0x%x ret:%d",
+        CHK_PRT_RETURN(ret != 0, hccp_err("phyId:%u dl_hal_get_device_info failed! sdid:0x%x ret:%d",
             phyId, id, ret), ret);
     } else {
-        hccp_err("phy_id:%u get vnic ip failed! id:0x%x, invalid type:%u", phyId, id, type);
+        hccp_err("phyId:%u get vnic ip failed! id:0x%x, invalid type:%u", phyId, id, type);
         return -EINVAL;
     }
 
@@ -1981,7 +2069,7 @@ STATIC int RsGetVnicIpInfo(unsigned int phyId, unsigned int id, enum IdType type
     info->family = AF_INET;
     info->ip.addr.s_addr = vnicIp;
 
-    hccp_dbg("phy_id:%u query id:%u type:%u got vnic_ip:%u", phyId, id, type, vnicIp);
+    hccp_dbg("phyId:%u query id:%u type:%u got vnic_ip:%u", phyId, id, type, vnicIp);
 
     return 0;
 }
@@ -1992,13 +2080,13 @@ RS_ATTRI_VISI_DEF int RsGetVnicIpInfos(unsigned int phyId, enum IdType type, uns
     unsigned int i;
     int ret;
 
-    CHK_PRT_RETURN(ids == NULL, hccp_err("phy_id:%u, ids is null!", phyId), -EINVAL);
-    CHK_PRT_RETURN(infos == NULL, hccp_err("phy_id:%u, infos is null!", phyId), -EINVAL);
+    CHK_PRT_RETURN(ids == NULL, hccp_err("phyId:%u, ids is null!", phyId), -EINVAL);
+    CHK_PRT_RETURN(infos == NULL, hccp_err("phyId:%u, infos is null!", phyId), -EINVAL);
 
     for (i = 0; i < num; i++) {
         ret = RsGetVnicIpInfo(phyId, ids[i], type, &infos[i]);
         if (ret != 0) {
-            hccp_err("phy_id:%u get vnic ip info failed! ids[%u]:0x%x type:%u", phyId, i, ids[i], type);
+            hccp_err("phyId:%u get vnic ip info failed! ids[%u]:0x%x type:%u", phyId, i, ids[i], type);
             return ret;
         }
     }
@@ -2118,10 +2206,10 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoNum(unsigned int phyId, unsigned int rdevId
 
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs get cqe err param error, phyId[%u]", phyId), -EINVAL);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     ret = RsRdev2rdevCb(chipId, rdevIdx, &rdevCb);
-    CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+    CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chipId[%u] failed, ret %d",
         chipId, ret), ret);
 
     *num = rdevCb->cqeErrCnt;
@@ -2142,10 +2230,10 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevI
 
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs get cqe err param error, phyId[%u]", phyId), -EINVAL);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phy_id[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     ret = RsRdev2rdevCb(chipId, rdevIdx, &rdevCb);
-    CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chip_id[%u] failed, ret %d",
+    CHK_PRT_RETURN(ret != 0 || rdevCb == NULL, hccp_err("rs_rdev2rdev_cb for chipId[%u] failed, ret %d",
         chipId, ret), ret);
 
     if (RsListEmpty(&rdevCb->qpList)) {
@@ -2305,7 +2393,7 @@ STATIC int RsGetLinuxVersion(struct RsLinuxVersionInfo *verInfo)
 #define LINUX_VERSION_MAX_CHAR 1024
 #define LINUX_VERSION_TYPE_NUM 3
 #define LINUX_VERSION_STR "Linux version "
-    char buffer[LINUX_VERSION_MAX_CHAR];
+    char buffer[LINUX_VERSION_MAX_CHAR] = {0};
     char *versionStr;
     int retClose = 0;
     int ret = 0;
@@ -2315,7 +2403,7 @@ STATIC int RsGetLinuxVersion(struct RsLinuxVersionInfo *verInfo)
     CHK_PRT_RETURN(fd < 0, hccp_run_warn("open proc/version unsuccessful, errno[%d] fd[%d]", errno, fd), -EFILEOPER);
 
     do {
-        ret = (int)read(fd, buffer, sizeof(buffer));
+        ret = (int)read(fd, buffer, sizeof(buffer) - 1);
     } while ((ret < 0) && (errno == EINTR));
 
     if (ret < 0) {
@@ -2371,11 +2459,6 @@ RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value)
 
 #ifndef CONFIG_SSL
 long ssl_adp_set_mode(SSL *s, long op)
-{
-    return 0;
-};
-
-long ssl_adp_ctrl(SSL *s, int cmd, long larg, void *parg)
 {
     return 0;
 };

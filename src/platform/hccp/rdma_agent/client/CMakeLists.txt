@@ -13,6 +13,18 @@ set(ra_list
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
 )
 
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
+list(APPEND ra_list
+        ${HCOMM_ORION}/rdma_agent/client/async/ra_ctx.c
+        ${HCOMM_ORION}/rdma_agent/client/ra_ctx.c
+)
+
+target_compile_definitions(ra PRIVATE
+    CONFIG_CONTEXT
+)
+endif()
+
 add_library(ra  SHARED ${ra_list})
 
 if(BUILD_OPEN_PROJECT)
@@ -43,6 +55,10 @@ if(BUILD_OPEN_PROJECT)
         # rdma头文件
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+
+        # HCCP2.0
+        ${HCOMM_ORION}/inc/network/
+        ${HCOMM_ORION}/rdma_agent/client/async/
     )
 
     target_link_directories(ra PRIVATE

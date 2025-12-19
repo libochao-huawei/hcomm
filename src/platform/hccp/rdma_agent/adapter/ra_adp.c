@@ -31,6 +31,11 @@
 #include "ra_adp_tlv.h"
 #endif
 #include "ra_adp_socket.h"
+#ifdef CONFIG_CONTEXT
+#include "ra_hdc_ctx.h"
+#include "ra_hdc_async_ctx.h"
+#include "ra_adp_ctx.h"
+#endif
 #include "ra_adp_async.h"
 #include "ra_adp.h"
 
@@ -1748,6 +1753,35 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_GET_HCCN_CFG, RaRsGetHccnCfg, sizeof(union OpGetHccnCfgData)},
     {RA_RS_ASYNC_HDC_SESSION_CONNECT, RaRsAsyncHdcSessionConnect, sizeof(union OpAsyncHdcConnectData)},
     {RA_RS_ASYNC_HDC_SESSION_CLOSE, RaRsAsyncHdcSessionClose, sizeof(union OpAsyncHdcCloseData)},
+#ifdef CONFIG_CONTEXT
+    {RA_RS_GET_DEV_EID_INFO_NUM, ra_rs_get_dev_eid_info_num, sizeof(union op_get_dev_eid_info_num_data)},
+    {RA_RS_GET_DEV_EID_INFO_LIST, ra_rs_get_dev_eid_info_list, sizeof(union op_get_dev_eid_info_list_data)},
+    {RA_RS_CTX_INIT, ra_rs_ctx_init, sizeof(union op_ctx_init_data)},
+    {RA_RS_CTX_DEINIT, ra_rs_ctx_deinit, sizeof(union op_ctx_deinit_data)},
+    {RA_RS_GET_EID_BY_IP, ra_rs_get_eid_by_ip, sizeof(union op_get_eid_by_ip_data)},
+    {RA_RS_GET_TP_INFO_LIST, ra_rs_get_tp_info_list, sizeof(union op_get_tp_info_list_data)},
+    {RA_RS_CTX_TOKEN_ID_ALLOC, ra_rs_ctx_token_id_alloc, sizeof(union op_token_id_alloc_data)},
+    {RA_RS_CTX_TOKEN_ID_FREE, ra_rs_ctx_token_id_free, sizeof(union op_token_id_free_data)},
+    {RA_RS_LMEM_REG, ra_rs_lmem_reg, sizeof(union op_lmem_reg_info_data)},
+    {RA_RS_LMEM_UNREG, ra_rs_lmem_unreg, sizeof(union op_lmem_unreg_info_data)},
+    {RA_RS_RMEM_IMPORT, ra_rs_rmem_import, sizeof(union op_rmem_import_info_data)},
+    {RA_RS_RMEM_UNIMPORT, ra_rs_rmem_unimport, sizeof(union op_rmem_unimport_info_data)},
+    {RA_RS_CTX_CHAN_CREATE, ra_rs_ctx_chan_create, sizeof(union op_ctx_chan_create_data)},
+    {RA_RS_CTX_CHAN_DESTROY, ra_rs_ctx_chan_destroy, sizeof(union op_ctx_chan_destroy_data)},
+    {RA_RS_CTX_CQ_CREATE, ra_rs_ctx_cq_create, sizeof(union op_ctx_cq_create_data)},
+    {RA_RS_CTX_CQ_DESTROY, ra_rs_ctx_cq_destroy, sizeof(union op_ctx_cq_destroy_data)},
+    {RA_RS_CTX_QP_CREATE, ra_rs_ctx_qp_create, sizeof(union op_ctx_qp_create_data)},
+    {RA_RS_CTX_QUERY_QP_BATCH, ra_rs_ctx_qp_query_batch, sizeof(union op_ctx_qp_query_batch_data)},
+    {RA_RS_CTX_QP_DESTROY, ra_rs_ctx_qp_destroy, sizeof(union op_ctx_qp_destroy_data)},
+    {RA_RS_CTX_QP_DESTROY_BATCH, ra_rs_ctx_qp_destroy_batch, sizeof(union op_ctx_qp_destroy_batch_data)},
+    {RA_RS_CTX_QP_IMPORT, ra_rs_ctx_qp_import, sizeof(union op_ctx_qp_import_data)},
+    {RA_RS_CTX_QP_UNIMPORT, ra_rs_ctx_qp_unimport, sizeof(union op_ctx_qp_unimport_data)},
+    {RA_RS_CTX_QP_BIND, ra_rs_ctx_qp_bind, sizeof(union op_ctx_qp_bind_data)},
+    {RA_RS_CTX_QP_UNBIND, ra_rs_ctx_qp_unbind, sizeof(union op_ctx_qp_unbind_data)},
+    {RA_RS_CTX_BATCH_SEND_WR, ra_rs_ctx_batch_send_wr, sizeof(union op_ctx_batch_send_wr_data)},
+    {RA_RS_CUSTOM_CHANNEL, ra_rs_custom_channel, sizeof(union op_custom_channel_data)},
+    {RA_RS_CTX_UPDATE_CI, ra_rs_ctx_update_ci, sizeof(union op_ctx_update_ci_data)},
+#endif
 };
 
 STATIC int RaCheckParam(char *recvBuf, int rcvBufLen, char **sendBuf, int *sndBufLen, int *paramCheckResult)
