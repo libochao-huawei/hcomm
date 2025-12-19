@@ -36,7 +36,7 @@
 #include "mmpa_api.h"
 #include "hccl_tbe_task.h"
 #if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
-#include "hcomm_private_v2.h"
+#include "hcom_private_v2.h"
 #endif
 
 using namespace std;
