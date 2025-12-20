@@ -26,12 +26,13 @@
 
 #include "topoinfo_parse.h"
 #include "hccl_alg.h"
+#include "hccl_aiv.h"
 #include "ccl_buffer_manager.h"
 #include "hccl_trace_info.h"
 #include "hccl_callback_task.h"
 #include "aicpu_operator_pub.h"
-#include "transport_pub.h"
 #include "h2d_dto/transport_h2d.h"
+#include "transport_pub.h"
 #include "mr_manager.h"
 #include "transport_heterog_def.h"
 #include "resource_manager/queue_notify_manager.h"
@@ -821,10 +822,14 @@ private:
 
     // 收集全部 Transport 内存/QP信息
     HcclResult GenAiRMAInfo(CommBase *comm);
+    HcclResult GenAiRMAInfoV2(const std::string &tag);
     // 同步全部信息到Device
     HcclResult H2DAiRMAInfo(const std::string &tag, rtStream_t aiCpuStream);
+    HcclResult H2DAiRMAInfoV2(const std::string &tag, rtStream_t aiCpuStream);
     HcclResult GetAIVNormalQPInfo(CommBase *comm, const std::string &tag);
-    HcclResult GenIbvAiRMAInfo(u32 rankid, const std::shared_ptr<Transport>& transport, const std::string &tag);
+    HcclResult GetAIVNormalQPInfoV2(std::vector<LINK>& links, const std::string &tag);
+    template<typename T>
+    HcclResult GenIbvAiRMAInfo(u32 rankid, const std::shared_ptr<Transport>& transport, const std::string &tag, T* aiRMAInfoPtr);
 
     HcclResult CaptureSlaveStreams(rtStream_t mainStream, std::vector<Stream> &slaveStreams);
     HcclResult HandleAclGraphFirstOpAivBuff(rtStream_t mainStream);
@@ -1001,6 +1006,7 @@ private:
 
     // Host侧收集的数据
     std::shared_ptr<HostMem> aiRMAInfoMem_ = nullptr;
+    std::shared_ptr<HostMem> rmaInfoMem_ = nullptr; // for aiv
     std::shared_ptr<HostMem> aiSqMem_ = nullptr;
     std::shared_ptr<HostMem> aiScqMem_ = nullptr;
     std::shared_ptr<HostMem> aiRqMem_ = nullptr;

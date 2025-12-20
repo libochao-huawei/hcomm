@@ -821,6 +821,14 @@ HcclResult CollAlgOperator::SetOpCounter(const OpCounterInfo& opCounter)
     opCounter_ = opCounter;
     return HCCL_SUCCESS;
 }
+
+HcclResult CollAlgOperator::SetRmaInfo(void* rmaInfo)
+{
+    CHK_SMART_PTR_NULL(executor_);
+    CHK_PTR_NULL(rmaInfo);
+    return executor_->SetRmaInfo(rmaInfo);
+}
+
 HcclResult CollAlgOperator::SelectAlgforAHC(u64 dataSize, AHCOpType ahcOpType)
 {
     bool isAHCWholeConfig = (algType_.algoLevel0 == AlgTypeLevel0::ALG_LEVEL0_RESERVED &&

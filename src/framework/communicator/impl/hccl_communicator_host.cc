@@ -4234,12 +4234,19 @@ namespace hccl
             }
         }
 
+        if (deviceType_ == DevType::DEV_TYPE_910B) {
+            // 用于AIV支持Roce直驱判断
+            CHK_RET(IsSupportAIVNormalQP(devicePhyId_, opParam.supportRoceDirect));
+        }
+
         ResourceLimit limit;
         limit.ifLimit = true;
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
         algDesc.isLastSelect = true;
         CHK_RET(algOperator->SelectAlg(opParam.tag, opParam, limit, algName, algDesc, newTag));
+        // 是否是AIV直驱Roce场景
+        opParam.isNpuDirectRoce = algName == "AlltoAllDirectFullmeshAIVExecutor";
         if (isOnlyAiv_ && !algDesc.isAivMode) {
             HCCL_ERROR("[HcclCommunicator][ExecOp] opType[%u] not support aiv only, support range:"
                 "[allreduce, reducescatter, allgather, alltoall, alltoallv, alltoallvc]", opParam.opType);
@@ -4283,6 +4290,11 @@ namespace hccl
             CHK_RET(RecordOpPara(opType, opParam));
             CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
+            if (opParam.isNpuDirectRoce) {
+                // AIV直驱roce多机场景，需要生成RMAInfo并拷贝至Device
+                CHK_RET(GenAiRMAInfoV2(newTag));
+                CHK_RET(H2DAiRMAInfoV2(newTag, opParam.stream.ptr()));
+            }
             // 对于91093超节点内aiv跨机通信算子，将不同机的CCLbuffer地址存在约定好的aiv将读取的HBM位置
             CHK_RET(algOperator->PrepareCommInfoToDevice(algName, resMap_[newTag]));
 
@@ -4358,6 +4370,13 @@ namespace hccl
             hcclNslbDp::GetInstance().SendAlgorithmInfoTable();
         }
         // 算法执行
+        if (opParam.isNpuDirectRoce) {
+            // AIV直驱roce多机场景，需要生成RMAInfo并拷贝至Device
+            CHK_PTR_NULL(combinOparaMem_);
+            HcclCombinOpParam *combinOparaPtr = reinterpret_cast<HcclCombinOpParam*>(combinOparaMem_->ptr());
+            CHK_PTR_NULL(combinOparaPtr);
+            CHK_RET(algOperator->SetRmaInfo(combinOparaPtr->aiRMAInfo));
+        }
         bool selectAivAlg = algDesc.isAivMode;
         if (selectAivAlg) {
             CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
@@ -5791,7 +5810,7 @@ namespace hccl
             }
             HCCL_INFO("[AllocAlgResource] tag[%s] alloc aiv buffer", newTag.c_str());
         }
-        if (AIV_COMM_INFO_BUFFER_BITMASK & resRequest.aivBufferRequest) {
+        if ((AIV_COMM_INFO_BUFFER_BITMASK & resRequest.aivBufferRequest) || opParam.isNpuDirectRoce) {
             if (!useOpbaseFlag) {
                 DeviceMem aivCommInfoMem; // 图模式每个算子单独一块内存
                 CHK_RET(DeviceMem::alloc(aivCommInfoMem, AIV_COMM_INFO_SIZE));
@@ -5864,7 +5883,7 @@ namespace hccl
             StateGuard<HcclCommunicator, HcclCommState> guard(this, HcclCommState::BUILDING);
             ret = transportManager_->Alloc(opParam.tag, transMem, algResResponse.opTransportResponse,
                                            opParam.aicpuUnfoldMode, false, opParam.isZeroCopy, opParam.opType,
-                                           opParam.isCapture);
+                                           opParam.isCapture, false, opParam.isNpuDirectRoce);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                 HCCL_ERROR("[%s]Alloc transports failed, tag[%s]", __func__, newTag.c_str()), ret);
         }
@@ -6949,8 +6968,13 @@ namespace hccl
         if (aiRMAInfoMem_ == nullptr) {
             CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAInfo), aiRMAInfoMem_));
         }
+        if (rmaInfoMem_ == nullptr) {
+            CHK_RET(AllocAndClearHostMem(sizeof(HcclRMAInfo), rmaInfoMem_));
+        }
         CHK_PTR_NULL(aiRMAInfoMem_);
         CHK_PTR_NULL(aiRMAInfoMem_->ptr());
+        CHK_PTR_NULL(rmaInfoMem_);
+        CHK_PTR_NULL(rmaInfoMem_->ptr());
 
         CHK_SAFETY_FUNC_RET(memset_s(combinOparaPtr, sizeof(HcclCombinOpParam), 0, sizeof(HcclCombinOpParam)));
 

@@ -39,6 +39,8 @@ public:
     virtual HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo);
     // AIV拷贝通信域信息到device上
     virtual HcclResult PrepareCommInfoToDevice(AlgResourceResponse& algResource);
+    // AIV支持Roce直通Rma信息拷贝
+    HcclResult SetRmaInfo(void* rmaInfo);
 
     // batchsendrecv需要增量建链
     virtual HcclResult CalcIncreLinkRequest(const OpParam& param, std::set<u32>& ranksLinked, 
@@ -67,6 +69,7 @@ protected:
     u32 blockDim_ = MAX_BLOCK_DIM;
     OpCounterInfo opCounter_;
     AlgDesc desc_;
+    void* rmaInfo_ = nullptr;
     HcclCacheInfo cacheInfo_;
 };
 }

@@ -72,6 +72,7 @@ public:
     HcclResult SetBlockDim(const u32& blockDim);
     HcclResult GetCache(HcclCacheInfo& cacheInfo);
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);
+    HcclResult SetRmaInfo(void* rmaInfo);
 protected:
     std::string GenerateNewTagByAlgTypeLevel1(std::string tag, std::string algTypeLevel1Tag) const;
     u32 CalcContextNumForPipeline(HcclCMDType hcclCMDType);

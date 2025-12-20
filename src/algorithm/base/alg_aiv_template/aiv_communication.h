@@ -59,6 +59,7 @@
 #include "aiv_reduce_scatter_v_910b_bigdata.h"
 
 #include "aiv_sync_910b.h"
+#include "aiv_sync_910b_rdma.h"
 
 #include "aiv_all_gather_910B_rdma.h"
 #include "aiv_all_gather_910B_rdma_graph.h"
@@ -72,6 +73,7 @@
 #include "aiv_reduce_scatter_deter_910b_bigdata.h"
 #include "aiv_broadcast_910b_bigdata.h"
 #include "aiv_broadcast_910b_smalldata.h"
+#include "aiv_all_to_all_910b_direct_fullmesh.h"
 
 using namespace AscendC;
 
@@ -174,7 +176,11 @@ extern "C" __global__ __aicore__ void aiv_all_to_all_##type(KERNEL_ARGS_DEF) { \
             return aiv_all_to_all_91093_graph<type>(KERNEL_ARGS_CALL); \
         } \
     } else if (aivRdmaStep >= 0) { \
-        return aiv_all_to_all_rdma_910b<type>(KERNEL_ARGS_CALL); \
+        if(isOpBase && rmaInfo != 0){ \
+            return aiv_all2All_910b_direct_fullmesh<type>(KERNEL_ARGS_CALL); \
+        } else { \
+            return aiv_all_to_all_rdma_910b<type>(KERNEL_ARGS_CALL); \
+        } \
     } else if (isOpBase) { \
         if (len * sizeof(type) < AIV_ALL_TO_ALL_BIG_SIZE) { \
             return aiv_all_to_all_910b_smalldata<type>(KERNEL_ARGS_CALL); \
@@ -287,6 +293,12 @@ extern "C" __global__ __aicore__ void hccl_aiv_sync(KERNEL_ARGS_DEF) {
     return aiv_sync_910b_inner(KERNEL_ARGS_CALL); 
 }
 EXPORT_AIV_META_INFO(hccl_aiv_sync);
+
+// aiv sync rdma
+extern "C" __global__ __aicore__ void hccl_aiv_sync_rdma(KERNEL_ARGS_DEF) {
+    return aiv_sync_910b_rdma(KERNEL_ARGS_CALL);
+}
+EXPORT_AIV_META_INFO(hccl_aiv_sync_rdma);
 
 // 910B支持的Atomic数据类型
 #define AIV_ATOMIC_DATA_TYPE_DEF(func) \
