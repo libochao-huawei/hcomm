@@ -48,6 +48,10 @@ public:
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
     static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);
+
+    // IndOp dfx
+    static HcclResult AicpuRegOpInfo(void* opInfo, u32 size);
+    static HcclResult AicpuRegOpTaskException(HcommGetOpInfoCallback callback);
 private:
     static HcclResult CalcDataSize(HcclCMDType op, HcclDataType type, u64 count, u32 rankSize,
         u64 &inputSize, u64 &outputSize);
