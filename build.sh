@@ -468,12 +468,12 @@ if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
 fi
 
-if [ -e "$ORION_PATH" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DORION_MODE=ON"
-    xml_add_orion_so
-else
-    xml_delete_orion_so
-fi
+#if [ -e "$ORION_PATH" ];then
+#    CUSTOM_OPTION="${CUSTOM_OPTION} -DORION_MODE=OFF"
+#    xml_add_orion_so
+#else
+#   xml_delete_orion_so
+#fi
 
 if [ "${BUILD_AARCH}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
