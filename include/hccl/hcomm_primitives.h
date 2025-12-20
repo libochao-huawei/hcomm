@@ -267,28 +267,6 @@ extern HcclResult HcommAcquireComm(const char* commId);
  * @note 当前仅支持AICPU模式
  */
 extern HcclResult HcommReleaseComm(const char* commId);
-
-/**
- * @brief 注册算子信息到通信域
- * @param[in] commId 通信域id
- * @param[in] opInfo 算子信息
- * @param[in] size 算子信息的数据长度
- * @return HcclResult 执行结果状态码
- * @note 当前仅支持AICPU模式
- */
-extern HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, uint32_t size);
-
-/**
- * @brief 注册taskException算子信息解析函数
- * @param[in] commId 通信域id
- * @param[in] callback 解析算子信息并输出字符数组的回调函数
- * @param[in] opInfo 算子信息存储的内存地址
- * @param[in] size 算子信息存储的内存长度
- * @return HcclResult 执行结果状态码
- * @note 当前仅支持AICPU模式
- */
-typedef void (*HcommGetOpInfoCallback)(const void *opInfo, char *outPut, size_t size);
-extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
