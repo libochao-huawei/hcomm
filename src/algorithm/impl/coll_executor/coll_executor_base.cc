@@ -82,6 +82,13 @@ HcclResult CollExecutorBase::PrepareCommInfoToDevice(AlgResourceResponse& algRes
     return HCCL_SUCCESS;
 }
 
+HcclResult CollExecutorBase::SetRmaInfo(void* rmaInfo)
+{
+    CHK_PTR_NULL(rmaInfo);
+    rmaInfo_ = rmaInfo;
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollExecutorBase::CalcIncreLinkRequest(const OpParam& param, std::set<u32>& ranksLinked, 
     AlgResourceRequest &resourceRequest, bool& needIncreLink)
 {

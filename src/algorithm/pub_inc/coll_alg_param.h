@@ -197,6 +197,8 @@ struct OpParam {
     bool supportZeroCopy = false;
     bool isZeroCopy = false;
     u8 aclGraphZeroCopyEnable = 0;  // 记录和传递外部配置参数aclGraphZeroCopyEnable
+    bool supportRoceDirect = false;   // AIV场景支持Roce直驱
+    bool isNpuDirectRoce = false;     // AIV场景使用Roce直驱标记位
     s32 aivTag = 0; // AIV场景使用的软同步标记位
     u32 index = 0;
     bool isInplaceError = false;
