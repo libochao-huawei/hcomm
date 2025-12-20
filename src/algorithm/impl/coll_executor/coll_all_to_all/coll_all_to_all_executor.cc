@@ -43,7 +43,6 @@ HcclResult CollAlltoAllExecutor::Orchestrate(OpParam& param, AlgResourceResponse
             CHK_RET(SetNormalMode(dispatcher_));
         }
         ret = KernelRun(param, execMem);
-        CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     } else {
         execMem.inputMem = algRes.paramInputMem;
         execMem.outputMem = algRes.paramOutputMem;
