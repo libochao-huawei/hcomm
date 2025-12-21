@@ -389,20 +389,6 @@ HcclResult hrtGetDeviceIndexByPhyId(u32 devicePhyId, u32 &deviceLogicId)
     return HCCL_SUCCESS;
 };
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-extern rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val);
-extern rtError_t rtGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *val);
-extern rtError_t rtEnableP2P(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t flag);
-extern rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc);
-extern rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status);
-
-#ifdef __cplusplus
-}
-#endif
-
 HcclResult hrtGetPhyDeviceInfo(u32 devicePhysicId, s32 moduleType, s32 infoType, s64 &value)
 {
 #ifndef HCCD
@@ -862,13 +848,37 @@ HcclResult hrtGetPairDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s32 infoType, 
 
     CHK_RET(hrtGetDeviceIndexByPhyId(otherPhyDevId, logicIdDest));
 
-    rtError_t ret = rtGetPairDevicesInfo(logicIdLocal, logicIdDest, infoType, reinterpret_cast<int64_t*>(pValue));
-    HCCL_DEBUG("rt get pair devices info, return[%d], "
-        "para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u], infoType[%d], value[%p].",
-        ret, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest, infoType, pValue);
-    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Get][PairPhyDevicesInfo]errNo[0x%016llx] rt get pair devices "
-        "info failed, return[%d], para: phyDevId[%u], otherPhyDevId[%u], infoType[%d], value[%p].",
-        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, phyDevId, otherPhyDevId, infoType, pValue), HCCL_E_RUNTIME);
+    aclError ret = aclrtGetDevicesTopo(logicIdLocal, logicIdDest, reinterpret_cast<uint64_t*>(pValue));
+    HCCL_DEBUG("aclrt get pair devices info, return[%d], "
+        "para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u], value[%lld].",
+        ret, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest, *pValue);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Get][PairPhyDevicesInfo]errNo[0x%016llx] rt get pair devices info "
+        "failed, return[%d], para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u], value[%lld].",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest, *pValue),
+        HCCL_E_RUNTIME);
+
+    // 当前 aclrtGetDevicesTopo 仅支持返回一种链路类型，将来可能会同时按照二进制位排列返回所支持的多种类型
+    // 按二进制位进行比较
+    if ((*pValue & ACL_RT_DEVS_TOPOLOGY_HCCS) != 0) {
+        *pValue = TOPOLOGY_HCCS;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_PIX) != 0) {
+        *pValue = TOPOLOGY_PIX;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_PIB) != 0) {
+        *pValue = TOPOLOGY_PIB;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_PHB) != 0) {
+        *pValue = TOPOLOGY_PHB;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_SYS) != 0) {
+        *pValue = TOPOLOGY_SYS;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_SIO) != 0) {
+        *pValue = TOPOLOGY_SIO;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_HCCS_SW) != 0) {
+        *pValue = TOPOLOGY_HCCS_SW;
+    } else {
+        HCCL_ERROR("aclrt get pair devices info failed, unknown linkType[%lld], "
+            "para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u].",
+            *pValue, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest);
+        return HCCL_E_RUNTIME;
+    }
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtGetPairDevicesInfo]Does not support this interface.");
