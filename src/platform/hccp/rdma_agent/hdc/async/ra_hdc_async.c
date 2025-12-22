@@ -294,8 +294,9 @@ STATIC int RaHdcAsyncSessionClose(unsigned int phyId)
     if (timeout <= 0) {
         hccp_warn("[deinit][ra_hdc_async]hdc async session close timeout:%d phy_id[%u]", timeout, phyId);
     }
-    free(reqHandle);
-    reqHandle = NULL;
+    RA_PTHREAD_MUTEX_LOCK(&gRaHdcAsync[phyId].reqMutex);
+    HdcAsyncDelResponse(reqHandle);
+    RA_PTHREAD_MUTEX_UNLOCK(&gRaHdcAsync[phyId].reqMutex);
 
     // destroy async recv thread and work thread pool
     ret = RaHdcProcessMsg(RA_RS_ASYNC_HDC_SESSION_CLOSE, phyId, (char *)&asyncData,
