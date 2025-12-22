@@ -5588,7 +5588,7 @@ TEST_F(OpbaseTest, st_topoInfoExchangeServer_timeout)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_TIMEOUT));
-    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectionedRank)
+    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectedRank)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -5621,7 +5621,7 @@ TEST_F(OpbaseTest, st_topoInfoExchangeServer_ErrTCP)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_TCP_CONNECT));
-    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectionedRank)
+    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectedRank)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -6439,7 +6439,7 @@ TEST_F(OpbaseTest, st_GroupLeaderAccept_When_Accept_E_Connect_Then_ReturnE_Conne
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_TCP_CONNECT));
-    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectionedRank)
+    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectedRank)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));

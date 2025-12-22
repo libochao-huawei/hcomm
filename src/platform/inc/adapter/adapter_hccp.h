@@ -240,7 +240,7 @@ HcclResult  hrtRaSocketNonBlockRecvHeterog(const FdHandle fdHandle, void *data, 
 s32 hrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 HcclResult hrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size,
-    std::function<bool()> needStop = []() { return false; });
+    std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
 
 s32 hrtRaSocketRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 

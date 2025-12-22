@@ -425,11 +425,11 @@ HcclResult HcclSocket::Send(const void *data, u64 size)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen)
+HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     CHK_PTR_NULL(recvBuf);
-    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }));
+    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }, timeout));
     return HCCL_SUCCESS;
 }
 
@@ -449,13 +449,13 @@ HcclResult HcclSocket::Send(const std::string &sendMsg)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::Recv(std::string &recvMsg)
+HcclResult HcclSocket::Recv(std::string &recvMsg, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     recvMsg.clear();
     u8 recvBuf[MAX_MSG_STR_LEN] = {0};
     CHK_RET(hrtRaSocketBlockRecv(fdHandle_, reinterpret_cast<void *>(recvBuf), MAX_MSG_STR_LEN,
-        [this]() -> bool { return this->GetStopFlag(); }));
+        [this]() -> bool { return this->GetStopFlag(); }, timeout));
     recvMsg.assign(reinterpret_cast<char *>(recvBuf));
     return HCCL_SUCCESS;
 }

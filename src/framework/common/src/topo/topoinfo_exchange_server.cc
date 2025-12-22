@@ -312,7 +312,7 @@ HcclResult TopoInfoExchangeServer::Connect(std::map<std::string, std::shared_ptr
         if (topoExUsedTime >= timeout) {
             HCCL_ERROR("[Get][Connection]topo exchange server get socket timeout! timeout[%d s]",
                 GetExternalInputHcclLinkTimeOut());
-            DisplayConnectionedRank(connectSockets, rankSize);
+            DisplayConnectedRank(connectSockets, rankSize);
             return HCCL_E_TIMEOUT;
         }
         auto topoExResTime =  timeout - topoExUsedTime;
@@ -328,6 +328,8 @@ HcclResult TopoInfoExchangeServer::Connect(std::map<std::string, std::shared_ptr
         HcclResult ret = listenSocket_->Accept(tag, socket, socketWaitTime);
         if (ret == HCCL_SUCCESS) {
             HCCL_INFO("listenSocket_->Accept completed.");
+            // server获取socket之后进行一次数据收发用于判断是否都成功获取到了socket
+            CHK_RET(socket->Send(TOPO_EXCHANGE_CHECK_MESSAGE, sizeof(TOPO_EXCHANGE_CHECK_MESSAGE)));
             u32 rankNum = 0;
             CHK_RET(GetRemoteFdAndRankSize(socket, connectSockets, rankNum));
             rankSize = rankNum;
@@ -346,7 +348,7 @@ HcclResult TopoInfoExchangeServer::Connect(std::map<std::string, std::shared_ptr
             DisplayConnectingStatus(previousRankNum, expectSocketNum, connectSockets);
         } else if (ret == HCCL_E_TCP_CONNECT) {
             HCCL_INFO("listenSocket_->Accept E_TCP_CONNECT");
-            DisplayConnectionedRank(connectSockets, rankSize);
+            DisplayConnectedRank(connectSockets, rankSize);
             return HCCL_E_TCP_CONNECT;
         }
     }
@@ -366,7 +368,7 @@ HcclResult TopoInfoExchangeServer::GroupLeaderConnect(std::map<std::string, std:
         if (topoExUsedTime >= timeout) {
             HCCL_ERROR("[Get][Connection]topo exchange server get socket timeout! timeout[%d s]",
                 GetExternalInputHcclLinkTimeOut());
-            DisplayConnectionedRank(connectSockets);
+            DisplayConnectedRank(connectSockets);
             return HCCL_E_TIMEOUT;
         }
         auto topoExResTime =  timeout - topoExUsedTime;
@@ -403,7 +405,7 @@ HcclResult TopoInfoExchangeServer::GroupLeaderConnect(std::map<std::string, std:
             DisplayConnectingStatus(previousRankNum_, expectSocketNum_, connectSockets);
         } else if (ret == HCCL_E_TCP_CONNECT) {
             HCCL_INFO("listenSocket_->Accept E_TCP_CONNECT");
-            DisplayConnectionedRank(connectSockets);
+            DisplayConnectedRank(connectSockets);
             return HCCL_E_TCP_CONNECT;
         }
     }
@@ -487,7 +489,7 @@ HcclResult TopoInfoExchangeServer::GetRemoteFdAndRankSize(std::shared_ptr<HcclSo
     return HCCL_SUCCESS;
 }
 
-HcclResult TopoInfoExchangeServer::DisplayConnectionedRank(
+HcclResult TopoInfoExchangeServer::DisplayConnectedRank(
     const std::map<std::string, std::shared_ptr<HcclSocket>> &connectSockets, u32 rankNum)
 {
     vector<string> ranksInfo;

@@ -64,6 +64,9 @@ public:
 private:
     HcclResult DetectClusterTopoInfo(std::shared_ptr<HcclSocket> socket, RankTable_t &clusterTopoInfo);
     HcclResult Connect(HcclIpAddress &serverIp, u32 port, std::shared_ptr<HcclSocket> &socket);
+    HcclResult ConnectWithRetry(HcclIpAddress &serverIp, u32 port,
+        std::shared_ptr<HcclSocket> &socket);
+    HcclResult TryRecvFromServer(std::shared_ptr<HcclSocket> &socket, u32 retryTime);
     HcclResult GetConnection(HcclIpAddress &serverIp, u32 port,
         std::shared_ptr<HcclSocket> &socket);
     HcclResult Disconnect(std::shared_ptr<HcclSocket> &socket);
