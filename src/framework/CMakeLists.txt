@@ -755,7 +755,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
         endforeach()
 
         add_subdirectory(${ORION_REAL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/orion)
-        add_dependencies(hcomm hccl_v2)
+        add_dependencies(hcomm hccl_v2 hccl_aiv_op_910_95)
         target_link_libraries(hcomm
             hccl_v2
         )

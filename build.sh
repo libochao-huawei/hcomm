@@ -46,6 +46,7 @@ INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
 ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
 ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" release_type=\"debug\"/>"
 ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
+ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -285,7 +286,7 @@ function xml_add_orion_so() {
         exit 1
     fi
 
-    strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO")
+    strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO" "$ORION_AIV_OP")
     not_found=()
     for str in "${strings[@]}"; do
         if ! grep -q "$str" "$INSTALL_XML_FILE"; then
@@ -322,7 +323,7 @@ function xml_delete_orion_so() {
 
     temp_file=$(mktemp)
     while IFS= read -r line; do
-        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* ]]; then
+        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* || "$line" == *"$ORION_AIV_OP"* ]]; then
             echo "$line" >> "$temp_file"
         fi
     done < "$INSTALL_XML_FILE"
