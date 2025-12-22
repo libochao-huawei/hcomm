@@ -10,7 +10,7 @@
 # ----------------------------------------------------------------------------
 set(HCOMM_UTILS_PATH ${CMAKE_CURRENT_BINARY_DIR})
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
-set(CANN_UTILS_VERSION "8.5.0")
+set(CANN_UTILS_VERSION "8.5.0-beta.1")
 
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "hcomm_utils found in ${HCOMM_UTILS_PATH}")
@@ -27,7 +27,7 @@ else()
         set(SIMULATOR_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/${HCOMM_UTILS_FILE})
         execute_process(COMMAND rm -rf ${SIMULATOR_DIR})
 
-        set(HCOMM_UTILS_URL "https://mirrors.huaweicloud.com/artifactory/cann-run/${CANN_UTILS_VERSION}/inner/${CMAKE_HOST_SYSTEM_PROCESSOR}/${HCOMM_UTILS_FILE}")
+        set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${CANN_UTILS_VERSION}/${CMAKE_HOST_SYSTEM_PROCESSOR}/basic/${HCOMM_UTILS_FILE}")
         message(STATUS "hcomm_utils pkg not found in ${HCOMM_UTILS_PKG}, downloading utils pkg from ${HCOMM_UTILS_URL}")
         file(DOWNLOAD
             ${HCOMM_UTILS_URL}
