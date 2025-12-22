@@ -1,5 +1,5 @@
 # HCOMM
-
+- log 2025.12.22
 ## 🔥Latest News
 
 - [2025/11/30] HCOMM项目开源。
