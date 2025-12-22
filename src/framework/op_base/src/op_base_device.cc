@@ -48,3 +48,10 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus &captureStat
    HCCL_WARNING("[%s]Stream capture does not support!", __func__);
    return HCCL_SUCCESS;
 }
+
+HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
+                         HcclReduceOp op, HcclComm comm, aclrtStream stream)
+{
+   HCCL_WARNING("[%s]HcclAllReduceInner does not support!", __func__);
+   return HCCL_SUCCESS;
+}

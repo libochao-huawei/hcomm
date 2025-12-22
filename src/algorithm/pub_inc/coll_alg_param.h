@@ -207,6 +207,11 @@ struct OpParam {
     u8 deterministic = 0;
     u32 srTag = 0;
     u32 localGroupRank = 0;
+    bool isGroupMode = false;
+    u32 nSend = 0;
+    u32 nRecv = 0;
+    u32 iSend = 0; // index of send
+    u32 iRecv = 0; // index of recv
 
     inline HcclDataType GetDataType() const
     {

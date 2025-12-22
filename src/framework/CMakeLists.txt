@@ -79,6 +79,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/
     ${HCCL_BASE_DIR}/framework/nslbdp/
     ${HCCL_BASE_DIR}/framework/op_base/src
+    ${HCCL_BASE_DIR}/framework/group
     ${HCCL_BASE_DIR}/common/health/
     ${HCCL_BASE_DIR}/common/stream/
     ${HCCL_BASE_DIR}/common/launch_device/
@@ -832,6 +833,7 @@ add_subdirectory(common)
 add_subdirectory(communicator)
 add_subdirectory(hcom)
 add_subdirectory(op_base)
+add_subdirectory(group)
 add_subdirectory(cluster_maintenance)
 add_subdirectory(nslbdp)
 

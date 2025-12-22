@@ -330,6 +330,7 @@ public:
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
 
+    std::shared_ptr<struct hcclKernelPlanner> planner; //for group
     void* barrierSendBuf;
     void* barrierRecvBuf;
     std::mutex operatorlock_;
@@ -375,6 +376,17 @@ public:
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
+    // for group
+    HcclResult SetGroupMode(bool isGroup);
+    bool GetGroupMode();
+    HcclResult SetSendIndex(u32 index);
+    HcclResult SetRecvIndex(u32 index);
+    HcclResult SetBufferSliceNum(u32 bufferSliceNum);
+    HcclResult SetNSend(u32 nSend);
+    HcclResult SetNRecv(u32 nRecv);
+    HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
+    HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
+    HcclResult GroupSubstreamsSync();
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -395,7 +407,7 @@ private:
     const std::string identifier_;
     const std::string cclBuffName_;
     bool isHeterogComm_;
-
+    bool isGroupMode_;
     bool isResetDevice_;
     bool isSpecialType_;
     bool isHaveCpuRank_{false};

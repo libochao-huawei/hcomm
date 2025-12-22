@@ -254,6 +254,7 @@ else()
 	    ${HCCL_CODE_ROOT}/src/framework/hcom/
 		${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
 	    ${HCCL_CODE_ROOT}/src/framework/op_base/src/
+	    ${HCCL_CODE_ROOT}/src/framework/group
 	    ${HCCL_CODE_ROOT}/src/framework/nslbdp/
 		${HCCL_OPEN_CODE_ROOT}/pkg_inc
 

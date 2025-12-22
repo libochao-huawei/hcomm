@@ -131,6 +131,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/hcom/
     ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
+    ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
 
     ${HCCL_CODE_ROOT}/src/platform/

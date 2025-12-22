@@ -116,6 +116,22 @@ TEST_F(HcclReduceTest, Ut_HcclReduce_When_DataSize1KB_Expect_ReturnIsHCCL_SUCCES
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
+TEST_F(HcclReduceTest, Ut_Group_HcclReduce_When_DataSize1KB_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_SET_SENDBUF_RECVBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    u32 root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclGroupStart();
+    HcclResult ret = HcclReduceInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, HCCL_REDUCE_SUM, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
 TEST_F(HcclReduceTest, Ut_HcclReduce_When_DataSize300MB_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_RECVBUF_COUNT(HCCL_COM_BIG_DATA_SIZE, HCCL_COM_BIG_DATA_SIZE, HCCL_COM_BIG_DATA_SIZE);

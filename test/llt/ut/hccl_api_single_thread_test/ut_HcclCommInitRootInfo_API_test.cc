@@ -43,6 +43,30 @@ TEST_F(HcclCommInitRootInfoTest, Ut_HcclCommInitRootInfo_When_nRanksIsZero_Expec
     Ut_Comm_Destroy(comm);
 }
 
+TEST_F(HcclCommInitRootInfoTest, Ut_Group_HcclCommInitRootInfo_rank8)
+{
+    int nRanks = 8;
+    HcclRootInfo id = Ut_Get_Root_Info(0);
+    int rankId = 0;
+    HcclComm comms[nRanks];
+
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        HcclCommInitRootInfo(nRanks, &id, rankId, &comms[i]);
+    }
+    HcclResult ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        Ut_Comm_Destroy(comms[i]);
+    }
+    ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 // 小概率测试用例段错误
 TEST_F(HcclCommInitRootInfoTest, Ut_HcclCommInitRootInfo_When_GetDeviceError_Expect_ReturnIsHCCL_E_RUNTIME)
 {

@@ -35,6 +35,7 @@
 #include "error_codes/rt_error_codes.h"
 #include "mmpa_api.h"
 #include "op_base.h"
+#include "hccl_group.h"
 #if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "op_base_v2.h"
 #endif
@@ -73,6 +74,21 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus &captureStat
 HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
                          HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLREDUCE;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendCount = count;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.op = op;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAllReduce] Finish taskAppend, count [%d] dataType [%s]", count, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
     HcclUs startut = TIME_NOW();
 
     bool isCapture;

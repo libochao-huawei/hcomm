@@ -72,6 +72,7 @@ constexpr float CACHEMAP_CLEARPERCENT = 0.1;
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
 constexpr u32 RDMA_NOTIFY_MAX_NUM = 8192;
 constexpr u32 COMM_LAYER_NUM_MAX = 2;
+constexpr u32 GROUP_SYNC_NOTIFY_NUM = 2;
 
 struct RemoteRes {
     u64 inbufferSize;
@@ -448,6 +449,22 @@ public:
         CommLink **linkList, uint32_t *listSize);
     HcclTopoAttr GetTopoAttr();
     void ForceProf(bool isForce);
+    // for Group
+    HcclResult SetGroupMode(bool isGroup);
+    bool GetGroupMode();
+    HcclResult SetSendIndex(u32 index);
+    HcclResult GetSendIndex(u32 &index);
+    HcclResult SetRecvIndex(u32 index);
+    HcclResult GetRecvIndex(u32 &index);
+    HcclResult SetBufferSliceNum(u32 bufferSliceNum_);
+    HcclResult GetBufferSliceNum(u32 &bufferSliceNum_);
+    HcclResult SetNSend(u32 index);
+    HcclResult GetNSend(u32 &index);
+    HcclResult SetNRecv(u32 index);
+    HcclResult GetNRecv(u32 &index);
+    HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
+    HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
+    HcclResult GroupSubstreamsSync();
 private:
 
     bool IsEnableRoce();
@@ -850,6 +867,14 @@ private:
     HcclResult CheckSetRetryStateToWaitResume();
     HcclResult CheckExitWaitResumeState(bool &isChangedLink);
 
+    //for group
+    HcclResult CreateGroupSendNotifies();
+    HcclResult CreateGroupRecvNotifies();
+    HcclResult CreateGroupSendStreams();
+    HcclResult CreateGroupRecvStreams();
+    HcclResult SetGroupMainStream(HcclRtStream sendRecvMainStream);
+    HcclResult GetSliceSize(u64 &sliceSize);
+
     bool isOnlyAiv_{false};
     HcclIpAddress loopBackIp_;
     bool profilingInitiated_;
@@ -1050,6 +1075,20 @@ private:
     std::map<u32, TransportType> remoteTransportMap_;
     uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};
     RankGraph rankGraph_;    
+
+    // for group
+    bool isGroupMode_;
+    u32 iSend;
+    u32 iRecv;
+    u32 nSend;
+    u32 nRecv;
+    u32 bufferSliceNum;
+    std::vector<std::shared_ptr<LocalNotify>> groupSendNotifies;
+    std::vector<std::shared_ptr<LocalNotify>> groupRecvNotifies;
+    std::vector<Stream> groupSendStreams;
+    std::vector<Stream> groupRecvStreams;
+    Stream groupSendRecvMainStream;
+
     // 独立算子
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;
