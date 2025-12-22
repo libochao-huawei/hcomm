@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 
 # HCCP2.0
-set(HCOMM_ORION ${CMAKE_CURRENT_SOURCE_DIR}/../../../drivers/network/orion/hcomm_dev)
+set(HCOMM_ORION ${CMAKE_CURRENT_SOURCE_DIR}/../../../../drivers/network/orion/hcomm_dev)
 
 if(BUILD_OPEN_PROJECT)
     if (DEVICE_MODE)

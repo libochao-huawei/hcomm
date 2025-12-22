@@ -39,20 +39,24 @@ if(EXISTS ${HCOMM_ORION})
 list(APPEND rs_list
         ${HCOMM_ORION}/rdma_service/ctx/dl_ccu_function.c
         ${HCOMM_ORION}/rdma_service/ctx/dl_urma_function.c
+        ${HCOMM_ORION}/rdma_service/ctx/rs_ping_urma.c
         ${HCOMM_ORION}/rdma_service/ctx/rs_ccu.c
         ${HCOMM_ORION}/rdma_service/ctx/rs_ctx.c
         ${HCOMM_ORION}/rdma_service/ctx/rs_esched.c
         ${HCOMM_ORION}/rdma_service/ctx/rs_ub.c
 )
+endif()
 
+add_library(rs  SHARED ${rs_list})
+
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
 target_compile_definitions(rs PRIVATE
     TGID_VA
     CONFIG_V121
     CONFIG_CONTEXT
 )
 endif()
-
-add_library(rs  SHARED ${rs_list})
 
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(rs PRIVATE
@@ -88,6 +92,7 @@ if(BUILD_OPEN_PROJECT)
 
         # HCCP2.0
         ${HCOMM_ORION}/inc/network/
+        ${HCOMM_ORION}/inc/private/network
         ${HCOMM_ORION}/rdma_service/ctx/
         ${HCOMM_ORION}/external_depends/ccu/
         ${HCOMM_ORION}/external_depends/ubengine/

@@ -19,14 +19,17 @@ list(APPEND ra_peer_list
         ${HCOMM_ORION}/rdma_agent/comm/ctx/ra_ctx_comm.c
         ${HCOMM_ORION}/rdma_agent/peer/ra_peer_ctx.c
 )
-
-target_compile_definitions(ra_peer PRIVATE
-    CONFIG_CONTEXT
-)
 endif()
 
 #编译目标
 add_library(ra_peer SHARED ${ra_peer_list})
+
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
+target_compile_definitions(ra_peer PRIVATE
+    CONFIG_CONTEXT
+)
+endif()
 
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_peer PRIVATE
@@ -53,9 +56,11 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
 
         # HCCP2.0
-        ${HCOMM_ORION}/inc/network/
-        ${HCOMM_ORION}/rdma_agent/comm/ctx/
-        ${HCOMM_ORION}/rdma_service/ctx/
+        ${HCOMM_ORION}/inc/network
+        ${HCOMM_ORION}/inc/private/network
+        ${HCOMM_ORION}/rdma_agent/inc
+        ${HCOMM_ORION}/rdma_agent/comm/ctx
+        ${HCOMM_ORION}/rdma_service/ctx
     )
 
     target_link_directories(ra_peer PRIVATE

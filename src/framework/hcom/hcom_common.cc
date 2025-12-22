@@ -40,6 +40,37 @@
 using namespace std;
 using namespace hccl;
 
+
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
+// DEV_TYPE_V80 对应 DevType::DEV_TYPE_V80
+// DEV_TYPE_V51_310_P3 对应 DevType::DEV_TYPE_310P3
+// DEV_TYPE_V71 对应 DevType::DEV_TYPE_V71
+// DEV_TYPE_V51_310_P1 对应 DevType::DEV_TYPE_310P1
+// DEV_TYPE_V81 对应 DevType::DEV_TYPE_V81
+// DEV_TYPE_910_95 对应 DevType::DEV_TYPE_910_95
+// DEV_TYPE_NOSOC 对应 DevType::DEV_TYPE_NOSOC
+
+DevType MakeEnumToDevType(int makeEnum)
+{
+    // 正向映射：MAKE_ENUM到DevType
+    static std::map<int, DevType> makeEnumToDevType = {{0, DevType::DEV_TYPE_910},
+        {1, DevType::DEV_TYPE_310P3},
+        {2, DevType::DEV_TYPE_910B},
+        {3, DevType::DEV_TYPE_310P1},
+        {4, DevType::DEV_TYPE_910_93},
+        {5, DevType::DEV_TYPE_910_95},
+        {6, DevType::DEV_TYPE_NOSOC}};
+
+    auto it = makeEnumToDevType.find(makeEnum);
+    if (it != makeEnumToDevType.end()) {
+        return it->second;
+    } else {
+        HCCL_WARNING("Invalid MAKE_ENUM value");
+    }
+    return DevType::DEV_TYPE_NOSOC;
+}
+#endif
+
 typedef HcclResult (*HcomCreateGroupCallback)(const std::string &, const std::vector<u32> &);
 typedef bool (*HcomCallBackGroupIsInit)(HcomInfo &);
 typedef HcclResult (*HcomDestroyGroupCallback)(const std::string &);
@@ -1419,6 +1450,21 @@ HcclResult HcomInitByFile(const char *rankTablePath, const char *identify)
         hcomInfo.rankTable.rankNum, hcomInfo.params.rank, hcomInfo.params.serverId.c_str(),
         hcomInfo.params.logicDevId);
     return HCCL_SUCCESS;
+}
+
+DevType HcomGetDeviceType()
+{
+#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
+    DevType devType;
+	hrtGetDeviceType(devType);
+    if(devType == DevType::DEV_TYPE_910_95 ){
+        HcomGetDevTypeV2(devType);
+        HCCL_INFO("LaunchHcomKernel: devType is %d", MakeEnumToDevType(static_cast<int>(devType)));
+        return MakeEnumToDevType(static_cast<int>(devType));
+    }
+#endif
+    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
+    return hcomInfo.params.deviceType;
 }
 
 HcclResult HcomCreateCommCCLbuffer(const char *group)

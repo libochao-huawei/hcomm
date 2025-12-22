@@ -27,13 +27,16 @@ list(APPEND ra_hdc_list
         ${HCOMM_ORION}/rdma_agent/hdc/async/ra_hdc_async_ctx.c
         ${HCOMM_ORION}/rdma_agent/hdc/ra_hdc_ctx.c
 )
+endif()
 
+add_library(ra_hdc SHARED ${ra_hdc_list})
+
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
 target_compile_definitions(ra_hdc PRIVATE
     CONFIG_CONTEXT
 )
 endif()
-
-add_library(ra_hdc SHARED ${ra_hdc_list})
 
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_hdc PRIVATE
@@ -66,9 +69,12 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
 
         # HCCP2.0
-        ${HCOMM_ORION}/inc/network/
-        ${HCOMM_ORION}/rdma_agent/comm/ctx/
-        ${HCOMM_ORION}/rdma_agent/hdc/async/
+        ${HCOMM_ORION}/inc/network
+        ${HCOMM_ORION}/inc/private/network
+        ${HCOMM_ORION}/rdma_agent/inc
+        ${HCOMM_ORION}/rdma_agent/comm/ctx
+        ${HCOMM_ORION}/rdma_agent/hdc
+        ${HCOMM_ORION}/rdma_agent/hdc/async
     )
 
     target_link_directories(ra_hdc PRIVATE
