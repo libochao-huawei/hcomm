@@ -231,10 +231,10 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
     } else if (smallCountOptimMultiServer || smallCountOptimMultiPod) {
         algName = "BroadCastComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-    } else if (!param.supportSymmetricMemory && smallCountOptimSingleServer) {
+    } else if (smallCountOptimSingleServer) {
         algName = "BroadCastSmallCountExecutor";
-    } else if (param.supportSymmetricMemory || (param.supportZeroCopy &&
-        (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize > HCCL_MID_COUNT_16_MB * serverNum_))) {
+    } else if (param.supportZeroCopy &&
+        (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize > HCCL_MID_COUNT_16_MB * serverNum_)) {
         algName = "BroadCastRingZerocopyExecutor";
     } else if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING || topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
         algName = "BroadCastRingFor91093Executor";

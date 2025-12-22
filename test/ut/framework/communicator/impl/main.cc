@@ -7,27 +7,14 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "gtest/gtest.h"
+#include "llt_hccl_stub_pub.h"
 
-#ifndef HCCL_MEM_ALLOC_H
-#define HCCL_MEM_ALLOC_H
+GTEST_API_ int main(int argc, char **argv) {
+    printf("Running hccl_api_single_thread_test\n");
 
-#include <hccl_comm.h>
-#include "hccl_comm_pub.h"
-#include "config.h"
-
-#define ALIGN_SIZE(size, align) \
-    ({ \
-        (size) = (((size) + (align) - 1) / (align)) * (align);\
-    })
-
-#ifdef __cplusplus
-extern "C" {
-#endif  // __cplusplus
-
-HcclResult HcclMemAlloc(void **ptr, size_t size);
-HcclResult HcclMemFree(void *ptr);
-
-#ifdef __cplusplus
+    testing::InitGoogleTest(&argc, argv);
+    setenv("HCCL_DEBUG_CONFIG", "alg", 1);
+    setenv("HCCL_DFS_CONFIG", "connection_fault_detction_time:0", 1);
+    return RUN_ALL_TESTS();
 }
-#endif  // __cplusplus
-#endif // HCCL_MEM_ALLOC_H

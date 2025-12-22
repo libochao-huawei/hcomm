@@ -1,12 +1,12 @@
-/*
- * Copyright (c) 2024-2025 Huawei Technologies Co., Ltd. All Rights Reserved.
- * This file is a part of the CANN Open Software.
- * Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "symmetric_memory.h"
 #include <algorithm> // for std::max
@@ -395,21 +395,25 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
         return HCCL_E_PARA;
     }
     CHK_PTR_NULL(baseUserVa);
+    CHK_PRT_RET(baseVaSize == 0, HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] Invalid baseVaSize: 0."), HCCL_E_PARA);
+    CHK_PRT_RET(baseVaSize % granularity_ != 0,
+        HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] baseVaSize %u is not a multiple of granularity %zu.",
+        baseVaSize, granularity_), HCCL_E_PARA);
+
     aclrtDrvMemHandle paHandle;
     if (aclrtMemRetainAllocationHandle(baseUserVa, &paHandle) != 0) {
         HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] MemRetainAllocationHandle failed for ptr[%p], size[%zu]. ", ptr, size);
         return HCCL_E_PARA;
     }
-    size_t alignedBaseSize = (baseVaSize + granularity_ - 1) & ~(granularity_ - 1);
 
-    if (reinterpret_cast<uintptr_t>(ptr) + size > reinterpret_cast<uintptr_t>(baseUserVa) + alignedBaseSize) {
+    if (reinterpret_cast<uintptr_t>(ptr) + size > reinterpret_cast<uintptr_t>(baseUserVa) +  baseVaSize) {
         HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] ptr=%p size=%zu exceeds  block [baseUserVa=%p, size=%zu]", 
-           ptr, size, baseUserVa, alignedBaseSize);
+           ptr, size, baseUserVa,  baseVaSize);
         return HCCL_E_PARA;
     }
 
-    HCCL_INFO("[SymmetricMemory][RegisterSymmetricMem] Retained paHandle[%p] for baseUserVa[%p], alignedBaseSize[%zu]. Total Stride: %zu",
-        paHandle, baseUserVa, alignedBaseSize, stride_);
+    HCCL_INFO("[SymmetricMemory][RegisterSymmetricMem] Retained paHandle[%p] for baseUserVa[%p],  baseVaSize[%zu]. Total Stride: %zu",
+        paHandle, baseUserVa,  baseVaSize, stride_);
 
     std::shared_ptr<PaMappingInfo> paMapInfo;
     auto it = paMappingMap_.find(paHandle);
@@ -420,11 +424,11 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
     }else {
         size_t offset = 0;
         // 使用 granularity_ (通常是2MB) 作为对齐参数
-        if (vaAllocator_->Reserve(alignedBaseSize, granularity_, offset) != HCCL_SUCCESS) {
+        if (vaAllocator_->Reserve( baseVaSize, granularity_, offset) != HCCL_SUCCESS) {
             HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] Failed to reserve VA space. "
                 "Req alignedSize: %zu (0x%zx), Align: %zu. Total Stride: %zu. "
                 "Is fragmentation too high or stride too small?", 
-                alignedBaseSize, alignedBaseSize, granularity_, stride_);
+                 baseVaSize,  baseVaSize, granularity_, stride_);
             return HCCL_E_MEMORY;
         }
         paMapInfo = std::make_shared<PaMappingInfo>();
@@ -441,17 +445,17 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
     pWin->userSize = baseVaSize;
     pWin->baseVa = static_cast<uint8_t*>(heapBase_) + paMapInfo->heapBaseOffset;
     pWin->alignedHeapOffset = paMapInfo->heapBaseOffset;
-    pWin->alignedSize = alignedBaseSize;
+    pWin->alignedSize =  baseVaSize;
     pWin->localRank = rank_;
     pWin->rankSize = rankSize_;
     pWin->stride = stride_;
     pWin->paHandle = paHandle;
 
-    HcclResult ret = RegisterInternal(paHandle, paMapInfo->heapBaseOffset, alignedBaseSize);
+    HcclResult ret = RegisterInternal(paHandle, paMapInfo->heapBaseOffset,  baseVaSize);
     if (ret != HCCL_SUCCESS) {
         if (paMapInfo->refCount == 1) {
             HCCL_ERROR("[SymmetricMemory] RegisterInternal Failed! Releasing offset 0x%zx", paMapInfo->heapBaseOffset);
-            (void)vaAllocator_->Release(paMapInfo->heapBaseOffset, alignedBaseSize);
+            (void)vaAllocator_->Release(paMapInfo->heapBaseOffset,  baseVaSize);
             paMappingMap_.erase(paHandle);
         } else {
             paMapInfo->refCount--;
@@ -464,7 +468,7 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
         HCCL_ERROR("[SymmetricMemory] AddSymmetricWindow Failed!");
         if (paMapInfo->refCount == 1) {
             HCCL_ERROR("[SymmetricMemory] Releasing offset 0x%zx", paMapInfo->heapBaseOffset);
-            (void)vaAllocator_->Release(paMapInfo->heapBaseOffset, alignedBaseSize);
+            (void)vaAllocator_->Release(paMapInfo->heapBaseOffset,  baseVaSize);
             paMappingMap_.erase(paHandle);
         } else {
             paMapInfo->refCount--;

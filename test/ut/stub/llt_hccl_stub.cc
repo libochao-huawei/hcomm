@@ -82,6 +82,7 @@ static s32 chip_type_stub[256] = {0}; /*最大为16，下面不再做判断*/
 /*----------------------------------------------*
  * 常量定义                                     *
  *----------------------------------------------*/
+constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
 
 /*----------------------------------------------*
  * 宏定义                                       *
@@ -5461,5 +5462,12 @@ aclError aclrtMemGetAddressRange(void *ptr, void **baseUserVa, size_t *baseVaSiz
     (void)ptr;
     (void)baseUserVa;
     (void)baseVaSize;
+    return ACL_SUCCESS;
+}
+
+aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, size_t *total)
+{
+    *total = 64 * GIGABYTE_TO_BYTE;
+    *free = 50 * GIGABYTE_TO_BYTE;
     return ACL_SUCCESS;
 }

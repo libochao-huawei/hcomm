@@ -8850,11 +8850,9 @@ namespace hccl
         size_t total = 0;
         aclError acl_ret = aclrtGetMemInfo(ACL_HBM_MEM_HUGE, &free, &total);
         CHK_PRT_RET(acl_ret != ACL_SUCCESS,
-            HCCL_ERROR("[InitSymmetricMemory] aclrtGetMemInfo failed, ret=[%d]", acl_ret),
-            HCCL_E_PARA);
+            HCCL_ERROR("[InitSymmetricMemory] aclrtGetMemInfo failed, ret=[%d]", acl_ret), HCCL_E_PARA);
         if (stride < COMM_SYMMETRIC_MEMORY_MIN_STRIDE * GIGABYTE_TO_BYTE || stride > free) {
-            HCCL_ERROR("[InitSymmetricMemory] stride[%llu] is invalid, free[%llu].",
-                       stride, free);
+            HCCL_ERROR("[InitSymmetricMemory] stride[%llu] is invalid, free[%llu].", stride, free);
             return HCCL_E_PARA;
         }
         HCCL_RUN_INFO("InitSymmetricMemory, comm identifier[%s], userRank[%u], userRankSize[%u], stride[%llu], devicePhyId[%u].",
