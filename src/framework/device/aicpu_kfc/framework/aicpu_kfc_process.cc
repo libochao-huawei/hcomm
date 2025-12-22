@@ -1451,7 +1451,6 @@ HcclResult KfcClearMsgArea(const std::vector<u64> &args)
         (void)memset_s(hcclMsgArea, sizeof(HcclMsgArea), 0, sizeof(HcclMsgArea));
     }
     hcclMsgArea->controlMsg.resetSeq = 1;
-    SetExpectPrepareId(0, 0);
     return HCCL_SUCCESS;
 }
 
@@ -1810,6 +1809,7 @@ u32 AicpuKfcProcess::AicpuRunRpcServerForMC2V2(KFCTaskV2 *task, const Mc2InitTil
         }
         initFlag = false;
         if (CheckNsStopLaunchStatus(groupIds) == HCCL_E_SUSPENDING) {
+            SetExpectPrepareId(0U, 0U);
             HCCL_INFO("mc2 opp is suspended");
             return AICPUSUSPENDING_ERROR;
         }
@@ -1832,6 +1832,7 @@ u32 AicpuKfcProcess::AicpuRunRpcServerForMC2(KFCTaskV2 *task)
         AicpuHcclProcess::AicpuReleaseCommbyGroup(group);
     }
     if (CheckNsStopLaunchStatus(groupIds) == HCCL_E_SUSPENDING) {
+        SetExpectPrepareId(0U, 0U);
         HCCL_INFO("mc2 opp is suspended");
         return AICPUSUSPENDING_ERROR;
     }
