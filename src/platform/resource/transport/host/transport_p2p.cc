@@ -127,6 +127,8 @@ HcclResult TransportP2p::Init()
 
     CHK_RET(SetLinkType()); // 需要在交换sdid之后调用，确定是否超节点内节点间HCCS场景
 
+    machinePara_.linkAttribute = 0x01;  // 写语义
+
     CHK_RET(FillExchangeDataTotalSize());
 
     CHK_RET(ConstructExchangeForSend());

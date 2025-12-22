@@ -146,7 +146,6 @@ public:
     inline bool IsSpInlineReduce() const
     {
         bool isSpInlineReduce = transportAttr_.linkType == LinkType::LINK_HCCS ||
-                                transportAttr_.linkType == LinkType::LINK_PCIE ||
                                 transportAttr_.linkType == LinkType::LINK_SIO ||
                                 transportAttr_.linkType == LinkType::LINK_HCCS_SW;
         return isSpInlineReduce;
