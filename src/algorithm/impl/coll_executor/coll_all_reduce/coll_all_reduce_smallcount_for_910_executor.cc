@@ -91,14 +91,6 @@ HcclResult CollAllReduceSmallCountFor910Executor::Orchestrate(OpParam& param, Al
     CHK_RET(HcclD2DMemcpyAsync(dispatcher_, outMem, inCommMem, param.stream));
     HCCL_DEBUG("[CollAllReduceSmallCountFor910Executor][RunLoop]copy from ccl out to usr out.");
 
-    // Enforce task launch at the end of Orchestrate
-    if (!is310P3Common_) {
-        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
-        CHK_RET(LaunchTaskExtend(dispatcher_,
-            const_cast<Stream &>(param.stream),
-            const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
-    }
-
     HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;

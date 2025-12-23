@@ -612,6 +612,11 @@ HcclResult CollNativeExecutorBase::PostSyncWithoutSubstream(OpParam &param, Exec
     HCCL_INFO("[CollNativeExecutorBase][PostSyncWithoutSubstream] "
         "The op with algOpContext_.opRetryHandler.isPostSync[%d] ends.",
         algOpContext_.opRetryHandler.isPostSync);
+
+    CHK_RET(LaunchTaskExtend(dispatcher_,
+        const_cast<Stream &>(param.stream),
+        const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
+
     return HCCL_SUCCESS;
 }
 
