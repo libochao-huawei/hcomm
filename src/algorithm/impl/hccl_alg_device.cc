@@ -136,6 +136,12 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclAlg::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap)
+    {
+        (void) algoMap;
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclAlg::GetRankVecInfo(std::vector<std::vector<std::vector<u32>>> &serverAndsuperPodToRank)
     {
         (void) serverAndsuperPodToRank;

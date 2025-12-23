@@ -91,6 +91,7 @@ public:
     s32 GetConfigExecTimeOut() const;
     bool GetConfigExecTimeOutSet() const;
     std::vector<HcclAlgoType> GetConfigHcclAlgo(HcclCMDType opType = HcclCMDType::HCCL_CMD_ALL);
+    const std::map<HcclCMDType, std::vector<HcclAlgoType>>& GetConfigHcclAlgoMap() const;
     bool GetConfigIntraServerRetryEnable() const;
     bool GetConfigInterServerRetryEnable() const;
     bool GetConfigInterSuperPodRetryEnable() const;

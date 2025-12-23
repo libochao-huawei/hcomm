@@ -212,6 +212,8 @@ HcclResult CollAllGatherMeshAivFor91093Executor::KernelRun(const OpParam &param,
     } else {
         algArgs.step = blockDim_;
     }
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {

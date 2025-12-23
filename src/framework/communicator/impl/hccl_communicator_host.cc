@@ -290,7 +290,7 @@ namespace hccl
     HcclResult HcclCommunicator::Init(HcclCommParams &params, const RankTable_t &rankTable)
     {
         CHK_RET(InitCommParams(params));
-        CHK_RET(attrCollector_.Init(params, rankTable));
+        CHK_RET(attrCollector_.Init(params, rankTable, commConfig_.GetConfigHcclAlgoMap()));
         CHK_RET(InitRankInfo(rankTable));
         CHK_RET(InitNetResource(rankTable));
         CHK_RET(InitDebug());
@@ -338,7 +338,7 @@ namespace hccl
                                       WorldGroupInfo &groupCommonData)
     {
         CHK_RET(InitCommParams(params));
-        CHK_RET(attrCollector_.Init(params, rankList, groupCommonData));
+        CHK_RET(attrCollector_.Init(params, rankList, groupCommonData, commConfig_.GetConfigHcclAlgoMap()));
         CHK_RET(InitRankInfoSubGroup(rankList, groupCommonData));
         CHK_RET(InitDebugSubGroup());
         CHK_RET(InitNotifyManager());
@@ -1408,7 +1408,7 @@ namespace hccl
         if (SatisfyIntraSuperPod(deviceType_, userRankSize_, useSuperPodMode_, superPodNum_)) {
             streamNum = std::max(static_cast<u64>(userRankSize_ - 1u), streamNum);
         } else if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(deviceType_,
-                                                                      meshAggregationRankSize_, useSuperPodMode_, identifier_)) {
+                                                                      meshAggregationRankSize_, useSuperPodMode_, commConfig_.GetConfigHcclAlgo(HcclCMDType::HCCL_CMD_ALLTOALL))) {
             streamNum = std::max(static_cast<u64>(meshAggregationRankSize_ - 1u), streamNum);
         }
 
@@ -7526,6 +7526,13 @@ namespace hccl
     {
         CHK_SMART_PTR_NULL(implAlg_);
         CHK_RET(implAlg_->SetExecTimeOutConfig(execTimeOut));
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap)
+    {
+        CHK_SMART_PTR_NULL(implAlg_);
+        CHK_RET(implAlg_->SetAlgoConfig(algoMap));
         return HCCL_SUCCESS;
     }
 

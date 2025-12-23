@@ -256,6 +256,8 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     algArgs.argsType = KernelArgsType::ARGS_TYPE_SIMPLE;
     struct AivProfilingInfo aivProfilingInfo;
     if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE){
