@@ -2929,11 +2929,6 @@ aclError aclrtDeviceEnablePeerAccess(int32_t devIdDes, u32 flag)
     return ACL_SUCCESS;
 }
 
-rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val)
-{
-    return RT_ERROR_NONE;
-}
-
 aclError aclrtDeviceDisablePeerAccess(int32_t devicePhyId)
 {
     return ACL_SUCCESS;
