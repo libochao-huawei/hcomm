@@ -1315,6 +1315,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap)
+    {
+        return HCCL_SUCCESS;
+    }
+
     bool HcclCommunicator::GetAivModeConfig()
     {
         return false;

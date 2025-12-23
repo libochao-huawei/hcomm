@@ -36,7 +36,7 @@ public:
         bool multiSuperPodDiffServerNumMode = false, bool isDiffDeviceType = false, u32 gcdDeviceNumPerAggregation = 0);
 #endif
     ~TopoInfoExtractor();
-    HcclResult Init();
+    HcclResult Init(std::map<HcclCMDType, std::vector<HcclAlgoType>> &algoConfig);
     HcclResult CheckInitInfo();
     HcclResult SetRankInfo();
     HcclResult SetTopologyInfo();
@@ -62,7 +62,7 @@ public:
     HcclResult GetCommPlaneRanks(std::vector<std::vector<std::vector<u32>>> &CommPlaneRanks);
     void GetCommPlaneVector(std::vector<std::vector<std::vector<RankInfo>>> &commPlaneVector);
     void GetIsBridgeVector(std::vector<bool> &isBridgeVector);
-    void InitAHCConfig();
+    void InitAHCConfig(std::map<HcclCMDType, std::vector<HcclAlgoType>> &algoConfig);
     void AHCCommSubgroupInit();
     HcclResult SetAHCSubGroupsAndAlgOption();
     void GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &CommPlaneSubGroupVector);

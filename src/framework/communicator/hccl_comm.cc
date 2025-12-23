@@ -1273,6 +1273,12 @@ HcclResult hcclComm::SetExecTimeOutConfig(const s32 execTimeOut)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap)
+{
+    CHK_RET(communicator_->SetAlgoConfig(algoMap));
+    return HCCL_SUCCESS;
+}
+
 u64 hcclComm::GetConfigInCCLbufferSize()
 {
     return inCCLbufferSize_;

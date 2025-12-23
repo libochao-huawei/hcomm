@@ -428,6 +428,12 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set execTimeOut error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
+        
+        /* 设置HcclAlgo */
+        ret = opBaseHcom.pComm->SetAlgoConfig(commConfig.GetConfigHcclAlgoMap());
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set hcclAlgo error.", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
 
         ret = ShowRanktableConfigInfo(opBaseHcom.cloudFlag, opBaseHcom.params,
             opBaseHcom.rankTable);
@@ -726,6 +732,12 @@ HcclResult HcclCreateSubCommConfigInner(hccl::hcclComm *globalComm, uint32_t ran
         ret = pComm->SetExecTimeOutConfig(commConfig.GetConfigExecTimeOut());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set execTimeOut error.", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        
+        /* 设置HcclAlgo */
+        ret = pComm->SetAlgoConfig(commConfig.GetConfigHcclAlgoMap());
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set hcclAlgo error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         ret = InitWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -1206,6 +1218,12 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         ret = pComm->SetExecTimeOutConfig(commConfig.GetConfigExecTimeOut());
         CHK_PRT_BREAK(ret != HCCL_SUCCESS,
             HCCL_ERROR("[InitCommRootInfo]errNo[0x%016llx] set execTimeOut error.", HCCL_ERROR_CODE(ret)),
+            errorFlag = true);
+        
+        /* 设置HcclAlgo */
+        ret = pComm->SetAlgoConfig(commConfig.GetConfigHcclAlgoMap());
+        CHK_PRT_BREAK(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Init][CommClusterInfo]errNo[0x%016llx] set hcclAlgo error.", HCCL_ERROR_CODE(ret)),
             errorFlag = true);
 
         // 初始化完成的comm指针赋给出参

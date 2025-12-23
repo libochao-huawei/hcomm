@@ -327,6 +327,8 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::KernelRun(const OpParam &pa
     if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE){
         algArgs.deterministic = 1;
     }
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {

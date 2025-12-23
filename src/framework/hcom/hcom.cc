@@ -2872,7 +2872,8 @@ HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum
 
     if (SatisfyIntraSuperPod(devType, deviceNum, true)) {
         streamNum = std::max(static_cast<u64>(deviceNum - 1u), streamNum);
-    } else if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(devType, deviceNum * serverNum, true, group)) {
+    } else if (FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(devType, deviceNum * serverNum, true,
+                CommConfiger::GetInstance().GetCommConfigAlgoConfig(group, HcclCMDType::HCCL_CMD_ALLTOALL))) {
         streamNum = std::max(static_cast<u64>(deviceNum * serverNum - 1u), streamNum);
     }
 
