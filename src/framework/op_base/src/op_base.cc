@@ -1141,10 +1141,11 @@ HcclResult HcclGetCommHandle(const char *commName, std::shared_ptr<hccl::hcclCom
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetCommConnections(const std::string &identifier, HcclCommConnections &commConnections)
+HcclResult HcclGetCommConnections(const HcclRootHandle &rootHandle, const std::string &identifier,
+    HcclCommConnections &commConnections)
 {
     HcclOpInfoCtx& opBaseInfo = GetHcclOpInfoCtx();
-    auto iterServer = opBaseInfo.hcclCommTopoInfoDetectServer.find(identifier);
+    auto iterServer = opBaseInfo.hcclCommTopoInfoDetectServer.find(rootHandle.identifier);
     if (iterServer == opBaseInfo.hcclCommTopoInfoDetectServer.end()) {
         commConnections.isRoot = false;
     } else {
@@ -1337,7 +1338,7 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
         if (retryEnable) {
             EXECEPTION_CATCH(opBaseHcom.hcclCommTopoInfoDetectAgent.insert({ commIdentifier, topoDetectAgent }),
                 return HCCL_E_MEMORY);
-            ret = HcclGetCommConnections(commIdentifier, params.commConnections);
+            ret = HcclGetCommConnections(rootHandle, commIdentifier, params.commConnections);
             CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][RootInfo]HcclGetCommConnections failed."),
                 errorFlag = true);
         } else {
