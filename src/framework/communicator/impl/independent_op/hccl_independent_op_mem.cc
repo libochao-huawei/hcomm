@@ -70,18 +70,20 @@ HcclResult HcclCommDeregMem(HcclComm comm, const char *memTag, const void* memHa
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetHcclBuffer(HcclComm comm, CommBuffer *buffer)
+HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 {
     CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[HcclGetHcclBuffer]buffer is null"), HCCL_E_PARA);
-
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
     auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
-    HcclResult ret = commMemMgr.GetHcclBuffer(buffer);
+    CommBuffer commBuffer;
+    HcclResult ret = commMemMgr.GetHcclBuffer(&commBuffer);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HcclGetHcclBuffer] Failed to get local cclBuffer ret[%d]", ret);
         return ret;
     }
+    *buffer = commBuffer.addr;
+    *size = commBuffer.size;
     return HCCL_SUCCESS;
 }
