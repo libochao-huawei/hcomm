@@ -98,6 +98,7 @@ using HcclExternalEnable = struct HcclExternalEnableDef {
     bool aicpuUnfold;
     bool isOnlyAiv;
     s32 execTimeOut;
+    std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfig;
 
     HcclExternalEnableDef()
         : enableFfts(1),
@@ -109,7 +110,16 @@ using HcclExternalEnable = struct HcclExternalEnableDef {
         aicpuUnfold(false),
         isOnlyAiv(false),
         execTimeOut(GetInternalExecTimeOut())
-    {}
+    {
+        SetDefaultAlgo();
+    }
+    void SetDefaultAlgo()
+    {
+        for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
+            algoConfig[static_cast<HcclCMDType>(opType)] =
+                std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+        }
+    }
 };
 
 bool CheckRankNeighbors(const std::vector<u32> &nicList);
@@ -146,10 +156,12 @@ public:
     bool GetIsOnlyAivConfig() const;
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);
     HcclResult SetExecTimeOutConfig(const s32 execTimeOut);
+    HcclResult SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap);
     u8 GetDeterministicConfig() const;
     bool GetAivModeConfig() const;
     bool GetAicpuUnfoldConfig() const;
     s32 GetExecTimeOutConfig() const;
+    std::vector<HcclAlgoType> GetAlgoConfig(HcclCMDType opType = HcclCMDType::HCCL_CMD_ALL);
     HcclResult GetGlobalSubGroups(const CommPlane level, std::vector<std::vector<std::vector<u32>>> &globalSubGroups);
     HcclResult SetGlobalSubGroups(const CommPlane level, std::vector<std::vector<std::vector<u32>>> &globalSubGroups);
     HcclResult GetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &commPlaneSubGroupVector);

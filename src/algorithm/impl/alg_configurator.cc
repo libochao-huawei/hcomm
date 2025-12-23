@@ -12,7 +12,6 @@
 #include "log.h"
 #include "hccl/base.h"
 #include "coll_alg_utils.h"
-#include "comm_configer.h"
 
 namespace hccl {
 
@@ -59,14 +58,11 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
     AlgTypeLevel0 algType0 = AlgTypeLevel0::ALG_LEVEL0_RESERVED;
     AlgTypeLevel1 algType1 = AlgTypeLevel1::ALG_LEVEL1_RESERVED;
     AlgTypeLevel2 algType2 = AlgTypeLevel2::ALG_LEVEL2_RESERVED; // 第2层拓扑算法, 待梳理后考虑是否和第0层、第1层算法归一
-    
-    CommConfiger& commConfiger = CommConfiger::GetInstance();
-    HcclAlgoType algoConfigLevel0 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
-                                    [HCCL_ALGO_LEVEL_0];
-    HcclAlgoType algoConfigLevel1 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
-                                    [HCCL_ALGO_LEVEL_1];
-    HcclAlgoType algoConfigLevel2 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
-                                    [HCCL_ALGO_LEVEL_2];
+
+    std::vector<HcclAlgoType> algoCommConfig = algoAttr_.commAlgoConfig[opType];
+    HcclAlgoType algoConfigLevel0 = algoCommConfig[HCCL_ALGO_LEVEL_0];
+    HcclAlgoType algoConfigLevel1 = algoCommConfig[HCCL_ALGO_LEVEL_1];
+    HcclAlgoType algoConfigLevel2 = algoCommConfig[HCCL_ALGO_LEVEL_2];
 
     bool isConfigAHC = (algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
                         algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);

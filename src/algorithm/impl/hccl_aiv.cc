@@ -21,7 +21,6 @@
 #include "ccl_buffer_manager.h"
 #include "acl/acl_rt.h"
 #include "launch_device.h"
-#include "comm_configer.h"
 #include "hccl_aiv.h"
 
 using namespace std;
@@ -543,7 +542,7 @@ u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
 }
 
 HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stream, s32 step, const std::string& comm, u32 blockDim,
-    KernelArgsType argsType, const AivTopoArgs &topoArgs)
+    KernelArgsType argsType, const AivTopoArgs &topoArgs, s32 execTimeOut, bool execTimeOutSet)
 {
     uint64_t beginTime = 0;
     SetAivProfilingInfoBeginTime(beginTime);
@@ -555,8 +554,7 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
     attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US;
-    s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(comm);
-    attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(comm));
+    attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(execTimeOut, execTimeOutSet);
     attr[1].value.timeoutUs.timeoutHigh = 0;
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;
@@ -617,7 +615,7 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
     u32 rank = topoArgs.rank;
     u32 rankSize = topoArgs.rankSize;
     CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, 1, 
-        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs));
+        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs, algArgs.execTimeOut, algArgs.execTimeOutSet));
 
     u8* flagAddr;
     if (algArgs.argsType != KernelArgsType::ARGS_TYPE_SERVER || 
@@ -633,7 +631,7 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
     CHK_RET(hrtMemAsyncCopy(flagMem.ptr(), AIV_FLAG_AREA_SIZE, zeroMem.ptr(), AIV_FLAG_AREA_SIZE,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, resourceArgs.stream));
     CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, RESET_TAIL_SYNC_TAG,
-        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs));
+        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs, algArgs.execTimeOut, algArgs.execTimeOutSet));
     HCCL_INFO("[AIV][ClearAivSyncBuf] clearaiv done.");
     return HCCL_SUCCESS;
 }
@@ -688,8 +686,7 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
     attr[0].id = ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE;
     attr[0].value.schemMode = 1;
     attr[1].id = ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US;
-    s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(topoArgs.identify);
-    attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(execTimeOut, CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(topoArgs.identify));
+    attr[1].value.timeoutUs.timeoutLow = GetAivTimeout(algArgs.execTimeOut, algArgs.execTimeOutSet);
     attr[1].value.timeoutUs.timeoutHigh = 0;
     attr[2].id = ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE;
     attr[2].value.engineType = ACL_RT_ENGINE_TYPE_AIV;

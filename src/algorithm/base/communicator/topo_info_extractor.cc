@@ -15,7 +15,6 @@
 #include "comm_base_pub.h"
 #include "hccl_impl_pub.h"
 #include "coll_alg_param.h"
-#include "comm_configer.h"
 
 
 namespace hccl {
@@ -59,7 +58,7 @@ TopoInfoExtractor::TopoInfoExtractor(std::string identifier, u32 userRank, u32 u
 TopoInfoExtractor::~TopoInfoExtractor()
 {}
 
-HcclResult TopoInfoExtractor::Init()
+HcclResult TopoInfoExtractor::Init(std::map<HcclCMDType, std::vector<HcclAlgoType>> &algoConfig)
 {
     HCCL_INFO(
         "factory init:collective id[%s], user rank[%u], user rank size[%u], topo type[%d], device Type[%d], "\
@@ -70,7 +69,7 @@ HcclResult TopoInfoExtractor::Init()
     CHK_RET(CheckInitInfo());
 
     // 初始化 AHC 相关信息
-    InitAHCConfig();
+    InitAHCConfig(algoConfig);
 
     // 填充必要数据结构
     CHK_RET(SetRankInfo());
@@ -1130,13 +1129,12 @@ void TopoInfoExtractor::GetCommPlaneVector(std::vector<std::vector<std::vector<R
     return;
 }
 
-void TopoInfoExtractor::InitAHCConfig()
+void TopoInfoExtractor::InitAHCConfig(std::map<HcclCMDType, std::vector<HcclAlgoType>> &algoConfig)
 {
-    CommConfiger& commConfiger = CommConfiger::GetInstance();
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
-        HcclAlgoType algoType = commConfiger.GetCommConfigAlgoConfig(identifier_, static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_1];
-        isConfigAHC_ = (algoType == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
-                        algoType == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
+        std::vector<HcclAlgoType> algoType = algoConfig[static_cast<HcclCMDType>(opType)];
+        isConfigAHC_ = (algoType[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
+                        algoType[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
         if (isConfigAHC_) {
             HCCL_INFO("[InitAHCConfig] set AHC alg, opType[%u]", opType);
             break;
@@ -1144,8 +1142,8 @@ void TopoInfoExtractor::InitAHCConfig()
     }
 
     for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {  //没配置算法的情况下默认会走AHC嘛？  给测试用
-        HcclAlgoType algoType = commConfiger.GetCommConfigAlgoConfig(identifier_, static_cast<HcclCMDType>(opType))[HCCL_ALGO_LEVEL_0];
-        isConfigNULL_ = algoType == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
+        std::vector<HcclAlgoType> algoType = algoConfig[static_cast<HcclCMDType>(opType)];
+        isConfigNULL_ = algoType[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
         if (isConfigNULL_) {
             HCCL_INFO("[InitAHCConfig] set NULL alg, opType[%u]", opType);
             break;
