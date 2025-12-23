@@ -43,23 +43,23 @@ HcclResult ChannelManager::SetChannelCallbacks(const ChannelManagerCallbacks& ch
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelManager::CheckChannelParam(const std::string &tag, CommEngine engine,
-    const ChannelDesc *channelDesc, uint32_t descNum)
+HcclResult ChannelManager::CheckChannelParam(CommEngine engine,
+    const HcclChannelDesc *channelDesc, uint32_t descNum)
 {
-    std::unordered_set<ChannelDesc, std::hash<ChannelDesc>, ChannelDescEqual> descSet;
+    std::unordered_set<HcclChannelDesc, std::hash<HcclChannelDesc>, HcclChannelDescEqual> descSet;
 
     for (uint32_t descIdx = 0; descIdx < descNum; ++descIdx) {
-        // 检查ChannelDesc是否有重复元素
+        // 检查HcclChannelDesc是否有重复元素
         CHK_PRT_RET(descSet.find(channelDesc[descIdx]) != descSet.end(),
-            HCCL_ERROR("[%s]Duplicate item found in ChannelDesc.", __func__), HCCL_E_PARA);
+            HCCL_ERROR("[%s]Duplicate item found in HcclChannelDesc.", __func__), HCCL_E_PARA);
         descSet.insert(channelDesc[descIdx]);
         // 检查RemoteRank有效性
         CHK_PRT_RET(channelDesc[descIdx].remoteRank == userRank_,
-            HCCL_ERROR("[%s]Local Rank found in ChannelDesc.", __func__), HCCL_E_PARA);
+            HCCL_ERROR("[%s]Local Rank found in HcclChannelDesc.", __func__), HCCL_E_PARA);
         // 检查是否有不支持协议
         CHK_PRT_RET(channelDesc[descIdx].protocol != COMM_PROTOCOL_HCCS &&
             channelDesc[descIdx].protocol != COMM_PROTOCOL_ROCE,
-            HCCL_ERROR("[%s]Unsupported protocol found in ChannelDesc.", __func__), HCCL_E_PARA);
+            HCCL_ERROR("[%s]Unsupported protocol found in HcclChannelDesc.", __func__), HCCL_E_PARA);
         
         // 检查engine支持情况
         if (engine != COMM_ENGINE_HOSTCPU && engine != COMM_ENGINE_HOSTCPU_TS && 
@@ -72,7 +72,7 @@ HcclResult ChannelManager::CheckChannelParam(const std::string &tag, CommEngine 
 }
 
 HcclResult ChannelManager::RegisterHandle(const std::string &tag, CommEngine engine, 
-    const ChannelDesc &channelDesc, ChannelHandle channelHandle)
+    const HcclChannelDesc &channelDesc, ChannelHandle channelHandle)
 {
     std::string channelKey = tag + ":" + std::to_string(engine) + ":" + std::to_string(channelDesc.remoteRank) + 
                             ":" + std::to_string(channelDesc.protocol);
@@ -87,8 +87,8 @@ HcclResult ChannelManager::RegisterHandle(const std::string &tag, CommEngine eng
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelManager::PrepareHandleArray(const std::string& tag, CommEngine engine, const ChannelDesc *channelDesc, 
-    uint32_t descNum, ChannelHandle* channelHandleArray, std::vector<ChannelDesc>& needCreateDescs, 
+HcclResult ChannelManager::PrepareHandleArray(const std::string& tag, CommEngine engine, const HcclChannelDesc *channelDesc, 
+    uint32_t descNum, ChannelHandle* channelHandleArray, std::vector<HcclChannelDesc>& needCreateDescs, 
     std::vector<uint32_t>& needCreateIndices)
 {
     needCreateDescs.clear();
@@ -250,7 +250,7 @@ HcclResult ChannelManager::CopyVectorToDeviceMem(const u64 len, DeviceMem &dstDe
     return HCCL_SUCCESS;
 }
 
-OpCommTransport ChannelManager::BuildChannelRequests(const std::vector<ChannelDesc> &descs)
+OpCommTransport ChannelManager::BuildChannelRequests(const std::vector<HcclChannelDesc> &descs)
 {
     OpCommTransport opCommTransport;
     LevelNSubCommTransport level0Transport;
@@ -610,21 +610,42 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
     return HCCL_SUCCESS;
 }
 
-HcclResult ChannelManager::ChannelCommCreate(const std::string &commId, const std::string &tag, CommEngine engine, 
-    const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
+const std::map<CommEngine, std::string> COMM_ENGINE_TYPE_STR_MAP {
+    {CommEngine::COMM_ENGINE_HOSTCPU, "host_cpu"},
+    {CommEngine::COMM_ENGINE_HOSTCPU_TS, "host_cpu_ts"},
+    {CommEngine::COMM_ENGINE_AICPU, "aicpu"},
+    {CommEngine::COMM_ENGINE_AICPU_TS, "aicpu_ts"},
+    {CommEngine::COMM_ENGINE_AIV, "aiv"},
+    {CommEngine::COMM_ENGINE_CCU, "ccu"},
+    {CommEngine::COMM_ENGINE_RESERVED, "reserved"}
+};
+
+std::string GetCommEngineEnumStr(CommEngine engine)
 {
-    CHK_RET(CheckChannelParam(tag, engine, channelDescList, listNum));
+    auto iter = COMM_ENGINE_TYPE_STR_MAP.find(engine);
+    if (iter == COMM_ENGINE_TYPE_STR_MAP.end()) {
+        return "CommEngine=" + std::to_string(engine);
+    } else {
+        return iter->second;
+    }
+}
+
+HcclResult ChannelManager::ChannelCommCreate(const std::string &commId, CommEngine engine, 
+    const HcclChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
+{
+    CHK_RET(CheckChannelParam(engine, channelDescList, listNum));
 
     // channel复用，以tag + engine + remoterank + protocol 作为channel标识       
-    std::vector<ChannelDesc> needCreateDescs;
+    std::vector<HcclChannelDesc> needCreateDescs;
     std::vector<uint32_t> needCreateIndices;
+    std::string tag = commId;
     CHK_RET(PrepareHandleArray(tag, engine, channelDescList, listNum, channelList, needCreateDescs, needCreateIndices));
 
     // 对未复用的channelDesc进行建链
     if (needCreateDescs.size() > 0) {
         // 构造建链param
         OpCommTransport opCommTransport = BuildChannelRequests(needCreateDescs);
-        std::string linkTag = commId + tag; // 待确认
+        std::string linkTag = commId + "_" + GetCommEngineEnumStr(engine);
         bool isAicpuModeEn = false;
         if (engine == COMM_ENGINE_AICPU || engine == COMM_ENGINE_AICPU_TS) {
             isAicpuModeEn = true;

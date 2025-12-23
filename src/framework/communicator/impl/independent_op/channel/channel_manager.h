@@ -27,8 +27,8 @@
 
 namespace std {
     template <>
-    struct hash<ChannelDesc> {
-        size_t operator()(const ChannelDesc& desc) const {
+    struct hash<HcclChannelDesc> {
+        size_t operator()(const HcclChannelDesc& desc) const {
             size_t hash = 0;
             // 仅区分remoteRank和protocol
             hash ^= std::hash<uint32_t>()(desc.remoteRank);
@@ -40,8 +40,8 @@ namespace std {
 
 namespace hccl {
 
-struct ChannelDescEqual {
-    bool operator()(const ChannelDesc& lcd, const ChannelDesc& rcd) const {
+struct HcclChannelDescEqual {
+    bool operator()(const HcclChannelDesc& lcd, const HcclChannelDesc& rcd) const {
         return lcd.remoteRank == rcd.remoteRank && lcd.protocol == rcd.protocol;
     }
 };
@@ -52,8 +52,8 @@ public:
     ~ChannelManager();
     HcclResult Init(aclrtBinHandle binHandle, u32 userRank, const ManagerCallbacks& callbacks);
     HcclResult SetChannelCallbacks(const ChannelManagerCallbacks& channelCallbacks);
-    HcclResult ChannelCommCreate(const std::string &commId, const std::string &tag, CommEngine engine, 
-        const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
+    HcclResult ChannelCommCreate(const std::string &commId, CommEngine engine,
+        const HcclChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
     HcclResult ChannelCommGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum);
     HcclResult ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum);
     HcclResult ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer);
@@ -78,15 +78,15 @@ private:
     HcclResult AicpuChannelInit(const std::string &commId, const std::string &tag, CommEngine engine, 
         const OpCommTransport &opTransportResponse, ChannelHandle *channelList, uint32_t listNum);
     void ClearOpTransportResponseLinks(OpCommTransport &opTransportResponse);
-    OpCommTransport BuildChannelRequests(const std::vector<ChannelDesc> &descs);
+    OpCommTransport BuildChannelRequests(const std::vector<HcclChannelDesc> &descs);
 
-    HcclResult CheckChannelParam(const std::string &tag, CommEngine engine, const ChannelDesc *channelDesc,
+    HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc *channelDesc,
         uint32_t descNum);
-    HcclResult RegisterHandle(const std::string& key, CommEngine engine, const ChannelDesc& channelDesc, ChannelHandle channelHandle);
+    HcclResult RegisterHandle(const std::string& key, CommEngine engine, const HcclChannelDesc& channelDesc, ChannelHandle channelHandle);
     HcclResult RegisterHandleHDPair(ChannelHandle deviceChannelHandle, ChannelHandle hostChannelHandle);
     HcclResult UnregisterHandle(ChannelHandle channelHandle);
-    HcclResult PrepareHandleArray(const std::string &tag, CommEngine engine, const ChannelDesc *channelDesc, 
-        uint32_t descNum, ChannelHandle *channelHandleArray, std::vector<ChannelDesc> &needCreateDescs,
+    HcclResult PrepareHandleArray(const std::string &tag, CommEngine engine, const HcclChannelDesc *channelDesc, 
+        uint32_t descNum, ChannelHandle *channelHandleArray, std::vector<HcclChannelDesc> &needCreateDescs,
         std::vector<uint32_t> &needCreateIndices);
     HcclResult IsChannelExist(ChannelHandle channel);
     HcclResult GetHostChannel(ChannelHandle channel, ChannelHandle &hostChannel);
