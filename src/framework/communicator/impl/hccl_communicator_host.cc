@@ -47,6 +47,7 @@
 #include "launch_aicpu.h"
 #include "order_launch/order_launch.h"
 #include "comm_configer.h"
+#include "comm_topo_desc.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -287,6 +288,16 @@ namespace hccl
         HCCL_DEBUG("~HcclCommunicator success.");
     }
 
+    HcclResult HcclCommunicator::SaveTopoDesc(std::string &identifier)
+    {
+        CommTopo topoType = CommTopo::COMM_TOPO_RESERVED;
+        CHK_RET(GetInstTopoTypeByNetLayer(0, &topoType)); // layer 0
+
+        CommTopoDesc::GetInstance().SaveRankSize(identifier, userRankSize_);
+        CommTopoDesc::GetInstance().SaveL0TopoType(identifier, topoType);
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::Init(HcclCommParams &params, const RankTable_t &rankTable)
     {
         CHK_RET(InitCommParams(params));
@@ -331,6 +342,7 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(rankTable, topoAttr));
+        CHK_RET(SaveTopoDesc(params.identifier));
         return HCCL_SUCCESS;
     }
 
@@ -358,6 +370,7 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(topoAttr));
+        CHK_RET(SaveTopoDesc(params.identifier));
         return HCCL_SUCCESS;
     }
 
