@@ -28,6 +28,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
     const u64 count = param.GetDataCount(topoAttr_.userRank);
     const HcclDataType dataType = param.GetDataType();
     HcclResult ret = HCCL_SUCCESS;
+    bool needLaunchAtTheEnd = !is310P3Common_; // 是否需要在Orchestrate()结束时launch任务
     // 图模式和单卡场景下不需要Loop
     if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         ExecMem execMem;
@@ -51,6 +52,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         execMem.outputMem = algRes.cclOutputMem;
         execMem.scratchMem = algRes.scratchMem;
         ret = KernelRun(param, execMem);
+        needLaunchAtTheEnd = false;
     } else if (desc_.isZeroCopy) {
         // 在Level0执行KernelRun
         ExecMem execMem;
@@ -90,8 +92,10 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
             ret = InplaceOpSync(param, execMem);
         } else if (isReduceScatterV_) {
             ret = RunLoopV(param, algRes);
+            needLaunchAtTheEnd = false;
         } else {
             ret = RunLoop(param, algRes);
+            needLaunchAtTheEnd = false;
         }
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -99,7 +103,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
-    if (!is310P3Common_) {
+    if (needLaunchAtTheEnd) {
         HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     }

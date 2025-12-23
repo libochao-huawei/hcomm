@@ -247,9 +247,6 @@ HcclResult CollAllReduceMeshSmallCountExecutor::KernelRun(const OpParam &param, 
             (level0CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level0CommInfo.localRank,
             PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, param.stream));
     CHK_RET(RunTemplate(level0TempAlg, level0CommInfo));
-    if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        CHK_RET(LaunchTask(dispatcher_, const_cast<Stream&>(param.stream)));
-    }
     HCCL_INFO("AllReduce small count executor run success.");
     return HCCL_SUCCESS;
 }

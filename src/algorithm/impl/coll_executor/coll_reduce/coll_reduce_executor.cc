@@ -46,11 +46,12 @@ HcclResult CollReduceExecutor::Orchestrate(OpParam& param, AlgResourceResponse& 
 
     algResResp_ = &algRes;
     HcclResult ret = HCCL_SUCCESS;
-    // 图模式和单卡场景下不需要Loop
+    bool needLaunchAtTheEnd = true; // 是否需要在Orchestrate()结束时launch任务
     ExecMem execMem;
     execMem.count = param.DataDes.count;
     execMem.inputPtr = param.inputPtr;
     execMem.outputPtr = param.outputPtr;
+    // 图模式和单卡场景下不需要Loop
     HCCL_DEBUG("[CollReduceExecutor][Orchestrate]workflowMode is %d", workflowMode_);
     if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         execMem.inputMem = algRes.paramInputMem;
@@ -66,16 +67,20 @@ HcclResult CollReduceExecutor::Orchestrate(OpParam& param, AlgResourceResponse& 
         execMem.outputMem = algRes.cclOutputMem;
         execMem.scratchMem = algRes.scratchMem;
         ret = KernelRun(param, execMem);
+        needLaunchAtTheEnd = false;
     } else {
         ret = RunLoop(param, algRes);
+        needLaunchAtTheEnd = false;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollReduceExecutor][Orchestrate]errNo[0x%016llx]reduce excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
-    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
-    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+    if (needLaunchAtTheEnd) {
+        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+        CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+    }
 
     HCCL_INFO("tag[%s], Reduce executor orchestrate success, take time [%lld]us.", tag_.c_str(),
         DURATION_US(TIME_NOW() - startut));
