@@ -578,6 +578,7 @@ private:
         std::shared_ptr<HDCommunicate> &controlH2D, std::shared_ptr<HDCommunicate> &statusD2H);
     HcclResult SaveRankInfoHasLinked(const AlgResourceRequest& resRequest);
     HcclResult RecordOpPara(HcclCMDType opType, OpParam &opParam);
+    HcclResult SaveTopoDesc(std::string &identifier);
 
     HcclResult SetAicpuUnfoldFlag();
     bool GetAicpuUnfoldFlag();
