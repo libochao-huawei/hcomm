@@ -52,6 +52,20 @@ typedef struct {
     uint64_t size;    ///< 缓存区域字节数
 } CommBuffer;
 
+const uint32_t HCCL_CHANNEL_MAGIC_WORD = 0x0f0f0f0f;
+const uint32_t HCCL_CHANNEL_VERSION = 1;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
+
+
+/**
+ * @brief 兼容Abi字段结构体
+ */
+typedef struct {
+    uint32_t version;
+    uint32_t magicWord;
+    uint32_t size;
+    uint32_t reserved;
+} HcclAbiHeader;
+
 /**
  * @brief 通信协议类型枚举
  * @warning
@@ -107,6 +121,7 @@ typedef struct {
  * @warning
  */
 typedef struct {
+    HcclAbiHeader header;
     uint32_t remoteRank;    ///< 远端rankId
     CommProtocol protocol;  ///< 通信协议
     uint32_t notifyNum;  ///< channel上使用的通知消息数量
@@ -115,7 +130,37 @@ typedef struct {
         RoCEAttr roceAttr;
         UbAttr ubAttr;
     };
-} ChannelDesc;
+} HcclChannelDesc;
+// 解决与Hcomm仓合入问题
+#define HCCL_CHANNEL_ABI
+/**
+ * @brief 初始化HcclChannelDesc结构体
+ *
+ * @param[inout] channelDesc 返回的通道描述参数
+ * @return void
+ * @warning
+ */
+inline void HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
+{
+    for (uint32_t idx = 0; idx < descNum; idx++) {
+        if (channelDesc != nullptr) {
+            // Abi字段初始化
+            channelDesc->header.version     = HCCL_CHANNEL_VERSION;
+            channelDesc->header.magicWord   = HCCL_CHANNEL_MAGIC_WORD;
+            channelDesc->header.size        = sizeof(HcclChannelDesc);
+            channelDesc->header.reserved    = 0;
+
+            // HcclChannelDesc内容初始化
+            channelDesc->remoteRank = ~0U;
+            channelDesc->protocol   = COMM_PROTOCOL_RESERVED;
+            channelDesc->notifyNum  = 0;
+            (void)memset_s(&(channelDesc->hccsAttr), sizeof(HccsAttr), 0, sizeof(HccsAttr));
+            (void)memset_s(&(channelDesc->roceAttr), sizeof(RoCEAttr), 0, sizeof(RoCEAttr));
+            (void)memset_s(&(channelDesc->ubAttr), sizeof(UbAttr), 0, sizeof(UbAttr));
+        }
+    }
+    return;
+}
 
 /// HCCL算子标识最大长度（字节）
 const uint32_t HCCL_OP_TAG_LEN_MAX = 255;
@@ -163,7 +208,7 @@ extern HcclResult HcclAllocThreadRes(HcclComm comm, CommEngine engine, uint32_t 
  * @param[out] thread 返回的线程句柄
  * @return HcclResult 执行结果状态码
  */
-extern HcclResult HcclAllocThreadResByStream(HcclComm comm, CommEngine engine,
+extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
     aclrtStream stream, uint32_t notifyNum, ThreadHandle *thread);
 
 /**
@@ -200,7 +245,6 @@ extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
 /**
  * @brief 基于算子tag创建通信通道
  * @param[in] comm 通信域句柄
- * @param[in] channelTag 通信通道标签（最大字符长度为HCCL_OP_TAG_LEN_MAX）
  * @param[in] engine 通信引擎类型
  * @param[in] channelDescList 通道描述列表
  * @param[in] listNum 列表数量
@@ -215,8 +259,8 @@ extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
  * 6.资源描述相同时，key相同情况下已有资源，则复用该资源返回，不重新创建（ps：host展开场景下 ，jetty不能复用）
  * @warning
  */
-extern HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag,
-    CommEngine engine, const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
+extern HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChannelDesc *channelDescList,
+    uint32_t listNum, ChannelHandle *channelList);
 
 /**
  * @brief 获取通道通知数量
@@ -278,5 +322,4 @@ extern HcclResult HcclGetEngineCtx(HcclComm comm, const char *engineTag, CommEng
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
-
 #endif

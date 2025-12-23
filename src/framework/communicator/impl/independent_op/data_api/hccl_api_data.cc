@@ -62,9 +62,9 @@ HcclResult HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *
     return HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
 }
 
-HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
+HcclResult HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
 {
-    HCCL_DEBUG("[HcommInterThreadNotifyRecordOnThread]thread[%llu], dstThread[%p], dstNotifyIdx[%u].", thread, dstThread, dstNotifyIdx);
+    HCCL_DEBUG("[HcommThreadNotifyRecordOnThread]thread[%llu], dstThread[%p], dstNotifyIdx[%u].", thread, dstThread, dstNotifyIdx);
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -75,9 +75,9 @@ HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandl
     return HcclLocalNotifyRecord(stream, notify);
 }
 
-HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout)
+HcclResult HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout)
 {
-    HCCL_DEBUG("[HcommInterThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeout[%u].", thread, notifyIdx, timeout);
+    HCCL_DEBUG("[HcommThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeout[%u].", thread, notifyIdx, timeout);
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -88,21 +88,21 @@ HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t noti
 }
 
 
-HcclResult HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
+HcclResult HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
-    HCCL_DEBUG("[HcommInterOpNotifyRecordOnThread]thread[%p], dstNotifyId[%u].", thread, dstNotifyId);
+    HCCL_DEBUG("[HcommAclrtNotifyRecordOnThread]thread[%p], dstNotifyId[%u].", thread, dstNotifyId);
     return HcclLocalBareNotifyRecord(stream, dstNotifyId);
 }
 
-HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
+HcclResult HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
-    HCCL_DEBUG("[HcommInterOpNotifyWaitOnThread]thread[%p], notifyId[%llu], timeOut[%u].",
+    HCCL_DEBUG("[HcommAclrtNotifyWaitOnThread]thread[%p], notifyId[%llu], timeOut[%u].",
         thread, notifyId, timeOut);
     return HcclLocalBareNotifyWait(stream, notifyId, timeOut);
 }
@@ -236,9 +236,9 @@ HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, v
     return HcclRemoteReadReduce(stream, reinterpret_cast<void*>(channel), &locBuf, &rmtBuf, reduceInfo);
 }
 
-HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
+HcclResult HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
 {
-    HCCL_DEBUG("[HcommNotifyRecordOnThread]thread[%llu], channel[%llu], remoteNotifyIdx[%u].",
+    HCCL_DEBUG("[HcommChannelNotifyRecordOnThread]thread[%llu], channel[%llu], remoteNotifyIdx[%u].",
         thread, channel, remoteNotifyIdx);
     AddThread(thread);
 
@@ -248,9 +248,9 @@ HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel,
     return HcclRemoteNotifyRecord(stream, reinterpret_cast<void*>(channel), remoteNotifyIdx);
 }
 
-HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+HcclResult HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
-    HCCL_DEBUG("[HcommNotifyWaitOnThread]thread[%llu], channel[%llu], localNotifyIdx[%u], timeout[%u].",
+    HCCL_DEBUG("[HcommChannelNotifyWaitOnThread]thread[%llu], channel[%llu], localNotifyIdx[%u], timeout[%u].",
         thread, channel, localNotifyIdx, timeout);
     AddThread(thread);
     Stream *stream = GetStream(thread);
