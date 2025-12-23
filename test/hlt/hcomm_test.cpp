@@ -142,8 +142,8 @@ HcclResult __attribute__((weak))
 HcclResult __attribute__((weak)) HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType notifyType,
     uint32_t notifyNum, NotifyHandle **notifyHandleList);
 HcclResult __attribute__((weak)) HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *notifyHandleList);
-HcclResult __attribute__((weak)) HcclGetHcclBuffer(HcclComm comm, CommBuffer *buffer);
-HcclResult __attribute__((weak)) HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer);
+HcclResult __attribute__((weak)) HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size);
+HcclResult __attribute__((weak)) HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size);
 
 
 }  // extern "C"
@@ -574,10 +574,10 @@ public:
     {
         ChannelHandle &channel = channels_[0];
         CommBuffer localBuf;
-        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf));
+        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf.addr, &localBuf.size));
 
         CommBuffer remoteBuf;
-        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf));
+        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf.addr, &remoteBuf.size));
 
         uint64_t len = std::min(localBuf.size, remoteBuf.size);
         LOG(INFO, "%s localBuf: addr[%p] size[%llu], remoteBuf: addr[%p] size[%llu], len[%llu]",
@@ -592,10 +592,10 @@ public:
     {
         ChannelHandle &channel = channels_[0];
         CommBuffer localBuf;
-        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf));
+        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf.addr, &localBuf.size));
 
         CommBuffer remoteBuf;
-        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf));
+        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf.addr, &remoteBuf.size));
 
         uint64_t len = std::min(localBuf.size, remoteBuf.size);
         LOG(INFO, "%s localBuf: addr[%p] size[%llu], remoteBuf: addr[%p] size[%llu], len[%llu]",

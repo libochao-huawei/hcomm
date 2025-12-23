@@ -20,6 +20,7 @@
 #include "hccl_res.h"
 #include "hccl_comm.h"
 #include "hccl_rank_graph.h"
+#include "hccl_mem_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -73,6 +74,15 @@ typedef union {
     };
     uint64_t value;
 } HcclRegMemAttr;
+
+/**
+ * @brief 缓存段元数据描述结构体
+ */
+typedef struct {
+    HcclMemType type; ///< 缓存物理位置类型，参见HcclMemType
+    void *addr;       ///< 缓存地址
+    uint64_t size;    ///< 缓存区域字节数
+} CommBuffer;
 
 /** @} */  // 运行时接口-类型定义
 /**
