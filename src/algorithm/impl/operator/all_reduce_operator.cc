@@ -592,7 +592,8 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool isAivMode = (topoMatcher_->GetAivModeConfig() && !isBarrierOp)
                     && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                     && serverNum_ == 1
-                    && ((isOpbase && (dataSizePerRank <= AIV_ALL_REDUCE_A3_ENTRY_SIZE || isOnlyAiv)) || !isOpbase)
+                    && ((isOpbase && (dataSizePerRank <= AIV_ALL_REDUCE_A3_ENTRY_SIZE || isOnlyAiv))
+                        || (!isOpbase && (dataSizePerRank <= AIV_ALL_REDUCE_A3_GRAPH_ENTRY_SIZE || isOnlyAiv)))
                     && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE)
                     && (!retryEnable_)
                     && !multiModuleDiffDeviceNumMode_;
@@ -641,10 +642,10 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && (serverNum_ != 1) && (superPodNum_ == 1) &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_1_MB * deviceNumPerAggregation_);
     bool useHostComm = !isSupportInlineReduce && ((serverNum_ != 1 && superPodNum_ == 1 && !GetExternalInputInterHccsDisable())
-        || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable())
+        || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
         && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB * deviceNumPerAggregation_));
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_); // 涉及ROCE平面
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
 
     if (multiModuleDiffDeviceNumMode_) {
         algName = "AllReduceComm";
