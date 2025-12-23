@@ -190,6 +190,8 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::KernelRun(const OpParam &param, 
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     AivOpArgs opArgs {

@@ -320,6 +320,7 @@ public:
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
     HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
+    HcclResult SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap);  //设置HCCL_ALGO
     u64 GetConfigInCCLbufferSize();     // 获取通信域配置的输入buffer大小
     u64 GetConfigOutCCLbufferSize();    // 获取通信域配置的输出buffer大小
     u32 GetRankTableCrc();

@@ -162,10 +162,14 @@ struct AivAlgArgs {
     bool isSmallCount;
     u32 deterministic;
     KernelArgsType argsType;
+    s32 execTimeOut;
+    bool execTimeOutSet; // true表示set by commConfig
  
     explicit AivAlgArgs(s32 step = -1, bool isSmallCount = false, u32 deterministic = 0, 
-        KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER)
-    : step(step), isSmallCount(isSmallCount), deterministic(deterministic), argsType(argsType)
+        KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER,
+        s32 execTimeOut = static_cast<s32>(AIV_TIMEOUT_DEFAULT), bool execTimeOutSet = false)
+    : step(step), isSmallCount(isSmallCount), deterministic(deterministic), argsType(argsType),
+      execTimeOut(execTimeOut), execTimeOutSet(execTimeOutSet)
     {
     }
 };

@@ -194,11 +194,13 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::KernelRun(const OpParam &para
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     HCCL_DEBUG("[CollAllReduceMeshAivSmallCountExecutor][KernelRun]blockDim is %u", blockDim_);
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

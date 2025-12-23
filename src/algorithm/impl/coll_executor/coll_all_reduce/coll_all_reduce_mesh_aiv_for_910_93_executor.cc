@@ -97,7 +97,11 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     // Step2. Compare User Given blockDim_ with bestBlockDim
     blockDim = bestBlockDim;
     if (blockDim_ < blockDim) {
-        blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
+        if (blockDim_ > rankSize) {
+            blockDim = blockDim_ / rankSize * rankSize;
+        } else {
+            blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
+        }
     }
 
     CHK_PRT_RET(blockDim < minBlockDim,
@@ -252,6 +256,8 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     algArgs.argsType = KernelArgsType::ARGS_TYPE_SIMPLE;
     struct AivProfilingInfo aivProfilingInfo;
     if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE){

@@ -211,9 +211,11 @@ HcclResult CollReduceScatterMeshAivExecutor::KernelRun(const OpParam &param, Exe
     };
     struct AivProfilingInfo aivProfilingInfo;
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

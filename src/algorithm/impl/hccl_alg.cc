@@ -64,7 +64,7 @@ HcclResult HcclAlg::Init(HcclAlgoAttr &algoAttr, HcclTopoAttr &topoAttr, bool is
     algConfigurator_->GetTopoType(topoType);
     topoInfoEx_.reset(new (std::nothrow) TopoInfoExtractor(algoAttr_, topoAttr_, topoType));
     CHK_SMART_PTR_NULL(topoInfoEx_);
-    CHK_RET(topoInfoEx_->Init());
+    CHK_RET(topoInfoEx_->Init(algoAttr_.commAlgoConfig));
 
     std::vector<std::vector<std::vector<u32>>> CommPlaneRanks;
     CHK_RET(topoInfoEx_->GetCommPlaneRanks(CommPlaneRanks));
@@ -192,6 +192,12 @@ HcclResult HcclAlg::SetAicpuUnfoldConfig(const bool aicpuUnfold)
 HcclResult HcclAlg::SetExecTimeOutConfig(const s32 execTimeOut)
 {
     CHK_RET(topoMatcher_->SetExecTimeOutConfig(execTimeOut));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclAlg::SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap)
+{
+    CHK_RET(topoMatcher_->SetAlgoConfig(algoMap));
     return HCCL_SUCCESS;
 }
 

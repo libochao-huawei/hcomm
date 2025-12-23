@@ -71,6 +71,7 @@ public:
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold); // 设置aicpu配置
     HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
+    HcclResult SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap);  // 设置HCCL_Algo
     bool GetAicpuUnfoldConfig() const;
     bool GetAivModeConfig() const;
     HcclResult GetIsBridgeVector(std::vector<bool> &isBridgeVector);

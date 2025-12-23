@@ -34,12 +34,16 @@ __aicore__ inline void AivBroadcastBig910B::WaitRecordSync(int32_t tag, uint32_t
     if ((rank_ < root && block_idx == rank_) || (rank_ > root && block_idx == rank_ - 1)){
         Record(tag, root, AivNotifyType::DataSignal, 0, ifPingpong);  // 告诉root数据拿过来了
         PipeBarrier<PIPE_ALL>();
+        for (uint32_t remoteRank = 0; remoteRank < rankSize_; remoteRank += 1) {
+            if (remoteRank == root || remoteRank == rank_) {
+                continue;
+            } else {
+                Wait(tag, remoteRank, AivNotifyType::DataSignal, 0, ifPingpong);
+            }
+        }
+        PipeBarrier<PIPE_ALL>();
     } else if(rank_ != root){
         Record(tag, targetRank, AivNotifyType::DataSignal, 0, ifPingpong);
-        PipeBarrier<PIPE_ALL>();
-        if (targetRank != root || targetRank != rank_) {
-            Wait(tag, targetRank, AivNotifyType::DataSignal, 0, ifPingpong);
-        }
         PipeBarrier<PIPE_ALL>();
     } else {
         Wait(tag, targetRank, AivNotifyType::DataSignal, 0, ifPingpong);  // 等待对应卡的数据拿走

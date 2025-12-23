@@ -16,7 +16,6 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
-#include "comm_configer.h"
 #include <algorithm>
 
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -465,8 +464,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
-        HcclAlgoType configAlgTypeLevel2 = CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier_,
-            HcclCMDType::HCCL_CMD_REDUCE_SCATTER)[HCCL_ALGO_LEVEL_2];
+        HcclAlgoType configAlgTypeLevel2 = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_REDUCE_SCATTER)[HCCL_ALGO_LEVEL_2];
         if ((superPodNum_ > 1) && (userRankSize_ / superPodNum_ > 1) &&
             ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
              ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) && (dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN)))) {

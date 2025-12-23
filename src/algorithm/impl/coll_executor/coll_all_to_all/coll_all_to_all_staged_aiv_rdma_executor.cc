@@ -129,11 +129,13 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::RunAlltoAllStaged1InAIV(const O
         param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {0};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     HCCL_DEBUG("[CollRunAlltoAllStagedAivRdmaExecutor]RunAlltoAllStaged1InAIV for blockDim is %u", blockDim_);
     if (aivClearEnable_) {
-        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs);
+        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs, algArgs);
     }
     CHK_RET(ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo));
     return HCCL_SUCCESS;

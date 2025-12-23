@@ -53,7 +53,6 @@ private:
     HcclResult InitServerRankInfo();
     HcclResult InitSuperPodRankInfo();
     HcclResult InitNetLayer();
-    HcclResult GetModuleIdx(const RankInfo &rankInfo, u32 &moduleIdx);
     HcclResult InitGraphRankInfo();
     RankTable_t rankTable_;
     // 根据 rankId 获取 RankInfo_t 与 EndPoint信息

@@ -378,6 +378,7 @@ public:
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv); // 设置aiv only模式配置
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
     HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
+    HcclResult SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap); // 设置HCCL_ALGO
     bool GetAivModeConfig();  // 获取通信域粒度aiv模式配置
     bool GetConfigIsOnlyAivMode(); // 获取通信域粒度aiv only模式配置
     bool GetAicpuUnfoldConfig();  // 获取通信域粒度aicpu配置
