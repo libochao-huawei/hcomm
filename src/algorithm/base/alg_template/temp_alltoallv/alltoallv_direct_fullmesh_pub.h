@@ -30,7 +30,6 @@ private:
         const std::vector<std::shared_ptr<LocalNotify>> &meshSignalSubToMain);
     std::string GetStreamIndexString();
     u64 CalcMaxSendLen();
-    u64 CalMaxRecvLen();
     HcclResult NotifySubStreamStart();
     HcclResult WaitSubStreamFinish();
     HcclResult NotifyLocalSubStreamStart();
@@ -95,8 +94,7 @@ private:
     u32 totalRdmaRankNum_; // 需要通信的rdma对端
     bool isSuPodAsym_;
     HcclCMDType opType_;
-    bool isBigCount_{false};
-    bool isHugeData_{false};
+    bool isBigCount_;
 
     DeviceMem userInput_;
     DeviceMem userOutput_;
