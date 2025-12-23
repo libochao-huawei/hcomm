@@ -330,7 +330,7 @@ public:
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
 
-    std::shared_ptr<struct hcclKernelPlanner> planner; //for group
+    std::shared_ptr<struct hcclKernelPlanner> planner {nullptr}; //for group
     void* barrierSendBuf;
     void* barrierRecvBuf;
     std::mutex operatorlock_;
@@ -407,7 +407,7 @@ private:
     const std::string identifier_;
     const std::string cclBuffName_;
     bool isHeterogComm_;
-    bool isGroupMode_;
+    bool isGroupMode_{false};
     bool isResetDevice_;
     bool isSpecialType_;
     bool isHaveCpuRank_{false};

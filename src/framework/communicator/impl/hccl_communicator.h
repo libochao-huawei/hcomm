@@ -1077,16 +1077,16 @@ private:
     RankGraph rankGraph_;    
 
     // for group
-    bool isGroupMode_;
-    u32 iSend;
-    u32 iRecv;
-    u32 nSend;
-    u32 nRecv;
-    u32 bufferSliceNum;
-    std::vector<std::shared_ptr<LocalNotify>> groupSendNotifies;
-    std::vector<std::shared_ptr<LocalNotify>> groupRecvNotifies;
-    std::vector<Stream> groupSendStreams;
-    std::vector<Stream> groupRecvStreams;
+    bool isGroupMode_ {false};
+    u32 iSend {0};
+    u32 iRecv {0};
+    u32 nSend {0};
+    u32 nRecv {0};
+    u32 bufferSliceNum {0};
+    std::vector<std::shared_ptr<LocalNotify>> groupSendNotifies {};
+    std::vector<std::shared_ptr<LocalNotify>> groupRecvNotifies {};
+    std::vector<Stream> groupSendStreams {};
+    std::vector<Stream> groupRecvStreams {};
     Stream groupSendRecvMainStream;
 
     // 独立算子
