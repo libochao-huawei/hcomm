@@ -272,7 +272,37 @@ function run_ut() {
   fi
 }
 
+# print usage message
+function usage() {
+  echo "Usage:"
+  echo "  sh build.sh --pkg [-h | --help] [-j<N>]"
+  echo "              [--cann_3rd_lib_path=<PATH>]"
+  echo "              [--asan]"
+  echo "              [--sign-script <PATH>] [--enable-sign] [--version <VERSION>]"
+  echo ""
+  echo "Options:"
+  echo "    -h, --help     Print usage"
+  echo "    --asan         Enable AddressSanitizer"
+  echo "    -build-type=<TYPE>"
+  echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
+  echo "    -j<N>          Set the number of threads used for building, default is 8"
+  echo "    --cann_3rd_lib_path=<PATH>"
+  echo "                   Set ascend third_party package install path, default ./output/third_party"
+  echo "    --sign-script <PATH>"
+  echo "                   Set sign-script's path to <PATH>"
+  echo "    --enable-sign"
+  echo "                   Enable to sign"
+  echo "    --version <VERSION>"
+  echo "                   Set sign version to <VERSION>"
+  echo ""
+}
+
 while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -h | --help)
+        usage
+        exit 0
+        ;;
     case $1 in
     -j*)
         JOB_NUM="$1"
@@ -394,7 +424,9 @@ while [[ $# -gt 0 ]]; do
         shift 2
         ;;
     *)
-        break
+        echo "Undefined option: $1"
+        usage
+        exit 1
         ;;
     esac
 done
