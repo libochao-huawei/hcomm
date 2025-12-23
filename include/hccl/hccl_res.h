@@ -11,8 +11,9 @@
 #ifndef HCCL_RES_H
 #define HCCL_RES_H
 
+#define HCCL_CTX_API
+
 #include "hcomm_primitives.h"
-#include "hccl_mem_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -43,18 +44,8 @@ typedef enum {
     NOTIFY_TYPE_DEVICE_MEM = 2,
 } NotifyType;
 
-/**
- * @brief 缓存段元数据描述结构体
- */
-typedef struct {
-    HcclMemType type; ///< 缓存物理位置类型，参见HcclMemType
-    void *addr;       ///< 缓存地址
-    uint64_t size;    ///< 缓存区域字节数
-} CommBuffer;
-
 const uint32_t HCCL_CHANNEL_MAGIC_WORD = 0x0f0f0f0f;
 const uint32_t HCCL_CHANNEL_VERSION = 1;    // HcclChannelDesc更新时，HCCL_CHANNEL_VERSION + 1
-
 
 /**
  * @brief 兼容Abi字段结构体
@@ -173,12 +164,13 @@ const uint32_t HCCL_OP_TAG_LEN_MAX = 255;
  * @brief 获取通信域中的Hccl缓存(CCL Buffer)
  * @param[in] comm 通信域句柄
  * @param[out] buffer Hccl缓存信息
+ * @param[out] size 缓存区域字节数
  * @return HcclResult 执行结果状态码
  * @note 即获取通信域中的CCL Buffer
  * @warning  1、CCLBuffer是否有是Host场景？——对应返回的数据结构； 2、先不用HcclMem *mem； \n
  *          3、未来可扩展增加CommGetMemType接口
  */
-extern HcclResult HcclGetHcclBuffer(HcclComm comm, CommBuffer *buffer);
+extern HcclResult HcclGetHcclBuffer(HcclComm comm, void **buffer, uint64_t *size);
 
 /**
  * @defgroup 通信引擎资源管理
@@ -275,11 +267,12 @@ extern HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, 
  * @param[in] comm 通信域句柄
  * @param[in] channel 通信通道句柄
  * @param[out] buffer Hccl缓存信息
+ * @param[out] size 缓存区域字节数
  * @return HcclResult 执行结果状态码
  * @note 获取远端CCL buffer
  * @warning
  */
-extern HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer);
+extern HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size);
 
  /**
  * @defgroup 通信引擎上下文管理接口（编程控制面可选接口）
@@ -290,34 +283,45 @@ extern HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel,
 /**
  * @brief 创建算子通信引擎上下文
  * @param[in] comm 通信域句柄
- * @param[in] engineTag 引擎标签（最大字符长度为HCCL_OP_TAG_LEN_MAX）
+ * @param[in] ctxTag 引擎标签（最大字符长度为HCCL_OP_TAG_LEN_MAX）
  * @param[in] engine 通信引擎类型
- * @param[inout] engineCtx 通信引擎上下文\n
- *                         -size: 申请的ctx内存大小；\n
- *                         -addr: 返回的ctx内存地址；\n
- *                         -type: 返回的ctx内存类型，分host和device。
+ * @param[in] size ctx内存大小
+ * @param[out] ctx 通信引擎上下文
  * @return HcclResult 执行结果状态码
  * @note 1、由使用者决定ctx的大小，并排布ctx里面的内容\n
  *       2、通信库提供ctx地址空间申请接口，并返回该地址空间的类型{host/device}，不同类型决定地址空间的访问方式\n
  *       3、通信库基于通信域+opTag为key存储ctx地址
  * @warning
  */
-extern HcclResult HcclCreateEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx);
+extern HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine engine, uint64_t size, void **ctx);
 
 /**
  * @brief 获取算子通信引擎上下文
  * @param[in] comm 通信域句柄
- * @param[in] engineTag 引擎标签（最大字符长度为HCCL_OP_TAG_LEN_MAX）
+ * @param[in] ctxTag 引擎标签（最大字符长度为HCCL_OP_TAG_LEN_MAX）
  * @param[in] engine 通信引擎类型
- * @param[out] engineCtx 通信引擎上下文\n
- *                       -size: ctx内存大小；\n
- *                       -addr: ctx内存地址；\n
- *                       -type: ctx内存类型，分host和device。
+ * @param[out] ctx 通信引擎上下文
+ * @param[out] size ctx内存大小
  * @return HcclResult 执行结果状态码
  * @note 使用者可先查询ctx是否已存在，再决定是否重新申请ctx地址
- * @warning 可以考虑将两个Ctx接口一起优化下
+ * @warning 
  */
-extern HcclResult HcclGetEngineCtx(HcclComm comm, const char *engineTag, CommEngine engine, HcclMem *engineCtx);
+extern HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine, void **ctx, uint64_t *size);
+
+/**
+ * @brief 拷贝算子通信引擎上下文
+ * @param[in] comm 通信域句柄
+ * @param[in] engine 通信引擎类型
+ * @param[in] ctxTag 引擎标签（最大字符长度为HCCL_OP_TAG_LEN_MAX）
+ * @param[in] srcCtx 拷贝的源引擎
+ * @param[in] size 拷贝的ctx内存大小
+ * @param[in] dstCtxOffset 拷贝的ctx地址偏移
+ * @return HcclResult 执行结果状态码
+ * @note 1、目标ctx通过ctxTag获取
+ * @warning
+ */
+extern HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTag, const void *srcCtx,
+    uint64_t size, uint64_t dstCtxOffset);
 
 #ifdef __cplusplus
 }
