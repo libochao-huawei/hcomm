@@ -126,9 +126,6 @@ HcclResult AlltoAllVDirectFullMesh::Prepare(PrepareData &param)
     // 一半的CCLOut用来发送RDMA数据，另一半用来接收RDMA数据，因此需要除以2
     rdmaDataBlockSize_ = cclOutMem_.size() / std::max(1u, rdmaConcurrentNum_) / 2;
 
-    u64 maxRecvLen = CalMaxRecvLen();
-    isHugeData_ = std::max(maxSendLen, maxRecvLen) > std::min(sdmaDataBlockSize_, rdmaDataBlockSize_);
-
     return HCCL_SUCCESS;
 }
 
@@ -154,19 +151,6 @@ u64 AlltoAllVDirectFullMesh::CalcMaxSendLen()
 
     HCCL_DEBUG("[AlltoAllVDirectFullMesh][CalcMaxSendLen] maxSendLen[%llu]", maxSendLen);
     return maxSendLen;
-}
-
-u64 AlltoAllVDirectFullMesh::CalMaxRecvLen()
-{
-    u64 maxRecvLen = 0;
-    const SendRecvInfo& localSendRecvInfo = *localSendRecvInfoPtr_;
-
-    for (u32 dstRank = 0; dstRank < localSendRecvInfo.recvLength.size(); dstRank++) {
-        maxRecvLen = std::max(maxRecvLen, localSendRecvInfo.recvLength[dstRank]);
-    }
-
-    HCCL_DEBUG("[AlltoAllVDirectFullMesh][CalMaxRecvLen] maxRecvLen[%llu]", maxRecvLen);
-    return maxRecvLen;
 }
 
 void AlltoAllVDirectFullMesh::UpdateCurrRankRecvInfo(u32 roundIdx, u32 side, u32 destRank,
@@ -506,7 +490,6 @@ HcclResult AlltoAllVDirectFullMesh::SdmaMainStreamWait(u32 step, u32 roundIdx)
             if (sendRank == userRank_) {
                 continue;
             }
-            HCCL_DEBUG("[AlltoAllVDirectFullMesh]recvRank is %u, sendRank is %u", recvRank, sendRank);
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
             if (step < readInfo.size()) {
                 HCCL_DEBUG("[AlltoAllVDirectFullMesh][SdmaMainStreamWait] userRank [%u], recvRank[%u], "
@@ -585,8 +568,6 @@ HcclResult AlltoAllVDirectFullMesh::SDMAwithRemoteRankAndNotifyEnd(u32 step, u32
             if (sendRank == userRank_) {
                 continue;
             }
-            HCCL_DEBUG("[AlltoAllVDirectFullMesh][SDMAwithRemoteRankAndNotifyEnd]recvRank is %u, sendRank is %u",
-                recvRank, sendRank);
             const std::vector<ReadDataBlock>& readInfo = subStreamReadInfo_[recvRank];
             const std::vector<SendDataBlock>& sendInfo = subStreamSendInfo_[sendRank];
             Stream& currStream = sdmaSubStream_[streamIndex];
@@ -825,8 +806,6 @@ HcclResult AlltoAllVDirectFullMesh::SendRecvRdmaData(u32 dstRank, u32 srcRank, s
 {
     const LINK& sendTransport = links_[dstRank];
     const LINK& recvTransport = links_[srcRank];
-    HCCL_DEBUG("[AlltoAllVDirectFullMesh][SendRecvRdmaData] userRank[%u], dstRank[%u], srcRank[%u]",
-        userRank_, dstRank, srcRank);
     u32 minStep = std::min(sendInfo.size(), recvInfo.size());
     CHK_PTR_NULL(sendTransport);
     CHK_PTR_NULL(recvTransport);
