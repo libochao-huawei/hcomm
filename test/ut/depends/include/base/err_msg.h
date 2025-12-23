@@ -161,6 +161,7 @@ namespace ge {
 using error_message::ReportInnerErrMsg;
 using error_message::ReportPredefinedErrMsg;
 using error_message::ReportUserDefinedErrMsg;
+using error_message::RegisterFormatErrorMessage;
 } // namespace ge
 
 #endif  // INC_EXTERNAL_BASE_ERR_MSG_H_
