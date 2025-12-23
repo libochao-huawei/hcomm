@@ -3167,9 +3167,14 @@ HcclResult GetRedcueScatterVScratchMemSize(HcomOpParam *hcomOpParam, u64 &getMem
     u64 dataTypeSize = SIZE_TABLE[hcomOpParam->dataType];
     u64 ranksize = hcomOpParam->rankSize;
     // 910B 确定性 || 910B 多module
-    if (devType == DevType::DEV_TYPE_910B && (deterministic != DETERMINISTIC_DISABLE || ranksize > deviceEight )) { 
-        getMemSize = (hcomOpParam->count * dataTypeSize + paddingLen) * ranksize;
-        HCCL_INFO("[GetRedcueScatterVScratchMemSize] maxCount[%llu]", hcomOpParam->count);
+    if (devType == DevType::DEV_TYPE_910B && (deterministic != DETERMINISTIC_DISABLE || ranksize > deviceEight )) {
+        u64 maxCount = 0;
+        for (u32 i = 0; i < ranksize; i++) {
+            // reducescatterv复用HcomOpParam的All2AllDataDes字段
+            maxCount = std::max(maxCount, static_cast<u64 *>(hcomOpParam->All2AllDataDes.sendCounts)[i]);
+        }
+        getMemSize = (maxCount * dataTypeSize + paddingLen) * ranksize;
+        HCCL_INFO("[GetRedcueScatterVScratchMemSize] maxCount[%llu], getMemSize[%llu]", maxCount, getMemSize);
     } else if (devType == DevType::DEV_TYPE_910B && ranksize <= deviceEight) {
         getMemSize = hcomOpParam->count * dataTypeSize * ranksize;
         HCCL_INFO("[GetRedcueScatterVScratchMemSize] getMemSize[%llu]", getMemSize);
