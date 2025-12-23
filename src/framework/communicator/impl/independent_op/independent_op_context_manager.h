@@ -44,8 +44,10 @@ class ContextManager {
 public:
     ContextManager();
     ~ContextManager();
-    HcclResult CreateCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx);
-    HcclResult GetCommEngineCtx(const std::string &tag, CommEngine engine, HcclMem *engineCtx);
+    HcclResult CreateCommEngineCtx(const std::string &tag, CommEngine engine, uint64_t size, void **ctx);
+    HcclResult GetCommEngineCtx(const std::string &tag, CommEngine engine, void **ctx, uint64_t *size);
+    HcclResult CopyCommEngineCtx(const std::string &tag, CommEngine engine, const void *srcCtx, uint64_t size,
+        uint64_t dstCtxOffset);
     HcclResult DestroyCommEngineCtx(const HcclMem *engineCtx);
 private:
     std::unordered_map<std::string, std::unordered_map<CommEngine, HcclMem, CommEngineHash>> contextMap_;

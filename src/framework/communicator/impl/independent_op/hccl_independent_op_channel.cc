@@ -155,22 +155,26 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer)
+HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(buffer);
+    CHK_PTR_NULL(size);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-    HcclResult ret = channelMgr.ChannelCommGetHcclBuffer(channel, buffer);
+    CommBuffer commBuffer;
+    HcclResult ret = channelMgr.ChannelCommGetHcclBuffer(channel, &commBuffer);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get channel hccl buffer, group[%s], channel[%llu], ret[%d]",
            __func__, hcclComm->GetIdentifier().c_str(), channel, ret);
         return ret;
     }
+    *buffer = commBuffer.addr;
+    *size = commBuffer.size;
 
     HCCL_RUN_INFO("[%s] get channel hccl buffer success, group[%s], channel[%llu], " 
         "buffer[type:%d, addr:%p, size:%llu], ret[%d]", __func__, hcclComm->GetIdentifier().c_str(), 
-        channel, buffer->type, buffer->addr, buffer->size, ret);
+        channel, commBuffer.type, commBuffer.addr, commBuffer.size, ret);
     return HCCL_SUCCESS;
 }
 
