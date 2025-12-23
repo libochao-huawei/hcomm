@@ -163,6 +163,9 @@ HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank)
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
 HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum)
 {
     CHK_PTR_NULL(comm);
@@ -208,3 +211,6 @@ HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
     HCCL_RUN_INFO("[%s] success, group[%s], rankNum[%u]", __func__, hcclComm->GetIdentifier().c_str(), *rankNum);
     return HCCL_SUCCESS;
 }
+#ifdef __cplusplus
+}
+#endif // __cplusplus

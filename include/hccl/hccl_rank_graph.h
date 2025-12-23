@@ -253,9 +253,6 @@ extern HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRan
  */
 extern HcclResult HcclGetInstRanksByNetLayer(HcclComm comm,
     uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
-extern HcclResult CommGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
-extern HcclResult CommGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
-extern HcclResult CommGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, u32 *topoType);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
