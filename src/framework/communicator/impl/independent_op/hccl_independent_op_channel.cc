@@ -16,28 +16,105 @@
 
 using namespace hccl;
 
-HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag,
-    CommEngine engine, const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
+const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
+static HcclResult HandleHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
+{
+    if (channelDesc.header.size < channelDescFinal.header.size) {
+        // 需要前向兼容HcclChannelDesc，末尾部分字段不支持处理
+    } else if (channelDesc.header.size > channelDescFinal.header.size) {
+        // 需要后向向兼容HcclChannelDesc，末尾部分字段会被忽略
+    }
+
+    if (channelDesc.header.magicWord != channelDescFinal.header.magicWord) {
+        HCCL_ERROR("[%s]channelDescFinal.header.magicWord[%u] not equal to channelDesc.header.magicWord[%u]",
+            __func__, channelDescFinal.header.magicWord, channelDesc.header.magicWord);
+        return HCCL_E_PARA;
+    }
+
+    if (channelDesc.header.version >= HCCL_CHANNEL_VERSION_ONE) {
+        channelDescFinal.remoteRank = channelDesc.remoteRank;
+        channelDescFinal.protocol   = channelDesc.protocol;
+        channelDescFinal.notifyNum  = channelDesc.notifyNum;
+
+        // 根据协议类型拷贝union中的相应成员
+        switch (channelDesc.protocol) {
+            case COMM_PROTOCOL_HCCS:
+            case COMM_PROTOCOL_PCIE:
+            case COMM_PROTOCOL_SIO:
+                CHK_SAFETY_FUNC_RET(memcpy_s(&(channelDescFinal.hccsAttr), sizeof(HccsAttr),
+                    &(channelDesc.hccsAttr), sizeof(HccsAttr)));
+                break;
+            case COMM_PROTOCOL_ROCE:
+                CHK_SAFETY_FUNC_RET(memcpy_s(&(channelDescFinal.roceAttr), sizeof(RoCEAttr),
+                    &(channelDesc.roceAttr), sizeof(RoCEAttr)));
+                break;
+            case COMM_PROTOCOL_UB_CTP:
+            case COMM_PROTOCOL_UB_TP:
+                CHK_SAFETY_FUNC_RET(memcpy_s(&(channelDescFinal.ubAttr), sizeof(UbAttr),
+                    &(channelDesc.ubAttr), sizeof(UbAttr)));
+                break;
+            default:
+                HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.protocol);
+                return HCCL_E_PARA;
+        }
+    }
+
+    if (channelDesc.header.version > HCCL_CHANNEL_VERSION) {
+        // 传入的版本高于当前版本，警告不支持的配置项将被忽略
+        HCCL_WARNING("The version of provided [%u] is higher than the current version[%u], "
+            "unsupported configuration will be ignored.",
+            channelDesc.header.version, HCCL_CHANNEL_VERSION);
+    } else if (channelDesc.header.version < HCCL_CHANNEL_VERSION) {
+        // 传入的版本低于当前版本，警告高版本支持的配置项将被忽略
+        HCCL_WARNING("The version of provided [%u] is lower than the current version[%u], "
+            "configurations supported by later versions will be ignored.",
+            channelDesc.header.version, HCCL_CHANNEL_VERSION);
+    }
+
+    // 如果扩展到version=2后
+    // 1) 在底层为新的结构体和版本（version为2）上，会正常执行下面的判断处理逻辑；
+    // 2) 在底层为旧的结构体和版本（version为1）上，下面的逻辑没有，version的2 > 1的部分会被忽略掉；
+    if (channelDesc.header.version >= 2) {
+    }
+
+    return HCCL_SUCCESS;
+}
+HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChannelDesc *channelDescList,
+    uint32_t listNum, ChannelHandle *channelList)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(channelTag);
     CHK_PTR_NULL(channelDescList);
     CHK_PTR_NULL(channelList);
     CHK_PRT_RET(listNum == 0, HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
         __func__, listNum), HCCL_E_PARA);
 
+    HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    std::vector<HcclChannelDesc> channelDescFinals;
+    for (uint32_t idx = 0; idx < listNum; idx++) {
+        HcclChannelDesc channelDescFinal;
+        HcclChannelDescInit(&channelDescFinal, 1);
+        ret = HandleHcclResPackReq(channelDescList[idx], channelDescFinal);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
+                "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),
+                engine, listNum, ret);
+            return ret;
+        }
+        channelDescFinals.push_back(channelDescFinal);
+    }
     auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-    HcclResult ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), std::string(channelTag), engine, channelDescList, listNum, channelList);
+    ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
+        channelDescFinals.data(), listNum, channelList);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to create channel, group[%s], channelTag[%s], engine[%d], channelNum[%llu], ret[%d]",
-           __func__, hcclComm->GetIdentifier().c_str(), channelTag, engine, listNum, ret);
+        HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]",
+           __func__, hcclComm->GetIdentifier().c_str(), engine, listNum, ret);
         return ret;
     }
 
-    HCCL_RUN_INFO("[%s] create channel success, group[%s], channelTag[%s], engine[%d], channelNum[%llu], ret[%d]", 
-        __func__, hcclComm->GetIdentifier().c_str(), channelTag, engine, listNum, ret);
+    HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], ret[%d]", 
+        __func__, hcclComm->GetIdentifier().c_str(), engine, listNum, ret);
     return HCCL_SUCCESS;
 }
 

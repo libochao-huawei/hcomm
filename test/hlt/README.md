@@ -4,13 +4,13 @@
 
 ## 概述
 
-该测试框架用于验证 HCCL 资源的创建与组合（`HcclCommInitClusterInfoConfig`、`HcclAllocThreadRes`、`HcclChannelCreate`、`HcommWriteOnThread ` 等）。默认链接真实 HCCL/ACL 库（`MOCK_HCCL=0`）；未来逐步支持**Mock 模式**（`MOCK_HCCL=1`，可在没有 NPU 环境下本地跑通流程）。
+该测试框架用于验证 HCCL 资源的创建与组合（`HcclCommInitClusterInfoConfig`、`HcclAllocThreadRes`、`HcclChannelAcquire`、`HcommWriteOnThread ` 等）。默认链接真实 HCCL/ACL 库（`MOCK_HCCL=0`）；未来逐步支持**Mock 模式**（`MOCK_HCCL=1`，可在没有 NPU 环境下本地跑通流程）。
 
 * 核心类：`HcclFwkTest`。
 * 主要方法：
 
   * `init()`：初始化 ACL 与 HCCL 通信域。
-  * `setup_channel_pair()` ：分配 buffer、构造 ChannelDesc、调用 `HcclChannelCreate`接口。
+  * `setup_channel_pair()` ：分配 buffer、构造 HcclChannelDesc、调用 `HcclChannelAcquire`接口。
   * `do_sample_write()`：在 threadResource 与 channel 可用时，执行一次写作验证。
   * `cleanup()`：释放 buffer、channel、thread，销毁 comm。
 
@@ -126,7 +126,7 @@
 
 * **comm init 失败**：检查 `cluster_info`（文件路径或 JSON）是否正确；rank 是否在 rank table 范围内；真实环境下确认 HCCL/ACL 库路径与 ABI 匹配。
 * **device 设置失败（ACL）**：确认 `aclInit` 成功并且 `aclrtSetDevice(rank)` 的 device id 在节点上存在。
-* **Channel 创建失败**：不同 HCCL SDK 的 `ChannelDesc` 字段可能不同。请根据真实头文件调整 `setup_channel_pair()` 中的填充逻辑（remote address / memHandle / flags）。
+* **Channel 创建失败**：不同 HCCL SDK 的 `HcclChannelDesc` 字段可能不同。请根据真实头文件调整 `setup_channel_pair()` 中的填充逻辑（remote address / memHandle / flags）。
 * **内存分配失败**：在真实环境优先使用 `aclrtMalloc`，若使用 host fallback，请确保对齐与大小合理。
 * **多进程协调问题**：真实测试通常由集群 launcher 启动，确认各进程的 `--cluster_info` / `RANK_ID` 与 rank table 一致。
 * **若要调测 mock**：`Mock` 模式会打印模拟行为，方便定位参数解析、流程顺序问题。

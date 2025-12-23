@@ -124,10 +124,10 @@ extern int32_t HcommLocalReduceOnThread(
  * @param[in] dstThread 目标线程句柄
  * @param[in] dstNotifyIdx 目标通知索引
  * @return int32_t 执行结果状态码
- * @note 配合HcommInterThreadNotifyWaitOnThread使用
+ * @note 配合HcommThreadNotifyWaitOnThread使用
  * @warning
  */
-extern int32_t HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
+extern int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
 
 /**
  * @brief 本地等待通知
@@ -135,10 +135,10 @@ extern int32_t HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadH
  * @param[in] notifyIdx 通知索引
  * @param[in] timeout 超时时间(毫秒)
  * @return int32_t 执行结果状态码
- * @note 配合HcommInterThreadNotifyRecordOnThread使用
+ * @note 配合HcommThreadNotifyRecordOnThread使用
  * @warning
  */
-extern int32_t HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout);
+extern int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout);
 /** @} */  // 本地线程间同步通知
 
 /**
@@ -152,7 +152,7 @@ extern int32_t HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t 
  * @param[in] dstNotifyId 通知id
  * @return 执行状态码 int32_t
  */
-extern int32_t HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId);
+extern int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId);
 
 /**
  * @brief 等待通知事件（消费者）
@@ -161,7 +161,7 @@ extern int32_t HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t ds
  * @param[in] timeOut 超时时间
  * @return 执行状态码 int32_t
  */
-extern int32_t HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
+extern int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
 /** @} */  // 本地通知
 
 /**
@@ -250,7 +250,7 @@ extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channe
  * @param[in] remoteNotifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
+extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 等待通知事件
@@ -260,7 +260,7 @@ extern int32_t HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle chan
  * @param[in] timeout 超时时间(毫秒)
  * @return int32_t 执行结果状态码
  */
-extern int32_t HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
+extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
 /** @} */  // 通知
 
 /**

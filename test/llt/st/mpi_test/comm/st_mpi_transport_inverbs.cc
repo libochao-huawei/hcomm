@@ -2864,15 +2864,15 @@ TEST_F(MPI_Link_Ibv_Test, st_data_plane_interface_rdma)
     ret = hcclStreamSynchronize(stream->ptr());
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = HcommInterThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&mianThread), reinterpret_cast<uint64_t>(&subThread), 0);
+    ret = HcommThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&mianThread), reinterpret_cast<uint64_t>(&subThread), 0);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = HcommInterThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&subThread), 0, 1);
+    ret = HcommThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&subThread), 0, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ret = HcommInterThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&subThread), reinterpret_cast<uint64_t>(&mianThread), 1);
+    ret = HcommThreadNotifyRecordOnThread(reinterpret_cast<uint64_t>(&subThread), reinterpret_cast<uint64_t>(&mianThread), 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    ret = HcommInterThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&mianThread), 1, 1);
+    ret = HcommThreadNotifyWaitOnThread(reinterpret_cast<uint64_t>(&mianThread), 1, 1);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     ret = hcclStreamSynchronize(stream->ptr());
