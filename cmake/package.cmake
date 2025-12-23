@@ -141,17 +141,6 @@ function(pack_built_in)
   install(DIRECTORY ${CMAKE_SOURCE_DIR}/scripts/package/latest_manager/scripts/
       DESTINATION latest_manager
   )
-  set(BIN_FILES
-      ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts/prereq_check.bash
-      ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts/prereq_check.csh
-      ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts/prereq_check.fish
-      ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts/setenv.bash
-      ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts/setenv.csh
-      ${CMAKE_SOURCE_DIR}/scripts/package/hcomm/scripts/setenv.fish
-  )
-  install(FILES ${BIN_FILES}
-      DESTINATION share/info/hcomm/bin
-  )
 
   string(FIND "${ASCEND_COMPUTE_UNIT}" ";" SEMICOLON_INDEX)
   if (SEMICOLON_INDEX GREATER -1)
