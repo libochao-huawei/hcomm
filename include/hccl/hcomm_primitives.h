@@ -34,16 +34,6 @@ typedef uint64_t ChannelHandle;
  */
 typedef uint64_t ThreadHandle;
 
- /**
- * @brief 下发模式
- * @warning
- */
-typedef enum {
-    HCOMM_LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
-    HCOMM_LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
-    HCOMM_LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
-} HcommLaunchMode;
-
 typedef enum {
     HCOMM_REDUCE_SUM = 0,    /**< sum */
     HCOMM_REDUCE_PROD = 1,   /**< prod */
@@ -269,14 +259,20 @@ extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle
  */
 
 /**
- * @brief 设置任务下发模式（批量或直接下发）
- * @param[in] launchId 下发Id
- * @param[in] mode 下发模式
+ * @brief 批量模式执行开始
+ * @param batchTag 批量Id
  * @return int32_t 执行结果状态码
- * @note 可运行在Host或Device上。
- * @warning
+ * @note Start和End及中间的批量任务需要在同一个线程上执行
  */
-extern int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode);
+extern int32_t HcommBatchModeStart(const char *batchTag);
+
+/**
+ * @brief 批量模式执行结束
+ * @param batchTag 批量Id
+ * @return int32_t 执行结果状态码
+ * @note Start和End及中间的批量任务需要在同一个线程上执行
+ */
+extern int32_t HcommBatchModeEnd(const char *batchTag);
 
 /** @} */  // 批量下发设置接口
 
@@ -300,6 +296,7 @@ extern int32_t HcommAcquireComm(const char* commId);
 extern int32_t HcommReleaseComm(const char* commId);
 
 #define HCOMM_PRIMITIVES_H_MODIFIED
+#define HCOMM_BATCH_MODE_MODIFIED
 
 #ifdef __cplusplus
 }

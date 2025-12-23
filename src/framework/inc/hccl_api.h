@@ -646,16 +646,6 @@ const uint32_t COMM_TAG_LEN_MAX = 255;
 
 
  /**
- * @brief 下发模式
- * @warning  有点奇怪，建议再讨论下
- */
-typedef enum {
-    HCOMM_LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
-    HCOMM_LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
-    HCOMM_LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
-} HcommLaunchMode;
-
- /**
  * @brief 910A3的RankGraph定义
  * @warning  完善内容
  */

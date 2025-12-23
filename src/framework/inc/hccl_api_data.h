@@ -67,6 +67,25 @@ extern HcclResult CommFence(ThreadHandle thread, ChannelHandle channel);
 extern HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp, uint32_t remoteNotifyIdx);
 
+ /**
+ * @brief 下发模式
+ */
+typedef enum {
+    HCOMM_LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
+    HCOMM_LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
+    HCOMM_LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
+} HcommLaunchMode;
+
+/**
+ * @brief 设置任务下发模式（批量或直接下发）
+ * @param[in] launchId 下发Id
+ * @param[in] mode 下发模式
+ * @return int32_t 执行结果状态码
+ * @note 可运行在Host或Device上。
+ * @warning
+ */
+extern int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
