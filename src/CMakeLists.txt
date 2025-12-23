@@ -478,6 +478,7 @@ target_compile_options(ccl_kernel_plf PRIVATE
     -O3
     -std=c++14
     -D_FORTIFY_SOURCE=2 -O2
+    -fstack-protector-all
 )
 
 # 给ccl_kernel_plf_a添加编译选项
@@ -492,6 +493,7 @@ target_compile_options(ccl_kernel_plf_a PRIVATE
     -ftrapv
     -D_FORTIFY_SOURCE=2 -O2
     -fPIC
+    -fstack-protector-all
 )
 # 为ccl_kernel_plf添加编译定义
 target_compile_definitions(ccl_kernel_plf PRIVATE
@@ -516,6 +518,7 @@ target_link_options(ccl_kernel_plf PRIVATE
     -Wl,-z,relro,-z,now,-z,noexecstack
     -Wl,-Bsymbolic
     -Wl,--exclude-libs,ALL
+    $<$<CONFIG:Release>:-s>
 )
 # 向ccl_kernel_plf_a添加链接器选项
 target_link_options(ccl_kernel_plf_a PRIVATE
