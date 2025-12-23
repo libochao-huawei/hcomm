@@ -18,7 +18,6 @@
     <file_info value="include" copy_type="source" src_path="hcomm/include/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccl_comm.h"/>
         <file value="hccl_types.h"/>
-        <file value="hccl_ctrl_plane.h"/>
         <file value="hccl_mem_defs.h"/>
         <file value="hccl_rank_graph.h"/>
         <file value="hccl_rankgraph.h"/>
@@ -36,6 +35,7 @@
         <file value="dtype_common.h"/>
         <file value="workflow.h"/>
         <file value="hccl_inner.h"/>
+        <file value="hccl_ctrl_plane.h"/>
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="Ascend/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440" optional="true">
         <file value="aicpu_hcomm.tar.gz"/>
