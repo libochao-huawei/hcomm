@@ -19,6 +19,7 @@
 #include <map>
 #include "workflow.h"
 #include "dtype_common.h"
+#include "hccl/hccl_rank_graph.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -373,6 +374,8 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
 HcclResult HcomGetHcclComm(int64_t comm, std::string &group);
 HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *group, char *sTag);
 HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size);
+HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag);
+HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t flag);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
