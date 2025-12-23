@@ -716,7 +716,7 @@ install_run() {
         new_echo "INFO" "install ${hcomm_install_path_param} ${hcomm_install_type}"
         log "INFO" "install ${hcomm_install_path_param} ${hcomm_install_type}"
         bash "${curpath}/run_hcomm_install.sh" "install" "${hcomm_input_install_path}" "${hcomm_install_type}" \
-            "${is_quiet}" "${pylocal}" "${input_setenv}" "${docker_root}" "${in_install_for_all}"
+            "${is_quiet}" "${pylocal}" "${input_setenv}" "${docker_root}" "${in_install_for_all}" "$pkg_version_dir"
         if [ $? -eq 0 ]; then
             update_version_info_version
 
@@ -759,7 +759,7 @@ upgrade_run() {
         new_echo "INFO" "upgrade ${hcomm_install_path_param} ${hcomm_install_type}"
         log "INFO" "upgrade ${hcomm_install_path_param} ${hcomm_install_type}"
         bash "${curpath}/run_hcomm_upgrade.sh" "upgrade" "${hcomm_input_install_path}" "${hcomm_install_type}" \
-            "${is_quiet}" "${pylocal}" "${input_setenv}" "${docker_root}" "${in_install_for_all}"
+            "${is_quiet}" "${pylocal}" "${input_setenv}" "${docker_root}" "${in_install_for_all}" "$pkg_version_dir"
         if [ $? -eq 0 ]; then
             update_version_info_version
 
@@ -811,7 +811,7 @@ uninstall_run() {
         log "INFO" "uninstall ${hcomm_install_path_param} ${hcomm_install_type}"
 
         bash "$upgrade_default_dir/script/run_hcomm_uninstall.sh" "uninstall" "${hcomm_input_install_path}" "${hcomm_install_type}" "${is_quiet}" \
-            "${is_docker_install}" "${docker_root}" "${is_recreate_softlink}"
+            "${is_docker_install}" "${docker_root}" "${is_recreate_softlink}" "$pkg_version_dir"
         if [ $? -eq 0 ]; then
             if [ "$is_remove_info_files" = "y" ]; then
                 test -f "$upgrade_install_info" && rm -f "$upgrade_install_info"
@@ -894,19 +894,6 @@ check_install_for_all() {
             log "ERROR" "${pkg_install_path} permission is ${mod_num}, this permission does not support install_for_all param."
             exit_install_log 1
         fi
-    fi
-}
- 
-pre_check() {
-    local check_shell_path="${curpath}/../bin/prereq_check.bash"
-    if [ ! -f "${check_shell_path}" ]; then
-        log "WARNING" "${check_shell_path} not exist."
-        return 0
-    fi
-    if [ "x$is_quiet" = "xy" ]; then
-        bash "${check_shell_path}" --quiet
-    else
-        bash "${check_shell_path}" --no-quiet
     fi
 }
  
@@ -1206,9 +1193,8 @@ fi
  
 #######################################################
 is_multi_version_pkg "pkg_is_multi_version" "$pkg_version_path"
-get_version_dir "pkg_version_dir" "$pkg_version_path"
  
-if [ "$full_install" = "y" ] || [ "$run_install" = "y" ] || [ "$devel_install" = "y" ] || [ "$upgrade" = "y" ] || [ "$uninstall" = "y" ]; then
+if [ "$full_install" = "y" ] || [ "$run_install" = "y" ] || [ "$devel_install" = "y" ] || [ "$upgrade" = "y" ] || [ "$uninstall" = "y" ] || [ "$check" = "y" ]; then
     input_install_path=$(relative_path_to_absolute_path "${input_install_path}")
     get_install_path
  
@@ -1231,7 +1217,14 @@ if [ "$full_install" = "y" ] || [ "$run_install" = "y" ] || [ "$devel_install" =
         fi
     fi
     export hetero_arch
- 
+
+    if is_version_dirpath "$input_install_path"; then
+        pkg_version_dir="$(basename "$input_install_path")"
+        input_install_path="$(dirname "$input_install_path")"
+    else
+        pkg_version_dir="cann"
+    fi
+
     install_top_path="$(dirname $input_install_path)"
     install_path_param="${input_install_path}"
     if [ "$hetero_arch" = "y" ]; then
@@ -1269,12 +1262,6 @@ fi
 # 执行预检查
 if [ "$input_pre_check" = "y" ]; then
     log "INFO" "Hcomm do pre check started."
-    pre_check
-    if [ $? -ne 0 ]; then
-        log "WARNING" "Hcomm do pre check failed."
-    else
-        log "INFO" "Hcomm do pre check finished."
-    fi
     if [ "$full_install" = "n" ] && [ "$run_install" = "n" ] && [ "$devel_install" = "n" ] && [ "$upgrade" = "n" ]; then
         exit_install_log 0
     fi
@@ -1283,26 +1270,22 @@ fi
 # 版本兼容性检查
 if [ "$check" = "y" ]; then
     ver_check
-    if [ -z "$pkg_version_dir" ]; then
-        preinstall_check --install-path="$install_path_param" --script-dir="$curpath" --package="hcomm" --logfile="$logfile" --docker-root="$docker_root"
-        if [ $? -ne 0 ]; then
-            exit_install_log 1
-        else
-            log "INFO" "version compatibility check successfully!"
-        fi
+    preinstall_check --install-path="$pkg_install_path/$pkg_version_dir" --script-dir="$curpath" --package="hcomm" --logfile="$logfile" --docker-root="$docker_root"
+    if [ $? -ne 0 ]; then
+        exit_install_log 1
+    else
+        log "INFO" "version compatibility check successfully!"
     fi
     if [ "$full_install" = "n" ] && [ "$run_install" = "n" ] && [ "$devel_install" = "n" ] && [ "$upgrade" = "n" ]; then
         exit_install_log 0
     fi
 elif [ "$full_install" = "y" ] || [ "$run_install" = "y" ] || [ "$devel_install" = "y" ] || [ "$upgrade" = "y" ]; then
     ver_check
-    if [ -z "$pkg_version_dir" ]; then
-        preinstall_process --install-path="$install_path_param" --script-dir="$curpath" --package="hcomm" --logfile="$logfile" --docker-root="$docker_root"
-        if [ $? -ne 0 ]; then
-            exit_install_log 1
-        else
-            log "INFO" "version compatibility check successfully!"
-        fi
+    preinstall_process --install-path="$pkg_install_path/$pkg_version_dir" --script-dir="$curpath" --package="hcomm" --logfile="$logfile" --docker-root="$docker_root"
+    if [ $? -ne 0 ]; then
+        exit_install_log 1
+    else
+        log "INFO" "version compatibility check successfully!"
     fi
 fi
  

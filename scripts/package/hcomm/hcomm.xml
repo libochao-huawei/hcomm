@@ -21,7 +21,6 @@
     </generate_info>
     <file_info value="hcomm_script" copy_type="source" src_path="" dst_path="share/info/hcomm" install_path="share/info/hcomm">
         <file value="script" entity="true"/>
-        <file value="bin" entity="true"/>
         <file value="version.info" dst_path="share/info/hcomm" install_path="share/info/hcomm"/>
     </file_info>
     <block_info dependtree="false" dst_path="hcomm" block_conf_path="ascend">
@@ -33,7 +32,6 @@
         <path value="share" install_mod="555"/>
         <path value="share/info" install_mod="750"/>
         <path value="share/info/hcomm" install_mod="750"/>
-        <path value="share/info/hcomm/bin" install_mod="550"/>
         <path value="share/info/hcomm/script" install_mod="550"/>
     </dir_info>
 </config>
