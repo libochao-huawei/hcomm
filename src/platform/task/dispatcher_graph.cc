@@ -20,6 +20,9 @@
 constexpr u32 UB_BLOCK_SIZE = 32;
 constexpr u64 TBE_REDUCE_MAX_COUNT = INT32_MAX;
 
+__attribute__((weak)) HcclResult GraphAddRecordTaskWithSignalAddr(void *fftsPubInfo, void *ctx, uint32_t streamId,
+    void *signal, bool inchip, u64 signalAddr, uint32_t *ctxIdx);
+
 namespace hccl {
 DispatcherGraph::DispatcherGraph(const s32 deviceLogicId)
     : DispatcherPub(deviceLogicId), fftsCtxsPtr(nullptr), disableFfts_(true), multiQpMode_(false)
@@ -165,7 +168,11 @@ HcclResult DispatcherGraph::SignalRecord(HcclRtNotify signal, Stream &stream, u3
         return DispatcherPub::SignalRecord(signal, stream, userRank, offset, stage, inchip);
     }
     u32 ctxIdx;
-    CHK_RET(GraphAddRecordTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
+    if (GraphAddRecordTaskWithSignalAddr != nullptr) {
+        CHK_RET(GraphAddRecordTaskWithSignalAddr(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, signalAddr, &ctxIdx));
+    } else {
+        CHK_RET(GraphAddRecordTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), signal, inchip, &ctxIdx));
+    }
     if (!inchip && ctxIdx > 0) {
         CHK_RET(SignalTaskParaSave(signal, stream, userRank, INVALID_UINT,
                 offset, stage, TaskType::TASK_NOTIFY_RECORD, beginTime, ctxIdx));
