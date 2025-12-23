@@ -18,16 +18,6 @@ extern "C" {
 #endif  // __cplusplus
 
 /**
- * @brief RankGraph类别
- * @warning  考虑A2等变更为version等
- */
-typedef enum {
-    RANK_GRAPH_TYPE_RESERVED = -1, ///< 保留的rank图类型
-    RANK_GRAPH_TYPE_910A2 = 0,     ///< 910A2的rank图类型
-    RANK_GRAPH_TYPE_910A3 = 1,     ///< 910A3的rank图类型
-} RankGraphType;
-
-/**
  * @brief 通信拓扑枚举
  * @warning 检查910A3的拓扑类型
  */
@@ -39,14 +29,6 @@ typedef enum {
     COMM_TOPO_910_93 = 4,     ///< 910_93互联拓扑
     COMM_TOPO_310P = 5,       ///< 310P
 } CommTopo;
-
-/**
- * @brief 通信的rank图类型
- */
-typedef enum {
-    RANK_GRAPH_RESERVED = -1,   ///< 保留的rank图类型
-    RANK_GRAPH_910_93 = 0,      ///< 910_93 rank图类型
-} GraphType;
 
 /**
  * @brief 通信设备地址类别
@@ -102,16 +84,6 @@ typedef struct {
  * @warning extern HcclResult CommGetMyRank(HcclComm comm, uint32_t *rankId)
  */
 extern HcclResult HcclGetRankId(HcclComm comm, uint32_t *rank);
-
-/**
- * @brief 获取通信域中的rank图
- * @param comm 通信域句柄
- * @param rankGraph 通信域中的rank图
- * @return HcclResult 执行结果状态码
- * @note 外部使用rankGraph，但不能释放rankGraph内存
- * @warning
- */
-extern HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len);
 
 /**
  * @brief 给定通信域，返回该通信域的rank数量

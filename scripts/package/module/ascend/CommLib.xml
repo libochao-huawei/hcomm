@@ -19,7 +19,6 @@
         <file value="hccl_comm.h"/>
         <file value="hccl_types.h"/>
         <file value="hccl_rank_graph.h"/>
-        <file value="hccl_rankgraph.h"/>
         <file value="hccl_res.h"/>
         <file value="hcomm_primitives.h"/>
     </file_info>
