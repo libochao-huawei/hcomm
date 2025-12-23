@@ -173,7 +173,7 @@ HcclResult ThreadMgr::HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *no
     return HCCL_SUCCESS;
 }
 
-HcclResult ThreadMgr::HcclAllocThreadResByStream(CommEngine engine,
+HcclResult ThreadMgr::HcclThreadAcquireWithStream(CommEngine engine,
     rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
 {
     CHK_PTR_NULL(thread);
@@ -188,7 +188,7 @@ HcclResult ThreadMgr::HcclAllocThreadResByStream(CommEngine engine,
     std::lock_guard<std::mutex> lock(mainThreadMutex_);
     mainThread_.emplace(stream, std::move(handle));
 
-    HCCL_INFO("[ThreadMgr] Hcom[%s] HcclAllocThreadResByStream done: engine[%d] stream[%p],"
+    HCCL_INFO("[ThreadMgr] Hcom[%s] HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
         "notifyNum[%u]", commId_.c_str(), engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }

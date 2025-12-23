@@ -76,7 +76,7 @@ HcclResult HcclRemoteReadReduce(StreamHandle streamHandle, HcclMemTransport memT
 
     // 后续使用transport，p2p支持，rdma不支持
     if (reinterpret_cast<Transport*>(memTransport)->GetLinkType() == LinkType::LINK_ROCE) {
-        HCCL_ERROR("[HcommNotifyWaitOnThread]ROCE is not supported.");
+        HCCL_ERROR("[HcclRemoteReadReduce]ROCE is not supported.");
         return HCCL_E_NOT_SUPPORT;
     }
 
