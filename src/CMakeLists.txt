@@ -630,6 +630,7 @@ set(common_cc PRIVATE
     ${HCCL_BASE_DIR}/common/health/rank_consistentcy_checker.cc
     ${HCCL_BASE_DIR}/common/health/calc_crc.cc
     ${HCCL_BASE_DIR}/common/debug/config/config_log.cc
+    ${HCCL_BASE_DIR}/common/error_code/error_code.cc
 )
 
 # 动态地向已经定义的hccd添加源文件
