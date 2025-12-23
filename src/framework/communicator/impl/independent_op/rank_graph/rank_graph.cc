@@ -351,20 +351,17 @@ HcclResult RankGraph::InitRankInfo()
 
 HcclResult RankGraph::InitServerRankInfo()
 {
-    u32 moduleIdx = 0;
+    u32 serverIdx = 0;
     auto& rankInfoList = topoAttr_.rankInfoList;
     for (u32 index = 0; index < rankInfoList.size(); index++) {
-        CHK_RET(GetModuleIdx(rankInfoList[index], moduleIdx));
-        // 填充serverRankMap_, 只记录本superPod下的serverIdx -> rankInfo_t
-        if (rankInfoList[index].superPodId == rankInfoList[index].superPodId || topoAttr_.isDiffDeviceType) {
-            auto itServer = serverToRank_.find(moduleIdx);
-            if (itServer != serverToRank_.end()) {  
-                itServer->second.push_back(rankInfoList[index]);
-            } else {
-                std::vector<RankInfo> rankVecTmp;
-                rankVecTmp.push_back(rankInfoList[index]);
-                serverToRank_.insert(std::make_pair(moduleIdx, rankVecTmp));
-            }
+        serverIdx = rankInfoList[index].serverIdx;
+        auto itServer = serverToRank_.find(serverIdx);
+        if (itServer != serverToRank_.end()) {  
+            itServer->second.push_back(rankInfoList[index]);
+        } else {
+            std::vector<RankInfo> rankVecTmp;
+            rankVecTmp.push_back(rankInfoList[index]);
+            serverToRank_.insert(std::make_pair(serverIdx, rankVecTmp));
         }
     }
     // 调整每个server内的user_rank排序(server内userRank从小到大,一定连续)
@@ -373,11 +370,11 @@ HcclResult RankGraph::InitServerRankInfo()
             std::sort(iterMap->second.begin(), iterMap->second.end(), RankGraphSort);
         }
     }
-    CHK_RET(GetModuleIdx(rankData_, moduleIdx));
-    auto rankVec = serverToRank_.find(moduleIdx);
+    serverIdx = rankData_.serverIdx;
+    auto rankVec = serverToRank_.find(serverIdx);
     if (rankVec != serverToRank_.end()) {
         std::string rankIdListServer;
-        for (auto iter : serverToRank_[moduleIdx]) {
+        for (auto iter : serverToRank_[serverIdx]) {
             rankIdListServer += std::to_string(iter.userRank) + " ";
         }
         HCCL_INFO("[RankGraph][%s] devtype[%d], curRank[%u], serverToRanklist[%s]", __func__,
@@ -420,44 +417,21 @@ HcclResult RankGraph::InitSuperPodRankInfo()
     }
     return HCCL_SUCCESS;
 }
- 
-// 集群中存在910B A+X时，0-7卡: moduleIdx = 2 * serverIdx; 8-15卡: moduleIdx = 2 * serverIdx + 1
-// 集群中不存在910B A+X时，moduleIdx = serverIdx
-HcclResult RankGraph::GetModuleIdx(const RankInfo &rankInfo, u32 &moduleIdx)
-{
-    // 获取moduleIdx，在16P同时使用左右两个module时，moduleIdx标识当前rank所在的module，其他场景下moduleIdx等同于serverIdx
-    u32 serverIdx = rankInfo.serverIdx;
-    if (serverIdx == INVALID_UINT) {
-        HCCL_ERROR("server idx is invalid.");
-        return HCCL_E_INTERNAL;
-    }
-    if (topoAttr_.isDiffDeviceType) {
-        moduleIdx = rankInfo.userRank / topoAttr_.gcdDeviceNumPerAggregation;
-        HCCL_DEBUG("[rankGraph][%s] serverIdx [%u] devicePhyId[%u] userRank[%u] moduleIdx[%u] "
-            "gcdDeviceNumPerAggregation[%u]", __func__, serverIdx, rankInfo.devicePhyId, rankInfo.userRank, moduleIdx,
-            topoAttr_.gcdDeviceNumPerAggregation);
-    } else if (topoAttr_.deviceType == DevType::DEV_TYPE_910B && topoAttr_.isDiffDeviceModule) {
-        moduleIdx = serverIdx * FACTOR_NUM_TWO + rankInfo.devicePhyId / DEVICE_PER_MODULE;
-    } else {
-        moduleIdx = serverIdx;
-    }
-    return HCCL_SUCCESS;
-}
- 
+
 HcclResult RankGraph::InitNetLayer()
 {
     netLayer_.clear();
     netLayer_.push_back(static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0));
  
-    u32 moduleIdx = 0;
-    CHK_RET(GetModuleIdx(rankData_, moduleIdx));
-    auto rankVec = serverToRank_.find(moduleIdx);
+    u32 serverIdx = 0;
+    serverIdx = rankData_.serverIdx;
+    auto rankVec = serverToRank_.find(serverIdx);
     if (rankVec == serverToRank_.end()) {
-        HCCL_ERROR("[RankGraph][%s]find serverToRank failed, moudleIdx[%u]", __func__, moduleIdx);
+        HCCL_ERROR("[RankGraph][%s]find serverToRank failed, serverIdx[%u]", __func__, serverIdx);
         return HCCL_E_INTERNAL;
     }
     std::vector<u32> rankListTmp;
-    for (auto iter : serverToRank_[moduleIdx]) {
+    for (auto iter : serverToRank_[serverIdx]) {
         rankListTmp.push_back(iter.userRank);
     }
     rankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0), rankListTmp});
