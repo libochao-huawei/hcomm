@@ -76,8 +76,8 @@ HcclResult HcomInit(const char *rankTableM, const char *identify, WorkMode commW
 
     /* 防止重复调用初始化 */
     CHK_PRT_RET((hcomInfo.pComm != nullptr),
-        HCCL_ERROR("[Init][Result]errNo[0x%016llx] identify[%s],\
-        multiple initialization is not supported", HCOM_ERROR_CODE(HCCL_E_UNAVAIL), identify), HCCL_E_UNAVAIL);
+        HCCL_ERROR("[Init][Result]errNo[0x%016llx] identify[%s], "\
+        "multiple initialization is not supported", HCOM_ERROR_CODE(HCCL_E_UNAVAIL), identify), HCCL_E_UNAVAIL);
 
     /* --------------初始化------------------------- */
     bool errorFlag = false;
