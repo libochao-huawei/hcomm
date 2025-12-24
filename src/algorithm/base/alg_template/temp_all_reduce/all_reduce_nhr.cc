@@ -94,6 +94,7 @@ HcclResult AllReduceNHR::PrepareRunAsync(const u32 rank, const u32 rankSize, con
 
         u64 residueSize = totalSize;
 
+        HCCL_DEBUG("[AllReduceNHR][PrepareRunAsync]residueSize is %llu, sliceSizeAligned is %llu", residueSize, sliceSizeAligned);
         for (u32 i = 0; i < rankSize; i++) {
             slices_[i].size = (residueSize > sliceSizeAligned) ? sliceSizeAligned : residueSize;
             slices_[i].offset = totalSize - residueSize;

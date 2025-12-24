@@ -146,15 +146,19 @@ HcclResult CollAlltoAllVContinuousPipeline::Orchestrate(OpParam& param, AlgResou
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAlltoAllVContinuousPipeline][Orchestrate]errNo[0x%016llx]excutor run failed",
             HCCL_ERROR_CODE(ret)), ret);
+
+    // Enforce task launch at the end of Orchestrate
+    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+
     HCCL_INFO("tag[%s], CollAlltoAllVContinuousPipeline tempAlg orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
-
     return HCCL_SUCCESS;
 }
 
 HcclResult CollAlltoAllVContinuousPipeline::KernelRun(const OpParam &param, ExecMem &execMem)
 {
-    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAlltoAllVContinuousPipeline][KernelRun] alltoall npu direct start.");
+    HCCL_CONFIG_INFO(HCCL_ALG, "[CollAlltoAllVContinuousPipeline][KernelRun] AllToAllV npu direct start.");
 
     // 获取通信域
     CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));

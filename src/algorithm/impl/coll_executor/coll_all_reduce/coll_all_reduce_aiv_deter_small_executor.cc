@@ -66,7 +66,7 @@ HcclResult CollAllReduceAivDeterSmallExecutor::CalBlockDim(u32& blockDim, u32 ra
 
     u32 bestBlockDim = blockDim;
     CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_ERROR("[CollAllReduceAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        HCCL_ERROR("[CollAllReduceAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / rankSize * rankSize;
@@ -148,13 +148,15 @@ HcclResult CollAllReduceAivDeterSmallExecutor::KernelRun(const OpParam &param, E
     };
     AivAlgArgs algArgs {};
     algArgs.deterministic = 1;
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
 
     HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][KernelRun]AllReduce bufferin[%d] bufferout[%d]",execMem.inputMem.size(), execMem.outputMem.size());
 
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

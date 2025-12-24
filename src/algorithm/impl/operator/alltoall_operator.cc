@@ -234,9 +234,10 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
         return HCCL_SUCCESS; // alltoall aiv不需要后面操作，直接返回
     }
 
+    std::vector<HcclAlgoType> algoTypeArr = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL);
     bool useOneLevelAlgorithm =
-        GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL)[0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
-        GetExternalInputHcclAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL)[1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE;
+        algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_NA &&
+        algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE;
         // 用户配置打平 alltoall
 
     CHK_PRT_RET(deviceType_ == DevType::DEV_TYPE_310P3 && userRankSize_ > MAX_310P_RANK_SIZE,
@@ -464,6 +465,7 @@ HcclResult AlltoAllOperator::CheckNeedRecreateComm(const std::string& algName, c
 
 bool AlltoAllOperator::IsA3PipelineCondition(const OpParam& param)
 {
+    (void) param;
     return false;
 }
 

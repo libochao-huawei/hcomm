@@ -79,7 +79,6 @@ def gen_ini():
                 file_name = os.path.join(elem.attrib['out'], f'{elem.attrib["ini_name"]}.ini')
             else:
                 file_name = os.path.join(elem.attrib['out'], ('{}.ini'.format(elem.attrib['tag'])))
-            # print(file_name)
             with open(file_name, 'w+') as f:
                 line_elem = [elem.attrib['tag'], hashVal]
                 line = '{};\n'.format(',   '.join(line_elem))

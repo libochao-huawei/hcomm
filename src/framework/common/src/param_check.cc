@@ -55,15 +55,23 @@ HcclResult HcomGetRanktableRealPath(const char *rankTable, std::string &realFile
 
     u32 rankTablePathLen = strnlen(rankTable, RANK_TABLE_MAX_LEN + 1);
     if (rankTablePathLen == (RANK_TABLE_MAX_LEN + 1) || rankTablePathLen == 0) {
-        HCCL_ERROR("[Get][RanktableRealPath]errNo[0x%016llx] rankTable file name is invalid, len is %u",
-            HCOM_ERROR_CODE(HCCL_E_PARA), rankTablePathLen);
+        RPT_INPUT_ERR(true,
+        "EI0004",
+        std::vector<std::string>({"error_reason", "ranktable_path"}),
+        std::vector<std::string>({"rankTable file name is invalid", std::string(rankTable)}));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable file name is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTablePathLen);
         return HCCL_E_PARA;
     }
     // 校验文件是否存在
     char realFile[PATH_MAX] = {0};
     if (realpath(rankTable, realFile) == nullptr) {
-        HCCL_ERROR("[Get][RanktableRealPath]errNo[0x%016llx] path %s is not a valid real path",
-            HCOM_ERROR_CODE(HCCL_E_PARA), rankTable);
+        RPT_INPUT_ERR(true,
+            "EI0004",
+            std::vector<std::string>({"error_reason", "ranktable_path"}),
+            std::vector<std::string>({"ranktable path is not a valid real path.", std::string(rankTable)}));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] path %s is not a valid real path", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTable);
         return HCCL_E_PARA;
     }
     realFilePath = std::string(realFile);
@@ -76,8 +84,12 @@ HcclResult HcomCheckRankTable(const char *rankTableM, u32 &rankTableSize)
 
     size_t rankTableLen = strnlen(rankTableM, STRING_MAX_LENGTH + 1);
     if (rankTableLen == (STRING_MAX_LENGTH + 1) || rankTableLen == 0) {
-        HCCL_ERROR("[HcomCheckRankTable]errNo[0x%016llx] rankTable string is invalid, len is %u",
-            HCOM_ERROR_CODE(HCCL_E_PARA), rankTableLen);
+        RPT_INPUT_ERR(true,
+            "EI0004",
+            std::vector<std::string>({"error_reason", "ranktable_path"}),
+            std::vector<std::string>({"rankTable string is invalid.", std::string(rankTableM)}));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTable string is invalid, len is %u", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), rankTableLen);
         return HCCL_E_PARA;
     }
 
@@ -293,7 +305,10 @@ HcclResult HcomCheckReductionOp(const HcclReduceOp op)
     if (HCCL_SUPPORT_REDUCE_OP.find(op) == HCCL_SUPPORT_REDUCE_OP.end()) {
         RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
             std::vector<std::string>({ "HcomCheckReductionOp", "op", GetReduceOpEnumStr(op), "op not supported" }));
-        HCCL_ERROR("[Check][ReductionOp]errNo[0x%016llx] Op:[%s] not supported", HCOM_ERROR_CODE(HCCL_E_PARA),
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] Op:[%s] not supported",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            HCOM_ERROR_CODE(HCCL_E_NOT_SUPPORT),
             GetReduceOpEnumStr(op).c_str());
         return HCCL_E_NOT_SUPPORT;
     }
@@ -313,8 +328,9 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
                 "please check dataType when optype is prod"
                 }));
             HCCL_ERROR(
-                "[Check][DataType]errNo[0x%016llx] device type[%d] does not support the data type[%s] and data "\
-                "type[%s] for Op[%s]", HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), deviceType,
+                "[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] and data "\
+                "type[%s] for Op[%s]", LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+                HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), deviceType,
                 GetDataTypeEnumStr(HcclDataType::HCCL_DATA_TYPE_BFP16).c_str(),
                 GetDataTypeEnumStr(HcclDataType::HCCL_DATA_TYPE_INT16).c_str(),
                 GetReduceOpEnumStr(op).c_str());
@@ -330,7 +346,8 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
                 "please check the data type when the device type is 910."
                 }));
             HCCL_ERROR(
-                "[Check][DataType]errNo[0x%016llx] device type[%d] does not support the data type[%s]",\
+                "[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s]",\
+                LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
                 HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), deviceType,
                 GetDataTypeEnumStr(dataType).c_str());
             return HCCL_E_NOT_SUPPORT;
@@ -345,7 +362,8 @@ HcclResult HcomCheckReduceDataType(const HcclDataType dataType, const HcclReduce
                 "please check operation type when the data type is int16."
             }));
             HCCL_ERROR(
-                "[Check][DataType]errNo[0x%016llx] device type[%d] does not support the data type[%s] for Op[%s]",\
+                "[%s][%s]errNo[0x%016llx] device type[%d] does not support the data type[%s] for Op[%s]",\
+                LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
                 HCCL_ERROR_CODE(HCCL_E_NOT_SUPPORT), deviceType,
                 GetDataTypeEnumStr(HcclDataType::HCCL_DATA_TYPE_INT16).c_str(),
                 GetReduceOpEnumStr(op).c_str());
@@ -371,8 +389,8 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({tag, "group", group, "please check group"}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Check][OpParam]errNo[0x%016llx] group name is invalid",
-        HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     CHK_RET(HcomCheckOpParam(tag, count, dataType, stream));
 
@@ -395,20 +413,20 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
     HcclResult ret = HcomCheckTag(tag);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcomCheckTag", "tag", tag, "please check tag"}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Check][OpParam]errNo[0x%016llx] tag is invalid",
-        HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] tag is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     ret = HcomCheckCount(count);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({tag, "count", std::to_string(count), "please check count"}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Check][OpParam]errNo[0x%016llx] count is out of range",
-        HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] count is out of range",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     ret = HcomCheckDataType(dataType);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({tag, "dataType", GetDataTypeEnumStr(dataType), "please check dataType"}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Check][OpParam]errNo[0x%016llx] dataType is invalid",
-        HCOM_ERROR_CODE(ret)), ret);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] dataType is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     return HCCL_SUCCESS;
 }

@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -28,6 +28,10 @@
 #include "securec.h"
 #include "rs.h"
 #include "rs_inner.h"
+
+#define RS_CONN_USLEEP_TIME 200000
+#define RS_PROMOTE_CONN_USLEEP_TIME 5000
+#define RS_EPOLL_EVENT      64
 
 int RsEpollConnectHandleInit(struct rs_cb *rscb);
 int RsEpollCtl(int epollfd, int op, int fd, unsigned int state);

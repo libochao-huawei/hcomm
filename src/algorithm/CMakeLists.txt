@@ -25,9 +25,6 @@ endif()
 target_include_directories(hccl_alg PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/base/inc
     ${HCCL_BASE_DIR}/pub_inc
-    ${HCCL_BASE_DIR}/pub_inc/hccl
-    ${HCCL_BASE_DIR}/inc
-    ${HCCL_BASE_DIR}/inc/adapter
 
     ${CMAKE_CURRENT_SOURCE_DIR}/base/alg_aiv_template
     ${CMAKE_CURRENT_SOURCE_DIR}/base/alg_template
@@ -87,9 +84,8 @@ if(BUILD_OPEN_PROJECT)
 
     target_include_directories(hccl_alg PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../inc/hccl/hccl
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../include
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../include/hccl
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/hccl
@@ -163,6 +159,7 @@ target_link_options(hccl_alg PRIVATE
 
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(hccl_alg PRIVATE
+        $<BUILD_INTERFACE:intf_pub>
         -Wl,--no-as-needed
         c_sec
         unified_dlog

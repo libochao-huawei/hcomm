@@ -90,8 +90,8 @@ HcclResult CollAllReduceMidCountAivRdmaExecutor::Orchestrate(OpParam& param, Alg
     ExecMem execMem;
     execMem.count = param.DataDes.count;
     execMem.inputPtr = param.inputPtr;
-    execMem.outputPtr = param.outputPtr;
     execMem.inputMem = algRes.aivInputMem;
+    execMem.outputPtr = param.outputPtr;
     if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         execMem.outputMem = algRes.cclOutputMem;
     } else {
@@ -161,10 +161,12 @@ HcclResult CollAllReduceMidCountAivRdmaExecutor::KernelRun(const OpParam &param,
         param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs { INTRA_RS_STEP, false };
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs);
+        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs, algArgs);
     }
  
     CHK_RET(ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo));

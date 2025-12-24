@@ -51,10 +51,11 @@ HcclResult GlobalMemRegMgr::CheckOverlapAndInsert(GlobalMemRecord& memRecord, vo
     auto it = memRecordSet_.lower_bound(memRecord);
     if (it != memRecordSet_.cend()) {
         if (memRecord == *it) {
-            // 已经存在相同的记录，报错返回
-            HCCL_ERROR("[GlobalMemRegMgr][CheckOverlapAndInsert] The memory[%s] has been registered already.",
+            // 已经存在相同的记录，取出地址作为handle
+            *memRecordHandle = const_cast<GlobalMemRecord*>(&(*it));
+            HCCL_INFO("[GlobalMemRegMgr][CheckOverlapAndInsert] The memory[%s] has been registered already.",
                 memInfo.c_str());
-            return HCCL_E_PARA;
+            return HCCL_SUCCESS;
         }
 
         // 检查后一个记录

@@ -108,14 +108,18 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    string commIdentifier = hcclComm->GetIdentifier();
+    HCCL_INFO("[%s]commIdentifier[%s]", __func__, commIdentifier.c_str());
+    string cclBufferName = hcclComm->GetCCLbufferName();
+    bool isShareComm = cclBufferName.empty() ? false : true;
+    if (isShareComm) {
+        HCCL_RUN_WARNING("MC2 using share CCLbuffer[%s], potential conflict with coll communicator", cclBufferName.c_str());
+    }
 
     if (*pVersion < MC2_TILING_VERSION || devType != DevType::DEV_TYPE_910_93) {
         return HcclCreateComResourceByComm(comm, streamMode, true, commContext, true, Mc2Tiling);
     }
-
-    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-    string commIdentifier = hcclComm->GetIdentifier();
-    HCCL_INFO("[%s]commIdentifier[%s]", __func__, commIdentifier.c_str());
 
     // 根据streamMode创建aicpuStream
     rtStream_t aicpuStream{};

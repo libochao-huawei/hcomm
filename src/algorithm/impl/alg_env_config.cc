@@ -126,7 +126,6 @@ HcclResult ParserHcclAlgoLevel(const std::string &algoLevel, u32 &level, HcclAlg
         {"AHC", HcclAlgoType::HCCL_ALGO_TYPE_AHC},
         {"AHC_BROKE", HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE},
         {"NB", HcclAlgoType::HCCL_ALGO_TYPE_NB},
-        {"CP", HcclAlgoType::HCCL_ALGO_TYPE_CONTINUOUS_PIPELINE},
         {"NA", HcclAlgoType::HCCL_ALGO_TYPE_NA},
     };
 
@@ -253,7 +252,7 @@ HcclResult SplitHcclAlgoLevel(const std::string &algoConfig, std::vector<std::st
     return HCCL_SUCCESS;
 }
 
-const s32 GetInternalExecTimeOut()
+s32 GetInternalExecTimeOut()
 {
     double timeout = GetExternalInputHcclExecTimeOut();
     // 向上取整获取s32秒级超时时间

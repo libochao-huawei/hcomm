@@ -27,6 +27,7 @@ HcclResult AlignedReduceScatterDoubleRingWithSerialLocalCopy::RunAsync(const u32
 {
     // 基本的检查
     CHK_RET(CheckParameters(rank, rankSize, links));
+    HCCL_DEBUG("[AlignedReduceScatterDoubleRingWithSerialLocalCopy]RunAsync start");
 
     // 判断rank_size == 1的情况，并拷贝
     if (rankSize == 1) {

@@ -139,6 +139,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::InterServerHDOneshot(const Op
     u32 &outputOffset, u64 sliceCount, u32 dbOffset, u32 interRankSize, u32 interRankId, bool isOpbase,
     std::vector<LINK> &interLinks)
 {
+    (void) isOpbase;
     u64 reduceAttr = GetReduceAttr(execMem.inputMem, execMem.outputMem, param.DataDes.dataType, param.reduceType);
     HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][InterServerHDOneshot]reduceAttr is [%llu].", reduceAttr);
     std::unique_ptr<Sender> senderInfo;
@@ -244,10 +245,12 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::KernelRun(const OpParam &para
         param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs { INTRA_RS_STEP, true };
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs);
+        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs, algArgs);
     }
  
     CHK_RET(ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo));

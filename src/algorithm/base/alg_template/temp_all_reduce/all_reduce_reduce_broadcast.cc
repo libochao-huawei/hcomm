@@ -96,6 +96,7 @@ HcclResult AllReduceReduceBcast::RunAsync(const u32 rank, const u32 rankSize, co
 
     // 如果ranksize为1, 从input->output
     if (rankSize == 1) {
+        HCCL_DEBUG("[AllReduceReduceBcast][RunAsync]rankSize is %u", rankSize);
         if (opInfo_->inputAddr != opInfo_->outputAddr) {
             DeviceMem userMemIn = DeviceMem::create(opInfo_->inputAddr, count_ * DataUnitSize(dataType_));
             DeviceMem userMemOut = DeviceMem::create(opInfo_->outputAddr, count_ * DataUnitSize(dataType_));

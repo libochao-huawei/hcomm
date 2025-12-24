@@ -1826,11 +1826,11 @@ DLLEXPORT DV_OFF_ONLINE DVresult drvMemSmmuQuery(DVdevice device, UINT32 *SSID);
 
 /**
  * @ingroup driver
- * @brief Map the L2buff to the process address space, establish page table, and obtain the starting virtual address
+ * @brief Map the L2buff to the process address space, establish page table, and obtain the starting virtual address.
  * of the current process L2buff and the corresponding PTE
  * @attention 1. It can only be called once during initialization, and a page will be created internally, and multiple
  * calls are prohibited; it is released when the process exits.
- * @attention: Ascend910_95 and Ascend910C are not supported
+ * @attention: Ascend910_95 and 910_93 are not supported
  * @param [in] device:  unsigned shaping, device id, this value is not used in offline scenarios
  * @param [out] l2buff:  double pointer, returns a pointer to the starting virtual address of the L2buff
  * @param [out] pte: reserved param
@@ -1844,7 +1844,7 @@ DLLEXPORT DV_OFF_ONLINE DVresult drvMemAllocL2buffAddr(DVdevice device, void **l
 /**
  * @ingroup driver
  * @brief Release L2buff address space, should be used in conjunction with drvMemAllocL2buffAddr
- * @attention: Ascend910_95 and Ascend910C are not supported
+ * @attention: Ascend910_95 and 910_93 are not supported
  * @param [in] device:  unsigned shaping, device id, this value is not used in offline scenarios
  * @param [in] l2buff:  pointer to the starting virtual address space of L2buff
  * @return DRV_ERROR_INVALID_HANDLE : Parameter error, pointer is empty
@@ -1854,7 +1854,7 @@ DLLEXPORT DV_OFF_ONLINE DVresult drvMemReleaseL2buffAddr(DVdevice device, void *
 
 /**
  * @ingroup driver
- * @brief Set the initial memory value according to 8bits (device physical address, unified virtual address
+ * @brief Set the initial memory value according to 8bits (device physical address, unified virtual address.
  * are supported)
  * @attention
  *  1. Make sure that the destination buffer can store at least num characters.
@@ -1896,9 +1896,9 @@ DLLEXPORT DV_OFF_ONLINE DVresult drvMemcpy(DVdeviceptr dst, size_t dest_max, DVd
  * @attention
  * 1. The destination buffer must have enough space to store the contents of the source buffer to be copied.
  * 2. Only support d2h copy.
- * @param [in] dst: destination address
+ * @param [in] dst: destination address.
  * @param [in] dst_size: destination memory region size
- * @param [in] src: source address
+ * @param [in] src: source address.
  * @param [in] count: size of the buffer to be copy
  * @param [in] info: copy information
  * @return DRV_ERROR_NONE : success
@@ -1974,9 +1974,9 @@ DLLEXPORT DV_ONLINE DVresult halMemcpyBatch(uint64_t dst[], uint64_t src[], size
  * memcpy_s if the sdma version of memcpy failed. This copy interface can not be used
  * in p2p scenario.
  * @attention: Ascend910_95 is not supported
- * @param [in] dst: destination address
+ * @param [in] dst: destination address.
  * @param [in] dst_size: destination memory region size
- * @param [in] src: source address
+ * @param [in] src: source address.
  * @param [in] len: size of the buffer to be copy
  * @return zero on success otherwise -errno
  */
@@ -3007,35 +3007,35 @@ DLLEXPORT void *drvHdcMallocEx(enum drvHdcMemType mem_type, void *addr, unsigned
 * @brief Release memory
 * @attention null
 * @param [in]  mem_type  : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcFreeEx(enum drvHdcMemType mem_type, void *buf);
 /**
 * @ingroup driver
-* @brief Map DMA address
+* @brief Map DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @param [in]  devid : Device id
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcDmaMap(enum drvHdcMemType mem_type, void *buf, int devid);
 /**
 * @ingroup driver
-* @brief UnMap DMA address
+* @brief UnMap DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
 DLLEXPORT drvError_t drvHdcDmaUnMap(enum drvHdcMemType mem_type, void *buf);
 /**
 * @ingroup driver
-* @brief ReMap DMA address
+* @brief ReMap DMA address.
 * @attention null
 * @param [in]  mem_type   : Memory type
-* @param [in]  buf : Applied memory address
+* @param [in]  buf : Applied memory address.
 * @param [in]  devid : Device id
 * @return   DRV_ERROR_NONE, DRV_ERROR_INVALID_VALUE
 */
@@ -3153,7 +3153,7 @@ DLLEXPORT hdcError_t halHdcRecvEx(HDC_SESSION session, struct drvHdcMsg *pMsg, i
 /**
 * @ingroup driver
 * @brief Session copy-free fast sending interface, applications need to apply for memory through hdc in advance
-* @attention Need to apply for memory through hdc in advance. And after the send function returns, the src address
+* @attention Need to apply for memory through hdc in advance. And after the send function returns, the src address.
 * cannot be reused directly. It must wait for the peer to receive it.
 * @param [in]  session    : Specify in which session
 * @param [in]  msg : Send and receive information

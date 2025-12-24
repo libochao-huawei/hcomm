@@ -37,7 +37,7 @@ typedef void (*LoadTaskCallBack)(void *userPtr, void *param, u32 length);
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-    HcclResult HcclDispatcherInit(DispatcherType type, const s32 deviceLogicId, HcclDispatcher *dispatcher);
+    HcclResult HcclDispatcherInit(DispatcherType type, const s32 devicePhyId, HcclDispatcher *dispatcher);
 
     HcclResult HcclDispatcherDestroy(HcclDispatcher dispatcher);
 
@@ -90,6 +90,8 @@ extern "C" {
     HcclResult HcclSetSqFullWaitTimeOut(HcclDispatcher dispatcherPtr, const u64 timeOut);
     HcclResult HcclSetOpRingBufferIdx(HcclDispatcher dispatcherPtr, const u32 opRingBufferIdx);
     HcclResult ForceProfOn(HcclDispatcher &dispatcherPtr, bool isForce);
+    HcclResult HcclSetExecTimeOut(HcclDispatcher dispatcherPtr, s32 execTimeOut = NOTIFY_DEFAULT_WAIT_TIME);
+    HcclResult SetMultiQpMode(HcclDispatcher dispatcherPtr, bool multiQpMode);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

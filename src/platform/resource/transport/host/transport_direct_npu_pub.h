@@ -80,6 +80,11 @@ public:
         std::vector<std::pair<TransportBase*, CqeInfo>> &infos, u32 &num);
     HcclIpAddress& GetRemoteIp();
     HcclResult GetTransportId(u32 &id) override;
+    HcclResult GetRemoteMem(UserMemType memType, void **remotePtr) override;
+    HcclResult GetRemoteMemSize(UserMemType memType, u64 &size) override;
+    HcclResult GetLocalNotifyValueAddrKey(std::vector<AddrKey> &notifyValue) override;
+    HcclResult GetLocalRdmaNotify(std::vector<HcclSignalInfo> &rdmaNotify) override;
+    HcclResult GetRemoteRdmaNotifyAddrKey(std::vector<AddrKey> &rdmaNotifyAddr) override;
 
 protected:
     HcclResult GetRemoteAddr(MemType memType, u8*& exchangeDataPtr, u64& exchangeDataBlankSize);

@@ -50,8 +50,7 @@ HcclResult HcclOneSidedConn::Connect(const std::string &commIdentifier, s32 time
 {
     const auto startTime = TIME_NOW();
     if (aicpuUnfoldMode_) {
-        transportDataDevice_ = DeviceMem::alloc(sizeof(TransportDeviceNormalData));
-        CHK_PTR_NULL(transportDataDevice_.ptr());
+        CHK_RET(DeviceMem::alloc(transportDataDevice_, sizeof(TransportDeviceNormalData)));
     }
     // 创建socket用于交换数据
     std::string newTag;
@@ -167,7 +166,7 @@ HcclResult HcclOneSidedConn::GetMemType(const char *description, RmaMemType &mem
         sizeof(void*)        // devAddr
     };
     // 计算偏移量
-    size_t offset = std::accumulate(skip_sizes.begin(), skip_sizes.end(), 0);
+    size_t offset = std::accumulate(skip_sizes.begin(), skip_sizes.end(), 0u);
     // 定位到 memType 的位置
     iss.seekg(offset);
     iss.read(reinterpret_cast<char_t *>(&memType), sizeof(memType));

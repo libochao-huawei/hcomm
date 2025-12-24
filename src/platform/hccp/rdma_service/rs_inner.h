@@ -36,6 +36,7 @@
 #include "tls.h"
 #include "hccp_common.h"
 #include "hccp_ping.h"
+#include "rs_rdma_inner.h"
 #include "rs_common_inner.h"
 #include "rs_ping_inner.h"
 #include "rs.h"
@@ -45,55 +46,19 @@
 #define CHIPER_LIST "ECDHE-RSA-AES256-GCM-SHA384:\
     !RC2:!RC4:!MD2:!MD4:!MD5:!DES:!3DES:!SHA1:!BLOWFISH:!CBC:!ECB:!ADH:!LOW:!PSK:!SRP:!DSS:!eNULL:!aNULL:!EXP:@STRENGTH"
 
-#define RS_WC_NUM 16384
-#define RS_S6_ADDR32 2
-#define RS_QP_ATTR_MIN_RNR_TIMER 12
-#define RS_QP_ATTR_TIMEOUT 16
-#define RS_QP_ATTR_RETRY_CNT 7
-#define RS_QP_ATTR_RNR_RETRY 7
-#define RS_QP_ATTR_MAX_SEND_SGE 8
-#define RS_QP_ATTR_GID_LEN 16
-#define RS_QP_TX_DEPTH_OFFLINE 128
-#define RS_QP_RX_DEPTH_OFFLINE 128
-#define RS_QP_TX_DEPTH_ONLINE 4096
-#define RS_QP_RX_DEPTH_ONLINE 4096
-#define RS_MR_NUM_MAX 256
 #define RS_USLEEP_TIME 20000
-#define RS_CONN_USLEEP_TIME 200000
-#define RS_PROMOTE_CONN_USLEEP_TIME 5000
 #define RS_RECV_MAX_TIME (1000.0 * 5) // ms
 #define RS_RECV_TAG_MAX_TIME (1000.0 * 90) // ms
-#define RS_TLS_CONN_TIME 1
-#define RS_DEVICE_NUM 0x3
-#define RS_HOSTID2DEVID(dev_id) ((dev_id) & RS_DEVICE_NUM)
 #define SOCK_CONN_DEV_ID_SIZE 64
-#define RS_VNIC_MAX 128
-#define RS_VNIC_IP_LEN 14
-#define RS_IB_NAME_LEN 10
-
-#define RS_VNIC_FIRST 192
-#define RS_VNIC_SECOND 168
-#ifndef CA_CONFIG_LLT
-#define RS_VNIC_THIRD 2
-#else
-#define RS_VNIC_THIRD 1
-#endif
-#define RS_VNIC_FOUTH 199
-#define RS_VNIC_FLAG 1
 
 #define RS_TCP_DSCP_0      0
 #define RS_ROCE_DSCP_33    33
 #define RS_DSCP_MASK       0x3f
 #define RS_DSCP_OFF        2
 
-#define RS_ROCE_4_SL    4
-
 #define RS_MAX_FD_NUM 65536
-
-#define IB_NAME "hns_0"
 #define RS_CONN_EXIT_FLAG 2
 #define RS_TRY_TIME 200
-#define RS_WLIST_VALID_FLAG_SIZE   6
 #define RS_SSL_CERT_LEN 2048
 #define RS_SSL_MIN_CERT_NUM 2
 #define RS_SSL_MAX_CERT_NUM 15
@@ -103,10 +68,7 @@
 #define RS_SSL_PRI_LEN 5120
 #define RS_SSL_REVOKE_LEN 20480
 #define RS_SSL_FALSH_HEAD_LEN 8
-#define RS_SSL_ENC_MODE 1
 #define RS_SSL_VERSION 2
-#define HCCP_CERTS_STATR "-----BEGIN CERTIFICATE-----"
-#define HCCP_CERTS_END "-----END CERTIFICATE-----"
 #define RS_KID_MAX_LENGTH 512
 #define RS_KID_MIN_LENGTH 8
 #define RS_RSA_KY_BITS_MIN_LEN 2048
@@ -114,28 +76,6 @@
 #define RS_DH_KY_BITS_MIN_LEN 2048
 #define RS_EC_KY_BITS_MIN_LEN 256
 #define RS_SSL_ERR_MSG_LEN 256
-#define RS_SOCKET_MAXLEN 2048
-#define RS_INTERFACE_LEN    5
-#define RS_INTERFACE_BOND_LEN    6
-#define RS_INTERFACE_ETH_PREFIX_LEN 3
-#define RS_INTERFACE_BOND_PREFIX_LEN 4
-
-/* pcie card boardid rule: GPIO[75:73]=0x000 */
-#define RS_BOARDID_PCIE_CARD_MASK        0xE00
-#define RS_BOARDID_PCIE_CARD_MASK_VALUE  0x0
-#define RS_BOARDID_AI_SERVER_MODULE  0x0
-#define RS_BOARDID_ARM_SERVER_AG     0x20
-#define RS_BOARDID_ARM_POD     0x30
-#define RS_BOARDID_X86_16P     0x50
-#define RS_BOARDID_ARM_SERVER_2DIE    0xB0
-
-#define RS_MAX_RD_ATOMIC_NUM                128
-#define RS_QP_TX_DEPTH                      8191
-#define RS_QP_32K_DEPTH                     32767
-#define RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE    16      // host RDMA adapt
-#define RS_QP_TX_DEPTH_PEER_ONLINE          4096    // host RDMA adapt
-
-#define RS_CLOSE_TIMEOUT    5
 
 enum CaPtye {
     RS_EQPT_CA = 0,
@@ -195,7 +135,6 @@ struct RsSecPara {
     } \
 } while (0)
 
-
 #define RS_CHECK_POINTER_NULL_WITH_RET(ptr) do { \
         if ((ptr) == NULL) { \
             hccp_err("pointer is NULL!"); \
@@ -238,18 +177,7 @@ struct RsSecPara {
     } \
 } while (0)
 
-#define RS_MAX_SOCKET_NUM      16
-
 #define RS_MAX_DEV_NUM         64
-
-#define RS_MAX_WLIST_NUM       16
-
-#define RS_SOCKET_PARA_CHECK(num, conn) do { \
-    if (((num) <= 0) || ((num) > RS_MAX_SOCKET_NUM) || ((conn) == NULL)) { \
-        hccp_err("rs socket param error ! number:%d", num); \
-        return (-EINVAL); \
-    } \
-} while (0)
 
 #define RS_QP_PARA_CHECK(phy_id) do { \
     if ((phy_id) >= RS_MAX_DEV_NUM) { \
@@ -258,34 +186,7 @@ struct RsSecPara {
     } \
 } while (0)
 
-struct RsVnicInfo {
-    uint32_t vnicFlag;
-    uint32_t role;
-};
-
 #define RS_FD_INVALID       (-1)
-#define RS_EPOLL_EVENT      64
-#define RS_SGLIST_MAX       16
-#define RS_SGLIST_LEN_MAX   2147483648
-#define RS_QP_NUM_MAX       8192
-#define RS_MIN_TEMPTH_DEPTH 8
-#define RS_MAX_TEMPTH_DEPTH 4096
-
-enum RsCmdOpcode {
-    RS_CMD_QP_INFO = 0x12345678,
-    RS_CMD_MR_INFO = 0x12345687,
-    RS_CMD_LEN_INFO = 0x12345867,
-};
-
-struct RsMrInfo {
-    uint32_t cmd;    /* MUST be the first element */
-
-    uint32_t rkey;
-    uint64_t addr;
-    uint64_t len;
-};
-
-#define RS_MR_STATE_SYNCED  1
 
 /*
  * mr_cb also used to sync to remote
@@ -313,11 +214,6 @@ struct RsQpInfo {
     struct RsMrInfo notifyMr;
 };
 
-struct RsQpLenInfo {
-    uint32_t cmd;
-    uint32_t len;
-};
-
 enum RsConnState {
     RS_CONN_STATE_RESET,
     RS_CONN_STATE_INIT,
@@ -336,10 +232,6 @@ enum RsConnState {
 
     RS_CONN_STATE_MAX,
 };
-
-#define WELL_KNOWN_PORT_MAX 1024
-
-#define FD_USED_FOR_QP_EXCHANGE 1
 
 struct RsConnInfo {
     struct RsIpAddrInfo serverIp;
@@ -367,9 +259,6 @@ struct RsConnInfo {
 
     struct RsListHead list;
 };
-
-#define RS_BUF_SIZE 2048
-#define RS_SOCK_LISTEN_PARALLEL_NUM 16384
 
 enum ListenFdState {
     LISTEN_FD_STATE_ADDED = 0,
@@ -628,12 +517,17 @@ struct TlvBufInfo {
 };
 
 struct RsNslbCb {
-    struct rs_cb *rscb;
+    bool initFlag;
+    void *netcoCb;
+    pthread_mutex_t mutex;
+};
+
+struct RsTlvCb {
     unsigned int phyId;
     pthread_mutex_t mutex;
     struct TlvBufInfo bufInfo;
-    void *netcoCb;
-    bool netcoInitFlag;
+    bool initFlag;
+    struct RsNslbCb nslbCb;
 };
 
 /*
@@ -664,7 +558,7 @@ struct rs_cb {
 
     struct RsPingCtxCb pingCb;
 
-    struct RsNslbCb nslbCb;
+    struct RsTlvCb tlvCb;
 
     char buf[RS_BUF_SIZE];
     struct ProcessRsSign pRsSign;
@@ -683,13 +577,6 @@ struct rs_cb {
     bool grpSetupFlag;
 };
 
-enum RsHardwareType {
-    RS_HARDWARE_SERVER,
-    RS_HARDWARE_PCIE,
-    RS_HARDWARE_2DIE,
-    RS_HARDWARE_UNKNOWN,
-};
-
 union RsSocketaddr {
     struct sockaddr_in sAddr;
     struct sockaddr_in6 sAddr6;
@@ -700,15 +587,8 @@ struct RsSocketaddrInfo {
     union RsSocketaddr addr;
 };
 
-int RsQpInfoSync(struct RsQpCb *qpCb);
-int RsSetDevice(int devId);
-int RsSocketConnectAsync(struct RsConnInfo *conn, struct rs_cb *rscb);
-int RsGetSocketConnectState(struct RsConnInfo *conn);
-int RsAllocConnNode(struct RsConnInfo **conn, unsigned short serverPort);
-
 extern __thread struct rs_cb *gRsCb;
 
-int RsSocketNodeid2vnic(uint32_t nodeId, uint32_t *ipAddr);
 int RsGetHccpMode(unsigned int chipId);
 int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb);
 int RsFd2conn(int fd, struct RsConnInfo **conn);
@@ -716,14 +596,8 @@ int RsDev2rscb(uint32_t chipId, struct rs_cb **rsCb, bool initFlag);
 int RsQpn2qpcb(unsigned int phyId, unsigned int rdevIndex, uint32_t qpn, struct RsQpCb **qpCb);
 int RsRdev2rdevCb(unsigned int chipId, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
 int RsGetRdevCb(struct rs_cb *rsCb, unsigned int rdevIndex, struct RsRdevCb **rdevCb);
-void RsAccpetListNodeFree(struct rs_cb *rscb);
 int RsWlistCheckConnAdd(struct rs_cb *rsCb, struct RsConnInfo* connTmp);
-void ShowConnNode(struct RsListHead *listHead);
 enum ibv_mtu RsDrvSetMtu(struct RsQpCb *qpCb);
-enum RsHardwareType RsGetDeviceType(unsigned int phyId);
-
-int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
-bool RsCompareIpAddr(struct RsIpAddrInfo *a, struct RsIpAddrInfo *b);
 #ifdef CUSTOM_INTERFACE
 int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyid);
 #endif

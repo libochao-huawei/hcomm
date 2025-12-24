@@ -67,12 +67,19 @@ private:
     void GenRdmaRecvInfo(u32 srcRank, std::vector<RecvDataBlock>& recvInfo);
     HcclResult CopyDataForSend(u32 dstRank, std::vector<SendDataBlock>& sendInfo, u32 curStep, Stream strem);
     HcclResult SendRecvRdmaData(u32 dstRank, u32 srcRank, std::vector<SendDataBlock>& sendInfo,
-        std::vector<RecvDataBlock>& recvInfo, u32 curStep, Stream strem);
+        std::vector<RecvDataBlock>& recvInfo, u32 round, u32 index, u32 curStep, Stream strem);
     HcclResult CopyRecvDataToOutput(u32 srcRank, std::vector<RecvDataBlock>& recvInfo,
         u32 curStep, Stream strem);
-    HcclResult ProcessSingleGroupRdmaData(std::vector<u32>& dstRanks, std::vector<u32>& srcRanks);
+    HcclResult ProcessSingleGroupRdmaData(std::vector<u32>& dstRanks, std::vector<u32>& srcRanks, u32 round);
     HcclResult ProcessRdmaData();
     HcclResult RunRDMA();
+
+    // 后同步处理相关函数
+    bool IsPostSyncEnable(u32 step, u32 roundIdx);
+    HcclResult SdmaMainStreamWait(u32 step, u32 roundIdx);
+    HcclResult SdmaMainStreamPost(u32 step, u32 roundIdx);
+    HcclResult RdmaPostSync(Stream& stream);
+    HcclResult SetPostSyncTasks(u32 step, u32 roundIdx);
 
     Stream mainStream_;
     u32 userRank_;
@@ -127,8 +134,12 @@ private:
     std::vector<std::shared_ptr<LocalNotify>> rdmaControl2SubNotifies_;
     std::vector<std::shared_ptr<LocalNotify>> rdmaSub2ControlNotifies_;
     Mc2HandlerPub mc2HandlerPub;
+    //重执行后同步优化需要在最后一个step插入收发任务做拉齐操作
     u32 lastStep_ = 0;
     u32 lastRoundIdx_ = 0;
+    u32 lastRdmaRoundIdx_ = 0;
+    u32 lastRdmaDstRanksIdx_ = 0;
+    u32 lastRdmaStep_ = 0;
 };
 } // namespace hccl
 #endif /* ALLTOALL_V_MESH_READ_ONLY_PUB_H */

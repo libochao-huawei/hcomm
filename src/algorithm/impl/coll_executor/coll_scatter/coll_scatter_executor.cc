@@ -218,14 +218,14 @@ HcclResult CollScatterExecutor::KernelRunLevel1(DeviceMem& inputMem, u64 count, 
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
         // server间NB算法走NB
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_SCATTER_NB, dispatcher_);
-        HCCL_INFO("[Scatter][KernelRunLevel1]: using NB algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_NB in COMM_LEVEL1", __func__);
     } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_SCATTER_NHR, dispatcher_);
-        HCCL_INFO("[Scatter][KernelRunLevel1]: using NHR algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_NHR in COMM_LEVEL1", __func__);
     } else {
         level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
             TemplateType::TEMPLATE_SCATTER_RING, dispatcher_);
-        HCCL_INFO("[Scatter][KernelRunLevel1]: using ring algo inter-server.");
+        HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_SCATTER_RING in COMM_LEVEL1", __func__);
     }
 
     CHK_SMART_PTR_NULL(level1TempAlg);
@@ -246,6 +246,7 @@ HcclResult CollScatterExecutor::Orchestrate(OpParam& param, AlgResourceResponse&
     tag_ = param.tag;
     algResResp_ = &algRes;
     HcclResult ret = HCCL_SUCCESS;
+    bool needLaunchAtTheEnd = true; // 是否需要在Orchestrate()结束时launch任务
     // 图模式和单卡场景下不需要Loop
     ExecMem execMem;
     execMem.count = param.DataDes.count;
@@ -258,12 +259,21 @@ HcclResult CollScatterExecutor::Orchestrate(OpParam& param, AlgResourceResponse&
         ret = KernelRun(param, execMem);
     } else if (topoAttr_.userRankSize == 1) {
         ret = KernelRun(param, execMem);
+        needLaunchAtTheEnd = false;
     } else {
         ret = RunLoop(param, algRes);
+        needLaunchAtTheEnd = false;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollScatterExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor kernel run failed",
+        HCCL_ERROR("[CollScatterExecutor][Orchestrate]errNo[0x%016llx]Scatter excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
+
+    // Enforce task launch at the end of Orchestrate
+    if (needLaunchAtTheEnd) {
+        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+        CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+    }
+
     HCCL_INFO("tag[%s] Scatter executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;

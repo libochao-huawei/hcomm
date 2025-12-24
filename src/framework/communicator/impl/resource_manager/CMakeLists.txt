@@ -10,6 +10,7 @@
 set(src_list
     transport_manager.cc
     preempt_port_manager.cc
+    multi_qpInfo_manager.cc
 )
 
 target_sources(hcomm PRIVATE

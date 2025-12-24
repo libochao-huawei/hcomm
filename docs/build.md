@@ -7,6 +7,9 @@
    本项目编译用到的软件依赖如下，请注意版本要求。
 
    - python >= 3.7.0
+   - pip >= 20.3.0
+   - setuptools >= 45.0.0
+   - wheel >= 0.34.0
    - gcc >= 7.3.0
    - cmake >= 3.16.0
    - ccache
@@ -68,6 +71,16 @@ bash ./build_out/cann-hcomm_<version>_linux-<arch>.run --full
 请注意：编译时需要将上述命令中的软件包名称替换为实际编译生成的软件包名称。
 
 安装完成后，用户编译生成的HCOMM软件包会替换已安装CANN开发套件包中的HCOMM相关软件。
+
+## 卸载
+
+卸载已安装的HCOMM软件包：
+
+```shell
+bash ./build_out/cann-hcomm_<version>_linux-<arch>.run --uninstall
+```
+
+请注意：卸载时需要将上述命令中的软件包名称替换为实际安装的软件包名称。
 
 ## LLT 测试
 

@@ -132,7 +132,16 @@ HcclResult CollAllReduceMeshSmallCountExecutor::Orchestrate(OpParam& param, AlgR
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAllReduceMeshSmallCountExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
+
+    // Enforce task launch at the end of Orchestrate
+    if (!is310P3Common_) {
+        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+        CHK_RET(LaunchTaskExtend(dispatcher_,
+            const_cast<Stream &>(param.stream),
+            const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
+    }
+
+    HCCL_INFO("[CollAllReduceMeshSmallCountExecutor]tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -238,9 +247,6 @@ HcclResult CollAllReduceMeshSmallCountExecutor::KernelRun(const OpParam &param, 
             (level0CommInfo.localRankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level0CommInfo.localRank,
             PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, param.stream));
     CHK_RET(RunTemplate(level0TempAlg, level0CommInfo));
-    if (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        CHK_RET(LaunchTask(dispatcher_, const_cast<Stream&>(param.stream)));
-    }
     HCCL_INFO("AllReduce small count executor run success.");
     return HCCL_SUCCESS;
 }

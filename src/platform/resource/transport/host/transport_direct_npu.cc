@@ -66,6 +66,70 @@ HcclResult TransportDirectNpu::DeInit()
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportDirectNpu::GetRemoteMem(UserMemType memType, void **remotePtr)
+{
+    HCCL_INFO("[TransportDirectNpu][GetRemoteMem] direct npu getRemoteMem");
+    switch (memType) {
+        case UserMemType::INPUT_MEM:
+        case UserMemType::OUTPUT_MEM:
+            *remotePtr = remoteMemMsg_[static_cast<u32>(memType)].addr;
+            break;
+
+        default:
+            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            return HCCL_E_NOT_SUPPORT;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDirectNpu::GetLocalNotifyValueAddrKey(std::vector<AddrKey> &notifyValue)
+{
+    // 目前这里时随意填充了一些数据上去，不然会调用到基类接口，导致报错
+    AddrKey notifyDetails;
+    notifyDetails.addr = reinterpret_cast<u64>(memMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].addr);
+    notifyDetails.key = reinterpret_cast<u32>(memMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].lkey);
+    notifyValue.push_back(notifyDetails);
+    notifyValue.push_back(notifyDetails);
+    notifyValue.push_back(notifyDetails);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDirectNpu::GetLocalRdmaNotify(std::vector<HcclSignalInfo> &rdmaNotify)
+{
+    HcclSignalInfo signalInfo;
+    rdmaNotify.push_back(signalInfo);
+    rdmaNotify.push_back(signalInfo);
+    rdmaNotify.push_back(signalInfo);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDirectNpu::GetRemoteRdmaNotifyAddrKey(std::vector<AddrKey> &rdmaNotifyAddr)
+{
+    AddrKey notifyDetails;
+    notifyDetails.addr = reinterpret_cast<u64>(memMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].addr);
+    notifyDetails.key = reinterpret_cast<u32>(memMsg_[static_cast<u32>(MemType::USER_INPUT_MEM)].lkey);
+    rdmaNotifyAddr.push_back(notifyDetails);
+    rdmaNotifyAddr.push_back(notifyDetails);
+    rdmaNotifyAddr.push_back(notifyDetails);
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportDirectNpu::GetRemoteMemSize(UserMemType memType, u64 &size)
+{
+    HCCL_INFO("[TransportDirectNpu][GetRemoteMem] direct npu GetRemoteMemSize");
+    switch (memType) {
+        case UserMemType::INPUT_MEM:
+        case UserMemType::OUTPUT_MEM:
+            size = remoteMemMsg_[static_cast<u32>(memType)].len;
+            break;
+
+        default:
+            HCCL_ERROR("[Get][RemoteMem]not support dst_mem_type=%d", memType);
+            return HCCL_E_NOT_SUPPORT;
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult TransportDirectNpu::LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
                                                 aclrtBinHandle &binHandle)
 {
@@ -118,14 +182,14 @@ void TransportDirectNpu::UnloadAICPUKernel(void)
         aclError aclRet = aclrtBinaryUnLoad(binHandle_);
         if (aclRet != ACL_SUCCESS) {
             HCCL_ERROR("[UnloadAICPUKernel]errNo[0x%016llx] unload binary from binHandel[%p] error.",
-            aclRet, binHandle_);
+                aclRet, binHandle_);
         }
         binHandle_ = nullptr;
     }
 #endif
     return;
 }
-    
+
 HcclResult TransportDirectNpu::DeRegOneMR(QpHandle& qpHandle, MemMsg& memMsg)
 {
     struct MrInfoT mrInfo = {nullptr};
@@ -369,8 +433,7 @@ HcclResult TransportDirectNpu::ParseReceivedExchangeData()
 
 u32 TransportDirectNpu::GetQpsPerConnection()
 {
-    u32 externalQps =
-        GetExternalInputQpSrcPortConfigPath() == "" ? GetExternalInputQpsPerConnection() : machinePara_.srcPorts.size();
+    u32 externalQps = std::max(static_cast<u32>(machinePara_.srcPorts.size()), 1U);
     s32 qpMode = GetQpMode();
     if (GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         externalQps != HCCL_QPS_PER_CONNECTION_DEFAULT) {
@@ -458,8 +521,9 @@ HcclResult TransportDirectNpu::CreateOneQp(
     RPT_ENV_ERR(ret != 0 || (qpHandle == nullptr), "EI0007", vector<string>({ "resource_type", "resource_info" }),
         vector<string>({ "qp", qpInfo }));
 
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Create][Qp]create qp failed, "\
-        "localDeviceId[%d], qpMode[%d]", machinePara_.localDeviceId, qpMode), HCCL_E_ROCE_CONNECT);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]create qp failed, localDeviceId[%d], qpMode[%d]",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str(), machinePara_.localDeviceId, qpMode),
+        HCCL_E_ROCE_CONNECT);
 
     // 表示没有通过config配置，则使用环境变量配置
     CHK_RET(SetQpAttrQos(qpHandle, machinePara_.tc, machinePara_.sl));
@@ -485,12 +549,12 @@ HcclResult TransportDirectNpu::CreateSingleQp(s32 qpMode) // 根据socket个数�
                         (machinePara_.deviceType == DevType::DEV_TYPE_910_93) &&
                         (workFlowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
     if (!isAicpuLib) {
-        socketNum = machinePara_.sockets.size();
+        socketNum = std::max(static_cast<u32>(machinePara_.sockets.size()), socketNum);
     }
     // 原来是 machinePara_.socketFdHandles 换成 machinePara_.sockets
     for (u32 i = 0; i < socketNum; i++) {
         QpHandle qpHandle = nullptr;
-        u32 udpSport = machinePara_.srcPorts.size() > 0 ? machinePara_.srcPorts[0] : 0;
+        u32 udpSport = machinePara_.srcPorts.empty() ? 0 : machinePara_.srcPorts[0];
         CHK_RET(CreateOneQp(
             qpMode, HCCL_QPS_PER_CONNECTION_DEFAULT, qpHandle, aiQpInfo_, machinePara_.isAicpuModeEn, udpSport));
         qpHandles_.push_back(qpHandle);
@@ -819,17 +883,19 @@ HcclResult TransportDirectNpu::TxData(UserMemType dstMemType, u64 dstOffset, con
     apiParam.remoteAddr = reinterpret_cast<u64>(remoteAddr) + dstOffset;
     apiParam.dataSize = len;
     apiParam.localAddr = reinterpret_cast<u64>(src);
-    apiParam.timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-         GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    apiParam.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        dispatcher_->GetExecTimeOutSet()) {
+        apiParam.timeout = dispatcher_->GetExecTimeOut();
+    }
     apiParam.localFlagAddr = reinterpret_cast<u64>(aicpuMem_.ptr());
     std::vector<HcclQpInfoV2> aiQpInfos;
     CHK_RET(GetAiQpInfo(aiQpInfos));
     apiParam.qpInfo = aiQpInfos[0];
-    HCCL_INFO("[TransportDirectNpu][TxData] lkey %u rkey %u remoteAddr %p localAddr %p dataSize %llu "
+    HCCL_INFO("[TransportDirectNpu][TxData]localRank %u remoteRank %u lkey %u rkey %u remoteAddr %p localAddr %p dataSize %llu "
         "timeout %llu localFlagAddr %p remoteFlagAddr %p lfkey %u rfkey %u qpinfo %llu",
-        apiParam.lKey, apiParam.rKey, apiParam.remoteAddr, apiParam.localAddr, apiParam.dataSize,
-        apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey,
-        apiParam.qpInfo.qpPtr);
+        machinePara_.localUserrank, machinePara_.remoteUserrank, apiParam.lKey, apiParam.rKey, apiParam.remoteAddr, apiParam.localAddr, apiParam.dataSize,
+        apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey, apiParam.qpInfo.qpPtr);
 
 #ifndef CCL_KERNEL
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
@@ -886,18 +952,19 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
     apiParam.remoteAddr = reinterpret_cast<u64>(remoteAddr) + srcOffset;
     apiParam.dataSize = len;
     apiParam.localAddr = reinterpret_cast<u64>(dst);
-    apiParam.timeout = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-         GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    apiParam.timeout = NOTIFY_DEFAULT_WAIT_TIME;
+    if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+        dispatcher_->GetExecTimeOutSet()) {
+        apiParam.timeout = dispatcher_->GetExecTimeOut();
+    }
     apiParam.localFlagAddr = reinterpret_cast<u64>(aicpuMem_.ptr());
     std::vector<HcclQpInfoV2> aiQpInfos;
     CHK_RET(GetAiQpInfo(aiQpInfos));
     apiParam.qpInfo = aiQpInfos[0];
-
-    HCCL_INFO("[TransportDirectNpu][RxData] lkey %u rkey %u remoteAddr %p localAddr %p dataSize %llu "
+    HCCL_INFO("[TransportDirectNpu][RxData]localRank %u remoteRank %u lkey %u rkey %u remoteAddr %p localAddr %p dataSize %llu "
         "timeout %llu localFlagAddr %p remoteFlagAddr %p lfkey %u rfkey %u qpinfo %llu",
-        apiParam.lKey, apiParam.rKey, apiParam.remoteAddr, apiParam.localAddr, apiParam.dataSize,
-        apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey,
-        apiParam.qpInfo.qpPtr);
+        machinePara_.localUserrank, machinePara_.remoteUserrank, apiParam.lKey, apiParam.rKey, apiParam.remoteAddr, apiParam.localAddr, apiParam.dataSize,
+        apiParam.timeout, apiParam.localFlagAddr, apiParam.remoteFlagAddr, apiParam.lfKey, apiParam.rfKey, apiParam.qpInfo.qpPtr);
 
 #ifndef CCL_KERNEL
     CHK_PRT(AicpuAclKernelLaunch(stream.ptr(), reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
@@ -906,7 +973,6 @@ HcclResult TransportDirectNpu::RxData(UserMemType srcMemType, u64 srcOffset, voi
     HCCL_ERROR("[AicpuAclKernelLaunch]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
-    HCCL_INFO("[TransportDirectNpu][RxData] exec succ.");
     return HCCL_SUCCESS;
 }
 

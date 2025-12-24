@@ -21,18 +21,18 @@ public:
     ~CollAllReduceMeshAivFor91093Executor() override = default;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
-    HcclResult MyCalBlockDim(u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID);
+    HcclResult CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;
     HcclResult PrepareCommInfoToDevice(AlgResourceResponse& algResource) override;
-    HcclResult CalcScratchMemSize(u64&) override;
+    HcclResult GetAivExecParam(const OpParam& param, AlgResourceResponse& algRes, AivSuperKernelArgs &args) override;
+    HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
 
 private:
     HcclResult CopyAivCommInfoToDevice(const CommPlane levelIndex, const u32 subLevelIndex, AlgResourceResponse& algResource) override;
-    void ParseParam(const OpParam&) override;
+    void ParseParam(const OpParam& param) override;
     /* *************** 资源计算 *************** */
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
-    HcclResult CalcLevel0CommInfo(TransportMemType inputType,
-        TransportMemType outputType,
+    HcclResult CalcLevel0CommInfo(TransportMemType inputType, TransportMemType outputType,
         std::vector<LevelNSubCommTransport>& opTransport) override;
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
 

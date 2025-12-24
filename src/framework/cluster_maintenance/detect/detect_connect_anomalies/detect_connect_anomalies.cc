@@ -56,12 +56,16 @@ void DetectConnectionAnomalies::AddIpQueue(RankInfo &localRankInfo, RankInfo &re
     // 检查是否需要进行连接异常检测
     if (GetExternalInputDfsConnectionFaultDetectionTime() == 0 || !threadExit_) {
         HCCL_RUN_INFO("[Add][IpQueue]GetExternalInputDfsConnectionFaultDetectionTime is 0, no need to detect");
+        RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
+        std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT}));
         return;
     }
 
     // 检查设备类型是否支持
     if (localRankInfo.deviceType != DevType::DEV_TYPE_910_93 && localRankInfo.deviceType != DevType::DEV_TYPE_910B) {
         HCCL_WARNING("[AddIpQueue] not support deviceType[%d]", localRankInfo.deviceType);
+        RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
+        std::vector<std::string>({GET_SOCKET_TIMEOUT_REASON_CLOSE_DETECT}));
         return;
     }
 
@@ -75,20 +79,6 @@ void DetectConnectionAnomalies::AddIpQueue(RankInfo &localRankInfo, RankInfo &re
     // 多线程访问ipQueue需要加锁
     Detect();
     std::unique_lock<std::mutex> lock(ipNictypeQueueMutex_);
-    if (!isPrint_) {
-        HCCL_ERROR("-------------------CONNECT TIMEOUT DETECT RESULT-----------------------");
-        HCCL_ERROR("if BELOW DETECT EVENT num ≥ 1:");
-        HCCL_ERROR("    The error above was caused by a failure at the site in the cluster where the events happened.Please "\
-            "confirm whether the link between SRCRANK and DSTRANK or the DSTRANK process is healthy.");
-        HCCL_ERROR("if BELOW DETECT EVENT num = 0:");
-        HCCL_ERROR("    please prioritize investigating the consistency of cluster script behaviors.");
-        HCCL_ERROR("NOTE: The detection results are only used to assist in locating the problem and may not represent the "\
-            "actual fault site in some complex scenarios. Please continue to analyze and confirm based on the current "\
-            "detected fault site(if BELOW DETECT EVENT num ≥ 1).");
-        HCCL_ERROR("-------------------------DETECT EVENT LIST-----------------------------------------");
-        HCCL_ERROR("-----------------------------------------------------------------------------------");
-        isPrint_ = true;
-    }
     ErrInfo errInfo;
     auto ip = ipMap_.find(remoteIp);
     if (ip == ipMap_.end()) {
@@ -102,18 +92,60 @@ void DetectConnectionAnomalies::AddIpQueue(RankInfo &localRankInfo, RankInfo &re
         ipNictypeQueue_.push(errInfo); // 记录报错卡信息
     }
     lock.unlock();
-    // 计算等待时间
-    auto waitTime = std::chrono::seconds(GetExternalInputDfsConnectionFaultDetectionTime()) +
-        std::chrono::seconds(broadCastTime);
-    
-    auto startTime = std::chrono::steady_clock::now();
-    while (threadExit_ && (std::chrono::steady_clock::now() - startTime) <= waitTime) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 每次休眠100毫秒
-    }
+    WaitForDectect();
     HCCL_INFO("[Add][IpQueue]ipNictypeQueue size[%d]", ipNictypeQueue_.size());
     return;
 }
+HcclResult DetectConnectionAnomalies::WaitForDectect()
+{
+    // 计算等待时间
+    auto waitTime = std::chrono::seconds(GetExternalInputDfsConnectionFaultDetectionTime()) +
+        std::chrono::seconds(broadCastTime);
+    std::unique_lock<std::mutex> timelock(time_mutex);
+    startTime = std::chrono::steady_clock::now(); // 刷新时间
+    std::chrono::steady_clock::time_point localStartTime = startTime;
+    timelock.unlock();
 
+    while (threadExit_ && (std::chrono::steady_clock::now() - localStartTime) <= waitTime) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100)); // 每次休眠100毫秒
+        timelock.lock();
+        localStartTime = startTime;
+        timelock.unlock();
+    }
+    // 通过锁只进入一次
+    std::lock_guard<std::mutex> printlock(print_mutex);
+    if (!isPrint_) {
+        ProcessDetectionResults();
+    }
+    isPrint_ = true;
+    return HCCL_SUCCESS;
+}
+HcclResult DetectConnectionAnomalies::ProcessDetectionResults()
+{
+    std::string errMsg;
+    HCCL_ERROR("-------------------CONNECT TIMEOUT DETECT RESULT-----------------------");
+    for (const auto& detectInfo : recvErrorInfoMap_) {
+        std::string eventInfo = PrintDetectInfo(detectInfo.second.localServerId, detectInfo.second.localDeviceId, detectInfo.second);
+        HCCL_ERROR("%s", eventInfo.c_str());
+        errMsg = errMsg + std::string("\n") + eventInfo;
+    }
+
+    if (recvErrorInfoMap_.size() >= 1) {
+        HCCL_ERROR("----------------------------------------------------------------------");
+        HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITH_EVENT.c_str());
+        HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITH_EVENT_NOTE.c_str());
+        errMsg = errMsg + std::string("\n") + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT;
+        errMsg = errMsg + std::string("\n") + GET_SOCKET_TIMEOUT_REASON_WITH_EVENT_NOTE;
+    } else {
+        HCCL_ERROR("%s", GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT.c_str());
+        errMsg = GET_SOCKET_TIMEOUT_REASON_WITHOUT_EVENT;
+    }
+    HCCL_ERROR("----------------------------------------------------------------------");
+
+    RPT_INPUT_ERR(true, "EI0006", std::vector<std::string>({"reason"}), \
+    std::vector<std::string>({errMsg}));
+    return HCCL_SUCCESS;
+}
 // 检测连接异常
 HcclResult DetectConnectionAnomalies::Detect()
 {
@@ -186,7 +218,7 @@ HcclResult DetectConnectionAnomalies::CreateDetectVnicLinks(struct ErrInfo  errI
     u32 acceptTimeOut = 1; // accecpt 超时1s
     std::shared_ptr<HcclSocket> acceptSuccessSocket;
     auto detectTimeOut = std::chrono::seconds(GetExternalInputDfsConnectionFaultDetectionTime());
-    auto startTime = std::chrono::steady_clock::now();
+    startTime = std::chrono::steady_clock::now();
     HcclResult ret;
     while (threadExit_ && (std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(detectTimeOut)) {
         ret = vnicSocket_->Accept(tag, acceptSuccessSocket, acceptTimeOut);
@@ -248,7 +280,7 @@ HcclResult DetectConnectionAnomalies::CreateDetectNicLinks(struct ErrInfo errInf
     u32 acceptTimeOutAccept = 1;
     auto acceptTimeOut = std::chrono::seconds(GetExternalInputDfsConnectionFaultDetectionTime());
     std::shared_ptr<HcclSocket> acceptSuccessSocket;
-    auto startTime = std::chrono::steady_clock::now();
+    startTime = std::chrono::steady_clock::now();
     HcclResult ret;
     while (threadExit_ && (std::chrono::steady_clock::now() - startTime) <= acceptTimeOut) {
         ret = nicSocket_->Accept(tag, acceptSuccessSocket, acceptTimeOutAccept);
@@ -391,7 +423,7 @@ HcclResult DetectConnectionAnomalies::ConstructErrorInfo(std::shared_ptr<HcclSoc
     std::string ip = localDeviceIp + "-" + remoteDeviceIp;
     recvErrorInfoMap_.emplace(ip, detectInfo);
     sendErrorInfoMap_.emplace(ip, SendInfo{});
-    PrintDetectInfo(detectInfo.localServerId, detectInfo.localDeviceId, detectInfo);
+
     lock.unlock();
     // 保存错误信息
     return HCCL_SUCCESS;
@@ -399,7 +431,7 @@ HcclResult DetectConnectionAnomalies::ConstructErrorInfo(std::shared_ptr<HcclSoc
 
 HcclResult DetectConnectionAnomalies::GetStatus(struct ErrInfo errInfo, std::shared_ptr<HcclSocket> &clientSocket)
 {
-    auto startTime = std::chrono::steady_clock::now();
+    startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(GetExternalInputDfsConnectionFaultDetectionTime());
     // 等待时间不大于超时时间
     HcclSocketStatus status = HcclSocketStatus::SOCKET_INIT;
@@ -467,7 +499,6 @@ HcclResult DetectConnectionAnomalies::CreateClient(struct ErrInfo errInfo)
     CHK_SAFETY_FUNC_RET(memcpy_s(localServerId, DEST_MAX_LEN, errInfo.localRankInfo.serverId.c_str(),
         errInfo.localRankInfo.serverId.size()));
     localServerId[errInfo.localRankInfo.serverId.size()] = '\0';
-    s32 localDeviceId = errInfo.localRankInfo.devicePhyId;
 
     // 保存clientSocket，在析构时join
     clientSockets_.push_back(clientSocket);
@@ -475,7 +506,7 @@ HcclResult DetectConnectionAnomalies::CreateClient(struct ErrInfo errInfo)
     // 开始计时
     auto waitTime = std::chrono::seconds(GetExternalInputDfsConnectionFaultDetectionTime()) +
         std::chrono::seconds(broadCastTime);
-    auto startTime = std::chrono::steady_clock::now();
+    startTime = std::chrono::steady_clock::now();
 
     DetectInfo detectInfo{};
     u64 totalSize = sizeof(detectInfo);
@@ -498,7 +529,6 @@ HcclResult DetectConnectionAnomalies::CreateClient(struct ErrInfo errInfo)
             if (it == recvErrorInfoMap_.end()) {
                 recvErrorInfoMap_.emplace(ip, detectInfo);
                 sendErrorInfoMap_.emplace(ip, SendInfo{});
-                PrintDetectInfo(localServerId, localDeviceId, detectInfo);
             }
             CHK_SAFETY_FUNC_RET(memset_s(&detectInfo, sizeof(DetectInfo), 0, sizeof(DetectInfo)));
             lock.unlock();
@@ -521,14 +551,18 @@ HcclResult DetectConnectionAnomalies::CreateClients(struct ErrInfo errInfo, std:
     return HCCL_SUCCESS;
 }
 
-void DetectConnectionAnomalies::PrintDetectInfo(const char *localServerId, s32 localDeviceId, DetectInfo &detectInfo)
+std::string DetectConnectionAnomalies::PrintDetectInfo(const char *localServerId, s32 localDeviceId, const DetectInfo &detectInfo)
 {
     errorCount_++;
-    HCCL_ERROR("DETECT EVENT[%d]:Rank[%s/%d]: srcRank[%s/%d] connect destRank[%s/%d] fail.", \
+    char errorLogBuffer[LOG_TMPBUF_SIZE];
+    s32 ret = snprintf_s(errorLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
+        "TRANSPORT DETECT EVENT[%d]:Rank[%s/%d]: srcRank[%s/%d] connect destRank[%s/%d] fail.", \
         errorCount_.load(), localServerId, localDeviceId, detectInfo.localServerId, detectInfo.localDeviceId, detectInfo.remoteServerId,
         detectInfo.remoteDeviceId);
-    HCCL_ERROR("-----------------------------------------------------------------------------------------------------");
-    return;
+    if (ret == -1) {
+        HCCL_RUN_WARNING("[DetectConnectionAnomalies][%s] snprintf_s failed",  __func__);
+    }
+    return std::string(errorLogBuffer);
 }
 
 void DetectConnectionAnomalies::ThreadDestroy()

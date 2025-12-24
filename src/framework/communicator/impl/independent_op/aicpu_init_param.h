@@ -11,6 +11,7 @@
 #define AICPU_INIT_PARAM_H
 
 #include "hccl_common.h"
+#include "hdc_pub.h"
 
 constexpr uint32_t HCOMID_MAX_SIZE = 128;
 
@@ -20,6 +21,8 @@ struct CommAicpuParam {
     s32 deviceLogicId;
     u32 devicePhyId;
     u32 deviceType;
+    hccl::HDCommunicateParams kfcControlTransferH2DParams;
+    hccl::HDCommunicateParams kfcStatusTransferD2HParams;
 };
 
 #endif

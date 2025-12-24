@@ -27,6 +27,7 @@ HcclResult RankGraph::DevTypeToCommProtocol(DevType type, CommProtocol &protocol
     switch (type) {
         case DevType::DEV_TYPE_910B:
         case DevType::DEV_TYPE_910_93:
+        case DevType::DEV_TYPE_910:
             protocol = CommProtocol::COMM_PROTOCOL_ROCE;
             break;
         case DevType::DEV_TYPE_310P1:
@@ -36,9 +37,9 @@ HcclResult RankGraph::DevTypeToCommProtocol(DevType type, CommProtocol &protocol
         case DevType::DEV_TYPE_NOSOC:
             protocol = CommProtocol::COMM_PROTOCOL_TCP;
             break;
-        // 暂不支持DEV_TYPE_910 DEV_TYPE_910_95 
-        case DevType::DEV_TYPE_910:
         case DevType::DEV_TYPE_910_95:
+            protocol = CommProtocol::COMM_PROTOCOL_UB_CTP;
+            break;
         default:
             HCCL_ERROR("[RankGraph] Unknown comm devType: %d", type);
             return HCCL_E_PARA;
@@ -81,6 +82,18 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
         }
         rankIndex_[r.rankId] = std::move(info);
     }
+    rankGraph_ = rankTable_.rankList;
+    CHK_RET(InitRankInfo());
+    CHK_RET(InitNetLayer());
+    return HCCL_SUCCESS;
+}
+
+HcclResult RankGraph::Init(const HcclTopoAttr &topoAttr)
+{
+    topoAttr_ = topoAttr;
+    rankIndex_.clear();
+    rankPairInfo_.clear();
+    HCCL_INFO("[RankGraph][%s] rankNum[%zu]", __func__, rankTable_.rankList.size());
     CHK_RET(InitRankInfo());
     CHK_RET(InitNetLayer());
     return HCCL_SUCCESS;
@@ -179,22 +192,6 @@ HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dst
     return HCCL_SUCCESS;
 }
 
-HcclResult RankGraph::GetRankGraph(GraphType type, void **graph, uint32_t *len)
-{
-    switch (type) {
-        case RANK_GRAPH_910_93: {
-            *graph = rankGraph_.data();
-            *len = rankGraph_.size() * sizeof(RankInfo_t);
-            break;
-        }
-        default: {
-            HCCL_ERROR("[RankGraph][%s]Graph type[%d] is invalid", __func__, type);
-            return HCCL_E_NOT_SUPPORT;
-        }
-    }
-    return HCCL_SUCCESS;
-}
-
 HcclResult RankGraph::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
 {
     if (netLayer_.empty()) {
@@ -284,12 +281,12 @@ HcclResult RankGraph::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **in
     return HCCL_SUCCESS;
 }
  
-bool RankGraphSort(const RankInfo_t &first, const RankInfo_t &second)
+bool RankGraphSort(const RankInfo &first, const RankInfo &second)
 {
     if (first.serverIdx != second.serverIdx) {
         return first.serverIdx < second.serverIdx;
     } else {
-        return first.rankId < second.rankId;
+        return first.userRank < second.userRank;
     }
 }
 
@@ -339,10 +336,10 @@ HcclResult RankGraph::GetRankGraphInfo(GraphType type, void **graph, uint32_t *l
  
 HcclResult RankGraph::InitRankInfo()
 {
-    rankGraph_ = rankTable_.rankList;
-    for (u32 index = 0; index < rankGraph_.size(); index++) {
-        if (topoAttr_.userRank == rankGraph_[index].rankId) {
-            rankData_ = rankGraph_[index];
+    auto& rankInfoList = topoAttr_.rankInfoList;
+    for (u32 index = 0; index < rankInfoList.size(); index++) {
+        if (topoAttr_.userRank == rankInfoList[index].userRank) {
+            rankData_ = rankInfoList[index];
             break;
         }
     }
@@ -354,19 +351,17 @@ HcclResult RankGraph::InitRankInfo()
 
 HcclResult RankGraph::InitServerRankInfo()
 {
-    u32 moduleIdx = 0;
-    for (u32 index = 0; index < rankGraph_.size(); index++) {
-        CHK_RET(GetModuleIdx(rankGraph_[index], moduleIdx));
-        // 填充serverRankMap_, 只记录本superPod下的serverIdx -> rankInfo_t
-        if (rankGraph_[index].superPodId == rankGraph_[index].superPodId || topoAttr_.isDiffDeviceType) {
-            auto itServer = serverToRank_.find(moduleIdx);
-            if (itServer != serverToRank_.end()) {  
-                itServer->second.push_back(rankGraph_[index]);
-            } else {
-                std::vector<RankInfo_t> rankVecTmp;
-                rankVecTmp.push_back(rankGraph_[index]);
-                serverToRank_.insert(std::make_pair(moduleIdx, rankVecTmp));
-            }
+    u32 serverIdx = 0;
+    auto& rankInfoList = topoAttr_.rankInfoList;
+    for (u32 index = 0; index < rankInfoList.size(); index++) {
+        serverIdx = rankInfoList[index].serverIdx;
+        auto itServer = serverToRank_.find(serverIdx);
+        if (itServer != serverToRank_.end()) {  
+            itServer->second.push_back(rankInfoList[index]);
+        } else {
+            std::vector<RankInfo> rankVecTmp;
+            rankVecTmp.push_back(rankInfoList[index]);
+            serverToRank_.insert(std::make_pair(serverIdx, rankVecTmp));
         }
     }
     // 调整每个server内的user_rank排序(server内userRank从小到大,一定连续)
@@ -375,32 +370,33 @@ HcclResult RankGraph::InitServerRankInfo()
             std::sort(iterMap->second.begin(), iterMap->second.end(), RankGraphSort);
         }
     }
-    CHK_RET(GetModuleIdx(rankData_, moduleIdx));
-    auto rankVec = serverToRank_.find(moduleIdx);
+    serverIdx = rankData_.serverIdx;
+    auto rankVec = serverToRank_.find(serverIdx);
     if (rankVec != serverToRank_.end()) {
         std::string rankIdListServer;
-        for (auto iter : serverToRank_[moduleIdx]) {
-            rankIdListServer += std::to_string(iter.rankId) + " ";
+        for (auto iter : serverToRank_[serverIdx]) {
+            rankIdListServer += std::to_string(iter.userRank) + " ";
         }
         HCCL_INFO("[RankGraph][%s] devtype[%d], curRank[%u], serverToRanklist[%s]", __func__,
-            topoAttr_.deviceType, rankData_.rankId, rankIdListServer.c_str());
+            topoAttr_.deviceType, rankData_.userRank, rankIdListServer.c_str());
     }
     return HCCL_SUCCESS;
 }
 
 HcclResult RankGraph::InitSuperPodRankInfo()
 {
-    for (u32 index = 0; index < rankGraph_.size(); index++) {
+    auto& rankInfoList = topoAttr_.rankInfoList;
+    for (u32 index = 0; index < rankInfoList.size(); index++) {
         // 填充superPodRankMap_, 记录superPodId -> rankInfo
         HCCL_DEBUG("[RankGraph][%s] superPodIdx[%d],superPodId[%s]", __func__, 
-            rankGraph_[index].superPodIdx, rankGraph_[index].superPodId.c_str());
-        auto itSuperPod = superPodToRank_.find(rankGraph_[index].superPodIdx);
+            rankInfoList[index].superPodIdx, rankInfoList[index].superPodId.c_str());
+        auto itSuperPod = superPodToRank_.find(rankInfoList[index].superPodIdx);
         if (itSuperPod != superPodToRank_.end()) {
-            itSuperPod->second.push_back(rankGraph_[index]);
+            itSuperPod->second.push_back(rankInfoList[index]);
         } else {
-            std::vector<RankInfo_t> rankVecTmp;
-            rankVecTmp.push_back(rankGraph_[index]);
-            superPodToRank_.insert(std::make_pair(rankGraph_[index].superPodIdx, rankVecTmp));
+            std::vector<RankInfo> rankVecTmp;
+            rankVecTmp.push_back(rankInfoList[index]);
+            superPodToRank_.insert(std::make_pair(rankInfoList[index].superPodIdx, rankVecTmp));
         }
     }
  
@@ -414,52 +410,29 @@ HcclResult RankGraph::InitSuperPodRankInfo()
     if (superPodToRank_.find(rankData_.superPodIdx) != superPodToRank_.end()) {
         std::string rankIdListPod;
         for (auto iter : superPodToRank_[rankData_.superPodIdx]) {
-            rankIdListPod += std::to_string(iter.rankId) + " ";
+            rankIdListPod += std::to_string(iter.userRank) + " ";
         }
         HCCL_INFO("[RankGraph][%s] curRank[%d], curSuperPod[%s] superPodToRanklist[%s]",
-            __func__, rankData_.rankId, rankData_.superPodId.c_str(), rankIdListPod.c_str());
+            __func__, rankData_.userRank, rankData_.superPodId.c_str(), rankIdListPod.c_str());
     }
     return HCCL_SUCCESS;
 }
- 
-// 集群中存在910B A+X时，0-7卡: moduleIdx = 2 * serverIdx; 8-15卡: moduleIdx = 2 * serverIdx + 1
-// 集群中不存在910B A+X时，moduleIdx = serverIdx
-HcclResult RankGraph::GetModuleIdx(const RankInfo_t &rankInfo, u32 &moduleIdx)
-{
-    // 获取moduleIdx，在16P同时使用左右两个module时，moduleIdx标识当前rank所在的module，其他场景下moduleIdx等同于serverIdx
-    u32 serverIdx = rankInfo.serverIdx;
-    if (serverIdx == INVALID_UINT) {
-        HCCL_ERROR("server idx is invalid.");
-        return HCCL_E_INTERNAL;
-    }
-    if (topoAttr_.isDiffDeviceType) {
-        moduleIdx = rankInfo.rankId / topoAttr_.gcdDeviceNumPerAggregation;
-        HCCL_DEBUG("[rankGraph][%s] serverIdx [%u] devicePhyId[%u] userRank[%u] moduleIdx[%u] "
-            "gcdDeviceNumPerAggregation[%u]", __func__, serverIdx, rankInfo.deviceInfo.devicePhyId, rankInfo.rankId, moduleIdx,
-            topoAttr_.gcdDeviceNumPerAggregation);
-    } else if (topoAttr_.deviceType == DevType::DEV_TYPE_910B && topoAttr_.isDiffDeviceModule) {
-        moduleIdx = serverIdx * FACTOR_NUM_TWO + rankInfo.deviceInfo.devicePhyId / DEVICE_PER_MODULE;
-    } else {
-        moduleIdx = serverIdx;
-    }
-    return HCCL_SUCCESS;
-}
- 
+
 HcclResult RankGraph::InitNetLayer()
 {
     netLayer_.clear();
     netLayer_.push_back(static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0));
  
-    u32 moduleIdx = 0;
-    CHK_RET(GetModuleIdx(rankData_, moduleIdx));
-    auto rankVec = serverToRank_.find(moduleIdx);
+    u32 serverIdx = 0;
+    serverIdx = rankData_.serverIdx;
+    auto rankVec = serverToRank_.find(serverIdx);
     if (rankVec == serverToRank_.end()) {
-        HCCL_ERROR("[RankGraph][%s]find serverToRank failed, moudleIdx[%u]", __func__, moduleIdx);
+        HCCL_ERROR("[RankGraph][%s]find serverToRank failed, serverIdx[%u]", __func__, serverIdx);
         return HCCL_E_INTERNAL;
     }
     std::vector<u32> rankListTmp;
-    for (auto iter : serverToRank_[moduleIdx]) {
-        rankListTmp.push_back(iter.rankId);
+    for (auto iter : serverToRank_[serverIdx]) {
+        rankListTmp.push_back(iter.userRank);
     }
     rankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L0), rankListTmp});
  
@@ -476,7 +449,7 @@ HcclResult RankGraph::InitNetLayer()
             std::vector<u32> rankListTmp1;
             for (auto& pair : serverToRank_) {
                 for (auto iter : pair.second) {
-                    rankListTmp1.push_back(iter.rankId);
+                    rankListTmp1.push_back(iter.userRank);
                 }
             }
             rankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L1), rankListTmp1});
@@ -489,7 +462,7 @@ HcclResult RankGraph::InitNetLayer()
             }
             std::vector<u32> rankListTmp1;
             for (auto iter : superPodToRank_[rankData_.superPodIdx]) {
-                rankListTmp1.push_back(iter.rankId);
+                rankListTmp1.push_back(iter.userRank);
             }
             std::vector<u32> rankSizeListTmp1;
             for (auto iter : superPodToRank_) {
@@ -505,7 +478,7 @@ HcclResult RankGraph::InitNetLayer()
         std::vector<u32> rankListTmp2;
         for (const auto& pair : superPodToRank_) {
            for (auto iter : pair.second) {
-               rankListTmp2.push_back(iter.rankId);
+               rankListTmp2.push_back(iter.userRank);
            }
         }
         rankList_.insert({static_cast<uint32_t>(HcclNetLayerlevel::HCCL_NetLayer_L2), rankListTmp2});

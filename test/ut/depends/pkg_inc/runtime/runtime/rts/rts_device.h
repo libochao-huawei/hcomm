@@ -360,7 +360,7 @@ RTS_API rtError_t rtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo);
 
 /**
  * @ingroup
- * @brief map resource va address
+ * @brief map resource va address.
  * @param [in] resInfo resource info
  * @param [out] addrInfo resource address info
  * @return RT_ERROR_NONE for ok, errno for failed
@@ -370,9 +370,9 @@ RTS_API rtError_t rtGetDevResAddress(rtDevResInfo * const resInfo, rtDevResAddrI
 
 /**
  * @ingroup
- * @brief unmap resource va address
+ * @brief unmap resource va address.
  * @param [in] resInfo resource info
- * @param [out] resAddress resource address
+ * @param [out] resAddress resource address.
  * @return RT_ERROR_NONE for ok, errno for failed
  * @return RT_ERROR_INVALID_VALUE for error input
  */

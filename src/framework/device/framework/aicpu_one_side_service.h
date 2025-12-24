@@ -82,7 +82,7 @@ private:
     u32 devId_{0};
     DevType devType_{DevType::DEV_TYPE_COUNT};
     int64_t chipId_{0};
-    u32 linkTimeout_{INVALID_UINT};
+    u32 linkTimeout_{INVALID_UINT}; // 单位us
     std::unordered_map<u32, std::shared_ptr<TransportMem>> rdmaLinks_; // 根据remoteRankId索引transport
     std::vector<std::shared_ptr<LocalNotify>> opNotifies_;     // host与device间同步的notify
     bool execStreamEnable_ = true;

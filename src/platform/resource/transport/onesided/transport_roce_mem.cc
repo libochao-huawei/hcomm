@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <future>
 #include "transport_roce_mem.h"
 #include "log.h"
 #include "adapter_hal.h"
@@ -17,6 +18,7 @@
 #include "dispatcher_pub.h"
 #include "hccl_network.h"
 #include "device_capacity.h"
+#include "externalinput.h"
 
 namespace hccl {
 using namespace std;
@@ -319,6 +321,9 @@ HcclResult TransportRoceMem::CheckRdmaVal(void)
 
 HcclResult TransportRoceMem::ConnectImpl(s32 timeoutSec)
 {
+    if (deviceLogicId_ != HOST_DEVICE_ID) {
+        hrtSetDevice(deviceLogicId_);
+    }
     CHK_RET(GetRdmaHandle());
     CHK_RET(CreateCqAndQp());
     CHK_RET(CreatSignalMesg());
@@ -326,6 +331,37 @@ HcclResult TransportRoceMem::ConnectImpl(s32 timeoutSec)
     CHK_RET(ExchangeNotifyValueBuffer());
     CHK_RET(QpConnect());
     CHK_RET(WaitQPLinkComplete(timeoutSec));
+    CHK_RET(hrtResetDevice(deviceLogicId_));
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportRoceMem::ConnectImplWithTimeout(s32 timeoutSec)
+{
+    std::future<HcclResult> futureResult;
+    // 增加1s的超时时间防止剩余超时时间不足
+    s32 redundantTimeout = timeoutSec + 1;
+    futureResult = std::async(std::launch::async,
+        [this](s32 redundantTimeout) -> HcclResult {return this->ConnectImpl(redundantTimeout); }, redundantTimeout);
+
+    CHK_PRT_RET(!futureResult.valid(),
+        HCCL_ERROR("[%s]ConnectImpl futureResult is not assigned.", __func__),
+        HCCL_E_INTERNAL);
+
+    // 超时检查，若timeout设置为-1则不检查，上层已经保证timeout不会为0
+    if (timeoutSec != -1 && futureResult.wait_for(std::chrono::seconds(redundantTimeout)) == std::future_status::timeout) {
+        // 发生超时，设置stop flag让socket线程停止，避免进程长时间无法退出
+        CHK_RET(socket_->SetStopFlag(true));
+        HCCL_ERROR("[%s]ConnectImplWithTimeout timeout.timeout[%ds]", __func__, timeoutSec);
+        futureResult.wait();
+        CHK_RET(socket_->SetStopFlag(false));
+        return HCCL_E_TIMEOUT;
+    }
+
+    HcclResult ret = futureResult.get();
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]ConnectImplWithTimeout Prepare failed", __func__),
+        ret);
+    HCCL_INFO("[%s]connect success", __func__);
     return HCCL_SUCCESS;
 }
 
@@ -339,7 +375,7 @@ HcclResult TransportRoceMem::Connect(s32 timeoutSec)
     CHK_PTR_NULL(dispatcher_);
     CHK_SMART_PTR_NULL(notifyPool_);
     CHK_RET(notifyPool_->RegisterOp(socket_->GetTag()));
-    auto ret = ConnectImpl(timeoutSec);
+    auto ret = ConnectImplWithTimeout(timeoutSec);
     // 解注册之后再返回ret
     CHK_RET(notifyPool_->UnregisterOp(socket_->GetTag()));
     return ret;
@@ -503,6 +539,8 @@ HcclResult TransportRoceMem::GetQpInfo(HcclQpInfoV2 &qpInfo)
     qpInfo.qpPtr = aiQpInfo_.aiQpAddr;    // reinterpret_cast<u64>(dataQpInfo_.qp)
     qpInfo.sqIndex = aiQpInfo_.sqIndex;
     qpInfo.dbIndex = aiQpInfo_.dbIndex;
+    qpInfo.retryCnt = static_cast<u16>(GetExternalInputRdmaRetryCnt());
+    qpInfo.retryTime = static_cast<u16>(GetExternalInputRdmaTimeOut());
     struct ibv_qp *qp = reinterpret_cast<struct ibv_qp *>(qpInfo.qpPtr);
     HCCL_DEBUG("[%s] qp=%p", __func__, qp);
     return HCCL_SUCCESS;
@@ -572,8 +610,9 @@ HcclResult TransportRoceMem::WaitOpFence(const rtStream_t &stream)
     auto opType = static_cast<u32>(MemType::SEND_NOTIFY_MEM);
     hccl::Stream hcclStream(stream);
     DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcher_);
-    const u32 timeOut = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ?
-        GetExternalInputHcclExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
+    const u32 timeOut = (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET) ||
+        dispatcher->GetExecTimeOutSet() ?
+        dispatcher->GetExecTimeOut() : NOTIFY_DEFAULT_WAIT_TIME;
     HcclResult ret = LocalIpcNotify::Wait(hcclStream, dispatcher, remoteIsendDoneSignal_, INVALID_VALUE_STAGE,
         timeOut, localRankId_, remoteRankId_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -621,7 +660,7 @@ HcclResult TransportRoceMem::CreateCqAndQp()
 
 HcclResult TransportRoceMem::QpConnect()
 {
-    CHK_RET(HrtRaQpConnectAsync(dataQpInfo_.qpHandle, socket_->GetFdHandle()));
+    CHK_RET(HrtRaQpConnectAsync(dataQpInfo_.qpHandle, socket_->GetFdHandle(), [this]() -> bool {return this->socket_->GetStopFlag(); }));
 
     return HCCL_SUCCESS;
 }

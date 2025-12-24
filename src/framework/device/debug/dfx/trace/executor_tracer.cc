@@ -68,7 +68,7 @@ void ExecutorTracer::HandleDestroyComm(AicpuComContext *const ctx)
     KfcCommand cmd = KfcCommand::kNone;
     for (auto &commInfo : aicpuCommInfo) {
         hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
-        if (hcclAicpu->GetCommInfoStatus()) {
+        if (hcclAicpu->GetCommInfoStatus() || hcclAicpu->GetIsInitIndOp()) {
             (void) hcclAicpu->GetKfcCommand(cmd);
             if (cmd == KfcCommand::kDestroyComm) {
                 auto groupName = hcclAicpu->GetGroupName();
@@ -113,7 +113,7 @@ void ExecutorTracer::StopBackGround(AicpuComContext *const ctx, bool &isNotStop)
         (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
         for (auto &commInfo : aicpuCommInfo) {
             hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
-            if (hcclAicpu->GetCommInfoStatus()) {
+            if (hcclAicpu->GetCommInfoStatus() || hcclAicpu->GetIsInitIndOp()) {
                 isNotStop = true;
             }
         }
@@ -266,6 +266,11 @@ void ExecutorTracer::HandleCqeStatusInComm()
     for (auto &commInfo : aicpuCommInfo) {
         std::vector<hccl::Stream> streams;
         hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
+
+        // 通信域走自定义算子流程初始化，需要轮询thread状态
+        if (hcclAicpu->GetIsInitIndOp()) {
+            hcclAicpu->HandleIndOpCqe();
+        }
 
         if (!hcclAicpu->GetCommInfoStatus()) { // 已结束, 不再轮询
             continue;

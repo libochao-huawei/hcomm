@@ -38,9 +38,9 @@ HcclResult CollRunAlltoAllDirectFullmesh::Orchestrate(OpParam& param, AlgResourc
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollRunAlltoAllDirectFullmesh][Orchestrate]errNo[0x%016llx]excutor run failed",
             HCCL_ERROR_CODE(ret)), ret);
+
     HCCL_INFO("tag[%s], AlltoAllDirectFullmesh tempAlg orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
-
     return HCCL_SUCCESS;
 }
 

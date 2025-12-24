@@ -24,6 +24,8 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
     tag_ = param.tag;
     algResResp_ = &algRes;
     HcclResult ret = HCCL_SUCCESS;
+    bool needLaunchAtTheEnd = !is310P3Common_; // 是否需要在Orchestrate()结束时launch任务
+
     // 图模式和单卡场景下不需要Loop
     if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         ExecMem execMem;
@@ -43,6 +45,7 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         execMem.outputMem = algRes.cclOutputMem;
         execMem.scratchMem = algRes.scratchMem;
         ret = KernelRun(param, execMem);
+        needLaunchAtTheEnd = false;
     } else if ((param.inputPtr == algRes.cclInputMem.ptr()) && (param.outputPtr == algRes.cclOutputMem.ptr())) {
         ret = AvoidSubgraphLoop(param, algRes);
     } else if (desc_.isZeroCopy) {
@@ -56,7 +59,7 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollAllReduceExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor level0 ReduceScatter failed",
+            HCCL_ERROR("[CollAllReduceExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor level0 failed",
                 HCCL_ERROR_CODE(ret)), ret);
 
         // 在Level1和Level2执行RunLoop
@@ -73,6 +76,7 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
             DeviceMem dstMem = DeviceMem::create(static_cast<u8 *>(algRes.paramOutputMem.ptr()) + slice.offset, slice.size);
             DeviceMem srcMem = DeviceMem::create(static_cast<u8 *>(algRes.paramInputMem.ptr()) + slice.offset, slice.size);
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, param.stream));
+            HCCL_DEBUG("[CollAllReduceExecutor][Orchestrate]AllReduce RunLoop success");
         }
 
         ret = KernelRunIntraServerPost(param, execMem);
@@ -89,12 +93,22 @@ HcclResult CollAllReduceExecutor::Orchestrate(OpParam& param, AlgResourceRespons
             ret = InplaceOpSync(param, execMem);
         } else {
             ret = RunLoop(param, algRes);
+            needLaunchAtTheEnd = false;
         }
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAllReduceExecutor][Orchestrate]errNo[0x%016llx]AllReduce excutor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
-    HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
+
+    // Enforce task launch at the end of Orchestrate
+    if (needLaunchAtTheEnd) {
+        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+        CHK_RET(LaunchTaskExtend(dispatcher_,
+            const_cast<Stream &>(param.stream),
+            const_cast<std::vector<Stream> &>(algResResp_->slaveStreams)));
+    }
+
+    HCCL_INFO("[CollAllReduceExecutor]tag[%s], AllReduce executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -186,8 +200,8 @@ HcclResult CollAllReduceExecutor::RunLoop(OpParam &param, AlgResourceResponse &a
             param.tag.c_str(), topoAttr_.userRankSize, maxCountPerLoop);
         return HCCL_E_PARA;
     }
-    HCCL_DEBUG("[CollAllReduceExecutor][RunLoop]tag[%s], userRankSize is [%u], maxCountPerLoop is [%llu].",
-        param.tag.c_str(), topoAttr_.userRankSize, maxCountPerLoop);
+    HCCL_DEBUG("[CollAllReduceExecutor][RunLoop]tag[%s], maxCountPerLoop is [%lu], userRankSize is [%lu].",
+        param.tag.c_str(), maxCountPerLoop, topoAttr_.userRankSize);
 
     u64 totalCount;
     if (desc_.isZeroCopy) {     // 对零拷贝场景而言，只在Server间通信切循环
@@ -367,7 +381,7 @@ HcclResult CollAllReduceExecutor::PrepareSliceDataWithAlignSize(u64 totalSize, u
     CHK_PRT_RET((sliceNum == 0), HCCL_ERROR("[Prepare][SliceData]data slice prepare, sliceNum is 0"), HCCL_E_PARA);
     u64 tempPerSlice = (totalSize + sliceNum - 1) / sliceNum; /* 1是为了向上取整 */
     u64 sizePerSlice = AlgTemplateBase::RoundUpWithDivisor(tempPerSlice, alignSize);
-    HCCL_DEBUG("total_size:%llu sliceNum:%u temp_per_ring:%llu size_per_ring:%llu", totalSize, sliceNum, tempPerSlice,
+    HCCL_DEBUG("total_size:%llu sliceNum:%u temp_per_ring:%llu size_per_ring:%llu.", totalSize, sliceNum, tempPerSlice,
         sizePerSlice);
     u64 residueSize = totalSize;
     u32 i = 0;
@@ -376,11 +390,12 @@ HcclResult CollAllReduceExecutor::PrepareSliceDataWithAlignSize(u64 totalSize, u
         temp.size = sliceSize;
         temp.offset = totalSize - residueSize + piplineOffset;
         i++;
-        CHK_PRT_RET((sliceSize <= 0), HCCL_ERROR("[Prepare][SliceData]data_slice_prepare sliceSize[%llu]", sliceSize),
+        CHK_PRT_RET((sliceSize <= 0), HCCL_ERROR("[Prepare][SliceData]data_slice_prepare sliceSize[%llu].", sliceSize),
             HCCL_E_PARA);
         residueSize -= sliceSize;
         dataSlice.push_back(temp);
     }
+    HCCL_DEBUG("[%s] PrepareSliceDataWithAlignSize for data_slice_prepare", __func__);
     while (i < sliceNum) {
         temp.size = 0;
         temp.offset = totalSize + piplineOffset;

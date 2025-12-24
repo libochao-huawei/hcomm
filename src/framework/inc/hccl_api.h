@@ -20,6 +20,7 @@
 #include "hccl_res.h"
 #include "hccl_comm.h"
 #include "hccl_rank_graph.h"
+#include "hccl_mem_defs.h"
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
@@ -73,6 +74,15 @@ typedef union {
     };
     uint64_t value;
 } HcclRegMemAttr;
+
+/**
+ * @brief 缓存段元数据描述结构体
+ */
+typedef struct {
+    HcclMemType type; ///< 缓存物理位置类型，参见HcclMemType
+    void *addr;       ///< 缓存地址
+    uint64_t size;    ///< 缓存区域字节数
+} CommBuffer;
 
 /** @} */  // 运行时接口-类型定义
 /**
@@ -1238,6 +1248,19 @@ extern HcclResult HixlCSClientGetLinks(void *clientHandle, CommLink **linkList, 
  */
 // extern HcclResult HixlCSClientChannelGetStatus(void *clientHandle, const ChannelHandle *channelList,
 //     uint32_t listNum, int32_t *statusList);
+
+/**
+ * @brief 查询通信通道的状态
+ * @param[in] comm 通信域句柄 
+ * @param[in] channelList 通道句柄列表
+ * @param[in] listNum 列表数量
+ * @param[out] statusList 返回状态列表，0表示成功
+ * @return HcclResult 执行结果状态码
+ * @note 非阻塞接口
+ * @warning  statusList是否改成枚举？
+ */
+extern HcclResult HcclChannelGetStatus(HcclComm comm, const ChannelHandle *channelList, uint32_t listNum,
+    int32_t *statusList);
 
 /**
  * @brief 获取channel中全部的交换获得的远端内存信息

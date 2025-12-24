@@ -28,16 +28,10 @@
 #include "workflow_pub.h"
 #include "comm_base_pub.h"
 #include "coll_alg_param.h"
-
+#include "multi_qpInfo_manager.h"
 namespace hccl {
 
 constexpr u32 AICPU_RETRY_BACKUP_PORT = 16667;     // aicpu重执行备份默认端口
-constexpr u32 MULTI_QP_CONFIG_SUB_STRING_NUM = 2; // 配置信息格式为"sip,dip=sport0,sport1,...", 因此会被=分为两个子串
-constexpr u32 MULTI_QP_CONFIG_IP_NUM = 2; // 有两个ip，分别为源ip和目的ip
-constexpr u32 MULTI_QP_CONFIG_IP_PAIR_SHIFT_NUM = 32;
-constexpr u32 MULTI_QP_CONFIG_FILE_LINE_MAX = 128 * 1024; // 配置文件最多只能配置128k行有效内容
-constexpr u32 MULTI_QP_CONFIG_SRC_PORT_NUM_MAX = 32; // 一对ip对最多配置32个源端口号
-constexpr u32 MULTI_QP_CONFIG_SRC_PORT_ID_MAX = 65535;
 constexpr u32 MASSIVE_IBV_CONNECTION_COUNT = 1000; // bsr大于这个链路数量就切换链路类型
 constexpr u32 SEND_QP_DEPTH_FOR_BSR = 512; // 使用Transport NpuDriect链路的时候设置send深度为512
 constexpr u32 RECV_QP_DEPTH_FOR_BSR = 128; // // 使用Transport NpuDriect链路的时候设置recv深度为128
@@ -169,7 +163,7 @@ class TransportManager {
 public:
     TransportManager(CCLBufferManager &cclBufferManager,
         const std::unique_ptr<HcclSocketManager> &socketManager_,
-        HcclDispatcher &dispatcher,
+        HcclDispatcher dispatcher,
         const std::unique_ptr<NotifyPool> &notifyPool,
         const std::vector<RankInfo> &rankInfoList,
         RankId userRank,
@@ -231,7 +225,7 @@ private:
     HcclResult CreateDestSockets(const std::string &newTag, RankId remoteRank, u64 taskNum,
         std::vector<std::shared_ptr<HcclSocket> > &connectSockets, HcclNetDevCtx &netDevCtx, bool &isInterRdma, bool forceRdma = false, bool isBackup = false,
         u32 subCommIndex = 0, TransportLinkType linkType = TransportLinkType::RESERVED);
-    u32 GetSocketsPerLink(u64 taskNum);
+    u32 GetSocketsPerLink(u64 taskNum, u32 remoteRankId = INVALID_VALUE_RANKID);
     HcclResult SetMachinePara(const std::string &tag, MachineType machineType, const std::string &serverId, u32 dstRank,
         const bool supportDataReceivedAck, const LinkMode linkMode,
         const std::vector<std::shared_ptr<HcclSocket> > &socketList, const DeviceMem &inputMem,
@@ -256,9 +250,6 @@ private:
     HcclResult ConstructTransTag(const std::string& tag, std::string& transTag, bool isInterRdma, u32 subCommIndex = 0,
         bool isHccs = false);
     HcclResult ExceptionHandle(const std::string &tag, OpCommTransport &opTransportResponse);
-
-    HcclResult LoadMultiQpSrcPortFromFile();
-    HcclResult GetConfigSrcPorts(MachinePara &machinePara);
     HcclResult createSubCommLinkThreads(const std::string &tag, const TransportIOMem &transMem,
         struct SubCommLinkPara &subCommLinkPara, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
@@ -271,7 +262,7 @@ private:
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;
     const std::unique_ptr<HcclSocketManager> &socketManager_;
-    HcclDispatcher &dispatcher_;
+    HcclDispatcher dispatcher_;
     const std::unique_ptr<NotifyPool> &notifyPool_;
     const std::vector<RankInfo> &rankInfoList_;
     RankId userRank_;
@@ -301,9 +292,6 @@ private:
 
     std::atomic<bool> stopFlag_{false};
     HcclWorkflowMode workflowMode_{HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE};
-    std::unordered_map<std::string, std::vector<u32>> mapIpPairSrcPorts_;
-    bool isCfgFileRead_{ false };
-    std::mutex loadCfgFileMutex_; // 控制文件资源的访问
     u64 rankConsistentDataLength_ = 0;
     u32 trafficClass_;
     u32 serviceLevel_;
@@ -311,6 +299,7 @@ private:
     std::mutex ibvCountMutex_;
     HcclCMDType opType_ = HcclCMDType::HCCL_CMD_INVALID;
     bool isStandardCard_ = false;
+    std::unique_ptr<MulQpInfo> mulQpinfo_ = { nullptr };
 };
 }  // namespace hccl
 

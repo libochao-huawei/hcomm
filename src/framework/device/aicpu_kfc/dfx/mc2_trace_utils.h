@@ -69,5 +69,10 @@ private:
     static HcclResult InitSqeBatchInfoHandle();
     static HcclResult InitTraceHandle();
     static HcclResult InitFuncHandle();
+    static void SetHcclKFCTilingDataOne();
+    static void SetHcclKFCTilingDataTwo();
+    static void SetTraceMsgInfo();
+    static void SetTraceSqeBatchInfo();
+    static HcclResult GetTraceFunc(const std::string &traceName);
 };
 #endif // __MC2_TRACE_UTILS_H__

@@ -150,6 +150,22 @@ u32 RunKernelAicpuServerV1(void *args[], HcclCommParamDesc *desc)
     return ret;
 }
 
+HcclResult KfcProf(u64 launchEntryTime, KFCTaskV2 &task, u32 turnOffset = 0U)
+{
+    if (AicpuKfcProf::NeedRecordTimeTaken()) {
+        AicpuKfcProf::SetCurrentProf(launchEntryTime);
+        HcclOpResParam *commParam = reinterpret_cast<HcclOpResParam *>(task.context[0]);
+        AicpuKfcProf::GetCurrentAicpuProf()->rankId = commParam->topoInfo.userRank;
+        AicpuKfcProf::GetCurrentAicpuProf()->endTime = GetCurCpuTimestamp(true);
+    }
+
+    CHK_RET(dfx::AicpuProfilingManager::ReportTaskExecTimeLine(AicpuKfcProf::GetCurrentAicpuProf(), turnOffset));
+    AicpuKfcProf::OutputProfLog(AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_TIME_TAKEN),
+                                AicpuKfcProf::GetaicpuProfInst());
+    AicpuKfcProf::AddProfLoopCnt();
+    return HCCL_SUCCESS;
+}
+
 u32 RunKernelAicpuServerV2(void *args[], HcclCommParamDesc *desc, void *tilingData)
 {
     u64 launchEntryTime = GetCurCpuTimestamp(true);
@@ -166,10 +182,6 @@ u32 RunKernelAicpuServerV2(void *args[], HcclCommParamDesc *desc, void *tilingDa
 
     KFCTaskV2 task;
     task.tilingData = reinterpret_cast<u64>(tilingData);
-    if (tilingData == nullptr) {
-        HCCL_ERROR("tilingData is null.");
-        return HCCL_E_PARA;
-    }
     task.ctxNum = desc->groupNum;
     if (task.ctxNum > MAX_COMM_CTX_NUM) {
         HCCL_ERROR("group num must be smaller than %u.", MAX_COMM_CTX_NUM);
@@ -190,26 +202,12 @@ u32 RunKernelAicpuServerV2(void *args[], HcclCommParamDesc *desc, void *tilingDa
     }
     HCCL_INFO("Start launch RunAicpuInnerKfcSrvLaunch");
     AicpuKfcProf::GetCurrentAicpuProf()->workCnt = 0;
-    auto ret = AicpuKfcProcess::AicpuRunRpcServerForMC2(&task);
-    if (AicpuKfcProcess::CheckNsStopLaunchStatus(desc->groupNum) == HCCL_E_SUSPENDING) {
-        HCCL_INFO("mc2 opp is suspended");
-        return AICPUSUSPENDING_ERROR;
-    }
+    const u32 ret = AicpuKfcProcess::AicpuRunRpcServerForMC2(&task);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("Server runs failed.");
+        HCCL_ERROR("Server runs failed, error code %u.", ret);
         return ret;
     }
-    if (AicpuKfcProf::NeedRecordTimeTaken()) {
-        AicpuKfcProf::SetCurrentProf(launchEntryTime);
-        HcclOpResParam *commParam = reinterpret_cast<HcclOpResParam *>(task.context[0]);
-        AicpuKfcProf::GetCurrentAicpuProf()->rankId = commParam->topoInfo.userRank;
-        AicpuKfcProf::GetCurrentAicpuProf()->endTime = GetCurCpuTimestamp(true);
-    }
-
-    CHK_RET(dfx::AicpuProfilingManager::ReportTaskExecTimeLine(AicpuKfcProf::GetCurrentAicpuProf()));
-    AicpuKfcProf::OutputProfLog(AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_TIME_TAKEN),
-                                AicpuKfcProf::GetaicpuProfInst());
-    AicpuKfcProf::AddProfLoopCnt();
+    CHK_RET(KfcProf(launchEntryTime, task));
     HCCL_INFO("end kfc server.");
     return 0;
 }
@@ -350,8 +348,7 @@ u32 RunAicpuApiRpcSrvLaunchV2(void *args[], HcclCommParamDesc *desc)
             task.context[task.ctxNum++] = arg;
         }
     }
-    CHK_PRT_RET(task.ctxNum == 0 || task.ctxNum > MAX_COMM_CTX_NUM,
-                HCCL_ERROR("Invalid ctx number %u.", task.ctxNum),
+    CHK_PRT_RET(task.ctxNum == 0 || task.ctxNum > MAX_COMM_CTX_NUM, HCCL_ERROR("Invalid ctx number %u.", task.ctxNum),
                 HCCL_E_PARA);
     task.workSpace = 0;
     AicpuKfcProf::GetCurrentAicpuProf()->workCnt = 0;
@@ -359,33 +356,20 @@ u32 RunAicpuApiRpcSrvLaunchV2(void *args[], HcclCommParamDesc *desc)
     if (AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_PRINT_MSG) || AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_PRINT_BUFF)) {
         HCCL_RUN_INFO("Server start, MC2 opIdx:%lu", aicpuOpIdx);
     }
-    HCCL_INFO("Start launch %s, aicpuOpIdx %lu", __func__, aicpuOpIdx);
-    auto ret = AicpuKfcProcess::AicpuRunRpcServerForMC2V2(&task, tilingData);
-    if (AicpuKfcProcess::CheckNsStopLaunchStatus(desc->groupNum) == HCCL_E_SUSPENDING) {
-        HCCL_INFO("mc2 opp is suspended");
-        return AICPUSUSPENDING_ERROR;
-    }
-
+    HCCL_INFO("Start %s, aicpuOpIdx %lu", __func__, aicpuOpIdx);
+    const u32 ret = AicpuKfcProcess::AicpuRunRpcServerForMC2V2(&task, tilingData);
     if (ret != HCCL_SUCCESS) {
         AicpuKfcUtils::PrintTilingData(*tilingData, true);
         HCCL_ERROR("[%s] aicpuOpIdx %lu", __func__, aicpuOpIdx);
         return ret;
     }
-    if (AicpuKfcProf::NeedRecordTimeTaken()) {
-        AicpuKfcProf::SetCurrentProf(launchEntryTime);
-        HcclOpResParam *commParam = reinterpret_cast<HcclOpResParam *>(task.context[0]);
-        AicpuKfcProf::GetCurrentAicpuProf()->rankId = commParam->topoInfo.userRank;
-        AicpuKfcProf::GetCurrentAicpuProf()->endTime = GetCurCpuTimestamp(true);
-    }
+
     const u32 blockNum = HcclAicpuUtils::GetBlockNum();
     const u32 blockIdx = HcclAicpuUtils::GetBlockIdx();
     const u32 totalQueueNum = tilingData->commBlockNum * tilingData->queueNum;
     const u32 turnOffset = blockIdx * (totalQueueNum / blockNum) + std::min(blockIdx, totalQueueNum % blockNum);
-    CHK_RET(dfx::AicpuProfilingManager::ReportTaskExecTimeLine(AicpuKfcProf::GetCurrentAicpuProf(), turnOffset));
-    AicpuKfcProf::OutputProfLog(AicpuKfcProf::IsDebugModeEquals(MC2_DEBUG_TIME_TAKEN),
-                                AicpuKfcProf::GetaicpuProfInst());
-    AicpuKfcProf::AddProfLoopCnt();
-    HCCL_INFO("end %s", __func__);
+    CHK_RET(KfcProf(launchEntryTime, task, turnOffset));
+    HCCL_INFO("End %s, aicpuOpIdx %lu", __func__, aicpuOpIdx);
     return 0;
 }
 

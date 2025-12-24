@@ -9,13 +9,13 @@
 # ----------------------------------------------------------------------------
 
 
-add_library(intf_llt_base INTERFACE)
+add_library(intf_pub_base INTERFACE)
 
-target_compile_definitions(intf_llt_base INTERFACE
+target_compile_definitions(intf_pub_base INTERFACE
 	CFG_BUILD_DEBUG
 )
 
-target_compile_options(intf_llt_base INTERFACE
+target_compile_options(intf_pub_base INTERFACE
     -D_GLIBCXX_USE_CXX11_ABI=0
     -g
     -fprofile-arcs
@@ -23,25 +23,26 @@ target_compile_options(intf_llt_base INTERFACE
     --coverage
     -w
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
-    $<$<STREQUAL:${ENABLE_ASAN},ON>:-fsanitize=address -fno-omit-frame-pointer -static-libasan -fsanitize=undefined -static-libubsan -fsanitize=leak -static-libtsan>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all -fno-stack-protector -fno-omit-frame-pointer -g>
+    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
     -fPIC
     -pipe
 )
 
-target_link_options(intf_llt_base INTERFACE
+target_link_options(intf_pub_base INTERFACE
     -fprofile-arcs -ftest-coverage
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -static-libasan -fsanitize=undefined  -static-libubsan -fsanitize=leak -static-libtsan>
-
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
+    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
 )
 
 
-add_library(intf_llt_pub INTERFACE)
+add_library(intf_pub INTERFACE)
 
-target_link_libraries(intf_llt_pub INTERFACE
-    $<BUILD_INTERFACE:intf_llt_base>
+target_link_libraries(intf_pub INTERFACE
+    $<BUILD_INTERFACE:intf_pub_base>
     -Wl,--whole-archive
-    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a
-    ${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so
+    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a>
+    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so>
     -Wl,--no-whole-archive
     -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )

@@ -308,9 +308,11 @@ bool AicpuKfcRpcServerV2::ReadValidMsgExtArea(int32_t idx, u32 rankSize)
     }
     uint64_t msgExtXorCheck = GenXorForMsgExt(idx, rankSize);
     static uint32_t msgExtXorCheckTurn = 0;
-    if (msgExtXorCheckTurn % MC2_API_XORCHECK_PRINT_NUM == 0 && msgExtXorCheck != extMsgList.xorCheck) {
-        HCCL_WARNING("data is modified! modified_xor:%llu, origin_xor:%llu.", msgExtXorCheck, extMsgList.xorCheck);
-        msgExtXorCheckTurn++;
+    if (UNLIKELY(msgExtXorCheck != extMsgList.xorCheck)) {
+        if (msgExtXorCheckTurn++ % MC2_API_XORCHECK_PRINT_NUM == 0) {
+            HCCL_RUN_INFO("Extend data is modified! modified_xor:%llu, origin_xor:%llu.",
+                          msgExtXorCheck, extMsgList.xorCheck);
+        }
         return false;
     }
     HCCL_INFO("hcclMsgArea xorCheck[%llu]", extMsgList.xorCheck);
@@ -365,11 +367,13 @@ bool AicpuKfcRpcServerV2::ReadValidMsg(HcclMsg *rMsg, HcclMsg *msg, bool needReP
     memcpy_s(rMsg, sizeof(HcclMsg), msg, sizeof(HcclMsg));
     uint32_t msgXorCheck = AicpuKfcUtils::GenXor(rMsg);
     static uint32_t msgXorCheckTurn = 0;
-    if (UNLIKELY(msgXorCheck != rMsg->addMsg.v0Msg.xorCheck && msgXorCheckTurn % MC2_API_XORCHECK_PRINT_NUM == 0)) {
-        AicpuKfcUtils::PrintMsg("Rcv src msg", *msg);
-        AicpuKfcUtils::PrintMsg("Rcv dst msg", *rMsg);
-        HCCL_WARNING("data is modified! modified_xor:%u, origin_xor:%u.", msgXorCheck, rMsg->addMsg.v0Msg.xorCheck);
-        msgXorCheckTurn++;
+    if (UNLIKELY(msgXorCheck != rMsg->addMsg.v0Msg.xorCheck)) {
+        if (msgXorCheckTurn++ % MC2_API_XORCHECK_PRINT_NUM == 0) {
+            AicpuKfcUtils::PrintMsg("Rcv src msg", *msg, true);
+            AicpuKfcUtils::PrintMsg("Rcv dst msg", *rMsg, true);
+            HCCL_RUN_INFO("data is modified! modified_xor:%u, origin_xor:%u.", msgXorCheck,
+                          rMsg->addMsg.v0Msg.xorCheck);
+        }
         return false;
     }
     if (UNLIKELY(IsExceedLimit(static_cast<HcclCMDType>(rMsg->commType.prepareType), rankSize))) {
@@ -436,7 +440,7 @@ HcclResult AicpuKfcRpcServerV2::ResetCommitTaskAdd(HcclDispatcher dispatcherPtr,
 
 void AicpuKfcRpcServerV2::WriteFinishWhenAllFinalize()
 {
-    if (hcclMsgArea_ == nullptr) {
+    if (hcclMsgArea_ == nullptr || totalQueueNum_ != 0U) {
         return;
     }
     uint32_t msgPos = GetMsgPos();
@@ -450,7 +454,7 @@ void AicpuKfcRpcServerV2::WriteFinishWhenAllFinalize()
 
 void AicpuKfcRpcServerV2::WriteRestartFlag()
 {
-    if (hcclMsgArea_ != nullptr) {
+    if (totalQueueNum_ == 0U) {
         for (uint32_t i = 0; i < HCCL_MSG_CNT; i++) {
             hcclMsgArea_->commMsg.singleMsg.sendMsgs[i].addMsg.v0Msg.valid = ~HCCL_MSG_VALID_MASK;
             hcclMsgArea_->commMsg.singleMsg.commitTurnCnt[i].cnt = 0;

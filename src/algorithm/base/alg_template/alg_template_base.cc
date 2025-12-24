@@ -41,8 +41,6 @@ HcclResult ExecutorBase::Prepare(DeviceMem &inputMem, DeviceMem &outputMem, Devi
 {
     // 部分集合通信操作允许input_mem/output_mem为空
 
-    HCCL_DEBUG("ExecutorBase prepare start");
-
     /* * 参数保存 */
     inputMem_ = inputMem;
     outputMem_ = outputMem;
@@ -52,8 +50,10 @@ HcclResult ExecutorBase::Prepare(DeviceMem &inputMem, DeviceMem &outputMem, Devi
     dataType_ = dataType;
     dataBytes_ = count * DataUnitSize(dataType);
     reductionOp_ = reductionOp;
+    HCCL_DEBUG("[ExecutorBase][Prepare]count is %lu, reductionOp is %d", count_, reductionOp_);
     root_ = root;
     disableDMAReduce_ = disableDMAReduce;
+    HCCL_DEBUG("ExecutorBase prepare start");
 
     /* 相对用户基地址偏移 */
     baseOffset_ = baseOffset;
@@ -403,6 +403,8 @@ HcclResult ExecutorBase::Prepare(const u32 userRank, const A2aPipelineMemory &a2
     std::vector<SendRecvInfo> &sendRecvInfoList, const HcclDataType dataType,
     const HcclWorkflowMode workMode)
 {
+    (void) a2aPipelineMemory;
+    (void) sendRecvInfoList;
     return HCCL_E_PARA;
 }
 
@@ -860,7 +862,7 @@ void ExecutorBase::CalcRecursiveHdLinkRelationForFirstScene(u32 rank,
             linkRelation[it] = true;
         }
     } else if (rank < part1Size && rank % 2 == 1) { // 除2判断是否为奇数
-        if (rank - 1 < linkRelation.size() && rank - 1 >= 0) {
+        if ((rank > 0) && (rank - 1 < linkRelation.size())) {
             linkRelation[rank - 1] = true;    //  只有旁边的那个rank
         }
     } else {                                //  rank大于等于part1Size

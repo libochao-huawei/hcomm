@@ -26,8 +26,8 @@ ReduceScatterVOperator::~ReduceScatterVOperator()
 {
 }
 
-HcclResult ReduceScatterVOperator::SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
-    std::string& newTag)
+HcclResult ReduceScatterVOperator::SelectAlg(const std::string& tag, const OpParam& param,
+    std::string& algName, std::string& newTag)
 {
     HcclResult ret;
 
@@ -93,7 +93,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor91093(const OpParam& param, std::
             if (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) {
                 algName = "ReduceScatterVFastDoubleRingFor91093Executor";
             } else {
-                algName = "AlignedReduceScatterDoubleRingFor91093Executor";
+                algName = "AlignedReduceScatterVDoubleRingFor91093Executor";
             }
         } else {
             HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support topoType_[%u]", topoType_);
@@ -220,6 +220,7 @@ HcclResult ReduceScatterVOperator::SelectAlgfor910B(const OpParam& param, std::s
 
 HcclResult ReduceScatterVOperator::SelectAlgfor310P3(const OpParam& param, std::string& algName)
 {
+    (void) param;
     CHK_PRT_RET(userRankSize_ > MAX_310P_RANK_SIZE,
         HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor310P3]rankSize[%u] is not supported.ReduceScatterV does not"
         "support the scenario where the rankSize is greater than 4.", userRankSize_), HCCL_E_NOT_SUPPORT);

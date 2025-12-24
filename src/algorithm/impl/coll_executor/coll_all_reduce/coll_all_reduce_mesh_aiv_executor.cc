@@ -72,7 +72,7 @@ HcclResult CollAllReduceMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize
 
     u32 bestBlockDim = blockDim;
     CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_ERROR("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at lest need [%u].",
+        HCCL_ERROR("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / rankSize * rankSize;
@@ -207,14 +207,17 @@ HcclResult CollAllReduceMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
     CHK_RET(CalBlockDim(blockDim, localRankSize));
     blockDim_ = blockDim;
     topoArgs.identify = algoAttr_.identifier;
+    HCCL_DEBUG("[CollAllReduceMeshAivExecutor][KernelRun]blockDim is %u", blockDim_);
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
  
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

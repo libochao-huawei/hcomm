@@ -29,6 +29,7 @@ constexpr u64 AIV_COMM_INFO_BUFFER_BITMASK = 0x02;
 
 constexpr u64 AIV_ALL_REDUCE_BIG_SIZE = 16 * 1024 * 1024;
 constexpr u64 AIV_ALL_REDUCE_A3_ENTRY_SIZE = 1 * 1024 * 1024; // AllReduce单张卡数据量A3
+constexpr u64 AIV_ALL_REDUCE_A3_GRAPH_ENTRY_SIZE = 4 * 1024 * 1024;
 constexpr u64 AIV_REDUCE_SCATTER_DETER_SMALL_SIZE = 1 * 1024 * 1024;
 constexpr u64 AIV_REDUCE_SCATTER_BIG_SIZE = 190 * 1024;
 constexpr u64 AIV_REDUCE_SCATTER_MID_SIZE = 2 * 1024 * 1024;
@@ -81,8 +82,21 @@ constexpr s32 TAG_INIT_VALUE = 1;
 constexpr s32 TAG_RESET_COUNT = 1000;
 constexpr s32 AIV_A2_ALL_REDUCE_RDMA_KERNEL_NUM = 2;
 
+constexpr u32 TIME_S_TO_US = 1000000;
 constexpr u32 AIV_TIMEOUT_DEFAULT = 1091;
+constexpr u32 AIV_TIMEOUT_DEFAULT_US = 1091 * TIME_S_TO_US;
 constexpr u32 AIV_TIMEOUT_MAX = 1091;
+constexpr u32 AIV_TIMEOUT_MAX_US = 1091 * TIME_S_TO_US;
+
+constexpr u32 BUFFER_DIVIDE = 2;
+constexpr u32 MAX_TARGET_NUM = 20;
+
+enum class KernelArgsType {
+    ARGS_TYPE_SERVER = 0, // kernel参数为单机内
+    ARGS_TYPE_SUPERPOD = 1, // kernel参数包含多机，当前仅A3 AlltoAllV跨机场景
+    ARGS_TYPE_SIMPLE = 2, // kernel参数为A3跨机
+    ARGS_TYPE_DEFAULT
+};
 
 // 非均匀算子AlltoAllV/AlltoAllVC/AllGatherV/ReduceScatterV需要的额外参数信息，A2场景
 using ExtraArgs = struct AlltoAllExtraArgs {
@@ -147,9 +161,15 @@ struct AivAlgArgs {
     s32 step;
     bool isSmallCount;
     u32 deterministic;
+    KernelArgsType argsType;
+    s32 execTimeOut;
+    bool execTimeOutSet; // true表示set by commConfig
  
-    explicit AivAlgArgs(s32 step = -1, bool isSmallCount = false, u32 deterministic = 0)
-    : step(step), isSmallCount(isSmallCount), deterministic(deterministic)
+    explicit AivAlgArgs(s32 step = -1, bool isSmallCount = false, u32 deterministic = 0, 
+        KernelArgsType argsType = KernelArgsType::ARGS_TYPE_SERVER,
+        s32 execTimeOut = static_cast<s32>(AIV_TIMEOUT_DEFAULT), bool execTimeOutSet = false)
+    : step(step), isSmallCount(isSmallCount), deterministic(deterministic), argsType(argsType),
+      execTimeOut(execTimeOut), execTimeOutSet(execTimeOutSet)
     {
     }
 };
@@ -205,7 +225,7 @@ HcclResult RegisterKernel(DevType deviceType);
 HcclResult UnRegisterAivKernel();
 
 HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resourceArgs,
-    const AivTopoArgs &topoArgs, u32 deterministic=0);
+    const AivTopoArgs &topoArgs, AivAlgArgs algArgs = AivAlgArgs{});
 
 inline s32 GetNextAivTag(s32 curTag, s32 tagIncre = 1) { return (curTag + tagIncre - 1) % TAG_RESET_COUNT + 1; }
 
@@ -230,7 +250,7 @@ HcclResult ReadBinFile(const std::string& fileName, std::string& buffer);
 HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, s8* stubFunc);
 
 void SetAivProfilingInfoBeginTime(AivProfilingInfo& aivProfilingInfo);
-void SetAivProfilingInfoBeginTime(uint64_t& oneTime);
+void SetAivProfilingInfoBeginTime(uint64_t& beginTime);
 }
 
 #endif // HCCL_AIV_H

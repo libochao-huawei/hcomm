@@ -2639,7 +2639,7 @@ static inline int ibv_close_xrcd(struct ibv_xrcd *xrcd)
 }
 
 /**
- * ibv_reg_mr_iova2 - Register memory region with a virtual offset address
+ * ibv_reg_mr_iova2 - Register memory region with a virtual offset address.
  *
  * This version will be called if ibv_reg_mr or ibv_reg_mr_iova were called
  * with at least one potential access flag from the IBV_OPTIONAL_ACCESS_RANGE
@@ -2673,7 +2673,7 @@ __ibv_reg_mr(struct ibv_pd *pd, void *addr, size_t length, unsigned int access,
 
 /**
  * ibv_reg_mr_iova - Register a memory region with a virtual offset
- * address
+ * address.
  */
 struct ibv_mr *ibv_reg_mr_iova(struct ibv_pd *pd, void *addr, size_t length,
 			       uint64_t iova, int access);

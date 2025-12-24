@@ -14,9 +14,16 @@
 #include "new/hccl_primitive_remote.h"
 #include "hccl_thread.h"
 #include "launch_context.h"
+#ifdef CCL_KERNEL_AICPU
+#include "device/framework/aicpu_hccl_process.h"
+#endif
 
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
+
+#ifdef CCL_KERNEL_AICPU
+thread_local HcclCommAicpu *g_hcclComm = nullptr;
+#endif
 
 void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
@@ -55,9 +62,9 @@ HcclResult HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *
     return HcclLocalCopyReduce(stream, &dstBuf, &srcBuf, reduceInfo);
 }
 
-HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
+HcclResult HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx)
 {
-    HCCL_DEBUG("[HcommInterThreadNotifyRecordOnThread]thread[%llu], dstThread[%p], dstNotifyIdx[%u].", thread, dstThread, dstNotifyIdx);
+    HCCL_DEBUG("[HcommThreadNotifyRecordOnThread]thread[%llu], dstThread[%p], dstNotifyIdx[%u].", thread, dstThread, dstNotifyIdx);
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -68,34 +75,34 @@ HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandl
     return HcclLocalNotifyRecord(stream, notify);
 }
 
-HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeOut)
+HcclResult HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout)
 {
-    HCCL_DEBUG("[HcommInterThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeOut[%u].", thread, notifyIdx, timeOut);
+    HCCL_DEBUG("[HcommThreadNotifyWaitOnThread]thread[%llu], notifyIdx[%u], timeout[%u].", thread, notifyIdx, timeout);
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
     LocalNotify *notify = GetNotify(thread, notifyIdx);
     CHK_PTR_NULL(notify);
 
-    return HcclLocalNotifyWait(stream, notify, timeOut);
+    return HcclLocalNotifyWait(stream, notify, timeout);
 }
 
 
-HcclResult CommLocalBareNotifyRecord(ThreadHandle thread, uint64_t dstNotifyId)
+HcclResult HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
-    HCCL_DEBUG("[CommLocalBareNotifyRecord]thread[%p], dstNotifyId[%u].", thread, dstNotifyId);
+    HCCL_DEBUG("[HcommAclrtNotifyRecordOnThread]thread[%p], dstNotifyId[%u].", thread, dstNotifyId);
     return HcclLocalBareNotifyRecord(stream, dstNotifyId);
 }
 
-HcclResult CommLocalBareNotifyWait(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
+HcclResult HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut)
 {
     AddThread(thread);
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
-    HCCL_DEBUG("[CommLocalBareNotifyWait]thread[%p], notifyId[%llu], timeOut[%u].",
+    HCCL_DEBUG("[HcommAclrtNotifyWaitOnThread]thread[%p], notifyId[%llu], timeOut[%u].",
         thread, notifyId, timeOut);
     return HcclLocalBareNotifyWait(stream, notifyId, timeOut);
 }
@@ -229,9 +236,9 @@ HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, v
     return HcclRemoteReadReduce(stream, reinterpret_cast<void*>(channel), &locBuf, &rmtBuf, reduceInfo);
 }
 
-HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
+HcclResult HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, const uint32_t remoteNotifyIdx)
 {
-    HCCL_DEBUG("[HcommNotifyRecordOnThread]thread[%llu], channel[%llu], remoteNotifyIdx[%u].",
+    HCCL_DEBUG("[HcommChannelNotifyRecordOnThread]thread[%llu], channel[%llu], remoteNotifyIdx[%u].",
         thread, channel, remoteNotifyIdx);
     AddThread(thread);
 
@@ -241,9 +248,9 @@ HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel,
     return HcclRemoteNotifyRecord(stream, reinterpret_cast<void*>(channel), remoteNotifyIdx);
 }
 
-HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
+HcclResult HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout)
 {
-    HCCL_DEBUG("[HcommNotifyWaitOnThread]thread[%llu], channel[%llu], localNotifyIdx[%u], timeout[%u].",
+    HCCL_DEBUG("[HcommChannelNotifyWaitOnThread]thread[%llu], channel[%llu], localNotifyIdx[%u], timeout[%u].",
         thread, channel, localNotifyIdx, timeout);
     AddThread(thread);
     Stream *stream = GetStream(thread);
@@ -264,4 +271,57 @@ HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode)
 {
     HCCL_DEBUG("HcommSetLaunchMode launchTag[%s]", launchTag);
     return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
+}
+
+HcclResult HcommAcquireComm(const char* commId)
+{
+    CHK_PTR_NULL(commId);
+#ifdef CCL_KERNEL_AICPU
+    g_hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
+    CHK_PRT_RET(!g_hcclComm, HCCL_ERROR("%s g_hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+    HCCL_INFO("%s success, commId[%s]", __func__, commId);
+#else
+    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
+#endif
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommReleaseComm(const char* commId)
+{
+    CHK_PTR_NULL(commId);
+#ifdef CCL_KERNEL_AICPU
+    AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
+    g_hcclComm = nullptr;
+    HCCL_INFO("%s success, commId[%s]", __func__, commId);
+#else
+    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
+#endif
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, u32 size)
+{
+    CHK_PTR_NULL(commId);
+    CHK_PTR_NULL(opInfo);
+#ifdef CCL_KERNEL_AICPU
+    CHK_PTR_NULL(g_hcclComm);
+    g_hcclComm->RegisterOpInfo(opInfo, size);
+    HCCL_INFO("%s success, commId[%s], opInfo[%p], size[%u]", __func__, commId, opInfo, size);
+#else
+    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
+#endif
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback)
+{
+    CHK_PTR_NULL(commId);
+#ifdef CCL_KERNEL_AICPU
+    CHK_PTR_NULL(g_hcclComm);
+    g_hcclComm->RegOpTaskException(callback);
+    HCCL_INFO("%s success, commId[%s]", __func__, commId);
+#else
+    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
+#endif
+    return HCCL_SUCCESS;
 }

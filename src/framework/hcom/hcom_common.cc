@@ -27,6 +27,7 @@
 #include "stream_pub.h"
 #include "mmpa/mmpa_api.h"
 #include "hcom_common.h"
+#include "comm_configer.h"
 
 #include "comm_base_pub.h"
 #include "coll_alg_utils.h"
@@ -175,6 +176,7 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
 {
     CHK_PTR_NULL(commHandle);
     CHK_PTR_NULL(group);
+
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
@@ -189,6 +191,7 @@ HcclResult HcomGetCommHandleByGroup(const char *group, HcclComm *commHandle)
         *commHandle = static_cast<HcclComm>(hcclComm.get());
         return HCCL_SUCCESS;
     }
+    lock.unlock();
 
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     *commHandle = static_cast<HcclComm>(hcclComm.get());
@@ -383,9 +386,16 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
         }
     ));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Create][Group]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            HCOM_ERROR_CODE(ret)),
+        ret);
     CHK_PRT_RET((!strncmp(group, HCCL_WORLD_GROUP, sizeof(HCCL_WORLD_GROUP))),
-        HCCL_ERROR("[Create][Group]create group isn't support world group"), HCCL_E_PARA);
+        HCCL_ERROR("[%s][%s]create group isn't support world group",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str()),
+        HCCL_E_PARA);
 
     RPT_INPUT_ERR(rankIds == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcomCreateGroup", "rankIds", "nullptr", "please check rankIds"}));
@@ -400,13 +410,12 @@ HcclResult HcomCreateGroup(const char *group, u32 rankNum, u32 *rankIds)
                 "please check rankNum"
             }
         ));
-        HCCL_ERROR("[Create][Group]errNo[0x%016llx] group[%s] rankNum[%u] is invalid", HCOM_ERROR_CODE(HCCL_E_PARA),
-            group, rankNum);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] group[%s] rankNum[%u] is invalid",
+            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), group, rankNum);
         return HCCL_E_PARA;
     }
     // 入参合法性校验 END
     std::vector<u32> ranks(rankIds, rankIds + rankNum);
-
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     if (hcomInfo.pComm == nullptr &&
         ((g_hcomCallBackGroupIsInit != nullptr) && (!(g_hcomCallBackGroupIsInit(hcomInfo))))) {
@@ -520,10 +529,10 @@ HcclResult HcomDestroyGroup(const char *group)
     CHK_RET(HcomCheckGroupName(group));
 
     if (!strncmp(group, HCCL_WORLD_GROUP, sizeof(HCCL_WORLD_GROUP))) {
-        HCCL_ERROR("[Destroy][Group]errNo[0x%016llx] destroy group is world group", HCOM_ERROR_CODE(HCCL_E_PARA));
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] destroy group is world group",
+            LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA));
         return HCCL_E_PARA;
     }
-
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
 
     if (hcomInfo.pComm == nullptr &&
@@ -701,8 +710,8 @@ HcclResult HcomGetWorldRankFromGroupRank(const char *group, u32 groupRank, u32 *
             "please check group name"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Get][WorldRank]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
-
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
     if (groupRank >= hcomInfo.params.totalRanks) {
         HCCL_ERROR("[Get][WorldRank]errNo[0x%016llx] groupRank[%u] is out of range[0-%u]",
             HCOM_ERROR_CODE(HCCL_E_PARA), groupRank, hcomInfo.params.totalRanks);
@@ -737,8 +746,8 @@ HcclResult HcomGetGroupRankFromWorldRank(u32 worldRank, const char *group, u32 *
             "please check group name"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Get][GroupRank]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
-
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     if (worldRank >= hcomInfo.params.totalRanks) {
         HCCL_ERROR("[Get][GroupRank]errNo[0x%016llx] world[%u] rank is invalid", HCOM_ERROR_CODE(HCCL_E_PARA),
@@ -869,7 +878,8 @@ HcclResult HcomGetRankSize(const char *group, u32 *rankSize)
             "please check group name"
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Get][RankSize]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] group name is invalid",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     std::shared_ptr<hccl::hcclComm> hcclComm;
     if (group != nullptr && HcclGetCommHandle(group, hcclComm) == HCCL_SUCCESS) {
@@ -956,8 +966,11 @@ HcclResult HcomDestroy(void)
             if (hcomInfo.rankTable.version.compare(HETEROG_CLUSTER_VERSION) == 0) {
                 CHK_RET(hrtGetDeviceIndexByPhyId(hcomInfo.params.logicDevId, logicId));
             }
-            CHK_RET(hrtSetDevice(logicId));
-            HCCL_INFO("[HcomDestroy][SetDeviceId]logicDevId[%u]", logicId);
+            s32 deviceId = 0;
+            if (hrtGetDevice(&deviceId) != HCCL_SUCCESS) {
+                CHK_RET(hrtSetDevice(logicId));
+                HCCL_INFO("[HcomDestroy][SetDeviceId]logicDevId[%u]", logicId);
+            }
         }
 
         HCCL_INFO("[Destroy][Result]hcomInfo[%u].pComm destroy.", i);
@@ -996,18 +1009,23 @@ HcclResult HcomSetGradFusionByIndex(const char *group, u32 segmentNum, const u32
         return HCCL_SUCCESS;
     }
 
-    RPT_INPUT_ERR(inputIdxList == nullptr, "EI0003", std::vector<std::string>({
-            "ccl_op", "parameter", "value", "tips"
-        }),\
+    RPT_INPUT_ERR(inputIdxList == nullptr,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcomSetGradFusionByIndex", "inputIdxList", "nullptr", "please check inputIdxList"}));
     CHK_PTR_NULL(inputIdxList);
     bool bRet = segmentNum == 0;
-    RPT_INPUT_ERR(bRet, "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
-        std::vector<std::string>({
-            "HcomSetGradFusionByIndex", "segmentNum", std::to_string(0), "please check segmentNum"
-        }));
-    CHK_PRT_RET(bRet, HCCL_ERROR("[Set][GradFusionByIndex]errNo[0x%016llx] set split inputIdxList length is zero",
-        HCOM_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    RPT_INPUT_ERR(bRet,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcomSetGradFusionByIndex", "segmentNum", std::to_string(0), "please check segmentNum"}));
+    CHK_PRT_RET(bRet,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] set split inputIdxList length is zero",
+            LOG_KEYWORDS_TASK_EXEC.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            HCOM_ERROR_CODE(HCCL_E_PARA)),
+        HCCL_E_PARA);
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     string idxList;
     for (u32 i = 0; i < segmentNum; i++) {
@@ -1061,8 +1079,8 @@ HcclResult HcomSetGradFusionBySize(const char *group, u32 segmentNum, const floa
             "please check segmentNum"
         }
     ));
-    CHK_PRT_RET(bRet, HCCL_ERROR("[Set][GradFusionBySize]errNo[0x%016llx] set split sizeList length is zero",
-        HCOM_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
+    CHK_PRT_RET(bRet, HCCL_ERROR("[%s][%s]errNo[0x%016llx] set split sizeList length is zero",
+        LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA)), HCCL_E_PARA);
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     string strSizeList;
     for (u32 i = 0; i < segmentNum; i++) {
@@ -1143,7 +1161,7 @@ HcclResult InitHcomMiscInfo(hccl::HcclCommParams &params, const char *rankTable)
     return HCCL_SUCCESS;
 }
 
-bool HcomCheckrtMemcpyAddrAsync(void)
+bool HcomCheckrtMemcpyAddrAsync(const std::string& group)
 {
     float counterVaule = 1.0f;
 
@@ -1154,7 +1172,7 @@ bool HcomCheckrtMemcpyAddrAsync(void)
     void *deviceMemSrc = nullptr;
     void *deviceMemDst = nullptr;
 
-     auto deleter = [&](void *dst) {
+    auto deleter = [&](void *dst) {
         if (dst != nullptr) {
             CHK_PRT(hrtFree(dst));
             if (dst == deviceMemSrcLevel2) {
@@ -1199,7 +1217,7 @@ bool HcomCheckrtMemcpyAddrAsync(void)
     if (ret == HCCL_E_NOT_SUPPORT) {
         notSupportSecAddrCopyWithOffset = true;
     } else {
-        CHK_RET(hcclStreamSynchronize(stream.ptr()));
+        CHK_RET(hcclStreamSynchronize(stream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(group)));
     }
 
     g_notSupportSecAddrCopyWithOffset = notSupportSecAddrCopyWithOffset;
@@ -1246,9 +1264,10 @@ HcclResult HcomNormalInit(const char *rankTableM, const char *identify)
         CHK_PRT_BREAK(hrtGetDevice(&logicDevId) != HCCL_SUCCESS, , errorFlag = true);
         CHK_RET(hrtGetDeviceType(deviceType));
         // 为适配12包，做此修改
-        g_notSupportSecAddrCopyWithOffset = HcomCheckrtMemcpyAddrAsync();
+        g_notSupportSecAddrCopyWithOffset = HcomCheckrtMemcpyAddrAsync(identify);
 
-        ret = CfgGetClusterInfo(rankTableM, identify, hcomInfo.params, hcomInfo.rankTable, deviceType);
+        ret = CfgGetClusterInfo(rankTableM, identify, hcomInfo.params, hcomInfo.rankTable,
+            GetExternalInputInterSuperPodRetryEnable(), deviceType);
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][Result]errNo[0x%016llx] cfg get ranktable[%p] info "\
             "error: identify[%s]", HCOM_ERROR_CODE(ret), rankTableM, identify), errorFlag = true);
 
@@ -1299,22 +1318,26 @@ HcclResult HcomCheckInitClusterInfo(const char *rankTableM, const char *identify
     // rankTable合法性检测
     u32 rankTableSize = 0;
     ret = HcomCheckRankTable(rankTableM, rankTableSize);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
-        std::vector<std::string>({
-                "HcomInit", "rankTableSize", std::to_string(rankTableSize), "please check rankTable"
-            }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Init][Result]errNo[0x%016llx] input rankTable error", HCOM_ERROR_CODE(ret)), ret);
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] input rankTable error",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            HCOM_ERROR_CODE(ret)),
+        ret);
 
     // identify合法性检测
     ret = HcomCheckIdentify(identify);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
-        std::vector<std::string>({
-            "HcomInit", "identify",\
-            {identify, strnlen(identify, IDENTIFY_MAX_LEN + 1)}, "please check identify"
-        }));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcomInit]errNo[0x%016llx] identify parameter error",
-        HCOM_ERROR_CODE(ret)), ret);
+    RPT_INPUT_ERR(ret != HCCL_SUCCESS,
+        "EI0003",
+        std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>(
+            {"HcomInit", "identify", {identify, strnlen(identify, IDENTIFY_MAX_LEN + 1)}, "please check identify"}));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] identify parameter error",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_INVALID_ARGUMENT.c_str(),
+            HCOM_ERROR_CODE(ret)),
+        ret);
     return ret;
 }
 
@@ -1332,13 +1355,14 @@ HcclResult HcomInitByFile(const char *rankTablePath, const char *identify)
     std::string rankTableM;
     std::string realFilePath;
     ret = HcomLoadRanktableFile(rankTablePath, rankTableM, realFilePath);
-    RPT_INPUT_ERR(ret != HCCL_SUCCESS, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
-        std::vector<std::string>({
-                "HcomInitByFile", "rankTablePath", {rankTablePath,\
-                strnlen(rankTablePath, RANK_TABLE_MAX_LEN + 1)}, "please check rankTable"
-            }));
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcomInitByFile]errNo[0x%016llx] rankTablePath[%s] identify[%s] "
-        "load rankTable error.", HCCL_ERROR_CODE(HCCL_E_INTERNAL), rankTablePath, identify), HCCL_E_INTERNAL);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] rankTablePath[%s] identify[%s] load rankTable error.",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_RANKTABLE_CONFIG.c_str(),
+            HCCL_ERROR_CODE(HCCL_E_INTERNAL),
+            rankTablePath,
+            identify),
+        HCCL_E_INTERNAL);
     CHK_RET(HcomCheckInitClusterInfo(rankTableM.c_str(), identify));
     HCCL_RUN_INFO("Entry-HcomInitByFile:rankTablePath[%s], identify[%s]", realFilePath.c_str(), identify);
 
@@ -1399,7 +1423,7 @@ HcclResult HcomGetInCCLbuffer(const char *group, void** buffer, u64 *size)
         }));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Get][HcomGetInCCLbuffer]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
- 
+
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->GetInCCLbuffer(*buffer, *size));

@@ -35,6 +35,7 @@ void CollReduceScatterRingExecutor::ParseParam(const OpParam& param)
     }
 
     // 记录图模式总数据量
+    HCCL_DEBUG("[CollReduceScatterRingExecutor][ParseParam]scratchMemFlag is %d", scratchMemFlag_);
     totalSize_ = topoAttr_.userRankSize * param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
     aicpuUnfoldMode_ = param.aicpuUnfoldMode;
 }

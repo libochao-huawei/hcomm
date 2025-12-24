@@ -10,6 +10,7 @@
 set(src_list
     profiling_manager_device.cc
     profiling_extend_info.cc
+    profiling_command_handle.cc
 )
 
 target_sources(ccl_kernel PRIVATE

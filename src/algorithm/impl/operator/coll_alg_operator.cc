@@ -54,33 +54,43 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag,
     return HCCL_SUCCESS;
 }
 
+HcclResult CollAlgOperator::SelectAlg(const std::string& tag,
+    const OpParam& param, std::string& algName, std::string& newTag, const ResourceLimit &limit)
+{
+    return SelectAlg(tag, param, algName, newTag);
+}
+
 HcclResult CollAlgOperator::GetAivExecParam(std::string& algName, const OpParam& param,
     AlgResourceResponse& algRes, AivSuperKernelArgs &args)
 {
     if (executor_.get() == nullptr) {
         executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor_.get() == nullptr,
-            HCCL_ERROR("[CollAlgOperator][CalcResRequest]Fail to find executor for algName[%s]", algName.c_str()),
+            HCCL_ERROR("[CollAlgOperator][GetAivExecParam]Fail to find executor for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
     }
     return executor_->GetAivExecParam(param, algRes, args);
 }
 
-HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& param, u32 &blockDim)
+HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& param, u32 &blockDim, int32_t aivCoreLimit)
 {
     if (executor_.get() == nullptr) {
         executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor_.get() == nullptr,
-            HCCL_ERROR("[CollAlgOperator][CalcResRequest]Fail to find executor for algName[%s]", algName.c_str()),
+            HCCL_ERROR("[CollAlgOperator][CalBlockDim]Fail to find executor for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
+    }
+
+    if (aivCoreLimit != 0) {
+        CHK_RET(executor_->SetBlockDim(aivCoreLimit));
     }
 
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL){
         CHK_RET(executor_->CalBlockDim(blockDim, userRankSize_,
-            param.All2AllDataDes.sendCount * sizeof(param.All2AllDataDes.sendType), param.opType));
+            param.All2AllDataDes.sendCount * SIZE_TABLE[param.All2AllDataDes.sendType], param.opType));
     } else {
         CHK_RET(executor_->CalBlockDim(blockDim, userRankSize_,
-            param.DataDes.count * sizeof(param.DataDes.dataType), param.opType));
+            param.DataDes.count * SIZE_TABLE[param.DataDes.dataType], param.opType));
     }
     return HCCL_SUCCESS;
 }
@@ -89,7 +99,16 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
     std::string &algName, AlgDesc &algDesc, std::string &newTag)
 {
     // 兼容老接口
-    CHK_RET(SelectAlg(tag, param, algName, newTag));
+    if (limit.ifLimit) {
+        CHK_RET(SelectAlg(tag, param, algName, newTag, limit));
+    } else {
+        CHK_RET(SelectAlg(tag, param, algName, newTag));
+    }
+
+    // 校验控核
+    if (limit.ifLimit && deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAivModeConfig()) {
+        CHK_RET(SelectAlgFor91093WithCoreLimit(param, limit, algName));
+    }
 
     // 从对应executor获取算法描述
     if (executor_.get() == nullptr) {
@@ -99,10 +118,11 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
             HCCL_E_PARA);
         CHK_RET(SetExecutorAttr(param));
     }
+    bool isLastSelect = algDesc.isLastSelect;
     algDesc = executor_->GetAlgDesc();
 
     // 打印维测日志
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
+    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && isLastSelect) {
         // 获取展开模式，转换成字符串
         std::string opExpansionStr;
         if (algDesc.isAivMode) {
@@ -127,8 +147,55 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
             "opExpansionMode[%s] isZeroCopy[%u] retryEnable[%u] isOpBase[%u] isCapture[%u] aivCoreLimit[%u] %s.",
             __func__, newTag.c_str(), algName.c_str(), userRank_, topoType_, AlgTypeToStr(algDesc.algType).c_str(),
             userRankSize_, deviceNumPerAggregation_, moduleNum_ / superPodNum_, superPodNum_,
-            opExpansionStr.c_str(), algDesc.isZeroCopy, retryEnable_, isOpBase, param.isCapture, param.aivCoreLimit, appendStr.c_str());
+            opExpansionStr.c_str(), algDesc.isZeroCopy, retryEnable_, isOpBase, param.isCapture, limit.aivCoreLimit, appendStr.c_str());
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollAlgOperator::SelectAlgFor91093WithCoreLimit(const OpParam &param, const ResourceLimit &limit,
+        std::string &algName)
+{
+    if (executor_.get() == nullptr) {
+        executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
+        CHK_PRT_RET(executor_.get() == nullptr,
+            HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to find executor for algName[%s]", algName.c_str()),
+            HCCL_E_PARA);
+    }
+
+    CHK_RET(SetBlockDim(limit.aivCoreLimit));
+
+    std::string reSelName;
+    switch (param.opType) {
+        case HcclCMDType::HCCL_CMD_ALLREDUCE:
+            reSelName = "AllReduceMeshAivFor91093Executor";
+            break;
+        case HcclCMDType::HCCL_CMD_ALLGATHER:
+            reSelName = "AllGatherMeshAivFor91093Executor";
+            break;
+        case HcclCMDType::HCCL_CMD_REDUCE_SCATTER:
+            reSelName = "ReduceScatterMeshAivFor91093Executor";
+            break;
+        case HcclCMDType::HCCL_CMD_ALLTOALLV:
+        case HcclCMDType::HCCL_CMD_ALLTOALL:
+        case HcclCMDType::HCCL_CMD_ALLTOALLVC:
+            reSelName = "AlltoAllMeshAivFor91093Executor";
+            break;
+        default:
+            break;
+    }
+
+    u32 blockDim;
+    HcclResult ret = CalBlockDim(algName, param, blockDim);
+    executor_ = nullptr;
+    if (ret != HCCL_SUCCESS) {
+        CHK_PRT_RET(reSelName.empty() || reSelName == algName,
+            HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to check CalBlockDim for algName[%s]", algName.c_str()),
+            HCCL_E_PARA);
+
+        algName = reSelName;
+        HCCL_INFO("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Re select to algName[%s]", reSelName.c_str());
+    }
+
     return HCCL_SUCCESS;
 }
 
@@ -484,8 +551,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGather(float delay, u64 sendCurS
         // the (RHD_FACTOR_TWO * moduleNum_ - RHD_FACTOR_ONE) / moduleNum_ is equal to 1 + (moduleNum_ -1) / moduleNum_
         hdCost = ceil(log2(moduleNum_)) * delay +
                  static_cast<double>(RHD_FACTOR_TWO * moduleNum_ - RHD_FACTOR_ONE) / moduleNum_ *
-                 sendCurSize * userRankSize_ / bandWidth *
-                 SECOND2MICROSECOND;
+                 sendCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
     }
 
     // compare cost among NHR, HD and Ring
@@ -502,6 +568,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGatherV(float delay, u64 sendCur
                       static_cast<double>(steps) / moduleNum_ * sendCurSize * userRankSize_ / bandWidth *
                       SECOND2MICROSECOND;
 
+    HCCL_DEBUG("[%s] CollAlgOperator for SelectAlgoTypeForAllGatherV", __func__);
     // theoretical time cost of NHR
     double nhrCost = ceil(log2(moduleNum_)) * delay +
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *
@@ -611,6 +678,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForBroadcast(float delay, u64 curSize,
 HcclResult CollAlgOperator::SelectAlgoTypeForReduce(float delay, u64 curSize, float bandWidth,
     AlgTypeLevel1 &algType)
 {
+    HCCL_DEBUG("[CollAlgOperator]SelectAlgoTypeForReduce start");
     auto steps = moduleNum_ - 1;
     // theoretical time cost of Ring
     double ringCost = DOUBLE_SUB_HCCLCMD * static_cast<double>(steps) * delay +
@@ -858,6 +926,8 @@ HcclResult CollAlgOperator::AHCAlgSelect(AlgTypeLevel1 &algType, std::vector<std
 HcclResult CollAlgOperator::AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vector<std::vector<std::vector<u32>>> &globalSubGroups,
     std::map<AHCConcOpType, TemplateType> &ahcAlgOption, AHCAlgSelectParam &ahcAlgSelectParam)
 {
+    (void) algType;
+    (void) ahcAlgSelectParam;
     AHCConcOpType ahcConcOpType;
     //一层组间拼接时，分组数大于设定阈值则修改默认算法为NHR
     if(globalSubGroups[0].size() <= AHC_LEVEL0_GROUP_SIZE_THRESHOLD ) {

@@ -38,8 +38,8 @@ private:
     HcclResult SubWaitMain();
     HcclResult MainWaitSub();
     HcclResult SubRecordMain();
-    HcclResult RunInterDieOpBase(const u32 RankId, const LINK &link, const u32 srcDMAMemSliceId, u32 unitSize);
-    HcclResult RunInterDieOffload(const u32 RankId, const LINK &link, const u32 srcDMAMemSliceId, u32 unitSize);
+    HcclResult RunInterDieOpBase(const u32 rank, const LINK &link, const u32 srcDMAMemSliceId, u32 unitSize);
+    HcclResult RunInterDieOffload(const u32 rank, const LINK &link, const u32 srcDMAMemSliceId, u32 unitSize);
 
     u64 reduceAttr_ = 0;
     u32 localRank_ = 0;

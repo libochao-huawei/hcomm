@@ -235,8 +235,8 @@ HcclResult ReduceScatterNHR::InlineReduceRxLastStep(const LINK &linkLeft, InterS
         DeviceMem srcMem = inputMem_.range(inputSlices[rxSliceIdx].offset, inputSlices[rxSliceIdx].size);
         DeviceMem tmpMem = scratchMem_.range(outputSlices[rxSliceIdx].offset, outputSlices[rxSliceIdx].size);
         HCCL_DEBUG("[ReduceScatterNHR][RunReduceScatterNHR] final reduce rxSliceIdx[%u] will reduce with "
-            "inputMem_ offset[%llu] to ouput_mem_ offset[%llu] size[%llu]", rxSliceIdx,
-            inputSlices[rxSliceIdx].offset, outputSlices[rxSliceIdx].offset, outputSlices[rxSliceIdx].size);
+            "inputMem_ offset[%llu] to ouput_mem_ offset[%llu] size[%llu]", 
+            rxSliceIdx, inputSlices[rxSliceIdx].offset, outputSlices[rxSliceIdx].offset, outputSlices[rxSliceIdx].size);
 
         rxReduceMems.emplace_back(
             ReducerMemoryInfo { baseOffset_ + inputSlices[rxSliceIdx].offset, srcMem, dstMem, tmpMem });

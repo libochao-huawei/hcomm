@@ -12,6 +12,7 @@
 #include "externalinput_pub.h"
 #include "sal_pub.h"
 #include "heartbeat.h"
+#include "comm_configer.h"
 #include "opretry_agent.h"
 
 namespace hccl {
@@ -451,7 +452,9 @@ HcclResult OpRetryAgentWaitCmd::ParseCommandWithOpId(RetryContext* retryCtx, Ret
         case RETRY_CMD_CHECK_LINK:
             if (curState == RETRY_STATE_WAIT_CMD_CHECK_LINK) {
                 u32 &retryCnt = retryCtx->localRetryInfo_.opInfo.execStatus.retryInfo.retryCount;
-                u32 waitTime = (retryCnt == 0) ? GetExternalInputRetryHoldTime() : GetExternalInputRetryIntervalTime();
+                CommConfiger& commConfiger = CommConfiger::GetInstance();
+                u32 waitTime = (retryCnt == 0) ? commConfiger.GetCommConfigRetryHoldTime(retryCtx->group_) :
+                    commConfiger.GetCommConfigRetryIntervalTime(retryCtx->group_);
                 constexpr u32 TIME_MS_TO_US = 1000;
                 SaluSleep(waitTime * TIME_MS_TO_US);
                 HCCL_RUN_INFO("[OpRetry][Agent]wait for [%u]ms until the link recovers", waitTime);

@@ -109,7 +109,6 @@ HcclResult HcclOneSideServiceAicpu::Init(const std::string &tag, const OpTilingD
     identifier_ = tag;
     rankId_ = tilingData->srcRank;
     rankSize_ = vDataPtr->rankSize;
-    linkTimeout_ = vDataPtr->linkTimeout;
 
     const u32 hostDevId = commResParaPtr_->aicpuOpNotify[0].devId;
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(hostDevId, &devId_));
@@ -117,9 +116,6 @@ HcclResult HcclOneSideServiceAicpu::Init(const std::string &tag, const OpTilingD
     CHK_PRT_RET(devType_ != DevType::DEV_TYPE_910_93, HCCL_ERROR("[Init] Expect devType[%u] is A3[%u]", devType_,
         DevType::DEV_TYPE_910_93), HCCL_E_NOT_SUPPORT);
     CHK_RET(hrtHalGetDeviceInfo(devId_, MODULE_TYPE_SYSTEM, INFO_TYPE_PHY_CHIP_ID, &chipId_));
-
-    HCCL_DEBUG("[Init] rankId[%u] hostDevId[%u] chipId[%u] devId[%u] linkTimeout[%u]", rankId_, hostDevId, chipId_,
-        devId_, linkTimeout_);
 
     s32 devLogicId = INVALID_INT;
     CHK_RET(hrtGetDevice(&devLogicId));
@@ -139,8 +135,8 @@ HcclResult HcclOneSideServiceAicpu::Init(const std::string &tag, const OpTilingD
 
     isInited_ = true;
 
-    HCCL_RUN_INFO("[Init] End. rankId[%u] hostDevId[%u] chipId[%u] devId[%u] linkTimeout[%u] commResPara[%p]", rankId_,
-        hostDevId, chipId_, devId_, linkTimeout_, commResParaPtr_);
+    HCCL_RUN_INFO("[Init] End. rankId[%u] hostDevId[%u] chipId[%u] devId[%u] streamId[%u] commResPara[%p]", rankId_,
+        hostDevId, chipId_, devId_, execStream_.id(), commResParaPtr_);
 
     return HCCL_SUCCESS;
 }
@@ -226,6 +222,7 @@ HcclResult HcclOneSideServiceAicpu::FillMemDetails(MemDetails &localMems, MemDet
 HcclResult HcclOneSideServiceAicpu::PrepareRdmaLink(u32 remoteRankId, const struct HcclQpInfoV2 &qpInfo)
 {
     if (rdmaLinks_[remoteRankId] == nullptr) {
+        linkTimeout_ = 4096ULL * (1 << qpInfo.retryTime) * (qpInfo.retryCnt + 1) / 1000;    // RDMA超时基数是4.096us
         TransportMem::AttrInfo attrInfo{};
         attrInfo.localRankId = rankId_;
         attrInfo.remoteRankId = remoteRankId;
@@ -235,6 +232,9 @@ HcclResult HcclOneSideServiceAicpu::PrepareRdmaLink(u32 remoteRankId, const stru
             return HCCL_E_MEMORY);
         CHK_SMART_PTR_NULL(link);
         rdmaLinks_[remoteRankId] = link;
+        HCCL_INFO("[Init] PrepareRdmaLink. rankId[%u] chipId[%u] devId[%u] remoteRankId[%u] linkTimeout[%u us]"
+            "retryTime[%u] retryCnt[%u]", rankId_, chipId_, devId_, remoteRankId, linkTimeout_, qpInfo.retryTime,
+            qpInfo.retryCnt);
     }
     return HCCL_SUCCESS;
 }

@@ -203,6 +203,7 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
                     reduceMem.localdst.ptr()),
                     ret);
             }
+            HCCL_DEBUG("[Reducer][Run]memcpy_async localSrc is [%p]", reduceMem.localsrc.ptr());
         }
         CHK_RET(postSync_());
     } else {
@@ -229,6 +230,7 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
 HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<Transport> &link,
     const std::vector<ReducerMemoryInfo> &reducerMems, u32 notifyIdx, Stream &stream, DstMemType resultMem) const
 {
+    (void) resultMem;
     CHK_PTR_NULL(stream.ptr());
     CHK_SMART_PTR_NULL(link);
 
@@ -246,7 +248,7 @@ HcclResult Reducer::run(const HcclDispatcher dispatcher, const std::shared_ptr<T
                 HcclReduceAsync(dispatcher, static_cast<s8 *>(remoteMem) + reduceMem.remoteMemOffset,
                 dataBytes / SIZE_TABLE[dataType_], dataType_, reductionOp_, stream, reduceMem.localsrc.ptr(),
                 link->GetRemoteRank(), link->GetLinkType(), INLINE_REDUCE_BIT));
-
+            HCCL_DEBUG("[Reducer][Run]memcpy_async localSrc[%p]", reduceMem.localsrc.ptr());
             if (reduceMem.localsrc != reduceMem.localdst) {
                 ret = HcclD2DMemcpyAsync(dispatcher, reduceMem.localdst, reduceMem.localsrc, stream);
                 CHK_PRT_RET(ret != HCCL_SUCCESS,

@@ -48,8 +48,6 @@ const uint16_t HEAD_TASK = 0;
 constexpr int32_t MAX_COMM_CTX_NUM = 3;
 constexpr int32_t LOCAL = 0;
 constexpr int32_t REMOTE = 1;
-constexpr uint16_t TS_ERROR_RETRY_CONSTRAINT = 1000; // 重执行失败，约束是算子不一致或者inplace算子不支持
-constexpr uint16_t TS_ERROR_AICPU_SDMA = 1001; // AICPU算子失败，sqe类型为SDMA是，上报给aicpu的框架错误码
 constexpr uint16_t MAX_BATCH_WRITE_THREAD_NUM = 2;
 
 constexpr uint8_t FLAG_OFFSET = 1;

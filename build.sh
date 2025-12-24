@@ -20,15 +20,15 @@ JOB_NUM="-j${CPU_NUM}"
 ASAN="false"
 COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
-FULL_MODE="false"  # 新增变量，用于控制是否全量构建
+FULL_MODE="true"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
 BUILD_AARCH="false"
-CUSTOM_SIGN_SCRIPT=""
+CUSTOM_SIGN_SCRIPT="${CURRENT_DIR}/scripts/sign/community_sign_build.py"
 ENABLE_SIGN="false"
-VERSION_INFO="8.5.0.0.B010"
+VERSION_INFO="8.5.0"
 
 BUILD_FWK_HLT="false"
 MOCK_FWK_HLT="0"
@@ -272,8 +272,39 @@ function run_ut() {
   fi
 }
 
+# print usage message
+function usage() {
+  echo "Usage:"
+  echo "  sh build.sh --pkg [-h | --help] [-j<N>]"
+  echo "              [--cann_3rd_lib_path=<PATH>] [-p|--package-path <PATH>]"
+  echo "              [--asan]"
+  echo "              [--sign-script <PATH>] [--enable-sign] [--version <VERSION>]"
+  echo ""
+  echo "Options:"
+  echo "    -h, --help     Print usage"
+  echo "    --asan         Enable AddressSanitizer"
+  echo "    -build-type=<TYPE>"
+  echo "                   Specify build type (TYPE options: Release/Debug), Default: Release"
+  echo "    -j<N>          Set the number of threads used for building, default is 8"
+  echo "    --cann_3rd_lib_path=<PATH>"
+  echo "                   Set ascend third_party package install path, default ./output/third_party"
+  echo "    -p|--package-path <PATH>"
+  echo "                   Set ascend package install path, default /usr/local/Ascend/cann"
+  echo "    --sign-script <PATH>"
+  echo "                   Set sign-script's path to <PATH>"
+  echo "    --enable-sign"
+  echo "                   Enable to sign"
+  echo "    --version <VERSION>"
+  echo "                   Set sign version to <VERSION>"
+  echo ""
+}
+
 while [[ $# -gt 0 ]]; do
-    case $1 in
+    case "$1" in
+      -h | --help)
+        usage
+        exit 0
+        ;;
     -j*)
         JOB_NUM="$1"
         shift
@@ -382,7 +413,7 @@ while [[ $# -gt 0 ]]; do
         shift
         ;;
     --enable-sign)
-        ENABLE_SIGN="true"
+        ENABLE_SIGN="false"
         shift
         ;;
     --sign-script)
@@ -394,8 +425,9 @@ while [[ $# -gt 0 ]]; do
         shift 2
         ;;
     *)
-        break
-        ;;
+        log "Error: Undefined option: $1"
+        usage
+        exit 1
     esac
 done
 

@@ -88,16 +88,16 @@ typedef enum {
     HCCL_DATA_TYPE_FP64 = 10,    /**< fp64 */
     HCCL_DATA_TYPE_BFP16 = 11,    /**< bfp16 */
     HCCL_DATA_TYPE_INT128 = 12,   /**< int128 */
-    HCCL_DATA_TYPE_HIF8 = 14,     /**< experimental */
-    HCCL_DATA_TYPE_FP8E4M3 = 15,  /**< experimental */
-    HCCL_DATA_TYPE_FP8E5M2 = 16,  /**< experimental */
-    HCCL_DATA_TYPE_FP8E8M0 = 17,  /**< experimental */
+    HCCL_DATA_TYPE_HIF8 = 14,     /**< hif8 (not support this version) */ 
+    HCCL_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 (not support this version) */
+    HCCL_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 (not support this version) */
+    HCCL_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 (not support this version) */
     HCCL_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcclDataType;
 
 typedef enum {
     HCCL_DETERMINISTIC = 0,     /**< 0: non-deterministic, 1: deterministic */
-    HCCL_ACCELERATOR,           /**< experimental */
+    HCCL_ACCELERATOR,           /**< 0: default, 1: CCU, 2: AIV, 3: AICPU_TS, 4: HOSTCPU_TS, 5: AICPU (not support this version) */
     HCCL_CONFIG_RESERVED
 } HcclConfig;
 
@@ -107,7 +107,11 @@ union HcclConfigValue {
 
 const uint32_t HCCL_ROOT_INFO_BYTES =  4108; // 4108: root info length
 const uint32_t COMM_NAME_MAX_LENGTH = 128; // group name max length
+const uint32_t BUFFER_NAME_MAX_LENGTH = 128; // cclbuffer name max length
 const uint32_t UDI_MAX_LENGTH = 128; // UDI max length
+const uint32_t HCCL_COMM_ALGO_MAX_LENGTH = 1600; // hccl algo max length
+const uint32_t HCCL_COMM_RETRY_ENABLE_MAX_LENGTH = 50; // hccl_retry_enable max length
+const uint32_t HCCL_COMM_RETRY_PARAMS_MAX_LENGTH = 128; // hccl_retry_params max length
 /**
  * @brief HCCL root info
  */
@@ -117,7 +121,7 @@ typedef struct HcclRootInfoDef {
 
 const uint32_t HCCL_COMM_CONFIG_INFO_BYTES = 24;
 const uint32_t HCCL_COMM_CONFIG_MAGIC_WORD = 0xf0f0f0f0;
-const uint32_t HCCL_COMM_CONFIG_VERSION = 7;
+const uint32_t HCCL_COMM_CONFIG_VERSION = 8;
 const uint32_t HCCL_COMM_DEFAULT_BUFFSIZE = 200;
 const uint32_t HCCL_COMM_BUFFSIZE_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_DEFAULT_DETERMINISTIC = 0;
@@ -126,10 +130,7 @@ const uint32_t HCCL_COMM_DEFAULT_OP_EXPANSION_MODE = 0;
 // 0xffffffff表示用户未配置TC或SL
 const uint32_t HCCL_COMM_TRAFFIC_CLASS_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_SERVICE_LEVEL_CONFIG_NOT_SET = 0xffffffff;
-const int32_t  HCCL_COMM_ENGINE_CONFIG_NOT_SET = -1;
-const uint32_t HCCL_COMM_THREADNUM_CONFIG_NOT_SET = 0xffffffff;
-const uint32_t HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET = 0xffffffff;
-const uint32_t HCCL_COMM_CNT_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET = 0xffffffff;
+const int32_t HCCL_COMM_EXECTIMEOUT_CONFIG_NOT_SET = 0xffffffff;
 
 typedef struct HcclCommConfigDef {
     char reserved[HCCL_COMM_CONFIG_INFO_BYTES];
@@ -142,14 +143,15 @@ typedef struct HcclCommConfigDef {
     uint32_t hcclRdmaServiceLevel;
     uint32_t hcclWorldRankID;
     uint64_t hcclJobID;
-    int32_t commEngine;             ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
-    uint32_t threadNum;             ///< thread数量（新增）
-    uint32_t notifyNumPerThread;    ///< 每个thread的notify数量（新增）
     uint8_t aclGraphZeroCopyEnable; ///< 只有Reduce类算子(单算子和AclGraph下算法选择不一致)受此配置影响 0:默认值，关闭aclgraph零拷贝(结果与单算子一致优先) 1:开启aclgraph零拷贝(性能优先) 
+    int32_t hcclExecTimeOut; // hccl执行超时时间
+    char hcclAlgo[HCCL_COMM_ALGO_MAX_LENGTH];
+    char hcclRetryEnable[HCCL_COMM_RETRY_ENABLE_MAX_LENGTH];
+    char hcclRetryParams[HCCL_COMM_RETRY_PARAMS_MAX_LENGTH];
 } HcclCommConfig;
 
 typedef enum {
-    HCCL_COMM_CONFIG_BUFFER_SIZE= 0,
+    HCCL_COMM_CONFIG_BUFFER_SIZE = 0,
     HCCL_COMM_CONFIG_DETERMINISTIC = 1,
     HCCL_COMM_CONFIG_COMM_NAME = 2,
     HCCL_COMM_CONFIG_OP_EXPANSION_MODE = 3,
@@ -157,6 +159,9 @@ typedef enum {
     HCCL_COMM_CONFIG_WORLD_RANKID = 5,
     HCCL_COMM_CONFIG_JOBID = 6,
     HCCL_COMM_CONFIG_ACLGRAPH_ZEROCOPY_ENABLE = 7,
+    HCCL_COMM_CONFIG_EXEC_TIMEOUT = 8,
+    HCCL_COMM_CONFIG_ALGO = 9,
+    HCCL_COMM_CONFIG_RETRY = 10,
     HCCL_COMM_CONFIG_RESERVED
 } HcclCommConfigCapability;
 
