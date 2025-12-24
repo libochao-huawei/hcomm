@@ -26,6 +26,23 @@ extern "C" {
 #endif  // __cplusplus
 
 /**
+ * @brief 通信的rank图类型
+ */
+typedef enum {
+    RANK_GRAPH_RESERVED = -1,   ///< 保留的rank图类型
+    RANK_GRAPH_910_93 = 0,      ///< 910_93 rank图类型
+} GraphType;
+
+/**
+ * @brief 获取通信域中的rank图
+ * @param comm 通信域句柄
+ * @param rankGraph 通信域中的rank图
+ * @return HcclResult 执行结果状态码
+ * @note 外部使用rankGraph，但不能释放rankGraph内存
+ * @warning
+ */
+extern HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len);
+/**
  * @defgroup 运行时接口
  * @{
  */
