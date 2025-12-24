@@ -309,7 +309,7 @@ HcclResult CollReduceScatterVDeterExecutor::RunReduceScattervLevel1(const OpPara
     std::vector<Slice> slices;
     CHK_RET(CalReduceScatterVSliceData(param, level0RankSize, level1RankSize, slices));
   
-    CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.outputMem, 0,
+    CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.inputMem, 0,
         dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, slices));
 
     CHK_RET(level1TempAlg->RegisterProfiler(
