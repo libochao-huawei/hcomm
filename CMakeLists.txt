@@ -37,11 +37,6 @@ if((BUILD_OPEN_PROJECT AND DEVICE_MODE) OR AARCH_MODE)
     set(CMAKE_C_COMPILER   ${TOOLCHAIN_DIR}/bin/aarch64-target-linux-gnu-gcc)
 endif()
 
-set(CMAKE_CXX_COMPILER_OBJECT "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' "
-                              "-Who-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
-set(CMAKE_C_COMPILER_OBJECT "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' "
-                              "-Who-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>")
-
 # 获取host架构
 execute_process(
     COMMAND uname -m
@@ -50,6 +45,13 @@ execute_process(
 )
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
 project(hcomm)
+
+set(CMAKE_CXX_COMPILE_OBJECT
+    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
+set(CMAKE_C_COMPILE_OBJECT
+    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
 
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
