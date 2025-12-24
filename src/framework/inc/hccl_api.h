@@ -650,10 +650,10 @@ const uint32_t COMM_TAG_LEN_MAX = 255;
  * @warning  有点奇怪，建议再讨论下
  */
 typedef enum {
-    LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
-    LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
-    LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
-} LaunchMode;
+    HCOMM_LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
+    HCOMM_LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
+    HCOMM_LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
+} HcommLaunchMode;
 
  /**
  * @brief 910A3的RankGraph定义
@@ -1493,10 +1493,10 @@ extern HcclResult HcommWriteNbiOnThread(
  * @param[out] dst 目标内存地址
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  * @warning  因为有commChannelFence带了channel，所有跨卡通信的接口是否都统一加channel？
  */
-extern HcclResult HcommWriteOnThread(
+extern int32_t HcommWriteOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
@@ -1532,10 +1532,10 @@ extern HcclResult HcommWriteReduceNbiOnThread(ThreadHandle thread, ChannelHandle
  * @param[in] count 元素个数
  * @param[in] dataType 数据类型
  * @param[in] reduceOp 归约操作类型
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp);
+extern int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+    uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp);
 
 /**
  * @brief 归约写操作
@@ -1570,9 +1570,9 @@ extern HcclResult HcommReadNbiOnThread(
  * @param[out] dst 目标内存地址
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommReadOnThread(
+extern int32_t HcommReadOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
@@ -1608,10 +1608,10 @@ extern HcclResult HcommReadReduceNbiOnThread(ThreadHandle thread, ChannelHandle 
  * @param[in] count 元素个数
  * @param[in] dataType 数据类型
  * @param[in] reduceOp 归约操作类型
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
-    HcclDataType dataType, HcclReduceOp reduceOp);
+extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
+    HcommDataType dataType, HcommReduceOp reduceOp);
 
 /**
  * @brief 归约读操作
@@ -1723,10 +1723,10 @@ extern HcclResult HcommWriteWithNotifyNbiOnThread(ThreadHandle thread, ChannelHa
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @param[in] notifyIdx 远端通知索引
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  * @note 当前在A5上主要支持
  */
-extern HcclResult HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
