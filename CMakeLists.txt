@@ -96,7 +96,6 @@ if(BUILD_OPEN_PROJECT)
         include/hccl/hccl_types.h
         src/pub_inc/hccn_rping.h
         include/hccl/hccl_rank_graph.h
-        include/hccl/hccl_rankgraph.h
         include/hccl/hccl_res.h
         include/hccl/hcomm_primitives.h
     )
