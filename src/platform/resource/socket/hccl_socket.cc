@@ -100,10 +100,14 @@ HcclResult HcclSocket::Listen()
     }
     RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EJ0003", std::vector<std::string>({"reason"}),
             std::vector<std::string>({"The IP address and port have been bound already."}));
+    std::stringstream tmpMsgstream;
+    tmpMsgstream << ((socketType_ == NicType::HOST_NIC_TYPE) ? ("[" + LOG_KEYWORDS_INIT_CHANNEL + "]") :
+        ("[" + LOG_KEYWORDS_INIT_GROUP + "]")) << "[" << LOG_KEYWORDS_RANKTABLE_DETECT << "]";
+    std::string errmsg = tmpMsgstream.str();
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclSocket][Listen] socket type[%u], listen on ip[%s] and specific port[%u] fail. "
+        HCCL_ERROR("%s socket type[%u], listen on ip[%s] and specific port[%u] fail. "
         "Please check the port status and whether the port is being used by other process.",
-        socketType_, localIp_.GetReadableAddress(), localPort_), ret);
+        errmsg.c_str(), socketType_, localIp_.GetReadableAddress(), localPort_), ret);
 
     CHK_RET(GetNicSocketHandle());
 
@@ -134,12 +138,16 @@ HcclResult HcclSocket::Listen(u32 port)
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
             localIp_, hostSocketHandle, port, false);
     }
+    std::stringstream tmpMsgstream;
+    tmpMsgstream << ((socketType_ == NicType::HOST_NIC_TYPE) ? ("[" + LOG_KEYWORDS_INIT_CHANNEL + "]") :
+        ("[" + LOG_KEYWORDS_INIT_GROUP + "]")) << "[" << LOG_KEYWORDS_RANKTABLE_DETECT << "]";
+    std::string errmsg = tmpMsgstream.str();
     CHK_PRT_RET(ret == HCCL_E_UNAVAIL,
-        HCCL_INFO("[HcclSocket][Listen] socket type[%u], Could not listen on IP [%s] and port [%u], port already in use.",
-        socketType_, localIp_.GetReadableAddress(), port), ret);
+        HCCL_INFO("%s socket type[%u], Could not listen on IP [%s] and port [%u], port already in use.",
+        errmsg.c_str(), socketType_, localIp_.GetReadableAddress(), port), ret);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclSocket][Listen] socket type[%u], listen on ip[%s] and port[%u] fail,.",
-        socketType_, localIp_.GetReadableAddress(), port), ret);
+        HCCL_ERROR("%s socket type[%u], listen on ip[%s] and port[%u] fail,.",
+        errmsg.c_str(), socketType_, localIp_.GetReadableAddress(), port), ret);
 
     CHK_RET(GetNicSocketHandle());
 
