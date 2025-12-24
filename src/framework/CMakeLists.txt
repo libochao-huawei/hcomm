@@ -527,7 +527,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/common/health/calc_crc.cc
         ${HCCL_BASE_DIR}/common/health/rank_consistentcy_checker.cc
         ${HCCL_BASE_DIR}/common/stream/stream_utils_aicpu.cc
-        ${HCCL_BASE_DIR}/common/error_code/error_code.cc
 
         #framework
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
