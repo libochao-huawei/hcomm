@@ -211,20 +211,23 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     // 同通信域同算子复用tag
     const string tag = "AllReduce_" + hcclComm->GetIdentifier();
 
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
-
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                             "tag[%s], sendBuf[%p], recvBuf[%p], count[%d], dataType[%s], op[%s], streamId[%d],"
+                             "tag[%s], sendBuf[%p], recvBuf[%p], count[%d], dataType[%s], op[%s], localRank[%u], streamId[%d],"
                              "deviceLogicId[%d]",
                              tag.c_str(), hcclComm->barrierSendBuf, hcclComm->barrierRecvBuf, HCCL_BARRIER_DEFAULT_COUNT,
-                             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), streamId, deviceLogicId);
+                             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclBarrier:" + std::string(stackLogBuffer) +

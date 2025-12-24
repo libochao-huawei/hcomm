@@ -1866,12 +1866,15 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], buf[%p], count[%llu], dataType[%s], root[%u], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), buf, count, GetDataTypeEnumStr(dataType).c_str(), root, streamId, deviceLogicId);
+            "tag[%s], buf[%p], count[%llu], dataType[%s], root[%u], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), buf, count, GetDataTypeEnumStr(dataType).c_str(), root, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclBroadcastInner:" + std::string(stackLogBuffer) +
@@ -1983,14 +1986,17 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], op[%s],"
-            "streamId[%d], deviceLogicId[%d]",
+            "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
-            streamId, deviceLogicId);
+            localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclReduceScatterInner:" + std::string(stackLogBuffer) +
@@ -2120,14 +2126,17 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], sendDispls[%p], recvCount[%llu], dataType[%s], op[%s],"
-            "streamId[%d], deviceLogicId[%d]",
+            "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, sendDispls, recvCount,
-            GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclReduceScatterVInner:" + std::string(stackLogBuffer) +
@@ -2254,12 +2263,15 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], root[%u], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), root, streamId, deviceLogicId);
+            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], root[%u], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), root, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclScatterInner:" + std::string(stackLogBuffer) +
@@ -2366,13 +2378,16 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], streamId[%d],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], localRank[%u], streamId[%d],"
             "deviceLogicId[%d]",
-            tag.c_str(), sendBuf, recvBuf, sendCount, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            tag.c_str(), sendBuf, recvBuf, sendCount, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAllGatherInner:" + std::string(stackLogBuffer) +
@@ -2492,6 +2507,9 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
@@ -2500,9 +2518,9 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%llu], recvDispls[%llu], "
-            "dataType[%s], streamId[%d], deviceLogicId[%d]",
+            "dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, recvCounts, recvDispls,
-            GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAllGatherVInner:" + std::string(stackLogBuffer) +
@@ -2608,8 +2626,8 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], count[%llu], dataType[%s], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), sendBuf, count, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            "tag[%s], sendBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), sendBuf, count, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclSendInner:" + std::string(stackLogBuffer) +
@@ -2701,8 +2719,8 @@ HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, u
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], recvBuf[%p], count[%llu], dataType[%s], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            "tag[%s], recvBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclRecvInner:" + std::string(stackLogBuffer) +
@@ -3154,19 +3172,23 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
     const std::string tag = HCCL_ALLTOALL + "_" + hcclComm->GetIdentifier();
     CHK_RET(HcomCheckOpParam(tag.c_str(), 0, sendType, stream));
     CHK_RET(HcomCheckDataType(recvType));
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
     // 接口交互信息日志
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], streamId[%d],"
+            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], localRank[%u], streamId[%d],"
             "deviceLogicId[%d]",
             tag.c_str(), sendCount, recvCount, GetDataTypeEnumStr(sendType).c_str(), GetDataTypeEnumStr(recvType).c_str(),
-            streamId, deviceLogicId);
+            localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAlltoAllInner:" + std::string(stackLogBuffer) +
@@ -3260,19 +3282,23 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
     const std::string tag = HCCL_ALLTOALLV + "_" + hcclComm->GetIdentifier();
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataType(recvType), tag.c_str());
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], recvCounts[%p], sendType[%s],"
-            "recvType[%s], streamId[%d], deviceLogicId[%d]",
+            "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, recvCounts, GetDataTypeEnumStr(sendType).c_str(),
-            GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAlltoAllVInner:" + std::string(stackLogBuffer) +
@@ -3371,8 +3397,6 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataType(recvType), tag.c_str());
 
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
     u64 sendCountMatrixHash;
     HcomGetHashFromSendCountMatrix(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
 
@@ -3382,11 +3406,17 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p],"
-            "recvType[%s], streamId[%d], deviceLogicId[%d]",
+            "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, sendCountMatrixHash, GetDataTypeEnumStr(sendType).c_str(), recvBuf,
-            GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAlltoAllVCInner:" + std::string(stackLogBuffer) +
@@ -3493,14 +3523,17 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], count[%llu], dataType[%s], op[%s], root[%u],"
-            "streamId[%d], deviceLogicId[%d]",
+            "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
-            root, streamId, deviceLogicId);
+            root, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclReduceInner:" + std::string(stackLogBuffer) +
@@ -4055,9 +4088,6 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
     CHK_PTR_NULL(sendRecvInfo);
     CHK_PRT_RET((itemNum == 0), HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);
 
-    s32 streamId = 0;
-    CHK_RET(hrtGetStreamId(stream, streamId));
-
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
     // 若任务不同，也复用tag
@@ -4073,8 +4103,14 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET(hrtGetStreamId(stream, streamId));
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], itemNum[%u], streamId[%d], deviceLogicId[%d]", tag.c_str(), itemNum, streamId, deviceLogicId);
+            "tag[%s], itemNum[%u], localRank[%u], streamId[%d], deviceLogicId[%d]", tag.c_str(), itemNum, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclBatchSendRecvInner:" + std::string(stackLogBuffer) +
