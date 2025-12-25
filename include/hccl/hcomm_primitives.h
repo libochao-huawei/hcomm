@@ -321,8 +321,6 @@ extern int32_t HcommRegisterOpInfo(const char* commId, void* opInfo, uint32_t si
 typedef void (*HcommGetOpInfoCallback)(const void *opInfo, char *outPut, size_t size);
 extern int32_t HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
 
-#define HCOMM_PRIMITIVES_H_MODIFIED
-
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
