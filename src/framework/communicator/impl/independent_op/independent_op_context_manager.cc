@@ -36,7 +36,7 @@ HcclResult ContextManager::CreateCommEngineCtx(const std::string &tag, CommEngin
     void* ctxData = nullptr;
     // 区分设备类型
     HcclMemType type;
-    if (engine == COMM_ENGINE_HOSTCPU || engine == COMM_ENGINE_HOSTCPU_TS) {
+    if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS) {
         type = HCCL_MEM_TYPE_HOST;
         ctxData = malloc(size);
         CHK_PTR_NULL(ctxData);
@@ -89,7 +89,7 @@ HcclResult ContextManager::CopyCommEngineCtx(const std::string &tag, CommEngine 
         // 从Host内存拷贝到Device Context内存上
         CHK_RET(hrtMemSyncCopy(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size,
             HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
-    } else if (engine == COMM_ENGINE_HOSTCPU || engine == COMM_ENGINE_HOSTCPU_TS) {
+    } else if (engine == COMM_ENGINE_CPU || engine == COMM_ENGINE_CPU_TS) {
         CHK_RET(GetCommEngineCtx(tag, engine, &dstCtx, &dstSize));
         (void)memcpy_s(reinterpret_cast<uint8_t*>(dstCtx) + dstCtxOffset, size, srcCtx, size);
     } else {

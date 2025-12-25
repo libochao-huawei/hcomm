@@ -100,14 +100,14 @@ HcclResult HcclGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum)
+HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
-    CHK_PTR_NULL(rankList);
+    CHK_PTR_NULL(ranks);
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = hcclComm->GetInstRanksByNetLayer(netLayer, rankList, rankNum);
+    HcclResult ret = hcclComm->GetInstRanksByNetLayer(netLayer, ranks, rankNum);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
         return ret;

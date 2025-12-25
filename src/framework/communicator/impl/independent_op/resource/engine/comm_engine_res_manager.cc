@@ -30,8 +30,8 @@ HcclResult CommEngineResMgr::Init(uint32_t threadNum, uint32_t notifyNumPerThrea
     return HCCL_SUCCESS;
 }
 
-HcclResult CommEngineResMgr::HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
-    uint32_t notifyNumPerThread, ThreadHandle *thread)
+HcclResult CommEngineResMgr::HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
+    uint32_t notifyNumPerThread, ThreadHandle *threads)
 {
     CHK_SMART_PTR_NULL(threadMgr_);
     uint32_t setThreadNum = threadMgr_->GetThreadNum();
@@ -40,7 +40,7 @@ HcclResult CommEngineResMgr::HcclAllocThreadRes(CommEngine engine, uint32_t thre
         __func__, threadNum, setThreadNum), HCCL_E_PARA);
     CHK_PRT_RET(notifyNumPerThread > setNotifyNumPerThread,  HCCL_ERROR("[%s] Alloced preNotify num[%u] more than "
         "num[%u] in config", __func__, notifyNumPerThread, setNotifyNumPerThread), HCCL_E_PARA);
-    return threadMgr_->HcclAllocThreadRes(engine, threadNum, notifyNumPerThread, thread);
+    return threadMgr_->HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads);
 }
 
 HcclResult CommEngineResMgr::HcclThreadAcquireWithStream(CommEngine engine,

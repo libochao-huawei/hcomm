@@ -22,9 +22,9 @@ HcclResult HcclEngineCtxCreate(HcclComm comm, const char *ctxTag, CommEngine eng
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(ctxTag);
     CHK_PTR_NULL(ctx);
-    CHK_PRT_RET(strlen(ctxTag) > HCCL_OP_TAG_LEN_MAX,
+    CHK_PRT_RET(strlen(ctxTag) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
-            __func__,  strlen(ctxTag), HCCL_OP_TAG_LEN_MAX), HCCL_E_PARA);
+            __func__,  strlen(ctxTag), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s]Invalid CtxSize, CtxSize[%u]", __func__, size), HCCL_E_PARA);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
@@ -46,9 +46,9 @@ HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine engine
     CHK_PTR_NULL(ctxTag);
     CHK_PTR_NULL(ctx);
     CHK_PTR_NULL(size);
-    CHK_PRT_RET(strlen(ctxTag) > HCCL_OP_TAG_LEN_MAX,
+    CHK_PRT_RET(strlen(ctxTag) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
-            __func__, strlen(ctxTag), HCCL_OP_TAG_LEN_MAX), HCCL_E_PARA);
+            __func__, strlen(ctxTag), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
     HcclResult ret = contextMgr.GetCommEngineCtx(std::string(ctxTag), engine, ctx, size);
@@ -69,9 +69,9 @@ HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTa
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(ctxTag);
     CHK_PTR_NULL(srcCtx);
-    CHK_PRT_RET(strlen(ctxTag) > HCCL_OP_TAG_LEN_MAX,
+    CHK_PRT_RET(strlen(ctxTag) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[%s] ctxTag length exceeds maximum length, ctxTag length[%zu], max length[%d]",
-            __func__,  strlen(ctxTag), HCCL_OP_TAG_LEN_MAX), HCCL_E_PARA);
+            __func__,  strlen(ctxTag), HCCL_RES_TAG_MAX_LEN), HCCL_E_PARA);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s]Invalid size, size[%llu]", __func__, size), HCCL_E_PARA);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     auto& contextMgr = hcclComm->GetIndependentOp().GetContextManager();
