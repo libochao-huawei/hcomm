@@ -1,6 +1,6 @@
 # create\_group<a name="ZH-CN_TOPIC_0000001312713837"></a>
 
-## AI处理器支持情况<a name="section10594071513"></a>
+## 产品支持情况<a name="section10594071513"></a>
 
 <a name="table38301303189"></a>
 <table><thead align="left"><tr id="row20831180131817"><th class="cellrowborder" valign="top" width="57.86%" id="mcps1.1.3.1.1"><p id="p1883113061818"><a name="p1883113061818"></a><a name="p1883113061818"></a>产品</p>
@@ -9,24 +9,21 @@
 </th>
 </tr>
 </thead>
-<tbody><tr id="row220181016240"><td class="cellrowborder" valign="top" width="57.86%" headers="mcps1.1.3.1.1 "><p id="p48327011813"><a name="p48327011813"></a><a name="p48327011813"></a><span id="ph583230201815"><a name="ph583230201815"></a><a name="ph583230201815"></a><term id="zh-cn_topic_0000001312391781_term1253731311225"><a name="zh-cn_topic_0000001312391781_term1253731311225"></a><a name="zh-cn_topic_0000001312391781_term1253731311225"></a>Ascend 910C</term></span></p>
+<tbody><tr id="row220181016240"><td class="cellrowborder" valign="top" width="57.86%" headers="mcps1.1.3.1.1 "><p id="p48327011813"><a name="p48327011813"></a><a name="p48327011813"></a><span id="ph583230201815"><a name="ph583230201815"></a><a name="ph583230201815"></a><term id="zh-cn_topic_0000001312391781_term1253731311225"><a name="zh-cn_topic_0000001312391781_term1253731311225"></a><a name="zh-cn_topic_0000001312391781_term1253731311225"></a>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term></span></p>
 </td>
 <td class="cellrowborder" align="center" valign="top" width="42.14%" headers="mcps1.1.3.1.2 "><p id="p7948163910184"><a name="p7948163910184"></a><a name="p7948163910184"></a>√</p>
 </td>
 </tr>
-<tr id="row173226882415"><td class="cellrowborder" valign="top" width="57.86%" headers="mcps1.1.3.1.1 "><p id="p14832120181815"><a name="p14832120181815"></a><a name="p14832120181815"></a><span id="ph1292674871116"><a name="ph1292674871116"></a><a name="ph1292674871116"></a><term id="zh-cn_topic_0000001312391781_term11962195213215"><a name="zh-cn_topic_0000001312391781_term11962195213215"></a><a name="zh-cn_topic_0000001312391781_term11962195213215"></a>Ascend 910B</term></span></p>
+<tr id="row173226882415"><td class="cellrowborder" valign="top" width="57.86%" headers="mcps1.1.3.1.1 "><p id="p14832120181815"><a name="p14832120181815"></a><a name="p14832120181815"></a><span id="ph1292674871116"><a name="ph1292674871116"></a><a name="ph1292674871116"></a><term id="zh-cn_topic_0000001312391781_term11962195213215"><a name="zh-cn_topic_0000001312391781_term11962195213215"></a><a name="zh-cn_topic_0000001312391781_term11962195213215"></a>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term></span></p>
 </td>
 <td class="cellrowborder" align="center" valign="top" width="42.14%" headers="mcps1.1.3.1.2 "><p id="p19948143911820"><a name="p19948143911820"></a><a name="p19948143911820"></a>√</p>
-</td>
-</tr>
-<tr id="row186111339162516"><td class="cellrowborder" colspan="2" valign="top" headers="mcps1.1.3.1.1 mcps1.1.3.1.2 "><p id="p5133163315209"><a name="p5133163315209"></a><a name="p5133163315209"></a><span id="ph71511010202"><a name="ph71511010202"></a><a name="ph71511010202"></a>注：AI处理器与昇腾产品的对应关系，请参见《<a href="https://www.hiascend.com/document/detail/zh/AscendFAQ/ProduTech/productform/hardwaredesc_0001.html" target="_blank" rel="noopener noreferrer">昇腾产品形态说明</a>》。</span></p>
 </td>
 </tr>
 </tbody>
 </table>
 
 > [!NOTE]说明
-> 针对Ascend 910B，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
+> 针对Atlas A2 训练系列产品/Atlas A2 推理系列产品，仅支持Atlas 800T A2 训练服务器、Atlas 900 A2 PoD 集群基础单元、Atlas 200T A2 Box16 异构子框。
 
 ## 功能说明<a name="section15101187760"></a>
 
@@ -80,7 +77,7 @@ def create_group(group, rank_num, rank_ids)
 <td class="cellrowborder" valign="top" width="66.71000000000001%" headers="mcps1.1.4.1.3 "><p id="p194881567257"><a name="p194881567257"></a><a name="p194881567257"></a>list类型。</p>
 <p id="p28368299334"><a name="p28368299334"></a><a name="p28368299334"></a>组成该group的world_rank_id列表。</p>
 <p id="p15751133182617"><a name="p15751133182617"></a><a name="p15751133182617"></a>在不同单板类型上，有不同的限制。</p>
-<div class="p" id="p1613649124016"><a name="p1613649124016"></a><a name="p1613649124016"></a> 针对<span id="ph14880920154918"><a name="ph14880920154918"></a><a name="ph14880920154918"></a><term id="zh-cn_topic_0000001312391781_term16184138172215"><a name="zh-cn_topic_0000001312391781_term16184138172215"></a><a name="zh-cn_topic_0000001312391781_term16184138172215"></a>Ascend 910B</term></span>：<a name="ul27072714012"></a><a name="ul27072714012"></a><ul id="ul27072714012"><li>对于Server单机场景，rank_ids无限制条件。</li><li>对于Server集群场景，rank_ids需满足如下条件：<p id="p12564111118917"><a name="p12564111118917"></a><a name="p12564111118917"></a>建议各Server要选取相同数量的rank（数量大小无要求），且各Server选取的rank对应位置要相等（即rank id按8取模相等）。若各Server选取的rank数量不同，会造成性能劣化。</p>
+<div class="p" id="p1613649124016"><a name="p1613649124016"></a><a name="p1613649124016"></a> 针对<span id="ph14880920154918"><a name="ph14880920154918"></a><a name="ph14880920154918"></a><term id="zh-cn_topic_0000001312391781_term16184138172215"><a name="zh-cn_topic_0000001312391781_term16184138172215"></a><a name="zh-cn_topic_0000001312391781_term16184138172215"></a>Atlas A2 训练系列产品/Atlas A2 推理系列产品</term></span>：<a name="ul27072714012"></a><a name="ul27072714012"></a><ul id="ul27072714012"><li>对于Server单机场景，rank_ids无限制条件。</li><li>对于Server集群场景，rank_ids需满足如下条件：<p id="p12564111118917"><a name="p12564111118917"></a><a name="p12564111118917"></a>建议各Server要选取相同数量的rank（数量大小无要求），且各Server选取的rank对应位置要相等（即rank id按8取模相等）。若各Server选取的rank数量不同，会造成性能劣化。</p>
 <p id="p651125764512"><a name="p651125764512"></a><a name="p651125764512"></a>举例：</p>
 <p id="p19312223152212"><a name="p19312223152212"></a><a name="p19312223152212"></a>假设对三台Server创建group，三台Server的rank id分别为：</p>
 <p id="p1922461117466"><a name="p1922461117466"></a><a name="p1922461117466"></a>{0,1,2,3,4,5,6,7}</p>
@@ -92,7 +89,7 @@ def create_group(group, rank_num, rank_ids)
 <p id="p1194217322110"><a name="p1194217322110"></a><a name="p1194217322110"></a>rank_ids=[4,5,6,7,12,13,14,15,20,21,22,23]</p>
 </li></ul>
 </div>
-<p id="p6916121605114"><a name="p6916121605114"></a><a name="p6916121605114"></a> 针对<span id="ph13754548217"><a name="ph13754548217"></a><a name="ph13754548217"></a><term id="zh-cn_topic_0000001312391781_term1253731311225_1"><a name="zh-cn_topic_0000001312391781_term1253731311225_1"></a><a name="zh-cn_topic_0000001312391781_term1253731311225_1"></a>Ascend 910C</term></span>：建议每个超节点中的Server数量一致，每个Server中的rank数量一致，若不一致，会造成性能劣化。</p>
+<p id="p6916121605114"><a name="p6916121605114"></a><a name="p6916121605114"></a> 针对<span id="ph13754548217"><a name="ph13754548217"></a><a name="ph13754548217"></a><term id="zh-cn_topic_0000001312391781_term1253731311225_1"><a name="zh-cn_topic_0000001312391781_term1253731311225_1"></a><a name="zh-cn_topic_0000001312391781_term1253731311225_1"></a>Atlas A3 训练系列产品/Atlas A3 推理系列产品</term></span>：建议每个超节点中的Server数量一致，每个Server中的rank数量一致，若不一致，会造成性能劣化。</p>
 <p id="p67038351313"><a name="p67038351313"></a><a name="p67038351313"></a><strong id="b1293616381436"><a name="b1293616381436"></a><a name="b1293616381436"></a>补充说明：</strong></p>
 <p id="p115715491633"><a name="p115715491633"></a><a name="p115715491633"></a>建议rank_ids按照Device物理连接顺序进行排序，即将物理连接上较近的device编排在一起。例如，若device_ip按照物理连接从小到大设置，则rank_ids也建议按照从小到大的顺序设置。</p>
 </td>
@@ -111,7 +108,7 @@ def create_group(group, rank_num, rank_ids)
 
 ## 调用示例<a name="section1221995817532"></a>
 
-```bash
+```python
 from hccl.manage.api import create_group
 create_group("myGroup", 4, [0, 1, 2, 3])
 ```
