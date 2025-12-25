@@ -85,12 +85,15 @@ HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& par
         CHK_RET(executor_->SetBlockDim(aivCoreLimit));
     }
 
-    if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL){
+    if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
         return executor_->CalBlockDim(blockDim, userRankSize_,
             param.All2AllDataDes.sendCount * SIZE_TABLE[param.All2AllDataDes.sendType], param.opType);
-    } else {
+    } else if (param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE || param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER
+        || param.opType == HcclCMDType::HCCL_CMD_ALLGATHER || param.opType == HcclCMDType::HCCL_CMD_BROADCAST) {
         return executor_->CalBlockDim(blockDim, userRankSize_,
             param.DataDes.count * SIZE_TABLE[param.DataDes.dataType], param.opType);
+    } else {
+        return executor_->CalBlockDim(blockDim, userRankSize_);
     }
     return HCCL_SUCCESS;
 }
