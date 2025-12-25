@@ -1497,7 +1497,9 @@ HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtSt
         HCCL_ERROR("[Get][HcomGetDevType]errNo[0x%016llx] group name is invalid", HCOM_ERROR_CODE(ret)), ret);
  
     std::shared_ptr<hccl::hcclComm> hcclComm;
-    CHK_RET(HcomGetCommByGroup(group, hcclComm));
+    ret = HcomGetCommByGroup(group, hcclComm);
+    // 兼容V2，获取通信域失败由外层判断，此处不报ERROR
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_WARNING("[%s] HcomGetCommByGroup fail", __func__), ret);
     CHK_RET(hcclComm->Mc2AiCpuStreamAllocAndGet(streamMode, *aiCpuStream));
     return HCCL_SUCCESS;
 }
