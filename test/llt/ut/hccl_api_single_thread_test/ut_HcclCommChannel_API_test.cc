@@ -32,19 +32,16 @@ public:
  
 TEST_F(HcclCommChannelTest, Ut_HcclChannelAcquire_When_Comm_Nullptr_Return_EPTR)
 {
-    RoCEAttr roceAttr;
     HcclChannelDesc desc[2];
     HcclChannelDescInit(desc, 2);
     desc[0].remoteRank = 1;
-    desc[0].protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    desc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_ROCE;
     desc[0].notifyNum = 2;
-    desc[0].roceAttr = roceAttr;
     desc[1].remoteRank = 2;
-    desc[1].protocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    desc[1].channelProtocol = CommProtocol::COMM_PROTOCOL_ROCE;
     desc[1].notifyNum = 2;
-    desc[1].roceAttr = roceAttr;
 
     ChannelHandle channel;
-    HcclResult ret = HcclChannelAcquire(nullptr, CommEngine::COMM_ENGINE_HOSTCPU, desc, 2, &channel);
+    HcclResult ret = HcclChannelAcquire(nullptr, CommEngine::COMM_ENGINE_CPU, desc, 2, &channel);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }

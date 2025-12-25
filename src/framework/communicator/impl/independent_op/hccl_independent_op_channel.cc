@@ -31,30 +31,35 @@ static HcclResult HandleHcclResPackReq(const HcclChannelDesc &channelDesc, HcclC
         return HCCL_E_PARA;
     }
 
+    uint32_t copySize = (channelDescFinal.header.size < channelDesc.header.size ?
+        channelDescFinal.header.size : channelDesc.header.size) - sizeof(CommAbiHeader);
+    CHK_SAFETY_FUNC_RET(memcpy_s((uint8_t *)&channelDescFinal + sizeof(CommAbiHeader), copySize,
+        (uint8_t *)&channelDesc + sizeof(CommAbiHeader), copySize));
+
     if (channelDesc.header.version >= HCCL_CHANNEL_VERSION_ONE) {
         channelDescFinal.remoteRank = channelDesc.remoteRank;
-        channelDescFinal.protocol   = channelDesc.protocol;
+        channelDescFinal.channelProtocol   = channelDesc.channelProtocol;
+        channelDescFinal.localEndpoint  = channelDesc.localEndpoint;
+        channelDescFinal.remoteEndpoint  = channelDesc.remoteEndpoint;
         channelDescFinal.notifyNum  = channelDesc.notifyNum;
+        channelDescFinal.memHandles  = channelDesc.memHandles;
+        channelDescFinal.memHandleNum  = channelDesc.memHandleNum;
 
         // 根据协议类型拷贝union中的相应成员
-        switch (channelDesc.protocol) {
+        switch (channelDesc.channelProtocol) {
             case COMM_PROTOCOL_HCCS:
             case COMM_PROTOCOL_PCIE:
             case COMM_PROTOCOL_SIO:
-                CHK_SAFETY_FUNC_RET(memcpy_s(&(channelDescFinal.hccsAttr), sizeof(HccsAttr),
-                    &(channelDesc.hccsAttr), sizeof(HccsAttr)));
                 break;
             case COMM_PROTOCOL_ROCE:
-                CHK_SAFETY_FUNC_RET(memcpy_s(&(channelDescFinal.roceAttr), sizeof(RoCEAttr),
-                    &(channelDesc.roceAttr), sizeof(RoCEAttr)));
-                break;
-            case COMM_PROTOCOL_UB_CTP:
-            case COMM_PROTOCOL_UB_TP:
-                CHK_SAFETY_FUNC_RET(memcpy_s(&(channelDescFinal.ubAttr), sizeof(UbAttr),
-                    &(channelDesc.ubAttr), sizeof(UbAttr)));
+                channelDescFinal.roceAttr.queueNum = channelDesc.roceAttr.queueNum;
+                channelDescFinal.roceAttr.retryCnt = channelDesc.roceAttr.retryCnt;
+                channelDescFinal.roceAttr.retryInterval = channelDesc.roceAttr.retryInterval;
+                channelDescFinal.roceAttr.tc = channelDesc.roceAttr.tc;
+                channelDescFinal.roceAttr.sl = channelDesc.roceAttr.sl;
                 break;
             default:
-                HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.protocol);
+                HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.channelProtocol);
                 return HCCL_E_PARA;
         }
     }

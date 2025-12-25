@@ -4,7 +4,7 @@
 
 ## 概述
 
-该测试框架用于验证 HCCL 资源的创建与组合（`HcclCommInitClusterInfoConfig`、`HcclAllocThreadRes`、`HcclChannelAcquire`、`HcommWriteOnThread ` 等）。默认链接真实 HCCL/ACL 库（`MOCK_HCCL=0`）；未来逐步支持**Mock 模式**（`MOCK_HCCL=1`，可在没有 NPU 环境下本地跑通流程）。
+该测试框架用于验证 HCCL 资源的创建与组合（`HcclCommInitClusterInfoConfig`、`HcclThreadAcquire`、`HcclChannelAcquire`、`HcommWriteOnThread ` 等）。默认链接真实 HCCL/ACL 库（`MOCK_HCCL=0`）；未来逐步支持**Mock 模式**（`MOCK_HCCL=1`，可在没有 NPU 环境下本地跑通流程）。
 
 * 核心类：`HcclFwkTest`。
 * 主要方法：

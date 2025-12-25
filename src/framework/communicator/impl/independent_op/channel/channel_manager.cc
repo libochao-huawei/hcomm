@@ -57,12 +57,12 @@ HcclResult ChannelManager::CheckChannelParam(CommEngine engine,
         CHK_PRT_RET(channelDesc[descIdx].remoteRank == userRank_,
             HCCL_ERROR("[%s]Local Rank found in HcclChannelDesc.", __func__), HCCL_E_PARA);
         // 检查是否有不支持协议
-        CHK_PRT_RET(channelDesc[descIdx].protocol != COMM_PROTOCOL_HCCS &&
-            channelDesc[descIdx].protocol != COMM_PROTOCOL_ROCE,
-            HCCL_ERROR("[%s]Unsupported protocol found in HcclChannelDesc.", __func__), HCCL_E_PARA);
+        CHK_PRT_RET(channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_HCCS &&
+            channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_ROCE,
+            HCCL_ERROR("[%s]Unsupported channelProtocol found in HcclChannelDesc.", __func__), HCCL_E_PARA);
         
         // 检查engine支持情况
-        if (engine != COMM_ENGINE_HOSTCPU && engine != COMM_ENGINE_HOSTCPU_TS && 
+        if (engine != COMM_ENGINE_CPU && engine != COMM_ENGINE_CPU_TS && 
             engine != COMM_ENGINE_AICPU && engine != COMM_ENGINE_AICPU_TS) {
             HCCL_ERROR("[%s]Unsupported engine for Channel.", __func__);
             return HCCL_E_PARA;
@@ -75,11 +75,11 @@ HcclResult ChannelManager::RegisterHandle(const std::string &tag, CommEngine eng
     const HcclChannelDesc &channelDesc, ChannelHandle channelHandle)
 {
     std::string channelKey = tag + ":" + std::to_string(engine) + ":" + std::to_string(channelDesc.remoteRank) + 
-                            ":" + std::to_string(channelDesc.protocol);
+                            ":" + std::to_string(channelDesc.channelProtocol);
 
     CHK_PRT_RET((channelHandleMap_.find(channelKey) != channelHandleMap_.end()),
-        HCCL_ERROR("[%s]Channel already exists, tag[%s], engine[%d], remoteRank[%d], protocol[%d].", 
-        __func__, tag.c_str(), engine, channelDesc.remoteRank, channelDesc.protocol), HCCL_E_PARA);
+        HCCL_ERROR("[%s]Channel already exists, tag[%s], engine[%d], remoteRank[%d], channelProtocol[%d].", 
+        __func__, tag.c_str(), engine, channelDesc.remoteRank, channelDesc.channelProtocol), HCCL_E_PARA);
     channelHandleMap_[channelKey] = channelHandle;
     keyMap_[channelHandle] = channelKey;
     engineMap_[channelHandle] = engine;
@@ -97,7 +97,7 @@ HcclResult ChannelManager::PrepareHandleArray(const std::string& tag, CommEngine
     for (uint32_t descIdx = 0; descIdx < descNum; descIdx++) {
         // 组合channelKey
         std::string channelKey = tag + ":" + std::to_string(engine) + ":" + std::to_string(channelDesc[descIdx].remoteRank) + 
-                                ":" + std::to_string(channelDesc[descIdx].protocol);
+                                ":" + std::to_string(channelDesc[descIdx].channelProtocol);
         if (channelHandleMap_.find(channelKey) != channelHandleMap_.end()) {
             channelHandleArray[descIdx] = channelHandleMap_[channelKey];
             continue;
@@ -264,7 +264,7 @@ OpCommTransport ChannelManager::BuildChannelRequests(const std::vector<HcclChann
         tmpTransport.notifyNum = desc.notifyNum;
         tmpTransport.inputMemType = TransportMemType::CCL_INPUT;
         tmpTransport.outputMemType = TransportMemType::CCL_OUTPUT;
-        tmpTransport.isUsedRdma = (desc.protocol == CommProtocol::COMM_PROTOCOL_ROCE);
+        tmpTransport.isUsedRdma = (desc.channelProtocol == CommProtocol::COMM_PROTOCOL_ROCE);
         commTransport.transportRequests.push_back(tmpTransport);
     }
     
@@ -611,8 +611,8 @@ HcclResult ChannelManager::AicpuChannelInit(const std::string &commId, const std
 }
 
 const std::map<CommEngine, std::string> COMM_ENGINE_TYPE_STR_MAP {
-    {CommEngine::COMM_ENGINE_HOSTCPU, "host_cpu"},
-    {CommEngine::COMM_ENGINE_HOSTCPU_TS, "host_cpu_ts"},
+    {CommEngine::COMM_ENGINE_CPU, "host_cpu"},
+    {CommEngine::COMM_ENGINE_CPU_TS, "host_cpu_ts"},
     {CommEngine::COMM_ENGINE_AICPU, "aicpu"},
     {CommEngine::COMM_ENGINE_AICPU_TS, "aicpu_ts"},
     {CommEngine::COMM_ENGINE_AIV, "aiv"},
@@ -635,7 +635,7 @@ HcclResult ChannelManager::ChannelCommCreate(const std::string &commId, CommEngi
 {
     CHK_RET(CheckChannelParam(engine, channelDescList, listNum));
 
-    // channel复用，以tag + engine + remoterank + protocol 作为channel标识       
+    // channel复用，以tag + engine + remoterank + channelProtocol 作为channel标识
     std::vector<HcclChannelDesc> needCreateDescs;
     std::vector<uint32_t> needCreateIndices;
     std::string tag = commId;

@@ -21,8 +21,8 @@ extern std::unique_ptr<CollCommMgr> g_collCommMgr;
 /**
  * @note C接口适配参考示例
  * @code {.c}
- * HcclResult HcclAllocThreadRes(HcclComm comm, CommEngine engine, uint32_t threadNum,
- *     uint32_t notifyNumPerThread, ThreadHandle *thread) {
+ * HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum,
+ *     uint32_t notifyNumPerThread, ThreadHandle *threads) {
  *     return HCCL_SUCCESS;
  * }
  * @endcode
