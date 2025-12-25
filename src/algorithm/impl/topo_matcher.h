@@ -19,6 +19,7 @@
 #include "comm_factory_pub.h"
 #include "hccl_common.h"
 #include "calc_impl.h"
+#include "alg_env_config.h"
 
 namespace hccl {
 constexpr u32 COMM_LEVEL1_INDEX = COMM_LEVEL1;
@@ -116,8 +117,7 @@ using HcclExternalEnable = struct HcclExternalEnableDef {
     void SetDefaultAlgo()
     {
         for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
-            algoConfig[static_cast<HcclCMDType>(opType)] =
-                std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
+            algoConfig[static_cast<HcclCMDType>(opType)] = GetExternalInputHcclAlgoConfig(static_cast<HcclCMDType>(opType));
         }
     }
 };
