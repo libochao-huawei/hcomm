@@ -89,9 +89,6 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
 {
     // Step1. Calculate the best block dimension
     u32 bestBlockDim = (rankSize < MAX_BLOCK_DIM ? rankSize : MAX_BLOCK_DIM);
-    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE && rankSize <= MAX_RANK_SIZE) {
-        bestBlockDim = BLOCK_DIM_THREE_PER_RANK_A3 * rankSize; // 非确定性卡数较少时，使用三倍核提升性能
-    }
     u32 minBlockDim = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, BLOCK_DIM_FACTOR_TWO);
 
     // Step2. Compare User Given blockDim_ with bestBlockDim
