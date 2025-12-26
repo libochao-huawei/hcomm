@@ -203,6 +203,8 @@ public:
     HcclResult ClearCqeErr(const std::string &identifier, u32 remoteRank, u32 qpn = 0);
     void SetOpretryErr();
     void GetIpQueue();
+    bool IsPaused() const;
+    bool IsResumed() const;
  
 private:
     Heartbeat() = default;
@@ -258,6 +260,7 @@ private:
     bool CheckIsSameOp(const OpInfoDesc &localOpInfo, const OpInfoDesc &remoteOpInfo);
     void CheckRecvOpInfoList();
     void AddopInfoListToSendFrame(UIDType &dst, HeartBeatFrame &bf, const std::vector<OpInfoDesc> &opInfoList, bool &hasValidOpInfo);
+    void CheckSnapshotStatus();
     struct Status {
         HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
         UIDType informer;
@@ -322,6 +325,7 @@ private:
     std::mutex opInfoQueueMutex_;
     std::mutex opInfoMapMutex_;
     std::list<std::pair<OpInfoDesc, UIDType>> recvOpInfoList_;
+    bool isPaused_ { false }; // heartbeat need to be paused when snapshot
 };
 } // namespace hccl
 

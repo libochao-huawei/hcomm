@@ -1559,4 +1559,14 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
+
+    HcclResult HcclCommunicator::SnapshotCheckPreProcess()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SnapshotCheckPostProcess()
+    {
+        return HCCL_SUCCESS;
+    }
 }

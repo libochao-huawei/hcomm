@@ -48,6 +48,7 @@
 #include "order_launch/order_launch.h"
 #include "comm_configer.h"
 #include "hccl_group_utils.h"
+#include "snapshot_control.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -166,8 +167,14 @@ namespace hccl
         HCCL_DEBUG("Enter ~HcclCommunicator.");
 
         DeinitZeroCopyMemoryAgent(true);
-        (void)DestroyAicpuComm();
-        (void)UnRegisterBackGroundThread();
+        if (!isInvalidComm_) {
+            (void)DestroyAicpuComm();
+            (void)UnRegisterBackGroundThread();
+        } else {
+            HCCL_WARNING("The comm[%s] is invalid in snapshot, rank[%u]. deviceLogicId[%u]. "
+                "There is no aicpu comm in device, skip aicpu comm destroy in destructor.",
+                identifier_.c_str(), userRank_, deviceLogicId_);
+        }
 
         UnRegisterToHeartBeat();
         DeleteOpInfoToHeartBeat();
@@ -285,6 +292,7 @@ namespace hccl
             HcclDispatcherDestroy(vDispatcher_);
             vDispatcher_ = nullptr;
         }
+        UnRegisterFromSnapshot();
         HCCL_DEBUG("~HcclCommunicator success.");
     }
 
@@ -303,6 +311,7 @@ namespace hccl
         CHK_RET(InitMemoryManager());
         CHK_RET(InitCombinOpara());
         CHK_RET(RegisterRanksToDca());
+        CHK_RET(RegisterToSnapshot());
         /*--------------加锁区--------------*/
         std::unique_lock<std::mutex> lock(g_hcomInitMutex);
         CHK_RET(RegistTaskExceptionHandler());
@@ -332,6 +341,7 @@ namespace hccl
         HcclTopoAttr topoAttr;
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(rankTable, topoAttr));
+        CHK_RET(RegisterToSnapshot());
         return HCCL_SUCCESS;
     }
 
@@ -816,7 +826,7 @@ namespace hccl
     HcclResult HcclCommunicator::DeinitZeroCopyMemoryAgent(bool inDestructor)
     {
         if (zeroCopyMemoryAgent_ != nullptr) {
-            if (!inDestructor) {
+            if (!inDestructor && zeroCopyMemoryAgent_->IsResumed()) {
                 // 析构函数释放场景不做barrier close
                 CHK_RET(zeroCopyMemoryAgent_->BarrierClose());
             }
@@ -4112,6 +4122,11 @@ namespace hccl
 
     HcclResult HcclCommunicator::ExecOp(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid, no operator is allowed to execute.",
+            __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
+
         std::string tag = opParam.tag;
         u32 aivCoreLimit = blockDim_;
         //单机AIV场景下cache复用，提升下发性能
@@ -4351,6 +4366,11 @@ namespace hccl
 
     HcclResult HcclCommunicator::ExecOpAlltoAll(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid, no operator is allowed to execute.",
+            __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
+
         std::string &tag = opParam.tag;
         u32 aivCoreLimit = blockDim_;
         //单机AIV场景下cache复用，提升下发性能
@@ -7830,6 +7850,9 @@ namespace hccl
     {
         CHK_PRT_RET(zeroCopyMemoryAgent_ == nullptr,
                     HCCL_ERROR("[HcclCommunicator][UnsetMemoryRange] not call HcclCommSetMemoryRange()"), HCCL_E_PARA);
+        CHK_PRT_RET(zeroCopyMemoryAgent_->IsPaused(), HCCL_ERROR("[HcclCommunicator][UnsetMemoryRange] "
+            "zero copy is in snapshot pre-processing, cannot do UnsetMemoryRange, "
+            "comm[%s], rank[%u], deviceLogicId[%d]", identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_PARA);
         CHK_RET(zeroCopyMemoryAgent_->UnsetMemoryRange(baseVirPtr));
         return HCCL_SUCCESS;
     }
@@ -7838,6 +7861,9 @@ namespace hccl
     {
         CHK_PRT_RET(zeroCopyMemoryAgent_ == nullptr,
                     HCCL_ERROR("[HcclCommunicator][ActivateCommMemory] not call HcclCommSetMemoryRange()"), HCCL_E_PARA);
+        CHK_PRT_RET(zeroCopyMemoryAgent_->IsPaused(), HCCL_ERROR("[HcclCommunicator][ActivateCommMemory] "
+            "zero copy is in snapshot pre-processing, cannot do ActivateCommMemory, "
+            "comm[%s], rank[%u], deviceLogicId[%d]", identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_PARA);
         CHK_RET(zeroCopyMemoryAgent_->ActivateCommMemory(virPtr, size, offset, handle, flags));
         return HCCL_SUCCESS;
     }
@@ -7846,6 +7872,9 @@ namespace hccl
     {
         CHK_PRT_RET(zeroCopyMemoryAgent_ == nullptr,
                     HCCL_ERROR("[HcclCommunicator][DeactivateCommMemory] not call HcclCommSetMemoryRange()"), HCCL_E_PARA);
+        CHK_PRT_RET(zeroCopyMemoryAgent_->IsPaused(), HCCL_ERROR("[HcclCommunicator][DeactivateCommMemory] "
+            "zero copy is in snapshot pre-processing, cannot do DeactivateCommMemory, "
+            "comm[%s], rank[%u], deviceLogicId[%d]", identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_PARA);
         CHK_RET(zeroCopyMemoryAgent_->DeactivateCommMemory(virPtr));
         return HCCL_SUCCESS;
     }
@@ -8010,15 +8039,14 @@ namespace hccl
     {
         HcclResult ret = HCCL_SUCCESS;
         CHK_PRT_RET(!IsEnableBackupLink(), HCCL_RUN_WARNING("[HcclCommunicator][%s]Backup link is not enabled, "
-                                                            "switch nic will not be prorcessed, comm identifier[%s], rank[%u], devType[%u], opretry enable[%u], "
-                                                            "backup ip valid[%u], roce enable[%u].",
-                                                            __func__, identifier_.c_str(), userRank_, deviceType_, GetExternalInputHcclAicpuUnfold() && commConfig_.GetConfigInterSuperPodRetryEnable(), !devBackupIpAddr_[0].IsInvalid(), IsEnableRoce()),
-                    HCCL_SUCCESS);
+            "switch nic will not be prorocessed, comm identifier[%s], rank[%u], devType[%u], opretry enable[%u], "
+            "backup ip valid[%u], roce enable[%u].", __func__, identifier_.c_str(), userRank_, deviceType_,
+            GetExternalInputHcclAicpuUnfold() && commConfig_.GetConfigInterSuperPodRetryEnable(),
+            !devBackupIpAddr_[0].IsInvalid(), IsEnableRoce()), HCCL_SUCCESS);
         CHK_PRT_RET(resMap_.empty(), HCCL_ERROR("[HcclCommunicator][%s] "
-                                                "no collective operation has been executed in this communication[%s] on rank[%u], "
-                                                "which does not support to set working device nic.",
-                                                __func__, identifier_.c_str(), userRank_),
-                    HCCL_E_PARA);
+            "no collective operation has been executed in this communication[%s] on rank[%u], "
+            "which does not support to set working device nic.", __func__, identifier_.c_str(), userRank_),
+            HCCL_E_PARA);
         std::unordered_map<u32, bool> switchRanks;
         ChangeLinkInfo changeLinkInfo;
         ret = ParseSwitchRanks(nRanks, ranks, useBackup, switchRanks);
@@ -8459,6 +8487,117 @@ namespace hccl
         }
 
         HCCL_RUN_INFO("DeInitTransportMem Success!");
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::RegisterToSnapshot()
+    {
+        auto setInvalidCommCallback = [this](bool isInvalid) {
+            return this->SetInvalidComm(isInvalid);
+        };
+        auto preProcessCallback = [this]() {
+            return this->SnapshotCheckPreProcess();
+        };
+        auto postProcessCallback = [this]() {
+            return this->SnapshotCheckPostProcess();
+        };
+        return SnapshotControl::GetInstance(deviceLogicId_).RegisterComm(identifier_, setInvalidCommCallback,
+            preProcessCallback, postProcessCallback);
+    }
+
+    HcclResult HcclCommunicator::UnRegisterFromSnapshot()
+    {
+        return SnapshotControl::GetInstance(deviceLogicId_).UnRegisterComm(identifier_);
+    }
+
+    HcclResult HcclCommunicator::SetInvalidComm(bool isInvalid) {
+        isInvalidComm_ = isInvalid;
+        HCCL_INFO("[HcclCommunicator][SetInvalidComm] comm[%s] is set to invalid, rank[%u], deviceLogicId[%d]",
+            identifier_.c_str(), userRank_, deviceLogicId_);
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SnapshotCheckPreProcess()
+    {
+        bool errorFlag = false;
+        auto pauseTimeout = std::chrono::seconds(SNAPSHOT_SUBTHREAD_TIMEOUT);
+        auto startTime = std::chrono::steady_clock::now();
+        while (true) {
+            CHK_PRT_BREAK(Heartbeat::GetInstance(deviceLogicId_).IsPaused(),
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "heartbeat thread has been paused.", identifier_.c_str(), userRank_, deviceLogicId_),);
+            CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= pauseTimeout,
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "pause heartbeat thread timeout[%u s].",
+                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+        }
+        startTime = std::chrono::steady_clock::now();
+        while (retryEnable_ && opRetryManager_) {
+            CHK_PRT_BREAK(opRetryManager_->IsPaused(identifier_),
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "opretry threads have been paused.", identifier_.c_str(), userRank_, deviceLogicId_),);
+            CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= pauseTimeout,
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "pause opretry threads timeout[%u s].",
+                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+        }
+        startTime = std::chrono::steady_clock::now();
+        while (zeroCopyMemoryAgent_) {
+            CHK_PRT_BREAK(zeroCopyMemoryAgent_->IsPaused(),
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "zero-copy memory agent thread has been paused.", identifier_.c_str(), userRank_, deviceLogicId_),);
+            CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= pauseTimeout,
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "pause zero-copy memory agent thread timeout[%u s].",
+                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+        }
+        CHK_PRT_RET(errorFlag, HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], "
+            "deviceLogicId[%d], snapshot pre-process fail due to some background threads pause timeout, please check.",
+            identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_INTERNAL);
+        HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+            "snapshot pre-process success.", identifier_.c_str(), userRank_, deviceLogicId_);
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SnapshotCheckPostProcess()
+    {
+        bool errorFlag = false;
+        auto resumeTimeout = std::chrono::seconds(SNAPSHOT_SUBTHREAD_TIMEOUT);
+        auto startTime = std::chrono::steady_clock::now();
+        while (true) {
+            CHK_PRT_BREAK(Heartbeat::GetInstance(deviceLogicId_).IsResumed(),
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "heartbeat thread has been resumed.", identifier_.c_str(), userRank_, deviceLogicId_),);
+            CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "resume heartbeat thread timeout[%u s].",
+                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+        }
+        startTime = std::chrono::steady_clock::now();
+        while (retryEnable_ && opRetryManager_) {
+            CHK_PRT_BREAK(opRetryManager_->IsResumed(identifier_),
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "opretry threads have been resumed.", identifier_.c_str(), userRank_, deviceLogicId_),);
+            CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "resume opretry threads timeout[%u s].",
+                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+        }
+        startTime = std::chrono::steady_clock::now();
+        while (zeroCopyMemoryAgent_) {
+            CHK_PRT_BREAK(zeroCopyMemoryAgent_->IsResumed(),
+                HCCL_INFO("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "zero-copy memory agent thread has been resumed.", identifier_.c_str(), userRank_, deviceLogicId_),);
+            CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
+                HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+                "resume zero-copy memory agent thread timeout[%u s].",
+                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+        }
+        CHK_PRT_RET(errorFlag, HCCL_ERROR("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], "
+            "deviceLogicId[%d], snapshot post-process check fail due to some background threads resume timeout, "
+            "please check.", identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_INTERNAL);
+        HCCL_INFO("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
+            "snapshot post-process check success.", identifier_.c_str(), userRank_, deviceLogicId_);
         return HCCL_SUCCESS;
     }
 }

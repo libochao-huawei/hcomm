@@ -84,6 +84,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/health/heartbeat/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
     ${HCCL_CODE_ROOT}/src/framework/common/src
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/task

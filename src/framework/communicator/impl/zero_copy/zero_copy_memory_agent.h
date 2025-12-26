@@ -125,6 +125,9 @@ public:
     static HcclResult GetRingBufferAddr(u64 &bufferPtr, u64 &headPtr, u64 &tailPtr);
     static bool IsAddressMgrInited();
 
+    bool IsPaused() const;
+    bool IsResumed() const;
+
 private:
     // member functions
     std::string GenerateSocketTag(u32 localDevPhyId, u32 remoteDevPhyId);
@@ -169,6 +172,8 @@ private:
         return type == RequestType::BARRIER_CLOSE || type == RequestType::BARRIER_CLOSE_ACK;
     }
 
+    void CheckSnapshotStatus();
+
     // member variables
     bool initiated_;
     bool isSingleRank_{false};
@@ -210,6 +215,7 @@ private:
     std::unordered_map<u32, ZeroCopyMemoryAgentRecvMgr> recvMgrs_;
 
     static std::unique_ptr<ZeroCopyAddressMgr> addressMgr_;
+    bool isPaused_ { false }; // need to be paused when snapshot
 };
 }
 

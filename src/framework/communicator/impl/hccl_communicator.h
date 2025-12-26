@@ -431,6 +431,9 @@ public:
     HcclResult ExecOpCache(HcclCMDType opType, OpParam &opParam, HcclCacheInfo& cacheInfo);
     void SplitBsrData(OpParam &opParam, std::vector<u8>& isDirectRemoteRank,
         std::vector<HcclSendRecvItem>& hostSendRecvInfo, std::vector<HcclSendRecvItem>& aicpuSendRecvInfo);
+    HcclResult SetInvalidComm(bool isInvalid);
+    HcclResult SnapshotCheckPreProcess();
+    HcclResult SnapshotCheckPostProcess();
 
     //decouple for MC2
     HcclResult GetLocalCCLBuf(void **addr, uint64_t *size);
@@ -875,6 +878,9 @@ private:
     HcclResult SetGroupMainStream(HcclRtStream sendRecvMainStream);
     HcclResult GetSliceSize(u64 &sliceSize);
 
+    HcclResult RegisterToSnapshot();
+    HcclResult UnRegisterFromSnapshot();
+
     bool isOnlyAiv_{false};
     HcclIpAddress loopBackIp_;
     bool profilingInitiated_;
@@ -1093,6 +1099,7 @@ private:
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;
     std::function<bool()> getAicpuCommState_; // 获取自定义算子aicpu通信域是否初始化
+    bool isInvalidComm_ { false };
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
