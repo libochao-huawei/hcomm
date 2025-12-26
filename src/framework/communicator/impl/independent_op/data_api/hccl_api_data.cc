@@ -21,10 +21,6 @@
 using namespace hccl;
 thread_local LaunchContext g_threadLaunchCtx;
 
-#ifdef CCL_KERNEL_AICPU
-thread_local HcclCommAicpu *g_hcclComm = nullptr;
-#endif
-
 void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }
@@ -277,9 +273,8 @@ int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);
 #ifdef CCL_KERNEL_AICPU
-    g_hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
-    CHK_PRT_RET(!g_hcclComm, HCCL_ERROR("%s g_hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
-    HCCL_INFO("%s success, commId[%s]", __func__, commId);
+    HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
+    CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
 #else
     HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
 #endif
@@ -291,34 +286,6 @@ int32_t HcommReleaseComm(const char* commId)
     CHK_PTR_NULL(commId);
 #ifdef CCL_KERNEL_AICPU
     AicpuHcclProcess::AicpuReleaseCommbyGroup(commId);
-    g_hcclComm = nullptr;
-    HCCL_INFO("%s success, commId[%s]", __func__, commId);
-#else
-    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
-#endif
-    return HCCL_SUCCESS;
-}
-
-int32_t HcommRegisterOpInfo(const char* commId, void* opInfo, u32 size)
-{
-    CHK_PTR_NULL(commId);
-    CHK_PTR_NULL(opInfo);
-#ifdef CCL_KERNEL_AICPU
-    CHK_PTR_NULL(g_hcclComm);
-    g_hcclComm->RegisterOpInfo(opInfo, size);
-    HCCL_INFO("%s success, commId[%s], opInfo[%p], size[%u]", __func__, commId, opInfo, size);
-#else
-    HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
-#endif
-    return HCCL_SUCCESS;
-}
-
-int32_t HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback)
-{
-    CHK_PTR_NULL(commId);
-#ifdef CCL_KERNEL_AICPU
-    CHK_PTR_NULL(g_hcclComm);
-    g_hcclComm->RegOpTaskException(callback);
     HCCL_INFO("%s success, commId[%s]", __func__, commId);
 #else
     HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);

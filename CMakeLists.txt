@@ -198,6 +198,7 @@ if(BUILD_OPEN_PROJECT)
         pkg_inc/hccl/hccl_ex.h
         pkg_inc/hccl/hccl_one_sided_services.h
         pkg_inc/hccl/hcom.h
+        pkg_inc/hccl/hcomm_diag.h
         pkg_inc/hccl/dtype_common.h
         pkg_inc/hccl/workflow.h
         pkg_inc/hccl/hccl_inner.h
