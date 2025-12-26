@@ -48,6 +48,7 @@ struct hcclCommAicpuInfo {
 hcclCommAicpuInfo g_commAicpuInfo;
 AicpuComContext g_comContext[CLUSTER_CNT];
 DevType g_devType = DevType::DEV_TYPE_COUNT;
+thread_local HcclCommAicpu *g_hcclComm = nullptr; // 记录当前线程通信域; AicpuGetCommbyGroup赋值，AicpuReleaseCommbyGroup置空
 }
 
 DevType AicpuHcclProcess::AicpuGetInnerDevType()
@@ -255,6 +256,20 @@ HcclResult AicpuHcclProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuHcclProcess::AicpuRegOpInfo(void* opInfo, u32 size)
+{
+    CHK_PTR_NULL(g_hcclComm);
+    CHK_RET(g_hcclComm->RegisterOpInfo(opInfo, size));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::AicpuRegOpTaskException(HcommGetOpInfoCallback callback)
+{
+    CHK_PTR_NULL(g_hcclComm);
+    CHK_RET(g_hcclComm->RegOpTaskException(callback));
+    return HCCL_SUCCESS;
+}
+
 ReadWriteLockBase& AicpuHcclProcess::AicpuGetCommMutex()
 {
     return g_commAicpuInfo.commAicpuMapMutex;
@@ -297,6 +312,7 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetCommbyGroup(const std::string &gr
             usleep(pollIntervalUs);
             continue;
         }
+        g_hcclComm = iter->second.first.get();
         iter->second.second = true;
         rwlock.readUnlock();
         return iter->second.first.get();
@@ -322,6 +338,7 @@ void AicpuHcclProcess::AicpuReleaseCommbyGroup(const std::string &group)
         rwlock.readUnlock();
         return;
     }
+    g_hcclComm = nullptr;
     iter->second.second = false;
     rwlock.readUnlock();
 }
