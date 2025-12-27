@@ -310,8 +310,8 @@ HcclResult TopoInfoExchangeServer::Connect(std::map<std::string, std::shared_ptr
     while (expectSocketNum > 0) {
         auto topoExUsedTime = std::chrono::steady_clock::now() - startTime;
         if (topoExUsedTime >= timeout) {
-            HCCL_ERROR("[Get][Connection]topo exchange server get socket timeout! timeout[%d s]",
-                GetExternalInputHcclLinkTimeOut());
+            HCCL_ERROR("[%s][%s]topo exchange server get socket timeout! timeout[%d s]",
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), GetExternalInputHcclLinkTimeOut());
             DisplayConnectionedRank(connectSockets, rankSize);
             return HCCL_E_TIMEOUT;
         }
@@ -364,8 +364,8 @@ HcclResult TopoInfoExchangeServer::GroupLeaderConnect(std::map<std::string, std:
     while (expectSocketNum_ > 0 && groupMaxRankNum > 0) {
         auto topoExUsedTime = std::chrono::steady_clock::now() - startTime;
         if (topoExUsedTime >= timeout) {
-            HCCL_ERROR("[Get][Connection]topo exchange server get socket timeout! timeout[%d s]",
-                GetExternalInputHcclLinkTimeOut());
+            HCCL_ERROR("[%s][%s]topo exchange server get socket timeout! timeout[%d s]",
+                LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), GetExternalInputHcclLinkTimeOut());
             DisplayConnectionedRank(connectSockets);
             return HCCL_E_TIMEOUT;
         }
@@ -497,10 +497,10 @@ HcclResult TopoInfoExchangeServer::DisplayConnectionedRank(
     u64 ranksLen = ranksInfo.size();
     u64 lineNum = (ranksInfo.size() % DISPLAY_RANKNUM_PERLINE == 0) ?  (ranksInfo.size()/DISPLAY_RANKNUM_PERLINE) :
                                                                     (ranksInfo.size()/DISPLAY_RANKNUM_PERLINE + 1);
-    HCCL_ERROR("[TopoInfoExchangeServer][%s]total connected num is [%llu],line num is [%llu]",
-               __func__, ranksLen, lineNum);
+    HCCL_ERROR("[%s][%s]total connected num is [%llu],line num is [%llu]",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), __func__, ranksLen, lineNum);
     if (rankNum != 0) {
-        HCCL_ERROR("[TopoInfoExchangeServer][%s]need connect rankNum is [%u]", __func__, rankNum);
+        HCCL_ERROR("[%s][%s]need connect rankNum is [%u]", LOG_KEYWORDS_INIT_GROUP.c_str(), __func__, rankNum);
     }
     for (u64 i = 0; i < lineNum; i++) {
         string tmpRankList;
@@ -513,7 +513,7 @@ HcclResult TopoInfoExchangeServer::DisplayConnectionedRank(
             }
             tmpRankList += ((j == DISPLAY_RANKNUM_PERLINE - 1 || ranksInfoIndex == ranksInfo.size() - 1) ? ";" : ",");
         }
-        HCCL_ERROR("[TopoInfoExchangeServer][%s]connected rankinfo[LINE %llu]: %s",
+        HCCL_ERROR("[%s][%s]connected rankinfo[LINE %llu]: %s", LOG_KEYWORDS_INIT_GROUP.c_str(),
             __func__, i, tmpRankList.c_str());
     }
     return HCCL_SUCCESS;
