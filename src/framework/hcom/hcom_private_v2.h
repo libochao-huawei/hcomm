@@ -96,6 +96,8 @@ HcclResult __attribute__((weak)) HcomGetCommCCLBufferSizeV2();
 HcclResult __attribute__((weak)) HcclCommResetQosCfgV2();
 HcclResult __attribute__((weak)) HcomResetQosCfgV2();
 HcclResult __attribute__((weak)) HcclCommSetQosCfgV2();
+HcclResult __attribute__((weak)) HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t flag);
+HcclResult __attribute__((weak)) HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t flag);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

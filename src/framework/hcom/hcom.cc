@@ -38,6 +38,7 @@
 #if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "hcom_private_v2.h"
 #endif
+#include "comm_topo_desc.h"
 
 using namespace std;
 using namespace hccl;
@@ -2705,6 +2706,50 @@ HcclResult HcomGetTopoDesc(const char *group, HcclTopoDescs *topoDescs, uint32_t
 
     return HCCL_SUCCESS;
 }
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag)
+{
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomGetL0TopoTypeExV2(group, topoType, flag));
+#endif
+#define IS_SET_DEVICE_MASK 0xfffffffe
+    CHK_PTR_NULL(topoType);
+    CHK_PTR_NULL(group);
+
+    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    if (isSetDevice) {
+        HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
+        return HCCL_E_PARA;
+    }
+
+    std::string identifier(group);
+    return CommTopoDesc::GetInstance().GetL0TopoType(identifier, topoType);
+}
+
+HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t flag)
+{
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomGetRankSizeExV2(group, rankSize, flag));
+#endif
+#define IS_SET_DEVICE_MASK 0xfffffffe
+    CHK_PTR_NULL(rankSize);
+    CHK_PTR_NULL(group);
+
+    bool isSetDevice = (bool)(flag & (~(0xfffffffe)));
+    if (isSetDevice) {
+        HCCL_ERROR("current only support no setdevice, flag[%u]", flag);
+        return HCCL_E_PARA;
+    }
+
+    std::string identifier(group);
+    return CommTopoDesc::GetInstance().GetRankSize(identifier, rankSize);
+}
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size)
 {
