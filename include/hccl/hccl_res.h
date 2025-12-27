@@ -188,8 +188,6 @@ typedef struct {
     };
 } HcclChannelDesc;
 
-// 解决与Hcomm仓合入问题
-#define HCCL_CHANNEL_ABI
 /**
  * @brief 初始化HcclChannelDesc结构体
  *

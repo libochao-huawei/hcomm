@@ -276,7 +276,6 @@ extern int32_t HcommAcquireComm(const char* commId);
  */
 extern int32_t HcommReleaseComm(const char* commId);
 #define HCOMM_PRIMITIVES_H_MODIFIED
-#define HCOMM_BATCH_MODE_MODIFIED
 
 #ifdef __cplusplus
 }
