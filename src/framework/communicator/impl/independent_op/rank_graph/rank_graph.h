@@ -22,7 +22,7 @@ namespace hccl {
 class RankGraph {
 struct RankGraphInfo {
     RankInfo_t rankInfo;  // rank → server / supernode 等归属
-    std::vector<EndPoint> endPoints; // 通信端点信息
+    std::vector<EndpointDesc> endPoints; // 通信端点信息
 };
 
 enum class HcclNetLayerlevel {

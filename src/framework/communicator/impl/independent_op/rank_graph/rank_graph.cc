@@ -35,10 +35,11 @@ HcclResult RankGraph::DevTypeToCommProtocol(DevType type, CommProtocol &protocol
             protocol = CommProtocol::COMM_PROTOCOL_PCIE;
             break;
         case DevType::DEV_TYPE_NOSOC:
-            protocol = CommProtocol::COMM_PROTOCOL_TCP;
+            protocol = CommProtocol::COMM_PROTOCOL_PCIE;
             break;
         case DevType::DEV_TYPE_910_95:
-            protocol = CommProtocol::COMM_PROTOCOL_UB_CTP;
+            // 待扩展UB的协议，当前先不支持
+            protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
             break;
         default:
             HCCL_ERROR("[RankGraph] Unknown comm devType: %d", type);
@@ -59,16 +60,16 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
         RankGraphInfo info;
         info.rankInfo = r;
 
-        // 构造 EndPoints
+        // 构造 EndpointDescs
         // 1. 存在device ip理论上就有COMM_PROTOCOL_ROCE能力
         // 2. 利用hccp接口可以查询虚拟网卡地址，但虚拟网卡不等于HCCS
-        // 3. 此处只收集device的EndPoint（ROCE），todo：收集虚拟网卡的EndPoint（HCCS等）
+        // 3. 此处只收集device的EndpointDesc（ROCE），todo：收集虚拟网卡的EndpointDesc（HCCS等）
         std::vector<HcclIpAddress> addrs = r.deviceInfo.deviceIp;
         CommProtocol protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
         CHK_RET(DevTypeToCommProtocol(r.deviceInfo.deviceType, protocol));
         for (const auto &addr :addrs) {
-            EndPoint point;
-            point.rankId = r.rankId;
+            EndpointDesc point;
+            EndpointDescInit(&point, 1);
             if (addr.IsIPv6()) {
                 point.commAddr.type = COMM_ADDR_TYPE_IP_V6;
                 point.commAddr.addr6 = addr.GetBinaryAddress().addr6;
@@ -76,8 +77,12 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
                 point.commAddr.type = COMM_ADDR_TYPE_IP_V4;
                 point.commAddr.addr = addr.GetBinaryAddress().addr;
             }
-            point.commAddr.id = 0; // todo 暂时不知道含义
-            point.protocol = protocol; // todo 暂时不知道怎么判断
+            point.protocol = protocol;
+            point.loc.locType = ENDPOINT_LOC_TYPE_DEVICE; // 当前默认device
+            point.loc.device.devPhyId = r.deviceInfo.devicePhyId;
+            point.loc.device.superDevId = r.superDeviceId;
+            point.loc.device.serverIdx = r.serverIdx;
+            point.loc.device.superPodIdx = r.superPodIdx;
             info.endPoints.push_back(std::move(point));
         }
         rankIndex_[r.rankId] = std::move(info);
@@ -149,8 +154,8 @@ HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dst
         return HCCL_E_PARA;
     }
 
-    auto &srcEndPoints = rankIndex_[srcRank].endPoints;
-    auto &dstEndPoints = rankIndex_[dstRank].endPoints;
+    auto &srcEndpointDescs = rankIndex_[srcRank].endPoints;
+    auto &dstEndpointDescs = rankIndex_[dstRank].endPoints;
 
     const RankInfo_t srcInfo = rankIndex_[srcRank].rankInfo;
     const RankInfo_t dstInfo = rankIndex_[dstRank].rankInfo;
@@ -162,17 +167,15 @@ HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dst
         // 没有则创建
         HCCL_INFO("[RankGraph][%s] no cached links, build new srcRank[%u] dstRank[%u]", __func__, srcRank, dstRank);
         std::vector<CommLink> links;
-        for (size_t i = 0; i < srcEndPoints.size(); i++) {
-            for (size_t j = 0; j < dstEndPoints.size(); j++) {
+        for (size_t i = 0; i < srcEndpointDescs.size(); i++) {
+            for (size_t j = 0; j < dstEndpointDescs.size(); j++) {
                 CommLink link;
-                link.srcEndPoint = srcEndPoints[i];
-                link.dstEndPoint = dstEndPoints[j];
-                // 非TCP协议通过接口获取
-                if (link.srcEndPoint.protocol != COMM_PROTOCOL_TCP && link.dstEndPoint.protocol != COMM_PROTOCOL_TCP) {
-                    link.protocol = GetCommProtocolFromRankInfo(srcInfo, dstInfo);
-                } else {
-                    link.protocol = CommProtocol::COMM_PROTOCOL_TCP;
-                }
+                CommLinkInit(&link, 1);
+
+                link.srcEndpointDesc = srcEndpointDescs[i];
+                link.dstEndpointDesc = dstEndpointDescs[j];
+                link.linkAttr.linkProtocol = GetCommProtocolFromRankInfo(srcInfo, dstInfo);
+    
                 links.push_back(std::move(link));
             }
         }

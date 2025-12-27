@@ -269,6 +269,16 @@ int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode)
     return g_threadLaunchCtx.SetLaunchMode(launchTag, mode);
 }
 
+int32_t HcommBatchModeStart(const char *batchTag)
+{
+    return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_BATCH);
+}
+
+int32_t HcommBatchModeEnd(const char *batchTag)
+{
+    return HcommSetLaunchMode(batchTag, HCOMM_LAUNCH_MODE_EAGER);
+}
+
 int32_t HcommAcquireComm(const char* commId)
 {
     CHK_PTR_NULL(commId);

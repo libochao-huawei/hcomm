@@ -42,11 +42,11 @@ HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread,
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclAllocThreadRes(HcclComm comm, CommEngine engine, uint32_t threadNum,
-    uint32_t notifyNumPerThread, ThreadHandle *thread)
+HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum,
+    uint32_t notifyNumPerThread, ThreadHandle *threads)
 {
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
-    CHK_PRT_RET(thread == nullptr,  HCCL_ERROR("[%s] thread is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(threads == nullptr,  HCCL_ERROR("[%s] threads is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(!IsValidCommEngine(engine), 
         HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(engine)), HCCL_E_PARA);
 
@@ -56,7 +56,7 @@ HcclResult HcclAllocThreadRes(HcclComm comm, CommEngine engine, uint32_t threadN
         __func__, commId.c_str(), engine, threadNum, notifyNumPerThread);
 
     auto& engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
-    HcclResult ret = engineResMgr.HcclAllocThreadRes(engine, threadNum, notifyNumPerThread, thread);
+    HcclResult ret = engineResMgr.HcclThreadAcquire(engine, threadNum, notifyNumPerThread, threads);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to create threads for engine[%d], threadNum[%u], notifyNumPerThread[%u]",
             __func__, engine, threadNum, notifyNumPerThread);
@@ -104,7 +104,7 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType noti
     CHK_PRT_RET(notifyHandleList == nullptr, HCCL_ERROR("[%s] notifyHandleList is null", __func__), HCCL_E_PARA);
     CHK_PRT_RET(*notifyHandleList != nullptr, HCCL_ERROR("[%s] notifyHandleList is not null", __func__), HCCL_E_PARA);
 
-    if (commEngine == CommEngine::COMM_ENGINE_HOSTCPU || commEngine == CommEngine::COMM_ENGINE_HOSTCPU_TS) {
+    if (commEngine == CommEngine::COMM_ENGINE_CPU || commEngine == CommEngine::COMM_ENGINE_CPU_TS) {
         if (notifyType != NotifyType:: NOTIFY_TYPE_RTS_NOTIFY) {
             HCCL_ERROR("[%s] commEngine[%u] and notifyType[%u] are mismatch",  __func__, commEngine, notifyType);
             return HCCL_E_PARA;
