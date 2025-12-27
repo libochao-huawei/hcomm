@@ -1,7 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2020-2021. All rights reserved.
- * Description: dev.h
- * Create: 2020-01-01
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #ifndef CCE_RUNTIME_RT_EXTERNAL_DEVICE_H
@@ -198,6 +202,118 @@ typedef enum tagGetDevMsgType {
  * @return RT_ERROR_INVALID_VALUE for error input
  */
 RTS_API rtError_t rtGetDevMsg(rtGetDevMsgType_t getMsgType, rtGetMsgCallback callback);
+
+/**
+ * @ingroup dvrt_dev
+ * @brief get device infomation.
+ * @param [in] device   the device id
+ * @param [in] moduleType   module type
+               typedef enum {
+                    MODULE_TYPE_SYSTEM = 0,   system info
+                    MODULE_TYPE_AICPU,        aicpu info
+                    MODULE_TYPE_CCPU,         ccpu_info
+                    MODULE_TYPE_DCPU,         dcpu info
+                    MODULE_TYPE_AICORE,       AI CORE info
+                    MODULE_TYPE_TSCPU,        tscpu info
+                    MODULE_TYPE_PCIE,         PCIE info
+               } DEV_MODULE_TYPE;
+ * @param [in] infoType   info type
+               typedef enum {
+                    INFO_TYPE_ENV = 0,
+                    INFO_TYPE_VERSION,
+                    INFO_TYPE_MASTERID,
+                    INFO_TYPE_CORE_NUM,
+                    INFO_TYPE_OS_SCHED,
+                    INFO_TYPE_IN_USED,
+                    INFO_TYPE_ERROR_MAP,
+                    INFO_TYPE_OCCUPY,
+                    INFO_TYPE_ID,
+                    INFO_TYPE_IP,
+                    INFO_TYPE_ENDIAN,
+               } DEV_INFO_TYPE;
+ * @param [out] val   the device info
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_DRV_ERR for error
+ */
+RTS_API rtError_t rtGetDeviceInfo(uint32_t deviceId, int32_t moduleType, int32_t infoType, int64_t *val);
+
+/**
+ * @ingroup rts_device
+ * @brief get device feature ability by device id, such as task schedule ability.
+ * @param [in] deviceId
+ * @param [in] devFeatureType
+ * @param [out] val
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtsDeviceGetCapability(int32_t deviceId, int32_t devFeatureType, int32_t *val);
+
+#define RT_DEVICE_FLAG_DEFAULT (0x0U)
+#define RT_DEVICE_FLAG_NOT_START_CPU_SCHED (0x1U)
+
+/**
+ * @ingroup dvrt_dev
+ * @brief set device with different flags
+* @param [in] deviceId    : device id
+* @param [in] flags    : flags
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtSetDeviceWithFlags(int32_t deviceId, uint64_t flags);
+
+/**
+ * @ingroup dvrt_dev
+ * @brief enable direction:devIdDes---->phyIdSrc.
+ * @param [in] devIdDes   the logical device id
+ * @param [in] phyIdSrc   the physical device id
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtEnableP2P(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t flag);
+
+/**
+ * @ingroup dvrt_dev
+ * @brief disable direction:devIdDes---->phyIdSrc.
+ * @param [in] devIdDes   the logical device id
+ * @param [in] phyIdSrc   the physical device id
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc);
+
+/**
+ * @ingroup dvrt_dev
+ * @brief get status
+ * @param [in] devIdDes   the logical device id
+ * @param [in] phyIdSrc   the physical device id
+ * @param [in|out] status   status value
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status);
+
+/**
+ * @ingroup dvrt_dev
+ * @brief get status
+ * @param [in] devId   the physic device id
+ * @param [in] otherDevId   the other physic device id
+ * @param [in] infoType   info type
+ * @param [in|out] val   pair info
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *val);
+
+/**
+* @ingroup dvrt_dev
+* @brief get phy device infomation.
+* @param [int] phyId        the physic Id
+* @param [int] moduleType   module type
+* @param [int] infoType     info type
+* @param [out] val          the device info
+* @return RT_ERROR_NONE for ok
+* @return RT_ERROR_DRV_ERR for error
+*/
+RTS_API rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val);
 
 #if defined(__cplusplus)
 }
