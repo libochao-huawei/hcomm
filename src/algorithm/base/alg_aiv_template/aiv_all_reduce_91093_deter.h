@@ -354,26 +354,27 @@ __aicore__ inline void sk_all_reduce_deter(SUPERKERNEL_ARGS_DEF)
     
     op.InitSuperKernel(hiddenInput, false);
     // 每张卡的CCLBuffer大小为bufferSize, 平均分给ranksize*2块，每块的大小为avgBufferCount
-    uint64_t avgBufferCount = (op.len_ + op.rankSize_-1)/op.rankSize_;
+    uint64_t totalCount = (op.len_ * op.unitSize_ + ATOMIC_FLAG_SIZE) / ATOMIC_FLAG_SIZE * ATOMIC_FLAG_SIZE / op.unitSize_;
+    uint64_t avgBufferCount = totalCount /op.rankSize_;
     uint64_t halfBufferCount = avgBufferCount * op.rankSize_;
    
     if (op.dataType_ == HcclDataType::HCCL_DATA_TYPE_INT8) {
-        op.InitDataCopyOffset<int8_t>(avgBufferCount, op.len_, op.len_);
+        op.InitDataCopyOffset<int8_t>(avgBufferCount, halfBufferCount, op.len_);
         op.Process<int8_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
     } else if (op.dataType_ == HcclDataType::HCCL_DATA_TYPE_INT16) {
-        op.InitDataCopyOffset<int16_t>(avgBufferCount, op.len_, op.len_);
+        op.InitDataCopyOffset<int16_t>(avgBufferCount, halfBufferCount , op.len_);
         op.Process<int16_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
     } else if (op.dataType_ ==HCCL_DATA_TYPE_INT32) {
-        op.InitDataCopyOffset<int32_t>(avgBufferCount, op.len_, op.len_);
+        op.InitDataCopyOffset<int32_t>(avgBufferCount, halfBufferCount , op.len_);
         op.Process<int32_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount,  op.len_);
     } else if (op.dataType_ == HCCL_DATA_TYPE_FP16) {
-        op.InitDataCopyOffset<half>(avgBufferCount, op.len_, op.len_);
+        op.InitDataCopyOffset<half>(avgBufferCount, halfBufferCount , op.len_);
         op.Process<half>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
     } else if (op.dataType_ == HCCL_DATA_TYPE_FP32) {
-        op.InitDataCopyOffset<float>(avgBufferCount, op.len_, op.len_);
+        op.InitDataCopyOffset<float>(avgBufferCount, halfBufferCount , op.len_);
         op.Process<float>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
     } else {
-        op.InitDataCopyOffset<bfloat16_t>(avgBufferCount, op.len_, op.len_);
+        op.InitDataCopyOffset<bfloat16_t>(avgBufferCount, halfBufferCount , op.len_);
         op.Process<bfloat16_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, halfBufferCount,avgBufferCount, op.len_);
-    }  
+    }
 }

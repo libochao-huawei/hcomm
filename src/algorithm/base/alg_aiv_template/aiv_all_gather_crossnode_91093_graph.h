@@ -56,23 +56,25 @@ __aicore__ inline void AivAllGatherCrossNodeGraph91093::Process(GM_ADDR buffOut0
     PipeBarrier<PIPE_ALL>();
 
     if (clearEnable_ == 1) {
-        TQue<AscendC::TPosition::VECIN, 1> syncQue;
-        GlobalTensor<int32_t> syncGlobal;
-        GlobalTensor<int32_t> syncGlobalSecond;
-        uint32_t syncBufferSize = blockdim_ * 32;
-        LocalTensor<int32_t> workLocal;
+        if (blockIdxInGroup == 0) {
+            TQue<AscendC::TPosition::VECIN, 1> syncQue;
+            GlobalTensor<int32_t> syncGlobal;
+            GlobalTensor<int32_t> syncGlobalSecond;
+            uint32_t syncBufferSize = blockdim_ * 32;
+            LocalTensor<int32_t> workLocal;
 
-        pipe.InitBuffer(syncQue, 1, syncBufferSize);
-        syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
-        syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
-        workLocal = syncQue.AllocTensor<int32_t>();
-        Barrier(buffersOut, 1);
-        SyncAll(syncGlobal, workLocal, blockdim_);
-        ClearGM();
-        Barrier(buffersOut, 2);
-        SyncAll(syncGlobalSecond, workLocal, blockdim_);
-	    syncQue.FreeTensor(workLocal);
-        PipeBarrier<PIPE_ALL>();
+            pipe.InitBuffer(syncQue, 1, syncBufferSize);
+            syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
+            syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
+            workLocal = syncQue.AllocTensor<int32_t>();
+            Barrier(buffersOut, 1);
+            SyncAll(syncGlobal, workLocal, blockGroup_);
+            ClearGM();
+            Barrier(buffersOut, 2);
+            SyncAll(syncGlobalSecond, workLocal, blockGroup_);
+            syncQue.FreeTensor(workLocal);
+            PipeBarrier<PIPE_ALL>();
+        }
     }
 
     // 首次卡间同步
@@ -130,4 +132,4 @@ __aicore__ inline void sk_all_gather_crossnode(SUPERKERNEL_ARGS_DEF)
     } else {
         op.Process<uint32_t>(op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, op.len_);
     }
-}
+}   
