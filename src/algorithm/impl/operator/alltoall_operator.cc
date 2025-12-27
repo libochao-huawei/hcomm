@@ -509,7 +509,8 @@ bool AlltoAllOperator::IsSatisfyAlltoAllAivCondition(const OpParam& param)
                     && IsSupportAIVCopy(param.All2AllDataDes.sendType)
                     && userRankSize_ > 1
                     && isBufferEnough
-                    && !retryEnable_;
+                    && !retryEnable_
+                    && !multiModuleDiffDeviceNumMode_;
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isSupportAiv) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
