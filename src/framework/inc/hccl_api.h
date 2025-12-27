@@ -42,6 +42,15 @@ typedef enum {
  * @warning
  */
 extern HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_t *len);
+
+/**
+ * @brief 获取通道通知数量
+ * @param[in] channel 通道句柄
+ * @param[out] notifyNum 通知槽数量
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_t *notifyNum);
+
 /**
  * @defgroup 运行时接口
  * @{
@@ -101,6 +110,40 @@ typedef struct {
     uint64_t size;    ///< 缓存区域字节数
 } CommBuffer;
 
+typedef enum {
+    NOTIFY_TYPE_RESERVED = -1,
+    NOTIFY_TYPE_RTS_NOTIFY = 0,
+    NOTIFY_TYPE_RTS_EVENT = 1,
+    NOTIFY_TYPE_DEVICE_MEM = 2,
+} NotifyType;
+
+typedef uint64_t NotifyHandle;
+
+/**
+ * @brief 基于通信域申请Notify
+ * 
+ * @param hcclComm 
+ * @param commEngine 
+ * @param notifyType 
+ * @param notifyHandleList
+ * @return HcclResult 
+ * @warning  需要考虑是否带tag 2、需要确认安全校验等方案
+ */
+extern HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine,
+    NotifyType notifyType, uint32_t notifyNum, NotifyHandle **notifyHandleList);
+
+/**
+ * @brief 获取线程通知数量
+ * @param[in] comm 通信域句柄
+ * @param[in] thread 线程句柄
+ * @param[in] engine 通信引擎类型
+ * @param[out] notifyNum 通知数量
+ * @return HcclResult 执行结果状态码
+ * @note 1.基于thread获取notify数量\n 2.后续数据面用notify idx操作
+ */
+extern HcclResult HcclGetNotifyNumInThread(HcclComm comm, ThreadHandle thread, CommEngine engine, uint32_t *notifyNum);
+// extern HcclResult HcclThreadGetNotifyNum(HcclComm comm, CommEngine engine, ThreadHandle thread, uint32_t *notifyNum);
+
 /** @} */  // 运行时接口-类型定义
 /**
  * @defgroup 通信域管理接口（已对外开放）
@@ -113,7 +156,7 @@ typedef struct {
  * @{
  */
 
-//  * @param[in] opTag 算子标签（建议包含算子名和标识，最大字符长度为HCCL_OP_TAG_LEN_MAX）。\n
+//  * @param[in] opTag 算子标签（建议包含算子名和标识，最大字符长度为HCCL_RES_TAG_MAX_LEN）。\n
 //  *                  opTag为'\0'，表示注册的内存只绑定通信域，不绑定算子。
 /**
  * @name 通信内存注册
@@ -122,7 +165,7 @@ typedef struct {
 /**
  * @brief 向通信域注册内存
  * @param[in] comm 通信域句柄
- * @param[in] memTag 内存字符串标识，以"\0"结尾，最大字符长度为HCCL_OP_TAG_LEN_MAX
+ * @param[in] memTag 内存字符串标识，以"\0"结尾，最大字符长度为HCCL_RES_TAG_MAX_LEN
  * @param[in] mem 内存信息
  * @param[in] regAttr 内存注册属性
  * @param[out] memHandle 注册内存句柄
@@ -136,7 +179,7 @@ extern HcclResult HcclCommRegMem(HcclComm comm, const char *memTag, const HcclMe
 /**
  * @brief 从通信域解注册内存
  * @param[in] comm 通信域句柄
- * @param[in] memTag 内存字符串标识，以"\0"结尾，最大字符长度为HCCL_OP_TAG_LEN_MAX
+ * @param[in] memTag 内存字符串标识，以"\0"结尾，最大字符长度为HCCL_RES_TAG_MAX_LEN
  * @param[in] memHandle 注册内存句柄
  * @return HcclResult 执行结果状态码
  * @warning
@@ -561,20 +604,18 @@ extern HcclResult HcclCommInitRootInfoConfig(
 
 /**
  * @brief 通信拓扑枚举
- * @warning 检查910A3的拓扑类型
  */
 typedef enum {
     COMM_TOPO_RESERVED = -1,  ///< 保留拓扑
-    COMM_TOPO_1DMESH = 0,     ///< 1DMesh互联拓扑
-    COMM_TOPO_2DMESH = 1,     ///< 2DMesh互联拓扑
+    COMM_TOPO_1DMESH = 1,     ///< 1DMesh互联拓扑
     COMM_TOPO_CLOS = 2,       ///< CLOS互联拓扑
-    COMM_TOPO_910A3 = 3,      ///< 910A3互联拓扑
+    COMM_TOPO_910_93 = 3,     ///< 910_93互联拓扑(带SIO)
+    COMM_TOPO_310P = 4,       ///< 310P互联拓扑
 } CommTopo;
 
 /**
  * @brief 通信协议类型枚举
- * @warning  COMM_PROTOCOL_BUS是否应该包含UB？\n
- *     2.除了HCCS以外的其他类型？或者统一抽象为某一类？
+ * @warning
  */
 typedef enum {
     COMM_PROTOCOL_RESERVED = -1,  ///< 保留协议类型
@@ -583,6 +624,8 @@ typedef enum {
     COMM_PROTOCOL_ROCE = 2,       ///< RDMA over Converged Ethernet
     COMM_PROTOCOL_UB_CTP = 3,    ///< 华为统一总线UB_CTP
     COMM_PROTOCOL_UB_TP = 4,     ///< 华为统一总线UB_TP
+    COMM_PROTOCOL_PCIE = 5,      ///< PCIE协议
+    COMM_PROTOCOL_SIO = 6,        ///< SIO协议
 } CommProtocol;
 
 // CommProtocol protocol;  ///< 通信协议
@@ -663,16 +706,6 @@ const uint32_t COMM_TAG_LEN_MAX = 255;
 
 
  /**
- * @brief 下发模式
- * @warning  有点奇怪，建议再讨论下
- */
-typedef enum {
-    HCOMM_LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
-    HCOMM_LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
-    HCOMM_LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
-} HcommLaunchMode;
-
- /**
  * @brief 910A3的RankGraph定义
  * @warning  完善内容
  */
@@ -688,6 +721,14 @@ typedef enum {
     RANK_GRAPH_TYPE_910A2 = 0,     ///< 910A2的rank图类型
     RANK_GRAPH_TYPE_910A3 = 1,     ///< 910A3的rank图类型
 } RankGraphType;
+
+/**
+ * @brief 通信的rank图类型
+ */
+typedef enum {
+    RANK_GRAPH_RESERVED = -1,   ///< 保留的rank图类型
+    RANK_GRAPH_910_93 = 0,      ///< 910_93 rank图类型
+} GraphType;
 
 /**
  * #define __aicore__ 
@@ -910,7 +951,7 @@ extern HcclResult HcclExchangeMem(HcclComm comm, const EndPoint *srcEndPoint, co
  * @param[out] thread 返回的线程句柄
  * @return HcclResult 执行结果状态码
  */
-// extern HcclResult HcclAllocThreadResByStream(HcclComm comm, CommEngine engine,
+// extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine,
 //     aclrtStream stream, uint32_t notifyNumPerThread, ThreadHandle *thread);
 // \endcond
 

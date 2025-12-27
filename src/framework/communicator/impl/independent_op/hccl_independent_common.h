@@ -20,8 +20,8 @@ constexpr u32 NOTIFY_MAX_NUM = 2048;
 inline bool IsValidCommEngine(CommEngine engine)
 {
     switch (engine) {
-        case COMM_ENGINE_HOSTCPU:
-        case COMM_ENGINE_HOSTCPU_TS:
+        case COMM_ENGINE_CPU:
+        case COMM_ENGINE_CPU_TS:
         case COMM_ENGINE_AICPU:
         case COMM_ENGINE_AICPU_TS:
         case COMM_ENGINE_AIV:

@@ -20,29 +20,21 @@
 extern "C" {
 #endif  // __cplusplus
 
-typedef uint64_t NotifyHandle;
-
+#ifndef CHANNEL_HANDLE_DEFINED
+#define CHANNEL_HANDLE_DEFINED
 /**
- * @brief 通道句柄类型（不透明结构）
- * @warning
+ * @brief 通道句柄类型
  */
 typedef uint64_t ChannelHandle;
+#endif
 
-
+#ifndef THREAD_HANDLE_DEFINED
+#define THREAD_HANDLE_DEFINED
 /**
- * @brief 线程句柄类型（不透明结构）
+ * @brief 线程句柄类型
  */
 typedef uint64_t ThreadHandle;
-
- /**
- * @brief 下发模式
- * @warning
- */
-typedef enum {
-    HCOMM_LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
-    HCOMM_LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
-    HCOMM_LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
-} HcommLaunchMode;
+#endif
 
 typedef enum {
     HCOMM_REDUCE_SUM = 0,    /**< sum */
@@ -93,7 +85,6 @@ typedef enum {
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
  * @note 源目内存地址要能执行引擎直接访问
- * @warning  是否需要将数据面接口的void *改为void，因为在较多场景存在地址不是直接访问的。
  */
 extern int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len);
 
@@ -109,9 +100,7 @@ extern int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void
  */
 extern int32_t HcommLocalReduceOnThread(
     ThreadHandle thread, void *dst, const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp);
-
 /** @} */  // 本地拷贝和规约
-
 
 /**
  * @name 本地线程间同步通知
@@ -125,7 +114,6 @@ extern int32_t HcommLocalReduceOnThread(
  * @param[in] dstNotifyIdx 目标通知索引
  * @return int32_t 执行结果状态码
  * @note 配合HcommThreadNotifyWaitOnThread使用
- * @warning
  */
 extern int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
 
@@ -136,7 +124,6 @@ extern int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle
  * @param[in] timeout 超时时间(毫秒)
  * @return int32_t 执行结果状态码
  * @note 配合HcommThreadNotifyRecordOnThread使用
- * @warning
  */
 extern int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout);
 /** @} */  // 本地线程间同步通知
@@ -177,24 +164,9 @@ extern int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notify
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
- * @warning
  */
 extern int32_t HcommWriteOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
-
-/**
- * @brief 带通知的单边写操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @param[out] dst 目标内存地址
- * @param[in] src 源内存地址
- * @param[in] len 数据长度（字节）
- * @param[in] notifyIdx 远端通知索引
- * @return int32_t 执行结果状态码
- * @note 当前在A5上主要支持
- */
-extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 归约写操作
@@ -237,7 +209,6 @@ extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channe
     HcommDataType dataType, HcommReduceOp reduceOp);
 /** @} */  // 数据读写相关
 
-
 /**
  * @name 通知
  * @{
@@ -269,14 +240,20 @@ extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle
  */
 
 /**
- * @brief 设置任务下发模式（批量或直接下发）
- * @param[in] launchId 下发Id
- * @param[in] mode 下发模式
+ * @brief 批量模式执行开始
+ * @param batchTag 批量Id
  * @return int32_t 执行结果状态码
- * @note 可运行在Host或Device上。
- * @warning
+ * @note Start和End及中间的批量任务需要在同一个线程上执行
  */
-extern int32_t HcommSetLaunchMode(const char *launchTag, HcommLaunchMode mode);
+extern int32_t HcommBatchModeStart(const char *batchTag);
+
+/**
+ * @brief 批量模式执行结束
+ * @param batchTag 批量Id
+ * @return int32_t 执行结果状态码
+ * @note Start和End及中间的批量任务需要在同一个线程上执行
+ */
+extern int32_t HcommBatchModeEnd(const char *batchTag);
 
 /** @} */  // 批量下发设置接口
 
@@ -299,6 +276,7 @@ extern int32_t HcommAcquireComm(const char* commId);
  */
 extern int32_t HcommReleaseComm(const char* commId);
 #define HCOMM_PRIMITIVES_H_MODIFIED
+#define HCOMM_BATCH_MODE_MODIFIED
 
 #ifdef __cplusplus
 }

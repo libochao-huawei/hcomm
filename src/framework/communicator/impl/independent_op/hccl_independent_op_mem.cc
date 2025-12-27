@@ -25,7 +25,7 @@ HcclResult HcclCommRegMem(HcclComm comm, const char *memTag, const HcclMem *mem,
 {
     CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[HcclCommRegMem]comm is null"), HCCL_E_PARA);
     CHK_PRT_RET(memTag == nullptr, HCCL_ERROR("[HcclCommRegMem]memTag is null"), HCCL_E_PARA);
-    CHK_PRT_RET(strlen(memTag) == 0 || strlen(memTag) > HCCL_OP_TAG_LEN_MAX,
+    CHK_PRT_RET(strlen(memTag) == 0 || strlen(memTag) > HCCL_RES_TAG_MAX_LEN,
         HCCL_ERROR("[HcclCommRegMem]memTag length is %u", strlen(memTag)), HCCL_E_PARA);
     CHK_PRT_RET(mem == nullptr,   HCCL_ERROR("[HcclCommRegMem]mem is null"), HCCL_E_PARA);
     CHK_PRT_RET(memHandle == nullptr, HCCL_ERROR("[HcclCommRegMem]memHandle is null"), HCCL_E_PARA);
