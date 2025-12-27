@@ -584,7 +584,8 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                         && (topoMatcher_->GetAivModeConfig() && !isBarrierOp)
                         && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                         && ((topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) || (serverNum_ > 1))
-                        && (dataSize < HCCL_SMALL_COUNT_8_MB)
+                        && ((userRankSize_ > DEVICE_EIGHT && dataSize < HCCL_SMALL_COUNT_8_MB) ||
+                            (userRankSize_ <= DEVICE_EIGHT && dataSize <= HCCL_SMALL_COUNT_512_KB))
                         && (!retryEnable_)
                         && userRankSize_ > 1
                         && !multiModuleDiffDeviceNumMode_;

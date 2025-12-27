@@ -112,7 +112,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::GetAivExecParam(const OpParam& p
 
     args.rank = localRank;
     args.rankSize = localRankSize;
-    args.len = execMem.count;
+    args.len = param.All2AllDataDes.sendCount;
     args.dataType = param.All2AllDataDes.sendType;
     args.unitSize = SIZE_TABLE[param.All2AllDataDes.sendType];
     args.reduceOp = param.reduceType;
