@@ -248,7 +248,11 @@ HcclResult HcomGenerteRanktable(std::string &rankTableM, std::string &rankId)
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
         logicDevId == static_cast<s32>(GetExternalInputMasterInfo().serverDeviceId));
     if (isRoot) {
-        CHK_RET(topoDetectServer->SetupServerByMasterInfo(localHostIp, GetExternalInputMasterInfo().port, rootHandle));
+        HcclResult ret =
+            topoDetectServer->SetupServerByMasterInfo(localHostIp, GetExternalInputMasterInfo().port, rootHandle);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, localHostIp[%s] and localhostPort[%u] ret[%u]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__,
+            localHostIp.GetReadableAddress(), GetExternalInputMasterInfo().port, ret), ret);
     }
 
     CHK_PRT_RET(topoDetectAgent->SetupAgentByMasterInfo(localHostIp, rootHandle) != HCCL_SUCCESS,

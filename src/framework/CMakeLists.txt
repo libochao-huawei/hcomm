@@ -193,7 +193,6 @@ target_compile_definitions(hcomm PRIVATE
 
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(hcomm
-            $<BUILD_INTERFACE:intf_pub>
             -Wl,--no-as-needed
             c_sec
             unified_dlog
@@ -853,7 +852,6 @@ if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
             set(CCL_KERNEL_PLF_PATH ccl_kernel_plf)
         endif()
         target_link_libraries(ccl_kernel PRIVATE
-            $<BUILD_INTERFACE:intf_pub>
             -Wl,--no-as-needed
             ascend_hal
             c_sec
