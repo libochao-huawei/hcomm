@@ -45,7 +45,7 @@ struct OpUnfoldMemRange {
 
     const OpUnfoldMemRange& operator=(const OpUnfoldMemRange& other); // 拷贝赋值操作符
 
-    bool InRange(const uint64_t addr) const;
+    HcclResult InRange(const uint64_t addr, bool& isInRange) const;
 
     bool isValid;
     uint64_t baseAddr;
