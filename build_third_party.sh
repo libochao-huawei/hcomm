@@ -155,7 +155,7 @@ download_and_compile_protobuf() {
   PROTOBUF_URL="https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.zip"
   wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/protobuf-25.1.zip" ${PROTOBUF_URL}
 
-  # 下载abseeil子模块
+  # 下载abseil子模块
   ABSEIL_URL="https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.zip"
   wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/abseil-cpp-20250127.0.zip" ${ABSEIL_URL}
 
@@ -163,7 +163,7 @@ download_and_compile_protobuf() {
   unzip "${OUTPUT_PATH}/pkg/protobuf-25.1.zip" -d "${OUTPUT_PATH}/protobuf"
   unzip "${OUTPUT_PATH}/pkg/abseil-cpp-20250127.0.zip" -d "${OUTPUT_PATH}/protobuf/protobuf-25.1/third_party"
 
-  # 下载abseeil子模块
+  # 下载abseil子模块
   cd "${OUTPUT_PATH}/protobuf/protobuf-25.1/third_party"
   mv abseil-cpp-20250127.0/* abseil-cpp
 

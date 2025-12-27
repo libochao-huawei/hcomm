@@ -2,11 +2,11 @@
 
 ## 工具简介
 
-HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算法逻辑及内存操作等功能。HCCL算法分析器提供了命令行工具“hccl\_alg\_analyzer\_test”，高效、快捷的批量执行测试任务，满足开发者的运行诉求。
+HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算法逻辑及内存操作等功能。HCCL算法分析器提供了高效、快捷的批量执行测试任务，满足开发者的运行诉求。
 
 ## 原理介绍
 
-![](../../docs/figures/algorithm_analyzer/principle.png)
+![](../../../docs/figures/algorithm_analyzer/principle.png)
 
 **几个关键点：**
 
@@ -14,13 +14,17 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 2. 将所有Rank的Task信息组成一张**有向无环图**。
 3. 基于**图算法**做一些校验，比如内存读写冲突校验，语义校验。1）内存冲突校验会基于图中的同步情况分析是否存在可能的读写冲突。2）语义校验通过模拟执行Task图，记录**数据的搬运信息**，模拟执行完成后检查UserOutput内存中**数据搬运信息**是否符合算子的要求。
 
+## 环境准备
+
+参照[源码构建](../../../docs/build.md)中的环境准备，源码下载，进行算法分析器编译前的准备工作。
+
 ## 用例编写
 
 ### LLT用例一览
 
 一个算法checker用例分为5个步骤，分别如下图5个框框所示，接下来依次介绍下每个步骤的写法，以适应不同的算子需求。并介绍下出现问题之后，如何借助checker工具进行问题定位。
 
-![](../../docs/figures/algorithm_analyzer/compile_testcase1.png)
+![](../../../docs/figures/algorithm_analyzer/compile_testcase1.png)
 
 ### LLT用例各步骤详解
 
@@ -28,7 +32,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
 - TopoMeta结构体介绍
 
-  ![](../../docs/figures/algorithm_analyzer/compile_testcase2.png)
+  ![](../../../docs/figures/algorithm_analyzer/compile_testcase2.png)
 
   checker：使用TopoMeta来表示一个拓扑结构，TopoMeta是一个三层vector结构。
 
@@ -46,11 +50,11 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
   1. 指定超节点个数、服务器个数、每个服务器的卡数，然后利用RankTable_For_LLT类提供的GenTopoMeta函数来生成，适用于对称拓扑场景。
 
-     ![](../../docs/figures/algorithm_analyzer/compile_testcase3.png)
+     ![](../../../docs/figures/algorithm_analyzer/compile_testcase3.png)
 
   2. 对超节点、服务器、卡数等完全定制，适用非对称拓扑场景。如下图，TopoMeta中有一个超节点，超节点内有两个server，一个server有2张卡，一个server有3张卡
 
-     ![](../../docs/figures/algorithm_analyzer/RE_1_1.png)
+     ![](../../../docs/figures/algorithm_analyzer/RE_1_1.png)
 
 - rank table生成
 
@@ -66,11 +70,11 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
   因为环境变量是进程级别的，一个LLT任务在同一个进程中执行，环境变量的使用可能会影响其他的用例执行。为了清理环境变量，目前在测试套中的TearDown函数中调用了清理环境变量的函数。
 
-  ![](../../docs/figures/algorithm_analyzer/RE_2_2.png)
+  ![](../../../docs/figures/algorithm_analyzer/RE_2_2.png)
 
   目前清理环境变量的函数会清理如下的环境变量，如果后续有新增的环境变量，需要在这个函数中进行补充。
 
-  ![](../../docs/figures/algorithm_analyzer/compile_testcase6.png)
+  ![](../../../docs/figures/algorithm_analyzer/compile_testcase6.png)
 
 #### 日志级别设置
 
@@ -80,7 +84,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
         将checker日志级别设置为WARNING：
 
-        ![](../../docs/figures/algorithm_analyzer/RE_3_1.png)
+        ![](../../../docs/figures/algorithm_analyzer/RE_3_1.png)
 
    2. 通过环境变量设置日志级别
  
@@ -100,7 +104,7 @@ HCCL算法分析器用于在离线环境中模拟HCCL算法的运行，验证算
 
    当前设置环境变量的方式失效，用下面这种方法设置日志级别并打印。
 
-   ![](../../docs/figures/algorithm_analyzer/compile_testcase8.png)
+   ![](../../../docs/figures/algorithm_analyzer/compile_testcase8.png)
 
    打开DEBUG级别日志：
 
@@ -154,22 +158,27 @@ TestOpParam用来设置测试参数，下表介绍其主要使用的一些参数
 
 用例较多，仅需执行某个用例时，修改main.cc中用例名称即可。
 
-![](../../docs/figures/algorithm_analyzer/RE_4.png)
+![](../../../docs/figures/algorithm_analyzer/RE_4.png)
 
 ## 用例执行
 
-编译并执行算法分析器用例：
+在源码仓根目录下，按如下命令，编译并执行算法分析器用例：
 
 ```
-cd /home/hccluser/cann-hccl
+# 编译所有测试套用例，并自动执行
+bash build.sh --st
 
-# 编译测试用例，并自动执行
-bash build.sh
+# 编译单个测试套用例，并自动执行
+bash build.sh --open_hccl_test
+bash build.sh --executor_hccl_test
+bash build.sh --executor_reduce_hccl_test
+bash build.sh --executor_pipeline_hccl_test
 
 # 手动执行测试用例
-export BUILD_TEST_DIR="/home/hccluser/cann-hccl/build/test/"
-export LD_LIBRARY_PATH="${BUILD_TEST_DIR}:${LD_LIBRARY_PATH}"
-./build/test/open_hccl_test
+./build/test/st/algorithm/testcase/testcase/open_hccl_test
+./build/test/st/algorithm/testcase/testcase/executor_hccl_test
+./build/test/st/algorithm/testcase/testcase/executor_reduce_hccl_test
+./build/test/st/algorithm/testcase/testcase/executor_pipeline_hccl_test
 ```
 
 ## 结果示例
@@ -178,7 +187,7 @@ export LD_LIBRARY_PATH="${BUILD_TEST_DIR}:${LD_LIBRARY_PATH}"
 
 用例执行结果如下所示：
 
-![](../../docs/figures/algorithm_analyzer/result1.png)
+![](../../../docs/figures/algorithm_analyzer/result1.png)
 
 各字段含义如下：
 
@@ -277,15 +286,15 @@ struct SrcBufDes {
 
 1.  初始状态，有Rank0与Rank1两个Rank，有Input，Output两种内存类型。
 
-    ![](../../docs/figures/algorithm_analyzer/allgather.png)
+    ![](../../../docs/figures/algorithm_analyzer/allgather.png)
 
 2.  状态一动作：将rank0的Input，偏移地址20，大小为30的数据块搬运到rank0的Output，偏移地址为35结果：在rank0的Output上产生了一个语义块，记录了本次搬运的信息。
 
-    ![](../../docs/figures/algorithm_analyzer/allgather-0.png)
+    ![](../../../docs/figures/algorithm_analyzer/allgather-0.png)
 
 3.  状态二动作：将rank1的Input，偏移地址70，大小为15的数据块搬运到rank0的Output，偏移地址为50结果：目的内存与现有的语义块有重叠，需要对现有的语义块进行拆分，产生两条语义块。
 
-    ![](../../docs/figures/algorithm_analyzer/allgather-1.png)
+    ![](../../../docs/figures/algorithm_analyzer/allgather-1.png)
 
 #### 结果校验
 
@@ -295,11 +304,11 @@ struct SrcBufDes {
 
 -   **正确场景：**
 
-    ![](../../docs/figures/algorithm_analyzer/allgather-2.png)
+    ![](../../../docs/figures/algorithm_analyzer/allgather-2.png)
 
 -   **错误场景：**
 
-    ![](../../docs/figures/algorithm_analyzer/allgather-3.png)
+    ![](../../../docs/figures/algorithm_analyzer/allgather-3.png)
 
 #### 定位思路
 
