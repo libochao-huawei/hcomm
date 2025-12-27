@@ -86,14 +86,14 @@ HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& par
     }
 
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-        CHK_RET(executor_->CalBlockDim(blockDim, userRankSize_,
-            param.All2AllDataDes.sendCount * SIZE_TABLE[param.All2AllDataDes.sendType], param.opType));
+        return executor_->CalBlockDim(blockDim, userRankSize_,
+            param.All2AllDataDes.sendCount * SIZE_TABLE[param.All2AllDataDes.sendType], param.opType);
     } else if (param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE || param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER
         || param.opType == HcclCMDType::HCCL_CMD_ALLGATHER || param.opType == HcclCMDType::HCCL_CMD_BROADCAST) {
-        CHK_RET(executor_->CalBlockDim(blockDim, userRankSize_,
-            param.DataDes.count * SIZE_TABLE[param.DataDes.dataType], param.opType));
+        return executor_->CalBlockDim(blockDim, userRankSize_,
+            param.DataDes.count * SIZE_TABLE[param.DataDes.dataType], param.opType);
     } else {
-        CHK_RET(executor_->CalBlockDim(blockDim, userRankSize_));
+        return executor_->CalBlockDim(blockDim, userRankSize_);
     }
     return HCCL_SUCCESS;
 }

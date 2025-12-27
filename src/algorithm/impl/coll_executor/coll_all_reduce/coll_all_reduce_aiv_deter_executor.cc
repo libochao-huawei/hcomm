@@ -133,7 +133,9 @@ HcclResult CollAllReduceAivDeterExecutor::KernelRun(const OpParam &param, ExecMe
     
     u64 dataSize = SIZE_TABLE[param.DataDes.dataType] * execMem.count;
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize, dataSize));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, dataSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
     AivResourceArgs resourceArgs {
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
