@@ -81,7 +81,17 @@ HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommT
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(topoType);
-
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            uint32_t uintTopoType = 0;
+            CHK_RET(HcclGetInstTopoTypeByNetLayerV2(comm, netLayer, &uintTopoType));
+            *topoType = static_cast<CommTopo>(uintTopoType);
+            return HCCL_SUCCESS;
+        }(), socNamePtr);
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = hcclComm->GetInstTopoTypeByNetLayer(netLayer, topoType);
     if (ret != HCCL_SUCCESS) {
