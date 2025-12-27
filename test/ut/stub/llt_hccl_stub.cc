@@ -833,7 +833,6 @@ aclError aclrtSetCurrentContext(aclrtContext ctx)
 aclError aclrtGetDevicesTopo(uint32_t devId, uint32_t otherDevId, uint64_t *value)
 {
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {
-
         if ((devId / 8)  != (otherDevId / 8)) {
             *value = ACL_RT_DEVS_TOPOLOGY_PIX; // PXI
         } else {
