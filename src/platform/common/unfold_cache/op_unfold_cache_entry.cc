@@ -45,11 +45,17 @@ namespace hccl {
         return *this;
     }
 
-    bool OpUnfoldMemRange::InRange(const uint64_t addr) const {
+    HcclResult OpUnfoldMemRange::InRange(const uint64_t addr, bool& isInRange) const {
+        // 检查地址是否溢出
+        CHK_PRT_RET(baseAddr + memSize < baseAddr, HCCL_ERROR("[OpUnfoldMemRange][InRange] baseAddr[0x%016llx] + memSize[%llu] overflows", baseAddr, memSize), HCCL_E_INTERNAL);
+
         if (isValid && addr >= baseAddr && addr < (baseAddr + memSize)) {
-            return true;
+            isInRange = true;
+        } else {
+            isInRange = false;
         }
-        return false;
+
+        return HCCL_SUCCESS;
     }
 
     // struct RefreshAddrInfo
@@ -490,7 +496,9 @@ namespace hccl {
     HcclResult OpUnfoldCacheEntry::CheckAndPrepareRefreshAddrInfo(const uint64_t sqeAddr, RefreshAddrInfo& refreshAddrInfo) {
         // 遍历per-rank user input memory range
         for (size_t rankId = 0; rankId < userInputMemRanges_.size(); ++rankId) {
-            if (userInputMemRanges_[rankId].InRange(sqeAddr)) {
+            bool isInRange = false;
+            CHK_RET(userInputMemRanges_[rankId].InRange(sqeAddr, isInRange));
+            if (isInRange) {
                 refreshAddrInfo.rankId = rankId;
                 refreshAddrInfo.memType = RefreshAddrInfo::USER_INPUT_MEMTYPE;
                 return HCCL_SUCCESS; // 确实是某rank下的user input mem, 则无需继续搜索output mem
@@ -499,7 +507,9 @@ namespace hccl {
 
         // 遍历per-rank user input memory range
         for (size_t rankId = 0; rankId < userOutputMemRanges_.size(); ++rankId) {
-            if (userOutputMemRanges_[rankId].InRange(sqeAddr)) {
+            bool isInRange = false;
+            CHK_RET(userOutputMemRanges_[rankId].InRange(sqeAddr, isInRange));
+            if (isInRange) {
                 refreshAddrInfo.rankId = rankId;
                 refreshAddrInfo.memType = RefreshAddrInfo::USER_OUTPUT_MEMTYPE;
                 return HCCL_SUCCESS;
@@ -516,11 +526,13 @@ namespace hccl {
         // 获取缓存的和当前的memory ranges
         const OpUnfoldMemRange& cachedMemRange = cachedMemRanges[rankId];
         const OpUnfoldMemRange& curMemRange = curMemRanges[rankId];
-        HCCL_DEBUG("[OpUnfoldCacheEntry][RefreshSqeAddr] cachedMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%u]; curMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%u]",
+        HCCL_DEBUG("[OpUnfoldCacheEntry][RefreshSqeAddr] cachedMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%llu]; curMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%llu]",
             cachedMemRange.isValid, cachedMemRange.baseAddr, cachedMemRange.memSize, curMemRange.isValid, curMemRange.baseAddr, curMemRange.memSize);
 
         // 对应rank下一定有user memory, 且对应SQE的addr字段一定在user memory range内, 才需要调用本函数刷新addr
-        CHK_PRT_RET(!cachedMemRange.InRange(sqeAddr),
+        bool isInRange = false;
+        CHK_RET(cachedMemRange.InRange(sqeAddr, isInRange));
+        CHK_PRT_RET(!isInRange,
             HCCL_ERROR("[OpUnfoldCacheEntry][RefreshSqeAddr] sqeAddr[0x%016llx] not in the range of cachedMemRange[0x%016llx, 0x%016llx)",
                 sqeAddr, cachedMemRange.baseAddr, cachedMemRange.baseAddr + cachedMemRange.memSize),
             HCCL_E_INTERNAL);
