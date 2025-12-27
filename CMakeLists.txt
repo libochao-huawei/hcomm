@@ -46,6 +46,13 @@ execute_process(
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
 project(hcomm)
 
+set(CMAKE_CXX_COMPILE_OBJECT
+    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
+set(CMAKE_C_COMPILE_OBJECT
+    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
+
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     execute_process(
@@ -81,7 +88,6 @@ if(ENABLE_TEST)
 endif()
 
 if(BUILD_OPEN_PROJECT)
-    include(cmake/intf_pub_gccnative.cmake)
     include(cmake/third_party/openssl.cmake)
     include(cmake/third_party/json.cmake)
     include(cmake/utils.cmake)

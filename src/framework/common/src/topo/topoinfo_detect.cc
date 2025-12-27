@@ -173,7 +173,10 @@ HcclResult TopoInfoDetect::SetupServerByMasterInfo(const HcclIpAddress& masterIP
     }
     rootInfo_ = rootInfo;
     CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_HOST, devicePhysicID_, deviceLogicID_, true));
-    CHK_RET(StartRootNetwork(masterIP, masterPort));
+    HcclResult ret = StartRootNetwork(masterIP, masterPort);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, masterIP[%s] and masterPort[%u] ret[%u]",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__,
+        masterIP.GetReadableAddress(), masterPort, ret), ret);
 
     if (GetExternalInputHcclEnableWhitelist() == HCCL_WHITELIST_ON) {
         CHK_RET(AddSocketWhiteList(masterPort, whitelist));
@@ -224,7 +227,10 @@ HcclResult TopoInfoDetect::SetupServer(HcclRootHandle &rootInfo)
             hostPort = devicePhysicID_ + GetExternalInputHcclIfBasePort();
         }
     }
-    CHK_RET(StartRootNetwork(hostIP, hostPort));
+    HcclResult ret = StartRootNetwork(hostIP, hostPort);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, hostIP[%s] and hostPort[%u] ret[%u]",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__,
+        hostIP.GetReadableAddress(), hostPort, ret), ret);
     CHK_RET(GenerateRootInfo(hostIP, hostPort, devicePhysicID_, rootInfo_));
     if (GetExternalInputHcclEnableWhitelist() == HCCL_WHITELIST_ON) {
         CHK_RET(AddSocketWhiteList(hostPort, whitelist));
@@ -733,7 +739,9 @@ HcclResult TopoInfoDetect::StartRootNetwork( const HcclIpAddress& hostIP, u32 &u
         listenSocket_.reset(new (nothrow) HcclSocket(serverPortCtx_, usePort));
         CHK_SMART_PTR_NULL(listenSocket_);
         CHK_RET(listenSocket_->Init());
-        CHK_RET(listenSocket_->Listen());
+        HcclResult ret = listenSocket_->Listen();
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, ret[%u]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__, ret), ret);
     }
 
     HCCL_INFO("topo info exchange server start with host ip[%s] and port[%u]", hostIP.GetReadableAddress(), usePort);
@@ -763,7 +771,9 @@ HcclResult TopoInfoDetect::StartGroupLeaderNetwork(const vector<HcclIpAddress> &
         listenSocket_.reset(new (nothrow) HcclSocket(serverPortCtx_, bindPort));
         CHK_SMART_PTR_NULL(listenSocket_);
         CHK_RET(listenSocket_->Init());
-        CHK_RET(listenSocket_->Listen());
+        HcclResult ret = listenSocket_->Listen();
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, ret[%u]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__, ret), ret);
     }
 
     HCCL_INFO("group leader start with host ip[%s] and port[%u]", hostIP.GetReadableAddress(), bindPort);
