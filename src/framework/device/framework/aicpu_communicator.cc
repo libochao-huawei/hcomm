@@ -813,6 +813,11 @@ HcclResult HcclCommAicpu::NotifyWait(void)
 // 按照算子模式来Post对应的Notify
 HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, u8 orderLaunchMode)
 {
+    const u8 orderLaunchInvalidInHcom = 255;
+    if (orderLaunchMode == orderLaunchInvalidInHcom) {
+        HCCL_INFO("[%s] attachedStreams_ is invalid in graph mode", __func__);
+        return HCCL_SUCCESS;
+    }
     if (orderNotifies_[orderLaunchMode] == nullptr) {
         std::shared_ptr<LocalNotify> notify;
         HcclSignalInfo *aicpuOrderNotify = reinterpret_cast<HcclSignalInfo*>(static_cast<u64>(commParam->aicpuOrderNotifyAddr) +
