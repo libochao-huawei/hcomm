@@ -28,8 +28,8 @@ extern "C" {
 typedef uint64_t ChannelHandle;
 #endif
 
-+#ifndef THREAD_HANDLE_DEFINED
-+#define THREAD_HANDLE_DEFINED
+#ifndef THREAD_HANDLE_DEFINED
+#define THREAD_HANDLE_DEFINED
 /**
  * @brief 线程句柄类型
  */
