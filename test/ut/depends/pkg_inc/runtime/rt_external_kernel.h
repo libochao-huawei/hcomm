@@ -1,28 +1,12 @@
- /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- * 
- * The code snippet comes from Ascend project.
- * 
- * Copyright 2020 Huawei Technologies Co., Ltd
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef CCE_RUNTIME_RT_EXTERNAL_KERNEL_H
 #define CCE_RUNTIME_RT_EXTERNAL_KERNEL_H
@@ -97,6 +81,21 @@ RTS_API rtError_t rtMetadataRegister(void *hdl, const char_t *metadata);
  * @brief magic number of elf binary for aicube
  */
 #define RT_DEV_BINARY_MAGIC_ELF_AICUBE 0x41494343U
+/**
+ * @ingroup rt_kernel_flags
+ * @brief kernel op bit flags
+ */
+#define RT_KERNEL_DEFAULT (0x00U)
+#define RT_KERNEL_CONVERT (0x01U)
+#define RT_KERNEL_DUMPFLAG (0x02U)
+#define RT_FUSION_KERNEL_DUMPFLAG (0x04U)
+#define RT_KERNEL_CUSTOM_AICPU (0x08U)
+#define RT_KERNEL_FFTSPLUS_DYNAMIC_SHAPE_DUMPFLAG (0x10U)
+#define RT_KERNEL_FFTSPLUS_STATIC_SHAPE_DUMPFLAG  (0x20U)
+// cmdlist does not need to be released by the runtime.
+#define RT_KERNEL_CMDLIST_NOT_FREE                (0x40U)
+#define RT_KERNEL_USE_SPECIAL_TIMEOUT             (0x100U)
+
 /**
  * @ingroup rt_kernel
  * @brief host memory input struct
@@ -267,6 +266,143 @@ typedef struct tagRtCcuTaskInfo {
  */
 RTS_API rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);
 
+/**
+ * @ingroup rtCpuKernelLaunchWithFlag(abandoned)
+ * @brief launch cpu kernel to device  with dump identifier
+ * @param [in] soName        so name
+ * @param [in] kernelName    kernel name
+ * @param [in] blockDim      block dimensions
+ * @param [in] argsInfo      argments address for kernel function
+ * @param [in] smDesc        shared memory description
+ * @param [in] stm           associated stream
+ * @param [in] flag          dump flag or others function flag
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtCpuKernelLaunchWithFlag(const void *soName, const void *kernelName, uint32_t blockDim,
+                                            const rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc, rtStream_t stm,
+                                            uint32_t flags);
+
+/**
+ * @ingroup rts_kernel
+ * @brief engine type [AICORE, AIVECTOR]
+ */
+typedef enum {
+    RT_ENGINE_TYPE_AIC = 0,
+    RT_ENGINE_TYPE_AIV
+} rtEngineType;
+
+/**
+ * @ingroup rts_kernel
+ * @brief kernel launch option config type
+ */
+typedef enum {
+    RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE = 1,
+    RT_LAUNCH_KERNEL_ATTR_LOCAL_MEM_SIZE,
+    // vector core使能使用
+    RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE,
+    // vector core使能使用
+    RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
+    RT_LAUNCH_KERNEL_ATTR_BLOCK_TASK_PREFETCH,
+    RT_LAUNCH_KERNEL_ATTR_DATA_DUMP,
+    RT_LAUNCH_KERNEL_ATTR_TIMEOUT,
+    RT_LAUNCH_KERNEL_ATTR_TIMEOUT_US,
+    RT_LAUNCH_KERNEL_ATTR_MAX
+} rtLaunchKernelAttrId;
+
+/**
+ * @ingroup rts_kernel
+ * @brief kernel launch option config value
+ */
+typedef union {
+    uint8_t schemMode;
+    uint32_t localMemorySize;
+    rtEngineType engineType;
+    uint32_t blockDimOffset;
+    uint8_t isBlockTaskPrefetch;  // 任务下发时判断是否sqe后续需要刷新标记（tiling key依赖下沉场景）0:disable 1:enable
+    uint8_t isDataDump; // 0:disable 1:enable
+    uint16_t timeout;
+    uint64_t timeoutUs; // uint:us
+    uint32_t rsv[4];
+} rtLaunchKernelAttrVal_t;
+
+/**
+ * @ingroup rts_kernel
+ * @brief kernel launch option config struct
+ */
+typedef struct {
+    rtLaunchKernelAttrId id;
+    rtLaunchKernelAttrVal_t value;
+} rtLaunchKernelAttr_t;
+
+/**
+ * @ingroup rts_kernel
+ * @brief kernel launch option config info
+ */
+typedef struct {
+    rtLaunchKernelAttr_t *attrs;
+    size_t numAttrs;
+} rtKernelLaunchCfg_t;
+
+/**
+ * @ingroup rts_kernel
+ * @brief rts Launch Kernel
+ * @param [in] funcHandle  function Handle
+ * @param [in] blockDim  block dimensions
+ * @param [in] stm  associated stream
+ * @param [in] cfg task t-v config
+ * @param [in] argsHandle  args Handle
+ * @param [in] reserve  reserve param
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtsLaunchKernelWithConfig(rtFuncHandle funcHandle, uint32_t blockDim, rtStream_t stm,
+                                            rtKernelLaunchCfg_t *cfg, rtArgsHandle argsHandle, void *reserve);
+
+/**
+ * @ingroup rts_kernel
+ * @brief get Saturation Status task
+ * @param [in] outputAddrPtr  pointer to op output addr
+ * @param [in] outputSize   op output size
+ * @param [in] stm  associated stream
+ * @return RT_ERROR_NONE for ok, errno for failed
+ */
+RTS_API rtError_t rtsGetFloatOverflowStatus(void *const outputAddrPtr, const uint64_t outputSize, rtStream_t stm);
+
+/**
+ * @ingroup rts_kernel
+ * @brief clear Saturation Status task
+ * @param [in] stm  associated stream
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtsResetFloatOverflowStatus(rtStream_t stm);
+
+/**
+ * @ingroup rts_kernel
+ * @brief launch npu get float status task
+ * @param [in] outputAddrPtr  pointer to op output addr
+ * @param [in] outputSize   op output size
+ * @param [in] checkMode   check mode
+ * @param [in] stm   associated stream
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtsNpuGetFloatOverFlowStatus(void *outputAddrPtr, uint64_t outputSize, uint32_t checkMode,
+                                               rtStream_t stm);
+
+/**
+ * @ingroup rts_kernel
+ * @brief launch npu get float status task
+ * @param [in] outputAddrPtr  pointer to op output addr
+ * @param [in] outputSize   op output size
+ * @param [in] checkMode   check mode
+ * @param [in] stm   associated stream
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+RTS_API rtError_t rtsNpuGetFloatOverFlowDebugStatus(void *outputAddrPtr, uint64_t outputSize, uint32_t checkMode,
+                                                    rtStream_t stm);
 #if defined(__cplusplus)
 }
 #endif
