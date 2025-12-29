@@ -6592,8 +6592,7 @@ namespace hccl
             struct OpTilingBatchSendRecvDataDes *batchSendRecvDataPtr =
                 reinterpret_cast<struct OpTilingBatchSendRecvDataDes *>(dynamicDataMem.ptr());
             batchSendRecvDataPtr->itemNum = opParam.BatchSendRecvDataDes.itemNum;
-            for (u32 i = 0; i < opParam.BatchSendRecvDataDes.itemNum; i++)
-            {
+            for (u32 i = 0; i < opParam.BatchSendRecvDataDes.itemNum; i++) {
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
