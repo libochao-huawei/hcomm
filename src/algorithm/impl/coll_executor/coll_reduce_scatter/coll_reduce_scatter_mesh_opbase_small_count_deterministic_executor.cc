@@ -96,8 +96,7 @@ bool CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::IsHugeData(cons
 
 bool CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::IsSmallData(const u64 totalSize, const u64 curSize)
 {
-    // 小数据量才选到该执行器，默认为true
-    return true;
+    return curSize <= totalSize;
 }
 
 HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
@@ -123,7 +122,7 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CopyFromU
     ExecMem &execMem) 
 {
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
-    const bool preloadCopyOpt = (param.DataDes.count == execMem.count);
+    const bool preloadCopyOpt = IsPreloadCopy(param, execMem);
     DeviceMem dstMem;
     DeviceMem srcMem;
     if (preloadCopyOpt) {
@@ -257,6 +256,13 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::RunAlgLev
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
     }
     return HCCL_SUCCESS;
+}
+
+bool CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::IsPreloadCopy(const OpParam &param,
+    ExecMem &execMem)
+{
+    // 通信buffer足够大时，将user in到ccl的拷贝任务合并成一个
+    return param.DataDes.count == execMem.count;
 }
 
 REGISTER_EXEC("ReduceScatterMeshOpbaseSmallCountDeterministicExecutor",
