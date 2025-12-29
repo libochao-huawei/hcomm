@@ -19,7 +19,7 @@ const std::string hcomm_g_msg = R"(
     "error_info_list": [
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Invalid_Environment_Variable_Configuration",
+      "errTitle": "Config_Error_Invalid_Environment_Variable",
       "ErrCode": "EI0001",
       "ErrMessage": "Environment variable [%s] is invalid. Reason: %s.",
       "Arglist": "env,tips",
@@ -30,7 +30,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "_Communication_Operation__Timeout",
+      "errTitle": "Communication_Error_Timeout",
       "ErrCode": "EI0002",
       "ErrMessage": "The wait execution of the Notify register times out. Reason: The Notify register has not received the Notify record from remote rank: [%s]. base information: [%s]. task information: [%s]. group information: [%s]",
       "Arglist": "remote_rankid, base_information, task_information, group_rank_content",
@@ -52,7 +52,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Invalid_Ranktable_Configuration",
+      "errTitle": "Config_Error_Ranktable_Configuration",
       "ErrCode": "EI0004",
       "ErrMessage": "The ranktable or rank is invalid,Reason:[%s]. Please check the configured ranktable. [%s]",
       "Arglist": "error_reason,ranktable_path",
@@ -74,7 +74,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Get_Socket_Timeout",
+      "errTitle": "Communication_Error_Get_Socket",
       "ErrCode": "EI0006",
       "ErrMessage": "Getting socket times out. Reason: %s",
       "Arglist": "reason",
@@ -85,7 +85,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Allocation_Failure",
+      "errTitle": "Resource_Error",
       "ErrCode": "EI0007",
       "ErrMessage": "Failed to allocate resource[%s] with info [%s]. Reason: Memory resources are exhausted.",
       "Arglist": "resource_type, resource_info",
@@ -96,18 +96,18 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "Inconsistent_CANN_Versions",
+      "errTitle": "Package_Error_Incorrect_HCCL_Version",
       "ErrCode": "EI0008",
-      "ErrMessage": "The CANN versions are inconsistent: tag [%s], local_version [%s], remote_version [%s]",
+      "ErrMessage": "The HCCL versions are inconsistent: tag [%s], local_version [%s], remote_version [%s]",
       "Arglist": "tag,local_version,remote_version",
       "suggestion": {
         "Possible Cause": "N/A",
-        "Solution": "Install the same CANN version."
+        "Solution": "Install the same HCCL version."
       }
     },
     {
       "errClass": "HCCL Errors",
-      "errTitle": "P2P_Communication_Failed",
+      "errTitle": "Communication_Error_P2P",
       "ErrCode": "EI0010",
       "ErrMessage": "P2P communication failed. Reason: %s",
       "Arglist": "reason",
@@ -162,6 +162,17 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCL Errors",
+      "errTitle": "Ranktable_Detect_Failed",
+      "ErrCode": "EI0015",
+      "ErrMessage": "Failed to collect cluster information of the communicator based on rootInfo detection. Reason: %s.",
+      "Arglist": "error_reason",
+      "suggestion": {
+        "Possible Cause": "N/A",
+        "Solution":"1. Check whether all ranks in the communicator have delivered the communicator creation interface. 2. Check the connectivity between the host networks of all nodes and the server node. 3. Check whether the HCCL_SOCKET_IFNAME environment variable of all nodes is correctly configured. 4. Increase the timeout by configuring the HCCL_CONNECT_TIMEOUT environment variable."
+      }
+    },
+    {
+      "errClass": "HCCL Errors",
       "errTitle": "Config_Error",
       "ErrCode": "EI0016",
       "ErrMessage": "Value %s for config %s is invalid. Expected value: %s.",
@@ -206,7 +217,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCP Errors",
-      "errTitle": "Bind_Failed",
+      "errTitle": "Communication_Error_Bind_IP_Port",
       "ErrCode": "EJ0003",
       "ErrMessage": "Failed to bind the IP port. Reason: %s",
       "Arglist": "reason",
@@ -217,7 +228,7 @@ const std::string hcomm_g_msg = R"(
     },
     {
       "errClass": "HCCP Errors",
-      "errTitle": "Check_Ip_Failed",
+      "errTitle": "Invalid_Argument_IP_Address",
       "ErrCode": "EJ0004",
       "ErrMessage": "Check ip fail. Reason: %s",
       "Arglist": "reason",
