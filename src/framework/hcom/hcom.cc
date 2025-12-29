@@ -1217,11 +1217,11 @@ HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommGraphGetWorkspaceSubStreamNum(s64 opBaseHcom, u64 &streamNum, u64 dataSize,
-    HcclCMDType opType)
+HcclResult HcclCommGraphGetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op, const std::string &algName,
+    s64 opBaseHcom, u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType opType)
 {
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
-    return hcclComm->GetWorkspaceSubStreamNum(streamNum, dataSize, opType);
+    return hcclComm->GetWorkspaceSubStreamNum(count, dataType, op, algName, streamNum, dataSize, ifAiv, opType);
 }
 
 HcclResult HcclCommGraphGetAllReduceScratchSize(s64 opBaseHcom, const u32 count, const HcclDataType dataType,
@@ -1706,12 +1706,14 @@ HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, vo
     return HCCL_SUCCESS;
 }
 // 取得所需的从stream数目
-HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 dataSize, HcclDataType dataType, HcclCMDType optype)
+HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 dataSize, HcclDataType dataType, u32 aivCoreLimit,
+    HcclReduceOp reduceOp, u64 count, HcclCMDType optype)
 {
     std::shared_ptr<hccl::hcclComm> hcclComm{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     hcclComm = hcomInfo.pComm;
     CHK_RET(HcomCheckGroupName(group));
+    HcclResult ret = HCCL_SUCCESS;
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     if (strGroup != HCCL_WORLD_GROUP && hcomInfo.pComm != nullptr) {
         std::unique_lock<std::mutex> groupParaLock(hcomInfo.groupParamsLock);
@@ -1719,19 +1721,26 @@ HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 d
         if (iter != hcomInfo.hcomGroupMap.end()) {
             hcclComm = (iter->second).pSubComm;
         } else {
-            HCCL_WARNING("[GetWorkspaceSubStreamNum], please check if the initialize process is called.");
+            HCCL_WARNING("[HcomGetWorkspaceSubStreamNum], please check if the initialize process is called.");
             streamNum = 0;
         }
     } else if (hcomInfo.pComm == nullptr) {
-        HcclResult ret = HcclGetCommHandle(group, hcclComm);
+        ret = HcclGetCommHandle(group, hcclComm);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_WARNING("[GetWorkspaceSubStreamNum], please check if the initialize process is called."),
+            HCCL_WARNING("[HcomGetWorkspaceSubStreamNum], please check if the initialize process is called."),
             HCCL_SUCCESS);
     }
     CHK_PRT_RET(hcclComm == nullptr,
-        HCCL_ERROR("[GetWorkspaceSubStreamNum] Get Comm is null"), HCCL_E_PTR);
+        HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] Get Comm is null"), HCCL_E_PTR);
 
-    return hcclComm->GetWorkspaceSubStreamNum(streamNum, dataSize, optype);
+    string algName;
+    bool ifAiv = false;
+    ret = hcclComm->HcclSelectAlg(optype, count, dataType, reduceOp, aivCoreLimit, ifAiv, algName);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
+            "dataType[%d], reduceOp[%d]", ret, optype, count, dataType, reduceOp), ret);
+    CHK_RET(hcclComm->GetWorkspaceSubStreamNum(count, dataType, reduceOp, algName, streamNum, dataSize, ifAiv, optype));
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcomGetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType, const char *group,
@@ -2763,7 +2772,8 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
 
     u64 opDataSize = dataTypeSize * hcomOpParam->count;
 
-    CHK_RET(HcomGetWorkspaceSubStreamNum(hcomOpParam->group, streamNum, opDataSize, hcomOpParam->dataType, hcclOpType));
+    CHK_RET(HcomGetWorkspaceSubStreamNum(hcomOpParam->group, streamNum, opDataSize, hcomOpParam->dataType,
+        hcomOpParam->aivCoreLimit, hcomOpParam->reduceOp, hcomOpParam->count, hcclOpType));
     CHK_RET(GetOpWorkspaceMemSize(false, hcclOpType, hcomOpParam, 0, opMemSize));
 
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
@@ -2824,8 +2834,18 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
         hcomOpParam->rankSize = deviceNumPerServer;
     }
 
+    string algName;
+    bool ifAiv = false;
+    std::shared_ptr<hccl::hcclComm> hcclComm;
     std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
-    CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, devType, streamNum, group));
+    CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
+    HcclResult ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, hcomOpParam->dataType, 
+                                hcomOpParam->reduceOp, hcomOpParam->aivCoreLimit, ifAiv, algName);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
+            "dataType[%d], reduceOp[%d]", ret, hcclOpType, hcomOpParam->count, hcomOpParam->dataType,
+            hcomOpParam->reduceOp), ret);
+    CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, ifAiv, devType, streamNum, group));
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
     CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
@@ -2854,8 +2874,8 @@ HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devTyp
     return HCCL_SUCCESS;
 }
 
-HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType,
-    u64 &streamNum, const std::string& group)
+HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, bool ifAiv,
+    DevType devType, u64 &streamNum, const std::string& group)
 {
     switch (devType) {
         case DevType::DEV_TYPE_310P1:
@@ -2868,7 +2888,7 @@ HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 de
         case DevType::DEV_TYPE_910:
         case DevType::DEV_TYPE_910_95: 
         case DevType::DEV_TYPE_910_93: {
-            CHK_RET(GetStremNumOfflineByDev(devType, hcclOpType, serverNum, deviceNumPerServer, streamNum, group));
+            CHK_RET(GetStremNumOfflineByDev(devType, hcclOpType, serverNum, deviceNumPerServer, ifAiv, streamNum, group));
             break;
         }
 
@@ -2882,8 +2902,15 @@ HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 de
     return HCCL_SUCCESS;
 }
 
-HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum, const std::string& group)
+HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, bool ifAiv,
+    u64 &streamNum, const std::string& group)
 {
+    if (ifAiv) {
+        streamNum = 0; // 离线编译下，从流数量设置为0
+        HCCL_INFO("[GetStremNumOfflineByDev] set AIV stream num is 0 When in Aiv mode");
+        return HCCL_SUCCESS;
+    }
+
     if (hcclOpType == HcclCMDType::HCCL_CMD_SEND || hcclOpType == HcclCMDType::HCCL_CMD_RECEIVE) {
         streamNum = 0;
         return HCCL_SUCCESS;

@@ -252,8 +252,9 @@ public:
     HcclResult HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
         HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
         void *&commContext, u64 &len, u32 aivCoreLimit);
-    
-    HcclResult GetWorkspaceSubStreamNum(u64 &streamNum, u64 dataSize = 0,
+
+    HcclResult GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op, const std::string &algName,
+        u64 &streamNum, u64 dataSize = 0, bool ifAiv = false,
         HcclCMDType optype = HcclCMDType::HCCL_CMD_INVALID) const;
     HcclResult GetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType,
                                    u32 &rankSize, u64 &size);
