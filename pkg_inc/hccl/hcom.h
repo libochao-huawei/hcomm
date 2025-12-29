@@ -257,7 +257,7 @@ HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpb
 
 void HcomTopoInfoRegCallback(HcclResult (*p1)(const char *, uint32_t), void (*p2)(const char *));
 
-HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo *hcclDumpInfo, s32 len);
+HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfo, s32 *len);
 
 HcclWorkflowMode HcomGetWorkflowMode();
 

@@ -2376,12 +2376,14 @@ HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globa
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo *hcclDumpInfo, s32 len)
+HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfoPtr, s32 *len)
 {
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
-    std::vector<hccl::HcclDumpInfo> hcclDumpInf(hcclDumpInfo, hcclDumpInfo + len);
-    CHK_RET(hcclComm->GetandClearOverFlowTasks(hcclDumpInf));
+    std::vector<hccl::HcclDumpInfo> hcclDumpInfo;
+    CHK_RET(hcclComm->GetandClearOverFlowTasks(hcclDumpInfo));
+    *hcclDumpInfoPtr = hcclDumpInfo.data();
+    *len = hcclDumpInfo.size();
     return HCCL_SUCCESS;
 }
 
