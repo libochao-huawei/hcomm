@@ -1294,6 +1294,7 @@ HcclResult ParseRDMARetryCnt()
 
 HcclResult ParseCannVersion()
 {
+#if !defined(CCL_KERNEL_AICPU) && !defined(HCCD)
     char hcommPkgName[] = "hcomm";
     char hcclPkgName[] = "hccl";
     constexpr u32 HCCL_VERSION_STR_MAX_LEN = 128;
@@ -1319,6 +1320,10 @@ HcclResult ParseCannVersion()
     g_externalInput.cannVersion = std::string(hcommVersion.data()) + "_" + std::string(hcclVersion.data());
     HCCL_RUN_INFO("[Parse][CannVersion]success, CannVersion is %s ", g_externalInput.cannVersion.c_str());
     return HcclResult::HCCL_SUCCESS;
+#else
+	HCCL_WARNING("[ParseCannVersion]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
 }
 
 HcclResult ParseCclBufferSize()
