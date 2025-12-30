@@ -22,6 +22,8 @@ COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 FULL_MODE="true"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
+ORION_MODE="false"
+ORION_PATH="${CURRENT_DIR}/../ace/comop/hccl/orion"
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
@@ -39,6 +41,12 @@ ENABLE_UT="off"
 ENABLE_ST="off"
 CMAKE_BUILD_TYPE="Debug"
 ASCEND_3RD_LIB_PATH="${CURRENT_DIR}/output/third_party"
+HCOMM_LIB_NAME="libhcomm.so"
+INSTALL_XML_FILE="${CURRENT_DIR}/scripts/package/module/ascend/CommLib.xml"
+ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\"debug\"/>"
+ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" release_type=\"debug\"/>"
+ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
+ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -122,7 +130,8 @@ function build_cb_test_verify(){
 }
 
 function build_test() {
-    cmake_config
+    ENABLE_ST="on"
+    cmake_config -DENABLE_ST=${ENABLE_ST}
 
     LIBRARY_DIR="${BUILD_DIR}/test:${ASCEND_HOME_PATH}/lib64:"
     # 每日构建sdk包安装路径
@@ -152,39 +161,26 @@ function build_test() {
     if [ "${TEST_TASK_NAME}" == "open_hccl_test" ] || [ "$TEST" = "all" ];then
         build open_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/open_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/testcase/open_hccl_test
     fi
 
     if [ "${TEST_TASK_NAME}" == "executor_hccl_test" ] || [ "$TEST" = "all" ];then
         build executor_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_testcase_generalization/executor_hccl_test
     fi
 
     if [ "${TEST_TASK_NAME}" == "executor_reduce_hccl_test" ] || [ "$TEST" = "all" ];then
         build executor_reduce_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_reduce_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_reduce_testcase_generalization/executor_reduce_hccl_test
     fi
 
     if [ "${TEST_TASK_NAME}" == "executor_pipeline_hccl_test" ] || [ "$TEST" = "all" ];then
         build executor_pipeline_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_pipeline_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
     fi
-
-    if [ "${TEST_TASK_NAME}" == "device_testcase" ] || [ "$TEST" = "all" ];then
-        build device_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/device_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "executor_aiv_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_aiv_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_aiv_hccl_test
-    fi
-
 }
 
 function build_kernel() {
@@ -216,7 +212,6 @@ function build_ut() {
               -DENABLE_COV=${ENABLE_COV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
-              -DENABLE_ST=${ENABLE_ST} \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
               -DLLT_KILL_TIME=${LLT_KILL_TIME}"
 
@@ -270,6 +265,56 @@ function run_ut() {
   else
     echo "Unit tests is not enabled, sh build.sh with parameter -u or --ut to enable it"
   fi
+}
+
+function xml_add_orion_so() {
+    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
+        echo "error:file $INSTALL_XML_FILE not exist."
+        exit 1
+    fi
+
+    strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO" "$ORION_AIV_OP")
+    not_found=()
+    for str in "${strings[@]}"; do
+        if ! grep -q "$str" "$INSTALL_XML_FILE"; then
+            not_found+=("$str")
+        fi
+    done
+
+    if [[ ${#not_found[@]} -eq 0 ]]; then
+        echo "orion lib has been existed in $INSTALL_XML_FILE"
+        return
+    fi
+
+    insert_content=""
+    for str in "${not_found[@]}"; do
+        insert_content+="$str"$'
+        '
+    done
+
+    temp_file=$(mktemp)
+    while IFS= read -r line; do
+        echo "$line" >> "$temp_file"
+        if [[ "$line" == *"$HCOMM_LIB_NAME"* ]]; then
+            echo "$insert_content" >> "$temp_file"
+        fi
+    done < "$INSTALL_XML_FILE"
+    mv "$temp_file" "$INSTALL_XML_FILE"
+}
+
+function xml_delete_orion_so() {
+    if [[ ! -f "$INSTALL_XML_FILE" ]]; then
+        echo "error:file $INSTALL_XML_FILE not exist."
+        exit 1
+    fi
+
+    temp_file=$(mktemp)
+    while IFS= read -r line; do
+        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* || "$line" == *"$ORION_AIV_OP"* ]]; then
+            echo "$line" >> "$temp_file"
+        fi
+    done < "$INSTALL_XML_FILE"
+    mv "$temp_file" "$INSTALL_XML_FILE"
 }
 
 # print usage message
@@ -340,7 +385,7 @@ while [[ $# -gt 0 ]]; do
         ENABLE_UT="on"
         shift
         ;;
-    -t|--test)
+    -s|--st)
         TEST="all"
         shift
         ;;
@@ -362,16 +407,6 @@ while [[ $# -gt 0 ]]; do
     --executor_pipeline_hccl_test)
         TEST="partial"
         TEST_TASK_NAME="executor_pipeline_hccl_test"
-        shift
-        ;;
-    --device_testcase)
-        TEST="partial"
-        TEST_TASK_NAME="device_testcase"
-        shift
-        ;;
-    --executor_aiv_hccl_test)
-        TEST="partial"
-        TEST_TASK_NAME="executor_aiv_hccl_test"
         shift
         ;;
     --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
@@ -428,6 +463,7 @@ while [[ $# -gt 0 ]]; do
         log "Error: Undefined option: $1"
         usage
         exit 1
+        ;;
     esac
 done
 
@@ -443,16 +479,23 @@ if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
 fi
 
+if [ -e "$ORION_PATH" ];then
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DORION_MODE=ON"
+    xml_add_orion_so
+else
+   xml_delete_orion_so
+fi
+
 if [ "${BUILD_AARCH}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
 fi
 
 if [ "${ASAN}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_ASAN=true"
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_ASAN=ON"
 fi
 
 if [ "${COV}" == "true" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=true"
+    CUSTOM_OPTION="${CUSTOM_OPTION} -DENABLE_GCOV=ON"
 fi
 
 if [ -n "${ascend_package_path}" ];then

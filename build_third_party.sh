@@ -147,6 +147,42 @@ build_mockcpp() {
   ln -s lib64 lib
 }
 
+download_and_compile_protobuf() {
+  mk_dir "${OUTPUT_PATH}/protobuf"
+  mk_dir "${OUTPUT_PATH}/abseil-cpp"
+
+  # 下载
+  PROTOBUF_URL="https://gitcode.com/cann-src-third-party/protobuf/releases/download/v25.1/protobuf-25.1.zip"
+  wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/protobuf-25.1.zip" ${PROTOBUF_URL}
+
+  # 下载abseil子模块
+  ABSEIL_URL="https://gitcode.com/cann-src-third-party/abseil-cpp/releases/download/20250127.0/abseil-cpp-20250127.0.zip"
+  wget --no-check-certificate -O "${OUTPUT_PATH}/pkg/abseil-cpp-20250127.0.zip" ${ABSEIL_URL}
+
+  # 解压
+  unzip "${OUTPUT_PATH}/pkg/protobuf-25.1.zip" -d "${OUTPUT_PATH}/protobuf"
+  unzip "${OUTPUT_PATH}/pkg/abseil-cpp-20250127.0.zip" -d "${OUTPUT_PATH}/protobuf/protobuf-25.1/third_party"
+
+  # 下载abseil子模块
+  cd "${OUTPUT_PATH}/protobuf/protobuf-25.1/third_party"
+  mv abseil-cpp-20250127.0/* abseil-cpp
+
+  # 编译
+  mk_dir "${OUTPUT_PATH}/protobuf/protobuf-25.1"
+  cd "${OUTPUT_PATH}/protobuf/protobuf-25.1"
+
+  cmake -G "Unix Makefiles" -DCMAKE_CXX_FLAGS="-D_GLIBCXX_USE_CXX11_ABI=0" \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=${OUTPUT_PATH}/protobuf \
+        -DCMAKE_INSTALL_LIBDIR=lib64 \
+        -DBUILD_SHARED_LIBS=ON \
+        -Dprotobuf_WITH_ZLIB=OFF \
+        -Dprotobuf_BUILD_TESTS=OFF
+  
+  make -j8 && make install
+  ln -s lib64 lib
+}
+
 main() {
   checkopts "$@"
 
@@ -161,6 +197,9 @@ main() {
   # 下载、编译 mockcpp
   download_mockcpp
   build_mockcpp
+
+  # 下载、编译 protobuf
+  download_and_compile_protobuf
 
   echo "---------------- script finished ----------------"
 }
