@@ -28,6 +28,7 @@ set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
 # Include List
 set(ASCEND_CANN_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc
+    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/base
     ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/hccl
     ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/trace
     ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/runtime

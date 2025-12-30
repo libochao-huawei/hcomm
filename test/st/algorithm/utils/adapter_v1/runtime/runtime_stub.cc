@@ -337,3 +337,8 @@ HcclResult hrtRaGetInterfaceVersion(unsigned int phyId, unsigned int interfaceOp
     *interfaceVersion = 1;
     return HCCL_SUCCESS;
 }
+
+aclError aclsysGetVersionStr(char *pkgName, char *versionStr)
+{
+    return RT_ERROR_NONE;
+}
