@@ -31,6 +31,7 @@ private:
     u64 CalcLoopMaxCount(const u32 unitSize) override;
     bool IsHugeData(const u64 curSize, OpParam *param = nullptr) override;
     bool IsSmallData(const u64 totalSize, const u64 curSize) override;
+    bool IsPreloadCopyOptimizeCondition(const OpParam &param, ExecMem &execMem) override;
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
     bool IsPowerOfTwo(u32 num);
     HcclResult CopyFromUserInToCclIn(const OpParam &param, ExecMem &execMem);
