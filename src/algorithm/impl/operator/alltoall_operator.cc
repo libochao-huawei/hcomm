@@ -295,6 +295,10 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
     HcclResult ret;
     std::string copyMode = "BCopy";
 
+    if (isDiffDeviceType_) {
+        HCCL_ERROR("[AlltoAllOperator][SelectAlg] AlltoAll not support diffDeviceType");
+        return HCCL_E_NOT_SUPPORT;
+    }
     ret = SelectAlgforAlltoAll(param, algName, copyMode);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[SelectAlgforAlltoAll][SelectAlg]tag[%s], Alltoall failed, return[%d].", tag.c_str(), ret), ret);
