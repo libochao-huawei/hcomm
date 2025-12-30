@@ -88,13 +88,13 @@ __aicore__ inline void AivReduceScatterCrossNode91093::Process(GM_ADDR buffIn0, 
         PipeBarrier<PIPE_ALL>();
 
         // 首次卡间同步
-         BatchRecordWait(curTag, buffersOut);
+        BatchRecordWait(curTag, buffersOut);
 
         PipeBarrier<PIPE_ALL>();
 
         // 读对端ccl到usrout
         for (uint32_t i = 0; i < numTargets; i++) {
-            if ( targetRanks[i]!=rank_){
+            if (targetRanks[i] != rank_){
                 __gm__ T *cclGMOther = (__gm__ T *)(buffersIn[i]);
                 uint64_t remoteSendOffset = avgBufferCount * rank_;
                 CpGM2GM(outputGM + curOffset + curBlockOffset, cclGMOther + remoteSendOffset + curBlockOffset, curCount, true, reduceOp_);

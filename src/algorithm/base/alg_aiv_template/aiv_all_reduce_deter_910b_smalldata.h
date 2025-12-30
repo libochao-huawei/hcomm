@@ -225,7 +225,7 @@ __aicore__ inline void AivAllReduceDeterSmall910B::ProcessProxy(GM_ADDR input, G
 {
     if (blockdim_ == rankSize_){
         ProcessSingleRanksizeCore<T>(input, output, len, tag, bufferSize);
-    }else{
+    } else {
         Process<T>(input, output, len, tag, bufferSize);
     }
 }

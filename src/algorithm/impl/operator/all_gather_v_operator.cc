@@ -34,7 +34,10 @@ HcclResult AllGatherVOperator::SelectAlg(const std::string& tag, const OpParam& 
 {
     HcclResult ret;
     HCCL_DEBUG("[%s] SelectAlg begins", __func__);
-    if (deviceType_ == DevType::DEV_TYPE_910_93) {
+    if (isDiffDeviceType_) {
+        HCCL_ERROR("[AllGatherVOperator][SelectAlg] AllGatherV not support diffDeviceType");
+        return HCCL_E_NOT_SUPPORT;
+    } else if (deviceType_ == DevType::DEV_TYPE_910_93) {
         ret = SelectAlgfor91093(param, algName);
     } else if (deviceType_ == DevType::DEV_TYPE_910B) {
         ret = SelectAlgfor910B(param, algName);
