@@ -545,7 +545,10 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
 {
     // 确定性图和单算子归一流程
     HcclDataCountType countType = GetCountTypeForDeterAllReduce(param.DataDes.count, param.DataDes.dataType);
-    if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
+    if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
+        && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+        algName = "AllReduceDeterPipelineExecutor";
+    } else if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
         if (countType == HcclDataCountType::HCCL_COUNT_SMALL) {
             algName = "AllReduceMeshSmallCountExecutor";
         } else if (countType == HcclDataCountType::HCCL_COUNT_MEDIUM) {

@@ -34,6 +34,7 @@ constexpr u64 PIPELINE_MIN_SIZE_NO_LITE = 2 * 1024 * 1024; // 如不支持RDMALi
 constexpr u64 HCCL_FFTS_CAPACITY = 65535; // FFTS+子图最大容量
 constexpr u32 AHC_MIN_SUBGROUP_SPLIT_DIVISOR = 2;
 constexpr u32 AHC_LEVEL0_GROUP_SIZE_THRESHOLD = 3;
+constexpr u32 SERVER_COUNT_THRESHOLD_FOR_MULTI_DETER_PIPELINE = 2;
 
 CollAlgOperator::CollAlgOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
                                  HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher,
@@ -413,11 +414,15 @@ HcclResult CollAlgOperator::SelectAlgoForComm(HcclCMDType hcclCMDType, float del
 // 保守估计Pipeline算法所需context数量
 u32 CollAlgOperator::CalcContextNumForPipeline(HcclCMDType hcclCMDType)
 {
+    bool isDeterPipeline = topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE
+        && (hcclCMDType == HcclCMDType::HCCL_CMD_ALLREDUCE || hcclCMDType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
     const u32 stepNum = moduleNum_;  // 通信步数
     const u32 hccsContextNumPerStep = 5 * (deviceNumPerAggregation_ - 1);   // SDMA跨片每步所需context数
     const u32 roceContextNumPerStep = 7;  // RDMA每步所需context数
     const u32 copyContextNumPerStep = 1;  // SDMA片内每步所需context数
-    const u32 contextNumPerStep = hccsContextNumPerStep + roceContextNumPerStep + copyContextNumPerStep; // 小计
+    const u32 localReduceNumPerStep = isDeterPipeline ? (deviceNumPerAggregation_ - 1) : 0;
+    const u32 contextNumPerStep = hccsContextNumPerStep + roceContextNumPerStep + copyContextNumPerStep
+        + localReduceNumPerStep; // 小计
     const u32 barrierContextNum = 4;  // 通信结束时barrier操作所需context数
 
     switch (hcclCMDType) {
@@ -429,6 +434,9 @@ u32 CollAlgOperator::CalcContextNumForPipeline(HcclCMDType hcclCMDType)
             u32 contextNum = stepNum * contextNumPerStep + barrierContextNum + copyContextNum;
             if (hcclCMDType == HcclCMDType::HCCL_CMD_ALLREDUCE) {
                 contextNum += contextNum;
+            }
+            if (isDeterPipeline) {
+                contextNum += stepNum - 1; // 最后的local reduce
             }
             return contextNum;
         }
@@ -452,6 +460,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
     auto originalAlgTypeLevel0 = algType_.algoLevel0;
     bool disdeterniminsticWithInlineReduce = isInlineReduce && isRdmaReduce &&
         topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE;
+    bool deterniminsticWithInlineReduce = isInlineReduce && isRdmaReduce &&
+        topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE;
 
     // 对于不支持Rdma Lite的场景，下发性能较差，RS和AG需要一个很大的数据量（AR的一半）才能掩盖下发时间
     u64 pipelineMinSize = (isSupportRdmaLite_) ? (PIPELINE_MIN_SIZE) : (PIPELINE_MIN_SIZE_NO_LITE);
@@ -459,6 +469,13 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
         hcclCMDType == HcclCMDType::HCCL_CMD_ALLGATHER || hcclCMDType == HcclCMDType::HCCL_CMD_ALLGATHER_V) &&
         deviceNumPerAggregation_ != 1 && curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
         CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
+        algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
+        return HCCL_SUCCESS;
+    }
+    if (hcclCMDType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && deterniminsticWithInlineReduce &&
+        deviceNumPerAggregation_ > 1 && curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+        CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY
+        && moduleNum_ > 1 && curSize >= HCCL_SMALL_COUNT_256_KB) {
         algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
         return HCCL_SUCCESS;
     }
@@ -471,6 +488,12 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
         allreduceCurSize = curSize / (moduleNum_ * deviceNumPerAggregation_);
         if (disdeterniminsticWithInlineReduce && deviceNumPerAggregation_ != 1 &&
             allreduceCurSize >= pipelineMinSize && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+            CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
+            algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
+            return HCCL_SUCCESS;
+        }
+        if (deterniminsticWithInlineReduce && deviceNumPerAggregation_ > 1 &&
+            allreduceCurSize >= HCCL_SMALL_COUNT_GRAPH_64_KB && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
             CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             return HCCL_SUCCESS;

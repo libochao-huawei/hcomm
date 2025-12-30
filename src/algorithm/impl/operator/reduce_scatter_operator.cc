@@ -166,6 +166,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     CHK_RET(cclBufferManager_.GetOutCCLbuffer(commOutputPtr, commOutputSize));
     bool isServNumPowOfTwo = (serverNum_ > 0) && ((serverNum_ & (serverNum_ - 1)) == 0);
     bool isOpbase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    bool isInlineReduce = IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
+        cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType);
 
     if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT) {
         if (!isMeshTopo || multiModuleDiffDeviceNumMode_) {
@@ -232,8 +234,6 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     }
 
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        bool isInlineReduce = IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
-            cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType);
         bool isRdmaReduce = IsSupportRDMAReduce(param.DataDes.dataType, param.reduceType);
 
         std::string algTypeLevel1Tag;
@@ -261,7 +261,11 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     }
 
     if (isMeshTopo) {
-        if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+        if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE
+            && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
+            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+            algName = "ReduceScatterDeterPipelineExecutor";
+        } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             if (SingleMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
                 if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) {
