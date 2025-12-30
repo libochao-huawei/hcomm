@@ -275,7 +275,6 @@ extern int32_t HcommAcquireComm(const char* commId);
  * @note 当前仅支持AICPU模式
  */
 extern int32_t HcommReleaseComm(const char* commId);
-#define HCOMM_PRIMITIVES_H_MODIFIED
 
 #ifdef __cplusplus
 }
