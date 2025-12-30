@@ -48,19 +48,16 @@ typedef void (*aivFuncExtra)(EXTERN_KERNEL_ARGS_DEF);
 typedef void (*aivFuncExtraV2)(EXTERN_KERNEL_ARGS_DEF_V2);
 typedef void (*aivFuncExtraA3)(KERNEL_ARGS_DEF_A3);
 
-// enum class KernelArgsType {
-//     ARGS_TYPE_SERVER = 0,        // kernel参数为单机内
-//     ARGS_TYPE_SUPERPOD = 1,      // kernel参数包含多机，当前仅A3 AlltoAllV跨机场景
-//     ARGS_TYPE_SIMPLE = 2,  // kernel参数为A3跨机
-//     ARGS_TYPE_DEFAULT
-// };
+enum class KernelLaunchMode {
+    LAUNCH_MODE_ARGS_BASE = 0,  // Launch模式，基础参数
+    LAUNCH_MODE_ARGS_EXTRA,     // Launch模式，基础参数+ExtraArgs
+    LAUNCH_MODE_ARGS_EXTRA_V2,  // Launch模式，基础参数+ExtraArgsV2
+    LAUNCH_MODE_ARGS_EXTRA_A3   // Launch模式，A3跨机
+};
 
-// enum class KernelLaunchMode {
-//     LAUNCH_MODE_ARGS_BASE = 0,  // Launch模式，基础参数
-//     LAUNCH_MODE_ARGS_EXTRA,     // Launch模式，基础参数+ExtraArgs
-//     LAUNCH_MODE_ARGS_EXTRA_V2,  // Launch模式，基础参数+ExtraArgsV2
-//     LAUNCH_MODE_ARGS_EXTRA_A3   // Launch模式，A3跨机
-// };
+HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &topoArgs,
+    const AivResourceArgs &resourceArgs, const AivAlgArgs &algArgs,
+    AivProfilingInfo& aivProfilingInfo, KernelLaunchMode launchMode, void* extraArgsPtr = nullptr);
 
 using AivKernelInfo = struct AivKernelInfoDef {
     const char* kernelName;

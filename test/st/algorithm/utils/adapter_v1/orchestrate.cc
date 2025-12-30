@@ -172,7 +172,7 @@ void InitOpParam(OpParam &opParam, CheckerOpParam &checkerOpParam, RankId myRank
 
     opParam.tag = checkerOpParam.tag;
     opParam.aicpuUnfoldMode = checkerOpParam.aicpuUnfoldMode;
-    opParam.supportRoceDirect = checkerOpParam.supportRoceDirect;
+    // opParam.supportRoceDirect = checkerOpParam.supportRoceDirect;
 
     return;
 }
