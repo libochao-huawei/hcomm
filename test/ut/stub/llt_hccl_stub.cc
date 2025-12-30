@@ -833,29 +833,28 @@ aclError aclrtSetCurrentContext(aclrtContext ctx)
 aclError aclrtGetDevicesTopo(uint32_t devId, uint32_t otherDevId, uint64_t *value)
 {
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {
-
         if ((devId / 8)  != (otherDevId / 8)) {
-            *value = 1; // PXI
+            *value = ACL_RT_DEVS_TOPOLOGY_PIX; // PXI
         } else {
-            *value = 0; // HCCS
+            *value = ACL_RT_DEVS_TOPOLOGY_HCCS; // HCCS
         }
     }
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910_93))
     {
         // 0-1 2-3 4-5 6-7
         if ((fabs(devId - otherDevId) == 1) && ((devId + otherDevId) % 4 == 1)) {
-            *value = 5;     // SIO
+            *value = ACL_RT_DEVS_TOPOLOGY_SIO;     // SIO
         } else {
-            *value = 6;     // HCCS_SW
+            *value = ACL_RT_DEVS_TOPOLOGY_HCCS_SW;     // HCCS_SW
         }
         return ACL_SUCCESS;
     }
 
     if ( (gBoardId == 0x1E ||  gIsVM == 1 ) || (devId / 4)  != (otherDevId / 4)) // 若当前为标卡/虚拟机/非同一clustor
     {
-        *value = 1; // PXI
+        *value = ACL_RT_DEVS_TOPOLOGY_PIX; // PXI
     } else {
-        *value = 0; // HCCS
+        *value = ACL_RT_DEVS_TOPOLOGY_HCCS; // HCCS
     }
 
     return ACL_SUCCESS;
@@ -5345,5 +5344,31 @@ const char *aclrtGetSocName()
 
 rtError_t rtModelGetId(rtModel_t mdl, uint32_t *modelId)
 {
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *val)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtEnableP2P(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t flag)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
+{
+    *status = 1;
     return RT_ERROR_NONE;
 }

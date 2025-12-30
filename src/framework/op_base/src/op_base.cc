@@ -877,7 +877,9 @@ HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo)
     std::shared_ptr<TopoInfoDetect> topoDetectServer;
     EXECEPTION_CATCH((topoDetectServer = std::make_shared<TopoInfoDetect>()),
         return HCCL_E_MEMORY);
-    CHK_RET(topoDetectServer->SetupServer(rootHandle));
+    HcclResult ret = topoDetectServer->SetupServer(rootHandle);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, ret[%u]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__, ret), ret);
 
     if (sizeof(HcclRootHandle) > HCCL_ROOT_INFO_BYTES) {
         HCCL_ERROR("[Get][RootInfo]hccl root info overflow. max length: %u, actual:%zu, identifier[%s]",

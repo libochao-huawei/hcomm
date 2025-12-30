@@ -719,6 +719,9 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
         "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
         })
     );
+    CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
+        HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
 
     CHK_PRT_RET(ret == HCCP_ELINKDOWN , HCCL_RUN_WARNING("ra rdma init need retry."), HCCL_E_AGAIN);
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
@@ -754,6 +757,9 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
         })
     );
+    CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
+        HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
 
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
         "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
@@ -796,6 +802,9 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
         "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
         })
     );
+    CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
+        HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
 
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
         "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);

@@ -93,10 +93,10 @@ chmod_end() {
     chmod_recur "$current_install_path/python" 750 dir
  
     if [ "$pylocal" = "y" ]; then
-        chmod_recur "$current_install_path/python/site-packages/hcomm" 550 dir
-        chmod_recur "$current_install_path/python/site-packages/hcomm" 550 file
-        chmod_recur "$current_install_path/python/site-packages/hcomm-0.1.0.dist-info" 550 dir
-        chmod_recur "$current_install_path/python/site-packages/hcomm-0.1.0.dist-info" 550 file
+        chmod_recur "$current_install_path/python/site-packages/hccl" 550 dir
+        chmod_recur "$current_install_path/python/site-packages/hccl" 550 file
+        chmod_recur "$current_install_path/python/site-packages/hccl-0.1.0.dist-info" 550 dir
+        chmod_recur "$current_install_path/python/site-packages/hccl-0.1.0.dist-info" 550 file
         chmod_recur "$current_install_path/python/site-packages/LICENSE" 440 file
     fi
  

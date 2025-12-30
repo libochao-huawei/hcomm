@@ -76,8 +76,8 @@ HcclResult HcomInit(const char *rankTableM, const char *identify, WorkMode commW
 
     /* 防止重复调用初始化 */
     CHK_PRT_RET((hcomInfo.pComm != nullptr),
-        HCCL_ERROR("[Init][Result]errNo[0x%016llx] identify[%s],\
-        multiple initialization is not supported", HCOM_ERROR_CODE(HCCL_E_UNAVAIL), identify), HCCL_E_UNAVAIL);
+        HCCL_ERROR("[Init][Result]errNo[0x%016llx] identify[%s], "\
+        "multiple initialization is not supported", HCOM_ERROR_CODE(HCCL_E_UNAVAIL), identify), HCCL_E_UNAVAIL);
 
     /* --------------初始化------------------------- */
     bool errorFlag = false;
@@ -248,7 +248,11 @@ HcclResult HcomGenerteRanktable(std::string &rankTableM, std::string &rankId)
     bool isRoot = (localHostIp == GetExternalInputMasterInfo().serverIp &&
         logicDevId == static_cast<s32>(GetExternalInputMasterInfo().serverDeviceId));
     if (isRoot) {
-        CHK_RET(topoDetectServer->SetupServerByMasterInfo(localHostIp, GetExternalInputMasterInfo().port, rootHandle));
+        HcclResult ret =
+            topoDetectServer->SetupServerByMasterInfo(localHostIp, GetExternalInputMasterInfo().port, rootHandle);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, localHostIp[%s] and localhostPort[%u] ret[%u]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__,
+            localHostIp.GetReadableAddress(), GetExternalInputMasterInfo().port, ret), ret);
     }
 
     CHK_PRT_RET(topoDetectAgent->SetupAgentByMasterInfo(localHostIp, rootHandle) != HCCL_SUCCESS,
@@ -2372,12 +2376,14 @@ HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globa
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo *hcclDumpInfo, s32 len)
+HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfoPtr, s32 *len)
 {
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
-    std::vector<hccl::HcclDumpInfo> hcclDumpInf(hcclDumpInfo, hcclDumpInfo + len);
-    CHK_RET(hcclComm->GetandClearOverFlowTasks(hcclDumpInf));
+    std::vector<hccl::HcclDumpInfo> hcclDumpInfo;
+    CHK_RET(hcclComm->GetandClearOverFlowTasks(hcclDumpInfo));
+    *hcclDumpInfoPtr = hcclDumpInfo.data();
+    *len = hcclDumpInfo.size();
     return HCCL_SUCCESS;
 }
 

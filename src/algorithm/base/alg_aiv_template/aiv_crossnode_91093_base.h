@@ -274,20 +274,20 @@ __aicore__ inline void AivCrossNode91093Base::CalcNumTargetsAndTargetRanks()
             leftTailRankSize = halfConcurrent;
             rightTailRankSize = tailRankSize - halfConcurrent;
         }
-        if (block_idx < halfConcurrent && (halfConcurrent - block_idx) <= leftTailRankSize) {
+        if (GetBlockIdx() < halfConcurrent && (halfConcurrent - GetBlockIdx()) <= leftTailRankSize) {
             numTargets += 1;
         }
-        if (block_idx >= halfConcurrent && (block_idx - halfConcurrent + 1) <= rightTailRankSize) {
+        if (GetBlockIdx() >= halfConcurrent && (GetBlockIdx() - halfConcurrent + 1) <= rightTailRankSize) {
             numTargets += 1;
         }
     }
 
     for (uint32_t i = 0; i < numTargets; i++) {
         uint32_t targetRank;
-        if (block_idx < halfConcurrent) {
-            targetRank = (rank_ + rankSize_ - (halfConcurrent - block_idx) - i * halfConcurrent) % rankSize_; // left
+        if (GetBlockIdx() < halfConcurrent) {
+            targetRank = (rank_ + rankSize_ - (halfConcurrent - GetBlockIdx()) - i * halfConcurrent) % rankSize_; // left
         } else {
-            targetRank = (rank_ + (block_idx - halfConcurrent + 1) + i * halfConcurrent) % rankSize_; // right
+            targetRank = (rank_ + (GetBlockIdx() - halfConcurrent + 1) + i * halfConcurrent) % rankSize_; // right
         }
         targetRanks[i] = targetRank;
     }
@@ -454,6 +454,8 @@ __aicore__ inline void AivCrossNode91093Base::InitSuperKernel(GM_ADDR hiddenInpu
     blockGroup_ = rankSize_ > blockdim_ ? blockdim_ : rankSize_;
     
     InitSetCheckClearArgsTensor();
+    pipe.InitBuffer(offsetArgsBuf, UB_FLAG_SIZE * MAX_TARGET_NUM);
+    offsetArgsTensor = offsetArgsBuf.Get<uint64_t>();
     InitOffset();
 }
 
@@ -817,16 +819,15 @@ __aicore__ inline void AivCrossNode91093Base::Barrier(GM_ADDR* buffersOut, int32
             }
         }
         DataCopy(globalTag, localClearTensor, UB_FLAG_PAD_COUNT); //清零
-    }
+    }  
 }
 
 __aicore__ inline void AivCrossNode91093Base::ClearGM()
 {
     uint32_t emptyOffset = 1 * 1024 * 1024;
-    uint32_t blockOffset = 1 * 1024 * 1024 / blockdim_ * GetBlockIdx();
-    uint32_t blockCount= 1 * 1024 * 1024 / blockdim_;
+    uint32_t blockOffset = 1 * 1024 * 1024 / blockGroup_ * targetRanks[0];
+    uint32_t blockCount= 1 * 1024 * 1024 / blockGroup_;
     CpGM2GM(flagAddrSelf_ + blockOffset, flagAddrSelf_ + blockOffset + emptyOffset, blockCount);
 }
-
 
 #endif  /* AIV_CROSSNODE_91093_BASE_H */

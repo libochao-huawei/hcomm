@@ -295,6 +295,10 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
     HcclResult ret;
     std::string copyMode = "BCopy";
 
+    if (isDiffDeviceType_) {
+        HCCL_ERROR("[AlltoAllOperator][SelectAlg] AlltoAll not support diffDeviceType");
+        return HCCL_E_NOT_SUPPORT;
+    }
     ret = SelectAlgforAlltoAll(param, algName, copyMode);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[SelectAlgforAlltoAll][SelectAlg]tag[%s], Alltoall failed, return[%d].", tag.c_str(), ret), ret);
@@ -509,7 +513,8 @@ bool AlltoAllOperator::IsSatisfyAlltoAllAivCondition(const OpParam& param)
                     && IsSupportAIVCopy(param.All2AllDataDes.sendType)
                     && userRankSize_ > 1
                     && isBufferEnough
-                    && !retryEnable_;
+                    && !retryEnable_
+                    && !multiModuleDiffDeviceNumMode_;
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
     if (isOnlyAiv && !isSupportAiv) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");

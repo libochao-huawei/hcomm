@@ -133,10 +133,6 @@ HcclResult CollAllGatherRingZerocopyPipelineExecutor::Orchestrate(OpParam& param
 
     CHK_RET(RunLoop(param));
 
-    // Enforce task launch at the end of Orchestrate
-    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
-    CHK_RET(LaunchTaskExtend(dispatcher_, mainStream_, subStreams_));
-
     HCCL_INFO("tag[%s], Allgather executor orchestrate success, take time [%lld]us.", tag_.c_str(),
         DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;

@@ -1607,7 +1607,9 @@ namespace hccl
             param.DataDes.dataType = dataType;
         }
 
-        CHK_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit));
+        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         SetWorkflowMode(originWorkflowMode);
         return HCCL_SUCCESS;
     }
@@ -1675,7 +1677,9 @@ namespace hccl
         // gettag
         HCCL_INFO("SPK, rank %llu.", userRank_);
         u32 blockDim;
-        CHK_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit));
+        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
         aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
         aivSuperKernelArgs.blockdim = blockDim;
@@ -6588,8 +6592,7 @@ namespace hccl
             struct OpTilingBatchSendRecvDataDes *batchSendRecvDataPtr =
                 reinterpret_cast<struct OpTilingBatchSendRecvDataDes *>(dynamicDataMem.ptr());
             batchSendRecvDataPtr->itemNum = opParam.BatchSendRecvDataDes.itemNum;
-            for (u32 i = 0; i < opParam.BatchSendRecvDataDes.itemNum; i++)
-            {
+            for (u32 i = 0; i < opParam.BatchSendRecvDataDes.itemNum; i++) {
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
@@ -6624,14 +6627,18 @@ namespace hccl
 
     u8 HcclCommunicator::GetOrderLaunchMode (bool isCapture)
     {
+        bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
+        const u8 orderLaunchInvalidInHcom = 255;
         u8 orderLaunchMode = 0;
         HcclWorkflowMode mode = GetWorkflowMode();
         if (isCapture) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::ACLGRAPH_MODE);
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::OPBASE_MODE);
-        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::HCOM_MODE);
+        } else {
+            orderLaunchMode = orderLaunchInvalidInHcom;
         }
 
         return orderLaunchMode;
@@ -6639,12 +6646,14 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode)
     {
+        const u8 opbaseOrderLaunchMode = 0;
+        const u8 aclgraphOrderLaunchMode = 1;
         u32 idx0;
         u32 idx1;
-        if (orderLaunchMode == 0) {
+        if (orderLaunchMode == opbaseOrderLaunchMode) {
             idx0 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0);
             idx1 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1);
-        } else if (orderLaunchMode == 1) {
+        } else if (orderLaunchMode == aclgraphOrderLaunchMode) {
             idx0 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0);
             idx1 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1);
         } else {
@@ -6691,15 +6700,18 @@ namespace hccl
 
         Stream kfcOpStream;
         HcclWorkflowMode mode = GetWorkflowMode();
+        bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
         if (opParam.isCapture || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             kfcOpStream = opStream_;
         } else {
-            // 如果是图模式，则尝试从附属从流中获取一下stream，如果能拿到则使用，否则报错
-            if (attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr) {
-                HCCL_ERROR("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is invalid in graph mode");
-                return HCCL_E_NOT_FOUND;
+            // 如果是图模式，则尝试从附属从流中获取一下stream，如果能拿到则使用，否则退化
+            if (isSupportHcomAttachedStream) {
+                HCCL_INFO("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is valid in graph mode");
+                kfcOpStream = attachedStreams_[0];
+            } else {
+                HCCL_INFO("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is invalid in graph mode");
+                kfcOpStream = opParam.stream;
             }
-            kfcOpStream = attachedStreams_[0];
         }
         uint64_t beginTime = hrtMsprofSysCycleTime();
         std::string profName = GetCMDTypeEnumStr(opParam.opType);
@@ -6748,7 +6760,7 @@ namespace hccl
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
             CHK_RET(orderLaunch.OpbaseLaunchInOrder(identifier_, kfcOpStream, notify0, notify1, timeOut));
-        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_1)];
             CHK_RET(orderLaunch.HcomLaunchInOrder(identifier_, kfcOpStream, graphId_, notify0,
