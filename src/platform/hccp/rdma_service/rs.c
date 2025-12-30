@@ -178,6 +178,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CTX_BATCH_SEND_WR, 1},
     {RA_RS_CUSTOM_CHANNEL, 1},
     {RA_RS_CTX_UPDATE_CI, 1},
+    {RA_RS_CTX_GET_AUX_INFO, 1},
 #endif
 
     // inner opcode version

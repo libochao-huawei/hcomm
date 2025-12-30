@@ -135,6 +135,8 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
     {RA_RS_CTX_DEINIT, 0},
     {RA_RS_GET_EID_BY_IP, 0},
     {RA_RS_GET_TP_INFO_LIST, 0},
+    {RA_RS_GET_TP_ATTR, 0},
+    {RA_RS_SET_TP_ATTR, 0},
     {RA_RS_CTX_TOKEN_ID_ALLOC, 0},
     {RA_RS_CTX_TOKEN_ID_FREE, 0},
     {RA_RS_LMEM_REG, 0},
@@ -156,6 +158,7 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
     {RA_RS_CTX_BATCH_SEND_WR, 0},
     {RA_RS_CUSTOM_CHANNEL, 0},
     {RA_RS_CTX_UPDATE_CI, 0},
+    {RA_RS_CTX_GET_AUX_INFO, 0},
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 0},

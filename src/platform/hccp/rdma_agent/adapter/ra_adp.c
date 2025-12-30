@@ -1760,6 +1760,8 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_CTX_DEINIT, ra_rs_ctx_deinit, sizeof(union op_ctx_deinit_data)},
     {RA_RS_GET_EID_BY_IP, ra_rs_get_eid_by_ip, sizeof(union op_get_eid_by_ip_data)},
     {RA_RS_GET_TP_INFO_LIST, ra_rs_get_tp_info_list, sizeof(union op_get_tp_info_list_data)},
+    {RA_RS_GET_TP_ATTR, ra_rs_get_tp_attr, sizeof(union op_get_tp_attr_data)},
+    {RA_RS_SET_TP_ATTR, ra_rs_set_tp_attr, sizeof(union op_set_tp_attr_data)},
     {RA_RS_CTX_TOKEN_ID_ALLOC, ra_rs_ctx_token_id_alloc, sizeof(union op_token_id_alloc_data)},
     {RA_RS_CTX_TOKEN_ID_FREE, ra_rs_ctx_token_id_free, sizeof(union op_token_id_free_data)},
     {RA_RS_LMEM_REG, ra_rs_lmem_reg, sizeof(union op_lmem_reg_info_data)},
@@ -1781,6 +1783,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_CTX_BATCH_SEND_WR, ra_rs_ctx_batch_send_wr, sizeof(union op_ctx_batch_send_wr_data)},
     {RA_RS_CUSTOM_CHANNEL, ra_rs_custom_channel, sizeof(union op_custom_channel_data)},
     {RA_RS_CTX_UPDATE_CI, ra_rs_ctx_update_ci, sizeof(union op_ctx_update_ci_data)},
+    {RA_RS_CTX_GET_AUX_INFO, ra_rs_ctx_get_aux_info, sizeof(union op_ctx_get_aux_info_data)},
 #endif
 };
 

@@ -125,6 +125,9 @@ enum OpType {
     RA_RS_CTX_QP_DESTROY_BATCH = 102,
     RA_RS_CTX_QUERY_QP_BATCH = 103,
     RA_RS_GET_EID_BY_IP = 104,
+    RA_RS_CTX_GET_AUX_INFO = 105,
+    RA_RS_GET_TP_ATTR = 106,
+    RA_RS_SET_TP_ATTR = 107,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode

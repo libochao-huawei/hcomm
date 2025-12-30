@@ -37,6 +37,7 @@ endif()
 # HCCP2.0
 if(EXISTS ${HCOMM_ORION})
 list(APPEND rs_list
+        ${HCOMM_ORION}/rdma_service/ctx/dl_net_function.c
         ${HCOMM_ORION}/rdma_service/ctx/dl_ccu_function.c
         ${HCOMM_ORION}/rdma_service/ctx/dl_urma_function.c
         ${HCOMM_ORION}/rdma_service/ctx/rs_ping_urma.c
@@ -95,6 +96,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCOMM_ORION}/inc/private/network
         ${HCOMM_ORION}/rdma_service/ctx/
         ${HCOMM_ORION}/external_depends/ccu/
+        ${HCOMM_ORION}/external_depends/net_adapt/
         ${HCOMM_ORION}/external_depends/ubengine/
     )
 
