@@ -211,7 +211,7 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
         HCCL_ERROR("[CollReduceScatterExecutor][RunLoopInner]In OP_BASE curCount is zero."), HCCL_E_PARA);
         
     // 不开启dma消减，且通信buffer足够大时，将user in到ccl的拷贝任务合并成一个
-    const bool preloadCopyOpt = (!DMAReduceFlag_) && (param.DataDes.count == execMem.count);
+    const bool preloadCopyOpt = IsPreloadCopyOptimizeCondition(param, execMem);
 
     if (!is310P3Common_) {
         /* 设置子图复用标志 */
@@ -569,4 +569,9 @@ HcclResult CollReduceScatterExecutor::RetryPostSync(OpParam& param, ExecMem &exe
     return HCCL_SUCCESS;
 }
 
+bool CollReduceScatterExecutor::IsPreloadCopyOptimizeCondition(const OpParam &param, ExecMem &execMem)
+{
+    // 不开启dma消减，且通信buffer足够大时，将user in到ccl的拷贝任务合并成一个
+    return (!DMAReduceFlag_) && (param.DataDes.count == execMem.count);
+}
 } // namespace hccl

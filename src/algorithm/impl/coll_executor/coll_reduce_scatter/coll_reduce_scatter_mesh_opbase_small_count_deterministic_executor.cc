@@ -123,7 +123,7 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::CopyFromU
     ExecMem &execMem) 
 {
     u32 unitSize = SIZE_TABLE[param.DataDes.dataType];
-    const bool preloadCopyOpt = (param.DataDes.count == execMem.count);
+    const bool preloadCopyOpt = IsPreloadCopyOptimizeCondition(param, execMem);
     DeviceMem dstMem;
     DeviceMem srcMem;
     if (preloadCopyOpt) {
@@ -257,6 +257,13 @@ HcclResult CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::RunAlgLev
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));
     }
     return HCCL_SUCCESS;
+}
+
+bool CollReduceScatterMeshOpbaseSmallCountDeterministicExecutor::IsPreloadCopyOptimizeCondition(const OpParam &param,
+    ExecMem &execMem)
+{
+    // 通信buffer足够大时，将user in到ccl的拷贝任务合并成一个
+    return param.DataDes.count == execMem.count;
 }
 
 REGISTER_EXEC("ReduceScatterMeshOpbaseSmallCountDeterministicExecutor",
