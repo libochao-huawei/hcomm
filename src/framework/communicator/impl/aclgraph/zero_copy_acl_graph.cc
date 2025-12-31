@@ -89,7 +89,7 @@ bool ZeroCopyAclGraph::SetAclGraphZeroCopyMode(
 
 bool ZeroCopyAclGraph::SetGraphMode(HcclCMDType opType, OpParam &opParam, HcclAlg *impl, u64 bufferSize)
 {
-    if (!opParam.aicpuUnfoldMode || (GetExternalInputHcclAivMode() && opType == HCCL_CMD_ALLTOALLV)) {
+    if (!opParam.aicpuUnfoldMode || (GetExternalInputHcclAivMode() && (opType == HCCL_CMD_ALLTOALLV || opType == HCCL_CMD_BROADCAST))) {
         HCCL_INFO("[ZeroCopyAclGraph][SetAclGraphZeroCopyMode] Hccl can't support graph zero copy "
                   "mode. Only support on aicpu mode aicpuUnfoldMode %d aiv %d",
             opParam.aicpuUnfoldMode,
