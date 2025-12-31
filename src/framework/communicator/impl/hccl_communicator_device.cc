@@ -1569,4 +1569,9 @@ namespace hccl
     {
         return HCCL_SUCCESS;
     }
+
+    void HcclCommunicator::SetReleaseChannel(std::function<HcclResult()> releaseChannel)
+    {
+        return;
+    }
 }

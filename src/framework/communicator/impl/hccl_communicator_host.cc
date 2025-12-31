@@ -195,6 +195,10 @@ namespace hccl
             DestroyAlgResource(res.second);
         }
 
+        if (releaseChannel_ != nullptr) {
+            releaseChannel_();
+        }
+
         if (opRetryManager_ != nullptr) {
             OpRetryManager::DeleteLinkInfoByIdentifier(deviceLogicId_, identifier_);
             opRetryManager_->UnRegisterOpRetryManager(identifier_);
@@ -8648,5 +8652,11 @@ namespace hccl
         HCCL_INFO("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], deviceLogicId[%d], "
             "snapshot post-process check success.", identifier_.c_str(), userRank_, deviceLogicId_);
         return HCCL_SUCCESS;
+    }
+
+    void HcclCommunicator::SetReleaseChannel(std::function<HcclResult()> releaseChannel)
+    {
+        releaseChannel_ = releaseChannel;
+        return;
     }
 }
