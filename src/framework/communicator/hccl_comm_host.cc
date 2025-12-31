@@ -156,8 +156,15 @@ namespace hccl
             kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
         return HCCL_SUCCESS;
     }
+
+    HcclResult hcclComm::ReleaseChannel()
+    {
+        return independentOp_.GetChannelManager().ReleaseChannel();
+    }
+
     HcclResult hcclComm::InitIndependentOp()
     {
+        communicator_->SetReleaseChannel([this]() -> HcclResult { return this->ReleaseChannel(); });
         ChannelManagerCallbacks channelCallbacks;
         channelCallbacks.indOpTransportAlloc = [this](const std::string &tag, OpCommTransport &opCommTransport, 
             bool isAicpuModeEn) -> HcclResult {
