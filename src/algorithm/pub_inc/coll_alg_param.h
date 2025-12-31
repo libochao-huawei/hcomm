@@ -270,6 +270,7 @@ struct AlgDesc {
 
 struct ResourceLimit {
     bool ifLimit = false;
+    bool ifCompileForAiv = false;
     u32 aivCoreLimit = 0;
 };
 
