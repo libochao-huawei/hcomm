@@ -447,6 +447,7 @@ public:
         CommLink **linkList, uint32_t *listSize);
     HcclTopoAttr GetTopoAttr();
     void ForceProf(bool isForce);
+    void SetReleaseChannel(std::function<HcclResult()> releaseChannel);
 private:
 
     bool IsEnableRoce();
@@ -1049,6 +1050,7 @@ private:
     std::vector<std::shared_ptr<DeviceMem>> channelRemoteParamMem_;
     CommConfig commConfig_;
     std::function<bool()> getAicpuCommState_; // 获取自定义算子aicpu通信域是否初始化
+    std::function<HcclResult()> releaseChannel_ = nullptr;
 };
 }  // end namespace hccl
 #endif  // HCCL_IMPL_BASE_H
