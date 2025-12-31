@@ -193,10 +193,12 @@ main() {
     echo "script failed.";
     exit 1;
   fi
-
+  echo "---------------- download_and_compile pass ----------------"
   # 下载、编译 mockcpp
   download_mockcpp
+  echo "---------------- download_mockcpp pass ----------------"
   build_mockcpp
+  echo "---------------- build_mockcpp pass ----------------"
 
   # 下载、编译 protobuf
   download_and_compile_protobuf
