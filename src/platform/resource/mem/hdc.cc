@@ -13,7 +13,7 @@
 #include "ascend_hal.h"
 #include "adapter_hal.h"
 #include "adapter_rts.h"
-
+#include <atomic>
 #include <chrono>
 
 namespace hccl {
@@ -183,6 +183,8 @@ HcclResult HDCommunicate::Write(u32 offset, u32 length, u8 *value)
         CHK_RET(hrtDrvMemCpy(reinterpret_cast<u8 *>(devMem_.ptr()) + offset,
             hostMem_.size() - HCCL_HDC_CONTROL_WORDS * sizeof(u32), value, length));
     }
+
+    std::atomic_thread_fence(std::memory_order_seq_cst);
 
     u32 tail = *tailCntAddr_;
     tail++;
