@@ -156,6 +156,7 @@ struct OpParam {
     RankId dstRank = 0;
     RankId srcRank = 0;
     bool aicpuUnfoldMode = false;
+    uint8_t aicpuCacheEnable = 0;
     bool isCapture = false;
     HcclTraceInfo* opBaseAtraceInfo = nullptr;
     union {

@@ -8,9 +8,54 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "testcase_utils.h"
+#include <securec.h>
 #include <stdlib.h>
 #include "checker.h"
 using namespace checker;
+
+#include "sub_inc/mmpa_typedef_linux.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+int memcpy_s(void *dest, size_t destMax, const void *src, size_t count)
+{
+	memcpy(dest, src, count);
+	return 0;
+}
+
+INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
+{
+    INT32 ret;
+    UINT32 envLen = 0;
+    if ((name == NULL) || (value == NULL) || (len == MMPA_ZERO)) {
+        return EN_INVALID_PARAM;
+    }
+    const CHAR *envPtr = getenv(name);
+    if (envPtr == NULL) {
+        return EN_ERROR;
+    }
+
+    UINT32 lenOfRet = (UINT32)strlen(envPtr);
+    if (lenOfRet < (UINT32)(MMPA_MEM_MAX_LEN - 1)) {
+        envLen = lenOfRet + 1U;
+    }
+
+    if ((envLen != MMPA_ZERO) && (len < envLen)) {
+        return EN_INVALID_PARAM;
+    } else {
+        ret = memcpy_s(value, len, envPtr, envLen); //lint !e613
+        if (ret != EN_OK) {
+            return EN_ERROR;
+        }
+    }
+    return EN_OK;
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 void ClearHcclEnv()
 {

@@ -20,6 +20,7 @@
 #include "externalinput.h"
 #include "adapter_rts.h"
 #include "env_config.h"
+#include "sub_inc/mmpa_typedef_linux.h"
 
 #define private public
 #define protected public
@@ -41,6 +42,34 @@ typedef enum tagRtClearStep {
 rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
 {
     return 0;
+}
+
+INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
+{
+    INT32 ret;
+    UINT32 envLen = 0;
+    if ((name == NULL) || (value == NULL) || (len == MMPA_ZERO)) {
+        return EN_INVALID_PARAM;
+    }
+    const CHAR *envPtr = getenv(name);
+    if (envPtr == NULL) {
+        return EN_ERROR;
+    }
+
+    UINT32 lenOfRet = (UINT32)strlen(envPtr);
+    if (lenOfRet < (UINT32)(MMPA_MEM_MAX_LEN - 1)) {
+        envLen = lenOfRet + 1U;
+    }
+
+    if ((envLen != MMPA_ZERO) && (len < envLen)) {
+        return EN_INVALID_PARAM;
+    } else {
+        ret = memcpy_s(value, len, envPtr, envLen); //lint !e613
+        if (ret != EN_OK) {
+            return EN_ERROR;
+        }
+    }
+    return EN_OK;
 }
 
 #ifdef __cplusplus

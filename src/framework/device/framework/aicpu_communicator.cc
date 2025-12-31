@@ -180,7 +180,7 @@ HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, const AlgRes
 
         // 根据算子类型判断是否需要cache
         const HcclCMDType opType = param.opType;
-        bool needCache = OpUnfoldCache::NeedCache(opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
+        bool needCache = OpUnfoldCache::NeedCache(param.aicpuCacheEnable, opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
         if (needCache) { // 屏蔽inplace场景
             bool isInplace = false;
             CHK_RET(IsInplace(param, isInplace));
@@ -242,7 +242,7 @@ HcclResult HcclCommAicpu::ClearOpUnfoldCacheEntry(const OpParam &param)
     if (opUnfoldCachePtr_ != nullptr) {
         // 根据算子类型判断是否需要cache
         const HcclCMDType opType = param.opType;
-        bool needCache = OpUnfoldCache::NeedCache(opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
+        bool needCache = OpUnfoldCache::NeedCache(param.aicpuCacheEnable, opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
         if (needCache) { // 屏蔽inplace场景
             bool isInplace = false;
             CHK_RET(IsInplace(param, isInplace));
