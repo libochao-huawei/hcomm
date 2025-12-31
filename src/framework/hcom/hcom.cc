@@ -1677,7 +1677,7 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, H
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts,, HcclDataType dataType, int32_t aivCoreLimit,
+HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *blockDim)
 {
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
