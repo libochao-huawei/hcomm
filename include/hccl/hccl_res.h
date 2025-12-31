@@ -76,6 +76,9 @@ typedef enum {
     COMM_PROTOCOL_ROCE = 1,       ///< RDMA over Converged Ethernet
     COMM_PROTOCOL_PCIE = 2,       ///< PCIE协议
     COMM_PROTOCOL_SIO = 3,        ///< SIO协议
+    COMM_PROTOCOL_UBC_CTP = 4,    ///< 华为统一总线UBC_CTP
+    COMM_PROTOCOL_UBC_TP = 5,     ///< 华为统一总线UBC_CP
+    COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
 } CommProtocol;
 
 /**
@@ -86,12 +89,14 @@ typedef enum {
     COMM_ADDR_TYPE_IP_V4 = 0,     ///< IPv4地址类型
     COMM_ADDR_TYPE_IP_V6 = 1,     ///< IPv6地址类型
     COMM_ADDR_TYPE_ID = 2,         ///< ID地址类型
+    COMM_ADDR_TYPE_EID = 3,        ///< EID地址类型
 } CommAddrType;
 
 /**
  * @brief 通信设备地址描述结构体
  * @note 支持CommAddrType的扩展，地址最大长度36字节
  */
+constexpr uint32_t COMM_ADDR_EID_LEN = 16;
 typedef struct {
     CommAddrType type;         ///< 通信地址类别
     union {
@@ -99,6 +104,7 @@ typedef struct {
         struct in_addr addr;   ///< IPv4地址结构
         struct in6_addr addr6; ///< IPv6地址结构
         uint32_t id;           ///< 标识
+        uint8_t eid[COMM_ADDR_EID_LEN];  ///< EID地址类型
     };
 } CommAddr;
 

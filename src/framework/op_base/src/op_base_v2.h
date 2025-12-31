@@ -118,6 +118,18 @@ HcclResult __attribute__((weak)) HcclGetInstSizeByNetLayerV2(HcclComm comm, uint
 HcclResult __attribute__((weak)) HcclGetInstTopoTypeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *topoType);
 
 HcclResult __attribute__((weak)) CommGetCCLBufSizeCfgV2(HcclComm comm, uint64_t *cclBufSize);
+
+HcclResult __attribute__((weak)) HcclGetInstRanksByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum);
+
+HcclResult __attribute__((weak)) HcclGetInstSizeListByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+
+HcclResult __attribute__((weak)) HcclGetLinksV2(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList, uint32_t *listSize);
+
+HcclResult __attribute__((weak)) HcclGetTopoInstsByLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+
+HcclResult __attribute__((weak)) HcclGetTopoTypeV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+
+HcclResult __attribute__((weak)) HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
 #endif
 #ifdef __cplusplus
 }

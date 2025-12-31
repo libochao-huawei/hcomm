@@ -27,6 +27,8 @@ typedef enum {
     COMM_TOPO_1DMESH = 1,     ///< 1DMesh互联拓扑
     COMM_TOPO_910_93 = 2,     ///< 910_93互联拓扑(带SIO)
     COMM_TOPO_310P = 3,       ///< 310P互联拓扑
+    COMM_TOPO_A2AXSERVER = 4, ///< A2_AX_SERVER
+    COMM_TOPO_CUSTOM = 5      ///< 自定义
 } CommTopo;
 
 const uint32_t COMM_LINK_MAGIC_WORD = 0x0f0e0f0f;
@@ -44,6 +46,7 @@ typedef struct {
         uint8_t raws[128];
         struct {
             CommProtocol linkProtocol;
+            uint8_t hop;
         };
     } linkAttr;
 } CommLink;
@@ -73,6 +76,7 @@ inline void CommLinkInit(CommLink *commLink, uint32_t linkNum)
             
             // 初始化链路属性（显式设置保留值）
             commLink->linkAttr.linkProtocol = COMM_PROTOCOL_RESERVED;
+            commLink->linkAttr.hop          = 1;
         }
         commLink++;  // 移动到下一个描述符
     }
@@ -231,6 +235,55 @@ extern HcclResult HcclGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer
  */
 extern HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
     CommLink **links, uint32_t *linkNum);
+
+
+/**
+ * @brief 给定通信域和netLayer，myRank所在的topoInstance集合
+ * @param[in] comm 通信域
+ * @param[in] netLayer 通信网络层次
+ * @param[out] topoInsts topoInstanceId列表
+ * @param[out] topoInstNum 列表大小
+ * @return HcclResult 执行结果状态码
+ * @warning 重要约束：
+ * 1、返回的topoInsts内存由库内管理，调用者严禁释放
+ * 2、应及时复制返回的topoInsts数据，同一通信域重复调用可能使前次结果失效
+ */
+extern HcclResult HcclGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+
+/**
+ * @brief 给定通信域和netLayer，myRank所在的指定topoInstId的topoInstance的topoType
+ * @param[in] comm 通信域
+ * @param[in] netLayer 通信网络层次
+ * @param[in] topoInstId topo实例id
+ * @param[out] topoType topo类型
+ * @return HcclResult 执行结果状态码
+ * @code {.c}
+ * commTp = CreateComm([0,1,2,..,31]);
+ * uint32_t topoType;
+ * HcclGetTopoType(commTp, netLayer=0, topoInstId=0， &topoType); // topoType=1 (1DMesh)
+ * HcclGetTopoType(commTp, netLayer=1, topoInstId=0， &topoType); // topoType=0 (clos)
+ * @endcode
+ */
+extern HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+
+/**
+ * @brief 给定通信域和netLayer，myRank所在的指定topoInstId的topoInstance中包含的rank信息
+ * @param[in] comm 通信域
+ * @param[in] netLayer 通信网络层次
+ * @param[out] ranks   对应topoInstance中包含的rankId列表
+ * @param[out] rankNum 列表数量
+ * @return HcclResult 执行结果状态码
+ * @note 使用参考：
+ * @code {.c}
+ * 8卡通信域，同一个8p Mesh内
+ * HcclGetInstRanksByNetLayer( commTp, netLayer=0, topoInst=0,  &ranks, &rankNum )
+ * // ranks = [0,1,2,…,7],  rankNum=8
+ * @endcode
+ * @warning 重要约束：
+ * 1、返回的ranks内存由库内管理，调用者严禁释放
+ * 2、应及时复制返回的ranks数据，同一通信域重复调用可能使前次结果失效
+ */
+extern HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
