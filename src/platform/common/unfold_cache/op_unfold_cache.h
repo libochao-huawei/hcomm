@@ -26,7 +26,7 @@ namespace hccl {
 class OpUnfoldCache {
 public:
     // 根据算子类型判断是否需要cache
-    static bool NeedCache(const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode);
+    static bool NeedCache(const uint8_t aicpuCacheEnable, const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode);
 
     explicit OpUnfoldCache();
     ~OpUnfoldCache();
