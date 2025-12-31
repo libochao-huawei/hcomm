@@ -1004,16 +1004,16 @@ HcclResult hcclComm::GetRankSize(u32 &rankSize)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
+HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
     HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
 {
-    return communicator_->HcclSelectAlg(opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
+    return communicator_->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, algName);
 }
 
-HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
+HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim)
 {
-    return communicator_->HcclCalcBlockDim(opType, count, dataType, aivCoreLimit, algName, blockDim);
+    return communicator_->HcclCalcBlockDim(opType, count, counts, dataType, aivCoreLimit, algName, blockDim);
 }
 
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,

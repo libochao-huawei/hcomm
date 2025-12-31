@@ -384,13 +384,13 @@ namespace hccl
         2. 计算resource，存到request内
         3. 创建和分配资源
     */
-    HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
+    HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
                                                HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
+    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
                                                   std::string &algName, u32 &blockDim)
     {
         return HCCL_SUCCESS;
