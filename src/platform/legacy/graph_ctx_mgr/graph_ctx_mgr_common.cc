@@ -119,7 +119,7 @@ HcclResult LaunchGraph(void *fftsPubInfo, void *streamPtr, void *ctx, uint32_t t
     task.argsHandleInfoPtr = nullptr;
     ConstructFftsTask(task, fftsPlusSqe, fftsCtxsPtr, fftsPubInfoPtr->argsHandleList);
     PrintFFTSDebugDetails(fftsPlusSqe, task, fftsCtxsPtr);
-    CHK_RET(FftsPlusTaskLaunchWithFlag(&task, streamPtr, 0));
+    CHK_RET(FftsPlusTaskLaunch(&task, streamPtr));
     *ctxNum = fftsCtxsPtr->ctxNum;
     return HCCL_SUCCESS;
 }
