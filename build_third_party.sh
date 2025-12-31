@@ -187,6 +187,9 @@ main() {
   checkopts "$@"
 
   echo "---------------- script start ----------------"
+  whoami
+  id
+  echo $USER
 
   download_and_compile
   if [[ "$?" -ne 0 ]]; then
