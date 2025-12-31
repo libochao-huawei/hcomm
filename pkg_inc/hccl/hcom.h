@@ -321,12 +321,12 @@ bool HcomFindGroup(const char *group);
 
 #define TEMP_WEAK_DEF 1
 
-HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
+HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts,
     HcclDataType dataType, HcclReduceOp op, HcclCMDType opType, int32_t aivCoreLimit,
     bool &ifAiv, char *algName);
 
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
+HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *blockDim);
 
 HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,

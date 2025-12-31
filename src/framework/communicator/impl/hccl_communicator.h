@@ -250,10 +250,10 @@ public:
 
     virtual bool Is310PDuoCard();
 
-    HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
+    HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
         HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
 
-    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
+    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim);
 
     HcclResult HcclGetAlgExecParam(const std::string &tag, HcclCMDType opType, u64 count, void *inputPtr, void *outputPtr,
