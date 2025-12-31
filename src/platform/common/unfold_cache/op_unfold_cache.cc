@@ -18,7 +18,13 @@
 
 namespace hccl {
 
-    bool OpUnfoldCache::NeedCache(const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode) {
+    bool OpUnfoldCache::NeedCache(const uint8_t aicpuCacheEnable, const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode) {
+        // 校验环境变量
+        if (aicpuCacheEnable == 0) {
+            HCCL_INFO("[OpUnfoldCache][NeedCache] disable aicpu cache for aicpuCacheEnable[%u]", aicpuCacheEnable);
+            return false;
+        }
+
         // 屏蔽MC2算子
         if (isDeviceMode) {
             HCCL_INFO("[OpUnfoldCache][NeedCache] MC2 op is not supported for operator unfolding cache");

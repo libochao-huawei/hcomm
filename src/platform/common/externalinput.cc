@@ -371,6 +371,21 @@ HcclResult InitEnvVarParam()
             HCCL_ERROR_CODE(ret),
             ret),
         ret);
+    
+    // 解析aicpu cache enable
+    ret = ParseAicpuCacheEnable();
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_AICPU_CACHE_ENABLE", "Value should be 0 or 1."}));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_AICPU_CACHE_ENABLE failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析rank 间的QP个数
     ret = ParseRdmaQpsPerConnection();
@@ -1626,6 +1641,44 @@ HcclResult ParseOpExpansion()
     return HCCL_SUCCESS;
 }
 
+HcclResult ParseAicpuCacheEnable()
+{
+    // 默认开启aicpu cache
+    g_externalInput.aicpuCacheEnable = 1;
+
+    // 获得环境变量
+    std::string aicpuCacheEnable = "";
+    constexpr uint32_t charCnt = 128;
+    char aicpuCacheEnableChars[charCnt];
+    CHK_SAFETY_FUNC_RET(memset_s(aicpuCacheEnableChars, charCnt, '\0', charCnt));
+    int result = mmGetEnv("HCCL_AICPU_CACHE_ENABLE", aicpuCacheEnableChars, charCnt);
+    if (result == EN_OK) { // get HCCL_AICPU_CACHE_ENABLE successfully
+        aicpuCacheEnable = std::string(aicpuCacheEnableChars);
+    } else if (result == EN_ERROR) { // not specify HCCL_AICPU_CACHE_ENABLE
+        aicpuCacheEnable = "EmptyString";
+    } else { // insufficient length
+        HCCL_ERROR("[Parser][AicpuCacheEnable] failt to get HCCL_AICPU_CACHE_ENABLE: aicpuCacheEnableChars.len[%u]", charCnt);
+        return HCCL_E_INTERNAL;
+    }
+
+    // 根据环境变量设置g_externalInput.aicpuCacheEnable
+    if (aicpuCacheEnable == "EmptyString") {
+        HCCL_RUN_INFO("HCCL_AICPU_CACHE_ENABLE set by default to [1]");
+        return HCCL_SUCCESS;
+    } else if (aicpuCacheEnable == "0") {
+        g_externalInput.aicpuCacheEnable = 0; // 关闭aicpu cache
+    } else if (aicpuCacheEnable == "1") {
+        g_externalInput.aicpuCacheEnable = 1; // 开启aicpu cache
+    } else {
+        HCCL_ERROR("[Parser][AicpuCacheEnable]environmental variable HCCL_AICPU_CACHE_ENABLE [%s] is invalid, set by default to [1]", aicpuCacheEnable.c_str());
+        return HCCL_E_PARA;
+    }
+
+    HCCL_RUN_INFO("environmental variable HCCL_AICPU_CACHE_ENABLE is [%s], aicpuCacheEnable[%u]", aicpuCacheEnable.c_str(), g_externalInput.aicpuCacheEnable);
+
+    return HCCL_SUCCESS;
+}
+
 HcclResult SplitHcclRetryEnable(const std::string &retryConfig, std::vector<std::string> &retryEnables)
 {
 #ifndef CCL_KERNEL_AICPU
@@ -2011,6 +2064,11 @@ const MasterInfo& GetExternalInputMasterInfo()
 const bool& GetExternalInputHcclAicpuUnfold()
 {
     return g_externalInput.aicpuUnfold;
+}
+
+const uint8_t& GetExternalInputAicpuCacheEnable()
+{
+    return g_externalInput.aicpuCacheEnable;
 }
 
 const bool& GetExternalInputHcclAivMode()
