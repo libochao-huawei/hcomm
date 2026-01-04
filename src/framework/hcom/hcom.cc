@@ -3288,6 +3288,8 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
     } else if (hcclOpType == HCCL_CMD_BROADCAST) {
         if (count * dataTypeSize <= HCCL_MID_COUNT_32_MB) {
             opMemSize += count * dataTypeSize * HCCL_MEMSIZE_HD_FACTOR;
+        }else{
+            opMemSize += count * dataTypeSize;
         }
     } else if ((hcclOpType == HCCL_CMD_ALLTOALLV ||
         hcclOpType == HCCL_CMD_ALLTOALLVC) &&
