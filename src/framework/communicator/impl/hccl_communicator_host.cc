@@ -187,6 +187,10 @@ namespace hccl
             DestroyAlgResource(res.second);
         }
 
+        if (releaseChannel_ != nullptr) {
+            releaseChannel_();
+        }
+
         if (opRetryManager_ != nullptr) {
             OpRetryManager::DeleteLinkInfoByIdentifier(deviceLogicId_, identifier_);
             opRetryManager_->UnRegisterOpRetryManager(identifier_);
@@ -8276,5 +8280,11 @@ namespace hccl
 
         HCCL_RUN_INFO("DeInitTransportMem Success!");
         return HCCL_SUCCESS;
+    }
+
+    void HcclCommunicator::SetReleaseChannel(std::function<HcclResult()> releaseChannel)
+    {
+        releaseChannel_ = releaseChannel;
+        return;
     }
 }
