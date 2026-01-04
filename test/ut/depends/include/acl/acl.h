@@ -110,6 +110,9 @@ typedef struct aclCANNPackageVersion {
  */
 ACL_FUNC_VISIBILITY aclError aclsysGetCANNVersion(aclCANNPackageName name, aclCANNPackageVersion *version);
 
+ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr);
+
+ACL_FUNC_VISIBILITY aclError aclsysGetVersionNum(char* pkgNname, int32_t* versionNum);
 #ifdef __cplusplus
 }
 #endif

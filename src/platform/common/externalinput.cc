@@ -24,6 +24,7 @@
 #include "config_plf_log.h"
 #include "device_capacity.h"
 #include "externalinput.h"
+#include <acl/acl.h>
 
 using namespace std;
 using namespace hccl;
@@ -1308,109 +1309,36 @@ HcclResult ParseRDMARetryCnt()
 
 HcclResult ParseCannVersion()
 {
-    const std::string cannEnv = GET_ENV(MM_ENV_LD_LIBRARY_PATH);
-    // 环境变量不存在
-    if (cannEnv == "EmptyString") {
-        HCCL_RUN_INFO("[CannVersion][Verification]environmental variable LD_LIBRARY_PATH is not set.");
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult ret = HCCL_SUCCESS;
-    std::string cannVersionPath;   // 存放cann安装路径
-    if (GetCannVersionPath(cannEnv, "/hccl", cannVersionPath) == HCCL_SUCCESS) {
-        cannVersionPath += "/version.info";
-        ret = LoadCannVersionInfoFile(cannVersionPath, "Version=");
-    } else if (GetCannVersionPath(cannEnv, "/latest", cannVersionPath) == HCCL_SUCCESS) {
-        cannVersionPath += "/version.cfg";
-        ret = LoadCannVersionInfoFile(cannVersionPath, "hccl_running_version=[");
-    } else {
-        HCCL_INFO("[CannVersion][Verification]cannot found version file in %s.", cannEnv.c_str());
-    }
-    return ret;
-}
-
-HcclResult GetCannVersionPath(const std::string &cannEnvStr, const std::string &keyStr, std::string &cannVersionPath)
-{
-    std::string tempPath;   // 存放临时路径
-    // 查找cann安装路径
-    for (u32 i = 0; i < cannEnvStr.length(); ++i) {
-        // 环境变量中存放的每段路径之间以':'隔开
-        if (cannEnvStr[i] != ':') {
-            tempPath += cannEnvStr[i];
-        }
-        // 对存放CANN版本文件的路径进行搜索, 有两种情况
-        // 一种是*/latest/version.cfg
-        // 另一种是*/hccl/version.info
-        if (cannEnvStr[i] == ':' || i == cannEnvStr.length() - 1) {
-            size_t found = tempPath.find(keyStr);
-            // 防止出现类似/hccl*/的情况
-            if (found == string::npos) {
-                tempPath.clear();
-                continue;
-            }
-            if (tempPath.length() <= found + keyStr.length() || tempPath[found + keyStr.length()] == '/') {
-                cannVersionPath = tempPath.substr(0, found + keyStr.length());
-                break;
-            }
-            tempPath.clear();
-        }
-    }
-    // 路径为空
-    if (cannVersionPath.empty()) {
+#if !defined(CCL_KERNEL_AICPU) && !defined(HCCD)
+    char hcommPkgName[] = "hcomm";
+    char hcclPkgName[] = "hccl";
+    constexpr u32 HCCL_VERSION_STR_MAX_LEN = 128;
+    std::vector<char> hcommVersion(HCCL_VERSION_STR_MAX_LEN, 0);
+    std::vector<char> hcclVersion(HCCL_VERSION_STR_MAX_LEN, 0);
+    aclError aclRet = aclsysGetVersionStr(hcommPkgName, hcommVersion.data());
+    CHK_PRT_RET(
+        aclRet != ACL_SUCCESS,
+        HCCL_WARNING("[Parse][CannVersion]failed to get hcomm version, aclRet[%d]", static_cast<int>(aclRet)),
+        HCCL_E_NOT_FOUND);
+    aclRet = aclsysGetVersionStr(hcclPkgName, hcclVersion.data());
+    CHK_PRT_RET(
+        aclRet != ACL_SUCCESS,
+        HCCL_WARNING("[Parse][CannVersion]failed to get hccl version, aclRet[%d]", static_cast<int>(aclRet)),
+        HCCL_E_NOT_FOUND);
+    size_t hlen = strnlen(hcommVersion.data(), HCCL_VERSION_STR_MAX_LEN);
+    size_t clen = strnlen(hcclVersion.data(), HCCL_VERSION_STR_MAX_LEN);
+    if (hlen == 0 || clen == 0 || hlen == HCCL_VERSION_STR_MAX_LEN || clen == HCCL_VERSION_STR_MAX_LEN) {
+        HCCL_WARNING("[Parse][CannVersion]hcomm version or hccl version is empty, hcomm Version=%s, hccl Version=%s.",
+                     std::string(hcommVersion.data(), hlen).c_str(), std::string(hcclVersion.data(), clen).c_str());
         return HCCL_E_NOT_FOUND;
     }
-    return HCCL_SUCCESS;
-}
-
-HcclResult LoadCannVersionInfoFile(const std::string &realName, const std::string &keyStr)
-{
-    // 打开该文件前，判断该文件路径是否有效、规范
-    char realFile[PATH_MAX] = {0};
-    if (realpath(realName.c_str(), realFile) == nullptr) {
-        HCCL_INFO("[CannVersion][Verification]cann version path %s is not a valid real path",
-            realName.c_str());
-        return HCCL_E_NOT_FOUND;
-    }
-    HCCL_INFO("Load CannVersion InfoFile in %s", realFile);
-
-    // realFile转str,然后open这个str
-    ifstream infile;
-    infile.open(realFile);
-
-    if (!infile.is_open()) {
-        HCCL_INFO("[CannVersion][Verification]%s does not exist.", realFile);
-        return HCCL_E_NOT_FOUND;
-    }
-
-    HcclResult ret = HCCL_SUCCESS;
-    // 逐行读取，结果放在line中，寻找带有keyStr的字符串
-    string line;
-    s32 maxRows = 100; // 在文件中读取的最长行数为100，避免超大文件长时间读取
-    while (getline(infile, line)) {
-        --maxRows;
-        CHK_PRT_BREAK(maxRows < 0, \
-            HCCL_WARNING("[CannVersion][Verification]version file content is too long."), \
-            ret = HCCL_E_NOT_FOUND);
-        u32 found = line.find(keyStr);
-        // 版本字段的两种模式
-        // hccl目录下, version.info文件, Version=1.83.T8.0.B128
-        // latest目录下, version.cfg文件, hccl_running_version=[1.83.T8.0.B128:CANN-1.83]
-        if (found == 0) {
-            u32 startPos = keyStr.length(); // 版本字符串开始位置
-            u32 endPos = min(line.find(":"), line.length()); // 版本字符串在":"或结尾处结束
-            // 版本字符串为空
-            CHK_PRT_BREAK(endPos <= startPos, \
-                HCCL_WARNING("[CannVersion][Verification]cannVersion is invalid."), \
-                ret = HCCL_E_NOT_FOUND);
-
-            u32 len = endPos - startPos; // 版本字符串长度
-            g_externalInput.cannVersion = line.substr(startPos, len); // 从keyStr截断
-            HCCL_RUN_INFO("[Parse][CannVersion]success, CannVersion is %s ", g_externalInput.cannVersion.c_str());
-            break;
-        }
-    }
-    infile.close();
-    return ret;
+    g_externalInput.cannVersion = std::string(hcommVersion.data()) + "_" + std::string(hcclVersion.data());
+    HCCL_RUN_INFO("[Parse][CannVersion]success, CannVersion is %s ", g_externalInput.cannVersion.c_str());
+    return HcclResult::HCCL_SUCCESS;
+#else
+	HCCL_WARNING("[ParseCannVersion]Does not support this interface.");
+	return HCCL_E_NOT_SUPPORT;
+#endif
 }
 
 HcclResult ParseCclBufferSize()
