@@ -16,7 +16,7 @@
 #include "hccl_common.h"
 #include "common.h"
 #include "hdc_pub.h"
-#include "transport_pub.h"
+#include <transport_pub.h>
 #include "dispatcher_task_types.h"
 #include "externalinput_pub.h"
 #include "hccl_mem_defs.h"
