@@ -11,19 +11,13 @@
 #include <securec.h>
 #include <stdlib.h>
 #include "checker.h"
-using namespace checker;
-
 #include "sub_inc/mmpa_typedef_linux.h"
+
+using namespace checker;
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
-int memcpy_s(void *dest, size_t destMax, const void *src, size_t count)
-{
-	memcpy(dest, src, count);
-	return 0;
-}
 
 INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
 {
@@ -45,7 +39,7 @@ INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
     if ((envLen != MMPA_ZERO) && (len < envLen)) {
         return EN_INVALID_PARAM;
     } else {
-        ret = memcpy_s(value, len, envPtr, envLen); //lint !e613
+        ret = memcpy_s(value, len, envPtr, envLen);
         if (ret != EN_OK) {
             return EN_ERROR;
         }
