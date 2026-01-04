@@ -2675,7 +2675,7 @@ namespace hccl
             rtStream_t aicpuStream;
             ret = Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream);
             void *commContext = nullptr;
-            ret = CreateCommResource(tag, stream, true, &commContext);
+            ret = CreateCommResource(tag, aicpuStream, true, &commContext);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[hcclImpl][CreateComm]create aicpu unfold comminfo by tag[%s] failed. return[%d]",
                            tag.c_str(), ret);
