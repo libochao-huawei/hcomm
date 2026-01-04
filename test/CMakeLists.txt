@@ -16,5 +16,5 @@ endif()
 
 # ST
 if(ENABLE_ST)
-    add_subdirectory(st)
+    add_subdirectory(st/algorithm)
 endif()
