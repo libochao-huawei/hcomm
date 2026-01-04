@@ -27,21 +27,21 @@ set(PROTOC_PROGRAM     ${THIRD_PARTY_PATH}/protobuf/bin/protoc)
 
 # Include List
 set(ASCEND_CANN_INCLUDE_LIST
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/base
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/hccl
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/trace
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/runtime
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/runtime/runtime
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/pkg_inc/profiling
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/include
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/include/driver
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/include/mmpa
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/include/toolchain
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/include/experiment/metadef
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/asc/include
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/asc/include/basic_api
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/asc/impl/basic_api
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling
+    ${ASCEND_CANN_PACKAGE_PATH}/include
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+    ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa
+    ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain
+    ${ASCEND_CANN_PACKAGE_PATH}/include/experiment/metadef
+    ${ASCEND_CANN_PACKAGE_PATH}/asc/include
+    ${ASCEND_CANN_PACKAGE_PATH}/asc/include/basic_api
+    ${ASCEND_CANN_PACKAGE_PATH}/asc/impl/basic_api
 )
 
 set(UTILS_PUBLIC_INCLUDE_LIST

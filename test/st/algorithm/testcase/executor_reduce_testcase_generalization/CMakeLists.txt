@@ -48,7 +48,7 @@ target_link_libraries(executor_reduce_hccl_test PRIVATE
     ${THIRD_PARTY_PATH}/gtest_shared/lib/libgtest.so
     -lpthread
     ${PROTO_SOURCE_DIR}/libprotobuf.so
-    ${ASCEND_CANN_PACKAGE_PATH}/../cann-8.5.0/x86_64-linux/lib64/libc_sec.so
+    ${ASCEND_CANN_PACKAGE_PATH}/lib64/libc_sec.so
     -lrt
     -ldl
 )
