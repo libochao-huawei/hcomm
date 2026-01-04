@@ -225,10 +225,6 @@ HcclResult ParseMultiQpThreshold();
 
 HcclResult ParseCannVersion();
 
-HcclResult GetCannVersionPath(const std::string &cannEnvStr, const std::string &keyStr, std::string &cannVersionPath);
-
-HcclResult LoadCannVersionInfoFile(const std::string &realName, const std::string &keyStr);
-
 HcclResult ParseCclBufferSize();
 
 HcclResult ParseDeterministic();

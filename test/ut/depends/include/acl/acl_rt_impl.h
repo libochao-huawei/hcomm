@@ -703,6 +703,9 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessRestoreImpl();
 
 ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessGetStateImpl(aclrtProcessState *state);
 
+ACL_FUNC_VISIBILITY aclError aclsysGetVersionStrImpl(char *pkgNname, char *versionStr);
+
+ACL_FUNC_VISIBILITY aclError aclsysGetVersionNumImpl(char *pkgNname, int32_t *versionNum);
 #ifdef __cplusplus
 }
 #endif
