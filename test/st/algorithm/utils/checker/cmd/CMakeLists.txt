@@ -7,14 +7,6 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(orion_include_list
-    #2.0 - checker
-    ${HCCL_ALG_ROOT}/adapter_v2
-    ${HCCL_ALG_ROOT}/adapter_v2/stub_ccu
-    ${HCCL_ALG_ROOT}/adapter_v2/adapter_rts
-    ${HCCL_ALG_V2_CODE_ROOT}/primitive
-)
-
 set(analyzer_test_list
     ${HCCL_ALG_ROOT}/checker/cmd/src/main.cc
     ${HCCL_ALG_ROOT}/checker/cmd/src/CheckerCmd.cc
