@@ -115,15 +115,10 @@ HcclResult MultiDeterPipeline::RunIntraAlltoall(u32 step)
     // 机内alltoall full mesh收集数据，是为了收集机内第sendServerId整块的内存（包含intraRankId_块）
     // 该索引是为了计算第sendServerId整块内的内存序号块（0~intraRankId_-1）
     std::vector<u32> localUsrInIndex;
-    for (u32 i = intraRankId_; i < intraRankSize_ + intraRankId_; ++i) {
-        if (i == intraRankId_) {
-            continue;
-        } else {
-            localUsrInIndex.push_back(i % intraRankSize_);
-        }
+    for (u32 i = intraRankId_ + 1; i < intraRankSize_ + intraRankId_; ++i) {
+        localUsrInIndex.push_back(i % intraRankSize_);
     }
     for (u32 i = 0; i < intraRankSize_ - 1; ++i) {
-        u32 recvIntraRankId = GetPreIntraRankIdByStep(i + 1);
         u32 sendIntraRankId = GetNextIntraRankIdByStep(i + 1);
         LINK sendIntraLink = intraLinks_[sendIntraRankId];
         DeviceMem srcMem;

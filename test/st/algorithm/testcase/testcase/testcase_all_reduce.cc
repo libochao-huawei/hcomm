@@ -1826,3 +1826,68 @@ TEST_F(AllReduceTest, allreduce_aiv_determinstic_priority_test)
 
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+constexpr int BIG_COUNT = 128 - 1;
+void AllReduceDeterCheckerFor910B(int serverNum, int intraRankNum, int count)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, serverNum, intraRankNum);
+    setenv("HCCL_DETERMINISTIC", "true", 1);
+    setenv("HCCL_ALGO", "level0:NA;level1:ring", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllReduce";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.DataDes.count = count;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "AllReduceDeterPipelineExecutor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllReduceTest, all_reduce_executor_deter_big_count_two_servers)
+{
+    AllReduceDeterCheckerFor910B(2, 8, 2 * 8 * BIG_COUNT);
+}
+
+TEST_F(AllReduceTest, all_reduce_executor_deter_big_count_normal)
+{
+    AllReduceDeterCheckerFor910B(3, 4, 3 * 4 * BIG_COUNT);
+}
+
+TEST_F(AllReduceTest, all_reduce_executor_deter_big_count_not_power_of_two_intraRanks)
+{
+    AllReduceDeterCheckerFor910B(4, 3, 4 * 3 * BIG_COUNT);
+}
+
+TEST_F(AllReduceTest, all_reduce_executor_deter_big_count_ax)
+{
+    TopoMeta topoMeta {{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}}};
+    setenv("HCCL_DETERMINISTIC", "true", 1);
+    setenv("HCCL_ALGO", "level0:NA;level1:ring", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllReduce";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.DataDes.count = BIG_COUNT * 16;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "AllReduceDeterPipelineExecutor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllReduceTest, all_reduce_executor_deter_very_big_count)
+{
+    AllReduceDeterCheckerFor910B(2, 3, 1024 * 1024 * 30);
+}

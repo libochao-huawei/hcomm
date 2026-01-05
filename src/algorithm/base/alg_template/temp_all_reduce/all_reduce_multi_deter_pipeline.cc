@@ -98,7 +98,8 @@ HcclResult AllReduceMultiDeterPipeline::GetLocalUserInDeviceMem(u32 rankIdInAllR
 
 HcclResult AllReduceMultiDeterPipeline::GetLocalUserOutDeviceMem(u32 rankIdInAllRanks, DeviceMem &localMem)
 {
-    return GetLocalUserDeviceMem(rankIdInAllRanks, localMem, false);
+    CHK_RET(GetLocalUserDeviceMem(rankIdInAllRanks, localMem, false));
+    return HCCL_SUCCESS;
 }
 
 HcclResult AllReduceMultiDeterPipeline::RunLocalCopy()
