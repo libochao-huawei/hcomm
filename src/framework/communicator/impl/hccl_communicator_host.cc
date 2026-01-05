@@ -5667,18 +5667,22 @@ namespace hccl
         opResPara_.localUsrRankId = userRank_;
         opResPara_.rankSize = userRankSize_;
 
-        if (!isUserMemRegisted_ || userMemMap_.empty()) {
+        bool isUseUserMem = isUserMemRegisted_ && !userMemMap_.empty();
+        if (!isUseUserMem) {
             opResPara_.winSize = algResource.cclInputMem.size();
             opResPara_.localWindowsIn = reinterpret_cast<u64>(algResource.cclInputMem.ptr());
             opResPara_.localWindowsOut = reinterpret_cast<u64>(algResource.cclOutputMem.ptr());
         } else {
             opResPara_.winSize = userMemMap_.begin()->second->size();
-            opResPara_.localWindowsIn = reinterpret_cast<u64>(userMemMap_.begin()->first);
-            opResPara_.localWindowsOut = reinterpret_cast<u64>(userMemMap_.begin()->first);
+            opResPara_.localWindowsIn = reinterpret_cast<u64>(userMemMap_.begin()->second->ptr());
+            opResPara_.localWindowsOut = reinterpret_cast<u64>(userMemMap_.begin()->second->ptr());
         }
         // 填充Exp相关信息 当前该块内存大小恒为1M
         opResPara_.winExpSize = EXP_BUFFER_SIZE;
         opResPara_.localWindowsExp = reinterpret_cast<u64>(cclBufferManager_.GetCommExpBuffer().ptr());
+        HCCL_INFO("[HcclCommunicator][%s] isUseUserMem[%d], winSize[%llu], localWindowsIn[%llu],"
+                  "localWindowsOut[%llu], localWindowsExp[%llu]", __func__, isUseUserMem, opResPara_.winSize,
+                  opResPara_.localWindowsIn, opResPara_.localWindowsOut, opResPara_.localWindowsExp);
 
         CHK_SAFETY_FUNC_RET(
             memcpy_s(opResPara_.hcomId, sizeof(opResPara_.hcomId), identifier_.c_str(), identifier_.length() + 1));
@@ -8257,8 +8261,8 @@ namespace hccl
         EXECEPTION_CATCH((userMemPtr = std::make_shared<DeviceMem>(std::move(userMem))), return HCCL_E_PTR);
         *handle = static_cast<void *>(userMemPtr.get());
         userMemMap_.insert(std::make_pair(*handle, userMemPtr));
-        HCCL_INFO("[HcclCommunicator][%s]Register user mem success, group[%s], handle[%p], size[%llu]",
-            __func__, identifier_.c_str(), *handle, size);
+        HCCL_INFO("[HcclCommunicator][%s]Register user mem success, group[%s], handle[%p], addr[%llu], size[%llu]",
+            __func__, identifier_.c_str(), *handle, reinterpret_cast<uint64_t>(addr), size);
         isUserMemRegisted_ = true;
         return HCCL_SUCCESS;
     }
