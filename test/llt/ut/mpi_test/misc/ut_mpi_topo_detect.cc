@@ -252,7 +252,7 @@ TEST_F(MPI_TOPO_DETECT_Test, ut_hcclGetRootInfo_single_server_2p_success_normal_
     unsetenv("HCCL_SOCKET_IFNAME");
 }
 
-TEST_F(MPI_TOPO_DETECT_Test, ut_hcclGetRootInfo_invaild_env_01)
+TEST_F(MPI_TOPO_DETECT_Test, ut_hcclGetRootInfo_invalid_env_01)
 {
     setenv("HCCL_WHITELIST_DISABLE", "2", 1);
     HcclRootInfo id;

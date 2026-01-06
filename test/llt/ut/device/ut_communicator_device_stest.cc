@@ -385,7 +385,7 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     hcclCommunicator.GetAicpuOpStreamNotify(nullptr, 0, nullptr);
     hcclCommunicator.GetAicpuOpStreamAndNotify(nullptr, 0, nullptr);
 
-    hcclCommunicator.SetAicpuNotifyInvaild();
+    hcclCommunicator.SetAicpuNotifyInvalid();
     std::unique_ptr<CommInfo> commInfo = nullptr;;
     hcclCommunicator.ReplaceCommInfoByTag(tag, commInfo);
     level1StreamInfo_t streamInfo;

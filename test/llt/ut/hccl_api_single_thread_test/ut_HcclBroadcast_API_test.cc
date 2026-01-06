@@ -62,7 +62,7 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_CountIsZero_Expect_ReturnIsHCCL_
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
-TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_RootIsInvaild_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_RootIsInvalid_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
     int root = 2;   // 默认初始化，本通信域只有一个rank
