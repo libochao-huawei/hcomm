@@ -39,6 +39,7 @@ HcclResult __attribute__((weak)) HcomReduceV2(const char *tag, void *inputPtr, v
     HcclReduceOp op, u32 root, const char *group, rtStream_t stream);
 HcclResult __attribute__((weak)) HcomGetAlltoAllStagedWorkSpaceMemSizeV2(const char *group, u64 *sendCounts, u64 *sdispls,
     HcclDataType sendType, u64 *recvCounts, u64 *rdispls, HcclDataType recvType, u64 &memSize);
+HcclResult __attribute__((weak)) HcomGetAlltoAllvcStagedWorkSpaceMemSizeV2(const char *group, u64 &memSize);
 HcclResult __attribute__((weak)) HcomAlltoAllV2(const void *sendBuf, u64 sendCount, HcclDataType sendType,
                         const void *recvBuf, u64 recvCount, HcclDataType recvType,
                         const char *group, rtStream_t stream, const char *tag);

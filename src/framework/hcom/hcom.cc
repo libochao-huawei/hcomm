@@ -1902,6 +1902,9 @@ HcclResult HcomGetAlltoAllStagedWorkSpaceMemSize(const char *group, u64 *sendCou
 HcclResult HcomGetAlltoAllvcStagedWorkSpaceMemSize(const char *group,
     std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo, u64 &memSize)
 {
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomGetAlltoAllvcStagedWorkSpaceMemSizeV2(group, memSize));
+#endif
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
