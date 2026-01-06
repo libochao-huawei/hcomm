@@ -300,6 +300,7 @@ public:
     bool IsNeedResetDevice();
     HcclResult ResetDeviceEnable();
     HcclResult CommCheckErrorCqe(HcclResult &result);
+    HcclResult CommCheckOpInconsistentError(HcclResult &result);
     HcclResult SaveTraceInfo(std::string &logInfo);
     HcclResult AllocComResourceByTiling(const std::string &algConfig, void *param);
     HcclResult CreateCommResource(const std::string &tag, rtStream_t aiCpuStream, bool isOpbaseMode,
