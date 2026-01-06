@@ -7323,7 +7323,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::SetAicpuNotifyInvaild()
+    HcclResult HcclCommunicator::SetAicpuNotifyInvalid()
     {
         CHK_PTR_NULL(combinOparaMem_);
         HcclCombinOpParam *combinOparaPtr = reinterpret_cast<HcclCombinOpParam*>(combinOparaMem_->ptr());

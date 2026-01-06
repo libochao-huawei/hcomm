@@ -94,7 +94,7 @@ HcclResult LaunchGraph(void *fftsPubInfo, void *streamPtr, void *ctx, uint32_t t
     }
 
     if (fftsCtxsPtr->refreshIndex != fftsCtxsPtr->ctxNum) {
-        HCCL_ERROR("ffts context num is invaild, expected:%u, actual:%u.", fftsCtxsPtr->ctxNum,
+        HCCL_ERROR("ffts context num is invalid, expected:%u, actual:%u.", fftsCtxsPtr->ctxNum,
             fftsCtxsPtr->refreshIndex);
         return HCCL_E_PARA;
     }

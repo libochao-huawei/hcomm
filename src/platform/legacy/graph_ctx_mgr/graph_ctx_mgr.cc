@@ -43,7 +43,7 @@ HcclResult RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint3
     rtFftsPlusAicAivCtx_t *ctx = reinterpret_cast<rtFftsPlusAicAivCtx_t *>(&comCtx);
 
     if (ctx->contextType != RT_CTX_TYPE_AIV && ctx->contextType != RT_CTX_TYPE_LABEL) {
-        HCCL_ERROR("ffts context type is invaild, expected:0x%x, actual:0x%x", RT_CTX_TYPE_AIV, ctx->contextType);
+        HCCL_ERROR("ffts context type is invalid, expected:0x%x, actual:0x%x", RT_CTX_TYPE_AIV, ctx->contextType);
         return HCCL_E_PARA;
     }
 
@@ -121,7 +121,7 @@ HcclResult RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 strea
 
     if (ctx->contextType != RT_CTX_TYPE_WRITE_VALUE && ctx->contextType != RT_CTX_TYPE_LABEL &&
             ctx->contextType != RT_CTX_TYPE_WRITE_VALUE_RDMA) {
-        HCCL_ERROR("ffts context type is invaild, expected:0x%x, actual:0x%x or 0x%x or 0x%x", ctx->contextType,
+        HCCL_ERROR("ffts context type is invalid, expected:0x%x, actual:0x%x or 0x%x or 0x%x", ctx->contextType,
             RT_CTX_TYPE_WRITE_VALUE, RT_CTX_TYPE_LABEL, RT_CTX_TYPE_WRITE_VALUE_RDMA);
         return HCCL_E_PARA;
     };
@@ -142,7 +142,7 @@ HcclResult RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 strea
     } else {
         u64 dbAddrOrg = (static_cast<u64>(ctx->writeAddressBaseH) << 32) + ctx->writeAddressBaseL;
         if (dbAddrOrg != dbAddr) {
-            HCCL_ERROR("ffts context dbAddr is invaild, expected:0x%x, actual:0x%x", dbAddrOrg, dbAddr);
+            HCCL_ERROR("ffts context dbAddr is invalid, expected:0x%x, actual:0x%x", dbAddrOrg, dbAddr);
             return HCCL_E_PARA;
         }
     }

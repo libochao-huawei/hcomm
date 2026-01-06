@@ -676,7 +676,7 @@ void CommBase::SetTransportParam(TransportPara &para, MachinePara &machinePara)
 HcclResult CommBase::TransportInit(const u32 dstRank, MachinePara &machinePara)
 {
     CHK_PRT_RET(dstRank >= transportInfo_.size(),
-        HCCL_ERROR("[TransportQuerry] Transport[%u] is invaild, should init before querry it.", dstRank), HCCL_E_PARA);
+        HCCL_ERROR("[TransportQuerry] Transport[%u] is invalid, should init before querry it.", dstRank), HCCL_E_PARA);
     // 实例化TransportBase
     CHK_RET(SetTransportType(dstRank));
     TransportPara para{};
@@ -902,7 +902,7 @@ HcclResult CommBase::GetBuildStatus(u32& status)
         status = HETEROG_P2P_WAIT;
     } else {
         status = HETEROG_P2P_FAILED;
-        HCCL_ERROR("transport done num[%u] invaild, expect[%u].", transportDoneNum, transportNum);
+        HCCL_ERROR("transport done num[%u] invalid, expect[%u].", transportDoneNum, transportNum);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -912,7 +912,7 @@ HcclResult CommBase::TransportBuildAsync(const MachineType machineType, const st
     const std::vector<std::shared_ptr<HcclSocket> > &sockets, u32& status)
 {
     CHK_PRT_RET(dstRank >= transportInfo_.size(),
-        HCCL_ERROR("[TransportQuerry] Transport[%u] is invaild, should init before querry it.", dstRank), HCCL_E_PARA);
+        HCCL_ERROR("[TransportQuerry] Transport[%u] is invalid, should init before querry it.", dstRank), HCCL_E_PARA);
     MachinePara machinePara;
     CHK_RET(SetMachinePara(machineType, serverId, dstRank, sockets, machinePara));
     // 实例化TransportBase
@@ -940,7 +940,7 @@ HcclResult CommBase::TransportBuildAsync(const MachineType machineType, const st
 HcclResult CommBase::TransportBuildQuerry(u32 dstRank, u32& status)
 {
     CHK_PRT_RET(dstRank >= transportInfo_.size(),
-        HCCL_ERROR("[TransportQuerry] Transport[%u] is invaild, should init before querry it.", dstRank), HCCL_E_PARA);
+        HCCL_ERROR("[TransportQuerry] Transport[%u] is invalid, should init before querry it.", dstRank), HCCL_E_PARA);
     if (transportInfo_[dstRank]) {
         CHK_RET(transportInfo_[dstRank]->ConnectQuerry(status));
         if (status == HETEROG_P2P_SUCCESS && checkStatus_[dstRank] == false) {

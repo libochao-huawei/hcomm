@@ -1247,7 +1247,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::SetAicpuNotifyInvaild()
+    HcclResult HcclCommunicator::SetAicpuNotifyInvalid()
     {
         return HCCL_SUCCESS;
     }

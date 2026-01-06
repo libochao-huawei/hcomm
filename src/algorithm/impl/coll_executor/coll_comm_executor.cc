@@ -2094,7 +2094,7 @@ HcclResult CollCommExecutor::PrepareLevel1CommInfo(u32 &segmentIdx, u32 &commInd
             CHK_PRT_RET(iter == nicSendSizeList_.end(), HCCL_ERROR("[Prepare][Level1CommInfo]find tag[%s] in "\
                 "nicSendSizeList_ failed", tag.c_str()), HCCL_E_INTERNAL);
             CHK_PRT_RET(nicIdx >= iter->second.size(), HCCL_ERROR("[Prepare][Level1CommInfo]tag[%s] nicIdx[%u] "\
-                "invaild, expect less than %zu", tag.c_str(), nicIdx, iter->second.size()), HCCL_E_INTERNAL);
+                "invalid, expect less than %zu", tag.c_str(), nicIdx, iter->second.size()), HCCL_E_INTERNAL);
             hdSize = iter->second[nicIdx];                    // 通过nicSendSizeList_得到该网口传输数据量
             u32 ringRanks = multRingsSliceZero[0].size(); // 获取单个 ring 上设备的数量
             segmentIdx = ringRanks / topoAttr_.nicList.size() * nicIdx; // 通过网口位置得到该网口传输数据的起始位置

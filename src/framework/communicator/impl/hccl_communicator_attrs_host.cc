@@ -660,7 +660,7 @@ namespace hccl
             (deviceType_ != DevType::DEV_TYPE_910B && deviceType_ != DevType::DEV_TYPE_910_93 && !Is310P3Common()))
         {
             CHK_PRT_RET(CheckDevCount(devNum) != HCCL_SUCCESS,
-                        HCCL_ERROR("[Check][RankTable]errNo[0x%016llx] devnum  is invaild in server.",
+                        HCCL_ERROR("[Check][RankTable]errNo[0x%016llx] devnum is invalid in server.",
                                    HCCL_ERROR_CODE(HCCL_E_PARA)),
                         HCCL_E_PARA);
         }

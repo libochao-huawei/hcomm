@@ -54,7 +54,7 @@ int RaHdcPingTargetAdd(struct RaPingHandle *pingHandle, struct PingTargetInfo ta
     for (i = 0; i < num; i++) {
         if (pingHandle->protocol == PROTOCOL_RDMA) {
             CHK_PRT_RETURN(target[i].localInfo.rdma.udpSport > MAX_PORT_NUM,
-                hccp_err("[add][ra_hdc_ping]udp_sport(%u) invaild, i(%u), phyId(%u)",
+                hccp_err("[add][ra_hdc_ping]udp_sport(%u) invalid, i(%u), phyId(%u)",
                 target[i].localInfo.rdma.udpSport, i, phyId), -EINVAL);
         }
 

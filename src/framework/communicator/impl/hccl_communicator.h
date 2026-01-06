@@ -531,7 +531,7 @@ private:
     HcclResult SetCommResource(u64 commBufferSize, void *commInPtr, void *commOutPtr, void *commExpPtr,
         CommBase *comm, level1StreamInfo_t &streamInfo, Stream &stream);
     HcclResult GetAicpuOpStreamAndNotify(HcclRtStream *opStream, u8 aicpuNotifyNum, void** aicpuNotify);
-    HcclResult SetAicpuNotifyInvaild();
+    HcclResult SetAicpuNotifyInvalid();
     HcclResult AicpuKfcTilingDataLaunch(const OpParam &opParam, const HcclCMDType &opType, const DeviceMem &deviceContext,
     const std::string &kernelName, const AicpuOpTiling opTilingInfo);
     HcclResult AicpuKfcTilingDataLaunchExt(const OpParam &opParam, const HcclCMDType &opType,

@@ -1681,7 +1681,7 @@ HcclResult NetworkManager::StopHostSocketHandle(const HcclIpAddress &ipAddr)
     auto sockInfo = raResourceInfo_.hostNetSocketMap.find(ipAddr);
     auto ipIt = IPPortListenRefMapHost_.find(ipAddr);
     CHK_PRT_RET((sockInfo == raResourceInfo_.hostNetSocketMap.end()),
-        HCCL_ERROR("[NetworkManager][StopHostSocketHandle]ipAddr is invaild"), HCCL_E_INTERNAL);
+        HCCL_ERROR("[NetworkManager][StopHostSocketHandle]ipAddr is invalid"), HCCL_E_INTERNAL);
     IpSocket &sock = raResourceInfo_.hostNetSocketMap[ipAddr];  
     CHK_RET(CheckSocketInfo(sock.nicSocketHandle, ipAddr));
     
