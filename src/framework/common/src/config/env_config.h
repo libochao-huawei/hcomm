@@ -51,6 +51,8 @@ const bool& GetExternalInputHcclHeartBeatEnable();
 
 const bool& GetExternalInputStuckDetect();
 
+const bool& GetExternalInconsistentCheckSwitch();
+
 s32& GetExternalInputDfsConnectionFaultDetectionTime();
 
 /*************** For Internal Use ***************/
@@ -68,6 +70,7 @@ struct EnvConfig {
     u32 rdmaServerLevel;
     bool enableClusterHeartBeat;
     bool opCounterEnable;
+    bool inconsistentCheckSwitch;
     s32 dfsConnectionFaultDetectionTime;
 
     // HCCL_ALGO环境变量参数
@@ -94,6 +97,8 @@ struct EnvConfig {
         // 初始化 enableClusterHeartBeat 为默认值
         enableClusterHeartBeat = true;
         opCounterEnable = true;
+        // 初始化 inconsistentCheckSwitch 为默认值
+        inconsistentCheckSwitch = false;
         dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         specificAlgoMode = false;
         for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
