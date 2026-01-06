@@ -33,6 +33,9 @@
 #ifdef CONFIG_TLV
 #include "rs_adp_nslb.h"
 #endif
+#ifdef CONFIG_CONTEXT
+#include "rs_ub.h"
+#endif
 #include "rs_epoll.h"
 
 #define BIND_MIN_DCPU_NUM 1
@@ -356,6 +359,14 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
         hccp_info("the fd:%d is for tcp recv, no need to go on, ret:%d", fd, ret);
         return;
     }
+
+#ifdef CONFIG_CONTEXT
+    ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
+    if (ret != -ENODEV) {
+        hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
+        return;
+    }
+#endif
 
     return;
 }

@@ -121,31 +121,18 @@ int RsDrvGetCqeErrInfo(struct CqeErrInfo *info)
     return 0;
 }
 
-STATIC void RsRetryTimeoutExceptionCheck(struct RsRdevCb *rdevCb, struct ibv_wc *wc)
+STATIC void RsRdmaRetryTimeoutExceptionCheck(struct SensorNode *sensorNode, struct ibv_wc *wc)
 {
     int ret = 0;
-
-    /* sensor may not support, handle is 0 */
-    if (rdevCb->sensorHandle == 0) {
-        return;
-    }
 
     if (wc->status != IBV_WC_RETRY_EXC_ERR) {
         return;
     }
 
-    /* The notification alarm framework does not filter alarms. In this example, only one notification
-        alarm is reported by a single process, which does not need to be accurate. Therefore, no lock is used. */
-    if (rdevCb->sensorUpdateCnt == 0) {
-        ret = DlHalSensorNodeUpdateState(rdevCb->logicDevid, rdevCb->sensorHandle,
-            RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE, GENERAL_EVENT_TYPE_ONE_TIME);
-        if (ret == 0) {
-            rdevCb->sensorUpdateCnt++;
-        }
-    }
+    ret = RsRetryTimeoutExceptionCheck(sensorNode);
 
-    hccp_warn("update sensor state logic_devid(%u), qpn(%u), sensorUpdateCnt(%d),ret(%d)\n",
-        rdevCb->logicDevid, wc->qp_num, rdevCb->sensorUpdateCnt, ret);
+    hccp_warn("update sensor state logic_devid(%u), qpn(%u), sensorUpdateCnt(%d), ret(%d)\n",
+        sensorNode->logicDevid, wc->qp_num, sensorNode->sensorUpdateCnt, ret);
 }
 
 STATIC void RsCqeCallbackProcess(struct RsQpCb *qpCb, struct ibv_wc *wc, struct ibv_cq *evCq)
@@ -155,7 +142,7 @@ STATIC void RsCqeCallbackProcess(struct RsQpCb *qpCb, struct ibv_wc *wc, struct 
             RsIbvWcStatusStr(wc->status), wc->status, wc->wr_id);
         RsDrvSaveCqeErrInfo(wc->status, qpCb);
         RsDrvSaveQpCqeErrInfo(wc->status, qpCb);
-        RsRetryTimeoutExceptionCheck(qpCb->rdevCb, wc);
+        RsRdmaRetryTimeoutExceptionCheck(&qpCb->rdevCb->sensorNode, wc);
     }
 
     return;

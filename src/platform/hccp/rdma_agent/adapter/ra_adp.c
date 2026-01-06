@@ -1784,6 +1784,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_CUSTOM_CHANNEL, ra_rs_custom_channel, sizeof(union op_custom_channel_data)},
     {RA_RS_CTX_UPDATE_CI, ra_rs_ctx_update_ci, sizeof(union op_ctx_update_ci_data)},
     {RA_RS_CTX_GET_AUX_INFO, ra_rs_ctx_get_aux_info, sizeof(union op_ctx_get_aux_info_data)},
+    {RA_RS_CTX_GET_CR_ERR_INFO_LIST, ra_rs_ctx_get_cr_err_info_list, sizeof(union op_ctx_get_cr_err_info_list_data)},
 #endif
 };
 

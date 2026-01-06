@@ -528,6 +528,12 @@ struct RsCertSkidSubjectCb {
     struct RsSubject subjects[RS_SSL_MAX_ALL_CERT_NUM];
 };
 
+struct SensorNode {
+    unsigned int logicDevid;
+    int sensorUpdateCnt;
+    uint64_t sensorHandle;
+};
+
 struct RsRdevCb {
     struct rs_cb *rs_cb;
     unsigned int rdevIndex;
@@ -545,9 +551,7 @@ struct RsRdevCb {
     unsigned long long notifyVaBase;
     unsigned long long notifySize;
     int notifyAccess;
-    unsigned int logicDevid;
-    int sensorUpdateCnt;
-    uint64_t sensorHandle;
+    struct SensorNode sensorNode;
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
 
@@ -676,4 +680,7 @@ int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb, str
 int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
 int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
 int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
+int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNode *sensorNode);
+void RsSensorNodeUnregister(struct SensorNode *snesorNode);
+int RsRetryTimeoutExceptionCheck(struct SensorNode *snesorNode);
 #endif // RS_INNER_H

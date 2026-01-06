@@ -179,6 +179,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CUSTOM_CHANNEL, 1},
     {RA_RS_CTX_UPDATE_CI, 1},
     {RA_RS_CTX_GET_AUX_INFO, 1},
+    {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},
 #endif
 
     // inner opcode version
@@ -1079,16 +1080,22 @@ destroy_rdev_mutex:
     return ret;
 }
 
-STATIC int RsSensorNodeRegister(unsigned int hccpMode, unsigned int phyId, struct RsRdevCb *rdevCb)
+int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNode *sensorNode)
 {
     struct halSensorNodeCfg cfg = { 0 };
     int ret;
 
-    rdevCb->sensorHandle = 0;
-    rdevCb->sensorUpdateCnt = 0;
+    sensorNode->sensorHandle = 0;
+    sensorNode->sensorUpdateCnt = 0;
     // some non-hdc scenarios don't have corresponding API, skip to register sensor node
-    if (hccpMode != NETWORK_OFFLINE) {
+    if (rsCb->hccpMode != NETWORK_OFFLINE) {
         return 0;
+    }
+
+    ret = rsGetLocalDevIDByHostDevID(phyId, &sensorNode->logicDevid);
+    if (ret) {
+        hccp_err("[init][rs_rdev]rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)", phyId, ret);
+        return ret;
     }
 
     ret = sprintf_s(cfg.name, sizeof(cfg.name), "roce_rs_%d", getpid());
@@ -1101,24 +1108,48 @@ STATIC int RsSensorNodeRegister(unsigned int hccpMode, unsigned int phyId, struc
     cfg.SensorType = RDMA_CQE_ERR_SENSOR_TYPE;
     cfg.AssertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_MASK;
     cfg.DeassertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE_MASK;
-    ret = DlHalSensorNodeRegister(rdevCb->logicDevid, &cfg, &rdevCb->sensorHandle);
-    if (ret) {
+    ret = DlHalSensorNodeRegister(sensorNode->logicDevid, &cfg, &sensorNode->sensorHandle);
+    if (ret != 0) {
         hccp_err("[init][rs_rdev]dl_hal_sensor_node_register failed, phyId(%u), logicDevid(%u), ret(%d)",
-            phyId, rdevCb->logicDevid, ret);
+            phyId, sensorNode->logicDevid, ret);
         return ret;
     }
 
     return 0;
 }
 
-STATIC void RsSensorNodeUnregister(struct RsRdevCb *rdevCb)
+void RsSensorNodeUnregister(struct SensorNode *sensorNode)
 {
     // no need to unregister sensor node
-    if (rdevCb->sensorHandle == 0) {
+    if (sensorNode->sensorHandle == 0) {
         return;
     }
 
-    (void)DlHalSensorNodeUnregister(rdevCb->logicDevid, rdevCb->sensorHandle);
+    (void)DlHalSensorNodeUnregister(sensorNode->logicDevid, sensorNode->sensorHandle);
+}
+
+int RsRetryTimeoutExceptionCheck(struct SensorNode *sensorNode)
+{
+    int ret = 0;
+
+    /* sensor may not support, handle is 0 */
+    if (sensorNode->sensorHandle == 0) {
+        return 0;
+    }
+
+    /*
+     * The notification alarm framework does not filter alarms. In this example, only one notification
+     * alarm is reported by a single process, which does not need to be accurate. Therefore, no lock is used.
+     */
+    if (sensorNode->sensorUpdateCnt == 0) {
+        ret = DlHalSensorNodeUpdateState(sensorNode->logicDevid, sensorNode->sensorHandle,
+            RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE, GENERAL_EVENT_TYPE_ONE_TIME);
+        if (ret == 0) {
+            sensorNode->sensorUpdateCnt++;
+        }
+    }
+
+    return ret;
 }
 
 STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo backupInfo,
@@ -1147,12 +1178,6 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
         goto get_rs_cb_fail;
     }
 
-    ret = rsGetLocalDevIDByHostDevID(phyId, &rdevCb->logicDevid);
-    if (ret) {
-        hccp_err("[init][rs_rdev]rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)", phyId, ret);
-        goto free_rs_cb;
-    }
-
     rdevCb->backupInfo.backupFlag = backupInfo.backupFlag;
     (void)memcpy_s(&rdevCb->backupInfo.rdevInfo, sizeof(struct rdev),
         &backupInfo.rdevInfo, sizeof(struct rdev));
@@ -1173,7 +1198,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
         goto free_rs_cb;
     }
 
-    ret = RsSensorNodeRegister(rsCb->hccpMode, phyId, rdevCb);
+    ret = RsSensorNodeRegister(phyId, rsCb, &rdevCb->sensorNode);
     if (ret != 0) {
         hccp_err("[init][rs_rdev]rs_sensor_node_register failed, phyId(%u), ret(%d)", phyId, ret);
         goto free_dev_list;
@@ -1183,7 +1208,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
 
     ret = RsRdevCbInit(rdevInfo, rdevCb, rsCb, rdevIndex);
     if (ret) {
-        RsSensorNodeUnregister(rdevCb);
+        RsSensorNodeUnregister(&rdevCb->sensorNode);
         hccp_err("rs_rdev_cb_init failed ret %d!, normal ret 0", ret);
         goto free_dev_list;
     }
@@ -1312,7 +1337,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 
     pthread_mutex_destroy(&rdevCb->rdevMutex);
 
-    RsSensorNodeUnregister(rdevCb);
+    RsSensorNodeUnregister(&rdevCb->sensorNode);
 
     RsIbvFreeDeviceList(rdevCb->devList);
 
