@@ -37,7 +37,7 @@
 
 struct ThreadContext {
     HcclComm comm;
-    int32_t device;
+    uint32_t device;
     uint32_t devCount;
 };
 
@@ -47,7 +47,8 @@ int Sample(void *arg)
     void *hostBuf = nullptr;
     void *sendBuf = nullptr;
     void *recvBuf = nullptr;
-    size_t count = ctx->devCount;
+    uint32_t device = ctx->device;
+    uint64_t count = ctx->devCount;
     size_t mallocSize = count * sizeof(float);
 
     // 申请集合通信操作的 Device 内存
@@ -57,7 +58,7 @@ int Sample(void *arg)
     // 申请 Host 内存用于存放输入数据，并将内容初始化为：0~7
     ACLCHECK(aclrtMallocHost(&hostBuf, mallocSize));
     float *tmpHostBuff = static_cast<float *>(hostBuf);
-    for (uint32_t i = 0; i < count; ++i) {
+    for (uint64_t i = 0; i < count; ++i) {
         tmpHostBuff[i] = static_cast<float>(i);
     }
     // 将 Host 侧输入数据拷贝到 Device 侧
@@ -73,13 +74,13 @@ int Sample(void *arg)
     ACLCHECK(aclrtSynchronizeStream(stream));
 
     // 将 Device 侧集合通信任务结果拷贝到 Host，并打印结果
-    std::this_thread::sleep_for(std::chrono::seconds(ctx->device));
+    std::this_thread::sleep_for(std::chrono::seconds(device));
     void *resultBuff;
     ACLCHECK(aclrtMallocHost(&resultBuff, mallocSize));
     ACLCHECK(aclrtMemcpy(resultBuff, mallocSize, recvBuf, mallocSize, ACL_MEMCPY_DEVICE_TO_HOST));
     float *tmpResBuff = static_cast<float *>(resultBuff);
-    std::cout << "rankId: " << ctx->device << ", output: [";
-    for (uint32_t i = 0; i < count; ++i) {
+    std::cout << "rankId: " << device << ", output: [";
+    for (uint64_t i = 0; i < count; ++i) {
         std::cout << " " << tmpResBuff[i];
     }
     std::cout << " ]" << std::endl;
@@ -101,12 +102,12 @@ int main()
     int procRank = 0;
     MPI_Comm_size(MPI_COMM_WORLD, &procSize);  // 进程总数
     MPI_Comm_rank(MPI_COMM_WORLD, &procRank);  // 当前进程在所属进程组的编号
-    int devId = procRank;
-    int devCount = procSize;
+    uint32_t devId = static_cast<uint32_t>(procRank);
+    uint32_t devCount = static_cast<uint32_t>(procSize);
     // 设备资源初始化
     ACLCHECK(aclInit(NULL));
     // 指定集合通信操作使用的设备
-    ACLCHECK(aclrtSetDevice(devId));
+    ACLCHECK(aclrtSetDevice(static_cast<int32_t>(devId)));
 
     // 指定 rank_table.json 文件路径
     const char *rankTableFile = "./rank_table.json";
@@ -128,8 +129,9 @@ int main()
     Sample((void *)&args);
 
     // 释放资源
-    HCCLCHECK(HcclCommDestroy(hcclComm));  // 销毁通信域
-    ACLCHECK(aclFinalize());               // 设备去初始化
-    MPI_Finalize();                        // 释放 MPI 资源
+    HCCLCHECK(HcclCommDestroy(hcclComm));                       // 销毁通信域
+    ACLCHECK(aclrtResetDevice(static_cast<int32_t>(devId)));    // 重置设备，释放设备资源
+    ACLCHECK(aclFinalize());                                    // 设备去初始化
+    MPI_Finalize();                                             // 释放 MPI 资源
     return 0;
 }
