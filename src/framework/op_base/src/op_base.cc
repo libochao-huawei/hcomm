@@ -3840,6 +3840,9 @@ HcclResult HcclGetCommAsyncError(HcclComm comm, HcclResult *asyncError)
 #endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->CommCheckErrorCqe(*asyncError));
+    if (*asyncError == HCCL_SUCCESS) {
+        CHK_RET(hcclComm->CommCheckOpInconsistentError(*asyncError));
+    } 
     return HCCL_SUCCESS;
 }
 
