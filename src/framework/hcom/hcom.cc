@@ -2382,7 +2382,18 @@ HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     std::vector<hccl::HcclDumpInfo> hcclDumpInfo;
     CHK_RET(hcclComm->GetandClearOverFlowTasks(hcclDumpInfo));
-    *hcclDumpInfoPtr = hcclDumpInfo.data();
+    if (hcclDumpInfo.size() > 0) {
+        *hcclDumpInfoPtr = static_cast<hccl::HcclDumpInfo*>(malloc(hcclDumpInfo.size() * sizeof(hccl::HcclDumpInfo)));
+        if (*hcclDumpInfoPtr == nullptr) {
+            HCCL_ERROR("[HcomGetandClearOverFlowTasks][HcclDumpInfo]mem malloc size[%zu] failed.",
+                hcclDumpInfo.size() * sizeof(hccl::HcclDumpInfo));
+            return HCCL_E_MEMORY;
+        }
+        int32_t sret = memcpy_s(*hcclDumpInfoPtr, hcclDumpInfo.size() * sizeof(hccl::HcclDumpInfo), hcclDumpInfo.data(),
+            hcclDumpInfo.size() * sizeof(hccl::HcclDumpInfo));
+        CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomGetandClearOverFlowTasks][HcclDumpInfo]memcpy failed. ret[%d], "
+            "hcclDumpInfo:size[%zu]", sret, hcclDumpInfo.size()), HCCL_E_MEMORY);
+    }
     *len = hcclDumpInfo.size();
     return HCCL_SUCCESS;
 }
