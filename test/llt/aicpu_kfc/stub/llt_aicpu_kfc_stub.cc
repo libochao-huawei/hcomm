@@ -1051,6 +1051,11 @@ aclError aclrtCreateEvent(aclrtEvent *event)
     return rtNotifyCreate(0, (rtNotify_t *)event);
 }
 
+aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
+{
+    return rtNotifyCreate(0, (rtNotify_t *)event);
+}
+
 aclError aclrtGetEventId(aclrtEvent event, uint32_t *eventId)
 {
     *eventId = 0;

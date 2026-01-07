@@ -978,6 +978,11 @@ aclError aclrtCreateEvent(aclrtEvent *event)
     return aclrtCreateNotify((aclrtNotify *)event, 0UL);
 }
 
+aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
+{
+    return aclrtCreateNotify((aclrtNotify *)event, 0UL);
+}
+
 aclError aclrtGetEventId(aclrtEvent event, uint32_t *eventId)
 {
     *eventId = 0;
