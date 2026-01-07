@@ -72,6 +72,7 @@ public:
     HcclResult SetBlockDim(const u32& blockDim);
     HcclResult GetCache(HcclCacheInfo& cacheInfo);
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);
+    u32 CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, HcclCMDType opType);
     HcclResult SetRmaInfo(void* rmaInfo);
 protected:
     std::string GenerateNewTagByAlgTypeLevel1(std::string tag, std::string algTypeLevel1Tag) const;
@@ -109,6 +110,7 @@ protected:
     u32 deviceNumPerAggregation_;
     bool multiModuleDiffDeviceNumMode_;
     bool multiSuperPodDiffServerNumMode_;
+    bool multiSuperPodDiffDeviceNumMode_;
     u32 meshAggregationRankSize_;
     bool isDiffDeviceModule_;
     bool isDiffDeviceType_;
@@ -122,6 +124,7 @@ protected:
     bool isSupportRdmaLite_ = false;    // 是否支持rdma lite
     bool isSupportHccsAndSio_ = false;  // 是否支持hccs，sio并行
     bool useSuperPodMode_ = false;
+    bool isARSDoubleRing_ = true;
     u32 userRank_; // 本group中的userrank
     u32 realUserRank_; // world group中的userrank
     u32 userRankSize_;

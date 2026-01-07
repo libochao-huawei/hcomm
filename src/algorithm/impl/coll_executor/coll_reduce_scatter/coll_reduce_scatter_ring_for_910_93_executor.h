@@ -25,6 +25,7 @@ protected:
 private:
     void ParseParam(const OpParam& param) override;
     /* *************** 资源计算 *************** */
+    bool isZeroCopy_= false;
     HcclResult CalcScratchMemSize(u64& scratchMemSize) override;
     HcclResult CalcStreamNum(u32& streamNum) override;
     HcclResult CalcCommInfo(std::vector<LevelNSubCommTransport>& opTransport) override;
@@ -45,6 +46,7 @@ private:
         const u64 baseOffset = 0, const HcomCollOpInfo *opInfo = nullptr,
         const std::vector<std::vector<Slice>> &multRingsUserMemSlice = std::vector<std::vector<Slice>>(0),
         const bool disableDMAReduce = false);
+    virtual HcclResult GetLevelCommInfo();
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
     HcclResult Getlevel1CommRank(SubCommInfo& level1CommInfo) override;
     HcclResult SelectTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg, u32 level1RankSize) override;
@@ -90,6 +92,11 @@ private:
         u32 sliceNum, u32 level1RankSize, u32 level2RankSize, u32 perDataSize, std::vector<Slice> &level1DataSegsSlice);
     virtual HcclResult CalLevel2DataSegsSliceV(const OpParam &param, u32 level2RankSize, u32 perDataSize,
         std::vector<Slice> &level2DataSegsSlice);
+protected:
+    SubCommInfo logicalLevel0CommInfo_;
+    SubCommInfo logicalLevel1CommInfo_;
+    CommPlane logicalLevel0plane_;
+    CommPlane logicalLevel1plane_;
 };
 
 } // namespace hccl
