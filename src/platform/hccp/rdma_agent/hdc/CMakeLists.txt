@@ -146,8 +146,3 @@ target_compile_definitions(ra_hdc PRIVATE
 install(TARGETS  ra_hdc
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
-
-# install_package(
-#     PACKAGE ra_hdc
-#     TARGETS ra_hdc
-# )

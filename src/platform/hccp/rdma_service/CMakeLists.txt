@@ -1,10 +1,4 @@
-if(BUILD_OPEN_PROJECT)
-    set(CRYP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../crypt)
-    set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
-else()
-    set(CRYP_DIR ${TOP_DIR}/hccl/src/platform/hccp/crypt)
-    set(TLV_DIR ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/tlv)
-endif()
+set(TLV_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tlv)
 
 set(rs_list
     rs.c
@@ -59,63 +53,49 @@ target_compile_definitions(rs PRIVATE
 )
 endif()
 
-if(BUILD_OPEN_PROJECT)
-    target_compile_definitions(rs PRIVATE
-        OPEN_BUILD_PROJECT
-        LOG_CPP)
+target_compile_definitions(rs PRIVATE
+    OPEN_BUILD_PROJECT
+    LOG_CPP
+)
 
-    target_include_directories(rs PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/network
-        ${CMAKE_CURRENT_SOURCE_DIR}/../inc/private/network
-        ${CMAKE_CURRENT_SOURCE_DIR}/../common/
-        ${CMAKE_CURRENT_SOURCE_DIR}/../crypt/inc
+target_include_directories(rs PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/
+    ${CMAKE_CURRENT_SOURCE_DIR}/../inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/../inc/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/../inc/private/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/
 
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
+    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
+    # runtime头文件
+    ${ASCEND_CANN_PACKAGE_PATH}/include/
 
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
+    # 第三方库依赖路径
+    ${OPENSSL_INCLUDE_DIR}
+    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
+    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
 
-        # 第三方库依赖路径
-        ${OPENSSL_INCLUDE_DIR}
-        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/tls_adp
-        ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/kms
+    # rdma头文件
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
 
-        # rdma头文件
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
-        ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
+    # HCCP2.0
+    ${HCOMM_ORION}/inc/network/
+    ${HCOMM_ORION}/inc/private/network
+    ${HCOMM_ORION}/rdma_service/ctx/
+    ${HCOMM_ORION}/external_depends/ccu/
+    ${HCOMM_ORION}/external_depends/net_adapt/
+    ${HCOMM_ORION}/external_depends/ubengine/
+)
 
-        # HCCP2.0
-        ${HCOMM_ORION}/inc/network/
-        ${HCOMM_ORION}/inc/private/network
-        ${HCOMM_ORION}/rdma_service/ctx/
-        ${HCOMM_ORION}/external_depends/ccu/
-        ${HCOMM_ORION}/external_depends/net_adapt/
-        ${HCOMM_ORION}/external_depends/ubengine/
-    )
-
-    target_link_directories(rs PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-else()
-    #头文件搜索路径
-    target_include_directories(rs PRIVATE
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/network
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/private/network
-        ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/hccl/src/platform/hccp/common
-        ${TOP_DIR}/hccl/src/platform/hccp/crypt/inc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_service/
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/rdma-core/providers/hns
-    )
-endif()
-
+# c_sec、mmpa、unified_dlog动态库搜索路径
+target_link_directories(rs PRIVATE
+    ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
+)
 
 if((("${PRODUCT}" STREQUAL "ascend910B") OR ("${PRODUCT}" STREQUAL "ascend")) AND
    ("${PRODUCT_SIDE}" STREQUAL "device") AND (NOT ${USE_ALOG}))
@@ -140,7 +120,6 @@ target_link_options(rs PRIVATE
     -Wl,-Bsymbolic -Wl,--exclude-libs,ALL
     -Wl,-z,now
     $<$<CONFIG:Release>:-s>
-    # -rdynamic -Wl,--no-undefined
 )
 
 if(NOT (PRODUCT IN_LIST ASCEND910_95_PRODUCT_LIST) AND
@@ -162,41 +141,17 @@ target_compile_definitions(rs PRIVATE
 )
 endif()
 
-if(BUILD_OPEN_PROJECT)
-    target_link_libraries(rs PRIVATE
-        -Wl,--no-as-needed
-        c_sec
-        $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
-        $<$<NOT:$<STREQUAL:${PRODUCT},ascend310p>>:tls_adp>
-        -Wl,--as-needed
-        -Wl,--whole-archive
-        -Wl,--no-whole-archive
-        -lrt
-        -ldl
-    )
-else()
-#链接动态库
-    target_link_libraries(rs PRIVATE
-        $<BUILD_INTERFACE:intf_pub>
-        $<BUILD_INTERFACE:mmpa_headers>
-        $<BUILD_INTERFACE:slog_headers>
-        -Wl,--no-as-needed
-        c_sec
-        slog
-        mmpa
-        -Wl,--as-needed
-
-        -Wl,--whole-archive
-        $<$<STREQUAL:${PRODUCT_SIDE},device>:ascend_protobuf_static>
-        crypto_static
-        -Wl,--no-whole-archive
-        kmc
-        sdp
-        -lrt
-        -ldl
-        ofed_headers
-    )
-endif()
+target_link_libraries(rs PRIVATE
+    -Wl,--no-as-needed
+    c_sec
+    $<$<STREQUAL:${PRODUCT_SIDE},host>:unified_dlog>
+    $<$<NOT:$<STREQUAL:${PRODUCT},ascend310p>>:tls_adp>
+    -Wl,--as-needed
+    -Wl,--whole-archive
+    -Wl,--no-whole-archive
+    -lrt
+    -ldl
+)
 
 install(TARGETS  rs
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL

@@ -128,8 +128,3 @@ target_compile_definitions(ra_peer PRIVATE
 install(TARGETS  ra_peer
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
-
-# install_package(
-#     PACKAGE ra_peer
-#     TARGETS ra_peer
-# )
