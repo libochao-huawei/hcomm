@@ -1,0 +1,17 @@
+diff --git a/src/pub_inc/transport_pub.h b/src/pub_inc/transport_pub.h
+index 184de062ad9251689502b0827d7bf7092167908a..8d8728691a30c76d86f80497cdac138f8e909d61 100644
+--- a/src/pub_inc/transport_pub.h
++++ b/src/pub_inc/transport_pub.h
+@@ -517,10 +517,10 @@ class Transport {
+ public:
+     struct Buffer {
+         const void *addr{nullptr};
+-        u32 size{0};
++        u64 size{0};
+ 
+         Buffer() : addr(nullptr), size(0) {}
+-        Buffer(const void *addr, u32 size) : addr(addr), size(size) {}
++        Buffer(const void *addr, u64 size) : addr(addr), size(size) {}
+     };
+ 
+     Transport() {};
