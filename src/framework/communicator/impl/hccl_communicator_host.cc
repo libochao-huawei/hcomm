@@ -1570,54 +1570,47 @@ namespace hccl
         2. 计算resource，存到request内
         3. 创建和分配资源
     */
-    HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
+    HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
                                                HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
     {
         ifAiv = false;
+
         /* 选择算法前，先更新成图模式 */
         auto originWorkflowMode = GetWorkflowMode();
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
-
+        std::string newTag;
         std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
         CHK_SMART_PTR_NULL(algOperator);
-
         OpParam param;
         param.reduceType = op;
         param.opType = opType;
-        if (opType == HcclCMDType::HCCL_CMD_ALLTOALL || opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
-            opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
+        if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             param.All2AllDataDes.sendType = dataType;
             param.All2AllDataDes.recvType = dataType;
             param.All2AllDataDes.sendCount = count;
-        } else if (opType == HcclCMDType::HCCL_CMD_ALLGATHER_V || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
-            param.VDataDes.counts = counts;
-            param.VDataDes.dataType = dataType;
         } else {
             param.DataDes.count = count;
             param.DataDes.dataType = dataType;
         }
 
-        AlgDesc algDesc;
-        std::string newTag;
-        ResourceLimit limit{true, true, 0};
+        ResourceLimit limit;
+        limit.ifLimit = true;
         limit.aivCoreLimit = aivCoreLimit;
+        AlgDesc algDesc;
         CHK_RET(algOperator->SelectAlg("", param, limit, algName, algDesc, newTag));
-
         /* 非AIV算法直接返回 */
         if (!algDesc.isAivMode) {
-            HCCL_INFO("[HcclCommunicator][HcclSelectAlg] select non-Aiv alg, early return");
+            HCCL_INFO("[HcclCommunicator][HcclSelectAlg] alg not select to AIV");
             return HCCL_SUCCESS;
         }
-
+        ifAiv = true;
         /* 完成算法选择和记录后，恢复成原来的模式 */
         SetWorkflowMode(originWorkflowMode);
-        ifAiv = true;
-        HCCL_INFO("[HcclCommunicator][HcclSelectAlg] compile for aiv, select algName is [%s]", algName.c_str());
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
-        int32_t aivCoreLimit, std::string &algName, u32 &blockDim)
+    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
+                                                  std::string &algName, u32 &blockDim)
     {
         auto originWorkflowMode = GetWorkflowMode();
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -1626,14 +1619,10 @@ namespace hccl
         OpParam param;
 
         param.opType = opType;
-        if (opType == HcclCMDType::HCCL_CMD_ALLTOALL || opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
-            opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
+        if (opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
             param.All2AllDataDes.sendType = dataType;
             param.All2AllDataDes.recvType = dataType;
             param.All2AllDataDes.sendCount = count;
-        } else if (opType == HcclCMDType::HCCL_CMD_ALLGATHER_V || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
-            param.VDataDes.counts = counts;
-            param.VDataDes.dataType = dataType;
         } else {
             param.DataDes.count = count;
             param.DataDes.dataType = dataType;

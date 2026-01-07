@@ -109,31 +109,24 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         CHK_RET(SelectAlg(tag, param, algName, newTag));
     }
 
-    // 非AIV算法提前返回, 采用兜底Executor
-    if (algName.empty()) {
-        executor_ = CollAlgExecRegistry::Instance().GetAlgExec("SendExecutor", dispatcher_, topoMatcher_);
-        CHK_PRT_RET(executor_.get() == nullptr,
-            HCCL_ERROR("[CollAlgOperator][SelectAlg]Fail to find executor for algName[DefaultExecutor]"),
-            HCCL_E_PARA);
-    }else{
-        // 校验控核
-        if (limit.ifLimit && deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAivModeConfig()) {
-            CHK_RET(SelectAlgFor91093WithCoreLimit(param, limit, algName));
-        }
-
-        // 从对应executor获取算法描述
-        if (executor_.get() == nullptr) {
-            executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
-            CHK_PRT_RET(executor_.get() == nullptr,
-                HCCL_ERROR("[CollAlgOperator][SelectAlg]Fail to find executor for algName[%s]", algName.c_str()),
-                HCCL_E_PARA);
-            CHK_RET(SetExecutorAttr(param));
-        }
+    // 校验控核
+    if (limit.ifLimit && deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAivModeConfig()) {
+        CHK_RET(SelectAlgFor91093WithCoreLimit(param, limit, algName));
     }
 
+    // 从对应executor获取算法描述
+    if (executor_.get() == nullptr) {
+        executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
+        CHK_PRT_RET(executor_.get() == nullptr,
+            HCCL_ERROR("[CollAlgOperator][SelectAlg]Fail to find executor for algName[%s]", algName.c_str()),
+            HCCL_E_PARA);
+        CHK_RET(SetExecutorAttr(param));
+    }
+    bool isLastSelect = algDesc.isLastSelect;
     algDesc = executor_->GetAlgDesc();
+
     // 打印维测日志
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && algDesc.isLastSelect) {
+    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && isLastSelect) {
         // 获取展开模式，转换成字符串
         std::string opExpansionStr;
         if (algDesc.isAivMode) {
