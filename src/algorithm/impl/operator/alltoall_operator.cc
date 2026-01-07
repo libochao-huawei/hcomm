@@ -235,11 +235,17 @@ HcclResult AlltoAllOperator::SelectAlgforAiv(const OpParam& param, std::string& 
     return HCCL_SUCCESS;
 }
 
-HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::string& algName, std::string& copyMode)
+HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::string& algName, std::string& copyMode,
+    const ResourceLimit& resourceLimit)
 {
     if (IsSatisfyAlltoAllAivCondition(param)) {
         CHK_RET(SelectAlgforAiv(param, algName));
         return HCCL_SUCCESS; // alltoall aiv不需要后面操作，直接返回
+    }
+
+    if (resourceLimit.ifCompileForAiv) {
+        HCCL_DEBUG("[SelectAlgForAlltoAll] compile for aiv, early return.");
+        return HCCL_SUCCESS;
     }
 
     std::vector<HcclAlgoType> algoTypeArr = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLTOALL);
@@ -300,6 +306,13 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
 HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
                                         std::string& newTag)
 {
+    ResourceLimit resourceLimit;
+    return SelectAlg(tag, param, algName, newTag, resourceLimit);
+}
+
+HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& param, std::string& algName,
+                                        std::string& newTag, const ResourceLimit& resourceLimit)
+{
     HcclResult ret;
     std::string copyMode = "BCopy";
 
@@ -307,9 +320,14 @@ HcclResult AlltoAllOperator::SelectAlg(const std::string& tag, const OpParam& pa
         HCCL_ERROR("[AlltoAllOperator][SelectAlg] AlltoAll not support diffDeviceType");
         return HCCL_E_NOT_SUPPORT;
     }
-    ret = SelectAlgforAlltoAll(param, algName, copyMode);
+    ret = SelectAlgforAlltoAll(param, algName, copyMode, resourceLimit);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[SelectAlgforAlltoAll][SelectAlg]tag[%s], Alltoall failed, return[%d].", tag.c_str(), ret), ret);
+
+    if (resourceLimit.ifCompileForAiv) {
+        HCCL_DEBUG("[SelectAlg] AlltoAllOperator compile for aiv, early return.");
+        return HCCL_SUCCESS;
+    }
 
     bool useA3Pipeline = IsA3PipelineCondition(param);
     bool useA2AAiv = IsSatisfyAlltoAllAivCondition(param);
@@ -589,7 +607,11 @@ bool AlltoAllOperator::IsSatisfyAlltoAllAivCondition(const OpParam& param)
 
 bool AlltoAllOperator::IsBufferSatisfyAlltoAllAivCondition(const OpParam& param)
 {
-    u64 sendCount = *(static_cast<const u64 *>(param.All2AllDataDes.sendCountMatrix));
+    u64 sendCount = param.All2AllDataDes.sendCount;
+    if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC && param.All2AllDataDes.sendCountMatrix != nullptr) {
+        sendCount = *(static_cast<const u64 *>(param.All2AllDataDes.sendCountMatrix));
+    }
+
     u64 dataSize = SIZE_TABLE[param.All2AllDataDes.sendType];
     u64 scratchMemSize = sendCount * dataSize * userRankSize_;
     s64 dataSizeLimit = param.supportRoceDirect ? HCCL_SMALL_COUNT_8_MB : HCCL_SMALL_COUNT_190_KB;
