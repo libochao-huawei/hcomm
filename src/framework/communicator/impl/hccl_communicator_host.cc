@@ -2725,8 +2725,10 @@ namespace hccl
         algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_SINGLE_RING;
         algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_RING;
 
-        // 构造空vector用于入参，无实际意义
         const std::vector<Stream> slaveStreams;
+        if (opParam.isCapture) {
+            slaveStreams.emplace_back(opStream_);
+        }
         CHK_RET(RegisterDfxInfo(opParam, algType, slaveStreams));
         HcclResult ret;
         if (!IsExistCommRes(tag)) {
@@ -2736,7 +2738,7 @@ namespace hccl
             rtStream_t aicpuStream;
             ret = Mc2AiCpuStreamAllocAndGet(streamMode, aicpuStream);
             void *commContext = nullptr;
-            ret = CreateCommResource(tag, stream, true, &commContext);
+            ret = CreateCommResource(tag, aicpuStream, true, &commContext);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("[hcclImpl][CreateComm]create aicpu unfold comminfo by tag[%s] failed. return[%d]",
                            tag.c_str(), ret);
@@ -4627,8 +4629,8 @@ namespace hccl
 
     HcclResult HcclCommunicator::CaptureSlaveStreams(rtStream_t mainStream, vector<Stream> &slaveStreams)
     {
-        if (deviceType_ != DevType::DEV_TYPE_910_93) {
-            HCCL_INFO("[HcclCommunicator][%s]Only A3 device in host expand mode need to capture slave streams.", __func__);
+        if ((deviceType_ != DevType::DEV_TYPE_910_93) && (deviceType_ != DevType::DEV_TYPE_310P3)) {
+            HCCL_INFO("[HcclCommunicator][%s]Only 310P3 or A3 device in host expand mode need to capture slave streams.", __func__);
             return HCCL_SUCCESS;
         }
         aclmdlRI rtModel = nullptr;
@@ -6640,8 +6642,15 @@ namespace hccl
         CHK_RET(LocalNotify::Post(mainStream, dispatcher_,
             localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::HOST_TO_AICPU_0)], INVALID_VALUE_STAGE));
         rtStream_t kfcOpStream = opStream_.ptr();
-        if (opTilingInfo.isUsedMainStream) {
+        if (opTilingInfo.isUsedMainStream && !opParam.isCapture) {
             kfcOpStream = opParam.stream.ptr();
+        }
+        if (opParam.isCapture) {
+            bool isCapture = false;
+            rtModel_t rtModel = nullptr;
+            CHK_RET(GetStreamCaptureInfo(kfcOpStream, rtModel, isCapture));
+            CHK_PTR_NULL(rtModel);
+            CHK_RET(AddStreamToModel(kfcOpStream, rtModel));
         }
         CHK_RET(AicpuUnfoldKernelLaunch(opParam.inputPtr, opParam.outputPtr, kfcOpStream,
                                         reinterpret_cast<u64>(deviceContext.ptr()), &tilingDate, sizeof(HcclKFCTilingData),
