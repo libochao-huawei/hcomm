@@ -74,10 +74,12 @@ HcclResult P2PMgmt::EnableP2P(uint32_t remoteDevicePhysicID)
         u32 localDevicePhysicID = 0;
         CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
         CHK_RET(CheckMarsterId(remoteDevicePhysicID, localDevicePhysicID, isMarsterIdDiff));
+        HCCL_RUN_INFO("TESTfanbin CheckMarsterId localDeviceLogicID %d, localDevicePhysicID %u, remoteDevicePhysicID %u, isMarsterIdDiff %s",
+            localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID, isMarsterIdDiff ? "true" : "false");
         if (isMarsterIdDiff) {
             CHK_RET(hrtEnableP2P(localDeviceLogicID, remoteDevicePhysicID));
-            HCCL_INFO("enable p2p: local logic id:%d, remote physic id:%u.", localDeviceLogicID,
-                remoteDevicePhysicID);
+            HCCL_INFO("[hrtEnableP2P]enable p2p: local logic id:%d, local physic id:%u, remote physic id:%u.",
+                localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
         }
         iterLocalDevice[remoteDevicePhysicID].status = P2PStatus::P2P_STATUS_ENABLING;
         iterLocalDevice[remoteDevicePhysicID].reference++;
@@ -240,6 +242,10 @@ HcclResult P2PMgmt::WaitP2PEnabled(uint32_t remoteDevicePhysicID, std::function<
     }
     int32_t localDeviceLogicID;
     CHK_RET(hrtGetDevice(&localDeviceLogicID));
+    u32 localDevicePhysicID = 0;
+    CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
+    HCCL_RUN_INFO("TESTfanbin localDeviceLogicID %d, localDevicePhysicID %u, remoteDevicePhysicID %u",
+        localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);  
     u32 maxDeviceNum;
     CHK_RET(GetMaxDevNum(maxDeviceNum));
     CHK_PRT_RET(static_cast<u32>(localDeviceLogicID) >= maxDeviceNum,
@@ -262,12 +268,15 @@ HcclResult P2PMgmt::WaitP2PEnabled(uint32_t remoteDevicePhysicID, std::function<
         u32 localDevicePhysicID = 0;
         CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
         HcclResult ret = CheckMarsterId(remoteDevicePhysicID, localDevicePhysicID, isMarsterIdDiff);
+        HCCL_RUN_INFO("TESTfanbin CheckMarsterId localDeviceLogicID %d, localDevicePhysicID %u, remoteDevicePhysicID %u, isMarsterIdDiff %s",
+            localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID, isMarsterIdDiff ? "true" : "false");
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Wait][P2PEnabled]check pcie connection failed. device info: local logic id:%d, "\
                 "remote physic id:%u.", localDeviceLogicID, remoteDevicePhysicID), ret);
         if (isMarsterIdDiff) {
             CHK_RET(WaitP2PConnected(localDeviceLogicID, remoteDevicePhysicID, needStop));
-            HCCL_INFO("enable p2p: local logic id:%d, remote physic id:%u.", localDeviceLogicID, remoteDevicePhysicID);
+            HCCL_INFO("[WaitP2PConnected]enable p2p: local logic id:%d, local physic id:%u, remote physic id:%u.",
+                localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
         }
         iterLocalDevice[remoteDevicePhysicID].status = P2PStatus::P2P_STATUS_ENABLED;
     }
@@ -288,8 +297,10 @@ HcclResult P2PMgmt::WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remote
         CHK_RET(CheckP2P(remoteDevicePhysicID, enabled));
 
         if (enabled) {
-            HCCL_INFO("connected p2p success, take time [%lld]us. device info: local logic id:%d, remote physic id:%u.",
-                DURATION_US(TIME_NOW() - start), localDeviceLogicID, remoteDevicePhysicID);
+            u32 localDevicePhysicID = 0;
+            CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID)); 
+            HCCL_INFO("TESTfanbin connected p2p success, take time [%lld]us. device info: localDeviceLogicID %d, localDevicePhysicID %u, remoteDevicePhysicID %u",
+                DURATION_US(TIME_NOW() - start), localDeviceLogicID, localDevicePhysicID, remoteDevicePhysicID);
             return HCCL_SUCCESS;
         }
         std::this_thread::sleep_for(checkP2PTimeInterval);

@@ -719,7 +719,21 @@ void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperP
     bool localUseSuporPodModel = useSuperPodMode && locRank.superPodId.empty() == false;
     bool needSuperModeHb = localUseSuporPodModel && useSuperPodMode && rankInfo.superPodId.empty() == false;
     if (needSuperModeHb) {
-        if (locRank.serverId == rankInfo.serverId) { // serverId相同表示同超结点同server
+        bool isInterServer = false;
+        if (locRank.deviceType == DevType::DEV_TYPE_910_93) {
+            uint32_t userRankServerId = 0;
+            uint32_t remoteRankServerId = 0;
+            hrtGetServerIDBySDID(locRank.superDeviceId, &userRankServerId);
+            hrtGetServerIDBySDID(rankInfo.superDeviceId, &remoteRankServerId);
+            isInterServer = userRankServerId == remoteRankServerId;
+            HCCL_RUN_INFO("TESTfanbin localdevicePhyId %d, localRankServerId %d, remotedevicePhyId %d, remoteRankServerId %d",
+                locRank.devicePhyId, userRankServerId, rankInfo.devicePhyId, remoteRankServerId);
+        } else {
+            isInterServer = locRank.serverId == rankInfo.serverId;
+            HCCL_RUN_INFO("TESTfanbin localdevicePhyId %d, localRankServerId %s, remotedevicePhyId %d, remoteRankServerId %s",
+                locRank.devicePhyId, locRank.serverId.c_str(), rankInfo.devicePhyId, rankInfo.serverId.c_str());
+        }
+        if (isInterServer) { // serverId相同表示同超结点同server
             type = HcclSocketType::SOCKET_VNIC;
         } else if (locRank.superPodId == rankInfo.superPodId) { // 同超结点
             type =

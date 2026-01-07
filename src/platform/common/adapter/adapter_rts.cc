@@ -1534,7 +1534,12 @@ HcclResult hrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
 #ifndef HCCD
     rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
 
-    HCCL_INFO("rt enableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
+    u32 localDevicePhysicID = 0;
+
+    CHK_RET(hrtGetDevicePhyIdByIndex(deviceLogicId, localDevicePhysicID));
+
+    HCCL_INFO("rt enableP2P deviceLogicId[%u], localDevicePhysicID[%u] and devicePhyId[%u] fail[%d]",
+        deviceLogicId, localDevicePhysicID, devicePhyId, ret);
 
     CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Enable][P2P]errNo[0x%016llx] rt enableP2P deviceLogicId[%u] and "\
         "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
@@ -1542,6 +1547,23 @@ HcclResult hrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtEnableP2P]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
+}
+
+HcclResult hrtGetServerIDBySDID(uint32_t sdid, uint32_t *serverId)
+{
+#ifndef HCCD
+    CHK_PTR_NULL(serverId);
+
+    rtError_t ret = rtGetServerIDBySDID(sdid, serverId);
+    HCCL_INFO("rt GetServerIDBySDID sdid[%u] and serverId[%u] ret[%d]", sdid, serverId, ret);
+
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[rtGetServerIDBySDID]rtGetServerIDBySDID failed sdid[%u], serverID[%u], ret[%u]",
+        sdid, serverId, ret), HCCL_E_RUNTIME);
+    return HCCL_SUCCESS;
+#else
+    HCCL_ERROR("[rtGetServerIDBySDID]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
 }
