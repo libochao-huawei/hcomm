@@ -549,8 +549,11 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
 {
     // 确定性图和单算子归一流程
     HcclDataCountType countType = GetCountTypeForDeterAllReduce(param.DataDes.count, param.DataDes.dataType);
-    if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
-        && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+    const bool isOpbase = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    const bool isInlineReduce =
+        IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType);
+
+    if (isOpbase && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
         algName = "AllReduceDeterPipelineExecutor";
     } else if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
         if (countType == HcclDataCountType::HCCL_COUNT_SMALL) {
@@ -562,11 +565,13 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
         }
     } else {
         u64 dataSize = param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
-        // 单算子 + 确定性 + 数据量小于512kB
-        if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-            !isSingleMeshAggregation_ && dataSize <= HCCL_SMALL_COUNT_512_KB && 
-            IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
-            algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
+        if (isOpbase && !isSingleMeshAggregation_ && isInlineReduce) {
+            if (dataSize <= HCCL_SMALL_COUNT_512_KB) {
+                // 单算子 + 确定性 + 数据量小于512kB
+                algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
+            } else {
+                algName = "AllReduceMeshOpbaseMidCountDeterministicExecutor";
+            }
         }
     }
     return HCCL_SUCCESS;

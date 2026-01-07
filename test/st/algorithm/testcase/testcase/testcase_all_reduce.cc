@@ -1891,3 +1891,45 @@ TEST_F(AllReduceTest, all_reduce_executor_deter_very_big_count)
 {
     AllReduceDeterCheckerFor910B(2, 3, 1024 * 1024 * 30);
 }
+
+TEST_F(AllReduceTest, allreduce_A2_1Server16Rank_midcount_deterministic)
+{
+    TopoMeta topoMeta {{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}}};
+    setenv("HCCL_DETERMINISTIC", "true", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllReduce";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.DataDes.count = 1024;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "AllReduceMeshOpbaseMidCountDeterministicExecutor";
+
+    Checker checker;
+    HcclResult ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(AllReduceTest, allreduce_A2_2Server8Rank_midcount_deterministic)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 2, 8);
+    setenv("HCCL_DETERMINISTIC", "true", 1);
+
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLREDUCE;
+    checkerOpParam.tag = "AllReduce";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.DataDes.count = 1024;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.algName = "AllReduceMeshOpbaseMidCountDeterministicExecutor";
+
+    Checker checker;
+    HcclResult ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}

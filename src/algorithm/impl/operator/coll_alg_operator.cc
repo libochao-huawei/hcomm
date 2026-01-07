@@ -501,7 +501,7 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
             return HCCL_SUCCESS;
         }
         if (deterniminsticWithInlineReduce && deviceNumPerAggregation_ > 1 &&
-            allreduceCurSize >= HCCL_SMALL_COUNT_GRAPH_64_KB && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+            allreduceCurSize >= HCCL_SMALL_COUNT_1_MB && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
             CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             return HCCL_SUCCESS;
