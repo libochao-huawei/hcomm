@@ -605,6 +605,14 @@ HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address)
     } else {
         ret = aclrtMallocWithCfg(devPtr, size, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
     }
+    RPT_ENV_ERR(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, "EI0011",                                                                             
+        std::vector<std::string>({"memory_size"}),                                                          
+        std::vector<std::string>({std::string("size:") + std::to_string(size)}));
+
+    CHK_PRT_RET(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, HCCL_ERROR("[Malloc][Mem] rtMalloc failed, "\
+        "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu Byte].", ret, *devPtr, size),
+        HCCL_E_OOM);
+
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
         std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
 
