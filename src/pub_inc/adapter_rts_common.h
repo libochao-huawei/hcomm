@@ -93,6 +93,7 @@ HcclResult hrtGetPairDevicePhyId(u32 localDevPhyId, u32 &pairDevPhyId);
 HcclResult PrintMemoryAttr(const void *memAddr);
 HcclResult hrtCtxGetOverflowAddr(void **overflowAddr);
 HcclResult hrtGetDeviceTypeBySocVersion(std::string &socVersion, DevType &devType);
+HcclResult hrtGetServerIDBySDID(uint32_t sdid, uint32_t *serverId);
 
 HcclResult hrtEventDestroy(HcclRtEvent event);
 HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address = false);

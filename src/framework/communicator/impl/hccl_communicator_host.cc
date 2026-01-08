@@ -1161,6 +1161,29 @@ namespace hccl
             return HCCL_E_NOT_SUPPORT;
         }
         (void)rankTable;
+
+        // 判断是否为A3多docker场景，该场景需要使用sdid获取到的serverId判断是否属于同一server，若属于同一server则需要enablep2p
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            for (size_t index = 0; index < rankInfoList_.size(); ++index)
+            {
+                const RankInfo &rankInfo = rankInfoList_[index];
+                uint32_t localRankServerId = 0;
+                uint32_t remoteRankServerId = 0;
+                CHK_RET(hrtGetServerIDBySDID(rankInfoList_[realUserRank_].superDeviceId, &localRankServerId));
+                CHK_RET(hrtGetServerIDBySDID(rankInfo.superDeviceId, &remoteRankServerId));
+                if (serverId_ != rankInfo.serverId && localRankServerId == remoteRankServerId) {
+                    enableP2PDevices_.push_back(rankInfo.devicePhyId);
+                    HCCL_RUN_INFO("TESTfanbin insert devicePhyId %u to enableP2PDevices_", rankInfo.devicePhyId);
+                    HCCL_RUN_INFO("TESTfanbin " \
+                        "localSuperDeviceId %d. localRealUserRank %d, localRankServerIdBySDID %u, localDevicePhyId %d, " \
+                        "remoteSuperDevcieId %d, remoteworldRank %d, remoteRankServerIdBySDID %u, remoteDevciePhyId %d, " \
+                        "curServerId_ %s, otherRankServerId %s",
+                        rankInfoList_[realUserRank_].superDeviceId, realUserRank_, localRankServerId, rankInfoList_[realUserRank_].devicePhyId,
+                        rankInfo.superDeviceId, rankInfo.worldRank, remoteRankServerId, rankInfo.devicePhyId,
+                        serverId_.c_str(), rankInfo.serverId.c_str());
+                }
+            }
+        }
         // 查询本rank所在服务器
         auto iterServ = servRankInfo_.find(serverId_);
 
@@ -1171,10 +1194,16 @@ namespace hccl
         for (u32 i = 0; i < iterServ->second.size(); i++) {
             if (iterServ->second[i].deviceInfo.devicePhyId != HOST_DEVICE_ID) {
                 enableP2PDevices_.push_back(iterServ->second[i].deviceInfo.devicePhyId);
+                HCCL_RUN_INFO("TESTfanbin All devices within the current server, serverId[%s], rankId[%d], localRank[%u], superDeviceId[%u], devicePhyId[%d]",
+                    iterServ->second[i].serverId.c_str(), iterServ->second[i].rankId, iterServ->second[i].localRank,
+                    iterServ->second[i].superDeviceId, iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
             HcclResult ret = P2PMgmtPub::EnableP2P(enableP2PDevices_);
+            for (u32 enableP2PDevices : enableP2PDevices_) {
+                HCCL_RUN_INFO("TESTfanbin enableP2PDevices %u", enableP2PDevices);
+            }
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][PreResource]Enable P2P Failed, deviceLogicId[%d], ret[%u]", deviceLogicId_, ret), ret);
         }
 
