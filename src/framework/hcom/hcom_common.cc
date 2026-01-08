@@ -1599,7 +1599,11 @@ HcclResult HcomMc2AiCpuStreamAllocAndGet(const char *group, u32 streamMode, rtSt
     RPT_INPUT_ERR(group == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcomGetDevType", "group", "nullptr", "please check group"}));
     CHK_PTR_NULL(group);
- 
+
+ #if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        HCCLV2_FUNC_RUN(HcomMc2AiCpuStreamAllocAndGetV2(group, streamMode, aiCpuStream));
+#endif
+
     HcclResult ret = HcomCheckGroupName(group);
     RPT_INPUT_ERR(ret != HCCL_SUCCESS,
         "EI0003", std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),

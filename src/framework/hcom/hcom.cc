@@ -169,6 +169,10 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     CHK_PTR_NULL(rankTableM);
     CHK_PTR_NULL(identify);
 
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomInitByStringV2(rankTableM, identify));
+#endif
+
     if (initConfig != nullptr) {
         DevType devType;
         CHK_RET(hrtGetDeviceType(devType));
