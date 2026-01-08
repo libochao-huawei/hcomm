@@ -1043,7 +1043,7 @@ void Heartbeat::CheckRecvOpInfoList()
         auto opInfoIndexMap = opInfoMap_.find(identifier);
         if (opInfoIndexMap == opInfoMap_.end()) {
             ++it;
-            HCCL_DEBUG("[Heartbeat]check recv not fount. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
+            HCCL_DEBUG("[Heartbeat]check recv not found. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
             continue;
         }
 

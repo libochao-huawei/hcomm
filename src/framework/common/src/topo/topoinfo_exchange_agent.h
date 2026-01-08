@@ -55,7 +55,7 @@ public:
     HcclResult SetupByMasterInfo();
     HcclResult Teardown();
     HcclResult GetClusterTopoInfo(RankTable_t &clusterInfo);
-    HcclResult GetIdentifier(u32 &indentify);
+    HcclResult GetIdentifier(u32 &identify);
     HcclResult GetConnection(std::shared_ptr<HcclSocket> &socket);
     HcclResult GetGroupLeader(HcclRankHandle &rankHandle);
     HcclResult SendGroupLeaderPortInfo(std::shared_ptr<HcclSocket> socket,  HcclRankHandle &rankHandle);

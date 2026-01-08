@@ -155,10 +155,10 @@ struct HcclKFCTilingData {
     u32 stride;          // 跳写间隔
     u32 workspaceOff;    // 使用workspace作为recvbuf时的workspace偏移
     u32 notifyOff;       // device notify write/read value偏移
-    u16 notifyBeginCnt;  // notift write value的使用个数
-    u16 notifyEndCnt;    // notift read value的使用个数
+    u16 notifyBeginCnt;  // notify write value的使用个数
+    u16 notifyEndCnt;    // notify read value的使用个数
     u8 useBufferType;    // 是否使用workspace作为recvbuf
-    u8 funID;            // funtion ID
+    u8 funID;            // function ID
     u8 dataType;         // hccl 数据类型
     u8 groupNum;         // groupNum
     u8 reuseMode;        // tiling，填msgCnt，内存优化选择复用的内存块个数
@@ -274,7 +274,7 @@ static inline void ListCommonAddHead(struct ListCommon *newDeviceL, struct ListC
     struct ListCommon *headHostL, struct ListCommon *headDeviceL)
 {
     if (newHostL == nullptr || headHostL == nullptr) {
-        HCCL_ERROR("intput ptr is nullptr, newHostL[%p], headHostL[%p]", newHostL, headHostL);
+        HCCL_ERROR("input ptr is nullptr, newHostL[%p], headHostL[%p]", newHostL, headHostL);
         return;
     }
     ListCommon *headHostLNextHost = reinterpret_cast<ListCommon *>(headHostL->nextHost);

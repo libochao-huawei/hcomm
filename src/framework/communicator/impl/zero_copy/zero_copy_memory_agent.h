@@ -57,7 +57,7 @@ const std::map<RequestType, std::string> REQUEST_TYPE_STR {
 
 inline const char *GetReadableRequestType(RequestType type) {
     auto it = REQUEST_TYPE_STR.find(type);
-    return (it != REQUEST_TYPE_STR.end()) ? it->second.c_str() : "unkown type";
+    return (it != REQUEST_TYPE_STR.end()) ? it->second.c_str() : "unknown type";
 }
 
 inline bool IsAckRequestType(RequestType type)

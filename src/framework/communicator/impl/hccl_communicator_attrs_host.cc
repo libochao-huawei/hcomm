@@ -646,7 +646,7 @@ namespace hccl
         if (CheckSuperDeviceId(rankTable) != HCCL_SUCCESS)
         {
             HCCL_ERROR("[Check][RankTable]errNo[0x%016llx] super_device_id is invalid in ranktable, "
-                       "ranktable config vaule: rankId[%u], superDeviceId[0x%x]",
+                       "ranktable config value: rankId[%u], superDeviceId[0x%x]",
                        HCCL_ERROR_CODE(HCCL_E_PARA), userRank_, superDeviceId_);
             return HCCL_E_PARA;
         }

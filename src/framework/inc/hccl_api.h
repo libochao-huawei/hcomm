@@ -2199,7 +2199,7 @@ extern HcclResult HcommSocketIRecv(HcommSocket socket, void *recvBuf, uint64_t l
  * @param[in] comm 通信域句柄
  * @param[in] engineTag 引擎标签（最大字符长度为COMM_TAG_LEN_MAX）
  * @param[in] engine 通信引擎类型
- * @param[inout] engineCtx 通信引擎上下文\n
+ * @param[in,out] engineCtx 通信引擎上下文\n
  *                         -size: 申请的ctx内存大小；\n
  *                         -addr: 返回的ctx内存地址；\n
  *                         -type: 返回的ctx内存类型，分host和device。

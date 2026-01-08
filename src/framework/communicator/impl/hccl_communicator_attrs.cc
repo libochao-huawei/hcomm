@@ -211,7 +211,7 @@ HcclResult HcclCommunicatorAttrs::CheckSuperDeviceId(const RankTable_t &rankTabl
                 RPT_INPUT_ERR(true, "EI0014", std::vector<std::string>({ "error_reason" }),
                     std::vector<std::string>({ "the 'super_device_id' in the ranktable is invalid" }));
                 HCCL_ERROR("[%s][%s]errNo[0x%016llx] super_device_id is invalid, " \
-                    "expect value [0x%x], ranktable config vaule [0x%x]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+                    "expect value [0x%x], ranktable config value [0x%x]", LOG_KEYWORDS_INIT_GROUP.c_str(),
                     LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), drvSuperDeviceID,
                     superDeviceId_);
                 return HCCL_E_PARA;

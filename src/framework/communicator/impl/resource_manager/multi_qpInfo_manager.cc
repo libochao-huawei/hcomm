@@ -432,7 +432,7 @@ HcclResult EnvConfigPathCache::LoadMultiQpSrcPortFromFile()
         // 去除注释
         std::string lineInfo = Split(line, "#")[0];  // 只保留#号前的内容
         if (lineInfo.empty()) {
-            HCCL_DEBUG("[EnvConfigPathCache][LoadMultiQpSrcPortFromFile][line: %u]commet line, do not parse.[%s]",
+            HCCL_DEBUG("[EnvConfigPathCache][LoadMultiQpSrcPortFromFile][line: %u]comment line, do not parse.[%s]",
                        lineCnt, lineAvator.c_str());
             lineCnt++;
             continue;

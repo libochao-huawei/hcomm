@@ -179,7 +179,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         std::ifstream ifs(clusterInfo);
         if (ifs.is_open()) {
             std::string s((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-            // crude count of "rank_id" occurences
+            // crude count of "rank_id" occurrences
             size_t pos = 0;
             while ((pos = s.find("rank_id", pos)) != std::string::npos) {
                 rankCount++;

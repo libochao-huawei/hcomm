@@ -322,9 +322,9 @@ HcclResult TopoInfoExchangeAgent::GetClusterTopoInfo(RankTable_t &clusterInfo)
 
     return HCCL_SUCCESS;
 }
-HcclResult TopoInfoExchangeAgent::GetIdentifier(u32 &indentify)
+HcclResult TopoInfoExchangeAgent::GetIdentifier(u32 &identify)
 {
-    indentify = identifierNum_;
+    identify = identifierNum_;
     return HCCL_SUCCESS;
 }
 HcclResult TopoInfoExchangeAgent::Connect(HcclIpAddress &serverIp, u32 port,
@@ -1041,7 +1041,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
     } else if (isTlsConsistent && !isSupportCheckTlsStatus) {
     // 3.通信域内的部分卡不支持查询TLS开关状态，目前能查询到的卡的TLS开关状态是一致的，打印warning提醒
         HCCL_RUN_WARNING("[Verify][TlsConsistency] Some ranks do not support to check tlsStatus, " \
-            "not suppport serverId/rankId: %s", tlsUnknownRankStr.c_str());
+            "not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
     } else {
         errormessage =
             "Some rank tlsStatus are inconsistent, "

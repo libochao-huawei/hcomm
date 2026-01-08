@@ -621,7 +621,7 @@ bool TransportManager::IsHccsTransport(u32 remoteRank, TransportLinkType linkTyp
         HcclResult ret = hrtGetPairDeviceLinkType(
             rankInfoList_[userRank_].devicePhyId, rankInfoList_[remoteRank].devicePhyId, linkTypeTmp);
         if (ret != HCCL_SUCCESS) {
-            HCCL_WARNING("fail to get device link type for userRank[%u] remoteRank[%u] ret[%d], defalut to Hccs",
+            HCCL_WARNING("fail to get device link type for userRank[%u] remoteRank[%u] ret[%d], default to Hccs",
                 userRank_, remoteRank, ret);
             return true;
         }

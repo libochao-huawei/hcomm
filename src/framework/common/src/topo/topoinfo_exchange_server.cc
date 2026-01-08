@@ -676,11 +676,11 @@ HcclResult TopoInfoExchangeServer::GetRanksTransInfo(
     return HCCL_SUCCESS;
 }
 
-HcclResult TopoInfoExchangeServer::SendIndentify(std::shared_ptr<HcclSocket> socket, u32 indentify) const
+HcclResult TopoInfoExchangeServer::SendIdentify(std::shared_ptr<HcclSocket> socket, u32 identify) const
 {
-    HcclResult ret = socket->Send(&indentify, sizeof(indentify));
+    HcclResult ret = socket->Send(&identify, sizeof(identify));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Send][ClusterInfoMsg]errNo[0x%016llx] ra send indentify failed! "\
+        HCCL_ERROR("[Send][ClusterInfoMsg]errNo[0x%016llx] ra send identify failed! "\
             "ret[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), ret), ret);
 
     return HCCL_SUCCESS;

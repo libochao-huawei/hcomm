@@ -836,7 +836,7 @@ int ra_socket_recv(const void* handle, void* __data, u64 size, u64 *recvSize) /*
 
     if (p_cn->rev_buff.size == 0)
     {
-        HCCL_DEBUG("there is not available data to recive");
+        HCCL_DEBUG("there is not available data to receive");
         return 1;
     }
     else if ((p_cn->rev_buff.size < 0) || (p_cn->rev_buff.size  < size))
@@ -927,7 +927,7 @@ int ra_send_wr(void* handle, struct send_wr* wr, struct send_wr_rsp *op_rsp)
 
     if (wqe_index == WQE_MAX)
     {
-        HCCL_ERROR("no available memeory for new WQE");
+        HCCL_ERROR("no available memory for new WQE");
         return -1;
     }
 
@@ -1234,7 +1234,7 @@ int ra_rdev_init(int mode, unsigned int notify_type, struct rdev rdev_info, void
 
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
     if (rdev_info.local_ip.addr.s_addr < DEV_MAX) {
-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdev_info.local_ip.addr.s_addr);
+        HCCL_ERROR("unsupported rdev init by Vic, local_ip[%u]", rdev_info.local_ip.addr.s_addr);
         return -1;
     } else {
         int idx = rdev_info.phy_id * 2;
@@ -1271,7 +1271,7 @@ int ra_rdev_init_with_backup(struct RdevInitInfo *init_info, struct rdev *rdev_i
 
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
     if (rdev_info->local_ip.addr.s_addr < DEV_MAX) {
-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdev_info->local_ip.addr.s_addr);
+        HCCL_ERROR("unsupported rdev init by Vic, local_ip[%u]", rdev_info->local_ip.addr.s_addr);
         return -1;
     } else {
         int idx = rdev_info->phy_id * 2;
@@ -1307,7 +1307,7 @@ int ra_rdev_init_v2(struct RdevInitInfo init_info, struct rdev rdev_info, void *
 
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
     if (rdev_info.local_ip.addr.s_addr < DEV_MAX) {
-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdev_info.local_ip.addr.s_addr);
+        HCCL_ERROR("unsupported rdev init by Vic, local_ip[%u]", rdev_info.local_ip.addr.s_addr);
         return -1;
     } else {
         int idx = rdev_info.phy_id * 2;
@@ -1344,7 +1344,7 @@ int ra_rdev_deinit(void *rdma_handle, unsigned int notify_type)
 
     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
     if (rdmaHandle->local_ip < DEV_MAX) {
-        HCCL_WARNING("unsupport rdev deinit by Vic, local_ip[%u]", rdmaHandle->local_ip);
+        HCCL_WARNING("unsupported rdev deinit by Vic, local_ip[%u]", rdmaHandle->local_ip);
     }
 
     u32 idx = rdmaHandle->idx;
@@ -1913,7 +1913,7 @@ void* accept_process_between_nodes(void* arg)
                 if (size_recv != size_total) {
                     continue;
                 }
-                HCCL_INFO("listern recieve info[0x%08x], tag[%s]", recv_info.client_ip, recv_info.tag);
+                HCCL_INFO("listen receive info[0x%08x], tag[%s]", recv_info.client_ip, recv_info.tag);
 
                 // 记录连接信息
                 struct connect_info_t connection;
@@ -2811,7 +2811,7 @@ int batch_connect_check_link_nodes(u32 ipAddr, s32 deviceId)
     u32 remoteServerIp;
     u32 recv_ret = recv(socketHandle, (char *)(&remoteServerIp), sizeof(remoteServerIp), 0);
     if (recv_ret < 0) {
-        HCCL_INFO("connet recevive failed.error%s(errno: %d)", strerror(errno), errno);
+        HCCL_INFO("connect receive failed.error%s(errno: %d)", strerror(errno), errno);
         return -1;
     }
     /* 保持连接状态 */
@@ -3569,7 +3569,7 @@ int ra_ctl_event_handle(int event_handle, const void *fd_handle, int opcode, enu
     } else if (event == RA_EPOLLOUT) {
         tmpEvent = EPOLLOUT;
     } else {
-        HCCL_ERROR("[ra_ctl_event_handle]unkown event[%d]", event);
+        HCCL_ERROR("[ra_ctl_event_handle]unknown event[%d]", event);
         return -EINVAL;
     }
 

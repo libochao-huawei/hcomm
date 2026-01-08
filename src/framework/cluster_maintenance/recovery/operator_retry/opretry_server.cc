@@ -1013,7 +1013,7 @@ HcclResult ResumeServerChangeLink::CmdAgentChangeLink(RetryContext *retryCtx)
  
 HcclResult ResumeServerChangeLink::WaitAllChangeLinkResult(RetryContext *retryCtx, RetryState &nextState)
 {
-    HCCL_RUN_INFO("[OpRetry][Server][Resume]WaitAllChangeLinkResult begin gorup[%s]", retryCtx->group_.c_str());
+    HCCL_RUN_INFO("[OpRetry][Server][Resume]WaitAllChangeLinkResult begin group[%s]", retryCtx->group_.c_str());
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
     RetryState expectAgentState = RETRY_STATE_AGENT_RUNNING;

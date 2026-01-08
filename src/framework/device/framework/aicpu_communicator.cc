@@ -4219,7 +4219,7 @@ void HcclCommAicpu::RecordReportStatus(dfx::ReportStatus status)
     std::unique_lock<std::mutex> lock(reportQueueMutex_);
     while (reportStatusQueue_.size() >= MAX_REPORT_STATUS) {
         HCCL_WARNING("[HcclCommAicpu][RecordReportStatus] retry status queue reach the limit[%u], " \
-            "the front status[%u] is droped.", MAX_REPORT_STATUS, reportStatusQueue_.front());
+            "the front status[%u] is dropped.", MAX_REPORT_STATUS, reportStatusQueue_.front());
         reportStatusQueue_.pop();
     }
     reportStatusQueue_.push(status);
@@ -4895,7 +4895,7 @@ void HcclCommAicpu::HandleIndOpCqe()
                              cqeException.errorCode == RT_SDMA_COMPERR;
         bool isSdmaCompDataErr = isSdmaTypeErr && isCompDataErr;
         if (isSdmaCompDataErr) {
-            HCCL_RUN_INFO("[OpRetry][AICPU]group[%s] can not retry, IndOp unsupport opRetry", identifier_.c_str());
+            HCCL_RUN_INFO("[OpRetry][AICPU]group[%s] can not retry, IndOp does not support opRetry", identifier_.c_str());
         }
 
         // 标记发生ErrCqe的流

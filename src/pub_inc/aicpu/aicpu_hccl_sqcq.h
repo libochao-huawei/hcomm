@@ -583,7 +583,7 @@ const std::vector<std::string> StarsCqeErrorDesc = {
     "task trap",
     "task timeout",
     "sqe error",
-    "resouce conflict error",
+    "resource conflict error",
     "sq sw status error",
     "warning"
 };

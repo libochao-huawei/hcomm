@@ -101,7 +101,7 @@ HcclResult InitEnvParam()
         std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_HOST_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_HOST_SOCKET_PORT_RANGE failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -115,7 +115,7 @@ HcclResult InitEnvParam()
         std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_NPU_SOCKET_PORT_RANGE", "Please check whether the port range is valid."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_NPU_SOCKET_PORT_RANGE failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -129,7 +129,7 @@ HcclResult InitEnvParam()
         std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_DFS_CONFIG", "Please check whether the DFS config is valid."}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_DFS_CONFIG failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -143,7 +143,7 @@ HcclResult InitEnvParam()
         std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_TC", "Value range[0, 255], Must be a multiple of 4"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_TC failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -157,7 +157,7 @@ HcclResult InitEnvParam()
         std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_RDMA_SL", "Value range[0, 7]"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_SL failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -171,7 +171,7 @@ HcclResult InitEnvParam()
         std::vector<std::string>({"env", "tips"}),
         std::vector<std::string>({"HCCL_DEBUG_CONFIG", "Please check whether the env is valid"}));
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environtment param, parse "
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_DEBUG_CONFIG failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
@@ -357,7 +357,7 @@ HcclResult SetSocketPortRange(const std::string &envName, const std::string &soc
         return HCCL_SUCCESS;
     }
 
-    // the socket port range is set to auto, then the os will listen on the ports dymamically and automatically.
+    // the socket port range is set to auto, then the os will listen on the ports dynamically and automatically.
     if (!socketPortRange.compare(HCCL_AUTO_PORT_CONFIG)) {
         HcclSocketPortRange autoSocketPortRange = {
             HCCL_SOCKET_PORT_RANGE_AUTO,
@@ -533,7 +533,7 @@ HcclResult ParseDFSConfig()
     } else if (heartbeatSwitch == "on") {
         g_envConfig.enableClusterHeartBeat = true;
     } else {
-        HCCL_RUN_WARNING("[HCCL_ENV][ParseDFSConfig] HCCL_DFS_CONFIG-cluster_heartebat was configed to [%s], please configed to"\
+        HCCL_RUN_WARNING("[HCCL_ENV][ParseDFSConfig] HCCL_DFS_CONFIG-cluster_heartbeat was configured to [%s], please configured to"\
             "'on' or 'off'", heartbeatSwitch.c_str());
     }
 
@@ -544,7 +544,7 @@ HcclResult ParseDFSConfig()
     } else if (stuckDetectSwitch == "on") {
         g_envConfig.opCounterEnable = true;
     } else {
-        HCCL_RUN_WARNING("[HCCL_ENV][ParseDFSConfig] HCCL_DFS_CONFIG-stuck_detection was configed to [%s], please configed to"\
+        HCCL_RUN_WARNING("[HCCL_ENV][ParseDFSConfig] HCCL_DFS_CONFIG-stuck_detection was configured to [%s], please configured to"\
             "'on' or 'off'", stuckDetectSwitch.c_str());
     }
 
@@ -556,7 +556,7 @@ HcclResult ParseDFSConfig()
     } else if (inconsistentCheckSwitch == "on") {
         g_envConfig.inconsistentCheckSwitch = true;
     } else {
-        HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-inconsistent_check was configed to [%s], please configed to"\
+        HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-inconsistent_check was configured to [%s], please configured to"\
             "'on' or 'off'", inconsistentCheckSwitch.c_str());
     }
 

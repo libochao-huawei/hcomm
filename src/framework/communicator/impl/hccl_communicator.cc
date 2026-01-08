@@ -1601,7 +1601,7 @@ namespace hccl
             CHK_SAFETY_FUNC_RET(memcpy_s(sendRecvInfoPtr, hostCollectBuffer_.size(), hostCollectBuffer_.ptr(), hostCollectBuffer_.size()));
         }
 
-        HCCL_DEBUG("[SetDynamicTilingDataAlltoallv] set dynamic tiling data for AllToAllV successs, alltoallvDataPtr[%p]", alltoallvDataPtr);
+        HCCL_DEBUG("[SetDynamicTilingDataAlltoallv] set dynamic tiling data for AllToAllV success, alltoallvDataPtr[%p]", alltoallvDataPtr);
         return HCCL_SUCCESS;
     }
 

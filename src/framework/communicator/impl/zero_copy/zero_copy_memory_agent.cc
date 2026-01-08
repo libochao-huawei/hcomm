@@ -537,7 +537,7 @@ HcclResult ZeroCopyMemoryAgent::SetMemoryRange(void *virPtr, size_t size, size_t
         HCCL_ERROR("[ZeroCopyMemoryAgent][SetMemoryRange] invalid set ptr[%p] size[%lu] alignment[%lu] flags[%lu]",
         virPtr, size, alignment, flags), HCCL_E_PARA);
 
-    HCCL_INFO("[ZeroCopyMemoryAgent][SetMemoryRange] basePtr[%p] size[%lu] aligment[%lu] flag[%lu]",
+    HCCL_INFO("[ZeroCopyMemoryAgent][SetMemoryRange] basePtr[%p] size[%lu] alignment[%lu] flag[%lu]",
         virPtr, size, alignment, flags);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;

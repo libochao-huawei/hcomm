@@ -115,7 +115,7 @@ typedef enum tagCcStatus {
   CC_STATUS_INTERNAL_ERROR = 4,  /**< internal error */
   CC_STATUS_KERNEL_ERROR = 5,    /**< kernel error */
   CC_STATUS_RUNTIME_ERROR = 6,   /**< runtime error */
-  CC_STATUS_NOT_SUPPORTED = 7,   /**< unsupport error */
+  CC_STATUS_NOT_SUPPORTED = 7,   /**< unsupported error */
   CC_STATUS_INVALID_VALUE = 7,   /**< invalid value error for blas*/
   CC_STATUS_RESERVED             /**< just for check */
 } ccStatus_t;
@@ -440,7 +440,7 @@ typedef struct ProfileTaskTrack
     u32 thread;
     u32 deviceId;
     char kernelName[M_PROF_KERNEL_TASK_NAME_LEN];
-    u8 persistant:1;
+    u8 persistent:1;
     u8 reserved:7;
 }rtProfTaskTrack_t;
 

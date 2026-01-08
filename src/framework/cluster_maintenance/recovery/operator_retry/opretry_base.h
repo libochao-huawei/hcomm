@@ -78,12 +78,12 @@ using HcclAgentRetryInfo = struct HcclAgentRetryInfoDef {
 
 inline const char *GetReadableState(RetryState retryState) {
     auto it = RETRY_STATE_STR_MAP.find(retryState);
-    return (it != RETRY_STATE_STR_MAP.end()) ? it->second.c_str() : "unkown state";
+    return (it != RETRY_STATE_STR_MAP.end()) ? it->second.c_str() : "unknown state";
 }
 
 inline const char *GetReadableCmd(RetryCommand retryCommand) {
     auto it = RETRY_COMMAND_STR_MAP.find(retryCommand);
-    return (it != RETRY_COMMAND_STR_MAP.end()) ? it->second.c_str() : "unkown cmd";
+    return (it != RETRY_COMMAND_STR_MAP.end()) ? it->second.c_str() : "unknown cmd";
 }
 
 class RetryContext;

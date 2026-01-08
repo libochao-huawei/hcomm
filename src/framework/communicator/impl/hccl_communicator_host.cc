@@ -2023,7 +2023,7 @@ namespace hccl
         u32 emptySend = 0;
         u32 emptyRecv = 0;
         // one round(while loop) corresponds one local copy
-        // one round dispathes M+N Wait, M+N Record to the Mainstream
+        // one round dispatches M+N Wait, M+N Record to the Mainstream
         // M = the counts of sendStream which still has local copy tasks, N = the counts of recvStream which still has local copy tasks
         while ((emptySend < sendStreamNum || sendStreamNum == 0) && (emptyRecv < recvStreamNum || recvStreamNum == 0) && sendStreamNum + recvStreamNum > 0) {
             std::vector<u32> aliveSendTasks; // the size should be M
@@ -6865,7 +6865,7 @@ namespace hccl
             opTilingDataBuf_.free();
             opTilingDataBuf_ = HostMem::alloc(opTilingDataSize);
             CHK_PRT_RET(opTilingDataBuf_.ptr() == nullptr,
-                        HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] increate opTilingDataBuf len[%llu] failed!",
+                        HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] in create opTilingDataBuf len[%llu] failed!",
                                    opTilingDataSize),
                         HCCL_E_INTERNAL);
         }
@@ -6967,7 +6967,7 @@ namespace hccl
         }
 
         if (localAiCpuOpNotify_[idx0] != nullptr) {
-            HCCL_INFO("[%s], the orderNotify of orderLaunchMode [%u] is avalible", __func__, orderLaunchMode);
+            HCCL_INFO("[%s], the orderNotify of orderLaunchMode [%u] is available", __func__, orderLaunchMode);
             return HCCL_SUCCESS;
         }
         HcclSignalInfo orderSignalInfo0;
@@ -8161,7 +8161,7 @@ namespace hccl
             }  else if ((std::chrono::steady_clock::now() - startTime) >= waitSwitchExecCmdTimeoutMs) {
                 HCCL_ERROR("[HcclCommunicator][%s] comm identifier[%s], devicePhyId[%u], "
                            "userRank[%u] switch nic timeout[%u ms], the transport status is undefined. "
-                           "Please search log with keywork [ErrToWarn] for detail.",
+                           "Please search log with keyword [ErrToWarn] for detail.",
                            __func__, identifier_.c_str(), devicePhyId_, userRank_, waitSwitchExecCmdTimeout);
                 ret = HCCL_E_TIMEOUT;
                 break;
@@ -8268,7 +8268,7 @@ namespace hccl
         if (deviceType_ != DevType::DEV_TYPE_910_93 || superPodNum_ > 1 || isUserMemRegisted_ ||
             cclBufferManager_.GetInCCLbuffer().ptr() != nullptr) {
             HCCL_ERROR("[HcclCommunicator][%s]Registration user mem is not supported with the params. "
-                "Device type[%d], superPodNum[%u]; Or user mem/CCL buffer has already registed, addr[%p], "
+                "Device type[%d], superPodNum[%u]; Or user mem/CCL buffer has already registered, addr[%p], "
                 "isUserMemRegisted[%d]", __func__, deviceType_, superPodNum_, addr, isUserMemRegisted_);
             return HCCL_E_NOT_SUPPORT;
         }

@@ -421,7 +421,7 @@ HcclResult TopoInfoDetect::WaitTopoExchangeServerCompelte(u32 idx) const
                 idx);
             return HCCL_E_INTERNAL;
         } else if (status == TOPO_EXCHANGE_SERVER_STATUS_IDLE) {
-            HCCL_INFO("topoExchangeServer[%u] compeleted.", idx);
+            HCCL_INFO("topoExchangeServer[%u] completed.", idx);
             return HCCL_SUCCESS;
         } else {
             const auto elapsed =

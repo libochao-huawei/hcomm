@@ -244,8 +244,8 @@ void HcclOneSidedConn::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
                 "(used by other RemoteRank), do not disable memory.");
         }
     } catch (std::out_of_range& e) {
-        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del expection: %s", e.what());
-        EXCEPTION_THROW_IF_COND_ERR(true, "[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del expection");
+        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception: %s", e.what());
+        EXCEPTION_THROW_IF_COND_ERR(true, "[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception");
     }
     HCCL_INFO("[HcclOneSidedConn][DisableMemAccess] Disable memory access success.");
 }

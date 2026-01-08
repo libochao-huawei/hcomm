@@ -157,7 +157,7 @@ HcclResult HcclRegisterMem(HcclComm comm, u32 remoteRank, int type,
         HCCL_RUN_INFO("Entry-%s:comm[%s], remoteRank[%u], memType[%d], memAddr[%p], memSize[%llu], memDescPtr[%p]",
                       __func__, commIdentifier.c_str(), remoteRank, type, addr, size, desc);
         CHK_PRT_RET(remoteRank == localRank, HCCL_WARNING("remoteRank[%u] is equal to localRank[%u], no need to "\
-        "register memeory, return HcclRegisterMem success", remoteRank, localRank), HCCL_SUCCESS);
+        "register memory, return HcclRegisterMem success", remoteRank, localRank), HCCL_SUCCESS);
 
         CHK_PRT_RET(type != HCCL_MEM_TYPE_DEVICE && type != HCCL_MEM_TYPE_HOST,
                     HCCL_ERROR("[HcclRegisterMem]memoryType[%d] must be device or host, please check type", type), HCCL_E_PARA);
@@ -275,7 +275,7 @@ HcclResult HcclExchangeMemDesc(HcclComm comm, u32 remoteRank, HcclMemDescs* loca
         u32 localRank = INVALID_VALUE_RANKID;
         CHK_RET(hcclComm->GetUserRank(localRank));
         CHK_PRT_RET(remoteRank == localRank, HCCL_WARNING("remoteRank[%u] is equal to localRank[%u], no need to "\
-        "register memeory, return HcclRegisterMem success", remoteRank, localRank), HCCL_SUCCESS);
+        "register memory, return HcclRegisterMem success", remoteRank, localRank), HCCL_SUCCESS);
 
         IHcclOneSidedService *service = nullptr;
         CHK_RET(hcclComm->GetOneSidedService(&service));

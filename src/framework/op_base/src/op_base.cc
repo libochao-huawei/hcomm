@@ -167,7 +167,7 @@ HcclResult GetDeviceComm(uint32_t ndev, const HcclRootInfo &rootHandle, const s3
 HcclResult HcclGetCommAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 {
     // 入参校验
-    CHK_PRT_RET(ndev == 0, HCCL_ERROR("[HcclGetCommAll] ndev is unvalid ndev[%u]", ndev), HCCL_E_PARA);
+    CHK_PRT_RET(ndev == 0, HCCL_ERROR("[HcclGetCommAll] ndev is invalid, ndev[%u]", ndev), HCCL_E_PARA);
     CHK_PTR_NULL(comms);
     CHK_PTR_NULL(devices);
 
@@ -226,7 +226,7 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
     // 入参校验
-    CHK_PRT_RET(ndev <= 0, HCCL_ERROR("[HcclCommInitAll] ndev is unvalid ndev:[%u]", ndev), HCCL_E_PARA);
+    CHK_PRT_RET(ndev <= 0, HCCL_ERROR("[HcclCommInitAll] ndev is invalid, ndev[%u]", ndev), HCCL_E_PARA);
     CHK_PTR_NULL(comms);
     CHK_PTR_NULL(devices);
 
@@ -1729,7 +1729,7 @@ HcclResult HcclSetConfig(HcclConfig config, HcclConfigValue configValue)
                 HCCL_INFO("[HcclSetConfig] Set HCCL_DETERMINISTIC to %u", configValue.value);
             }
         } else {
-            HCCL_WARNING("[HcclSetConfig] HCCL_DETERMINISTIC has been setted by Env, so will not be reseted again");
+            HCCL_WARNING("[HcclSetConfig] HCCL_DETERMINISTIC has been set by Env, so will not be reset again");
             return HCCL_SUCCESS;
         }
         HcclOpInfoCtx& opBaseInfo = GetHcclOpInfoCtx();
@@ -3854,7 +3854,7 @@ HcclResult HcclGetCommAsyncError(HcclComm comm, HcclResult *asyncError)
 const char *HcclGetErrorString(HcclResult code)
 {
     if (code < HcclResult::HCCL_SUCCESS || code >= HcclResult::HCCL_E_RESERVED) {
-        return "unknow error";
+        return "unknown error";
     }
     static const std::map<HcclResult, std::string> errorMap = {{HCCL_SUCCESS, "no error"},
         {HCCL_E_PARA, "parameter error"}, {HCCL_E_PTR, "empty pointer"},
