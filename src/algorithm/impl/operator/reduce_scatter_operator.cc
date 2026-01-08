@@ -85,10 +85,6 @@ HcclResult ReduceScatterOperator::SelectAlg(const std::string& tag, const OpPara
         const std::string REDUCE_SCATTER_NO_INLINE = "_no_inline";
         newTag = (isInlineReduce && isRdmaReduce) ? newTag : newTag + REDUCE_SCATTER_NO_INLINE;
     }
-    if (algName == "ReduceScatterARSFor91093Executor") {
-        u32 ringSize = CalcOptimalIntraRingsize(param.DataDes.count, param.DataDes.dataType, HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
-        newTag += std::to_string(ringSize);
-    }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
     return ret;
 }
@@ -415,15 +411,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         HCCL_INFO("[SelectAlgfor91093] ReduceScatter SelectAlgfor91093 is algName [%s]", algName.c_str());
         return HCCL_SUCCESS;
     }
-    // ARS 算法选择
-    bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
-    if (isARSAlgo) {
-        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)) {
-            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-            HCCL_WARNING("[ReduceScatterOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
-                "yet, default is NHR.");
-        }
-    }
+
     // AHC 算法选择逻辑
     bool isAHCAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
     if (isAHCAlgo) {
@@ -466,10 +454,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
-    } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
-         algName = "ReduceScatterComm";
-    } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
-        algName = "ReduceScatterARSFor91093Executor";
+    } else if (multiModuleDiffDeviceNumMode_) {
+        algName = "ReduceScatterComm";
     } else if (smallCountOptimMultiPod || useHostComm || (smallCountOptimMultiServer && !isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_256_KB))) {
         algName = "ReduceScatterComm";

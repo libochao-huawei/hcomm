@@ -111,7 +111,7 @@ namespace hccl
           commWorkMode_(WorkMode::HCCL_MODE_NORMAL), meshAggregationRankSize_(0), isHaveCpuRank_(false), ranktableCrc_(0),
           pMsgInfosMem_(nullptr), pReqInfosMem_(nullptr), memBlocksManager_(nullptr), pRecvWrInfosMem_(nullptr),
           transportResInfo_(mrManager_, pMsgInfosMem_, pReqInfosMem_, memBlocksManager_, pRecvWrInfosMem_),
-          multiModuleDiffDeviceNumMode_(false), multiSuperPodDiffServerNumMode_(false), multiSuperPodDiffDeviceNumMode_(false),
+          multiModuleDiffDeviceNumMode_(false), multiSuperPodDiffServerNumMode_(false),
           isStandardCard_(false), is310PDuoCard_(false), hccsPortNum_(-1),
           loopBackIp_(HcclIpAddress(COMM_LOOPBACK_IP)), profilingInitiated_(false), callbackThreadId_(INVALID_U64),
           role_(SERVER_ROLE_SOCKET), mrManagerInit_(false),
@@ -603,12 +603,6 @@ namespace hccl
     {
         if (!algDesc.isZeroCopy) {
             HCCL_INFO("[HcclCommunicator][PrepareZeroCopy] algName[%s] not support zerocopy.", algName.c_str());
-            return HCCL_SUCCESS;
-        }
-        // ARS特性不支持零拷贝
-        if ((opParam.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER || opParam.opType == HcclCMDType::HCCL_CMD_ALLGATHER ||
-                opParam.opType == HcclCMDType::HCCL_CMD_ALLREDUCE) && deviceType_ == DevType::DEV_TYPE_910_93 && 
-                multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_){
             return HCCL_SUCCESS;
         }
 
@@ -5285,8 +5279,6 @@ namespace hccl
         opResPara_.topoInfo.isDiffDeviceType = isDiffDeviceType_;
         opResPara_.topoInfo.gcdDeviceNumPerAggregation = gcdDeviceNumPerAggregation_;
         opResPara_.topoInfo.moduleNum = moduleNum_;
-        opResPara_.isARSDoubleRing = isARSDoubleRing_;
-        opResPara_.multiSuperPodDiffDeviceNumMode = multiSuperPodDiffDeviceNumMode_;
         CHK_RET(BuildPairLinkCounter(algName));
         CHK_RET(BuildIsUsedRdmaRank(algName));
         CHK_RET(BuildNicList(algName));

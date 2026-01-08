@@ -69,24 +69,8 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
 
     bool isConfigNULL = algoConfigLevel0 == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
 
-    HCCL_INFO("[Set][AlgType] isConfigAHC[%u] isConfigNULL[%u] multiModuleDiffDeviceNumMode[%u]"\
-        "multiSuperPodDiffServerNumMode[%u]  multiSuperPodDiffDeviceNumMode[%u]",isConfigAHC, isConfigNULL,
-        topoAttr_.multiModuleDiffDeviceNumMode, topoAttr_.multiSuperPodDiffServerNumMode, topoAttr_.multiSuperPodDiffDeviceNumMode);
- 
-    bool isSupportCmdARS = (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
-        opType == HcclCMDType::HCCL_CMD_ALLREDUCE);
- 
-    bool isSupportCmdAHC = (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
-        opType == HcclCMDType::HCCL_CMD_ALLREDUCE || opType == HcclCMDType::HCCL_CMD_ALL);
-    
-    // server内卡数不对称，且不是ARS的情况
-    bool isNoARS = (topoAttr_.multiModuleDiffDeviceNumMode && !(isSupportCmdARS && 
-        deviceType == DevType::DEV_TYPE_910_93 && !topoAttr_.multiSuperPodDiffDeviceNumMode));
- 
-    // server内卡数对称, server内卡数不对称情况isNoARS已经讨论完毕；
-    // 超节点server非对称，且不是AHC的情况
-    bool isNoAHC = (!topoAttr_.multiModuleDiffDeviceNumMode && topoAttr_.multiSuperPodDiffServerNumMode && 
-        !(isSupportCmdAHC && isConfigAHC));
+    HCCL_INFO("[Set][AlgType] isConfigAHC[%u] isConfigNULL[%u] multiModuleDiffDeviceNumMode[%u] multiSuperPodDiffServerNumMode[%u]",
+        isConfigAHC, isConfigNULL, topoAttr_.multiModuleDiffDeviceNumMode, topoAttr_.multiSuperPodDiffServerNumMode);
 
     if (Is310P3Common(algoAttr_.isHaveCpuRank, topoAttr_.deviceType)) {
         algType[opType].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING;
@@ -123,7 +107,12 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
             algType[opType].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING;
             isAlgoLevel1Default_[opType] = false;
         }
-    } else if ((isNoARS || isNoAHC) && !isConfigNULL) { // 多server不同卡模式，设置为单层拓扑类型
+    } else if ((topoAttr_.multiModuleDiffDeviceNumMode ||
+               (topoAttr_.multiSuperPodDiffServerNumMode &&
+               !((opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_ALLREDUCE ||
+                  opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER || opType == HcclCMDType::HCCL_CMD_ALL)
+               && isConfigAHC))) &&
+               !isConfigNULL) { // 多server不同卡模式，设置为单层拓扑类型
         algType[opType].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING;
         algType[opType].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING;
         isAlgoLevel1Default_[opType] = false;

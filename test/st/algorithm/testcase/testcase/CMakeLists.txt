@@ -85,6 +85,5 @@ target_sources(open_hccl_test
         testcase_reduce_scatter_v_for_310p.cc
         testcase_template_base.cc
         testcase_misc.cc
-        testcase_ars_alg.cc
 )
 

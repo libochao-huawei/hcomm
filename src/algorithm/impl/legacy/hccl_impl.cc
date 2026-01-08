@@ -132,7 +132,6 @@ void hcclImpl::SetTopoAttr(HcclTopoAttr &topoAttr)
     deviceNumPerAggregation_ = topoAttr.deviceNumPerAggregation;
     multiModuleDiffDeviceNumMode_ = topoAttr.multiModuleDiffDeviceNumMode;
     multiSuperPodDiffServerNumMode_ = topoAttr.multiSuperPodDiffServerNumMode;
-    multiSuperPodDiffDeviceNumMode_ = topoAttr.multiSuperPodDiffDeviceNumMode;
 
     meshAggregationRankSize_ = topoAttr.meshAggregationRankSize;
     isDiffDeviceModule_ = topoAttr.isDiffDeviceModule;

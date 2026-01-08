@@ -672,9 +672,6 @@ struct HcclOpResParam {
     HcclStreamParam aicpuOrderStreamParam; // 按序下发的stream
     u64 aicpuOrderNotifyAddr;
     u64 aicpuOrderNotifySize;
-    // ARS算法属性
-    u32 multiSuperPodDiffDeviceNumMode;
-    bool isARSDoubleRing;
 };
 
 struct OpTilingData {

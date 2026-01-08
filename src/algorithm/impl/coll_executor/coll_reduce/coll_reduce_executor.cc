@@ -12,6 +12,8 @@
 
 namespace hccl {
 
+constexpr u32 FACTOR_TWO = 2;
+
 CollReduceExecutor::CollReduceExecutor(const HcclDispatcher dispatcher,
     std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollCommExecutor(dispatcher, topoMatcher)

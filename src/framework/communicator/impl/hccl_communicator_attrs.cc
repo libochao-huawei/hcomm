@@ -524,11 +524,6 @@ bool HcclCommunicatorAttrs::GetDiffDeviceModule()
     return isDiffDeviceModule_;
 }
 
-bool HcclCommunicatorAttrs::GetSupportARS()
-{
-    return isARSDoubleRing_;
-}
-
 u32 HcclCommunicatorAttrs::GetModuleNum()
 {
     return moduleNum_;
@@ -542,11 +537,6 @@ bool HcclCommunicatorAttrs::GetMultiModuleDiffDeviceNumMode()
 bool HcclCommunicatorAttrs::GetMultiSuperPodDiffServerNumMode()
 {
     return multiSuperPodDiffServerNumMode_;
-}
-
-bool HcclCommunicatorAttrs::GetmultiSuperPodDiffDeviceNumMode()
-{
-    return multiSuperPodDiffDeviceNumMode_;
 }
 
 std::vector<u32> HcclCommunicatorAttrs::GetNicList()
@@ -687,19 +677,5 @@ u32 HcclCommunicatorAttrs::GetHostPort(s32 devicePhyId)
 void HcclCommunicatorAttrs::SetNeedInitNicFlag(const bool isNeedInitNic)
 {
     isNeedInitNic_ = isNeedInitNic;
-}
-
-// 判断是否是双环
-bool CheckDoubleRingWithRohTopo(const std::vector<u32> &nicList)
-{
-    std::vector<u32> topoList;
-    std::vector<u32> tmpNicList(nicList);
-    std::sort(tmpNicList.begin(), tmpNicList.end());
-    SearchPath searchPath;
-    topoList = searchPath.Search(tmpNicList, true);
-    if (topoList.empty()) {
-        return false;
-    }
-    return true;
 }
 }

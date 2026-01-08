@@ -12,7 +12,7 @@
 
 class SearchPath {
 public:
-    std::vector<u32> Search(const std::vector<u32> &nicList, bool isDoubleRingMap = false)
+    std::vector<u32> Search(const std::vector<u32> &nicList)
     {
         if (nicList.size() == 0 || nicList.size() == 1) {
             return nicList;
@@ -25,7 +25,7 @@ public:
             nicSet_.insert(i);
         }
 
-        if (dfs(nicList, arrived, 0, nicList[0], isDoubleRingMap)) {
+        if (dfs(nicList, arrived, 0, nicList[0])) {
             return result_;
         } else {
             return {};
@@ -33,19 +33,13 @@ public:
     }
 
 private:
-    bool dfs(const std::vector<u32> &nicList, std::vector<bool> &arrived, u32 idx, u32 nowNicIdx, bool isDoubleRingMap)
+    bool dfs(const std::vector<u32> &nicList, std::vector<bool> &arrived, u32 idx, u32 nowNicIdx)
     {
-        std::map<int, std::vector<u32>> reachableMap = isDoubleRingMap ? reachableDoubleRing_ : reachableRank_;
         // the last nic, it must reachable to result_[0]
         if (idx == nicList.size() - 1) {
-            for (auto i : reachableMap[nowNicIdx]) {
+            for (auto i : reachableRank_[nowNicIdx]) {
                 if (i == result_[0]) {
                     result_.push_back(nowNicIdx);
-                    std::string valueStr = "";
-                    for (auto j : result_) {
-                        valueStr.append(std::to_string(j));
-                    }
-                    HCCL_INFO("find path success: %s",valueStr.c_str());
                     return true;
                 }
             }
@@ -56,12 +50,12 @@ private:
         arrived[nowNicIdx] = true;
         result_.push_back(nowNicIdx);
 
-        for (auto i : reachableMap[nowNicIdx]) {
+        for (auto i : reachableRank_[nowNicIdx]) {
             if (nicSet_.count(i) == 0 || arrived[i]) {
                 continue;
             }
 
-            if (dfs(nicList, arrived, idx + 1, i, isDoubleRingMap)) {
+            if (dfs(nicList, arrived, idx + 1, i)) {
                 return true;
             }
         }
@@ -91,23 +85,5 @@ private:
     {13, {12, 15, 1, 3, 5, 7, 9, 11}},
     {14, {15, 0, 2, 4, 6, 8, 10, 12}},
     {15, {14, 1, 3, 5, 7, 9, 11, 13}}};
-
-    std::map<int, std::vector<u32>> reachableDoubleRing_ = {
-    {0, {1}},
-    {1, {0, 2, 4, 6, 8, 10, 12, 14}},
-    {2, {3}},
-    {3, {4, 6, 8, 10, 12, 14, 0, 2}},
-    {4, {5}},
-    {5, {6, 8, 10, 12, 14, 0, 2, 4}},
-    {6, {7}},
-    {7, {8, 10, 12, 14, 0, 2, 4, 6}},
-    {8, {9}},
-    {9, {10, 12, 14, 0, 2, 4, 6, 8}},
-    {10, {11}},
-    {11, {12, 14, 0, 2, 4, 6, 8, 10}},
-    {12, {13}},
-    {13, {14, 0, 2, 4, 6, 8, 10, 12}},
-    {14, {15}},
-    {15, {0, 2, 4, 6, 8, 10, 12,14}}};
 };
 #endif

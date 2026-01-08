@@ -279,7 +279,7 @@ void CollAlgOperator::SetTopoAttr(AlgConfigurator* algConfigurator)
     deviceNumPerAggregation_ = topoAttr.deviceNumPerAggregation;
     multiModuleDiffDeviceNumMode_ = topoAttr.multiModuleDiffDeviceNumMode;
     multiSuperPodDiffServerNumMode_ = topoAttr.multiSuperPodDiffServerNumMode;
-    multiSuperPodDiffDeviceNumMode_ = topoAttr.multiSuperPodDiffDeviceNumMode;
+
     isDiffDeviceType_ = topoAttr.isDiffDeviceType;
     gcdDeviceNumPerAggregation_ = topoAttr.gcdDeviceNumPerAggregation;
 
@@ -304,7 +304,6 @@ void CollAlgOperator::SetTopoAttr(AlgConfigurator* algConfigurator)
     isSupportRdmaLite_ = topoAttr.isSupportRdmaLite;
     isSupportHccsAndSio_ = topoAttr.isSupportHccsAndSio;
     useSuperPodMode_ = topoAttr.useSuperPodMode;
-    isARSDoubleRing_  = topoAttr.isARSDoubleRing;
     return;
 }
 
@@ -858,10 +857,6 @@ HcclResult CollAlgOperator::SetRmaInfo(void* rmaInfo)
 
 HcclResult CollAlgOperator::SelectAlgforAHC(u64 dataSize, AHCOpType ahcOpType)
 {
-    if (multiModuleDiffDeviceNumMode_) {
-        return HCCL_SUCCESS;
-    }
-
     bool isAHCWholeConfig = (algType_.algoLevel0 == AlgTypeLevel0::ALG_LEVEL0_RESERVED &&
         (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE));
@@ -992,74 +987,4 @@ HcclResult CollAlgOperator::AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vect
     }
     return HCCL_SUCCESS;
 }
-
-u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, HcclCMDType opType)
-{
-    if (!topoMatcher_->GetARSFlag()) return 0;
- 
-    u32 level0RankSize   = topoMatcher_->GetCommPlaneRanks(COMM_LEVEL0)[0].size();
-    u32 rankSizeInSuperPod = topoMatcher_->GetCommPlaneRanks(COMM_ARS)[0].size();
-    u32 perDataSize = 0;
-    CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
-    // 不支持 ARS 或环内卡数不是 2 的倍数
-    u32 level0RingSize = 1;
-    if (!isARSDoubleRing_ || (level0RankSize % FACTOR_TWO != 0)) {
-        HCCL_INFO("not Support ARS doubleRing, level0RingSize:[%u], level0RankSize[%u].", level0RingSize, level0RankSize);
-        return level0RingSize;
-    }
-    // --- 1. 带宽 & 基本参数 ---
-    float bwHCCS, bwHBM, bwSIO;
-    CHK_RET(GetBandWidthPerNPU(0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
-    CHK_RET(GetBandWidthPerNPU(2, userRankSize_, deviceNumPerAggregation_, bwHBM));
-    CHK_RET(GetBandWidthPerNPU(3, userRankSize_, deviceNumPerAggregation_, bwSIO));
-    float latency = BASE_COMM_LATENCY / MULTIPLIER_MS2US;   // ms
-    // --- 2. 数据总量 (GB) ---
-    float baseSizeGB = static_cast<double>(count) * perDataSize / GB2B;
-    float totalSize  = baseSizeGB;
-    HCCL_INFO("CalcOptimalIntraRingsize: count[%u], totalSize:[%lf]GB, perDataSize[%u].", count, totalSize, perDataSize);
-    if (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER) {
-        totalSize *= rankSizeInSuperPod;
-    }
-    // --- 3. 枚举可能的环大小 ---
-    std::vector<u32> factors;
-    for (u32 i = 1; i <= rankSizeInSuperPod / i; ++i) {
-        if (rankSizeInSuperPod % i == 0) {
-            factors.push_back(i);
-            if (i != rankSizeInSuperPod / i) {
-                factors.push_back(rankSizeInSuperPod / i);
-            }
-        }
-    }
-    std::sort(factors.begin(), factors.end());
-    // --- 4. 计算最优带宽 ---
-    double maxBwARS = 0.0;
-    for (u32 N1 : factors) {
-        u32 N2 = rankSizeInSuperPod / N1;
-        // 静态时延 (ms)
-        double interStep = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) ? (N2 - 1) : log2(N2);
-        double latencyStep = (interStep + (N1 - 1)) * latency;
-        // 传输时延 (ms)
-        double latencyIntra;
-        if ((N1 % FACTOR_TWO == 0) && (N1 > FACTOR_TWO)) {
-            latencyIntra = (N1 - 1) * totalSize * MULTIPLIER_S2MS / N1 / bwHCCS / FACTOR_TWO;
-        } else if (N1 == FACTOR_TWO) {
-            latencyIntra = totalSize * MULTIPLIER_S2MS / FACTOR_TWO / bwSIO;
-        } else {
-            latencyIntra = (N1 - 1) * totalSize * MULTIPLIER_S2MS / N1 / bwHCCS;
-        }
-        double latencyInter = (N2 - 1) * totalSize * MULTIPLIER_S2MS / N1 / N2 / bwHCCS;
-        // HBM 拷贝时延 (ms)
-        double latencyCopy = totalSize * MULTIPLIER_S2MS / bwHBM;
-        u8 mul = (opType == HcclCMDType::HCCL_CMD_ALLREDUCE) ? FACTOR_TWO : 1;
-        double timeCost = mul * (latencyStep + latencyIntra + latencyInter) + latencyCopy;
-        double bwARS = totalSize / timeCost;  // GB/ms
-        if (bwARS > maxBwARS) {
-            maxBwARS = bwARS;
-            level0RingSize = N1;
-        }
-    }
-    HCCL_INFO("level0RingSize:[%u], totalSize:[%lf]GB, level0RankSize[%u].", level0RingSize, totalSize, level0RankSize);
-    return level0RingSize;
-}
-
 }   // namesapce hccl

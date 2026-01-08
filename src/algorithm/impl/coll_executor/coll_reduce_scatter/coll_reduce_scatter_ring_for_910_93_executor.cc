@@ -67,7 +67,6 @@ void CollReduceScatterRingFor91093Executor::ParseParam(const OpParam& param)
     // 记录图模式总数据量
     totalSize_ = CalcTotalCount(param) * SIZE_TABLE[dataType];
     aicpuUnfoldMode_ = param.aicpuUnfoldMode;
-    isZeroCopy_ = param.isZeroCopy;
 }
 
 HcclResult CollReduceScatterRingFor91093Executor::CalcScratchMemSize(u64& scratchMemSize)
@@ -146,8 +145,8 @@ HcclResult CollReduceScatterRingFor91093Executor::CalcLevel2CommInfo(TransportMe
     TransportMemType outputType,
     std::vector<LevelNSubCommTransport>& opTransport)
 {
-    if ((algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE)) {
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
+        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
         HCCL_INFO("[CollReduceScatterRingFor91093Executor][CalcLevel2CommInfo] select AHC bypass level2 comm calulate");
         return HCCL_SUCCESS;
     }
@@ -178,8 +177,8 @@ u64 CollReduceScatterRingFor91093Executor::CalcLoopMaxCount(const u32 unitSize)
 bool CollReduceScatterRingFor91093Executor::IsHugeData(const u64 curSize, OpParam *param)
 {
     u32 level2RankSize;
-    if ((algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE)) {
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
+        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
         //AHC非对称场景下没有L2
         level2RankSize =1;
     } else {
@@ -210,7 +209,7 @@ HcclResult CollReduceScatterRingFor91093Executor::RunIntraSeverReduceScatter(
     const std::vector<std::vector<Slice>> &multRingsUserMemSlice, const bool disableDMAReduce)
 {
     CHK_RET(MultiRingReduceScatter(tag, inputMem, outputMem, count, dataType, reductionOp,
-        multRingsSliceZero, stream, profStage, baseOffset, opInfo, multRingsUserMemSlice, logicalLevel0plane_));
+        multRingsSliceZero, stream, profStage, baseOffset, opInfo, multRingsUserMemSlice));
     return HCCL_SUCCESS;
 }
 
@@ -273,13 +272,8 @@ HcclResult CollReduceScatterRingFor91093Executor::CalUserMemDataSegsSlice(const 
         HCCL_E_PARA);
     HCCL_DEBUG("[CollReduceScatterRingFor91093Executor][KernelRun]strideCount[%llu], opCount[%llu]",
         param.DataDes.strideCount, param.DataDes.count);
-
-    u32 level0RankSize = logicalLevel0CommInfo_.localRankSize;
-    bool ARSFlag = topoMatcher_->GetARSFlag();
-    bool ARSDoubleRing = (ARSFlag && (level0RankSize > FACTOR_TWO) && topoAttr_.isARSDoubleRing);
-
     if (opInfoPtr == nullptr &&
-        (!((topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || ARSDoubleRing) &&
+        (!(topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING &&
         (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB || disableDMAReduce)))) {
         multRingsUserMemSlice = level0DataSegsSlice;
         // 图模式，根据strideCount更新slice的offset
@@ -340,20 +334,6 @@ HcclResult CollReduceScatterRingFor91093Executor::CalLevel1DataSegsSlice(const E
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterRingFor91093Executor::GetLevelCommInfo()
-{
-    logicalLevel0plane_ = COMM_LEVEL0;
-    CHK_RET(CheckCommSize(logicalLevel0plane_, COMM_INDEX_0 + 1));
-    logicalLevel0CommInfo_ = GetSubCommInfo(logicalLevel0plane_, COMM_INDEX_0);
-    u32 commIndex = logicalLevel0CommInfo_.localRank;
-    bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
-    logicalLevel1plane_ = isSelectAHC ? COMM_LEVEL1_AHC : COMM_LEVEL1;
-    CHK_RET(CheckCommSize(logicalLevel1plane_, commIndex + 1));
-    logicalLevel1CommInfo_ = GetSubCommInfo(logicalLevel1plane_, commIndex);
-    return HCCL_SUCCESS;
-}
- 
 HcclResult CollReduceScatterRingFor91093Executor::CalLevel2DataSegsSlice(const ExecMem &execMem, const OpParam &param,
     u32 level2RankSize, u32 perDataSize, std::vector<Slice> &level2DataSegsSlice)
 {
@@ -572,37 +552,39 @@ u64 CollReduceScatterRingFor91093Executor::CalcSrcMemOffset(const ExecMem &execM
 HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] executor starts, rsv[%u]", __func__, isReduceScatterV_);
-    CHK_RET(GetLevelCommInfo()); // 获取通信域
     u32 perDataSize = 0;
     const HcclDataType dataType = param.GetDataType();
     CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
 
+    CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
+    SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
+
     u32 ringNum;
-    u32 level0RankSize = logicalLevel0CommInfo_.localRankSize;
-    bool ARSFlag = topoMatcher_->GetARSFlag();
-    bool ARSDoubleRing = (ARSFlag && (level0RankSize > FACTOR_TWO) && topoAttr_.isARSDoubleRing);
-    u32 sliceNum = logicalLevel0CommInfo_.localRankSize;
-    u32 commIndex = logicalLevel0CommInfo_.localRank;
- 
-    if ((topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING && !IsUnifiedMarch(param) && !ARSFlag) || ARSDoubleRing) {
+    if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING && !IsUnifiedMarch(param)) {
         ringNum = LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE;
     } else {
         ringNum = LEVEL0_PLANE_NUM_IN_NPRING_SINGLE;
     }
 
+    u32 sliceNum = level0CommInfo.localRankSize;
+    u32 commIndex = level0CommInfo.localRank;
+
     bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
+    CommPlane commPlaneLevel1 = isSelectAHC ? COMM_LEVEL1_AHC : COMM_LEVEL1;
+    CHK_RET(CheckCommSize(commPlaneLevel1, commIndex + 1));
+    SubCommInfo level1CommInfo = GetSubCommInfo(commPlaneLevel1, commIndex);
 
     SubCommInfo level2CommInfo;
     if (isSelectAHC) {
-        level2CommInfo = logicalLevel1CommInfo_;
+        level2CommInfo = level1CommInfo;
         level2CommInfo.localRankSize = 1;   // AHC bypass level2
     } else {
         CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
         level2CommInfo = GetSubCommInfo(COMM_LEVEL2, COMM_INDEX_0);
     }
     const u32 level2RankSize = level2CommInfo.localRankSize;
-    const u32 level1RankSize = logicalLevel1CommInfo_.localRankSize;
+    const u32 level1RankSize = level1CommInfo.localRankSize;
 
     // 节点内reduce scatter
     CHK_RET(ActiveSlaveStreams(param.stream));
@@ -627,7 +609,7 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
         level2RankSize, dataType, perDataSize, opInfoPtr, disableDMAReduce, multRingsUserMemSlice);
 
     // 区分消减拷贝场景
-    if ((topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || ARSDoubleRing) &&
+    if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING &&
         (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB)) {
         // 图模式opinfo不为空
         HcomCollOpInfo graphModeOpInfo = {"", execMem.inputMem.ptr(), nullptr, param.GetDataCount(topoAttr_.userRank),
@@ -660,7 +642,7 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
 
         // 计算slice
         std::vector<Slice> level1DataSegsSlice;
-        CHK_RET(CalLevel1DataSegsSlice(execMem, param, logicalLevel1plane_, commIndex, sliceNum, level1RankSize,
+        CHK_RET(CalLevel1DataSegsSlice(execMem, param, commPlaneLevel1, commIndex, sliceNum, level1RankSize,
             level2RankSize, perDataSize, level1DataSegsSlice));
 
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
@@ -675,11 +657,11 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
             CHK_SMART_PTR_NULL(level1TempAlg);
             CHK_RET(level1TempAlg->Prepare(reduceAttr));
             HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_REDUCESCATTER_NB in COMM_LEVEL1", __func__);
-        } else if (isSelectAHC) {
+        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
             // 获取通信域分组信息
             std::vector<std::vector<std::vector<u32>>> globalSubGroups;
             std::map<AHCConcOpType, TemplateType> ahcAlgOption;
-            CHK_RET(topoMatcher_->GetGlobalSubGroups(logicalLevel1plane_, globalSubGroups));
+            CHK_RET(topoMatcher_->GetGlobalSubGroups(commPlaneLevel1, globalSubGroups));
             topoMatcher_->GetAHCAlgOption(ahcAlgOption);
             if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
                 level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_REDUCESCATTER_AHC, dispatcher_);
@@ -703,9 +685,9 @@ HcclResult CollReduceScatterRingFor91093Executor::KernelRun(const OpParam &param
         CHK_RET(level1TempAlg->Prepare(execMem.inputMem, execMem.inputMem, execMem.scratchMem, execMem.count,
             dataType, param.stream, param.reduceType, LEVEL0_BRIDGE_RANK_ID, level1DataSegsSlice));
         CHK_RET(level1TempAlg->RegisterProfiler(
-            (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + logicalLevel1CommInfo_.localRank,
+            (level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level1CommInfo.localRank,
             PROF_STAGE_2, HCCL_EXEC_STEP_NOT_SET, param.stream));
-        CHK_RET(RunTemplate(level1TempAlg, logicalLevel1CommInfo_));
+        CHK_RET(RunTemplate(level1TempAlg, level1CommInfo));
     }
 
     if (level2RankSize > 1) {
@@ -768,7 +750,6 @@ HcclResult CollReduceScatterRingFor91093Executor::Getlevel1CommRank(SubCommInfo&
 {
     bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
-
     if (isSelectAHC) {
         CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
         SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);

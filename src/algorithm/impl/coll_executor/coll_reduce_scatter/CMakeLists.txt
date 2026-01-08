@@ -28,7 +28,6 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_aiv_rdma_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_mesh_graph_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_hccs_sio_executor.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ars_for_910_93_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_zerocopy_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_zerocopy_exchange_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_reduce_scatter_ring_zerocopy_exchange_pipeline_executor.cc

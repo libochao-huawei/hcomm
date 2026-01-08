@@ -678,7 +678,6 @@ private:
     TransportResInfo transportResInfo_;
     bool multiModuleDiffDeviceNumMode_;
     bool multiSuperPodDiffServerNumMode_;
-    bool multiSuperPodDiffDeviceNumMode_;
     DeviceMem commContext_;
     std::shared_ptr<ProfilerManager> profilerManager_;
     bool isStandardCard_ = false;
@@ -921,7 +920,6 @@ private:
     std::vector<HcclRtEvent> aiCpuNoIpcEvnet_;
     bool isDiffDeviceModule_;
     bool isDiffDeviceType_;
-    bool isARSDoubleRing_;
     u32 gcdDeviceNumPerAggregation_;
     tagCommInfo_t tagCommInfo_;    // 以tag为粒度分配comm实例和资源
     std::mutex commLock_;
