@@ -6771,17 +6771,17 @@ namespace hccl
             __func__, profName.c_str(), opParam.tag.c_str(), streamId, opParam.stream.id(), opStream_.id(),
             opParam.isCapture, mode);
 
-        u64 modelId = UINT64_MAX;
-        rtModel_t rtModel = nullptr;
         if (opParam.isCapture) { // 非主流下发时，acl graph场景，capture从流
+            u64 modelId = UINT64_MAX;
+            rtModel_t rtModel = nullptr;
             bool isCapture = false;
             CHK_RET(GetStreamCaptureInfo(opParam.stream.ptr(), rtModel, isCapture));
             CHK_PTR_NULL(rtModel);
             CHK_RET(AddStreamToModel(kfcOpStream.ptr(), rtModel));
-            // 获取 modelId，后续通过modelId申请流
+
             CHK_RET(GetModelId(rtModel, modelId));
-            HCCL_INFO("[HcclCommunicator][%s]Tag[%s], Add stream[%d] to model success.", __func__, opParam.tag.c_str(),
-                      streamId);
+            HCCL_INFO("[HcclCommunicator][%s]tag[%s], add stream[%d] to modelId[%llu] success.",
+                __func__, opParam.tag.c_str(), streamId, modelId);
         }
 
         u32 timeOut = (opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
@@ -6792,8 +6792,7 @@ namespace hccl
         if (opParam.isCapture) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1)];
-            CHK_RET(orderLaunch.AclgraphLaunchInOrder(identifier_, kfcOpStream, modelId, rtModel,
-                notify0, notify1, timeOut));
+            CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(identifier_, kfcOpStream, notify0, notify1, timeOut));
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
@@ -6807,6 +6806,9 @@ namespace hccl
         CHK_RET(KernelLaunchChooseAicpuOrCustom(opParam.inputPtr, opParam.outputPtr, kfcOpStream.ptr(),
                                                 reinterpret_cast<u64>(deviceContext.ptr()), opTilingDataMem.ptr(), opTilingDataSize,
                                                 kernelName, mode, opParam.tag, isCustom));
+        if (opParam.isCapture) {
+            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream));
+        }
 
         uint64_t endTime = hrtMsprofSysCycleTime();
         s32 threadId = SalGetTid();
