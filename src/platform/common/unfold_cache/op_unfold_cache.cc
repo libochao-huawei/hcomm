@@ -18,6 +18,8 @@
 
 namespace hccl {
 
+    constexpr size_t OP_UNFOLD_CACHE_CAPACITY = 1000; // Cache entry数目的上限
+
     bool OpUnfoldCache::NeedCache(const uint8_t aicpuCacheEnable, const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode) {
         // 校验环境变量
         if (aicpuCacheEnable == 0) {
@@ -79,6 +81,15 @@ namespace hccl {
             delete entryPtr;
             entryPtr = nullptr;
         }
+    }
+
+    bool OpUnfoldCache::IsCacheFull() const {
+        const size_t curSize = cacheHashMap_.size();
+        if (curSize >= OP_UNFOLD_CACHE_CAPACITY) {
+            HCCL_INFO("[OpUnfoldCache][IsCacheFull] cacheHashMap_.size[%u] >= capacity[%u]", cacheHashMap_.size(), OP_UNFOLD_CACHE_CAPACITY);
+            return true;
+        }
+        return false;
     }
 
     HcclResult OpUnfoldCache::FindEntry(const OpUnfoldKey& key, OpUnfoldCacheEntry **entryPtrPtr) const {
