@@ -190,6 +190,12 @@ HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, const AlgRes
             }
         }
 
+        // 检查cache容量
+        if (needCache && opUnfoldCachePtr_->IsCacheFull()) {
+            HCCL_INFO("[HcclCommAicpu][LookupOpUnfoldCache] cache is full, disable cache for current operator");
+            needCache = false;
+        }
+
         // Cacheable算子
         if (needCache) {
             // 将streams中已有的task强制下发, 放置cache缓存跟算子编排无关的SQE
