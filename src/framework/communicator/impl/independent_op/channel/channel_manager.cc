@@ -741,5 +741,16 @@ HcclResult ChannelManager::ChannelCommGetRemoteMem(ChannelHandle channel, HcclMe
     return HCCL_SUCCESS;
 }
 
-
+HcclResult ChannelManager::ReleaseChannel()
+{
+    for (auto &link : channelLinks_) {
+        if (link != nullptr) {
+            if (link->DeInit() != HCCL_SUCCESS) {
+                HCCL_ERROR("[%s]transport[%p] deinit failed.", __func__, link.get());
+            }
+        }
+    }
+    channelLinks_.clear();
+    return HCCL_SUCCESS;
+}
 } // namespace hccl

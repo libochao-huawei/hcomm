@@ -28,6 +28,7 @@ protected:
     virtual u64 CalcLoopMaxCount(const u32 unitSize);
     virtual bool IsHugeData(const u64 curSize, OpParam *param = nullptr);
     virtual bool IsSmallData(const u64 totalSize, const u64 curSize);
+    virtual bool IsPreloadCopyOptimizeCondition(const OpParam &param, ExecMem &execMem);
     virtual HcclResult RunLoop(OpParam &param, AlgResourceResponse &algRes);
     virtual HcclResult RunLoopV(OpParam &param, AlgResourceResponse &algRes);
 

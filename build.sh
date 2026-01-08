@@ -122,7 +122,8 @@ function build_cb_test_verify(){
 }
 
 function build_test() {
-    cmake_config
+    ENABLE_ST="on"
+    cmake_config -DENABLE_ST=${ENABLE_ST}
 
     LIBRARY_DIR="${BUILD_DIR}/test:${ASCEND_HOME_PATH}/lib64:"
     # 每日构建sdk包安装路径
@@ -152,39 +153,26 @@ function build_test() {
     if [ "${TEST_TASK_NAME}" == "open_hccl_test" ] || [ "$TEST" = "all" ];then
         build open_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/open_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/testcase/open_hccl_test
     fi
 
     if [ "${TEST_TASK_NAME}" == "executor_hccl_test" ] || [ "$TEST" = "all" ];then
         build executor_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_testcase_generalization/executor_hccl_test
     fi
 
     if [ "${TEST_TASK_NAME}" == "executor_reduce_hccl_test" ] || [ "$TEST" = "all" ];then
         build executor_reduce_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_reduce_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_reduce_testcase_generalization/executor_reduce_hccl_test
     fi
 
     if [ "${TEST_TASK_NAME}" == "executor_pipeline_hccl_test" ] || [ "$TEST" = "all" ];then
         build executor_pipeline_hccl_test
         export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_pipeline_hccl_test
+        && ${BUILD_DIR}/test/st/algorithm/testcase/executor_alltoall_A3_pipeline_testcase/executor_pipeline_hccl_test
     fi
-
-    if [ "${TEST_TASK_NAME}" == "device_testcase" ] || [ "$TEST" = "all" ];then
-        build device_testcase
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/device_testcase
-    fi
-
-    if [ "${TEST_TASK_NAME}" == "executor_aiv_hccl_test" ] || [ "$TEST" = "all" ];then
-        build executor_aiv_hccl_test
-        export LD_LIBRARY_PATH=${LIBRARY_DIR}${LD_LIBRARY_PATH} && export LD_PRELOAD=${PRELOAD} && export ASAN_OPTIONS=${ASAN_OPT} \
-        && ${BUILD_DIR}/test/executor_aiv_hccl_test
-    fi
-
 }
 
 function build_kernel() {
@@ -216,7 +204,6 @@ function build_ut() {
               -DENABLE_COV=${ENABLE_COV} \
               -DENABLE_TEST=${ENABLE_TEST} \
               -DENABLE_UT=${ENABLE_UT} \
-              -DENABLE_ST=${ENABLE_ST} \
               -DOUTPUT_PATH=${OUTPUT_PATH} \
               -DLLT_KILL_TIME=${LLT_KILL_TIME}"
 
@@ -340,7 +327,7 @@ while [[ $# -gt 0 ]]; do
         ENABLE_UT="on"
         shift
         ;;
-    -t|--test)
+    -s|--st)
         TEST="all"
         shift
         ;;
@@ -362,16 +349,6 @@ while [[ $# -gt 0 ]]; do
     --executor_pipeline_hccl_test)
         TEST="partial"
         TEST_TASK_NAME="executor_pipeline_hccl_test"
-        shift
-        ;;
-    --device_testcase)
-        TEST="partial"
-        TEST_TASK_NAME="device_testcase"
-        shift
-        ;;
-    --executor_aiv_hccl_test)
-        TEST="partial"
-        TEST_TASK_NAME="executor_aiv_hccl_test"
         shift
         ;;
     --aicpu)  # 新增选项，用于只编译 ccl_kernel.so
@@ -428,6 +405,7 @@ while [[ $# -gt 0 ]]; do
         log "Error: Undefined option: $1"
         usage
         exit 1
+        ;;
     esac
 done
 

@@ -59,6 +59,7 @@ public:
     HcclResult ChannelCommDestroy(ChannelHandle *channelList, uint32_t channelNum);
     HcclResult ChannelCommGetHcclBuffer(ChannelHandle channel, CommBuffer *buffer);
     HcclResult ChannelCommGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
+    HcclResult ReleaseChannel();
 
 private:
     template <typename T>

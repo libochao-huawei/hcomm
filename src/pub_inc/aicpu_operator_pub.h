@@ -16,7 +16,7 @@
 #include "hccl_common.h"
 #include "common.h"
 #include "hdc_pub.h"
-#include "transport_pub.h"
+#include <transport_pub.h>
 #include "dispatcher_task_types.h"
 #include "externalinput_pub.h"
 #include "hccl_mem_defs.h"
@@ -701,6 +701,7 @@ struct OpTilingData {
     u64 version = 0;
     s32 userStreamId;
     u32 ahcConfInfo[TOP_HIERARCHICAL_CONF_SIZE] = {0};
+    uint8_t aicpuCacheEnable = 0; // 是否开启aicpu cache
 
     /******************可变长度数据区，如需新增字段请在这之前增加*******************/
     u64 length;   // 可变长度数据区长度

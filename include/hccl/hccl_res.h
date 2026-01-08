@@ -11,8 +11,6 @@
 #ifndef HCCL_RES_H
 #define HCCL_RES_H
 
-#define HCCL_CTX_API
-
 #include <stdint.h>
 #include <arpa/inet.h>
 #include "securec.h"

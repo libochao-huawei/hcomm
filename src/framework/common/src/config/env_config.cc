@@ -212,11 +212,11 @@ HcclResult SetDefaultSocketPortRange(const SocketLocation &socketLoc, std::vecto
     if (socketLoc == SOCKET_HOST) {
         g_envConfig.hostSocketPortSwitch = false;
         portRangeVec.clear();
-        HCCL_RUN_WARNING("HCCL_HOST_SOCKET_PORT_RANGE is not set. Multi-process will not be supported!");
+        HCCL_RUN_WARNING("[HCCL_ENV] HCCL_HOST_SOCKET_PORT_RANGE is not set. Multi-process will not be supported!");
     } else if (socketLoc == SOCKET_NPU) {
         g_envConfig.npuSocketPortSwitch = false;
         portRangeVec.clear();
-        HCCL_RUN_WARNING("HCCL_NPU_SOCKET_PORT_RANGE is not set. Multi-process will not be supported!");
+        HCCL_RUN_WARNING("[HCCL_ENV] HCCL_NPU_SOCKET_PORT_RANGE is not set. Multi-process will not be supported!");
     } else {
         HCCL_ERROR("[SetDefaultSocketPortRange] undefined socket location, fail to init socket port range by default.");
         return HCCL_E_NOT_SUPPORT;
@@ -396,7 +396,7 @@ HcclResult ParseHostSocketPortRange()
         && deviceType != DevType::DEV_TYPE_910_93) {
         g_envConfig.hostSocketPortSwitch = false;
         g_envConfig.hostSocketPortRange.clear();
-        HCCL_RUN_INFO("HCCL_HOST_SOCKET_PORT_RANGE is not supported on devType[%u], nothing is loaded.", deviceType);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_HOST_SOCKET_PORT_RANGE is not supported on devType[%u], nothing is loaded.", deviceType);
         return HCCL_SUCCESS;
     }
 
@@ -417,7 +417,7 @@ HcclResult ParseNpuSocketPortRange()
         && deviceType != DevType::DEV_TYPE_910_93) {
         g_envConfig.npuSocketPortSwitch = false;
         g_envConfig.npuSocketPortRange.clear();
-        HCCL_RUN_INFO("HCCL_NPU_SOCKET_PORT_RANGE is not supported on devType[%u], nothing is loaded.", deviceType);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_NPU_SOCKET_PORT_RANGE is not supported on devType[%u], nothing is loaded.", deviceType);
         return HCCL_SUCCESS;
     }
     char* mmSysGetEnvValue = nullptr;
@@ -516,7 +516,7 @@ HcclResult ParseDFSConfig()
     MM_SYS_GET_ENV(MM_ENV_HCCL_DFS_CONFIG, dfsConfigValue);
     std::string dfsConfigEnv = (dfsConfigValue != nullptr) ? dfsConfigValue : "EmptyString";
     if (dfsConfigEnv == "EmptyString") {
-        HCCL_RUN_INFO("[Parse][HCCL_DFS_CONFIG] Parse environmental variable HCCL_DFS_CONFIG is not set.");
+        HCCL_RUN_INFO("[HCCL_ENV][Parse][HCCL_DFS_CONFIG] Parse environmental variable HCCL_DFS_CONFIG is not set.");
         return HCCL_SUCCESS;
     }
 
@@ -532,7 +532,7 @@ HcclResult ParseDFSConfig()
     } else if (heartbeatSwitch == "on") {
         g_envConfig.enableClusterHeartBeat = true;
     } else {
-        HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-cluster_heartebat was configed to [%s], please configed to"\
+        HCCL_RUN_WARNING("[HCCL_ENV][ParseDFSConfig] HCCL_DFS_CONFIG-cluster_heartebat was configed to [%s], please configed to"\
             "'on' or 'off'", heartbeatSwitch.c_str());
     }
 
@@ -543,7 +543,7 @@ HcclResult ParseDFSConfig()
     } else if (stuckDetectSwitch == "on") {
         g_envConfig.opCounterEnable = true;
     } else {
-        HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-stuck_detection was configed to [%s], please configed to"\
+        HCCL_RUN_WARNING("[HCCL_ENV][ParseDFSConfig] HCCL_DFS_CONFIG-stuck_detection was configed to [%s], please configed to"\
             "'on' or 'off'", stuckDetectSwitch.c_str());
     }
 
@@ -552,7 +552,7 @@ HcclResult ParseDFSConfig()
     CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, CONNECTION_FAULT_DETECTION_TIME, connectionDefaultDetectionTime));
     if (connectionDefaultDetectionTime.empty()) {
         g_envConfig.dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
-        HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
+        HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
             "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s",
             g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime);
         return HCCL_SUCCESS;
@@ -572,7 +572,7 @@ HcclResult ParseDFSConfig()
         return HCCL_E_PARA;
     }
 
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
+    HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
         "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s", 
         g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime);
     return HCCL_SUCCESS;
@@ -639,9 +639,9 @@ HcclResult ParseHcclAlgo()
     std::string hcclAlgo = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
     if (hcclAlgo != "EmptyString") {
         CHK_RET(SetHcclAlgoConfig(hcclAlgo));
-        HCCL_RUN_INFO("HCCL_ALGO set by environment to [%s]", hcclAlgo.c_str());
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_ALGO set by environment to [%s]", hcclAlgo.c_str());
     } else {
-        HCCL_RUN_INFO("HCCL_ALGO is not set");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_ALGO is not set");
     }
     return HCCL_SUCCESS;
 }
