@@ -180,7 +180,7 @@ HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, const AlgRes
 
         // 根据算子类型判断是否需要cache
         const HcclCMDType opType = param.opType;
-        bool needCache = OpUnfoldCache::NeedCache(opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
+        bool needCache = OpUnfoldCache::NeedCache(param.aicpuCacheEnable, opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
         if (needCache) { // 屏蔽inplace场景
             bool isInplace = false;
             CHK_RET(IsInplace(param, isInplace));
@@ -242,7 +242,7 @@ HcclResult HcclCommAicpu::ClearOpUnfoldCacheEntry(const OpParam &param)
     if (opUnfoldCachePtr_ != nullptr) {
         // 根据算子类型判断是否需要cache
         const HcclCMDType opType = param.opType;
-        bool needCache = OpUnfoldCache::NeedCache(opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
+        bool needCache = OpUnfoldCache::NeedCache(param.aicpuCacheEnable, opType, topoInfo_.isUsedRdmaMap, isDeviceMode_);
         if (needCache) { // 屏蔽inplace场景
             bool isInplace = false;
             CHK_RET(IsInplace(param, isInplace));
@@ -657,7 +657,7 @@ HcclResult HcclCommAicpu::RegisterProfCallBack() {
     if (MsprofRegisterCallback != nullptr) {
         HCCL_INFO("RegisterProfCallBack not null");
         int32_t ret = MsprofRegisterCallback(AICPU, &DeviceCommandHandle);
-        CHK_PRT_RET((ret != 0), HCCL_ERROR("[%s] failed. ret = [%d]", ret), HCCL_E_PARA);
+        CHK_PRT_RET((ret != 0), HCCL_ERROR("[%s] failed. ret = [%d]", __func__, ret), HCCL_E_PARA);
     } else {
         HCCL_INFO("RegisterProfCallBack is null");
     }
@@ -813,6 +813,11 @@ HcclResult HcclCommAicpu::NotifyWait(void)
 // 按照算子模式来Post对应的Notify
 HcclResult HcclCommAicpu::RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, u8 orderLaunchMode)
 {
+    const u8 orderLaunchInvalidInHcom = 255;
+    if (orderLaunchMode == orderLaunchInvalidInHcom) {
+        HCCL_INFO("[%s] attachedStreams_ is invalid in graph mode", __func__);
+        return HCCL_SUCCESS;
+    }
     if (orderNotifies_[orderLaunchMode] == nullptr) {
         std::shared_ptr<LocalNotify> notify;
         HcclSignalInfo *aicpuOrderNotify = reinterpret_cast<HcclSignalInfo*>(static_cast<u64>(commParam->aicpuOrderNotifyAddr) +

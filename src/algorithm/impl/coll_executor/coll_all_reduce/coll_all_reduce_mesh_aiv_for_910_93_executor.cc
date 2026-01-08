@@ -89,9 +89,6 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
 {
     // Step1. Calculate the best block dimension
     u32 bestBlockDim = (rankSize < MAX_BLOCK_DIM ? rankSize : MAX_BLOCK_DIM);
-    if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE && rankSize <= MAX_RANK_SIZE) {
-        bestBlockDim = BLOCK_DIM_THREE_PER_RANK_A3 * rankSize; // 非确定性卡数较少时，使用三倍核提升性能
-    }
     u32 minBlockDim = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, BLOCK_DIM_FACTOR_TWO);
 
     // Step2. Compare User Given blockDim_ with bestBlockDim
@@ -105,7 +102,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     }
 
     CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_WARNING("[CollAllReduceMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, minBlockDim),
         HCCL_E_PARA);
 
@@ -249,7 +246,9 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType, algoAttr_.identifier};
 
     u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * SIZE_TABLE[opArgs.dataType]));
+    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * SIZE_TABLE[opArgs.dataType]) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        HCCL_E_PARA);
     blockDim_ = blockDim;
 
     AivResourceArgs resourceArgs {

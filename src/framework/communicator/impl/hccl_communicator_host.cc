@@ -187,6 +187,10 @@ namespace hccl
             DestroyAlgResource(res.second);
         }
 
+        if (releaseChannel_ != nullptr) {
+            releaseChannel_();
+        }
+
         if (opRetryManager_ != nullptr) {
             OpRetryManager::DeleteLinkInfoByIdentifier(deviceLogicId_, identifier_);
             opRetryManager_->UnRegisterOpRetryManager(identifier_);
@@ -1607,7 +1611,9 @@ namespace hccl
             param.DataDes.dataType = dataType;
         }
 
-        CHK_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit));
+        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         SetWorkflowMode(originWorkflowMode);
         return HCCL_SUCCESS;
     }
@@ -1675,7 +1681,9 @@ namespace hccl
         // gettag
         HCCL_INFO("SPK, rank %llu.", userRank_);
         u32 blockDim;
-        CHK_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit));
+        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
         aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
         aivSuperKernelArgs.blockdim = blockDim;
@@ -2309,6 +2317,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER;
 
         CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_ALLGATHER, opParam));
@@ -2359,6 +2368,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER_V;
 
         if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
@@ -2393,6 +2403,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.isCapture = isCapture;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         AlgType algType;
         algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_MESH;
         algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_RING;
@@ -2472,6 +2483,7 @@ namespace hccl
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER;
 
@@ -2530,6 +2542,7 @@ namespace hccl
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.rankSize = userRankSize_;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLGATHER_V;
@@ -2610,6 +2623,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = syncMode;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
         // 用于inplace支持重执行场景的图模式归一至单算子模式
         retryOrigWorkflowMode_ = GetWorkflowMode();
@@ -2649,6 +2663,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.isCapture = isCapture;
         opParam.syncMode = SyncMode::DEFAULT_TIMEWAITSYNCMODE;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         AlgType algType;
         algType.algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_NP_SINGLE_RING;
         algType.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_RING;
@@ -2743,6 +2758,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.syncMode = syncMode;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.opType = HcclCMDType::HCCL_CMD_ALLREDUCE;
@@ -2791,6 +2807,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
         opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
         if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
@@ -2849,6 +2866,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
         opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
         if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
@@ -2907,6 +2925,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
         opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
         if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
@@ -2961,6 +2980,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
         opParam.aicpuUnfoldMode = deviceType_ == DevType::DEV_TYPE_910_93 && GetExternalInputHcclAicpuUnfold();
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
 
         if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
@@ -3012,9 +3032,11 @@ namespace hccl
         opParam.stream = Stream(stream);
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALL;
         opParam.aicpuUnfoldMode = false;
+        opParam.aicpuCacheEnable = 0;
         opParam.isCapture = isCapture;
         if (deviceType_ == DevType::DEV_TYPE_910_93) {
             opParam.aicpuUnfoldMode = GetExternalInputHcclAicpuUnfold();
+            opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
 
         std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
@@ -3057,6 +3079,7 @@ namespace hccl
         opParam.root = root;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.opType = HcclCMDType::HCCL_CMD_BROADCAST;
 
@@ -3106,6 +3129,7 @@ namespace hccl
         opParam.root = root;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.opType = HcclCMDType::HCCL_CMD_BROADCAST;
 
@@ -3156,6 +3180,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.root = root;
         opParam.opType = HcclCMDType::HCCL_CMD_SCATTER;
         CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_SCATTER, opParam));
@@ -3208,6 +3233,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.root = root;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
@@ -3258,6 +3284,7 @@ namespace hccl
         opParam.root = root;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opType = HcclCMDType::HCCL_CMD_REDUCE;
 
         CHK_RET(ExecOp(HcclCMDType::HCCL_CMD_REDUCE, opParam));
@@ -3308,6 +3335,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.opType = HcclCMDType::HCCL_CMD_REDUCE;
 
@@ -3353,6 +3381,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         // 用于inplace支持重执行场景的图模式归一至单算子模式
         retryOrigWorkflowMode_ = GetWorkflowMode();
         bool isHcclOpInplace = IsHcclOpInplace(HcclCMDType::HCCL_CMD_REDUCE_SCATTER, opParam, userRank_, userRankSize_,
@@ -3416,6 +3445,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
 
@@ -3471,6 +3501,7 @@ namespace hccl
         opParam.stream = streamObj;
         opParam.opType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
 
         if (UNLIKELY(GetDebugConfig() & HCCL_ALG)) {
             for (u32 i = 0; i < userRankSize_; i++) {
@@ -3536,6 +3567,7 @@ namespace hccl
         opParam.opType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.rankSize = userRankSize_;
 
@@ -3585,6 +3617,7 @@ namespace hccl
         opParam.tag = tag;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.BatchSendRecvDataDes.sendRecvItemsPtr = sendRecvItemsPtr;
         opParam.BatchSendRecvDataDes.itemNum = itemNum;
@@ -3626,6 +3659,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.dstRank = destRank;
         opParam.opType = HcclCMDType::HCCL_CMD_SEND;
@@ -3680,6 +3714,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.dstRank = destRank;
@@ -3721,6 +3756,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.srcRank = srcRank;
         opParam.opType = HcclCMDType::HCCL_CMD_RECEIVE;
@@ -3775,6 +3811,7 @@ namespace hccl
         opParam.DataDes.dataType = dataType;
         opParam.stream = streamObj;
         opParam.aicpuUnfoldMode = aicpuUnfoldMode;
+        opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         opParam.isCapture = isCapture;
         opParam.opBaseAtraceInfo = opBaseAtraceInfo_.get();
         opParam.srcRank = srcRank;
@@ -4095,6 +4132,7 @@ namespace hccl
             HCCL_INFO("[HcclCommunicator][ExecOp] tag[%s] userRank[%u] cur aiv tag [%d]",
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
+            opParam.aicpuCacheEnable = 0;
             CHK_RET(algOperator->SetBlockDim(aivCoreLimit));
         }
         std::vector<HcclSendRecvItem> hostSendRecvInfo;
@@ -4149,6 +4187,7 @@ namespace hccl
             opParam.BatchSendRecvDataDes.sendRecvItemsPtr = hostSendRecvInfo.data();
             opParam.BatchSendRecvDataDes.itemNum = hostSendRecvInfo.size();
             opParam.aicpuUnfoldMode = false;
+            opParam.aicpuCacheEnable = 0;
             std::string tempTag;
             std::unique_ptr<CollAlgOperator> newalgOperator = implAlg_->GetAlgOperator(opType);
             CHK_SMART_PTR_NULL(newalgOperator);
@@ -4222,6 +4261,7 @@ namespace hccl
 
         if (alltoAllOperator->IsSatisfyAlltoallContinuousPipelineCondition()) {
             opParam.aicpuUnfoldMode = true;
+            opParam.aicpuCacheEnable = GetExternalInputAicpuCacheEnable();
         }
 
         // 算法选择
@@ -4379,6 +4419,7 @@ namespace hccl
             HCCL_INFO("[HcclCommunicator][ExecOpAlltoAll] tag[%s] userRank[%u] cur aiv tag [%d]",
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
+            opParam.aicpuCacheEnable = 0;
             CHK_RET(algOperator->SetBlockDim(aivCoreLimit));
         }
 
@@ -6580,6 +6621,7 @@ namespace hccl
         // 有没有存在对应的Notify
         CHK_RET(InitAndCheckAicpuOrderNotify(opTilingData->orderLaunchMode));
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));
+        opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
 
         // 填充动态内容
         HostMem dynamicDataMem = opTilingDataBuf_.range(sizeof(struct OpTilingData), dynamicDataSize);
@@ -6588,8 +6630,7 @@ namespace hccl
             struct OpTilingBatchSendRecvDataDes *batchSendRecvDataPtr =
                 reinterpret_cast<struct OpTilingBatchSendRecvDataDes *>(dynamicDataMem.ptr());
             batchSendRecvDataPtr->itemNum = opParam.BatchSendRecvDataDes.itemNum;
-            for (u32 i = 0; i < opParam.BatchSendRecvDataDes.itemNum; i++)
-            {
+            for (u32 i = 0; i < opParam.BatchSendRecvDataDes.itemNum; i++) {
                 CHK_PTR_NULL(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
                 batchSendRecvDataPtr->batchSendRecvItem[i] = *(opParam.BatchSendRecvDataDes.sendRecvItemsPtr + i);
             }
@@ -6624,14 +6665,18 @@ namespace hccl
 
     u8 HcclCommunicator::GetOrderLaunchMode (bool isCapture)
     {
+        bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
+        const u8 orderLaunchInvalidInHcom = 255;
         u8 orderLaunchMode = 0;
         HcclWorkflowMode mode = GetWorkflowMode();
         if (isCapture) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::ACLGRAPH_MODE);
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::OPBASE_MODE);
-        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::HCOM_MODE);
+        } else {
+            orderLaunchMode = orderLaunchInvalidInHcom;
         }
 
         return orderLaunchMode;
@@ -6639,12 +6684,14 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode)
     {
+        const u8 opbaseOrderLaunchMode = 0;
+        const u8 aclgraphOrderLaunchMode = 1;
         u32 idx0;
         u32 idx1;
-        if (orderLaunchMode == 0) {
+        if (orderLaunchMode == opbaseOrderLaunchMode) {
             idx0 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0);
             idx1 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1);
-        } else if (orderLaunchMode == 1) {
+        } else if (orderLaunchMode == aclgraphOrderLaunchMode) {
             idx0 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0);
             idx1 = static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1);
         } else {
@@ -6691,15 +6738,18 @@ namespace hccl
 
         Stream kfcOpStream;
         HcclWorkflowMode mode = GetWorkflowMode();
+        bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
         if (opParam.isCapture || mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             kfcOpStream = opStream_;
         } else {
-            // 如果是图模式，则尝试从附属从流中获取一下stream，如果能拿到则使用，否则报错
-            if (attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr) {
-                HCCL_ERROR("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is invalid in graph mode");
-                return HCCL_E_NOT_FOUND;
+            // 如果是图模式，则尝试从附属从流中获取一下stream，如果能拿到则使用，否则退化
+            if (isSupportHcomAttachedStream) {
+                HCCL_INFO("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is valid in graph mode");
+                kfcOpStream = attachedStreams_[0];
+            } else {
+                HCCL_INFO("[HcclCommunicator][AicpuKfcTilingDataLaunchIn] attachedStreams_ is invalid in graph mode");
+                kfcOpStream = opParam.stream;
             }
-            kfcOpStream = attachedStreams_[0];
         }
         uint64_t beginTime = hrtMsprofSysCycleTime();
         std::string profName = GetCMDTypeEnumStr(opParam.opType);
@@ -6748,7 +6798,7 @@ namespace hccl
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
             CHK_RET(orderLaunch.OpbaseLaunchInOrder(identifier_, kfcOpStream, notify0, notify1, timeOut));
-        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) {
+        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_0)];
             notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_1)];
             CHK_RET(orderLaunch.HcomLaunchInOrder(identifier_, kfcOpStream, graphId_, notify0,
@@ -7424,6 +7474,7 @@ namespace hccl
         opParam.All2AllDataDes.rdispls = static_cast<void *>(rdispls);
         opParam.opType = HcclCMDType::HCCL_CMD_ALLTOALLV;
         opParam.aicpuUnfoldMode = false;
+        opParam.aicpuCacheEnable = 0;
 
         if (alltoAllOperator->IsSatisfyAlltoAllAivCondition(opParam) ||
             alltoAllOperator->IsSatisfy91093OffloadCondition()) {
@@ -8229,5 +8280,11 @@ namespace hccl
 
         HCCL_RUN_INFO("DeInitTransportMem Success!");
         return HCCL_SUCCESS;
+    }
+
+    void HcclCommunicator::SetReleaseChannel(std::function<HcclResult()> releaseChannel)
+    {
+        releaseChannel_ = releaseChannel;
+        return;
     }
 }

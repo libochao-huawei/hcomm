@@ -522,6 +522,10 @@ HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSched
 u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
     u32 timeout = AIV_TIMEOUT_DEFAULT_US;
     if (GetExternalInputHcclExecTimeoutSet() != HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET || isSetByConfig) {
+        // 配0时，使用最大超时时间
+        if (execTimeOut == 0) {
+            return AIV_TIMEOUT_MAX_US;
+        }
         double timeoutUs = execTimeOut * TIME_S_TO_US;
         if (timeoutUs > static_cast<double>(std::numeric_limits<u32>::max())) {
             HCCL_INFO("[GetAivTimeout]Get input timeout[%.2f] is out of valid range.", timeoutUs);

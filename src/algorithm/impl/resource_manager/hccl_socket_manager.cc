@@ -66,24 +66,7 @@ HcclResult HcclSocketManager::ServerDeInit(const HcclNetDevCtx netDevCtx, u32 po
 {
     HcclIpAddress localIp{0};
     CHK_RET(HcclNetDevGetLocalIp(netDevCtx, localIp));
-    PortInfo portInfo(localIp, port);
-
-    std::unique_lock<std::mutex> lock(serverMapMutex_);
-    auto res = serverSocketMap_.find(portInfo);
-    if (res == serverSocketMap_.end()) {
-        return HCCL_SUCCESS;
-    }
-
-    auto &serverSocketRef = serverSocketRefMap_[portInfo];
-    serverSocketRef.Unref();
-
-    HCCL_INFO("[DeInit][Server]ip[%s] port[%u] serverSocketRef.Count() = %d", localIp.GetReadableAddress(), port, serverSocketRef.Count());
-    if (serverSocketRef.Count() == 0) {
-        HCCL_INFO("[DeInit][Server]ip[%s] port[%u]", localIp.GetReadableAddress(), port);
-        serverSocketMap_[portInfo]->DeInit();
-        serverSocketMap_.erase(portInfo);
-        serverSocketRefMap_.erase(portInfo);
-    }
+    CHK_RET(ServerDeInit(localIp, port));
 
     return HCCL_SUCCESS;
 }
@@ -473,6 +456,7 @@ HcclResult HcclSocketManager::CreateSingleLinkSocket(const std::string &commTag,
     std::vector<std::shared_ptr<HcclSocket> > &connectSockets,
     bool isWaitEstablished, bool isSupportReuse, s32 timeout)
 {
+    HcclResult ret;
     NicType socketType;
     CHK_RET(HcclNetDevGetNicType(netDevCtx, &socketType));
     HcclIpAddress localIp{0};
@@ -483,7 +467,6 @@ HcclResult HcclSocketManager::CreateSingleLinkSocket(const std::string &commTag,
         isInterLink = false;
     }
  
-    HcclResult ret;
     HcclSocketRole role =
         userRank_ < remoteRankInfo.userRank ? HcclSocketRole::SOCKET_ROLE_SERVER : HcclSocketRole::SOCKET_ROLE_CLIENT;
  

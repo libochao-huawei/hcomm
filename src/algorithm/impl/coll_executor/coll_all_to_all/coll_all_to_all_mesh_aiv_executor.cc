@@ -88,12 +88,12 @@ HcclResult CollAlltoAllMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize,
         (isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType != HcclCMDType::HCCL_CMD_ALLTOALLV)
         || (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV)) {
         CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_ERROR("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+            HCCL_WARNING("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
             blockDim_, blockDim), HCCL_E_PARA);
     } else if ((isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV)
         || (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType != HcclCMDType::HCCL_CMD_ALLTOALLV)) {
         CHK_PRT_RET(blockDim_ < rankSize,
-            HCCL_ERROR("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+            HCCL_WARNING("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
             blockDim_, rankSize), HCCL_E_PARA);
         if (blockDim_ < blockDim) {
             blockDim = blockDim_ / rankSize * rankSize;
@@ -237,7 +237,9 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
         (!isOpbase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93))) {
         opArgs.count = param.All2AllDataDes.sendCount;
         u32 blockDim;
-        CHK_RET(CalBlockDim(blockDim, localRankSize, dataSize, opArgs.cmdType));
+        CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, dataSize, opArgs.cmdType) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         blockDim_ = blockDim;
         resourceArgs.blockDim = blockDim_;
         if (aivClearEnable_) {
@@ -260,7 +262,9 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
         opArgs.count = extraArgs.maxCount;
         opArgs.cmdType = HcclCMDType::HCCL_CMD_ALLTOALLVC;
         u32 blockDim;
-        CHK_RET(CalBlockDim(blockDim, localRankSize, dataSize, opArgs.cmdType));
+        CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, dataSize, opArgs.cmdType) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         blockDim_ = blockDim;
         resourceArgs.blockDim = blockDim_;
         if (aivClearEnable_) {
@@ -277,7 +281,9 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
 
         opArgs.cmdType = HcclCMDType::HCCL_CMD_ALLTOALLV;
         u32 blockDim;
-        CHK_RET(CalBlockDim(blockDim, localRankSize, dataSize, opArgs.cmdType));
+        CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, dataSize, opArgs.cmdType) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+            HCCL_E_PARA);
         blockDim_ = blockDim;
         resourceArgs.blockDim = blockDim_;
         if (aivClearEnable_) {

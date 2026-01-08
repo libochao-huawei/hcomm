@@ -71,6 +71,33 @@ u64 CollAllGatherRingExecutor::CalcLoopMaxCount(const u64 cclBuffSize, const u32
     return maxCountPerLoop;
 }
 
+HcclResult CollAllGatherRingExecutor::SelectAlgorithmTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg)
+{
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
+        HCCL_INFO("AllGather ring: using ring algo inter-server.");
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
+        HCCL_INFO("AllGather ring: using nhr algo inter-server.");
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_ALL_GATHER_NHRV1, dispatcher_);
+        HCCL_INFO("AllGather ring: using nhr_v1 algo inter-server.");
+    } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
+        HCCL_INFO("AllGather ring: using nonuniform-bruck algo inter-server.");
+    } else {
+        level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
+            TemplateType::TEMPLATE_ALL_GATHER_RECURSIVE_HALVING_DOUBLING, dispatcher_);
+        HCCL_INFO("AllGather ring: using halving-doubling algo inter-server.");
+    }
+    CHK_SMART_PTR_NULL(level1TempAlg);
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollAllGatherRingExecutor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[CollAllGatherRingExecutor][KernelRun]The AllGatherRingExecutor starts.");
@@ -145,28 +172,7 @@ HcclResult CollAllGatherRingExecutor::KernelRun(const OpParam &param, ExecMem &e
     bool innRunRet = isMultiNic && (iterNic == nicList.end());
     if (!innRunRet) { // 满足以下条件, 不做server间通信: 1. 8P ring的拓扑 2. 网口不满配 3. 当前device不出网口
         std::unique_ptr<AlgTemplateBase> level1TempAlg;
-        if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
-            HCCL_INFO("AllGather ring: using ring algo inter-server.");
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-            HCCL_INFO("AllGather ring: using nhr algo inter-server.");
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_NHRV1, dispatcher_);
-            HCCL_INFO("AllGather ring: using nhr_v1 algo inter-server.");
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
-            HCCL_INFO("AllGather ring: using nonuniform-bruck algo inter-server.");
-        } else {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_RECURSIVE_HALVING_DOUBLING, dispatcher_);
-            HCCL_INFO("AllGather ring: using halving-doubling algo inter-server.");
-        }
-        CHK_SMART_PTR_NULL(level1TempAlg);
+        CHK_RET(SelectAlgorithmTempAlg(level1TempAlg));
 
         //  此处虽然带入inputMem作为scratch mem, 但inputMem 不能被使用
         CHK_RET(level1TempAlg->Prepare(execMem.outputMem, execMem.outputMem, execMem.inputMem, hdCount,
@@ -221,29 +227,7 @@ HcclResult CollAllGatherRingExecutor::Getlevel1CommRank(SubCommInfo& level1CommI
 HcclResult CollAllGatherRingExecutor::SelectTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg, u32 level1RankSize)
 {
     if (level1RankSize > 1) {
-        if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_RING, dispatcher_);
-            HCCL_INFO("AllGather ring: using ring algo inter-server.");
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
-            HCCL_INFO("AllGather ring: using nhr algo inter-server.");
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NHR_V1) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_NHRV1, dispatcher_);
-            HCCL_INFO("AllGather ring: using nhr_v1 algo inter-server.");
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB) {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_NB, dispatcher_);
-            HCCL_INFO("AllGather ring: using nonuniform-bruck algo inter-server.");
-        } else {
-            level1TempAlg = AlgTemplateRegistry::Instance().GetAlgTemplate(
-                TemplateType::TEMPLATE_ALL_GATHER_RECURSIVE_HALVING_DOUBLING, dispatcher_);
-            HCCL_INFO("AllGather ring: using halving-doubling algo inter-server.");
-        }
-        CHK_SMART_PTR_NULL(level1TempAlg);
-        return HCCL_SUCCESS;
+        CHK_RET(SelectAlgorithmTempAlg(level1TempAlg));
     }
     return HCCL_E_UNAVAIL;
 }

@@ -391,6 +391,8 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
         tilingData->syncMode, tilingData->root, tilingData->dstRank, tilingData->srcRank,
         tilingData->opType, tilingData->index, tilingData->length);
 
+    HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2]Entry AicpuRunRpcServerV2, aicpuCacheEnable[%u]", tilingData->aicpuCacheEnable);
+
     CHK_RET(hcclCommAicpu->RecordHostOrder(commParam, tag, tilingData->orderLaunchMode));
 
     hccl::OpParam opParam;
@@ -411,6 +413,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     opParam.isZeroCopy = tilingData->isZeroCopy;
     opParam.index = tilingData->index;
     opParam.isCapture = tilingData->isCapture;
+    opParam.aicpuCacheEnable = tilingData->aicpuCacheEnable;
     hcclCommAicpu->PrepareOpRetryHandler(tilingData->inplaceSupportRetry,
         tilingData->retryEnable, tilingData->inPlaceSupportRetryStatus,
         tilingData->isInplacePreSync, tilingData->isPostSync);

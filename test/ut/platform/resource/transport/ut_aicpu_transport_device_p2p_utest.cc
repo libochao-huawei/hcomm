@@ -28,6 +28,7 @@
 #include "adapter_rts.h"
 #include "ascend_hal.h"
 #include "dispatcher_aicpu_pub.h"
+#include "sub_inc/mmpa_typedef_linux.h"
 
 #undef private
 #undef protected
@@ -49,30 +50,32 @@ rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
     return 0;
 }
 
-rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val)
+INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
 {
-    return RT_ERROR_NONE;
-}
+    INT32 ret;
+    UINT32 envLen = 0;
+    if ((name == NULL) || (value == NULL) || (len == MMPA_ZERO)) {
+        return EN_INVALID_PARAM;
+    }
+    const CHAR *envPtr = getenv(name);
+    if (envPtr == NULL) {
+        return EN_ERROR;
+    }
 
-rtError_t rtGetPairDevicesInfo(uint32_t devId, uint32_t otherDevId, int32_t infoType, int64_t *val)
-{
-    return RT_ERROR_NONE;
-}
+    UINT32 lenOfRet = (UINT32)strlen(envPtr);
+    if (lenOfRet < (UINT32)(MMPA_MEM_MAX_LEN - 1)) {
+        envLen = lenOfRet + 1U;
+    }
 
-rtError_t rtEnableP2P(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t flag)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc)
-{
-    return RT_ERROR_NONE;
-}
-
-rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
-{
-    *status = 1;
-    return RT_ERROR_NONE;
+    if ((envLen != MMPA_ZERO) && (len < envLen)) {
+        return EN_INVALID_PARAM;
+    } else {
+        ret = memcpy_s(value, len, envPtr, envLen); //lint !e613
+        if (ret != EN_OK) {
+            return EN_ERROR;
+        }
+    }
+    return EN_OK;
 }
 
 #ifdef __cplusplus
