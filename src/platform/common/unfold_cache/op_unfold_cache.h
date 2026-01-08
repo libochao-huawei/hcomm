@@ -31,6 +31,8 @@ public:
     explicit OpUnfoldCache();
     ~OpUnfoldCache();
 
+    bool IsCacheFull() const;
+
     HcclResult FindEntry(const OpUnfoldKey& key, OpUnfoldCacheEntry **entryPtrPtr) const; // 查看是否存在key对应的cache entry (如果不存在, *entryPtrPtr会被置为空)
     HcclResult AddEntry(const OpUnfoldKey& key, const std::vector<OpUnfoldMemRange>& userInputMemRanges, const std::vector<OpUnfoldMemRange>& userOutputMemRanges, OpUnfoldCacheEntry **entryPtrPtr); // 插入新的cache entry
     HcclResult ClearEntry(const OpUnfoldKey& key); // 如果key存在对应的cache entry, 清理entry
