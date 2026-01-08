@@ -565,7 +565,7 @@ HcclResult ParseDFSConfig()
     CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, CONNECTION_FAULT_DETECTION_TIME, connectionDefaultDetectionTime));
     if (connectionDefaultDetectionTime.empty()) {
         g_envConfig.dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
-        HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
+        HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
             "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d]", 
             g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime,
             g_envConfig.inconsistentCheckSwitch);
@@ -586,7 +586,7 @@ HcclResult ParseDFSConfig()
         return HCCL_E_PARA;
     }
 
-    HCCL_RUN_INFO("[Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
+    HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
         "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d]", 
         g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime,
         g_envConfig.inconsistentCheckSwitch);
