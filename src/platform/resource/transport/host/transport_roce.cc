@@ -40,7 +40,7 @@ TransportRoce::TransportRoce(const HcclDispatcher dispatcher,
     bool isRootRank, bool isESPs)
     : TransportBase(reinterpret_cast<DispatcherPub*>(const_cast<HcclDispatcher>(dispatcher)),
         notifyPool, machinePara, timeout),
-      TransportHeterogRoce(machinePara_.tag, selfIp, peerIp, selfPort, peerPort, transportResourceInfo),
+      TransportHeterogRoce(machinePara_.tag, selfIp, peerIp, peerPort, selfPort, transportResourceInfo),
       deviceLogicId_(HCCL_DEFAULT_INITIAL_VALUE), isInited_(false), proxyDevLogicId_(proxyDevLogicId),
       isRootRank_(isRootRank), isESPs_(isESPs)
 {
