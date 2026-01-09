@@ -17,6 +17,7 @@
 #include "aicpu_hccl_sqcqv1.h"
 #include "aicpu_hccl_sqcqv2.h"
 #include "log.h"
+#include "sal.h"
 
 namespace hccl {
 
@@ -318,7 +319,7 @@ namespace hccl {
         return HCCL_SUCCESS;
     }
 
-    HcclResult OpUnfoldCacheEntry::UpdateAndGetSqeArray(const size_t arrayIdx, const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr, AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<size_t>& largestSqeIdxes) {
+    HcclResult OpUnfoldCacheEntry::UpdateAndGetSqeArray(const size_t arrayIdx, const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr, AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<size_t>& largestSqeIdxes, const bool profL1Enable, std::vector<uint64_t>& profTimestamps) {
         HCCL_INFO("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update and get SQEs from %uth SQE array", arrayIdx);
 
         // 检验入参
@@ -336,6 +337,10 @@ namespace hccl {
         *sqeTypeArrayPtr = sqeTypeArrays_[arrayIdx];
         *sqeDfxInfoArrayPtr = sqeDfxInfoArrays_[arrayIdx];
         largestSqeIdxes.clear();
+        if (profL1Enable) {
+            profTimestamps.clear();
+            profTimestamps.reserve(sqeCount); // 需要额外flip placeholder是小概率事件, 所以只reserve cached SQE个数 (即非flip placeholder类SQE)
+        }
 
         // 设置入参的stream pointer
         const uint32_t streamSeqIdx = streamSeqIdxes_[arrayIdx];
@@ -462,12 +467,24 @@ namespace hccl {
                 }
             }
 
+            // 记录SQE刷新时间用于profiling
+            if (profL1Enable) {
+                const uint64_t curTime = ProfGetCurCpuTimestamp();
+                profTimestamps.push_back(curTime);
+            }
+
             // 刷新stream.curTaskId
             if (curTaskId < UINT16_MAX) { // 未出现uint16 overflow
                 curTaskId += 1;
             } else { // 触发flip
                 curTaskId = 1; // 为placeholder SQE预留task id = 0
                 largestSqeIdxes.push_back(sqeIdx); // 记录sqeIdx, LaunchNewTask中需要在该位置后添加placeholder SQE
+
+                // Flip placeholder SQE在外侧dispatcher aicpu中生成, 这里记录当前时间作为flip placeholder SQE的生成时间
+                if (profL1Enable) {
+                    const uint64_t curTime = ProfGetCurCpuTimestamp();
+                    profTimestamps.push_back(curTime);
+                }
             }
 
             sqePtr += HCCL_SQE_SIZE;

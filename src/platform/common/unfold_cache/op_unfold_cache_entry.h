@@ -89,7 +89,7 @@ public:
     // 缓存命中下的函数
 
     // 更新指定的一段连续SQE, 并将相关信息设置给对应指针, 用于后续下发task到RTSQ
-    HcclResult UpdateAndGetSqeArray(const size_t arrayIdx, const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr, AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<size_t>& largestSqeIdxes); // largestSqeIdxes指的是该段连续SQE中taskid达到最大值的SQE的索引, 即这些SQE后面需要增加placeholder
+    HcclResult UpdateAndGetSqeArray(const size_t arrayIdx, const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr, AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<size_t>& largestSqeIdxes, const bool profL1Enable, std::vector<uint64_t>& profTimestamps); // largestSqeIdxes指的是该段连续SQE中taskid达到最大值的SQE的索引, 即这些SQE后面需要增加placeholder
 
     // Cache hit更新并下发entry中所有的SQE后, 由于缓存的SQE的addr-related fields被in-place更新, 需要把userInputMemRanges_/userOutputMemRanges_为当前执行对应的memory ranges
     HcclResult SetInputOutputMemRanges(const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges);
