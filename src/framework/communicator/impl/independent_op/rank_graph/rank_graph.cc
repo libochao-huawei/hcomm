@@ -90,6 +90,7 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
     rankGraph_ = rankTable_.rankList;
     CHK_RET(InitRankInfo());
     CHK_RET(InitNetLayer());
+    CHK_RET(InitHeterogMode());
     return HCCL_SUCCESS;
 }
 
@@ -101,6 +102,7 @@ HcclResult RankGraph::Init(const HcclTopoAttr &topoAttr)
     HCCL_INFO("[RankGraph][%s] rankNum[%zu]", __func__, rankTable_.rankList.size());
     CHK_RET(InitRankInfo());
     CHK_RET(InitNetLayer());
+    CHK_RET(InitHeterogMode());
     return HCCL_SUCCESS;
 }
 
@@ -192,6 +194,46 @@ HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dst
         HCCL_INFO("[RankGraph][%s] srcRank[%u] dstRank[%u] linkNum[%u]", __func__, srcRank, dstRank, *linkList);
     }
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult RankGraph::InitHeterogMode() {
+    if (topoAttr_.rankInfoList.empty()) {
+        HCCL_ERROR("[rankGraph][%s] invalid para. rankInfoList is empty", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    std::set<DevType> devTypes;
+    for (u32 index = 0; index < topoAttr_.rankInfoList.size(); index++) {
+        devTypes.insert(topoAttr_.rankInfoList[index].deviceType);
+    }
+
+    // 只包含一种芯片的同构组网
+    if (devTypes.size() == 1) {
+        heterogMode_ = HcclHeterogMode::HCCL_HETEROG_MODE_HOMOGENEOUS;
+        return HCCL_SUCCESS;
+    }
+
+    // 包含两种芯片的异构混合组网
+    if (devTypes.size() == 2 && devTypes.find(DevType::DEV_TYPE_910B) != devTypes.end() && devTypes.find(DevType::DEV_TYPE_910_93) != devTypes.end()) {
+        heterogMode_ = HcclHeterogMode::HCCL_HETEROG_MODE_MIX_A2_A3;
+        return HCCL_SUCCESS;
+    }
+
+    std::string devStr;
+    for (auto itSet = devTypes.begin(); itSet !=devTypes.end(); itSet++) {
+        if (itSet != devTypes.begin()) {
+            devStr +=", ";
+        }
+        devStr += std::to_string(static_cast<int>(*itSet));
+    }
+    HCCL_ERROR("[rankGraph][%s] Unknown mode[%d], devtypes[%s]", __func__, HcclHeterogMode::HCCL_HETEROG_MODE_INVALID, devStr.c_str());
+    return HCCL_E_INTERNAL;
+}
+
+HcclResult RankGraph::GetHeterogMode(HcclHeterogMode *mode)
+{
+    *mode = heterogMode_;
     return HCCL_SUCCESS;
 }
 
