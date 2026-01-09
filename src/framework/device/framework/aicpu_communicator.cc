@@ -222,7 +222,9 @@ HcclResult HcclCommAicpu::LookupOpUnfoldCache(const OpParam &param, const AlgRes
 
                 // 刷新缓存的SQE并直接下发到RTSQ
                 CHK_PTR_NULL(dispatcher_);
-                CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcher_))->LaunchNewTask(entryPtr, userInputMemRanges, userOutputMemRanges, mainStream_, slaveStreams_));
+                (void)InvokeKfcHandler(AicpuKfcHandlerType::kSetProfTimeStart, {}); // Keep consistent with cache miss
+                const bool profL1Enable = dfx::ProfilingManager::GetProfL1State(); // SQE-level profiling info
+                CHK_RET((reinterpret_cast<DispatcherAiCpu *>(dispatcher_))->LaunchNewTask(entryPtr, userInputMemRanges, userOutputMemRanges, mainStream_, slaveStreams_, profL1Enable));
 
                 // 不需要执行算子展开的具体编排
                 needExecute = false;
