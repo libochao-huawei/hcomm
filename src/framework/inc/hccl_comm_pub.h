@@ -377,6 +377,7 @@ public:
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
+    HcclResult GetHeterogMode(HcclHeterogMode *mode);
     // for group
     HcclResult SetGroupMode(bool isGroup);
     bool GetGroupMode();

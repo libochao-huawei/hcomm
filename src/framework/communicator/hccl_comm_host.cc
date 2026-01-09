@@ -260,4 +260,9 @@ namespace hccl
     {
         return communicator_->GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
     }
+
+    HcclResult hcclComm::GetHeterogMode(HcclHeterogMode *mode)
+    {
+        return communicator_->GetHeterogMode(mode);
+    }
 } // namespace hccl

@@ -8533,6 +8533,11 @@ namespace hccl
         return rankGraph_.GetLinks(netLayer, srcRank, dstRank, linkList, listSize);
     }
 
+    HcclResult HcclCommunicator::GetHeterogMode(HcclHeterogMode *mode)
+    {
+        return rankGraph_.GetHeterogMode(mode);
+    }
+
     HcclResult HcclCommunicator::DeInitTransportMem()
     {
         if (memBlocksManager_ != nullptr) {

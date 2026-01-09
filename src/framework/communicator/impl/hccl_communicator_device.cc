@@ -1560,6 +1560,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::GetHeterogMode(HcclHeterogMode *mode)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::DeInitTransportMem()
     {
         return HCCL_SUCCESS;
