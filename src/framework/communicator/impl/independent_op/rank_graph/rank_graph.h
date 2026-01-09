@@ -37,6 +37,7 @@ public:
     HcclResult Init(const HcclTopoAttr &topoAttr);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
         uint32_t* listSize);
+    HcclResult GetHeterogMode(HcclHeterogMode *mode);
     // 根据 rankId 获取 rank 信息
     const RankInfo_t* FindRank(uint32_t rankId) const;
     HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
@@ -45,7 +46,7 @@ public:
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
-
+    
 private:
     HcclResult DevTypeToCommProtocol(DevType type, CommProtocol &protocol);
     CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t srcInfo, const RankInfo_t dstInfo);
@@ -54,6 +55,7 @@ private:
     HcclResult InitSuperPodRankInfo();
     HcclResult InitNetLayer();
     HcclResult InitGraphRankInfo();
+    HcclResult InitHeterogMode();
     RankTable_t rankTable_;
     // 根据 rankId 获取 RankInfo_t 与 EndPoint信息
     std::unordered_map<uint32_t, RankGraphInfo> rankIndex_;
@@ -66,6 +68,7 @@ private:
     std::vector<struct GraphRankInfo> graphRankInfo_;
     HcclTopoAttr topoAttr_;
     RankInfo rankData_;         // 当前rank的相关信息
+    HcclHeterogMode heterogMode_{HcclHeterogMode::HCCL_HETEROG_MODE_INVALID};    // 组网异构&同构形态
 
     // 通信域在当前superPod内, 按照serverIdx划分的所有rank信息
     std::map<u32, std::vector<RankInfo> > serverToRank_;

@@ -131,6 +131,20 @@ HcclResult HcclGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer, uint3
     HCCL_RUN_INFO("[%s] success, group[%s], listSize[%u]", __func__, hcclComm->GetIdentifier().c_str(), *listSize);
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(mode);
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclResult ret = hcclComm->GetHeterogMode(mode);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[%s] Failed, ret[%d]", __func__, ret);
+        return ret;
+    }
+    HCCL_RUN_INFO("[%s] success, group[%s], mode[%u]", __func__, hcclComm->GetIdentifier().c_str(), *mode);
+    return HCCL_SUCCESS;
+}
 #endif
 
 HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize)
