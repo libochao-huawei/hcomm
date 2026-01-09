@@ -1025,7 +1025,7 @@ HcclResult hrtIpcSetMemoryName(void *ptr, u8 *name, u64 ptrMaxLen, u32 nameMaxLe
     HCCL_INFO("Call aclrtIpcMemGetExportKey, return value[%d], para: ptr[%p], name[%s], byteCount[%llu], nameLen[%u]",
         rtRet, ptr, name, ptrMaxLen, nameMaxLen);
     CHK_PRT_RET(rtRet != ACL_SUCCESS, HCCL_ERROR("[Set][IpcMemoryName]errNo[0x%016llx] rtSet Ipc Memory Name, "\
-        "return[%d], para: ptr[%p] byteCount[%llu].",
+        "return[%d], para: ptr[%p] byteCount[%llu]. Possible Cause: The memory addr or size is not aligned with pagesize.",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), rtRet, ptr, ptrMaxLen), HCCL_E_RUNTIME);
 
     return HCCL_SUCCESS;
