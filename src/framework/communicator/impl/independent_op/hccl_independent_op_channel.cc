@@ -33,8 +33,8 @@ static HcclResult HandleHcclResPackReq(const HcclChannelDesc &channelDesc, HcclC
 
     uint32_t copySize = (channelDescFinal.header.size < channelDesc.header.size ?
         channelDescFinal.header.size : channelDesc.header.size) - sizeof(CommAbiHeader);
-    CHK_SAFETY_FUNC_RET(memcpy_s((uint8_t *)&channelDescFinal + sizeof(CommAbiHeader), copySize,
-        (uint8_t *)&channelDesc + sizeof(CommAbiHeader), copySize));
+    CHK_SAFETY_FUNC_RET(memcpy_s(reinterpret_cast<uint8_t *>(&channelDescFinal) + sizeof(CommAbiHeader), copySize,
+        reinterpret_cast<const uint8_t *>(&channelDesc) + sizeof(CommAbiHeader), copySize));
 
     if (channelDesc.header.version >= HCCL_CHANNEL_VERSION_ONE) {
         channelDescFinal.remoteRank = channelDesc.remoteRank;
@@ -84,42 +84,42 @@ static HcclResult HandleHcclResPackReq(const HcclChannelDesc &channelDesc, HcclC
 
     return HCCL_SUCCESS;
 }
-HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChannelDesc *channelDescList,
-    uint32_t listNum, ChannelHandle *channelList)
+HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChannelDesc *channelDescs,
+    uint32_t channelNum, ChannelHandle *channels)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(channelDescList);
-    CHK_PTR_NULL(channelList);
-    CHK_PRT_RET(listNum == 0, HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
-        __func__, listNum), HCCL_E_PARA);
+    CHK_PTR_NULL(channelDescs);
+    CHK_PTR_NULL(channels);
+    CHK_PRT_RET(channelNum == 0, HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]",
+        __func__, channelNum), HCCL_E_PARA);
 
     HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     std::vector<HcclChannelDesc> channelDescFinals;
-    for (uint32_t idx = 0; idx < listNum; idx++) {
+    for (uint32_t idx = 0; idx < channelNum; idx++) {
         HcclChannelDesc channelDescFinal;
         HcclChannelDescInit(&channelDescFinal, 1);
-        ret = HandleHcclResPackReq(channelDescList[idx], channelDescFinal);
+        ret = HandleHcclResPackReq(channelDescs[idx], channelDescFinal);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[%s] Failed check channelDesc, channelDesc idx[%u], group[%s], engine[%d], "
                 "channelNum[%llu], ret[%d]", __func__, idx, hcclComm->GetIdentifier().c_str(),
-                engine, listNum, ret);
+                engine, channelNum, ret);
             return ret;
         }
         channelDescFinals.push_back(channelDescFinal);
     }
     auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
     ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), engine,
-        channelDescFinals.data(), listNum, channelList);
+        channelDescFinals.data(), channelNum, channels);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to acquire channel, group[%s], engine[%d], channelNum[%llu], ret[%d]",
-           __func__, hcclComm->GetIdentifier().c_str(), engine, listNum, ret);
+           __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
         return ret;
     }
 
     HCCL_RUN_INFO("[%s] acquire channel success, group[%s], engine[%d], channelNum[%llu], ret[%d]", 
-        __func__, hcclComm->GetIdentifier().c_str(), engine, listNum, ret);
+        __func__, hcclComm->GetIdentifier().c_str(), engine, channelNum, ret);
     return HCCL_SUCCESS;
 }
 
