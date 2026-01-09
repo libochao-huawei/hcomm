@@ -58,7 +58,7 @@ static HcclResult HcclMemRegIpc(NetDevContext *netDevCtx, const HcclMem *mem, Hc
         HCCL_INFO("[HcclMemRegIpc]Register memory success! Add key {%p, %llu}", mem->addr, size);
         return HCCL_SUCCESS;
     } else {  // 内存再次注册时
-        HCCL_INFO("[HcclMemRegIpc]Memory is already registed, just increase the reference count. Add key "
+        HCCL_INFO("[HcclMemRegIpc]Memory is already registered, just increase the reference count. Add key "
                   "{%p, %llu}", mem->addr, size);;
         return HCCL_E_AGAIN;
     }
@@ -125,7 +125,7 @@ static HcclResult HcclMemRegRoce(NetDevContext *netDevCtx, const HcclMem *mem, H
         HCCL_INFO("[HcclMemRegRoce]Register memory success! Add key {%p, %llu}", mem->addr, size);
         return HCCL_SUCCESS;
     } else {  // 内存再次注册时
-        HCCL_INFO("[HcclMemRegRoce]Memory is already registed, just increase the reference count. Add key "
+        HCCL_INFO("[HcclMemRegRoce]Memory is already registered, just increase the reference count. Add key "
                   "{%p, %llu}", mem->addr, size);;
         return HCCL_E_AGAIN;
     }

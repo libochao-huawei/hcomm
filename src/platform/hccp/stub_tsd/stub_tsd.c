@@ -45,7 +45,7 @@ int32_t SendStartUpFinishMsg(const uint32_t deviceId, const TsdWaitType waitType
 * @param [in] vfId : vf id
 * @param [in] errCode : errCode: errMsg code produced by host
 * @param [in] errLen : errLen: errMsg code length
-* @return TSD_OK: sucess, other: error code
+* @return TSD_OK: success, other: error code
 */
 int32_t ReportProcessStartUpErrorCode(const uint32_t deviceId, const TsdWaitType waitType,
                                       const uint32_t hostPid, const uint32_t vfId,

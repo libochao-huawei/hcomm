@@ -102,7 +102,7 @@ DV_ONLINE DVresult drvMemInitSvmDevice(int hostpid, unsigned int vfid, unsigned 
 
 /**
  * @ingroup driver
- * @brief get borad id
+ * @brief get board id
  * @attention This function is only can be called by components in driver of device,
  *  if the components is not in driver of device, don't use this function.
  * @param [in] dev_id device id
@@ -232,7 +232,7 @@ drvError_t halTsCmdlistMemUnMap(unsigned int devId, unsigned int tsId);
  * @param [in] img_path  verify image path.
  * @param [in] cmd_type  head type.
  * @param [in] buf  the buff to save head info.
- * @param [in] buf_len  input buff length, when proc succ, the value should be change to actural value length
+ * @param [in] buf_len  input buff length, when proc succ, the value should be change to actual value length
  * @return  0  success, return others fail
  */
 int halGetImgHeadInfo(HAL_IMG_ID image_id, const char *img_path, HAL_IMG_HEAD_TYPE cmd_type, char *buf, int* buf_len);
@@ -273,7 +273,7 @@ typedef enum  {
 
 typedef struct {
     UADK_DIGEST_ALG alg;
-    unsigned int task_mode; /**< 0:loop query, 1:intrrupt nofity */
+    unsigned int task_mode; /**< 0:loop query, 1:interrupt notify */
     int rsv[4];
 } uadk_digest_param;
 
@@ -291,7 +291,7 @@ DLLEXPORT int uadk_digest_init(DIGEST_CTX *handle, uadk_digest_param *param);
 
 /**
  * @ingroup driver
- * @brief alloc digest memery
+ * @brief alloc digest memory
  * @attention
  * @param [in] handle  digest context handle
  * @param [in] len  buffer length
@@ -436,7 +436,7 @@ DLLEXPORT int drv_hw_deflate(struct drv_zip_stream *zstrm, int flush);
  * @brief deflate end
  * @attention null
  * @param [inout] zstrm  zip stream
- * @return   HZIP_OK   sucess
+ * @return   HZIP_OK   success
  * @return   other  fail
  */
 DLLEXPORT int drv_hw_deflateEnd(struct drv_zip_stream *zstrm);
@@ -484,7 +484,7 @@ DLLEXPORT int drv_hw_inflate(struct drv_zip_stream *zstrm, int flush);
  * @brief inflate end
  * @attention null
  * @param [inout] zstrm  zip stream
- * @return   HZIP_OK   sucess
+ * @return   HZIP_OK   success
  * @return   other  fail
  */
 DLLEXPORT int drv_hw_inflateEnd(struct drv_zip_stream *zstrm);
@@ -538,7 +538,7 @@ struct prof_sample_register_para {
 
 /**
  * @ingroup driver
- * @brief register prof channel smaple handle
+ * @brief register prof channel sample handle
  * @attention null
  * @param [in] dev_id : device id
  * @param [in] chan_id : channel id

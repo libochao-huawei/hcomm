@@ -79,7 +79,7 @@ typedef enum {
     TSD_SUB_PROC_NPU            = 5,           // npu process
     TSD_SUB_PROC_PROXY          = 6,           // proxy process
     TSD_SUB_PROC_BUILTIN_UDF    = 7,           // build in udf
-    TSD_SUB_PROC_ADPROF         = 8,           // adprof proces
+    TSD_SUB_PROC_ADPROF         = 8,           // adprof process
     TSD_SUB_PROC_MAX            = 0xFF
 } SubProcType;
 

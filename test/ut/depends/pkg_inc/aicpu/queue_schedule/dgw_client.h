@@ -118,7 +118,7 @@ struct CommChannelAttr {
 // group attr
 struct GroupAttr {
     int32_t groupId;       // group id
-    GroupPolicy policy;    // only need set for dstination group
+    GroupPolicy policy;    // only need set for destination group
     uint32_t endpointNum;  // only used for query result
     uint32_t rootModelId;
 };
@@ -217,7 +217,7 @@ struct ReDeployConfig {
 
 // config info, group config or routes config
 struct ConfigInfo {
-    ConfigCmd cmd;               // query mode, user donot need fill this param
+    ConfigCmd cmd;               // query mode, user do not need fill this param
     union {
         GroupConfig groupCfg;     // group config
         RoutesConfig routesCfg;   // routes config
@@ -522,7 +522,7 @@ private:
     pid_t curPid_;
     // dgw client group id
     uint32_t curGroupId_;
-    // dgw client and qs server pipline queue id
+    // dgw client and qs server pipeline queue id
     uint32_t piplineQueueId_;
     // dgw initialized flag
     bool initFlag_;

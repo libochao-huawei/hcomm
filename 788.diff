@@ -1,0 +1,3435 @@
+diff --git a/Third_Party_Open_Source_Software_Notice b/Third_Party_Open_Source_Software_Notice
+index d024f548da78ec9782eb61230b5b1c2fa46729bc..9b75084f95ad272a64293bbdbf17860e155663e4 100644
+--- a/Third_Party_Open_Source_Software_Notice
++++ b/Third_Party_Open_Source_Software_Notice
+@@ -166,7 +166,7 @@ Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ Copyright (c) Huawei Technologies Co., Ltd. 2012-2019. All rights reserved.
+ Copyright (c) Huawei Technologies Co., Ltd. 2012-2020. All rights reserved.
+ License: Apache License V2.0
+-Full Lisence Text:
++Full Licence Text:
+                                  Apache License
+                            Version 2.0, January 2004
+                         http://www.apache.org/licenses/
+@@ -393,7 +393,7 @@ Copyright (c) 2017 Facebook Inc.
+ Copyright (c) 2017 Georgia Institute of Technology
+ Copyright 2019 Google LLC
+ License: The MIT License (MIT)
+-Full Lisence Text:
++Full Licence Text:
+     Permission is hereby granted, free of charge, 
+     to any person obtaining a copy of this software and associated documentation files (the "Software"), 
+     to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, 
+@@ -434,7 +434,7 @@ test/ut/depends/include/securectype.h
+ Copyright notice(s):
+ Copyright (c) Huawei Technologies Co., Ltd. 2014-2021. All rights reserved.
+ License: Mulan PSL v2
+-Full Lisence Text:
++Full Licence Text:
+     http://license.coscl.org.cn/MulanPSL2
+     THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND,
+     EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT,
+@@ -650,7 +650,7 @@ Copyright (c) 1996-2003 Intel Corporation. All rights reserved.
+ Copyright (c) 2009 HNR Consulting. All rights reserved.
+ Copyright (c) 2011 Lawrence Livermore National Security. All rights reserved.
+ License: CC0 (Public domain)
+-Full Lisence Text:
++Full Licence Text:
+ 
+     Statement of Purpose
+ 
+@@ -751,7 +751,7 @@ Full Lisence Text:
+     obligation with respect to this CC0 or use of the Work.
+ 
+ License: OpenIB.org BSD License (MIT variant)
+-Full Lisence Text:
++Full Licence Text:
+ 
+            OpenIB.org BSD license (MIT variant)
+  
+
+diff --git a/include/hccl/hccl_types.h b/include/hccl/hccl_types.h
+index 016f25fa04cfb1e9b8e21b6a15d63a44b8ecbab6..1f67881a7ed423f61faf6556b51d96d8d9e04609 100644
+--- a/include/hccl/hccl_types.h
++++ b/include/hccl/hccl_types.h
+@@ -61,7 +61,7 @@ typedef void *HcclComm;
+ typedef void *HcclConn;
+ 
+ /**
+- * @brief HCCL Reduction opperation
++ * @brief HCCL Reduction operation
+  */
+ typedef enum {
+     HCCL_REDUCE_SUM = 0,    /**< sum */
+diff --git a/pkg_inc/hccl/base.h b/pkg_inc/hccl/base.h
+index 71d1f11bc3691e44b45319d126d986a402d3c570..938d4652f5c4009f2ab3dc5358068bbcc3a49687 100644
+--- a/pkg_inc/hccl/base.h
++++ b/pkg_inc/hccl/base.h
+@@ -26,7 +26,7 @@ typedef unsigned int u32;
+ typedef unsigned long long u64;
+ 
+ /**
+- * @brief Horovod Reduction opperation
++ * @brief Horovod Reduction operation
+  */
+ typedef enum {
+     HOROVOD_REDUCE_AVERAGE = 0, /**< average */
+diff --git a/pkg_inc/hccl/hccl_ex.h b/pkg_inc/hccl/hccl_ex.h
+index 53764379d3d308cab94bd0f660ac44b39075c130..5adf7ba2d3777d6e2fde7cc8923e3a6734bcc745 100644
+--- a/pkg_inc/hccl/hccl_ex.h
++++ b/pkg_inc/hccl/hccl_ex.h
+@@ -31,7 +31,7 @@ extern HcclResult HcclInitComm(const char* rankTableM, uint32_t rank, const Comm
+ /**
+  * @brief Destroy HCCL Heterog comm
+  *
+- * @param comm A pointer identifying the communication resource targetting
++ * @param comm A pointer identifying the communication resource targeting
+  * @return HcclResult
+  * @see HcclInitComm()
+  */
+@@ -39,7 +39,7 @@ extern HcclResult HcclFinalizeComm(HcclComm comm);
+ 
+ /**
+  * @ingroup mem_manangement
+- * @brief MR registed for the whole process
++ * @brief MR registered for the whole process
+  * @param [in]  addr memory address of the MR
+  * @param [in]  byte number of the MR
+  * @return HCCL_SUCCESS for ok
+@@ -49,7 +49,7 @@ extern HcclResult HcclRegisterGlobalMemory(void* addr, u64 size);
+ 
+ /**
+  * @ingroup mem_manangement
+- * @brief MR unregisted for the whole process
++ * @brief MR unregistered for the whole process
+  * @param [in]  addr memory address of the MR
+  * @return HCCL_SUCCESS for ok
+  * @return HCCL_E_PARA for error input
+@@ -77,7 +77,7 @@ extern int HcclTestSome(int count, HcclRequest requestArray[], int* compCount,
+ /**
+  * @ingroup raw communication
+  * @brief open HCCL connection handle
+- * @param [out] conn    hanlde be created
++ * @param [out] conn    handle be created
+  * @return HCCL_SUCCESS for ok
+  * @return HCCL_E_PARA for error input
+  */
+@@ -86,7 +86,7 @@ extern HcclResult HcclRawOpen(HcclConn* conn);
+ /**
+  * @ingroup raw communication
+  * @brief close HCCL connection handle
+- * @param [in] conn    hanlde that will be destroyed
++ * @param [in] conn    handle that will be destroyed
+  * @return HCCL_SUCCESS for ok
+  * @return HCCL_E_PARA for error input
+  */
+@@ -95,7 +95,7 @@ extern HcclResult HcclRawClose(HcclConn conn);
+ /**
+  * @ingroup raw communication
+  * @brief force close HCCL connection handle, sockets will be immediately close
+- * @param [in] conn    hanlde that will be destroyed
++ * @param [in] conn    handle that will be destroyed
+  * @return HCCL_SUCCESS for ok
+  * @return HCCL_E_PARA for error input
+  */
+@@ -104,7 +104,7 @@ extern HcclResult HcclRawForceClose(HcclConn conn);
+ /**
+  * @ingroup raw communication
+  * @brief bind a communiocation address for the handle
+- * @param [in] conn    connection hanlde
++ * @param [in] conn    connection handle
+  * @param [in] bindAddr    hccl address to which the handle will be bind
+  * @return HCCL_SUCCESS for connect suncess
+  * @return HCCL_E_AGAIN for need retry
+@@ -115,7 +115,7 @@ extern HcclResult HcclRawBind(HcclConn conn, HcclAddr* bindAddr);
+ /**
+  * @ingroup raw communication
+  * @brief try to connect to remote as client role
+- * @param [in] conn    hanlde that try to connect
++ * @param [in] conn    handle that try to connect
+  * @param [in] connectionAddr    remote hccl address.
+  * @return HCCL_SUCCESS for connect suncess
+  * @return HCCL_E_AGAIN for need retry
+@@ -126,7 +126,7 @@ extern HcclResult HcclRawConnect(HcclConn conn, HcclAddr* connectAddr);
+ /**
+  * @ingroup raw communication
+  * @brief listen communiocation peer for the handle with a pre-bind HCCL address.
+- * @param [in] conn    connection hanlde
++ * @param [in] conn    connection handle
+  * @param [in] bakLog    max peer can be queued in parallel when listening
+  * @return HCCL_SUCCESS for listen OK
+  * @return HCCL_E_PARA for error input
+@@ -136,7 +136,7 @@ extern HcclResult HcclRawListen(HcclConn conn, int backLog);
+ /**
+  * @ingroup raw communication
+  * @brief accept communiocation peer for the handle with a listend handle
+- * @param [in] listenConn    connection hanlde
++ * @param [in] listenConn    connection handle
+  * @param [out] acceptAddr   peer address that accepted
+  * @param [out] acceptConn   handle for peer communication
+  * @return HCCL_SUCCESS for listen OK
+@@ -148,7 +148,7 @@ extern HcclResult HcclRawAccept(HcclConn listenConn, HcclAddr* acceptAddr, HcclC
+ /**
+  * @ingroup raw communication
+  * @brief raw non-blocking send
+- * @param [in] conn    connection hanlde with which replace {comm, rank, tag} in MPI-like APIs
++ * @param [in] conn    connection handle with which replace {comm, rank, tag} in MPI-like APIs
+  * @param [in|out]  other params same as HcclIsend
+  * @return same as HcclIsend
+  */
+@@ -157,7 +157,7 @@ extern HcclResult HcclRawIsend(const void* buf, int count, HcclDataType dataType
+ /**
+  * @ingroup raw communication
+  * @brief raw non-blocking message probe
+- * @param [in] conn    connection hanlde with which replace {comm, rank, tag} in MPI-like APIs
++ * @param [in] conn    connection handle with which replace {comm, rank, tag} in MPI-like APIs
+  * @param [in|out]  other params same as HcclIsend
+  * @return same as HcclImprobe
+  */
+diff --git a/python/hccl/manage/api.py b/python/hccl/manage/api.py
+index b4ba584e9d2eba11f31c10f924e8508d4088f2e1..94843e55165c033cc35c792471ba535da36d43bf 100644
+--- a/python/hccl/manage/api.py
++++ b/python/hccl/manage/api.py
+@@ -15,7 +15,7 @@ MAX_GROUP_NAME_LEN = 127
+ 
+ def check_group(group):
+     """A function that check if a collection
+-    communication group is leagal.If not raise error.
++    communication group is legal.If not raise error.
+     Returns:
+         None
+     """
+@@ -29,7 +29,7 @@ def check_group(group):
+ 
+ def check_rank_num(rank_num):
+     """A function that check if a collection
+-    communication rank number is leagal.If not raise error.
++    communication rank number is legal.If not raise error.
+     Returns:
+         None
+     """
+diff --git a/src/platform/comm_primitive/hccl_dispatcher_ctx.cc b/src/platform/comm_primitive/hccl_dispatcher_ctx.cc
+index 14b3ef03b7efb4444704b721a9ae0d41244ba6a0..fa56cef704a23228f108dc4ff369649b0062eed3 100644
+--- a/src/platform/comm_primitive/hccl_dispatcher_ctx.cc
++++ b/src/platform/comm_primitive/hccl_dispatcher_ctx.cc
+@@ -128,11 +128,11 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
+ {
+     CHK_PTR_NULL(commId);
+     CHK_PTR_NULL(ctx);
+-    HCCL_INFO("[DestoryCtx] Destory Ctx, ctx[%p] commId[%s]", ctx, commId);
++    HCCL_INFO("[DestroyCtx] Destroy Ctx, ctx[%p] commId[%s]", ctx, commId);
+     if (gDispatcherCtx == ctx) {
+         gDispatcherCtx = nullptr;
+     } else {
+-        HCCL_WARNING("[DestoryCtx] gDispatcherCtx[%p] and ctx[%p] do not match.", gDispatcherCtx, ctx);
++        HCCL_WARNING("[DestroyCtx] gDispatcherCtx[%p] and ctx[%p] do not match.", gDispatcherCtx, ctx);
+     }
+ 
+     DispatcherCtxPtr otherCtx = nullptr;
+@@ -143,15 +143,15 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
+     } else {
+         bool hasFound = DeleteCommIdByDispatcherCtx(ctx);
+         if (!hasFound) {
+-            HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], it may have be destroied", ctx, commId);
++            HCCL_WARNING("[DestroyCtx] ctx[%p] not found by commId[%s], it may have be destroied", ctx, commId);
+             return HCCL_SUCCESS;
+         }
+-        HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], just destroy", ctx, commId);
++        HCCL_WARNING("[DestroyCtx] ctx[%p] not found by commId[%s], just destroy", ctx, commId);
+     }
+     hccl::DispatcherCtx *Ctx_tmp = reinterpret_cast<hccl::DispatcherCtx*>(ctx);
+     HcclResult ret = Ctx_tmp->Destroy();
+     if (ret != HCCL_SUCCESS) {
+-        HCCL_ERROR("[DestoryCtx] CTX Destroy fail");
++        HCCL_ERROR("[DestroyCtx] CTX Destroy fail");
+     }
+     delete Ctx_tmp;
+     ctx = nullptr;
+@@ -177,7 +177,7 @@ DispatcherCtxPtr GetDispatcherCtx(const char* commId)
+     }
+     HCCL_DEBUG("[%s], commId[%s]", __func__, commId);
+     if (LIKELY((gDispatcherCtx != nullptr))) {
+-        HCCL_INFO("[%s], gDispatcherCtx[%p] exsist, commId[%s]", __func__, gDispatcherCtx, commId);
++        HCCL_INFO("[%s], gDispatcherCtx[%p] exist, commId[%s]", __func__, gDispatcherCtx, commId);
+         return gDispatcherCtx;
+     }
+     DispatcherCtxPtr ctx;
+diff --git a/src/platform/common/buffer_manager/rma_buffer_mgr.h b/src/platform/common/buffer_manager/rma_buffer_mgr.h
+index 4c7a88541599c2a294ac7842494caff81862ee13..943471529f73a9038b26ad0d3c0869615d5e59df 100644
+--- a/src/platform/common/buffer_manager/rma_buffer_mgr.h
++++ b/src/platform/common/buffer_manager/rma_buffer_mgr.h
+@@ -58,7 +58,7 @@ public:
+                 throw std::logic_error("ref++ = 0, ref++ flipped");
+             }
+             else if(result.first->second.ref > 1) {
+-                HCCL_RUN_INFO("Memory is already registed, just increase the reference count, "
++                HCCL_RUN_INFO("Memory is already registered, just increase the reference count, "
+                     "current memory reference count[%llu], %s.", result.first->second.ref, key.ToString().c_str());
+             }
+         }
+diff --git a/src/platform/common/externalinput.cc b/src/platform/common/externalinput.cc
+index 96dc791c8320e7167689744c3df55b0de1578f7a..7d09a5163754b4da17be702288bf51b29fb63835 100644
+--- a/src/platform/common/externalinput.cc
++++ b/src/platform/common/externalinput.cc
+@@ -1586,7 +1586,7 @@ HcclResult ParseAicpuCacheEnable()
+     } else if (result == EN_ERROR) { // not specify HCCL_AICPU_CACHE_ENABLE
+         aicpuCacheEnable = "EmptyString";
+     } else { // insufficient length
+-        HCCL_ERROR("[Parser][AicpuCacheEnable] failt to get HCCL_AICPU_CACHE_ENABLE: aicpuCacheEnableChars.len[%u]", charCnt);
++        HCCL_ERROR("[Parser][AicpuCacheEnable] fail to get HCCL_AICPU_CACHE_ENABLE: aicpuCacheEnableChars.len[%u]", charCnt);
+         return HCCL_E_INTERNAL;
+     }
+ 
+diff --git a/src/platform/hccp/inc/network/hccp.h b/src/platform/hccp/inc/network/hccp.h
+index f17249482b9e45a799beea5feeae02b32066ae67..2a78974867f44545d32e15a6825b2f740c76a34e 100644
+--- a/src/platform/hccp/inc/network/hccp.h
++++ b/src/platform/hccp/inc/network/hccp.h
+@@ -91,7 +91,7 @@ HCCP_ATTRI_VISI_DEF int RaGetSockets(unsigned int role, struct SocketInfoT conn[
+  * @param size [IN] size of data you want to send unit(Byte)
+  * @param sent_size [OUT] number of sent bytes
+  * @see ra_socket_recv
+- * @attention if sent_size is greate than zero but less than size,
++ * @attention if sent_size is greater than zero but less than size,
+  * the function needed to be revoked again,
+  * the param of size is original size minus sent_size,
+   *the param of data should also offset by sent_size
+@@ -110,7 +110,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketSend(const void *fdHandle, const void *data, uns
+  * @param received_size [OUT] number of received bytes
+  * @see ra_socket_send
+  * @attention if return value is SOCK_EAGAIN which means no data right now,
+- * you need to revoke the funcion again
++ * you need to revoke the function again
+  * @retval #zero Success
+  * @retval #SOCK_EAGAIN Success(no data received by socket)
+  * @retval #non-zero Failure(exclude SOCK_EAGAIN)
+@@ -332,7 +332,7 @@ HCCP_ATTRI_VISI_DEF int RaCqCreate(void *rdevHandle, struct CqAttr *attr);
+ 
+ /**
+  * @ingroup librdma
+- * @brief Destory cq
++ * @brief Destroy cq
+  * @param rdev_handle [IN] rdev handle
+  * @param attr [IN] cq attr
+  * @see ra_cq_create
+@@ -429,7 +429,7 @@ HCCP_ATTRI_VISI_DEF int RaDeregisterMr(const void *rdmaHandle, void *mrHandle);
+  * @param wr [IN] work request
+  * @param op_rsp [IN/OUT] respond of sending work request
+  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
+- * you need to revoke the funcion again
++ * you need to revoke the function again
+  * @retval #zero Success
+  * @retval #SOCK_ENOENT Success
+  * @retval #non-zero Failure(exclude SOCK_ENOENT)
+@@ -443,7 +443,7 @@ HCCP_ATTRI_VISI_DEF int RaSendWr(void *qpHandle, struct SendWr *wr, struct SendW
+  * @param wr [IN] work request
+  * @param op_rsp [IN/OUT] respond of sending work request
+  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
+- * you need to revoke the funcion again
++ * you need to revoke the function again
+  * @retval #zero Success
+  * @retval #SOCK_ENOENT Success
+  * @retval #non-zero Failure(exclude SOCK_ENOENT)
+@@ -471,7 +471,7 @@ HCCP_ATTRI_VISI_DEF int RaTypicalSendWr(void *qpHandle, struct SendWr *wr, struc
+  * @param send_num [IN] size of wr list
+  * @param complete_num [OUT] number of wr been sent successfully
+  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
+- * you need to revoke the funcion again
++ * you need to revoke the function again
+  * @retval #zero Success
+  * @retval #SOCK_ENOENT Success
+  * @retval #non-zero Failure(exclude SOCK_ENOENT)
+@@ -488,7 +488,7 @@ HCCP_ATTRI_VISI_DEF int RaSendWrlist(void *qpHandle, struct SendWrlistData wr[],
+  * @param send_num [IN] size of wr list
+  * @param complete_num [OUT] number of wr been sent successfully
+  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
+- * you need to revoke the funcion again
++ * you need to revoke the function again
+  * @retval #zero Success
+  * @retval #SOCK_ENOENT Success
+  * @retval #non-zero Failure(exclude SOCK_ENOENT)
+@@ -827,7 +827,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevGetPortStatus(void *rdmaHandle, enum PortStatus *s
+  * @param recv_num [IN] size of wr list
+  * @param complete_num [OUT] number of wr been post recv request successfully
+  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
+- * you need to revoke the funcion again
++ * you need to revoke the function again
+  * @retval #zero Success
+  * @retval #non-zero Failure
+ */
+diff --git a/src/platform/hccp/inc/network/hccp_common.h b/src/platform/hccp/inc/network/hccp_common.h
+index f480937f778f7f0f1eebbeaa38ef6fedc016c895..d3dc4d2cf80f05f1e1a5a26ed269599f78223e4a 100644
+--- a/src/platform/hccp/inc/network/hccp_common.h
++++ b/src/platform/hccp/inc/network/hccp_common.h
+@@ -72,7 +72,7 @@ enum WhiteListStatus {
+  */
+ #define SOCK_EAGAIN    128201   /* EAGAIN:no data received by socket */
+ #define SOCK_CLOSE   128203 /* EINVAL:device异常关闭时作为心跳返回值返回给hccl*/
+-#define SOCK_ENOENT    228200   /* ENOENT:SOCK_ENOENT means mr async not success right now,revoke the funcion again */
++#define SOCK_ENOENT    228200   /* ENOENT:SOCK_ENOENT means mr async not success right now,revoke the function again */
+ #define SOCK_EADDRINUSE    128205   /* EADDRINUSE：check if IP has been listened when SOCK_EADDRINUSE is returned */
+ #define SOCK_EADDRNOTAVAIL 128206   /* EADDRNOTAVAIL：check if IP exist when SOCK_EADDRNOTAVAIL is returned */
+ #define SOCK_ESOCKCLOSED   128207   /* ESOCKCLOSED：socket has been closed */
+@@ -93,7 +93,7 @@ enum WhiteListStatus {
+ #define ROCE_EAGAIN    128101   /* EAGAIN:try again */
+ #define ROCE_ENOMEM    328100   /* ENOMEM: roce module has ENOMEM error */
+ #define ROCE_EOPENSRC  528101   /* EOPENSRC: open source verbs error */
+-#define ROCE_ENOENT    228100   /* ENOENT: means mr async not success right now, revoke the funcion again */
++#define ROCE_ENOENT    228100   /* ENOENT: means mr async not success right now, revoke the function again */
+ 
+ /**
+  * @ingroup libinit
+diff --git a/src/platform/hccp/rdma_service/rs_socket.c b/src/platform/hccp/rdma_service/rs_socket.c
+index 62fd0e2becd2d1b07e7908e6f83b620db44bdd8d..0819953ce5b8c024ecbdae0f955fba05f37802fd 100644
+--- a/src/platform/hccp/rdma_service/rs_socket.c
++++ b/src/platform/hccp/rdma_service/rs_socket.c
+@@ -338,7 +338,7 @@ STATIC int RsTcpRecvTagInHandle(struct RsListenInfo *listenInfo, int connfd, str
+         }
+         // peer socket session has been closed
+         if (size == 0) {
+-            hccp_run_info("session has been clsoed, server:{%s:%u} client:%s tagSyncTime:%u tagEintrTime:%u",
++            hccp_run_info("session has been closed, server:{%s:%u} client:%s tagSyncTime:%u tagEintrTime:%u",
+                 listenInfo->serverIpAddr.readAddr, listenInfo->sockPort, remoteIp->readAddr,
+                 connTmp->tagSyncTime, connTmp->tagEintrTime);
+             return -ESOCKCLOSED;
+@@ -424,7 +424,7 @@ STATIC int RsSocketCheckCredit(struct RsConnCb *connCb, struct RsListenInfo *lis
+         return 0;
+     }
+ 
+-    // accept_credit is exhaused, check failed
++    // accept_credit is exhausted, check failed
+     if (listenInfo->acceptCreditLimit == 0) {
+         return -EINVAL;
+     }
+@@ -433,7 +433,7 @@ STATIC int RsSocketCheckCredit(struct RsConnCb *connCb, struct RsListenInfo *lis
+     listenInfo->acceptCreditLimit--;
+     RS_PTHREAD_MUTEX_ULOCK(&listenInfo->acceptCreditMutex);
+ 
+-    // accept_credit is exhaused, ignore return value to delete from epoll
++    // accept_credit is exhausted, ignore return value to delete from epoll
+     if (listenInfo->acceptCreditLimit == 0) {
+         (void)RsSocketListenDelFromEpoll(connCb, listenInfo);
+     }
+diff --git a/src/platform/hccp/stub_tsd/stub_tsd.c b/src/platform/hccp/stub_tsd/stub_tsd.c
+index 0b951c76222b3739d5d9358cfa2e1bc96d31fee6..b5cdac59ee43d70013e12ba9ecae17ddb8587368 100644
+--- a/src/platform/hccp/stub_tsd/stub_tsd.c
++++ b/src/platform/hccp/stub_tsd/stub_tsd.c
+@@ -45,7 +45,7 @@ int32_t SendStartUpFinishMsg(const uint32_t deviceId, const TsdWaitType waitType
+ * @param [in] vfId : vf id
+ * @param [in] errCode : errCode: errMsg code produced by host
+ * @param [in] errLen : errLen: errMsg code length
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t ReportProcessStartUpErrorCode(const uint32_t deviceId, const TsdWaitType waitType,
+                                       const uint32_t hostPid, const uint32_t vfId,
+
+
+diff --git a/src/platform/ping_mesh/ping_mesh.cc b/src/platform/ping_mesh/ping_mesh.cc
+index ca86c0506412dcb3a15283a92210b19a6e5c900c..2e2652d52d6cb3b02116ba3cc382aac99b5b7704 100644
+--- a/src/platform/ping_mesh/ping_mesh.cc
++++ b/src/platform/ping_mesh/ping_mesh.cc
+@@ -73,7 +73,7 @@ inline HcclResult UninitStateCheck(RpingState nextState)
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+         default:
+-            HCCL_ERROR("[HCCN][UninitStateCheck]Undefinied behavior.");
++            HCCL_ERROR("[HCCN][UninitStateCheck]Undefined behavior.");
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+     }
+@@ -101,7 +101,7 @@ inline HcclResult InitedStateCheck(RpingState nextState)
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+         default:
+-            HCCL_ERROR("[HCCN][InitedStateCheck]Undefinied behavior.");
++            HCCL_ERROR("[HCCN][InitedStateCheck]Undefined behavior.");
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+     }
+@@ -126,7 +126,7 @@ inline HcclResult ReadyStateCheck(RpingState nextState)
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+         default:
+-            HCCL_ERROR("[HCCN][ReadyStateCheck]Undefinied behavior.");
++            HCCL_ERROR("[HCCN][ReadyStateCheck]Undefined behavior.");
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+     }
+@@ -150,7 +150,7 @@ inline HcclResult RunStateCheck(RpingState nextState)
+         case RpingState::STOP:
+             break;
+         default:
+-            HCCL_ERROR("[HCCN][RunStateCheck]Undefinied behavior.");
++            HCCL_ERROR("[HCCN][RunStateCheck]Undefined behavior.");
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+     }
+@@ -174,7 +174,7 @@ inline HcclResult StopStateCheck(RpingState nextState)
+             HCCL_WARNING("[HCCN][StopStateCheck]Task is stopped.");
+             break;
+         default:
+-            HCCL_ERROR("[HCCN][StopStateCheck]Undefinied behavior.");
++            HCCL_ERROR("[HCCN][StopStateCheck]Undefined behavior.");
+             ret = HCCL_E_NOT_SUPPORT;
+             break;
+     }
+diff --git a/src/platform/remote_access/comm_remote_access.cc b/src/platform/remote_access/comm_remote_access.cc
+index 267cc2ac307098e9dea1a76153b6023fe5a03a2b..707c2c0af917955d04890e6b38a6b74a6c26c684 100644
+--- a/src/platform/remote_access/comm_remote_access.cc
++++ b/src/platform/remote_access/comm_remote_access.cc
+@@ -313,7 +313,7 @@ HcclResult CommRemoteAccess::CreateLinks()
+     HCCL_INFO("CommRemoteAccess CreateLinks rank_[%u] dstInterClientMapSize[%u], nicNum[%u], dstInterServerMapSize[%u]",
+         rank_, dstInterClientMap_.size(), nicNum, dstInterServerMap_.size());
+     CHK_PRT_RET((threadsNum == 0), HCCL_ERROR("[Create][Links]no link to create, please check ranktable to see if"
+-        "device_ip is configed. nicNum[%u]", nicNum), HCCL_E_INTERNAL);
++        "device_ip is configured. nicNum[%u]", nicNum), HCCL_E_INTERNAL);
+     linkThreads_.resize(threadsNum);
+     threadsStatus_.resize(threadsNum);
+     HCCL_INFO(
+@@ -494,7 +494,7 @@ void CommRemoteAccess::PrintErrorConnection(const u32 role, const u32 num)
+     RPT_INNER_ERR_PRT("remote op nic connect failed, please ensure that collective communication execution status "\
+         "of each device is consistent(include network TLS configuration)");
+ 
+-    HCCL_ERROR("Some NPUs get socket timout, the details are as follows:");
++    HCCL_ERROR("Some NPUs get socket timeout, the details are as follows:");
+     HCCL_ERROR("   _________________________LINK_ERROR_INFO___________________________");
+     HCCL_ERROR("   |  comm error, device[%d] num[%u] ", deviceLogicId_, num);
+     HCCL_ERROR("   |  dest_ip(user_rank)  |   dest_port   |  src_ip(user_rank)   |   src_port   |   MyRole   "
+diff --git a/src/platform/remote_access/transport_remote_access.cc b/src/platform/remote_access/transport_remote_access.cc
+index f4e0ed2557afb206b38ae7d5e26facd78c5d3e05..5c0067109d0905681cfa186f4c40e8c1f120d068 100644
+--- a/src/platform/remote_access/transport_remote_access.cc
++++ b/src/platform/remote_access/transport_remote_access.cc
+@@ -100,7 +100,7 @@ HcclResult TransportRemoteAccess::MrRegister()
+ {
+     void* memPtr = nullptr;
+     if (MemRegistInfos_.size() == 0) {
+-        HCCL_ERROR("[Register][Mr]local mem info to registe is empty!");
++        HCCL_ERROR("[Register][Mr]local mem info to register is empty!");
+         return HCCL_E_PARA;
+     }
+     struct MrInfoT mrInfo = {nullptr};
+diff --git a/src/platform/resource/notify/notify_pool_impl.cc b/src/platform/resource/notify/notify_pool_impl.cc
+index 25da122bd8a9331a4b2504587a8e617179d4a0df..1bd02629b5b094c919fe14d9e8e64f727b607564 100644
+--- a/src/platform/resource/notify/notify_pool_impl.cc
++++ b/src/platform/resource/notify/notify_pool_impl.cc
+@@ -133,7 +133,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMap()
+         }
+     }
+     notifyPoolIPCAsignedMap_.clear();
+-    HCCL_DEBUG("destroy asigned notify pool(ipc).");
++    HCCL_DEBUG("destroy assigned notify pool(ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -147,7 +147,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceIPCAsignedMap()
+         }
+     }
+     notifyPoolDeivceIPCAsignedMap_.clear();
+-    HCCL_DEBUG("destroy asigned notify pool(device ipc).");
++    HCCL_DEBUG("destroy assigned notify pool(device ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -161,7 +161,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMapForA2A()
+         }
+     }
+     notifyPoolIPCAsignedMapForA2A_.clear();
+-    HCCL_DEBUG("for a2a destroy asigned notify pool(ipc).");
++    HCCL_DEBUG("for a2a destroy assigned notify pool(ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -176,7 +176,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceIPCAsignedMapForA2A()
+         }
+     }
+     notifyPoolDevIPCAsignedMapForA2A_.clear();
+-    HCCL_DEBUG("for a2a destroy asigned notify pool(ipc).");
++    HCCL_DEBUG("for a2a destroy assigned notify pool(ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -189,7 +189,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMap()
+         }
+     }
+     notifyPoolNoIPCAsignedMap_.clear();
+-    HCCL_DEBUG("destroy asigned notify pool(no ipc).");
++    HCCL_DEBUG("destroy assigned notify pool(no ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -202,7 +202,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceNoIPCAsignedMap()
+         }
+     }
+     notifyPoolDeivceNoIPCAsignedMap_.clear();
+-    HCCL_DEBUG("destroy asigned notify pool(device no ipc).");
++    HCCL_DEBUG("destroy assigned notify pool(device no ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -215,7 +215,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMapForA2A()
+         }
+     }
+     notifyPoolNoIPCAsignedMapForA2A_.clear();
+-    HCCL_DEBUG("for a2a destroy asigned notify pool(no ipc).");
++    HCCL_DEBUG("for a2a destroy assigned notify pool(no ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -229,7 +229,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceNoIPCAsignedMapForA2A()
+         }
+     }
+     notifyPoolDevNoIPCAsignedMapForA2A_.clear();
+-    HCCL_DEBUG("for a2a destroy asigned notify pool(no ipc).");
++    HCCL_DEBUG("for a2a destroy assigned notify pool(no ipc).");
+     return HCCL_SUCCESS;
+ }
+ 
+diff --git a/src/platform/resource/transport/host/transport_p2p.cc b/src/platform/resource/transport/host/transport_p2p.cc
+index f7b6917a354270d49186d9d71a5c1239eefe9574..69be8467df240374a8bd982ef84ddf1339aae239 100644
+--- a/src/platform/resource/transport/host/transport_p2p.cc
++++ b/src/platform/resource/transport/host/transport_p2p.cc
+@@ -909,7 +909,7 @@ HcclResult TransportP2p::ExchangeMemAndNotifyWithoutIpc()
+     ret = RecvMemMesgWithoutIpc(memAddr, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_);
+     remoteOutputPtr_ = reinterpret_cast<void*>(memAddr);
+     CHK_PRT_RET(ret != HCCL_SUCCESS,
+-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc output mem mesg fail. ret[%d], "\
++        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "\
+         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteOutputPtr_, remoteOutputMemName_.ipcName,
+         remoteOutputOffsetValue_), ret);
+ 
+@@ -917,7 +917,7 @@ HcclResult TransportP2p::ExchangeMemAndNotifyWithoutIpc()
+     ret = RecvMemMesgWithoutIpc(memAddr, remoteInputMemName_.ipcName, remoteInputOffsetValue_);
+     remoteInputPtr_ = reinterpret_cast<void*>(memAddr);
+     CHK_PRT_RET(ret != HCCL_SUCCESS,
+-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc input mem mesg fail. ret[%d], "\
++        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "\
+         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteInputPtr_, remoteInputMemName_.ipcName,
+         remoteInputOffsetValue_), ret);
+ 
+@@ -948,14 +948,14 @@ HcclResult TransportP2p::ExchangeMemAndNotifyWithIpc()
+     /* 接收IPC output 内存 */
+     ret = RecvIpcMemMesg(&remoteOutputPtr_, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_);
+     CHK_PRT_RET(ret != HCCL_SUCCESS,
+-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc output mem mesg fail. ret[%d], "\
++        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "\
+         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteOutputPtr_, remoteOutputMemName_.ipcName,
+         remoteOutputOffsetValue_), ret);
+ 
+     /* 接收IPC input 内存 */
+     ret = RecvIpcMemMesg(&remoteInputPtr_, remoteInputMemName_.ipcName, remoteInputOffsetValue_);
+     CHK_PRT_RET(ret != HCCL_SUCCESS,
+-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc input mem mesg fail. ret[%d], "\
++        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "\
+         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteInputPtr_, remoteInputMemName_.ipcName,
+         remoteInputOffsetValue_), ret);
+ 
+diff --git a/src/platform/resource/transport/host/transport_shm_event.cc b/src/platform/resource/transport/host/transport_shm_event.cc
+index b9f64bd47e12867e79d51708646efc86d57a6c11..c77ac721bbb7a0b3de448ca37a57f3d5e4499038 100644
+--- a/src/platform/resource/transport/host/transport_shm_event.cc
++++ b/src/platform/resource/transport/host/transport_shm_event.cc
+@@ -132,7 +132,7 @@ HcclResult TransportShmEvent::ExchangeIpcMesg()
+         void *remoteMemPtr = nullptr;
+         ret = RecvIpcMemMesg(&remoteMemPtr, remoteInputMemName_.ipcName, remoteInputOffsetValue_, size);
+         CHK_PRT_RET(ret != HCCL_SUCCESS,
+-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc input mem mesg fail. ret[%d], "\
++            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "\
+             "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteInputMemName_.ipcName,
+             remoteOutputOffsetValue_), ret);
+         HCCL_DEBUG("remote inpue ptr size[%llu]", size);
+@@ -140,7 +140,7 @@ HcclResult TransportShmEvent::ExchangeIpcMesg()
+         /* 接收IPC output中转内存 */
+         ret = RecvIpcMemMesg(&remoteMemPtr, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_, size);
+         CHK_PRT_RET(ret != HCCL_SUCCESS,
+-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc output mem mesg fail. ret[%d], "\
++            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "\
+             "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteOutputMemName_.ipcName,
+             remoteOutputOffsetValue_), ret);
+         HCCL_DEBUG("remote inpue ptr size[%llu]", size);
+@@ -149,7 +149,7 @@ HcclResult TransportShmEvent::ExchangeIpcMesg()
+         ret = RecvIpcMemMesg(&remoteMemPtr, remoteEnvelopeItemMemName_.ipcName,
+             remoteEnvelopeItemOffsetValue_, size);
+         CHK_PRT_RET(ret != HCCL_SUCCESS,
+-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc envelope mem mesg fail. ret[%d], "\
++            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc envelope mem mesg fail. ret[%d], "\
+             "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteEnvelopeItemMemName_.ipcName,
+             remoteOutputOffsetValue_), ret);
+         envelopeShmQue_ = DeviceMem::create(remoteMemPtr, size);
+diff --git a/src/platform/resource/transport/onesided/hccl_mem.cc b/src/platform/resource/transport/onesided/hccl_mem.cc
+index 4f3720e3a693a35fb718c83b1074279796eda0e0..cfff655d2f5a24160b136018bb16d4731c71173d 100644
+--- a/src/platform/resource/transport/onesided/hccl_mem.cc
++++ b/src/platform/resource/transport/onesided/hccl_mem.cc
+@@ -59,7 +59,7 @@ static HcclResult HcclMemRegIpc(NetDevContext *netDevCtx, const HcclMem *mem, Hc
+         HCCL_INFO("[HcclMemRegIpc]Register memory success! Add key {%p, %llu}", mem->addr, size);
+         return HCCL_SUCCESS;
+     } else {  // 内存再次注册时
+-        HCCL_INFO("[HcclMemRegIpc]Memory is already registed, just increase the reference count. Add key "
++        HCCL_INFO("[HcclMemRegIpc]Memory is already registered, just increase the reference count. Add key "
+                   "{%p, %llu}", mem->addr, size);;
+         return HCCL_E_AGAIN;
+     }
+@@ -126,7 +126,7 @@ static HcclResult HcclMemRegRoce(NetDevContext *netDevCtx, const HcclMem *mem, H
+         HCCL_INFO("[HcclMemRegRoce]Register memory success! Add key {%p, %llu}", mem->addr, size);
+         return HCCL_SUCCESS;
+     } else {  // 内存再次注册时
+-        HCCL_INFO("[HcclMemRegRoce]Memory is already registed, just increase the reference count. Add key "
++        HCCL_INFO("[HcclMemRegRoce]Memory is already registered, just increase the reference count. Add key "
+                   "{%p, %llu}", mem->addr, size);;
+         return HCCL_E_AGAIN;
+     }
+diff --git a/src/platform/resource/transport/onesided/transport_ipc_mem.cc b/src/platform/resource/transport/onesided/transport_ipc_mem.cc
+index 250b00999c5b6241d1ad7117d91e0f1236606f9f..af8c145114684887d9c293c2ec8a5ad6ad70b8df 100644
+--- a/src/platform/resource/transport/onesided/transport_ipc_mem.cc
++++ b/src/platform/resource/transport/onesided/transport_ipc_mem.cc
+@@ -95,7 +95,7 @@ HcclResult TransportIpcMem::DisableMemAccess(const RmaMemDesc &remoteMemDesc)
+         }
+         return HCCL_SUCCESS;
+     } catch (std::out_of_range& e) {
+-        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del expection: %s", e.what());
++        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception: %s", e.what());
+         return HCCL_E_NOT_FOUND;
+     }
+ }
+diff --git a/src/platform/resource/transport/onesided/transport_roce_mem.cc b/src/platform/resource/transport/onesided/transport_roce_mem.cc
+index 91acbb3d96a5a18e33be408c9fe5704aa0ad793c..5689f222b3c00796edfe4aac0e44c9c5eadad301 100644
+--- a/src/platform/resource/transport/onesided/transport_roce_mem.cc
++++ b/src/platform/resource/transport/onesided/transport_roce_mem.cc
+@@ -149,7 +149,7 @@ HcclResult TransportRoceMem::DisableMemAccess(const RmaMemDesc &remoteMemDesc)
+         }
+         return HCCL_SUCCESS;
+     } catch (std::out_of_range& e) {
+-        HCCL_ERROR("[TransportRoceMem][DisableMemAccess] catch RmaBufferMgr Del expection: %s", e.what());
++        HCCL_ERROR("[TransportRoceMem][DisableMemAccess] catch RmaBufferMgr Del exception: %s", e.what());
+         return HCCL_E_NOT_FOUND;
+     }
+ }
+diff --git a/src/platform/task/dispatcher_aicpu.cc b/src/platform/task/dispatcher_aicpu.cc
+index b5d9e8fc2d064450db6812abffaf4cbafcd17569..e981a5758c74b89b8acff429fe9b5a4104a2328b 100644
+--- a/src/platform/task/dispatcher_aicpu.cc
++++ b/src/platform/task/dispatcher_aicpu.cc
+@@ -54,7 +54,7 @@ HcclResult HcclDispatcherAicpuInit(HcclDispatcher *dispatcher, const u32 devPhyI
+ }
+ #endif // __cplusplus
+ 
+-DispatcherAiCpu::DispatcherAiCpu(const u32 devPhyId) // depreated
++DispatcherAiCpu::DispatcherAiCpu(const u32 devPhyId) // deprecated
+     : DispatcherPub(INVALID_INT)
+ {
+     aicpuInfo_.devId = devPhyId;
+
+ 
+diff --git a/test/ut/depends/include/acl/acl_base_mdl.h b/test/ut/depends/include/acl/acl_base_mdl.h
+index edff8e1fbeca7baaab81dfebeac310f6614b7471..103e8f24a7cdb1a5bc7af2fada8bd3ada36f479c 100644
+--- a/test/ut/depends/include/acl/acl_base_mdl.h
++++ b/test/ut/depends/include/acl/acl_base_mdl.h
+@@ -1,6 +1,6 @@
+ /*!
+  * This is an empyt file, included for compatibility with old version.
+- * If you want to use aclmdl api, please install the corresponding package to overrite this file.
++ * If you want to use aclmdl api, please install the corresponding package to overwrite this file.
+  *
+  * 这是一个空文件，是为了兼容老的版本，如果您想用aclmdl接口，请安装对应的包覆盖本文件。
+  * */
+\ No newline at end of file
+diff --git a/test/ut/depends/include/acl/acl_mdl.h b/test/ut/depends/include/acl/acl_mdl.h
+index c2e54be46d0c7db5daa198202a75bd1eecec9744..bc20b1590052245c7c3ed6f0753c0cea26a2cbc7 100644
+--- a/test/ut/depends/include/acl/acl_mdl.h
++++ b/test/ut/depends/include/acl/acl_mdl.h
+@@ -1,6 +1,6 @@
+ /*!
+  * This is an empyt file, included for compatibility with old version. 
+- * If you want to use aclmdl api, please install the corresponding package to overrite this file.
++ * If you want to use aclmdl api, please install the corresponding package to overwrite this file.
+  *
+  * 这是一个空文件，是为了兼容老的版本，如果您想用aclmdl接口，请安装对应的包覆盖本文件。
+  * */
+diff --git a/test/ut/depends/include/acl/acl_op.h b/test/ut/depends/include/acl/acl_op.h
+index 0c25853f9223818f557380a0bf09e40861a09447..7b68cf4209677519f194c3f329620c466978d6e4 100644
+--- a/test/ut/depends/include/acl/acl_op.h
++++ b/test/ut/depends/include/acl/acl_op.h
+@@ -1,6 +1,6 @@
+ /*!
+  * This is an empyt file, included for compatibility with old version. 
+- * If you want to use aclop api, please install the corresponding package to overrite this file.
++ * If you want to use aclop api, please install the corresponding package to overwrite this file.
+  *
+  * 这是一个空文件，是为了兼容老的版本，如果您想用aclop接口，请安装对应的包覆盖本文件。
+  * */
+diff --git a/test/ut/depends/include/acl/acl_prof.h b/test/ut/depends/include/acl/acl_prof.h
+index 2f2f657fe04cb92e0b85b66d2a2ab50dc39d673c..6a9599d1c45eb0671265b8b83c83fe9821dfa658 100644
+--- a/test/ut/depends/include/acl/acl_prof.h
++++ b/test/ut/depends/include/acl/acl_prof.h
+@@ -381,7 +381,7 @@ MSVP_PROF_API uint64_t aclprofGetOpEnd(const void *opInfo, size_t opInfoLen, uin
+ 
+ /**
+  * @ingroup AscendCL
+- * @brief get excution time of specified op from subscription data
++ * @brief get execution time of specified op from subscription data
+  *
+  * @param  opInfo [IN]     pointer to subscription data
+  * @param  opInfoLen [IN]  memory size of subscription data
+diff --git a/test/ut/depends/include/acl/acl_rt.h b/test/ut/depends/include/acl/acl_rt.h
+index 87c265e6c3b7494dac0402d01549b7f6b60512c0..fdc0cdd03cbc9b790a577cf2f5b29cf5a10f33e2 100644
+--- a/test/ut/depends/include/acl/acl_rt.h
++++ b/test/ut/depends/include/acl/acl_rt.h
+@@ -2256,7 +2256,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetMemInfo(aclrtMemAttr attr, size_t *free, si
+ 
+ /**
+  * @ingroup AscendCL
+- * @brief Set the timeout interval for waitting of op
++ * @brief Set the timeout interval for waiting of op
+  *
+  * @param timeout [IN]   op wait timeout
+  *
+@@ -2504,7 +2504,7 @@ ACL_FUNC_VISIBILITY aclError aclrtBinaryGetFunction(const aclrtBinHandle binHand
+  * @ingroup AscendCL
+  * @brief Kernel Launch to device
+  * @param [in] funcHandle  function handle
+- * @param [in] blockDim  block dimentions
++ * @param [in] blockDim  block dimensions
+  * @param [in] argsData  args data
+  * @param [in] argsSize  args size
+  * @param [in] stream   stream handle
+@@ -3040,8 +3040,8 @@ ACL_FUNC_VISIBILITY aclError aclrtGetEventId(aclrtEvent event, uint32_t *eventId
+ 
+ /**
+  * @ingroup AscendCL
+- * @brief get avaliable event count
+- * @param [out] eventCount  avaliable event count
++ * @brief get available event count
++ * @param [out] eventCount  available event count
+  * @retval ACL_SUCCESS The function is successfully executed.
+  * @retval OtherValues Failure
+  */
+@@ -3049,7 +3049,7 @@ ACL_FUNC_VISIBILITY aclError aclrtGetEventAvailNum(uint32_t *eventCount);
+ 
+ /**
+  * @ingroup AscendCL
+- * @brief get device infomation.
++ * @brief get device information.
+  * @param [in] deviceId  the device id
+  * @param [in] attr      device attr
+  * @param [out] value    the device info
+@@ -3258,7 +3258,7 @@ ACL_FUNC_VISIBILITY aclError aclrtCreateLabelList(aclrtLabel *labels, size_t num
+ 
+ /**
+  * @ingroup AscendCL
+- * @brief destory label list
++ * @brief destroy label list
+  * @param labelList [in]  label list to destroy
+  * @retval ACL_SUCCESS The function is successfully executed.
+  * @retval OtherValues Failure
+@@ -4059,7 +4059,7 @@ ACL_FUNC_VISIBILITY aclError aclrtProfTrace(void *userdata, int32_t length, aclr
+  * @ingroup AscendCL
+  * @brief Kernel Launch to device
+  * @param [in] funcHandle  function handle
+- * @param [in] blockDim  block dimentions
++ * @param [in] blockDim  block dimensions
+  * @param [in] argsData  args data
+  * @param [in] argsSize  args size
+  * @param [in] cfg  configuration information
+@@ -4076,7 +4076,7 @@ ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelV2(aclrtFuncHandle funcHandle, uin
+  * @ingroup AscendCL
+  * @brief Launch kernel with host args
+  * @param [in] funcHandle  function handle
+- * @param [in] blockDim  block dimentions
++ * @param [in] blockDim  block dimensions
+  * @param [in] stream  stream handle
+  * @param [in] cfg  configuration information
+  * @param [in] hostArgs  host args data
+diff --git a/test/ut/depends/include/acl/acl_rt_allocator.h b/test/ut/depends/include/acl/acl_rt_allocator.h
+index f821e910213ad60ac58650c9de25623ee867353c..d5450dea34ba6350dbc17f371b6549888547ca56 100644
+--- a/test/ut/depends/include/acl/acl_rt_allocator.h
++++ b/test/ut/depends/include/acl/acl_rt_allocator.h
+@@ -34,7 +34,7 @@ ACL_FUNC_VISIBILITY aclrtAllocatorDesc aclrtAllocatorCreateDesc();
+ 
+ /**
+  * @ingroup AscendCL
+- * @brief Relese allocator description
++ * @brief Release allocator description
+  *
+  * @param allocatorDesc [IN]     allocator description
+  *
+diff --git a/test/ut/depends/include/acl/error_codes/rt_error_codes.h b/test/ut/depends/include/acl/error_codes/rt_error_codes.h
+index 22999b6a9b5e9a0ceeb76af4eed10a2aa0ac396c..70116879bb08823cdfa2b7fdd3e49097d4e80e22 100644
+--- a/test/ut/depends/include/acl/error_codes/rt_error_codes.h
++++ b/test/ut/depends/include/acl/error_codes/rt_error_codes.h
+@@ -65,7 +65,7 @@ extern "C" {
+ #define  ACL_ERROR_RT_EVENT_CAPTURED             107028 // event is captured
+ #define  ACL_ERROR_RT_STREAM_NOT_CAPTURED        107029 // stream is not in capture status
+ #define  ACL_ERROR_RT_CAPTURE_MODE_NOT_SUPPORT   107030 // stream is captured, not support current oper
+-#define  ACL_ERROR_RT_STREAM_CAPTURE_IMPLICIT    107031 // a disallowed implicit dependency from defalut stream
++#define  ACL_ERROR_RT_STREAM_CAPTURE_IMPLICIT    107031 // a disallowed implicit dependency from default stream
+ #define  ACL_ERROR_STREAM_CAPTURE_CONFLICT       107032 // interdependent stream cannot begin capture together
+ #define  ACL_ERROR_STREAM_TASK_GROUP_STATUS      107033 // task group status error
+ #define  ACL_ERROR_STREAM_TASK_GROUP_INTR        107034 // task group interrupted
+@@ -94,7 +94,7 @@ extern "C" {
+ #define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP 207019 // not support to update this op 
+ 
+ #define  ACL_ERROR_RT_INTERNAL_ERROR             507000 // runtime internal error
+-#define  ACL_ERROR_RT_TS_ERROR                   507001 // ts internel error
++#define  ACL_ERROR_RT_TS_ERROR                   507001 // ts internal error
+ #define  ACL_ERROR_RT_STREAM_TASK_FULL           507002 // task full in stream
+ #define  ACL_ERROR_RT_STREAM_TASK_EMPTY          507003 // task empty in stream
+ #define  ACL_ERROR_RT_STREAM_NOT_COMPLETE        507004 // stream not complete
+diff --git a/test/ut/depends/include/driver/ascend_hal.h b/test/ut/depends/include/driver/ascend_hal.h
+index 66cc007dd0828603b0f650a47af4980b1365d84b..7b5c405e599c02c87da6e95edda628a5ede18391 100644
+--- a/test/ut/depends/include/driver/ascend_hal.h
++++ b/test/ut/depends/include/driver/ascend_hal.h
+@@ -925,13 +925,13 @@ enum hal_product_type {
+ * MODULE_TYPE_AICORE        |  INFO_TYPE_IN_USED          |   ai core in used           |                |
+ * MODULE_TYPE_AICORE        |  INFO_TYPE_ERROR_MAP        |   ai core error map         |                |
+ * MODULE_TYPE_AICORE        |  INFO_TYPE_ID               |   ai core id                |                |
+-* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE           |   ai core rated frequence   |                |
+-* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE_LEVEL     |   ai core frequence level   |                |
++* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE           |   ai core rated frequency   |                |
++* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE_LEVEL     |   ai core frequency level   |                |
+ * MODULE_TYPE_AICORE        |  INFO_TYPE_UTILIZATION      |   ai core utilization       |                |
+ * MODULE_TYPE_AICORE        |  INFO_TYPE_DIE_NUM          |   ai core die num(Ddie num) |                |
+ * --------------------------------------------------------------------------------------------------------
+ * MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_CORE_NUM        |   vector core number        |                |
+-* MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_FREQUE          |   vector core frequence     |                |
++* MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_FREQUE          |   vector core frequency     |                |
+ * MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_UTILIZATION     |   vector core utilization   |                |
+ * --------------------------------------------------------------------------------------------------------
+ * MODULE_TYPE_TSCPU         |  INFO_TYPE_CORE_NUM         |   ts cpu number             |                |
+@@ -1054,7 +1054,7 @@ typedef enum {
+ * --------------------------------------------------------------------------------------------------------
+ * MODULE_TYPE_QOS           |  INFO_TYPE_CONFIG           |   qos config information    |                |
+ * --------------------------------------------------------------------------------------------------------
+-* MODULE_TYPE_AICORE        |  INFO_TYPE_CURRENT_FREQ     |   ai core current frequence |                |
++* MODULE_TYPE_AICORE        |  INFO_TYPE_CURRENT_FREQ     |   ai core current frequency |                |
+ * --------------------------------------------------------------------------------------------------------
+ * MODULE_TYPE_MEMORY        |  INFO_TYPE_UCE_VA           |   UCE VA num and VA info    |                |
+ * MODULE_TYPE_MEMORY        |  INFO_TYPE_SYS_COUNT        | HAL_FAULT_OCCUR_SYSCNT_STRU |                |
+@@ -1497,7 +1497,7 @@ DLLEXPORT drvError_t drvCloseIpcNotify(const char *name, struct drvIpcNotifyInfo
+  * @brief create shared id
+  * @attention null
+  * @param [in] name:  share id name to be created
+- * @param [in] len:  name lenth
++ * @param [in] len:  name length
+  * @param [in] info:  see struct drvShrIdInfo
+  * @return   0 for success, others for fail
+  */
+@@ -1712,7 +1712,7 @@ struct DVattribute {
+  * @param [out] pptr: unsigned 64-bit integer. The corresponding physical address is returned. The value is valid
+  * when the return is successful
+  * @return DRV_ERROR_INVALID_HANDLE : parameter error, pointer is empty, addr is zero.
+- * @return DRV_ERROR_FILE_OPS : internel error, file operation failed.
++ * @return DRV_ERROR_FILE_OPS : internal error, file operation failed.
+  * @return DRV_ERROR_IOCRL_FAIL : Internal error, IOCTL operation failed
+  * @return DRV_ERROR_NONE : success
+  */
+@@ -1869,8 +1869,8 @@ DLLEXPORT DV_OFFLINE drvError_t halSdmaCopy(
+  * @attention This is used for large size of memcpy, and it is the batch one of
+  * halSdmaCopy. This copy interface can not be used in p2p scenario.
+  * @param [in] dst: destination address array
+- * @param [in] src: source address arrary
+- * @param [in] size: size arrary for copy
++ * @param [in] src: source address array
++ * @param [in] size: size array for copy
+  * @param [in] count: the length of size[], dst[] and src[]
+  * @return zero on success otherwise -errno
+  */
+@@ -1920,11 +1920,11 @@ DLLEXPORT DV_ONLINE DVresult halMemDestroyAddrBatch(struct DMA_ADDR *ptr[], uint
+ 
+ /**
+  * @ingroup driver
+- * @brief Sumbit DMA the physical address information of the DMA copy
++ * @brief Submit DMA the physical address information of the DMA copy
+  * @attention Available online, not offline. This interface is used with drvMemConvertAddr.
+  * @attention Ascend910_95 is not supported
+  * @param [in] dma_addr : information to be DMA copy
+- * @param [in] flag: sumbit DMA copy use synchronize or asynchronous mode, use enum MEMCPY_SUMBIT_TYPE
++ * @param [in] flag: submit DMA copy use synchronize or asynchronous mode, use enum MEMCPY_SUMBIT_TYPE
+  * @return DRV_ERROR_NONE : success
+  * @return DV_ERROR_XXX : fail
+  */
+@@ -2247,7 +2247,7 @@ DLLEXPORT drvError_t halMemAdvise(DVdeviceptr ptr, size_t count, unsigned int ty
+  * @param [in] device: requested input device id.
+  * @param [in] process_type: requested device process type parameter.
+  * @param [in] status: used to check the status of device process.
+- * @param [out] is_matched: used to indicate whether the deivce process status is the same as the given status.
++ * @param [out] is_matched: used to indicate whether the device process status is the same as the given status.
+  * @return DRV_ERROR_NONE : success
+  * @return DV_ERROR_XXX : fail
+  */
+@@ -2288,7 +2288,7 @@ DLLEXPORT DV_ONLINE drvError_t halMemGetAddressReserveRange(
+  * @attention
+  * 1. Only support ONLINE scene: in scenarios where hccl is not used for a single process,
+  *    cross-chip access is not supported, only can use aclrtMemcpyAsync to copy data across chips.
+- * 2. Spcified addrress reserve must comply with the following rules:
++ * 2. Specified address reserve must comply with the following rules:
+  *    1) If the size is greater than 512 MB, the address must be 1 GB aligned.
+  *    2) If the size is less than or equal to 512 MB, the address must be aligned by power(2, ceil(log2(size))).
+  * 3. The halMemFree interface has a cache mechanism. The address is actually cached after be released.
+@@ -2298,7 +2298,7 @@ DLLEXPORT DV_ONLINE drvError_t halMemGetAddressReserveRange(
+  * @param [in] size: size of the reserved virtual address range requested.
+  * @param [in] alignment: currently unused, must be zero.
+  * @param [in] addr: addr==NULL, normal address reserve.
+- *                 addr!=NULL, spcified addrress reserve, should in specified address alloc range, and be 2M aligned.
++ *                 addr!=NULL, specified address reserve, should in specified address alloc range, and be 2M aligned.
+  *                 when size is bigger than 1G, addr must be 1G aligned
+  * @param [in] flag: flag of the address to create, current only support pg_type.
+  * @param [out] ptr: resulting pointer to start of virtual address range allocated.
+@@ -2388,8 +2388,8 @@ DLLEXPORT drvError_t halMemUnmap(void *ptr);
+  * 1. Only support ONLINE scene.
+  * 2. Support va->pa:
+  *    D2H,
+- *    D2D(sigle device, diffrent device with same host, diffrent device with diffrent host),
+- *    H2H(same host, diffrent host(support latter))
++ *    D2D(single device, different device with same host, different device with different host),
++ *    H2H(same host, different host(support latter))
+  * 3. halMemSetAccess: ptr and size must be same with halMemMap, halMemGetAccess: ptr and size is in range of set
+  * 4. after halMemMap, if handle has owner(witch location pa is created or use witch device pa handle is imported)
+  *    the owner location has readwrite prop automatic, not need to set again
+@@ -3149,7 +3149,7 @@ enum log_cmd_type {
+ * @param [in] device_id   device ID
+ * @param [out] buf Store log information
+ * @param [out] size size of log information store in buf,As a input parameter means max size of buf.
+-* @param [in] timeout   timeout to read log infomation
++* @param [in] timeout   timeout to read log information
+ * @param [in] channel_type   which channel to read(LOG_CHANNEL_TYPE_TS_PROC/LOG_CHANNEL_TYPE_EVENT/LOG_CHANNEL_TYPE_MAX)
+ *             LOG_CHANNEL_TYPE_TS_PROC : reads logs that need to be sent back to host;
+ *             LOG_CHANNEL_TYPE_EVENT : reads fault event logs;
+@@ -3203,7 +3203,7 @@ int log_get_dfx_param(uint32_t devid, uint32_t chan_type, uint32_t cmd_type, voi
+ * @param [in] devid   device ID
+ * @param [in] type   the type of mem
+ * @param [in/out] size   the size of mem firstly allocated
+-* @return void *buff  buff mmaped for user space
++* @return void *buff  buff mapped for user space
+ */
+ void* log_type_alloc_mem(uint32_t device_id, uint32_t type, uint32_t *size);
+ 
+@@ -3581,7 +3581,7 @@ DLLEXPORT int halMbufBuild(void *buff, uint64_t len, Mbuf **mbuf);
+ 
+ /**
+ * @ingroup driver
+-* @brief release mbuf head and return the nomal buff
++* @brief release mbuf head and return the normal buff
+ * @attention buff must be referenced only by this mbuf
+ * @param [in] Mbuf *mbuf: mbuf handle
+ * @param [out] void **buff: buff addr
+@@ -3819,7 +3819,7 @@ DLLEXPORT drvError_t halResourceIdFree(uint32_t devId, struct halResourceIdInput
+ 
+ /**
+  * @ingroup driver
+- * @brief  resource enable interface, DRV_STREAM_ID surport
++ * @brief  resource enable interface, DRV_STREAM_ID support
+  * @attention null
+  * @param [in] devId: logic devid
+  * @param [in] in:   see struct halResourceIdInputInfo
+@@ -3829,7 +3829,7 @@ DLLEXPORT drvError_t halResourceEnable(uint32_t devId, struct halResourceIdInput
+ 
+ /**
+  * @ingroup driver
+- * @brief  resource disable interface, DRV_STREAM_ID surport
++ * @brief  resource disable interface, DRV_STREAM_ID support
+  * @attention null
+  * @param [in] devId: logic devid
+  * @param [in] in:   see struct halResourceIdInputInfo
+@@ -3903,7 +3903,7 @@ struct drvResIdKey {
+     uint32_t tsId;
+     drvIdType_t resType;
+     uint32_t resId;
+-    uint32_t flag;  /* flag is used for distingush whether ruDevid is sdid. */
++    uint32_t flag;  /* flag is used for distinguish whether ruDevid is sdid. */
+     uint32_t rsv[3]; /* 4 is rsv */
+ };
+ 
+@@ -3938,10 +3938,10 @@ DLLEXPORT drvError_t halResourceIdRestore(struct drvResIdKey *info);
+ 
+ /**
+  * @ingroup driver
+- * @brief  tsdrv IO contrl interface
++ * @brief  tsdrv IO control interface
+  * @attention null
+  * @param [in] devId: logic devid
+- * @param [in] cmd: io contrl type
++ * @param [in] cmd: io control type
+  * @param [in] param: parameter
+  * @param [in] paramSize: parameter size
+  * @param [out] out: out data
+@@ -4148,7 +4148,7 @@ DLLEXPORT drvError_t halAsyncDmaWqeCreate(
+ 
+ /**
+  * @ingroup driver
+- * @brief  async dma wqe destory
++ * @brief  async dma wqe destroy
+  * @attention null
+  * @param [in] devId: logic devid
+  * @param [in]  para: see struct halAsyncDmaDestoryPara
+@@ -4170,7 +4170,7 @@ DLLEXPORT drvError_t halAsyncDmaCreate(
+ 
+ /**
+  * @ingroup driver
+- * @brief  async dma destory
++ * @brief  async dma destroy
+  * @attention null
+  * @param [in] devId: logic devid
+  * @param [in]  para: see struct halAsyncDmaDestoryPara
+@@ -4180,7 +4180,7 @@ DLLEXPORT drvError_t halAsyncDmaDestory(uint32_t devId, struct halAsyncDmaDestor
+ 
+ /**
+ * @ingroup driver
+-* @brief  ACL IO contrl interface
++* @brief  ACL IO control interface
+ * @attention null
+ * @param [in] cmd: command
+ * @param [in]  param_value   param_value addr
+@@ -4204,7 +4204,7 @@ struct halCdqPara {
+ /*=========================== Event Sched ===========================*/
+ /**
+ * @ingroup driver
+-* @brief  dettach one process from a device
++* @brief  detach one process from a device
+ * @attention null
+ * @param [in] devId: logic devid
+ * @return   0 for success, others for fail
+@@ -4705,7 +4705,7 @@ DLLEXPORT drvError_t halQueueModeNotify(PSM_STATUS status, void *rsv) ASCEND_HAL
+ * @attention
+ * ensure to export after queue is created.
+ * not support to export repeatedly.
+-* not support to export after local queue enque or deque.
++* not support to export after local queue enqueue or deque.
+ * @param [in] devId: logic devid
+ * @param [in] qid: queue id
+ * @param [in] queInfo: share queue info
+@@ -4946,10 +4946,10 @@ struct halSDIDParseInfo {
+ 
+ /**
+ * @ingroup driver
+-* @brief get the parsed SDID infomation
++* @brief get the parsed SDID information
+ * @attention Not supported called in split mode, do not check validity for sdid;
+ * @param [in]  sdid SDID
+-* @param [out] sdid_parse  Parsed SDID infomation
++* @param [out] sdid_parse  Parsed SDID information
+ * @return   0 for success, others for fail
+ */
+ DLLEXPORT drvError_t halParseSDID(uint32_t sdid, struct halSDIDParseInfo *sdid_parse);
+diff --git a/test/ut/depends/include/driver/ascend_hal_define.h b/test/ut/depends/include/driver/ascend_hal_define.h
+index 9a9b80620e831a99d3788cb19b9e514d6a52d272..cca65aec3c88d735b034d487232446df75833a3e 100644
+--- a/test/ut/depends/include/driver/ascend_hal_define.h
++++ b/test/ut/depends/include/driver/ascend_hal_define.h
+@@ -27,7 +27,7 @@ enum devdrv_process_type {
+     DEVDRV_PROCESS_DEV_ONLY,  /* TDT */
+     DEVDRV_PROCESS_QS,        /* queue_scheduler */
+     DEVDRV_PROCESS_HCCP,      /* hccp server */
+-    DEVDRV_PROCESS_USER,      /* user proc, can bind many on host or device. not surport quert from host pid */
++    DEVDRV_PROCESS_USER,      /* user proc, can bind many on host or device. not support quert from host pid */
+     DEVDRV_PROCESS_CPTYPE_MAX,
+ };
+ 
+@@ -118,9 +118,9 @@ typedef enum schedule_policy {
+ 
+ typedef enum event_id {
+     EVENT_RANDOM_KERNEL,      /* Random operator event */
+-    EVENT_DVPP_MSG,           /* operator events commited by DVPP */
+-    EVENT_FR_MSG,             /* operator events commited by Feature retrieves */
+-    EVENT_TS_HWTS_KERNEL,     /* operator events commited by ts/hwts */
++    EVENT_DVPP_MSG,           /* operator events committed by DVPP */
++    EVENT_FR_MSG,             /* operator events committed by Feature retrieves */
++    EVENT_TS_HWTS_KERNEL,     /* operator events committed by ts/hwts */
+     EVENT_AICPU_MSG,          /* aicpu activates its own stream events */
+     EVENT_TS_CTRL_MSG,        /* controls message events of TS */
+     EVENT_QUEUE_ENQUEUE,      /* entry event of Queue(consumer) */
+@@ -139,12 +139,12 @@ typedef enum event_id {
+     EVENT_CCPU_CTRL_MSG,
+     EVENT_SPLIT_KERNEL,
+     EVENT_DVPP_MPI_MSG,
+-    EVENT_CDQ_MSG,            /* message events commited by CDQM(hardware) */
+-    EVENT_FFTS_PLUS_MSG,      /* operator events commited by FFTS(hardware) */
+-    EVENT_DRV_MSG,            /* 24-events of drvier */
++    EVENT_CDQ_MSG,            /* message events committed by CDQM(hardware) */
++    EVENT_FFTS_PLUS_MSG,      /* operator events committed by FFTS(hardware) */
++    EVENT_DRV_MSG,            /* 24-events of driver */
+     EVENT_QS_MSG,             /* events of queue scheduler */
+     EVENT_TS_CALLBACK_MSG,
+-    EVENT_DRV_MSG_EX,            /* 27-events of drvier for ccpu */
++    EVENT_DRV_MSG_EX,            /* 27-events of driver for ccpu */
+     /* Add a new event here */
+     EVENT_TEST,               /* Reserve for test */
+     EVENT_HCCP_MSG = 47,   /* ccu kill msg of ts and hccp */
+@@ -372,8 +372,8 @@ struct esched_table_key_entry_stat {
+ /*=========================== Queue Manage ===========================*/
+ 
+ typedef enum QueEventCmd {
+-    QUE_PAUSE_EVENT = 1,    /* pause enque event publish in group */
+-    QUE_RESUME_EVENT        /* resume enque event publish */
++    QUE_PAUSE_EVENT = 1,    /* pause enqueue event publish in group */
++    QUE_RESUME_EVENT        /* resume enqueue event publish */
+ } QUE_EVENT_CMD;
+ 
+ typedef enum queue_entity_type {
+@@ -539,7 +539,7 @@ typedef struct {
+         unsigned int align;      /* addr align, must be an integer multiple of 2, 2< algn <4k */
+         unsigned int hugePageFlag; /* huge page flag */
+         int reserve[2]; /* reserved */
+-    } pubPoolCfg[BUFF_PUB_POOL_CFG_MAX_NUM]; /* max allo 128 cfg */
++    } pubPoolCfg[BUFF_PUB_POOL_CFG_MAX_NUM]; /* max allow 128 cfg */
+ } PubPoolAttr;
+ /*lint +e116 +e17*/
+ 
+@@ -565,7 +565,7 @@ enum BuffGetCmdType {
+ 
+ struct MbufTimeoutCheckPara {
+     unsigned int enableFlag;     /* enable: 1; disable: 0 */
+-    unsigned int maxRecordNum;   /* maximum number timeout mbuf info recored */
++    unsigned int maxRecordNum;   /* maximum number timeout mbuf info recorded */
+     unsigned int timeout;        /* mbuf timeout value,  unit:ms, minimum 10ms, default 1000 ms */
+     unsigned int checkPeriod;    /* mbuf check thread work period, uinit:ms, minimum 1000ms, default:1s */
+ };
+@@ -1061,7 +1061,7 @@ typedef enum tagProcType {
+     PROCESS_DEV_ONLY,  /* TDT */
+     PROCESS_QS,        /* queue_scheduler */
+     PROCESS_HCCP,        /* hccp server */
+-    PROCESS_USER,        /* user proc, can bind many on host or device. not surport quert from host pid */
++    PROCESS_USER,        /* user proc, can bind many on host or device. not support quert from host pid */
+     PROCESS_CPTYPE_MAX
+ } processType_t;
+ 
+@@ -1125,7 +1125,7 @@ enum {
+     HLT_MODULE_ID = 9,           /* Used for hlt test */
+     DEVMM_MODULE_ID = 22,        /* Dlog memory managent */
+     LIBMEDIA_MODULE_ID = 24,     /* Libmedia */
+-    CCECPU_MODULE_ID = 25,       /* aicpu shedule */
++    CCECPU_MODULE_ID = 25,       /* aicpu schedule */
+     ASCENDDK_MODULE_ID = 26,     /* AscendDK */
+     HCCP_SCHE_MODULE_ID = 27,    /* Memory statistics of device hccp process */
+     HCCP_HAL_MODULE_ID = 28,
+@@ -1137,7 +1137,7 @@ enum {
+     TSDUMP_MODULE_ID = 35,       /* TSDUMP module */
+     AICPU_MODULE_ID = 36,        /* AICPU module */
+     AICPU_SCHE_MODULE_ID = 37,   /* Memory statistics of device aicpu process */
+-    TDT_MODULE_ID = 38,          /* tsdaemon or aicpu shedule */
++    TDT_MODULE_ID = 38,          /* tsdaemon or aicpu schedule */
+     FE_MODULE_ID = 39,
+     MD_MODULE_ID = 40,
+     MB_MODULE_ID = 41,
+@@ -1254,7 +1254,7 @@ struct res_map_info {
+ #define TSDRV_FLAG_TASK_SINK_SQ (0x1U << 14) /* only support async cpy task sink */
+ #define TSDRV_FLAG_RTS_RSV_SQCQ_ID (0x1 << 15)
+ 
+-#define TSDRV_FLAG_SPECIFIED_SQ_MEM (0x1U << 31) /* used for internel */
++#define TSDRV_FLAG_SPECIFIED_SQ_MEM (0x1U << 31) /* used for internal */
+ 
+ #define TSDRV_RES_RESERVED_ID       (0x1 << 0)  /* res free active */
+ #define TSDRV_RES_SPECIFIED_ID      (0x1 << 1)  /* res allc active */
+diff --git a/test/ut/depends/include/driver/ascend_hal_error.h b/test/ut/depends/include/driver/ascend_hal_error.h
+index 44cd0b1a4cfca2f4eb76a67b86915d1d9e954940..ab8d5aadf921429b271ad3b545eb47b30fc856d5 100644
+--- a/test/ut/depends/include/driver/ascend_hal_error.h
++++ b/test/ut/depends/include/driver/ascend_hal_error.h
+@@ -46,7 +46,7 @@ typedef enum tagDrvError {
+     DRV_ERROR_NOT_EXIST = 11,        /**< there is resource*/
+     DRV_ERROR_REPEATED_USERD = 12,
+     DRV_ERROR_BUSY = 13,                /**< task already running */
+-    DRV_ERROR_NO_RESOURCES = 14,        /**< driver short of resouces */
++    DRV_ERROR_NO_RESOURCES = 14,        /**< driver short of resources */
+     DRV_ERROR_OUT_OF_CMD_SLOT = 15,
+     DRV_ERROR_WAIT_TIMEOUT = 16,       /**< driver wait timeout*/
+     DRV_ERROR_IOCRL_FAIL = 17,         /**< driver ioctl fail*/
+diff --git a/test/ut/depends/include/driver/ascend_hal_external.h b/test/ut/depends/include/driver/ascend_hal_external.h
+index 2b6ebbac67725befcf2623260af4f402fa54c699..3beb5b6c2fbd63c22fc8a9a912703f7ec930a717 100644
+--- a/test/ut/depends/include/driver/ascend_hal_external.h
++++ b/test/ut/depends/include/driver/ascend_hal_external.h
+@@ -108,7 +108,7 @@ struct buff_cfg {
+     unsigned int cfg_id;         /**< cfg id, 0~7 */
+     unsigned int total_size;  /**< memzone total size, must below 256M */
+     unsigned int blk_size;       /**< the size of each blk in this memzone  */
+-    unsigned int max_buf_size;   /**< max buff size could allocte, */
++    unsigned int max_buf_size;   /**< max buff size could allocate, */
+     unsigned int page_type;      /**< page type of memzone, could be PAGE_NORMAL or PAGE_HUGET_ONLY */
+     int reserve[BUFF_RESERVE_LEN];   /**< for reserve */
+ };
+@@ -318,7 +318,7 @@ DLLEXPORT int halGrpAddProc(const char *name, int pid, GroupShareAttr attr) ASCE
+ 
+ /**
+ * @ingroup driver
+-* @brief attach proccess to check permission in grp
++* @brief attach process to check permission in grp
+ * @attention null
+ * @param [in] name, grp name
+ * @param [in] timeout, time out ms
+diff --git a/test/ut/depends/include/driver/ascend_hal_mdc.h b/test/ut/depends/include/driver/ascend_hal_mdc.h
+index 5615f8ec968d8262540a6bc8cd97a9cd1fcbe0e3..25e2163c9074b5f1a00af254bc6fb1da42c99fe6 100644
+--- a/test/ut/depends/include/driver/ascend_hal_mdc.h
++++ b/test/ut/depends/include/driver/ascend_hal_mdc.h
+@@ -322,7 +322,7 @@ typedef enum {
+ typedef struct {
+     uadk_crypto_algorithm alg;
+     int rsv[4];  /**< rsv[0]: task mode, 0:block mode, 1:stream mode;
+-                      rsv[1]: wait result mode, 0:loop query, 1:intrrupt nofity; */
++                      rsv[1]: wait result mode, 0:loop query, 1:interrupt notify; */
+ } uadk_crypto_param;
+ 
+ /**
+@@ -384,7 +384,7 @@ DLLEXPORT int uadk_crypto_alloc (void *ctx_, uadk_mem_info *mem_info);
+  * @ingroup driver
+  * @brief update ctx information
+  * @param [in] ctx   crypto context
+- * @param [in] src_len    srouce length
++ * @param [in] src_len    source length
+  * @param [out] dst_len    destination length
+  * @return   0   success
+  * @return   other  fail
+diff --git a/test/ut/depends/include/driver/ascend_inpackage_hal.h b/test/ut/depends/include/driver/ascend_inpackage_hal.h
+index 3ccb097353d4432a365832d934881578cf7923cf..750bc1885f117a99052253027d51c75457fe6bba 100644
+--- a/test/ut/depends/include/driver/ascend_inpackage_hal.h
++++ b/test/ut/depends/include/driver/ascend_inpackage_hal.h
+@@ -102,7 +102,7 @@ DV_ONLINE DVresult drvMemInitSvmDevice(int hostpid, unsigned int vfid, unsigned
+ 
+ /**
+  * @ingroup driver
+- * @brief get borad id
++ * @brief get board id
+  * @attention This function is only can be called by components in driver of device,
+  *  if the components is not in driver of device, don't use this function.
+  * @param [in] dev_id device id
+@@ -232,7 +232,7 @@ drvError_t halTsCmdlistMemUnMap(unsigned int devId, unsigned int tsId);
+  * @param [in] img_path  verify image path.
+  * @param [in] cmd_type  head type.
+  * @param [in] buf  the buff to save head info.
+- * @param [in] buf_len  input buff length, when proc succ, the value should be change to actural value length
++ * @param [in] buf_len  input buff length, when proc succ, the value should be change to actual value length
+  * @return  0  success, return others fail
+  */
+ int halGetImgHeadInfo(HAL_IMG_ID image_id, const char *img_path, HAL_IMG_HEAD_TYPE cmd_type, char *buf, int* buf_len);
+@@ -273,7 +273,7 @@ typedef enum  {
+ 
+ typedef struct {
+     UADK_DIGEST_ALG alg;
+-    unsigned int task_mode; /**< 0:loop query, 1:intrrupt nofity */
++    unsigned int task_mode; /**< 0:loop query, 1:interrupt notify */
+     int rsv[4];
+ } uadk_digest_param;
+ 
+@@ -291,7 +291,7 @@ DLLEXPORT int uadk_digest_init(DIGEST_CTX *handle, uadk_digest_param *param);
+ 
+ /**
+  * @ingroup driver
+- * @brief alloc digest memery
++ * @brief alloc digest memory
+  * @attention
+  * @param [in] handle  digest context handle
+  * @param [in] len  buffer length
+@@ -436,7 +436,7 @@ DLLEXPORT int drv_hw_deflate(struct drv_zip_stream *zstrm, int flush);
+  * @brief deflate end
+  * @attention null
+  * @param [inout] zstrm  zip stream
+- * @return   HZIP_OK   sucess
++ * @return   HZIP_OK   success
+  * @return   other  fail
+  */
+ DLLEXPORT int drv_hw_deflateEnd(struct drv_zip_stream *zstrm);
+@@ -484,7 +484,7 @@ DLLEXPORT int drv_hw_inflate(struct drv_zip_stream *zstrm, int flush);
+  * @brief inflate end
+  * @attention null
+  * @param [inout] zstrm  zip stream
+- * @return   HZIP_OK   sucess
++ * @return   HZIP_OK   success
+  * @return   other  fail
+  */
+ DLLEXPORT int drv_hw_inflateEnd(struct drv_zip_stream *zstrm);
+@@ -538,7 +538,7 @@ struct prof_sample_register_para {
+ 
+ /**
+  * @ingroup driver
+- * @brief register prof channel smaple handle
++ * @brief register prof channel sample handle
+  * @attention null
+  * @param [in] dev_id : device id
+  * @param [in] chan_id : channel id
+diff --git a/test/ut/depends/include/driver/ascend_kernel_hal.h b/test/ut/depends/include/driver/ascend_kernel_hal.h
+index 864eb9e38a291db845dc8a31007cd53e5702a6c9..e7f7f88dd2b3f7ea3b9b2cb4dd390784de32302c 100644
+--- a/test/ut/depends/include/driver/ascend_kernel_hal.h
++++ b/test/ut/depends/include/driver/ascend_kernel_hal.h
+@@ -66,7 +66,7 @@
+ #define CHAN_FLAG_RTS_RSV_SQ_ID_BIT    19
+ #define CHAN_FLAG_RTS_RSV_CQ_ID_BIT    20
+ 
+-#define CHAN_FLAG_SPECIFIED_SQ_MEM_BIT 31 /* used for internel */
++#define CHAN_FLAG_SPECIFIED_SQ_MEM_BIT 31 /* used for internal */
+ 
+ #define CQ_RECV_CONTINUE 0
+ #define CQ_RECV_FINISH 1
+@@ -409,7 +409,7 @@ struct qos_master_config_type {
+     unsigned int qos; /* qos */
+     unsigned int pmg; /* pmg */
+     unsigned long long bitmap[QOS_MASTER_BITMAP_LEN]; /* max support 64 * 4  */
+-    unsigned int mode; /* 0 -- regs vaild, 1 -- smmu vaild, 2 -- sqe vaild */
++    unsigned int mode; /* 0 -- regs valid, 1 -- smmu valid, 2 -- sqe valid */
+     unsigned int reserved[QOS_CFG_RESERVED_LEN - 1];
+ };
+ 
+@@ -508,7 +508,7 @@ int hal_kernel_qos_notify_module_online(int dev_id, enum qos_master_type master)
+ int hal_kernel_qos_notify_module_offline(int dev_id, enum qos_master_type master);
+ 
+ /**
+-* @brief get all bandwidth infomation
++* @brief get all bandwidth information
+ * @param [in] uint32_t devid: device id
+ * @param [out] struct qos_bw_result_t *res: bandwidth info of each master
+ * @param [in] uint32_t in_size: size of res
+@@ -559,7 +559,7 @@ struct esched_cq_phase_head {
+     struct esched_addr_desc head;
+     u64 overlay_value; /* when a register is written, the value must be superimposed. */
+     u64 phase_mask; /* when the software notifies the hardware, the value of bits in the mask needs to be
+-                       incremented to notify the hardware when the queue flips. surport 1bit */
++                       incremented to notify the hardware when the queue flips. support 1bit */
+     u8 init_value; /* phase value of the first round when the software notifies the hardware */
+     u8 ring_step;
+ };
+@@ -789,7 +789,7 @@ void hal_kernel_svm_put_user_pages(void **pages, u32 nr_pages, bool is_remap_add
+ * @brief   This interface is used to init bootdot block
+ * @param [in]  block_id: block id
+ * @param [in]  magic: magic
+-* @param [in]  execption_id: execption id
++* @param [in]  execption_id: exception id
+ * @param [in]  expect_status: expect status
+ * @return   0 Success, others for fail
+ * @note Support: Ascend310Brc
+@@ -958,12 +958,12 @@ struct memory_fault_timestamp {
+     unsigned int host_pid;
+     unsigned int event_id;
+     unsigned int reserved; /* for byte alignment */
+-    unsigned long long syscnt; /* event occurr syscnt*/
++    unsigned long long syscnt; /* event occur syscnt*/
+ };
+ 
+ /**
+  * @ingroup driver
+- * @brief register prof channel smaple handle
++ * @brief register prof channel sample handle
+  * @attention null
+  * @param [in] dev_id chan_id para
+  * @return   DRV_ERROR_NONE   success
+@@ -974,7 +974,7 @@ int hal_kernel_prof_sample_register(unsigned int dev_id, unsigned int chan_id,
+ 
+ /**
+  * @ingroup driver
+- * @brief unregister prof channel smaple handle
++ * @brief unregister prof channel sample handle
+  * @attention null
+  * @param [in] dev_id chan_id
+  * @return: no ret_val
+diff --git a/test/ut/depends/include/driver/dsmi_common_interface.h b/test/ut/depends/include/driver/dsmi_common_interface.h
+index a0c44996fa766392e9d42a5bcd0745b8298724af..bab8f06ed70af6b2123923a1c8126df25bb6ec53 100644
+--- a/test/ut/depends/include/driver/dsmi_common_interface.h
++++ b/test/ut/depends/include/driver/dsmi_common_interface.h
+@@ -147,7 +147,7 @@ typedef enum {
+ typedef enum {
+     DSMI_UPGRADE_MAIN_TYPE_VERSION = 0,
+     DSMI_UPGRADE_MAIN_TYPE_PARTITION,
+-    DSMI_UPGRADE_MAIN_TYPE_REG_PROG_PKG_INFO, // register program package infomation
++    DSMI_UPGRADE_MAIN_TYPE_REG_PROG_PKG_INFO, // register program package information
+     DSMI_UPGRADE_SUB_TYPE_FW_VERIFY,
+     DSMI_UPGRADE_MAIN_TYPE_CRL,
+     /* Basic version information of the BOM, which is written in the fixed area of
+@@ -317,7 +317,7 @@ typedef void (*fault_event_handler)(unsigned int faultcode,
+ 
+ #define DSMI_SOC_DIE_LEN 5
+ struct dsmi_soc_die_stru {
+-    unsigned int soc_die[DSMI_SOC_DIE_LEN]; /**< 5 soc_die arrary sizet */
++    unsigned int soc_die[DSMI_SOC_DIE_LEN]; /**< 5 soc_die array sizet */
+ };
+ struct dsmi_power_info_stru {
+     unsigned short power;
+@@ -493,9 +493,9 @@ typedef struct dsmi_lp_work_tops_stru {
+ struct dsmi_lp_each_tops_details {
+     unsigned int work_tops;     /* it is a index for aic_tops */
+     unsigned int aic_tops;      /* just as 4T/8T/8Tx/16T */
+-    unsigned int aic_freq;      /* AI core frequence */
++    unsigned int aic_freq;      /* AI core frequency */
+     unsigned int aic_vol;       /* AI core voltage */
+-    unsigned int cpu_freq;      /* CPU frequence */
++    unsigned int cpu_freq;      /* CPU frequency */
+     unsigned int cpu_vol;       /* CPU voltage */
+     unsigned char reserve[DSMI_LP_WORK_TOPS_RESERVE];
+ };
+@@ -1288,7 +1288,7 @@ typedef struct ts_utilization_rate_info {
+ } TS_UTILIZATION_RATE;
+ 
+ typedef struct ts_utilization_block_info {
+-    unsigned int array_len;         // Core utilization array length setted by user
++    unsigned int array_len;         // Core utilization array length set by user
+     unsigned int valid_core_num;    // Numbers of valid cores
+     TS_UTILIZATION_RATE core_util_array[CORE_UTIL_ARR_MAX_LEN];  // Structure array which store the core utilization
+ } TS_UTILIZATION_BLOCK;
+@@ -1503,7 +1503,7 @@ struct dsmi_ecc_pages_stru {
+     unsigned int isolated_pages_double_bit_error;
+ };
+ 
+-#define DSMI_MAX_VDEV_NUM 16 /**< max number a device can spilts */
++#define DSMI_MAX_VDEV_NUM 16 /**< max number a device can splits */
+ #define DSMI_MAX_SPEC_RESERVE 8
+ 
+ #define DSMI_VDEV_RES_NAME_LEN 16
+@@ -1823,7 +1823,7 @@ struct qos_master_config {
+     int qos;
+     int pmg;
+     unsigned long long bitmap[4]; /* max support 64 * 4  */
+-    unsigned int mode; /* 0 -- regs vaild, 1 -- smmu vaild, 2 -- sqe vaild */
++    unsigned int mode; /* 0 -- regs valid, 1 -- smmu valid, 2 -- sqe valid */
+     int reserved[QOS_CFG_RESERVED_LEN - 1];
+ };
+ 
+@@ -1832,8 +1832,8 @@ struct qos_gbl_config {
+     unsigned int autoqos_fuse_en;         /* 0--enable, 1--disable */
+     unsigned int mpamqos_fuse_mode;       /* 0--average, 1--max, 2--replace */
+     unsigned int mpam_subtype;            /* 0--all, 1--wr, 2--rd, 3--none */
+-    unsigned int lqos_retry_start_thres;  /* 0 is invaild */
+-    unsigned int lqos_retry_stop_thres;   /* 0 is invaild */
++    unsigned int lqos_retry_start_thres;  /* 0 is invalid */
++    unsigned int lqos_retry_stop_thres;   /* 0 is invalid */
+     int reserved[QOS_CFG_RESERVED_LEN - 2];
+ };
+ 
+@@ -2259,7 +2259,7 @@ DLLEXPORT int dsmi_upgrade_get_component_static_version(int device_id, DSMI_COMP
+ * @attention The address of the second parameter version number is applied by the user,
+              the module only performs non-null check on it, and the size is guaranteed by the user
+ * @param [in] device_id  The device id
+-* @param [in] version_len  length of paramer version_str
++* @param [in] version_len  length of parameter version_str
+ * @param [out] version_str  User-applied space stores system version number
+ * @param [out] ret_len  The space requested by the user is used to store the effective
+                length of the returned system version number
+@@ -2778,7 +2778,7 @@ DLLEXPORT int dsmi_get_mini2mcu_heartbeat_status(int device_id, unsigned char *s
+ * @brief Queries the frequency, total capacity, used capacity, temperature, and usage of the hbm.
+ * @attention NULL
+ * @param [in] device_id  The device id
+-* @param [out] pdevice_hbm_info return hbm infomation
++* @param [out] pdevice_hbm_info return hbm information
+ * @return  0 for success, others for fail
+ * @note Support:Ascend910,Ascend910B,Ascend910_93
+ */
+@@ -2886,7 +2886,7 @@ DLLEXPORT int dsmi_clear_user_config(int device_id, const char *config_name);
+ * @brief Get the DIE ID of the specified device
+ * @attention NULL
+ * @param [in] device_id  The device id
+-* @param [out] pdevice_die  return die id infomation
++* @param [out] pdevice_die  return die id information
+ * @return  0 for success, others for fail
+ * @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+ */
+@@ -2972,7 +2972,7 @@ DLLEXPORT int dsmi_get_sensorhub_config(int device_id, struct dsmi_sensorhub_con
+  * @ingroup driver
+  * @brief: get hiss status info
+  * @param [in] device_id device id, not userd  default 0
+- * @param [out] hiss_status_data hiss status infomation
++ * @param [out] hiss_status_data hiss status information
+  * @return  0 for success, others for fail
+  * @note Support:Ascend610,Ascend910B,Ascend910_93,bs9sx1a,as31xm1,Ascend610Lite,Ascend910_95,Ascend910_55
+  */
+@@ -3128,7 +3128,7 @@ DLLEXPORT int dsmi_destroy_vdevice(unsigned int devid, unsigned int vdevid);
+ * @brief get resource info
+ * @attention used on host side
+ * @param [in] devid       device id
+-* @param [in] para        intput para needed including type and id
++* @param [in] para        input para needed including type and id
+ * @param [out] info       resource info including buffer and buffer len
+ * @return  0 for success, others for fail
+ * @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+@@ -3309,10 +3309,10 @@ struct dsmi_sdid_parse_info {
+ 
+ /**
+ * @ingroup driver
+-* @brief get the parsed SDID infomation
++* @brief get the parsed SDID information
+ * @attention Not supported called in split mode, do not check validity for sdid;
+ * @param [in]  sdid SDID
+-* @param [out] sdid_parse  Parsed SDID infomation
++* @param [out] sdid_parse  Parsed SDID information
+ * @return   0 for success, others for fail
+ * @note Support:Ascend910B,Ascend910_93,Ascend910_95
+ */
+diff --git a/test/ut/depends/include/driver/dsmi_common_interface_base.h b/test/ut/depends/include/driver/dsmi_common_interface_base.h
+index a499715e74f53683ff44d387883b41179a87303a..237ca145f61765af8bb8371c27a91d1acadf828c 100644
+--- a/test/ut/depends/include/driver/dsmi_common_interface_base.h
++++ b/test/ut/depends/include/driver/dsmi_common_interface_base.h
+@@ -156,7 +156,7 @@ DLLEXPORT int dsmi_fault_inject(DSMI_FAULT_INJECT_INFO fault_inject_info);
+ * @param [in] device_id
+ * @param [in] max_info_cnt how many DSMI_FAULT_INJECT_INFO type structs did the info_buf contain;
+ * @param [out] info_buf  the memory malloced by users to store DSMI_FAULT_INJECT_INFO structs;
+-* @param [out] real_info_cnt DSMI_FAULT_INJECT_INFO supportd by device;
++* @param [out] real_info_cnt DSMI_FAULT_INJECT_INFO supported by device;
+ * @return 0 for success, others for fail
+ * @note Support:as31xm1, BS9SX1A, Ascend610,Ascend610Lite
+ */
+diff --git a/test/ut/depends/include/external/ge_common/ge_api_types.h b/test/ut/depends/include/external/ge_common/ge_api_types.h
+index 88bb5153b1c79eeb1bc5dd1e35dd696230d3e2c2..17c7b0fef743d4b3e0bb4c79139d368165e33cc9 100644
+--- a/test/ut/depends/include/external/ge_common/ge_api_types.h
++++ b/test/ut/depends/include/external/ge_common/ge_api_types.h
+@@ -341,13 +341,13 @@ const std::string GE_FE_FLAG = "ge.feFlag";
+ // this option is to obtain stream max parallel num
+ const std::string STREAM_MAX_PARALLEL_NUM = "ge.streamMaxParallelNum";
+ 
+-// congigure outputDatatype to setting net output type
++// configure outputDatatype to setting net output type
+ const std::string OUTPUT_DATATYPE = "ge.outputDatatype";
+ 
+-// congigure opSelectImplmode to setting op select implmode
++// configure opSelectImplmode to setting op select implmode
+ const std::string OP_SELECT_IMPL_MODE = "ge.opSelectImplmode";
+ 
+-// congigure optypelist_for_implmode to setting which op use implmode
++// configure optypelist_for_implmode to setting which op use implmode
+ const std::string OPTYPELIST_FOR_IMPLMODE = "ge.optypelistForImplmode";
+ 
+ // configure whether to enable hcom parallel by session constructor options param,
+@@ -443,7 +443,7 @@ const char_t *const ENABLE_PRINT_OP_PASS = "ge.enablePrintOpPass";
+ const char_t *const DEBUG_DIR = "ge.debugDir";
+ 
+ // Configure switch for op status check such as overflow
+-// Its value should be true of flase
++// Its value should be true of false
+ const char_t *const STATUS_CHECK = "ge.status_check";
+ 
+ // Configure operator compiler cache path
+diff --git a/test/ut/depends/include/graph/tensor.h b/test/ut/depends/include/graph/tensor.h
+index c16d502dad8f7a228844eba8be73d9c3cbffc291..77430e1fbb72dae23e39f5a89019f278f1a007c1 100644
+--- a/test/ut/depends/include/graph/tensor.h
++++ b/test/ut/depends/include/graph/tensor.h
+@@ -125,7 +125,7 @@ class GE_FUNC_DEV_VISIBILITY GE_FUNC_HOST_VISIBILITY TensorDesc {
+   void SetName(const std::string &name);
+   void SetName(const char_t *name);
+ 
+-  // Attr acess
++  // Attr access
+   void SetSize(int64_t size);
+   int64_t GetSize() const;
+ 
+diff --git a/test/ut/depends/include/securectype.h b/test/ut/depends/include/securectype.h
+index 212b73c18fe13b392dfa6ebecf909313ea4f8802..ec40d686e2d3a92155c4c232f201a5ae31f22505 100644
+--- a/test/ut/depends/include/securectype.h
++++ b/test/ut/depends/include/securectype.h
+@@ -384,7 +384,7 @@
+ #endif
+ 
+ /*
+- * Add  the -DSECUREC_SUPPORT_FORMAT_WARNING=1  compiler option to supoort  -Wformat=2.
++ * Add  the -DSECUREC_SUPPORT_FORMAT_WARNING=1  compiler option to support  -Wformat=2.
+  * Default does not check the format is that the same data type in the actual code.
+  * In the product is different in the original data type definition of VxWorks and Linux.
+  */
+diff --git a/test/ut/depends/pkg_inc/aicpu/aicpu_engine_struct.h b/test/ut/depends/pkg_inc/aicpu/aicpu_engine_struct.h
+index be9ca6a65c1a85db1452a55c66c37d0143e1e571..0a42164a8af1798c0953c2510704e9481f422a94 100644
+--- a/test/ut/depends/pkg_inc/aicpu/aicpu_engine_struct.h
++++ b/test/ut/depends/pkg_inc/aicpu/aicpu_engine_struct.h
+@@ -34,7 +34,7 @@ extern "C" {
+ #endif
+ 
+ /*
+-    The different framwork we adapted for.
++    The different framework we adapted for.
+ */
+ typedef enum {
+     FMK_KERNEL_TYPE_TF = 0,
+diff --git a/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpu_async_event.h b/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpu_async_event.h
+index daffcc7a7f64cb2064071dbd29c5cbec36238bfb..05b269a2c78bef569338747957d1eb476125dd04 100644
+--- a/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpu_async_event.h
++++ b/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpu_async_event.h
+@@ -111,7 +111,7 @@ private:
+     AsyncEventManager(AsyncEventManager &&) = delete;
+     AsyncEventManager &operator = (AsyncEventManager &&) = delete;
+ 
+-    // wait notify funciton
++    // wait notify function
+     NotifyFunc notifyFunc_;
+ };
+ }  // namespace aicpu
+diff --git a/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_info.h b/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_info.h
+index 7ec8ea178a5d4dfc2965851254ce2460b0cebf1b..4d1866e936aaca1e2c2ecc456d72b32e12e7caad 100644
+--- a/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_info.h
++++ b/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_info.h
+@@ -273,7 +273,7 @@ struct __attribute__((visibility("default"))) CheckKernelSupportedConfig {
+ 
+ struct __attribute__((visibility("default"))) DataFlowExceptionNotify {
+     uint64_t transId;
+-    uint32_t type;	// 0:Exception occured, 1:Exception expired
++    uint32_t type;	// 0:Exception occurred, 1:Exception expired
+     uint32_t modelIdNum;
+     uint64_t modelIdsAddr; // ptr which point to modelIds(uint32_t)
+     char rsv[40];
+diff --git a/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_interface.h b/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_interface.h
+index 8c4c170ab5af806d54eae32748843e34f1838c66..1614c530c9aa61a34779ca50061cc332f8db75aa 100644
+--- a/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_interface.h
++++ b/test/ut/depends/pkg_inc/aicpu/aicpu_schedule/aicpusd_interface.h
+@@ -34,30 +34,30 @@ enum __attribute__((visibility("default"))) ErrorCode : int32_t {
+ /**
+  * @brief it is used to load the task and stream info.
+  * @param [in] ptr : the address of the task and stream info
+- * @return AICPU_SCHEDULE_SUCCESS: sucess  other: error code in ErrorCode
++ * @return AICPU_SCHEDULE_SUCCESS: success  other: error code in ErrorCode
+  */
+ __attribute__((visibility("default"))) int32_t AICPUModelLoad(void *ptr);
+ 
+ /**
+- * @brief it is used to destory the model.
++ * @brief it is used to destroy the model.
+  * @param [in] modelId : The id of model will be destroy.
+- * @return AICPU_SCHEDULE_SUCCESS: sucess  other: error code in ErrorCode
++ * @return AICPU_SCHEDULE_SUCCESS: success  other: error code in ErrorCode
+  */
+ __attribute__((visibility("default"))) int32_t AICPUModelDestroy(uint32_t modelId);
+ 
+ /**
+  * @brief it is used to execute the model.
+  * @param [in] modelId : The id of model will be run.
+- * @return AICPU_SCHEDULE_SUCCESS: sucess  other: error code in ErrorCode
++ * @return AICPU_SCHEDULE_SUCCESS: success  other: error code in ErrorCode
+  */
+ __attribute__((visibility("default"))) int32_t AICPUModelExecute(uint32_t modelId);
+ 
+ /**
+  * @brief it is used to init aicpu scheduler for acl.
+  * @param [in] deviceId : The id of self cpu.
+- * @param [in] hostPid :  pid of host appication
++ * @param [in] hostPid :  pid of host application
+  * @param [in] profilingMode : it used to open or close profiling.
+- * @return AICPU_SCHEDULE_SUCCESS: sucess  other: error code in ErrorCode
++ * @return AICPU_SCHEDULE_SUCCESS: success  other: error code in ErrorCode
+  */
+ __attribute__((visibility("default"))) int32_t InitAICPUScheduler(uint32_t deviceId, pid_t hostPid,
+                                                                   ProfilingMode profilingMode);
+@@ -67,15 +67,15 @@ __attribute__((visibility("default"))) int32_t InitAICPUScheduler(uint32_t devic
+  * @param [in] deviceId : The id of self cpu.
+  * @param [in] hostPid : The id of host
+  * @param [in] flag : flag[0] == 1 means PROFILING_OPEN, otherwise PROFILING_CLOSE.
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code in StatusCode
++ * @return AICPU_SCHEDULE_OK: success  other: error code in StatusCode
+  */
+ __attribute__((visibility("default"))) int32_t UpdateProfilingMode(uint32_t deviceId, pid_t hostPid, uint32_t flag);
+ 
+ /**
+  * @brief it is used to stop the aicpu scheduler for acl.
+  * @param [in] deviceId : The id of self cpu.
+- * @param [in] hostPid : pid of host appication
+- * @return AICPU_SCHEDULE_SUCCESS: sucess  other: error code in ErrorCode
++ * @param [in] hostPid : pid of host application
++ * @return AICPU_SCHEDULE_SUCCESS: success  other: error code in ErrorCode
+  */
+ __attribute__((visibility("default"))) int32_t StopAICPUScheduler(uint32_t deviceId, pid_t hostPid);
+ 
+@@ -84,7 +84,7 @@ __attribute__((visibility("default"))) int32_t StopAICPUScheduler(uint32_t devic
+  * @brief it use to execute the model from call interface.
+  * @param [in] drvEventInfo : event info.
+  * @param [out] eventAck : event ack.
+- * @return 0: sucess, other: error code
++ * @return 0: success, other: error code
+  */
+ __attribute__((visibility("default"))) int32_t AICPUExecuteTask(struct event_info* drvEventInfo,
+                                                                 struct event_ack* drvEventAck);
+@@ -93,7 +93,7 @@ __attribute__((visibility("default"))) int32_t AICPUExecuteTask(struct event_inf
+  * @ingroup AicpuScheduleInterface
+  * @brief it use to preload so.
+  * @param [in] soName : so name.
+- * @return 0: sucess, other: error code
++ * @return 0: success, other: error code
+  */
+ __attribute__((visibility("default"))) int32_t AICPUPreOpenKernels(const char *soName);
+ 
+@@ -101,49 +101,49 @@ __attribute__((visibility("default"))) int32_t AICPUPreOpenKernels(const char *s
+  * @brief it is used to load op mapping info for data dump.
+  * @param [in] infoAddr : The pointer of info.
+  * @param [in] len : The length of info
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code in StatusCode
++ * @return AICPU_SCHEDULE_OK: success  other: error code in StatusCode
+  */
+ __attribute__((visibility("default"))) int32_t LoadOpMappingInfo(const void *infoAddr, uint32_t len);
+ 
+ /**
+  * @brief it is used to set report callback function.
+  * @param [in] reportCallback : report callback function.
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code in StatusCode
++ * @return AICPU_SCHEDULE_OK: success  other: error code in StatusCode
+  */
+ __attribute__((visibility("default"))) int32_t AicpuSetMsprofReporterCallback(MsprofReporterCallback reportCallback);
+ 
+ /**
+  * @brief it is used to init aicpu scheduler for helper.
+  * @param [in] initParam : init param.
+- * @return AICPU_SCHEDULE_SUCCESS: sucess  other: error code in ErrorCode
++ * @return AICPU_SCHEDULE_SUCCESS: success  other: error code in ErrorCode
+  */
+ __attribute__((visibility("default"))) int32_t InitCpuScheduler(const CpuSchedInitParam * const initParam);
+ 
+ /**
+  * @brief it is used to load model with queue.
+  * @param [in] ptr : the address of the model info
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code
++ * @return AICPU_SCHEDULE_OK: success  other: error code
+  */
+ __attribute__((visibility("default"))) int32_t AicpuLoadModelWithQ(void *ptr);
+ 
+ /**
+  * @brief it is used to stop aicpu module.
+  * @param [in] eventInfo : the message send by tsd
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code
++ * @return AICPU_SCHEDULE_OK: success  other: error code
+  */
+ __attribute__((visibility("default"))) int32_t StopAicpuSchedulerModule(const struct TsdSubEventInfo * const
+                                                                         eventInfo);
+ /**
+  * @brief it is used to start aicpu module.
+  * @param [in] eventInfo : the message send by tsd
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code
++ * @return AICPU_SCHEDULE_OK: success  other: error code
+  */
+ __attribute__((visibility("default"))) int32_t StartAicpuSchedulerModule(const struct TsdSubEventInfo * const
+                                                                          eventInfo);
+ 
+ /**
+  * @brief it is used to send retcode to ts.
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code
++ * @return AICPU_SCHEDULE_OK: success  other: error code
+  */
+ __attribute__((weak)) __attribute__((visibility("default"))) void AicpuReportNotifyInfo(
+     const aicpu::AsyncNotifyInfo &notifyInfo);
+@@ -162,7 +162,7 @@ __attribute__((weak)) __attribute__((visibility("default"))) bool AicpuIsStoped(
+ 
+ /**
+  * @brief it is used to register last word.
+- * @param [in] mark : module lable.
++ * @param [in] mark : module label.
+  * @param [in] callback : record last word callback.
+  * @param [out] cancelDeadline : cancel reg closer.
+  */
+@@ -172,21 +172,21 @@ __attribute__((weak)) __attribute__((visibility("default"))) void RegLastwordCal
+ /**
+  * @brief it is used to load model with event.
+  * @param [in] ptr : the address of the model info
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code
++ * @return AICPU_SCHEDULE_OK: success  other: error code
+  */
+ __attribute__((visibility("default"))) int32_t AicpuLoadModel(void *ptr);
+ 
+ /**
+  * @brief it is used to stop model.
+  * @param [in] ptr : the address of config
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code
++ * @return AICPU_SCHEDULE_OK: success  other: error code
+  */
+ __attribute__((visibility("default"))) int32_t AICPUModelStop(const ReDeployConfig * const ptr);
+ 
+ /**
+  * @brief it is used to recover model.
+  * @param [in] ptr : the address of the config
+- * @return AICPU_SCHEDULE_OK: sucess  other: error code
++ * @return AICPU_SCHEDULE_OK: success  other: error code
+  */
+ __attribute__((visibility("default"))) int32_t AICPUModelClearInputAndRestart(const ReDeployConfig * const ptr);
+ 
+diff --git a/test/ut/depends/pkg_inc/aicpu/fwk_adpt_struct.h b/test/ut/depends/pkg_inc/aicpu/fwk_adpt_struct.h
+index 522330cc7aa77987974319698638c94c6122ae88..6402c00265e5e6defafb260d0c8e965e568299d1 100644
+--- a/test/ut/depends/pkg_inc/aicpu/fwk_adpt_struct.h
++++ b/test/ut/depends/pkg_inc/aicpu/fwk_adpt_struct.h
+@@ -40,12 +40,12 @@ enum FWKAdptAPIRetCode {
+     FWK_ADPT_PARAM_INVALID = 3,            // invalid input param
+     FWK_ADPT_PARAM_PARSE_FAILED = 4,       // parase input param failed
+     FWK_ADPT_NATIVE_ERROR = 5,             // error code
+-    FWK_ADPT_NOT_SUPPORT_OPTYPE = 6,       // unsupport operate type
+-    FWK_ADPT_INTERNAL_ERROR = 7,           // adpter internal error
+-    FWK_ADPT_NOT_SUPPORT_DATATYPE = 8,     // unsupport input/output data type
+-    FWK_ADPT_KERNEL_ALREADY_RUNING = 9,    // kernel already runing, not support parallel run
++    FWK_ADPT_NOT_SUPPORT_OPTYPE = 6,       // unsupported operate type
++    FWK_ADPT_INTERNAL_ERROR = 7,           // adapter internal error
++    FWK_ADPT_NOT_SUPPORT_DATATYPE = 8,     // unsupported input/output data type
++    FWK_ADPT_KERNEL_ALREADY_RUNING = 9,    // kernel already running, not support parallel run
+     FWK_ADPT_SESSION_NOT_EXIST = 10,       // session id not exist
+-    FWK_ADPT_SESSION_ALREADY_EXIST = 11,   // session id alread exist for create session
++    FWK_ADPT_SESSION_ALREADY_EXIST = 11,   // session id already exist for create session
+     FWK_ADPT_NATIVE_END_OF_SEQUENCE = 12,  // end of sequence
+     FWK_ADPT_EXTEND_TYPE_NOT_EXIST = 13,   // extend info type not exist
+     FWK_ADPT_UNKNOWN_ERROR = 99            // unknown error code
+diff --git a/test/ut/depends/pkg_inc/aicpu/queue_schedule/dgw_client.h b/test/ut/depends/pkg_inc/aicpu/queue_schedule/dgw_client.h
+index 022bda66b1182e0256d5bbd812b545e548636048..9bb766570730d545d04b8b09fb2ffef176552b6f 100644
+--- a/test/ut/depends/pkg_inc/aicpu/queue_schedule/dgw_client.h
++++ b/test/ut/depends/pkg_inc/aicpu/queue_schedule/dgw_client.h
+@@ -118,7 +118,7 @@ struct CommChannelAttr {
+ // group attr
+ struct GroupAttr {
+     int32_t groupId;       // group id
+-    GroupPolicy policy;    // only need set for dstination group
++    GroupPolicy policy;    // only need set for destination group
+     uint32_t endpointNum;  // only used for query result
+     uint32_t rootModelId;
+ };
+@@ -217,7 +217,7 @@ struct ReDeployConfig {
+ 
+ // config info, group config or routes config
+ struct ConfigInfo {
+-    ConfigCmd cmd;               // query mode, user donot need fill this param
++    ConfigCmd cmd;               // query mode, user do not need fill this param
+     union {
+         GroupConfig groupCfg;     // group config
+         RoutesConfig routesCfg;   // routes config
+@@ -522,7 +522,7 @@ private:
+     pid_t curPid_;
+     // dgw client group id
+     uint32_t curGroupId_;
+-    // dgw client and qs server pipline queue id
++    // dgw client and qs server pipeline queue id
+     uint32_t piplineQueueId_;
+     // dgw initialized flag
+     bool initFlag_;
+diff --git a/test/ut/depends/pkg_inc/aicpu/tsd/tsd.h b/test/ut/depends/pkg_inc/aicpu/tsd/tsd.h
+index b60a63a6a8b74abef102dd6e8b0928235d274f43..273d87ff46e4e6bf9aef23fe6a2f1dd93bc589a7 100644
+--- a/test/ut/depends/pkg_inc/aicpu/tsd/tsd.h
++++ b/test/ut/depends/pkg_inc/aicpu/tsd/tsd.h
+@@ -230,7 +230,7 @@ int32_t WaitForShutDown(const uint32_t deviceId);
+ * @param [in] vfId : vf id
+ * @param [in] errCode : errCode: errMsg code produced by host
+ * @param [in] errLen : errLen: errMsg code length
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t TsdReportStartOrStopErrCode(const uint32_t deviceId, const TsdWaitType waitType,
+                                     const uint32_t hostPid, const uint32_t vfId,
+@@ -245,7 +245,7 @@ int32_t TsdReportStartOrStopErrCode(const uint32_t deviceId, const TsdWaitType w
+ * @param [in] hostPid :  host pid
+ * @param [in] vfId : vf id
+ * @param [in] msgInfo : capability
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t ReportMsgToTsd(const uint32_t deviceId, const TsdWaitType waitType,
+                        const uint32_t hostPid, const uint32_t vfId,
+@@ -255,7 +255,7 @@ int32_t ReportMsgToTsd(const uint32_t deviceId, const TsdWaitType waitType,
+ * @ingroup tsd_event_client
+ * @brief reg event call back func to tsdclient
+ * @param [in] SubProcEventCallBackInfo : event id, callbackfunc
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t RegEventMsgCallBackFunc(const struct SubProcEventCallBackInfo *regInfo);
+  
+@@ -271,7 +271,7 @@ void UnRegEventMsgCallBackFunc(const uint32_t eventType);
+ * @ingroup tsd_event_client
+ * @brief reg event call back func to tsdclient
+ * @param [in] SubProcEventCallBackInfo : event id, callbackfunc
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+  
+ /**
+@@ -282,7 +282,7 @@ void UnRegEventMsgCallBackFunc(const uint32_t eventType);
+ * @param [in] hostPid :  host pid
+ * @param [in] vfId : vf id
+ * @param [in] eventType : eventType
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t SubModuleProcessResponse(const uint32_t deviceId, const TsdWaitType waitType,
+                                  const uint32_t hostPid, const uint32_t vfId,
+@@ -295,22 +295,22 @@ int32_t SubModuleProcessResponse(const uint32_t deviceId, const TsdWaitType wait
+ * @param [in] waitType : process type
+ * @param [in] hostPid :  host pid
+ * @param [in] vfId : vf id
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t StartUpRspAndWaitProcess(const uint32_t deviceId, const TsdWaitType waitType,
+                                  const uint32_t hostPid, const uint32_t vfId);
+  
+ /**
+ * @ingroup StopWaitForCustAicpu
+-* @brief aicpu wait aicpu_cust_schedule attatch grp success
+-* @return TSD_OK: sucess, other: error code
++* @brief aicpu wait aicpu_cust_schedule attach grp success
++* @return TSD_OK: success, other: error code
+ */
+ int32_t StopWaitForCustAicpu();
+  
+ /**
+ * @ingroup tsd_event_client
+ * @brief set tsd event dst pid
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t SetDstTsdEventPid(const uint32_t dstPid);
+  
+@@ -321,7 +321,7 @@ int32_t SetDstTsdEventPid(const uint32_t dstPid);
+ * @param [in] waitType : process type
+ * @param [in] hostPid :  host pid
+ * @param [in] vfId : vf id
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t SendUpdateProfilingRspToTsd(const uint32_t deviceId, const uint32_t waitType,
+                                     const uint32_t hostPid, const uint32_t vfId);
+@@ -335,7 +335,7 @@ int32_t SendUpdateProfilingRspToTsd(const uint32_t deviceId, const uint32_t wait
+ * @param [in] hostPid :  host pid
+ * @param [in] vfId : vf id
+ * @param [in] vfId : vf id
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t SetSubProcScheduleMode(const uint32_t deviceId, const uint32_t waitType,
+                                const uint32_t hostPid, const uint32_t vfId,
+@@ -373,7 +373,7 @@ int32_t SendStartUpFinishMsg(const uint32_t deviceId, const TsdWaitType waitType
+ * @param [in] vfId : vf id
+ * @param [in] errCode : errCode: errMsg code produced by host
+ * @param [in] errLen : errLen: errMsg code length
+-* @return TSD_OK: sucess, other: error code
++* @return TSD_OK: success, other: error code
+ */
+ int32_t ReportProcessStartUpErrorCode(const uint32_t deviceId, const TsdWaitType waitType,
+                                       const uint32_t hostPid, const uint32_t vfId,
+diff --git a/test/ut/depends/pkg_inc/aicpu/tsd/tsd_client.h b/test/ut/depends/pkg_inc/aicpu/tsd/tsd_client.h
+index a66ed22d42bd58773dfcf90bcc310f3fe0e8fb3d..d24e513f21de19fc75e1d52e45b791a52827545d 100644
+--- a/test/ut/depends/pkg_inc/aicpu/tsd/tsd_client.h
++++ b/test/ut/depends/pkg_inc/aicpu/tsd/tsd_client.h
+@@ -79,7 +79,7 @@ typedef enum {
+     TSD_SUB_PROC_NPU            = 5,           // npu process
+     TSD_SUB_PROC_PROXY          = 6,           // proxy process
+     TSD_SUB_PROC_BUILTIN_UDF    = 7,           // build in udf
+-    TSD_SUB_PROC_ADPROF         = 8,           // adprof proces
++    TSD_SUB_PROC_ADPROF         = 8,           // adprof process
+     TSD_SUB_PROC_MAX            = 0xFF
+ } SubProcType;
+ 
+diff --git a/test/ut/depends/pkg_inc/asc/include/adv_api/hccl/internal/hccl_msg.h b/test/ut/depends/pkg_inc/asc/include/adv_api/hccl/internal/hccl_msg.h
+index fac11640e9891db4822ca80bc9046fd1710fa81a..82b10ec5ea0bb8cdd8871cefb54ec887ba70c0d0 100644
+--- a/test/ut/depends/pkg_inc/asc/include/adv_api/hccl/internal/hccl_msg.h
++++ b/test/ut/depends/pkg_inc/asc/include/adv_api/hccl/internal/hccl_msg.h
+@@ -126,8 +126,8 @@ constexpr uint32_t BYTE_PER_MB = BYTE_PER_KB * BYTE_PER_KB;
+ // HcclMsgArea is the 16MB space reserved by workspace in struct HcclCombinOpParam and belongs to each comm group.
+ // cacheline size aligned by 64 bytes
+ struct TurnCnt {
+-    uint64_t valid;       // COMMIT_VALID_MASK, writen by client when Commit, checked by server
+-    uint64_t cnt;         // commit cnt, writen by client, reset by server
++    uint64_t valid;       // COMMIT_VALID_MASK, written by client when Commit, checked by server
++    uint64_t cnt;         // commit cnt, written by client, reset by server
+     uint64_t reserved[6];
+ };
+ 
+@@ -135,8 +135,8 @@ struct SingleQueueMsg {
+     HcclMsg sendMsgs[HCCL_MSG_CNT];
+     HcclMsg recvMsgs[HCCL_MSG_CNT];
+     uint8_t reserved0[8 * BYTE_PER_KB];    // for abi compatibility
+-    TurnCnt commitTurnCnt[HCCL_MSG_CNT];    // writen by client, indicating task num needed to be executed.
+-    TurnCnt finishedTurnCnt[HCCL_MSG_CNT];  // writen by server, indicating task num has been executed.
++    TurnCnt commitTurnCnt[HCCL_MSG_CNT];    // written by client, indicating task num needed to be executed.
++    TurnCnt finishedTurnCnt[HCCL_MSG_CNT];  // written by server, indicating task num has been executed.
+     uint8_t reserved1[BYTE_PER_MB];
+     HcclMsgExt paramExtMsgList[HCCL_MSG_CNT];
+ };
+diff --git a/test/ut/depends/pkg_inc/base/dlog_pub.h b/test/ut/depends/pkg_inc/base/dlog_pub.h
+index b57d8bdad5d7bd14f78face8c58277262f1bce4b..e71f7d572caf6323b9327a27a906c597c9ebb404 100644
+--- a/test/ut/depends/pkg_inc/base/dlog_pub.h
++++ b/test/ut/depends/pkg_inc/base/dlog_pub.h
+@@ -23,7 +23,7 @@ extern "C" {
+ 
+ /**
+  * @brief           get module debug loglevel and enableEvent
+- * @param [in]      moduleId       moudule id(see log_types.h, eg: CCE), others: invalid
++ * @param [in]      moduleId       module id(see log_types.h, eg: CCE), others: invalid
+  * @param [out]     enableEvent    1: enable; 0: disable
+  * @return          module level   0: debug, 1: info, 2: warning, 3: error, 4: null output
+  */
+@@ -31,7 +31,7 @@ LOG_FUNC_VISIBILITY int32_t dlog_getlevel(int32_t moduleId, int32_t *enableEvent
+ 
+ /**
+  * @brief           set module loglevel and enableEvent
+- * @param [in]      moduleId       moudule id(see log_types.h, eg: CCE), -1: all modules, others: invalid
++ * @param [in]      moduleId       module id(see log_types.h, eg: CCE), -1: all modules, others: invalid
+  * @param [in]      level          log level, eg: DLOG_ERROR/DLOG_WARN/DLOG_INFO/DLOG_DEBUG
+  * @param [in]      enableEvent    1: enable; 0: disable, others:invalid
+  * @return          0: SUCCEED, others: FAILED
+diff --git a/test/ut/depends/pkg_inc/base/log_types.h b/test/ut/depends/pkg_inc/base/log_types.h
+index a930e3367a70b5cbceb19e239569fffd09cb232d..06e605e2ee0a3f35eae750ca3f02f3ee22149df2 100644
+--- a/test/ut/depends/pkg_inc/base/log_types.h
++++ b/test/ut/depends/pkg_inc/base/log_types.h
+@@ -58,7 +58,7 @@ enum {
+     DEVMM = 22,             /* Dlog memory managent */
+     KERNEL = 23,            /* Kernel */
+     LIBMEDIA = 24,          /* Libmedia */
+-    CCECPU = 25,            /* aicpu shedule */
++    CCECPU = 25,            /* aicpu schedule */
+     ROS = 27,               /* ROS */
+     HCCP = 28,
+     ROCE = 29,
+@@ -70,7 +70,7 @@ enum {
+     TSDUMP = 35,
+     AICPU = 36,
+     LP = 37,                /* Low Power */
+-    TDT = 38,               /* tsdaemon or aicpu shedule */
++    TDT = 38,               /* tsdaemon or aicpu schedule */
+     FE = 39,
+     MD = 40,
+     MB = 41,
+diff --git a/test/ut/depends/pkg_inc/profiling/aprof_pub.h b/test/ut/depends/pkg_inc/profiling/aprof_pub.h
+index f155337ef08c3323695f9c1184b67696107cfe09..d604be212b499798070933c60e283a6c3e1c36e9 100644
+--- a/test/ut/depends/pkg_inc/profiling/aprof_pub.h
++++ b/test/ut/depends/pkg_inc/profiling/aprof_pub.h
+@@ -346,7 +346,7 @@ struct MsprofAicTimeStampInfo {
+     uint64_t syscyc;   // dotting timestamp with system cycle
+     uint32_t blockId;  // core block id
+     uint32_t descId;   // dot Id for description
+-    uint64_t curPc;   // currrent pc for source line
++    uint64_t curPc;   // current pc for source line
+ };
+ 
+ struct MsprofRuntimeTrack {  // for MsprofReportCompactInfo buffer data
+@@ -508,9 +508,9 @@ MSVP_PROF_API int32_t MsprofReportEvent(uint32_t nonPersistantFlag, const struct
+ /**
+  * @ingroup libprofapi
+  * @name  MsprofReportCompactInfo
+- * @brief report profiling compact infomation
++ * @brief report profiling compact information
+  * @param[in] nonPersistantFlag  0 isn't aging, !0 is aging
+- * @param[in] data               profiling data of compact infomation
++ * @param[in] data               profiling data of compact information
+  * @param[in] length             length of profiling data
+  * @return 0:SUCCESS, !0:FAILED
+  */
+@@ -519,9 +519,9 @@ MSVP_PROF_API int32_t MsprofReportCompactInfo(uint32_t nonPersistantFlag, const
+ /**
+  * @ingroup libprofapi
+  * @name  MsprofReportAdditionalInfo
+- * @brief report profiling additional infomation
++ * @brief report profiling additional information
+  * @param[in] nonPersistantFlag  0 isn't aging, !0 is aging
+- * @param[in] data               profiling data of additional infomation
++ * @param[in] data               profiling data of additional information
+  * @param[in] length             length of profiling data
+  * @return 0:SUCCESS, !0:FAILED
+  */
+@@ -542,8 +542,8 @@ MSVP_PROF_API int32_t MsprofRegTypeInfo(uint16_t level, uint32_t typeId, const c
+  * @ingroup libprofapi
+  * @name  MsprofGetHashId
+  * @brief return hash id of hash info
+- * @param[in] hashInfo  infomation to be hashed
+- * @param[in] length    the length of infomation to be hashed
++ * @param[in] hashInfo  information to be hashed
++ * @param[in] length    the length of information to be hashed
+  * @return hash id
+  */
+ MSVP_PROF_API uint64_t MsprofGetHashId(const char *hashInfo, size_t length);
+@@ -552,8 +552,8 @@ MSVP_PROF_API uint64_t MsprofGetHashId(const char *hashInfo, size_t length);
+  * @ingroup libprofapi
+  * @name  MsprofStr2Id
+  * @brief Return the corresponding hash id code of the input string.
+- * @param[in] hashInfo  string infomation to be hashed
+- * @param[in] length    the length of string infomation
++ * @param[in] hashInfo  string information to be hashed
++ * @param[in] length    the length of string information
+  * @return hash id
+  */
+ MSVP_PROF_API uint64_t MsprofStr2Id(const char *hashInfo, size_t length);
+diff --git a/test/ut/depends/pkg_inc/profiling/devprof_pub.h b/test/ut/depends/pkg_inc/profiling/devprof_pub.h
+index 710f3e7d25bbf0fd1a31ddaef4181ff54e2d8f6a..fd21376b1f147bf5a8093ce23e7b47f11ebbe439 100644
+--- a/test/ut/depends/pkg_inc/profiling/devprof_pub.h
++++ b/test/ut/depends/pkg_inc/profiling/devprof_pub.h
+@@ -38,7 +38,7 @@ enum AdprofReportType {
+ /**
+  * @ingroup libascend_devprof
+  * @name  AdprofInit
+- * @brief regist aicpu channel and start the report func
++ * @brief register aicpu channel and start the report func
+  * @param[in] para  aicpu start para
+  * @return 0:SUCCESS, !0:FAILED
+  */
+@@ -65,7 +65,7 @@ MSVP_PROF_API int32_t AdprofFinalize(void);
+ /**
+  * @ingroup libascend_devprof
+  * @name  AdprofAicpuStartRegister
+- * @brief regist aicpu start report func
++ * @brief register aicpu start report func
+  * @param[in] aicpuStartCallback  aicpu start report func
+  * @param[in] para                aicpu start para
+  * @return 0:SUCCESS, !0:FAILED
+@@ -77,7 +77,7 @@ MSVP_PROF_API int32_t AdprofAicpuStartRegister(AicpuStartFunc aicpuStartCallback
+  * @name  AdprofReportAdditionalInfo
+  * @brief aicpu report profiling data func
+  * @param[in] agingFlag  0 isn't aging, !0 is aging
+- * @param[in] data       profiling data of additional infomation
++ * @param[in] data       profiling data of additional information
+  * @param[in] length     length of profiling data
+  * @return 0:SUCCESS, !0:FAILED
+  */
+@@ -88,7 +88,7 @@ MSVP_PROF_API int32_t AdprofReportAdditionalInfo(uint32_t nonPersistantFlag, con
+  * @name  AdprofReportBatchAdditionalInfo
+  * @brief aicpu report batch profiling data func
+  * @param[in] agingFlag  0 isn't aging, !0 is aging
+- * @param[in] data       profiling data of additional infomation
++ * @param[in] data       profiling data of additional information
+  * @param[in] length     length of profiling data
+  * @return 0:SUCCESS, !0:FAILED
+  */
+@@ -107,8 +107,8 @@ MSVP_PROF_API size_t AdprofGetBatchReportMaxSize(uint32_t type);
+  * @ingroup libascend_devprof
+  * @name  AdprofStr2Id
+  * @brief return hash id of hash info
+- * @param[in] hashInfo  infomation to be hashed
+- * @param[in] length    the length of infomation to be hashed
++ * @param[in] hashInfo  information to be hashed
++ * @param[in] length    the length of information to be hashed
+  * @return hash id
+  */
+ MSVP_PROF_API uint64_t AdprofStr2Id(const char *hashInfo, size_t length);
+diff --git a/test/ut/depends/pkg_inc/profiling/prof_common.h b/test/ut/depends/pkg_inc/profiling/prof_common.h
+index edfb2abee125cc476629ea18807f38046fa75818..eff1f16492264c80fd8e2d8fab25d5024a23de43 100644
+--- a/test/ut/depends/pkg_inc/profiling/prof_common.h
++++ b/test/ut/depends/pkg_inc/profiling/prof_common.h
+@@ -773,7 +773,7 @@ struct MsprofStaticOpMem {
+     uint64_t lifeEnd;    // serial number of op memory used
+     uint64_t totalAllocateMemory; // static graph total allocate memory
+     uint64_t dynOpName;  // 0: invalid， other： dynamic op name of root
+-    uint32_t graphId;    // multipe model
++    uint32_t graphId;    // multiple model
+ };
+ 
+ #define MSPROF_PHYSIC_STREAM_ID_MAX_NUM 56
+@@ -797,7 +797,7 @@ struct MsprofExeomLoadInfo {
+  * @brief struct of data to report
+  */
+ struct ReporterData {
+-    char tag[MSPROF_ENGINE_MAX_TAG_LEN + 1];  // the sub-type of the module, data with different tag will be writen
++    char tag[MSPROF_ENGINE_MAX_TAG_LEN + 1];  // the sub-type of the module, data with different tag will be written
+     int32_t deviceId;                         // the index of device
+     size_t dataLen;                           // the length of send data
+     uint8_t *data;                            // the data content
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_error_codes.h b/test/ut/depends/pkg_inc/runtime/rt_error_codes.h
+index 22999b6a9b5e9a0ceeb76af4eed10a2aa0ac396c..70116879bb08823cdfa2b7fdd3e49097d4e80e22 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_error_codes.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_error_codes.h
+@@ -65,7 +65,7 @@ extern "C" {
+ #define  ACL_ERROR_RT_EVENT_CAPTURED             107028 // event is captured
+ #define  ACL_ERROR_RT_STREAM_NOT_CAPTURED        107029 // stream is not in capture status
+ #define  ACL_ERROR_RT_CAPTURE_MODE_NOT_SUPPORT   107030 // stream is captured, not support current oper
+-#define  ACL_ERROR_RT_STREAM_CAPTURE_IMPLICIT    107031 // a disallowed implicit dependency from defalut stream
++#define  ACL_ERROR_RT_STREAM_CAPTURE_IMPLICIT    107031 // a disallowed implicit dependency from default stream
+ #define  ACL_ERROR_STREAM_CAPTURE_CONFLICT       107032 // interdependent stream cannot begin capture together
+ #define  ACL_ERROR_STREAM_TASK_GROUP_STATUS      107033 // task group status error
+ #define  ACL_ERROR_STREAM_TASK_GROUP_INTR        107034 // task group interrupted
+@@ -94,7 +94,7 @@ extern "C" {
+ #define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP 207019 // not support to update this op 
+ 
+ #define  ACL_ERROR_RT_INTERNAL_ERROR             507000 // runtime internal error
+-#define  ACL_ERROR_RT_TS_ERROR                   507001 // ts internel error
++#define  ACL_ERROR_RT_TS_ERROR                   507001 // ts internal error
+ #define  ACL_ERROR_RT_STREAM_TASK_FULL           507002 // task full in stream
+ #define  ACL_ERROR_RT_STREAM_TASK_EMPTY          507003 // task empty in stream
+ #define  ACL_ERROR_RT_STREAM_NOT_COMPLETE        507004 // stream not complete
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_external_base.h b/test/ut/depends/pkg_inc/runtime/rt_external_base.h
+index de3bf92247a1e4d899d682679150bfbe0e646813..7b1a6b8d0f4049f9bda147465a2f82d49a47a89e 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_external_base.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_external_base.h
+@@ -112,7 +112,7 @@ typedef struct tagRtTaskCfgInfo {
+     uint8_t qos;
+     uint8_t partId;
+     uint8_t schemMode; // rtschemModeType_t 0:normal;1:batch;2:sync
+-    bool d2dCrossFlag; // d2dCrossFlag true:D2D_CROSS flase:D2D_INNER
++    bool d2dCrossFlag; // d2dCrossFlag true:D2D_CROSS false:D2D_INNER
+     uint32_t blockDimOffset;
+     uint8_t dumpflag; // dumpflag 0:fault 2:RT_KERNEL_DUMPFLAG 4:RT_FUSION_KERNEL_DUMPFLAG
+     uint8_t neverTimeout; // 1: never timeout, 0: will timeout
+@@ -329,7 +329,7 @@ typedef void (*rtStreamStateCallback)(rtStream_t stm, const bool isCreate);
+ /**
+  * @ingroup profiling_base
+  * @brief dataType: rtProfCtrlType_t
+- * @brief data: data swtich or reporter function
++ * @brief data: data switch or reporter function
+  * @brief dataLen: length of data
+  */
+ typedef rtError_t (*rtProfCtrlHandle)(uint32_t dataType, void *data, uint32_t dataLen);
+@@ -446,7 +446,7 @@ typedef enum {
+ 
+ /**
+  * @ingroup profiling_base
+- * @brief set profling switch, called by profiling
++ * @brief set profiling switch, called by profiling
+  * @param [in]  data  rtProfCommandHandle
+  * @param [out] len   length of data
+  * @return RT_ERROR_NONE for ok
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_external_device.h b/test/ut/depends/pkg_inc/runtime/rt_external_device.h
+index 3568e54d19edee7b379bc78c57054ef376c13a4b..ac1be7cabbaa161daa6a8141f1527d52ea08820b 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_external_device.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_external_device.h
+@@ -85,7 +85,7 @@ typedef enum {
+     RT_PROCESS_DEV_ONLY,   /* TDT */
+     RT_PROCESS_QS,         /* queue_scheduler */
+     RT_PROCESS_HCCP,       /* hccp server */
+-    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not surport quert from host pid */
++    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not support quert from host pid */
+     RT_PROCESS_CPTYPE_MAX
+ } rtDevResProcType_t;
+ 
+@@ -139,7 +139,7 @@ typedef enum {
+ /**
+  * @ingroup
+  * @brief query ub device info
+- * @param [in] cmd query info tpye
++ * @param [in] cmd query info type
+  * @param [in|out] info input/output parameter
+  * @return RT_ERROR_NONE for ok, errno for failed
+  * @return RT_ERROR_INVALID_VALUE for error input
+@@ -205,7 +205,7 @@ RTS_API rtError_t rtGetDevMsg(rtGetDevMsgType_t getMsgType, rtGetMsgCallback cal
+ 
+ /**
+  * @ingroup dvrt_dev
+- * @brief get device infomation.
++ * @brief get device information.
+  * @param [in] device   the device id
+  * @param [in] moduleType   module type
+                typedef enum {
+@@ -305,7 +305,7 @@ RTS_API rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, i
+ 
+ /**
+ * @ingroup dvrt_dev
+-* @brief get phy device infomation.
++* @brief get phy device information.
+ * @param [int] phyId        the physic Id
+ * @param [int] moduleType   module type
+ * @param [int] infoType     info type
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_external_kernel.h b/test/ut/depends/pkg_inc/runtime/rt_external_kernel.h
+index e085cf742600d61cf22bd2d2994e066198d2f86d..9cd3a07cebcf0e0604455a8028f46684de4ae0b8 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_external_kernel.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_external_kernel.h
+@@ -23,8 +23,8 @@ RTS_API rtError_t  rtGetNotifyAddress(rtNotify_t notify, uint64_t * const notify
+ 
+ /**
+ * @ingroup rt_kernel
+-* @brief set input argments size for exception
+-* @param [in] sizeInfo argments size info
++* @brief set input arguments size for exception
++* @param [in] sizeInfo arguments size info
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+@@ -172,7 +172,7 @@ typedef struct tagRtSmCtrl {
+  * @param [in] kernelType    aicpu kernel type
+  * @param [in] opName        address of op name
+  * @param [in] blockDim      block dimensions
+- * @param [in] argsInfo      argments address for kernel function
++ * @param [in] argsInfo      arguments address for kernel function
+  * @param [in] smDesc        shared memory description
+  * @param [in] stm           associated stream
+  * @param [in] flags         dump flag or others function flag
+@@ -213,7 +213,7 @@ RTS_API rtError_t rtGetStackBuffer(const rtBinHandle binHandle, const uint32_t c
+ 
+ /**
+  * @ingroup rt_kernel
+- * @brief L1 fusion dump addr transfered to device
++ * @brief L1 fusion dump addr transferred to device
+  * @param [in] mdl    handle info
+  * @param [in] addr     ddr address of L1 Fusion Dump
+  * @param [in] dumpSize memory size
+@@ -272,7 +272,7 @@ RTS_API rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);
+  * @param [in] soName        so name
+  * @param [in] kernelName    kernel name
+  * @param [in] blockDim      block dimensions
+- * @param [in] argsInfo      argments address for kernel function
++ * @param [in] argsInfo      arguments address for kernel function
+  * @param [in] smDesc        shared memory description
+  * @param [in] stm           associated stream
+  * @param [in] flag          dump flag or others function flag
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_external_mem.h b/test/ut/depends/pkg_inc/runtime/rt_external_mem.h
+index c5caea0c1a4cfb31b2c255c2a03e6e5d9b3611fb..ae929bbfe57599ca895a9efc0c374b71a1577433 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_external_mem.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_external_mem.h
+@@ -352,9 +352,9 @@ typedef struct tagBindHostpidInfo {
+ 
+ /**
+ * @ingroup rt_mem_queue
+-* @brief  query device proccess id
++* @brief  query device process id
+ * @param [in] info: see struct rtBindHostpidInfo_t
+-* @param [out] devPid: device proccess id
++* @param [out] devPid: device process id
+ * @return RT_ERROR_NONE for ok
+ */
+ RTS_API rtError_t rtQueryDevPid(rtBindHostpidInfo_t *info, int32_t *devPid);
+@@ -476,7 +476,7 @@ RTS_API rtError_t rtMemGrpAddProc(const char_t *name, int32_t pid, const rtMemGr
+ 
+ /**
+ * @ingroup rt_mem_queue
+-* @brief attach proccess to check permission in group
++* @brief attach process to check permission in group
+ * @param [in] name, group name
+ * @param [in] timeout, time out ms
+ * @return   0 for success, others for fail
+@@ -599,9 +599,9 @@ RTS_API rtError_t rtQueueSubscribe(int32_t devId, uint32_t qId, uint32_t groupId
+ 
+ typedef enum rtEventIdType {
+     RT_EVENT_RANDOM_KERNEL,      /* Random operator event */
+-    RT_EVENT_DVPP_MSG,           /* operator events commited by DVPP */
+-    RT_EVENT_FR_MSG,             /* operator events commited by Feature retrieves */
+-    RT_EVENT_TS_HWTS_KERNEL,     /* operator events commited by ts/hwts */
++    RT_EVENT_DVPP_MSG,           /* operator events committed by DVPP */
++    RT_EVENT_FR_MSG,             /* operator events committed by Feature retrieves */
++    RT_EVENT_TS_HWTS_KERNEL,     /* operator events committed by ts/hwts */
+     RT_EVENT_AICPU_MSG,          /* aicpu activates its own stream events */
+     RT_EVENT_TS_CTRL_MSG,        /* controls message events of TS */
+     RT_EVENT_QUEUE_ENQUEUE,      /* entry event of Queue(consumer) */
+@@ -762,7 +762,7 @@ RTS_API rtError_t rtDebugReadAICore(rtDebugMemoryParam_t *const param);
+  * @ingroup dvrt_mem
+  * @brief HCCL Async memory cpy
+  * @param [in] sqIndex sq index
+- * @param [in] wqeIndex moudle index
++ * @param [in] wqeIndex module index
+  * @param [in] stm asynchronized task stream
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_external_preload.h b/test/ut/depends/pkg_inc/runtime/rt_external_preload.h
+index e7bdd4712ab4e7500f51d39e97f5e5250e90d6a5..913a80f94489ab6142383638ca3e83010d7632ff 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_external_preload.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_external_preload.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+- * Description: parma rt_preload_task.h
++ * Description: param rt_preload_task.h
+  * Create: 2023-06-02
+  */
+ #ifndef CCE_RUNTIME_RT_EXTERNAL_PRELOAD_H
+@@ -17,7 +17,7 @@ typedef int32_t (*rtKernelLaunchFillFunc)(void* cfgAddr, uint32_t cfglen);
+ typedef enum tagRtTaskBuffType {
+     HWTS_STATIC_TASK_DESC = 0,       /**< static task */
+     HWTS_DYNAMIC_TASK_DESC = 1,      /**< dynamic task */
+-    PARAM_TASK_INFO_DESC = 2,        /**< parma task */
++    PARAM_TASK_INFO_DESC = 2,        /**< param task */
+     MAX_TASK,
+ } rtTaskBuffType_t;
+ 
+@@ -103,7 +103,7 @@ typedef struct {
+ typedef struct {
+     void* dataBuffer;                       // current write addr
+     uint32_t bufferLen;                     // the space of dataBuffer left
+-    rtCompilerPartinfo_t compilerInfo;      // task info for complie
++    rtCompilerPartinfo_t compilerInfo;      // task info for compile
+     uint64_t argOffset;                     // args offset
+ } rtTaskInput_t;
+ 
+@@ -120,7 +120,7 @@ RTS_API rtError_t rtGetTaskBufferLen(const rtTaskBuffType_t type, uint32_t * con
+ /**
+  * @ingroup rt_preload_task
+  * @brief exeom task build
+- * @param [in] taskInput        task info for complie
++ * @param [in] taskInput        task info for compile
+  * @param [out] taskLen         current tasklen
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_external_stars_define.h b/test/ut/depends/pkg_inc/runtime/rt_external_stars_define.h
+index bed1c3f777ccc9c2109da7e0604f8181eaf6db13..4888b3c36e004fa8bc8f3dc962959c90a57b73b0 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_external_stars_define.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_external_stars_define.h
+@@ -105,7 +105,7 @@ typedef struct tagStarsFftsPlusHeader {
+     uint8_t preP : 2;
+     uint8_t postP : 2;
+     uint8_t wrCqe : 1;
+-    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is excuted */
++    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is executed */
+     uint8_t overflowEn : 1;
+ 
+     uint16_t blockDim;
+diff --git a/test/ut/depends/pkg_inc/runtime/rt_external_stream.h b/test/ut/depends/pkg_inc/runtime/rt_external_stream.h
+index e20fe025a38263f551af840a489bf2d0ca45b913..f891e31f40f577d14a3d93bbace2aea39b285031 100644
+--- a/test/ut/depends/pkg_inc/runtime/rt_external_stream.h
++++ b/test/ut/depends/pkg_inc/runtime/rt_external_stream.h
+@@ -18,7 +18,7 @@ extern "C" {
+ /**
+  * @ingroup dvrt_stream
+  * @brief create stream instance
+- * @param [in] stm   stream hadle
++ * @param [in] stm   stream handle
+  * @param [out] sqId   stream op sqId
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+@@ -28,7 +28,7 @@ RTS_API rtError_t rtStreamGetSqid(const rtStream_t stm, uint32_t *sqId);
+ /**
+  * @ingroup dvrt_stream
+  * @brief get stream cq info
+- * @param [in] stm   stream hadle
++ * @param [in] stm   stream handle
+  * @param [out] sqId   stream op cqId
+  * @param [out] cqId   stream op logic cqId
+  * @return RT_ERROR_NONE for ok
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/base.h b/test/ut/depends/pkg_inc/runtime/runtime/base.h
+index 80fa07361a4d53017ee62ad370ba139d9f9f5844..7a131fcd539644de146e7922818d3a3b7a63b463 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/base.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/base.h
+@@ -345,7 +345,7 @@ typedef void (*rtStreamStateCallback)(rtStream_t stm, const bool isCreate);
+ /**
+  * @ingroup profiling_base
+  * @brief dataType: rtProfCtrlType_t
+- * @brief data: data swtich or reporter function
++ * @brief data: data switch or reporter function
+  * @brief dataLen: length of data
+  */
+ typedef rtError_t (*rtProfCtrlHandle)(uint32_t dataType, void *data, uint32_t dataLen);
+@@ -546,7 +546,7 @@ RTS_API rtError_t rtGetDeviceIdByGeModelIdx(uint32_t geModelIdx, uint32_t *devic
+ 
+ /**
+  * @ingroup profiling_base
+- * @brief set profling switch, called by profiling
++ * @brief set profiling switch, called by profiling
+  * @param [in]  data  rtProfCommandHandle
+  * @param [out] len   length of data
+  * @return RT_ERROR_NONE for ok
+@@ -566,7 +566,7 @@ RTS_API rtError_t rtProfRegisterCtrlCallback(uint32_t moduleId, rtProfCtrlHandle
+ 
+ /**
+  * @ingroup profiling_base
+- * @brief set profling switch, called by profiling
++ * @brief set profiling switch, called by profiling
+  * @param [in]  data  rtProfilingCommandHandle
+  * @param [in]  len   length of data
+  * @return RT_ERROR_NONE for ok
+@@ -619,7 +619,7 @@ typedef enum DevCallBackDir {
+  * @brief register callback for deviceid by position
+  * @param [in] regName unique register name, can't be null
+  * @param [in] callback Device state callback function
+- * @param [in] notifyPos callback notify Postion
++ * @param [in] notifyPos callback notify Position
+  * @param [out] NA
+  * @return RT_ERROR_NONE for ok
+  */
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/dev.h b/test/ut/depends/pkg_inc/runtime/runtime/dev.h
+index 9cf6b043cfcd877ee6034a0917d2e22ca829383f..e1d18c0542fe8ab97ec98979c5a4bdbba4aefdec 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/dev.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/dev.h
+@@ -165,7 +165,7 @@ typedef enum {
+     RT_PROCESS_DEV_ONLY,   /* TDT */
+     RT_PROCESS_QS,         /* queue_scheduler */
+     RT_PROCESS_HCCP,       /* hccp server */
+-    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not surport quert from host pid */
++    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not support quert from host pid */
+     RT_PROCESS_CPTYPE_MAX
+ } rtDevResProcType_t;
+ 
+@@ -271,7 +271,7 @@ RTS_API rtError_t rtGetDeviceIDs(uint32_t *devices, uint32_t len);
+ 
+ /**
+  * @ingroup dvrt_dev
+- * @brief get device infomation.
++ * @brief get device information.
+  * @param [in] device   the device id
+  * @param [in] moduleType   module type
+                typedef enum {
+@@ -305,7 +305,7 @@ RTS_API rtError_t rtGetDeviceInfo(uint32_t deviceId, int32_t moduleType, int32_t
+ 
+ /**
+ * @ingroup dvrt_dev
+-* @brief get phy device infomation.
++* @brief get phy device information.
+ * @param [int] phyId        the physic Id
+ * @param [int] moduleType   module type
+ * @param [int] infoType     info type
+@@ -412,7 +412,7 @@ RTS_API rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc);
+ 
+ /**
+  * @ingroup dvrt_dev
+- * @brief get cability of P2P omemry copy betwen device and peeredevic.
++ * @brief get cability of P2P omemry copy between device and peeredevic.
+  * @param [in] devId   the logical device id
+  * @param [in] peerDevice   the physical device id
+  * @param [outv] *canAccessPeer   1:enable 0:disable
+@@ -467,7 +467,7 @@ RTS_API rtError_t rtDeviceResetEx(int32_t devId);
+ 
+ /**
+  * @ingroup dvrt_dev
+- * @brief get total device infomation.
++ * @brief get total device information.
+  * @param [in] devId   the device id
+  * @param [in] type     limit type RT_LIMIT_TYPE_LOW_POWER_TIMEOUT=0
+  * @param [in] val    limit value
+@@ -498,7 +498,7 @@ RTS_API rtError_t rtDeviceSynchronizeWithTimeout(int32_t timeout);
+  * @ingroup dvrt_dev
+  * @brief Wait for compute device to finish
+  * @param [in] devId   the device id
+- * @param [in] timeout the time for hadle
++ * @param [in] timeout the time for handle
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+  */
+@@ -606,7 +606,7 @@ RTS_API rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, i
+ 
+ /**
+  * @ingroup dvrt_dev
+- * @brief get capability infomation.
++ * @brief get capability information.
+  * @param [in] featureType  feature type
+                typedef enum tagRtFeatureType {
+                     FEATURE_TYPE_MEMCPY = 0,
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/kernel.h b/test/ut/depends/pkg_inc/runtime/runtime/kernel.h
+index 0fb776637601898b8b9ebe5e3c3e4f3c82f14739..a79adb3bd81def642b3d297c0a738f6ed801683c 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/kernel.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/kernel.h
+@@ -517,7 +517,7 @@ RTS_API rtError_t rtRegisterAllKernel(const rtDevBinary_t *bin, void **hdl);
+ 
+ /**
+  * @ingroup rt_kernel
+- * @brief register fast memeory device binary
++ * @brief register fast memory device binary
+  * @param [in] hdl   device binary handle
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+@@ -560,7 +560,7 @@ RTS_API rtError_t rtDependencyRegister(void *mHandle, void *sHandle);
+  * @param [in] stubFunc   stub function
+  * @param [in] stubName   stub function name
+  * @param [in] kernelInfoExt   kernel Info extension. device function description or tiling key,
+- *                             depending static shape or dynmaic shape.
++ *                             depending static shape or dynamic shape.
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+  */
+@@ -638,8 +638,8 @@ RTS_API rtError_t rtKernelGetAddrAndPrefCntV2(void *hdl, const uint64_t tilingKe
+ 
+ /**
+ * @ingroup rt_kernel
+-* @brief set input argments size for exception
+-* @param [in] sizeInfo argments size info
++* @brief set input arguments size for exception
++* @param [in] sizeInfo arguments size info
+ * @return RT_ERROR_NONE for ok
+ * @return RT_ERROR_INVALID_VALUE for error input
+ */
+@@ -650,8 +650,8 @@ RTS_API rtError_t rtSetExceptionExtInfo(const rtArgsSizeInfo_t * const sizeInfo)
+  * @brief launch kernel to device
+  * @param [in] stubFunc   stub function
+  * @param [in] blockDim   block dimensions
+- * @param [in] args   argments address for kernel function
+- * @param [in] argsSize   argements size
++ * @param [in] args   arguments address for kernel function
++ * @param [in] argsSize   arguments size
+  * @param [in] smDesc   shared memory description
+  * @param [in] stm   associated stream
+  * @return RT_ERROR_NONE for ok
+@@ -666,7 +666,7 @@ RTS_API rtError_t rtKernelLaunch(const void *stubFunc, uint32_t blockDim, void *
+  * @param [in] hdl             program
+  * @param [in] tilingKey       tilingKey
+  * @param [in] blockDim        block dimensions
+- * @param [in] argsInfo        argments address for kernel function
++ * @param [in] argsInfo        arguments address for kernel function
+  * @param [in] smDesc          shared memory description
+  * @param [in] stm             associated stream
+  * @param [in] kernelInfo      kernel info
+@@ -683,7 +683,7 @@ RTS_API rtError_t rtKernelLaunchWithHandle(void *hdl, const uint64_t tilingKey,
+  * @param [in] hdl             program
+  * @param [in] tilingKey       tilingKey
+  * @param [in] blockDim        block dimensions
+- * @param [in] argsInfo        argments address for kernel function
++ * @param [in] argsInfo        arguments address for kernel function
+  * @param [in] smDesc          shared memory description
+  * @param [in] stm             associated stream
+  * @param [in] cfgInfo      task config
+@@ -698,7 +698,7 @@ RTS_API rtError_t rtKernelLaunchWithHandleV2(void *hdl, const uint64_t tilingKey
+  * @brief launch kernel to device
+  * @param [in] stubFunc   stub function
+  * @param [in] blockDim   block dimensions
+- * @param [in] argsInfo   argments address for kernel function
++ * @param [in] argsInfo   arguments address for kernel function
+  * @param [in] smDesc     shared memory description
+  * @param [in] stm        associated stream
+  * @param [in] flags      dump flag
+@@ -713,7 +713,7 @@ RTS_API rtError_t rtKernelLaunchWithFlag(const void *stubFunc, uint32_t blockDim
+  * @brief launch kernel to device
+  * @param [in] stubFunc   stub function
+  * @param [in] blockDim   block dimensions
+- * @param [in] argsInfo   argments address for kernel function
++ * @param [in] argsInfo   arguments address for kernel function
+  * @param [in] smDesc     shared memory description
+  * @param [in] stm        associated stream
+  * @param [in] flags      dump flag
+@@ -727,8 +727,8 @@ RTS_API rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockD
+ /**
+  * @ingroup rt_kernel(abandoned)
+  * @brief launch kernel to device
+- * @param [in] args       argments address for kernel function
+- * @param [in] argsSize   argements size
++ * @param [in] args       arguments address for kernel function
++ * @param [in] argsSize   arguments size
+  * @param [in] flags      launch flags
+  * @param [in] stm     associated stream
+  * @return RT_ERROR_NONE for ok
+@@ -740,8 +740,8 @@ RTS_API rtError_t rtKernelLaunchEx(void *args, uint32_t argsSize, uint32_t flags
+  * @ingroup rt_kernel(in use)
+  * @brief launch kernel to device
+  * @param [in] opName     opkernel name
+- * @param [in] args       argments address for kernel function
+- * @param [in] argsSize   argements size
++ * @param [in] args       arguments address for kernel function
++ * @param [in] argsSize   arguments size
+  * @param [in] flags      launch flags
+  * @param [in] stm     associated stream
+  * @return RT_ERROR_NONE for ok
+@@ -756,7 +756,7 @@ RTS_API rtError_t rtKernelLaunchFwk(const char_t *opName, void *args, uint32_t a
+  * @param [in] soName        so name
+  * @param [in] kernelName    kernel name
+  * @param [in] blockDim      block dimensions
+- * @param [in] argsInfo      argments address for kernel function
++ * @param [in] argsInfo      arguments address for kernel function
+  * @param [in] smDesc        shared memory description
+  * @param [in] stm           associated stream
+  * @param [in] flag          dump flag or others function flag
+@@ -772,7 +772,7 @@ RTS_API rtError_t rtCpuKernelLaunchWithFlag(const void *soName, const void *kern
+  * @brief launch cpu kernel to device with dump identifier
+  * @param [in] launchNames   names for kernel launch
+  * @param [in] blockDim      block dimensions
+- * @param [in] args          argments address for kernel function
++ * @param [in] args          arguments address for kernel function
+  * @param [in] smDesc        shared memory description
+  * @param [in] stm           associated stream
+  * @param [in] flags          dump flag or others function flag
+@@ -789,7 +789,7 @@ RTS_API rtError_t rtAicpuKernelLaunchWithFlag(const rtKernelLaunchNames_t *launc
+  * @param [in] kernelType    aicpu kernel type
+  * @param [in] opName        address of op name
+  * @param [in] blockDim      block dimensions
+- * @param [in] argsInfo      argments address for kernel function
++ * @param [in] argsInfo      arguments address for kernel function
+  * @param [in] smDesc        shared memory description
+  * @param [in] stm           associated stream
+  * @param [in] flags         dump flag or others function flag
+@@ -803,7 +803,7 @@ RTS_API rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const
+ 
+ /**
+  * @ingroup rt_kernel
+- * @brief L1 fusion dump addr transfered to device
++ * @brief L1 fusion dump addr transferred to device
+  * @param [in] mdl    handle info
+  * @param [in] addr     ddr address of L1 Fusion Dump
+  * @param [in] dumpSize memory size
+@@ -893,7 +893,7 @@ RTS_API rtError_t rtNpuClearFloatDebugStatus(uint32_t checkMode, rtStream_t stm)
+ #define __CLANG_CCE_RUNTIME_H__
+ /**
+  * @ingroup rt_kernel
+- * @brief configure call argment for next rtLaunch in current thread
++ * @brief configure call argument for next rtLaunch in current thread
+  * @param [in] numBlocks   block dimensions
+  * @param [in] smDesc   shared memory description
+  * @param [in] stm   associated stream
+@@ -910,10 +910,10 @@ RTS_API rtError_t rtConfigureCall(uint32_t numBlocks, rtSmDesc_t *smDesc, rtStre
+ 
+ /**
+  * @ingroup rt_kernel
+- * @brief setup argment for next rtLaunch in current thread
+- * @param [in] args   argment address for kernel function
+- * @param [in] size   argment size
+- * @param [in] offset  argment table offset
++ * @brief setup argument for next rtLaunch in current thread
++ * @param [in] args   argument address for kernel function
++ * @param [in] size   argument size
++ * @param [in] offset  argument table offset
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+  */
+@@ -921,8 +921,8 @@ RTS_API rtError_t rtSetupArgument(const void *args, uint32_t size, uint32_t offs
+ 
+ /**
+  * @ingroup rt_kernel
+- * @brief launch kernel to device with previous setting kernel argment
+- *        and call argment
++ * @brief launch kernel to device with previous setting kernel argument
++ *        and call argument
+  * @param [in] stubFunc   stub function
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+@@ -931,7 +931,7 @@ RTS_API rtError_t rtLaunch(const void *stubFunc);
+ 
+ /**
+  * @ingroup rt_kernel
+- * @brief implicitly transfered data to device.
++ * @brief implicitly transferred data to device.
+  *        lifecycle end after next kernel task finish
+  * @param [in] ptr   host memory
+  * @param [in] size   host memory size
+@@ -1331,7 +1331,7 @@ rtError_t rtLaunchKernelByFuncHandleV3(rtFuncHandle funcHandle, uint32_t blockDi
+  * @param [in] hdl             program
+  * @param [in] tilingKey       tilingKey
+  * @param [in] blockDim        block dimensions
+- * @param [in] argsInfo        argments address for kernel function
++ * @param [in] argsInfo        argument address for kernel function
+  * @param [in] smDesc          shared memory description
+  * @param [in] stm             associated stream
+  * @param [in] cfgInfo      task config
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/mem.h b/test/ut/depends/pkg_inc/runtime/runtime/mem.h
+index 43e04de5631c6ac030af50d26e13b9f3ef2f6919..c69d70d7866f8c2890902f4b7bb0d569ff47310b 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/mem.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/mem.h
+@@ -234,7 +234,7 @@ typedef enum tagRtMemoryType {
+     RT_MEMORY_TYPE_DEVICE = 2,
+     RT_MEMORY_TYPE_SVM = 3,
+     RT_MEMORY_TYPE_DVPP = 4,
+-    RT_MEMORY_TYPE_USER = 5 // by user malloc, unkown memory
++    RT_MEMORY_TYPE_USER = 5 // by user malloc, unknown memory
+ } rtMemoryType_t;
+ 
+ /**
+@@ -501,7 +501,7 @@ RTS_API rtError_t rtMallocCached(void **devPtr, uint64_t size, rtMemType_t type,
+ /**
+  * @ingroup dvrt_mem
+  * @brief flush device mempory
+- * @param [in] base   virtal base addr
++ * @param [in] base   virtual base addr
+  * @param [in] len    memory size
+  * @return RT_ERROR_NONE for ok, errno for failed
+  */
+@@ -510,7 +510,7 @@ RTS_API rtError_t rtFlushCache(void *base, size_t len);
+ /**
+  * @ingroup dvrt_mem
+  * @brief invalid device mempory
+- * @param [in] base   virtal base addr
++ * @param [in] base   virtual base addr
+  * @param [in] len    memory size
+  * @return RT_ERROR_NONE for ok, errno for failed
+  */
+@@ -954,7 +954,7 @@ RTS_API rtError_t rtIpcCloseMemory(const void *ptr);
+  * @ingroup dvrt_mem
+  * @brief HCCL Async memory cpy
+  * @param [in] sqIndex sq index
+- * @param [in] wqeIndex moudle index
++ * @param [in] wqeIndex module index
+  * @param [in] stm asynchronized task stream
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+@@ -1152,8 +1152,8 @@ RTS_API rtError_t rtUnmapMem(void* devPtr);
+ * 1. Only support ONLINE scene.
+ * 2. Support va->pa:
+ *    D2H,
+-*    D2D(sigle device, diffrent device with same host, diffrent device with diffrent host),
+-*    H2H(same host, diffrent host(support latter))
++*    D2D(single device, different device with same host, different device with different host),
++*    H2H(same host, different host(support latter))
+ * 3. rtMemSetAccess: ptr and size must be same with rtMemMap, rtMemGetAccess: ptr and size is in range of set
+ * 4. after rtMemMap, if handle has owner(witch location pa handle is created or use witch device pa handle is imported)
+ *    the owner location has readwrite prop automatic, not need to set again
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rt_dfx.h b/test/ut/depends/pkg_inc/runtime/runtime/rt_dfx.h
+index 118902f56b76d138123d16f72bada0ea017a2a79..5a77fef6e28848fadc99893e8228e511051b5677 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rt_dfx.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rt_dfx.h
+@@ -51,9 +51,9 @@ RTS_API rtError_t rtSetTaskTag(const char_t *taskTag);
+ 
+ /**
+  * @brief set aicpu device attribute.
+- * it is used for aicpu device to be aware of enviroment config
+- * @param [in] key  attrubute key.
+- * @param [in] val  attrubute value.
++ * it is used for aicpu device to be aware of environment config
++ * @param [in] key  attribute key.
++ * @param [in] val  attribute value.
+  * @return RT_ERROR_NONE for ok
+  * @return other failed
+  */
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rt_mem_queue.h b/test/ut/depends/pkg_inc/runtime/runtime/rt_mem_queue.h
+index 110e6ce4fbe3b6c46e920954b38c6a40b09acef3..9489edf92b926b547efed7df4870eb3bdadd56cb 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rt_mem_queue.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rt_mem_queue.h
+@@ -167,9 +167,9 @@ typedef void *rtMbufPtr_t;
+ 
+ typedef enum rtEventIdType {
+     RT_EVENT_RANDOM_KERNEL,      /* Random operator event */
+-    RT_EVENT_DVPP_MSG,           /* operator events commited by DVPP */
+-    RT_EVENT_FR_MSG,             /* operator events commited by Feature retrieves */
+-    RT_EVENT_TS_HWTS_KERNEL,     /* operator events commited by ts/hwts */
++    RT_EVENT_DVPP_MSG,           /* operator events committed by DVPP */
++    RT_EVENT_FR_MSG,             /* operator events committed by Feature retrieves */
++    RT_EVENT_TS_HWTS_KERNEL,     /* operator events committed by ts/hwts */
+     RT_EVENT_AICPU_MSG,          /* aicpu activates its own stream events */
+     RT_EVENT_TS_CTRL_MSG,        /* controls message events of TS */
+     RT_EVENT_QUEUE_ENQUEUE,      /* entry event of Queue(consumer) */
+@@ -444,9 +444,9 @@ RTS_API rtError_t rtEschedSubmitEventSync(int32_t devId, rtEschedEventSummary_t
+ 
+ /**
+ * @ingroup rt_mem_queue
+-* @brief  query device proccess id
++* @brief  query device process id
+ * @param [in] info: see struct rtBindHostpidInfo_t
+-* @param [out] devPid: device proccess id
++* @param [out] devPid: device process id
+ * @return RT_ERROR_NONE for ok
+ */
+ RTS_API rtError_t rtQueryDevPid(rtBindHostpidInfo_t *info, int32_t *devPid);
+@@ -750,7 +750,7 @@ RTS_API rtError_t rtMemGrpAddProc(const char_t *name, int32_t pid, const rtMemGr
+ 
+ /**
+ * @ingroup rt_mem_queue
+-* @brief attach proccess to check permission in group
++* @brief attach process to check permission in group
+ * @param [in] name, group name
+ * @param [in] timeout, time out ms
+ * @return   0 for success, others for fail
+@@ -786,7 +786,7 @@ RTS_API rtError_t rtEschedAttachDevice(int32_t devId);
+ 
+ /**
+ * @ingroup rt_mem_queue
+-* @brief esched dettach device
++* @brief esched detach device
+ * @param [in] devId, device id
+ * @return   0 for success, others for fail
+ */
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rt_model.h b/test/ut/depends/pkg_inc/runtime/runtime/rt_model.h
+index 0bd95f1f9ebba131723918411930ecd0fe4a2434..46fdea290bb41bbb32a0fa9afc005f31a57f8b99 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rt_model.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rt_model.h
+@@ -108,7 +108,7 @@ typedef enum tagModelQueueFlag {
+ 
+ /**
+  * @ingroup
+- * @brief the type defination of aicpu model task command
++ * @brief the type definition of aicpu model task command
+  */
+ typedef enum tagTsAicpuModelCmd {
+     TS_AICPU_MODEL_LOAD = 1,
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rt_preload_task.h b/test/ut/depends/pkg_inc/runtime/runtime/rt_preload_task.h
+index ee9bf22bafdce5d3d65baa66cd5d12479d9ddc45..b1eb0257e13f46766e1325fdc055b99af81dde55 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rt_preload_task.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rt_preload_task.h
+@@ -1,6 +1,6 @@
+ /*
+  * Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
+- * Description: parma rt_preload_task.h
++ * Description: param rt_preload_task.h
+  * Create: 2023-06-02
+  */
+ #ifndef CCE_RUNTIME_RT_PRELOAD_TASK_H
+@@ -17,7 +17,7 @@ typedef int32_t (*rtKernelLaunchFillFunc)(void* cfgAddr, uint32_t cfglen);
+ typedef enum tagRtTaskBuffType {
+     HWTS_STATIC_TASK_DESC = 0,       /**< static task */
+     HWTS_DYNAMIC_TASK_DESC = 1,      /**< dynamic task */
+-    PARAM_TASK_INFO_DESC = 2,        /**< parma task */
++    PARAM_TASK_INFO_DESC = 2,        /**< param task */
+     MAX_TASK,
+ } rtTaskBuffType_t;
+ 
+@@ -103,7 +103,7 @@ typedef struct {
+ typedef struct {
+     void* dataBuffer;                       // current write addr
+     uint32_t bufferLen;                     // the space of dataBuffer left
+-    rtCompilerPartinfo_t compilerInfo;      // task info for complie
++    rtCompilerPartinfo_t compilerInfo;      // task info for compile
+     uint64_t argOffset;                     // args offset
+ } rtTaskInput_t;
+ 
+@@ -120,7 +120,7 @@ RTS_API rtError_t rtGetTaskBufferLen(const rtTaskBuffType_t type, uint32_t * con
+ /**
+  * @ingroup rt_preload_task
+  * @brief exeom task build
+- * @param [in] taskInput        task info for complie
++ * @param [in] taskInput        task info for compile
+  * @param [out] taskLen         current tasklen
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rt_stars.h b/test/ut/depends/pkg_inc/runtime/runtime/rt_stars.h
+index bc83dd32200554107fcdb8884523ad6df3267263..50ad64d856c3baad691628cf22e9fad1aeb9d2ee 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rt_stars.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rt_stars.h
+@@ -69,7 +69,7 @@ RTS_API rtError_t rtCdqAllocBatch(const char_t *queName, int32_t timeout, uint32
+  * When the task is executed, the data information will be inserted into the cdqe index position of the queue.
+  * @param [in] queName      cdq name
+  * @param [in] cdqeIndex    cdqe index
+- * @param [in] data         cdqe infomation
++ * @param [in] data         cdqe information
+  * @param [in] dataSize     data size
+  * @param [in] stm       launch task on the stream
+  * @return RT_ERROR_NONE for ok, others failed
+@@ -83,7 +83,7 @@ RTS_API rtError_t rtCdqEnQueue(const char_t *queName, uint32_t cdqeIndex, void *
+  * When the task is executed, the data information will be inserted into the cdqe index position of the queue.
+  * @param [in] queName      cdq name
+  * @param [in] cdqeIndex    cdqe index
+- * @param [in] data         cdqe infomation
++ * @param [in] data         cdqe information
+  * @param [in] dataSize     data size
+  * @param [in] stm       launch task on the stream
+  * @return RT_ERROR_NONE for ok, others failed
+@@ -248,7 +248,7 @@ typedef enum tagGeneralCtrlType {
+ 
+ /**
+  * @ingroup rt_stars
+- * @brief gerneral ctrl if
++ * @brief general ctrl if
+  * @param [in] ctl              ctl input
+  * @param [in] num              ctl input num
+  * @param [in] type             ctl type
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rt_stars_define.h b/test/ut/depends/pkg_inc/runtime/runtime/rt_stars_define.h
+index cfaa3c25e62abfd70431849f7089f6db5660af7e..0b03b5496dce3f404848dfd2eef9adf5b8286d84 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rt_stars_define.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rt_stars_define.h
+@@ -105,7 +105,7 @@ typedef struct tagStarsFftsPlusHeader {
+     uint8_t preP : 2;
+     uint8_t postP : 2;
+     uint8_t wrCqe : 1;
+-    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is excuted */
++    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is executed */
+     uint8_t overflowEn : 1;
+ 
+     uint16_t blockDim;
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_device.h b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_device.h
+index fa359067ff6082e26fddd328e07e25395aedffc8..62ae2316a4a53c459b8cc1c9063d5c818fdccdeb 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_device.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_device.h
+@@ -121,7 +121,7 @@ RTS_API rtError_t rtsSetTsDevice(uint32_t tsId);
+ 
+ /**
+  * @ingroup rts_device
+- * @brief get device infomation.
++ * @brief get device information.
+  * @param [in] device the device id
+  * @param [in] attr device attr 
+  * @param [out] val   the device info
+@@ -351,7 +351,7 @@ RTS_API rtError_t rtsGetDeviceResLimit(const int32_t devId, const rtDevResLimitT
+ /**
+  * @ingroup
+  * @brief query ub device info
+- * @param [in] cmd query info tpye
++ * @param [in] cmd query info type
+  * @param [in|out] info input/output parameter
+  * @return RT_ERROR_NONE for ok, errno for failed
+  * @return RT_ERROR_INVALID_VALUE for error input
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_dqs.h b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_dqs.h
+index c048f0ed6c065f3112a40414afa1031a8e46ed83..e34b0dd4b2c0dc29a2ba069b10c059b37c78d062 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_dqs.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_dqs.h
+@@ -90,7 +90,7 @@ typedef struct {
+  * @brief Set DQS(Deterministic Queue Scheduler) schedule config to the related control stream.
+  * 
+  * @param stm dqs control stream, created with stream flag RT_STREAM_DQS_CONTROL
+- * @param config dqs schedule config, including input/ouput queue info, ouput mbuf pool, input/out addr, etc.
++ * @param config dqs schedule config, including input/output queue info, output mbuf pool, input/out addr, etc.
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+  */
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_event.h b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_event.h
+index 25f42f6d565654612c5034ecfae4d4a410165203..c9c69e676da92941888cfdcf2ad728dd2a7ba897 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_event.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_event.h
+@@ -171,8 +171,8 @@ RTS_API rtError_t rtsEventReset(rtEvent_t evt, rtStream_t stm);
+ 
+ /**
+  * @ingroup dvrt_stream
+- * @brief inquire avaliable event count
+- * @param [out] eventCount  avaliable event Count
++ * @brief inquire available event count
++ * @param [out] eventCount  available event Count
+  * @return ACL_RT_SUCCESS for complete
+  * @return ACL_ERROR_RT_PARAM_INVALID for error input
+  */
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_kernel.h b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_kernel.h
+index 3dc8ed9d09904353cab6914750666f78f6a6e8a0..2bfbc57ea3e8029ec1b6433689bb6e3bf6177283 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_kernel.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_kernel.h
+@@ -534,8 +534,8 @@ RTS_API rtError_t rtsResetFloatOverflowStatus(rtStream_t stm);
+  * @param [in] blockDim  block dimensions
+  * @param [in] stm  associated stream
+  * @param [in] cfg task t-v config
+- * @param [in] args  argment address for kernel function
+- * @param [in] argsSize  argment size
++ * @param [in] args  argument address for kernel function
++ * @param [in] argsSize  argument size
+  * @param [in] reserve  reserve param
+  * @return RT_ERROR_NONE for ok
+  */
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_mem.h b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_mem.h
+index 401d3f40415c960e1d35cea6ce22c954a8ed09e8..438d7a2bdcea9b4acdab5dbdab128f0535d2bfc9 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_mem.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_mem.h
+@@ -262,7 +262,7 @@ RTS_API rtError_t rtsMemsetAsync(void *ptr, uint64_t destMax, uint32_t val, uint
+  * @param [in] size Size of the reserved virtual address range requested.
+  * @param [in] policy mem policy.
+  * @param [in] expectAddr Expected virtual address space start address Currently, Currently unused, must be zero.
+- * @param [in] cfg Memory appication configuration, Currently unused, must be nullptr.
++ * @param [in] cfg Memory application configuration, Currently unused, must be nullptr.
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+  * @return RT_ERROR_DRV_ERR for driver error
+@@ -287,7 +287,7 @@ RTS_API rtError_t rtsMemFreeAddress(void** virPtr);
+  * @param [out] handle Value of handle returned,all operations on this allocation are to be performed using this handle.
+  * @param [in] size Size of the allocation requested.
+  * @param [in] policy mem policy.
+- * @param [in] cfg Memory appication configuration.
++ * @param [in] cfg Memory application configuration.
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+  * @return RT_ERROR_DRV_ERR for driver error
+@@ -364,7 +364,7 @@ RTS_API rtError_t rtsPointerGetAttributes(const void *ptr, rtPtrAttributes_t *at
+ /**
+  * @ingroup rts_mem
+  * @brief flush device mempory
+- * @param [in] base   virtal base addr
++ * @param [in] base   virtual base addr
+  * @param [in] len    memory size
+  * @return RT_ERROR_NONE for ok, errno for failed
+  */
+@@ -373,7 +373,7 @@ RTS_API rtError_t rtsMemFlushCache(void *base, size_t len);
+ /**
+  * @ingroup rts_mem
+  * @brief invalid device mempory
+- * @param [in] base   virtal base addr
++ * @param [in] base   virtual base addr
+  * @param [in] len    memory size
+  * @return RT_ERROR_NONE for ok, errno for failed
+  */
+@@ -465,7 +465,7 @@ RTS_API rtError_t rtsDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc);
+ 
+ /**
+  * @ingroup dvrt_dev
+- * @brief get cability of P2P omemry copy betwen device and peeredevic.
++ * @brief get cability of P2P omemry copy between device and peeredevic.
+  * @param [in] devId   the logical device id
+  * @param [in] peerDevice   the physical device id
+  * @param [out] *canAccessPeer   1:enable 0:disable
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_model.h b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_model.h
+index b928ecc895eff7ffbf1f2a59735465ac71255b21..9a9f59b3dcdb8771f5a93f76bda03501768f9e80 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_model.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_model.h
+@@ -50,7 +50,7 @@ typedef struct {
+ 
+ /**
+  * @ingroup rts_model
+- * @brief launch update task (tiling sink senario & dvpp update)
++ * @brief launch update task (tiling sink scenario & dvpp update)
+  * @param [in] destStm destination stream
+  * @param [in] destTaskId destination task id
+  * @param [in] stm  associated stream
+@@ -171,7 +171,7 @@ RTS_API rtError_t rtsLabelSwitchListCreate(rtLabel_t *labels, size_t num, void *
+ 
+ /**
+  * @ingroup rts_label
+- * @brief destory label switch list
++ * @brief destroy label switch list
+  * @param [in] labelList   label switch list to destroy
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_stream.h b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_stream.h
+index ccc6f4b5481bdde87fd4d8bba193a7924d6177d6..c8d12c7e205c426b66f090075fea82b0fcb4d0ad 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_stream.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/rts/rts_stream.h
+@@ -16,7 +16,7 @@ extern "C" {
+ #endif
+ 
+ #define RT_STREAM_DESTORY_FLAG_DEFAULT 0x0ULL
+-#define RT_STREAM_DESTORY_FLAG_FORCE 0x1ULL  //Force destory: The stream will be destroyed without waiting for all tasks on the stream to be completed.
++#define RT_STREAM_DESTORY_FLAG_FORCE 0x1ULL  //Force destroy: The stream will be destroyed without waiting for all tasks on the stream to be completed.
+ 
+ // Stream Mode 
+ #define RT_STREAM_FAILURE_MODE_CONTINUE_ON_FAILURE  (0x0U)  // 默认值，task出错时，处理完异常后继续执行流上的任务 
+@@ -92,9 +92,9 @@ RTS_API rtError_t rtsStreamGetAttribute(rtStream_t stm, rtStreamAttr stmAttrId,
+ 
+ /**
+  * @ingroup rts_stream
+- * @brief destory a stream
++ * @brief destroy a stream
+  * @param [in] stm   stream handle
+- * @param [in] flags   destory flags
++ * @param [in] flags   destroy flags
+  * @return ACL_RT_SUCCESS for ok
+  * @return ACL_ERROR_RT_PARAM_INVALID for error input
+  */
+diff --git a/test/ut/depends/pkg_inc/runtime/runtime/stream.h b/test/ut/depends/pkg_inc/runtime/runtime/stream.h
+index 9a6e672dd3badf979a53556306ae63b95c64face..f2463cfcaf855a896e93456803eb9a8f1f9efe28 100644
+--- a/test/ut/depends/pkg_inc/runtime/runtime/stream.h
++++ b/test/ut/depends/pkg_inc/runtime/runtime/stream.h
+@@ -139,7 +139,7 @@ RTS_API rtError_t rtStreamCreateWithConfig(rtStream_t *stm, rtStreamConfigHandle
+ /**
+  * @ingroup dvrt_stream
+  * @brief create stream instance
+- * @param [in] stm   stream hadle
++ * @param [in] stm   stream handle
+  * @param [out] sqId   stream op sqId
+  * @return RT_ERROR_NONE for ok
+  * @return RT_ERROR_INVALID_VALUE for error input
+@@ -149,7 +149,7 @@ RTS_API rtError_t rtStreamGetSqid(const rtStream_t stm, uint32_t *sqId);
+ /**
+  * @ingroup dvrt_stream
+  * @brief get stream cq info
+- * @param [in] stm   stream hadle
++ * @param [in] stm   stream handle
+  * @param [out] sqId   stream op cqId
+  * @param [out] cqId   stream op logic cqId
+  * @return RT_ERROR_NONE for ok
+@@ -160,7 +160,7 @@ RTS_API rtError_t rtStreamGetCqid(const rtStream_t stm, uint32_t *cqId, uint32_t
+ /**
+  * @ingroup dvrt_stream
+  * @brief create stream instance
+- * @param [in] stm   stream hadle
++ * @param [in] stm   stream handle
+  * @param [out] workaddr   workaddr on stream
+  * @param [out] worksize   worksize on stream
+  * @return RT_ERROR_NONE for ok
+@@ -238,7 +238,7 @@ RTS_API rtError_t rtStreamQuery(rtStream_t stm);
+ /**
+  * @ingroup dvrt_stream
+  * @brief get stream id from a stream handle
+- * @param [in] stm   stream hadle
++ * @param [in] stm   stream handle
+  * @param [in] streamId   stream id
+  * @return RT_ERROR_NONE for complete
+  * @return RT_ERROR_INVALID_VALUE for error input
+@@ -258,9 +258,9 @@ RTS_API rtError_t rtGetMaxStreamAndTask(uint32_t streamType, uint32_t *maxStrCou
+ 
+ /**
+  * @ingroup dvrt_stream
+- * @brief inquire avaliable stream count
++ * @brief inquire available stream count
+  * @param [in] streamType   Stream Type
+- * @param [out] streamCount  avaliable streamCount
++ * @param [out] streamCount  available streamCount
+  * @return RT_ERROR_NONE for complete
+  * @return RT_ERROR_INVALID_VALUE for error input
+  */
+@@ -268,8 +268,8 @@ RTS_API rtError_t rtGetAvailStreamNum(const uint32_t streamType, uint32_t * cons
+ 
+ /**
+  * @ingroup dvrt_stream
+- * @brief inquire avaliable event count
+- * @param [out] eventCount  avaliable event Count
++ * @brief inquire available event count
++ * @param [out] eventCount  available event Count
+  * @return RT_ERROR_NONE for complete
+  * @return RT_ERROR_INVALID_VALUE for error input
+  */
+diff --git a/test/ut/depends/pkg_inc/trace/atrace_types.h b/test/ut/depends/pkg_inc/trace/atrace_types.h
+index ad4d83f81e7ddda5680835cc717d28a56d6246c3..d219939aa338e998d8bf76dd680fb124e3073afe 100644
+--- a/test/ut/depends/pkg_inc/trace/atrace_types.h
++++ b/test/ut/depends/pkg_inc/trace/atrace_types.h
+@@ -60,7 +60,7 @@ typedef intptr_t TraEventHandle;
+ #define TRACE_STRUCT_SHOW_MODE_CHAR     3        // string
+  
+ 
+-// evnet process type
++// event process type
+ #define TRACE_EVENT_PROCESS_SYNC                  0U  // process event synchronously
+ #define TRACE_EVENT_PROCESS_ASYNC                 1U  // process event asynchronously
+ #define TRACE_EVENT_PROCESS_ASYNC_DEDUPLICATION   2U  // process event asynchronously and deduplication
+diff --git a/test/ut/stub/llt_hccl_stub.cc b/test/ut/stub/llt_hccl_stub.cc
+index ef2e55365d96e3f782f308f4350035d45c2dd02c..94eba730e49d16a54af4a2ff65a5362816b85079 100644
+--- a/test/ut/stub/llt_hccl_stub.cc
++++ b/test/ut/stub/llt_hccl_stub.cc
+@@ -507,7 +507,7 @@ aclError aclrtDestroyStreamForce(aclrtStream stream)
+ /**
+  * @ingroup dvrt_stream
+  * @brief get stream id from a stream handle
+- * @param [in] stream   stream hadle
++ * @param [in] stream   stream handle
+  * @param [in] streamId   stream id
+  * @return RT_ERROR_NONE for complete
+  * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream handle
+@@ -1732,7 +1732,7 @@ aclError aclrtIpcMemImportByKey(void **ptr, const char *name, uint64_t flag)
+                 }
+             }
+             if(j == IPC_SHM_PID_NUM_MAX) {
+-                HCCL_ERROR("aclrtIpcMemImportByKey error , cant find pid[%d]", pid);
++                HCCL_ERROR("aclrtIpcMemImportByKey error , can't find pid[%d]", pid);
+                 DestroyIpcMemShm();
+                 return ACL_ERROR_RT_PARAM_INVALID;
+             }
+@@ -1742,7 +1742,7 @@ aclError aclrtIpcMemImportByKey(void **ptr, const char *name, uint64_t flag)
+     }
+ 
+     if(i == IPC_SHM_MEM_NUM_MAX) {
+-        HCCL_ERROR("aclrtIpcMemImportByKey error , cant find name[%s]", name);
++        HCCL_ERROR("aclrtIpcMemImportByKey error , can't find name[%s]", name);
+         DestroyIpcMemShm();
+         return ACL_ERROR_RT_PARAM_INVALID;
+     }
+@@ -2447,7 +2447,7 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
+ 
+ /**
+  * @ingroup rt_stars
+- * @brief gerneral ctrl if
++ * @brief general ctrl if
+  * @param [in] ctl              ctl input
+  * @param [in] num              ctl input num
+  * @param [in] type             ctl type
+@@ -2866,7 +2866,7 @@ aclError aclrtNotifyImportByKey(aclrtNotify *notify, const char *name, uint64_t
+     }
+     // 未找到NAME
+     if(i == IPC_SHM_NOTIFY_NUM_MAX) {
+-        HCCL_ERROR("aclrtNotifyImportByKey error , cant find name[%s]", name);
++        HCCL_ERROR("aclrtNotifyImportByKey error , can't find name[%s]", name);
+         DestroyIpcNotifyShm();
+         return ACL_ERROR_RT_PARAM_INVALID;
+     }
+@@ -3001,7 +3001,7 @@ void* threadfun(void* p)
+ 
+     if (iRet)
+     {
+-        HCCL_WARNING("[STUB] Thread Handler Return Faile[%d]", iRet);
++        HCCL_WARNING("[STUB] Thread Handler Return Failed[%d]", iRet);
+     }
+ 
+     iRet = pcthread->update_thread_state(THREAD_STATE_STOPED);
+@@ -3254,11 +3254,11 @@ s32 thread_class::stop_thread()
+                 threadfd = 0;
+             }
+ 
+-            HCCL_WARNING("Force Stop Thread Sucess");
++            HCCL_WARNING("Force Stop Thread Success");
+         }
+         else
+         {
+-            //HCCL_INFO("Stop Thread Sucess. Counter cost [%d]", THREAD_STOP_COUNTER - uiStopCounter);
++            //HCCL_INFO("Stop Thread Success. Counter cost [%d]", THREAD_STOP_COUNTER - uiStopCounter);
+         }
+     }
+ 
+@@ -4518,7 +4518,7 @@ HcclResult __rt_get_dev_ip(s32 chipType, s32 devId, u32 *ipAddr)
+         }
+         *ipAddr = inet_addr(devIpStr.c_str());
+     } else {
+-        HCCL_ERROR("get unknow chip type[%d] dev:[%d]", chipType, devId);
++        HCCL_ERROR("get unknown chip type[%d] dev:[%d]", chipType, devId);
+         return HCCL_E_NOT_SUPPORT;
+     }
+     return HCCL_SUCCESS;
+diff --git a/test/ut/stub/llt_hccl_stub.h b/test/ut/stub/llt_hccl_stub.h
+index 64f158cbb7d6a7dcc0aef2c5a6d7af5d8823e699..c4686d64edb9a8d715647a5be473d49a2313abe2 100644
+--- a/test/ut/stub/llt_hccl_stub.h
++++ b/test/ut/stub/llt_hccl_stub.h
+@@ -136,7 +136,7 @@ typedef enum tagCcStatus {
+   CC_STATUS_INTERNAL_ERROR = 4,  /**< internal error */
+   CC_STATUS_KERNEL_ERROR = 5,    /**< kernel error */
+   CC_STATUS_RUNTIME_ERROR = 6,   /**< runtime error */
+-  CC_STATUS_NOT_SUPPORTED = 7,   /**< unsupport error */
++  CC_STATUS_NOT_SUPPORTED = 7,   /**< unsupported error */
+   CC_STATUS_INVALID_VALUE = 7,   /**< invalid value error for blas*/
+   CC_STATUS_RESERVED             /**< just for check */
+ } ccStatus_t;
+diff --git a/test/ut/stub/llt_hccl_stub_fp16.h b/test/ut/stub/llt_hccl_stub_fp16.h
+index 6d15a31ce2b4ad8cada5e3100cb33979f9404df6..30a8eb4e8a96992747a2051f00466d5ff0c9d6be 100644
+--- a/test/ut/stub/llt_hccl_stub_fp16.h
++++ b/test/ut/stub/llt_hccl_stub_fp16.h
+@@ -284,7 +284,7 @@ static inline float fp16_ieee_to_fp32_value(uint16_t h) {
+ 	 * A normalized single-precision floating-point number is represented as:
+ 	 *    FP32 = (1 + mantissa * 2**(-23)) * 2**(exponent - 127)
+ 	 * Therefore, when the biased exponent is 126, a unit change in the mantissa of the input denormalized half-precision
+-	 * number causes a change of the constructud single-precision number by 2**(-24), i.e. the same ammount.
++	 * number causes a change of the constructud single-precision number by 2**(-24), i.e. the same amount.
+ 	 *
+ 	 * The last step is to adjust the bias of the constructed single-precision number. When the input half-precision number
+ 	 * is zero, the constructed single-precision number has the value of
+@@ -491,7 +491,7 @@ static inline float fp16_alt_to_fp32_value(uint16_t h) {
+ 	 * A normalized single-precision floating-point number is represented as:
+ 	 *    FP32 = (1 + mantissa * 2**(-23)) * 2**(exponent - 127)
+ 	 * Therefore, when the biased exponent is 126, a unit change in the mantissa of the input denormalized half-precision
+-	 * number causes a change of the constructud single-precision number by 2**(-24), i.e. the same ammount.
++	 * number causes a change of the constructud single-precision number by 2**(-24), i.e. the same amount.
+ 	 *
+ 	 * The last step is to adjust the bias of the constructed single-precision number. When the input half-precision number
+ 	 * is zero, the constructed single-precision number has the value of
+diff --git a/test/ut/stub/llt_hccl_stub_gdr.cc b/test/ut/stub/llt_hccl_stub_gdr.cc
+index ab314bdf3a2cf261440f9b1517d6939e16d430fb..86049c06470fce53dc065079fcc7aebb89944b61 100644
+--- a/test/ut/stub/llt_hccl_stub_gdr.cc
++++ b/test/ut/stub/llt_hccl_stub_gdr.cc
+@@ -835,7 +835,7 @@ int RaSocketRecv(const void* handle, void* data, u64 size, u64 *recvSize) /*非
+ 
+     if (p_cn->rev_buff.size == 0)
+     {
+-        HCCL_DEBUG("there is not available data to recive");
++        HCCL_DEBUG("there is not available data to receive");
+         return SOCK_EAGAIN;
+     }
+     else if ((p_cn->rev_buff.size < 0) || (p_cn->rev_buff.size  < size))
+@@ -926,7 +926,7 @@ int RaSendWr(void* handle, struct SendWr* wr, struct SendWrRsp *op_rsp)
+ 
+     if (wqe_index == WQE_MAX)
+     {
+-        HCCL_ERROR("no available memeory for new WQE");
++        HCCL_ERROR("no available memory for new WQE");
+         return -1;
+     }
+ 
+@@ -1233,7 +1233,7 @@ int RaRdevInit(int mode, unsigned int notify_type, struct rdev rdevInfo, void **
+ 
+     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
+     if (rdevInfo.localIp.addr.s_addr < DEV_MAX) {
+-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdevInfo.localIp.addr.s_addr);
++        HCCL_ERROR("unsupported rdev init by Vic, local_ip[%u]", rdevInfo.localIp.addr.s_addr);
+         return -1;
+     } else {
+         int idx = rdevInfo.phyId * 2;
+@@ -1270,7 +1270,7 @@ int RaRdevInitWithBackup(struct RdevInitInfo *init_info, struct rdev *rdevInfo,
+ 
+     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
+     if (rdevInfo->localIp.addr.s_addr < DEV_MAX) {
+-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdevInfo->localIp.addr.s_addr);
++        HCCL_ERROR("unsupported rdev init by Vic, local_ip[%u]", rdevInfo->localIp.addr.s_addr);
+         return -1;
+     } else {
+         int idx = rdevInfo->phyId * 2;
+@@ -1306,7 +1306,7 @@ int RaRdevInitV2(struct RdevInitInfo init_info, struct rdev rdevInfo, void **rdm
+ 
+     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
+     if (rdevInfo.localIp.addr.s_addr < DEV_MAX) {
+-        HCCL_ERROR("unsupport rdev init by Vic, local_ip[%u]", rdevInfo.localIp.addr.s_addr);
++        HCCL_ERROR("unsupported rdev init by Vic, local_ip[%u]", rdevInfo.localIp.addr.s_addr);
+         return -1;
+     } else {
+         int idx = rdevInfo.phyId * 2;
+@@ -1343,7 +1343,7 @@ int RaRdevDeinit(void *rdma_handle, unsigned int notify_type)
+ 
+     // 通过IP 判断当前是nic 还是vic, 小于DEV_MAX则是Vnic
+     if (rdmaHandle->local_ip < DEV_MAX) {
+-        HCCL_WARNING("unsupport rdev deinit by Vic, local_ip[%u]", rdmaHandle->local_ip);
++        HCCL_WARNING("unsupported rdev deinit by Vic, local_ip[%u]", rdmaHandle->local_ip);
+     }
+ 
+     u32 idx = rdmaHandle->idx;
+@@ -1912,7 +1912,7 @@ void* accept_process_between_nodes(void* arg)
+                 if (size_recv != size_total) {
+                     continue;
+                 }
+-                HCCL_INFO("listern recieve info[0x%08x], tag[%s]", recv_info.client_ip, recv_info.tag);
++                HCCL_INFO("listern receive info[0x%08x], tag[%s]", recv_info.client_ip, recv_info.tag);
+ 
+                 // 记录连接信息
+                 struct connect_info_t connection;
+@@ -2810,7 +2810,7 @@ int batch_connect_check_link_nodes(u32 ipAddr, s32 deviceId)
+     u32 remoteServerIp;
+     u32 recv_ret = recv(socketHandle, (char *)(&remoteServerIp), sizeof(remoteServerIp), 0);
+     if (recv_ret < 0) {
+-        HCCL_INFO("connet recevive failed.error%s(errno: %d)", strerror(errno), errno);
++        HCCL_INFO("connect recevive failed.error%s(errno: %d)", strerror(errno), errno);
+         return -1;
+     }
+     /* 保持连接状态 */
+@@ -3571,7 +3571,7 @@ int RaCtlEventHandle(int event_handle, const void *fd_handle, int opcode, enum R
+     } else if (event == RA_EPOLLOUT) {
+         tmpEvent = EPOLLOUT;
+     } else {
+-        HCCL_ERROR("[ra_ctl_event_handle]unkown event[%d]", event);
++        HCCL_ERROR("[ra_ctl_event_handle]unknown event[%d]", event);
+         return -EINVAL;
+     }
+ 
+diff --git a/test/ut/stub/llt_hccl_stub_sal.cc b/test/ut/stub/llt_hccl_stub_sal.cc
+index 5ac1b80a31019f329bbfe95b223e31f837da44ad..9c9ce8f5c6188e09ef2479cf4569a8c77fcd1c4a 100644
+--- a/test/ut/stub/llt_hccl_stub_sal.cc
++++ b/test/ut/stub/llt_hccl_stub_sal.cc
+@@ -37,7 +37,7 @@ sal_manage_class sal_manage;
+ /* 检查SAL是否已经初始化完成，若没有则返回错误 */
+ #define SAL_ERR_RET_IF_SAL_IS_NOT_ACTIVED(ret) do { \
+     if (sal_manage.sal_active_get() != SAL_TRUE) {        \
+-        HCCL_ERROR("sal is not available before actived"); \
++        HCCL_ERROR("sal is not available before activated"); \
+         return ret;                                       \
+     }                                                     \
+ } while (0)
+@@ -1213,7 +1213,7 @@ void sal_share_memory_destroy(void *ptr)
+         }
+     }
+ 
+-    HCCL_DEBUG("destroy share mem[%s] sucess", uniqueId);
++    HCCL_DEBUG("destroy share mem[%s] success", uniqueId);
+ 
+     return;
+     // ptr 指针已经 unmap，共享内存也已销毁，pclint误报，此处屏蔽。
+@@ -1269,7 +1269,7 @@ HcclResult sal_manage_class::sal_thread_regist(const thread_info_t *thread)
+     sal_thread_list.push_back(node);
+     len_of_thread_res++;
+ 
+-    HCCL_DEBUG("thread Name[%s]\t PID[%08u] is registed", thread->name.c_str(), thread->pid);
++    HCCL_DEBUG("thread Name[%s]\t PID[%08u] is registered", thread->name.c_str(), thread->pid);
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -1297,7 +1297,7 @@ void sal_manage_class::sal_thread_unregist(const thread_info_t *thread)
+     for (auto it = sal_thread_list.begin(); it != sal_thread_list.end(); ++it) {
+         if (thread == (*it)->thread_info) {
+             len_of_thread_res--;
+-            HCCL_DEBUG("thread Name[%s]\t PID[%08u] is unregisted", (*it)->thread_info->name.c_str(),
++            HCCL_DEBUG("thread Name[%s]\t PID[%08u] is unregistered", (*it)->thread_info->name.c_str(),
+                       (*it)->thread_info->pid);
+ 
+             delete (*it);

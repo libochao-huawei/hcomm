@@ -90,7 +90,7 @@ typedef struct {
  * @brief Set DQS(Deterministic Queue Scheduler) schedule config to the related control stream.
  * 
  * @param stm dqs control stream, created with stream flag RT_STREAM_DQS_CONTROL
- * @param config dqs schedule config, including input/ouput queue info, ouput mbuf pool, input/out addr, etc.
+ * @param config dqs schedule config, including input/output queue info, output mbuf pool, input/out addr, etc.
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */

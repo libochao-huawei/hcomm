@@ -773,7 +773,7 @@ struct MsprofStaticOpMem {
     uint64_t lifeEnd;    // serial number of op memory used
     uint64_t totalAllocateMemory; // static graph total allocate memory
     uint64_t dynOpName;  // 0: invalid， other： dynamic op name of root
-    uint32_t graphId;    // multipe model
+    uint32_t graphId;    // multiple model
 };
 
 #define MSPROF_PHYSIC_STREAM_ID_MAX_NUM 56
@@ -797,7 +797,7 @@ struct MsprofExeomLoadInfo {
  * @brief struct of data to report
  */
 struct ReporterData {
-    char tag[MSPROF_ENGINE_MAX_TAG_LEN + 1];  // the sub-type of the module, data with different tag will be writen
+    char tag[MSPROF_ENGINE_MAX_TAG_LEN + 1];  // the sub-type of the module, data with different tag will be written
     int32_t deviceId;                         // the index of device
     size_t dataLen;                           // the length of send data
     uint8_t *data;                            // the data content

@@ -34,7 +34,7 @@ ACL_FUNC_VISIBILITY aclrtAllocatorDesc aclrtAllocatorCreateDesc();
 
 /**
  * @ingroup AscendCL
- * @brief Relese allocator description
+ * @brief Release allocator description
  *
  * @param allocatorDesc [IN]     allocator description
  *

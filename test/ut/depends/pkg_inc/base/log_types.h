@@ -58,7 +58,7 @@ enum {
     DEVMM = 22,             /* Dlog memory managent */
     KERNEL = 23,            /* Kernel */
     LIBMEDIA = 24,          /* Libmedia */
-    CCECPU = 25,            /* aicpu shedule */
+    CCECPU = 25,            /* aicpu schedule */
     ROS = 27,               /* ROS */
     HCCP = 28,
     ROCE = 29,
@@ -70,7 +70,7 @@ enum {
     TSDUMP = 35,
     AICPU = 36,
     LP = 37,                /* Low Power */
-    TDT = 38,               /* tsdaemon or aicpu shedule */
+    TDT = 38,               /* tsdaemon or aicpu schedule */
     FE = 39,
     MD = 40,
     MB = 41,

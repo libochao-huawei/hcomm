@@ -23,8 +23,8 @@ RTS_API rtError_t  rtGetNotifyAddress(rtNotify_t notify, uint64_t * const notify
 
 /**
 * @ingroup rt_kernel
-* @brief set input argments size for exception
-* @param [in] sizeInfo argments size info
+* @brief set input arguments size for exception
+* @param [in] sizeInfo arguments size info
 * @return RT_ERROR_NONE for ok
 * @return RT_ERROR_INVALID_VALUE for error input
 */
@@ -172,7 +172,7 @@ typedef struct tagRtSmCtrl {
  * @param [in] kernelType    aicpu kernel type
  * @param [in] opName        address of op name
  * @param [in] blockDim      block dimensions
- * @param [in] argsInfo      argments address for kernel function
+ * @param [in] argsInfo      arguments address for kernel function
  * @param [in] smDesc        shared memory description
  * @param [in] stm           associated stream
  * @param [in] flags         dump flag or others function flag
@@ -213,7 +213,7 @@ RTS_API rtError_t rtGetStackBuffer(const rtBinHandle binHandle, const uint32_t c
 
 /**
  * @ingroup rt_kernel
- * @brief L1 fusion dump addr transfered to device
+ * @brief L1 fusion dump addr transferred to device
  * @param [in] mdl    handle info
  * @param [in] addr     ddr address of L1 Fusion Dump
  * @param [in] dumpSize memory size
@@ -272,7 +272,7 @@ RTS_API rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);
  * @param [in] soName        so name
  * @param [in] kernelName    kernel name
  * @param [in] blockDim      block dimensions
- * @param [in] argsInfo      argments address for kernel function
+ * @param [in] argsInfo      arguments address for kernel function
  * @param [in] smDesc        shared memory description
  * @param [in] stm           associated stream
  * @param [in] flag          dump flag or others function flag

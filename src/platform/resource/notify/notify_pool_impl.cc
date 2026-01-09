@@ -133,7 +133,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMap()
         }
     }
     notifyPoolIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(ipc).");
+    HCCL_DEBUG("destroy assigned notify pool(ipc).");
     return HCCL_SUCCESS;
 }
 
@@ -147,7 +147,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceIPCAsignedMap()
         }
     }
     notifyPoolDeivceIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(device ipc).");
+    HCCL_DEBUG("destroy assigned notify pool(device ipc).");
     return HCCL_SUCCESS;
 }
 
@@ -161,7 +161,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolIPCAsignedMapForA2A()
         }
     }
     notifyPoolIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(ipc).");
+    HCCL_DEBUG("for a2a destroy assigned notify pool(ipc).");
     return HCCL_SUCCESS;
 }
 
@@ -176,7 +176,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceIPCAsignedMapForA2A()
         }
     }
     notifyPoolDevIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(ipc).");
+    HCCL_DEBUG("for a2a destroy assigned notify pool(ipc).");
     return HCCL_SUCCESS;
 }
 
@@ -189,7 +189,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMap()
         }
     }
     notifyPoolNoIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(no ipc).");
+    HCCL_DEBUG("destroy assigned notify pool(no ipc).");
     return HCCL_SUCCESS;
 }
 
@@ -202,7 +202,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceNoIPCAsignedMap()
         }
     }
     notifyPoolDeivceNoIPCAsignedMap_.clear();
-    HCCL_DEBUG("destroy asigned notify pool(device no ipc).");
+    HCCL_DEBUG("destroy assigned notify pool(device no ipc).");
     return HCCL_SUCCESS;
 }
 
@@ -215,7 +215,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolNoIPCAsignedMapForA2A()
         }
     }
     notifyPoolNoIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(no ipc).");
+    HCCL_DEBUG("for a2a destroy assigned notify pool(no ipc).");
     return HCCL_SUCCESS;
 }
 
@@ -229,7 +229,7 @@ HcclResult NotifyPoolImpl::DestroyNotifyPoolDeviceNoIPCAsignedMapForA2A()
         }
     }
     notifyPoolDevNoIPCAsignedMapForA2A_.clear();
-    HCCL_DEBUG("for a2a destroy asigned notify pool(no ipc).");
+    HCCL_DEBUG("for a2a destroy assigned notify pool(no ipc).");
     return HCCL_SUCCESS;
 }
 

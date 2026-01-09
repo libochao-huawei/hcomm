@@ -338,7 +338,7 @@ STATIC int RsTcpRecvTagInHandle(struct RsListenInfo *listenInfo, int connfd, str
         }
         // peer socket session has been closed
         if (size == 0) {
-            hccp_run_info("session has been clsoed, server:{%s:%u} client:%s tagSyncTime:%u tagEintrTime:%u",
+            hccp_run_info("session has been closed, server:{%s:%u} client:%s tagSyncTime:%u tagEintrTime:%u",
                 listenInfo->serverIpAddr.readAddr, listenInfo->sockPort, remoteIp->readAddr,
                 connTmp->tagSyncTime, connTmp->tagEintrTime);
             return -ESOCKCLOSED;
@@ -424,7 +424,7 @@ STATIC int RsSocketCheckCredit(struct RsConnCb *connCb, struct RsListenInfo *lis
         return 0;
     }
 
-    // accept_credit is exhaused, check failed
+    // accept_credit is exhausted, check failed
     if (listenInfo->acceptCreditLimit == 0) {
         return -EINVAL;
     }
@@ -433,7 +433,7 @@ STATIC int RsSocketCheckCredit(struct RsConnCb *connCb, struct RsListenInfo *lis
     listenInfo->acceptCreditLimit--;
     RS_PTHREAD_MUTEX_ULOCK(&listenInfo->acceptCreditMutex);
 
-    // accept_credit is exhaused, ignore return value to delete from epoll
+    // accept_credit is exhausted, ignore return value to delete from epoll
     if (listenInfo->acceptCreditLimit == 0) {
         (void)RsSocketListenDelFromEpoll(connCb, listenInfo);
     }
