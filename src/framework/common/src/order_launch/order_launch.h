@@ -19,14 +19,28 @@
 #include "local_notify.h"
 
 namespace hccl {
+enum class AicpuOrderEventIdx : uint32_t
+{
+    ACLGRAPH_ORDER_EVENT_0 = 0,
+    ACLGRAPH_ORDER_EVENT_1 = 1,
+};
+constexpr uint32_t AICPU_ORDER_EVENT_SIZE = 2;
+
+struct EventParam
+{
+    rtEvent_t event = nullptr;
+    u32 eventId = INVALID_UINT;
+};
+
 class OrderLaunch {
 public:
     static OrderLaunch& GetInstance(s32 deviceLogicID);
     HcclResult RegisterOrderLaunch(const std::string &group);
     HcclResult UnRegisterOrderLaunch(const std::string &group);
 
-    HcclResult AclgraphLaunchInOrder(std::string &group, const Stream& kernelStream, u64 modelId, rtModel_t rtModel,
+    HcclResult AclgraphLaunchInOrderToOrderStream(std::string &group, const Stream& kernelStream,
         std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
+    HcclResult AclgraphLaunchInOrderToKernelStream(std::string &group, const Stream& kernelStream);
     HcclResult OpbaseLaunchInOrder(std::string &group, const Stream& kernelStream,
         std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
     HcclResult HcomLaunchInOrder(std::string &group, const Stream& kernelStream, u32 graphId,
@@ -39,12 +53,14 @@ private:
 
     std::mutex streamMutex_;
     std::unordered_set<std::string> groupSet_; // 记录已经初始化过的group
-    std::unique_ptr<Stream> opbaseStream_;
-    std::unordered_map<u64, Stream> aclgraphStreamMap_;
-    std::unordered_map<u32, Stream> hcomStreamMap_;
+    std::unique_ptr<Stream> opbaseStream_ = { nullptr }; // 单算子模式使用
+    std::unique_ptr<Stream> aclgraphStream_ = { nullptr }; // aclgraph模式使用
+    EventParam aclgraphEvents_[AICPU_ORDER_EVENT_SIZE] = { nullptr };
+    std::unordered_map<u32, Stream> hcomStreamMap_; // 图模式使用
     bool initialized_ = false;
     HcclResult LaunchInOrder(std::string &group, const Stream &kernelStream, const Stream &hostOrderStream,
         std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut);
+    void DestoryRes();
 };
 }
 #endif
