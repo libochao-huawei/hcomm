@@ -29,6 +29,17 @@ typedef enum {
     COMM_TOPO_310P = 3,       ///< 310P互联拓扑
 } CommTopo;
 
+/**
+ * @brief 异构组网模式枚举
+ * @note 描述通信域中芯片类型的混合情况，可用于优化通信算法选择
+ */
+typedef enum
+{
+    HCCL_HETEROG_MODE_INVALID = -1,    ///< 无效/未初始化
+    HCCL_HETEROG_MODE_HOMOGENEOUS = 0, ///< 同构组网：单一芯片类型
+    HCCL_HETEROG_MODE_MIX_A2_A3,       ///< 异构组网：A2和A3芯片混合
+} HcclHeterogMode;
+
 const uint32_t COMM_LINK_MAGIC_WORD = 0x0f0e0f0f;
 const uint32_t COMM_LINK_VERSION = 1;    // CommLink末尾非固定区扩展时，COMM_LINK_VERSION + 1
 
