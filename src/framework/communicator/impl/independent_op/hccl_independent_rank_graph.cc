@@ -49,6 +49,10 @@ HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint
     CHK_PTR_NULL(socNamePtr);
     HCCLV2_FUNC_RUN(HcclGetLinksV2(comm, netLayer, srcRank, dstRank, links, linkNum), socNamePtr);
 #endif
+    if (srcRank == dstRank) {
+        HCCL_ERROR("[%s] srcRank[%u] and dstRank[%u] is same", __func__, srcRank, dstRank);
+        return HCCL_E_PARA;
+    }
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HCCL_RUN_INFO("Entry-%s: comm[%s], netLayer%u], srcRank[%u], dstRank[%u]", __func__,
         hcclComm->GetIdentifier().c_str(), netLayer, srcRank, dstRank);

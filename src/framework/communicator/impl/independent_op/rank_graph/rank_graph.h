@@ -1,12 +1,12 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef RANK_GRAPH_H
 #define RANK_GRAPH_H
@@ -18,6 +18,9 @@
 #include "hccl_rank_graph.h"
 #include "hccl_rankgraph.h"
 namespace hccl {
+constexpr uint32_t HCCL_NETLAYER_0 = 0;
+constexpr uint32_t HCCL_NETLAYER_1 = 1;
+constexpr uint32_t HCCL_NETLAYER_2 = 2;
 
 class RankGraph {
 struct RankGraphInfo {
@@ -48,19 +51,22 @@ public:
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
     
 private:
-    HcclResult DevTypeToCommProtocol(DevType type, CommProtocol &protocol);
-    CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t srcInfo, const RankInfo_t dstInfo);
+    HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol);
+    CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo, uint32_t netLayer);
     HcclResult InitRankInfo();
     HcclResult InitServerRankInfo();
     HcclResult InitSuperPodRankInfo();
     HcclResult InitNetLayer();
     HcclResult InitGraphRankInfo();
+    CommProtocol GetCommProtocolInSameServer(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
+    CommProtocol GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
+    bool NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol);
     HcclResult InitHeterogMode();
     RankTable_t rankTable_;
     // 根据 rankId 获取 RankInfo_t 与 EndPoint信息
     std::unordered_map<uint32_t, RankGraphInfo> rankIndex_;
     // 根据 srcRank dstRank 获取CommLink信息
-    std::map<std::pair<uint32_t, uint32_t>, std::vector<CommLink>> rankPairInfo_;
+    std::map<std::tuple<uint32_t, uint32_t, uint32_t>, std::vector<CommLink>> rankPairInfo_;
     std::vector<uint32_t> netLayer_;
     std::unordered_map<uint32_t, std::vector<u32>> rankList_;      //level->rankList
     std::unordered_map<uint32_t, std::vector<u32>> rankSizeList_;  //level->rankSizeList
@@ -68,6 +74,7 @@ private:
     std::vector<struct GraphRankInfo> graphRankInfo_;
     HcclTopoAttr topoAttr_;
     RankInfo rankData_;         // 当前rank的相关信息
+    DevType devType_ = DevType::DEV_TYPE_NOSOC;
     HcclHeterogMode heterogMode_{HcclHeterogMode::HCCL_HETEROG_MODE_INVALID};    // 组网异构&同构形态
 
     // 通信域在当前superPod内, 按照serverIdx划分的所有rank信息
