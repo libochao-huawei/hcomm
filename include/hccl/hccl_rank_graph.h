@@ -81,6 +81,7 @@ inline HcclResult CommLinkInit(CommLink *commLink, uint32_t linkNum)
             return HCCL_E_PTR;
         }
     }
+    return HCCL_SUCCESS;
 }
 
 /**
