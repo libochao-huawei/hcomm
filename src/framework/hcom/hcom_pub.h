@@ -157,8 +157,8 @@ HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic);
 HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm,
     std::string& group, std::string &sTag);
 #if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
-HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, bool *ifAiv, char *algName, bool isSuperKernel);
+HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, HcclReduceOp op,
+    int32_t aivCoreLimit, bool &ifAiv, char *algName);
 #endif
 
 #ifdef __cplusplus

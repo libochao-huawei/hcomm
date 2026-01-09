@@ -1749,15 +1749,15 @@ HcclResult GetGradientSegment(const std::string &group, const struct model_featu
 }
 
 #if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
-HcclResult HcomExecSelectAlg(s64 comm, const char *group, u64 count, HcclDataType dataType, HcclReduceOp op,
-    HcclCMDType opType, bool *ifAiv, char *algName, bool isSuperKernel)
+HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, HcclReduceOp op,
+    int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
     std::string tempAlgName;
     if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
-        CHK_RET(HcomGraphSelectAlgV2(comm, group, count, dataType, op, opType, *ifAiv, tempAlgName, isSuperKernel));
+        CHK_RET(HcomSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     } else {
         std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
-        CHK_RET(HcomSelectAlgV2(comm, group, count, dataType, op, opType, *ifAiv, tempAlgName, isSuperKernel));
+        CHK_RET(HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
     }
     int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
     CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomExecSelectAlg][algName]memcpy failed. ret[%d],"
@@ -1770,7 +1770,7 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, HcclDataType da
     HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
 #if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, count, dataType, op, opType, &ifAiv, algName, false));
+    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName));
 #endif
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -1795,6 +1795,10 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, HcclDataType da
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *blockDim)
 {
+#if  (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    std::string algNamV2(algName);
+    HCCLV2_FUNC_RUN(HcomCalcBlockDimV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *blockDim));
+#endif
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -1808,6 +1812,10 @@ HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, vo
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
     void **commContext, u64 *len, u32 aivCoreLimit)
 {
+#if  (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetAlgExecParamV2(tag, group, count, inputPtr, outputPtr, opType, clearEnable, dataType, op,
+            *commContext, *len, aivCoreLimit));
+#endif
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -2797,6 +2805,9 @@ bool HcomIsNormalComm(const char *group)
 
 HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable)
 {
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomSetAivClearEnableV2(group, aivClearEnable));
+#endif
     CHK_PTR_NULL(group);
     std::shared_ptr<hcclComm> hcclComm;
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
