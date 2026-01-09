@@ -1,4 +1,4 @@
-# HCCL API \(python\)
+# 通信域管理API (python语言)
 
 -   [hccl.manage.api](hccl-manage-api.md)
     -   [create\_group](create_group.md)
@@ -17,4 +17,3 @@
 -   [样例代码](样例代码.md)
     -   [代码示例](代码示例.md)
     -   [样例执行](样例执行.md)
-
