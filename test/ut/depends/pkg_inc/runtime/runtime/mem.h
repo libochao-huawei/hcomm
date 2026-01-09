@@ -234,7 +234,7 @@ typedef enum tagRtMemoryType {
     RT_MEMORY_TYPE_DEVICE = 2,
     RT_MEMORY_TYPE_SVM = 3,
     RT_MEMORY_TYPE_DVPP = 4,
-    RT_MEMORY_TYPE_USER = 5 // by user malloc, unkown memory
+    RT_MEMORY_TYPE_USER = 5 // by user malloc, unknown memory
 } rtMemoryType_t;
 
 /**
@@ -501,7 +501,7 @@ RTS_API rtError_t rtMallocCached(void **devPtr, uint64_t size, rtMemType_t type,
 /**
  * @ingroup dvrt_mem
  * @brief flush device mempory
- * @param [in] base   virtal base addr
+ * @param [in] base   virtual base addr
  * @param [in] len    memory size
  * @return RT_ERROR_NONE for ok, errno for failed
  */
@@ -510,7 +510,7 @@ RTS_API rtError_t rtFlushCache(void *base, size_t len);
 /**
  * @ingroup dvrt_mem
  * @brief invalid device mempory
- * @param [in] base   virtal base addr
+ * @param [in] base   virtual base addr
  * @param [in] len    memory size
  * @return RT_ERROR_NONE for ok, errno for failed
  */
@@ -954,7 +954,7 @@ RTS_API rtError_t rtIpcCloseMemory(const void *ptr);
  * @ingroup dvrt_mem
  * @brief HCCL Async memory cpy
  * @param [in] sqIndex sq index
- * @param [in] wqeIndex moudle index
+ * @param [in] wqeIndex module index
  * @param [in] stm asynchronized task stream
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
@@ -1152,8 +1152,8 @@ RTS_API rtError_t rtUnmapMem(void* devPtr);
 * 1. Only support ONLINE scene.
 * 2. Support va->pa:
 *    D2H,
-*    D2D(sigle device, diffrent device with same host, diffrent device with diffrent host),
-*    H2H(same host, diffrent host(support latter))
+*    D2D(single device, different device with same host, different device with different host),
+*    H2H(same host, different host(support latter))
 * 3. rtMemSetAccess: ptr and size must be same with rtMemMap, rtMemGetAccess: ptr and size is in range of set
 * 4. after rtMemMap, if handle has owner(witch location pa handle is created or use witch device pa handle is imported)
 *    the owner location has readwrite prop automatic, not need to set again

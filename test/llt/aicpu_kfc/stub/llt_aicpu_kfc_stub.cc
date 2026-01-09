@@ -472,7 +472,7 @@ aclError aclrtDestroyStreamForce(aclrtStream stream)
 /**
  * @ingroup dvrt_stream
  * @brief get stream id from a stream handle
- * @param [in] stream   stream hadle
+ * @param [in] stream   stream handle
  * @param [in] streamId   stream id
  * @return RT_ERROR_NONE for complete
  * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream handle
@@ -1750,7 +1750,7 @@ aclError aclrtIpcMemImportByKey(void **ptr, const char *name, uint64_t flag)
                 }
             }
             if(j == IPC_SHM_PID_NUM_MAX) {
-                HCCL_ERROR("aclrtIpcMemImportByKey error , cant find pid[%d]", pid);
+                HCCL_ERROR("aclrtIpcMemImportByKey error , can't find pid[%d]", pid);
                 DestroyIpcMemShm();
                 return ACL_ERROR_RT_PARAM_INVALID;
             }
@@ -1760,7 +1760,7 @@ aclError aclrtIpcMemImportByKey(void **ptr, const char *name, uint64_t flag)
     }
 
     if(i == IPC_SHM_MEM_NUM_MAX) {
-        HCCL_ERROR("aclrtIpcMemImportByKey error , cant find name[%s]", name);
+        HCCL_ERROR("aclrtIpcMemImportByKey error , can't find name[%s]", name);
         DestroyIpcMemShm();
         return ACL_ERROR_RT_PARAM_INVALID;
     }
@@ -2570,7 +2570,7 @@ rtError_t rtReduceAsyncV2(void* dst, uint64_t destMax,const void* src, uint64_t 
 
 /**
  * @ingroup rt_stars
- * @brief gerneral ctrl if
+ * @brief general ctrl if
  * @param [in] ctl              ctl input
  * @param [in] num              ctl input num
  * @param [in] type             ctl type
@@ -3014,7 +3014,7 @@ rtError_t rtIpcOpenNotify(rtNotify_t* notify, const char *name)
     }
     // 未找到NAME
     if(i == IPC_SHM_NOTIFY_NUM_MAX) {
-        HCCL_ERROR("rtIpcOpenNotify error , cant find name[%s]", name);
+        HCCL_ERROR("rtIpcOpenNotify error , can't find name[%s]", name);
         DestroyIpcNotifyShm();
         return ACL_ERROR_RT_PARAM_INVALID;
     }
@@ -3290,7 +3290,7 @@ void* threadfun(void* p)
 
     if (iRet)
     {
-        HCCL_WARNING("[STUB] Thread Handler Return Faile[%d]", iRet);
+        HCCL_WARNING("[STUB] Thread Handler Return Fail[%d]", iRet);
     }
 
     iRet = pcthread->update_thread_state(THREAD_STATE_STOPED);
@@ -3543,11 +3543,11 @@ s32 thread_class::stop_thread()
                 threadfd = 0;
             }
 
-            HCCL_WARNING("Force Stop Thread Sucess");
+            HCCL_WARNING("Force Stop Thread Success");
         }
         else
         {
-            //HCCL_INFO("Stop Thread Sucess. Counter cost [%d]", THREAD_STOP_COUNTER - uiStopCounter);
+            //HCCL_INFO("Stop Thread Success. Counter cost [%d]", THREAD_STOP_COUNTER - uiStopCounter);
         }
     }
 
@@ -4807,7 +4807,7 @@ HcclResult __rt_get_dev_ip(s32 chipType, s32 devId, u32 *ipAddr)
         }
         *ipAddr = inet_addr(devIpStr.c_str());
     } else {
-        HCCL_ERROR("get unknow chip type[%d] dev:[%d]", chipType, devId);
+        HCCL_ERROR("get unknown chip type[%d] dev:[%d]", chipType, devId);
         return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;

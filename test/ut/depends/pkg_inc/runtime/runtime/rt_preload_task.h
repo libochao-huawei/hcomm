@@ -1,6 +1,6 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2023-2023. All rights reserved.
- * Description: parma rt_preload_task.h
+ * Description: param rt_preload_task.h
  * Create: 2023-06-02
  */
 #ifndef CCE_RUNTIME_RT_PRELOAD_TASK_H
@@ -17,7 +17,7 @@ typedef int32_t (*rtKernelLaunchFillFunc)(void* cfgAddr, uint32_t cfglen);
 typedef enum tagRtTaskBuffType {
     HWTS_STATIC_TASK_DESC = 0,       /**< static task */
     HWTS_DYNAMIC_TASK_DESC = 1,      /**< dynamic task */
-    PARAM_TASK_INFO_DESC = 2,        /**< parma task */
+    PARAM_TASK_INFO_DESC = 2,        /**< param task */
     MAX_TASK,
 } rtTaskBuffType_t;
 
@@ -103,7 +103,7 @@ typedef struct {
 typedef struct {
     void* dataBuffer;                       // current write addr
     uint32_t bufferLen;                     // the space of dataBuffer left
-    rtCompilerPartinfo_t compilerInfo;      // task info for complie
+    rtCompilerPartinfo_t compilerInfo;      // task info for compile
     uint64_t argOffset;                     // args offset
 } rtTaskInput_t;
 
@@ -120,7 +120,7 @@ RTS_API rtError_t rtGetTaskBufferLen(const rtTaskBuffType_t type, uint32_t * con
 /**
  * @ingroup rt_preload_task
  * @brief exeom task build
- * @param [in] taskInput        task info for complie
+ * @param [in] taskInput        task info for compile
  * @param [out] taskLen         current tasklen
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input

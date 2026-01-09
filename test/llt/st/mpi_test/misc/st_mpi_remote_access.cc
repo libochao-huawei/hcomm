@@ -89,7 +89,7 @@ static HcclResult g_excutorStatus;
 
 void setExecutorStatus(HcclResult status)
 {
-    HCCL_INFO("this is setExecutorStatus fuction");
+    HCCL_INFO("this is setExecutorStatus function");
     g_excutorStatus = status;
 }
 
@@ -174,7 +174,7 @@ void* inter_remote_access_task(void* para)
 
     if ( rt_ret != ACL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (NULL);

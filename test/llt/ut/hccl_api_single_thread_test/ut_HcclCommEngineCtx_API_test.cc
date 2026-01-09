@@ -66,7 +66,7 @@ TEST_F(HcclCommEngineCtxTest, Ut_CommEngineCtx_When_Error_Input_Expect_Return_ER
     ret = HcclEngineCtxCreate(comm, "opTag", CommEngine::COMM_ENGINE_CPU, size, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-    // create: engine unsupport
+    // create: engine unsupported
     ret = HcclEngineCtxCreate(comm, "opTag", CommEngine::COMM_ENGINE_CCU, size, &ctx);
     EXPECT_EQ(ret, HCCL_E_PARA);
 

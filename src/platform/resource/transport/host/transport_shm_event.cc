@@ -132,7 +132,7 @@ HcclResult TransportShmEvent::ExchangeIpcMesg()
         void *remoteMemPtr = nullptr;
         ret = RecvIpcMemMesg(&remoteMemPtr, remoteInputMemName_.ipcName, remoteInputOffsetValue_, size);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc input mem mesg fail. ret[%d], "\
+            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "\
             "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteInputMemName_.ipcName,
             remoteOutputOffsetValue_), ret);
         HCCL_DEBUG("remote inpue ptr size[%llu]", size);
@@ -140,7 +140,7 @@ HcclResult TransportShmEvent::ExchangeIpcMesg()
         /* 接收IPC output中转内存 */
         ret = RecvIpcMemMesg(&remoteMemPtr, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_, size);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc output mem mesg fail. ret[%d], "\
+            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "\
             "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteOutputMemName_.ipcName,
             remoteOutputOffsetValue_), ret);
         HCCL_DEBUG("remote inpue ptr size[%llu]", size);
@@ -149,7 +149,7 @@ HcclResult TransportShmEvent::ExchangeIpcMesg()
         ret = RecvIpcMemMesg(&remoteMemPtr, remoteEnvelopeItemMemName_.ipcName,
             remoteEnvelopeItemOffsetValue_, size);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc envelope mem mesg fail. ret[%d], "\
+            HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc envelope mem mesg fail. ret[%d], "\
             "ptr[%p], mem name[%s], offset[%llu]", ret, remoteMemPtr, remoteEnvelopeItemMemName_.ipcName,
             remoteOutputOffsetValue_), ret);
         envelopeShmQue_ = DeviceMem::create(remoteMemPtr, size);

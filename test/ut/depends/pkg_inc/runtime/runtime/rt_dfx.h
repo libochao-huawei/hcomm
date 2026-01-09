@@ -51,9 +51,9 @@ RTS_API rtError_t rtSetTaskTag(const char_t *taskTag);
 
 /**
  * @brief set aicpu device attribute.
- * it is used for aicpu device to be aware of enviroment config
- * @param [in] key  attrubute key.
- * @param [in] val  attrubute value.
+ * it is used for aicpu device to be aware of environment config
+ * @param [in] key  attribute key.
+ * @param [in] val  attribute value.
  * @return RT_ERROR_NONE for ok
  * @return other failed
  */

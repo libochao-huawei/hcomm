@@ -313,7 +313,7 @@ HcclResult CommRemoteAccess::CreateLinks()
     HCCL_INFO("CommRemoteAccess CreateLinks rank_[%u] dstInterClientMapSize[%u], nicNum[%u], dstInterServerMapSize[%u]",
         rank_, dstInterClientMap_.size(), nicNum, dstInterServerMap_.size());
     CHK_PRT_RET((threadsNum == 0), HCCL_ERROR("[Create][Links]no link to create, please check ranktable to see if"
-        "device_ip is configed. nicNum[%u]", nicNum), HCCL_E_INTERNAL);
+        "device_ip is configured. nicNum[%u]", nicNum), HCCL_E_INTERNAL);
     linkThreads_.resize(threadsNum);
     threadsStatus_.resize(threadsNum);
     HCCL_INFO(
@@ -494,7 +494,7 @@ void CommRemoteAccess::PrintErrorConnection(const u32 role, const u32 num)
     RPT_INNER_ERR_PRT("remote op nic connect failed, please ensure that collective communication execution status "\
         "of each device is consistent(include network TLS configuration)");
 
-    HCCL_ERROR("Some NPUs get socket timout, the details are as follows:");
+    HCCL_ERROR("Some NPUs get socket timeout, the details are as follows:");
     HCCL_ERROR("   _________________________LINK_ERROR_INFO___________________________");
     HCCL_ERROR("   |  comm error, device[%d] num[%u] ", deviceLogicId_, num);
     HCCL_ERROR("   |  dest_ip(user_rank)  |   dest_port   |  src_ip(user_rank)   |   src_port   |   MyRole   "

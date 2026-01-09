@@ -3988,7 +3988,7 @@ TEST_F(OpbaseTest, ut_HcclGetErrorString)
     EXPECT_EQ("call network api fail", std::string(HcclGetErrorString(HCCL_E_NETWORK)));
     EXPECT_EQ("error cqe", std::string(HcclGetErrorString(HCCL_E_REMOTE)));
     EXPECT_EQ("call network api fail", std::string(HcclGetErrorString(HCCL_E_NETWORK)));
-    EXPECT_EQ("unknow error", std::string(HcclGetErrorString(HCCL_E_RESERVED)));
+    EXPECT_EQ("unknown error", std::string(HcclGetErrorString(HCCL_E_RESERVED)));
 }
 
 TEST_F(OpbaseTest, ut_hcclGetRootInfo_single_server_success_normal_9)

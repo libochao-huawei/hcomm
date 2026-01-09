@@ -135,7 +135,7 @@ void* intra_send_receive_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task send_receive falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task send_receive fails", para_info->device_id);
     }
 
     bool swapped;

@@ -139,7 +139,7 @@ RTS_API rtError_t rtStreamCreateWithConfig(rtStream_t *stm, rtStreamConfigHandle
 /**
  * @ingroup dvrt_stream
  * @brief create stream instance
- * @param [in] stm   stream hadle
+ * @param [in] stm   stream handle
  * @param [out] sqId   stream op sqId
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
@@ -149,7 +149,7 @@ RTS_API rtError_t rtStreamGetSqid(const rtStream_t stm, uint32_t *sqId);
 /**
  * @ingroup dvrt_stream
  * @brief get stream cq info
- * @param [in] stm   stream hadle
+ * @param [in] stm   stream handle
  * @param [out] sqId   stream op cqId
  * @param [out] cqId   stream op logic cqId
  * @return RT_ERROR_NONE for ok
@@ -160,7 +160,7 @@ RTS_API rtError_t rtStreamGetCqid(const rtStream_t stm, uint32_t *cqId, uint32_t
 /**
  * @ingroup dvrt_stream
  * @brief create stream instance
- * @param [in] stm   stream hadle
+ * @param [in] stm   stream handle
  * @param [out] workaddr   workaddr on stream
  * @param [out] worksize   worksize on stream
  * @return RT_ERROR_NONE for ok
@@ -238,7 +238,7 @@ RTS_API rtError_t rtStreamQuery(rtStream_t stm);
 /**
  * @ingroup dvrt_stream
  * @brief get stream id from a stream handle
- * @param [in] stm   stream hadle
+ * @param [in] stm   stream handle
  * @param [in] streamId   stream id
  * @return RT_ERROR_NONE for complete
  * @return RT_ERROR_INVALID_VALUE for error input
@@ -258,9 +258,9 @@ RTS_API rtError_t rtGetMaxStreamAndTask(uint32_t streamType, uint32_t *maxStrCou
 
 /**
  * @ingroup dvrt_stream
- * @brief inquire avaliable stream count
+ * @brief inquire available stream count
  * @param [in] streamType   Stream Type
- * @param [out] streamCount  avaliable streamCount
+ * @param [out] streamCount  available streamCount
  * @return RT_ERROR_NONE for complete
  * @return RT_ERROR_INVALID_VALUE for error input
  */
@@ -268,8 +268,8 @@ RTS_API rtError_t rtGetAvailStreamNum(const uint32_t streamType, uint32_t * cons
 
 /**
  * @ingroup dvrt_stream
- * @brief inquire avaliable event count
- * @param [out] eventCount  avaliable event Count
+ * @brief inquire available event count
+ * @param [out] eventCount  available event Count
  * @return RT_ERROR_NONE for complete
  * @return RT_ERROR_INVALID_VALUE for error input
  */

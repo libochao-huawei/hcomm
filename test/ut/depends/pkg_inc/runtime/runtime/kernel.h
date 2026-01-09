@@ -517,7 +517,7 @@ RTS_API rtError_t rtRegisterAllKernel(const rtDevBinary_t *bin, void **hdl);
 
 /**
  * @ingroup rt_kernel
- * @brief register fast memeory device binary
+ * @brief register fast memory device binary
  * @param [in] hdl   device binary handle
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
@@ -560,7 +560,7 @@ RTS_API rtError_t rtDependencyRegister(void *mHandle, void *sHandle);
  * @param [in] stubFunc   stub function
  * @param [in] stubName   stub function name
  * @param [in] kernelInfoExt   kernel Info extension. device function description or tiling key,
- *                             depending static shape or dynmaic shape.
+ *                             depending static shape or dynamic shape.
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
@@ -638,8 +638,8 @@ RTS_API rtError_t rtKernelGetAddrAndPrefCntV2(void *hdl, const uint64_t tilingKe
 
 /**
 * @ingroup rt_kernel
-* @brief set input argments size for exception
-* @param [in] sizeInfo argments size info
+* @brief set input arguments size for exception
+* @param [in] sizeInfo arguments size info
 * @return RT_ERROR_NONE for ok
 * @return RT_ERROR_INVALID_VALUE for error input
 */
@@ -650,8 +650,8 @@ RTS_API rtError_t rtSetExceptionExtInfo(const rtArgsSizeInfo_t * const sizeInfo)
  * @brief launch kernel to device
  * @param [in] stubFunc   stub function
  * @param [in] blockDim   block dimensions
- * @param [in] args   argments address for kernel function
- * @param [in] argsSize   argements size
+ * @param [in] args   arguments address for kernel function
+ * @param [in] argsSize   arguments size
  * @param [in] smDesc   shared memory description
  * @param [in] stm   associated stream
  * @return RT_ERROR_NONE for ok
@@ -666,7 +666,7 @@ RTS_API rtError_t rtKernelLaunch(const void *stubFunc, uint32_t blockDim, void *
  * @param [in] hdl             program
  * @param [in] tilingKey       tilingKey
  * @param [in] blockDim        block dimensions
- * @param [in] argsInfo        argments address for kernel function
+ * @param [in] argsInfo        arguments address for kernel function
  * @param [in] smDesc          shared memory description
  * @param [in] stm             associated stream
  * @param [in] kernelInfo      kernel info
@@ -683,7 +683,7 @@ RTS_API rtError_t rtKernelLaunchWithHandle(void *hdl, const uint64_t tilingKey, 
  * @param [in] hdl             program
  * @param [in] tilingKey       tilingKey
  * @param [in] blockDim        block dimensions
- * @param [in] argsInfo        argments address for kernel function
+ * @param [in] argsInfo        arguments address for kernel function
  * @param [in] smDesc          shared memory description
  * @param [in] stm             associated stream
  * @param [in] cfgInfo      task config
@@ -698,7 +698,7 @@ RTS_API rtError_t rtKernelLaunchWithHandleV2(void *hdl, const uint64_t tilingKey
  * @brief launch kernel to device
  * @param [in] stubFunc   stub function
  * @param [in] blockDim   block dimensions
- * @param [in] argsInfo   argments address for kernel function
+ * @param [in] argsInfo   arguments address for kernel function
  * @param [in] smDesc     shared memory description
  * @param [in] stm        associated stream
  * @param [in] flags      dump flag
@@ -713,7 +713,7 @@ RTS_API rtError_t rtKernelLaunchWithFlag(const void *stubFunc, uint32_t blockDim
  * @brief launch kernel to device
  * @param [in] stubFunc   stub function
  * @param [in] blockDim   block dimensions
- * @param [in] argsInfo   argments address for kernel function
+ * @param [in] argsInfo   arguments address for kernel function
  * @param [in] smDesc     shared memory description
  * @param [in] stm        associated stream
  * @param [in] flags      dump flag
@@ -727,8 +727,8 @@ RTS_API rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockD
 /**
  * @ingroup rt_kernel(abandoned)
  * @brief launch kernel to device
- * @param [in] args       argments address for kernel function
- * @param [in] argsSize   argements size
+ * @param [in] args       arguments address for kernel function
+ * @param [in] argsSize   arguments size
  * @param [in] flags      launch flags
  * @param [in] stm     associated stream
  * @return RT_ERROR_NONE for ok
@@ -740,8 +740,8 @@ RTS_API rtError_t rtKernelLaunchEx(void *args, uint32_t argsSize, uint32_t flags
  * @ingroup rt_kernel(in use)
  * @brief launch kernel to device
  * @param [in] opName     opkernel name
- * @param [in] args       argments address for kernel function
- * @param [in] argsSize   argements size
+ * @param [in] args       arguments address for kernel function
+ * @param [in] argsSize   arguments size
  * @param [in] flags      launch flags
  * @param [in] stm     associated stream
  * @return RT_ERROR_NONE for ok
@@ -756,7 +756,7 @@ RTS_API rtError_t rtKernelLaunchFwk(const char_t *opName, void *args, uint32_t a
  * @param [in] soName        so name
  * @param [in] kernelName    kernel name
  * @param [in] blockDim      block dimensions
- * @param [in] argsInfo      argments address for kernel function
+ * @param [in] argsInfo      arguments address for kernel function
  * @param [in] smDesc        shared memory description
  * @param [in] stm           associated stream
  * @param [in] flag          dump flag or others function flag
@@ -772,7 +772,7 @@ RTS_API rtError_t rtCpuKernelLaunchWithFlag(const void *soName, const void *kern
  * @brief launch cpu kernel to device with dump identifier
  * @param [in] launchNames   names for kernel launch
  * @param [in] blockDim      block dimensions
- * @param [in] args          argments address for kernel function
+ * @param [in] args          arguments address for kernel function
  * @param [in] smDesc        shared memory description
  * @param [in] stm           associated stream
  * @param [in] flags          dump flag or others function flag
@@ -789,7 +789,7 @@ RTS_API rtError_t rtAicpuKernelLaunchWithFlag(const rtKernelLaunchNames_t *launc
  * @param [in] kernelType    aicpu kernel type
  * @param [in] opName        address of op name
  * @param [in] blockDim      block dimensions
- * @param [in] argsInfo      argments address for kernel function
+ * @param [in] argsInfo      arguments address for kernel function
  * @param [in] smDesc        shared memory description
  * @param [in] stm           associated stream
  * @param [in] flags         dump flag or others function flag
@@ -803,7 +803,7 @@ RTS_API rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const
 
 /**
  * @ingroup rt_kernel
- * @brief L1 fusion dump addr transfered to device
+ * @brief L1 fusion dump addr transferred to device
  * @param [in] mdl    handle info
  * @param [in] addr     ddr address of L1 Fusion Dump
  * @param [in] dumpSize memory size
@@ -893,7 +893,7 @@ RTS_API rtError_t rtNpuClearFloatDebugStatus(uint32_t checkMode, rtStream_t stm)
 #define __CLANG_CCE_RUNTIME_H__
 /**
  * @ingroup rt_kernel
- * @brief configure call argment for next rtLaunch in current thread
+ * @brief configure call argument for next rtLaunch in current thread
  * @param [in] numBlocks   block dimensions
  * @param [in] smDesc   shared memory description
  * @param [in] stm   associated stream
@@ -910,10 +910,10 @@ RTS_API rtError_t rtConfigureCall(uint32_t numBlocks, rtSmDesc_t *smDesc, rtStre
 
 /**
  * @ingroup rt_kernel
- * @brief setup argment for next rtLaunch in current thread
- * @param [in] args   argment address for kernel function
- * @param [in] size   argment size
- * @param [in] offset  argment table offset
+ * @brief setup argument for next rtLaunch in current thread
+ * @param [in] args   argument address for kernel function
+ * @param [in] size   argument size
+ * @param [in] offset  argument table offset
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
@@ -921,8 +921,8 @@ RTS_API rtError_t rtSetupArgument(const void *args, uint32_t size, uint32_t offs
 
 /**
  * @ingroup rt_kernel
- * @brief launch kernel to device with previous setting kernel argment
- *        and call argment
+ * @brief launch kernel to device with previous setting kernel argument
+ *        and call argument
  * @param [in] stubFunc   stub function
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
@@ -931,7 +931,7 @@ RTS_API rtError_t rtLaunch(const void *stubFunc);
 
 /**
  * @ingroup rt_kernel
- * @brief implicitly transfered data to device.
+ * @brief implicitly transferred data to device.
  *        lifecycle end after next kernel task finish
  * @param [in] ptr   host memory
  * @param [in] size   host memory size
@@ -1331,7 +1331,7 @@ rtError_t rtLaunchKernelByFuncHandleV3(rtFuncHandle funcHandle, uint32_t blockDi
  * @param [in] hdl             program
  * @param [in] tilingKey       tilingKey
  * @param [in] blockDim        block dimensions
- * @param [in] argsInfo        argments address for kernel function
+ * @param [in] argsInfo        argument address for kernel function
  * @param [in] smDesc          shared memory description
  * @param [in] stm             associated stream
  * @param [in] cfgInfo      task config

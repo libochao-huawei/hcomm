@@ -303,7 +303,7 @@ TEST_F(ScatterInterTest, run_async_04)
 }
 #endif
 #if 1
-// 3个rank，input != ouput ,root 节点
+// 3个rank，input != output ,root 节点
 TEST_F(ScatterInterTest, run_async_05)
 {
     s32 ret = HCCL_SUCCESS;
@@ -355,7 +355,7 @@ TEST_F(ScatterInterTest, run_async_05)
 }
 #endif
 #if 1
-// 3个rank，input != ouput ,最后一个节点
+// 3个rank，input != output ,最后一个节点
 TEST_F(ScatterInterTest, run_async_06)
 {
     s32 ret = HCCL_SUCCESS;

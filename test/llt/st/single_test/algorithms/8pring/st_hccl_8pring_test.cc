@@ -124,7 +124,7 @@ void* all_reduce_8pring_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
 
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -188,7 +188,7 @@ void* all_reduce_8pring_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner fails", para_info->device_id);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -196,7 +196,7 @@ void* all_reduce_8pring_task(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     for (s32 i = 0; i < stream_list_size; i++)
     {
@@ -249,7 +249,7 @@ void* all_reduce_8pring_task_ffts(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
 
     bool swapped;
@@ -311,7 +311,7 @@ void* all_reduce_8pring_task_ffts(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner fails", para_info->device_id);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -319,7 +319,7 @@ void* all_reduce_8pring_task_ffts(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     for (s32 i = 0; i < stream_list_size; i++)
     {
@@ -2147,7 +2147,7 @@ void* reduce_scatter_8pring_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
 
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -2211,7 +2211,7 @@ void* reduce_scatter_8pring_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcomReduceScatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcomReduceScatter fails", para_info->device_id);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -2219,7 +2219,7 @@ void* reduce_scatter_8pring_task(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task reducescatter falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reducescatter fails", hcom_info.params.rank);
     }
     for (s32 i = 0; i < stream_list_size; i++)
     {

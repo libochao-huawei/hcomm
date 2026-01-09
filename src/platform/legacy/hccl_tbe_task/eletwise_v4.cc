@@ -159,7 +159,7 @@ template <typename T> bool Elewise<T>::DisableAllFuse()
     // check if disable all fuse, including disable_optimization and fractal_format tiling:
     // 1. elewise_disable_fuse = true
     // 2. dynamic fractal_format and contains_need_pad_compute is true
-    // 3. static and const only check if statisfy fractal format
+    // 3. static and const only check if satisfy fractal format
     if (compile_info->elewise_disable_fuse) {
         return true;
     }

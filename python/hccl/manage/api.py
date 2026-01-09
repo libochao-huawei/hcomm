@@ -15,7 +15,7 @@ MAX_GROUP_NAME_LEN = 127
 
 def check_group(group):
     """A function that check if a collection
-    communication group is leagal.If not raise error.
+    communication group is legal.If not raise error.
     Returns:
         None
     """
@@ -29,7 +29,7 @@ def check_group(group):
 
 def check_rank_num(rank_num):
     """A function that check if a collection
-    communication rank number is leagal.If not raise error.
+    communication rank number is legal.If not raise error.
     Returns:
         None
     """

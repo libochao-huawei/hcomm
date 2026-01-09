@@ -322,7 +322,7 @@ typedef enum {
 typedef struct {
     uadk_crypto_algorithm alg;
     int rsv[4];  /**< rsv[0]: task mode, 0:block mode, 1:stream mode;
-                      rsv[1]: wait result mode, 0:loop query, 1:intrrupt nofity; */
+                      rsv[1]: wait result mode, 0:loop query, 1:interrupt notify; */
 } uadk_crypto_param;
 
 /**
@@ -384,7 +384,7 @@ DLLEXPORT int uadk_crypto_alloc (void *ctx_, uadk_mem_info *mem_info);
  * @ingroup driver
  * @brief update ctx information
  * @param [in] ctx   crypto context
- * @param [in] src_len    srouce length
+ * @param [in] src_len    source length
  * @param [out] dst_len    destination length
  * @return   0   success
  * @return   other  fail

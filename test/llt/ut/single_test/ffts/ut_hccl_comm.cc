@@ -157,7 +157,7 @@ void* inter_reduce_task_0_ffts(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task reduce fails", para_info->device_id);
     }
 
     bool swapped;
@@ -223,7 +223,7 @@ void* inter_reduce_task_0_ffts(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task reduce falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -238,7 +238,7 @@ void* inter_reduce_task_0_ffts(void* parg)
     }
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     return (NULL);
 }
@@ -431,7 +431,7 @@ void* inter_send_receive_task_0_ffts(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task reduce fails", para_info->device_id);
     }
 
     bool swapped;
@@ -504,7 +504,7 @@ void* inter_send_receive_task_0_ffts(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task reduce falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -519,7 +519,7 @@ void* inter_send_receive_task_0_ffts(void* parg)
     }
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (NULL);

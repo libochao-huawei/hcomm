@@ -95,7 +95,7 @@ HcclResult TransportIpcMem::DisableMemAccess(const RmaMemDesc &remoteMemDesc)
         }
         return HCCL_SUCCESS;
     } catch (std::out_of_range& e) {
-        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del expection: %s", e.what());
+        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception: %s", e.what());
         return HCCL_E_NOT_FOUND;
     }
 }

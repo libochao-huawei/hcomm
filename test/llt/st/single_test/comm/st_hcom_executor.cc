@@ -68,7 +68,7 @@ protected:
 static HcclResult g_excutorStatus;
 void setExecutorStatus(HcclResult status)
 {
-    HCCL_INFO("this is setExecutorStatus fuction");
+    HCCL_INFO("this is setExecutorStatus function");
     g_excutorStatus = status;
 }
 

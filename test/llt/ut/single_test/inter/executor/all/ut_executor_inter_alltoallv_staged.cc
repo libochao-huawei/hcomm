@@ -178,7 +178,7 @@ void *inter_alltoallv_staged_task(void *parg)
     InitWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
 
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
 
     //-----------------Set Workspace Resource Start------------------//
@@ -238,14 +238,14 @@ void *inter_alltoallv_staged_task(void *parg)
         tag);
 
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
     rt_ret = hcclStreamSynchronize(para_info->stream);
 
     if (rt_ret != RT_ERROR_NONE) {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
     for (s32 i = 0; i < stream_list_size; i++)
@@ -294,12 +294,12 @@ void *inter_alltoallv_staged_task1(void *parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
 
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
 
     ret = hcom_info.pComm->CreateCommCCLbuffer();
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
 
     HcclWorkflowMode mode = GetWorkflowMode();
@@ -346,14 +346,14 @@ void *inter_alltoallv_staged_task1(void *parg)
         tag);
 
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     rtError_t rt_ret = RT_ERROR_NONE;
     rt_ret = hcclStreamSynchronize(para_info->stream);
 
     if (rt_ret != RT_ERROR_NONE) {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
 
@@ -417,7 +417,7 @@ void* all_gather_8p_subgroup_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     else
     {
@@ -478,7 +478,7 @@ rankSize, memSize); EXPECT_EQ(ret, HCCL_SUCCESS);
                                    para_info->stream);
         if (ret != HCCL_SUCCESS)
         {
-            HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+            HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
         }
         subGroupFlag = false;
         EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -492,7 +492,7 @@ rankSize, memSize); EXPECT_EQ(ret, HCCL_SUCCESS);
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
     for (s32 i = 0; i < stream_list_size; i++)

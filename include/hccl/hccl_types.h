@@ -61,7 +61,7 @@ typedef void *HcclComm;
 typedef void *HcclConn;
 
 /**
- * @brief HCCL Reduction opperation
+ * @brief HCCL Reduction operation
  */
 typedef enum {
     HCCL_REDUCE_SUM = 0,    /**< sum */
