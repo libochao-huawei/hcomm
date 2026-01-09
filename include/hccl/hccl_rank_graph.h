@@ -73,7 +73,7 @@ inline HcclResult CommLinkInit(CommLink *commLink, uint32_t linkNum)
                 UNLIKELY(EndpointDescInit(&commLink->dstEndpointDesc, 1) != HCCL_SUCCESS)) {
                 return HCCL_E_INTERNAL;
             }
-            
+
             // 初始化链路属性（显式设置保留值）
             commLink->linkAttr.linkProtocol = COMM_PROTOCOL_RESERVED;
             commLink++;  // 移动到下一个描述符
