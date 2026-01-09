@@ -125,5 +125,10 @@ HcclResult hcclComm::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstR
 {
     return HCCL_SUCCESS;
 }
+
+HcclResult hcclComm::GetHeterogMode(HcclHeterogMode *mode)
+{
+    return HCCL_SUCCESS;
+}
 }  // namespace hccl
  

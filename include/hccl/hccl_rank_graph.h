@@ -29,6 +29,16 @@ typedef enum {
     COMM_TOPO_310P = 3,       ///< 310P互联拓扑
 } CommTopo;
 
+/**
+ * @brief 异构组网模式枚举
+ * @note 描述通信域中芯片类型的混合情况，可用于优化通信算法选择
+ */
+typedef enum {
+    HCCL_HETEROG_MODE_INVALID = -1,    ///< 无效/未初始化
+    HCCL_HETEROG_MODE_HOMOGENEOUS = 0, ///< 同构组网：单一芯片类型
+    HCCL_HETEROG_MODE_MIX_A2_A3,       ///< 异构组网：A2和A3芯片混合
+} HcclHeterogMode;
+
 const uint32_t COMM_LINK_MAGIC_WORD = 0x0f0e0f0f;
 const uint32_t COMM_LINK_VERSION = 1;    // CommLink末尾非固定区扩展时，COMM_LINK_VERSION + 1
 
@@ -231,6 +241,35 @@ extern HcclResult HcclGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer
  */
 extern HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
     CommLink **links, uint32_t *linkNum);
+
+/**
+ * @brief 获取通信域的异构组网模式
+ * @param[in] comm 通信域句柄
+ * @param[out] mode 返回的异构模式
+ * @return HcclResult 执行结果状态码
+ * @note 该接口用于查询当前通信域的组网模式：
+ *       - HCCL_HETEROG_MODE_HOMOGENEOUS：同构组网，所有rank使用相同芯片
+ *       - HCCL_HETEROG_MODE_MIX_*：异构组网，存在多种芯片混合
+ * @code {.c}
+ * // 使用示例：检查是否为异构组网
+ * HcclHeterogMode mode;
+ * HcclResult ret = HcclGetHeterogMode(comm, &mode);
+ * if (ret == HCCL_SUCCESS) {
+ *     switch (mode) {
+ *         case HCCL_HETEROG_MODE_HOMOGENEOUS:
+ *             printf("同构组网\n");
+ *             break;
+ *         case HCCL_HETEROG_MODE_MIX_A2_A3:
+ *             printf("A2/A3异构组网\n");
+ *             break;
+ *         default:
+ *             printf("未知组网模式\n");
+ *             break;
+ *     }
+ * }
+ * @endcode
+ */
+extern HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
