@@ -164,7 +164,9 @@ namespace hccl
 
     HcclResult hcclComm::InitIndependentOp()
     {
-        communicator_->SetReleaseChannel([this]() -> HcclResult { return this->ReleaseChannel(); });
+        if (communicator_ != nullptr) {
+            communicator_->SetReleaseChannel([this]() -> HcclResult { return this->ReleaseChannel(); });
+        }
         ChannelManagerCallbacks channelCallbacks;
         channelCallbacks.indOpTransportAlloc = [this](const std::string &tag, OpCommTransport &opCommTransport, 
             bool isAicpuModeEn) -> HcclResult {
