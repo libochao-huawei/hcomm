@@ -155,7 +155,6 @@ inline HcclResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
         } else {
             return HCCL_E_PTR;
         }
-  
     }
     return HCCL_SUCCESS;
 }
@@ -231,7 +230,6 @@ inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t des
         } else {
             return HCCL_E_PTR;
         }
-
     }
     return HCCL_SUCCESS;
 }
