@@ -274,7 +274,6 @@ HcclResult AlltoAllOperator::SelectAlgforAlltoAll(const OpParam& param, std::str
 
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
         // alltoallv
-        CHK_PTR_NULL(hostCollectBuffer_.ptr());
         CHK_RET(GetAlltoAllvSendRecvInfo(param, hostCollectBuffer_));
     } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC || param.opType == HcclCMDType::HCCL_CMD_ALLTOALL){
         // alltoallvc&&alltoall
