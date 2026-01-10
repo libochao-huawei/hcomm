@@ -1612,7 +1612,17 @@ namespace hccl
         limit.ifLimit = true;
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
+        if (opType == HcclCMDType::HCCL_CMD_ALLTOALLV) { // A2 alltoallv场景下，流程需要额外携带count矩阵信息，需要特殊处理
+            AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
+            CHK_PTR_NULL(alltoAllOperator);
+            ifAiv = alltoAllOperator->IsSatisfyAlltoAllAivCondition(param);
+            HCCL_INFO("[HcclCommunicator][HcclSelectAlg] use [IsSatisfyAlltoAllAivCondition] to judge alltoallv ifAiv[%d]", ifAiv);
+            /* 完成算法选择和记录后，恢复成原来的模式 */
+            SetWorkflowMode(originWorkflowMode);
+            return HCCL_SUCCESS;
+        }
         CHK_RET(algOperator->SelectAlg("", param, limit, algName, algDesc, newTag));
+        HCCL_INFO("[HcclCommunicator][HcclSelectAlg] use [SelectAlg] to judge ifAiv[%d]", algDesc.isAivMode);
         /* 非AIV算法直接返回 */
         if (!algDesc.isAivMode) {
             HCCL_INFO("[HcclCommunicator][HcclSelectAlg] alg not select to AIV");
