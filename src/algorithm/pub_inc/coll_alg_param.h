@@ -278,6 +278,7 @@ struct AlgDesc {
 
 struct ResourceLimit {
     bool ifLimit = false;
+    bool ifCompileForAiv = false; // 图编译时选择AIV算法，不运行
     u32 aivCoreLimit = 0;
 };
 
