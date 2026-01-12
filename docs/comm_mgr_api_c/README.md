@@ -1,4 +1,4 @@
-# 接口列表<a name="ZH-CN_TOPIC_0000002519092489"></a>
+# 通信域管理接口列表（C语言）
 
 HCCL提供了C语言的通信域管理接口，框架开发者可以通过这些接口进行单算子模式下的框架适配，实现分布式能力。
 
@@ -57,6 +57,11 @@ HCCL提供了C语言的通信域管理接口，框架开发者可以通过这些
 <tr id="zh-cn_topic_0000001312721317_row1121210508472"><td class="cellrowborder" valign="top" width="25.47%" headers="mcps1.2.3.1.1 "><p id="zh-cn_topic_0000001312721317_p152138505479"><a name="zh-cn_topic_0000001312721317_p152138505479"></a><a name="zh-cn_topic_0000001312721317_p152138505479"></a><a href="./context/HcclGetRankId.md">HcclGetRankId</a></p>
 </td>
 <td class="cellrowborder" valign="top" width="74.53%" headers="mcps1.2.3.1.2 "><p class="msonormal" id="zh-cn_topic_0000001312721317_p221319506475"><a name="zh-cn_topic_0000001312721317_p221319506475"></a><a name="zh-cn_topic_0000001312721317_p221319506475"></a>获取device在集合通信域中对应的rank序号。</p>
+</td>
+</tr>
+<tr id="zh-cn_topic_0000001312721317_row2913102219481"><td class="cellrowborder" valign="top" width="25.46%" headers="mcps1.2.3.1.1 "><p id="zh-cn_topic_0000001312721317_p645175273118"><a href="./context/HcclBarrier.md">HcclBarrier</a></p>
+</td>
+<td class="cellrowborder" valign="top" width="74.53999999999999%" headers="mcps1.2.3.1.2 "><p id="zh-cn_topic_0000001312721317_p791372217484">将指定通信域内所有rank的stream阻塞，直到所有rank都下发执行该操作为止。</p>
 </td>
 </tr>
 <tr id="zh-cn_topic_0000001312721317_row148927214351"><td class="cellrowborder" valign="top" width="25.47%" headers="mcps1.2.3.1.1 "><p id="zh-cn_topic_0000001312721317_p51823489259"><a name="zh-cn_topic_0000001312721317_p51823489259"></a><a name="zh-cn_topic_0000001312721317_p51823489259"></a><a href="./context/HcclSetConfig.md">HcclSetConfig</a></p>
