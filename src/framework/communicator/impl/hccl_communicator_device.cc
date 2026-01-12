@@ -329,7 +329,8 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::GetWorkspaceSubStreamNum(u64 &streamNum, u64 dataSize, HcclCMDType opType)
+    HcclResult HcclCommunicator::GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op,
+        const std::string &algName, u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType opType)
     {
         return HCCL_SUCCESS;
     }

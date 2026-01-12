@@ -35,7 +35,7 @@ HcclResult HcclGetRankGraph(HcclComm comm, GraphType type, void **graph, uint32_
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
     CommLink **linkList, uint32_t *listSize)
 {
     CHK_PTR_NULL(comm);
@@ -54,7 +54,7 @@ HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum)
+HcclResult HcclRankGraphGetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(netLayers);
@@ -70,7 +70,7 @@ HcclResult HcclGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLa
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommTopo *topoType)
+HcclResult HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, CommTopo *topoType)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(topoType);
@@ -85,7 +85,7 @@ HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommT
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
+HcclResult HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
@@ -100,7 +100,7 @@ HcclResult HcclGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t 
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum)
+HcclResult HcclRankGraphGetRanksByLayer(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(rankNum);
@@ -116,7 +116,7 @@ HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
+HcclResult HcclRankGraphGetInstSizeListByLayer(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(instSizeList);
