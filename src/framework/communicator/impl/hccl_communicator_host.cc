@@ -1587,8 +1587,14 @@ namespace hccl
     HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, HcclDataType dataType,
                                                HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
     {
+        HCCL_INFO("[HcclCommunicator][HcclSelectAlg] start to run with opType[%d], count[%llu], dataType[%d], reduceOp[%d], aivCoreLimit[%d]",
+ 	              opType, count, dataType, op, aivCoreLimit);
         ifAiv = false;
-
+        if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V || opType == HcclCMDType::HCCL_CMD_ALLGATHER_V || 
+            opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV || opType == HcclCMDType::HCCL_CMD_BATCH_WRITE) {
+            HCCL_INFO("[HcclCommunicator][HcclSelectAlg] opType[%d] no need select AIV algorithm", opType);
+            return HCCL_SUCCESS;
+        }
         /* 选择算法前，先更新成图模式 */
         auto originWorkflowMode = GetWorkflowMode();
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -1612,7 +1618,9 @@ namespace hccl
         limit.ifLimit = true;
         limit.aivCoreLimit = aivCoreLimit;
         AlgDesc algDesc;
-        if (opType == HcclCMDType::HCCL_CMD_ALLTOALLV) { // A2 alltoallv场景下，流程需要额外携带count矩阵信息，需要特殊处理
+        // A2 alltoall算子类型场景下，流程需要额外携带count矩阵信息，需要特殊处理
+        if (opType == HcclCMDType::HCCL_CMD_ALLTOALL || opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+            opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
             AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
             CHK_PTR_NULL(alltoAllOperator);
             ifAiv = alltoAllOperator->IsSatisfyAlltoAllAivCondition(param);
