@@ -31,6 +31,7 @@ constexpr u32 MAX_PORT_NUMBER = 65535; // 合法端口号的上限
 constexpr u32 HCCL_SOCKET_PORT_RANGE_AUTO = 0; // 需要保留的
 const std::string CLUSTER_HEART_CONFIG = "cluster_heartbeat:";
 const std::string STUCK_DETECTION_CONFIG = "stuck_detection:";
+const std::string INCONSISTENT_CHECK_CONFIG = "inconsistent_check:";
 const std::string CONNECTION_FAULT_DETECTION_TIME = "connection_fault_detection_time:";
 constexpr static const s32 HCCL_MAX_LINK_TIME_OUT_S  = (120 * 60); // HCCL 最大探测超时时间设置为120*60s
 HcclResult InitEnvConfig()
@@ -547,14 +548,27 @@ HcclResult ParseDFSConfig()
             "'on' or 'off'", stuckDetectSwitch.c_str());
     }
 
+    // 解析算子不一致故障检测能力开关
+    std::string inconsistentCheckSwitch;
+    CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, INCONSISTENT_CHECK_CONFIG, inconsistentCheckSwitch));
+    if (inconsistentCheckSwitch == "off") {
+        g_envConfig.inconsistentCheckSwitch = false;
+    } else if (inconsistentCheckSwitch == "on") {
+        g_envConfig.inconsistentCheckSwitch = true;
+    } else {
+        HCCL_RUN_WARNING("[ParseDFSConfig] HCCL_DFS_CONFIG-inconsistent_check was configed to [%s], please configed to"\
+            "'on' or 'off'", inconsistentCheckSwitch.c_str());
+    }
+
     // 解析连接故障检测时间
     std::string connectionDefaultDetectionTime = "";
     CHK_RET(ParseSingleDFSConfigItem(dfsConfigEnv, CONNECTION_FAULT_DETECTION_TIME, connectionDefaultDetectionTime));
     if (connectionDefaultDetectionTime.empty()) {
         g_envConfig.dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
         HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
-            "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s",
-            g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime);
+            "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d]", 
+            g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime,
+            g_envConfig.inconsistentCheckSwitch);
         return HCCL_SUCCESS;
     }
     s32 detctTime = 0;
@@ -573,8 +587,9 @@ HcclResult ParseDFSConfig()
     }
 
     HCCL_RUN_INFO("[HCCL_ENV][Parse] HCCL_DFS_CONFIG cluster_heartbeat set by environment to [%d], "
-        "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s", 
-        g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime);
+        "stuck_detection set by environment to [%d], connection_fault_detection_time[%d]s inconsistentCheckSwitch[%d]", 
+        g_envConfig.enableClusterHeartBeat, g_envConfig.opCounterEnable, g_envConfig.dfsConnectionFaultDetectionTime,
+        g_envConfig.inconsistentCheckSwitch);
     return HCCL_SUCCESS;
 }
 
@@ -630,6 +645,11 @@ const bool& GetExternalInputHcclHeartBeatEnable()
 const bool& GetExternalInputStuckDetect()
 {
     return g_envConfig.opCounterEnable;
+}
+
+const bool& GetExternalInconsistentCheckSwitch()
+{
+    return g_envConfig.inconsistentCheckSwitch;
 }
 
 HcclResult ParseHcclAlgo()
