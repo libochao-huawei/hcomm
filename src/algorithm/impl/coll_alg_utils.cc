@@ -70,9 +70,11 @@ bool IsSupportDirectFullmeshForAlltoallv(const OpParam& param, DevType deviceTyp
             // alltoallv算子单机和多机(小于8机64卡)acl graph场景都走directfullmesh算法，且不支持卡数不一致场景
             aclmdlRI rtModel = nullptr;
             bool isCapture = false;
-            HcclResult retCapture = GetStreamCaptureInfo(param.stream.ptr(), rtModel, isCapture);
-            CHK_PRT_CONT(retCapture != HCCL_SUCCESS,
-                HCCL_ERROR("Get capture status error. return[%d], capture model", retCapture));
+            if (isOpbase) { // acl graph模式下获取capture信息，图模式需要规避
+                HcclResult retCapture = GetStreamCaptureInfo(param.stream.ptr(), rtModel, isCapture);
+                CHK_PRT_CONT(retCapture != HCCL_SUCCESS, 
+                    HCCL_ERROR("Get capture status error. return[%d], capture model", retCapture));
+            }
             isHCCS = (userRankSize <= MAX_ALLTOALLV_DIRECT_FULLMESH_RANKSIZE &&
                       serverNum <= MAX_ALLTOALLV_DIRECT_FULLMESH_SERVER_NUM && isCapture) ||
                       isSingleMeshAggregation;
