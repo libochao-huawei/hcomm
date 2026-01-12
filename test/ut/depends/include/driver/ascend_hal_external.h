@@ -108,7 +108,7 @@ struct buff_cfg {
     unsigned int cfg_id;         /**< cfg id, 0~7 */
     unsigned int total_size;  /**< memzone total size, must below 256M */
     unsigned int blk_size;       /**< the size of each blk in this memzone  */
-    unsigned int max_buf_size;   /**< max buff size could allocte, */
+    unsigned int max_buf_size;   /**< max buff size could allocate, */
     unsigned int page_type;      /**< page type of memzone, could be PAGE_NORMAL or PAGE_HUGET_ONLY */
     int reserve[BUFF_RESERVE_LEN];   /**< for reserve */
 };
@@ -318,7 +318,7 @@ DLLEXPORT int halGrpAddProc(const char *name, int pid, GroupShareAttr attr) ASCE
 
 /**
 * @ingroup driver
-* @brief attach proccess to check permission in grp
+* @brief attach process to check permission in grp
 * @attention null
 * @param [in] name, grp name
 * @param [in] timeout, time out ms

@@ -27,7 +27,7 @@ enum devdrv_process_type {
     DEVDRV_PROCESS_DEV_ONLY,  /* TDT */
     DEVDRV_PROCESS_QS,        /* queue_scheduler */
     DEVDRV_PROCESS_HCCP,      /* hccp server */
-    DEVDRV_PROCESS_USER,      /* user proc, can bind many on host or device. not surport quert from host pid */
+    DEVDRV_PROCESS_USER,      /* user proc, can bind many on host or device. not support quert from host pid */
     DEVDRV_PROCESS_CPTYPE_MAX,
 };
 
@@ -118,9 +118,9 @@ typedef enum schedule_policy {
 
 typedef enum event_id {
     EVENT_RANDOM_KERNEL,      /* Random operator event */
-    EVENT_DVPP_MSG,           /* operator events commited by DVPP */
-    EVENT_FR_MSG,             /* operator events commited by Feature retrieves */
-    EVENT_TS_HWTS_KERNEL,     /* operator events commited by ts/hwts */
+    EVENT_DVPP_MSG,           /* operator events committed by DVPP */
+    EVENT_FR_MSG,             /* operator events committed by Feature retrieves */
+    EVENT_TS_HWTS_KERNEL,     /* operator events committed by ts/hwts */
     EVENT_AICPU_MSG,          /* aicpu activates its own stream events */
     EVENT_TS_CTRL_MSG,        /* controls message events of TS */
     EVENT_QUEUE_ENQUEUE,      /* entry event of Queue(consumer) */
@@ -139,12 +139,12 @@ typedef enum event_id {
     EVENT_CCPU_CTRL_MSG,
     EVENT_SPLIT_KERNEL,
     EVENT_DVPP_MPI_MSG,
-    EVENT_CDQ_MSG,            /* message events commited by CDQM(hardware) */
-    EVENT_FFTS_PLUS_MSG,      /* operator events commited by FFTS(hardware) */
-    EVENT_DRV_MSG,            /* 24-events of drvier */
+    EVENT_CDQ_MSG,            /* message events committed by CDQM(hardware) */
+    EVENT_FFTS_PLUS_MSG,      /* operator events committed by FFTS(hardware) */
+    EVENT_DRV_MSG,            /* 24-events of driver */
     EVENT_QS_MSG,             /* events of queue scheduler */
     EVENT_TS_CALLBACK_MSG,
-    EVENT_DRV_MSG_EX,            /* 27-events of drvier for ccpu */
+    EVENT_DRV_MSG_EX,            /* 27-events of driver for ccpu */
     /* Add a new event here */
     EVENT_TEST,               /* Reserve for test */
     EVENT_HCCP_MSG = 47,   /* ccu kill msg of ts and hccp */
@@ -372,8 +372,8 @@ struct esched_table_key_entry_stat {
 /*=========================== Queue Manage ===========================*/
 
 typedef enum QueEventCmd {
-    QUE_PAUSE_EVENT = 1,    /* pause enque event publish in group */
-    QUE_RESUME_EVENT        /* resume enque event publish */
+    QUE_PAUSE_EVENT = 1,    /* pause enqueue event publish in group */
+    QUE_RESUME_EVENT        /* resume enqueue event publish */
 } QUE_EVENT_CMD;
 
 typedef enum queue_entity_type {
@@ -539,7 +539,7 @@ typedef struct {
         unsigned int align;      /* addr align, must be an integer multiple of 2, 2< algn <4k */
         unsigned int hugePageFlag; /* huge page flag */
         int reserve[2]; /* reserved */
-    } pubPoolCfg[BUFF_PUB_POOL_CFG_MAX_NUM]; /* max allo 128 cfg */
+    } pubPoolCfg[BUFF_PUB_POOL_CFG_MAX_NUM]; /* max allow 128 cfg */
 } PubPoolAttr;
 /*lint +e116 +e17*/
 
@@ -565,7 +565,7 @@ enum BuffGetCmdType {
 
 struct MbufTimeoutCheckPara {
     unsigned int enableFlag;     /* enable: 1; disable: 0 */
-    unsigned int maxRecordNum;   /* maximum number timeout mbuf info recored */
+    unsigned int maxRecordNum;   /* maximum number timeout mbuf info recorded */
     unsigned int timeout;        /* mbuf timeout value,  unit:ms, minimum 10ms, default 1000 ms */
     unsigned int checkPeriod;    /* mbuf check thread work period, uinit:ms, minimum 1000ms, default:1s */
 };
@@ -1061,7 +1061,7 @@ typedef enum tagProcType {
     PROCESS_DEV_ONLY,  /* TDT */
     PROCESS_QS,        /* queue_scheduler */
     PROCESS_HCCP,        /* hccp server */
-    PROCESS_USER,        /* user proc, can bind many on host or device. not surport quert from host pid */
+    PROCESS_USER,        /* user proc, can bind many on host or device. not support quert from host pid */
     PROCESS_CPTYPE_MAX
 } processType_t;
 
@@ -1125,7 +1125,7 @@ enum {
     HLT_MODULE_ID = 9,           /* Used for hlt test */
     DEVMM_MODULE_ID = 22,        /* Dlog memory managent */
     LIBMEDIA_MODULE_ID = 24,     /* Libmedia */
-    CCECPU_MODULE_ID = 25,       /* aicpu shedule */
+    CCECPU_MODULE_ID = 25,       /* aicpu schedule */
     ASCENDDK_MODULE_ID = 26,     /* AscendDK */
     HCCP_SCHE_MODULE_ID = 27,    /* Memory statistics of device hccp process */
     HCCP_HAL_MODULE_ID = 28,
@@ -1137,7 +1137,7 @@ enum {
     TSDUMP_MODULE_ID = 35,       /* TSDUMP module */
     AICPU_MODULE_ID = 36,        /* AICPU module */
     AICPU_SCHE_MODULE_ID = 37,   /* Memory statistics of device aicpu process */
-    TDT_MODULE_ID = 38,          /* tsdaemon or aicpu shedule */
+    TDT_MODULE_ID = 38,          /* tsdaemon or aicpu schedule */
     FE_MODULE_ID = 39,
     MD_MODULE_ID = 40,
     MB_MODULE_ID = 41,
@@ -1254,7 +1254,7 @@ struct res_map_info {
 #define TSDRV_FLAG_TASK_SINK_SQ (0x1U << 14) /* only support async cpy task sink */
 #define TSDRV_FLAG_RTS_RSV_SQCQ_ID (0x1 << 15)
 
-#define TSDRV_FLAG_SPECIFIED_SQ_MEM (0x1U << 31) /* used for internel */
+#define TSDRV_FLAG_SPECIFIED_SQ_MEM (0x1U << 31) /* used for internal */
 
 #define TSDRV_RES_RESERVED_ID       (0x1 << 0)  /* res free active */
 #define TSDRV_RES_SPECIFIED_ID      (0x1 << 1)  /* res allc active */

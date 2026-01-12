@@ -156,7 +156,7 @@ DLLEXPORT int dsmi_fault_inject(DSMI_FAULT_INJECT_INFO fault_inject_info);
 * @param [in] device_id
 * @param [in] max_info_cnt how many DSMI_FAULT_INJECT_INFO type structs did the info_buf contain;
 * @param [out] info_buf  the memory malloced by users to store DSMI_FAULT_INJECT_INFO structs;
-* @param [out] real_info_cnt DSMI_FAULT_INJECT_INFO supportd by device;
+* @param [out] real_info_cnt DSMI_FAULT_INJECT_INFO supported by device;
 * @return 0 for success, others for fail
 * @note Support:as31xm1, BS9SX1A, Ascend610,Ascend610Lite
 */

@@ -23,7 +23,7 @@ extern "C" {
 
 /**
  * @brief           get module debug loglevel and enableEvent
- * @param [in]      moduleId       moudule id(see log_types.h, eg: CCE), others: invalid
+ * @param [in]      moduleId       module id(see log_types.h, eg: CCE), others: invalid
  * @param [out]     enableEvent    1: enable; 0: disable
  * @return          module level   0: debug, 1: info, 2: warning, 3: error, 4: null output
  */
@@ -31,7 +31,7 @@ LOG_FUNC_VISIBILITY int32_t dlog_getlevel(int32_t moduleId, int32_t *enableEvent
 
 /**
  * @brief           set module loglevel and enableEvent
- * @param [in]      moduleId       moudule id(see log_types.h, eg: CCE), -1: all modules, others: invalid
+ * @param [in]      moduleId       module id(see log_types.h, eg: CCE), -1: all modules, others: invalid
  * @param [in]      level          log level, eg: DLOG_ERROR/DLOG_WARN/DLOG_INFO/DLOG_DEBUG
  * @param [in]      enableEvent    1: enable; 0: disable, others:invalid
  * @return          0: SUCCEED, others: FAILED

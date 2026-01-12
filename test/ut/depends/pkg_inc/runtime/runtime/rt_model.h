@@ -108,7 +108,7 @@ typedef enum tagModelQueueFlag {
 
 /**
  * @ingroup
- * @brief the type defination of aicpu model task command
+ * @brief the type definition of aicpu model task command
  */
 typedef enum tagTsAicpuModelCmd {
     TS_AICPU_MODEL_LOAD = 1,

@@ -1586,7 +1586,7 @@ HcclResult ParseAicpuCacheEnable()
     } else if (result == EN_ERROR) { // not specify HCCL_AICPU_CACHE_ENABLE
         aicpuCacheEnable = "EmptyString";
     } else { // insufficient length
-        HCCL_ERROR("[Parser][AicpuCacheEnable] failt to get HCCL_AICPU_CACHE_ENABLE: aicpuCacheEnableChars.len[%u]", charCnt);
+        HCCL_ERROR("[Parser][AicpuCacheEnable] fail to get HCCL_AICPU_CACHE_ENABLE: aicpuCacheEnableChars.len[%u]", charCnt);
         return HCCL_E_INTERNAL;
     }
 

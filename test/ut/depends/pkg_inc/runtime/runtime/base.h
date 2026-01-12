@@ -345,7 +345,7 @@ typedef void (*rtStreamStateCallback)(rtStream_t stm, const bool isCreate);
 /**
  * @ingroup profiling_base
  * @brief dataType: rtProfCtrlType_t
- * @brief data: data swtich or reporter function
+ * @brief data: data switch or reporter function
  * @brief dataLen: length of data
  */
 typedef rtError_t (*rtProfCtrlHandle)(uint32_t dataType, void *data, uint32_t dataLen);
@@ -546,7 +546,7 @@ RTS_API rtError_t rtGetDeviceIdByGeModelIdx(uint32_t geModelIdx, uint32_t *devic
 
 /**
  * @ingroup profiling_base
- * @brief set profling switch, called by profiling
+ * @brief set profiling switch, called by profiling
  * @param [in]  data  rtProfCommandHandle
  * @param [out] len   length of data
  * @return RT_ERROR_NONE for ok
@@ -566,7 +566,7 @@ RTS_API rtError_t rtProfRegisterCtrlCallback(uint32_t moduleId, rtProfCtrlHandle
 
 /**
  * @ingroup profiling_base
- * @brief set profling switch, called by profiling
+ * @brief set profiling switch, called by profiling
  * @param [in]  data  rtProfilingCommandHandle
  * @param [in]  len   length of data
  * @return RT_ERROR_NONE for ok
@@ -619,7 +619,7 @@ typedef enum DevCallBackDir {
  * @brief register callback for deviceid by position
  * @param [in] regName unique register name, can't be null
  * @param [in] callback Device state callback function
- * @param [in] notifyPos callback notify Postion
+ * @param [in] notifyPos callback notify Position
  * @param [out] NA
  * @return RT_ERROR_NONE for ok
  */

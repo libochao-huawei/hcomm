@@ -165,7 +165,7 @@ typedef enum {
     RT_PROCESS_DEV_ONLY,   /* TDT */
     RT_PROCESS_QS,         /* queue_scheduler */
     RT_PROCESS_HCCP,       /* hccp server */
-    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not surport quert from host pid */
+    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not support quert from host pid */
     RT_PROCESS_CPTYPE_MAX
 } rtDevResProcType_t;
 
@@ -271,7 +271,7 @@ RTS_API rtError_t rtGetDeviceIDs(uint32_t *devices, uint32_t len);
 
 /**
  * @ingroup dvrt_dev
- * @brief get device infomation.
+ * @brief get device information.
  * @param [in] device   the device id
  * @param [in] moduleType   module type
                typedef enum {
@@ -305,7 +305,7 @@ RTS_API rtError_t rtGetDeviceInfo(uint32_t deviceId, int32_t moduleType, int32_t
 
 /**
 * @ingroup dvrt_dev
-* @brief get phy device infomation.
+* @brief get phy device information.
 * @param [int] phyId        the physic Id
 * @param [int] moduleType   module type
 * @param [int] infoType     info type
@@ -412,7 +412,7 @@ RTS_API rtError_t rtDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc);
 
 /**
  * @ingroup dvrt_dev
- * @brief get cability of P2P omemry copy betwen device and peeredevic.
+ * @brief get cability of P2P omemry copy between device and peeredevic.
  * @param [in] devId   the logical device id
  * @param [in] peerDevice   the physical device id
  * @param [outv] *canAccessPeer   1:enable 0:disable
@@ -467,7 +467,7 @@ RTS_API rtError_t rtDeviceResetEx(int32_t devId);
 
 /**
  * @ingroup dvrt_dev
- * @brief get total device infomation.
+ * @brief get total device information.
  * @param [in] devId   the device id
  * @param [in] type     limit type RT_LIMIT_TYPE_LOW_POWER_TIMEOUT=0
  * @param [in] val    limit value
@@ -498,7 +498,7 @@ RTS_API rtError_t rtDeviceSynchronizeWithTimeout(int32_t timeout);
  * @ingroup dvrt_dev
  * @brief Wait for compute device to finish
  * @param [in] devId   the device id
- * @param [in] timeout the time for hadle
+ * @param [in] timeout the time for handle
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
@@ -606,7 +606,7 @@ RTS_API rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, i
 
 /**
  * @ingroup dvrt_dev
- * @brief get capability infomation.
+ * @brief get capability information.
  * @param [in] featureType  feature type
                typedef enum tagRtFeatureType {
                     FEATURE_TYPE_MEMCPY = 0,

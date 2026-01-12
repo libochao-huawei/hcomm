@@ -65,7 +65,7 @@ extern "C" {
 #define  ACL_ERROR_RT_EVENT_CAPTURED             107028 // event is captured
 #define  ACL_ERROR_RT_STREAM_NOT_CAPTURED        107029 // stream is not in capture status
 #define  ACL_ERROR_RT_CAPTURE_MODE_NOT_SUPPORT   107030 // stream is captured, not support current oper
-#define  ACL_ERROR_RT_STREAM_CAPTURE_IMPLICIT    107031 // a disallowed implicit dependency from defalut stream
+#define  ACL_ERROR_RT_STREAM_CAPTURE_IMPLICIT    107031 // a disallowed implicit dependency from default stream
 #define  ACL_ERROR_STREAM_CAPTURE_CONFLICT       107032 // interdependent stream cannot begin capture together
 #define  ACL_ERROR_STREAM_TASK_GROUP_STATUS      107033 // task group status error
 #define  ACL_ERROR_STREAM_TASK_GROUP_INTR        107034 // task group interrupted
@@ -94,7 +94,7 @@ extern "C" {
 #define  ACL_ERROR_RT_FEATURE_NOT_SUPPORT_UPDATE_OP 207019 // not support to update this op 
 
 #define  ACL_ERROR_RT_INTERNAL_ERROR             507000 // runtime internal error
-#define  ACL_ERROR_RT_TS_ERROR                   507001 // ts internel error
+#define  ACL_ERROR_RT_TS_ERROR                   507001 // ts internal error
 #define  ACL_ERROR_RT_STREAM_TASK_FULL           507002 // task full in stream
 #define  ACL_ERROR_RT_STREAM_TASK_EMPTY          507003 // task empty in stream
 #define  ACL_ERROR_RT_STREAM_NOT_COMPLETE        507004 // stream not complete

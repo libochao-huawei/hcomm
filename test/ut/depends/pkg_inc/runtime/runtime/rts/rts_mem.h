@@ -262,7 +262,7 @@ RTS_API rtError_t rtsMemsetAsync(void *ptr, uint64_t destMax, uint32_t val, uint
  * @param [in] size Size of the reserved virtual address range requested.
  * @param [in] policy mem policy.
  * @param [in] expectAddr Expected virtual address space start address Currently, Currently unused, must be zero.
- * @param [in] cfg Memory appication configuration, Currently unused, must be nullptr.
+ * @param [in] cfg Memory application configuration, Currently unused, must be nullptr.
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  * @return RT_ERROR_DRV_ERR for driver error
@@ -287,7 +287,7 @@ RTS_API rtError_t rtsMemFreeAddress(void** virPtr);
  * @param [out] handle Value of handle returned,all operations on this allocation are to be performed using this handle.
  * @param [in] size Size of the allocation requested.
  * @param [in] policy mem policy.
- * @param [in] cfg Memory appication configuration.
+ * @param [in] cfg Memory application configuration.
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  * @return RT_ERROR_DRV_ERR for driver error
@@ -364,7 +364,7 @@ RTS_API rtError_t rtsPointerGetAttributes(const void *ptr, rtPtrAttributes_t *at
 /**
  * @ingroup rts_mem
  * @brief flush device mempory
- * @param [in] base   virtal base addr
+ * @param [in] base   virtual base addr
  * @param [in] len    memory size
  * @return RT_ERROR_NONE for ok, errno for failed
  */
@@ -373,7 +373,7 @@ RTS_API rtError_t rtsMemFlushCache(void *base, size_t len);
 /**
  * @ingroup rts_mem
  * @brief invalid device mempory
- * @param [in] base   virtal base addr
+ * @param [in] base   virtual base addr
  * @param [in] len    memory size
  * @return RT_ERROR_NONE for ok, errno for failed
  */
@@ -465,7 +465,7 @@ RTS_API rtError_t rtsDisableP2P(uint32_t devIdDes, uint32_t phyIdSrc);
 
 /**
  * @ingroup dvrt_dev
- * @brief get cability of P2P omemry copy betwen device and peeredevic.
+ * @brief get cability of P2P omemry copy between device and peeredevic.
  * @param [in] devId   the logical device id
  * @param [in] peerDevice   the physical device id
  * @param [out] *canAccessPeer   1:enable 0:disable

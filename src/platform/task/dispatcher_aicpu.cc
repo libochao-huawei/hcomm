@@ -54,7 +54,7 @@ HcclResult HcclDispatcherAicpuInit(HcclDispatcher *dispatcher, const u32 devPhyI
 }
 #endif // __cplusplus
 
-DispatcherAiCpu::DispatcherAiCpu(const u32 devPhyId) // depreated
+DispatcherAiCpu::DispatcherAiCpu(const u32 devPhyId) // deprecated
     : DispatcherPub(INVALID_INT)
 {
     aicpuInfo_.devId = devPhyId;

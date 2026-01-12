@@ -73,7 +73,7 @@ inline HcclResult UninitStateCheck(RpingState nextState)
             ret = HCCL_E_NOT_SUPPORT;
             break;
         default:
-            HCCL_ERROR("[HCCN][UninitStateCheck]Undefinied behavior.");
+            HCCL_ERROR("[HCCN][UninitStateCheck]Undefined behavior.");
             ret = HCCL_E_NOT_SUPPORT;
             break;
     }
@@ -101,7 +101,7 @@ inline HcclResult InitedStateCheck(RpingState nextState)
             ret = HCCL_E_NOT_SUPPORT;
             break;
         default:
-            HCCL_ERROR("[HCCN][InitedStateCheck]Undefinied behavior.");
+            HCCL_ERROR("[HCCN][InitedStateCheck]Undefined behavior.");
             ret = HCCL_E_NOT_SUPPORT;
             break;
     }
@@ -126,7 +126,7 @@ inline HcclResult ReadyStateCheck(RpingState nextState)
             ret = HCCL_E_NOT_SUPPORT;
             break;
         default:
-            HCCL_ERROR("[HCCN][ReadyStateCheck]Undefinied behavior.");
+            HCCL_ERROR("[HCCN][ReadyStateCheck]Undefined behavior.");
             ret = HCCL_E_NOT_SUPPORT;
             break;
     }
@@ -150,7 +150,7 @@ inline HcclResult RunStateCheck(RpingState nextState)
         case RpingState::STOP:
             break;
         default:
-            HCCL_ERROR("[HCCN][RunStateCheck]Undefinied behavior.");
+            HCCL_ERROR("[HCCN][RunStateCheck]Undefined behavior.");
             ret = HCCL_E_NOT_SUPPORT;
             break;
     }
@@ -174,7 +174,7 @@ inline HcclResult StopStateCheck(RpingState nextState)
             HCCL_WARNING("[HCCN][StopStateCheck]Task is stopped.");
             break;
         default:
-            HCCL_ERROR("[HCCN][StopStateCheck]Undefinied behavior.");
+            HCCL_ERROR("[HCCN][StopStateCheck]Undefined behavior.");
             ret = HCCL_E_NOT_SUPPORT;
             break;
     }

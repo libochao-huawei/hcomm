@@ -925,13 +925,13 @@ enum hal_product_type {
 * MODULE_TYPE_AICORE        |  INFO_TYPE_IN_USED          |   ai core in used           |                |
 * MODULE_TYPE_AICORE        |  INFO_TYPE_ERROR_MAP        |   ai core error map         |                |
 * MODULE_TYPE_AICORE        |  INFO_TYPE_ID               |   ai core id                |                |
-* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE           |   ai core rated frequence   |                |
-* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE_LEVEL     |   ai core frequence level   |                |
+* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE           |   ai core rated frequency   |                |
+* MODULE_TYPE_AICORE        |  INFO_TYPE_FREQUE_LEVEL     |   ai core frequency level   |                |
 * MODULE_TYPE_AICORE        |  INFO_TYPE_UTILIZATION      |   ai core utilization       |                |
 * MODULE_TYPE_AICORE        |  INFO_TYPE_DIE_NUM          |   ai core die num(Ddie num) |                |
 * --------------------------------------------------------------------------------------------------------
 * MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_CORE_NUM        |   vector core number        |                |
-* MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_FREQUE          |   vector core frequence     |                |
+* MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_FREQUE          |   vector core frequency     |                |
 * MODULE_TYPE_VECTOR_CORE   |   INFO_TYPE_UTILIZATION     |   vector core utilization   |                |
 * --------------------------------------------------------------------------------------------------------
 * MODULE_TYPE_TSCPU         |  INFO_TYPE_CORE_NUM         |   ts cpu number             |                |
@@ -1054,7 +1054,7 @@ typedef enum {
 * --------------------------------------------------------------------------------------------------------
 * MODULE_TYPE_QOS           |  INFO_TYPE_CONFIG           |   qos config information    |                |
 * --------------------------------------------------------------------------------------------------------
-* MODULE_TYPE_AICORE        |  INFO_TYPE_CURRENT_FREQ     |   ai core current frequence |                |
+* MODULE_TYPE_AICORE        |  INFO_TYPE_CURRENT_FREQ     |   ai core current frequency |                |
 * --------------------------------------------------------------------------------------------------------
 * MODULE_TYPE_MEMORY        |  INFO_TYPE_UCE_VA           |   UCE VA num and VA info    |                |
 * MODULE_TYPE_MEMORY        |  INFO_TYPE_SYS_COUNT        | HAL_FAULT_OCCUR_SYSCNT_STRU |                |
@@ -1497,7 +1497,7 @@ DLLEXPORT drvError_t drvCloseIpcNotify(const char *name, struct drvIpcNotifyInfo
  * @brief create shared id
  * @attention null
  * @param [in] name:  share id name to be created
- * @param [in] len:  name lenth
+ * @param [in] len:  name length
  * @param [in] info:  see struct drvShrIdInfo
  * @return   0 for success, others for fail
  */
@@ -1712,7 +1712,7 @@ struct DVattribute {
  * @param [out] pptr: unsigned 64-bit integer. The corresponding physical address is returned. The value is valid
  * when the return is successful
  * @return DRV_ERROR_INVALID_HANDLE : parameter error, pointer is empty, addr is zero.
- * @return DRV_ERROR_FILE_OPS : internel error, file operation failed.
+ * @return DRV_ERROR_FILE_OPS : internal error, file operation failed.
  * @return DRV_ERROR_IOCRL_FAIL : Internal error, IOCTL operation failed
  * @return DRV_ERROR_NONE : success
  */
@@ -1869,8 +1869,8 @@ DLLEXPORT DV_OFFLINE drvError_t halSdmaCopy(
  * @attention This is used for large size of memcpy, and it is the batch one of
  * halSdmaCopy. This copy interface can not be used in p2p scenario.
  * @param [in] dst: destination address array
- * @param [in] src: source address arrary
- * @param [in] size: size arrary for copy
+ * @param [in] src: source address array
+ * @param [in] size: size array for copy
  * @param [in] count: the length of size[], dst[] and src[]
  * @return zero on success otherwise -errno
  */
@@ -1920,11 +1920,11 @@ DLLEXPORT DV_ONLINE DVresult halMemDestroyAddrBatch(struct DMA_ADDR *ptr[], uint
 
 /**
  * @ingroup driver
- * @brief Sumbit DMA the physical address information of the DMA copy
+ * @brief Submit DMA the physical address information of the DMA copy
  * @attention Available online, not offline. This interface is used with drvMemConvertAddr.
  * @attention Ascend910_95 is not supported
  * @param [in] dma_addr : information to be DMA copy
- * @param [in] flag: sumbit DMA copy use synchronize or asynchronous mode, use enum MEMCPY_SUMBIT_TYPE
+ * @param [in] flag: submit DMA copy use synchronize or asynchronous mode, use enum MEMCPY_SUMBIT_TYPE
  * @return DRV_ERROR_NONE : success
  * @return DV_ERROR_XXX : fail
  */
@@ -2247,7 +2247,7 @@ DLLEXPORT drvError_t halMemAdvise(DVdeviceptr ptr, size_t count, unsigned int ty
  * @param [in] device: requested input device id.
  * @param [in] process_type: requested device process type parameter.
  * @param [in] status: used to check the status of device process.
- * @param [out] is_matched: used to indicate whether the deivce process status is the same as the given status.
+ * @param [out] is_matched: used to indicate whether the device process status is the same as the given status.
  * @return DRV_ERROR_NONE : success
  * @return DV_ERROR_XXX : fail
  */
@@ -2288,7 +2288,7 @@ DLLEXPORT DV_ONLINE drvError_t halMemGetAddressReserveRange(
  * @attention
  * 1. Only support ONLINE scene: in scenarios where hccl is not used for a single process,
  *    cross-chip access is not supported, only can use aclrtMemcpyAsync to copy data across chips.
- * 2. Spcified addrress reserve must comply with the following rules:
+ * 2. Specified address reserve must comply with the following rules:
  *    1) If the size is greater than 512 MB, the address must be 1 GB aligned.
  *    2) If the size is less than or equal to 512 MB, the address must be aligned by power(2, ceil(log2(size))).
  * 3. The halMemFree interface has a cache mechanism. The address is actually cached after be released.
@@ -2298,7 +2298,7 @@ DLLEXPORT DV_ONLINE drvError_t halMemGetAddressReserveRange(
  * @param [in] size: size of the reserved virtual address range requested.
  * @param [in] alignment: currently unused, must be zero.
  * @param [in] addr: addr==NULL, normal address reserve.
- *                 addr!=NULL, spcified addrress reserve, should in specified address alloc range, and be 2M aligned.
+ *                 addr!=NULL, specified address reserve, should in specified address alloc range, and be 2M aligned.
  *                 when size is bigger than 1G, addr must be 1G aligned
  * @param [in] flag: flag of the address to create, current only support pg_type.
  * @param [out] ptr: resulting pointer to start of virtual address range allocated.
@@ -2388,8 +2388,8 @@ DLLEXPORT drvError_t halMemUnmap(void *ptr);
  * 1. Only support ONLINE scene.
  * 2. Support va->pa:
  *    D2H,
- *    D2D(sigle device, diffrent device with same host, diffrent device with diffrent host),
- *    H2H(same host, diffrent host(support latter))
+ *    D2D(single device, different device with same host, different device with different host),
+ *    H2H(same host, different host(support latter))
  * 3. halMemSetAccess: ptr and size must be same with halMemMap, halMemGetAccess: ptr and size is in range of set
  * 4. after halMemMap, if handle has owner(witch location pa is created or use witch device pa handle is imported)
  *    the owner location has readwrite prop automatic, not need to set again
@@ -3149,7 +3149,7 @@ enum log_cmd_type {
 * @param [in] device_id   device ID
 * @param [out] buf Store log information
 * @param [out] size size of log information store in buf,As a input parameter means max size of buf.
-* @param [in] timeout   timeout to read log infomation
+* @param [in] timeout   timeout to read log information
 * @param [in] channel_type   which channel to read(LOG_CHANNEL_TYPE_TS_PROC/LOG_CHANNEL_TYPE_EVENT/LOG_CHANNEL_TYPE_MAX)
 *             LOG_CHANNEL_TYPE_TS_PROC : reads logs that need to be sent back to host;
 *             LOG_CHANNEL_TYPE_EVENT : reads fault event logs;
@@ -3203,7 +3203,7 @@ int log_get_dfx_param(uint32_t devid, uint32_t chan_type, uint32_t cmd_type, voi
 * @param [in] devid   device ID
 * @param [in] type   the type of mem
 * @param [in/out] size   the size of mem firstly allocated
-* @return void *buff  buff mmaped for user space
+* @return void *buff  buff mapped for user space
 */
 void* log_type_alloc_mem(uint32_t device_id, uint32_t type, uint32_t *size);
 
@@ -3581,7 +3581,7 @@ DLLEXPORT int halMbufBuild(void *buff, uint64_t len, Mbuf **mbuf);
 
 /**
 * @ingroup driver
-* @brief release mbuf head and return the nomal buff
+* @brief release mbuf head and return the normal buff
 * @attention buff must be referenced only by this mbuf
 * @param [in] Mbuf *mbuf: mbuf handle
 * @param [out] void **buff: buff addr
@@ -3819,7 +3819,7 @@ DLLEXPORT drvError_t halResourceIdFree(uint32_t devId, struct halResourceIdInput
 
 /**
  * @ingroup driver
- * @brief  resource enable interface, DRV_STREAM_ID surport
+ * @brief  resource enable interface, DRV_STREAM_ID support
  * @attention null
  * @param [in] devId: logic devid
  * @param [in] in:   see struct halResourceIdInputInfo
@@ -3829,7 +3829,7 @@ DLLEXPORT drvError_t halResourceEnable(uint32_t devId, struct halResourceIdInput
 
 /**
  * @ingroup driver
- * @brief  resource disable interface, DRV_STREAM_ID surport
+ * @brief  resource disable interface, DRV_STREAM_ID support
  * @attention null
  * @param [in] devId: logic devid
  * @param [in] in:   see struct halResourceIdInputInfo
@@ -3903,7 +3903,7 @@ struct drvResIdKey {
     uint32_t tsId;
     drvIdType_t resType;
     uint32_t resId;
-    uint32_t flag;  /* flag is used for distingush whether ruDevid is sdid. */
+    uint32_t flag;  /* flag is used for distinguish whether ruDevid is sdid. */
     uint32_t rsv[3]; /* 4 is rsv */
 };
 
@@ -3938,10 +3938,10 @@ DLLEXPORT drvError_t halResourceIdRestore(struct drvResIdKey *info);
 
 /**
  * @ingroup driver
- * @brief  tsdrv IO contrl interface
+ * @brief  tsdrv IO control interface
  * @attention null
  * @param [in] devId: logic devid
- * @param [in] cmd: io contrl type
+ * @param [in] cmd: io control type
  * @param [in] param: parameter
  * @param [in] paramSize: parameter size
  * @param [out] out: out data
@@ -4148,7 +4148,7 @@ DLLEXPORT drvError_t halAsyncDmaWqeCreate(
 
 /**
  * @ingroup driver
- * @brief  async dma wqe destory
+ * @brief  async dma wqe destroy
  * @attention null
  * @param [in] devId: logic devid
  * @param [in]  para: see struct halAsyncDmaDestoryPara
@@ -4170,7 +4170,7 @@ DLLEXPORT drvError_t halAsyncDmaCreate(
 
 /**
  * @ingroup driver
- * @brief  async dma destory
+ * @brief  async dma destroy
  * @attention null
  * @param [in] devId: logic devid
  * @param [in]  para: see struct halAsyncDmaDestoryPara
@@ -4180,7 +4180,7 @@ DLLEXPORT drvError_t halAsyncDmaDestory(uint32_t devId, struct halAsyncDmaDestor
 
 /**
 * @ingroup driver
-* @brief  ACL IO contrl interface
+* @brief  ACL IO control interface
 * @attention null
 * @param [in] cmd: command
 * @param [in]  param_value   param_value addr
@@ -4204,7 +4204,7 @@ struct halCdqPara {
 /*=========================== Event Sched ===========================*/
 /**
 * @ingroup driver
-* @brief  dettach one process from a device
+* @brief  detach one process from a device
 * @attention null
 * @param [in] devId: logic devid
 * @return   0 for success, others for fail
@@ -4705,7 +4705,7 @@ DLLEXPORT drvError_t halQueueModeNotify(PSM_STATUS status, void *rsv) ASCEND_HAL
 * @attention
 * ensure to export after queue is created.
 * not support to export repeatedly.
-* not support to export after local queue enque or deque.
+* not support to export after local queue enqueue or deque.
 * @param [in] devId: logic devid
 * @param [in] qid: queue id
 * @param [in] queInfo: share queue info
@@ -4946,10 +4946,10 @@ struct halSDIDParseInfo {
 
 /**
 * @ingroup driver
-* @brief get the parsed SDID infomation
+* @brief get the parsed SDID information
 * @attention Not supported called in split mode, do not check validity for sdid;
 * @param [in]  sdid SDID
-* @param [out] sdid_parse  Parsed SDID infomation
+* @param [out] sdid_parse  Parsed SDID information
 * @return   0 for success, others for fail
 */
 DLLEXPORT drvError_t halParseSDID(uint32_t sdid, struct halSDIDParseInfo *sdid_parse);

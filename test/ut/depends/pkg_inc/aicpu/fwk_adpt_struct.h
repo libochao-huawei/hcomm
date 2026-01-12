@@ -40,12 +40,12 @@ enum FWKAdptAPIRetCode {
     FWK_ADPT_PARAM_INVALID = 3,            // invalid input param
     FWK_ADPT_PARAM_PARSE_FAILED = 4,       // parase input param failed
     FWK_ADPT_NATIVE_ERROR = 5,             // error code
-    FWK_ADPT_NOT_SUPPORT_OPTYPE = 6,       // unsupport operate type
-    FWK_ADPT_INTERNAL_ERROR = 7,           // adpter internal error
-    FWK_ADPT_NOT_SUPPORT_DATATYPE = 8,     // unsupport input/output data type
-    FWK_ADPT_KERNEL_ALREADY_RUNING = 9,    // kernel already runing, not support parallel run
+    FWK_ADPT_NOT_SUPPORT_OPTYPE = 6,       // unsupported operate type
+    FWK_ADPT_INTERNAL_ERROR = 7,           // adapter internal error
+    FWK_ADPT_NOT_SUPPORT_DATATYPE = 8,     // unsupported input/output data type
+    FWK_ADPT_KERNEL_ALREADY_RUNING = 9,    // kernel already running, not support parallel run
     FWK_ADPT_SESSION_NOT_EXIST = 10,       // session id not exist
-    FWK_ADPT_SESSION_ALREADY_EXIST = 11,   // session id alread exist for create session
+    FWK_ADPT_SESSION_ALREADY_EXIST = 11,   // session id already exist for create session
     FWK_ADPT_NATIVE_END_OF_SEQUENCE = 12,  // end of sequence
     FWK_ADPT_EXTEND_TYPE_NOT_EXIST = 13,   // extend info type not exist
     FWK_ADPT_UNKNOWN_ERROR = 99            // unknown error code
