@@ -73,6 +73,7 @@ HcclResult HcclCommDeregMem(HcclComm comm, const char *memTag, const void* memHa
 HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 {
     CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[HcclGetHcclBuffer]buffer is null"), HCCL_E_PARA);
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[HcclGetHcclBuffer]comm is null"), HCCL_E_PARA);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
