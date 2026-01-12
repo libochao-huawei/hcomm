@@ -59,6 +59,7 @@ typedef struct HcomOpParamDef {
     HcclDataType dataType; // 数据类型
 	HcclReduceOp reduceOp; // 规约类型
     u8 geDeterministic;      // 是否为确定性计算
+    u32 aivCoreLimit; // aiv核数限制
 
     char *socVersion; // soc字符串，用于查询devType
     char *rankTable;
@@ -76,11 +77,15 @@ typedef struct HcomOpParamDef {
         void* recvDispls;
         void* sendCountMatrix;
     } All2AllDataDes;
+    union {
+        uint8_t reserved[128]; // 预留扩展字段，长度为128字节
+        // 可在此处添加新的结构体及其成员
+    };
 
     HcomOpParamDef() : group(nullptr), opType(nullptr),
         dataType(HcclDataType::HCCL_DATA_TYPE_RESERVED), reduceOp(HcclReduceOp::HCCL_REDUCE_RESERVED),
-        geDeterministic(0), socVersion(nullptr), rankTable(nullptr), groupList(nullptr), groupListSize(0),
-        count(0), rankSize(0),
+        geDeterministic(0), aivCoreLimit(0), socVersion(nullptr), rankTable(nullptr), groupList(nullptr),
+        groupListSize(0), count(0), rankSize(0),
         All2AllDataDes{ HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclDataType::HCCL_DATA_TYPE_RESERVED,
                         nullptr, nullptr, nullptr, nullptr, nullptr } {}
 } HcomOpParam;
