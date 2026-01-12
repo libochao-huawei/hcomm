@@ -229,6 +229,8 @@ public:
 
     virtual HcclResult GetCqeError(HcclResult &result);
 
+    virtual HcclResult GetOpInconsistentError(HcclResult &result);
+
     //  对内接口
     virtual HcclResult CheckDataType(const HcclDataType dataType, bool needReduce);
 
@@ -531,7 +533,7 @@ private:
     HcclResult SetDynamicTilingDataAlltoall(const OpParam &opParam, HostMem &dynamicDataMem);
     HcclResult UnRegisterDfxInfo(const OpParam &param, const std::vector<Stream> &slaveStreams);
     HcclResult RegisterDfxInfo(const OpParam &param, AlgType algType,
-        const std::vector<Stream> &slaveStreams, bool isAiv = false, const std::string &newTag = "");
+        const std::vector<Stream> &slaveStreams, bool isAiv = false, const std::string &tag = "");
     HcclResult AddGroupTagInfo(const std::string &tag, bool isAiv);
     HcclResult SetDynamicTilingDataAlltoallv(const OpParam &opParam, HostMem &dynamicDataMem,
         const std::string &algName = "");
