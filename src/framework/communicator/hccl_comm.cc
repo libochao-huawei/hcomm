@@ -919,6 +919,13 @@ HcclResult hcclComm::CommCheckErrorCqe(HcclResult &result)
     return HCCL_SUCCESS;
 }
 
+HcclResult hcclComm::CommCheckOpInconsistentError(HcclResult &result)
+{
+    CHK_RET(communicator_->GetOpInconsistentError(result));
+ 
+    return HCCL_SUCCESS;
+}
+
 HcclResult hcclComm::InitImpl(DevType deviceType, const CommConfig &commConfig)
 {
     HCCL_INFO("InitImpl Implementation isHeterogComm_[%d] isHaveCpuRank_[%d] deviceType[%d] isSpecialType_[%d]",
