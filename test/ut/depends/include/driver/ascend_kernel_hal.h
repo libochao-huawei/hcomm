@@ -66,7 +66,7 @@
 #define CHAN_FLAG_RTS_RSV_SQ_ID_BIT    19
 #define CHAN_FLAG_RTS_RSV_CQ_ID_BIT    20
 
-#define CHAN_FLAG_SPECIFIED_SQ_MEM_BIT 31 /* used for internel */
+#define CHAN_FLAG_SPECIFIED_SQ_MEM_BIT 31 /* used for internal */
 
 #define CQ_RECV_CONTINUE 0
 #define CQ_RECV_FINISH 1
@@ -409,7 +409,7 @@ struct qos_master_config_type {
     unsigned int qos; /* qos */
     unsigned int pmg; /* pmg */
     unsigned long long bitmap[QOS_MASTER_BITMAP_LEN]; /* max support 64 * 4  */
-    unsigned int mode; /* 0 -- regs vaild, 1 -- smmu vaild, 2 -- sqe vaild */
+    unsigned int mode; /* 0 -- regs valid, 1 -- smmu valid, 2 -- sqe valid */
     unsigned int reserved[QOS_CFG_RESERVED_LEN - 1];
 };
 
@@ -508,7 +508,7 @@ int hal_kernel_qos_notify_module_online(int dev_id, enum qos_master_type master)
 int hal_kernel_qos_notify_module_offline(int dev_id, enum qos_master_type master);
 
 /**
-* @brief get all bandwidth infomation
+* @brief get all bandwidth information
 * @param [in] uint32_t devid: device id
 * @param [out] struct qos_bw_result_t *res: bandwidth info of each master
 * @param [in] uint32_t in_size: size of res
@@ -559,7 +559,7 @@ struct esched_cq_phase_head {
     struct esched_addr_desc head;
     u64 overlay_value; /* when a register is written, the value must be superimposed. */
     u64 phase_mask; /* when the software notifies the hardware, the value of bits in the mask needs to be
-                       incremented to notify the hardware when the queue flips. surport 1bit */
+                       incremented to notify the hardware when the queue flips. support 1bit */
     u8 init_value; /* phase value of the first round when the software notifies the hardware */
     u8 ring_step;
 };
@@ -789,7 +789,7 @@ void hal_kernel_svm_put_user_pages(void **pages, u32 nr_pages, bool is_remap_add
 * @brief   This interface is used to init bootdot block
 * @param [in]  block_id: block id
 * @param [in]  magic: magic
-* @param [in]  execption_id: execption id
+* @param [in]  execption_id: exception id
 * @param [in]  expect_status: expect status
 * @return   0 Success, others for fail
 * @note Support: Ascend310Brc
@@ -958,12 +958,12 @@ struct memory_fault_timestamp {
     unsigned int host_pid;
     unsigned int event_id;
     unsigned int reserved; /* for byte alignment */
-    unsigned long long syscnt; /* event occurr syscnt*/
+    unsigned long long syscnt; /* event occur syscnt*/
 };
 
 /**
  * @ingroup driver
- * @brief register prof channel smaple handle
+ * @brief register prof channel sample handle
  * @attention null
  * @param [in] dev_id chan_id para
  * @return   DRV_ERROR_NONE   success
@@ -974,7 +974,7 @@ int hal_kernel_prof_sample_register(unsigned int dev_id, unsigned int chan_id,
 
 /**
  * @ingroup driver
- * @brief unregister prof channel smaple handle
+ * @brief unregister prof channel sample handle
  * @attention null
  * @param [in] dev_id chan_id
  * @return: no ret_val

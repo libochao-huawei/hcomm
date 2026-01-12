@@ -34,7 +34,7 @@ extern "C" {
 #endif
 
 /*
-    The different framwork we adapted for.
+    The different framework we adapted for.
 */
 typedef enum {
     FMK_KERNEL_TYPE_TF = 0,

@@ -69,7 +69,7 @@ RTS_API rtError_t rtCdqAllocBatch(const char_t *queName, int32_t timeout, uint32
  * When the task is executed, the data information will be inserted into the cdqe index position of the queue.
  * @param [in] queName      cdq name
  * @param [in] cdqeIndex    cdqe index
- * @param [in] data         cdqe infomation
+ * @param [in] data         cdqe information
  * @param [in] dataSize     data size
  * @param [in] stm       launch task on the stream
  * @return RT_ERROR_NONE for ok, others failed
@@ -83,7 +83,7 @@ RTS_API rtError_t rtCdqEnQueue(const char_t *queName, uint32_t cdqeIndex, void *
  * When the task is executed, the data information will be inserted into the cdqe index position of the queue.
  * @param [in] queName      cdq name
  * @param [in] cdqeIndex    cdqe index
- * @param [in] data         cdqe infomation
+ * @param [in] data         cdqe information
  * @param [in] dataSize     data size
  * @param [in] stm       launch task on the stream
  * @return RT_ERROR_NONE for ok, others failed
@@ -248,7 +248,7 @@ typedef enum tagGeneralCtrlType {
 
 /**
  * @ingroup rt_stars
- * @brief gerneral ctrl if
+ * @brief general ctrl if
  * @param [in] ctl              ctl input
  * @param [in] num              ctl input num
  * @param [in] type             ctl type

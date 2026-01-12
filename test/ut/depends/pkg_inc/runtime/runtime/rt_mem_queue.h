@@ -167,9 +167,9 @@ typedef void *rtMbufPtr_t;
 
 typedef enum rtEventIdType {
     RT_EVENT_RANDOM_KERNEL,      /* Random operator event */
-    RT_EVENT_DVPP_MSG,           /* operator events commited by DVPP */
-    RT_EVENT_FR_MSG,             /* operator events commited by Feature retrieves */
-    RT_EVENT_TS_HWTS_KERNEL,     /* operator events commited by ts/hwts */
+    RT_EVENT_DVPP_MSG,           /* operator events committed by DVPP */
+    RT_EVENT_FR_MSG,             /* operator events committed by Feature retrieves */
+    RT_EVENT_TS_HWTS_KERNEL,     /* operator events committed by ts/hwts */
     RT_EVENT_AICPU_MSG,          /* aicpu activates its own stream events */
     RT_EVENT_TS_CTRL_MSG,        /* controls message events of TS */
     RT_EVENT_QUEUE_ENQUEUE,      /* entry event of Queue(consumer) */
@@ -444,9 +444,9 @@ RTS_API rtError_t rtEschedSubmitEventSync(int32_t devId, rtEschedEventSummary_t 
 
 /**
 * @ingroup rt_mem_queue
-* @brief  query device proccess id
+* @brief  query device process id
 * @param [in] info: see struct rtBindHostpidInfo_t
-* @param [out] devPid: device proccess id
+* @param [out] devPid: device process id
 * @return RT_ERROR_NONE for ok
 */
 RTS_API rtError_t rtQueryDevPid(rtBindHostpidInfo_t *info, int32_t *devPid);
@@ -750,7 +750,7 @@ RTS_API rtError_t rtMemGrpAddProc(const char_t *name, int32_t pid, const rtMemGr
 
 /**
 * @ingroup rt_mem_queue
-* @brief attach proccess to check permission in group
+* @brief attach process to check permission in group
 * @param [in] name, group name
 * @param [in] timeout, time out ms
 * @return   0 for success, others for fail
@@ -786,7 +786,7 @@ RTS_API rtError_t rtEschedAttachDevice(int32_t devId);
 
 /**
 * @ingroup rt_mem_queue
-* @brief esched dettach device
+* @brief esched detach device
 * @param [in] devId, device id
 * @return   0 for success, others for fail
 */

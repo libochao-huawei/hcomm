@@ -534,8 +534,8 @@ RTS_API rtError_t rtsResetFloatOverflowStatus(rtStream_t stm);
  * @param [in] blockDim  block dimensions
  * @param [in] stm  associated stream
  * @param [in] cfg task t-v config
- * @param [in] args  argment address for kernel function
- * @param [in] argsSize  argment size
+ * @param [in] args  argument address for kernel function
+ * @param [in] argsSize  argument size
  * @param [in] reserve  reserve param
  * @return RT_ERROR_NONE for ok
  */

@@ -85,7 +85,7 @@ typedef enum {
     RT_PROCESS_DEV_ONLY,   /* TDT */
     RT_PROCESS_QS,         /* queue_scheduler */
     RT_PROCESS_HCCP,       /* hccp server */
-    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not surport quert from host pid */
+    RT_PROCESS_USER,       /* user proc, can bind many on host or device. not support quert from host pid */
     RT_PROCESS_CPTYPE_MAX
 } rtDevResProcType_t;
 
@@ -139,7 +139,7 @@ typedef enum {
 /**
  * @ingroup
  * @brief query ub device info
- * @param [in] cmd query info tpye
+ * @param [in] cmd query info type
  * @param [in|out] info input/output parameter
  * @return RT_ERROR_NONE for ok, errno for failed
  * @return RT_ERROR_INVALID_VALUE for error input
@@ -205,7 +205,7 @@ RTS_API rtError_t rtGetDevMsg(rtGetDevMsgType_t getMsgType, rtGetMsgCallback cal
 
 /**
  * @ingroup dvrt_dev
- * @brief get device infomation.
+ * @brief get device information.
  * @param [in] device   the device id
  * @param [in] moduleType   module type
                typedef enum {
@@ -305,7 +305,7 @@ RTS_API rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, i
 
 /**
 * @ingroup dvrt_dev
-* @brief get phy device infomation.
+* @brief get phy device information.
 * @param [int] phyId        the physic Id
 * @param [int] moduleType   module type
 * @param [int] infoType     info type

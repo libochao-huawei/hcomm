@@ -37,7 +37,7 @@ sal_manage_class sal_manage;
 /* 检查SAL是否已经初始化完成，若没有则返回错误 */
 #define SAL_ERR_RET_IF_SAL_IS_NOT_ACTIVED(ret) do { \
     if (sal_manage.sal_active_get() != SAL_TRUE) {        \
-        HCCL_ERROR("sal is not available before actived"); \
+        HCCL_ERROR("sal is not available before activated"); \
         return ret;                                       \
     }                                                     \
 } while (0)
@@ -1213,7 +1213,7 @@ void sal_share_memory_destroy(void *ptr)
         }
     }
 
-    HCCL_DEBUG("destroy share mem[%s] sucess", uniqueId);
+    HCCL_DEBUG("destroy share mem[%s] success", uniqueId);
 
     return;
     // ptr 指针已经 unmap，共享内存也已销毁，pclint误报，此处屏蔽。
@@ -1269,7 +1269,7 @@ HcclResult sal_manage_class::sal_thread_regist(const thread_info_t *thread)
     sal_thread_list.push_back(node);
     len_of_thread_res++;
 
-    HCCL_DEBUG("thread Name[%s]\t PID[%08u] is registed", thread->name.c_str(), thread->pid);
+    HCCL_DEBUG("thread Name[%s]\t PID[%08u] is registered", thread->name.c_str(), thread->pid);
     return HCCL_SUCCESS;
 }
 
@@ -1297,7 +1297,7 @@ void sal_manage_class::sal_thread_unregist(const thread_info_t *thread)
     for (auto it = sal_thread_list.begin(); it != sal_thread_list.end(); ++it) {
         if (thread == (*it)->thread_info) {
             len_of_thread_res--;
-            HCCL_DEBUG("thread Name[%s]\t PID[%08u] is unregisted", (*it)->thread_info->name.c_str(),
+            HCCL_DEBUG("thread Name[%s]\t PID[%08u] is unregistered", (*it)->thread_info->name.c_str(),
                       (*it)->thread_info->pid);
 
             delete (*it);

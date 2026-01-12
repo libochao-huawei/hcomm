@@ -909,7 +909,7 @@ HcclResult TransportP2p::ExchangeMemAndNotifyWithoutIpc()
     ret = RecvMemMesgWithoutIpc(memAddr, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_);
     remoteOutputPtr_ = reinterpret_cast<void*>(memAddr);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc output mem mesg fail. ret[%d], "\
+        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "\
         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteOutputPtr_, remoteOutputMemName_.ipcName,
         remoteOutputOffsetValue_), ret);
 
@@ -917,7 +917,7 @@ HcclResult TransportP2p::ExchangeMemAndNotifyWithoutIpc()
     ret = RecvMemMesgWithoutIpc(memAddr, remoteInputMemName_.ipcName, remoteInputOffsetValue_);
     remoteInputPtr_ = reinterpret_cast<void*>(memAddr);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc input mem mesg fail. ret[%d], "\
+        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "\
         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteInputPtr_, remoteInputMemName_.ipcName,
         remoteInputOffsetValue_), ret);
 
@@ -948,14 +948,14 @@ HcclResult TransportP2p::ExchangeMemAndNotifyWithIpc()
     /* 接收IPC output 内存 */
     ret = RecvIpcMemMesg(&remoteOutputPtr_, remoteOutputMemName_.ipcName, remoteOutputOffsetValue_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc output mem mesg fail. ret[%d], "\
+        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc output mem mesg fail. ret[%d], "\
         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteOutputPtr_, remoteOutputMemName_.ipcName,
         remoteOutputOffsetValue_), ret);
 
     /* 接收IPC input 内存 */
     ret = RecvIpcMemMesg(&remoteInputPtr_, remoteInputMemName_.ipcName, remoteInputOffsetValue_);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, recive ipc input mem mesg fail. ret[%d], "\
+        HCCL_ERROR("[Exchange][IpcMesg]In exchange ipc mesg, receive ipc input mem mesg fail. ret[%d], "\
         "ptr[%p], memptr[%p], offset[%llu]", ret, remoteInputPtr_, remoteInputMemName_.ipcName,
         remoteInputOffsetValue_), ret);
 

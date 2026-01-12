@@ -90,7 +90,7 @@ HCCP_ATTRI_VISI_DEF int RaGetSockets(unsigned int role, struct SocketInfoT conn[
  * @param size [IN] size of data you want to send unit(Byte)
  * @param sent_size [OUT] number of sent bytes
  * @see ra_socket_recv
- * @attention if sent_size is greate than zero but less than size,
+ * @attention if sent_size is greater than zero but less than size,
  * the function needed to be revoked again,
  * the param of size is original size minus sent_size,
   *the param of data should also offset by sent_size
@@ -109,7 +109,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketSend(const void *fdHandle, const void *data, uns
  * @param received_size [OUT] number of received bytes
  * @see ra_socket_send
  * @attention if return value is SOCK_EAGAIN which means no data right now,
- * you need to revoke the funcion again
+ * you need to revoke the function again
  * @retval #zero Success
  * @retval #SOCK_EAGAIN Success(no data received by socket)
  * @retval #non-zero Failure(exclude SOCK_EAGAIN)
@@ -331,7 +331,7 @@ HCCP_ATTRI_VISI_DEF int RaCqCreate(void *rdevHandle, struct CqAttr *attr);
 
 /**
  * @ingroup librdma
- * @brief Destory cq
+ * @brief Destroy cq
  * @param rdev_handle [IN] rdev handle
  * @param attr [IN] cq attr
  * @see ra_cq_create
@@ -428,7 +428,7 @@ HCCP_ATTRI_VISI_DEF int RaDeregisterMr(const void *rdmaHandle, void *mrHandle);
  * @param wr [IN] work request
  * @param op_rsp [IN/OUT] respond of sending work request
  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
- * you need to revoke the funcion again
+ * you need to revoke the function again
  * @retval #zero Success
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
@@ -442,7 +442,7 @@ HCCP_ATTRI_VISI_DEF int RaSendWr(void *qpHandle, struct SendWr *wr, struct SendW
  * @param wr [IN] work request
  * @param op_rsp [IN/OUT] respond of sending work request
  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
- * you need to revoke the funcion again
+ * you need to revoke the function again
  * @retval #zero Success
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
@@ -470,7 +470,7 @@ HCCP_ATTRI_VISI_DEF int RaTypicalSendWr(void *qpHandle, struct SendWr *wr, struc
  * @param send_num [IN] size of wr list
  * @param complete_num [OUT] number of wr been sent successfully
  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
- * you need to revoke the funcion again
+ * you need to revoke the function again
  * @retval #zero Success
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
@@ -487,7 +487,7 @@ HCCP_ATTRI_VISI_DEF int RaSendWrlist(void *qpHandle, struct SendWrlistData wr[],
  * @param send_num [IN] size of wr list
  * @param complete_num [OUT] number of wr been sent successfully
  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
- * you need to revoke the funcion again
+ * you need to revoke the function again
  * @retval #zero Success
  * @retval #SOCK_ENOENT Success
  * @retval #non-zero Failure(exclude SOCK_ENOENT)
@@ -826,7 +826,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevGetPortStatus(void *rdmaHandle, enum PortStatus *s
  * @param recv_num [IN] size of wr list
  * @param complete_num [OUT] number of wr been post recv request successfully
  * @attention if return value is SOCK_ENOENT which means mr async not success right now,
- * you need to revoke the funcion again
+ * you need to revoke the function again
  * @retval #zero Success
  * @retval #non-zero Failure
 */

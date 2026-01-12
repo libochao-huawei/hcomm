@@ -111,7 +111,7 @@ private:
     AsyncEventManager(AsyncEventManager &&) = delete;
     AsyncEventManager &operator = (AsyncEventManager &&) = delete;
 
-    // wait notify funciton
+    // wait notify function
     NotifyFunc notifyFunc_;
 };
 }  // namespace aicpu
