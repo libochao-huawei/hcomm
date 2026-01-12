@@ -1592,7 +1592,7 @@ HcclResult ParseAicpuCacheEnable()
 
     // 根据环境变量设置g_externalInput.aicpuCacheEnable
     if (aicpuCacheEnable == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_AICPU_CACHE_ENABLE set by default to [1]");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_AICPU_CACHE_ENABLE set by default to [1]");
         return HCCL_SUCCESS;
     } else if (aicpuCacheEnable == "0") {
         g_externalInput.aicpuCacheEnable = 0; // 关闭aicpu cache
@@ -1603,7 +1603,7 @@ HcclResult ParseAicpuCacheEnable()
         return HCCL_E_PARA;
     }
 
-    HCCL_RUN_INFO("environmental variable HCCL_AICPU_CACHE_ENABLE is [%s], aicpuCacheEnable[%u]", aicpuCacheEnable.c_str(), g_externalInput.aicpuCacheEnable);
+    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_AICPU_CACHE_ENABLE is [%s], aicpuCacheEnable[%u]", aicpuCacheEnable.c_str(), g_externalInput.aicpuCacheEnable);
 
     return HCCL_SUCCESS;
 }
