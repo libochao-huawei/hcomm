@@ -1,4 +1,4 @@
-# HCCL API \(c\)
+# 通信域管理API（C语言）
 
 -   [通信域管理](通信域管理.md)
     -   [HcclCommInitClusterInfo](HcclCommInitClusterInfo.md)
@@ -11,6 +11,7 @@
     -   [HcclCommDestroy](HcclCommDestroy.md)
     -   [HcclGetRankSize](HcclGetRankSize.md)
     -   [HcclGetRankId](HcclGetRankId.md)
+    -   [HcclBarrier](HcclBarrier.md)
     -   [HcclSetConfig](HcclSetConfig.md)
     -   [HcclGetConfig](HcclGetConfig.md)
     -   [HcclGetCommName](HcclGetCommName.md)
