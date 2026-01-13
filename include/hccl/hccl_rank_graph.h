@@ -63,8 +63,9 @@ typedef struct {
  * 
  * @param[inout] commLink 通信link信息列表
  * @param[in] linkNum link数量
+ * @return HcclResult 执行结果状态码
  */
-inline void CommLinkInit(CommLink *commLink, uint32_t linkNum)
+inline HcclResult CommLinkInit(CommLink *commLink, uint32_t linkNum)
 {
     for (uint32_t idx = 0; idx < linkNum; idx++) {
         if (commLink != nullptr) {
@@ -78,14 +79,19 @@ inline void CommLinkInit(CommLink *commLink, uint32_t linkNum)
             commLink->header.reserved    = 0;
 
             // 初始化源端点和目的端点的关键字段
-            EndpointDescInit(&commLink->srcEndpointDesc, 1);
-            EndpointDescInit(&commLink->dstEndpointDesc, 1);
-            
+            if (UNLIKELY(EndpointDescInit(&commLink->srcEndpointDesc, 1) != HCCL_SUCCESS) ||
+                UNLIKELY(EndpointDescInit(&commLink->dstEndpointDesc, 1) != HCCL_SUCCESS)) {
+                return HCCL_E_INTERNAL;
+            }
+
             // 初始化链路属性（显式设置保留值）
             commLink->linkAttr.linkProtocol = COMM_PROTOCOL_RESERVED;
+            commLink++;  // 移动到下一个描述符
+        } else {
+            return HCCL_E_PTR;
         }
-        commLink++;  // 移动到下一个描述符
     }
+    return HCCL_SUCCESS;
 }
 
 /**
