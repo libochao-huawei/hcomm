@@ -99,6 +99,20 @@ HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& par
     return HCCL_SUCCESS;
 }
 
+HcclResult CollAlgOperator::GetOpExpansionStr(const OpParam &param, AlgDesc &algDesc, std::string &opExpansionStr)
+{
+    if (algDesc.isAivMode) {
+        opExpansionStr = "AIV";
+    } else if (param.aicpuUnfoldMode) {
+        opExpansionStr = "AI_CPU";
+    } else if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+        opExpansionStr = "HOST";
+    } else {
+        opExpansionStr = "HOST_TS";
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &param, const ResourceLimit &limit,
     std::string &algName, AlgDesc &algDesc, std::string &newTag)
 {
@@ -115,7 +129,7 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         CHK_PRT_RET(executor_.get() == nullptr,
             HCCL_ERROR("[CollAlgOperator][SelectAlg]Fail to find executor for algName[DefaultExecutor]"),
             HCCL_E_PARA);
-    }else{
+    } else {
         // 校验控核
         if (limit.ifLimit && deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAivModeConfig()) {
             CHK_RET(SelectAlgFor91093WithCoreLimit(param, limit, algName));
@@ -131,20 +145,13 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         }
     }
 
+    bool isLastSelect = algDesc.isLastSelect;
     algDesc = executor_->GetAlgDesc();
     // 打印维测日志
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && algDesc.isLastSelect) {
+    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && isLastSelect) {
         // 获取展开模式，转换成字符串
         std::string opExpansionStr;
-        if (algDesc.isAivMode) {
-            opExpansionStr = "AIV";
-        } else if (param.aicpuUnfoldMode) {
-            opExpansionStr = "AI_CPU";
-        } else if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
-            opExpansionStr = "HOST";
-        } else {
-            opExpansionStr = "HOST_TS";
-        }
+        CHK_RET(GetOpExpansionStr(param, algDesc, opExpansionStr));
         // 尝试获取确定性属性（如果Executor有声明自己是否为确定性）
         std::string appendStr = "";
         if (algDesc.deterministic >= 0) {

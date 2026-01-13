@@ -73,6 +73,7 @@ public:
     HcclResult GetCache(HcclCacheInfo& cacheInfo);
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);
     HcclResult SetRmaInfo(void* rmaInfo);
+    HcclResult GetOpExpansionStr(const OpParam &param, AlgDesc &algDesc, std::string &opExpansionStr);
 protected:
     std::string GenerateNewTagByAlgTypeLevel1(std::string tag, std::string algTypeLevel1Tag) const;
     u32 CalcContextNumForPipeline(HcclCMDType hcclCMDType);
