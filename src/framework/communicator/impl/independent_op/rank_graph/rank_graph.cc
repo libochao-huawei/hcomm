@@ -69,7 +69,7 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
         CHK_RET(DevTypeToCommProtocol(r.deviceInfo.deviceType, protocol));
         for (const auto &addr :addrs) {
             EndpointDesc point;
-            EndpointDescInit(&point, 1);
+            CHK_RET(EndpointDescInit(&point, 1));
             if (addr.IsIPv6()) {
                 point.commAddr.type = COMM_ADDR_TYPE_IP_V6;
                 point.commAddr.addr6 = addr.GetBinaryAddress().addr6;
@@ -172,7 +172,7 @@ HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dst
         for (size_t i = 0; i < srcEndpointDescs.size(); i++) {
             for (size_t j = 0; j < dstEndpointDescs.size(); j++) {
                 CommLink link;
-                CommLinkInit(&link, 1);
+                CHK_RET(CommLinkInit(&link, 1));
 
                 link.srcEndpointDesc = srcEndpointDescs[i];
                 link.dstEndpointDesc = dstEndpointDescs[j];
