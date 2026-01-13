@@ -1032,18 +1032,13 @@ STATIC int RsSocketSslConnect(struct RsConnInfo *conn, struct rs_cb *rscb)
         } else if (err == SSL_ERROR_WANT_READ) {
             hccp_dbg("ssl fd %d return want read", conn->connfd);
         } else {
-#ifdef CONFIG_SSL
             rs_ssl_err_string(conn->connfd, err);
-#endif
         }
 
         return -EAGAIN;
     }
-
-#ifdef CONFIG_SSL
     ret = rs_tls_peer_cert_verify(conn->ssl, rscb);
     CHK_PRT_RETURN(ret, hccp_err("verify peer cert failed ret %d", ret), ret);
-#endif
 
     return 0;
 }
@@ -1828,9 +1823,7 @@ RS_ATTRI_VISI_DEF int RsPeerSocketSend(uint32_t sslEnable, int fd, const void *d
 
     CHK_PRT_RETURN(fd < 0 || size == 0 || data == NULL, hccp_err("param error ! fd:%d < 0, size:%llu or data is NULL",
         fd, size), -EINVAL);
-
     if (sslEnable != RS_SSL_DISABLE) {
-#ifdef CONFIG_SSL
         int err;
         struct RsConnInfo *conn = NULL;
 
@@ -1844,7 +1837,6 @@ RS_ATTRI_VISI_DEF int RsPeerSocketSend(uint32_t sslEnable, int fd, const void *d
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ), hccp_info("ssl_adp_write need"
                 "to retry"), -EAGAIN);
         }
-#endif
     } else {
         ret = (int)send(fd, data, size, MSG_DONTWAIT | MSG_NOSIGNAL);
         if (ret < 0) {
@@ -1878,9 +1870,7 @@ RS_ATTRI_VISI_DEF int RsPeerSocketRecv(uint32_t sslEnable, int fd, void *data, u
 
     CHK_PRT_RETURN(fd < 0 || data == NULL || size == 0, hccp_err("param error ! fd:%d < 0 or data is NULL, size:%llu",
         fd, size), -EINVAL);
-
     if (sslEnable != RS_SSL_DISABLE) {
-#ifdef CONFIG_SSL
         int err;
         struct RsConnInfo *conn = NULL;
 
@@ -1895,7 +1885,6 @@ RS_ATTRI_VISI_DEF int RsPeerSocketRecv(uint32_t sslEnable, int fd, void *data, u
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ), hccp_dbg("ssl_adp_read"
                 "need to retry"), -EAGAIN);
         }
-#endif
     } else {
         ret = (int)recv(fd, data, size, MSG_DONTWAIT);
         if (ret < 0) {

@@ -357,7 +357,6 @@ int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
         fd, size), -EINVAL);
 
     if (gRsCb->sslEnable == RS_SSL_ENABLE) {
-#ifdef CONFIG_SSL
         int err;
         struct RsConnInfo *conn = NULL;
 
@@ -371,7 +370,6 @@ int RsDrvSocketSend(int fd, const void *data, uint64_t size, int flags)
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ), hccp_info("ssl_adp_write need"
                 "to retry"), -EAGAIN);
         }
-#endif
     } else {
         ret = send(fd, data, size, flags);
         if (ret < 0) {
@@ -398,7 +396,6 @@ int RsDrvSocketRecv(int fd, void *data, uint64_t size, int flags)
         fd, size), -EINVAL);
 
     if (gRsCb->sslEnable == RS_SSL_ENABLE) {
-#ifdef CONFIG_SSL
         int err;
         struct RsConnInfo *conn = NULL;
 
@@ -413,7 +410,6 @@ int RsDrvSocketRecv(int fd, void *data, uint64_t size, int flags)
             CHK_PRT_RETURN((err == SSL_ERROR_WANT_WRITE) || (err == SSL_ERROR_WANT_READ), hccp_dbg("ssl_adp_read"
                 "need to retry"), -EAGAIN);
         }
-#endif
     } else {
         ret = recv(fd, data, size, flags);
         if (ret < 0) {

@@ -222,13 +222,11 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
 
     ret = ssl_adp_do_handshake(acceptInfo->ssl);
     if (ret == 1) {
-#ifdef CONFIG_SSL
         ret = rs_tls_peer_cert_verify(acceptInfo->ssl, rscb);
         if (ret) {
             hccp_err("tls verify peer cert failed");
             return ;
         }
-#endif
         acceptInfo->state = RS_CONN_STATE_SSL_CONNECTED;
     } else {
         err = ssl_adp_get_error(acceptInfo->ssl, ret);
@@ -239,9 +237,7 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
             hccp_info("return want read");
             return ;
         } else {
-#ifdef CONFIG_SSL
             rs_ssl_err_string(acceptInfo->connFd, err);
-#endif
             return ;
         }
     }

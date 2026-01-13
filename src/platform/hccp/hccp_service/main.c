@@ -94,10 +94,10 @@ int main(int argc, char *argv[])
 int llt_main(int argc, char *argv[])
 #endif
 {
-    int ret;
     struct HccpInitParam param = {0};
     struct timeval start, end;
     float timeCost = 0.0;
+    int ret;
 
     hccp_run_info("hccp init start!");
     ret = HccpChangeNumOfFile();
@@ -124,14 +124,14 @@ int llt_main(int argc, char *argv[])
     }
 
     RsGetCurTime(&start);
-
-#ifndef CONFIG_CONTEXT
-    ret = RsApiInit();
-    if (ret != 0) {
-        hccp_err("RsApiInit error[%d]", ret);
-        goto out;
+    if(RsGetIsRdmaSupported(param.logicId)) {
+        ret = RsApiInit();
+        if (ret != 0) {
+            hccp_err("RsApiInit error[%d]", ret);
+            goto out;
+        }
     }
-#endif
+
     ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
         ReportProcessStartUpErrorCode((uint32_t)param.logicId, 0, (uint32_t)param.pid, 0, ERR_EJ1, ERR_LEN);
@@ -157,9 +157,9 @@ int llt_main(int argc, char *argv[])
     hccp_run_info("hccp deinit ok! logic_id=%d", param.logicId);
 
 hccp_init_fail:
-#ifndef CONFIG_CONTEXT
-    RsApiDeinit();
-#endif
+    if(RsGetIsRdmaSupported(param.logicId)) {
+        RsApiDeinit();
+    }
 out:
     DlHalDeinit();
     return ret;

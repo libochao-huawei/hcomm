@@ -455,7 +455,6 @@ close_roce_user_so:
 
 DL_ATTRI_VISI_DEF int RsApiInit(void)
 {
-#ifndef NOT_INIT_IBVERBS
 #ifndef CA_CONFIG_LLT
     int ret;
     ret = RsIbverbsApiInit();
@@ -467,7 +466,6 @@ DL_ATTRI_VISI_DEF int RsApiInit(void)
         RsCloseIbverbsSo();
         return ret;
     }
-#endif
 #endif
 #endif
     return 0;

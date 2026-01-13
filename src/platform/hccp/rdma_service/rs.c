@@ -23,6 +23,7 @@
 #include <sys/fcntl.h>
 #include <arpa/inet.h>
 #include <dlfcn.h>
+#include <fnmatch.h>
 #include "securec.h"
 #include "rs_inner.h"
 #include "rs_drv_rdma.h"
@@ -430,7 +431,6 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 
     ret = RsGetChipLogicId(rscb->chipId, rscb->hccpMode, &rscb->logicId);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_logic_id failed, ret[%d]", ret), ret);
-
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
     ret = rs_get_chip_protocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
@@ -444,14 +444,11 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     }
 #endif
 #endif
-
-#ifdef CONFIG_SSL
     ret = rs_ssl_init(rscb);
     if (ret != 0) {
         hccp_err("init ssl failed, ret[%d]", ret);
         goto ssl_init_err;
     }
-#endif
 
     RsGetCurTime(&start);
     ret = RsEpollConnectHandleInit(rscb);
@@ -466,10 +463,8 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     return 0;
 
 create_pthread_err:
-#ifdef CONFIG_SSL
     rs_ssl_deinit(rscb);
 ssl_init_err:
-#endif
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
     rs_esched_deinit(rscb->protocol);
@@ -492,11 +487,7 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
     (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
 #endif
 #endif
-
-#ifdef CONFIG_SSL
     rs_ssl_deinit(rscb);
-#endif
-
     // deinit resources in rs_epoll_connect_handle_init
     // deinit epoll thread, send event to eventfd to waking up epoll handle thread
     ret = (int)write(rscb->connCb.eventfd, &event, sizeof(eventfd_t));
@@ -2487,69 +2478,43 @@ RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value)
     return ret;
 }
 
-#ifndef CONFIG_SSL
-long ssl_adp_set_mode(SSL *s, long op)
+STATIC int RsGetProductType(int devId, enum ProductType *type)
 {
-    return 0;
-};
+    halChipInfo chipInfo = {0};
+    int ret;
 
-SSL *ssl_adp_new(SSL_CTX *ctx)
-{
-    return NULL;
-};
+    DlHalInit();
+    ret = DlHalGetChipInfo(devId, &chipInfo);
+    DlHalDeinit();
 
-void ssl_adp_free(SSL *s)
-{
-    return;
-};
+    CHK_PRT_RETURN(ret != 0, hccp_err("[Get][ChipInfo]DlHalGetChipInfo failed ret:%d", ret), ret);
 
-int ssl_adp_read(SSL *s, void *buf, int num)
-{
-    return 0;
-};
+    if(fnmatch("910_93[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
+        *type = PRODUCT_TYPE_910_93;
+    } else if (fnmatch("910B[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
+        *type = PRODUCT_TYPE_910B;
+    } else if(fnmatch("910[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
+        *type = PRODUCT_TYPE_910;
+    } else if(fnmatch("310p[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
+        *type = PRODUCT_TYPE_310p;
+    } else {
+        *type = PRODUCT_TYPE_INVALID;
+    }
 
-int ssl_adp_write(SSL *s, const void *buf, int num)
-{
-    return 0;
-};
+    hccp_info("[Get][ChipInfo]chip name is %s, type:%d", chipInfo.name, *type);
+    return ret;
+}
 
-int ssl_adp_set_fd(SSL *s, int fd)
+RS_ATTRI_VISI_DEF bool RsGetIsRdmaSupported(int devId)
 {
-    return 0;
-};
+    enum ProductType productType = 0;
+    int ret;
 
-void ssl_adp_ctx_free(SSL_CTX *a)
-{
-    return;
-};
+    ret = RsGetProductType(devId, &productType);
+    if(ret != 0) {
+        hccp_warn("Rs Get ProductType, ret:%d", ret);
+    }
 
-int ssl_adp_shutdown(SSL *s)
-{
-    return 0;
-};
-
-int ssl_adp_get_error(const SSL *s, int i)
-{
-    return 0;
-};
-
-int ssl_adp_do_handshake(SSL *s)
-{
-    return 0;
-};
-
-void ssl_adp_set_accept_state(SSL *s)
-{
-    return;
-};
-
-void ssl_adp_set_connect_state(SSL *s)
-{
-    return;
-};
-
-void ssl_adp_clear_error()
-{
-    return;
-};
-#endif
+    return productType == PRODUCT_TYPE_910 || productType == PRODUCT_TYPE_910B || 
+        productType == PRODUCT_TYPE_910_93;
+}
