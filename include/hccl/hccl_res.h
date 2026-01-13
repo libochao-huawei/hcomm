@@ -140,7 +140,7 @@ typedef struct {
     };
 } EndpointDesc;
 
-inline void EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
+inline HcclResult EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
 {
     for (uint32_t idx = 0; idx < num; idx++) {
         if (endpoint != nullptr) {
@@ -151,9 +151,12 @@ inline void EndpointDescInit(EndpointDesc *endpoint, uint32_t num)
             endpoint->protocol = COMM_PROTOCOL_RESERVED;
             endpoint->commAddr.type = COMM_ADDR_TYPE_RESERVED;
             endpoint->loc.locType = ENDPOINT_LOC_TYPE_RESERVED;
+            endpoint++;  // 移动到下一个描述符
+        } else {
+            return HCCL_E_PTR;
         }
-        endpoint++;  // 移动到下一个描述符
     }
+    return HCCL_SUCCESS;
 }
 
 const uint32_t HCCL_CHANNEL_MAGIC_WORD = 0x0f0f0f0f;
@@ -186,14 +189,19 @@ typedef struct {
     };
 } HcclChannelDesc;
 
+#ifndef LIKELY
+#define LIKELY(x) (__builtin_expect(!!(x), 1))
+#define UNLIKELY(x) (__builtin_expect(!!(x), 0))
+#endif
+
 /**
  * @brief 初始化HcclChannelDesc结构体
  *
  * @param[inout] channelDesc 返回的通道描述参数
  * @param[in] descNum 描述数量
- * @return void
+ * @return HcclResult 执行结果状态码
  */
-inline void HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
+inline HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 {
     for (uint32_t idx = 0; idx < descNum; idx++) {
         if (channelDesc != nullptr) {
@@ -214,11 +222,16 @@ inline void HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
             channelDesc->memHandleNum = 0;
 
             // 显式设置EndpointDesc相关字段为无效值
-            EndpointDescInit(&channelDesc->localEndpoint, 1);
-            EndpointDescInit(&channelDesc->remoteEndpoint, 1);
+            if (UNLIKELY(EndpointDescInit(&channelDesc->localEndpoint, 1) != HCCL_SUCCESS) ||
+                UNLIKELY(EndpointDescInit(&channelDesc->remoteEndpoint, 1) != HCCL_SUCCESS)) {
+                return HCCL_E_INTERNAL;
+            }
+            channelDesc++;  // 移动到下一个描述符
+        } else {
+            return HCCL_E_PTR;
         }
-        channelDesc++;  // 移动到下一个描述符
     }
+    return HCCL_SUCCESS;
 }
 
 /**
@@ -280,6 +293,7 @@ extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine, 
  * @param[in] channelNum channel数量
  * @param[out] channels 创建的通道句柄列表
  * @return HcclResult 执行结果状态码
+ * @warning 重要约束：channelDescs必须使用HcclChannelDescInit进行初始化
  */
 extern HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);

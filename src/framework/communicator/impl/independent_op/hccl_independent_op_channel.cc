@@ -84,6 +84,8 @@ static HcclResult HandleHcclResPackReq(const HcclChannelDesc &channelDesc, HcclC
 
     return HCCL_SUCCESS;
 }
+
+constexpr uint32_t CHANNEL_NUM_MAX = 1024 * 1024;  // channel的默认限制最大为1024 * 1024
 HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChannelDesc *channelDescList,
     uint32_t listNum, ChannelHandle *channelList)
 {
@@ -91,8 +93,8 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChanne
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(channelDescList);
     CHK_PTR_NULL(channelList);
-    CHK_PRT_RET(listNum == 0, HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
-        __func__, listNum), HCCL_E_PARA);
+    CHK_PRT_RET((listNum == 0 || listNum > CHANNEL_NUM_MAX), HCCL_ERROR("[%s]Invalid listNum, listNum[%u], max channel num[%u]",
+        __func__, listNum, CHANNEL_NUM_MAX), HCCL_E_PARA);
 
     HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
