@@ -1346,7 +1346,8 @@ namespace hccl
             param.reduceType = op;
             param.opType = opType;
 
-            if (opType == HcclCMDType::HCCL_CMD_ALLTOALL || opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
+            if (opType == HcclCMDType::HCCL_CMD_ALLTOALL || opType == HcclCMDType::HCCL_CMD_ALLTOALLV ||
+                opType == HcclCMDType::HCCL_CMD_ALLTOALLVC) {
                 param.All2AllDataDes.sendType = dataType;
                 param.All2AllDataDes.recvType = dataType;
                 param.All2AllDataDes.sendCount = count;
@@ -1624,6 +1625,10 @@ namespace hccl
             AlltoAllOperator *alltoAllOperator = dynamic_cast<AlltoAllOperator *>(algOperator.get());
             CHK_PTR_NULL(alltoAllOperator);
             ifAiv = alltoAllOperator->IsSatisfyAlltoAllAivCondition(param);
+            if (ifAiv) {
+                CHK_RET(alltoAllOperator->SelectAlgforAiv(param, algName)); // 如果是AIV，需要拿到AlgName
+                HCCL_INFO("[HcclCommunicator][HcclSelectAlg] algName[%s] select to AIV", algName.c_str());
+            }
             HCCL_INFO("[HcclCommunicator][HcclSelectAlg] use [IsSatisfyAlltoAllAivCondition] to judge alltoallv ifAiv[%d]", ifAiv);
             /* 完成算法选择和记录后，恢复成原来的模式 */
             SetWorkflowMode(originWorkflowMode);
