@@ -153,7 +153,7 @@ namespace hccl
         CHK_RET(communicator_->GetHDCommunicate(kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
         CHK_RET(communicator_->SetGetAicpuCommState(getAicpuCommState));
         CHK_RET(GetIndependentOp().SetIndependentOpConfig(commConfig, rankTable, topoAttr, binHandle,
-            kfcControlTransferH2DParams, kfcStatusTransferD2HParams));
+            kfcControlTransferH2DParams, kfcStatusTransferD2HParams, communicator_->GetCCLbufferManager()));
         return HCCL_SUCCESS;
     }
 
