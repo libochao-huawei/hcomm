@@ -38,6 +38,8 @@ struct RaAsyncOpHandle gRaAsyncOpHandle[] = {
     {RA_RS_CTX_QP_IMPORT, RDMA_OP, ra_hdc_async_handle_qp_import, sizeof(union op_ctx_qp_import_data)},
     {RA_RS_CTX_QP_UNIMPORT, RDMA_OP, NULL, sizeof(union op_ctx_qp_unimport_data)},
     {RA_RS_GET_TP_INFO_LIST, RDMA_OP, ra_hdc_async_handle_tp_info_list, sizeof(union op_get_tp_info_list_data)},
+    {RA_RS_GET_TP_ATTR, RDMA_OP, ra_hdc_async_handle_get_tp_attr, sizeof(union op_get_tp_attr_data)},
+    {RA_RS_SET_TP_ATTR, RDMA_OP, NULL, sizeof(union op_set_tp_attr_data)},
     {RA_RS_CTX_QP_DESTROY_BATCH, RDMA_OP, ra_hdc_async_handle_qp_destroy_batch,
         sizeof(union op_ctx_qp_destroy_batch_data)},
 #endif
