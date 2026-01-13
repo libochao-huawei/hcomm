@@ -843,7 +843,8 @@ aclError aclrtGetDevicesTopo(uint32_t devId, uint32_t otherDevId, uint64_t *valu
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910_93))
     {
         // 0-1 2-3 4-5 6-7
-        if ((fabs(devId - otherDevId) == 1) && ((devId + otherDevId) % 4 == 1)) {
+        int32_t diff = static_cast<int32_t>(devId) - static_cast<int32_t>(otherDevId);
+        if ((abs(diff) == 1) && ((devId + otherDevId) % 4 == 1)) {
             *value = ACL_RT_DEVS_TOPOLOGY_SIO;     // SIO
         } else {
             *value = ACL_RT_DEVS_TOPOLOGY_HCCS_SW;     // HCCS_SW
