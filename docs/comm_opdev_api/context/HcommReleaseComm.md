@@ -59,44 +59,58 @@ int32\_t：接口成功返回0，其他失败。
 
 ## 约束说明<a name="section15114764"></a>
 
-1.  当前仅支持通信算法的编排展开位置为AI CPU的场景。
+1.  仅支持AI CPU模式下，在Device侧调用该接口。
 2.  HcommAcquireComm和HcommReleaseComm分别对应加锁和解锁动作，必须成对调用。接口内部会拦截重复加锁场景，避免同一个通信域被多个线程同时占用。
 
 ## 调用示例<a name="section204039211474"></a>
 
+该函数需编译到Device侧使用：
+
 ```
-#include "hcomm_primitives.h"
-#include <stdio.h>
-
-int main() {
-    // 假设已初始化线程句柄 thread 和内存地址 src/dst
-    ThreadHandle thread = ...;  // 有效线程句柄
-    void *dst = ...;            // 有效目标地址
-    const void *src = ...;      // 有效源地址
-    uint64_t len = 1024;        // 数据长度
-	
-    char *commId = "hccl_world_group";
-    // 获取通信域并加锁
-    int32_t ret = HcommAcquireComm(commId);
-    if (ret != 0) {
-        printf("HcommAcquireComm failed, ret: %d, commId: %s\n", ret, commId);
-        return ret;
+// 在AI CPU上执行的Kernel函数
+extern "C" unsigned int HcclLaunchP2PAicpuKernel(OpParam *param)
+{
+    HCCL_INFO("Entry-%s, commName[%s], tag[%s]", __func__, param->commName, param->tag);
+    if (HcommAcquireComm(param->commName) != HCCL_SUCCESS) { // 对通信域加锁，防止该通信域被并发使用
+        HCCL_ERROR("%s HcommAcquireComm fail, commName[%s]", __func__, param->commName);
+        return 1;
     }
 
-    // 调用 HcommLocalCopy
-    ret = HcommLocalCopyOnThread(thread, dst, src, len);
-    if (ret != 0) {
-        printf("HcommLocalCopyOnThread failed, ret: %d\n", ret);
-        return ret;
+    // 获取Device侧主thread
+    ThreadHandle thread = param->resCtx->threadHandle;
+    if (HcommBatchModeStart(param->tag) != HCCL_SUCCESS) {
+        HCCL_ERROR("failed start batch mode");
+        return 1;
     }
 
-    // 结束批量模式并触发执行
-    ret = HcommReleaseComm(commId);
-    if (ret != 0) {
-        printf("HcommReleaseComm failed, ret: %d, commId: %s\n", ret, commId);
-        return ret;
+    // 主thread等待Host stream的通知
+    if (HcommAclrtNotifyWaitOnThread(thread, param->resCtx->notifyIds[0], CUSTOM_TIMEOUT) != HCCL_SUCCESS) {
+        HCCL_ERROR("failed to wait notify[%d] from host main stream", param->resCtx->notifyIds[0]);
+        return 1;
     }
+
+    // 执行任务编排
+    if (ExecOp(*param, param->resCtx) != HCCL_SUCCESS) {
+        HCCL_ERROR("orchestrate failed for op:%d", param->opType);
+        return 1;
+    }
+
+    // 主thread通知Host stream
+    if (HcommAclrtNotifyRecordOnThread(thread, param->resCtx->notifyIds[1]) != HCCL_SUCCESS) {
+        HCCL_ERROR("failed to record host main stream");
+        return 1;
+    }
+
+    if (HcommBatchModeEnd(param->tag) != HCCL_SUCCESS) {
+        HCCL_ERROR("failed end batch mode");
+        return 1;
+    }
+
+    if (HcommReleaseComm(param->commName) != HCCL_SUCCESS) { // 释放通信域
+        HCCL_ERROR("%s HcommReleaseComm fail, commName[%s]", __func__, param->commName);
+        return 1;
+    }
+    HCCL_INFO("%s success, commName[%s], tag[%s]", __func__, param->commName, param->tag);
     return 0;
 }
 ```
-
