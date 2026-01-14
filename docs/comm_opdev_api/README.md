@@ -64,7 +64,7 @@
 <td class="cellrowborder" valign="top" headers="mcps1.1.4.1.2 "><p id="p12402181102118"><a name="p12402181102118"></a><a name="p12402181102118"></a>给定通信域和拓扑层级编号，查询源rank和目的rank之间的通信连接信息。</p>
 </td>
 </tr>
-<tr id="row742311333215"><td class="cellrowborder" rowspan="8" valign="top" width="12.471247124712471%" headers="mcps1.1.4.1.1 "><p id="p242333319216"><a name="p242333319216"></a><a name="p242333319216"></a>资源管理</p>
+<tr id="row742311333215"><td class="cellrowborder" rowspan="9" valign="top" width="12.471247124712471%" headers="mcps1.1.4.1.1 "><p id="p242333319216"><a name="p242333319216"></a><a name="p242333319216"></a>资源管理</p>
 </td>
 <td class="cellrowborder" valign="top" width="27.992799279927993%" headers="mcps1.1.4.1.2 "><p id="p12423123332111"><a name="p12423123332111"></a><a name="p12423123332111"></a><a href="./context/HcclGetHcclBuffer.md">HcclGetHcclBuffer</a></p>
 </td>
@@ -80,6 +80,9 @@
 </td>
 <td class="cellrowborder" valign="top" headers="mcps1.1.4.1.2 "><p id="p1618517457217"><a name="p1618517457217"></a><a name="p1618517457217"></a>基于已有runtime stream获取指定notifyNum的通信线程资源。</p>
 </td>
+</tr>
+<tr><td><p><a href="./context/HcclChannelDescInit.md">HcclChannelDescInit</a></p></td>
+<td><p>初始化通信通道描述列表。</p></td>
 </tr>
 <tr id="row17185104582115"><td class="cellrowborder" valign="top" headers="mcps1.1.4.1.1 "><p id="p171851045132116"><a name="p171851045132116"></a><a name="p171851045132116"></a><a href="./context/HcclChannelAcquire.md">HcclChannelAcquire</a></p>
 </td>
