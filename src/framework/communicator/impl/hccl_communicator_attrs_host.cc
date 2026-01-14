@@ -382,6 +382,7 @@ namespace hccl
         moduleNum_ = moduleMap.size();
         u32 preDeviceNum = moduleMap.begin()->second.size();
         u32 curDeviceNum = preDeviceNum;
+        std::vector<u32> devicePhyIdInfoList;
         for (auto &moduleInfo : moduleMap)
         {
             curDeviceNum = moduleInfo.second.size();
@@ -393,12 +394,18 @@ namespace hccl
             moduleDeviceNumVec.push_back(curDeviceNum);
 
             HCCL_INFO("module[%d] contains [%d]devices", moduleInfo.first, moduleInfo.second.size());
+            devicePhyIdInfoList.clear();
             for (auto &rankInfo : moduleInfo.second)
             {
+                devicePhyIdInfoList.push_back(rankInfo.deviceInfo.devicePhyId);
                 HCCL_INFO("moduleIdx[%d] Info: rankId[%d], serverId[%s], serverIdx[%d], devicePhyId[%d]",
                           moduleInfo.first, rankInfo.rankId, rankInfo.serverId.c_str(), rankInfo.serverIdx,
                           rankInfo.deviceInfo.devicePhyId);
             }
+            if (!CheckDoubleRingWithRohTopo(devicePhyIdInfoList)) {
+                isARSDoubleRing_ = false;
+                HCCL_DEBUG("SetModuleInfo isARSDoubleRing[%llu]", isARSDoubleRing_);
+            }            
         }
 
         if (isDiffDeviceType_)
@@ -422,7 +429,9 @@ namespace hccl
         // 1.超节点数目 2.超节点间server数是否一致 3.
         superPodNum_ = 0;
         multiSuperPodDiffServerNumMode_ = false;
+        multiSuperPodDiffDeviceNumMode_ = false;
         std::map<std::string, std::set<u32>> superPodToServerNum; // 记录每个超节点中的server数目
+        std::map<std::string, std::vector<RankInfo_t>> superPodToDeviceNum; //记录每个超节点中的设备(rank)数目
         for (RankInfo_t rankInfo : rankList)
         {
             // superPodId为空时, 返回超节点数量为0, 按照非超节点模式处理
@@ -432,6 +441,14 @@ namespace hccl
                         HCCL_SUCCESS);
 
             superPodToServerNum[rankInfo.superPodId].insert(rankInfo.serverIdx);
+            auto iter = superPodToDeviceNum.find(rankInfo.superPodId);
+            if (iter == superPodToDeviceNum.end()) {
+                std::vector<RankInfo_t> rankInfoList;
+                rankInfoList.push_back(rankInfo);
+                superPodToDeviceNum.insert(std::make_pair(rankInfo.superPodId, rankInfoList));
+            } else {
+                iter->second.push_back(rankInfo);
+            }
         }
         superPodNum_ = superPodToServerNum.size();
         std::vector<u32> superPodServerNumVec;
@@ -464,6 +481,14 @@ namespace hccl
         {
             multiSuperPodDiffServerNumMode_ = false;
             HCCL_RUN_INFO("mix mode, set multiSuperPodDiffServerNumMode to false");
+        }
+
+        for (auto item: superPodToDeviceNum) {
+            u32 curDeviceNum = item.second.size();
+            if (curDeviceNum != superPodToDeviceNum.begin()->second.size()) {
+                multiSuperPodDiffDeviceNumMode_ = true;
+            }
+            HCCL_INFO("[Set][SuperPodInfo]SuperPod[%s] contains [%d] devices", item.first.c_str(), item.second.size());
         }
         return HCCL_SUCCESS;
     }
@@ -1010,6 +1035,7 @@ namespace hccl
         topoAttr.deviceNumPerAggregation = deviceNumPerAggregation_;
         topoAttr.multiModuleDiffDeviceNumMode = multiModuleDiffDeviceNumMode_;
         topoAttr.multiSuperPodDiffServerNumMode = multiSuperPodDiffServerNumMode_;
+        topoAttr.multiSuperPodDiffDeviceNumMode = multiSuperPodDiffDeviceNumMode_;
         topoAttr.meshAggregationRankSize = meshAggregationRankSize_;
         topoAttr.isDiffDeviceModule = isDiffDeviceModule_;
         topoAttr.isDiffDeviceType = isDiffDeviceType_;
@@ -1035,6 +1061,7 @@ namespace hccl
         topoAttr.isSupportHccsAndSio = isSupportHccsAndSio_;
         topoAttr.localNicPort = GetLocalNicPort(NicType::DEVICE_NIC_TYPE);
         topoAttr.isNeedInitNic = isNeedInitNic_;
+        topoAttr.isARSDoubleRing = isARSDoubleRing_;
     }
 
     void HcclCommunicatorAttrs::GetAlgoAttr(HcclAlgoAttr &algoAttr)

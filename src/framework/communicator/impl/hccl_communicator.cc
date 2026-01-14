@@ -439,6 +439,8 @@ namespace hccl
         moduleNum_ = attrCollector_.GetModuleNum();
         multiModuleDiffDeviceNumMode_ = attrCollector_.GetMultiModuleDiffDeviceNumMode();
         multiSuperPodDiffServerNumMode_ = attrCollector_.GetMultiSuperPodDiffServerNumMode();
+        multiSuperPodDiffDeviceNumMode_ = attrCollector_.GetmultiSuperPodDiffDeviceNumMode();
+        isARSDoubleRing_ = attrCollector_.GetSupportARS();
         // 生成nicList
         nicList_ = attrCollector_.GetNicList();
         // InitTopoInfo

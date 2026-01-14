@@ -33,7 +33,8 @@ public:
     TopoInfoExtractor(std::string identifier, u32 userRank, u32 userRankSize, TopoType topoType,
         DevType deviceType, std::vector<RankInfo>& rankVector, u32 meshAggregationRankSize = 0,
         bool isUsedRdmaLevel0 = false, bool isUsedInterHccsMode = false, bool multiModuleDiffDeviceNumMode = false,
-        bool multiSuperPodDiffServerNumMode = false, bool isDiffDeviceType = false, u32 gcdDeviceNumPerAggregation = 0);
+        bool multiSuperPodDiffServerNumMode = false, bool multiSuperPodDiffDeviceNumMode = false,
+        bool isDiffDeviceType = false, u32 gcdDeviceNumPerAggregation = 0);
 #endif
     ~TopoInfoExtractor();
     HcclResult Init(std::map<HcclCMDType, std::vector<HcclAlgoType>> &algoConfig);
@@ -46,6 +47,7 @@ public:
     HcclResult SetTopoInfoForLevel2();
     HcclResult SetTopoInfoForMeshL0();
     HcclResult SetTopoInfoForMeshL1();
+    HcclResult SetTopoInfoForARS();
     HcclResult CheckPlaneInfo();
     HcclResult CheckSuperPodInfo();
     HcclResult CheckServerInfo();
@@ -121,6 +123,7 @@ private:
     // 当前层次是否为非对称
     bool multiModuleDiffDeviceNumMode_; // 每个module内的设备数是否相等
     bool multiSuperPodDiffServerNumMode_; // 每个超节点内的server数是否相等
+    bool multiSuperPodDiffDeviceNumMode_; // 每个超节点内的设备数是否相等(超节点内的总rank数)
 
     bool isDiffDeviceType_;
     u32 gcdDeviceNumPerAggregation_;

@@ -164,6 +164,10 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
     } else {
         newTag = tag;
     }
+    if (algName == "AllReduceARSFor91093Executor") {
+        u32 ringSize = CalcOptimalIntraRingsize(param.DataDes.count, param.DataDes.dataType, HcclCMDType::HCCL_CMD_ALLREDUCE);
+        newTag += std::to_string(ringSize);
+    }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
     return ret;
 }
@@ -625,7 +629,16 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         HCCL_INFO("[SelectAlgfor91093] AllReduce SelectAlgfor91093 is algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }
-
+    // ARS 算法选择
+    bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
+    if (isARSAlgo) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllReduceOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+    }
     // AHC 算法选择逻辑
     if ((algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) ||
         (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE)) {
@@ -656,8 +669,10 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
 
-    if (multiModuleDiffDeviceNumMode_) {
+    if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceComm";
+    } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
+        algName = "AllReduceARSFor91093Executor";
     } else if (useHostComm || smallCountOptimMultiServer || smallCountOptimMultiPod) {
         algName = "AllReduceComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;

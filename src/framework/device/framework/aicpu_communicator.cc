@@ -1115,8 +1115,10 @@ HcclResult HcclCommAicpu::InitTopoInfo(const HcclOpResParam *commParam)
     topoInfo_.isDiffDeviceModule = commParam->topoInfo.isDiffDeviceModule;
     topoInfo_.isDiffDeviceType = commParam->topoInfo.isDiffDeviceType;
     topoInfo_.gcdDeviceNumPerAggregation = commParam->topoInfo.gcdDeviceNumPerAggregation;
-    topoInfo_.moduleNum = commParam->topoInfo.moduleNum;
+    topoInfo_.moduleNum = commParam->topoInfo.moduleNum; 
     topoInfo_.useSuperPodMode = true;
+    topoInfo_.isARSDoubleRing = commParam->isARSDoubleRing;
+    topoInfo_.multiSuperPodDiffDeviceNumMode = commParam->multiSuperPodDiffDeviceNumMode;
     if (commParam->topoInfo.isUsedRdmaRankPairNum % KEY_VALUE_TO_VECTOR_MODULUS != 0) {
         HCCL_ERROR("[HcclCommAicpu][InitTopoInfo]rdma rank pair number[%lu] is error.",
             commParam->topoInfo.isUsedRdmaRankPairNum);

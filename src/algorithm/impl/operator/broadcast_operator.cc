@@ -17,7 +17,7 @@
 #include "hccl_aiv.h"
 
 namespace hccl {
-constexpr u32 FACTOR_TWO = 2;
+
 BroadCastOperator::BroadCastOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
     HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollAlgOperator(algConfigurator, cclBufferManager, dispatcher, topoMatcher, HcclCMDType::HCCL_CMD_BROADCAST)

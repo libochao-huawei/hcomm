@@ -65,6 +65,10 @@ protected:
     HcclResult BuildResourceRequest(u64 scratchMemSize, u32 streamNum, u32 notifyNum, u64 aivBufferRequest,
         std::vector<LevelNSubCommTransport>& opTransport, AlgResourceRequest& resourceRequest);
     HcclResult PrintTransportRequest(AlgResourceRequest& resourceRequest);
+    virtual HcclResult CalcOptimalIntraRing(const OpParam& param);
+    HcclResult SetCommInfoForARS(u32 ringSize);
+    HcclResult SetCommInfoForIntraARS(u32 intraRingsize, std::vector<u32> commPlaneVector);
+    HcclResult SetCommInfoForInterARS(u32 intraRingsize, std::vector<u32> commPlaneVector);
     /* *************** 算法编排 *************** */
     // 非零拷贝场景走KernelRun
     virtual HcclResult KernelRun(const OpParam &param, ExecMem &execMem);
@@ -132,5 +136,6 @@ protected:
     bool aicpuUnfoldMode_ = false;
     HcclWorkflowMode workflowMode_;
 };
+std::vector<std::vector<u32>> GetARSRingsOrder(u32 ranksSize, TopoType topoType, std::vector<u32> &RingList);
 }
 #endif

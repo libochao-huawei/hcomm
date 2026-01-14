@@ -421,6 +421,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_mix_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_ring_zerocopy_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_order_preserved_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_ars_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_ring_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_direct_executor.cc
@@ -441,6 +442,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_exchange_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_pipeline_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ars_for_910_93_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_ring_for_910_93_executor.cc
@@ -481,7 +483,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ring_zerocopy_exchange_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ring_zerocopy_exchange_pipeline_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_order_preserved_executor.cc
-
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ars_for_910_93_executor.cc
+        
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_aiv_big_count_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_mesh_aiv_smallcount_executor.cc
