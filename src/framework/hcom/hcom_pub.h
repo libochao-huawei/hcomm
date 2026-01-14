@@ -67,13 +67,15 @@ HcclResult HcclCommGraphGetAllReduceScratchSize(s64 opBaseHcom, const u32 count,
     u64 &outScratchSize);
 HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize);
 HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId);
-HcclResult HcclCommGraphGetWorkspaceSubStreamNum(s64 opBaseHcom, u64 &streamNum,
-    u64 dataSize = 0, HcclCMDType opType = HcclCMDType::HCCL_CMD_INVALID);
+HcclResult HcclCommGraphGetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op, std::string algName,
+    s64 opBaseHcom, u64 &streamNum, u64 dataSize = 0, bool ifAiv = false, HcclCMDType opType = HcclCMDType::HCCL_CMD_INVALID);
 HcclResult HcclCommGraphSetIsPytorchComm();
 // pytorch单算子通信域复用 end
 
 HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 dataSize = 0,
-    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclCMDType optype = HcclCMDType::HCCL_CMD_INVALID);
+    HcclDataType dataType = HcclDataType::HCCL_DATA_TYPE_RESERVED, u32 aivCoreLimit = 0,
+    HcclReduceOp reduceOp = HcclReduceOp::HCCL_REDUCE_SUM, u64 count = 0,
+    HcclCMDType optype = HcclCMDType::HCCL_CMD_INVALID);
 HcclResult HcomGetWorkspaceMemSize(const std::string &opType, u64 count,
     HcclDataType dataType, const char *group, u64 &memSize);
 HcclResult HcomGetAlltoAllStagedWorkSpaceMemSize(const char *group, u64 *sendCounts, u64 *sdispls,
@@ -109,8 +111,10 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
     bool multiModuleDiffDeviceNumMode, u32 &taskNum, DevType devType);
 HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum, s32 deviceNumPerServer,
     DevType devType, u32 &taskNum, const std::string& group = HCCL_WORLD_GROUP);
-HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, DevType devType, u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
-HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, bool ifAiv,
+    DevType devType, u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
+HcclResult GetStremNumOfflineByDev(const DevType &devType, HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, bool ifAiv,
+    u64 &streamNum, const std::string& group = HCCL_WORLD_GROUP);
 HcclResult GetSubStreamNum(const DevType &devType, s32 deviceNum, u64 &streamNum, s32 &serverNum, const std::string& group = HCCL_WORLD_GROUP);
 HcclResult GetOffDeviceTypeWithoutDev(std::string socVersionStr, DevType &devType);
 HcclResult GetServerAndDevNumFromGroupList(const u32 *groupList, u32 groupListSize, const std::string rankTableString,
