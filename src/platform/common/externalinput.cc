@@ -1333,7 +1333,7 @@ HcclResult ParseCannVersion()
         return HCCL_E_NOT_FOUND;
     }
     g_externalInput.cannVersion = std::string(hcommVersion.data()) + "_" + std::string(hcclVersion.data());
-    HCCL_RUN_INFO("[Parse][CannVersion]success, CannVersion is %s ", g_externalInput.cannVersion.c_str());
+    HCCL_RUN_INFO("[Parse][CannVersion]success, hcomm version is %s, hccl version is %s ", std::string(hcommVersion.data()).c_str(), std::string(hcclVersion.data()).c_str());
     return HcclResult::HCCL_SUCCESS;
 #else
 	HCCL_WARNING("[ParseCannVersion]Does not support this interface.");

@@ -5347,7 +5347,8 @@ const char *aclrtGetSocName()
     return "Ascend910";
 }
 
-ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr) {
+ACL_FUNC_VISIBILITY aclError aclsysGetVersionStr(char* pkgNname, char* versionStr) 
+{
     sal_memcpy(versionStr, sizeof("8.5.0"), "8.5.0", sizeof("8.5.0"));
     return ACL_SUCCESS; 
 }
