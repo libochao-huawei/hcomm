@@ -750,14 +750,12 @@ HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dat
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_RET(HcomCheckUserRank(hcomInfo.params.totalRanks, destRank));
-    u32 destWorldRank = INVALID_VALUE_RANKID;
-    CHK_RET(HcomGetWorldRankFromGroupRank(strGroup.c_str(), destRank, &destWorldRank));
 
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
 
     u32 localGroupRank = INVALID_VALUE_RANKID;
-    CHK_RET(HcomGetGroupRankFromWorldRank(hcomInfo.params.rank, strGroup.c_str(), &localGroupRank));
+    CHK_RET(hcclComm->GetGroupRank(localGroupRank));
     /* 调用HCCL的send, 入参的正确性由HCCL确保 */
     HcclResult ret = hcclComm->send(tag, inputPtr, count, dataType, destRank, stream, srTag, localGroupRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Send][Result]errNo[0x%016llx] hcclComm send error, tag[%s], "\
@@ -766,8 +764,9 @@ HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dat
     CHK_RET(CallMsprofReportHostApi(hcclComm.get(), HcclCMDType::HCCL_CMD_SEND, beginTime, count, dataType));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom send success,time[%lld]us,tag[%s],inputPtr[%p],count[%llu],dataType[%s],destRank[%u],"
-        "srTag[%u]",
-        DURATION_US(TIME_NOW() - startut), tag, inputPtr, count, GetDataTypeEnumStr(dataType).c_str(), destRank, srTag);
+        "srTag[%u], localGroupRank[%u]",
+        DURATION_US(TIME_NOW() - startut), tag, inputPtr, count, GetDataTypeEnumStr(dataType).c_str(), destRank,
+        srTag, localGroupRank);
 
     return HCCL_SUCCESS;
 }
@@ -815,7 +814,7 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
         HCOM_ERROR_CODE(ret), strGroup.c_str()), ret);
 
     u32 localGroupRank = INVALID_VALUE_RANKID;
-    CHK_RET(HcomGetGroupRankFromWorldRank(hcomInfo.params.rank, strGroup.c_str(), &localGroupRank));
+    CHK_RET(hcclComm->GetGroupRank(localGroupRank));
     ret = hcclComm->receive(tag, outputPtr, count, dataType, srcRank, stream, srTag, localGroupRank);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Receive][Result]errNo[0x%016llx] hcclComm receive error,tag[%s], "\
         "outputPtr[%p], count[%llu], dataType[%s], srcRank[%u], group[%s]", HCOM_ERROR_CODE(ret), tag,
@@ -824,8 +823,9 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
     CHK_RET(CallMsprofReportHostApi(hcclComm.get(), HcclCMDType::HCCL_CMD_RECEIVE, beginTime, count, dataType));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom receive success,time[%lld]us,tag[%s],outputPtr[%p],count[%llu],dataType[%s],srcRank[%u],"
-        "srTag[%u]",
-        DURATION_US(TIME_NOW() - startut), tag, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), srcRank, srTag);
+        "srTag[%u],localGroupRank[%u]",
+        DURATION_US(TIME_NOW() - startut), tag, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), srcRank,
+        srTag, localGroupRank);
 
     return HCCL_SUCCESS;
 }
@@ -1377,15 +1377,11 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
         "please check group name" }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get_rank_id group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
-
-    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
-    CHK_PRT_RET(hcomInfo.pComm == nullptr, HCCL_ERROR("[Get][RankId]hcomInfo.pComm is null, "\
-        "please check if the initialize process is called."), HCCL_E_PTR);
-
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    CHK_RET(HcomGetCommByGroup(group, hcclComm));
+    CHK_RET(hcclComm->GetGroupRank(*rankId));
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
-    CHK_RET(GetGroupRankInfo(strGroup.c_str(), RankInfoType::RANK_ID_IN_GROUP, 0, rankId));
-
-    HCCL_INFO("hcom get rank id success, group[%s]", strGroup.c_str());
+    HCCL_INFO("hcom get rank id success, group[%s], rankId[%u]", strGroup.c_str(), *rankId);
 
     return HCCL_SUCCESS;
 }
