@@ -66,7 +66,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChanne
 </td>
 <td class="cellrowborder" valign="top" width="17.26%" headers="mcps1.1.4.1.2 "><p id="p158914171795"><a name="p158914171795"></a><a name="p158914171795"></a>输入</p>
 </td>
-<td class="cellrowborder" valign="top" width="62.53999999999999%" headers="mcps1.1.4.1.3 "><p id="p72239481983"><a name="p72239481983"></a><a name="p72239481983"></a>通信通道描述列表。</p>
+<td class="cellrowborder" valign="top" width="62.53999999999999%" headers="mcps1.1.4.1.3 "><p id="p72239481983"><a name="p72239481983"></a><a name="p72239481983"></a>通信通道描述列表，列表长度为channelNum。</p>
 <p id="p10912917141213"><a name="p10912917141213"></a><a name="p10912917141213"></a>HcclChannelDesc类型的定义可参见<a href="HcclChannelDesc.md">HcclChannelDesc</a>。</p>
 </td>
 </tr>
@@ -74,7 +74,7 @@ HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine, const HcclChanne
 </td>
 <td class="cellrowborder" valign="top" width="17.26%" headers="mcps1.1.4.1.2 "><p id="p1489211171390"><a name="p1489211171390"></a><a name="p1489211171390"></a>输入</p>
 </td>
-<td class="cellrowborder" valign="top" width="62.53999999999999%" headers="mcps1.1.4.1.3 "><p id="p122231448481"><a name="p122231448481"></a><a name="p122231448481"></a>通信通道数量。</p>
+<td class="cellrowborder" valign="top" width="62.53999999999999%" headers="mcps1.1.4.1.3 "><p id="p122231448481"><a name="p122231448481"></a><a name="p122231448481"></a>通信通道数量，channelNum的取值范围为(0, 1024*1024]。</p>
 </td>
 </tr>
 <tr id="row457782815815"><td class="cellrowborder" valign="top" width="20.200000000000003%" headers="mcps1.1.4.1.1 "><p id="p1983413715818"><a name="p1983413715818"></a><a name="p1983413715818"></a>channels</p>

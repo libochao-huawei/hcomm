@@ -29,7 +29,7 @@
 ## 函数原型<a name="section62999330"></a>
 
 ```
-void HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
+HcclResult HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 ```
 
 ## 参数说明<a name="section2672115"></a>
@@ -47,7 +47,7 @@ void HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 </td>
 <td class="cellrowborder" valign="top" width="17.169999999999998%" headers="mcps1.1.4.1.2 "><p id="p158914171795"><a name="p158914171795"></a><a name="p158914171795"></a>输入</p>
 </td>
-<td class="cellrowborder" valign="top" width="62.629999999999995%" headers="mcps1.1.4.1.3 "><p id="p72239481983"><a name="p72239481983"></a><a name="p72239481983"></a>通信通道描述列表。</p>
+<td class="cellrowborder" valign="top" width="62.629999999999995%" headers="mcps1.1.4.1.3 "><p id="p72239481983"><a name="p72239481983"></a><a name="p72239481983"></a>通信通道描述列表，列表长度为descNum。</p>
 <p id="p10912917141213"><a name="p10912917141213"></a><a name="p10912917141213"></a>HcclChannelDesc类型的定义可参见<a href="HcclChannelDesc.md">HcclChannelDesc</a>。</p>
 </td>
 </tr>
@@ -63,11 +63,11 @@ void HcclChannelDescInit(HcclChannelDesc *channelDesc, uint32_t descNum)
 
 ## 返回值<a name="section24049039"></a>
 
-无
+[HcclResult](../../comm_mgr_api_c/context/HcclResult.md)：接口成功返回HCCL\_SUCCESS，其他失败。
 
 ## 约束说明<a name="section15114764"></a>
 
-无
+HcclChannelDesc结构体必须调用该接口进行初始化。
 
 ## 调用示例<a name="section204039211474"></a>
 
