@@ -126,7 +126,7 @@ extern HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize);
  * @code {.c}
  * uint32_t *netLayers;
  * uint32_t layerNum;
- * HcclGetNetLayers(comm, &netLayers, &layerNum);
+ * HcclRankGraphGetLayers(comm, &netLayers, &layerNum);
  * // 以server内，server间两级拓扑为例
  * // netLayers = [0,1], layerNum = 2
  * @endcode
@@ -134,7 +134,7 @@ extern HcclResult HcclGetRankSize(HcclComm comm, uint32_t *rankSize);
  * 1、返回的netLayers内存由库内管理，调用者严禁释放
  * 2、应及时复制返回的netLayers数据，同一通信域重复调用可能使前次结果失效
  */
-extern HcclResult HcclGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
+extern HcclResult HcclRankGraphGetLayers(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
 
 /**
  * @brief 给定通信域和netLayer，返回本Rank所在的netInstance中的所有ranks
@@ -151,15 +151,15 @@ extern HcclResult HcclGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t
  * vector<uint32_t> ranks;
  * uint32_t rankNum;
  * 如果本卡为rank0
- * HcclGetInstRanksByNetLayer( commTp, netLayer=0, &ranks, &rankNum )
+ * HcclRankGraphGetRanksByLayer( commTp, netLayer=0, &ranks, &rankNum )
  * // ranks = [0,1,2,…,7],  rankNum=8
- * HcclGetInstRanksByNetLayer( commTp, netLayer=1, &ranks, &rankNum )
+ * HcclRankGraphGetRanksByLayer( commTp, netLayer=1, &ranks, &rankNum )
  * // ranks = [0,1,2,…,31],  rankNum=32
  * 
  * 如果本卡为rank9
- * HcclGetInstRanksByNetLayer( commTp, netLayer=0, &ranks, &rankNum )
+ * HcclRankGraphGetRanksByLayer( commTp, netLayer=0, &ranks, &rankNum )
  * // ranks = [8,9,10,…,15],  rankNum=8
- * HcclGetInstRanksByNetLayer( commTp, netLayer=1, &ranks, &rankNum )
+ * HcclRankGraphGetRanksByLayer( commTp, netLayer=1, &ranks, &rankNum )
  * // ranks = [0,1,2,…,31],  rankNum=32
  * @endcode
  * 说明：该接口只反映组网/拓扑情况，不反映算法情况，所以这里的netLayer1查询的是level1可连通的范围，
@@ -169,7 +169,7 @@ extern HcclResult HcclGetNetLayers(HcclComm comm, uint32_t **netLayers, uint32_t
  * 1、返回的ranks内存由库内管理，调用者严禁释放
  * 2、应及时复制返回的ranks数据，同一通信域重复调用可能使前次结果失效
  */
-extern HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum);
+extern HcclResult HcclRankGraphGetRanksByLayer(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum);
 
 /**
  * @brief 给定通信域和netLayer，返回rank数量
@@ -181,15 +181,15 @@ extern HcclResult HcclGetInstRanksByNetLayer(HcclComm comm, uint32_t netLayer, u
  * @code {.c}
  * HcclComm commTp = CreateComm([0,1,2,3,…,31]);
  * uint32 rankNum;
- * HcclGetInstSizeByNetLayer(commTp, level=0, &rankNum)
+ * HcclRankGraphGetRankSizeByLayer(commTp, level=0, &rankNum)
  * // rankNum=8
- * HcclGetInstSizeByNetLayer(commTp, level=1, &rankNum )
+ * HcclRankGraphGetRankSizeByLayer(commTp, level=1, &rankNum )
  * // rankNum=32
  * @endcode
  * 主要用于不需要返回list的场景，只返回size即可；对于超大规模的集群，
  * 返回list会消耗较多的时间和内存
  */
-extern HcclResult HcclGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
+extern HcclResult HcclRankGraphGetRankSizeByLayer(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
 
 /**
  * @brief 给定通信域和netLayer，查询本rank在该netLayer的硬件连接拓扑
@@ -202,11 +202,11 @@ extern HcclResult HcclGetInstSizeByNetLayer(HcclComm comm, uint32_t netLayer, ui
  * @code {.c}
  * commTp = CreateComm([0,1,2,..,31]);
  * uint32_t topoType;
- * HcclGetInstTopoTypeByNetLayer(commTp, netLayer=0, &topoType); // topoType=1 (1DMesh)
- * HcclGetInstTopoTypeByNetLayer(commTp, netLayer=1, &topoType); // topoType=2 (clos)
+ * HcclRankGraphGetTopoTypeByLayer(commTp, netLayer=0, &topoType); // topoType=1 (1DMesh)
+ * HcclRankGraphGetTopoTypeByLayer(commTp, netLayer=1, &topoType); // topoType=2 (clos)
  * @endcode
  */
-extern HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer, CommTopo *topoType);
+extern HcclResult HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, CommTopo *topoType);
 
 /**
  * @brief 给定通信域和netLayer，查询rankTable在该层分为多少group，以及每个group的size
@@ -220,16 +220,16 @@ extern HcclResult HcclGetInstTopoTypeByNetLayer(HcclComm comm, uint32_t netLayer
  * commA = CreateComm([0,1,2,…,31]);
  * uint32_t *sizeList;
  * uint32_t listSize;
- * HcclGetInstSizeListByNetLayer(commA, netLayer=0, &sizeList, &listSize);
+ * HcclRankGraphGetInstSizeListByLayer(commA, netLayer=0, &sizeList, &listSize);
  * // sizeList=[8,8,8,8], listSize=4
- * HcclGetInstSizeListByNetLayer(commA, netLayer=1, &sizeList, &listSize);
+ * HcclRankGraphGetInstSizeListByLayer(commA, netLayer=1, &sizeList, &listSize);
  * // sizeList = [32], listSize=1
  * @endcode
  * @warning 重要约束：
  * 1、返回的instSizeList内存由库内管理，调用者严禁释放
  * 2、应及时复制返回的instSizeList数据，同一通信域重复调用可能使前次结果失效
  */
-extern HcclResult HcclGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList,
+extern HcclResult HcclRankGraphGetInstSizeListByLayer(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList,
     uint32_t *listSize);
 
 /**
@@ -245,7 +245,7 @@ extern HcclResult HcclGetInstSizeListByNetLayer(HcclComm comm, uint32_t netLayer
  * 1、返回的links内存由库内管理，调用者严禁释放
  * 2、应及时复制返回的links数据，同一通信域重复调用可能使前次结果失效
  */
-extern HcclResult HcclGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
+extern HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
     CommLink **links, uint32_t *linkNum);
 
 /**

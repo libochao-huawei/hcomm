@@ -303,7 +303,8 @@ public:
     HcclResult ReleasePreemptSocket();
     HcclResult DestroyNetworkResources();
     HcclResult DisablePreResource();
-    HcclResult GetWorkspaceSubStreamNum(u64 &streamNum, u64 dataSize, HcclCMDType opType);
+    HcclResult GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op,
+        const std::string &algName, u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType opType);
     HcclResult GetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType,
                                    u32 &rankSize, u64 &size, DevType &deviceType) const;
     HcclResult SetWorkspaceResource(const std::string &tag, void *memPtr, u64 &maxSize,

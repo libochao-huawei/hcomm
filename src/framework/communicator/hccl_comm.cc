@@ -1029,9 +1029,10 @@ HcclResult hcclComm::SetAicpuCommEngine(bool isAicpuCommEngine)
     return communicator_->SetAicpuCommEngine(isAicpuCommEngine);
 }
 
-HcclResult hcclComm::GetWorkspaceSubStreamNum(u64 &streamNum, u64 dataSize, HcclCMDType optype) const
+HcclResult hcclComm::GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op, const std::string &algName,
+         u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType optype) const
 {
-    return communicator_->GetWorkspaceSubStreamNum(streamNum, dataSize, optype);
+    return communicator_->GetWorkspaceSubStreamNum(count, dataType, op, algName, streamNum, dataSize, ifAiv, optype);
 }
 HcclResult hcclComm::GetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType,
     u32 &rankSize, u64 &size)
