@@ -258,22 +258,22 @@ void DestroyComm(HcclComm comm) {
 }
 
 // 910C 用例
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_Param_Is_Null_Expect_PtrError)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_Param_Is_Null_Expect_PtrError)
 {
-    HcclResult ret = HcclGetLinks(nullptr, 0, 0, 0, nullptr, nullptr);
+    HcclResult ret = HcclRankGraphGetLinks(nullptr, 0, 0, 0, nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
     Create91093Comm(&comm);
-    ret = HcclGetLinks(comm, 0, 0, 0, nullptr, nullptr);
+    ret = HcclRankGraphGetLinks(comm, 0, 0, 0, nullptr, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
     uint32_t listSize = 0;
     CommLink *linkList = nullptr;
-    ret = HcclGetLinks(comm, 0, 0, 0, &linkList, nullptr);
+    ret = HcclRankGraphGetLinks(comm, 0, 0, 0, &linkList, nullptr);
     EXPECT_EQ(ret, HCCL_E_PTR);
-    ret = HcclGetLinks(comm, 0, 0, 0, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, 0, 0, 0, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    ret = HcclGetLinks(comm, 0, 0, 100, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, 0, 0, 100, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_E_PARA);
-    ret = HcclGetLinks(comm, 100, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, 100, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_E_PARA);
     DestroyComm(comm);
 }
@@ -290,13 +290,13 @@ netLayer = 0， HCCS
 netLayer = 1， 无 (如果是超节点，可能是HCCS)
 netLayer = 2， 无
 */
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Server)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910_93));
     Create91093Comm(&comm);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
@@ -306,7 +306,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server)
         EXPECT_EQ(linkList[i].linkAttr.linkProtocol, COMM_PROTOCOL_SIO);
     }
     EXPECT_EQ(listSize, 1);
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
         EXPECT_EQ(linkList[i].dstEndpointDesc.commAddr.id, 1);
@@ -315,11 +315,11 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server)
         EXPECT_EQ(linkList[i].linkAttr.linkProtocol, COMM_PROTOCOL_HCCS);
     }
     EXPECT_EQ(listSize, 1);
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 2, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 2, &linkList, &listSize);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
         EXPECT_EQ(linkList[i].dstEndpointDesc.commAddr.id, 2);
@@ -329,7 +329,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server)
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 2, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 2, &linkList, &listSize);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
         EXPECT_EQ(linkList[i].dstEndpointDesc.commAddr.id, 2);
@@ -339,7 +339,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server)
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 2, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 2, &linkList, &listSize);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
     DestroyComm(comm);
@@ -357,13 +357,13 @@ netLayer = 0， 无
 netLayer = 1， 无
 netLayer = 2， RDMA连接
 */
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_diff_Servers_Same_Supod)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Servers_Same_Supod)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910_93));
     Create91093Comm(&comm);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
@@ -374,28 +374,28 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_diff_Servers_Same
     }
     EXPECT_EQ(listSize, 1);
     // 从缓存里拿
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 4, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 4, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 4, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 4, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
     DestroyComm(comm);
 }
 
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_diff_Servers_diff_Supod)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Servers_diff_Supod)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910_93));
     Create91093Comm(&comm);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 8, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 8, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
@@ -404,12 +404,12 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_diff_Servers_diff
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 8, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 8, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 8, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 8, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
@@ -468,13 +468,13 @@ netLayer = 0， HCCS连接
 netLayer = 1， 无
 netLayer = 2， 无
 */
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server_910B)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Server_910B)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910B));
     Create910BComm(&comm, rank_table_2server_2rank);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
@@ -485,25 +485,25 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server_910B)
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
     DestroyComm(comm);
 }
 
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Diff_Servers_910B)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Diff_Servers_910B)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910B));
     Create910BComm(&comm, rank_table_2server_2rank);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 3, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 3, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
@@ -512,12 +512,12 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Diff_Servers_910B
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 3, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 3, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 3, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 3, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
@@ -542,7 +542,7 @@ netLayer = 1， 无（有接交换机，就有rdma连接）
 netLayer = 2， 无
 */
 
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Mesh_AX)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Mesh_AX)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
@@ -552,7 +552,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Mesh_AX)
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
     Create910BComm(&comm, rank_table_910B_1server_16rank);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 3, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 3, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_HCCS);
@@ -561,12 +561,12 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Mesh_AX)
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 3, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 3, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 3, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 3, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
@@ -574,7 +574,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Mesh_AX)
 }
 
 // 不同个MESH间走PCIE
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_diff_Mesh_AX)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Mesh_AX)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
@@ -584,7 +584,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_diff_Mesh_AX)
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
     Create910BComm(&comm, rank_table_910B_1server_16rank);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 8, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 8, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_PCIE);
@@ -593,12 +593,12 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_diff_Mesh_AX)
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 8, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 8, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 8, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 8, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
@@ -650,13 +650,13 @@ netLayer = 0， V卡PCIE连接 DUO卡DIE间走HCCS
 netLayer = 1， 无
 netLayer = 2， 无
 **/
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server_310P)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Server_310P)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_310P3));
     Create310PComm(&comm, rank_table_2server_4rank);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
@@ -667,29 +667,29 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Server_310P)
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
     // DUO卡两个卡间其实走PCIE
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 2, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 2, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 1);
     DestroyComm(comm);
 }
 
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Diff_Servers_310P)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Diff_Servers_310P)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_310P3));
     Create310PComm(&comm, rank_table_2server_4rank);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_PCIE);
@@ -698,12 +698,12 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Diff_Servers_310P
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 4, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 4, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 4, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 4, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
@@ -711,14 +711,14 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Diff_Servers_310P
 }
 
 // 310P V卡走PCIE
-TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Servers_310P_V)
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Servers_310P_V)
 {
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_310P3));
     set_board_id(0x1E); // 设置为V卡
     Create310PComm(&comm, rank_table_2server_4rank);
-    HcclResult ret = HcclGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_PCIE);
@@ -727,17 +727,17 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclGetLinks_When_In_Same_Servers_310P
     }
     EXPECT_EQ(listSize, 1);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
 
-    ret = HcclGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 4, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_PCIE);

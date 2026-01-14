@@ -1338,7 +1338,8 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::GetWorkspaceSubStreamNum(u64 &streamNum, u64 dataSize, HcclCMDType opType)
+    HcclResult HcclCommunicator::GetWorkspaceSubStreamNum(u64 count, HcclDataType dataType, HcclReduceOp op,
+        const std::string &algName,u64 &streamNum, u64 dataSize, bool ifAiv, HcclCMDType opType)
     {
         AlgType algType;
 
@@ -1348,6 +1349,36 @@ namespace hccl
             {HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HCCL_SMALL_COUNT_512_KB + HCCL_SMALL_COUNT_512_KB},
             {HcclCMDType::HCCL_CMD_ALLGATHER, HCCL_SMALL_COUNT_512_KB + HCCL_SMALL_COUNT_512_KB},
             {HcclCMDType::HCCL_CMD_ALLREDUCE, (HCCL_SMALL_COUNT_512_KB + HCCL_SMALL_COUNT_512_KB) * userRankSize_}};
+
+        // 图模式下AIV展开，需要重新计算streamNum
+        bool ifHcomWithAiv = ifAiv && (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
+        HCCL_INFO("[GetWorkspaceSubStreamNum] ifAiv[%d], workflowMode[%d], ifHcomWithAiv[%d]",
+                  ifAiv, GetWorkflowMode(), ifHcomWithAiv);
+        if (ifHcomWithAiv && (deviceType_ == DevType::DEV_TYPE_910_93 || deviceType_ == DevType::DEV_TYPE_910B)) {
+            HCCL_INFO("[GetWorkspaceSubStreamNum] Hcom AIV enabled, calculating the streamNum.");
+            // A3 和 A2 公用以下的参数
+            std::string newTag;
+            std::unique_ptr<CollAlgOperator> algOperator = implAlg_->GetAlgOperator(opType);
+            CHK_SMART_PTR_NULL(algOperator);
+            OpParam param;
+            param.reduceType = op;
+            param.opType = opType;
+
+            if (opType == HcclCMDType::HCCL_CMD_ALLTOALL || opType == HcclCMDType::HCCL_CMD_ALLTOALLV) {
+                param.All2AllDataDes.sendType = dataType;
+                param.All2AllDataDes.recvType = dataType;
+                param.All2AllDataDes.sendCount = count;
+            } else { //不论 A2 还是 A3，AIV场景下的AllReduce/ReduceScatter还是A2上单独支持AIV的算子都用以下参数
+                param.DataDes.count = count;
+                param.DataDes.dataType = dataType;
+            }
+            AlgResourceRequest resRequest;
+            CHK_RET(algOperator->CalcResRequest(algName, param, resRequest)); // 计算资源请求
+            streamNum = resRequest.streamNum;
+            HCCL_INFO("[GetWorkspaceSubStreamNum] Hcom AIV enabled on DeviceType[%d], the streamNum is [%llu]",
+                      deviceType_, streamNum);
+            return HCCL_SUCCESS;
+        }
 
         if (serverNum_ == 1 && deviceType_ == DevType::DEV_TYPE_910_93 && opType == HcclCMDType::HCCL_CMD_ALLGATHER &&
             dataSize <= gapMap[opType] &&
@@ -1574,7 +1605,14 @@ namespace hccl
     HcclResult HcclCommunicator::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
                                                HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName)
     {
+        HCCL_INFO("[HcclCommunicator][HcclSelectAlg] start to run with opType[%d], count[%llu], dataType[%d], reduceOp[%d], aivCoreLimit[%d]",
+                  opType, count, dataType, op, aivCoreLimit);
         ifAiv = false;
+        if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V || opType == HcclCMDType::HCCL_CMD_ALLGATHER_V || 
+            opType == HcclCMDType::HCCL_CMD_BATCH_SEND_RECV || opType == HcclCMDType::HCCL_CMD_BATCH_WRITE) {
+            HCCL_INFO("[HcclCommunicator][HcclSelectAlg] opType[%d] no need select AIV algorithm", opType);
+            return HCCL_SUCCESS;
+        }
         /* 选择算法前，先更新成图模式 */
         auto originWorkflowMode = GetWorkflowMode();
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
