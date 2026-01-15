@@ -51,6 +51,7 @@
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
+constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 
 namespace hccl
 {
@@ -6575,8 +6576,15 @@ namespace hccl
             CHK_RET(BuildCustomOpResParam());
             uint64_t customBeginTime = hrtMsprofSysCycleTime();
             const std::string customProfName = "hcomAicpuCustomInit";
-            u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
-                (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
+
+            u16 timeOut = 0;
+ 	        if (opResPara_.config.notifyWaitTime == 0) {
+ 	            timeOut = opResPara_.config.notifyWaitTime;
+ 	        } else if (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC >=  MAX_VALUE_U16) {
+ 	            timeOut = MAX_VALUE_U16;
+ 	        } else {
+ 	            timeOut = opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC;
+ 	        }
             CHK_RET(AicpuAclKernelLaunch(aicpuStream, reinterpret_cast<void *>(&customInitTask),
                 sizeof(customInitTask), binCustomHandle_, kernelName, true, timeOut));
             uint64_t customEndTime = hrtMsprofSysCycleTime();
@@ -6601,8 +6609,14 @@ namespace hccl
         InitTask initTask = {0};
         initTask.context = addr;
         initTask.isCustom = false;
-        u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
-            (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
+        u16 timeOut = 0;
+ 	    if (opResPara_.config.notifyWaitTime == 0) {
+ 	        timeOut = opResPara_.config.notifyWaitTime;
+ 	    } else if (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC >=  MAX_VALUE_U16) {
+ 	        timeOut = MAX_VALUE_U16;
+ 	    } else {
+ 	        timeOut = opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC;
+ 	    }
         CHK_RET(AicpuAclKernelLaunch(stm, reinterpret_cast<void *>(&initTask), sizeof(initTask),
             binHandle_, kernelName, true, timeOut));
         uint64_t endTime = hrtMsprofSysCycleTime();
@@ -7022,8 +7036,14 @@ namespace hccl
         apiParam.gatherOut = reinterpret_cast<uint64_t>(outputPtr);
         apiParam.context = addr;
         apiParam.workspace = (u64)workSpace_.ptr();
-        u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
-            (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
+        u16 timeOut = 0;
+ 	    if (opResPara_.config.notifyWaitTime == 0) {
+ 	        timeOut = opResPara_.config.notifyWaitTime;
+ 	    } else if (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC >=  MAX_VALUE_U16) {
+ 	        timeOut = MAX_VALUE_U16;
+ 	    } else {
+ 	        timeOut = opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC;
+ 	    }
         CHK_PRT(AicpuAclKernelLaunch(stm, reinterpret_cast<void *>(&apiParam), sizeof(apiParam),
             binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
         HCCL_INFO("[HcclCommunicator][AicpuUnfoldKernelLaunch] exec succ.");
@@ -7043,8 +7063,14 @@ namespace hccl
             HCCL_ERROR("[AicpuUnfoldKernelLaunchV2]isCustom[%d] binHandle is nullptr, please check.", isCustom);
             return HCCL_E_NOT_SUPPORT;
         }
-        u16 timeOut = static_cast<u16>((opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
-            (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC));
+        u16 timeOut = 0;
+ 	    if (opResPara_.config.notifyWaitTime == 0) {
+ 	        timeOut = opResPara_.config.notifyWaitTime;
+ 	    } else if (opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC >=  MAX_VALUE_U16) {
+ 	        timeOut = MAX_VALUE_U16;
+ 	    } else {
+ 	        timeOut = opResPara_.config.notifyWaitTime + AICPU_KERNEL_TIMEOUT_INC;
+ 	    }
         HcclResult ret = AicpuAclKernelLaunchV2(stm, reinterpret_cast<void *>(&context), sizeof(context),
             binHandle, kernelName, false, timeOut, tilingDataPtr, tilingDataSize);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
