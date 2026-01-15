@@ -377,8 +377,7 @@ void Heartbeat::CreateLinkWithRemote(std::string group, UIDType rem, ConnInfo ne
         rankId2SocketMap_.insert(rem, needConnectRank);
         // 心跳socket建链完成后，需要立即及激活其心跳收发能力
         auto frameSize = GetExternalInconsistentCheckSwitch() ? sizeof(HeartBeatFrameWithOpCheck) : sizeof(HeartBeatFrame);
-        if (rankId2SocketMap_[rem].recvBuffer.Init(2 * frameSize) !=
-            HCCL_SUCCESS) { // 2倍帧长，确报不会溢出
+        if (rankId2SocketMap_[rem].recvBuffer.Init(BASE_NUMBER * frameSize) != HCCL_SUCCESS) {// 2倍帧长，确报不会溢出
             HCCL_RUN_WARNING(
                 "establish rank[%s] to rank[%s] heartbeat connection failed. Reason: socket recv buffer init"
                 "failed. Group[%s].",
@@ -1548,7 +1547,6 @@ void Heartbeat::HeartbeatStatusMonitor()
 
         auto sleeptime = !GetExternalInconsistentCheckSwitch() ? BROADCAST_INTERVAL : BROADCAST_INTERVAL_WITH_CHECK;
         std::this_thread::sleep_for(std::chrono::milliseconds(sleeptime));
-        
     }
     linkThreadRunning_ = false;
     // 在心跳进程结束之前join所有的建链线程

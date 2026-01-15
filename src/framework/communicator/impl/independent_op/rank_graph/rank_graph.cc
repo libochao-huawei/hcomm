@@ -305,7 +305,8 @@ HcclResult RankGraph::InitHeterogMode() {
     }
 
     // 包含两种芯片的异构混合组网
-    if (devTypes.size() == 2 && devTypes.find(DevType::DEV_TYPE_910B) != devTypes.end() && devTypes.find(DevType::DEV_TYPE_910_93) != devTypes.end()) {
+    constexpr uint32_t MIX_CHIPS = 2;
+    if (devTypes.size() == MIX_CHIPS && devTypes.find(DevType::DEV_TYPE_910B) != devTypes.end() && devTypes.find(DevType::DEV_TYPE_910_93) != devTypes.end()) {
         heterogMode_ = HcclHeterogMode::HCCL_HETEROG_MODE_MIX_A2_A3;
         return HCCL_SUCCESS;
     }
