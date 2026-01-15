@@ -22,8 +22,9 @@ const RankInfo_t* RankGraph::FindRank(uint32_t rankId) const {
     return &(it->second.rankInfo);
 }
 
-HcclResult RankGraph::DevTypeToCommProtocol(DevType type, CommProtocol &protocol)
+HcclResult RankGraph::DevTypeToCommProtocol(DevType &type, CommProtocol &protocol)
 {
+    CHK_RET(hrtGetDeviceType(type));
     switch (type) {
         case DevType::DEV_TYPE_910B:
         case DevType::DEV_TYPE_910_93:
@@ -48,13 +49,15 @@ HcclResult RankGraph::DevTypeToCommProtocol(DevType type, CommProtocol &protocol
     return HCCL_SUCCESS;
 }
 
-HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &topoAttr)
+HcclResult RankGraph::Init(const RankTable_t &rankTable, const HcclTopoAttr &topoAttr)
 {
     rankTable_ = rankTable;
     topoAttr_ = topoAttr;
     rankIndex_.clear();
     rankPairInfo_.clear();
     HCCL_INFO("[RankGraph][%s] rankNum[%zu]", __func__, rankTable_.rankList.size());
+    CommProtocol protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
+    CHK_RET(DevTypeToCommProtocol(devType_, protocol));
     // 解析 rankTable，建立 rankId -> RankGraphInfo 映射
     for (const auto& r : rankTable_.rankList) {
         RankGraphInfo info;
@@ -65,8 +68,6 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
         // 2. 利用hccp接口可以查询虚拟网卡地址，但虚拟网卡不等于HCCS
         // 3. 此处只收集device的EndpointDesc（ROCE），todo：收集虚拟网卡的EndpointDesc（HCCS等）
         std::vector<HcclIpAddress> addrs = r.deviceInfo.deviceIp;
-        CommProtocol protocol = CommProtocol::COMM_PROTOCOL_RESERVED;
-        CHK_RET(DevTypeToCommProtocol(r.deviceInfo.deviceType, protocol));
         for (const auto &addr :addrs) {
             EndpointDesc point;
             CHK_RET(EndpointDescInit(&point, 1));
@@ -77,6 +78,7 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
                 point.commAddr.type = COMM_ADDR_TYPE_IP_V4;
                 point.commAddr.addr = addr.GetBinaryAddress().addr;
             }
+            point.commAddr.id = r.rankId;
             point.protocol = protocol;
             point.loc.locType = ENDPOINT_LOC_TYPE_DEVICE; // 当前默认device
             point.loc.device.devPhyId = r.deviceInfo.devicePhyId;
@@ -84,6 +86,20 @@ HcclResult RankGraph::Init(const RankTable_t &rankTable,  const HcclTopoAttr &to
             point.loc.device.serverIdx = r.serverIdx;
             point.loc.device.superPodIdx = r.superPodIdx;
             info.endPoints.push_back(std::move(point));
+            if (devType_ == DevType::DEV_TYPE_910B || devType_ == DevType::DEV_TYPE_910_93 ||
+                devType_ == DevType::DEV_TYPE_310P1 || devType_ == DevType::DEV_TYPE_310P3) {
+                EndpointDesc hccsPoint = point;
+                hccsPoint.protocol = COMM_PROTOCOL_HCCS;
+                hccsPoint.commAddr.type = COMM_ADDR_TYPE_ID;
+                info.endPoints.push_back(std::move(hccsPoint));
+            }
+            if (devType_ == DevType::DEV_TYPE_910B || devType_ == DevType::DEV_TYPE_310P1 ||
+                devType_ == DevType::DEV_TYPE_310P3) {
+                EndpointDesc pciePoint = point;
+                pciePoint.protocol = COMM_PROTOCOL_PCIE;
+                pciePoint.commAddr.type = COMM_ADDR_TYPE_ID;
+                info.endPoints.push_back(std::move(pciePoint));
+            }
         }
         rankIndex_[r.rankId] = std::move(info);
     }
@@ -106,7 +122,44 @@ HcclResult RankGraph::Init(const HcclTopoAttr &topoAttr)
     return HCCL_SUCCESS;
 }
 
-CommProtocol RankGraph::GetCommProtocolFromRankInfo(const RankInfo_t srcInfo, const RankInfo_t dstInfo)
+CommProtocol RankGraph::GetCommProtocolInSameServer(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo)
+{
+      // 310P间链路为PCIE或HCCS
+      LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
+      hrtGetPairDeviceLinkType(srcInfo.deviceInfo.devicePhyId, dstInfo.deviceInfo.devicePhyId, linkType);
+      HCCL_INFO("[RankGraph][%s] ranks[%u,%u] intra-server linkType[%d]", __func__,
+          srcInfo.rankId, dstInfo.rankId, linkType);
+      if (linkType == LinkTypeInServer::HCCS_TYPE || linkType == LinkTypeInServer::HCCS_SW_TYPE) {
+          return CommProtocol::COMM_PROTOCOL_HCCS;
+      } else if (linkType == LinkTypeInServer::SIO_TYPE) {
+          return CommProtocol::COMM_PROTOCOL_SIO;
+      } else if (linkType == LinkTypeInServer::PXI_TYPE) {
+          return CommProtocol::COMM_PROTOCOL_PCIE;
+      }
+      return CommProtocol::COMM_PROTOCOL_RESERVED;
+}
+
+CommProtocol RankGraph::GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo)
+{
+      // srcInfo与dstInfo一定是相同数据类型
+      if (devType_ == DevType::DEV_TYPE_310P3 || devType_ == DevType::DEV_TYPE_310P1) {
+          return CommProtocol::COMM_PROTOCOL_PCIE;
+      }
+      if (devType_ == DevType::DEV_TYPE_910B) {
+          return CommProtocol::COMM_PROTOCOL_ROCE;
+      }
+      HCCL_DEBUG("[%s] srcInfo.superPodId %s dstInfo.superPodId %s", __func__, srcInfo.superPodId.c_str(), dstInfo.superPodId.c_str());
+      if (devType_ == DevType::DEV_TYPE_910_93) {
+          // 超节点内链路为HCCS
+          if (!srcInfo.superPodId.empty() && srcInfo.superPodId == dstInfo.superPodId) {
+              return CommProtocol::COMM_PROTOCOL_HCCS;
+          }
+      }
+      return CommProtocol::COMM_PROTOCOL_RESERVED;
+}
+
+CommProtocol RankGraph::GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo,
+    uint32_t netLayer)
 {
     if (srcInfo.deviceInfo.deviceType != dstInfo.deviceInfo.deviceType) {
         HCCL_ERROR("[RankGraph][%s] srcType[%d] != dstType[%d]", __func__,
@@ -115,30 +168,31 @@ CommProtocol RankGraph::GetCommProtocolFromRankInfo(const RankInfo_t srcInfo, co
     }
     // 首先判断是否在同一机内
     if (srcInfo.serverIdx == dstInfo.serverIdx) {
-        // 310P间链路为PCIE
-        if (srcInfo.deviceInfo.deviceType == DevType::DEV_TYPE_310P3 ||
-            srcInfo.deviceInfo.deviceType == DevType::DEV_TYPE_310P1) {
-            return CommProtocol::COMM_PROTOCOL_PCIE;
-        }
-        LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
-        hrtGetPairDeviceLinkType(srcInfo.deviceInfo.devicePhyId, dstInfo.deviceInfo.devicePhyId, linkType);
-        HCCL_INFO("[RankGraph][%s] ranks[%u,%u] intra-server linkType[%d]", __func__,
-            srcInfo.rankId, dstInfo.rankId, linkType);
-        if (linkType == LinkTypeInServer::HCCS_TYPE || linkType == LinkTypeInServer::HCCS_SW_TYPE) {
+        if (netLayer == HCCL_NETLAYER_0) {
+            return GetCommProtocolInSameServer(srcInfo, dstInfo);
+        // 超节点有HCCL_NETLAYER_1及以上的情况，为HCCS链路，或者同卡不同DIE
+        } else if (netLayer == HCCL_NETLAYER_1 && devType_ == DevType::DEV_TYPE_910_93 &&
+            (srcInfo.superPodId == dstInfo.superPodId ||
+            GetCommProtocolInSameServer(srcInfo, dstInfo) == CommProtocol::COMM_PROTOCOL_SIO)) {
             return CommProtocol::COMM_PROTOCOL_HCCS;
-        } else if (linkType == LinkTypeInServer::SIO_TYPE) {
-            return CommProtocol::COMM_PROTOCOL_SIO;
         } else {
+            // 接了交换机才会有HCCL_NETLAYER_1及以上的情况，当前无法判断是否连接交换机，接了交换机走RDMA
             return CommProtocol::COMM_PROTOCOL_RESERVED;
         }
-    } else {
-        // 超节点间链路为HCCS
-        if (!srcInfo.superPodId.empty() && srcInfo.superPodId == dstInfo.superPodId) {
+    }
+    if (srcInfo.serverIdx != dstInfo.serverIdx) {
+        if (netLayer == HCCL_NETLAYER_0) {
+            HCCL_INFO("[RankGraph][%s] ranks[%u,%u] not in same server", __func__, srcInfo.rankId, dstInfo.rankId);
+            return CommProtocol::COMM_PROTOCOL_RESERVED;
+        }
+        if (netLayer == HCCL_NETLAYER_1) {
             HCCL_INFO("[RankGraph][%s] ranks[%u,%u] inter-server but same superPod[%s]", __func__,
                 srcInfo.rankId, dstInfo.rankId, srcInfo.superPodId.c_str());
-            return CommProtocol::COMM_PROTOCOL_HCCS;
-        } else {
-            HCCL_INFO("[RankGraph][%s] ranks[%u,%u] inter-server use ROCE", __func__,
+            return GetCommProtocolBetweenServers(srcInfo, dstInfo);
+        // 跨超走ROCE
+        } else if (!srcInfo.superPodId.empty() && srcInfo.superPodId != dstInfo.superPodId &&
+            netLayer == HCCL_NETLAYER_2) {
+            HCCL_INFO("[RankGraph][%s] ranks[%u,%u] inter-superPod use ROCE", __func__,
                 srcInfo.rankId, dstInfo.rankId);
             return CommProtocol::COMM_PROTOCOL_ROCE;
         }
@@ -146,24 +200,54 @@ CommProtocol RankGraph::GetCommProtocolFromRankInfo(const RankInfo_t srcInfo, co
     return CommProtocol::COMM_PROTOCOL_RESERVED;
 }
 
+bool RankGraph::NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol)
+{
+    if (srcProtocol != dstProtocol) {
+        return true;
+    } else {
+        // 两个hccs endpoints间可能是SIO链路
+        // A + X 两个mesh间是PCIE链路, 310DUO卡两个DIE间链路是HCCS，主次DIE间是PCIE
+        if (srcProtocol == COMM_PROTOCOL_HCCS && dstProtocol == COMM_PROTOCOL_HCCS
+            && linkProtocol == COMM_PROTOCOL_SIO) {
+            return false;
+        } else if (dstProtocol != linkProtocol) {
+            return true;
+        }
+    }
+    return false;
+}
+
 HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
     CommLink **linkList, uint32_t *listSize)
 {
     if (rankIndex_.find(srcRank) == rankIndex_.end() || rankIndex_.find(dstRank) == rankIndex_.end() ||
         FindRank(srcRank) == nullptr || FindRank(dstRank) == nullptr) {
-        HCCL_ERROR("[RankGraph][%s] srcRank[%u] and dstRank[%u] are not existed in rankTable",
+        HCCL_ERROR("[RankGraph][%s] srcRank[%u] or dstRank[%u] is not existed in rankTable",
             __func__, srcRank, dstRank);
         return HCCL_E_PARA;
     }
 
+    if (netLayer > HCCL_NETLAYER_2) {
+        HCCL_ERROR("[RankGraph][%s] srcRank[%u] and dstRank[%u] are do not have netLayer[%u]",
+            __func__, srcRank, dstRank, netLayer);
+        return HCCL_E_PARA;
+    }
     auto &srcEndpointDescs = rankIndex_[srcRank].endPoints;
     auto &dstEndpointDescs = rankIndex_[dstRank].endPoints;
 
-    const RankInfo_t srcInfo = rankIndex_[srcRank].rankInfo;
-    const RankInfo_t dstInfo = rankIndex_[dstRank].rankInfo;
+    const RankInfo_t &srcInfo = rankIndex_[srcRank].rankInfo;
+    const RankInfo_t &dstInfo = rankIndex_[dstRank].rankInfo;
+    CommProtocol protocol = COMM_PROTOCOL_RESERVED;
+    protocol = GetCommProtocolFromRankInfo(srcInfo, dstInfo, netLayer);
+    if (protocol == COMM_PROTOCOL_RESERVED) {
+        HCCL_WARNING("[RankGraph][%s] no links between srcRank[%u] dstRank[%u]", __func__, srcRank, dstRank);
+        *linkList = nullptr;
+        *listSize = 0;
+        return HCCL_SUCCESS;
+    }
 
     // 1. 查询是否有缓存CommLink信息
-    auto key = std::make_pair(srcRank, dstRank);
+    auto key = std::make_tuple(netLayer, srcRank, dstRank);
     auto it = rankPairInfo_.find(key);
     if (it == rankPairInfo_.end()) {
         // 没有则创建
@@ -171,18 +255,24 @@ HcclResult RankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dst
         std::vector<CommLink> links;
         for (size_t i = 0; i < srcEndpointDescs.size(); i++) {
             for (size_t j = 0; j < dstEndpointDescs.size(); j++) {
+                HCCL_DEBUG("[%s] srcProtocol[%d] dstProtocol[%d] Protocol[%d]", __func__,
+                    srcEndpointDescs[i].protocol, dstEndpointDescs[j].protocol, protocol);
+                if (NeedIgnoreEndPoints(srcEndpointDescs[i].protocol, dstEndpointDescs[j].protocol, protocol)) {
+                    continue;
+                }
                 CommLink link;
                 CHK_RET(CommLinkInit(&link, 1));
 
                 link.srcEndpointDesc = srcEndpointDescs[i];
                 link.dstEndpointDesc = dstEndpointDescs[j];
-                link.linkAttr.linkProtocol = GetCommProtocolFromRankInfo(srcInfo, dstInfo);
-    
+                link.linkAttr.linkProtocol = protocol;
                 links.push_back(std::move(link));
             }
         }
-        it = rankPairInfo_.emplace(std::make_pair(srcRank, dstRank), std::move(links)).first;
+        it = rankPairInfo_.emplace(std::make_tuple(netLayer, srcRank, dstRank), std::move(links)).first;
     }
+    HCCL_INFO("[RankGraph][%s] links, netLayer[%u] srcRank[%u] dstRank[%u] protocol[%u]", __func__,
+        netLayer, srcRank, dstRank, protocol);
 
     auto &links = it->second;
     *listSize = static_cast<uint32_t>(links.size());
