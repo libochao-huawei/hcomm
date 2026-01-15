@@ -3867,9 +3867,15 @@ const char *HcclGetErrorString(HcclResult code)
         {HCCL_E_RUNTIME, "call runtime api fail"}, {HCCL_E_DRV, "call driver api fail"},
         {HCCL_E_PROFILING, "call profiling api fail"}, {HCCL_E_CCE, "call cce api fail"},
         {HCCL_E_NETWORK, "call network api fail"}, {HCCL_E_AGAIN, "try again"},
-        {HCCL_E_REMOTE, "error cqe"}};
+        {HCCL_E_REMOTE, "error cqe"}, {HCCL_E_SUSPENDING, "error communicator suspending"},
+ 	    {HCCL_E_OPRETRY_FAIL, "retry constraint"}, {HCCL_E_OOM, "out of memory"}};
 
-    return errorMap.at(code).data();
+    auto it = errorMap.find(code);
+    if (it != errorMap.end()) {
+        return it->second.c_str();
+    } else {
+        return "unknown err";
+    }
 }
 
 /*
