@@ -1735,7 +1735,7 @@ HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 d
 
     string algName;
     bool ifAiv = false;
-    ret = hcclComm->HcclSelectAlg(optype, count, dataType, reduceOp, aivCoreLimit, ifAiv, algName);
+    ret = hcclComm->HcclSelectAlg(optype, count, nullptr, dataType, reduceOp, aivCoreLimit, ifAiv, algName);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
             "dataType[%d], reduceOp[%d]", ret, optype, count, dataType, reduceOp), ret);
@@ -2839,7 +2839,7 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     std::shared_ptr<hccl::hcclComm> hcclComm;
     std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
     CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
-    HcclResult ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, hcomOpParam->dataType, 
+    HcclResult ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, nullptr, hcomOpParam->dataType, 
                                 hcomOpParam->reduceOp, hcomOpParam->aivCoreLimit, ifAiv, algName);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
