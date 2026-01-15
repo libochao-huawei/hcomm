@@ -26,6 +26,7 @@ namespace hccl {
 using namespace std;
 constexpr u32 INVALID_REMOTE_RANK_ID = 0xFFFFFFFF;
 constexpr u64 TILINGDATA_BUF_SIZE = 32 * 1024;
+constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 
 std::mutex HcclOneSidedService::regMutex_;
 
@@ -1201,10 +1202,18 @@ HcclResult HcclOneSidedService::AicpuUnfoldKernelLaunchV2(const std::string &ker
     u64 tilingDataSize, const rtStream_t stream)
 {
     u64 commContext = 0ULL;
-    u16 timeOut = static_cast<u16>((GetExternalInputHcclExecTimeoutSet() !=
-        HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
-        CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(identifier_)) ?
-        CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_) : NOTIFY_DEFAULT_WAIT_TIME);
+    u16 timeOut = NOTIFY_DEFAULT_WAIT_TIME;
+ 	if (GetExternalInputHcclExecTimeoutSet() !=
+ 	    HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_NOT_SET ||
+ 	    CommConfiger::GetInstance().GetCommConfigExecTimeOutSet(identifier_)) {
+ 	        s32 execTimeOut = CommConfiger::GetInstance().GetCommConfigExecTimeOut(identifier_);
+ 	        if (execTimeOut >= MAX_VALUE_U16) {
+ 	            timeOut = MAX_VALUE_U16;
+ 	        } else {
+ 	            timeOut = execTimeOut;
+ 	        }
+ 	}
+
     CHK_RET(AicpuAclKernelLaunchV2(stream, reinterpret_cast<void *>(&commContext),
         sizeof(commContext), binHandle_, kernelName, false, timeOut, tilingDataPtr, tilingDataSize));
     HCCL_DEBUG("[HcclOneSidedService][AicpuUnfoldKernelLaunchV2] exec succ.");
