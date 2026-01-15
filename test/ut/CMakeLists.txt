@@ -211,6 +211,7 @@ set(UT_COMMON_INCLUDE_LIST
 
 add_subdirectory(stub)
 add_subdirectory(common/prepare_ut_env)
+add_subdirectory(device)
 add_subdirectory(platform/resource/dispatcher)
 add_subdirectory(platform/resource/notify)
 add_subdirectory(platform/resource/transport)
