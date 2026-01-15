@@ -72,8 +72,9 @@ HcclResult HcclCommDeregMem(HcclComm comm, const char *memTag, const void* memHa
 
 HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
 {
-    CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[HcclGetHcclBuffer]buffer is null"), HCCL_E_PARA);
-    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[HcclGetHcclBuffer]comm is null"), HCCL_E_PARA);
+    CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[%s] buffer is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+    CHK_PRT_RET(size == nullptr, HCCL_ERROR("[%s] size is null", __func__), HCCL_E_PTR);
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
@@ -81,7 +82,7 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     CommBuffer commBuffer;
     HcclResult ret = commMemMgr.GetHcclBuffer(&commBuffer);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[HcclGetHcclBuffer] Failed to get local cclBuffer ret[%d]", ret);
+        HCCL_ERROR("[%s] Failed to get local cclBuffer ret[%d]", __func__, ret);
         return ret;
     }
     *buffer = commBuffer.addr;
