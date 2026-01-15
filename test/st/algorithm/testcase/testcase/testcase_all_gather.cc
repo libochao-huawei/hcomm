@@ -292,7 +292,7 @@ TEST_F(AllGatherTest, allgather_executor_test_loop)
         HcclResult ret;
         ret = checker.Check(checkerOpParam, topoMeta);
         if (ret == HcclResult::HCCL_SUCCESS) {
-            std::cout << allGatherAlgName[i] + " run successed" << std::endl;
+            std::cout << allGatherAlgName[i] + " run succeeded" << std::endl;
         } else {
             std::cout << allGatherAlgName[i] + " run failed" << std::endl;
         }

@@ -99,7 +99,7 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::Orchestrate(OpParam& param, Al
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AlltoAll executor orchestrate success, take time [%lld]us",
@@ -146,7 +146,7 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::GetAivExecParam(const OpParam&
     args.unitSize = SIZE_TABLE[param.All2AllDataDes.sendType];
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AlltoAll executor getalgexecparam success, take time [%lld]us.",

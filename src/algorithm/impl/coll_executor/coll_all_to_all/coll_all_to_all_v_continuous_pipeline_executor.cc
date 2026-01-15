@@ -144,7 +144,7 @@ HcclResult CollAlltoAllVContinuousPipeline::Orchestrate(OpParam& param, AlgResou
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllVContinuousPipeline][Orchestrate]errNo[0x%016llx]excutor run failed",
+        HCCL_ERROR("[CollAlltoAllVContinuousPipeline][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     HCCL_INFO("tag[%s], CollAlltoAllVContinuousPipeline tempAlg orchestrate success, take time [%lld]us.",
@@ -208,7 +208,7 @@ HcclResult CollAlltoAllVContinuousPipeline::KernelRun(const OpParam &param, Exec
 
     CHK_RET(tempAlg->RunAsync());
 
-    HCCL_INFO("[CollAlltoAllVContinuousPipeline] excutor run success.");
+    HCCL_INFO("[CollAlltoAllVContinuousPipeline] executor run success.");
     return HCCL_SUCCESS;
 }
 

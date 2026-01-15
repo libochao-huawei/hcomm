@@ -80,6 +80,7 @@ HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& par
         CHK_PRT_RET(executor_.get() == nullptr,
             HCCL_ERROR("[CollAlgOperator][CalBlockDim]Fail to find executor for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
+        CHK_RET(SetExecutorAttr(param));
     }
 
     if (aivCoreLimit != 0) {
@@ -129,6 +130,7 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         CHK_PRT_RET(executor_.get() == nullptr,
             HCCL_ERROR("[CollAlgOperator][SelectAlg]Fail to find executor for algName[DefaultExecutor]"),
             HCCL_E_PARA);
+        CHK_RET(SetExecutorAttr(param));
     } else {
         // 校验控核
         if (limit.ifLimit && deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAivModeConfig()) {
@@ -178,6 +180,7 @@ HcclResult CollAlgOperator::SelectAlgFor91093WithCoreLimit(const OpParam &param,
         CHK_PRT_RET(executor_.get() == nullptr,
             HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to find executor for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
+        CHK_RET(SetExecutorAttr(param));
     }
 
     CHK_RET(SetBlockDim(limit.aivCoreLimit));
@@ -204,13 +207,13 @@ HcclResult CollAlgOperator::SelectAlgFor91093WithCoreLimit(const OpParam &param,
 
     u32 blockDim;
     HcclResult ret = CalBlockDim(algName, param, blockDim);
-    executor_ = nullptr;
     if (ret != HCCL_SUCCESS) {
         CHK_PRT_RET(reSelName.empty() || reSelName == algName,
             HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to check CalBlockDim for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
 
         algName = reSelName;
+        executor_ = nullptr;
         HCCL_INFO("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Re select to algName[%s]", reSelName.c_str());
     }
 
@@ -537,7 +540,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForReduceScatter(float delay, u64 recv
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 recvCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
     double interMinCost = min(nhrCost, ringCost);
 
@@ -576,7 +579,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGather(float delay, u64 sendCurS
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 sendCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
     double interMinCost = min(nhrCost, ringCost);
 
@@ -615,7 +618,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGatherV(float delay, u64 sendCur
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 sendCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
 
     return HCCL_SUCCESS;
@@ -662,7 +665,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllReduce(float delay, u64 curSize,
                 NHR_FACTOR_TWO * static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 curSize / deviceNumPerAggregation_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
     double interMinCost = min(nhrCost, ringCost);
 
@@ -1076,4 +1079,4 @@ u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, 
     return level0RingSize;
 }
 
-}   // namesapce hccl
+}   // namespace hccl

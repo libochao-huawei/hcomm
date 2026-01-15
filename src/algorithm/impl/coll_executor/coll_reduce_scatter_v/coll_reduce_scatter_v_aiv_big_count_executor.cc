@@ -87,7 +87,7 @@ HcclResult CollReduceScatterVAIVBigCountExecutor::Orchestrate(OpParam& param, Al
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterVAIVBigCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollReduceScatterVAIVBigCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], ReduceScatterV executor orchestrate success, take time [%lld]us",

@@ -102,7 +102,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     }
 
     CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_WARNING("[CollAllReduceMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, minBlockDim),
         HCCL_E_PARA);
 
@@ -148,7 +148,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::GetAivExecParam(const OpParam& 
     HCCL_INFO("SPK [CollAllReduceMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AllReduce executor getalgexecparam success, take time [%lld]us.",
@@ -209,7 +209,7 @@ HcclResult CollAllReduceMeshAivFor91093Executor::Orchestrate(OpParam& param, Alg
     HcclResult ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], allreduce executor orchestrate success, take time [%lld]us.",

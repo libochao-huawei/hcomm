@@ -274,7 +274,7 @@ TEST_F(AllReduceTest, allreduce_executor_test_loop)
         checker.CloseRankMemCheck();
         ret = checker.Check(checkerOpParam, topoMeta);
         if (ret == HcclResult::HCCL_SUCCESS) {
-            std::cout << allReduceAlgName[i] + " run successed" << std::endl;
+            std::cout << allReduceAlgName[i] + " run succeeded" << std::endl;
         } else {
             std::cout << allReduceAlgName[i] + " run failed" << std::endl;
         }

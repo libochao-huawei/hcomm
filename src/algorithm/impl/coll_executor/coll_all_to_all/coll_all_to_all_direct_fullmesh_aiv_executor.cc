@@ -127,7 +127,7 @@ HcclResult CollAlltoAllDirectFullmeshAIVExecutor::Orchestrate(OpParam& param, Al
     ret = KernelRun(param, execMem);
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllDirectFullmeshAIVExecutor][%s]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollAlltoAllDirectFullmeshAIVExecutor][%s]errNo[0x%016llx] tag[%s] executor kernel run failed",
             __func__, HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AlltoAll executor orchestrate success, take time [%lld]us",

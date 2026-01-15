@@ -50,7 +50,7 @@ HcclResult CollAlltoAllExecutor::Orchestrate(OpParam& param, AlgResourceResponse
         ret = KernelRun(param, execMem);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollRunAlltoAllVFullMesh][Orchestrate]errNo[0x%016llx]excutor run failed",
+        HCCL_ERROR("[CollRunAlltoAllVFullMesh][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate

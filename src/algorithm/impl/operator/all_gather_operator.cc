@@ -74,7 +74,7 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
         newTag += std::to_string(ringSize);
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag);
+    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag.c_str());
     return ret;
 }
 

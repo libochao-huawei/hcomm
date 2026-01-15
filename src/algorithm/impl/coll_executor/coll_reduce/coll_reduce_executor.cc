@@ -71,7 +71,7 @@ HcclResult CollReduceExecutor::Orchestrate(OpParam& param, AlgResourceResponse& 
         needLaunchAtTheEnd = false;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceExecutor][Orchestrate]errNo[0x%016llx]reduce excutor kernel run failed",
+        HCCL_ERROR("[CollReduceExecutor][Orchestrate]errNo[0x%016llx]reduce executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate

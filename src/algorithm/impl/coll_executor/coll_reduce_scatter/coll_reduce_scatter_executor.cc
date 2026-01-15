@@ -64,7 +64,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         execMem.scratchMem = algRes.paramInputMem;
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]ReduceScatter excutor KernelRunIntraServerPre failed",
+            HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]ReduceScatter executor KernelRunIntraServerPre failed",
                 HCCL_ERROR_CODE(ret)), ret);
         if (algOpContext_.opRetryHandler.isPostSync == true) {
             // post Sync
@@ -99,7 +99,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         }
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
+        HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate

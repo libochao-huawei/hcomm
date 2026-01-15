@@ -171,7 +171,7 @@ HcclResult SalStrToInt(const std::string str, int base, s32 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][StrToInt]strtoi catch errror, str[%s] base[%d] val[%d]", str.c_str(), base, val);
+        HCCL_ERROR("[Transform][StrToInt]strtoi catch error, str[%s] base[%d] val[%d]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -219,7 +219,7 @@ HcclResult SalStrToULong(const std::string str, int base, u32 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][StrToULong]stoul catch errror, str[%s] base[%d] val[%u]", str.c_str(), base, val);
+        HCCL_ERROR("[Transform][StrToULong]stoul catch error, str[%s] base[%d] val[%u]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -242,7 +242,7 @@ HcclResult SalStrToULonglong(const std::string str, int base, u64 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][StrToULonglong]stoull catch errror, str[%s] base[%d] val[%llu]",
+        HCCL_ERROR("[Transform][StrToULonglong]stoull catch error, str[%s] base[%d] val[%llu]",
             str.c_str(), base, val);
         return HCCL_E_PARA;
     }
@@ -266,7 +266,7 @@ HcclResult SalStrToLonglong(const std::string str, int base, s64 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][SalStrToLonglong]stoll catch errror, str[%s] base[%d] val[%lld]",
+        HCCL_ERROR("[Transform][SalStrToLonglong]stoll catch error, str[%s] base[%d] val[%lld]",
             str.c_str(), base, val);
         return HCCL_E_PARA;
     }

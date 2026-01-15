@@ -20,7 +20,7 @@ HcclResult TaskGraphGenerator::GenGraph(const TaskQueueStub &taskQueues, TaskNod
 
     /*
     Mismatch may occur when: 1) fail to generate local dependency graph correctly --> ERROR
-                             2) a group prim is placed at the begining of the primitive queue
+                             2) a group prim is placed at the beginning of the primitive queue
     */
 
     CHK_RET(GenGraphInterRanks(dummyStart));
@@ -840,7 +840,7 @@ HcclResult TaskGraphGenerator::ProcInterAivSendSyncNode4Graph(TaskNodePtr currNo
             flagValue = ((TaskStubSendSyncReduce*)(currNode->task))->GetFlagValue();
             break;
         default:
-            HCCL_ERROR("Node is not expected tpye, SendSync or SendSyncReduce.");
+            HCCL_ERROR("Node is not expected type, SendSync or SendSyncReduce.");
             return HcclResult::HCCL_E_INTERNAL;
     }
     if (seenInterRankSendSync.find(flagAddr) == seenInterRankSendSync.end()) {

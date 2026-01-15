@@ -46,7 +46,7 @@ HcclResult ScatterNHR::RunAsync(const u32 rank, const u32 rankSize,
     interRank_ = rank;
     interRankSize_ = rankSize;
 
-    // ranksize为1时，只有当input!=ouput 时候进行拷贝
+    // ranksize为1时，只有当input!=output 时候进行拷贝
     if (interRankSize_ == 1) {
         if (inputMem_ != outputMem_) {
             CHK_RET(HcclD2DMemcpyAsync(dispatcher_, outputMem_, inputMem_, stream_));

@@ -36,7 +36,7 @@ HcclResult TaskCheckBatchSendRecvSemantics(std::map<RankId, RankMemorySemantics>
                 DataDumper::Global()->AddMissingSemantic(rankId, BufferType::OUTPUT, totalSize);
                 DataDumper::Global()->SetResultStatus(gui::ResultStatus::CHECK_FAILED_MISSING_SEMANTIC);
                 DUMP_AND_ERROR("[rankId:%u]Missing buffer semantic: "
-                    "exepected startAddr is %llu, while cur buffer semantic startAddr is %llu, cur buffer semantic is %s",
+                    "expected startAddr is %llu, while cur buffer semantic startAddr is %llu, cur buffer semantic is %s",
                     rankId, totalSize, ele.startAddr, ele.Describe().c_str());
                 return HcclResult::HCCL_E_PARA;
             }

@@ -117,7 +117,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
     HCCL_INFO("SPK [CollAllReduceMeshAivSmallCountExecutor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllReduce executor getalgexecparam success, take time [%lld]us.",
@@ -144,7 +144,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::Orchestrate(OpParam& param, A
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us.",

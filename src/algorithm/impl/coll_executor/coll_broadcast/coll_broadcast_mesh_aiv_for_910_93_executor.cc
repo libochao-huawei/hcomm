@@ -155,7 +155,7 @@ HcclResult CollBroadcastMeshAivFor91093Executor::Orchestrate(OpParam& param, Alg
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollBroadcastMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollBroadcastMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], Broadcast executor orchestrate success, take time [%lld]us",

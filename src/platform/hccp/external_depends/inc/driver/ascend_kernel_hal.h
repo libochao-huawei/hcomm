@@ -511,7 +511,7 @@ int hal_kernel_qos_notify_module_online(int dev_id, enum qos_master_type master)
 int hal_kernel_qos_notify_module_offline(int dev_id, enum qos_master_type master);
 
 /**
-* @brief get all bandwidth infomation
+* @brief get all bandwidth information
 * @param [in] uint32_t devid: device id
 * @param [out] struct qos_bw_result_t *res: bandwidth info of each master
 * @param [in] uint32_t in_size: size of res

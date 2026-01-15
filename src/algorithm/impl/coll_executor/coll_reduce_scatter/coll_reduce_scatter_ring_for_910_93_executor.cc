@@ -146,9 +146,9 @@ HcclResult CollReduceScatterRingFor91093Executor::CalcLevel2CommInfo(TransportMe
     TransportMemType outputType,
     std::vector<LevelNSubCommTransport>& opTransport)
 {
-    if ((algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE)) {
-        HCCL_INFO("[CollReduceScatterRingFor91093Executor][CalcLevel2CommInfo] select AHC bypass level2 comm calulate");
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
+        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
+        HCCL_INFO("[CollReduceScatterRingFor91093Executor][CalcLevel2CommInfo] select AHC bypass level2 comm calculate");
         return HCCL_SUCCESS;
     }
 

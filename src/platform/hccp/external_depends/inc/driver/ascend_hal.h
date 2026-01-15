@@ -3261,7 +3261,7 @@ enum log_channel_type {
 * @param [in] device_id   device ID
 * @param [out] buf Store log information
 * @param [out] size size of log information store in buf,As a input parameter means max size of buf.
-* @param [in] timeout   timeout to read log infomation
+* @param [in] timeout   timeout to read log information
 * @param [in] channel_type   which channel to read
 * @return  0 for success, others for fail
 */
@@ -3297,7 +3297,7 @@ int log_get_channel_type(int device_id, int *channel_type_set, int *channel_type
 * @param [in] device_id   device ID
 * @param [out] buf Store log information
 * @param [out] size size of log information store in buf,As a input parameter means max size of buf.
-* @param [in] timeout   timeout to read log infomation
+* @param [in] timeout   timeout to read log information
 * @return  0 for success, others for fail
 */
 int log_read(int device_id, char *buf, unsigned int *size, int timeout);
@@ -4337,7 +4337,7 @@ struct halCdqPara {
 * @param [in] devId  create on which device
 * @param [in] tsId  tsId
 * @param [in] cdqPara  parameter of Circle Data Queue
-* @param [out] queId  cdq_Id created successed
+* @param [out] queId  cdq_Id created succeeded
 * @return   0 for success, DRV_ERROR_NO_CDQ_RESOURCES means device full.
 */
 DLLEXPORT drvError_t halCdqCreate(unsigned int devId, unsigned int tsId, struct halCdqPara *cdqPara,
@@ -4348,7 +4348,7 @@ DLLEXPORT drvError_t halCdqCreate(unsigned int devId, unsigned int tsId, struct 
 * @destroy circle data queue
 * @param [in] devId  create on which device
 * @param [in] tsId  tsId
-* @param [in] queId  cdq_Id created successed
+* @param [in] queId  cdq_Id created succeeded
 * @return   0 for success, DRV_ERROR_CDQ_NOT_EXIST means no such cdq.
 */
 DLLEXPORT drvError_t halCdqDestroy(unsigned int devId, unsigned int tsId, unsigned int queId) ASCEND_HAL_WEAK;
@@ -4358,7 +4358,7 @@ DLLEXPORT drvError_t halCdqDestroy(unsigned int devId, unsigned int tsId, unsign
 * @alloc free batch in data queue
 * @param [in] devId  create on which device
 * @param [in] tsId  tsId
-* @param [in] queId  cdq_Id created successed
+* @param [in] queId  cdq_Id created succeeded
 * @return   0 for success, DRV_ERROR_CDQ_ABNORMAL means cdq has batch timeout, DRV_ERROR_WAIT_TIMEOUT for wait timeout.
 */
 DLLEXPORT drvError_t halCdqAllocBatch(unsigned int devId, unsigned int tsId, unsigned int queId, unsigned int timeout,
@@ -5134,10 +5134,10 @@ struct halSDIDParseInfo {
 
 /**
 * @ingroup driver
-* @brief get the parsed SDID infomation
+* @brief get the parsed SDID information
 * @attention Not supported called in split mode, do not check validity for sdid;
 * @param [in]  sdid SDID
-* @param [out] sdid_parse  Parsed SDID infomation
+* @param [out] sdid_parse  Parsed SDID information
 * @return   0 for success, others for fail
 */
 DLLEXPORT drvError_t halParseSDID(uint32_t sdid, struct halSDIDParseInfo *sdid_parse);

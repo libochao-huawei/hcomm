@@ -588,7 +588,7 @@ HcclResult AlltoallvContinuousPipeline::SdmaReadFromRemoteOutBufferToOutput(cons
 {
     // 需要recv counts信息
     CHK_PRT_RET(needCollectInfo_,
-        HCCL_ERROR("[AlltoallvContinuousPipeline][SdmaReadFromRemoteOutBufferToOutput] No recieve info."),
+        HCCL_ERROR("[AlltoallvContinuousPipeline][SdmaReadFromRemoteOutBufferToOutput] No receive info."),
         HCCL_E_INTERNAL);
 
     const u64 readCount = std::min(GetLocalRecvCountOfRank(sourceRank), countsPerBlock_);

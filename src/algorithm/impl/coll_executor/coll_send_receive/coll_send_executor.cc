@@ -35,10 +35,10 @@ HcclResult CollSendExecutor::Orchestrate(OpParam& param, AlgResourceResponse& al
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollSendExecutor][Orchestrate]errNo[0x%016llx]send excutor kernel run failed",
+        HCCL_ERROR("[CollSendExecutor][Orchestrate]errNo[0x%016llx]send executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
-    HCCL_INFO("tag[%s] Send Excutor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s] Send Executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }

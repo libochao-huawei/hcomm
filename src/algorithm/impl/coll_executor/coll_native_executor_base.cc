@@ -267,7 +267,7 @@ HcclResult CollNativeExecutorBase::CalcLevel2CommInfo(TransportMemType inputType
 {
     if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
-        HCCL_INFO("[%s] select AHC bypass level2 comm calulate", __func__);
+        HCCL_INFO("[%s] select AHC bypass level2 comm calculate", __func__);
         return HCCL_SUCCESS;
     }
 

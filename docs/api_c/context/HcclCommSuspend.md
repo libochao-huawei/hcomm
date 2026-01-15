@@ -33,7 +33,7 @@
 
 ## 功能说明<a name="zh-cn_topic_0000002008554129_section48254661"></a>
 
-当片上内存UCE（uncorrect error）故障时（ACL接口返回ACL\_ERROR\_RT\_DEVICE\_MTE\_ERROR错误码），可调用本接口将通信域置为挂起状态。
+当片上内存UCE（incorrect error）故障时（ACL接口返回ACL\_ERROR\_RT\_DEVICE\_MTE\_ERROR错误码），可调用本接口将通信域置为挂起状态。
 
 使用此接口挂起集合通信域，无需退出Host侧进程，后续故障修复后，可调用[HcclCommResume](HcclCommResume.md#ZH-CN_TOPIC_0000002519007955)接口恢复通信域状态。
 

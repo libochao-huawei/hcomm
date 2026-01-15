@@ -103,7 +103,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::Orchestrate(OpParam& param, A
     ret = KernelRun(param, execMem);
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor orchestrate success, take time [%lld]us.",
@@ -151,7 +151,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
     args.reduceOp = param.reduceType;
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor getalgexecparam success, take time [%lld]us.",

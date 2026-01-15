@@ -787,7 +787,7 @@ HcclResult GraphRevampBilateralSemantics::AddTerminalNodeCurRankVirtualQue(TaskN
     CHK_RET(PrepAvailVirtQueTail(currRank, peerRank, dummyStart, rank2Head, virtQueManager));
     TaskNodePtr peerRankVirtQueTailNode = virtQueManager[currRank][peerRank][0];
     CHK_PRT_RET(peerRankVirtQueTailNode->task->GetType() != TaskTypeStub::POST,
-                HCCL_ERROR("[GraphRevampBilateralSemantics] The previous node of the virutal queue must be POST."),
+                HCCL_ERROR("[GraphRevampBilateralSemantics] The previous node of the virtual queue must be POST."),
                 HcclResult::HCCL_E_INTERNAL);
 
     TaskStub *postToShadow = new TaskStubLocalPostToShadow(

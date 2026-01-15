@@ -475,7 +475,7 @@ TEST_F(ReduceScatterTest, reduce_scatter_executor_test_loop)
         checker.CloseRankMemCheck();
         ret = checker.Check(checkerOpParam, topoMeta);
         if (ret == HcclResult::HCCL_SUCCESS) {
-            std::cout << reduceScatterAlgName[i] + " run successed" << std::endl;
+            std::cout << reduceScatterAlgName[i] + " run succeeded" << std::endl;
         } else {
             std::cout << reduceScatterAlgName[i] + " run failed" << std::endl;
         }

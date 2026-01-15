@@ -106,7 +106,7 @@ HcclResult CollReduceScatterVMeshAivFor91093Executor::Orchestrate(OpParam& param
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterVMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollReduceScatterVMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed.", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], ReduceScatterV executor orchestrate success, take time [%lld]us.",

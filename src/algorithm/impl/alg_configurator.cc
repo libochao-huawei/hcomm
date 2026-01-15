@@ -244,7 +244,7 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
             break;
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
-            HCCL_WARNING("level1:fullmesh algo is not suported. the config is ignored.");
+            HCCL_WARNING("level1:fullmesh algo is not supported. the config is ignored.");
             algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
             break;
         default:
@@ -328,7 +328,7 @@ HcclResult AlgConfigurator::SetAlgoLevel0StandardCard(HcclAlgoType algoConfig, A
     }
 
     if (algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_NA) {
-        HCCL_WARNING("level0:%d algo is not suported. the config is ignored.", algoConfig);
+        HCCL_WARNING("level0:%d algo is not supported. the config is ignored.", algoConfig);
     }
 
     CHK_RET(GetDefaultAlgoLevel0StandardCard(algType));
@@ -364,7 +364,7 @@ HcclResult AlgConfigurator::SetAlgoLevel0Module(HcclAlgoType algoConfig, AlgType
     }
 
     if (algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_NA) {
-        HCCL_WARNING("level0:%d algo is not suported. the config is ignored.", algoConfig);
+        HCCL_WARNING("level0:%d algo is not supported. the config is ignored.", algoConfig);
     }
 
     CHK_RET(GetDefaultAlgoLevel0Module(algType));

@@ -37,7 +37,7 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::Orchestrate(OpParam& param, Alg
     execMem.scratchMem = algRes.aivInputMem;
     HcclResult ret = KernelRun(param, execMem);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollRunAlltoAllStagedAivRdmaExecutor][Orchestrate]errNo[0x%016llx]excutor run failed",
+        HCCL_ERROR("[CollRunAlltoAllStagedAivRdmaExecutor][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     HCCL_INFO("[CollRunAlltoAllStagedAivRdmaExecutor]tag[%s], orchestrate success, take time [%lld]us.",

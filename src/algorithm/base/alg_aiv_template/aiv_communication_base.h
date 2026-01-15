@@ -1010,7 +1010,7 @@ __aicore__ inline void AivCommBase::AIVRDMAPostSend(GM_ADDR srcDmaAddr, GM_ADDR 
     HcclAiRMAMemType localType = isLocalOutput ? HcclAiRMAMemType::LOCAL_OUTPUT : HcclAiRMAMemType::LOCAL_INPUT;
     *(__gm__ uint32_t*)(sgeAddr + sizeof(uint32_t)) = ((__gm__ MemDetails*)(memDetail->memDetailPtr +
         memDetail->sizeOfMemDetails * static_cast<uint32_t>(localType)))->key; // L_Key
-    *(__gm__ uint64_t*)(sgeAddr + 2 * sizeof(uint32_t)) = (uint64_t)srcDmaAddr; // src VA addr memory registerd by RNIC
+    *(__gm__ uint64_t*)(sgeAddr + 2 * sizeof(uint32_t)) = (uint64_t)srcDmaAddr; // src VA addr memory registered by RNIC
 
     // wqe & sge cache flush
     cacheWriteThrough(wqeAddr, sizeof(struct hns_roce_rc_sq_wqe) + sizeof(struct hns_roce_lite_wqe_data_seg));

@@ -35,10 +35,10 @@ HcclResult CollReceiveExecutor::Orchestrate(OpParam& param, AlgResourceResponse&
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReceiveExecutor][Orchestrate]errNo[0x%016llx]recv excutor kernel run failed",
+        HCCL_ERROR("[CollReceiveExecutor][Orchestrate]errNo[0x%016llx]recv executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
-    HCCL_INFO("tag[%s], Receive Excutor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s], Receive Executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }

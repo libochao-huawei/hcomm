@@ -76,7 +76,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 r
     }
 
     CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_WARNING("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, minBlockDim),
         HCCL_E_PARA);
 
@@ -120,7 +120,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::GetAivExecParam(const OpParam& p
     HCCL_INFO("SPK [CollAlltoAllMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AlltoAll executor getalgexecparam success, take time [%lld]us.",
@@ -153,7 +153,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::Orchestrate(OpParam& param, AlgR
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] "
-            "excutor kernel run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
+            "executor kernel run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AlltoAll executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
