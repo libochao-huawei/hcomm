@@ -99,7 +99,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # acl头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
