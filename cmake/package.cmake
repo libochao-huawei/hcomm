@@ -118,7 +118,7 @@ function(pack_built_in)
   set(HCOMM_VERSION_FILE ${CMAKE_CURRENT_BINARY_DIR}/version/version.info)
   set(HOST_ONLY "false")
   if (NOT FULL_MODE)
-    set(HOST_ONLY "true)
+    set(HOST_ONLY "true")
   endif()
   add_custom_command(
     OUTPUT ${HCOMM_VERSION_FILE}
