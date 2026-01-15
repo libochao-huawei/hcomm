@@ -100,7 +100,7 @@ HcclResult AicpuAllgather::RunAllGatherv(HcclReduceOp opType, void *sendBuffer, 
 
 u64 AicpuAllgather::GetWindowOffset(u32 curTurnCnt, u64 curSize, u64 strideCnt, u64 recvBuffer)
 {
-    (void) recvBufAddr;
+    (void) recvBuffer;
     u64 windowOffset = 0;
     u64 bufferFlag = static_cast<uint64_t>(curTurnCnt % AC_DEFAULT_WINDOW_DIM);
     u64 recvOffset = (static_cast<uint64_t>(ctx_->rankId) * strideCnt * static_cast<uint64_t>(ctx_->unitSize)) % HCCL_COPY_ALIGN;
