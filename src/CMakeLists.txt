@@ -156,7 +156,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
@@ -295,7 +295,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
@@ -331,7 +331,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver

@@ -89,7 +89,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
