@@ -1357,6 +1357,9 @@ HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm, 
 
 HcclResult HcomGetDevId(const char *group, s32 *devId)
 {
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcomGetDevIdV2(group, devId));
+#endif
     /* 获取rankId */
     std::shared_ptr<hccl::hcclComm> hcclComm;
     if (group != nullptr && HcclGetCommHandle(group, hcclComm) == HCCL_SUCCESS) {

@@ -106,6 +106,7 @@ HcclResult __attribute__((weak)) HcomCalcBlockDimV2(const char *group, HcclCMDTy
 HcclResult __attribute__((weak)) HcclGetAlgExecParamV2(const std::string &tag, const char *group, u64 count,
     void *inputPtr, void *outputPtr, HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op,
     void *&commContext, u64 &len, u32 aivCoreLimit); 
+HcclResult __attribute__((weak)) HcomGetDevIdV2(const char *group, s32 *devId);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
