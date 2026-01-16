@@ -137,7 +137,6 @@ function(pack_built_in)
  install(FILES ${HCOMM_VERSION_FILE}
       DESTINATION share/info/hcomm
   )
-
   install(FILES ${CONF_FILES}
       DESTINATION hcomm/conf
   )
