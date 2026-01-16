@@ -144,7 +144,8 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     hcclCommunicator.InitRaResource();
     hcclCommunicator.DisablePreResource();
 
-    hcclCommunicator.GetWorkspaceSubStreamNum(count, 0, HcclCMDType::HCCL_CMD_ALL);
+    u64 streamNum;
+    hcclCommunicator.GetWorkspaceSubStreamNum(count, dataType, op, tag, streamNum, 0, false, HcclCMDType::HCCL_CMD_ALL);
     hcclCommunicator.DestroyNetworkResources();
     std::vector<rtStream_t> streams;
     hcclCommunicator.SetWorkspaceResource(tag, nullptr, count, streams);
@@ -158,8 +159,10 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
     hcclCommunicator.GetRankSize();
     hcclCommunicator.GetNicInitialized();
 
-    hcclCommunicator.HcclSelectAlg(HcclCMDType::HCCL_CMD_ALL, 0, 0, dataType, op, findTag, tag, true);
-    hcclCommunicator.HcclCalcBlockDim(HcclCMDType::HCCL_CMD_ALL, 0, 0, dataType, tag, buffer);
+    bool ifAiv;
+    hcclCommunicator.HcclSelectAlg(HcclCMDType::HCCL_CMD_ALL, 0, nullptr, dataType, op, 0, ifAiv, tag);
+    u32 blockDim;
+    hcclCommunicator.HcclCalcBlockDim(HcclCMDType::HCCL_CMD_ALL, 0, nullptr, dataType, 0, tag, blockDim);
 
     void *commContext = nullptr;
     hcclCommunicator.HcclGetAlgExecParam(tag, HcclCMDType::HCCL_CMD_ALL, 0, nullptr, nullptr, true, dataType, op, commContext, count, 0);
@@ -470,7 +473,6 @@ TEST_F(Communicator_Device_UT, CommunicatorAttrsTest) {
 
     commAttrs.IsDiffDeviceModule(rankInfoTList);
     commAttrs.InitHccsPortNum();
-    commAttrs.CheckSingleServerComm(rankInfoTList);
     commAttrs.SetRankInfoList(rankTable);
 
     commAttrs.CheckRankTable(rankTable, servRankInfo);
