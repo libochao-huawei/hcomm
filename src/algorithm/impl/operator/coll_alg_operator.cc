@@ -130,7 +130,6 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         CHK_PRT_RET(executor_.get() == nullptr,
             HCCL_ERROR("[CollAlgOperator][SelectAlg]Fail to find executor for algName[DefaultExecutor]"),
             HCCL_E_PARA);
-        CHK_RET(SetExecutorAttr(param));
     } else {
         // 校验控核
         if (limit.ifLimit && deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAivModeConfig()) {
