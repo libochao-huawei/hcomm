@@ -1082,7 +1082,7 @@ HcclResult DispatcherAiCpu::MemcpyRtsq(Stream& stream, const size_t sqeCount, co
         // 循环拷贝cached SQE到SQE ring buffer中
         size_t reportSqeCount = 0;
         while (reportSqeCount < sqeCount) {
-            CHK_PRT_RET(sqeContextBuffer->tailSqeIdx > sqeContextBuffer->tailSqeIdx, HCCL_ERROR("[DispatcherAicpu][MemcpyRtsq] tailSqeIdx[%u] > HCCL_SQE_MAX_CNT[%u]", sqeContextBuffer->tailSqeIdx, HCCL_SQE_MAX_CNT), HCCL_E_INTERNAL);
+            CHK_PRT_RET(sqeContextBuffer->tailSqeIdx > HCCL_SQE_MAX_CNT, HCCL_ERROR("[DispatcherAicpu][MemcpyRtsq] tailSqeIdx[%u] > HCCL_SQE_MAX_CNT[%u]", sqeContextBuffer->tailSqeIdx, HCCL_SQE_MAX_CNT), HCCL_E_INTERNAL);
             const size_t sqeTailLeft = HCCL_SQE_MAX_CNT - sqeContextBuffer->tailSqeIdx;
             if (sqeTailLeft > 0) {
                 // 准备profiling上报的目的末端基地址 (SQE ring buffer从tail开始拷贝)
