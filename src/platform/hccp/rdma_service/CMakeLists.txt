@@ -122,15 +122,6 @@ target_link_options(rs PRIVATE
     $<$<CONFIG:Release>:-s>
 )
 
-if(NOT (PRODUCT IN_LIST ASCEND910_95_PRODUCT_LIST) AND
-   NOT (PRODUCT IN_LIST ASCEND910_96_PRODUCT_LIST) AND
-   NOT (PRODUCT IN_LIST ASCEND910_55_PRODUCT_LIST) AND
-   NOT (PRODUCT STREQUAL "ascend310p"))
-target_compile_definitions(rs PRIVATE
-    CONFIG_SSL
-)
-endif()
-
 target_compile_definitions(rs PRIVATE
     $<$<AND:$<STREQUAL:${PRODUCT},ascend310p>,$<STREQUAL:${PRODUCT_SIDE},device>>:NOT_INIT_IBVERBS>
 )
