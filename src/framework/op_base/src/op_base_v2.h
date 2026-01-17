@@ -110,6 +110,8 @@ HcclResult __attribute__((weak)) HcclGetConfigV2(HcclConfig config, HcclConfigVa
 
 HcclResult __attribute__((weak)) HcclBarrierV2(HcclComm comm, aclrtStream stream);
 
+HcclResult __attribute__((weak)) HcclGetHeterogModeV2(HcclComm comm, HcclHeterogMode *mode);
+
 #if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 HcclResult __attribute__((weak)) HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
 

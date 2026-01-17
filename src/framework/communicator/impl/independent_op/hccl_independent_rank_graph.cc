@@ -212,6 +212,9 @@ HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode)
 {
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(mode);
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetHeterogModeV2(comm, mode));
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclResult ret = hcclComm->GetHeterogMode(mode);
     if (ret != HCCL_SUCCESS) {
