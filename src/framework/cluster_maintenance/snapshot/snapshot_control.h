@@ -54,6 +54,7 @@ private:
     HcclResult CheckCommsPostProcess();
     HcclResult MarkInvalidComms();
 
+    static bool registered;
     std::mutex statusMutex_;
     SnapshotStatus status_{ SnapshotStatus::DEFAULT };
     std::mutex commMutex_;

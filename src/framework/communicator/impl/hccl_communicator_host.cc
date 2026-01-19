@@ -298,7 +298,9 @@ namespace hccl
             HcclDispatcherDestroy(vDispatcher_);
             vDispatcher_ = nullptr;
         }
-        UnRegisterFromSnapshot();
+        if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93){
+            UnRegisterFromSnapshot();
+        }
         HCCL_DEBUG("~HcclCommunicator success.");
     }
 
@@ -358,7 +360,9 @@ namespace hccl
         attrCollector_.GetTopoAttr(topoAttr);
         CHK_RET(rankGraph_.Init(rankTable, topoAttr));
         CHK_RET(SaveTopoDesc(params.identifier));
-        CHK_RET(RegisterToSnapshot());
+        if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93){
+            CHK_RET(RegisterToSnapshot());
+        }
         return HCCL_SUCCESS;
     }
 

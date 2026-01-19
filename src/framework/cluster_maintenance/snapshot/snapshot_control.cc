@@ -11,50 +11,70 @@
 #include "snapshot_control.h"
 #include "adapter_rts_common.h"
 #include "adapter_hccp_common.h"
+#include "externalinput.h"
 
 namespace hccl {
 
-constexpr int32_t STAGE_PREPROCESS = 1;
-constexpr int32_t STAGE_POSTPROCESS = 2;
-constexpr int32_t STAGE_RESTORE = 3;
+bool SnapshotControl::registered = false;
 
-int32_t PreProcessCallback(uint32_t devId, void * args)
+uint32_t PreProcessCallback(int32_t devId, void *args)
 {
     HCCL_RUN_INFO("[Snapshot] PreProcess callback, devId[%d]", devId);
     HcclResult ret = SnapshotControl::GetInstance(devId).PreProcess();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] PreProcess fail, devId[%d].", devId),
-        static_cast<int32_t>(ret));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] PreProcess fail, devId[%d].", devId), ret);
     HCCL_RUN_INFO("[Snapshot] PreProcess success, devId[%d]", devId);
     return 0;
 }
 
-int32_t PostProcessCallback(uint32_t devId, void * args)
+uint32_t PostProcessCallback(int32_t devId, void *args)
 {
     HCCL_RUN_INFO("[Snapshot] PostProcess callback, devId[%d]", devId);
     HcclResult ret = SnapshotControl::GetInstance(devId).PostProcess();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] PostProcess fail, devId[%d].", devId),
-        static_cast<int32_t>(ret));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] PostProcess fail, devId[%d].", devId), ret);
     HCCL_RUN_INFO("[Snapshot] PostProcess success, devId[%d]", devId);
     return 0;
 }
 
-int32_t RecoveryCallback(uint32_t devId, void * args)
+uint32_t RecoveryCallback(int32_t devId, void *args)
 {
     HCCL_RUN_INFO("[Snapshot] Recovery callback, devId[%d]", devId);
     HcclResult ret = SnapshotControl::GetInstance(devId).Recovery();
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] Recovery fail, devId[%d].", devId),
-        static_cast<int32_t>(ret));
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Snapshot] Recovery fail, devId[%d].", devId), ret);
     HCCL_RUN_INFO("[Snapshot] Recovery success, devId[%d]", devId);
     return 0;
 }
 
 HcclResult ResgisterSnapshotCallback()
 {
+    rtError_t ret = aclrtSnapShotCallbackRegister(ACL_RT_SNAPSHOT_LOCK_PRE, PreProcessCallback, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[SnapshotControl]errNo[0x%016llx] regiter preprocess callback fail, ret[%d]",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    ret = aclrtSnapShotCallbackRegister(ACL_RT_SNAPSHOT_UNLOCK_POST, PostProcessCallback, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[SnapshotControl]errNo[0x%016llx] regiter postprocess callback fail, ret[%d]",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    ret = aclrtSnapShotCallbackRegister(ACL_RT_SNAPSHOT_RESTORE_POST, RecoveryCallback, nullptr);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[SnapshotControl]errNo[0x%016llx] regiter recovery callback fail, ret[%d]",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
 
 HcclResult UnResgisterSnapshotCallback()
 {
+    rtError_t ret = aclrtSnapShotCallbackUnregister(ACL_RT_SNAPSHOT_LOCK_PRE, PreProcessCallback);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[SnapshotControl]errNo[0x%016llx] unregiter preprocess callback fail, ret[%d]",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    ret = aclrtSnapShotCallbackUnregister(ACL_RT_SNAPSHOT_UNLOCK_POST, PostProcessCallback);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[SnapshotControl]errNo[0x%016llx] unregiter postprocess callback fail, ret[%d]",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
+    ret = aclrtSnapShotCallbackUnregister(ACL_RT_SNAPSHOT_RESTORE_POST, RecoveryCallback);
+    CHK_PRT_RET(ret != ACL_SUCCESS,
+        HCCL_ERROR("[SnapshotControl]errNo[0x%016llx] unregiter recovery callback fail, ret[%d]",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
 
@@ -70,19 +90,22 @@ SnapshotControl &SnapshotControl::GetInstance(s32 deviceLogicId)
 
 SnapshotControl::SnapshotControl()
 {
-    static bool registered = false;
-    if (!registered) {
-        (void) ResgisterSnapshotCallback();
-        registered = true;
+    if (!registered){
+        DevType devType = DevType::DEV_TYPE_COUNT;
+        HcclResult ret = hrtGetDeviceType(devType);
+        CHK_PRT_CONT(ret != HCCL_SUCCESS, HCCL_ERROR("[SnapshotControl] Get device type fail, ret[%u]", ret));
+        if (devType == DevType::DEV_TYPE_910B || devType == DevType::DEV_TYPE_910_93) {
+            (void) ResgisterSnapshotCallback();
+            registered = true;
+        }
     }
 }
 
 SnapshotControl::~SnapshotControl()
 {
-    static bool unregistered = false;
-    if (!unregistered) {
+    if (registered) {
         (void) UnResgisterSnapshotCallback();
-        unregistered = true;
+        registered = false;
     }
 
     std::lock_guard<std::mutex> lock(commMutex_);
@@ -233,6 +256,7 @@ HcclResult SnapshotControl::Recovery()
     // set device status to stopped, need to skip device operations
     CHK_RET(MarkInvalidComms());
     CHK_RET(SetStatus(SnapshotStatus::RESTORE_SNAPSHOT));
+    CHK_RET(ResetInitState());
     HCCL_INFO("[SnapshotControl][PostProcess] snapshot recovery success, devId[%d], devPhyId[%u].",
         deviceLogicId_, devicePhyId_);
     return HCCL_SUCCESS;
