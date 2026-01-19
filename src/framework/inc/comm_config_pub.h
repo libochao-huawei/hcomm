@@ -19,6 +19,7 @@ constexpr uint32_t COMM_ALGO_MAX_LENGTH = 1600; // hccl algo max length
 constexpr uint32_t COMM_RETRY_ENABLE_MAX_LENGTH = 50; // hccl_retry_enable max length
 constexpr uint32_t COMM_RETRY_PARAMS_MAX_LENGTH = 128; // hccl_retry_params max length
 constexpr int32_t COMM_EXECTIMEOUT_CONFIG_NOT_SET = 0xffffffff;
+constexpr uint64_t COMM_SYMMETRIC_MEMORY_MIN_STRIDE = 1U; // 对称内存预留VA最小值
 
 enum CommConfigVersion {
     COMM_CONFIG_VERSION_ONE = 1,
@@ -29,7 +30,8 @@ enum CommConfigVersion {
     COMM_CONFIG_VERSION_SIX = 6,
     COMM_CONFIG_VERSION_SEVEN = 7,
     COMM_CONFIG_VERSION_EIGHT = 8,    
-    COMM_CONFIG_VERSION_NINE = 9                  // 当前支持的最高版本
+    COMM_CONFIG_VERSION_NINE = 9,
+    COMM_CONFIG_VERSION_TEN = 10                  // 当前支持的最高版本
 };
 
 enum CommConfigOpExpansion {
@@ -66,6 +68,7 @@ typedef struct CommConfigHandleDef {
     char hcclRetryEnable[COMM_RETRY_ENABLE_MAX_LENGTH]; // hccl_retry_enable
     char hcclRetryParams[COMM_RETRY_PARAMS_MAX_LENGTH]; // hccl_retry_params
     char bufferName[BUFFER_NAME_MAX_LENGTH];    // cclbuffer名称
+    uint64_t symmetricMemoryStride; // 对称内存预留VA大小
 } CommConfigHandle;
 
 namespace hccl {
@@ -100,6 +103,7 @@ public:
     u32 GetConfigRetryIntervalTime() const;
     HcclResult SetConfigExecTimeOut(s32 execTimeOut);
     const std::string& GetConfigBufferName() const;
+    u64 GetConfigSymmetricMemoryStride() const;
 
 private:
     void InitAlgoConfig();
@@ -120,6 +124,7 @@ private:
     HcclResult SplitRetryEnable(const std::string &retryConfig, std::vector<std::string> &retryEnables);
     HcclResult SetConfigRetryEnable(const std::vector<std::string> &retryEnables);
     HcclResult SetConfigBufferName(const CommConfigHandle& config);    // 设置通信Buffer名称
+    HcclResult SetConfigSymmetricMemoryStride(const CommConfigHandle& config);  // 设置对称内存预留VA大小
 
     u64 bufferSize_;        // CCL buffer大小配置，单位B
     u8 deterministic_;      // 确定性计算配置：0-关闭，1-开启确定性（不支持规约保序），2-开启确定性&规约保序，其他数字暂时保留
@@ -141,6 +146,7 @@ private:
     u32 retryHoldTime_;
     u32 retryIntervalTime_;    // 重执行间隔时间，配置范围[0,3600000]，默认值1000
     std::string bufferName_;    // CCL buffer名称
+    u64 symmetricMemoryStride_; // 对称内存预留VA大小，单位GB
 };
 }
 #endif /* HCCL_COMM_CONFIG_PUB_H */

@@ -73,6 +73,8 @@ namespace hccl
     constexpr u32 SINGLE_PROCESS_MAX_PORT = 65535;
     constexpr u32 TYPE_USER_MEM = 1;
     constexpr u32 NON_BATCH_WRITE_MAX_STREAM_NUM = 19U;
+    constexpr u64 GIGABYTE_TO_BYTE = 1024ULL * 1024ULL * 1024ULL;
+    constexpr u64 DEFAULT_SYMMETRIC_MEMORY_STRIDE = 16ULL; // 默认对称内存预留VA大小: 16G
     enum TransferMemInfoIdx
     {
         TRANSFER_MEM_INFO_KEY_IDX = 0,
@@ -8838,7 +8840,23 @@ namespace hccl
             HCCL_DEBUG("[InitSymmetricMemory] SymmetricMemory is not support Cross-SuperNode");
             return HCCL_SUCCESS;
         }
-        u64 stride = 17179869184;
+        u64 stride = commConfig_.GetConfigSymmetricMemoryStride();
+        if (stride == 0) {
+            stride = DEFAULT_SYMMETRIC_MEMORY_STRIDE;
+            HCCL_RUN_INFO("[InitSymmetricMemory] stride set to default=[%lluG].", stride);
+        }
+        stride *= GIGABYTE_TO_BYTE;
+        size_t free = 0;
+        size_t total = 0;
+        aclError acl_ret = aclrtGetMemInfo(ACL_HBM_MEM_HUGE, &free, &total);
+        CHK_PRT_RET(acl_ret != ACL_SUCCESS,
+            HCCL_ERROR("[InitSymmetricMemory] aclrtGetMemInfo failed, ret=[%d]", acl_ret),
+            HCCL_E_PARA);
+        if (stride < COMM_SYMMETRIC_MEMORY_MIN_STRIDE * GIGABYTE_TO_BYTE || stride > free) {
+            HCCL_ERROR("[InitSymmetricMemory] stride[%llu] is invalid, free[%llu].",
+                       stride, free);
+            return HCCL_E_PARA;
+        }
         HCCL_RUN_INFO("InitSymmetricMemory, comm identifier[%s], userRank[%u], userRankSize[%u], stride[%llu], devicePhyId[%u].",
             identifier_.c_str(), realUserRank_, userRankSize_, stride, devicePhyId_);
         
