@@ -832,7 +832,12 @@ HcclResult SwitchNicServerCheckAllSwitchRanks::ProcessEvent(RetryContext *retryC
 
 HcclResult OpRetryServerWaitResume::ProcessEvent(RetryContext *retryCtx)
 {
-    if (!retryCtx->isServerStateWaitResume_) {
+    if (!retryCtx->isServerStateWaitResume_ && !retryCtx->haveCommEnableBackupLink_) {
+        CHK_RET(CreateOpRetryServerByState(RETRY_STATE_SERVER_RUNNING, retryCtx));
+        HCCL_RUN_INFO("[OpRetry][Server]OpRetryServerWaitResume, group[%s], no comm enable backup link, set state to running", retryCtx->group_.c_str());
+        return HCCL_SUCCESS;
+    }
+    if (!retryCtx->isServerStateWaitResume_ && retryCtx->haveCommEnableBackupLink_) {
         for (auto &it : retryCtx->serverSockets_) {
             const u32 &agentId = it.first;
             RetryCommandInfo commandInfo;

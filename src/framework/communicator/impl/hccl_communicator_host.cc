@@ -56,6 +56,7 @@ constexpr u16 MAX_VALUE_U16 = 0xFFFF;
 namespace hccl
 {
     static std::mutex g_hcomInitMutex;
+    static std::atomic<u32> g_enableBackupLinkCommCount{0}; // 开启借轨的通信域计数
     constexpr u32 MEMORY_CAPACITY = 256 * 1024;
     constexpr u32 WAIT_PREPARE_SLEEP_TIME = 5000;
     constexpr u32 SINGLE_SERVER_NUM = 1;
@@ -196,6 +197,14 @@ namespace hccl
             OpRetryManager::DeleteLinkInfoByIdentifier(deviceLogicId_, identifier_);
             opRetryManager_->UnRegisterOpRetryManager(identifier_);
             opRetryManager_ = nullptr;
+        }
+
+        if (IsEnableBackupLink()) {
+            if (g_enableBackupLinkCommCount == 0) {
+                HCCL_ERROR("[Destroy] g_enableBackupLinkCommCount is 0");
+            } else {
+                g_enableBackupLinkCommCount--;
+            }
         }
 
         resMap_.clear();
@@ -1114,6 +1123,9 @@ namespace hccl
                     return this->SetTransportResumeStatus(remoteRankPortMap, isChangeLinkMap, isChangeLinkFlag, statusStop); };
             HcclNetDevCtx netDevCtx = netDevCtxMap_[devIpAddr_[0]];
             HcclNetDevCtx backUpNetDevCtx = {};
+            if (IsEnableBackupLink()) {
+                g_enableBackupLinkCommCount++;
+            }
             if (IsEnableBackupLink() && netDevCtxMap_.find(devBackupIpAddr_[0]) != netDevCtxMap_.end()) {
                 backUpNetDevCtx = netDevCtxMap_[devBackupIpAddr_[0]];
             }
@@ -1136,6 +1148,8 @@ namespace hccl
 
             CHK_RET(opRetryManager_->RegisterOpRetryMachine(agentParam, userRankSize_, commConnections_.isRoot,
                                                             commConnections_.serverConnections, serverInfo));
+            HCCL_RUN_INFO("[InitOpRetry] group[%s], isEnableBackupLink[%d], g_enableBackupLinkCommCount[%u]",
+                          identifier_, IsEnableBackupLink(), g_enableBackupLinkCommCount.load());
         }
         return HCCL_SUCCESS;
     }
@@ -7713,7 +7727,11 @@ namespace hccl
     HcclResult HcclCommunicator::CheckExitWaitResumeState(bool &isChangedLink)
     {
         if (retryEnable_ && opRetryManager_ != nullptr) {
-            HcclResult ret = opRetryManager_->ExitWaitResumeState(identifier_, commConnections_.isRoot, isChangedLink);
+            bool haveCommEnableBackupLink = false;
+            if (g_enableBackupLinkCommCount.load() > 0) {
+                haveCommEnableBackupLink = true;
+            }
+            HcclResult ret = opRetryManager_->ExitWaitResumeState(identifier_, commConnections_.isRoot, haveCommEnableBackupLink, isChangedLink);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
                         HCCL_ERROR("[HcclCommunicator][Resume]opretry exit wait resume state failed."), ret);
         }

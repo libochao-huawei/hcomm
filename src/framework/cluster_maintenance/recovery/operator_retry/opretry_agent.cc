@@ -730,6 +730,11 @@ HcclResult OpRetryAgentRetryFail::ProcessEvent(RetryContext* retryCtx)
 
 HcclResult OpRetryAgentWaitResume::ProcessEvent(RetryContext* retryCtx)
 {
+    if (!retryCtx->isAgentStateWaitResume_ && !retryCtx->haveCommEnableBackupLink_) {
+        CHK_RET(CreateOpRetryAgentByState(RETRY_STATE_AGENT_RUNNING, retryCtx));
+        HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentWaitResume, group[%s], no comm enable backup link, set state to running", retryCtx->group_.c_str());
+        return HCCL_SUCCESS;
+    }
     std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
     RetryCommandInfo commandInfo;
     HcclResult ret = WaitCommandWithOpId(retryCtx->agentSocket_, commandInfo);
