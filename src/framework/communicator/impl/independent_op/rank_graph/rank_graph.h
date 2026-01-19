@@ -40,7 +40,7 @@ public:
     HcclResult Init(const HcclTopoAttr &topoAttr);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
         uint32_t* listSize);
-    HcclResult GetHeterogMode(HcclHeterogMode *mode);
+    HcclResult GetHeterogMode(HcclHeterogMode *mode) const;
     // 根据 rankId 获取 rank 信息
     const RankInfo_t* FindRank(uint32_t rankId) const;
     HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
