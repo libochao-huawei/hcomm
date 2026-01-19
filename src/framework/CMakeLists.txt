@@ -562,6 +562,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
         -pipe
         -O3
         -std=c++14
+        $<$<CONFIG:Debug>:-g>
     )
 
     target_link_options(ccl_kernel PRIVATE
@@ -771,20 +772,6 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
 endif()
 
 if(NOT BUILD_OPEN_PROJECT)
-    # orion仓依赖
-    FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${TOP_DIR}/ace/comop/hccl/orion/*)
-    foreach (dir ${sources_list})
-        IF ((IS_DIRECTORY ${dir}))
-            target_include_directories(ccl_kernel PRIVATE ${dir})
-        endif()
-    endforeach()
-
-    FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${TOP_DIR}/ace/comop/hccl/whole/hccl_next/*)
-    foreach (dir ${open_dir_list})
-        IF ((IS_DIRECTORY ${dir}))
-            target_include_directories(ccl_kernel PRIVATE ${dir})
-        endif()
-    endforeach()
     target_include_directories(ccl_kernel PRIVATE
         ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/pub_inc
@@ -796,6 +783,7 @@ if(NOT BUILD_OPEN_PROJECT)
 
         ${TOP_DIR}/inc
         ${TOP_DIR}/inc/driver
+        ${TOP_DIR}/inc/external
         ${TOP_DIR}/metadef/inc/external
         ${TOP_DIR}/metadef/pkg_inc
         ${TOP_DIR}/metadef/pkg_inc
@@ -806,19 +794,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/atc/opcompiler/ascendc_compiler/api/include
         ${TOP_DIR}/abl/adump/inc/adump
         ${TOP_DIR}/abl/atrace/inc/utrace
-        ${TOP_DIR}/runtime/include/external
- 	    ${TOP_DIR}/runtime/include/external/acl
- 	    ${TOP_DIR}/runtime/pkg_inc
- 	    ${TOP_DIR}/runtime/pkg_inc/runtime
- 	    ${TOP_DIR}/runtime/pkg_inc/profiling
- 	    ${TOP_DIR}/runtime/pkg_inc/trace
- 	    ${TOP_DIR}/runtime/pkg_inc/base
- 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
- 	    ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
-
-        # orion
-        ${TOP_DIR}/ace/comop/inc
-
         ${HCCL_BASE_DIR}/platform/
         ${HCCL_BASE_DIR}/platform/inc/
         ${HCCL_BASE_DIR}/platform/inc/adapter
@@ -836,13 +811,6 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
 	    ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
-
-        ${HCCL_BASE_DIR}/framework
- 	    ${HCCL_BASE_DIR}/framework/common
- 	    ${HCCL_BASE_DIR}/framework/common/src
- 	    ${HCCL_BASE_DIR}/framework/common/src/mgr
- 	    ${HCCL_BASE_DIR}/framework/communicator
- 	    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
     )
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
