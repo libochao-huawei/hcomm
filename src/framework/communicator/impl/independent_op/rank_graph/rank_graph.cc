@@ -322,7 +322,7 @@ HcclResult RankGraph::InitHeterogMode() {
     return HCCL_E_INTERNAL;
 }
 
-HcclResult RankGraph::GetHeterogMode(HcclHeterogMode *mode)
+HcclResult RankGraph::GetHeterogMode(HcclHeterogMode *mode) const
 {
     *mode = heterogMode_;
     return HCCL_SUCCESS;
