@@ -3085,7 +3085,7 @@ HcclResult GetOpWorkspaceMemSize(bool isOfflineCompilation, HcclCMDType hcclOpTy
 HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType, HcomOpParam *hcomOpParam,
     u64 &opMemSize, u32 dataTypeSize, s32 rankSize, s32 serverNum)
 {
-    u32 count = hcomOpParam->count;
+    u64 count = hcomOpParam->count;
     std::string sCollectiveType(hcomOpParam->opType);
 
     std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
