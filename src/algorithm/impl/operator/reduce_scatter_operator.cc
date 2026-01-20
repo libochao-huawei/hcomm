@@ -384,7 +384,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                         && topoMatcher_->GetAivModeConfig()
                         && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                         && (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE)
-                        && (dataSize * userRankSize_ < HCCL_SMALL_COUNT_8_MB)
+                        && ((dataSize * userRankSize_ < HCCL_SMALL_COUNT_8_MB) || isOnlyAiv)
                         && (!retryEnable_)
                         && userRankSize_ > 1
                         && !multiModuleDiffDeviceNumMode_;
@@ -518,23 +518,17 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
             "default is algType=NHR.");
     }
      // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
-    if (isOnlyAiv && !isAivMode) {
+    if (isOnlyAiv && !isAivMode && !isSupportAivDeter) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
         CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported,"
             "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.superPodNum_[%u] deterministic config[%u]"
-            "userRankSize_[%u] dataSize[%llu], retryEnable_[%d]",
-            superPodNum_, topoMatcher_->GetDeterministicConfig(), userRankSize_, dataSize, retryEnable_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable [%d] not supported", retryEnable_), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isAivSingleNode && !isAivCrossNode,
-            HCCL_ERROR("not is aiv single or cross node. serverNum_[%u] isOpbase[%d] superPodNum_[%u] hccs disable[%u]"
-                "userRankSize_[%u] dataSize[%llu]", serverNum_, isOpbase,
-                superPodNum_, GetExternalInputInterHccsDisable(), userRankSize_, dataSize), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(superPodNum_ != 1, HCCL_ERROR("multi superpod [%s] not supported", superPodNum_), HCCL_E_NOT_SUPPORT);
 
-        HCCL_ERROR("deterministic config[%u] retryEnable_[%d]",
-            topoMatcher_->GetDeterministicConfig(), retryEnable_);
+        CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] ReduceScatter SelectAlgfor91093 is algName [%s]", algName.c_str());
