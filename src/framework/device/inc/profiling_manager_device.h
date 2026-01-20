@@ -14,7 +14,6 @@
 #include "stream_pub.h"
 #include "hccl_common.h"
 #include "common/aicpu_hccl_def.h"
-#include "aprof_pub.h"
 #include "prof_common.h"
 
 extern "C" {
