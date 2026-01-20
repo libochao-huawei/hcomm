@@ -19,6 +19,20 @@ extern "C" {
 #endif  // __cplusplus
 
 /**
+ * @brief 通信设备Endpoint属性
+ */
+typedef  enum {
+    ENDPOINT_ATTR_INVALID = -1,
+    ENDPOINT_ATTR_BW_COEFF = 0,
+    ENDPOINT_ATTR_DIE_ID = 1,
+    ENDPOINT_ATTR_LOCATION = 2,
+} EndpointAttr;
+
+typedef uint32_t EndpointAttrBwCoeff;
+typedef uint32_t EndpointAttrDieId;
+typedef uint32_t EndpointAttrLocation;
+
+/**
  * @brief 通信拓扑枚举
  */
 typedef enum {
@@ -328,6 +342,48 @@ extern HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint3
  * @endcode
  */
 extern HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode);
+
+/**
+ * @brief 根据layer获取通信域所有endpoint信息
+ * @param[in] comm 通信域句柄
+ * @param[in] layer 通信网络层次
+ * @param[in] topoInstId 拓扑实例ID
+ * @param[out] num  返回的端点数量
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num);
+
+/**
+ * @brief 获取拓扑实例的端点描述列表
+ * @param[in] comm 通信域句柄
+ * @param[in] layer 通信网络层次
+ * @param[in] topoInstId 拓扑实例ID
+ * @param[inout] descNum 要获取的通信设备描述数量（输入时必须等于GetEndpointNum结果）
+ * @param[out] endpointDesc 通信设备表述数组（由调用方分配内存)
+ * @note 数组内存由调用方管理，建议使用栈空间或动态分配
+ * @return HcclResult 执行结果状态码
+ */
+extern HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+
+/**
+ * @brief 获取指定通信设备的拓扑属性信息
+ * @param[in] comm 通信域句柄
+ * @param[in] rankId 需要查询的端点的所属的rankID
+ * @param[in] endpointDesc 端点描述符（通过HcclRankGraphGetEndpointDesc获取）
+ * @param[in] endpointAttr 需要查询的端点属性类型
+ * @param[in] infoLen 提供的info缓冲区大小（字节）
+ * @param[out] info 存储属性信息的输出缓冲区指针
+ * @return HcclResult 执行结果状态码
+ * @warning 调用者必须确保
+ *     1. infoLen参数必须等于目标属性的大小
+ *     2. info缓冲区必须按属性类型对齐且可写
+ * @code {.c}
+ * EndpointAttrBwCoeff bwCoeff{};
+ * uint32_t size = sizeof(EndpointAttrBwCoeff); //必须等于目标类型大小
+ * HcclRankGraphGetEndpointInfo(comm, rankId, endpointDesc, ENDPOINT_ATTR_BW_COEFF, size, &bwCoeff);
+ * @endcode
+ */
+extern HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

@@ -208,6 +208,44 @@ HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t top
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(num);
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclRankGraphGetEndpointNumV2(comm, layer, topoInstId, num), socNamePtr);
+#endif
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(descNum);
+    CHK_PTR_NULL(endpointDesc);
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclRankGraphGetEndpointDescV2(comm, layer, topoInstId, descNum, endpointDesc), socNamePtr);
+#endif
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(endpointDesc);
+    CHK_PTR_NULL(info);
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclRankGraphGetEndpointInfoV2(comm, rankId, endpointDesc, endpointAttr, infoLen, info));
+#endif
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode)
 {
     CHK_PTR_NULL(comm);

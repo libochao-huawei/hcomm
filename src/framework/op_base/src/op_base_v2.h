@@ -132,6 +132,12 @@ HcclResult __attribute__((weak)) HcclGetTopoInstsByLayerV2(HcclComm comm, uint32
 HcclResult __attribute__((weak)) HcclGetTopoTypeV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
 
 HcclResult __attribute__((weak)) HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+
+HcclResult __attribute__((weak)) HcclRankGraphGetEndpointNumV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num);
+
+HcclResult __attribute__((weak)) HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+
+HcclResult __attribute__((weak)) HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
 #endif
 #ifdef __cplusplus
 }
