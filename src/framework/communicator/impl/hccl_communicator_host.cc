@@ -238,6 +238,7 @@ namespace hccl
         /* 网络资源销毁 */
         DestroyNetworkResources();
         notifyPool_ = nullptr;
+        queueNotifyManager_ = nullptr;
         /* driver关联资源释放 */
         if (drvInit_){
             if (DisablePreResource() != HCCL_SUCCESS) {
