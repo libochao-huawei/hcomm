@@ -281,6 +281,7 @@ HcclResult TransportP2p::FillExchangeDataTotalSize()
     if (sendPid != recvPid_ || recvSdid_ != INVALID_INT) {
         // 输入输出内存
         HCCL_DEBUG("[TransportP2p][FillExchangeDataTotalSize] Inter Proc");
+        ipcMemDataSize = HCCL_IPC_MEM_NAME_LEN + sizeof(u64) + sizeof(u64); // size + offset
         if (!isMemInclude_) {
  	             exchangeInfoSize_.ipcMenSize = ipcMemDataSize * (2 + machinePara_.mem.size());
         } else {
