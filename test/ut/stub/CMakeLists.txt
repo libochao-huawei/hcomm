@@ -25,6 +25,8 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_mmpa_stub.c
     ${HCCL_LLT_ROOT}/stub/llt_stub_mm.c
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_msg.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mmpa.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
@@ -114,6 +116,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/health/heartbeat/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
     ${HCCL_CODE_ROOT}/src/framework/common/src/host
     ${HCCL_CODE_ROOT}/src/framework/common/src/config
     ${HCCL_CODE_ROOT}/src/framework/common/src/task
@@ -132,6 +135,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/hcom/
     ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
+    ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
 
     ${HCCL_CODE_ROOT}/src/platform/
@@ -227,7 +231,11 @@ target_include_directories(hccl_llt  PRIVATE
     # proto.h头文件
     ${CMAKE_BINARY_DIR}/proto/hccl_llt
 
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+    # tbe头文件
+    ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/common/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/graph_ctx_mgr/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/inc/
 
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
