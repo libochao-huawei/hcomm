@@ -288,17 +288,6 @@ extern HcclResult HcclGroupStart();
  */
 extern HcclResult HcclGroupEnd();
 
-#ifndef OPEN_BUILD_PROJECT
-/**
- * @brief Comm accelerator set/get
- * @param comm A pointer identifying the communication resource based on.
- * @param config A struct identifying the Config
- * @param configValue An integer identifying the identify for the config.
- */
-extern HcclResult HcclSetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue configValue);
-extern HcclResult HcclGetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue *configValue);
-#endif
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus

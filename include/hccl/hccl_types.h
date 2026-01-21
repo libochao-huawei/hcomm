@@ -99,9 +99,6 @@ typedef enum {
 
 typedef enum {
     HCCL_DETERMINISTIC = 0,     /**< 0: non-deterministic, 1: deterministic */
-#if !defined (OPEN_BUILD_PROJECT) || defined (ORION_MODE)
-    HCCL_ACCELERATOR,           /**< 0: default, 1: CCU, 2: AIV, 3: AICPU_TS, 4: HOSTCPU_TS, 5: AICPU */
-#endif
     HCCL_CONFIG_RESERVED
 } HcclConfig;
 

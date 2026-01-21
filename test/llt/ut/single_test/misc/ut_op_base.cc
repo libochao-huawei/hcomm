@@ -6522,48 +6522,4 @@ TEST_F(OpbaseTest, ut_GroupLeaderAccept_When_Accept_E_Connect_Then_ReturnE_Conne
 
     GlobalMockObject::verify();
 }
-
-TEST_F(OpbaseTest, ut_HcclSetCommConfig_NOT_SUPPORT)
-{   HcclComm newcomm;
-    HcclConfig config{HCCL_DETERMINISTIC};
-    HcclConfigValue configValue{0};
-    //HCCL_ACCELERATOR
-    auto ret = HcclSetCommConfig(newcomm, config, configValue);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-    GlobalMockObject::verify();
-}
-
-TEST_F(OpbaseTest, ut_HcclSetCommConfig_HCCL_SUCCESS)
-{
-    hcclComm test;
-    HcclComm newcomm = &test;
-    HcclConfig config{HCCL_ACCELERATOR};
-    HcclConfigValue configValue{0};
-
-    auto ret = HcclSetCommConfig(newcomm, config, configValue);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
-
-TEST_F(OpbaseTest, ut_HcclGetCommConfig_NOT_SUPPORT)
-{   HcclComm newcomm;
-    HcclConfig config{HCCL_DETERMINISTIC};
-    HcclConfigValue configValue{0};
-    //HCCL_ACCELERATOR
-    auto ret = HcclGetCommConfig(newcomm, config, &configValue);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-    GlobalMockObject::verify();
-}
-
-TEST_F(OpbaseTest, ut_HcclGetCommConfig_HCCL_SUCCESS)
-{
-    hcclComm test;
-    HcclComm newcomm = &test;
-    HcclConfig config{HCCL_ACCELERATOR};
-    HcclConfigValue configValue{0};
-
-    auto ret = HcclGetCommConfig(newcomm, config, &configValue);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
 #endif

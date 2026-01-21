@@ -1754,43 +1754,6 @@ HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue)
     return HCCL_SUCCESS;
 }
 
-#ifndef OPEN_BUILD_PROJECT
-HcclResult HcclSetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue configValue)
-{
-    if (config != HCCL_ACCELERATOR) {
-        HCCL_ERROR("[HcclSetCommConfig] config[%d] configValue[%d] not support", config, configValue);
-        return HCCL_E_NOT_SUPPORT;
-    }
-    // 入参合法性校验
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclSetCommConfig", "comm", "nullptr", "please check comm"}));
-    CHK_PTR_NULL(comm);
-    HCCL_RUN_INFO("Entry-%s: comm[%p], config[%d], configValue[%d]", __func__, comm, config, configValue);
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclSetCommConfigV2(comm, configValue.value));
-#endif
-    return HCCL_SUCCESS;
-}
-
-HcclResult HcclGetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue *configValue)
-{
-    if (config != HCCL_ACCELERATOR) {
-        HCCL_ERROR("[HcclGetCommConfig] config[%d] configValue[%d] not support", config, configValue->value);
-        return HCCL_E_NOT_SUPPORT;
-    }
-    // 入参合法性校验
-    RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
-        std::vector<std::string>({"HcclGetCommConfig", "comm", "nullptr", "please check comm"}));
-    CHK_PTR_NULL(comm);
-    HCCL_RUN_INFO("Entry-%s: comm[%p], config[%d]", __func__, comm, config);
-
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclGetCommConfigV2(comm, &(configValue->value)));
-#endif
-    return HCCL_SUCCESS;
-}
-#endif
-
 HcclResult HcclSetIfProfile()
 {
     bool ifOpbase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
