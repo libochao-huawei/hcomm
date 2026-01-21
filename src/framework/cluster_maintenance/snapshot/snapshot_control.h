@@ -20,8 +20,6 @@ using SnapshotSetInvalidComm = std::function<HcclResult(bool)>;
 using SnapshotCheckPreProcess = std::function<HcclResult()>;
 using SnapshotCheckPostProcess = std::function<HcclResult()>;
 
-constexpr u32 SNAPSHOT_SUBTHREAD_TIMEOUT = 120; // 背景线程状态切换的超时时间为120s
-
 enum class SnapshotStatus {
     DEFAULT = 0,
     PRE_SNAPSHOT = 1,

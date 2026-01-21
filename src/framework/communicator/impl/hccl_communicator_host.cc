@@ -8026,9 +8026,6 @@ namespace hccl
     {
         CHK_PRT_RET(zeroCopyMemoryAgent_ == nullptr,
                     HCCL_ERROR("[HcclCommunicator][UnsetMemoryRange] not call HcclCommSetMemoryRange()"), HCCL_E_PARA);
-        CHK_PRT_RET(zeroCopyMemoryAgent_->IsPaused(), HCCL_ERROR("[HcclCommunicator][UnsetMemoryRange] "
-            "zero copy is in snapshot pre-processing, cannot do UnsetMemoryRange, "
-            "comm[%s], rank[%u], deviceLogicId[%d]", identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_PARA);
         CHK_RET(zeroCopyMemoryAgent_->UnsetMemoryRange(baseVirPtr));
         return HCCL_SUCCESS;
     }
@@ -8037,9 +8034,6 @@ namespace hccl
     {
         CHK_PRT_RET(zeroCopyMemoryAgent_ == nullptr,
                     HCCL_ERROR("[HcclCommunicator][ActivateCommMemory] not call HcclCommSetMemoryRange()"), HCCL_E_PARA);
-        CHK_PRT_RET(zeroCopyMemoryAgent_->IsPaused(), HCCL_ERROR("[HcclCommunicator][ActivateCommMemory] "
-            "zero copy is in snapshot pre-processing, cannot do ActivateCommMemory, "
-            "comm[%s], rank[%u], deviceLogicId[%d]", identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_PARA);
         CHK_RET(zeroCopyMemoryAgent_->ActivateCommMemory(virPtr, size, offset, handle, flags));
         return HCCL_SUCCESS;
     }
@@ -8048,9 +8042,6 @@ namespace hccl
     {
         CHK_PRT_RET(zeroCopyMemoryAgent_ == nullptr,
                     HCCL_ERROR("[HcclCommunicator][DeactivateCommMemory] not call HcclCommSetMemoryRange()"), HCCL_E_PARA);
-        CHK_PRT_RET(zeroCopyMemoryAgent_->IsPaused(), HCCL_ERROR("[HcclCommunicator][DeactivateCommMemory] "
-            "zero copy is in snapshot pre-processing, cannot do DeactivateCommMemory, "
-            "comm[%s], rank[%u], deviceLogicId[%d]", identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_PARA);
         CHK_RET(zeroCopyMemoryAgent_->DeactivateCommMemory(virPtr));
         return HCCL_SUCCESS;
     }
@@ -8701,7 +8692,7 @@ namespace hccl
     HcclResult HcclCommunicator::SnapshotCheckPreProcess()
     {
         bool errorFlag = false;
-        auto pauseTimeout = std::chrono::seconds(SNAPSHOT_SUBTHREAD_TIMEOUT);
+        auto pauseTimeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
         auto startTime = std::chrono::steady_clock::now();
         while (true) {
             CHK_PRT_BREAK(Heartbeat::GetInstance(deviceLogicId_).IsPaused(),
@@ -8710,7 +8701,7 @@ namespace hccl
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= pauseTimeout,
                 HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "pause heartbeat thread timeout[%u s].",
-                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+                identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         startTime = std::chrono::steady_clock::now();
         while (retryEnable_ && opRetryManager_) {
@@ -8720,7 +8711,7 @@ namespace hccl
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= pauseTimeout,
                 HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "pause opretry threads timeout[%u s].",
-                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+                identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         startTime = std::chrono::steady_clock::now();
         while (zeroCopyMemoryAgent_) {
@@ -8730,7 +8721,7 @@ namespace hccl
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= pauseTimeout,
                 HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "pause zero-copy memory agent thread timeout[%u s].",
-                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+                identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         CHK_PRT_RET(errorFlag, HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], "
             "deviceLogicId[%d], snapshot pre-process fail due to some background threads pause timeout, please check.",
@@ -8743,7 +8734,7 @@ namespace hccl
     HcclResult HcclCommunicator::SnapshotCheckPostProcess()
     {
         bool errorFlag = false;
-        auto resumeTimeout = std::chrono::seconds(SNAPSHOT_SUBTHREAD_TIMEOUT);
+        auto resumeTimeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
         auto startTime = std::chrono::steady_clock::now();
         while (true) {
             CHK_PRT_BREAK(Heartbeat::GetInstance(deviceLogicId_).IsResumed(),
@@ -8752,7 +8743,7 @@ namespace hccl
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
                 HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "resume heartbeat thread timeout[%u s].",
-                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+                identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         startTime = std::chrono::steady_clock::now();
         while (retryEnable_ && opRetryManager_) {
@@ -8762,7 +8753,7 @@ namespace hccl
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
                 HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "resume opretry threads timeout[%u s].",
-                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+                identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         startTime = std::chrono::steady_clock::now();
         while (zeroCopyMemoryAgent_) {
@@ -8772,7 +8763,7 @@ namespace hccl
             CHK_PRT_BREAK((std::chrono::steady_clock::now() - startTime) >= resumeTimeout,
                 HCCL_ERROR("[HcclCommunicator][SnapshotCheckPreProcess] comm[%s], rank[%u], deviceLogicId[%d], "
                 "resume zero-copy memory agent thread timeout[%u s].",
-                identifier_.c_str(), userRank_, deviceLogicId_, SNAPSHOT_SUBTHREAD_TIMEOUT), errorFlag = true);
+                identifier_.c_str(), userRank_, deviceLogicId_, GetExternalInputHcclLinkTimeOut()), errorFlag = true);
         }
         CHK_PRT_RET(errorFlag, HCCL_ERROR("[HcclCommunicator][SnapshotCheckPostProcess] comm[%s], rank[%u], "
             "deviceLogicId[%d], snapshot post-process check fail due to some background threads resume timeout, "
