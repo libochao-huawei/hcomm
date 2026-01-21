@@ -28,7 +28,6 @@ constexpr u32 OP_RETRY_POLL_AICPU_STATE_INTERVAL = 10000; // 重执行状态轮�
 constexpr u32 OP_RETRY_SEND_RECV_TIMEOUT = 205; // 发送和接收的超时时间, 单位s, 比aicpu状态机超时时间长5s
 constexpr u32 OP_RETRY_SEND_RECV_INTERVAL = 10000; // 发送和接收的间隔时间, 单位us
 constexpr u32 OP_RETRY_KEEP_INTERVAL = 1; // 保活时间间隔, 单位s
-constexpr u32 OP_RETRY_SWITCH_WAIT_RESUM = 10; // 切入和切出等待通信域恢复状态的超时时间，单位s
 constexpr u32 OP_RETRY_RUNNING_POLL_INTERVAL = 100000; // 重执行状态轮询状态的间隔, 单位us
 constexpr u32 TIME_MS_TO_US = 1000;
 constexpr u32 OP_RETRY_WAIT_CAN_RETRY_RANK = 60;
@@ -279,6 +278,7 @@ public:
     std::string group_ = "";
     s32 deviceLogicId_ = INVALID_INT;
     u32 rankId_ = INVALID_UINT;
+    bool haveCommEnableBackupLink_ = false;
 
     // agent状态机储存信息
     std::shared_ptr<HcclSocket> agentSocket_ = nullptr;

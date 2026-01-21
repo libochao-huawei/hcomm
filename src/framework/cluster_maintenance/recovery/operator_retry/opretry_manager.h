@@ -40,7 +40,7 @@ public:
         const std::string &newTag, std::vector<u32> &remoteRankList);
     static HcclResult DeleteLinkInfoByIdentifier(s32 deviceLogicID, const std::string &identifier);
     HcclResult SetRetryStateToWaitResume(const std::string& group, bool isRoot);
-    HcclResult ExitWaitResumeState(const std::string& group, bool isRoot, bool& isChangedLink);
+    HcclResult ExitWaitResumeState(const std::string& group, bool isRoot, bool haveCommEnableBackupLink, bool& isChangedLink);
 private:
     HcclResult Init();
     HcclResult DeInit()
