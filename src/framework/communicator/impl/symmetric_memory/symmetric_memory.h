@@ -18,6 +18,7 @@
 #include <functional>
 #include <memory>
 #include "allgather_manager.h"
+#include "hccl_mem_alloc.h"
 
 // HCCL
 #include "hccl/base.h"
@@ -85,8 +86,7 @@ public:
     HcclResult FreeSymmetricMem(void* devWin);
     HcclResult RegisterSymmetricMem(void* ptr, size_t size, void** devWin);
     HcclResult DeregisterSymmetricMem(void* devWin);
-    HcclResult GetSymmetricMemPtr(void* ptr, size_t size, void** win, void *symPtr);
-    HcclResult FindSymmetricWindow(void* ptr, size_t size, void** win, u64 &offset);
+    HcclResult FindSymmetricWindow(void* ptr, size_t size, void** win, u64 *offset);
 
 private:
     HcclResult Init();

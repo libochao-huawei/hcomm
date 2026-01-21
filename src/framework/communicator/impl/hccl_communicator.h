@@ -478,10 +478,10 @@ public:
     HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
     HcclResult GroupSubstreamsSync();
     void SetReleaseChannel(std::function<HcclResult()> releaseChannel);
-    HcclResult RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags);
-    HcclResult DeregisterWindow(HcclWindow winHandle);
+    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags);
+    HcclResult DeregisterWindow(CommSymWindow winHandle);
     HcclResult InitSymmetricMemory();
-    HcclResult GetSymmetricPtr(void* ptr, size_t size, HcclWindow *winHandle, void *symPtr);
+    HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 private:
 
     bool IsEnableRoce();

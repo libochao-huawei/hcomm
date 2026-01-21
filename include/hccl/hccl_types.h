@@ -63,7 +63,7 @@ typedef void *HcclConn;
 /**
  * @brief handle to HCCL Window
  */
-typedef void *HcclWindow;
+typedef void *CommSymWindow;
 
 /**
  * @brief HCCL Reduction operation

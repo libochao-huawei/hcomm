@@ -12,13 +12,13 @@
 
 namespace hccl {
 
-void *HcclGetSymPtr(HcclWindow winHandle, int32_t peerRank, size_t offset)
+HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr)
 {
     SymmetricWindow *symWin = reinterpret_cast<SymmetricWindow *>(winHandle);
     size_t peerOffset = peerRank * symWin->stride + offset;
-    void *peerVa = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(symWin->baseVa) + peerOffset);
-    HCCL_INFO("[HcclGetSymPtr] Get Ptr[%p] from winHandle[%p], rank[%d], peerOffset[%llu]", peerVa, winHandle, peerRank, peerOffset);
-    return peerVa;
+    ptr = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(symWin->baseVa) + peerOffset);
+    HCCL_INFO("[HcommSymWinGetPeerPointer] Get Ptr[%p] from winHandle[%p], rank[%d], peerOffset[%llu]", ptr, winHandle, peerRank, peerOffset);
+    return HCCL_SUCCESS;
 }
 
 }

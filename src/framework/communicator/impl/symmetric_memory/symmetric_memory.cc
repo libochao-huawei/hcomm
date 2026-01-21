@@ -256,8 +256,8 @@ HcclResult SymmetricMemory::Init()
         return HCCL_E_PARA;
     }
 
-    size_t targetStartTB = 40ULL * 1024ULL * 1024ULL * 1024ULL * 1024ULL;
-    void* hintPtr = reinterpret_cast<void*>(targetStartTB);
+    // size_t targetStartTB = 40ULL * 1024ULL * 1024ULL * 1024ULL * 1024ULL;
+    // void* hintPtr = reinterpret_cast<void*>(targetStartTB);
     //aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0);
     // 默认大页对齐
     if (aclrtReserveMemAddress(&heapBase_, totalHeapSize, 0, nullptr, 1) != ACL_SUCCESS) {
@@ -528,7 +528,7 @@ HcclResult SymmetricMemory::DeregisterSymmetricMem(void* devWin)
     return ret;
 }
 
-HcclResult SymmetricMemory::GetSymmetricMemPtr(void* ptr, size_t size, void** win, void *symPtr)
+HcclResult SymmetricMemory::FindSymmetricWindow(void* ptr, size_t size, void** win, u64 *offset)
 {
     uintptr_t userVaStart = reinterpret_cast<uintptr_t>(ptr);
     uintptr_t userVaEnd = userVaStart + size;
@@ -542,29 +542,7 @@ HcclResult SymmetricMemory::GetSymmetricMemPtr(void* ptr, size_t size, void** wi
 
         if (userVaStart >= winStart && userVaEnd <= winStart + pWin->userSize) {
             *win = pWin->devWin;
-            symPtr = pWin->userVa;
-            return HCCL_SUCCESS;
-        }
-    }
-
-    return HCCL_E_NOT_FOUND;
-}
-
-HcclResult SymmetricMemory::FindSymmetricWindow(void* ptr, size_t size, void** win, u64 &offset)
-{
-    uintptr_t userVaStart = reinterpret_cast<uintptr_t>(ptr);
-    uintptr_t userVaEnd = userVaStart + size;
-
-    // 遍历所有窗口
-    for (const auto& pWin : sortedWindows_) {
-        uintptr_t winStart = reinterpret_cast<uintptr_t>(pWin->userVa);
-        if (winStart > userVaStart) {
-            return HCCL_E_NOT_FOUND;
-        }
-
-        if (userVaStart >= winStart && userVaEnd <= winStart + pWin->userSize) {
-            *win = pWin->devWin;
-            offset = userVaStart - winStart;
+            *offset = userVaStart - winStart;
             return HCCL_SUCCESS;
         }
     }

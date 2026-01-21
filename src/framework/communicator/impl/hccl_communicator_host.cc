@@ -608,10 +608,10 @@ namespace hccl
                     false);
 
         // 判断输入输出地址是否都注册为对称内存
-        HcclResult ret = symmetricMemory_->FindSymmetricWindow(opParam.inputPtr, opParam.inputSize, &opParam.inputWindow, opParam.inputOffset);
+        HcclResult ret = symmetricMemory_->FindSymmetricWindow(opParam.inputPtr, opParam.inputSize, &opParam.inputWindow, &opParam.inputOffset);
         CHK_PRT_RET(ret != HCCL_SUCCESS || opParam.inputWindow == nullptr,
                     HCCL_INFO("[%s] input[%p] size[%llu] is not support symmetric memory", __func__, opParam.inputPtr, opParam.inputSize), false);
-        ret = symmetricMemory_->FindSymmetricWindow(opParam.outputPtr, opParam.outputSize, &opParam.outputWindow, opParam.outputOffset);
+        ret = symmetricMemory_->FindSymmetricWindow(opParam.outputPtr, opParam.outputSize, &opParam.outputWindow, &opParam.outputOffset);
         CHK_PRT_RET(ret != HCCL_SUCCESS || opParam.outputWindow == nullptr,
                     HCCL_INFO("[%s] output[%p] size[%llu] is not support symmetric memory", __func__, opParam.outputPtr, opParam.outputSize), false);
         
@@ -8851,21 +8851,21 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);
     }
 
-    HcclResult HcclCommunicator::DeregisterWindow(HcclWindow winHandle)
+    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->DeregisterSymmetricMem(winHandle);
     }
 
-    HcclResult HcclCommunicator::GetSymmetricPtr(void* ptr, size_t size, HcclWindow *winHandle, void *symPtr)
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
-        return symmetricMemory_->GetSymmetricMemPtr(ptr, size, winHandle, symPtr);
+        return symmetricMemory_->FindSymmetricWindow(ptr, size, winHandle, reinterpret_cast<u64*>(offset));
     }
 }

@@ -2261,8 +2261,10 @@ HcclResult HcclCommAicpu::PrepareSymmetricMemory(const OpParam &param, OpCommTra
                 continue;
             }
             u32 peerRank = link->GetRemoteRank();
-            void *remoteIn = HcclGetSymPtr(param.inputWindow, peerRank, param.inputOffset);
-            void *remoteOut = HcclGetSymPtr(param.outputWindow, peerRank, param.outputOffset);
+            void *remoteIn = nullptr;
+            CHK_RET(HcommSymWinGetPeerPointer(param.inputWindow, param.inputOffset, peerRank, remoteIn));
+            void *remoteOut = nullptr;
+            CHK_RET(HcommSymWinGetPeerPointer(param.outputWindow, param.outputOffset, peerRank, remoteOut));
 
             CHK_PRT_RET(remoteIn == nullptr || remoteOut == nullptr,
                 HCCL_ERROR("[HcclCommAicpu][PrepareSymmetricMemory] remoteRank[%d] in[%p] out[%p] is invalid", peerRank, remoteIn, remoteOut),
@@ -2286,8 +2288,8 @@ HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &a
         if (isSymmetricMemory_) {
             HCCL_INFO("[HcclCommAicpu][ExecOp] opParam.inputPtr[%p], inputOffset[%llu], inputWindow[%p]", opParam.inputPtr, opParam.inputOffset, opParam.inputWindow);
             HCCL_INFO("[HcclCommAicpu][ExecOp] opParam.outputPtr[%p], outputOffset[%llu], outputWindow[%p]", opParam.outputPtr, opParam.outputOffset, opParam.outputWindow);
-            opParam.inputPtr = HcclGetSymPtr(opParam.inputWindow, commParam->localUsrRankId, opParam.inputOffset);
-            opParam.outputPtr = HcclGetSymPtr(opParam.outputWindow, commParam->localUsrRankId, opParam.outputOffset);
+            CHK_RET(HcommSymWinGetPeerPointer(opParam.inputWindow, opParam.inputOffset, commParam->localUsrRankId, opParam.inputPtr));
+            CHK_RET(HcommSymWinGetPeerPointer(opParam.outputWindow, opParam.outputOffset, commParam->localUsrRankId, opParam.outputPtr));
             CHK_PTR_NULL(opParam.inputPtr);
             CHK_PTR_NULL(opParam.outputPtr);
             CHK_RET(PrepareSymmetricMemory(opParam, algResResponse->opTransportResponse));

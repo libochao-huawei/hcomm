@@ -11,9 +11,8 @@
 #define AICPU_SYMMETRIC_MEMORY_H_
 
 #include "symmetric_memory/symmetric_memory.h"
-
 namespace hccl {
-    void *HcclGetSymPtr(HcclWindow winHandle, int32_t peerRank, size_t offset);
+    HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr);
 }
 
 #endif // AICPU_SYMMETRIC_MEMORY_H_

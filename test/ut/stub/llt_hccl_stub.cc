@@ -5430,3 +5430,26 @@ rtError_t rtGetP2PStatus(uint32_t devIdDes, uint32_t phyIdSrc, uint32_t *status)
     *status = 1;
     return RT_ERROR_NONE;
 }
+
+rtError_t aclrtMemExportToShareableHandleV2(aclrtDrvMemHandle handle, uint64_t flags,  aclrtMemSharedHandleType shareType, void *shareableHandle)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t aclrtMemSetPidToShareableHandleV2(void *shareableHandle, aclrtMemSharedHandleType shareType, int32_t *pid, size_t pidNum)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t aclrtMemImportFromShareableHandleV2(void *shareableHandle, aclrtMemSharedHandleType shareType, uint64_t flags, aclrtDrvMemHandle *handle)
+{
+    return RT_ERROR_NONE;
+}
+
+aclError aclrtMemGetAddressRange(void *ptr, void **baseUserVa, size_t *baseVaSize)
+{
+    (void)ptr;
+    (void)baseUserVa;
+    (void)baseVaSize;
+    return ACL_SUCCESS;
+}

@@ -1596,12 +1596,12 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags)
     {
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::DeregisterWindow(HcclWindow winHandle)
+    HcclResult HcclCommunicator::DeregisterWindow(CommSymWindow winHandle)
     {
         return HCCL_SUCCESS;
     }

@@ -1501,25 +1501,25 @@ bool hcclComm::IsCommunicatorV2()
     return false;
 }
 
-HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle, flags));
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::DeregisterWindow(HcclWindow winHandle)
+HcclResult hcclComm::DeregisterWindow(CommSymWindow winHandle)
 {
     CHK_SMART_PTR_NULL(communicator_);
     CHK_RET(communicator_->DeregisterWindow(winHandle));
     return HCCL_SUCCESS;
 }
 
-// HcclResult hcclComm::GetSymmetricPtr(void* ptr, size_t size, HcclWindow *winHandle, void *symPtr)
-// {
-//     CHK_SMART_PTR_NULL(communicator_);
-//     CHK_RET(communicator_->GetSymmetricPtr(ptr, size, winHandle, symPtr));
-//     return HCCL_SUCCESS;
-// }
+HcclResult hcclComm::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+{
+    CHK_SMART_PTR_NULL(communicator_);
+    CHK_RET(communicator_->GetCommSymWin(ptr, size, winHandle, offset));
+    return HCCL_SUCCESS;
+}
 
 }  // namespace hccl

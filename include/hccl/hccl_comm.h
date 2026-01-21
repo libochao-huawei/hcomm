@@ -292,54 +292,47 @@ extern HcclResult HcclGroupEnd();
  * @brief Register a memory window for HCCL communication.
  *
  * @param comm A pointer identifying the communication resource based on.
- * @param ptr A pointer identifying the user memory address.
+ * @param addr A pointer identifying the user memory address.
  * @param size A size_t identifying the size of memory window.
  * @param winHandle A pointer identifying the registered memory window handle.
- * @param flags The flag of this memory window, now only support 0
+ * @param flag The flag of this memory window, now only support 0
  * @return HcclResult
  */
-extern HcclResult HcclCommWindowRegister(HcclComm comm, void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags);
+extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag);
 
 /**
  * @brief Deregister a memory window for HCCL communication.
  *
- * @param comm A pointer identifying the communication resource based on.
  * @param winHandle A pointer identifying the registered memory window handle.
  * @return HcclResult
  */
-extern HcclResult HcclCommWindowDeRegister(HcclComm comm, HcclWindow winHandle);
+extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
 
 HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
     HcclComm comm, aclrtStream stream);
 
 /**
- * @brief Allocates virtual memory and maps it to physical memory.
- *
- * @param ptr A pointer to a void pointer that will receive the allocated virtual memory address.
- * @param size The size of the virtual memory to allocate.
- * @return HcclResult
- */
-extern HcclResult HcclMemAlloc(void **ptr, size_t size);
-
-/**
- * @brief Releases virtual memory and its mapped physical memory.
- *
- * @param ptr A pointer identifying the virtual memory address to be released.
- * @return HcclResult
- */
-extern HcclResult HcclMemFree(void *ptr);
-
-/**
- * @brief Get symmetric memory pointer and window for HCCL communication.
+ * @brief Get symmetric memory offset and window for HCCL communication.
  *
  * @param comm A pointer identifying the communication resource based on.
  * @param ptr A pointer identifying the user memory address.
  * @param size A size_t identifying the size of memory window.
  * @param winHandle A pointer identifying the registered memory window handle.
- * @param symPtr A pointer identifying the symmetric memory address.
+ * @param offset A size_t identifying the offset of symmetric memory heap.
  * @return HcclResult
  */
-extern HcclResult HcclCommGetSymPtr(HcclComm comm, void *ptr, size_t size, HcclWindow *winHandle, void *symPtr);
+extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
+
+/**
+ * @brief Get symmetric memory pointer.
+ *
+ * @param winHandle A pointer identifying the registered memory window handle.
+ * @param offset A size_t identifying the offset of symmetric memory heap.
+ * @param peerRank A integer identifying the identify for the peer rank.
+ * @param ptr A pointer identifying the symmetric memory heap address.
+ * @return HcclResult
+ */
+extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr);
 
 #ifdef __cplusplus
 }

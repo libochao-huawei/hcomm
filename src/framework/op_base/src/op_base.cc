@@ -4559,24 +4559,28 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommWindowRegister(HcclComm comm, void* ptr, size_t size, HcclWindow *winHandle, uint64_t flags)
+std::unordered_map<CommSymWindow, HcclComm> winHandle2comm;
+
+HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, CommSymWindow *winHandle, uint32_t flag)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(ptr);
+    CHK_PTR_NULL(addr);
     CHK_PTR_NULL(winHandle);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
 
+    winHandle2comm[winHandle] = comm;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    CHK_RET(hcclComm->RegisterWindow(ptr, size, winHandle, flags));
+    CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle, flag));
     HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
         hcclComm->GetIdentifier().c_str(), *winHandle, size);
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommWindowDeRegister(HcclComm comm, HcclWindow winHandle)
+HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
 {
     // 入参校验
+    HcclComm comm = winHandle2comm[winHandle];
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(winHandle);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -4586,7 +4590,7 @@ HcclResult HcclCommWindowDeRegister(HcclComm comm, HcclWindow winHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommGetSymPtr(HcclComm comm, void *ptr, size_t size, HcclWindow *winHandle, void *symPtr)
+HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
@@ -4595,9 +4599,9 @@ HcclResult HcclCommGetSymPtr(HcclComm comm, void *ptr, size_t size, HcclWindow *
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    //CHK_RET(hcclComm->GetSymmetricPtr(ptr, size, winHandle, symPtr));
-    HCCL_RUN_INFO("[%s]GetSymmetricPtr success, group[%s], handle ptr[%p], symPtr[%p], size[%llu]", __func__,
-        hcclComm->GetIdentifier().c_str(), *winHandle, symPtr, size);
+    CHK_RET(hcclComm->GetCommSymWin(ptr, size, winHandle, offset));
+    HCCL_RUN_INFO("[%s]GetCommSymWin success, group[%s], handle ptr[%p], offset[%llu], size[%llu]", __func__,
+        hcclComm->GetIdentifier().c_str(), *winHandle, *offset, size);
     return HCCL_SUCCESS;
 }
 
