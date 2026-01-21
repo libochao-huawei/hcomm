@@ -34,7 +34,7 @@ bool CollAllReduceMeshSmallCountExecutor::CalcScratchMemFlag(const u64 totalSize
         topoMatcher_->GetExternalInputHcclDeterministic() != DETERMINISTIC_DISABLE &&
         topoAttr_.deviceNumPerAggregation > DEVICE_TWO &&
         topoAttr_.deviceNumPerAggregation < DEVICE_EIGHT &&
-        totalSize <= HCCL_SMALL_COUNT_GRAPH_64_KB;
+        totalSize <= HCCL_SMALL_COUNT_128_KB;
     return workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
         (isDeter910B || topoAttr_.deviceType == DevType::DEV_TYPE_910_93);
 }

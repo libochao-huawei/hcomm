@@ -34,9 +34,9 @@ HcclDataCountType AllReduceOperator::GetCountTypeForDeterAllReduce(const u64 cou
 {
     u64 dataSize = SIZE_TABLE[dataType] * count;
     if ((GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB)) {
-        if (dataSize <= HCCL_SMALL_COUNT_GRAPH_64_KB) {
+        if (dataSize <= HCCL_SMALL_COUNT_128_KB) { // 单算子图模式一致性规避
             return HcclDataCountType::HCCL_COUNT_SMALL;
-        } else if ((dataSize <= HCCL_MEDIUM_COUNT_GRAPH_4_MB) && (deviceNumPerAggregation_ == DEVICE_EIGHT)) {
+        } else if (deviceNumPerAggregation_ == DEVICE_EIGHT) {
             return HcclDataCountType::HCCL_COUNT_MEDIUM;
         } else {
             return HcclDataCountType::HCCL_COUNT_HUGE;
@@ -323,6 +323,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
                                 && (dataSize <= HCCL_MID_COUNT_16_MB);
 
     bool isSupportAivDeter = isSingleMeshAggregation_
+                            && isOpbase // 930->1230 变化点1：单机AIV确定性支持图模式
                             && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE)
                             && (dataSize <= HCCL_SMALL_COUNT_8_MB);
 
@@ -546,20 +547,12 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
     // 确定性图和单算子归一流程
     HcclDataCountType countType = GetCountTypeForDeterAllReduce(param.DataDes.count, param.DataDes.dataType);
     if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
-        if (countType == HcclDataCountType::HCCL_COUNT_SMALL) {
+        if (countType <= HcclDataCountType::HCCL_COUNT_SMALL) { // 930->1230 变化点2：多机单算子确定性小数据性能优化
             algName = "AllReduceMeshSmallCountExecutor";
         } else if (countType == HcclDataCountType::HCCL_COUNT_MEDIUM) {
             algName = "AllReduceMeshMidCountLoopExecutor";
         } else { 
             algName = "AllReduceMeshOneshotLoopExecutor";
-        }
-    } else {
-        u64 dataSize = param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
-        // 单算子 + 确定性 + 数据量小于512kB
-        if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-            !isSingleMeshAggregation_ && dataSize <= HCCL_SMALL_COUNT_512_KB && 
-            IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
-            algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
         }
     }
     return HCCL_SUCCESS;
@@ -584,8 +577,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                         && (topoMatcher_->GetAivModeConfig() && !isBarrierOp)
                         && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                         && ((topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) || (serverNum_ > 1))
-                        && ((userRankSize_ > DEVICE_EIGHT && dataSize < HCCL_SMALL_COUNT_8_MB) ||
-                            (userRankSize_ <= DEVICE_EIGHT && dataSize <= HCCL_SMALL_COUNT_512_KB))
+                        && (dataSize < HCCL_SMALL_COUNT_8_MB) // 930->1230 变化点3：AIV确定性阈值调整
                         && (!retryEnable_)
                         && userRankSize_ > 1
                         && !multiModuleDiffDeviceNumMode_;
@@ -633,8 +625,6 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool smallCountOptimSingleServer =
         (!retryEnable_) &&
         (serverNum_ == 1) &&
-        ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) ||
-        (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !param.aicpuUnfoldMode)) &&
         isSupportInlineReduce &&
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_512_KB * userRankSize_) &&
@@ -642,21 +632,18 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool smallCountOptimMultiServer =
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && (serverNum_ != 1) && (superPodNum_ == 1) &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_1_MB * deviceNumPerAggregation_);
-    bool useHostComm = !isSupportInlineReduce && ((serverNum_ != 1 && superPodNum_ == 1 && !GetExternalInputInterHccsDisable())
-        || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
-        && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB * deviceNumPerAggregation_));
-    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
+    // 930->1230 变化点4：跨超小数据优化
+    // bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
+    //     (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
 
     if (multiModuleDiffDeviceNumMode_) {
         algName = "AllReduceComm";
-    } else if (useHostComm || smallCountOptimMultiServer || smallCountOptimMultiPod) {
+    } else if (smallCountOptimMultiServer) {
         algName = "AllReduceComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
     } else if (smallCountOptimSingleServer) {
         algName = "AllReduceMeshSmallCountExecutor";
-    } else if (param.supportZeroCopy &&
-        (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize > HCCL_MID_COUNT_16_MB * serverNum_)) {
+    } else if (param.supportZeroCopy) {
         algName = "AllReduceRingZerocopyExecutor";
     } else {
         if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_HD) {

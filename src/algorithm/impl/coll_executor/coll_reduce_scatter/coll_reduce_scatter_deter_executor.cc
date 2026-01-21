@@ -112,9 +112,7 @@ HcclResult CollReduceScatterDeterExecutor::CalcLevel0CommInfo(TransportMemType i
 u64 CollReduceScatterDeterExecutor::CalcLoopMaxCount(const u32 unitSize)
 {
     u64 maxCountPerLoop;
-    bool isLocalReduce91073 = ((((topoAttr_.userRankSize & (topoAttr_.userRankSize - 1)) != 0) ||
-        aicpuUnfoldMode_ || (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB)) 
-        && (topoAttr_.deviceType == DevType::DEV_TYPE_910_93)) && (topoAttr_.serverNum == 1);
+    bool isLocalReduce91073 = (topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && topoAttr_.serverNum == 1);
 
     bool isLocalReduce910B = ((totalSize_ > HCCL_SMALL_COUNT_32_KB) ||
         (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ||
@@ -170,9 +168,7 @@ HcclResult CollReduceScatterDeterExecutor::KernelRun(const OpParam &param, ExecM
     HcomCollOpInfo opInfo = {"", execMem.inputPtr, execMem.outputPtr, param.DataDes.count, param.DataDes.dataType,
         param.root, param.reduceType};
 
-    bool isLocalReduce91073 = ((((topoAttr_.userRankSize & (topoAttr_.userRankSize - 1)) != 0) ||
-        aicpuUnfoldMode_ || (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB)) 
-        && (topoAttr_.deviceType == DevType::DEV_TYPE_910_93)) && (topoAttr_.serverNum == 1);
+    bool isLocalReduce91073 = (topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && topoAttr_.serverNum == 1);
 
     bool isLocalReduce910B = ((param.DataDes.count * unitSize > HCCL_SMALL_COUNT_32_KB) ||
         (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ||
