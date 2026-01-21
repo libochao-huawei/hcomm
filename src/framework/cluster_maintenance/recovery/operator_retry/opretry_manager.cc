@@ -13,6 +13,7 @@
 #include "opretry_connection_pub.h"
 #include "opretry_agent.h"
 #include "opretry_server.h"
+#include "externalinput_pub.h"
 #include "adapter_rts_common.h"
 #include "sal_pub.h"
 
@@ -182,7 +183,7 @@ HcclResult OpRetryManager::DeleteLinkInfoByIdentifier(s32 deviceLogicID, const s
 HcclResult OpRetryManager::SetRetryStateToWaitResume(const std::string &group, bool isRoot)
 {
     std::unique_lock<std::mutex> lock(ProcessLock_);
-    std::chrono::seconds setTimeout = std::chrono::seconds(OP_RETRY_SWITCH_WAIT_RESUM);
+    std::chrono::seconds setTimeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     if (agentOpRetry_.find(group) != agentOpRetry_.end()) {
         agentOpRetry_[group].retryCtx->isAgentStateWaitResume_ = true;
@@ -223,16 +224,18 @@ HcclResult OpRetryManager::SetRetryStateToWaitResume(const std::string &group, b
     return HCCL_SUCCESS;
 }
 
-HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool isRoot, bool &isChangedLink)
+HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool isRoot, bool haveCommEnableBackupLink, bool &isChangedLink)
 {
-    HCCL_RUN_INFO("[OpRetryManager][ExitWaitResumeState]group[%s], exit wait resume state start", group.c_str());
+    HCCL_RUN_INFO("[OpRetryManager][ExitWaitResumeState]group[%s], haveCommEnableBackupLink[%d] exit wait resume state start", group.c_str(), haveCommEnableBackupLink);
     std::unique_lock<std::mutex> lock(ProcessLock_);
-    std::chrono::seconds exitTimeout = std::chrono::seconds(OP_RETRY_SWITCH_WAIT_RESUM);
+    std::chrono::seconds exitTimeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
     if (isRoot && serverOpRetry.find(group) != serverOpRetry.end()) {
+        serverOpRetry[group].retryCtx->haveCommEnableBackupLink_ = haveCommEnableBackupLink;
         serverOpRetry[group].retryCtx->isServerStateWaitResume_ = false;
     }
     if (agentOpRetry_.find(group) != agentOpRetry_.end()) {
+        agentOpRetry_[group].retryCtx->haveCommEnableBackupLink_ = haveCommEnableBackupLink;
         agentOpRetry_[group].retryCtx->isAgentStateWaitResume_ = false;
     }
     while (isRoot && serverOpRetry.find(group) != serverOpRetry.end() && serverOpRetry[group].retryCtx->GetRetryState() != RETRY_STATE_SERVER_RUNNING) {
