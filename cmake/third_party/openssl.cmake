@@ -9,7 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 include(ExternalProject)
 set(OPENSSL_SRC_DIR ${PROJECT_SOURCE_DIR}/third_party/openssl-${PRODUCT_SIDE})
-
+message("11111111111test time openssl")
 if(CCACHE_PROGRAM)
     set(OPENSSL_CC "${CCACHE_PROGRAM} ${CMAKE_C_COMPILER}")
     set(OPENSSL_CXX "${CCACHE_PROGRAM} ${CMAKE_CXX_COMPILER}")

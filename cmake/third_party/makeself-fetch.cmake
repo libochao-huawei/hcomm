@@ -11,7 +11,7 @@
 
 set(MAKESELF_NAME "makeself")
 set(MAKESELF_PATH "${CMAKE_BINARY_DIR}/${MAKESELF_NAME}")
-
+message("11111111111test time makeself")
 if(POLICY CMP0135)
     cmake_policy(SET CMP0135 NEW)
 endif()
