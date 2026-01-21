@@ -5598,7 +5598,6 @@ HcclResult HcclCommAicpu::NotifyFree(NotifyMgrAicpuParam *param)
 
 HcclResult HcclCommAicpu::RegisterOpInfo(void* opInfo, u32 size)
 {
-    CHK_RET(SetDispatcherCtx(dispatcherCtx_));
     CHK_RET(taskExecption_.RegisterOpInfo(opInfo, size));
     u32 opIdx = taskExecption_.GetOpRingBufferIdx();
     CHK_RET(SetDispatcherCtxOpIdx(opIdx));
@@ -5609,6 +5608,13 @@ HcclResult HcclCommAicpu::RegisterOpInfo(void* opInfo, u32 size)
 HcclResult HcclCommAicpu::RegOpTaskException(HcommGetOpInfoCallback callback)
 {
     CHK_RET(taskExecption_.RegisterOpInfoCallback(callback));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::SetDispatcherCtxOnThread()
+{
+    // 设置 DispatcherCtx 到线程变量
+    CHK_RET(SetDispatcherCtx(dispatcherCtx_));
     return HCCL_SUCCESS;
 }
 }  // namespace hccl
