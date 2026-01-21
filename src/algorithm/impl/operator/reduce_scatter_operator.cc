@@ -203,6 +203,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
 
     bool isSupportAivDeter = isSingleMeshAggregation_
                             && serverNum_ == 1
+                            && isOpbase // 930->1230 变化点1：单机AIV确定性支持图模式
                             && (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE)
                             && ((dataSize * userRankSize_ <= HCCL_SMALL_COUNT_8_MB) || isOnlyAiv);
 
@@ -273,12 +274,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
                 algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE &&
                 IsMultiMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
-                algName = "ReduceScatterMeshOpbasePipelineExecutor";
-            } else if (!isSingleMeshAggregation_ && topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE && 
-                dataSize <= HCCL_SMALL_COUNT_512_KB &&
-                IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(), cclBufferManager_.GetOutCCLbuffer().ptr(),
-                    param.DataDes.dataType, param.reduceType)) {
-                algName = "ReduceScatterMeshOpbaseSmallCountDeterministicExecutor";
+                algName = "ReduceScatterMeshOpbasePipelineExecutor"; // 930->1230 变化点2：多机单算子确定性小数据性能优化
             }
         } else {
             if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
@@ -428,8 +424,6 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     bool smallCountOptimSingleServer =
         (!retryEnable_) &&
         (serverNum_ == 1) &&
-        ((workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) ||
-        (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE && !param.aicpuUnfoldMode)) &&
         isSupportInlineReduce &&
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= smallCountSingleServerThreshold) &&
@@ -440,19 +434,16 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         !dmaReduceLimit && !GetExternalInputInterHccsDisable();
     bool isHccsPlusSio = userRankSize_ == 2 && pairLinkCounter_[static_cast<u32>(LinkTypeInServer::SIO_TYPE)] == 2 &&
                          pairLinkCounter_[static_cast<u32>(LinkTypeInServer::HCCS_TYPE)] == 0;
-    bool useHostComm = !isSupportInlineReduce && ((serverNum_ != 1 && superPodNum_ == 1 && !GetExternalInputInterHccsDisable())
-        || ((superPodNum_ > 1 || GetExternalInputInterHccsDisable()) && !retryEnable_
-        && ((isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_4_MB)
-        || (!isPowOfTwo && param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_2_MB))));
-    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
+    // 930->1230 变化点4：跨超小数据优化
+    // bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
+    //     (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
 
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
     } else if (multiModuleDiffDeviceNumMode_) {
         algName = "ReduceScatterComm";
-    } else if (smallCountOptimMultiPod || useHostComm || (smallCountOptimMultiServer && !isPowOfTwo &&
+    } else if ((smallCountOptimMultiServer && !isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_256_KB))) {
         algName = "ReduceScatterComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
@@ -460,8 +451,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         (smallCountOptimMultiServer && isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] * serverNum_ <= smallCountMultiServerThreshold))) {
         algName = "ReduceScatterDeterExecutor";
-    } else if (param.supportZeroCopy && isSupportInlineReduce &&    // 不申请scratch ==> 不支持非InlineReduce
-        (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
+    } else if (param.supportZeroCopy && isSupportInlineReduce) {    // 不申请scratch ==> 不支持非InlineReduce
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
         HcclAlgoType configAlgTypeLevel2 = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_REDUCE_SCATTER)[HCCL_ALGO_LEVEL_2];
@@ -480,11 +470,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
             algName = "ReduceScatterRingFor91093Executor";
         } else if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
-            if (IsSupportUnifiedMarch(param, topoType_, serverNum_, superPodNum_)) {
-                algName = "ReduceScatterSemiRingExecutor";
-            } else {
-                algName = "ReduceScatterFastDoubleRingFor91093Executor";
-            }
+            algName = "ReduceScatterFastDoubleRingFor91093Executor";
         } else {
             algName = "ReduceScatterComm";
         }
