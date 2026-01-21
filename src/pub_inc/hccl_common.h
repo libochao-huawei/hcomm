@@ -273,15 +273,15 @@ using IpSocket = struct IpSocket {
     }
 };
 using RaResourceInfo = struct TagRaResourceInfo {
-    SocketHandle vnicSocketHandle;
+    std::map<hccl::HcclIpAddress, IpSocket> vnicSocketMap;
     std::map<hccl::HcclIpAddress, IpSocket> nicSocketMap;
     std::map<hccl::HcclIpAddress, IpSocket> hostNetSocketMap;
 
-    TagRaResourceInfo() : vnicSocketHandle(nullptr)
+    TagRaResourceInfo()
     {
     }
 
-    TagRaResourceInfo(const TagRaResourceInfo &that) : vnicSocketHandle(that.vnicSocketHandle),
+    TagRaResourceInfo(const TagRaResourceInfo &that) : vnicSocketMap(that.vnicSocketMap),
         nicSocketMap(that.nicSocketMap), hostNetSocketMap(that.hostNetSocketMap)
     {
     }
@@ -289,7 +289,7 @@ using RaResourceInfo = struct TagRaResourceInfo {
     TagRaResourceInfo &operator=(const TagRaResourceInfo &that)
     {
         if (&that != this) {
-            vnicSocketHandle = that.vnicSocketHandle;
+            vnicSocketMap = that.vnicSocketMap;
             nicSocketMap = that.nicSocketMap;
             hostNetSocketMap = that.hostNetSocketMap;
         }
@@ -298,7 +298,7 @@ using RaResourceInfo = struct TagRaResourceInfo {
 
     ~TagRaResourceInfo()
     {
-        vnicSocketHandle = nullptr;
+        vnicSocketMap.clear();
         nicSocketMap.clear();
         hostNetSocketMap.clear();
     }

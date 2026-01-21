@@ -39,7 +39,6 @@ NetworkManager::InitTool::~InitTool()
 NetworkManager::NetworkManager()
     : deviceLogicId_(INVALID_INT),
       devicePhyId_(INVALID_UINT),
-      vnicListened_(false),
       isHostUseDevNic_(false),
       notifyType_(NO_USE)
 {

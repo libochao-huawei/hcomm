@@ -61,7 +61,7 @@ HcclResult HcclSocket::DeInit()
     Close();
     if (listened_) {
         if (socketType_ == NicType::VNIC_TYPE) {
-            CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopVnic());
+            CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopVnic(localIp_, localPort_));
         } else if (socketType_ == NicType::DEVICE_NIC_TYPE) {
             CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopNic(localIp_, localPort_));
         } else {
@@ -628,11 +628,10 @@ HcclResult HcclSocket::GetNicSocketHandle()
             localDeviceLogicId_, tempSocketMap.size(), localIp_.GetReadableAddress());
         CHK_RET(GetNicSocketHandle(tempSocketMap, localIp_, nicSocketHandle_));
     } else if (socketType_ == NicType::VNIC_TYPE) {
-            if (raResourceInfo.vnicSocketHandle == nullptr) {
-                HCCL_ERROR("[Get][NicHandleInfo] deviceLogicId[%d] get null vnic socket", localDeviceLogicId_);
-                return HCCL_E_INTERNAL;
-            }
-            nicSocketHandle_ = raResourceInfo.vnicSocketHandle;
+        tempSocketMap = raResourceInfo.vnicSocketMap;
+        HCCL_INFO("[Get][NicHandleInfo]phyId[%u], vnicSocketMap size[%u] localIp[[%s]",
+            localDeviceLogicId_, tempSocketMap.size(), localIp_.GetReadableAddress());
+        CHK_RET(GetNicSocketHandle(tempSocketMap, localIp_, nicSocketHandle_));
     } else {
         return HCCL_E_INTERNAL;
     }
