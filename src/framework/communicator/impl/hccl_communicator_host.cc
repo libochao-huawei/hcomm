@@ -2024,7 +2024,6 @@ namespace hccl
             return HCCL_SUCCESS;
         }
         CHK_RET(hrtGetPairDevicePhyId(devicePhyId_, backupDevPhyId));
-        CHK_RET(hrtGetDeviceIndexByPhyId(backupDevPhyId, backupDevLogicId));
 
         std::vector<HcclIpAddress> backupIpList;
         std::vector<std::vector<HcclIpAddress>> chipDeviceIPs;
@@ -2038,6 +2037,10 @@ namespace hccl
         auto equalToLocal = [this](const HcclIpAddress &entry) { return entry == devIpAddr_[0];};
         isOneSidedTaskAndBackupInitA3 = any_of(backupIpList.begin(), backupIpList.end(), equalToLocal) &&
                                         !any_of(localIpList.begin(), localIpList.end(), equalToLocal);
+        if (isOneSidedTaskAndBackupInitA3) {
+            CHK_RET(hrtGetDeviceIndexByPhyId(backupDevPhyId, backupDevLogicId));
+        }
+
         HCCL_INFO("[HcclCommunicator::CheckOneSidedBackupAndSetDevId] isOneSidedTaskAndBackupInitA3[%s]",
             isOneSidedTaskAndBackupInitA3 ? "true" : "false");
         return HCCL_SUCCESS;
