@@ -298,7 +298,7 @@ RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo 
 
     phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : UINT_MAX;
 #ifdef CONFIG_CONTEXT
-    phyId = attr->ub.phy_id;
+    phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : attr->ub.phy_id;
 #endif
     ret = RsGetRsCb(phyId, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
