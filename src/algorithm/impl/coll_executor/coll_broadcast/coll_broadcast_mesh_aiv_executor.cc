@@ -42,7 +42,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize
 {
     blockDim = rankSize; // 默认情况使用rankSize个AIV
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollBroadcastMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollBroadcastMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need[%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollBroadcastMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",

@@ -102,7 +102,7 @@ HcclResult CollAlltoAllDirectFullmeshAIVExecutor::CalBlockDim(u32& blockDim, u32
 {
     blockDim = 2 * topoAttr_.moduleNum; // 默认情况使用serverNum*2个AIV
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_ERROR("[CollAlltoAllDirectFullmeshAIVExecutor][%s]aivCore[%u] is less than need[%u].", __func__,
+        HCCL_ERROR("[CollAlltoAllDirectFullmeshAIVExecutor][%s]aivCore[%u] is invalid, at least need[%u].", __func__,
         blockDim_, blockDim), HCCL_E_PARA);
  
     HCCL_INFO("[CollAlltoAllDirectFullmeshAIVExecutor][%s] blockDim is set to [%u], limit[%u], best[%u]", __func__,

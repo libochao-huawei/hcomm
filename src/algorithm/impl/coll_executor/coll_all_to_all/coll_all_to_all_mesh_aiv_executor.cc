@@ -88,7 +88,7 @@ HcclResult CollAlltoAllMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize,
         (isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType != HcclCMDType::HCCL_CMD_ALLTOALLV)
         || (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV)) {
         CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_WARNING("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+            HCCL_WARNING("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need[%u].",
             blockDim_, blockDim), HCCL_E_PARA);
     } else if ((isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV)
         || (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType != HcclCMDType::HCCL_CMD_ALLTOALLV)) {

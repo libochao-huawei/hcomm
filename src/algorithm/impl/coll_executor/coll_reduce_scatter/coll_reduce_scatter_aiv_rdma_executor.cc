@@ -85,7 +85,7 @@ HcclResult CollReduceScatterAivRdmaExecutor::CalBlockDim(u32& blockDim, u32 rank
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollReduceScatterAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollReduceScatterAivRdmaExecutor][CalBlockDim]aivCore[%u] is invalid, at least need[%u].",
         blockDim_, blockDim), HCCL_E_PARA);
     
     HCCL_INFO("[CollReduceScatterAivRdmaExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
