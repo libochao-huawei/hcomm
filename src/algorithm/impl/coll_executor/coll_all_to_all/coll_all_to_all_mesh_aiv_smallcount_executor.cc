@@ -66,7 +66,7 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u32
     u32 bestBlockDim = blockDim;
     if (isOpBase || topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
         CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_WARNING("[CollAlltoAllMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need[%u].",
+            HCCL_WARNING("[CollAlltoAllMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
             blockDim_, blockDim), HCCL_E_PARA);
     } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         CHK_PRT_RET(blockDim_ < rankSize,

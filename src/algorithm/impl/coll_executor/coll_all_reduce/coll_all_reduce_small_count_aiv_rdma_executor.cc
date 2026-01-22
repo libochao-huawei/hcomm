@@ -95,7 +95,7 @@ HcclResult CollAllReduceSmallCountAivRdmaExecutor::CalBlockDim(u32& blockDim, u3
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollAllReduceSmallCountAivRdmaExecutor][CalBlockDim]aivCore[%u] is invalid, at least need[%u].",
+        HCCL_WARNING("[CollAllReduceSmallCountAivRdmaExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollAllReduceSmallCountAivRdmaExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",

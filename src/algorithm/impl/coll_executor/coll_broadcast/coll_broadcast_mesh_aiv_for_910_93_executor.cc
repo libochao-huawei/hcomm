@@ -85,7 +85,7 @@ HcclResult CollBroadcastMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     // Step2. Compare User Given blockDim_ with bestBlockDim
     const u32 originUserLimit = blockDim_;
     CHK_PRT_RET(originUserLimit < BLOCK_DIM_FACTOR_TWO,
-        HCCL_ERROR("[CollBroadcastMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at lest need 2.",
+        HCCL_ERROR("[CollBroadcastMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [2].",
         originUserLimit), HCCL_E_PARA);
 
     if (blockDim_ > bestBlockDim){
@@ -93,7 +93,8 @@ HcclResult CollBroadcastMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     }
 
     if (blockDim_ < minBlockDim){
-        HCCL_ERROR("[CollBroadcastMeshAivFor91093Executor][CalBlockDim] limit[%u], at least[%u]", originUserLimit, minBlockDim);
+        HCCL_ERROR("[CollBroadcastMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u]",
+            originUserLimit, minBlockDim);
         return HCCL_E_PARA;
     }
     blockDim = blockDim_;
