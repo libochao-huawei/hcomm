@@ -63,9 +63,16 @@ set(platform_include_list
 )
 
 if(BUILD_OPEN_PROJECT)
-    target_compile_definitions(hccl_plf PRIVATE
-        OPEN_BUILD_PROJECT
-        LOG_CPP)
+    if(ORION_MODE)
+        target_compile_definitions(hccl_plf PRIVATE
+            ORION_MODE
+            OPEN_BUILD_PROJECT
+            LOG_CPP)
+    else()
+        target_compile_definitions(hccl_plf PRIVATE
+            OPEN_BUILD_PROJECT
+            LOG_CPP)
+    endif()
 
     target_include_directories(hccl_plf PRIVATE
         ${HCCL_BASE_DIR}/../include
