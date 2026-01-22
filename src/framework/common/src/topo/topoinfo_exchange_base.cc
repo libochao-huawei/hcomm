@@ -81,7 +81,7 @@ void TopoInfoExchangeBase::PrintRecvFailReasons(std::shared_ptr<HcclSocket> sock
 
 HcclResult TopoInfoExchangeBase::RecvClusterInfoMsg(std::shared_ptr<HcclSocket> socket, RankTable_t &clusterInfo)
 {
-    const u32 recvBufferLimit = 10 * 1024 * 1024; // 10 * 1024 * 1024 = 10MB
+    const u32 recvBufferLimit = 100 * 1024 * 1024; // 100 * 1024 * 1024 = 100MB
     u32 msgLen = 0;
     HcclResult ret = socket->Recv(reinterpret_cast<char *>(&msgLen), sizeof(msgLen));
     if (ret == HCCL_E_TIMEOUT) {
