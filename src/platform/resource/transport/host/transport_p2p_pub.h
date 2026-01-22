@@ -159,7 +159,9 @@ protected:
     bool useSdmaToSignalRecord_{false};
 private:
     HcclResult ParseSpecifyLink(LinkTypeInServer &linkType);
-
+    void SetMemIncludeFlag();
+    HcclResult ConstructMemIncludeInfoForSend(u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
+    HcclResult ParseMemIncludeInfo(void **memPtr, u64 &size, u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     SecIpcName_t remoteOutputMemName_;
     SecIpcName_t remoteInputMemName_;
     std::vector<SecIpcName_t> remoteIpcMemNameVector_;
@@ -171,6 +173,7 @@ private:
     static std::array<Referenced, MAX_MODULE_DEVICE_NUM> instanceRef_; // 实例计数，用于释放静态资源
     ExchangeInfoSize exchangeInfoSize_ {0};
     bool isSioToHccs_{false}; // 是否是sio->hccs的链路
+    bool isMemInclude_{false}; //input output是否在machinePara_.mem[0]范围内
 };
 }  // namespace hccl
 
