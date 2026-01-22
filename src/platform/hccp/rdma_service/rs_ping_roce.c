@@ -907,8 +907,8 @@ STATIC int RsPongPostSend(struct RsPingCtxCb *pingCb, struct ibv_wc *wc, struct 
 
     // handle detect packet & send response packet
     recvSgeIdx = (uint32_t)wc->wr_id;
-    if (recvSgeIdx > pingCb->pingQp.recvMrCb.sgeNum) {
-        hccp_err("param err recv_sge_idx:%u > sge_num:%u", recvSgeIdx, pingCb->pingQp.recvMrCb.sgeNum);
+    if (recvSgeIdx >= pingCb->pingQp.recvMrCb.sgeNum) {
+        hccp_err("param err recv_sge_idx:%u >= sge_num:%u", recvSgeIdx, pingCb->pingQp.recvMrCb.sgeNum);
         return -EIO;
     }
     (void)memcpy_s(&recvList, sizeof(struct ibv_sge),
