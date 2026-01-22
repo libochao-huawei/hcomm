@@ -1501,10 +1501,10 @@ bool hcclComm::IsCommunicatorV2()
     return false;
 }
 
-HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags)
+HcclResult hcclComm::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
 {
     CHK_SMART_PTR_NULL(communicator_);
-    CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle, flags));
+    CHK_RET(communicator_->RegisterWindow(ptr, size, winHandle));
     return HCCL_SUCCESS;
 }
 

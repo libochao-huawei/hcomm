@@ -13,7 +13,7 @@
 GTEST_API_ int main(int argc, char **argv) {
     // testcase测试代码，只跑特定的用例 testing::GTEST_FLAG(filter) = "AllReduceTest.allreduce_cyw_test";
     printf("Running symmetric memory\n");
-    log_level_get_stub(1);
+    log_level_set_stub(1);
     testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }

@@ -4568,21 +4568,33 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, Comm
     CHK_PTR_NULL(addr);
     CHK_PTR_NULL(winHandle);
     CHK_PRT_RET(size == 0, HCCL_ERROR("[%s] size is 0, please check size value", __func__), HCCL_E_PARA);
-
-    winHandle2comm[winHandle] = comm;
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle, flag));
-    HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
-        hcclComm->GetIdentifier().c_str(), *winHandle, size);
+    if (flag == HCCL_WIN_COLL_SYMMETRIC) {
+        hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+        CHK_RET(hcclComm->RegisterWindow(addr, size, winHandle));
+        HCCL_RUN_INFO("[%s]WindowRegister mem success, group[%s], handle ptr[%p], size[%llu]", __func__,
+            hcclComm->GetIdentifier().c_str(), *winHandle, size);
+        winHandle2comm[*winHandle] = comm;
+    } else if (flag == HCCL_WIN_DEFAULT) {
+        HCCL_ERROR("[HcclCommSymWinRegister]HCCL_WIN_DEFAULT is not supported yet.");
+        return HCCL_E_PARA;
+    }else {
+        HCCL_ERROR("[HcclCommSymWinRegister]Invalid flag[%u], must be HCCL_WIN_COLL_SYMMETRIC[1] or HCCL_WIN_DEFAULT[0]", flag);
+        return HCCL_E_PARA;
+    }
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
 {
     // 入参校验
-    HcclComm comm = winHandle2comm[winHandle];
-    CHK_PTR_NULL(comm);
     CHK_PTR_NULL(winHandle);
+    HcclComm comm = nullptr;
+    auto it = winHandle2comm.find(winHandle);
+    CHK_PRT_RET(it == winHandle2comm.end(), HCCL_ERROR("[HcclCommSymWinDeregister]Window handle[%p] not registered",
+        winHandle), HCCL_E_PARA);
+    comm = it->second;
+    CHK_PTR_NULL(comm);
+    winHandle2comm.erase(it);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->DeregisterWindow(winHandle));
     HCCL_RUN_INFO("[%s]WindowDeregister mem success, group[%s], handle ptr[%p]", __func__,

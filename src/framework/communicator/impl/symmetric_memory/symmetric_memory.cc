@@ -256,11 +256,11 @@ HcclResult SymmetricMemory::Init()
         return HCCL_E_PARA;
     }
 
-    // size_t targetStartTB = 40ULL * 1024ULL * 1024ULL * 1024ULL * 1024ULL;
-    // void* hintPtr = reinterpret_cast<void*>(targetStartTB);
-    //aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0);
+    size_t targetStartTB = 40ULL * 1024ULL * 1024ULL * 1024ULL * 1024ULL;
+    void* hintPtr = reinterpret_cast<void*>(targetStartTB);
+    //aclrtReserveMemAddress(&heapBase_, totalHeapSize, 0, nullptr, 1)
     // 默认大页对齐
-    if (aclrtReserveMemAddress(&heapBase_, totalHeapSize, 0, nullptr, 1) != ACL_SUCCESS) {
+    if (aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0) != ACL_SUCCESS) {
         HCCL_ERROR("[SymmetricMemory][Init] aclrtReserveMemAddress failed to reserve %zu bytes. stride: %u, rankSize: %u.",
                    totalHeapSize, stride_, rankSize_);
         return HCCL_E_INTERNAL;
@@ -389,12 +389,12 @@ HcclResult SymmetricMemory::RegisterSymmetricMem(void* ptr, size_t size, void** 
     HCCL_INFO("[SymmetricMemory][RegisterSymmetricMem] Request: ptr=%p, size=%zu, granularity=%zu", 
         ptr, size, granularity_);
 
-    void* baseUserVa = ptr;
-    size_t baseVaSize = size;
-    // if(aclrtMemGetAddressRange(ptr, &baseUserVa, &baseVaSize) != 0) {
-    //     HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] aclrtMemGetAddressRange failed for ptr[%p], size[%zu]. ", ptr, size);
-    //     return HCCL_E_PARA;
-    // }
+    void* baseUserVa = nullptr;
+    size_t baseVaSize = 0;
+    if(aclrtMemGetAddressRange(ptr, &baseUserVa, &baseVaSize) != 0) {
+        HCCL_ERROR("[SymmetricMemory][RegisterSymmetricMem] aclrtMemGetAddressRange failed for ptr[%p], size[%zu]. ", ptr, size);
+        return HCCL_E_PARA;
+    }
     CHK_PTR_NULL(baseUserVa);
     aclrtDrvMemHandle paHandle;
     if (aclrtMemRetainAllocationHandle(baseUserVa, &paHandle) != 0) {

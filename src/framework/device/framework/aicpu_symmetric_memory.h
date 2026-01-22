@@ -10,9 +10,17 @@
 #ifndef AICPU_SYMMETRIC_MEMORY_H_
 #define AICPU_SYMMETRIC_MEMORY_H_
 
-#include "symmetric_memory/symmetric_memory.h"
-namespace hccl {
-    HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr);
-}
+//#include "hcomm_primitives.h"
 
+#include "hccl/base.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
+
+HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr);
+
+#ifdef __cplusplus
+}
+#endif  // __cplusplus
 #endif // AICPU_SYMMETRIC_MEMORY_H_

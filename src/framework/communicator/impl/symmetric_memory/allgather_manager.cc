@@ -237,7 +237,7 @@ void AllGatherManager::DealWithRequest()
 }
 
 HcclResult AllGatherManager::ProcessReceivedPacket(Packet& pkt) {
-    if (pkt.rankId < rankSize_) {
+    if (pkt.rankId < rankSize_ && pkt.rankId != userRank_) {
         u8* dest = outputDataPtr_ + (pkt.rankId * currentInputSize_);
         CHK_SAFETY_FUNC_RET(memcpy_s(dest, currentInputSize_, pkt.data, currentInputSize_));
         collectedCount_++;

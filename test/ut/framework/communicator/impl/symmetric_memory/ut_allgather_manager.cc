@@ -35,6 +35,33 @@ protected:
     }
 };
 
+void get_ranks_1server_2dev(std::vector<RankInfo>& rank_vector)
+{
+    RankInfo tmp_para_0;
+
+    tmp_para_0.userRank = 0;
+    tmp_para_0.devicePhyId = 0;
+    tmp_para_0.deviceType = DevType::DEV_TYPE_910;
+    tmp_para_0.serverIdx = 0;
+    tmp_para_0.serverId = "10.0.0.10";
+    tmp_para_0.nicIp.push_back(HcclIpAddress("192.168.0.11"));
+    tmp_para_0.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+
+    RankInfo tmp_para_1;
+
+    tmp_para_1.userRank = 1;
+    tmp_para_1.devicePhyId = 1;
+    tmp_para_1.deviceType = DevType::DEV_TYPE_910;
+    tmp_para_1.serverIdx = 0;
+    tmp_para_1.serverId = "10.0.0.10";
+    tmp_para_1.nicIp.push_back(HcclIpAddress("192.168.0.12"));
+    tmp_para_1.nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE;
+
+    rank_vector.push_back(tmp_para_0);
+    rank_vector.push_back(tmp_para_1);
+    return;
+}
+
 TEST_F(AllGatherManagerTest, ut_Init_When_Normal_Expect_ReturnHCCL_SUCCESS)
 {
     HcclResult ret = ;
@@ -50,23 +77,8 @@ TEST_F(AllGatherManagerTest, ut_Init_When_Normal_Expect_ReturnHCCL_SUCCESS)
     EXPECT_EQ(ret, HCCL_SUCCESS);
     std::vector<RankInfo> rank_vector;
     get_ranks_1server_2dev(rank_vector);
-    ZeroCopyMemoryAgent ZeroCopyMemoryAgent(socketManager, 0, 0, localIPs, rank_vector, 0, true,"ZeroCopyMemoryAgentTest");
-    EXPECT_EQ(ZeroCopyMemoryAgent.Init(), HCCL_SUCCESS);
+    AllGatherManager allGatherManager(socketManager, 0, 0, localIPs, rank_vector, 0, true,"AllGatherManagerTest");
+    EXPECT_EQ(allGatherManager.Init(), HCCL_SUCCESS);
 
-    std::vector<RankInfo> rankInfoList(2);
-    HcclIpAddress localVnicIp;
-    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
-        0, localVnicIp, rankInfoList, 0, true, "1");
-    MOCKER_CPP(&AllGatherManager::Init)
-        .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
-    
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
-    HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }

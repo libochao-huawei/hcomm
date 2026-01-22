@@ -66,6 +66,14 @@ typedef void *HcclConn;
 typedef void *CommSymWindow;
 
 /**
+ * @brief Symmetric Memory Flag
+ */
+typedef enum {
+    HCCL_WIN_DEFAULT = 0,       /**< 先不支持，预留 */
+    HCCL_WIN_COLL_SYMMETRIC = 1 /**< 启用对称内存 */
+} symmetricMemoryFlag;
+
+/**
  * @brief HCCL Reduction operation
  */
 typedef enum {

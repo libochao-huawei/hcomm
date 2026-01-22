@@ -142,6 +142,11 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    bool HcclCommunicator::IsSupportSymmetricMemory(OpParam &opParam)
+    {
+        return false;
+    }
+
     bool HcclCommunicator::IsSupportZeroCopy(const OpParam &opParam)
     {
         return false;
@@ -1596,7 +1601,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
     {
         return HCCL_SUCCESS;
     }
@@ -1606,4 +1611,8 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset)
+    {
+        return HCCL_SUCCESS;
+    }
 }

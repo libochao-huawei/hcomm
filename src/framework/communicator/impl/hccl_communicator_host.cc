@@ -592,7 +592,7 @@ namespace hccl
             __func__, opParam.aicpuUnfoldMode, GetWorkflowMode(), deviceType_,
             deviceNumPerAggregation_, multiModuleDiffDeviceNumMode_, opParam.tag.c_str());
 
-        // 只支持aicpu展开、非重执行、单算子模式、910_93芯片
+        // 只支持aicpu展开、单算子模式、910_93芯片
         CHK_PRT_RET(!opParam.aicpuUnfoldMode,
                     HCCL_INFO("[%s] aicpuUnfold:%d not support symmetric memory", __func__, opParam.aicpuUnfoldMode), false);
         CHK_PRT_RET(GetWorkflowMode() != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE,
@@ -8851,7 +8851,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags)
+    HcclResult HcclCommunicator::RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle)
     {
         CHK_SMART_PTR_NULL(symmetricMemory_);
         return symmetricMemory_->RegisterSymmetricMem(ptr, size, winHandle);

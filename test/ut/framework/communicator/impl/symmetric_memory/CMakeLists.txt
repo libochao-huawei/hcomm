@@ -8,53 +8,53 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 set(src_to_test_list
-    main.cc
-    ${HCCL_CODE_ROOT}/test/ut/framework/communicator/hccl_api_base_test.cc
-    ut_allgather_manager.cc
-    ut_symmetric_memory.cc
+    main.cc
+    ${HCCL_CODE_ROOT}/test/ut/framework/communicator/hccl_api_base_test.cc
+    ut_allgather_manager.cc
+    ut_symmetric_memory.cc
 )
 
 add_executable(hccl_utest_framework_symmetric_memory ${src_to_test_list})
 
 #头文件搜索路径
 target_include_directories(hccl_utest_framework_symmetric_memory PRIVATE
-    ${UT_COMMON_INCLUDE_LIST}
-    ${HCCL_CODE_ROOT}/test/ut/framework/communicator
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/symmetric_memory
+    ${UT_COMMON_INCLUDE_LIST}
+    ${HCCL_CODE_ROOT}/test/ut/framework/communicator
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/symmetric_memory
 )
 
 target_compile_definitions(hccl_utest_framework_symmetric_memory PRIVATE
-    _GLIBCXX_USE_CXX11_ABI=0
-    google=ascend_private
-    -DOPEN_HCCL_TEST
-    OPEN_BUILD_PROJECT
+    _GLIBCXX_USE_CXX11_ABI=0
+    google=ascend_private
+    -DOPEN_HCCL_TEST
+    OPEN_BUILD_PROJECT
 )
 
 target_compile_options(hccl_utest_framework_symmetric_memory PRIVATE
-    -U_FORTIFY_SOURCE
-    -fno-var-tracking-assignments
-    -Os
-    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
+    -U_FORTIFY_SOURCE
+    -fno-var-tracking-assignments
+    -Os
+    -O0 -g --coverage -fprofile-arcs -ftest-coverage -fno-access-control
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address -fsanitize-recover=address,all -fno-omit-frame-pointer>
 )
 
 target_link_directories(hccl_utest_framework_symmetric_memory PRIVATE
-    ${ASCEND_CANN_PACKAGE_PATH}/lib64
+    ${ASCEND_CANN_PACKAGE_PATH}/lib64
 )
 target_link_libraries(hccl_utest_framework_symmetric_memory PRIVATE
-    $<BUILD_INTERFACE:intf_pub>
-    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
-    -lpthread
-    hccl_llt
-    -Wl,--whole-archive
-    -Wl,--no-whole-archi
-    -lgcov
-    -lrt
-    -ldl
+    $<BUILD_INTERFACE:intf_pub>
+    $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
+    -lpthread
+    hccl_llt
+    -Wl,--whole-archive
+    -Wl,--no-whole-archi
+    -lgcov
+    -lrt
+    -ldl
 )
 add_dependencies(hccl_utest_framework_symmetric_memory hccl_llt)
 
 run_llt_test(
-   TARGET  hccl_utest_framework_symmetric_memory
-   TASK_NUM 1
+    TARGET  hccl_utest_framework_symmetric_memory
+    TASK_NUM 1
 )

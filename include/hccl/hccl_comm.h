@@ -323,17 +323,6 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
  */
 extern HcclResult HcclCommSymWinGet(HcclComm comm, void *ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 
-/**
- * @brief Get symmetric memory pointer.
- *
- * @param winHandle A pointer identifying the registered memory window handle.
- * @param offset A size_t identifying the offset of symmetric memory heap.
- * @param peerRank A integer identifying the identify for the peer rank.
- * @param ptr A pointer identifying the symmetric memory heap address.
- * @return HcclResult
- */
-extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr);
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus

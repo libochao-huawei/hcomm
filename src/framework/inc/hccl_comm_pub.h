@@ -402,7 +402,7 @@ public:
     HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
     HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
     HcclResult GroupSubstreamsSync();
-    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle, uint64_t flags);
+    HcclResult RegisterWindow(void* ptr, size_t size, CommSymWindow *winHandle);
     HcclResult DeregisterWindow(CommSymWindow winHandle);
     HcclResult GetCommSymWin(void* ptr, size_t size, CommSymWindow *winHandle, size_t *offset);
 

@@ -9,8 +9,13 @@
  */
 
 #include "aicpu_symmetric_memory.h"
+#include "symmetric_memory/symmetric_memory.h"
 
-namespace hccl {
+using namespace hccl;
+
+#ifdef __cplusplus
+extern "C" {
+#endif  // __cplusplus
 
 HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr)
 {
@@ -21,4 +26,6 @@ HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int
     return HCCL_SUCCESS;
 }
 
+#ifdef __cplusplus
 }
+#endif  // __cplusplus
