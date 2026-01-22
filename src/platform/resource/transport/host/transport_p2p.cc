@@ -115,7 +115,7 @@ HcclResult TransportP2p::Init()
     CHK_SMART_PTR_NULL(notifyPool_);
     CHK_RET(CheckDeviceId());
     CHK_RET(CheckExchangeData());
-
+    SetMemIncludeFlag();
     // 上层初始化时保证 machinePara_.sockets 非空
     if (machinePara_.sockets.size() == 0) {
         HCCL_ERROR("machinePara sockets is empty.");
