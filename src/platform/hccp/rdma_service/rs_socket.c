@@ -1733,9 +1733,6 @@ renew_conn:
     }
     RS_PTHREAD_MUTEX_ULOCK(&connCb->connMutex);
     RsSocketsServeripConverter(conn, num, vnicInfo.vnicFlag);
-    struct RsIpAddrInfo localIp;
-    RsConvertIpAddr(conn[0].family, &conn[0].localIp, &localIp);
-    hccp_dbg("local_ip:%s, fd:%d, sockNum:%d", localIp.readAddr, conn[0].fd, sockNum);
     return sockNum;
 }
 

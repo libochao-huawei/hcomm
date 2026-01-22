@@ -109,7 +109,6 @@ STATIC void HdcAsyncSetReqDone(struct RaRequestHandle *reqHandle, unsigned int p
     RaListAddTail(&reqHandle->list, &gRaHdcAsync[phyId].rspList);
     RA_PTHREAD_MUTEX_UNLOCK(&gRaHdcAsync[phyId].rspMutex);
     reqHandle->opRet = (ret != 0) ? ret : reqHandle->opRet;
-    hccp_dbg("opcode[%u] req_id[%u] phyId[%u]", reqHandle->opHandle->opcode, reqHandle->reqId, phyId);
     reqHandle->isDone = true;
 }
 
@@ -254,8 +253,6 @@ int RaHdcSendMsgAsync(unsigned int opcode, unsigned int phyId, char *data, unsig
         hccp_err("[async][ra_hdc_send]hdc_async_send_pkt opcode(%u) failed ret(%d) phyId(%u)", opcode, ret, phyId);
         goto out;
     }
-
-    hccp_dbg("opcode[%u] req_id[%u] phyId[%u]", opHandleTmp->opcode, asyncReqId, phyId);
 
 out:
     RA_PTHREAD_MUTEX_UNLOCK(&gRaHdcAsync[phyId].reqMutex);

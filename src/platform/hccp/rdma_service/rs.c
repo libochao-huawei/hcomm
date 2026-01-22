@@ -56,7 +56,6 @@ int gInitCounter[RS_MAX_DEV_NUM] = {0};
 void RsSetCtx(unsigned int phyId)
 {
     gRsCb = gRsCbList[phyId];
-    hccp_dbg("[RsSetCtx], phyId[%u], gRsCb[%p]", phyId, gRsCb);
 }
 
 /* get current g_rs_cb */
