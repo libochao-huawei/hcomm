@@ -25,6 +25,8 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_mmpa_stub.c
     ${HCCL_LLT_ROOT}/stub/llt_stub_mm.c
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_msg.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mmpa.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
