@@ -467,7 +467,8 @@ HcclResult OpRetryBase::Send(std::shared_ptr<HcclSocket> socket, void *data, u64
 {
     HCCL_DEBUG("[OpRetry][Send]start, para: data[%p], size[%llu Byte]", data, size);
     const auto start = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
 
     u64 restSize = size; // 待发送数据长度
     while (true) {
@@ -501,7 +502,8 @@ HcclResult OpRetryBase::Send(std::shared_ptr<HcclSocket> socket, void *data, u64
 HcclResult OpRetryBase::Recv(std::shared_ptr<HcclSocket> socket, void *data, u64 totalSize)
 {
     const auto start = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
 
     u64 recvSize = 0;
     while (true) {
