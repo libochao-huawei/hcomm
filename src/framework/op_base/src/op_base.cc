@@ -4029,6 +4029,9 @@ HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8
     // 切换线程后获取不到hcom上下文，需重新刷新一次线程操作的deviceid
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
+ #if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetAicpuOpStreamAndNotifyV2(comm, opstream, aicpuNotifyNum, aicpuNotify));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
 
     CHK_RET(hcclComm->GetAicpuOpStreamNotify(opstream, aicpuNotifyNum, aicpuNotify));

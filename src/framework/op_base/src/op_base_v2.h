@@ -138,6 +138,32 @@ HcclResult __attribute__((weak)) HcclRankGraphGetEndpointNumV2(HcclComm comm, ui
 HcclResult __attribute__((weak)) HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
 
 HcclResult __attribute__((weak)) HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+
+HcclResult __attribute__((weak)) HcclGetOpArgsV2(void **opArgs);
+ 	 
+HcclResult __attribute__((weak)) HcclFreeOpArgsV2(void *opArgs);
+
+HcclResult __attribute__((weak)) HcclSetOpSrcDataTypeV2(void *opArgs, uint8_t srcDataType);
+
+HcclResult __attribute__((weak)) HcclSetOpDstDataTypeV2(void *opArgs, uint8_t dstDataType);
+
+HcclResult __attribute__((weak)) HcclSetOpReduceTypeV2(void *opArgs, uint32_t reduceType);
+
+HcclResult __attribute__((weak)) HcclSetOpCountV2(void *opArgs, uint64_t count);
+
+HcclResult __attribute__((weak)) HcclSetOpAlgConfigV2(void *opArgs, char *algConfig);
+
+HcclResult __attribute__((weak)) HcclSetOpCommEngineV2(void *opArgs, uint8_t commEngine);
+
+HcclResult __attribute__((weak)) HcclCommResPrepareV2(HcclComm comm, char *opName, void *opArgs, void **addr);
+
+HcclResult __attribute__((weak)) HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
+
+HcclResult __attribute__((weak)) HcclGetHcclBufferV2(HcclComm comm, void **addr, uint64_t *size);
+
+HcclResult __attribute__((weak)) HcclGetRemoteIpcHcclBufV2(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
+
+HcclResult __attribute__((weak)) HcclGetAicpuOpStreamAndNotifyV2(HcclComm comm, rtStream_t *opstream, u8 aicpuNotifyNum, void **aicpuNotify);
 #endif
 #ifdef __cplusplus
 }

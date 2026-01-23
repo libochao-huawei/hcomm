@@ -2502,6 +2502,10 @@ HcclResult HcomGetActualRankSizeImpl(const char *group, u32 *rankSize)
 
 HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
 {
+ #if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
+    HCCLV2_FUNC_RUN(HcclCommGraphUnloadTaskV2(opBaseHcom, tag));
+#endif
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[HcclCommGraphUnloadTask]hcclComm is null, "\
         "please check if the initialize process is called."), HCCL_SUCCESS);

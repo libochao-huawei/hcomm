@@ -93,6 +93,7 @@ HcclResult __attribute__((weak)) HcomSelectAlgV2(s64 comm, const char *group, Hc
 HcclResult __attribute__((weak)) HcomGraphSelectAlgV2(s64 comm, const char *group, HcclCMDType opType, u64 count,
     HcclDataType dataType, HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
 HcclResult __attribute__((weak)) HcomUnloadTaskV2(const std::string group, const char *tag);
+HcclResult __attribute__((weak)) HcclCommGraphUnloadTaskV2(s64 opBaseHcom, const char *tag);
 HcclResult __attribute__((weak)) HcomGetCommCCLBufferSizeV2();
 HcclResult __attribute__((weak)) HcclCommResetQosCfgV2();
 HcclResult __attribute__((weak)) HcomResetQosCfgV2();

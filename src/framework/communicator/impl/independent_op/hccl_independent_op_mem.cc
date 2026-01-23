@@ -19,6 +19,8 @@
 #include "stream_pub.h"
 #include "hccl_communicator.h"
 #include "hccl_comm_pub.h"
+#include "param_check_pub.h"
+#include "op_base_v2.h"
 
 HcclResult HcclCommRegMem(HcclComm comm, const char *memTag, const HcclMem *mem,
                           HcclRegMemAttr attr, void **memHandle)
@@ -75,6 +77,11 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     CHK_PRT_RET(buffer == nullptr, HCCL_ERROR("[%s] buffer is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(size == nullptr, HCCL_ERROR("[%s] size is null", __func__), HCCL_E_PTR);
+
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetHcclBufferV2(comm, buffer, size));
+#endif
+
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());

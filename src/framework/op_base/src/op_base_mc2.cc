@@ -162,6 +162,94 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
 
     return HCCL_SUCCESS;
 }
+
+#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+HcclResult HcclGetOpArgs(void **opArgs) 
+{
+    CHK_PTR_NULL(opArgs);
+    HCCLV2_FUNC_RUN(HcclGetOpArgsV2(opArgs));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclFreeOpArgs(void *opArgs)
+{
+    CHK_PTR_NULL(opArgs);
+    HCCLV2_FUNC_RUN(HcclFreeOpArgsV2(opArgs));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclSetOpSrcDataType(void *opArgs, uint8_t srcDataType)
+{
+    CHK_PTR_NULL(opArgs);
+    HCCLV2_FUNC_RUN(HcclSetOpSrcDataTypeV2(opArgs, srcDataType));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclSetOpDstDataType(void *opArgs, uint8_t dstDataType)
+{
+    CHK_PTR_NULL(opArgs);
+    HCCLV2_FUNC_RUN(HcclSetOpDstDataTypeV2(opArgs, dstDataType));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclSetOpReduceType(void *opArgs, uint32_t reduceType)
+{
+    CHK_PTR_NULL(opArgs);
+    HCCLV2_FUNC_RUN(HcclSetOpReduceTypeV2(opArgs, reduceType));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclSetOpCount(void *opArgs, uint64_t count)
+{
+    CHK_PTR_NULL(opArgs);
+    HCCLV2_FUNC_RUN(HcclSetOpCountV2(opArgs, count));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclSetOpAlgConfig(void *opArgs, char *algConfig)
+{
+    CHK_PTR_NULL(opArgs);
+    CHK_PTR_NULL(algConfig);
+    HCCLV2_FUNC_RUN(HcclSetOpAlgConfigV2(opArgs, algConfig));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclSetOpCommEngine(void *opArgs, uint8_t commEngine)
+{
+    CHK_PTR_NULL(opArgs);
+    HCCLV2_FUNC_RUN(HcclSetOpCommEngineV2(opArgs, commEngine));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommResPrepare(HcclComm comm, char *opName, void *opArgs, void **addr)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(opName);
+    CHK_PTR_NULL(opArgs);
+    CHK_PTR_NULL(addr);
+    HCCLV2_FUNC_RUN(HcclCommResPrepareV2(comm, opName, opArgs, addr));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(size);
+    CHK_PTR_NULL(addr);
+    HCCLV2_FUNC_RUN(HcclDevMemAcquireV2(comm, memTag, size, addr, newCreated));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclGetRemoteIpcHcclBuf(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(addr);
+    CHK_PTR_NULL(size);
+    HCCLV2_FUNC_RUN(HcclGetRemoteIpcHcclBuf(comm, remoteRank, addr, size));
+    return HCCL_SUCCESS;
+}
+#endif
+ 	 
 #ifdef __cplusplus
 }
 #endif
