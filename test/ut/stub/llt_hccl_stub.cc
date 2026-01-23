@@ -2048,6 +2048,16 @@ aclError aclrtReserveMemAddress(void **virPtr, size_t size, size_t alignment, vo
     return ACL_SUCCESS;;
 }
 
+aclError aclrtReserveMemAddressNoUCMemory(void **virPtr, size_t size, size_t alignment, void *expectPtr, uint64_t flags)
+{
+    (void)virPtr;
+    (void)size;
+    (void)alignment;
+    (void)expectPtr;
+    (void)flags;
+    return ACL_SUCCESS;;
+}
+
 aclError aclrtReleaseMemAddress(void *virPtr)
 {
     (void)virPtr;

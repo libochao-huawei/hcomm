@@ -352,7 +352,7 @@ extern int32_t HcommReleaseComm(const char* commId);
  * @param ptr A pointer identifying the symmetric memory heap address.
  * @return HcclResult
  */
-//extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void* ptr);
+extern HcclResult HcommSymWinGetPeerPointer(CommSymWindow winHandle, size_t offset, int peerRank, void** ptr);
 
 #define HCOMM_PRIMITIVES_H_MODIFIED
 

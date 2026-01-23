@@ -4587,11 +4587,16 @@ HcclResult HcclCommSymWinRegister(HcclComm comm, void* addr, uint64_t size, Comm
 HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle)
 {
     // 入参校验
-    CHK_PTR_NULL(winHandle);
+    if (winHandle == nullptr) {
+        HCCL_DEBUG("[HcclCommSymWinDeregister]Window handle is a nullptr.");
+        return HCCL_SUCCESS;
+    }
     HcclComm comm = nullptr;
     auto it = winHandle2comm.find(winHandle);
-    CHK_PRT_RET(it == winHandle2comm.end(), HCCL_ERROR("[HcclCommSymWinDeregister]Window handle[%p] not registered",
-        winHandle), HCCL_E_PARA);
+    if (it == winHandle2comm.end()) {
+        HCCL_DEBUG("[HcclCommSymWinDeregister]Window handle[%p] is not registered.", winHandle);
+        return HCCL_SUCCESS;
+    }
     comm = it->second;
     CHK_PTR_NULL(comm);
     winHandle2comm.erase(it);

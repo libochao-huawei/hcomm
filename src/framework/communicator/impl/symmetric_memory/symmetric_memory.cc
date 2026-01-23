@@ -258,7 +258,6 @@ HcclResult SymmetricMemory::Init()
 
     size_t targetStartTB = 40ULL * 1024ULL * 1024ULL * 1024ULL * 1024ULL;
     void* hintPtr = reinterpret_cast<void*>(targetStartTB);
-    //aclrtReserveMemAddress(&heapBase_, totalHeapSize, 0, nullptr, 1)
     // 默认大页对齐
     if (aclrtReserveMemAddressNoUCMemory(&heapBase_, totalHeapSize, 0, hintPtr, 0) != ACL_SUCCESS) {
         HCCL_ERROR("[SymmetricMemory][Init] aclrtReserveMemAddress failed to reserve %zu bytes. stride: %u, rankSize: %u.",

@@ -1886,6 +1886,9 @@ ACL_FUNC_VISIBILITY aclError aclrtMemSetPidToShareableHandleV2(void *shareableHa
 ACL_FUNC_VISIBILITY aclError aclrtMemImportFromShareableHandleV2(void *shareableHandle, aclrtMemSharedHandleType shareType, uint64_t flags, aclrtDrvMemHandle *handle);
 
 ACL_FUNC_VISIBILITY aclError aclrtMemGetAddressRange(void *ptr, void **baseUserVa, size_t *baseVaSize);
+
+ACL_FUNC_VISIBILITY aclError aclrtReserveMemAddressNoUCMemory(void **virPtr, size_t size, size_t alignment, void *expectPtr, uint64_t flags);
+
 /**
  * @ingroup AscendCL
  * @brief Create a memory handle representing a memory allocation of a given
