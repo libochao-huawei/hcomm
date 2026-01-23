@@ -124,17 +124,22 @@ HcclResult CollReduceScatterMeshAivExecutor::GetAivExecParam(const OpParam& para
             args.buffersOut[i] = execMem.outputMem.ptr();
         }
     }
+    HCCL_INFO("SPK, buffersIn [%p] [%p] [%p] [%p]"
+        "buffersOut [%p] [%p] [%p] [%p]", args.buffersIn[0], args.buffersIn[1], args.buffersIn[2], args.buffersIn[3],
+        args.buffersOut[0], args.buffersOut[1], args.buffersOut[2], args.buffersOut[3]);
     args.rank = localRank;
     args.rankSize = localRankSize;
     args.len = execMem.count;
     args.dataType = param.DataDes.dataType;
     args.unitSize = SIZE_TABLE[param.DataDes.dataType];
     args.reduceOp = param.reduceType;
-
+    args.devType = static_cast<u32>(topoAttr_.deviceType);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollReduceScatterMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
-    
+    HCCL_INFO("SPK [CollReduceScatterMeshAivExecutor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu], devType[%u]",
+        args.rank, args.rankSize, args.len, args.dataType, args.reduceOp, args.devType);
+
     HCCL_INFO("tag[%s], ReduceScatter executor getalgexecparam success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
