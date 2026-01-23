@@ -203,7 +203,8 @@ HcclResult DetectConnectionAnomalies::CreateDetectVnicLinks(struct ErrInfo  errI
         errInfo.deviceLogicId, errInfo.localRankInfo.deviceVnicIp));
     CHK_PTR_NULL(vnicCtx_);
     std::string tag = GetTag(errInfo.localRankInfo.deviceVnicIp);
-    u32 port = (errInfo.localRankInfo.deviceVnicPort== HCCL_INVALID_PORT) ? HETEROG_CCL_PORT : port;
+    u32 port = (errInfo.localRankInfo.deviceVnicPort == HCCL_INVALID_PORT)
+ 	  	? HETEROG_CCL_PORT : errInfo.localRankInfo.deviceVnicPort;
 
     // 创建vnic socket服务端
     EXECEPTION_CATCH((vnicSocket_ = std::make_shared<HcclSocket>(vnicCtx_, port)), return HCCL_E_PTR);
@@ -267,7 +268,8 @@ HcclResult DetectConnectionAnomalies::CreateDetectNicLinks(struct ErrInfo errInf
     CHK_PTR_NULL(nicCtx_);
     std::string tag = GetTag(errInfo.localRankInfo.nicIp[0]);
 
-    u32 port = (errInfo.localRankInfo.deviceNicPort == HCCL_INVALID_PORT) ? HETEROG_CCL_PORT : port;
+    u32 port = (errInfo.localRankInfo.deviceNicPort == HCCL_INVALID_PORT)
+ 	  	? HETEROG_CCL_PORT : errInfo.localRankInfo.deviceNicPort;
     EXECEPTION_CATCH((nicSocket_ = std::make_shared<HcclSocket>(nicCtx_, port)), return HCCL_E_PTR);
 
     HCCL_RUN_INFO("[CreateDetectNicLinks]tag[%s], localIp[%s], remoteIp[%u], port[%u]", tag.c_str(),
