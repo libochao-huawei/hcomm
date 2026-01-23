@@ -1656,6 +1656,13 @@ STATIC void RaGetOpRight(struct RaHdcOpSec *opSec, unsigned int opcode, unsigned
 
     opSec->tokenNum = opSec->tokenNum - 1;
     opSec->tokenNum = (opSec->tokenNum > BUCKET_DEPTH) ? BUCKET_DEPTH : opSec->tokenNum;
+    if (RaIsOpcodeLogSuppressed(opSec->lastOpcode) && opSec->lastOpcode != opcode) {
+        hccp_dbg("lastOpcode[%u], exeRight[%d], tokenNum[%llu], cfgOpNum[%u], lastOpcodeCnt[%u]",
+            opSec->lastOpcode, exeRight, opSec->tokenNum, opSec->cfgOpNum, opSec->lastOpcodeCnt);
+    } else if (RaIsOpcodeLogSuppressed(opcode)) {
+        goto out;
+    }
+
     if (opSec->isAsyncOp) {
         hccp_dbg("opcode[%u], reqId[%u], exeRight[%d], tokenNum[%llu], cfgOpNum[%u]",
             opcode, asyncReqId, exeRight, opSec->tokenNum, opSec->cfgOpNum);
@@ -1664,6 +1671,10 @@ STATIC void RaGetOpRight(struct RaHdcOpSec *opSec, unsigned int opcode, unsigned
             opcode, exeRight, opSec->tokenNum, opSec->cfgOpNum);
     }
 
+out:
+    opSec->lastOpcodeCnt = (opcode == opSec->lastOpcode) ? (opSec->lastOpcodeCnt + 1) :
+        (RaIsOpcodeLogSuppressed(opcode) ? 1 : 0);
+    opSec->lastOpcode = opcode;
     *right = exeRight;
     return;
 }
