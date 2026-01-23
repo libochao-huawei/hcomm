@@ -162,7 +162,7 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
 // 同一个通信域不可以切换dispatcherCtx
 HcclResult SetDispatcherCtx(const DispatcherCtxPtr ctx)
 {
-    HCCL_INFO("SetCtx");
+    HCCL_INFO("[%s], param: ctx[%p]", __func__, ctx);
     CHK_PTR_NULL(ctx);
     gDispatcherCtx = ctx;
     return HCCL_SUCCESS;

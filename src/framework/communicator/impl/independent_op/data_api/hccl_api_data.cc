@@ -285,6 +285,7 @@ int32_t HcommAcquireComm(const char* commId)
 #ifdef CCL_KERNEL_AICPU
     HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
     CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
+    CHK_RET(hcclComm->SetDispatcherCtxOnThread());
 #else
     HCCL_INFO("%s not support, commId[%s], do nothing", __func__, commId);
 #endif
