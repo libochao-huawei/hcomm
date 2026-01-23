@@ -182,6 +182,7 @@ public:
     HcclResult RegisterOpInfo(void* opInfo, u32 size);
     HcclResult RegOpTaskException(HcommGetOpInfoCallback callback);
 
+    HcclResult SetDispatcherCtxOnThread();
 private:
     HcclResult SetHrtWorkMode(const HcclOpResParam *commParam);
     HcclResult SetHrtDeviceSatMode(const HcclOpResParam *commParam);
