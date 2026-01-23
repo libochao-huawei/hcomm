@@ -121,9 +121,6 @@ std::string AllGatherManager::GenerateSocketTag(u32 localRank, u32 remoteRank)
     return tag;
 }
 
-// ---------------------------------------------------------------------
-// 核心接口: AllGather
-// ---------------------------------------------------------------------
 HcclResult AllGatherManager::AllGather(void *inputPtr, void *outputPtr, u64 inputSize)
 {
     CHK_PTR_NULL(inputPtr);
@@ -165,21 +162,16 @@ HcclResult AllGatherManager::AllGather(void *inputPtr, void *outputPtr, u64 inpu
     return HCCL_SUCCESS;
 }
 
-// ---------------------------------------------------------------------
-// 独立函数: 等待完成
-// ---------------------------------------------------------------------
 HcclResult AllGatherManager::WaitForCollectionComplete()
 {
     std::unique_lock<std::mutex> lock(completionMutex_);
-    
     auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
-    completionCv_.wait_for(lock, timeout);
-    if (collectedCount_ != rankSize_) {
-        HCCL_ERROR("[AllGatherManager] AllGather Timeout! Collected: %u/%u", 
+    auto status = completionCv_.wait_for(lock, timeout);
+    if (status == std::cv_status::timeout) {
+        HCCL_ERROR("[AllGatherManager] AllGather Timeout! Collected: %u/%u",
             collectedCount_.load(), rankSize_);
         return HCCL_E_TCP_TRANSFER;
     }
-
     return HCCL_SUCCESS;
 }
 
