@@ -382,14 +382,7 @@ HcclResult AllReduceOperator::SelectAlgfor910B(const OpParam& param, std::string
                 param.aicpuUnfoldMode, topoMatcher_->GetAivModeConfig());
         }
         // 只有浮点数存在多batch不一致的可能，整数天然一致
-        HcclDataCountType countType = GetCountTypeForDeterAllReduce(param.DataDes.count, param.DataDes.dataType);
-        if (countType <= HcclDataCountType::HCCL_COUNT_SMALL
-            && SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
-            // 单机小数据量走 小数据量算法（支持规约保序）
-            algName = "AllReduceMeshSmallCountExecutor";
-        } else {
-            algName = "AllReduceOrderPreservedExecutor";
-        }
+        algName = "AllReduceOrderPreservedExecutor";
     } else if (isAivMode) {
         if (isSupportAivDeter) {
             if (dataSize <= HCCL_SMALL_COUNT_8_MB){
