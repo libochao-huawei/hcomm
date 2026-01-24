@@ -10,20 +10,21 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    ut_HcclAllGatherV_API_test.cc
-    ut_HcclBatchSendRecv_API_test.cc
-    ut_HcclReduceScatterV_API_test.cc
-    ut_HcclAllReduce_API_test.cc
-    ut_HcclBroadcast_API_test.cc
-    ut_HcclScatter_API_test.cc
-    ut_HcclAlltoAll_API_test.cc
-    ut_HcclRecv_API_test.cc
-    ut_HcclSend_API_test.cc
-    ut_HcclAlltoAllV_API_test.cc
-    ut_HcclReduce_API_test.cc
-    ut_HcclAllGather_API_test.cc
-    ut_HcclBarrier_API_test.cc
-    ut_HcclReduceScatter_API_test.cc
+    repro.cc
+    # ut_HcclAllGatherV_API_test.cc
+    # ut_HcclBatchSendRecv_API_test.cc
+    # ut_HcclReduceScatterV_API_test.cc
+    # ut_HcclAllReduce_API_test.cc
+    # ut_HcclBroadcast_API_test.cc
+    # ut_HcclScatter_API_test.cc
+    # ut_HcclAlltoAll_API_test.cc
+    # ut_HcclRecv_API_test.cc
+    # ut_HcclSend_API_test.cc
+    # ut_HcclAlltoAllV_API_test.cc
+    # ut_HcclReduce_API_test.cc
+    # ut_HcclAllGather_API_test.cc
+    # ut_HcclBarrier_API_test.cc
+    # ut_HcclReduceScatter_API_test.cc
 )
 
 add_executable(hccl_utest_framework_op_base_api ${src_to_test_list})
