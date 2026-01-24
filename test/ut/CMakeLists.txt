@@ -13,71 +13,34 @@ message(STATUS "${HCCL_CODE_ROOT}/src/platform/common/ *************************
 set(HCCL_LLT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set(UT_COMMON_INCLUDE_LIST
-    # # hccl/src目录下头文件
-    ${HCCL_CODE_ROOT}/
-    ${HCCL_CODE_ROOT}/src
-    ${HCCL_CODE_ROOT}/src/inc
-    ${HCCL_CODE_ROOT}/src/hcom/src
-    ${HCCL_CODE_ROOT}/src/hcom/src/gradient_segment
-    ${HCCL_CODE_ROOT}/src/hccl/op_base/src
-    ${HCCL_CODE_ROOT}/src/common/src
-    ${HCCL_CODE_ROOT}/src/common/src/host
-    ${HCCL_CODE_ROOT}/src/common/src/topo
-    ${HCCL_CODE_ROOT}/src/hccd
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm
-    ${HCCL_CODE_ROOT}/src/algorithm/pub_inc
-    ${HCCL_CODE_ROOT}/src/algorithm/impl
-
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/executor/component/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/impl
-    ${HCCL_CODE_ROOT}/src/hdcs
-    ${HCCL_CODE_ROOT}/src/platform/
-    ${HCCL_CODE_ROOT}/src/platform/common/
-    ${HCCL_CODE_ROOT}/src/platform/common/unique/
-    ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
-    ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
-    ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
-    ${HCCL_CODE_ROOT}/src/platform/inc/
-    ${HCCL_CODE_ROOT}/src/platform/inc/adapter
-    ${HCCL_CODE_ROOT}/src/platform/inc/adapter/host
-    ${HCCL_CODE_ROOT}/src/platform/resource/
-    ${HCCL_CODE_ROOT}/src/platform/resource/mem
-    ${HCCL_CODE_ROOT}/src/platform/resource/notify/
-    ${HCCL_CODE_ROOT}/src/platform/resource/rma_buffer
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/device/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/host/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/heterog/
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided
-    ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided/device
-    ${HCCL_CODE_ROOT}/src/platform/resource/socket/
-    ${HCCL_CODE_ROOT}/src/platform/task/
-    ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
-    ${HCCL_CODE_ROOT}/src/platform/debug/
-    ${HCCL_CODE_ROOT}/src/platform/debug/dfx/
-    ${HCCL_CODE_ROOT}/src/platform/debug/dfx/trace/
-    ${HCCL_CODE_ROOT}/src/platform/task/
-    ${HCCL_CODE_ROOT}/src/platform/task/rtsq_interact/
-    ${HCCL_CODE_ROOT}/src/platform/typical
-    ${HCCL_CODE_ROOT}/src/platform/hccp/inc
-    ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
-    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
-
-    ${HCCL_CODE_ROOT}/include/
+    ${HCCL_CODE_ROOT}
+    ${HCCL_CODE_ROOT}/include
     ${HCCL_CODE_ROOT}/include/hccl
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
+
+    # src/pub_inc 目录下头文件
     ${HCCL_CODE_ROOT}/src/pub_inc
     ${HCCL_CODE_ROOT}/src/pub_inc/inner
     ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
     ${HCCL_CODE_ROOT}/src/pub_inc/new
-    ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/rpc/
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/heterog_cpu/
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/common/
-    ${HCCL_CODE_ROOT}/src/pkg_inc
 
+    # src/hccd 目录下头文件
+    ${HCCL_CODE_ROOT}/src/hccd
+
+    # src/common 目录下头文件
+    ${HCCL_CODE_ROOT}/src/common/health
+    ${HCCL_CODE_ROOT}/src/common/stream
+    ${HCCL_CODE_ROOT}/src/common/launch_device
+    ${HCCL_CODE_ROOT}/src/common/src
+    ${HCCL_CODE_ROOT}/src/common/src/host
+    ${HCCL_CODE_ROOT}/src/common/src/topo
+    ${HCCL_CODE_ROOT}/src/common/debug/config
+    ${HCCL_CODE_ROOT}/src/common/debug/profiling
+    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc
+    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc/host
+
+    # src/framework 目录下头文件
     ${HCCL_CODE_ROOT}/src/framework/
     ${HCCL_CODE_ROOT}/src/framework/inc/
     ${HCCL_CODE_ROOT}/src/framework/inc/host
@@ -107,16 +70,42 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
 
-    # hccl/common 目录下头文件
-    ${HCCL_CODE_ROOT}/src/common/health
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc/host
-    ${HCCL_CODE_ROOT}/src/common/debug/config
-    ${HCCL_CODE_ROOT}/src/common/stream/
-    ${HCCL_CODE_ROOT}/src/common/launch_device/
+    # src/platform 目录下头文件
+    ${HCCL_CODE_ROOT}/src/platform/
+    ${HCCL_CODE_ROOT}/src/platform/common/
+    ${HCCL_CODE_ROOT}/src/platform/common/unique/
+    ${HCCL_CODE_ROOT}/src/platform/common/buffer_manager
+    ${HCCL_CODE_ROOT}/src/platform/common/unfold_cache
+    ${HCCL_CODE_ROOT}/src/platform/ping_mesh/
+    ${HCCL_CODE_ROOT}/src/platform/inc/
+    ${HCCL_CODE_ROOT}/src/platform/inc/adapter
+    ${HCCL_CODE_ROOT}/src/platform/inc/adapter/host
+    ${HCCL_CODE_ROOT}/src/platform/resource/
+    ${HCCL_CODE_ROOT}/src/platform/resource/mem
+    ${HCCL_CODE_ROOT}/src/platform/resource/notify/
+    ${HCCL_CODE_ROOT}/src/platform/resource/rma_buffer
+    ${HCCL_CODE_ROOT}/src/platform/resource/transport/
+    ${HCCL_CODE_ROOT}/src/platform/resource/transport/device/
+    ${HCCL_CODE_ROOT}/src/platform/resource/transport/host/
+    ${HCCL_CODE_ROOT}/src/platform/resource/transport/heterog/
+    ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided
+    ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided/device
+    ${HCCL_CODE_ROOT}/src/platform/resource/socket/
+    ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
+    ${HCCL_CODE_ROOT}/src/platform/task/
+    ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
+    ${HCCL_CODE_ROOT}/src/platform/debug/
+    ${HCCL_CODE_ROOT}/src/platform/debug/dfx/
+    ${HCCL_CODE_ROOT}/src/platform/debug/dfx/trace/
+    ${HCCL_CODE_ROOT}/src/platform/task/
+    ${HCCL_CODE_ROOT}/src/platform/task/rtsq_interact/
+    ${HCCL_CODE_ROOT}/src/platform/typical
+    ${HCCL_CODE_ROOT}/src/platform/hccp/inc
+    ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
+    ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
 
     # hccl/algorithm 目录下头文件
+    ${HCCL_CODE_ROOT}/src/algorithm/pub_inc
     ${HCCL_CODE_ROOT}/src/algorithm/base
     ${HCCL_CODE_ROOT}/src/algorithm/base/inc
     ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template
@@ -219,6 +208,8 @@ set(UT_COMMON_INCLUDE_LIST
 add_subdirectory(stub)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
+add_subdirectory(misc)
+add_subdirectory(impl)
 add_subdirectory(platform/hcom)
 add_subdirectory(platform/resource/dispatcher)
 add_subdirectory(platform/resource/notify)

@@ -8,18 +8,20 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#include <fstream>
-#include <iostream>
-#include <algorithm>
-#include <mutex>
-#include <sstream>
 #include <stdio.h>
-#include <cstdarg>
-#include <securec.h>
-#include <vector>
+#include <stdlib.h>
+#include <fstream>
+#include <gtest/gtest.h>
 
-namespace error_message {
-    int32_t RegisterFormatErrorMessage(const char *error_msg, size_t error_msg_len) {
-        return 0;
-    }
+#include "comm.h"
+#include "env_config.h"
+#include "llt_hccl_stub_pub.h"
+
+GTEST_API_ int main(int argc, char **argv) {
+    printf("Running main() from gtest_main.cc\n");
+    setTargetPort(11111, 41114);
+    testing::InitGoogleTest(&argc, argv);
+    setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
+    InitEnvParam();
+    return RUN_ALL_TESTS();
 }

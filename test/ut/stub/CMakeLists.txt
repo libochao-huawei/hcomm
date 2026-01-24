@@ -16,17 +16,15 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_gdr.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_sal.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_fe.cc
-    # ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_manager.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_manager.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mc2.cc
     # ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_GenRankTable.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_gert.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_platform.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
     ${HCCL_LLT_ROOT}/stub/llt_stub_sec.c
     ${HCCL_LLT_ROOT}/stub/llt_mmpa_stub.c
     ${HCCL_LLT_ROOT}/stub/llt_stub_mm.c
-    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_msg.cc
-    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
-    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mmpa.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
