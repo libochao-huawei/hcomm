@@ -39,6 +39,7 @@ HcclResult __attribute__((weak)) HcomReduceV2(const char *tag, void *inputPtr, v
     HcclReduceOp op, u32 root, const char *group, rtStream_t stream);
 HcclResult __attribute__((weak)) HcomGetAlltoAllStagedWorkSpaceMemSizeV2(const char *group, u64 *sendCounts, u64 *sdispls,
     HcclDataType sendType, u64 *recvCounts, u64 *rdispls, HcclDataType recvType, u64 &memSize);
+HcclResult __attribute__((weak)) HcomGetAlltoAllvcStagedWorkSpaceMemSizeV2(const char *group, u64 &memSize);
 HcclResult __attribute__((weak)) HcomAlltoAllV2(const void *sendBuf, u64 sendCount, HcclDataType sendType,
                         const void *recvBuf, u64 recvCount, HcclDataType recvType,
                         const char *group, rtStream_t stream, const char *tag);
@@ -87,15 +88,26 @@ HcclResult __attribute__((weak)) HcomSetGlobalWorkSpaceV2(const char *group, std
 HcclResult __attribute__((weak)) HcomSupportDeterministicOptimV2(const char *group, bool &isDeterministicOptim);
 HcclResult __attribute__((weak)) HcomSetAivCoreLimitV2(const char *group, u32 aivCoreLimit);
 HcclResult __attribute__((weak)) HcomSetQosCfgV2(const char *group, const u32 qosCfg);
-HcclResult __attribute__((weak)) HcomSelectAlgV2(s64 comm, const char *group, u64 count, HcclDataType dataType,
-    HcclReduceOp op, HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel);
-HcclResult __attribute__((weak)) HcomGraphSelectAlgV2(s64 comm, const char *group, u64 count, HcclDataType dataType,
-    HcclReduceOp op, HcclCMDType opType, bool &ifAiv, std::string &algName, bool isSuperKernel);
+HcclResult __attribute__((weak)) HcomSelectAlgV2(s64 comm, const char *group, HcclCMDType opType, u64 count,
+    HcclDataType dataType, HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
+HcclResult __attribute__((weak)) HcomGraphSelectAlgV2(s64 comm, const char *group, HcclCMDType opType, u64 count,
+    HcclDataType dataType, HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
 HcclResult __attribute__((weak)) HcomUnloadTaskV2(const std::string group, const char *tag);
+HcclResult __attribute__((weak)) HcclCommGraphUnloadTaskV2(s64 opBaseHcom, const char *tag);
 HcclResult __attribute__((weak)) HcomGetCommCCLBufferSizeV2();
 HcclResult __attribute__((weak)) HcclCommResetQosCfgV2();
 HcclResult __attribute__((weak)) HcomResetQosCfgV2();
 HcclResult __attribute__((weak)) HcclCommSetQosCfgV2();
+HcclResult __attribute__((weak)) HcomGetL0TopoTypeExV2(const char *group, CommTopo *topoType, uint32_t flag);
+HcclResult __attribute__((weak)) HcomGetRankSizeExV2(const char *group, uint32_t *rankSize, uint32_t flag);
+HcclResult __attribute__((weak)) HcomMc2AiCpuStreamAllocAndGetV2(const char *group, u32 streamMode, rtStream_t *aiCpuStream);
+HcclResult __attribute__((weak)) HcomSetAivClearEnableV2(const char *group, bool aivClearEnable);
+HcclResult __attribute__((weak)) HcomCalcBlockDimV2(const char *group, HcclCMDType opType, u64 count,
+    HcclDataType dataType, int32_t aivCoreLimit, std::string &algName, u32 &blockDim);
+HcclResult __attribute__((weak)) HcclGetAlgExecParamV2(const std::string &tag, const char *group, u64 count,
+    void *inputPtr, void *outputPtr, HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op,
+    void *&commContext, u64 &len, u32 aivCoreLimit); 
+HcclResult __attribute__((weak)) HcomGetDevIdV2(const char *group, s32 *devId);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

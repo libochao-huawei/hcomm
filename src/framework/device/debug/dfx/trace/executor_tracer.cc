@@ -314,7 +314,7 @@ void ExecutorTracer::HandleReportStatusInComm()
                 reportStatus, deviceId, reportStatusQueue.size());
             HcclResult ret = dfx::CannErrorReporter::GetInstance().UpdateSensorNode(deviceId, reportStatus);
             if (ret != HCCL_SUCCESS) {
-                HCCL_WARNING("Fail to report reportStatus[%u] to dp frame, status droped, deviceId[%u].",
+                HCCL_WARNING("Fail to report reportStatus[%u] to dp frame, status dropped, deviceId[%u].",
                     reportStatus, deviceId);
             }
             reportStatusQueue.pop();

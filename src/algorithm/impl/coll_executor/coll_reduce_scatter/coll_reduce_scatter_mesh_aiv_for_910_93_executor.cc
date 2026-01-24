@@ -112,7 +112,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::CalBlockDimDeter(u32& block
     }
     
     CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_WARNING("[CollReduceScatterMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_ERROR("[CollReduceScatterMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, minBlockDim),
         HCCL_E_PARA);
 
@@ -146,7 +146,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::CalBlockDim(u32& blockDim, 
     blockDim = blockDim_ < rankSize ? blockDim_ : (blockDim_ < blockDim ? blockDim_ / rankSize * rankSize : blockDim);
 
     CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_WARNING("[CollReduceScatterMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_ERROR("[CollReduceScatterMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, minBlockDim),
         HCCL_E_PARA);
 
@@ -241,7 +241,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::GetAivExecParam(const OpPar
     HCCL_INFO("SPK [CollReduceScatterMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollReduceScatterMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], ReduceScatter executor getalgexecparam success, take time [%lld]us.",
@@ -275,7 +275,7 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::Orchestrate(OpParam& param,
     HcclResult ret = KernelRun(param, execMem);
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollReduceScatterMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], ReduceScatter executor orchestrate success, take time [%lld]us.",
@@ -329,6 +329,8 @@ HcclResult CollReduceScatterMeshAivFor91093Executor::KernelRun(const OpParam &pa
     if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE){
         algArgs.deterministic = 1;
     }
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {

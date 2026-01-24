@@ -1259,7 +1259,7 @@ TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_Mc2api_Test_NS)
 // 1 group 1  alltoallv
 // 2 group 1 innersync 0 handleid 1
 // 3 group 0 alltoallv
-// 4 group 0 finialize
+// 4 group 0 finalize
 // 5 group 1 false
 // 6 group 1 innersync 0 handleid 1
 // 7 group 1 finializa
@@ -1819,7 +1819,7 @@ TEST_F(AicpuUnfold_ST, RpcServerV2_PrintMsg_1)
 }
 
 // 0 group 0 allgather
-// 0 group 0 finialize
+// 0 group 0 finalize
 Mc2CcTilingInner strideTiling;
 static int32_t StrideLoopCnt = 0;
 static bool MC2APIStrideMsg(AicpuKfcRpcServerV2 *tmp, HcclApi::HcclMsg *tmpMsg, HcclApi::HcclMsg *msgList, u32 queueIdx, uint32_t msgPos)

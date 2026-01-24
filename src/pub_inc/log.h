@@ -44,8 +44,8 @@ enum class HcclSubModuleID {
 constexpr s32 LOG_TMPBUF_SIZE = 512;
 
 void DlogRecord(int32_t moduleId, int32_t level, const char *fmt, ...) __attribute((weak));
-#define LOG_FUNC(moudle, level, fmt, ...) do { \
-    DlogRecord(moudle, level, fmt, ##__VA_ARGS__); \
+#define LOG_FUNC(module, level, fmt, ...) do { \
+    DlogRecord(module, level, fmt, ##__VA_ARGS__); \
 } while (0)
 
 bool HcclCheckLogLevel(int logType, int moduleId = HCCL);

@@ -722,6 +722,9 @@ HcclResult HrtRaRdmaInit(int mode, u32 notifyType, struct rdev rdevInfo, RdmaHan
         "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
         })
     );
+    CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
+        HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
 
     CHK_PRT_RET(ret == HCCP_ELINKDOWN , HCCL_RUN_WARNING("ra rdma init need retry."), HCCL_E_AGAIN);
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
@@ -757,6 +760,9 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
         "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
         })
     );
+    CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
+        HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
 
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
         "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
@@ -799,6 +805,9 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
         "On this device. the IP address in the ranktable is inconsistent with the IP address of the network adapter."
         })
     );
+    CHK_PRT_CONT(ret == HCCP_EINVALIDIPS, 
+        HCCL_ERROR("[%s][%s]the IP address in the ranktable is inconsistent with the IP address of the network adapter.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str()));
 
     CHK_PRT_RET(ret != 0 || (rdmaHandle == nullptr), HCCL_ERROR("[Init][RaRdma]errNo[0x%016llx] rdma init fail. "\
         "return: ret[%d]", HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
@@ -1456,25 +1465,25 @@ HcclResult hrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, std::function<bool()> needStop)
+HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, std::function<bool()> needStop, u32 timeout)
 {
     auto startTime = chrono::steady_clock::now();
     void *recvData = const_cast<void *>(data);
     u64 recvSize = 0;
     s32 rtRet = 0;
     u64 getedLen = 0;
-    const chrono::seconds timeout = chrono::seconds(
-        GetExternalInputHcclLinkTimeOut());
+    const chrono::seconds timeoutSec = chrono::seconds(
+        timeout > 0 ? timeout : GetExternalInputHcclLinkTimeOut());
 
     HCCL_DEBUG("before ra socket recv, para: data[%p], size[%llu]", recvData, size);
     while (true) {
         CHK_PRT_RET(needStop(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
 
-        if ((chrono::steady_clock::now() - startTime) >= timeout) {
+        if ((chrono::steady_clock::now() - startTime) >= timeoutSec) {
             HCCL_ERROR("[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "\
                 "size[%llu Byte], recvSize[%llu Byte] timeout[%lld s]. Peerrank did not send the data in time. " \
                 "Check whether the peerrank is abnormal.", \
-                HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeout);
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeoutSec);
             return HCCL_E_TIMEOUT;
         }
         rtRet = DlRaFunction::GetInstance().dlRaSocketRecv(fdHandle,

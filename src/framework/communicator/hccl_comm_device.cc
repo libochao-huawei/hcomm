@@ -125,5 +125,17 @@ HcclResult hcclComm::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstR
 {
     return HCCL_SUCCESS;
 }
+
+HcclResult hcclComm::GetHeterogMode(HcclHeterogMode *mode)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclComm hcclComm::GetCommunicatorV2()
+{
+    HCCL_ERROR("[HcclComm][GetCommunicatorV2]collComm_ is nullptr");
+    return nullptr;
+}
+
 }  // namespace hccl
  

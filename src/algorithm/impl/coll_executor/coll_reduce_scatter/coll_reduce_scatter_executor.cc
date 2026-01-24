@@ -28,6 +28,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
     const u64 count = param.GetDataCount(topoAttr_.userRank);
     const HcclDataType dataType = param.GetDataType();
     HcclResult ret = HCCL_SUCCESS;
+    bool needLaunchAtTheEnd = !is310P3Common_; // 是否需要在Orchestrate()结束时launch任务
     // 图模式和单卡场景下不需要Loop
     if (workflowMode_ != HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
         ExecMem execMem;
@@ -51,6 +52,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         execMem.outputMem = algRes.cclOutputMem;
         execMem.scratchMem = algRes.scratchMem;
         ret = KernelRun(param, execMem);
+        needLaunchAtTheEnd = false;
     } else if (desc_.isZeroCopy) {
         // 在Level0执行KernelRun
         ExecMem execMem;
@@ -62,7 +64,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         execMem.scratchMem = algRes.paramInputMem;
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]ReduceScatter excutor KernelRunIntraServerPre failed",
+            HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]ReduceScatter executor KernelRunIntraServerPre failed",
                 HCCL_ERROR_CODE(ret)), ret);
         if (algOpContext_.opRetryHandler.isPostSync == true) {
             // post Sync
@@ -90,16 +92,18 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
             ret = InplaceOpSync(param, execMem);
         } else if (isReduceScatterV_) {
             ret = RunLoopV(param, algRes);
+            needLaunchAtTheEnd = false;
         } else {
             ret = RunLoop(param, algRes);
+            needLaunchAtTheEnd = false;
         }
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
+        HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
-    if (!is310P3Common_) {
+    if (needLaunchAtTheEnd) {
         HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     }
@@ -207,7 +211,7 @@ HcclResult CollReduceScatterExecutor::RunLoopInner(OpParam &param, const ReduceT
         HCCL_ERROR("[CollReduceScatterExecutor][RunLoopInner]In OP_BASE curCount is zero."), HCCL_E_PARA);
         
     // 不开启dma消减，且通信buffer足够大时，将user in到ccl的拷贝任务合并成一个
-    const bool preloadCopyOpt = (!DMAReduceFlag_) && (param.DataDes.count == execMem.count);
+    const bool preloadCopyOpt = IsPreloadCopyOptimizeCondition(param, execMem);
 
     if (!is310P3Common_) {
         /* 设置子图复用标志 */
@@ -464,6 +468,15 @@ std::vector<std::vector<Slice>> CollReduceScatterExecutor::ReduceScatterRingSlic
         sliceTemp.offset = outputMemSize * i;
         dataSegsSlice.push_back(sliceTemp);
     }
+    bool ARSFlag = topoMatcher_->GetARSFlag();
+    auto nicList = topoAttr_.nicList;
+    if (ARSFlag) {
+        std::vector<u32> mockNicList;
+        for (u32 i = 0; i < sliceNum; i++) {
+            mockNicList.push_back(i);
+        }
+        nicList = mockNicList;
+    }
 
     // 再将每个 slice 划分为 ringNum 份
     if (ringNum == LEVEL0_PLANE_NUM_IN_8PRING) {
@@ -477,11 +490,11 @@ std::vector<std::vector<Slice>> CollReduceScatterExecutor::ReduceScatterRingSlic
     } else if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE) {
         // 双环场景，需要传入正确的 niclist (不涉及网口裁剪)
         if (useInlineReduce) {
-            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, topoAttr_.nicList);
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, nicList);
         } else if (outputMem.size() % CCE_REDUCE_ALIGN_SIZE == 0) {
-            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, topoAttr_.nicList);
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, nicList);
         } else {
-            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, true, topoAttr_.nicList);
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, true, nicList);
         }
     } else {
         multiStreamSlice.push_back(dataSegsSlice);
@@ -565,4 +578,9 @@ HcclResult CollReduceScatterExecutor::RetryPostSync(OpParam& param, ExecMem &exe
     return HCCL_SUCCESS;
 }
 
+bool CollReduceScatterExecutor::IsPreloadCopyOptimizeCondition(const OpParam &param, ExecMem &execMem)
+{
+    // 不开启dma消减，且通信buffer足够大时，将user in到ccl的拷贝任务合并成一个
+    return (!DMAReduceFlag_) && (param.DataDes.count == execMem.count);
+}
 } // namespace hccl

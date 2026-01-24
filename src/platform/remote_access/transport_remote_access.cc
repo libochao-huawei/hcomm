@@ -100,7 +100,7 @@ HcclResult TransportRemoteAccess::MrRegister()
 {
     void* memPtr = nullptr;
     if (MemRegistInfos_.size() == 0) {
-        HCCL_ERROR("[Register][Mr]local mem info to registe is empty!");
+        HCCL_ERROR("[Register][Mr]local mem info to register is empty!");
         return HCCL_E_PARA;
     }
     struct MrInfoT mrInfo = {nullptr};

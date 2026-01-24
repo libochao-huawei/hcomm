@@ -13,7 +13,7 @@
 #include <unordered_set>
 #include <memory>
 #include <mutex>
-#include "coll_comm.h"
+// #include "coll_comm.h"
 
 namespace hccl {
 /**
@@ -21,21 +21,7 @@ namespace hccl {
  */
 class CollCommMgr {
 public:
-    CollCommMgr() = default;
-    ~CollCommMgr();
-    
-    // 创建通信域
-    HcclResult CreateComm(const char* rankTable, uint32_t rank, const CommConfig& config, HcclComm* comm);
-    
-    // 销毁通信域
-    HcclResult DestroyComm(HcclComm comm);
-    
-    // 获取通信域
-    std::shared_ptr<CollComm> GetComm(HcclComm comm);
 
-private:
-    std::unordered_set<std::shared_ptr<CollComm>> collComms_{};
-    std::mutex mutex_{};
 };
 }
 #endif // COLL_COMM_MGR_H

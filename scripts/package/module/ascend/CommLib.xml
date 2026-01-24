@@ -14,14 +14,12 @@
         <path value="opp/built-in/op_impl/aicpu"/>
         <path value="opp/built-in/op_impl/aicpu/kernel"/>
         <path value="opp/built-in/op_impl/aicpu/config"/>
+        <path value="opp/built-in/op_impl/dpu"/>
     </dir_info>
     <file_info value="include" copy_type="source" src_path="hcomm/include/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccl_comm.h"/>
         <file value="hccl_types.h"/>
-        <file value="hccl_ctrl_plane.h"/>
-        <file value="hccl_mem_defs.h"/>
         <file value="hccl_rank_graph.h"/>
-        <file value="hccl_rankgraph.h"/>
         <file value="hccl_res.h"/>
         <file value="hcomm_primitives.h"/>
     </file_info>
@@ -36,6 +34,8 @@
         <file value="dtype_common.h"/>
         <file value="workflow.h"/>
         <file value="hccl_inner.h"/>
+        <file value="hccl_ctrl_plane.h"/>
+        <file value="hcomm_diag.h"/>
     </file_info>
     <file_info value="device" copy_type="delivery" src_path="build" dst_path="Ascend/aicpu" install_path="opp/built-in/op_impl/aicpu/kernel" install_type="all" install_mod="440" optional="true">
         <file value="aicpu_hcomm.tar.gz"/>
@@ -47,15 +47,22 @@
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
     </file_info>
+    <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/dpu" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
+        <file value="libccl_dpu.json"/>
+    </file_info>
+    <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
+        <file value="libccl_dpu.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libccl_dpu.so"/>
+    </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
         <file value="libhcomm.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libhccl_fwk.so"/>
+        <file value="hccl_aiv_op_910_95.o"/>
+        <file value="libhccl_v2.so" file_type="shared" release_type="debug"/>
+        <file value="libhccl_v2_alg_frame.so" file_type="shared" release_type="debug"/>
+        <file value="libhccl_v2_native_alg_repo.so" file_type="shared" release_type="debug"/>
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>
-        <!-- <file value="libhccl_v2.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2.so;comop:lib64/libhccl_v2.so;hcomm:lib64/libhccl_v2.so" release_type="debug"/>
-        <file value="libhccl_v2_alg_frame.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_alg_frame.so;comop:lib64/libhccl_v2_alg_frame.so;hcomm:lib64/libhccl_v2_alg_frame.so" release_type="debug"/>
-        <file value="libhccl_v2_native_alg_repo.so" file_type="shared" pkg_inner_softlink="compiler:lib64/libhccl_v2_native_alg_repo.so;comop:lib64/libhccl_v2_native_alg_repo.so;hcomm:lib64/libhccl_v2_native_alg_repo.so" release_type="debug"/> -->
         <file value="dynamic_mul_int8_v80.o"/>
         <file value="dynamic_minimum_int8_v80.o"/>
         <file value="dynamic_maximum_int8_v80.o"/>

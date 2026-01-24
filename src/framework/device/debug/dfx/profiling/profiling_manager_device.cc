@@ -10,7 +10,6 @@
 
 #include "profiling_manager_device.h"
 #include "aicpu_schedule/aicpu_context.h"
-#include "aprof_pub.h"
 #include "prof_common.h"
 #include "log.h"
 #include "sal_pub.h"
@@ -119,8 +118,8 @@ HcclResult ProfilingManager::CallMsprofReportAdditionInfo(uint32_t type, uint64_
     reporterData.timeStamp = timeStamp;
     s32 sret = memcpy_s(reporterData.data, sizeof(reporterData.data), data, len);
     CHK_PRT_RET(sret != EOK, 
-            HCCL_ERROR("memcpy failed. errorno:[%d] level:[%hu] type:[%u] threadId:[%u] len:[%u] timeStamp:[%llu]",
-                sret, reporterData.level, type, reporterData.threadId, len, timeStamp), 
+            HCCL_ERROR("memcpy failed. errorno:[%d] level:[%hu] type:[%u] threadId:[%u] sizeof_data[%zu] len:[%u] timeStamp:[%llu]",
+                sret, reporterData.level, type, reporterData.threadId, sizeof(reporterData.data), len, timeStamp), 
             HCCL_E_MEMORY);
     HCCL_DEBUG("CallMsprofReportAdditionInfo, AdditionInfoType[%u]", type);
         if (MsprofReportBatchAdditionalInfo == nullptr) {
@@ -359,7 +358,7 @@ HcclResult ProfilingManager::UpdateStartReportSqeIdx(s32 streamId, u32 newSqeTai
 
 HcclResult ProfilingManager::GetProfInfoByStreamId(s32 streamId, ProfCommInfo& profInfo)
 {
-    std::string tag = "unkown";
+    std::string tag = "unknown";
     std::unique_lock<std::mutex> lock(streamMutex_);
     auto iter = streamToTagMap_.find(streamId);
     if (iter == streamToTagMap_.end()) {

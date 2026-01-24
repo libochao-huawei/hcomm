@@ -25,7 +25,6 @@
 #include "queue_notify_manager.h"
 #include "llt_hccl_stub_mc2.h"
 #include "profiling_manager_device.h"
-#include "hccl_thread.h"
 
 #undef private
 #undef protected

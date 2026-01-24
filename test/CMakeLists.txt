@@ -7,13 +7,15 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
+set(CMAKE_SKIP_RPATH FALSE)
 
 # UT
 if(ENABLE_UT)
     add_subdirectory(ut)
+    # add_subdirectory(orion/ut)
 endif()
 
 # ST
 if(ENABLE_ST)
-    add_subdirectory(st)
+    add_subdirectory(st/algorithm)
 endif()

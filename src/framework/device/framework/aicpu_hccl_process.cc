@@ -36,7 +36,6 @@
 #include "dtype_common.h"
 #include "aicpu_one_side_service.h"
 #include "coll_batch_write_executor.h"
-#include "hccl_thread.h"
 
 using namespace hccl;
 using namespace HcclApi;
@@ -48,6 +47,7 @@ struct hcclCommAicpuInfo {
 hcclCommAicpuInfo g_commAicpuInfo;
 AicpuComContext g_comContext[CLUSTER_CNT];
 DevType g_devType = DevType::DEV_TYPE_COUNT;
+thread_local HcclCommAicpu *g_hcclComm = nullptr; // 记录当前线程通信域; AicpuGetCommbyGroup赋值，AicpuReleaseCommbyGroup置空
 }
 
 DevType AicpuHcclProcess::AicpuGetInnerDevType()
@@ -255,6 +255,20 @@ HcclResult AicpuHcclProcess::AicpuIndOpCommInit(CommAicpuParam *commAicpuParam)
     return HCCL_SUCCESS;
 }
 
+HcclResult AicpuHcclProcess::AicpuRegOpInfo(void* opInfo, u32 size)
+{
+    CHK_PTR_NULL(g_hcclComm);
+    CHK_RET(g_hcclComm->RegisterOpInfo(opInfo, size));
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::AicpuRegOpTaskException(HcommGetOpInfoCallback callback)
+{
+    CHK_PTR_NULL(g_hcclComm);
+    CHK_RET(g_hcclComm->RegOpTaskException(callback));
+    return HCCL_SUCCESS;
+}
+
 ReadWriteLockBase& AicpuHcclProcess::AicpuGetCommMutex()
 {
     return g_commAicpuInfo.commAicpuMapMutex;
@@ -297,6 +311,7 @@ hccl::HcclCommAicpu *AicpuHcclProcess::AicpuGetCommbyGroup(const std::string &gr
             usleep(pollIntervalUs);
             continue;
         }
+        g_hcclComm = iter->second.first.get();
         iter->second.second = true;
         rwlock.readUnlock();
         return iter->second.first.get();
@@ -322,6 +337,7 @@ void AicpuHcclProcess::AicpuReleaseCommbyGroup(const std::string &group)
         rwlock.readUnlock();
         return;
     }
+    g_hcclComm = iter->second.first.get();
     iter->second.second = false;
     rwlock.readUnlock();
 }
@@ -374,6 +390,8 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
         tilingData->syncMode, tilingData->root, tilingData->dstRank, tilingData->srcRank,
         tilingData->opType, tilingData->index, tilingData->length);
 
+    HCCL_DEBUG("[AicpuHcclProcess][AicpuRunRpcServerV2]Entry AicpuRunRpcServerV2, aicpuCacheEnable[%u]", tilingData->aicpuCacheEnable);
+
     CHK_RET(hcclCommAicpu->RecordHostOrder(commParam, tag, tilingData->orderLaunchMode));
 
     hccl::OpParam opParam;
@@ -394,6 +412,7 @@ HcclResult AicpuHcclProcess::AicpuRunRpcServerV2(
     opParam.isZeroCopy = tilingData->isZeroCopy;
     opParam.index = tilingData->index;
     opParam.isCapture = tilingData->isCapture;
+    opParam.aicpuCacheEnable = tilingData->aicpuCacheEnable;
     hcclCommAicpu->PrepareOpRetryHandler(tilingData->inplaceSupportRetry,
         tilingData->retryEnable, tilingData->inPlaceSupportRetryStatus,
         tilingData->isInplacePreSync, tilingData->isPostSync);
@@ -599,6 +618,27 @@ HcclResult AicpuHcclProcess::AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *
         HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
         HCCL_ERROR_CODE(ret), group.c_str()), ret);
     AicpuReleaseCommbyGroup(group);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::AicpuIndOpChannelInitV2(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[AicpuHcclProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
+        "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
+        commParam->uniqueIdSize);
+
+    std::string group = commParam->hcomId;
+    hccl::HcclCommAicpu *hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
+    CHK_PRT_RET(!hcclCommAicpu, HCCL_ERROR("%s hcclCommAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+
+    HcclResult ret = hcclCommAicpu->AllocChannelResourceV2(commParam);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
+        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+
+    AicpuReleaseCommbyGroup(group);
+    HCCL_INFO("[AicpuHcclProcess][%s] aicpuTask End.", __func__);
+
     return HCCL_SUCCESS;
 }
 

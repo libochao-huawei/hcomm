@@ -20,7 +20,6 @@
 extern "C" {
 #endif
 
-
 #define HCCP_ATTRI_VISI_DEF __attribute__ ((visibility ("default")))
 
 /**
@@ -73,7 +72,7 @@ enum WhiteListStatus {
  */
 #define SOCK_EAGAIN    128201   /* EAGAIN:no data received by socket */
 #define SOCK_CLOSE   128203 /* EINVAL:device异常关闭时作为心跳返回值返回给hccl*/
-#define SOCK_ENOENT    228200   /* ENOENT:SOCK_ENOENT means mr async not success right now,revoke the funcion again */
+#define SOCK_ENOENT    228200   /* ENOENT:SOCK_ENOENT means mr async not success right now,revoke the function again */
 #define SOCK_EADDRINUSE    128205   /* EADDRINUSE：check if IP has been listened when SOCK_EADDRINUSE is returned */
 #define SOCK_EADDRNOTAVAIL 128206   /* EADDRNOTAVAIL：check if IP exist when SOCK_EADDRNOTAVAIL is returned */
 #define SOCK_ESOCKCLOSED   128207   /* ESOCKCLOSED：socket has been closed */
@@ -94,7 +93,7 @@ enum WhiteListStatus {
 #define ROCE_EAGAIN    128101   /* EAGAIN:try again */
 #define ROCE_ENOMEM    328100   /* ENOMEM: roce module has ENOMEM error */
 #define ROCE_EOPENSRC  528101   /* EOPENSRC: open source verbs error */
-#define ROCE_ENOENT    228100   /* ENOENT: means mr async not success right now, revoke the funcion again */
+#define ROCE_ENOENT    228100   /* ENOENT: means mr async not success right now, revoke the function again */
 
 /**
  * @ingroup libinit
@@ -112,6 +111,7 @@ enum NetworkMode {
  */
 enum ProtocolTypeT {
     PROTOCOL_RDMA = 0,
+    PROTOCOL_UDMA,
     PROTOCOL_UNSUPPORT,
 };
 
@@ -145,7 +145,7 @@ enum HccnCfgKey {
 
 /**
  * @ingroup libinit
- * ip address.
+ * ip address
  */
 union HccpIpAddr {
     struct in_addr addr;
@@ -291,7 +291,7 @@ enum RaSendFlags {
     RA_SEND_FENCE = 1 << 0, /**< RDMA operation with fence */
     RA_SEND_SIGNALED = 1 << 1, /**< RDMA operation with signaled */
     RA_SEND_SOLICITED = 1 << 2, /**< RDMA operation with solicited */
-    RA_SEND_INLINE = 1 << 3, /**< RDMA operation with inline */
+    RA_SEND_INLINE = 1 << 3, /**< RDMA operation with*/
 };
 
 /**
@@ -425,7 +425,7 @@ enum RaAccessFlags {
  * @ingroup librdma
  * wqe template info
  */
-struct WqeInfo {
+struct WqeInfoT {
     unsigned int sqIndex; /**< index of sq */
     unsigned int wqeIndex; /**< index of wqe */
 };
@@ -445,7 +445,7 @@ struct DbInfo {
  */
 struct SendWrRsp {
     union {
-        struct WqeInfo wqeTmp; /**< wqe template info */
+        struct WqeInfoT wqeTmp; /**< wqe template info */
         struct DbInfo db; /**< doorbell info */
     };
 };
@@ -657,6 +657,7 @@ enum SaveSnapshotAction {
     SAVE_SNAPSHOT_ACTION_POST_PROCESSING = 1,
     SAVE_SNAPSHOT_ACTION_MAX,
 };
+
 #ifdef __cplusplus
 }
 #endif

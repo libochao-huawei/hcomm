@@ -37,7 +37,7 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::Orchestrate(OpParam& param, Alg
     execMem.scratchMem = algRes.aivInputMem;
     HcclResult ret = KernelRun(param, execMem);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollRunAlltoAllStagedAivRdmaExecutor][Orchestrate]errNo[0x%016llx]excutor run failed",
+        HCCL_ERROR("[CollRunAlltoAllStagedAivRdmaExecutor][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     HCCL_INFO("[CollRunAlltoAllStagedAivRdmaExecutor]tag[%s], orchestrate success, take time [%lld]us.",
@@ -95,7 +95,7 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::CalBlockDim(u32& blockDim, u32 
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollRunAlltoAllStagedAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollRunAlltoAllStagedAivRdmaExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollRunAlltoAllStagedAivRdmaExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -131,11 +131,13 @@ HcclResult CollRunAlltoAllStagedAivRdmaExecutor::RunAlltoAllStaged1InAIV(const O
         param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {0};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     HCCL_DEBUG("[CollRunAlltoAllStagedAivRdmaExecutor]RunAlltoAllStaged1InAIV for blockDim is %u", blockDim_);
     if (aivClearEnable_) {
-        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs);
+        ClearAivSyncBuf(flagBuffers, resourceArgs, topoArgs, algArgs);
     }
     CHK_RET(ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo));
     return HCCL_SUCCESS;

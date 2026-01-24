@@ -117,14 +117,14 @@ void* impl_common_broadcast_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task rt_set_device falis", hcom_info.params.rank);
+        HCCL_ERROR("dev[%d] task rt_set_device fails", hcom_info.params.rank);
     }
 
     CommConfig commConfig("hccl_world_group"); 
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task broadcast falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task broadcast fails", para_info->device_id);
     }
 
     bool swapped;
@@ -154,7 +154,7 @@ void* impl_common_broadcast_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task broadcast falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task broadcast fails", hcom_info.params.rank);
     }
 
     rtError_t rt_ret = RT_ERROR_NONE;
@@ -162,7 +162,7 @@ void* impl_common_broadcast_task(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     return (NULL);
@@ -204,7 +204,7 @@ void* impl_common_all_reduce_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
     bool swapped;
 
@@ -233,7 +233,7 @@ void* impl_common_all_reduce_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduce fails", para_info->device_id);
     }
 
     rtError_t rt_ret = RT_ERROR_NONE;
@@ -241,7 +241,7 @@ void* impl_common_all_reduce_task(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     RankConsistentcyChecker::GetInstance().ClearCheckInfo();
     return (NULL);

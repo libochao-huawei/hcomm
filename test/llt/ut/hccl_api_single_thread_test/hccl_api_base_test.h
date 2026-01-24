@@ -68,6 +68,7 @@
 #include <dirent.h>
 #include "hccl_api.h"
 #include "rts/rts_device.h"
+// #include "hccl_group.h"
 
 using namespace std;
 

@@ -8,9 +8,65 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "thread.h"
+#include "cpu_ts_thread.h"
+#include "aicpu_ts_thread.h"
 
-namespace hcomm {
-Thread::Thread(CommEngine engineType)
-    : engineType_(engineType) {
+namespace hccl {
+
+HcclResult CreateThread(CommEngine engine, StreamType streamType,
+    uint32_t notifyNum, NotifyLoadType loadType, std::shared_ptr<Thread>& out_thread)  
+{
+    out_thread = nullptr;  // 初始化出参
+ 
+    if (engine == COMM_ENGINE_CPU_TS || engine == COMM_ENGINE_CPU) {
+        EXECEPTION_CATCH(out_thread = std::make_shared<CpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+    } else if (engine == COMM_ENGINE_AICPU_TS || engine == COMM_ENGINE_AICPU) {
+        EXECEPTION_CATCH(out_thread = std::make_shared<AicpuTsThread>(streamType, notifyNum, loadType), return HCCL_E_PTR);
+    } else {
+        return HCCL_E_NOT_SUPPORT;
+    }
+ 
+    return HCCL_SUCCESS;
 }
+
+HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type)
+{
+    switch (engine) {
+        case COMM_ENGINE_CPU:
+        case COMM_ENGINE_CPU_TS:
+            type =  NotifyLoadType::HOST_NOTIFY;
+            break;
+        case COMM_ENGINE_AICPU:
+        case COMM_ENGINE_AICPU_TS:
+            type =  NotifyLoadType::DEVICE_NOTIFY;
+            break;
+        default:
+            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", engine);
+            return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
 }
+
+HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type)
+{
+    switch (engine) {
+        case COMM_ENGINE_CPU:
+        case COMM_ENGINE_CPU_TS:
+            type = StreamType::STREAM_TYPE_ONLINE; // 单算子使用online，图模式使用offine
+            break;
+        case COMM_ENGINE_AICPU:
+        case COMM_ENGINE_AICPU_TS:
+            type = StreamType::STREAM_TYPE_DEVICE;
+            break;
+        // 暂不支持AIV、CCU
+        case COMM_ENGINE_AIV:
+        case COMM_ENGINE_CCU:
+        default:
+            HCCL_ERROR("[ThreadMgr] Unknown comm engine type: %d", engine);
+            return HCCL_E_PARA;
+    }
+    return HCCL_SUCCESS;
+}
+
+
+}  // namespace hccl

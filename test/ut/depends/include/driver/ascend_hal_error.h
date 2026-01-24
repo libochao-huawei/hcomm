@@ -46,7 +46,7 @@ typedef enum tagDrvError {
     DRV_ERROR_NOT_EXIST = 11,        /**< there is resource*/
     DRV_ERROR_REPEATED_USERD = 12,
     DRV_ERROR_BUSY = 13,                /**< task already running */
-    DRV_ERROR_NO_RESOURCES = 14,        /**< driver short of resouces */
+    DRV_ERROR_NO_RESOURCES = 14,        /**< driver short of resources */
     DRV_ERROR_OUT_OF_CMD_SLOT = 15,
     DRV_ERROR_WAIT_TIMEOUT = 16,       /**< driver wait timeout*/
     DRV_ERROR_IOCRL_FAIL = 17,         /**< driver ioctl fail*/

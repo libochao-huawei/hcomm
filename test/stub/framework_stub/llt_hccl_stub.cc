@@ -269,6 +269,25 @@ int dlog_setlevel(int moduleId, int level, int enableEvent)
     return 0;
 }
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
+typedef enum tagRtClearStep {
+    RT_STREAM_STOP = 0,
+    RT_STREAM_CLEAR,
+} rtClearStep_t;
+
+rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
+{
+    return 0;
+}
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+
 /**
  * @ingroup dvrt_stream
  * @brief create stream instance
@@ -405,7 +424,7 @@ aclError aclrtDestroyStreamForce(aclrtStream stream)
 /**
  * @ingroup dvrt_stream
  * @brief get stream id from a stream handle
- * @param [in] stream   stream hadle
+ * @param [in] stream   stream handle
  * @param [in] streamId   stream id
  * @return RT_ERROR_NONE for complete
  * @return RT_ERROR_INVALID_RESOURCE_HANDLE for error input stream handle
@@ -921,6 +940,11 @@ aclError aclrtCreateEvent(aclrtEvent *event)
     /*
     1、原来的event机制需要使用者确保先下发record然后再下发wait。新的event机制没有这种限制，与notify流程类似。故打桩直接使用notify机制
     2、event为软件资源，与device无关。为了复用notify已有机制，不关注device id默认填0。*/
+    return aclrtCreateNotify((aclrtNotify *)event, 0UL);
+}
+
+aclError aclrtCreateEventExWithFlag(aclrtEvent *event, uint32_t flag)
+{
     return aclrtCreateNotify((aclrtNotify *)event, 0UL);
 }
 
@@ -1607,7 +1631,7 @@ aclError aclrtIpcMemImportByKey(void **ptr, const char *name, uint64_t flag)
                 }
             }
             if(j == IPC_SHM_PID_NUM_MAX) {
-                HCCL_ERROR("aclrtIpcMemImportByKey error , cant find pid[%d]", pid);
+                HCCL_ERROR("aclrtIpcMemImportByKey error , cannot find pid[%d]", pid);
                 DestroyIpcMemShm();
                 return ACL_ERROR_RT_PARAM_INVALID;
             }
@@ -1617,7 +1641,7 @@ aclError aclrtIpcMemImportByKey(void **ptr, const char *name, uint64_t flag)
     }
 
     if(i == IPC_SHM_MEM_NUM_MAX) {
-        HCCL_ERROR("aclrtIpcMemImportByKey error , cant find name[%s]", name);
+        HCCL_ERROR("aclrtIpcMemImportByKey error , cannot find name[%s]", name);
         DestroyIpcMemShm();
         return ACL_ERROR_RT_PARAM_INVALID;
     }
@@ -2311,7 +2335,7 @@ aclError aclrtReduceAsync(void *dst, const void *src, uint64_t count, aclrtReduc
 
 /**
  * @ingroup rt_stars
- * @brief gerneral ctrl if
+ * @brief general ctrl if
  * @param [in] ctl              ctl input
  * @param [in] num              ctl input num
  * @param [in] type             ctl type
@@ -2730,7 +2754,7 @@ aclError aclrtNotifyImportByKey(aclrtNotify *notify, const char *name, uint64_t 
     }
     // 未找到NAME
     if(i == IPC_SHM_NOTIFY_NUM_MAX) {
-        HCCL_ERROR("aclrtNotifyImportByKey error , cant find name[%s]", name);
+        HCCL_ERROR("aclrtNotifyImportByKey error , cannot find name[%s]", name);
         DestroyIpcNotifyShm();
         return ACL_ERROR_RT_PARAM_INVALID;
     }
@@ -2878,7 +2902,7 @@ void* threadfun(void* p)
 
     if (iRet)
     {
-        HCCL_WARNING("[STUB] Thread Handler Return Faile[%d]", iRet);
+        HCCL_WARNING("[STUB] Thread Handler Return Failed[%d]", iRet);
     }
 
     iRet = pcthread->update_thread_state(THREAD_STATE_STOPED);
@@ -3131,11 +3155,11 @@ s32 thread_class::stop_thread()
                 threadfd = 0;
             }
 
-            HCCL_WARNING("Force Stop Thread Sucess");
+            HCCL_WARNING("Force Stop Thread Success");
         }
         else
         {
-            //HCCL_INFO("Stop Thread Sucess. Counter cost [%d]", THREAD_STOP_COUNTER - uiStopCounter);
+            //HCCL_INFO("Stop Thread Success. Counter cost [%d]", THREAD_STOP_COUNTER - uiStopCounter);
         }
     }
 
@@ -4395,7 +4419,7 @@ HcclResult __rt_get_dev_ip(s32 chipType, s32 devId, u32 *ipAddr)
         }
         *ipAddr = inet_addr(devIpStr.c_str());
     } else {
-        HCCL_ERROR("get unknow chip type[%d] dev:[%d]", chipType, devId);
+        HCCL_ERROR("get unknown chip type[%d] dev:[%d]", chipType, devId);
         return HCCL_E_NOT_SUPPORT;
     }
     return HCCL_SUCCESS;

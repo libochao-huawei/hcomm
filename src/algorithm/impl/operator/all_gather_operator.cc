@@ -16,7 +16,6 @@
 #include "stream_active_manager.h"
 #include "hccl_aiv.h"
 #include "coll_alg_op_registry.h"
-#include "comm_configer.h"
 
 constexpr u32 MODULE_NUM_FOUR = 4;
 constexpr u32 HCCL_310P_DATA_SIZE_MID_COUNT = 320 * 1024;
@@ -70,8 +69,12 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
                     HCCL_ERROR("[[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
         newTag = tag + level1Iter->second + algName;
     }
+    if (algName == "AllGatherARSFor91093Executor") {
+        u32 ringSize = CalcOptimalIntraRingsize(param.DataDes.count, param.DataDes.dataType, HcclCMDType::HCCL_CMD_ALLGATHER);
+        newTag += std::to_string(ringSize);
+    }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag);
+    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag.c_str());
     return ret;
 }
 
@@ -310,9 +313,19 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_512_KB) &&
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && !GetExternalInputInterHccsDisable();
     bool smallCountOptimMultiServer = SmallCountOptimMultiServer(param);
-    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
-        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB); // 涉及ROCE平面
 
+    bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
+        (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
+    // ARS 算法选择
+    bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
+    if (isARSAlgo) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+    }
     // AHC 算法选择逻辑
     bool isAHCAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
     if (isAHCAlgo) {
@@ -324,8 +337,16 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "AllGatherHccsSioExecutor";
-    } else if (multiModuleDiffDeviceNumMode_) {
-        algName = "AllGatherComm";
+    } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
+         algName = "AllGatherComm";
+    } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+        algName = "AllGatherARSFor91093Executor";
     } else if (smallCountOptimMultiPod) {
         algName = "AllGatherComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
@@ -335,8 +356,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING || param.DataDes.count * unitSize * deviceNumPerAggregation_ > HCCL_MID_COUNT_16_MB)) {
         const u32 SEVER_NUM_FOUR = 4;
         constexpr u64 RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN = 2 * 1024 * 1024;
-        HcclAlgoType configAlgTypeLevel2 = CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier_,
-            HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
+        HcclAlgoType configAlgTypeLevel2 = topoMatcher_->GetAlgoConfig(HcclCMDType::HCCL_CMD_ALLGATHER)[HCCL_ALGO_LEVEL_2];
         bool setPipelineAlgo = ((configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_PIPELINE) ||
              (configAlgTypeLevel2 == HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && dataSize >= RING_EXCHANGE_PIPELINE_DATA_SIZE_MIN));
         if (superPodNum_ > 1 && userRankSize_ / superPodNum_ > 1 && setPipelineAlgo) {

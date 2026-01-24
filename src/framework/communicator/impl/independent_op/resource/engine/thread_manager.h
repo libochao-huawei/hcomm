@@ -15,7 +15,8 @@
 #include <memory>
 #include <mutex>
 #include "hccl_api.h"
-#include "hccl_thread.h"
+#include "aicpu_ts_thread.h"
+#include "cpu_ts_thread.h"
 #include "log.h"
 #include "manager_common.h"
 
@@ -25,9 +26,9 @@ class ThreadMgr {
 public:
     ThreadMgr(uint32_t threadNum, uint32_t notifyNumPerThread, std::string commId, aclrtBinHandle binHandle, const ManagerCallbacks& callbacks);
     ~ThreadMgr() = default;
-    HcclResult HcclAllocThreadRes(CommEngine engine, uint32_t threadNum,
-        uint32_t notifyNumPerThread, ThreadHandle *thread);
-    HcclResult HcclAllocThreadResByStream(CommEngine engine,
+    HcclResult HcclThreadAcquire(CommEngine engine, uint32_t threadNum,
+        uint32_t notifyNumPerThread, ThreadHandle *threads);
+    HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
 
@@ -45,10 +46,10 @@ private:
 
     u64 usedNotifyNum_ = 0;
     std::mutex threadMutex_;
-    std::vector<std::shared_ptr<HcclThread>> threads_;
+    std::vector<std::shared_ptr<Thread>> threads_;
 
     std::mutex mainThreadMutex_;
-    std::map<rtStream_t, std::unique_ptr<HcclThread>> mainThread_;
+    std::map<rtStream_t, std::unique_ptr<Thread>> mainThread_;
 
     ManagerCallbacks callbacks_;
 };

@@ -234,6 +234,7 @@ else()
 	    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/health/heartbeat/
 	    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
 	    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
+	    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
 	    ${HCCL_CODE_ROOT}/src/framework/common/src
 	    ${HCCL_CODE_ROOT}/src/framework/common/src/host
 	    ${HCCL_CODE_ROOT}/src/framework/common/src/task
@@ -254,6 +255,7 @@ else()
 	    ${HCCL_CODE_ROOT}/src/framework/hcom/
 		${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
 	    ${HCCL_CODE_ROOT}/src/framework/op_base/src/
+	    ${HCCL_CODE_ROOT}/src/framework/group
 	    ${HCCL_CODE_ROOT}/src/framework/nslbdp/
 		${HCCL_OPEN_CODE_ROOT}/pkg_inc
 

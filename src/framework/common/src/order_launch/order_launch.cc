@@ -16,6 +16,7 @@
 #include "hccl_communicator.h"
 #include "stream_utils.h"
 #include "hccl_types.h"
+#include "adapter_rts_common.h"
 
 namespace hccl {
 OrderLaunch &OrderLaunch::GetInstance(s32 deviceLogicID)
@@ -36,9 +37,21 @@ OrderLaunch::~OrderLaunch()
     std::unique_lock<std::mutex> mapLock(streamMutex_);
     initialized_ = false;
     groupSet_.clear();
+    DestoryRes();
+}
+
+void OrderLaunch::DestoryRes()
+{
     opbaseStream_.reset();
-    aclgraphStreamMap_.clear();
+    aclgraphStream_.reset();
     hcomStreamMap_.clear();
+
+    for (u32 i = 0; i < AICPU_ORDER_EVENT_SIZE; ++i) {
+        if (aclgraphEvents_[i].event != nullptr) {
+            (void)hrtEventDestroy(aclgraphEvents_[i].event);
+            aclgraphEvents_[i].event = nullptr;
+        }
+    }
 }
 
 HcclResult OrderLaunch::RegisterOrderLaunch(const std::string &group)
@@ -64,9 +77,7 @@ HcclResult OrderLaunch::UnRegisterOrderLaunch(const std::string &group)
 
     groupSet_.erase(group);
     if (groupSet_.empty()) { // 没有注册的通信域，销毁全局的流
-        opbaseStream_.reset();
-        aclgraphStreamMap_.clear();
-        hcomStreamMap_.clear();
+        DestoryRes();
     }
     HCCL_INFO("%s success, group[%s]", __func__, group.c_str());
     return HCCL_SUCCESS;
@@ -79,38 +90,56 @@ HcclResult OrderLaunch::SetHcomStream(u32 graphId, const Stream& hcomAttachedStr
     return HCCL_SUCCESS;
 }
 
-HcclResult OrderLaunch::AclgraphLaunchInOrder(std::string &group, const Stream& kernelStream, u64 modelId,
-    rtModel_t rtModel, std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
+// aclgraph模式下，先在kernel stream上写record，再在上order stream写wait；解order stream的wait
+HcclResult OrderLaunch::AclgraphLaunchInOrderToOrderStream(std::string &group, const Stream& kernelStream,
+    std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut)
 {
-    HCCL_INFO("AclgraphLaunchInOrder skip");
-    return HCCL_SUCCESS;
     std::unique_lock<std::mutex> mapLock(streamMutex_);
     if (groupSet_.find(group) == groupSet_.end()) {
-        HCCL_ERROR("[%s] fail, group[%s] has not been registered", __func__, group.c_str());
         return HCCL_E_PARA;
     }
 
-    Stream* hostOrderStream = nullptr;
-    for (auto it = aclgraphStreamMap_.begin(); it != aclgraphStreamMap_.end(); ++it) {
-        if (it->first == modelId) {
-            hostOrderStream = &(it->second);
-            CHK_PTR_NULL(hostOrderStream);
-            HCCL_INFO("[%s] reuse existing modelId[%llu] streamId[%u]",
-                        __func__, modelId, hostOrderStream->id());
-            break;
+    aclError ret = ACL_SUCCESS;
+    u32 index0 = static_cast<u32>(AicpuOrderEventIdx::ACLGRAPH_ORDER_EVENT_0);
+    if (aclgraphStream_ == nullptr) {
+        // 申请唯一控制流 order stream
+        EXECEPTION_CATCH(aclgraphStream_ = std::make_unique<Stream>(StreamType::STREAM_TYPE_ONLINE), return HCCL_E_PTR);
+
+        for (u32 i = 0; i < AICPU_ORDER_EVENT_SIZE; ++i) {
+            ret = aclrtCreateEventExWithFlag(&aclgraphEvents_[i].event, ACL_EVENT_SYNC); // 申请全局唯一event对，但是此时还不能获取id
+            CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtCreateEventExWithFlag failed, ret[%d] event[%p].",
+                __func__, ret, aclgraphEvents_[i].event), HCCL_E_RUNTIME);
         }
     }
 
-    if (hostOrderStream == nullptr) {
-        aclgraphStreamMap_[modelId] = Stream(StreamType::STREAM_TYPE_ONLINE);
-        hostOrderStream = &(aclgraphStreamMap_[modelId]);
-        HCCL_INFO("[%s] modelId[%llu] group[%s] alloc streamId[%u]",
-                    __func__, modelId, group.c_str(), hostOrderStream->id());
-        CHK_PTR_NULL(hostOrderStream);
-        CHK_RET(AddStreamToModel(hostOrderStream->ptr(), rtModel));
-    }
-    HCCL_INFO("[%s] group[%s], modelId[%llu], streamId[%u]", __func__, group.c_str(), modelId, hostOrderStream->id());
-    CHK_RET(LaunchInOrder(group, kernelStream, *hostOrderStream, notify0, notify1, timeOut));
+    // kernelStream -> aclgraphStream_
+    ret = aclrtRecordEvent(aclgraphEvents_[index0].event, kernelStream.ptr());
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtRecordEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: kernelStreamId[%d]", __func__, kernelStream.id());
+
+    ret = aclrtStreamWaitEvent(aclgraphStream_->ptr(), aclgraphEvents_[index0].event);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtStreamWaitEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: orderStreamId[%d]",  __func__, aclgraphStream_->id());
+
+    HCCL_INFO("[%s] group[%s], orderStreamId[%u]", __func__, group.c_str(), aclgraphStream_->id());
+    CHK_RET(LaunchInOrder(group, kernelStream, *aclgraphStream_, notify0, notify1, timeOut));
+    return HCCL_SUCCESS;
+}
+
+// aclgraph模式下，接着在order stream上做record，再在kernel stream上做wait；解kernel stream的wait
+HcclResult OrderLaunch::AclgraphLaunchInOrderToKernelStream(std::string &group, const Stream& kernelStream)
+{
+    aclError ret = ACL_SUCCESS;
+    u32 index1 = static_cast<u32>(AicpuOrderEventIdx::ACLGRAPH_ORDER_EVENT_1);
+    ret = aclrtRecordEvent(aclgraphEvents_[index1].event, aclgraphStream_->ptr());
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtRecordEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtRecordEvent para: orderStreamId[%d]", __func__, aclgraphStream_->id());
+
+    ret = aclrtStreamWaitEvent(kernelStream.ptr(), aclgraphEvents_[index1].event);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[%s]aclrtStreamWaitEvent failed, ret[%d]", __func__, ret), HCCL_E_RUNTIME);
+    HCCL_CONFIG_INFO(HCCL_TASK, "[%s]aclrtStreamWaitEvent para: kernelStreamId[%d]", __func__, kernelStream.id());
+    HCCL_INFO("[%s] group[%s], kernelStreamId[%u]", __func__, group.c_str(), kernelStream.id());
+
     return HCCL_SUCCESS;
 }
 
@@ -158,7 +187,6 @@ HcclResult OrderLaunch::HcomLaunchInOrder(std::string &group, const Stream& kern
 HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelStream, const Stream &hostOrderStream,
     std::shared_ptr<LocalNotify> notify0, std::shared_ptr<LocalNotify> notify1, u32 timeOut) 
 {
-#ifndef CCL_KERNEL_AICPU
     aclError ret = ACL_SUCCESS;
     ret = aclrtWaitAndResetNotify(notify0->ptr(), kernelStream.ptr(), timeOut);
     CHK_PRT_RET(ret != ACL_SUCCESS,
@@ -179,7 +207,6 @@ HcclResult OrderLaunch::LaunchInOrder(std::string &group, const Stream &kernelSt
         __func__, ret, notify1->notifyId_, hostOrderStream.id(), timeOut), HCCL_E_RUNTIME);
     HCCL_CONFIG_INFO(HCCL_TASK, "[%s] aclrtWaitAndResetNotify para: notifyId[%u], streamId[%d], timeOut[%d s]",
         __func__, notify1->notifyId_, hostOrderStream.id(), timeOut);
-#endif
     return HCCL_SUCCESS;
 }
 }

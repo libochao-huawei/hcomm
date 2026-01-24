@@ -1,0 +1,1 @@
+../../../hccl_next/service/collective/coll_alg_params.h

@@ -7,25 +7,42 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #include "endpoint_pair.h"
+#include "socket_config.h"
+#include "hcomm_c_adpt.h"
+#include "orion_adpt_utils.h"
 
 namespace hcomm {
-EndPointPair::EndPointPair(EndPointHandle srcEndPoint, EndPointInfo dstEndPoint)
-    : srcEndPoint_(srcEndPoint), dstEndPoint_(dstEndPoint) {
-}
 
-EndPointPair::~EndPointPair()
+EndpointPair::~EndpointPair() 
 {
-    channels_.clear();
+    (void)HcommChannelDestroy(channelHandles_.data(), channelHandles_.size());
 }
 
-HcclResult EndPointPair::CreateChannel(CommEngineType engineType, const std::vector<MemRegion>& memRegions,
-    ChannelHandle* channel) {
+HcclResult EndpointPair::Init()
+{
+    printf("EndpointPair::Init 000\n");
+    EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
+    channelHandles_.clear();
     return HCCL_SUCCESS;
 }
 
-HcclResult EndPointPair::GetRemoteMemoryInfo(std::vector<MemRegion>& remoteMemories) {
-    remoteMemories = remoteMemories_;
+HcclResult EndpointPair::GetSocket(const std::string &socketTag, Hccl::Socket*& socket)
+{
+    Hccl::LinkData linkData = BuildDefaultLinkData();
+    CHK_RET(EndpointDescPairToLinkData(localEndpointDesc_, remoteEndpointDesc_, linkData));
+    Hccl::SocketConfig socketConfig = Hccl::SocketConfig(linkData, socketTag);
+    CHK_RET(socketMgr_->GetSocket(socketConfig, socket));
     return HCCL_SUCCESS;
 }
+
+HcclResult EndpointPair::CreateChannel(EndpointHandle endpointHandle, CommEngine engine, 
+        HcommChannelDesc *channelDescs, ChannelHandle *channels)
+{
+    CHK_RET(HcommChannelCreate(endpointHandle, engine, channelDescs, 1, channels));
+    channelHandles_.push_back(channels[0]);
+    return HCCL_SUCCESS;
 }
+
+} // namespace hcomm

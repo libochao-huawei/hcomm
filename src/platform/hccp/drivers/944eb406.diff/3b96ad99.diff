@@ -1,0 +1,49 @@
+From 3b96ad992276bb3d6f0d4f0220615e11b6de9450 Mon Sep 17 00:00:00 2001
+From: c00922186 <c00922186@huawei.com>
+Date: Thu, 8 Jan 2026 17:32:21 +0800
+Subject: [PATCH] DTS:DTS2025121565085 Description:[ICSL]bugfix recv_sge_idx
+ out of range
+
+Team:OTHERS
+Feature or Bugfix:Bugfix
+
+Change-Id: I8caaf68850da346d9121206486349941944eb406
+Signed-off-by: c00922186 <c00922186@huawei.com>
+---
+ hccp/rdma_service/rs_ping_roce.c                | 4 ++--
+ orion/hcomm_dev/rdma_service/ctx/rs_ping_urma.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/hccp/rdma_service/rs_ping_roce.c b/hccp/rdma_service/rs_ping_roce.c
+index 4844a9fd4..b7093bb34 100644
+--- a/hccp/rdma_service/rs_ping_roce.c
++++ b/hccp/rdma_service/rs_ping_roce.c
+@@ -906,8 +906,8 @@ STATIC int RsPongPostSend(struct RsPingCtxCb *pingCb, struct ibv_wc *wc, struct
+ 
+     // handle detect packet & send response packet
+     recvSgeIdx = (uint32_t)wc->wr_id;
+-    if (recvSgeIdx > pingCb->pingQp.recvMrCb.sgeNum) {
+-        hccp_err("param err recv_sge_idx:%u > sge_num:%u", recvSgeIdx, pingCb->pingQp.recvMrCb.sgeNum);
++    if (recvSgeIdx >= pingCb->pingQp.recvMrCb.sgeNum) {
++        hccp_err("param err recv_sge_idx:%u >= sge_num:%u", recvSgeIdx, pingCb->pingQp.recvMrCb.sgeNum);
+         return -EIO;
+     }
+     (void)memcpy_s(&recvList, sizeof(struct ibv_sge),
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ping_urma.c b/orion/hcomm_dev/rdma_service/ctx/rs_ping_urma.c
+index bebc50a45..7efd2013c 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ping_urma.c
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ping_urma.c
+@@ -958,8 +958,8 @@ STATIC int rs_pong_jetty_post_send(struct RsPingCtxCb *ping_cb, urma_cr_t *cr, s
+ 
+     // handle detect packet & send response packet
+     recv_sge_idx = (uint32_t)cr->user_ctx;
+-    if (recv_sge_idx > ping_cb->ping_jetty.recv_seg_cb.sge_num) {
+-        hccp_err("param err recv_sge_idx:%u > sge_num:%u", recv_sge_idx, ping_cb->ping_jetty.recv_seg_cb.sge_num);
++    if (recv_sge_idx >= ping_cb->ping_jetty.recv_seg_cb.sge_num) {
++        hccp_err("param err recv_sge_idx:%u >= sge_num:%u", recv_sge_idx, ping_cb->ping_jetty.recv_seg_cb.sge_num);
+         return -EIO;
+     }
+     (void)memcpy_s(&recv_list, sizeof(urma_sge_t),
+-- 
+2.45.2.huawei.10
+

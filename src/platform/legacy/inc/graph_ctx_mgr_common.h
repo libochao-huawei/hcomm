@@ -9,8 +9,8 @@
  */
 
 
-#ifndef GRAPH_CTX_MGR_COMMON_H
-#define GRAPH_CTX_MGR_COMMON_H
+#ifndef HCOMM_GRAPH_CTX_MGR_COMMON_H
+#define HCOMM_GRAPH_CTX_MGR_COMMON_H
 
 #include <hccl/hccl_types.h>
 #include <hccl/base.h>
@@ -46,4 +46,4 @@ extern HcclResult GraphAddWaitTaskById(void *fftsPubInfo, void *ctx, uint32_t st
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif  // GRAPH_CTX_MGR_COMMON_H
+#endif  // HCOMM_GRAPH_CTX_MGR_COMMON_H

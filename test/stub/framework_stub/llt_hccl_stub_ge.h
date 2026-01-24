@@ -98,7 +98,7 @@ class ComputeGraphImpl {
   void SetInputSize(uint32_t size) { input_size_ = size; }
   uint32_t GetInputSize() const { return input_size_; }
 
-  // false: known shape  true: unknow shape
+  // false: known shape  true: unknown shape
   bool GetGraphUnknownFlag() const { return is_unknown_shape_graph_; }
   void SetGraphUnknownFlag(bool flag) { is_unknown_shape_graph_ = flag; }
   void SetNeedIteration(bool need_iteration) { need_iteration_ = need_iteration; }

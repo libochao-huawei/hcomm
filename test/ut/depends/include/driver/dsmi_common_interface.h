@@ -147,7 +147,7 @@ typedef enum {
 typedef enum {
     DSMI_UPGRADE_MAIN_TYPE_VERSION = 0,
     DSMI_UPGRADE_MAIN_TYPE_PARTITION,
-    DSMI_UPGRADE_MAIN_TYPE_REG_PROG_PKG_INFO, // register program package infomation
+    DSMI_UPGRADE_MAIN_TYPE_REG_PROG_PKG_INFO, // register program package information
     DSMI_UPGRADE_SUB_TYPE_FW_VERIFY,
     DSMI_UPGRADE_MAIN_TYPE_CRL,
     /* Basic version information of the BOM, which is written in the fixed area of
@@ -317,7 +317,7 @@ typedef void (*fault_event_handler)(unsigned int faultcode,
 
 #define DSMI_SOC_DIE_LEN 5
 struct dsmi_soc_die_stru {
-    unsigned int soc_die[DSMI_SOC_DIE_LEN]; /**< 5 soc_die arrary sizet */
+    unsigned int soc_die[DSMI_SOC_DIE_LEN]; /**< 5 soc_die array sizet */
 };
 struct dsmi_power_info_stru {
     unsigned short power;
@@ -493,9 +493,9 @@ typedef struct dsmi_lp_work_tops_stru {
 struct dsmi_lp_each_tops_details {
     unsigned int work_tops;     /* it is a index for aic_tops */
     unsigned int aic_tops;      /* just as 4T/8T/8Tx/16T */
-    unsigned int aic_freq;      /* AI core frequence */
+    unsigned int aic_freq;      /* AI core frequency */
     unsigned int aic_vol;       /* AI core voltage */
-    unsigned int cpu_freq;      /* CPU frequence */
+    unsigned int cpu_freq;      /* CPU frequency */
     unsigned int cpu_vol;       /* CPU voltage */
     unsigned char reserve[DSMI_LP_WORK_TOPS_RESERVE];
 };
@@ -1288,7 +1288,7 @@ typedef struct ts_utilization_rate_info {
 } TS_UTILIZATION_RATE;
 
 typedef struct ts_utilization_block_info {
-    unsigned int array_len;         // Core utilization array length setted by user
+    unsigned int array_len;         // Core utilization array length set by user
     unsigned int valid_core_num;    // Numbers of valid cores
     TS_UTILIZATION_RATE core_util_array[CORE_UTIL_ARR_MAX_LEN];  // Structure array which store the core utilization
 } TS_UTILIZATION_BLOCK;
@@ -1503,7 +1503,7 @@ struct dsmi_ecc_pages_stru {
     unsigned int isolated_pages_double_bit_error;
 };
 
-#define DSMI_MAX_VDEV_NUM 16 /**< max number a device can spilts */
+#define DSMI_MAX_VDEV_NUM 16 /**< max number a device can splits */
 #define DSMI_MAX_SPEC_RESERVE 8
 
 #define DSMI_VDEV_RES_NAME_LEN 16
@@ -1823,7 +1823,7 @@ struct qos_master_config {
     int qos;
     int pmg;
     unsigned long long bitmap[4]; /* max support 64 * 4  */
-    unsigned int mode; /* 0 -- regs vaild, 1 -- smmu vaild, 2 -- sqe vaild */
+    unsigned int mode; /* 0 -- regs valid, 1 -- smmu valid, 2 -- sqe valid */
     int reserved[QOS_CFG_RESERVED_LEN - 1];
 };
 
@@ -1832,8 +1832,8 @@ struct qos_gbl_config {
     unsigned int autoqos_fuse_en;         /* 0--enable, 1--disable */
     unsigned int mpamqos_fuse_mode;       /* 0--average, 1--max, 2--replace */
     unsigned int mpam_subtype;            /* 0--all, 1--wr, 2--rd, 3--none */
-    unsigned int lqos_retry_start_thres;  /* 0 is invaild */
-    unsigned int lqos_retry_stop_thres;   /* 0 is invaild */
+    unsigned int lqos_retry_start_thres;  /* 0 is invalid */
+    unsigned int lqos_retry_stop_thres;   /* 0 is invalid */
     int reserved[QOS_CFG_RESERVED_LEN - 2];
 };
 
@@ -2259,7 +2259,7 @@ DLLEXPORT int dsmi_upgrade_get_component_static_version(int device_id, DSMI_COMP
 * @attention The address of the second parameter version number is applied by the user,
              the module only performs non-null check on it, and the size is guaranteed by the user
 * @param [in] device_id  The device id
-* @param [in] version_len  length of paramer version_str
+* @param [in] version_len  length of parameter version_str
 * @param [out] version_str  User-applied space stores system version number
 * @param [out] ret_len  The space requested by the user is used to store the effective
                length of the returned system version number
@@ -2778,7 +2778,7 @@ DLLEXPORT int dsmi_get_mini2mcu_heartbeat_status(int device_id, unsigned char *s
 * @brief Queries the frequency, total capacity, used capacity, temperature, and usage of the hbm.
 * @attention NULL
 * @param [in] device_id  The device id
-* @param [out] pdevice_hbm_info return hbm infomation
+* @param [out] pdevice_hbm_info return hbm information
 * @return  0 for success, others for fail
 * @note Support:Ascend910,Ascend910B,Ascend910_93
 */
@@ -2886,7 +2886,7 @@ DLLEXPORT int dsmi_clear_user_config(int device_id, const char *config_name);
 * @brief Get the DIE ID of the specified device
 * @attention NULL
 * @param [in] device_id  The device id
-* @param [out] pdevice_die  return die id infomation
+* @param [out] pdevice_die  return die id information
 * @return  0 for success, others for fail
 * @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
 */
@@ -2972,7 +2972,7 @@ DLLEXPORT int dsmi_get_sensorhub_config(int device_id, struct dsmi_sensorhub_con
  * @ingroup driver
  * @brief: get hiss status info
  * @param [in] device_id device id, not userd  default 0
- * @param [out] hiss_status_data hiss status infomation
+ * @param [out] hiss_status_data hiss status information
  * @return  0 for success, others for fail
  * @note Support:Ascend610,Ascend910B,Ascend910_93,bs9sx1a,as31xm1,Ascend610Lite,Ascend910_95,Ascend910_55
  */
@@ -3128,7 +3128,7 @@ DLLEXPORT int dsmi_destroy_vdevice(unsigned int devid, unsigned int vdevid);
 * @brief get resource info
 * @attention used on host side
 * @param [in] devid       device id
-* @param [in] para        intput para needed including type and id
+* @param [in] para        input para needed including type and id
 * @param [out] info       resource info including buffer and buffer len
 * @return  0 for success, others for fail
 * @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
@@ -3309,10 +3309,10 @@ struct dsmi_sdid_parse_info {
 
 /**
 * @ingroup driver
-* @brief get the parsed SDID infomation
+* @brief get the parsed SDID information
 * @attention Not supported called in split mode, do not check validity for sdid;
 * @param [in]  sdid SDID
-* @param [out] sdid_parse  Parsed SDID infomation
+* @param [out] sdid_parse  Parsed SDID information
 * @return   0 for success, others for fail
 * @note Support:Ascend910B,Ascend910_93,Ascend910_95
 */

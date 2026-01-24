@@ -51,7 +51,7 @@ public:
 
     std::vector<std::unique_ptr<CommBase> > CreateCommP2PAsync(const std::string &tag,
         const DeviceMem& inputMem, const DeviceMem& outputMem, const u32 dstUserRank, u32& status);
-    HcclResult CreateCommP2PQuerry(std::vector<std::unique_ptr<CommBase> >& comm, u32& status);
+    HcclResult CreateCommP2PQuarry(std::vector<std::unique_ptr<CommBase> >& comm, u32& status);
     // 创建单层通信域
     HcclResult CreateCommPlane(const std::string &tag,
                                const DeviceMem &inputMem,

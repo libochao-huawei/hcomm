@@ -88,7 +88,7 @@ HcclResult CollAlltoAllMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize,
         (isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType != HcclCMDType::HCCL_CMD_ALLTOALLV)
         || (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV)) {
         CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_WARNING("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+            HCCL_WARNING("[CollAlltoAllMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
             blockDim_, blockDim), HCCL_E_PARA);
     } else if ((isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType == HcclCMDType::HCCL_CMD_ALLTOALLV)
         || (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && cmdType != HcclCMDType::HCCL_CMD_ALLTOALLV)) {
@@ -128,7 +128,7 @@ HcclResult CollAlltoAllMeshAivExecutor::Orchestrate(OpParam& param, AlgResourceR
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollAlltoAllMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AlltoAll executor orchestrate success, take time [%lld]us.",
@@ -180,7 +180,7 @@ HcclResult CollAlltoAllMeshAivExecutor::GetAivExecParam(const OpParam& param, Al
     args.unitSize = SIZE_TABLE[param.All2AllDataDes.sendType];
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAlltoAllMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AlltoAll executor getalgexecparam success, take time [%lld]us.",
@@ -228,6 +228,8 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), 0, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
 
@@ -241,7 +243,7 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
         blockDim_ = blockDim;
         resourceArgs.blockDim = blockDim_;
         if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
         }
         ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
     } else if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALLVC || param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
@@ -266,7 +268,7 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
         blockDim_ = blockDim;
         resourceArgs.blockDim = blockDim_;
         if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
         }
         ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo);
     } else {
@@ -285,7 +287,7 @@ HcclResult CollAlltoAllMeshAivExecutor::KernelRun(const OpParam &param, ExecMem 
         blockDim_ = blockDim;
         resourceArgs.blockDim = blockDim_;
         if (aivClearEnable_) {
-            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+            ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
         }
         ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo);
     }

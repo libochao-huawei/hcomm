@@ -3977,7 +3977,7 @@ TEST_F(OpbaseTest, st_HcclGetErrorString)
     EXPECT_EQ("call network api fail", std::string(HcclGetErrorString(HCCL_E_NETWORK)));
     EXPECT_EQ("error cqe", std::string(HcclGetErrorString(HCCL_E_REMOTE)));
     EXPECT_EQ("call network api fail", std::string(HcclGetErrorString(HCCL_E_NETWORK)));
-    EXPECT_EQ("unknow error", std::string(HcclGetErrorString(HCCL_E_RESERVED)));
+    EXPECT_EQ("unknown error", std::string(HcclGetErrorString(HCCL_E_RESERVED)));
 }
 
 TEST_F(OpbaseTest, st_hcclGetRootInfo_single_server_success_normal_9)
@@ -5588,7 +5588,7 @@ TEST_F(OpbaseTest, st_topoInfoExchangeServer_timeout)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_TIMEOUT));
-    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectionedRank)
+    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectedRank)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -5621,7 +5621,7 @@ TEST_F(OpbaseTest, st_topoInfoExchangeServer_ErrTCP)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_TCP_CONNECT));
-    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectionedRank)
+    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectedRank)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -6439,7 +6439,7 @@ TEST_F(OpbaseTest, st_GroupLeaderAccept_When_Accept_E_Connect_Then_ReturnE_Conne
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_TCP_CONNECT));
-    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectionedRank)
+    MOCKER_CPP(&TopoInfoExchangeServer::DisplayConnectedRank)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
@@ -6455,50 +6455,6 @@ TEST_F(OpbaseTest, st_GroupLeaderAccept_When_Accept_E_Connect_Then_ReturnE_Conne
     ret = topoExServer.GroupLeaderConnect(connectSockets);
     EXPECT_EQ(ret, HCCL_E_TCP_CONNECT);
 
-    GlobalMockObject::verify();
-}
-
-TEST_F(OpbaseTest, ut_HcclSetCommConfig_NOT_SUPPORT)
-{   HcclComm newcomm;
-    HcclConfig config{HCCL_DETERMINISTIC};
-    HcclConfigValue configValue{0};
-    //HCCL_ACCELERATOR
-    auto ret = HcclSetCommConfig(newcomm, config, configValue);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-    GlobalMockObject::verify();
-}
-
-TEST_F(OpbaseTest, ut_HcclSetCommConfig_HCCL_SUCCESS)
-{
-    hcclComm test;
-    HcclComm newcomm = &test;
-    HcclConfig config{HCCL_ACCELERATOR};
-    HcclConfigValue configValue{0};
-
-    auto ret = HcclSetCommConfig(newcomm, config, configValue);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-    GlobalMockObject::verify();
-}
-
-TEST_F(OpbaseTest, ut_HcclGetCommConfig_NOT_SUPPORT)
-{   HcclComm newcomm;
-    HcclConfig config{HCCL_DETERMINISTIC};
-    HcclConfigValue configValue{0};
-    //HCCL_ACCELERATOR
-    auto ret = HcclGetCommConfig(newcomm, config, &configValue);
-    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
-    GlobalMockObject::verify();
-}
-
-TEST_F(OpbaseTest, ut_HcclGetCommConfig_HCCL_SUCCESS)
-{
-    hcclComm test;
-    HcclComm newcomm = &test;
-    HcclConfig config{HCCL_ACCELERATOR};
-    HcclConfigValue configValue{0};
-
-    auto ret = HcclGetCommConfig(newcomm, config, &configValue);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
     GlobalMockObject::verify();
 }
 #endif

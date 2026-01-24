@@ -91,7 +91,7 @@ int ReadFileToBuf(const char *path, char *content, unsigned int *contentLen)
 out:
     retVal = fclose(readFile);
     if (retVal) {
-        roce_warn("fclose fail, retVal:%d, errno:%d", retVal, errno);
+        roce_warn("fclose failed, retVal:%d, errno:%d", retVal, errno);
     }
 
     return ret;
@@ -151,7 +151,7 @@ int WriteBufToFile(const unsigned char *buf, unsigned int bufLen, const char *fi
 
     ret = chmod(file, mode);
     if (ret != 0) {
-        roce_err("file[%s] chmod fail, errno: %d.", file, ret);
+        roce_err("file[%s] chmod failed, errno: %d.", file, ret);
         RemoveFile(file);
     }
     return ret;
@@ -203,7 +203,7 @@ int CheckFilePath(const char *path, mode_t mode)
             }
             ret = chmod(realConfPath, mode);
             if (ret != 0) {
-                roce_err("file[%s] chmod fail, errno: %d.", realConfPath, ret);
+                roce_err("file[%s] chmod failed, errno: %d.", realConfPath, ret);
             }
             return ret;
         }
@@ -356,7 +356,7 @@ STATIC int CfgInnerReadConf(const char *confPath, const char *confName, char *co
 
     fp = fopen(realConfPath, "r");
     if (fp == NULL) {
-        roce_err("Open configure file fail errno[%d] real_conf_path[%s]", errno, realConfPath);
+        roce_err("Open configure file failed errno[%d] real_conf_path[%s]", errno, realConfPath);
         return FILE_OPT_SYS_READ_FILE_ERR;
     }
 
@@ -377,7 +377,7 @@ STATIC int CfgInnerReadConf(const char *confPath, const char *confName, char *co
     ret = CfgInnerReadConfByfd(fp, confName, confValue, len);
 out:
     retVal = fclose(fp);
-    FILE_CHECK_RET_WITHOUT_RETURN(retVal, "fclose fail, retVal:%d, errno:%d", retVal, errno);
+    FILE_CHECK_RET_WITHOUT_RETURN(retVal, "fclose failed, retVal:%d, errno:%d", retVal, errno);
     fp = NULL;
     return ret;
 }
@@ -393,7 +393,7 @@ int FileReadCfg(const char *filePath, int devId, const char *confName, char *con
 
     ret = sprintf_s(conf, CONLINE_LEN, "%s_%d", confName, devId);
     if (ret <= 0) {
-        roce_err("conf str op fail! ret[%d] conf_name[%s] dev_id[%d]", ret, confName, devId);
+        roce_err("conf str op failed! ret[%d] conf_name[%s] dev_id[%d]", ret, confName, devId);
         return -EINVAL;
     }
 
@@ -405,7 +405,7 @@ int FileReadCfg(const char *filePath, int devId, const char *confName, char *con
         roce_warn("cfg_inner_read_conf unsuccessful ret[%d]", ret);
         return ret;
     } else if (ret != 0) {
-        roce_err("cfg_inner_read_conf fail! ret[%d] conf[%s] conf_value[%s]", ret, conf, confValue);
+        roce_err("cfg_inner_read_conf failed! ret[%d] conf[%s] conf_value[%s]", ret, conf, confValue);
         return ret;
     }
 

@@ -104,7 +104,7 @@ inline std::string AicpuKfcRpcServer::GetMsgTypeString(uint8_t msgType)
     if (msgType == RANK_TAIL_TIME) {
         return "EndNotify";
     }
-    return "unkown";
+    return "unknown";
 }
 
 #pragma GCC push_options

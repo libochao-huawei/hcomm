@@ -14,7 +14,7 @@
 extern "C" {
 #endif  // __cplusplus
 
-HcclResult __attribute__((weak)) HcclCommDestroyV2(HcclComm comm);
+HcclResult HcclCommDestroyV2(HcclComm comm);
 
 HcclResult __attribute__((weak)) HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, HcclComm *comm);
 
@@ -107,6 +107,72 @@ HcclResult __attribute__((weak)) HcclSetConfigV2(HcclConfig config, HcclConfigVa
 HcclResult __attribute__((weak)) HcclGetConfigV2(HcclConfig config, HcclConfigValue *configValue);
 
 HcclResult __attribute__((weak)) HcclBarrierV2(HcclComm comm, aclrtStream stream);
+
+HcclResult __attribute__((weak)) HcclGetHeterogModeV2(HcclComm comm, HcclHeterogMode *mode);
+
+HcclResult __attribute__((weak)) HcclGetRankGraphV2(HcclComm *comm, void **rankGraph);
+
+HcclResult __attribute__((weak)) HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType);
+
+
+HcclResult __attribute__((weak)) HcommFlushV2();
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+HcclResult __attribute__((weak)) HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
+
+HcclResult __attribute__((weak)) HcclGetInstSizeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
+
+HcclResult __attribute__((weak)) HcclGetInstTopoTypeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *topoType);
+
+HcclResult __attribute__((weak)) CommGetCCLBufSizeCfgV2(HcclComm comm, uint64_t *cclBufSize);
+
+HcclResult __attribute__((weak)) HcclGetInstRanksByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum);
+
+HcclResult __attribute__((weak)) HcclGetInstSizeListByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+
+HcclResult __attribute__((weak)) HcclGetLinksV2(HcclComm comm, uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink **linkList, uint32_t *listSize);
+
+HcclResult __attribute__((weak)) HcclGetTopoInstsByLayerV2(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
+
+HcclResult __attribute__((weak)) HcclGetTopoTypeV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
+
+HcclResult __attribute__((weak)) HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
+
+HcclResult __attribute__((weak)) HcclRankGraphGetEndpointNumV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num);
+
+HcclResult __attribute__((weak)) HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
+
+HcclResult __attribute__((weak)) HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+
+HcclResult __attribute__((weak)) HcclGetOpArgsV2(void **opArgs);
+ 	 
+HcclResult __attribute__((weak)) HcclFreeOpArgsV2(void *opArgs);
+
+HcclResult __attribute__((weak)) HcclSetOpSrcDataTypeV2(void *opArgs, uint8_t srcDataType);
+
+HcclResult __attribute__((weak)) HcclSetOpDstDataTypeV2(void *opArgs, uint8_t dstDataType);
+
+HcclResult __attribute__((weak)) HcclSetOpReduceTypeV2(void *opArgs, uint32_t reduceType);
+
+HcclResult __attribute__((weak)) HcclSetOpCountV2(void *opArgs, uint64_t count);
+
+HcclResult __attribute__((weak)) HcclSetOpAlgConfigV2(void *opArgs, char *algConfig);
+
+HcclResult __attribute__((weak)) HcclSetOpCommEngineV2(void *opArgs, uint8_t commEngine);
+
+HcclResult __attribute__((weak)) HcclCommResPrepareV2(HcclComm comm, char *opName, void *opArgs, void **addr);
+
+HcclResult __attribute__((weak)) HcclDevMemAcquireV2(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
+
+HcclResult __attribute__((weak)) HcclGetHcclBufferV2(HcclComm comm, void **addr, uint64_t *size);
+
+HcclResult __attribute__((weak)) HcclGetRemoteIpcHcclBufV2(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
+
+HcclResult __attribute__((weak)) HcclGetAicpuOpStreamAndNotifyV2(HcclComm comm, rtStream_t *opstream, u8 aicpuNotifyNum, void **aicpuNotify);
+
+typedef int32_t(Callback)(uint64_t, int32_t);
+HcclResult __attribute__((weak)) HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
+HcclResult __attribute__((weak)) HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
+#endif
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

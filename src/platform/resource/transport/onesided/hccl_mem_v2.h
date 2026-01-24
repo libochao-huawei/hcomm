@@ -15,7 +15,6 @@
 #include "hccl_mem_defs.h"
 #include <stdint.h>
 
-#ifndef OPEN_BUILD_PROJECT
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -29,5 +28,5 @@ HcclResult __attribute__((weak)) HcclMemCloseV2(HcclBuf *buf);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif  // OPEN_BUILD_PROJECT 
+
 #endif  // HCCL_MEM_V2_H 

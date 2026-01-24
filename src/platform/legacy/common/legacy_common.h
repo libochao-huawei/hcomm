@@ -21,7 +21,7 @@
 #include "acl/acl_rt.h"
 #include "rt_external.h"
 
-// 2 is sizeof(float16), 8 is sizeof(float64), 2 is sizeof(bfloat16)..
+// 2 is sizeof(float16), 8 is sizeof(float64), 16 is sizeof(int128)..
 constexpr u32 LEGACY_SIZE_TABLE[HCCL_DATA_TYPE_RESERVED] = {sizeof(s8), sizeof(s16), sizeof(s32),
     2, sizeof(float), sizeof(s64), sizeof(u64), sizeof(u8), sizeof(u16), sizeof(u32), 8, 2, 16};
 
@@ -112,7 +112,7 @@ extern HcclResult LaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t bl
         aclrtStream stream, aclrtLaunchKernelCfg *cfg, aclrtArgsHandle argsHandle, void *reserve);
 extern HcclResult NotifyGetAddr(void *signal, u64 *notifyAddr);
 extern HcclResult GetNotifyID(void *signal, u32 *notifyID);
-extern HcclResult FftsPlusTaskLaunchWithFlag(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rtStream_t stm, u32 flag);
+extern HcclResult FftsPlusTaskLaunch(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rtStream_t stm);
 extern HcclResult LegacyParseDebugConfig();
 extern const u64& GetExterInputDebugConfigLegacy();
 extern std::string LegacyGetDataTypeEnumStr(HcclDataType dataType);

@@ -11,6 +11,7 @@
 #define COLL_COMM_RES_C_ADPT_H
 
 #include <cstdint>
+#include "hccl/hccl_res.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,10 +24,11 @@ extern "C" {
 /**
  * @note 非对外接口声明示例
  * @code {.c}
- * extern HcclResult HcclAllocThreadRes(HcclComm comm, CommEngine engine, uint32_t threadNum,
- *     uint32_t notifyNumPerThread, ThreadHandle *thread);
+ * extern HcclResult HcclThreadAcquire(HcclComm comm, CommEngine engine, uint32_t threadNum,
+ *     uint32_t notifyNumPerThread, ThreadHandle *threads);
  * @endcode
  */
+
 #ifdef __cplusplus
 }
 #endif

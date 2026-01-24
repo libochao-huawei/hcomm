@@ -20,29 +20,52 @@
 extern "C" {
 #endif  // __cplusplus
 
-typedef uint64_t NotifyHandle;
-
+#ifndef CHANNEL_HANDLE_DEFINED
+#define CHANNEL_HANDLE_DEFINED
 /**
- * @brief 通道句柄类型（不透明结构）
- * @warning
+ * @brief 通道句柄类型
  */
 typedef uint64_t ChannelHandle;
+#endif
 
-
+#ifndef THREAD_HANDLE_DEFINED
+#define THREAD_HANDLE_DEFINED
 /**
- * @brief 线程句柄类型（不透明结构）
+ * @brief 线程句柄类型
  */
 typedef uint64_t ThreadHandle;
+#endif
 
- /**
- * @brief 下发模式
- * @warning
- */
 typedef enum {
-    LAUNCH_MODE_RESERVED = -1, ///< 保留的下发模式
-    LAUNCH_MODE_EAGER = 0,     ///< 直接下发模式（实时执行）
-    LAUNCH_MODE_BATCH          ///< 批量下发模式（延迟合并执行）
-} LaunchMode;
+    HCOMM_REDUCE_SUM = 0,    /**< sum */
+    HCOMM_REDUCE_PROD = 1,   /**< prod */
+    HCOMM_REDUCE_MAX = 2,    /**< max */
+    HCOMM_REDUCE_MIN = 3,    /**< min */
+    HCOMM_REDUCE_RESERVED = 255 /**< reserved */
+} HcommReduceOp;
+
+typedef enum {
+    HCOMM_DATA_TYPE_INT8 = 0,    /**< int8 */
+    HCOMM_DATA_TYPE_INT16 = 1,   /**< int16 */
+    HCOMM_DATA_TYPE_INT32 = 2,   /**< int32 */
+    HCOMM_DATA_TYPE_FP16 = 3,    /**< fp16 */
+    HCOMM_DATA_TYPE_FP32 = 4,    /**< fp32 */
+    HCOMM_DATA_TYPE_INT64 = 5,    /**< int64 */
+    HCOMM_DATA_TYPE_UINT64 = 6,    /**< uint64 */
+    HCOMM_DATA_TYPE_UINT8 = 7,    /**< uint8 */
+    HCOMM_DATA_TYPE_UINT16 = 8,   /**< uint16 */
+    HCOMM_DATA_TYPE_UINT32 = 9,   /**< uint32 */
+    HCOMM_DATA_TYPE_FP64 = 10,    /**< fp64 */
+    HCOMM_DATA_TYPE_BFP16 = 11,    /**< bfp16 */
+    HCOMM_DATA_TYPE_INT128 = 12,   /**< int128 */
+#ifndef OPEN_BUILD_PROJECT
+    HCOMM_DATA_TYPE_HIF8 = 14,     /**< hif8 */
+    HCOMM_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
+    HCOMM_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
+    HCOMM_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
+#endif
+    HCOMM_DATA_TYPE_RESERVED = 255 /**< reserved */
+} HcommDataType;
 
 /**
  * @defgroup 数据面编程接口
@@ -60,11 +83,10 @@ typedef enum {
  * @param[out] dst 目标地址
  * @param[in] src 源地址
  * @param[in] len 数据长度（字节）
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  * @note 源目内存地址要能执行引擎直接访问
- * @warning  是否需要将数据面接口的void *改为void，因为在较多场景存在地址不是直接访问的。
  */
-extern HcclResult HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len);
+extern int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len);
 
 /**
  * @brief 本地归约操作
@@ -74,13 +96,11 @@ extern HcclResult HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const v
  * @param[in] count 元素个数
  * @param[in] dataType 数据类型
  * @param[in] reduceOp 归约操作类型
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommLocalReduceOnThread(
-    ThreadHandle thread, void *dst, const void *src, uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp);
-
+extern int32_t HcommLocalReduceOnThread(
+    ThreadHandle thread, void *dst, const void *src, uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp);
 /** @} */  // 本地拷贝和规约
-
 
 /**
  * @name 本地线程间同步通知
@@ -92,22 +112,20 @@ extern HcclResult HcommLocalReduceOnThread(
  * @param[in] thread 线程句柄
  * @param[in] dstThread 目标线程句柄
  * @param[in] dstNotifyIdx 目标通知索引
- * @return HcclResult 执行结果状态码
- * @note 配合HcommInterThreadNotifyWaitOnThread使用
- * @warning
+ * @return int32_t 执行结果状态码
+ * @note 配合HcommThreadNotifyWaitOnThread使用
  */
-extern HcclResult HcommInterThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
+extern int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThread, uint32_t dstNotifyIdx);
 
 /**
  * @brief 本地等待通知
  * @param[in] thread 线程句柄
  * @param[in] notifyIdx 通知索引
  * @param[in] timeout 超时时间(毫秒)
- * @return HcclResult 执行结果状态码
- * @note 配合HcommInterThreadNotifyRecordOnThread使用
- * @warning
+ * @return int32_t 执行结果状态码
+ * @note 配合HcommThreadNotifyRecordOnThread使用
  */
-extern HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout);
+extern int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, uint32_t timeout);
 /** @} */  // 本地线程间同步通知
 
 /**
@@ -119,18 +137,18 @@ extern HcclResult HcommInterThreadNotifyWaitOnThread(ThreadHandle thread, uint32
  * @brief 记录通知事件（生产者）
  * @param[in] streamHandle 异步流句柄
  * @param[in] dstNotifyId 通知id
- * @return 执行状态码 HcclResult
+ * @return 执行状态码 int32_t
  */
-extern HcclResult HcommInterOpNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId);
+extern int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId);
 
 /**
  * @brief 等待通知事件（消费者）
  * @param[in] streamHandle 异步流句柄
  * @param[in] notifyId 通知id
  * @param[in] timeOut 超时时间
- * @return 执行状态码 HcclResult
+ * @return 执行状态码 int32_t
  */
-extern HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
+extern int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uint32_t timeOut);
 /** @} */  // 本地通知
 
 /**
@@ -145,25 +163,10 @@ extern HcclResult HcommInterOpNotifyWaitOnThread(ThreadHandle thread, uint64_t n
  * @param[out] dst 目标内存地址
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
- * @return HcclResult 执行结果状态码
- * @warning
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommWriteOnThread(
+extern int32_t HcommWriteOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
-
-/**
- * @brief 带通知的单边写操作
- * @param[in] thread 线程句柄
- * @param[in] channel 通道句柄
- * @param[out] dst 目标内存地址
- * @param[in] src 源内存地址
- * @param[in] len 数据长度（字节）
- * @param[in] notifyIdx 远端通知索引
- * @return HcclResult 执行结果状态码
- * @note 当前在A5上主要支持
- */
-extern HcclResult HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 归约写操作
@@ -174,10 +177,24 @@ extern HcclResult HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandl
  * @param[in] count 元素个数
  * @param[in] dataType 数据类型
  * @param[in] reduceOp 归约操作类型
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp);
+extern int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+    uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp);
+
+/**
+ * @brief 带通知的单边写操作
+ * @param[in] thread 线程句柄
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] len 数据长度（字节）
+ * @param[in] notifyIdx 远端通知索引
+ * @return int32_t 执行结果状态码
+ * @note 当前在A5上主要支持
+ */
+extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
+    uint64_t len, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 单边读操作
@@ -186,9 +203,9 @@ extern HcclResult HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle ch
  * @param[out] dst 目标内存地址
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommReadOnThread(
+extern int32_t HcommReadOnThread(
     ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
 /**
@@ -200,12 +217,45 @@ extern HcclResult HcommReadOnThread(
  * @param[in] count 元素个数
  * @param[in] dataType 数据类型
  * @param[in] reduceOp 归约操作类型
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
-    HcclDataType dataType, HcclReduceOp reduceOp);
-/** @} */  // 数据读写相关
+extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t count,
+    HcommDataType dataType, HcommReduceOp reduceOp);
 
+/**
+ * @brief 单边写操作
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] len 数据长度（字节）
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
+ 
+/**
+ * @brief 带通知的单边写操作
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] len 数据长度（字节）
+ * @param[in] notifyIdx 远端通知索引
+ * @return int32_t 执行结果状态码
+ * @note 当前在A5上主要支持
+ */
+extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
+    uint64_t len, uint32_t remoteNotifyIdx);
+ 
+/**
+ * @brief 单边读操作
+ * @param[in] channel 通道句柄
+ * @param[out] dst 目标内存地址
+ * @param[in] src 源内存地址
+ * @param[in] len 数据长度（字节）
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
+
+/** @} */  // 数据读写相关
 
 /**
  * @name 通知
@@ -217,9 +267,17 @@ extern HcclResult HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle cha
  * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
  * @param[in] remoteNotifyIdx 远端通知索引
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
+extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
+
+/**
+ * @brief 记录通知事件
+ * @param[in] channel 通道句柄
+ * @param[in] remoteNotifyIdx 远端通知索引
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 等待通知事件
@@ -227,9 +285,19 @@ extern HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle c
  * @param[in] channel 通道句柄
  * @param[in] localNotifyIdx 本地通知索引
  * @param[in] timeout 超时时间(毫秒)
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
+extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
+
+/**
+ * @brief 等待通知事件
+ * @param[in] channel 通道句柄
+ * @param[in] localNotifyIdx 本地通知索引
+ * @param[in] timeout 超时时间(毫秒)
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
+
 /** @} */  // 通知
 
 /**
@@ -238,14 +306,20 @@ extern HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle cha
  */
 
 /**
- * @brief 设置任务下发模式（批量或直接下发）
- * @param[in] launchId 下发Id
- * @param[in] mode 下发模式
- * @return HcclResult 执行结果状态码
- * @note 可运行在Host或Device上。
- * @warning
+ * @brief 批量模式执行开始
+ * @param batchTag 批量Id
+ * @return int32_t 执行结果状态码
+ * @note Start和End及中间的批量任务需要在同一个线程上执行
  */
-extern HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode);
+extern int32_t HcommBatchModeStart(const char *batchTag);
+
+/**
+ * @brief 批量模式执行结束
+ * @param batchTag 批量Id
+ * @return int32_t 执行结果状态码
+ * @note Start和End及中间的批量任务需要在同一个线程上执行
+ */
+extern int32_t HcommBatchModeEnd(const char *batchTag);
 
 /** @} */  // 批量下发设置接口
 
@@ -255,40 +329,67 @@ extern HcclResult HcommSetLaunchMode(const char *launchTag, LaunchMode mode);
 /**
  * @brief 获取通信域并加锁
  * @param[in] commId 通信域id
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  * @note 当前仅支持AICPU模式
  */
-extern HcclResult HcommAcquireComm(const char* commId);
+extern int32_t HcommAcquireComm(const char* commId);
 
 /**
  * @brief 释放通信域
  * @param[in] commId 通信域id
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  * @note 当前仅支持AICPU模式
  */
-extern HcclResult HcommReleaseComm(const char* commId);
+extern int32_t HcommReleaseComm(const char* commId);
+
+#define HCOMM_PRIMITIVES_H_MODIFIED
+
 
 /**
- * @brief 注册算子信息到通信域
- * @param[in] commId 通信域id
- * @param[in] opInfo 算子信息
- * @param[in] size 算子信息的数据长度
- * @return HcclResult 执行结果状态码
- * @note 当前仅支持AICPU模式
+ * @brief NPU上查询 rtsq任务执行完成的接口（阻塞）
+ * @param[in] thread NPU上执行的线程句柄
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommRegisterOpInfo(const char* commId, void* opInfo, uint32_t size);
+extern int32_t HcommThreadSynchronize(ThreadHandle thread);
+
+using MsgHandle = uint64_t;
 
 /**
- * @brief 注册taskException算子信息解析函数
- * @param[in] commId 通信域id
- * @param[in] callback 解析算子信息并输出字符数组的回调函数
- * @param[in] opInfo 算子信息存储的内存地址
- * @param[in] size 算子信息存储的内存长度
- * @return HcclResult 执行结果状态码
- * @note 当前仅支持AICPU模式
+ * @brief NPU 通过 HBM 共享内存向 DPU 发送同步消息（非阻塞）
+ * @param[in] handle 目的地址，位于 HBM 共享内存
+ * @param[in] msgTag 消息（算子任务）标签（char[256])
+ * @param[in] src 附加消息源地址
+ * @param[in] sizeByte 消息大小（字节）
+ * @param[out] msgId 消息 Id 指针
+ * @return int32_t 执行结果状态码
  */
-typedef void (*HcommGetOpInfoCallback)(const void *opInfo, char *outPut, size_t size);
-extern HcclResult HcommRegOpTaskException(const char* commId, HcommGetOpInfoCallback callback);
+extern int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void *src, size_t sizeByte, uint32_t *msgId);
+
+/**
+ * @brief NPU 通过 HBM 共享内存接收 DPU 同步消息（非阻塞）
+ * @param[in] handle 源地址，位于 HBM 共享内存
+ * @param[in] dst 读出数据的地址
+ * @param[in] sizeByte 数据大小（字节）
+ * @param[out] msgId 消息 Id 指针
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
+
+/**
+ * @brief DPU数据面flush接口，已架构师评审过
+ * @param[in] void
+ * @return int32_t 执行结果状态码
+*/
+extern int32_t HcommFlush();
+
+/**
+ * @brief 通信通道级内存屏障操作
+ * @param[in] channel 通道句柄
+ * @return int32_t 执行结果状态码
+ */
+extern int32_t HcommChannelFence(ChannelHandle channel);
+ 
+/** @} */  // 算子编程接口
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

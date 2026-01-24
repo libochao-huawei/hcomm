@@ -542,7 +542,7 @@ TEST_F(ExecutorTest, scatter_ring_01)
     delete tempAlg;
 }
 
-// root节点，input != ouput ,slice为空
+// root节点，input != output ,slice为空
 TEST_F(ExecutorTest, scatter_ring_02)
 {
     s32 ret = HCCL_SUCCESS;

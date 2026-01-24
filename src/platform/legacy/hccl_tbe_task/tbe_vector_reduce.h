@@ -89,6 +89,7 @@ public:
 
 protected:
     char *tilingDataHostPtr_{nullptr};
+    uint64_t tilingDataHostSize_{0};
     std::vector<char *> binaryDataPtrVec_;
     std::map<std::string, aclrtBinHandle> binaryLoadMap_;
     std::mutex stubFuncMutex_;

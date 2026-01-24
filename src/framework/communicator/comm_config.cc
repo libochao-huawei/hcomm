@@ -445,7 +445,7 @@ HcclResult CommConfig::SetConfigHcclRetryEnable(const CommConfigHandle &config)
     retryConfig.erase(std::remove(retryConfig.begin(), retryConfig.end(), ' '), retryConfig.end());
     if (retryConfig.empty()) {
         HCCL_WARNING("[%s] Hccl retry config is empty. The retryEnable of all levels is" \
-            "set by environment viable.", __func__);
+            "set by environment variable.", __func__);
         return HCCL_SUCCESS;
     }
     std::vector<std::string> retryEnables;
@@ -703,6 +703,11 @@ bool CommConfig::GetConfigExecTimeOutSet() const
 std::vector<HcclAlgoType> CommConfig::GetConfigHcclAlgo(HcclCMDType opType)
 {
     return algoConfig_[opType];
+}
+
+const std::map<HcclCMDType, std::vector<HcclAlgoType>>& CommConfig::GetConfigHcclAlgoMap() const
+{
+    return algoConfig_;
 }
  
 bool CommConfig::GetConfigIntraServerRetryEnable() const

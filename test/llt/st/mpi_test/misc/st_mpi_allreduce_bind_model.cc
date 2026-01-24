@@ -156,7 +156,7 @@ void* inter_all_reduce_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner fails", para_info->device_id);
     }
 
     bool swapped;
@@ -196,7 +196,7 @@ void* inter_all_reduce_task(void* parg)
 
         if (ret != HCCL_SUCCESS)
         {
-            HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
+            HCCL_ERROR("dev[%d] task HcclAllReduceInner fails", para_info->device_id);
         }
 
         rtError_t rt_ret = RT_ERROR_NONE;
@@ -204,7 +204,7 @@ void* inter_all_reduce_task(void* parg)
 
         if ( rt_ret != ACL_SUCCESS)
         {
-            HCCL_ERROR("rank[%d] task allgather falis", para_info->comm_id);
+            HCCL_ERROR("rank[%d] task allgather fails", para_info->comm_id);
         }
 
     }
@@ -249,7 +249,7 @@ void* all_reduce_8pring_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner fails", para_info->device_id);
     }
 
     bool swapped;
@@ -291,7 +291,7 @@ void* all_reduce_8pring_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduceInner falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduceInner fails", para_info->device_id);
     }
 
     rt_ret = rtModelExecute(model, exeStream.ptr(), 0);
@@ -304,7 +304,7 @@ void* all_reduce_8pring_task(void* parg)
 
     if ( rt_ret != ACL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", para_info->comm_id);
+        HCCL_ERROR("rank[%d] task allgather fails", para_info->comm_id);
     }
 
     ret = hcom_info.pComm->unbind_model(model);

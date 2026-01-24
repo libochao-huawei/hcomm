@@ -42,7 +42,7 @@ HcclResult CollBroadcastMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize
 {
     blockDim = rankSize; // 默认情况使用rankSize个AIV
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollBroadcastMeshAivExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollBroadcastMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollBroadcastMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -77,7 +77,7 @@ HcclResult CollBroadcastMeshAivExecutor::Orchestrate(OpParam& param, AlgResource
     ret = KernelRun(param, execMem);
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollBroadcastMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollBroadcastMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], Broadcast executor orchestrate success, take time [%lld]us",
@@ -134,10 +134,12 @@ HcclResult CollBroadcastMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs{};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
     ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);  // 执行kernelLaunch
     CHK_PRT_RET(ret != HCCL_SUCCESS,

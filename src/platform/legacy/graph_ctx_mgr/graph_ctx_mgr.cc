@@ -43,7 +43,7 @@ HcclResult RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint3
     rtFftsPlusAicAivCtx_t *ctx = reinterpret_cast<rtFftsPlusAicAivCtx_t *>(&comCtx);
 
     if (ctx->contextType != RT_CTX_TYPE_AIV && ctx->contextType != RT_CTX_TYPE_LABEL) {
-        HCCL_ERROR("ffts context type is invaild, expected:0x%x, actual:0x%x", RT_CTX_TYPE_AIV, ctx->contextType);
+        HCCL_ERROR("ffts context type is invalid, expected:0x%x, actual:0x%x", RT_CTX_TYPE_AIV, ctx->contextType);
         return HCCL_E_PARA;
     }
 
@@ -121,7 +121,7 @@ HcclResult RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 strea
 
     if (ctx->contextType != RT_CTX_TYPE_WRITE_VALUE && ctx->contextType != RT_CTX_TYPE_LABEL &&
             ctx->contextType != RT_CTX_TYPE_WRITE_VALUE_RDMA) {
-        HCCL_ERROR("ffts context type is invaild, expected:0x%x, actual:0x%x or 0x%x or 0x%x", ctx->contextType,
+        HCCL_ERROR("ffts context type is invalid, expected:0x%x, actual:0x%x or 0x%x or 0x%x", ctx->contextType,
             RT_CTX_TYPE_WRITE_VALUE, RT_CTX_TYPE_LABEL, RT_CTX_TYPE_WRITE_VALUE_RDMA);
         return HCCL_E_PARA;
     };
@@ -142,7 +142,7 @@ HcclResult RefreshFftsDescRdmaSend(HcclFftsContextsInfo *&fftsCtxsPtr, s32 strea
     } else {
         u64 dbAddrOrg = (static_cast<u64>(ctx->writeAddressBaseH) << 32) + ctx->writeAddressBaseL;
         if (dbAddrOrg != dbAddr) {
-            HCCL_ERROR("ffts context dbAddr is invaild, expected:0x%x, actual:0x%x", dbAddrOrg, dbAddr);
+            HCCL_ERROR("ffts context dbAddr is invalid, expected:0x%x, actual:0x%x", dbAddrOrg, dbAddr);
             return HCCL_E_PARA;
         }
     }
@@ -462,7 +462,7 @@ HcclResult ConstructFFtsNotifyWaitCtx(void *signal, rtFftsPlusNotifyCtx_t* ctx)
     return ConstructFftsNotifyCtx(notifyID, RT_CTX_TYPE_NOTIFY_WAIT, ctx);
 }
 
-HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId,
+HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId, u64 signalAddr,
     HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2)
 {
     EnsureFftsContextsSize(fftsCtxsPtr);
@@ -471,7 +471,7 @@ HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId,
 
     rtFftsPlusWriteValueCtx_t* ctx = reinterpret_cast<rtFftsPlusWriteValueCtx_t*>(&comCtx);
 
-    CHK_RET(ConstructFftsNotifyRecordRemoteCtx(signal, ctx));
+    CHK_RET(ConstructFftsNotifyRecordRemoteCtx(signal, ctx, signalAddr));
 
     if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::REMOTE_NOTIFY_RECORD, fftsCtxsPtr));
@@ -525,13 +525,15 @@ HcclResult UpdataFftsDescRelationship(s32 streamId, HcclFftsContextsInfo *&fftsC
     return HCCL_SUCCESS;
 }
 
-HcclResult ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx)
+HcclResult ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx, u64 signalAddr)
 {
     const u64 u64HighMask = 0xffffffff00000000;
     const u64 u64LowMask = 0x00000000ffffffff;
     const u32 shift = 32;
-    u64 notifyAddr = 0;
-    CHK_RET(NotifyGetAddr(signal, &notifyAddr));
+    u64 notifyAddr = signalAddr;
+    if (notifyAddr == LEGACY_INVALID_U64) {
+        CHK_RET(NotifyGetAddr(signal, &notifyAddr));
+    }
     ctx->contextType = RT_CTX_TYPE_WRITE_VALUE;
     ctx->successorNum = 0;
     ctx->aten = 0;

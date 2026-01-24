@@ -112,7 +112,7 @@ void* impl_common_all_gather_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
 
     bool swapped;
@@ -174,7 +174,7 @@ void* impl_common_all_gather_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task hcclall_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task hcclall_gather fails", para_info->device_id);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -182,7 +182,7 @@ void* impl_common_all_gather_task(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     for (s32 i = 0; i < stream_list_size; i++)
     {

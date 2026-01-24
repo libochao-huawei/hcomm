@@ -46,6 +46,7 @@ HcclResult GetDeviceType(LegacyDevType &deviceType)
 HcclResult Malloc(void **devPtr, u64 size)
 {
     CHK_PTR_NULL(devPtr);
+    CHK_PRT_RET((size == 0), HCCL_ERROR("Malloc size[%llu Byte] should be greater than 0.", size), HCCL_E_PARA);
     LegacyDevType devType;
     aclrtMallocConfig mallocConfig;
     aclrtMallocAttribute attriBute;
@@ -119,11 +120,12 @@ HcclResult BinaryGetFunction(const aclrtBinHandle binHandle, const char *kernelN
 {
     CHK_PTR_NULL(binHandle);
     CHK_PTR_NULL(kernelName);
+    CHK_PTR_NULL(funcHandle);
     aclError ret = aclrtBinaryGetFunction(binHandle, kernelName, funcHandle);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[aclrtBinaryGetFunction]binary get function failed,ret[%d]",
         ret), HCCL_E_RUNTIME);
-    CHK_PRT_RET(funcHandle == nullptr, HCCL_ERROR("[aclrtBinaryGetFunction]funcHandle is nullptr[%p]",
-        funcHandle), HCCL_E_RUNTIME);
+    CHK_PRT_RET(*funcHandle == nullptr, HCCL_ERROR("[aclrtBinaryGetFunction]funcHandle is nullptr[%p]",
+        *funcHandle), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }
 
@@ -234,7 +236,7 @@ HcclResult GetNotifyID(void *signal, u32 *notifyID)
     return HCCL_SUCCESS;
 }
 
-HcclResult FftsPlusTaskLaunchWithFlag(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rtStream_t stm, u32 flag)
+HcclResult FftsPlusTaskLaunch(rtFftsPlusTaskInfo_t *fftsPlusTaskInfo, rtStream_t stm)
 {
     CHK_PTR_NULL(fftsPlusTaskInfo);
     CHK_PTR_NULL(stm);

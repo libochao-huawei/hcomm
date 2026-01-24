@@ -12,7 +12,6 @@
 #include "log.h"
 #include "hccl/base.h"
 #include "coll_alg_utils.h"
-#include "comm_configer.h"
 
 namespace hccl {
 
@@ -59,22 +58,35 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
     AlgTypeLevel0 algType0 = AlgTypeLevel0::ALG_LEVEL0_RESERVED;
     AlgTypeLevel1 algType1 = AlgTypeLevel1::ALG_LEVEL1_RESERVED;
     AlgTypeLevel2 algType2 = AlgTypeLevel2::ALG_LEVEL2_RESERVED; // 第2层拓扑算法, 待梳理后考虑是否和第0层、第1层算法归一
-    
-    CommConfiger& commConfiger = CommConfiger::GetInstance();
-    HcclAlgoType algoConfigLevel0 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
-                                    [HCCL_ALGO_LEVEL_0];
-    HcclAlgoType algoConfigLevel1 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
-                                    [HCCL_ALGO_LEVEL_1];
-    HcclAlgoType algoConfigLevel2 = commConfiger.GetCommConfigAlgoConfig(algoAttr_.identifier, opType)
-                                    [HCCL_ALGO_LEVEL_2];
+
+    std::vector<HcclAlgoType> algoCommConfig = algoAttr_.commAlgoConfig[opType];
+    HcclAlgoType algoConfigLevel0 = algoCommConfig[HCCL_ALGO_LEVEL_0];
+    HcclAlgoType algoConfigLevel1 = algoCommConfig[HCCL_ALGO_LEVEL_1];
+    HcclAlgoType algoConfigLevel2 = algoCommConfig[HCCL_ALGO_LEVEL_2];
 
     bool isConfigAHC = (algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
                         algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);
 
     bool isConfigNULL = algoConfigLevel0 == HcclAlgoType::HCCL_ALGO_TYPE_NULL;
 
-    HCCL_INFO("[Set][AlgType] isConfigAHC[%u] isConfigNULL[%u] multiModuleDiffDeviceNumMode[%u] multiSuperPodDiffServerNumMode[%u]",
-        isConfigAHC, isConfigNULL, topoAttr_.multiModuleDiffDeviceNumMode, topoAttr_.multiSuperPodDiffServerNumMode);
+    HCCL_INFO("[Set][AlgType] isConfigAHC[%u] isConfigNULL[%u] multiModuleDiffDeviceNumMode[%u]"\
+        "multiSuperPodDiffServerNumMode[%u]  multiSuperPodDiffDeviceNumMode[%u]",isConfigAHC, isConfigNULL,
+        topoAttr_.multiModuleDiffDeviceNumMode, topoAttr_.multiSuperPodDiffServerNumMode, topoAttr_.multiSuperPodDiffDeviceNumMode);
+ 
+    bool isSupportCmdARS = (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
+        opType == HcclCMDType::HCCL_CMD_ALLREDUCE);
+ 
+    bool isSupportCmdAHC = (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
+        opType == HcclCMDType::HCCL_CMD_ALLREDUCE || opType == HcclCMDType::HCCL_CMD_ALL);
+    
+    // server内卡数不对称，且不是ARS的情况
+    bool isNoARS = (topoAttr_.multiModuleDiffDeviceNumMode && !(isSupportCmdARS && 
+        deviceType == DevType::DEV_TYPE_910_93 && !topoAttr_.multiSuperPodDiffDeviceNumMode));
+ 
+    // server内卡数对称, server内卡数不对称情况isNoARS已经讨论完毕；
+    // 超节点server非对称，且不是AHC的情况
+    bool isNoAHC = (!topoAttr_.multiModuleDiffDeviceNumMode && topoAttr_.multiSuperPodDiffServerNumMode && 
+        !(isSupportCmdAHC && isConfigAHC));
 
     if (Is310P3Common(algoAttr_.isHaveCpuRank, topoAttr_.deviceType)) {
         algType[opType].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING;
@@ -111,12 +123,7 @@ HcclResult AlgConfigurator::SelectCurrOpAlgType(
             algType[opType].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING;
             isAlgoLevel1Default_[opType] = false;
         }
-    } else if ((topoAttr_.multiModuleDiffDeviceNumMode ||
-               (topoAttr_.multiSuperPodDiffServerNumMode &&
-               !((opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_ALLREDUCE ||
-                  opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER || opType == HcclCMDType::HCCL_CMD_ALL)
-               && isConfigAHC))) &&
-               !isConfigNULL) { // 多server不同卡模式，设置为单层拓扑类型
+    } else if ((isNoARS || isNoAHC) && !isConfigNULL) { // 多server不同卡模式，设置为单层拓扑类型
         algType[opType].algoLevel0 = AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING;
         algType[opType].algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING;
         isAlgoLevel1Default_[opType] = false;
@@ -237,7 +244,7 @@ HcclResult AlgConfigurator::SetAlgoLevel1(HcclAlgoType algoConfig, u32 moduleNum
             break;
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
-            HCCL_WARNING("level1:fullmesh algo is not suported. the config is ignored.");
+            HCCL_WARNING("level1:fullmesh algo is not supported. the config is ignored.");
             algoConfigShadow = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
             break;
         default:
@@ -321,7 +328,7 @@ HcclResult AlgConfigurator::SetAlgoLevel0StandardCard(HcclAlgoType algoConfig, A
     }
 
     if (algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_NA) {
-        HCCL_WARNING("level0:%d algo is not suported. the config is ignored.", algoConfig);
+        HCCL_WARNING("level0:%d algo is not supported. the config is ignored.", algoConfig);
     }
 
     CHK_RET(GetDefaultAlgoLevel0StandardCard(algType));
@@ -357,7 +364,7 @@ HcclResult AlgConfigurator::SetAlgoLevel0Module(HcclAlgoType algoConfig, AlgType
     }
 
     if (algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT && algoConfig != HcclAlgoType::HCCL_ALGO_TYPE_NA) {
-        HCCL_WARNING("level0:%d algo is not suported. the config is ignored.", algoConfig);
+        HCCL_WARNING("level0:%d algo is not supported. the config is ignored.", algoConfig);
     }
 
     CHK_RET(GetDefaultAlgoLevel0Module(algType));

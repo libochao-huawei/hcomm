@@ -392,20 +392,12 @@ HcclResult hrtGetDeviceIndexByPhyId(u32 devicePhyId, u32 &deviceLogicId)
 HcclResult hrtGetPhyDeviceInfo(u32 devicePhysicId, s32 moduleType, s32 infoType, s64 &value)
 {
 #ifndef HCCD
-    CHK_PRT_RET(moduleType != MODULE_TYPE_SYSTEM || infoType != INFO_TYPE_MASTERID,
-        HCCL_ERROR("[hrtGetPhyDeviceInfo]Not support module[%d] and info[%d]", moduleType, infoType),
-        HCCL_E_NOT_SUPPORT);
-
-    u32 deviceId = 0;
-    CHK_RET(hrtGetDeviceIndexByPhyId(devicePhysicId, deviceId));
-
-    aclrtDevAttr attr = ACL_DEV_ATTR_SMP_ID;
-    aclError rtRet = aclrtGetDeviceInfo(deviceId, attr, reinterpret_cast<int64_t *>(&value));
-    HCCL_DEBUG("rt get device info, return[%d], para: deviceId[%u], attr[%d], "\
-        "value[%d].", rtRet, deviceId, attr, value);
-    CHK_PRT_RET(rtRet != ACL_SUCCESS, HCCL_ERROR("[Get][DeviceInfo]errNo[0x%016llx] rt get pair devices "\
-        "info failed, return[%d], para:deviceId[%u], attr[%d], value[%d].",\
-        HCCL_ERROR_CODE(HCCL_E_RUNTIME), rtRet, deviceId, attr, value), HCCL_E_RUNTIME);
+    rtError_t rtRet = rtGetPhyDeviceInfo(devicePhysicId, moduleType, infoType, reinterpret_cast<int64_t *>(&value));
+    HCCL_INFO("[hrtGetPhyDeviceInfo] Call rtGetPhyDeviceInfo, ret[%d], para: devicePhysicId[%u], moduleType[%d], "
+        "infoType[%d], value[%lld]", rtRet, devicePhysicId, moduleType, infoType, value);
+    CHK_PRT_RET(rtRet != RT_ERROR_NONE, HCCL_ERROR("[Get][DeviceInfo]errNo[0x%016llx] rt get pair devices "\
+        "info failed, return[%d], para:devicePhysicId[%u], moduleType[%d], infoType[%d], value[%lld].",\
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), rtRet, devicePhysicId, moduleType, infoType, value), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtGetPhyDeviceInfo]Does not support this interface.");
@@ -613,6 +605,14 @@ HcclResult hrtMalloc(void **devPtr, u64 size, bool level2Address)
     } else {
         ret = aclrtMallocWithCfg(devPtr, size, static_cast<aclrtMemMallocPolicy>(policy), &cfg);
     }
+    RPT_ENV_ERR(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, "EI0011",                                                                             
+        std::vector<std::string>({"memory_size"}),                                                          
+        std::vector<std::string>({std::string("size:") + std::to_string(size)}));
+
+    CHK_PRT_RET(ret == ACL_ERROR_RT_MEMORY_ALLOCATION, HCCL_ERROR("[Malloc][Mem] rtMalloc failed, "\
+        "Reason: out of memory, return[%d], para: devPtrAddr[%p], size[%llu Byte].", ret, *devPtr, size),
+        HCCL_E_OOM);
+
     RPT_ENV_ERR((ret != ACL_SUCCESS), "EI0007", std::vector<std::string>({"resource_type", "resource_info"}), \
         std::vector<std::string>({"DeviceMemory", std::string("size:") + std::to_string(size)}));
 
@@ -836,7 +836,17 @@ HcclResult hrtMemAsyncCopyWithoutCheckKind(void *dst, uint64_t destMax, const vo
 #endif
 }
 
-HcclResult hrtGetPairPhyDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s64 *pValue)
+HcclResult hrtGetPairDeviceLinkTypeRaw(u32 phyDevId, u32 otherPhyDevId, s32 infoType, s64 *pValue)
+{
+    static auto funcPtr = (rtGetPairPhyDevicesInfoPtr)g_dlRts.Handle<RT_GET_PAIR_PHY_DEVICES_INFO>();
+    if (funcPtr != nullptr) {
+        return hrtGetPairPhyDevicesInfo(phyDevId, otherPhyDevId, infoType, pValue, funcPtr);
+    } else {
+        return hrtGetPairDevicesInfo(phyDevId, otherPhyDevId, infoType, pValue);
+    }
+}
+
+HcclResult hrtGetPairDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s32 infoType, s64 *pValue)
 {
 #ifndef HCCD
     CHK_PTR_NULL(pValue);
@@ -848,11 +858,53 @@ HcclResult hrtGetPairPhyDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s64 *pValue
 
     aclError ret = aclrtGetDevicesTopo(logicIdLocal, logicIdDest, reinterpret_cast<uint64_t*>(pValue));
     HCCL_DEBUG("aclrt get pair devices info, return[%d], "
-        "para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u], value[%p].",
-        ret, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest, pValue);
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Get][PairPhyDevicesInfo]errNo[0x%016llx] rt get pair devices "
-        "info failed, return[%d], para: phyDevId[%u], otherPhyDevId[%u], value[%p].",
-        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, phyDevId, otherPhyDevId, pValue), HCCL_E_RUNTIME);
+        "para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u], value[%lld].",
+        ret, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest, *pValue);
+    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Get][PairPhyDevicesInfo]errNo[0x%016llx] rt get pair devices info "
+        "failed, return[%d], para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u], value[%lld].",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest, *pValue),
+        HCCL_E_RUNTIME);
+
+    // 当前 aclrtGetDevicesTopo 仅支持返回一种链路类型，将来可能会同时按照二进制位排列返回所支持的多种类型
+    // 按二进制位进行比较
+    if ((*pValue & ACL_RT_DEVS_TOPOLOGY_HCCS) != 0) {
+        *pValue = TOPOLOGY_HCCS;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_PIX) != 0) {
+        *pValue = TOPOLOGY_PIX;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_PIB) != 0) {
+        *pValue = TOPOLOGY_PIB;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_PHB) != 0) {
+        *pValue = TOPOLOGY_PHB;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_SYS) != 0) {
+        *pValue = TOPOLOGY_SYS;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_SIO) != 0) {
+        *pValue = TOPOLOGY_SIO;
+    } else if ((*pValue & ACL_RT_DEVS_TOPOLOGY_HCCS_SW) != 0) {
+        *pValue = TOPOLOGY_HCCS_SW;
+    } else {
+        HCCL_ERROR("aclrt get pair devices info failed, unknown linkType[%lld], "
+            "para: phyDevId[%u], otherPhyDevId[%u], logicIdLocal[%u], logicIdDest[%u].",
+            *pValue, phyDevId, otherPhyDevId, logicIdLocal, logicIdDest);
+        return HCCL_E_RUNTIME;
+    }
+    return HCCL_SUCCESS;
+#else
+    HCCL_ERROR("[hrtGetPairDevicesInfo]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
+}
+
+HcclResult hrtGetPairPhyDevicesInfo(u32 phyDevId, u32 otherPhyDevId, s32 infoType, s64 *pValue,
+                                    rtGetPairPhyDevicesInfoPtr funcPtr)
+{
+#ifndef HCCD
+    CHK_PTR_NULL(pValue);
+    rtError_t ret = funcPtr(phyDevId, otherPhyDevId, infoType, reinterpret_cast<int64_t*>(pValue));
+    HCCL_DEBUG("rt get pair devices info, return[%d], para: phyDevId[%u], otherPhyDevId[%u], infoType[%d], value[%lld]",
+        ret, phyDevId, otherPhyDevId, infoType, *pValue);
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Get][PairPhyDevicesInfo]errNo[0x%016llx] rt get pair devices "
+        "info failed, return[%d], para: phyDevId[%u], otherPhyDevId[%u], infoType[%d], value[%lld].",
+        HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, phyDevId, otherPhyDevId, infoType, *pValue), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtGetPairPhyDevicesInfo]Does not support this interface.");
@@ -869,12 +921,12 @@ HcclResult hrtGetPairDeviceLinkType(u32 phyDevId, u32 otherPhyDevId, LinkTypeInS
 
     s64 linkTypeRaw = 0;
 #ifndef HCCD
-    CHK_RET(hrtGetPairPhyDevicesInfo(phyDevId, otherPhyDevId, &linkTypeRaw));
+    CHK_RET(hrtGetPairDeviceLinkTypeRaw(phyDevId, otherPhyDevId, 0, &linkTypeRaw));
 #else
-    HCCL_ERROR("[hrtGetPairDeviceLinkType]Does not support this interface.");
+    HCCL_ERROR("[hrtGetPairDeviceLinkTypeRaw]Does not support this interface.");
     return HCCL_E_NOT_SUPPORT;
 #endif
-    HCCL_INFO("[hrtGetPairDeviceLinkType]phyDevId[%u] otherPhyDevId[%u] linkTypeRaw[%d]",
+    HCCL_INFO("[hrtGetPairDeviceLinkTypeRaw]phyDevId[%u] otherPhyDevId[%u] linkTypeRaw[%d]",
         phyDevId, otherPhyDevId, linkTypeRaw);
 
     // 若当前为标卡/虚拟机device间通过HCCS直接互联：HCCS_TYPE，device间通过HCCS交换芯片互联：TOPOLOGY_HCCS_SW
@@ -882,15 +934,15 @@ HcclResult hrtGetPairDeviceLinkType(u32 phyDevId, u32 otherPhyDevId, LinkTypeInS
     // 其他情况为PXI_TYPE
 
     switch (linkTypeRaw) {
-        case ACL_RT_DEVS_TOPOLOGY_HCCS:
+        case TOPOLOGY_HCCS:
             linkType = LinkTypeInServer::HCCS_TYPE;
             break;
 
-        case ACL_RT_DEVS_TOPOLOGY_HCCS_SW:
+        case TOPOLOGY_HCCS_SW:
             linkType = LinkTypeInServer::HCCS_SW_TYPE;
             break;
 
-        case ACL_RT_DEVS_TOPOLOGY_SIO:
+        case TOPOLOGY_SIO:
             linkType = LinkTypeInServer::SIO_TYPE;
             break;
 
@@ -973,7 +1025,7 @@ HcclResult hrtIpcSetMemoryName(void *ptr, u8 *name, u64 ptrMaxLen, u32 nameMaxLe
     HCCL_INFO("Call aclrtIpcMemGetExportKey, return value[%d], para: ptr[%p], name[%s], byteCount[%llu], nameLen[%u]",
         rtRet, ptr, name, ptrMaxLen, nameMaxLen);
     CHK_PRT_RET(rtRet != ACL_SUCCESS, HCCL_ERROR("[Set][IpcMemoryName]errNo[0x%016llx] rtSet Ipc Memory Name, "\
-        "return[%d], para: ptr[%p] byteCount[%llu].",
+        "return[%d], para: ptr[%p] byteCount[%llu]. Possible Cause: The memory addr or size is not aligned with pagesize.",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), rtRet, ptr, ptrMaxLen), HCCL_E_RUNTIME);
 
     return HCCL_SUCCESS;
@@ -1495,18 +1547,15 @@ HcclResult hrtNotifyReset(aclrtNotify notify)
 
 #if T_DESC("EnableP2P", true)
 
-HcclResult hrtEnableP2P(u32 peerDevPhyId)
+HcclResult hrtEnableP2P(u32 deviceLogicId, u32 devicePhyId)
 {
 #ifndef HCCD
-    s32 deviceId = GetDeviceLogicalId();
-    u32 peerDeviceLogicID = 0;
-    CHK_RET(hrtGetDeviceIndexByPhyId(peerDevPhyId, peerDeviceLogicID));
-    aclError ret = aclrtDeviceEnablePeerAccess(peerDeviceLogicID, 0);
+    rtError_t ret = rtEnableP2P(deviceLogicId, devicePhyId, 0);
 
-    HCCL_DEBUG("rt enableP2P device id[%d] and peer device id[%u] fail[%d]", deviceId, peerDeviceLogicID, ret);
+    HCCL_INFO("rt enableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
 
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Enable][P2P]errNo[0x%016llx] acl enableP2P device id[%d] and peer"\
-        "device id[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceId, peerDeviceLogicID, ret), HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Enable][P2P]errNo[0x%016llx] rt enableP2P deviceLogicId[%u] and "\
+        "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
 
     return HCCL_SUCCESS;
 #else
@@ -1515,18 +1564,15 @@ HcclResult hrtEnableP2P(u32 peerDevPhyId)
 #endif
 }
 
-HcclResult hrtDisableP2P(u32 peerDevPhyId)
+HcclResult hrtDisableP2P(u32 deviceLogicId, u32 devicePhyId)
 {
 #ifndef HCCD
-    s32 deviceId = GetDeviceLogicalId();
-    u32 peerDeviceLogicID = 0;
-    CHK_RET(hrtGetDeviceIndexByPhyId(peerDevPhyId, peerDeviceLogicID));
-    aclError ret = aclrtDeviceDisablePeerAccess(peerDeviceLogicID);
+    rtError_t ret = rtDisableP2P(deviceLogicId, devicePhyId);
 
-    HCCL_DEBUG("rt disableP2P device id[%d] and peer device id[%u] fail[%d]", deviceId, peerDeviceLogicID, ret);
+    HCCL_INFO("rt disableP2P deviceLogicId[%u] and devicePhyId[%u] fail[%d]", deviceLogicId, devicePhyId, ret);
 
-    CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[Disable][P2P]errNo[0x%016llx] acl disableP2P device id[%d] and peer"\
-        "device id[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceId, peerDeviceLogicID, ret), HCCL_E_RUNTIME);
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Disable][P2P]errNo[0x%016llx] rt disableP2P deviceLogicId[%u] and "\
+        "devicePhyId[%u] fail[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), deviceLogicId, devicePhyId, ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else
     HCCL_ERROR("[hrtDisableP2P]Does not support this interface.");
@@ -1534,16 +1580,15 @@ HcclResult hrtDisableP2P(u32 peerDevPhyId)
 #endif
 }
 
-HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, int32_t *status)
+HcclResult hrtGetP2PStatus(u32 deviceLogicId, u32 devicePhyId, uint32_t *status)
 {
 #ifndef HCCD
-    aclError ret = aclrtDevicePeerAccessStatus(static_cast<s32>(deviceLogicId), static_cast<s32>(devicePhyId), status);
- 
-    HCCL_DEBUG("[hrtGetP2PStatus]Call aclrtDevicePeerAccessStatus, ret[%d], para: devLogicId[%u], devPhyId[%u]",
-        ret, deviceLogicId, devicePhyId);
-    CHK_PRT_RET(ret != ACL_SUCCESS,
-        HCCL_ERROR("[Get][P2PStatus]errNo[0x%016llx]Call aclrtDevicePeerAccessStatus failed, "
-            "ret[%d], devLogicId[%u], devPhyId[%u]",
+    rtError_t ret = rtGetP2PStatus(deviceLogicId, devicePhyId, status);
+
+    HCCL_DEBUG("rt getp2pstatus deviceLogicId[%u] and devicePhyId[%u] fail[%d], status[%u]",
+        deviceLogicId, devicePhyId, ret, *status);
+    CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[Get][P2PStatus]errNo[0x%016llx]Call rtGetP2PStatus failed, "
+            "ret[%d], deviceLogicId[%u], devicePhyId[%u]",
             HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret, deviceLogicId, devicePhyId), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 #else

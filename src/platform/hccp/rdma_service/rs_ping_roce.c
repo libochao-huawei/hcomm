@@ -104,7 +104,7 @@ STATIC int RsPingCbGetIbCtxAndIndex(struct rdev *rdevInfo, struct RsPingCtxCb *p
         }
     }
 
-    CHK_PRT_RETURN(i == pingCb->rdevCb.devNum, hccp_err("can not find ib_ctx for phy_id[%u] local_ip[0x%x] "
+    CHK_PRT_RETURN(i == pingCb->rdevCb.devNum, hccp_err("can not find ib_ctx for phyId[%u] local_ip[0x%x] "
         "in dev_list!", rdevInfo->phyId, rdevInfo->localIp.addr.s_addr), -ENODEV);
     return 0;
 }
@@ -171,7 +171,7 @@ STATIC int RsPingCommonInitLocalQp(struct rs_cb *rscb, struct RsPingCtxCb *pingC
     }
     ret = RsEpollCtl(rscb->connCb.epollfd, EPOLL_CTL_ADD, qpCb->channel->fd, EPOLLIN | EPOLLRDHUP);
     if (ret != 0) {
-        hccp_err("rs_epoll_ctl failed! epollfd:%d fd:%d ret:%d", rscb->connCb.epollfd, qpCb->channel->fd, ret);
+        hccp_err("RsEpollCtl failed! epollfd:%d fd:%d ret:%d", rscb->connCb.epollfd, qpCb->channel->fd, ret);
         goto epoll_ctl_fail;
     }
     qpCb->recvCq.depth = attr->rdma.cqAttr.recvCqDepth;
@@ -256,7 +256,7 @@ STATIC int RsPingCommonInitMrCb(struct rs_cb *rscb, struct RsPingCtxCb *pingCb, 
     ret = DlHalBuffAllocAlignEx(mrCb->len, RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE, flag,
         (int)rscb->grpId, (void **)&mrCb->addr);
     if (ret != 0) {
-        hccp_err("dl_hal_buff_alloc_align_ex failed, length:0x%llx, dev_id:0x%x, flag:0x%lx, grpId:%u, ret:%d",
+        hccp_err("DlHalBuffAllocAlignEx failed, length:0x%llx, dev_id:0x%x, flag:0x%lx, grpId:%u, ret:%d",
             mrCb->len, pingCb->logicDevid, flag, rscb->grpId, ret);
         goto alloc_fail;
     }
@@ -494,7 +494,7 @@ STATIC int RsPingRocePingCbInit(unsigned int phyId, struct PingInitAttr *attr, s
     int ret;
 
     ret = RsGetRsCb(phyId, &rscb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     // prepare input attr
     pingCb->rdevCb.ip.family = (uint32_t)rdevInfo->family;
@@ -907,8 +907,8 @@ STATIC int RsPongPostSend(struct RsPingCtxCb *pingCb, struct ibv_wc *wc, struct 
 
     // handle detect packet & send response packet
     recvSgeIdx = (uint32_t)wc->wr_id;
-    if (recvSgeIdx > pingCb->pingQp.recvMrCb.sgeNum) {
-        hccp_err("param err recv_sge_idx:%u > sge_num:%u", recvSgeIdx, pingCb->pingQp.recvMrCb.sgeNum);
+    if (recvSgeIdx >= pingCb->pingQp.recvMrCb.sgeNum) {
+        hccp_err("param err recv_sge_idx:%u >= sge_num:%u", recvSgeIdx, pingCb->pingQp.recvMrCb.sgeNum);
         return -EIO;
     }
     (void)memcpy_s(&recvList, sizeof(struct ibv_sge),
@@ -1216,7 +1216,7 @@ STATIC void RsPingRocePingCbDeinit(unsigned int phyId, struct RsPingCtxCb *pingC
 
     ret = RsGetRsCb(phyId, &rscb);
     if (ret != 0) {
-        hccp_err("rs_get_rs_cb failed, phyId[%u] invalid, ret %d", phyId, ret);
+        hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret);
         return;
     }
 

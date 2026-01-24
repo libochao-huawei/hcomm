@@ -161,7 +161,7 @@ void* inter_all_reduce_task_1(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -231,7 +231,7 @@ void* inter_all_reduce_task_1(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduce falis", hcom_info.params.rank);
+        HCCL_ERROR("dev[%d] task HcclAllReduce fails", hcom_info.params.rank);
     }
 
     rt_ret = aclrtSynchronizeStream(para_info->stream);
@@ -248,7 +248,7 @@ void* inter_all_reduce_task_1(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (NULL);
@@ -281,7 +281,7 @@ void* inter_reduce_scatter_task_1(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task reduce_scatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task reduce_scatter fails", para_info->device_id);
     }
 
     u64 stream_list_size = 0;
@@ -344,7 +344,7 @@ void* inter_reduce_scatter_task_1(void* parg)
                                para_info->stream);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task reduce_scatter falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce_scatter fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -361,7 +361,7 @@ void* inter_reduce_scatter_task_1(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     return (NULL);
 }
@@ -395,7 +395,7 @@ void* inter_reduce_scatter_task_1_ffts(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task reduce_scatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task reduce_scatter fails", para_info->device_id);
     }
 
     u64 stream_list_size = 0;
@@ -458,7 +458,7 @@ void* inter_reduce_scatter_task_1_ffts(void* parg)
                                para_info->stream);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task reduce_scatter falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce_scatter fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -475,7 +475,7 @@ void* inter_reduce_scatter_task_1_ffts(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     SetFftsSwitch(false);
     InitEnvVarParam();
@@ -509,7 +509,7 @@ void* inter_reduce_scatter_atomic_opbase_task_1(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task reduce_scatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task reduce_scatter fails", para_info->device_id);
     }
 
     u64 stream_list_size = 0;
@@ -572,7 +572,7 @@ void* inter_reduce_scatter_atomic_opbase_task_1(void* parg)
                                para_info->stream);
     unsetenv("HCCL_DETERMINISTIC");
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("rank[%d] task reduce_scatter falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce_scatter fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -589,7 +589,7 @@ void* inter_reduce_scatter_atomic_opbase_task_1(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task reduce_scatter falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce_scatter fails", hcom_info.params.rank);
     }
     HCCL_ERROR("rank[%d] task done", hcom_info.params.rank);
     (void) SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -626,7 +626,7 @@ void* inter_all_gather_task_1(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -691,7 +691,7 @@ void* inter_all_gather_task_1(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -707,7 +707,7 @@ void* inter_all_gather_task_1(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (NULL);
@@ -746,7 +746,7 @@ void* inter_all_gather_task_1_ffts(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -811,7 +811,7 @@ void* inter_all_gather_task_1_ffts(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -827,7 +827,7 @@ void* inter_all_gather_task_1_ffts(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     SetFftsSwitch(false);
@@ -867,7 +867,7 @@ void* inter_all_gather_outplace_ffts(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -939,7 +939,7 @@ void* inter_all_gather_outplace_ffts(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -955,7 +955,7 @@ void* inter_all_gather_outplace_ffts(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (NULL);
@@ -994,7 +994,7 @@ void *inter_all_reduce_outplace_task_1(void *parg)
     HcclCommunicator *impl = dynamic_cast<HcclCommunicator *>(hcom_info.pComm->communicator_.get());
     impl->implAlg_->pimpl_->topoType_ = TopoType::TOPO_TYPE_NP_SINGLE_RING;
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -1068,7 +1068,7 @@ void *inter_all_reduce_outplace_task_1(void *parg)
         SyncMode::DEFAULT_TIMEWAITSYNCMODE);
 
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task HcclAllReduce falis", hcom_info.params.rank);
+        HCCL_ERROR("dev[%d] task HcclAllReduce fails", hcom_info.params.rank);
     }
 
     rt_ret = aclrtSynchronizeStream(para_info->stream);
@@ -1083,7 +1083,7 @@ void *inter_all_reduce_outplace_task_1(void *parg)
     hrtFree(memptr);
 
     if (rt_ret != RT_ERROR_NONE) {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (NULL);
@@ -1301,7 +1301,7 @@ void* inter_all_gather_outplace_task_1(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -1376,7 +1376,7 @@ void* inter_all_gather_outplace_task_1(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllGather falis", hcom_info.params.rank);
+        HCCL_ERROR("dev[%d] task HcclAllGather fails", hcom_info.params.rank);
     }
 
     rt_ret = aclrtSynchronizeStream(para_info->stream);
@@ -1393,7 +1393,7 @@ void* inter_all_gather_outplace_task_1(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (nullptr);
@@ -2138,7 +2138,7 @@ void* inter_reduce_scatter_mesh_atomic_single_operator_task(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task reduce_scatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task reduce_scatter fails", para_info->device_id);
     }
 
     u64 stream_list_size = 0;
@@ -2202,7 +2202,7 @@ void* inter_reduce_scatter_mesh_atomic_single_operator_task(void* parg)
                                para_info->stream);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task reduce_scatter falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce_scatter fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -2219,7 +2219,7 @@ void* inter_reduce_scatter_mesh_atomic_single_operator_task(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     return (nullptr);
 }
@@ -2422,7 +2422,7 @@ void* inter_all_gather_outplace_task_single_operator(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -2497,7 +2497,7 @@ void* inter_all_gather_outplace_task_single_operator(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllGather falis", hcom_info.params.rank);
+        HCCL_ERROR("dev[%d] task HcclAllGather fails", hcom_info.params.rank);
     }
 
     rt_ret = aclrtSynchronizeStream(para_info->stream);
@@ -2514,7 +2514,7 @@ void* inter_all_gather_outplace_task_single_operator(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (nullptr);
@@ -2717,7 +2717,7 @@ void *inter_reduce_scatter_task_undeter_opbase(void *parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
   if (ret != HCCL_SUCCESS)
   {
-    HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+    HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
   }
   u64 stream_list_size = 0;
   ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -2793,7 +2793,7 @@ void *inter_reduce_scatter_task_undeter_opbase(void *parg)
 
   if (ret != HCCL_SUCCESS)
   {
-    HCCL_ERROR("dev[%d] task HcclReduceScatter falis", hcom_info.params.rank);
+    HCCL_ERROR("dev[%d] task HcclReduceScatter fails", hcom_info.params.rank);
   }
 
   rt_ret = aclrtSynchronizeStream(para_info->stream);
@@ -2810,7 +2810,7 @@ void *inter_reduce_scatter_task_undeter_opbase(void *parg)
   (void)SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED);
   if (rt_ret != RT_ERROR_NONE)
   {
-    HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+    HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
   }
 
   return nullptr;
@@ -3015,7 +3015,7 @@ void* inter_reduce_scatter_atomic_single_operator_task(void* parg)
     impl->implAlg_->pimpl_->topoType_ = TopoType::TOPO_TYPE_NP_DOUBLE_RING;
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task reduce_scatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task reduce_scatter fails", para_info->device_id);
     }
 
     u64 stream_list_size = 0;
@@ -3079,7 +3079,7 @@ void* inter_reduce_scatter_atomic_single_operator_task(void* parg)
                                para_info->stream);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task reduce_scatter falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task reduce_scatter fails", hcom_info.params.rank);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -3096,7 +3096,7 @@ void* inter_reduce_scatter_atomic_single_operator_task(void* parg)
     hrtFree(memptr);
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     return (nullptr);
 }

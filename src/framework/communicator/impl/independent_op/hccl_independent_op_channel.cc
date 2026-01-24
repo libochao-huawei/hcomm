@@ -13,40 +13,29 @@
 #include "log.h"
 #include "hccl_comm_pub.h"
 #include "independent_op.h"
+#include "channel_manager.h"
+#include "hcomm_c_adpt.h"
+#include "param_check_pub.h"
 
 using namespace hccl;
-
-HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag,
-    CommEngine engine, const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
-{
-    // 入参校验
-    CHK_PTR_NULL(comm);
-    CHK_PTR_NULL(channelTag);
-    CHK_PTR_NULL(channelDescList);
-    CHK_PTR_NULL(channelList);
-    CHK_PRT_RET(listNum == 0, HCCL_ERROR("[%s]Invalid listNum, listNum[%u]",
-        __func__, listNum), HCCL_E_PARA);
-
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-    HcclResult ret = channelMgr.ChannelCommCreate(hcclComm->GetIdentifier(), std::string(channelTag), engine, channelDescList, listNum, channelList);
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to create channel, group[%s], channelTag[%s], engine[%d], channelNum[%llu], ret[%d]",
-           __func__, hcclComm->GetIdentifier().c_str(), channelTag, engine, listNum, ret);
-        return ret;
-    }
-
-    HCCL_RUN_INFO("[%s] create channel success, group[%s], channelTag[%s], engine[%d], channelNum[%llu], ret[%d]", 
-        __func__, hcclComm->GetIdentifier().c_str(), channelTag, engine, listNum, ret);
-    return HCCL_SUCCESS;
-}
 
 HcclResult HcclChannelGetNotifyNum(HcclComm comm, ChannelHandle channel, uint32_t *notifyNum)
 {
     CHK_PTR_NULL(notifyNum);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-    HcclResult ret = channelMgr.ChannelCommGetNotifyNum(channel, notifyNum);
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        ChannelManager* channelMgr = collComm->GetChannelManager();
+        CHK_PTR_NULL(channelMgr);
+        ret = channelMgr->ChannelCommGetNotifyNum(channel, notifyNum);
+    }
+    else {
+        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+        ret = channelMgr.ChannelCommGetNotifyNum(channel, notifyNum);
+    }
+
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get channel notifyNum, group[%s], channel[%llu], ret[%d]",
            __func__, hcclComm->GetIdentifier().c_str(), channel, ret);
@@ -65,8 +54,19 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
     CHK_PRT_RET(channelNum == 0, HCCL_ERROR("[%s]Invalid channelNum, channelNum[%u]",
         __func__, channelNum), HCCL_E_PARA);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-    HcclResult ret = channelMgr.ChannelCommDestroy(channelList, channelNum);
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        ChannelManager* channelMgr = collComm->GetChannelManager();
+        CHK_PTR_NULL(channelMgr);
+        ret = channelMgr->ChannelCommDestroy(channelList, channelNum);
+    }
+    else {
+        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+        ret = channelMgr.ChannelCommDestroy(channelList, channelNum);
+    }
+    
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to destroy channel, group[%s], channelList[%p], channelNum[%lu], ret[%d]",
            __func__, hcclComm->GetIdentifier().c_str(), channelList, channelNum, ret);
@@ -78,22 +78,43 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer)
+HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *indOp = getenv("HCCL_A5_INDEPENDENT_OP");
+    if (*indOp == '1') {
+        HCCLV2_FUNC_RUN(HcclChannelGetHcclBufferA5(comm, channel, buffer, size));
+    }
+#endif
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(buffer);
+    CHK_PTR_NULL(size);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-    HcclResult ret = channelMgr.ChannelCommGetHcclBuffer(channel, buffer);
+    HcclResult ret = HCCL_SUCCESS;
+    CommBuffer commBuffer;
+    if (hcclComm->IsCommunicatorV2()) {
+        CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        ChannelManager* channelMgr = collComm->GetChannelManager();
+        CHK_PTR_NULL(channelMgr);
+        ret = channelMgr->ChannelCommGetHcclBuffer(channel, &commBuffer);
+    }
+    else {
+        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+        ret = channelMgr.ChannelCommGetHcclBuffer(channel, &commBuffer);
+    }
+   
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get channel hccl buffer, group[%s], channel[%llu], ret[%d]",
            __func__, hcclComm->GetIdentifier().c_str(), channel, ret);
         return ret;
     }
+    *buffer = commBuffer.addr;
+    *size = commBuffer.size;
 
     HCCL_RUN_INFO("[%s] get channel hccl buffer success, group[%s], channel[%llu], " 
         "buffer[type:%d, addr:%p, size:%llu], ret[%d]", __func__, hcclComm->GetIdentifier().c_str(), 
-        channel, buffer->type, buffer->addr, buffer->size, ret);
+        channel, commBuffer.type, commBuffer.addr, commBuffer.size, ret);
     return HCCL_SUCCESS;
 }
 
@@ -104,8 +125,19 @@ HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, HcclMem
     CHK_PTR_NULL(remoteMem);
     CHK_PTR_NULL(memNum);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-    HcclResult ret = channelMgr.ChannelCommGetRemoteMem(channel, remoteMem, memNum);
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        ChannelManager* channelMgr = collComm->GetChannelManager();
+        CHK_PTR_NULL(channelMgr);
+        ret = channelMgr->ChannelCommGetRemoteMem(channel, remoteMem, memNum);
+    }
+    else {
+        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+        ret = channelMgr.ChannelCommGetRemoteMem(channel, remoteMem, memNum);
+    }
+
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get channel remote mem, group[%s], channel[%p], ret[%d]",
            __func__, hcclComm->GetIdentifier().c_str(), channel, ret);

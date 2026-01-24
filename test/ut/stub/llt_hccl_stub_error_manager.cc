@@ -89,6 +89,9 @@ int32_t ReportPredefinedErrMsg(const char *error_code, const std::vector<const c
   return 0;            
 }
 
+int32_t RegisterFormatErrorMessage(const char *error_msg, size_t error_msg_len) {
+  return 0;
+}
 }
 
 using namespace error_message;

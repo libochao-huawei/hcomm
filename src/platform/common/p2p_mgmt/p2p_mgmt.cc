@@ -75,7 +75,7 @@ HcclResult P2PMgmt::EnableP2P(uint32_t remoteDevicePhysicID)
         CHK_RET(hrtGetDevicePhyIdByIndex(localDeviceLogicID, localDevicePhysicID));
         CHK_RET(CheckMarsterId(remoteDevicePhysicID, localDevicePhysicID, isMarsterIdDiff));
         if (isMarsterIdDiff) {
-            CHK_RET(hrtEnableP2P(remoteDevicePhysicID));
+            CHK_RET(hrtEnableP2P(localDeviceLogicID, remoteDevicePhysicID));
             HCCL_INFO("enable p2p: local logic id:%d, remote physic id:%u.", localDeviceLogicID,
                 remoteDevicePhysicID);
         }
@@ -124,7 +124,7 @@ HcclResult P2PMgmt::DisableAllP2P()
         if (isMarsterIdDiff) {
             HCCL_INFO("there is active p2p connections. in P2PMgmt disable all p2p, it is forced to disable p2p. "
                 "device info: local logic id:%d, remote physic id:%u.", localDeviceLogicID, iterRemoteDevice.first);
-            CHK_RET(hrtDisableP2P(iterRemoteDevice.first));
+            CHK_RET(hrtDisableP2P(localDeviceLogicID, iterRemoteDevice.first));
         }
     }
 
@@ -186,7 +186,7 @@ HcclResult P2PMgmt::DisableP2P(uint32_t localDeviceLogicID, uint32_t remoteDevic
         if (isMarsterIdDiff) {
             HCCL_INFO("disable p2p: local logic id:%d, remote physic id:%u.", localDeviceLogicID,
                 remoteDevicePhysicID);
-            CHK_RET(hrtDisableP2P(remoteDevicePhysicID));
+            CHK_RET(hrtDisableP2P(localDeviceLogicID, remoteDevicePhysicID));
         }
         iterLocalDevice[remoteDevicePhysicID].status = P2PStatus::P2P_STATUS_DISABLED;
     }
@@ -217,9 +217,9 @@ HcclResult P2PMgmt::CheckMarsterId(
     }
     if (deviceType_ == DevType::DEV_TYPE_910B || deviceType_ == DevType::DEV_TYPE_910_93) {
         s64 localDevicePhysicValue, remoteDevicePhysicValue;
-        CHK_RET(hrtGetPhyDeviceInfo(localDevicePhysicID, MODULE_TYPE_SYSTEM, INFO_TYPE_MASTERID,
+        CHK_RET(hrtGetPhyDeviceInfo(localDevicePhysicID, MODULE_TYPE_SYSTEM, RT_PHY_INFO_TYPE_MASTER_ID,
             localDevicePhysicValue));
-        CHK_RET(hrtGetPhyDeviceInfo(remoteDevicePhysicID, MODULE_TYPE_SYSTEM, INFO_TYPE_MASTERID,
+        CHK_RET(hrtGetPhyDeviceInfo(remoteDevicePhysicID, MODULE_TYPE_SYSTEM, RT_PHY_INFO_TYPE_MASTER_ID,
             remoteDevicePhysicValue));
 
         isMarsterIdDiff = (localDevicePhysicValue == remoteDevicePhysicValue) ? false : true;
@@ -315,7 +315,7 @@ HcclResult P2PMgmt::WaitP2PConnected(int32_t localDeviceLogicID, uint32_t remote
 
 HcclResult P2PMgmt::CheckP2P(uint32_t remoteDevicePhysicID, bool &enabled)
 {
-    int32_t status = DRV_P2P_STATUS_DISABLE;
+    uint32_t status = DRV_P2P_STATUS_DISABLE;
     int32_t localDeviceLogicID;
     CHK_RET(hrtGetDevice(&localDeviceLogicID));
 

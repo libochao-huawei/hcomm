@@ -121,7 +121,7 @@ RTS_API rtError_t rtsSetTsDevice(uint32_t tsId);
 
 /**
  * @ingroup rts_device
- * @brief get device infomation.
+ * @brief get device information.
  * @param [in] device the device id
  * @param [in] attr device attr 
  * @param [out] val   the device info
@@ -351,7 +351,7 @@ RTS_API rtError_t rtsGetDeviceResLimit(const int32_t devId, const rtDevResLimitT
 /**
  * @ingroup
  * @brief query ub device info
- * @param [in] cmd query info tpye
+ * @param [in] cmd query info type
  * @param [in|out] info input/output parameter
  * @return RT_ERROR_NONE for ok, errno for failed
  * @return RT_ERROR_INVALID_VALUE for error input
@@ -511,6 +511,23 @@ typedef int32_t (*rtsDeviceTaskAbortCallback)(uint32_t devId, rtDeviceTaskAbortS
  */
 RTS_API rtError_t rtsSetDeviceTaskAbortCallback(const char_t *regName, rtsDeviceTaskAbortCallback callback, void *args);
 
+/**
+ * @ingroup xpu dev
+ * @brief set xpu device
+ * @param [in] devType Currently, only the DPU type is supported. 
+ * @param [in] devId Currently devId=0 is supported
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId);
+ 
+/**
+ * @ingroup xpu dev
+ * @brief reset xpu device
+ * @param [in] devType Currently, only the DPU type is supported. 
+ * @param [in] devId Currently devId=0 is supported
+ * @return RT_ERROR_NONE for ok
+ */
+RTS_API rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId);
 #if defined(__cplusplus)
 }
 #endif

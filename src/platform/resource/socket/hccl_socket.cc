@@ -61,7 +61,7 @@ HcclResult HcclSocket::DeInit()
     Close();
     if (listened_) {
         if (socketType_ == NicType::VNIC_TYPE) {
-            CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopVnic());
+            CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopVnic(localIp_, localPort_));
         } else if (socketType_ == NicType::DEVICE_NIC_TYPE) {
             CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopNic(localIp_, localPort_));
         } else {
@@ -100,10 +100,14 @@ HcclResult HcclSocket::Listen()
     }
     RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EJ0003", std::vector<std::string>({"reason"}),
             std::vector<std::string>({"The IP address and port have been bound already."}));
+    std::stringstream tmpMsgstream;
+    tmpMsgstream << ((socketType_ == NicType::HOST_NIC_TYPE) ? ("[" + LOG_KEYWORDS_INIT_CHANNEL + "]") :
+        ("[" + LOG_KEYWORDS_INIT_GROUP + "]")) << "[" << LOG_KEYWORDS_RANKTABLE_DETECT << "]";
+    std::string errmsg = tmpMsgstream.str();
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclSocket][Listen] socket type[%u], listen on ip[%s] and specific port[%u] fail. "
+        HCCL_ERROR("%s socket type[%u], listen on ip[%s] and specific port[%u] fail. "
         "Please check the port status and whether the port is being used by other process.",
-        socketType_, localIp_.GetReadableAddress(), localPort_), ret);
+        errmsg.c_str(), socketType_, localIp_.GetReadableAddress(), localPort_), ret);
 
     CHK_RET(GetNicSocketHandle());
 
@@ -134,12 +138,16 @@ HcclResult HcclSocket::Listen(u32 port)
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
             localIp_, hostSocketHandle, port, false);
     }
+    std::stringstream tmpMsgstream;
+    tmpMsgstream << ((socketType_ == NicType::HOST_NIC_TYPE) ? ("[" + LOG_KEYWORDS_INIT_CHANNEL + "]") :
+        ("[" + LOG_KEYWORDS_INIT_GROUP + "]")) << "[" << LOG_KEYWORDS_RANKTABLE_DETECT << "]";
+    std::string errmsg = tmpMsgstream.str();
     CHK_PRT_RET(ret == HCCL_E_UNAVAIL,
-        HCCL_INFO("[HcclSocket][Listen] socket type[%u], Could not listen on IP [%s] and port [%u], port already in use.",
-        socketType_, localIp_.GetReadableAddress(), port), ret);
+        HCCL_INFO("%s socket type[%u], Could not listen on IP [%s] and port [%u], port already in use.",
+        errmsg.c_str(), socketType_, localIp_.GetReadableAddress(), port), ret);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclSocket][Listen] socket type[%u], listen on ip[%s] and port[%u] fail,.",
-        socketType_, localIp_.GetReadableAddress(), port), ret);
+        HCCL_ERROR("%s socket type[%u], listen on ip[%s] and port[%u] fail,.",
+        errmsg.c_str(), socketType_, localIp_.GetReadableAddress(), port), ret);
 
     CHK_RET(GetNicSocketHandle());
 
@@ -425,11 +433,11 @@ HcclResult HcclSocket::Send(const void *data, u64 size)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen)
+HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     CHK_PTR_NULL(recvBuf);
-    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }));
+    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }, timeout));
     return HCCL_SUCCESS;
 }
 
@@ -449,13 +457,13 @@ HcclResult HcclSocket::Send(const std::string &sendMsg)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::Recv(std::string &recvMsg)
+HcclResult HcclSocket::Recv(std::string &recvMsg, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     recvMsg.clear();
     u8 recvBuf[MAX_MSG_STR_LEN] = {0};
     CHK_RET(hrtRaSocketBlockRecv(fdHandle_, reinterpret_cast<void *>(recvBuf), MAX_MSG_STR_LEN,
-        [this]() -> bool { return this->GetStopFlag(); }));
+        [this]() -> bool { return this->GetStopFlag(); }, timeout));
     recvMsg.assign(reinterpret_cast<char *>(recvBuf));
     return HCCL_SUCCESS;
 }
@@ -620,11 +628,10 @@ HcclResult HcclSocket::GetNicSocketHandle()
             localDeviceLogicId_, tempSocketMap.size(), localIp_.GetReadableAddress());
         CHK_RET(GetNicSocketHandle(tempSocketMap, localIp_, nicSocketHandle_));
     } else if (socketType_ == NicType::VNIC_TYPE) {
-            if (raResourceInfo.vnicSocketHandle == nullptr) {
-                HCCL_ERROR("[Get][NicHandleInfo] deviceLogicId[%d] get null vnic socket", localDeviceLogicId_);
-                return HCCL_E_INTERNAL;
-            }
-            nicSocketHandle_ = raResourceInfo.vnicSocketHandle;
+        tempSocketMap = raResourceInfo.vnicSocketMap;
+        HCCL_INFO("[Get][NicHandleInfo]phyId[%u], vnicSocketMap size[%u] localIp[[%s]",
+            localDeviceLogicId_, tempSocketMap.size(), localIp_.GetReadableAddress());
+        CHK_RET(GetNicSocketHandle(tempSocketMap, localIp_, nicSocketHandle_));
     } else {
         return HCCL_E_INTERNAL;
     }

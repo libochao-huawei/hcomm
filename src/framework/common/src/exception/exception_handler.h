@@ -19,27 +19,6 @@
 
 namespace hccl {
 
-// 宏定义，用于包装 C 接口函数的异常处理
-#define EXCEPTION_HANDLE_BEGIN try {
-#define EXCEPTION_HANDLE_END_INFO(func_name) } catch (...) { \
-    return ExceptionHandler::HandleException(func_name); }
-
-#define EXCEPTION_HANDLE_END EXCEPTION_HANDLE_END_INFO(__func__)
-
-#define EXCEPTION_THROW_IF_ERR(call, errString) \
-    do { \
-        HcclResult ret = call; \
-        ExceptionHandler::ThrowIfErrorCode(ret, errString, __FILE__, __LINE__, __func__); \
-    } while (0)
-
-#define EXCEPTION_THROW_IF_COND_ERR(condition, errString) \
-    do { \
-        if (condition) { \
-            HcclResult ret = HCCL_E_INTERNAL; \
-            ExceptionHandler::ThrowIfErrorCode(ret, errString, __FILE__, __LINE__, __func__); \
-        } \
-    } while (0)
-
 // 异常处理器类
 class ExceptionHandler {
 public:
@@ -65,6 +44,28 @@ private:
     HcclResult code_;
     std::string msg_;
 };
+
+// 宏定义，用于包装 C 接口函数的异常处理
+#define EXCEPTION_HANDLE_BEGIN try {
+#define EXCEPTION_HANDLE_END_INFO(func_name) } catch (...) { \
+    return hccl::ExceptionHandler::HandleException(func_name); }
+
+#define EXCEPTION_HANDLE_END EXCEPTION_HANDLE_END_INFO(__func__)
+
+#define EXCEPTION_THROW_IF_ERR(call, errString) \
+    do { \
+        HcclResult ret = call; \
+        hccl::ExceptionHandler::ThrowIfErrorCode(ret, errString, __FILE__, __LINE__, __func__); \
+    } while (0)
+
+#define EXCEPTION_THROW_IF_COND_ERR(condition, errString) \
+    do { \
+        if (condition) { \
+            HcclResult ret = HCCL_E_INTERNAL; \
+            hccl::ExceptionHandler::ThrowIfErrorCode(ret, errString, __FILE__, __LINE__, __func__); \
+        } \
+    } while (0)
+
 }
 
 #endif

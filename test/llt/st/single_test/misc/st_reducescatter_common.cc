@@ -107,7 +107,7 @@ void* impl_common_reduce_scatter_task(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
 
     bool swapped;
@@ -168,7 +168,7 @@ void* impl_common_reduce_scatter_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task hcclreduce_scatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task hcclreduce_scatter fails", para_info->device_id);
     }
 
     rt_ret = RT_ERROR_NONE;
@@ -176,7 +176,7 @@ void* impl_common_reduce_scatter_task(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
 }
     for (s32 i = 0; i < stream_list_size; i++)
     {
@@ -225,7 +225,7 @@ void* impl_common_reduce_scatter_task_ffts(void* parg)
     ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
 
     bool swapped;
@@ -288,7 +288,7 @@ void* impl_common_reduce_scatter_task_ffts(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task hcclreduce_scatter falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task hcclreduce_scatter fails", para_info->device_id);
     }
     auto &profilingManager = hccl::ProfilingManager::Instance();
     u64 profConfigL0 = 0x84000985;
@@ -299,7 +299,7 @@ void* impl_common_reduce_scatter_task_ffts(void* parg)
 
     if ( rt_ret != RT_ERROR_NONE)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     if (stream_list_size > 0) {
         for (s32 i = 0; i < stream_list_size; i++)

@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  
-#ifndef GRAPH_CTX_MGR_H
-#define GRAPH_CTX_MGR_H
+#ifndef HCOMM_GRAPH_CTX_MGR_H
+#define HCOMM_GRAPH_CTX_MGR_H
 
 #include <hccl/base.h>
 #include "ffts_common.h"
@@ -67,8 +67,8 @@ HcclResult AddDependencyEdge(u32 preCtxId, u32 afterCtxId, u32 preTaskIndex,
 HcclResult AddCtxExpasionSuccessor(HcclFftsContextsInfo *&fftsCtxsPtr);
 HcclResult AddExpasionEdgeCtx(u32 preCtxId, HcclFftsContextsInfo *&fftsCtxsPtr);
 HcclResult InitFftsSuccessorStart(u32 notifyID, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2);
-HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2);
-HcclResult ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx);
+HcclResult InitFftsDescNotifyRecordRemote(void *signal, s32 streamId, u64 signalAddr, HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2);
+HcclResult ConstructFftsNotifyRecordRemoteCtx(void *signal, rtFftsPlusWriteValueCtx_t *ctx, u64 signalAddr);
 HcclResult UpdataFftsDescRelationship(s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr);
 HcclResult InitFftsSuccessorEnd(u32 notifyID, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2);
 HcclResult InitFftsDescNotifyWait(void *signal, s32 streamId, HcclFftsContextsInfo *&fftsCtxsPtr, bool useGraphConstructorV2);
@@ -126,4 +126,4 @@ inline bool FftsCtxReady(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     return fftsCtxsPtr->completed;
 }
-#endif // GRAPH_CTX_MGR_H
+#endif // HCOMM_GRAPH_CTX_MGR_H

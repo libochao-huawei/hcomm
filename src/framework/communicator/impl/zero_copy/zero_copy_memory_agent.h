@@ -57,7 +57,7 @@ const std::map<RequestType, std::string> REQUEST_TYPE_STR {
 
 inline const char *GetReadableRequestType(RequestType type) {
     auto it = REQUEST_TYPE_STR.find(type);
-    return (it != REQUEST_TYPE_STR.end()) ? it->second.c_str() : "unkown type";
+    return (it != REQUEST_TYPE_STR.end()) ? it->second.c_str() : "unknown type";
 }
 
 inline bool IsAckRequestType(RequestType type)
@@ -125,6 +125,9 @@ public:
     static HcclResult GetRingBufferAddr(u64 &bufferPtr, u64 &headPtr, u64 &tailPtr);
     static bool IsAddressMgrInited();
 
+    bool IsPaused() const;
+    bool IsResumed() const;
+
 private:
     // member functions
     std::string GenerateSocketTag(u32 localDevPhyId, u32 remoteDevPhyId);
@@ -169,6 +172,8 @@ private:
         return type == RequestType::BARRIER_CLOSE || type == RequestType::BARRIER_CLOSE_ACK;
     }
 
+    void CheckSnapshotStatus();
+
     // member variables
     bool initiated_;
     bool isSingleRank_{false};
@@ -210,6 +215,7 @@ private:
     std::unordered_map<u32, ZeroCopyMemoryAgentRecvMgr> recvMgrs_;
 
     static std::unique_ptr<ZeroCopyAddressMgr> addressMgr_;
+    bool isPaused_ { false }; // need to be paused when snapshot
 };
 }
 

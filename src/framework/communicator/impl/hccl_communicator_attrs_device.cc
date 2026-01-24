@@ -23,8 +23,21 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const RankTable_t &rankTable,
+                                           const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap)
+    {
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
                                            WorldGroupInfo &groupCommonData)
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicatorAttrs::Init(HcclCommParams &params, const std::vector<RankInfo> &rankList,
+                                           WorldGroupInfo &groupCommonData,
+                                           const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoConfigMap)
     {
         return HCCL_SUCCESS;
     }

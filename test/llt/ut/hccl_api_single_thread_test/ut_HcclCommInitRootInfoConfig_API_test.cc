@@ -82,6 +82,34 @@ TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_RootIn
     Ut_Comm_Destroy(comm);
 }
 
+
+TEST_F(HcclCommInitRootInfoTest, Ut_Group_HcclCommInitRootInfoConfig_rank8)
+{
+    int nRanks = 8;
+    HcclRootInfo id = Ut_Get_Root_Info(0);
+    int rankId = 0;
+    HcclComm comms[nRanks];
+
+    HcclCommConfig commConfig;
+    HcclCommConfigInit(&commConfig);
+
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        HcclCommInitRootInfoConfig(nRanks, &id, rankId, &commConfig, &comms[i]);
+    }
+    HcclResult ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        Ut_Comm_Destroy(comms[i]);
+    }
+    ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 TEST_F(HcclCommInitRootInfoConfigTest, Ut_HcclCommInitRootInfoConfig_When_RankGreaterThannRanks_Expect_ReturnIsHCCL_E_PARA)
 {
     int nRanks = 10;

@@ -191,10 +191,8 @@ const std::map<HcclDataType, std::string> HCOM_DATA_TYPE_STR_MAP{
     {HcclDataType::HCCL_DATA_TYPE_FP64, "float64"},
     {HcclDataType::HCCL_DATA_TYPE_BFP16, "bfloat16"},
     {HcclDataType::HCCL_DATA_TYPE_INT128, "int128"},
-#ifndef OPEN_BUILD_PROJECT
     {HcclDataType::HCCL_DATA_TYPE_FP8E4M3, "fp8e4m3"},
     {HcclDataType::HCCL_DATA_TYPE_FP8E5M2, "fp8e5m2"},
-#endif
     {HcclDataType::HCCL_DATA_TYPE_RESERVED, "reserved"}
 };
 
@@ -273,15 +271,15 @@ using IpSocket = struct IpSocket {
     }
 };
 using RaResourceInfo = struct TagRaResourceInfo {
-    SocketHandle vnicSocketHandle;
+    std::map<hccl::HcclIpAddress, IpSocket> vnicSocketMap;
     std::map<hccl::HcclIpAddress, IpSocket> nicSocketMap;
     std::map<hccl::HcclIpAddress, IpSocket> hostNetSocketMap;
 
-    TagRaResourceInfo() : vnicSocketHandle(nullptr)
+    TagRaResourceInfo()
     {
     }
 
-    TagRaResourceInfo(const TagRaResourceInfo &that) : vnicSocketHandle(that.vnicSocketHandle),
+    TagRaResourceInfo(const TagRaResourceInfo &that) : vnicSocketMap(that.vnicSocketMap),
         nicSocketMap(that.nicSocketMap), hostNetSocketMap(that.hostNetSocketMap)
     {
     }
@@ -289,7 +287,7 @@ using RaResourceInfo = struct TagRaResourceInfo {
     TagRaResourceInfo &operator=(const TagRaResourceInfo &that)
     {
         if (&that != this) {
-            vnicSocketHandle = that.vnicSocketHandle;
+            vnicSocketMap = that.vnicSocketMap;
             nicSocketMap = that.nicSocketMap;
             hostNetSocketMap = that.hostNetSocketMap;
         }
@@ -298,7 +296,7 @@ using RaResourceInfo = struct TagRaResourceInfo {
 
     ~TagRaResourceInfo()
     {
-        vnicSocketHandle = nullptr;
+        vnicSocketMap.clear();
         nicSocketMap.clear();
         hostNetSocketMap.clear();
     }

@@ -55,7 +55,7 @@ TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_clusterInfoF
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_clusterInfoFileContentInvaild_Expect_ReturnIsHCCL_E_INTERNAL) {
+TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_clusterInfoFileContentInvalid_Expect_ReturnIsHCCL_E_INTERNAL) {
     Ut_Device_Set(0);
     const char* rankTableFile = rankTableFileName;
     std::ofstream badFile(rankTableFile, std::ios::trunc);

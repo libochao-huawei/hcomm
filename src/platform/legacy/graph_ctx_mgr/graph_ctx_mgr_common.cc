@@ -94,7 +94,7 @@ HcclResult LaunchGraph(void *fftsPubInfo, void *streamPtr, void *ctx, uint32_t t
     }
 
     if (fftsCtxsPtr->refreshIndex != fftsCtxsPtr->ctxNum) {
-        HCCL_ERROR("ffts context num is invaild, expected:%u, actual:%u.", fftsCtxsPtr->ctxNum,
+        HCCL_ERROR("ffts context num is invalid, expected:%u, actual:%u.", fftsCtxsPtr->ctxNum,
             fftsCtxsPtr->refreshIndex);
         return HCCL_E_PARA;
     }
@@ -119,7 +119,7 @@ HcclResult LaunchGraph(void *fftsPubInfo, void *streamPtr, void *ctx, uint32_t t
     task.argsHandleInfoPtr = nullptr;
     ConstructFftsTask(task, fftsPlusSqe, fftsCtxsPtr, fftsPubInfoPtr->argsHandleList);
     PrintFFTSDebugDetails(fftsPlusSqe, task, fftsCtxsPtr);
-    CHK_RET(FftsPlusTaskLaunchWithFlag(&task, streamPtr, 0));
+    CHK_RET(FftsPlusTaskLaunch(&task, streamPtr));
     *ctxNum = fftsCtxsPtr->ctxNum;
     return HCCL_SUCCESS;
 }
@@ -146,7 +146,7 @@ void GraphDump(void *fftsPubInfo, void *ctx)
     return;
 }
 
-HcclResult GraphAddRecordTask(void *fftsPubInfo, void *ctx, uint32_t streamId, void *signal, bool inchip, uint32_t *ctxIdx)
+HcclResult GraphAddRecordTaskInner(void *fftsPubInfo, void *ctx, uint32_t streamId, void *signal, bool inchip, u64 signalAddr, uint32_t *ctxIdx)
 {
     CHK_PTR_NULL(fftsPubInfo);
     CHK_PTR_NULL(ctx);
@@ -160,7 +160,7 @@ HcclResult GraphAddRecordTask(void *fftsPubInfo, void *ctx, uint32_t streamId, v
             CHK_RET(GetNotifyID(signal, &notifyID));
             CHK_RET(InitFftsSuccessorStart(notifyID, streamId, fftsCtxsPtr, fftsPubInfoPtr->useGraphConstructorV2));
         } else {
-            CHK_RET(InitFftsDescNotifyRecordRemote(signal, streamId, fftsCtxsPtr, fftsPubInfoPtr->useGraphConstructorV2));
+            CHK_RET(InitFftsDescNotifyRecordRemote(signal, streamId, signalAddr, fftsCtxsPtr, fftsPubInfoPtr->useGraphConstructorV2));
             *ctxIdx = fftsCtxsPtr->refreshIndex;
         }
     } else {
@@ -177,6 +177,19 @@ HcclResult GraphAddRecordTask(void *fftsPubInfo, void *ctx, uint32_t streamId, v
         }
     }
     PLF_CONFIG_INFO(PLF_TASK, "%s para: taskIndex[%u]", __func__, fftsCtxsPtr->refreshTaskIndex - 1);
+    return HCCL_SUCCESS;
+}
+
+HcclResult GraphAddRecordTaskWithSignalAddr(void *fftsPubInfo, void *ctx, uint32_t streamId,
+    void *signal, bool inchip, u64 signalAddr, uint32_t *ctxIdx)
+{
+    CHK_RET(GraphAddRecordTaskInner(fftsPubInfo, ctx, streamId, signal, inchip, signalAddr, ctxIdx));
+    return HCCL_SUCCESS;
+}
+
+HcclResult GraphAddRecordTask(void *fftsPubInfo, void *ctx, uint32_t streamId, void *signal, bool inchip, uint32_t *ctxIdx)
+{
+    CHK_RET(GraphAddRecordTaskInner(fftsPubInfo, ctx, streamId, signal, inchip, LEGACY_INVALID_U64, ctxIdx));
     return HCCL_SUCCESS;
 }
 

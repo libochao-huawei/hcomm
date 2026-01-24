@@ -26,6 +26,7 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
 
     const u64 count = param.GetDataCount(topoAttr_.userRank);
     const HcclDataType dataType = param.GetDataType();
+    bool needLaunchAtTheEnd = !is310P3Common_; // 是否需要在Orchestrate()结束时launch任务
 
     HcclResult ret = HCCL_SUCCESS;
     // 图模式和单卡场景下不需要Loop
@@ -53,13 +54,14 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         execMem.inputPtr = param.inputPtr;
         execMem.outputPtr = param.outputPtr;
         ret = KernelRun(param, execMem);
+        needLaunchAtTheEnd = false;
     } else if (desc_.isZeroCopy) {
         u64 totalSize = param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
         // 在Level1和Level2执行RunLoop
         if (topoAttr_.serverNum > 1) {
             ret = RunLoop(param, algRes);
             CHK_PRT_RET(ret != HCCL_SUCCESS,
-                HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather excutor run loop failed",
+                HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather executor run loop failed",
                     HCCL_ERROR_CODE(ret)), ret);
         } else {        // 单机场景，数据直接从UserInput搬到UserOutput
             DeviceMem dstMem = DeviceMem::create(static_cast<u8 *>(algRes.paramOutputMem.ptr()) + totalSize * topoAttr_.userRank, totalSize);
@@ -81,13 +83,14 @@ HcclResult CollAllGatherExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         } else {
             ret = RunLoop(param, algRes);
         }
+        needLaunchAtTheEnd = false;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather excutor kernel run failed",
+        HCCL_ERROR("[CollAllGatherExecutor][Orchestrate]errNo[0x%016llx]AllGather executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
-    if (!is310P3Common_) {
+    if (needLaunchAtTheEnd) {
         HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
         CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     }

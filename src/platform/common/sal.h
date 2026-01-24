@@ -8,14 +8,14 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_SRC_SAL_H
-#define HCCL_SRC_SAL_H
+#ifndef HCOMM_HCCL_SRC_SAL_H
+#define HCOMM_HCCL_SRC_SAL_H
 
 #include <nlohmann/json.hpp>
 #include "sal_pub.h"
 #include "log.h"
 
-#if T_DESC("日志处理适配", true)
+#if HCOMM_T_DESC("日志处理适配", true)
 
 constexpr u32 TIME_FROM_1900 = 1900;
 
@@ -24,7 +24,7 @@ constexpr s32  LOG_TIME_STAMP_SIZE = 27;
 
 #endif
 
-#if T_DESC("json处理函数", true)
+#if HCOMM_T_DESC("json处理函数", true)
 HcclResult SalParseInformation(nlohmann::json &parseInformation, const std::string &information);
 HcclResult SalGetJsonProperty(const nlohmann::json &obj, const std::string &propName, std::string &propValue);
 #endif
@@ -105,4 +105,4 @@ inline s32 FloatMemClear(float* dst, size_t count)
     return ret;
 }
 
-#endif  // HCCL_SRC_SAL_H
+#endif  // HCOMM_HCCL_SRC_SAL_H

@@ -8,44 +8,55 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 #include "coll_comm.h"
-#include "rank_graphs/rank_graph.h"
+// #include "rank_graphs/rank_graph.h"
+#include "exception_handler.h"
+#include "rank_graph_v2.h"
+
 
 namespace hccl {
-CollComm::CollComm(uint32_t rankId, const std::string& rankTable, const CommConfig& config)
-    : rankId_(rankId), rankTable_(rankTable), config_(config) {
+CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
+    : comm_(comm), rankId_(rankId), commId_ (commName), callbacks_(callbacks)
+{}
+
+CollComm::~CollComm()
+{
+    HCCL_INFO("[CollComm][~CollComm] collComm deinit");
 }
 
-CollComm::~CollComm() {
-}
-
-HcclResult CollComm::Init()
+HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer)
 {
     EXCEPTION_HANDLE_BEGIN
     // 创建RankGraph
-    rankGraph_ = RankGraph::CreateRankGraph(rankTable_, "");
+    EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
+    // int32_t commEngine = -1;
+    u32 threadNum = 0xffffffff;
+    u32 notifyNumPerThread = 0xffffffff;
     
-    // 获取Rank信息
-    RankInfo rankInfo;
-    rankInfo.rankId = rankId_;
-    rankInfo.totalRanks = rankGraph_->GetRankSize();
-    
-    // 创建MyRank
-    myRank_ = std::make_shared<MyRank>(rankId_, rankInfo, config_);
-    
-    // 初始化MyRank
-    CHK_RET(myRank_->Init());
+   
+    // Threadmanger
+    if (!commEngineResMgr_) {
+        EXECEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
+            return HCCL_E_PTR);
+        CHK_PRT(commEngineResMgr_->Init(threadNum, notifyNumPerThread, commId_, binHandle, callbacks_));
+    }
+
+    // Contextmanger
+    if (!contextMgr_) {
+        EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
+    }
+   
+
+    EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_), return HCCL_E_PTR);
+    // // 初始化MyRank
+    CHK_RET(myRank_->Init(cclBuffer));
+
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
-uint32_t CollComm::GetMyRankId() const {
+uint32_t CollComm::GetMyRankId() const
+{
     return rankId_;
 }
 
-uint32_t CollComm::GetRankSize() const {
-    if (rankGraph_) {
-        return rankGraph_->GetRankSize();
-    }
-    return 0;
-}
-}
+}  // namespace hccl

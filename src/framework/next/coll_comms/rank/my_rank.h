@@ -10,56 +10,47 @@
 #ifndef MY_RANK_H
 #define MY_RANK_H
 
-#include <memory>
-#include <vector>
+#include "hcomm_res_defs.h"
+#include "mem_host_pub.h"
+#include "rank_pair_mgr.h"
+#include "endpoint_mgr.h"
+#include "comm_config_pub.h"
+#include "common.h"
 #include "comm_mems/comm_mems.h"
-#include "../../comms/comm_engine_res/comm_engine_res_mgr.h"
-#include "../../comms/endpoints/endpoint_mgr.h"
-#include "rank_pair.h"
-
+#include "endpoint_mgr.h"
 namespace hccl {
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
  */
 class MyRank {
 public:
-    MyRank(uint32_t rankId, const RankInfo& rankInfo, const CommConfig& config);
-    ~MyRank() = default;
-
-    // 初始化MyRank资源
-    HcclResult Init();
-
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const RankInfo& rankInfo, const CommConfig& config);
+    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config);
+    ~MyRank();
     // 获取通信内存管理器
-    std::shared_ptr<CommMems> GetCommMems() const { return commMems_; }
-
-    // 获取通信引擎资源管理器
-    std::shared_ptr<CommEngineResMgr> GetCommEngineResMgr() const { return commEngineResMgr_; }
-
-    // 获取端点管理器
-    std::shared_ptr<EndPointMgr> GetEndPointMgr() const { return endPointMgr_; }
-
-    // 获取和目标rank的连接对
-    std::shared_ptr<RankPair> GetRankPair(uint32_t dstRankId) const { return rankPairMgr_.at(dstRankId); }
+    CommMems* GetCommMems() const { return commMems_.get(); }
+    // 初始化MyRank资源
+    HcclResult Init(HcclMem cclBuffer);
 
     // 创建通信Channel
-    HcclResult CreateChannels(CommEngine engine, const std::vector<ChannelDesc>& channelDescs,
-        std::vector<ChannelHandle>& channels);
-
-    // 获取Rank ID
-    uint32_t GetRankId() const { return rankId_; }
-
-    // 获取配置
-    const CommConfig& GetConfig() const { return config_; }
+    HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
+        const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
 
 private:
+    HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
+        const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
+    HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
+        std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
+    HcclResult BatchConnectChannels(ChannelHandle *channelHandles, uint32_t channelNum);
+
+    aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
-    RankInfo rankInfo_{};
     CommConfig config_{};
-    std::shared_ptr<CommMems> commMems_{};
-    std::shared_ptr<CommEngineResMgr> commEngineResMgr_{};
-    std::shared_ptr<EndPointMgr> endPointMgr_{};
-    std::unordered_map<uint32_t, std::shared_ptr<RankPair>> rankPairMgr_{};
+    std::unique_ptr<RankPairMgr> rankPairMgr_{nullptr};
+    std::unique_ptr<hcomm::EndpointMgr> endpointMgr_{nullptr};
+    std::unique_ptr<CommMems> commMems_{nullptr};
 };
-}
+
+} // namespace hccl
 
 #endif // MY_RANK_H

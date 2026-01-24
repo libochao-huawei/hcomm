@@ -1,15 +1,15 @@
 /**
-Â * Copyright (c) 2025 Huawei Technologies Co., Ltd.
-Â * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-Â * CANN Open Software License Agreement Version 2.0 (the "License").
-Â * Please refer to the License for details. You may not use this file except in compliance with the License.
-Â * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-Â * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-Â * See LICENSE in the root of the software repository for the full text of the License.
-Â */
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
-#ifndef RANK_GRAPH_H
-#define RANK_GRAPH_H
+#ifndef RANK_GRAPH_V1_H
+#define RANK_GRAPH_V1_H
 
 #include "topoinfo_struct.h"
 #include "hccl_api.h"
@@ -17,12 +17,13 @@
 #include "hccl_impl_pub.h"
 #include "hccl_rank_graph.h"
 #include "hccl_rankgraph.h"
+#include "rank_graph_base.h"
 namespace hccl {
 
-class RankGraph {
+class RankGraphV1 : public RankGraph {
 struct RankGraphInfo {
-    RankInfo_t rankInfo;  // rank â†’ server / supernode ç­‰å½’å±
-    std::vector<EndPoint> endPoints; // é€šä¿¡ç«¯ç‚¹ä¿¡æ¯
+    RankInfo_t rankInfo;  // rank ¡ú server / supernode µÈ¹éÊô
+    std::vector<EndpointDesc> endPoints; // Í¨ĞÅ¶ËµãĞÅÏ¢
 };
 
 enum class HcclNetLayerlevel {
@@ -37,7 +38,8 @@ public:
     HcclResult Init(const HcclTopoAttr &topoAttr);
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
         uint32_t* listSize);
-    // æ ¹æ® rankId è·å– rank ä¿¡æ¯
+    HcclResult GetHeterogMode(HcclHeterogMode *mode) const;
+    // ¸ù¾İ rankId »ñÈ¡ rank ĞÅÏ¢
     const RankInfo_t* FindRank(uint32_t rankId) const;
     HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
@@ -47,30 +49,35 @@ public:
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
 
 private:
-    HcclResult DevTypeToCommProtocol(DevType type, CommProtocol &protocol);
-    CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t srcInfo, const RankInfo_t dstInfo);
+    HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol);
+    CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo, uint32_t netLayer);
     HcclResult InitRankInfo();
     HcclResult InitServerRankInfo();
     HcclResult InitSuperPodRankInfo();
     HcclResult InitNetLayer();
-    HcclResult GetModuleIdx(const RankInfo &rankInfo, u32 &moduleIdx);
     HcclResult InitGraphRankInfo();
+    CommProtocol GetCommProtocolInSameServer(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
+    CommProtocol GetCommProtocolBetweenServers(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo);
+    bool NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol);
+    HcclResult InitHeterogMode();
     RankTable_t rankTable_;
-    // æ ¹æ® rankId è·å– RankInfo_t ä¸ EndPointä¿¡æ¯
+    // ¸ù¾İ rankId »ñÈ¡ RankInfo_t Óë EndPointĞÅÏ¢
     std::unordered_map<uint32_t, RankGraphInfo> rankIndex_;
-    // æ ¹æ® srcRank dstRank è·å–CommLinkä¿¡æ¯
-    std::map<std::pair<uint32_t, uint32_t>, std::vector<CommLink>> rankPairInfo_;
+    // ¸ù¾İ srcRank dstRank »ñÈ¡CommLinkĞÅÏ¢
+    std::map<std::tuple<uint32_t, uint32_t, uint32_t>, std::vector<CommLink>> rankPairInfo_;
     std::vector<uint32_t> netLayer_;
     std::unordered_map<uint32_t, std::vector<u32>> rankList_;      //level->rankList
     std::unordered_map<uint32_t, std::vector<u32>> rankSizeList_;  //level->rankSizeList
     std::vector<RankInfo_t> rankGraph_;
     std::vector<struct GraphRankInfo> graphRankInfo_;
     HcclTopoAttr topoAttr_;
-    RankInfo rankData_;         // å½“å‰rankçš„ç›¸å…³ä¿¡æ¯
+    RankInfo rankData_;         // µ±Ç°rankµÄÏà¹ØĞÅÏ¢
+    DevType devType_ = DevType::DEV_TYPE_NOSOC;
+    HcclHeterogMode heterogMode_{HcclHeterogMode::HCCL_HETEROG_MODE_INVALID};    // ×éÍøÒì¹¹&Í¬¹¹ĞÎÌ¬
 
-    // é€šä¿¡åŸŸåœ¨å½“å‰superPodå†…, æŒ‰ç…§serverIdxåˆ’åˆ†çš„æ‰€æœ‰rankä¿¡æ¯
+    // Í¨ĞÅÓòÔÚµ±Ç°superPodÄÚ, °´ÕÕserverIdx»®·ÖµÄËùÓĞrankĞÅÏ¢
     std::map<u32, std::vector<RankInfo> > serverToRank_;
-    // é€šä¿¡åŸŸæ‰€æœ‰rankçš„ä¿¡æ¯, æŒ‰ç…§superPodId -> RankInfo çš„ç»“æ„åˆ’åˆ†
+    // Í¨ĞÅÓòËùÓĞrankµÄĞÅÏ¢, °´ÕÕsuperPodId -> RankInfo µÄ½á¹¹»®·Ö
     std::map<u32, std::vector<RankInfo> > superPodToRank_;
 };
 } // namespace hccl

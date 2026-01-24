@@ -62,8 +62,8 @@ private:
     HcclResult RecvRemoteRankNum(std::shared_ptr<HcclSocket> socket, u32 &remoteRankNum);
     HcclResult HierarchicalSendRecv();
     HcclResult VerifyRemoteRankNum(u32 &previousRankNum, u32 remoteRankNum) const;
-    HcclResult SendIndentify(std::shared_ptr<HcclSocket> socket, u32 indentify) const;
-    HcclResult DisplayConnectionedRank(const std::map<std::string, std::shared_ptr<HcclSocket>> &connectSockets, u32 rankNum = 0);
+    HcclResult SendIdentify(std::shared_ptr<HcclSocket> socket, u32 identify) const;
+    HcclResult DisplayConnectedRank(const std::map<std::string, std::shared_ptr<HcclSocket>> &connectSockets, u32 rankNum = 0);
     HcclResult DisplayConnectingStatus(u32 totalSockets, u32 waitSockets,
         const std::map<std::string, std::shared_ptr<HcclSocket>> &connectSockets);
     bool DoServerIdExist(const RankTable_t &rankTable, const std::string &serverId) const;

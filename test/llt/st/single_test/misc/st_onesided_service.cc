@@ -3782,7 +3782,7 @@ TEST_F(OneSidedSt, regmem_without_memExport)
     try {
         ret = service->RegMem(localbuf, bufSize, HCCL_MEM_TYPE_DEVICE, 1, localMemDesc1);
     } catch (...) {
-         HCCL_ERROR("[HcclOneSidedService][RegMem] get mem desc fialed");
+         HCCL_ERROR("[HcclOneSidedService][RegMem] get mem desc failed");
     }
 
     ret = HcclCommDestroy(comm);

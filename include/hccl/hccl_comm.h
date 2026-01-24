@@ -100,7 +100,7 @@ extern HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo
  * @brief Set deterministic calculate
  *
  * @param config A struct identifying the Config
- * @param configValue An interger identifying the identify for the config.
+ * @param configValue An integer identifying the identify for the config.
  */
 
 extern HcclResult HcclSetConfig(HcclConfig config, HcclConfigValue configValue) HCOMM_WEAK_SYMBOL;
@@ -146,7 +146,7 @@ extern HcclResult HcclBarrier(HcclComm comm, aclrtStream stream) HCOMM_WEAK_SYMB
 /**
  * @brief Destroy HCCL comm
  *
- * @param comm A pointer identifying the communication resource targetting
+ * @param comm A pointer identifying the communication resource targeting
  * @return HcclResult
  * @see HcclCommInitClusterInfo()
  */
@@ -257,7 +257,7 @@ extern HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr) HCOM
  * @param virPtr The virtual address memory range in @ref HcclCommSetMemoryRange()
  * @param size The length of activate memory
  * @param offset the offset of physical memory, now only support 0
- * @param handle the physical memory hande
+ * @param handle the physical memory handle
  * @param flags the flag of physical memory, now only support 0
  */
 extern HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, size_t offset, aclrtDrvMemHandle handle, uint64_t flags) HCOMM_WEAK_SYMBOL;
@@ -278,16 +278,15 @@ extern HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr) HCOM
  */
 extern HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks) HCOMM_WEAK_SYMBOL;
 
-#ifndef OPEN_BUILD_PROJECT
 /**
- * @brief Comm accelerator set/get
- * @param comm A pointer identifying the communication resource based on.
- * @param config A struct identifying the Config
- * @param configValue An interger identifying the identify for the config.
+ * @brief Group Start
  */
-extern HcclResult HcclSetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue configValue);
-extern HcclResult HcclGetCommConfig(HcclComm comm, HcclConfig config, HcclConfigValue *configValue);
-#endif
+extern HcclResult HcclGroupStart();
+
+/**
+ * @brief Group End
+ */
+extern HcclResult HcclGroupEnd();
 
 #ifdef __cplusplus
 }
