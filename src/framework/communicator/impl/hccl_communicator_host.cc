@@ -6536,7 +6536,7 @@ namespace hccl
         opStream_ = Stream(StreamType::STREAM_TYPE_ONLINE);
         CHK_RET(hrtStreamSetMode(opStream_.ptr(), aicpuStreamMode));
         aiCpuStream = opStream_.ptr();
-        HCCL_RUN_INFO("%s alloc success, group:%s, stream id:%u, mainStreamMode:%u, aicpuStreamMode:%u",
+        HCCL_RUN_INFO("%s alloc success, group:%s, streamId:%u, mainStreamMode:%u, aicpuStreamMode:%u",
                       __func__, identifier_.c_str(), opStream_.id(), streamMode, aicpuStreamMode);
         return HCCL_SUCCESS;
     }
@@ -6874,29 +6874,9 @@ namespace hccl
 
         u32 timeOut = (opResPara_.config.notifyWaitTime == 0) ? opResPara_.config.notifyWaitTime :
                                                                (opResPara_.config.notifyWaitTime + AICPU_H2D_TIMEOUT_INC);
-        OrderLaunch& orderLaunch = OrderLaunch::GetInstance(deviceLogicId_);
-        std::shared_ptr<LocalNotify> notify0;
-        std::shared_ptr<LocalNotify> notify1;
-        if (opParam.isCapture) {
-            notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_0)];
-            notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_ACLGRAPH_1)];
-            CHK_RET(orderLaunch.AclgraphLaunchInOrderToOrderStream(identifier_, kfcOpStream, notify0, notify1, timeOut));
-        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-            notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_0)];
-            notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_OPBASE_1)];
-            CHK_RET(orderLaunch.OpbaseLaunchInOrder(identifier_, kfcOpStream, notify0, notify1, timeOut));
-        } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
-            notify0 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_0)];
-            notify1 = localAiCpuOpNotify_[static_cast<u32>(AicpuLocalNotifyIdx::ORDER_INDEX_HCOM_1)];
-            CHK_RET(orderLaunch.HcomLaunchInOrder(identifier_, kfcOpStream, graphId_, notify0,
-                notify1, timeOut));
-        }
         CHK_RET(KernelLaunchChooseAicpuOrCustom(opParam.inputPtr, opParam.outputPtr, kfcOpStream.ptr(),
                                                 reinterpret_cast<u64>(deviceContext.ptr()), opTilingDataMem.ptr(), opTilingDataSize,
                                                 kernelName, mode, opParam.tag, isCustom));
-        if (opParam.isCapture) {
-            CHK_RET(orderLaunch.AclgraphLaunchInOrderToKernelStream(identifier_, kfcOpStream));
-        }
 
         uint64_t endTime = hrtMsprofSysCycleTime();
         s32 threadId = SalGetTid();
