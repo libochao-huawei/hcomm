@@ -70,6 +70,16 @@ const u32& EnvConfig::GetExternalInputRdmaServerLevel()
     return g_envConfig.rdmaServerLevel;
 }
 
+const u32& EnvConfig::GetExternalInputRdmaTimeOut()
+{
+    return g_envConfig.rdmaTimeOut;
+}
+
+const u32& EnvConfig::GetExternalInputRdmaRetryCnt()
+{
+    return g_envConfig.rdmaRetryCnt;
+}
+
 const std::vector<HcclSocketPortRange> &GetExternalInputHostSocketPortRange()
 {
     std::lock_guard<std::mutex> lock(g_envConfigMutex);
@@ -159,6 +169,37 @@ HcclResult InitEnvParam()
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init environment param, parse "
                    "HCCL_RDMA_SL failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
+
+    // 解析RDMATimeOut
+    std::pair<u32, u32> rdmaTimeOutRange;
+    ret = g_envConfig.ParseRDMATimeOut(rdmaTimeOutRange);
+    std::string vaildRange =
+        "Value range[" + std::to_string(rdmaTimeOutRange.first) + " ," + std::to_string(rdmaTimeOutRange.second) + "]";
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_RDMA_TIMEOUT", vaildRange}));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_TIMEOUT failed. errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
+
+    // 解析RDMARetryCnt
+    ret = g_envConfig.ParseRDMARetryCnt();
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_RDMA_RETRY_CNT", "Value range[1, 7]"}));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_RDMA_RETRY_CNT failed. errorno[%d]",
             LOG_KEYWORDS_INIT_GROUP.c_str(),
             LOG_KEYWORDS_ENV_CONFIG.c_str(),
             HCCL_ERROR_CODE(ret),
@@ -491,6 +532,91 @@ HcclResult EnvConfig::ParseRDMAServerLevel()
     MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_SL, mmSysGetEnvValue);
     std::string envValue = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
     return ParseEnvConfig(param, envValue, g_envConfig.rdmaServerLevel);
+}
+
+HcclResult EnvConfig::ParseRDMATimeOut(std::pair<u32, u32> &rdmaTimeOutRange)
+{
+    u32 rdmaTimeOutMax;
+#ifndef HCCD
+    if (!IsGeneralServer()) {
+        DevType deviceType;
+        CHK_RET(hrtGetDeviceType(deviceType));
+        rdmaTimeOutMax = (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B)
+            ? HCCL_RDMA_TIMEOUT_MAX_910_93
+            : HCCL_RDMA_TIMEOUT_MAX;
+    } else {
+        rdmaTimeOutMax = HCCL_RDMA_TIMEOUT_MAX;
+    }
+#else
+    rdmaTimeOutMax = HCCL_RDMA_TIMEOUT_MAX;
+#endif
+    rdmaTimeOutRange.first = HCCL_RDMA_TIMEOUT_MIN;
+    rdmaTimeOutRange.second = rdmaTimeOutMax;
+    char* mmSysGetEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_TIMEOUT, mmSysGetEnvValue);
+    std::string timeOutEnv = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
+    u32 rdmaTimeOut = HCCL_RDMA_TIMEOUT_DEFAULT;
+    if (timeOutEnv == "EmptyString") {
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TIMEOUT set by default to [%u]", rdmaTimeOut);
+        return HCCL_SUCCESS;
+    }
+
+    // 校验环境变量长度
+    bool isEnvLenValid = CheckEnvLen(timeOutEnv.c_str(), MAX_LEN_OF_DIGIT_ENV);
+
+    CHK_PRT_RET(!isEnvLenValid,
+        HCCL_ERROR("[Parse][RDMATimeOut]errNo[0x%016llx] Invalid HCCL_RDMA_TIMEOUT env len, len is bigger than "\
+            "[%u]. errorno[%d]", HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
+
+    g_envConfig.rdmaTimeOut = HCCL_RDMA_TIMEOUT_DEFAULT;
+    CHK_RET(IsAllDigit(timeOutEnv.c_str()));
+
+    HcclResult ret = SalStrToULong(timeOutEnv.c_str(), HCCL_BASE_DECIMAL, rdmaTimeOut);
+    // 若转换出错或者设置的RDMATimeOut不在有效范围内，报错
+    CHK_PRT_RET(
+        (ret != HCCL_SUCCESS || rdmaTimeOut < HCCL_RDMA_TIMEOUT_MIN || rdmaTimeOut > rdmaTimeOutMax),
+        HCCL_ERROR("[Parse][RDMATimeOut]HCCL_RDMA_TIMEOUT[%s] is invalid. except: [%u, %u]",
+            timeOutEnv.c_str(),
+            HCCL_RDMA_TIMEOUT_MIN,
+            rdmaTimeOutMax),
+        HCCL_E_PARA);
+
+    g_envConfig.rdmaTimeOut = rdmaTimeOut;
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TIMEOUT set by environment to [%u]", rdmaTimeOut);
+    return HCCL_SUCCESS;
+}
+
+HcclResult EnvConfig::ParseRDMARetryCnt()
+{
+    char* mmSysGetEnvValue = nullptr;
+    MM_SYS_GET_ENV(MM_ENV_HCCL_RDMA_RETRY_CNT, mmSysGetEnvValue);
+    std::string retryCntEnv = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
+    u32 rdmaRetryCnt = HCCL_RDMA_RETRY_CNT_DEFAULT;
+    if (retryCntEnv == "EmptyString") {
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_RETRY_CNT set by default to [%u]", rdmaRetryCnt);
+        return HCCL_SUCCESS;
+    }
+
+    // 校验环境变量长度
+    bool isEnvLenValid = CheckEnvLen(retryCntEnv.c_str(), MAX_LEN_OF_DIGIT_ENV);
+
+    CHK_PRT_RET(!isEnvLenValid,
+        HCCL_ERROR("[Parse][rdmaRetryCnt]errNo[0x%016llx] Invalid HCCL_RDMA_RETRY_CNT env len, len is bigger than "\
+            "[%u]. errorno[%d]", HCCL_ERROR_CODE(HCCL_E_PARA), MAX_LEN_OF_DIGIT_ENV, HCCL_E_PARA), HCCL_E_PARA);
+
+    g_envConfig.rdmaRetryCnt = HCCL_RDMA_RETRY_CNT_DEFAULT;
+    CHK_RET(IsAllDigit(retryCntEnv.c_str()));
+
+    HcclResult ret = SalStrToULong(retryCntEnv.c_str(), HCCL_BASE_DECIMAL, rdmaRetryCnt);
+    // 若转换出错或者设置的RDMARetryCnt不在有效范围内，报错
+    CHK_PRT_RET(
+        (ret != HCCL_SUCCESS || rdmaRetryCnt < HCCL_RDMA_RETRY_CNT_MIN || rdmaRetryCnt > HCCL_RDMA_RETRY_CNT_MAX),
+        HCCL_ERROR("[Parse][rdmaRetryCnt]HCCL_RDMA_RETRY_CNT[%s] is invalid. except: [%u, %u]", retryCntEnv.c_str(),
+        HCCL_RDMA_RETRY_CNT_MIN, HCCL_RDMA_RETRY_CNT_MAX),
+        HCCL_E_PARA);
+    g_envConfig.rdmaRetryCnt = rdmaRetryCnt;
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_RETRY_CNT set by environment to [%u]", rdmaRetryCnt);
+    return HCCL_SUCCESS;
 }
 
 HcclResult ParseSingleDFSConfigItem(const std::string& dfsConfigEnv, const std::string& configName,

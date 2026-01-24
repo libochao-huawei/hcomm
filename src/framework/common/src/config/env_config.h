@@ -68,6 +68,8 @@ struct EnvConfig {
     std::vector<HcclSocketPortRange> npuSocketPortRange;
     u32 rdmaTrafficClass;
     u32 rdmaServerLevel;
+    u32 rdmaTimeOut;        // RDMA超时时间，配置范围5-24，默认值为20
+    u32 rdmaRetryCnt;       // RDMA重传次数，配置范围1-7，默认值为7
     bool enableClusterHeartBeat;
     bool opCounterEnable;
     bool inconsistentCheckSwitch;
@@ -94,6 +96,8 @@ struct EnvConfig {
         rdmaTrafficClass = HCCL_RDMA_TC_DEFAULT;
         // 初始化 rdmaServerLevel 为默认值
         rdmaServerLevel = HCCL_RDMA_SL_DEFAULT;
+        rdmaTimeOut = HCCL_RDMA_TIMEOUT_DEFAULT;
+        rdmaRetryCnt = HCCL_RDMA_RETRY_CNT_DEFAULT;
         // 初始化 enableClusterHeartBeat 为默认值
         enableClusterHeartBeat = true;
         opCounterEnable = true;
@@ -117,13 +121,28 @@ struct EnvConfig {
     static const u32 HCCL_RDMA_SL_DEFAULT = 4;      // 默认的server level为4
     static const u32 HCCL_RDMA_SL_MIN = 0;
     static const u32 HCCL_RDMA_SL_MAX = 7;
+
+    static const u32 HCCL_RDMA_TIMEOUT_DEFAULT = 20;  // 默认的TIMEOUT配置为20(对应时间4.096*2^20us)
+    static const u32 HCCL_RDMA_TIMEOUT_MIN = 5;  // TIMEOUT最小值为5
+    static const u32 HCCL_RDMA_TIMEOUT_MAX = 24;  // TIMEOUT最大值为24
+    static const u32 HCCL_RDMA_TIMEOUT_MAX_910_93 = 20;  // 910B和910_93 TIMEOUT最大值为20
+
+    static const u32 HCCL_RDMA_RETRY_CNT_DEFAULT = 7;  // 默认的Retry Cnt为7
+    static const u32 HCCL_RDMA_RETRY_CNT_MIN = 1;  // Retry Cnt最小值为1
+    static const u32 HCCL_RDMA_RETRY_CNT_MAX = 7;  // Retry Cnt最大值为7
     // 解析RDMATrafficClass
     HcclResult ParseRDMATrafficClass();
     // 解析RDMAServerLevel
     HcclResult ParseRDMAServerLevel();
 
+    HcclResult ParseRDMATimeOut(std::pair<u32, u32> &rdmaTimeOutRange);
+
+    HcclResult ParseRDMARetryCnt();
+
     static const u32& GetExternalInputRdmaTrafficClass();
     static const u32& GetExternalInputRdmaServerLevel();
+    static const u32& GetExternalInputRdmaTimeOut();
+    static const u32& GetExternalInputRdmaRetryCnt();
 
     bool CheckEnvLen(const char *envStr, u32 envMaxLen);
 };
