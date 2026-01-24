@@ -128,11 +128,11 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
 {
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(ctx);
-    HCCL_INFO("[DestoryCtx] Destory Ctx, ctx[%p] commId[%s]", ctx, commId);
+    HCCL_INFO("[DestroyCtx] Destroy Ctx, ctx[%p] commId[%s]", ctx, commId);
     if (gDispatcherCtx == ctx) {
         gDispatcherCtx = nullptr;
     } else {
-        HCCL_WARNING("[DestoryCtx] gDispatcherCtx[%p] and ctx[%p] do not match.", gDispatcherCtx, ctx);
+        HCCL_WARNING("[DestroyCtx] gDispatcherCtx[%p] and ctx[%p] do not match.", gDispatcherCtx, ctx);
     }
 
     DispatcherCtxPtr otherCtx = nullptr;
@@ -143,15 +143,15 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
     } else {
         bool hasFound = DeleteCommIdByDispatcherCtx(ctx);
         if (!hasFound) {
-            HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], it may have be destroied", ctx, commId);
+            HCCL_WARNING("[DestroyCtx] ctx[%p] not found by commId[%s], it may have be destroied", ctx, commId);
             return HCCL_SUCCESS;
         }
-        HCCL_WARNING("[DestoryCtx] ctx[%p] not found by commId[%s], just destroy", ctx, commId);
+        HCCL_WARNING("[DestroyCtx] ctx[%p] not found by commId[%s], just destroy", ctx, commId);
     }
     hccl::DispatcherCtx *Ctx_tmp = reinterpret_cast<hccl::DispatcherCtx*>(ctx);
     HcclResult ret = Ctx_tmp->Destroy();
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[DestoryCtx] CTX Destroy fail");
+        HCCL_ERROR("[DestroyCtx] CTX Destroy fail");
     }
     delete Ctx_tmp;
     ctx = nullptr;
@@ -162,7 +162,7 @@ HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
 // 同一个通信域不可以切换dispatcherCtx
 HcclResult SetDispatcherCtx(const DispatcherCtxPtr ctx)
 {
-    HCCL_INFO("SetCtx");
+    HCCL_INFO("[%s], param: ctx[%p]", __func__, ctx);
     CHK_PTR_NULL(ctx);
     gDispatcherCtx = ctx;
     return HCCL_SUCCESS;
@@ -177,7 +177,7 @@ DispatcherCtxPtr GetDispatcherCtx(const char* commId)
     }
     HCCL_DEBUG("[%s], commId[%s]", __func__, commId);
     if (LIKELY((gDispatcherCtx != nullptr))) {
-        HCCL_INFO("[%s], gDispatcherCtx[%p] exsist, commId[%s]", __func__, gDispatcherCtx, commId);
+        HCCL_INFO("[%s], gDispatcherCtx[%p] exist, commId[%s]", __func__, gDispatcherCtx, commId);
         return gDispatcherCtx;
     }
     DispatcherCtxPtr ctx;

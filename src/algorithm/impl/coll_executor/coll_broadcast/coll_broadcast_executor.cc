@@ -32,6 +32,7 @@ HcclResult CollBroadcastExecutor::Orchestrate(OpParam& param, AlgResourceRespons
 
     tag_ = param.tag;
     algResResp_ = &algRes;
+    bool needLaunchAtTheEnd = true; // 是否需要在Orchestrate()结束时launch任务
     /*  ------------执行算法-------------- */
     HcclUs startut = TIME_NOW();
 
@@ -58,7 +59,7 @@ HcclResult CollBroadcastExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         execMem.outputMem = algRes.paramOutputMem;
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]Broadcast excutor level0 failed",
+            HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]Broadcast executor level0 failed",
                 HCCL_ERROR_CODE(ret)), ret);
 
         // 在Level1和Level2执行RunLoop
@@ -80,15 +81,18 @@ HcclResult CollBroadcastExecutor::Orchestrate(OpParam& param, AlgResourceRespons
         ret = KernelRunIntraServerPost(param, execMem);
     } else {
         ret = RunLoop(param, algRes);
+        needLaunchAtTheEnd = false;
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]broadcast excutor kernel run failed",
+        HCCL_ERROR("[CollBroadcastExecutor][Orchestrate]errNo[0x%016llx]broadcast executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
-    HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
-    CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+    if (needLaunchAtTheEnd) {
+        HCCL_INFO("%s: enforce task launch at the end of Orchestrate", __func__);
+        CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
+    }
 
     HCCL_INFO("tag[%s], Broadcast executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));

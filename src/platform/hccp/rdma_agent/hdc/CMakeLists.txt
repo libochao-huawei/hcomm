@@ -2,8 +2,8 @@ if(BUILD_OPEN_PROJECT)
     set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../comm)
     set(ASYNC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/async)
 else()
-    set(BASE_DIR "${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm")
-    set(ASYNC_DIR "${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/hdc/async")
+    set(BASE_DIR "${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm")
+    set(ASYNC_DIR "${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/hdc/async")
 endif()
 
 set(ra_hdc_list ra_hdc.c
@@ -20,7 +20,23 @@ set(ra_hdc_list ra_hdc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
 )
 
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
+list(APPEND ra_hdc_list
+        ${HCOMM_ORION}/rdma_agent/comm/ctx/ra_ctx_comm.c
+        ${HCOMM_ORION}/rdma_agent/hdc/async/ra_hdc_async_ctx.c
+        ${HCOMM_ORION}/rdma_agent/hdc/ra_hdc_ctx.c
+)
+endif()
+
 add_library(ra_hdc SHARED ${ra_hdc_list})
+
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
+target_compile_definitions(ra_hdc PRIVATE
+    CONFIG_CONTEXT
+)
+endif()
 
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_hdc PRIVATE
@@ -51,6 +67,14 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+
+        # HCCP2.0
+        ${HCOMM_ORION}/inc/network
+        ${HCOMM_ORION}/inc/private/network
+        ${HCOMM_ORION}/rdma_agent/inc
+        ${HCOMM_ORION}/rdma_agent/comm/ctx
+        ${HCOMM_ORION}/rdma_agent/hdc
+        ${HCOMM_ORION}/rdma_agent/hdc/async
     )
 
     target_link_directories(ra_hdc PRIVATE
@@ -64,16 +88,16 @@ if(BUILD_OPEN_PROJECT)
 else()
     target_include_directories(ra_hdc PRIVATE
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/network
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/private/network
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/inc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_service
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/hdc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/hdc/async
-        ${TOP_DIR}/hccl/src/platform/hccp/common/
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/host_lite
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/rdma-core/providers/hns
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/private/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/inc
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_service
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/hdc
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/hdc/async
+        ${TOP_DIR}/hcomm/src/platform/hccp/common/
+        ${TOP_DIR}/hcomm/src/platform/hccp/external_depends/host_lite
+        ${TOP_DIR}/hcomm/src/platform/hccp/external_depends/rdma-core/providers/hns
     )
 endif()
 
@@ -122,8 +146,3 @@ target_compile_definitions(ra_hdc PRIVATE
 install(TARGETS  ra_hdc
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
-
-# install_package(
-#     PACKAGE ra_hdc
-#     TARGETS ra_hdc
-# )

@@ -24,34 +24,6 @@
 #include "base/context_builder/op_tiling_context_builder.h"
 #include "exe_graph/runtime/storage_shape.h"
 
-#if 0
-namespace ge {
-REG_OP(Add)
-    .INPUT(x1, TensorType({ DT_INT64 }))
-    .INPUT(x2, TensorType({ DT_INT64 }))
-    .OUTPUT(y, TensorType({ DT_INT64 }))
-    .OP_END_FACTORY_REG(Add);
-
-REG_OP(Mul)
-    .INPUT(x1, TensorType({ DT_INT64 }))
-    .INPUT(x2, TensorType({ DT_INT64 }))
-    .OUTPUT(y, TensorType({ DT_INT64 }))
-    .OP_END_FACTORY_REG(Mul);
-
-REG_OP(Maximum)
-    .INPUT(x1, TensorType({ DT_INT64 }))
-    .INPUT(x2, TensorType({ DT_INT64 }))
-    .OUTPUT(y, TensorType({ DT_INT64 }))
-    .OP_END_FACTORY_REG(Maximum);
-
-REG_OP(Minimum)
-    .INPUT(x1, TensorType({ DT_INT64 }))
-    .INPUT(x2, TensorType({ DT_INT64 }))
-    .OUTPUT(y, TensorType({ DT_INT64 }))
-    .OP_END_FACTORY_REG(Minimum);
-}
-#endif
-
 namespace TbeReduce {
 using namespace std;
 

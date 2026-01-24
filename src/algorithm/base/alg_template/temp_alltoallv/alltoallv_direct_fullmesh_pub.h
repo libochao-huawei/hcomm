@@ -30,7 +30,6 @@ private:
         const std::vector<std::shared_ptr<LocalNotify>> &meshSignalSubToMain);
     std::string GetStreamIndexString();
     u64 CalcMaxSendLen();
-    u64 CalMaxRecvLen();
     HcclResult NotifySubStreamStart();
     HcclResult WaitSubStreamFinish();
     HcclResult NotifyLocalSubStreamStart();
@@ -53,7 +52,7 @@ private:
         const std::vector<std::vector<std::pair<u32,u32>>> &partialCommRankSet);
     HcclResult LocalCopy();
     HcclResult RunGroupFullMeshAlltoall(u32 roundIdx, u32 step);
-    HcclResult RunSDMA();
+    HcclResult RunSDMA(HcclOpMetaInfoDef &opMeta);
     HcclResult RunSDMATasks(u32 roundIdx, u32 step, u32 groupRankSize, u32 leftRankSize);
     HcclResult RunSDMAFineGrained(u32 totalStep, HcclOpMetaInfoDef& opMeta);
 
@@ -66,11 +65,11 @@ private:
     u32 GetPreSrcRank(u32& curDstRank);
     void GenRdmaSendInfo(u32 dstRank, std::vector<SendDataBlock>& sendInfo);
     void GenRdmaRecvInfo(u32 srcRank, std::vector<RecvDataBlock>& recvInfo);
-    HcclResult CopyDataForSend(u32 dstRank, std::vector<SendDataBlock>& sendInfo, u32 curStep, Stream strem);
+    HcclResult CopyDataForSend(u32 dstRank, std::vector<SendDataBlock>& sendInfo, u32 curStep, Stream stream);
     HcclResult SendRecvRdmaData(u32 dstRank, u32 srcRank, std::vector<SendDataBlock>& sendInfo,
-        std::vector<RecvDataBlock>& recvInfo, u32 round, u32 index, u32 curStep, Stream strem);
+        std::vector<RecvDataBlock>& recvInfo, u32 round, u32 index, u32 curStep, Stream stream);
     HcclResult CopyRecvDataToOutput(u32 srcRank, std::vector<RecvDataBlock>& recvInfo,
-        u32 curStep, Stream strem);
+        u32 curStep, Stream stream);
     HcclResult ProcessSingleGroupRdmaData(std::vector<u32>& dstRanks, std::vector<u32>& srcRanks, u32 round);
     HcclResult ProcessRdmaData();
     HcclResult RunRDMA();
@@ -81,7 +80,6 @@ private:
     HcclResult SdmaMainStreamPost(u32 step, u32 roundIdx);
     HcclResult RdmaPostSync(Stream& stream);
     HcclResult SetPostSyncTasks(u32 step, u32 roundIdx);
-    void CheckIsHaveZeroLength();
 
     Stream mainStream_;
     u32 userRank_;
@@ -96,9 +94,7 @@ private:
     u32 totalRdmaRankNum_; // 需要通信的rdma对端
     bool isSuPodAsym_;
     HcclCMDType opType_;
-    bool isBigCount_{false};
-    bool isHugeData_{false};
-    bool isHaveZeroLength_{false};
+    bool isBigCount_;
 
     DeviceMem userInput_;
     DeviceMem userOutput_;

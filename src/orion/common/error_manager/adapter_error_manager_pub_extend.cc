@@ -1,0 +1,1 @@
+../../../platform/common/adapter/adapter_error_manager_pub_extend.cc

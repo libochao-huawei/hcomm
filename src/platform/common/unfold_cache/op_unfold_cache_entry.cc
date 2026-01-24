@@ -17,6 +17,7 @@
 #include "aicpu_hccl_sqcqv1.h"
 #include "aicpu_hccl_sqcqv2.h"
 #include "log.h"
+#include "sal.h"
 
 namespace hccl {
 
@@ -45,11 +46,17 @@ namespace hccl {
         return *this;
     }
 
-    bool OpUnfoldMemRange::InRange(const uint64_t addr) const {
+    HcclResult OpUnfoldMemRange::InRange(const uint64_t addr, bool& isInRange) const {
+        // 检查地址是否溢出
+        CHK_PRT_RET(baseAddr + memSize < baseAddr, HCCL_ERROR("[OpUnfoldMemRange][InRange] baseAddr[0x%016llx] + memSize[%llu] overflows", baseAddr, memSize), HCCL_E_INTERNAL);
+
         if (isValid && addr >= baseAddr && addr < (baseAddr + memSize)) {
-            return true;
+            isInRange = true;
+        } else {
+            isInRange = false;
         }
-        return false;
+
+        return HCCL_SUCCESS;
     }
 
     // struct RefreshAddrInfo
@@ -312,7 +319,7 @@ namespace hccl {
         return HCCL_SUCCESS;
     }
 
-    HcclResult OpUnfoldCacheEntry::UpdateAndGetSqeArray(const size_t arrayIdx, const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr, AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<size_t>& largestSqeIdxes) {
+    HcclResult OpUnfoldCacheEntry::UpdateAndGetSqeArray(const size_t arrayIdx, const std::vector<OpUnfoldMemRange>& curUserInputMemRanges, const std::vector<OpUnfoldMemRange>& curUserOutputMemRanges, Stream& mainStream, std::vector<Stream> &slaveStreams, const uint32_t opRingBufferIdx, size_t& sqeCount, uint8_t **sqeArrayPtr, uint8_t **sqeTypeArrayPtr, AicpuDfxInfo **sqeDfxInfoArrayPtr, Stream **streamPtrPtr, std::vector<size_t>& largestSqeIdxes, const bool profL1Enable, std::vector<uint64_t>& profTimestamps) {
         HCCL_INFO("[OpUnfoldCacheEntry][UpdateAndGetSqeArray] update and get SQEs from %uth SQE array", arrayIdx);
 
         // 检验入参
@@ -330,6 +337,10 @@ namespace hccl {
         *sqeTypeArrayPtr = sqeTypeArrays_[arrayIdx];
         *sqeDfxInfoArrayPtr = sqeDfxInfoArrays_[arrayIdx];
         largestSqeIdxes.clear();
+        if (profL1Enable) {
+            profTimestamps.clear();
+            profTimestamps.reserve(sqeCount); // 需要额外flip placeholder是小概率事件, 所以只reserve cached SQE个数 (即非flip placeholder类SQE)
+        }
 
         // 设置入参的stream pointer
         const uint32_t streamSeqIdx = streamSeqIdxes_[arrayIdx];
@@ -456,12 +467,24 @@ namespace hccl {
                 }
             }
 
+            // 记录SQE刷新时间用于profiling
+            if (profL1Enable) {
+                const uint64_t curTime = ProfGetCurCpuTimestamp();
+                profTimestamps.push_back(curTime);
+            }
+
             // 刷新stream.curTaskId
             if (curTaskId < UINT16_MAX) { // 未出现uint16 overflow
                 curTaskId += 1;
             } else { // 触发flip
                 curTaskId = 1; // 为placeholder SQE预留task id = 0
                 largestSqeIdxes.push_back(sqeIdx); // 记录sqeIdx, LaunchNewTask中需要在该位置后添加placeholder SQE
+
+                // Flip placeholder SQE在外侧dispatcher aicpu中生成, 这里记录当前时间作为flip placeholder SQE的生成时间
+                if (profL1Enable) {
+                    const uint64_t curTime = ProfGetCurCpuTimestamp();
+                    profTimestamps.push_back(curTime);
+                }
             }
 
             sqePtr += HCCL_SQE_SIZE;
@@ -490,7 +513,9 @@ namespace hccl {
     HcclResult OpUnfoldCacheEntry::CheckAndPrepareRefreshAddrInfo(const uint64_t sqeAddr, RefreshAddrInfo& refreshAddrInfo) {
         // 遍历per-rank user input memory range
         for (size_t rankId = 0; rankId < userInputMemRanges_.size(); ++rankId) {
-            if (userInputMemRanges_[rankId].InRange(sqeAddr)) {
+            bool isInRange = false;
+            CHK_RET(userInputMemRanges_[rankId].InRange(sqeAddr, isInRange));
+            if (isInRange) {
                 refreshAddrInfo.rankId = rankId;
                 refreshAddrInfo.memType = RefreshAddrInfo::USER_INPUT_MEMTYPE;
                 return HCCL_SUCCESS; // 确实是某rank下的user input mem, 则无需继续搜索output mem
@@ -499,7 +524,9 @@ namespace hccl {
 
         // 遍历per-rank user input memory range
         for (size_t rankId = 0; rankId < userOutputMemRanges_.size(); ++rankId) {
-            if (userOutputMemRanges_[rankId].InRange(sqeAddr)) {
+            bool isInRange = false;
+            CHK_RET(userOutputMemRanges_[rankId].InRange(sqeAddr, isInRange));
+            if (isInRange) {
                 refreshAddrInfo.rankId = rankId;
                 refreshAddrInfo.memType = RefreshAddrInfo::USER_OUTPUT_MEMTYPE;
                 return HCCL_SUCCESS;
@@ -516,11 +543,13 @@ namespace hccl {
         // 获取缓存的和当前的memory ranges
         const OpUnfoldMemRange& cachedMemRange = cachedMemRanges[rankId];
         const OpUnfoldMemRange& curMemRange = curMemRanges[rankId];
-        HCCL_DEBUG("[OpUnfoldCacheEntry][RefreshSqeAddr] cachedMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%u]; curMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%u]",
+        HCCL_DEBUG("[OpUnfoldCacheEntry][RefreshSqeAddr] cachedMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%llu]; curMemRange: isValid[%u] baseAddr[0x%016llx] memSize[%llu]",
             cachedMemRange.isValid, cachedMemRange.baseAddr, cachedMemRange.memSize, curMemRange.isValid, curMemRange.baseAddr, curMemRange.memSize);
 
         // 对应rank下一定有user memory, 且对应SQE的addr字段一定在user memory range内, 才需要调用本函数刷新addr
-        CHK_PRT_RET(!cachedMemRange.InRange(sqeAddr),
+        bool isInRange = false;
+        CHK_RET(cachedMemRange.InRange(sqeAddr, isInRange));
+        CHK_PRT_RET(!isInRange,
             HCCL_ERROR("[OpUnfoldCacheEntry][RefreshSqeAddr] sqeAddr[0x%016llx] not in the range of cachedMemRange[0x%016llx, 0x%016llx)",
                 sqeAddr, cachedMemRange.baseAddr, cachedMemRange.baseAddr + cachedMemRange.memSize),
             HCCL_E_INTERNAL);

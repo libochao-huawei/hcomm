@@ -12,20 +12,74 @@
 
 #include <vector>
 #include "thread.h"
+#include "aicpu_ts_thread_interface.h"
 
-namespace hcomm {
-/**
- * @note 职责：AICPU_TS通信引擎的Thread的C++派生类，内部包含rtsStream、thread间的同步Notify。
- */
+namespace hccl {
 class AicpuTsThread : public Thread {
 public:
-    AicpuTsThread();
-    ~AicpuTsThread() override;
+    AicpuTsThread(StreamType streamType, uint32_t notifyNum, const NotifyLoadType notifyLoadType);
+    AicpuTsThread(const std::string &uniqueIdStr);
 
+    ~AicpuTsThread();
+
+    HcclResult Init() override;
+    HcclResult DeInit() override;
+    std::string &GetUniqueId() override;
     uint32_t GetNotifyNum() const override;
+    LocalNotify *GetNotify(uint32_t index) const override;
+
+    // A3 Stream & A5 Stream
+    bool IsDeviceA5() const override;
+    Stream *GetStream() const override;
+    void *GetStreamLitePtr() const override;
+    void LaunchTask() const override;
+
+    // Local Data Plane Functions
+    HcclResult LocalNotifyWait(uint32_t notifyId) const override;
+    HcclResult LocalNotifyRecord(uint32_t notifyId) const override;
+    HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const override;
+    HcclResult LocalReduce(
+        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
+
+    // Non-override functions
+    HcclResult GetSqHeadAndTail(uint32_t& sqHead, uint32_t& sqTail);
 
 private:
-    uint32_t notifyNum_{};
+    struct HcclStreamInfo {
+        s32 streamIds;
+        uint32_t sqIds;
+        uint32_t cqIds;       // 记录物理cqId
+        uint32_t logicCqids;  // 记录逻辑cqId
+    };
+
+    struct HcclStreamParam {
+        HcclStreamInfo streamInfo;
+        uint64_t sqCqContextAddr = 0;  // 记录sqeContext地址
+        uint64_t sqCqContextSize = 0;  // 记录sqeContext大小
+    };
+
+    HcclResult InitStreamLite(HcclStreamInfo &streamParam, uint32_t hostPhyId);
+    HcclResult InitStream(HcclStreamParam &streamParam);
+    HcclResult HostInit();
+    HcclResult DeviceInit();
+#ifdef CCL_KERNEL_AICPU
+    HcclResult BuildComStreamInfo(const HcclStreamInfo &streamInfo, HcclComStreamInfo &comStreamInfo) const;
+#endif
+
+    // 成员变量（适配 AICPU-TS）
+    bool isDeviceSide_ = false;
+    rtStream_t rtStream_ = nullptr;
+    StreamType streamType_ = StreamType::STREAM_TYPE_RESERVED;
+    uint32_t notifyNum_ = 0;
+    NotifyLoadType notifyLoadType_ = NotifyLoadType::HOST_NOTIFY;
+    uint32_t devId_ = INVALID_UINT;
+    std::unique_ptr<Stream> stream_ = nullptr;
+    std::vector<std::unique_ptr<LocalNotify>> notifys_;
+    std::string uniqueIdStr_;
+    DeviceMem sqCqeContext_;
+    DevType devType_ = DevType::DEV_TYPE_COUNT;
+    std::unique_ptr<Hccl::IAicpuTsThread> pImpl_{nullptr};
 };
-}
-#endif // AICPU_TS_THREAD_H
+
+}  // namespace hccl
+#endif  // AICPU_TS_THREAD_H

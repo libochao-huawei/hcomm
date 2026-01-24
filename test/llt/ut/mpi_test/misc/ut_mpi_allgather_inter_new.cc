@@ -182,7 +182,7 @@ void* all_gather_8p_subgroup_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     else
     {
@@ -243,7 +243,7 @@ void* all_gather_8p_subgroup_task(void* parg)
                                    para_info->stream);
         if (ret != HCCL_SUCCESS)
         {
-            HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+            HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
         }
         subGroupFlag = false;
         EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -256,7 +256,7 @@ void* all_gather_8p_subgroup_task(void* parg)
 
     if ( rt_ret != ACL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
     for (s32 i = 0; i < stream_list_size; i++)
@@ -343,7 +343,7 @@ void* inter_all_gather_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     bool swapped;
     rank_num_tmp = *(para_info->sync_addr) - 1;
@@ -371,14 +371,14 @@ void* inter_all_gather_task(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     rt_ret = aclrtSynchronizeStream(para_info->stream);
 
     if ( rt_ret != ACL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
     for (s32 i = 0; i < stream_list_size; i++)

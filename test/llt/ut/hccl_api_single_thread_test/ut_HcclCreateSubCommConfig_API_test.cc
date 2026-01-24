@@ -57,7 +57,7 @@ TEST_F(HcclCreateSubCommConfigTest, Ut_HcclCreateSubCommConfig_When_RankIdsIsNul
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCreateSubCommConfigTest, Ut_HcclCreateSubCommConfig_When_subCommIdIsInvaild_Expect_ReturnIsHCCL_E_PARA) {
+TEST_F(HcclCreateSubCommConfigTest, Ut_HcclCreateSubCommConfig_When_subCommIdIsInvalid_Expect_ReturnIsHCCL_E_PARA) {
     UT_COMM_CREATE_DEFAULT(comm);
     int rankNum = 1;
     uint32_t rankIds[1] = {0};
@@ -74,7 +74,7 @@ TEST_F(HcclCreateSubCommConfigTest, Ut_HcclCreateSubCommConfig_When_subCommIdIsI
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCreateSubCommConfigTest, Ut_HcclCreateSubCommConfig_When_RankIdsIsNullAndSubCommIdIsInvaild_Expect_ReturnIsHCCL_SUCCESS) {
+TEST_F(HcclCreateSubCommConfigTest, Ut_HcclCreateSubCommConfig_When_RankIdsIsNullAndSubCommIdIsInvalid_Expect_ReturnIsHCCL_SUCCESS) {
     UT_COMM_CREATE_DEFAULT(comm);
     int rankNum = 1;
     uint32_t *rankIds = nullptr;

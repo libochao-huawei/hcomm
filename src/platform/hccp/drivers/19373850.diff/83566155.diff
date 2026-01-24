@@ -1,0 +1,716 @@
+From 83566155a529530b9519a3883bff5fa4867f5184 Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Thu, 18 Dec 2025 21:04:20 +0800
+Subject: [PATCH] DTS:AR20250220825369 Description:Support UB async event
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: I1453a98ec5a06b7cbd32cf0d4fecb86619373850
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ hccp/rdma_agent/adapter/ra_adp.c              |   1 +
+ hccp/rdma_agent/hdc/ra_hdc.c                  |   1 +
+ hccp/rdma_service/rs.c                        |   1 +
+ hccp/rdma_service/rs_epoll.c                  |   9 +
+ inc/private/network/ra_rs_comm.h              |   1 +
+ orion/hcomm_dev/inc/network/hccp_ctx.h        |  18 ++
+ .../rdma_agent/adapter/ctx/ra_adp_ctx.c       |  25 +++
+ .../rdma_agent/adapter/ctx/ra_adp_ctx.h       |   2 +
+ orion/hcomm_dev/rdma_agent/client/ra_ctx.c    |  28 +++
+ orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.c   |  32 ++++
+ orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.h   |  16 ++
+ orion/hcomm_dev/rdma_agent/inc/ra_ctx.h       |   1 +
+ orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.c |  19 ++
+ orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.h |   2 +
+ orion/hcomm_dev/rdma_service/ctx/rs_ctx.c     |  24 +++
+ orion/hcomm_dev/rdma_service/ctx/rs_ctx.h     |   2 +
+ .../hcomm_dev/rdma_service/ctx/rs_ctx_inner.h |   8 +
+ orion/hcomm_dev/rdma_service/ctx/rs_ub.c      | 171 +++++++++++++++++-
+ orion/hcomm_dev/rdma_service/ctx/rs_ub.h      |   2 +
+ 19 files changed, 362 insertions(+), 1 deletion(-)
+
+diff --git a/hccp/rdma_agent/adapter/ra_adp.c b/hccp/rdma_agent/adapter/ra_adp.c
+index dba66132a..855773994 100755
+--- a/hccp/rdma_agent/adapter/ra_adp.c
++++ b/hccp/rdma_agent/adapter/ra_adp.c
+@@ -2262,6 +2262,7 @@ struct RaOpHandle gRaOpHandle[] = {
+     {RA_RS_GET_DEV_EID_INFO_NUM, ra_rs_get_dev_eid_info_num, sizeof(union op_get_dev_eid_info_num_data)},
+     {RA_RS_GET_DEV_EID_INFO_LIST, ra_rs_get_dev_eid_info_list, sizeof(union op_get_dev_eid_info_list_data)},
+     {RA_RS_CTX_INIT, ra_rs_ctx_init, sizeof(union op_ctx_init_data)},
++    {RA_RS_CTX_GET_ASYNC_EVENTS, ra_rs_ctx_get_async_events, sizeof(union op_ctx_get_async_events_data)},
+     {RA_RS_CTX_DEINIT, ra_rs_ctx_deinit, sizeof(union op_ctx_deinit_data)},
+     {RA_RS_GET_EID_BY_IP, ra_rs_get_eid_by_ip, sizeof(union op_get_eid_by_ip_data)},
+     {RA_RS_GET_TP_INFO_LIST, ra_rs_get_tp_info_list, sizeof(union op_get_tp_info_list_data)},
+diff --git a/hccp/rdma_agent/hdc/ra_hdc.c b/hccp/rdma_agent/hdc/ra_hdc.c
+index 63b5e7fce..51c2086b5 100755
+--- a/hccp/rdma_agent/hdc/ra_hdc.c
++++ b/hccp/rdma_agent/hdc/ra_hdc.c
+@@ -132,6 +132,7 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
+ 
+     // outer opcode version: 2.0
+     {RA_RS_CTX_INIT, 0},
++    {RA_RS_CTX_GET_ASYNC_EVENTS, 0},
+     {RA_RS_CTX_DEINIT, 0},
+     {RA_RS_GET_EID_BY_IP, 0},
+     {RA_RS_GET_TP_INFO_LIST, 0},
+diff --git a/hccp/rdma_service/rs.c b/hccp/rdma_service/rs.c
+index f143a1065..72107155f 100755
+--- a/hccp/rdma_service/rs.c
++++ b/hccp/rdma_service/rs.c
+@@ -157,6 +157,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
+     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
+     {RA_RS_GET_DEV_EID_INFO_LIST, 1},
+     {RA_RS_CTX_INIT, 1},
++    {RA_RS_CTX_GET_ASYNC_EVENTS, 1},
+     {RA_RS_CTX_DEINIT, 1},
+     {RA_RS_GET_EID_BY_IP, 1},
+     {RA_RS_GET_TP_INFO_LIST, 1},
+diff --git a/hccp/rdma_service/rs_epoll.c b/hccp/rdma_service/rs_epoll.c
+index 1f21dc545..c2056156f 100755
+--- a/hccp/rdma_service/rs_epoll.c
++++ b/hccp/rdma_service/rs_epoll.c
+@@ -65,6 +65,7 @@ int RsEpollCtl(int epollfd, int op, int fd, unsigned int state)
+         hccp_warn("epoll_ctl for fd %d unsuccessful! ret:%d errno:%d op:%d state:%u",
+             fd, ret, errno, op, state);
+     }
++    hccp_err("epoll_ctl for fd %d", fd);
+     return ret;
+ }
+ 
+@@ -328,6 +329,8 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
+     int fd = events->data.fd;
+     int ret;
+ 
++    hccp_err("epoll active fd:%d", fd);
++
+     ret = RsEpollEventPingHandle(rsCb, fd);
+     if (ret != -ENODEV) {
+         hccp_info("the fd:%d is for ping, no need to go on, ret:%d", fd, ret);
+@@ -366,6 +369,12 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
+         hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
+         return;
+     }
++
++    ret = RsEpollEventUrmaAsyncEventInHandle(rsCb, fd);
++    if (ret != -ENODEV) {
++        hccp_info("the fd:%d is for urma async event, no need to go on, ret:%d", fd, ret);
++        return;
++    }
+ #endif
+ 
+     return;
+diff --git a/inc/private/network/ra_rs_comm.h b/inc/private/network/ra_rs_comm.h
+index ab433dbd6..76fe3fc09 100755
+--- a/inc/private/network/ra_rs_comm.h
++++ b/inc/private/network/ra_rs_comm.h
+@@ -129,6 +129,7 @@ enum OpType {
+     RA_RS_GET_TP_ATTR = 106,
+     RA_RS_SET_TP_ATTR = 107,
+     RA_RS_CTX_GET_CR_ERR_INFO_LIST = 108,
++    RA_RS_CTX_GET_ASYNC_EVENTS = 109,
+     RA_RS_EXTER_OP_MAX_NUM,
+ 
+     // 上面opcode是对部opcode,下面是内部opcode
+diff --git a/orion/hcomm_dev/inc/network/hccp_ctx.h b/orion/hcomm_dev/inc/network/hccp_ctx.h
+index 0c7cee3eb..edc4da77a 100644
+--- a/orion/hcomm_dev/inc/network/hccp_ctx.h
++++ b/orion/hcomm_dev/inc/network/hccp_ctx.h
+@@ -701,6 +701,13 @@ struct CrErrInfo {
+     uint32_t resv[2U];
+ };
+ 
++struct async_event {
++    uint32_t res_id;
++    uint32_t event_type;
++};
++
++#define ASYNC_EVENT_MAX_NUM 128U
++
+ /**
+  * @ingroup libudma
+  * @brief get total dev eid info num
+@@ -749,6 +756,17 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_init(struct ctx_init_cfg *cfg, struct ctx_init_at
+ */
+ HCCP_ATTRI_VISI_DEF int ra_get_dev_base_attr(void *ctx_handle, struct dev_base_attr *attr);
+ 
++/**
++ * @ingroup libudma
++ * @brief get async event
++ * @param ctx_handle [IN] ctx handle
++ * @param events [IN/OUT] see struct async_event
++ * @param num [IN/OUT] num of events
++ * @retval #zero Success
++ * @retval #non-zero Failure
++*/
++HCCP_ATTRI_VISI_DEF int ra_ctx_get_async_events(void *ctx_handle, struct async_event events[], unsigned int *num);
++
+ /**
+  * @ingroup libudma
+  * @brief get corresponding eid by ip
+diff --git a/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.c b/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.c
+index 170efa9a8..68e010837 100644
+--- a/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.c
++++ b/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.c
+@@ -19,6 +19,7 @@ struct rs_ctx_ops g_ra_rs_ctx_ops = {
+     .get_dev_eid_info_num = rs_get_dev_eid_info_num,
+     .get_dev_eid_info_list = rs_get_dev_eid_info_list,
+     .ctx_init = rs_ctx_init,
++    .ctx_get_async_events = rs_ctx_get_async_events,
+     .ctx_deinit = rs_ctx_deinit,
+     .get_eid_by_ip = rs_get_eid_by_ip,
+     .get_tp_info_list = rs_get_tp_info_list,
+@@ -102,6 +103,30 @@ int ra_rs_ctx_init(char *in_buf, char *out_buf, int *out_len, int *op_result, in
+     return 0;
+ }
+ 
++int ra_rs_ctx_get_async_events(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
++{
++    union op_ctx_get_async_events_data *op_data_out =
++        (union op_ctx_get_async_events_data *)(out_buf + sizeof(struct MsgHead));
++    union op_ctx_get_async_events_data *op_data =
++        (union op_ctx_get_async_events_data *)(in_buf + sizeof(struct MsgHead));
++    struct RaRsDevInfo dev_info = {0};
++
++    HCCP_CHECK_PARAM_LEN_RET_HOST(sizeof(union op_ctx_get_async_events_data), sizeof(struct MsgHead), rcv_buf_len,
++        op_result);
++    HCCP_CHECK_PARAM_LEN_RET_HOST(op_data->tx_data.num, 0, ASYNC_EVENT_MAX_NUM, op_result);
++
++    op_data_out->rx_data.num = op_data->tx_data.num;
++    ra_rs_set_dev_info(&dev_info, op_data->tx_data.phy_id, op_data->tx_data.dev_index);
++    *op_result = g_ra_rs_ctx_ops.ctx_get_async_events(&dev_info, op_data_out->rx_data.events,
++        &op_data_out->rx_data.num);
++    if (*op_result != 0) {
++        hccp_err("[get][async_events]ctx_get_async_events failed, ret[%d] phy_id[%u] dev_index[0x%x]",
++            *op_result, dev_info.phyId, dev_info.devIndex);
++    }
++
++    return 0;
++}
++
+ int ra_rs_ctx_deinit(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len)
+ {
+     union op_ctx_deinit_data *op_data = (union op_ctx_deinit_data *)(in_buf + sizeof(struct MsgHead));
+diff --git a/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.h b/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.h
+index b8d5b13cd..74c054977 100644
+--- a/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.h
++++ b/orion/hcomm_dev/rdma_agent/adapter/ctx/ra_adp_ctx.h
+@@ -17,6 +17,7 @@ struct rs_ctx_ops {
+     int (*get_dev_eid_info_list)(unsigned int phyId, struct dev_eid_info info_list[], unsigned int start_index,
+         unsigned int count);
+     int (*ctx_init)(struct ctx_init_attr *attr, unsigned int *dev_index, struct dev_base_attr *dev_attr);
++    int (*ctx_get_async_events)(struct RaRsDevInfo *dev_info, struct async_event async_events[], unsigned int *num);
+     int (*ctx_deinit)(struct RaRsDevInfo *dev_info);
+     int (*get_eid_by_ip)(struct RaRsDevInfo *dev_info, struct IpInfo ip[], union hccp_eid eid[], unsigned int *num);
+     int (*get_tp_info_list)(struct RaRsDevInfo *dev_info, struct get_tp_cfg *cfg, struct tp_info info_list[],
+@@ -61,6 +62,7 @@ struct rs_ctx_ops {
+ int ra_rs_get_dev_eid_info_num(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+ int ra_rs_get_dev_eid_info_list(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+ int ra_rs_ctx_init(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
++int ra_rs_ctx_get_async_events(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+ int ra_rs_ctx_deinit(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+ int ra_rs_get_eid_by_ip(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+ int ra_rs_get_tp_info_list(char *in_buf, char *out_buf, int *out_len, int *op_result, int rcv_buf_len);
+diff --git a/orion/hcomm_dev/rdma_agent/client/ra_ctx.c b/orion/hcomm_dev/rdma_agent/client/ra_ctx.c
+index da80cfca4..7c7a0bcce 100644
+--- a/orion/hcomm_dev/rdma_agent/client/ra_ctx.c
++++ b/orion/hcomm_dev/rdma_agent/client/ra_ctx.c
+@@ -18,6 +18,7 @@
+ 
+ struct ra_ctx_ops g_ra_hdc_ctx_ops = {
+     .ra_ctx_init = ra_hdc_ctx_init,
++    .ra_ctx_get_async_events = ra_hdc_ctx_get_async_events,
+     .ra_ctx_deinit = ra_hdc_ctx_deinit,
+     .ra_ctx_get_eid_by_ip = ra_hdc_get_eid_by_ip,
+     .ra_ctx_token_id_alloc = ra_hdc_ctx_token_id_alloc,
+@@ -44,6 +45,7 @@ struct ra_ctx_ops g_ra_hdc_ctx_ops = {
+ 
+ struct ra_ctx_ops g_ra_peer_ctx_ops = {
+     .ra_ctx_init = ra_peer_ctx_init,
++    .ra_ctx_get_async_events = ra_peer_ctx_get_async_events,
+     .ra_ctx_deinit = ra_peer_ctx_deinit,
+     .ra_ctx_get_eid_by_ip = ra_peer_get_eid_by_ip,
+     .ra_ctx_token_id_alloc = ra_peer_ctx_token_id_alloc,
+@@ -192,6 +194,32 @@ HCCP_ATTRI_VISI_DEF int ra_get_dev_base_attr(void *ctx_handle, struct dev_base_a
+     return 0;
+ }
+ 
++HCCP_ATTRI_VISI_DEF int ra_ctx_get_async_events(void *ctx_handle, struct async_event events[], unsigned int *num)
++{
++    struct ra_ctx_handle *ctx_handle_tmp = NULL;
++    int ret = 0;
++
++    CHK_PRT_RETURN(ctx_handle == NULL || events == NULL || num == NULL,
++        hccp_err("[get][async_events]ctx_handle or events or num is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
++
++    if (*num == 0 || *num > ASYNC_EVENT_MAX_NUM) {
++        hccp_err("[get][async_events]num:%u must greater than 0 and less or equal to %d", *num, ASYNC_EVENT_MAX_NUM);
++        return ConverReturnCode(RDMA_OP, -EINVAL);
++    }
++
++    ctx_handle_tmp = (struct ra_ctx_handle *)ctx_handle;
++    CHK_PRT_RETURN(ctx_handle_tmp->ctx_ops == NULL || ctx_handle_tmp->ctx_ops->ra_ctx_get_async_events == NULL,
++        hccp_err("[get][async_events]ctx_ops or ra_ctx_get_async_events is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
++
++    hccp_run_info("[get][async_events]phy_id(%u), dev_index(0x%x)", ctx_handle_tmp->attr.phy_id,
++        ctx_handle_tmp->dev_index);
++    ret = ctx_handle_tmp->ctx_ops->ra_ctx_get_async_events(ctx_handle_tmp, events, num);
++    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]ra_ctx_get_async_events failed, ret(%d) phy_id(%u) dev_index"
++        "(0x%x)", ret, ctx_handle_tmp->attr.phy_id, ctx_handle_tmp->dev_index), ConverReturnCode(RDMA_OP, ret));
++
++    return ConverReturnCode(RDMA_OP, ret);
++}
++
+ HCCP_ATTRI_VISI_DEF int ra_ctx_deinit(void *ctx_handle)
+ {
+     struct ra_ctx_handle *ctx_handle_tmp = NULL;
+diff --git a/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.c b/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.c
+index 86e46551e..0c6b12d3c 100644
+--- a/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.c
++++ b/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.c
+@@ -110,6 +110,38 @@ int ra_hdc_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr
+     return 0;
+ }
+ 
++int ra_hdc_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num)
++{
++    union op_ctx_get_async_events_data op_data = {0};
++    unsigned int phy_id = ctx_handle->attr.phy_id;
++    unsigned int expected_num = *num;
++    unsigned int i;
++    int ret = 0;
++
++    op_data.tx_data.phy_id = phy_id;
++    op_data.tx_data.dev_index = ctx_handle->dev_index;
++    op_data.tx_data.num = *num;
++    ret = RaHdcProcessMsg(RA_RS_CTX_GET_ASYNC_EVENTS, phy_id, (char *)&op_data,
++        sizeof(union op_ctx_get_async_events_data));
++    CHK_PRT_RETURN(ret, hccp_err("[get][async_events]hdc message process failed ret[%d], phy_id[%u] dev_index[0x%x]",
++        ret, phy_id, ctx_handle->dev_index), ret);
++
++    if (op_data.rx_data.num > expected_num) {
++        hccp_err("[get][async_events]rx_data.num(%u) > expected_num(%u), phy_id(%u) dev_index(0x%x)",
++            op_data.rx_data.num, expected_num, phy_id, ctx_handle->dev_index);
++        return -EINVAL;
++    }
++
++    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]hdc message process failed ret[%d], phy_id[%u]"
++        " dev_index[0x%x]", ret, phy_id, ctx_handle->dev_index), ret);
++
++    for (i = 0; i < op_data.rx_data.num; i++) {
++        (void)memcpy_s(&events[i], sizeof(struct async_event), &op_data.rx_data.events[i], sizeof(struct async_event));
++    }
++    *num = op_data.rx_data.num;
++    return ret;
++}
++
+ int ra_hdc_ctx_deinit(struct ra_ctx_handle *ctx_handle)
+ {
+     unsigned int phy_id = ctx_handle->attr.phy_id;
+diff --git a/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.h b/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.h
+index e15f09f4c..bb0d54585 100644
+--- a/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.h
++++ b/orion/hcomm_dev/rdma_agent/hdc/ra_hdc_ctx.h
+@@ -56,6 +56,21 @@ union op_ctx_init_data {
+     } rx_data;
+ };
+ 
++union op_ctx_get_async_events_data {
++    struct {
++        unsigned int phy_id;
++        unsigned int dev_index;
++        unsigned int num;
++        unsigned int rsvd;
++    } tx_data;
++
++    struct {
++        struct async_event events[ASYNC_EVENT_MAX_NUM];
++        unsigned int num;
++        unsigned int rsvd;
++    } rx_data;
++};
++
+ union op_ctx_deinit_data {
+     struct {
+         unsigned int phy_id;
+@@ -385,6 +400,7 @@ int ra_hdc_get_dev_eid_info_num(struct RaInfo info, unsigned int *num);
+ int ra_hdc_get_dev_eid_info_list(unsigned int phy_id, struct dev_eid_info info_list[], unsigned int *num);
+ int ra_hdc_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *dev_index,
+     struct dev_base_attr *dev_attr);
++int ra_hdc_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num);
+ int ra_hdc_ctx_deinit(struct ra_ctx_handle *ctx_handle);
+ void ra_hdc_prepare_get_eid_by_ip(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], unsigned int ip_num,
+     union op_get_eid_by_ip_data *op_data);
+diff --git a/orion/hcomm_dev/rdma_agent/inc/ra_ctx.h b/orion/hcomm_dev/rdma_agent/inc/ra_ctx.h
+index 9045b83d5..359c3afd1 100644
+--- a/orion/hcomm_dev/rdma_agent/inc/ra_ctx.h
++++ b/orion/hcomm_dev/rdma_agent/inc/ra_ctx.h
+@@ -67,6 +67,7 @@ struct ra_cq_handle {
+ struct ra_ctx_ops {
+     int (*ra_ctx_init)(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *devIndex,
+         struct dev_base_attr *dev_attr);
++    int (*ra_ctx_get_async_events)(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num);
+     int (*ra_ctx_deinit)(struct ra_ctx_handle *ctx_handle);
+     int (*ra_ctx_get_eid_by_ip)(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+         unsigned int *num);
+diff --git a/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.c b/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.c
+index dbc29e251..feaf647b4 100644
+--- a/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.c
++++ b/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.c
+@@ -63,6 +63,25 @@ int ra_peer_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *att
+     return ret;
+ }
+ 
++int ra_peer_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num)
++{
++    unsigned int phy_id = ctx_handle->attr.phy_id;
++    struct RaRsDevInfo dev_info = {0};
++    int ret = 0;
++
++    ra_rs_set_dev_info(&dev_info, phy_id, ctx_handle->dev_index);
++
++    RaPeerMutexLock(phy_id);
++    RsSetCtx(phy_id);
++    ret = rs_ctx_get_async_events(&dev_info, events, num);
++    RaPeerMutexUnlock(phy_id);
++    if (ret != 0) {
++        hccp_err("[init][ra_peer_ctx]ctx init failed[%d] phy_id[%u]", ret, phy_id);
++    }
++
++    return ret;
++}
++
+ int ra_peer_ctx_deinit(struct ra_ctx_handle *ctx_handle)
+ {
+     unsigned int phy_id = ctx_handle->attr.phy_id;
+diff --git a/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.h b/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.h
+index 1c7c14f17..3294a310e 100644
+--- a/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.h
++++ b/orion/hcomm_dev/rdma_agent/peer/ra_peer_ctx.h
+@@ -17,6 +17,8 @@ int ra_peer_get_dev_eid_info_list(unsigned int phyId, struct dev_eid_info info_l
+ int ra_peer_ctx_init(struct ra_ctx_handle *ctx_handle, struct ctx_init_attr *attr, unsigned int *dev_index,
+     struct dev_base_attr *dev_base_attr);
+ 
++int ra_peer_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_event events[], unsigned int *num);
++
+ int ra_peer_ctx_deinit(struct ra_ctx_handle *ctx_handle);
+ 
+ int ra_peer_get_eid_by_ip(struct ra_ctx_handle *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ctx.c b/orion/hcomm_dev/rdma_service/ctx/rs_ctx.c
+index daee33691..4aab5bb52 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ctx.c
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ctx.c
+@@ -158,6 +158,30 @@ RS_ATTRI_VISI_DEF int rs_ctx_init(struct ctx_init_attr *attr, unsigned int *dev_
+     return ret;
+ }
+ 
++RS_ATTRI_VISI_DEF int rs_ctx_get_async_events(struct RaRsDevInfo *dev_info, struct async_event async_events[],
++    unsigned int *num)
++{
++    struct rs_ub_dev_cb *dev_cb = NULL;
++    struct rs_cb *rscb = NULL;
++    int ret = 0;
++
++    RS_CHECK_POINTER_NULL_RETURN_INT(dev_info);
++    RS_CHECK_POINTER_NULL_RETURN_INT(async_events);
++    RS_CHECK_POINTER_NULL_RETURN_INT(num);
++
++    CHK_PRT_RETURN(*num == 0, hccp_err("num can not be 0"), -EINVAL);
++
++    ret = RsGetRsCb(dev_info->phyId, &rscb);
++    CHK_PRT_RETURN(ret != 0, hccp_err("get rscb failed, ret:%d", ret), ret);
++
++    ret = rs_ub_get_dev_cb(rscb, dev_info->devIndex, &dev_cb);
++    CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb failed, ret:%d dev_index:0x%x", ret, dev_info->devIndex), ret);
++
++    rs_ub_ctx_get_async_events(dev_cb, async_events, num);
++
++    return ret;
++}
++
+ RS_ATTRI_VISI_DEF int rs_ctx_deinit(struct RaRsDevInfo *dev_info)
+ {
+     struct rs_ub_dev_cb *dev_cb = NULL;
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ctx.h b/orion/hcomm_dev/rdma_service/ctx/rs_ctx.h
+index 840160bb7..a3227770a 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ctx.h
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ctx.h
+@@ -37,6 +37,8 @@ RS_ATTRI_VISI_DEF int rs_get_dev_eid_info_num(unsigned int phyId, unsigned int *
+ RS_ATTRI_VISI_DEF int rs_get_dev_eid_info_list(unsigned int phyId, struct dev_eid_info info_list[],
+     unsigned int start_index, unsigned int count);
+ RS_ATTRI_VISI_DEF int rs_ctx_init(struct ctx_init_attr *attr, unsigned int *devIndex, struct dev_base_attr *dev_attr);
++RS_ATTRI_VISI_DEF int rs_ctx_get_async_events(struct RaRsDevInfo *dev_info, struct async_event async_events[],
++    unsigned int *num);
+ RS_ATTRI_VISI_DEF int rs_ctx_deinit(struct RaRsDevInfo *dev_info);
+ RS_ATTRI_VISI_DEF int rs_get_eid_by_ip(struct RaRsDevInfo *dev_info, struct IpInfo ip[], union hccp_eid eid[],
+     unsigned int *num);
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h b/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
+index 14472f52b..a4e4b5f29 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
+@@ -34,6 +34,7 @@ struct rs_ub_dev_cb {
+     pthread_mutex_t cqeErrCntMutex;
+ 
+     pthread_mutex_t mutex;
++    unsigned int async_event_cnt;
+     unsigned int jfce_cnt;
+     unsigned int jfc_cnt;
+     unsigned int jetty_cnt;
+@@ -41,6 +42,7 @@ struct rs_ub_dev_cb {
+     unsigned int token_id_cnt;
+     unsigned int lseg_cnt;
+     unsigned int rseg_cnt;
++    struct RsListHead async_event_list;
+     struct RsListHead jfce_list;
+     struct RsListHead jfc_list;
+     struct RsListHead jetty_list;
+@@ -51,6 +53,12 @@ struct rs_ub_dev_cb {
+     struct RsListHead list;
+ };
+ 
++struct rs_ctx_async_event_cb {
++    struct rs_ub_dev_cb *dev_cb;
++    urma_async_event_t async_event;
++    struct RsListHead list;
++};
++
+ struct rs_ctx_jfce_cb {
+     struct rs_ub_dev_cb *dev_cb;
+     uint64_t jfce_addr; // urma_jfce_t *
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ub.c b/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
+index d6db85a1a..ce7ed7f61 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
+@@ -281,6 +281,7 @@ STATIC int rs_ub_dev_cb_init(struct ctx_init_attr *attr, struct rs_ub_dev_cb *de
+     ret = pthread_mutex_init(&dev_cb->mutex, NULL);
+     CHK_PRT_RETURN(ret != 0, hccp_err("mutex_init failed ret:%d", ret), -ESYSFUNC);
+ 
++    RS_INIT_LIST_HEAD(&dev_cb->async_event_list);
+     RS_INIT_LIST_HEAD(&dev_cb->jfce_list);
+     RS_INIT_LIST_HEAD(&dev_cb->jfc_list);
+     RS_INIT_LIST_HEAD(&dev_cb->jetty_list);
+@@ -295,14 +296,24 @@ STATIC int rs_ub_dev_cb_init(struct ctx_init_attr *attr, struct rs_ub_dev_cb *de
+         goto destroy_mutex;
+     }
+ 
++    hccp_err("ub async_fd:%d, ret:%d", dev_cb->urma_ctx->async_fd, ret);
++    ret = RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_ADD, dev_cb->urma_ctx->async_fd + 1, EPOLLIN | EPOLLRDHUP);
++    hccp_err("ub async_fd + 1:%d, ret:%d", dev_cb->urma_ctx->async_fd + 1, ret);
++    if (ret != 0) {
++        hccp_err("rs_epoll_ctl failed, ret:%d", ret);
++        goto close_dev;
++    }
++
+     ret = rs_ub_get_dev_attr(dev_cb, dev_attr, devIndex);
+     if (ret != 0) {
+         hccp_err("rs_ub_get_dev_attr failed, ret:%d", ret);
+-        goto close_dev;
++        goto epoll_del;
+     }
+ 
+     return 0;
+ 
++epoll_del:
++    (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
+ close_dev:
+     (void)rs_urma_delete_context(dev_cb->urma_ctx);
+ destroy_mutex:
+@@ -834,6 +845,7 @@ int rs_ub_ctx_chan_create(struct rs_ub_dev_cb *dev_cb, union data_plane_cstm_fla
+ 
+     if (data_plane_flag.bs.poll_cq_cstm == 0) {
+         ret = RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_ADD, out_jfce->fd, EPOLLIN | EPOLLRDHUP);
++        hccp_err("chan fd:%d", out_jfce->fd);
+         if (ret != 0) {
+             hccp_err("rs_epoll_ctl failed ret:%d, fd:%d", ret, dev_cb->rscb->connCb.epollfd);
+             goto delete_jfce;
+@@ -1062,6 +1074,33 @@ STATIC void rs_ub_free_token_id_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsLi
+     return;
+ }
+ 
++STATIC void rs_ub_free_async_event_cb(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_async_event_cb *async_event_cb)
++{
++    RsListDel(&async_event_cb->list);
++    dev_cb->async_event_cnt--;
++
++    free(async_event_cb);
++    async_event_cb = NULL;
++}
++
++STATIC void rs_ub_free_async_event_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsListHead *async_event_list)
++{
++    struct rs_ctx_async_event_cb *async_event_curr = NULL;
++    struct rs_ctx_async_event_cb *async_event_next = NULL;
++
++    RS_PTHREAD_MUTEX_LOCK(&dev_cb->mutex);
++    if (!RsListEmpty(async_event_list)) {
++        hccp_warn("async_event list do not empty!");
++        RS_LIST_GET_HEAD_ENTRY(async_event_curr, async_event_next, async_event_list, list,
++            struct rs_ctx_async_event_cb);
++        for (; (&async_event_curr->list) != async_event_list; async_event_curr = async_event_next,
++            async_event_next = list_entry(async_event_next->list.next, struct rs_ctx_async_event_cb, list)) {
++            rs_ub_free_async_event_cb(dev_cb, async_event_curr);
++        }
++    }
++    RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
++}
++
+ int rs_ub_ctx_deinit(struct rs_ub_dev_cb *dev_cb)
+ {
+     int ret;
+@@ -1073,6 +1112,9 @@ int rs_ub_ctx_deinit(struct rs_ub_dev_cb *dev_cb)
+     rs_ub_free_jfc_cb_list(dev_cb, &dev_cb->jfc_list);
+     rs_ub_free_jfce_cb_list(dev_cb, &dev_cb->jfce_list);
+     rs_ub_free_token_id_cb_list(dev_cb, &dev_cb->token_id_list);
++    rs_ub_free_async_event_cb_list(dev_cb, &dev_cb->async_event_list);
++
++    (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
+ 
+     ret = rs_urma_delete_context(dev_cb->urma_ctx);
+     if (ret != 0) {
+@@ -2752,4 +2794,131 @@ int rs_epoll_event_jfc_in_handle(struct rs_cb *rs_cb, int fd)
+     }
+ 
+     return -ENODEV;
++}
++STATIC void rs_ub_get_async_event_res_id(urma_async_event_t *event, struct rs_ub_dev_cb *dev_cb,
++    unsigned int *res_id)
++{
++    switch (event->event_type) {
++        case URMA_EVENT_JFC_ERR:
++            *res_id = event->element.jfc->jfc_id.id;
++            break;
++        case URMA_EVENT_JFS_ERR:
++            *res_id = event->element.jfs->jfs_id.id;
++            break;
++        case URMA_EVENT_JFR_ERR:
++        case URMA_EVENT_JFR_LIMIT:
++            *res_id = event->element.jfr->jfr_id.id;
++            break;
++        case URMA_EVENT_JETTY_ERR:
++        case URMA_EVENT_JETTY_LIMIT:
++            *res_id = event->element.jetty->jetty_id.id;
++            break;
++        case URMA_EVENT_JETTY_GRP_ERR:
++            *res_id = event->element.jetty_grp->jetty_grp_id.id;
++            break;
++        case URMA_EVENT_PORT_ACTIVE:
++        case URMA_EVENT_PORT_DOWN:
++            *res_id = event->element.port_id;
++            break;
++        case URMA_EVENT_EID_CHANGE:
++            *res_id = event->element.eid_idx;
++            break;
++        case URMA_EVENT_DEV_FATAL:
++        case URMA_EVENT_ELR_ERR:
++        case URMA_EVENT_ELR_DONE:
++            *res_id = dev_cb->index;
++            break;
++        default:
++            hccp_err("no such event_type:%d dev_index:0x%x", event->event_type, dev_cb->index);
++            break;
++    }
++}
++
++STATIC int rs_ub_get_save_async_event(struct rs_ub_dev_cb *dev_cb)
++{
++    struct rs_ctx_async_event_cb *async_event_cb = NULL;
++    urma_async_event_t *event = NULL;
++    unsigned int res_id = 0;
++    int ret = 0;
++
++    async_event_cb = calloc(1, sizeof(struct rs_ctx_async_event_cb));
++    CHK_PRT_RETURN(async_event_cb == NULL, hccp_err("calloc async_event_cb failed"), -ENOMEM);
++    async_event_cb->dev_cb = dev_cb;
++    event = &async_event_cb->async_event;
++
++    ret = rs_urma_get_async_event(dev_cb->urma_ctx, event);
++    if (ret != 0) {
++        hccp_err("rs_urma_get_async_event failed, ret:%d errno:%d dev_index:0x%x", ret, errno, dev_cb->index);
++        ret = -EOPENSRC;
++        goto free_event_cb;
++    }
++    rs_urma_ack_async_event(event);
++
++    rs_ub_get_async_event_res_id(event, dev_cb, &res_id);
++    hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, res_id, dev_cb->index);
++
++    RsListAddTail(&async_event_cb->list, &dev_cb->async_event_list);
++    dev_cb->async_event_cnt++;
++
++    return ret;
++
++free_event_cb:
++    free(async_event_cb);
++    async_event_cb = NULL;
++    return ret;
++}
++
++int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
++{
++    struct rs_ub_dev_cb *dev_cb_curr = NULL;
++    struct rs_ub_dev_cb *dev_cb_next = NULL;
++    int ret = 0;
++
++    RS_LIST_GET_HEAD_ENTRY(dev_cb_curr, dev_cb_next, &rsCb->rdevList, list, struct rs_ub_dev_cb);
++    for (; (&dev_cb_curr->list) != &rsCb->rdevList;
++        dev_cb_curr = dev_cb_next, dev_cb_next = list_entry(dev_cb_next->list.next, struct rs_ub_dev_cb, list)) {
++        if (dev_cb_curr->urma_ctx->async_fd == fd) {
++            RS_PTHREAD_MUTEX_LOCK(&dev_cb_curr->mutex);
++            ret = rs_ub_get_save_async_event(dev_cb_curr);
++            if (ret != 0) {
++                hccp_err("rs_ub_get_save_async_event failed, ret:%d dev_index:0x%x", ret, dev_cb_curr->index);
++            }
++            RS_PTHREAD_MUTEX_ULOCK(&dev_cb_curr->mutex);
++            return ret;
++        }
++    }
++
++    return -ENODEV;
++}
++
++STATIC void rs_ub_ctx_fill_async_events(struct rs_ctx_async_event_cb *event_cb, struct async_event async_events[],
++    unsigned int *num)
++{
++    rs_ub_get_async_event_res_id(&event_cb->async_event, event_cb->dev_cb, &async_events[*num].res_id);
++    async_events[*num].event_type = event_cb->async_event.event_type;
++}
++
++void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event async_events[], unsigned int *num)
++{
++    struct rs_ctx_async_event_cb *event_cb_curr = NULL;
++    struct rs_ctx_async_event_cb *event_cb_next = NULL;
++    unsigned int expected_num = *num;
++
++    *num = 0;
++    if (RsListEmpty(&dev_cb->async_event_list)) {
++        return;
++    }
++
++    RS_PTHREAD_MUTEX_LOCK(&dev_cb->mutex);
++    RS_LIST_GET_HEAD_ENTRY(event_cb_curr, event_cb_next, &dev_cb->async_event_list, list, struct rs_ctx_async_event_cb);
++    for (; (&event_cb_curr->list) != &dev_cb->async_event_list; event_cb_curr = event_cb_next,
++        event_cb_next = list_entry(event_cb_next->list.next, struct rs_ctx_async_event_cb, list)) {
++        rs_ub_ctx_fill_async_events(event_cb_curr, async_events, num);
++        (*num)++;
++        rs_ub_free_async_event_cb(dev_cb, event_cb_curr);
++        if (*num == expected_num) {
++            break;
++        }
++    }
++    RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
+ }
+\ No newline at end of file
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ub.h b/orion/hcomm_dev/rdma_service/ctx/rs_ub.h
+index a1490844f..4b1ddd212 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ub.h
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ub.h
+@@ -90,4 +90,6 @@ int rs_ub_ctx_batch_send_wr(struct rs_cb *rs_cb, struct wrlist_base_info *base_i
+ int rs_ub_ctx_jetty_update_ci(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_id, uint16_t ci);
+ int rs_ub_ctx_get_aux_info(struct rs_ub_dev_cb *dev_cb, struct aux_info_in *info_in, struct aux_info_out *info_out);
+ int rs_epoll_event_jfc_in_handle(struct rs_cb *rs_cb, int fd);
++int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd);
++void rs_ub_ctx_get_async_events(struct rs_ub_dev_cb *dev_cb, struct async_event async_events[], unsigned int *num);
+ #endif // RS_UB_H
+-- 
+2.45.2.huawei.10
+

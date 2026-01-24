@@ -164,7 +164,7 @@ void* inter_pipeline_all_gather_task(void* parg)
      CommConfig commConfig("hccl_world_group");
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
     u64 stream_list_size = 0;
     ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
@@ -229,7 +229,7 @@ void* inter_pipeline_all_gather_task(void* parg)
             para_info->stream);
  
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task HcclAllGather falis", hcom_info.params.rank);
+        HCCL_ERROR("dev[%d] task HcclAllGather fails", hcom_info.params.rank);
     }
  
     rt_ret = aclrtSynchronizeStream(para_info->stream);
@@ -244,7 +244,7 @@ void* inter_pipeline_all_gather_task(void* parg)
     hrtFree(memptr);
  
     if ( rt_ret != RT_ERROR_NONE) {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
 
     return (nullptr);

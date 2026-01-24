@@ -80,8 +80,8 @@ typedef uint64_t NotifyHandle;
 
 typedef enum {
     COMM_ENGINE_RESERVED = -1,   ///< 保留的通信引擎
-    COMM_ENGINE_HOSTCPU = 0,     ///< HOST CPU引擎
-    COMM_ENGINE_HOSTCPU_TS = 1,  ///< HOST CPU TS引擎
+    COMM_ENGINE_CPU = 0,     ///< HOST CPU引擎
+    COMM_ENGINE_CPU_TS = 1,  ///< HOST CPU TS引擎
     COMM_ENGINE_AICPU = 2,       ///< AICPU引擎
     COMM_ENGINE_AICPU_TS = 3,    ///< AICPU TS引擎
     COMM_ENGINE_AIV = 4,         ///< AIV引擎
@@ -103,7 +103,7 @@ struct HcclCommConfig {
     uint32_t threadNum;             ///< thread数量（新增）
     uint32_t notifyNumPerThread;    ///< 每个thread的notify数量（新增）
 };
-struct ChannelDesc {
+struct HcclChannelDesc {
     uint32_t peerRank;
     uint64_t size;
     // additional mock fields
@@ -131,10 +131,10 @@ HcclResult __attribute__((weak))
     HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank, HcclCommConfig *config, HcclComm *comm);
 HcclResult __attribute__((weak)) HcclCommDestroy(HcclComm comm);
     void __attribute__((weak)) HcclCommConfigInit(HcclCommConfig *config);
-HcclResult __attribute__((weak)) HcclAllocThreadRes(
+HcclResult __attribute__((weak)) HcclThreadAcquire
     HcclComm comm, CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *thread);
-HcclResult __attribute__((weak)) HcclChannelCreate(HcclComm comm, const char *channelTag, CommEngine engine,
-    const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
+HcclResult __attribute__((weak)) HcclChannelAcquire(HcclComm comm, CommEngine engine,
+    const HcclChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList);
 HcclResult __attribute__((weak))
     HcommWriteOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src, uint64_t len);
 HcclResult __attribute__((weak))
@@ -142,8 +142,8 @@ HcclResult __attribute__((weak))
 HcclResult __attribute__((weak)) HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType notifyType,
     uint32_t notifyNum, NotifyHandle **notifyHandleList);
 HcclResult __attribute__((weak)) HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *notifyHandleList);
-HcclResult __attribute__((weak)) HcclGetHcclBuffer(HcclComm comm, CommBuffer *buffer);
-HcclResult __attribute__((weak)) HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, CommBuffer *buffer);
+HcclResult __attribute__((weak)) HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size);
+HcclResult __attribute__((weak)) HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size);
 
 
 }  // extern "C"
@@ -179,7 +179,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         std::ifstream ifs(clusterInfo);
         if (ifs.is_open()) {
             std::string s((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
-            // crude count of "rank_id" occurences
+            // crude count of "rank_id" occurrences
             size_t pos = 0;
             while ((pos = s.find("rank_id", pos)) != std::string::npos) {
                 rankCount++;
@@ -211,30 +211,31 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
 {
     *config = HcclCommConfig();
 }
-HcclResult HcclAllocThreadRes(
+HcclResult HcclThreadAcquire
     HcclComm comm, CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *thread)
 {
     std::lock_guard<std::mutex> lk(g_mock_mtx);
     MockThreadRes *r = new MockThreadRes();
     r->threads = threadNum;
     *thread = reinterpret_cast<ThreadHandle>(r);
-    std::cout << "[MOCK] HcclAllocThreadRes threads=" << threadNum << " notify=" << notifyNumPerThread << std::endl;
+    std::cout << "[MOCK] HcclThreadAcquireds=" << threadNum << " notify=" << notifyNumPerThread << std::endl;
     return 0;
 }
-HcclResult HcclChannelCreate(HcclComm comm, const char *channelTag, CommEngine engine,
-    const ChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
+HcclResult HcclChannelAcquire(HcclComm comm, CommEngine engine,
+    const HcclChannelDesc *channelDescList, uint32_t listNum, ChannelHandle *channelList)
 {
     std::lock_guard<std::mutex> lk(g_mock_mtx);
     if (listNum == 0)
         return -1;
+    std::string channelTag = "op_test";
     for (uint32_t i = 0; i < listNum; i++) {
         MockChannel *ch = new MockChannel();
-        ch->tag = (channelTag ? channelTag : "ch") + std::string(":") + std::to_string(i);
+        ch->tag = channelTag + std::string(":") + std::to_string(i);
         ch->peer = channelDescList ? channelDescList[i].peerRank : 0;
         ch->size = channelDescList ? channelDescList[i].size : 0;
         channelList[i] = reinterpret_cast<ChannelHandle>(ch);
     }
-    std::cout << "[MOCK] HcclChannelCreate tag=" << (channelTag ? channelTag : "(null)") << " count=" << listNum
+    std::cout << "[MOCK] HcclChannelAcquire tag=" << channelTag << " count=" << listNum
               << std::endl;
     return 0;
 }
@@ -405,7 +406,7 @@ struct Config {
     uint32_t iters = 100;
     uint64_t msgSize = 64;
     uint32_t threadNum = 1;
-    CommEngine commEngine = COMM_ENGINE_HOSTCPU;
+    CommEngine commEngine = COMM_ENGINE_CPU;
 };
 
 // -------测试用例注册--------
@@ -486,12 +487,12 @@ public:
     bool AllocThread(CommEngine commEngine)
     {
         // Alloc thread resource (optional, but often required to use HcommWriteOnThread)
-        HcclResult r2 = HcclAllocThreadRes(comm_, /*engine=*/commEngine, 1, /*notify*/ 1, &threadRes_);
+        HcclResult r2 = HcclThreadAcquirecomm_, /*engine=*/commEngine, 1, /*notify*/ 1, &threadRes_);
         if (r2 != 0 || threadRes_ == 0) {
-            LOG(ERROR, "%s HcclAllocThreadRes fail, ret[%d]", __func__, r2);
+            LOG(ERROR, "%s HcclThreadAcquire fail, ret[%d]", __func__, r2);
             return true;
         } else {
-            LOG(INFO, "%s HcclAllocThreadRes success, allocated threads[%u]", __func__, cfg_.threadNum);
+            LOG(INFO, "%s HcclThreadAcquire success, allocated threads[%u]", __func__, cfg_.threadNum);
         }
 
         return false;
@@ -538,8 +539,8 @@ public:
             }
         }
 
-        // build ChannelDesc list (use simple fields compatible with mock)
-        std::vector<ChannelDesc> descs(peers);
+        // build HcclChannelDesc list (use simple fields compatible with mock)
+        std::vector<HcclChannelDesc> descs(peers);
 #if MOCK_HCCL
         for (uint32_t i = 0; i < peers; i++) {
             descs[i].peerRank = i;
@@ -549,7 +550,7 @@ public:
         }
 #else
         for (uint32_t i = 0; i < peers; i++) {
-            memset(&descs[i], 0, sizeof(ChannelDesc));
+            memset(&descs[i], 0, sizeof(HcclChannelDesc));
             descs[i].remoteRank = cfg_.rank == 0 ? 1 : 0;
             descs[i].notifyNum = 3;
         }
@@ -557,11 +558,11 @@ public:
         // create channel handles vector
         channels_.resize(peers, 0);
 
-        // call HcclChannelCreate
-        HcclResult rc = HcclChannelCreate(comm_, "p2p_channel", commEngine, descs.data(),
+        // call HcclChannelAcquire
+        HcclResult rc = HcclChannelAcquire(comm_, commEngine, descs.data(),
             static_cast<uint32_t>(descs.size()), channels_.data());
         if (rc != 0) {
-            LOG(ERROR, "%s HcclChannelCreate failed, ret[%d]", __func__, rc);
+            LOG(ERROR, "%s HcclChannelAcquire failed, ret[%d]", __func__, rc);
             return true;
         }
         LOG(INFO, "%s success, peers[%u]", __func__, peers);
@@ -573,10 +574,10 @@ public:
     {
         ChannelHandle &channel = channels_[0];
         CommBuffer localBuf;
-        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf));
+        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf.addr, &localBuf.size));
 
         CommBuffer remoteBuf;
-        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf));
+        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf.addr, &remoteBuf.size));
 
         uint64_t len = std::min(localBuf.size, remoteBuf.size);
         LOG(INFO, "%s localBuf: addr[%p] size[%llu], remoteBuf: addr[%p] size[%llu], len[%llu]",
@@ -591,10 +592,10 @@ public:
     {
         ChannelHandle &channel = channels_[0];
         CommBuffer localBuf;
-        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf));
+        CHK_RET(HcclGetHcclBuffer(comm_, &localBuf.addr, &localBuf.size));
 
         CommBuffer remoteBuf;
-        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf));
+        CHK_RET(HcclChannelGetHcclBuffer(comm_, channel, &remoteBuf.addr, &remoteBuf.size));
 
         uint64_t len = std::min(localBuf.size, remoteBuf.size);
         LOG(INFO, "%s localBuf: addr[%p] size[%llu], remoteBuf: addr[%p] size[%llu], len[%llu]",
@@ -697,7 +698,7 @@ bool test_alloc_host_thread(const Config &cfg)
     CHK_RET(t.init());
 
     for (auto tn : tlist) {
-        CHK_RET(t.AllocThread(COMM_ENGINE_HOSTCPU_TS));
+        CHK_RET(t.AllocThread(COMM_ENGINE_CPU_TS));
 
         std::cout << "[INFO] alloc ok for threadNum=" << tn << std::endl;
     }
@@ -748,7 +749,7 @@ bool test_alloc_host_notify(const Config &cfg)
     CHK_RET(t.init());
     for (auto nn : nlist) {
         NotifyHandle *notifyList = nullptr;
-        bool ret = t.AllocNotify(COMM_ENGINE_HOSTCPU_TS, NOTIFY_TYPE_RTS_NOTIFY, nn, &notifyList);
+        bool ret = t.AllocNotify(COMM_ENGINE_CPU_TS, NOTIFY_TYPE_RTS_NOTIFY, nn, &notifyList);
         if (ret || notifyList == nullptr) {
             std::cerr << "[FAIL] alloc host notify failed num=" << nn << std::endl;
             return true;
@@ -766,7 +767,7 @@ bool test_alloc_host_notify(const Config &cfg)
 }
 REGISTER_HCCL_TEST(alloc_host_notify, test_alloc_host_notify);
 
-// test: 测试两卡HcclChannelCreate, 需同时拉起两个进程
+// test: 测试两卡HcclChannelAcquire, 需同时拉起两个进程
 // rank_0进程: hcomm_test --cluster_info test/hlt/ranktable-2p.json --rank 0 --test channel_create --engine 2
 // rank_1进程: hcomm_test --cluster_info test/hlt/ranktable-2p.json --rank 1 --test channel_create --engine 2
 bool test_channel_create(const Config &cfg)
@@ -783,7 +784,7 @@ bool test_channel_create(const Config &cfg)
 }
 REGISTER_HCCL_TEST(channel_create, test_channel_create);
 
-// test: 测试host展开下，两卡HcclAllocThreadRes+HcclChannelCreate+Write+Read, 需同时拉起两个进程
+// test: 测试host展开下，两卡HcclThreadAcquire+HcclChannelAcquire+Write+Read, 需同时拉起两个进程
 bool test_host_write_read(const Config &cfg)
 {
     LOG(INFO, "%s start", __func__);
@@ -818,7 +819,7 @@ bool test_stress(const Config &cfg)
         Config c = cfg;
         c.peers = 1 + (i % std::max<uint32_t>(1, cfg.peers));
         HcclFwkTest t(c);
-        if (t.init() || t.setup_channel_pair(COMM_ENGINE_HOSTCPU_TS)) {
+        if (t.init() || t.setup_channel_pair(COMM_ENGINE_CPU_TS)) {
             ++fails;
             std::cerr << "[WARN] iter=" << i << " failed\n";
         }

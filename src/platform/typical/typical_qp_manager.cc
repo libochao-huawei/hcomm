@@ -106,7 +106,7 @@ HcclResult TypicalQpManager::SetQpRdmaRetryCfg(struct TypicalQp& qpInfo)
 {
     qpInfo.retryCnt = GetExternalInputRdmaRetryCnt();
     qpInfo.retryTime = GetExternalInputRdmaTimeOut();
-    HCCL_INFO("[TypicalQpManager][SetQpCreateBaseInfo] Qpinfo is setted, tc is %u, sl is %u, retry cnt is %u, "\
+    HCCL_INFO("[TypicalQpManager][SetQpCreateBaseInfo] Qpinfo is set, tc is %u, sl is %u, retry cnt is %u, "\
         "retry time is %u", qpInfo.tc, qpInfo.sl, qpInfo.retryCnt, qpInfo.retryTime);
     return HCCL_SUCCESS;
 }

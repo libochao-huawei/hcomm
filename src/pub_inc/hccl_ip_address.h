@@ -86,12 +86,12 @@ public:
 
     const char *GetReadableIP() const
     {
-        // return "IP adddress (string)"
+        // return "IP address (string)"
         return readableIP.c_str();
     }
     const char *GetReadableAddress() const
     {
-        // return "IP adddress (string) % ifname"
+        // return "IP address (string) % ifname"
         return readableAddr.c_str();
     }
     union HcclInAddr GetBinaryAddress() const

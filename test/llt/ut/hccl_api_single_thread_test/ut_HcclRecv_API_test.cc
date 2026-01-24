@@ -62,7 +62,7 @@ TEST_F(HcclRecvTest, Ut_HcclRecv_When_CountIsZero_Expect_ReturnIsHCCL_SUCCESS)
     UT_UNSET_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
-TEST_F(HcclRecvTest, Ut_HcclRecv_When_RootIsInvaild_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(HcclRecvTest, Ut_HcclRecv_When_RootIsInvalid_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_RECVBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
     int destRank = 0xFFFFFFFF;

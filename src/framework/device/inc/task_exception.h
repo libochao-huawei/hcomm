@@ -13,8 +13,8 @@
 
 #include "hccl_types.h"
 #include "hccl_common.h"
-#include "hccl_thread.h"
 #include "aicpu_operator_pub.h"
+#include "hcomm_diag.h"
 
 namespace hccl {
 constexpr u32 OP_INFO_MAX_SIZE = 1024;

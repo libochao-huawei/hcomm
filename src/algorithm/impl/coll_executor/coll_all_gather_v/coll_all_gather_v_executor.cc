@@ -43,7 +43,7 @@ HcclResult CollAllGatherVExecutor::Orchestrate(OpParam& param, AlgResourceRespon
         ret = RunLoop(param, algRes);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherVExecutor][Orchestrate]errNo[0x%016llx]AllGatherV excutor kernel run failed",
+        HCCL_ERROR("[CollAllGatherVExecutor][Orchestrate]errNo[0x%016llx]AllGatherV executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
     HCCL_INFO("tag[%s], AllgatherV executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));

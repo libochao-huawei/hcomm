@@ -381,7 +381,8 @@ HcclResult OpRetryAgentWaitCmd::ProcessEvent(RetryContext* retryCtx)
     RetryState nextState = RETRY_STATE_RESERVED;
     RetryCommandInfo commandinfo;
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     
     // 接收到命令和当前状态不匹配时, 不做处理, 等待下一个命令, 直到命令正确或者超时
     while (true) {
@@ -679,7 +680,8 @@ HcclResult OpRetryAgentWaitChangeLinkInfo::ProcessEvent(RetryContext* retryCtx)
     RetryState nextState = RETRY_STATE_RESERVED;
 
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     ChangeLinkInfo tmpRecvChangeLinkInfo;
     // 接收到命令和当前状态不匹配时, 不做处理, 等待下一个命令, 直到命令正确或者超时
     while (true) {
@@ -730,6 +732,11 @@ HcclResult OpRetryAgentRetryFail::ProcessEvent(RetryContext* retryCtx)
 
 HcclResult OpRetryAgentWaitResume::ProcessEvent(RetryContext* retryCtx)
 {
+    if (!retryCtx->isAgentStateWaitResume_ && !retryCtx->haveCommEnableBackupLink_) {
+        CHK_RET(CreateOpRetryAgentByState(RETRY_STATE_AGENT_RUNNING, retryCtx));
+        HCCL_RUN_INFO("[OpRetry][Agent]OpRetryAgentWaitResume, group[%s], no comm enable backup link, set state to running", retryCtx->group_.c_str());
+        return HCCL_SUCCESS;
+    }
     std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();
     RetryCommandInfo commandInfo;
     HcclResult ret = WaitCommandWithOpId(retryCtx->agentSocket_, commandInfo);
@@ -1006,7 +1013,8 @@ HcclResult ResumeAgentChangeLink::WaitResumeCmdResumeTransport(RetryContext *ret
 {
     ChangeLinkInfo tmpRecvChangeLinkInfo;
     std::chrono::steady_clock::time_point startTime = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
     // 接收到命令和当前状态不匹配时, 不做处理, 等待下一个命令, 直到命令正确或者超时
     while (true) {
         std::chrono::steady_clock::time_point curTime = std::chrono::steady_clock::now();

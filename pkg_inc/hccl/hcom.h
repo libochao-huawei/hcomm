@@ -19,6 +19,7 @@
 #include <map>
 #include "workflow.h"
 #include "dtype_common.h"
+#include "hccl/hccl_rank_graph.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +59,7 @@ typedef struct HcomOpParamDef {
     HcclDataType dataType; // 数据类型
 	HcclReduceOp reduceOp; // 规约类型
     u8 geDeterministic;      // 是否为确定性计算
+    u32 aivCoreLimit; // aiv核数限制
 
     char *socVersion; // soc字符串，用于查询devType
     char *rankTable;
@@ -75,11 +77,15 @@ typedef struct HcomOpParamDef {
         void* recvDispls;
         void* sendCountMatrix;
     } All2AllDataDes;
+    union {
+        uint8_t reserved[128]; // 预留扩展字段，长度为128字节
+        // 可在此处添加新的结构体及其成员
+    };
 
     HcomOpParamDef() : group(nullptr), opType(nullptr),
         dataType(HcclDataType::HCCL_DATA_TYPE_RESERVED), reduceOp(HcclReduceOp::HCCL_REDUCE_RESERVED),
-        geDeterministic(0), socVersion(nullptr), rankTable(nullptr), groupList(nullptr), groupListSize(0),
-        count(0), rankSize(0),
+        geDeterministic(0), aivCoreLimit(0), socVersion(nullptr), rankTable(nullptr), groupList(nullptr),
+        groupListSize(0), count(0), rankSize(0),
         All2AllDataDes{ HcclDataType::HCCL_DATA_TYPE_RESERVED, HcclDataType::HCCL_DATA_TYPE_RESERVED,
                         nullptr, nullptr, nullptr, nullptr, nullptr } {}
 } HcomOpParam;
@@ -256,7 +262,7 @@ HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpb
 
 void HcomTopoInfoRegCallback(HcclResult (*p1)(const char *, uint32_t), void (*p2)(const char *));
 
-HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo *hcclDumpInfo, s32 len);
+HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfoPtr, s32 *len);
 
 HcclWorkflowMode HcomGetWorkflowMode();
 
@@ -315,13 +321,13 @@ bool HcomFindGroup(const char *group);
 
 #define TEMP_WEAK_DEF 1
 
-HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count,
+HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts,
     HcclDataType dataType, HcclReduceOp op, HcclCMDType opType, int32_t aivCoreLimit,
     bool &ifAiv, char *algName);
 
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
-        char *algName, u32 *blockDim);
+HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
+    int32_t aivCoreLimit, char *algName, u32 *blockDim);
 
 HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,
     s32 len, void *memPtr, u64 maxSize);
@@ -373,6 +379,8 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
 HcclResult HcomGetHcclComm(int64_t comm, std::string &group);
 HcclResult HcomGenerateCclOpTag(const char *opType, s64 hcomComm, const char *group, char *sTag);
 HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size);
+HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag);
+HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t flag);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

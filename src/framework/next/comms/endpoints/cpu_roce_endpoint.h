@@ -7,8 +7,9 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-#ifndef CPU_ROCE_ENDPOINT_H
-#define CPU_ROCE_ENDPOINT_H
+
+#ifndef ROCE_ENDPOINT_H
+#define ROCE_ENDPOINT_H
 
 #include <memory>
 #include <vector>
@@ -17,11 +18,26 @@
 
 namespace hcomm {
 /**
- * @note 职责：Host CPU通信引擎+RoCE协议的通信设备EndPoint，管理通信设备上下文，以及设备上的注册内存。
+ * @note 职责：Host CPU通信引擎+RoCE协议的通信设备Endpoint，管理通信设备上下文，以及设备上的注册内存。
  */
-class CpuTsRoceEndPoint : public EndPoint {
+class CpuRoceEndpoint : public Endpoint {
 public:
-    virtual ~CpuTsRoceEndPoint() = default;
+    explicit CpuRoceEndpoint(const EndpointDesc &endpointDesc);
+
+    ~CpuRoceEndpoint() = default;
+
+    HcclResult Init() override;
+
+    HcclResult ServerSocketListen() override;
+
+    HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
+    HcclResult UnregisterMemory(void* memHandle) override;
+    HcclResult MemoryExport(const void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
+    HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+
+private:
+    std::unordered_map<Hccl::IpAddress, std::shared_ptr<Hccl::Socket>> &GetServerSocketMap();
 };
 }
-#endif // CPU_ROCE_ENDPOINT_H
+#endif // ROCE_ENDPOINT_H

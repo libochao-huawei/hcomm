@@ -271,7 +271,7 @@ void *inter_alltoallvc_pipeline_task(void *parg)
     ret = hcom_info.pComm->CreateCommCCLbuffer();
 
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("dev[%d] task all_gather falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_gather fails", para_info->device_id);
     }
 
     //-----------------Set Workspace Resource Start------------------//
@@ -325,7 +325,7 @@ void *inter_alltoallvc_pipeline_task(void *parg)
     rt_ret = aclrtSynchronizeStream(para_info->stream);
 
     if (rt_ret != RT_ERROR_NONE) {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
     for (s32 i = 0; i < stream_list_size; i++)

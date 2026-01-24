@@ -129,6 +129,22 @@ TEST_F(HcclScatterTest, Ut_HcclScatter_When_DataSize1KB_Expect_ReturnIsHCCL_SUCC
     UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
+TEST_F(HcclScatterTest, Ut_HcclScatter_When_DataSize1KB_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_SET_SENDBUF_RECVBUF_COUNT(rankNum * HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    u32 root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclGroupStart();
+    HcclResult ret = HcclScatterInner(sendBuf, recvBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    UT_UNSET_SENDBUF_RECVBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
 TEST_F(HcclScatterTest, Ut_HcclScatter_When_DataSize300MB_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_RECVBUF_COUNT(rankNum * HCCL_COM_BIG_DATA_SIZE, HCCL_COM_BIG_DATA_SIZE, HCCL_COM_BIG_DATA_SIZE);

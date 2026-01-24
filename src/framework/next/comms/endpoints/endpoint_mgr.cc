@@ -9,7 +9,86 @@
  */
 #include "endpoint_mgr.h"
 #include <algorithm>
+#include "hcomm_c_adpt.h"
 
 namespace hcomm {
 
+EndpointMgr::~EndpointMgr()
+{
+    for (const auto &kv : endpointMemMap_) {
+        const EndpointHandle &endpointHandle = kv.first;
+        const std::vector<MemHandle> &memHandleVec = kv.second;
+
+        for (auto menHandle : memHandleVec) {
+            (void)HcommMemUnreg(endpointHandle, menHandle);
+        }
+    }
+
+    for (const auto &kv : endpointMap_) {
+        const EndpointHandle &endpointHandle = kv.second;
+        (void)HcommEndpointDestroy(endpointHandle);
+    }
 }
+
+HcclResult EndpointMgr::Get(EndpointDesc epDesc, EndpointHandle &handle)
+{
+    auto iterPtr = endpointMap_.find(epDesc);
+    if (iterPtr != endpointMap_.end()) {
+        handle = iterPtr->second;
+        return HCCL_SUCCESS;
+    }
+    HCCL_INFO("[EndpointMgr::Get] create Endpoint");
+    CHK_RET(HcommEndpointCreate(&epDesc, &handle));
+
+    endpointMap_.emplace(epDesc, handle);
+    return HCCL_SUCCESS;
+}
+
+HcclResult EndpointMgr::RegisterMemory(EndpointHandle epHandle, const char* memTag, const std::vector<HcclMem>& memVec,
+    std::vector<MemHandle>& memHandleVec)
+{
+    memHandleVec.clear();
+    for (const auto &mem: memVec) {
+        MemHandle memHandle = nullptr;
+        HcommMem hmem { mem.type, mem.addr, mem.size };
+        CHK_RET(HcommMemReg(epHandle, memTag, hmem, &memHandle));
+        CHK_PTR_NULL(memHandle);
+        memHandleVec.push_back(memHandle);
+    }
+
+    CHK_RET(AddMemHandle(epHandle, memHandleVec));
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult EndpointMgr::AddMemHandle(EndpointHandle epHandle, const std::vector<MemHandle>& memHandleVec)
+{
+    if (IsMemExist(epHandle)) {
+        auto& existMemHandleVec = endpointMemMap_.at(epHandle);
+        existMemHandleVec.insert(existMemHandleVec.end(), memHandleVec.begin(), memHandleVec.end());
+    } else {
+        endpointMemMap_.emplace(epHandle, std::move(memHandleVec));
+    }
+    return HCCL_SUCCESS;
+}
+ 
+bool EndpointMgr::IsMemExist(EndpointHandle epHandle)
+{
+    return endpointMemMap_.find(epHandle) != endpointMemMap_.end();
+}
+ 
+bool EndpointMgr::IsDescExist(EndpointDesc epDesc)
+{
+    return endpointMap_.find(epDesc) != endpointMap_.end();
+}
+ 
+HcclResult EndpointMgr::GetAllRegisteredMemory(EndpointHandle epHandle, std::vector<MemHandle>& memHandleVec)
+{
+    if (!IsMemExist(epHandle)) {
+        HCCL_ERROR("EndpointMgr GetAllRegisteredMemory Fail");
+        return HCCL_E_MEMORY;
+    }
+    memHandleVec = endpointMemMap_.at(epHandle);
+    return HCCL_SUCCESS;
+}
+
+} // namespace hcomm

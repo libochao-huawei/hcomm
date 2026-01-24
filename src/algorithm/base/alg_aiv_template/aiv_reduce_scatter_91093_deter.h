@@ -313,5 +313,5 @@ __aicore__ inline void sk_reduce_scatter_deter(SUPERKERNEL_ARGS_DEF)
     } else {
         op.InitDataCopyOffset<bfloat16_t>(avgBufferCount, op.len_);
         op.Process<bfloat16_t>(op.dataAddrSelf_, op.flagAddrSelf_, op.commAddr_, input, output, op.tag_, avgBufferCount, op.len_);
-    }  
+    }
 }

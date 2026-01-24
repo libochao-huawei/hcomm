@@ -33,6 +33,30 @@ TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_RankIdInRank
     Ut_Comm_Destroy(comm);
 }
 
+TEST_F(HcclCommInitRootInfoTest, Ut_Group_HcclCommInitClusterInfo_rank1)
+{
+    int nRanks = 1;
+    int rankId = 0;
+    HcclComm comms[nRanks];
+    const char* rankTableFile = rankTableFileName;
+
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        HcclCommInitClusterInfo(rankTableFile, rankId, &comms[i]);
+    }
+    HcclResult ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        Ut_Comm_Destroy(comms[i]);
+    }
+    ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_RankIdNotInRankTable_Expect_ReturnIsHCCL_E_PARA) {
     Ut_Device_Set(0);
     const char* rankTableFile = rankTableFileName;
@@ -55,7 +79,7 @@ TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_clusterInfoF
     Ut_Comm_Destroy(comm);
 }
 
-TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_clusterInfoFileContentInvaild_Expect_ReturnIsHCCL_E_INTERNAL) {
+TEST_F(HcclCommInitClusterInfoTest, Ut_HcclCommInitClusterInfo_When_clusterInfoFileContentInvalid_Expect_ReturnIsHCCL_E_INTERNAL) {
     Ut_Device_Set(0);
     const char* rankTableFile = rankTableFileName;
     std::ofstream badFile(rankTableFile, std::ios::trunc);

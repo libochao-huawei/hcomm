@@ -66,7 +66,7 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u32
     u32 bestBlockDim = blockDim;
     if (isOpBase || topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
         CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_WARNING("[CollAlltoAllMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+            HCCL_WARNING("[CollAlltoAllMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
             blockDim_, blockDim), HCCL_E_PARA);
     } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         CHK_PRT_RET(blockDim_ < rankSize,
@@ -99,7 +99,7 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::Orchestrate(OpParam& param, Al
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AlltoAll executor orchestrate success, take time [%lld]us",
@@ -146,7 +146,7 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::GetAivExecParam(const OpParam&
     args.unitSize = SIZE_TABLE[param.All2AllDataDes.sendType];
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAlltoAllMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AlltoAll executor getalgexecparam success, take time [%lld]us.",
@@ -199,10 +199,12 @@ HcclResult CollAlltoAllMeshAivSmallCountExecutor::KernelRun(const OpParam &param
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     // AllToAll pingpong 图模式走单算子归一流程 或者 单算子模式

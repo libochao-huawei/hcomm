@@ -23,7 +23,8 @@ ReduceScatterPlantLocalReduce::~ReduceScatterPlantLocalReduce()
 HcclResult ReduceScatterPlantLocalReduce::Prepare(void *inputMemPtr, DeviceMem &cclInMem, DeviceMem &outputMem,
     const Stream &stream, std::vector<Stream> &subStreams, std::vector<std::shared_ptr<LocalNotify>> &meshSignal,
     std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux, GroupSlicesInfo &grouSlicesInfo,
-    const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType, bool isNeedSpaceBorrow)
+    const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType, bool isNeedSpaceBorrow,
+    bool reverseMemUsage)
 {
     inputMemPtr_ = inputMemPtr;       // UserInPtr，All2All使用
     inputMem_ = cclInMem;             // 空拷贝 & 存放最后一块数据（Allreduce非整除场景）
@@ -37,6 +38,12 @@ HcclResult ReduceScatterPlantLocalReduce::Prepare(void *inputMemPtr, DeviceMem &
     all2allOffset_ = all2allOffset;
     dataType_ = dataType;
     isNeedSpaceBorrow_ = isNeedSpaceBorrow;
+    if (reverseMemUsage) {
+        // 交换两块buffer的用途，in buffer作为输出buffer
+        HCCL_INFO("[%s] reverse memory usage.", __func__);
+        std::swap(scratchMemType_, outputMemType_);
+        std::swap(inputMem_, outputMem_);
+    }
     return HCCL_SUCCESS;
 }
 
@@ -221,10 +228,10 @@ HcclResult ReduceScatterPlantLocalReduce::RunAlltoAll(const std::vector<LINK> &l
             u64 dstOffset = 0;
             void *remMemPtr = nullptr;
             if (isNeedSpaceBorrow_ && isLastBlockData(outputIndex) && !(isLastRank(round) && isLastGroup(groupId))) {
-                CHK_RET(links[round]->GetRemoteMem(UserMemType::INPUT_MEM, &remMemPtr));
+                CHK_RET(links[round]->GetRemoteMem(scratchMemType_, &remMemPtr));
                 dstOffset = memBlockInfo.outputOffsets[round];
             } else {
-                CHK_RET(links[round]->GetRemoteMem(UserMemType::OUTPUT_MEM, &remMemPtr));
+                CHK_RET(links[round]->GetRemoteMem(outputMemType_, &remMemPtr));
                 dstOffset = memBlockInfo.outputOffsets[outputIndex];
             }
             DeviceMem dst = DeviceMem::create(static_cast<u8 *>(remMemPtr) + dstOffset, sliceSize);

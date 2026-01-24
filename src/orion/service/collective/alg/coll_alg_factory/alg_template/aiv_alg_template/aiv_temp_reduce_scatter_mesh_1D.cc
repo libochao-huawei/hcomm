@@ -1,0 +1,113 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Description: 算法模板AivTempReduceScatterMesh1D类实现
+ * Author: chenluyao
+ * Create: 2025-09-05
+ */
+
+#include "hccl_aiv_utils.h"
+#include "aiv_ins.h"
+#include "aiv_temp_reduce_scatter_mesh_1D.h"
+#include "executor_utils.h"
+
+namespace Hccl {
+
+AivTempReduceScatterMesh1D::AivTempReduceScatterMesh1D(const RankId virtualRank, const u32 tempRankSize,
+    const std::vector<std::vector<RankId>> &tempVTopo, const std::map<RankId, u32> &tempVirtRankMap)
+    : AivAlgTemplateBase(virtualRank, tempRankSize, tempVTopo, tempVirtRankMap)
+{
+}
+
+AivTempReduceScatterMesh1D::~AivTempReduceScatterMesh1D()
+{
+}
+
+u32 AivTempReduceScatterMesh1D::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType)
+{
+    (void) inBuffType;
+    (void) outBuffType;
+    return tempRankSize_;
+}
+
+HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
+{
+    tempResReq.queNum = 1;
+    tempResReq.streamNum = tempResReq.queNum;
+    HCCL_INFO("[CalcRes] tempResReq.queNum[%u]", tempResReq.queNum);
+    CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult AivTempReduceScatterMesh1D::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+{
+    (void) dataSize;
+    blockDim = blockDimLimit;
+    constexpr uint32_t stepNum = 2;
+    if (blockDim > stepNum * tempRankSize_) {
+        blockDim = stepNum * tempRankSize_;
+    }
+    HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", blockDim);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult AivTempReduceScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, 
+    const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues)
+{
+    HCCL_INFO("[AivTempReduceScatterMesh1D] GenExtIns start");
+
+    std::vector<LinkData> allLinks;
+    for (auto iter = tempLinks.begin(); iter != tempLinks.end(); ++iter) {
+        allLinks.emplace_back(iter->second.at(0));
+    }
+
+    IncSliceId();  // 自动增长sliceId，传入aivTag
+
+    AivOpArgs aivReduceScatterArgs;
+    aivReduceScatterArgs.cmdType = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
+    aivReduceScatterArgs.input = templateDataParams.buffInfo.inBuffBaseOff;
+    aivReduceScatterArgs.output = templateDataParams.buffInfo.outBuffBaseOff;
+    aivReduceScatterArgs.rank = u32(myRank_);
+    aivReduceScatterArgs.rankSize = tempRankSize_;
+    aivReduceScatterArgs.count = templateDataParams.sliceSize / DataTypeSizeGet(dataType_);
+    aivReduceScatterArgs.dataType = dataType_;
+    aivReduceScatterArgs.op = reduceOp_;
+    aivReduceScatterArgs.root = root_;
+    aivReduceScatterArgs.aivTag = sliceId_;  // 传入aivTag，Lauch时重新组装为aivTag
+    aivReduceScatterArgs.isOpBase = (tempFuncs.opMode == OpMode::OPBASE);
+    aivReduceScatterArgs.xRankSize = tempVTopo_[0].size();
+    aivReduceScatterArgs.yRankSize = 0;
+    aivReduceScatterArgs.zRankSize = 0;
+    for (u32 i = 0; i < tempVTopo_[0].size(); i++){
+        aivReduceScatterArgs.topo_[i] = tempVTopo_[0][i];
+    }
+    if (tempVTopo_.size() > 1){
+        aivReduceScatterArgs.yRankSize = tempVTopo_[1].size();
+        for (u32 i = 0; i < tempVTopo_[1].size(); i++){
+            aivReduceScatterArgs.topo_[TOPO_LEN_Y_OFFSET + i] = tempVTopo_[1][i];
+        }
+    }
+    if (tempVTopo_.size() == MAX_DIM_NUM){
+        aivReduceScatterArgs.zRankSize = tempVTopo_[MAX_DIM_NUM - 1].size();
+        for (u32 i = 0; i < tempVTopo_[MAX_DIM_NUM - 1].size(); i++){
+            aivReduceScatterArgs.topo_[TOPO_LEN_Z_OFFSET + i] = tempVTopo_[MAX_DIM_NUM - 1][i];
+        }
+    }
+
+    u64 dataSize = op_.dataCount * DataTypeSizeGet(dataType_);
+    CHK_RET(CalBlockDim(aivReduceScatterArgs.blockDim, dataSize, op_.blockDimLimit));
+
+    aivReduceScatterArgs.inputSliceStride = templateDataParams.inputSliceStride;
+    aivReduceScatterArgs.outputSliceStride = templateDataParams.outputSliceStride;
+    aivReduceScatterArgs.repeatNum = templateDataParams.repeatNum;
+    aivReduceScatterArgs.inputRepeatStride = templateDataParams.inputRepeatStride;
+    aivReduceScatterArgs.outputRepeatStride = templateDataParams.outputRepeatStride;
+
+    std::unique_ptr<Instruction> aivInsReduceScatterMesh1D = std::make_unique<AivInstruction>(allLinks, aivReduceScatterArgs);
+
+    tempInsQues[0]->Append(std::move(aivInsReduceScatterMesh1D));
+
+    HCCL_INFO("[AivTempReduceScatterMesh1D] GenExtIns finished");
+    return HcclResult::HCCL_SUCCESS;
+}
+
+}  // namespace Hccl

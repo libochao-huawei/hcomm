@@ -112,7 +112,7 @@ typedef struct tagRtTaskCfgInfo {
     uint8_t qos;
     uint8_t partId;
     uint8_t schemMode; // rtschemModeType_t 0:normal;1:batch;2:sync
-    bool d2dCrossFlag; // d2dCrossFlag true:D2D_CROSS flase:D2D_INNER
+    bool d2dCrossFlag; // d2dCrossFlag true:D2D_CROSS false:D2D_INNER
     uint32_t blockDimOffset;
     uint8_t dumpflag; // dumpflag 0:fault 2:RT_KERNEL_DUMPFLAG 4:RT_FUSION_KERNEL_DUMPFLAG
     uint8_t neverTimeout; // 1: never timeout, 0: will timeout
@@ -329,7 +329,7 @@ typedef void (*rtStreamStateCallback)(rtStream_t stm, const bool isCreate);
 /**
  * @ingroup profiling_base
  * @brief dataType: rtProfCtrlType_t
- * @brief data: data swtich or reporter function
+ * @brief data: data switch or reporter function
  * @brief dataLen: length of data
  */
 typedef rtError_t (*rtProfCtrlHandle)(uint32_t dataType, void *data, uint32_t dataLen);
@@ -446,7 +446,7 @@ typedef enum {
 
 /**
  * @ingroup profiling_base
- * @brief set profling switch, called by profiling
+ * @brief set profiling switch, called by profiling
  * @param [in]  data  rtProfCommandHandle
  * @param [out] len   length of data
  * @return RT_ERROR_NONE for ok

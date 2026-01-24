@@ -65,7 +65,8 @@ set(platform_include_list
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(hccl_plf PRIVATE
         OPEN_BUILD_PROJECT
-        LOG_CPP)
+        LOG_CPP
+    )
 
     target_include_directories(hccl_plf PRIVATE
         ${HCCL_BASE_DIR}/../include
@@ -89,7 +90,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
@@ -160,6 +161,7 @@ target_link_options(hccl_plf PRIVATE
     -Wl,-z,now
     -Wl,-z,noexecstack
     -Wl,--build-id=none
+    $<$<CONFIG:Release>:-s>
 )
 
 #头文件搜索路径

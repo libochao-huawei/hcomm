@@ -443,6 +443,9 @@ set(aicpu_kfc_list_open
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/recovery/operator_retry/opretry_link_manage.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/recovery/operator_retry/opretry_connection.cc
 
+    #framework/cluster_maintenance/snapshot
+    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/snapshot/snapshot_control.cc
+
     #/hccl/platform/common/src
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/param_check.cc
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/config.cc
@@ -824,6 +827,7 @@ target_include_directories(aicpu_kfc_llt  PRIVATE
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/health/heartbeat/
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/recovery/operator_retry
+    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/snapshot
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/host
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/config
@@ -1032,6 +1036,7 @@ target_include_directories(aicpu_kfc_llt_open  PRIVATE
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/health/heartbeat/
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/recovery/operator_retry
+    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/snapshot
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/host
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/task

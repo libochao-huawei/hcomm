@@ -1,16 +1,15 @@
-# ----------------------------------------------------------------------------
-# This program is free software, you can redistribute it and/or modify it.
+# -----------------------------------------------------------------------------------------------------------
 # Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This file is a part of the CANN Open Software.
-# Licensed under CANN Open Software License Agreement Version 2.0 (the "License").
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
 # THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
-# ----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------------------
 set(HCOMM_UTILS_PATH ${CMAKE_CURRENT_BINARY_DIR})
 set(INSTALL_LIBRARY_DIR hcomm/lib64)
-set(CANN_UTILS_VERSION "8.5.0")
+set(CANN_UTILS_VERSION "8.5.0-beta.1")
 
 if(hcomm_utils_FOUND AND NOT FORCE_REBUILD_CANN_3RD)
     message(STATUS "hcomm_utils found in ${HCOMM_UTILS_PATH}")
@@ -27,7 +26,7 @@ else()
         set(SIMULATOR_DIR ${CMAKE_CURRENT_BINARY_DIR}/download/${HCOMM_UTILS_FILE})
         execute_process(COMMAND rm -rf ${SIMULATOR_DIR})
 
-        set(HCOMM_UTILS_URL "https://mirrors.huaweicloud.com/artifactory/cann-run/${CANN_UTILS_VERSION}/inner/${CMAKE_HOST_SYSTEM_PROCESSOR}/${HCOMM_UTILS_FILE}")
+        set(HCOMM_UTILS_URL "https://ascend.devcloud.huaweicloud.com/artifactory/cann-run/dependency/${CANN_UTILS_VERSION}/${CMAKE_HOST_SYSTEM_PROCESSOR}/basic/${HCOMM_UTILS_FILE}")
         message(STATUS "hcomm_utils pkg not found in ${HCOMM_UTILS_PKG}, downloading utils pkg from ${HCOMM_UTILS_URL}")
         file(DOWNLOAD
             ${HCOMM_UTILS_URL}

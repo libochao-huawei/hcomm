@@ -168,7 +168,7 @@ void* inter_all_reduce_task_for_hostnic(void* parg)
  ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task all_reduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task all_reduce fails", para_info->device_id);
     }
     hcom_info.pComm->CreateCommCCLbuffer();
     //-----------------Set Workspace Resource Start------------------//
@@ -230,13 +230,13 @@ void* inter_all_reduce_task_for_hostnic(void* parg)
 
     if (ret != HCCL_SUCCESS)
     {
-        HCCL_ERROR("dev[%d] task HcclAllReduce falis", para_info->device_id);
+        HCCL_ERROR("dev[%d] task HcclAllReduce fails", para_info->device_id);
     }
 
     rt_ret = aclrtSynchronizeStream(para_info->stream);
     if ( rt_ret != ACL_SUCCESS)
     {
-        HCCL_ERROR("rank[%d] task allgather falis", hcom_info.params.rank);
+        HCCL_ERROR("rank[%d] task allgather fails", hcom_info.params.rank);
     }
     //--------------Resource destroy----------------//
 

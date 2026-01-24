@@ -19,7 +19,7 @@ namespace hcomm {
 /**
  * @note 职责：AICPU_TS通信引擎+HCCS协议的通信设备EndPoint，管理通信设备上下文，以及设备上的注册内存。
  */
-class AicpuTsHccsEndPoint : public EndPoint {
+class AicpuTsHccsEndPoint : public Endpoint {
 public:
     virtual ~AicpuTsHccsEndPoint() = default;
 

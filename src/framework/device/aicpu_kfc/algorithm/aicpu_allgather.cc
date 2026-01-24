@@ -100,10 +100,10 @@ HcclResult AicpuAllgather::RunAllGatherv(HcclReduceOp opType, void *sendBuffer, 
 
 u64 AicpuAllgather::GetWindowOffset(u32 curTurnCnt, u64 curSize, u64 strideCnt, u64 recvBuffer)
 {
+    (void) recvBuffer;
     u64 windowOffset = 0;
     u64 bufferFlag = static_cast<uint64_t>(curTurnCnt % AC_DEFAULT_WINDOW_DIM);
-    u64 recvOffset = (static_cast<uint64_t>(ctx_->rankId) * strideCnt * static_cast<uint64_t>(ctx_->unitSize) +
-        recvBuffer - ctx_->gatherOut) % HCCL_COPY_ALIGN;
+    u64 recvOffset = (static_cast<uint64_t>(ctx_->rankId) * strideCnt * static_cast<uint64_t>(ctx_->unitSize)) % HCCL_COPY_ALIGN;
     u64 windowOffsetTmp = bufferFlag * (ctx_->windowSize / AC_DEFAULT_WINDOW_DIM / HCCL_COPY_ALIGN + 1) *
         HCCL_COPY_ALIGN + recvOffset;
     if ((bufferFlag == 0 && (recvOffset + curSize) < ctx_->windowSize / AC_DEFAULT_WINDOW_DIM) ||
@@ -152,7 +152,7 @@ HcclResult AicpuAllgather::RunAllGathervMC(HcclReduceOp opType, void *sendBuffer
     for (u32 i = 0; i < ctx_->rankNum; i++) {
         winOffsets[i] = (ctx_->curTurnCnt % AC_DEFAULT_WINDOW_DIM) *
             (ctx_->windowSize / AC_DEFAULT_WINDOW_DIM / HCCL_COPY_ALIGN + 1) * HCCL_COPY_ALIGN +
-            (i * strideCnt * ctx_->unitSize + reinterpret_cast<uint64_t>(recvBuffer) - ctx_->gatherOut) % HCCL_COPY_ALIGN;
+            (i * strideCnt * ctx_->unitSize) % HCCL_COPY_ALIGN;
     }
     CHK_RET(TaskOrchestrator::IpcCpyWin2Rcv(recvBuffer, curSize, winOffsets, displs, HCCL_REDUCE_RESERVED, dataType));
 

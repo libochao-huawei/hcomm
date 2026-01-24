@@ -81,7 +81,7 @@ HCCL提供了C语言的通信域管理接口，框架开发者可以通过这些
 </tr>
 <tr id="zh-cn_topic_0000001312721317_row9786142318275"><td class="cellrowborder" valign="top" width="25.47%" headers="mcps1.2.3.1.1 "><p id="zh-cn_topic_0000001312721317_p47861223102715"><a name="zh-cn_topic_0000001312721317_p47861223102715"></a><a name="zh-cn_topic_0000001312721317_p47861223102715"></a><a href="./context/HcclCommSuspend.md">HcclCommSuspend</a></p>
 </td>
-<td class="cellrowborder" valign="top" width="74.53%" headers="mcps1.2.3.1.2 "><p id="zh-cn_topic_0000001312721317_p20786823132712"><a name="zh-cn_topic_0000001312721317_p20786823132712"></a><a name="zh-cn_topic_0000001312721317_p20786823132712"></a>当片上内存UCE（uncorrect error）故障时（ACL接口返回ACL_ERROR_RT_DEVICE_MTE_ERROR错误码），可调用本接口将通信域置为挂起状态。</p>
+<td class="cellrowborder" valign="top" width="74.53%" headers="mcps1.2.3.1.2 "><p id="zh-cn_topic_0000001312721317_p20786823132712"><a name="zh-cn_topic_0000001312721317_p20786823132712"></a><a name="zh-cn_topic_0000001312721317_p20786823132712"></a>当片上内存UCE（incorrect error）故障时（ACL接口返回ACL_ERROR_RT_DEVICE_MTE_ERROR错误码），可调用本接口将通信域置为挂起状态。</p>
 <p id="zh-cn_topic_0000001312721317_p206661725112816"><a name="zh-cn_topic_0000001312721317_p206661725112816"></a><a name="zh-cn_topic_0000001312721317_p206661725112816"></a>注意：本接口为预留接口，后续有可能变更，不支持开发者使用。</p>
 </td>
 </tr>

@@ -625,7 +625,7 @@ HcclResult CommBrokeAlignInfo::CalcIntraSlicesAndLinks(const u32 rank, const u32
     u64 sliceSizeAligned = totalSize_ / rankSize_;
     u64 curoffset = 0;
 
-    HCCL_DEBUG("[CommBrokeAlignInfo][CalcIntraSlicesAndLinks] caclulate sliceSizeAligned[%llu]", sliceSizeAligned);
+    HCCL_DEBUG("[CommBrokeAlignInfo][CalcIntraSlicesAndLinks] calculate sliceSizeAligned[%llu]", sliceSizeAligned);
 
     for (u32 k = 0; k < subGroups_.size(); ++k) {
         // 满片分组处理过程

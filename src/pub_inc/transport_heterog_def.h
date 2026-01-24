@@ -106,7 +106,7 @@ using TransportRequestInfo = struct TransportRequestInfoDef {
     TransData transData;
     TransportEndPointParam epParam;
     HcclRequestType requestType;
-    u8 protocol; // rendezous:0; eager:1
+    u8 protocol; // rendezvous:0; eager:1
     u64 msn;
     s32 status;
     u64 envoffset;
@@ -134,7 +134,7 @@ using HcclUserRequire = struct HcclUserRequireDef {
 };
 
 using HcclEnvelope = struct HcclEnvelopeDef {
-    u8 protocol; // rendezous:0; eager:1
+    u8 protocol; // rendezvous:0; eager:1
     TransData transData;
     TransportEndPointParam epParam;
     u32 key; // RDMA Read用的Key
@@ -162,7 +162,7 @@ using HcclEnvelopePcie = struct HcclEnvelopePcieDef {
     u64 offset;
     u64 count;
     u32 dataType;
-    bool updateEndFlag; // embedding servie update flag
+    bool updateEndFlag; // embedding service update flag
     u32 tableId;
     s64 globalStep;
 

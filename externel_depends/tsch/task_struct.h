@@ -16,7 +16,7 @@ extern "C" {
 
 /**
  * @ingroup tsch
- * @brief the type defination of task
+ * @brief the type definition of task
  */
 typedef enum tag_ts_task_type {
     TS_TASK_TYPE_KERNEL_AICORE = 0,     /**< AI core task */
@@ -27,7 +27,7 @@ typedef enum tag_ts_task_type {
     TS_TASK_TYPE_MEMCPY = 5,            /**< memory copy task */
     TS_TASK_TYPE_MAINTENANCE = 6,       /**< such as destroy the event or stream */
     TS_TASK_TYPE_CREATE_STREAM = 7,     /**< create stream task */
-    TS_TASK_TYPE_DATA_DUMP = 8,         /**< kernal data dump configure */
+    TS_TASK_TYPE_DATA_DUMP = 8,         /**< kernel data dump configure */
     TS_TASK_TYPE_REMOTE_EVENT_WAIT = 9, /* * wait for event on another device */
     TS_TASK_TYPE_PCTRACE_ENABLE = 10,
     TS_TASK_TYPE_CREATE_L2_ADDR = 11,   /**< create L2 addr info for aicpu kernel */
@@ -575,7 +575,7 @@ typedef struct tag_ts_model_maintaince_task {
 } ts_model_maintaince_task_t;
 
 typedef struct tag_ts_maintaince_task {
-    uint8_t  sub_type; // force recyle
+    uint8_t  sub_type; // force recycle
     uint8_t  rsv;
     uint16_t target_id;
     uint8_t  reserved[44];
@@ -777,13 +777,13 @@ typedef struct tag_ts_end_graph {
     uint32_t executor_flag;
     uint8_t priority;
     uint8_t flag;
-    uint8_t reserved[22]; // reserv 22 Bytes
+    uint8_t reserved[22]; // reserve 22 Bytes
 } ts_end_graph_t;
 
 typedef struct tag_ts_model_exit {
     uint32_t model_id;
     uint32_t stream_id;
-    uint8_t reserved[40]; // reserv 40 Bytes
+    uint8_t reserved[40]; // reserve 40 Bytes
 } ts_model_exit_t;
 
 typedef struct tag_ts_aicpu_task {
@@ -2578,7 +2578,7 @@ typedef struct ts_stars_ffts_plus_sqe_header {
     uint8_t pre_p : 2;
     uint8_t post_p : 2;
     uint8_t wr_cqe : 1;
-    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is excuted */
+    /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is executed */
     uint8_t overflow_en : 1;
 
     uint16_t block_dim;

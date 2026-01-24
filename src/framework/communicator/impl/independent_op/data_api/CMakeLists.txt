@@ -7,17 +7,20 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(src_list
-    hccl_api_data.cc
+set(common_src_list
     launch_context.cc
 )
 
 target_sources(hcomm PRIVATE
-    ${src_list}
+    ${common_src_list}
+    hccl_api_data_cpu.cc
+    sync_data_cpu.cc
 )
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     target_sources(ccl_kernel PRIVATE
-        ${src_list}
+        ${common_src_list}
+        hccl_api_data_aicpu_ts.cc
+        sync_data_aicpu_ts.cc
     )
 endif()

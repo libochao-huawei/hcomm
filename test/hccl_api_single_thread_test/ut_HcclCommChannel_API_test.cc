@@ -30,15 +30,19 @@ public:
     }
 };
  
-TEST_F(HcclCommChannelTest, Ut_HcclChannelCreate_When_Comm_Nullptr_Return_EPTR)
+TEST_F(HcclCommChannelTest, Ut_HcclChannelAcquire_When_Comm_Nullptr_Return_EPTR)
 {
-    RoCEAttr roceAttr;
-    ChannelDesc desc[2] = {
-        {1, CommProtocol::COMM_PROTOCOL_ROCE, 2, {.roceAttr = roceAttr}}, 
-        {2, CommProtocol::COMM_PROTOCOL_ROCE, 2, {.roceAttr = roceAttr}}
-    };
+    HcclChannelDesc desc[2];
+    HcclResult ret = HcclChannelDescInit(desc, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    desc[0].remoteRank = 1;
+    desc[0].channelProtocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    desc[0].notifyNum = 2;
+    desc[1].remoteRank = 2;
+    desc[1].channelProtocol = CommProtocol::COMM_PROTOCOL_ROCE;
+    desc[1].notifyNum = 2;
 
     ChannelHandle channel;
-    HcclResult ret = HcclChannelCreate(nullptr, "opTag", CommEngine::COMM_ENGINE_HOSTCPU, desc, 2, &channel);
+    ret = HcclChannelAcquire(nullptr, CommEngine::COMM_ENGINE_CPU, desc, 2, &channel);
     EXPECT_EQ(ret, HCCL_E_PTR);
 }

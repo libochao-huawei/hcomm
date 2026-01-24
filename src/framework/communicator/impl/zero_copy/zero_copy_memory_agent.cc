@@ -14,6 +14,7 @@
 #include "hccl_network_pub.h"
 #include "adapter_hccp_common.h"
 #include "adapter_rts_common.h"
+#include "snapshot_control.h"
 
 namespace hccl {
 using namespace std;
@@ -438,6 +439,12 @@ void ZeroCopyMemoryAgent::InnerThread()
     }
 
     while (threadRun_) {
+        CheckSnapshotStatus();
+        if (isPaused_) {
+            SaluSleep(USLEEP_ONE_THOUSAND);
+            continue;
+        }
+
         if (isSocketSupportAsync_) {
             CheckBatchSendAsyncResult();
             RequestBatchSendAsync();
@@ -530,7 +537,7 @@ HcclResult ZeroCopyMemoryAgent::SetMemoryRange(void *virPtr, size_t size, size_t
         HCCL_ERROR("[ZeroCopyMemoryAgent][SetMemoryRange] invalid set ptr[%p] size[%lu] alignment[%lu] flags[%lu]",
         virPtr, size, alignment, flags), HCCL_E_PARA);
 
-    HCCL_INFO("[ZeroCopyMemoryAgent][SetMemoryRange] basePtr[%p] size[%lu] aligment[%lu] flag[%lu]",
+    HCCL_INFO("[ZeroCopyMemoryAgent][SetMemoryRange] basePtr[%p] size[%lu] alignment[%lu] flag[%lu]",
         virPtr, size, alignment, flags);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
@@ -1067,6 +1074,30 @@ std::string ZeroCopyMemoryAgent::DumpFinishInfo(RequestType requestType)
     finishedRanks.clear();
 
     return msg;
+}
+
+bool ZeroCopyMemoryAgent::IsPaused() const
+{
+    return !threadRun_ || isPaused_;
+}
+
+bool ZeroCopyMemoryAgent::IsResumed() const
+{
+    return !threadRun_ || !isPaused_;
+}
+
+void ZeroCopyMemoryAgent::CheckSnapshotStatus()
+{
+    auto snapshotStatus = SnapshotControl::GetInstance(deviceLogicId_).GetStatus();
+    if (isPaused_ && snapshotStatus == SnapshotStatus::POST_SNAPSHOT) {
+        isPaused_ = false;
+        HCCL_RUN_INFO("[ZeroCopyMemoryAgent][CheckSnapshotStatus] detect snapshot post-processing, "
+            "zero-copy memory agent is resumed, deviceLogicId[%d].", deviceLogicId_);
+    } else if (!isPaused_ && snapshotStatus == SnapshotStatus::PRE_SNAPSHOT) {
+        isPaused_ = true;
+        HCCL_RUN_INFO("[ZeroCopyMemoryAgent][CheckSnapshotStatus] detect snapshot pre-processing, "
+            "zero-copy memory agent is paused, deviceLogicId[%d].", deviceLogicId_);
+    }
 }
 
 }  // namespace hccl

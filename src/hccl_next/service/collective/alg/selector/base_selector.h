@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ * Description: selector基类文件头
+ * Author: yinding
+ * Create: 2024-02-04
+ */
+#ifndef HCCLV2_COLL_ALG_BASE_SELECTOR
+#define HCCLV2_COLL_ALG_BASE_SELECTOR
+
+#include <string>
+#include "coll_alg_params.h"
+#include "coll_operator.h"
+#include "virtual_topo.h"
+#include "log.h"
+#include "env_config.h"
+
+namespace Hccl {
+constexpr int RANK_SIZE_EIGHT = 8;
+constexpr u32 CCU_MS_MODE = 2;
+
+enum class SelectorStatus { MATCH, NOT_MATCH };
+enum class Level0Shape {
+    MESH_1D = 1,
+    MESH_2D = 2,
+};
+
+
+const std::map<OpType, std::string> OP_TYPE_TO_AICPU_SOLE_ALG_MAP = {
+    {OpType::ALLGATHER, "InsAllGatherMesh"},
+    {OpType::REDUCESCATTER, "InsReduceScatterNHR"},
+    {OpType::ALLREDUCE, "InsAllReduceNHR"},
+    {OpType::ALLTOALL, "InsAlltoAllMesh"},
+    {OpType::ALLTOALLV, "InsAlltoAllvMesh"},
+    {OpType::ALLTOALLVC, "InsAlltoAllvcMesh"},
+};
+
+class BaseSelector {
+public:
+    virtual ~BaseSelector() {};
+    BaseSelector &SetVirtualTopo(RankGraph *rankGraph);
+    BaseSelector &SetDevType(DevType devType);
+    BaseSelector &SetMyRank(RankId myRank);
+    BaseSelector &SetRankSize(u32 rankSize);
+    BaseSelector &SetSeverId(std::string severId);
+    BaseSelector &SetDeviceNumPerSever(u32 deviceNumPerSever);
+    BaseSelector &SetServerNum(u32 serverNum);
+    BaseSelector &SetOpConfig(OpExecuteConfig opConfig);
+
+    RankGraph *GetVirtualTopo();
+    DevType      GetDevType();
+    RankId       GetMyRank() const;
+    u32          GetRankSize() const;
+    std::string  GetSeverId();
+    u32          GetDeviceNumPerSever() const;
+    u32          GetServerNum() const;
+
+    bool IsInputOutputOverlap(const std::shared_ptr<Buffer> &inputMem, const std::shared_ptr<Buffer> &outputMem) const;
+    virtual SelectorStatus Select(const CollAlgOperator &op, CollAlgParams &params, std::string &primQueueGenName)
+     = 0;
+
+protected:
+    struct TopoInfo {
+        u32 levelNum;
+        Level0Shape level0Shape;
+        bool Level0Nhr{false};
+        bool Level1Nhr{false};
+    };
+    u32 Gcd(u32 a, u32 b) const;  // 自定义实现的 gcd 函数（兼容旧版本 C++）
+    u32 GcdOfArray(const std::vector<u32> &numbers) const;  // 计算数组中所有元素的最大公约数
+    u32 GetLevel0Gcd();
+    u32 GetNumRanksPerBoard() const;
+    void CalcTopoShape(TopoInfo &topoInfo);
+    Level0Shape CalcTopoShapeLevel0(TopoInfo &topoInfo);
+    bool IsAsymmetricTopoShapeLevel1Nhr(const std::vector<std::vector<u32>> &localIdPerBoard, u32 gcdRankSizeLevel0) const;
+    bool IsTopoShapeLevel0Regular(const std::vector<std::vector<u32>> &localIdPerBoard) const;
+    RankGraph *rankGraph_ = nullptr;
+    OpExecuteConfig opConfig_;
+    DevType      devType_;
+    RankId       myRank_;
+    u32          rankSize_;
+    std::string  severId_;
+    u32          deviceNumPerSever_;
+    u32          serverNum_;
+};
+
+} // namespace Hccl
+#endif

@@ -166,7 +166,6 @@ HcclResult RtsNotify::Alloc()
     }
     CHK_RET(hrtNotifyGetOffset(notifyPtr, notifyInfo_.ipcNotify.offset));
     notifyInfo_.ipcNotify.ptr = notifyPtr;
-
     return HCCL_SUCCESS;
 }
 

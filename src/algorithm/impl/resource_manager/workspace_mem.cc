@@ -21,7 +21,7 @@ WorkSpaceMem::~WorkSpaceMem()= default;
 HcclResult WorkSpaceMem::SetMemResource(const std::string &tag, void *ptr, u64 maxSize)
 {
     if (ptr == nullptr) {
-        HCCL_ERROR("[Set][MemResource]contruct fail, ptr is [null], tag[%s], maxSize[%llu]", tag.c_str(), maxSize);
+        HCCL_ERROR("[Set][MemResource]construct fail, ptr is [null], tag[%s], maxSize[%llu]", tag.c_str(), maxSize);
         return HCCL_E_PTR;
     } else {
         std::unique_lock<std::mutex> lock(memResMutex_);

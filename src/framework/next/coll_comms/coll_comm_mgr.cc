@@ -11,24 +11,5 @@
 
 namespace hccl {
 
-CollCommMgr::~CollCommMgr() {
-    std::lock_guard<std::mutex> lock(mutex_);
-    collComms_.clear();
-}
 
-HcclResult CollCommMgr::CreateComm(const char* rankTable, uint32_t rank, const CommConfig& config, HcclComm* comm) {
-    EXCEPTION_HANDLE_BEGIN
-    auto collComm = std::make_shared<CollComm>(rank, rankTable, config);
-    
-    CHK_RET(collComm->Init());
-    
-    {
-        std::lock_guard<std::mutex> lock(mutex_);
-        collComms_.insert(collComm);
-    }
-    
-    *comm = static_cast<HcclComm>(collComm.get());
-    EXCEPTION_HANDLE_END
-    return HCCL_SUCCESS;
-}
 }

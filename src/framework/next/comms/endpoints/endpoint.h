@@ -13,27 +13,65 @@
 #include <memory>
 #include <vector>
 #include <string>
-#include "reged_mems/reged_mems.h"
+#include "reged_mems/reged_mem_mgr.h"
+// #include "socket.h"
+#include "../../../../orion/unified_platform/resource/socket/socket.h"
+#include "socket_handle_manager.h"
+#include "rdma_handle_manager.h"
+#include "../common/orion_adpt_utils.h"
+#include "hccp_hdc_manager.h"
 
 namespace hcomm {
 /**
- * @note 职责：通信设备EndPoint的C++抽象接口类，管理通信设备上下文，以及设备上的注册内存。
+ * @note 职责：通信设备Endpoint的C++抽象接口类，管理通信设备上下文，以及设备上的注册内存。
  */
-class EndPoint {
+class Endpoint {
 public:
-    virtual ~EndPoint() = default;
+    explicit Endpoint(const EndpointDesc &endpointDesc);
+    
+    virtual ~Endpoint() = default;
 
+    static HcclResult CreateEndpoint(const EndpointDesc &endpointDesc, std::unique_ptr<Endpoint> &endpointPtr);
+
+    virtual HcclResult Init() = 0;
+
+    virtual HcclResult ServerSocketListen() = 0;
+
+    virtual std::shared_ptr<RegedMemMgr> GetRegedMemMgr() 
+    {
+        return regedMemMgr_;
+    }
+
+    void* GetRdmaHandle()
+    {
+        return ctxHandle_;
+    }
+
+    EndpointDesc GetEndpointDesc()
+    {
+        return endpointDesc_;
+    }
+     
     // 注册内存
-    virtual HcclResult RegisterMemory(const std::vector<MemHandle>& memHandles);
-
+    virtual HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) = 0;
+ 
     // 注销内存
-    virtual HcclResult UnregisterMemory(MemHandle memHandle) = 0;
+    virtual HcclResult UnregisterMemory(void* memHandle) = 0;
+ 
+    // 导出指定内存描述，用于交换
+    virtual HcclResult MemoryExport(const void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
+ 
+    // 基于内存描述，导入获得内存
+    virtual HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) = 0;
+ 
+    // 关闭内存
+    virtual HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) = 0;
 
-    // 获取注册的内存信息
-    virtual HcclResult GetRegisteredMemory(std::vector<MemRegion>& memRegions) const = 0;
-
-private:
+protected:
+    void* ctxHandle_{nullptr};
     std::shared_ptr<RegedMemMgr> regedMemMgr_{};
+    EndpointDesc endpointDesc_;
 };
+
 }
 #endif // ENDPOINT_H

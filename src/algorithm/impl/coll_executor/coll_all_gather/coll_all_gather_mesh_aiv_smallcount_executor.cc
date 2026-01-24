@@ -69,7 +69,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u3
     u32 bestBlockDim = blockDim;
     if (isOpBase || topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
         CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
             blockDim_, blockDim), HCCL_E_PARA);
     } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
         CHK_PRT_RET(blockDim_ < rankSize,
@@ -103,7 +103,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::Orchestrate(OpParam& param, A
     ret = KernelRun(param, execMem);
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor orchestrate success, take time [%lld]us.",
@@ -151,7 +151,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
     args.reduceOp = param.reduceType;
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor getalgexecparam success, take time [%lld]us.",
@@ -200,10 +200,12 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::KernelRun(const OpParam &para
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

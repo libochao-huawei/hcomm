@@ -477,22 +477,7 @@ HcclResult ReduceScatterNHR::RunDestReducer(const LINK &link, InterServerAlgoSte
 {
     std::vector<Slice> rxSlices;
     std::vector<Slice> rxSlicestemp;
-    for (u32 i = 0; i < stepInfo.nSlices; i++) {
-        rxSlices.push_back(inputSlices[stepInfo.rxSliceIdxs[i]]);
-        rxSlicestemp.push_back(outputSlices[stepInfo.rxSliceIdxs[i]]);
-        HCCL_DEBUG("[ReduceScatterNHR][RunDestReducer] i[%u] rxSliceIndex[%u] rx offset[%llu] size[%llu]",
-            i, stepInfo.rxSliceIdxs[i], outputSlices[stepInfo.rxSliceIdxs[i]].offset,
-            outputSlices[stepInfo.rxSliceIdxs[i]].size);
-    }
-
-    HCCL_DEBUG("[ReduceScatterNHR][RunDestReducer] rxslices size [%u], rxslices temp size [%u]",
-        rxSlices.size(), rxSlicestemp.size());
-
-    // 合并连续slices
-    MergeSlices(rxSlices);
-    MergeSlices(rxSlicestemp);
-    HCCL_DEBUG("[ReduceScatterNHR][RunDestReducer] merged rxslices size [%u], merged rxslices temp size [%u]",
-        rxSlices.size(), rxSlicestemp.size());
+    CHK_RET(GetRxSlices(rxSlices, rxSlicestemp, stepInfo, inputSlices, outputSlices));
 
     std::vector<ReducerMemoryInfo> rxReduceMems;
     for (u64 i = 0; i < rxSlices.size(); i++) {

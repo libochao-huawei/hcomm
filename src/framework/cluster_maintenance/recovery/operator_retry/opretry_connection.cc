@@ -564,7 +564,7 @@ HcclResult OpRetryConnection::Connect()
             HCCL_ERROR("[OpRetryConnection][Connect] Get socket failed, ret [%d]", status);
             return HCCL_E_TCP_CONNECT;
         } else {
-            HCCL_INFO("[OpRetryConnection][Connnect] Get socket success with server [%s] port [%u]",
+            HCCL_INFO("[OpRetryConnection][Connect] Get socket success with server [%s] port [%u]",
                 serverIp_.GetReadableIP(), serverPort_);
             break;
         }

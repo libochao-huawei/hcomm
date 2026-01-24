@@ -62,7 +62,7 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_CountIsZero_Expect_ReturnIsHCCL_
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
 }
 
-TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_RootIsInvaild_Expect_ReturnIsHCCL_SUCCESS)
+TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_RootIsInvalid_Expect_ReturnIsHCCL_SUCCESS)
 {
     UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
     int root = 2;   // 默认初始化，本通信域只有一个rank
@@ -96,6 +96,22 @@ TEST_F(HcclBroadcastTest, Ut_HcclBroadcast_When_DataSize1KB_Expect_ReturnIsHCCL_
     UT_STREAM_CREATE_DEFAULT(stream);
 
     HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);
+}
+
+TEST_F(HcclBroadcastTest, Ut_Group_HcclBroadcast_When_DataSize1KB_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_SET_SENDBUF_COUNT(HCCL_COM_DATA_SIZE, HCCL_COM_DATA_SIZE);
+    int root = 0;
+    UT_COMM_CREATE_DEFAULT(comm);
+    UT_STREAM_CREATE_DEFAULT(stream);
+
+    HcclGroupStart();
+    HcclResult ret = HcclBroadcastInner(sendBuf, count, HCCL_DATA_TYPE_INT8, root, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = HcclGroupEnd();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     UT_UNSET_SENDBUF_COMM_STREAM_WITHSTREAMSYNCHRONIZEFIRST(comm, stream);

@@ -56,7 +56,7 @@ TEST_F(NotifyPoolTest, ut_alloc_notify_ipc_ok)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(NotifyPoolTest, ut_alloc_notify_ipc_fail_tag_invaild)
+TEST_F(NotifyPoolTest, ut_alloc_notify_ipc_fail_tag_invalid)
 {
     s32 ret = HCCL_SUCCESS;
 
@@ -109,7 +109,7 @@ TEST_F(NotifyPoolTest, ut_alloc_notify_no_ipc_ok)
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(NotifyPoolTest, ut_alloc_notify_no_ipc_fail_tag_invaild)
+TEST_F(NotifyPoolTest, ut_alloc_notify_no_ipc_fail_tag_invalid)
 {
     s32 ret = HCCL_SUCCESS;
 

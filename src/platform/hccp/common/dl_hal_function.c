@@ -222,7 +222,7 @@ int DlHalInit(void)
     gHalApiHandle = AscendHalDlopen("libascend_hal.so", RTLD_NOW);
     if (gHalApiHandle == NULL) {
         pthread_mutex_unlock(&gHalApiLock);
-        roce_err("dlopen libascend_hal.so fail! error_no=[%d]", errno);
+        roce_err("dlopen libascend_hal.so failed! error_no=[%d]", errno);
         return -EINVAL;
     }
 

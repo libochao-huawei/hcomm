@@ -46,13 +46,23 @@ execute_process(
 message(STATUS "当前系统架构: ${SYSTEM_ARCH}")
 project(hcomm)
 
+set(CMAKE_C_FLAGS_RELEASE "")
+set(CMAKE_CXX_FLAGS_RELEASE "")
+
+set(CMAKE_CXX_COMPILE_OBJECT
+    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
+set(CMAKE_C_COMPILE_OBJECT
+    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+)
+
 # 获取 CPU 核心数
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     execute_process(
         COMMAND nproc
         OUTPUT_VARIABLE CPU_CORES
         OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    ) 
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     execute_process(
         COMMAND wmic cpu get NumberOfCores /value
@@ -92,13 +102,12 @@ if(BUILD_OPEN_PROJECT)
     set(HCCL_HEAD
         include/hccl/hccl_comm.h
         include/hccl/hccl_types.h
-        include/hccl/hccl_ctrl_plane.h
         src/pub_inc/hccn_rping.h
-        include/hccl/hccl_mem_defs.h
         include/hccl/hccl_rank_graph.h
-        include/hccl/hccl_rankgraph.h
         include/hccl/hccl_res.h
         include/hccl/hcomm_primitives.h
+        include/hcomm_res.h
+        include/hcomm_res_defs.h
     )
 
     set(HCCL_JSON
@@ -199,9 +208,11 @@ if(BUILD_OPEN_PROJECT)
         pkg_inc/hccl/hccl_ex.h
         pkg_inc/hccl/hccl_one_sided_services.h
         pkg_inc/hccl/hcom.h
+        pkg_inc/hccl/hcomm_diag.h
         pkg_inc/hccl/dtype_common.h
         pkg_inc/hccl/workflow.h
         pkg_inc/hccl/hccl_inner.h
+        pkg_inc/hccl/hccl_ctrl_plane.h
     )
     install(FILES
         ${HCCL_PKG_HEAD}

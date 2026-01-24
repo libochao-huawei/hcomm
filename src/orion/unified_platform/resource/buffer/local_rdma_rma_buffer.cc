@@ -1,0 +1,75 @@
+
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "local_rdma_rma_buffer.h"
+#include "hccp.h"
+#include "rma_buffer.h"
+#include "exchange_rdma_buffer_dto.h"
+
+namespace Hccl {
+
+LocalRdmaRmaBuffer::LocalRdmaRmaBuffer(std::shared_ptr<Buffer> buf, RdmaHandle rdmaHandle)
+    : LocalRmaBuffer(buf, RmaType::RDMA), rdmaHandle(rdmaHandle)
+{
+    if (rdmaHandle == nullptr || buf == nullptr) {
+        THROW<NullPtrException>("LocalRdmaRmaBuffer's rdmaHandle is NULL");
+    }
+    const uintptr_t bufAddr = buf->GetAddr();
+    size_t bufSize = buf->GetSize();
+    if (bufAddr == 0 || bufSize <= 0) {
+        HCCL_ERROR("[LocalRdmaRmaBuffer]buffer size[%llu Byte] and addr[%llu] should be greater than 0.", bufAddr,
+                   bufSize);
+        THROW<InvalidParamsException>("[%s] failed, param error.", __func__);
+    }
+    // 注册内存
+    struct MrInfoT mrInfo;
+    mrInfo.addr   = reinterpret_cast<void *>(bufAddr);
+    mrInfo.size   = bufSize;
+    mrInfo.access = RA_ACCESS_REMOTE_WRITE | RA_ACCESS_LOCAL_WRITE | RA_ACCESS_REMOTE_READ;
+
+    s32 ret = RaRegisterMr(rdmaHandle, &mrInfo, &mrHandle);
+    if (ret != 0 || mrHandle == nullptr) {
+        HCCL_ERROR("[HrtRaRegisterMr] RaRegisterMr failed, call interface error[%d]", ret);
+        THROW<InternalException>("[%s] failed, call interface error[%d].", __func__, ret);
+    }
+    lkey = mrInfo.lkey;
+    rkey = mrInfo.rkey;
+    HCCL_INFO("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s, lkey=%u, rkey=%u]", 
+            rdmaHandle, mrHandle, buf->Describe().c_str(), lkey, rkey);
+}
+
+LocalRdmaRmaBuffer::~LocalRdmaRmaBuffer()
+{
+    if (mrHandle) {
+        s32 ret = RaDeregisterMr(rdmaHandle, mrHandle);
+        if (ret != 0) {
+            HCCL_ERROR("[HrtRaDeRegisterMr]errNo[0x%016llx] RaDeregisterMr failed, return[%d]",
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), ret);
+            // THROW<InternalException>("[%s] failed, call interface error[%d].", __func__, ret);
+        }
+        mrHandle = nullptr;
+    }
+}
+
+string LocalRdmaRmaBuffer::Describe() const
+{
+    return StringFormat("LocalRdmaRmaBuffer[rdmaHandle=%p, mrHandle = %p, buf=%s]", rdmaHandle, mrHandle,
+                        buf->Describe().c_str());
+}
+
+std::unique_ptr<Serializable> LocalRdmaRmaBuffer::GetExchangeDto()
+{
+    std::unique_ptr<ExchangeRdmaBufferDto> dto
+        = make_unique<ExchangeRdmaBufferDto>(buf->GetAddr(), buf->GetSize(), this->rkey);
+    return std::unique_ptr<Serializable>(dto.release());
+}
+
+} // namespace Hccl

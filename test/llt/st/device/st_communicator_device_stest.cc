@@ -157,8 +157,8 @@ TEST_F(Communicator_Device_ST, CommunicatorTest) {
     hcclCommunicator.GetRankSize();
     hcclCommunicator.GetNicInitialized();
 
-    hcclCommunicator.HcclSelectAlg(HcclCMDType::HCCL_CMD_ALL, 0, dataType, op, findTag, tag, true);
-    hcclCommunicator.HcclCalcBlockDim(HcclCMDType::HCCL_CMD_ALL, 0, dataType, tag, buffer);
+    hcclCommunicator.HcclSelectAlg(HcclCMDType::HCCL_CMD_ALL, 0, 0, dataType, op, findTag, tag, true);
+    hcclCommunicator.HcclCalcBlockDim(HcclCMDType::HCCL_CMD_ALL, 0, 0, dataType, tag, buffer);
 
     void *commContext = nullptr;
     hcclCommunicator.HcclGetAlgExecParam(tag, HcclCMDType::HCCL_CMD_ALL, 0, nullptr, nullptr, true, dataType, op, commContext, count, 0);
@@ -384,7 +384,7 @@ TEST_F(Communicator_Device_ST, CommunicatorTest) {
     hcclCommunicator.GetAicpuOpStreamNotify(nullptr, 0, nullptr);
     hcclCommunicator.GetAicpuOpStreamAndNotify(nullptr, 0, nullptr);
 
-    hcclCommunicator.SetAicpuNotifyInvaild();
+    hcclCommunicator.SetAicpuNotifyInvalid();
     std::unique_ptr<CommInfo> commInfo = nullptr;;
     hcclCommunicator.ReplaceCommInfoByTag(tag, commInfo);
     level1StreamInfo_t streamInfo;

@@ -1,0 +1,1 @@
+../../../platform/inc/adapter/hccd/adapter_error_manager.h

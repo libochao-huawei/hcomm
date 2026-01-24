@@ -43,7 +43,7 @@ if(BUILD_OPEN_PROJECT)
 
         # mmpa头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
@@ -112,6 +112,7 @@ target_link_options(hccl_legacy PRIVATE
     -Wl,-z,now
     -Wl,-z,noexecstack
     -Wl,--build-id=none
+    -s
 )
  
 if(BUILD_OPEN_PROJECT)

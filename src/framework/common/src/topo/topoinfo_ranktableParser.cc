@@ -395,8 +395,8 @@ HcclResult TopoInfoRanktableParser::GetJsonArrayMemberProperty(const nlohmann::j
             std::vector<std::string>(
                 {"json object property value of Name[" + std::string(propName) + "] is not string."}));
         HCCL_ERROR(
-            "[Get][JsonArrayMemberProperty]errNo[0x%016llx] json object property value of Name[%s] is not string!",
-            HCOM_ERROR_CODE(HCCL_E_PARA),
+            "[%s][%s]errNo[0x%016llx] json object property value of Name[%s] is not string!",
+            LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_CHECK.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA),
             propName);
         return HCCL_E_PARA;
     }

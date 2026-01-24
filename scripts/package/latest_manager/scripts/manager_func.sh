@@ -304,7 +304,7 @@ package_uninstalled() {
         # 多版本卸载时检查版本兼容性
         if ! recreate_compatiable_softlink_in_multi_version_uninstall "$install_path" "$LATEST_DIR" "$package" \
             "$USERNAME" "$USERGROUP" "$docker_root"; then
-            comm_log "ERROR" "Recreate ${package} compatiable softlink in package uninstalled failed!"
+            comm_log "ERROR" "Recreate ${package} compatible softlink in package uninstalled failed!"
             return 1
         fi
     fi
@@ -1073,10 +1073,6 @@ add_latest_common_script() {
     add_setenv "${latest_path}" "${package}" "NA" "${username}" "${usergroup}" "true" "${docker_root}"
     ret="$?" && [ $ret -ne 0 ] && return $ret
 
-    # 给latest目录添加prereq_check条目
-    add_prereq_check "${latest_path}" "${package}" "${username}" "${usergroup}" "${docker_root}"
-    ret="$?" && [ $ret -ne 0 ] && return $ret
-
     # 恢复bin目录的权限
     chmod "${mod}" "${latest_path}/bin"
     ret="$?" && [ $ret -ne 0 ] && return $ret
@@ -1106,10 +1102,6 @@ del_latest_common_script() {
 
     # unsetenv
     del_setenv "${latest_path}" "${package}" "${username}" "${docker_root}"
-    ret="$?" && [ $ret -ne 0 ] && return $ret
-
-    # 给latest目录删除prereq_check条目
-    del_prereq_check "${latest_path}" "${package}" "${docker_root}"
     ret="$?" && [ $ret -ne 0 ] && return $ret
 
     # 恢复bin目录的权限

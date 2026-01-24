@@ -86,7 +86,7 @@ HcclResult CollAllGatherMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 
     blockDim = blockDim_ < rankSize ? blockDim_ : (blockDim_ < blockDim ? blockDim_ / rankSize * rankSize : blockDim);
 
     CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_WARNING("[CollAllGatherMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        HCCL_ERROR("[CollAllGatherMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, minBlockDim),
         HCCL_E_PARA);
 
@@ -132,7 +132,7 @@ HcclResult CollAllGatherMeshAivFor91093Executor::GetAivExecParam(const OpParam& 
         args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor getalgexecparam success, take time [%lld]us.",
@@ -164,7 +164,7 @@ HcclResult CollAllGatherMeshAivFor91093Executor::Orchestrate(OpParam& param, Alg
     HcclResult ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor orchestrate success, take time [%lld]us.",
@@ -214,6 +214,8 @@ HcclResult CollAllGatherMeshAivFor91093Executor::KernelRun(const OpParam &param,
     } else {
         algArgs.step = blockDim_;
     }
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {

@@ -19,14 +19,14 @@ IndependentOp::IndependentOp(){};
 
 HcclResult IndependentOp::SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable,
     const HcclTopoAttr &topoAttr, aclrtBinHandle binHandle, HDCommunicateParams &kfcControlTransferH2DParams,
-    HDCommunicateParams &kfcStatusTransferD2HParams)
+    HDCommunicateParams &kfcStatusTransferD2HParams, CCLBufferManager &bufferManager)
 {
     commEngine_ = HCCL_COMM_ENGINE_CONFIG_NOT_SET;
     threadNum_ = HCCL_COMM_THREADNUM_CONFIG_NOT_SET;
     notifyNumPerThread_ = HCCL_COMM_NOTIFY_NUM_PER_THREAD_CONFIG_NOT_SET;
     cclBufferSize_ = commConfig.GetConfigBufferSize();
     commId_ = commConfig.GetConfigCommName();
-    commMemMgr_.CommSetHcclBufferSize(commConfig.GetConfigBufferSize() * 2);
+    commMemMgr_.CommSetHcclBufferManager(bufferManager);
     binHandle_ = binHandle;
 
     // aicpu侧初始化状态的回调函数

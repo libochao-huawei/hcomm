@@ -29,6 +29,20 @@ using NotifyPoolIndicator = struct NotifyPoolIndicatorDef {
     std::map<s64, u32> notifyPoolNoIPC;     // key: remote, value: index
 };
 
+constexpr u32 NOTIFY_RES_MGR_NUM = 3; // notifyResMgr_ 长度
+using NotifyResMgr = struct NotifyResMgrDef {
+    std::mutex registeredOpMapMutex;
+    std::map<std::string, NotifyPoolIndicator> registeredOpMap;
+
+    std::mutex notifyPoolIPCAsignedMutex;
+    std::map<s64, NotifyPoolIPCSub> notifyPoolIPCAsignedMap;
+    std::map<s64, NotifyPoolIPCSub> notifyPoolDevIPCAsignedMap;
+
+    std::mutex notifyPoolNoIPCAsignedMutex;
+    std::map<s64, NotifyPoolNoIPCSub> notifyPoolNoIPCAsignedMap;
+    std::map<s64, NotifyPoolNoIPCSub> notifyPoolDevNoIPCAsignedMap;
+};
+
 class NotifyPoolImpl {
 public:
     explicit NotifyPoolImpl(const s32 devicePhyId);
@@ -65,37 +79,17 @@ private:
         std::shared_ptr<LocalIpcNotify> &localNotify, u32 offsetAlignSize);
     HcclResult IsNotifyOffsetAligned(std::shared_ptr<LocalIpcNotify> &localNotify, u32 offsetAlignSize, bool &isAligned);
 
-    HcclResult DestroyRegisteredOpMap();
-    HcclResult DestroyNotifyPoolIPCAsignedMap();
-    HcclResult DestroyNotifyPoolNoIPCAsignedMap();
-    HcclResult DestroyNotifyPoolIPCAsignedMapForA2A();
-    HcclResult DestroyNotifyPoolNoIPCAsignedMapForA2A();
-    HcclResult DestroyNotifyPoolDeviceIPCAsignedMap();
-    HcclResult DestroyNotifyPoolDeviceNoIPCAsignedMap();
-    HcclResult DestroyNotifyPoolDeviceIPCAsignedMapForA2A();
-    HcclResult DestroyNotifyPoolDeviceNoIPCAsignedMapForA2A();
+    HcclResult DestroyRegisteredOpMap(u32 index);
+    HcclResult DestroyNotifyPoolIPCAsignedMap(u32 index);
+    HcclResult DestroyNotifyPoolNoIPCAsignedMap(u32 index);
+    HcclResult DestroyNotifyPoolDevIPCAsignedMap(u32 index);
+    HcclResult DestroyNotifyPoolDevNoIPCAsignedMap(u32 index);
     HcclResult RegisterOpMap(const std::string &tag, std::map<std::string, NotifyPoolIndicator> &registeredOpMap);
     HcclResult UnregisterOpMap(const std::string &tag, std::map<std::string, NotifyPoolIndicator> &registeredOpMap);
     HcclResult DestroyNotify(std::shared_ptr<LocalIpcNotify> &localNotify);
-    std::mutex notifyPoolIPCAsignedMutex_;
-    std::mutex notifyPoolNoIPCAsignedMutex_;
-    std::mutex registeredOpMapMutex_;
-    std::mutex hcclSignalPoolAsignedMutex_;
-    std::map<std::string, NotifyPoolIndicator> registeredOpMap_;
-    std::map<s64, NotifyPoolIPCSub> notifyPoolIPCAsignedMap_;
-    std::map<s64, NotifyPoolNoIPCSub> notifyPoolNoIPCAsignedMap_;
-    std::map<s64, NotifyPoolIPCSub> notifyPoolDeivceIPCAsignedMap_;
-    std::map<s64, NotifyPoolNoIPCSub> notifyPoolDeivceNoIPCAsignedMap_;
+    u32 GetNotifyResIdx(const std::string &tag, u32 offsetAlignSize);
 
-    // notify pool for alltoall、alltoallv、alltoallvc
-    std::mutex notifyPoolIPCAsignedMutexForA2A_;
-    std::mutex notifyPoolNoIPCAsignedMutexForA2A_;
-    std::mutex registeredOpMapMutexForA2A_;
-    std::map<std::string, NotifyPoolIndicator> registeredOpMapForA2A_;
-    std::map<s64, NotifyPoolIPCSub> notifyPoolIPCAsignedMapForA2A_;
-    std::map<s64, NotifyPoolNoIPCSub> notifyPoolNoIPCAsignedMapForA2A_;
-    std::map<s64, NotifyPoolIPCSub> notifyPoolDevIPCAsignedMapForA2A_;
-    std::map<s64, NotifyPoolNoIPCSub> notifyPoolDevNoIPCAsignedMapForA2A_;
+    std::array<NotifyResMgr, NOTIFY_RES_MGR_NUM> notifyResMgr_;
     s32 devicePhyId_;
     s32 pid_;
 };

@@ -53,7 +53,7 @@ HcclResult CollReduceScatterVMeshAivSmallCountExecutor::CalBlockDim(u32& blockDi
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollReduceScatterVMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollReduceScatterVMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollReduceScatterVMeshAivSmallCountExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -77,7 +77,7 @@ HcclResult CollReduceScatterVMeshAivSmallCountExecutor::Orchestrate(OpParam& par
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterVMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollReduceScatterVMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed.", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], ReduceScatterV executor orchestrate success, take time [%lld]us.",
@@ -133,10 +133,12 @@ HcclResult CollReduceScatterVMeshAivSmallCountExecutor::KernelRun(const OpParam 
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, extraArgs, aivProfilingInfo);

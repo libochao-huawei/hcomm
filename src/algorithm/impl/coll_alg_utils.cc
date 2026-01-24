@@ -12,7 +12,6 @@
 #include "workflow_pub.h"
 #include "stream_utils.h"
 #include "coll_alg_utils.h"
-#include "comm_configer.h"
 
 namespace hccl {
 
@@ -71,9 +70,11 @@ bool IsSupportDirectFullmeshForAlltoallv(const OpParam& param, DevType deviceTyp
             // alltoallv算子单机和多机(小于8机64卡)acl graph场景都走directfullmesh算法，且不支持卡数不一致场景
             aclmdlRI rtModel = nullptr;
             bool isCapture = false;
-            HcclResult retCapture = GetStreamCaptureInfo(param.stream.ptr(), rtModel, isCapture);
-            CHK_PRT_CONT(retCapture != HCCL_SUCCESS,
-                HCCL_ERROR("Get capture status error. return[%d], capture model", retCapture));
+            if (isOpbase) { // acl graph模式下获取capture信息，图模式需要规避
+                HcclResult retCapture = GetStreamCaptureInfo(param.stream.ptr(), rtModel, isCapture);
+                CHK_PRT_CONT(retCapture != HCCL_SUCCESS, 
+                    HCCL_ERROR("Get capture status error. return[%d], capture model", retCapture));
+            }
             isHCCS = (userRankSize <= MAX_ALLTOALLV_DIRECT_FULLMESH_RANKSIZE &&
                       serverNum <= MAX_ALLTOALLV_DIRECT_FULLMESH_SERVER_NUM && isCapture) ||
                       isSingleMeshAggregation;
@@ -107,15 +108,13 @@ bool SatisfyIntraSuperPod(DevType deviceType, u32 rankSize, bool useSuperPodMode
 }
 
 bool FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(DevType deviceType, u32 rankSize, bool useSuperPodMode,
-    const std::string& identifier)
+    std::vector<HcclAlgoType> algoConfig)
 {
     bool rankSizeSupport = (rankSize <= MAX_ALLTOALL_MESH_ALGO_RANK_INTRA_MESH);
     bool isDevice91093 = (deviceType == DevType::DEV_TYPE_910_93);
-    std::vector<HcclAlgoType> algoTypeArr =
-                CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier, HcclCMDType::HCCL_CMD_ALLTOALL);
     bool twoLevelIntraUseMesh =
-        (algoTypeArr[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH &&
-        algoTypeArr[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
+        (algoConfig[HCCL_ALGO_LEVEL_0] == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH &&
+        algoConfig[HCCL_ALGO_LEVEL_1] == HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE);
     bool isHCCS = !GetExternalInputInterHccsDisable() && useSuperPodMode;
     HCCL_DEBUG("[FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition]isDevice91093 %u twoLevelIntraUseMesh %u isHCCS %u",
         isDevice91093, twoLevelIntraUseMesh, isHCCS);
@@ -128,15 +127,14 @@ bool FullmeshPairwiseSatisfyHighPerfAlltoallMeshCondition(DevType deviceType, u3
     return (isDevice91093 && twoLevelIntraUseMesh && rankSizeSupport && isHCCS);
 }
 
-bool IsConfigAHCAlgo(const std::string& identifier)
+bool IsConfigAHCAlgo(std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfigMap)
 {
     const std::set<HcclCMDType> hcclSupportAHCOpSet = {
         HcclCMDType::HCCL_CMD_ALLREDUCE, HcclCMDType::HCCL_CMD_REDUCE_SCATTER, HcclCMDType::HCCL_CMD_ALLGATHER
     };
  
     for (const auto& opType : hcclSupportAHCOpSet) {
-        HcclAlgoType algoConfigLevel1 =
-                CommConfiger::GetInstance().GetCommConfigAlgoConfig(identifier, opType)[HCCL_ALGO_LEVEL_1];
+        HcclAlgoType algoConfigLevel1 = algoConfigMap[opType][HCCL_ALGO_LEVEL_1];
         bool isConfigAHC =
             (algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC ||
             algoConfigLevel1 == HcclAlgoType::HCCL_ALGO_TYPE_AHC_BROKE);

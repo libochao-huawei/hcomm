@@ -115,6 +115,7 @@ set(include_list
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/health/heartbeat/
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/detect/detect_connect_anomalies/
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/recovery/operator_retry
+    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/cluster_maintenance/snapshot
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/host
     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/common/src/task

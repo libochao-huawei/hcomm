@@ -198,7 +198,7 @@ HcclResult CollReduceScatterRingZerocopyExchangePipelineExecutor::KernelRunInter
     CHK_RET(RunFinallyProcess(param, execMem));
 
     intraServerDone_ = true;
-    HCCL_INFO("[CollReduceScatterRingZerocopyExchangePipelineExecutor] run succes, rank[%u:%u,%u,%u]",
+    HCCL_INFO("[CollReduceScatterRingZerocopyExchangePipelineExecutor] run success, rank[%u:%u,%u,%u]",
         topoAttr_.userRank, level2Rank_, level1Rank_, level0Rank_);
     return HCCL_SUCCESS;
 }

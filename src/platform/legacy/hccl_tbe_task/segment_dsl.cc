@@ -472,7 +472,7 @@ template <typename T> bool SegmentDsl<T>::is_support_pad(const std::string sch)
         return false;
     }
     if (segment_compile_info->tensor_sizes.count(ATOMIC_SPECIAL_SCH) != 0 && segment_rows == 1) {
-        HCCL_DEBUG("sch is sepcial");
+        HCCL_DEBUG("sch is special");
         return true;
     }
     if (check_pad(sch)) {

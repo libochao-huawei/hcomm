@@ -105,8 +105,8 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_ExchangeIpcMesg)
     MachinePara machine_para;
     std::chrono::milliseconds timeout = std::chrono::milliseconds(10000);
     std::string tag = "name";
-    HcclIpAddress invaildIp;
-    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 1,
+    HcclIpAddress invalidIp;
+    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 1,
         CLIENT_ROLE_SOCKET, TransportResourceInfo(), nullptr);
     transport.GetLinkTag(tag);
     HcclIpAddress invalidIp;
@@ -146,7 +146,7 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_ExchangeIpcMesg)
 
     ret = transport.ExchangeIpcMesg();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 0,
+    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 0,
         SERVER_ROLE_SOCKET, TransportResourceInfo(), nullptr);
 
     transport1.machinePara_.machineType = MachineType::MACHINE_CLIENT_TYPE;
@@ -183,8 +183,8 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_ExchangePidMesg)
 {
     MachinePara machine_para;
     std::chrono::milliseconds timeout = std::chrono::milliseconds(10000);
-    HcclIpAddress invaildIp;
-    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 1,
+    HcclIpAddress invalidIp;
+    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 1,
         CLIENT_ROLE_SOCKET, TransportResourceInfo(), nullptr);
     HcclIpAddress invalidIp;
     DeviceMem inputMem = DeviceMem::alloc(sizeof(s32));
@@ -253,7 +253,7 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_ExchangePidMesg)
     ret = transport.ExchangeSignalMesg();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 0,
+    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 0,
         SERVER_ROLE_SOCKET, TransportResourceInfo(), nullptr);
 
     transport1.machinePara_.machineType = MachineType::MACHINE_CLIENT_TYPE;
@@ -288,8 +288,8 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_SocketSend)
 {
     MachinePara machine_para;
     std::chrono::milliseconds timeout = std::chrono::milliseconds(10000);
-    HcclIpAddress invaildIp;
-    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 1,
+    HcclIpAddress invalidIp;
+    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 1,
         CLIENT_ROLE_SOCKET, TransportResourceInfo(), nullptr);
     HcclIpAddress invalidIp;
     DeviceMem inputMem = DeviceMem::alloc(sizeof(s32));
@@ -333,7 +333,7 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_SocketSend)
     ret = transport.SocketSend(message);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 0,
+    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 0,
         SERVER_ROLE_SOCKET, TransportResourceInfo(), nullptr);
 
     transport1.machinePara_.machineType = MachineType::MACHINE_CLIENT_TYPE;
@@ -367,8 +367,8 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_PrepareConnect)
 {
     MachinePara machine_para;
     std::chrono::milliseconds timeout = std::chrono::milliseconds(10000);
-    HcclIpAddress invaildIp;
-    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 1,
+    HcclIpAddress invalidIp;
+    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 1,
         CLIENT_ROLE_SOCKET, TransportResourceInfo(), nullptr);
     HcclIpAddress invalidIp;
     DeviceMem inputMem = DeviceMem::alloc(sizeof(s32));
@@ -442,7 +442,7 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_PrepareConnect)
     ret = transport.AddSocketWhiteList();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
-    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 0,
+    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 0,
         SERVER_ROLE_SOCKET, TransportResourceInfo(), nullptr);
 
     transport1.machinePara_.machineType = MachineType::MACHINE_CLIENT_TYPE;
@@ -488,10 +488,10 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_Init)
 {
     MachinePara machine_para;
     std::chrono::milliseconds timeout = std::chrono::milliseconds(10000);
-    HcclIpAddress invaildIp;
+    HcclIpAddress invalidIp;
     int tmp = 45;
     rtContext_t ctx =  (rtContext_t)&tmp;
-    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 1,
+    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 1,
         CLIENT_ROLE_SOCKET, TransportResourceInfo(), ctx);
     HcclIpAddress invalidIp;
     DeviceMem inputMem = DeviceMem::alloc(sizeof(s32));
@@ -518,7 +518,7 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_Init)
     ipsocketInfo.nicRdmaHandle = (void*)0x00000001;
     transport.machinePara_.deviceLogicId = 0;
     RaResourceInfo &raResourceInfo = NetworkManager::GetInstance(transport.machinePara_.deviceLogicId).raResourceInfo_;
-    raResourceInfo.hostNetSocketMap.insert({invaildIp, ipsocketInfo});
+    raResourceInfo.hostNetSocketMap.insert({invalidIp, ipsocketInfo});
 
     HcclResult ret;
     MOCKER_CPP(&MemNameRepository::SetIpcMem,
@@ -612,9 +612,9 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_Init)
 
     ret = transport.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    raResourceInfo.hostNetSocketMap.erase(invaildIp);
+    raResourceInfo.hostNetSocketMap.erase(invalidIp);
 
-    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 0,
+    TransportShmEvent transport1(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 0,
         SERVER_ROLE_SOCKET, TransportResourceInfo(), ctx);
 
     transport1.machinePara_.machineType = MachineType::MACHINE_CLIENT_TYPE;
@@ -637,11 +637,11 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_Init)
 
     transport1.machinePara_.deviceLogicId = 0;
     RaResourceInfo &raResourceInfo1 = NetworkManager::GetInstance(transport1.machinePara_.deviceLogicId).raResourceInfo_;
-    raResourceInfo1.hostNetSocketMap.insert({invaildIp, ipsocketInfo});
+    raResourceInfo1.hostNetSocketMap.insert({invalidIp, ipsocketInfo});
 
     ret = transport1.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    raResourceInfo1.hostNetSocketMap.erase(invaildIp);
+    raResourceInfo1.hostNetSocketMap.erase(invalidIp);
 
     GlobalMockObject::verify();
 }
@@ -651,8 +651,8 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_Imrecv)
 {
     MachinePara machine_para;
     std::chrono::milliseconds timeout = std::chrono::milliseconds(10000);
-    HcclIpAddress invaildIp;
-    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 1,
+    HcclIpAddress invalidIp;
+    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 1,
         CLIENT_ROLE_SOCKET, TransportResourceInfo(), nullptr);
     HcclIpAddress invalidIp;
     DeviceMem inputMem = DeviceMem::alloc(sizeof(s32));
@@ -733,8 +733,8 @@ TEST_F(TransportShmEventTest, st_TransportShmEvent_CheckShmMemRange)
 {
     MachinePara machine_para;
     std::chrono::milliseconds timeout = std::chrono::milliseconds(10000);
-    HcclIpAddress invaildIp;
-    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invaildIp, invaildIp, 18000, 18000, 1,
+    HcclIpAddress invalidIp;
+    TransportShmEvent transport(nullptr, nullptr, machine_para, timeout, invalidIp, invalidIp, 18000, 18000, 1,
         CLIENT_ROLE_SOCKET, TransportResourceInfo(), nullptr);
     HcclIpAddress invalidIp;
     DeviceMem inputMem = DeviceMem::alloc(sizeof(s32));

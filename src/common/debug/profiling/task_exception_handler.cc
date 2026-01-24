@@ -261,7 +261,7 @@ string TaskInfo::GetParaInfoStr()
         case TaskType::TASK_NOTIFY_WAIT:
             return GetParaNotify();
         default:
-            return "unkown task";
+            return "unknown task";
     }
 }
 
@@ -407,7 +407,7 @@ string CtxInfo::GetCtxParaInfoStr()
         case TaskType::TASK_NOTIFY_WAIT:
             return GetCtxParaNotify();
         default:
-            return "unkown task";
+            return "unknown task";
     }
 }
 
@@ -495,7 +495,7 @@ std::string GetTaskName(TaskType taskType, bool isAlgInfo)
             taskName += "Notify Wait";
             break;
         default:
-            return "unkown task";
+            return "unknown task";
     }
 
     return taskName;
@@ -523,7 +523,7 @@ std::string GetTaskBriefsName(TaskType taskType)
             taskName += "NW";
             break;
         default:
-            return "unkown task";
+            return "unknown task";
     }
 
     return taskName;
@@ -846,15 +846,15 @@ bool TaskExceptionHandler::ProcessContext(rtExceptionInfo *exceptionInfo, std::s
 	auto &queIt = mapIt->second;
     auto fftsOpInfo = *(queIt->front().first);
     auto exceptionCtxInfo = (*(queIt->front().second))[0];
-    uint16_t unvalidCtxid = 65535;
+    uint16_t invalidCtxid = 65535;
     bool ctxFound = false;
 
     while (queIt->size() > 0) {
         if (exceptionInfo->taskid == queIt->back().first->taskID) {
             fftsOpInfo = *(queIt->back().first);
-            if (exceptionInfo->expandInfo.u.fftsPlusInfo.contextId == unvalidCtxid) {
+            if (exceptionInfo->expandInfo.u.fftsPlusInfo.contextId == invalidCtxid) {
                 // 子图任务粒度下，RTS返回的异常task不包含contexId时的处理，约定contextId为65535。只记录算子信息
-                HCCL_WARNING("%sTask run failed, unvalid contexid," \
+                HCCL_WARNING("%sTask run failed, invalid contexid," \
                     "base opInformation is %s", stageErrInfo.c_str(), fftsOpInfo.GetBaseInfoStr().c_str());
             } else if (exceptionInfo->expandInfo.u.fftsPlusInfo.contextId >= queIt->back().second->size()) {
                 HCCL_ERROR("%sTask run failed, contextId[%u] is out of vector "

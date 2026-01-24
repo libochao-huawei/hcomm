@@ -16,7 +16,6 @@
 #include "hccl_net_dev_defs.h"
 #include <stdint.h>
 
-#ifndef OPEN_BUILD_PROJECT
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -30,5 +29,3 @@ HcclResult __attribute__((weak)) HcclNetDevGetNicAddrV2(int32_t devicePhyId, Hcc
 }
 #endif
 #endif // __cplusplus
-
-#endif

@@ -62,7 +62,7 @@
 #include "hccl_primitive_remote.h"
 #include "hccl_dispatcher_ctx.h"
 #include "dispatcher_ctx.h"
-#include "hccl_thread.h"
+#include "aicpu_ts_thread.h"
 
 
 using namespace std;
@@ -1287,10 +1287,10 @@ HcclResult LocalCopyWithReadReduce(HcclDispatcher dispatcher, DeviceMem &inputMe
     CHK_RET(CommTaskPrepare(const_cast<char*>(key.c_str()), key.length()));
     uint64_t len = count * SIZE_TABLE[HCCL_DATA_TYPE_FP32];
     if (rank == 0) {
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
     } else if (rank == 1) {
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
         void *remoteInputPtr;
         void *remoteOutputPtr;
         CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteInputPtr));
@@ -1301,7 +1301,7 @@ HcclResult LocalCopyWithReadReduce(HcclDispatcher dispatcher, DeviceMem &inputMe
 
         CHK_RET(HcommLocalCopyOnThread(thread, outputMem.ptr() , inputMem.ptr(), len));
         CHK_RET(HcommReadReduceOnThread(thread, reinterpret_cast<uint64_t>(link.get()), const_cast<void*>(outputMem.ptr()), remoteInputPtr, count, HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
     }
     ThreadHandle threads[1];
     threads[0] = thread;
@@ -1340,12 +1340,12 @@ HcclResult ReadWithLocalReduce(HcclDispatcher dispatcher, DeviceMem &inputMem, D
     CHK_RET(CommTaskPrepare(const_cast<char*>(key.c_str()), key.length()));
     uint64_t len = count * SIZE_TABLE[HCCL_DATA_TYPE_FP32];
     if (rank == 0) {
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
     } else if (rank == 1) {
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
         void *remoteInputPtr;
         void *remoteOutputPtr;
         CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteInputPtr));
@@ -1355,11 +1355,11 @@ HcclResult ReadWithLocalReduce(HcclDispatcher dispatcher, DeviceMem &inputMem, D
         printf("-----------------------------\n");
 
         CHK_RET(HcommReadOnThread(thread, reinterpret_cast<uint64_t>(link.get()), const_cast<void*>(outputMem.ptr()), remoteInputPtr, len));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
         CHK_RET(HcommLocalReduceOnThread(thread, static_cast<void *>(outputMem.ptr()), static_cast<void *>(inputMem.ptr()), count,
             HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
     }
     ThreadHandle threads[1];
     threads[0] = thread;
@@ -1400,15 +1400,15 @@ HcclResult RemoteWriteWithLocalReduce(HcclDispatcher dispatcher, DeviceMem &inpu
     if (rank == 0) {
         void *remoteOutputPtr;
         CHK_RET(link->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteOutputPtr));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
         CHK_RET(HcommWriteOnThread(thread, reinterpret_cast<uint64_t>(link.get()), remoteOutputPtr, inputMem.ptr(), len));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
     } else if (rank == 1) {
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
         void *remoteInputPtr;
         void *remoteOutputPtr;
         CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteInputPtr));
@@ -1417,11 +1417,11 @@ HcclResult RemoteWriteWithLocalReduce(HcclDispatcher dispatcher, DeviceMem &inpu
         printf("IsSupportSDMAReduce %d\n", IsSupportSDMAReduce(outputMem.ptr(), remoteInputPtr, HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM));
         printf("-----------------------------\n");
 
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
         CHK_RET(HcommLocalReduceOnThread(thread, static_cast<void *>(outputMem.ptr()), static_cast<void *>(inputMem.ptr()), count,
             HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM));
     }
@@ -1464,23 +1464,23 @@ HcclResult RemoteWriteWithReduce(HcclDispatcher dispatcher, DeviceMem &inputMem,
     if (rank == 0) {
         void *remoteOutputPtr;
         CHK_RET(link->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteOutputPtr));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
         if (!isWithReduce) {
             CHK_RET(HcommWriteOnThread(thread, reinterpret_cast<uint64_t>(link.get()), remoteOutputPtr, inputMem.ptr(), len));
         } else {
             CHK_RET(HcommWriteReduceOnThread(thread, reinterpret_cast<uint64_t>(link.get()), remoteOutputPtr, inputMem.ptr(), count, HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM));
         }
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
     } else if (rank == 1) {
         if (isWithReduce) {
             CHK_RET(HcommLocalCopyOnThread(thread, outputMem.ptr() , inputMem.ptr(), len));
         }
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 0, NOTIFY_TIMEOUT));
         void *remoteInputPtr;
         void *remoteOutputPtr;
         CHK_RET(link->GetRemoteMem(UserMemType::INPUT_MEM, &remoteInputPtr));
@@ -1489,10 +1489,10 @@ HcclResult RemoteWriteWithReduce(HcclDispatcher dispatcher, DeviceMem &inputMem,
         printf("IsSupportSDMAReduce %d\n", IsSupportSDMAReduce(outputMem.ptr(), remoteInputPtr, HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM));
         printf("-----------------------------\n");
 
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
-        CHK_RET(HcommNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
-        CHK_RET(HcommNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 1, NOTIFY_TIMEOUT));
+        CHK_RET(HcommChannelNotifyRecordOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2));
+        CHK_RET(HcommChannelNotifyWaitOnThread(thread, reinterpret_cast<uint64_t>(link.get()), 2, NOTIFY_TIMEOUT));
         if (!isWithReduce) {
             CHK_RET(HcommLocalReduceOnThread(thread, static_cast<void *>(outputMem.ptr()), static_cast<void *>(inputMem.ptr()), count,
                 HCCL_DATA_TYPE_FP32, HCCL_REDUCE_SUM));
@@ -1914,7 +1914,7 @@ TEST_F(MPI_Pcie_Test, st_data_plane_interface_p2p)
     ret = link->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     MPI_Barrier(MPI_COMM_WORLD);//mpi通信域所有进程同步
-    HcclThread mianThread(StreamType::STREAM_TYPE_ONLINE, 2, NotifyLoadType::HOST_NOTIFY);
+    AicpuTsThread mianThread(StreamType::STREAM_TYPE_ONLINE, 2, NotifyLoadType::HOST_NOTIFY);
     ret = mianThread.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     Stream *stream = mianThread.GetStream();

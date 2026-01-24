@@ -1,0 +1,1 @@
+../../../../../../hccl_next/service/collective/alg/coll_alg_factory/alg_template/template_utils.h

@@ -63,7 +63,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u3
     u32 bestBlockDim = blockDim;
 
     CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollAllReduceMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
+        HCCL_WARNING("[CollAllReduceMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, blockDim), HCCL_E_PARA);
 
     HCCL_INFO("[CollAllReduceMeshAivSmallCountExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
@@ -117,7 +117,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
     HCCL_INFO("SPK [CollAllReduceMeshAivSmallCountExecutor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllReduce executor getalgexecparam success, take time [%lld]us.",
@@ -144,7 +144,7 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::Orchestrate(OpParam& param, A
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllReduceMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us.",
@@ -196,11 +196,13 @@ HcclResult CollAllReduceMeshAivSmallCountExecutor::KernelRun(const OpParam &para
         param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
     };
     AivAlgArgs algArgs {};
+    algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();
+    algArgs.execTimeOutSet = true;
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
     HCCL_DEBUG("[CollAllReduceMeshAivSmallCountExecutor][KernelRun]blockDim is %u", blockDim_);
     if (aivClearEnable_) {
-        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs);
+        ClearAivSyncBuf(buffersOut, resourceArgs, topoArgs, algArgs);
     }
 
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);

@@ -30,7 +30,7 @@ HcclResult CollAllGatherSingleRankExecutor::KernelRun(const OpParam &param, Exec
     } else {
         auto opMeta = HcclOpMetaInfo::GetOneForAllGather(originalAlgTypeLevel1, hugeData, false, CopyPattern::BCOPY);
         CHK_RET(InitTask(dispatcher_, const_cast<Stream&>(param.stream), opMeta.isEnableCache, opMeta.GetCacheKey()));
-        // ranksize = 1; intput、output地址不同，input->output
+        // ranksize = 1; input、output地址不同，input->output
         DeviceMem srcMem(execMem.inputPtr, execMem.count * unitSize);
         DeviceMem dstMem(execMem.outputPtr, execMem.count * unitSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));

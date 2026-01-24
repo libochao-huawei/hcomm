@@ -11,17 +11,13 @@
 #ifndef HCCL_MEM_H
 #define HCCL_MEM_H
 
-#include "hccl_types.h"
+#include <hccl/hccl_types.h>
 #include "hccl_mem_defs.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-
-/* 网络设备句柄 */
-typedef void *HcclNetDev;
-using HcclNetDevCtx = void *;
 
 /**
  * @brief 注册设备可访问内存

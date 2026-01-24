@@ -16,7 +16,7 @@
 #include "hccl_common.h"
 #include "common.h"
 #include "hdc_pub.h"
-#include "transport_pub.h"
+#include <transport_pub.h>
 #include "dispatcher_task_types.h"
 #include "externalinput_pub.h"
 #include "hccl_mem_defs.h"
@@ -155,10 +155,10 @@ struct HcclKFCTilingData {
     u32 stride;          // 跳写间隔
     u32 workspaceOff;    // 使用workspace作为recvbuf时的workspace偏移
     u32 notifyOff;       // device notify write/read value偏移
-    u16 notifyBeginCnt;  // notift write value的使用个数
-    u16 notifyEndCnt;    // notift read value的使用个数
+    u16 notifyBeginCnt;  // notify write value的使用个数
+    u16 notifyEndCnt;    // notify read value的使用个数
     u8 useBufferType;    // 是否使用workspace作为recvbuf
-    u8 funID;            // funtion ID
+    u8 funID;            // function ID
     u8 dataType;         // hccl 数据类型
     u8 groupNum;         // groupNum
     u8 reuseMode;        // tiling，填msgCnt，内存优化选择复用的内存块个数
@@ -274,7 +274,7 @@ static inline void ListCommonAddHead(struct ListCommon *newDeviceL, struct ListC
     struct ListCommon *headHostL, struct ListCommon *headDeviceL)
 {
     if (newHostL == nullptr || headHostL == nullptr) {
-        HCCL_ERROR("intput ptr is nullptr, newHostL[%p], headHostL[%p]", newHostL, headHostL);
+        HCCL_ERROR("input ptr is nullptr, newHostL[%p], headHostL[%p]", newHostL, headHostL);
         return;
     }
     ListCommon *headHostLNextHost = reinterpret_cast<ListCommon *>(headHostL->nextHost);
@@ -672,6 +672,9 @@ struct HcclOpResParam {
     HcclStreamParam aicpuOrderStreamParam; // 按序下发的stream
     u64 aicpuOrderNotifyAddr;
     u64 aicpuOrderNotifySize;
+    // ARS算法属性
+    u32 multiSuperPodDiffDeviceNumMode;
+    bool isARSDoubleRing;
 };
 
 struct OpTilingData {
@@ -701,6 +704,7 @@ struct OpTilingData {
     u64 version = 0;
     s32 userStreamId;
     u32 ahcConfInfo[TOP_HIERARCHICAL_CONF_SIZE] = {0};
+    uint8_t aicpuCacheEnable = 0; // 是否开启aicpu cache
 
     /******************可变长度数据区，如需新增字段请在这之前增加*******************/
     u64 length;   // 可变长度数据区长度

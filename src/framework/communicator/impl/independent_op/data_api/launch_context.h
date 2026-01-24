@@ -16,13 +16,12 @@
 #include <string>
 #include <mutex>
 #include "hccl_api_data.h"
-#include "hccl_thread.h"
 
 class LaunchContext {
 public:
     LaunchContext() = default;
 
-    HcclResult SetLaunchMode(const char* launchTag, LaunchMode mode);
+    HcclResult SetLaunchMode(const char* launchTag, HcommLaunchMode mode);
     void AddThread(ThreadHandle thread);
 
 private:
@@ -33,7 +32,7 @@ private:
     std::string launchTag_; // 当前tag
     std::unordered_map<std::string, std::unordered_set<ThreadHandle>> launchModeMap_;
     std::mutex mtx_;
-    LaunchMode mode_ = LAUNCH_MODE_EAGER;
+    HcommLaunchMode mode_ = HCOMM_LAUNCH_MODE_EAGER;
 };
 
 #endif

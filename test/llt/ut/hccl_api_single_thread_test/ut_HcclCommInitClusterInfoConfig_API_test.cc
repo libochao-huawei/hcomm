@@ -36,6 +36,33 @@ TEST_F(HcclCommInitClusterInfoConfigTest, Ut_HcclCommInitClusterInfoConfig_When_
     Ut_Comm_Destroy(comm);
 }
 
+TEST_F(HcclCommInitRootInfoTest, Ut_Group_HcclCommInitClusterInfoConfig_rank1)
+{
+    int nRanks = 1;
+    int rank = 0;
+    HcclComm comms[nRanks];
+    const char* rankTableFile = rankTableFileName;
+    HcclCommConfig commConfig;
+    HcclCommConfigInit(&commConfig);
+    commConfig.hcclBufferSize=400;
+
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        HcclCommInitClusterInfoConfig(rankTableFile, rankId, &commConfig, &comms[i]);
+    }
+    HcclResult ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    HcclGroupStart();
+    for (int i = 0; i < nRanks; ++i){
+        Ut_Device_Set(i);
+        Ut_Comm_Destroy(comms[i]);
+    }
+    ret = HcclGroupEnd();
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
 TEST_F(HcclCommInitClusterInfoConfigTest, Ut_HcclCommInitClusterInfoConfig_When_ConfigBufferSizeIsZero_Expect_ReturnIsHCCL_SUCCESS) {
     Ut_Device_Set(0);
     const char* rankTableFile = rankTableFileName;

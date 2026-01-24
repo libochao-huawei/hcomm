@@ -2,7 +2,7 @@
 if(BUILD_OPEN_PROJECT)
     set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../comm)
 else()
-    set(BASE_DIR "${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm")
+    set(BASE_DIR "${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm")
 endif()
 
 set(ra_peer_list
@@ -13,9 +13,23 @@ set(ra_peer_list
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
     )
 
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
+list(APPEND ra_peer_list
+        ${HCOMM_ORION}/rdma_agent/comm/ctx/ra_ctx_comm.c
+        ${HCOMM_ORION}/rdma_agent/peer/ra_peer_ctx.c
+)
+endif()
 
 #编译目标
 add_library(ra_peer SHARED ${ra_peer_list})
+
+# HCCP2.0
+if(EXISTS ${HCOMM_ORION})
+target_compile_definitions(ra_peer PRIVATE
+    CONFIG_CONTEXT
+)
+endif()
 
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_peer PRIVATE
@@ -40,6 +54,13 @@ if(BUILD_OPEN_PROJECT)
         # rdma头文件
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+
+        # HCCP2.0
+        ${HCOMM_ORION}/inc/network
+        ${HCOMM_ORION}/inc/private/network
+        ${HCOMM_ORION}/rdma_agent/inc
+        ${HCOMM_ORION}/rdma_agent/comm/ctx
+        ${HCOMM_ORION}/rdma_service/ctx
     )
 
     target_link_directories(ra_peer PRIVATE
@@ -53,14 +74,14 @@ if(BUILD_OPEN_PROJECT)
 else()
     #添加头文件搜索路径
     target_include_directories(ra_peer PRIVATE
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/network
-        ${TOP_DIR}/hccl/src/platform/hccp/inc/private/network
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/inc
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_service
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/inc/private/network
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/inc
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_service
         ${TOP_DIR}/inc/driver
-        ${TOP_DIR}/hccl/src/platform/hccp/rdma_agent/comm
-        ${TOP_DIR}/hccl/src/platform/hccp/common
-        ${TOP_DIR}/hccl/src/platform/hccp/external_depends/host_lite
+        ${TOP_DIR}/hcomm/src/platform/hccp/rdma_agent/comm
+        ${TOP_DIR}/hcomm/src/platform/hccp/common
+        ${TOP_DIR}/hcomm/src/platform/hccp/external_depends/host_lite
     )
 endif()
 
@@ -107,8 +128,3 @@ target_compile_definitions(ra_peer PRIVATE
 install(TARGETS  ra_peer
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
-
-# install_package(
-#     PACKAGE ra_peer
-#     TARGETS ra_peer
-# )

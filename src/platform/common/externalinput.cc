@@ -24,6 +24,7 @@
 #include "config_plf_log.h"
 #include "device_capacity.h"
 #include "externalinput.h"
+#include <acl/acl.h>
 
 using namespace std;
 using namespace hccl;
@@ -371,6 +372,21 @@ HcclResult InitEnvVarParam()
             HCCL_ERROR_CODE(ret),
             ret),
         ret);
+    
+    // 解析aicpu cache enable
+    ret = ParseAicpuCacheEnable();
+    RPT_ENV_ERR(ret != HCCL_SUCCESS,
+        "EI0001",
+        std::vector<std::string>({"env", "tips"}),
+        std::vector<std::string>({"HCCL_AICPU_CACHE_ENABLE", "Value should be 0 or 1."}));
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_AICPU_CACHE_ENABLE failed. "
+                   "errorno[%d]",
+            LOG_KEYWORDS_INIT_GROUP.c_str(),
+            LOG_KEYWORDS_ENV_CONFIG.c_str(),
+            HCCL_ERROR_CODE(ret),
+            ret),
+        ret);
 
     // 解析rank 间的QP个数
     ret = ParseRdmaQpsPerConnection();
@@ -505,7 +521,7 @@ HcclResult ParseRdmaFastPost()
 {
     std::string rdmaFastPostEnv = GET_ENV(MM_ENV_HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT);
     if (rdmaFastPostEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT set by default to [%s], rdmaFastPost is [%d]",
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT set by default to [%s], rdmaFastPost is [%d]",
             rdmaFastPostEnv.c_str(), g_externalInput.rdmaFastPost);
         return HCCL_SUCCESS;
     }
@@ -519,7 +535,7 @@ HcclResult ParseRdmaFastPost()
             rdmaFastPostEnv.c_str());
         return HCCL_E_PARA;
     }
-    HCCL_RUN_INFO("HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT set by environment to [%s], rdmaFastPost is [%d].",
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_PCIE_DIRECT_POST_NOSTRICT set by environment to [%s], rdmaFastPost is [%d].",
         rdmaFastPostEnv.c_str(), g_externalInput.rdmaFastPost);
     return HCCL_SUCCESS;
 }
@@ -539,7 +555,7 @@ HcclResult ParseExecTimeOut()
 {
     std::string execTimeOutEnv = GET_ENV(MM_ENV_HCCL_EXEC_TIMEOUT);
     if (execTimeOutEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_EXEC_TIMEOUT set by default to [%d]s", NOTIFY_DEFAULT_WAIT_TIME);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_EXEC_TIMEOUT set by default to [%d]s", NOTIFY_DEFAULT_WAIT_TIME);
         return HCCL_SUCCESS;
     }
 
@@ -577,9 +593,9 @@ HcclResult ParseLinkConnTimeOut()
             g_externalInput.linkTimeOut = HCCL_LINK_TIME_OUT_S;
             return HCCL_E_PARA;
         }
-        HCCL_RUN_INFO("HCCL_CONNECT_TIMEOUT set by environment to [%d]s", timeOut);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_CONNECT_TIMEOUT set by environment to [%d]s", timeOut);
     } else {
-        HCCL_RUN_INFO("HCCL_CONNECT_TIMEOUT set by default to [%d]s", timeOut);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_CONNECT_TIMEOUT set by default to [%d]s", timeOut);
     }
 
     g_externalInput.linkTimeOut = timeOut;
@@ -602,7 +618,7 @@ HcclResult ParseDeterministic()
 {
     std::string hcclDeterministicEnv = GET_ENV(MM_ENV_HCCL_DETERMINISTIC);
     if (hcclDeterministicEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_DETERMINISTIC set by default to [false]");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_DETERMINISTIC set by default to [false]");
         return HCCL_SUCCESS;
     }
 
@@ -628,7 +644,7 @@ HcclResult ParseDeterministic()
     } else {
         g_externalInput.hcclDeterministic = DETERMINISTIC_DISABLE;
     }
-    HCCL_RUN_INFO("HCCL_DETERMINISTIC set by environment to [%s], hcclDeterministic[%u]",
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_DETERMINISTIC set by environment to [%s], hcclDeterministic[%u]",
         hcclDeterministicEnv.c_str(), g_externalInput.hcclDeterministic);
     return HCCL_SUCCESS;
 }
@@ -643,7 +659,7 @@ HcclResult ParseIntraLinkType()
 
     // 两个通信域环境变量均未设置，默认走pcie
     if (intraPcieEnv == "EmptyString" && intraRoceEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_INTRA_PCIE_ENABLE set by default to [%u], HCCL_INTRA_ROCE_ENABLE set by default to [%u]",
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_INTRA_PCIE_ENABLE set by default to [%u], HCCL_INTRA_ROCE_ENABLE set by default to [%u]",
             intraPcie, intraRoce);
         return HCCL_SUCCESS;
     }
@@ -677,7 +693,7 @@ HcclResult ParseIntraLinkType()
         } else {                 // roce环境变量值为1，走roce
             intraPcie = 0;
         }
-        HCCL_RUN_INFO("HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
             "HCCL_INTRA_ROCE_ENABLE set by environment to [%u]", intraPcie, intraRoce);
     }
 
@@ -688,14 +704,14 @@ HcclResult ParseIntraLinkType()
                 "HCCL_INTRA_ROCE_ENABLE");
             return HCCL_E_PARA;
         }
-        HCCL_RUN_INFO("HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
             "HCCL_INTRA_ROCE_ENABLE set by default to [%u]", intraPcie, intraRoce);
     }
 
     // pcie和roce环境变量同时配置且不相等
     if (intraPcieEnv  != "EmptyString" && intraRoceEnv != "EmptyString") {
         if ((intraPcie == 0 && intraRoce == 1) || (intraPcie == 1 && intraRoce == 0)) {
-            HCCL_RUN_INFO("HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
+            HCCL_RUN_INFO("[HCCL_ENV] HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
                 "HCCL_INTRA_ROCE_ENABLE set by environment to [%u]", intraPcie, intraRoce);
         }
     }
@@ -709,7 +725,7 @@ HcclResult ParseIntraLinkType()
             HCCL_WARNING("Pcie and Roce Env both set to zero at the same time, intra comm is default Pcie");
             intraPcie = 1;
         }
-        HCCL_RUN_INFO("HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_INTRA_PCIE_ENABLE set by environment to [%u], "\
             "HCCL_INTRA_ROCE_ENABLE set by environment to [%u]", intraPcie, intraRoce);
     }
 
@@ -722,7 +738,7 @@ HcclResult ParseProfilingConfig()
     g_externalInput.profilingOption = "";
     std::string profilingEnv = GET_ENV(MM_ENV_PROFILING_MODE);
     CHK_PRT_RET(profilingEnv == "EmptyString",
-        HCCL_RUN_INFO("environmental variable PROFILING_MODE and GE profiling option is not set, default: false"),
+        HCCL_RUN_INFO("[HCCL_ENV] environmental variable PROFILING_MODE and GE profiling option is not set, default: false"),
         HCCL_SUCCESS);
     HCCL_DEBUG("PROFILING_MODE[%s] is set", profilingEnv.c_str());
     CHK_PRT_RET(profilingEnv.compare("true") != 0, HCCL_INFO("environmental variable PROFILING_MODE = false"),
@@ -730,10 +746,10 @@ HcclResult ParseProfilingConfig()
     g_externalInput.profilingMode = true;
     profilingEnv = GET_ENV(MM_ENV_PROFILING_OPTIONS);
     CHK_PRT_RET(profilingEnv == "EmptyString",
-        HCCL_RUN_INFO("environmental variable PROFILING_OPTIONS is not set."), HCCL_SUCCESS);
+        HCCL_RUN_INFO("[HCCL_ENV] environmental variable PROFILING_OPTIONS is not set."), HCCL_SUCCESS);
 
     g_externalInput.profilingOption = profilingEnv;
-    HCCL_RUN_INFO("Set Env [PROFILING_MODE]: Value[%s]", g_externalInput.profilingOption.c_str());
+    HCCL_RUN_INFO("[HCCL_ENV] Set Env [PROFILING_MODE]: Value[%s]", g_externalInput.profilingOption.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -744,7 +760,7 @@ HcclResult ParseHcclWhitelistFilePath()
     std::string filePath = GET_ENV(MM_ENV_HCCL_WHITELIST_FILE);
     if (filePath == "EmptyString") {
         g_externalInput.hcclWhiteListFile.clear();
-        HCCL_RUN_INFO("[Parse][HcclWhitelistFilePath]environmental variable HCCL_WHITELIST_DISABLE is [0],"
+        HCCL_RUN_INFO("[HCCL_ENV][Parse][HcclWhitelistFilePath]environmental variable HCCL_WHITELIST_DISABLE is [0],"
             "but HCCL_WHITELIST_FILE is not set");
     } else {
         u32 len = strnlen(filePath.c_str(), PATH_MAX);
@@ -756,12 +772,12 @@ HcclResult ParseHcclWhitelistFilePath()
         // 校验文件是否存在
         char realFile[PATH_MAX] = {0};
         if (realpath(filePath.c_str(), realFile) == nullptr) {
-            HCCL_RUN_WARNING("[Parse][HcclWhitelistFilePath]path %s is not a valid real path", filePath.c_str());
+            HCCL_RUN_WARNING("[HCCL_ENV][Parse][HcclWhitelistFilePath]path %s is not a valid real path", filePath.c_str());
             g_externalInput.hcclWhiteListFile.clear();
         } else {
             g_externalInput.hcclWhiteListFile = realFile;
         }
-        HCCL_RUN_INFO("HCCL_WHITELIST_FILE set by environment to [%s], realpath[%s].", filePath.c_str(), \
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_WHITELIST_FILE set by environment to [%s], realpath[%s].", filePath.c_str(), \
             g_externalInput.hcclWhiteListFile.c_str());
     }
     return HCCL_SUCCESS;
@@ -772,7 +788,7 @@ HcclResult ParseMultiQpSrcPortConfigPath()
     std::string filePath = GET_ENV(MM_ENV_HCCL_RDMA_QP_PORT_CONFIG_PATH);
     if (filePath == "EmptyString") {
         g_externalInput.multiQpSrcPortConfigPath.clear();
-        HCCL_RUN_INFO("[Parse][MultiQpSrcPortConfigPath]environmental variable HCCL_RDMA_QP_PORT_CONFIG_PATH is empty");
+        HCCL_RUN_INFO("[HCCL_ENV][Parse][MultiQpSrcPortConfigPath]environmental variable HCCL_RDMA_QP_PORT_CONFIG_PATH is empty");
     } else {
         u32 len = filePath.size() > PATH_MAX ? PATH_MAX : filePath.size();
         if (len == (PATH_MAX) || len == 0) {
@@ -788,7 +804,7 @@ HcclResult ParseMultiQpSrcPortConfigPath()
             return HCCL_E_PARA;
         }
         g_externalInput.multiQpSrcPortConfigPath = realFile;
-        HCCL_RUN_INFO("HCCL_RDMA_QP_PORT_CONFIG_PATH set by environment to [%s], realpath[%s]", filePath.c_str(),
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_QP_PORT_CONFIG_PATH set by environment to [%s], realpath[%s]", filePath.c_str(),
             g_externalInput.multiQpSrcPortConfigPath.c_str());
     }
     return HCCL_SUCCESS;
@@ -814,10 +830,10 @@ HcclResult ParseHcclWhitelistSwitch()
             g_externalInput.enableWhitelist = HCCL_WHITELIST_OFF;
             return HCCL_E_PARA;
         }
-        HCCL_RUN_INFO("HCCL_WHITELIST_DISABLE set by environment to [%u]", disableWhitelist);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_WHITELIST_DISABLE set by environment to [%u]", disableWhitelist);
     } else {
         disableWhitelist = 1; // 缺省时关闭白名单
-        HCCL_RUN_INFO("HCCL_WHITELIST_DISABLE set by default to [%u]", disableWhitelist);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_WHITELIST_DISABLE set by default to [%u]", disableWhitelist);
     }
     g_externalInput.enableWhitelist = !disableWhitelist;
     return HCCL_SUCCESS;
@@ -844,9 +860,9 @@ HcclResult ParseHcclIfBasePort()
                 HCOM_ERROR_CODE(ret), ifBasePort.c_str(), HCCL_BASE_PORT_MIN, HOST_PORT_MAX);
             return HCCL_E_PARA;
         }
-        HCCL_RUN_INFO("HCCL_IF_BASE_PORT set by environment to [%u]", basePort);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_IF_BASE_PORT set by environment to [%u]", basePort);
     } else {
-        HCCL_RUN_INFO("HCCL_IF_BASE_PORT set by default to [%u]", HOST_CONTROL_BASE_PORT);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_IF_BASE_PORT set by default to [%u]", HOST_CONTROL_BASE_PORT);
     }
     g_externalInput.hcclIfBasePort = basePort;
     return HCCL_SUCCESS;
@@ -858,10 +874,10 @@ HcclResult ParseHcclIfIp()
     if (hcclControlIfIp != "EmptyString") {
         CHK_PRT_RET(g_externalInput.hcclControlIfIp.SetReadableAddress(hcclControlIfIp),
             HCCL_ERROR("[Parse][HcclIfIp]IP address[%s] is invalid.", hcclControlIfIp.c_str()), HCCL_E_PARA);
-        HCCL_RUN_INFO("HCCL_IF_IP is set to [%s], ip[%s].", hcclControlIfIp.c_str(),
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_IF_IP is set to [%s], ip[%s].", hcclControlIfIp.c_str(),
             g_externalInput.hcclControlIfIp.GetReadableAddress());
     } else {
-        HCCL_RUN_INFO("HCCL_IF_IP is not set");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_IF_IP is not set");
     }
     return HCCL_SUCCESS;
 }
@@ -870,7 +886,7 @@ HcclResult ParseHcclSocketFamily()
 {
     std::string hcclSocketFamily = GET_ENV(MM_ENV_HCCL_SOCKET_FAMILY);
     if (hcclSocketFamily != "EmptyString") {
-        HCCL_RUN_INFO("HCCL_SOCKET_FAMILY set by environment to [%s]", hcclSocketFamily.c_str());
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_SOCKET_FAMILY set by environment to [%s]", hcclSocketFamily.c_str());
         if (hcclSocketFamily == "AF_INET") {
             g_externalInput.hcclSocketFamily = AF_INET;
         } else if (hcclSocketFamily == "AF_INET6") {
@@ -884,7 +900,7 @@ HcclResult ParseHcclSocketFamily()
         }
     } else {
         g_externalInput.hcclSocketFamily = -1;
-        HCCL_RUN_INFO("HCCL_SOCKET_FAMILY is not set and is used by default [AF_INET]");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_SOCKET_FAMILY is not set and is used by default [AF_INET]");
     }
     return HCCL_SUCCESS;
 }
@@ -915,9 +931,9 @@ HcclResult ParseHcclSocketIfName()
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Parse][HcclSocketIfName]hccl IfName config[%s] is invalid.", hcclSocketIfName.c_str()),
             HCCL_E_PARA);
-        HCCL_RUN_INFO("HCCL_SOCKET_IFNAME set by environment to [%s]", hcclSocketIfName.c_str());
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_SOCKET_IFNAME set by environment to [%s]", hcclSocketIfName.c_str());
     } else {
-        HCCL_RUN_INFO("HCCL_SOCKET_IFNAME set by default to [%s]", hcclSocketIfName.c_str());
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_SOCKET_IFNAME set by default to [%s]", hcclSocketIfName.c_str());
     }
     g_externalInput.hcclSocketIfName.searchNot = searchNot;
     g_externalInput.hcclSocketIfName.searchExact = searchExact;
@@ -997,9 +1013,9 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
     g_externalInput.execTimeOut = execTimeOut;
     g_externalInput.execTimeOutSet = execTimeOutSet;
     if (execTimeOutSet == HcclExecTimeoutSet::HCCL_EXEC_TIMEOUT_SET_BY_ENV) {
-        HCCL_RUN_INFO("HCCL_EXEC_TIMEOUT set by environment to [%.2f]s", execTimeOut);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_EXEC_TIMEOUT set by environment to [%.2f]s", execTimeOut);
     } else {
-        HCCL_RUN_INFO("HCCL_EXEC_TIMEOUT set by GE option to [%.2f]s", execTimeOut);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_EXEC_TIMEOUT set by GE option to [%.2f]s", execTimeOut);
     }
     return HCCL_SUCCESS;
 }
@@ -1151,7 +1167,7 @@ HcclResult ParseRDMATrafficClass()
     u32 rdmaTrafficClass = HCCL_RDMA_TC_DEFAULT;
 
     if (trafficClassEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_RDMA_TC set by default to [%u]", rdmaTrafficClass);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TC set by default to [%u]", rdmaTrafficClass);
         return HCCL_SUCCESS;
     }
 
@@ -1176,7 +1192,7 @@ HcclResult ParseRDMATrafficClass()
         return HCCL_E_PARA;
     }
     g_externalInput.rdmaTrafficClass = rdmaTrafficClass;
-    HCCL_RUN_INFO("HCCL_RDMA_TC set by environment to [%u]", rdmaTrafficClass);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TC set by environment to [%u]", rdmaTrafficClass);
     return HCCL_SUCCESS;
 }
 
@@ -1186,7 +1202,7 @@ HcclResult ParseRDMAServerLevel()
     u32 rdmaServerLevel = HCCL_RDMA_SL_DEFAULT;
 
     if (serverLevelEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_RDMA_SL set by default to [%u]", rdmaServerLevel);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_SL set by default to [%u]", rdmaServerLevel);
         return HCCL_SUCCESS;
     }
 
@@ -1206,7 +1222,7 @@ HcclResult ParseRDMAServerLevel()
         HCCL_ERROR("[Parse][rdmaServerLevel]HCCL_RDMA_SL[%s] is invalid. except: [%u, %u]",
             serverLevelEnv.c_str(), HCCL_RDMA_SL_MIN, HCCL_RDMA_SL_MAX), HCCL_E_PARA);
     g_externalInput.rdmaServerLevel = rdmaServerLevel;
-    HCCL_RUN_INFO("HCCL_RDMA_SL set by environment to [%u]", rdmaServerLevel);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_SL set by environment to [%u]", rdmaServerLevel);
     return HCCL_SUCCESS;
 }
 
@@ -1231,7 +1247,7 @@ HcclResult ParseRDMATimeOut(std::pair<u32, u32> &rdmaTimeOutRange)
     std::string timeOutEnv = GET_ENV(MM_ENV_HCCL_RDMA_TIMEOUT);
     u32 rdmaTimeOut = HCCL_RDMA_TIMEOUT_DEFAULT;
     if (timeOutEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_RDMA_TIMEOUT set by default to [%u]", rdmaTimeOut);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TIMEOUT set by default to [%u]", rdmaTimeOut);
         return HCCL_SUCCESS;
     }
 
@@ -1256,7 +1272,7 @@ HcclResult ParseRDMATimeOut(std::pair<u32, u32> &rdmaTimeOutRange)
         HCCL_E_PARA);
 
     g_externalInput.rdmaTimeOut = rdmaTimeOut;
-    HCCL_RUN_INFO("HCCL_RDMA_TIMEOUT set by environment to [%u]", rdmaTimeOut);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_TIMEOUT set by environment to [%u]", rdmaTimeOut);
     return HCCL_SUCCESS;
 }
 
@@ -1265,7 +1281,7 @@ HcclResult ParseRDMARetryCnt()
     std::string retryCntEnv = GET_ENV(MM_ENV_HCCL_RDMA_RETRY_CNT);
     u32 rdmaRetryCnt = HCCL_RDMA_RETRY_CNT_DEFAULT;
     if (retryCntEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_RDMA_RETRY_CNT set by default to [%u]", rdmaRetryCnt);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_RETRY_CNT set by default to [%u]", rdmaRetryCnt);
         return HCCL_SUCCESS;
     }
 
@@ -1287,115 +1303,42 @@ HcclResult ParseRDMARetryCnt()
         HCCL_RDMA_RETRY_CNT_MIN, HCCL_RDMA_RETRY_CNT_MAX),
         HCCL_E_PARA);
     g_externalInput.rdmaRetryCnt = rdmaRetryCnt;
-    HCCL_RUN_INFO("HCCL_RDMA_RETRY_CNT set by environment to [%u]", rdmaRetryCnt);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_RETRY_CNT set by environment to [%u]", rdmaRetryCnt);
     return HCCL_SUCCESS;
 }
 
 HcclResult ParseCannVersion()
 {
-    const std::string cannEnv = GET_ENV(MM_ENV_LD_LIBRARY_PATH);
-    // 环境变量不存在
-    if (cannEnv == "EmptyString") {
-        HCCL_RUN_INFO("[CannVersion][Verification]environmental variable LD_LIBRARY_PATH is not set.");
-        return HCCL_SUCCESS;
-    }
-
-    HcclResult ret = HCCL_SUCCESS;
-    std::string cannVersionPath;   // 存放cann安装路径
-    if (GetCannVersionPath(cannEnv, "/hccl", cannVersionPath) == HCCL_SUCCESS) {
-        cannVersionPath += "/version.info";
-        ret = LoadCannVersionInfoFile(cannVersionPath, "Version=");
-    } else if (GetCannVersionPath(cannEnv, "/latest", cannVersionPath) == HCCL_SUCCESS) {
-        cannVersionPath += "/version.cfg";
-        ret = LoadCannVersionInfoFile(cannVersionPath, "hccl_running_version=[");
-    } else {
-        HCCL_INFO("[CannVersion][Verification]cannot found version file in %s.", cannEnv.c_str());
-    }
-    return ret;
-}
-
-HcclResult GetCannVersionPath(const std::string &cannEnvStr, const std::string &keyStr, std::string &cannVersionPath)
-{
-    std::string tempPath;   // 存放临时路径
-    // 查找cann安装路径
-    for (u32 i = 0; i < cannEnvStr.length(); ++i) {
-        // 环境变量中存放的每段路径之间以':'隔开
-        if (cannEnvStr[i] != ':') {
-            tempPath += cannEnvStr[i];
-        }
-        // 对存放CANN版本文件的路径进行搜索, 有两种情况
-        // 一种是*/latest/version.cfg
-        // 另一种是*/hccl/version.info
-        if (cannEnvStr[i] == ':' || i == cannEnvStr.length() - 1) {
-            size_t found = tempPath.find(keyStr);
-            // 防止出现类似/hccl*/的情况
-            if (found == string::npos) {
-                tempPath.clear();
-                continue;
-            }
-            if (tempPath.length() <= found + keyStr.length() || tempPath[found + keyStr.length()] == '/') {
-                cannVersionPath = tempPath.substr(0, found + keyStr.length());
-                break;
-            }
-            tempPath.clear();
-        }
-    }
-    // 路径为空
-    if (cannVersionPath.empty()) {
+#if !defined(CCL_KERNEL_AICPU) && !defined(HCCD)
+    char hcommPkgName[] = "hcomm";
+    char hcclPkgName[] = "hccl";
+    constexpr u32 HCCL_VERSION_STR_MAX_LEN = 128;
+    std::vector<char> hcommVersion(HCCL_VERSION_STR_MAX_LEN, 0);
+    std::vector<char> hcclVersion(HCCL_VERSION_STR_MAX_LEN, 0);
+    aclError aclRet = aclsysGetVersionStr(hcommPkgName, hcommVersion.data());
+    CHK_PRT_RET(
+        aclRet != ACL_SUCCESS,
+        HCCL_WARNING("[Parse][CannVersion]failed to get hcomm version, aclRet[%d]", static_cast<int>(aclRet)),
+        HCCL_E_NOT_FOUND);
+    aclRet = aclsysGetVersionStr(hcclPkgName, hcclVersion.data());
+    CHK_PRT_RET(
+        aclRet != ACL_SUCCESS,
+        HCCL_WARNING("[Parse][CannVersion]failed to get hccl version, aclRet[%d]", static_cast<int>(aclRet)),
+        HCCL_E_NOT_FOUND);
+    size_t hlen = strnlen(hcommVersion.data(), HCCL_VERSION_STR_MAX_LEN);
+    size_t clen = strnlen(hcclVersion.data(), HCCL_VERSION_STR_MAX_LEN);
+    if (hlen == 0 || clen == 0 || hlen == HCCL_VERSION_STR_MAX_LEN || clen == HCCL_VERSION_STR_MAX_LEN) {
+        HCCL_WARNING("[Parse][CannVersion]hcomm version or hccl version is empty, hcomm Version=%s, hccl Version=%s.",
+                     std::string(hcommVersion.data(), hlen).c_str(), std::string(hcclVersion.data(), clen).c_str());
         return HCCL_E_NOT_FOUND;
     }
-    return HCCL_SUCCESS;
-}
-
-HcclResult LoadCannVersionInfoFile(const std::string &realName, const std::string &keyStr)
-{
-    // 打开该文件前，判断该文件路径是否有效、规范
-    char realFile[PATH_MAX] = {0};
-    if (realpath(realName.c_str(), realFile) == nullptr) {
-        HCCL_INFO("[CannVersion][Verification]cann version path %s is not a valid real path",
-            realName.c_str());
-        return HCCL_E_NOT_FOUND;
-    }
-    HCCL_INFO("Load CannVersion InfoFile in %s", realFile);
-
-    // realFile转str,然后open这个str
-    ifstream infile;
-    infile.open(realFile);
-
-    if (!infile.is_open()) {
-        HCCL_INFO("[CannVersion][Verification]%s does not exist.", realFile);
-        return HCCL_E_NOT_FOUND;
-    }
-
-    HcclResult ret = HCCL_SUCCESS;
-    // 逐行读取，结果放在line中，寻找带有keyStr的字符串
-    string line;
-    s32 maxRows = 100; // 在文件中读取的最长行数为100，避免超大文件长时间读取
-    while (getline(infile, line)) {
-        --maxRows;
-        CHK_PRT_BREAK(maxRows < 0, \
-            HCCL_WARNING("[CannVersion][Verification]version file content is too long."), \
-            ret = HCCL_E_NOT_FOUND);
-        u32 found = line.find(keyStr);
-        // 版本字段的两种模式
-        // hccl目录下, version.info文件, Version=1.83.T8.0.B128
-        // latest目录下, version.cfg文件, hccl_running_version=[1.83.T8.0.B128:CANN-1.83]
-        if (found == 0) {
-            u32 startPos = keyStr.length(); // 版本字符串开始位置
-            u32 endPos = min(line.find(":"), line.length()); // 版本字符串在":"或结尾处结束
-            // 版本字符串为空
-            CHK_PRT_BREAK(endPos <= startPos, \
-                HCCL_WARNING("[CannVersion][Verification]cannVersion is invalid."), \
-                ret = HCCL_E_NOT_FOUND);
-
-            u32 len = endPos - startPos; // 版本字符串长度
-            g_externalInput.cannVersion = line.substr(startPos, len); // 从keyStr截断
-            HCCL_RUN_INFO("[Parse][CannVersion]success, CannVersion is %s ", g_externalInput.cannVersion.c_str());
-            break;
-        }
-    }
-    infile.close();
-    return ret;
+    g_externalInput.cannVersion = std::string(hcommVersion.data()) + "_" + std::string(hcclVersion.data());
+    HCCL_RUN_INFO("[Parse][CannVersion]success, hcomm version is %s, hccl version is %s ", std::string(hcommVersion.data()).c_str(), std::string(hcclVersion.data()).c_str());
+    return HcclResult::HCCL_SUCCESS;
+#else
+	HCCL_WARNING("[ParseCannVersion]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
 }
 
 HcclResult ParseCclBufferSize()
@@ -1403,7 +1346,7 @@ HcclResult ParseCclBufferSize()
     std::string hcclBufferSize = GET_ENV(MM_ENV_HCCL_BUFFSIZE);
     u32 cclBufferSize = HCCL_CCL_COMM_DEFAULT_BUFFER_SIZE;
     if (hcclBufferSize == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_BUFFSIZE set by default to [%u]M", cclBufferSize);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_BUFFSIZE set by default to [%u]M", cclBufferSize);
         return HCCL_SUCCESS;
     }
 
@@ -1424,7 +1367,7 @@ HcclResult ParseCclBufferSize()
         HCCL_ERROR("[Parse][CclBufferSize]external input CclBufferSize[%uM] should be greater than %uM",
         cclBufferSize, HCCL_CCL_COMM_BUFFER_MIN), HCCL_E_PARA);
     g_externalInput.cclBufferSize = static_cast<u64>(cclBufferSize * cclBufFixedCalcSize);
-    HCCL_RUN_INFO("HCCL_BUFFSIZE set by environment to [%u]M", cclBufferSize);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_BUFFSIZE set by environment to [%u]M", cclBufferSize);
     return HCCL_SUCCESS;
 }
 
@@ -1449,7 +1392,7 @@ HcclResult ParseTaskExceptionSwitch()
     // task_exception_handler调测开关，默认关闭 (0)
     std::string taskExceptionSwitchEnv = GET_ENV(MM_ENV_HCCL_DIAGNOSE_ENABLE);
     if (taskExceptionSwitchEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_DIAGNOSE_ENABLE set by default to [0]");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_DIAGNOSE_ENABLE set by default to [0]");
         return HCCL_SUCCESS;
     }
     u32 taskExceptionSwitchConfig = 0;
@@ -1464,7 +1407,7 @@ HcclResult ParseTaskExceptionSwitch()
             taskExceptionSwitchConfig);
         return HCCL_E_PARA;
     }
-    HCCL_RUN_INFO("HCCL_DIAGNOSE_ENABLE set by environment to [%u]", taskExceptionSwitchConfig);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_DIAGNOSE_ENABLE set by environment to [%u]", taskExceptionSwitchConfig);
     g_externalInput.taskExceptionSwitch = taskExceptionSwitchConfig;
     return HCCL_SUCCESS;
 }
@@ -1474,7 +1417,7 @@ HcclResult ParseRdmaQpsPerConnection()
     g_externalInput.qpsPerConnection = HCCL_QPS_PER_CONNECTION_DEFAULT;
     std::string rdmaQpsPerConnectionEnv = GET_ENV(MM_ENV_HCCL_RDMA_QPS_PER_CONNECTION);
     if (rdmaQpsPerConnectionEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_RDMA_QPS_PER_CONNECTION is set to default value [1]");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_RDMA_QPS_PER_CONNECTION is set to default value [1]");
         return HCCL_SUCCESS;
     }
     // 校验环境变量长度
@@ -1498,7 +1441,7 @@ HcclResult ParseRdmaQpsPerConnection()
         return HCCL_E_PARA;
     }
     g_externalInput.qpsPerConnection = qpsPerConnection;
-    HCCL_RUN_INFO("environmental variable HCCL_RDMA_QPS_PER_CONNECTION is set to [%d]", qpsPerConnection);
+    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_RDMA_QPS_PER_CONNECTION is set to [%d]", qpsPerConnection);
     return HCCL_SUCCESS;
 }
 
@@ -1507,7 +1450,8 @@ HcclResult ParseMultiQpThreshold()
     g_externalInput.multiQpThreshold = HCCL_MULTI_QP_THRESHOLD_DEFAULT;
     std::string strMultiQpThresholdEnv = GET_ENV(MM_ENV_HCCL_MULTI_QP_THRESHOLD);
     if (strMultiQpThresholdEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_MULTI_QP_THRESHOLD is set to default value [%u]KB", HCCL_MULTI_QP_THRESHOLD_DEFAULT);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_MULTI_QP_THRESHOLD is set to default value [%u]KB",
+                      HCCL_MULTI_QP_THRESHOLD_DEFAULT);
         return HCCL_SUCCESS;
     }
     // 校验环境变量长度
@@ -1529,7 +1473,7 @@ HcclResult ParseMultiQpThreshold()
         return HCCL_E_PARA;
     }
     g_externalInput.multiQpThreshold = multiQpThreshold;
-    HCCL_RUN_INFO("environmental variable HCCL_MULTI_QP_THRESHOLD is set to [%d]KB", multiQpThreshold);
+    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_MULTI_QP_THRESHOLD is set to [%d]KB", multiQpThreshold);
     return HCCL_SUCCESS;
 }
 
@@ -1537,7 +1481,7 @@ HcclResult ParseEntryLogEnable()
 {
     std::string enableEntryLogEnv = GET_ENV(MM_ENV_HCCL_ENTRY_LOG_ENABLE);
     if (enableEntryLogEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_ENTRY_LOG_ENABLE set by default to [0]");
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_ENTRY_LOG_ENABLE set by default to [0]");
         return HCCL_SUCCESS;
     }
     if (enableEntryLogEnv != "0" && enableEntryLogEnv != "1") {
@@ -1549,7 +1493,7 @@ HcclResult ParseEntryLogEnable()
     if (enableEntryLogEnv == "1") {
         g_externalInput.enableEntryLog = true;
     }
-    HCCL_RUN_INFO("HCCL_ENTRY_LOG_ENABLE set by environment to [%u]", g_externalInput.enableEntryLog);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_ENTRY_LOG_ENABLE set by environment to [%u]", g_externalInput.enableEntryLog);
     return HCCL_SUCCESS;
 }
 
@@ -1557,7 +1501,7 @@ HcclResult ParseInterLinkType()
 {
     std::string interHccsDisableEnv = GET_ENV(MM_ENV_HCCL_INTER_HCCS_DISABLE);
     if (interHccsDisableEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_INTER_HCCS_DISABLE is not set, default value is %s.",
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_INTER_HCCS_DISABLE is not set, default value is %s.",
             g_externalInput.interHccsDisable ? "TRUE" : "FALSE");
         return HCCL_SUCCESS;
     }
@@ -1570,7 +1514,7 @@ HcclResult ParseInterLinkType()
         HCCL_ERROR("HCCL_INTER_HCCS_DISABLE %s is invalid, expect true or false.", interHccsDisableEnv.c_str());
         return HCCL_E_PARA;
     }
-    HCCL_RUN_INFO("environmental variable HCCL_INTER_HCCS_DISABLE is set to [%s], interHccsDisable[%d]",
+    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_INTER_HCCS_DISABLE is set to [%s], interHccsDisable[%d]",
         interHccsDisableEnv.c_str(), g_externalInput.interHccsDisable);
     return HCCL_SUCCESS;
 }
@@ -1581,7 +1525,7 @@ HcclResult ParseOpExpansion()
     g_externalInput.aicpuUnfold = false;
     g_externalInput.aivMode = false;
     if (IsGeneralServer()) {
-        HCCL_RUN_INFO("HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u]",
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u]",
             g_externalInput.aicpuUnfold, g_externalInput.aivMode);
         return HCCL_SUCCESS;
     }
@@ -1594,7 +1538,7 @@ HcclResult ParseOpExpansion()
         g_externalInput.aicpuUnfold = true;
     }
     if (opExpansionModeEnv == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u]",
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u]",
             g_externalInput.aicpuUnfold, g_externalInput.aivMode);
         return HCCL_SUCCESS;
     }
@@ -1621,8 +1565,46 @@ HcclResult ParseOpExpansion()
         return HCCL_E_PARA;
     }
 #endif
-    HCCL_RUN_INFO("environmental variable HCCL_OP_EXPANSION_MODE is [%s], aicpuUnfold[%u], aivMode[%u], enableFfts[%u]",
+    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_OP_EXPANSION_MODE is [%s], aicpuUnfold[%u], aivMode[%u], enableFfts[%u]",
         opExpansionModeEnv.c_str(), g_externalInput.aicpuUnfold, g_externalInput.aivMode, g_externalInput.enableFfts);
+    return HCCL_SUCCESS;
+}
+
+HcclResult ParseAicpuCacheEnable()
+{
+    // 默认开启aicpu cache
+    g_externalInput.aicpuCacheEnable = 1;
+
+    // 获得环境变量
+    std::string aicpuCacheEnable = "";
+    constexpr uint32_t charCnt = 128;
+    char aicpuCacheEnableChars[charCnt];
+    CHK_SAFETY_FUNC_RET(memset_s(aicpuCacheEnableChars, charCnt, '\0', charCnt));
+    int result = mmGetEnv("HCCL_AICPU_CACHE_ENABLE", aicpuCacheEnableChars, charCnt);
+    if (result == EN_OK) { // get HCCL_AICPU_CACHE_ENABLE successfully
+        aicpuCacheEnable = std::string(aicpuCacheEnableChars);
+    } else if (result == EN_ERROR) { // not specify HCCL_AICPU_CACHE_ENABLE
+        aicpuCacheEnable = "EmptyString";
+    } else { // insufficient length
+        HCCL_ERROR("[Parser][AicpuCacheEnable] fail to get HCCL_AICPU_CACHE_ENABLE: aicpuCacheEnableChars.len[%u]", charCnt);
+        return HCCL_E_INTERNAL;
+    }
+
+    // 根据环境变量设置g_externalInput.aicpuCacheEnable
+    if (aicpuCacheEnable == "EmptyString") {
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_AICPU_CACHE_ENABLE set by default to [1]");
+        return HCCL_SUCCESS;
+    } else if (aicpuCacheEnable == "0") {
+        g_externalInput.aicpuCacheEnable = 0; // 关闭aicpu cache
+    } else if (aicpuCacheEnable == "1") {
+        g_externalInput.aicpuCacheEnable = 1; // 开启aicpu cache
+    } else {
+        HCCL_ERROR("[Parser][AicpuCacheEnable]environmental variable HCCL_AICPU_CACHE_ENABLE [%s] is invalid, set by default to [1]", aicpuCacheEnable.c_str());
+        return HCCL_E_PARA;
+    }
+
+    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_AICPU_CACHE_ENABLE is [%s], aicpuCacheEnable[%u]", aicpuCacheEnable.c_str(), g_externalInput.aicpuCacheEnable);
+
     return HCCL_SUCCESS;
 }
 
@@ -1718,8 +1700,7 @@ HcclResult ParseRetryEnable()
     }
     std::string hcclRetryEnable = GET_ENV(MM_ENV_HCCL_OP_RETRY_ENABLE);
     if (hcclRetryEnable == "EmptyString") {
-        HCCL_RUN_INFO(
-            "[ParseRetryEnable] HCCL_OP_RETRY_ENABLE is not set. The retryEnable of all levels is set to false.");
+        HCCL_RUN_INFO("[HCCL_ENV][ParseRetryEnable] HCCL_OP_RETRY_ENABLE is not set. The retryEnable of all levels is set to false.");
         return HCCL_SUCCESS;
     }
     // 去除空格
@@ -1727,7 +1708,7 @@ HcclResult ParseRetryEnable()
     retryConfig.erase(std::remove(retryConfig.begin(), retryConfig.end(), ' '), retryConfig.end());
 
     if (retryConfig.empty()) {
-        HCCL_RUN_INFO("[ParseRetryEnable] Hccl retry config is empty. The retryEnable of all levels is set to false.");
+        HCCL_RUN_INFO("[HCCL_ENV][ParseRetryEnable] Hccl retry config is empty. The retryEnable of all levels is set to false.");
         return HCCL_SUCCESS;
     }
 
@@ -1740,7 +1721,7 @@ HcclResult ParseRetryEnable()
         ret);
 
     CHK_RET(CollectRetryEnableFromConfig(retryEnables));
-    HCCL_RUN_INFO("[ParseRetryEnable] HCCL_OP_RETRY_ENABLE set by environment variable to [%s].", retryConfig.c_str());
+    HCCL_RUN_INFO("[HCCL_ENV][ParseRetryEnable] HCCL_OP_RETRY_ENABLE set by environment variable to [%s].", retryConfig.c_str());
 #endif
     return HCCL_SUCCESS;
 }
@@ -1750,7 +1731,7 @@ HcclResult ParseRetryParams()
 #ifndef CCL_KERNEL_AICPU
     std::string retryParams = GET_ENV(MM_ENV_HCCL_OP_RETRY_PARAMS);
     if (retryParams == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_OP_RETRY_PARAMS is not set, default value MaxCnt is [%u], HoldTime is [%u]ms, "\
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_RETRY_PARAMS is not set, default value MaxCnt is [%u], HoldTime is [%u]ms, "\
             "IntervalTime is [%u]ms",
             HCCL_RETRY_MAXCNT_DEFAULT, HCCL_RETRY_HOLD_TIME_DEFAULT, HCCL_RETRY_INTERVAL_DEFAULT);
         return HCCL_SUCCESS;
@@ -1773,7 +1754,7 @@ HcclResult ParseRetryParams()
     g_externalInput.retryHoldTime = holdtime;
     g_externalInput.retryIntervalTime = intervaltime;
 
-    HCCL_RUN_INFO("HCCL_OP_RETRY_PARAMS is set, MaxCnt is [%u], HoldTime is [%u]ms, IntervalTime is [%u]ms.",
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_RETRY_PARAMS is set, MaxCnt is [%u], HoldTime is [%u]ms, IntervalTime is [%u]ms.",
         maxcnt, holdtime, intervaltime);
 #endif
     return HCCL_SUCCESS;
@@ -1783,7 +1764,7 @@ HcclResult ParseLogicSuperPodId()
 {
     std::string logicSuperPodId = GET_ENV(MM_ENV_HCCL_LOGIC_SUPERPOD_ID);
     if (logicSuperPodId == "EmptyString") {
-        HCCL_RUN_INFO("HCCL_LOGIC_SUPERPOD_ID is not set, default value[%s]", g_externalInput.logicSuperPodId.c_str());
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_LOGIC_SUPERPOD_ID is not set, default value[%s]", g_externalInput.logicSuperPodId.c_str());
         return HCCL_SUCCESS;
     }
 
@@ -1794,7 +1775,7 @@ HcclResult ParseLogicSuperPodId()
         MAX_LEN_OF_LOGIC_SUPER_ID), HCCL_E_PARA);
 
     g_externalInput.logicSuperPodId = logicSuperPodId;
-    HCCL_RUN_INFO("HCCL_LOGIC_SUPERPOD_ID set by environment to [%s]", g_externalInput.logicSuperPodId.c_str());
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_LOGIC_SUPERPOD_ID set by environment to [%s]", g_externalInput.logicSuperPodId.c_str());
     return HCCL_SUCCESS;
 }
 
@@ -1816,7 +1797,7 @@ HcclResult ParseDebugConfig()
     char* env = nullptr; // 环境变量值
     MM_SYS_GET_ENV(MM_ENV_HCCL_DEBUG_CONFIG, env);
     if (env == nullptr) {
-        HCCL_RUN_INFO("HCCL_DEBUG_CONFIG is not set, debugConfig set by default to 0x%llx", g_externalInput.debugConfig);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_DEBUG_CONFIG is not set, debugConfig set by default to 0x%llx", g_externalInput.debugConfig);
         return HCCL_SUCCESS;
     }
 
@@ -1848,7 +1829,7 @@ HcclResult ParseDebugConfig()
         subConfig = strtok_r(nullptr, ",", &left);
     }
     free(configDup);
-    HCCL_RUN_INFO("HCCL_DEBUG_CONFIG[%s], set debugConfig[0x%llx]", env, g_externalInput.debugConfig);
+    HCCL_RUN_INFO("[HCCL_ENV] HCCL_DEBUG_CONFIG[%s], set debugConfig[0x%llx]", env, g_externalInput.debugConfig);
     return HCCL_SUCCESS;
 }
 
@@ -2011,6 +1992,11 @@ const MasterInfo& GetExternalInputMasterInfo()
 const bool& GetExternalInputHcclAicpuUnfold()
 {
     return g_externalInput.aicpuUnfold;
+}
+
+const uint8_t& GetExternalInputAicpuCacheEnable()
+{
+    return g_externalInput.aicpuCacheEnable;
 }
 
 const bool& GetExternalInputHcclAivMode()

@@ -45,7 +45,7 @@ HcclResult AicpuKfcRpcServerV2::Init(const HcclMC2WorkSpace &workspaceInfo, cons
     if (turnNumAddr_ + sizeof(u32) * TILING_TURN_MAX * HCCL_MAX_RANK_NUM_V2 >
         workspaceInfo.workSpace + workspaceInfo.workSpaceSize) {
         HCCL_ERROR("Turn number addr %#llx, space for turn number is %lu, the space after workspace %#llx will "
-            "be overwrited.", turnNumAddr_, sizeof(u32) * TILING_TURN_MAX * HCCL_MAX_RANK_NUM_V2,
+            "be overwritten.", turnNumAddr_, sizeof(u32) * TILING_TURN_MAX * HCCL_MAX_RANK_NUM_V2,
             workspaceInfo.workSpace + workspaceInfo.workSpaceSize);
         return HCCL_E_INTERNAL;
     }
