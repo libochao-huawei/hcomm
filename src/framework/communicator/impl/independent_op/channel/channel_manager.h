@@ -49,8 +49,8 @@ struct HcclChannelDescEqual {
 
 class ChannelManager {
 public:
-    ChannelManager();
-    ~ChannelManager();
+    ChannelManager() = default;
+    ~ChannelManager() = default;
     HcclResult Init(aclrtBinHandle binHandle, u32 userRank, const ManagerCallbacks& callbacks);
     HcclResult SetChannelCallbacks(const ChannelManagerCallbacks& channelCallbacks);
     HcclResult ChannelCommCreate(const std::string &commId, CommEngine engine,

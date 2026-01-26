@@ -1088,17 +1088,13 @@ TransportType TransportManager::GetTransportType(const u32 dstRank, bool isUsedR
     TransportType transportType;
     // 判断是否在同一个server
     if (rankInfoList_[userRank_].serverId == rankInfoList_[dstRank].serverId) {
-        if (isHaveCpuRank_) {
-            transportType = TransportType::TRANS_TYPE_HETEROG_P2P;
+        LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
+        hrtGetPairDeviceLinkType(rankInfoList_[userRank_].devicePhyId, rankInfoList_[dstRank].devicePhyId,
+            linkType);
+        if (isUsedRdma) {
+            transportType = TransportType::TRANS_TYPE_IBV_EXP;
         } else {
-            LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
-            hrtGetPairDeviceLinkType(rankInfoList_[userRank_].devicePhyId, rankInfoList_[dstRank].devicePhyId,
-                linkType);
-            if (isUsedRdma) {
-                transportType = TransportType::TRANS_TYPE_IBV_EXP;
-            } else {
-                transportType = TransportType::TRANS_TYPE_P2P;
-            }
+            transportType = TransportType::TRANS_TYPE_P2P;
         }
     } else { // server间
         if ((!isUsedRdma) && IsSupportInterHccs(dstRank)) {
@@ -1106,11 +1102,6 @@ TransportType TransportManager::GetTransportType(const u32 dstRank, bool isUsedR
             transportType = TransportType::TRANS_TYPE_P2P;
         } else if (GetExternalInputHcclIsTcpMode()) {
             transportType = TransportType::TRANS_TYPE_HOST_TCP;
-        } else if ((static_cast<DevType>(rankInfoList_[dstRank].deviceType) == DevType::DEV_TYPE_310P3) ||
-            (static_cast<DevType>(rankInfoList_[dstRank].deviceType) == DevType::DEV_TYPE_310P1)) {
-            transportType = TransportType::TRANS_TYPE_ROCE;
-        } else if (isHaveCpuRank_) {
-            transportType = TransportType::TRANS_TYPE_HETEROG_ROCE;
         } else if ((!isUsedRdma) && IsSupportInterHccs(dstRank)) {
             // 超节点内节点间走HCCS通信
             transportType = TransportType::TRANS_TYPE_P2P;
@@ -1153,20 +1144,6 @@ HcclResult TransportManager::TransportInit(const u32 dstRank, MachinePara &machi
         link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
         para.nicDeploy = nicDeployment_;
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_ROCE) {
-        para.selfIp = &machinePara.localIpAddr;
-        para.peerIp = &machinePara.remoteIpAddr;
-        std::set<u32> listenedPort;
-        CHK_SMART_PTR_NULL(socketManager_);
-        CHK_RET(socketManager_->GetListenPortByIp(NICDeployment::NIC_DEPLOYMENT_DEVICE, *(para.selfIp),
-            listenedPort));
-        para.peerPort = *(listenedPort.begin());
-        para.selfPort = para.peerPort;
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_P2P) {
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_ROCE) {
         link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
         bool isEnableMulQp = false;

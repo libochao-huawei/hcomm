@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  
-#ifndef GRAPH_CTX_MGR_H
-#define GRAPH_CTX_MGR_H
+#ifndef HCOMM_GRAPH_CTX_MGR_H
+#define HCOMM_GRAPH_CTX_MGR_H
 
 #include <hccl/base.h>
 #include "ffts_common.h"
@@ -126,4 +126,4 @@ inline bool FftsCtxReady(HcclFftsContextsInfo *&fftsCtxsPtr)
 {
     return fftsCtxsPtr->completed;
 }
-#endif // GRAPH_CTX_MGR_H
+#endif // HCOMM_GRAPH_CTX_MGR_H

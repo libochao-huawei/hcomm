@@ -11,10 +11,13 @@
 #define COLL_COMM_RES_C_ADPT_H
 
 #include <cstdint>
+#include "hccl/hccl_res.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
 
 /**
  * @note 职责：集合通信的通信域资源管理的C接口声明（暂未对外的接口）
@@ -27,6 +30,7 @@ extern "C" {
  *     uint32_t notifyNumPerThread, ThreadHandle *threads);
  * @endcode
  */
+
 #ifdef __cplusplus
 }
 #endif

@@ -22,6 +22,8 @@
 #include "param_check_pub.h"
 #include "op_base_v2.h"
 
+using namespace hccl;
+
 HcclResult HcclCommRegMem(HcclComm comm, const char *memTag, const HcclMem *mem,
                           HcclRegMemAttr attr, void **memHandle)
 {
@@ -42,8 +44,18 @@ HcclResult HcclCommRegMem(HcclComm comm, const char *memTag, const HcclMem *mem,
     HCCL_RUN_INFO("Entry-%s: comm[%s], memTag[%s], addr[%p], size[%lld], type[%d]",
                   __func__, commId.c_str(), memTag, mem->addr, static_cast<long long>(mem->size), mem->type);
     // 通信域实例：按算子绑定（幂等）
-    auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
-    HcclResult ret = commMemMgr.CommRegMem(std::string(memTag), *mem, attr, memHandle);
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommMemMgr* commMemMgr = collComm->GetCommMemMgr();
+        CHK_PTR_NULL(commMemMgr);
+        ret = commMemMgr->CommRegMem(std::string(memTag), *mem, attr, memHandle);
+    }
+    else {
+        auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
+        ret = commMemMgr.CommRegMem(std::string(memTag), *mem, attr, memHandle);
+    }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HcclCommRegMem]Bind failed. memTag[%s], ret[%d]", memTag, ret), ret);
     HCCL_INFO("[HcclCommRegMem] success: raw handle[%p]", *memHandle);
@@ -62,8 +74,19 @@ HcclResult HcclCommDeregMem(HcclComm comm, const char *memTag, const void* memHa
     HCCL_RUN_INFO("Entry-%s: comm[%s], handle[%p]", __func__, commId.c_str(), memHandle);
 
     // 解绑某算子下的该句柄
-    auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
-    HcclResult ret = commMemMgr.CommUnregMem(std::string(memTag), memHandle);
+    HcclResult ret = HCCL_SUCCESS;
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommMemMgr* commMemMgr = collComm->GetCommMemMgr();
+        CHK_PTR_NULL(commMemMgr);
+        ret = commMemMgr->CommUnregMem(std::string(memTag), memHandle);
+    }
+    else {
+        auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
+        ret = commMemMgr.CommUnregMem(std::string(memTag), memHandle);
+    }
+
     CHK_PRT_RET(ret == HCCL_E_NOT_FOUND,
         HCCL_WARNING("[HcclCommDeregMem]handle not bound in this domain. raw[%p]", memHandle), HCCL_SUCCESS);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -78,16 +101,27 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
     CHK_PRT_RET(size == nullptr, HCCL_ERROR("[%s] size is null", __func__), HCCL_E_PTR);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclGetHcclBufferV2(comm, buffer, size));
 #endif
 
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
     std::string commId = hcclComm->GetIdentifier();
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
-    auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
+    HcclResult ret = HCCL_SUCCESS;
     CommBuffer commBuffer;
-    HcclResult ret = commMemMgr.GetHcclBuffer(&commBuffer);
+    if (hcclComm->IsCommunicatorV2()) {
+        hccl::CollComm* collComm = hcclComm->GetCollComm();
+        CHK_PTR_NULL(collComm);
+        CommMemMgr* commMemMgr = collComm->GetCommMemMgr();
+        CHK_PTR_NULL(commMemMgr);
+        ret = commMemMgr->GetHcclBuffer(&commBuffer);
+    }
+    else {
+        auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
+        ret = commMemMgr.GetHcclBuffer(&commBuffer);
+    }
+
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get local cclBuffer ret[%d]", __func__, ret);
         return ret;

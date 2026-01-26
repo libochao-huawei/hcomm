@@ -1,0 +1,67 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ * Description: RankGraphBuilder header file
+ * Create: 2024-12-16
+ */
+
+#ifndef RANK_GRAPH_BUILDER_H
+#define RANK_GRAPH_BUILDER_H
+
+#include <memory>
+#include <unordered_map>
+
+#include "json_parser.h"
+#include "rank_gph.h"
+#include "rank_table_info.h"
+#include "phy_topo.h"
+#include "types.h"
+#include "topo_common_types.h"
+#include "topo_info.h"
+#include "updater_for_64_plus_1.h"
+
+namespace Hccl {
+
+class RankGraphBuilder {
+public:
+    std::unique_ptr<RankGraph> Build(const std::string &ranktableM, const std::string &topoPath, RankId myRank);
+    unique_ptr<RankGraph>      Build(const RankTableInfo &ranktable, const string &topoPath, RankId myRank);
+    std::unique_ptr<RankTableInfo> GetRankTableInfo();
+    std::shared_ptr<TopoInfo>      GetTopoInfo();
+    unique_ptr<RankGraph> RecoverBuild(const RankTableInfo &rankTableInfo,const TopoInfo &topoInfo, RankId myRank);
+
+private:
+    std::unique_ptr<RankTableInfo>  rankTable_;
+    std::unique_ptr<RankGraph>      rankGraph_;
+    RankId2PeerMap                  peers_;
+    Level2Id2NetInst                tempNetInsts_;
+    RankId                          myRank_;
+    std::shared_ptr<TopoInfo>       topoInfo_;
+    UpdaterFor64Plus1               updaterFor64Plus1_{};
+
+    void CheckMyRankInRankTable() const;
+    void CheckNetLayerFromPhyTopo(const u32 netLayer) const;
+    void BuildRankGraph();
+    void BuildFromRankTable();
+    void BuildPeer2PeerLinks();
+    void AddFabricInfo(u32 level);
+    void AddPeer2NetLink(const u32 netLayer,  const string &netInstId, RankId rankId, const AddressInfo &addrInfo,
+                        const shared_ptr<NetInstance::Fabric> &fabNode, const vector<shared_ptr<PhyTopo::Link>> &links);
+    void AddTopoDescFabricInfo();
+    void UpdateTopoInstForMyRankOnly();
+    // 新增创建NetInstance
+    std::shared_ptr<NetInstance> GetNetInstance(const RankLevelInfo &levelInfo);
+    std::shared_ptr<NetInstance> CreateNetInstance(const RankLevelInfo &levelInfo);
+};
+
+std::unordered_map<PlaneId, FabricId> GetFabricsFromAddrInfo(std::vector<AddressInfo> rankAddrs);
+std::vector<shared_ptr<PhyTopo::Link>> GetPeer2NetPhyLinks(u32 netLayer, LocalId localId);
+std::vector<std::shared_ptr<NetInstance::ConnInterface>> ConstructConnIFromPhyTopoConnIAndPortMap(
+    std::shared_ptr<PhyTopo::ConnInterface> phyConnIFace, std::unordered_map<std::string, IpAddress> portAddrMap, const TopoType topoType, const u32 topoInstId);
+std::vector<shared_ptr<NetInstance::Link>> ConstructLinks(shared_ptr<NetInstance::Peer> srcPeer, 
+    shared_ptr<NetInstance::Peer> dstPeer, std::vector<std::shared_ptr<NetInstance::ConnInterface>> sourceIfaces,
+    std::vector<std::shared_ptr<NetInstance::ConnInterface>> targetIfaces, shared_ptr<PhyTopo::Link> phyLink);
+std::vector<std::shared_ptr<PhyTopo::Link>> GetPeer2PeerPhyLinks(std::shared_ptr<Graph<PhyTopo::Node, PhyTopo::Link>> phyTopoGraph, 
+    LocalId srcLocalId, LocalId dstLocalId);
+} // namespace Hccl
+
+#endif // RANK_GRAPH_BUILDER_H

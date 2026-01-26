@@ -84,11 +84,7 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
 HcclResult HcclParseRanktable(const std::string &rankTableM,
     const std::string &identify, hccl::HcclCommParams &params, hccl::RankTable_t &rankTable);
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "param_check_basic_v2.h"
 bool IsSupportHCCLV2(const char *socNamePtr);
-#else
-#define HCCLV2_FUNC_RUN(func, ...)
-#endif
 
 #endif  // PARAM_CHECK_PUB_H

@@ -36,9 +36,7 @@
 #include "mmpa_api.h"
 #include "op_base.h"
 #include "hccl_group.h"
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "op_base_v2.h"
-#endif
 
 using namespace std;
 using namespace hccl;
@@ -113,9 +111,7 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
                   std::vector<std::string>({"HcclAllReduceInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
-#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -199,9 +195,7 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclBarrierV2(comm, stream));
-#endif
 
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;

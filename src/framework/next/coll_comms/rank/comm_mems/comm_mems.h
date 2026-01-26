@@ -14,6 +14,9 @@
 #include <vector>
 #include <unordered_map>
 #include <mutex>
+#include "hccl_types.h"
+#include "log.h"
+#include "hccl_mem_defs.h"
 
 namespace hccl {
 /**
@@ -22,15 +25,23 @@ namespace hccl {
 class CommMems {
 public:
     explicit CommMems(uint64_t bufferSize);
+    // CommMems(void* addr,u32 size );
     ~CommMems() = default;
 
     HcclResult Add(void *addr, uint64_t len);
 
     HcclResult GetHcclBuffer(void *&addr, uint64_t &len);
 
+    HcclResult Init(HcclMem cclBuffer);
+
+    HcclResult GetMemoryHandles(std::vector<HcclMem> &mem);
+
 private:
     uint64_t bufferSize_{};
-    RmaBufferMgr<BufferKey<uintptr_t, uint64_t>, void*>;
+    void*   addr_{nullptr};
+    std::size_t size_{0};
+    HcclMemType memType_{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+    // RmaBufferMgr<BufferKey<uintptr_t, uint64_t>, void*>;
 };
 }
 

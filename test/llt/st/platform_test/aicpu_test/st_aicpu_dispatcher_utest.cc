@@ -30,7 +30,7 @@
 #undef protected
 #include "hccl_dispatcher_ctx.h"
 #include "dispatcher_ctx.h"
-#include "hccl_thread.h"
+#include "aicpu_ts_thread.h"
 
 using namespace hccl;
 
@@ -576,10 +576,10 @@ TEST_F(DispatcherAiCpu_ST, st_data_plane_interface_aicpu)
     .stubs()
     .with(outBound(isDeviceSide))
     .will(returnValue(HCCL_SUCCESS));
-    HcclThread mainThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
+    AicpuTsThread mainThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
     HcclResult ret = mainThread.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    HcclThread subThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
+    AicpuTsThread subThread(StreamType::STREAM_TYPE_DEVICE, 2, NotifyLoadType::DEVICE_NOTIFY);
     ret = subThread.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
@@ -600,10 +600,10 @@ TEST_F(DispatcherAiCpu_ST, st_data_plane_interface_aicpu)
     .will(returnValue(HCCL_SUCCESS));
 
 
-    HcclThread mainDevThread(mainStr);
+    AicpuTsThread mainDevThread(mainStr);
     ret = mainDevThread.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    HcclThread subDevThread(subStr);
+    AicpuTsThread subDevThread(subStr);
     ret = subDevThread.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
 

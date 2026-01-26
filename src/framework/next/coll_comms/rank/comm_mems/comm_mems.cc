@@ -16,4 +16,41 @@ CommMems::CommMems(uint64_t bufferSize)
     : bufferSize_(bufferSize)
 {
 }
+
+HcclResult CommMems::Add(void *addr, uint64_t len)
+{
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommMems::GetHcclBuffer(void *&addr, uint64_t &len)
+{
+    addr = reinterpret_cast<void*>(addr_);
+    len = static_cast<uint64_t>(size_);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommMems::Init(HcclMem cclBuffer)
+{
+    addr_ = cclBuffer.addr;
+    size_ = cclBuffer.size;
+    memType_ = cclBuffer.type;
+    HCCL_INFO("[CommMems][Init] addr[%p] size[%u] memType[%u]", cclBuffer.addr, cclBuffer.type, cclBuffer.type);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommMems::GetMemoryHandles(std::vector<HcclMem> &mem)
+{
+    HcclMem memTemp;
+    memTemp.size = size_;
+    memTemp.type = memType_;
+    memTemp.addr = addr_;;
+    mem.push_back(memTemp);
+
+    HCCL_INFO("[CommMems][%s] HcclMem: size[%u], addr[%p], type[%d]", 
+        __func__, memTemp.size, memTemp.addr, (int)memTemp.type
+    );
+
+    return HCCL_SUCCESS;
+}
+
 }

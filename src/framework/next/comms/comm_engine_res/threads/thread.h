@@ -10,25 +10,69 @@
 #ifndef THREAD_H
 #define THREAD_H
 
+#include <string>
 #include <vector>
 #include <memory>
+#include "hccl_types.h"
+#include "hccl_common.h"
+#include "hcomm_primitives.h"
+#include "local_notify.h"
+#include "stream_pub.h"
+#include "acl/acl_rt.h"
+#include "adapter_hal_pub.h"
+#include "device_capacity.h"
+#include "hccl_api.h"
 
-namespace hcomm {
+namespace hccl {
 /**
  * @note 职责：通信引擎的Thread的C++抽象接口类，表达并行资源，内部包含thread间的同步Notify。
  */
 class Thread {
 public:
-    explicit Thread(CommEngine engineType);
     virtual ~Thread() = default;
-
-    // 获取Notify数量
+    virtual HcclResult Init() = 0;
+    virtual HcclResult DeInit() = 0;
+    virtual std::string &GetUniqueId() = 0;
     virtual uint32_t GetNotifyNum() const = 0;
+    virtual LocalNotify *GetNotify(uint32_t index) const = 0;
 
-protected:
-    ThreadHandle handle_{};
-    CommEngine engineType_{};
-    std::vector<Notify> notifys_{};
+    // A3 Stream & A5 Stream
+    virtual bool IsDeviceA5() const = 0;
+    virtual Stream *GetStream() const = 0;
+    virtual void *GetStreamLitePtr() const = 0;
+    virtual void LaunchTask() const = 0;
+
+    // Local Data Plane Functions
+    virtual HcclResult LocalNotifyRecord(uint32_t notifyId) const = 0;
+    virtual HcclResult LocalNotifyWait(uint32_t notifyId) const = 0;
+    virtual HcclResult LocalCopy(void *dst, const void *src, uint64_t sizeByte) const = 0;
+    virtual HcclResult LocalReduce(
+        void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const = 0;
 };
 
-#endif // THREAD_H
+inline Stream *GetStream(uint64_t thread)
+{
+    Thread *threadPtr = reinterpret_cast<Thread *>(thread);
+    if (UNLIKELY(threadPtr == nullptr)) {
+        HCCL_ERROR("[Thread][GetStream]thread is nullptr");
+        return nullptr;
+    }
+    return threadPtr->GetStream();
+}
+
+inline LocalNotify *GetNotify(uint64_t thread, uint32_t index)
+{
+    Thread *threadPtr = reinterpret_cast<Thread *>(thread);
+    if (UNLIKELY(threadPtr == nullptr)) {
+        HCCL_ERROR("[Thread][GetStream]thread is nullptr");
+        return nullptr;
+    }
+    return threadPtr->GetNotify(index);
+}
+
+HcclResult CreateThread(CommEngine engine, StreamType streamType, uint32_t notifyNum,
+                        NotifyLoadType loadType, std::shared_ptr<Thread>& out_thread);
+HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
+HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
+}  // namespace hccl
+#endif  // THREAD_H

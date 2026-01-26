@@ -20,9 +20,7 @@
 #include "kernel_tiling/kernel_tiling.h"
 #include "param_check_pub.h"
 #include "hccl_tiling_msg.h"
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "op_base_v2.h"
-#endif
 
 using namespace std;
 using namespace hccl;
@@ -111,7 +109,7 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     HCCL_INFO("[%s]version ptr[%p] val[%u] devType[%u]", __func__, pVersion, *pVersion, devType);
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclAllocComResourceByTilingV2(comm, stream, Mc2Tiling, commContext));
 #endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -163,7 +161,7 @@ HcclResult HcclAllocComResourceByTiling(HcclComm comm, void* stream, void* Mc2Ti
     return HCCL_SUCCESS;
 }
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 HcclResult HcclGetOpArgs(void **opArgs) 
 {
     CHK_PTR_NULL(opArgs);

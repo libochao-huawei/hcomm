@@ -13,6 +13,7 @@
 
 #include <map>
 #include "buffer_key.h"
+#include "log.h"
 
 namespace hccl {
 template<typename KeyType, typename BufferType, template <typename...> class M = std::map, typename... MapArgs>

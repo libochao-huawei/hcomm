@@ -22,8 +22,6 @@ COV="false"
 CUSTOM_OPTION="-DCMAKE_INSTALL_PREFIX=${BUILD_OUTPUT_DIR}"
 FULL_MODE="false"  # 新增变量，用于控制是否全量构建
 KERNEL="false"  # 新增变量，用于控制是否只编译 ccl_kernel.so
-ORION_MODE="false"
-ORION_PATH="${CURRENT_DIR}/../ace/comop/hccl/orion"
 DO_NOT_CLEAN="false" # 是否清理
 CANN_3RD_LIB_PATH="${CURRENT_DIR}/third_party"
 CANN_UTILS_LIB_PATH="${CURRENT_DIR}/utils"
@@ -47,6 +45,9 @@ ORION_HCCL_V2="<file value=\"libhccl_v2.so\" file_type=\"shared\" release_type=\
 ORION_ALG_FRAME="<file value=\"libhccl_v2_alg_frame.so\" file_type=\"shared\" release_type=\"debug\"/>"
 ORION_ALG_REPO="<file value=\"libhccl_v2_native_alg_repo.so\" file_type=\"shared\" release_type=\"debug\"/>"
 ORION_AIV_OP="<file value=\"hccl_aiv_op_910_95.o\"/>"
+DPU_INSTALL_PATH="opp/built-in/op_impl/dpu"
+DPU_JSON="<file value=\"libccl_dpu.json\"/>"
+DPU_LIB="<file value=\"libccl_dpu.so\" file_type=\"shared\" install_softlink=\"\$(TARGET_ENV)/lib64/libccl_dpu.so\"/>"
 
 if [ "${USER_ID}" != "0" ]; then
     DEFAULT_TOOLKIT_INSTALL_DIR="${HOME}/Ascend/ascend-toolkit/latest"
@@ -274,6 +275,8 @@ function xml_add_orion_so() {
     fi
 
     strings=("$ORION_HCCL_V2" "$ORION_ALG_FRAME" "$ORION_ALG_REPO" "$ORION_AIV_OP")
+    dpu_json_string="$DPU_JSON"
+    dpu_lib_string="$DPU_LIB"
     not_found=()
     for str in "${strings[@]}"; do
         if ! grep -q "$str" "$INSTALL_XML_FILE"; then
@@ -298,6 +301,14 @@ function xml_add_orion_so() {
         if [[ "$line" == *"$HCOMM_LIB_NAME"* ]]; then
             echo "$insert_content" >> "$temp_file"
         fi
+
+        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"json"* ]]; then
+            echo "$dpu_json_string" >> "$temp_file"
+        fi
+
+        if [[ "$line" == *"$DPU_INSTALL_PATH"* && "$line" == *"lib64"* ]]; then
+            echo "$dpu_lib_string" >> "$temp_file"
+        fi
     done < "$INSTALL_XML_FILE"
     mv "$temp_file" "$INSTALL_XML_FILE"
 }
@@ -310,7 +321,8 @@ function xml_delete_orion_so() {
 
     temp_file=$(mktemp)
     while IFS= read -r line; do
-        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* || "$line" == *"$ORION_AIV_OP"* ]]; then
+        if ! [[ "$line" == *"$ORION_HCCL_V2"* || "$line" == *"$ORION_ALG_FRAME"* || "$line" == *"$ORION_ALG_REPO"* ||
+            "$line" == *"$ORION_AIV_OP"* || "$line" == *"$DPU_JSON"* || "$line" == *"$DPU_LIB"* ]]; then
             echo "$line" >> "$temp_file"
         fi
     done < "$INSTALL_XML_FILE"
@@ -479,13 +491,6 @@ if [ "${FULL_MODE}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DFULL_MODE=ON"
 fi
 
-if [ -e "$ORION_PATH" ];then
-    CUSTOM_OPTION="${CUSTOM_OPTION} -DORION_MODE=ON"
-    xml_add_orion_so
-else
-   xml_delete_orion_so
-fi
-
 if [ "${BUILD_AARCH}" == "true" ];then
     CUSTOM_OPTION="${CUSTOM_OPTION} -DAARCH_MODE=ON"
 fi
@@ -535,7 +540,7 @@ cd ${BUILD_DIR}
 
 if [ "${ENABLE_UT}" == "on" ]; then
     build_ut
-    make_ut_gov
+    # make_ut_gov
 elif [ -n "${TEST}" ];then
     build_test
 elif [ "${KERNEL}" == "true" ]; then

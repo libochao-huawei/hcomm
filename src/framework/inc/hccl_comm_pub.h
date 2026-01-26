@@ -28,6 +28,7 @@
 #include "transport_manager.h"
 #include "independent_op.h"
 #include "share_ccl_buffer_manager.h"
+#include "coll_comm.h"
 
 namespace hccl {
 /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
@@ -356,10 +357,21 @@ public:
     // 独立算子专用
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable);
     HcclResult InitIndependentOp();
+    void SetAicpuCommState(bool aicpuCommState);
+    bool GetAicpuCommState();
+    HcclResult KernelLaunchAicpuCommInit();
+    bool IsCommunicatorV2();
+    
+    HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank, HcclMem cclBuffer, const std::string &commName);
+    void* GetCommunicatorV2();
 #ifndef CCL_KERNEL_AICPU
+    CollComm* GetCollComm();
     IndependentOp& GetIndependentOp();
 #endif
+    // A5communicator相关
+
     HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, bool isAicpuModeEn);
+
     HcclResult PrepareChannelMem(const std::string &tag, TransportIOMem &transMem);
 
     //Decouple for MC2
@@ -368,7 +380,7 @@ public:
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
-    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
+    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, uint32_t *topoType);
     //rankgraph interface 
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
@@ -416,10 +428,18 @@ private:
     bool isSpecialType_;
     bool isHaveCpuRank_{false};
     std::unique_ptr<HcclCommunicator> communicator_;
+
+    bool isAicpuCommInit_ = false;
+    CommAicpuParam commAicpuParam_;
+    aclrtBinHandle binHandle_ = nullptr;
+    DevType devType_ = DevType::DEV_TYPE_COUNT;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
     IndependentOp independentOp_;
+    // A5CollComm
+    std::unique_ptr<CollComm> collComm_{nullptr};
 #endif
+
 };
 }  // namespace hccl
 

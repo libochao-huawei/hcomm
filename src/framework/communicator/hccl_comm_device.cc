@@ -130,5 +130,12 @@ HcclResult hcclComm::GetHeterogMode(HcclHeterogMode *mode)
 {
     return HCCL_SUCCESS;
 }
+
+HcclComm hcclComm::GetCommunicatorV2()
+{
+    HCCL_ERROR("[HcclComm][GetCommunicatorV2]collComm_ is nullptr");
+    return nullptr;
+}
+
 }  // namespace hccl
  

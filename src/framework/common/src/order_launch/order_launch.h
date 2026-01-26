@@ -17,6 +17,7 @@
 #include "stream_pub.h"
 #include "hccl_common.h"
 #include "local_notify.h"
+#include "adapter_rts.h"
 
 namespace hccl {
 enum class AicpuOrderEventIdx : uint32_t

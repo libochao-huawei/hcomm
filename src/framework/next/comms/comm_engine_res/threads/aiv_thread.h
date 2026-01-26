@@ -13,14 +13,14 @@
 #include <vector>
 #include "thread.h"
 
-namespace hcomm {
+namespace hccl {
 /**
  * @note 职责：AIV通信引擎的Thread的C++派生类，内部对应AIV block，及thread间的同步Notify。
  */
 class AivThread : public Thread {
 public:
     AivThread();
-    ~AivThread() override;
+    ~AivThread();
 
     uint32_t GetNotifyNum() const override;
 

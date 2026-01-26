@@ -457,7 +457,7 @@ static HcclResult groupLaunch()
 inline void groupLocalResetJobState()
 {
     // hcclcomm中group相关的变量
-    for (HcclComm comm : hcclGroupCommList){
+    for (HcclComm comm : hcclGroupCommList) {
         hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
         hcclComm->planner = std::make_shared<hcclKernelPlanner>();
         hcclComm->SetGroupMode(false);

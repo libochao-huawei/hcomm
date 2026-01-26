@@ -10,8 +10,6 @@
 
 #include "transport.h"
 #include "transport_base.h"
-#include "transport_heterog_p2p_pub.h"
-#include "transport_roce_pub.h"
 #include "transport_ibverbs.h"
 #include "transport_tcp.h"
 #include "transport_direct_npu.h"
@@ -48,13 +46,6 @@ Transport::Transport(TransportType type, TransportPara& para,
         pimpl_ = new (std::nothrow) TransportP2p(dispatcher, notifyPool, machinePara, para.timeout);
     } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
         pimpl_ = new (std::nothrow) TransportTcp(dispatcher, notifyPool, machinePara, para.timeout, para.nicDeploy);
-    } else if (type == TransportType::TRANS_TYPE_ROCE) {
-        (void)CreateTransportRoce(type, para, dispatcherPtr, notifyPool, machinePara);
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_P2P) {
-        pimpl_ = new (std::nothrow) TransportHeterogP2P(dispatcher, notifyPool, machinePara,
-            para.timeout);
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_ROCE) {
-        (void)CreateTransportRoce(type, para, dispatcherPtr, notifyPool, machinePara);
     } else if (type == TransportType::TRANS_TYPE_DEVICE_P2P) {
 #ifdef CCL_KERNEL
         pimpl_ =
@@ -77,63 +68,6 @@ Transport::Transport(TransportType type, TransportPara& para,
         pimpl_ = new (std::nothrow) TransportBase(dispatcher, notifyPool, machinePara, para.timeout);
     }
     HCCL_DEBUG("Transport::Transport, type = %d", static_cast<int>(type));
-}
-
-void Transport::CreateTransportRoce(TransportType type, TransportPara& para, const HcclDispatcher dispatcherPtr,
-    const std::unique_ptr<NotifyPool> &notifyPool, MachinePara &machinePara)
-{
-    DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(const_cast<HcclDispatcher>(dispatcherPtr));
-    if (para.selfIp == nullptr || para.peerIp  == nullptr) {
-        HCCL_ERROR("[CreateTransportRoce] para.selfIp or para.peerIp is nullptr");
-        return;
-    }
-    if (type == TransportType::TRANS_TYPE_ROCE) {
-        if (para.transportResourceInfoAddr == nullptr || (para.transportResourceInfoSize !=
-            sizeof(TransportResourceInfo) && para.transportResourceInfoSize != sizeof(TransportResInfo))) {
-            pimpl_ = new (std::nothrow) TransportRoce(dispatcherPtr, notifyPool, machinePara,
-                para.timeout, *para.selfIp, *para.peerIp, para.peerPort, para.selfPort, TransportResourceInfo());
-        } else if (para.transportResourceInfoSize == sizeof(TransportResInfo)) {
-            pimpl_ = new (std::nothrow) TransportRoce(dispatcherPtr, notifyPool, machinePara,
-                para.timeout, *para.selfIp, *para.peerIp, para.peerPort, para.selfPort,
-                TransportResourceInfo(*(reinterpret_cast<TransportResInfo *>(const_cast<void *>(
-                    para.transportResourceInfoAddr)))));
-        } else if (para.transportResourceInfoSize == sizeof(TransportResourceInfo)) {
-            pimpl_ = new (std::nothrow) TransportRoce(dispatcherPtr, notifyPool, machinePara,
-                para.timeout, *para.selfIp, *para.peerIp, para.peerPort, para.selfPort,
-                *(static_cast<const TransportResourceInfo*>(para.transportResourceInfoAddr)));
-        } else {
-            HCCL_ERROR("[Transport]create transport failed! TransportType[%d], transportResourceInfoSize[%lu], "
-                "TransportResourceInfo size[%lu], TransportResInfo[%lu]", type, para.transportResourceInfoSize,
-                sizeof(TransportResourceInfo), sizeof(TransportResInfo));
-        }
-    } else {
-        if (para.transportResourceInfoSize == sizeof(TransportResInfo)) {
-            pimpl_ = new (std::nothrow) TransportRoce(dispatcher, notifyPool, machinePara, para.timeout,
-                *para.selfIp, *para.peerIp, para.selfPort, para.peerPort,
-                TransportResourceInfo(*(reinterpret_cast<TransportResInfo *>(const_cast<void *>(
-                    para.transportResourceInfoAddr))), para.qpMode, para.devLogicId, para.isHdcMode, true),
-                    para.proxyDevLogicId, para.isRootRank, para.isESPs);
-        } else if (para.transportResourceInfoSize == sizeof(TransportResourceInfo)) {
-            TransportResourceInfo *info =
-                reinterpret_cast<TransportResourceInfo *>(const_cast<void *>(para.transportResourceInfoAddr));
-            if (info == nullptr) {
-                HCCL_ERROR("[Transport][CreateTransportRoce]transportResourceInfoAddr is nullptr");
-                return;
-            }
-            info->qpMode = para.qpMode;
-            info->isHdcMode = para.isHdcMode;
-            info->deviceLogicId = para.devLogicId;
-            info->remoteIsHdc = para.remoteIsHdc;
-            info->isESMode = true;
-            pimpl_ = new (std::nothrow) TransportRoce(dispatcher, notifyPool, machinePara, para.timeout,
-                *para.selfIp, *para.peerIp, para.selfPort, para.peerPort, *info, para.proxyDevLogicId,
-                para.isRootRank, para.isESPs);
-        } else {
-            HCCL_ERROR("[Transport]create transport failed! TransportType[%d], transportResourceInfoSize[%lu], "
-                "TransportResourceInfo size[%lu], TransportResInfo[%lu]", type, para.transportResourceInfoSize,
-                sizeof(TransportResourceInfo), sizeof(TransportResInfo));
-        }
-    }
 }
 
 Transport::~Transport()
@@ -555,7 +489,7 @@ HcclResult Transport::RxEnv(Stream &stream)
 
 bool Transport::IsTransportRoce()
 {
-    return dynamic_cast<TransportRoce*>(pimpl_);
+    return false;
 }
 
 HcclResult Transport::WriteAsync(struct Buffer &remoteBuf, struct Buffer &localBuf, Stream &stream)

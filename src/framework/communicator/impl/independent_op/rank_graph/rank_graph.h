@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef RANK_GRAPH_H
-#define RANK_GRAPH_H
+#ifndef RANK_GRAPH_V1_H
+#define RANK_GRAPH_V1_H
 
 #include "topoinfo_struct.h"
 #include "hccl_api.h"
@@ -17,15 +17,13 @@
 #include "hccl_impl_pub.h"
 #include "hccl_rank_graph.h"
 #include "hccl_rankgraph.h"
+#include "rank_graph_base.h"
 namespace hccl {
-constexpr uint32_t HCCL_NETLAYER_0 = 0;
-constexpr uint32_t HCCL_NETLAYER_1 = 1;
-constexpr uint32_t HCCL_NETLAYER_2 = 2;
 
-class RankGraph {
+class RankGraphV1 : public RankGraph {
 struct RankGraphInfo {
-    RankInfo_t rankInfo;  // rank → server / supernode 等归属
-    std::vector<EndpointDesc> endPoints; // 通信端点信息
+    RankInfo_t rankInfo;
+    std::vector<EndpointDesc> endPoints;
 };
 
 enum class HcclNetLayerlevel {
@@ -41,7 +39,6 @@ public:
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
         uint32_t* listSize);
     HcclResult GetHeterogMode(HcclHeterogMode *mode) const;
-    // 根据 rankId 获取 rank 信息
     const RankInfo_t* FindRank(uint32_t rankId) const;
     HcclResult GetRankGraphInfo(GraphType type, void **graph, uint32_t *len);
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
@@ -49,7 +46,7 @@ public:
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
-    
+
 private:
     HcclResult DevTypeToCommProtocol(DevType &type, CommProtocol &protocol);
     CommProtocol GetCommProtocolFromRankInfo(const RankInfo_t &srcInfo, const RankInfo_t &dstInfo, uint32_t netLayer);
@@ -63,9 +60,7 @@ private:
     bool NeedIgnoreEndPoints(CommProtocol srcProtocol, CommProtocol dstProtocol, CommProtocol linkProtocol);
     HcclResult InitHeterogMode();
     RankTable_t rankTable_;
-    // 根据 rankId 获取 RankInfo_t 与 EndPoint信息
     std::unordered_map<uint32_t, RankGraphInfo> rankIndex_;
-    // 根据 srcRank dstRank 获取CommLink信息
     std::map<std::tuple<uint32_t, uint32_t, uint32_t>, std::vector<CommLink>> rankPairInfo_;
     std::vector<uint32_t> netLayer_;
     std::unordered_map<uint32_t, std::vector<u32>> rankList_;      //level->rankList
@@ -73,13 +68,11 @@ private:
     std::vector<RankInfo_t> rankGraph_;
     std::vector<struct GraphRankInfo> graphRankInfo_;
     HcclTopoAttr topoAttr_;
-    RankInfo rankData_;         // 当前rank的相关信息
+    RankInfo rankData_;
     DevType devType_ = DevType::DEV_TYPE_NOSOC;
-    HcclHeterogMode heterogMode_{HcclHeterogMode::HCCL_HETEROG_MODE_INVALID};    // 组网异构&同构形态
+    HcclHeterogMode heterogMode_{HcclHeterogMode::HCCL_HETEROG_MODE_INVALID};
 
-    // 通信域在当前superPod内, 按照serverIdx划分的所有rank信息
     std::map<u32, std::vector<RankInfo> > serverToRank_;
-    // 通信域所有rank的信息, 按照superPodId -> RankInfo 的结构划分
     std::map<u32, std::vector<RankInfo> > superPodToRank_;
 };
 } // namespace hccl

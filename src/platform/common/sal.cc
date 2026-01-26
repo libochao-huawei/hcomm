@@ -32,7 +32,7 @@
 using namespace std;
 constexpr uint32_t HOST = 1;
 
-#if T_DESC("C字符串处理函数适配", true)
+#if HCOMM_T_DESC("C字符串处理函数适配", true)
 
 u32 SalStrLen(const char *s, u32 maxLen)
 {
@@ -62,7 +62,7 @@ HcclResult SalStrToDouble(const std::string str, double &val)
 
 #endif
 
-#if T_DESC("时间处理接口适配", true)
+#if HCOMM_T_DESC("时间处理接口适配", true)
 
 void SaluSleep(u32 usec)
 {
@@ -101,7 +101,7 @@ u64 GetCurAicpuTimestamp()
 
 #endif
 
-#if T_DESC("跨进程处理函数", true)
+#if HCOMM_T_DESC("跨进程处理函数", true)
 
 // 去除字符串中的首位空格
 std::string SalTrim(const std::string &s)
@@ -149,7 +149,7 @@ u32 SalGetUid()
 
 #endif
 
-#if T_DESC("环境变量处理适配", true)
+#if HCOMM_T_DESC("环境变量处理适配", true)
 
 std::string SalGetEnv(const char *name)
 {
@@ -161,7 +161,7 @@ std::string SalGetEnv(const char *name)
 }
 #endif
 
-#if T_DESC("系统时间处理适配", true)
+#if HCOMM_T_DESC("系统时间处理适配", true)
 
 // 获取系统当前时间
 s64 SalGetSysTime()
@@ -174,7 +174,7 @@ s64 SalGetSysTime()
 
 #endif
 
-#if T_DESC("库函数封装", true)
+#if HCOMM_T_DESC("库函数封装", true)
 // 字符串转换成整型
 HcclResult SalStrToInt(const std::string str, int base, s32 &val)
 {
@@ -272,7 +272,7 @@ HcclResult SalStrToLonglong(const std::string str, int base, s64 &val)
 }
 #endif
 
-#if T_DESC("路径信息函数", true)
+#if HCOMM_T_DESC("路径信息函数", true)
 HcclResult SalIsDirExist(const std::string &dir, s32 &status)
 {
     // 文件存在：0，不存在：-1，异常：1
@@ -299,14 +299,14 @@ HcclResult SalIsDirExist(const std::string &dir, s32 &status)
 }
 #endif
 
-#if T_DESC("数学计算处理函数", true)
+#if HCOMM_T_DESC("数学计算处理函数", true)
 s32 SalLog2(s32 data)
 {
     return static_cast<s32>(log2(data));
 }
 #endif
 
-#if T_DESC("计算类型占用内存大小函数", true)
+#if HCOMM_T_DESC("计算类型占用内存大小函数", true)
 HcclResult SalGetDataTypeSize(HcclDataType dataType, u32 &dataTypeSize)
 {
     if ((dataType >= HCCL_DATA_TYPE_INT8) &&
@@ -321,7 +321,7 @@ HcclResult SalGetDataTypeSize(HcclDataType dataType, u32 &dataTypeSize)
 }
 #endif
 
-#if T_DESC("设置指定位值函数", true)
+#if HCOMM_T_DESC("设置指定位值函数", true)
 void SalSetBitOne(u64 &value, u64 index)
 {
     u64 bit = static_cast<u64>(1) << index;
@@ -331,7 +331,7 @@ void SalSetBitOne(u64 &value, u64 index)
 #endif
 
 
-#if T_DESC("json处理函数", true)
+#if HCOMM_T_DESC("json处理函数", true)
 HcclResult SalParseInformation(nlohmann::json &parseInformation, const std::string &information)
 {
     try {

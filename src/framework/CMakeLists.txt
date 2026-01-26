@@ -20,12 +20,13 @@ else()
     set(HCCL_OPEN_CODE_BASE_DIR ${TOP_DIR}/hcomm/src/)
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
     set(INSTALL_CCL_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
+    set(INSTALL_DPU_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
 endif()
 
-if(ORION_MODE)
-    set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
-    set(HCCL_NEXT_CODE_ROOT ${ORION_REAL_PATH}/../whole/hccl_next)
-endif()
+
+set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
+set(HCCL_NEXT_CODE_ROOT ${HCCL_NEXT_REAL_PATH})
+
 
 message(STATUS "HCCL_OPEN_CODE_BASE_DIR = ${HCCL_OPEN_CODE_BASE_DIR}")
 message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
@@ -74,6 +75,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
+
     ${HCCL_BASE_DIR}/framework/hcom/
     ${HCCL_BASE_DIR}/framework/hcom/gradient_segment
     ${HCCL_BASE_DIR}/framework/inc/
@@ -81,9 +83,22 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/nslbdp/
     ${HCCL_BASE_DIR}/framework/op_base/src
     ${HCCL_BASE_DIR}/framework/group
+
     ${HCCL_BASE_DIR}/common/health/
     ${HCCL_BASE_DIR}/common/stream/
     ${HCCL_BASE_DIR}/common/launch_device/
+
+    ${HCCL_BASE_DIR}/platform/resource/socket
+    ${HCCL_BASE_DIR}/platform/inc
+    ${HCCL_BASE_DIR}/platform/inc/adapter
+
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
 )
 
 target_include_directories(hcomm PRIVATE
@@ -91,16 +106,10 @@ target_include_directories(hcomm PRIVATE
 )
 
 if(BUILD_OPEN_PROJECT)
-    if(ORION_MODE)
-        target_compile_definitions(hcomm PRIVATE
-            ORION_MODE
-            OPEN_BUILD_PROJECT
-            LOG_CPP)
-    else()
-        target_compile_definitions(hcomm PRIVATE
-            OPEN_BUILD_PROJECT
-            LOG_CPP)
-    endif()
+
+    target_compile_definitions(hcomm PRIVATE
+        OPEN_BUILD_PROJECT
+        LOG_CPP)
 
     target_include_directories(hcomm PRIVATE
         ${HCCL_BASE_DIR}/pub_inc
@@ -112,13 +121,18 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${HCCL_BASE_DIR}/platform/hccp/inc/
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network
 
         ${THIRD_PARTY_NLOHMANN_PATH}
 
         ${HCCL_BASE_DIR}/common/debug/profiling/inc
         ${HCCL_BASE_DIR}/common/debug/profiling/inc/host
         ${HCCL_BASE_DIR}/common/debug/config
+        ${HCCL_BASE_DIR}/orion/interface
+        ${HCCL_BASE_DIR}/orion/framework/topo/new_topo_builder/rank_graph
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -146,6 +160,8 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
         ${THIRD_PARTY_NLOHMANN_PATH}
+
+        ${HCCL_BASE_DIR}/framework/op_base/src
     )
 
     target_link_directories(hcomm PRIVATE
@@ -240,7 +256,23 @@ message(STATUS "framework KERNEL_MODE=${KERNEL_MODE}")
 message(STATUS "framework BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "framework ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
 
-if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
+set(ORION_HEAD_LIST)
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT})
+
+foreach (dir ${sources_list})
+    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/orion") AND (NOT ${dir} MATCHES "src/orion/mdpi"))
+        list(APPEND ORION_HEAD_LIST ${dir})
+    endif()
+endforeach()
+
+FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${HCCL_NEXT_CODE_ROOT})
+foreach (dir ${open_dir_list})
+    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/hccl_next"))
+        list(APPEND ORION_HEAD_LIST ${dir})
+    endif()
+endforeach()
+
+if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     add_library(ccl_kernel  SHARED)
 
     set(CCL_KERNEL_SRC_LIST
@@ -568,21 +600,13 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
-    $<$<CONFIG:Release>:-s>
+    -s
 )
     
-    if(ORION_MODE)
-        target_compile_definitions(ccl_kernel PRIVATE
-            HCCD
-            CCL_KERNEL_AICPU
-            ORION_MODE
-        )
-    else()
-        target_compile_definitions(ccl_kernel PRIVATE
-            HCCD
-            CCL_KERNEL_AICPU
-        )
-    endif()
+    target_compile_definitions(ccl_kernel PRIVATE
+        HCCD
+        CCL_KERNEL_AICPU
+    )
 
     set(CCL_KERNEL_INCLUDE_LIST
         ${HCCL_BASE_DIR}/../include/hccl
@@ -655,6 +679,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
+        
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce
@@ -738,37 +763,32 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE) OR ORION_MODE)
         ${HCCL_BASE_DIR}/../externel_depends/tsch/
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
         ${THIRD_PARTY_NLOHMANN_PATH}
+
+        
+
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network/
+        ${HCCL_BASE_DIR}/platform/hccp/inc/
+        ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
+        ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
+        ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+
     )
 
     target_include_directories(ccl_kernel PRIVATE
         ${CCL_KERNEL_INCLUDE_LIST}
     )
 
-    if(ORION_MODE)
-        FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT}/*)
-
-        foreach (dir ${sources_list})
-            IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "hccl/orion") AND (NOT ${dir} MATCHES "hccl/orion/mdpi"))
-                target_include_directories(ccl_kernel PRIVATE ${dir})
-            endif()
-        endforeach()
-
-        FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${HCCL_NEXT_CODE_ROOT})
-        foreach (dir ${open_dir_list})
-            IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "whole/hccl_next"))
-                target_include_directories(ccl_kernel PRIVATE ${dir})
-            endif()
-        endforeach()
-
-        add_subdirectory(${ORION_REAL_PATH} ${CMAKE_CURRENT_BINARY_DIR}/orion)
-        add_dependencies(hcomm hccl_v2 hccl_aiv_op_910_95)
-        target_link_libraries(hcomm
-            hccl_v2
-        )
-    endif()
+    target_include_directories(ccl_kernel PRIVATE ${ORION_HEAD_LIST})
 
     add_subdirectory(device)
 endif()
+
+target_include_directories(hcomm PRIVATE ${ORION_HEAD_LIST})
+add_subdirectory(${HCCL_BASE_DIR}/orion ${CMAKE_CURRENT_BINARY_DIR}/orion)
+add_dependencies(hcomm hccl_v2 hccl_aiv_op_910_95)
+target_link_libraries(hcomm
+    hccl_v2
+)
 
 if(NOT BUILD_OPEN_PROJECT)
     # orion仓依赖
@@ -876,6 +896,7 @@ add_subdirectory(op_base)
 add_subdirectory(group)
 add_subdirectory(cluster_maintenance)
 add_subdirectory(nslbdp)
+add_subdirectory(next)
 
 if(NOT KERNEL_MODE)
     SET(HCCL_CMAKE_DIR ${HCCL_OPEN_CODE_BASE_DIR}/../cmake/)
@@ -898,10 +919,23 @@ if(NOT KERNEL_MODE)
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
 
-    add_dependencies(hcomm ccl_kernel_json aicpu_custom_json)
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../orion/framework/communicator/hostdpu/libccl_dpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    add_custom_target(dpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
+    )
+    add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
+    target_include_directories(ccl_kernel PRIVATE
+        ${HCCL_BASE_DIR}/platform/hccp/inc/
+        # orion 仓头文件
+        ${HCCL_BASE_DIR}/../../ace/comop/hccl/orion/interface
+        )
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
         target_compile_definitions(ccl_kernel PRIVATE

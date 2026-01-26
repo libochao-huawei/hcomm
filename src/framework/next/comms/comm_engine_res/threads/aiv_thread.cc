@@ -9,7 +9,7 @@
  */
 #include "aiv_thread.h"
 
-namespace hcomm {
+namespace hccl {
 uint32_t AivThread::GetNotifyNum() const {
     return notifyNum_;
 }

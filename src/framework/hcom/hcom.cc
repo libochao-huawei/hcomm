@@ -35,9 +35,7 @@
 #include "topoinfo_ranktableOffline.h"
 #include "mmpa_api.h"
 #include "hccl_tbe_task.h"
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "hcom_private_v2.h"
-#endif
 #include "comm_topo_desc.h"
 
 using namespace std;
@@ -169,9 +167,7 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     CHK_PTR_NULL(rankTableM);
     CHK_PTR_NULL(identify);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomInitByStringV2(rankTableM, identify));
-#endif
 
     if (initConfig != nullptr) {
         DevType devType;
@@ -391,9 +387,7 @@ HcclResult HcomAllGather(const char *tag, void *inputPtr, void *outputPtr, u64 i
     CHK_RET(PrintMemoryAttr(outputPtr));
 
     // HcomAllGatherV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomAllGatherV2(tag, inputPtr, outputPtr, inputCount, dataType, group, stream));
-#endif
 
     CHK_RET(HcomCheckOpParam(tag, inputCount, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
@@ -445,10 +439,9 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
         GetDataTypeEnumStr(dataType).c_str(), recvCounts, rdispls, strGroup.c_str(), streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(sendBuf));
     CHK_RET(PrintMemoryAttr(recvBuf));
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+
     HCCLV2_FUNC_RUN(
         HcomAllGatherVV2(tag, const_cast<void*>(sendBuf), sendCount, const_cast<void*>(recvBuf), const_cast<void*>(recvCounts), const_cast<void*>(rdispls), dataType, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, 0, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -467,10 +460,7 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
 
 HcclResult HcomGetInitStatus(bool *initiated)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetInitStatusV2(*initiated));
-#endif
-
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     *initiated = !(hcomInfo.pComm == nullptr);
 
@@ -514,9 +504,7 @@ HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 c
     CHK_RET(PrintMemoryAttr(outputPtr));
 
     // HcomAllReduceV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomAllReduceV2(tag, inputPtr, outputPtr, count, dataType, op, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -562,9 +550,7 @@ HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dat
     CHK_RET(PrintMemoryAttr(ptr));
 
     // HcomBroadcastV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomBroadcastV2(tag, ptr, count, dataType, root, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_RET(HcomCheckUserRank(hcomInfo.params.totalRanks, root));
@@ -624,9 +610,7 @@ HcclResult HcomReduce(const char *tag, void *inputPtr, void *outputPtr, u64 coun
     CHK_RET(PrintMemoryAttr(outputPtr));
 
     // HcomReduceV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomReduceV2(tag, inputPtr, outputPtr, count, dataType, op, root, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_PRT_RET(hcomInfo.pComm == nullptr, HCCL_ERROR("[Reduce][Result]hcomInfo.pComm is null, "\
@@ -683,9 +667,7 @@ HcclResult HcomReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomReduceScatterV2(tag, inputPtr, outputPtr, count, dataType, op, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -733,10 +715,9 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
         GetReduceOpEnumStr(op).c_str(), strGroup.c_str(), streamId);
     CHK_RET(PrintMemoryAttr(sendBuf));
     CHK_RET(PrintMemoryAttr(recvBuf));
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+
     HCCLV2_FUNC_RUN(
         HcomReduceScatterVV2(tag, sendBuf, const_cast<void*>(sendCounts), const_cast<void*>(sdispls), recvBuf, recvCount, dataType, op, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, 0, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -788,9 +769,7 @@ HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dat
     CHK_RET(PrintMemoryAttr(inputPtr));
 
     // HcomSendV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomSendV2(tag, inputPtr, count, dataType, destRank, srTag, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_RET(HcomCheckUserRank(hcomInfo.params.totalRanks, destRank));
@@ -847,9 +826,7 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
     CHK_RET(PrintMemoryAttr(outputPtr));
 
     // HcomReceiveV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomReceiveV2(tag, outputPtr, count, dataType, srcRank, srTag, group, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_RET(HcomCheckUserRank(hcomInfo.params.totalRanks, srcRank));
@@ -905,10 +882,8 @@ HcclResult HcclCommGraphAllGather(const char *tag, void *inputPtr, void *outputP
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     // HcclCommGraphAllGatherV2
     HCCLV2_FUNC_RUN(HcclCommGraphAllGatherV2(tag, inputPtr, outputPtr, inputCount, dataType, opBaseHcom, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, inputCount, dataType, stream));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -952,10 +927,8 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     // HcomGraphAllReduceV2
     HCCLV2_FUNC_RUN(HcomGraphAllReduceV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType, stream));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1007,10 +980,8 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
      // HcomGraphReduceV2
     HCCLV2_FUNC_RUN(HcomGraphReduceV2(tag, inputPtr, outputPtr, count, dataType, op, root, opBaseHcom, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1056,9 +1027,7 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
 
     CHK_RET(PrintMemoryAttr(ptr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGraphBroadcastV2(tag, ptr, count, dataType, root, opBaseHcom, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1105,9 +1074,7 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGraphReduceScatterV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1153,9 +1120,7 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
 
     CHK_RET(PrintMemoryAttr(inputPtr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGraphSendV2(tag, inputPtr, count, dataType, destRank, srTag, opBaseHcom, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1200,9 +1165,7 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
         srcRank, srTag, opBaseHcom, streamId);
     CHK_RET(PrintMemoryAttr(outputPtr));
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGraphReceiveV2(tag, outputPtr, count, dataType, srcRank, srTag, opBaseHcom, stream));
-#endif
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
@@ -1261,9 +1224,7 @@ HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
     }
     HCCL_INFO("HcclCommGraphGetRankSize:opBaseHcom[%lld]", opBaseHcom);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclCommGraphGetRankSizeV2(opBaseHcom, rankSize));
-#endif
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1284,9 +1245,7 @@ HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
     }
     HCCL_INFO("HcclCommGraphGetRankId:opBaseHcom[%lld]", opBaseHcom);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclCommGraphGetRankIdV2(opBaseHcom, rankId));
-#endif
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1357,9 +1316,7 @@ HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm, 
 
 HcclResult HcomGetDevId(const char *group, s32 *devId)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetDevIdV2(group, devId));
-#endif
     /* 获取rankId */
     std::shared_ptr<hccl::hcclComm> hcclComm;
     if (group != nullptr && HcclGetCommHandle(group, hcclComm) == HCCL_SUCCESS) {
@@ -1402,9 +1359,8 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
         std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
         std::vector<std::string>({ "HcomGetLocalRankSize", "localRankSize", "nullptr", "please check localRankSize" }));
     CHK_PTR_NULL(localRankSize);
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+
     HCCLV2_FUNC_RUN(HcomGetLocalRankSizeV2(group, localRankSize));
-#endif
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
         *localRankSize = 1;
@@ -1463,9 +1419,7 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
 
     // HcomGetRankIdV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetRankIdV2(group, rankId));
-#endif
     std::shared_ptr<hccl::hcclComm>  hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->GetGroupRank(*rankId));
@@ -1483,9 +1437,8 @@ HcclResult HcomGetLocalRankId(const char *group, u32 *localRankId)
         *localRankId = 0;
         return HCCL_SUCCESS;
     }
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+
     HCCLV2_FUNC_RUN(HcomGetLocalRankIdV2(group, localRankId));
-#endif
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_PRT_RET(hcomInfo.pComm == nullptr, HCCL_ERROR("[Get][LocalRankId]hcomInfo.pComm is null, "\
         "please check if the initialize process is called."), HCCL_E_PTR);
@@ -1746,7 +1699,6 @@ HcclResult GetGradientSegment(const std::string &group, const struct model_featu
     return ret;
 }
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, HcclReduceOp op,
     int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
@@ -1762,14 +1714,11 @@ HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u6
         "params:destMaxSize[%zu],count[%zu]", sret, ALG_NAME_MAX_LEN, (tempAlgName.length() + 1)), HCCL_E_PARA);
     return HCCL_SUCCESS;
 }
-#endif
 
 HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, HcclDataType dataType, HcclReduceOp op,
     HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName));
-#endif
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
     std::string tempAlgName;
@@ -1793,10 +1742,8 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, H
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
         char *algName, u32 *numBlocks)
 {
-#if  (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     std::string algNamV2(algName);
     HCCLV2_FUNC_RUN(HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *numBlocks));
-#endif
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -1810,10 +1757,9 @@ HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, vo
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
     void **commContext, u64 *len, u32 aivCoreLimit)
 {
-#if  (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcclGetAlgExecParamV2(tag, group, count, inputPtr, outputPtr, opType, clearEnable, dataType, op,
             *commContext, *len, aivCoreLimit));
-#endif
+
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -1826,9 +1772,7 @@ HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, vo
 HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 dataSize, HcclDataType dataType, u32 aivCoreLimit,
     HcclReduceOp reduceOp, u64 count, HcclCMDType optype)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetWorkspaceSubStreamNumV2(group, streamNum, dataSize, dataType, optype));
-#endif
     std::shared_ptr<hccl::hcclComm> hcclComm{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     hcclComm = hcomInfo.pComm;
@@ -1867,9 +1811,7 @@ HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 d
 HcclResult HcomGetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType, const char *group,
     u64 &memSize)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetWorkspaceMemSizeV2(opType, count, dataType, group, memSize));
-#endif
     u32 rankSize = 0;
     std::shared_ptr<hccl::hcclComm> hcclComm{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
@@ -1904,10 +1846,8 @@ HcclResult HcomGetAlltoAllStagedWorkSpaceMemSize(const char *group, u64 *sendCou
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetAlltoAllStagedWorkSpaceMemSizeV2(group, sendCounts, sdispls, sendType, recvCounts,
                                                             rdispls, recvType, memSize));
-#endif
     CHK_RET(HcomCheckDataType(sendType));
     CHK_RET(HcomCheckDataType(recvType));
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -1922,9 +1862,7 @@ HcclResult HcomGetAlltoAllStagedWorkSpaceMemSize(const char *group, u64 *sendCou
 HcclResult HcomGetAlltoAllvcStagedWorkSpaceMemSize(const char *group,
     std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo, u64 &memSize)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetAlltoAllvcStagedWorkSpaceMemSizeV2(group, memSize));
-#endif
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -1979,9 +1917,7 @@ HcclResult HcomGetCCLBufferAvailableSize(u64 &size)
 
 HcclResult HcomCheckCommValidity(const char* group)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomCheckCommValidityV2(group));
-#endif
     std::shared_ptr<hccl::hcclComm> hcclComm;
     if (HcomGetCommByGroup(group, hcclComm) != HCCL_SUCCESS) {
         return HCCL_E_PTR;
@@ -1995,9 +1931,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
 {
     std::vector<rtStream_t> rtStream(stream, stream + len);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomSetWorkspaceResourceV2(tag, group, rtStream, memPtr, maxSize));
-#endif
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
@@ -2203,10 +2137,8 @@ HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void
         GetDataTypeEnumStr(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
     // HcomAlltoAllV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType,
                                     group, stream, tag));
-#endif
     CHK_RET(HcomCheckOpParam(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataType(recvType));
     std::shared_ptr<hccl::hcclComm> hcclComm;
@@ -2263,9 +2195,7 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
         CHK_RET(PrintMemoryAttr(recvBuf));
     }
     // HcomAlltoAllVCV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, group, stream, tag));
-#endif
     CHK_RET(HcomCheckOpParam(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataType(recvType));
 
@@ -2438,9 +2368,7 @@ HcclResult HcclCommGraphAlltoAllVC(const void *sendBuf, const void *sendCountMat
 
 HcclResult HcomUnloadTask(const char *group, const char *tag)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomUnloadTaskV2(group, tag));
-#endif
     std::shared_ptr<hcclComm> hcclComm;
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[UnloadAllTask]hcclComm is null, "\
@@ -2502,7 +2430,7 @@ HcclResult HcomGetActualRankSizeImpl(const char *group, u32 *rankSize)
 
 HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
 {
- #if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+ #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
     HCCLV2_FUNC_RUN(HcclCommGraphUnloadTaskV2(opBaseHcom, tag));
 #endif
@@ -2517,10 +2445,8 @@ HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
 
 HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr, u32 len)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     std::vector<void *> workspaceAddrVec(globalWorkSpaceAddr, globalWorkSpaceAddr + len);
     HCCLV2_FUNC_RUN(HcomSetGlobalWorkSpaceV2(group, workspaceAddrVec));
-#endif
     std::shared_ptr<hccl::hcclComm> hcclComm;
     std::vector<void *> globalWorkSpaceAdd(globalWorkSpaceAddr, globalWorkSpaceAddr + len);
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
@@ -2530,14 +2456,13 @@ HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr,
 
 HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globalWorkSpaceAddr)
 {
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if(devType == DevType::DEV_TYPE_910_95){
         HCCL_WARNING(" A5 does not support this interface");
         return HCCL_SUCCESS;
     }
-#endif    
+    
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(hcclComm->SetGlobalWorkSpace(globalWorkSpaceAddr));
     return HCCL_SUCCESS;
@@ -2545,14 +2470,12 @@ HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globa
 
 HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfoPtr, s32 *len)
 {
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if(devType == DevType::DEV_TYPE_910_95){
         HCCL_WARNING("A5 does not support get and clear hcom over flow tasks.");
         return HCCL_SUCCESS;
     }
-#endif
 
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
@@ -2576,14 +2499,13 @@ HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **
 
 HcclResult HcclCommGetandClearOverFlowTasks(s64 opBaseHcom, std::vector<hccl::HcclDumpInfo> &hcclDumpInfo)
 {
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if(devType == DevType::DEV_TYPE_910_95){
         HCCL_WARNING("A5 does not support get and clear hcclcom over flow tasks.");
         return HCCL_SUCCESS;
     }
-#endif
+
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(hcclComm->GetandClearOverFlowTasks(hcclDumpInfo));
     return HCCL_SUCCESS;
@@ -2591,9 +2513,7 @@ HcclResult HcclCommGetandClearOverFlowTasks(s64 opBaseHcom, std::vector<hccl::Hc
 
 HcclResult HcomSupportDeterministicOptim(const char *group, bool *isDeterministicOptim)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomSupportDeterministicOptimV2(group, *isDeterministicOptim));
-#endif
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->SupportDeterministicOptim(*isDeterministicOptim));
@@ -2657,9 +2577,7 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
         GetDataTypeEnumStr(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
     // HcomAlltoAllV2
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, group, stream, tag));
-#endif
     CHK_RET(HcomCheckOpParam(tag, sendCount, sendType, stream));
     CHK_RET(HcomCheckOpParam(tag, recvCount, recvType, stream));
     CHK_RET(HcomCheckDataType(sendType));
@@ -2729,9 +2647,7 @@ HcclResult HcomGetTopoDesc(const char *group, HcclTopoDescs *topoDescs, uint32_t
 {
     CHK_PTR_NULL(topoDescs);
     CHK_PTR_NULL(group);
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetTopoDescV2(group, topoDescs, topoSize));
-#endif
 
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
@@ -2750,9 +2666,7 @@ extern "C" {
 #endif // __cplusplus
 HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetL0TopoTypeExV2(group, topoType, flag));
-#endif
 #define IS_SET_DEVICE_MASK 0xfffffffe
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
@@ -2769,9 +2683,7 @@ HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t f
 
 HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t flag)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetRankSizeExV2(group, rankSize, flag));
-#endif
 #define IS_SET_DEVICE_MASK 0xfffffffe
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
@@ -2791,9 +2703,7 @@ HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t fla
 
 HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomGetCommCCLBufferSizeV2());
-#endif
     CHK_PTR_NULL(group);
     std::shared_ptr<hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
@@ -2817,9 +2727,7 @@ bool HcomIsNormalComm(const char *group)
 
 HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable)
 {
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomSetAivClearEnableV2(group, aivClearEnable));
-#endif
     CHK_PTR_NULL(group);
     std::shared_ptr<hcclComm> hcclComm;
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
@@ -2842,9 +2750,8 @@ HcclResult HcomSetAivCoreLimit(const char *group, u32 aivCoreLimit)
 {
     CHK_PRT_RET(aivCoreLimit == 0,
         HCCL_ERROR("[HcomSetAivCoreLimit] aivCoreLimit[%u] invalid", aivCoreLimit), HCCL_E_PARA);
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomSetAivCoreLimitV2(group, aivCoreLimit));
-#endif  
+
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->SetAivCoreLimit(aivCoreLimit));
@@ -2858,14 +2765,14 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit)
     CHK_PRT_RET((comm == 0 || aivCoreLimit == 0),
         HCCL_ERROR("[HcclCommGraphSetAivCoreLimit] comm[%lld] or aivCoreLimit[%u] invalid", comm, aivCoreLimit),
         HCCL_E_PARA);
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
+
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
     if(devType == DevType::DEV_TYPE_910_95){
         HCCL_WARNING("A5 does not support get and clear hcclcom set aiv core limit.");
         return HCCL_SUCCESS;
     }
-#endif
+
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(comm);
     CHK_RET(hcclComm->SetAivCoreLimit(aivCoreLimit));
 
@@ -2873,16 +2780,12 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit)
     return HCCL_SUCCESS;
 }
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum)
 {
     CHK_PTR_NULL(hcomOpParam);
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     HCCLV2_FUNC_RUN(HcomCalcTaskNumV2(hcomOpParam, taskNum));
-#endif
     return HCCL_SUCCESS;
 }
-#endif
 
 __attribute__((constructor)) void CallBackInit()
 {
@@ -3005,15 +2908,11 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
         HCCL_WARNING("call GetModuleInfo error, failed to get multiModuleDiffDeviceNumMode.");
     }
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     if (devType == DevType::DEV_TYPE_910_95) {
         CHK_RET(CalcTaskNumV2(hcomOpParam, taskNum));
     } else {
-#endif
         CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     }
-#endif
 
     hcomResResponse->streamNum = streamNum;
     hcomResResponse->opMemSize = opMemSize;
@@ -3074,14 +2973,10 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, ifAiv, devType, streamNum, group));
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     if (devType == DevType::DEV_TYPE_910_95) {
         HCCL_INFO("A5 offline calculation task num is not supported.");
-#endif
         CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
     }
-#endif
 
     hcomResResponse->streamNum = streamNum;
     hcomResResponse->opMemSize = opMemSize;
@@ -3985,7 +3880,6 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
     return HCCL_SUCCESS;
 }
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum)
 {
     HcclUs startut = TIME_NOW();
@@ -4006,7 +3900,6 @@ HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum)
     HCCL_INFO("GetAndSetTaskNum success, cost time[%lld]us taskNum[%u]", DURATION_US(TIME_NOW() - startut), taskNum);
     return HCCL_SUCCESS;
 }
-#endif
 
 HcclResult HcomGetMemType(const char *group, const char *socVersion, bool isMalloc, u32 *memType, bool *isTsMem,
     bool withoutImplCompile, bool level2Address)

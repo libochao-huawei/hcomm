@@ -1,0 +1,132 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+ #include "profiling_reporter.h"
+ #include "dlprof_function.h"
+ #include "communicator_impl.h"
+namespace Hccl {
+thread_local std::unordered_map<u32, std::shared_ptr<Queue<std::shared_ptr<TaskInfo>>::Iterator>> ProfilingReporter::lastPoses_;
+ProfilingReporter::ProfilingReporter(MirrorTaskManager *mirrorTaskMgr, ProfilingHandler* profilingHandler) 
+{
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct start.");
+    if(mirrorTaskMgr == nullptr || profilingHandler == nullptr) {
+        THROW<InternalException>("[ProfilingReporter] mirrorTaskMgr or profilingHandler is nullptr.");
+    }
+    profilingHandler_ = profilingHandler;
+    mirrorTaskMgr_ = mirrorTaskMgr;
+    mirrorTaskMgr_->RegFullyCallBack([this]() { ReportCallBackAllTasks(); });
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter Construct end.");
+    Init();
+}
+
+ProfilingReporter::~ProfilingReporter()
+{
+}
+
+void ProfilingReporter::Init() const
+{
+}
+
+void ProfilingReporter::ReportOp(uint64_t beginTime, bool cachedReq, bool opbased) const
+{
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter reportOp start.");
+    std::shared_ptr<DfxOpInfo> opInfo = mirrorTaskMgr_->GetCurrDfxOpInfo();
+    if (opInfo == nullptr) {
+        THROW<InternalException>("[ProfilingReporter]ProfilingReporter reportOp failed, opInfo is nullptr.");
+    }
+    uint64_t endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+    OpType   opType    = opInfo->op_.opType;
+    CommunicatorImpl *commImp = static_cast<CommunicatorImpl *>(opInfo->comm_);
+    CHECK_NULLPTR(commImp, "[ProfilingReporter::ReportOp] commImp is nullptr!");
+    bool isAiCpu = commImp->GetOpAiCpuTSFeatureFlag();
+    // 上报op信息
+    opInfo->endTime_ = endTime;
+    profilingHandler_->ReportHcclOp(*opInfo, cachedReq);
+    
+    // 单算子模式涉及HOST API信息上报
+    if (opbased) {
+        profilingHandler_->ReportHostApi(opType, beginTime, endTime, cachedReq, isAiCpu);
+    }
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter reportOp end.");
+}
+
+void ProfilingReporter::ReportCallBackAllTasks(bool cachedReq)
+{
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportCallBackAllTasks start.");
+    ReportAllTasks(cachedReq);
+}
+
+void ProfilingReporter::ReportAllTasks(bool cachedReq)
+{
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks start.");
+    std::lock_guard<std::mutex> lock(profMutex);
+    for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
+        u32  streamId     = it->first;
+        Queue<std::shared_ptr<TaskInfo>> *currQueue = it->second;
+        if (currQueue == nullptr || currQueue->Begin() == nullptr || (*(*(currQueue->Begin()))) == nullptr 
+            || currQueue->Tail() == nullptr) {
+            HCCL_WARNING("[ProfilingReporterLite][ReportAllTasks] currQueue is nullptr, continue to next task.");
+            continue;
+        }
+        if (lastPoses_.find(streamId) == lastPoses_.end()&& currQueue->Begin() != nullptr) {
+            TaskInfo task = (*(*(*currQueue->Begin())));
+            bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
+                                                 task.taskParam_.endTime, isMainStream, cachedReq, true);
+            profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
+            lastPoses_[streamId] = currQueue->Begin();
+        }
+        auto endPos = currQueue->Tail();
+        auto iter = lastPoses_[streamId];
+        ++(*(iter));
+        for (; (*(iter)) != (*(currQueue->End())); ++(*(iter))) {//从iter下一个开始上报
+            TaskInfo task = (*(*(*iter)));
+            bool isMainStream = (it->first == task.dfxOpInfo_->mainStreamId_) ? true : false;
+            profilingHandler_->ReportHcclTaskApi(task.taskParam_.taskType, task.taskParam_.beginTime,
+                                                 task.taskParam_.endTime, isMainStream, cachedReq, true);
+            profilingHandler_->ReportHcclTaskDetails(task, cachedReq);
+        }
+        lastPoses_[streamId] = endPos;
+    }
+
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter ReportAllTasks end.");
+}
+
+/* 中途打开profiling开关 */
+void ProfilingReporter::UpdateProfStat(void)
+{
+    if (enableHcclL1_ == true) {
+        return;
+    }
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter UpdateProfStat start.");
+    // 读取L1开关状态，更新reporter中的开关；
+    bool newEnableHcclL1 = profilingHandler_->GetHcclL1State();
+    if (mirrorTaskMgr_ == nullptr) {
+        THROW<InternalException>("[ProfilingReporter]UpdateProfStat failed, mirrorTaskMgr_ is nullptr.");
+    }
+    if (enableHcclL1_ != newEnableHcclL1) {
+        enableHcclL1_ = newEnableHcclL1;
+        for (auto it = mirrorTaskMgr_->Begin(); it != mirrorTaskMgr_->End(); ++it) {
+            u32 streamId = it->first;
+            if (it->second == nullptr) {
+                continue;
+            }
+            lastPoses_[streamId] = it->second->Tail();
+        }
+    }
+    HCCL_INFO("[ProfilingReporter]ProfilingReporter UpdateProfStat end.");
+}
+
+void ProfilingReporter::CallReportMc2CommInfo(const Stream &kfcStream, Stream &stream, const std::vector<Stream *> &aicpuStreams,
+                                   const std::string &id, RankId myRank, u32 rankSize, RankId rankInParentComm) const
+{
+    profilingHandler_->ReportHcclMC2CommInfo(kfcStream, stream, aicpuStreams, id, myRank, rankSize, rankInParentComm);
+}
+ 
+} // namespace Hccl

@@ -69,6 +69,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/op_base/src/
     ${HCCL_CODE_ROOT}/src/framework/group
     ${HCCL_CODE_ROOT}/src/framework/nslbdp/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt
 
     # src/platform 目录下头文件
     ${HCCL_CODE_ROOT}/src/platform/
@@ -169,8 +170,44 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/common
     ${HCCL_CODE_ROOT}/src/framework/device/utils
     ${HCCL_CODE_ROOT}/src/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+
+    # framework/next
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/common/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+
+    # orion include
+    ${HCCL_CODE_ROOT}/src/orion/common/
+    ${HCCL_CODE_ROOT}/src/orion/common/utils/
+    ${HCCL_CODE_ROOT}/src/orion/common/exception/
+    ${HCCL_CODE_ROOT}/src/orion/common/types/
+    ${HCCL_CODE_ROOT}/src/orion/framework/resource_manager/socket/
+    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/
+    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/external_system/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/aicpu/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/notify/aicpu/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/stream/aicpu/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/aicpu/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/connection/aicpu/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/pub_inc/
+    ${HCCL_CODE_ROOT}/src/orion/unified_platform/common/
 
     # hccl_next include
+    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/
+    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/common/
+    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_graph/
+    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_table_info/
+    ${HCCL_CODE_ROOT}/src/hccl_next/service/collective/
+
     # tbe头文件
     ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
     ${HCCL_CODE_ROOT}/src/platform/legacy/common/
@@ -181,6 +218,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/engines/hcclengine/inc
 
     ${HCCL_CODE_ROOT}/test/ut/stub
+    ${HCCL_CODE_ROOT}/test/ut/stub/orion/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/common/
@@ -218,3 +256,5 @@ add_subdirectory(platform/ping_mesh)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/op_base_api)
 add_subdirectory(framework/communicator/impl)
+add_subdirectory(framework/resource)
+# add_subdirectory(framework/dpu_npu_sync)

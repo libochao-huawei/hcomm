@@ -10,7 +10,7 @@
 
 #ifndef HCCL_ONE_SIDED_SERVICE_ADAPT_V2_H
 #define HCCL_ONE_SIDED_SERVICE_ADAPT_V2_H
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -31,5 +31,5 @@ HcclResult __attribute__((weak)) HcclBatchGetV2(HcclComm comm, u32 remoteRank, H
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif
+
 #endif  // HCCL_ONE_SIDED_SERVICE_ADAPT_V2_H

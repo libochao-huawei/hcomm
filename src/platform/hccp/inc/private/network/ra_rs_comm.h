@@ -129,6 +129,7 @@ enum OpType {
     RA_RS_GET_TP_ATTR = 106,
     RA_RS_SET_TP_ATTR = 107,
     RA_RS_CTX_GET_CR_ERR_INFO_LIST = 108,
+    RA_RS_CTX_GET_ASYNC_EVENTS = 109,
     RA_RS_EXTER_OP_MAX_NUM,
 
     // 上面opcode是对部opcode,下面是内部opcode

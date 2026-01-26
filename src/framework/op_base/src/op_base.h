@@ -21,9 +21,8 @@
 // ltm指定config路径
 #include "common/src/config.h"
 #include "../common/src/topo/topoinfo_detect.h"
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #include "op_base_v2.h"
-#endif
+
 using HcclOpInfoCtx = struct HcclInfoTag {
     HcclCommPtr pComm;
     hccl::HcclCommParams params;

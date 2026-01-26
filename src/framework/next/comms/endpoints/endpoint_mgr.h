@@ -7,6 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+
 #ifndef ENDPOINT_MGR_H
 #define ENDPOINT_MGR_H
 
@@ -15,35 +16,38 @@
 #include <vector>
 #include <mutex>
 #include "endpoint.h"
+#include "../endpoint_pairs/endpoint_pair.h"
 
 namespace hcomm {
 /**
- * @note 职责：EndPoint管理器，支持不同类型的EndPoint的创建和销毁管理。
+ * @note 职责：Endpoint管理器，支持不同类型的Endpoint的创建和销毁管理。
  */
-class EndPointMgr {
+class EndpointMgr {
 public:
-    EndPointMgr();
-    ~EndPointMgr();
-
-    // 创建端点
-    HcclResult CreateEndPoint(const EndPointInfo &endpoint, EndPointHandle* handle);
-
-    // 销毁端点
-    HcclResult DestroyEndPoint(EndPointHandle handle);
+    EndpointMgr() {};
+    ~EndpointMgr();
 
     // 获取端点
-    std::shared_ptr<EndPoint> GetEndPoint(EndPointHandle handle);
+    HcclResult Get(EndpointDesc epDesc, EndpointHandle &handle);
 
     // 注册内存到端点
-    HcclResult RegisterMemory(EndPointHandle handle, const std::vector<MemHandle>& memHandles);
+    HcclResult RegisterMemory(EndpointHandle epHandle, const char* memTag, const std::vector<HcclMem>& memVec,
+        std::vector<MemHandle>& memHandleVec);
 
     // 获取所有注册的内存信息
-    HcclResult GetAllRegisteredMemory(std::vector<MemRegion>& memRegions);
+    HcclResult GetAllRegisteredMemory(EndpointHandle epHandle, std::vector<MemHandle>& memHandleVec);
 
 private:
-    std::unordered_map<EndPointHandle, std::shared_ptr<EndPoint>> endPoints_{};
+    HcclResult AddMemHandle(EndpointHandle endpointHandle, const std::vector<MemHandle>& memHandleVec);
+    bool IsMemExist(EndpointHandle epHandle);
+    bool IsDescExist(EndpointDesc epDesc);
+
+private:
+    std::unordered_map<EndpointDesc, EndpointHandle> endpointMap_{};
+    std::unordered_map<EndpointHandle, std::vector<MemHandle>> endpointMemMap_{};
     std::mutex mutex_{};
 };
-}
+
+} // namespace hcomm
 
 #endif // ENDPOINT_MGR_H

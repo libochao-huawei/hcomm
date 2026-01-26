@@ -63,7 +63,7 @@
 #include "hccl_primitive_remote.h"
 #include "hccl_dispatcher_ctx.h"
 #include "dispatcher_ctx.h"
-#include "hccl_thread.h"
+#include "aicpu_ts_thread.h"
 #include "transport_direct_npu_pub.h"
 
 using namespace std;
@@ -1915,7 +1915,7 @@ TEST_F(MPI_Pcie_Test, st_data_plane_interface_p2p)
     ret = link->Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     MPI_Barrier(MPI_COMM_WORLD);//mpi通信域所有进程同步
-    HcclThread mianThread(StreamType::STREAM_TYPE_ONLINE, 2, NotifyLoadType::HOST_NOTIFY);
+    AicpuTsThread mianThread(StreamType::STREAM_TYPE_ONLINE, 2, NotifyLoadType::HOST_NOTIFY);
     ret = mianThread.Init();
     EXPECT_EQ(ret, HCCL_SUCCESS);
     Stream *stream = mianThread.GetStream();

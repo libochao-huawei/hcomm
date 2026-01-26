@@ -31,6 +31,7 @@ extern "C" {
 typedef enum {
     RANK_GRAPH_RESERVED = -1,   ///< 保留的rank图类型
     RANK_GRAPH_910_93 = 0,      ///< 910_93 rank图类型
+    RANK_GRAPH_910_95 = 1,      ///< 910_95 rank图类型
 } GraphType;
 
 /**
@@ -472,15 +473,6 @@ typedef enum {
     HCCL_MEM_TYPE_HOST,   ///< 主机侧内存
     HCCL_MEM_TYPE_NUM     ///< 内存类型数量
 } HcclMemType;
-
-/**
- * @brief 内存段元数据描述结构体
- */
-typedef struct {
-    HcclMemType type; ///< 内存物理位置类型，参见HcclMemType
-    void *addr;       ///< 内存地址
-    uint64_t size;    ///< 内存区域字节数
-} HcclMem;
 
 /// 根节点信息长度
 const uint32_t HCCL_ROOT_INFO_BYTES = 4108;
@@ -1901,10 +1893,6 @@ typedef struct {
     uint64_t len;
 } HcommBuf;
 
-
-/* Socket通信句柄（不透明指针） */
-typedef void *HcommSocket;
-
 const uint32_t HCCL_SOCK_CONN_TAG_MAX_SIZE = 192; ///< 握手标识最大长度（含终止符）
 
 /**
@@ -1993,27 +1981,6 @@ extern HcclResult HcommMemGrant(HcommBuf *localBuf, const HcommMemGrantInfo *rem
  */
 extern HcclResult HcommMemRemap(const EndPointHandle endPointHandle, const HcclMem *memArray, uint64_t arraySize);
 /** @} */  // 内存注册与导入管理
-
-/**
- * @name 通信通道管理
- * @{
- */
-
-
-/**
- * @brief 通道描述参数
- * @warning  创建channel的参数需要分析； HccsAttr的定义需要分析（HCCS & UB MEM），或者改名？
- * 可能还要增加CntNotify，其他协议对应的Attr？
- */
-typedef struct {
-    EndPoint remoteEndPoint; ///< 远端端侧描述
-    uint32_t notifyNum;  ///< channel上使用的通知消息数量
-    union {
-        HccsAttr hccsAttr;
-        RoCEAttr roceAttr;
-        UbAttr ubAttr;
-    };
-} HcommChannelDesc;
 
 /**
  * @brief 创建通信通道

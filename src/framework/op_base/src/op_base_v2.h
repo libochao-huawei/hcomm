@@ -14,9 +14,7 @@
 extern "C" {
 #endif  // __cplusplus
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 HcclResult HcclCommDestroyV2(HcclComm comm);
-#endif
 
 HcclResult __attribute__((weak)) HcclCommInitClusterInfoV2(const char *clusterInfo, uint32_t rank, HcclComm *comm);
 
@@ -112,7 +110,13 @@ HcclResult __attribute__((weak)) HcclBarrierV2(HcclComm comm, aclrtStream stream
 
 HcclResult __attribute__((weak)) HcclGetHeterogModeV2(HcclComm comm, HcclHeterogMode *mode);
 
-#if (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+HcclResult __attribute__((weak)) HcclGetRankGraphV2(HcclComm *comm, void **rankGraph);
+
+HcclResult __attribute__((weak)) HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType);
+
+
+HcclResult __attribute__((weak)) HcommFlushV2();
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
 HcclResult __attribute__((weak)) HcclGetNetLayersV2(HcclComm comm, uint32_t **netLayers, uint32_t *netLayerNum);
 
 HcclResult __attribute__((weak)) HcclGetInstSizeByNetLayerV2(HcclComm comm, uint32_t netLayer, uint32_t *rankNum);
@@ -164,6 +168,10 @@ HcclResult __attribute__((weak)) HcclGetHcclBufferV2(HcclComm comm, void **addr,
 HcclResult __attribute__((weak)) HcclGetRemoteIpcHcclBufV2(HcclComm comm, uint64_t remoteRank, void **addr, uint64_t *size);
 
 HcclResult __attribute__((weak)) HcclGetAicpuOpStreamAndNotifyV2(HcclComm comm, rtStream_t *opstream, u8 aicpuNotifyNum, void **aicpuNotify);
+
+typedef int32_t(Callback)(uint64_t, int32_t);
+HcclResult __attribute__((weak)) HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
+HcclResult __attribute__((weak)) HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
 #endif
 #ifdef __cplusplus
 }

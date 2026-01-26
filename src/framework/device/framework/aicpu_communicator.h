@@ -39,10 +39,11 @@
 #include "hccl_api.h"
 #include "channel_param.h"
 #include "aicpu_launch_manager.h"
-#include "hccl_thread.h"
+#include "aicpu_ts_thread.h"
 #include "new/hccl_dispatcher_ctx.h"
 #include "aicpu_init_param.h"
 #include "task_exception.h"
+#include "ub_transport_lite_impl.h"
 
 namespace hccl {
 
@@ -173,6 +174,9 @@ public:
     HcclResult InitRoceChannel(HcclIndOpChannelRemoteResV3 *commParam, uint32_t channelIndex);
     HcclResult AllocChannelResource(HcclIndOpChannelRemoteResV3 *commParam);
 
+    HcclResult InitUrmaChannel(HcclChannelUrmaRes *commParam);
+    HcclResult AllocChannelResourceV2(HcclChannelUrmaRes *commParam);
+
     HcclResult InitAicpuIndOp(CommAicpuParam *commAicpuParam);
     bool GetIsInitIndOp() { return indOpCommInitialized_; };
     HcclResult InitThreads(ThreadMgrAicpuParam *param);
@@ -292,6 +296,7 @@ private:
     HcclResult GetAlltoAllTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
     HcclResult GetAlltoAllVTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
     HcclResult GetAlltoAllVCTotalCount(OpParam &param, u64 &sendCount, u64 &recvCount);
+    HcclResult ParsePackData(std::vector<char> &data, ChannelHandle &handle);
 
     // taskException
     void PollCqeException(hccl::Stream &stream, bool isReadClear, rtLogicCqReport_t &cqeException, CqeStatus &cqeStatus);
@@ -556,9 +561,11 @@ private:
     DispatcherCtxPtr dispatcherCtx_{nullptr};
     std::unordered_map<std::string, ChannelHandle> channelHandleMap_;
     std::unordered_map<ChannelHandle, std::shared_ptr<Transport>> linkMap_;
-    std::vector<std::shared_ptr<HcclThread>> threads_;
+    std::vector<std::shared_ptr<Thread>> threads_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
     TaskException taskExecption_;
+    // A5 独立算子
+    std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__

@@ -35,6 +35,7 @@
 #include "dlprof_function.h"
 #include "profiling_command_handle.h"
 #include "dispatcher_ctx.h"
+#include "aicpu_res_package_helper.h"
 
 namespace hccl {
 constexpr u32 IPC_SIGNAL_MODULUS = 2;
@@ -5184,7 +5185,7 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
             identifier_.c_str());
         return HCCL_SUCCESS;
     }
-
+    CHK_PTR_NULL(commAicpuParam);
     topoInfo_.deviceLogicId = commAicpuParam->deviceLogicId;
     topoInfo_.devicePhyId = commAicpuParam->devicePhyId;
     topoInfo_.deviceType = static_cast<DevType>(commAicpuParam->deviceType);
@@ -5200,12 +5201,19 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     CHK_RET(hrtSetlocalDevice(topoInfo_.deviceLogicId));
     CHK_RET(hrtSetlocalDeviceType(topoInfo_.deviceType));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(topoInfo_.devicePhyId, &devId_));
+    CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
+
+    if (topoInfo_.deviceType == DevType::DEV_TYPE_910_95) {
+        HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOpV2 start");
+        indOpCommInitialized_ = true;
+        return HCCL_SUCCESS;
+    } 
+
+    HCCL_INFO("[HcclCommAicpu][InitAicpuIndOp] InitAicpuIndOp start");
     if (!FindDispatcherByCommId(&dispatcherCtx_, identifier_.c_str())) {
         CHK_RET(CreateDispatcherCtx(&dispatcherCtx_, devId_, identifier_.c_str()));
     }
     CHK_PTR_NULL(dispatcherCtx_);
-
-    CHK_RET(taskExecption_.Init(devId_, localUserRank_, identifier_));
 
     if (commAicpuParam->kfcControlTransferH2DParams.buffLen != 0 && kfcControlTransferH2D_ == nullptr) {
         EXECEPTION_CATCH((kfcControlTransferH2D_ = std::make_shared<hccl::HDCommunicate>()), return HCCL_E_PTR);
@@ -5225,15 +5233,16 @@ HcclResult HcclCommAicpu::InitAicpuIndOp(CommAicpuParam *commAicpuParam)
     AicpuHcclProcess::CallMC2MaintenanceThread(ctx);
     
     HCCL_RUN_INFO("%s group[%s] success!, deviceLogicId[%u], devicePhyId[%u], deviceType[%u], notifySize[%u], "
-        "dispatcherCtx[%p]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
-        topoInfo_.deviceType, notifySize_, dispatcherCtx_);
+    "dispatcherCtx[%p]", __func__, identifier_.c_str(), topoInfo_.deviceLogicId, topoInfo_.devicePhyId,
+    topoInfo_.deviceType, notifySize_, dispatcherCtx_);
+    
     return HCCL_SUCCESS;
 }
 
 HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
 {
-    u32 threadNum = param->threadNum;
-    std::vector<std::shared_ptr<HcclThread>> outThreads;
+   u32 threadNum = param->threadNum;
+    std::vector<std::shared_ptr<Thread>> outThreads;
     outThreads.reserve(threadNum);
     std::string hcomId(param->hcomId);
     for (u32 i = 0; i < threadNum; ++i) {
@@ -5247,8 +5256,8 @@ HcclResult HcclCommAicpu::InitThreads(ThreadMgrAicpuParam *param)
             }
             HCCL_INFO("[HcclCommAicpu][%s] %s", __func__, oss.str().c_str());
         }
-        std::shared_ptr<HcclThread> thread;
-        EXECEPTION_CATCH((thread = std::make_shared<HcclThread>(thdUniqueId)), return HCCL_E_PTR);
+        std::shared_ptr<AicpuTsThread> thread;
+        EXECEPTION_CATCH((thread = std::make_shared<AicpuTsThread>(thdUniqueId)), return HCCL_E_PTR);
         HcclResult ret = thread->Init();
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[HcclCommAicpu][%s] comm identifier[%s], init threads num[%u] failed at index %u",
@@ -5297,6 +5306,69 @@ HcclResult HcclCommAicpu::AllocChannelResource(HcclIndOpChannelRemoteResV3 *comm
             CHK_RET(InitP2pChannel(commParam, idx));
         }
     }
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::AllocChannelResourceV2(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[HcclCommAicpu][%s] deviceLogicId[%d], devicePhyId[%u], deviceType[%d], commParam->channelList[%p], "
+        "commParam->listNum[%u], commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
+        __func__, topoInfo_.deviceLogicId, topoInfo_.devicePhyId, topoInfo_.deviceType, commParam->channelList,
+        commParam->listNum, commParam->uniqueIdAddr, commParam->uniqueIdSize);
+    CHK_PRT(InitUrmaChannel(commParam));
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::InitUrmaChannel(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[HcclCommAicpu][%s] commParam->uniqueIdAddr[%p], commParam->uniqueIdSize[%u]",
+        __func__, commParam->uniqueIdAddr, commParam->uniqueIdSize);
+
+    for (u32 index = 0; index < commParam->listNum; index++) {
+        std::vector<char> data(commParam->singleUniqueIdSize);
+
+        // 计算地址块的偏移
+        u8* currentSrcAddr = reinterpret_cast<u8*>(commParam->uniqueIdAddr) + index * commParam->singleUniqueIdSize;
+        CHK_SAFETY_FUNC_RET(memcpy_s(data.data(), data.size(), currentSrcAddr, commParam->singleUniqueIdSize));
+
+        // 反序列化得到device侧transport对象
+        Hccl::AicpuResPackageHelper helper;
+        auto dataVec = helper.ParsePackedData(data);
+
+        Hccl::AicpuResMgrType resType = Hccl::AicpuResMgrType::STREAM; // todo 待修改
+        if (static_cast<u32>(resType) >= dataVec.size()) {
+            HCCL_ERROR("[HcclCommAicpu][%s] fail, resType[%d], dataVec size[%u]", __func__, resType, dataVec.size());
+            return HCCL_E_PARA;
+        }
+        ChannelHandle channelHandle;
+        CHK_RET(ParsePackData(dataVec[resType].data, channelHandle));
+
+        // 恢复出的channelHandle回填到commParam中
+        ChannelHandle* channelList = reinterpret_cast<ChannelHandle*>(commParam->channelList);
+        channelList[index] = channelHandle;
+        HCCL_INFO("[HcclCommAicpu][%s] index[%u], currentSrcAddr[%p], singleUniqueIdSize[%u], channelHandle[0x%llx]",
+            __func__, index, currentSrcAddr, commParam->singleUniqueIdSize, channelHandle);
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclCommAicpu::ParsePackData(std::vector<char> &data, ChannelHandle &handle)
+{
+    HCCL_DEBUG("[HcclCommAicpu][%s] data: ptr[%p], size[%u]", __func__, data.data(), data.size());
+    Hccl::BinaryStream binaryStream(data);
+
+    std::vector<char> transpUniqueId;
+    binaryStream >> transpUniqueId;
+
+    std::unique_ptr<Hccl::UbTransportLiteImpl> ubTransportLiteImpl;
+    EXECEPTION_CATCH((ubTransportLiteImpl = std::make_unique<Hccl::UbTransportLiteImpl>(transpUniqueId)),
+        return HCCL_E_PTR);
+    CHK_SMART_PTR_NULL(ubTransportLiteImpl);
+
+    handle = reinterpret_cast<uint64_t>(ubTransportLiteImpl.get());
+    ubTransportMap_.insert({handle, std::move(ubTransportLiteImpl)});
+
     return HCCL_SUCCESS;
 }
 

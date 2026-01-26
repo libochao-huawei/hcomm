@@ -55,6 +55,7 @@
 #include "independent_op.h"
 #include "comm_config_pub.h"
 #include "new/hccl_dispatcher_ctx.h"
+#include "rank_graph.h"
 
 namespace hccl {
 using ServRankInfo_t = std::map<std::string, std::vector<RankInfo_t> >;
@@ -418,7 +419,7 @@ public:
     ErrorMessageReport GetAicpuTaskException();
 
     // 独立算子专用
-    HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, 
+    HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport,
         TransportIOMem& transMem, bool isAicpuModeEn);
     aclrtBinHandle GetBinHandle();
     HcclResult GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
@@ -451,7 +452,9 @@ public:
     HcclResult GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo *topoType);
     HcclResult GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **rankList, uint32_t *rankNum);
     HcclResult GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t **instSizeList, uint32_t *listSize);
+
     HcclResult GetRankGraph(GraphType type, void **graph, uint32_t *len);
+
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
     HcclResult GetHeterogMode(HcclHeterogMode *mode);   
@@ -1089,7 +1092,9 @@ private:
     void *cclBuf_[AICPU_MAX_RANK_NUM]{};
     std::map<u32, TransportType> remoteTransportMap_;
     uint32_t netLayer_[COMM_LAYER_NUM_MAX]{};
-    RankGraph rankGraph_;    
+#ifndef CCL_KERNEL_AICPU
+    RankGraphV1 rankGraph_;
+#endif
 
     // for group
     bool isGroupMode_ {false};

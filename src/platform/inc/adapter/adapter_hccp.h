@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_INC_ADAPTER_HCCP_H
-#define HCCL_INC_ADAPTER_HCCP_H
+#ifndef HCOMM_HCCL_INC_ADAPTER_HCCP_H
+#define HCOMM_HCCL_INC_ADAPTER_HCCP_H
 
 #include <functional>
 

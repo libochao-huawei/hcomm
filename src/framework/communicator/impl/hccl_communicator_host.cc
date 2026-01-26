@@ -43,7 +43,7 @@
 #include "launch_device.h"
 #include "launch_aicpu.h"
 #include "hccl_communicator.h"
-#include "hccl_thread.h"
+#include "thread.h"
 #include "launch_aicpu.h"
 #include "order_launch/order_launch.h"
 #include "comm_configer.h"

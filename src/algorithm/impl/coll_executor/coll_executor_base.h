@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef COLL_EXECUTOR_BASE_H
-#define COLL_EXECUTOR_BASE_H
+#ifndef HCCL_COLL_EXECUTOR_BASE_H
+#define HCCL_COLL_EXECUTOR_BASE_H
 
 #include "hccl_impl.h"
 #include "topo_matcher.h"

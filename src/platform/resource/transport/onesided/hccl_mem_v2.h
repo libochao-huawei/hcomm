@@ -15,7 +15,6 @@
 #include "hccl_mem_defs.h"
 #include <stdint.h>
 
-#if defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -29,5 +28,5 @@ HcclResult __attribute__((weak)) HcclMemCloseV2(HcclBuf *buf);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
-#endif  // OPEN_BUILD_PROJECT 
+
 #endif  // HCCL_MEM_V2_H 

@@ -1493,5 +1493,11 @@ HcclResult hcclComm::GetKFCWorkSpace(void **addr, uint64_t *size)
     return HCCL_SUCCESS;
 }
 
-
+bool hcclComm::IsCommunicatorV2()
+{
+    if (devType_ == DevType::DEV_TYPE_910_95) {
+        return true;
+    }
+    return false;
+}
 }  // namespace hccl
