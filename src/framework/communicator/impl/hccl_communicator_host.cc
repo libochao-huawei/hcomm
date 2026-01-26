@@ -8399,4 +8399,9 @@ namespace hccl
         releaseChannel_ = releaseChannel;
         return;
     }
+
+    CCLBufferManager& HcclCommunicator::GetCCLbufferManager()
+    {
+        return cclBufferManager_;
+    }
 }
