@@ -16,7 +16,7 @@
 #include "llt_hccl_stub_pub.h"
 GTEST_API_ int main(int argc, char **argv) {
     printf("Running hccl_api_single_thread_test\n");
-    log_level_set_stub(1);
+    // log_level_set_stub(1);
     setTargetPort(27743, 31123);
     testing::InitGoogleTest(&argc, argv);
     setenv("HCCL_DEBUG_CONFIG", "alg", 1);

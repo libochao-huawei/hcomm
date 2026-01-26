@@ -1947,32 +1947,6 @@ aclError aclrtFreePhysical(aclrtDrvMemHandle handle)
     return ACL_SUCCESS;
 }
 
-aclError aclrtMallocPhysical(aclrtDrvMemHandle *handle, size_t size, const aclrtPhysicalMemProp *prop, uint64_t flags)
-{
-    (void)handle;
-    (void)size;
-    (void)prop;
-    (void)flags;
-    return ACL_SUCCESS;
-}
-
-aclError aclrtMemGetAllocationGranularity(aclrtPhysicalMemProp *prop, aclrtMemGranularityOptions option, size_t *granularity)
-{
-    (void)prop;
-    (void)option;
-    if(granularity != nullptr) {
-        *granularity = 2097152;
-    }
-    return ACL_SUCCESS;
-}
-
-aclError aclrtMemRetainAllocationHandle(void *virPtr, aclrtDrvMemHandle *handle)
-{
-    (void)virPtr;
-    (void)handle;
-    return ACL_SUCCESS;
-}
-
 aclError aclrtMapMem(void *virPtr, size_t size, size_t offset, aclrtDrvMemHandle handle, uint64_t flags)
 {
     (void)virPtr;

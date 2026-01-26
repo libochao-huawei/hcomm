@@ -24,6 +24,8 @@
 using namespace std;
 using namespace hccl;
 
+constexpr size_t TWO_M = 2097152;
+
 class SymmetricMemoryTest : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -462,7 +464,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_Normal_Expect_ReturnHCCL_SUCCESS)
         .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
     
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
@@ -473,7 +475,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_VaAllocator_Is_Nullptr_Expect_ReturnHCC
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     symmetricMemory.vaAllocator_ = nullptr;
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_PTR);
@@ -481,7 +483,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_VaAllocator_Is_Nullptr_Expect_ReturnHCC
 
 TEST_F(SymmetricMemoryTest, ut_Init_When_AllGatherManager_Is_Nullptr_Expect_ReturnHCCL_E_PTR)
 {
-    SymmetricMemory symmetricMemory(0, 2, 2097152, nullptr);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, nullptr);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_PTR);
 }
@@ -492,7 +494,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_SingleRankCommunicator_Expect_ReturnHCC
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 1, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 1, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
@@ -506,7 +508,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_GetAllocationGranularityFails_Expect_Re
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
@@ -520,7 +522,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_GranularityZero_Expect_ReturnHCCL_E_INT
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
@@ -545,7 +547,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_ReserveMemAddressFails_Expect_ReturnHCC
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
@@ -560,7 +562,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_VaAllocatorInitFails_Expect_ReturnHCCL_
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
@@ -575,7 +577,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_AllGatherManagerInitFails_Expect_Return
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
@@ -590,7 +592,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_GetPidFails_Expect_ReturnHCCL_E_DRV)
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_DRV);
 }
@@ -605,7 +607,7 @@ TEST_F(SymmetricMemoryTest, ut_Init_When_AllGatherFails_Expect_ReturnHCCL_E_INTE
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     HcclResult ret = symmetricMemory.Init(); // 1MB
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
@@ -626,7 +628,7 @@ TEST_F(SymmetricMemoryTest, ut_AllocSymmetricMem_When_Normal_Expect_ReturnNonNul
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     void* devWin = symmetricMemory.AllocSymmetricMem(1048576); // 1MB
     EXPECT_NE(devWin, nullptr);
 }
@@ -641,7 +643,7 @@ TEST_F(SymmetricMemoryTest, ut_AllocSymmetricMem_When_HcclMemAllocFails_Expect_R
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     void* devWin = symmetricMemory.AllocSymmetricMem(1048576); // 1MB
     EXPECT_EQ(devWin, nullptr);
 }
@@ -660,7 +662,7 @@ TEST_F(SymmetricMemoryTest, ut_AllocSymmetricMem_When_RegisterSymmetricMemFails_
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     void* devWin = symmetricMemory.AllocSymmetricMem(1048576); // 1MB
     EXPECT_EQ(devWin, nullptr);
 }
@@ -675,7 +677,7 @@ TEST_F(SymmetricMemoryTest, ut_AddSymmetricWindow_When_Normal_Expect_ReturnHCCL_
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     std::shared_ptr<SymmetricWindow> pWin(new (std::nothrow) SymmetricWindow());
     HcclResult ret = symmetricMemory.AddSymmetricWindow(pWin);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -691,7 +693,7 @@ TEST_F(SymmetricMemoryTest, ut_DeleteSymmetricWindow_When_Normal_Expect_ReturnHC
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     std::shared_ptr<SymmetricWindow> pWin(new (std::nothrow) SymmetricWindow());
     HcclResult ret = symmetricMemory.AddSymmetricWindow(pWin);
     ret = symmetricMemory.DeleteSymmetricWindow(pWin);
@@ -726,7 +728,7 @@ TEST_F(SymmetricMemoryTest, ut_FreeSymmetricMem_When_Normal_Expect_ReturnNonNull
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     void* devWin = symmetricMemory.AllocSymmetricMem(1048576); // 1MB
     HcclResult ret = symmetricMemory.FreeSymmetricMem(devWin);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -742,7 +744,7 @@ TEST_F(SymmetricMemoryTest, ut_FindSymmetricWindow_When_Normal_Expect_ReturnHCCL
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     std::shared_ptr<SymmetricWindow> pWin(new (std::nothrow) SymmetricWindow());
     pWin->userVa = reinterpret_cast<void*>(0x1000);
     pWin->userSize = 4096;
@@ -751,7 +753,7 @@ TEST_F(SymmetricMemoryTest, ut_FindSymmetricWindow_When_Normal_Expect_ReturnHCCL
     void* ptr = reinterpret_cast<void*>(0x1000);
     void* win;
     u64 offset;
-    ret = symmetricMemory.FindSymmetricWindow(ptr, 1024, &win, offset);
+    ret = symmetricMemory.FindSymmetricWindow(ptr, 1024, &win, &offset);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -765,12 +767,12 @@ TEST_F(SymmetricMemoryTest, ut_FindSymmetricWindow_When_PtrNotInAnyWindow_Expect
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     std::shared_ptr<SymmetricWindow> pWin(new (std::nothrow) SymmetricWindow());
     void* ptr = reinterpret_cast<void*>(0x1000);
     void* win;
     u64 offset;
-    HcclResult ret = symmetricMemory.FindSymmetricWindow(ptr, 1024, &win, offset);
+    HcclResult ret = symmetricMemory.FindSymmetricWindow(ptr, 1024, &win, &offset);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
@@ -784,7 +786,7 @@ TEST_F(SymmetricMemoryTest, ut_FindSymmetricWindow_When_PtrBeforeFirstWindow_Exp
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
+    SymmetricMemory symmetricMemory(0, 2, TWO_M, allGatherManager_);
     std::shared_ptr<SymmetricWindow> pWin(new (std::nothrow) SymmetricWindow());
     pWin->userVa = reinterpret_cast<void*>(0x2000);
     pWin->userSize = 4096;
@@ -793,7 +795,7 @@ TEST_F(SymmetricMemoryTest, ut_FindSymmetricWindow_When_PtrBeforeFirstWindow_Exp
     void* ptr = reinterpret_cast<void*>(0x1000);
     void* win;
     u64 offset;
-    ret = symmetricMemory.FindSymmetricWindow(ptr, 1024, &win, offset);
+    ret = symmetricMemory.FindSymmetricWindow(ptr, 1024, &win, &offset);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
 }
 
@@ -801,161 +803,447 @@ TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_Normal_Expect_ReturnHCC
 {  
     MOCKER_CPP(&AllGatherManager::Init)
         .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
     std::vector<RankInfo> rankInfoList(2);
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
-    void* ptr = reinterpret_cast<void*>(0x1000);
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
     void* win;
-    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, 1024, &win);
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(any(), outBoundP(&ptr, sizeof(ptr)), outBoundP(&bsize, sizeof(bsize)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
+        .stubs()
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemRetainAllocationHandle)
+        .stubs()
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    aclrtMemFabricHandle shareableHandle;
+    ShareableInfo remoteShareableInfos[2] = {
+        {0, TWO_M, shareableHandle},
+        {0, TWO_M, shareableHandle}
+    };
+    int32_t remoteShareablePids[2] = {0,1};
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareableInfos, sizeof(remoteShareableInfos)), eq((u64)sizeof(ShareableInfo)))
+        .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_AclrtMemGetAddressRangeFails_Expect_ReturnHCCL_E_PARA)
+TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_ParaError_Expect_ReturnHCCL_E_PARA)
 {  
     MOCKER_CPP(&AllGatherManager::Init)
         .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(aclrtMemGetAddressRange)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(1));
-    std::vector<RankInfo> rankInfoList(2);
-    HcclIpAddress localVnicIp;
-    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
-        0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
-    void* ptr = reinterpret_cast<void*>(0x1000);
-    void* win;
-    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, 1024, &win);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_NullPtr_Expect_ReturnHCCL_E_PARA)
-{  
-    MOCKER_CPP(&AllGatherManager::Init)
-        .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
     std::vector<RankInfo> rankInfoList(2);
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
-    void* ptr = nullptr;
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
     void* win;
-    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, 1024, &win);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_AclrtMemRetainAllocationHandleFails_Expect_ReturnHCCL_E_PARA)
-{  
-    MOCKER_CPP(&AllGatherManager::Init)
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
         .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(HCCL_SUCCESS));
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
     MOCKER_CPP(aclrtMemRetainAllocationHandle)
         .stubs()
-        .with(any(), any(), any())
-        .will(returnValue(1));
-    std::vector<RankInfo> rankInfoList(2);
-    HcclIpAddress localVnicIp;
-    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
-        0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
-    void* ptr = reinterpret_cast<void*>(0x1000);
-    void* win;
-    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, 2097152, &win);
-    EXPECT_EQ(ret, HCCL_E_PARA);
-}
-
-TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_SizeNotAlignedToGranularity_ExpectHCCL_E_PARA)
-{  
-    void* mockBaseUserVa = reinterpret_cast<void*>(0x0200);
-    MOCKER_CPP(&AllGatherManager::Init)
-        .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    int32_t remoteShareablePids[2] = {0,1};
     MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), any(), any())
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
         .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HCCL_SUCCESS;
+    ret = symmetricMemory.RegisterSymmetricMem(nullptr, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    ret = symmetricMemory.RegisterSymmetricMem(ptr, 0, &win);
+    EXPECT_EQ(ret, HCCL_E_PARA);
     MOCKER_CPP(aclrtMemGetAddressRange)
         .stubs()
-        .with(any(), outBoundP(&mockBaseUserVa, sizeof(mockBaseUserVa)), any())
-        .will(returnValue(0));
-    std::vector<RankInfo> rankInfoList(2);
-    HcclIpAddress localVnicIp;
-    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
-        0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 4194304, allGatherManager_);
-    void* ptr = reinterpret_cast<void*>(0x1000);
-    void* win;
-    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, 2097152, &win);
+        .with(eq(ptr+1), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    ret = symmetricMemory.RegisterSymmetricMem(ptr+1, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(eq(ptr+2), any(), any())
+        .will(returnValue(ACL_ERROR_INTERNAL_ERROR));
+    ret = symmetricMemory.RegisterSymmetricMem(ptr+2, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(eq(ptr+3), outBoundP(&ptr, sizeof(ptr)), any())
+        .will(returnValue(ACL_SUCCESS));
+    ret = symmetricMemory.RegisterSymmetricMem(ptr+3, TWO_M, &win);
+    size_t asize = TWO_M - 1;
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(eq(ptr+4), outBoundP(&ptr, sizeof(ptr)), outBoundP(&asize, sizeof(asize)))
+        .will(returnValue(ACL_SUCCESS));
+    ret = symmetricMemory.RegisterSymmetricMem(ptr+4, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    size_t csize = TWO_M;
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(eq(ptr+5), outBoundP(&ptr, sizeof(ptr)), outBoundP(&csize, sizeof(csize)))
+        .will(returnValue(ACL_SUCCESS));
+    ret = symmetricMemory.RegisterSymmetricMem(ptr+5, 2 * TWO_M, &win);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_VaAllocatorReserveFails_Expect_ReturnHCCL_E_MEMORY)
+TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_TwoRegister_Expect_ReturnHCCL_SUCCESS)
 {  
     MOCKER_CPP(&AllGatherManager::Init)
         .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), any(), any())
         .will(returnValue(HCCL_SUCCESS));
     std::vector<RankInfo> rankInfoList(2);
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 2097152, allGatherManager_);
-    void* ptr;
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
     void* win;
-    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, 2097153, &win);
-    EXPECT_EQ(ret, HCCL_E_MEMORY);
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(any(), outBoundP(&ptr, sizeof(ptr)), outBoundP(&bsize, sizeof(bsize)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
+        .stubs()
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemRetainAllocationHandle)
+        .stubs()
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    aclrtMemFabricHandle shareableHandle;
+    ShareableInfo remoteShareableInfos[2] = {
+        {0, TWO_M, shareableHandle},
+        {0, TWO_M, shareableHandle}
+    };
+    int32_t remoteShareablePids[2] = {0,1};
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .stubs()
+        .with(any(), outBoundP((void*)remoteShareableInfos, sizeof(remoteShareableInfos)), eq((u64)sizeof(ShareableInfo)))
+        .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HCCL_SUCCESS;
+    ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
-TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_RegisterInternalFailed_Expect_ReturnHCCL_E_INTERNAL)
+TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_Offset_Is_Failed_Expect_ReturnHCCL_E_INTERNAL)
 {  
-    aclrtMemFabricHandle shareableHandle;
-    ShareableInfo shareableInfo{0, 2097152, shareableHandle};
-    std::vector<std::vector<int>> mockRemoteShareableInfos(2, {0, 2097152});
     MOCKER_CPP(&AllGatherManager::Init)
         .stubs()
-        .with()
-        .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&AllGatherManager::AllGather)
-        .stubs()
-        .with(any(), outBoundP((void*)mockRemoteShareableInfos.data(), sizeof(mockRemoteShareableInfos)), any())
         .will(returnValue(HCCL_SUCCESS));
     std::vector<RankInfo> rankInfoList(2);
     HcclIpAddress localVnicIp;
     std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
         0, localVnicIp, rankInfoList, 0, true, "1");
-    SymmetricMemory symmetricMemory(0, 2, 4194304, allGatherManager_);
-    void* ptr;
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
     void* win;
-    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, 2097152, &win);
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(any(), outBoundP(&ptr, sizeof(ptr)), outBoundP(&bsize, sizeof(bsize)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
+        .stubs()
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemRetainAllocationHandle)
+        .stubs()
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    aclrtMemFabricHandle shareableHandle;
+    ShareableInfo remoteShareableInfos[2] = {
+        {0, TWO_M, shareableHandle},
+        {1, TWO_M, shareableHandle}
+    };
+    int32_t remoteShareablePids[2] = {0,1};
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareableInfos, sizeof(remoteShareableInfos)), eq((u64)sizeof(ShareableInfo)))
+        .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
     EXPECT_EQ(ret, HCCL_E_INTERNAL);
+}
+
+TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_MapFailed_Expect_ReturnHCCL_E_DRV)
+{  
+    MOCKER_CPP(&AllGatherManager::Init)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    std::vector<RankInfo> rankInfoList(2);
+    HcclIpAddress localVnicIp;
+    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
+        0, localVnicIp, rankInfoList, 0, true, "1");
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
+    void* win;
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(any(), outBoundP(&ptr, sizeof(ptr)), outBoundP(&bsize, sizeof(bsize)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
+        .stubs()
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemRetainAllocationHandle)
+        .stubs()
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    aclrtMemFabricHandle shareableHandle;
+    ShareableInfo remoteShareableInfos[2] = {
+        {0, TWO_M, shareableHandle},
+        {0, TWO_M, shareableHandle}
+    };
+    int32_t remoteShareablePids[2] = {0,1};
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareableInfos, sizeof(remoteShareableInfos)), eq((u64)sizeof(ShareableInfo)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(aclrtMapMem)
+        .stubs()
+        .will(returnValue(1));
+    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_E_DRV);
+}
+
+TEST_F(SymmetricMemoryTest, ut_RegisterSymmetricMem_When_AddSymmetricWindowFailed_Expect_ReturnHCCL_E_OOM)
+{  
+    MOCKER_CPP(&AllGatherManager::Init)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    std::vector<RankInfo> rankInfoList(2);
+    HcclIpAddress localVnicIp;
+    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
+        0, localVnicIp, rankInfoList, 0, true, "1");
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
+    void* win;
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(any(), outBoundP(&ptr, sizeof(ptr)), outBoundP(&bsize, sizeof(bsize)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
+        .stubs()
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemRetainAllocationHandle)
+        .stubs()
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(returnValue(HCCL_E_OOM));
+    aclrtMemFabricHandle shareableHandle;
+    ShareableInfo remoteShareableInfos[2] = {
+        {0, TWO_M, shareableHandle},
+        {0, TWO_M, shareableHandle}
+    };
+    int32_t remoteShareablePids[2] = {0,1};
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareableInfos, sizeof(remoteShareableInfos)), eq((u64)sizeof(ShareableInfo)))
+        .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_E_OOM);
+}
+
+HcclResult stub_hrtMalloc(void **devPtr, u64 size, bool Level2Address)
+{
+    *devPtr = (void*)0x4000000;
+    return HCCL_SUCCESS;
+}
+
+TEST_F(SymmetricMemoryTest, ut_DeRegisterSymmetricMem_When_Normal_Expect_ReturnHCCL_SUCCESS)
+{  
+    MOCKER_CPP(&AllGatherManager::Init)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    std::vector<RankInfo> rankInfoList(2);
+    HcclIpAddress localVnicIp;
+    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
+        0, localVnicIp, rankInfoList, 0, true, "1");
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
+    void* win;
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(any(), outBoundP(&ptr, sizeof(ptr)), outBoundP(&bsize, sizeof(bsize)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
+        .stubs()
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemRetainAllocationHandle)
+        .stubs()
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(invoke(stub_hrtMalloc));
+    MOCKER_CPP(hrtFree)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    aclrtMemFabricHandle shareableHandle;
+    ShareableInfo remoteShareableInfos[2] = {
+        {0, TWO_M, shareableHandle},
+        {0, TWO_M, shareableHandle}
+    };
+    int32_t remoteShareablePids[2] = {0,1};
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareableInfos, sizeof(remoteShareableInfos)), eq((u64)sizeof(ShareableInfo)))
+        .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HCCL_SUCCESS;
+    ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(win, (void*)0x4000000);
+    ret = symmetricMemory.DeregisterSymmetricMem(win);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(SymmetricMemoryTest, ut_DeRegisterSymmetricMem_When_FreePhysical_Is_Failed_Expect_ReturnHCCL_E_DRV)
+{  
+    MOCKER_CPP(&AllGatherManager::Init)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    std::vector<RankInfo> rankInfoList(2);
+    HcclIpAddress localVnicIp;
+    std::shared_ptr<AllGatherManager> allGatherManager_ = std::make_shared<AllGatherManager>(nullptr, 0,
+        0, localVnicIp, rankInfoList, 0, true, "1");
+    SymmetricMemory symmetricMemory(0, 2, 2 * TWO_M, allGatherManager_);
+    size_t bsize = TWO_M;
+    void* heapBase_ = reinterpret_cast<void*>(0x2000000);
+    void* ptr = reinterpret_cast<void*>(0x1000000);
+    void* win;
+    void* handle = reinterpret_cast<void*>(0x3000000);
+    MOCKER_CPP(aclrtMemGetAddressRange)
+        .stubs()
+        .with(any(), outBoundP(&ptr, sizeof(ptr)), outBoundP(&bsize, sizeof(bsize)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtReserveMemAddressNoUCMemory)
+        .stubs()
+        .with(outBoundP(&heapBase_, sizeof(heapBase_)), any(), any(), any(), any())
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(aclrtMemRetainAllocationHandle)
+        .stubs()
+        .with(any(), outBoundP(&handle, sizeof(handle)))
+        .will(returnValue(ACL_SUCCESS));
+    MOCKER_CPP(hrtMalloc)
+        .stubs()
+        .will(invoke(stub_hrtMalloc));
+    MOCKER_CPP(hrtFree)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(hrtMemSyncCopy)
+        .stubs()
+        .will(returnValue(HCCL_SUCCESS));
+    aclrtMemFabricHandle shareableHandle;
+    ShareableInfo remoteShareableInfos[2] = {
+        {0, TWO_M, shareableHandle},
+        {0, TWO_M, shareableHandle}
+    };
+    int32_t remoteShareablePids[2] = {0,1};
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareablePids, sizeof(remoteShareablePids)), eq((u64)sizeof(int32_t)))
+        .will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&AllGatherManager::AllGather)
+        .expects(once())
+        .with(any(), outBoundP((void*)remoteShareableInfos, sizeof(remoteShareableInfos)), eq((u64)sizeof(ShareableInfo)))
+        .will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HCCL_SUCCESS;
+    ret = symmetricMemory.RegisterSymmetricMem(ptr, TWO_M, &win);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(win, (void*)0x4000000);
+    MOCKER_CPP(aclrtFreePhysical)
+        .stubs()
+        .will(returnValue(1));
+    ret = symmetricMemory.DeregisterSymmetricMem(win);
+    EXPECT_EQ(ret, HCCL_E_DRV);
 }

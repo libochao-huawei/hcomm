@@ -15,6 +15,7 @@
 #define private public
 #define protected public
 #include "hccl_comm.h"
+#include "hccl_mem_alloc.h"
 #undef private
 #undef protected
 
@@ -148,7 +149,7 @@ TEST_F(MemAllocTest, ut_HcclMemFree_When_PtrIsNull_Expect_ReturnHCCL_SUCCESS)
 
 TEST_F(MemAllocTest, ut_HcclMemFree_When_RetainAllocationHandleFailed_Expect_ReturnHCCL_E_RUNTIME)
 {
-    MOCKER(aclMemRetainAllocationHandle)
+    MOCKER(aclrtMemRetainAllocationHandle)
     .stubs()
     .will(returnValue(500000));
 

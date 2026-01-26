@@ -220,7 +220,7 @@ inline void HcclCommConfigInit(HcclCommConfig *config)
     config->hcclRetryEnable[0] = '\0';
     config->hcclRetryParams[0] = '\0';
     config->hcclBufferName[0] = '\0';
-    config->hcclSymWinMaxMemSizePerRank = 0;
+    config->hcclSymWinMaxMemSizePerRank = 16;
 }
 
 /**
@@ -308,9 +308,6 @@ extern HcclResult HcclCommSymWinRegister(HcclComm comm, void *addr, uint64_t siz
  * @return HcclResult
  */
 extern HcclResult HcclCommSymWinDeregister(CommSymWindow winHandle);
-
-HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
-    HcclComm comm, aclrtStream stream);
 
 /**
  * @brief Get symmetric memory offset and window for HCCL communication.

@@ -12,6 +12,9 @@ set(src_to_test_list
     ${HCCL_CODE_ROOT}/test/ut/framework/communicator/hccl_api_base_test.cc
     ut_allgather_manager.cc
     ut_symmetric_memory.cc
+    ut_hccl_mem_alloc.cc
+    ut_hccl_communicator_host.cc
+    ut_aicpu_communicator.cc
 )
 
 add_executable(hccl_utest_framework_symmetric_memory ${src_to_test_list})
