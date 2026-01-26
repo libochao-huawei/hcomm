@@ -88,11 +88,11 @@ void ExecutorTracer::HandleDestroyComm(AicpuComContext *const ctx)
     }
     rwlock.readUnlock();
 
-    rwlock.writeLock();
     for (auto &groupName : destroyGroupName) {
+        rwlock.writeLock();
         AicpuHcclProcess::AicpuDestoryCommbyGroup(groupName);
+        rwlock.writeUnlock();
     }
-    rwlock.writeUnlock();
 }
 
 void ExecutorTracer::HandleBackGround(AicpuComContext *const ctx)
