@@ -126,6 +126,8 @@ bool DeleteCommIdByDispatcherCtx(DispatcherCtxPtr ctx)
 // 不分成两个接口，防止重复释放
 HcclResult DestroyDispatcherCtx(DispatcherCtxPtr ctx, const char* commId)
 {
+    static std::mutex deleteMutex_;
+    const std::lock_guard<std::mutex> lock(deleteMutex_);
     CHK_PTR_NULL(commId);
     CHK_PTR_NULL(ctx);
     HCCL_INFO("[DestoryCtx] Destory Ctx, ctx[%p] commId[%s]", ctx, commId);
