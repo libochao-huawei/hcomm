@@ -5333,6 +5333,19 @@ aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t bloc
     return ACL_SUCCESS;
 }
 
+
+aclError aclrtSnapShotCallbackRegister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback, void *args)
+{
+    return ACL_SUCCESS;
+}
+
+
+aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback)
+{
+    return ACL_SUCCESS;
+}
+
+
 const char *aclrtGetSocName()
 {
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {

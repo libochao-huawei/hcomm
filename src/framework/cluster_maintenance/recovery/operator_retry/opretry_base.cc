@@ -17,6 +17,7 @@
 #include "opretry_agent.h"
 #include "opretry_server.h"
 #include "opretry_base.h"
+#include "snapshot_control.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +55,12 @@ HcclResult StreamClear(HcclRtStream stream, HcclRtStreamClearStep step)
 namespace hccl {
 HcclResult OpRetryBase::Handle(RetryContext* retryCtx)
 {
+    CheckSnapshotStatus(retryCtx);
+    if (retryCtx->IsPaused()) {
+        SaluSleep(OP_RETRY_RUNNING_POLL_INTERVAL);
+        return HCCL_SUCCESS;
+    }
+
     if (!retryCtx->IsRootRetryCtx() && retryCtx->isAgentStateWaitResume_ && retryCtx->GetRetryState() != RETRY_STATE_AGENT_WAIT_RESUME) {
         std::shared_ptr<OpRetryBase> retryPtr = nullptr;
         EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitResume>(), return HCCL_E_PTR);
@@ -735,5 +742,20 @@ HcclResult OpRetryBase::GetSwitchRanks(RetryContext* retryCtx, bool &needCheckDe
 
 void OpRetryBase::SetEnableSendRecv(bool enable){
     enableSendRecv = enable;
+}
+
+void OpRetryBase::CheckSnapshotStatus(RetryContext* retryCtx) {
+    auto snapshotStatus = SnapshotControl::GetInstance(retryCtx->deviceLogicId_).GetStatus();
+    if (retryCtx->isPaused_ && snapshotStatus == SnapshotStatus::POST_SNAPSHOT) {
+        retryCtx->isPaused_ = false;
+        HCCL_RUN_INFO("[OpRetryBase][CheckSnapshotStatus] detect snapshot post-processing, "
+            "opretry is resumed, curState[%s], deviceLogicId[%d].",
+            retryCtx->GetReadableCtxState(), retryCtx->deviceLogicId_);
+    } else if (!retryCtx->isPaused_ && snapshotStatus == SnapshotStatus::PRE_SNAPSHOT) {
+        retryCtx->isPaused_ = true;
+        HCCL_RUN_INFO("[OpRetryBase][CheckSnapshotStatus] detect snapshot pre-processing, "
+            "opretry is paused, curState[%s], deviceLogicId[%d].",
+            retryCtx->GetReadableCtxState(), retryCtx->deviceLogicId_);
+    }
 }
 }

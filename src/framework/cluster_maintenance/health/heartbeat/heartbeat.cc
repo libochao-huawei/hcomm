@@ -18,6 +18,7 @@
 #include "hccl_communicator.h"
 #include "task_exception_handler_pub.h"
 #include "comm_configer.h"
+#include "snapshot_control.h"
 
 namespace hccl {
 constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
@@ -145,6 +146,7 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
     CHK_SMART_PTR_NULL(sendRecvThread_);
     lostThreshold_ = 30; // 心跳丢失阈值为30s
     initialized_ = true;
+    isPaused_ = false;
     isDeInit_ = false;
     HCCL_INFO("[%s] heartbeat Init end, stuckDetectTime[%d s].", __func__, stuckDetectTime_);
     return HCCL_SUCCESS;
@@ -156,6 +158,7 @@ HcclResult Heartbeat::DeInit()
     isDeInit_ = true;
     startSendRecvTask_ = false;
     linkThreadRunning_ = false;
+    isPaused_ = false;
     if (sendRecvThread_) {
         if (sendRecvThread_->joinable()) {
             sendRecvThread_->join();
@@ -1501,6 +1504,11 @@ void Heartbeat::HeartbeatStatusMonitor()
     auto counterStat = CounterStat();
     InitStuckDetection(counterStat);
     while (startSendRecvTask_) {
+        CheckSnapshotStatus();
+        if (isPaused_) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL));
+            continue;
+        }
         CreateHBLinksAsync();
         ProcessLock_.lock();
         count++;
@@ -1997,6 +2005,30 @@ u32 Heartbeat::GetHostPort(s32 devicePhyId)
         return (devicePhyId + HOST_PARA_BASE_PORT);
     } else {
         return (devicePhyId + GetExternalInputHcclIfBasePort() + HCCL_AISERVER_DEVICE_NUM);
+    }
+}
+
+bool Heartbeat::IsPaused() const
+{
+    return !startSendRecvTask_ || isPaused_;
+}
+
+bool Heartbeat::IsResumed() const
+{
+    return !startSendRecvTask_ || !isPaused_;
+}
+
+void Heartbeat::CheckSnapshotStatus()
+{
+    auto snapshotStatus = SnapshotControl::GetInstance(deviceLogicId_).GetStatus();
+    if (isPaused_ && snapshotStatus == SnapshotStatus::POST_SNAPSHOT) {
+        isPaused_ = false;
+        HCCL_RUN_INFO("[Heartbeat][CheckSnapshotStatus] detect snapshot post-processing, heart is resumed, "
+            "deviceLogicId[%u].", deviceLogicId_);
+    } else if (!isPaused_ && snapshotStatus == SnapshotStatus::PRE_SNAPSHOT) {
+        isPaused_ = true;
+        HCCL_RUN_INFO("[Heartbeat][CheckSnapshotStatus] detect snapshot pre-processing, heart is paused, "
+            "deviceLogicId[%u].", deviceLogicId_);
     }
 }
 

@@ -14,6 +14,7 @@
 #include "hccl_network_pub.h"
 #include "adapter_hccp_common.h"
 #include "adapter_rts_common.h"
+#include "snapshot_control.h"
 
 namespace hccl {
 using namespace std;
@@ -472,6 +473,11 @@ void ZeroCopyMemoryAgent::DealWithIpcMemoryRequest()
     }
     HcclResult ret;
     do {
+        CheckSnapshotStatus();
+        if (isPaused_) {
+            SaluSleep(USLEEP_ONE_THOUSAND);
+            continue;
+        }
         for (const auto& kv : mapDevPhyIdconnectedSockets_) {
             if (receivedBarrierClose_.count(kv.first) && receivedBarrierCloseAck_.count(kv.first)) {
                 // 该socket已经收到了BarrierClose报文，因此不允许再进行其他数据接收了
@@ -839,6 +845,30 @@ std::string ZeroCopyMemoryAgent::DumpFinishInfo(RequestType requestType)
     finishedRanks.clear();
 
     return msg;
+}
+
+bool ZeroCopyMemoryAgent::IsPaused() const
+{
+    return !threadRun_ || isPaused_;
+}
+
+bool ZeroCopyMemoryAgent::IsResumed() const
+{
+    return !threadRun_ || !isPaused_;
+}
+
+void ZeroCopyMemoryAgent::CheckSnapshotStatus()
+{
+    auto snapshotStatus = SnapshotControl::GetInstance(deviceLogicId_).GetStatus();
+    if (isPaused_ && snapshotStatus == SnapshotStatus::POST_SNAPSHOT) {
+        isPaused_ = false;
+        HCCL_RUN_INFO("[ZeroCopyMemoryAgent][CheckSnapshotStatus] detect snapshot post-processing, "
+            "zero-copy memory agent is resumed, deviceLogicId[%d].", deviceLogicId_);
+    } else if (!isPaused_ && snapshotStatus == SnapshotStatus::PRE_SNAPSHOT) {
+        isPaused_ = true;
+        HCCL_RUN_INFO("[ZeroCopyMemoryAgent][CheckSnapshotStatus] detect snapshot pre-processing, "
+            "zero-copy memory agent is paused, deviceLogicId[%d].", deviceLogicId_);
+    }
 }
 
 }  // namespace hccl

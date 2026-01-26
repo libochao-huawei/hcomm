@@ -750,6 +750,9 @@ namespace hccl
         ErrorMessageReport errorMessage;
         if (kfcStatusTransferD2H_ != nullptr)
         {
+            CHK_PRT_RET(isInvalidComm_,
+                HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+                "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), errorMessage);
             ret = kfcStatusTransferD2H_->Get(sizeof(HcclOpIdentifier) + sizeof(ExecStatusDef),
                                              sizeof(errorMessage), reinterpret_cast<uint8_t *>(&errorMessage));
             if (ret != HCCL_SUCCESS)
@@ -762,6 +765,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::UnRegisterBackGroundThread()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         CHK_RET(UnRegisterBackGroundThread(kfcControlTransferH2D_, kfcStatusTransferD2H_));
         if (IsEnableCustom())
         {
@@ -811,6 +817,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::DestroyAicpuComm()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         CHK_RET(DestroyAicpuComm(kfcControlTransferH2D_, kfcStatusTransferD2H_));
         if (IsEnableCustom())
         {
@@ -1154,6 +1163,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::Suspend()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         return Suspend(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
@@ -1211,6 +1223,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::StopExec()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         return StopExec(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 

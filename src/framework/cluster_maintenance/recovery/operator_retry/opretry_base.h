@@ -160,6 +160,7 @@ private:
     HcclResult CheckOpName(const RetryInfo &opInfo1, const RetryInfo &opInfo2); // 校验算子一致
     HcclResult CheckMaxRetryCnt(const RetryInfo &retryInfo, const std::string& identifier = HCCL_WORLD_GROUP); // 校验重执行次数
     HcclResult CheckLinkStates(const RetryInfo &retryInfo); // 校验link状态
+    void CheckSnapshotStatus(RetryContext* retryCtx);
     bool enableSendRecv = true;
 };
 
@@ -205,6 +206,7 @@ public:
             serverSockets_.insert(std::make_pair(it->first, std::move(tempAgentInfo)));
         }
         rankId_ = agentInfo.userRank;
+        deviceLogicId_ = agentInfo.deviceLogicId;
         std::string dfxInfo = "deviceIP:" + std::string(agentInfo.deviceIP.GetReadableIP()) +
             ",hostIP:" + std::string(agentInfo.hostIP.GetReadableIP());
         EXCEPTION_THROW_IF_COND_ERR(memcpy_s(localRetryInfo_.dfxIpInfo, sizeof(localRetryInfo_.dfxIpInfo),
@@ -275,6 +277,10 @@ public:
         return d2hPtr_;
     }
 
+    bool IsPaused() const {
+        return isPaused_;
+    }
+
     std::string group_ = "";
     s32 deviceLogicId_ = INVALID_INT;
     u32 rankId_ = INVALID_UINT;
@@ -318,6 +324,7 @@ public:
     bool isNeedReportOpRetryErr = false; // 针对重执行算子不一致和inplace场景，上报故障
 
     bool isOpRetryQuit = false;
+    bool isPaused_ = false;
 private:
     std::shared_ptr<OpRetryBase> retryBase_ = nullptr;
     RetryState state_ = RETRY_STATE_RESERVED;
