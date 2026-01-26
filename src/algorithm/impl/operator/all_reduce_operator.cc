@@ -105,9 +105,6 @@ HcclResult AllReduceOperator::GetAllReduceScratchSize(const u32 count, const Hcc
         scratchSize = count * SIZE_TABLE[dataType] * DEVICE_TWO + reservedSize;
     }
 
-    const u64 MAX_SCRATCH_SIZE = 16 * 1024 * 1024 * 4;
-    scratchSize = scratchSize < MAX_SCRATCH_SIZE ? scratchSize : MAX_SCRATCH_SIZE;
-
     HCCL_INFO("[AllReduceOperator][GetAllReduceScratchSize] scratchSize %llu, count %llu", scratchSize, count);
     return HCCL_SUCCESS;
 }

@@ -536,7 +536,7 @@ HcclResult RegisterKernel(DevType deviceType)
     if (g_init) {
         return HCCL_SUCCESS;
     }
-
+    
     HcclResult ret;
     string binFilePath;
     ret = GetAivOpBinaryPath(deviceType, binFilePath);
