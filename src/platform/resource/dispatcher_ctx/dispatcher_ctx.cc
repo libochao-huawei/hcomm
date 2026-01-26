@@ -26,7 +26,6 @@ namespace hccl {
         return g_LaunchTaskCallback;
     }
 
-
     HcclResult DispatcherCtx::Init()
     {
         CHK_RET(DlHalFunction::GetInstance().DlHalFunctionInit());
@@ -56,8 +55,10 @@ namespace hccl {
 
         return HCCL_SUCCESS;
     }
+
     HcclResult DispatcherCtx::Destroy()
     {
+        const std::lock_guard<std::mutex> lock(destroyMutex_);
         if (dispatcher_ != nullptr) {
             DispatcherPub* dispatcher = reinterpret_cast<DispatcherPub*>(dispatcher_);
             delete dispatcher;
@@ -65,6 +66,7 @@ namespace hccl {
         }
         return HCCL_SUCCESS;
     }
+
     HcclDispatcher DispatcherCtx::GetDispatcher() const
     {
         return dispatcher_;
