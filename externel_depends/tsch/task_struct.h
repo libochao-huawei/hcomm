@@ -269,7 +269,7 @@ typedef struct tag_ts_kernel_task {
     uint64_t literal_src_addr;
     uint32_t literal_dst_base;
     uint32_t literal_size;
-    uint16_t block_dim;
+    uint16_t num_blocks;
     uint8_t L2_size;
     uint8_t l2_in_main;
     uint32_t priority : 3;
@@ -555,7 +555,7 @@ typedef struct tag_ts_data_dump_task {
     uint64_t dumpBaseAddr;
     uint32_t dumpKind;
     uint32_t dumpBlockSize;
-    uint32_t dumpBlockDim;
+    uint32_t dumpNumBlocks;
     uint16_t dumptaskID;
     uint8_t reserved[22];
     uint32_t virAddr;
@@ -905,7 +905,7 @@ typedef struct tag_ts_flip_task_t {
 typedef struct tag_ts_model_update_task_t { // rtMdlTaskUpdate_t
     uint64_t desc_buff_offset; // rtFftsPlusTaskInfo_t-->descBuf
     uint64_t tiling_key_offset;
-    uint64_t block_dim_offset;
+    uint64_t num_blocks_offset;
     uint64_t tiling_tab_offset;
     uint16_t tiling_tab_len;
     uint16_t des_stream_id;
@@ -916,7 +916,7 @@ typedef struct tag_ts_model_update_task_t { // rtMdlTaskUpdate_t
 #else
 typedef struct tag_ts_model_update_task_t { // rtMdlTaskUpdate_t
     uint64_t tiling_key_offset;
-    uint64_t block_dim_offset;
+    uint64_t num_blocks_offset;
     uint64_t tiling_tab_offset;
     uint16_t tiling_tab_len;
     uint16_t des_stream_id;
@@ -1424,7 +1424,7 @@ typedef struct ts_stars_sqe_header {
     uint8_t wr_cqe : 1;
     uint8_t reserved : 1;
 
-    uint16_t block_dim;
+    uint16_t num_blocks;
     uint16_t rt_stream_id;
     uint16_t task_id;
 } ts_stars_sqe_header_t;
@@ -1440,7 +1440,7 @@ typedef struct ts_stars_sqe_word0 {
     uint8_t wr_cqe : 1;
     uint8_t reserved : 1;
 
-    uint16_t block_dim;
+    uint16_t num_blocks;
 } ts_stars_sqe_word0_t;
 
 typedef struct ts_stars_ph_sqe_word0 {
@@ -1551,7 +1551,7 @@ typedef struct stars_aicpu_sqe {
     uint8_t post_p : 2;
     uint8_t wr_cqe : 1;
     uint8_t reserved : 1;
-    uint16_t block_dim;
+    uint16_t num_blocks;
     uint16_t rt_stream_id;
     uint16_t task_id;
 
@@ -1746,7 +1746,7 @@ typedef struct ts_stars_sqe_header {
     uint8_t head_update : 1;
     uint8_t reserved : 1;
 
-    uint16_t block_dim;
+    uint16_t num_blocks;
     uint16_t rt_stream_id;
     uint16_t task_id;
 } ts_stars_sqe_header_t;
@@ -1795,7 +1795,7 @@ typedef struct ts_stars_ph_sqe {
     uint8_t ptt_mode : 1;
     uint8_t head_update : 1;
     uint8_t res0 : 1;
-    uint16_t block_dim;
+    uint16_t num_blocks;
 
     uint16_t stream_id;
     uint16_t task_id;
@@ -1854,7 +1854,7 @@ typedef struct ts_stars_aic_aiv_sqe {
  
     /* word2 */
     uint16_t group_dim;
-    uint16_t group_block_dim;
+    uint16_t group_num_blocks;
  
     /* word3 */
     uint8_t res0;      // res0 used for DATADUMP BIUPERF L2CACHE flag
@@ -2423,7 +2423,7 @@ typedef struct ts_stars_callback_sqe {
     uint8_t wr_cqe : 1;
     uint8_t reserved : 1;
 
-    uint16_t block_dim;  // block_dim or res
+    uint16_t num_blocks;  // num_blocks or res
 
     uint16_t rt_stream_id;
     uint16_t header_task_id;
@@ -2487,7 +2487,7 @@ typedef struct ts_stars_topic_sched_sqe {
     uint8_t wr_cqe : 1;
     uint8_t reserved : 1;
 
-    uint16_t block_dim;
+    uint16_t num_blocks;
 
     uint16_t rt_stream_id;
     uint16_t header_task_id;
@@ -2581,7 +2581,7 @@ typedef struct ts_stars_ffts_plus_sqe_header {
     /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is executed */
     uint8_t overflow_en : 1;
 
-    uint16_t block_dim;
+    uint16_t num_blocks;
     uint16_t rt_stream_id;
     uint16_t task_id;
 } ts_stars_ffts_plus_sqe_header_t;

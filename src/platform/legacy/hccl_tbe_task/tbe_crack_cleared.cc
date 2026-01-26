@@ -158,7 +158,7 @@ HcclResult TbeCrackCleard::Run(const std::vector<std::int64_t> &crackAddr, const
 
     // 获取tiling data
     OpRunInfo runInfo;
-    runInfo.blockDim = 0;
+    runInfo.numBlocks = 0;
     runInfo.workspaces = { 0 };
     runInfo.clearAtomic = 0;
     CHK_RET(GetTilingRunInfo(opDescInfo, opTilingInfo, runInfo, crackSize));
@@ -218,7 +218,7 @@ HcclResult TbeCrackCleard::ExecuteKernelLaunch(const std::vector<std::int64_t> &
     attr.value.timeout = 0;
     cfg.numAttrs = 1;
     cfg.attrs = &attr;
-    CHK_RET(LaunchKernelWithConfig(funcHandle, runInfo.blockDim, stream, &cfg, argsHandle, nullptr));
+    CHK_RET(LaunchKernelWithConfig(funcHandle, runInfo.numBlocks, stream, &cfg, argsHandle, nullptr));
     return HCCL_SUCCESS;
 }
 

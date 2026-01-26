@@ -310,7 +310,7 @@ HcclResult GraphAddRdmaSendTask(void *fftsPubInfo, void *ctx, uint32_t streamId,
 
 // 因为tailCount == 0的话, addrListDevMemPtr和funcAddr是nullptr,所以此处不对addrListDevMemPtr和funcAddr做校验
 HcclResult GraphAddVectorReduceTask(void *fftsPubInfo, void *ctx, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, uint32_t *ctxIdx)
+    void *funcAddr, uint32_t numBlocks, uint32_t *ctxIdx)
 {
     CHK_PTR_NULL(fftsPubInfo);
     CHK_PTR_NULL(ctx);
@@ -318,10 +318,10 @@ HcclResult GraphAddVectorReduceTask(void *fftsPubInfo, void *ctx, uint32_t strea
     HcclFftsPubInfo *fftsPubInfoPtr = static_cast<HcclFftsPubInfo *>(fftsPubInfo);
     HcclFftsContextsInfo *fftsCtxsPtr = static_cast<HcclFftsContextsInfo*>(ctx);
     if (UNLIKELY(!FftsCtxReady(fftsCtxsPtr))) {
-        CHK_RET(InitFftsDescVectorReduce(fftsCtxsPtr, streamId, count, addrListDevMemPtr, funcAddr, blockDim,
+        CHK_RET(InitFftsDescVectorReduce(fftsCtxsPtr, streamId, count, addrListDevMemPtr, funcAddr, numBlocks,
             fftsPubInfoPtr->useGraphConstructorV2));
     } else {
-        CHK_RET(RefreshFftsDescVectorReduce(fftsCtxsPtr, streamId, count, addrListDevMemPtr, funcAddr, blockDim,
+        CHK_RET(RefreshFftsDescVectorReduce(fftsCtxsPtr, streamId, count, addrListDevMemPtr, funcAddr, numBlocks,
             fftsPubInfoPtr->useGraphConstructorV2));
     }
     *ctxIdx = fftsCtxsPtr->refreshIndex;

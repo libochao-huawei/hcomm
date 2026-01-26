@@ -279,8 +279,8 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
                         && serverNum_ > 1
                         && !GetExternalInputInterHccsDisable()
                         && ((
-                            (userRankSize_ <= ONE_EIGHTH_MAX_BLOCK_DIM && dataSize <= AIV_ALL_GATHER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
-                            (userRankSize_ <= ONE_THIRD_MAX_BLOCK_DIM && dataSize <= AIV_ALL_GATHER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
+                            (userRankSize_ <= ONE_EIGHTH_MAX_NUM_BLOCKS && dataSize <= AIV_ALL_GATHER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
+                            (userRankSize_ <= ONE_THIRD_MAX_NUM_BLOCKS && dataSize <= AIV_ALL_GATHER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
                             (dataSize <= AIV_ALL_GATHER_A3_LARGE_RANKSIZE_ENTRY_SIZE)
                         ) || isOnlyAiv);
 

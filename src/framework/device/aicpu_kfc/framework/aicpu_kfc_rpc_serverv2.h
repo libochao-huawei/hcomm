@@ -96,7 +96,7 @@ private:
     u32 blockNum_ = 1U;
     u32 totalQueueNum_ = 0U;
     BarrierInfo barrierFlags_[MAX_COMM_CTX_NUM][HcclApi::MAX_QUE_NUM];
-    u32 barrierFinishCnt_[MAX_AICPU_BLOCK_DIM];
+    u32 barrierFinishCnt_[MAX_AICPU_NUM_BLOCKS];
     u64 tilingBaseAddr_;
 };
 

@@ -1013,8 +1013,8 @@ public:
   OpRunInfoImpl() = default;
   ~OpRunInfoImpl() = default;
 
-  OpRunInfoImpl(const uint32_t &block_dim, const bool &clear_atomic, const uint64_t &tiling_key)
-          : block_dim_(block_dim),
+  OpRunInfoImpl(const uint32_t &num_blocks, const bool &clear_atomic, const uint64_t &tiling_key)
+          : num_blocks_(num_blocks),
             clear_atomic_(clear_atomic),
             tiling_key_(tiling_key),
             addr_base_(nullptr),
@@ -1022,9 +1022,9 @@ public:
             offset_(0),
             tiling_cond_(-1) {}
 
-  void SetBlockDim(const uint32_t &block_dim) { block_dim_ = block_dim; }
+  void SetNumBlocks(const uint32_t &num_blocks) { num_blocks_ = num_blocks; }
 
-  uint32_t GetBlockDim() const { return block_dim_; }
+  uint32_t GetNumBlocks() const { return num_blocks_; }
 
   void AddWorkspace(const int64_t &workspace) { workspaces_.push_back(workspace); }
 
@@ -1107,7 +1107,7 @@ public:
 
   int32_t GetTilingCond() const { return tiling_cond_; }
 private:
-  uint32_t block_dim_;
+  uint32_t num_blocks_;
   bool clear_atomic_;
   uint64_t tiling_key_;
   ByteBuffer tiling_data_;
@@ -1124,7 +1124,7 @@ private:
     return;
   }
 
-  void OpRunInfo::SetBlockDim(const uint32_t &block_dim) {
+  void OpRunInfo::SetNumBlocks(const uint32_t &num_blocks) {
     return;
   }
 

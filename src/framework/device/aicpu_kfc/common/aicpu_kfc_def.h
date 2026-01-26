@@ -189,7 +189,7 @@ struct DataBlock {
 	uint32_t data[16];
 };
 
-constexpr uint32_t MAX_AICPU_BLOCK_DIM = 6U;
+constexpr uint32_t MAX_AICPU_NUM_BLOCKS = 6U;
 
 // HCCL 代码直调时直接传此结构：
 struct AivAicpuOpParam {

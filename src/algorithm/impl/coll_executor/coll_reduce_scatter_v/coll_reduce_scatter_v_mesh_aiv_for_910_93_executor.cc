@@ -64,30 +64,30 @@ HcclResult CollReduceScatterVMeshAivFor91093Executor::CalcLevel0CommInfo(Transpo
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterVMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollReduceScatterVMeshAivFor91093Executor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
     // Step1. Calculate the best block dimension
-    const u32 bestBlockDim = (rankSize < MAX_BLOCK_DIM ? rankSize : MAX_BLOCK_DIM);
-    const u32 minBlockDim = (rankSize + MAX_TARGET_NUM) / MAX_TARGET_NUM;
+    const u32 bestNumBlocks = (rankSize < MAX_NUM_BLOCKS ? rankSize : MAX_NUM_BLOCKS);
+    const u32 minNumBlocks = (rankSize + MAX_TARGET_NUM) / MAX_TARGET_NUM;
 
-    // Step2. Compare User Given blockDim_ with bestBlockDim
-    const u32 originUserLimit = blockDim_;
-    CHK_PRT_RET(originUserLimit < BLOCK_DIM_FACTOR_TWO,
-        HCCL_ERROR("[CollAllGatherVMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [2].",
+    // Step2. Compare User Given numBlocks_ with bestNumBlocks
+    const u32 originUserLimit = numBlocks_;
+    CHK_PRT_RET(originUserLimit < NUM_BLOCKS_FACTOR_TWO,
+        HCCL_ERROR("[CollAllGatherVMeshAivFor91093Executor][CalNumBlocks]aivCore[%u] is invalid, at least need [2].",
         originUserLimit), HCCL_E_PARA);
 
-    if (blockDim_ > bestBlockDim){
-        blockDim_ = bestBlockDim;
+    if (numBlocks_ > bestNumBlocks){
+        numBlocks_ = bestNumBlocks;
     }
 
-    if (blockDim_ < minBlockDim){
-        HCCL_ERROR("[CollAllGatherVMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u]",
-            originUserLimit, minBlockDim);
+    if (numBlocks_ < minNumBlocks){
+        HCCL_ERROR("[CollAllGatherVMeshAivFor91093Executor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u]",
+            originUserLimit, minNumBlocks);
         return HCCL_E_PARA;
     }
-    blockDim = blockDim_;
-    HCCL_INFO("[CollAllGatherVMeshAivFor91093Executor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim_, originUserLimit, bestBlockDim);
+    numBlocks = numBlocks_;
+    HCCL_INFO("[CollAllGatherVMeshAivFor91093Executor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks_, originUserLimit, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -150,11 +150,11 @@ HcclResult CollReduceScatterVMeshAivFor91093Executor::KernelRun(const OpParam &p
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType, algoAttr_.identifier};
 
-    u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize));
+    u32 numBlocks;
+    CHK_RET(CalNumBlocks(numBlocks, localRankSize));
 
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
 
     AivAlgArgs algArgs {};

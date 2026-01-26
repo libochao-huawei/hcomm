@@ -130,7 +130,7 @@ bool EletwiseV2::DoBlockTiling()
     CHECK_GT(coreNum_, 0, "opType[%s] baseInfo coreNum_ error, it is [%d]", opType_.c_str(), coreNum_);
     blockFactor_ = static_cast<int64_t>(std::ceil(outputShape_[0] * 1.0 / curCore));
     blockFactor_ = static_cast<int64_t>(std::ceil(blockFactor_ * 1.0 / eleInBlock) * eleInBlock);
-    blockDims_ = static_cast<int64_t>(std::ceil(outputShape_[0] * 1.0 / blockFactor_));
+    numBlockss_ = static_cast<int64_t>(std::ceil(outputShape_[0] * 1.0 / blockFactor_));
     return true;
 }
 
@@ -171,7 +171,7 @@ void EletwiseV2::CalcKey()
 
 bool EletwiseV2::WriteTilingData(OpRunInfo& runInfo) const
 {
-    runInfo.blockDim = static_cast<uint32_t>(blockDims_);
+    runInfo.numBlocks = static_cast<uint32_t>(numBlockss_);
     if (onlyConstTiling_) {
         ByteBufferPut(runInfo.tilingData, static_cast<int32_t>(needMultiCore_));
         ByteBufferPut(runInfo.tilingData, static_cast<int32_t>(blockAxis_));
@@ -318,7 +318,7 @@ bool MatchConstShape(const std::string& opType,
 
 bool CalcConstKey(const std::string& opType, const TeOpParas& opParas,
                   const nlohmann::json& opInfo, const bool isSupportBroadcast,
-                  int64_t& key, int64_t& blockDims)
+                  int64_t& key, int64_t& numBlockss)
 {
     size_t key_index = 0;
     bool ret = true;
@@ -347,13 +347,13 @@ bool CalcConstKey(const std::string& opType, const TeOpParas& opParas,
     if (ret) {
         try {
             const int64_t baseNum = 100000000;
-            const auto& constBlockDims = opInfo["_const_block_dims"];
-            CHECK_GT(constBlockDims.size(), key_index,
-                     "opType[%s] const_block_dims index out of range", opType.c_str());
-            blockDims = constBlockDims[key_index].get<int64_t>();
+            const auto& constNumBlockss = opInfo["_const_num_blockss"];
+            CHECK_GT(constNumBlockss.size(), key_index,
+                     "opType[%s] const_num_blockss index out of range", opType.c_str());
+            numBlockss = constNumBlockss[key_index].get<int64_t>();
             key = baseNum + key_index;
         } catch (const std::exception &e) {
-            HCCL_ERROR("get compile_info[_const_block_dims] error. Error message: %s", e.what());
+            HCCL_ERROR("get compile_info[_const_num_blockss] error. Error message: %s", e.what());
             return false;
         }
     }
@@ -375,9 +375,9 @@ bool IsEmptyTensor(const std::string& opType, const TeOpParas& opParas)
     return hasZero;
 }
 
-bool WriteConstTiling(const std::string& opType, OpRunInfo& runInfo, const int64_t& key, const int64_t& blockDims)
+bool WriteConstTiling(const std::string& opType, OpRunInfo& runInfo, const int64_t& key, const int64_t& numBlockss)
 {
-    runInfo.blockDim = static_cast<uint32_t>(blockDims);
+    runInfo.numBlocks = static_cast<uint32_t>(numBlockss);
     runInfo.tilingKey = static_cast<int32_t>(key);
     return true;
 }
@@ -406,9 +406,9 @@ bool EletwiseTilingV2(const std::string& opType, const TeOpParas& opParas, const
     bool ret = CompletedShapes(inputShapes, dimLen, isPureElementwise, opType, opParas);
     if (is_const) {
         int64_t key_{0};
-        int64_t blockDims_{1};
-        ret = ret && CalcConstKey(opType, opParas, opInfo, isSupportBroadcast, key_, blockDims_);
-        ret = ret && WriteConstTiling(opType, runInfo, key_, blockDims_);
+        int64_t numBlockss_{1};
+        ret = ret && CalcConstKey(opType, opParas, opInfo, isSupportBroadcast, key_, numBlockss_);
+        ret = ret && WriteConstTiling(opType, runInfo, key_, numBlockss_);
     } else if (IsEmptyTensor(opType, opParas)) {
         ret = ret && WriteConstTiling(opType, runInfo, INT32_MIN, 1);
     } else if ((isPureElementwise && !(isSupportBroadcast && !useSpecialPattern_)) || !isSupportBroadcast) {

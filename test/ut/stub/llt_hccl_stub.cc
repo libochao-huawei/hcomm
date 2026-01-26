@@ -2488,7 +2488,7 @@ rtError_t rtNotifyGetPhyInfoExt(rtNotify_t notify, rtNotifyPhyInfo *notifyInfo)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t blockDim,
+rtError_t rtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t numBlocks,
                                         const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
                                         rtStream_t stream, uint32_t flags)
 {
@@ -5303,7 +5303,7 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockDim,
+aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     aclrtArgsHandle argsHandle, void *reserve)
 {
@@ -5328,7 +5328,7 @@ aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream,
                                        aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
                                        aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {

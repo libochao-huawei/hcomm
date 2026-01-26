@@ -24,19 +24,19 @@ struct TaskParaAiv{
     HcclCMDType cmdType;
     u32 tag;
     u64 size;
-    u32 blockDim;
+    u32 numBlocks;
     u32 rankSize;
     s32 aivRdmaStep;
     void* flagMem;
     u32 rank;
     bool isOpbase;
     TaskParaAiv()
-        : cmdType(HcclCMDType::HCCL_CMD_INVALID), tag(0), size(0), blockDim(0), rankSize(0), aivRdmaStep(0), flagMem(nullptr),
+        : cmdType(HcclCMDType::HCCL_CMD_INVALID), tag(0), size(0), numBlocks(0), rankSize(0), aivRdmaStep(0), flagMem(nullptr),
           rank(0), isOpbase(false)
     {}
     TaskParaAiv(
-        HcclCMDType cmdType, u32 tag, u64 size, u32 blockDim, u32 rankSize, s32 aivRdmaStep, void *flagMem, u32 rank, bool isOpbase = false)
-        : cmdType(cmdType), tag(tag), size(size), blockDim(blockDim), rankSize(rankSize), aivRdmaStep(aivRdmaStep),
+        HcclCMDType cmdType, u32 tag, u64 size, u32 numBlocks, u32 rankSize, s32 aivRdmaStep, void *flagMem, u32 rank, bool isOpbase = false)
+        : cmdType(cmdType), tag(tag), size(size), numBlocks(numBlocks), rankSize(rankSize), aivRdmaStep(aivRdmaStep),
           flagMem(flagMem), rank(rank), isOpbase(isOpbase)
     {}
 };

@@ -2620,7 +2620,7 @@ rtError_t rtNotifyGetPhyInfoExt(rtNotify_t notify, rtNotifyPhyInfo *notifyInfo)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t blockDim,
+rtError_t rtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t numBlocks,
                                         const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
                                         rtStream_t stream, uint32_t flags)
 {
@@ -3165,7 +3165,7 @@ rtError_t rtFunctionRegister(void *binHandle, const void *stubFunc, const char *
     return RT_ERROR_NONE;
 }
 
-rtError_t rtKernelLaunch(const void *stubFunc, uint32_t blockDim, void *args, uint32_t argsSize,
+rtError_t rtKernelLaunch(const void *stubFunc, uint32_t numBlocks, void *args, uint32_t argsSize,
                                  rtSmDesc_t *smDesc, rtStream_t stream)
 {
     int32_t count;
@@ -3245,12 +3245,12 @@ rtError_t rtKernelLaunch(const void *stubFunc, uint32_t blockDim, void *args, ui
     return RT_ERROR_NONE;
 }
 
-rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
                                    rtStream_t stm, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo) {
     return RT_ERROR_NONE;
 }
 
-rtError_t rtAicpuKernelLaunchWithFlag(const rtKernelLaunchNames_t *launchNames, uint32_t blockDim,
+rtError_t rtAicpuKernelLaunchWithFlag(const rtKernelLaunchNames_t *launchNames, uint32_t numBlocks,
     const rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc, rtStream_t stm, uint32_t flags) {
   return RT_ERROR_NONE;
 }
@@ -5614,7 +5614,7 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockDim,
+aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     aclrtArgsHandle argsHandle, void *reserve)
 {
@@ -5710,7 +5710,7 @@ aclError aclrtMemcpy(void *dst, size_t destMax, const void *src, size_t count, a
     return ACL_SUCCESS;
 }
 
-rtError_t rtsLaunchKernelWithHostArgs(rtFuncHandle funcHandle, uint32_t blockDim, rtStream_t stm, rtKernelLaunchCfg_t *cfg,
+rtError_t rtsLaunchKernelWithHostArgs(rtFuncHandle funcHandle, uint32_t numBlocks, rtStream_t stm, rtKernelLaunchCfg_t *cfg,
     void *hostArgs, uint32_t argsSize, rtPlaceHolderInfo_t *placeHolderArray, uint32_t placeHolderNum)
 {
     return RT_ERROR_NONE;

@@ -571,7 +571,7 @@ HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dat
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     /* 入参的正确性由HCCL确保 */
     HcclResult ret = hcclComm->Broadcast(tag, ptr, count, dataType, root, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1063,7 +1063,7 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     /* 入参的正确性由HCCL确保 */
     HcclResult ret = hcclComm->Broadcast(tag, ptr, count, dataType, root, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1791,17 +1791,17 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, H
 }
 
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        char *algName, u32 *blockDim)
+        char *algName, u32 *numBlocks)
 {
 #if  (defined (OPEN_BUILD_PROJECT) && defined (ORION_MODE)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
     std::string algNamV2(algName);
-    HCCLV2_FUNC_RUN(HcomCalcBlockDimV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *blockDim));
+    HCCLV2_FUNC_RUN(HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *numBlocks));
 #endif
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     std::string algNam(algName);
-    CHK_RET(hcclComm->HcclCalcBlockDim(opType, count, counts, dataType, aivCoreLimit, algNam, *blockDim));
+    CHK_RET(hcclComm->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algNam, *numBlocks));
 
     return HCCL_SUCCESS;
 }
@@ -2219,7 +2219,7 @@ HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     u32 rankId = 0;
     CHK_RET(hcclComm->GetUserRank(rankId));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2290,7 +2290,7 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
                recvBuf, GetDataTypeEnumStr(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2352,7 +2352,7 @@ HcclResult HcclCommGraphAlltoAllV(const void *sendBuf, const void *sendCounts, c
         GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2415,7 +2415,7 @@ HcclResult HcclCommGraphAlltoAllVC(const void *sendBuf, const void *sendCountMat
                GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2671,7 +2671,7 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
     CHK_RET(hcclComm->GetRankSize(rankSize));
     CHK_RET(hcclComm->GetUserRank(rankId));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
 
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),

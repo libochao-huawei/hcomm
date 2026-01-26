@@ -10,13 +10,13 @@ class KernelContext {
 
 class KernelDef {
  public:
-    uint32_t block_dim() const;
+    uint32_t num_blocks() const;
     const KernelContext& context() const;
 };
 
 class StarsSqeHeaderDef {
  public:
-    uint32_t block_dim() const;
+    uint32_t num_blocks() const;
 };
 
 class FftsPlusSqeDef {
@@ -26,18 +26,18 @@ class FftsPlusSqeDef {
 
 class FftsPlusMixAicAivCtxDef {
  public:
-  uint32_t non_tail_block_dim() const;
+  uint32_t non_tail_num_blocks() const;
   uint32_t non_tail_block_ratio_n() const;
 };
 
 class FftsPlusAicAivCtxDef {
  public:
-  uint32_t non_tail_block_dim() const;
+  uint32_t non_tail_num_blocks() const;
 };
 
 class FftsPlusAicpuCtxDef {
  public:
-  uint32_t non_tail_block_dim() const;
+  uint32_t non_tail_num_blocks() const;
 };
 
 class FftsPlusCtxDef {

@@ -97,12 +97,12 @@ HcclResult ConstructFftsWriteValueCtx(u32 dbindex, u64 dbinfo, rtFftsPlusWriteVa
 HcclResult GetSqDepth(u32 dbindex, u32& sqDepth);
 HcclResult GetSdmaSqeHeader(const HcclDataType &datatype, const HcclReduceOp &redOp,
     FftsSdmaSqeHeader &sdmaSqeHeader);
-HcclResult ConstructFftsAicAivCtx(int count, void *addrListDevMemPtr, void *funcAddr, uint32_t blockDim,
+HcclResult ConstructFftsAicAivCtx(int count, void *addrListDevMemPtr, void *funcAddr, uint32_t numBlocks,
     rtFftsPlusAicAivCtx_t *ctx, bool isInit);
 HcclResult RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, bool useGraphConstructorV2);
+    void *funcAddr, uint32_t numBlocks, bool useGraphConstructorV2);
 HcclResult InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, bool useGraphConstructorV2);
+    void *funcAddr, uint32_t numBlocks, bool useGraphConstructorV2);
 HcclResult AssociateWaitToRecord(const HcclFfftsTaskInfo& curTask, s32 curStreamId,
     bool& isRecordFound, HcclFftsContextsInfo *&fftsCtxsPtr);
 HcclResult BuildFFTSGraph(HcclFftsContextsInfo *&fftsCtxsPtr);

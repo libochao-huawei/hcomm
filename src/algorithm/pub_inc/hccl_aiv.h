@@ -65,19 +65,19 @@ constexpr u32 MAX_RANK_SIZE = 16; // server内最大卡数
 constexpr u32 MAX_RANK_SIZE_A3 = 768; // 超节点内最大卡数
 constexpr u32 MAX_RANK_SIZE_RDMA = 64; // 跨机支持的最大卡数
 
-constexpr u32 BLOCK_DIM_FACTOR_TWO = 2;
-constexpr u32 BLOCK_DIM_FACTOR_THREE = 3;
-constexpr u32 BLOCK_DIM_FACTOR_FOUR = 4;
-constexpr u32 BLOCK_DIM_FACTOR_SIX = 6;
-constexpr u32 BLOCK_DIM_FACTOR_EIGHT = 8;
-constexpr u32 BLOCK_DIM_THREE_PER_RANK_A3 = 3;
-constexpr u32 BLOCK_DIM_FOUR_PER_RANK_A3 = 4;
-constexpr u32 MAX_BLOCK_DIM = 48;
-constexpr u32 HALF_MAX_BLOCK_DIM = 24;
-constexpr u32 ONE_THIRD_MAX_BLOCK_DIM = 16;
-constexpr u32 ONE_FOURTH_MAX_BLOCK_DIM = 12;
-constexpr u32 ONE_SIXTH_MAX_BLOCK_DIM = 8;
-constexpr u32 ONE_EIGHTH_MAX_BLOCK_DIM = 6;
+constexpr u32 NUM_BLOCKS_FACTOR_TWO = 2;
+constexpr u32 NUM_BLOCKS_FACTOR_THREE = 3;
+constexpr u32 NUM_BLOCKS_FACTOR_FOUR = 4;
+constexpr u32 NUM_BLOCKS_FACTOR_SIX = 6;
+constexpr u32 NUM_BLOCKS_FACTOR_EIGHT = 8;
+constexpr u32 NUM_BLOCKS_THREE_PER_RANK_A3 = 3;
+constexpr u32 NUM_BLOCKS_FOUR_PER_RANK_A3 = 4;
+constexpr u32 MAX_NUM_BLOCKS = 48;
+constexpr u32 HALF_MAX_NUM_BLOCKS = 24;
+constexpr u32 ONE_THIRD_MAX_NUM_BLOCKS = 16;
+constexpr u32 ONE_FOURTH_MAX_NUM_BLOCKS = 12;
+constexpr u32 ONE_SIXTH_MAX_NUM_BLOCKS = 8;
+constexpr u32 ONE_EIGHTH_MAX_NUM_BLOCKS = 6;
 
 constexpr s32 TAG_INIT_VALUE = 1;
 constexpr s32 TAG_RESET_COUNT = 1000;
@@ -224,7 +224,7 @@ struct AivResourceArgs {
     void** buffersIn; // 注册的CCLIN地址，所有卡可访问
     void** buffersOut; // 注册的CCLOUT地址，所有卡可访问
     u64 bufferSize;
-    u32 blockDim;
+    u32 numBlocks;
     s32 aivTag;
 };
  
@@ -281,13 +281,13 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     u64 dataType;
     u64 unitSize;
     u64 reduceOp;
-    u64 blockdim;
+    u64 numBlocks;
     s32 tag; // 第几次调用，定时重置成1
     s64 clearEnable;
  
     AivSuperKernelArgsDef(void** buffIn, void** buffOut, u32 rank,
-        u32 rankSize, u64 len, u32 dataType, u32 unitSize, u32 reduceOp,u32 blockdim = 0, s32 tag = 0, bool clearEnable = true)
-        : rank(rank), rankSize(rankSize), len(len), dataType(dataType), unitSize(unitSize), reduceOp(reduceOp), blockdim(blockdim),tag(tag), clearEnable(clearEnable)
+        u32 rankSize, u64 len, u32 dataType, u32 unitSize, u32 reduceOp,u32 numBlocks = 0, s32 tag = 0, bool clearEnable = true)
+        : rank(rank), rankSize(rankSize), len(len), dataType(dataType), unitSize(unitSize), reduceOp(reduceOp), numBlocks(numBlocks),tag(tag), clearEnable(clearEnable)
     {
         for (u32 i = 0; i < MAX_RANK_SIZE; i++) {
             buffersIn[i] = (u8 *) buffIn[i];

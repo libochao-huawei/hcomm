@@ -242,7 +242,7 @@ __aicore__ inline void AivAllReduceBig910B::ProcessSingleRanksizeCore(GM_ADDR in
 template<typename T>
 __aicore__ inline void AivAllReduceBig910B::ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag, int32_t maxCount)
 {
-    if (blockdim_ == rankSize_){
+    if (numBlocks_ == rankSize_){
         ProcessSingleRanksizeCore<T>(input, output, len, tag, maxCount);
     }else{
         Process<T>(input, output, len, tag, maxCount);

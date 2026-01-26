@@ -1673,8 +1673,8 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
-        int32_t aivCoreLimit, std::string &algName, u32 &blockDim)
+    HcclResult HcclCommunicator::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
+        int32_t aivCoreLimit, std::string &algName, u32 &numBlocks)
     {
         auto originWorkflowMode = GetWorkflowMode();
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -1696,8 +1696,8 @@ namespace hccl
             param.DataDes.dataType = dataType;
         }
 
-        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        CHK_PRT_RET(algOperator->CalNumBlocks(algName, param, numBlocks, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
             HCCL_E_PARA);
         SetWorkflowMode(originWorkflowMode);
         return HCCL_SUCCESS;
@@ -1765,16 +1765,16 @@ namespace hccl
 
         // gettag
         HCCL_INFO("SPK, rank %llu.", userRank_);
-        u32 blockDim;
-        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        u32 numBlocks;
+        CHK_PRT_RET(algOperator->CalNumBlocks(algName, param, numBlocks, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
             HCCL_E_PARA);
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
         aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
-        aivSuperKernelArgs.blockdim = blockDim;
+        aivSuperKernelArgs.numBlocks = numBlocks;
 
-        HCCL_INFO("SPK, Tag %llu clearEnable %llu, aivCoreLimit %u, blockdim %llu.", aivSuperKernelArgs.tag,
-                  aivSuperKernelArgs.clearEnable, aivCoreLimit, aivSuperKernelArgs.blockdim);
+        HCCL_INFO("SPK, Tag %llu clearEnable %llu, aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
+                  aivSuperKernelArgs.clearEnable, aivCoreLimit, aivSuperKernelArgs.numBlocks);
         // clearenable
         //  拷贝到Device
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -4211,7 +4211,7 @@ namespace hccl
                 cacheInfo.algArgs, cacheInfo.profilingInfo);
         }
         //刷新核数
-        blockDim_ = cacheInfo.resourceArgs.blockDim;
+        numBlocks_ = cacheInfo.resourceArgs.numBlocks;
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ExecOpCache]launch aiv failed, return[%d]", ret), ret);
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, resMap_[newTag].slaveStreams));
@@ -4259,7 +4259,7 @@ namespace hccl
             __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
 
         std::string tag = opParam.tag;
-        u32 aivCoreLimit = blockDim_;
+        u32 aivCoreLimit = numBlocks_;
         //单机AIV场景下cache复用，提升下发性能
         if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             if (aivCoreLimit == 0) {
@@ -4408,7 +4408,7 @@ namespace hccl
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
-            CHK_RET(algOperator->SetBlockDim(aivCoreLimit));
+            CHK_RET(algOperator->SetNumBlocks(aivCoreLimit));
         }
         std::vector<HcclSendRecvItem> hostSendRecvInfo;
         std::vector<HcclSendRecvItem> aicpuSendRecvInfo;
@@ -4450,7 +4450,7 @@ namespace hccl
             if (hostResMap_.find(newTag) == hostResMap_.end()) {
                 hostResMap_.insert(newTag);
             }
-            CHK_RET(algOperator->GetBlockDim(blockDim_));
+            CHK_RET(algOperator->GetNumBlocks(numBlocks_));
             if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
@@ -4505,7 +4505,7 @@ namespace hccl
             __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
 
         std::string &tag = opParam.tag;
-        u32 aivCoreLimit = blockDim_;
+        u32 aivCoreLimit = numBlocks_;
         //单机AIV场景下cache复用，提升下发性能
         if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             if (aivCoreLimit == 0) {
@@ -4719,7 +4719,7 @@ namespace hccl
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
-            CHK_RET(algOperator->SetBlockDim(aivCoreLimit));
+            CHK_RET(algOperator->SetNumBlocks(aivCoreLimit));
         }
 
         auto algType = algOperator->GetAlgType();
@@ -4756,8 +4756,8 @@ namespace hccl
             CHK_RET(GetOpCountInfo(opCounter));
             CHK_RET(algOperator->SetOpCounter(opCounter));
             CHK_RET(algOperator->Orchestrate(algName, opParam, algRes));
-            // for profiling, blockDim upload
-            CHK_RET(algOperator->GetBlockDim(blockDim_));
+            // for profiling, numBlocks upload
+            CHK_RET(algOperator->GetNumBlocks(numBlocks_));
             if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
@@ -4778,7 +4778,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::RecordOpPara(HcclCMDType opType, OpParam &opParam)
     {
-        u32 aivCoreLimit = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ? blockDim_ : 0;
+        u32 aivCoreLimit = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ? numBlocks_ : 0;
         u8 deterministic = implAlg_->GetDeterministicConfig();
         switch (opType) {
             case HcclCMDType::HCCL_CMD_ALLGATHER:

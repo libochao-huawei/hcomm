@@ -82,7 +82,7 @@ private:
     int32_t key_{0};
     int32_t blockAxis_{-1};
     int32_t ubaxis_{-1};
-    int32_t blockDims_{1};
+    int32_t numBlockss_{1};
     int32_t ubFactor_{1};
     int32_t specialScalarKey_{0};
     int32_t broadcastAixs_{-1};

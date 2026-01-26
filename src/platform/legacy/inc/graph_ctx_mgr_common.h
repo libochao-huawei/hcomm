@@ -36,7 +36,7 @@ extern HcclResult GraphAddInlineReduceTask(void *fftsPubInfo, void *ctx, uint32_
 extern HcclResult GraphAddRdmaSendTask(void *fftsPubInfo, void *ctx, uint32_t streamId, u32 dbindex, u64 dbinfo,
     bool isCapture, uint32_t *ctxIdx);
 extern HcclResult GraphAddVectorReduceTask(void *fftsPubInfo, void *ctx, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, uint32_t *ctxIdx);
+    void *funcAddr, uint32_t numBlocks, uint32_t *ctxIdx);
 extern HcclResult GraphAddTailVectorReduceTask(void *fftsPubInfo, void *ctx, uint32_t streamId, void *dst, const void *src,
     u64 cnt, uint32_t *ctxIdx);
 extern HcclResult GraphAddVectorReduceArgs(void *fftsPubInfo, void *argsHandle);

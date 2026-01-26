@@ -1012,10 +1012,10 @@ HcclResult hcclComm::HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, 
     return communicator_->HcclSelectAlg(opType, count, counts, dataType, op, aivCoreLimit, ifAiv, algName);
 }
 
-HcclResult hcclComm::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim)
+HcclResult hcclComm::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+        std::string &algName, u32 &numBlocks)
 {
-    return communicator_->HcclCalcBlockDim(opType, count, counts, dataType, aivCoreLimit, algName, blockDim);
+    return communicator_->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algName, numBlocks);
 }
 
 HcclResult hcclComm::HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
@@ -1383,9 +1383,9 @@ HcclResult hcclComm::DeactivateCommMemory(void *virPtr)
     return HCCL_SUCCESS;
 }
 
-HcclResult hcclComm::GetBlockDim(u32& blockDim)
+HcclResult hcclComm::GetNumBlocks(u32& numBlocks)
 {
-    return communicator_->GetBlockDim(blockDim);
+    return communicator_->GetNumBlocks(numBlocks);
 }
 
 HcclResult hcclComm::SetAivCoreLimit(u32 aivCoreLimit)

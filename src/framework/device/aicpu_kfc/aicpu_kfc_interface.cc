@@ -36,12 +36,12 @@ u64 GetTensorAddr(uint16_t index, uint8_t *tensorPtr) {
 
 u64 GetUpdatedOpIdx()
 {
-    static uint64_t aicpuOpIdx[MAX_AICPU_BLOCK_DIM] = {0UL};
+    static uint64_t aicpuOpIdx[MAX_AICPU_NUM_BLOCKS] = {0UL};
     const u32 blockNum = HcclAicpuUtils::GetBlockNum();
     const u32 blockIdx = HcclAicpuUtils::GetBlockIdx();
     ++aicpuOpIdx[blockIdx];
     if (blockIdx == blockNum - 1U) {
-        for (u32 i = blockIdx + 1U; i < MAX_AICPU_BLOCK_DIM; ++i) {
+        for (u32 i = blockIdx + 1U; i < MAX_AICPU_NUM_BLOCKS; ++i) {
             ++aicpuOpIdx[i];
         }
     }

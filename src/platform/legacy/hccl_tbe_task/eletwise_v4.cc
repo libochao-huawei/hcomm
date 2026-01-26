@@ -112,7 +112,7 @@ ElewisePattern GetDispatchPattern(const Fusion &fusion, size_t input_num, size_t
     }
 }
 
-int64_t ElewiseCalcAlignCore(const int64_t &shape, const int64_t &core, const int64_t &block_dims,
+int64_t ElewiseCalcAlignCore(const int64_t &shape, const int64_t &core, const int64_t &num_blocks,
     const int64_t &half_core)
 {
     int64_t align_core = core;
@@ -121,7 +121,7 @@ int64_t ElewiseCalcAlignCore(const int64_t &shape, const int64_t &core, const in
             break;
         }
     }
-    return (block_dims * align_core) > half_core ? align_core : core;
+    return (num_blocks * align_core) > half_core ? align_core : core;
 }
 
 template <typename T> void Elewise<T>::SetElewisePattern(const ElewisePattern &pattern)
@@ -227,8 +227,8 @@ template <typename T> bool Elewise<T>::GetInputsShapes()
 
 template <typename T> bool Elewise<T>::WriteKnownData()
 {
-    HCCL_DEBUG("elewise known tiling key is:%llu and block_dims is:%lld", tiling_key, block_dims);
-    context->SetBlockDim(static_cast<uint32_t>(block_dims));
+    HCCL_DEBUG("elewise known tiling key is:%llu and num_blocks is:%lld", tiling_key, num_blocks);
+    context->SetNumBlocks(static_cast<uint32_t>(num_blocks));
     context->SetTilingKey(tiling_key);
     if (compile_info->has_var_attrs) {
         return context->WriteVarAttrs(tiling_key);
@@ -243,16 +243,16 @@ template <typename T> bool Elewise<T>::CalcConstKey()
     constexpr size_t pure_elewise_size = 1;
     constexpr size_t elewise_broadcast_size = 2;
     if (const_dim_size == pure_elewise_size) {
-        block_dims = compile_info->elewise_const_dims.second[0];
+        num_blocks = compile_info->elewise_const_dims.second[0];
         tiling_key = CONST_TILING_KEY;
     } else if (const_dim_size == elewise_broadcast_size) {
         if (!all_shape_same) {
             // inputs with diff shapes such as [1] and [4] will secondly add info during compiler time
-            block_dims = compile_info->elewise_const_dims.second[1];
+            num_blocks = compile_info->elewise_const_dims.second[1];
             tiling_key = CONST_TILING_KEY + 1;
         } else {
             // inputs with diff shapes such as [4] and [4] will first add info during compiler time
-            block_dims = compile_info->elewise_const_dims.second[0];
+            num_blocks = compile_info->elewise_const_dims.second[0];
             tiling_key = CONST_TILING_KEY;
         }
     } else {
@@ -363,7 +363,7 @@ template <typename T> void Elewise<T>::DoBlockTiling()
     block_factor = ((block_factor + aligned_block_factor - 1) / aligned_block_factor) * aligned_block_factor;
     block_factor =
         std::min(std::max(block_factor, SMALL_SHAPE_BLOCK_THRESHOLD * block_size_bytes / max_dtype), out_shape_size);
-    block_dims = (out_shape_size + block_factor - 1) / block_factor;
+    num_blocks = (out_shape_size + block_factor - 1) / block_factor;
 }
 
 template <typename T> bool Elewise<T>::DoUbTiling(const int64_t factor)
@@ -433,11 +433,11 @@ template <typename T> void Elewise<T>::CalcTilingKey()
 template <typename T> bool Elewise<T>::WriteTilingDataInt32()
 {
     HCCL_DEBUG(
-        "op_type[%s], ElemWise tiling key:%llu, block_dims:%lld, block_axis:%lld, block_factor:%lld, ub_axis:%lld,"
+        "op_type[%s], ElemWise tiling key:%llu, num_blocks:%lld, block_axis:%lld, block_factor:%lld, ub_axis:%lld,"
         "ub_factor:%lld",
-        op_type, tiling_key, block_dims, block_axis, block_factor, ub_axis, ub_factor);
+        op_type, tiling_key, num_blocks, block_axis, block_factor, ub_axis, ub_factor);
 
-    context->SetBlockDim(static_cast<uint32_t>(block_dims));
+    context->SetNumBlocks(static_cast<uint32_t>(num_blocks));
     if (compile_info->only_const_tiling) {
         int32_t double_buffer_num = need_double_buffer ? 1 : 0;
         context->Append(static_cast<int32_t>(need_multi_core));
@@ -489,11 +489,11 @@ template <typename T> bool Elewise<T>::WriteTilingDataInt32()
 template <typename T> bool Elewise<T>::WriteTilingDataInt64()
 {
     HCCL_DEBUG(
-        "op_type[%s], ElemWise tiling key:%llu, block_dims:%lld, block_axis:%lld, block_factor:%lld, ub_axis:%lld,"
+        "op_type[%s], ElemWise tiling key:%llu, num_blocks:%lld, block_axis:%lld, block_factor:%lld, ub_axis:%lld,"
         "ub_factor:%lld",
-        op_type, tiling_key, block_dims, block_axis, block_factor, ub_axis, ub_factor);
+        op_type, tiling_key, num_blocks, block_axis, block_factor, ub_axis, ub_factor);
 
-    context->SetBlockDim(static_cast<uint32_t>(block_dims));
+    context->SetNumBlocks(static_cast<uint32_t>(num_blocks));
     if (compile_info->only_const_tiling) {
         int64_t double_buffer_num = need_double_buffer ? 1 : 0;
         context->Append(static_cast<int64_t>(need_multi_core));
@@ -563,23 +563,23 @@ template <typename T> void Elewise<T>::DisableAllFuseBlockTiling()
     for (size_t i = 0; i < disable_all_fuse_shape.size(); i++) {
         if (disable_all_fuse_shape[i] > cur_core) {
             int64_t block_align_core = need_block_align ?
-                ElewiseCalcAlignCore(disable_all_fuse_shape[i], cur_core, block_dims, half_core) :
+                ElewiseCalcAlignCore(disable_all_fuse_shape[i], cur_core, num_blocks, half_core) :
                 cur_core;
             multi_core_output = disable_all_fuse_shape[i];
             block_axis = i;
             block_factor = (disable_all_fuse_shape[i] + block_align_core - 1) / block_align_core;
             CHK_PRT_RET((block_factor <= 0),
                 HCCL_ERROR("op_type:%s, block_factor must be greater than zero.", op_type),);
-            block_dims *= ((disable_all_fuse_shape[i] + block_factor - 1) / block_factor);
+            num_blocks *= ((disable_all_fuse_shape[i] + block_factor - 1) / block_factor);
             disable_all_fuse_shape[i] = block_factor;
             break;
         }
         if (need_block_align && cur_core % disable_all_fuse_shape[i] != 0 &&
-            block_dims * disable_all_fuse_shape[i] > half_core) {
+            num_blocks * disable_all_fuse_shape[i] > half_core) {
             multi_core_output = disable_all_fuse_shape[i];
             block_axis = i;
             block_factor = 1;
-            block_dims *= disable_all_fuse_shape[i];
+            num_blocks *= disable_all_fuse_shape[i];
             disable_all_fuse_shape[i] = block_factor;
             if (!is_one_dim) {
                 block_axis = i + 1;
@@ -590,7 +590,7 @@ template <typename T> void Elewise<T>::DisableAllFuseBlockTiling()
             break;
         }
         cur_core /= disable_all_fuse_shape[i];
-        block_dims *= disable_all_fuse_shape[i];
+        num_blocks *= disable_all_fuse_shape[i];
     }
 }
 
@@ -651,7 +651,7 @@ template <typename T> void Elewise<T>::CheckUpdateUbTiling()
         disable_all_fuse_shape[block_axis] = multi_core_output;
         block_axis = 0;
         block_factor = disable_all_fuse_shape[block_axis];
-        block_dims = 1;
+        num_blocks = 1;
     }
     int64_t max_tiling_core_num = core_num;
     if (need_single_core) {
@@ -664,7 +664,7 @@ template <typename T> void Elewise<T>::CheckUpdateUbTiling()
     CHK_PRT_RET((max_tiling_core_num == 0), HCCL_ERROR("op_type:%s, max_tiling_core_num can not be zero.", op_type),);
     block_factor = (shape_before_ub * ub_split_out + max_tiling_core_num - 1) / max_tiling_core_num;
     CHK_PRT_RET((block_factor == 0), HCCL_ERROR("op_type:%s, block_factor can not be zero.", op_type),);
-    block_dims = (shape_before_ub * ub_split_out + block_factor - 1) / block_factor;
+    num_blocks = (shape_before_ub * ub_split_out + block_factor - 1) / block_factor;
     block_axis = 0;
 }
 
@@ -750,7 +750,7 @@ template <typename T> bool Elewise<T>::DisableAllFuseTiling()
         }
         DisableAllFuseUbTiling();
     } else {
-        block_dims = 1;
+        num_blocks = 1;
         block_axis = 0;
         ub_axis = 0;
         block_factor = disable_all_fuse_shape[0];
@@ -776,7 +776,7 @@ template <typename T> bool Elewise<T>::AllFuseTiling()
         }
         return DoUbTiling(factor);
     }
-    block_dims = 1;
+    num_blocks = 1;
     block_axis = 0;
     ub_axis = 0;
     block_factor = out_shape_size;
@@ -818,7 +818,7 @@ template <typename T> bool Elewise<T>::DoTiling()
         ret = CalcConstKey();
         ret = ret && WriteKnownData();
     } else if (is_empty_tensor) {
-        block_dims = 1;
+        num_blocks = 1;
         tiling_key = INT32_MAX;
         ret = WriteKnownData();
     } else {

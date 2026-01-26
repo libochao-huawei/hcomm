@@ -34,7 +34,7 @@ HcclResult AicpuKfcRpcServerV2::Init(const HcclMC2WorkSpace &workspaceInfo, cons
         workspaceInfo.workSpace, addr, blockNum_, HcclAicpuUtils::GetBlockIdx());
     if (tilingData != nullptr && tilingData->queueNum > 0U) {
         totalQueueNum_ = tilingData->commBlockNum * tilingData->queueNum;
-        CHK_PRT_RET(totalQueueNum_ > LOCAL_STREAM_MAX_NUM || blockNum_ > std::min(MAX_AICPU_BLOCK_DIM, totalQueueNum_),
+        CHK_PRT_RET(totalQueueNum_ > LOCAL_STREAM_MAX_NUM || blockNum_ > std::min(MAX_AICPU_NUM_BLOCKS, totalQueueNum_),
                     HCCL_ERROR("Invalid para, comm block %u, aicpu block %u, queue number %u.",
                                tilingData->commBlockNum, blockNum_, tilingData->queueNum), HCCL_E_INTERNAL);
     } else {

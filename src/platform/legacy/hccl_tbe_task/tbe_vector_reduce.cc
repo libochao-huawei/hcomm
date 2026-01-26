@@ -243,7 +243,7 @@ HcclResult TbeVectorReduce::GetKernelFunctionAndArgs(std::vector<const void *> &
 HcclResult TbeVectorReduce::GetTilingDataInfo(const u64 count, const HcclDataType dataType, const HcclReduceOp redOp,
     void *&tilingDataDevPtr, nlohmann::json &opDescInfo, OpRunInfo &runInfo)
 {
-    runInfo.blockDim = 0;
+    runInfo.numBlocks = 0;
     runInfo.workspaces = { 0 };
     runInfo.clearAtomic = 0;
     HCCL_INFO("VectorReduce count[%llu], dataType[%s]", count, LegacyGetDataTypeEnumStr(dataType).c_str());
@@ -260,8 +260,8 @@ HcclResult TbeVectorReduce::GetTilingDataInfo(const u64 count, const HcclDataTyp
         CHK_RET(GetTilingRunInfo(opDescInfo, opTilingInfo, count, dataType, runInfo, redOp));
     }
 
-    HCCL_INFO("runInfo blockDim[%u], clearAtomic[%d], tilingKey[%u]",
-        runInfo.blockDim, runInfo.clearAtomic, runInfo.tilingKey);
+    HCCL_INFO("runInfo numBlocks[%u], clearAtomic[%d], tilingKey[%u]",
+        runInfo.numBlocks, runInfo.clearAtomic, runInfo.tilingKey);
 
     // 如果tilingDataMap_里没有，用GetTilingDataDevMem获取tilingDataDevPtr；如果tilingDataMap_里有，直接取出来给tilingDataDevPtr
     TilingInputInfo tilingDataInfo = { dataType, redOp, count };
@@ -312,7 +312,7 @@ HcclResult TbeVectorReduce::VectorReduce(const void *src1, const void *src2, u64
     attr.value.timeout = 0;
     cfg.numAttrs = 1;
     cfg.attrs = &attr;
-    CHK_RET(LaunchKernelWithConfig(funcHandle, runInfo.blockDim, stream, &cfg, argsHandle, nullptr));
+    CHK_RET(LaunchKernelWithConfig(funcHandle, runInfo.numBlocks, stream, &cfg, argsHandle, nullptr));
     return HCCL_SUCCESS;
 }
 
@@ -798,7 +798,7 @@ HcclResult TbeVectorReduce::GetOpProperty(nlohmann::json &opInfo, const std::str
 
 HcclResult TbeVectorReduce::ConvertToOpRunInfo(gert::TilingContext *context, OpRunInfo &runInfo)
 {
-    runInfo.blockDim = context->GetBlockDim();
+    runInfo.numBlocks = context->GetBlockDim();
     runInfo.workspaces.push_back(reinterpret_cast<int64_t>(context->GetWorkspaceSizes(context->GetWorkspaceNum())));
 
     auto rawTilingData = context->GetRawTilingData();
@@ -1054,7 +1054,7 @@ void TbeVectorReduce::InitOpInfoMap910B()
 
 HcclResult TbeVectorReduce::PrepareVectorReduce(const void *src1, const void *src2, u64 count,
     const HcclDataType dataType, HcclReduceOp redOp, const void *dst, void *stream, void *&addrListDevMemPtr,
-    void *&argsHandle, void *&stubFuncAddr, uint32_t &blockDim)
+    void *&argsHandle, void *&stubFuncAddr, uint32_t &numBlocks)
 {
     CHK_PRT_RET(!isInit_, HCCL_ERROR("[Run][Reduce]TbeVectorReduce had not been initialized"), HCCL_E_UNAVAIL);
     CHK_PTR_NULL(src1);
@@ -1096,7 +1096,7 @@ HcclResult TbeVectorReduce::PrepareVectorReduce(const void *src1, const void *sr
     void *aicAddr = nullptr;
     CHK_RET(GetFunctionAddr(funcHandle, &aicAddr, &stubFuncAddr));
 
-    blockDim = runInfo.blockDim;
+    numBlocks = runInfo.numBlocks;
     return HCCL_SUCCESS;
 }
 

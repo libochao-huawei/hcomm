@@ -68,12 +68,12 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
             CHK_RET(hcclComm->GetAlgType(algType, cmdType));
         }
 
-        u32 blockDim = 0;
-        hcclComm->GetBlockDim(blockDim);
+        u32 numBlocks = 0;
+        hcclComm->GetNumBlocks(numBlocks);
 
         uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
-            groupName, blockDim), tag.c_str());
+            groupName, numBlocks), tag.c_str());
     }
     hcclComm->SetAivCoreLimit(0);
     return HCCL_SUCCESS;

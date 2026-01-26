@@ -47,7 +47,7 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     uint64_t dataType;
     uint64_t unitSize;
     uint64_t reduceOp;
-    int64_t blockdim;
+    int64_t numBlocks;
     int32_t tag; // 第几次调用，定时重置成1
     int64_t clearEnable;
 };
@@ -171,9 +171,9 @@ constexpr uint64_t AIV_REDUCE_SCATTER_BIG_SIZE = 190 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_TINY_SIZE = 28 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_SMALL_SIZE = 112 * 1024;
 constexpr uint32_t AIV_A3_CROSSNODE_MID_SIZE = 448 * 1024;
-constexpr uint32_t BLOCK_DIM_THREE_PER_RANK_A3 = 3;
-constexpr uint32_t BLOCK_DIM_FOUR_PER_RANK_A3 = 4;
-constexpr uint32_t MAX_BLOCK_DIM = 48;
+constexpr uint32_t NUM_BLOCKS_THREE_PER_RANK_A3 = 3;
+constexpr uint32_t NUM_BLOCKS_FOUR_PER_RANK_A3 = 4;
+constexpr uint32_t MAX_NUM_BLOCKS = 48;
 
 constexpr uint32_t TAG_MOVE_LEFT_BITS = 15;
 
@@ -196,11 +196,11 @@ constexpr uint64_t FLAG_FOUR_OFFSET = FLAG_SIZE * 3;
 constexpr uint64_t FLAG_FIVE_OFFSET = FLAG_SIZE * 4;
 constexpr uint64_t FLAG_SIX_OFFSET = FLAG_SIZE * 5;
 constexpr uint64_t FLAG_SEVEN_OFFSET = FLAG_SIZE * 6;
-constexpr uint32_t HALF_MAX_BLOCK_DIM = 24;
-constexpr uint32_t ONE_THIRD_MAX_BLOCK_DIM = 16;
-constexpr uint32_t ONE_FOURTH_MAX_BLOCK_DIM = 12;
-constexpr uint32_t ONE_SIXTH_MAX_BLOCK_DIM = 8;
-constexpr uint32_t ONE_EIGHTH_MAX_BLOCK_DIM = 6;
+constexpr uint32_t HALF_MAX_NUM_BLOCKS = 24;
+constexpr uint32_t ONE_THIRD_MAX_NUM_BLOCKS = 16;
+constexpr uint32_t ONE_FOURTH_MAX_NUM_BLOCKS = 12;
+constexpr uint32_t ONE_SIXTH_MAX_NUM_BLOCKS = 8;
+constexpr uint32_t ONE_EIGHTH_MAX_NUM_BLOCKS = 6;
 constexpr uint64_t DETERMINISTIC_RANKSIZE = 4;
 
 constexpr uint64_t IDX_0 = 0;
@@ -272,13 +272,13 @@ public:
         tag_ = tag;
 
         useDoubleBuffer_ = useDoubleBuffer;
-        blockdim_ = block_num;
+        numBlocks_ = block_num;
 
-        localOffset = (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
-        multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
-        pingpongOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
-        seperateOffset = countOffset + BLOCK_DIM_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         logLevel_ = GetLogLevel();
         uint64_t offset = (logLevel_ == 1) ? (tag_ & 1 ? INFO_EVEN_BUFFER_OFFSET : INFO_ODD_BUFFER_OFFSET) : INFO_EVEN_BUFFER_OFFSET;
         AscendC::InitDump(false, GM_OUT[rank_] + offset, ONE_CORE_DUMP_SIZE);
@@ -318,7 +318,7 @@ public:
         tag_ = args->tag;
         dataType_ = args->dataType;
         unitSize_ = args->unitSize;
-        blockdim_ = args->blockdim;
+        numBlocks_ = args->numBlocks;
  
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_4);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -326,11 +326,11 @@ public:
         localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_THREE_OFFSET);
         localGetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_FOUR_OFFSET);
 
-        localOffset = (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
-        multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
-        pingpongOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
-        seperateOffset = countOffset + BLOCK_DIM_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
         
         if (len_ * (unitSize_) > threshold) {
             useDoubleBuffer_ = true;
@@ -405,14 +405,14 @@ public:
         rankSize_ = rankSize;
         reduceOp_ = reduceOp;
         useDoubleBuffer_ = useDoubleBuffer;
-        blockdim_ = block_num;
+        numBlocks_ = block_num;
         tag_ = tag;
 
-        localOffset = (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
-        multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
-        pingpongOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
-        seperateOffset = countOffset + BLOCK_DIM_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
 
         pipe.InitBuffer(localFlagBuf, UB_FLAG_SIZE_7);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -556,7 +556,7 @@ public:
  
     uint64_t len_;
     int32_t tag_;
-    int32_t blockdim_;
+    int32_t numBlocks_;
     int32_t logLevel_;
 
     bool useDoubleBuffer_;
@@ -630,12 +630,12 @@ __aicore__ inline void AivCommBase::ClearFlag()
  
 __aicore__ inline void AivCommBase::BlockSync()
 {
-    uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * blockdim_;
+    uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
     __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
     if (GetBlockIdx() == 0) {
         //通知其他核
         pipe_barrier(PIPE_ALL);
-        for (int i = 1; i < blockdim_; i++) {
+        for (int i = 1; i < numBlocks_; i++) {
             SetSignalValue(ctrlFlagsGM + i * FLAG_SIZE, localSetTensor, 1);
         }
         pipe_barrier(PIPE_ALL);
@@ -874,7 +874,7 @@ __aicore__ inline void AivCommBase::Record(uint32_t tag, int32_t waitRank, AivNo
 __aicore__ inline void AivCommBase::LocalRecord(uint32_t tag, int32_t blockIdx, AivNotifyType notifyType, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t recordOffset = localOffset + (int32_t(notifyType) * MAX_BLOCK_DIM + blockIdx) * FLAG_SIZE;
+    int32_t recordOffset = localOffset + (int32_t(notifyType) * MAX_NUM_BLOCKS + blockIdx) * FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]+ OffSet + recordOffset);
     SetSignalValue(ctrlFlagGM, localSetTensor, tag);
 }
@@ -882,8 +882,8 @@ __aicore__ inline void AivCommBase::LocalRecord(uint32_t tag, int32_t blockIdx, 
 __aicore__ inline void AivCommBase::Record1vN(uint32_t tag, CommPattern pattern, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t recordOffset = multiOffset + (int32_t(pattern) * 2 * BLOCK_DIM_FOUR_PER_RANK_A3 +
-        int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
+    int32_t recordOffset = multiOffset + (int32_t(pattern) * 2 * NUM_BLOCKS_FOUR_PER_RANK_A3 +
+        int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]+ OffSet + recordOffset);
     SetSignalValue(ctrlFlagGM, localSetTensor, tag);
 }
@@ -891,8 +891,8 @@ __aicore__ inline void AivCommBase::Record1vN(uint32_t tag, CommPattern pattern,
 __aicore__ inline void AivCommBase::RecordNv1(uint32_t tag, int32_t waitRank, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t recordOffset = multiOffset + 2 * 2 * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
-        (int32_t(waitRank == rank_) * BLOCK_DIM_FOUR_PER_RANK_A3 * 2 + int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3
+    int32_t recordOffset = multiOffset + 2 * 2 * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
+        (int32_t(waitRank == rank_) * NUM_BLOCKS_FOUR_PER_RANK_A3 * 2 + int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3
         + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[waitRank]+ OffSet + recordOffset);
     AddSignalValue(ctrlFlagGM, localSetTensor, tag);
@@ -916,7 +916,7 @@ __aicore__ inline void AivCommBase::Wait(uint32_t tag, int32_t recordRank, AivNo
 __aicore__ inline void AivCommBase::LocalWait(uint32_t tag, int32_t blockIdx, AivNotifyType notifyType, bool ifpingpong)
 {
     int32_t OffSet = ifpingpong ? pingpongOffset : 0;
-    int32_t waitOffset = localOffset + (int32_t(notifyType) * MAX_BLOCK_DIM + blockIdx) * FLAG_SIZE;
+    int32_t waitOffset = localOffset + (int32_t(notifyType) * MAX_NUM_BLOCKS + blockIdx) * FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_] + OffSet + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
 }
@@ -924,8 +924,8 @@ __aicore__ inline void AivCommBase::LocalWait(uint32_t tag, int32_t blockIdx, Ai
 __aicore__ inline void AivCommBase::WaitNv1(uint32_t tag, int32_t recordRank, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t waitOffset = multiOffset + (int32_t(recordRank == rank_) * BLOCK_DIM_FOUR_PER_RANK_A3 * 2 +
-        int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
+    int32_t waitOffset = multiOffset + (int32_t(recordRank == rank_) * NUM_BLOCKS_FOUR_PER_RANK_A3 * 2 +
+        int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[recordRank]+ OffSet + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
 }
@@ -933,9 +933,9 @@ __aicore__ inline void AivCommBase::WaitNv1(uint32_t tag, int32_t recordRank, Ai
 __aicore__ inline void AivCommBase::Wait1vN(uint32_t tag, CommPattern pattern, bool ifClear, AivNotifyType notifyType, int32_t block, bool ifPingpong)
 {
     int32_t OffSet = ifPingpong ? pingpongOffset : 0;
-    int32_t waitOffset = multiOffset + 2 * 2 * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
-        (int32_t(pattern) * BLOCK_DIM_FOUR_PER_RANK_A3 * 2 +
-        int32_t(notifyType) * BLOCK_DIM_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
+    int32_t waitOffset = multiOffset + 2 * 2 * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
+        (int32_t(pattern) * NUM_BLOCKS_FOUR_PER_RANK_A3 * 2 +
+        int32_t(notifyType) * NUM_BLOCKS_FOUR_PER_RANK_A3 + block) * ATOMIC_FLAG_SIZE;
     __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(GM_OUT[rank_]+ OffSet + waitOffset);
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
     PipeBarrier<PIPE_ALL>();

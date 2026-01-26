@@ -614,7 +614,7 @@ u32 GetAivTimeout(s32 execTimeOut, bool isSetByConfig) {
     return timeout < AIV_TIMEOUT_MAX_US ? timeout : AIV_TIMEOUT_MAX_US;
 }
 
-HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stream, s32 step, const std::string& comm, u32 blockDim,
+HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stream, s32 step, const std::string& comm, u32 numBlocks,
     KernelArgsType argsType, const AivTopoArgs &topoArgs, s32 execTimeOut, bool execTimeOutSet)
 {
     uint64_t beginTime = 0;
@@ -647,7 +647,7 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
             "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
-        aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < blockDim ? rankSize: blockDim, stream,
+        aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < numBlocks ? rankSize: numBlocks, stream,
             &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
         CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
             HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
@@ -664,7 +664,7 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
             "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
-        aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < blockDim ? rankSize: blockDim, stream,
+        aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < numBlocks ? rankSize: numBlocks, stream,
             &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
         CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
             HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
@@ -672,7 +672,7 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
     
     struct TaskParaGeneral taskParaGeneral;
     TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0,
-                rankSize < blockDim ? rankSize: blockDim, rankSize, -1, flagAddr, rank);
+                rankSize < numBlocks ? rankSize: numBlocks, rankSize, -1, flagAddr, rank);
     taskParaGeneral.isMainStream = true;
     taskParaGeneral.stream = stream;
     taskParaGeneral.beginTime = beginTime;
@@ -709,14 +709,14 @@ HcclResult BarrierForMulServer(const AivResourceArgs &resourceArgs, s32 step, co
         KernelArgsType::ARGS_TYPE_SUPERPOD));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][BarrierForMulServer] errNo[0x%016llx] GetKernelFunc failed, "
             "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
-    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.blockDim, resourceArgs.stream,
+    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
             &cfg, args, argsSize, nullptr, 0);
 
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
  
     struct TaskParaGeneral taskParaGeneral;
-    TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0, resourceArgs.blockDim, topoArgs.rankSize, -1,
+    TaskParaAiv taskParaAiv(HcclCMDType::HCCL_CMD_INVALID, step, 0, resourceArgs.numBlocks, topoArgs.rankSize, -1,
         flagAddr, rank);
     taskParaGeneral.isMainStream = true;
     taskParaGeneral.stream = resourceArgs.stream;
@@ -735,7 +735,7 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
     u32 rank = topoArgs.rank;
     u32 rankSize = topoArgs.rankSize;
     CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, 1, 
-        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs, algArgs.execTimeOut, algArgs.execTimeOutSet));
+        topoArgs.identify, resourceArgs.numBlocks, algArgs.argsType, topoArgs, algArgs.execTimeOut, algArgs.execTimeOutSet));
 
     u8* flagAddr;
     if (algArgs.argsType != KernelArgsType::ARGS_TYPE_SERVER || 
@@ -751,7 +751,7 @@ HcclResult ClearAivSyncBuf(void** cclBuffersOut, const AivResourceArgs &resource
     CHK_RET(hrtMemAsyncCopy(flagMem.ptr(), AIV_FLAG_AREA_SIZE, zeroMem.ptr(), AIV_FLAG_AREA_SIZE,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_DEVICE, resourceArgs.stream));
     CHK_RET(Barrier(cclBuffersOut, rank, rankSize, resourceArgs.stream, RESET_TAIL_SYNC_TAG,
-        topoArgs.identify, resourceArgs.blockDim, algArgs.argsType, topoArgs, algArgs.execTimeOut, algArgs.execTimeOutSet));
+        topoArgs.identify, resourceArgs.numBlocks, algArgs.argsType, topoArgs, algArgs.execTimeOut, algArgs.execTimeOutSet));
     HCCL_INFO("[AIV][ClearAivSyncBuf] clearaiv done.");
     return HCCL_SUCCESS;
 }
@@ -782,7 +782,7 @@ void TaskAivProfilerWrap(const AivOpArgs& opArgs, const AivTopoArgs& topoArgs,
     struct TaskParaGeneral taskParaGeneral;
 
     TaskParaAiv taskParaAiv(opArgs.cmdType, resourceArgs.aivTag, opArgs.count*SIZE_TABLE[opArgs.dataType],
-                resourceArgs.blockDim, topoArgs.rankSize, algArgs.step, flagMem, topoArgs.rank, opArgs.isOpBase);
+                resourceArgs.numBlocks, topoArgs.rankSize, algArgs.step, flagMem, topoArgs.rank, opArgs.isOpBase);
 
     if(taskParaAiv.flagMem == nullptr){
         taskParaAiv.flagMem = resourceArgs.buffersOut[topoArgs.rank];
@@ -837,7 +837,7 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner] errNo[0x%016llx] GetKernelFunc failed, "
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
-    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.blockDim, resourceArgs.stream,
+    aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
         &cfg, args, argsSize, nullptr, 0);
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);

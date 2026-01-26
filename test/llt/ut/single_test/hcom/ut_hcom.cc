@@ -2924,7 +2924,7 @@ TEST_F(HcomTest, ut_HcclCommGraphBroadcast)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetBlockDim)
+    MOCKER_CPP(&hcclComm::GetNumBlocks)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
 
@@ -3155,7 +3155,7 @@ TEST_F(HcomTest, ut_HcclCommGraphAlltoAllV)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetBlockDim)
+    MOCKER_CPP(&hcclComm::GetNumBlocks)
         .stubs()
         .will(returnValue(HCCL_SUCCESS));
 
@@ -4623,29 +4623,29 @@ TEST_F(HcomTest, ut_hcom_SetAivCoreLimit)
     h->communicator_ = std::make_unique<HcclCommunicator>();
 
     s64 base = 0;
-    u32 blockDim = 4;
-    EXPECT_EQ(HcclCommGraphSetAivCoreLimit(base, blockDim), HCCL_E_PARA);
+    u32 numBlocks = 4;
+    EXPECT_EQ(HcclCommGraphSetAivCoreLimit(base, numBlocks), HCCL_E_PARA);
  
     base = reinterpret_cast<s64>(h.get());
-    blockDim = 0;
-    EXPECT_EQ(HcclCommGraphSetAivCoreLimit(base, blockDim), HCCL_E_PARA);
+    numBlocks = 0;
+    EXPECT_EQ(HcclCommGraphSetAivCoreLimit(base, numBlocks), HCCL_E_PARA);
  
-    blockDim = 4;
-    EXPECT_EQ(HcclCommGraphSetAivCoreLimit(base, blockDim), HCCL_SUCCESS);
-    // EXPECT_EQ(h->communicator_->blockDim_, 4U);
+    numBlocks = 4;
+    EXPECT_EQ(HcclCommGraphSetAivCoreLimit(base, numBlocks), HCCL_SUCCESS);
+    // EXPECT_EQ(h->communicator_->numBlocks_, 4U);
  
-    blockDim = 0;
-    EXPECT_EQ(HcomSetAivCoreLimit(nullptr, blockDim), HCCL_E_PARA);
+    numBlocks = 0;
+    EXPECT_EQ(HcomSetAivCoreLimit(nullptr, numBlocks), HCCL_E_PARA);
  
     MOCKER(HcomGetCommByGroup).stubs().with(any(), outBound(h)).will(returnValue(HCCL_SUCCESS));
-    blockDim = 5;
-    EXPECT_EQ(HcomSetAivCoreLimit(nullptr, blockDim), HCCL_SUCCESS);
-    // EXPECT_EQ(h->communicator_->blockDim_, 5U);
+    numBlocks = 5;
+    EXPECT_EQ(HcomSetAivCoreLimit(nullptr, numBlocks), HCCL_SUCCESS);
+    // EXPECT_EQ(h->communicator_->numBlocks_, 5U);
  
     std::string group("hcom_group_1");
-    blockDim = 6;
-    EXPECT_EQ(HcomSetAivCoreLimit(group.c_str(), blockDim), HCCL_SUCCESS);
-    // EXPECT_EQ(h->communicator_->blockDim_, 6U);
+    numBlocks = 6;
+    EXPECT_EQ(HcomSetAivCoreLimit(group.c_str(), numBlocks), HCCL_SUCCESS);
+    // EXPECT_EQ(h->communicator_->numBlocks_, 6U);
  
     GlobalMockObject::verify();
 }

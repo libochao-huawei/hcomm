@@ -57,7 +57,7 @@ __aicore__ inline void AivReduceScatterCrossNodeGraph91093::Process(GM_ADDR buff
             TQue<AscendC::TPosition::VECIN, 1> syncQue;
             GlobalTensor<int32_t> syncGlobal;
             GlobalTensor<int32_t> syncGlobalSecond;
-            uint32_t syncBufferSize = blockdim_ * 32;
+            uint32_t syncBufferSize = numBlocks_ * 32;
             LocalTensor<int32_t> workLocal;
 
             pipe.InitBuffer(syncQue, 1, syncBufferSize);

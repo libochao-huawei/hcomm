@@ -131,8 +131,8 @@ HcclResult AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
     attr.value.timeout = timeOut;
     cfg.numAttrs = 1;
     cfg.attrs = &attr;
-    constexpr u32 blockDim = 1;
-    aclError aclRet = aclrtLaunchKernelWithConfig(funcHandle, blockDim, stm, &cfg, argsHandle, nullptr);
+    constexpr u32 numBlocks = 1;
+    aclError aclRet = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, stm, &cfg, argsHandle, nullptr);
     CHK_PRT_RET(aclRet != ACL_SUCCESS,
                 HCCL_ERROR("[aclrtLaunchKernelWithConfig]errNo[0x%016llx] launch kernel failed", ret), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
@@ -182,8 +182,8 @@ HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
   attr.value.timeout = timeOut;
   cfg.numAttrs = 1;
   cfg.attrs = &attr;
-  constexpr u32 blockDim = 1;
-  aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, blockDim, stm, &cfg, g_aicpuKernelBinV2.ptr(), hostBufferSize,
+  constexpr u32 numBlocks = 1;
+  aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, stm, &cfg, g_aicpuKernelBinV2.ptr(), hostBufferSize,
                                                   nullptr, 0);
   CHK_PRT_RET(aclRet != ACL_SUCCESS,
               HCCL_ERROR("[aclrtLaunchKernelWithHostArgs]errNo[0x%016llx] launch kernel failed", aclRet),

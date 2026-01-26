@@ -16,7 +16,7 @@
 static nlohmann::json dynamic_add_float16_v51 = {
     {"binFileName", "dynamic_add_float16_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_add_float16_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -46,7 +46,7 @@ static nlohmann::json dynamic_add_float16_v51_tiling_info = {
 static nlohmann::json dynamic_add_float32_v51 = {
     {"binFileName", "dynamic_add_float32_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_add_float32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -76,7 +76,7 @@ static nlohmann::json dynamic_add_float32_v51_tiling_info = {
 static nlohmann::json dynamic_add_int32_v51 = {
     {"binFileName", "dynamic_add_int32_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_add_int32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -106,7 +106,7 @@ static nlohmann::json dynamic_add_int32_v51_tiling_info = {
 static nlohmann::json dynamic_add_float16_v80 = {
     {"binFileName", "add_Ascend910_float16"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "add_Ascend910_float16_210000000"},
                     {"kernelName", "add_Ascend910_float16_210010000"},
                     {"kernelName", "add_Ascend910_float16_232000000"},
@@ -154,7 +154,7 @@ static nlohmann::json dynamic_add_float16_v80_tiling_info = {
 static nlohmann::json dynamic_add_float32_v80 = {
     {"binFileName", "add_Ascend910_float32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "add_Ascend910_float32_210000000"},
                     {"kernelName", "add_Ascend910_float32_210010000"},
                     {"kernelName", "add_Ascend910_float32_232000000"},
@@ -202,7 +202,7 @@ static nlohmann::json dynamic_add_float32_v80_tiling_info = {
 static nlohmann::json dynamic_add_int32_v80 = {
     {"binFileName", "dynamic_add_int32_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_add_int32_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -232,7 +232,7 @@ static nlohmann::json dynamic_add_int32_v80_tiling_info = {
 static nlohmann::json dynamic_mul_float16_v51 = {
     {"binFileName", "dynamic_mul_float16_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_mul_float16_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -262,7 +262,7 @@ static nlohmann::json dynamic_mul_float16_v51_tiling_info = {
 static nlohmann::json dynamic_mul_float32_v51 = {
     {"binFileName", "dynamic_mul_float32_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_mul_float32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -292,7 +292,7 @@ static nlohmann::json dynamic_mul_float32_v51_tiling_info = {
 static nlohmann::json dynamic_mul_int32_v51 = {
     {"binFileName", "dynamic_add_float16_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_mul_int32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -322,7 +322,7 @@ static nlohmann::json dynamic_mul_int32_v51_tiling_info = {
 static nlohmann::json dynamic_mul_float16_v80 = {
     {"binFileName", "mul_Ascend910_float16"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910_float16_210000000"},
                     {"kernelName", "mul_Ascend910_float16_210010000"},
                     {"kernelName", "mul_Ascend910_float16_232000000"},
@@ -370,7 +370,7 @@ static nlohmann::json dynamic_mul_float16_v80_tiling_info = {
 static nlohmann::json dynamic_mul_float32_v80 = {
     {"binFileName", "mul_Ascend910_float32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910_float32_210000000"},
                     {"kernelName", "mul_Ascend910_float32_210010000"},
                     {"kernelName", "mul_Ascend910_float32_232000000"},
@@ -418,7 +418,7 @@ static nlohmann::json dynamic_mul_float32_v80_tiling_info = {
 static nlohmann::json dynamic_mul_int32_v80 = {
     {"binFileName", "dynamic_mul_int32_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_mul_int32_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -448,7 +448,7 @@ static nlohmann::json dynamic_mul_int32_v80_tiling_info = {
 static nlohmann::json dynamic_maximum_float16_v51 = {
     {"binFileName", "dynamic_maximum_float16_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_maximum_float16_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -493,7 +493,7 @@ static nlohmann::json dynamic_maximum_float16_v51_tiling_info = {
 static nlohmann::json dynamic_maximum_float32_v51 = {
     {"binFileName", "dynamic_maximum_float32_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_maximum_float32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -538,7 +538,7 @@ static nlohmann::json dynamic_maximum_float32_v51_tiling_info = {
 static nlohmann::json dynamic_maximum_int32_v51 = {
     {"binFileName", "dynamic_maximum_int32_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_maximum_int32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -583,7 +583,7 @@ static nlohmann::json dynamic_maximum_int32_v51_tiling_info = {
 static nlohmann::json dynamic_maximum_float16_v80 = {
     {"binFileName", "dynamic_maximum_float16_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_maximum_float16_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELf"},
     {"opParaSize", 16},
@@ -628,7 +628,7 @@ static nlohmann::json dynamic_maximum_float16_v80_tiling_info = {
 static nlohmann::json dynamic_maximum_float32_v80 = {
     {"binFileName", "dynamic_maximum_float32_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_maximum_float32_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -673,7 +673,7 @@ static nlohmann::json dynamic_maximum_float32_v80_tiling_info = {
 static nlohmann::json dynamic_maximum_int32_v80 = {
     {"binFileName", "dynamic_maximum_int32_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_maximum_int32_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -718,7 +718,7 @@ static nlohmann::json dynamic_maximum_int32_v80_tiling_info = {
 static nlohmann::json dynamic_minimum_float16_v51 = {
     {"binFileName", "dynamic_minimum_float16_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_minimum_float16_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -763,7 +763,7 @@ static nlohmann::json dynamic_minimum_float16_v51_tiling_info = {
 static nlohmann::json dynamic_minimum_float32_v51 = {
     {"binFileName", "dynamic_minimum_float32_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_minimum_float32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -808,7 +808,7 @@ static nlohmann::json dynamic_minimum_float32_v51_tiling_info = {
 static nlohmann::json dynamic_minimum_int32_v51 = {
     {"binFileName", "dynamic_minimum_int32_v51"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_minimum_int32_v51__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -853,7 +853,7 @@ static nlohmann::json dynamic_minimum_int32_v51_tiling_info = {
 static nlohmann::json dynamic_minimum_float16_v80 = {
     {"binFileName", "dynamic_minimum_float16_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_minimum_float16_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -898,7 +898,7 @@ static nlohmann::json dynamic_minimum_float16_v80_tiling_info = {
 static nlohmann::json dynamic_minimum_float32_v80 = {
     {"binFileName", "dynamic_minimum_float32_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_minimum_float32_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -943,7 +943,7 @@ static nlohmann::json dynamic_minimum_float32_v80_tiling_info = {
 static nlohmann::json dynamic_minimum_int32_v80 = {
     {"binFileName", "dynamic_minimum_int32_v80"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelName", "dynamic_minimum_int32_v80__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
     {"opParaSize", 16},
@@ -988,7 +988,7 @@ static nlohmann::json dynamic_minimum_int32_v80_tiling_info = {
 static nlohmann::json dynamic_add_int8_v80 = {
     {"binFileName", "add_Ascend910_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "add_Ascend910_int8_210000000"},
                     {"kernelName", "add_Ascend910_int8_210010000"},
                     {"kernelName", "add_Ascend910_int8_232000000"},
@@ -1027,7 +1027,7 @@ static nlohmann::json dynamic_add_int8_v80_tiling_info = {
 static nlohmann::json dynamic_add_int8_v51 = {
     {"binFileName", "add_Ascend310P3_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "add_Ascend310P3_int8_210000000"},
                     {"kernelName", "add_Ascend310P3_int8_210010000"},
                     {"kernelName", "add_Ascend310P3_int8_232000000"},
@@ -1066,7 +1066,7 @@ static nlohmann::json dynamic_add_int8_v51_tiling_info = {
 static nlohmann::json dynamic_mul_int8_v80 = {
     {"binFileName", "mul_Ascend910_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910_int8_210000000"},
                     {"kernelName", "mul_Ascend910_int8_210010000"},
                     {"kernelName", "mul_Ascend910_int8_232000000"},
@@ -1105,7 +1105,7 @@ static nlohmann::json dynamic_mul_int8_v80_tiling_info = {
 static nlohmann::json dynamic_mul_int8_v51 = {
     {"binFileName", "mul_Ascend310P3_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend310P3_int8_210000000"},
                     {"kernelName", "mul_Ascend310P3_int8_210010000"},
                     {"kernelName", "mul_Ascend310P3_int8_232000000"},
@@ -1144,7 +1144,7 @@ static nlohmann::json dynamic_mul_int8_v51_tiling_info = {
 static nlohmann::json dynamic_maximum_int8_v80 = {
     {"binFileName", "maximum_Ascend910_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "maximum_Ascend910_int8_210000000"},
                     {"kernelName", "maximum_Ascend910_int8_210010000"},
                     {"kernelName", "maximum_Ascend910_int8_232000000"},
@@ -1183,7 +1183,7 @@ static nlohmann::json dynamic_maximum_int8_v80_tiling_info = {
 static nlohmann::json dynamic_maximum_int8_v51 = {
     {"binFileName", "maximum_Ascend310P3_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "maximum_Ascend310P3_int8_210000000"},
                     {"kernelName", "maximum_Ascend310P3_int8_210010000"},
                     {"kernelName", "maximum_Ascend310P3_int8_232000000"},
@@ -1222,7 +1222,7 @@ static nlohmann::json dynamic_maximum_int8_v51_tiling_info = {
 static nlohmann::json dynamic_minimum_int8_v80 = {
     {"binFileName", "minimum_Ascend910_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "minimum_Ascend910_int8_210000000"},
                     {"kernelName", "minimum_Ascend910_int8_210010000"},
                     {"kernelName", "minimum_Ascend910_int8_232000000"},
@@ -1261,7 +1261,7 @@ static nlohmann::json dynamic_minimum_int8_v80_tiling_info = {
 static nlohmann::json dynamic_minimum_int8_v51 = {
     {"binFileName", "minimum_Ascend310P3_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "minimum_Ascend310P3_int8_210000000"},
                     {"kernelName", "minimum_Ascend310P3_int8_210010000"},
                     {"kernelName", "minimum_Ascend310P3_int8_232000000"},
@@ -1300,7 +1300,7 @@ static nlohmann::json dynamic_minimum_int8_v51_tiling_info = {
 static nlohmann::json dynamic_mul_int8_v81_910B1 = {
     {"binFileName", "mul_Ascend910B1_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B1_int8_210000000"},
                     {"kernelName", "mul_Ascend910B1_int8_210010000"},
                     {"kernelName", "mul_Ascend910B1_int8_232000000"},
@@ -1319,7 +1319,7 @@ static nlohmann::json dynamic_mul_int8_v81_910B1 = {
 static nlohmann::json dynamic_mul_int32_v81_910B1 = {
     {"binFileName", "mul_Ascend910B1_int32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B1_int32_210000000"},
                     {"kernelName", "mul_Ascend910B1_int32_210010000"},
                     {"kernelName", "mul_Ascend910B1_int32_232000000"},
@@ -1338,7 +1338,7 @@ static nlohmann::json dynamic_mul_int32_v81_910B1 = {
 static nlohmann::json dynamic_mul_float16_v81_910B1 = {
     {"binFileName", "mul_Ascend910B1_float16"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B1_float16_210000000"},
                     {"kernelName", "mul_Ascend910B1_float16_210010000"},
                     {"kernelName", "mul_Ascend910B1_float16_232000000"},
@@ -1357,7 +1357,7 @@ static nlohmann::json dynamic_mul_float16_v81_910B1 = {
 static nlohmann::json dynamic_mul_float32_v81_910B1 = {
     {"binFileName", "mul_Ascend910B1_float32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B1_float32_210000000"},
                     {"kernelName", "mul_Ascend910B1_float32_210010000"},
                     {"kernelName", "mul_Ascend910B1_float32_232000000"},
@@ -1376,7 +1376,7 @@ static nlohmann::json dynamic_mul_float32_v81_910B1 = {
 static nlohmann::json dynamic_mul_int8_v81_910B2 = {
     {"binFileName", "mul_Ascend910B2_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B2_int8_210000000"},
                     {"kernelName", "mul_Ascend910B2_int8_210010000"},
                     {"kernelName", "mul_Ascend910B2_int8_232000000"},
@@ -1395,7 +1395,7 @@ static nlohmann::json dynamic_mul_int8_v81_910B2 = {
 static nlohmann::json dynamic_mul_int32_v81_910B2 = {
     {"binFileName", "mul_Ascend910B2_int32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B2_int32_210000000"},
                     {"kernelName", "mul_Ascend910B2_int32_210010000"},
                     {"kernelName", "mul_Ascend910B2_int32_232000000"},
@@ -1414,7 +1414,7 @@ static nlohmann::json dynamic_mul_int32_v81_910B2 = {
 static nlohmann::json dynamic_mul_float16_v81_910B2 = {
     {"binFileName", "mul_Ascend910B2_float16"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B2_float16_210000000"},
                     {"kernelName", "mul_Ascend910B2_float16_210010000"},
                     {"kernelName", "mul_Ascend910B2_float16_232000000"},
@@ -1433,7 +1433,7 @@ static nlohmann::json dynamic_mul_float16_v81_910B2 = {
 static nlohmann::json dynamic_mul_float32_v81_910B2 = {
     {"binFileName", "mul_Ascend910B2_float32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B2_float32_210000000"},
                     {"kernelName", "mul_Ascend910B2_float32_210010000"},
                     {"kernelName", "mul_Ascend910B2_float32_232000000"},
@@ -1452,7 +1452,7 @@ static nlohmann::json dynamic_mul_float32_v81_910B2 = {
 static nlohmann::json dynamic_mul_int8_v81_910B3 = {
     {"binFileName", "mul_Ascend910B3_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B3_int8_210000000"},
                     {"kernelName", "mul_Ascend910B3_int8_210010000"},
                     {"kernelName", "mul_Ascend910B3_int8_232000000"},
@@ -1471,7 +1471,7 @@ static nlohmann::json dynamic_mul_int8_v81_910B3 = {
 static nlohmann::json dynamic_mul_int32_v81_910B3 = {
     {"binFileName", "mul_Ascend910B3_int32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B3_int32_210000000"},
                     {"kernelName", "mul_Ascend910B3_int32_210010000"},
                     {"kernelName", "mul_Ascend910B3_int32_232000000"},
@@ -1490,7 +1490,7 @@ static nlohmann::json dynamic_mul_int32_v81_910B3 = {
 static nlohmann::json dynamic_mul_float16_v81_910B3 = {
     {"binFileName", "mul_Ascend910B3_float16"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B3_float16_210000000"},
                     {"kernelName", "mul_Ascend910B3_float16_210010000"},
                     {"kernelName", "mul_Ascend910B3_float16_232000000"},
@@ -1509,7 +1509,7 @@ static nlohmann::json dynamic_mul_float16_v81_910B3 = {
 static nlohmann::json dynamic_mul_float32_v81_910B3 = {
     {"binFileName", "mul_Ascend910B3_float32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B3_float32_210000000"},
                     {"kernelName", "mul_Ascend910B3_float32_210010000"},
                     {"kernelName", "mul_Ascend910B3_float32_232000000"},
@@ -1528,7 +1528,7 @@ static nlohmann::json dynamic_mul_float32_v81_910B3 = {
 static nlohmann::json dynamic_mul_int8_v81_910B4 = {
     {"binFileName", "mul_Ascend910B4_int8"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B4_int8_210000000"},
                     {"kernelName", "mul_Ascend910B4_int8_210010000"},
                     {"kernelName", "mul_Ascend910B4_int8_232000000"},
@@ -1547,7 +1547,7 @@ static nlohmann::json dynamic_mul_int8_v81_910B4 = {
 static nlohmann::json dynamic_mul_int32_v81_910B4 = {
     {"binFileName", "mul_Ascend910B4_int32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B4_int32_210000000"},
                     {"kernelName", "mul_Ascend910B4_int32_210010000"},
                     {"kernelName", "mul_Ascend910B4_int32_232000000"},
@@ -1566,7 +1566,7 @@ static nlohmann::json dynamic_mul_int32_v81_910B4 = {
 static nlohmann::json dynamic_mul_float16_v81_910B4 = {
     {"binFileName", "mul_Ascend910B4_float16"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B4_float16_210000000"},
                     {"kernelName", "mul_Ascend910B4_float16_210010000"},
                     {"kernelName", "mul_Ascend910B4_float16_232000000"},
@@ -1585,7 +1585,7 @@ static nlohmann::json dynamic_mul_float16_v81_910B4 = {
 static nlohmann::json dynamic_mul_float32_v81_910B4 = {
     {"binFileName", "mul_Ascend910B4_float32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"kernelList", {{"kernelName", "mul_Ascend910B4_float32_210000000"},
                     {"kernelName", "mul_Ascend910B4_float32_210010000"},
                     {"kernelName", "mul_Ascend910B4_float32_232000000"},
@@ -2100,7 +2100,7 @@ static nlohmann::json dynamic_mul_float32_v81_910B4_tiling_info = {
 static nlohmann::json MemSet_dynamic_AtomicAddrClean_1_ascend910 = {
     {"binFileName", "MemSet_dynamic_AtomicAddrClean_1_ascend910"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 32},
+    {"numBlocks", 32},
     {"deterministic", "ignore"},
     {"kernelName", "MemSet_dynamic_AtomicAddrClean_1_ascend910__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
@@ -2125,7 +2125,7 @@ static nlohmann::json MemSet_dynamic_AtomicAddrClean_1_ascend910_tiling_info = {
 static nlohmann::json MemSet_dynamic_AtomicAddrClean_1_ascend310p3 = {
     {"binFileName", "MemSet_dynamic_AtomicAddrClean_1_ascend310p3"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 8},
+    {"numBlocks", 8},
     {"deterministic", "ignore"},
     {"kernelName", "MemSet_dynamic_AtomicAddrClean_1_ascend310p3__kernel0"},
     {"magic", "RT_DEV_BINARY_MAGIC_ELF"},
@@ -2150,7 +2150,7 @@ static nlohmann::json MemSet_dynamic_AtomicAddrClean_1_ascend310p3_tiling_info =
 static nlohmann::json MemSet_dynamic_AtomicAddrClean_1_ascend910b = {
     {"binFileName", "MemSet_dynamic_AtomicAddrClean_1_ascend910b"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 48},
+    {"numBlocks", 48},
     {"core_type", "AIV"},
     {"deterministic", "ignore"},
     {"kernelName", "MemSet_dynamic_AtomicAddrClean_1_ascend910b__kernel0"},
@@ -2179,7 +2179,7 @@ static nlohmann::json MemSet_dynamic_AtomicAddrClean_1_ascend910b_tiling_info = 
 static nlohmann::json te_gatherv2_08c676dd0564eaf646f0054fc0fb4adc559d7dca0155d698d2b788ce8a3a6a39_1 = {
     {"binFileName", "te_gatherv2_08c676dd0564eaf646f0054fc0fb4adc559d7dca0155d698d2b788ce8a3a6a39_1"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 32},
+    {"numBlocks", 32},
     {"core_type", "AiCore"},
     {"deterministic", "ignore"},
     {"kernelName", "te_gatherv2_08c676dd0564eaf646f0054fc0fb4adc559d7dca0155d698d2b788ce8a3a6a39_1__kernel0"},
@@ -2210,7 +2210,7 @@ static nlohmann::json te_gatherv2_08c676dd0564eaf646f0054fc0fb4adc559d7dca0155d6
 static nlohmann::json te_gatherv2_187b0f20dcf51283c20135753f6879d71370acd742114d5cb4847c86e660cd3c_1 = {
     {"binFileName", "te_gatherv2_187b0f20dcf51283c20135753f6879d71370acd742114d5cb4847c86e660cd3c_1"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 32},
+    {"numBlocks", 32},
     {"core_type", "AiCore"},
     {"deterministic", "ignore"},
     {"kernelName", "te_gatherv2_187b0f20dcf51283c20135753f6879d71370acd742114d5cb4847c86e660cd3c_1__kernel0"},
@@ -2241,7 +2241,7 @@ static nlohmann::json te_gatherv2_187b0f20dcf51283c20135753f6879d71370acd742114d
 static nlohmann::json gatherv2_Ascend910B_float32_B1B2 = {
     {"binFileName", "gatherv2_Ascend910B_float32_B1B2"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 48},
+    {"numBlocks", 48},
     {"core_type", "VectorCore"},
     {"deterministic", "ignore"},
     {"intercoreSync", 0},
@@ -2266,7 +2266,7 @@ static nlohmann::json gatherv2_Ascend910B_float32_B1B2 = {
 static nlohmann::json gatherv2_Ascend910B_float32_B3B4 = {
     {"binFileName", "gatherv2_Ascend910B_float32_B3B4"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 40},
+    {"numBlocks", 40},
     {"core_type", "VectorCore"},
     {"deterministic", "ignore"},
     {"intercoreSync", 0},
@@ -2291,7 +2291,7 @@ static nlohmann::json gatherv2_Ascend910B_float32_B3B4 = {
 static nlohmann::json te_gatherv2_ca87d1f41c037f24ece7993bc5c6f9afc00be851bcbaef7c03daf96701a30810_1 = {
     {"binFileName", "te_gatherv2_ca87d1f41c037f24ece7993bc5c6f9afc00be851bcbaef7c03daf96701a30810_1"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 8},
+    {"numBlocks", 8},
     {"core_type", "AiCore"},
     {"deterministic", "ignore"},
     {"kernelName", "te_gatherv2_ca87d1f41c037f24ece7993bc5c6f9afc00be851bcbaef7c03daf96701a30810_1__kernel0"},
@@ -2322,7 +2322,7 @@ static nlohmann::json te_gatherv2_ca87d1f41c037f24ece7993bc5c6f9afc00be851bcbaef
 static nlohmann::json te_gatherv2_ec8c036da6e525f834dabb7a436b50387bbc5929f5201b28f0db7bd63fdb3a9b_1 = {
     {"binFileName", "te_gatherv2_ec8c036da6e525f834dabb7a436b50387bbc5929f5201b28f0db7bd63fdb3a9b_1"},
     {"binFileSuffix", ".o"},
-    {"blockDim", 8},
+    {"numBlocks", 8},
     {"core_type", "AiCore"},
     {"deterministic", "ignore"},
     {"kernelName", "te_gatherv2_ec8c036da6e525f834dabb7a436b50387bbc5929f5201b28f0db7bd63fdb3a9b_1__kernel0"},
@@ -2353,7 +2353,7 @@ static nlohmann::json te_gatherv2_ec8c036da6e525f834dabb7a436b50387bbc5929f5201b
 static nlohmann::json te_unsortedsegmentsum_72b2c8c4c1584aa29ce28fc90a2f137f8e986479aa7adc062001be857271aea5_1 = {
     {"binFileName", "te_unsortedsegmentsum_72b2c8c4c1584aa29ce28fc90a2f137f8e986479aa7adc062001be857271aea5_1"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"core_type", "AiCore"},
     {"deterministic", "false"},
     {"kernelName", "te_unsortedsegmentsum_72b2c8c4c1584aa29ce28fc90a2f137f8e986479aa7adc062001be857271aea5_1__kernel0"},
@@ -2387,7 +2387,7 @@ static nlohmann::json
 static nlohmann::json te_unsortedsegmentsum_da0a5264250330a6c92ab5b622124e7d75359168a46ae6eab47256ad57367ba9_1 = {
     {"binFileName", "te_unsortedsegmentsum_da0a5264250330a6c92ab5b622124e7d75359168a46ae6eab47256ad57367ba9_1"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"core_type", "AiCore"},
     {"deterministic", "false"},
     {"kernelName", "te_unsortedsegmentsum_da0a5264250330a6c92ab5b622124e7d75359168a46ae6eab47256ad57367ba9_1__kernel0"},
@@ -2421,7 +2421,7 @@ static nlohmann::json
 static nlohmann::json uss_Ascend910B4_float32 = {
     {"binFileName", "uss_Ascend910B4_float32"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"core_type", "VectorCore"},
     {"deterministic", "false"},
     {"intercoreSync", 0},
@@ -2526,7 +2526,7 @@ static nlohmann::json uss_Ascend910B4_float32 = {
 static nlohmann::json te_unsortedsegmentsum_d0a8c7e68142042963e855ce6004fa68d52228200ba7cf5426e5ab47e86ae38c_1 = {
     {"binFileName", "te_unsortedsegmentsum_d0a8c7e68142042963e855ce6004fa68d52228200ba7cf5426e5ab47e86ae38c_1"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"core_type", "AiCore"},
     {"deterministic", "false"},
     {"kernelName", "te_unsortedsegmentsum_d0a8c7e68142042963e855ce6004fa68d52228200ba7cf5426e5ab47e86ae38c_1__kernel0"},
@@ -2559,7 +2559,7 @@ static nlohmann::json
 static nlohmann::json dynamic_add_int64_v80 = {
     {"binFileName", "add_Ascend910_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {
         {"_base_info", {{"100", {32, 8, 5436, 2716}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
@@ -2625,7 +2625,7 @@ static nlohmann::json dynamic_add_int64_v80 = {
 static nlohmann::json dynamic_mul_int64_v80 = {
     {"binFileName", "mul_Ascend910_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {
         {"_base_info", {{"100", {32, 8, 8192, 4096}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
@@ -2717,7 +2717,7 @@ static nlohmann::json dynamic_mul_int64_v80 = {
 static nlohmann::json dynamic_maximum_int64_v80 = {
     {"binFileName", "max_Ascend910_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {
         {"_base_info", {{"100", {32, 8, 8188, 4092}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
@@ -2825,7 +2825,7 @@ static nlohmann::json dynamic_maximum_int64_v80 = {
 static nlohmann::json dynamic_minimum_int64_v80 = {
     {"binFileName", "min_Ascend910_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {{"_base_info", {{"100", {32, 8, 8188, 4092}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
         {"_elewise_disable_fuse", false},
@@ -2915,7 +2915,7 @@ static nlohmann::json dynamic_minimum_int64_v80 = {
 static nlohmann::json dynamic_add_int64_v81 = {
     {"binFileName", "add_Ascend910b_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {
         {"_base_info", {{"100", {40, 8, 3492, 1744}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
@@ -3007,7 +3007,7 @@ static nlohmann::json dynamic_add_int64_v81 = {
 static nlohmann::json dynamic_mul_int64_v81 = {
     {"binFileName", "mul_Ascend910b_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {
         {"_base_info", {{"100", {40, 8, 6144, 3072}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
@@ -3099,7 +3099,7 @@ static nlohmann::json dynamic_mul_int64_v81 = {
 static nlohmann::json dynamic_maximum_int64_v81 = {
     {"binFileName", "max_Ascend910b_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {{"_base_info", {{"100", {48, 8, 6140, 3068}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
         {"_elewise_disable_fuse", false},
@@ -3189,7 +3189,7 @@ static nlohmann::json dynamic_maximum_int64_v81 = {
 static nlohmann::json dynamic_minimum_int64_v81 = {
     {"binFileName", "min_Ascend910b_int64"},
     {"binFileSuffix", ".o"},
-    {"blockDim", -1},
+    {"numBlocks", -1},
     {"compileInfo", {{"_base_info", {{"100", {48, 8, 6140, 3068}}}},
         {"_custom_vars", {{"210000000", {}}, {"210010000", {}}, {"2147483647", {}}}},
         {"_elewise_disable_fuse", false},

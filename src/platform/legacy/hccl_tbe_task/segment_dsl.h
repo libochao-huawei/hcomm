@@ -121,7 +121,7 @@ private:
     int64_t out_size_total_align{ 1 };
     int64_t key{ -1 };
     int64_t key_special_pattern{ 0 };
-    int64_t block_dims{ 1 };
+    int64_t num_blocks{ 1 };
 
     int64_t block_axis{ 0 };
     int64_t ub_norm_axis{ 0 };
