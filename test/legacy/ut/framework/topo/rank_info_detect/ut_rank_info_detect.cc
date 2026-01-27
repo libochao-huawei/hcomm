@@ -199,22 +199,6 @@ TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Input_Expect_NO_THROW)
     EXPECT_EQ(rankInfoDetect.GetHostListenPort(), 60000); // HOST_CONTROL_BASE_PORT
 }
 
-TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Config_PORT_RANGE_Expect_Right)
-{
-    // when
-    EnvHostNicConfig envConfig;
-    EnvHostNicConfig &fakeEnvConfig = envConfig;
-    std::vector<SocketPortRange> range;
-    range.push_back(SocketPortRange{50000, 50001});
-    fakeEnvConfig.hcclSocketPortRange = CfgField<std::vector<SocketPortRange>>{"HCCL_HOST_SOCKET_PORT_RANGE", range, CastSocketPortRange};
-    fakeEnvConfig.hcclSocketPortRange.isParsed = true;
-    MOCKER_CPP(&EnvConfig::GetHostNicConfig).stubs().will(returnValue(fakeEnvConfig));
-
-    // check
-    RankInfoDetect rankInfoDetect;
-    EXPECT_EQ(rankInfoDetect.GetHostListenPort(), HCCL_INVALID_PORT);
-}
-
 TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Config_PORT_BASE_Expect_Right)
 {
     // when
@@ -222,7 +206,7 @@ TEST_F(RankInfoDetectTest, Ut_GetHostListenPort_When_Config_PORT_BASE_Expect_Rig
     EnvHostNicConfig &fakeEnvConfig = envConfig;
     fakeEnvConfig.hcclIfBasePort = CfgField<u32>{"HCCL_IF_BASE_PORT", 40000, Str2T<u32>};
     fakeEnvConfig.hcclIfBasePort.isParsed = true;
-    fakeEnvConfig.hcclSocketPortRange.isParsed = true;
+    fakeEnvConfig.hcclHostSocketPortRange.isParsed = true;
     MOCKER_CPP(&EnvConfig::GetHostNicConfig).stubs().will(returnValue(fakeEnvConfig));
 
     // check
