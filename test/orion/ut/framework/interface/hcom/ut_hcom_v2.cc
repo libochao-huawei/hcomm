@@ -2006,7 +2006,7 @@ TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_UnNormal_Expect_ReturnError)
     EXPECT_EQ(HCCL_E_PARA, ret);
 }
 
-TEST_F(HcomTest, ut_HcomCalcBlockDimV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
+TEST_F(HcomTest, ut_HcomCalcNumBlocksV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
 {
     SetupCommonCommInfo();
 
@@ -2025,12 +2025,12 @@ TEST_F(HcomTest, ut_HcomCalcBlockDimV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
     std::string algName = "";
     u32 blockDim = 0;
 
-    HcclResult ret = HcomCalcBlockDimV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
+    HcclResult ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
     EXPECT_EQ(HCCL_SUCCESS, ret);
     EXPECT_EQ(blockDim, aivCoreLimit);
 
     opType = HcclCMDType::HCCL_CMD_INVALID;
-    ret = HcomCalcBlockDimV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
+    ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
     EXPECT_EQ(HCCL_E_NOT_SUPPORT, ret);
 }
 
