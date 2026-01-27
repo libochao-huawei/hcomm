@@ -37,7 +37,7 @@ typedef struct {
     uint64_t kernelBinOffset;
     uint64_t argsOffset;                           // need add rtTaskInput_t.argOffset
     uint32_t literalBuffLen;
-    uint16_t blockDim;
+    uint16_t numBlocks;
     uint8_t kernelFlag;
 } rtAicoreTaskParam_t;
 
@@ -60,7 +60,7 @@ typedef struct {
     uint8_t vld;
     uint32_t codeSize;
     uint32_t dynTaskDescSize;
-    uint32_t blockDim;
+    uint32_t numBlocks;
     uint32_t taskPcOffset;
 } rtHwtsDynamicTaskDesc_t;
 

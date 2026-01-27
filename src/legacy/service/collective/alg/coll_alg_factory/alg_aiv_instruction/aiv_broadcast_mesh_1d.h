@@ -26,7 +26,7 @@ template<typename T>
 __aicore__ inline void AivBroadcastMesh1D::Process(uint64_t curCount, uint64_t curTag, uint64_t stride)
 {   
     uint64_t dataTypeSize = sizeof(T);
-    uint64_t curStageCoreNum = blockdim_ / rankSize_ * rankSize_;
+    uint64_t curStageCoreNum = numBlocks_ / rankSize_ * rankSize_;
     if (block_idx >= curStageCoreNum) {
         return;
     }
