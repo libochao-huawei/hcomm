@@ -247,7 +247,7 @@ void ProfilingHandler::GetHCCLReportData(const TaskInfo &taskInfo, HCCLReportDat
     }
     hcclReportData.profInfo.dataType = taskInfo.dfxOpInfo_->op_.dataType;
     hcclReportData.profInfo.opType        = taskInfo.dfxOpInfo_->op_.opType;
-    hcclReportData.profInfo.transportType = static_cast<int32_t>(SimpleTaskType::RDMA);
+    hcclReportData.profInfo.transportType = static_cast<int32_t>(SimpleTaskType::UB);
     DumpHCCLReportData(taskInfo, hcclReportData);
     HCCL_INFO("[ProfilingHandler]GetHCCLReportData end.");
 }
