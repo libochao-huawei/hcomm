@@ -422,6 +422,7 @@ public:
     HcclResult GetHDCommunicate(HDCommunicateParams &kfcControlTransferH2DParams,
         HDCommunicateParams &kfcStatusTransferD2HParams);
     HcclResult SetGetAicpuCommState(std::function<bool()> getAicpuCommState);
+    CCLBufferManager& GetCCLbufferManager();
 
     HcclResult RegisterCommUserMem(void* addr, u64 size, void **handle);
     HcclResult DeregisterCommUserMem(void* handle);

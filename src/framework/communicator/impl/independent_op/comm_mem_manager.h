@@ -37,7 +37,7 @@ public:
     ~CommMemMgr() = default;
 
      // cclbuffer内存
-    void CommSetHcclBufferSize(uint64_t size);
+    void CommSetHcclBufferManager(CCLBufferManager &bufferManager);
     HcclResult GetHcclBuffer(CommBuffer *buffer);
     
     // 用户注册/反注册内存
@@ -54,7 +54,6 @@ private:
 
     // cclbuffer内存
     std::mutex bufferMutex_;
-    uint32_t bufferSize_;
     CCLBufferManager bufferManager_;
 
     // 用户绑定内存

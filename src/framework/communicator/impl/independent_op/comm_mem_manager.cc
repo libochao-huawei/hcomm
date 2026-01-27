@@ -11,9 +11,9 @@
 #include "comm_mem_manager.h"
 namespace hccl {
 
-void CommMemMgr::CommSetHcclBufferSize(uint64_t size)
+void CommMemMgr::CommSetHcclBufferManager(CCLBufferManager &bufferManager)
 {
-    bufferManager_.InitCCLbuffer(size, 0);
+    bufferManager_ = bufferManager;
 }
 
 HcclResult CommMemMgr::GetHcclBuffer(CommBuffer *buffer)

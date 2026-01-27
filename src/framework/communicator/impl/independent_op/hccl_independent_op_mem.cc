@@ -86,5 +86,6 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     }
     *buffer = commBuffer.addr;
     *size = commBuffer.size;
+    HCCL_RUN_INFO("Entry-%s: success: comm[%s], buffer[%p] size[%llu]", __func__, commId.c_str(), *buffer, *size);
     return HCCL_SUCCESS;
 }

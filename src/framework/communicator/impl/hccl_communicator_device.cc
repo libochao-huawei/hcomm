@@ -1547,4 +1547,9 @@ namespace hccl
     {
         return;
     }
+
+    CCLBufferManager& HcclCommunicator::GetCCLbufferManager()
+    {
+        return cclBufferManager_;
+    }
 }
