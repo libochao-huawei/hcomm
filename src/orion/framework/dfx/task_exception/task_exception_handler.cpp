@@ -84,30 +84,33 @@ static bool IsMC2Exception(rtExceptionInfo_t* exceptionInfo)
 
 void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
 {
-    if (exceptionInfo == nullptr) {
-        HCCL_ERROR("Exception process failed, rtExceptionInfo is nullptr.");
-        return;
-    }
+    //Task Exception 入口，使用宏捕获执行间异常
+    TRY_CATCH_PRINT_ERROR(
+        if (exceptionInfo == nullptr) {
+            HCCL_ERROR("Exception process failed, rtExceptionInfo is nullptr.");
+            return;
+        }
 
-    if (IsMC2Exception(exceptionInfo)) {
-        ProcessCcuMC2Exception(exceptionInfo);
-        return;
-    }
+        if (IsMC2Exception(exceptionInfo)) {
+            ProcessCcuMC2Exception(exceptionInfo);
+            return;
+        }
 
-    const auto curTask = GlobalMirrorTasks::Instance().GetTaskInfo(
-        exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-    if (curTask == nullptr) {
-        // 未找到异常对应的TaskInfo
-        HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].",
-                   exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
-        return;
-    }
+        const auto curTask = GlobalMirrorTasks::Instance().GetTaskInfo(
+            exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+        if (curTask == nullptr) {
+            // 未找到异常对应的TaskInfo
+            HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].",
+                    exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+            return;
+        }
 
-    if (curTask->taskParam_.taskType == TaskParamType::TASK_CCU) {
-        ProcessCcuException(exceptionInfo->deviceid, *curTask);
-    } else {
-        ProcessException(exceptionInfo, *curTask);
-    }
+        if (curTask->taskParam_.taskType == TaskParamType::TASK_CCU) {
+            ProcessCcuException(exceptionInfo->deviceid, *curTask);
+        } else {
+            ProcessException(exceptionInfo, *curTask);
+        }
+    );
 }
 
 string TaskExceptionHandler::GetGroupRankInfo(const TaskInfo& taskInfo)
@@ -269,7 +272,7 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
         return {};
     }
     const CommunicatorImpl* communicator = (CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
-    auto* collServiceBase = communicator->GetCollService();
+    auto* collServiceBase = communicator->GetCcuCollService();
     if (collServiceBase == nullptr) {
         HCCL_ERROR("[TaskInfo][%s]Failed to get collService from communicator.", __func__);
         return {};
@@ -629,7 +632,7 @@ RankId TaskExceptionHandler::GetRankIdByChannelId(uint16_t channelId, const Task
         return INVALID_RANKID;
     }
     const CommunicatorImpl* communicator = (CommunicatorImpl*)taskInfo.dfxOpInfo_->comm_;
-    auto* collServiceBase = communicator->GetCollService();
+    auto* collServiceBase = communicator->GetCcuCollService();
     if (collServiceBase == nullptr) {
         HCCL_ERROR("[TaskInfo][%s]Failed to get collService from communicator.", __func__);
         return INVALID_RANKID;

@@ -1450,6 +1450,18 @@ CollServiceBase *CommunicatorImpl::GetCollService() const
     return collService;
 }
 
+CollServiceBase *CommunicatorImpl::GetCcuCollService() const
+{
+    // 仅在Task Exception下使用，异常捕获由TaskExceptionHandler::Process管理
+    if (collServices.find(AcceleratorState::CCU_SCHED) != collServices.end()) {
+        return collServices.at(AcceleratorState::CCU_SCHED).get();
+    }
+    else {
+        std::string msg{"[CommunicatorImpl] Communicator uninitialized, this should not be arrived"};
+        MACRO_THROW(NullPtrException, msg);
+    }
+}
+
 SocketManager &CommunicatorImpl::GetSocketManager() const
 {
     CHECK_NULLPTR(socketManager, "socketManager is nullptr!");

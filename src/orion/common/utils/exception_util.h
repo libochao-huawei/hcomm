@@ -59,6 +59,23 @@
         }                                                                                                              \
     } while (0)
 
+#define TRY_CATCH_PRINT_ERROR(expr)                                                                                    \
+    do {                                                                                                               \
+        try {                                                                                                          \
+            expr;                                                                                                      \
+        } catch (HcclException & e) {                                                                                  \
+            HCCL_ERROR("Exception occurred: %s", e.what());                                                            \
+            auto backTraces = e.GetBackTraceStrings();                                                                 \
+            std::for_each(backTraces.begin(), backTraces.end(), [](string item) {                                      \
+                HCCL_INFO("backTraces item: %s", item.c_str());                                                        \
+            });                                                                                                        \
+        } catch (exception & e) {                                                                                      \
+            HCCL_ERROR("Exception occurred: %s", e.what());                                                            \
+        } catch (...) {                                                                                                \
+            HCCL_ERROR("Unkown error occurs!");                                                                        \
+        }                                                                                                              \
+    } while (0)
+
 #define CHK_RET_THROW(EXCEPTION, MSG, expr)                                                                            \
     do {                                                                                                               \
         auto ret = (expr);                                                                                             \

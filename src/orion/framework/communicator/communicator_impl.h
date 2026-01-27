@@ -142,6 +142,8 @@ public:
 
     virtual CollServiceBase *GetCollService() const;
 
+    virtual CollServiceBase *GetCcuCollService() const;
+
     virtual SocketManager &GetSocketManager() const;
 
     virtual RmaConnManager &GetRmaConnManager() const;
