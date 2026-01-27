@@ -3798,11 +3798,36 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
 
     std::string sCollectiveType(hcomOpParam->opType);
 
+    HcclResult ret;
     HcclUs startut = TIME_NOW();
 
     auto iter = HCCL_OPTYPE_NAME_MAP.find(hcomOpParam->opType);
     HcclCMDType hcclOpType = (iter != HCCL_OPTYPE_NAME_MAP.end()) ? iter->second : HcclCMDType::HCCL_CMD_INVALID;
 
+    string algName;
+    bool ifAiv = false;
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    // 获取通信域句柄
+    std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
+    CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
+    // 判断是否是AIV场景
+    void* counts = nullptr;
+    ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, counts, hcomOpParam->dataType, 
+                                hcomOpParam->reduceOp, hcomOpParam->aivCoreLimit, ifAiv, algName);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
+            "dataType[%d], reduceOp[%d]", ret, hcomOpParam->opType, hcomOpParam->count,
+            hcomOpParam->dataType, hcomOpParam->reduceOp), ret);
+    HCCL_INFO("[%s] HcclSelectAlg success ifAiv[%d] algName[%s] optype[%d] count[%llu] dataType[%d] reduceOp[%d]",
+        __func__, ifAiv, algName.c_str(), hcomOpParam->opType, hcomOpParam->count,
+        hcomOpParam->dataType, hcomOpParam->reduceOp);
+    // AIV和非rdma场景下，task数量固定
+    if (ifAiv && algName.find("Rdma") == std::string::npos) {
+        taskNum = AIV_DEFAULT_TASK_NUM;
+        HCCL_INFO("[%s] GetAndSetTaskNum success taskNum[%u]", __func__, taskNum);
+        return HCCL_SUCCESS;
+    }
+    
     if (!IsNeedCalTaskNum(hcclOpType)) {
         if (hcclOpType ==  HCCL_CMD_SEND || hcclOpType == HCCL_CMD_RECEIVE) {
             taskNum = SEND_RECEIVE_TASK_NUM;
@@ -3823,7 +3848,7 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
             // 计算Server间pipline切分数量
             u32 dataTypeSize;
             u64 totalSize = 0;
-            HcclResult ret = SalGetDataTypeSize(hcomOpParam->dataType, dataTypeSize);
+            ret = SalGetDataTypeSize(hcomOpParam->dataType, dataTypeSize);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Get][OpWorkspaceMemSize]op[%s]: get data size failed. ret[%d]",
                 sCollectiveType.c_str(), ret), ret);
 

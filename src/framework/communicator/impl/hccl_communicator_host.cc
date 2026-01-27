@@ -4350,6 +4350,8 @@ namespace hccl
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
+        // aiv算法不需要申请host和device侧的从流
+        bool selectAivAlg = algDesc.isAivMode;
         if (resMap_.find(newTag) == resMap_.end()) {
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
@@ -4357,10 +4359,8 @@ namespace hccl
                 CHK_RET(SaveRankInfoHasLinked(resRequest));
             }
             resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            // aiv算法不需要申请host侧的从流
-            bool isNeedHostSlaveStream = algDesc.isAivMode ? false : true;
             CHK_RET(RecordOpPara(opType, opParam));
-            HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream);
+            HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
 
@@ -4397,7 +4397,6 @@ namespace hccl
         }
 
         // 算法执行
-        bool selectAivAlg = algDesc.isAivMode;
         if (selectAivAlg) {
             CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
             if (aivClearEnable_) {
@@ -4594,8 +4593,7 @@ namespace hccl
             CHK_RET(CreateCommCCLbuffer());
         }
         // 资源创建
-        // aiv算法不需要申请host侧的从流
-        bool isNeedHostSlaveStream = algDesc.isAivMode ? false : true;
+        bool selectAivAlg = algDesc.isAivMode;
         if (opParam.isCapture && (resMap_.find(newTag) != resMap_.end()))
         {
             auto resTmp = resMap_[newTag];
@@ -4619,7 +4617,7 @@ namespace hccl
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
             resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
             CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
+            CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
             if (opParam.isNpuDirectRoce) {
                 // AIV直驱roce多机场景，需要生成RMAInfo并拷贝至Device
@@ -4652,7 +4650,7 @@ namespace hccl
                 // alltoall算子重分配内存前需清除scratchMMem，防止内存泄漏
                 CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
                 CHK_RET(RecordOpPara(opType, opParam));
-                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
+                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
                 CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
                 if (!isHaveCpuRank_) {
                     if (isUseRankPort_) {
@@ -4708,7 +4706,6 @@ namespace hccl
             CHK_PTR_NULL(combinOparaPtr);
             CHK_RET(algOperator->SetRmaInfo(combinOparaPtr->aiRMAInfo));
         }
-        bool selectAivAlg = algDesc.isAivMode;
         if (selectAivAlg) {
             CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
             if (aivClearEnable_) {
@@ -6061,10 +6058,12 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::AllocAlgResource(const std::string &newTag, HcclCMDType opType, const OpParam &opParam,
-        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream)
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg)
     {
         HcclResult ret = HCCL_SUCCESS;
         bool isGraphZeroCopyAlgAlloc = false;
+        // 只有aicpu模式下才需要申请从流和相关的notify资源，isNeedSlaveStream为true就代表算子下发是aicpu模式
+        bool isNeedSlaveStream = !selectAivAlg && opParam.aicpuUnfoldMode;
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
             !IsForceAicpuOpBaseMode(opParam, opType)) {
             isGraphZeroCopyAlgAlloc = resRequest.isInGraphCaptureZeroCopy;
@@ -6094,7 +6093,7 @@ namespace hccl
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE ||
                  IsForceAicpuOpBaseMode(opParam, opType)) {
             CHK_RET(AllocOpBaseModeScratchMem(opType, opParam, resRequest, algResResponse));
-            if ((resRequest.streamNum > 0) && isNeedHostSlaveStream) {
+            if ((resRequest.streamNum > 0) && !selectAivAlg) {
                 CHK_RET(opStreamManager_->RegisterMaster(opParam.stream));
                 algResResponse.slaveStreams =
                     opStreamManager_->AllocSlaves(StreamType::STREAM_TYPE_ONLINE, resRequest.streamNum);
@@ -6109,7 +6108,7 @@ namespace hccl
             return HCCL_E_PARA;
         }
 
-        if (opParam.aicpuUnfoldMode && ((userRankSize_ != 1) || IsForceAicpuOpBaseMode(opParam, opType))) {
+        if (isNeedSlaveStream && ((userRankSize_ != 1) || IsForceAicpuOpBaseMode(opParam, opType))) {
             CHK_RET(opStreamManager_->RegisterMaster(opParam.stream));
             algResResponse.slaveDevStreams =
                     opStreamManager_->AllocSlaves(StreamType::STREAM_TYPE_DEVICE, LOCAL_STREAM_MAX_NUM);
@@ -6121,6 +6120,11 @@ namespace hccl
             CHK_RET(AllocAlgNotifys(opParam.tag, NotifyLoadType::DEVICE_NOTIFY, LOCAL_NOTIFY_MAX_NUM,
                                     algResResponse.notifiesDevMain, algResResponse.notifiesDevAux));
         }
+        uint8_t devNotifyNum = algResResponse.notifiesDevMain.size() + algResResponse.notifiesDevAux.size();
+        HCCL_INFO("[AllocAlgResource] tag[%s] alloc host slaveStreamNum[%u],"
+            "device slaveStreamNum[%u], devNotifyNum[%u], hostNotifyNum[%u]",
+            newTag.c_str(), algResResponse.slaveStreams.size(),
+            algResResponse.slaveDevStreams.size(), devNotifyNum, resRequest.notifyNum);
         CHK_RET(AllocAlgNotifys(opParam.tag, NotifyLoadType::HOST_NOTIFY, resRequest.notifyNum, algResResponse.notifiesMain,
                                 algResResponse.notifiesAux));
 

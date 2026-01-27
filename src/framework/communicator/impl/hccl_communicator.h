@@ -747,7 +747,7 @@ private:
     HcclResult AllocOpBaseModeScratchMem(HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult AllocAlgResource(const std::string &tag, HcclCMDType opType, const OpParam &opParam,
-        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream = true);
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg = false);
     HcclResult IncreAllocLink(const std::string &newTag, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse);
