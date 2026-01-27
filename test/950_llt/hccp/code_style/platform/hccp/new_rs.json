@@ -1,0 +1,45 @@
+{
+    "includes": [
+        
+        "/home/x00949166/Ascend/cann/pkg_inc/base/",
+        "/home/x00949166/Ascend/cann/include/",
+        "/home/x00949166/Ascend/cann/include/toolchain/",
+        "/home/x00949166/Ascend/cann/include/driver/",
+        "/home/x00949166/Ascend/cann/pkg_inc",
+        "/home/x00949166/Ascend/cann/include/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/third_party/openssl-host/include",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/build/hcomm_utils/host/include/tls_adp",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/build/hcomm_utils/host/include/kms",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/external_depends/rdma-core/include",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/external_depends/host_lite",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/external_depends/rdma-core/providers/hns",
+        
+
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_service/tlv",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_service/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/inc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/inc/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/inc/private/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/common/",
+        
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/inc/network/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/inc/private/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/rdma_service/ctx/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/external_depends/ccu/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/external_depends/net_adapt/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/external_depends/ubengine/"
+    ],
+    "defines": [
+        "CONFIG_CONTEXT",
+        "CONFIG_TLV",
+        "CUSTOM_INTERFACE",
+        "CONFIG_V121",
+        "TGID_VA"
+    ],
+    "std": "gnu11",
+    "coption": "",
+    "sources": [
+        "../new_hccp/rdma_service/",
+        "../new_hccp/orion/hcomm_dev/rdma_service/ctx"
+    ]
+}

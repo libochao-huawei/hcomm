@@ -1,0 +1,29 @@
+add_subdirectory(ccu)
+add_subdirectory(common)
+add_subdirectory(resource)
+target_sources(hccl_v2_stest
+        PUBLIC
+        ##st_adapter_rts.cc
+        st_adapter_trace.cc
+        st_buffer.cc
+        st_cnt_notify.cc
+        st_dev_ub_connection.cc
+        st_p2p_connection.cc
+        st_p2p_transport.cc
+        st_trace.cc
+        st_ub_ci_updater.cc
+        st_ub_local_notify.cc
+        st_ub_mem_transport.cc
+        st_ub_transport_lite_impl.cc
+
+        st_stream.cc
+        st_stream_lite.cc
+        st_rtsq_a5.cc
+        st_notify_lite.cc
+        st_cnt_1ton_notify_lite.cc
+        st_cnt_nto1_notify_lite.cc
+        st_rts_1ton_cnt_notify.cc
+        st_rts_cnt_notify.cc
+
+        st_tokenInfo_manager.cc
+)

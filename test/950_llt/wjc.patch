@@ -1,0 +1,867 @@
+From 3b580927e83782edb635e551e46b3530b08893e6 Mon Sep 17 00:00:00 2001
+From: j00800701 <j00800701@huawei.com>
+Date: Tue, 27 Jan 2026 10:10:53 +0800
+Subject: [PATCH] DTS:DTS8888888888888 Description:AICPU A5 Code
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: Ief42b38146e2ca7348efeb428bdc6ffdb9eef3d1
+Signed-off-by: w00939517 <w00939517@huawei.com>
+Signed-off-by: l00943499 <l00943499@huawei.com>
+Signed-off-by: j00800701 <j00800701@huawei.com>
+---
+ include/hcomm_res.h                           |  5 ++
+ .../data_api/hccl_api_data_aicpu_ts.cc        | 48 +++++++++++
+ .../hccl_independent_op_channel.cc            |  4 +
+ .../independent_op/hccl_independent_op_mem.cc | 30 +++++++
+ .../hccl_independent_rank_graph.cc            | 79 +++++++++++++++++++
+ src/framework/inc/hccl_comm_pub.h             | 24 ++++++
+ .../api_c_adpt/coll_comm_res_c_adpt.cc        |  4 +
+ .../coll_comms/rank/comm_mems/comm_mems.cc    |  4 +
+ .../next/comms/api_c_adpt/hcomm_c_adpt.cc     | 26 ++++++
+ .../next/comms/api_c_adpt/hcomm_c_adpt.h      |  5 ++
+ .../channels/aicpu/aicpu_ts_urma_channel.cc   |  7 ++
+ .../endpoint_pairs/sockets/socket_mgr.cc      | 44 +++++++++++
+ src/framework/next/comms/endpoints/endpoint.h |  4 +
+ .../comms/endpoints/reged_mems/roce_mem.cc    | 26 ++++++
+ .../comms/endpoints/reged_mems/urma_mem.cc    | 23 ++++++
+ .../comms/endpoints/reged_mems/urma_mem.h     |  4 +
+ src/framework/op_base/src/op_base.cc          |  4 +
+ .../transport/aicpu/ub_transport_lite_impl.cc |  4 +
+ .../resource/transport/ub_mem_transport.cc    | 10 +++
+ .../resource/transport/ub_mem_transport.h     |  5 ++
+ src/platform/resource/notify/rts_notify.cc    | 11 ++-
+ 21 files changed, 370 insertions(+), 1 deletion(-)
+
+diff --git a/include/hcomm_res.h b/include/hcomm_res.h
+index b7258c37..a1b0d2d9 100644
+--- a/include/hcomm_res.h
++++ b/include/hcomm_res.h
+@@ -56,8 +56,13 @@ extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **rem
+ extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
+ 
+ extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
++<<<<<<< HEAD
+  
+  
++=======
++
++extern HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ #ifdef __cplusplus
+ }
+ #endif // __cplusplus
+diff --git a/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc b/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
+index 0a71c159..c94cddf0 100644
+--- a/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
++++ b/src/framework/communicator/impl/independent_op/data_api/hccl_api_data_aicpu_ts.cc
+@@ -25,6 +25,19 @@ void AddThread(ThreadHandle thread) {
+     g_threadLaunchCtx.AddThread(thread);
+ }
+ 
++<<<<<<< HEAD
++=======
++bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
++{
++    bool checkDataType =
++        (dataType == HCOMM_DATA_TYPE_FP32 || dataType == HCOMM_DATA_TYPE_FP16 || dataType == HCOMM_DATA_TYPE_INT8 ||
++        dataType == HCOMM_DATA_TYPE_INT16 || dataType == HCOMM_DATA_TYPE_INT32 || dataType == HCOMM_DATA_TYPE_BFP16);
++    bool checkReduceType = (op == HCOMM_REDUCE_SUM || op == HCOMM_REDUCE_MAX || op == HCOMM_REDUCE_MIN);
++    return checkDataType && checkReduceType;
++}
++ 
++
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
+ {
+     HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len);
+@@ -69,6 +82,11 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
+     if (threadPtr->IsDeviceA5()) {
+         ret = threadPtr->LocalReduce(dst, src, len, dataType, reduceOp);
+     } else {
++<<<<<<< HEAD
++=======
++        CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
++            "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
+         HcclBuf dstBuf{dst, len, nullptr};
+         HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
+@@ -349,6 +367,11 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
+ 
+         EXECEPTION_CATCH(ubTransportLitePtr->WriteReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
+     } else {
++<<<<<<< HEAD
++=======
++        CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
++            "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         HcclBuf locBuf{const_cast<void *>(src), len, nullptr};
+         HcclBuf rmtBuf{dst, len, nullptr};
+         HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
+@@ -366,14 +389,26 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
+ }
+ 
+ HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
++<<<<<<< HEAD
+     uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp, uint32_t remoteNotifyIdx)
++=======
++    uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx)
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ {
+     CHK_PTR_NULL(src);
+     CHK_PTR_NULL(dst);
+     AddThread(thread);
++<<<<<<< HEAD
+     HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
+     HcclBuf rmtBuf{dst, count * SIZE_TABLE[dataType], nullptr};
+     HcclReduceInfo reduceInfo{dataType, reduceOp};
++=======
++    CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
++        "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
++    HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
++    HcclBuf rmtBuf{dst, count * SIZE_TABLE[dataType], nullptr};
++    HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ 
+     Stream *stream = GetStream(thread);
+     CHK_PTR_NULL(stream);
+@@ -558,6 +593,11 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
+ 
+         EXECEPTION_CATCH(ubTransportLitePtr->ReadReduce(locRmaBuf, rmtBuf, reduceIn, *streamLitePtr), ret = HCCL_E_INTERNAL);
+     } else {
++<<<<<<< HEAD
++=======
++        CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
++            "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         HcclBuf locBuf{dst, len, nullptr};
+         HcclBuf rmtBuf{const_cast<void *>(src), len, nullptr};
+         HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
+@@ -700,8 +740,16 @@ int32_t HcommAcquireComm(const char* commId)
+ {
+     CHK_PTR_NULL(commId);
+     HcclCommAicpu *hcclComm = AicpuHcclProcess::AicpuGetCommbyGroup(commId);
++<<<<<<< HEAD
+     CHK_RET(hcclComm->SetDispatcherCtxOnThread());
+     CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
++=======
++    CHK_PRT_RET(!hcclComm, HCCL_ERROR("%s hcclComm is null, commId[%s]", __func__, commId), HCCL_E_PTR);
++    DevType devType = hcclComm->GetDevType();
++    if (devType != DevType::DEV_TYPE_910_95){
++        CHK_RET(hcclComm->SetDispatcherCtxOnThread());
++    }
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     return HCCL_SUCCESS;
+ }
+ 
+diff --git a/src/framework/communicator/impl/independent_op/hccl_independent_op_channel.cc b/src/framework/communicator/impl/independent_op/hccl_independent_op_channel.cc
+index 78838cb4..411f1d4c 100644
+--- a/src/framework/communicator/impl/independent_op/hccl_independent_op_channel.cc
++++ b/src/framework/communicator/impl/independent_op/hccl_independent_op_channel.cc
+@@ -81,7 +81,11 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
+ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
+ {
+ #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
++<<<<<<< HEAD
+     const char *indOp = getenv("HCCL_A5_INDEPENDENT_OP");
++=======
++    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     if (*indOp == '1') {
+         HCCLV2_FUNC_RUN(HcclChannelGetHcclBufferA5(comm, channel, buffer, size));
+     }
+diff --git a/src/framework/communicator/impl/independent_op/hccl_independent_op_mem.cc b/src/framework/communicator/impl/independent_op/hccl_independent_op_mem.cc
+index e2f463d4..232d9836 100644
+--- a/src/framework/communicator/impl/independent_op/hccl_independent_op_mem.cc
++++ b/src/framework/communicator/impl/independent_op/hccl_independent_op_mem.cc
+@@ -101,8 +101,32 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
+     CHK_PRT_RET(comm == nullptr, HCCL_ERROR("[%s] comm is null", __func__), HCCL_E_PTR);
+     CHK_PRT_RET(size == nullptr, HCCL_ERROR("[%s] size is null", __func__), HCCL_E_PTR);
+ 
++<<<<<<< HEAD
+ #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+     HCCLV2_FUNC_RUN(HcclGetHcclBufferV2(comm, buffer, size));
++=======
++
++
++#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
++    HCCLV2_FUNC_RUN(
++        [&]() -> HcclResult {
++            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
++            if (indOp == nullptr || strcmp(indOp, "") == 0) {
++                CHK_RET(HcclGetHcclBufferV2(comm, buffer, size));
++                return HCCL_SUCCESS;
++            }
++            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
++            std::string commId = hcclComm->GetIdentifier();
++            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
++            hccl::CollComm* collComm = hcclComm->GetCollComm();
++            CHK_PTR_NULL(collComm);
++            auto myRank = collComm->GetMyRank();
++            CHK_PTR_NULL(myRank);
++            CommMems* commMem = myRank->GetCommMems();
++            CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
++            return HCCL_SUCCESS;
++        }());
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ #endif
+ 
+     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+@@ -110,6 +134,7 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
+     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+     HcclResult ret = HCCL_SUCCESS;
+     CommBuffer commBuffer;
++<<<<<<< HEAD
+     if (hcclComm->IsCommunicatorV2()) {
+         hccl::CollComm* collComm = hcclComm->GetCollComm();
+         CHK_PTR_NULL(collComm);
+@@ -121,6 +146,11 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
+         auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
+         ret = commMemMgr.GetHcclBuffer(&commBuffer);
+     }
++=======
++    
++    auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
++    ret = commMemMgr.GetHcclBuffer(&commBuffer);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ 
+     if (ret != HCCL_SUCCESS) {
+         HCCL_ERROR("[%s] Failed to get local cclBuffer ret[%d]", __func__, ret);
+diff --git a/src/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc b/src/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
+index 4afb35c3..9bfedd9c 100644
+--- a/src/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
++++ b/src/framework/communicator/impl/independent_op/hccl_independent_rank_graph.cc
+@@ -74,7 +74,11 @@ HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcR
+             RankGraph* rankGraph = collComm->GetRankGraph();
+             CHK_PTR_NULL(rankGraph);
+             ret = rankGraph->GetLinks(netLayer, srcRank, dstRank, links, linkNum);
++<<<<<<< HEAD
+             return HCCL_SUCCESS;
++=======
++            return ret;
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         }());
+ 
+     ret = hcclComm->GetLinks(netLayer, srcRank, dstRank, links, linkNum);
+@@ -132,7 +136,11 @@ HcclResult HcclRankGraphGetTopoTypeByLayer(HcclComm comm, uint32_t netLayer, Com
+             RankGraph* rankGraph = collComm->GetRankGraph();
+             CHK_PTR_NULL(rankGraph);
+             ret = rankGraph->GetInstTopoTypeByNetLayer(netLayer, topoType);
++<<<<<<< HEAD
+             return HCCL_SUCCESS;
++=======
++            return ret;
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         }());
+ 
+     ret = hcclComm->GetInstTopoTypeByNetLayer(netLayer, topoType);
+@@ -188,7 +196,11 @@ HcclResult HcclRankGraphGetRanksByLayer(HcclComm comm, uint32_t netLayer, uint32
+             RankGraph* rankGraph = collComm->GetRankGraph();
+             CHK_PTR_NULL(rankGraph);
+             ret = rankGraph->GetInstRanksByNetLayer(netLayer, ranks, rankNum);
++<<<<<<< HEAD
+             return HCCL_SUCCESS;
++=======
++            return ret;
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         }());
+     ret = hcclComm->GetInstRanksByNetLayer(netLayer, ranks, rankNum);
+     if (ret != HCCL_SUCCESS) {
+@@ -219,7 +231,11 @@ HcclResult HcclRankGraphGetInstSizeListByLayer(HcclComm comm, uint32_t netLayer,
+             RankGraph* rankGraph = collComm->GetRankGraph();
+             CHK_PTR_NULL(rankGraph);
+             ret = rankGraph->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
++<<<<<<< HEAD
+             return HCCL_SUCCESS;
++=======
++            return ret;
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         }());
+ 
+     ret = hcclComm->GetInstSizeListByNetLayer(netLayer, instSizeList, listSize);
+@@ -236,7 +252,28 @@ HcclResult HcclGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint32_t **
+     CHK_PTR_NULL(comm);
+     CHK_PTR_NULL(topoInsts);
+     CHK_PTR_NULL(topoInstNum);
++<<<<<<< HEAD
+     HCCLV2_FUNC_RUN(HcclGetTopoInstsByLayerV2(comm, netLayer, topoInsts, topoInstNum));
++=======
++    HcclResult ret = HCCL_SUCCESS;
++    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
++    HCCLV2_FUNC_RUN(
++        [&]() -> HcclResult {
++            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
++            if (indOp == nullptr || strcmp(indOp, "") == 0) {
++                CHK_RET(HcclGetTopoInstsByLayerV2(comm, netLayer, topoInsts, topoInstNum));
++                return HCCL_SUCCESS;
++            }
++
++            CollComm* collComm = hcclComm->GetCollComm();
++            CHK_PTR_NULL(collComm);
++            RankGraph* rankGraph = collComm->GetRankGraph();
++            CHK_PTR_NULL(rankGraph);
++            RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
++            ret = rankGraphV2->GetTopoInstsByLayer(netLayer, topoInsts, topoInstNum);
++            return ret;
++        }());
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -244,7 +281,28 @@ HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t topoInstId
+ {
+     CHK_PTR_NULL(comm);
+     CHK_PTR_NULL(topoType);
++<<<<<<< HEAD
+     HCCLV2_FUNC_RUN(HcclGetTopoTypeV2(comm, netLayer, topoInstId, topoType));
++=======
++    HcclResult ret = HCCL_SUCCESS;
++    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
++    HCCLV2_FUNC_RUN(
++        [&]() -> HcclResult {
++            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
++            if (indOp == nullptr || strcmp(indOp, "") == 0) {
++                CHK_RET(HcclGetTopoTypeV2(comm, netLayer, topoInstId, topoType));
++                return HCCL_SUCCESS;
++            }
++
++            CollComm* collComm = hcclComm->GetCollComm();
++            CHK_PTR_NULL(collComm);
++            RankGraph* rankGraph = collComm->GetRankGraph();
++            CHK_PTR_NULL(rankGraph);
++            RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
++            ret = rankGraphV2->GetTopoType(netLayer, topoInstId, topoType);
++            return ret;
++        }());
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -253,7 +311,28 @@ HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t top
+     CHK_PTR_NULL(comm);
+     CHK_PTR_NULL(ranks);
+     CHK_PTR_NULL(rankNum);
++<<<<<<< HEAD
+     HCCLV2_FUNC_RUN(HcclGetRanksByTopoInstV2(comm, netLayer, topoInstId, ranks, rankNum));
++=======
++    HcclResult ret = HCCL_SUCCESS;
++    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
++    HCCLV2_FUNC_RUN(
++        [&]() -> HcclResult {
++            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
++            if (indOp == nullptr || strcmp(indOp, "") == 0) {
++                CHK_RET(HcclGetRanksByTopoInstV2(comm, netLayer, topoInstId, ranks, rankNum));
++                return HCCL_SUCCESS;
++            }
++
++            CollComm* collComm = hcclComm->GetCollComm();
++            CHK_PTR_NULL(collComm);
++            RankGraph* rankGraph = collComm->GetRankGraph();
++            CHK_PTR_NULL(rankGraph);
++            RankGraphV2* rankGraphV2 = static_cast<RankGraphV2*>(rankGraph);
++            ret = rankGraphV2->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
++            return ret;
++        }());
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     return HCCL_SUCCESS;
+ }
+ 
+diff --git a/src/framework/inc/hccl_comm_pub.h b/src/framework/inc/hccl_comm_pub.h
+index cfb08be2..deb9b6e7 100644
+--- a/src/framework/inc/hccl_comm_pub.h
++++ b/src/framework/inc/hccl_comm_pub.h
+@@ -28,7 +28,13 @@
+ #include "transport_manager.h"
+ #include "independent_op.h"
+ #include "share_ccl_buffer_manager.h"
++<<<<<<< HEAD
+ #include "coll_comm.h"
++=======
++#ifndef HCCD
++    #include "coll_comm.h"
++#endif
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ 
+ namespace hccl {
+ /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
+@@ -361,11 +367,22 @@ public:
+     bool GetAicpuCommState();
+     HcclResult KernelLaunchAicpuCommInit();
+     bool IsCommunicatorV2();
++<<<<<<< HEAD
+     
+     HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank, HcclMem cclBuffer, const std::string &commName);
+     void* GetCommunicatorV2();
+ #ifndef CCL_KERNEL_AICPU
+     CollComm* GetCollComm();
++=======
++#ifndef HCCD
++    HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank, HcclMem cclBuffer, const std::string &commName);
++#endif
++    void* GetCommunicatorV2();
++#ifndef CCL_KERNEL_AICPU
++    #ifndef HCCD
++        CollComm* GetCollComm();
++    #endif
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     IndependentOp& GetIndependentOp();
+ #endif
+     // A5communicator相关
+@@ -436,8 +453,15 @@ private:
+ #ifndef CCL_KERNEL_AICPU
+     // 独立算子专用成员变量
+     IndependentOp independentOp_;
++<<<<<<< HEAD
+     // A5CollComm
+     std::unique_ptr<CollComm> collComm_{nullptr};
++=======
++    #ifndef HCCD
++        // A5CollComm
++        std::unique_ptr<CollComm> collComm_{nullptr};
++    #endif
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ #endif
+ 
+ };
+diff --git a/src/framework/next/coll_comms/api_c_adpt/coll_comm_res_c_adpt.cc b/src/framework/next/coll_comms/api_c_adpt/coll_comm_res_c_adpt.cc
+index 864f8d92..fc48c5a7 100644
+--- a/src/framework/next/coll_comms/api_c_adpt/coll_comm_res_c_adpt.cc
++++ b/src/framework/next/coll_comms/api_c_adpt/coll_comm_res_c_adpt.cc
+@@ -61,6 +61,10 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
+             case COMM_PROTOCOL_HCCS:
+             case COMM_PROTOCOL_PCIE:
+             case COMM_PROTOCOL_SIO:
++<<<<<<< HEAD
++=======
++            case COMM_PROTOCOL_UBC_CTP:
++>>>>>>> aad2c703... DTS:DTS8888888888888
+                 break;
+             case COMM_PROTOCOL_ROCE:
+                 channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
+diff --git a/src/framework/next/coll_comms/rank/comm_mems/comm_mems.cc b/src/framework/next/coll_comms/rank/comm_mems/comm_mems.cc
+index ef73bc18..3ea46210 100644
+--- a/src/framework/next/coll_comms/rank/comm_mems/comm_mems.cc
++++ b/src/framework/next/coll_comms/rank/comm_mems/comm_mems.cc
+@@ -34,7 +34,11 @@ HcclResult CommMems::Init(HcclMem cclBuffer)
+     addr_ = cclBuffer.addr;
+     size_ = cclBuffer.size;
+     memType_ = cclBuffer.type;
++<<<<<<< HEAD
+     HCCL_INFO("[CommMems][Init] addr[%p] size[%u] memType[%u]", cclBuffer.addr, cclBuffer.type, cclBuffer.type);
++=======
++    HCCL_INFO("[CommMems][Init] addr[%p] size[%u] memType[%u]", cclBuffer.addr, cclBuffer.size, cclBuffer.type);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     return HCCL_SUCCESS;
+ }
+ 
+diff --git a/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.cc b/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.cc
+index e0a79c24..b3072fde 100644
+--- a/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.cc
++++ b/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.cc
+@@ -87,10 +87,14 @@ static HcommEndpointMap g_EndpointMap;
+ HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
+ {
+     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
++<<<<<<< HEAD
+     if (it == nullptr) {
+         HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[0x%llx]", __func__, endpointHandle);
+         return HCCL_E_PARA;
+     }
++=======
++    CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]", __func__, endpointHandle), HCCL_E_PARA);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ 
+     *endpoint = static_cast<void *>(it);
+     return HCCL_SUCCESS;
+@@ -591,4 +595,26 @@ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
+ 
+     HCCL_INFO("[HcommThreadfree] all threads freed successfully");
+     return HCCL_SUCCESS;
++<<<<<<< HEAD
++=======
++}
++
++HcclResult HcommThreadAllocWithStream(CommEngine engine,
++    rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
++{
++    CHK_PTR_NULL(thread);
++    hccl::NotifyLoadType notifyLoadType;
++    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
++    std::shared_ptr<hccl::Thread> handle;
++    EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
++    CHK_RET(handle->Init());
++ 
++    // 返回第一个句柄
++    *thread = reinterpret_cast<ThreadHandle>(handle.get());
++    hcomm::g_ThreadMap.emplace(*thread , handle);
++ 
++    HCCL_INFO("[ThreadMgr]  HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
++        "notifyNum[%u]",  engine, stream, notifyNum);
++    return HCCL_SUCCESS;
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ }
+\ No newline at end of file
+diff --git a/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.h b/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.h
+index 65456ff3..65ac5c12 100644
+--- a/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.h
++++ b/src/framework/next/comms/api_c_adpt/hcomm_c_adpt.h
+@@ -51,6 +51,11 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
+ 
+ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
+ 
++<<<<<<< HEAD
++=======
++HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
++ 
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ #ifdef __cplusplus
+ }
+ #endif // __cplusplus
+diff --git a/src/framework/next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.cc b/src/framework/next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.cc
+index bf8a9c37..0eb36951 100644
+--- a/src/framework/next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.cc
++++ b/src/framework/next/comms/endpoint_pairs/channels/aicpu/aicpu_ts_urma_channel.cc
+@@ -44,9 +44,16 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
+     // TODO: memHandle 强转成 Hccl::LocalUbRmaBuffer*, push_back 进去 commLocRes_.bufferVec
+ 
+     for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
++<<<<<<< HEAD
+         HcclBuf* buf = static_cast<HcclBuf*>(channelDesc_.memHandles[i]);
+         bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
+             reinterpret_cast<uintptr_t>(buf->addr), buf->len)
++=======
++        Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(channelDesc_.memHandles[i]);
++        HCCL_INFO("[%s] tag[%s] addr[0x%llx] size[%zu]", __func__, localUbRmaBuffer->GetBuf()->GetMemTag(), localUbRmaBuffer->GetAddr(), localUbRmaBuffer->GetSize());
++        bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
++            reinterpret_cast<uintptr_t>(localUbRmaBuffer->GetAddr()), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag())
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         ));
+     }
+ 
+diff --git a/src/framework/next/comms/endpoint_pairs/sockets/socket_mgr.cc b/src/framework/next/comms/endpoint_pairs/sockets/socket_mgr.cc
+index 8aa525ae..509bd7ea 100644
+--- a/src/framework/next/comms/endpoint_pairs/sockets/socket_mgr.cc
++++ b/src/framework/next/comms/endpoint_pairs/sockets/socket_mgr.cc
+@@ -13,18 +13,37 @@
+ #include "orion_adpt_utils.h"
+ #include "host_socket_handle_manager.h"
+ #include "exception_handler.h"
++<<<<<<< HEAD
+ 
+ namespace hcomm {
+ 
++=======
++#include "adapter_rts.h"
++
++namespace hcomm {
++
++constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
++
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ HcclResult SocketMgr::Init()
+ {
+     if (isLoaded_) {
+         return HCCL_SUCCESS;
+     }
+     isLoaded_ = true;
++<<<<<<< HEAD
+     int32_t devLogicId = Hccl::HrtGetDevice();
+     devicePhyId_ = Hccl::HrtGetDevicePhyIdByIndex(devLogicId);
+     serverListenPort_ = 60001;
++=======
++    s32 devLogicId;
++    CHK_RET(hrtGetDevice(&devLogicId));
++    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
++     
++    // int32_t devLogicId = Hccl::HrtGetDevice();
++    // devicePhyId_ = Hccl::HrtGetDevicePhyIdByIndex(devLogicId);
++    serverListenPort_ = TempServerListenPort;
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     return HCCL_SUCCESS;
+ }
+ 
+@@ -131,6 +150,7 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
+ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
+ {
+     CHK_RET(Init());
++<<<<<<< HEAD
+     auto res = socketMap_.find(socketConfig);
+     if (res == socketMap_.end()) {
+         Hccl::SocketHandle socketHandle;
+@@ -146,6 +166,30 @@ HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::So
+     }
+ 
+     socket = res->second.get();
++=======
++    // 1. 先查找
++    auto it = socketMap_.find(socketConfig);
++    if (it != socketMap_.end()) {
++        socket = it->second.get();
++        return HCCL_SUCCESS;
++    }
++
++    // 2. 不存在则创建
++    Hccl::SocketHandle socketHandle;
++    CHK_RET(GetSocketHandle(socketConfig, socketHandle));
++    CHK_RET(AddWhiteList(socketConfig, socketHandle));
++    CHK_RET(CreateSocket(socketConfig, socketHandle));
++ 
++    // 3. 再次查找
++    it = socketMap_.find(socketConfig);
++    if (it == socketMap_.end()) {
++        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found",
++                   __func__);
++        return HCCL_E_INTERNAL;
++    }
++ 
++    socket = it->second.get();
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     return HCCL_SUCCESS;
+ }
+ 
+diff --git a/src/framework/next/comms/endpoints/endpoint.h b/src/framework/next/comms/endpoints/endpoint.h
+index 7af10f8e..932a5f41 100644
+--- a/src/framework/next/comms/endpoints/endpoint.h
++++ b/src/framework/next/comms/endpoints/endpoint.h
+@@ -14,8 +14,12 @@
+ #include <vector>
+ #include <string>
+ #include "reged_mems/reged_mem_mgr.h"
++<<<<<<< HEAD
+ // #include "socket.h"
+ #include "../../../../orion/unified_platform/resource/socket/socket.h"
++=======
++#include "socket.h"
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ #include "socket_handle_manager.h"
+ #include "rdma_handle_manager.h"
+ #include "../common/orion_adpt_utils.h"
+diff --git a/src/framework/next/comms/endpoints/reged_mems/roce_mem.cc b/src/framework/next/comms/endpoints/reged_mems/roce_mem.cc
+index 5839e166..86c39600 100644
+--- a/src/framework/next/comms/endpoints/reged_mems/roce_mem.cc
++++ b/src/framework/next/comms/endpoints/reged_mems/roce_mem.cc
+@@ -20,10 +20,18 @@
+ #include "local_rdma_rma_buffer.h"
+ 
+ namespace hcomm {
++<<<<<<< HEAD
++=======
++
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ RoceRegedMemMgr::RoceRegedMemMgr()
+ {
+     localRdmaRmaBufferMgr_ = std::make_unique<LocalRdmaRmaBufferMgr>();
+ }
++<<<<<<< HEAD
++=======
++
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+ {
+     HCCL_INFO("[%s] Begin", __FUNCTION__);
+@@ -33,13 +41,28 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
+     std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
+     EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
+         return HCCL_E_PTR);
++<<<<<<< HEAD
++=======
++ 
++    // LocalRdmaRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
++    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
++    if(localRdmaRmaBufferMgr_->Find(tempKey).first) {
++        // 内存再次注册时
++        HCCL_INFO("[RdmaRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
++                "{%p, %llu}", mem.addr, mem.size);
++        return HCCL_E_AGAIN;
++    }
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     
+     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer = nullptr;
+     EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+         return HCCL_E_PTR);
+     
+     // 注册到LocalRdmaRmaBuffer计数器
++<<<<<<< HEAD
+     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
++=======
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
+     if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
+         // 若已注册内存有交叉，返回HCCL_E_INTERNAL
+@@ -158,7 +181,10 @@ HcclResult RoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen,
+         remoteRdmaRmaBuffer = std::make_shared<Hccl::RemoteRdmaRmaBuffer>(this->rdmaHandle_, dto),
+         return HCCL_E_PTR;
+     );
++<<<<<<< HEAD
+     CHK_SMART_PTR_NULL(remoteRdmaRmaBuffer);
++=======
++>>>>>>> aad2c703... DTS:DTS8888888888888
+ 
+     // 放到RemoteRdmaRmaBufferMgr_
+     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(remoteRdmaRmaBuffer->GetAddr()), remoteRdmaRmaBuffer->GetSize());
+diff --git a/src/framework/next/comms/endpoints/reged_mems/urma_mem.cc b/src/framework/next/comms/endpoints/reged_mems/urma_mem.cc
+index 39d8f140..c723a656 100644
+--- a/src/framework/next/comms/endpoints/reged_mems/urma_mem.cc
++++ b/src/framework/next/comms/endpoints/reged_mems/urma_mem.cc
+@@ -20,6 +20,14 @@
+ #include "local_ub_rma_buffer.h"
+ 
+ namespace hcomm {
++<<<<<<< HEAD
++=======
++
++UbRegedMemMgr::UbRegedMemMgr()
++{
++    localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
++}
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     
+ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+ {
+@@ -31,12 +39,27 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void
+     EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
+         return HCCL_E_PTR);
+     
++<<<<<<< HEAD
++=======
++    // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
++    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
++    if(localUbRmaBufferMgr_->Find(tempKey).first) {
++        // 内存再次注册时
++        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
++                "{%p, %llu}", mem.addr, mem.size);
++        return HCCL_E_AGAIN;
++    }
++
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
+     EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+         return HCCL_E_PTR);
+     
+     // 注册到LocalUbRmaBuffer计数器
++<<<<<<< HEAD
+     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
++=======
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
+     if (resultPair.first == localUbRmaBufferMgr_->End()) {
+         // 若已注册内存有交叉，返回HCCL_E_INTERNAL
+diff --git a/src/framework/next/comms/endpoints/reged_mems/urma_mem.h b/src/framework/next/comms/endpoints/reged_mems/urma_mem.h
+index 76202dd6..9b6282d7 100644
+--- a/src/framework/next/comms/endpoints/reged_mems/urma_mem.h
++++ b/src/framework/next/comms/endpoints/reged_mems/urma_mem.h
+@@ -29,7 +29,11 @@ public:
+     using LocalUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::LocalUbRmaBuffer>>;
+     using RemoteUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::RemoteUbRmaBuffer>>;
+  
++<<<<<<< HEAD
+     UbRegedMemMgr()  = default;
++=======
++    UbRegedMemMgr();
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     ~UbRegedMemMgr() = default;
+  
+     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
+diff --git a/src/framework/op_base/src/op_base.cc b/src/framework/op_base/src/op_base.cc
+index 8c156bdb..4f26a20c 100644
+--- a/src/framework/op_base/src/op_base.cc
++++ b/src/framework/op_base/src/op_base.cc
+@@ -361,7 +361,11 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
+     u32 rankNum = 0;
+     CHK_RET(HcclGetRankSizeV2(*commV2, &rankNum));
+     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
++<<<<<<< HEAD
+     // CHK_RET(HcclGetCommNameV2(*commV2, commName));
++=======
++    CHK_RET(HcclGetCommNameV2(*commV2, commName));
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
+     //获取cclbuffer
+     uintptr_t cclBufferAddr{0};
+diff --git a/src/orion/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc b/src/orion/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+index 1a6848ce..c59478d7 100644
+--- a/src/orion/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
++++ b/src/orion/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+@@ -249,6 +249,10 @@ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtNotifySliceLite(u32 index)
+ RmtRmaBufSliceLite UbTransportLiteImpl::GetRmtRmaBufSliceLite(const Buffer &rmtBuf)
+ {
+     for (auto &it : rmtBufferVec) {
++<<<<<<< HEAD
++=======
++        HCCL_INFO("[%s] rmtBuffer addr[%llu] size[%llu].", __func__, it.addr, it.size);
++>>>>>>> aad2c703... DTS:DTS8888888888888
+         Buffer buf(it.addr, it.size);
+         if (buf.Contains(rmtBuf.GetAddr(), rmtBuf.GetSize())) {
+             // ub conn lite 不关心rkey , rkey 设定为0
+diff --git a/src/orion/unified_platform/resource/transport/ub_mem_transport.cc b/src/orion/unified_platform/resource/transport/ub_mem_transport.cc
+index 3c397329..4a3e196e 100644
+--- a/src/orion/unified_platform/resource/transport/ub_mem_transport.cc
++++ b/src/orion/unified_platform/resource/transport/ub_mem_transport.cc
+@@ -816,7 +816,12 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
+         return HCCL_SUCCESS;
+     }
+ 
++<<<<<<< HEAD
+     auto remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
++=======
++    remoteMemsPtr_.reset();  // 释放之前的内存
++    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);  // 重新分配
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     CHK_PTR_NULL(remoteMemsPtr_);
+ 
+     for (uint32_t i = 0; i < totalCount; i++) {
+@@ -825,6 +830,11 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
+         remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
+         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
+         memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag());
++<<<<<<< HEAD
++=======
++        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
++            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     }
+ 
+     *memNum = totalCount;
+diff --git a/src/orion/unified_platform/resource/transport/ub_mem_transport.h b/src/orion/unified_platform/resource/transport/ub_mem_transport.h
+index 68141cd0..1b006728 100644
+--- a/src/orion/unified_platform/resource/transport/ub_mem_transport.h
++++ b/src/orion/unified_platform/resource/transport/ub_mem_transport.h
+@@ -92,6 +92,11 @@ private:
+     u32          cntNotifyDescSize{0};
+     vector<char> rmtCntNotifyDesc;
+ 
++<<<<<<< HEAD
++=======
++    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
++
++>>>>>>> aad2c703... DTS:DTS8888888888888
+     using RemoteBufferVec = std::vector<std::unique_ptr<RemoteUbRmaBuffer>>;
+     using LocalBufferVec = std::vector<LocalUbRmaBuffer *>;
+ 
+diff --git a/src/platform/resource/notify/rts_notify.cc b/src/platform/resource/notify/rts_notify.cc
+index 3b55c847..799b17a7 100644
+--- a/src/platform/resource/notify/rts_notify.cc
++++ b/src/platform/resource/notify/rts_notify.cc
+@@ -182,7 +182,16 @@ HcclResult RtsNotify::Destroy()
+ HcclResult RtsNotify::UpdateNotifyInfo()
+ {
+     CHK_RET(hrtGetNotifyID(notifyPtr, &id));
+-
++        
++    DevType devType_ = DevType::DEV_TYPE_COUNT;
++    CHK_RET(hrtGetDeviceType(devType_));
++    if (devType_ == DevType::DEV_TYPE_910_95) {
++        s32 deviceLogicId;
++        CHK_RET(hrtGetDevice(&deviceLogicId));
++        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devId));
++        return HCCL_SUCCESS;
++    }
++    
+     CHK_RET(hrtNotifyGetPhyInfo(notifyPtr, &devId, &tsId));
+ 
+     rtNotifyPhyInfo notifyInfo;
+-- 
+2.27.0
+

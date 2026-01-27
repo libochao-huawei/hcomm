@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024. All rights reserved.
+ * Description: 获取动态库中ccu接口函数的适配接口
+ * Create: 2024-04-29
+ */
+#include "hccp_dl.h"
+#include "dl_ccu_function.h"
+
+void *gCcuApiHandle = NULL;
+#ifndef CA_CONFIG_LLT
+struct RsCcuOps gCcuOps;
+#else
+struct rs_ccu_ops g_ccu_ops = {
+    .RsCcuInit = ccu_init,
+    .RsCcuUninit = ccu_uninit,
+    .rs_ccu_custom_channel = ccu_custom_channel,
+    .rs_ccu_get_cqe_base_addr = ccu_get_cqe_base_addr,
+};
+#endif
+
+STATIC int RsCcuDeviceApiInit(void)
+{
+#ifndef CA_CONFIG_LLT
+    gCcuOps.rsCcuInit = (int (*)(void)) HccpDlsym(gCcuApiHandle, "ccu_init");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuInit, "ccu_init");
+
+    gCcuOps.rsCcuUninit = (int (*)(void)) HccpDlsym(gCcuApiHandle, "ccu_uninit");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuUninit, "ccu_uninit");
+
+    gCcuOps.rsCcuCustomChannel = (int (*)(const struct channel_info_in *in, struct channel_info_out *out))
+        HccpDlsym(gCcuApiHandle, "ccu_custom_channel");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuCustomChannel, "ccu_custom_channel");
+
+    gCcuOps.rsCcuGetCqeBaseAddr = (unsigned long long (*)(unsigned int dieId))
+        HccpDlsym(gCcuApiHandle, "ccu_get_cqe_base_addr");
+    DL_API_RET_IS_NULL_CHECK(gCcuOps.rsCcuGetCqeBaseAddr, "ccu_get_cqe_base_addr");
+#endif
+    return 0;
+}
+
+STATIC int RsOpenCcuSo(void)
+{
+#ifndef CA_CONFIG_LLT
+    if (gCcuApiHandle == NULL) {
+        gCcuApiHandle = HccpDlopen("libccu-user-drv.so", RTLD_NOW);
+        if (gCcuApiHandle != NULL) {
+            return 0;
+        }
+        return -EINVAL;
+    } else {
+        hccp_run_info("ccu_api dlopen again!");
+    }
+#endif
+    return 0;
+}
+
+STATIC void RsCloseCcuSo(void)
+{
+#ifndef CA_CONFIG_LLT
+    if (gCcuApiHandle != NULL) {
+        (void)HccpDlclose(gCcuApiHandle);
+        gCcuApiHandle = NULL;
+    }
+#endif
+    return;
+}
+
+int RsCcuApiInit(void)
+{
+    int ret;
+
+    ret = RsOpenCcuSo();
+    CHK_PRT_RETURN(ret, hccp_err("HccpDlopen[libccu-user-drv.so] failed! ret=[%d],"\
+    "Please check network adapter driver has been installed", ret), ret);
+
+    ret = RsCcuDeviceApiInit();
+    if (ret != 0) {
+        hccp_err("[rs_ccu_device_api_init]HccpDlopen failed! ret=[%d]", ret);
+        RsCloseCcuSo();
+        return ret;
+    }
+    return 0;
+}
+
+void RsCcuApiDeinit(void)
+{
+    RsCloseCcuSo();
+    return;
+}
+
+int RsCcuInit(void)
+{
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuInit == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("g_ccu_api_handle is NULL or RsCcuInit is NULL");
+        return -EINVAL;
+#endif
+    }
+    return gCcuOps.rsCcuInit();
+}
+
+int RsCcuCustomChannel(const struct channel_info_in *in, struct channel_info_out *out)
+{
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuCustomChannel == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("g_ccu_api_handle is NULL or rs_ccu_custom_channel is NULL");
+        return -EINVAL;
+#endif
+    }
+    return gCcuOps.rsCcuCustomChannel(in, out);
+}
+
+int RsCcuGetCqeBaseAddr(unsigned int dieId, unsigned long long *cqeBaseAddr)
+{
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuGetCqeBaseAddr == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("g_ccu_api_handle is NULL or rs_ccu_get_cqe_base_addr is NULL");
+        return -EINVAL;
+#endif
+    }
+    CHK_PRT_RETURN(cqeBaseAddr == NULL, hccp_err("cqe_base_addr is null, dieId:%u", dieId), -EINVAL);
+    *cqeBaseAddr = gCcuOps.rsCcuGetCqeBaseAddr(dieId);
+    return 0;
+}
+
+int RsCcuUninit(void)
+{
+    if (gCcuApiHandle == NULL || gCcuOps.rsCcuUninit == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("g_ccu_api_handle is NULL or RsCcuUninit is NULL");
+        return -EINVAL;
+#endif
+    }
+    return gCcuOps.rsCcuUninit();
+}

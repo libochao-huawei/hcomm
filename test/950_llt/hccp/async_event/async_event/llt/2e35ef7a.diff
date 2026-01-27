@@ -1,0 +1,615 @@
+From 2e35ef7afb783211aa6aa83b46725af725f62f6b Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Thu, 25 Dec 2025 14:43:02 +0800
+Subject: [PATCH] DTS:AR20250220825369 Description:Support UB async event
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: I1453a98ec5a06b7cbd32cf0d4fecb86619373850
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ ut/roce/rdma_agent/CMakeLists.txt           |  16 +-
+ ut/roce/rdma_agent/stub/rs_ctx.c            |   5 +
+ ut/roce/rdma_agent/tc_adp.c                 |   5 +
+ ut/roce/rdma_agent/tc_ra_ctx.c              | 109 ++++++++++++++
+ ut/roce/rdma_agent/tc_ra_ctx.h              |   4 +
+ ut/roce/rdma_agent/ut_test.cc               |   4 +
+ ut/roce/rdma_service_normal/CMakeLists.txt  |   5 +-
+ ut/roce/rdma_service_normal/tc_ut_rs_ctx.c  |  40 +++++
+ ut/roce/rdma_service_normal/tc_ut_rs_ctx.h  |   1 +
+ ut/roce/rdma_service_normal/tc_ut_rs_ping.c |   2 +-
+ ut/roce/rdma_service_normal/tc_ut_rs_ub.c   | 157 +++++++++++++++++++-
+ ut/roce/rdma_service_normal/tc_ut_rs_ub.h   |   4 +
+ ut/roce/rdma_service_normal/ut_test.cc      |   5 +
+ 13 files changed, 343 insertions(+), 14 deletions(-)
+
+diff --git a/ut/roce/rdma_agent/CMakeLists.txt b/ut/roce/rdma_agent/CMakeLists.txt
+index d13161cc4..e6936e487 100755
+--- a/ut/roce/rdma_agent/CMakeLists.txt
++++ b/ut/roce/rdma_agent/CMakeLists.txt
+@@ -1,4 +1,4 @@
+-
++set(HCOMM_RA_DIR ${TOP_DIR}/drivers/network/orion/hcomm_dev/rdma_agent)
+ 
+ set(rdma_agent_utest_list
+     stub/hdc.c
+@@ -23,33 +23,33 @@ set(rdma_agent_utest_list
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_host.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_common.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_ping.c
+-    ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_ctx.c
++    ${HCOMM_RA_DIR}/client/ra_ctx.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_rdma.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_init.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_socket.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/ra_tlv.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/async/ra_comm.c
+-    ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/async/ra_ctx.c
++    ${HCOMM_RA_DIR}/client/async/ra_ctx.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/client/async/ra_socket.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/adapter/ra_adp.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/adapter/tlv/ra_adp_tlv.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/adapter/async/ra_adp_pool.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/adapter/async/ra_adp_async.c
+-    ${TOP_DIR}/drivers/network/hccp/rdma_agent/adapter/ctx/ra_adp_ctx.c
++    ${HCOMM_RA_DIR}/adapter/ctx/ra_adp_ctx.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/ra_hdc.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/ra_hdc_ping.c
+-    ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/ra_hdc_ctx.c
++    ${HCOMM_RA_DIR}/hdc/ra_hdc_ctx.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/ra_hdc_socket.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/ra_hdc_rdma.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/ra_hdc_tlv.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/async/ra_hdc_async.c
+-    ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/async/ra_hdc_async_ctx.c
++    ${HCOMM_RA_DIR}/hdc/async/ra_hdc_async_ctx.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/async/ra_hdc_async_socket.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/peer/ra_peer.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/peer/ra_peer_socket.c
+-    ${TOP_DIR}/drivers/network/hccp/rdma_agent/peer/ra_peer_ctx.c
++    ${HCOMM_RA_DIR}/peer/ra_peer_ctx.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/comm/ra_comm.c
+-    ${TOP_DIR}/drivers/network/hccp/rdma_agent/comm/ctx/ra_ctx_comm.c
++    ${HCOMM_RA_DIR}/comm/ctx/ra_ctx_comm.c
+     ${TOP_DIR}/drivers/network/common/dl_hal_function.c
+     ${TOP_DIR}/llt/network/st/stub/devdrv_runtime_api.c
+     ${TOP_DIR}/drivers/network/hccp/rdma_agent/hdc/ra_hdc_lite.c
+diff --git a/ut/roce/rdma_agent/stub/rs_ctx.c b/ut/roce/rdma_agent/stub/rs_ctx.c
+index b99377638..8e0ab3917 100644
+--- a/ut/roce/rdma_agent/stub/rs_ctx.c
++++ b/ut/roce/rdma_agent/stub/rs_ctx.c
+@@ -24,6 +24,11 @@ int rs_ctx_init(struct ctx_init_attr *attr, unsigned int *dev_index, struct dev_
+     return 0;
+ }
+ 
++int rs_ctx_get_async_events(struct RaRsDevInfo *dev_info, struct async_event async_events[], unsigned int *num)
++{
++    return 0;
++}
++
+ int rs_ctx_deinit(struct RaRsDevInfo *dev_info)
+ {
+     return 0;
+diff --git a/ut/roce/rdma_agent/tc_adp.c b/ut/roce/rdma_agent/tc_adp.c
+index 5118c629d..12d0284dc 100755
+--- a/ut/roce/rdma_agent/tc_adp.c
++++ b/ut/roce/rdma_agent/tc_adp.c
+@@ -1276,6 +1276,11 @@ void tc_ra_rs_test_ctx_ops()
+     add_test_msg(RA_RS_CTX_GET_CR_ERR_INFO_LIST, sizeof(union op_ctx_get_cr_err_info_list_data));
+     tc_common_test();
+ 
++    tc_adp_env_init();
++    mocker((stub_fn_t)g_ra_rs_ctx_ops.ctx_get_async_events, 1, 0);
++    add_test_msg(RA_RS_CTX_GET_ASYNC_EVENTS, sizeof(union op_ctx_get_async_events_data));
++    tc_common_test();
++
+     mocker_clean();
+ }
+ 
+diff --git a/ut/roce/rdma_agent/tc_ra_ctx.c b/ut/roce/rdma_agent/tc_ra_ctx.c
+index f93793ded..4581e5b86 100644
+--- a/ut/roce/rdma_agent/tc_ra_ctx.c
++++ b/ut/roce/rdma_agent/tc_ra_ctx.c
+@@ -1876,6 +1876,115 @@ void tc_ra_rs_set_tp_attr()
+     out_buf = NULL;
+ }
+ 
++void tc_ra_ctx_get_async_events()
++{
++    struct ra_ctx_handle ctx_handle = {0};
++    struct async_event events[1] = {0};
++    unsigned int num = 0;
++    int ret = 0;
++
++    ret = ra_ctx_get_async_events(NULL, NULL, NULL);
++    EXPECT_INT_EQ(ret, 128103);
++
++    ret = ra_ctx_get_async_events(&ctx_handle, NULL, NULL);
++    EXPECT_INT_EQ(ret, 128103);
++
++    ret = ra_ctx_get_async_events(&ctx_handle, events, NULL);
++    EXPECT_INT_EQ(ret, 128103);
++
++    ret = ra_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, 128103);
++
++    num = ASYNC_EVENT_MAX_NUM + 1;
++    ret = ra_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, 128103);
++
++    num = 1;
++    ret = ra_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, 128103);
++
++    ctx_handle.ctx_ops = &g_ra_hdc_ctx_ops;
++    mocker_clean();
++    mocker(ra_hdc_ctx_get_async_events, 1, 0);
++    ret = ra_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, 0);
++    mocker_clean();
++
++    mocker(ra_hdc_ctx_get_async_events, 1, -1);
++    ret = ra_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, 128100);
++    mocker_clean();
++}
++
++void tc_ra_hdc_ctx_get_async_events()
++{
++    struct ra_ctx_handle ctx_handle = {0};
++    struct async_event events[1] = {0};
++    unsigned int num = 1;
++    int ret = 0;
++
++    mocker_clean();
++    mocker(RaHdcProcessMsg, 1, -1);
++    ret = ra_hdc_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, -1);
++    mocker_clean();
++
++    mocker(RaHdcProcessMsg, 1, 0);
++    ret = ra_hdc_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, 0);
++    mocker_clean();
++};
++
++void tc_ra_peer_ctx_get_async_events()
++{
++    struct ra_ctx_handle ctx_handle = {0};
++    struct async_event events[1] = {0};
++    unsigned int num = 1;
++    int ret = 0;
++
++    ret = ra_peer_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, 0);
++
++    mocker(rs_ctx_get_async_events, 1, -1);
++    ret = ra_peer_ctx_get_async_events(&ctx_handle, events, &num);
++    EXPECT_INT_EQ(ret, -1);
++    mocker_clean();
++}
++
++void tc_ra_rs_ctx_get_async_events()
++{
++    union op_ctx_get_async_events_data data_out = {0};
++    union op_ctx_get_async_events_data data_in = {0};
++
++    int rcv_buf_len = 0;
++    int op_result;
++    int out_len;
++    int ret;
++
++    char* in_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_get_async_events_data));
++    char* out_buf = calloc(1, sizeof(struct MsgHead) + sizeof(union op_ctx_get_async_events_data));
++
++    data_in.tx_data.phy_id = 0;
++    data_in.tx_data.dev_index = 0;
++    memcpy_s(in_buf + sizeof(struct MsgHead), sizeof(union op_ctx_get_async_events_data),
++        &data_in, sizeof(union op_ctx_get_async_events_data));
++    data_in.tx_data.num = ASYNC_EVENT_MAX_NUM;
++    mocker(rs_ctx_get_async_events, 1, 0);
++    ret = ra_rs_ctx_get_async_events(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
++    EXPECT_INT_EQ(op_result, 0);
++    mocker_clean();
++
++    mocker(rs_ctx_get_async_events, 1, -1);
++    ret = ra_rs_ctx_get_async_events(in_buf, out_buf, &out_len, &op_result, rcv_buf_len);
++    EXPECT_INT_EQ(op_result, -1);
++    mocker_clean();
++
++    free(in_buf);
++    in_buf = NULL;
++    free(out_buf);
++    out_buf = NULL;
++}
++
+ void tc_ra_ctx_get_cr_err_info_list()
+ {
+     struct ra_ctx_handle ctx_handle = {0};
+diff --git a/ut/roce/rdma_agent/tc_ra_ctx.h b/ut/roce/rdma_agent/tc_ra_ctx.h
+index b4c5a5ceb..8b645d2e0 100644
+--- a/ut/roce/rdma_agent/tc_ra_ctx.h
++++ b/ut/roce/rdma_agent/tc_ra_ctx.h
+@@ -39,6 +39,10 @@ void tc_ra_rs_ctx_get_aux_info();
+ void tc_ra_ctx_get_cr_err_info_list();
+ void tc_ra_hdc_ctx_get_cr_err_info_list();
+ void tc_ra_rs_ctx_get_cr_err_info_list();
++void tc_ra_ctx_get_async_events();
++void tc_ra_hdc_ctx_get_async_events();
++void tc_ra_peer_ctx_get_async_events();
++void tc_ra_rs_ctx_get_async_events();
+ 
+ void tc_ra_get_tp_info_list_async();
+ void tc_ra_hdc_get_tp_info_list_async();
+diff --git a/ut/roce/rdma_agent/ut_test.cc b/ut/roce/rdma_agent/ut_test.cc
+index 15b0ac29a..b3b4c4f66 100755
+--- a/ut/roce/rdma_agent/ut_test.cc
++++ b/ut/roce/rdma_agent/ut_test.cc
+@@ -280,6 +280,9 @@ TEST_M(RdmaAgent, tc_ra_hdc_ctx_get_aux_info);
+ TEST_M(RdmaAgent, tc_ra_rs_ctx_get_aux_info);
+ TEST_M(RdmaAgent, tc_ra_hdc_ctx_get_cr_err_info_list);
+ TEST_M(RdmaAgent, tc_ra_rs_ctx_get_cr_err_info_list);
++TEST_M(RdmaAgent, tc_ra_hdc_ctx_get_async_events);
++TEST_M(RdmaAgent, tc_ra_peer_ctx_get_async_events);
++TEST_M(RdmaAgent, tc_ra_rs_ctx_get_async_events);
+ 
+ /* pingMesh ut cases */
+ TEST_M(RdmaAgent, tc_ra_ping_init_get_handle_abnormal);
+@@ -311,6 +314,7 @@ TEST_M(RdmaAgent, tc_ra_ctx_update_ci);
+ TEST_M(RdmaAgent, tc_ra_custom_channel);
+ TEST_M(RdmaAgent, tc_ra_get_eid_by_ip);
+ TEST_M(RdmaAgent, tc_ra_ctx_get_cr_err_info_list);
++TEST_M(RdmaAgent, tc_ra_ctx_get_async_events);
+ 
+ TEST_M(RdmaAgent, tc_ra_rs_async_hdc_session_connect);
+ TEST_M(RdmaAgent, tc_ra_hdc_async_send_pkt);
+diff --git a/ut/roce/rdma_service_normal/CMakeLists.txt b/ut/roce/rdma_service_normal/CMakeLists.txt
+index 610eeae78..a04050236 100755
+--- a/ut/roce/rdma_service_normal/CMakeLists.txt
++++ b/ut/roce/rdma_service_normal/CMakeLists.txt
+@@ -1,4 +1,5 @@
+ set(CTX_DIR ${TOP_DIR}/drivers/network/hccp/rdma_service/ctx)
++set(HCOMM_RS_DIR ${TOP_DIR}/drivers/network/orion/hcomm_dev/rdma_service/ctx)
+ 
+ set(rs_ut_normal_list
+     stub/cmd.c
+@@ -43,8 +44,8 @@ set(rs_ut_normal_list
+     ${CTX_DIR}/dl_urma_function.c
+     ${CTX_DIR}/dl_net_function.c
+     ${CTX_DIR}/rs_ccu.c
+-    ${CTX_DIR}/rs_ub.c
+-    ${CTX_DIR}/rs_ctx.c
++    ${HCOMM_RS_DIR}/rs_ub.c
++    ${HCOMM_RS_DIR}/rs_ctx.c
+     ${CTX_DIR}/rs_esched.c
+     ${CTX_DIR}/rs_ping_urma.c
+     main.cc
+diff --git a/ut/roce/rdma_service_normal/tc_ut_rs_ctx.c b/ut/roce/rdma_service_normal/tc_ut_rs_ctx.c
+index 884e9c0dc..ea8463103 100644
+--- a/ut/roce/rdma_service_normal/tc_ut_rs_ctx.c
++++ b/ut/roce/rdma_service_normal/tc_ut_rs_ctx.c
+@@ -813,3 +813,43 @@ void tc_rs_ctx_get_cr_err_info_list()
+     EXPECT_INT_EQ(0, ret);
+     mocker_clean();
+ }
++
++void tc_rs_ctx_get_async_events()
++{
++    struct async_event async_events[1] = {0};
++    struct RaRsDevInfo dev_info = {0};
++    unsigned int num = 0;
++    int ret;
++
++    ret = rs_ctx_get_async_events(NULL, NULL, NULL);
++    EXPECT_INT_EQ(-EINVAL, ret);
++
++    ret = rs_ctx_get_async_events(&dev_info, NULL, NULL);
++    EXPECT_INT_EQ(-EINVAL, ret);
++
++    ret = rs_ctx_get_async_events(&dev_info, async_events, NULL);
++    EXPECT_INT_EQ(-EINVAL, ret);
++
++    ret = rs_ctx_get_async_events(&dev_info, async_events, &num);
++    EXPECT_INT_EQ(-EINVAL, ret);
++
++    num = 1;
++    mocker_clean();
++    mocker(RsGetRsCb, 1, -EINVAL);
++    ret = rs_ctx_get_async_events(&dev_info, async_events, &num);
++    EXPECT_INT_EQ(-EINVAL, ret);
++    mocker_clean();
++
++    mocker(RsGetRsCb, 1, 0);
++    mocker(rs_ub_get_dev_cb, 1, -ENODEV);
++    ret = rs_ctx_get_async_events(&dev_info, async_events, &num);
++    EXPECT_INT_EQ(-ENODEV, ret);
++    mocker_clean();
++
++    mocker(RsGetRsCb, 1, 0);
++    mocker(rs_ub_get_dev_cb, 1, 0);
++    mocker(rs_ub_ctx_get_async_events, 1, 0);
++    ret = rs_ctx_get_async_events(&dev_info, async_events, &num);
++    EXPECT_INT_EQ(0, ret);
++    mocker_clean();
++}
+diff --git a/ut/roce/rdma_service_normal/tc_ut_rs_ctx.h b/ut/roce/rdma_service_normal/tc_ut_rs_ctx.h
+index eba288510..792de57c2 100644
+--- a/ut/roce/rdma_service_normal/tc_ut_rs_ctx.h
++++ b/ut/roce/rdma_service_normal/tc_ut_rs_ctx.h
+@@ -45,6 +45,7 @@ void tc_rs_ctx_get_aux_info();
+ void tc_rs_get_tp_attr();
+ void tc_rs_set_tp_attr();
+ void tc_rs_ctx_get_cr_err_info_list();
++void tc_rs_ctx_get_async_events();
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/ut/roce/rdma_service_normal/tc_ut_rs_ping.c b/ut/roce/rdma_service_normal/tc_ut_rs_ping.c
+index e4e22b26e..814f2dc48 100644
+--- a/ut/roce/rdma_service_normal/tc_ut_rs_ping.c
++++ b/ut/roce/rdma_service_normal/tc_ut_rs_ping.c
+@@ -326,7 +326,7 @@ void tc_rs_ping_target_add()
+     RS_INIT_LIST_HEAD(&g_tmp_ping_cb.pingList);
+     mocker_invoke(RsGetPingCb, rs_get_ping_cb_stub, 1);
+     ret = RsPingTargetAdd(&rdev, &target);
+-    EXPECT_INT_EQ(ret, -9);
++    EXPECT_INT_NE(ret, 0);
+     mocker_clean();
+ 
+     target.payload.size = 1;
+diff --git a/ut/roce/rdma_service_normal/tc_ut_rs_ub.c b/ut/roce/rdma_service_normal/tc_ut_rs_ub.c
+index ec3434484..a8718069f 100644
+--- a/ut/roce/rdma_service_normal/tc_ut_rs_ub.c
++++ b/ut/roce/rdma_service_normal/tc_ut_rs_ub.c
+@@ -59,6 +59,7 @@ extern void rs_ub_free_jetty_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsListH
+ extern void rs_ub_free_jfc_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsListHead *jfc_list);
+ extern void rs_ub_free_jfce_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsListHead *jfce_list);
+ extern void rs_ub_free_token_id_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsListHead *token_id_list);
++extern void rs_ub_free_async_event_cb_list(struct rs_ub_dev_cb *dev_cb, struct RsListHead *async_event_list);
+ extern int rs_ub_get_token_id_cb(struct rs_ub_dev_cb *dev_cb, unsigned long long addr,
+     struct rs_token_id_cb **token_id_cb);
+ extern int rs_ub_init_seg_cb(struct mem_reg_attr_t *mem_attr, struct rs_ub_dev_cb *dev_cb, struct rs_seg_cb *seg_cb);
+@@ -86,6 +87,9 @@ extern void rs_ub_free_jetty_cb_batch(struct jetty_destroy_batch_info *batch_inf
+ extern int rs_ub_ctx_jfc_create_normal(struct rs_ub_dev_cb *dev_cb, urma_jfc_cfg_t *jfc_cfg, urma_jfc_t **out_jfc);
+ extern int rs_ub_get_jfce_cb(struct rs_ub_dev_cb *dev_cb, unsigned long long addr, struct rs_ctx_jfce_cb **jfce_cb);
+ extern int rs_handle_epoll_poll_jfc(struct rs_ub_dev_cb *dev_cb, urma_jfce_t *jfce);
++extern int rs_ub_get_save_async_event(struct rs_ub_dev_cb *dev_cb);
++extern void rs_ub_get_async_event_res_id(urma_async_event_t *event, struct rs_ub_dev_cb *dev_cb,
++    unsigned int *res_id);
+ 
+ struct RsConnInfo g_conn = {0};
+ char g_rev_buf[RS_BUF_SIZE] = {0};
+@@ -206,8 +210,11 @@ void tc_rs_ub_v2()
+     EXPECT_INT_EQ(ret, 0);
+ 
+     RS_INIT_LIST_HEAD(&rscb.rdevList);
++    mocker_clean();
++    mocker(RsEpollCtl, 10, 0);
+     ret = rs_ub_ctx_init(&rscb, &info, &dev_index, &attr);
+     EXPECT_INT_EQ(0, ret);
++    mocker_clean();
+ 
+     ret = rs_ub_get_dev_cb(&rscb, dev_index, &dev_cb);
+     EXPECT_INT_EQ(0, ret);
+@@ -392,8 +399,11 @@ struct rs_cb *tc_rs_ub_v2_init(int mode, unsigned int *dev_index)
+     EXPECT_INT_EQ(ret, 0);
+     RS_INIT_LIST_HEAD(&rs_cb->rdevList);
+ 
++    mocker_clean();
++    mocker(RsEpollCtl, 10, 0);
+     ret = rs_ub_ctx_init(rs_cb, &info, dev_index, &attr);
+     EXPECT_INT_EQ(0, ret);
++    mocker_clean();
+ 
+     return rs_cb;
+ }
+@@ -1069,14 +1079,24 @@ void tc_rs_ub_dev_cb_init()
+ 
+     mocker_clean();
+     mocker(pthread_mutex_init, 1, 0);
+-    mocker(rs_ub_create_ctx, 1, 0);
++    mocker(RsEpollCtl, 2, -1);
+     mocker(rs_ub_get_dev_attr, 1, -1);
+     mocker(rs_urma_delete_context, 1, -1);
+     mocker(pthread_mutex_destroy, 1, -1);
+     ret = rs_ub_dev_cb_init(&attr, &dev_cb, &rscb, &dev_index, &base_attr);
+     EXPECT_INT_NE(0, ret);
+-
+     mocker_clean();
++    rs_urma_delete_context(dev_cb.urma_ctx);
++
++    mocker(pthread_mutex_init, 1, 0);
++    mocker(RsEpollCtl, 2, 0);
++    mocker(rs_ub_get_dev_attr, 1, -1);
++    mocker(rs_urma_delete_context, 1, -1);
++    mocker(pthread_mutex_destroy, 1, -1);
++    ret = rs_ub_dev_cb_init(&attr, &dev_cb, &rscb, &dev_index, &base_attr);
++    EXPECT_INT_NE(0, ret);
++    mocker_clean();
++    rs_urma_delete_context(dev_cb.urma_ctx);
+ }
+ 
+ void tc_rs_ub_ctx_init()
+@@ -1146,13 +1166,16 @@ void tc_rs_ub_ctx_deinit()
+     struct rs_cb rs_cb = {0};
+     int ret = 0;
+ 
++    ret = rs_ub_create_ctx(dev_cb->urma_dev, 0, &(dev_cb->urma_ctx));
++    EXPECT_INT_EQ(0, ret);
++
+     dev_cb->rscb = &rs_cb;
+-    mocker(rs_urma_delete_context, 1, -1);
+     mocker(rs_ub_free_seg_cb_list, 1, -1);
+     mocker(rs_ub_free_jetty_cb_list, 1, -1);
+     mocker(rs_ub_free_jfc_cb_list, 1, -1);
+     mocker(rs_ub_free_jfce_cb_list, 1, -1);
+     mocker(rs_ub_free_token_id_cb_list, 1, -1);
++    mocker(rs_ub_free_async_event_cb_list, 1, -1);
+     RS_INIT_LIST_HEAD(&dev_cb->list);
+     ret = rs_ub_ctx_deinit(dev_cb);
+     EXPECT_INT_EQ(0, ret);
+@@ -1636,3 +1659,131 @@ void tc_rs_jfc_callback_process()
+     cr.status = URMA_CR_RNR_RETRY_CNT_EXC_ERR;
+     rs_jfc_callback_process(&jetty_cb, &cr, &jfc);
+ }
++
++void tc_rs_ub_ctx_get_async_events()
++{
++    struct rs_ctx_async_event_cb *event_cb1 = NULL;
++    struct rs_ctx_async_event_cb *event_cb2 = NULL;
++    struct async_event async_events[1] = {0};
++    struct rs_ub_dev_cb dev_cb = {0};
++    unsigned int num = 1;
++
++    event_cb1 = calloc(1, sizeof(struct rs_ctx_async_event_cb));
++    event_cb2 = calloc(1, sizeof(struct rs_ctx_async_event_cb));
++
++    RS_INIT_LIST_HEAD(&dev_cb.async_event_list);
++    rs_ub_ctx_get_async_events(&dev_cb, async_events, &num);
++
++    RsListAddTail(&event_cb1->list, &dev_cb.async_event_list);
++    RsListAddTail(&event_cb2->list, &dev_cb.async_event_list);
++
++    mocker_clean();
++    num = 1;
++    mocker(rs_ub_get_async_event_res_id, 1, 0);
++    rs_ub_ctx_get_async_events(&dev_cb, async_events, &num);
++    mocker_clean();
++
++    num = 1;
++    mocker(rs_ub_get_async_event_res_id, 1, 0);
++    rs_ub_ctx_get_async_events(&dev_cb, async_events, &num);
++    mocker_clean();
++}
++
++void tc_rs_epoll_event_urma_async_event_in_handle()
++{
++    struct rs_ub_dev_cb dev_cb1 = {0};
++    struct rs_ub_dev_cb dev_cb2 = {0};
++    urma_context_t urma_ctx1 = {0};
++    urma_context_t urma_ctx2 = {0};
++    struct rs_cb rsCb = {0};
++    int ret = 0;
++
++    urma_ctx1.async_fd = 1;
++    urma_ctx2.async_fd = 2;
++    dev_cb1.urma_ctx = &urma_ctx1;
++    dev_cb2.urma_ctx = &urma_ctx2;
++
++    RS_INIT_LIST_HEAD(&rsCb.rdevList);
++
++    ret = RsEpollEventUrmaAsyncEventInHandle(&rsCb, 1);
++    EXPECT_INT_EQ(-ENODEV, ret);
++
++    mocker_clean();
++    RsListAddTail(&dev_cb1.list, &rsCb.rdevList);
++    RsListAddTail(&dev_cb2.list, &rsCb.rdevList);
++    mocker(rs_ub_get_save_async_event, 10, -1);
++    ret = RsEpollEventUrmaAsyncEventInHandle(&rsCb, 2);
++    EXPECT_INT_EQ(-1, ret);
++    mocker_clean();
++
++    RsListDel(&dev_cb1.list);
++    RsListDel(&dev_cb2.list);
++}
++
++void tc_rs_ub_get_save_async_event()
++{
++    struct async_event async_events[1] = {0};
++    struct rs_ub_dev_cb dev_cb = {0};
++    unsigned int num = 1;
++    int ret = 0;
++
++    RS_INIT_LIST_HEAD(&dev_cb.async_event_list);
++    mocker_clean();
++    mocker(rs_ub_get_async_event_res_id, 1, 0);
++    ret = rs_ub_get_save_async_event(&dev_cb);
++    EXPECT_INT_EQ(0, ret);
++    mocker_clean();
++
++    mocker(rs_urma_get_async_event, 1, -1);
++    ret = rs_ub_get_save_async_event(&dev_cb);
++    EXPECT_INT_EQ(-EOPENSRC, ret);
++    mocker_clean();
++
++    mocker(rs_ub_get_async_event_res_id, 1, 0);
++    rs_ub_ctx_get_async_events(&dev_cb, async_events, &num);
++    mocker_clean();
++}
++
++void tc_rs_ub_get_async_event_res_id()
++{
++    struct rs_ub_dev_cb dev_cb = {0};
++    urma_jetty_grp_t jetty_grp = {0};
++    urma_async_event_t event = {0};
++    urma_jetty_t jetty = {0};
++    unsigned int res_id = 0;
++    urma_jfc_t jfc = {0};
++    urma_jfs_t jfs = {0};
++    urma_jfr_t jfr = {0};
++    uint32_t port_id = 0;
++    uint32_t eid_idx = 0;
++
++    jfc.jfc_id.id = 1;
++    event.element.jfc = &jfc;
++    event.event_type = URMA_EVENT_JFC_ERR;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++    EXPECT_INT_EQ(1, res_id);
++
++    event.event_type = URMA_EVENT_JFS_ERR;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++    
++    event.event_type = URMA_EVENT_JFR_ERR;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++
++    event.event_type = URMA_EVENT_JETTY_ERR;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++
++    event.event_type = URMA_EVENT_JETTY_GRP_ERR;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++
++    event.event_type = URMA_EVENT_PORT_ACTIVE;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++
++    event.event_type = URMA_EVENT_EID_CHANGE;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++
++    event.event_type = URMA_EVENT_DEV_FATAL;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++
++    event.event_type = -1;
++    rs_ub_get_async_event_res_id(&event, &dev_cb, &res_id);
++}
+\ No newline at end of file
+diff --git a/ut/roce/rdma_service_normal/tc_ut_rs_ub.h b/ut/roce/rdma_service_normal/tc_ut_rs_ub.h
+index 760d85429..688cf8205 100644
+--- a/ut/roce/rdma_service_normal/tc_ut_rs_ub.h
++++ b/ut/roce/rdma_service_normal/tc_ut_rs_ub.h
+@@ -52,6 +52,10 @@ void tc_rs_ub_set_tp_attr();
+ void tc_rs_epoll_event_jfc_in_handle();
+ void tc_rs_handle_epoll_poll_jfc();
+ void tc_rs_jfc_callback_process();
++void tc_rs_ub_ctx_get_async_events();
++void tc_rs_epoll_event_urma_async_event_in_handle();
++void tc_rs_ub_get_save_async_event();
++void tc_rs_ub_get_async_event_res_id();
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/ut/roce/rdma_service_normal/ut_test.cc b/ut/roce/rdma_service_normal/ut_test.cc
+index e1cc88353..444580113 100755
+--- a/ut/roce/rdma_service_normal/ut_test.cc
++++ b/ut/roce/rdma_service_normal/ut_test.cc
+@@ -345,3 +345,8 @@ TEST_M(RS, tc_rs_ub_get_tp_attr);
+ TEST_M(RS, tc_rs_ub_set_tp_attr);
+ TEST_M(RS, tc_rs_ctx_get_cr_err_info_list);
+ TEST_M(RS, tc_rs_retry_timeout_exception_check);
++TEST_M(RS, tc_rs_ctx_get_async_events);
++TEST_M(RS, tc_rs_ub_ctx_get_async_events);
++TEST_M(RS, tc_rs_epoll_event_urma_async_event_in_handle);
++TEST_M(RS, tc_rs_ub_get_save_async_event);
++TEST_M(RS, tc_rs_ub_get_async_event_res_id);
+-- 
+2.45.2.huawei.10
+

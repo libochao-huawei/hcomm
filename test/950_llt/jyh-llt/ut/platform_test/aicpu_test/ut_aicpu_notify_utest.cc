@@ -1,0 +1,147 @@
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
+#include <stdio.h>
+
+#include "../inc/hccl/base.h"
+#include <hccl/hccl_types.h>
+
+#ifndef private
+#define private public
+#define protected public
+#endif
+
+#include "local_notify.h"
+#include "local_notify_impl.h"
+#include "esched_notify.h"
+#include "remote_notify.h"
+#include "notify_base.h"
+#include "rts_notify.h"
+#include "local_ipc_notify.h"
+#include "mem_host_pub.h"
+#include "mem_device_pub.h"
+#include "sal.h"
+
+#include "adapter_rts.h"
+
+#undef private
+#undef protected
+
+using namespace std;
+using namespace hccl;
+
+class NotifyAiCpu_UT : public testing::Test
+{
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "\033[36m--NotifyAiCpu_UT SetUP--\033[0m" << std::endl;
+    }
+    static void TearDownTestCase()
+    {
+        std::cout << "\033[36m--NotifyAiCpu_UT TearDown--\033[0m" << std::endl;
+    }
+    // Some expensive resource shared by all tests.
+    virtual void SetUp()
+    {
+        s32 portNum = 7;
+        MOCKER(hrtGetHccsPortNum)
+            .stubs()
+            .with(any(), outBound(portNum))
+            .will(returnValue(HCCL_SUCCESS));
+        notifyInfo.addr = 100;
+        notifyInfo.devId = 1;
+        notifyInfo.rankId = 2;
+        notifyInfo.resId = 3;
+        notifyInfo.tsId = 4;
+        std::cout << "A Test SetUP" << std::endl;
+    }
+    virtual void TearDown()
+    {
+        std::cout << "A Test TearDown" << std::endl;
+        GlobalMockObject::verify();
+    }
+
+    HcclSignalInfo notifyInfo;
+};
+
+TEST_F(NotifyAiCpu_UT, init_with_signal_info)
+{
+    s32 ret = HCCL_SUCCESS;
+    
+    // local notify
+    LocalNotify localNotify;
+    ret = localNotify.Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_FALSE(localNotify.notifyOwner_);
+    
+    // remote notify
+    RemoteNotify remoteNotify;
+    ret = remoteNotify.Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // local ipc notify
+    LocalIpcNotify localIpcNotify;
+    ret = localIpcNotify.Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_FALSE(localIpcNotify.notifyOwner_);
+}
+
+TEST_F(NotifyAiCpu_UT, check_signal_info)
+{
+    s32 ret = HCCL_SUCCESS;
+    HcclSignalInfo notifyInfoGotten;
+    
+    // local notify
+    LocalNotify localNotify;
+    localNotify.Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY);
+    localNotify.GetNotifyData(notifyInfoGotten);
+    EXPECT_EQ(notifyInfoGotten.addr, notifyInfo.addr);
+    EXPECT_EQ(notifyInfoGotten.devId, notifyInfo.devId);
+    EXPECT_EQ(notifyInfoGotten.resId, notifyInfo.resId);
+    EXPECT_EQ(notifyInfoGotten.tsId, notifyInfo.tsId);
+    
+    // remote notify
+    RemoteNotify remoteNotify;
+    remoteNotify.Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY);
+    notifyInfo.tsId = 400;
+    remoteNotify.SetNotifyData(notifyInfo);
+    remoteNotify.GetNotifyData(notifyInfoGotten);
+    EXPECT_EQ(notifyInfoGotten.tsId, u32(400));
+}
+
+TEST_F(NotifyAiCpu_UT, ut_local_notify_error)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    HcclSignalInfo notifyInfoGotten;;
+    MOCKER_CPP(&LocalNotifyImpl::Init, HcclResult(LocalNotifyImpl::*)(const NotifyLoadType type))
+    .stubs()
+    .will(returnValue(HCCL_E_PTR));
+    MOCKER_CPP(&LocalNotifyImpl::Init, HcclResult(LocalNotifyImpl::*)(const HcclSignalInfo &notifyInfo, const NotifyLoadType type))
+    .stubs()
+    .will(returnValue(HCCL_E_PTR));
+
+    // local notify
+    LocalNotify localNotify;
+    ret = localNotify.Init(NotifyLoadType::HOST_NOTIFY);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    ret = localNotify.Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+    GlobalMockObject::verify();
+}
+
+TEST_F(NotifyAiCpu_UT, init_esched_notify)
+{
+    // local notify
+    LocalNotifyImpl localNotifyImpl;
+    localNotifyImpl.Init(HOST_DEVICE_ID, 1, NotifyLoadType::HOST_NOTIFY);
+
+    void *dispatcher = nullptr;
+
+    HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcher);
+
+    Stream stream(false, RT_STREAM_FAST_LAUNCH | RT_STREAM_FAST_SYNC);
+    localNotifyImpl.Wait(stream, dispatcher, INVALID_VALUE_STAGE, 0xffffffff);
+    HcclDispatcherDestroy(dispatcher);
+    localNotifyImpl.Destroy();
+}

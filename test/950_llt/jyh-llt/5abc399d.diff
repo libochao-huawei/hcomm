@@ -1,0 +1,1782 @@
+From 5abc399dc85a7e71cd0130128fed8abb71d8ab51 Mon Sep 17 00:00:00 2001
+From: x00606526 <x00606526@huawei.com>
+Date: Tue, 20 Jan 2026 22:51:55 +0800
+Subject: [PATCH] DTS:AR20251129619507 Description:Support MC2 on A5 Aicpu
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: I99ee56c811d6278aec371380a918b0d819e3cdf6
+Signed-off-by: x00606526 <x00606526@huawei.com>
+---
+ aicpu_kfc/st/CMakeLists.txt                   |   1 +
+ .../st/aicpu/st_aicpu_kfc_interface_stest.cc  |  16 +-
+ .../st/aicpu/st_aicpu_kfc_unfold_stest.cc     | 654 +++++++++++++++++-
+ aicpu_kfc/stub/CMakeLists.txt                 |   5 +
+ aicpu_kfc/stub/llt_aicpu_kfc_stub.cc          |  17 +-
+ aicpu_kfc/stub/llt_aicpu_kfc_stub.h           |   9 +
+ aicpu_kfc/stub/llt_aicpu_kfc_stub_mc2.h       |  12 +
+ aicpu_kfc/ut/CMakeLists.txt                   |   1 +
+ .../ut/aicpu/ut_aicpu_kfc_interface_utest.cc  |  16 +-
+ .../ut/aicpu/ut_aicpu_kfc_unfold_utest.cc     | 654 +++++++++++++++++-
+ st/CMakeLists.txt                             |   1 +
+ stub/CMakeLists.txt                           |   5 +
+ stub/llt_hccl_stub_mc2.cc                     |  15 +
+ stub/llt_hccl_stub_mc2.h                      |   9 +
+ ut/CMakeLists.txt                             |   1 +
+ 15 files changed, 1393 insertions(+), 23 deletions(-)
+
+diff --git a/aicpu_kfc/st/CMakeLists.txt b/aicpu_kfc/st/CMakeLists.txt
+index 520ef600e2..6c8ba9163c 100755
+--- a/aicpu_kfc/st/CMakeLists.txt
++++ b/aicpu_kfc/st/CMakeLists.txt
+@@ -44,6 +44,7 @@ set(include_list
+     ${TOP_DIR}/air/inc/external
+     ${TOP_DIR}/metadef/
+     ${TOP_DIR}/metadef/inc/external/register
++    ${TOP_DIR}/ace/comop/hccl/orion
+     # libc_sec目录下的头文件
+     ${TOP_DIR}/abl/libc_sec/include
+     ${TOP_DIR}/abl/atrace/inc/utrace
+diff --git a/aicpu_kfc/st/aicpu/st_aicpu_kfc_interface_stest.cc b/aicpu_kfc/st/aicpu/st_aicpu_kfc_interface_stest.cc
+index 068d57fc8b..5b827d0a6c 100644
+--- a/aicpu_kfc/st/aicpu/st_aicpu_kfc_interface_stest.cc
++++ b/aicpu_kfc/st/aicpu/st_aicpu_kfc_interface_stest.cc
+@@ -854,7 +854,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_1)
+ {
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -887,7 +887,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_2)
+     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1093,7 +1093,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuRpcSrvLaunch_Mc2api_debugModePrintBuff)
+ 
+     u64* a = (u64*)malloc(1024*1024);
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1148,7 +1148,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_5)
+     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1203,7 +1203,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_6)
+     hcclMsgArea->sendMsgList[0].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[0]));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1231,7 +1231,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_7)
+ {
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1401,7 +1401,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_8)
+     hcclMsgArea->sendMsgList[1].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[1]));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1510,7 +1510,7 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_9)
+     hcclMsgArea->sendMsgList[1].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[1]));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+diff --git a/aicpu_kfc/st/aicpu/st_aicpu_kfc_unfold_stest.cc b/aicpu_kfc/st/aicpu/st_aicpu_kfc_unfold_stest.cc
+index 1d9be7f774..efd8d288e4 100755
+--- a/aicpu_kfc/st/aicpu/st_aicpu_kfc_unfold_stest.cc
++++ b/aicpu_kfc/st/aicpu/st_aicpu_kfc_unfold_stest.cc
+@@ -33,6 +33,7 @@
+ #include "dispatcher.h"
+ #include "adapter_rts.h"
+ #include "aicpu_kfc/common/aicpu_kfc_utils.h"
++#include "framework/communicator/aicpu/inc/hccl_mc2_ex.h"
+ #undef protected
+ #include "ts_api.h"
+ 
+@@ -750,7 +751,7 @@ TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_Mc2api_Test_1)
+     MOCKER(AddTaskForHcclMsgV2).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -849,7 +850,7 @@ TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_Mc2api_Test_1_v1)
+     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 3;
+@@ -960,7 +961,7 @@ TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_Mc2api_Test_BatchWrite)
+     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 3;
+@@ -2173,3 +2174,650 @@ TEST_F(AicpuUnfold_ST, RpcServerPreCheck_restart_error)
+ 
+     delete comm;
+ }
++
++HcclResult HcclGetCommHandleByCtxStub(void *ctx, void **handle) {
++    *handle = ctx;
++    return HCCL_SUCCESS;
++}
++
++HcclResult HcclGetTaskStatusStub(void *handle, HcclTaskStatus *status) {
++    *status = HcclTaskStatus::HCCL_NORMAL_STATUS;
++    return HCCL_SUCCESS;
++}
++ 
++HcclResult HcclGetTaskStatusInvalidStub(void *handle, HcclTaskStatus *status) {
++    *status = HcclTaskStatus::HCCL_CQE_ERROR;
++    return HCCL_SUCCESS;
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_DecoulpledCtx)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    memset_s(g_msgAreaBak, sizeof(g_msgAreaBak), 0, sizeof(g_msgAreaBak));
++
++    HcclMsgForTest *syncMsg = (HcclMsgForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    // group sync
++    syncMsg->commType = HCCL_CMD_INTER_GROUP_SYNC;
++    syncMsg->commDepGroupID = 1;
++    syncMsg->commDepHandleID = 1;
++    syncMsg->valid = HCCL_MSG_VALID_MASK;
++    syncMsg->xorCheck = GenXorStub(syncMsg);
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[1]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->selfHandleID = 0;
++    msg->seqNum = 2;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALL;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 3;
++    msg->selfHandleID = 1;
++    msg->seqNum = 3;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALLV;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 4;
++    msg->selfHandleID = 2;
++    msg->seqNum = 4;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    HcclApi::HcclMsgExt *extMsg = &(((HcclMsgAreaForTest *)g_msgArea)->paramExtMsgList[3]);
++    extMsg->sendCounts[0] = extMsg->sendOffset[0] = extMsg->recvCounts[0] = extMsg->recvOffset[0] = 666;
++    extMsg->sendCounts[1] = extMsg->sendOffset[1] = extMsg->recvCounts[1] = extMsg->recvOffset[1] = 999;
++    extMsg->valid = HCCL_MSG_VALID_MASK;
++    extMsg->xorCheck = GenXorStub(extMsg, 2);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    // commit
++    msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgAreaBak)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLREDUCE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 2;
++    msg->selfHandleID = 0;
++    msg->seqNum = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_REDUCE_SCATTER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 5;
++    msg->selfHandleID = 1;
++    msg->seqNum = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 5;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx2{};
++    ctx2.hcclContext = 2;
++    ctx2.apiCtx.workSpace = (u64)g_msgAreaBak;
++    ctx2.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx3{};
++    ctx3.hcclContext = 3;
++    ctx3.apiCtx.workSpace = (u64)g_msgArea;
++    HcclCommKfcContext ctx4{};
++    ctx4.hcclContext = 4;
++    ctx4.apiCtx.workSpace = (u64)g_msgArea;
++    HcclCommKfcContext ctx5{};
++    ctx5.hcclContext = 5;
++    ctx5.apiCtx.workSpace = (u64)g_msgAreaBak;
++    uint64_t args[6] = {inputDesc, (uint64_t)&ctx1, (uint64_t)&ctx2, (uint64_t)&ctx3, (uint64_t)&ctx4, (uint64_t)&ctx5};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), 0);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_SeqTest)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    memset_s(g_msgAreaBak, sizeof(g_msgAreaBak), 0, sizeof(g_msgAreaBak));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALLV;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->selfHandleID = 0;
++    msg->seqNum = 2;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    HcclApi::HcclMsgExt *extMsg = &(((HcclMsgAreaForTest *)g_msgArea)->paramExtMsgList[0]);
++    extMsg->sendCounts[0] = extMsg->sendOffset[0] = extMsg->recvCounts[0] = extMsg->recvOffset[0] = 777;
++    extMsg->sendCounts[1] = extMsg->sendOffset[1] = extMsg->recvCounts[1] = extMsg->recvOffset[1] = 888;
++    extMsg->valid = HCCL_MSG_VALID_MASK;
++    extMsg->xorCheck = GenXorStub(extMsg, 2);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALL;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 2;
++    msg->selfHandleID = 1;
++    msg->seqNum = 3;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    // commit
++    msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgAreaBak)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLREDUCE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 3;
++    msg->selfHandleID = 0;
++    msg->seqNum = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_REDUCE_SCATTER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 4;
++    msg->selfHandleID = 1;
++    msg->seqNum = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 4;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx2{};
++    ctx2.hcclContext = 2;
++    ctx2.apiCtx.workSpace = (u64)g_msgArea;
++    ctx2.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx3{};
++    ctx3.hcclContext = 3;
++    ctx3.apiCtx.workSpace = (u64)g_msgAreaBak;
++    HcclCommKfcContext ctx4{};
++    ctx4.hcclContext = 4;
++    ctx4.apiCtx.workSpace = (u64)g_msgAreaBak;
++    uint64_t args[5] = {inputDesc, (uint64_t)&ctx1, (uint64_t)&ctx2, (uint64_t)&ctx3, (uint64_t)&ctx4};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), 0);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_RetryFail)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLREDUCE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->seqNum = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_INTERNAL);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_GroupSyncInvalidPara)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    memset_s(g_msgAreaBak, sizeof(g_msgAreaBak), 0, sizeof(g_msgAreaBak));
++
++    HcclMsgForTest *syncMsg = (HcclMsgForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    // group sync
++    syncMsg->commType = HCCL_CMD_INTER_GROUP_SYNC;
++    syncMsg->commDepGroupID = 0;
++    syncMsg->commDepHandleID = 1;
++    syncMsg->valid = HCCL_MSG_VALID_MASK;
++    syncMsg->xorCheck = GenXorStub(syncMsg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 2;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx2{};
++    ctx2.hcclContext = 2;
++    ctx2.apiCtx.workSpace = (u64)g_msgAreaBak;
++    ctx2.apiCtx.rankNum = 2;
++    uint64_t args[3] = {inputDesc, (uint64_t)&ctx1, (uint64_t)&ctx2};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++
++    syncMsg->commDepGroupID = 100;
++    syncMsg->valid = HCCL_MSG_VALID_MASK;
++    syncMsg->xorCheck = GenXorStub(syncMsg);
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_InvalidRankNumForAlltoallv)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALLV;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->selfHandleID = 0;
++    msg->seqNum = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    HcclApi::HcclMsgExt *extMsg = &(((HcclMsgAreaForTest *)g_msgArea)->paramExtMsgList[0]);
++    extMsg->sendCounts[0] = extMsg->sendOffset[0] = extMsg->recvCounts[0] = extMsg->recvOffset[0] = 666;
++    extMsg->sendCounts[1] = extMsg->sendOffset[1] = extMsg->recvCounts[1] = extMsg->recvOffset[1] = 999;
++    extMsg->valid = HCCL_MSG_VALID_MASK;
++    extMsg->xorCheck = GenXorStub(extMsg, 256);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2000;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_InvalidCmdType)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_RECEIVE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_InvalidCctiling)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 999;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_PrepareMsgTimeout)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = 0;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_TIMEOUT);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_FinalizeMsgTimeout)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_TIMEOUT);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_InvalidRepeat)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 100;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_FinalizeTimeout)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclCheckFinishByStream).stubs().will(returnValue(HCCL_E_SUSPENDING));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_TIMEOUT);
++}
++
++TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_FinalizeStatusError)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusInvalidStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_INTERNAL);
++}
+diff --git a/aicpu_kfc/stub/CMakeLists.txt b/aicpu_kfc/stub/CMakeLists.txt
+index 55930fe24f..0038b3012e 100755
+--- a/aicpu_kfc/stub/CMakeLists.txt
++++ b/aicpu_kfc/stub/CMakeLists.txt
+@@ -252,6 +252,10 @@ set(aicpu_kfc_list
+     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/framework/aicpu_kfc_rpc_server.cc
+     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/framework/aicpu_kfc_rpc_serverv2.cc
+ 
++    #/hccl/framework/device/aicpu_kfc/decoupler/
++    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/decoupler/comm_kfc_dispatcher.cc
++    ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/decoupler/comm_kfc_aicpu_server.cc
++
+     #/hccl/framework/device/aicpu_kfc/dfx/
+     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/dfx/aicpu_executor_tracer.cc
+     ${AICPU_KFC_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/dfx/aicpu_profiling_manager.cc
+@@ -811,6 +815,7 @@ target_include_directories(aicpu_kfc_llt  PRIVATE
+     ${TOP_DIR}/asc/asc-devkit
+     ${TOP_DIR}/asc/asc-devkit/impl
+     ${TOP_DIR}/asc/asc-devkit/include
++    ${TOP_DIR}/ace/comop/hccl/orion
+ 
+     ${AICPU_KFC_LLT_ROOT}/stub
+     ${TOP_DIR}/hlt/hccl/third_party/mellanox/4.2/include
+diff --git a/aicpu_kfc/stub/llt_aicpu_kfc_stub.cc b/aicpu_kfc/stub/llt_aicpu_kfc_stub.cc
+index c0816eadf8..c6d3242db8 100755
+--- a/aicpu_kfc/stub/llt_aicpu_kfc_stub.cc
++++ b/aicpu_kfc/stub/llt_aicpu_kfc_stub.cc
+@@ -5740,4 +5740,19 @@ aclError aclrtHostRegister(void *ptr, uint64_t size, aclrtHostRegisterType type,
+ aclError aclrtHostUnregister(void *ptr)
+ {
+     return ACL_SUCCESS;
+-}
+\ No newline at end of file
++}
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++HcclResult HcclGetCommHandleByCtx(void *ctx, void **opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclReleaseComm(void* opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclGetTaskStatus(void* opHandle, HcclTaskStatus *status) { return HCCL_SUCCESS; }
++HcclResult HcclCheckFinishByStream(void* opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclPrintTaskExceptionAllComm(void* opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclLaunchCcoreWait(void* opHandle, uint64_t waitAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast) { return HCCL_SUCCESS; }
++HcclResult HcclLaunchCcorePost(void* opHandle, uint64_t recordAddr, uint32_t turnNum, uint64_t turnNumAddr) { return HCCL_SUCCESS; }
++HcclResult HcclLaunchOp(void* opHandle, HcclOpData* data) { return HCCL_SUCCESS; }
++#ifdef __cplusplus
++}  // extern "C"
++#endif
+diff --git a/aicpu_kfc/stub/llt_aicpu_kfc_stub.h b/aicpu_kfc/stub/llt_aicpu_kfc_stub.h
+index d33f709171..5e6656b470 100755
+--- a/aicpu_kfc/stub/llt_aicpu_kfc_stub.h
++++ b/aicpu_kfc/stub/llt_aicpu_kfc_stub.h
+@@ -81,6 +81,7 @@ extern "C" {
+ #include "llt_aicpu_kfc_stub_gdr.h"
+ #include "llt_aicpu_kfc_stub_profiling_plugin.h"
+ #include "task_profiling_pub.h"
++#include "framework/communicator/aicpu/inc/hccl_mc2_ex.h"
+ #define EVENT_UNIQUE_ID_BYTES (SAL_UNIQUE_ID_BYTES + 11)
+ #define EVENT_UNIQUE_ID_PREFIX "hccl-event-"
+ 
+@@ -483,6 +484,14 @@ HcclResult ConstructNetDevCtx(std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxM
+     s32 deviceLogicId, u32 devicePhyId, NicType nicType, HcclIpAddress localIp);
+ void DeConstructNetDevCtx(std::map<HcclIpAddress, HcclNetDevCtx> &netDevCtxMap, NICDeployment nicDeploy,
+     s32 deviceLogicId, u32 devicePhyId);
++HcclResult HcclGetCommHandleByCtx(void *ctx, void **opHandle);
++HcclResult HcclReleaseComm(void* opHandle);
++HcclResult HcclGetTaskStatus(void* opHandle, HcclTaskStatus *status);
++HcclResult HcclCheckFinishByStream(void* opHandle);
++HcclResult HcclPrintTaskExceptionAllComm(void* opHandle);
++HcclResult HcclLaunchCcoreWait(void* opHandle, uint64_t waitAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast);
++HcclResult HcclLaunchCcorePost(void* opHandle, uint64_t recordAddr, uint32_t turnNum, uint64_t turnNumAddr);
++HcclResult HcclLaunchOp(void* opHandle, HcclOpData* data);
+ #ifdef __cplusplus
+ }  // extern "C"
+ #endif
+diff --git a/aicpu_kfc/stub/llt_aicpu_kfc_stub_mc2.h b/aicpu_kfc/stub/llt_aicpu_kfc_stub_mc2.h
+index 3d6e9c4bf2..d6041222a6 100644
+--- a/aicpu_kfc/stub/llt_aicpu_kfc_stub_mc2.h
++++ b/aicpu_kfc/stub/llt_aicpu_kfc_stub_mc2.h
+@@ -272,6 +272,18 @@ inline uint32_t GenXorStub(HcclMsgForTest *msg) {
+     return xorVal;
+ }
+ 
++inline uint64_t GenXorStub(HcclApi::HcclMsgExt *msg, u32 rankSize) {
++    uint64_t xorVal = 0U;
++    for (u32 i = 0U; i < rankSize; ++i) {
++        xorVal ^= msg->sendCounts[i];
++        xorVal ^= msg->sendOffset[i];
++        xorVal ^= msg->recvCounts[i];
++        xorVal ^= msg->recvOffset[i];
++    }
++    xorVal ^= msg->valid;
++    return xorVal;
++}
++
+ extern void InitMultiThreadSharedCtx(int32_t cpuId);
+ extern void GetCommonHcclMsg(HcclApi::HcclMsg *hcclMsg, CommonHcclMsg *commonHcclMsg, u64 tilingBase);
+ extern void PrepareOpParam(hccl::OpParam *opParam, CommonHcclMsg *hcclMsg, AicpuKfcRpcServerV2 &rpc, hccl::HcclCommAicpu *commAicpu);
+diff --git a/aicpu_kfc/ut/CMakeLists.txt b/aicpu_kfc/ut/CMakeLists.txt
+index 8f6f8570f6..3cc2ef74e3 100755
+--- a/aicpu_kfc/ut/CMakeLists.txt
++++ b/aicpu_kfc/ut/CMakeLists.txt
+@@ -44,6 +44,7 @@ set(include_list
+     ${TOP_DIR}/air/inc/external
+     ${TOP_DIR}/metadef/
+     ${TOP_DIR}/metadef/inc/external/register
++    ${TOP_DIR}/ace/comop/hccl/orion
+     # libc_sec目录下的头文件
+     ${TOP_DIR}/abl/libc_sec/include
+     ${TOP_DIR}/abl/atrace/inc/utrace
+diff --git a/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_interface_utest.cc b/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_interface_utest.cc
+index 563fe58ab7..adcd24e210 100644
+--- a/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_interface_utest.cc
++++ b/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_interface_utest.cc
+@@ -850,7 +850,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_1)
+ {
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -883,7 +883,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_2)
+     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1089,7 +1089,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuRpcSrvLaunch_Mc2api_debugModePrintBuff)
+ 
+     u64* a = (u64*)malloc(1024*1024);
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1144,7 +1144,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_5)
+     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1199,7 +1199,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_6)
+     hcclMsgArea->sendMsgList[0].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[0]));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1226,7 +1226,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_7)
+ {
+     HccCommResParamTask paramTask;
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1400,7 +1400,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_8)
+     hcclMsgArea->sendMsgList[1].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[1]));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -1510,7 +1510,7 @@ TEST_F(MC2AicpuInterface_UT, RunAicpuKfcSrvLaunch_Mc2api_9)
+     hcclMsgArea->sendMsgList[1].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[1]));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+diff --git a/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_unfold_utest.cc b/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_unfold_utest.cc
+index f35c7cd1a0..2f1d2bb965 100755
+--- a/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_unfold_utest.cc
++++ b/aicpu_kfc/ut/aicpu/ut_aicpu_kfc_unfold_utest.cc
+@@ -35,6 +35,7 @@
+ #include "dispatcher.h"
+ #include "adapter_rts.h"
+ #include "aicpu_kfc/common/aicpu_kfc_utils.h"
++#include "framework/communicator/aicpu/inc/hccl_mc2_ex.h"
+ #undef private
+ #undef protected
+ 
+@@ -749,7 +750,7 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_Mc2api_Test_1)
+     MOCKER(AddTaskForHcclMsgV2).stubs().will(returnValue(HCCL_SUCCESS));
+     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 2;
+     desc.hasFfts = 0;
+     desc.tilingOff = 4;
+@@ -848,7 +849,7 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_Mc2api_Test_1_v1)
+     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 3;
+@@ -959,7 +960,7 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_Mc2api_Test_BatchWrite)
+     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
+ 
+     HcclCommParamDesc desc;
+-    desc.version = 2;
++    desc.version = 1;
+     desc.groupNum = 1;
+     desc.hasFfts = 0;
+     desc.tilingOff = 3;
+@@ -2286,3 +2287,650 @@ TEST_F(AicpuUnfold_UT, TestStructSize)
+     EXPECT_EQ(offsetof(HcclCombinOpParam, ibverbsData), 8880);
+     EXPECT_EQ(offsetof(HcclOpResParam, remoteRes), 2984);
+ }
++
++HcclResult HcclGetCommHandleByCtxStub(void *ctx, void **handle) {
++    *handle = ctx;
++    return HCCL_SUCCESS;
++}
++
++HcclResult HcclGetTaskStatusStub(void *handle, HcclTaskStatus *status) {
++    *status = HcclTaskStatus::HCCL_NORMAL_STATUS;
++    return HCCL_SUCCESS;
++}
++
++HcclResult HcclGetTaskStatusInvalidStub(void *handle, HcclTaskStatus *status) {
++    *status = HcclTaskStatus::HCCL_CQE_ERROR;
++    return HCCL_SUCCESS;
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_DecoulpledCtx)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    memset_s(g_msgAreaBak, sizeof(g_msgAreaBak), 0, sizeof(g_msgAreaBak));
++
++    HcclMsgForTest *syncMsg = (HcclMsgForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    // group sync
++    syncMsg->commType = HCCL_CMD_INTER_GROUP_SYNC;
++    syncMsg->commDepGroupID = 1;
++    syncMsg->commDepHandleID = 1;
++    syncMsg->valid = HCCL_MSG_VALID_MASK;
++    syncMsg->xorCheck = GenXorStub(syncMsg);
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[1]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->selfHandleID = 0;
++    msg->seqNum = 2;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALL;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 3;
++    msg->selfHandleID = 1;
++    msg->seqNum = 3;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALLV;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 4;
++    msg->selfHandleID = 2;
++    msg->seqNum = 4;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    HcclApi::HcclMsgExt *extMsg = &(((HcclMsgAreaForTest *)g_msgArea)->paramExtMsgList[3]);
++    extMsg->sendCounts[0] = extMsg->sendOffset[0] = extMsg->recvCounts[0] = extMsg->recvOffset[0] = 666;
++    extMsg->sendCounts[1] = extMsg->sendOffset[1] = extMsg->recvCounts[1] = extMsg->recvOffset[1] = 999;
++    extMsg->valid = HCCL_MSG_VALID_MASK;
++    extMsg->xorCheck = GenXorStub(extMsg, 2);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    // commit
++    msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgAreaBak)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLREDUCE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 2;
++    msg->selfHandleID = 0;
++    msg->seqNum = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_REDUCE_SCATTER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 5;
++    msg->selfHandleID = 1;
++    msg->seqNum = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 5;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx2{};
++    ctx2.hcclContext = 2;
++    ctx2.apiCtx.workSpace = (u64)g_msgAreaBak;
++    ctx2.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx3{};
++    ctx3.hcclContext = 3;
++    ctx3.apiCtx.workSpace = (u64)g_msgArea;
++    HcclCommKfcContext ctx4{};
++    ctx4.hcclContext = 4;
++    ctx4.apiCtx.workSpace = (u64)g_msgArea;
++    HcclCommKfcContext ctx5{};
++    ctx5.hcclContext = 5;
++    ctx5.apiCtx.workSpace = (u64)g_msgAreaBak;
++    uint64_t args[6] = {inputDesc, (uint64_t)&ctx1, (uint64_t)&ctx2, (uint64_t)&ctx3, (uint64_t)&ctx4, (uint64_t)&ctx5};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), 0);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_SeqTest)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    memset_s(g_msgAreaBak, sizeof(g_msgAreaBak), 0, sizeof(g_msgAreaBak));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALLV;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->selfHandleID = 0;
++    msg->seqNum = 2;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    HcclApi::HcclMsgExt *extMsg = &(((HcclMsgAreaForTest *)g_msgArea)->paramExtMsgList[0]);
++    extMsg->sendCounts[0] = extMsg->sendOffset[0] = extMsg->recvCounts[0] = extMsg->recvOffset[0] = 777;
++    extMsg->sendCounts[1] = extMsg->sendOffset[1] = extMsg->recvCounts[1] = extMsg->recvOffset[1] = 888;
++    extMsg->valid = HCCL_MSG_VALID_MASK;
++    extMsg->xorCheck = GenXorStub(extMsg, 2);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALL;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 2;
++    msg->selfHandleID = 1;
++    msg->seqNum = 3;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    // commit
++    msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgAreaBak)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLREDUCE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 3;
++    msg->selfHandleID = 0;
++    msg->seqNum = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // commit
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_REDUCE_SCATTER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 4;
++    msg->selfHandleID = 1;
++    msg->seqNum = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 4;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx2{};
++    ctx2.hcclContext = 2;
++    ctx2.apiCtx.workSpace = (u64)g_msgArea;
++    ctx2.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx3{};
++    ctx3.hcclContext = 3;
++    ctx3.apiCtx.workSpace = (u64)g_msgAreaBak;
++    HcclCommKfcContext ctx4{};
++    ctx4.hcclContext = 4;
++    ctx4.apiCtx.workSpace = (u64)g_msgAreaBak;
++    uint64_t args[5] = {inputDesc, (uint64_t)&ctx1, (uint64_t)&ctx2, (uint64_t)&ctx3, (uint64_t)&ctx4};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), 0);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_RetryFail)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLREDUCE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->seqNum = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_INTERNAL);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_GroupSyncInvalidPara)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    memset_s(g_msgAreaBak, sizeof(g_msgAreaBak), 0, sizeof(g_msgAreaBak));
++
++    HcclMsgForTest *syncMsg = (HcclMsgForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    // group sync
++    syncMsg->commType = HCCL_CMD_INTER_GROUP_SYNC;
++    syncMsg->commDepGroupID = 0;
++    syncMsg->commDepHandleID = 1;
++    syncMsg->valid = HCCL_MSG_VALID_MASK;
++    syncMsg->xorCheck = GenXorStub(syncMsg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 2;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2;
++    HcclCommKfcContext ctx2{};
++    ctx2.hcclContext = 2;
++    ctx2.apiCtx.workSpace = (u64)g_msgAreaBak;
++    ctx2.apiCtx.rankNum = 2;
++    uint64_t args[3] = {inputDesc, (uint64_t)&ctx1, (uint64_t)&ctx2};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++
++    syncMsg->commDepGroupID = 100;
++    syncMsg->valid = HCCL_MSG_VALID_MASK;
++    syncMsg->xorCheck = GenXorStub(syncMsg);
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_InvalidRankNumForAlltoallv)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLTOALLV;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->selfHandleID = 0;
++    msg->seqNum = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    HcclApi::HcclMsgExt *extMsg = &(((HcclMsgAreaForTest *)g_msgArea)->paramExtMsgList[0]);
++    extMsg->sendCounts[0] = extMsg->sendOffset[0] = extMsg->recvCounts[0] = extMsg->recvOffset[0] = 666;
++    extMsg->sendCounts[1] = extMsg->sendOffset[1] = extMsg->recvCounts[1] = extMsg->recvOffset[1] = 999;
++    extMsg->valid = HCCL_MSG_VALID_MASK;
++    extMsg->xorCheck = GenXorStub(extMsg, 256);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    ctx1.apiCtx.rankNum = 2000;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_InvalidCmdType)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_RECEIVE;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_InvalidCctiling)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 999;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_PrepareMsgTimeout)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = 0;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_TIMEOUT);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_FinalizeMsgTimeout)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = 0;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_TIMEOUT);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_InvalidRepeat)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 100;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_PARA);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_FinalizeTimeout)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclCheckFinishByStream).stubs().will(returnValue(HCCL_E_SUSPENDING));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_TIMEOUT);
++}
++
++TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_FinalizeStatusError)
++{
++    memset_s(g_msgArea, sizeof(g_msgArea), 0, sizeof(g_msgArea));
++
++    // commit
++    HcclMsgV1ForTest *msg = (HcclMsgV1ForTest *)&(((HcclMsgAreaForTest *)g_msgArea)->sendMsgList[0]);
++    msg->version = 3;
++    msg->commType = HCCL_CMD_ALLGATHER;
++    msg->hcclDataType = HCCL_DATA_TYPE_FP16;
++    msg->dataCnt = 16;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->repeatCnt = 2;
++    msg->sendBuffer = 0x12345678;
++    msg->recvBuffer = 0x12345678;
++    msg->ccOpTilingData = 1;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++    // finalize
++    ++msg;
++    msg->version = 3;
++    msg->commType = HCCL_CMD_FINALIZE;
++    msg->valid = HCCL_MSG_VALID_MASK;
++    msg->xorCheck = GenXorStub((HcclMsgForTest *)msg);
++
++    HcclCommParamDesc desc;
++    desc.version = 2;
++    desc.groupNum = 1;
++    desc.hasFfts = 0;
++    desc.tilingOff = 0;
++    desc.isDyn = 0;
++    uint64_t inputDesc;
++    memcpy_s(&inputDesc, sizeof(inputDesc), &desc, sizeof(HcclCommParamDesc));
++    HcclCommKfcContext ctx1{};
++    ctx1.hcclContext = 1;
++    ctx1.apiCtx.workSpace = (u64)g_msgArea;
++    uint64_t args[2] = {inputDesc, (uint64_t)&ctx1};
++    MOCKER(HcclGetCommHandleByCtx).stubs().with(any()).will(invoke(HcclGetCommHandleByCtxStub));
++    MOCKER(HcclGetTaskStatus).stubs().with(any()).will(invoke(HcclGetTaskStatusInvalidStub));
++    EXPECT_EQ(RunAicpuKfcSrvLaunch((void **)args), HCCL_E_INTERNAL);
++}
+diff --git a/st/CMakeLists.txt b/st/CMakeLists.txt
+index 74fc5c8420..5171c3be58 100755
+--- a/st/CMakeLists.txt
++++ b/st/CMakeLists.txt
+@@ -8,6 +8,7 @@ set(include_list
+     ${TOP_DIR}/inc
+     ${TOP_DIR}/ace/comop/inc
+     ${TOP_DIR}/ace/comop/inc/hccl
++    ${TOP_DIR}/ace/comop/hccl/orion
+     ${TOP_DIR}/graphengine/inc
+     ${TOP_DIR}/metadef/
+     ${TOP_DIR}/metadef/inc
+diff --git a/stub/CMakeLists.txt b/stub/CMakeLists.txt
+index c74cdfd245..4e3131a47b 100755
+--- a/stub/CMakeLists.txt
++++ b/stub/CMakeLists.txt
+@@ -251,6 +251,10 @@ set(hccl_list
+     ${HCCL_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/framework/aicpu_kfc_rpc_server.cc
+     ${HCCL_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/framework/aicpu_kfc_rpc_serverv2.cc
+ 
++    #/hccl/framework/device/aicpu_kfc/decoupler/
++    ${HCCL_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/decoupler/comm_kfc_dispatcher.cc
++    ${HCCL_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/decoupler/comm_kfc_aicpu_server.cc
++
+     #/hccl/framework/device/aicpu_kfc/dfx/
+     ${HCCL_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/dfx/aicpu_executor_tracer.cc
+     ${HCCL_OPEN_CODE_ROOT}/src/domain/collective_communication/framework/device/aicpu_kfc/dfx/aicpu_profiling_manager.cc
+@@ -799,6 +803,7 @@ target_include_directories(hccl_llt  PRIVATE
+     ${TOP_DIR}/abl/qos/qosmng
+     ${TOP_DIR}/ace/comop/inc
+     ${TOP_DIR}/ace/comop/inc/hccl
++    ${TOP_DIR}/ace/comop/hccl/orion
+     ${TOP_DIR}/asl/hss/inc
+     ${TOP_DIR}/asl/hss/inc/pub
+     ${TOP_DIR}/asl/hss/common/hash_table
+diff --git a/stub/llt_hccl_stub_mc2.cc b/stub/llt_hccl_stub_mc2.cc
+index 846e0d23e8..0bf29d9e48 100644
+--- a/stub/llt_hccl_stub_mc2.cc
++++ b/stub/llt_hccl_stub_mc2.cc
+@@ -191,3 +191,18 @@ status_t GetTaskAndStreamId(uint64_t &taskId, uint32_t &streamId)
+ }
+ 
+ }  // namespace aicpu
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++HcclResult HcclGetCommHandleByCtx(void *ctx, void **opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclReleaseComm(void* opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclGetTaskStatus(void* opHandle, HcclTaskStatus *status) { return HCCL_SUCCESS; }
++HcclResult HcclCheckFinishByStream(void* opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclPrintTaskExceptionAllComm(void* opHandle) { return HCCL_SUCCESS; }
++HcclResult HcclLaunchCcoreWait(void* opHandle, uint64_t waitAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast) { return HCCL_SUCCESS; }
++HcclResult HcclLaunchCcorePost(void* opHandle, uint64_t recordAddr, uint32_t turnNum, uint64_t turnNumAddr) { return HCCL_SUCCESS; }
++HcclResult HcclLaunchOp(void* opHandle, HcclOpData* data) { return HCCL_SUCCESS; }
++#ifdef __cplusplus
++}  // extern "C"
++#endif
+diff --git a/stub/llt_hccl_stub_mc2.h b/stub/llt_hccl_stub_mc2.h
+index 39a340b5c5..fcba36bb06 100644
+--- a/stub/llt_hccl_stub_mc2.h
++++ b/stub/llt_hccl_stub_mc2.h
+@@ -37,6 +37,7 @@
+ #include "adv_api/hccl/internal/hccl_msg.h"
+ #include "adv_api/hccl/internal/hccl_tiling_msg.h"
+ #include "framework/aicpu_communicator.h"
++#include "framework/communicator/aicpu/inc/hccl_mc2_ex.h"
+ #undef private
+ #undef protected
+ 
+@@ -294,5 +295,13 @@ extern HcclResult RpcServerPreCheck(AicpuKfcRpcServerV2 *rpc, hccl::HcclCommAicp
+ extern HcclResult UpdateOpExecStatus(AicpuComContext *ctx, HcclOpExecFSM &fsmState, KfcStatus state, KfcError &errorCode, uint32_t retryCnt);
+ extern int32_t InsertComIdMap(const std::string &group);
+ extern HcclResult InsertCommInst(uint32_t idx, hccl::HcclCommAicpu *comm, HcclOpResParam *resParam);
++HcclResult HcclGetCommHandleByCtx(void *ctx, void **opHandle);
++HcclResult HcclReleaseComm(void* opHandle);
++HcclResult HcclGetTaskStatus(void* opHandle, HcclTaskStatus *status);
++HcclResult HcclCheckFinishByStream(void* opHandle);
++HcclResult HcclPrintTaskExceptionAllComm(void* opHandle);
++HcclResult HcclLaunchCcoreWait(void* opHandle, uint64_t waitAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast);
++HcclResult HcclLaunchCcorePost(void* opHandle, uint64_t recordAddr, uint32_t turnNum, uint64_t turnNumAddr);
++HcclResult HcclLaunchOp(void* opHandle, HcclOpData* data);
+ 
+ #endif // __MC2_AICPU_STUB_HPP__
+diff --git a/ut/CMakeLists.txt b/ut/CMakeLists.txt
+index 2a208d781b..9bfe7ca1a8 100755
+--- a/ut/CMakeLists.txt
++++ b/ut/CMakeLists.txt
+@@ -8,6 +8,7 @@ set(include_list
+     ${TOP_DIR}/inc
+     ${TOP_DIR}/ace/comop/inc
+     ${TOP_DIR}/ace/comop/inc/hccl
++    ${TOP_DIR}/ace/comop/hccl/orion
+     ${TOP_DIR}/graphengine/inc
+     ${TOP_DIR}/metadef/
+     ${TOP_DIR}/metadef/inc
+-- 
+2.45.2.huawei.10
+

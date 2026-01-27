@@ -1,0 +1,225 @@
+From c766009ecaa3e0b5cbd37868824c40a16a88d5ac Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Mon, 19 Jan 2026 17:34:39 +0800
+Subject: [PATCH] DTS:AR20241206322968 Description:HCCP support udma sensor
+ node
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: Ia778d589cf6afd5a01b393c7688620b148c09943
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ hccp/rdma_service/rs.c                        | 40 +++++++++++--------
+ hccp/rdma_service/rs_drv_rdma.c               |  2 +-
+ hccp/rdma_service/rs_inner.h                  |  6 +--
+ .../hcomm_dev/rdma_service/ctx/rs_ctx_inner.h |  1 -
+ orion/hcomm_dev/rdma_service/ctx/rs_ub.c      | 10 ++++-
+ 5 files changed, 36 insertions(+), 23 deletions(-)
+ mode change 100755 => 100644 hccp/rdma_service/rs.c
+
+diff --git a/hccp/rdma_service/rs.c b/hccp/rdma_service/rs.c
+old mode 100755
+new mode 100644
+index f143a10656..fa268905a7
+--- a/hccp/rdma_service/rs.c
++++ b/hccp/rdma_service/rs.c
+@@ -1093,19 +1093,21 @@ destroy_rdev_mutex:
+     return ret;
+ }
+ 
+-int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNode *sensorNode)
++int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb)
+ {
+     struct halSensorNodeCfg cfg = { 0 };
+     int ret;
+ 
+-    sensorNode->sensorHandle = 0;
+-    sensorNode->sensorUpdateCnt = 0;
++    if (rsCb->sensorNode.sensorHandle != 0) {
++        return 0;
++    }
++
+     // some non-hdc scenarios don't have corresponding API, skip to register sensor node
+     if (rsCb->hccpMode != NETWORK_OFFLINE) {
+         return 0;
+     }
+ 
+-    ret = rsGetLocalDevIDByHostDevID(phyId, &sensorNode->logicDevid);
++    ret = rsGetLocalDevIDByHostDevID(phyId, &rsCb->sensorNode.logicDevid);
+     if (ret != 0) {
+         hccp_err("[init][rs_rdev]rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)", phyId, ret);
+         return ret;
+@@ -1121,24 +1123,30 @@ int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNo
+     cfg.SensorType = RDMA_CQE_ERR_SENSOR_TYPE;
+     cfg.AssertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_MASK;
+     cfg.DeassertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE_MASK;
+-    ret = DlHalSensorNodeRegister(sensorNode->logicDevid, &cfg, &sensorNode->sensorHandle);
++    ret = DlHalSensorNodeRegister(rsCb->sensorNode.logicDevid, &cfg, &rsCb->sensorNode.sensorHandle);
+     if (ret != 0) {
+         hccp_err("[init][rs_rdev]dl_hal_sensor_node_register failed, phyId(%u), logicDevid(%u), ret(%d)",
+-            phyId, sensorNode->logicDevid, ret);
++            phyId, rsCb->sensorNode.logicDevid, ret);
+         return ret;
+     }
+ 
+     return 0;
+ }
+ 
+-void RsSensorNodeUnregister(struct SensorNode *sensorNode)
++void RsSensorNodeUnregister(struct rs_cb *rsCb)
+ {
+     // no need to unregister sensor node
+-    if (sensorNode->sensorHandle == 0) {
++    if (rsCb->sensorNode.sensorHandle == 0) {
+         return;
+     }
+ 
+-    (void)DlHalSensorNodeUnregister(sensorNode->logicDevid, sensorNode->sensorHandle);
++    RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
++    if (RsListEmpty(&rsCb->rdevList)) {
++        (void)DlHalSensorNodeUnregister(rsCb->sensorNode.logicDevid, rsCb->sensorNode.sensorHandle);
++        rsCb->sensorNode.sensorUpdateCnt = 0;
++        rsCb->sensorNode.sensorHandle = 0;
++    }
++    RS_PTHREAD_MUTEX_ULOCK(&rsCb->mutex);
+ }
+ 
+ int RsRetryTimeoutExceptionCheck(struct SensorNode *sensorNode)
+@@ -1211,7 +1219,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
+         goto free_rs_cb;
+     }
+ 
+-    ret = RsSensorNodeRegister(phyId, rsCb, &rdevCb->sensorNode);
++    ret = RsSensorNodeRegister(phyId, rsCb);
+     if (ret != 0) {
+         hccp_err("[init][rs_rdev]rs_sensor_node_register failed, phyId(%u), ret(%d)", phyId, ret);
+         goto free_dev_list;
+@@ -1220,8 +1228,8 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
+     hccp_info("ibv_get_device_list phyId[%d] dev_num[%d]", phyId, rdevCb->devNum);
+ 
+     ret = RsRdevCbInit(rdevInfo, rdevCb, rsCb, rdevIndex);
+-    if (ret) {
+-        RsSensorNodeUnregister(&rdevCb->sensorNode);
++    if (ret != 0) {
++        RsSensorNodeUnregister(rdevCb->rs_cb);
+         hccp_err("rs_rdev_cb_init failed ret %d!, normal ret 0", ret);
+         goto free_dev_list;
+     }
+@@ -1350,18 +1358,16 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType,
+ 
+     pthread_mutex_destroy(&rdevCb->rdevMutex);
+ 
+-    RsSensorNodeUnregister(&rdevCb->sensorNode);
+-
+     RsIbvFreeDeviceList(rdevCb->devList);
+ 
+     RS_PTHREAD_MUTEX_LOCK(&gRsCb->mutex);
+-
+     RsListDel(&rdevCb->list);
+-    free(rdevCb);
+-    rdevCb = NULL;
+     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
++    RsSensorNodeUnregister(rdevCb->rs_cb);
+     RsApiDeinit();
+     hccp_run_info("rdev deinit success, phyId:%u, rdevIndex:%u", phyId, rdevIndex);
++    free(rdevCb);
++    rdevCb = NULL;
+     return 0;
+ }
+ 
+diff --git a/hccp/rdma_service/rs_drv_rdma.c b/hccp/rdma_service/rs_drv_rdma.c
+index 0827ee74b7..30efd277dd 100755
+--- a/hccp/rdma_service/rs_drv_rdma.c
++++ b/hccp/rdma_service/rs_drv_rdma.c
+@@ -140,7 +140,7 @@ STATIC void RsCqeCallbackProcess(struct RsQpCb *qpCb, struct ibv_wc *wc, struct
+             RsIbvWcStatusStr(wc->status), wc->status, wc->wr_id);
+         RsDrvSaveCqeErrInfo(wc->status, qpCb);
+         RsDrvSaveQpCqeErrInfo(wc->status, qpCb);
+-        RsRdmaRetryTimeoutExceptionCheck(&qpCb->rdevCb->sensorNode, wc);
++        RsRdmaRetryTimeoutExceptionCheck(&qpCb->rdevCb->rs_cb->sensorNode, wc);
+     }
+ 
+     return;
+diff --git a/hccp/rdma_service/rs_inner.h b/hccp/rdma_service/rs_inner.h
+index 8b0d27e3e1..685564f3ba 100755
+--- a/hccp/rdma_service/rs_inner.h
++++ b/hccp/rdma_service/rs_inner.h
+@@ -603,7 +603,6 @@ struct RsRdevCb {
+     unsigned long long notifyVaBase;
+     unsigned long long notifySize;
+     int notifyAccess;
+-    struct SensorNode sensorNode;
+     unsigned int cqeErrCnt;
+     pthread_mutex_t cqeErrCntMutex;
+ 
+@@ -680,6 +679,7 @@ struct rs_cb {
+ 
+     unsigned long long notifyVaBase;
+     unsigned long long notifySize;
++    struct SensorNode sensorNode;
+ 
+     void (*tcpRecvCallback)(const void *fdHandle);
+     const void **fdMap;
+@@ -740,7 +740,7 @@ int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb, str
+ int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
+ int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
+ int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
+-int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNode *sensorNode);
+-void RsSensorNodeUnregister(struct SensorNode *sensorNode);
++int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb);
++void RsSensorNodeUnregister(struct rs_cb *rsCb);
+ int RsRetryTimeoutExceptionCheck(struct SensorNode *sensorNode);
+ #endif // RS_INNER_H
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h b/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
+index 14472f52b5..12645af79e 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
+@@ -29,7 +29,6 @@ struct rs_ub_dev_cb {
+     unsigned int index;
+     struct dev_base_attr dev_attr;
+ 
+-    struct SensorNode sensorNode;
+     unsigned int cqeErrCnt;
+     pthread_mutex_t cqeErrCntMutex;
+ 
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ub.c b/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
+index d6db85a1ae..25ccefb56e 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
+@@ -337,8 +337,15 @@ int rs_ub_ctx_init(struct rs_cb *rs_cb, struct ctx_init_attr *attr, unsigned int
+         goto free_dev_cb;
+     }
+ 
++    ret = RsSensorNodeRegister(attr->phy_id, rs_cb);
++    if (ret != 0) {
++        hccp_err("rs_sensor_node_register failed, phy_id(%u), ret(%d)", attr->phy_id, ret);
++        goto free_dev_cb;
++    }
++
+     ret = rs_ub_dev_cb_init(attr, dev_cb, rs_cb, devIndex, dev_attr);
+     if (ret != 0) {
++        RsSensorNodeUnregister(dev_cb->rscb);
+         hccp_err("rs_ub_dev_cb_init failed ret:%d, eid_index:%u eid:%016llx:%016llx", ret, attr->ub.eid_index,
+             (unsigned long long)be64toh(eid.in6.subnet_prefix), (unsigned long long)be64toh(eid.in6.interface_id));
+         goto free_dev_cb;
+@@ -1084,6 +1091,7 @@ int rs_ub_ctx_deinit(struct rs_ub_dev_cb *dev_cb)
+     RS_PTHREAD_MUTEX_LOCK(&dev_cb->rscb->mutex);
+     RsListDel(&dev_cb->list);
+     RS_PTHREAD_MUTEX_ULOCK(&dev_cb->rscb->mutex);
++    RsSensorNodeUnregister(dev_cb->rscb);
+ 
+     rs_ub_api_deinit();
+ 
+@@ -2665,7 +2673,7 @@ STATIC void rs_jfc_callback_process(struct rs_ctx_jetty_cb *jetty_cb, urma_cr_t
+ {
+     if (cr->status != URMA_CR_SUCCESS) {
+         rs_udma_save_cqe_err_info(cr->status, jetty_cb);
+-        rs_udma_retry_timeout_exception_check(&jetty_cb->dev_cb->sensorNode, cr);
++        rs_udma_retry_timeout_exception_check(&jetty_cb->dev_cb->rscb->sensorNode, cr);
+     }
+ }
+ 
+-- 
+2.45.2.huawei.10
+

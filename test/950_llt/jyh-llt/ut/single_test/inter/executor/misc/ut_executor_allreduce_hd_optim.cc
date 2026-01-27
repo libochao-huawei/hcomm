@@ -1,0 +1,203 @@
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
+#include <cstdio>
+
+#include "../inc/hccl/base.h"
+#include <hccl/hccl_types.h>
+#include "llt_hccl_stub_pub.h"
+
+#include "comm_base_pub.h"
+#define private public
+#define protected public
+#include "alg_template_base_pub.h"
+#include "all_reduce_hd_optim_pub.h"
+#undef private
+#undef protected
+#include "sal.h"
+#include "comm_ring_pub.h"
+#include "dispatcher_pub.h"
+
+using namespace std;
+using namespace hccl;
+
+class StubTransportBase : public TransportBase
+{
+public:
+    StubTransportBase(const HcclDispatcher dispatcher,
+    MachinePara &machinePara,
+    std::chrono::milliseconds timeout, void *remotePtr)
+    : TransportBase(reinterpret_cast<DispatcherPub*>(dispatcher), nullptr, machinePara, timeout), remotePtr_(remotePtr)
+    {
+    }
+
+    HcclResult GetRemoteMem(UserMemType memType, void **remotePtr) {
+        *remotePtr = remotePtr_;
+        return HCCL_SUCCESS;
+    }
+private:
+    void *remotePtr_;
+};
+
+class AllReduceHDOptimTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        s32 ret = HcclDispatcherInit(DispatcherType::DISPATCHER_NORMAL, 0, &dispatcherPtr);
+        if (ret != HCCL_SUCCESS) return;
+        if (dispatcherPtr == nullptr) return;
+        dispatcher = reinterpret_cast<DispatcherPub*>(dispatcherPtr);
+        std::cout << "\033[36m--AllReduceHDOptimTest SetUP--\033[0m" << std::endl;
+    }
+    static void TearDownTestCase()
+    {
+        if (dispatcherPtr != nullptr) {
+            s32 ret = HcclDispatcherDestroy(dispatcherPtr);
+            EXPECT_EQ(ret, HCCL_SUCCESS);
+            dispatcherPtr = nullptr;
+            dispatcher = nullptr;
+        }
+        std::cout << "\033[36m--AllReduceHDOptimTest TearDown--\033[0m" << std::endl;
+    }
+    // Some expensive resource shared by all tests.
+    virtual void SetUp()
+    {
+        s32 portNum = 7;
+        MOCKER(hrtGetHccsPortNum)
+            .stubs()
+            .with(any(), outBound(portNum))
+            .will(returnValue(HCCL_SUCCESS));
+        opInfo.inputAddr  = inputMem.ptr();
+        opInfo.outputAddr = inputMem.ptr();
+        opInfo.count      = 360;
+        opInfo.dataType   = HCCL_DATA_TYPE_FP32;
+        opInfo.reduceOp   = HCCL_REDUCE_SUM;
+        std::cout << "A Test SetUP" << std::endl;
+    }
+    virtual void TearDown()
+    {
+        std::cout << "A Test TearDown" << std::endl;
+    }
+    DeviceMem inputMem  = DeviceMem::alloc(360);
+    HcomCollOpInfo opInfo;
+    u32 userRank   = 0;
+    Stream stream = Stream(StreamType::STREAM_TYPE_OFFLINE);
+    std::vector<Stream> subStreams = {stream, stream};
+    std::shared_ptr<LocalNotify> mainSignal{new LocalNotify()};
+    std::vector<std::shared_ptr<LocalNotify>> mainSignals = {mainSignal, mainSignal};
+    std::shared_ptr<LocalNotify> subSignal{new LocalNotify()};
+    std::vector<std::shared_ptr<LocalNotify>> subSignals = {subSignal, subSignal};
+
+    static HcclDispatcher dispatcherPtr;
+    static DispatcherPub *dispatcher;
+
+};
+HcclDispatcher AllReduceHDOptimTest::dispatcherPtr = nullptr;
+DispatcherPub *AllReduceHDOptimTest::dispatcher = nullptr;
+
+TEST_F(AllReduceHDOptimTest, destructor_D0)
+{
+    s32 ret = HCCL_SUCCESS; 
+    std::string                      collect_id = "test-destructor"; 
+    std::vector<RankInfo> para_vector(1);
+    AllReduceHDOptim *tempAlg = new AllReduceHDOptim(dispatcher);
+    tempAlg->Prepare(1, subStreams, mainSignals, subSignals, userRank, &opInfo, false);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = rt_stream_synchronize(stream.ptr());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    delete tempAlg;
+}
+
+TEST_F(AllReduceHDOptimTest, run_async_05)
+{
+    MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
+        s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
+        s32, bool, u32, u32)).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(&HcclReduceAsync)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+    s32 ret = HCCL_SUCCESS;
+
+    std::string                      collect_id = "test_run_async_00_combine";
+    std::vector<RankInfo>     para_vector(1);
+    MachinePara               machinePara;
+    std::chrono::milliseconds timeout;
+    const std::string         tag;
+
+    DeviceMem output = DeviceMem::alloc(100);
+
+    DeviceMem input = DeviceMem::alloc(100);
+
+    std::vector<std::shared_ptr<Transport>> link;
+    link.resize(5);
+
+    for (int i = 0; i < 5; i++) {
+        link[i].reset(new(std::nothrow) Transport(new (std::nothrow) StubTransportBase(
+            dispatcher, machinePara, timeout, input.ptr())));
+        link[i]->Init();
+    }
+    
+    AllReduceHDOptim *tempAlg = new AllReduceHDOptim(dispatcher);
+    tempAlg->Prepare(1, subStreams, mainSignals, subSignals, userRank, &opInfo, false);
+
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+    ret = tempAlg->Prepare(output, output, input, 1, HCCL_DATA_TYPE_INT8, stream, HcclReduceOp::HCCL_REDUCE_MAX, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = tempAlg->RunAsync(0, 5, link);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = rt_stream_synchronize(stream.ptr());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    delete tempAlg;
+}
+
+TEST_F(AllReduceHDOptimTest, run_async_45)
+{
+    MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalRecord, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u64,
+        s32, bool, u64, u32)).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP_VIRTUAL(*dispatcher, &DispatcherPub::SignalWait, HcclResult(DispatcherPub::*)(HcclRtNotify, hccl::Stream &, u32, u32,
+        s32, bool, u32, u32)).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(&HcclReduceAsync)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+    s32 ret = HCCL_SUCCESS;
+
+    std::string                      collect_id = "test_run_async_00_combine";
+    std::vector<RankInfo>     para_vector(1);
+    MachinePara               machinePara;
+    std::chrono::milliseconds timeout;
+    const std::string         tag;
+
+    DeviceMem output = DeviceMem::alloc(100);
+
+    DeviceMem input = DeviceMem::alloc(100);
+
+    std::vector<std::shared_ptr<Transport>> link;
+    link.resize(5);
+
+    for (int i = 0; i < 5; i++) {
+        link[i].reset(new(std::nothrow) Transport(new (std::nothrow) StubTransportBase(
+            dispatcher, machinePara, timeout, input.ptr())));
+        link[i]->Init();
+    }
+    
+    AllReduceHDOptim *tempAlg = new AllReduceHDOptim(dispatcher);
+    tempAlg->Prepare(1, subStreams, mainSignals, subSignals, userRank, &opInfo, false);
+
+    Stream stream(StreamType::STREAM_TYPE_OFFLINE);
+    ret = tempAlg->Prepare(output, output, input, 1, HCCL_DATA_TYPE_INT8, stream, HcclReduceOp::HCCL_REDUCE_MAX, 0);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = tempAlg->RunAsync(4, 5, link);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    ret = rt_stream_synchronize(stream.ptr());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    delete tempAlg;
+    GlobalMockObject::verify();
+}
+

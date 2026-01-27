@@ -1,0 +1,3 @@
+# source file:python/hccl/split/api.py
+def set_split_strategy_by_idx(idxList, group="hccl_world_group"):
+def set_split_strategy_by_size(dataSizeList, group="hccl_world_group"):

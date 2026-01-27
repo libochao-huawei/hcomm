@@ -1,0 +1,70 @@
+From bb99df931d7a19c55f8202afec138fdce6fb2440 Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Tue, 20 Jan 2026 21:51:55 +0800
+Subject: [PATCH] DTS:AR20240314849017 Description:write value new struct
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: I9856a9b829f43268890045150a410ef5be275522
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ st/roce/rdma_service/tc_ut_rs_ub.c        | 4 ++--
+ ut/roce/rdma_service_normal/tc_ut_rs_ub.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/st/roce/rdma_service/tc_ut_rs_ub.c b/st/roce/rdma_service/tc_ut_rs_ub.c
+index 029c1a72b..dfc248ab0 100644
+--- a/st/roce/rdma_service/tc_ut_rs_ub.c
++++ b/st/roce/rdma_service/tc_ut_rs_ub.c
+@@ -1565,11 +1565,11 @@ void tc_rs_epoll_event_jfc_in_handle()
+ 
+ void tc_rs_handle_epoll_poll_jfc()
+ {
++    struct ctx_qp_share_info qp_share_info = {0};
+     struct rs_ctx_jetty_cb jetty_cb = {0};
+     struct rs_ub_dev_cb dev_cb = {0};
+     urma_jetty_t jetty = {0};
+     urma_jfce_t jfce = {0};
+-    uint16_t ci_addr = 0;
+     int ret = 0;
+ 
+     jetty_cb.jetty = &jetty;
+@@ -1600,7 +1600,7 @@ void tc_rs_handle_epoll_poll_jfc()
+     mocker_clean();
+ 
+     jetty_cb.jetty->jetty_id.id = 0;
+-    jetty_cb.ci_addr = &ci_addr;
++    jetty_cb.qp_share_info_addr = &qp_share_info;
+     RS_INIT_LIST_HEAD(&dev_cb.jetty_list);
+     RsListAddTail(&jetty_cb.list, &dev_cb.jetty_list);
+     mocker(rs_urma_wait_jfc, 1, 1);
+diff --git a/ut/roce/rdma_service_normal/tc_ut_rs_ub.c b/ut/roce/rdma_service_normal/tc_ut_rs_ub.c
+index ec3434484..e140dd8a0 100644
+--- a/ut/roce/rdma_service_normal/tc_ut_rs_ub.c
++++ b/ut/roce/rdma_service_normal/tc_ut_rs_ub.c
+@@ -1575,11 +1575,11 @@ void tc_rs_epoll_event_jfc_in_handle()
+ 
+ void tc_rs_handle_epoll_poll_jfc()
+ {
++    struct ctx_qp_share_info qp_share_info = {0};
+     struct rs_ctx_jetty_cb jetty_cb = {0};
+     struct rs_ub_dev_cb dev_cb = {0};
+     urma_jetty_t jetty = {0};
+     urma_jfce_t jfce = {0};
+-    uint16_t ci_addr = 0;
+     int ret = 0;
+ 
+     jetty_cb.jetty = &jetty;
+@@ -1610,7 +1610,7 @@ void tc_rs_handle_epoll_poll_jfc()
+     mocker_clean();
+ 
+     jetty_cb.jetty->jetty_id.id = 0;
+-    jetty_cb.ci_addr = &ci_addr;
++    jetty_cb.qp_share_info_addr = &qp_share_info;
+     RS_INIT_LIST_HEAD(&dev_cb.jetty_list);
+     RsListAddTail(&jetty_cb.list, &dev_cb.jetty_list);
+     mocker(rs_urma_wait_jfc, 1, 1);
+-- 
+2.45.2.huawei.10
+

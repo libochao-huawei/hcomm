@@ -1,0 +1,44 @@
+{
+    "includes": [
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/inc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/inc/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/inc/private",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_service",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/inc/private/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/comm",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/hdc/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/hdc/async",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/common/",
+
+        "/home/x00949166/Ascend/cann/pkg_inc/base/",
+        "/home/x00949166/Ascend/cann/include/",
+        "/home/x00949166/Ascend/cann/include/toolchain/",
+        "/home/x00949166/Ascend/cann/include/driver/",
+        "/home/x00949166/Ascend/cann/pkg_inc",
+
+        "/home/x00949166/Ascend/cann/include/",
+
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/include",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/providers/hns",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/host_lite",
+
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/orion/hcomm_dev/inc/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/orion/hcomm_dev/inc/private/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/orion/hcomm_dev/rdma_agent/inc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/orion/hcomm_dev/rdma_agent/comm/ctx",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/orion/hcomm_dev/rdma_agent/hdc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/orion/hcomm_dev/rdma_agent/hdc/async"
+    ],
+    "defines": [
+        "CONFIG_CONTEXT",
+        "CONFIG_TLV",
+        "CUSTOM_INTERFACE",
+        "CONFIG_V121"
+    ],
+    "std": "gnu11",
+    "coption": "",
+    "sources": [
+        "rdma_agent/hdc",
+        "orion/hcomm_dev/rdma_agent/hdc/"
+    ]
+}

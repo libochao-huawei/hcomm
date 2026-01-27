@@ -1,0 +1,84 @@
+From a31d54eb8b06783ee3776fda17e433046be260bb Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Mon, 26 Jan 2026 17:47:53 +0800
+Subject: [PATCH] DTS:DTS2025122232064 Description:HCCP support AIV URMA
+
+Team:OTHERS
+Feature or Bugfix:Feature
+cherry picked from commit 8198d4757bfaa37ca2ef3dab2bfa82ef64e3395c
+
+Change-Id: I9cd312eb4950b5d216fd1b5162f9c64dad013ce0
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ hccp_test/hlt_hccp_ub_test.c | 54 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
+
+diff --git a/hccp_test/hlt_hccp_ub_test.c b/hccp_test/hlt_hccp_ub_test.c
+index 36ea1f1..4923ce7 100644
+--- a/hccp_test/hlt_hccp_ub_test.c
++++ b/hccp_test/hlt_hccp_ub_test.c
+@@ -835,6 +835,60 @@ end:
+     return ret;
+ }
+ 
++int hlt_hccp_aiv_urma_test(int machine_type, int dev_id, const char* conf_file)
++{
++    struct qp_create_info *qp_info = NULL;
++    struct test_config testconfig = {0};
++    struct cq_info_t *cq_info = NULL;
++    int ret = 0;
++
++    testconfig.machine_type = machine_type;
++    testconfig.dev_id = dev_id;
++
++    ret = test_config_init(&testconfig, conf_file);
++    CHECK_RET_GO_END(ret, "test_test_config_init");
++
++    ret = test_config_resource_init(&testconfig);
++    CHECK_RET_GO_END(ret, "test_config_resource_init");
++
++    ret = test_open_hccp_by_tsd(&testconfig);
++    CHECK_RET_GO_END(ret, "test_open_hccp_by_tsd");
++
++    ret = test_rts_resource_init(&testconfig);
++    CHECK_RET_GO_END(ret, "test_rts_resource_init");
++
++    ret = test_ra_init_ub(&testconfig);
++    CHECK_RET_GO_END(ret, "test_ra_init_ub");
++
++    ret = test_ra_ctx_init(&testconfig);
++    CHECK_RET_GO_END(ret, "test_ra_ctx_init");
++
++    ret = test_ra_ctx_cq_create(&testconfig);
++    CHECK_RET_GO_END(ret, "test_ra_ctx_cq_create");
++    cq_info = &testconfig.cq_config.cq_info;
++    LOG(LOG_INFO, "jfc_id[%u] cqe_size[%u] buf_addr[0x%lx] db_addr[0x%lx]\n", cq_info->out.id, cq_info->out.cqe_size,
++        cq_info->out.buf_addr, cq_info->out.swdb_addr);
++
++    ret = test_ra_ctx_qp_create(&testconfig);
++    CHECK_RET_GO_END(ret, "test_ra_ctx_qp_create");
++    qp_info = &testconfig.qp_config.lqp_context[0].lqp_info;
++    LOG(LOG_INFO, "sq_buff_va[0x%lx] wqebb_size[%lu]\n", qp_info->ub.sq_buff_va, qp_info->ub.wqebb_size);
++
++end:
++    ret += test_ra_ctx_qp_destroy(&testconfig);
++    CHECK_RET_ONLY_PRINT(ret, "test_ra_ctx_qp_destroy");
++    ret += test_ra_ctx_cq_destroy(&testconfig);
++    CHECK_RET_ONLY_PRINT(ret, "test_ra_ctx_cq_destroy");
++    ret += test_ra_ctx_deinit(&testconfig);
++    CHECK_RET_ONLY_PRINT(ret, "test_ra_ctx_deinit");
++    ret += test_ra_deinit_ub(&testconfig);
++    CHECK_RET_ONLY_PRINT(ret, "test_ra_deinit_ub");
++    ret += test_rts_resource_deinit(&testconfig);
++    ret += test_close_hccp_by_tsd(&testconfig);
++    test_config_resource_deinit(&testconfig);
++    return ret;
++}
++
+ #ifdef __cplusplus
+ }
+ #endif
+\ No newline at end of file
+-- 
+2.45.2.huawei.10
+

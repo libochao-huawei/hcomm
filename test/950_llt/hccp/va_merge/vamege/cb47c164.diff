@@ -1,0 +1,298 @@
+From cb47c164e45705b0efafb1c35665c73430d4408d Mon Sep 17 00:00:00 2001
+From: s00922185 <shibingchen@huawei.com>
+Date: Fri, 26 Dec 2025 22:37:06 +0800
+Subject: [PATCH] DTS:AR20250424301141 Description:1. adatp hccp api change,
+ HCCL no more alloc sqPtr, instead of getting sqbuffva from hccp. 2. fix log
+ info btw 3. Extract the common parts of RaUbCreateJetty/RaUbCreateJettyAsync
+ 4. change .h
+
+Team:OTHERS
+Feature or Bugfix:Feature
+cherry picked from commit aee04f0c8cc185bbeeaf1afcba55cc3f748f0228
+
+Change-Id: I417d9749b1a0e9ae95fb39644a63eca8fce482bc
+Signed-off-by: c00953948 <c00953948@huawei.com>
+---
+ .../external_system/orion_adapter_hccp.cc     | 78 ++++++-------------
+ .../external_system/orion_adapter_hccp.h      |  3 +-
+ .../external_system/orion_adapter_rts.cc      |  4 +-
+ .../resource/connection/dev_ub_connection.cc  | 22 ++----
+ .../resource/connection/dev_ub_connection.h   |  2 +-
+ 5 files changed, 35 insertions(+), 74 deletions(-)
+
+diff --git a/unified_platform/external_system/orion_adapter_hccp.cc b/unified_platform/external_system/orion_adapter_hccp.cc
+index e8cce41e7..64a9bd152 100644
+--- a/unified_platform/external_system/orion_adapter_hccp.cc
++++ b/unified_platform/external_system/orion_adapter_hccp.cc
+@@ -5,6 +5,8 @@
+  * Create: 2024-02-04
+  */
+ 
++#include "orion_adapter_hccp.h"
++
+ #include <chrono>
+ #include <unistd.h>
+ #include <memory>
+@@ -13,13 +15,11 @@
+ #include "network_api_exception.h"
+ #include "internal_exception.h"
+ #include "hccp.h"
+-#include "hccp_tlv.h"
+ #include "hccp_ctx.h"
+ #include "hccp_async_ctx.h"
+ #include "hccp_async.h"
+ #include "env_config.h"
+ #include "hccp_common.h"
+-#include "orion_adapter_hccp.h"
+ #include "exception_util.h"
+ 
+ using namespace std;
+@@ -1206,7 +1206,7 @@ const std::map<HrtJettyMode, jetty_mode> HRT_JETTY_MODE_MAP
+ constexpr u8  RNR_RETRY = 7;
+ constexpr u32 RQ_DEPTH  = 256;
+ 
+-HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in)
++static struct qp_create_attr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
+ {
+     struct qp_create_attr attr {};
+     attr.scq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
+@@ -1233,25 +1233,33 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
+     attr.ub.ext_mode.sqebb_num = in.sqDepth;
+     if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
+         attr.ub.ext_mode.pi_type = 1;
++        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 0; // 表示不指定Va，由HCCP返回Va
+     } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
+         attr.ub.token_value                   = in.tokenValue;
+         attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
+         attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
+         attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+-    } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
+-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
++    } else if (in.jettyMode == HrtJettyMode::DEV_USED ||
++               in.jettyMode == HrtJettyMode::CACHE_LOCK_DWQE) {
++        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 0; // 表示不指定Va，由HCCP返回Va
+         attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
+         attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+-    }
++    } // 预埋HrtJettyMode::CACHE_LOCK_DWQE类型，当前流程暂未使用
+ 
+     // 其他Mode暂时不需要额外更新特定字段
+     HCCL_INFO("Create jetty, input params: attr.ub.jetty_id[%u], attr.rq_depth[%u], "
+-        "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
+-        "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
+-        "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u].",
+-        attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode,
+-        attr.ub.mode, attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va,
+-        attr.ub.ext_mode.sq.buff_size, attr.ub.ext_mode.pi_type);
++              "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
++              "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
++              "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u], attr.ub.priority[%u].",
++              attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode, attr.ub.mode,
++              attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va, attr.ub.ext_mode.sq.buff_size,
++              attr.ub.ext_mode.pi_type, attr.ub.priority);
++    return attr;
++}
++
++HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in)
++{
++    struct qp_create_attr attr = GetQpCreateAttr(in);
+ 
+     struct qp_create_info info {};
+     void *qpHandle = nullptr;
+@@ -1268,6 +1276,7 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
+     out.jettyVa   = info.va;
+     out.dbVa      = info.ub.db_addr;
+     out.dbTokenId = info.ub.db_token_id >> URMA_TOKEN_ID_RIGHT_SHIFT;
++    out.sqBuffVa  = info.ub.sq_buff_va; // 适配HCCP修改，jettybufva由HCCP提供，不再由HCCL分配
+ 
+     s32 sRet = memcpy_s(out.key, sizeof(out.key), info.key.value, info.key.size);
+     if (sRet != EOK) {
+@@ -1824,50 +1833,7 @@ RequestHandle RaUbLocalMemUnregAsync(RdmaHandle rdmaHandle, LocMemHandle lmemHan
+ RequestHandle RaUbCreateJettyAsync(const RdmaHandle handle, const HrtRaUbCreateJettyParam &in,
+     vector<char_t> &out, void *&jettyHandle)
+ {
+-    struct qp_create_attr attr {};
+-    attr.scq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
+-    attr.rcq_handle     = reinterpret_cast<void *>(in.rjfcHandle);
+-    attr.srq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
+-    attr.rq_depth       = RQ_DEPTH;
+-    attr.sq_depth       = in.sqDepth;
+-    attr.transport_mode = HRT_TRANSPORT_MODE_MAP.at(in.transMode);
+-    attr.ub.mode        = HRT_JETTY_MODE_MAP.at(in.jettyMode);
+-
+-    attr.ub.token_value       = in.tokenValue;
+-    attr.ub.token_id_handle   = reinterpret_cast<void *>(in.tokenIdHandle);
+-    attr.ub.flag.value        = 0;
+-    attr.ub.err_timeout       = 0;
+-    // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
+-    attr.ub.priority          = 2;
+-    attr.ub.rnr_retry         = RNR_RETRY;
+-    attr.ub.flag.bs.share_jfr = 1;
+-    attr.ub.jetty_id          = in.jettyId;
+-    // 在continue模式下+配置了wqe的fence标记，并且远端有一些权限校验错误/内存异常错误，硬件会直接挂死
+-    // jfs_flag 的 error_suspend 设置为 1，
+-    attr.ub.jfs_flag.bs.error_suspend = 1;
+-
+-    attr.ub.ext_mode.sqebb_num = in.sqDepth;
+-    if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
+-        attr.ub.ext_mode.pi_type = 1;
+-    } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
+-        attr.ub.token_value                   = in.tokenValue;
+-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
+-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
+-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+-    } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
+-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
+-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
+-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
+-    }
+-
+-    // 其他Mode暂时不需要额外更新特定字段
+-    HCCL_INFO("Create jetty, input params: attr.ub.jetty_id[%u], attr.rq_depth[%u], "
+-              "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
+-              "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
+-              "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u], priority[%u].",
+-              attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode, attr.ub.mode,
+-              attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va, attr.ub.ext_mode.sq.buff_size,
+-              attr.ub.ext_mode.pi_type, attr.ub.priority);
++    struct qp_create_attr attr = GetQpCreateAttr(in);
+ 
+     void *raReqHandle = nullptr;
+     out.resize(sizeof(qp_create_info));
+diff --git a/unified_platform/external_system/orion_adapter_hccp.h b/unified_platform/external_system/orion_adapter_hccp.h
+index fe52529e7..6a6db3d54 100644
+--- a/unified_platform/external_system/orion_adapter_hccp.h
++++ b/unified_platform/external_system/orion_adapter_hccp.h
+@@ -296,7 +296,7 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
+     // [1024 + 192, 1024 + 192 + 4K - 1]为starsJetty预留的id
+     u32 jettyId{0};
+ 
+-    // 指定内存，需要填写的参数，CCU类型 和 DEV_USED类型需要填写
++    // 指定内存，需要填写的参数，CCU类型需要填写,即HrtJettyMode::CCU_CCUM_CACHE
+     u64 sqBufVa{0};
+     u32 sqBufSize{0};
+     // 指定sqeBB资源起始id，当前预留
+@@ -331,6 +331,7 @@ using HrtRaUbJettyCreatedOutParam = struct HrtRaUbJettyCreatedOutParamDef {
+     u32         keySize{0};
+     u64         dbVa{0};
+     u32         dbTokenId{0};
++    uint64_t    sqBuffVa{0}; // 适配HCCP修改，jettybufva由HCCP提供，不再由HCCL分配
+ };
+ 
+ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in);
+diff --git a/unified_platform/external_system/orion_adapter_rts.cc b/unified_platform/external_system/orion_adapter_rts.cc
+index 00bf7be64..f7724a8dc 100644
+--- a/unified_platform/external_system/orion_adapter_rts.cc
++++ b/unified_platform/external_system/orion_adapter_rts.cc
+@@ -45,9 +45,9 @@ DevType HrtGetDeviceType()
+     std::string targetChipVerStr;
+     HrtGetSocVer(targetChipVerStr);
+ 
+-    HCCL_INFO("[hrtGetDeviceType]targetChipVerStr = %s.", targetChipVerStr.c_str());
++    HCCL_INFO("[HrtGetDeviceType]targetChipVerStr = %s.", targetChipVerStr.c_str());
+     if (targetChipVerStr.find("Ascend910_95") != std::string::npos) {
+-        HCCL_INFO("[hrtGetDeviceType]DeviceType = DevType::DEV_TYPE_910_95.");
++        HCCL_INFO("[HrtGetDeviceType]DeviceType = DevType::DEV_TYPE_910_95.");
+         return DevType::DEV_TYPE_910_95;
+     }
+ 
+diff --git a/unified_platform/resource/connection/dev_ub_connection.cc b/unified_platform/resource/connection/dev_ub_connection.cc
+index 500dc66aa..88b91f300 100644
+--- a/unified_platform/resource/connection/dev_ub_connection.cc
++++ b/unified_platform/resource/connection/dev_ub_connection.cc
+@@ -15,7 +15,7 @@
+ 
+ namespace Hccl {
+ 
+-constexpr u32 OPBASED_UB_SQ_DEPTH_MAX = 32768;
++constexpr u32 OPBASED_UB_SQ_DEPTH_MAX = 8192;
+ constexpr u32 UB_SQ_OFFLOAD_DEPTH     = 128;
+ constexpr u32 UB_SQ_WQEBB_SIZE        = 64;
+ constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传输量256*1024*1024 Byte
+@@ -43,8 +43,6 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
+     if (sqDepth > (UINT32_MAX / UB_SQ_WQEBB_SIZE)) {
+         THROW<InternalException>("integer overflow occurs");
+     }
+-    u32 size = sqDepth * UB_SQ_WQEBB_SIZE;
+-    sqPtr    = HrtMalloc(size, RT_MEMORY_HBM);
+ 
+     CreateJetty(devUsed);
+ }
+@@ -77,8 +75,7 @@ std::vector<char> DevUbConnection::GetUniqueId() const
+     binaryStream << dwqeCacheLocked;
+     binaryStream << dbAddr;
+     binaryStream << sqCiAddr;
+-    u64 sqVa = reinterpret_cast<u64>(sqPtr);
+-    binaryStream << sqVa;
++    binaryStream << sqBuffVa;
+     binaryStream << sqDepth;
+     binaryStream << tpn;
+     binaryStream << rmtEid.raw;
+@@ -248,7 +245,7 @@ void DevUbConnection::CreateJetty(const bool devUsed)
+         GetUbToken(), tokenIdHandle,
+         HrtJettyMode::HOST_OPBASE, // 默认HOST单算子模式
+         0, // HOST展开与AICPU展开传入jetty id为0，申请一个新的jetty
+-        reinterpret_cast<u64>(sqPtr),
++        0, // va由底层分配，此处填0即可。
+         size, 0, sqDepth}; // 非CCUv2不需要填写sqeBufIndex
+ 
+     if (opMode == OpMode::OFFLOAD) { // HOST展开图模式切换模式
+@@ -269,6 +266,8 @@ void DevUbConnection::SetJettyInfo()
+     jettyId                     = info->ub.id;
+     jettyHandle                 = reinterpret_cast<JettyHandle>(jettyHandlePtr);
+     keySize                     = info->key.size;
++    sqBuffVa                    = info->ub.sq_buff_va; // hccp提供
++    HCCL_INFO("[DevUbConnection][%s] Get sqBuffVa is %llx.", __func__, sqBuffVa);
+ 
+     s32 ret = memcpy_s(localQpKey, HRT_UB_QP_KEY_MAX_LEN, info->key.value, info->key.size);
+     if (ret != 0) {
+@@ -281,7 +280,7 @@ void DevUbConnection::SetJettyInfo()
+ bool DevUbConnection::GetTpInfo()
+ {
+     if (tpProtocol == TpProtocol::INVALID) { // 不感知tp建链，当前默认不支持
+-        HCCL_ERROR("[CcuConnection][%s] failed, tpProtocol[%s] is not expected.",
++        HCCL_ERROR("[DevUbConnection][%s] failed, tpProtocol[%s] is not expected.",
+             __func__, tpProtocol.Describe().c_str());
+         ThrowAbnormalStatus(std::string(__func__));
+     }
+@@ -351,11 +350,6 @@ void DevUbConnection::ReleaseResource()
+         HrtRaUbDestroyJetty(jettyHandle);
+         jettyHandle = 0;
+     }
+-
+-    if (sqPtr) {
+-        HrtFree(sqPtr);
+-        sqPtr = nullptr;
+-    }
+ }
+ 
+ DevUbConnection::~DevUbConnection()
+@@ -749,10 +743,10 @@ unique_ptr<BaseTask> DevUbConnection::PrepareWriteReduceWithNotify(const MemoryB
+ 
+ string DevUbConnection::Describe() const
+ {
+-    return StringFormat("DevUbConnection[locAddr=%s, rmtAddr=%s, status=%s, dieId=%u, funcId=%u, jettyId=%u, sqPtr=%p, "
++    return StringFormat("DevUbConnection[locAddr=%s, rmtAddr=%s, status=%s, dieId=%u, funcId=%u, jettyId=%u, sqBuffVa=%llx, "
+                         "sqDepth=%u, tpn=%u, dbAddr=0x%llx]",
+                         locAddr.Describe().c_str(), rmtAddr.Describe().c_str(), status.Describe().c_str(), dieId,
+-                        funcId, jettyId, sqPtr, sqDepth, tpn, dbAddr);
++                        funcId, jettyId, sqBuffVa, sqDepth, tpn, dbAddr);
+ }
+ 
+ void DevUbConnection::AddNop(const Stream &stream)
+diff --git a/unified_platform/resource/connection/dev_ub_connection.h b/unified_platform/resource/connection/dev_ub_connection.h
+index eb652e44e..18e5d8ad5 100644
+--- a/unified_platform/resource/connection/dev_ub_connection.h
++++ b/unified_platform/resource/connection/dev_ub_connection.h
+@@ -93,7 +93,7 @@ private:
+     u32       funcId{0};
+     JfcHandle jfcHandle{0};
+     u32       sqDepth{0};
+-    void     *sqPtr{nullptr};
++    uint64_t  sqBuffVa{0};
+ 
+     RequestHandle  reqHandle{0};
+     vector<char_t> reqDataBuffer;
+-- 
+2.45.2.huawei.10
+
