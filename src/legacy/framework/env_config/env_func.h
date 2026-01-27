@@ -186,7 +186,7 @@ extern u32 CastBin2UInt(const std::string &s);
 
 extern void CheckSocketIfName(const SocketIfName &config);
 
-extern std::vector<SocketPortRange> CastSocketPortRange(const std::string &s);
+extern std::vector<SocketPortRange> CastSocketPortRange(const std::string &s, const std::string &envName);
 
 /*----------------------- env variable validate functions -----------------------------
  *   Several template cast functions are provided.
