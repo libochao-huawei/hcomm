@@ -395,6 +395,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
             HCCL_ERROR("not is aiv single or cross node. serverNum_[%u] isOpbase[%d] superPodNum_[%u]",
             serverNum_, isOpbase, superPodNum_), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable_[%d] is true.", retryEnable_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s].", algName.c_str());
