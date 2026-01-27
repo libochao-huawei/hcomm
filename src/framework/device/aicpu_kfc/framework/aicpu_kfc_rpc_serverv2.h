@@ -72,9 +72,7 @@ public:
 
 private:
     bool ReadValidMsg(HcclApi::HcclMsg *rMsg, HcclApi::HcclMsg *msg, bool needReProcess, uint32_t msgPos, u32 rankSize);
-    uint64_t GenXorForMsgExt(int32_t idx, u32 rankSize);
     bool ReadValidMsgExtArea(int32_t idx, u32 rankSize);
-    void GenMsgByTaskParam(AivAicpuOpParam *outMsg);
 
 private:
     uint64_t workSpace_ = 0;

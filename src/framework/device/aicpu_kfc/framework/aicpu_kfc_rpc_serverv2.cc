@@ -156,21 +156,6 @@ uint64_t AicpuKfcRpcServerV2::GetFinishAddr(int32_t idx) const {
     return reinterpret_cast<uint64_t>(&(hcclMsgArea_->commMsg.singleMsg.finishedTurnCnt[idx].cnt));
 }
 
-uint64_t AicpuKfcRpcServerV2::GenXorForMsgExt(int32_t idx, u32 rankSize) {
-    if (hcclMsgArea_ == nullptr) {
-        return 0UL;
-    }
-    uint64_t xorVal = 0U;
-    for (uint32_t i = 0U; i < rankSize; ++i) {
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].sendCounts[i];
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].sendOffset[i];
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].recvCounts[i];
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].recvOffset[i];
-    }
-    xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].valid;
-    return xorVal;
-}
-
 uint64_t AicpuKfcRpcServerV2::GetCommitareaAddr(int32_t idx) const {
     if (idx >= static_cast<int32_t>(HCCL_MSG_CNT) || hcclMsgArea_ == nullptr) {
         HCCL_ERROR("idx %d exceed max or hcclMsgArea_ is not initialized.", idx);
@@ -306,7 +291,7 @@ bool AicpuKfcRpcServerV2::ReadValidMsgExtArea(int32_t idx, u32 rankSize)
     if (hcclMsgArea_ == nullptr || extMsgList.valid != static_cast<u64>(HCCL_MSG_VALID_MASK)) {
         return false;
     }
-    uint64_t msgExtXorCheck = GenXorForMsgExt(idx, rankSize);
+    uint64_t msgExtXorCheck = AicpuKfcUtils::GenXor(&extMsgList, rankSize);
     static uint32_t msgExtXorCheckTurn = 0;
     if (UNLIKELY(msgExtXorCheck != extMsgList.xorCheck)) {
         if (msgExtXorCheckTurn++ % MC2_API_XORCHECK_PRINT_NUM == 0) {

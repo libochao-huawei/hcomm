@@ -886,14 +886,14 @@ TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_Mc2api_Test_1)
     AicpuHcclProcess::AicpuReleaseCommbyGroup(hcomId2);
     MOCKER(AddTaskForHcclMsgV2).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 2;
+    desc.itemNum = 2;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     ArgsInput curArgs = {inputDesc, (void *)&context1, (void *)&context2, nullptr, &tilingData};
     void *args[sizeof(curArgs) / sizeof(void *)];
     memcpy(args, &curArgs, sizeof(curArgs));
@@ -985,14 +985,14 @@ TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_Mc2api_Test_1_v1)
     MOCKER(ParseCcOpTilingData).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
 
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 3;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     ArgsInput curArgs = {inputDesc, (void *)&context1, nullptr, &tilingData};
     void *args[sizeof(curArgs)/ sizeof(void *)];
     memcpy(args, &curArgs, sizeof(curArgs));
@@ -1096,14 +1096,14 @@ TEST_F(AicpuUnfold_ST, AicpuRunRpcServerForMC2_Mc2api_Test_BatchWrite)
     MOCKER(OrchestrateSdmaSqe).stubs().will(returnValue(0));
     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
 
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 3;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     ArgsInput curArgs = {inputDesc, (void *)&context1, nullptr, &tilingData};
     void *args[sizeof(curArgs)/ sizeof(void *)];
     memcpy(args, &curArgs, sizeof(curArgs));

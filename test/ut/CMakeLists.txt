@@ -189,6 +189,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/orion/framework/resource_manager/socket/
     ${HCCL_CODE_ROOT}/src/orion/framework/communicator/
     ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/orion/unified_platform/external_system/
     ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/
     ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/
@@ -241,6 +242,9 @@ set(UT_COMMON_INCLUDE_LIST
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
+
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
 )
 
 add_subdirectory(stub)

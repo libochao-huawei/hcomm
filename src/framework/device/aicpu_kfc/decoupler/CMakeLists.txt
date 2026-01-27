@@ -1,5 +1,5 @@
 # -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# Copyright (c) 2026 Huawei Technologies Co., Ltd.
 # This program is free software, you can redistribute it and/or modify it under the terms and conditions of
 # CANN Open Software License Agreement Version 2.0 (the "License").
 # Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -7,10 +7,11 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-target_sources(ccl_kernel PRIVATE aicpu_kfc_interface.cc)
+set(src_list
+    comm_kfc_aicpu_server.cc
+    comm_kfc_dispatcher.cc
+)
 
-add_subdirectory(algorithm)
-add_subdirectory(common)
-add_subdirectory(dfx)
-add_subdirectory(framework)
-add_subdirectory(decoupler)
+target_sources(ccl_kernel PRIVATE
+    ${src_list}
+)
