@@ -362,6 +362,12 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
         hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
         return;
     }
+
+    ret = RsEpollEventUrmaAsyncEventInHandle(rsCb, fd);
+    if (ret != -ENODEV) {
+        hccp_info("the fd:%d is for urma async event, no need to go on, ret:%d", fd, ret);
+        return;
+    }
 #endif
 
     return;

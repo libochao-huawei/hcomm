@@ -297,7 +297,6 @@ STATIC int rs_ub_dev_cb_init(struct ctx_init_attr *attr, struct rs_ub_dev_cb *de
     }
 
     ret = RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_ADD, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
-    hccp_err("ub async_fd:%d, ret:%d", dev_cb->urma_ctx->async_fd, ret);
     if (ret != 0) {
         hccp_err("rs_epoll_ctl failed, ret:%d", ret);
         goto close_dev;

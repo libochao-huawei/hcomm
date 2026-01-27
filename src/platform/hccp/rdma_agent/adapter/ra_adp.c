@@ -1768,6 +1768,7 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_GET_DEV_EID_INFO_NUM, ra_rs_get_dev_eid_info_num, sizeof(union op_get_dev_eid_info_num_data)},
     {RA_RS_GET_DEV_EID_INFO_LIST, ra_rs_get_dev_eid_info_list, sizeof(union op_get_dev_eid_info_list_data)},
     {RA_RS_CTX_INIT, ra_rs_ctx_init, sizeof(union op_ctx_init_data)},
+    {RA_RS_CTX_GET_ASYNC_EVENTS, ra_rs_ctx_get_async_events, sizeof(union op_ctx_get_async_events_data)},
     {RA_RS_CTX_DEINIT, ra_rs_ctx_deinit, sizeof(union op_ctx_deinit_data)},
     {RA_RS_GET_EID_BY_IP, ra_rs_get_eid_by_ip, sizeof(union op_get_eid_by_ip_data)},
     {RA_RS_GET_TP_INFO_LIST, ra_rs_get_tp_info_list, sizeof(union op_get_tp_info_list_data)},

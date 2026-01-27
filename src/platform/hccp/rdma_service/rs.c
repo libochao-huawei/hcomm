@@ -156,6 +156,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
     {RA_RS_GET_DEV_EID_INFO_LIST, 1},
     {RA_RS_CTX_INIT, 1},
+    {RA_RS_CTX_GET_ASYNC_EVENTS, 1},
     {RA_RS_CTX_DEINIT, 1},
     {RA_RS_GET_EID_BY_IP, 1},
     {RA_RS_GET_TP_INFO_LIST, 1},

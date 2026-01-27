@@ -132,6 +132,7 @@ struct OpcodeInterfaceInfo gRaInterfaceInfoList[] = {
 
     // outer opcode version: 2.0
     {RA_RS_CTX_INIT, 0},
+    {RA_RS_CTX_GET_ASYNC_EVENTS, 0},
     {RA_RS_CTX_DEINIT, 0},
     {RA_RS_GET_EID_BY_IP, 0},
     {RA_RS_GET_TP_INFO_LIST, 0},
