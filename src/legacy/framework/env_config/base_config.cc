@@ -27,16 +27,21 @@ void EnvHostNicConfig::Parse()
         hcclWhiteListFile.Parse();
         HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclWhiteListFile[%s]", GetWhiteListFile().c_str());
     }
-    hcclSocketPortRange.Parse();
-    std::ostringstream portRangeOss;
-    for (auto range : GetSocketPortRange()) {
-        portRangeOss << " [" << std::to_string(range.min) << ", " << std::to_string(range.max) << "]";
+    hcclHostSocketPortRange.Parse();
+    hcclDeviceSocketPortRange.Parse();
+    std::ostringstream hosrPortRangeOss;
+    std::ostringstream devicePortRangeOss;
+    for (auto range : GetHostSocketPortRange()) {
+        hosrPortRangeOss << " [" << std::to_string(range.min) << ", " << std::to_string(range.max) << "]";
+    }
+    for (auto range : GetDeviceSocketPortRange()) {
+        devicePortRangeOss << " [" << std::to_string(range.min) << ", " << std::to_string(range.max) << "]";
     }
 
     HCCL_RUN_INFO("[Init][EnvVarParam]Env config hcclIfIp[%s], hcclIfBasePort[%u], hcclSocketIfName[%s], whitelistDisable[%d], "
-                  "hcclSocketPortRange[%s]",
+                  "hcclHostSocketPortRange[%s], devicePortRangeOss[%s]",
                   GetControlIfIp().Describe().c_str(), GetIfBasePort(), GetSocketIfName().configIfNameStr.c_str(),
-                  whitelistDisable.Get(), portRangeOss.str().c_str());
+                  whitelistDisable.Get(), hosrPortRangeOss.str().c_str(), devicePortRangeOss.str().c_str());
 }
 
 const IpAddress &EnvHostNicConfig::GetControlIfIp() const
@@ -64,9 +69,14 @@ const std::string &EnvHostNicConfig::GetWhiteListFile() const
     return hcclWhiteListFile.Get();
 }
 
-const std::vector<SocketPortRange> &EnvHostNicConfig::GetSocketPortRange() const
+const std::vector<SocketPortRange> &EnvHostNicConfig::GetHostSocketPortRange() const
 {
-    return hcclSocketPortRange.Get();
+    return hcclHostSocketPortRange.Get();
+}
+
+const std::vector<SocketPortRange> &EnvHostNicConfig::GetDeviceSocketPortRange() const
+{
+    return hcclDeviceSocketPortRange.Get();
 }
 
 // EnvSocketConfig

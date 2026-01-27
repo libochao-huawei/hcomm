@@ -47,6 +47,7 @@ void RankTableInfo::Check()
 
     std::unordered_set<u32> rankIdSet;
     std::unordered_set<u32> localIdSet;
+    std::unordered_set<u32> devicePortSet;
     u32 recordedReplaceLocalId{UNDEFIEND_LOCAL_ID};
     for (auto &rank : ranks) {
         if (static_cast<u32>(rank.rankId) >= rankCount) {
@@ -60,6 +61,7 @@ void RankTableInfo::Check()
                                                        __func__, version.c_str(), rankCount, rank.rankId));
         }
         rankIdSet.insert(rank.rankId);
+        devicePortSet.insert(rank.devicePort);
 
         if (rank.localId != BACKUP_LOCAL_ID && rank.localId != rank.replacedLocalId) {
             THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::Check] "
@@ -95,6 +97,12 @@ void RankTableInfo::Check()
         THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with configuring "
                                                    "same local_id[%u] with replaced one simutaneously",
                                                     __func__, recordedReplaceLocalId));
+    }
+
+    if(devicePortSet.size() != 1) {
+        THROW<InvalidParamsException>(StringFormat("[Parse][ClusterInfo][RankTableInfo::%s] failed with configuring "
+                                                   "the device port of rank info must be same",
+                                                    __func__));
     }
 }
 
@@ -242,6 +250,15 @@ void RankTableInfo::UpdateRankTable(const RankTableInfo &localRankInfo)
     rankCount++;
 
     HCCL_INFO("[%s] success, current rankTableInfo[%s]", __func__, Describe().c_str());
+}
+
+std::unordered_map<u32, u32> RankTableInfo::GetRankDeviceListenPortMap() 
+{
+    std::unordered_map<u32, u32> rankIdPortMap;
+    for (auto &rankinfo : ranks) {
+        rankIdPortMap.insert(std::make_pair(rankinfo.deviceId, rankinfo.devicePort));
+    }
+    return rankIdPortMap;
 }
 
 } // namespace Hccl
