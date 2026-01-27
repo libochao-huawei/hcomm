@@ -1,0 +1,675 @@
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
+
+#include <driver/ascend_hal.h>
+#include <runtime/rt.h>
+
+
+#include "hcom.h"
+#include "../inc/hccl/hcom_executor.h"
+#include "llt_hccl_stub_pub.h"
+#include <sys/mman.h>
+#include <fcntl.h>
+#include "dlra_function.h"
+#include "sal.h"
+#include "hccl_comm_pub.h"
+#include "config.h"
+#include "topoinfo_ranktableParser_pub.h"
+#include "externalinput.h"
+#include "../misc/ut_rank_table.h"
+#include "workflow_pub.h"
+#include "param_check_pub.h"
+#include <iostream>
+#include <fstream>
+
+using namespace std;
+using namespace hccl;
+class UT_51_Send_Receive_Test : public testing::TestWithParam<bool>
+{
+protected:
+    // static void SetUpTestCase()
+    // {
+    //     std::cout << "UT_51_Send_Receive_Test SetUP" << std::endl;
+    // }
+    // static void TearDownTestCase()
+    // {
+    //     std::cout << "UT_51_Send_Receive_Test TearDown" << std::endl;
+    // }
+    // Some expensive resource shared by all tests.
+    virtual void SetUp()
+    {
+        s32 portNum = 7;
+        MOCKER(hrtGetHccsPortNum)
+            .stubs()
+            .with(any(), outBound(portNum))
+            .will(returnValue(HCCL_SUCCESS));
+        static s32  call_cnt = 0;
+        string name =std::to_string(call_cnt++) +"_" + __PRETTY_FUNCTION__;
+        ra_set_shm_name(name .c_str());
+        ra_set_test_type(1, "ST_ST_TEST");
+        std::cout << "A TestCase SetUP" << std::endl;
+    }
+    virtual void TearDown()
+    {
+        std::cout << "A TestCase TearDown" << std::endl;
+    }
+};
+
+#define P2P_DATA_SIZE_LIGHT 20
+#define P2P_DATA_SIZE_HEAVY 1200000
+#define P2P_DATA_SIZE_S_HEAVY 3000000   /* 超大数据，约10M */
+
+typedef struct p2p_para_struct
+{
+    HcclRootInfo rootInfo;
+    std::string identify;
+    s32 device_id;
+    char* file_name;
+    bool sender_flag;
+    s32 peer_rank;
+    void* buffer;
+    s32 count;
+    HcclDataType datatype;
+    rtStream_t stream;
+    volatile s32* sync_addr;
+    const char* tag;
+    char* groupName;
+    u32 groupRanksNum;
+    u32 *pGroupRanks;
+    s32 ranks_local;
+} p2p_para_t;
+
+void* inter_send_receive_task(void* parg)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    p2p_para_t* para_info = (p2p_para_t*)parg;
+
+    hrtSetDevice(para_info->device_id);
+
+     HcomInfo    hcom_info;
+    std::string ranktable_file = para_info->file_name;
+    std::string rankTableM;
+    std::string realFilePath;
+
+    ret = HcomLoadRanktableFile(ranktable_file.c_str(), rankTableM, realFilePath);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = CfgGetClusterInfo(rankTableM, para_info->identify, hcom_info.params, hcom_info.rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    sal_memcpy(hcom_info.params.id.internal, sizeof(HcclRootInfo), &para_info->rootInfo, sizeof(HcclRootInfo));
+
+    hcom_info.pComm.reset(new(std::nothrow) hccl::hcclComm());
+    char* charModel = new char;
+    rtModel_t model = (void*)charModel;
+
+    ret = DlRaFunction::GetInstance().DlRaFunctionInit();
+    if (ret != HCCL_SUCCESS)
+    {
+        ("errNo[0x%016llx] dlRaFunction init error", HCOM_ERROR_CODE(ret));
+    }
+    CommConfig commConfig("hccl_world_group");
+    ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
+    if (ret != HCCL_SUCCESS)
+    {
+        HCCL_ERROR("dev[%d] task send_receive falis", para_info->device_id);
+    }
+    //-----------------Set Workspace Resource Start------------------//
+    u64 stream_list_size = 0;
+    ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    HCCL_INFO("get stream_list_size[%d] success", stream_list_size);
+    vector<HcclRtStream> streamList(stream_list_size);
+
+    rtError_t rt_ret;
+    //生成从stream
+    for (s32 i = 0; i < stream_list_size; i++)
+    {
+        rt_ret = rtStreamCreateWithFlags(&streamList[i], 0, (RT_STREAM_PERSISTENT | RT_STREAM_FORCE_COPY));
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+        //从流bind到model
+        rt_ret = rtModelBindStream(model, streamList[i], RT_MODEL_WAIT_ACTIVE_STREAM);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    u32 rankSize = 0;
+    ret = hcom_info.pComm->GetRankSize(rankSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+
+
+    ret = hcom_info.pComm->SetWorkspaceResource("default_tag", memptr, memSize, streamList);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    //-----------------Set Workspace Resource End------------------//
+    bool swapped;
+    s32 rank_num_tmp = *(para_info->sync_addr) - 1;
+
+    do
+    {
+        rank_num_tmp += 1;
+
+        swapped = __sync_bool_compare_and_swap(para_info->sync_addr /** &rank_num */, rank_num_tmp, rank_num_tmp + 1);
+    }
+    while (!swapped);
+
+    while (*(para_info->sync_addr) < para_info->ranks_local)
+    {
+        sched_yield(); // linux提供一个系统调用运行进程主动让出执行权
+    }
+
+    if (para_info->sender_flag)
+    {
+        u64 memSize = 0;
+        ret = hcom_info.pComm->GetWorkspaceMemSize("HcomSend", para_info->count, para_info->datatype, rankSize, memSize);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+
+        void *memptr = nullptr;
+        ret = hrtMalloc(&memptr, memSize);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+
+        ret = hcom_info.pComm->SetWorkspaceResource("default_tagSend", memptr, memSize, streamList);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        
+        ret = hcom_info.pComm->send(
+            para_info->tag,
+            para_info->buffer,
+            para_info->count,
+            para_info->datatype,
+            para_info->peer_rank,
+            0,
+            para_info->stream);
+        HCCL_INFO("rank[%s] device[%d] send to rank[%d]", para_info->identify.c_str(), para_info->device_id, para_info->peer_rank);
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("dev[%d] task send fails", para_info->device_id);
+        }
+
+    }
+    else
+    {
+        ret = hcom_info.pComm->SetWorkspaceResource("default_tagRecv", memptr, memSize, streamList);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        ret = hcom_info.pComm->receive(
+            para_info->tag,
+            para_info->buffer,
+            para_info->count,
+            para_info->datatype,
+            para_info->peer_rank,
+            0,
+            para_info->stream);
+        HCCL_INFO("rank[%s] device[%d] recv from rank[%d]", para_info->identify.c_str(), para_info->device_id, para_info->peer_rank);
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("dev[%d] task receive fails", para_info->device_id);
+        }
+    }
+
+    rt_ret = RT_ERROR_NONE;
+    rt_ret = rtStreamSynchronize(para_info->stream);
+    if ( rt_ret != RT_ERROR_NONE)
+    {
+        HCCL_ERROR("task sync fails");
+    }
+    //--------------Resource destroy----------------//
+    for (s32 i = 0; i < stream_list_size; i++)
+    {
+        rt_ret = rtModelUnbindStream(model, streamList[i]);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+        rt_ret = rtStreamDestroy(streamList[i]);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    hrtFree(memptr);
+
+    delete charModel;
+    charModel = nullptr;
+    return (NULL);
+}
+
+void* inter_send_receive_task_ffts(void* parg)
+{
+    HcclResult ret = HCCL_SUCCESS;
+    p2p_para_t* para_info = (p2p_para_t*)parg;
+
+    hrtSetDevice(para_info->device_id);
+
+     HcomInfo    hcom_info;
+    std::string ranktable_file = para_info->file_name;
+    std::string rankTableM;
+    std::string realFilePath;
+
+    ret = HcomLoadRanktableFile(ranktable_file.c_str(), rankTableM, realFilePath);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    ret = CfgGetClusterInfo(rankTableM, para_info->identify, hcom_info.params, hcom_info.rankTable);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    sal_memcpy(hcom_info.params.id.internal, sizeof(HcclRootInfo), &para_info->rootInfo, sizeof(HcclRootInfo));
+
+    hcom_info.pComm.reset(new(std::nothrow) hccl::hcclComm());
+    char* charModel = new char;
+    rtModel_t model = (void*)charModel;
+
+    ret = DlRaFunction::GetInstance().DlRaFunctionInit();
+    if (ret != HCCL_SUCCESS)
+    {
+        ("errNo[0x%016llx] dlRaFunction init error", HCOM_ERROR_CODE(ret));
+    }
+    CommConfig commConfig("hccl_world_group");
+    ret = hcom_info.pComm->init(hcom_info.params, commConfig, hcom_info.rankTable);
+    if (ret != HCCL_SUCCESS)
+    {
+        HCCL_ERROR("dev[%d] task send_receive falis", para_info->device_id);
+    }
+    //-----------------Set Workspace Resource Start------------------//
+    u64 stream_list_size = 0;
+    ret = hcom_info.pComm->GetWorkspaceSubStreamNum(stream_list_size);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    HCCL_INFO("get stream_list_size[%d] success", stream_list_size);
+    vector<HcclRtStream> streamList(stream_list_size);
+
+    rtError_t rt_ret;
+    //生成从stream
+    for (s32 i = 0; i < stream_list_size; i++)
+    {
+        rt_ret = rtStreamCreateWithFlags(&streamList[i], 0, (RT_STREAM_PERSISTENT | RT_STREAM_FORCE_COPY));
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+        //从流bind到model
+        rt_ret = rtModelBindStream(model, streamList[i], RT_MODEL_WAIT_ACTIVE_STREAM);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    u32 rankSize = 0;
+    ret = hcom_info.pComm->GetRankSize(rankSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+
+
+    ret = hcom_info.pComm->SetWorkspaceResource("default_tag", memptr, memSize, streamList);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    //-----------------Set Workspace Resource End------------------//
+    bool swapped;
+    s32 rank_num_tmp = *(para_info->sync_addr) - 1;
+
+    do
+    {
+        rank_num_tmp += 1;
+
+        swapped = __sync_bool_compare_and_swap(para_info->sync_addr /** &rank_num */, rank_num_tmp, rank_num_tmp + 1);
+    }
+    while (!swapped);
+
+    while (*(para_info->sync_addr) < para_info->ranks_local)
+    {
+        sched_yield(); // linux提供一个系统调用运行进程主动让出执行权
+    }
+
+    if (para_info->sender_flag)
+    {
+        u64 memSize = 0;
+        ret = hcom_info.pComm->GetWorkspaceMemSize("HcomSend", para_info->count, para_info->datatype, rankSize, memSize);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+
+        void *memptr = nullptr;
+        ret = hrtMalloc(&memptr, memSize);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+
+        ret = hcom_info.pComm->SetWorkspaceResource("default_tagSend", memptr, memSize, streamList);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        
+        ret = hcom_info.pComm->SendOutPlace(
+            para_info->tag,
+            para_info->buffer,
+            para_info->count,
+            para_info->datatype,
+            para_info->peer_rank,
+            0,
+            para_info->stream);
+        HCCL_INFO("rank[%s] device[%d] send to rank[%d]", para_info->identify.c_str(), para_info->device_id, para_info->peer_rank);
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("dev[%d] task send fails", para_info->device_id);
+        }
+
+    }
+    else
+    {
+        ret = hcom_info.pComm->SetWorkspaceResource("default_tagRecv", memptr, memSize, streamList);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        ret = hcom_info.pComm->ReceiveOutPlace(
+            para_info->tag,
+            para_info->buffer,
+            para_info->count,
+            para_info->datatype,
+            para_info->peer_rank,
+            0,
+            para_info->stream);
+        HCCL_INFO("rank[%s] device[%d] recv from rank[%d]", para_info->identify.c_str(), para_info->device_id, para_info->peer_rank);
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("dev[%d] task receive fails", para_info->device_id);
+        }
+    }
+
+    rt_ret = RT_ERROR_NONE;
+    rt_ret = rtStreamSynchronize(para_info->stream);
+    if ( rt_ret != RT_ERROR_NONE)
+    {
+        HCCL_ERROR("task sync fails");
+    }
+    //--------------Resource destroy----------------//
+    for (s32 i = 0; i < stream_list_size; i++)
+    {
+        rt_ret = rtModelUnbindStream(model, streamList[i]);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+        rt_ret = rtStreamDestroy(streamList[i]);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    hrtFree(memptr);
+
+    delete charModel;
+    charModel = nullptr;
+    return (NULL);
+}
+
+INSTANTIATE_TEST_CASE_P(FFTSSwitch, UT_51_Send_Receive_Test, testing::Bool());
+#define SEND_DEV_NUM 2
+TEST_F(UT_51_Send_Receive_Test, ut_51_send_receive_2ranks_1server_float)
+{
+    char file_name_t[] = "./ut_51_send_receive_2ranks_1server_float.json";
+    std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
+
+    if (outfile.is_open())
+    {
+        outfile << std::setw(4) << g_rank_table_610_2rank_1server << std::endl;
+        HCCL_INFO("open %s success", file_name_t);
+    }
+    else
+    {
+        HCCL_ERROR("open %s failed", file_name_t);
+    }
+    outfile.close();
+
+    s32 nnode, rank, errors = 0;
+
+    int ret = HCCL_SUCCESS;
+    rtError_t rt_ret = RT_ERROR_NONE;
+
+    float* buffer[SEND_DEV_NUM];
+    set_board_id(0x2000);
+    s32 sync_value = 0;
+    s32 noderank = 0;
+    rtStream_t stream[SEND_DEV_NUM];
+    sal_thread_t tid[SEND_DEV_NUM];
+    p2p_para_t para_info[SEND_DEV_NUM];
+
+    HcclDataType datatype = HCCL_DATA_TYPE_FP32;
+    s32 count = P2P_DATA_SIZE_S_HEAVY;
+    s32 ndev = SEND_DEV_NUM;
+
+    HcclRootInfo rootInfo;
+    ret = hccl::hcclComm::GetUniqueId(&rootInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    const s32 send_node_id = 0;
+    const s32 recv_node_id = 1;
+
+    /** 初始化输入输出缓存 */
+    for (s32 i = 0; i < ndev; i++ )
+    {
+        ret = hrtMalloc((void**)&buffer[i], (count * sizeof(float)));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        sal_memset(buffer[i], (count * sizeof(float)), 0, (count * sizeof(float)));
+    }
+
+        //sendbuf 赋值
+
+        for (u32 i = 0; i < count; i++)
+        {
+            buffer[0][i] = 1.0 * i * 10000000;
+        }
+
+    for (s32 i = 0; i < ndev; ++i)
+    {
+        rt_ret = rtStreamCreate(&stream[i], 5);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    for (s32 i = 0; i < ndev; i++)
+    {
+        sal_memcpy(&para_info[i].rootInfo, sizeof(HcclRootInfo), &rootInfo, sizeof(HcclRootInfo));
+        std::ostringstream identify("");
+        identify << (i);
+        para_info[i].tag = "default_tag";
+        para_info[i].identify = identify.str();
+        para_info[i].device_id = i ;
+        para_info[i].ranks_local = ndev;
+        para_info[i].count = count;
+        para_info[i].datatype = datatype;
+        para_info[i].stream = stream[i];
+        para_info[i].buffer = buffer[i];
+        para_info[i].sync_addr = &sync_value;
+        para_info[i].file_name = file_name_t;
+        if (i == send_node_id) {
+            para_info[i].sender_flag = true;
+            para_info[i].peer_rank   = ndev - i - 1;
+            noderank = 0;
+        } else {
+            para_info[i].sender_flag = false;
+            para_info[i].peer_rank   = ndev - i - 1;
+            noderank = 1;
+            }
+    }
+
+    bool fftsSwitch = GetParam();
+    // 创建每个Dev的allreduce任务线程
+    for (s32 i = 0; i < ndev; ++i)
+    {
+        if (fftsSwitch) {
+            tid[i] = sal_thread_create("thread", inter_send_receive_task_ffts, (void*)&para_info[i]);
+        } else {
+            tid[i] = sal_thread_create("thread", inter_send_receive_task, (void*)&para_info[i]);
+        }
+
+        EXPECT_NE(tid[i], (sal_thread_t )NULL);
+    }
+
+    for (s32 i = 0; i < ndev; ++i)
+    {
+        while ( sal_thread_is_running(tid[i]))
+        {
+            SaluSleep(SAL_MILLISECOND_USEC * 10);
+        }
+    }
+
+    //获取stream的操作的同步信号量
+    for (s32 j = 0; j < ndev; j++)
+    {
+       rt_ret = rtStreamSynchronize(stream[j]);
+       EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    /*check result*/
+    for (s32 j = 0; j < ndev; j++)
+    {
+        for (s32 i = 0; i < count; i++)
+        {
+            float recv = 1.0 * i * 10000000;
+
+            if (abs(buffer[j][i] - recv) > 1e-6)
+            {
+                HCCL_ERROR("node:%d result[%d][%d]:%f \n", noderank, j, i, buffer[j][i]);
+                errors++;
+                break;
+            }
+        }
+    }
+
+    if (errors)
+    {
+        HCCL_ERROR("%d errors. Test FAILED.\n", errors);
+    }
+    else
+    {
+        HCCL_INFO("Test PASSED.\n");
+    }
+
+    for (s32 j = 0; j < ndev; j++)
+    {
+        hrtFree(buffer[j]);
+        rt_ret = rtStreamDestroy(stream[j]);
+
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    } 
+    remove(file_name_t);
+    set_board_id(0);
+    EXPECT_EQ(errors, 0);
+}
+
+TEST_F(UT_51_Send_Receive_Test, ut_51_send_receive_2ranks_1server_float_memsampler)
+{
+    char file_name_t[] = "./ut_51_send_receive_2ranks_1server_float_memsampler.json";
+    std::ofstream outfile(file_name_t, std::ios::out | std::ios::trunc | std::ios::binary);
+
+    if (outfile.is_open())
+    {
+        outfile << std::setw(4) << g_rank_table_610_2rank_1server << std::endl;
+        HCCL_INFO("open %s success", file_name_t);
+    }
+    else
+    {
+        HCCL_ERROR("open %s failed", file_name_t);
+    }
+    outfile.close();
+    setenv("HCCL_MEM_SAMPLER_PARAM", "0x50000000", 1);
+    ResetInitState();
+    s32 nnode, rank, errors = 0;
+
+    int ret = HCCL_SUCCESS;
+    rtError_t rt_ret = RT_ERROR_NONE;
+
+    float* buffer[SEND_DEV_NUM];
+    set_board_id(0x2000);
+    s32 sync_value = 0;
+    s32 noderank = 0;
+    rtStream_t stream[SEND_DEV_NUM];
+    sal_thread_t tid[SEND_DEV_NUM];
+    p2p_para_t para_info[SEND_DEV_NUM];
+
+    HcclDataType datatype = HCCL_DATA_TYPE_FP32;
+    s32 count = P2P_DATA_SIZE_S_HEAVY;
+    s32 ndev = SEND_DEV_NUM;
+
+    HcclRootInfo rootInfo;
+    ret = hccl::hcclComm::GetUniqueId(&rootInfo);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    const s32 send_node_id = 0;
+    const s32 recv_node_id = 1;
+
+    /** 初始化输入输出缓存 */
+    for (s32 i = 0; i < ndev; i++ )
+    {
+        ret = hrtMalloc((void**)&buffer[i], (count * sizeof(float)));
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        sal_memset(buffer[i], (count * sizeof(float)), 0, (count * sizeof(float)));
+    }
+
+        //sendbuf 赋值
+
+        for (u32 i = 0; i < count; i++)
+        {
+            buffer[0][i] = 1.0 * i * 10000000;
+        }
+
+    for (s32 i = 0; i < ndev; ++i)
+    {
+        rt_ret = rtStreamCreate(&stream[i], 5);
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    for (s32 i = 0; i < ndev; i++)
+    {
+        sal_memcpy(&para_info[i].rootInfo, sizeof(HcclRootInfo), &rootInfo, sizeof(HcclRootInfo));
+        std::ostringstream identify("");
+        identify << (i);
+        para_info[i].tag = "default_tag";
+        para_info[i].identify = identify.str();
+        para_info[i].device_id = i ;
+        para_info[i].ranks_local = ndev;
+        para_info[i].count = count;
+        para_info[i].datatype = datatype;
+        para_info[i].stream = stream[i];
+        para_info[i].buffer = buffer[i];
+        para_info[i].sync_addr = &sync_value;
+        para_info[i].file_name = file_name_t;
+        if (i == send_node_id) {
+            para_info[i].sender_flag = true;
+            para_info[i].peer_rank   = ndev - i - 1;
+            noderank = 0;
+        } else {
+            para_info[i].sender_flag = false;
+            para_info[i].peer_rank   = ndev - i - 1;
+            noderank = 1;
+            }
+    }
+
+    // 创建每个Dev的allreduce任务线程
+    for (s32 i = 0; i < ndev; ++i)
+    {
+        tid[i] = sal_thread_create("thread", inter_send_receive_task, (void*)&para_info[i]);
+        EXPECT_NE(tid[i], (sal_thread_t )NULL);
+    }
+
+    for (s32 i = 0; i < ndev; ++i)
+    {
+        while ( sal_thread_is_running(tid[i]))
+        {
+            SaluSleep(SAL_MILLISECOND_USEC * 10);
+        }
+    }
+
+    //获取stream的操作的同步信号量
+    for (s32 j = 0; j < ndev; j++)
+    {
+       rt_ret = rtStreamSynchronize(stream[j]);
+       EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+
+    /*check result*/
+    for (s32 j = 0; j < ndev; j++)
+    {
+        for (s32 i = 0; i < count; i++)
+        {
+            float recv = 1.0 * i * 10000000;
+
+            if (abs(buffer[j][i] - recv) > 1e-6)
+            {
+                HCCL_ERROR("node:%d result[%d][%d]:%f \n", noderank, j, i, buffer[j][i]);
+                errors++;
+                break;
+            }
+        }
+    }
+
+    if (errors)
+    {
+        HCCL_ERROR("%d errors. Test FAILED.\n", errors);
+    }
+    else
+    {
+        HCCL_INFO("Test PASSED.\n");
+    }
+
+    for (s32 j = 0; j < ndev; j++)
+    {
+        hrtFree(buffer[j]);
+        rt_ret = rtStreamDestroy(stream[j]);
+
+        EXPECT_EQ(rt_ret, RT_ERROR_NONE);
+    }
+    remove(file_name_t);
+    unsetenv("HCCL_MEM_SAMPLER_PARAM");
+    ResetInitState();
+    EXPECT_EQ(errors, 0);
+    set_board_id(0);
+}

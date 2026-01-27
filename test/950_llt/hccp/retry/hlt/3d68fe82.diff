@@ -1,0 +1,37 @@
+From 3d68fe8246709927896742fe7653c4a333e98666 Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Wed, 21 Jan 2026 20:26:26 +0800
+Subject: [PATCH] DTS:AR20241206322968 Description:HCCP support udma sensor
+ node
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: Ia778d589cf6afd5a01b393c7688620b148c09943
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ hccp_test/hlt_hccp_ub_test.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/hccp_test/hlt_hccp_ub_test.c b/hccp_test/hlt_hccp_ub_test.c
+index 36ea1f1..3ccaec7 100644
+--- a/hccp_test/hlt_hccp_ub_test.c
++++ b/hccp_test/hlt_hccp_ub_test.c
+@@ -814,8 +814,12 @@ int hlt_hccp_udma_write_value_002(int machine_type, int dev_id, unsigned int rep
+     info_num = 1;
+     ret = ra_ctx_get_cr_err_info_list(testconfig.ctx_handle, info_list, &info_num);
+     CHECK_RET_GO_END(ret, "ra_ctx_get_cr_err_info_list");
+-    LOG(LOG_INFO, "ra_ctx_get_cr_err_info_list success, status:%u jetty_id:%u tv_sec: %ld, tv_usec: %ld\n",
+-        info_list[0].status, info_list[0].jetty_id, info_list[0].time.tv_sec, info_list[0].time.tv_usec);
++    if (info_num != 0) {
++        LOG(LOG_INFO, "ra_ctx_get_cr_err_info_list success, status:%u jetty_id:%u tv_sec: %ld, tv_usec: %ld\n",
++            info_list[0].status, info_list[0].jetty_id, info_list[0].time.tv_sec, info_list[0].time.tv_usec);
++    } else {
++        LOG(LOG_INFO, "ra_ctx_get_cr_err_info_list null\n");
++    }
+     sleep(8);
+ 
+ end:
+-- 
+2.45.2.huawei.10
+

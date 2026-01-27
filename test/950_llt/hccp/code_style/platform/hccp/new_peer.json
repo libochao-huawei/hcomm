@@ -1,0 +1,38 @@
+{
+    "includes": [
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../comm",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../inc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../../rdma_service",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../../inc/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../../inc/private/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../../common/",
+
+        "/home/x00949166/Ascend/cann/pkg_inc/base/",
+        "/home/x00949166/Ascend/cann/include/",
+        "/home/x00949166/Ascend/cann/include/toolchain/",
+        "/home/x00949166/Ascend/cann/include/driver/",
+        "/home/x00949166/Ascend/cann/pkg_inc",
+
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../../external_depends/rdma-core/include",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/rdma_agent/peer/../../external_depends/host_lite",
+
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/inc/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/inc/private/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/rdma_agent/inc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/rdma_agent/comm/ctx",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/new_hccp/orion/hcomm_dev/rdma_service/ctx"
+    ],
+    "defines": [
+        "CONFIG_CONTEXT",
+        "CONFIG_TLV",
+        "CUSTOM_INTERFACE",
+        "CONFIG_V121"
+    ],
+    "std": "gnu11",
+    "coption": "",
+    "sources": [
+        "../new_hccp/rdma_agent/peer",
+        "../new_hccp/orion/hcomm_dev/rdma_agent/peer"
+    ]
+}

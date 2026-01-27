@@ -1,0 +1,9 @@
+target_sources(hccl_v2_stest
+        PUBLIC
+        st_preempt_port_manager.cc
+        st_rankinfo_dispatcher.cc
+        st_rank_info_detect.cc
+        st_bootstrap_ip.cc
+        st_rank_info_detect_service.cc
+        st_rank_info_detect_client.cc
+)

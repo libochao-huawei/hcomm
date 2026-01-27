@@ -1,0 +1,48 @@
+From 9afa10569cb6606421a07a744b2358bb310e247e Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Mon, 19 Jan 2026 20:24:40 +0800
+Subject: [PATCH] DTS:AR20241206322968 Description:HCCP support udma sensor
+ node
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: Ia778d589cf6afd5a01b393c7688620b148c09943
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ st/roce/rdma_service/tc_rs.c | 10 ++++++----
+ 1 file changed, 6 insertions(+), 4 deletions(-)
+
+diff --git a/st/roce/rdma_service/tc_rs.c b/st/roce/rdma_service/tc_rs.c
+index 994005d32..62602d097 100755
+--- a/st/roce/rdma_service/tc_rs.c
++++ b/st/roce/rdma_service/tc_rs.c
+@@ -124,7 +124,7 @@ extern int RsDev2conncb(uint32_t chipId, struct RsConnCb **connCb);
+ extern int RsConvertIpAddr(int family, union HccpIpAddr *ip_addr, struct RsIpAddrInfo *ip);
+ extern int RsFindListenNode(struct RsConnCb *connCb, struct RsIpAddrInfo *ip_addr, uint32_t server_port,
+     struct RsListenInfo **listen_info);
+-extern void RsSensorNodeUnregister(struct SensorNode *sensorNode);
++extern void RsSensorNodeUnregister(struct rs_cb *rsCb);
+ extern int RsSocketListenAddToEpoll(struct RsConnCb *connCb, struct RsListenInfo *listen_info);
+ extern int RsFindWhiteList(struct RsConnCb *connCb, struct RsIpAddrInfo *server_ip, unsigned int server_port,
+     struct RsWhiteList **white_list);
+@@ -225,11 +225,13 @@ void tc_rs_init()
+ 	char pid_sign[] = "ec4cd587f827e128c66e01f257b8c2f97b52508e97efe36a";
+ 	struct RsRdevCb rdev_tmp = {0};
+ 	struct RsInitConfig cfg = {0};
++	struct rs_cb rs_cb = {0};
+ 	int ret;
+ 
+-	RsSensorNodeUnregister(&rdev_tmp.sensorNode);
+-	rdev_tmp.sensorNode.sensorHandle = 1;
+-	RsSensorNodeUnregister(&rdev_tmp.sensorNode);
++	rdev_tmp.rs_cb = &rs_cb;
++	RsSensorNodeUnregister(&rdev_tmp.rs_cb->sensorNode);
++	rdev_tmp.rs_cb->sensorNode.sensorHandle = 1;
++	RsSensorNodeUnregister(&rdev_tmp.rs_cb->sensorNode);
+ 
+ 	rs_ut_msg("\n%s+++++++++ABNORMAL TC Start++++++++\n", __func__);
+ 	ret = RsInit(NULL);
+-- 
+2.45.2.huawei.10
+

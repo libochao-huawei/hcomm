@@ -1,0 +1,29 @@
+{
+    "includes": [
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/hccp_service",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/inc/driver",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/inc/log",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/include",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/host_lite",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/external_depends/rdma-core/providers/hns",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/inc/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/inc/private/network",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_service",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/adapter",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/adapter/async",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/hdc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/rdma_agent/inc",
+        "/srv/workspace/trunk_ai1/work_code/hcomm/src/platform/hccp/common",
+        "/home/x00949166/Ascend/cann/include/",
+        "/home/x00949166/Ascend/cann/pkg_inc/aicpu/tsd"
+    ],
+    "defines": [
+        "CONFIG_CGROUP"
+    ],
+    "std": "gnu11",
+    "coption": "",
+    "sources": [
+        "hccp_service/"
+    ]
+}

@@ -1,0 +1,30 @@
+{
+    "RunAicpuKfcResInit":{
+        "opInfo":{
+            "functionName":"RunAicpuKfcResInit",
+            "kernelSo":"libccl_kernel.so",
+            "opKernelLib":"AICPUKernel"
+        }
+    },
+    "RunAicpuKfcResInitV2":{
+        "opInfo":{
+            "functionName":"RunAicpuKfcResInitV2",
+            "kernelSo":"libccl_kernel.so",
+            "opKernelLib":"AICPUKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunch":{
+        "opInfo":{
+            "functionName":"RunAicpuRpcSrvLaunch",
+            "kernelSo":"libccl_kernel.so",
+            "opKernelLib":"KFCKernel"
+        }
+    },
+    "RunAicpuRpcSrvLaunchV2":{
+        "opInfo":{
+            "functionName":"RunAicpuRpcSrvLaunchV2",
+            "kernelSo":"libccl_kernel.so",
+            "opKernelLib":"KFCKernel"
+        }
+    }
+}

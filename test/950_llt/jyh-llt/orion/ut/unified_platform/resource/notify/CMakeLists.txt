@@ -1,0 +1,12 @@
+target_sources(hccl_v2_utest
+    PUBLIC
+        ut_local_notify.cc
+        ut_remote_notify.cc
+        ut_local_cnt_notify.cc
+        ut_rts_notify.cc
+        ut_rts_cnt_notify.cc
+        ut_rts_1ton_cnt_notify.cc
+        ut_notify_lite.cc
+        ut_cnt_1ton_notify_lite.cc
+        ut_cnt_nto1_notify_lite.cc
+)

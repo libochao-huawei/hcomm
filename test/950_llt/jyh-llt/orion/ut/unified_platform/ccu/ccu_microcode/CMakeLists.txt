@@ -1,0 +1,9 @@
+target_sources(hccl_v2_utest 
+    PUBLIC
+    ut_ccu_microcode.cpp
+    ut_ccu_assist.cpp
+    ut_ccu_microcode_v2.cpp
+    ${HCCL_V2_CODE_ROOT}/unified_platform/ccu/ccu_microcode/ccu_microcode.cpp
+    ${HCCL_V2_CODE_ROOT}/unified_platform/ccu/ccu_microcode/ccu_microcode_v2.cpp
+    ${HCCL_V2_CODE_ROOT}/unified_platform/ccu/ccu_microcode/ccu_assist.cpp
+)

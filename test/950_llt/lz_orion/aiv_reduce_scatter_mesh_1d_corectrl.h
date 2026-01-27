@@ -1,0 +1,1 @@
+constexpr static uint32_t MAX_RANK_SIZE = 8;

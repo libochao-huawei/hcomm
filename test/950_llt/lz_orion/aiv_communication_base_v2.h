@@ -1,0 +1,1 @@
+constexpr uint32_t MAX_RANK_SIZE = 64; // server内最大卡数

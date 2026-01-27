@@ -1,0 +1,13 @@
+# source file:python/hccl/manage/api.py
+def create_group(group, rank_num, rank_ids):
+def destroy_group(group):
+def get_rank_size(group="hccl_world_group"):
+def get_rank_id(group="hccl_world_group"):
+def get_local_rank_size(group="hccl_world_group"):
+def get_local_rank_id(group="hccl_world_group"):
+def get_world_rank_from_group_rank(group, group_rank_id):
+def get_group_rank_from_world_rank(world_rank_id, group):
+
+
+
+

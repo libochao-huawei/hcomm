@@ -1,0 +1,114 @@
+From ef0d921e0fcc3142054d4e44adc0c4317444999d Mon Sep 17 00:00:00 2001
+From: x00939515 <x00939515@huawei.com>
+Date: Tue, 20 Jan 2026 11:51:11 +0800
+Subject: [PATCH] DTS:AR20240314849017 Description:write value new struct
+
+Team:OTHERS
+Feature or Bugfix:Feature
+
+Change-Id: I9856a9b829f43268890045150a410ef5be275522
+Signed-off-by: x00939515 <x00939515@huawei.com>
+---
+ orion/hcomm_dev/inc/network/hccp_ctx.h          |  9 ++++++++-
+ orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h |  3 +--
+ orion/hcomm_dev/rdma_service/ctx/rs_ub.c        | 13 +++++++------
+ 3 files changed, 16 insertions(+), 9 deletions(-)
+
+diff --git a/orion/hcomm_dev/inc/network/hccp_ctx.h b/orion/hcomm_dev/inc/network/hccp_ctx.h
+index 0c7cee3eb3..29eb578254 100644
+--- a/orion/hcomm_dev/inc/network/hccp_ctx.h
++++ b/orion/hcomm_dev/inc/network/hccp_ctx.h
+@@ -404,6 +404,12 @@ struct qp_key {
+     uint8_t size;
+ };
+ 
++struct ctx_qp_share_info {
++    uint16_t ci_val;
++    uint16_t resv0;
++    uint8_t raw_cqe[64U];
++};
++
+ struct qp_create_info {
+     struct qp_key key; /**< for modify qp or import & bind jetty*/
+     union {
+@@ -416,7 +422,8 @@ struct qp_create_info {
+             uint32_t id; /**< jetty id */
+             uint64_t db_addr;
+             uint32_t db_token_id;
+-            uint64_t ci_addr;
++            uint32_t share_info_len; /**< refer to struct ctx_qp_share_info */
++            uint64_t share_info_addr; /**< refer to struct ctx_qp_share_info */
+         } ub;
+     };
+     uint64_t va; /**< refer to struct urma_jetty*, struct ibv_qp* */
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h b/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
+index 14472f52b5..37860268b9 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ctx_inner.h
+@@ -16,7 +16,6 @@
+ #define DEV_INDEX_DIEID_OFFSET 8U
+ #define DEV_INDEX_CNT_OFFSET 16U
+ #define DEV_INDEX_UE_INFO_MASK 0x0000FFFFUL
+-#define CI_ADDR_TWO_BYTES 2
+ #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
+ 
+ struct rs_ub_dev_cb {
+@@ -108,7 +107,7 @@ struct rs_ctx_jetty_cb {
+     uint64_t db_seg_handle;
+     pthread_mutex_t mutex;
+     uint32_t last_pi;
+-    uint64_t ci_addr;
++    struct ctx_qp_share_info *qp_share_info_addr;
+     struct RsCrErrInfo cr_err_info;
+     struct RsListHead list;
+ };
+diff --git a/orion/hcomm_dev/rdma_service/ctx/rs_ub.c b/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
+index d6db85a1ae..ade036d704 100644
+--- a/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
++++ b/orion/hcomm_dev/rdma_service/ctx/rs_ub.c
+@@ -551,7 +551,7 @@ STATIC void rs_ub_ctx_free_jetty_cb(struct rs_ctx_jetty_cb *jetty_cb)
+     struct rs_ctx_jetty_cb *tmp_jetty_cb = jetty_cb;
+ 
+ #ifdef CUSTOM_INTERFACE
+-    (void)DlHalBuffFree((void *)(uintptr_t)jetty_cb->ci_addr);
++    (void)DlHalBuffFree((void *)(uintptr_t)jetty_cb->qp_share_info_addr);
+ #endif
+ 
+     pthread_mutex_destroy(&tmp_jetty_cb->cr_err_info.mutex);
+@@ -1560,11 +1560,11 @@ STATIC int rs_ub_jetty_cb_buff_alloc(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_
+     }
+ 
+     flag = ((unsigned long)logic_devid << BUFF_FLAGS_DEVID_OFFSET) | BUFF_SP_SVM;
+-    ret = DlHalBuffAllocAlignEx(CI_ADDR_TWO_BYTES, CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE, flag, (int)dev_cb->rscb->grpId,
+-        (void **)&jetty_cb->ci_addr);
++    ret = DlHalBuffAllocAlignEx(sizeof(struct ctx_qp_share_info), CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE, flag,
++        (int)dev_cb->rscb->grpId, (void **)&jetty_cb->qp_share_info_addr);
+     if (ret != 0) {
+         hccp_err("dl_hal_buff_alloc_align_ex failed, length:0x%llx, dev_id:0x%x, flag:0x%lx, grp_id:%u, ret:%d",
+-            CI_ADDR_TWO_BYTES, logic_devid, flag, dev_cb->rscb->grpId, ret);
++            sizeof(struct ctx_qp_share_info), logic_devid, flag, dev_cb->rscb->grpId, ret);
+     }
+ 
+     return ret;
+@@ -1836,7 +1836,8 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
+     jetty_info->ub.db_addr = jetty_cb->db_addr;
+     jetty_info->ub.db_token_id = jetty_cb->db_token_id;
+     jetty_info->va = (uint64_t)(uintptr_t)jetty_cb->jetty;
+-    jetty_info->ub.ci_addr = jetty_cb->ci_addr;
++    jetty_info->ub.share_info_addr = (uint64_t)(uintptr_t)jetty_cb->qp_share_info_addr;
++    jetty_info->ub.share_info_len = sizeof(struct ctx_qp_share_info);
+ 
+     return 0;
+ }
+@@ -2706,7 +2707,7 @@ STATIC int rs_handle_epoll_poll_jfc(struct rs_ub_dev_cb *dev_cb, urma_jfce_t *jf
+             RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
+             break;
+         }
+-        (*(uint16_t *)(uintptr_t)jetty_cb->ci_addr)++;
++        jetty_cb->qp_share_info_addr->ci_val += 1;
+         rs_jfc_callback_process(jetty_cb, &(g_cr_buf[i]), ev_jfc);
+         RS_PTHREAD_MUTEX_ULOCK(&dev_cb->mutex);
+     }
+-- 
+2.45.2.huawei.10
+

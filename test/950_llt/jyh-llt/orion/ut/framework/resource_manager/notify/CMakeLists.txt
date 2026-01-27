@@ -1,0 +1,13 @@
+target_sources(hccl_v2_utest
+        PUBLIC
+        ut_queue_notify_manager_test.cc
+        ut_conn_local_notify_manager_test.cc
+        ut_queue_cnt_notify_manager.cc
+        ut_conn_local_cnt_notify_manager.cc
+        ut_queue_bcast_post_cnt_notify_manager.cc
+        ut_host_device_sync_notify_manager.cc
+        ut_host_device_sync_notify_lite_mgr.cc
+        ut_queue_notify_lite_mgr.cc
+        ut_cnt_1ton_notify_lite_mgr.cc
+        ut_cnt_nto1_notify_lite_mgr.cc
+)

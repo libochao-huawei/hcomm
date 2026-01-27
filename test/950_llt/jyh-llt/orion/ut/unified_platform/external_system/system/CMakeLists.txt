@@ -1,0 +1,9 @@
+target_sources(hccl_v2_utest 
+    PUBLIC
+    rts_stub_ut.cc
+    hccp_stub_ut.cc
+    tsd_stub_ut.cc
+    lib_qos_manager_stub_ut.cc
+    trace_stub_ut.cc
+    mmpa_stub_ut.cc
+)

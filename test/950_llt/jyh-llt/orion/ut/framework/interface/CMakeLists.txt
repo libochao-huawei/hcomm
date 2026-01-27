@@ -1,0 +1,4 @@
+add_subdirectory(hcom)
+add_subdirectory(op_base)
+add_subdirectory(hcom_comm)
+add_subdirectory(one_sided_service)
