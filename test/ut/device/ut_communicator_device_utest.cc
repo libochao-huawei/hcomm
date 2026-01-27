@@ -161,8 +161,8 @@ TEST_F(Communicator_Device_UT, CommunicatorTest) {
 
     bool ifAiv;
     hcclCommunicator.HcclSelectAlg(HcclCMDType::HCCL_CMD_ALL, 0, nullptr, dataType, op, 0, ifAiv, tag);
-    u32 blockDim;
-    hcclCommunicator.HcclCalcBlockDim(HcclCMDType::HCCL_CMD_ALL, 0, nullptr, dataType, 0, tag, blockDim);
+    u32 numBlocks;
+    hcclCommunicator.HcclCalcNumBlocks(HcclCMDType::HCCL_CMD_ALL, 0, nullptr, dataType, 0, tag, numBlocks);
 
     void *commContext = nullptr;
     hcclCommunicator.HcclGetAlgExecParam(tag, HcclCMDType::HCCL_CMD_ALL, 0, nullptr, nullptr, true, dataType, op, commContext, count, 0);
