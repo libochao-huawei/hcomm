@@ -14,9 +14,6 @@ constexpr int CKE_IDX_0 = 0;
 constexpr int CKE_IDX_1 = 1;
 constexpr int CKE_IDX_2 = 2;
 
-constexpr uint64_t CCU_MS_SIZE   = 4096;
-constexpr uint64_t LOCAL_COPY_MS = 8;
-
 CcuContextAllToAllMesh1D::CcuContextAllToAllMesh1D(const CcuCtxArg &arg, const std::vector<CcuTransport*> &transports,
                                                      const CcuTransportGroup &group)
     : CcuContext(arg, transports, group)
@@ -33,80 +30,6 @@ CcuContextAllToAllMesh1D::CcuContextAllToAllMesh1D(const CcuCtxArg &arg, const s
         THROW<NullPtrException>(StringFormat("CcuContextAllToAllMesh1D transports is empty"));
     }
     loadFromMem_ = ctxArg->loadFromMem;
-}
-
-void CcuContextAllToAllMesh1D::CreateLocalCopyLoop()
-{
-    std::string loopType = "all_to_all";
-    if (registeredLoop.find(loopType) != registeredLoop.end()) {
-        return;
-    }
- 
-    for (uint32_t index = 0; index < 2; index++) { // 需要2个Loop
-        CcuRep::Memory              src = CreateMemory();
-        CcuRep::Memory              dst = CreateMemory();
-        CcuRep::Variable            len = CreateVariable();
-        CcuRep::LoopBlock           lb(this, loopType + "_localcopy_loop_" + std::to_string(index));
-        lb(src, dst, len);
- 
-        CcuRep::MaskSignal sem = moRes.maskSignal[index];
-        std::vector<CcuRep::CcuBuffer> bufs;
-        for (uint32_t i = 0; i < LOCAL_COPY_MS; i++) {
-            bufs.push_back(moRes.ccuBuffer[i]);
-        }
- 
-        LocalCopy(bufs[0], src, len, sem);
-        LocalWait(sem);
-        LocalCopy(dst, bufs[0], len, sem);
-        LocalWait(sem);
-    }
-    registeredLoop.insert(loopType);
-    return;
-}
-
-void CcuContextAllToAllMesh1D::LocalCopyByLoopGroup(CcuRep::Memory dst, CcuRep::Memory src)
-{
-    CreateLocalCopyLoop();
- 
-    CCU_IF(groupOpSize_.addrOffset != 0)
-    {
-        CcuRep::Variable loopParam = CreateVariable();
-        loopParam = CcuRep::GetLoopParam(0, moConfig.memSlice * moConfig.loopCount, 0);
-        loopParam += groupOpSize_.loopParam;
- 
-        CcuRep::Variable sliceSize = CreateVariable();
-        sliceSize = moConfig.memSlice;
-        auto lc   = Loop("all_to_all_localcopy_loop_0")(src, dst, sliceSize);
- 
-        CcuRep::Variable paraCfg = CreateVariable();
-        paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);
-        CcuRep::Variable offsetCfg = CreateVariable();
-        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
-        LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
-    }
- 
-    CCU_IF(groupOpSize_.parallelParam != 0)
-    {
-        CcuRep::Condition cond(this, groupOpSize_.parallelParam != 0);
- 
-        src.addr += groupOpSize_.addrOffset;
-        dst.addr += groupOpSize_.addrOffset;
-        auto lc0 = Loop("all_to_all_localcopy_loop_0")(src, dst, groupOpSize_.residual);
- 
-        src.addr += groupOpSize_.residual;
-        dst.addr += groupOpSize_.residual;
-        CcuRep::Variable sliceSize = CreateVariable();
-        sliceSize = moConfig.memSlice;
-        auto lc1  = Loop("all_to_all_localcopy_loop_1")(src, dst, sliceSize);
- 
-        CcuRep::Variable loopCfg0 = CreateVariable();
-        loopCfg0 = CcuRep::GetLoopParam(0, 0, 1);
-        CcuRep::Variable loopCfg1 = CreateVariable();
-        loopCfg1 = CcuRep::GetLoopParam(0, 0, 1);
-        CcuRep::Variable offsetCfg = CreateVariable();
-        offsetCfg = CcuRep::GetOffsetParam(moConfig.memSlice, moConfig.msInterleave, 1);
-        LoopGroup({lc0, lc1}, {loopCfg0, loopCfg1}, groupOpSize_.parallelParam, offsetCfg);
-    }
 }
 
 void CcuContextAllToAllMesh1D::Algorithm()
@@ -134,15 +57,6 @@ void CcuContextAllToAllMesh1D::Algorithm()
     srcOffset_   = CreateVariable();
     dstOffset_   = CreateVariable();
     groupOpSize_ = CreateGroupOpSize();
-
-    moConfig.loopCount = 8; // loop展开8次、16次
-    moConfig.msInterleave = LOCAL_COPY_MS; // 一个loop 8个MS
-    moConfig.memSlice = LOCAL_COPY_MS * CCU_MS_SIZE; // 32k
-    if (moRes.executor.size() == 0) {
-        moRes.executor = CreateBlockExecutor(moConfig.loopCount);
-        moRes.maskSignal = CreateBlockMaskSignal(moConfig.loopCount);
-        moRes.ccuBuffer = CreateBlockCcuBuffer(moConfig.loopCount * moConfig.msInterleave);
-    }
 
     // 从SQE load args，本rank需要的input、output地址等信息
     // inputAddr, outputAddr, tokenInfo, srcStride, srcOffset, dstOffset, groupOpSize
@@ -217,7 +131,7 @@ void CcuContextAllToAllMesh1D::Algorithm()
                 transportId++;
             }
         }
-        LocalCopyByLoopGroup(dst[rankId_], src[rankId_]);
+        GroupCopy(dst[rankId_], src[rankId_], groupOpSize_);
         LocalWait(locMask, allBit);
     }
 

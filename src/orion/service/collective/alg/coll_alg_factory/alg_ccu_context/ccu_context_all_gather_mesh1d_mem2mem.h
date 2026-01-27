@@ -28,9 +28,6 @@ public:
     void Algorithm() override;
     std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) override;
 private:
-    void CreateLocalCopyLoop();
-    void LocalCopyByLoopGroup(CcuRep::Memory dst, CcuRep::Memory src);
-
     uint64_t rankSize_{0};
     uint32_t rankId_{0};
     std::vector<CcuRep::Variable> input_;

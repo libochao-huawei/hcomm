@@ -39,9 +39,6 @@ private:
     CcuRep::Variable dstOffset_;
     GroupOpSize groupOpSize_;
     bool loadFromMem_ = false;
-
-    void CreateLocalCopyLoop();
-    void LocalCopyByLoopGroup(CcuRep::Memory dst, CcuRep::Memory src);
 };
 } // namespace Hccl
 
