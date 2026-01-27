@@ -11,7 +11,6 @@
 
 #include "hccl_api.h"
 #include "hcomm_res.h"
-#include "hcomm_res.h"
 #include "hcomm_res_defs.h"
 #include "log.h"
 #include "hcomm_c_adpt.h"
@@ -87,10 +86,8 @@ static HcommEndpointMap g_EndpointMap;
 HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
-    if (it == nullptr) {
-        HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[0x%llx]", __func__, endpointHandle);
-        return HCCL_E_PARA;
-    }
+    CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
+        __func__, endpointHandle), HCCL_E_PARA);
 
     *endpoint = static_cast<void *>(it);
     return HCCL_SUCCESS;
@@ -477,47 +474,6 @@ HcclResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remo
     });
 }
 
-HcclResult HcclChannelGetHcclBufferA5(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
-{
-    (void)comm;
-    CHK_PTR_NULL(buffer);
-    CHK_PTR_NULL(size);
-
-    u32 memNum = 0;  // 接收内存块数量
-    // CHK_RET(HcommChannelGetRemoteMemNum(channel, &memNum));
-    // CHK_PRT_RET(memNum == 0, HCCL_ERROR("%s fail, memNum[%u] is invalid", __func__, memNum), HCCL_E_PARA);
-
-    std::vector<HcommMem *> remoteMemList(10); /* 暂未实现获取buffer Num的接口，此处开一个Size为10的vector暂存 */
-    std::vector<char *> memTags(10);
-    CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data()));
-
-    // *buffer = remoteMemList[0]->addr;
-    // HCCL_INFO("%s buffer[%p] size[%llu]", __func__, *buffer, *size);
-    // HcommMem** converted = reinterpret_cast<HcommMem**>(buffer); // TODO: 临时方案！
-    // bool found = false;
-    for (u32 i = 0; i < memNum; i++) {
-        HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
-        if (strcmp(memTags[i], "HcclBuffer") == 0) {
-            // converted[i]->type = remoteMemList[i]->type;
-            // converted[i]->addr = remoteMemList[i]->addr;
-            // converted[i]->size = remoteMemList[i]->size;
-            *buffer = remoteMemList[i]->addr;
-            *size = remoteMemList[i]->size;
-            HCCL_INFO("[%s] Found Hccl buffer memNum is %u at index %u: addr=%p, size=%llu",
-                __func__,
-                memNum,
-                i,
-                remoteMemList[i]->addr,
-                remoteMemList[i]->size);
-            // found = true;
-            break;  // 找到后立即退出循环
-        }
-    }
-
-    // CHK_PRT_RET(!found, HCCL_ERROR("[%s]tag 'Hccl' not found in %u entries.", __func__, memNum), HCCL_E_NOT_FOUND);
-    return HCCL_SUCCESS;
-}
-
 HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
 {
     CHK_PTR_NULL(threads);
@@ -590,5 +546,24 @@ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
     }
 
     HCCL_INFO("[HcommThreadfree] all threads freed successfully");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadAllocWithStream(CommEngine engine,
+    rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread)
+{
+    CHK_PTR_NULL(thread);
+    hccl::NotifyLoadType notifyLoadType;
+    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
+    std::shared_ptr<hccl::Thread> handle;
+    EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(stream, notifyNum, notifyLoadType), return HCCL_E_PTR);
+    CHK_RET(handle->Init());
+ 
+    // 返回第一个句柄
+    *thread = reinterpret_cast<ThreadHandle>(handle.get());
+    hcomm::g_ThreadMap.emplace(*thread , handle);
+ 
+    HCCL_INFO("[ThreadMgr]  HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
+        "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }

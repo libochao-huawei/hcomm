@@ -51,13 +51,13 @@ extern HcclResult HcommChannelGetNotifyNum(ChannelHandle channel, uint32_t *noti
  
 extern HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
  
-extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **remoteMem, uint32_t *memNum);
+extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **remoteMem, uint32_t *memNum, char **memTags);
  
 extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
 
 extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
- 
- 
+
+extern HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

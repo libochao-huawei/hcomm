@@ -102,7 +102,24 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     CHK_PRT_RET(size == nullptr, HCCL_ERROR("[%s] size is null", __func__), HCCL_E_PTR);
 
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    HCCLV2_FUNC_RUN(HcclGetHcclBufferV2(comm, buffer, size));
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclGetHcclBufferV2(comm, buffer, size));
+                return HCCL_SUCCESS;
+            }
+            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            hccl::CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            CommMems* commMem = myRank->GetCommMems();
+            CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
+            return HCCL_SUCCESS;
+        }());
 #endif
 
     auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
@@ -110,17 +127,9 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
     HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
     HcclResult ret = HCCL_SUCCESS;
     CommBuffer commBuffer;
-    if (hcclComm->IsCommunicatorV2()) {
-        hccl::CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        CommMemMgr* commMemMgr = collComm->GetCommMemMgr();
-        CHK_PTR_NULL(commMemMgr);
-        ret = commMemMgr->GetHcclBuffer(&commBuffer);
-    }
-    else {
-        auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
-        ret = commMemMgr.GetHcclBuffer(&commBuffer);
-    }
+    
+    auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
+    ret = commMemMgr.GetHcclBuffer(&commBuffer);
 
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get local cclBuffer ret[%d]", __func__, ret);

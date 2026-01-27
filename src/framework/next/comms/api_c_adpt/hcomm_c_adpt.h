@@ -45,12 +45,12 @@ HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNu
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
     const std::string &commTag, aclrtBinHandle binHandle);
 
-HcclResult HcclChannelGetHcclBufferA5(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size);
-
 HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
 
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
+HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
+ 
 #ifdef __cplusplus
 }
 #endif // __cplusplus

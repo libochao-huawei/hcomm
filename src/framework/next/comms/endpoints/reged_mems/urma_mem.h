@@ -29,7 +29,7 @@ public:
     using LocalUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::LocalUbRmaBuffer>>;
     using RemoteUbRmaBufferMgr = hccl::RmaBufferMgr<hccl::BufferKey<uintptr_t, u64>, std::shared_ptr<Hccl::RemoteUbRmaBuffer>>;
  
-    UbRegedMemMgr()  = default;
+    UbRegedMemMgr();
     ~UbRegedMemMgr() = default;
  
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;

@@ -361,7 +361,7 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
     u32 rankNum = 0;
     CHK_RET(HcclGetRankSizeV2(*commV2, &rankNum));
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    // CHK_RET(HcclGetCommNameV2(*commV2, commName));
+    CHK_RET(HcclGetCommNameV2(*commV2, commName));
     CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
     //获取cclbuffer
     uintptr_t cclBufferAddr{0};

@@ -13,8 +13,11 @@
 #include "orion_adpt_utils.h"
 #include "host_socket_handle_manager.h"
 #include "exception_handler.h"
+#include "adapter_rts.h"
 
 namespace hcomm {
+
+constexpr uint32_t TempServerListenPort = 60001;    // 临时固定监听端口，用于功能验证
 
 HcclResult SocketMgr::Init()
 {
@@ -22,9 +25,10 @@ HcclResult SocketMgr::Init()
         return HCCL_SUCCESS;
     }
     isLoaded_ = true;
-    int32_t devLogicId = Hccl::HrtGetDevice();
-    devicePhyId_ = Hccl::HrtGetDevicePhyIdByIndex(devLogicId);
-    serverListenPort_ = 60001;
+    s32 devLogicId;
+    CHK_RET(hrtGetDevice(&devLogicId));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(devLogicId), devicePhyId_));
+    serverListenPort_ = TempServerListenPort;
     return HCCL_SUCCESS;
 }
 
@@ -131,21 +135,28 @@ HcclResult SocketMgr::CreateSocket(const Hccl::SocketConfig &socketConfig, const
 HcclResult SocketMgr::GetSocket(const Hccl::SocketConfig &socketConfig, Hccl::Socket*& socket)
 {
     CHK_RET(Init());
-    auto res = socketMap_.find(socketConfig);
-    if (res == socketMap_.end()) {
-        Hccl::SocketHandle socketHandle;
-        CHK_RET(GetSocketHandle(socketConfig, socketHandle));
-        CHK_RET(AddWhiteList(socketConfig, socketHandle));
-        CHK_RET(CreateSocket(socketConfig, socketHandle));
-        res = socketMap_.find(socketConfig);
+    // 1. 先查找
+    auto it = socketMap_.find(socketConfig);
+    if (it != socketMap_.end()) {
+        socket = it->second.get();
+        return HCCL_SUCCESS;
     }
 
-    if (res == socketMap_.end()) {
-        HCCL_ERROR("[SocketMgr][%s] Invalid SocketConfig");
-        return HCCL_E_NOT_FOUND;
+    // 2. 不存在则创建
+    Hccl::SocketHandle socketHandle;
+    CHK_RET(GetSocketHandle(socketConfig, socketHandle));
+    CHK_RET(AddWhiteList(socketConfig, socketHandle));
+    CHK_RET(CreateSocket(socketConfig, socketHandle));
+ 
+    // 3. 再次查找
+    it = socketMap_.find(socketConfig);
+    if (it == socketMap_.end()) {
+        HCCL_ERROR("[SocketMgr][%s] CreateSocket succeeded but socket not found",
+                   __func__);
+        return HCCL_E_INTERNAL;
     }
-
-    socket = res->second.get();
+ 
+    socket = it->second.get();
     return HCCL_SUCCESS;
 }
 

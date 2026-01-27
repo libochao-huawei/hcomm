@@ -35,6 +35,8 @@ public:
     // 创建通信Channel
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
+    
+    HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
 
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,

@@ -61,6 +61,7 @@ HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannel
             case COMM_PROTOCOL_HCCS:
             case COMM_PROTOCOL_PCIE:
             case COMM_PROTOCOL_SIO:
+            case COMM_PROTOCOL_UBC_CTP:
                 break;
             case COMM_PROTOCOL_ROCE:
                 channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;

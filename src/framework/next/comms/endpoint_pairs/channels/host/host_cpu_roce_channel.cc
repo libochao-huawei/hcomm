@@ -386,6 +386,7 @@ HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNu
         return HCCL_SUCCESS;
     }
 
+    // 释放之前的内存
     auto remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
     CHK_PTR_NULL(remoteMemsPtr_);
 
