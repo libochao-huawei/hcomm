@@ -146,7 +146,7 @@ struct Rt91095StarsSqeHeader {
     uint8_t  rttMode : 1;
     uint8_t  headUpdate : 1;
     uint8_t  reserved : 1;
-    uint16_t blockDim;
+    uint16_t numBlocks;
 
     /* word1 */
     uint16_t rtStreamId;

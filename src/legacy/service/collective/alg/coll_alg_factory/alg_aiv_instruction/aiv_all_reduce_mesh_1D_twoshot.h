@@ -45,8 +45,8 @@ __aicore__ inline void InitCoreInfo(uint32_t stepTag)
     curTag             = static_cast<int32_t>(stepTag);
     uint64_t dataCount = len_; 
     // aiv core 划分
-    // 1D rankSize_ <=16； coreNumPerRank*(ranksize_+1)一定比blockdim_小，否则就需要一个aicore处理多个rank的数据
-    coreNumPerRank    = blockdim_ / (rankSize_ + 1);      
+    // 1D rankSize_ <=16； coreNumPerRank*(ranksize_+1)一定比numBlocks_小，否则就需要一个aicore处理多个rank的数据
+    coreNumPerRank    = numBlocks_ / (rankSize_ + 1);      
     coreNumFirstStage = coreNumPerRank * rankSize_;       
     coreNumTotal      = coreNumPerRank * (rankSize_ + 1); 
 
@@ -158,8 +158,8 @@ __aicore__ inline void SmallCoreReduceScatter(uint32_t stepTag)
     curTag                 = static_cast<int32_t>(stepTag);
 
     // scatter
-    for (uint32_t i = 0; block_idx + i * blockdim_ < rankSize_; i++) {
-        targetRank = block_idx + i * blockdim_;
+    for (uint32_t i = 0; block_idx + i * numBlocks_ < rankSize_; i++) {
+        targetRank = block_idx + i * numBlocks_;
         rankChunkSize
             = ((targetRank + 1) * rankChunkStride <= dataCount)
                   ? rankChunkStride
@@ -175,7 +175,7 @@ __aicore__ inline void SmallCoreReduceScatter(uint32_t stepTag)
         Record(targetRank, rank_, curTag);
     }
     // reduce
-    if (block_idx == blockdim_ - 1) {
+    if (block_idx == numBlocks_ - 1) {
         uint64_t myRankChuckSize
             = ((rank_ + 1) * rankChunkStride <= dataCount)
                   ? rankChunkStride
@@ -204,8 +204,8 @@ __aicore__ inline void SmallCoreReduceScatter(uint32_t stepTag)
 __aicore__ inline void SmallCoreAllgather()
 {
     uint64_t dataCount = len_;
-    for (uint32_t i = 0; block_idx + i * blockdim_ < rankSize_; i++) {
-        targetRank = block_idx + i * blockdim_;
+    for (uint32_t i = 0; block_idx + i * numBlocks_ < rankSize_; i++) {
+        targetRank = block_idx + i * numBlocks_;
         rankChunkSize
             = ((targetRank + 1) * rankChunkStride <= dataCount)
                   ? rankChunkStride

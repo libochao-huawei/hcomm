@@ -668,7 +668,7 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
     return ACL_SUCCESS;
 }
  
-aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream,
                                        aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
                                        aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {

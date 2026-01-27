@@ -81,7 +81,7 @@ public:
     __aicore__ inline void Process(uint64_t len, uint32_t tag, ExtraArgs &extraArgs)
     {
         // 先看一个或者多个核处理一张卡数据的情况
-        coreNumPerRank = blockdim_ / rankSize_;
+        coreNumPerRank = numBlocks_ / rankSize_;
         if (coreNumPerRank < 1) { // 控核情况暂不处理
             return;
         }
