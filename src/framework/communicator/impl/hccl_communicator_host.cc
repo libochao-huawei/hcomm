@@ -3985,6 +3985,7 @@ namespace hccl
         //cache目前仅支持executor的kernel为1的情况
         cacheInfo.resourceArgs.buffersIn = cacheInfo.buffersIn;
         cacheInfo.resourceArgs.buffersOut = cacheInfo.buffersOut;
+        cacheInfo.resourceArgs.stream = opParam.stream.ptr(); // 刷新cache下发的stream
         cacheInfo.opArgs.input = opParam.inputPtr;
         cacheInfo.opArgs.output = opParam.outputPtr;
         AlgType& algType = cacheInfo.algType;
@@ -3994,9 +3995,9 @@ namespace hccl
         //更新aivtag
         GetAivTag(1, opParam.isCapture, cacheInfo.resourceArgs.aivTag);
         HCCL_INFO("[HcclCommunicator][ExecOpCache]buffersIn[%p] buffersOut[%p] tag[%s] opType[%d] "
-            "deterministic [%u] count[%llu] op[%d] userRank[%u] aiv tag [%d]",
+            "deterministic [%u] count[%llu] op[%d] userRank[%u] aiv tag [%d] stream [%d]",
             cacheInfo.buffersIn, cacheInfo.buffersOut, identifier_.c_str(), opType, opParam.deterministic,
-            cacheInfo.opArgs.count, cacheInfo.opArgs.op, userRank_, cacheInfo.resourceArgs.aivTag);
+            cacheInfo.opArgs.count, cacheInfo.opArgs.op, userRank_, cacheInfo.resourceArgs.aivTag, opParam.stream.id());
         CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
         //保留dfx
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg));
