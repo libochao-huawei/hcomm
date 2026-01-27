@@ -31,7 +31,6 @@ void EnvConfig::Parse()
     algoCfg.Parse();
     logCfg.Parse();
     detourCfg.Parse();
-    topoFilePathCfg.Parse();
 }
 
 const EnvHostNicConfig &EnvConfig::GetHostNicConfig()
@@ -67,11 +66,6 @@ const EnvLogConfig &EnvConfig::GetLogConfig()
 const EnvDetourConfig &EnvConfig::GetDetourConfig()
 {
     return detourCfg;
-}
-
-const EnvTopoFilePathConfig &EnvConfig::GetTopoFilePathConfig()
-{
-    return topoFilePathCfg;
 }
 
 } // namespace Hccl

@@ -190,14 +190,4 @@ HcclDetourType EnvDetourConfig::GetDetourType() const
     return detourType.Get();
 }
 
-void EnvTopoFilePathConfig::Parse()
-{
-    topoFilePath.Parse();
-}
- 
-std::string EnvTopoFilePathConfig::GetTopoFilePath() const
-{
-    return topoFilePath.Get();
-}
-
 } // namespace Hccl

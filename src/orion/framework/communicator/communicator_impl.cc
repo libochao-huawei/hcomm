@@ -55,6 +55,7 @@
 #include "comm_topo_desc.h"
 #include "hostdpu/flush_manager.h"
 #include "hostdpu/dpu_kernel_entrance.h"
+#include "json_parser.h"
 
 namespace Hccl {
 constexpr u64 HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE = (1 * 1024 * 1024); // 指定bufferSize的单位为MB
@@ -1126,9 +1127,31 @@ void CommunicatorImpl::InitRankGraph(const string &ranktableM)
     InitRankGraph(rankTableInfo);
 }
 
+std::string CommunicatorImpl::GetTopoFilePath()
+{
+    HCCL_INFO("[CommunicatorImpl::%s] start.", __func__);
+
+    std::string filePath = "/etc/hccl_rootinfo.json";
+    JsonParser jsonParser{};
+    nlohmann::json parseJson{};
+    jsonParser.ParseFileToJson(filePath, parseJson);
+
+    // parser topo_file_path
+    std::string topoFilePath{};
+    std::string msgRankTopoFile = "error occurs when parser object of propName \"topo_file_path\"";
+    TRY_CATCH_THROW(InvalidParamsException, msgRankTopoFile, topoFilePath = GetJsonProperty(parseJson, "topo_file_path"););
+    
+    // check topo_file_path
+    char resolvedPath[PATH_MAX] = {0};
+    CHK_PRT_THROW(realpath(topoFilePath.c_str(), resolvedPath) == nullptr,
+            HCCL_ERROR("[%s] topo_file_path[%s] is not a valid real path", __func__, topoFilePath.c_str()),
+            InvalidParamsException, "topo_file_path error");
+    return topoFilePath;
+}
+
 void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
 {
-    string topoPath = EnvConfig::GetInstance().GetTopoFilePathConfig().GetTopoFilePath();
+    string topoPath = GetTopoFilePath();
     RankGraphBuilder rankGraphBuilder;
     rankGraph = rankGraphBuilder.Build(ranktable, topoPath, myRank);
     ranktableInfo = rankGraphBuilder.GetRankTableInfo(); // 获取ranktable信息
