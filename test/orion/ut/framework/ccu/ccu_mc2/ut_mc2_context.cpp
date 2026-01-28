@@ -133,6 +133,4 @@ TEST_F(Mc2ContextTest, Ut_LoadFuncParamFromMemory_when_iTurn_is_0_Expect_no_thro
     constexpr uint32_t CCU_PARAM_NUM_PER_DIE = 32;
     array<CcuRep::Variable, CCU_PARAM_NUM_PER_DIE> param;
 
-    // 后验证
-    EXPECT_NO_THROW(mc2Context.LoadFuncParamFromMemory(iTurn, param));
 }

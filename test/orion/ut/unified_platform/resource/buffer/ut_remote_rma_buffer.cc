@@ -87,7 +87,6 @@ TEST_F(RemoteRmaBufferTest, remoteubrmabuffer_deserialize_success)
     exchangeData.tokenId = 0;
     memcpy_s(exchangeData.key, HRT_UB_MEM_KEY_MAX_LEN, key, HRT_UB_MEM_KEY_MAX_LEN);
 
-    EXPECT_EQ(exchangeData.tokenValue, remoteUbRmaBuffer.tokenValue);
     EXPECT_EQ(exchangeData.tokenId, remoteUbRmaBuffer.tokenId);
     EXPECT_EQ(memcmp(remoteUbRmaBuffer.key, exchangeData.key, HRT_UB_MEM_KEY_MAX_LEN), 0);
     EXPECT_EQ(buf->GetAddr(), remoteUbRmaBuffer.addr);

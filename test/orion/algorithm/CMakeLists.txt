@@ -347,6 +347,40 @@ target_link_libraries(orion_alg_ccu_1d_testcase PRIVATE
 
 add_dependencies(orion_alg_ccu_1d_testcase hccl_alg_analyzer hccl_orion_alg_test hccl_alg_adaption_v2)
 
+add_executable(orion_alg_ccu_1d_hf16p_testcase ${test_case_list})
+add_subdirectory(ccu_1d_hf16p_testcase)
+
+#头文件搜索路径
+target_include_directories(orion_alg_ccu_1d_hf16p_testcase PRIVATE
+    ${include_list}
+)
+
+target_compile_definitions(orion_alg_ccu_1d_hf16p_testcase PRIVATE
+    google=ascend_private
+    -DOPEN_HCCL_TEST
+    -DCCL_KERNEL_AICPU
+    -DHCCL_ALG_ANALYZER_DAVID
+)
+
+target_compile_options(orion_alg_ccu_1d_hf16p_testcase PRIVATE
+    -U_FORTIFY_SOURCE
+    -g
+    -O0
+)
+
+target_link_libraries(orion_alg_ccu_1d_hf16p_testcase PRIVATE
+    hccl_alg_analyzer
+    hccl_orion_alg_test
+    hccl_alg_adaption_v2
+    $<BUILD_INTERFACE:intf_llt_pub>
+    ascend_protobuf
+    c_sec_static
+    -lrt
+    -ldl
+)
+
+add_dependencies(orion_alg_ccu_1d_hf16p_testcase hccl_alg_analyzer hccl_orion_alg_test hccl_alg_adaption_v2)
+
 add_executable(orion_alg_ccu_2d_testcase ${test_case_list})
 add_subdirectory(ccu_2d_testcase)
 

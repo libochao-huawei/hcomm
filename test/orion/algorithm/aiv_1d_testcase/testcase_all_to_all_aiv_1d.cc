@@ -118,7 +118,7 @@ TEST_F(AivAlltoAllMesh1D, AivAlltoAllMesh1d_one_six_4G_offload)
     RunAivAlltoAllMesh1DTest(1, 1, 6, CheckerOpMode::OFFLOAD, 100, CheckerDataType::DATA_TYPE_INT32, 1024*1024*200);
 }
 
-TEST_F(AivAlltoAllMesh1D, AivAlltoAllMesh1d_calculate_blockdim)
+TEST_F(AivAlltoAllMesh1D, AivAlltoAllMesh1d_calculate_numblocks)
 {
     RankId myRank = 0;
     u32 rankSize = 4;
@@ -128,34 +128,34 @@ TEST_F(AivAlltoAllMesh1D, AivAlltoAllMesh1d_calculate_blockdim)
     executor->SetRankSize(rankSize);
     auto temp = std::make_shared<AivTempAlltoAllMesh1D>(myRank, rankSize, tempVTopo, tempVirtRankMap);
 
-    u32 blockDim = 0;
+    u32 numBlocks = 0;
     HcclResult ret = HcclResult::HCCL_SUCCESS;
 
-    ret = executor->CalBlockDim(blockDim, 1000, 1);
+    ret = executor->CalNumBlocks(numBlocks, 1000, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 1);
-    ret = temp->CalBlockDim(blockDim, 1000, 1);
+    EXPECT_EQ(numBlocks, 1);
+    ret = temp->CalNumBlocks(numBlocks, 1000, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 1);
+    EXPECT_EQ(numBlocks, 1);
 
-    ret = executor->CalBlockDim(blockDim, 1000, 3);
+    ret = executor->CalNumBlocks(numBlocks, 1000, 3);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 2);
-    ret = temp->CalBlockDim(blockDim, 1000, 3);
+    EXPECT_EQ(numBlocks, 2);
+    ret = temp->CalNumBlocks(numBlocks, 1000, 3);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 2);
+    EXPECT_EQ(numBlocks, 2);
 
-    ret = executor->CalBlockDim(blockDim, 1000, 11);
+    ret = executor->CalNumBlocks(numBlocks, 1000, 11);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 8);
-    ret = temp->CalBlockDim(blockDim, 1000, 11);
+    EXPECT_EQ(numBlocks, 8);
+    ret = temp->CalNumBlocks(numBlocks, 1000, 11);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 8);
+    EXPECT_EQ(numBlocks, 8);
 
-    ret = executor->CalBlockDim(blockDim, 1000, 48);
+    ret = executor->CalNumBlocks(numBlocks, 1000, 48);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 48);
-    ret = temp->CalBlockDim(blockDim, 1000, 48);
+    EXPECT_EQ(numBlocks, 48);
+    ret = temp->CalNumBlocks(numBlocks, 1000, 48);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(blockDim, 48);
+    EXPECT_EQ(numBlocks, 48);
 }

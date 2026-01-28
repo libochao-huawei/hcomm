@@ -66,7 +66,7 @@ protected:
 
 TEST_F(RankGraphBuilderTest, Ut_Build_When_Normal_Expect_Success)
 {
-    PhyTopo::GetInstance()->Clear();;
+    PhyTopo::GetInstance()->Clear();
     RankGraphBuilder rankGraphBuilder;
     std::unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RankTable2p, "topo.json", 0);
     EXPECT_NE(nullptr, rankGraph);
@@ -95,7 +95,7 @@ TEST_F(RankGraphBuilderTest, Ut_BuildRankGraph_When_Normal_Expect_Success)
 
 TEST_F(RankGraphBuilderTest, Ut_Build_When_1pRankTable_Expect_Success)
 {
-    PhyTopo::GetInstance()->Clear();;
+    PhyTopo::GetInstance()->Clear();
     RankGraphBuilder rankGraphBuilder;
     std::string topoPath{HCOMM_CODE_ROOT_DIR "/test/orion/ut/framework/topo/new_topo_builder/rank_graph_builder/1ptopo.json"};
     std::unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RankTable1p, topoPath, 0);
@@ -111,7 +111,7 @@ TEST_F(RankGraphBuilderTest, Ut_Build_When_1pRankTable_Expect_Success)
 
 TEST_F(RankGraphBuilderTest, Ut_Build_When_OnePTopoFileWithoutEdge_Expect_Success)
 {
-    PhyTopo::GetInstance()->Clear();;
+    PhyTopo::GetInstance()->Clear();
     RankGraphBuilder rankGraphBuilder;
     std::string topoPath{HCOMM_CODE_ROOT_DIR "/test/orion/ut/framework/topo/new_topo_builder/rank_graph_builder/1ptopo_without_edge.json"};
     std::unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RankTable1p, topoPath, 0);
@@ -139,7 +139,7 @@ TEST_F(RankGraphBuilderTest, Ut_BuildFromRankTable_When_NetLayerInconsistent_Exp
 
 TEST_F(RankGraphBuilderTest, ut_Build_When_4pRankTable_Expect_Success)
 {
-    PhyTopo::GetInstance()->Clear();;
+    PhyTopo::GetInstance()->Clear();
     RankGraphBuilder rankGraphBuilder;
     std::unique_ptr<RankGraph> rankGraph = rankGraphBuilder.Build(RankTable_4p, "topo.json", 0);
     EXPECT_NE(nullptr, rankGraph);
@@ -187,7 +187,7 @@ TEST_F(RankGraphBuilderTest, ut_Build_When_4pRankTable_Expect_Success)
     EXPECT_EQ(1, pathsLayer1.size());
     EXPECT_EQ(2, pathsLayer1[0].links.size());
 }
-#if 0 // V2 LLT FAILED
+
 TEST_F(RankGraphBuilderTest, Init_error)
 {
     CommunicatorImpl comm;
@@ -195,12 +195,11 @@ TEST_F(RankGraphBuilderTest, Init_error)
     CommParams commParams;
     std::unique_ptr<RankGraph> virtualTopo = std::make_unique<RankGraph>(0);
     HcclCommConfig subConfig;
-    // MOCKER(memset_s).stubs().with(any()).will(returnValue(0));
     DevId inputDevLogicId = 0;
     auto ret = comm.Init(commParams, virtualTopo, subConfig, inputDevLogicId);
     EXPECT_EQ(HCCL_E_INTERNAL, ret);
 }
-#endif
+
 TEST_F(RankGraphBuilderTest, CreateSubFabGroups_error)
 {
     CommunicatorImpl comm;

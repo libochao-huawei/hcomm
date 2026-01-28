@@ -172,7 +172,7 @@ TEST_F(AicpuInsPreprocessorTest, test_AllocAlltoallVOpMem)
     shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
     shared_ptr<NetInstance::ConnInterface> connInterface =
         std::make_shared<NetInstance::ConnInterface>(inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-    peer0->AddConnInterface(connInterface);
+    peer0->AddConnInterface(0, connInterface);
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
 

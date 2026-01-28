@@ -22,16 +22,16 @@ target_sources(hccl_v2_utest
         ut_one_sided_component_lite.cpp
         ut_op_params_checker.cc
         ut_ins_executor.cc
-        # ut_aicpu_mc2_handler.cc
-        # ut_hccl_mc2_ex.cc
+        ut_aicpu_mc2_handler.cc
+        ut_hccl_mc2_ex.cc
         
         ${HCCL_V2_CODE_ROOT}/framework/fault_recovery/snap_shot_parse.cc
         ${HCCL_V2_CODE_ROOT}/common/checkcrc.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/one_sided_component/one_sided_component_lite.cpp
         ${HCCL_V2_CODE_ROOT}/framework/entrance/hcom_comm/communicator_callback.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/ccu_super_fast_load.cc
-        # ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_mc2_handler.cc
-        # ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/hccl_mc2_ex.cc
+        ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_mc2_handler.cc
+        ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/hccl_mc2_ex.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/flush_manager.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/flush_handle.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/hostdpu/dpu_kernel_entrance.cc

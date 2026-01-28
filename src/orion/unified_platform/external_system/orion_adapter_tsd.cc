@@ -10,7 +10,7 @@
 
 #include "orion_adapter_tsd.h"
 #include "log.h"
-#include "rts/rts_device.h"
+#include "runtime/rts/rts_device.h"
 
 namespace Hccl {
 

@@ -513,9 +513,9 @@ TEST_F(TaskExceptionHandlerTest, test_get_rank_id_by_channel_id)
     delete communicator.collService;
 }
 
-TEST_F(TaskExceptionHandlerTest, ut_get_ccu_collservice_before_init_Expect_ThrowNullPtrException)
+TEST_F(TaskExceptionHandlerTest, ut_get_ccu_collservice_before_init_Expect_Throw_NullptrException)
 {
-    shard_ptr<TaskInfo> taskInfo = InitTaskInfo();
+    shared_ptr<TaskInfo> taskInfo = InitTaskInfo();
     taskInfo->taskParam_.taskType = TaskParamType::TASK_CCU;
     taskInfo->dfxOpInfo_ = make_shared<DfxOpInfo>();
     CommunicatorImpl communicator{};

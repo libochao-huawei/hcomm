@@ -138,10 +138,10 @@ TEST_F(AivAllGatherMesh1D, AllGather_excutor_template_test)
     std::map<RankId, u32>{{0, 0}, {1, 1}, {2, 2}, {3, 3}}
     );
     std::shared_ptr<AivAlgTemplateBase> tempAiv = tempBroadcast;
-    u32 blockDim = 0;
-    executor.CalBlockDim(blockDim, 1000, 56);
-    collAlgBase->CalBlockDim(blockDim, 1000, 56);
-    tempAiv->CalBlockDim(blockDim, 1000, 56);
+    u32 numBlocks = 0;
+    executor.CalNumBlocks(numBlocks, 1000, 56);
+    collAlgBase->CalNumBlocks(numBlocks, 1000, 56);
+    tempAiv->CalNumBlocks(numBlocks, 1000, 56);
 
     VirtualTopoStub virtTopo(0);
     string rankTable = "test";
@@ -150,7 +150,7 @@ TEST_F(AivAllGatherMesh1D, AllGather_excutor_template_test)
     CollAlgComponent collAlgComponent(rankGraphPtr, DevType::DEV_TYPE_910_95, u32(0), u32(4));
     u64 dataSize = 1000;
     std::string algName = "AivAllGatherMesh1D";
-    collAlgComponent.CalBlockDim(blockDim, dataSize, OpType::ALLGATHER, algName, 56);
+    collAlgComponent.CalNumBlocks(numBlocks, dataSize, OpType::ALLGATHER, algName, 56);
     std::shared_ptr<InsTempAllGatherMesh1D> tempAllGather = std::make_shared<InsTempAllGatherMesh1D>(
     0, 
     4, 
@@ -158,7 +158,7 @@ TEST_F(AivAllGatherMesh1D, AllGather_excutor_template_test)
     std::map<RankId, u32>{{0, 0}, {1, 1}, {2, 2}, {3, 3}}
     );
     std::shared_ptr<InsAlgTemplateBase> tempIns = tempAllGather;
-    tempIns->CalBlockDim(blockDim, 1000, 56);
+    tempIns->CalNumBlocks(numBlocks, 1000, 56);
 
     std::shared_ptr<CcuTempAllGatherMesh1D> tempAllGatherCcu = std::make_shared<CcuTempAllGatherMesh1D>(
     0, 
@@ -167,5 +167,5 @@ TEST_F(AivAllGatherMesh1D, AllGather_excutor_template_test)
     std::map<RankId, u32>{{0, 0}, {1, 1}, {2, 2}, {3, 3}}
     );
     std::shared_ptr<CcuAlgTemplateBase> tempCcu = tempAllGatherCcu;
-    tempCcu->CalBlockDim(blockDim, 1000, 56);
+    tempCcu->CalNumBlocks(numBlocks, 1000, 56);
 }

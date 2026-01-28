@@ -10,12 +10,6 @@
 
 #include "ascend_hal.h"
 
-drvError_t halCqReportRecv(uint32_t devId, struct halReportRecvInfo *info)
-{
-    info->report_cqe_num = 0U;
-    return drvError_t(0);
-}
-
 drvError_t halResourceIdCheck(struct drvResIdKey *info)
 {
     return drvError_t::DRV_ERROR_NONE;

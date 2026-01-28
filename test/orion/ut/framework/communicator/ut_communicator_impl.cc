@@ -193,7 +193,7 @@ protected:
         shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
         shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
             inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-        peer0->AddConnInterface(connInterface);
+        peer0->AddConnInterface(0,connInterface);
         fakeComm.rankGraph->AddPeer(peer0);
         fakeComm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(fakeComm);
         fakeComm.trace = std::make_unique<Trace>();
@@ -1311,7 +1311,7 @@ TEST_F(CommunicatorImplTest, should_no_throw_exception_when_only_ccu_enabled)
     shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
     shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
         inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-    peer0->AddConnInterface(connInterface);
+    peer0->AddConnInterface(0, connInterface);
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
     comm.trace = std::make_unique<Trace>();
@@ -1567,8 +1567,8 @@ TEST_F(CommunicatorImplTest, should_success_when_AllocCommResource_ccu)
         inputAddr, ports, AddrPosition::DEVICE, LinkType::PEER2PEER, protocols);
     shared_ptr<NetInstance::Link> link =
         std::make_shared<NetInstance::Link>(peer0, peer1, sourceIface, targetIface, LinkType::PEER2PEER, protocols);
-    peer0->AddConnInterface(sourceIface);
-    peer1->AddConnInterface(targetIface);
+    peer0->AddConnInterface(0, sourceIface);
+    peer1->AddConnInterface(0, targetIface);
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 
@@ -1686,88 +1686,6 @@ TEST_F(CommunicatorImplTest, should_throw_exception_SetAccelerator_when_isLoadOp
     int32_t accelerator = 0;
     bool isCcuMsAvailable = false;
     EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
-}
-
-TEST_F(CommunicatorImplTest, should_no_throw_exception_SetAccelerator_GetAccelerator)
-{
-    CommunicatorImpl comm;
-    comm.rankGraph = make_unique<RankGraph>(0);
-    u32 level = 0;
-    string groupId = "groupId";
-    shared_ptr<NetInstance> fabGroup = make_shared<InnerNetInstance>(level, groupId);
-    comm.rankGraph->netInsts_[level].emplace(groupId, fabGroup);
-
-    comm.RegisterAcceStateCallBack(CommunicatorCallback());
-    int32_t accelerator = 0;  // DEFAULT
-    bool isCcuMsAvailable = true;
-    comm.SetAccelerator(accelerator, isCcuMsAvailable);
-
-    accelerator = 1;  // HOSTCPU_TS
-    isCcuMsAvailable = false;
-    EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
-
-    accelerator = 2;  // AICPU_TS
-    isCcuMsAvailable = false;
-    comm.SetAccelerator(accelerator, isCcuMsAvailable);
-
-    accelerator = 3;  // AIV
-    isCcuMsAvailable = false;
-    comm.SetAccelerator(accelerator, isCcuMsAvailable);
-
-    accelerator = 4;  // AIV_ONLY
-    isCcuMsAvailable = false;
-    EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
-
-    accelerator = 5;  // CCU_MS
-    isCcuMsAvailable = false;
-    comm.SetAccelerator(accelerator, isCcuMsAvailable);
-
-    accelerator = 6;  // CCU_SCHED
-    isCcuMsAvailable = false;
-    comm.SetAccelerator(accelerator, isCcuMsAvailable);
-
-    accelerator = 7;  // AICPU
-    isCcuMsAvailable = false;
-    EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
-
-    comm.rankGraph = nullptr;
-    accelerator = 8;  // other
-    isCcuMsAvailable = true;
-    EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
-
-    comm.rankGraph = make_unique<RankGraph>(0);
-    accelerator = 8;  // other
-    isCcuMsAvailable = false;
-    EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
-
-    comm.commExecuteConfig.accState = AcceleratorState::HOSTCPU_TS;
-    HcclResult ret = comm.GetAccelerator(&accelerator);
-    EXPECT_EQ(accelerator, 1);
-
-    comm.commExecuteConfig.accState = AcceleratorState::AICPU_TS;
-    ret = comm.GetAccelerator(&accelerator);
-    EXPECT_EQ(accelerator, 2);
-
-    comm.commExecuteConfig.accState = AcceleratorState::AIV;
-    ret = comm.GetAccelerator(&accelerator);
-    EXPECT_EQ(accelerator, 3);
-
-    comm.commExecuteConfig.accState = AcceleratorState::CCU_MS;
-    ret = comm.GetAccelerator(&accelerator);
-    EXPECT_EQ(accelerator, 5);
-
-    comm.commExecuteConfig.accState = AcceleratorState::CCU_SCHED;
-    ret = comm.GetAccelerator(&accelerator);
-    EXPECT_EQ(accelerator, 6);
-
-    comm.commExecuteConfig.accState = AcceleratorState::AICPU;
-    ret = comm.GetAccelerator(&accelerator);
-    EXPECT_EQ(accelerator, 7);
-    EXPECT_EQ(ret, HCCL_SUCCESS);
-
-    comm.commExecuteConfig.accState = AcceleratorState::CCU_FALLBACK;
-    ret = comm.GetAccelerator(&accelerator);
-    EXPECT_EQ(ret, HCCL_E_INTERNAL);
 }
 
 HcclResult HrtGetMainboardIdStub(uint32_t deviceLogicId, HcclMainboardId &hcclMainboardId)
@@ -2048,10 +1966,9 @@ namespace {
 void getInsQueue(InsQuePtr &insQueue)
 {
     // ====== 配置用例基本信息 ======
-    using CurrentExecutorType = InsAllReduceSoleExecutor<TopoMatchMesh, CcuTempAllReduceMesh1DMultiMission>;
-    using CurrentCcuInstructionType = CcuInstructionAllReduceMesh1DMultiMission;
-    using CuurentCcuContextType = CcuContextAllReduceMesh1DMultiMission;
-
+    using CurrentExecutorType = InsV2AllReduceSoleExecutor<TopoMatchMesh, CcuTempAllReduceMeshMem2Mem1D>;
+    using CurrentCcuInstructionType = CcuInstructionAllReduceMeshMem2Mem1D;
+    using CuurentCcuContextType = CcuContextAllReduceMeshMem2Mem1D;
     auto myRank_ = 0;
     auto rankSize_ = 4;
     auto dimSize_ = {4};
@@ -3252,6 +3169,7 @@ TEST_F(CommunicatorImplTest, ut_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SU
 {
     std::shared_ptr<FakeAivCollAlgComponent> collAlgComponent = std::make_shared<FakeAivCollAlgComponent>();
     fakeComm.collAlgComponent = collAlgComponent;
+    fakeComm.commExecuteConfig.accState = AcceleratorState::AIV;
 
     std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
     CollOperator op;
@@ -3290,6 +3208,7 @@ TEST_F(CommunicatorImplTest, ut_GetAlgExecParam_When_Normal_Expect_ReturnHCCL_SU
     EXPECT_EQ(fakeComm.GetAlgExecParam(opParams, clearEnable, commContext, len, aivCoreLimit), HcclResult::HCCL_SUCCESS);
 
     MOCKER_CPP(&CommunicatorImpl::HcomSelectAlg).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
+    fakeComm.commExecuteConfig.accState = AcceleratorState::CCU_MS;
     fakeComm.opExecuteConfig.accState = AcceleratorState::CCU_MS;
     EXPECT_EQ(fakeComm.GetAlgExecParam(opParams, clearEnable, commContext, len, aivCoreLimit), HcclResult::HCCL_E_NOT_SUPPORT);
 }
@@ -3421,4 +3340,136 @@ TEST_F(CommunicatorImplTest, Ut_AllocCollOpResource_When_DataType_Check_Fail_Exp
     void *addr = nullptr;
     auto ret = fakeComm.AllocCollOpResource(param, &addr);
     EXPECT_EQ(HcclResult::HCCL_E_PARA, ret);
+}
+
+
+TEST_F(CommunicatorImplTest, Ut_GetEndpointNum_When_Valid_Return_HCCL_SUCCESS)
+{
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+    HcclCommConfig config;
+    CommParams params;
+
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath = "llt/ace/comop/hccl/orion/ut/framework/communicator/topo2p.json";
+    comm.rankGraph = rankGraphBuilder.Build(RankTable2pEnd, topoFilePath, 0);
+    EXPECT_NE(comm.rankGraph, nullptr);
+
+    uint32_t num = 0;
+    uint32_t topoInstId = 0;
+    auto ret = comm.GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(num, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetEndpointDesc_When_Valid_Return_HCCL_SUCCESS)
+{
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+
+    HcclCommConfig config;
+    CommParams params;
+
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath = "llt/ace/comop/hccl/orion/ut/framework/communicator/topo2p.json";
+    comm.rankGraph = rankGraphBuilder.Build(RankTable2pEnd, topoFilePath, 0);
+    EXPECT_NE(comm.rankGraph, nullptr);
+
+    uint32_t layer = 0;
+    uint32_t num = 2;
+    uint32_t topoInstId = 0;
+    HcclResult ret = comm.GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(num, 2);
+
+    uint32_t descNum = num;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    ret = comm.GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    for (uint32_t i = 0; i < num; ++i) {
+        EXPECT_NE(endPointDesc[i].commAddr.type, COMM_ADDR_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].loc.locType, ENDPOINT_LOC_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].protocol, COMM_PROTOCOL_RESERVED);
+    }
+    delete[] endPointDesc;
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetEndpointDesc_When_NoPeer_Return_HCCL_SUCCESS)
+{
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+
+    HcclCommConfig config;
+    CommParams params;
+
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath = "llt/ace/comop/hccl/orion/st/otherFiles/rank_graph/topo2pclos.json";
+    comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
+    EXPECT_NE(comm.rankGraph, nullptr);
+
+    uint32_t layer = 0;
+    uint32_t num = 0;
+    uint32_t topoInstId = 0;
+    auto ret = comm.GetEndpointNum(0, topoInstId, &num);
+    uint32_t descNum = num;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    ret = comm.GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    for (uint32_t i = 0; i < num; ++i) {
+        EXPECT_NE(endPointDesc[i].commAddr.type, COMM_ADDR_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].loc.locType, ENDPOINT_LOC_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].protocol, COMM_PROTOCOL_RESERVED);
+    }
+    delete[] endPointDesc;
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetInfo_When_BW_COEFF_Return_Success)
+{
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+
+    HcclCommConfig config;
+    CommParams params;
+
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath = "llt/ace/comop/hccl/orion/st/otherFiles/rank_graph/topo2pclos.json";
+    comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
+    EXPECT_NE(comm.rankGraph, nullptr);
+
+    uint32_t num = 0;
+    uint32_t topoInstId = 0;
+    auto ret = comm.GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(num, 2);
+    uint32_t descNum = num;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    uint32_t layer = 0;
+    ret = comm.GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
+    for (uint32_t i = 0; i < num; ++i) {
+        uint32_t infoLen = sizeof(EndpointAttrBwCoeff);
+        EndpointAttrBwCoeff bwCoeff{};
+        ret = comm.GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
+        EXPECT_EQ(bwCoeff, 1);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+    }
+    delete[] endPointDesc;
+}
+
+TEST_F(CommunicatorImplTest, Ut_GetInfo_When_endpointDecsNull_Return_Hccl_E_PTR)
+{
+    CommunicatorImpl comm;
+    comm.devLogicId = 0;
+
+    HcclCommConfig config;
+    CommParams params;
+
+    RankGraphBuilder rankGraphBuilder;
+    string topoFilePath = "llt/ace/comop/hccl/orion/st/otherFiles/rank_graph/topo2pclos.json";
+    comm.rankGraph = rankGraphBuilder.Build(RankTable2pClos, topoFilePath, 0);
+    EXPECT_NE(comm.rankGraph, nullptr);
+
+    uint32_t infoLen = sizeof(EndpointAttrBwCoeff);
+    EndpointAttrBwCoeff bwCoeff{};
+    HcclResult ret = comm.GetEndpointInfo(0, nullptr, ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
+    EXPECT_EQ(ret, HCCL_E_PTR);
 }

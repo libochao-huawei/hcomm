@@ -8,6 +8,7 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
+#include <runtime/stream.h>
 #include <runtime/rt.h>
 #include <runtime/base.h>
 #include "runtime/rts/rts_device.h"
@@ -434,7 +435,7 @@ rtError_t rtFunctionRegister(void *binHandle, const void *stubFunc, const char *
     return RT_ERROR_NONE;
 }
 
-rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo)
 {
     return RT_ERROR_NONE;
@@ -461,12 +462,12 @@ rtError_t rtDevBinaryUnRegister(void *hdl)
 }
 
 rtError_t rtKernelLaunch(
-    const void *stubFunc, uint32_t blockDim, void *args, uint32_t argsSize, rtSmDesc_t *smDesc, rtStream_t stm)
+    const void *stubFunc, uint32_t numBlocks, void *args, uint32_t argsSize, rtSmDesc_t *smDesc, rtStream_t stm)
 {
     return RT_ERROR_NONE;
 }
 
-rtError_t rtAicpuKernelLaunch(const rtKernelLaunchNames_t *launchNames, uint32_t blockDim, const void *args,
+rtError_t rtAicpuKernelLaunch(const rtKernelLaunchNames_t *launchNames, uint32_t numBlocks, const void *args,
     uint32_t argsSize, rtSmDesc_t *smDesc, rtStream_t stm)
 {
     return RT_ERROR_NONE;
@@ -540,7 +541,7 @@ rtError_t rtGetDevResAddress(rtDevResInfo *const resInfo, uint64_t *const resAdd
     return RT_ERROR_NONE;
 }
 
-rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const char_t *const opName, const uint32_t blockDim,
+rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const char_t *const opName, const uint32_t numBlocks,
                                         const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t *const smDesc, const rtStream_t stm,
                                         const uint32_t flags)
 
@@ -675,6 +676,11 @@ rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
 }
  
 rtError_t rtSetXpuDevice(rtXpuDevType devType, const uint32_t devId)
+{
+    return RT_ERROR_NONE;
+}
+
+rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId)
 {
     return RT_ERROR_NONE;
 }

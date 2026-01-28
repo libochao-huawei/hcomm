@@ -120,18 +120,18 @@ TEST_F(AivAllReduceMesh1DTwoShot, excutor_template_test)
     std::vector<std::vector<RankId>>{{0, 1, 2, 3}}, 
     std::map<RankId, u32>{{0, 0}, {1, 1}, {2, 2}, {3, 3}}
     );
-    u32 blockDim = 0;
-    HcclResult ret = executor->CalBlockDim(blockDim, 1000, 56);
+    u32 numBlocks = 0;
+    HcclResult ret = executor->CalNumBlocks(numBlocks, 1000, 56);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    ret = temponshot->CalBlockDim(blockDim, 1000, 56);
+    ret = temponshot->CalNumBlocks(numBlocks, 1000, 56);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    ret = temptwoshot->CalBlockDim(blockDim, 1000, 56);
+    ret = temptwoshot->CalNumBlocks(numBlocks, 1000, 56);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 
-    ret = executor->CalBlockDim(blockDim, 1000, 1);
+    ret = executor->CalNumBlocks(numBlocks, 1000, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    ret = temponshot->CalBlockDim(blockDim, 1000, 1);
+    ret = temponshot->CalNumBlocks(numBlocks, 1000, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-    ret = temptwoshot->CalBlockDim(blockDim, 1000, 1);
+    ret = temptwoshot->CalNumBlocks(numBlocks, 1000, 1);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }

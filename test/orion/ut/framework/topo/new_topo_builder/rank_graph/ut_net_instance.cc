@@ -52,12 +52,11 @@ TEST_F(NetInstanceTest, ut_NetInstance_Node_When_Normal_Expect_SUCCESS)
     string netInstId = "test";
     IpAddress inputAddr(0);
     std::set<std::string> ports = {"0/0"};
-    std::set<LinkProtocol> protocals = {LinkProtocol::UB_CTP};
+    std::set<LinkProtocol> protocals = {LinkProtocol::UB_CTP, LinkProtocol::UB_TP};
     shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocals);
     std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
-    node->AddConnInterface(connInterface);
-    node->AddConnInterface(connInterface);
-    node->IterIfaces();
+    node->AddConnInterface(0, connInterface);
+    node->AddConnInterface(0, connInterface);
 }
 
 TEST_F(NetInstanceTest, FabGroup_Peer_test)
@@ -542,4 +541,25 @@ TEST_F(NetInstanceTest, fabGroup_clos_get_paths_v1)
             }
         }
     }
+}
+
+TEST_F(NetInstanceTest, UT_GetIfacesByLayer_When_Valid_Return_HCCl_SUCCESS)
+{
+    s32 rankId = 0;
+    s32 localId = 0;
+    u32 groupLevel = 0;
+    DeviceId deviceId = 0;
+    string netInstId = "test";
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/0"};
+    std::set<LinkProtocol> protocals = {LinkProtocol::UB_CTP};
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocals);
+    EXPECT_EQ(connInterface->GetTopoType(), TopoType::CLOS);
+    EXPECT_EQ(connInterface->GetTopoInstId(), 0);
+    std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    node->AddConnInterface(0, connInterface);
+
+    auto ifaces = node->GetIfacesByLayer(0);
+    EXPECT_EQ(ifaces.size(), 1);
+    EXPECT_EQ(ifaces[0], connInterface);
 }

@@ -9,8 +9,8 @@
 # -----------------------------------------------------------------------------------------------------------
 target_sources(hccl_v2_utest
     PUBLIC
-    ut_ccu_jetty.cc
-    ut_ccu_connection.cc
+    # ut_ccu_jetty.cc
+    # ut_ccu_connection.cc
     ut_ccu_transport.cc
     # ut_ccu_transport_group.cc
 

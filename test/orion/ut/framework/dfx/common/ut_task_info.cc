@@ -151,7 +151,7 @@ TEST_F(TaskInfoTest, test_get_base_info)
     taskInfo.taskParam_.taskType = TaskParamType::TASK_SDMA;
     taskInfo.dfxOpInfo_->tag_ = "tag_name";
     taskInfo.dfxOpInfo_->algType_ = AlgType::MESH;
-    EXPECT_EQ(taskInfo.GetBaseInfo(), "streamID:[1], taskID:[7], taskType:[TaskParamType::TASK_SDMA], tag:[tag_name], algType:[AlgType::MESH]");
+    EXPECT_EQ(taskInfo.GetBaseInfo(), "streamID(sqId):[1], taskID(sqeId):[7], taskType:[TaskParamType::TASK_SDMA], tag:[tag_name], algType:[AlgType::MESH]");
 
     taskInfo.dfxOpInfo_ = shared_ptr<DfxOpInfo>(nullptr);
     EXPECT_EQ(taskInfo.GetBaseInfo(), "");

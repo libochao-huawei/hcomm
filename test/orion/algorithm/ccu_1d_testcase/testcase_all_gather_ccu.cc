@@ -356,7 +356,7 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_Mesh1DMultiMission_1M)
     checkerOpParam.DataDes.count = 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
-    checkerOpParam.algName = "CcuAllGatherMesh1DMultiMission";
+    checkerOpParam.algName = "CcuAllGatherMesh1D";
 
     Checker checker;
     HcclResult ret;
@@ -446,6 +446,26 @@ TEST_F(AllGatherCCUTest, allgather_ccu_case_test_3rank_offload_V2AllGatherSoleEx
     HcclResult ret;
     ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_E_INTERNAL); // TODO
+}
+
+TEST_F(AllGatherCCUTest, allgather_ccu_case_test_nhr)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, 1, 2);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::ALLGATHER;
+    checkerOpParam.tag = "AllGather";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.DataDes.count = 100;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
+    checkerOpParam.algName = "CcuAllGatherNHR1D";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS); 
 }
 
 }

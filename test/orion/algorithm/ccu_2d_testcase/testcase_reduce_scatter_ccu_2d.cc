@@ -320,7 +320,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -343,7 +343,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -366,7 +366,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -389,7 +389,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -412,7 +412,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -435,7 +435,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -458,7 +458,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -481,7 +481,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 512 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -504,7 +504,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 513 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -527,7 +527,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 515 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -550,7 +550,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 768 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -573,7 +573,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 769 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -596,7 +596,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_success
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_MAX;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -619,7 +619,7 @@ TEST_F(ReduceScatter2DCCUTest, test_reduce_scatter_mesh_2d_multi_mission_failed_
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuReduceScatterMesh2DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh2D";
 
     Checker checker;
     HcclResult ret;

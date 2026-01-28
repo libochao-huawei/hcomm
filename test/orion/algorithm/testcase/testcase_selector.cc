@@ -67,9 +67,9 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFour)
     params.opExecuteConfig = opConfig;
     std::string allReduceAlgName;
     params.dataSize = opAllReduce.dataCount * DataTypeSizeGet(opAllReduce.dataType);
-    HcclResult status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opAllReduce, params, allReduceAlgName);
+    HcclResult status = ExecuteSelector().SetVirtualTopo(&virtTopo).SetRankSize(4).Run(opAllReduce, params, allReduceAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(allReduceAlgName, "CcuAllReduceMesh1DMultiMission");
+    EXPECT_EQ(allReduceAlgName, "CcuAllReduceMesh1D");
     std::cout << "The setted allreduce insCollAlgName: " << allReduceAlgName << std::endl;
 
     CollAlgOperator opAllGather;
@@ -80,7 +80,7 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFour)
     params.dataSize = opAllGather.dataCount * DataTypeSizeGet(opAllGather.dataType);
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opAllGather, params, allGatherAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(allGatherAlgName, "CcuAllGatherMesh1DMultiMission");
+    EXPECT_EQ(allGatherAlgName, "CcuAllGatherMesh1D");
     std::cout << "The setted allgather insCollAlgName: " << allGatherAlgName << std::endl;
 
     CollAlgOperator opReduceScatter;
@@ -91,7 +91,7 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFour)
     params.dataSize = opReduceScatter.dataCount * DataTypeSizeGet(opReduceScatter.dataType);
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opReduceScatter, params, reduceScatterAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(reduceScatterAlgName, "CcuReduceScatterMesh1DMultiMission");
+    EXPECT_EQ(reduceScatterAlgName, "CcuReduceScatterMesh1D");
     std::cout << "The setted reducescatter insCollAlgName: " << reduceScatterAlgName << std::endl;
 
     CollAlgOperator opBroadcast;
@@ -102,7 +102,7 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFour)
     params.dataSize = opBroadcast.dataCount * DataTypeSizeGet(opBroadcast.dataType);
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opBroadcast, params, broadcastAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(broadcastAlgName, "CcuBroadcastMeshMultiMission1D");
+    EXPECT_EQ(broadcastAlgName, "CcuBroadcastMesh1D");
     std::cout << "The setted broadcast insCollAlgName: " << broadcastAlgName << std::endl;
 
     CollAlgOperator opReduce;
@@ -113,7 +113,7 @@ TEST_F(SelectorTest, TestAutoSelectorOneTimesFour)
     params.dataSize = opReduce.dataCount * DataTypeSizeGet(opReduce.dataType);
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opReduce, params, reduceAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(reduceAlgName, "CcuReduceMesh1DMultiMission");
+    EXPECT_EQ(reduceAlgName, "CcuReduceMesh1D");
     std::cout << "The setted reduce insCollAlgName: " << reduceAlgName << std::endl;
 
     CollAlgOperator opScatter;
@@ -357,7 +357,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwo)
     params.dataSize = opAllReduce.dataCount * DataTypeSizeGet(opAllReduce.dataType);
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opAllReduce, params, allReduceAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(allReduceAlgName, "CcuAllReduceMesh2DTwoShotMultiMission");
+    EXPECT_EQ(allReduceAlgName, "CcuAllReduceMesh2DTwoShot");
     std::cout << "The setted insCollAlgName: " << allReduceAlgName << std::endl;
 
     CollAlgOperator opAllGather;
@@ -366,7 +366,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwo)
     std::string allGatherAlgName;
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opAllGather, params, allGatherAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(allGatherAlgName, "CcuAllGatherMesh2DMultiMission");
+    EXPECT_EQ(allGatherAlgName, "CcuAllGatherMesh2D");
     std::cout << "The setted allgather insCollAlgName: " << allGatherAlgName << std::endl;
 
     CollAlgOperator opReduceScatter;
@@ -375,7 +375,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwo)
     std::string reduceScatterAlgName;
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opReduceScatter, params, reduceScatterAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(reduceScatterAlgName, "CcuReduceScatterMesh2DMultiMission");
+    EXPECT_EQ(reduceScatterAlgName, "CcuReduceScatterMesh2D");
     std::cout << "The setted reducescatter insCollAlgName: " << reduceScatterAlgName << std::endl;
 
     CollAlgOperator opBroadcast;
@@ -396,7 +396,7 @@ TEST_F(SelectorTest, TestAutoSelectorTwoTimesTwo)
     params.dataSize = opBroadcast2d.dataCount * DataTypeSizeGet(opBroadcast2d.dataType);
     status = ExecuteSelector().SetVirtualTopo(&virtTopo).Run(opBroadcast2d, params, broadcastAlgName);
     EXPECT_EQ(status, HcclResult::HCCL_SUCCESS);
-    EXPECT_EQ(broadcastAlgName, "CcuBroadcastMesh2DMultiMission");
+    EXPECT_EQ(broadcastAlgName, "CcuBroadcastMesh2D");
     std::cout << "The setted broadcast insCollAlgName: " << broadcastAlgName << std::endl;
 
     CollAlgOperator opReduce;

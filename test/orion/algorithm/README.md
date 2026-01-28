@@ -5,6 +5,8 @@ rm -rf tmp && mkdir -p tmp && cd tmp && cmake ../cmake/superbuild/ -DCUSTOM_PYTH
 
 rm -rf tmp && mkdir -p tmp && cd tmp && cmake ../cmake/superbuild/ -DCUSTOM_PYTHON=python3 -DHOST_PACKAGE=ut -DBUILD_MOD=hccl_v2_alg -DFULL_COVERAGE=false -DCOVERAGE_RC_CONFIG=false -DFEATURE_LIST=USE_LEGACY_PROTOBUF=TRUE && TARGETS=orion_alg_ccu_1d_testcase  make -j64
 
+rm -rf tmp && mkdir -p tmp && cd tmp && cmake ../cmake/superbuild/ -DCUSTOM_PYTHON=python3 -DHOST_PACKAGE=ut -DBUILD_MOD=hccl_v2_alg -DFULL_COVERAGE=false -DCOVERAGE_RC_CONFIG=false -DFEATURE_LIST=USE_LEGACY_PROTOBUF=TRUE && TARGETS=orion_alg_ccu_1d_hf16p_testcase  make -j64
+
 rm -rf tmp && mkdir -p tmp && cd tmp && cmake ../cmake/superbuild/ -DCUSTOM_PYTHON=python3 -DHOST_PACKAGE=ut -DBUILD_MOD=hccl_v2_alg -DFULL_COVERAGE=false -DCOVERAGE_RC_CONFIG=false -DFEATURE_LIST=USE_LEGACY_PROTOBUF=TRUE && TARGETS=orion_alg_ccu_2d_testcase  make -j64
 
 rm -rf tmp && mkdir -p tmp && cd tmp && cmake ../cmake/superbuild/ -DCUSTOM_PYTHON=python3 -DHOST_PACKAGE=ut -DBUILD_MOD=hccl_v2_alg -DFULL_COVERAGE=false -DCOVERAGE_RC_CONFIG=false -DFEATURE_LIST=USE_LEGACY_PROTOBUF=TRUE && TARGETS=orion_alg_aicpu_2d_testcase  make -j64
@@ -20,6 +22,8 @@ TARGETS=orion_alg_ccu_1d_testcase  make -j64
 
 TARGETS=orion_alg_ccu_2d_testcase  make -j64
 
+TARGETS=orion_alg_ccu_1d_hf16p_testcase  make -j64
+
 TARGETS=orion_alg_aicpu_2d_testcase  make -j64
 
 TARGETS=orion_alg_aiv_1d_testcase  make -j64
@@ -31,6 +35,8 @@ TARGETS=orion_alg_function_ut_testcase  make -j64
 ./llt_gcc4.9.3-prefix/src/llt_gcc4.9.3-build/llt/ace/comop/hccl/orion/algorithm/orion_alg_testcase
 
 ./llt_gcc4.9.3-prefix/src/llt_gcc4.9.3-build/llt/ace/comop/hccl/orion/algorithm/orion_alg_ccu_1d_testcase
+
+./llt_gcc4.9.3-prefix/src/llt_gcc4.9.3-build/llt/ace/comop/hccl/orion/algorithm/orion_alg_ccu_1d_hf16p_testcase
 
 ./llt_gcc4.9.3-prefix/src/llt_gcc4.9.3-build/llt/ace/comop/hccl/orion/algorithm/orion_alg_ccu_2d_testcase
 
