@@ -215,6 +215,8 @@ public:
         BaseInit::SetUp();
     }
     void TearDown() override {
+        unsetenv("HCCL_INTRA_ROCE_ENABLE");
+        unsetenv("HCCL_INTRA_PCIE_ENABLE");
         BaseInit::TearDown();
         GlobalMockObject::verify();
     }
@@ -301,8 +303,8 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Ser
     for (int i = 0; i < listSize; i++) {
         EXPECT_EQ(linkList[i].srcEndpointDesc.commAddr.id, 0);
         EXPECT_EQ(linkList[i].dstEndpointDesc.commAddr.id, 1);
-        EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_HCCS);
-        EXPECT_EQ(linkList[i].dstEndpointDesc.protocol, COMM_PROTOCOL_HCCS);
+        EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_SIO);
+        EXPECT_EQ(linkList[i].dstEndpointDesc.protocol, COMM_PROTOCOL_SIO);
         EXPECT_EQ(linkList[i].linkAttr.linkProtocol, COMM_PROTOCOL_SIO);
     }
     EXPECT_EQ(listSize, 1);
@@ -573,7 +575,7 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Mes
     DestroyComm(comm);
 }
 
-// 不同个MESH间走PCIE
+// 不同个MESH间对称场景走PCIE
 TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Mesh_AX)
 {
     CommLink *linkList = nullptr;
@@ -599,6 +601,100 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Mes
     EXPECT_EQ(linkList, nullptr);
 
     ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 8, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(listSize, 0);
+    EXPECT_EQ(linkList, nullptr);
+    DestroyComm(comm);
+}
+
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Mesh_AX_Roce)
+{
+    setenv("HCCL_INTRA_ROCE_ENABLE", "1", 1);
+    setenv("HCCL_INTRA_PCIE_ENABLE", "0", 1);
+    CommLink *linkList = nullptr;
+    uint32_t listSize = 0;
+    set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910B));
+    MOCKER(&TopoInfoExtractor::CheckPlaneInfo)
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
+    Create910BComm(&comm, rank_table_910B_1server_16rank);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 8, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+        for (int i = 0; i < listSize; i++) {
+        EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_PCIE);
+        EXPECT_EQ(linkList[i].dstEndpointDesc.protocol, COMM_PROTOCOL_PCIE);
+        EXPECT_EQ(linkList[i].linkAttr.linkProtocol, COMM_PROTOCOL_PCIE);
+    }
+    EXPECT_EQ(listSize, 1);
+
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 8, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    for (int i = 0; i < listSize; i++) {
+        EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
+        EXPECT_EQ(linkList[i].dstEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
+        EXPECT_EQ(linkList[i].linkAttr.linkProtocol, COMM_PROTOCOL_ROCE);
+    }
+    EXPECT_EQ(listSize, 1);
+    DestroyComm(comm);
+}
+
+// 不同个MESH间非对称场景不存在链路
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Mesh_AX_Unsym)
+{
+    CommLink *linkList = nullptr;
+    uint32_t listSize = 0;
+    set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910B));
+    MOCKER(&TopoInfoExtractor::CheckPlaneInfo)
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
+    Create910BComm(&comm, rank_table_910B_1server_16rank);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 9, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(listSize, 0);
+    EXPECT_EQ(linkList, nullptr);
+
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 9, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(listSize, 0);
+    EXPECT_EQ(linkList, nullptr);
+
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 9, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(listSize, 0);
+    EXPECT_EQ(linkList, nullptr);
+    DestroyComm(comm);
+}
+
+// 不同个MESH间非对称场景不存在链路，除非使能ROCE
+TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_diff_Mesh_AX_Unsym_Roce)
+{
+    setenv("HCCL_INTRA_ROCE_ENABLE", "1", 1);
+    setenv("HCCL_INTRA_PCIE_ENABLE", "0", 1);
+    CommLink *linkList = nullptr;
+    uint32_t listSize = 0;
+    set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_910B));
+    MOCKER(&TopoInfoExtractor::CheckPlaneInfo)
+        .stubs()
+        .with(any())
+        .will(returnValue(HCCL_SUCCESS));
+    Create910BComm(&comm, rank_table_910B_1server_16rank);
+    HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 9, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(listSize, 0);
+    EXPECT_EQ(linkList, nullptr);
+
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 8, &linkList, &listSize);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    for (int i = 0; i < listSize; i++) {
+        EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
+        EXPECT_EQ(linkList[i].dstEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
+        EXPECT_EQ(linkList[i].linkAttr.linkProtocol, COMM_PROTOCOL_ROCE);
+    }
+    EXPECT_EQ(listSize, 1);
+
+    ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 9, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(listSize, 0);
     EXPECT_EQ(linkList, nullptr);
@@ -713,10 +809,12 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Diff_Ser
 // 310P V卡走PCIE
 TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Servers_310P_V)
 {
+    setenv("HCCL_INTRA_ROCE_ENABLE", "1", 1);
+    setenv("HCCL_INTRA_PCIE_ENABLE", "0", 1);
     CommLink *linkList = nullptr;
     uint32_t listSize = 0;
     set_chip_type_stub(0, static_cast<s32>(DevType::DEV_TYPE_310P3));
-    set_board_id(0x1E); // 设置为V卡
+    set_board_id(0x1E); // 设置为V卡(310P标卡场景)
     Create310PComm(&comm, rank_table_2server_4rank);
     HcclResult ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_0, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -729,8 +827,12 @@ TEST_F(HcclIndependentOpRankGraphTest, Ut_HcclRankGraphGetLinks_When_In_Same_Ser
 
     ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_1, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(listSize, 0);
-    EXPECT_EQ(linkList, nullptr);
+    for (int i = 0; i < listSize; i++) {
+        EXPECT_EQ(linkList[i].srcEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
+        EXPECT_EQ(linkList[i].dstEndpointDesc.protocol, COMM_PROTOCOL_ROCE);
+        EXPECT_EQ(linkList[i].linkAttr.linkProtocol, COMM_PROTOCOL_ROCE);
+    }
+    EXPECT_EQ(listSize, 1);
 
     ret = HcclRankGraphGetLinks(comm, HCCL_NETLAYER_2, 0, 1, &linkList, &listSize);
     EXPECT_EQ(ret, HCCL_SUCCESS);

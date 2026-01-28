@@ -56,8 +56,8 @@ HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcR
     CHK_PTR_NULL(linkNum);
     HcclResult ret = HCCL_SUCCESS;
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HCCL_RUN_INFO("Entry-%s: comm[%s], netLayer%u], srcRank[%u], dstRank[%u]", __func__,
-    hcclComm->GetIdentifier().c_str(), netLayer, srcRank, dstRank);
+    HCCL_RUN_INFO("Entry-%s: comm[%s], netLayer[%u], srcRank[%u], dstRank[%u]", __func__,
+        hcclComm->GetIdentifier().c_str(), netLayer, srcRank, dstRank);
     HCCLV2_FUNC_RUN(
         [&]() -> HcclResult {
             const char *indOp = getenv("HCCL_INDEPENDENT_OP");
@@ -79,11 +79,11 @@ HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32_t srcR
 
     ret = hcclComm->GetLinks(netLayer, srcRank, dstRank, links, linkNum);
     if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to get links for netLayer[%d], srcRank[%u], dstRank[%u]] ret[%d]",
+        HCCL_ERROR("[%s] Failed to get links for netLayer[%d], srcRank[%u], dstRank[%u] ret[%d]",
             __func__, netLayer, srcRank, dstRank, ret);
         return ret;
     }
-    HCCL_INFO("[%s] success: comm[%s] linkNum[%u]",  __func__, hcclComm->GetIdentifier().c_str(), *linkNum);
+    HCCL_RUN_INFO("[%s] success: comm[%s] linkNum[%u]",  __func__, hcclComm->GetIdentifier().c_str(), *linkNum);
     return HCCL_SUCCESS;
 }
 
