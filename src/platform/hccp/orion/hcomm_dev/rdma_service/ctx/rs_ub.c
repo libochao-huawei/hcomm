@@ -346,8 +346,15 @@ int rs_ub_ctx_init(struct rs_cb *rs_cb, struct ctx_init_attr *attr, unsigned int
         goto free_dev_cb;
     }
 
+    ret = RsSensorNodeRegister(attr->phy_id, rs_cb);
+    if (ret != 0) {
+        hccp_err("rs_sensor_node_register failed, phy_id(%u), ret(%d)", attr->phy_id, ret);
+        goto free_dev_cb;
+    }
+
     ret = rs_ub_dev_cb_init(attr, dev_cb, rs_cb, devIndex, dev_attr);
     if (ret != 0) {
+        RsSensorNodeUnregister(dev_cb->rscb);
         hccp_err("rs_ub_dev_cb_init failed ret:%d, eid_index:%u eid:%016llx:%016llx", ret, attr->ub.eid_index,
             (unsigned long long)be64toh(eid.in6.subnet_prefix), (unsigned long long)be64toh(eid.in6.interface_id));
         goto free_dev_cb;
@@ -1123,6 +1130,7 @@ int rs_ub_ctx_deinit(struct rs_ub_dev_cb *dev_cb)
     RS_PTHREAD_MUTEX_LOCK(&dev_cb->rscb->mutex);
     RsListDel(&dev_cb->list);
     RS_PTHREAD_MUTEX_ULOCK(&dev_cb->rscb->mutex);
+    RsSensorNodeUnregister(dev_cb->rscb);
 
     rs_ub_api_deinit();
 
@@ -2704,7 +2712,7 @@ STATIC void rs_jfc_callback_process(struct rs_ctx_jetty_cb *jetty_cb, urma_cr_t 
 {
     if (cr->status != URMA_CR_SUCCESS) {
         rs_udma_save_cqe_err_info(cr->status, jetty_cb);
-        rs_udma_retry_timeout_exception_check(&jetty_cb->dev_cb->sensorNode, cr);
+        rs_udma_retry_timeout_exception_check(&jetty_cb->dev_cb->rscb->sensorNode, cr);
     }
 }
 

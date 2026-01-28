@@ -29,7 +29,6 @@ struct rs_ub_dev_cb {
     unsigned int index;
     struct dev_base_attr dev_attr;
 
-    struct SensorNode sensorNode;
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
 
