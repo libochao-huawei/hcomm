@@ -372,21 +372,6 @@ HcclResult InitEnvVarParam()
             HCCL_ERROR_CODE(ret),
             ret),
         ret);
-    
-    // 解析aicpu cache enable
-    ret = ParseAicpuCacheEnable();
-    RPT_ENV_ERR(ret != HCCL_SUCCESS,
-        "EI0001",
-        std::vector<std::string>({"env", "tips"}),
-        std::vector<std::string>({"HCCL_AICPU_CACHE_ENABLE", "Value should be 0 or 1."}));
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[%s][%s]errNo[0x%016llx] In init env variable param, parse HCCL_AICPU_CACHE_ENABLE failed. "
-                   "errorno[%d]",
-            LOG_KEYWORDS_INIT_GROUP.c_str(),
-            LOG_KEYWORDS_ENV_CONFIG.c_str(),
-            HCCL_ERROR_CODE(ret),
-            ret),
-        ret);
 
     // 解析rank 间的QP个数
     ret = ParseRdmaQpsPerConnection();
@@ -1524,9 +1509,10 @@ HcclResult ParseOpExpansion()
     std::string opExpansionModeEnv = GET_ENV(MM_ENV_HCCL_OP_EXPANSION_MODE);
     g_externalInput.aicpuUnfold = false;
     g_externalInput.aivMode = false;
+    g_externalInput.aicpuCacheEnable = 0; // aicpu模式不使能时, aicpu cache也不使能 (即使使能也不生效)
     if (IsGeneralServer()) {
-        HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u]",
-            g_externalInput.aicpuUnfold, g_externalInput.aivMode);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u], aicpuCacheEnable is [%u]",
+            g_externalInput.aicpuUnfold, g_externalInput.aivMode, g_externalInput.aicpuCacheEnable);
         return HCCL_SUCCESS;
     }
 
@@ -1536,10 +1522,11 @@ HcclResult ParseOpExpansion()
     // 910_93默认打开AICPU展开
     if (deviceType == DevType::DEV_TYPE_910_93) {
         g_externalInput.aicpuUnfold = true;
+        g_externalInput.aicpuCacheEnable = 1; // aicpu cache默认使能
     }
     if (opExpansionModeEnv == "EmptyString") {
-        HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u]",
-            g_externalInput.aicpuUnfold, g_externalInput.aivMode);
+        HCCL_RUN_INFO("[HCCL_ENV] HCCL_OP_EXPANSION_MODE is not set, aicpuUnfold is [%u], aivMode is [%u], aicpuCacheEnable is [%u]",
+            g_externalInput.aicpuUnfold, g_externalInput.aivMode, g_externalInput.aicpuCacheEnable);
         return HCCL_SUCCESS;
     }
     if (opExpansionModeEnv == "AI_CPU") {
@@ -1547,12 +1534,21 @@ HcclResult ParseOpExpansion()
             HCCL_WARNING("910 do not support AICPU unfold.");
         } else {
             g_externalInput.aicpuUnfold = true;
+            g_externalInput.aicpuCacheEnable = 1; // aicpu cache默认使能
+        }
+    } else if (opExpansionModeEnv == "AICPU_CacheDisable") {
+        if (deviceType == DevType::DEV_TYPE_910) {
+            HCCL_WARNING("910 do not support AICPU unfold.");
+        } else {
+            g_externalInput.aicpuUnfold = true;
+            g_externalInput.aicpuCacheEnable = 0; // Disable aicpu cache
         }
     } else if (opExpansionModeEnv == "AIV") {
         g_externalInput.aivMode = true;
     } else if (opExpansionModeEnv == "HOST") {
         g_externalInput.aivMode = false;
         g_externalInput.aicpuUnfold = false;
+        g_externalInput.aicpuCacheEnable = 0;
     } else if (opExpansionModeEnv == "HOST_TS") {
         if (deviceType == DevType::DEV_TYPE_910B) {
             g_externalInput.enableFfts = false;
@@ -1565,46 +1561,10 @@ HcclResult ParseOpExpansion()
         return HCCL_E_PARA;
     }
 #endif
-    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_OP_EXPANSION_MODE is [%s], aicpuUnfold[%u], aivMode[%u], enableFfts[%u]",
-        opExpansionModeEnv.c_str(), g_externalInput.aicpuUnfold, g_externalInput.aivMode, g_externalInput.enableFfts);
-    return HCCL_SUCCESS;
-}
-
-HcclResult ParseAicpuCacheEnable()
-{
-    // 默认开启aicpu cache
-    g_externalInput.aicpuCacheEnable = 1;
-
-    // 获得环境变量
-    std::string aicpuCacheEnable = "";
-    constexpr uint32_t charCnt = 128;
-    char aicpuCacheEnableChars[charCnt];
-    CHK_SAFETY_FUNC_RET(memset_s(aicpuCacheEnableChars, charCnt, '\0', charCnt));
-    int result = mmGetEnv("HCCL_AICPU_CACHE_ENABLE", aicpuCacheEnableChars, charCnt);
-    if (result == EN_OK) { // get HCCL_AICPU_CACHE_ENABLE successfully
-        aicpuCacheEnable = std::string(aicpuCacheEnableChars);
-    } else if (result == EN_ERROR) { // not specify HCCL_AICPU_CACHE_ENABLE
-        aicpuCacheEnable = "EmptyString";
-    } else { // insufficient length
-        HCCL_ERROR("[Parser][AicpuCacheEnable] fail to get HCCL_AICPU_CACHE_ENABLE: aicpuCacheEnableChars.len[%u]", charCnt);
-        return HCCL_E_INTERNAL;
-    }
-
-    // 根据环境变量设置g_externalInput.aicpuCacheEnable
-    if (aicpuCacheEnable == "EmptyString") {
-        HCCL_RUN_INFO("[HCCL_ENV] HCCL_AICPU_CACHE_ENABLE set by default to [1]");
-        return HCCL_SUCCESS;
-    } else if (aicpuCacheEnable == "0") {
-        g_externalInput.aicpuCacheEnable = 0; // 关闭aicpu cache
-    } else if (aicpuCacheEnable == "1") {
-        g_externalInput.aicpuCacheEnable = 1; // 开启aicpu cache
-    } else {
-        HCCL_ERROR("[Parser][AicpuCacheEnable]environmental variable HCCL_AICPU_CACHE_ENABLE [%s] is invalid, set by default to [1]", aicpuCacheEnable.c_str());
-        return HCCL_E_PARA;
-    }
-
-    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_AICPU_CACHE_ENABLE is [%s], aicpuCacheEnable[%u]", aicpuCacheEnable.c_str(), g_externalInput.aicpuCacheEnable);
-
+    HCCL_RUN_INFO("[HCCL_ENV] environmental variable HCCL_OP_EXPANSION_MODE is [%s], aicpuUnfold[%u], aivMode[%u], "\
+        "enableFfts[%u], aicpuCacheEnable[%u]",
+        opExpansionModeEnv.c_str(), g_externalInput.aicpuUnfold, g_externalInput.aivMode, g_externalInput.enableFfts,
+        g_externalInput.aicpuCacheEnable);
     return HCCL_SUCCESS;
 }
 
