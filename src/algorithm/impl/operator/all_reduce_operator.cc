@@ -694,7 +694,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
 
         CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable [%d] not supported", retryEnable_), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(superPodNum_ != 1, HCCL_ERROR("multi superpod [%s] not supported", superPodNum_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(superPodNum_ != 1, HCCL_ERROR("multi superpod [%u] not supported", superPodNum_), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
