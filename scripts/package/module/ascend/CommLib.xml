@@ -158,6 +158,47 @@
         <file value="hccl_sk_rs_crossnode.o"/>
         <file value="hccl_sk_ag_crossnode.o"/>
         <file value="hccl_sk_a2a_crossnode.o"/>
+        <!-- hccl_v2 -->
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_int8.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_int16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_int32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_float16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_float32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_bfloat16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_int8.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_int16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_int32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_float16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_float32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_bfloat16.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_int8.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_int16.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_int32.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_float16.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_float32.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_bfloat16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int8.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int32.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_float16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_float32.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_bfloat16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint8.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint32.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int64.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint64.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int8.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int32.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_float16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_float32.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_bfloat16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint8.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint32.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int64.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint64.o"/>
         <!-- network -->
         <file value="libra.so" file_type="shared" install_type="run;devel;docker"/>
         <file value="libra_hdc.so" file_type="shared"/>
