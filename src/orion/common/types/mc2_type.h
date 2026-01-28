@@ -24,7 +24,7 @@ constexpr uint32_t CCU_PARAM_NUM_PER_DIE = 32;
 constexpr uint32_t CCU_PARAM_NUM_MAX     = CCU_PARAM_NUM_PER_DIE * 2;
 constexpr uint32_t CCU_ONE_PARAM_SIZE    = 8;
 constexpr uint32_t CCU_TASK_NUM_MAX      = 64;
-constexpr uint32_t MAX_RANK_NUM          = 32; // 最大卡数
+constexpr uint32_t MAX_RANK_NUM          = 64; // 最大卡数
 
 constexpr uint32_t UNKNOWN_TILING_V1   = 3;     // 旧版本 MC2 Tiling version = 3
 constexpr uint32_t UNKNOWN_TILING_V2   = 100;   // 新版本 MC2 Tiling version = 100
