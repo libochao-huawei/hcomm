@@ -834,6 +834,11 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
+            u32 rankNum = 0;
+            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
+            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+            CHK_RET(HcclGetCommNameV2(commV2, commName));
+            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
             const char *indOp = getenv("HCCL_INDEPENDENT_OP");
             if (indOp == nullptr || strcmp(indOp, "") == 0) {
                 *comm = commV2;
