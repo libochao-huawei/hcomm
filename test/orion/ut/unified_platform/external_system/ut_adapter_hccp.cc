@@ -760,3 +760,14 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_Timeout_Expect_ThrowExcepti
     MockEnvLinkTimeoutGet(0); // 超时时间设为0
     EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
 }
+
+TEST_F(AdapterHccpTest, ut_HrtRaSocketWhiteListDel_With_Enormous_WhiteList)
+{
+    // 大量删除接口
+    RaSocketWhitelist wlist{};
+    vector<RaSocketWhitelist> wlists(56, wlist);
+
+    MOCKER(RaSocketWhiteListDel).stubs().will(returnValue(0));
+
+    EXPECT_NO_THROW(HrtRaSocketWhiteListDel(nullptr, wlists));
+}

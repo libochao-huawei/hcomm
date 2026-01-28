@@ -628,7 +628,7 @@ u32 HrtRaSocketGetWhiteListStatus()
 void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists)
 {
     vector<struct SocketWlistInfoT> wlistInfoVec;
-
+    wlistInfoVec.reserve(MAX_NUM_OF_WHITE_LIST_NUM);
     size_t wlistNum = wlists.size();
     size_t startIdx = 0;
     while (wlistNum > 0) {
@@ -650,7 +650,6 @@ void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist
             wlistInfoVec.push_back(wlistInfo);
         }
 
-        HCCL_INFO("add white list: num[%llu].", addListNum);
         s32 ret = RaSocketWhiteListAdd(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
         if (ret != 0) {
             HCCL_ERROR("[Add][RaSocketWhiteList]errNo[0x%016llx]errName[HCCL_E_TCP_CONNECT] ra white list add fail, return[%d].",
@@ -658,38 +657,50 @@ void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist
             throw NetworkApiException(StringFormat("call RaSocketWhiteListAdd failed, num=%llu",
                     wlistInfoVec.size()+startIdx));
         }
+        HCCL_INFO("add white list: num[%llu], remain [%llu].", addListNum, (wlistNum - addListNum));
 
         wlistInfoVec.clear();
         wlistNum -= addListNum;
         startIdx += addListNum;
     }
+    HCCL_INFO("[HrtRaSocketWhiteListAdd] Success. Total add num [%llu]", wlists.size());
 }
 
 void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists)
 {
     vector<struct SocketWlistInfoT> wlistInfoVec;
+    wlistInfoVec.reserve(MAX_NUM_OF_WHITE_LIST_NUM);
+    size_t wlistNum = wlists.size();
+    size_t startIdx = 0;
+    while (wlistNum > 0) {
+        size_t delListNum = wlistNum > MAX_NUM_OF_WHITE_LIST_NUM ? MAX_NUM_OF_WHITE_LIST_NUM : wlistNum;
+        for (size_t idx = startIdx; idx < delListNum + startIdx; idx++) {
+            struct SocketWlistInfoT wlistInfo {};
+            wlistInfo.connLimit = wlists[idx].connLimit;
+            wlistInfo.remoteIp  = IpAddressToHccpIpAddr(wlists[idx].remoteIp);
 
-    for (size_t idx = 0; idx < wlists.size(); idx++) {
-        struct SocketWlistInfoT wlistInfo {};
-        wlistInfo.connLimit = wlists[idx].connLimit;
-        wlistInfo.remoteIp  = IpAddressToHccpIpAddr(wlists[idx].remoteIp);
-
-        int sret = strcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag), wlists[idx].tag.c_str());
-        if (sret != EOK) {
-            auto msg = StringFormat("[Del][RaSocketWhiteList]errNo[0x%016llx] memory copy failed. ret[%d]",
-                                    HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), sret);
-            THROW<InternalException>(msg);
+            int sret = strcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag), wlists[idx].tag.c_str());
+            if (sret != EOK) {
+                auto msg = StringFormat("[Del][RaSocketWhiteList]errNo[0x%016llx] memory copy failed. ret[%d]",
+                                        HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), sret);
+                THROW<InternalException>(msg);
+            }
+            wlistInfoVec.push_back(wlistInfo);
         }
-        wlistInfoVec.push_back(wlistInfo);
-    }
 
-    HCCL_INFO("del white list: num[%llu].", wlists.size());
-    s32 ret = RaSocketWhiteListDel(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
-    if (ret != 0) {
-        HCCL_ERROR("[Del][RaSocketWhiteList]errNo[0x%016llx] ra white list del fail, return[%d].",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
-        throw NetworkApiException(StringFormat("call RaSocketWhiteListDel failed, num=%llu", wlists.size()));
+        s32 ret = RaSocketWhiteListDel(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
+        if (ret != 0) {
+            HCCL_ERROR("[Del][RaSocketWhiteList]errNo[0x%016llx] ra white list del fail, return[%d].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
+            throw NetworkApiException(StringFormat("call RaSocketWhiteListDel failed, num=%llu", wlists.size()));
+        }
+        HCCL_INFO("del white list: num[%llu], remain [%llu].", delListNum, (wlistNum - delListNum));
+
+        wlistInfoVec.clear();
+        wlistNum -= delListNum;
+        startIdx += delListNum;
     }
+    HCCL_INFO("[HrtRaSocketWhiteListDel] Success. Total delete num[%llu]", wlists.size());
 }
 
 static u32 HrtGetIfNum(struct RaGetIfattr &config)
