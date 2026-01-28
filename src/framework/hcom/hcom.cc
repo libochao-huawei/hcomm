@@ -1979,7 +1979,7 @@ void HcomSetAutoTuneMode(bool autoTuneMode)
 
 HcclResult HcomSetExecTimeOut(const char *execTimeOut)
 {
-    HCCL_RUN_INFO("HcomSetExecTimeOut:execTimeOut[%s]", execTimeOut);
+    HCCL_RUN_INFO("HcomSetExecTimeOut:execTimeOut[%s]s", execTimeOut);
     if(execTimeOut == nullptr) {
         return HCCL_SUCCESS;
     }
