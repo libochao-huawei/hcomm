@@ -96,7 +96,7 @@ private:
     u32       funcId{0};
     JfcHandle jfcHandle{0};
     u32       sqDepth{0};
-    void     *sqPtr{nullptr};
+    uint64_t  sqBuffVa{0};
 
     RequestHandle  reqHandle{0};
     vector<char_t> reqDataBuffer;

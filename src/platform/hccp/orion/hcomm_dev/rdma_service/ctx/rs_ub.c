@@ -22,6 +22,8 @@
 #include "rs_epoll.h"
 #include "rs_ctx_inner.h"
 #include "rs_ctx.h"
+#include "rs_ub_jetty.h"
+#include "rs_ub_jfc.h"
 #include "rs_ub.h"
 
 urma_cr_t g_cr_buf[RS_WC_NUM];
@@ -425,26 +427,6 @@ STATIC int rs_ub_get_jfc_cb(struct rs_ub_dev_cb *dev_cb, unsigned long long addr
     return -ENODEV;
 }
 
-STATIC int rs_ub_delete_jfc(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jfc_cb *jfc_cb)
-{
-    urma_user_ctl_out_t out = {0};
-    urma_user_ctl_in_t in = {0};
-    int out_buff = 0;
-    int ret;
-
-    in.addr = (uint64_t)(uintptr_t)&(jfc_cb->jfc_addr);
-    in.len = sizeof(urma_jfc_t *);
-    in.opcode = (jfc_cb->jfc_type == JFC_MODE_CCU_POLL && jfc_cb->ccu_ex_cfg.valid) ?
-        UDMA_U_USER_CTL_DELETE_CCU_JFC_EX : UDMA_U_USER_CTL_DELETE_JFC_EX;
-    out.addr = (uint64_t)(uintptr_t)&out_buff;
-    out.len = sizeof(int);
-
-    ret = rs_urma_user_ctl(dev_cb->urma_ctx, &in, &out);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_user_ctl delete jfc failed, ret:%d errno:%d", ret, errno), -EOPENSRC);
-
-    return 0;
-}
-
 STATIC int rs_ub_free_jfc_cb(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jfc_cb *jfc_cb)
 {
     urma_jfc_t *urma_jfc = NULL;
@@ -454,7 +436,7 @@ STATIC int rs_ub_free_jfc_cb(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jfc_cb *
     dev_cb->jfc_cnt--;
 
     if (jfc_cb->jfc_type == JFC_MODE_STARS_POLL || jfc_cb->jfc_type == JFC_MODE_CCU_POLL) {
-        (void)rs_ub_delete_jfc(dev_cb, jfc_cb);
+        (void)rs_ub_delete_jfc_ext(dev_cb, jfc_cb);
         hccp_info("[deinit][rs_jfc]destroy success, dev jfc_cnt:%u", dev_cb->jfc_cnt);
     } else if (jfc_cb->jfc_type == JFC_MODE_NORMAL) {
         urma_jfc = (urma_jfc_t *)(uintptr_t)jfc_cb->jfc_addr;
@@ -576,31 +558,6 @@ STATIC void rs_ub_ctx_free_jetty_cb(struct rs_ctx_jetty_cb *jetty_cb)
     tmp_jetty_cb = NULL;
 }
 
-STATIC void rs_ub_ctx_ext_jetty_delete(struct rs_ctx_jetty_cb *jetty_cb)
-{
-    urma_user_ctl_out_t out = {0};
-    urma_user_ctl_in_t in = {0};
-    unsigned int devIndex;
-    int out_buff = 0;
-    int ret;
-
-    devIndex = jetty_cb->dev_cb->index;
-    in.addr = (uint64_t)(uintptr_t)&jetty_cb->jetty;
-    in.len = sizeof(urma_jetty_t *);
-    in.opcode = (jetty_cb->jetty_mode == JETTY_MODE_CCU_TA_CACHE) ?
-        UDMA_U_USER_CTL_DELETE_LOCK_BUFFER_JETTY_EX : UDMA_U_USER_CTL_DELETE_JETTY_EX;
-    out.addr = (uint64_t)(uintptr_t)&out_buff;
-    out.len = sizeof(int);
-
-    ret = rs_urma_user_ctl(jetty_cb->dev_cb->urma_ctx, &in, &out);
-    if (ret != 0) {
-        hccp_err("rs_urma_user_ctl delete jetty_id:%u failed, devIndex:%u ret:%d errno:%d", jetty_cb->jetty_id,
-            devIndex, ret, errno);
-    }
-
-    return;
-}
-
 STATIC void rs_ub_ctx_drv_jetty_delete(struct rs_ctx_jetty_cb *jetty_cb)
 {
     if (jetty_cb->jetty_mode == JETTY_MODE_URMA_NORMAL) {
@@ -715,8 +672,8 @@ STATIC void rs_ub_free_jetty_batch_info(struct jetty_destroy_batch_info *batch_i
     }
 }
 
-STATIC void rs_ub_free_jetty_cb_batch(struct jetty_destroy_batch_info *batch_info,
-    unsigned int *num, urma_jetty_t *bad_jetty, urma_jfr_t *bad_jfr)
+STATIC void rs_ub_free_jetty_cb_batch(struct jetty_destroy_batch_info *batch_info, unsigned int *num,
+    urma_jetty_t *bad_jetty, urma_jfr_t *bad_jfr)
 {
     unsigned int jetty_destroy_num = *num;
     unsigned int jfr_destroy_num = *num;
@@ -747,6 +704,7 @@ STATIC int rs_ub_destroy_jetty_cb_batch(struct jetty_destroy_batch_info *batch_i
     int jetty_destroy_ret = 0;
     int jfr_destroy_ret = 0;
 
+    rs_ub_va_munmap_batch(batch_info->jetty_cb_arr, *num);
     jetty_destroy_ret = rs_urma_delete_jetty_batch(batch_info->jetty_arr, (int)*num, &bad_jetty);
     if (jetty_destroy_ret != 0) {
         hccp_err("rs_urma_delete_jetty_batch failed, jetty_destroy_ret:%d, num:%u", jetty_destroy_ret, *num);
@@ -757,6 +715,7 @@ STATIC int rs_ub_destroy_jetty_cb_batch(struct jetty_destroy_batch_info *batch_i
         hccp_err("rs_urma_delete_jfr_batch failed, jfr_destroy_ret:%d, num:%u", jfr_destroy_ret, *num);
     }
 
+    rs_ub_free_jetty_id_batch(batch_info->jetty_cb_arr, *num);
     rs_ub_free_jetty_cb_batch(batch_info, num, bad_jetty, bad_jfr);
     return jetty_destroy_ret + jfr_destroy_ret;
 }
@@ -1432,42 +1391,6 @@ int rs_ub_ctx_rmem_unimport(struct rs_ub_dev_cb *dev_cb, unsigned long long addr
     return 0;
 }
 
-STATIC int rs_ub_ctx_jfc_create_ext(struct rs_ctx_jfc_cb *ctx_jfc_cb, urma_jfc_cfg_t jfc_cfg, urma_jfc_t **jfc)
-{
-    union create_jfc_cfg create_jfc_in = {0};
-    urma_user_ctl_out_t out = {0};
-    urma_user_ctl_in_t in = {0};
-    urma_jfc_t *jfc_out = NULL;
-    int ret;
-
-    if (ctx_jfc_cb->jfc_type == JFC_MODE_CCU_POLL && ctx_jfc_cb->ccu_ex_cfg.valid) {
-        create_jfc_in.lock_jfc_cfg.base_cfg = jfc_cfg;
-        create_jfc_in.lock_jfc_cfg.ccu_cfg.ccu_cqe_flag = ctx_jfc_cb->ccu_ex_cfg.cqe_flag;
-        in.len = (uint32_t)sizeof(struct udma_u_lock_jfc_cfg);
-        in.opcode = UDMA_U_USER_CTL_CREATE_CCU_JFC_EX;
-        in.addr = (uint64_t)(uintptr_t)&create_jfc_in.lock_jfc_cfg;
-    } else {
-        create_jfc_in.jfc_cfg_ex.base_cfg = jfc_cfg;
-        create_jfc_in.jfc_cfg_ex.jfc_mode = (enum udma_u_jfc_type)ctx_jfc_cb->jfc_type;
-        in.len = (uint32_t)sizeof(struct udma_u_jfc_cfg_ex);
-        in.opcode = UDMA_U_USER_CTL_CREATE_JFC_EX;
-        in.addr = (uint64_t)(uintptr_t)&create_jfc_in.jfc_cfg_ex;
-    }
-
-    out.len = sizeof(urma_jfc_t *);
-    out.addr = (uint64_t)(uintptr_t)&jfc_out;
-
-    ret = rs_urma_user_ctl(ctx_jfc_cb->dev_cb->urma_ctx, &in, &out);
-    if (ret != 0) {
-        hccp_err("rs_urma_user_ctl create jfc failed, ret:%d errno:%d", ret, errno);
-        return -EOPENSRC;
-    }
-
-    *jfc = jfc_out;
-
-    return ret;
-}
-
 STATIC int rs_ub_ctx_jfc_create_normal(struct rs_ub_dev_cb *dev_cb, urma_jfc_cfg_t *jfc_cfg, urma_jfc_t **out_jfc)
 {
     uint64_t jfce_addr = (uint64_t)(uintptr_t)jfc_cfg->jfce;
@@ -1697,7 +1620,7 @@ STATIC void rs_ub_ctx_fill_jfr_cfg(struct rs_ctx_jetty_cb *jetty_cb, struct rs_c
     jfr_cfg->user_ctx = (uint64_t)NULL;
 }
 
-STATIC int rs_ub_ctx_reg_jetty_db(struct rs_ctx_jetty_cb *jetty_cb, struct udma_u_jetty_info *jetty_info)
+int rs_ub_ctx_reg_jetty_db(struct rs_ctx_jetty_cb *jetty_cb, struct udma_u_jetty_info *jetty_info)
 {
     struct mem_reg_attr_t mem_attr = { 0 };
     struct mem_reg_info_t mem_info = { 0 };
@@ -1765,62 +1688,6 @@ STATIC void rs_ub_ctx_ext_jetty_create_ta_cache(struct rs_ctx_jetty_cb *jetty_cb
     }
 }
 
-STATIC void rs_ub_ctx_ext_jetty_create(struct rs_ctx_jetty_cb *jetty_cb, urma_jetty_cfg_t *jetty_cfg)
-{
-    struct udma_u_jetty_cfg_ex jetty_ex_cfg = {0};
-    struct udma_u_jetty_info jetty_info = {0};
-    urma_user_ctl_out_t out = {0};
-    urma_user_ctl_in_t in = {0};
-    int ret;
-
-    jetty_ex_cfg.base_cfg = *jetty_cfg;
-    jetty_ex_cfg.jfs_cstm.flag.bs.sq_cstm = jetty_cb->ext_mode.cstm_flag.bs.sq_cstm;
-    jetty_ex_cfg.jfs_cstm.sq.buff = (void *)(uintptr_t)jetty_cb->ext_mode.sq.buff_va;
-    jetty_ex_cfg.jfs_cstm.sq.buff_size = jetty_cb->ext_mode.sq.buff_size;
-    jetty_ex_cfg.pi_type = jetty_cb->ext_mode.pi_type;
-    jetty_ex_cfg.sqebb_num = jetty_cb->ext_mode.sqebb_num;
-    // JETTY_MODE_USER_CTL_NORMAL jetty need to use tgid to mmap db addr to support write value
-    if (jetty_cb->jetty_mode == JETTY_MODE_USER_CTL_NORMAL) {
-        jetty_ex_cfg.jetty_type = UDMA_U_NORMAL_JETTY_TYPE;
-        jetty_ex_cfg.jfs_cstm.flag.bs.tg_id = 1;
-        jetty_ex_cfg.jfs_cstm.tgid = (uint32_t)jetty_cb->dev_cb->rscb->aicpuPid;
-    } else if (jetty_cb->jetty_mode == JETTY_MODE_CACHE_LOCK_DWQE) {
-        jetty_ex_cfg.jetty_type = UDMA_U_CACHE_LOCK_DWQE_JETTY_TYPE;
-    } else {
-        jetty_ex_cfg.jetty_type = UDMA_U_CCU_JETTY_TYPE;
-    }
-
-    in.len = (uint32_t)sizeof(struct udma_u_jetty_cfg_ex);
-    in.addr = (uint64_t)(uintptr_t)&jetty_ex_cfg;
-    in.opcode = UDMA_U_USER_CTL_CREATE_JETTY_EX;
-
-    hccp_dbg("sq.buff:0x%llx, sq.buff_size:%u, tgid:%u, pi_type:%d, sqebb_num:%u",
-        jetty_cb->ext_mode.sq.buff_va,jetty_cb->ext_mode.sq.buff_size, jetty_ex_cfg.jfs_cstm.tgid,
-        jetty_cb->ext_mode.pi_type, jetty_cb->ext_mode.sqebb_num);
-
-    out.addr = (uint64_t)(uintptr_t)&jetty_info;
-    out.len = sizeof(struct udma_u_jetty_info);
-    ret = rs_urma_user_ctl(jetty_cb->dev_cb->urma_ctx, &in, &out);
-    if (ret != 0) {
-        jetty_cb->jetty = NULL;
-        hccp_err("rs_urma_user_ctl create jetty failed, ret:%d, errno:%d", ret, errno);
-        return;
-    }
-
-    jetty_cb->jetty = jetty_info.jetty;
-    jetty_cb->db_addr = (uint64_t)(uintptr_t)jetty_info.db_addr;
-
-    // ccu jetty reg db addr
-    if (jetty_cb->jetty_mode == JETTY_MODE_CCU) {
-        ret = rs_ub_ctx_reg_jetty_db(jetty_cb, &jetty_info);
-        if (ret != 0) {
-            rs_ub_ctx_ext_jetty_delete(jetty_cb);
-            jetty_cb->jetty = NULL;
-            hccp_err("rs_ub_ctx_reg_jetty_db failed, ret:%d", ret);
-        }
-    }
-}
-
 STATIC int rs_ub_ctx_drv_jetty_create(struct rs_ctx_jetty_cb *jetty_cb, struct rs_ctx_jfc_cb *send_jfc_cb,
     struct rs_ctx_jfc_cb *recv_jfc_cb)
 {
@@ -1881,6 +1748,8 @@ STATIC int rs_ub_fill_jetty_info(struct rs_ctx_jetty_cb *jetty_cb, struct qp_cre
     jetty_info->ub.uasid = jetty_cb->jetty->jetty_id.uasid;
     jetty_info->ub.id = jetty_cb->jetty->jetty_id.id;
     jetty_info->ub.db_addr = jetty_cb->db_addr;
+    jetty_info->ub.sq_buff_va = jetty_cb->sq_buff_va;
+    jetty_info->ub.wqebb_size = WQE_BB_SIZE;
     jetty_info->ub.db_token_id = jetty_cb->db_token_id;
     jetty_info->va = (uint64_t)(uintptr_t)jetty_cb->jetty;
     jetty_info->ub.ci_addr = jetty_cb->ci_addr;

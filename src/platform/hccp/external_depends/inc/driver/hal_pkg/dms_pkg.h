@@ -8,8 +8,30 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef ASCEND_HAL_DC_H
-#define ASCEND_HAL_DC_H
+#ifndef DMS_PKG_H
+#define DMS_PKG_H
 
+#define MAX_RECORD_PA_NUM_PER_DEV    20U
+
+struct va_info {
+    unsigned short size;
+    unsigned char reserved[6];
+    unsigned long long va_addr;
+};
+
+struct hbm_pa_va_info {
+    unsigned int dev_id;
+    unsigned int host_pid;
+    unsigned int va_num;
+    struct va_info va_info[MAX_RECORD_PA_NUM_PER_DEV];
+};
+
+struct memory_fault_timestamp {
+    unsigned int dev_id;
+    unsigned int host_pid;
+    unsigned int event_id;
+    unsigned int reserved; /* for byte alignment */
+    unsigned long long syscnt; /* event occurr syscnt*/
+};
 
 #endif

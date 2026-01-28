@@ -44,6 +44,7 @@
 #include "rs_ccu.h"
 #include "rs_ctx.h"
 #include "rs_esched.h"
+#include "dl_net_function.h"
 #include "rs_ub.h"
 #include "rs_ctx_inner.h"
 #endif
@@ -423,6 +424,28 @@ STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsi
     return 0;
 }
 
+STATIC int RsInitNetAdapt(struct rs_cb *rscb) {
+    int ret = 0;
+
+    if (rscb->protocol != PROTOCOL_UDMA) {
+        return 0;
+    }
+
+    ret = rs_net_adapt_init();
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_net_adapt_init chipId[%u] logic_devid[%u] failed, ret=%d",
+        rscb->chipId, rscb->logicId, ret), ret);
+
+    return ret;
+}
+
+STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
+    if (rscb->protocol != PROTOCOL_UDMA) {
+        return;
+    }
+
+    rs_net_adapt_uninit();
+}
+
 STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 {
     struct timeval start, end;
@@ -442,6 +465,12 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
         hccp_err("rs_esched_init chipId[%u] logic_devid[%u] failed, ret=%d", rscb->chipId, rscb->logicId, ret);
         goto esched_init_err;
     }
+
+    ret = RsInitNetAdapt(rscb);
+    if (ret != 0) {
+        goto net_adapt_init_err;
+    }
+
 #endif
 #endif
     ret = rs_ssl_init(rscb);
@@ -467,6 +496,8 @@ create_pthread_err:
 ssl_init_err:
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
+    RsDeInitNetAdapt(rscb);
+net_adapt_init_err:
     rs_esched_deinit(rscb->protocol);
 esched_init_err:
     (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
@@ -483,6 +514,7 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
 
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
+    RsDeInitNetAdapt(rscb);
     rs_esched_deinit(rscb->protocol);
     (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
 #endif
@@ -1989,6 +2021,7 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
 
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
+    RsDeInitNetAdapt(rscb);
     rs_esched_deinit(rscb->protocol);
     (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
 #endif

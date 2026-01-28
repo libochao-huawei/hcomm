@@ -57,7 +57,6 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
         ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
         # runtime头文件
@@ -67,6 +66,8 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
 
         # HCCP2.0
         ${HCOMM_ORION}/inc/network

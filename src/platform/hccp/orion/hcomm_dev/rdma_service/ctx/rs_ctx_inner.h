@@ -110,6 +110,7 @@ struct rs_ctx_jetty_cb {
             uint32_t sqe_buf_idx;
         } ta_cache_mode;
     };
+    uint64_t sq_buff_va;
     uint64_t db_addr;
     uint32_t db_token_id;
     uint64_t db_seg_handle;

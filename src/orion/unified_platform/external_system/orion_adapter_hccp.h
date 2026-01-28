@@ -384,7 +384,7 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     // [1024 + 192, 1024 + 192 + 4K - 1]为starsJetty预留的id
     u32 jettyId{0};
 
-    // 指定内存，需要填写的参数，CCU类型 和 DEV_USED类型需要填写
+    // 指定内存，需要填写的参数，CCU类型需要填写,即HrtJettyMode::CCU_CCUM_CACHE
     u64 sqBufVa{0};
     u32 sqBufSize{0};
     // 指定sqeBB资源起始id，当前预留
@@ -419,6 +419,7 @@ using HrtRaUbJettyCreatedOutParam = struct HrtRaUbJettyCreatedOutParamDef {
     u32         keySize{0};
     u64         dbVa{0};
     u32         dbTokenId{0};
+    uint64_t    sqBuffVa{0}; // 适配HCCP修改，jettybufva由HCCP提供，不再由HCCL分配
 };
 
 HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in);

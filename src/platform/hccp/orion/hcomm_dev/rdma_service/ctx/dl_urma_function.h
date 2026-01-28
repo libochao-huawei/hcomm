@@ -70,6 +70,18 @@ struct rs_urma_ops {
         const uint8_t tp_attr_cnt, const uint32_t tp_attr_bitmap, const urma_tp_attr_value_t *tp_attr);
     urma_target_jetty_t *(*rs_urma_import_jetty_ex)(urma_context_t *ctx, urma_rjetty_t *rjetty,
         urma_token_t *token_value, urma_import_jetty_ex_cfg_t *cfg);
+    urma_status_t (*rs_urma_alloc_jetty)(urma_context_t *urma_ctx, urma_jetty_cfg_t *cfg, urma_jetty_t **jetty);
+    urma_status_t (*rs_urma_set_jetty_opt)(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len);
+    urma_status_t (*rs_urma_get_jetty_opt)(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len);
+    urma_status_t (*rs_urma_active_jetty)(urma_jetty_t *jetty);
+    urma_status_t (*rs_urma_deactive_jetty)(urma_jetty_t *jetty);
+    urma_status_t (*rs_urma_free_jetty)(urma_jetty_t *jetty);
+    urma_status_t (*rs_urma_alloc_jfc)(urma_context_t *urma_ctx, urma_jfc_cfg_t *cfg, urma_jfc_t **jfc);
+    urma_status_t (*rs_urma_set_jfc_opt)(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len);
+    urma_status_t (*rs_urma_active_jfc)(urma_jfc_t *jfc);
+    urma_status_t (*rs_urma_get_jfc_opt)(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len);
+    urma_status_t (*rs_urma_deactive_jfc)(urma_jfc_t *jfc);
+    urma_status_t (*rs_urma_free_jfc)(urma_jfc_t *jfc);
 };
 
 void rs_ub_api_deinit(void);
@@ -127,5 +139,17 @@ int rs_urma_set_tp_attr(const urma_context_t *ctx, const uint64_t tp_handle, con
     const uint32_t tp_attr_bitmap, const urma_tp_attr_value_t *tp_attr);
 urma_target_jetty_t *rs_urma_import_jetty_ex(urma_context_t *ctx, urma_rjetty_t *rjetty, urma_token_t *token_value,
     urma_import_jetty_ex_cfg_t *cfg);
+int rs_urma_alloc_jetty(urma_context_t *urma_ctx, urma_jetty_cfg_t *cfg, urma_jetty_t **jetty);
+int rs_urma_set_jetty_opt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len);
+int rs_urma_active_jetty(urma_jetty_t *jetty);
+int rs_urma_get_jetty_opt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len);
+int rs_urma_deactive_jetty(urma_jetty_t *jetty);
+int rs_urma_free_jetty(urma_jetty_t *jetty);
+int rs_urma_alloc_jfc(urma_context_t *urma_ctx, urma_jfc_cfg_t *cfg, urma_jfc_t **jfc);
+int rs_urma_set_jfc_opt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len);
+int rs_urma_active_jfc(urma_jfc_t *jfc);
+int rs_urma_get_jfc_opt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len);
+int rs_urma_deactive_jfc(urma_jfc_t *jfc);
+int rs_urma_free_jfc(urma_jfc_t *jfc);
 
 #endif // DL_URMA_FUNCTION_H

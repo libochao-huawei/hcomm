@@ -91,6 +91,14 @@
 #define URMA_TYPICAL_MIN_RNR_TIMER 12           /* typical value of min_rnr_timer for jfr cfg */
 #define URMA_MAX_PRIORITY 15
 
+#define URMA_JFS_SQE_BASE_ADDR 0x000c
+#define URMA_JFS_DB_ADDR 0x000e
+#define URMA_JFS_DB_STATUS 0x0011
+#define URMA_JFS_PI_TYPE 0x0011
+
+#define URMA_JFC_CQE_BASE_ADDR 0x2006
+#define URMA_JFC_ID 0x2007
+
 /* operation information */
 typedef enum urma_place_order {
     URMA_NO_ORDER = 0,     // No order

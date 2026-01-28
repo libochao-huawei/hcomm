@@ -97,8 +97,12 @@ struct ctx_cq_attr {
 
 struct ctx_cq_info {
     uint64_t addr; /**< refer to ibv_cq*, urma_jfc_t* for cq_cb index */
-    union {
-        uint32_t resv[8U]; /**< resv for stars poll cq */
+    struct {
+        uint32_t id; /**< jfc id */
+        uint32_t cqe_size;
+        uint64_t buf_addr;
+        uint64_t swdb_addr;
+        uint32_t resv[2U]; /**< resv for stars poll cq */
     } ub;
     uint32_t resv[4U];
 };
