@@ -50,7 +50,6 @@ std::map<ExceptionType, HcclResult> ExceptionInfo::errorCodeMap{
 HcclResult ExceptionInfo::GetErrorCode(const ExceptionType &type)
 {
     if (errorCodeMap.find(type) == errorCodeMap.end()) {
-        printf("error Type : %s \n", type.Describe().c_str());
         return HCCL_E_RESERVED;
     }
     return errorCodeMap.at(type);

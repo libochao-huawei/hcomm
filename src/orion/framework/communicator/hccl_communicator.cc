@@ -135,13 +135,11 @@ HcclResult HcclCommunicator::GetRankSize(uint32_t *rankSize)
 
 HcclResult HcclCommunicator::HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
 {
-    printf("HcclGetCclBuffer5555\n");
     auto commImpl = GetCommImpl();
     if (commImpl == nullptr) {
         HCCL_ERROR("[GetFoldParamsFromOrionToHcomm] commImpl is null");
         return HCCL_E_PTR;
     }
-    printf("HcclGetCclBuffer666\n");
     shared_ptr<DevBuffer> hcclBuffer = commImpl->GetCclBuffer();
     CHK_PTR_NULL(hcclBuffer);
     cclBufferAddr = hcclBuffer->GetAddr();

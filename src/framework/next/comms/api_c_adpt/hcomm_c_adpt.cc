@@ -465,7 +465,6 @@ HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNu
 HcclResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     HcclMem **remoteMemConverted = reinterpret_cast<HcclMem **>(remoteMem);
-    printf("remoteMem:%p, remoteMemConverted:%p, memNum:%p \n", remoteMem, remoteMemConverted, memNum);
 
     return hcomm::WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
