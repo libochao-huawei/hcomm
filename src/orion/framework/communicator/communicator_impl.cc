@@ -655,11 +655,10 @@ HcclResult CommunicatorImpl::CheckCommStatus()
 HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, void **addr)
 {
     try {
-        if (opParams.commEngine != HcclAccelerator::AICPU) {
-            HCCL_ERROR("[AllocCollOpResource]It's support aicpu(%u) unfold on mc2 temporarily. input is %s",
-                    HcclAccelerator::AICPU, opParams.commEngine.Describe().c_str());
-            return HCCL_E_NOT_SUPPORT;
-        }
+        if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
+ 	        HCCL_ERROR("[AllocCollOpResource]It's support aicpu unfold on mc2. input is %s", opParams.commEngine.Describe().c_str());
+ 	        return HCCL_E_NOT_SUPPORT;
+ 	    }
         CHK_RET(CheckCommStatus());
  
         WaitReady();
@@ -1186,7 +1185,7 @@ void CommunicatorImpl::InitDataBufferManager()
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
     scratchBufSize += HCCL_MC2_ON_AICPU_FIXED_CALC_BUFFER_SIZE;
     if (rankSize > 1) {
-        HCCL_INFO("[CommunicatorImpl][InitDataBufferManager] scratchBufSize[%llu]M", scratchBufSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
+        HCCL_INFO("[CommunicatorImpl][InitDataBufferManager] scratchBufSize[%llu]M", cclBufferSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(4 * 1024 * 1024));
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
 
