@@ -749,6 +749,9 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
             "whether the switch is connected"
         })
     );
+    CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
+        HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
 
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EJ0004",
@@ -794,6 +797,9 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
             "whether the switch is connected"
         })
     );
+    CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
+        HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
 
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EJ0004",
