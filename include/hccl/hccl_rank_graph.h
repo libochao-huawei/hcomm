@@ -54,6 +54,7 @@ typedef struct {
         uint8_t raws[128];
         struct {
             CommProtocol linkProtocol;
+            uint8_t hop;
         };
     } linkAttr;
 } CommLink;
