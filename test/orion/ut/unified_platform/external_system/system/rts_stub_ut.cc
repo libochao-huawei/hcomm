@@ -24,7 +24,7 @@ aclError aclrtDeviceGetBareTgid(int32_t *pid)
 
 const char *aclrtGetSocName()
 {
-    return "Ascend910_95";
+    return "Ascend950PR";
 }
 
 aclError aclrtGetDeviceCount(uint32_t *count)
