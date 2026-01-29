@@ -612,7 +612,7 @@ HcclResult HcclCommAicpu::InitZeroCopyExchanger(const HcclOpResParam *commParam)
 
     EXECEPTION_CATCH((ZeroCopyExchanger_ =
         std::make_shared<hccl::AicpuZeroCopyExchanger>(commParam->localUsrRankId, commParam->rankSize,
-        commParam, nSecStopFunc, timeoutSec, topoInfo_.deviceNumPerAggregation)), return HCCL_E_PTR);
+        commParam, nSecStopFunc, timeoutSec, topoInfo_.deviceNumPerAggregation, taskMonitorInterval_)), return HCCL_E_PTR);
 
     // 通信域第一次初始化时，如果IPC内存有不为空的则认为是使能该特性
     isZeroCopy_ = false;
@@ -1223,6 +1223,7 @@ HcclResult HcclCommAicpu::InitConfigInfo(const HcclOpResParam *commParam)
     multiQpThreshold_ = commParam->config.multiQpThreshold;
     inlineReducEnable_ = true;
     fftsEnable_ = false;
+    taskMonitorInterval_ = commParam->config.taskMonitorInterval;
     algoInfo_.inlineReduceSwitchOn = true;
     algoInfo_.identifier = commParam->hcomId;
     algoInfo_.isSupportAtomicWrite = static_cast<bool>(commParam->config.isSupportAtomicWrite);
@@ -3085,6 +3086,101 @@ std::string HcclCommAicpu::PrintInplaceSupportRetryStatus(InplaceSupportRetrySta
     return "";
 }
 
+bool HcclCommAicpu::IsNoNeedMonitor(void)
+{
+    if (taskMonitorInterval_ == 0) return true;
+
+    KfcCommand kfcCmd = KfcCommand::kNone;
+    (void)GetKfcCommand(kfcCmd);
+    if (kfcCmd != KfcCommand::kNone) return true;
+
+    BackgroundCommand bgCmd = BackgroundCommand::kNone;
+    (void)GetBackGroundCommand(bgCmd);
+    if (bgCmd != BackgroundCommand::kNone) return true;
+
+    HcclComSuspendingFlag suspendingFlag = HcclComSuspendingFlag::isNull;
+    (void)GetSuspendingFlag(suspendingFlag);
+    if (suspendingFlag != HcclComSuspendingFlag::isNull) return true;
+    return false;
+}
+
+void HcclCommAicpu::InsertMonitorData(Stream &stream, HcclUs &curTime, u32 sqHead, uint16_t taskId, uint8_t type)
+{
+    AicpuStreamMontior tmpTaskMonitor;
+    tmpTaskMonitor.historyTime = curTime;
+    tmpTaskMonitor.historyHead = sqHead;
+    tmpTaskMonitor.historyTaskId = taskId;
+    tmpTaskMonitor.historyType = type;
+    streamTaskMonitor_.insert(std::make_pair(stream.sqId(), tmpTaskMonitor));
+    return;
+}
+
+bool HcclCommAicpu::IsNeedRefreshMonitorData(AicpuStreamMontior &streamMontior, HcclUs &curTime, uint32_t remoteRank,
+    uint16_t taskId, u32 sqHead, u32 sqTail, uint8_t type)
+{
+    auto &historyTime = streamMontior.historyTime;
+    auto &historyHead = streamMontior.historyHead;
+    auto &historyTaskId = streamMontior.historyTaskId;
+    auto &historyType = streamMontior.historyType;
+    if((historyTaskId != taskId) || (sqHead != historyHead) || (sqHead == sqTail) || (historyType != type) ||
+       ((type == RT_STARS_SQE_TYPE_NOTIFY_WAIT) && (remoteRank == INVALID_VALUE_RANKID))) {
+        historyTime = curTime;
+        historyHead = sqHead;
+        historyTaskId = taskId;
+        historyType = type;
+        return true;
+    }
+    return false;
+}
+
+HcclResult HcclCommAicpu::StreamTaskMonitor(void)
+{
+    // 通信域资源已经释放
+    CHK_PRT_RET(!commOpenStatus,
+        HCCL_RUN_INFO("[PrintTaskExceptionAllStreams]group[%s] has been destroyed", identifier_.c_str()), HCCL_SUCCESS);
+    if (IsNoNeedMonitor()) return HCCL_SUCCESS;
+    HCCL_DEBUG("StreamTaskMonitor print");
+    std::vector<Stream> totalStream = {mainStream_};
+    totalStream.insert(totalStream.end(), slaveStreams_.begin(), slaveStreams_.end());
+    HcclUs curTime = TIME_NOW();
+    for (auto &stream : totalStream) {
+        u32 sqHead = 0U, sqTail = 0U;
+        (void)QuerySqStatus(devId_, stream.sqId(), sqHead, sqTail);
+        HcclSqeContext *sqeContext = stream.GetSqeContextPtr();
+        SqeRingBuffer *sqeContextBuffer = &(sqeContext->buffer);
+        CHK_PTR_NULL(sqeContextBuffer);
+
+        uint8_t type = 0;
+        uint16_t taskId = 0;
+        uint32_t remoteRank = 0;
+        std::string tmp = GetTaskExceptionTaskInfo(sqHead, sqeContextBuffer, type, taskId, remoteRank);
+        HCCL_DEBUG("GetTaskExceptionTaskInfo type %u taskId %u", type, taskId);
+        auto mapIt = streamTaskMonitor_.find(stream.sqId());
+        if (mapIt == streamTaskMonitor_.end()) {
+            InsertMonitorData(stream, curTime, sqHead, taskId, type);
+            continue;
+        }
+
+        auto &streamMontior = mapIt->second;
+        if (IsNeedRefreshMonitorData(streamMontior, curTime, remoteRank, taskId, sqHead, sqTail, type)) {
+            continue;
+        }
+
+        auto timeVal = DURATION_US(curTime - streamMontior.historyTime).count();
+        if (timeVal >= taskMonitorInterval_ * 1000 * 1000) {
+            HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor streamId:%d, sqid:%d, head:%u, tail:%u, time %s %s",
+                stream.id(), stream.sqId(), sqHead, sqTail, std::to_string(timeVal).c_str(), tmp.c_str());
+            HCCL_RUN_INFO("[StreamTaskMonitor]prof monitor %s", GetTaskExceptionOpInfo(sqHead,sqeContextBuffer).c_str());
+            PrintTaskExceptionTaskQue(sqHead, sqeContextBuffer, true);
+            streamMontior.historyTime = curTime;
+            streamMontior.historyHead = sqHead;
+            streamMontior.historyTaskId = taskId;
+            streamMontior.historyType = type;
+        }
+    }
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommAicpu::SupportRetryWithInplaceCheck(const std::string &algName, OpParam &param)
 {
     // 不支持inplace的通信算子重执行
@@ -3452,8 +3548,12 @@ HcclResult HcclCommAicpu::PrintTaskExceptionAllStreams()
             }
         }
 
+        uint8_t type = 0;
+        uint16_t taskId = 0;
+        uint32_t remoteRank = 0;
         HCCL_ERROR("[TaskException]base information is streamId:%d, sqid:%d, head:%u, tail:%u, %s",
-            stream.id(), stream.sqId(), sqHead, sqTail, GetTaskExceptionTaskInfo(sqHead, sqeContextBuffer).c_str());
+            stream.id(), stream.sqId(), sqHead, sqTail,
+            GetTaskExceptionTaskInfo(sqHead, sqeContextBuffer, type, taskId, remoteRank).c_str());
         PrintTaskExceptionTaskQue(sqHead, sqeContextBuffer);
     }
     return HCCL_SUCCESS;
@@ -4082,9 +4182,12 @@ HcclResult HcclCommAicpu::PrintTaskExceptionByTaskId(u8 sqeType, u16 taskId, hcc
         taskId, sqeType);
     s32 sqeIdx = tail - taskNum - 1;
     u32 sqHead = (sqeIdx + HCCL_SQE_MAX_CNT) % HCCL_SQE_MAX_CNT;
-
+    uint8_t type = 0;
+    uint16_t taskIdTmp = 0;
+    uint32_t remoteRank = 0;
     HCCL_ERROR("[TaskException][AICPU]base information is streamId:%d, sqid:%d, head:%u, tail:%u, %s",
-        stream.id(), stream.sqId(), sqHead, tail, GetTaskExceptionTaskInfo(sqHead, sqeContextBuffer).c_str());
+        stream.id(), stream.sqId(), sqHead, tail,
+        GetTaskExceptionTaskInfo(sqHead, sqeContextBuffer, type, taskIdTmp, remoteRank).c_str());
     PrintTaskExceptionTaskQue(sqHead, sqeContextBuffer);
     return HCCL_SUCCESS;
 }
@@ -4109,16 +4212,19 @@ std::string HcclCommAicpu::GetTaskExceptionOpInfo(u32 idx, SqeRingBuffer *sqeCon
     return ss.str();
 }
 
-std::string HcclCommAicpu::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *sqeContextBuffer)
+std::string HcclCommAicpu::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *sqeContextBuffer, uint8_t &type,
+    uint16_t &taskId, uint32_t &remoteRank)
 {
     SqeInfo sqeInfo;
     SqeContextUtils::QuerySqeInfo(sqeContextBuffer->rtsMirrorBuffer + sqHead * HCCL_SQE_SIZE,
         sqeContextBuffer->rtsqSqeType[sqHead], sqeContextBuffer->addInfo[sqHead], &sqeInfo);
-
+    type = sqeInfo.type;
+    taskId = sqeInfo.taskId;
+    remoteRank = sqeContextBuffer->rtsDfxInfo[sqHead].remoteRank;
     std::stringstream ss;
     ss << "type:" << SqeContextUtils::RtsqTaskTypeToStr(sqeInfo.type) << ", ";
     ss << "localRank:" << localUserRank_ << ", ";
-    ss << "remoteRank:" << sqeContextBuffer->rtsDfxInfo[sqHead].remoteRank << ", ";
+    ss << "remoteRank:" << remoteRank << ", ";
     ss << "taskId:" << sqeInfo.taskId << ", ";
     ss << "notifyId:" << sqeInfo.notifyId << ", ";
     ss << "length:" << sqeInfo.length << ", ";
@@ -4129,7 +4235,7 @@ std::string HcclCommAicpu::GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *s
     return ss.str();
 }
 
-void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer)
+void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor)
 {
     const u32 sqeNum = 50; // 打印当前位置的前50个task
     // 记录上一次打印的算子信息
@@ -4151,8 +4257,13 @@ void HcclCommAicpu::PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeConte
         u32 newOpIdx = newOpInfo->opIndex;
         std::string newOpTag = newOpInfo->tagBuff;
         if (newOpIdx != opIndex || newOpTag != opTag || i == sqeNum) { // 不同一个算子，或已经到打印的最后一个位置
-            HCCL_ERROR("[TaskException]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
-            HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
+            if (isMonitor == true) {
+                HCCL_RUN_INFO("[StreamTaskMonitor]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
+                HCCL_RUN_INFO("[StreamTaskMonitor]task sequence is %s", ss.str().c_str());
+            } else {
+                HCCL_ERROR("[TaskException]opData information is %s", GetTaskExceptionOpInfo(lastSqIdx, sqeContextBuffer).c_str());
+                HCCL_ERROR("[TaskException]task sequence is %s", ss.str().c_str());
+            }
             opIndex = newOpIdx;
             opTag = newOpTag;
             lastSqIdx = newSqIdx;

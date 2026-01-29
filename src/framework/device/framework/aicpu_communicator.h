@@ -92,6 +92,13 @@ enum class AicpuKfcHandlerType: u32 {
     kSetProfTimeEnd,
     kMax
 };
+
+struct AicpuStreamMontior {
+    HcclUs historyTime;
+    u32 historyHead;
+    u32 historyTaskId;
+    u32 historyType;
+};
 using AicpuKfcHandler = std::function<HcclResult(const std::vector<u64> &)>;
 class HcclCommAicpu {
 public:
@@ -108,6 +115,7 @@ public:
     void SetDumpDebug(bool dumpDebug);
     void SetIsDeviceMode(bool isDeviceMode) { isDeviceMode_ = isDeviceMode; }
     void SetUserStreamId(s32 userStreamId) { userStreamId_ = userStreamId; }
+    HcclResult StreamTaskMonitor(void);
     HcclResult UpdateNotifyWaitTimeOut(SyncMode syncMode, u64 notifyWaitTime);
     HcclResult GetStreamAll(std::vector<Stream> &streams);
     u32 GetDevId() const { return devId_; }
@@ -164,7 +172,8 @@ public:
     HcclResult ParseHierarchicalAlgOption(u32 *ahcConfInfo);
     void RegisterKfcHandler(AicpuKfcHandlerType type, AicpuKfcHandler cb) { kfcHandlers_[static_cast<size_t>(type)] = cb; }
     HcclResult RecordHostOrder(const HcclOpResParam *commParam, const std::string& tag, u8 orderLaunchMode); // kernel占到核后，通知host侧
-	HcclResult RegisterProfCallBack();
+    std::string GetTaskExceptionTaskInfo(u32 sqHead, SqeRingBuffer *sqeContextBuffer, uint8_t &type, uint16_t &taskId, uint32_t &remoteRank);
+    HcclResult RegisterProfCallBack();
     // 独立算子专用
     HcclResult SetChannelP2pNotify(TransportDeviceP2pData &transDevP2pData, u64 &p2pNotifyNum, 
         HcclChannelP2p &channelP2p);
@@ -306,8 +315,7 @@ private:
     HcclResult PrintTaskExceptionAllStreams();
     bool IsRepeatedOpTaskException(u32 idx, SqeRingBuffer *sqeContextBuffer); // 避免同一个算子重复打印taskException
     std::string GetTaskExceptionOpInfo(u32 idx, SqeRingBuffer *sqeContextBuffer); // 打印算子参数信息
-    std::string GetTaskExceptionTaskInfo(u32 idx, SqeRingBuffer *sqeContextBuffer); // 打印当前位置的task详细信息
-    void PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer); // 打印当前位置的前序task
+    void PrintTaskExceptionTaskQue(u32 sqIdx, SqeRingBuffer *sqeContextBuffer, bool isMonitor = false); // 打印当前位置的前序task
     std::string GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextBuffer); // 打印task简写
     void PrintAicpuCommExecStatus();
 
@@ -411,7 +419,10 @@ private:
     HcclResult PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
     HcclResult IsInplace(const OpParam &param, bool& isInplace);
     HcclResult ParseOpParamForCache(const OpParam &param, HcclDataType& sendType, HcclDataType& recvType, uint64_t& inputSize, uint64_t& outputSize);
-
+    bool IsNoNeedMonitor(void);
+    void InsertMonitorData(Stream &stream, HcclUs &curTime, u32 sqHead, uint16_t taskId, uint8_t type);
+    bool IsNeedRefreshMonitorData(AicpuStreamMontior &streamMontior, HcclUs &curTime, uint32_t remoteRank,
+        uint16_t taskId, u32 sqHead, u32 sqTail, uint8_t type);
     std::unordered_map<s32, u32> opExecIndexMap_;
 
     // 管理aicpu和custom进程共享的数据
@@ -533,6 +544,7 @@ private:
     // aicpu和custom进程单独对bsr send/recv的index进行计数，用于在重执行过程中保证send/recv的index一致
     std::map<u32, u32> bsrSendIndexMap_;
     std::map<u32, u32> bsrRecvIndexMap_;
+    std::map<u32, AicpuStreamMontior> streamTaskMonitor_;
 
     bool isZeroCopy_{false};
     hccl::AlgOpContext algOpContext_;
@@ -543,6 +555,7 @@ private:
     // alltoall pipeline
     void* sendRecvInfoPtr_ = nullptr;
     uint64_t sqeWaitTimeOut_ = dfx::kKfcTimeOut;
+    uint32_t taskMonitorInterval_ = 0;
 
     OpCounterInfo opCounterInfo_;
     std::mutex queryCqeMutex_;

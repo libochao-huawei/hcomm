@@ -5776,6 +5776,7 @@ namespace hccl
         aclrtFloatOverflowMode floatOverflowMode = ACL_RT_OVERFLOW_MODE_UNDEF;
         CHK_RET(hrtGetDeviceSatMode(&floatOverflowMode));
         opResPara_.config.floatOverflowMode = floatOverflowMode;
+        opResPara_.config.taskMonitorInterval = GetExternalInputDfsTaskMonitorInterval();
         bool isSupportAtomicWrite = false;
         if (userRankSize_ > 1) {
             CHK_RET(IsSupportAtomicWrite(deviceType_, devicePhyId_, isSupportAtomicWrite));

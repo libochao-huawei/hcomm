@@ -55,6 +55,8 @@ const bool& GetExternalInconsistentCheckSwitch();
 
 s32& GetExternalInputDfsConnectionFaultDetectionTime();
 
+u32& GetExternalInputDfsTaskMonitorInterval();
+
 /*************** For Internal Use ***************/
 
 struct EnvConfig {
@@ -74,6 +76,7 @@ struct EnvConfig {
     bool opCounterEnable;
     bool inconsistentCheckSwitch;
     s32 dfsConnectionFaultDetectionTime;
+    u32 dfsTaskMonitorInterval;
 
     // HCCL_ALGO环境变量参数
     bool specificAlgoMode;
@@ -104,6 +107,7 @@ struct EnvConfig {
         // 初始化 inconsistentCheckSwitch 为默认值
         inconsistentCheckSwitch = false;
         dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
+        dfsTaskMonitorInterval = 0;
         specificAlgoMode = false;
         for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
             hcclAlgoConfig[static_cast<HcclCMDType>(opType)] =
@@ -172,6 +176,8 @@ HcclResult ParseEnvConfig(const EnvConfigParam& param, std::string& envValue, u3
 
 HcclResult ParseSingleDFSConfigItem(const std::string& dfsConfigEnv, const std::string& configName,
     std::string& configResult);
+
+HcclResult ParseMonitor(std::string &taskMonitorInterval, s32 &monitorTime);
 
 HcclResult GetKeyWordPath(const std::string &cannEnvStr, const std::string &keyStr, std::string &cannPath);
 
