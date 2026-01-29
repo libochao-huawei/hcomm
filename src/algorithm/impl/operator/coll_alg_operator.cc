@@ -130,9 +130,10 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         }
     }
 
+    bool isLastSelect = algDesc.isLastSelect;
     algDesc = executor_->GetAlgDesc();
     // 打印维测日志
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && algDesc.isLastSelect) {
+    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && isLastSelect) {
         // 获取展开模式，转换成字符串
         std::string opExpansionStr;
         if (algDesc.isAivMode) {
