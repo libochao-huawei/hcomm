@@ -32,8 +32,6 @@ public:
 
     const EnvDetourConfig &GetDetourConfig();
 
-    const EnvTopoFilePathConfig &GetTopoFilePathConfig();
-
     EnvConfig(const EnvConfig &envConfig) = delete;
 
     EnvConfig &operator=(const EnvConfig &envConfig) = delete;
@@ -48,7 +46,6 @@ private:
     EnvAlgoConfig          algoCfg;
     EnvLogConfig           logCfg;
     EnvDetourConfig        detourCfg;
-    EnvTopoFilePathConfig  topoFilePathCfg;
     EnvConfig();
 };
 

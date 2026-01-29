@@ -106,7 +106,7 @@ void EletwiseV3::DoBlockTiling()
     block_factor = static_cast<int64_t>(std::ceil(out_shape * 1.0 / cur_core));
     block_factor = static_cast<int64_t>(std::ceil(block_factor * 1.0 / block_factor_align_size) *
         block_factor_align_size);
-    block_dims = static_cast<int64_t>(std::ceil(out_shape * 1.0 / block_factor));
+    num_blocks = static_cast<int64_t>(std::ceil(out_shape * 1.0 / block_factor));
 }
 
 bool EletwiseV3::DoUbTiling()
@@ -153,7 +153,7 @@ bool EletwiseV3::DoCommonTiling()
         }
         ret = ret && DoUbTiling();
     } else {
-        block_dims = 1;
+        num_blocks = 1;
         block_factor = out_shape;
         ub_factor = out_shape;
     }
@@ -166,11 +166,11 @@ bool EletwiseV3::DoCommonTiling()
 
 bool EletwiseV3::WriteCommonData() const
 {
-    HCCL_DEBUG("opType[%s] elewise tiling key is:%lld, block_dims is:%lld, block_factor is:%lld, ub_factor is:%lld,"\
-        "outshape:%lld", op_type.c_str(), tiling_key, block_dims, block_factor, ub_factor,\
+    HCCL_DEBUG("opType[%s] elewise tiling key is:%lld, num_blocks is:%lld, block_factor is:%lld, ub_factor is:%lld,"\
+        "outshape:%lld", op_type.c_str(), tiling_key, num_blocks, block_factor, ub_factor,\
         static_cast<int32_t>(out_shape));
 
-    run_info.blockDim = static_cast<uint32_t>(block_dims);
+    run_info.numBlocks = static_cast<uint32_t>(num_blocks);
     constexpr uint32_t pure_elewise_var_size = 3;
     run_info.tilingKey = static_cast<uint32_t>(tiling_key);
     if (compile_info.elewise_vars_size == pure_elewise_var_size) {

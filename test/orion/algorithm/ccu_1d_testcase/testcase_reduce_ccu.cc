@@ -182,7 +182,7 @@ TEST_F(ReduceCCUTest, reduce_ccu_case_test_3rank_Mesh1DMultiMission)
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
     checkerOpParam.root = 0;
-    checkerOpParam.algName = "CcuReduceMesh1DMultiMission";
+    checkerOpParam.algName = "CcuReduceMesh1D";
 
     Checker checker;
     HcclResult ret;

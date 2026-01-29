@@ -815,8 +815,9 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
         HCCL_INFO("[GetRemoteMem] No remote memory regions available");
         return HCCL_SUCCESS;
     }
-
-    auto remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
+    // 释放之前的内存
+    remoteMemsPtr_.reset();  
+    remoteMemsPtr_ = std::make_unique<HcclMem[]>(totalCount);
     CHK_PTR_NULL(remoteMemsPtr_);
 
     for (uint32_t i = 0; i < totalCount; i++) {
@@ -825,6 +826,8 @@ HcclResult UbMemTransport::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, c
         remoteMemsPtr_[i].addr = reinterpret_cast<void *>(rmtRmaBuffer->GetAddr());
         remoteMemsPtr_[i].size = rmtRmaBuffer->GetSize();
         memTags[i] = const_cast<char*>(rmtRmaBuffer->GetMemTag());
+        HCCL_INFO("[%s] addr[%p] size[%zu] rmtRmaBuffer[%p]", 
+            __func__, reinterpret_cast<void *>(rmtRmaBuffer->GetAddr()), rmtRmaBuffer->GetSize(), rmtRmaBuffer.get());
     }
 
     *memNum = totalCount;

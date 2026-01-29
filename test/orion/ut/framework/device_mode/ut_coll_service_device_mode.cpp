@@ -139,7 +139,7 @@ protected:
         shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
         shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
             inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-        peer0->AddConnInterface(connInterface);
+        peer0->AddConnInterface(0, connInterface);
         fakeComm.rankGraph->AddPeer(peer0);
         fakeComm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(fakeComm);
         fakeComm.trace = std::make_unique<Trace>();
@@ -220,7 +220,6 @@ TEST_F(CollServiceDeviceModeTest, test_init_LoadWithOffloadMode)
     MOCKER(HrtStreamCreateWithFlags).stubs().with(any(), any()).will(returnValue(ptr1));
     MOCKER(HrtGetStreamId).stubs().will(returnValue(0));
     MOCKER_CPP(&CollServiceDefaultImpl::AddCountTask).stubs().will(ignoreReturnValue());
-
     auto service = dynamic_cast<CollServiceDeviceMode *>(fakeComm.collService);
     OpType opType = OpType::ALLREDUCE;
     auto stream = std::make_unique<Stream>();
@@ -280,8 +279,8 @@ TEST_F(CollServiceDeviceModeTest, test_alloc_comm_resource_by_tiling_success)
         inputAddr, ports2, AddrPosition::DEVICE, LinkType::PEER2PEER, protocols);
     shared_ptr<NetInstance::Link> link = std::make_shared<NetInstance::Link>(
         peer0, peer1, sourceIface, targetIface, LinkType::PEER2PEER, protocols, direction, hop);
-    peer0->AddConnInterface(sourceIface);
-    peer1->AddConnInterface(targetIface);
+    peer0->AddConnInterface(0, sourceIface);
+    peer1->AddConnInterface(0, targetIface);
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 
@@ -542,7 +541,7 @@ TEST_F(CollServiceDeviceModeTest, test_coll_service_device_mode_resume)
     shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
     shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
         inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-    peer0->AddConnInterface(connInterface);
+    peer0->AddConnInterface(0, connInterface);
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
     comm.trace = std::make_unique<Trace>();
@@ -601,7 +600,7 @@ TEST_F(CollServiceDeviceModeTest, test_coll_service_device_mode_resume_when_link
     shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
     shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
         inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-    peer0->AddConnInterface(connInterface);
+    peer0->AddConnInterface(0, connInterface);
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
     comm.trace = std::make_unique<Trace>();
@@ -710,8 +709,8 @@ TEST_F(CollServiceDeviceModeTest, should_success_when_AllocCommResource_aiv)
         inputAddr, ports2, AddrPosition::DEVICE, LinkType::PEER2PEER, protocols);
     shared_ptr<NetInstance::Link> link = std::make_shared<NetInstance::Link>(
         peer0, peer1, sourceIface, targetIface, LinkType::PEER2PEER, protocols, direction, hop);
-    peer0->AddConnInterface(sourceIface);
-    peer1->AddConnInterface(targetIface);
+    peer0->AddConnInterface(0, sourceIface);
+    peer1->AddConnInterface(0, targetIface);
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 
@@ -800,8 +799,8 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs0_Expect_TH
         inputAddr, ports2, AddrPosition::DEVICE, LinkType::PEER2PEER, protocols);
     shared_ptr<NetInstance::Link> link = std::make_shared<NetInstance::Link>(
         peer0, peer1, sourceIface, targetIface, LinkType::PEER2PEER, protocols, direction, hop);
-    peer0->AddConnInterface(sourceIface);
-    peer1->AddConnInterface(targetIface);
+    peer0->AddConnInterface(0, sourceIface);
+    peer1->AddConnInterface(0, targetIface);
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 
@@ -906,8 +905,8 @@ TEST_F(CollServiceDeviceModeTest, Ut_AllocCommResource_When_versionIs100_Expect_
         inputAddr, ports2, AddrPosition::DEVICE, LinkType::PEER2PEER, protocols);
     shared_ptr<NetInstance::Link> link = std::make_shared<NetInstance::Link>(
         peer0, peer1, sourceIface, targetIface, LinkType::PEER2PEER, protocols, direction, hop);
-    peer0->AddConnInterface(sourceIface);
-    peer1->AddConnInterface(targetIface);
+    peer0->AddConnInterface(0, sourceIface);
+    peer1->AddConnInterface(0, targetIface);
     comm.rankGraph->AddPeer(peer0);
     comm.rankGraph->AddPeer(peer1);
 

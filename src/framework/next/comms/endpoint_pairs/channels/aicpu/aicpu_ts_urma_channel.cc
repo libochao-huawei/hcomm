@@ -44,9 +44,9 @@ HcclResult AicpuTsUrmaChannel::ParseInputParam()
     // TODO: memHandle 强转成 Hccl::LocalUbRmaBuffer*, push_back 进去 commLocRes_.bufferVec
 
     for (uint32_t i = 0; i < channelDesc_.memHandleNum; ++i) {
-        HcclBuf* buf = static_cast<HcclBuf*>(channelDesc_.memHandles[i]);
+        Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<Hccl::LocalUbRmaBuffer *>(channelDesc_.memHandles[i]);
         bufs_.emplace_back(std::move(std::make_shared<Hccl::Buffer>(
-            reinterpret_cast<uintptr_t>(buf->addr), buf->len)
+            reinterpret_cast<uintptr_t>(localUbRmaBuffer->GetAddr()), localUbRmaBuffer->GetSize(), localUbRmaBuffer->GetBuf()->GetMemTag())
         ));
     }
 

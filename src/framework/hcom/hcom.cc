@@ -186,7 +186,7 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     HcclResult ret = HCCL_SUCCESS;
     CHK_RET(InitExternalInput());
     CHK_RET(InitEnvConfig());
-    CHK_RET(HcomCheckInitClusterInfo(rankTableM, identify));
+    HCCL_RUN_INFO("Entry-HcomInitByString, rankTableM[%s], identify[%s], commWorkMode[%d]", rankTableM, identify, commWorkMode);
     HCCL_RUN_INFO("Entry-HcomInitByString, identify[%s]", identify);
 
     ret = HcomInit(rankTableM, identify, commWorkMode);
@@ -313,8 +313,8 @@ HcclResult HcomInitByMasterInfo(const char *masterIp, const char *masterPort, co
     // 读取rankTable文件到内存
     std::string rankTableM;
     std::string identify;
-    HCCL_RUN_INFO("Entry-HcomInitByMasterInfo:masterIp[%s], masterPort[%s], master device id[%s], rankSize[%s], "
-        "deviceId[%d]", masterIp, masterPort, masterDeviceId, rankSize, logicDevId);
+    HCCL_RUN_INFO("Entry-HcomInitByMasterInfo:masterIp[%s], masterPort[%s], master device id[%s], rankSize[%s], rankIp[%s], "
+        "deviceId[%d]", masterIp.c_str(), masterPort.c_str(), masterDeviceId.c_str(), rankSize.c_str(), rankIp.c_str(), logicDevId);
 
     CHK_RET(InitExternalInput()); // 生成ranktable前需要提前感知部分配置
     CHK_RET(InitEnvConfig());
@@ -557,7 +557,7 @@ HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dat
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     /* 入参的正确性由HCCL确保 */
     HcclResult ret = hcclComm->Broadcast(tag, ptr, count, dataType, root, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1032,7 +1032,7 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     /* 入参的正确性由HCCL确保 */
     HcclResult ret = hcclComm->Broadcast(tag, ptr, count, dataType, root, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1740,15 +1740,15 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, H
 }
 
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        char *algName, u32 *blockDim)
+        char *algName, u32 *numBlocks)
 {
     std::string algNamV2(algName);
-    HCCLV2_FUNC_RUN(HcomCalcBlockDimV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *blockDim));
+    HCCLV2_FUNC_RUN(HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *numBlocks));
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     std::string algNam(algName);
-    CHK_RET(hcclComm->HcclCalcBlockDim(opType, count, counts, dataType, aivCoreLimit, algNam, *blockDim));
+    CHK_RET(hcclComm->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algNam, *numBlocks));
 
     return HCCL_SUCCESS;
 }
@@ -1979,7 +1979,7 @@ void HcomSetAutoTuneMode(bool autoTuneMode)
 
 HcclResult HcomSetExecTimeOut(const char *execTimeOut)
 {
-    HCCL_RUN_INFO("HcomSetExecTimeOut:execTimeOut[%s]", execTimeOut);
+    HCCL_RUN_INFO("HcomSetExecTimeOut:execTimeOut[%s]s", execTimeOut);
     if(execTimeOut == nullptr) {
         return HCCL_SUCCESS;
     }
@@ -2151,7 +2151,7 @@ HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     u32 rankId = 0;
     CHK_RET(hcclComm->GetUserRank(rankId));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2220,7 +2220,7 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
                recvBuf, GetDataTypeEnumStr(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2282,7 +2282,7 @@ HcclResult HcclCommGraphAlltoAllV(const void *sendBuf, const void *sendCounts, c
         GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2345,7 +2345,7 @@ HcclResult HcclCommGraphAlltoAllVC(const void *sendBuf, const void *sendCountMat
                GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2589,7 +2589,7 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
     CHK_RET(hcclComm->GetRankSize(rankSize));
     CHK_RET(hcclComm->GetUserRank(rankId));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
 
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
@@ -3243,8 +3243,6 @@ HcclResult GetOpScratchMemSize(bool isOfflineCompilation, HcclCMDType hcclOpType
     } else if (hcclOpType == HCCL_CMD_BROADCAST) {
         if (count * dataTypeSize <= HCCL_MID_COUNT_32_MB) {
             opMemSize += count * dataTypeSize * HCCL_MEMSIZE_HD_FACTOR;
-        }else{
-            opMemSize += count * dataTypeSize;
         }
     } else if ((hcclOpType == HCCL_CMD_ALLTOALLV ||
         hcclOpType == HCCL_CMD_ALLTOALLVC) &&
@@ -3800,11 +3798,36 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
 
     std::string sCollectiveType(hcomOpParam->opType);
 
+    HcclResult ret;
     HcclUs startut = TIME_NOW();
 
     auto iter = HCCL_OPTYPE_NAME_MAP.find(hcomOpParam->opType);
     HcclCMDType hcclOpType = (iter != HCCL_OPTYPE_NAME_MAP.end()) ? iter->second : HcclCMDType::HCCL_CMD_INVALID;
 
+    string algName;
+    bool ifAiv = false;
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    // 获取通信域句柄
+    std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
+    CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
+    // 判断是否是AIV场景
+    void* counts = nullptr;
+    ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, counts, hcomOpParam->dataType, 
+                                hcomOpParam->reduceOp, hcomOpParam->aivCoreLimit, ifAiv, algName);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
+            "dataType[%d], reduceOp[%d]", ret, hcomOpParam->opType, hcomOpParam->count,
+            hcomOpParam->dataType, hcomOpParam->reduceOp), ret);
+    HCCL_INFO("[%s] HcclSelectAlg success ifAiv[%d] algName[%s] optype[%d] count[%llu] dataType[%d] reduceOp[%d]",
+        __func__, ifAiv, algName.c_str(), hcomOpParam->opType, hcomOpParam->count,
+        hcomOpParam->dataType, hcomOpParam->reduceOp);
+    // AIV和非rdma场景下，task数量固定
+    if (ifAiv && algName.find("Rdma") == std::string::npos) {
+        taskNum = AIV_DEFAULT_TASK_NUM;
+        HCCL_INFO("[%s] GetAndSetTaskNum success taskNum[%u]", __func__, taskNum);
+        return HCCL_SUCCESS;
+    }
+    
     if (!IsNeedCalTaskNum(hcclOpType)) {
         if (hcclOpType ==  HCCL_CMD_SEND || hcclOpType == HCCL_CMD_RECEIVE) {
             taskNum = SEND_RECEIVE_TASK_NUM;
@@ -3825,7 +3848,7 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
             // 计算Server间pipline切分数量
             u32 dataTypeSize;
             u64 totalSize = 0;
-            HcclResult ret = SalGetDataTypeSize(hcomOpParam->dataType, dataTypeSize);
+            ret = SalGetDataTypeSize(hcomOpParam->dataType, dataTypeSize);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Get][OpWorkspaceMemSize]op[%s]: get data size failed. ret[%d]",
                 sCollectiveType.c_str(), ret), ret);
 

@@ -7,12 +7,10 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-set(TOP_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../../../../)
-# set(HCCL_V2_CODE_ROOT ${TOP_DIR}/ace/comop/hccl/orion)
-# set(HCCL_NEXT_CODE_ROOT ${TOP_DIR}/ace/comop/hccl/whole/hccl_next)
 set(HCCL_LLT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../)
 set(HCCL_CODE_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../../..)
 get_filename_component(HCCL_CODE_ROOT "${HCCL_CODE_ROOT}" REALPATH)
+get_filename_component(HCCL_LLT_ROOT "${HCCL_LLT_ROOT}" REALPATH)
 set(HCCL_V2_CODE_ROOT ${HCCL_CODE_ROOT}/src/orion/)
 set(HCCL_NEXT_CODE_ROOT ${HCCL_CODE_ROOT}/src/hccl_next)
 
@@ -30,12 +28,12 @@ add_executable(hccl_v2_utest ${HCCL_V2_UTEST_FILES})
 FILE(GLOB_RECURSE ut_sources_list LIST_DIRECTORIES TRUE ${HCCL_LLT_ROOT}/ut)
 
 foreach (dir ${ut_sources_list})
-    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "hcomm/test/orion") AND (NOT ${dir} MATCHES "hccl/orion/mdpi"))
+    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "test/orion") AND (NOT ${dir} MATCHES "orion/depends"))
         target_include_directories(hccl_v2_utest PUBLIC ${dir})
     endif ()
 endforeach ()
 
-FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${TOP_DIR}/hcomm/src/orion)
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/orion)
 
 message(STATUS "************************=====${sources_list}")
 foreach (dir ${sources_list})
@@ -69,10 +67,11 @@ target_include_directories(hccl_v2_utest PRIVATE
         ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/trace/
         ${HCCL_CODE_ROOT}/test/orion/depends/toolchain/
         ${HCCL_CODE_ROOT}/test/orion/depends/pkg_inc/runtime/
-        ${HCCL_CODE_ROOT}/test/orion/depends/pkg_inc/runtime/runtime/
+        # ${HCCL_CODE_ROOT}/test/orion/depends/pkg_inc/runtime/runtime/
 
         ${HCCL_CODE_ROOT}/src/pub_inc/
         ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network/
+        ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
         ${HCCL_CODE_ROOT}/src/platform/hccp/orion/hcomm_dev/inc/network/
 
         ${ASCEND_3RD_LIB_PATH}/json/include/

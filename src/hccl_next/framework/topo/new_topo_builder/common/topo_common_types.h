@@ -74,7 +74,6 @@ struct hash<CommAddr> {
                 break;
             }
             case COMM_ADDR_TYPE_IP_V4: {
-                // IPv4地址哈希
                 h = h ^ static_cast<size_t>(commAddr.addr.s_addr);
                 break;
             }
@@ -85,7 +84,6 @@ struct hash<CommAddr> {
                 break;
             }
             case COMM_ADDR_TYPE_ID: {
-                // ID类型哈希
                 h = h ^ static_cast<size_t>(commAddr.id);
                 break;
             }
@@ -98,25 +96,21 @@ struct hash<CommAddr> {
 };
 
 inline bool operator==(const CommAddr& lhs, const CommAddr& rhs) {
-    // 类型不同，直接不等
     if (lhs.type != rhs.type) {
         return false;
     }
 
-    // 类型相同，根据类型比较具体数据
     switch (lhs.type) {
         case COMM_ADDR_TYPE_IP_V4:
             return lhs.addr.s_addr == rhs.addr.s_addr;
 
         case COMM_ADDR_TYPE_IP_V6:
-            // 比较 IPv6 地址的 16 字节
             return memcmp(lhs.addr6.s6_addr, rhs.addr6.s6_addr, sizeof(lhs.addr6.s6_addr)) == 0;
 
         case COMM_ADDR_TYPE_ID:
             return lhs.id == rhs.id;
 
         case COMM_ADDR_TYPE_EID:
-            // 假设 COMM_ADDR_EID_LEN 是一个常量，比如 16
             return memcmp(lhs.eid, rhs.eid, COMM_ADDR_EID_LEN) == 0;
 
         case COMM_ADDR_TYPE_RESERVED:

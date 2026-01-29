@@ -37,7 +37,8 @@ public:
     RdmaHandle GetByAddr(u32 devPhyId, const LinkProtoType &localProtocolType, IpAddress &localIp, PortDeploymentType type);
     RdmaHandle Get(u32 devPhyId, const PortData &localPort);
     RdmaHandle GetByIp(u32 devPhyId, const IpAddress &localIp); // only support ccu create loop channel
-    JfcHandle  GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode);
+    std::vector<RdmaHandle> GetUbRdmaHandlesByDevPhyId(u32 devPhyId);
+    JfcHandle  GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode, CqCreateInfo& cqInfo);
     std::pair<uint32_t, uint32_t> GetDieAndFuncId(RdmaHandle rdmaHandle);
 
     std::pair<TokenIdHandle, uint32_t> GetTokenIdInfo(RdmaHandle rdmaHandle, 

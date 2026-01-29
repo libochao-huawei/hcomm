@@ -239,7 +239,7 @@ TEST_F(BroadCastCCUTest, broadcast_ccu_case_test_6rank_MeshMultiMission1D)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 1000;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMeshMultiMission1D";
+    checkerOpParam.algName = "CcuBroadcastMesh1D";
     checkerOpParam.root = 0;
 
     Checker checker;

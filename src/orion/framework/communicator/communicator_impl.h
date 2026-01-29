@@ -47,8 +47,21 @@
 #include "ccu_driver_handle.h"
 #include "hccl_common_v2.h"
 #include "hccl_rank_graph.h"
+#include "error_message_v2.h"
+#include "mc2_type.h"
 
 namespace Hccl {
+#ifndef HCCL_DB_ADDR
+#define HCCL_DB_ADDR
+extern uint64_t DB_ADDR;
+extern uint64_t SQVA;
+#endif
+
+#ifndef HCCL_DB_ADDR
+#define HCCL_DB_ADDR
+extern uint64_t DB_ADDR;
+extern uint64_t SQVA;
+#endif
 
 using HcclUs = std::chrono::steady_clock::time_point;
 class CommunicatorImpl {
@@ -91,6 +104,10 @@ public:
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
+
+    HcclResult GetDbAddr(uint64_t *dbAddr, uint64_t *sqVa);
+
+    HcclResult GetDbAddr(uint64_t *dbAddr, uint64_t *sqVa);
 
     u32 GetCcuMc2ServerNum();
 
@@ -141,6 +158,8 @@ public:
     virtual AicpuStreamManager &GetAicpuStreamManager() const;
 
     virtual CollServiceBase *GetCollService() const;
+
+    virtual CollServiceBase *GetCcuCollService() const;
 
     virtual SocketManager &GetSocketManager() const;
 
@@ -198,6 +217,9 @@ public:
     {
         return inCclBuffer;
     }
+
+    HcclAiRMAWQ* GetWq();
+    HcclAiRMACQ* GetCq();
  
     const shared_ptr<DevBuffer> GetOutCclBuffer() const
     {
@@ -210,6 +232,9 @@ public:
         auto it = tagWorkspaceMap_.find(tag);
         return it != tagWorkspaceMap_.end() ? it->second : nullptr;
     }
+
+    HcclAiRMAWQ* GetWq();
+    HcclAiRMACQ* GetCq();
 
     HcclResult CreateCommCclBuf();
     HcclResult GetInCclBuf(void* &commInputPtr, u64 &commInputSize);
@@ -348,8 +373,6 @@ public:
     }
 
     HcclResult CreateBarrierMemory(void *&sendBuf, void *&recvBuf, uint64_t count);
-    // DPU
-    HcclResult InitAndLaunchDpuKernel();
 
     HcclResult HcomSelectAlg(const CollOpParams &opParams, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
     HcclResult CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
@@ -359,6 +382,8 @@ public:
     
     HcclResult ClearOpResource(const std::string &opTag);// 清空opTag所属资源
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
+    std::string GetTopoFilePath();
+    std::vector<LinkData> GetFullMeshLinks() const;
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护
@@ -423,6 +448,7 @@ private:
     bool isSuspended = false;
     bool isCleaned = false;
     bool isAicpuKernelLaunched = false;
+    bool isDpuKernelLaunched = false;
     bool isWorldGroup = false;
     bool aivClearEnable = false;
 
@@ -508,6 +534,7 @@ private:
     HcclResult PrepareDpuKernelResource(aclrtFuncHandle &funcHandle);
     HcclResult DestroyDpuKernelResource();
     HcclResult WaitDpuKernelThreadTerminate();
+    HcclResult InitAndLaunchDpuKernel();
 
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph, DevId inputDevLogicId);
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph,

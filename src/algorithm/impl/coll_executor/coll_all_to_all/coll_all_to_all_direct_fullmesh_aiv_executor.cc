@@ -97,16 +97,16 @@ HcclResult CollAlltoAllDirectFullmeshAIVExecutor::CopyAivCommInfoToDevice(const 
     return HCCL_SUCCESS;
 }
  
-HcclResult CollAlltoAllDirectFullmeshAIVExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize,
+HcclResult CollAlltoAllDirectFullmeshAIVExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize,
     HcclCMDType cmdType)
 {
-    blockDim = 2 * topoAttr_.moduleNum; // 默认情况使用serverNum*2个AIV
-    CHK_PRT_RET(blockDim_ < blockDim,
+    numBlocks = 2 * topoAttr_.moduleNum; // 默认情况使用serverNum*2个AIV
+    CHK_PRT_RET(numBlocks_ < numBlocks,
         HCCL_ERROR("[CollAlltoAllDirectFullmeshAIVExecutor][%s]aivCore[%u] is invalid, at least need[%u].", __func__,
-        blockDim_, blockDim), HCCL_E_PARA);
+        numBlocks_, numBlocks), HCCL_E_PARA);
  
-    HCCL_INFO("[CollAlltoAllDirectFullmeshAIVExecutor][%s] blockDim is set to [%u], limit[%u], best[%u]", __func__,
-        blockDim, blockDim_, blockDim);
+    HCCL_INFO("[CollAlltoAllDirectFullmeshAIVExecutor][%s] numBlocks is set to [%u], limit[%u], best[%u]", __func__,
+        numBlocks, numBlocks_, numBlocks);
     return HCCL_SUCCESS;
 }
  
@@ -170,10 +170,10 @@ HcclResult CollAlltoAllDirectFullmeshAIVExecutor::KernelRun(const OpParam &param
     struct AivProfilingInfo aivProfilingInfo;
     aivProfilingInfo.counter = opCounter_;
  
-    u32 blockDim;
-    CHK_RET(CalBlockDim(blockDim, localRankSize));
-    blockDim_ = blockDim;
-    resourceArgs.blockDim = blockDim_;
+    u32 numBlocks;
+    CHK_RET(CalNumBlocks(numBlocks, localRankSize));
+    numBlocks_ = numBlocks;
+    resourceArgs.numBlocks = numBlocks_;
     HcclResult ret = ExecuteKernelLaunch(opArgs, topoArgs, resourceArgs, algArgs, aivProfilingInfo);
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,

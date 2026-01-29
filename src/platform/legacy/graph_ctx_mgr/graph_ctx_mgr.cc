@@ -15,7 +15,7 @@
 using namespace std;
 
 HcclResult InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, bool useGraphConstructorV2)
+    void *funcAddr, uint32_t numBlocks, bool useGraphConstructorV2)
 {
     EnsureFftsContextsSize(fftsCtxsPtr);
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
@@ -23,7 +23,7 @@ HcclResult InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t
 
     rtFftsPlusAicAivCtx_t *ctx = reinterpret_cast<rtFftsPlusAicAivCtx_t *>(&comCtx);
 
-    ConstructFftsAicAivCtx(count, addrListDevMemPtr, funcAddr, blockDim, ctx, true);
+    ConstructFftsAicAivCtx(count, addrListDevMemPtr, funcAddr, numBlocks, ctx, true);
 
     if (useGraphConstructorV2) {
         CHK_RET(InitTaskAndUpdateDependencies(streamId, HcclFftsTaskType::REDUCE_TBE, fftsCtxsPtr));
@@ -37,7 +37,7 @@ HcclResult InitFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t
 }
 
 HcclResult RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, bool useGraphConstructorV2)
+    void *funcAddr, uint32_t numBlocks, bool useGraphConstructorV2)
 {
     rtFftsPlusComCtx_t &comCtx = fftsCtxsPtr->contexts[fftsCtxsPtr->refreshIndex];
     rtFftsPlusAicAivCtx_t *ctx = reinterpret_cast<rtFftsPlusAicAivCtx_t *>(&comCtx);
@@ -47,13 +47,13 @@ HcclResult RefreshFftsDescVectorReduce(HcclFftsContextsInfo *&fftsCtxsPtr, uint3
         return HCCL_E_PARA;
     }
 
-    ConstructFftsAicAivCtx(count, addrListDevMemPtr, funcAddr, blockDim, ctx, false);
+    ConstructFftsAicAivCtx(count, addrListDevMemPtr, funcAddr, numBlocks, ctx, false);
     fftsCtxsPtr->refreshIndex++;
     UpdateLastThreadIndex(streamId, fftsCtxsPtr, useGraphConstructorV2);
     return HCCL_SUCCESS;
 }
 
-HcclResult ConstructFftsAicAivCtx(int count, void *addrListDevMemPtr, void *funcAddr, uint32_t blockDim,
+HcclResult ConstructFftsAicAivCtx(int count, void *addrListDevMemPtr, void *funcAddr, uint32_t numBlocks,
     rtFftsPlusAicAivCtx_t *ctx, bool isInit)
 {
     if (isInit) {
@@ -74,8 +74,8 @@ HcclResult ConstructFftsAicAivCtx(int count, void *addrListDevMemPtr, void *func
     const u64 u64HighMask = 0xffffffff00000000;
     const u64 u64LowMask = 0x00000000ffffffff;
     const u32 shift = 32;
-    ctx->nonTailBlockdim = blockDim;
-    ctx->tailBlockdim = blockDim;
+    ctx->nonTailBlockdim = numBlocks;
+    ctx->tailBlockdim = numBlocks;
     ctx->taskParamPtrBaseL = reinterpret_cast<u64>(addrListDevMemPtr) & u64LowMask;
     ctx->taskParamPtrBaseH = (reinterpret_cast<u64>(addrListDevMemPtr) & u64HighMask) >> shift;
     ctx->nonTailTaskStartPcL = reinterpret_cast<u64>(funcAddr) & u64LowMask;

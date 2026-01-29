@@ -25,7 +25,7 @@ MAKE_ENUM(DmaOp, HCCL_DMA_READ, HCCL_DMA_WRITE, HCCL_DMA_NOTIFY_WAIT)
 MAKE_ENUM(AlgType, NOT_SPECIFIED, RING, MULTI_RING, MESH, RECURSIVE_HD, BINARY_HD, PAIR_WISE, INVALID_VAL)
 
 MAKE_ENUM(TaskParamType, TASK_SDMA, TASK_RDMA, TASK_REDUCE_INLINE, TASK_REDUCE_TBE, TASK_NOTIFY_RECORD, TASK_NOTIFY_WAIT,
-    TASK_SEND_NOTIFY, TASK_SEND_PAYLOAD, TASK_WRITE_WITH_NOTIFY, TASK_WRITE_REDUCE_WITH_NOTIFY, TASK_CCU, TASK_AICPU_KERNEL, TASK_AICPU_REDUCE)
+        TASK_SEND_NOTIFY, TASK_SEND_PAYLOAD, TASK_WRITE_WITH_NOTIFY, TASK_WRITE_REDUCE_WITH_NOTIFY, TASK_CCU, TASK_AICPU_KERNEL, TASK_AICPU_REDUCE, TASK_UB_DMA)
 
 MAKE_ENUM(DfxLinkType, ONCHIP, HCCS, PCIE, ROCE, SIO, HCCS_SW, STANDARD_ROCE, UB, UBoE, RESERVED)
 
@@ -64,6 +64,8 @@ struct ParaDMA {
     u64         notifyID;
     DfxLinkType linkType;
     DmaOp       dmaOp;
+    Eid         locEid{};
+    Eid         rmtEid{};
 };
 
 struct ParaReduce {
@@ -72,8 +74,8 @@ struct ParaReduce {
     std::size_t  size;
     u64          notifyID;
     DfxLinkType  linkType;
-    HcclReduceOp reduceOp;
-    HcclDataType dataType;
+    HcclReduceOp reduceOp{HcclReduceOp::HCCL_REDUCE_RESERVED};
+    HcclDataType dataType{HcclDataType::HCCL_DATA_TYPE_RESERVED};
 };
 
 struct ParaNotify {

@@ -36,6 +36,7 @@ public:
 
     uint32_t GetUsedChannelCount(const uint8_t dieId);
     RankId GetRemoteRankIdByChannelId(const uint8_t dieId, const uint32_t channelId);
+    std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(const uint8_t dieId, const uint32_t channelId);
 
 private:
     int32_t devLogicId_{0};
@@ -123,6 +124,7 @@ private:
     std::unordered_map<uint8_t, uint32_t> usedChannelCntMap_;
     // 记录channel与对端rank的映射关系, index: (die, channelId)
     std::unordered_map<ChannelIdKey, RankId, ResIdHash> channelRemoteRankIdMap_;
+    std::unordered_map<ChannelIdKey, std::pair<IpAddress, IpAddress>, ResIdHash> channelIpAddressMap_;
 
     HcclResult GetAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr);
     bool FindAvailableBatch(const BatchKey &batchKey, ResourceBatch *&batchPtr) const;

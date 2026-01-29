@@ -54,7 +54,7 @@ private:
     int64_t maxAvailableUbDb_{0};
     int64_t blockAxis_{-1};
     int64_t ubAxis_{-1};
-    int64_t blockDims_{1};
+    int64_t numBlockss_{1};
     int64_t ubFactor_{1};
     int64_t blockFactor_{1};
     int64_t maxDtype_{0};

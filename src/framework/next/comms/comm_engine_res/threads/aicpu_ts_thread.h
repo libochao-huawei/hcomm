@@ -57,7 +57,6 @@ private:
         uint64_t sqCqContextAddr = 0;  // 记录sqeContext地址
         uint64_t sqCqContextSize = 0;  // 记录sqeContext大小
     };
-
     HcclResult InitStreamLite(HcclStreamInfo &streamParam, uint32_t hostPhyId);
     HcclResult InitStream(HcclStreamParam &streamParam);
     HcclResult HostInit();

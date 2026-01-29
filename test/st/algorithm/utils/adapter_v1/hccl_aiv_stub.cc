@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include <unordered_map>
 #include <hccl/hccl_types.h>
 #include "hccl/base.h"
@@ -532,10 +542,10 @@ HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &t
     }
 
     s32 tag = resourceArgs.aivTag;
-    block_num = resourceArgs.blockDim;
+    block_num = resourceArgs.numBlocks;
     block_idx = 0;
 
-    checker::MemLayout::Global()->InitBlockMem(resourceArgs.blockDim);
+    checker::MemLayout::Global()->InitBlockMem(resourceArgs.numBlocks);
 
     uint8_t* buffersIn[MAX_RANK_SIZE] = {}; // 注册的CCLIN地址，所有卡可访问
     uint8_t* buffersOut[MAX_RANK_SIZE] = {}; // 注册的CCLOUT地址，所有卡可访问
@@ -545,7 +555,7 @@ HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &t
         buffersOut[i] = (uint8_t*) resourceArgs.buffersOut[i];
     }
 
-    for (u32 blkIdx = 0; blkIdx < resourceArgs.blockDim; blkIdx++) {
+    for (u32 blkIdx = 0; blkIdx < resourceArgs.numBlocks; blkIdx++) {
         switch (launchMode) {
             case KernelLaunchMode::LAUNCH_MODE_ARGS_BASE: {
                 const char* funcName = GetAivKernelFunc(opArgs.cmdType, opArgs.dataType);

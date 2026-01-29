@@ -246,6 +246,7 @@ namespace hccl
         /* 网络资源销毁 */
         DestroyNetworkResources();
         notifyPool_ = nullptr;
+        queueNotifyManager_ = nullptr;
         /* driver关联资源释放 */
         if (drvInit_){
             if (DisablePreResource() != HCCL_SUCCESS) {
@@ -1673,8 +1674,8 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
-        int32_t aivCoreLimit, std::string &algName, u32 &blockDim)
+    HcclResult HcclCommunicator::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
+        int32_t aivCoreLimit, std::string &algName, u32 &numBlocks)
     {
         auto originWorkflowMode = GetWorkflowMode();
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
@@ -1696,8 +1697,8 @@ namespace hccl
             param.DataDes.dataType = dataType;
         }
 
-        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        CHK_PRT_RET(algOperator->CalNumBlocks(algName, param, numBlocks, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
             HCCL_E_PARA);
         SetWorkflowMode(originWorkflowMode);
         return HCCL_SUCCESS;
@@ -1765,16 +1766,16 @@ namespace hccl
 
         // gettag
         HCCL_INFO("SPK, rank %llu.", userRank_);
-        u32 blockDim;
-        CHK_PRT_RET(algOperator->CalBlockDim(algName, param, blockDim, aivCoreLimit) != HCCL_SUCCESS,
-            HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+        u32 numBlocks;
+        CHK_PRT_RET(algOperator->CalNumBlocks(algName, param, numBlocks, aivCoreLimit) != HCCL_SUCCESS,
+            HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
             HCCL_E_PARA);
         GetAivTag(algDesc.aivTagNum, false, aivSuperKernelArgs.tag); // workflowmode为图模式
         aivSuperKernelArgs.clearEnable = (clearEnable ? 1 : 0);
-        aivSuperKernelArgs.blockdim = blockDim;
+        aivSuperKernelArgs.numBlocks = numBlocks;
 
-        HCCL_INFO("SPK, Tag %llu clearEnable %llu, aivCoreLimit %u, blockdim %llu.", aivSuperKernelArgs.tag,
-                  aivSuperKernelArgs.clearEnable, aivCoreLimit, aivSuperKernelArgs.blockdim);
+        HCCL_INFO("SPK, Tag %llu clearEnable %llu, aivCoreLimit %u, numBlocks %llu.", aivSuperKernelArgs.tag,
+                  aivSuperKernelArgs.clearEnable, aivCoreLimit, aivSuperKernelArgs.numBlocks);
         // clearenable
         //  拷贝到Device
         SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
@@ -4180,6 +4181,7 @@ namespace hccl
         //cache目前仅支持executor的kernel为1的情况
         cacheInfo.resourceArgs.buffersIn = cacheInfo.buffersIn;
         cacheInfo.resourceArgs.buffersOut = cacheInfo.buffersOut;
+        cacheInfo.resourceArgs.stream = opParam.stream.ptr(); // 刷新cache下发的stream
         cacheInfo.opArgs.input = opParam.inputPtr;
         cacheInfo.opArgs.output = opParam.outputPtr;
         AlgType& algType = cacheInfo.algType;
@@ -4189,9 +4191,9 @@ namespace hccl
         //更新aivtag
         GetAivTag(1, opParam.isCapture, cacheInfo.resourceArgs.aivTag);
         HCCL_INFO("[HcclCommunicator][ExecOpCache]buffersIn[%p] buffersOut[%p] tag[%s] opType[%d] "
-            "deterministic [%u] count[%llu] op[%d] userRank[%u] aiv tag [%d]",
+            "deterministic [%u] count[%llu] op[%d] userRank[%u] aiv tag [%d] stream [%d]",
             cacheInfo.buffersIn, cacheInfo.buffersOut, identifier_.c_str(), opType, opParam.deterministic,
-            cacheInfo.opArgs.count, cacheInfo.opArgs.op, userRank_, cacheInfo.resourceArgs.aivTag);
+            cacheInfo.opArgs.count, cacheInfo.opArgs.op, userRank_, cacheInfo.resourceArgs.aivTag, opParam.stream.id());
         CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
         //保留dfx
         CHK_RET(RegisterDfxInfo(opParam, algType, resMap_[newTag].slaveStreams, selectAivAlg));
@@ -4211,7 +4213,7 @@ namespace hccl
                 cacheInfo.algArgs, cacheInfo.profilingInfo);
         }
         //刷新核数
-        blockDim_ = cacheInfo.resourceArgs.blockDim;
+        numBlocks_ = cacheInfo.resourceArgs.numBlocks;
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ExecOpCache]launch aiv failed, return[%d]", ret), ret);
         CHK_RET(StarsCounter(dispatcher_, opParam.stream, TAIL, opParam.aicpuUnfoldMode, retryEnable_, selectAivAlg));
         CHK_RET(UnRegisterDfxInfo(opParam, resMap_[newTag].slaveStreams));
@@ -4259,7 +4261,7 @@ namespace hccl
             __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
 
         std::string tag = opParam.tag;
-        u32 aivCoreLimit = blockDim_;
+        u32 aivCoreLimit = numBlocks_;
         //单机AIV场景下cache复用，提升下发性能
         if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             if (aivCoreLimit == 0) {
@@ -4348,6 +4350,8 @@ namespace hccl
         }
         InsertNewTagToTagMap(newTag, opParam.tag);
         bool needIncreLink = false;
+        // aiv算法不需要申请host和device侧的从流
+        bool selectAivAlg = algDesc.isAivMode;
         if (resMap_.find(newTag) == resMap_.end()) {
             AlgResourceRequest resRequest;
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
@@ -4355,10 +4359,8 @@ namespace hccl
                 CHK_RET(SaveRankInfoHasLinked(resRequest));
             }
             resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
-            // aiv算法不需要申请host侧的从流
-            bool isNeedHostSlaveStream = algDesc.isAivMode ? false : true;
             CHK_RET(RecordOpPara(opType, opParam));
-            HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream);
+            HcclResult ret = AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommunicator][ExecOp] AllocAlgResource failed, algName=[%s]", algName.c_str()), ret);
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
 
@@ -4395,7 +4397,6 @@ namespace hccl
         }
 
         // 算法执行
-        bool selectAivAlg = algDesc.isAivMode;
         if (selectAivAlg) {
             CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
             if (aivClearEnable_) {
@@ -4408,7 +4409,7 @@ namespace hccl
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
-            CHK_RET(algOperator->SetBlockDim(aivCoreLimit));
+            CHK_RET(algOperator->SetNumBlocks(aivCoreLimit));
         }
         std::vector<HcclSendRecvItem> hostSendRecvInfo;
         std::vector<HcclSendRecvItem> aicpuSendRecvInfo;
@@ -4450,7 +4451,7 @@ namespace hccl
             if (hostResMap_.find(newTag) == hostResMap_.end()) {
                 hostResMap_.insert(newTag);
             }
-            CHK_RET(algOperator->GetBlockDim(blockDim_));
+            CHK_RET(algOperator->GetNumBlocks(numBlocks_));
             if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
@@ -4505,7 +4506,7 @@ namespace hccl
             __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
 
         std::string &tag = opParam.tag;
-        u32 aivCoreLimit = blockDim_;
+        u32 aivCoreLimit = numBlocks_;
         //单机AIV场景下cache复用，提升下发性能
         if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             if (aivCoreLimit == 0) {
@@ -4592,8 +4593,7 @@ namespace hccl
             CHK_RET(CreateCommCCLbuffer());
         }
         // 资源创建
-        // aiv算法不需要申请host侧的从流
-        bool isNeedHostSlaveStream = algDesc.isAivMode ? false : true;
+        bool selectAivAlg = algDesc.isAivMode;
         if (opParam.isCapture && (resMap_.find(newTag) != resMap_.end()))
         {
             auto resTmp = resMap_[newTag];
@@ -4617,7 +4617,7 @@ namespace hccl
             CHK_RET(algOperator->CalcResRequest(algName, opParam, resRequest));
             resRequest.isInGraphCaptureZeroCopy = isInGraphCaptureZeroCopy;
             CHK_RET(RecordOpPara(opType, opParam));
-            CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
+            CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
             CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
             if (opParam.isNpuDirectRoce) {
                 // AIV直驱roce多机场景，需要生成RMAInfo并拷贝至Device
@@ -4650,7 +4650,7 @@ namespace hccl
                 // alltoall算子重分配内存前需清除scratchMMem，防止内存泄漏
                 CHK_RET(FreeScratchMemOnOpBaseMode(resMap_[newTag].scratchMem, opParam, opType));
                 CHK_RET(RecordOpPara(opType, opParam));
-                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], isNeedHostSlaveStream));
+                CHK_RET(AllocAlgResource(newTag, opType, opParam, resRequest, resMap_[newTag], selectAivAlg));
                 CHK_RET(RankConsistentcyChecker::GetInstance().DelOpPara(opParam.tag));
                 if (!isHaveCpuRank_) {
                     if (isUseRankPort_) {
@@ -4706,7 +4706,6 @@ namespace hccl
             CHK_PTR_NULL(combinOparaPtr);
             CHK_RET(algOperator->SetRmaInfo(combinOparaPtr->aiRMAInfo));
         }
-        bool selectAivAlg = algDesc.isAivMode;
         if (selectAivAlg) {
             CHK_RET(HandleAclGraphFirstOpAivBuff(opParam.stream.ptr()));
             if (aivClearEnable_) {
@@ -4719,7 +4718,7 @@ namespace hccl
                 identifier_.c_str(), userRank_, opParam.aivTag);
             opParam.aicpuUnfoldMode = false;
             opParam.aicpuCacheEnable = 0;
-            CHK_RET(algOperator->SetBlockDim(aivCoreLimit));
+            CHK_RET(algOperator->SetNumBlocks(aivCoreLimit));
         }
 
         auto algType = algOperator->GetAlgType();
@@ -4756,8 +4755,8 @@ namespace hccl
             CHK_RET(GetOpCountInfo(opCounter));
             CHK_RET(algOperator->SetOpCounter(opCounter));
             CHK_RET(algOperator->Orchestrate(algName, opParam, algRes));
-            // for profiling, blockDim upload
-            CHK_RET(algOperator->GetBlockDim(blockDim_));
+            // for profiling, numBlocks upload
+            CHK_RET(algOperator->GetNumBlocks(numBlocks_));
             if (implAlg_->GetAivModeConfig() && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
                 CHK_RET(GetCacheMap(algOperator, opParam, algType, selectAivAlg, newTag));
             }
@@ -4778,7 +4777,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::RecordOpPara(HcclCMDType opType, OpParam &opParam)
     {
-        u32 aivCoreLimit = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ? blockDim_ : 0;
+        u32 aivCoreLimit = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB) ? numBlocks_ : 0;
         u8 deterministic = implAlg_->GetDeterministicConfig();
         switch (opType) {
             case HcclCMDType::HCCL_CMD_ALLGATHER:
@@ -5777,6 +5776,7 @@ namespace hccl
         aclrtFloatOverflowMode floatOverflowMode = ACL_RT_OVERFLOW_MODE_UNDEF;
         CHK_RET(hrtGetDeviceSatMode(&floatOverflowMode));
         opResPara_.config.floatOverflowMode = floatOverflowMode;
+        opResPara_.config.taskMonitorInterval = GetExternalInputDfsTaskMonitorInterval();
         bool isSupportAtomicWrite = false;
         if (userRankSize_ > 1) {
             CHK_RET(IsSupportAtomicWrite(deviceType_, devicePhyId_, isSupportAtomicWrite));
@@ -6059,10 +6059,12 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::AllocAlgResource(const std::string &newTag, HcclCMDType opType, const OpParam &opParam,
-        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream)
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg)
     {
         HcclResult ret = HCCL_SUCCESS;
         bool isGraphZeroCopyAlgAlloc = false;
+        // 只有aicpu模式下才需要申请从流和相关的notify资源，isNeedSlaveStream为true就代表算子下发是aicpu模式
+        bool isNeedSlaveStream = !selectAivAlg && opParam.aicpuUnfoldMode;
         if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
             !IsForceAicpuOpBaseMode(opParam, opType)) {
             isGraphZeroCopyAlgAlloc = resRequest.isInGraphCaptureZeroCopy;
@@ -6092,7 +6094,7 @@ namespace hccl
         } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE ||
                  IsForceAicpuOpBaseMode(opParam, opType)) {
             CHK_RET(AllocOpBaseModeScratchMem(opType, opParam, resRequest, algResResponse));
-            if ((resRequest.streamNum > 0) && isNeedHostSlaveStream) {
+            if ((resRequest.streamNum > 0) && !selectAivAlg) {
                 CHK_RET(opStreamManager_->RegisterMaster(opParam.stream));
                 algResResponse.slaveStreams =
                     opStreamManager_->AllocSlaves(StreamType::STREAM_TYPE_ONLINE, resRequest.streamNum);
@@ -6107,7 +6109,7 @@ namespace hccl
             return HCCL_E_PARA;
         }
 
-        if (opParam.aicpuUnfoldMode && ((userRankSize_ != 1) || IsForceAicpuOpBaseMode(opParam, opType))) {
+        if (isNeedSlaveStream && ((userRankSize_ != 1) || IsForceAicpuOpBaseMode(opParam, opType))) {
             CHK_RET(opStreamManager_->RegisterMaster(opParam.stream));
             algResResponse.slaveDevStreams =
                     opStreamManager_->AllocSlaves(StreamType::STREAM_TYPE_DEVICE, LOCAL_STREAM_MAX_NUM);
@@ -6119,6 +6121,11 @@ namespace hccl
             CHK_RET(AllocAlgNotifys(opParam.tag, NotifyLoadType::DEVICE_NOTIFY, LOCAL_NOTIFY_MAX_NUM,
                                     algResResponse.notifiesDevMain, algResResponse.notifiesDevAux));
         }
+        uint8_t devNotifyNum = algResResponse.notifiesDevMain.size() + algResResponse.notifiesDevAux.size();
+        HCCL_INFO("[AllocAlgResource] tag[%s] alloc host slaveStreamNum[%u],"
+            "device slaveStreamNum[%u], devNotifyNum[%u], hostNotifyNum[%u]",
+            newTag.c_str(), algResResponse.slaveStreams.size(),
+            algResResponse.slaveDevStreams.size(), devNotifyNum, resRequest.notifyNum);
         CHK_RET(AllocAlgNotifys(opParam.tag, NotifyLoadType::HOST_NOTIFY, resRequest.notifyNum, algResResponse.notifiesMain,
                                 algResResponse.notifiesAux));
 

@@ -435,7 +435,7 @@ rtError_t rtGetDeviceCount(int32_t *cnt)
     return 0;
 }
 
-rtError_t rtAicpuKernelLaunch(const rtKernelLaunchNames_t *launchNames, uint32_t blockDim, const void *args,
+rtError_t rtAicpuKernelLaunch(const rtKernelLaunchNames_t *launchNames, uint32_t numBlocks, const void *args,
                               uint32_t argsSize, rtSmDesc_t *smDesc, rtStream_t stm)
 {
     return 0;
@@ -466,7 +466,7 @@ rtError_t rtDevBinaryRegister(const rtDevBinary_t *bin, void **hdl)
     return 0;
 }
 
-rtError_t rtKernelLaunch(const void *stubFunc, uint32_t blockDim, void *args, uint32_t argsSize, rtSmDesc_t *smDesc,
+rtError_t rtKernelLaunch(const void *stubFunc, uint32_t numBlocks, void *args, uint32_t argsSize, rtSmDesc_t *smDesc,
                          rtStream_t stm)
 {
     return 0;
@@ -538,7 +538,7 @@ rtError_t rtCntNotifyDestroy(rtCntNotify_t const inCntNotify)
 //     return RT_ERROR_NONE;
 // }
 
-rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const char_t *const opName, const uint32_t blockDim,
+rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const char_t *const opName, const uint32_t numBlocks,
                                         const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t *const smDesc, const rtStream_t stm,
                                         const uint32_t flags)
 
@@ -644,7 +644,7 @@ rtError_t rtFunctionRegister(void *binHandle, const void *stubFunc, const char *
     return RT_ERROR_NONE;
 }
  
-rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+rtError_t rtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo)
 {
     return RT_ERROR_NONE;
@@ -654,6 +654,11 @@ aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
 {
     *value = 48;
     return ACL_SUCCESS;
+}
+
+rtError_t rtMemPrefetchToDevice(void *devPtr, uint64_t len, int32_t devId)
+{
+    return RT_ERROR_NONE;
 }
  
 #endif

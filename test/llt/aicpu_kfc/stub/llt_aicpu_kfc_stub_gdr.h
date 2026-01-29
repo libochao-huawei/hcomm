@@ -1,21 +1,12 @@
-/******************************************************************************
-
-                  版权所有 (C), 2001-2011, 华为技术有限公司
-
- ******************************************************************************
-  文 件 名   : llt_aicpu_kfc_stub_gdr.h
-  版 本 号   : 初稿
-  作    者   : l00442453
-  生成日期   : 2018年05月01日
-  最近修改   :
-  功能描述   : llt_aicpu_kfc_stub_gdr.cc 的私有头文件.
-  函数列表   :
-  修改历史   :
-  1.日    期   : 2018年10月26日
-    作    者   : l00442453
-    修改内容   : 创建文件
-
-******************************************************************************/
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #ifndef __LLT_AICPU_KFC_STUB_GDR_H__
 #define __LLT_AICPU_KFC_STUB_GDR_H__

@@ -17,6 +17,7 @@
 
 GTEST_API_ int main(int argc, char **argv) {
     printf("Running main() from gtest_main.cc\n");
+    //testing::GTEST_FLAG(filter) = "HccnRping_UT.ut_HccnRpingInit";
     testing::InitGoogleTest(&argc, argv);
     setenv("HCCL_DFS_CONFIG", "connection_fault_detection_time:0", 1);
     return RUN_ALL_TESTS();

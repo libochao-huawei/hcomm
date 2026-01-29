@@ -388,7 +388,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP16;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -409,7 +409,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_BFP16;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -430,7 +430,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -451,7 +451,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 1 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -472,7 +472,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -493,7 +493,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -514,7 +514,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -535,7 +535,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -556,7 +556,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 511 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -577,7 +577,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 767 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -598,7 +598,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 1023 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -619,7 +619,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 1024 * 1024 / 4;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -640,7 +640,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -661,7 +661,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -682,7 +682,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT16;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
@@ -703,7 +703,7 @@ TEST_F(AllReduceCCU2DTest, allreduce_ccu_case_test_mesh2d_two_shot_multi_mission
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShotMultiMission";
+    checkerOpParam.algName = "CcuAllReduceMesh2DTwoShot";
 
     Checker checker;
     HcclResult ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);

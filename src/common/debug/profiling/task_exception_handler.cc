@@ -76,7 +76,7 @@ constexpr u32 TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失�
 constexpr u32 PRINT_TASK_AIV_INFO_COUNT = 10;
 constexpr u32 AIV_KERNEL_FLAG_SIZE_PER_OP = 6;
 
-constexpr u32 MAX_BLOCK_DIM = 48;
+constexpr u32 MAX_NUM_BLOCKS = 48;
 constexpr u32 MAX_RANK_SIZE_SUPERPOD = 768;
 constexpr u32 INTERVAL_1VN = 128;
 constexpr u32 INTERVAL_NV1 = 128;
@@ -86,7 +86,7 @@ constexpr u32 PRINT_NV1_NUM = 4;
 constexpr u32 PRINT_1VN_NUM = 4;
 constexpr u32 INTERVAL_COUNT = 8;
 constexpr u32 NOTIFY_NUM = 3;
-constexpr u32 BLOCK_DIM_PER_RANK = 4;
+constexpr u32 NUM_BLOCKS_PER_RANK = 4;
 constexpr u32 CORE_PER_CARDS = 4;
 constexpr u32 NOTIFY_GROUPS_1V1 = 2;
 
@@ -147,7 +147,7 @@ TaskInfo::TaskInfo(u32 &streamID, u32 &taskID, string &tag, const TaskParaAiv& p
     taskPara.Aiv.cmdType = para.cmdType;
     taskPara.Aiv.tag = para.tag;
     taskPara.Aiv.size = para.size;
-    taskPara.Aiv.blockDim = para.blockDim;
+    taskPara.Aiv.numBlocks = para.numBlocks;
     taskPara.Aiv.rankSize = para.rankSize;
     taskPara.Aiv.flagMem = para.flagMem;
     taskPara.Aiv.aivRdmaStep = para.aivRdmaStep;
@@ -322,7 +322,7 @@ string TaskInfo::GetParaAiv()
     paraStr << "cmdType:[" << static_cast<int>(taskPara.Aiv.cmdType) << "], "
             << "tag:[" << taskPara.Aiv.tag << "], " 
             << "size:[" << taskPara.Aiv.size << "], " 
-            << "blockDim:[" << taskPara.Aiv.blockDim << "], "
+            << "numBlocks:[" << taskPara.Aiv.numBlocks << "], "
             << "rankSize:[" << taskPara.Aiv.rankSize << "], "
             << "aivRdmaStep:[" << taskPara.Aiv.aivRdmaStep <<"], "
             << "flagMem:[0x" << std::hex << static_cast<const u64>(reinterpret_cast<const uintptr_t>(taskPara.Aiv.flagMem)) <<"], "
@@ -962,8 +962,8 @@ void TaskExceptionHandler::PrintTaskContextInfo(const std::shared_ptr<std::deque
 
 void TaskExceptionHandler::ParseTaskSyncFlag(s32 *flagMem, u32 flagMemSize, u32 rankSize, u32 rank, u32 index)
 {    
-    u32 chips1v1 = std::min(rankSize * BLOCK_DIM_PER_RANK, MAX_RANK_SIZE_SUPERPOD) * NOTIFY_NUM * INTERVAL_1V1;
-    u32 cores1v1 = MAX_BLOCK_DIM * NOTIFY_GROUPS_1V1 * INTERVAL_1V1;
+    u32 chips1v1 = std::min(rankSize * NUM_BLOCKS_PER_RANK, MAX_RANK_SIZE_SUPERPOD) * NOTIFY_NUM * INTERVAL_1V1;
+    u32 cores1v1 = MAX_NUM_BLOCKS * NOTIFY_GROUPS_1V1 * INTERVAL_1V1;
     u32 chips1vN = PRINT_1VN_NUM * INTERVAL_1VN * NOTIFY_GROUPS_1V1;
     u32 cores1vN = PRINT_1VN_NUM * INTERVAL_1VN * NOTIFY_GROUPS_1V1;
     u32 chipsNv1 = PRINT_NV1_NUM * INTERVAL_NV1 * NOTIFY_GROUPS_1V1;
@@ -983,11 +983,11 @@ void TaskExceptionHandler::ParseTaskSyncFlag(s32 *flagMem, u32 flagMemSize, u32 
     std::string str;
     for (u32 i = 0; i < PING_PONG_NUM; ++i) {
         // print chips1v1
-        str = SerializeSyncFlag(buf + offset, rankSize * BLOCK_DIM_PER_RANK * NOTIFY_NUM, INTERVAL_1V1);
+        str = SerializeSyncFlag(buf + offset, rankSize * NUM_BLOCKS_PER_RANK * NOTIFY_NUM, INTERVAL_1V1);
         offset += chips1v1;
         HCCL_ERROR("rank %u opIndex %u chips 1v1 sync flag [%s] %s", rank, index, PREFIX[i].c_str(), str.c_str());
 
-        str = SerializeSyncFlag(buf + offset, MAX_BLOCK_DIM * NOTIFY_GROUPS_1V1, INTERVAL_1V1);
+        str = SerializeSyncFlag(buf + offset, MAX_NUM_BLOCKS * NOTIFY_GROUPS_1V1, INTERVAL_1V1);
         offset += cores1v1;
         HCCL_ERROR("rank %u opIndex %u cores 1v1 sync flag [%s] %s", rank, index, PREFIX[i].c_str(), str.c_str());
 

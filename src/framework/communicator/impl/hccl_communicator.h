@@ -256,8 +256,8 @@ public:
     HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
         HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
 
-    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim);
+    HcclResult HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+        std::string &algName, u32 &numBlocks);
 
     HcclResult HcclGetAlgExecParam(const std::string &tag, HcclCMDType opType, u64 count, void *inputPtr, void *outputPtr,
         bool clearEnable, HcclDataType dataType, HcclReduceOp op, void *&commContext, u64 &len, u32 aivCoreLimit);
@@ -405,8 +405,8 @@ public:
     HcclResult UnsetMemoryRange(void *baseVirPtr);
     HcclResult ActivateCommMemory(void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
     HcclResult DeactivateCommMemory(void *virPtr);
-    HcclResult GetBlockDim(u32& blockDim){
-        blockDim = blockDim_;
+    HcclResult GetNumBlocks(u32& numBlocks){
+        numBlocks = numBlocks_;
         return HCCL_SUCCESS;
     }
     HcclResult SetAivCoreLimit(u32 aivCoreLimit);
@@ -699,7 +699,7 @@ private:
     std::vector<RankInfo> worldRankInfoList_;
     std::unique_ptr<HcclTraceInfo> opBaseAtraceInfo_;
     bool aivClearEnable_ = false;
-    u32 blockDim_ = 0;
+    u32 numBlocks_ = 0;
     std::map<OpParam, HcclCacheInfo> hcclCacheMap_; //存储aiv cache信息
     std::string cclBuffName_;
     bool isShareComm_ = false; // 是否共享cclbuffer
@@ -747,7 +747,7 @@ private:
     HcclResult AllocOpBaseModeScratchMem(HcclCMDType opType, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult AllocAlgResource(const std::string &tag, HcclCMDType opType, const OpParam &opParam,
-        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool isNeedHostSlaveStream = true);
+        AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse, bool selectAivAlg = false);
     HcclResult IncreAllocLink(const std::string &newTag, const OpParam &opParam,
         AlgResourceRequest &resRequest, AlgResourceResponse &algResResponse);
     HcclResult CleanTransportLinks(OpCommTransport &opTransportReq, OpCommTransport &opTransportResponse);

@@ -348,7 +348,11 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     }
 
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
-
+    if (op.opMode == OpMode::OPBASE) {
+        param.kernel.op.userStreamId = comm->GetStreamManager().opbase->GetMaster()->GetId();
+    } else {
+       param.kernel.op.userStreamId = comm->GetStreamManager().offload->GetMaster(op.opTag)->GetId();
+    }
     param.kernel.kfcControlTransferH2DParams = comm->GetKfcControlTransferH2D().GetCommunicateParams();
     param.kernel.kfcControlTransferD2HParams = comm->GetKfcStatusTransferD2H().GetCommunicateParams();
 
@@ -396,6 +400,7 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
 {
+    param.kernel.op.userStreamId = stream.GetId();
     rtHostInputInfo hostInputInfo;
     hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
     hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
@@ -417,6 +422,9 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     AddPostToUserStream(stream);
     TaskParam taskParam {};
     taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+
+    auto getAicpuTaskExceptionCallBack = [this]() {return this->comm->GetAicpuTaskException();};
+    RegisterGetAicpuTaskExceptionCallBack(stream.GetId(), comm->GetDeviceLogicId(), getAicpuTaskExceptionCallBack);
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);

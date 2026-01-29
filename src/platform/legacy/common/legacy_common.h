@@ -108,7 +108,7 @@ extern HcclResult BinaryLoadFromData(const void *data, size_t length, const aclr
 extern HcclResult KernelArgsInit(aclrtFuncHandle funcHandle, aclrtArgsHandle *argsHandle);
 extern HcclResult KernelArgsFinalize(aclrtArgsHandle argsHandle);
 extern HcclResult KernelArgsAppend(aclrtArgsHandle argsHandle, void *param, size_t paramSize, aclrtParamHandle *paramHandle);
-extern HcclResult LaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockDim,
+extern HcclResult LaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t numBlocks,
         aclrtStream stream, aclrtLaunchKernelCfg *cfg, aclrtArgsHandle argsHandle, void *reserve);
 extern HcclResult NotifyGetAddr(void *signal, u64 *notifyAddr);
 extern HcclResult GetNotifyID(void *signal, u32 *notifyID);

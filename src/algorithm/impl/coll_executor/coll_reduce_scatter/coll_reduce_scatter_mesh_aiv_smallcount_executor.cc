@@ -57,31 +57,31 @@ HcclResult CollReduceScatterMeshAivSmallCountExecutor::CalcLevel0CommInfo(Transp
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollReduceScatterMeshAivSmallCountExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize; // 默认情况使用rankSize个AIV
+    numBlocks = rankSize; // 默认情况使用rankSize个AIV
 
     bool isOpBase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && !isOpBase) {
-        blockDim = rankSize * BLOCK_DIM_FOUR_PER_RANK_A3 > MAX_BLOCK_DIM ?
-            rankSize * BLOCK_DIM_THREE_PER_RANK_A3 : rankSize * BLOCK_DIM_FOUR_PER_RANK_A3;
+        numBlocks = rankSize * NUM_BLOCKS_FOUR_PER_RANK_A3 > MAX_NUM_BLOCKS ?
+            rankSize * NUM_BLOCKS_THREE_PER_RANK_A3 : rankSize * NUM_BLOCKS_FOUR_PER_RANK_A3;
     }
 
-    u32 bestBlockDim = blockDim;
-    CHK_PRT_RET(blockDim_ < rankSize && topoAttr_.deviceType == DevType::DEV_TYPE_910_93,
-        HCCL_WARNING("[CollReduceScatterMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
-        blockDim_, rankSize), HCCL_E_PARA);
+    u32 bestNumBlocks = numBlocks;
+    CHK_PRT_RET(numBlocks_ < rankSize && topoAttr_.deviceType == DevType::DEV_TYPE_910_93,
+        HCCL_WARNING("[CollReduceScatterMeshAivSmallCountExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, rankSize), HCCL_E_PARA);
     
-    CHK_PRT_RET(blockDim_ < bestBlockDim && topoAttr_.deviceType != DevType::DEV_TYPE_910_93,
-        HCCL_WARNING("[CollReduceScatterMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
-        blockDim_, bestBlockDim), HCCL_E_PARA);
+    CHK_PRT_RET(numBlocks_ < bestNumBlocks && topoAttr_.deviceType != DevType::DEV_TYPE_910_93,
+        HCCL_WARNING("[CollReduceScatterMeshAivSmallCountExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, bestNumBlocks), HCCL_E_PARA);
 
-    if (blockDim_ < bestBlockDim) {
-        blockDim = blockDim_ / rankSize * rankSize;
+    if (numBlocks_ < bestNumBlocks) {
+        numBlocks = numBlocks_ / rankSize * rankSize;
     }
 
-    HCCL_INFO("[CollReduceScatterMeshAivSmallCountExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollReduceScatterMeshAivSmallCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -199,14 +199,14 @@ HcclResult CollReduceScatterMeshAivSmallCountExecutor::KernelRun(const OpParam &
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType};
     topoArgs.identify = algoAttr_.identifier;
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
-    HCCL_DEBUG("[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]blockDim is [%u]", blockDim_);
+    numBlocks_ = numBlocks;
+    HCCL_DEBUG("[CollReduceScatterMeshAivSmallCountExecutor][KernelRun]numBlocks is [%u]", numBlocks_);
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();

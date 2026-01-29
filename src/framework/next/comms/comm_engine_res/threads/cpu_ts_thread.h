@@ -42,6 +42,18 @@ public:
         void *dst, const void *src, uint64_t sizeByte, HcommDataType dataType, HcommReduceOp reduceOp) const override;
 
 private:
+    struct HcclStreamInfo {
+        s32 streamIds;
+        uint32_t sqIds;
+        uint32_t cqIds;       // 记录物理cqId
+        uint32_t logicCqids;  // 记录逻辑cqId
+    };
+
+    struct HcclStreamParam {
+        HcclStreamInfo streamInfo;
+        uint64_t sqCqContextAddr = 0;  // 记录sqeContext地址
+        uint64_t sqCqContextSize = 0;  // 记录sqeContext大小
+    };
     rtStream_t rtStream_ = nullptr;
     bool isDeviceSide_ = false;
     StreamType streamType_ = StreamType::STREAM_TYPE_RESERVED;
@@ -50,6 +62,10 @@ private:
     NotifyLoadType notifyLoadType_ = NotifyLoadType::HOST_NOTIFY;
     std::unique_ptr<Stream> stream_;
     std::vector<std::unique_ptr<LocalNotify>> notifys_;
+
+    std::unique_ptr<Stream> streamDevice_; //在把用户的stream生成的thread导出到device时使用
+    DeviceMem sqCqeContext_; 
+    std::string uniqueIdStr_;
 };
 
 }  // namespace hccl

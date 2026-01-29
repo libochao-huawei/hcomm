@@ -840,12 +840,12 @@ TEST_F(DispatcherFFTSTest, ut_legacy_common_test)
     ret = GetFunctionAddr(funcHandle, &aicAddr, &aicAddr);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 
-    uint32_t blockDim = 10;
+    uint32_t numBlocks = 10;
     aclrtStream stream = &i;
     aclrtLaunchKernelCfg cfg;
     argsHandle = &i;
 
-    ret = LaunchKernelWithConfig(funcHandle, blockDim, stream, &cfg, argsHandle, nullptr);
+    ret = LaunchKernelWithConfig(funcHandle, numBlocks, stream, &cfg, argsHandle, nullptr);
     EXPECT_EQ(HCCL_SUCCESS, ret);
     rtArgsEx_t argsInfo;
     void *devArgsAddr = nullptr;
@@ -913,8 +913,8 @@ TEST_F(DispatcherFFTSTest, ut_graph_ctx_mgr_common_test)
     ret = GraphAddInlineReduceTask(graphMgr, fftsCtxsPtr, streamId, dstAddr, srcAddr, dataCount, datatype, reduceOp, &ctxIdx);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 
-    uint32_t blockDim = 1;
-    ret = GraphAddVectorReduceTask(graphMgr, fftsCtxsPtr, streamId, 1, srcAddr, dstAddr, blockDim, &ctxIdx);
+    uint32_t numBlocks = 1;
+    ret = GraphAddVectorReduceTask(graphMgr, fftsCtxsPtr, streamId, 1, srcAddr, dstAddr, numBlocks, &ctxIdx);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 
     ret = GraphAddTailVectorReduceTask(graphMgr, fftsCtxsPtr, streamId, dstAddr, srcAddr, 10, &ctxIdx);
@@ -935,7 +935,7 @@ TEST_F(DispatcherFFTSTest, ut_graph_ctx_mgr_common_test)
     ret = GraphAddInlineReduceTask(graphMgr, fftsCtxsPtr, streamId, dstAddr, srcAddr, dataCount, datatype, reduceOp, &ctxIdx);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 
-    ret = GraphAddVectorReduceTask(graphMgr, fftsCtxsPtr, streamId, 1, srcAddr, dstAddr, blockDim, &ctxIdx);
+    ret = GraphAddVectorReduceTask(graphMgr, fftsCtxsPtr, streamId, 1, srcAddr, dstAddr, numBlocks, &ctxIdx);
     EXPECT_EQ(HCCL_SUCCESS, ret);
 
     ret = GraphAddTailVectorReduceTask(graphMgr, fftsCtxsPtr, streamId, dstAddr, srcAddr, 10, &ctxIdx);

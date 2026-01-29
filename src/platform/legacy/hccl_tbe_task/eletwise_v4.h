@@ -149,7 +149,7 @@ private:
     bool need_multi_core { true };
     bool need_double_buffer { false };
     uint64_t tiling_key { 1 };
-    int64_t block_dims { 1 };
+    int64_t num_blocks { 1 };
     int64_t multi_core_output { 1 };
     int64_t block_axis { 0 };
     int64_t ub_axis { 0 };

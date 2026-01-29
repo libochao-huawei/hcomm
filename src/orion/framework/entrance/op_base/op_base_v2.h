@@ -168,7 +168,6 @@ HcclResult HcclGetRanksByTopoInstV2(HcclComm comm, uint32_t netLayer, uint32_t t
                                   uint32_t *rankNum);
 HcclResult HcommFlushV2();
 HcclResult HcclGetCclBuffer(HcclComm comm, uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType);
-HcclResult HostKFCServerInit(HcclComm comm);
 
 HcclResult HcclRankGraphGetEndpointNumV2(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num);
 
@@ -177,6 +176,20 @@ HcclResult HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_
 HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
 HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
+
+HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
+
+HcclResult HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
+
+HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr);
+
+HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
+
+HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
+HcclResult HcclDbAddrGetV2(HcclComm comm, uint64_t *dbAddr, uint64_t *sqva);
+
+HcclResult HcclDbAddrGetV2(HcclComm comm, uint64_t *dbAddr, uint64_t *sqva);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

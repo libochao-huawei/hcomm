@@ -65,7 +65,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_ccu_case_test_2_mul_2_uint8)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 3;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT8;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -830,7 +830,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_2_2_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 200 * 1024 + 55;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -853,7 +853,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_2_mul_3_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -876,7 +876,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_2_mul_3rank_of
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -899,7 +899,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_3_mul_3rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -922,7 +922,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_3_mul_4_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -945,7 +945,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_3_mul_5_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -968,7 +968,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_4_mul_7_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -991,7 +991,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_5_mul_7_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -1014,7 +1014,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_4_mul_4_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;
@@ -1037,7 +1037,7 @@ TEST_F(BroadCast2DCCUTest, broadcast2d_multimission_ccu_case_test_5_mul_5_rank)
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_FP32;
-    checkerOpParam.algName = "CcuBroadcastMesh2DMultiMission";
+    checkerOpParam.algName = "CcuBroadcastMesh2D";
     checkerOpParam.root = 0;
 
     Checker checker;

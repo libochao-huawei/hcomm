@@ -44,6 +44,7 @@
 #include "rs_ccu.h"
 #include "rs_ctx.h"
 #include "rs_esched.h"
+#include "dl_net_function.h"
 #include "rs_ub.h"
 #include "rs_ctx_inner.h"
 #endif
@@ -156,6 +157,7 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
     {RA_RS_GET_DEV_EID_INFO_LIST, 1},
     {RA_RS_CTX_INIT, 1},
+    {RA_RS_CTX_GET_ASYNC_EVENTS, 1},
     {RA_RS_CTX_DEINIT, 1},
     {RA_RS_GET_EID_BY_IP, 1},
     {RA_RS_GET_TP_INFO_LIST, 1},
@@ -422,6 +424,28 @@ STATIC int RsGetChipLogicId(unsigned int chipId, enum NetworkMode hccpMode, unsi
     return 0;
 }
 
+STATIC int RsInitNetAdapt(struct rs_cb *rscb) {
+    int ret = 0;
+
+    if (rscb->protocol != PROTOCOL_UDMA) {
+        return 0;
+    }
+
+    ret = rs_net_adapt_init();
+    CHK_PRT_RETURN(ret != 0, hccp_err("rs_net_adapt_init chipId[%u] logic_devid[%u] failed, ret=%d",
+        rscb->chipId, rscb->logicId, ret), ret);
+
+    return ret;
+}
+
+STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
+    if (rscb->protocol != PROTOCOL_UDMA) {
+        return;
+    }
+
+    rs_net_adapt_uninit();
+}
+
 STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 {
     struct timeval start, end;
@@ -441,6 +465,12 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
         hccp_err("rs_esched_init chipId[%u] logic_devid[%u] failed, ret=%d", rscb->chipId, rscb->logicId, ret);
         goto esched_init_err;
     }
+
+    ret = RsInitNetAdapt(rscb);
+    if (ret != 0) {
+        goto net_adapt_init_err;
+    }
+
 #endif
 #endif
     ret = rs_ssl_init(rscb);
@@ -466,6 +496,8 @@ create_pthread_err:
 ssl_init_err:
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
+    RsDeInitNetAdapt(rscb);
+net_adapt_init_err:
     rs_esched_deinit(rscb->protocol);
 esched_init_err:
     (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
@@ -482,6 +514,7 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
 
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
+    RsDeInitNetAdapt(rscb);
     rs_esched_deinit(rscb->protocol);
     (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
 #endif
@@ -1074,19 +1107,21 @@ destroy_rdev_mutex:
     return ret;
 }
 
-int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNode *sensorNode)
+int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb)
 {
     struct halSensorNodeCfg cfg = { 0 };
     int ret;
 
-    sensorNode->sensorHandle = 0;
-    sensorNode->sensorUpdateCnt = 0;
+    if (rsCb->sensorNode.sensorHandle != 0) {
+        return 0;
+    }
+
     // some non-hdc scenarios don't have corresponding API, skip to register sensor node
     if (rsCb->hccpMode != NETWORK_OFFLINE) {
         return 0;
     }
 
-    ret = rsGetLocalDevIDByHostDevID(phyId, &sensorNode->logicDevid);
+    ret = rsGetLocalDevIDByHostDevID(phyId, &rsCb->sensorNode.logicDevid);
     if (ret) {
         hccp_err("[init][rs_rdev]rsGetLocalDevIDByHostDevID failed, phyId(%u), ret(%d)", phyId, ret);
         return ret;
@@ -1102,24 +1137,30 @@ int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNo
     cfg.SensorType = RDMA_CQE_ERR_SENSOR_TYPE;
     cfg.AssertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_MASK;
     cfg.DeassertEventMask = RDMA_CQE_ERR_RETRY_TIMEOUT_EVENT_TYPE_MASK;
-    ret = DlHalSensorNodeRegister(sensorNode->logicDevid, &cfg, &sensorNode->sensorHandle);
+    ret = DlHalSensorNodeRegister(rsCb->sensorNode.logicDevid, &cfg, &rsCb->sensorNode.sensorHandle);
     if (ret != 0) {
         hccp_err("[init][rs_rdev]dl_hal_sensor_node_register failed, phyId(%u), logicDevid(%u), ret(%d)",
-            phyId, sensorNode->logicDevid, ret);
+            phyId, rsCb->sensorNode.logicDevid, ret);
         return ret;
     }
 
     return 0;
 }
 
-void RsSensorNodeUnregister(struct SensorNode *sensorNode)
+void RsSensorNodeUnregister(struct rs_cb *rsCb)
 {
     // no need to unregister sensor node
-    if (sensorNode->sensorHandle == 0) {
+    if (rsCb->sensorNode.sensorHandle == 0) {
         return;
     }
 
-    (void)DlHalSensorNodeUnregister(sensorNode->logicDevid, sensorNode->sensorHandle);
+    RS_PTHREAD_MUTEX_LOCK(&rsCb->mutex);
+    if (RsListEmpty(&rsCb->rdevList)) {
+        (void)DlHalSensorNodeUnregister(rsCb->sensorNode.logicDevid, rsCb->sensorNode.sensorHandle);
+        rsCb->sensorNode.sensorUpdateCnt = 0;
+        rsCb->sensorNode.sensorHandle = 0;
+    }
+    RS_PTHREAD_MUTEX_ULOCK(&rsCb->mutex);
 }
 
 int RsRetryTimeoutExceptionCheck(struct SensorNode *sensorNode)
@@ -1192,7 +1233,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
         goto free_rs_cb;
     }
 
-    ret = RsSensorNodeRegister(phyId, rsCb, &rdevCb->sensorNode);
+    ret = RsSensorNodeRegister(phyId, rsCb);
     if (ret != 0) {
         hccp_err("[init][rs_rdev]rs_sensor_node_register failed, phyId(%u), ret(%d)", phyId, ret);
         goto free_dev_list;
@@ -1201,8 +1242,8 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
     hccp_info("ibv_get_device_list phyId[%d] dev_num[%d]", phyId, rdevCb->devNum);
 
     ret = RsRdevCbInit(rdevInfo, rdevCb, rsCb, rdevIndex);
-    if (ret) {
-        RsSensorNodeUnregister(&rdevCb->sensorNode);
+    if (ret != 0) {
+        RsSensorNodeUnregister(rdevCb->rs_cb);
         hccp_err("rs_rdev_cb_init failed ret %d!, normal ret 0", ret);
         goto free_dev_list;
     }
@@ -1331,18 +1372,16 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
 
     pthread_mutex_destroy(&rdevCb->rdevMutex);
 
-    RsSensorNodeUnregister(&rdevCb->sensorNode);
-
     RsIbvFreeDeviceList(rdevCb->devList);
 
     RS_PTHREAD_MUTEX_LOCK(&gRsCb->mutex);
-
     RsListDel(&rdevCb->list);
-    free(rdevCb);
-    rdevCb = NULL;
     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
+    RsSensorNodeUnregister(rdevCb->rs_cb);
     RsApiDeinit();
     hccp_run_info("rdev deinit success, phyId:%u, rdevIndex:%u", phyId, rdevIndex);
+    free(rdevCb);
+    rdevCb = NULL;
     return 0;
 }
 
@@ -1982,6 +2021,7 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
 
 #ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
+    RsDeInitNetAdapt(rscb);
     rs_esched_deinit(rscb->protocol);
     (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
 #endif

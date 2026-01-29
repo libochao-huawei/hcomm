@@ -288,9 +288,7 @@ HcclResult AicpuTsThread::HostInit()
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
         CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-        if (Is310PDevice()) {
-            CHK_RET(notifys_[idx]->SetIpc());
-        }
+        CHK_RET(notifys_[idx]->SetIpc());
     }
 
     if (streamType_ == StreamType::STREAM_TYPE_DEVICE && devType_ != DevType::DEV_TYPE_910_95) {
@@ -310,14 +308,11 @@ HcclResult AicpuTsThread::DeviceInit()
     uint32_t hostPhyId = 0;
     iss.read(reinterpret_cast<char_t *>(&streamType_), sizeof(streamType_));
     iss.read(reinterpret_cast<char_t *>(&notifyLoadType_), sizeof(notifyLoadType_));
-    CHK_PRT_RET((streamType_ != StreamType::STREAM_TYPE_DEVICE || notifyLoadType_ != NotifyLoadType::DEVICE_NOTIFY),
-        HCCL_ERROR("[AicpuTsThread][Init]streamType[%d] or notifyLoadType[%d] is not support on device",
-            streamType_,
-            notifyLoadType_),
-        HCCL_E_NOT_SUPPORT);
+    HCCL_INFO("[AicpuTsThread][Init]streamType[%d], notifyLoadType[%d].", streamType_, notifyLoadType_);
     iss.read(reinterpret_cast<char_t *>(&hostPhyId), sizeof(hostPhyId));
     CHK_RET(hrtDrvGetLocalDevIDByHostDevID(hostPhyId, &devId_));
     iss.read(reinterpret_cast<char_t *>(&notifyNum_), sizeof(notifyNum_));
+
     HcclStreamParam streamParam;
     iss.read(reinterpret_cast<char_t *>(&streamParam), sizeof(streamParam));
     // 91095初始化streamlite，初始化rtsq接口
@@ -330,6 +325,7 @@ HcclResult AicpuTsThread::DeviceInit()
         CHK_RET(InitStream(streamParam));
     }
     HCCL_INFO("AicpuTsThread::DeviceInit InitStreams end");
+
     notifys_.reserve(notifyNum_);
     for (uint32_t idx = 0; idx < notifyNum_; idx++) {
         notifys_.emplace_back(nullptr);
@@ -337,7 +333,7 @@ HcclResult AicpuTsThread::DeviceInit()
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
-        CHK_RET(notifys_[idx]->Init(notifyInfo, NotifyLoadType::DEVICE_NOTIFY));
+        CHK_RET(notifys_[idx]->Init(notifyInfo, notifyLoadType_));
         HCCL_INFO("[AicpuTsThread][Init]local notify init success, resId[%u], tsId:%d, devId[%u]",
             notifyInfo.resId,
             notifyInfo.tsId,

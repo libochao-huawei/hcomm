@@ -1044,7 +1044,7 @@ TEST_F(HcomTest, ut_HcomCalcTaskNumV2_When_Abnormal_Expect_ReturnlsHCCL_E_INTERN
     HcomOpParam hcomOpParam;
     hcomOpParam.opType = "HcomAllReduce";
     hcomOpParam.count = 1;
-    hcomOpParam.dataType = HCCL_DATA_TYPE_INT8;
+    hcomOpParam.datatype = HCCL_DATA_TYPE_INT8;
     u32 taskNum = 0;
     hcclComm->GetCommImpl()->CollAlgComponentInit();
     auto ret = HcomCalcTaskNumV2(&hcomOpParam, taskNum);
@@ -1067,7 +1067,7 @@ TEST_F(HcomTest, ut_HcomCalcTaskNumV2_OpType_Not_Find_When_Abnormal_Expect_Retur
     HcomOpParam hcomOpParam;
     hcomOpParam.opType = "HcomAll";
     hcomOpParam.count = 1;
-    hcomOpParam.dataType = HCCL_DATA_TYPE_INT8;
+    hcomOpParam.datatype = HCCL_DATA_TYPE_INT8;
     u32 taskNum = 0;
     hcclComm->GetCommImpl()->CollAlgComponentInit();
     auto ret = HcomCalcTaskNumV2(&hcomOpParam, taskNum);
@@ -2001,12 +2001,13 @@ TEST_F(HcomTest, ut_HcomGraphSelectAlgV2_When_UnNormal_Expect_ReturnError)
 
     MOCKER_CPP(&CommunicatorImpl::ExecAlgSelect).defaults().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
     hcclComm->pimpl->isSuspended = false;
+    hcclComm->pimpl->commExecuteConfig.accState = AcceleratorState::AIV;
     opType = HcclCMDType::HCCL_CMD_REDUCE;
     ret = HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName);
     EXPECT_EQ(HCCL_E_PARA, ret);
 }
 
-TEST_F(HcomTest, ut_HcomCalcBlockDimV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
+TEST_F(HcomTest, ut_HcomCalcNumBlocksV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
 {
     SetupCommonCommInfo();
 
@@ -2023,14 +2024,14 @@ TEST_F(HcomTest, ut_HcomCalcBlockDimV2_When_Normal_Expect_ReturnHCCL_SUCCESS)
     HcclReduceOp op = HCCL_REDUCE_SUM;
     int32_t aivCoreLimit = 2;
     std::string algName = "";
-    u32 blockDim = 0;
+    u32 numBlocks = 0;
 
-    HcclResult ret = HcomCalcBlockDimV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
+    HcclResult ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, numBlocks);
     EXPECT_EQ(HCCL_SUCCESS, ret);
-    EXPECT_EQ(blockDim, aivCoreLimit);
+    EXPECT_EQ(numBlocks, aivCoreLimit);
 
     opType = HcclCMDType::HCCL_CMD_INVALID;
-    ret = HcomCalcBlockDimV2(group, opType, count, dataType, aivCoreLimit, algName, blockDim);
+    ret = HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algName, numBlocks);
     EXPECT_EQ(HCCL_E_NOT_SUPPORT, ret);
 }
 

@@ -977,6 +977,9 @@ target_include_directories(aicpu_kfc_llt  PRIVATE
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/legacy/common/
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/legacy/graph_ctx_mgr/
     ${AICPU_KFC_CODE_ROOT}/hccl/platform/legacy/inc/
+
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
 )
 
 add_library(aicpu_kfc_llt_open SHARED ${aicpu_kfc_list_open})

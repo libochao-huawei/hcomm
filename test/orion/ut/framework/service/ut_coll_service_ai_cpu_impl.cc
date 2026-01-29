@@ -99,7 +99,7 @@ protected:
         shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
         shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
             inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-        peer0->AddConnInterface(connInterface);
+        peer0->AddConnInterface(0, connInterface);
         comm.rankGraph->AddPeer(peer0);
         comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
         comm.cclBuffer = DevBuffer::Create(0x100, 10);
@@ -146,6 +146,23 @@ TEST_F(CollServiceAiCpuImplTest, Ut_SetHcclKernelLaunchParam_When_Op_BATCHSENDRE
     comm.InitHDCommunicate();
     HcclKernelLaunchParam param;
     comm.currentCollOperator->opType = OpType::BATCHSENDRECV;
+    comm.currentCollOperator->debugCase = 0;
+    comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
+    comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
+    s32 rankId = 0;
+    s32 localId = 0;
+    DeviceId deviceId = 0;
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/1"};
+    std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
+    shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
+        inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
+    peer0->AddConnInterface(0, connInterface);
+    comm.rankGraph->AddPeer(peer0);
+    comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
+    comm.cclBuffer = DevBuffer::Create(0x100, 10);
+
     CollServiceAiCpuImpl service(&comm);
     service.counterBuf = DevBuffer::Create(0x100, 10);
     service.devBatchSendRecvItemBufs = DevBuffer::Create(0x100, 10);
@@ -163,6 +180,19 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_Op_ALLTOALLV_Expect_MemSize_
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->scratchMem = DevBuffer::Create(0x100, 10);
+
+    s32 rankId = 0;
+    s32 localId = 0;
+    DeviceId deviceId = 0;
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/1"};
+    std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
+    shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
+        inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
+    peer0->AddConnInterface(0, connInterface);
+    comm.rankGraph->AddPeer(peer0);
+    comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
 
     u64 *sendCounts = (u64 *)malloc(comm.rankSize * sizeof(u64));
     u64 *recvCounts = (u64 *)malloc(comm.rankSize * sizeof(u64));
@@ -208,6 +238,21 @@ TEST_F(CollServiceAiCpuImplTest, Ut_AllocOpMem_When_BATCHSENDRECV_Expect_OK)
     comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
     comm.currentCollOperator->scratchMem = DevBuffer::Create(0x100, 10);
+
+    s32 rankId = 0;
+    s32 localId = 0;
+    DeviceId deviceId = 0;
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/1"};
+    std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
+    shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
+        inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
+    peer0->AddConnInterface(0, connInterface);
+    comm.rankGraph->AddPeer(peer0);
+    comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
+
+    CollOperator op;
     op.opTag = "testTag";
     op.opType = OpType::BATCHSENDRECV;
     op.dataType = DataType::FP32;
@@ -530,6 +575,44 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Normal_Expect_Succe
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetHostWaitNotify).stubs().with().will(returnValue(&notify));
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetDeviceWaitNotify).stubs().with().will(returnValue(&notify1));
 
+    CommunicatorImpl comm;
+    comm.InitNotifyManager();
+    comm.InitSocketManager();
+    comm.InitRmaConnManager();
+    comm.InitStreamManager();
+    comm.InitMemTransportManager();
+    comm.devLogicId = 0;
+    comm.InitMirrorTaskManager();
+    comm.myRank = 0;
+    comm.id = "testTag";
+    std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
+    std::shared_ptr<Buffer> buffer1 = DevBuffer::Create(0x100, 10);
+    comm.dataBufferManager = std::make_unique<DataBufManager>();
+    comm.dataBufferManager->Register("testTag", BufferType::SCRATCH, buffer);
+    comm.rankGraph = std::make_unique<RankGraph>(0);
+    comm.connLocalNotifyManager = std::make_unique<ConnLocalNotifyManager>(&comm);
+    comm.connLocalCntNotifyManager = std::make_unique<ConnLocalCntNotifyManager>(&comm);
+    comm.rmaConnectionManager = std::make_unique<RmaConnManager>(comm);
+    comm.currentCollOperator = std::make_unique<CollOperator>();
+    comm.currentCollOperator->opMode = OpMode::OPBASE;
+    comm.currentCollOperator->opMode = OpMode::OPBASE;
+    comm.currentCollOperator->opType = OpType::DEBUGCASE;
+    comm.currentCollOperator->debugCase = 0;
+    comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
+    comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
+    s32 rankId = 0;
+    s32 localId = 0;
+    DeviceId deviceId = 0;
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/1"};
+    std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
+    shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
+        inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
+    peer0->AddConnInterface(0, connInterface);
+    comm.rankGraph->AddPeer(peer0);
+    comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
+
     comm.InitCollService();
     comm.CollAlgComponentInit();
     MOCKER_CPP(&CollAlgComponent::ExecAlgSelect).stubs().with(any()).will(returnValue(HcclResult::HCCL_SUCCESS));
@@ -585,6 +668,43 @@ TEST_F(CollServiceAiCpuImplTest, Ut_LoadWithOpBasedMode_When_Loop_Expect_Success
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetHostWaitNotify).stubs().with().will(returnValue(&notify));
     MOCKER_CPP(&HostDeviceSyncNotifyManager::GetDeviceWaitNotify).stubs().with().will(returnValue(&notify1));
     MOCKER_CPP(&Trace::Save).stubs();
+    CommunicatorImpl comm;
+    comm.InitNotifyManager();
+    comm.InitSocketManager();
+    comm.InitRmaConnManager();
+    comm.InitStreamManager();
+    comm.InitMemTransportManager();
+    comm.devLogicId = 0;
+    comm.InitMirrorTaskManager();
+    comm.myRank = 0;
+    comm.id = "testTag";
+    std::shared_ptr<Buffer> buffer = DevBuffer::Create(0x100, 10);
+    std::shared_ptr<Buffer> buffer1 = DevBuffer::Create(0x100, 10);
+    comm.dataBufferManager = std::make_unique<DataBufManager>();
+    comm.dataBufferManager->Register("testTag", BufferType::SCRATCH, buffer);
+    comm.rankGraph = std::make_unique<RankGraph>(0);
+    comm.connLocalNotifyManager = std::make_unique<ConnLocalNotifyManager>(&comm);
+    comm.connLocalCntNotifyManager = std::make_unique<ConnLocalCntNotifyManager>(&comm);
+    comm.rmaConnectionManager = std::make_unique<RmaConnManager>(comm);
+    comm.currentCollOperator = std::make_unique<CollOperator>();
+    comm.currentCollOperator->opMode = OpMode::OPBASE;
+    comm.currentCollOperator->opMode = OpMode::OPBASE;
+    comm.currentCollOperator->opType = OpType::DEBUGCASE;
+    comm.currentCollOperator->debugCase = 0;
+    comm.currentCollOperator->inputMem = DevBuffer::Create(0x100, 10);
+    comm.currentCollOperator->outputMem = DevBuffer::Create(0x100, 10);
+    s32 rankId = 0;
+    s32 localId = 0;
+    DeviceId deviceId = 0;
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/1"};
+    std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
+    shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
+        inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
+    peer0->AddConnInterface(0, connInterface);
+    comm.rankGraph->AddPeer(peer0);
+    comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
 
     comm.InitCollService();
     comm.CollAlgComponentInit();
@@ -741,7 +861,7 @@ TEST_F(CollServiceAiCpuImplTest, test_LoadWithOffloadMode_Success)
     shared_ptr<NetInstance::Peer> peer0 = std::make_shared<NetInstance::Peer>(rankId, localId, localId, deviceId);
     shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
         inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-    peer0->AddConnInterface(connInterface);
+    peer0->AddConnInterface(0, connInterface);
     comm.rankGraph->AddPeer(peer0);
     comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
 
@@ -803,11 +923,11 @@ TEST_F(CollServiceAiCpuImplTest, ut_GetAlgExecParam_When_Aicpu_Expect_ReturnNotS
     CollServiceAiCpuImpl service(&comm);
 
     bool clearEnable = true;
-    int32_t blockDim = 2;
+    int32_t numBlocks = 2;
     void* commContext = nullptr;
     u64 len = 0;
 
-    EXPECT_EQ(service.GetAlgExecParam(clearEnable, blockDim, commContext, len), HCCL_E_NOT_SUPPORT);
+    EXPECT_EQ(service.GetAlgExecParam(clearEnable, numBlocks, commContext, len), HCCL_E_NOT_SUPPORT);
 }
 
 TEST_F(CollServiceAiCpuImplTest, Ut_AllocCollOpResource_When_Normal_Loop_Expect_OK)

@@ -191,7 +191,7 @@ HcclResult BinaryLoadFromData(const void *data, size_t length,
     return HCCL_SUCCESS;
 }
 
-HcclResult LaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockDim,
+HcclResult LaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     aclrtArgsHandle argsHandle, void *reserve)
 {
@@ -199,7 +199,7 @@ HcclResult LaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockDim,
     CHK_PTR_NULL(stream);
     CHK_PTR_NULL(cfg);
     CHK_PTR_NULL(argsHandle);
-    aclError ret = aclrtLaunchKernelWithConfig(funcHandle, blockDim, stream, cfg, argsHandle, reserve);
+    aclError ret = aclrtLaunchKernelWithConfig(funcHandle, numBlocks, stream, cfg, argsHandle, reserve);
     CHK_PRT_RET(ret != ACL_SUCCESS, HCCL_ERROR("[LaunchKernelWithConfig]execute kernel launch failed"), HCCL_E_RUNTIME);
     return HCCL_SUCCESS;
 }

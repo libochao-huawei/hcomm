@@ -368,8 +368,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         && serverNum_ > 1
         && !GetExternalInputInterHccsDisable()
         && (
-            ((userRankSize_ <= ONE_EIGHTH_MAX_BLOCK_DIM && dataSize <= AIV_REDUCE_SCATTER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
-            (userRankSize_ <= ONE_THIRD_MAX_BLOCK_DIM && dataSize <= AIV_REDUCE_SCATTER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
+            ((userRankSize_ <= ONE_EIGHTH_MAX_NUM_BLOCKS && dataSize <= AIV_REDUCE_SCATTER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
+            (userRankSize_ <= ONE_THIRD_MAX_NUM_BLOCKS && dataSize <= AIV_REDUCE_SCATTER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
             (dataSize <= AIV_REDUCE_SCATTER_A3_LARGE_RANKSIZE_ENTRY_SIZE) || isOnlyAiv)
         );
 
@@ -406,7 +406,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         if (isAivCrossNode) {
             algName = "ReduceScatterMeshAivFor91093Executor";
         } else if ((isOpbase && dataSize <= AIV_REDUCE_SCATTER_MID_SIZE) 
-            || (!isOpbase && dataSize <= std::min(limit.aivCoreLimit / userRankSize_, BLOCK_DIM_FACTOR_FOUR)
+            || (!isOpbase && dataSize <= std::min(limit.aivCoreLimit / userRankSize_, NUM_BLOCKS_FACTOR_FOUR)
             * AIV_REDUCE_SCATTER_BIG_SIZE)) {
             algName = "ReduceScatterMeshAivSmallCountExecutor";
         } else {
@@ -526,7 +526,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
 
         CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable [%d] not supported", retryEnable_), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(superPodNum_ != 1, HCCL_ERROR("multi superpod [%s] not supported", superPodNum_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(superPodNum_ != 1, HCCL_ERROR("multi superpod [%u] not supported", superPodNum_), HCCL_E_NOT_SUPPORT);
 
         CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;

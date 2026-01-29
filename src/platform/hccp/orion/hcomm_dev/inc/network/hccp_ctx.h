@@ -232,6 +232,7 @@ enum jfc_mode {
     JFC_MODE_NORMAL = 0,      /* Corresponding jetty mode：JETTY_MODE_URMA_NORMAL and JETTY_MODE_USER_CTL_NORMAL */
     JFC_MODE_STARS_POLL = 1,  /* Corresponding jetty mode：JETTY_MODE_CACHE_LOCK_DWQE and JETTY_MODE_USER_CTL_NORMAL */
     JFC_MODE_CCU_POLL = 2,    /* Corresponding jetty mode: JETTY_MODE_CCU */
+    JFC_MODE_USER_CTL_NORMAL = 3,    /* Corresponding jetty mode: JETTY_MODE_USER_CTL_NORMAL */
     JFC_MODE_MAX
 };
 
@@ -269,6 +270,10 @@ struct cq_create_attr {
 
 struct cq_create_info {
     uint64_t va; /**< refer to struct urma_jfc*, struct ibv_cq* */
+    uint32_t id; /**< jfc id */
+    uint32_t cqe_size;
+    uint64_t buf_addr;
+    uint64_t swdb_addr;
 };
 
 struct cq_info_t {
@@ -339,7 +344,7 @@ struct jetty_que_cfg_ex {
 
 union cstm_jfs_flag {
     struct {
-        uint32_t sq_cstm        : 1;
+        uint32_t sq_cstm        : 1; /**< valid in jetty mode: JETTY_MODE_CCU */
         uint32_t db_cstm        : 1;
         uint32_t db_ctl_cstm    : 1;
         uint32_t reserved       : 29;
@@ -414,6 +419,8 @@ struct qp_create_info {
         struct {
             uint32_t uasid;
             uint32_t id; /**< jetty id */
+            uint64_t sq_buff_va; /**< valid in jetty mode：JETTY_MODE_CACHE_LOCK_DWQE and JETTY_MODE_USER_CTL_NORMAL */
+            uint64_t wqebb_size; /**< valid in jetty mode: JETTY_MODE_CACHE_LOCK_DWQE and JETTY_MODE_USER_CTL_NORMAL */
             uint64_t db_addr;
             uint32_t db_token_id;
             uint64_t ci_addr;

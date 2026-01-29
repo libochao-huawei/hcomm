@@ -83,7 +83,7 @@ struct TeOpTensorArg {
 };
 
 struct OpRunInfo {
-    uint32_t blockDim;
+    uint32_t numBlocks;
     std::vector<int64_t> workspaces;
     ByteBuffer tilingData;
     bool clearAtomic;

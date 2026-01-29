@@ -33,13 +33,21 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
     std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
     EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
         return HCCL_E_PTR);
+ 
+    // LocalRdmaRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
+    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
+    if(localRdmaRmaBufferMgr_->Find(tempKey).first) {
+        // 内存再次注册时
+        HCCL_INFO("[RdmaRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
+                "{%p, %llu}", mem.addr, mem.size);
+        return HCCL_E_AGAIN;
+    }
     
     std::shared_ptr<Hccl::LocalRdmaRmaBuffer> localRdmaRmaBuffer = nullptr;
     EXECEPTION_CATCH((localRdmaRmaBuffer = std::make_shared<Hccl::LocalRdmaRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
         return HCCL_E_PTR);
     
     // 注册到LocalRdmaRmaBuffer计数器
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
     auto resultPair = localRdmaRmaBufferMgr_->Add(tempKey, localRdmaRmaBuffer);
     if (resultPair.first == localRdmaRmaBufferMgr_->End()) {
         // 若已注册内存有交叉，返回HCCL_E_INTERNAL
@@ -158,7 +166,6 @@ HcclResult RoceRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, 
         remoteRdmaRmaBuffer = std::make_shared<Hccl::RemoteRdmaRmaBuffer>(this->rdmaHandle_, dto),
         return HCCL_E_PTR;
     );
-    CHK_SMART_PTR_NULL(remoteRdmaRmaBuffer);
 
     // 放到RemoteRdmaRmaBufferMgr_
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(remoteRdmaRmaBuffer->GetAddr()), remoteRdmaRmaBuffer->GetSize());

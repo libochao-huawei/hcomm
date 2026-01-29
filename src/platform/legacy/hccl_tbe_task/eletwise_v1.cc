@@ -82,7 +82,7 @@ bool EletwiseV1::Init()
     needMultiCore_ = true;
     blockAxis_ = -1;
     ubaxis_ = -1;
-    blockDims_ = 1;
+    numBlockss_ = 1;
     sPattern_ = Pattern::ORIGINAL;
     return true;
 }
@@ -304,7 +304,7 @@ bool EletwiseV1::DoBlockTiling()
         CHECK((outputShape_.size() > 0), "op [%s] : output shape cannot be empty", opType_.c_str())
         int32_t blockFactor = static_cast<int32_t>(std::ceil(outputShape_[0] * 1.0 / curCore));
         blockFactor = static_cast<int32_t>(std::ceil(blockFactor * 1.0 / eleInBlock) * eleInBlock);
-        blockDims_ = static_cast<int32_t>(std::ceil(outputShape_[0] * 1.0 / blockFactor));
+        numBlockss_ = static_cast<int32_t>(std::ceil(outputShape_[0] * 1.0 / blockFactor));
         varNames_[blockFactorKey] = blockFactor;
         outputShape_[0] = blockFactor;
     } else {
@@ -312,13 +312,13 @@ bool EletwiseV1::DoBlockTiling()
             if (outputShape_[i] > curCore) {
                 blockAxis_ = i;
                 int32_t blockFactor = static_cast<int32_t>(std::ceil(outputShape_[i] * 1.0 / curCore));
-                blockDims_ *= static_cast<int32_t>(std::ceil(outputShape_[i] * 1.0 / blockFactor));
+                numBlockss_ *= static_cast<int32_t>(std::ceil(outputShape_[i] * 1.0 / blockFactor));
                 varNames_[blockFactorKey + i] = blockFactor;
                 outputShape_[i] = blockFactor;
                 break;
             } else {
                 curCore /= outputShape_[i];
-                blockDims_ *= outputShape_[i];
+                numBlockss_ *= outputShape_[i];
                 outputShape_[i] = 1;
             }
         }
@@ -373,7 +373,7 @@ void EletwiseV1::CalcKey()
 
 bool EletwiseV1::WriteTilingData(OpRunInfo& runInfo)
 {
-    runInfo.blockDim = blockDims_;
+    runInfo.numBlocks = numBlockss_;
     ByteBufferPut(runInfo.tilingData, key_);
     if (!isConst_) {
         CHECK((opInfo_.count("_vars") > 0), "op [%s] : compile info not contain [_vars]", opType_.c_str());

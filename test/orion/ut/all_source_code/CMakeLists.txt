@@ -19,9 +19,9 @@ target_sources(hccl_v2_utest
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_hdc_handler.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_comm_destroy_func.cc
         ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/ns_recovery_handler_func.cc
-        # ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_mc2_handler.cc
-        # ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/hccl_mc2_ex.cc
-        # ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_utils.cc
+        ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_mc2_handler.cc
+        ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/hccl_mc2_ex.cc
+        ${HCCL_V2_CODE_ROOT}/framework/communicator/aicpu/aicpu_utils.cc
 
         ${HCCL_V2_CODE_ROOT}/framework/service/coll_service_base.cc
         ${HCCL_V2_CODE_ROOT}/framework/service/coll_service_ai_cpu_impl.cc

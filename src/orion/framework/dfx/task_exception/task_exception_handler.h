@@ -19,8 +19,13 @@
 #include "ccu_dfx.h"
 #include "ccu_task_param.h"
 #include "hccl_common_v2.h"
+#include "error_message_v2.h"
+#include "orion_adapter_hccp.h"
+#include "rdma_handle_manager.h"
+#include "coll_service_device_mode.h"
 
 namespace Hccl {
+using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>;
 class TaskExceptionHandler {
 public:
     // 构造函数使用初始化列表初始化devId_
@@ -32,6 +37,7 @@ public:
     void        Register() const;                                // 向rts注册异常处理方法
     void        UnRegister() const;                              // 向rts注销异常处理方法
     static void Process(rtExceptionInfo_t *exceptionInfo); // 处理异常信息
+    static void PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo);
 
 private:
     static std::string GetGroupRankInfo(const TaskInfo& taskInfo);
@@ -39,8 +45,8 @@ private:
     static void PrintTaskContextInfo(uint32_t deviceId, uint32_t streamId, uint32_t taskId);
     static void ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionInfo);
     static std::vector<CcuTaskParam> GetMC2AlgTaskParam(const TaskInfo& taskInfo);
-    static void ProcessCcuException(uint32_t deviceId, const TaskInfo& taskInfo);
-    static void PrintCcuErrorInfo(uint32_t deviceId, const TaskInfo& taskInfo);
+    static void ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
+    static void PrintCcuErrorInfo(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo);
     static void PrintCcuErrorLog(const std::vector<CcuErrorInfo>& errorInfos, const TaskInfo& taskInfo);
 
     static std::string GetCcuErrorMsgByType(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
@@ -66,6 +72,7 @@ private:
     static std::string GetCcuErrorMsgBufLocWrite(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static std::string GetCcuErrorMsgBufReduce(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static RankId GetRankIdByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
+    static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
 
 private:
     uint32_t devId_; // 当前设备id
@@ -83,11 +90,54 @@ private:
     // 私有拷贝构造函数和赋值运算符，防止对象被拷贝
     TaskExceptionHandlerManager(const TaskExceptionHandlerManager &)            = delete;
     TaskExceptionHandlerManager &operator=(const TaskExceptionHandlerManager &) = delete;
+    void RegisterGetAicpuTaskException(u32 streamId, ErrorMessageReport errorMessageReport);
 
 private:
     // 全局静态数组，存储异常处理器指针
     static std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> handlers_;
 };
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+extern void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1);
+#ifdef __cplusplus
+}
+#endif // __cplusplus
+ 
+constexpr s32 INVALID_VALUE_STAGE = -1;
+constexpr u32 INVALID_UINT = 0xFFFFFFFF;
+ 
+struct TaskParaNotify {
+    u64 notifyID;
+    s32 stage; // 用于标识stream间同步时所在的stage， 非用于stream同步的默认为-1
+    u32 remoteUserRank;
+    u32 ctxId; // 子图 ctxId信息
+    TaskParaNotify() : notifyID(0), stage(INVALID_VALUE_STAGE), remoteUserRank(INVALID_UINT), ctxId(INVALID_UINT) {}
+    explicit TaskParaNotify(u64 notifyIDInput)
+        : notifyID(notifyIDInput),
+          stage(INVALID_VALUE_STAGE),
+          remoteUserRank(static_cast<u32>(notifyIDInput >> 32)), // 无remoteRank时，使用notify的高32位为remote rank
+          ctxId(INVALID_UINT)
+    {}
+    TaskParaNotify(u64 notifyIDInput, s32 stageIn)
+        : notifyID(notifyIDInput),
+          stage(stageIn),
+          remoteUserRank(static_cast<u32>(notifyIDInput >> 32)), // 无remoteRank时，使用notify的高32位为remote rank
+          ctxId(INVALID_UINT)
+    {}
+    TaskParaNotify(u64 notifyIDInput, s32 stageIn, u32 remoteUserRank)
+        : notifyID(notifyIDInput), stage(stageIn), remoteUserRank(remoteUserRank), ctxId(INVALID_UINT)
+    {}
+    TaskParaNotify(u64 notifyIDInput, s32 stageIn, u32 remoteUserRank, u32 ctxIdInput)
+        : notifyID(notifyIDInput), stage(stageIn), remoteUserRank(remoteUserRank), ctxId(ctxIdInput)
+    {}
+};
+ 
+const std::string LOG_KEYWORDS_TIMEOUT = "Timeout";                       // 算子执行阶段超时
+const std::string LOG_KEYWORDS_RUN_FAILED = "RunFailed";                  // 算子执行阶段失败，如SDMA ERROR
+const std::string LOG_KEYWORDS_TASK_EXEC = "TaskExecStage";               // 算子执行阶段异常
+const std::string LOG_KEYWORDS_AICPU = "AICPU";
 } // namespace Hccl
 
 #endif // HCCL_TASK_EXCEPTION_HANDLER_H

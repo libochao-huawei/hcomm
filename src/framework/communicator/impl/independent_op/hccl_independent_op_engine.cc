@@ -207,3 +207,27 @@ HcclResult HcommFreeNotify(HcclComm comm, uint32_t notifyNum, NotifyHandle *noti
     HCCL_RUN_INFO("[%s] Free notify for notifyNum[%u]", __func__, notifyNum);
     return HCCL_SUCCESS;
 }
+
+HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
+{
+    CHK_PTR_NULL(comm);
+    CHK_PTR_NULL(threads);
+    CHK_PTR_NULL(exportedThreads);
+    CHK_PRT_RET(!IsValidCommEngine(dstCommEngine),
+                HCCL_ERROR("[%s] commEngine[%d] is invalid", __func__, static_cast<int32_t>(dstCommEngine)), HCCL_E_PARA);
+    if (threadNum == 0) {
+        HCCL_ERROR("[%s] threadNum is 0", __func__);
+        return HCCL_E_PARA;
+    }
+
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    std::string commId = hcclComm->GetIdentifier();
+    HCCL_INFO("Entry-[%s]:comm[%s], threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]", 
+             __func__, commId.c_str(), threadNum, dstCommEngine, threads, exportedThreads);
+    auto &engineResMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr();
+    HcclResult ret = engineResMgr.HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Thread export failed. Export threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]",
+         __func__, threadNum, dstCommEngine, threads, exportedThreads), ret);
+    HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
+    return HCCL_SUCCESS;
+}

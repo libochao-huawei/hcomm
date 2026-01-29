@@ -22,7 +22,7 @@ public:
     HcclResult CalcScratchMemSize(u64&) override;
 
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
-    HcclResult CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;
+    HcclResult CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID) override;
 private:
     HcclResult CopyAivCommInfoToDevice(const CommPlane levelIndex, const u32 subLevelIndex, AlgResourceResponse& algResource) override;
     void ParseParam(const OpParam&) override;

@@ -28,9 +28,8 @@ HcclResult Channel::CreateChannel(
         case COMM_ENGINE_CPU:
             // TODO: if 判断 EndpointDesc 里面的协议
             if (channelDesc.remoteEndpoint.protocol == COMM_PROTOCOL_ROCE) {
-                channelPtr.reset(new (std::nothrow) HostCpuRoceChannel(
-                    endpointHandle, channelDesc
-                ));
+                EXECEPTION_CATCH(channelPtr = std::make_unique<HostCpuRoceChannel>(endpointHandle, channelDesc),
+                    return HCCL_E_PARA);
                 break;
             }
             HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CPU] not support", __func__);

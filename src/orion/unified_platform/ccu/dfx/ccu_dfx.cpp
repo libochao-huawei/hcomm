@@ -17,7 +17,7 @@
 namespace Hccl {
 using namespace std;
 
-HcclResult GetCcuErrorMsg(s32 deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
+HcclResult GetCcuErrorMsg(int32_t deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo, uint16_t &ccuMissionStatus)
 {
     TRY_CATCH_RETURN(
         HCCL_RUN_INFO(
@@ -29,9 +29,15 @@ HcclResult GetCcuErrorMsg(s32 deviceId, const ParaCcu &ccuTaskParam, std::vector
         CHK_PRT_RET((deviceId < 0 || static_cast<u32>(deviceId) >= MAX_MODULE_DEVICE_NUM),
                     HCCL_ERROR("[CcuDfx][GetCcuErrorMsg]deviceId[%d] error.", deviceId), HcclResult::HCCL_E_PARA);
 
-        CcuErrorHandler::GetCcuErrorMsg(deviceId, ccuTaskParam, errorInfo);
+        CcuErrorHandler::GetCcuErrorMsg(deviceId, ccuTaskParam, errorInfo, ccuMissionStatus);
     );
     return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys)
+{
+    CcuErrorHandler::GetCcuJettys(deviceLogicId, ccuTaskParam, ccuJettys);
+ 
 }
 
 } // namespace Hccl

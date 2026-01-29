@@ -22,7 +22,6 @@ EndpointPair::~EndpointPair()
 
 HcclResult EndpointPair::Init()
 {
-    printf("EndpointPair::Init 000\n");
     EXECEPTION_CATCH(socketMgr_ = std::make_unique<SocketMgr>(), return HCCL_E_PTR);
     channelHandles_.clear();
     return HCCL_SUCCESS;

@@ -151,12 +151,12 @@ HcclResult AicpuMc2Handler::HcclPrintTaskExceptionAllComm(void *opHandle) const
 
         StreamLite *curStream = streamLiteMgr->GetMaster();
         string nullInfo = "streamLiteMgr->GetMaster is nullptr";
-        AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo);
+        AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo, communicatorImplLite);
 
         for (uint32_t id = 0; id < streamLiteMgr->SizeOfSlaves(); id++) {
             curStream = streamLiteMgr->GetSlave(id);
             nullInfo = "streamLiteMgr->GetSlave(" + to_string(id) + ") is nullptr";
-            AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo);
+            AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo, communicatorImplLite);
         }
     }
     return HCCL_SUCCESS;

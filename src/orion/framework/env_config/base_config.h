@@ -167,15 +167,6 @@ private:
     CfgField<HcclDetourType> detourType{"HCCL_DETOUR", HcclDetourType::HCCL_DETOUR_DISABLE, CastDetourType};
 };
 
-class EnvTopoFilePathConfig : public BaseConfig {
-public:
-    void Parse() override;
-    std::string GetTopoFilePath() const;
-
-private:
-    CfgField<std::string> topoFilePath{"HCCL_TOPO_FILE_PATH", "", Str2T<std::string>, CheckFilePath, SetRealPath};
-};
-
 } // namespace Hccl
 
 #endif // HCCLV2_BASE_CONFIG_H

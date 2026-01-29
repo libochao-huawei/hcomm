@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include "runtime_stub.h"
 #include "mmpa_api.h"
 #include "device_info_recorder.h"
@@ -259,7 +269,7 @@ HcclResult hrtDevBinaryRegister(const rtDevBinary_t *bin, BinHandle *handle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+HcclResult hrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo)
 {
     return HCCL_SUCCESS;
@@ -326,7 +336,7 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg *cfg,
+aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     void *hostArgs, size_t argsSize, aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {
     return RT_ERROR_NONE;

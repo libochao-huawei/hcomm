@@ -9,6 +9,7 @@
  */
 #include "my_rank.h"
 #include "hcomm_c_adpt.h"
+#include "hcomm_res.h"
 #include "channel.h"
 #include "endpoint_pair.h"
 
@@ -201,6 +202,34 @@ HcclResult MyRank::CreateChannels(CommEngine engine, const std::string &commTag,
         // other process
     }
 
+    return HCCL_SUCCESS;
+}
+
+HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size)
+{
+    CHK_PTR_NULL(buffer);
+    CHK_PTR_NULL(size);
+
+    u32 memNum = 0;  // 接收内存块数量
+    /* 实现获取buffer Num的接口，此处Size为10的vector暂存 */
+    std::vector<HcommMem *> remoteMemList(10); 
+    std::vector<char *> memTags(10);
+    CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data()));
+
+    for (u32 i = 0; i < memNum; i++) {
+        HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
+        if (strcmp(memTags[i], "HcclBuffer") == 0) {
+            *buffer = remoteMemList[i]->addr;
+            *size = remoteMemList[i]->size;
+            HCCL_INFO("[%s] Found Hccl buffer memNum is %u at index %u: addr=%p, size=%llu",
+                __func__,
+                memNum,
+                i,
+                remoteMemList[i]->addr,
+                remoteMemList[i]->size);
+            break;  // 找到后立即退出循环
+        }
+    }
     return HCCL_SUCCESS;
 }
 

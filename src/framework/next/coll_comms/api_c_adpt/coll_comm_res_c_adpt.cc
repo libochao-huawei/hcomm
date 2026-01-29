@@ -11,6 +11,7 @@
 #include "../rank/my_rank.h"
 #include "hccl_comm_pub.h"
 #include "exception_handler.h"
+#include "env_config.h"
 using namespace hccl;
 /**
  * @note 职责：集合通信的通信域资源管理的C接口的C到C++适配
@@ -27,7 +28,7 @@ using namespace hccl;
  */
 
 const uint32_t HCCL_CHANNEL_VERSION_ONE = 1;
-static HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
+HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
 {
     if (channelDesc.header.size < channelDescFinal.header.size) {
         // 需要前向兼容HcclChannelDesc，末尾部分字段不支持处理
@@ -60,13 +61,17 @@ static HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, Hccl
             case COMM_PROTOCOL_HCCS:
             case COMM_PROTOCOL_PCIE:
             case COMM_PROTOCOL_SIO:
+            case COMM_PROTOCOL_UBC_CTP:
                 break;
             case COMM_PROTOCOL_ROCE:
-                channelDescFinal.roceAttr.queueNum = channelDesc.roceAttr.queueNum;
-                channelDescFinal.roceAttr.retryCnt = channelDesc.roceAttr.retryCnt;
-                channelDescFinal.roceAttr.retryInterval = channelDesc.roceAttr.retryInterval;
-                channelDescFinal.roceAttr.tc = channelDesc.roceAttr.tc;
-                channelDescFinal.roceAttr.sl = channelDesc.roceAttr.sl;
+                channelDescFinal.roceAttr.queueNum = (channelDesc.roceAttr.queueNum == INVALID_UINT) ? GetExternalInputQpsPerConnection() : channelDesc.roceAttr.queueNum;
+                channelDescFinal.roceAttr.retryCnt = (channelDesc.roceAttr.retryCnt == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaRetryCnt() : channelDesc.roceAttr.retryCnt;
+                channelDescFinal.roceAttr.retryInterval = (channelDesc.roceAttr.retryInterval == INVALID_UINT) ? EnvConfig::GetExternalInputRdmaTimeOut() : channelDesc.roceAttr.retryInterval;
+                channelDescFinal.roceAttr.tc = (channelDesc.roceAttr.tc == 0xFF) ? EnvConfig::GetExternalInputRdmaTrafficClass() : channelDesc.roceAttr.tc;
+                channelDescFinal.roceAttr.sl = (channelDesc.roceAttr.sl == 0xFF) ? EnvConfig::GetExternalInputRdmaServerLevel() : channelDesc.roceAttr.sl;
+                HCCL_INFO("[%s]queueNum[%u], retryCnt[%u], retryInterval[%u], tc[%u], sl[%u]", __func__, 
+                    channelDescFinal.roceAttr.queueNum, channelDescFinal.roceAttr.retryCnt, channelDescFinal.roceAttr.retryInterval,
+                    channelDescFinal.roceAttr.tc, channelDescFinal.roceAttr.sl);
                 break;
             default:
                 HCCL_ERROR("[%s]Unsupported protocol[%d] found in HcclChannelDesc.", __func__, channelDesc.channelProtocol);

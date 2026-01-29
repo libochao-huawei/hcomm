@@ -136,6 +136,15 @@ TEST_F(RankGraphTest, ut_InitInnerRanks_When_Normal_Expect_SUCCESS) {
 
 std::shared_ptr<RankGraph> create4pRankGraph(RankId myRank) {
     RankGraph rankGraph(myRank);
+
+    s32 localId = 0;
+    DeviceId deviceId = 0;
+    IpAddress inputAddr(0);
+    std::set<std::string> ports = {"0/0", "0/2"};
+    std::set<LinkProtocol> protocals = {LinkProtocol::UB_CTP, LinkProtocol::UB_TP};
+    shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocals);
+    std::shared_ptr<NetInstance::Node> node = std::make_shared<NetInstance::Peer>(myRank, localId, localId, deviceId);
+    connInterface->SetLocalDieId(1);
     std::shared_ptr<NetInstance> netInstLayer0_1 = std::make_shared<InnerNetInstance>(0, "layer0_1");
     std::shared_ptr<NetInstance> netInstLayer0_2 = std::make_shared<InnerNetInstance>(0, "layer0_2");
     std::shared_ptr<NetInstance> netInstLayer1_1 = std::make_shared<ClosNetInstance>(1, "layer1_1");
@@ -146,6 +155,10 @@ std::shared_ptr<RankGraph> create4pRankGraph(RankId myRank) {
     auto peer2 = createPeer(2, 2, 2);
     auto peer3 = createPeer(3, 3, 3);
     auto peer4 = createPeer(4, 4, 4);
+    peer0->AddConnInterface(0, connInterface);
+    peer1->AddConnInterface(0, connInterface);
+    peer2->AddConnInterface(0, connInterface);
+    peer3->AddConnInterface(0, connInterface);
     peer0->AddNetInstance(netInstLayer0_1);
     peer0->AddNetInstance(netInstLayer1_1);
     peer0->AddNetInstance(netInstLayer2);
@@ -283,4 +296,135 @@ TEST_F(RankGraphTest, ut_CreateSubRankGraph_When_Normal_Expect_SUCCESS) {
     EXPECT_EQ(1, subRankGraph->GetLocalInstSize(0));
     EXPECT_EQ(2, subRankGraph->GetLocalInstSize(1));
     EXPECT_EQ(2, subRankGraph->GetLocalInstSize(2));
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointNum_When_Normal_Expect_SUCCESS)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t num = 0;
+    uint32_t topoInstId = 0;
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(num, 2);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointNum_When_nullPeer_HCCL_E_PTR)
+{
+    RankGraph rankGraph(0);
+    uint32_t num = 0;
+    uint32_t topoInstId = 0;
+    HcclResult ret = rankGraph.GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointDesc_When_nullPeer_HCCL_E_PTR)
+{
+    RankGraph rankGraph(0);
+    uint32_t descNum = 1;
+    uint32_t topoInstId = 0;
+
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    HcclResult ret = rankGraph.GetEndpointDesc(0, topoInstId, &descNum, endPointDesc);
+    delete[] endPointDesc;
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointDesc_When_Normal_Expect_SUCCESS)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t num = 2;
+    uint32_t topoInstId = 0;
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(num, 2);
+
+    uint32_t descNum = num;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
+    for (uint32_t i = 0; i < num; ++i) {
+        EXPECT_NE(endPointDesc[i].commAddr.type, COMM_ADDR_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].loc.locType, ENDPOINT_LOC_TYPE_RESERVED);
+        EXPECT_NE(endPointDesc[i].protocol, COMM_PROTOCOL_RESERVED);
+    }
+    delete[] endPointDesc;
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(RankGraphTest, ut_GetEndpointDesc_When_NumTooSmall_Expect_Return_HCCl_E_PARA) {
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t topoInstId = 0;
+    uint32_t descNum = 1;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    HcclResult ret =  rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc);
+
+    EXPECT_EQ(ret, HCCL_E_PARA);
+    delete[] endPointDesc;
+}
+
+TEST_F(RankGraphTest, ut_GetInfo_When_Normal_Expect_SUCCESS)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t num = 2;
+    uint32_t topoInstId = 0;
+
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(num, 2);
+
+    uint32_t descNum = num;
+    std::unique_ptr<EndpointDesc[]> endPointDesc(new EndpointDesc[descNum]);
+    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    for (uint32_t i = 0; i < num; ++i) {
+        uint32_t infoLen = sizeof(EndpointAttrBwCoeff);
+        EndpointAttrBwCoeff bwCoeff{};
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        EXPECT_EQ(bwCoeff, 2);
+
+        // 测试 DIE_ID
+        EndpointAttrDieId dieid{};
+        infoLen = sizeof(EndpointAttrDieId);
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_DIE_ID, infoLen, &dieid);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        EXPECT_EQ(dieid, 1);
+
+        // 测试 POSITION
+        EndpointAttrLocation pos{};
+        infoLen = sizeof(EndpointAttrLocation);
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_LOCATION, infoLen, &pos);
+        EXPECT_EQ(ret, HCCL_SUCCESS);
+        EXPECT_EQ(pos, 0);
+    }
+}
+
+TEST_F(RankGraphTest, ut_GetInfo_When_infoLenTooSmall_Expect_Return_HCCL_E_PARA)
+{
+    auto rankGraph = create4pRankGraph(myRank);
+    uint32_t layer = 0;
+    uint32_t num = 2;
+    uint32_t topoInstId = 0;
+
+    HcclResult ret = rankGraph->GetEndpointNum(0, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    EXPECT_EQ(num, 2);
+
+    uint32_t descNum = num;
+    std::unique_ptr<EndpointDesc[]> endPointDesc(new EndpointDesc[descNum]);
+    ret = rankGraph->GetEndpointDesc(layer, topoInstId, &descNum, endPointDesc.get());
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    // 遍历每个端点，测试 infoLen 过小的情况
+    for (uint32_t i = 0; i < num; ++i) {
+        uint32_t actualSize = sizeof(EndpointAttrBwCoeff);
+        uint32_t infoLen = actualSize - 1;
+
+        EndpointAttrBwCoeff bwCoeff{};
+        ret = rankGraph->GetEndpointInfo(0, &endPointDesc[i], ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
+        EXPECT_EQ(ret, HCCL_E_PARA);
+    }
 }

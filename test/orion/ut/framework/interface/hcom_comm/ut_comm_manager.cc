@@ -297,17 +297,17 @@ TEST_F(HcomutCommManagerTest, ut_v2_comm_manager_PrintChannelInfo_test1)
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap = hcclGroupMap;
 
     MOCKER(CcuGetChannelSpecNum, HcclResult(int32_t, uint8_t, uint32_t&)).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::HcclCommunicator::GetUsedChannelCount).stubs().will(returnValue(1));
+    MOCKER_CPP(&Hccl::HcclCommunicator::GetUsedChannelCount).stubs().will(returnValue(static_cast<u32>(1)));
     CommManager::GetInstance(0).PrintChannelInfo();
     GlobalMockObject::verify();
 
     MOCKER(CcuGetChannelSpecNum, HcclResult(int32_t, uint8_t, uint32_t&)).stubs().will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&Hccl::HcclCommunicator::GetUsedChannelCount).stubs().will(returnValue(0));
+    MOCKER_CPP(&Hccl::HcclCommunicator::GetUsedChannelCount).stubs().will(returnValue(static_cast<u32>(0)));
     CommManager::GetInstance(0).PrintChannelInfo();
     GlobalMockObject::verify();
 
     MOCKER(CcuGetChannelSpecNum, HcclResult(int32_t, uint8_t, uint32_t&)).stubs().will(returnValue(HCCL_E_PARA));
-    MOCKER_CPP(&Hccl::HcclCommunicator::GetUsedChannelCount).stubs().will(returnValue(0));
+    MOCKER_CPP(&Hccl::HcclCommunicator::GetUsedChannelCount).stubs().will(returnValue(static_cast<u32>(0)));
     CommManager::GetInstance(0).PrintChannelInfo();
     GlobalMockObject::verify();
 }

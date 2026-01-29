@@ -7,7 +7,7 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
-
+#include "orion_adapter_hccp.h"
 #include <chrono>
 #include <unistd.h>
 #include <memory>
@@ -16,13 +16,11 @@
 #include "network_api_exception.h"
 #include "internal_exception.h"
 #include "hccp.h"
-#include "hccp_tlv.h"
 #include "hccp_ctx.h"
 #include "hccp_async_ctx.h"
 #include "hccp_async.h"
 #include "env_config.h"
 #include "hccp_common.h"
-#include "orion_adapter_hccp.h"
 #include "exception_util.h"
 
 using namespace std;
@@ -628,7 +626,7 @@ u32 HrtRaSocketGetWhiteListStatus()
 void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists)
 {
     vector<struct SocketWlistInfoT> wlistInfoVec;
-
+    wlistInfoVec.reserve(MAX_NUM_OF_WHITE_LIST_NUM);
     size_t wlistNum = wlists.size();
     size_t startIdx = 0;
     while (wlistNum > 0) {
@@ -650,7 +648,6 @@ void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist
             wlistInfoVec.push_back(wlistInfo);
         }
 
-        HCCL_INFO("add white list: num[%llu].", addListNum);
         s32 ret = RaSocketWhiteListAdd(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
         if (ret != 0) {
             HCCL_ERROR("[Add][RaSocketWhiteList]errNo[0x%016llx]errName[HCCL_E_TCP_CONNECT] ra white list add fail, return[%d].",
@@ -658,38 +655,50 @@ void HrtRaSocketWhiteListAdd(SocketHandle socketHandle, vector<RaSocketWhitelist
             throw NetworkApiException(StringFormat("call RaSocketWhiteListAdd failed, num=%llu",
                     wlistInfoVec.size()+startIdx));
         }
+        HCCL_INFO("add white list: num[%llu], remain [%llu].", addListNum, (wlistNum - addListNum));
 
         wlistInfoVec.clear();
         wlistNum -= addListNum;
         startIdx += addListNum;
     }
+    HCCL_INFO("[HrtRaSocketWhiteListAdd] Success. Total add num [%llu]", wlists.size());
 }
 
 void HrtRaSocketWhiteListDel(SocketHandle socketHandle, vector<RaSocketWhitelist> &wlists)
 {
     vector<struct SocketWlistInfoT> wlistInfoVec;
+    wlistInfoVec.reserve(MAX_NUM_OF_WHITE_LIST_NUM);
+    size_t wlistNum = wlists.size();
+    size_t startIdx = 0;
+    while (wlistNum > 0) {
+        size_t delListNum = wlistNum > MAX_NUM_OF_WHITE_LIST_NUM ? MAX_NUM_OF_WHITE_LIST_NUM : wlistNum;
+        for (size_t idx = startIdx; idx < delListNum + startIdx; idx++) {
+            struct SocketWlistInfoT wlistInfo {};
+            wlistInfo.connLimit = wlists[idx].connLimit;
+            wlistInfo.remoteIp  = IpAddressToHccpIpAddr(wlists[idx].remoteIp);
 
-    for (size_t idx = 0; idx < wlists.size(); idx++) {
-        struct SocketWlistInfoT wlistInfo {};
-        wlistInfo.connLimit = wlists[idx].connLimit;
-        wlistInfo.remoteIp  = IpAddressToHccpIpAddr(wlists[idx].remoteIp);
-
-        int sret = strcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag), wlists[idx].tag.c_str());
-        if (sret != EOK) {
-            auto msg = StringFormat("[Del][RaSocketWhiteList]errNo[0x%016llx] memory copy failed. ret[%d]",
-                                    HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), sret);
-            THROW<InternalException>(msg);
+            int sret = strcpy_s(wlistInfo.tag, sizeof(wlistInfo.tag), wlists[idx].tag.c_str());
+            if (sret != EOK) {
+                auto msg = StringFormat("[Del][RaSocketWhiteList]errNo[0x%016llx] memory copy failed. ret[%d]",
+                                        HCOM_ERROR_CODE(HcclResult::HCCL_E_MEMORY), sret);
+                THROW<InternalException>(msg);
+            }
+            wlistInfoVec.push_back(wlistInfo);
         }
-        wlistInfoVec.push_back(wlistInfo);
-    }
 
-    HCCL_INFO("del white list: num[%llu].", wlists.size());
-    s32 ret = RaSocketWhiteListDel(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
-    if (ret != 0) {
-        HCCL_ERROR("[Del][RaSocketWhiteList]errNo[0x%016llx] ra white list del fail, return[%d].",
-                   HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
-        throw NetworkApiException(StringFormat("call RaSocketWhiteListDel failed, num=%llu", wlists.size()));
+        s32 ret = RaSocketWhiteListDel(socketHandle, wlistInfoVec.data(), wlistInfoVec.size());
+        if (ret != 0) {
+            HCCL_ERROR("[Del][RaSocketWhiteList]errNo[0x%016llx] ra white list del fail, return[%d].",
+                    HCCL_ERROR_CODE(HcclResult::HCCL_E_TCP_CONNECT), ret);
+            throw NetworkApiException(StringFormat("call RaSocketWhiteListDel failed, num=%llu", wlists.size()));
+        }
+        HCCL_INFO("del white list: num[%llu], remain [%llu].", delListNum, (wlistNum - delListNum));
+
+        wlistInfoVec.clear();
+        wlistNum -= delListNum;
+        startIdx += delListNum;
     }
+    HCCL_INFO("[HrtRaSocketWhiteListDel] Success. Total delete num[%llu]", wlists.size());
 }
 
 static u32 HrtGetIfNum(struct RaGetIfattr &config)
@@ -1162,12 +1171,13 @@ void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle)
 
 const std::map<HrtUbJfcMode, jfc_mode> HRT_UB_JFC_MODE_MAP = {{HrtUbJfcMode::NORMAL, jfc_mode::JFC_MODE_NORMAL},
                                                               {HrtUbJfcMode::STARS_POLL, jfc_mode::JFC_MODE_STARS_POLL},
-                                                              {HrtUbJfcMode::CCU_POLL, jfc_mode::JFC_MODE_CCU_POLL}};
+                                                              {HrtUbJfcMode::CCU_POLL, jfc_mode::JFC_MODE_CCU_POLL},
+                                                              {HrtUbJfcMode::USER_CTL, jfc_mode::JFC_MODE_USER_CTL_NORMAL}};
 
 constexpr u32 CQ_DEPTH     = 1024 * 1024 / 64;
 constexpr u32 CCU_CQ_DEPTH = 64;
 
-JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode)
+JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode, CqCreateInfo& cqInfo)
 {
     struct cq_info_t info {};
 
@@ -1188,6 +1198,16 @@ JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode)
     if (ret != 0) {
         string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
         THROW<NetworkApiException>(msg);
+    }
+
+    HCCL_INFO("[HrtRaUbCreateJfc] jfcId[%u], cqVA[%llx], cqeSize[%u], dbAddr[%llx]", 
+        info.out.id, info.out.buf_addr, info.out.cqe_size, info.out.swdb_addr);
+
+    if (mode == HrtUbJfcMode::USER_CTL) {
+        cqInfo.va = info.out.buf_addr;
+        cqInfo.id = info.out.id;
+        cqInfo.cqe_size = info.out.cqe_size;
+        cqInfo.swdb_addr = info.out.swdb_addr;
     }
 
     return reinterpret_cast<JfcHandle>(jfcHandle);
@@ -1216,7 +1236,7 @@ const std::map<HrtJettyMode, jetty_mode> HRT_JETTY_MODE_MAP
 constexpr u8  RNR_RETRY = 7;
 constexpr u32 RQ_DEPTH  = 256;
 
-HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in)
+static struct qp_create_attr GetQpCreateAttr(const HrtRaUbCreateJettyParam &in)
 {
     struct qp_create_attr attr {};
     attr.scq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
@@ -1243,25 +1263,33 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
     attr.ub.ext_mode.sqebb_num = in.sqDepth;
     if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
         attr.ub.ext_mode.pi_type = 1;
+        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 0; // 表示不指定Va，由HCCP返回Va
     } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
         attr.ub.token_value                   = in.tokenValue;
         attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
         attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
         attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
-    } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
+    } else if (in.jettyMode == HrtJettyMode::DEV_USED ||
+                in.jettyMode == HrtJettyMode::CACHE_LOCK_DWQE) {
+        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 0; // 表示不指定Va，由HCCP返回Va
         attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
         attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
-    }
+    } // 预埋HrtJettyMode::CACHE_LOCK_DWQE类型，当前流程暂未使用
 
     // 其他Mode暂时不需要额外更新特定字段
     HCCL_INFO("Create jetty, input params: attr.ub.jetty_id[%u], attr.rq_depth[%u], "
-        "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
-        "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
-        "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u].",
-        attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode,
-        attr.ub.mode, attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va,
-        attr.ub.ext_mode.sq.buff_size, attr.ub.ext_mode.pi_type);
+              "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
+              "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
+              "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u], attr.ub.priority[%u].",
+               attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode, attr.ub.mode,
+               attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va, attr.ub.ext_mode.sq.buff_size,
+               attr.ub.ext_mode.pi_type, attr.ub.priority);
+    return attr;
+}
+
+HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in)
+{
+    struct qp_create_attr attr = GetQpCreateAttr(in);
 
     struct qp_create_info info {};
     void *qpHandle = nullptr;
@@ -1278,6 +1306,7 @@ HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbC
     out.jettyVa   = info.va;
     out.dbVa      = info.ub.db_addr;
     out.dbTokenId = info.ub.db_token_id >> URMA_TOKEN_ID_RIGHT_SHIFT;
+    out.sqBuffVa  = info.ub.sq_buff_va; // 适配HCCP修改，jettybufva由HCCP提供，不再由HCCL分配
 
     s32 sRet = memcpy_s(out.key, sizeof(out.key), info.key.value, info.key.size);
     if (sRet != EOK) {
@@ -1834,50 +1863,7 @@ RequestHandle RaUbLocalMemUnregAsync(RdmaHandle rdmaHandle, LocMemHandle lmemHan
 RequestHandle RaUbCreateJettyAsync(const RdmaHandle handle, const HrtRaUbCreateJettyParam &in,
     vector<char_t> &out, void *&jettyHandle)
 {
-    struct qp_create_attr attr {};
-    attr.scq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
-    attr.rcq_handle     = reinterpret_cast<void *>(in.rjfcHandle);
-    attr.srq_handle     = reinterpret_cast<void *>(in.sjfcHandle);
-    attr.rq_depth       = RQ_DEPTH;
-    attr.sq_depth       = in.sqDepth;
-    attr.transport_mode = HRT_TRANSPORT_MODE_MAP.at(in.transMode);
-    attr.ub.mode        = HRT_JETTY_MODE_MAP.at(in.jettyMode);
-
-    attr.ub.token_value       = in.tokenValue;
-    attr.ub.token_id_handle   = reinterpret_cast<void *>(in.tokenIdHandle);
-    attr.ub.flag.value        = 0;
-    attr.ub.err_timeout       = 0;
-    // CTP默认优先级使用2, TP/UBG等模式后续QoS特性统一适配
-    attr.ub.priority          = 2;
-    attr.ub.rnr_retry         = RNR_RETRY;
-    attr.ub.flag.bs.share_jfr = 1;
-    attr.ub.jetty_id          = in.jettyId;
-    // 在continue模式下+配置了wqe的fence标记，并且远端有一些权限校验错误/内存异常错误，硬件会直接挂死
-    // jfs_flag 的 error_suspend 设置为 1，
-    attr.ub.jfs_flag.bs.error_suspend = 1;
-
-    attr.ub.ext_mode.sqebb_num = in.sqDepth;
-    if (in.jettyMode == HrtJettyMode::HOST_OFFLOAD) {
-        attr.ub.ext_mode.pi_type = 1;
-    } else if (in.jettyMode == HrtJettyMode::CCU_CCUM_CACHE) {
-        attr.ub.token_value                   = in.tokenValue;
-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
-    } else if (in.jettyMode == HrtJettyMode::DEV_USED) {
-        attr.ub.ext_mode.cstm_flag.bs.sq_cstm = 1;
-        attr.ub.ext_mode.sq.buff_size         = in.sqBufSize;
-        attr.ub.ext_mode.sq.buff_va           = in.sqBufVa;
-    }
-
-    // 其他Mode暂时不需要额外更新特定字段
-    HCCL_INFO("Create jetty, input params: attr.ub.jetty_id[%u], attr.rq_depth[%u], "
-              "attr.sq_depth[%u], attr.transport_mode[%d], attr.ub.mode[%d], "
-              "attr.ub.ext_mode.sqebb_num[%u], attr.ub.ext_mode.sq.buff_va[%llx], "
-              "attr.ub.ext_mode.sq.buff_size[%u], attr.ub.ext_mode.pi_type[%u], priority[%u].",
-              attr.ub.jetty_id, attr.rq_depth, attr.sq_depth, attr.transport_mode, attr.ub.mode,
-              attr.ub.ext_mode.sqebb_num, attr.ub.ext_mode.sq.buff_va, attr.ub.ext_mode.sq.buff_size,
-              attr.ub.ext_mode.pi_type, attr.ub.priority);
+    struct qp_create_attr attr = GetQpCreateAttr(in);
 
     void *raReqHandle = nullptr;
     out.resize(sizeof(qp_create_info));
@@ -2177,6 +2163,56 @@ HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle)
     s32 ret = RaNormalQpDestroy(qpHandle);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Destroy][NormalQp]errNo[0x%016llx] ra destroy normal qp fail. return[%d]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
+{
+    aux_info_in in;
+    in.aux_info_in_type = auxInfoIn.auxInfoInType;
+    if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_CQE) {
+        in.cqe.status = auxInfoIn.cqe.status;
+        in.cqe.s_r = auxInfoIn.cqe.sR;
+    } else if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_AE) {
+        in.event_type = auxInfoIn.ae.eventType;
+    }
+ 
+    aux_info_out out;
+    auto ret = ra_ctx_get_aux_info(rdmaHandle, &in, &out);
+    if (ret != 0) {
+        HCCL_ERROR("RaGetAuxInfo failed.");
+        return HCCL_E_NETWORK;
+    }
+ 
+    auxInfoOut.auxInfoNum = out.aux_info_num;
+    for (auto i = 0; i = out.aux_info_num; i++) {
+        auxInfoOut.auxInfoTypes[i] = out.aux_info_type[i];
+        auxInfoOut.auxInfoValues[i] = out.aux_info_value[i];
+    }
+    return HCCL_SUCCESS;
+}
+ 
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
+{
+    if (jettyHandles.size() != num) {
+        HCCL_ERROR("jettyHandles size[%zu] not equal to num[%u]", jettyHandles.size(), num);
+        return HCCL_E_PARA;
+    }
+    std::vector<struct jetty_attr> raJettyAttrs(MAX_JETTY_QUERY_NUM);
+    auto ret = ra_ctx_qp_query_batch(jettyHandles, raJettyAttrs.data(), &num);
+    if (ret != 0) {
+        HCCL_ERROR("RaBatchQueryJettyAttr failed.");
+        return HCCL_E_NETWORK;
+    }
+    if (num != jettyHandles.size()) {
+        HCCL_ERROR("jettyAttrs num[%zu] not equal to input jettyHandles size[%zu]", num, jettyHandles.size());
+        return HCCL_E_PARA;
+    }
+ 
+    for (u32 i = 0; i < num; i++) {
+        JettyStatus jettyStatus = JettyStatus(raJettyAttrs[i].state);
+        jettyAttrs.push_back(jettyStatus);
+    }
     return HCCL_SUCCESS;
 }
 } // namespace Hccl

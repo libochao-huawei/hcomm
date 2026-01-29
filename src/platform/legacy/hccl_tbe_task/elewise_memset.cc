@@ -221,8 +221,8 @@ bool MemSetTiling(const std::string& op_type, const std::vector<int64_t>& sizes,
         // write tiling params to run_info
         WriteTilingParams(params, run_info);
 
-        // block_dim, core num used in tik op
-        run_info.blockDim = static_cast<uint32_t>(params.need_core_num_input_scalar);
+        // num_blocks, core num used in tik op
+        run_info.numBlocks = static_cast<uint32_t>(params.need_core_num_input_scalar);
 
         PrintMemSetParams(params);
     }

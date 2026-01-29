@@ -175,9 +175,9 @@ public:
         }
         return reinterpret_cast<const AutoTilingCompileInfo *>(context->GetCompileInfo());
     }
-    bool SetBlockDim(uint32_t block_dims)
+    bool SetNumBlocks(uint32_t num_blocks)
     {
-        if (context->SetBlockDim(block_dims) == ge::GRAPH_FAILED) {
+        if (context->SetBlockDim(num_blocks) == ge::GRAPH_FAILED) {
             return false;
         }
         return true;

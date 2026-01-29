@@ -64,7 +64,8 @@ struct HcclOpConfig {
     u8 isSupportAtomicWrite = 0;
     u8 padding[4];  // 大小需要64By对齐，未来添加参数时减小padding
     std::chrono::milliseconds linkTimeOut; //发送超时时长
-    u64 notifyWaitTime;  // 超时时长，同HCCL_EXEC_TIMEOUT
+    u32 taskMonitorInterval;
+    u32 notifyWaitTime;  // 超时时长，同HCCL_EXEC_TIMEOUT
     u32 retryHoldTime;
     u32 retryIntervalTime;
     bool interHccsDisable = false;  // 使能rdma开关

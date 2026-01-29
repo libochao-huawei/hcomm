@@ -1124,7 +1124,7 @@ HcclResult HcomSetAivClearEnableV2(const char *group, bool aivClearEnable)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcomCalcBlockDimV2(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
+HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim)
 {
     HCCL_INFO("[%s] start.", __func__);

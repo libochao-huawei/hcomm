@@ -394,6 +394,18 @@ extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
  */
 extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
 
+/**
+ * @brief 将Thread资源导出到指定通信引擎上
+ * @param[in] comm 通信域句柄
+ * @param[in] threadNum 通知数量
+ * @param[in] threads Thread句柄列表
+ * @param[in] dstCommEngine 目标通信引擎
+ * @param[out] exportedThreads 导出的Thread列表
+ * @return HcclResult 执行结果状态码
+ * @note 导出到目标通信引擎之后，在目标通信引擎直接引用，不需要导入操作
+ */
+extern HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
+
 #ifdef __cplusplus
 }
 #endif  // __cplusplus
