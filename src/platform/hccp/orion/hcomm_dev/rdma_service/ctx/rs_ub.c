@@ -298,22 +298,14 @@ STATIC int rs_ub_dev_cb_init(struct ctx_init_attr *attr, struct rs_ub_dev_cb *de
         goto destroy_mutex;
     }
 
-    ret = RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_ADD, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
-    if (ret != 0) {
-        hccp_err("rs_epoll_ctl failed, ret:%d", ret);
-        goto close_dev;
-    }
-
     ret = rs_ub_get_dev_attr(dev_cb, dev_attr, devIndex);
     if (ret != 0) {
         hccp_err("rs_ub_get_dev_attr failed, ret:%d", ret);
-        goto epoll_del;
+        goto close_dev;
     }
 
     return 0;
 
-epoll_del:
-    (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
 close_dev:
     (void)rs_urma_delete_context(dev_cb->urma_ctx);
 destroy_mutex:
@@ -1076,8 +1068,6 @@ int rs_ub_ctx_deinit(struct rs_ub_dev_cb *dev_cb)
     rs_ub_free_jfce_cb_list(dev_cb, &dev_cb->jfce_list);
     rs_ub_free_token_id_cb_list(dev_cb, &dev_cb->token_id_list);
     rs_ub_free_async_event_cb_list(dev_cb, &dev_cb->async_event_list);
-
-    (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
 
     ret = rs_urma_delete_context(dev_cb->urma_ctx);
     if (ret != 0) {
