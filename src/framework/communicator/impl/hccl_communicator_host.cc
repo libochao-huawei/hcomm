@@ -339,7 +339,6 @@ namespace hccl
         CHK_RET(InitMemoryManager());
         CHK_RET(InitCombinOpara());
         CHK_RET(RegisterRanksToDca());
-        CHK_RET(RegisterToSnapshot());
         /*--------------加锁区--------------*/
         std::unique_lock<std::mutex> lock(g_hcomInitMutex);
         CHK_RET(RegistTaskExceptionHandler());
