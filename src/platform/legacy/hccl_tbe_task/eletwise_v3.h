@@ -35,7 +35,7 @@ struct ElewiseCompileInfo {
     int64_t max_available_ub { -1 };
     int64_t max_available_ub_db { -1 };
     // const_core_dims
-    int64_t const_num_blockss { -1 };
+    int64_t const_num_blocks { -1 };
     // elewise_vars_size
     uint32_t elewise_vars_size { 0 };
     // tiling info from broadcast
