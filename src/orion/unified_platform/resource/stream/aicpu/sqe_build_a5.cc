@@ -14,7 +14,7 @@
 
 namespace Hccl {
 
-u8 GetKernelExecTimeoutFromEnvConfig()
+u32 GetKernelExecTimeoutFromEnvConfig()
 {
     const u32 envTimeout  = CommunicatorImplLiteMgr::GetInstance().GetEnvConfig().hcclExecTimeout;
     HCCL_INFO("[SQE] HcclExecTimeout=%u s.", envTimeout);
