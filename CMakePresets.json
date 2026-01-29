@@ -1,0 +1,123 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "host-debug",
+            "displayName": "Host-Debug",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/build_out",
+                "FULL_MODE": "ON",
+                "BUILD_OPEN_PROJECT": "ON",
+                "DEVICE_MODE": "OFF",
+                "PRODUCT_SIDE": "host",
+                "PRODUCT": "ascend",
+                "CANN_3RD_LIB_PATH": "${sourceDir}/third_party",
+                "CANN_UTILS_LIB_PATH": "${sourceDir}/utils",
+                "CUSTOM_ASCEND_CANN_PACKAGE_PATH": "/usr/local/Ascend/ascend-toolkit/latest"
+            },
+            "environment": {
+                "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+            }
+        },
+        {
+            "name": "host-ut",
+            "displayName": "Host-UT (gtest)",
+            "inherits": "host-debug",
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-fmacro-prefix-map=${sourceDir}/= -ffile-prefix-map=${sourceDir}/=",
+                "CMAKE_C_FLAGS": "-fmacro-prefix-map=${sourceDir}/= -ffile-prefix-map=${sourceDir}/=",
+                "CMAKE_EXE_LINKER_FLAGS": "-fuse-ld=mold -Wl,--thread-count=1",
+                "CMAKE_SHARED_LINKER_FLAGS": "-fuse-ld=mold -Wl,--thread-count=1",
+                "CMAKE_INTERPROCEDURAL_OPTIMIZATION": "OFF",
+                "CMAKE_C_COMPILER_LAUNCHER": "ccache",
+                "CMAKE_CXX_COMPILER_LAUNCHER": "ccache",
+                "CMAKE_DISABLE_PRECOMPILE_HEADERS": "OFF",
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+                "ENABLE_TEST": "ON",
+                "ENABLE_UT": "on",
+                "ENABLE_ST": "off",
+                "ASCEND_INSTALL_PATH": "/usr/local/Ascend/latest",
+                "ASCEND_3RD_LIB_PATH": "${sourceDir}/output/third_party",
+                "LLT_KILL_TIME": "1200",
+                "FULL_MODE": "ON",
+                "DEVICE_MODE": "OFF",
+                "BUILD_DIR": "${sourceDir}/build",
+                "BUILD_DEVICE_DIR": "${sourceDir}/build_device",
+                "BUILD_OUTPUT_DIR": "${sourceDir}/build_out",
+                "OUTPUT_PATH": "${sourceDir}/output",
+                "ENABLE_ASAN": "ON",
+                "ENABLE_GCOV": "ON",
+                "KERNEL_MODE": "ON",
+                "PRODUCT": "ascend",
+                "PRODUCT_SIDE": "host"
+            },
+            "environment": {
+                "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+            }
+
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "build-host-debug",
+            "displayName": "Build Host Debug",
+            "configurePreset": "host-debug"
+        },
+        {
+            "name": "build-host-ut",
+            "displayName": "Build Host UT",
+            "configurePreset": "host-ut",
+            "jobs": 1,
+            "targets": [ "all" ],
+            "inheritConfigureEnvironment": true,
+            "environment": {
+                "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash"
+            },
+            "cleanFirst": true,
+            "verbose": true,
+            "nativeToolOptions": [],
+            "configuration": ""
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "ctest-host-ut",
+            "displayName": "Run ctest for Host UT",
+            "configurePreset": "host-ut",
+            "inheritConfigureEnvironment": true,
+            "execution": {
+                "jobs": 1,
+                "timeout": 1200,
+                "stopOnFailure": true,
+                "interactiveDebugging": true
+            },
+            "environment": {
+                "BASH_ENV": "/usr/local/Ascend/ascend-toolkit/latest/bin/setenv.bash",
+                "GTEST_SHUFFLE": "1",
+                "GTEST_COLOR": "yes",
+                "GTEST_PRINT_TIME": "1",
+                "GTEST_BREAK_ON_FAILURE": "1",
+                "GTEST_CATCH_EXCEPTIONS": "1",
+                "GTEST_FILTER": "*"
+            },
+            "output": {
+                "outputOnFailure": true,
+                "verbosity": "verbose",
+                "quiet": false,
+                "debug": false
+            },
+            "filter": {
+                "include": {
+                    "name": ".*"
+                },
+                "exclude": {
+                    "label": "aaaaaaa"
+                }
+            }
+        }
+    ]
+}

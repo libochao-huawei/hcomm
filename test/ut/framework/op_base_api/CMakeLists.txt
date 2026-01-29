@@ -55,9 +55,15 @@ target_link_libraries(hccl_utest_framework_op_base_api PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     $<$<STREQUAL:${ENABLE_ASAN},true>:-fsanitize=address>
     -lpthread
-    hccl_llt
     -Wl,--whole-archive
-    -Wl,--no-whole-archi
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so
+    -Wl,--no-whole-archive
+    hccl_llt
+    hccl_llt_framework
+    hccl_llt_common
+    hccl_llt_algorithm
+    hccl_llt_platform
     -lgcov
     -lrt
     -ldl

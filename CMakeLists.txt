@@ -50,10 +50,10 @@ set(CMAKE_C_FLAGS_RELEASE "")
 set(CMAKE_CXX_FLAGS_RELEASE "")
 
 set(CMAKE_CXX_COMPILE_OBJECT
-    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+    "<CMAKE_CXX_COMPILER> <DEFINES> -D__FILE__='\"$$(notdir $$(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
 )
 set(CMAKE_C_COMPILE_OBJECT
-    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$(notdir $(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
+    "<CMAKE_C_COMPILER> <DEFINES> -D__FILE__='\"$$(notdir $$(abspath <SOURCE>))\"' -Wno-builtin-macro-redefined <INCLUDES> <FLAGS> -o <OBJECT> -c <SOURCE>"
 )
 
 # 获取 CPU 核心数
@@ -76,12 +76,13 @@ else()
     set(CPU_CORES 1)
 endif()
 
-math(EXPR JOBS "${CPU_CORES} * 2")
-message(STATUS "Detected JOBS: ${JOBS}")
-set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
-set(CMAKE_JOB_POOL_LINK "${JOBS}")
+# math(EXPR JOBS "${CPU_CORES} * 2")
+# message(STATUS "Detected JOBS: ${JOBS}")
+# set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
+# set(CMAKE_JOB_POOL_LINK "${JOBS}")
 
 if(ENABLE_TEST)
+    enable_testing()
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)

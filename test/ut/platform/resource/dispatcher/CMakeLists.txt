@@ -35,8 +35,15 @@ target_link_libraries(hccl_utest_platform_dispatcher  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lpthread
     hccl_llt
+    # link sub-libraries that implement dispatcher/stream/device types
+    hccl_llt_framework
+    hccl_llt_common
+    hccl_llt_algorithm
+    hccl_llt_platform
     -Wl,--whole-archive
-    -Wl,--no-whole-archi
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so
+    -Wl,--no-whole-archive
     -lgcov
     -lrt
     -lpthread

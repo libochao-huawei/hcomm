@@ -31,6 +31,8 @@ target_link_libraries(hccl_ut_prepare_env  PRIVATE
     $<BUILD_INTERFACE:intf_pub>
     -lpthread
     -Wl,--whole-archive
+    ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a
+    ${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so
     -Wl,--no-whole-archive
     -lgcov
     -lrt

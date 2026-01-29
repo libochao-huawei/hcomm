@@ -20,19 +20,21 @@ target_compile_options(intf_pub_base INTERFACE
     -g
     -fprofile-arcs
     -ftest-coverage
-    --coverage
+    $<$<BOOL:${ENABLE_GCOV}>:--coverage>
     -w
     $<$<COMPILE_LANGUAGE:CXX>:-std=c++14>
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address,all -fno-stack-protector -fno-omit-frame-pointer -g>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address,undefined -fno-stack-protector -fno-omit-frame-pointer>
     $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
+    $<$<BOOL:${ENABLE_TEST}>:-ffunction-sections -fdata-sections>
     -fPIC
     -pipe
 )
 
 target_link_options(intf_pub_base INTERFACE
-    -fprofile-arcs -ftest-coverage
-    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address -fsanitize=leak -fsanitize-recover=address>
-    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs -ftest-coverage>
+    $<$<BOOL:${ENABLE_GCOV}>:-fprofile-arcs>
+    $<$<BOOL:${ENABLE_GCOV}>:-ftest-coverage>
+    $<$<BOOL:${ENABLE_ASAN}>:-fsanitize=address,undefined -fsanitize-recover=address>
+    $<$<BOOL:${ENABLE_TEST}>:-Wl,--gc-sections>
 )
 
 
@@ -40,9 +42,6 @@ add_library(intf_pub INTERFACE)
 
 target_link_libraries(intf_pub INTERFACE
     $<BUILD_INTERFACE:intf_pub_base>
-    -Wl,--whole-archive
-    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/mockcpp_shared/lib/libmockcpp.a>
-    $<$<BOOL:${ENABLE_TEST}>:${ASCEND_3RD_LIB_PATH}/gtest_shared/lib/libgtest.so>
-    -Wl,--no-whole-archive
+    $<$<BOOL:${ENABLE_TEST}>:-Wl,--no-whole-archive>
     -Wl,-rpath,${CMAKE_INSTALL_PREFIX}/lib
 )
