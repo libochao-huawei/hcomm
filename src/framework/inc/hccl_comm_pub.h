@@ -320,6 +320,7 @@ public:
     HcclResult SetDeterministicConfig(const u8 deterministic);  // 设置确定性计算配置
     HcclResult SetAivModeConfig(const bool aivMode);  // 设置aiv模式配置
     HcclResult SetOnlyAivModeConfig(const bool isOnlyAiv);
+    HcclResult GetOnlyAivModeConfig(bool &isOnlyAiv);
     HcclResult SetAicpuUnfoldConfig(const bool aicpuUnfold);  // 设置aicpu配置
     HcclResult SetExecTimeOutConfig(const s32 execTimeOut);  // 设置HCCL执行超时时间
     HcclResult SetAlgoConfig(const std::map<HcclCMDType, std::vector<HcclAlgoType>>& algoMap);  //设置HCCL_ALGO
