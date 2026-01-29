@@ -16,7 +16,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_gdr.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_sal.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_fe.cc
-    # ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_manager.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_manager.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mc2.cc
     # ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_GenRankTable.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_gert.cc
@@ -25,9 +25,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_stub_sec.c
     ${HCCL_LLT_ROOT}/stub/llt_mmpa_stub.c
     ${HCCL_LLT_ROOT}/stub/llt_stub_mm.c
-    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_error_msg.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
-    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mmpa.cc
     ${HCCL_LLT_ROOT}/stub/orion/interface_channel.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
 )
@@ -324,6 +322,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/
     ${HCCL_CODE_ROOT}/src/orion/unified_platform/pub_inc
     ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu
+    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets
     ${HCCL_CODE_ROOT}/src/orion/unified_platform
     ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/notify/aicpu
@@ -339,6 +338,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
     ${HCCL_CODE_ROOT}/src/orion/interface
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 )
 
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/orion)

@@ -28,7 +28,9 @@
 #include "transport_manager.h"
 #include "independent_op.h"
 #include "share_ccl_buffer_manager.h"
-#include "coll_comm.h"
+#ifndef HCCD
+    #include "coll_comm.h"
+#endif
 
 namespace hccl {
 /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
@@ -248,8 +250,8 @@ public:
     HcclResult GetIndirectOutCCLbuf(void* &ptr, u64 &size);
     HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
         HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
-    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim);
+    HcclResult HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+        std::string &algName, u32 &numBlocks);
     HcclResult HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
         HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
         void *&commContext, u64 &len, u32 aivCoreLimit);
@@ -345,7 +347,7 @@ public:
     HcclResult UnsetMemoryRange(void *baseVirPtr);
     HcclResult ActivateCommMemory(void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
     HcclResult DeactivateCommMemory(void *virPtr);
-    HcclResult GetBlockDim(u32& blockDim);
+    HcclResult GetNumBlocks(u32& numBlocks);
     HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup);
     HcclResult InitHccpChannel();
@@ -361,11 +363,14 @@ public:
     bool GetAicpuCommState();
     HcclResult KernelLaunchAicpuCommInit();
     bool IsCommunicatorV2();
-    
+#ifndef HCCD
     HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank, HcclMem cclBuffer, const std::string &commName);
+#endif
     void* GetCommunicatorV2();
 #ifndef CCL_KERNEL_AICPU
-    CollComm* GetCollComm();
+    #ifndef HCCD
+        CollComm* GetCollComm();
+    #endif
     IndependentOp& GetIndependentOp();
 #endif
     // A5communicator相关
@@ -436,8 +441,10 @@ private:
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
     IndependentOp independentOp_;
-    // A5CollComm
-    std::unique_ptr<CollComm> collComm_{nullptr};
+    #ifndef HCCD
+        // A5CollComm
+        std::unique_ptr<CollComm> collComm_{nullptr};
+    #endif
 #endif
 
 };

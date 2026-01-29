@@ -290,11 +290,12 @@ HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockH
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, std::function<bool()> needStop)
+HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, std::function<bool()> needStop, u32 timeout)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
-    auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
+    const chrono::seconds timeoutSec = chrono::seconds(
+        timeout > 0 ? timeout : GetExternalInputHcclLinkTimeOut());
     while (true) {
         CHK_PRT_RET(needStop(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
 
@@ -302,9 +303,9 @@ HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, s
         if (!ret) {
             break;  // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
-            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
+            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeoutSec);
             CHK_PRT_RET(bTimeout, HCCL_ERROR("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async "\
-                "timeout[%lld s]. return[%d].", HCCL_ERROR_CODE(HCCL_E_NETWORK), timeout, ret), HCCL_E_NETWORK);
+                "timeout[%lld s]. return[%d].", HCCL_ERROR_CODE(HCCL_E_NETWORK), timeoutSec, ret), HCCL_E_NETWORK);
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             HCCL_ERROR("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async fail. return[%d]",\
@@ -752,6 +753,9 @@ HcclResult HrtRaRdmaInitWithAttr(struct RdevInitInfo &init_info, const struct rd
             "whether the switch is connected"
         })
     );
+    CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
+        HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
 
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EJ0004",
@@ -797,6 +801,9 @@ HcclResult HrtRdmaInitWithBackupAttr(struct RdevInitInfo &init_info, struct rdev
             "whether the switch is connected"
         })
     );
+    CHK_PRT_CONT(ret == HCCP_ELINKDOWN, 
+        HCCL_ERROR("[%s][%s]rdma init failed because RoCE link status is down, please check the network adapter configuration.",
+        LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RESOURCE.c_str()));
 
     RPT_INPUT_ERR(ret == HCCP_EINVALIDIPS,
         "EJ0004",

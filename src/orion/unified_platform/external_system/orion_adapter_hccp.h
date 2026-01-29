@@ -353,9 +353,17 @@ HrtRaUbRemMemImportedOutParam HrtRaUbRemoteMemImport(RdmaHandle handle, u8 *key,
 
 void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle);
 
-MAKE_ENUM(HrtUbJfcMode, NORMAL, STARS_POLL, CCU_POLL)
+MAKE_ENUM(HrtUbJfcMode, NORMAL, STARS_POLL, CCU_POLL, USER_CTL)
 
-JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode);
+struct CqCreateInfo {
+    uint64_t va; /**< refer to struct urma_jfc*, struct ibv_cq* */
+    uint32_t id; /**< jfc id */
+    uint64_t buf_addr;
+    uint32_t cqe_size;
+    uint64_t swdb_addr;
+};
+
+JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode, CqCreateInfo& cqInfo);
 
 void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle);
 
@@ -384,7 +392,7 @@ using HrtRaUbCreateJettyParam = struct HrtRaUbJettyCreateParamDef {
     // [1024 + 192, 1024 + 192 + 4K - 1]为starsJetty预留的id
     u32 jettyId{0};
 
-    // 指定内存，需要填写的参数，CCU类型 和 DEV_USED类型需要填写
+    // 指定内存，需要填写的参数，CCU类型需要填写,即HrtJettyMode::CCU_CCUM_CACHE
     u64 sqBufVa{0};
     u32 sqBufSize{0};
     // 指定sqeBB资源起始id，当前预留
@@ -419,6 +427,7 @@ using HrtRaUbJettyCreatedOutParam = struct HrtRaUbJettyCreatedOutParamDef {
     u32         keySize{0};
     u64         dbVa{0};
     u32         dbTokenId{0};
+    uint64_t    sqBuffVa{0}; // 适配HCCP修改，jettybufva由HCCP提供，不再由HCCL分配
 };
 
 HrtRaUbJettyCreatedOutParam HrtRaUbCreateJetty(RdmaHandle handle, const HrtRaUbCreateJettyParam &in);
@@ -592,5 +601,32 @@ HcclResult HrtRaDestroyCq(RdmaHandle rdmaHandle, CqInfo& cq);
 HcclResult ConstructQpDefaultAttrs(s32 qpMode, struct qp_ext_attrs &attrs, bool isWorkFlowLib);
 HcclResult HrtRaNormalQpCreate(RdmaHandle rdmaHandle, QpInfo& qp);
 HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle);
+
+MAKE_ENUM(AuxInfoInType, AUX_INFO_IN_TYPE_CQE, AUX_INFO_IN_TYPE_AE, AUX_INFO_IN_TYPE_MAX);
+struct AuxInfoIn {
+    AuxInfoInType auxInfoInType;
+    union {
+        struct {
+            uint32_t status;
+            uint8_t sR;
+        } cqe;
+        struct {
+            uint32_t eventType;
+        } ae;
+    };
+    u8 resv[7];
+};
+ 
+constexpr u32 MAX_AUX_INFO_NUM = 256;
+struct AuxInfoOut {
+    uint32_t auxInfoTypes[MAX_AUX_INFO_NUM];
+    uint32_t auxInfoValues[MAX_AUX_INFO_NUM];
+    uint32_t auxInfoNum{0};
+};
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn in, AuxInfoOut &out);
+ 
+MAKE_ENUM(JettyStatus, RESET, READY, SUSPENDED, ERROR);
+constexpr u32 MAX_JETTY_QUERY_NUM = 128;
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyStatusVec, u32 &num);
 } // namespace Hccl
 #endif // HCCLV2_ADAPTER_HCCP_H

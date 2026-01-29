@@ -320,9 +320,9 @@ AicpuServerRole AicpuKfcBatchwriteProcess::GetVerifiedServerRole(const AicpuComC
         }
     }
     // 老驱动包无法获取GetBlockNum，使用默认值6
-    const u32 blockDim = HcclAicpuUtils::GetBlockNum(6U);
-    if (opThreadIdx.load(std::memory_order_acquire) == blockDim) {
-        HCCL_INFO("Clear thread index at last with block dim %u.", blockDim);
+    const u32 numBlocks = HcclAicpuUtils::GetBlockNum(6U);
+    if (opThreadIdx.load(std::memory_order_acquire) == numBlocks) {
+        HCCL_INFO("Clear thread index at last with block dim %u.", numBlocks);
         opThreadIdx.store(0U, std::memory_order_relaxed);
     }
     return role;

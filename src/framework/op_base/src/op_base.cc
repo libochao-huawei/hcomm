@@ -68,12 +68,12 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
             CHK_RET(hcclComm->GetAlgType(algType, cmdType));
         }
 
-        u32 blockDim = 0;
-        hcclComm->GetBlockDim(blockDim);
+        u32 numBlocks = 0;
+        hcclComm->GetNumBlocks(numBlocks);
 
         uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
-            groupName, blockDim), tag.c_str());
+            groupName, numBlocks), tag.c_str());
     }
     hcclComm->SetAivCoreLimit(0);
     return HCCL_SUCCESS;
@@ -361,7 +361,7 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
     u32 rankNum = 0;
     CHK_RET(HcclGetRankSizeV2(*commV2, &rankNum));
     char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    // CHK_RET(HcclGetCommNameV2(*commV2, commName));
+    CHK_RET(HcclGetCommNameV2(*commV2, commName));
     CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
     //获取cclbuffer
     uintptr_t cclBufferAddr{0};
@@ -834,6 +834,11 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
+            u32 rankNum = 0;
+            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
+            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+            CHK_RET(HcclGetCommNameV2(commV2, commName));
+            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
             const char *indOp = getenv("HCCL_INDEPENDENT_OP");
             if (indOp == nullptr || strcmp(indOp, "") == 0) {
                 *comm = commV2;
@@ -1698,6 +1703,7 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
         [&]() -> HcclResult {
             void *commV2 = nullptr;
             HcclCommInitRootInfoConfigV2(nRanks, rootInfo, rank, config, &commV2);
+            CHK_PRT(HcomSetGroupTopoInfo(config->hcclCommName, nRanks));
             const char *indOp = getenv("HCCL_INDEPENDENT_OP");
             if (indOp == nullptr || strcmp(indOp, "") == 0) {
                 *comm = commV2;
@@ -2973,7 +2979,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 return HCCL_SUCCESS;
             }
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclCommDestroyV2(hcclComm->GetCommunicatorV2()));
+            void* commV2 = hcclComm->GetCommunicatorV2();
             string group;
             group = hcclComm->GetIdentifier();
             HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
@@ -2985,6 +2991,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
                 return HCCL_E_PARA;
             }
+            CHK_RET(HcclCommDestroyV2(commV2));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -4339,6 +4346,11 @@ HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
 
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(HcclCommSetMemoryRangeV2(comm, baseVirPtr, size, alignment, flags));
+    return HCCL_SUCCESS;
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->SetMemoryRange(baseVirPtr, size, alignment, flags));
@@ -4353,6 +4365,11 @@ HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr)
     // 入参校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
+
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(HcclCommUnsetMemoryRangeV2(comm, baseVirPtr));
+    return HCCL_SUCCESS;
+#endif
 
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -4370,6 +4387,11 @@ HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, 
     CHK_PTR_NULL(virPtr);
     CHK_PTR_NULL(handle);
 
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(HcclCommActivateCommMemoryV2(comm, virPtr, size, offset, handle, flags));
+    return HCCL_SUCCESS;
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->ActivateCommMemory(virPtr, size, offset, handle, flags));
@@ -4386,6 +4408,11 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(virPtr);
 
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(HcclCommDeactivateCommMemoryV2(comm, virPtr));
+    return HCCL_SUCCESS;
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->DeactivateCommMemory(virPtr));
@@ -4397,6 +4424,10 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
 
 HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks)
 {
+#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(HcclCommWorkingDevNicSetV2(comm, ranks, useBackup, nRanks));
+    return HCCL_SUCCESS;
+#endif
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclCommWorkingDevNicSet", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);

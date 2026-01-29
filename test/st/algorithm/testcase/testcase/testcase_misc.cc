@@ -90,7 +90,7 @@ TEST_F(MiscTest, testcase_ExecuteKernelLaunchInner)
     void *buffersIn[MAX_RANK_SIZE];
     void *buffersOut[MAX_RANK_SIZE];
     u64 count = 1;
-    u32 blockDim = 1;
+    u32 numBlocks = 1;
     s32 aivTag = TAG_RESET_COUNT;
 
     AivOpArgs opArgs {
@@ -98,7 +98,7 @@ TEST_F(MiscTest, testcase_ExecuteKernelLaunchInner)
         HCCL_DATA_TYPE_RESERVED, HCCL_REDUCE_RESERVED, 0, true
     };
     AivTopoArgs topoArgs { 0, 1, MAX_RANK_SIZE, 0, 1, DevType::DEV_TYPE_910_93 };
-    AivResourceArgs resourceArgs { tag, nullptr, buffersIn, buffersOut, 200 * 1024 * 1024, blockDim, aivTag };
+    AivResourceArgs resourceArgs { tag, nullptr, buffersIn, buffersOut, 200 * 1024 * 1024, numBlocks, aivTag };
     AivAlgArgs algArgs {};
     struct AivProfilingInfo aivProfilingInfo;
 

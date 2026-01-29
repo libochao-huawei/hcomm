@@ -20,6 +20,11 @@
 #include "local_ub_rma_buffer.h"
 
 namespace hcomm {
+
+UbRegedMemMgr::UbRegedMemMgr()
+{
+    localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
+}
     
 HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
 {
@@ -31,12 +36,20 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
         return HCCL_E_PTR);
     
+    // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
+    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
+    if(localUbRmaBufferMgr_->Find(tempKey).first) {
+        // 内存再次注册时
+        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
+                "{%p, %llu}", mem.addr, mem.size);
+        return HCCL_E_AGAIN;
+    }
+
     std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
     EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
         return HCCL_E_PTR);
     
     // 注册到LocalUbRmaBuffer计数器
-    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
     auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
     if (resultPair.first == localUbRmaBufferMgr_->End()) {
         // 若已注册内存有交叉，返回HCCL_E_INTERNAL

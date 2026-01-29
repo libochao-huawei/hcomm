@@ -64,6 +64,18 @@ struct rs_urma_ops g_urma_ops = {
     .rs_urma_get_tp_attr = urma_get_tp_attr,
     .rs_urma_set_tp_attr = urma_set_tp_attr,
     .rs_urma_import_jetty_ex = urma_import_jetty_ex,
+    .rs_urma_alloc_jetty = urma_alloc_jetty,
+    .rs_urma_set_jetty_opt = urma_set_jetty_opt,
+    .rs_urma_active_jetty = urma_active_jetty,
+    .rs_urma_get_jetty_opt = urma_get_jetty_opt,
+    .rs_urma_deactive_jetty = urma_deactive_jetty,
+    .rs_urma_free_jetty = urma_free_jetty,
+    .rs_urma_alloc_jfc = urma_alloc_jfc,
+    .rs_urma_set_jfc_opt = urma_set_jfc_opt,
+    .rs_urma_active_jfc = urma_active_jfc,
+    .rs_urma_get_jfc_opt = urma_get_jfc_opt,
+    .rs_urma_deactive_jfc = urma_deactive_jfc,
+    .rs_urma_free_jfc = urma_free_jfc,
 };
 #endif
 
@@ -178,6 +190,30 @@ STATIC int rs_urma_jetty_api_init(void)
     g_urma_ops.rs_urma_flush_jetty = (int (*)(urma_jetty_t *, int, urma_cr_t *))
         HccpDlsym(g_urma_api_handle, "urma_flush_jetty");
     DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_flush_jetty, "urma_flush_jetty");
+
+    g_urma_ops.rs_urma_alloc_jetty = (urma_status_t (*)(urma_context_t *, urma_jetty_cfg_t *, urma_jetty_t **))
+        HccpDlsym(g_urma_api_handle, "urma_alloc_jetty");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_alloc_jetty, "urma_alloc_jetty");
+
+    g_urma_ops.rs_urma_set_jetty_opt = (urma_status_t (*)(urma_jetty_t *, uint64_t, void *, uint32_t))
+        HccpDlsym(g_urma_api_handle, "urma_set_jetty_opt");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_set_jetty_opt, "urma_set_jetty_opt");
+
+    g_urma_ops.rs_urma_active_jetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(g_urma_api_handle, "urma_active_jetty");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_active_jetty, "urma_active_jetty");
+
+    g_urma_ops.rs_urma_get_jetty_opt = (urma_status_t (*)(urma_jetty_t *, uint64_t, void *, uint32_t))
+        HccpDlsym(g_urma_api_handle, "urma_get_jetty_opt");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_jetty_opt, "urma_get_jetty_opt");
+
+    g_urma_ops.rs_urma_deactive_jetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(g_urma_api_handle, "urma_deactive_jetty");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_deactive_jetty, "urma_deactive_jetty");
+
+    g_urma_ops.rs_urma_free_jetty = (urma_status_t (*)(urma_jetty_t *))
+        HccpDlsym(g_urma_api_handle, "urma_free_jetty");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_free_jetty, "urma_free_jetty");
 #endif
     return 0;
 }
@@ -212,6 +248,30 @@ STATIC int rs_urma_jfc_api_init(void)
     g_urma_ops.rs_urma_ack_async_event = (void (*)(urma_async_event_t *))
         HccpDlsym(g_urma_api_handle, "urma_ack_async_event");
     DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_ack_async_event, "urma_ack_async_event");
+
+    g_urma_ops.rs_urma_alloc_jfc = (urma_status_t (*)(urma_context_t *, urma_jfc_cfg_t *, urma_jfc_t **))
+    HccpDlsym(g_urma_api_handle, "urma_alloc_jfc");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_alloc_jfc, "urma_alloc_jfc");
+
+    g_urma_ops.rs_urma_set_jfc_opt = (urma_status_t (*)(urma_jfc_t *, uint64_t , void *, uint32_t))
+        HccpDlsym(g_urma_api_handle, "urma_set_jfc_opt");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_set_jfc_opt, "urma_set_jfc_opt");
+
+    g_urma_ops.rs_urma_active_jfc = (urma_status_t (*)(urma_jfc_t *))
+        HccpDlsym(g_urma_api_handle, "urma_active_jfc");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_active_jfc, "urma_active_jfc");
+
+    g_urma_ops.rs_urma_get_jfc_opt = (urma_status_t (*)(urma_jfc_t *, uint64_t , void *, uint32_t))
+        HccpDlsym(g_urma_api_handle, "urma_get_jfc_opt");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_get_jfc_opt, "urma_get_jfc_opt");
+
+    g_urma_ops.rs_urma_deactive_jfc = (urma_status_t (*)(urma_jfc_t *))
+        HccpDlsym(g_urma_api_handle, "urma_deactive_jfc");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_deactive_jfc, "urma_deactive_jfc");
+
+    g_urma_ops.rs_urma_free_jfc = (urma_status_t (*)(urma_jfc_t *))
+        HccpDlsym(g_urma_api_handle, "urma_free_jfc");
+    DL_API_RET_IS_NULL_CHECK(g_urma_ops.rs_urma_free_jfc, "urma_free_jfc");
 #endif
     return 0;
 }
@@ -931,4 +991,136 @@ int rs_urma_delete_jfr_batch(urma_jfr_t **jfr_arr, int jfr_num, urma_jfr_t **bad
 #endif
     }
     return g_urma_ops.rs_urma_delete_jfr_batch(jfr_arr, jfr_num, bad_jfr);
+}
+
+int rs_urma_alloc_jetty(urma_context_t *urma_ctx, urma_jetty_cfg_t *cfg, urma_jetty_t **jetty)
+{
+    if (g_urma_ops.rs_urma_alloc_jetty == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_alloc_jetty is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_alloc_jetty(urma_ctx, cfg, jetty);
+}
+
+int rs_urma_set_jetty_opt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
+{
+    if (g_urma_ops.rs_urma_set_jetty_opt == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_set_jetty_opt is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_set_jetty_opt(jetty, opt, buf, len);
+}
+
+int rs_urma_active_jetty(urma_jetty_t *jetty)
+{
+    if (g_urma_ops.rs_urma_active_jetty == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_active_jetty is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_active_jetty(jetty);
+}
+
+int rs_urma_get_jetty_opt(urma_jetty_t *jetty, uint64_t opt, void *buf, uint32_t len)
+{
+    if (g_urma_ops.rs_urma_get_jetty_opt == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_get_jetty_opt is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_get_jetty_opt(jetty, opt, buf, len);
+}
+
+int rs_urma_deactive_jetty(urma_jetty_t *jetty)
+{
+    if (g_urma_ops.rs_urma_deactive_jetty == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_deactive_jetty is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_deactive_jetty(jetty);
+}
+
+int rs_urma_free_jetty(urma_jetty_t *jetty)
+{
+    if (g_urma_ops.rs_urma_free_jetty == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_free_jetty is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_free_jetty(jetty);
+}
+
+int rs_urma_alloc_jfc(urma_context_t *urma_ctx, urma_jfc_cfg_t *cfg, urma_jfc_t **jfc)
+{
+    if (g_urma_ops.rs_urma_alloc_jfc == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_alloc_jfc is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_alloc_jfc(urma_ctx, cfg, jfc);
+}
+
+int rs_urma_set_jfc_opt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
+{
+    if (g_urma_ops.rs_urma_set_jfc_opt == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_set_jfc_opt is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_set_jfc_opt(jfc, opt, buf, len);
+}
+
+int rs_urma_active_jfc(urma_jfc_t *jfc)
+{
+    if (g_urma_ops.rs_urma_active_jfc == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_active_jfc is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_active_jfc(jfc);
+}
+
+int rs_urma_get_jfc_opt(urma_jfc_t *jfc, uint64_t opt, void *buf, uint32_t len)
+{
+    if (g_urma_ops.rs_urma_get_jfc_opt == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_get_jfc_opt is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_get_jfc_opt(jfc, opt, buf, len);
+}
+
+int rs_urma_deactive_jfc(urma_jfc_t *jfc)
+{
+    if (g_urma_ops.rs_urma_deactive_jfc == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_deactive_jfc is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_deactive_jfc(jfc);
+}
+
+int rs_urma_free_jfc(urma_jfc_t *jfc)
+{
+    if (g_urma_ops.rs_urma_free_jfc == NULL) {
+#ifndef CA_CONFIG_LLT
+        hccp_err("rs_urma_free_jfc is null");
+        return -EINVAL;
+#endif
+    }
+    return g_urma_ops.rs_urma_free_jfc(jfc);
 }

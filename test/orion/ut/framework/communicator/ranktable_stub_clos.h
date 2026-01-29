@@ -549,4 +549,67 @@ const std::string RANK_TABLE_4P_REPLACE_RANK1 = R"(
 }
 )";
 
+const std::string RankTable2pEnd = R"(
+    {
+  "version": "2.0",
+  "status": "completed",
+  "detour": "true",
+  "rank_count": 2,
+  "rank_list": [
+    {
+      "rank_id": 0,
+      "device_id": 0,
+      "local_id": 0,
+      "device_port": 6666,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "az0-rack0",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+            {
+              "addr_type": "IPV4",
+              "addr": "192.168.100.10",
+              "ports": [ "0/0"]
+            },
+             {
+              "addr_type": "IPV4",
+              "addr": "192.168.100.11",
+              "ports": [ "0/1" ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "rank_id": 1,
+      "device_id": 1,
+      "local_id": 1,
+      "device_port": 2222,
+      "level_list": [
+        {
+          "net_layer": 0,
+          "net_instance_id": "az0-rack0",
+          "net_type": "TOPO_FILE_DESC",
+          "net_attr": "",
+          "rank_addr_list": [
+           {
+              "addr_type": "IPV4",
+              "addr": "192.168.100.10",
+              "ports": [ "0/0"]
+            },
+             {
+              "addr_type": "IPV4",
+              "addr": "192.168.100.11",
+              "ports": [ "0/1" ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
+)";
+
 #endif

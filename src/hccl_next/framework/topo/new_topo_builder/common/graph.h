@@ -88,7 +88,6 @@ public:
 
     void DeleteEdge(const NodeId srcNodeId, const NodeId dstNodeId)
     {
-        // 在64+1中srcNode 和 dstNode代表fabric和db
         auto srcIt = edges.find(srcNodeId);
         if (srcIt == edges.end()) {
             return;
@@ -100,7 +99,6 @@ public:
             return;
         }
 
-        // 删除对应的边
         dstMap.erase(dstIt);
     }
 

@@ -39,6 +39,8 @@ list(APPEND rs_list
         ${HCOMM_ORION}/rdma_service/ctx/rs_ctx.c
         ${HCOMM_ORION}/rdma_service/ctx/rs_esched.c
         ${HCOMM_ORION}/rdma_service/ctx/rs_ub.c
+        ${HCOMM_ORION}/rdma_service/ctx/product/ascend910_95/rs_ub_jetty.c
+        ${HCOMM_ORION}/rdma_service/ctx/product/ascend910_95/rs_ub_jfc.c
 )
 endif()
 
@@ -68,7 +70,6 @@ target_include_directories(rs PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
     ${ASCEND_CANN_PACKAGE_PATH}/include/
     ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-    ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
     # runtime头文件
     ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -83,6 +84,8 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
+
     # HCCP2.0
     ${HCOMM_ORION}/inc/network/
     ${HCOMM_ORION}/inc/private/network
@@ -90,6 +93,7 @@ target_include_directories(rs PRIVATE
     ${HCOMM_ORION}/external_depends/ccu/
     ${HCOMM_ORION}/external_depends/net_adapt/
     ${HCOMM_ORION}/external_depends/ubengine/
+    ${HCOMM_ORION}/rdma_service/ctx/product/
 )
 
 # c_sec、mmpa、unified_dlog动态库搜索路径

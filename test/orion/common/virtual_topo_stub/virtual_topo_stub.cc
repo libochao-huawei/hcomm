@@ -100,7 +100,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesTwo(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -111,7 +111,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesTwo(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
 
@@ -122,7 +122,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesTwo(const string &rankTable)
     char rank2Address[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr(rank2Address);
     auto iface2 = InitConnInterface(rank2Addr);
-    rank2->AddConnInterface(iface2);
+    rank2->AddConnInterface(0, iface2);
     rank2->AddNetInstance(fabGroup);
     fabGroup->AddRankId(2);
 
@@ -133,7 +133,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesTwo(const string &rankTable)
     char rank3Address[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr(rank3Address);
     auto iface3 = InitConnInterface(rank3Addr);
-    rank3->AddConnInterface(iface3);
+    rank3->AddConnInterface(0, iface3);
     rank3->AddNetInstance(fabGroup);
     fabGroup->AddRankId(3);
 
@@ -171,14 +171,14 @@ void VirtualTopoStub::TopoInit91095TwoServerTimesTwo(const string &rankTable)
     char fabricAddress0[] = "5.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr0(fabricAddress0);
     auto ifaceNode0 = InitConnInterface(fabricAddr0);
-    fabric0->AddConnInterface(ifaceNode0);
+    fabric0->AddConnInterface(1, ifaceNode0);
     // 初始化fabric1信息
     auto fabric1 = InitFabric(1);
     fabGroupLevel1->AddNode(fabric1);
     char fabricAddress1[] = "6.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr1(fabricAddress1);
     auto ifaceNode1 = InitConnInterface(fabricAddr1);
-    fabric1->AddConnInterface(ifaceNode1);
+    fabric1->AddConnInterface(1, ifaceNode1);
 
 
     // 初始化rank0信息
@@ -189,11 +189,11 @@ void VirtualTopoStub::TopoInit91095TwoServerTimesTwo(const string &rankTable)
     char rank0Address0[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr0(rank0Address0);
     auto rank0iface0 = InitConnInterface(rank0Addr0);
-    rank0->AddConnInterface(rank0iface0);
+    rank0->AddConnInterface(0, rank0iface0);
     char rank0Address1[] = "0.0.0.1";  // 打桩用sendIP地址
     IpAddress rank0Addr1(rank0Address1);
     auto rank0iface1 = InitConnInterface(rank0Addr1);
-    rank0->AddConnInterface(rank0iface1);
+    rank0->AddConnInterface(1, rank0iface1);
     rank0->AddNetInstance(fabGroup0);
     rank0->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(0);
@@ -207,11 +207,11 @@ void VirtualTopoStub::TopoInit91095TwoServerTimesTwo(const string &rankTable)
     char rank1Address0[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr0(rank1Address0);
     auto rank1iface0 = InitConnInterface(rank1Addr0);
-    rank1->AddConnInterface(rank1iface0);
+    rank1->AddConnInterface(0, rank1iface0);
     char rank1Address1[] = "1.0.0.1";  // 打桩用sendIP地址
     IpAddress rank1Addr1(rank1Address1);
     auto rank1iface1 = InitConnInterface(rank1Addr1);
-    rank1->AddConnInterface(rank1iface1);
+    rank1->AddConnInterface(1, rank1iface1);
     rank1->AddNetInstance(fabGroup0);
     rank1->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(1);
@@ -225,11 +225,11 @@ void VirtualTopoStub::TopoInit91095TwoServerTimesTwo(const string &rankTable)
     char rank2Address0[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr0(rank2Address0);
     auto rank2iface0 = InitConnInterface(rank2Addr0);
-    rank2->AddConnInterface(rank2iface0);
+    rank2->AddConnInterface(0, rank2iface0);
     char rank2Address1[] = "2.0.0.1";  // 打桩用sendIP地址
     IpAddress rank2Addr1(rank2Address1);
     auto rank2iface1 = InitConnInterface(rank2Addr1);
-    rank2->AddConnInterface(rank2iface1);
+    rank2->AddConnInterface(1, rank2iface1);
     rank2->AddNetInstance(fabGroup1);
     rank2->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(2);
@@ -243,11 +243,11 @@ void VirtualTopoStub::TopoInit91095TwoServerTimesTwo(const string &rankTable)
     char rank3Address0[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr0(rank3Address0);
     auto rank3iface0 = InitConnInterface(rank3Addr0);
-    rank3->AddConnInterface(rank3iface0);
+    rank3->AddConnInterface(0, rank3iface0);
     char rank3Address1[] = "3.0.0.1";  // 打桩用sendIP地址
     IpAddress rank3Addr1(rank3Address1);
     auto rank3iface1 = InitConnInterface(rank3Addr1);
-    rank3->AddConnInterface(rank3iface1);
+    rank3->AddConnInterface(1, rank3iface1);
     rank3->AddNetInstance(fabGroup1);
     rank3->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(3);
@@ -298,7 +298,7 @@ void VirtualTopoStub::TopoInit91095OneTimesN(const string &rankTable, int numRan
         IpAddress addr(ipAddress);
         // 创建ConnInterface并添加到Peer
         auto iface = InitConnInterface(addr);
-        peer->AddConnInterface(iface);
+        peer->AddConnInterface(0, iface);
         peer2Interface[peer] = iface;
         peer->AddNetInstance(fabGroup);
         fabGroup->AddRankId(rankId);
@@ -336,7 +336,7 @@ void VirtualTopoStub::TopoInit91095OneTimesFour(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
  
@@ -347,7 +347,7 @@ void VirtualTopoStub::TopoInit91095OneTimesFour(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
  
@@ -358,7 +358,7 @@ void VirtualTopoStub::TopoInit91095OneTimesFour(const string &rankTable)
     char rank2Address[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr(rank2Address);
     auto iface2 = InitConnInterface(rank2Addr);
-    rank2->AddConnInterface(iface2);
+    rank2->AddConnInterface(0, iface2);
     rank2->AddNetInstance(fabGroup);
     fabGroup->AddRankId(2);
  
@@ -369,7 +369,7 @@ void VirtualTopoStub::TopoInit91095OneTimesFour(const string &rankTable)
     char rank3Address[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr(rank3Address);
     auto iface3 = InitConnInterface(rank3Addr);
-    rank3->AddConnInterface(iface3);
+    rank3->AddConnInterface(0, iface3);
     rank3->AddNetInstance(fabGroup);
     fabGroup->AddRankId(3);
  
@@ -410,7 +410,7 @@ void VirtualTopoStub::TopoInit91095OneTimesTwoDetour(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -421,7 +421,7 @@ void VirtualTopoStub::TopoInit91095OneTimesTwoDetour(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
 
@@ -451,7 +451,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesThree(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -462,7 +462,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesThree(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
 
@@ -473,7 +473,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesThree(const string &rankTable)
     char rank2Address[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr(rank2Address);
     auto iface2 = InitConnInterface(rank2Addr);
-    rank2->AddConnInterface(iface2);
+    rank2->AddConnInterface(0, iface2);
     rank2->AddNetInstance(fabGroup);
     fabGroup->AddRankId(2);
 
@@ -484,7 +484,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesThree(const string &rankTable)
     char rank3Address[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr(rank3Address);
     auto iface3 = InitConnInterface(rank3Addr);
-    rank3->AddConnInterface(iface3);
+    rank3->AddConnInterface(0, iface3);
     rank3->AddNetInstance(fabGroup);
     fabGroup->AddRankId(3);
 
@@ -495,7 +495,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesThree(const string &rankTable)
     char rank4Address[] = "4.0.0.0";  // 打桩用sendIP地址
     IpAddress rank4Addr(rank4Address);
     auto iface4 = InitConnInterface(rank4Addr);
-    rank4->AddConnInterface(iface4);
+    rank4->AddConnInterface(0, iface4);
     rank4->AddNetInstance(fabGroup);
     fabGroup->AddRankId(4);
 
@@ -506,7 +506,7 @@ void VirtualTopoStub::TopoInit91095TwoTimesThree(const string &rankTable)
     char rank5Address[] = "5.0.0.0";  // 打桩用sendIP地址
     IpAddress rank5Addr(rank5Address);
     auto iface5 = InitConnInterface(rank5Addr);
-    rank5->AddConnInterface(iface5);
+    rank5->AddConnInterface(0, iface5);
     rank5->AddNetInstance(fabGroup);
     fabGroup->AddRankId(5);
 
@@ -556,7 +556,7 @@ void VirtualTopoStub::TopoInit91095OneTimesThree(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -567,7 +567,7 @@ void VirtualTopoStub::TopoInit91095OneTimesThree(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
 
@@ -578,7 +578,7 @@ void VirtualTopoStub::TopoInit91095OneTimesThree(const string &rankTable)
     char rank2Address[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr(rank2Address);
     auto iface2 = InitConnInterface(rank2Addr);
-    rank2->AddConnInterface(iface2);
+    rank2->AddConnInterface(0, iface2);
     rank2->AddNetInstance(fabGroup);
     fabGroup->AddRankId(2);
 
@@ -610,7 +610,7 @@ void VirtualTopoStub::TopoInit91095OneTimesOne(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -630,7 +630,7 @@ void VirtualTopoStub::TopoInit91095TwoPlusOnePlusOne(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -641,7 +641,7 @@ void VirtualTopoStub::TopoInit91095TwoPlusOnePlusOne(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
 
@@ -652,7 +652,7 @@ void VirtualTopoStub::TopoInit91095TwoPlusOnePlusOne(const string &rankTable)
     char rank2Address[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr(rank2Address);
     auto iface2 = InitConnInterface(rank2Addr);
-    rank2->AddConnInterface(iface2);
+    rank2->AddConnInterface(0, iface2);
     rank2->AddNetInstance(fabGroup);
     fabGroup->AddRankId(2);
 
@@ -663,7 +663,7 @@ void VirtualTopoStub::TopoInit91095TwoPlusOnePlusOne(const string &rankTable)
     char rank3Address[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr(rank3Address);
     auto iface3 = InitConnInterface(rank3Addr);
-    rank3->AddConnInterface(iface3);
+    rank3->AddConnInterface(0, iface3);
     rank3->AddNetInstance(fabGroup);
     fabGroup->AddRankId(3);
 
@@ -697,7 +697,7 @@ void VirtualTopoStub::TopoInit2HCCSLink(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -708,7 +708,7 @@ void VirtualTopoStub::TopoInit2HCCSLink(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
 
@@ -731,7 +731,7 @@ void VirtualTopoStub::TopoInit4RankRDMALink(const string &rankTable)
     char rank0Address[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr(rank0Address);
     auto iface0 = InitConnInterface(rank0Addr);
-    rank0->AddConnInterface(iface0);
+    rank0->AddConnInterface(0, iface0);
     rank0->AddNetInstance(fabGroup);
     fabGroup->AddRankId(0);
 
@@ -742,7 +742,7 @@ void VirtualTopoStub::TopoInit4RankRDMALink(const string &rankTable)
     char rank1Address[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr(rank1Address);
     auto iface1 = InitConnInterface(rank1Addr);
-    rank1->AddConnInterface(iface1);
+    rank1->AddConnInterface(0, iface1);
     rank1->AddNetInstance(fabGroup);
     fabGroup->AddRankId(1);
 
@@ -753,7 +753,7 @@ void VirtualTopoStub::TopoInit4RankRDMALink(const string &rankTable)
     char rank2Address[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr(rank2Address);
     auto iface2 = InitConnInterface(rank2Addr);
-    rank2->AddConnInterface(iface2);
+    rank2->AddConnInterface(0, iface2);
     rank2->AddNetInstance(fabGroup);
     fabGroup->AddRankId(2);
 
@@ -764,7 +764,7 @@ void VirtualTopoStub::TopoInit4RankRDMALink(const string &rankTable)
     char rank3Address[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr(rank3Address);
     auto iface3 = InitConnInterface(rank3Addr);
-    rank3->AddConnInterface(iface3);
+    rank3->AddConnInterface(0, iface3);
     rank3->AddNetInstance(fabGroup);
     fabGroup->AddRankId(3);
 
@@ -809,14 +809,14 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char fabricAddress0[] = "13.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr0(fabricAddress0);
     auto ifaceNode0 = InitConnInterface(fabricAddr0);
-    fabric0->AddConnInterface(ifaceNode0);
+    fabric0->AddConnInterface(0, ifaceNode0);
     // 初始化fabric1信息
     auto fabric1 = InitFabric(1);
     fabGroupLevel1->AddNode(fabric1);
     char fabricAddress1[] = "14.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr1(fabricAddress1);
     auto ifaceNode1 = InitConnInterface(fabricAddr1);
-    fabric1->AddConnInterface(ifaceNode1);
+    fabric1->AddConnInterface(1, ifaceNode1);
 
     // 初始化rank0信息
     auto rank0 = InitPeer(0, 0);
@@ -826,11 +826,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank0Address0[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr0(rank0Address0);
     auto rank0iface0 = InitConnInterface(rank0Addr0);
-    rank0->AddConnInterface(rank0iface0);
+    rank0->AddConnInterface(0, rank0iface0);
     char rank0Address1[] = "0.0.0.1";  // 打桩用sendIP地址
     IpAddress rank0Addr1(rank0Address1);
     auto rank0iface1 = InitConnInterface(rank0Addr1);
-    rank0->AddConnInterface(rank0iface1);
+    rank0->AddConnInterface(1, rank0iface1);
     rank0->AddNetInstance(fabGroup0);
     rank0->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(0);
@@ -844,11 +844,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank1Address0[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr0(rank1Address0);
     auto rank1iface0 = InitConnInterface(rank1Addr0);
-    rank1->AddConnInterface(rank1iface0);
+    rank1->AddConnInterface(0, rank1iface0);
     char rank1Address1[] = "1.0.0.1";  // 打桩用sendIP地址
     IpAddress rank1Addr1(rank1Address1);
     auto rank1iface1 = InitConnInterface(rank1Addr1);
-    rank1->AddConnInterface(rank1iface1);
+    rank1->AddConnInterface(1, rank1iface1);
     rank1->AddNetInstance(fabGroup0);
     rank1->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(1);
@@ -862,11 +862,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank2Address0[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr0(rank2Address0);
     auto rank2iface0 = InitConnInterface(rank2Addr0);
-    rank2->AddConnInterface(rank2iface0);
+    rank2->AddConnInterface(0, rank2iface0);
     char rank2Address1[] = "2.0.0.1";  // 打桩用sendIP地址
     IpAddress rank2Addr1(rank2Address1);
     auto rank2iface1 = InitConnInterface(rank2Addr1);
-    rank2->AddConnInterface(rank2iface1);
+    rank2->AddConnInterface(1, rank2iface1);
     rank2->AddNetInstance(fabGroup0);
     rank2->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(2);
@@ -880,11 +880,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank3Address0[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr0(rank3Address0);
     auto rank3iface0 = InitConnInterface(rank3Addr0);
-    rank3->AddConnInterface(rank3iface0);
+    rank3->AddConnInterface(0, rank3iface0);
     char rank3Address1[] = "3.0.0.1";  // 打桩用sendIP地址
     IpAddress rank3Addr1(rank3Address1);
     auto rank3iface1 = InitConnInterface(rank3Addr1);
-    rank3->AddConnInterface(rank3iface1);
+    rank3->AddConnInterface(1, rank3iface1);
     rank3->AddNetInstance(fabGroup0);
     rank3->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(3);
@@ -898,11 +898,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank8Address0[] = "8.0.0.0";  // 打桩用sendIP地址
     IpAddress rank8Addr0(rank8Address0);
     auto rank8iface0 = InitConnInterface(rank8Addr0);
-    rank8->AddConnInterface(rank8iface0);
+    rank8->AddConnInterface(0, rank8iface0);
     char rank8Address1[] = "8.0.0.1";  // 打桩用sendIP地址
     IpAddress rank8Addr1(rank8Address1);
     auto rank8iface1 = InitConnInterface(rank8Addr1);
-    rank8->AddConnInterface(rank8iface1);
+    rank8->AddConnInterface(1, rank8iface1);
     rank8->AddNetInstance(fabGroup1);
     rank8->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(8);
@@ -916,11 +916,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank9Address0[] = "9.0.0.0";  // 打桩用sendIP地址
     IpAddress rank9Addr0(rank9Address0);
     auto rank9iface0 = InitConnInterface(rank9Addr0);
-    rank9->AddConnInterface(rank9iface0);
+    rank9->AddConnInterface(0, rank9iface0);
     char rank9Address1[] = "9.0.0.1";  // 打桩用sendIP地址
     IpAddress rank9Addr1(rank9Address1);
     auto rank9iface1 = InitConnInterface(rank9Addr1);
-    rank9->AddConnInterface(rank9iface1);
+    rank9->AddConnInterface(1, rank9iface1);
     rank9->AddNetInstance(fabGroup1);
     rank9->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(9);
@@ -934,11 +934,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank10Address0[] = "10.0.0.0";  // 打桩用sendIP地址
     IpAddress rank10Addr0(rank10Address0);
     auto rank10iface0 = InitConnInterface(rank10Addr0);
-    rank10->AddConnInterface(rank10iface0);
+    rank10->AddConnInterface(0, rank10iface0);
     char rank10Address1[] = "10.0.0.1";  // 打桩用sendIP地址
     IpAddress rank10Addr1(rank10Address1);
     auto rank10iface1 = InitConnInterface(rank10Addr1);
-    rank10->AddConnInterface(rank10iface1);
+    rank10->AddConnInterface(1, rank10iface1);
     rank10->AddNetInstance(fabGroup1);
     rank10->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(10);
@@ -952,11 +952,11 @@ void VirtualTopoStub::TopoInit91095TwoPodTwoTwoAndTwoTwo(const string &rankTable
     char rank11Address0[] = "11.0.0.0";  // 打桩用sendIP地址
     IpAddress rank11Addr0(rank11Address0);
     auto rank11iface0 = InitConnInterface(rank11Addr0);
-    rank11->AddConnInterface(rank11iface0);
+    rank11->AddConnInterface(0, rank11iface0);
     char rank11Address1[] = "11.0.0.1";  // 打桩用sendIP地址
     IpAddress rank11Addr1(rank11Address1);
     auto rank11iface1 = InitConnInterface(rank11Addr1);
-    rank11->AddConnInterface(rank11iface1);
+    rank11->AddConnInterface(1, rank11iface1);
     rank11->AddNetInstance(fabGroup1);
     rank11->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(11);
@@ -1047,14 +1047,14 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char fabricAddress0[] = "13.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr0(fabricAddress0);
     auto ifaceNode0 = InitConnInterface(fabricAddr0);
-    fabric0->AddConnInterface(ifaceNode0);
+    fabric0->AddConnInterface(0, ifaceNode0);
     // 初始化fabric1信息
     auto fabric1 = InitFabric(1);
     fabGroupLevel1->AddNode(fabric1);
     char fabricAddress1[] = "14.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr1(fabricAddress1);
     auto ifaceNode1 = InitConnInterface(fabricAddr1);
-    fabric1->AddConnInterface(ifaceNode1);
+    fabric1->AddConnInterface(1, ifaceNode1);
 
 
     // 初始化rank0信息
@@ -1065,11 +1065,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank0Address0[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr0(rank0Address0);
     auto rank0iface0 = InitConnInterface(rank0Addr0);
-    rank0->AddConnInterface(rank0iface0);
+    rank0->AddConnInterface(0, rank0iface0);
     char rank0Address1[] = "0.0.0.1";  // 打桩用sendIP地址
     IpAddress rank0Addr1(rank0Address1);
     auto rank0iface1 = InitConnInterface(rank0Addr1);
-    rank0->AddConnInterface(rank0iface1);
+    rank0->AddConnInterface(1, rank0iface1);
     rank0->AddNetInstance(fabGroup0);
     rank0->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(0);
@@ -1083,11 +1083,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank1Address0[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr0(rank1Address0);
     auto rank1iface0 = InitConnInterface(rank1Addr0);
-    rank1->AddConnInterface(rank1iface0);
+    rank1->AddConnInterface(0, rank1iface0);
     char rank1Address1[] = "1.0.0.1";  // 打桩用sendIP地址
     IpAddress rank1Addr1(rank1Address1);
     auto rank1iface1 = InitConnInterface(rank1Addr1);
-    rank1->AddConnInterface(rank1iface1);
+    rank1->AddConnInterface(1, rank1iface1);
     rank1->AddNetInstance(fabGroup0);
     rank1->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(1);
@@ -1101,11 +1101,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank2Address0[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr0(rank2Address0);
     auto rank2iface0 = InitConnInterface(rank2Addr0);
-    rank2->AddConnInterface(rank2iface0);
+    rank2->AddConnInterface(0, rank2iface0);
     char rank2Address1[] = "2.0.0.1";  // 打桩用sendIP地址
     IpAddress rank2Addr1(rank2Address1);
     auto rank2iface1 = InitConnInterface(rank2Addr1);
-    rank2->AddConnInterface(rank2iface1);
+    rank2->AddConnInterface(1, rank2iface1);
     rank2->AddNetInstance(fabGroup0);
     rank2->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(2);
@@ -1119,11 +1119,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank3Address0[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr0(rank3Address0);
     auto rank3iface0 = InitConnInterface(rank3Addr0);
-    rank3->AddConnInterface(rank3iface0);
+    rank3->AddConnInterface(0, rank3iface0);
     char rank3Address1[] = "3.0.0.1";  // 打桩用sendIP地址
     IpAddress rank3Addr1(rank3Address1);
     auto rank3iface1 = InitConnInterface(rank3Addr1);
-    rank3->AddConnInterface(rank3iface1);
+    rank3->AddConnInterface(1, rank3iface1);
     rank3->AddNetInstance(fabGroup0);
     rank3->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(3);
@@ -1137,11 +1137,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank4Address0[] = "4.0.0.0";  // 打桩用sendIP地址
     IpAddress rank4Addr0(rank4Address0);
     auto rank4iface0 = InitConnInterface(rank4Addr0);
-    rank4->AddConnInterface(rank4iface0);
+    rank4->AddConnInterface(0, rank4iface0);
     char rank4Address1[] = "4.0.0.1";  // 打桩用sendIP地址
     IpAddress rank4Addr1(rank4Address1);
     auto rank4iface1 = InitConnInterface(rank4Addr1);
-    rank4->AddConnInterface(rank4iface1);
+    rank4->AddConnInterface(1, rank4iface1);
     rank4->AddNetInstance(fabGroup0);
     rank4->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(4);
@@ -1155,11 +1155,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank5Address0[] = "5.0.0.0";  // 打桩用sendIP地址
     IpAddress rank5Addr0(rank5Address0);
     auto rank5iface0 = InitConnInterface(rank5Addr0);
-    rank5->AddConnInterface(rank5iface0);
+    rank5->AddConnInterface(0, rank5iface0);
     char rank5Address1[] = "5.0.0.1";  // 打桩用sendIP地址
     IpAddress rank5Addr1(rank5Address1);
     auto rank5iface1 = InitConnInterface(rank5Addr1);
-    rank5->AddConnInterface(rank5iface1);
+    rank5->AddConnInterface(1, rank5iface1);
     rank5->AddNetInstance(fabGroup0);
     rank5->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(5);
@@ -1173,11 +1173,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank6Address0[] = "6.0.0.0";  // 打桩用sendIP地址
     IpAddress rank6Addr0(rank6Address0);
     auto rank6iface0 = InitConnInterface(rank6Addr0);
-    rank6->AddConnInterface(rank6iface0);
+    rank6->AddConnInterface(0, rank6iface0);
     char rank6Address1[] = "6.0.0.1";  // 打桩用sendIP地址
     IpAddress rank6Addr1(rank6Address1);
     auto rank6iface1 = InitConnInterface(rank6Addr1);
-    rank6->AddConnInterface(rank6iface1);
+    rank6->AddConnInterface(1, rank6iface1);
     rank6->AddNetInstance(fabGroup0);
     rank6->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(6);
@@ -1191,11 +1191,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank7Address0[] = "7.0.0.0";  // 打桩用sendIP地址
     IpAddress rank7Addr0(rank7Address0);
     auto rank7iface0 = InitConnInterface(rank7Addr0);
-    rank7->AddConnInterface(rank7iface0);
+    rank7->AddConnInterface(0, rank7iface0);
     char rank7Address1[] = "7.0.0.1";  // 打桩用sendIP地址
     IpAddress rank7Addr1(rank7Address1);
     auto rank7iface1 = InitConnInterface(rank7Addr1);
-    rank7->AddConnInterface(rank7iface1);
+    rank7->AddConnInterface(1, rank7iface1);
     rank7->AddNetInstance(fabGroup0);
     rank7->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(7);
@@ -1209,11 +1209,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank8Address0[] = "8.0.0.0";  // 打桩用sendIP地址
     IpAddress rank8Addr0(rank8Address0);
     auto rank8iface0 = InitConnInterface(rank8Addr0);
-    rank8->AddConnInterface(rank8iface0);
+    rank8->AddConnInterface(0, rank8iface0);
     char rank8Address1[] = "8.0.0.1";  // 打桩用sendIP地址
     IpAddress rank8Addr1(rank8Address1);
     auto rank8iface1 = InitConnInterface(rank8Addr1);
-    rank8->AddConnInterface(rank8iface1);
+    rank8->AddConnInterface(1, rank8iface1);
     rank8->AddNetInstance(fabGroup1);
     rank8->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(8);
@@ -1227,11 +1227,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank9Address0[] = "9.0.0.0";  // 打桩用sendIP地址
     IpAddress rank9Addr0(rank9Address0);
     auto rank9iface0 = InitConnInterface(rank9Addr0);
-    rank9->AddConnInterface(rank9iface0);
+    rank9->AddConnInterface(0, rank9iface0);
     char rank9Address1[] = "9.0.0.1";  // 打桩用sendIP地址
     IpAddress rank9Addr1(rank9Address1);
     auto rank9iface1 = InitConnInterface(rank9Addr1);
-    rank9->AddConnInterface(rank9iface1);
+    rank9->AddConnInterface(1, rank9iface1);
     rank9->AddNetInstance(fabGroup1);
     rank9->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(9);
@@ -1245,11 +1245,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank10Address0[] = "10.0.0.0";  // 打桩用sendIP地址
     IpAddress rank10Addr0(rank10Address0);
     auto rank10iface0 = InitConnInterface(rank10Addr0);
-    rank10->AddConnInterface(rank10iface0);
+    rank10->AddConnInterface(0, rank10iface0);
     char rank10Address1[] = "10.0.0.1";  // 打桩用sendIP地址
     IpAddress rank10Addr1(rank10Address1);
     auto rank10iface1 = InitConnInterface(rank10Addr1);
-    rank10->AddConnInterface(rank10iface1);
+    rank10->AddConnInterface(1, rank10iface1);
     rank10->AddNetInstance(fabGroup1);
     rank10->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(10);
@@ -1263,11 +1263,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndTwoTwo(const string &rankTabl
     char rank11Address0[] = "11.0.0.0";  // 打桩用sendIP地址
     IpAddress rank11Addr0(rank11Address0);
     auto rank11iface0 = InitConnInterface(rank11Addr0);
-    rank11->AddConnInterface(rank11iface0);
+    rank11->AddConnInterface(0, rank11iface0);
     char rank11Address1[] = "11.0.0.1";  // 打桩用sendIP地址
     IpAddress rank11Addr1(rank11Address1);
     auto rank11iface1 = InitConnInterface(rank11Addr1);
-    rank11->AddConnInterface(rank11iface1);
+    rank11->AddConnInterface(1, rank11iface1);
     rank11->AddNetInstance(fabGroup1);
     rank11->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(11);
@@ -1407,14 +1407,14 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char fabricAddress0[] = "13.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr0(fabricAddress0);
     auto ifaceNode0 = InitConnInterface(fabricAddr0);
-    fabric0->AddConnInterface(ifaceNode0);
+    fabric0->AddConnInterface(0, ifaceNode0);
     // 初始化fabric1信息
     auto fabric1 = InitFabric(1);
     fabGroupLevel1->AddNode(fabric1);
     char fabricAddress1[] = "14.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr1(fabricAddress1);
     auto ifaceNode1 = InitConnInterface(fabricAddr1);
-    fabric1->AddConnInterface(ifaceNode1);
+    fabric1->AddConnInterface(1, ifaceNode1);
 
 
     // 初始化rank0信息
@@ -1425,11 +1425,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank0Address0[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr0(rank0Address0);
     auto rank0iface0 = InitConnInterface(rank0Addr0);
-    rank0->AddConnInterface(rank0iface0);
+    rank0->AddConnInterface(0, rank0iface0);
     char rank0Address1[] = "0.0.0.1";  // 打桩用sendIP地址
     IpAddress rank0Addr1(rank0Address1);
     auto rank0iface1 = InitConnInterface(rank0Addr1);
-    rank0->AddConnInterface(rank0iface1);
+    rank0->AddConnInterface(1, rank0iface1);
     rank0->AddNetInstance(fabGroup0);
     rank0->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(0);
@@ -1443,11 +1443,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank1Address0[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr0(rank1Address0);
     auto rank1iface0 = InitConnInterface(rank1Addr0);
-    rank1->AddConnInterface(rank1iface0);
+    rank1->AddConnInterface(0, rank1iface0);
     char rank1Address1[] = "1.0.0.1";  // 打桩用sendIP地址
     IpAddress rank1Addr1(rank1Address1);
     auto rank1iface1 = InitConnInterface(rank1Addr1);
-    rank1->AddConnInterface(rank1iface1);
+    rank1->AddConnInterface(1, rank1iface1);
     rank1->AddNetInstance(fabGroup0);
     rank1->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(1);
@@ -1461,11 +1461,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank2Address0[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr0(rank2Address0);
     auto rank2iface0 = InitConnInterface(rank2Addr0);
-    rank2->AddConnInterface(rank2iface0);
+    rank2->AddConnInterface(0, rank2iface0);
     char rank2Address1[] = "2.0.0.1";  // 打桩用sendIP地址
     IpAddress rank2Addr1(rank2Address1);
     auto rank2iface1 = InitConnInterface(rank2Addr1);
-    rank2->AddConnInterface(rank2iface1);
+    rank2->AddConnInterface(1, rank2iface1);
     rank2->AddNetInstance(fabGroup0);
     rank2->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(2);
@@ -1479,11 +1479,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank3Address0[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr0(rank3Address0);
     auto rank3iface0 = InitConnInterface(rank3Addr0);
-    rank3->AddConnInterface(rank3iface0);
+    rank3->AddConnInterface(0, rank3iface0);
     char rank3Address1[] = "3.0.0.1";  // 打桩用sendIP地址
     IpAddress rank3Addr1(rank3Address1);
     auto rank3iface1 = InitConnInterface(rank3Addr1);
-    rank3->AddConnInterface(rank3iface1);
+    rank3->AddConnInterface(1, rank3iface1);
     rank3->AddNetInstance(fabGroup0);
     rank3->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(3);
@@ -1497,11 +1497,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank4Address0[] = "4.0.0.0";  // 打桩用sendIP地址
     IpAddress rank4Addr0(rank4Address0);
     auto rank4iface0 = InitConnInterface(rank4Addr0);
-    rank4->AddConnInterface(rank4iface0);
+    rank4->AddConnInterface(0, rank4iface0);
     char rank4Address1[] = "4.0.0.1";  // 打桩用sendIP地址
     IpAddress rank4Addr1(rank4Address1);
     auto rank4iface1 = InitConnInterface(rank4Addr1);
-    rank4->AddConnInterface(rank4iface1);
+    rank4->AddConnInterface(1, rank4iface1);
     rank4->AddNetInstance(fabGroup0);
     rank4->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(4);
@@ -1515,11 +1515,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank5Address0[] = "5.0.0.0";  // 打桩用sendIP地址
     IpAddress rank5Addr0(rank5Address0);
     auto rank5iface0 = InitConnInterface(rank5Addr0);
-    rank5->AddConnInterface(rank5iface0);
+    rank5->AddConnInterface(0, rank5iface0);
     char rank5Address1[] = "5.0.0.1";  // 打桩用sendIP地址
     IpAddress rank5Addr1(rank5Address1);
     auto rank5iface1 = InitConnInterface(rank5Addr1);
-    rank5->AddConnInterface(rank5iface1);
+    rank5->AddConnInterface(1, rank5iface1);
     rank5->AddNetInstance(fabGroup0);
     rank5->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(5);
@@ -1533,11 +1533,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank6Address0[] = "6.0.0.0";  // 打桩用sendIP地址
     IpAddress rank6Addr0(rank6Address0);
     auto rank6iface0 = InitConnInterface(rank6Addr0);
-    rank6->AddConnInterface(rank6iface0);
+    rank6->AddConnInterface(0, rank6iface0);
     char rank6Address1[] = "6.0.0.1";  // 打桩用sendIP地址
     IpAddress rank6Addr1(rank6Address1);
     auto rank6iface1 = InitConnInterface(rank6Addr1);
-    rank6->AddConnInterface(rank6iface1);
+    rank6->AddConnInterface(1, rank6iface1);
     rank6->AddNetInstance(fabGroup0);
     rank6->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(6);
@@ -1551,11 +1551,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank7Address0[] = "7.0.0.0";  // 打桩用sendIP地址
     IpAddress rank7Addr0(rank7Address0);
     auto rank7iface0 = InitConnInterface(rank7Addr0);
-    rank7->AddConnInterface(rank7iface0);
+    rank7->AddConnInterface(0, rank7iface0);
     char rank7Address1[] = "7.0.0.1";  // 打桩用sendIP地址
     IpAddress rank7Addr1(rank7Address1);
     auto rank7iface1 = InitConnInterface(rank7Addr1);
-    rank7->AddConnInterface(rank7iface1);
+    rank7->AddConnInterface(1, rank7iface1);
     rank7->AddNetInstance(fabGroup0);
     rank7->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(7);
@@ -1569,11 +1569,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank8Address0[] = "8.0.0.0";  // 打桩用sendIP地址
     IpAddress rank8Addr0(rank8Address0);
     auto rank8iface0 = InitConnInterface(rank8Addr0);
-    rank8->AddConnInterface(rank8iface0);
+    rank8->AddConnInterface(0, rank8iface0);
     char rank8Address1[] = "8.0.0.1";  // 打桩用sendIP地址
     IpAddress rank8Addr1(rank8Address1);
     auto rank8iface1 = InitConnInterface(rank8Addr1);
-    rank8->AddConnInterface(rank8iface1);
+    rank8->AddConnInterface(1, rank8iface1);
     rank8->AddNetInstance(fabGroup1);
     rank8->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(8);
@@ -1587,11 +1587,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank9Address0[] = "9.0.0.0";  // 打桩用sendIP地址
     IpAddress rank9Addr0(rank9Address0);
     auto rank9iface0 = InitConnInterface(rank9Addr0);
-    rank9->AddConnInterface(rank9iface0);
+    rank9->AddConnInterface(0, rank9iface0);
     char rank9Address1[] = "9.0.0.1";  // 打桩用sendIP地址
     IpAddress rank9Addr1(rank9Address1);
     auto rank9iface1 = InitConnInterface(rank9Addr1);
-    rank9->AddConnInterface(rank9iface1);
+    rank9->AddConnInterface(1, rank9iface1);
     rank9->AddNetInstance(fabGroup1);
     rank9->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(9);
@@ -1605,11 +1605,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank10Address0[] = "10.0.0.0";  // 打桩用sendIP地址
     IpAddress rank10Addr0(rank10Address0);
     auto rank10iface0 = InitConnInterface(rank10Addr0);
-    rank10->AddConnInterface(rank10iface0);
+    rank10->AddConnInterface(0, rank10iface0);
     char rank10Address1[] = "10.0.0.1";  // 打桩用sendIP地址
     IpAddress rank10Addr1(rank10Address1);
     auto rank10iface1 = InitConnInterface(rank10Addr1);
-    rank10->AddConnInterface(rank10iface1);
+    rank10->AddConnInterface(1, rank10iface1);
     rank10->AddNetInstance(fabGroup1);
     rank10->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(10);
@@ -1623,11 +1623,11 @@ void VirtualTopoStub::TopoInit91095TwoPodIrregularEightAndIrregularFour(const st
     char rank11Address0[] = "11.0.0.0";  // 打桩用sendIP地址
     IpAddress rank11Addr0(rank11Address0);
     auto rank11iface0 = InitConnInterface(rank11Addr0);
-    rank11->AddConnInterface(rank11iface0);
+    rank11->AddConnInterface(0, rank11iface0);
     char rank11Address1[] = "11.0.0.1";  // 打桩用sendIP地址
     IpAddress rank11Addr1(rank11Address1);
     auto rank11iface1 = InitConnInterface(rank11Addr1);
-    rank11->AddConnInterface(rank11iface1);
+    rank11->AddConnInterface(1, rank11iface1);
     rank11->AddNetInstance(fabGroup1);
     rank11->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(11);
@@ -1750,14 +1750,14 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char fabricAddress0[] = "13.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr0(fabricAddress0);
     auto ifaceNode0 = InitConnInterface(fabricAddr0);
-    fabric0->AddConnInterface(ifaceNode0);
+    fabric0->AddConnInterface(0, ifaceNode0);
     // 初始化fabric1信息
     auto fabric1 = InitFabric(1);
     fabGroupLevel1->AddNode(fabric1);
     char fabricAddress1[] = "14.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr1(fabricAddress1);
     auto ifaceNode1 = InitConnInterface(fabricAddr1);
-    fabric1->AddConnInterface(ifaceNode1);
+    fabric1->AddConnInterface(1, ifaceNode1);
 
 
     // 初始化rank0信息
@@ -1768,11 +1768,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank0Address0[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr0(rank0Address0);
     auto rank0iface0 = InitConnInterface(rank0Addr0);
-    rank0->AddConnInterface(rank0iface0);
+    rank0->AddConnInterface(0, rank0iface0);
     char rank0Address1[] = "0.0.0.1";  // 打桩用sendIP地址
     IpAddress rank0Addr1(rank0Address1);
     auto rank0iface1 = InitConnInterface(rank0Addr1);
-    rank0->AddConnInterface(rank0iface1);
+    rank0->AddConnInterface(1, rank0iface1);
     rank0->AddNetInstance(fabGroup0);
     rank0->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(0);
@@ -1786,11 +1786,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank1Address0[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr0(rank1Address0);
     auto rank1iface0 = InitConnInterface(rank1Addr0);
-    rank1->AddConnInterface(rank1iface0);
+    rank1->AddConnInterface(0, rank1iface0);
     char rank1Address1[] = "1.0.0.1";  // 打桩用sendIP地址
     IpAddress rank1Addr1(rank1Address1);
     auto rank1iface1 = InitConnInterface(rank1Addr1);
-    rank1->AddConnInterface(rank1iface1);
+    rank1->AddConnInterface(1, rank1iface1);
     rank1->AddNetInstance(fabGroup0);
     rank1->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(1);
@@ -1804,11 +1804,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank2Address0[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr0(rank2Address0);
     auto rank2iface0 = InitConnInterface(rank2Addr0);
-    rank2->AddConnInterface(rank2iface0);
+    rank2->AddConnInterface(0, rank2iface0);
     char rank2Address1[] = "2.0.0.1";  // 打桩用sendIP地址
     IpAddress rank2Addr1(rank2Address1);
     auto rank2iface1 = InitConnInterface(rank2Addr1);
-    rank2->AddConnInterface(rank2iface1);
+    rank2->AddConnInterface(1, rank2iface1);
     rank2->AddNetInstance(fabGroup0);
     rank2->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(2);
@@ -1822,11 +1822,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank3Address0[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr0(rank3Address0);
     auto rank3iface0 = InitConnInterface(rank3Addr0);
-    rank3->AddConnInterface(rank3iface0);
+    rank3->AddConnInterface(0, rank3iface0);
     char rank3Address1[] = "3.0.0.1";  // 打桩用sendIP地址
     IpAddress rank3Addr1(rank3Address1);
     auto rank3iface1 = InitConnInterface(rank3Addr1);
-    rank3->AddConnInterface(rank3iface1);
+    rank3->AddConnInterface(1, rank3iface1);
     rank3->AddNetInstance(fabGroup0);
     rank3->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(3);
@@ -1840,11 +1840,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank4Address0[] = "4.0.0.0";  // 打桩用sendIP地址
     IpAddress rank4Addr0(rank4Address0);
     auto rank4iface0 = InitConnInterface(rank4Addr0);
-    rank4->AddConnInterface(rank4iface0);
+    rank4->AddConnInterface(0, rank4iface0);
     char rank4Address1[] = "4.0.0.1";  // 打桩用sendIP地址
     IpAddress rank4Addr1(rank4Address1);
     auto rank4iface1 = InitConnInterface(rank4Addr1);
-    rank4->AddConnInterface(rank4iface1);
+    rank4->AddConnInterface(1, rank4iface1);
     rank4->AddNetInstance(fabGroup0);
     rank4->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(4);
@@ -1858,11 +1858,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank5Address0[] = "5.0.0.0";  // 打桩用sendIP地址
     IpAddress rank5Addr0(rank5Address0);
     auto rank5iface0 = InitConnInterface(rank5Addr0);
-    rank5->AddConnInterface(rank5iface0);
+    rank5->AddConnInterface(0, rank5iface0);
     char rank5Address1[] = "5.0.0.1";  // 打桩用sendIP地址
     IpAddress rank5Addr1(rank5Address1);
     auto rank5iface1 = InitConnInterface(rank5Addr1);
-    rank5->AddConnInterface(rank5iface1);
+    rank5->AddConnInterface(1, rank5iface1);
     rank5->AddNetInstance(fabGroup0);
     rank5->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(5);
@@ -1876,11 +1876,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank6Address0[] = "6.0.0.0";  // 打桩用sendIP地址
     IpAddress rank6Addr0(rank6Address0);
     auto rank6iface0 = InitConnInterface(rank6Addr0);
-    rank6->AddConnInterface(rank6iface0);
+    rank6->AddConnInterface(0, rank6iface0);
     char rank6Address1[] = "6.0.0.1";  // 打桩用sendIP地址
     IpAddress rank6Addr1(rank6Address1);
     auto rank6iface1 = InitConnInterface(rank6Addr1);
-    rank6->AddConnInterface(rank6iface1);
+    rank6->AddConnInterface(1, rank6iface1);
     rank6->AddNetInstance(fabGroup0);
     rank6->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(6);
@@ -1894,11 +1894,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank7Address0[] = "7.0.0.0";  // 打桩用sendIP地址
     IpAddress rank7Addr0(rank7Address0);
     auto rank7iface0 = InitConnInterface(rank7Addr0);
-    rank7->AddConnInterface(rank7iface0);
+    rank7->AddConnInterface(0, rank7iface0);
     char rank7Address1[] = "7.0.0.1";  // 打桩用sendIP地址
     IpAddress rank7Addr1(rank7Address1);
     auto rank7iface1 = InitConnInterface(rank7Addr1);
-    rank7->AddConnInterface(rank7iface1);
+    rank7->AddConnInterface(1, rank7iface1);
     rank7->AddNetInstance(fabGroup0);
     rank7->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(7);
@@ -1912,11 +1912,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank8Address0[] = "8.0.0.0";  // 打桩用sendIP地址
     IpAddress rank8Addr0(rank8Address0);
     auto rank8iface0 = InitConnInterface(rank8Addr0);
-    rank8->AddConnInterface(rank8iface0);
+    rank8->AddConnInterface(0, rank8iface0);
     char rank8Address1[] = "8.0.0.1";  // 打桩用sendIP地址
     IpAddress rank8Addr1(rank8Address1);
     auto rank8iface1 = InitConnInterface(rank8Addr1);
-    rank8->AddConnInterface(rank8iface1);
+    rank8->AddConnInterface(1, rank8iface1);
     rank8->AddNetInstance(fabGroup1);
     rank8->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(8);
@@ -1930,11 +1930,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank9Address0[] = "9.0.0.0";  // 打桩用sendIP地址
     IpAddress rank9Addr0(rank9Address0);
     auto rank9iface0 = InitConnInterface(rank9Addr0);
-    rank9->AddConnInterface(rank9iface0);
+    rank9->AddConnInterface(0, rank9iface0);
     char rank9Address1[] = "9.0.0.1";  // 打桩用sendIP地址
     IpAddress rank9Addr1(rank9Address1);
     auto rank9iface1 = InitConnInterface(rank9Addr1);
-    rank9->AddConnInterface(rank9iface1);
+    rank9->AddConnInterface(1, rank9iface1);
     rank9->AddNetInstance(fabGroup1);
     rank9->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(9);
@@ -1948,11 +1948,11 @@ void VirtualTopoStub::TopoInit91095TwoPodFourTwoAndThree(const string &rankTable
     char rank10Address0[] = "10.0.0.0";  // 打桩用sendIP地址
     IpAddress rank10Addr0(rank10Address0);
     auto rank10iface0 = InitConnInterface(rank10Addr0);
-    rank10->AddConnInterface(rank10iface0);
+    rank10->AddConnInterface(0, rank10iface0);
     char rank10Address1[] = "10.0.0.1";  // 打桩用sendIP地址
     IpAddress rank10Addr1(rank10Address1);
     auto rank10iface1 = InitConnInterface(rank10Addr1);
-    rank10->AddConnInterface(rank10iface1);
+    rank10->AddConnInterface(1, rank10iface1);
     rank10->AddNetInstance(fabGroup1);
     rank10->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(10);
@@ -2084,14 +2084,14 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char fabricAddress0[] = "10.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr0(fabricAddress0);
     auto ifaceNode0 = InitConnInterface(fabricAddr0);
-    fabric0->AddConnInterface(ifaceNode0);
+    fabric0->AddConnInterface(0, ifaceNode0);
     // 初始化fabric1信息
     auto fabric1 = InitFabric(1);
     fabGroupLevel1->AddNode(fabric1);
     char fabricAddress1[] = "11.0.0.0";  // 打桩用sendIP地址
     IpAddress fabricAddr1(fabricAddress1);
     auto ifaceNode1 = InitConnInterface(fabricAddr1);
-    fabric1->AddConnInterface(ifaceNode1);
+    fabric1->AddConnInterface(1, ifaceNode1);
 
 
     // 初始化rank0信息
@@ -2102,11 +2102,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank0Address0[] = "0.0.0.0";  // 打桩用sendIP地址
     IpAddress rank0Addr0(rank0Address0);
     auto rank0iface0 = InitConnInterface(rank0Addr0);
-    rank0->AddConnInterface(rank0iface0);
+    rank0->AddConnInterface(0, rank0iface0);
     char rank0Address1[] = "0.0.0.1";  // 打桩用sendIP地址
     IpAddress rank0Addr1(rank0Address1);
     auto rank0iface1 = InitConnInterface(rank0Addr1);
-    rank0->AddConnInterface(rank0iface1);
+    rank0->AddConnInterface(1, rank0iface1);
     rank0->AddNetInstance(fabGroup0);
     rank0->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(0);
@@ -2120,11 +2120,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank1Address0[] = "1.0.0.0";  // 打桩用sendIP地址
     IpAddress rank1Addr0(rank1Address0);
     auto rank1iface0 = InitConnInterface(rank1Addr0);
-    rank1->AddConnInterface(rank1iface0);
+    rank1->AddConnInterface(0, rank1iface0);
     char rank1Address1[] = "1.0.0.1";  // 打桩用sendIP地址
     IpAddress rank1Addr1(rank1Address1);
     auto rank1iface1 = InitConnInterface(rank1Addr1);
-    rank1->AddConnInterface(rank1iface1);
+    rank1->AddConnInterface(1, rank1iface1);
     rank1->AddNetInstance(fabGroup0);
     rank1->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(1);
@@ -2138,11 +2138,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank2Address0[] = "2.0.0.0";  // 打桩用sendIP地址
     IpAddress rank2Addr0(rank2Address0);
     auto rank2iface0 = InitConnInterface(rank2Addr0);
-    rank2->AddConnInterface(rank2iface0);
+    rank2->AddConnInterface(0, rank2iface0);
     char rank2Address1[] = "2.0.0.1";  // 打桩用sendIP地址
     IpAddress rank2Addr1(rank2Address1);
     auto rank2iface1 = InitConnInterface(rank2Addr1);
-    rank2->AddConnInterface(rank2iface1);
+    rank2->AddConnInterface(1, rank2iface1);
     rank2->AddNetInstance(fabGroup0);
     rank2->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(2);
@@ -2156,11 +2156,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank3Address0[] = "3.0.0.0";  // 打桩用sendIP地址
     IpAddress rank3Addr0(rank3Address0);
     auto rank3iface0 = InitConnInterface(rank3Addr0);
-    rank3->AddConnInterface(rank3iface0);
+    rank3->AddConnInterface(0, rank3iface0);
     char rank3Address1[] = "3.0.0.1";  // 打桩用sendIP地址
     IpAddress rank3Addr1(rank3Address1);
     auto rank3iface1 = InitConnInterface(rank3Addr1);
-    rank3->AddConnInterface(rank3iface1);
+    rank3->AddConnInterface(1, rank3iface1);
     rank3->AddNetInstance(fabGroup0);
     rank3->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(3);
@@ -2174,11 +2174,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank4Address0[] = "4.0.0.0";  // 打桩用sendIP地址
     IpAddress rank4Addr0(rank4Address0);
     auto rank4iface0 = InitConnInterface(rank4Addr0);
-    rank4->AddConnInterface(rank4iface0);
+    rank4->AddConnInterface(0, rank4iface0);
     char rank4Address1[] = "4.0.0.1";  // 打桩用sendIP地址
     IpAddress rank4Addr1(rank4Address1);
     auto rank4iface1 = InitConnInterface(rank4Addr1);
-    rank4->AddConnInterface(rank4iface1);
+    rank4->AddConnInterface(1, rank4iface1);
     rank4->AddNetInstance(fabGroup0);
     rank4->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(4);
@@ -2192,11 +2192,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank5Address0[] = "5.0.0.0";  // 打桩用sendIP地址
     IpAddress rank5Addr0(rank5Address0);
     auto rank5iface0 = InitConnInterface(rank5Addr0);
-    rank5->AddConnInterface(rank5iface0);
+    rank5->AddConnInterface(0, rank5iface0);
     char rank5Address1[] = "5.0.0.1";  // 打桩用sendIP地址
     IpAddress rank5Addr1(rank5Address1);
     auto rank5iface1 = InitConnInterface(rank5Addr1);
-    rank5->AddConnInterface(rank5iface1);
+    rank5->AddConnInterface(1, rank5iface1);
     rank5->AddNetInstance(fabGroup0);
     rank5->AddNetInstance(fabGroupLevel1);
     fabGroup0->AddRankId(5);
@@ -2211,11 +2211,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank6Address0[] = "6.0.0.0";  // 打桩用sendIP地址
     IpAddress rank6Addr0(rank6Address0);
     auto rank6iface0 = InitConnInterface(rank6Addr0);
-    rank6->AddConnInterface(rank6iface0);
+    rank6->AddConnInterface(0, rank6iface0);
     char rank6Address1[] = "6.0.0.1";  // 打桩用sendIP地址
     IpAddress rank6Addr1(rank6Address1);
     auto rank6iface1 = InitConnInterface(rank6Addr1);
-    rank6->AddConnInterface(rank6iface1);
+    rank6->AddConnInterface(1, rank6iface1);
     rank6->AddNetInstance(fabGroup1);
     rank6->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(6);
@@ -2229,11 +2229,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank7Address0[] = "7.0.0.0";  // 打桩用sendIP地址
     IpAddress rank7Addr0(rank7Address0);
     auto rank7iface0 = InitConnInterface(rank7Addr0);
-    rank7->AddConnInterface(rank7iface0);
+    rank7->AddConnInterface(0, rank7iface0);
     char rank7Address1[] = "7.0.0.1";  // 打桩用sendIP地址
     IpAddress rank7Addr1(rank7Address1);
     auto rank7iface1 = InitConnInterface(rank7Addr1);
-    rank7->AddConnInterface(rank7iface1);
+    rank7->AddConnInterface(1, rank7iface1);
     rank7->AddNetInstance(fabGroup1);
     rank7->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(7);
@@ -2247,11 +2247,11 @@ void VirtualTopoStub::TopoInit91095TwoPodThreeTwoAndThree(const string &rankTabl
     char rank8Address0[] = "8.0.0.0";  // 打桩用sendIP地址
     IpAddress rank8Addr0(rank8Address0);
     auto rank8iface0 = InitConnInterface(rank8Addr0);
-    rank8->AddConnInterface(rank8iface0);
+    rank8->AddConnInterface(0, rank8iface0);
     char rank8Address1[] = "8.0.0.1";  // 打桩用sendIP地址
     IpAddress rank8Addr1(rank8Address1);
     auto rank8iface1 = InitConnInterface(rank8Addr1);
-    rank8->AddConnInterface(rank8iface1);
+    rank8->AddConnInterface(1, rank8iface1);
     rank8->AddNetInstance(fabGroup1);
     rank8->AddNetInstance(fabGroupLevel1);
     fabGroup1->AddRankId(8);

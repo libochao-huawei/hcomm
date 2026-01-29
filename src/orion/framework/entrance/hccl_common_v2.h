@@ -24,6 +24,7 @@ constexpr u32 ROOTINFO_INDENTIFIER_MAX_LENGTH = 128;
 constexpr char HCCL_WORLD_GROUP[] = "hccl_world_group";
 constexpr u32 GROUP_NAME_MAX_LEN = 127; // 最大的group name 长度
 constexpr u32 RANKTABLE_MAX_SIZE = 1024 * 1024 * 1024; // rankTable max size 1G
+constexpr u32 TAG_MAX_LENGTH = 256;
 
 using HcclUs = std::chrono::steady_clock::time_point;
 constexpr uint32_t HCCL_ALG_MESH = 0b1U;

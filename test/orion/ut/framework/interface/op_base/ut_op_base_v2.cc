@@ -2255,3 +2255,83 @@ TEST_F(OpbaseTestV2, Ut_HcclGetHeterogModeV2_When_Normal_Expect_ReturnIsHCCL_SUC
     EXPECT_EQ(ret, HCCL_SUCCESS);
     EXPECT_EQ(mode, HcclHeterogMode::HCCL_HETEROG_MODE_HOMOGENEOUS);
 }
+
+TEST_F(OpbaseTestV2, Ut_HcclRankGraphGetEndpointNumV2_When_Valid_Expect_ReturnHCCL_SUCCESS)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+
+    uint32_t num = 0;
+    uint32_t layer = 0;
+    uint32_t topoInstId = 0;
+    MOCKER_CPP(&CommunicatorImpl::GetEndpointNum).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HcclRankGraphGetEndpointNumV2(comm, layer, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclRankGraphGetEndpointNumV2_When_InValid_Expect_ReturnHCCL_E_NOT_FOUND)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+
+    uint32_t num = 0;
+    uint32_t layer = 0;
+    uint32_t topoInstId = 0;
+    MOCKER_CPP(&CommunicatorImpl::GetEndpointNum).stubs().with(any(), any()).will(returnValue(HCCL_E_NOT_FOUND));
+    HcclResult ret = HcclRankGraphGetEndpointNumV2(comm, layer, topoInstId, &num);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclRankGraphGetEndpointDescV2_When_Valid_Expect_ReturnHCCL_SUCCESS)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+
+    uint32_t descNum = 1;
+    uint32_t layer = 0;
+    uint32_t topoInstId = 0;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    MOCKER_CPP(&CommunicatorImpl::GetEndpointDesc).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HcclRankGraphGetEndpointDescV2(comm, layer, topoInstId, &descNum, endPointDesc);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    delete[] endPointDesc;
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclRankGraphGetEndpointDescV2_When_InValid_Expect_ReturnHCCL_E_NOT_FOUND)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+
+    uint32_t descNum = 1;
+    uint32_t layer = 0;
+    uint32_t topoInstId = 0;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    MOCKER_CPP(&CommunicatorImpl::GetEndpointDesc).stubs().with(any(), any()).will(returnValue(HCCL_E_NOT_FOUND));
+    HcclResult ret = HcclRankGraphGetEndpointDescV2(comm, layer, topoInstId, &descNum, endPointDesc);
+    EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    delete[] endPointDesc;
+}
+
+TEST_F(OpbaseTestV2, Ut_HcclRankGraphGetEndpointInfoV2_When_Valid_Expect_ReturnHCCL_SUCCESS)
+{
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+
+    uint32_t descNum = 1;
+    uint32_t layer = 0;
+    uint32_t topoInstId = 0;
+    EndpointDesc* endPointDesc = new EndpointDesc[descNum];
+    MOCKER_CPP(&CommunicatorImpl::GetEndpointDesc).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HcclRankGraphGetEndpointDescV2(comm, layer, topoInstId, &descNum, endPointDesc);
+    MOCKER_CPP(&CommunicatorImpl::GetEndpointInfo).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    uint32_t infoLen = sizeof(EndpointAttrBwCoeff);
+    EndpointAttrBwCoeff bwCoeff{};
+    ret = HcclRankGraphGetEndpointInfoV2(comm, 0, endPointDesc, ENDPOINT_ATTR_BW_COEFF, infoLen, &bwCoeff);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    delete[] endPointDesc;
+}

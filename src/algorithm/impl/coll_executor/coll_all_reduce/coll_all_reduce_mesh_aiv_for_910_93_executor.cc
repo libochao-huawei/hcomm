@@ -85,29 +85,29 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalcScratchMemSize(u64& scratch
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllReduceMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollAllReduceMeshAivFor91093Executor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
     // Step1. Calculate the best block dimension
-    u32 bestBlockDim = (rankSize < MAX_BLOCK_DIM ? rankSize : MAX_BLOCK_DIM);
-    u32 minBlockDim = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, BLOCK_DIM_FACTOR_TWO);
+    u32 bestNumBlocks = (rankSize < MAX_NUM_BLOCKS ? rankSize : MAX_NUM_BLOCKS);
+    u32 minNumBlocks = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, NUM_BLOCKS_FACTOR_TWO);
 
-    // Step2. Compare User Given blockDim_ with bestBlockDim
-    blockDim = bestBlockDim;
-    if (blockDim_ < blockDim) {
-        if (blockDim_ > rankSize) {
-            blockDim = blockDim_ / rankSize * rankSize;
+    // Step2. Compare User Given numBlocks_ with bestNumBlocks
+    numBlocks = bestNumBlocks;
+    if (numBlocks_ < numBlocks) {
+        if (numBlocks_ > rankSize) {
+            numBlocks = numBlocks_ / rankSize * rankSize;
         } else {
-            blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
+            numBlocks = numBlocks_ / NUM_BLOCKS_FACTOR_TWO * NUM_BLOCKS_FACTOR_TWO;
         }
     }
 
-    CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
-        blockDim_, minBlockDim),
+    CHK_PRT_RET(numBlocks < minNumBlocks,
+        HCCL_ERROR("[CollAllReduceMeshAivFor91093Executor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, minNumBlocks),
         HCCL_E_PARA);
 
-    HCCL_INFO("[CollAllReduceMeshAivFor91093Executor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollAllReduceMeshAivFor91093Executor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -245,14 +245,14 @@ HcclResult CollAllReduceMeshAivFor91093Executor::KernelRun(const OpParam &param,
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType, algoAttr_.identifier};
 
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, opArgs.count * SIZE_TABLE[opArgs.dataType]) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, localRankSize, opArgs.count * SIZE_TABLE[opArgs.dataType]) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
 
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();

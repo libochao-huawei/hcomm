@@ -73,29 +73,29 @@ HcclResult CollAlgOperator::GetAivExecParam(std::string& algName, const OpParam&
     return executor_->GetAivExecParam(param, algRes, args);
 }
 
-HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& param, u32 &blockDim, int32_t aivCoreLimit)
+HcclResult CollAlgOperator::CalNumBlocks(std::string& algName, const OpParam& param, u32 &numBlocks, int32_t aivCoreLimit)
 {
     if (executor_.get() == nullptr) {
         executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor_.get() == nullptr,
-            HCCL_ERROR("[CollAlgOperator][CalBlockDim]Fail to find executor for algName[%s]", algName.c_str()),
+            HCCL_ERROR("[CollAlgOperator][CalNumBlocks]Fail to find executor for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
         CHK_RET(SetExecutorAttr(param));
     }
 
     if (aivCoreLimit != 0) {
-        CHK_RET(executor_->SetBlockDim(aivCoreLimit));
+        CHK_RET(executor_->SetNumBlocks(aivCoreLimit));
     }
 
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-        return executor_->CalBlockDim(blockDim, userRankSize_,
+        return executor_->CalNumBlocks(numBlocks, userRankSize_,
             param.All2AllDataDes.sendCount * SIZE_TABLE[param.All2AllDataDes.sendType], param.opType);
     } else if (param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE || param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER
         || param.opType == HcclCMDType::HCCL_CMD_ALLGATHER || param.opType == HcclCMDType::HCCL_CMD_BROADCAST) {
-        return executor_->CalBlockDim(blockDim, userRankSize_,
+        return executor_->CalNumBlocks(numBlocks, userRankSize_,
             param.DataDes.count * SIZE_TABLE[param.DataDes.dataType], param.opType);
     } else {
-        return executor_->CalBlockDim(blockDim, userRankSize_);
+        return executor_->CalNumBlocks(numBlocks, userRankSize_);
     }
     return HCCL_SUCCESS;
 }
@@ -182,7 +182,7 @@ HcclResult CollAlgOperator::SelectAlgFor91093WithCoreLimit(const OpParam &param,
         CHK_RET(SetExecutorAttr(param));
     }
 
-    CHK_RET(SetBlockDim(limit.aivCoreLimit));
+    CHK_RET(SetNumBlocks(limit.aivCoreLimit));
 
     std::string reSelName;
     switch (param.opType) {
@@ -204,11 +204,11 @@ HcclResult CollAlgOperator::SelectAlgFor91093WithCoreLimit(const OpParam &param,
             break;
     }
 
-    u32 blockDim;
-    HcclResult ret = CalBlockDim(algName, param, blockDim);
+    u32 numBlocks;
+    HcclResult ret = CalNumBlocks(algName, param, numBlocks);
     if (ret != HCCL_SUCCESS) {
         CHK_PRT_RET(reSelName.empty() || reSelName == algName,
-            HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to check CalBlockDim for algName[%s]", algName.c_str()),
+            HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to check CalNumBlocks for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
 
         algName = reSelName;
@@ -844,14 +844,14 @@ bool CollAlgOperator::SupportRetryWithInplaceCheck(
     return true;
 }
 
-HcclResult CollAlgOperator::GetBlockDim(u32& blockDim){
+HcclResult CollAlgOperator::GetNumBlocks(u32& numBlocks){
     CHK_SMART_PTR_NULL(executor_);
-    return executor_->GetBlockDim(blockDim);
+    return executor_->GetNumBlocks(numBlocks);
 }
 
-HcclResult CollAlgOperator::SetBlockDim(const u32& blockDim){
+HcclResult CollAlgOperator::SetNumBlocks(const u32& numBlocks){
     CHK_SMART_PTR_NULL(executor_);
-    return executor_->SetBlockDim(blockDim);
+    return executor_->SetNumBlocks(numBlocks);
 }
     
 HcclResult CollAlgOperator::GetCache(HcclCacheInfo& cacheInfo){

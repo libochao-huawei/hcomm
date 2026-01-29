@@ -339,7 +339,7 @@ template <typename T> bool SegmentDsl<T>::DoNoAtomicTiling()
     block_factor = CeilDiv(num_segment, segment_compile_info->core_num);
 
     block_factor = block_factor > 0 ? block_factor : 1;
-    block_dims = (num_segment + block_factor - 1) / block_factor;
+    num_blocks = (num_segment + block_factor - 1) / block_factor;
 
     if (!is_support_no_atomic_sch()) {
         HCCL_ERROR("no atomic is_support_no_atomic_sch is false");
@@ -349,12 +349,12 @@ template <typename T> bool SegmentDsl<T>::DoNoAtomicTiling()
         HCCL_DEBUG("begin NO_ATOMIC_CORE_X_SCH");
         block_factor = CeilDiv(var_shape[1], segment_compile_info->core_num);
         block_factor = block_factor > 0 ? block_factor : 1;
-        block_dims = (var_shape[1] + block_factor - 1) / block_factor;
+        num_blocks = (var_shape[1] + block_factor - 1) / block_factor;
     }
     segment_rows_align_core_x = (block_factor + var_align_factor - 1) / var_align_factor * var_align_factor;
     HCCL_DEBUG("DoNoAtomicTiling,, block_factor:%lld, "
-        "block_dims:%lld",
-        block_factor, block_dims);
+        "num_blocks:%lld",
+        block_factor, num_blocks);
     id_num_ub = segment_compile_info->tensor_sizes.at(cur_sch)[1];
     var_num_ub = segment_compile_info->tensor_sizes.at(cur_sch)[0];
     cache_num_ub = segment_compile_info->tensor_sizes.at(cur_sch)[TWO];
@@ -433,7 +433,7 @@ template <typename T> void SegmentDsl<T>::EnsureBlockUBTiling()
 
 template <typename T> void SegmentDsl<T>::SafeTiling()
 {
-    block_dims = 1;
+    num_blocks = 1;
     ub_norm_axis = DUMMY_DIM;
     ub_norm_factor = DUMMY_DIM;
     block_factor = num_segment;
@@ -639,10 +639,10 @@ template <typename T> bool SegmentDsl<T>::CalcKey()
 
 template <typename T> bool SegmentDsl<T>::WriteTilingData()
 {
-    HCCL_DEBUG("tiling key:%lld block_dims:%lld block_axis:%lld block_factor:%lld ub_norm_axis:%lld"
+    HCCL_DEBUG("tiling key:%lld num_blocks:%lld block_axis:%lld block_factor:%lld ub_norm_axis:%lld"
         "ub_norm_factor:%lld ub_reduce_axis:%lld ub_reduce_factor:%lld segment_cache_num:%lld,"
         "segment_cache_start:%lld, segment_last_dim is %lld",
-        key, block_dims, block_axis, block_factor, ub_norm_axis, ub_norm_factor, ub_reduce_axis, ub_reduce_factor,
+        key, num_blocks, block_axis, block_factor, ub_norm_axis, ub_norm_factor, ub_reduce_axis, ub_reduce_factor,
         segment_cache_num, segment_cache_start, segment_last_dim);
     if (segment_compile_info->is_static) {
         context->Append(static_cast<uint64_t>(key));
@@ -659,7 +659,7 @@ template <typename T> bool SegmentDsl<T>::WriteTilingData()
         return true;
     }
 
-    context->SetBlockDim(static_cast<uint64_t>(block_dims));
+    context->SetNumBlocks(static_cast<uint64_t>(num_blocks));
     context->SetTilingKey(static_cast<uint64_t>(key));
 
     int64_t cur_key = key;
@@ -727,7 +727,7 @@ template <typename T> bool SegmentDsl<T>::IsAtomicTiling()
     block_factor = CeilDiv(id_shape[block_axis], segment_compile_info->core_num);
     block_factor = block_factor > 0 ? block_factor : 1;
 
-    block_dims = (id_shape[block_axis] + block_factor - 1) / block_factor;
+    num_blocks = (id_shape[block_axis] + block_factor - 1) / block_factor;
     if (!is_support_sch()) {
         HCCL_ERROR("is_support_sch is false");
         return false;
@@ -756,8 +756,8 @@ template <typename T> bool SegmentDsl<T>::DoTiling()
     if (is_zero) {
         HCCL_DEBUG(" tiling key is base key");
         key = BASE_KEY;
-        block_dims = 1;
-        context->SetBlockDim(static_cast<uint64_t>(block_dims));
+        num_blocks = 1;
+        context->SetNumBlocks(static_cast<uint64_t>(num_blocks));
         context->SetTilingKey(static_cast<uint64_t>(key));
         return true;
     }
@@ -769,7 +769,7 @@ template <typename T> bool SegmentDsl<T>::DoTiling()
         tiling_ret = DoNoAtomicTiling();
     }
 
-    if (block_dims != 1) {
+    if (num_blocks != 1) {
         EnsureBlockUBTiling();
     }
 

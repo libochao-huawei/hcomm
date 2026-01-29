@@ -478,12 +478,15 @@ TEST_F(TaskExceptionHandlerTest, test_get_rank_id_by_channel_id)
     // Mock CommunicatorImpl
     CommunicatorImpl communicator{};
     taskInfo->dfxOpInfo_->comm_ = &communicator;
+    communicator.collServices[AcceleratorState::CCU_SCHED] = nullptr;
     EXPECT_EQ(TaskExceptionHandler::GetRankIdByChannelId(1, *taskInfo), INVALID_RANKID);    // Failed to get collService
 
     // Mock collService
     auto dieChannelId = make_pair(taskInfo->taskParam_.taskPara.Ccu.dieId, 1);
     communicator.collService = new CollServiceDeviceMode(&communicator);
-    (static_cast<CollServiceDeviceMode*>(communicator.GetCollService()))->
+    communicator.collServices[AcceleratorState::CCU_SCHED] = std::make_shared<CollServiceDeviceMode>(&communicator);
+    MOCKER(HrtGetDevice).stubs().will(returnValue(0));
+    (static_cast<CollServiceDeviceMode*>(communicator.GetCcuCollService()))->
         GetCcuInsPreprocessor()->GetCcuComm()->GetCcuJettyMgr()->channelRemoteRankIdMap_.emplace(dieChannelId, 100);
     EXPECT_EQ(TaskExceptionHandler::GetRankIdByChannelId(1, *taskInfo), 100);
     delete communicator.collService;
@@ -714,12 +717,13 @@ TEST_F(TaskExceptionHandlerTest, test_GetMC2AlgTaskParam)
 
     // Mock CommunicatorImpl
     CommunicatorImpl communicator{};
+    communicator.collServices[AcceleratorState::CCU_SCHED] = std::make_shared<CollServiceDeviceMode>(&communicator);
     taskInfo->dfxOpInfo_->comm_ = &communicator;
     EXPECT_EQ(TaskExceptionHandler::GetMC2AlgTaskParam(*taskInfo).size(), 0);    // failed
 
     // Mock collService
     communicator.collService = new CollServiceDeviceMode(&communicator);
-    auto* collServiceCcu = static_cast<CollServiceDeviceMode*>(communicator.GetCollService());
+    auto* collServiceCcu = static_cast<CollServiceDeviceMode*>(communicator.GetCcuCollService());
     collServiceCcu->mc2Compont.ccuServerMap[10] = {1};
     CcuTaskParam ccuTaskParam{};
     std::vector<std::vector<CcuTaskParam>> ccuTaskParams{};

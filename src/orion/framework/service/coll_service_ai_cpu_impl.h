@@ -23,6 +23,7 @@
 #include "task_param.h"
 #include "ins_queue.h"
 #include "coll_alg_params.h"
+#include "task_exception_handler.h"
 
 namespace Hccl {
 

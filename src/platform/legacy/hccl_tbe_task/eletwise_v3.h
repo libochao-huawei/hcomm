@@ -35,7 +35,7 @@ struct ElewiseCompileInfo {
     int64_t max_available_ub { -1 };
     int64_t max_available_ub_db { -1 };
     // const_core_dims
-    int64_t const_block_dims { -1 };
+    int64_t const_num_blockss { -1 };
     // elewise_vars_size
     uint32_t elewise_vars_size { 0 };
     // tiling info from broadcast
@@ -78,7 +78,7 @@ private:
     bool need_multi_core { true };
     bool need_double_buffer { false };
     uint64_t tiling_key { 1 };
-    int64_t block_dims { 1 };
+    int64_t num_blocks { 1 };
     int64_t ub_factor { 1 };
     int64_t block_factor { 1 };
     int64_t out_shape { 1 };

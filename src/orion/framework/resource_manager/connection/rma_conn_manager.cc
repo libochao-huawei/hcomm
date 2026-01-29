@@ -37,7 +37,7 @@ RmaConnManager::~RmaConnManager()
 }
 
 unique_ptr<RmaConnection> RmaConnManager::CreateRdmaConn(Socket *socket, const std::string &tag,
-                                                         const LinkData &linkData) const
+                                                         const LinkData &linkData, const HrtUbJfcMode jfcMode) const
 {
     CHECK_NULLPTR(socket, "[RmaConnManager::CreateRdmaConn] socket is nullptr!");
     RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
@@ -65,7 +65,7 @@ unique_ptr<RmaConnection> RmaConnManager::CreateRdmaConn(Socket *socket, const s
 }
 
 unique_ptr<RmaConnection> RmaConnManager::CreateUbConn(Socket *socket, const std::string &tag,
-                                                       const LinkData &linkData) const
+                                                       const LinkData &linkData, const HrtUbJfcMode jfcMode) const
 {
     RdmaHandle rdmaHandle = RdmaHandleManager::GetInstance().Get(comm->GetDevicePhyId(), linkData.GetLocalPort());
     OpMode opMode = comm->GetCurrentCollOperator()->opMode;

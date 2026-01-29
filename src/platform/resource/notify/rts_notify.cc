@@ -156,6 +156,7 @@ HcclResult RtsNotify::Alloc()
 
     if (notifyType == NotifyType::RUNTIME_NOTIFY) {
         CHK_RET(hrtNotifyCreate(deviceId, &notifyPtr));
+        CHK_RET(hrtGetNotifyID(notifyPtr, &id));
     } else {
         CHK_RET(hrtNotifyCreateWithFlag(deviceId, &notifyPtr));
     }
@@ -182,7 +183,16 @@ HcclResult RtsNotify::Destroy()
 HcclResult RtsNotify::UpdateNotifyInfo()
 {
     CHK_RET(hrtGetNotifyID(notifyPtr, &id));
-
+        
+    DevType devType_ = DevType::DEV_TYPE_COUNT;
+    CHK_RET(hrtGetDeviceType(devType_));
+    if (devType_ == DevType::DEV_TYPE_910_95) {
+        s32 deviceLogicId;
+        CHK_RET(hrtGetDevice(&deviceLogicId));
+        CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devId));
+        return HCCL_SUCCESS;
+    }
+    
     CHK_RET(hrtNotifyGetPhyInfo(notifyPtr, &devId, &tsId));
 
     rtNotifyPhyInfo notifyInfo;

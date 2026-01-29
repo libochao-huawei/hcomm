@@ -30,6 +30,7 @@ using namespace aicpu;
 int32_t  ableNum = 0;
 class ProfilingHandlerLiteTest : public testing::Test {
 protected:
+    ProfilingHandlerLiteTest(): comm(0) {}
     static void SetUpTestCase()
     {
         std::cout << "ProfilingHandlerLiteTest SetUP" << std::endl;
@@ -51,15 +52,18 @@ protected:
         std::cout << "A Test case in ProfilingHandlerLiteTest TearDown" << std::endl;
     }
     
+    CommunicatorImplLite comm;
 };
 
-extern "C"
-{
+namespace aicpu {
     status_t GetTaskAndStreamId(uint64_t & taskId, uint32_t & streamId)
     {
         return status_t::AICPU_ERROR_NONE;
     }
+}
 
+extern "C"
+{
     int32_t AdprofReportAdditionalInfo(uint32_t agingFlag, const void *data, uint32_t length)
     {
         if (ableNum == 0) {
@@ -102,11 +106,11 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo_test)
     dfxOpInfo->index_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
-    dfxOpInfo->comm_ = nullptr;
+    dfxOpInfo->comm_ = &comm;
     mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
     ableNum = 0;
     handler.enableHcclL0_ = true;
-    handler.ReportHcclOpInfo(*dfxOpInfo);
+    EXPECT_NO_THROW(handler.ReportHcclOpInfo(*dfxOpInfo));
 }
 
 // 全局状态为false：测试ReportHcclOpInfo接口
@@ -124,11 +128,11 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo1_test)
     dfxOpInfo->index_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
-    dfxOpInfo->comm_ = nullptr;
+    dfxOpInfo->comm_ = &comm;
     mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
     ableNum = 1;
     handler.enableHcclL0_ = true;
-    handler.ReportHcclOpInfo(*dfxOpInfo);
+    EXPECT_THROW(handler.ReportHcclOpInfo(*dfxOpInfo), InternalException);
 }
 
 TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo2_test)
@@ -145,11 +149,11 @@ TEST_F(ProfilingHandlerLiteTest, ReportHcclOpInfo2_test)
     dfxOpInfo->index_ = 0;
     dfxOpInfo->beginTime_ = 0;
     dfxOpInfo->endTime_ = 1;
-    dfxOpInfo->comm_ = nullptr;
+    dfxOpInfo->comm_ = &comm;
     mirrorTaskManager.SetCurrDfxOpInfo(dfxOpInfo);
     ableNum = 2;
     handler.enableHcclL0_ = true;
-    handler.ReportHcclOpInfo(*dfxOpInfo);
+    EXPECT_NO_THROW(handler.ReportHcclOpInfo(*dfxOpInfo));
 }
 
 // 测试ReportMainStreamTask接口

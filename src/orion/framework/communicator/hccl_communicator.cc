@@ -135,13 +135,11 @@ HcclResult HcclCommunicator::GetRankSize(uint32_t *rankSize)
 
 HcclResult HcclCommunicator::HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType)
 {
-    printf("HcclGetCclBuffer5555\n");
     auto commImpl = GetCommImpl();
     if (commImpl == nullptr) {
         HCCL_ERROR("[GetFoldParamsFromOrionToHcomm] commImpl is null");
         return HCCL_E_PTR;
     }
-    printf("HcclGetCclBuffer666\n");
     shared_ptr<DevBuffer> hcclBuffer = commImpl->GetCclBuffer();
     CHK_PTR_NULL(hcclBuffer);
     cclBufferAddr = hcclBuffer->GetAddr();
@@ -431,11 +429,6 @@ HcclResult HcclCommunicator::GetKFCWorkSpace(const char *memTag, uint64_t *size,
     }
     return HcclResult::HCCL_SUCCESS;
 }
-// Dpu Kernel Launch
-HcclResult HcclCommunicator::LaunchDpuKernel()
-{
-    return pimpl->InitAndLaunchDpuKernel();
-}
 
 HcclResult HcclCommunicator::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum)
 {
@@ -510,6 +503,16 @@ HcclResult HcclCommunicator::GetEndpointInfo(uint32_t rankId, const EndpointDesc
                                      uint32_t infoLen, void* info)
 {
     return pimpl->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
+}
+
+HcclResult HcclCommunicator::GetDbAddr(uint64_t *dbAddr, uint64_t *sqVa)
+{
+    return pimpl->GetDbAddr(dbAddr, sqVa);
+}
+
+HcclResult HcclCommunicator::GetDbAddr(uint64_t *dbAddr, uint64_t *sqVa)
+{
+    return pimpl->GetDbAddr(dbAddr, sqVa);
 }
 
 } // namespace Hccl

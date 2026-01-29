@@ -390,8 +390,8 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-                                                  std::string &algName, u32 &blockDim)
+    HcclResult HcclCommunicator::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+                                                  std::string &algName, u32 &numBlocks)
     {
         return HCCL_SUCCESS;
     }

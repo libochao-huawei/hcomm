@@ -95,14 +95,6 @@ struct KFCGroupTilingData {  // for grouped_mat_mul_all_reduce op
     HcclKFCTilingData msg[64];  // 64: same as the tiling data size
 };
 
-struct HcclCommParamDesc {
-    uint64_t version : 4;    // 版本号，当前是1
-    uint64_t groupNum : 4;   // groupMatmul的输入数量，每个group对应一个输入和一个输出地址
-    uint64_t hasFfts : 1;    // 910下是否是ffts融合算子（多一个ffts_addr参数
-    uint64_t tilingOff : 7;  // tilingdata指针所在的参数索引
-    uint64_t isDyn : 48;     // 输入参数是否是动态输入，从IR输入开始计算，不包含前面的参数，is_dyn是一个bitmap，每个bit对应一个IR输入，如果是动态输入则为1，否则是0
-};
-
 struct KFCTask {
     u64 inputA;      // A矩阵地址，通信在前时为sendbuffer
     u64 outputC;     // 输出C矩阵地址
@@ -189,7 +181,7 @@ struct DataBlock {
 	uint32_t data[16];
 };
 
-constexpr uint32_t MAX_AICPU_BLOCK_DIM = 6U;
+constexpr uint32_t MAX_AICPU_NUM_BLOCKS = 6U;
 
 // HCCL 代码直调时直接传此结构：
 struct AivAicpuOpParam {

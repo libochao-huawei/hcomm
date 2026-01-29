@@ -50,9 +50,7 @@ HcclResult CpuTsThread::Init()
             notifys_[idx].reset(new (std::nothrow) LocalNotify());
             CHK_SMART_PTR_NULL(notifys_[idx]);
             CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-            if (Is310PDevice()) {
-                CHK_RET(notifys_[idx]->SetIpc());
-            }
+            CHK_RET(notifys_[idx]->SetIpc());
         }
         return HCCL_SUCCESS;
     } else {
@@ -71,9 +69,66 @@ HcclResult CpuTsThread::DeInit()
 
 std::string &CpuTsThread::GetUniqueId()
 {
-    HCCL_ERROR("[CpuTsThread][%s] Not supported", __func__);
-    static std::string emptyStr = std::string();
-    return emptyStr;
+    if (!uniqueIdStr_.empty()) {
+        return uniqueIdStr_;
+    }
+
+    // 序列化信息
+    uniqueIdStr_ = std::string();
+    std::ostringstream oss;
+    StreamType streamType = StreamType::STREAM_TYPE_DEVICE;
+    oss.write(reinterpret_cast<const char_t *>(&streamType), sizeof(streamType));
+    oss.write(reinterpret_cast<const char_t *>(&notifyLoadType_), sizeof(notifyLoadType_));
+    oss.write(reinterpret_cast<const char_t *>(&devId_), sizeof(devId_));
+    oss.write(reinterpret_cast<const char_t *>(&notifyNum_), sizeof(notifyNum_));
+
+    // 临时申请一条流，用于在device侧资源展开时initStream
+    streamDevice_.reset(new (std::nothrow) Stream(streamType));
+    if (streamDevice_ == nullptr) {
+        HCCL_ERROR("[CpuTsThread][%s]reset stream failed, stream type[%d]",__func__, streamType);
+        return uniqueIdStr_;
+    }
+
+    uint64_t size = sizeof(SqCqeContext);
+    sqCqeContext_ = DeviceMem::alloc(size);
+    if (sqCqeContext_.ptr() == nullptr) {
+        HCCL_ERROR("[CpuTsThread][%s]alloc mem failed, mem size[%llu]",__func__, size);
+        return uniqueIdStr_;
+    }
+    HcclResult ret = hrtMemSet(sqCqeContext_.ptr(), size, size);
+    if (ret != HCCL_SUCCESS) {
+        HCCL_ERROR("[CpuTsThread][%s]mem set failed, mem size[%llu], ptr[%p]",__func__, size, sqCqeContext_.ptr());
+        return uniqueIdStr_;
+    }
+
+    HcclStreamParam streamParam;
+    streamParam.streamInfo.streamIds = streamDevice_->id();
+    streamParam.streamInfo.sqIds = streamDevice_->sqId();
+    streamParam.streamInfo.cqIds = streamDevice_->cqId();
+    streamParam.streamInfo.logicCqids = streamDevice_->logicCqId();
+    streamParam.sqCqContextAddr = reinterpret_cast<uint64_t>(sqCqeContext_.ptr());
+    streamParam.sqCqContextSize = sqCqeContext_.size();
+    oss.write(reinterpret_cast<const char_t *>(&streamParam), sizeof(streamParam));
+
+    ret = HCCL_SUCCESS;
+    for (uint32_t idx = 0; idx < notifyNum_; idx++) {
+        HcclSignalInfo notifyInfo;
+        ret = notifys_[idx]->GetNotifyData(notifyInfo);
+        if (ret != HCCL_SUCCESS) {
+            HCCL_ERROR("[AicpuTsThread][GetUniqueId]GetNotifyData failed, ret[%d]", ret);
+            uniqueIdStr_ = std::string();
+            return uniqueIdStr_;
+        }
+        HCCL_INFO("[AicpuTsThread][GetUniqueId]get local notify data success, resId[%u], tsId:%d, devId[%u]",
+            notifyInfo.resId,
+            notifyInfo.tsId,
+            notifyInfo.devId);
+        oss.write(reinterpret_cast<const char_t *>(&notifyInfo), sizeof(notifyInfo));
+    }
+    HCCL_DEBUG("[AicpuTsThread][GetUniqueId] stream[%p], notifyNum[%u]", stream_->ptr(), notifyNum_);
+
+    uniqueIdStr_ = oss.str();
+    return uniqueIdStr_;
 }
 
 uint32_t CpuTsThread::GetNotifyNum() const

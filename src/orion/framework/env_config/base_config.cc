@@ -25,8 +25,19 @@ void EnvHostNicConfig::Parse()
     whitelistDisable.Parse();
     if (!whitelistDisable.Get()) {
         hcclWhiteListFile.Parse();
+        HCCL_RUN_INFO("[EnvHostNicConfig] hcclWhiteListFile[%s]", GetWhiteListFile().c_str());
     }
     hcclSocketPortRange.Parse();
+
+    std::ostringstream portRangeOss;
+    for (auto range : GetSocketPortRange()) {
+        portRangeOss << " [" << std::to_string(range.min) << ", " << std::to_string(range.max) << "]";
+    }
+
+    HCCL_RUN_INFO("[EnvHostNicConfig] hcclIfIp[%s], hcclIfBasePort[%u], hcclSocketIfName[%s], whitelistDisable[%d], "
+                  "hcclSocketPortRange[%s]",
+                  GetControlIfIp().Describe().c_str(), GetIfBasePort(), GetSocketIfName().configIfNameStr.c_str(),
+                  whitelistDisable.Get(), portRangeOss.str().c_str());
 }
 
 const IpAddress &EnvHostNicConfig::GetControlIfIp() const
@@ -65,6 +76,8 @@ void EnvSocketConfig::Parse()
 {
     hcclSocketFamily.Parse();
     linkTimeOut.Parse();
+    HCCL_RUN_INFO("[EnvSocketConfig] hcclSocketFamily[%d], linkTimeOut[%d]",
+                  GetSocketFamily(), GetLinkTimeOut());
 }
 
 s32 EnvSocketConfig::GetSocketFamily() const
@@ -82,6 +95,7 @@ s32 EnvSocketConfig::GetLinkTimeOut() const
 void EnvRtsConfig::Parse()
 {
     execTimeOut.Parse();
+    HCCL_RUN_INFO("[EnvRtsConfig] execTimeOut[%u]", GetExecTimeOut());
 }
 
 u32 EnvRtsConfig::GetExecTimeOut() const
@@ -97,6 +111,8 @@ void EnvRdmaConfig::Parse()
     rdmaServerLevel.Parse();
     rdmaTimeOut.Parse();
     rdmaRetryCnt.Parse();
+    HCCL_RUN_INFO("[EnvRdmaConfig] rdmaTrafficClass[%u], rdmaServerLevel[%u], rdmaTimeOut[%u], rdmaRetryCnt[%u]",
+                  GetRdmaTrafficClass(), GetRdmaServerLevel(), GetRdmaTimeOut(), GetRdmaRetryCnt());
 }
 
 u32 EnvRdmaConfig::GetRdmaTrafficClass() const
@@ -125,8 +141,20 @@ void EnvAlgoConfig::Parse()
 {
     primQueueGenName.Parse();
     hcclAlgoConfig.Parse();
+    std::ostringstream hcclAlgoConfigOss;
+    for (auto algoConfig : GetAlgoConfig()) {
+        OpType opType = algoConfig.first;
+        hcclAlgoConfigOss << " [" << opType.Describe().c_str() << ", ";
+        std::vector<HcclAlgoType> algoTypes = algoConfig.second;
+        for (auto algoType : algoTypes) {
+           hcclAlgoConfigOss << algoType.Describe().c_str() << " ";
+        }
+        hcclAlgoConfigOss << "]";
+    }
     bufferSize.Parse();
     hcclAccelerator_.Parse();
+    HCCL_RUN_INFO("[EnvAlgoConfig] primQueueGenName[%s], hcclAlgoConfig[%u], bufferSize[%llu], hcclAccelerator[%s]",
+                  GetPrimQueueGenName().c_str(), hcclAlgoConfigOss.str().c_str(), GetBuffSize(), GetHcclAccelerator().Describe().c_str());
 }
 
 const std::string &EnvAlgoConfig::GetPrimQueueGenName() const
@@ -156,6 +184,9 @@ void EnvLogConfig::Parse()
     entryLogEnable.Parse();
     cannVersion.Parse();
     dfsConfig.Parse();
+    HCCL_RUN_INFO("[EnvLogConfig] diagnoseEnable[%d], entryLogEnable[%d], cannVersion[%s], dfsConfig[%d]",
+                  GetDiagnoseEnable(), GetEntryLogEnable(), GetCannVersion().c_str(),
+                  GetDfsConfig().taskExceptionEnable);
 }
 
 bool EnvLogConfig::GetDiagnoseEnable() const
@@ -183,21 +214,12 @@ const DfsConfig &EnvLogConfig::GetDfsConfig() const
 void EnvDetourConfig::Parse()
 {
     detourType.Parse();
+    HCCL_RUN_INFO("[EnvDetourConfig] detourType[%s]", GetDetourType().Describe().c_str());
 }
 
 HcclDetourType EnvDetourConfig::GetDetourType() const
 {
     return detourType.Get();
-}
-
-void EnvTopoFilePathConfig::Parse()
-{
-    topoFilePath.Parse();
-}
- 
-std::string EnvTopoFilePathConfig::GetTopoFilePath() const
-{
-    return topoFilePath.Get();
 }
 
 } // namespace Hccl

@@ -7,18 +7,16 @@
  * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
+#include "hcomm_c_adpt.h"
+
 #include <mutex>
 
 #include "hccl_api.h"
 #include "hcomm_res.h"
-#include "hcomm_res.h"
 #include "hcomm_res_defs.h"
 #include "log.h"
-#include "hcomm_c_adpt.h"
 #include "../endpoints/endpoint.h"
 #include "../endpoint_pairs/channels/channel.h"
-#include "thread.h"
-#include "aicpu_ts_thread.h"
 #include "cpu_ts_thread.h"
 #include "aicpu_ts_urma_channel.h"
 #include "mem_device_pub.h"
@@ -26,7 +24,7 @@
 #include "launch_aicpu.h"
 #include "comm_configer.h"
 #include "endpoint_map.h"
-#include "endpoint_map.h"
+#include "exception_handler.h"
 
 namespace hcomm {
 static std::unordered_map<ChannelHandle, std::unique_ptr<Channel>> g_ChannelMap;
@@ -87,10 +85,8 @@ static HcommEndpointMap g_EndpointMap;
 HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
-    if (it == nullptr) {
-        HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[0x%llx]", __func__, endpointHandle);
-        return HCCL_E_PARA;
-    }
+    CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
+        __func__, endpointHandle), HCCL_E_PARA);
 
     *endpoint = static_cast<void *>(it);
     return HCCL_SUCCESS;
@@ -98,6 +94,7 @@ HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle)
 {
+    EXCEPTION_HANDLE_BEGIN
     if (endpoint->loc.locType != ENDPOINT_LOC_TYPE_DEVICE && endpoint->loc.locType != ENDPOINT_LOC_TYPE_HOST) {
         HCCL_ERROR("[%s] Only support END_POINT_LOCATION_DEVICE AND END_POINT_LOCATION_HOST, but "
                    "endpoint->loc.locType is %d",
@@ -117,6 +114,7 @@ HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *end
     EXECEPTION_CATCH(g_EndpointMap.AddEndpoint(handle, std::move(endpointPtr)), return HCCL_E_INTERNAL);
     *endpointHandle = handle;
 
+    EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;
 }
 
@@ -189,6 +187,8 @@ HcclResult HcommMemGetAllMemHandles(EndpointHandle endpointHandle, void **memHan
 HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels)
 {
+    HCCL_INFO("[%s] START. endpointHandle[0x%llx], engine[%d], channelNum[%u].",
+        __func__, endpointHandle, engine, channelNum);
     CHK_PTR_NULL(channelDescs);
     CHK_PTR_NULL(channels);
 
@@ -220,6 +220,7 @@ HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, 
         }
     }
 
+    HCCL_INFO("[%s] SUCCESS.", __func__);
     return HCCL_SUCCESS;
 }
 
@@ -367,6 +368,10 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
 
 HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList)
 {
+    HCCL_INFO("[%s] START. 1st channelHandle[0x%llx], channelNum[%u]", __func__, channelList[0], listNum);
+ 
+    EXCEPTION_HANDLE_BEGIN
+
     CHK_PTR_NULL(channelList);
     CHK_PTR_NULL(statusList);
 
@@ -390,10 +395,10 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
         HCCL_INFO("[%s] channel status[%d].", __func__, status);
 
         CHK_PRT_RET(
-            status == ChannelStatus::FAILED, HCCL_ERROR("%s failed, status[%d]", __func__, status), HCCL_E_NETWORK);
+            status == ChannelStatus::FAILED, HCCL_ERROR("[%s] FAILED, status[%d]", __func__, status), HCCL_E_NETWORK);
 
         CHK_PRT_RET(status == ChannelStatus::SOCKET_TIMEOUT,
-            HCCL_ERROR("%s timeout, status[%d]", __func__, status),
+            HCCL_ERROR("[%s] TIMEOUT, status[%d]", __func__, status),
             HCCL_E_TIMEOUT);
 
         readyCount += (status == ChannelStatus::READY) ? 1 : 0;
@@ -401,8 +406,11 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
     }
 
     HcclResult finalRet = (readyCount == listNum) ? HCCL_SUCCESS : HCCL_E_AGAIN;
-    HCCL_DEBUG("%s end, readyCount[%u], listNum[%u]", __func__, readyCount, listNum);
+    HCCL_DEBUG("[%s] SUCCESS, readyCount[%u], listNum[%u]", __func__, readyCount, listNum);
     return finalRet;
+
+    EXCEPTION_HANDLE_END
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum)
@@ -416,6 +424,7 @@ HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notif
 
 HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum)
 {
+    HCCL_INFO("[%s] START. 1st channelHandle[0x%llx], channelNum[%u].", __func__, channels[0], channelNum);
     CHK_PTR_NULL(channels);
 
     // 单锁：g_ChannelMapMtx 同时保护 g_ChannelMap + g_ChannelD2HMap
@@ -462,60 +471,19 @@ HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNu
         }
     }
 
-    return HcclResult::HCCL_SUCCESS;
+    HCCL_INFO("[%s] SUCCESS.", __func__);
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcommChannelGetRemoteMem(ChannelHandle channelHandle, HcommMem **remoteMem, uint32_t *memNum, char **memTags)
 {
     HcclMem **remoteMemConverted = reinterpret_cast<HcclMem **>(remoteMem);
-    printf("remoteMem:%p, remoteMemConverted:%p, memNum:%p \n", remoteMem, remoteMemConverted, memNum);
 
     return hcomm::WithChannelByHandleLocked(channelHandle, [&](Channel &channel) -> HcclResult {
         // 锁内调用，避免 destroy 并发释放
         channel.GetRemoteMem(remoteMemConverted, memNum, memTags);
-        return HcclResult::HCCL_SUCCESS;
+        return HCCL_SUCCESS;
     });
-}
-
-HcclResult HcclChannelGetHcclBufferA5(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
-{
-    (void)comm;
-    CHK_PTR_NULL(buffer);
-    CHK_PTR_NULL(size);
-
-    u32 memNum = 0;  // 接收内存块数量
-    // CHK_RET(HcommChannelGetRemoteMemNum(channel, &memNum));
-    // CHK_PRT_RET(memNum == 0, HCCL_ERROR("%s fail, memNum[%u] is invalid", __func__, memNum), HCCL_E_PARA);
-
-    std::vector<HcommMem *> remoteMemList(10); /* 暂未实现获取buffer Num的接口，此处开一个Size为10的vector暂存 */
-    std::vector<char *> memTags(10);
-    CHK_RET(HcommChannelGetRemoteMem(channel, remoteMemList.data(), &memNum, memTags.data()));
-
-    // *buffer = remoteMemList[0]->addr;
-    // HCCL_INFO("%s buffer[%p] size[%llu]", __func__, *buffer, *size);
-    // HcommMem** converted = reinterpret_cast<HcommMem**>(buffer); // TODO: 临时方案！
-    // bool found = false;
-    for (u32 i = 0; i < memNum; i++) {
-        HCCL_INFO("%s memNum[%u] memTags[%s] size[%llu]", __func__, memNum, memTags[i], *size);
-        if (strcmp(memTags[i], "HcclBuffer") == 0) {
-            // converted[i]->type = remoteMemList[i]->type;
-            // converted[i]->addr = remoteMemList[i]->addr;
-            // converted[i]->size = remoteMemList[i]->size;
-            *buffer = remoteMemList[i]->addr;
-            *size = remoteMemList[i]->size;
-            HCCL_INFO("[%s] Found Hccl buffer memNum is %u at index %u: addr=%p, size=%llu",
-                __func__,
-                memNum,
-                i,
-                remoteMemList[i]->addr,
-                remoteMemList[i]->size);
-            // found = true;
-            break;  // 找到后立即退出循环
-        }
-    }
-
-    // CHK_PRT_RET(!found, HCCL_ERROR("[%s]tag 'Hccl' not found in %u entries.", __func__, memNum), HCCL_E_NOT_FOUND);
-    return HCCL_SUCCESS;
 }
 
 HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads)
@@ -590,5 +558,23 @@ HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
     }
 
     HCCL_INFO("[HcommThreadfree] all threads freed successfully");
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcommThreadAllocWithStream(CommEngine engine, void *stream, uint32_t notifyNum, ThreadHandle *thread)
+{
+    CHK_PTR_NULL(thread);
+    hccl::NotifyLoadType notifyLoadType;
+    CHK_RET(CommEngineToNotifyLoadType(engine, notifyLoadType));
+    std::shared_ptr<hccl::Thread> handle;
+    EXECEPTION_CATCH(handle = std::make_shared<hccl::CpuTsThread>(static_cast<rtStream_t>(stream), notifyNum, notifyLoadType), return HCCL_E_PTR);
+    CHK_RET(handle->Init());
+ 
+    // 返回第一个句柄
+    *thread = reinterpret_cast<ThreadHandle>(handle.get());
+    hcomm::g_ThreadMap.emplace(*thread , handle);
+ 
+    HCCL_INFO("[ThreadMgr]  HcclThreadAcquireWithStream done: engine[%d] stream[%p],"
+        "notifyNum[%u]",  engine, stream, notifyNum);
     return HCCL_SUCCESS;
 }

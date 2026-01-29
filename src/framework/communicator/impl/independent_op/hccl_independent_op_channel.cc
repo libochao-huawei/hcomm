@@ -81,29 +81,31 @@ HcclResult CommChannelDestroy(HcclComm comm, ChannelHandle *channelList, uint32_
 HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size)
 {
 #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    const char *indOp = getenv("HCCL_A5_INDEPENDENT_OP");
-    if (*indOp == '1') {
-        HCCLV2_FUNC_RUN(HcclChannelGetHcclBufferA5(comm, channel, buffer, size));
-    }
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                HCCL_WARNING("[%s] is not supported in HCCL_INDEPENDENT_OP is set to 0.", __func__);
+                return HCCL_SUCCESS;
+            }
+
+            hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+            CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            CHK_RET(myRank->ChannelGetHcclBuffer(channel, buffer, size));
+            return HCCL_SUCCESS;
+        }());
 #endif
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(buffer);
     CHK_PTR_NULL(size);
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = HCCL_SUCCESS;
     CommBuffer commBuffer;
-    if (hcclComm->IsCommunicatorV2()) {
-        CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        ChannelManager* channelMgr = collComm->GetChannelManager();
-        CHK_PTR_NULL(channelMgr);
-        ret = channelMgr->ChannelCommGetHcclBuffer(channel, &commBuffer);
-    }
-    else {
-        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-        ret = channelMgr.ChannelCommGetHcclBuffer(channel, &commBuffer);
-    }
-   
+    HcclResult ret = HCCL_SUCCESS;
+    auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
+    ret = channelMgr.ChannelCommGetHcclBuffer(channel, &commBuffer);
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[%s] Failed to get channel hccl buffer, group[%s], channel[%llu], ret[%d]",
            __func__, hcclComm->GetIdentifier().c_str(), channel, ret);

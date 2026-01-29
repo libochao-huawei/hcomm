@@ -67,6 +67,9 @@ void CcuComponent::Init()
 
     devPhyId = HrtGetDevicePhyIdByIndex(devLogicId);
     CheckDiesEnable();
+    for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
+        CleanDieCkes(dieId);
+    }
     ChooseLoopEids();
     CreateCcuRmaBuffer();
     CreateResourceManagers();
@@ -80,6 +83,10 @@ void CcuComponent::Deinit()
 {
     std::lock_guard<std::mutex> _lock(innerMutex);
     ReleaseJettyRes();
+
+    for (uint8_t dieId = 0; dieId < MAX_CCU_IODIE_NUM; dieId++) {
+        CleanDieCkes(dieId);
+    }
 
     for (const auto &item : tpInfoMap) {
         const auto &ipAddr = item.first;
@@ -350,7 +357,8 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
 {
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
-    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL);
+    CqCreateInfo cqInfo;
+    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL, cqInfo);
 
     const auto &rmaBufferIter = ccuRmaBufferMap.find(dieId);
     CHK_PRT_RET(rmaBufferIter == ccuRmaBufferMap.end(),
@@ -863,11 +871,12 @@ void CcuComponent::ReleaseJettyRes()
 void CcuComponent::UnimportAllJetty()
 {
     // tpInfo不需要主动释放，因为CcuComponent生命周期与TpManager一致
-    for (const auto &importedVec : importedOutParamMap) {
-        for (const auto &paramPair : importedVec.second) {
+    for (auto &importedVec : importedOutParamMap) {
+        for (auto &paramPair : importedVec.second) {
             const auto rdmaHandle = paramPair.first;
             const auto remoteJettyHandle = paramPair.second.handle;
             if (rdmaHandle != nullptr && remoteJettyHandle != 0) {
+                paramPair.second.handle = 0;
                 HrtRaUbUnimportJetty(rdmaHandle, remoteJettyHandle);
             }
         }
@@ -878,10 +887,11 @@ void CcuComponent::UnimportAllJetty()
 
 void CcuComponent::DestroyAllJetty()
 {
-    for (const auto &createdVec : createdOutParamMap) {
-        for (const auto &param : createdVec.second) {
+    for (auto &createdVec : createdOutParamMap) {
+        for (auto &param : createdVec.second) {
             const auto jettyHandle = param.handle;
             if (jettyHandle != 0) {
+                param.handle = 0; 
                 HrtRaUbDestroyJetty(jettyHandle);
             }
         }

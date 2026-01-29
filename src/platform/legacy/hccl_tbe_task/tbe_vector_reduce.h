@@ -77,7 +77,7 @@ public:
     HcclResult SetGlobalWorkSpace(const std::vector<void *> &globalWorkSpaceAddr);
     HcclResult PrepareVectorReduce(const void *src1, const void *src2, u64 count, const HcclDataType dataType,
         HcclReduceOp redOp, const void *dst, void *stream, void *&addrListDevMemPtr, void *&argsHandle,
-        void *&stubFuncAddr, uint32_t &blockDim);
+        void *&stubFuncAddr, uint32_t &numBlocks);
     HcclResult GetVectorBlockSize(u32& blockSize);
     HcclResult GetOpProperty(nlohmann::json &opInfo, const std::string propName, std::string &propValue);
     HcclResult GetOpProperty(nlohmann::json &opInfo, const std::string propName, u32 &propValue);

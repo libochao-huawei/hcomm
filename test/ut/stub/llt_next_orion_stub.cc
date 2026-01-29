@@ -48,6 +48,17 @@ HcclResult HcclChannelGetHcclBufferA5(HcclComm comm, ChannelHandle channel, void
 }
 
 namespace hccl {
+HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size) {
+    return HCCL_SUCCESS;
+}
+
+HcclResult CommMems::GetHcclBuffer(void *&addr, uint64_t &len)
+{
+    return HCCL_SUCCESS;
+} 
+}
+
+namespace hccl {
 
 CollComm::CollComm(void * comm, uint32_t rankId, const std::string &commName, const ManagerCallbacks& callbacks)
     : comm_(comm), rankId_(rankId), commId_ (commName), callbacks_(callbacks)

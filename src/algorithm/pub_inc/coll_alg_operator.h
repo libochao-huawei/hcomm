@@ -63,13 +63,13 @@ public:
     HcclResult SetRetryEnable(bool retryEnable);
     HcclResult GetAivExecParam(std::string& algName, const OpParam& param,
         AlgResourceResponse& algRes, AivSuperKernelArgs &args);
-    HcclResult CalBlockDim(std::string& algName, const OpParam& param, u32 &blockDim, int32_t aivCoreLimit = 0);
+    HcclResult CalNumBlocks(std::string& algName, const OpParam& param, u32 &numBlocks, int32_t aivCoreLimit = 0);
     HcclResult SetAivClearEnable(bool aivClearEnable);
     bool SupportRetryWithInplaceCheck(
         const HcclCMDType &opType, OpParam &param, std::string& algName, u8 &isInplaceStatus,
         InplaceSupportRetryStatus &inPlaceSupportRetryStatus);
-    HcclResult GetBlockDim(u32& blockDim);
-    HcclResult SetBlockDim(const u32& blockDim);
+    HcclResult GetNumBlocks(u32& numBlocks);
+    HcclResult SetNumBlocks(const u32& numBlocks);
     HcclResult GetCache(HcclCacheInfo& cacheInfo);
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);
     u32 CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, HcclCMDType opType);

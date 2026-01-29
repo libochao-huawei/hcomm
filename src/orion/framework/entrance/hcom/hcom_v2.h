@@ -113,7 +113,7 @@ HcclResult HcclCommSetQosCfgV2();
 HcclResult HcomUnloadTaskV2(const std::string group, const char *tag);
 HcclResult HcomSetAivClearEnableV2(const char *group, bool aivClearEnable);
 
-HcclResult HcomCalcBlockDimV2(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
+HcclResult HcomCalcNumBlocksV2(const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, int32_t aivCoreLimit,
         std::string &algName, u32 &blockDim);
 
 HcclResult HcclGetAlgExecParamV2(const std::string &tag, const char *group, u64 count, void *inputPtr, void *outputPtr,

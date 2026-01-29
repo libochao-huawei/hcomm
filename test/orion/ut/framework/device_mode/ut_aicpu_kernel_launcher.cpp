@@ -42,7 +42,7 @@ protected:
         MOCKER(HrtNotifyCreate).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtNotifyCreateWithFlag).stubs().will(returnValue((void *)(fakeNotifyHandleAddr)));
         MOCKER(HrtGetNotifyID).stubs().will(returnValue(fakeNotifyId));
-        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(fakeDevPhyId));
+        MOCKER(HrtGetDevicePhyIdByIndex).stubs().will(returnValue(static_cast<s32>(fakeDevPhyId)));
         MOCKER(HrtIpcSetNotifyName).stubs().with(any(), outBoundP(fakeName, sizeof(fakeName)), any());
         MOCKER(HrtNotifyGetOffset).stubs().will(returnValue(fakeOffset));
         MOCKER(HrtGetDeviceType).stubs().will(returnValue(DevType(DevType::DEV_TYPE_910_95)));
@@ -78,7 +78,7 @@ protected:
         std::set<LinkProtocol> protocols = {LinkProtocol::UB_CTP};
         shared_ptr<NetInstance::ConnInterface> connInterface = std::make_shared<NetInstance::ConnInterface>(
             inputAddr, ports, AddrPosition::HOST, LinkType::PEER2PEER, protocols);
-        peer0->AddConnInterface(connInterface);
+        peer0->AddConnInterface(0, connInterface);
         comm.rankGraph->AddPeer(peer0);
         comm.localRmaBufManager = std::make_unique<LocalRmaBufManager>(comm);
         comm.cclBuffer = DevBuffer::Create(0x100, 10);

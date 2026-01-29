@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #ifndef GOOGLE_PROTOBUF_INCLUDED_task_2eproto
 #define GOOGLE_PROTOBUF_INCLUDED_task_2eproto
 
@@ -10,13 +20,13 @@ class KernelContext {
 
 class KernelDef {
  public:
-    uint32_t block_dim() const;
+    uint32_t num_blocks() const;
     const KernelContext& context() const;
 };
 
 class StarsSqeHeaderDef {
  public:
-    uint32_t block_dim() const;
+    uint32_t num_blocks() const;
 };
 
 class FftsPlusSqeDef {
@@ -26,18 +36,18 @@ class FftsPlusSqeDef {
 
 class FftsPlusMixAicAivCtxDef {
  public:
-  uint32_t non_tail_block_dim() const;
+  uint32_t non_tail_num_blocks() const;
   uint32_t non_tail_block_ratio_n() const;
 };
 
 class FftsPlusAicAivCtxDef {
  public:
-  uint32_t non_tail_block_dim() const;
+  uint32_t non_tail_num_blocks() const;
 };
 
 class FftsPlusAicpuCtxDef {
  public:
-  uint32_t non_tail_block_dim() const;
+  uint32_t non_tail_num_blocks() const;
 };
 
 class FftsPlusCtxDef {

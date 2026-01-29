@@ -59,8 +59,6 @@ private:
     // variables for mesh_chunk
     std::vector<CcuRep::Variable> chunkSize_;
     CcuRep::Variable              chunkOffset_;
-    void                          CreateLocalCopyLoop();
-    void                          LocalCopyByLoopGroup(CcuRep::Memory dst, CcuRep::Memory src);
 };
 } // namespace Hccl
 

@@ -92,6 +92,8 @@ private:
     u32          cntNotifyDescSize{0};
     vector<char> rmtCntNotifyDesc;
 
+    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
+
     using RemoteBufferVec = std::vector<std::unique_ptr<RemoteUbRmaBuffer>>;
     using LocalBufferVec = std::vector<LocalUbRmaBuffer *>;
 

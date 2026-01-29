@@ -183,7 +183,7 @@ TEST_F(HcomTest, ut_hcom_broadcast)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetBlockDim).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
     MOCKER_CPP(&hcclComm::Broadcast)
     .expects(atMost(1))
@@ -5468,7 +5468,7 @@ TEST_F(HcomTest, ut_HcclCommGraphBroadcast)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetBlockDim).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclCommGraphBroadcast("tag", sendbuf, 10, HCCL_DATA_TYPE_INT8, 0, opBaseHcom, stream);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -5717,7 +5717,7 @@ TEST_F(HcomTest, ut_HcclCommGraphAlltoAllV)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
 
-    MOCKER_CPP(&hcclComm::GetBlockDim).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclCommGraphAlltoAllV(sendMem.ptr(), sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, recvMem.ptr(),
         recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT32, opBaseHcom, stream.ptr(), "hcom_alltoallv");
@@ -10115,7 +10115,7 @@ TEST_F(HcomTest, ut_hcom_alltoallv)
     DeviceMem recvMem = DeviceMem::alloc(memSize);
 
     hccl::Stream stream(StreamType::STREAM_TYPE_OFFLINE);
-    MOCKER_CPP(&hcclComm::GetBlockDim).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
     ret = HcomAlltoAllV(sendMem.ptr(), sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, recvMem.ptr(),
         recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT32, nullptr, stream.ptr(), "hcom_alltoallv");
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -10174,7 +10174,7 @@ TEST_F(HcomTest, ut_hcom_alltoallv_null_input)
     vector<u64> rdispls(rankSize, 0);
 
     hccl::Stream stream(StreamType::STREAM_TYPE_OFFLINE);
-    MOCKER_CPP(&hcclComm::GetBlockDim).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
     ret = HcomAlltoAllV(nullptr, sendCounts.data(), sdispls.data(), HCCL_DATA_TYPE_INT32, nullptr,
         recvCounts.data(), rdispls.data(), HCCL_DATA_TYPE_INT32, nullptr, stream.ptr(), "hcom_alltoallv");
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -11175,7 +11175,7 @@ TEST_F(HcomTest, ut_hcom_HcclCommGraphAlltoAllVC)
     MOCKER_CPP(&hcclComm::GetAlgType)
     .stubs()
     .will(returnValue(HCCL_SUCCESS));
-    MOCKER_CPP(&hcclComm::GetBlockDim).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&hcclComm::GetNumBlocks).stubs().will(returnValue(HCCL_SUCCESS));
 
     ret = HcclCommGraphAlltoAllVC(sendMem.ptr(), sendMem.ptr(),HCCL_DATA_TYPE_INT32, recvMem.ptr(), HCCL_DATA_TYPE_INT32,
         opBaseHcom, stream.ptr(), "hcom_alltoallvc");

@@ -34,7 +34,7 @@ HcclResult CommMems::Init(HcclMem cclBuffer)
     addr_ = cclBuffer.addr;
     size_ = cclBuffer.size;
     memType_ = cclBuffer.type;
-    HCCL_INFO("[CommMems][Init] addr[%p] size[%u] memType[%u]", cclBuffer.addr, cclBuffer.type, cclBuffer.type);
+    HCCL_INFO("[CommMems][Init] addr[%p] size[%u] memType[%u]", cclBuffer.addr, cclBuffer.size, cclBuffer.type);
     return HCCL_SUCCESS;
 }
 

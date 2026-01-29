@@ -132,7 +132,7 @@ void ProfilingHandlerLite::GetTaskDetailInfos(const TaskInfo &it, MsprofAicpuHcc
     taskDetailsInfos.taskId            = it.taskId_;
     taskDetailsInfos.streamId          = it.streamId_;
     taskDetailsInfos.planeID           = 0;
-    taskDetailsInfos.transportType     = static_cast<int32_t>(SimpleTaskType::RDMA);
+    taskDetailsInfos.transportType     = static_cast<int32_t>(SimpleTaskType::UB);
     taskDetailsInfos.role              = static_cast<uint32_t>(TaskRole::DST);
     taskDetailsInfos.workFlowMode      = static_cast<uint32_t>(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
 }

@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+HcclResult ProcessHcclResPackReq(const HcclChannelDesc &channelDesc, HcclChannelDesc &channelDescFinal)
+
 /**
  * @note 职责：集合通信的通信域资源管理的C接口声明（暂未对外的接口）
  */

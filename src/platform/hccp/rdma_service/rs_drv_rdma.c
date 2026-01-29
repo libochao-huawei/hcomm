@@ -142,7 +142,7 @@ STATIC void RsCqeCallbackProcess(struct RsQpCb *qpCb, struct ibv_wc *wc, struct 
             RsIbvWcStatusStr(wc->status), wc->status, wc->wr_id);
         RsDrvSaveCqeErrInfo(wc->status, qpCb);
         RsDrvSaveQpCqeErrInfo(wc->status, qpCb);
-        RsRdmaRetryTimeoutExceptionCheck(&qpCb->rdevCb->sensorNode, wc);
+        RsRdmaRetryTimeoutExceptionCheck(&qpCb->rdevCb->rs_cb->sensorNode, wc);
     }
 
     return;

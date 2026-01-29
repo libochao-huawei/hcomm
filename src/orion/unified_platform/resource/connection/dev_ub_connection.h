@@ -16,13 +16,14 @@
 #include "orion_adapter_hccp.h"
 #include "tp_manager.h"
 #include "local_ub_rma_buffer.h"
+#include "mc2_type.h"
 
 namespace Hccl {
 
 class DevUbConnection : public RmaConnection {
 public:
     DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                    const OpMode opMode, const bool devUsed = false);
+                    const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
     void          Connect() override;
     RmaConnStatus GetStatus() override;
     bool          Suspend() override;
@@ -32,6 +33,7 @@ public:
     void                          ImportRmtDto() override;
 
     std::vector<char> GetUniqueId() const override;
+    HcclAiRMACQ GetCqInfo() const;
 
     unique_ptr<BaseTask> PrepareRead(const MemoryBuffer &remoteMemBuf, const MemoryBuffer &localMemBuf,
                                      const SqeConfig &config) override;
@@ -73,6 +75,7 @@ public:
 
 protected:
     TpProtocol     tpProtocol{TpProtocol::INVALID};
+    HcclAiRMACQ    cqInfo_{0};
 
 private:
     MAKE_ENUM(UbConnStatus,
@@ -90,6 +93,7 @@ private:
     HrtUbJfcMode jfcMode{HrtUbJfcMode::STARS_POLL};
     u32          tokenValue{GetUbToken()};
     Eid          rmtEid{};
+    Eid          locEid{};
 
     int32_t   devLogicId{0};
     u32       dieId{0};
@@ -97,6 +101,8 @@ private:
     JfcHandle jfcHandle{0};
     u32       sqDepth{0};
     void     *sqPtr{nullptr};
+    u64       sqBuffVa_{0};
+    uint64_t  sqBuffVa{0};
 
     RequestHandle  reqHandle{0};
     vector<char_t> reqDataBuffer;
@@ -129,6 +135,7 @@ private:
     void         GenerateLocalPsn();
     void         CreateJetty(const bool devUsed);
     void         SetJettyInfo();
+    void         SetJfcInfo(const CqCreateInfo &cqInfo);
     bool         GetTpInfo();
     void         UpdateLocTpInfo();
     TpInfo       SelectTpInfo();
@@ -154,13 +161,13 @@ private:
 class DevUbTpConnection : public DevUbConnection {
 public:
     DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                      const OpMode opMode, const bool devUsed = false);
+                      const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
 };
 
 class DevUbCtpConnection : public DevUbConnection {
 public:
     DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                       const OpMode opMode, const bool devUsed = false);
+                       const OpMode opMode, const bool devUsed = false, const HrtUbJfcMode jfcMode = HrtUbJfcMode::STARS_POLL);
 };
 
 std::vector<DevUbConnection *> GetStarsPollUbConns(const std::vector<RmaConnection *> &rmaConns);

@@ -153,7 +153,7 @@ TEST_F(ReduceScatterCCUTest, reducescatter_ccu_case_test_8rank_Mesh1DMultiMissio
     checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
     checkerOpParam.DataDes.count = 100;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT32;
-    checkerOpParam.algName = "CcuReduceScatterMesh1DMultiMission";
+    checkerOpParam.algName = "CcuReduceScatterMesh1D";
 
     Checker checker;
     HcclResult ret;

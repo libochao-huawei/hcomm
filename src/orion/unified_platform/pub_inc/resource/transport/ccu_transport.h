@@ -118,6 +118,11 @@ public:
     {
         attr.opAcceState = opAcceState;
     }
+        
+    CcuConnection *GetCcuConnection() const
+    {
+        return ccuConnection.get();
+    }
 
     // 下面接口为平台层接口，不能在框架层使用
     uint32_t    GetDieId() const;

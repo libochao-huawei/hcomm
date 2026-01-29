@@ -3007,7 +3007,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::SetAivCoreLimit(u32 aivCoreLimit)
     {
-        blockDim_ = aivCoreLimit;
+        numBlocks_ = aivCoreLimit;
         return HCCL_SUCCESS;
     }
 

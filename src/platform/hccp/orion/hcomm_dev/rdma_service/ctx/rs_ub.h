@@ -12,6 +12,7 @@
 #include "dl_urma_function.h"
 #include "hccp_async_ctx.h"
 #include "hccp_async.h"
+#include "hccp_ctx.h"
 #include "hccp_common.h"
 #include "ra_rs_comm.h"
 #include "ra_rs_ctx.h"
@@ -31,11 +32,6 @@ enum rs_jetty_state {
     RS_JETTY_STATE_IMPORTED = 2,
     RS_JETTY_STATE_BIND = 3,
     RS_JETTY_STATE_MAX
-};
-
-union create_jfc_cfg {
-    struct udma_u_lock_jfc_cfg lock_jfc_cfg;
-    struct udma_u_jfc_cfg_ex jfc_cfg_ex;
 };
 
 struct jetty_destroy_batch_info {
@@ -72,6 +68,7 @@ int rs_ub_ctx_chan_destroy(struct rs_ub_dev_cb *dev_cb, unsigned long long addr)
 int rs_ub_ctx_jfc_create(struct rs_ub_dev_cb *dev_cb, struct ctx_cq_attr *attr, struct ctx_cq_info *info);
 int rs_ub_ctx_jfc_destroy(struct rs_ub_dev_cb *dev_cb, unsigned long long addr);
 int rs_ub_ctx_jetty_create(struct rs_ub_dev_cb *dev_cb, struct ctx_qp_attr *attr, struct qp_create_info *info);
+int rs_ub_ctx_reg_jetty_db(struct rs_ctx_jetty_cb *jetty_cb, struct udma_u_jetty_info *jetty_info);
 int rs_ub_ctx_query_jetty_batch(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_ids[], struct jetty_attr attr[],
     unsigned int *num);
 int rs_ub_ctx_jetty_destroy(struct rs_ub_dev_cb *dev_cb, unsigned int jetty_id);

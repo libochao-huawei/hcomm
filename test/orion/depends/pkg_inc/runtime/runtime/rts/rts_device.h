@@ -14,8 +14,8 @@
 #include <stdlib.h>
 #include <unordered_map>
 
-#include "base.h"
-#include "dev.h"
+#include "runtime/base.h"
+#include "runtime/dev.h"
 
 #if defined(__cplusplus)
 extern "C" {

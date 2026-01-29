@@ -55,7 +55,8 @@ JfcHandle InnerNetDev::getUbJfcHandle(HrtUbJfcMode jfcMode)
     if (rdmaHandle_ == nullptr) {
         THROW<NullPtrException>("[InnerNetDev::%s] rdmaHandle_ is nullptr", __func__);
     }
-    ubJfcHandle_ = HrtRaUbCreateJfc(rdmaHandle_, jfcMode);
+    CqCreateInfo cqInfo;
+    ubJfcHandle_ = HrtRaUbCreateJfc(rdmaHandle_, jfcMode, cqInfo);
     return ubJfcHandle_;
 }
 

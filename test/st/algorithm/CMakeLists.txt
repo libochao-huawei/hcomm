@@ -62,6 +62,8 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/pub_inc
     ${HCOMM_CODE_ROOT}/src/pub_inc/new
     ${HCOMM_CODE_ROOT}/src/pub_inc/inner
+    ${HCOMM_CODE_ROOT}/pub_inc
+    ${HCOMM_CODE_ROOT}/pub_inc/hccl
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
@@ -136,6 +138,68 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/channel
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
+
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
+    ${HCOMM_CODE_FRAMEWORK}/../orion/interface
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank_pairs
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/sockets/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/api_c_adpt/
+    ${HCOMM_CODE_FRAMEWORK}/../common/stream
+    ${HCOMM_CODE_FRAMEWORK}/../orion/common/utils/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/transport
+    ${HCOMM_CODE_FRAMEWORK}/../orion/common/exception/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/common/utils/
+    ${HCOMM_CODE_FRAMEWORK}/../hccl_next/framework/topo/new_topo_builder/common/
+    ${HCOMM_CODE_FRAMEWORK}/../hccl_next/framework/topo/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/common/types/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/common/
+    ${HCOMM_CODE_FRAMEWORK}/../hccl_next/framework/topo/new_topo_builder/rank_graph/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/transport/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/../hccl_next/framework/topo/new_topo_builder/rank_table_info/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/framework/resource_manager/socket/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/external_system/
+    
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/common/
+ 
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/stream/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/pub_inc/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/notify/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/socket
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/stream/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/connection/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/buffer/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/framework/communicator/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/service/collective/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/framework/communicator/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/mem/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/connection/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/task/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/notify/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/stream/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/buffer/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/channel/dpu_notify/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/unified_platform/resource/channel/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/framework/env_config/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/service/collective/primitive/
+    ${HCOMM_CODE_FRAMEWORK}/../hccl_next/framework/topo/new_topo_builder/rank_graph_builder/
+    ${HCOMM_CODE_FRAMEWORK}/../orion/framework/misc/json_parser/
+    ${HCOMM_CODE_FRAMEWORK}/../hccl_next/framework/topo/new_topo_builder/phy_topo/
+    ${HCOMM_CODE_FRAMEWORK}/../hccl_next/framework/topo/new_topo_builder/topo_info/
+    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc
+    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc/network
+    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/external_depends/rdma-core/include
 )
 
 add_subdirectory(testcase)

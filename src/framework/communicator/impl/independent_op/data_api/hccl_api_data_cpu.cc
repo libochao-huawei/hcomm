@@ -27,6 +27,15 @@ void AddThread(ThreadHandle thread) {
     g_threadLaunchCtx.AddThread(thread);
 }
 
+bool IsSupportReduce(HcommDataType dataType, HcommReduceOp op)
+{
+    bool checkDataType =
+        (dataType == HCOMM_DATA_TYPE_FP32 || dataType == HCOMM_DATA_TYPE_FP16 || dataType == HCOMM_DATA_TYPE_INT8 ||
+        dataType == HCOMM_DATA_TYPE_INT16 || dataType == HCOMM_DATA_TYPE_INT32 || dataType == HCOMM_DATA_TYPE_BFP16);
+    bool checkReduceType = (op == HCOMM_REDUCE_SUM || op == HCOMM_REDUCE_MAX || op == HCOMM_REDUCE_MIN);
+    return checkDataType && checkReduceType;
+}
+
 int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, uint64_t len)
 {
     HCCL_INFO("[%s] START. thread[0x%llx], dst[0x%llx], src[0x%llx], len[%llu].", __func__, thread, dst, src, len);
@@ -56,6 +65,8 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommLocalReduceOnThread]Not support reduce, "
+        "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -217,6 +228,8 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommWriteReduceOnThread]Not support reduce, "
+        "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);
@@ -240,14 +253,16 @@ int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle channel, voi
 }
 
 HcclResult CommWriteReduceWithNotify(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
-    uint64_t count, HcclDataType dataType, HcclReduceOp reduceOp, uint32_t remoteNotifyIdx)
+    uint64_t count, HcommDataType dataType, HcommReduceOp reduceOp, uint32_t remoteNotifyIdx)
 {
     CHK_PTR_NULL(src);
     CHK_PTR_NULL(dst);
+    CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[CommWriteReduceWithNotify]Not support reduce, "
+        "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     AddThread(thread);
     HcclBuf locBuf{const_cast<void*>(src), count * SIZE_TABLE[dataType], nullptr};
     HcclBuf rmtBuf{dst, count * SIZE_TABLE[dataType], nullptr};
-    HcclReduceInfo reduceInfo{dataType, reduceOp};
+    HcclReduceInfo reduceInfo{static_cast<HcclDataType>(dataType), static_cast<HcclReduceOp>(reduceOp)};
 
     Stream *stream = GetStream(thread);
     CHK_PTR_NULL(stream);
@@ -344,6 +359,8 @@ int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channel, void
 
     CHK_PTR_NULL(dst);
     CHK_PTR_NULL(src);
+    CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[HcommReadReduceOnThread]Not support reduce, "
+        "dst[%p], src[%p], count[%llu], dataType[%d], reduceOp[%d]", dst, src, count, dataType, reduceOp), HCCL_E_PARA);
     AddThread(thread);
 
     Thread *const threadPtr = reinterpret_cast<Thread *>(thread);

@@ -49,6 +49,7 @@ void ExecutorTracer::BackGroundDfx(void *info)
         StopLaunchCommandHandle(ctx);
         KfcCommandHandle(ctx);
         HandleSwitchNic(ctx);
+        TaskMonitor();
         HandleCqeStatus(ctx);
         HandleResumeChangeLink(ctx);
         hccl::HcclOneSideServiceAicpu::HandleErrCqe();
@@ -88,11 +89,25 @@ void ExecutorTracer::HandleDestroyComm(AicpuComContext *const ctx)
     }
     rwlock.readUnlock();
 
-    rwlock.writeLock();
     for (auto &groupName : destroyGroupName) {
+        rwlock.writeLock();
         AicpuHcclProcess::AicpuDestoryCommbyGroup(groupName);
+        rwlock.writeUnlock();
     }
-    rwlock.writeUnlock();
+}
+
+void ExecutorTracer::TaskMonitor(void)
+{
+    ReadWriteLockBase &commAicpuMapMutex = AicpuHcclProcess::AicpuGetCommMutex();
+    ReadWriteLock rwlock(commAicpuMapMutex);
+    rwlock.readLock();
+    std::vector<std::pair<std::string, hccl::HcclCommAicpu *>> aicpuCommInfo;
+    (void)AicpuHcclProcess::AicpuGetCommAll(aicpuCommInfo);
+    for (auto &commInfo : aicpuCommInfo) {
+        hccl::HcclCommAicpu *hcclAicpu = commInfo.second;
+        (void)hcclAicpu->StreamTaskMonitor();
+    }
+    rwlock.readUnlock();
 }
 
 void ExecutorTracer::HandleBackGround(AicpuComContext *const ctx)

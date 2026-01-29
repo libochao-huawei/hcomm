@@ -551,7 +551,6 @@ struct RsRdevCb {
     unsigned long long notifyVaBase;
     unsigned long long notifySize;
     int notifyAccess;
-    struct SensorNode sensorNode;
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
 
@@ -627,6 +626,7 @@ struct rs_cb {
 
     unsigned long long notifyVaBase;
     unsigned long long notifySize;
+    struct SensorNode sensorNode;
 
     void (*tcpRecvCallback)(const void *fdHandle);
     const void **fdMap;
@@ -680,7 +680,7 @@ int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb, str
 int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
 int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
 int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
-int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb, struct SensorNode *sensorNode);
-void RsSensorNodeUnregister(struct SensorNode *snesorNode);
+int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb);
+void RsSensorNodeUnregister(struct rs_cb *rsCb);
 int RsRetryTimeoutExceptionCheck(struct SensorNode *snesorNode);
 #endif // RS_INNER_H

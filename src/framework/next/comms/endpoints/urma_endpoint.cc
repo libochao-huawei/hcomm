@@ -35,7 +35,7 @@ HcclResult UrmaEndpoint::Init()
     u32 devPhyId;
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
-    Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
+    EXECEPTION_CATCH(Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId), return HCCL_E_INTERNAL);
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
         HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);

@@ -21,19 +21,17 @@ extern "C" {
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
-HcclResult HcommEndpointDestroy(EndpointHandle endPointHandle);
+HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
 
-HcclResult HcommMemUnreg(EndpointHandle endPointHandle, void *memHandle);
+HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
 
-HcclResult HcommMemExport(
-    EndpointHandle endPointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
+HcclResult HcommMemExport(EndpointHandle endpointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
 
-HcclResult HcommMemImport(
-    EndpointHandle endPointHandle, const void *memDesc, uint32_t descLen, HcommBuf *outBuf);
+HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
 
-HcclResult HcommMemUnimport(EndpointHandle endPointHandle, const HcommBuf *buf);
+HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
 HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
@@ -45,12 +43,12 @@ HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNu
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,
     const std::string &commTag, aclrtBinHandle binHandle);
 
-HcclResult HcclChannelGetHcclBufferA5(HcclComm comm, ChannelHandle channel, void **buffer, uint64_t *size);
-
 HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
 
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
+HcclResult HcommThreadAllocWithStream(CommEngine engine, void *stream, uint32_t notifyNum, ThreadHandle *thread);
+ 
 #ifdef __cplusplus
 }
 #endif // __cplusplus

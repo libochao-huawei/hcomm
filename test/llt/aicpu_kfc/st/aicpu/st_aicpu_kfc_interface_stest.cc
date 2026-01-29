@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 
@@ -456,9 +466,9 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunchTestPrintHccl)
 {
     HccCommResParamTask paramTask;
     HcclKFCTilingData tilingData = {0};
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 1;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 1;
     desc.tilingOff = 11;
     desc.isDyn = 0;
@@ -473,9 +483,9 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunchTestNullArgs)
 TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunchTestNullDesc)
 {
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 1;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 1;
     desc.tilingOff = 11;
     desc.isDyn = 0;
@@ -860,14 +870,14 @@ struct ArgsInputForHost {
 TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_1)
 {
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     TestTilingData tilingData;
     tilingData.version = 2;
     tilingData.commCnt = 1;
@@ -893,14 +903,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_2)
 {
     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 2;
+    desc.itemNum = 2;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     TestTilingData tilingData;
 
     tilingData.serverCfg.debugMode = MC2_DEBUG_TIME_TAKEN;
@@ -921,14 +931,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_2)
 TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_3)
 {
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 1;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     auto hexDescAddr = 0x1711;
     void* desPtr = reinterpret_cast<void*>(hexDescAddr);
     HcclKFCTilingData tilingData = {0};
@@ -963,14 +973,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_3)
 TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_4)
 {
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 1;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 1;
     desc.tilingOff = 4;
     desc.isDyn = 23;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     auto hexDescAddr = 0x1711;
     void* desPtr = reinterpret_cast<void*>(hexDescAddr);
     HcclKFCTilingData tilingData = {0};
@@ -998,14 +1008,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_4)
 TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_tilingDataNullptr)
 {
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 1;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 1;
     desc.tilingOff = 4;
     desc.isDyn = 23;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     auto hexDescAddr = 0x1711;
     void* desPtr = reinterpret_cast<void*>(hexDescAddr);
     HcclKFCTilingData tilingData = {0};
@@ -1033,14 +1043,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_tilingDataNullptr)
 TEST_F(MC2AicpuInterface_ST, RunAicpuInnerRpcSrvGroupLaunch_launchFailed)
 {
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 1;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 1;
     desc.tilingOff = 4;
     desc.isDyn = 23;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     auto hexDescAddr = 0x1711;
     void* desPtr = reinterpret_cast<void*>(hexDescAddr);
     HcclKFCTilingData tilingData = {0};
@@ -1099,14 +1109,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuRpcSrvLaunch_Mc2api_debugModePrintBuff)
     EXPECT_EQ(0, RunAicpuKfcResInit(&initTask));
 
     u64* a = (u64*)malloc(1024*1024);
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     Mc2InitTilingInner tilingData;
     std::memset(&tilingData, 0, sizeof(Mc2InitTilingInner));
     tilingData.version = 100;
@@ -1154,14 +1164,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_5)
 {
     MOCKER(AdprofCheckFeatureIsOn).stubs().will(returnValue(1));
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 2;
+    desc.itemNum = 2;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     Mc2InitTilingInner tilingData;
     tilingData.version = 100;
     tilingData.mc2HcommCnt =2;
@@ -1209,14 +1219,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_6)
     hcclMsgArea->sendMsgList[0].valid = HCCL_MSG_VALID_MASK;
     hcclMsgArea->sendMsgList[0].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[0]));
 
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 2;
+    desc.itemNum = 2;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     Mc2InitTilingInner tilingData;
     tilingData.version = 100;
     tilingData.mc2HcommCnt = 2;
@@ -1237,14 +1247,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_6)
 TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_7)
 {
     HccCommResParamTask paramTask;
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 2;
+    desc.itemNum = 2;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     Mc2InitTilingInner tilingData;
     tilingData.version = 100;
     tilingData.mc2HcommCnt =2;
@@ -1407,14 +1417,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_8)
     hcclMsgArea->sendMsgList[1].valid = HCCL_MSG_VALID_MASK;
     hcclMsgArea->sendMsgList[1].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[1]));
 
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     Mc2InitTilingInner tilingData;
     std::memset(&tilingData, 0, sizeof(Mc2InitTilingInner));
     tilingData.version = 100;
@@ -1516,14 +1526,14 @@ TEST_F(MC2AicpuInterface_ST, RunAicpuKfcSrvLaunch_Mc2api_9)
     hcclMsgArea->sendMsgList[1].valid = HCCL_MSG_VALID_MASK;
     hcclMsgArea->sendMsgList[1].xorCheck = GenXorStub(&(hcclMsgArea->sendMsgList[1]));
 
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     Mc2InitTilingInner tilingData;
     std::memset(&tilingData, 0, sizeof(Mc2InitTilingInner));
     tilingData.version = 100;

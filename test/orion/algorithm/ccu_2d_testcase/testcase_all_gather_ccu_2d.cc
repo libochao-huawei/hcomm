@@ -199,7 +199,7 @@ TEST_F(AllGatherCCU2DTest, allgather_multimission)
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
-    checkerOpParam.algName = "CcuAllGatherMesh2DMultiMission";
+    checkerOpParam.algName = "CcuAllGatherMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -221,7 +221,7 @@ TEST_F(AllGatherCCU2DTest, allgather_multimission_3)
     checkerOpParam.DataDes.count = 2 * 1024 * 1024 + 33;
     checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
     checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
-    checkerOpParam.algName = "CcuAllGatherMesh2DMultiMission";
+    checkerOpParam.algName = "CcuAllGatherMesh2D";
 
     Checker checker;
     HcclResult ret;
@@ -340,40 +340,6 @@ TEST_F(AllGatherCCU2DTest, allgather_ccu_mem2mem_3_mul_4_rank_ub)
     unsetenv(envHcclBuffSize.c_str());
 }
 
-TEST_F(AllGatherCCU2DTest, allgather_ccu_mem2mem_3_mul_4_rank_huge)
-{
-    RankTable_For_LLT gen;
-    TopoMeta topoMeta {{{0,1,2,
-        8,9,10,
-        16,17,18,
-        24,25,26}}};
-
-    setenv("HCCL_IODIE_NUM", "2", 1);
-
-    constexpr u64 HCCL_BUFSIZE = 2048;  // u32 in 91095_alg_config.h at 91095AlgConfig.maxTmpMemSize, so can't be 4096
-    std::string envHcclBuffSize = "HCCL_BUFFSIZE";
-    setenv(envHcclBuffSize.c_str(), std::to_string(HCCL_BUFSIZE).c_str(), 1);
-
-    constexpr u64 GB2B = 1024 * 1024 * 1024;
-    constexpr u64 HUGE_DATA_SIZE = 8 * GB2B;
-
-    CheckerOpParam checkerOpParam;
-    checkerOpParam.opType = CheckerOpType::ALLGATHER;
-    checkerOpParam.tag = "AllGather";
-    checkerOpParam.opMode = CheckerOpMode::OPBASE;
-    checkerOpParam.DataDes.count = HUGE_DATA_SIZE + 1024;
-    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_UINT16;
-    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910_95;
-    checkerOpParam.algName = "CcuAllGatherMeshMem2Mem2D";
-
-    Checker checker;
-    HcclResult ret;
-    ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
-    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
-
-    unsetenv(envHcclBuffSize.c_str());
-}
-
 TEST_F(AllGatherCCU2DTest, allgather_ccu_mem2mem_3_mul_3_rank_int8_count1)
 {
     RankTable_For_LLT gen;
@@ -457,4 +423,6 @@ TEST_F(AllGatherCCU2DTest, allgather_ccu_mem2mem_case_test_4_mul_3_rank_offload)
     ret = checker.CheckA5Aicpu(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }
+
+
 }

@@ -1,3 +1,13 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include "gtest/gtest.h"
 #include <mockcpp/mockcpp.hpp>
 
@@ -922,14 +932,14 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_Mc2api_Test_1)
     AicpuHcclProcess::AicpuReleaseCommbyGroup(hcomId2);
     MOCKER(AddTaskForHcclMsgV2).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 2;
+    desc.itemNum = 2;
     desc.hasFfts = 0;
     desc.tilingOff = 4;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     ArgsInput curArgs = {inputDesc, (void *)&context1, (void *)&context2, nullptr, &tilingData};
     void *args[sizeof(curArgs)/ sizeof(void *)];
     memcpy(args, &curArgs, sizeof(curArgs));
@@ -1021,14 +1031,14 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_Mc2api_Test_1_v1)
     MOCKER(ParseCcOpTilingData).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
 
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 3;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     ArgsInput curArgs = {inputDesc, (void *)&context1, nullptr, &tilingData};
     void *args[sizeof(curArgs)/ sizeof(void *)];
     memcpy(args, &curArgs, sizeof(curArgs));
@@ -1132,14 +1142,14 @@ TEST_F(AicpuUnfold_UT, AicpuRunRpcServerForMC2_Mc2api_Test_BatchWrite)
     MOCKER(OrchestrateSdmaSqe).stubs().will(returnValue(0));
     MOCKER_CPP(&DispatcherAiCpu::LaunchTask).stubs().will(returnValue(0));
 
-    HcclCommParamDesc desc;
+    CommKfcParamDesc desc;
     desc.version = 2;
-    desc.groupNum = 1;
+    desc.itemNum = 1;
     desc.hasFfts = 0;
     desc.tilingOff = 3;
     desc.isDyn = 0;
     uint64_t inputDesc;
-    std::memcpy(&inputDesc, &desc, sizeof(HcclCommParamDesc));
+    std::memcpy(&inputDesc, &desc, sizeof(CommKfcParamDesc));
     ArgsInput curArgs = {inputDesc, (void *)&context1, nullptr, &tilingData};
     void *args[sizeof(curArgs)/ sizeof(void *)];
     memcpy(args, &curArgs, sizeof(curArgs));

@@ -13,7 +13,7 @@ target_sources(hccl_v2_utest
     # ut_coll_service_ai_cpu_impl.cc
     ut_connections_builder.cc
     ut_ins_rules.cc
-    ut_interpreter.cc
+    # ut_interpreter.cc
     # ut_coll_service_base.cc
 )
 

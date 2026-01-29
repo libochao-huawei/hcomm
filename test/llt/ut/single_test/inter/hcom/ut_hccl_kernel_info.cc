@@ -3900,20 +3900,20 @@ TEST_F(HcomKernelInfoTest, ut_LoadTaskSetAivCoreLimit)
     ret = hcomKernelInfo.SetAivCoreLimit(task);
     EXPECT_EQ(ret, HCCL_E_PARA);
 
-    u32 blockDim1 = 0;
-    MOCKER(&HcomSetAivCoreLimit).stubs().with(any(), spy(blockDim1)).will(returnValue(HCCL_SUCCESS));
+    u32 numBlocks1 = 0;
+    MOCKER(&HcomSetAivCoreLimit).stubs().with(any(), spy(numBlocks1)).will(returnValue(HCCL_SUCCESS));
     privateDefBuf.comm = 0;
     privateDefBuf.aivCoreLimit = 7;
     ret = hcomKernelInfo.SetAivCoreLimit(task);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(blockDim1, privateDefBuf.aivCoreLimit);
+    EXPECT_EQ(numBlocks1, privateDefBuf.aivCoreLimit);
 
-    u32 blockDim2 = 0;
+    u32 numBlocks2 = 0;
     privateDefBuf.comm = 0x1234;
     privateDefBuf.aivCoreLimit = 8;
     ret = hcomKernelInfo.SetAivCoreLimit(task);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    EXPECT_EQ(blockDim2, privateDefBuf.aivCoreLimit);
+    EXPECT_EQ(numBlocks2, privateDefBuf.aivCoreLimit);
 
     GlobalMockObject::verify();
 }

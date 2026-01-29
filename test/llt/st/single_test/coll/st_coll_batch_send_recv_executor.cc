@@ -338,7 +338,7 @@ TEST_F(CollBatchSendRecvExecutorTest, st_execop_aivmode)
     MOCKER_CPP(&HcclCommunicator::RegisterDfxInfo)
     .stubs()
     .will(returnValue(HCCL_E_PARA));
-    MOCKER_CPP(&CollAlgOperator::SetBlockDim)
+    MOCKER_CPP(&CollAlgOperator::SetNumBlocks)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_PARA));
@@ -398,7 +398,7 @@ TEST_F(CollBatchSendRecvExecutorTest, st_execop_cache)
     MOCKER_CPP(&HcclCommunicator::RegisterDfxInfo)
     .stubs()
     .will(returnValue(HCCL_E_PARA));
-    MOCKER_CPP(&CollAlgOperator::SetBlockDim)
+    MOCKER_CPP(&CollAlgOperator::SetNumBlocks)
     .stubs()
     .with(any())
     .will(returnValue(HCCL_E_PARA));
