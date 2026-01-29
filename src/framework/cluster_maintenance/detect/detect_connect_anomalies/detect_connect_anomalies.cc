@@ -212,7 +212,7 @@ HcclResult DetectConnectionAnomalies::CreateDetectVnicLinks(struct ErrInfo  errI
 
     CHK_RET(vnicSocket_->Init());
     CHK_RET(vnicSocket_->Listen());
-    CHK_RET(AddWhiteList(vnicSocket_, NicType::VNIC_TYPE, tag));; // 添加白名单
+    CHK_RET(AddWhiteList(vnicSocket_, NicType::VNIC_TYPE, tag)); // 添加白名单
     HCCL_INFO("[CreateDetectVnicLinks]AddWhiteList finished");
 
     u32 acceptTimeOut = 1; // accecpt 超时1s

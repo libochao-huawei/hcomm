@@ -389,7 +389,7 @@ HcclResult HcclSocketManager::CreateSockets(const std::string &commTag,
     }
 
     HCCL_INFO("[Create][Sockets]client socket map size %u, server socket map size %u",
-        serverSocketsMap.size(), serverSocketsMap.size());
+        dstClientMap.size(), serverSocketsMap.size());
 
     // 需要等待连接建立成功时，则会阻塞
     if (isWaitEstablished) {

@@ -282,4 +282,6 @@ const s32& GetIncreSaveExecTimeOut();
 const u64& GetProfConfig();
 
 const u64& GetExternalInputDebugConfig();
+
+void SetExternalInputProtocolType(ProtocolType prot);
 #endif  //  EXTERNALINPUT_H

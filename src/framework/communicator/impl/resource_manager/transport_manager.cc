@@ -755,7 +755,8 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
 
     HcclResult ret = HCCL_SUCCESS;
     if (isInterRdma || Is310PDevice()) {
-        netDevCtx = nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE ?
+        netDevCtx = ((nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) ||
+                     (nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST && !devIpAddr_[0].IsInvalid())) ?
             netDevCtxMap_[devIpAddr_[0]]: netDevCtxMap_[hostIp_];
         if (isBackup && nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
             netDevCtx = netDevCtxMap_[rankInfoList_[userRank_].backupNicIp[0]];

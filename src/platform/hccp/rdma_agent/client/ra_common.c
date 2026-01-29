@@ -119,8 +119,6 @@ HCCP_ATTRI_VISI_DEF int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, c
         ConverReturnCode(OTHERS, -EINVAL));
     CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][hccn_cfg]phy_id(%u) must smaller than %u",
         info->phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(OTHERS, -EINVAL));
-    CHK_PRT_RETURN(info->mode != NETWORK_OFFLINE, hccp_err("[get][hccn_cfg]do not support mode(%u)", info->mode),
-        ConverReturnCode(OTHERS, -EINVAL));
 
     hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%d], hccn_cfg_key[%d]",
         info->phyId, info->mode, key);

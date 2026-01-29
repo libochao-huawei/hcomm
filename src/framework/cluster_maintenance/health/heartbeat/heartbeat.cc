@@ -130,11 +130,21 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
                 backupPort, true));
         }
     }
-    if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST &&
-        netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
-        u32 hostPort = GetHostPort(devicePhyId_);
-        CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
+    if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        if (!locRank.nicIp[0].IsInvalid()) {
+            u32 nicPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
+            nicIp_ = locRank.nicIp[0];
+            if (netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
+                CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, nicPort));
+            }
+        } else {
+            if (netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
+                u32 hostPort = GetHostPort(devicePhyId_);
+                CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
+            }
+        }
     }
+
     mapLock.unlock();
     uid_ = GetUId(locRank);
     nicDeploy_ = locRank.nicDeploy;
@@ -267,10 +277,19 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
         }
     }
 
-    if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST &&
-        netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
-        u32 hostPort = GetHostPort(devicePhyId_);
-        CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
+    if (isNeedNic && locRank.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        if (!locRank.nicIp[0].IsInvalid()) {
+            u32 nicPort = (port == HCCL_INVALID_PORT) ? locRank.deviceNicPort : port;
+            nicIp_ = locRank.nicIp[0];
+            if (netDevCtxMap_.find(nicIp_) == netDevCtxMap_.end()) {
+                CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, nicIp_, nicPort));
+            }
+        } else {
+            if (netDevCtxMap_.find(locRank.hostIp) == netDevCtxMap_.end()) {
+                u32 hostPort = GetHostPort(devicePhyId_);
+                CHK_RET(InitNic(NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, locRank.hostIp, hostPort));
+            }
+        }
     }
     mapLock.unlock();
 

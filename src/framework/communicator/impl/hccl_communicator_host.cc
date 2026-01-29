@@ -48,6 +48,7 @@
 #include "order_launch/order_launch.h"
 #include "comm_configer.h"
 #include "comm_topo_desc.h"
+#include "hccl_net_dev_defs.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -2150,7 +2151,7 @@ namespace hccl
                 }
             }
         } else if (nicDeployment_ == NICDeployment::NIC_DEPLOYMENT_HOST) {
-            u32 port = GetLocalNicPort(NicType::HOST_NIC_TYPE);
+            u32 port = 0;
             CHK_PRT_RET((hostIp_.IsInvalid()), HCCL_ERROR("[Init][Nic] host ip is invalid when NIC "
                                                           "deployment is host. "),
                         HCCL_E_PARA);
@@ -2158,10 +2159,27 @@ namespace hccl
             isUsedRdmaLevel0_ = attrCollector_.GetUsedRdmaLevel0();
             u32 devicePhyID = (static_cast<s32>(devicePhyId_) == HOST_DEVICE_ID) ? 0 : devicePhyId_;
             HCCL_INFO("[Init][Nic], hostPort[%u], devicePhyID[%u]", port, devicePhyID);
-            HcclNetDevCtx hostnicPortCtx;
-            CHK_RET(HcclNetOpenDev(&hostnicPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, hostIp_));
-            CHK_PTR_NULL(hostnicPortCtx);
-            netDevCtxMap_.insert(std::make_pair(hostIp_, hostnicPortCtx));
+
+            u32 i = 0;
+            HcclNetDevCtx nicPortCtx;
+            for (i = 0; i < devIpAddr_.size(); i++) {
+                if (devIpAddr_[i].IsInvalid()) {
+                    continue;
+                }
+                std::vector<u32> &ranksPorts = groupNicRanksPort_.empty() ? nicRanksPort_ : groupNicRanksPort_;
+                port = GetNicPort(devicePhyId_, ranksPorts, userRank_, isUseRankPort_);
+                CHK_RET(HcclNetOpenDev(&nicPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, devIpAddr_[i]));
+                CHK_PTR_NULL(nicPortCtx);
+                netDevCtxMap_.insert(std::make_pair(devIpAddr_[i], nicPortCtx));
+                HcclNetDevSetProtoType(nicPortCtx, HCCL_PROTO_TYPE_ROCE);
+            }
+
+            if (i == devIpAddr_.size()) {
+                CHK_RET(HcclNetOpenDev(&nicPortCtx, NicType::HOST_NIC_TYPE, devicePhyId_, deviceLogicId_, hostIp_));
+                CHK_PTR_NULL(nicPortCtx);
+                netDevCtxMap_.insert(std::make_pair(hostIp_, nicPortCtx));
+            }
+
             CHK_RET(socketManager_->ServerInit(hostnicPortCtx, port));
         } else {
             HCCL_ERROR("[Init][Nic]nic deployment[%d] is not supported", nicDeployment_);

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <arpa/inet.h>
 
+#include "externalinput.h"
 #include "log.h"
 #include "env_config.h"
 #include "hccl_comm_pub.h"
@@ -128,9 +129,6 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
         return HCCL_SUCCESS;
     }
 
-    DetectNicDepoly(rankTable);
-    CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy));
-
     std::sort(rankTable.rankList.begin(), rankTable.rankList.end(),
         [&](const RankInfo_t &a, const RankInfo_t &b) -> bool {return a.rankId < b.rankId;});
 
@@ -143,6 +141,25 @@ HcclResult TopoinfoRanktableConcise::ParserClusterInfo(hccl::HcclCommParams &par
 	    HCCL_ERROR("[%s][%s]errNo[0x%016llx] rank_id[%s] is invalid", LOG_KEYWORDS_INIT_GROUP.c_str(),
 		    LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(HCCL_E_PARA), identify_.c_str());
 	    return HCCL_E_PARA;
+    }
+
+    u32 serverId = 0;
+    for (auto &rankInfo : rankTable.rankList) {
+        if (rankInfo.rankId = rankId) {
+            serverId = rankInfo.serverIdx;
+            break;
+        }
+    }
+    auto it = serverNicDeploy_.find(serverIdx);
+    if ((it == serverNicDeploy_.end()) ||
+        (serverNicDeploy_[serverIdx] == NICDeployment::NIC_DEPLOYMENT_RESERVED)) {
+        DetectNicDepoly(rankTable);
+        CHK_RET(CheckNicDeployConsistence(rankTable, rankTable.nicDeploy));
+    } else {
+        rankTable.nicDeploy = serverNicDeploy_[serverIdx];
+        if (rankTable.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+            SetHostUseDevNicFlag(false);
+        }
     }
 
     // 校验rank id合法性
@@ -300,6 +317,34 @@ HcclResult TopoinfoRanktableConcise::GetSingleServer(const nlohmann::json &serve
     HCCL_DEBUG("[%s.json] -> host_ip: [%s]. ret[%u]", fileName_.c_str(), hostNicIp.c_str(), ret);
     if (ret != HCCL_E_NOT_FOUND) {
         CHK_RET(ConvertIpAddress(hostNicIp, hostIp));
+    }
+
+    std::string paraNetPosition;
+    ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "para_net_position", paraNetPosition, true);
+    CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_NOT_FOUND,
+        HCCL_ERROR("[Get][SingleServer]get para net position error"), ret);
+    HCCL_DEBUG("[%s.json] -> paraNetPosition: [%s]. ret[%u]", fileName_.c_str(), paraNetPosition.c_str(), ret);
+    if (ret != HCCL_E_NOT_FOUND) {
+        if (paraNetPosition == "host") {
+            serverNicDeploy_[serverIdx] == NICDeployment::NIC_DEPLOYMENT_HOST;
+        } else if (paraNetPosition == "device") {
+            serverNicDeploy_[serverIdx] == NICDeployment::NIC_DEPLOYMENT_DEVICE;
+        } else {
+            serverNicDeploy_[serverIdx] == NICDeployment::NIC_DEPLOYMENT_RESERVED;
+        }
+    }
+
+    std::string paraNetProt;
+    ret = GetJsonArrayMemberProperty(serverListObj, objIndex, "para_net_protocol", paraNetProt, true);
+    CHK_PRT_RET(ret != HCCL_SUCCESS && ret != HCCL_E_NOT_FOUND,
+        HCCL_ERROR("[Get][SingleServer]get para net protocol error"), ret);
+    HCCL_DEBUG("[%s.json] -> para_net_protocol: [%s]. ret[%u]", fileName_.c_str(), paraNetProt.c_str(), ret);
+    if (ret != HCCL_E_NOT_FOUND) {
+        if (paraNetProt == "rdma") {
+            SetExternalInputProtocolType(ProtocolType::RDMA);
+        } else if (paraNetPosition == "tcp") {
+            SetExternalInputProtocolType(ProtocolType::TCP);
+        }
     }
 
     // 处理ranklist

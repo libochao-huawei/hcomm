@@ -64,6 +64,13 @@ HcclResult InitExternalInputHeterog()
     return HCCL_SUCCESS;
 }
 
+void SetExternalInputProtocolType(ProtocolType prot)
+{
+    g_externalInput.protocolType = prot;
+    HCCL_INFO("Set external Input Protocol[%d]", static_cast<s32>(g_externalInput.protocolType));
+    return HCCL_SUCCESS;
+}
+
 HcclResult ResetInitState()
 {
     g_externalInput.SetDefaultParams();

@@ -1141,7 +1141,7 @@ HcclResult NetworkManager::StartHostNetAndListen(const HcclIpAddress &ipAddr, So
             ret);
     }
     if (sock.nicRdmaHandle == nullptr && rdmaFlag) {
-        notifyType_ = NOTIFY;
+        notifyType_ = EVENTID;
         ret = InitRDMA(devicePhyId_, ipAddr, NETWORK_PEER_ONLINE, notifyType_, sock.nicRdmaHandle);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Start][Nic]errNo[0x%016llx] ra nic init rdma failed, devid[%u], return[%d]",

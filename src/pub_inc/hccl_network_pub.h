@@ -46,6 +46,8 @@ HcclResult HcclNetOpenDev(
 void HcclNetCloseDev(HcclNetDevCtx netDevCtx);
 
 HcclResult HcclNetDevGetNicType(HcclNetDevCtx netDevCtx, NicType *nicType);
+HcclResult HcclNetDevGetProtoType(HcclNetDevCtx netDevCtx, u32 &proto);
+HcclResult HcclNetDevSetProtoType(HcclNetDevCtx netDevCtx, u32 proto);
 HcclResult HcclNetDevGetLocalIp(HcclNetDevCtx netDevCtx, hccl::HcclIpAddress &localIp);
 HcclResult HcclNetDevGetPortStatus(HcclNetDevCtx netDevCtx, bool &portStatus);
 HcclResult HcclNetDevGetTlsStatus(HcclNetDevCtx netDevCtx, TlsStatus *tlsStatus);

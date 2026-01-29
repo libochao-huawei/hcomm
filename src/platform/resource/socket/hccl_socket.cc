@@ -13,6 +13,7 @@
 #include "adapter_hccp.h"
 #include "network_manager_pub.h"
 #include "sal_pub.h"
+#include "hccl_net_dev_defs.h"
 #include "hccl_network.h"
 #include "network/hccp_common.h"
 #include "adapter_error_manager_pub.h"
@@ -94,9 +95,17 @@ HcclResult HcclSocket::Listen()
         // 如果是backup，传入额外的rdev信息
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartNic(localIp_, localPort_, rdmaFlag, backupIp_);
     } else {
+        u32 prot = 0;
         SocketHandle hostSocketHandle;
+        bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
+        HcclNetDevGetProtoType(netDevCtx_, prot);
+        if (rdmaFlag && prot == HCCL_PROTO_TYPE_ROCE) {
+            rdmaFlag = true;
+        } else {
+            rdmaFlag = false;
+        }
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
-            localIp_, hostSocketHandle, localPort_, false);
+            localIp_, hostSocketHandle, localPort_, rdmaFlag);
     }
     RPT_INPUT_ERR(ret == HCCL_E_UNAVAIL, "EJ0003", std::vector<std::string>({"reason"}),
             std::vector<std::string>({"The IP address and port have been bound already."}));
@@ -134,9 +143,17 @@ HcclResult HcclSocket::Listen(u32 port)
         // 如果是backup，传入额外的rdev信息
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartNic(localIp_, port, rdmaFlag, backupIp_);
     } else {
+        u32 prot = 0;
         SocketHandle hostSocketHandle;
+        bool rdmaFlag = !GetExternalInputHcclIsTcpMode();
+        HcclNetDevGetProtoType(netDevCtx_, prot);
+        if (rdmaFlag && prot == HCCL_PROTO_TYPE_ROCE) {
+            rdmaFlag = true;
+        } else {
+            rdmaFlag = false;
+        }
         ret = NetworkManager::GetInstance(localDeviceLogicId_).StartHostNetAndListen(
-            localIp_, hostSocketHandle, port, false);
+            localIp_, hostSocketHandle, port, rdmaFlag);
     }
     std::stringstream tmpMsgstream;
     tmpMsgstream << ((socketType_ == NicType::HOST_NIC_TYPE) ? ("[" + LOG_KEYWORDS_INIT_CHANNEL + "]") :

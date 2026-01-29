@@ -129,6 +129,7 @@ HcclResult FindLocalHostIP(std::vector<std::pair<std::string, hccl::HcclIpAddres
 std::string GetLocalServerId(std::string &serverId);
 bool IsGeneralServer();
 HcclResult IsHostUseDevNic(bool &isHdcMode);
+HcclResult SetHostUseDevNicFlag(bool &isHdcMode);
 u32 GetNicPort(u32 devicePhyId, const std::vector<u32> &ranksPort, u32 userRank, bool isUseRanksPort);
 
 HcclResult IsAllDigit(const char *strNum);

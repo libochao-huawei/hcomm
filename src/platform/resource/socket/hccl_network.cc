@@ -313,6 +313,25 @@ HcclResult HcclNetDevGetLocalIp(HcclNetDevCtx netDevCtx, hccl::HcclIpAddress &lo
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclNetDevGetProtoType(HcclNetDevCtx netDevCtx, u32 &proto)
+{
+    CHK_PTR_NULL(netDevCtx);
+    hccl::NetDevContext* pNetDevCtx = static_cast<hccl::NetDevContext *>(netDevCtx);
+
+    proto = (u32)pNetDevCtx->GetProtoType();
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcclNetDevSetProtoType(HcclNetDevCtx netDevCtx, u32 proto)
+{
+    CHK_PTR_NULL(netDevCtx);
+    hccl::NetDevContext* pNetDevCtx = static_cast<hccl::NetDevContext *>(netDevCtx);
+
+    pNetDevCtx->SetProtoType(proto);
+    return HCCL_SUCCESS;
+}
+
+
 HcclResult HcclNetDevGetPortStatus(HcclNetDevCtx netDevCtx, bool &portStatus)
 {
     CHK_PTR_NULL(netDevCtx);

@@ -616,6 +616,12 @@ bool IsGeneralServer()
     return (numDev == 0);
 }
 
+bool g_isHdcMode = true;
+void SetHostUseDevNicFlag(bool isHdcMode)
+{
+    g_isHdcMode = isHdcMode;
+}
+
 // 判断host侧是否需要使用device网卡
 HcclResult IsHostUseDevNic(bool &isHdcMode)
 {
@@ -637,7 +643,7 @@ HcclResult IsHostUseDevNic(bool &isHdcMode)
     }
 
     // 在aiserver上判断该环境变量是否设置
-    isHdcMode = true;
+    isHdcMode = g_isHdcMode;
     HCCL_INFO("IsHostUseDevNic[%u]", isHdcMode);
 
     return HCCL_SUCCESS;
