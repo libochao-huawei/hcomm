@@ -11,16 +11,10 @@
 namespace Hccl {
 
 constexpr int INPUT_XN_ID  = 0;
-constexpr int OUTPUT_XN_ID = 1;
 constexpr int TOKEN_XN_ID  = 2;
 constexpr int CKE_IDX_0    = 0;
 constexpr int CKE_IDX_1    = 1;
 constexpr int CKE_IDX_2    = 2;
-constexpr int CKE_IDX_3    = 3;
-
-constexpr uint64_t MAIN_BLOCK_LOOP_NUM = 128;
-constexpr uint64_t TAIL_BLOCK_LOOP_NUM = 64;
-constexpr uint64_t MISSION_NUM_2       = 2;
 
 CcuContextAllReduceMesh1DOneShot::CcuContextAllReduceMesh1DOneShot(const CcuCtxArg &arg,
                                                                    const std::vector<CcuTransport *> &transports,
@@ -51,15 +45,11 @@ void CcuContextAllReduceMesh1DOneShot::Algorithm()
 {
     HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] AllReduceMesh1DOneShot start");
     InitResource();
-    ImportReduceVariables();  // 载入尾块处理 mission 的参数与同步信号
     LoadArgs();  // 加载 taskArg 参数
     Presync();  // 跨卡前同步，交换参数信息
 
-    SyncTailBlock(0);  // 通知尾块处理 mission 参数同步完成，可以开始执行
-
     DoGroupReduce();
 
-    SyncTailBlock(1);  // 等待尾块处理 mission 任务结束
     Postsync();  // 所有搬运任务结束后，跨卡后同步
 
     HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] AllReduceMesh1DOneShot end");
@@ -92,30 +82,6 @@ void CcuContextAllReduceMesh1DOneShot::InitResource()
     }
     groupOpSize_ = CreateGroupOpSize();
 
-    // reduce 的尾块需要的变量
-    tailBlockOffSet_ = CreateVariable();
-    tailBlockGroupOpSize_ = CreateGroupOpSize();
-    mainBlockCtxSignal_ = CreateMaskSignal();
-
-    AllocGoResource(MAIN_BLOCK_LOOP_NUM);
-    HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] InitResource end");
-}
-
-void CcuContextAllReduceMesh1DOneShot::ImportReduceVariables()
-{
-    HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] ImportReduceVariables start");
-    reduceInput_ = ImportVariable(notifySignal_ + "_Input_Reduce_Tail_Block");
-    reduceOutput_ = ImportVariable(notifySignal_ + "_Output_Reduce_Tail_Block");
-    reducetoken_ = ImportVariable(notifySignal_ + "_Token_Reduce_Tail_Block");
-    reduceInputOffSet_ = ImportVariable(notifySignal_ + "_Input_Offset_Reduce_Tail_Block");
-    reduceOutputOffSet_ = ImportVariable(notifySignal_ + "_Output_Offset_Reduce_Tail_Block");
-    reduceGroupOpSize_.addrOffset = ImportVariable(notifySignal_ + "_AddrOffset_Reduce_Tail_Block");
-    reduceGroupOpSize_.loopParam = ImportVariable(notifySignal_ + "_LoopParam_Reduce_Tail_Block");
-    reduceGroupOpSize_.parallelParam = ImportVariable(notifySignal_ + "_ParallelParam_Reduce_Tail_Block");
-    reduceGroupOpSize_.residual = ImportVariable(notifySignal_ + "_Residual_Reduce_Tail_Block");
-
-    ExportMaskSignal(mainBlockCtxSignal_, notifySignal_ + "_CtxSync_Main_Block");
-    tailBlockCtxSignal_ = ImportMaskSignal(notifySignal_ + "_CtxSync_Reduce_Tail_Block");
     HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] InitResource end");
 }
 
@@ -125,19 +91,7 @@ void CcuContextAllReduceMesh1DOneShot::LoadArgs()
     Load(input_[rankId_]);
     Load(output_);
     Load(token_[rankId_]);
-    Load(tailBlockOffSet_);
     Load(groupOpSize_);
-    Load(tailBlockGroupOpSize_);
-
-    LocalCtxPostVar(input_[rankId_], reduceInput_, tailBlockCtxSignal_, 0);  // 如果翻译成syncXn，需要有效的信号
-    LocalCtxPostVar(output_, reduceOutput_, tailBlockCtxSignal_, 0);
-    LocalCtxPostVar(token_[rankId_], reducetoken_, tailBlockCtxSignal_, 0);
-    LocalCtxPostVar(tailBlockOffSet_, reduceInputOffSet_, tailBlockCtxSignal_, 0);
-    LocalCtxPostVar(tailBlockOffSet_, reduceOutputOffSet_, tailBlockCtxSignal_, 0);
-    LocalCtxPostVar(tailBlockGroupOpSize_.addrOffset, reduceGroupOpSize_.addrOffset, tailBlockCtxSignal_, 0);
-    LocalCtxPostVar(tailBlockGroupOpSize_.loopParam, reduceGroupOpSize_.loopParam, tailBlockCtxSignal_, 0);
-    LocalCtxPostVar(tailBlockGroupOpSize_.parallelParam, reduceGroupOpSize_.parallelParam, tailBlockCtxSignal_, 0);
-    LocalCtxPostVar(tailBlockGroupOpSize_.residual, reduceGroupOpSize_.residual, tailBlockCtxSignal_, 0);
     HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] LoadArgs end");
 }
 
@@ -166,14 +120,6 @@ void CcuContextAllReduceMesh1DOneShot::Postsync()
     }
     GroupWait(*transportGroup, CKE_IDX_0, allBit);
     HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] Postsync end");
-}
-
-void CcuContextAllReduceMesh1DOneShot::SyncTailBlock(uint32_t ctxSignalIndex)
-{
-    HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] SyncTailBlock start, ctxSignalIndex[%u]", ctxSignalIndex);
-    LocalCtxPost(tailBlockCtxSignal_, 1 << (0 + ctxSignalIndex * MISSION_NUM_2));
-    LocalWait(mainBlockCtxSignal_, 1 << (1 + ctxSignalIndex * MISSION_NUM_2));
-    HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] SyncTailBlock end");
 }
 
 void CcuContextAllReduceMesh1DOneShot::DoGroupReduce()
@@ -211,28 +157,6 @@ void CcuContextAllReduceMesh1DOneShot::DoGroupReduce()
     return;
 }
 
-void CcuContextAllReduceMesh1DOneShot::CalcMissionOffset(
-    uint64_t sliceSize, uint64_t missionId, uint64_t &missionSize, uint64_t &missionOffset) const
-{
-    /*
-     128+64loop场景下，数据不足512K时全部由Mi-0的一次循环完成，超过512K时，512K整倍数部分由Mi-0完成，余下由Mi1完成
-     768K-1024K区间内，Mi-0一次循环，Mi-1两次循环，出现拖尾；其余场景Mi-0的循环次数不少于Mi-1循环次数
-     */
-    constexpr uint64_t MS_SIZE = 4096;
-    uint64_t loopSizeMi0 = MAIN_BLOCK_LOOP_NUM * MS_SIZE;  // Mi-0一次循环的搬运量，在这个范围内的都由Mi-0一次完成
-    if (sliceSize <= loopSizeMi0) {
-        // 全部由Mi-0完成
-        missionSize = missionId == 0 ? sliceSize : 0;
-        missionOffset = missionId == 0 ? 0 : sliceSize;
-    } else {
-        // 小于loopSizeMi0的由Mi-1完成
-        uint64_t resSize = sliceSize % loopSizeMi0;
-        missionSize = missionId == 0 ? (sliceSize - resSize) : resSize;
-        missionOffset = missionId == 0 ? 0 : (sliceSize - resSize);
-    }
-    return;
-}
-
 std::vector<uint64_t> CcuContextAllReduceMesh1DOneShot::GeneArgs(const CcuTaskArg &arg)
 {
     HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] GeneArgs start");
@@ -245,32 +169,16 @@ std::vector<uint64_t> CcuContextAllReduceMesh1DOneShot::GeneArgs(const CcuTaskAr
     uint64_t                                tokenInfo  = taskArg->token_;
     uint64_t                                sliceSize  = taskArg->sliceSize_;
 
-    uint64_t mainBlockSize;
-    uint64_t tailBlockSize;
-    uint64_t mainBlockOffset;
-    uint64_t tailBlockOffset;
+    auto mainBlockGoSize = CalGoSize(sliceSize);
 
-    CalcMissionOffset(sliceSize, 0, mainBlockSize, mainBlockOffset);
-    CalcMissionOffset(sliceSize, 1, tailBlockSize, tailBlockOffset);
+    HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] GeneArgs, taskArg are inputAddr[%llu], outputAddr[%llu], "
+        "sliceSize[%llu]", inputAddr, outputAddr, sliceSize);
 
-    moConfig.loopCount = MAIN_BLOCK_LOOP_NUM;
-    auto mainBlockGoSize = CalGoSize(mainBlockSize);
-    moConfig.loopCount = TAIL_BLOCK_LOOP_NUM;  // 需要模拟尾块的参数
-    auto tailBlockGoSize = CalGoSize(tailBlockSize);
-    moConfig.loopCount = MAIN_BLOCK_LOOP_NUM;  // 还原主块的参数
-
-    HCCL_INFO(
-        "[CcuContextAllReduceMesh1DOneShot] GeneArgs, taskArg are inputAddr[%llu], outputAddr[%llu], "
-        "sliceSize[%llu],  mainBlockSize[%llu], tailBlockSize[%llu], mainBlockOffset[%llu], tailBlockOffset[%llu]",
-        inputAddr, outputAddr, sliceSize, mainBlockSize, tailBlockSize, mainBlockOffset, tailBlockOffset);
-
-    std::vector<uint64_t> taskArgList{inputAddr, outputAddr, tokenInfo, tailBlockOffset};
-
-    for (auto goSize : {mainBlockGoSize, tailBlockGoSize}) {
-        for (auto val : goSize) {
-            taskArgList.push_back(val);
-        }
+    std::vector<uint64_t> taskArgList{inputAddr, outputAddr, tokenInfo};
+    for (auto val : mainBlockGoSize) {
+        taskArgList.push_back(val);
     }
+
     HCCL_INFO("[CcuContextAllReduceMesh1DOneShot] GeneArgs end");
     return taskArgList;
 }

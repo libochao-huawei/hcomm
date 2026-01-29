@@ -107,18 +107,7 @@ HcclResult CcuTempAllReduceMesh1DOneShot::Run(const TempFuncs &tempFuncs, const 
     ccuInstructionAllReduceMesh1DOneShot.SetLinks(links);
     ccuInstructionAllReduceMesh1DOneShot.SetCntCkeNum(cntCkeNum);
     ccuInstructionAllReduceMesh1DOneShot.SetRankGroup(rankGroup);
-    insGroupPtr->Append(std::move(
-        std::make_unique<CcuInstructionAllReduceMesh1DOneShot>(ccuInstructionAllReduceMesh1DOneShot)));
-
-    // 添加尾块处理拓展指令
-    CcuInstructionReduceTailBlock ccuInstructionReduceTailBlock;
-    ccuInstructionReduceTailBlock.Init(rankId, notifySignal, op_, tempVTopo_);
-    ccuInstructionReduceTailBlock.SetLinks(links);
-    ccuInstructionReduceTailBlock.SetRankGroup(rankGroup);
-    insGroupPtr->Append(std::move(
-        std::make_unique<CcuInstructionReduceTailBlock>(ccuInstructionReduceTailBlock)));
-
-    tempInsQues[0]->Append(std::move(insGroupPtr));
+    tempInsQues[0]->Append(std::move(std::make_unique<CcuInstructionAllReduceMesh1DOneShot>(ccuInstructionAllReduceMesh1DOneShot)));
     HCCL_INFO("[CcuTempAllReduceMesh1DOneShot][Run] end");
     return HcclResult::HCCL_SUCCESS;
 }
