@@ -68,5 +68,23 @@ HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type)
     return HCCL_SUCCESS;
 }
 
+HcclResult Thread::AddThreadHandleToMap(CommEngine commEngine, ThreadHandle threadHandle)
+{
+    if (threadHandleMap_.find(commEngine) != threadHandleMap_.end() && threadHandleMap_[commEngine] != threadHandle) {
+        HCCL_ERROR("[Thread][%s]Mapping already exists:commEngine[%d], threadHandle[%lu], new threadHandle[%lu]",
+                   __func__, threadHandleMap_[commEngine], threadHandle);
+    }
 
+    threadHandleMap_[commEngine] = threadHandle;
+    return HCCL_SUCCESS;
+}
+
+Thread *Thread::FindThreadByCommEngine(CommEngine commEngine)
+{
+    if (threadHandleMap_.find(commEngine) != threadHandleMap_.end()) {
+        return reinterpret_cast<Thread *>(threadHandleMap_[commEngine]);
+    }
+
+    return nullptr;
+}
 }  // namespace hccl

@@ -156,6 +156,7 @@ HcclResult RtsNotify::Alloc()
 
     if (notifyType == NotifyType::RUNTIME_NOTIFY) {
         CHK_RET(hrtNotifyCreate(deviceId, &notifyPtr));
+        CHK_RET(hrtGetNotifyID(notifyPtr, &id));
     } else {
         CHK_RET(hrtNotifyCreateWithFlag(deviceId, &notifyPtr));
     }
