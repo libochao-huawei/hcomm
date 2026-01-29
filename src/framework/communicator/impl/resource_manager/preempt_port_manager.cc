@@ -100,15 +100,24 @@ HcclResult PreemptPortManager::PreemptPortInRange(IpPortRef& portRef, const std:
             "ref count[%u].", ipAddr.c_str(), usePort, portRef[ipAddr].second.Count());
         return HCCL_SUCCESS;
     }
+
+    //如果不设置portRange，不走端口抢占逻辑
+    bool isPreempt = true;
+    if (!GetExternalInputHostPortSwitch()) {
+        isPreempt = false;
+    }
+
     // 如果这个IP上没有抢占过的port，则轮询输入的端口范围，找到一个可用的端口
     for (auto &range: portRange) {
         for (u32 port = range.min; port <= range.max; ++port) {
             HcclResult ret = listenSocket->Listen(port);
             if (ret == HCCL_SUCCESS) {
-                // 抢占端口成功，将端口记录到计数器中，并作为出参返回
                 usePort = listenSocket->GetLocalPort();
-                portRef[ipAddr].first = usePort;
-                portRef[ipAddr].second.Ref();
+                if (isPreempt) {
+                    // 抢占端口成功，将端口记录到计数器中，并作为出参返回
+                    portRef[ipAddr].first = usePort;
+                    portRef[ipAddr].second.Ref();
+                }
                 HCCL_INFO("[PreemptPortManager][PreemptPortInRange] listen on ip[%s] and port[%u] success.",
                     ipAddr.c_str(), usePort);
                 return HCCL_SUCCESS;
@@ -134,9 +143,7 @@ HcclResult PreemptPortManager::PreemptPortInRange(IpPortRef& portRef, const std:
     HCCL_ERROR("NOTICE: Users need to make sure ports in HCCL_HOST_SOCKET_PORT_RANGE and HCCL_NPU_SOCKET_PORT_RANGE "
         "are available for HCCL. Please double check whether the port are used by others unexpected process. "
         "The port ranges size should also be enough when running multi-process HCCL.");
-    HCCL_ERROR("NOTICE: The host port range size is not suggested to be smaller than the process number"
-        " on current rank.");
-    HCCL_ERROR("NOTICE: The npu port range size is not suggested to be smaller than the process number"
+    HCCL_ERROR("NOTICE: The host/npu port range size is not suggested to be smaller than the process number"
         " on current rank.");
     return HCCL_E_UNAVAIL;
 }

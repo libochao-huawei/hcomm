@@ -175,7 +175,7 @@ HcclResult TopoInfoDetect::SetIsInterSuperPodRetryEnable(bool isRetry)
     return HCCL_E_NOT_SUPPORT;
 }
 
-HcclResult TopoInfoDetect::StartRootNetwork( const HcclIpAddress& hostIP, u32 &usePort)
+HcclResult TopoInfoDetect::StartRootNetwork( const HcclIpAddress& hostIP, u32 &usePort, const std::vector<HcclSocketPortRange> &portRanges)
 {
     return HCCL_E_NOT_SUPPORT;
 }
