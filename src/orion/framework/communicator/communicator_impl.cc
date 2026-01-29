@@ -2382,7 +2382,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
     params.opMode                     = opMode;
     params.maxTmpMemSize              = GetBufferSize();
     params.isMc2                      = opParams.isMc2;
-    if (opParams.isMc2 && opParams.commEngine == HcclAccelerator::AICPU) {
+    if (opParams.isMc2 && (opParams.commEngine == HcclAccelerator::AICPU || opParams.commEngine == HcclAccelerator::AICPU_TS)) {
         opExecuteConfig.accState = AcceleratorState::AICPU_TS;
     } else if (opParams.isMc2 && opParams.commEngine != HcclAccelerator::AICPU) {
         opExecuteConfig.accState = AcceleratorState::CCU_MS;
