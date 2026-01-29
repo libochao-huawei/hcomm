@@ -198,7 +198,7 @@ TEST_F(AdapterTest, ut_hrtGetDeviceTypeBySocVersion)
 
 s32 fake_rtGetSocVersionV91095(char *chipVer, const u32 maxLen)
 {
-    sal_memcpy(chipVer, sizeof("Ascend910_95"), "Ascend910_95", sizeof("Ascend910_95"));
+    sal_memcpy(chipVer, sizeof("Ascend950"), "Ascend950", sizeof("Ascend950"));
     return DRV_ERROR_NONE;
 }
 
@@ -219,7 +219,7 @@ TEST_F(AdapterTest, ut_hrtGetDeviceTypeBySocVersion_910_95_return_ok)
 {
     log_level_set_stub(3);
     DevType deviceType;
-    std::string str{"Ascend910_9591"};
+    std::string str{"Ascend950DT_9591"};
     HcclResult cc = hrtGetDeviceTypeBySocVersion(str, deviceType);
     EXPECT_EQ(cc, HCCL_SUCCESS);
     EXPECT_EQ(deviceType, DevType::DEV_TYPE_910_95);

@@ -1326,7 +1326,7 @@ TEST_F(RuntimeTest, st_hrtGetDeviceTypeBySocVersion)
 
 const char *fake_rtGetSocVersionV91095()
 {
-    static std::string socName = "Ascend910_95";
+    static std::string socName = "Ascend950";
     return socName.c_str();
 }
 
@@ -1347,7 +1347,7 @@ TEST_F(RuntimeTest, st_hrtGetDeviceTypeBySocVersion_910_95_return_ok)
 {
     log_level_set_stub(3);
     DevType deviceType;
-    std::string str{"Ascend910_9591"};
+    std::string str{"Ascend950DT_9591"};
     HcclResult cc = hrtGetDeviceTypeBySocVersion(str, deviceType);
     EXPECT_EQ(cc, HCCL_SUCCESS);
     EXPECT_EQ(deviceType, DevType::DEV_TYPE_910_95);

@@ -28,7 +28,7 @@ HcclResult GetDeviceType(LegacyDevType &deviceType)
     CHK_PRT_RET(socName == nullptr, HCCL_ERROR("[GetDeviceType]get soc name is nullptr"), HCCL_E_RUNTIME);
     std::string targetChipVerStr(socName);
     HCCL_INFO("get soc name[%s] [%s]", socName, targetChipVerStr.c_str());
-    if (targetChipVerStr.find("Ascend910_95") != std::string::npos) {
+    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
         deviceType = LegacyDevType::DEV_TYPE_910_95;
         return HCCL_SUCCESS;
     }

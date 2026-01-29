@@ -1153,8 +1153,8 @@ TEST_F(AdapterRtsTest, HrtUbDevQueryToken_run_NOK)
 TEST_F(AdapterRtsTest, HrtGetDeviceType_910_95_return_ok)
 {
     // Given
-    const char targetChipVer[CHIP_VERSION_MAX_LEN] = "Ascend910_9591";
-    // std::string targetChipVer = "Ascend910_9591";
+    const char targetChipVer[CHIP_VERSION_MAX_LEN] = "Ascend950DT_9591";
+    // std::string targetChipVer = "Ascend950DT_9591";
     MOCKER(aclrtGetSocName)
         .stubs()
         .will(returnValue(&targetChipVer[0]));
