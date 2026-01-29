@@ -842,7 +842,11 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
             status = CommStatus::COMM_READY;
             return dataTypeChkRes;
         }
-        CHK_RET(SetAivControledCoreNum(isAiv));
+
+        if (isAiv) {
+            currentCollOperator->blockDimLimit = aivCoreLimit;
+            HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%d].", aivCoreLimit);
+        }
 
         auto info = StringFormat("Entry-Hccl(opType[%s]): group[%s], rankInGroup[%d], rankSizeInGroup[%u], "
                                  "devLogicId[%d], streamId[%u], opMode[%s], %s",

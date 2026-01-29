@@ -65,7 +65,7 @@ TEST_F(AivUtilsTest, aiv_utils_test)
     .with(any())
     .will(returnValue(libPathPtr));
 
-    MOCKER(ReadBinFile)
+    MOCKER(LoadBinaryFromFile)
     .stubs()
     .with(any())
     .will(returnValue(0));
@@ -84,6 +84,7 @@ TEST_F(AivUtilsTest, aiv_utils_test)
     .will(returnValue(returnValueChar));
     RegisterKernel();
 
-    string bufferRead;
-    Hccl::ReadBinFile("./hcomm/test/llt/stub/workspace/fwkacllib/lib64/hccl_aiv_op_91095.o", bufferRead);
+    aclrtBinHandle g_binHandle;
+    Hccl::LoadBinaryFromFile("./hcomm/test/llt/stub/workspace/fwkacllib/lib64/hccl_aiv_op_91095.o",
+        ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
 }

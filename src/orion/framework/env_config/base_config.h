@@ -73,12 +73,39 @@ class EnvRtsConfig : public BaseConfig {
 public:
     void Parse() override;
     u32  GetExecTimeOut() const;
+    double GetAivExecTimeOut() const;
 
 private:
     static constexpr s32 NOTIFY_DEFAULT_WAIT_TIME = 27 * 68; // notifywait默认1836等待时长
+    static constexpr s32 AIV_TIMEOUT_DEFAULT = 1091;
 
-    CfgField<u32> execTimeOut{"HCCL_EXEC_TIMEOUT", s32(NOTIFY_DEFAULT_WAIT_TIME), Str2T<u32>, CheckExecTimeOut,
-                              ProcExecTimeOut};
+    CfgField<u32> execTimeOut{
+        "HCCL_EXEC_TIMEOUT", 
+        static_cast<u32>(NOTIFY_DEFAULT_WAIT_TIME),
+        [](const std::string& s) -> u32 {
+            static std::regex validFormat(R"(^\d+(\.\d{1,2})?$)");
+            if (!std::regex_match(s, validFormat)) {
+                THROW<InvalidParamsException>(StringFormat("Invalid config value, execTimeOutStr[%s]", s.c_str()));
+            }
+            return String2T<u32>(s);
+        },
+        CheckExecTimeOut,
+        ProcExecTimeOut
+    };
+
+    CfgField<double> aivExecTimeOut{
+        "HCCL_EXEC_TIMEOUT",
+        double(AIV_TIMEOUT_DEFAULT),
+        [](const std::string& s) -> double {
+            static std::regex validFormat(R"(^\d+(\.\d{1,2})?$)");
+            if (!std::regex_match(s, validFormat)) {
+                THROW<InvalidParamsException>(StringFormat("Invalid config value, execTimeOutStr[%s]", s.c_str()));
+            }
+            return String2T<double>(s);
+        },
+        nullptr,
+        nullptr
+    };
 };
 
 // RDMA配置

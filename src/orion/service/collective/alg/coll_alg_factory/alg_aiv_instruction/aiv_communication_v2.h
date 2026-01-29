@@ -25,40 +25,53 @@
  
 using namespace AscendC;
 
+#define EXPORT_AIV_META_INFO(kernel_name) \
+static const struct FunLevelKType kernel_name##_kernel_type_section __attribute__ \
+((used, section (".ascend.meta." #kernel_name))) \
+= {{F_TYPE_KTYPE, sizeof(unsigned int), K_TYPE_AIV}}
+
+
 #define AIV_ALLGATHER_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_all_gather_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivAllGatherV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_all_gather_##type)
  
 #define AIV_SCATTER_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_scatter_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivScatterV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_scatter_##type)
  
 #define AIV_ALL_REDUCE_ONESHOT_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_allreduce_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivAllReduceV2Mesh1DOneShot<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_allreduce_##type)
  
 #define AIV_BROADCAST_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_broadcast_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivBroadcastV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_broadcast_##type)
  
 #define AIV_ALLREDUCE_MESH1D_TWOSHOT_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_allreduce_mesh1d_twoshot_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivAllReduceV2Mesh1DTwoShot<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_allreduce_mesh1d_twoshot_##type)
  
 #define AIV_ALL_TO_ALL_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_alltoall_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivAlltoAllV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_alltoall_##type)
  
 #define AIV_REDUCE_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_reduce_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivReduceV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_reduce_##type)
  
 #define AIV_REDUCE_SCATTER_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_reduce_scatter_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
@@ -67,12 +80,14 @@ extern "C" __global__ __aicore__ void aiv_reduce_scatter_##type(EXTERN_KERNEL_AR
         } else { \
                 AivReduceScatterV2Mesh1DCoreCtrl<type>(EXTERN_KERNEL_ARGS_CALL); \
         } \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_reduce_scatter_##type)
 
 #define AIV_ALL_TO_ALL_V_KERNEL_BATCH_DEF(type) \
 extern "C" __global__ __aicore__ void aiv_alltoallv_##type(EXTERN_KERNEL_ARGS_DEF_V2) { \
          return AivAlltoAllVV2Mesh1D<type>(EXTERN_KERNEL_ARGS_CALL); \
-}
+} \
+EXPORT_AIV_META_INFO(aiv_alltoallv_##type)
 
 // 910B支持的Atomic数据类型
 #define AIV_ATOMIC_DATA_TYPE_DEF(func) \

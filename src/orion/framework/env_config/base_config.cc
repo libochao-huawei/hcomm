@@ -82,11 +82,17 @@ s32 EnvSocketConfig::GetLinkTimeOut() const
 void EnvRtsConfig::Parse()
 {
     execTimeOut.Parse();
+    aivExecTimeOut.Parse();
 }
 
 u32 EnvRtsConfig::GetExecTimeOut() const
 {
     return execTimeOut.Get();
+}
+
+double EnvRtsConfig::GetAivExecTimeOut() const
+{
+    return aivExecTimeOut.Get();
 }
 
 // EnvRdmaConfig

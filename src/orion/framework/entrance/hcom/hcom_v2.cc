@@ -1015,10 +1015,12 @@ HcclResult HcomSupportDeterministicOptimV2(const char *group, const bool &isDete
 HcclResult HcomSetAivCoreLimitV2(const char *group, u32 aivCoreLimit)
 {
     HCCL_INFO("[%s] start.", __func__);
+    CHK_PRT_RET(aivCoreLimit == 0,
+        HCCL_ERROR("[HcomSetAivCoreLimitV2] aivCoreLimit[%u] invalid", aivCoreLimit), HCCL_E_PARA);
     std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
     CHK_RET(GetHcclCommV2(group, hcclComm));
-    (void)aivCoreLimit;
-    HCCL_WARNING("HcomSetAivCoreLimitV2 is not support at A5!");
+    CHK_RET(hcclComm->SetAivCoreLimit(aivCoreLimit));
+    HCCL_RUN_INFO("HcomSetAivCoreLimitV2 group[%s] aivCoreLimit[%u]", group ? group : HCCL_WORLD_GROUP, aivCoreLimit);
     return HCCL_SUCCESS;
 }
 

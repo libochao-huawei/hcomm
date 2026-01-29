@@ -102,6 +102,7 @@ public:
     HcclResult ExecAlgSelect(const CollOpParams &opParams, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
     HcclResult CreateBarrierMemory(void *&sendBuf, void *&recvBuf, uint64_t count);
     HcclResult SetAivClearEnable(bool aivClearEnable);
+    HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify);
     HcclResult GetKFCWorkSpace(const char *memTag, uint64_t *size, void **addr, bool *newCreated);
  

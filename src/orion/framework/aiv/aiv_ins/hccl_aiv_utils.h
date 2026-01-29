@@ -127,7 +127,8 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
 
 HcclResult RegisterKernel();
  
-HcclResult ReadBinFile(const std::string& fileName, std::string& buffer);
+HcclResult LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+    aclrtBinHandle &binHandle);
  
 HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, void* args, u32 argsSize);
  

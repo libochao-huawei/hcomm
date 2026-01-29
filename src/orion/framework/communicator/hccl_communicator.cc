@@ -402,6 +402,12 @@ HcclResult HcclCommunicator::SetAivClearEnable(bool aivClearEnable)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommunicator::SetAivCoreLimit(u32 newAivCoreLimit)
+{
+    pimpl->SetAivCoreLimit(newAivCoreLimit);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommunicator::GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum)
 {
     return pimpl->GetNetLayers(netLayers, netLayerNum);

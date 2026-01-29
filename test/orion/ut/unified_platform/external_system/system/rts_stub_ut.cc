@@ -669,6 +669,22 @@ aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t bloc
 {
     return ACL_SUCCESS;
 }
+
+aclError aclrtGetOpTimeOutInterval(uint64_t *interval)
+{
+    return ACL_SUCCESS;
+}
+
+aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle)
+{
+    return ACL_SUCCESS;
+}
+
+aclError aclrtBinaryGetFunctionByEntry(aclrtBinHandle binHandle, uint64_t funcEntry,
+    aclrtFuncHandle *funcHandle)
+{
+    return ACL_SUCCESS;
+}
  
 rtError_t rtResetXpuDevice(rtXpuDevType devType, const uint32_t devId)
 {

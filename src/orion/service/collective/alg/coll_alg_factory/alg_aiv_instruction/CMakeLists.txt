@@ -3,21 +3,37 @@ set_source_files_properties(
 )
 if(BUILD_OPEN_PROJECT)
     set(CCE_DIR ${ASCEND_CANN_PACKAGE_PATH}/tools/ccec_compiler/bin)
+    
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o
+        COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h 
+                -o ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o 
+                --cce-aicore-arch=dav-c310-vec
+                --cce-aicore-input-parameter-size=28000 --cce-aicore-only 
+                -mllvm -cce-aicore-function-stack-size=0x8000 
+                -mllvm -cce-aicore-stack-size=0x8000
+                -D__CCE_AICORE__=310 -D__DAV_C310__ -DASCENDC_DUMP
+                -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw/lib/
+                -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw
+                -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw/interface/
+                -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw/impl/
+                -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
+                -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
+                -mllvm -cce-aicore-record-overflow=false 
+                -mllvm -cce-aicore-addr-transform 
+                -mllvm --cce-aicore-jump-expand=true 
+                -std=c++17 -fstack-protector-all -DONE_CORE_DUMP_SIZE=1024
+        
+        COMMAND ${CCE_DIR}/ld.lld -m aicorelinux -Ttext=0 
+                ${CMAKE_CURRENT_BINARY_DIR}/aiv_communication_910_95_tmp.o 
+                -static -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o
+        
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMENT "Compiling and Linking AIV kernel"
+    )
+
     add_custom_target(hccl_aiv_op_910_95 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o)
-    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o
-            COMMAND ${CCE_DIR}/ccec -c -x cce -O2 ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication_v2.h -o ${CMAKE_CURRENT_BINARY_DIR}/hccl_aiv_op_910_95.o --cce-aicore-arch=dav-c310-vec
-            --cce-aicore-input-parameter-size=28000 --cce-aicore-only -mllvm -cce-aicore-function-stack-size=0x8000 -mllvm -cce-aicore-stack-size=0x8000
-            -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw/lib/
-            -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw
-            -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw/interface/
-            -I${ASCEND_CANN_PACKAGE_PATH}/tools/tikcpp/tikcfw/impl/
-            -I${ASCEND_CANN_PACKAGE_PATH}/include/hccl/
-            -I${CMAKE_CURRENT_SOURCE_DIR}/aiv_interface/
-            -mllvm -cce-aicore-record-overflow=false -mllvm -cce-aicore-addr-transform -mllvm
-            --cce-aicore-jump-expand=true -std=c++17 -fstack-protector-all
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
 
     add_custom_target(hccl_ar_superkernel_mesh_1d_oneshot_int8 ALL
         DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/hccl_ar_superkernel_mesh_1d_oneshot_int8.o)
