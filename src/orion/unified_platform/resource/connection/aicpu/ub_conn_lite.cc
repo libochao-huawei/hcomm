@@ -579,6 +579,7 @@ std::string UbConnLite::Describe()
                         Bytes2hex(rmtEid_.raw, sizeof(rmtEid_.raw)).c_str(), pi, ci);
 }
 
+constexpr uint32_t UB_WQE_NUM_PER_SQE = 4; // URMA约束每个SQE包含4个WQEBB
 UbConnLite::UbConnLite(const UbConnLiteParam &liteParam)
 {
     dieId_           = liteParam.dieId;
@@ -586,7 +587,8 @@ UbConnLite::UbConnLite(const UbConnLiteParam &liteParam)
     jettyId_         = liteParam.jettyId;
     dbAddr_          = liteParam.dbAddr;
     sqVa_            = liteParam.sqVa;
-    sqDepth_         = liteParam.sqDepth;
+    // host侧创建jetty指定的sqDepth为sqeBBNum,device侧需要感知wqebbnum,URMA约束每个SQE包含4个WQEBB
+    sqDepth_         = liteParam.sqDepth * UB_WQE_NUM_PER_SQE;
     dwqeCacheLocked_ = liteParam.dwqeCacheLocked;
     jfcPollMode_     = liteParam.jfcPollMode;
     tpn_             = liteParam.tpn;
