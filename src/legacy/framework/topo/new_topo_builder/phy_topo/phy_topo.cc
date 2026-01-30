@@ -123,13 +123,13 @@ std::string PhyTopo::ConnInterface::Describe() const
         protocolStr += it->Describe();
     }
 
-    return StringFormat("ConnInterface[ports={%s}, pos=%s, protocols={%s}, linkType=%s]", portsStr.c_str(),
-                        pos.Describe().c_str(), protocolStr.c_str(), linkType.Describe().c_str());
+    return StringFormat("ConnInterface[ports={%s}, pos=%s, protocols={%s}, linkType=%s], topoInstId=%u, topoType=%u", portsStr.c_str(),
+                        pos.Describe().c_str(), protocolStr.c_str(), linkType.Describe().c_str(), topoInstId, topoType);
 }
 
 bool PhyTopo::ConnInterface::operator==(const ConnInterface &rhs) const
 {
-    return ports == rhs.ports && pos == rhs.pos && linkType == rhs.linkType && linkProtocols == rhs.linkProtocols;
+    return ports == rhs.ports && pos == rhs.pos && linkType == rhs.linkType && linkProtocols == rhs.linkProtocols && topoInstId == rhs.topoInstId && topoType == rhs.topoType;
 }
 
 bool PhyTopo::ConnInterface::operator!=(const ConnInterface &rhs) const
