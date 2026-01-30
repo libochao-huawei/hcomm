@@ -276,6 +276,8 @@ extern HcclResult HcclRankGraphGetLinks(HcclComm comm, uint32_t netLayer, uint32
  * @warning 重要约束：
  * 1、返回的topoInsts内存由库内管理，调用者严禁释放
  * 2、应及时复制返回的topoInsts数据，同一通信域重复调用可能使前次结果失效
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
 
@@ -292,6 +294,8 @@ extern HcclResult HcclGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, uint
  * HcclGetTopoType(commTp, netLayer=0, topoInstId=0， &topoType); // topoType=1 (1DMesh)
  * HcclGetTopoType(commTp, netLayer=1, topoInstId=0， &topoType); // topoType=0 (clos)
  * @endcode
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
 
@@ -311,6 +315,8 @@ extern HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t top
  * @warning 重要约束：
  * 1、返回的ranks内存由库内管理，调用者严禁释放
  * 2、应及时复制返回的ranks数据，同一通信域重复调用可能使前次结果失效
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
 
@@ -340,6 +346,8 @@ extern HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint3
  *     }
  * }
  * @endcode
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode);
 
@@ -350,6 +358,8 @@ extern HcclResult HcclGetHeterogMode(HcclComm comm, HcclHeterogMode *mode);
  * @param[in] topoInstId 拓扑实例ID
  * @param[out] num  返回的端点数量
  * @return HcclResult 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *num);
 
@@ -362,6 +372,8 @@ extern HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uin
  * @param[out] endpointDesc 通信设备表述数组（由调用方分配内存)
  * @note 数组内存由调用方管理，建议使用栈空间或动态分配
  * @return HcclResult 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t topoInstId, uint32_t *descNum, EndpointDesc *endpointDesc);
 
@@ -382,6 +394,8 @@ extern HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, ui
  * uint32_t size = sizeof(EndpointAttrBwCoeff); //必须等于目标类型大小
  * HcclRankGraphGetEndpointInfo(comm, rankId, endpointDesc, ENDPOINT_ATTR_BW_COEFF, size, &bwCoeff);
  * @endcode
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
 #ifdef __cplusplus
