@@ -5799,6 +5799,7 @@ namespace hccl
         CHK_RET(implAlg_->GetTinyMem(tinySendRecvMem));
         opResPara_.tinyMem = reinterpret_cast<u64>(tinySendRecvMem.ptr());
         opResPara_.tinyMemSize = reinterpret_cast<u64>(tinySendRecvMem.size());
+        opResPara_.opEntry = GetExternalInputHcclEnableEntryLog();
 
         CHK_RET(BuildOpLocalResParam(algResource, newTag));
         CHK_RET(BuildOpRemoteResParam(algResource, newTag, opType));
@@ -5808,8 +5809,8 @@ namespace hccl
         CHK_RET(BuildAicpuCustomParam());
         CHK_RET(BuildAicpuOrderLaunchNotify()); // 先申请device侧的关于按序下发的Notify内存
         CHK_RET(CopyHostOpResToDeviceParam(newTag));
-        HCCL_RUN_INFO("[%s]build aicpu unfold resource success!, tag[%s] rWinStart[%u] rWinOffset[%u]",
-                      __func__, newTag.c_str(), opResPara_.rWinStart, opResPara_.rWinOffset);
+        HCCL_RUN_INFO("[%s]build aicpu unfold resource success, tag[%s] rWinStart[%u] rWinOffset[%u] opEntry[%d]",
+                      __func__, newTag.c_str(), opResPara_.rWinStart, opResPara_.rWinOffset, opResPara_.opEntry);
         return HCCL_SUCCESS;
     }
 

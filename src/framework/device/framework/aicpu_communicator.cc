@@ -2247,7 +2247,7 @@ HcclResult HcclCommAicpu::ExecOp(const std::string &newTag, const std::string &a
         return ret;
     }
 
-    HCCL_INFO("[HcclCommAicpu][ExecOp] executor op success tag[%s], newTag[%s], algName[%s], identifier[%s].",
+    HCCL_ENTRY_INFO(commParam->opEntry, "[HcclCommAicpu][ExecOp] executor op success tag[%s], newTag[%s], algName[%s], identifier[%s].",
         opParam.tag.c_str(), newTag.c_str(), algName.c_str(), identifier_.c_str());
     return HCCL_SUCCESS;
 }
@@ -2419,10 +2419,10 @@ HcclResult HcclCommAicpu::Orchestrate(const std::string &newTag, const std::stri
     HCCL_DEBUG("profL0Open:%d, profL1Open:%d", profL0Open, profL1Open);
 
     LogControl logControl(false, false); // 重执行ERROR日志保底控制，析构时重置日志设置
-    HCCL_INFO("[HcclCommAicpu][Orchestrate]start tag[%s] newTag[%s] algName[%s] "
-        "opRetryHandler.isInplacePreSync[%d] opRetryHandler.isPostSync[%d]",
-        param.tag.c_str(), newTag.c_str(), algName.c_str(), algOpContext_.opRetryHandler.isInplacePreSync,
-        algOpContext_.opRetryHandler.isPostSync);
+    HCCL_ENTRY_INFO(commParam->opEntry, "[HcclCommAicpu][Orchestrate]start tag[%s] newTag[%s] algName[%s] identifier[%s]",
+        param.tag.c_str(), newTag.c_str(), algName.c_str(), identifier_.c_str());
+    HCCL_INFO("opRetryHandler.isInplacePreSync[%d] opRetryHandler.isPostSync[%d]",
+        algOpContext_.opRetryHandler.isInplacePreSync, algOpContext_.opRetryHandler.isPostSync);
     if (executor.get() == nullptr) {
         executor = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor.get() == nullptr, HCCL_ERROR("[HcclCommAicpu][Orchestrate]Fail to find executor "
@@ -4067,8 +4067,8 @@ HcclResult HcclCommAicpu::CheckOpExecStatus()
         HCCL_RUN_INFO("hccl aicpu stop wait finish, for recv stop launch cmd");
         return HCCL_E_SUSPENDING;
     } else if (cmd == KfcCommand::kDestroyComm) {
-        HCCL_WARNING("hccl aicpu stop wait finish, for recv destroy comm cmd");
-        return HCCL_E_SUSPENDING;
+        HCCL_ERROR("hccl aicpu stop wait finish, for recv destroy comm cmd");
+        return HCCL_E_INTERNAL;
     } else if (cmd == KfcCommand::kExit) {
         HCCL_ERROR("hccl aicpu stop wait finish, for recv exit cmd, identify[%s]", identifier_.c_str());
         return HCCL_E_INTERNAL;
@@ -4313,6 +4313,9 @@ std::string HcclCommAicpu::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextB
             break;
         case RT_STARS_SQE_TYPE_COND:
             taskName = "CO";
+            break;
+        case RT_STARS_SQE_TYPE_PLACE_HOLDER:
+            taskName = "PH";
             break;
         default:
             taskName = std::to_string(sqeType);

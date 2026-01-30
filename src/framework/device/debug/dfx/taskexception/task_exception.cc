@@ -205,6 +205,9 @@ std::string TaskException::GetTaskBriefsInfo(u32 idx, SqeRingBuffer *sqeContextB
         case RT_STARS_SQE_TYPE_SDMA:
             taskName = "SD"; // SDMA
             break;
+        case RT_STARS_SQE_TYPE_PLACE_HOLDER:
+            taskName = "PH";
+            break;
         default:
             break;
     }
