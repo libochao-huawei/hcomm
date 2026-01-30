@@ -1,0 +1,78 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Description: CcuContextAllToAllVMesh1D的头文件
+ * Author: zhanlijuan
+ * Create: 2025-03-17
+ */
+
+
+#ifndef HCCLV2_CCU_CONTEXT_ALL_TO_ALL_V_MESH_1D_H_
+#define HCCLV2_CCU_CONTEXT_ALL_TO_ALL_V_MESH_1D_H_
+
+#include <vector>
+
+#include <ios>
+#include "log.h"
+#include "ccu_ctx.h"
+#include "ccu_datatype.h"
+
+namespace Hccl {
+
+class CcuContextAllToAllVMesh1D : public CcuContext {
+public:
+    CcuContextAllToAllVMesh1D(const CcuCtxArg &arg, const std::vector<CcuTransport*> &transports,
+                              const CcuTransportGroup &group);
+    ~CcuContextAllToAllVMesh1D() override {}
+
+    void Algorithm() override;
+    std::vector<uint64_t> GeneArgs(const CcuTaskArg &arg) override;
+
+protected:
+    // a2a 对每个对端的发送接收信息
+    struct A2AsingleSendRecvInfo {
+        CcuRep::Variable tailSize;
+        CcuRep::Variable loopNum;
+        CcuRep::Variable sendOffset;
+        CcuRep::Variable recvOffset;
+        GroupOpSize      tailGoSize;
+    };
+    void CreateVariables();
+    void LoadAll2allSendRecvInfo(A2AsingleSendRecvInfo &sendRecvInfo);
+    void LoadArgs();
+    void PreSync();
+    void PostSync();
+    void DoAll2AllVMultiLoop();
+    void CalcGroupSrcDst();
+
+private:
+    uint64_t rankSize_{0};
+    uint32_t rankId_{0};
+    std::vector<CcuRep::Variable> input_;
+    std::vector<CcuRep::Variable> output_;
+    std::vector<CcuRep::Variable> token_;
+    CcuRep::Variable srcOffset_;
+    CcuRep::Variable dstOffset_;
+    std::vector<A2AsingleSendRecvInfo> sendRecvInfo_;
+
+    CcuRep::Variable a2avXnAddr_;
+    bool loadFromMem = false;
+
+    std::vector<CcuRep::Memory> src_;
+    std::vector<CcuRep::Memory> dst_;
+
+    uint16_t selfBit_{0};
+    uint16_t allBit_{0};
+    uint16_t allOtherBit_{0};
+
+    CcuRep::MaskSignal locMask_;
+    CcuRep::Variable completedRankCount_;
+    CcuRep::Variable xnMaxTransportSize_;
+    GroupOpSize xnMaxTransportGoSize_;
+    CcuRep::Variable xnConst1_;
+
+    // 以下参数用于加载 MC2 参数
+    CcuRep::Variable xnLength_;
+};
+} // namespace Hccl
+
+#endif // HCCLV2_CCU_CONTEXT_ALL_TO_ALL_V_MESH_1D_H_

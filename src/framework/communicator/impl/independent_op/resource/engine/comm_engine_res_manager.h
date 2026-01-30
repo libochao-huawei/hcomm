@@ -31,7 +31,7 @@ public:
     HcclResult HcclAllocNotify(CommEngine commEngine, NotifyType notifyType, uint32_t notifyNum,
         NotifyHandle **notifyHandleList);
     HcclResult HcommFreeNotify(uint32_t notifyNum, NotifyHandle *notifyHandleList);
-    
+    HcclResult HcclThreadExportToCommEngine(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
 private:
     std::unique_ptr<ThreadMgr> threadMgr_;
     std::unique_ptr<NotifyManager> notifyMgr_;

@@ -134,7 +134,7 @@ HcclResult HcclCommConn::Listen(int backLog)
     }
 
     if (UNLIKELY(role_ == CLIENT_ROLE_SOCKET)) {
-        HCCL_ERROR("this HcclCommConn has been configed as client, cannot use listen as server.");
+        HCCL_ERROR("this HcclCommConn has been configured as client, cannot use listen as server.");
         return HCCL_E_INTERNAL;
     }
 
@@ -160,7 +160,7 @@ HcclResult HcclCommConn::StopListen()
     serverInfo.port = localAddr_.info.tcp.port;
     CHK_RET(hrtRaSocketListenStop(&serverInfo, 1));
     isListen_ = false;
-    HCCL_RUN_INFO("HcclCommConn ip[%s] port[%u]  StopListen successs.",
+    HCCL_RUN_INFO("HcclCommConn ip[%s] port[%u]  StopListen success.",
         HcclIpAddress(localAddr_.info.tcp.ipv4Addr).GetReadableIP(), localAddr_.info.tcp.port);
     return HCCL_SUCCESS;
 }

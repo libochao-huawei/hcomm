@@ -18,6 +18,8 @@
 #include "hccl_communicator.h"
 #include "task_exception_handler_pub.h"
 #include "comm_configer.h"
+#include "snapshot_control.h"
+#include "rt_external.h"
 
 namespace hccl {
 constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
@@ -145,6 +147,7 @@ HcclResult Heartbeat::Init(const RankInfo &locRank, const bool useSuperPodMode, 
     CHK_SMART_PTR_NULL(sendRecvThread_);
     lostThreshold_ = 30; // 心跳丢失阈值为30s
     initialized_ = true;
+    isPaused_ = false;
     isDeInit_ = false;
     HCCL_INFO("[%s] heartbeat Init end, stuckDetectTime[%d s].", __func__, stuckDetectTime_);
     return HCCL_SUCCESS;
@@ -156,6 +159,7 @@ HcclResult Heartbeat::DeInit()
     isDeInit_ = true;
     startSendRecvTask_ = false;
     linkThreadRunning_ = false;
+    isPaused_ = false;
     if (sendRecvThread_) {
         if (sendRecvThread_->joinable()) {
             sendRecvThread_->join();
@@ -275,7 +279,7 @@ HcclResult Heartbeat::RegisterRanks(DevType devType, const RankInfo &locRank, st
     mapLock.unlock();
 
     std::unique_lock<std::mutex> lock(ProcessLock_);
-    for (const auto &remRank : rankInfos) {
+    for (const auto remRank : rankInfos) {
         UIDType rem = GetUId(remRank);
         rankId2StatusMap_.insert(rem, Status());
         groupMap_[group].insert(std::make_pair(rem, NO_CONN));
@@ -545,7 +549,7 @@ HcclResult Heartbeat::UnRegisterRanks(const std::string &group)
             return HCCL_SUCCESS;
         }
 
-        for (const auto &remRank : groupMap_[group]) {
+        for (const auto remRank : groupMap_[group]) {
             UIDType rem = remRank.first;
             rankId2StatusMap_.erase(rem);
             if (remRank.second == HAS_CONN) {
@@ -713,7 +717,7 @@ HcclResult Heartbeat::GetConnInfo(RankInfo &remRank, bool useSuperPodMode, HcclS
     return HCCL_SUCCESS;
 }
 
-void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperPodMode, u32 index, u32 nextOrPrevIndex,
+HcclResult GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperPodMode, u32 index, u32 nextOrPrevIndex,
     HcclSocketType &type)
 {
     // 910_93 Type要动态改一下 1. 同server vnic 2. 不同server 超结点内vnic 超结点间nic
@@ -722,7 +726,30 @@ void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperP
     bool localUseSuporPodModel = useSuperPodMode && locRank.superPodId.empty() == false;
     bool needSuperModeHb = localUseSuporPodModel && useSuperPodMode && rankInfo.superPodId.empty() == false;
     if (needSuperModeHb) {
-        if (locRank.serverId == rankInfo.serverId) { // serverId相同表示同超结点同server
+        bool isInterServer = false;
+        if (locRank.deviceType == DevType::DEV_TYPE_910_93) {
+            uint32_t userRankServerId = 0;
+            uint32_t remoteRankServerId = 0;
+            rtError_t ret = rtGetServerIDBySDID(locRank.superDeviceId, &userRankServerId);
+            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[GetSocketTypeIn91093]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                locRank.superDeviceId, userRankServerId, ret), HCCL_E_RUNTIME);
+            ret = rtGetServerIDBySDID(rankInfo.superDeviceId, &remoteRankServerId);
+            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[GetSocketTypeIn91093]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                rankInfo.superDeviceId, remoteRankServerId, ret), HCCL_E_RUNTIME);
+            isInterServer = (userRankServerId != remoteRankServerId) || (locRank.superPodId != rankInfo.superPodId);
+            HCCL_INFO("[GetSocketTypeIn91093]localSDID[0x%08x], localdevicePhyId[%d], localServerId[%s], localServerIdBySDID[%d], localSuperPodId[%s]" \
+                "remoteSDID[0x%08x], remotedevicePhyId[%d], remoteRankServerId[%d], remoteServerIdBySDID[%d], remoteSuperPodId[%s], " \
+                "isInterServer[%s]",
+                locRank.superDeviceId, locRank.devicePhyId, locRank.serverId.c_str(), userRankServerId, locRank.superPodId.c_str(),
+                rankInfo.superDeviceId, rankInfo.devicePhyId, rankInfo.serverId.c_str(), remoteRankServerId, rankInfo.superPodId.c_str(),
+                isInterServer ? "true" : "false");
+        } else {
+            isInterServer = locRank.serverId != rankInfo.serverId;
+            HCCL_INFO("[GetSocketTypeIn91093]localdevicePhyId[%d], localRankServerId[%s], " \
+                "remotedevicePhyId[%d], remoteRankServerId[%s], isInterServer[%s]",
+                locRank.devicePhyId, locRank.serverId.c_str(), rankInfo.devicePhyId, rankInfo.serverId.c_str(), isInterServer ? "true" : "false");
+        }
+        if (!isInterServer) { // serverId相同表示同超结点同server
             type = HcclSocketType::SOCKET_VNIC;
         } else if (locRank.superPodId == rankInfo.superPodId) { // 同超结点
             type =
@@ -731,6 +758,7 @@ void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperP
             type = HcclSocketType::SOCKET_NIC;
         }
     }
+    return HCCL_SUCCESS;
 }
 
 template <typename T>
@@ -752,7 +780,7 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
     } else if (connCount == 2) { // 2个rank, 只需建链一条连接
         u32 nextIndex = connVec[(index + 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
-            GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type);
+            CHK_RET(GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type));
         }
         HCCL_INFO("[GetSamePlaneConnInfo]local rank[%u], remote rank[%u], type[%d]", worldRank,
             rankInfos[nextIndex].worldRank, type);
@@ -766,7 +794,7 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
     } else {
         u32 nextIndex = connVec[(index + 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
-            GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type);
+            CHK_RET(GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type));
         }
         HCCL_INFO("[GetSamePlaneConnInfo][nextIndex]local rank[%u], remote rank[%u], type[%d]", worldRank,
             rankInfos[nextIndex].worldRank, type);
@@ -775,7 +803,7 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
 
         u32 prevIndex = connVec[(index + connCount - 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
-            GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, prevIndex, type);
+            CHK_RET(GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, prevIndex, type));
         }
         HCCL_INFO("[GetSamePlaneConnInfo][prevIndex]local rank[%u], remote rank[%u], type[%d]", worldRank,
             rankInfos[prevIndex].worldRank, type);
@@ -1039,7 +1067,7 @@ void Heartbeat::CheckRecvOpInfoList()
         auto opInfoIndexMap = opInfoMap_.find(identifier);
         if (opInfoIndexMap == opInfoMap_.end()) {
             ++it;
-            HCCL_DEBUG("[Heartbeat]check recv not fount. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
+            HCCL_DEBUG("[Heartbeat]check recv not found. identifier[%s] index[%u]", identifier.c_str(), opInfoRecv.index);
             continue;
         }
 
@@ -1501,6 +1529,11 @@ void Heartbeat::HeartbeatStatusMonitor()
     auto counterStat = CounterStat();
     InitStuckDetection(counterStat);
     while (startSendRecvTask_) {
+        CheckSnapshotStatus();
+        if (isPaused_) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(BROADCAST_INTERVAL));
+            continue;
+        }
         CreateHBLinksAsync();
         ProcessLock_.lock();
         count++;
@@ -1997,6 +2030,30 @@ u32 Heartbeat::GetHostPort(s32 devicePhyId)
         return (devicePhyId + HOST_PARA_BASE_PORT);
     } else {
         return (devicePhyId + GetExternalInputHcclIfBasePort() + HCCL_AISERVER_DEVICE_NUM);
+    }
+}
+
+bool Heartbeat::IsPaused() const
+{
+    return !startSendRecvTask_ || isPaused_;
+}
+
+bool Heartbeat::IsResumed() const
+{
+    return !startSendRecvTask_ || !isPaused_;
+}
+
+void Heartbeat::CheckSnapshotStatus()
+{
+    auto snapshotStatus = SnapshotControl::GetInstance(deviceLogicId_).GetStatus();
+    if (isPaused_ && snapshotStatus == SnapshotStatus::POST_SNAPSHOT) {
+        isPaused_ = false;
+        HCCL_RUN_INFO("[Heartbeat][CheckSnapshotStatus] detect snapshot post-processing, heart is resumed, "
+            "deviceLogicId[%u].", deviceLogicId_);
+    } else if (!isPaused_ && snapshotStatus == SnapshotStatus::PRE_SNAPSHOT) {
+        isPaused_ = true;
+        HCCL_RUN_INFO("[Heartbeat][CheckSnapshotStatus] detect snapshot pre-processing, heart is paused, "
+            "deviceLogicId[%u].", deviceLogicId_);
     }
 }
 

@@ -64,7 +64,8 @@ struct HcclOpConfig {
     u8 isSupportAtomicWrite = 0;
     u8 padding[4];  // 大小需要64By对齐，未来添加参数时减小padding
     std::chrono::milliseconds linkTimeOut; //发送超时时长
-    u64 notifyWaitTime;  // 超时时长，同HCCL_EXEC_TIMEOUT
+    u32 taskMonitorInterval;
+    u32 notifyWaitTime;  // 超时时长，同HCCL_EXEC_TIMEOUT
     u32 retryHoldTime;
     u32 retryIntervalTime;
     bool interHccsDisable = false;  // 使能rdma开关
@@ -155,10 +156,10 @@ struct HcclKFCTilingData {
     u32 stride;          // 跳写间隔
     u32 workspaceOff;    // 使用workspace作为recvbuf时的workspace偏移
     u32 notifyOff;       // device notify write/read value偏移
-    u16 notifyBeginCnt;  // notift write value的使用个数
-    u16 notifyEndCnt;    // notift read value的使用个数
+    u16 notifyBeginCnt;  // notify write value的使用个数
+    u16 notifyEndCnt;    // notify read value的使用个数
     u8 useBufferType;    // 是否使用workspace作为recvbuf
-    u8 funID;            // funtion ID
+    u8 funID;            // function ID
     u8 dataType;         // hccl 数据类型
     u8 groupNum;         // groupNum
     u8 reuseMode;        // tiling，填msgCnt，内存优化选择复用的内存块个数
@@ -274,7 +275,7 @@ static inline void ListCommonAddHead(struct ListCommon *newDeviceL, struct ListC
     struct ListCommon *headHostL, struct ListCommon *headDeviceL)
 {
     if (newHostL == nullptr || headHostL == nullptr) {
-        HCCL_ERROR("intput ptr is nullptr, newHostL[%p], headHostL[%p]", newHostL, headHostL);
+        HCCL_ERROR("input ptr is nullptr, newHostL[%p], headHostL[%p]", newHostL, headHostL);
         return;
     }
     ListCommon *headHostLNextHost = reinterpret_cast<ListCommon *>(headHostL->nextHost);
@@ -672,6 +673,11 @@ struct HcclOpResParam {
     HcclStreamParam aicpuOrderStreamParam; // 按序下发的stream
     u64 aicpuOrderNotifyAddr;
     u64 aicpuOrderNotifySize;
+    // ARS算法属性
+    u32 multiSuperPodDiffDeviceNumMode;
+    bool isARSDoubleRing;
+    // 读取HCCL_ENTRY_LOG_ENABLE环境变量，用于增加算子kernel展开信息
+    bool opEntry{false};
 };
 
 struct OpTilingData {

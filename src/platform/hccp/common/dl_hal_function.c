@@ -186,6 +186,12 @@ static void DlHalApiInit(void)
     gHalOps.dlHalEschedWaitEvent = (int (*)(uint32_t devId, uint32_t grpId, uint32_t threadId, int32_t timeout,
         struct event_info *event))AscendHalDlsym(gHalApiHandle, "halEschedWaitEvent");
 
+    gHalOps.dlHalResAddrMapV2 = (drvError_t (*)(unsigned int devId, struct res_map_info_in *resInfoIn,
+        struct res_map_info_out *resInfoOut))AscendHalDlsym(gHalApiHandle, "halResAddrMapV2");
+
+    gHalOps.dlHalResAddrUnmapV2 = (drvError_t (*)(unsigned int devId, struct res_map_info_in *resInfoIn))
+        AscendHalDlsym(gHalApiHandle, "halResAddrUnmapV2");
+
     return;
 }
 
@@ -222,7 +228,7 @@ int DlHalInit(void)
     gHalApiHandle = AscendHalDlopen("libascend_hal.so", RTLD_NOW);
     if (gHalApiHandle == NULL) {
         pthread_mutex_unlock(&gHalApiLock);
-        roce_err("dlopen libascend_hal.so fail! error_no=[%d]", errno);
+        roce_err("dlopen libascend_hal.so failed! error_no=[%d]", errno);
         return -EINVAL;
     }
 
@@ -592,4 +598,18 @@ int DlHalEschedWaitEvent(uint32_t devId, uint32_t grpId, uint32_t threadId, int3
     DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalEschedWaitEvent, "dl_hal_esched_wait_event");
 
     return gHalOps.dlHalEschedWaitEvent(devId, grpId, threadId, timeout, event);
+}
+
+int DlHalResAddrMapV2(unsigned int devId, struct res_map_info_in *resInfoIn, struct res_map_info_out *resInfoOut)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalResAddrMapV2, "dlHalResAddrMapV2");
+
+    return gHalOps.dlHalResAddrMapV2(devId, resInfoIn, resInfoOut);
+}
+
+int DlHalResAddrUnmapV2(unsigned int devId, struct res_map_info_in *resInfoIn)
+{
+    DL_API_IS_NULL_CHECK(gHalApiHandle, gHalOps.dlHalResAddrUnmapV2, "dlHalResAddrUnmapV2");
+
+    return gHalOps.dlHalResAddrUnmapV2(devId, resInfoIn);
 }

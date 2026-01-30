@@ -17,7 +17,7 @@
 #include "hccl_aiv.h"
 
 namespace hccl {
-constexpr u32 FACTOR_TWO = 2;
+
 BroadCastOperator::BroadCastOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
     HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher)
     : CollAlgOperator(algConfigurator, cclBufferManager, dispatcher, topoMatcher, HcclCMDType::HCCL_CMD_BROADCAST)
@@ -197,8 +197,16 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
     const u64 commOutputSize = cclBufferManager_.GetOutCCLbufferSize();
     bool isCCLBufferGE16M = commInputSize >= HCCL_MID_COUNT_16_MB && commOutputSize >= HCCL_MID_COUNT_16_MB;
     bool isOpbase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
-    isAivMode_ = topoMatcher_->GetAivModeConfig() && isSingleMeshAggregation_ && isOpbase && isCCLBufferGE16M &&
-        IsSupportAIVCopy(param.DataDes.dataType) && serverNum_ == 1 && userRankSize_ <= DEVICE_EIGHT;
+
+    // 单机仅支持单算子
+    bool isAivSingleNode = (serverNum_ == 1) && isSingleMeshAggregation_ && isOpbase && isCCLBufferGE16M;
+    // 跨机单算子或者图模式
+    bool isAivCrossNode  = (superPodNum_ == 1) && (serverNum_ > 1) && !GetExternalInputInterHccsDisable()
+        &&( (isOpbase && isCCLBufferGE16M) );
+
+    isAivMode_ = topoMatcher_->GetAivModeConfig()
+            && IsSupportAIVCopy(param.DataDes.dataType)
+            && (isAivSingleNode || isAivCrossNode);
 
     bool smallCountOptimSingleServer =
         (serverNum_ == 1) &&
@@ -213,7 +221,11 @@ HcclResult BroadCastOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
     
     if (isAivMode_) {
-        algName = "BroadcastMeshAivExecutor";
+        if (isAivSingleNode){
+            algName = "BroadcastMeshAivExecutor";
+        }else {
+            algName = "BroadcastMeshAivFor91093Executor";
+        }
     } else if (multiModuleDiffDeviceNumMode_ || multiSuperPodDiffServerNumMode_) {
         algName = "BroadCastComm";
     } else if (smallCountOptimMultiServer || smallCountOptimMultiPod) {

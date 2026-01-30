@@ -39,6 +39,7 @@ namespace hccl
 
     HcclResult ZeroCopyAddressMgr::PushOne(ZeroCopyRingBufferItem &item)
     {
+        std::lock_guard<std::mutex> guard(processRingBufferLock_);
         if (!needPushOne)
         {
             HCCL_DEBUG("[ZeroCopyAddressMgr][PushOne] don't need push");

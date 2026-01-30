@@ -28,6 +28,9 @@
 #include "transport_manager.h"
 #include "independent_op.h"
 #include "share_ccl_buffer_manager.h"
+#ifndef HCCD
+    #include "coll_comm.h"
+#endif
 
 namespace hccl {
 /* * 默认的rank_table, ranklist为空数组;  后续HCCL可以用于判断是否走新分支 */
@@ -247,8 +250,8 @@ public:
     HcclResult GetIndirectOutCCLbuf(void* &ptr, u64 &size);
     HcclResult HcclSelectAlg(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
         HcclReduceOp op, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
-    HcclResult HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim);
+    HcclResult HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+        std::string &algName, u32 &numBlocks);
     HcclResult HcclGetAlgExecParam(const std::string &tag, u64 count, void *inputPtr, void *outputPtr,
         HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
         void *&commContext, u64 &len, u32 aivCoreLimit);
@@ -332,6 +335,7 @@ public:
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
 
+    std::shared_ptr<struct hcclKernelPlanner> planner {nullptr}; //for group
     void* barrierSendBuf;
     void* barrierRecvBuf;
     std::mutex operatorlock_;
@@ -343,7 +347,7 @@ public:
     HcclResult UnsetMemoryRange(void *baseVirPtr);
     HcclResult ActivateCommMemory(void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
     HcclResult DeactivateCommMemory(void *virPtr);
-    HcclResult GetBlockDim(u32& blockDim);
+    HcclResult GetNumBlocks(u32& numBlocks);
     HcclResult SetAivCoreLimit(u32 aivCoreLimit);
     HcclResult SwitchNic(uint32_t nRanks, uint32_t *ranks, bool *useBackup);
     HcclResult InitHccpChannel();
@@ -355,10 +359,24 @@ public:
     // 独立算子专用
     HcclResult SetIndependentOpConfig(const CommConfig &commConfig, const RankTable_t &rankTable);
     HcclResult InitIndependentOp();
+    void SetAicpuCommState(bool aicpuCommState);
+    bool GetAicpuCommState();
+    HcclResult KernelLaunchAicpuCommInit();
+    bool IsCommunicatorV2();
+#ifndef HCCD
+    HcclResult InitCollComm(void* commV2, void* rankGraph, uint32_t userRank, HcclMem cclBuffer, const std::string &commName);
+#endif
+    void* GetCommunicatorV2();
 #ifndef CCL_KERNEL_AICPU
+    #ifndef HCCD
+        CollComm* GetCollComm();
+    #endif
     IndependentOp& GetIndependentOp();
 #endif
+    // A5communicator相关
+
     HcclResult IndOpTransportAlloc(const std::string &tag, OpCommTransport &opCommTransport, bool isAicpuModeEn);
+
     HcclResult PrepareChannelMem(const std::string &tag, TransportIOMem &transMem);
 
     //Decouple for MC2
@@ -367,7 +385,7 @@ public:
     HcclResult GetKFCWorkSpace(void **addr, uint64_t *size);
     HcclResult CommGetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult CommGetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
-    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, u32 *topoType);
+    HcclResult CommGetInstTopoTypeByNetLayer(uint32_t netLayer, uint32_t *topoType);
     //rankgraph interface 
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
@@ -378,6 +396,17 @@ public:
     HcclResult GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank,
         CommLink **linkList, uint32_t *listSize);
     HcclResult GetHeterogMode(HcclHeterogMode *mode);
+    // for group
+    HcclResult SetGroupMode(bool isGroup);
+    bool GetGroupMode();
+    HcclResult SetSendIndex(u32 index);
+    HcclResult SetRecvIndex(u32 index);
+    HcclResult SetBufferSliceNum(u32 bufferSliceNum);
+    HcclResult SetNSend(u32 nSend);
+    HcclResult SetNRecv(u32 nRecv);
+    HcclResult GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream);
+    HcclResult GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte);
+    HcclResult GroupSubstreamsSync();
 protected:
     /* * 禁止用户对API类的实体做拷贝构造或拷贝赋值的操作，内部有指针成员变量 */
     hcclComm(const hcclComm &) = delete;
@@ -399,15 +428,25 @@ private:
     const std::string identifier_;
     const std::string cclBuffName_;
     bool isHeterogComm_;
-
+    bool isGroupMode_{false};
     bool isResetDevice_;
     bool isSpecialType_;
     bool isHaveCpuRank_{false};
     std::unique_ptr<HcclCommunicator> communicator_;
+
+    bool isAicpuCommInit_ = false;
+    CommAicpuParam commAicpuParam_;
+    aclrtBinHandle binHandle_ = nullptr;
+    DevType devType_ = DevType::DEV_TYPE_COUNT;
 #ifndef CCL_KERNEL_AICPU
     // 独立算子专用成员变量
     IndependentOp independentOp_;
+    #ifndef HCCD
+        // A5CollComm
+        std::unique_ptr<CollComm> collComm_{nullptr};
+    #endif
 #endif
+
 };
 }  // namespace hccl
 

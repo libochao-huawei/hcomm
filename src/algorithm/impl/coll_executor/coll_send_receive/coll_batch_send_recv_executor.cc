@@ -157,7 +157,7 @@ HcclResult CollBatchSendRecvExecutor::Orchestrate(OpParam& param, AlgResourceRes
     CHK_RET(GetPairWiseList(param.BatchSendRecvDataDes.sendRecvItemsPtr, param.BatchSendRecvDataDes.itemNum));
     CHK_RET(ProcessSelfSendRecvTasks(param.stream));
     if (topoAttr_.userRankSize == 1) {
-        HCCL_INFO("tag[%s] BatchSendRecv Excutor orchestrate success, take time [%lld]us.",
+        HCCL_INFO("tag[%s] BatchSendRecv Executor orchestrate success, take time [%lld]us.",
             param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
         return HCCL_SUCCESS;
     }
@@ -170,7 +170,7 @@ HcclResult CollBatchSendRecvExecutor::Orchestrate(OpParam& param, AlgResourceRes
     } else {
         CHK_RET(RunLoopInHostUnfoldMode(param));
     }
-    HCCL_INFO("tag[%s] BatchSendRecv Excutor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s] BatchSendRecv Executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }

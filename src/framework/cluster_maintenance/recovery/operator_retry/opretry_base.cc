@@ -17,6 +17,7 @@
 #include "opretry_agent.h"
 #include "opretry_server.h"
 #include "opretry_base.h"
+#include "snapshot_control.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +55,12 @@ HcclResult StreamClear(HcclRtStream stream, HcclRtStreamClearStep step)
 namespace hccl {
 HcclResult OpRetryBase::Handle(RetryContext* retryCtx)
 {
+    CheckSnapshotStatus(retryCtx);
+    if (retryCtx->IsPaused()) {
+        SaluSleep(OP_RETRY_RUNNING_POLL_INTERVAL);
+        return HCCL_SUCCESS;
+    }
+
     if (!retryCtx->IsRootRetryCtx() && retryCtx->isAgentStateWaitResume_ && retryCtx->GetRetryState() != RETRY_STATE_AGENT_WAIT_RESUME) {
         std::shared_ptr<OpRetryBase> retryPtr = nullptr;
         EXECEPTION_CATCH(retryPtr = std::make_shared<OpRetryAgentWaitResume>(), return HCCL_E_PTR);
@@ -460,7 +467,8 @@ HcclResult OpRetryBase::Send(std::shared_ptr<HcclSocket> socket, void *data, u64
 {
     HCCL_DEBUG("[OpRetry][Send]start, para: data[%p], size[%llu Byte]", data, size);
     const auto start = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
 
     u64 restSize = size; // 待发送数据长度
     while (true) {
@@ -494,7 +502,8 @@ HcclResult OpRetryBase::Send(std::shared_ptr<HcclSocket> socket, void *data, u64
 HcclResult OpRetryBase::Recv(std::shared_ptr<HcclSocket> socket, void *data, u64 totalSize)
 {
     const auto start = std::chrono::steady_clock::now();
-    const std::chrono::seconds timeout = std::chrono::seconds(OP_RETRY_SEND_RECV_TIMEOUT);
+    const u32 timeoutValue = std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()), OP_RETRY_SEND_RECV_TIMEOUT) + OP_RETRY_WAIT_AICPU_TIMEOUT;
+    const std::chrono::seconds timeout = std::chrono::seconds(timeoutValue);
 
     u64 recvSize = 0;
     while (true) {
@@ -735,5 +744,20 @@ HcclResult OpRetryBase::GetSwitchRanks(RetryContext* retryCtx, bool &needCheckDe
 
 void OpRetryBase::SetEnableSendRecv(bool enable){
     enableSendRecv = enable;
+}
+
+void OpRetryBase::CheckSnapshotStatus(RetryContext* retryCtx) {
+    auto snapshotStatus = SnapshotControl::GetInstance(retryCtx->deviceLogicId_).GetStatus();
+    if (retryCtx->isPaused_ && snapshotStatus == SnapshotStatus::POST_SNAPSHOT) {
+        retryCtx->isPaused_ = false;
+        HCCL_RUN_INFO("[OpRetryBase][CheckSnapshotStatus] detect snapshot post-processing, "
+            "opretry is resumed, curState[%s], deviceLogicId[%d].",
+            retryCtx->GetReadableCtxState(), retryCtx->deviceLogicId_);
+    } else if (!retryCtx->isPaused_ && snapshotStatus == SnapshotStatus::PRE_SNAPSHOT) {
+        retryCtx->isPaused_ = true;
+        HCCL_RUN_INFO("[OpRetryBase][CheckSnapshotStatus] detect snapshot pre-processing, "
+            "opretry is paused, curState[%s], deviceLogicId[%d].",
+            retryCtx->GetReadableCtxState(), retryCtx->deviceLogicId_);
+    }
 }
 }

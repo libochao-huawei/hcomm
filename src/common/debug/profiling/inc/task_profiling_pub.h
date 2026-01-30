@@ -45,7 +45,7 @@ constexpr u64 ENGINE_MAX_TAG_LEN = 31;
  * @brief struct of data to report
  */
 struct ProfReporterData {
-    char tag[ENGINE_MAX_TAG_LEN + 1]; // the sub-type of the module, data with different tag will be writen
+    char tag[ENGINE_MAX_TAG_LEN + 1]; // the sub-type of the module, data with different tag will be written
     u32 deviceId;                     // the index of device
     size_t dataLen;                   // the length of send data
     u8 *data;                         // the data content

@@ -167,6 +167,8 @@ enum TemplateType {
     TEMPLATE_ALL_2_ALL_V_CONTINUOUS_PIPELINE = 100, // AlltoallvContinuousPipeline
 
     TEMPLATE_ALL_GATHER_V_GRAPH_PIPELINE = 101, // AllGatherV Graph pipeline
+    TEMPLATE_REDUCESCATTER_MULTI_DETERMINISTIC_PIPELINE = 102,
+    TEMPLATE_ALL_REDUCE_MULTI_DETERMINISTIC_PIPELINE = 103,
 
     TEMPLATE_NATIVE_MAX_NUM,                        // 内置template最大值
 
@@ -407,7 +409,8 @@ public:
     virtual HcclResult Prepare(void *inputMemPtr, DeviceMem &cclInMem, DeviceMem &outputMem,
         const Stream &stream, std::vector<Stream> &subStreams, 
         std::vector<std::shared_ptr<LocalNotify>> &meshSignal, std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux,
-        GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType, bool isNeedSpaceBorrow);
+        GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, const HcclDataType dataType,
+        bool isNeedSpaceBorrow, bool reverseMemUsage = false);
 
     // ReduceScatterPlantLocalReduceCombine
     virtual HcclResult Prepare(DeviceMem &cclInMem, DeviceMem &outputMem,
@@ -549,6 +552,18 @@ public:
         const std::vector<std::shared_ptr<LocalNotify>> &mainSignals,
         const std::vector<std::shared_ptr<LocalNotify>> &subSignals, const std::vector<std::vector<u32>> &ringsOrders,
         const std::vector<std::vector<Slice>> &userMemInputSlicesOfDoubleRing);
+
+    // ReduceScatterDeterPipeline
+    virtual HcclResult Prepare(HcomCollOpInfo *opInfo, DeviceMem &buffer, const u64 count,
+        const u64 offset, const std::vector<Slice> &slices, const SubCommInfo &level0CommInfo,
+        const SubCommInfo &level1CommInfo, Stream &mainStream, std::vector<Stream> &subStream,
+        std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub);
+
+    // AllReduceDeterPipeline
+    virtual HcclResult Prepare(HcomCollOpInfo *opInfo, DeviceMem &inBuffer, DeviceMem &outBuffer, const u64 count,
+        const std::vector<Slice> &slices, const SubCommInfo &level0CommInfo,
+        const SubCommInfo &level1CommInfo, Stream &mainStream, std::vector<Stream> &subStream,
+        std::vector<std::shared_ptr<LocalNotify>> &notifyMain, std::vector<std::shared_ptr<LocalNotify>> &notifySub);
 
     HcclResult Sum(const std::vector<Slice> &inputSlices, u32 start, u32 num, u64 &sizeOut);
     HcclResult RegisterProfiler(s32 planeId, s32 stage, s32 step, const Stream &stream);

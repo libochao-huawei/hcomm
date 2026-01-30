@@ -130,7 +130,7 @@ HcclResult CollAllReduceMeshSmallCountExecutor::Orchestrate(OpParam& param, AlgR
     }
     HcclResult ret = KernelRun(param, execMem);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshSmallCountExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
+        HCCL_ERROR("[CollAllReduceMeshSmallCountExecutor][Orchestrate]errNo[0x%016llx]executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate

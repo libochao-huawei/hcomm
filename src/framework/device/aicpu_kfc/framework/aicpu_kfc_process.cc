@@ -155,7 +155,7 @@ AicpuKfcRpcServerV2 *GetCommRpcServer(uint32_t idx)
     return &(g_commIdMap.instMap[idx].rpcServer);
 }
 
-static uint8_t thread_local g_expectPrepareId[MAX_QUE_NUM];
+static thread_local uint8_t g_expectPrepareId[MAX_QUE_NUM];
 void SetExpectPrepareId(uint8_t queueId, uint8_t msgId)
 {
     g_expectPrepareId[queueId] = msgId;
@@ -890,9 +890,9 @@ bool SetAlgTypeLevel1(HcclAlgoType algoConfig, AlgTypeLevel1 &algType, uint32_t 
             break;
         case HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH:
         case HcclAlgoType::HCCL_ALGO_TYPE_PAIRWISE:
-            HCCL_WARNING("level1:fullmesh algo is not suported. the config is ignored.");
+            HCCL_WARNING("level1:fullmesh algo is not supported. the config is ignored.");
         default:
-            HCCL_WARNING("algo is not suported. the config is ignored.");
+            HCCL_WARNING("algo is not supported. the config is ignored.");
             return false;
     }
     return true;

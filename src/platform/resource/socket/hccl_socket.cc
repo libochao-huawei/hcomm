@@ -61,7 +61,7 @@ HcclResult HcclSocket::DeInit()
     Close();
     if (listened_) {
         if (socketType_ == NicType::VNIC_TYPE) {
-            CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopVnic());
+            CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopVnic(localIp_, localPort_));
         } else if (socketType_ == NicType::DEVICE_NIC_TYPE) {
             CHK_RET(NetworkManager::GetInstance(localDeviceLogicId_).StopNic(localIp_, localPort_));
         } else {
@@ -433,11 +433,11 @@ HcclResult HcclSocket::Send(const void *data, u64 size)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen)
+HcclResult HcclSocket::Recv(void *recvBuf, u32 recvBufLen, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     CHK_PTR_NULL(recvBuf);
-    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }));
+    CHK_RET(hrtRaSocketBlockRecv(fdHandle_, recvBuf, recvBufLen, [this]() -> bool { return this->GetStopFlag(); }, timeout));
     return HCCL_SUCCESS;
 }
 
@@ -457,13 +457,13 @@ HcclResult HcclSocket::Send(const std::string &sendMsg)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclSocket::Recv(std::string &recvMsg)
+HcclResult HcclSocket::Recv(std::string &recvMsg, u32 timeout)
 {
     CHK_PTR_NULL(fdHandle_);
     recvMsg.clear();
     u8 recvBuf[MAX_MSG_STR_LEN] = {0};
     CHK_RET(hrtRaSocketBlockRecv(fdHandle_, reinterpret_cast<void *>(recvBuf), MAX_MSG_STR_LEN,
-        [this]() -> bool { return this->GetStopFlag(); }));
+        [this]() -> bool { return this->GetStopFlag(); }, timeout));
     recvMsg.assign(reinterpret_cast<char *>(recvBuf));
     return HCCL_SUCCESS;
 }
@@ -502,6 +502,75 @@ HcclResult HcclSocket::IRecv(void *recvBuf, u32 recvBufLen, u64& compSize)
         return HCCL_E_NETWORK;
     }
     return HCCL_SUCCESS; // EAGAIN和success都要返回HCCL_SUCCESS
+}
+
+HcclResult HcclSocket::SendAsync(const void *data, u64 size, u64 *sentSize, void **reqHandle)
+{
+    CHK_PTR_NULL(fdHandle_);
+    CHK_PTR_NULL(data);
+    CHK_PTR_NULL(sentSize);
+    CHK_PTR_NULL(reqHandle);
+    CHK_PRT_RET((size == 0) || (size > MAX_MSG_STR_LEN),
+        HCCL_ERROR("[SendAsync]send size[%d] is 0 or large than %d", size, MAX_MSG_STR_LEN), HCCL_E_PARA);
+
+    s32 ret = hrtRaSocketSendAsync(fdHandle_, data, size, sentSize, reqHandle);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    }
+
+    if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    }
+    HCCL_ERROR("[SendAsync]RaSocketSendAsync failed, data[%p] size[%llu] ret[%d]", data, size, ret);
+    return HCCL_E_NETWORK;
+}
+
+HcclResult HcclSocket::RecvAsync(void *recvBuf, u64 recvBufLen, u64 *receivedSize, void **reqHandle)
+{
+    CHK_PTR_NULL(fdHandle_);
+    CHK_PTR_NULL(recvBuf);
+    CHK_PTR_NULL(receivedSize);
+    CHK_PTR_NULL(reqHandle);
+    CHK_PRT_RET(recvBufLen == 0, HCCL_ERROR("[RecvAsync]recvBufLen is 0"), HCCL_E_PARA);
+
+    s32 ret = hrtRaSocketRecvAsync(fdHandle_, recvBuf, recvBufLen, receivedSize, reqHandle);
+    if (ret == 0) {
+        return HCCL_SUCCESS;
+    }
+
+    if (ret == SOCK_EAGAIN) {
+        return HCCL_E_AGAIN;
+    }
+    HCCL_ERROR("[RecvAsync]RaSocketRecvAsync failed, recvBuf[%p] recvBufLen[%llu] ret[%d]", recvBuf, recvBufLen, ret);
+    return HCCL_E_NETWORK;
+}
+
+HcclResult HcclSocket::GetAsyncReqResult(void *reqHandle, HcclResult &reqResult)
+{
+    CHK_PTR_NULL(reqHandle);
+    s32 asyncReqRet = 0;
+    s32 ret = hrtRaSocketGetAsyncReqResult(reqHandle, &asyncReqRet);
+    if (ret == 0) {
+        reqResult = (asyncReqRet == 0) ? HCCL_SUCCESS : (asyncReqRet == SOCK_EAGAIN ? HCCL_E_AGAIN : HCCL_E_TCP_TRANSFER);
+        return HCCL_SUCCESS;
+    }
+
+    if (ret == OTHERS_EAGAIN) {
+        return HCCL_E_AGAIN;
+    }
+    HCCL_ERROR("[GetAsyncReqResult]RaSocketGetAsyncReqResult failed, ret[%d]", ret);
+    return HCCL_E_NETWORK;
+}
+
+// static
+bool HcclSocket::IsSupportAsync()
+{
+    bool isSupportRaSocketAsync = false;
+    HcclResult ret = IsSupportHdcAsync(isSupportRaSocketAsync);
+    if (ret != HCCL_SUCCESS) {  // 失败时默认不支持异步收发
+        HCCL_WARNING("[IsSupportAsync] IsSupportHdcAsync failed ret[%d]", ret);
+    }
+    return isSupportRaSocketAsync;
 }
 
 std::string HcclSocket::GetTag() const
@@ -559,11 +628,10 @@ HcclResult HcclSocket::GetNicSocketHandle()
             localDeviceLogicId_, tempSocketMap.size(), localIp_.GetReadableAddress());
         CHK_RET(GetNicSocketHandle(tempSocketMap, localIp_, nicSocketHandle_));
     } else if (socketType_ == NicType::VNIC_TYPE) {
-            if (raResourceInfo.vnicSocketHandle == nullptr) {
-                HCCL_ERROR("[Get][NicHandleInfo] deviceLogicId[%d] get null vnic socket", localDeviceLogicId_);
-                return HCCL_E_INTERNAL;
-            }
-            nicSocketHandle_ = raResourceInfo.vnicSocketHandle;
+        tempSocketMap = raResourceInfo.vnicSocketMap;
+        HCCL_INFO("[Get][NicHandleInfo]phyId[%u], vnicSocketMap size[%u] localIp[[%s]",
+            localDeviceLogicId_, tempSocketMap.size(), localIp_.GetReadableAddress());
+        CHK_RET(GetNicSocketHandle(tempSocketMap, localIp_, nicSocketHandle_));
     } else {
         return HCCL_E_INTERNAL;
     }

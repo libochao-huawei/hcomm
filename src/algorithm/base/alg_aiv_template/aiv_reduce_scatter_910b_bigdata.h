@@ -174,7 +174,7 @@ template<typename T>
 __aicore__ inline void AivReduceScatterBig910B::ProcessProxy(GM_ADDR input, GM_ADDR output, uint64_t len, uint64_t maxCount,
     int32_t tag, uint64_t totallen)
 {
-    if (blockdim_ == rankSize_){
+    if (numBlocks_ == rankSize_){
         ProcessSingleRanksizeCore<T>(input, output, len, maxCount, tag, totallen);
     }else{
         Process<T>(input, output, len, maxCount, tag, totallen);

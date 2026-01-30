@@ -18,6 +18,7 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/nonuniform_bruck_base.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/alg_template_register.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/alg_template_base.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/alg_template_multi_deter_pipeline.cc
 )
 
 target_sources(hccl_alg PRIVATE

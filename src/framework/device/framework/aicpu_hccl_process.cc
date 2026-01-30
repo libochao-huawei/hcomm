@@ -36,7 +36,6 @@
 #include "dtype_common.h"
 #include "aicpu_one_side_service.h"
 #include "coll_batch_write_executor.h"
-#include "hccl_thread.h"
 
 using namespace hccl;
 using namespace HcclApi;
@@ -338,7 +337,7 @@ void AicpuHcclProcess::AicpuReleaseCommbyGroup(const std::string &group)
         rwlock.readUnlock();
         return;
     }
-    g_hcclComm = nullptr;
+    g_hcclComm = iter->second.first.get();
     iter->second.second = false;
     rwlock.readUnlock();
 }
@@ -619,6 +618,27 @@ HcclResult AicpuHcclProcess::AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *
         HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
         HCCL_ERROR_CODE(ret), group.c_str()), ret);
     AicpuReleaseCommbyGroup(group);
+    return HCCL_SUCCESS;
+}
+
+HcclResult AicpuHcclProcess::AicpuIndOpChannelInitV2(HcclChannelUrmaRes *commParam)
+{
+    HCCL_INFO("[AicpuHcclProcess][%s] commParam->channelList[%p], commParam->listNum[%u], commParam->uniqueIdAddr[%p], "
+        "commParam->uniqueIdSize[%u]", __func__, commParam->channelList, commParam->listNum, commParam->uniqueIdAddr,
+        commParam->uniqueIdSize);
+
+    std::string group = commParam->hcomId;
+    hccl::HcclCommAicpu *hcclCommAicpu = AicpuHcclProcess::AicpuGetCommbyGroup(group);
+    CHK_PRT_RET(!hcclCommAicpu, HCCL_ERROR("%s hcclCommAicpu is null, group[%s]", __func__, group.c_str()), HCCL_E_PTR);
+
+    HcclResult ret = hcclCommAicpu->AllocChannelResourceV2(commParam);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[AicpuHcclProcess][AicpuIndOpChannelInit]errNo[0x%016llx] Failed to init channels group[%s]",
+        HCCL_ERROR_CODE(ret), group.c_str()), ret);
+
+    AicpuReleaseCommbyGroup(group);
+    HCCL_INFO("[AicpuHcclProcess][%s] aicpuTask End.", __func__);
+
     return HCCL_SUCCESS;
 }
 

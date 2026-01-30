@@ -20,6 +20,9 @@
 #include "rs_socket.h"
 #include "rs_ping_inner.h"
 #include "rs_ping_roce.h"
+#ifdef CONFIG_CONTEXT
+#include "rs_ping_urma.h"
+#endif
 #ifndef HNS_ROCE_LLT
 #include "dlog_pub.h"
 #endif
@@ -265,13 +268,19 @@ STATIC int RsPingInitProtocolOps(struct RsPingCtxCb *pingCb, enum ProtocolTypeT 
             pingCb->pingPongOps = RsPingRoceGetOps();
             pingCb->pingPongDfx = RsPingRoceGetDfx();
             break;
+#ifdef CONFIG_CONTEXT
+        case PROTOCOL_UDMA:
+            pingCb->pingPongOps = rs_ping_urma_get_ops();
+            pingCb->pingPongDfx = rs_ping_urma_get_dfx();
+            break;
+#endif
         default:
             hccp_err("unsupported protocol:%u", protocol);
             return -EINVAL;
     }
 
     if (pingCb->pingPongOps == NULL || pingCb->pingPongOps->initPingCb == NULL || pingCb->pingPongDfx == NULL) {
-        hccp_err("ping_cb->ping_pong_ops or init_ping_cb or ping_cb->ping_pong_dfx is NULL, protocol:%u", protocol);
+        hccp_err("pingCb->pingPongOps or init_ping_cb or pingCb->ping_pong_dfx is NULL, protocol:%u", protocol);
         return -ENOTSUPP;
     }
     return 0;
@@ -288,8 +297,11 @@ RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo 
         hccp_err("param error, attr or info or devIndex is NULL"), -EINVAL);
 
     phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : UINT_MAX;
+#ifdef CONFIG_CONTEXT
+    phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : attr->ub.phy_id;
+#endif
     ret = RsGetRsCb(phyId, &rscb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     pingCb = &rscb->pingCb;
     RS_PTHREAD_MUTEX_LOCK(&pingCb->devMutex);
@@ -309,7 +321,7 @@ RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo 
     // setup sharemem for pingmesh
     ret = RsSetupSharemem(rscb, false, phyId);
     if (ret != 0) {
-        hccp_err("rs_setup_sharemem failed, phyId(%u), ret(%d)", phyId, ret);
+        hccp_err("RsSetupSharemem failed, phyId(%u), ret(%d)", phyId, ret);
         goto free_dev_mutex;
     }
 #endif
@@ -341,7 +353,7 @@ STATIC int RsGetPingCb(struct RaRsDevInfo *rdev, struct RsPingCtxCb **pingCb)
     int ret;
 
     ret = RsGetRsCb(phyId, &rsCb);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_rs_cb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
 
     CHK_PRT_RETURN(rdev->devIndex != rsCb->pingCb.devIndex,
         hccp_err("param error, devIndex:%u != pingCb.devIndex:%u", rdev->devIndex, rsCb->pingCb.devIndex),
@@ -369,13 +381,13 @@ RS_ATTRI_VISI_DEF int RsPingTargetAdd(struct RaRsDevInfo *rdev, struct PingTarge
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_ping_cb failed, ret=%d phyId:%u", ret, rdev->phyId), ret);
 
     if (pingCb->taskStatus != RS_PING_TASK_RESET) {
-        hccp_err("task_status:%d disallow to add target phy_id:%u", pingCb->taskStatus, rdev->phyId);
+        hccp_err("task_status:%d disallow to add target phyId:%u", pingCb->taskStatus, rdev->phyId);
         return -EEXIST;
     }
 
     ret = pingCb->pingPongOps->pingFindTargetNode(pingCb, &target->remoteInfo.qpInfo, &targetInfo);
     if (ret == 0) {
-        hccp_info("target node exist! phy_id:%u", rdev->phyId);
+        hccp_info("target node exist! phyId:%u", rdev->phyId);
         ret = -EEXIST;
         goto out;
     }
@@ -459,14 +471,14 @@ RS_ATTRI_VISI_DEF int RsPingGetResults(struct RaRsDevInfo *rdev, struct PingTarg
 
     // caller needs to retry, degrade log level
     if (pingCb->taskStatus == RS_PING_TASK_RUNNING) {
-        hccp_warn("task_status:%d disallow to get ping results phy_id:%u", pingCb->taskStatus, rdev->phyId);
+        hccp_warn("task_status:%d disallow to get ping results phyId:%u", pingCb->taskStatus, rdev->phyId);
         return -EAGAIN;
     }
 
     for (i = 0; i < expectedNum; i++) {
         ret = pingCb->pingPongOps->getTargetResult(pingCb, &target[i], &result[i]);
         if (ret != 0) {
-            hccp_err("rs_ping_get_target_result node i:%d failed phy_id:%u", i, rdev->phyId);
+            hccp_err("rs_ping_get_target_result node i:%d failed phyId:%u", i, rdev->phyId);
             i = (i > 0) ? (i - 1U) : 0;
             goto out;
         }
@@ -510,7 +522,7 @@ RS_ATTRI_VISI_DEF int RsPingTargetDel(struct RaRsDevInfo *rdev, struct PingTarge
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_ping_cb failed, ret=%d phyId:%u", ret, rdev->phyId), ret);
 
     if (pingCb->taskStatus != RS_PING_TASK_RESET) {
-        hccp_err("task_status:%d disallow to delete target phy_id:%u", pingCb->taskStatus, rdev->phyId);
+        hccp_err("task_status:%d disallow to delete target phyId:%u", pingCb->taskStatus, rdev->phyId);
         return -EEXIST;
     }
 
@@ -551,7 +563,7 @@ RS_ATTRI_VISI_DEF int RsPingDeinit(struct RaRsDevInfo *rdev)
 
     pingCb->pingPongOps->deinitPingCb(rdev->phyId, pingCb);
     pingCb->initCnt--;
-    hccp_run_info("ping_cb deinit success, phyId:%u, devIndex:%u", rdev->phyId, rdev->devIndex);
+    hccp_run_info("pingCb deinit success, phyId:%u, devIndex:%u", rdev->phyId, rdev->devIndex);
 
 free_dev_mutex:
     RS_PTHREAD_MUTEX_ULOCK(&pingCb->devMutex);

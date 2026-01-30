@@ -1,0 +1,153 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "remote_rma_buffer.h"
+#include "not_support_exception.h"
+#include "null_ptr_exception.h"
+#include "invalid_params_exception.h"
+#include "exchange_ub_buffer_dto.h"
+#include "exchange_ipc_buffer_dto.h"
+#include "exchange_rdma_buffer_dto.h"
+namespace Hccl {
+RemoteIpcRmaBuffer::RemoteIpcRmaBuffer() : RemoteRmaBuffer(RmaType::IPC), isOpened(false)
+{
+}
+
+RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto) : RemoteRmaBuffer(RmaType::IPC), isOpened(false)
+{
+    const auto &dto = dynamic_cast<const ExchangeIpcBufferDto &>(rmtDto);
+    remotePid       = dto.pid;
+    ipcAddr         = dto.addr;
+    ipcOffset       = dto.offset;
+    size            = dto.size;
+    (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
+    myPid = HrtDeviceGetBareTgid();
+    if (myPid == remotePid) {
+        HCCL_INFO("RemoteIpcRmaBuffer: myPid is equal to remotePid, do not need to open memory");
+        HrtMemPrefetchToDevice(reinterpret_cast<void*>(ipcAddr + ipcOffset) , size);
+        addr = ipcAddr;
+    } else {
+        HCCL_INFO("RemoteIpcRmaBuffer: open memory.");
+        ipcPtr   = HrtIpcOpenMemory(ipcName);
+        addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
+        isOpened = true;
+    }
+}
+
+RemoteIpcRmaBuffer::RemoteIpcRmaBuffer(const Serializable &rmtDto, const string tag) : RemoteRmaBuffer(RmaType::IPC), isOpened(true)
+{
+    const auto &dto = dynamic_cast<const ExchangeIpcBufferDto &>(rmtDto);
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] dtoName[%s]", dto.name);
+    ipcAddr         = dto.addr;
+    ipcOffset       = dto.offset;
+    size            = dto.size;
+    (void)memcpy_s(ipcName, RTS_IPC_MEM_NAME_LEN, dto.name, RTS_IPC_MEM_NAME_LEN);
+    HCCL_INFO("[RemoteIpcRmaBuffer][RemoteIpcRmaBuffer] tag[%s] ipcAddr[%llu] ipcOffset[%llu] ipcName[%s]", tag.c_str(),
+              ipcAddr, ipcOffset, ipcName);
+    ipcPtr   = HrtIpcOpenMemory(ipcName);
+    addr     = reinterpret_cast<uintptr_t>(ipcPtr) + ipcOffset;
+    isOpened = true;
+}
+
+void RemoteIpcRmaBuffer::Close() const
+{
+    if (isOpened) {
+        HrtIpcCloseMemory(ipcPtr);
+    }
+}
+
+RemoteIpcRmaBuffer::~RemoteIpcRmaBuffer()
+{
+    DECTOR_TRY_CATCH("RemoteIpcRmaBuffer", Close());
+}
+
+string RemoteIpcRmaBuffer::Describe() const
+{
+    return StringFormat("RemoteIpcRmaBuffer[addr=0x%llx, size=0x%llx, myPid=%u, "
+                        "remotePid=%u, ipcAddr=0x%llx, ipcOffset=0x%llx, ipcPtr=%p, ipcName=%s, "
+                        "isOpened=%d]",
+                        addr, size, myPid, remotePid, ipcAddr, ipcOffset, ipcPtr, ipcName,
+                        isOpened);
+}
+
+RemoteRdmaRmaBuffer::RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle)
+    : RemoteRmaBuffer(RmaType::RDMA), rdmaHandle(rdmaHandle), keyValidLen(RDMA_MEM_KEY_LEN_ROCE)
+{
+    if (rdmaHandle == nullptr) { // 使用rdmaHandle调用 HCCP 新接口 import/unimport 接口，获取和销毁key
+        THROW<NullPtrException>("RemoteRdmaRmaBuffer's rdmaHandle is NULL");
+    }
+    // 待修改: 利用 rdmaHandle 从 HCCP 新接口获取keyValidLen, 暂定固定值 ROCE
+}
+
+RemoteRdmaRmaBuffer::RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle, const Serializable &rmtDto)
+    : RemoteRmaBuffer(RmaType::RDMA), rdmaHandle(rdmaHandle)
+{
+    auto dto = dynamic_cast<const ExchangeRdmaBufferDto &>(rmtDto);
+    addr = dto.addr;
+    size = dto.size;
+    rkey = dto.rkey;
+    memTag = "HcclBuffer"; // TODO： 临时处理
+    HCCL_INFO("[RemoteRdmaRmaBuffer]addr = %llu; size = %u; rkey = %u", addr, size, rkey);
+}
+
+RemoteRdmaRmaBuffer::~RemoteRdmaRmaBuffer()
+{
+    // 待修改:  使用rdmaHandle调用 HCCP 新接口 unimport 接口，销毁key
+}
+
+string RemoteRdmaRmaBuffer::Describe() const
+{
+    return StringFormat("RemoteRdmaRmaBuffer[addr=0x%llx, size=0x%llx]", addr, size);
+}
+
+RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle) : RemoteRmaBuffer(RmaType::UB), rdmaHandle(rdmaHandle)
+{
+    if (rdmaHandle == nullptr) {
+        THROW<NullPtrException>("RemoteUbRmaBuffer's rdmaHandle is NULL");
+    }
+}
+
+RemoteUbRmaBuffer::~RemoteUbRmaBuffer()
+{
+    if (memHandle != 0) {
+        DECTOR_TRY_CATCH("RemoteUbRmaBuffer", HrtRaUbRemoteMemUnimport(rdmaHandle, memHandle));
+    }
+}
+
+RemoteUbRmaBuffer::RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto) :
+      RemoteRmaBuffer(RmaType::UB), rdmaHandle(rdmaHandle1)
+{ // 从 DTO 取得数据，然后生成 memHandle
+    auto dto = dynamic_cast<const ExchangeUbBufferDto &>(rmtDto);
+    memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, dto.key, HRT_UB_MEM_KEY_MAX_LEN);
+    addr       = dto.addr;
+    size       = dto.size;
+    memType    = dto.memType;
+    memTag     = dto.memTag;
+    tokenId    = dto.tokenId;
+    tokenValue = dto.tokenValue;
+    keySize    = dto.keySize;
+    
+    if (keySize != 0) {
+        auto res        = HrtRaUbRemoteMemImport(rdmaHandle1, key, keySize, tokenValue);
+        memHandle       = res.handle;
+    } else {
+        HCCL_INFO("[RemoteUbRmaBuffer] key is 0, do not need to import memory");
+        memHandle = 0;
+    }
+    HCCL_INFO("Construct RemoteUbRmaBuffer:%s", Describe().c_str());
+}
+
+string RemoteUbRmaBuffer::Describe() const
+{
+    return StringFormat("RemoteUbRmaBuffer[rdmaHandle=%p, addr=0x%llx, size=0x%llx, memHandle=%p]",
+                        rdmaHandle, addr, size, memHandle);
+}
+
+} // namespace Hccl

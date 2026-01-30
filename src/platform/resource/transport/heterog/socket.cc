@@ -239,7 +239,13 @@ HcclResult Socket::GetSocketHandle()
     if (type_ == SocketType::SOCKET_VNIC) {
         CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicId), devicePhyId));
         locNicIp_ = HcclIpAddress(devicePhyId);
-        socketHandle_ = raResourceInfo.vnicSocketHandle;
+        auto& tmpSocketMap = raResourceInfo.vnicSocketMap;
+        auto itSocket = tmpSocketMap.find(locNicIp_);
+        if (itSocket == tmpSocketMap.end()) {
+            HCCL_ERROR("vnic socket handle not found");
+            return HCCL_E_PARA;
+        }
+        socketHandle_ = itSocket->second.nicSocketHandle;
         remNicIp_ = HcclIpAddress(remDevPhyId_);
         // 获取本端vic ip
         CHK_RET(hrtRaGetSingleSocketVnicIpInfo(devicePhyId, deviceIdType_, locDevPhyId_, locNicIp_));

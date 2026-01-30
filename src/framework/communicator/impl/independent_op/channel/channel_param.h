@@ -68,4 +68,13 @@ struct HcclIndOpChannelRemoteResV3 {
     HcclIndOpChannelRemoteResV2* remoteResV2 = nullptr; // 不同remoteRank建链的资源
 };
 
+struct HcclChannelUrmaRes {
+    char  hcomId[HCOMID_MAX_LENGTH]; // 通信域ID 最大长度待修改
+    void* channelList;               // 反序列后返回给host侧的device侧handle地址
+    u32   listNum = 0;               // 建链channel的总数量
+    void* uniqueIdAddr;              // 序列化后device侧地址
+    u32   uniqueIdSize{0};           // 序列化后总地址长度
+    u32   singleUniqueIdSize{0};     // 单个channel内序列化后地址长度
+};
+
 #endif

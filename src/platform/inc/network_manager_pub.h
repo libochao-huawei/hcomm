@@ -52,7 +52,7 @@ public:
     HcclResult HeterogInit(u32 devId, const HcclIpAddress &ipAddr, u32 port);
     HcclResult HeterogDeinit(u32 devId, const HcclIpAddress &ipAddr, u32 port);
     HcclResult StartVnic(HcclIpAddress localIp, u32 &port);
-    HcclResult StopVnic();
+    HcclResult StopVnic(const HcclIpAddress &localIp, u32 port);
     // port值为无效值0xFFFFFFFF时, 只初始化nic网卡，不启动监听
     HcclResult StartNic(const HcclIpAddress &ipAddr, u32 &port, bool rdmaFlag,
         HcclIpAddress ipAddrBackup = HcclIpAddress(0));
@@ -73,7 +73,6 @@ public:
     HcclResult PingMeshRaPingInit(u32 devLogicId, u32 devPhyId, RaInitConfig *config);
     HcclResult PingMeshRaPingDeinit();
     bool GetRdmaLiteStatus();
-    bool IsHasStartVnic();
     HcclResult GetRdmaHandleByIpAddr(const HcclIpAddress &ipAddr, RdmaHandle &rdmaHandle);
     HcclResult GetNicHandleByIpAddr(const HcclIpAddress &ipAddr, SocketHandle &nicHandle);
 
@@ -82,7 +81,7 @@ public:
     HcclResult DeInitV2(NICDeployment nicDeploy,  bool isBackup, bool resetDeviceFlag = false);
 
     HcclResult CreateVnicSocketHandle(HcclIpAddress localIp);
-    HcclResult StopVnicSocketHandle();
+    HcclResult StopVnicSocketHandle(const HcclIpAddress &localIp);
 
     HcclResult CreateNicSocketHandle(const HcclIpAddress &ipAddr);
     HcclResult StopNicSocketHandle(const HcclIpAddress &ipAddr);
@@ -116,11 +115,11 @@ private:
     HcclResult StopListenSocket(const SocketHandle socketHandle, u32 port) const;
     HcclResult CheckSocketInfo(const SocketHandle socketHandle, const HcclIpAddress &ipAddr,
         u32 port = NO_LISTEN_PORT) const;
-    HcclResult StopNicsSocketListen(const HcclIpAddress &ipAddr, u32 port);
+    HcclResult StopNicsSocketListen(const HcclIpAddress &localIp, u32 port);
     HcclResult StopNicsSocket(const HcclIpAddress &ipAddr);
     HcclResult StopAllDeviceNicSockets();
+    HcclResult StopAllDeviceVnicSockets();
     HcclResult StopAllHostNicSockets();
-    void DestroyRaVnicResource();
 
     HcclResult CheckAutoListenVersion(bool isAutoPort);
 
@@ -141,25 +140,23 @@ private:
 
     s32 deviceLogicId_;
     u32 devicePhyId_;
-    bool vnicListened_ = false;
     bool isHostUseDevNic_ = false;
     bool isRdmaLiteEn_ = false;
     bool isRaInitRepeated_ = false;
     bool isRaDeInit_ = false;
+    bool isEnableHdcAsync_ = false;
     RaResourceInfo raResourceInfo_;
     Referenced deviceNicInitRef_;
     Referenced hostNicInitRef_;
-    Referenced deviceVnicSocketRef_;
     std::map<HcclIpAddress, Referenced> hostNicSocketClientRef_;
     std::map<HcclIpAddress, std::map<u32, Referenced>> IPPortListenRefMapHost_;
     std::map<HcclIpAddress, std::map<u32, Referenced>> IPPortListenRefMapDevice_;
+    std::map<HcclIpAddress, std::map<u32, Referenced>> IPPortListenRefMapVnicDevice_;
     std::mutex raLock_;
     std::mutex hccpProcInfoMutex_;
     NotifyTypeT notifyType_;
     static NetworkManager* nmInstance[MAX_DEV_NUM];
     pid_t subPid_{ 0 };
-    u32 vnicPort_ = HETEROG_CCL_PORT;
-    HcclIpAddress vnicIp_;
     bool isTsdOpened_{false};
     std::mutex memResMutex_;
     std::vector<HcclAddress> nicIpAddrs_;

@@ -33,6 +33,9 @@
 #ifdef CONFIG_TLV
 #include "rs_adp_nslb.h"
 #endif
+#ifdef CONFIG_CONTEXT
+#include "rs_ub.h"
+#endif
 #include "rs_epoll.h"
 
 #define BIND_MIN_DCPU_NUM 1
@@ -219,13 +222,11 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
 
     ret = ssl_adp_do_handshake(acceptInfo->ssl);
     if (ret == 1) {
-#ifdef CONFIG_SSL
         ret = rs_tls_peer_cert_verify(acceptInfo->ssl, rscb);
         if (ret) {
             hccp_err("tls verify peer cert failed");
             return ;
         }
-#endif
         acceptInfo->state = RS_CONN_STATE_SSL_CONNECTED;
     } else {
         err = ssl_adp_get_error(acceptInfo->ssl, ret);
@@ -236,9 +237,7 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
             hccp_info("return want read");
             return ;
         } else {
-#ifdef CONFIG_SSL
             rs_ssl_err_string(acceptInfo->connFd, err);
-#endif
             return ;
         }
     }
@@ -356,6 +355,20 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
         hccp_info("the fd:%d is for tcp recv, no need to go on, ret:%d", fd, ret);
         return;
     }
+
+#ifdef CONFIG_CONTEXT
+    ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
+    if (ret != -ENODEV) {
+        hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
+        return;
+    }
+
+    ret = RsEpollEventUrmaAsyncEventInHandle(rsCb, fd);
+    if (ret != -ENODEV) {
+        hccp_info("the fd:%d is for urma async event, no need to go on, ret:%d", fd, ret);
+        return;
+    }
+#endif
 
     return;
 }

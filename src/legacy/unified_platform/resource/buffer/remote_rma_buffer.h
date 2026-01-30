@@ -1,0 +1,161 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#ifndef HCCLV2_REMOTE_RMA_BUFFER_H
+#define HCCLV2_REMOTE_RMA_BUFFER_H
+
+#include <string>
+#include <memory>
+#include "rma_buffer.h"
+#include "dev_buffer.h"
+#include "rma_type.h"
+#include "serializable.h"
+namespace Hccl {
+
+class RemoteRmaBuffer {
+public:
+    explicit RemoteRmaBuffer(const RmaType rmaType) : rmaType(rmaType)
+    {
+    }
+
+    virtual ~RemoteRmaBuffer() = default;
+
+    RmaType GetRmaType() const
+    {
+        return rmaType;
+    }
+
+    inline uintptr_t GetAddr() const
+    {
+        return addr;
+    }
+
+    inline u64 GetSize() const
+    {
+        return size;
+    }
+
+    inline HcclMemType GetMemType() const
+    {
+        return memType;
+    }
+
+    inline const char* GetMemTag() const
+    {
+        return memTag.c_str();
+    }
+
+    u64 GetMemHandle() const
+    {
+        return memHandle;
+    }
+
+    virtual string Describe() const = 0;
+
+protected:
+    uintptr_t   addr{0};
+    u64         size{0};
+    RmaType     rmaType;
+    HcclMemType memType;
+    std::string memTag;
+    u64         memHandle{0};
+};
+
+class RemoteIpcRmaBuffer : public RemoteRmaBuffer {
+public:
+    RemoteIpcRmaBuffer();
+
+    explicit RemoteIpcRmaBuffer(const Serializable &rmtDto);
+    
+    RemoteIpcRmaBuffer(const Serializable &rmtDto, const string tag);
+
+    ~RemoteIpcRmaBuffer() override;
+
+    RemoteIpcRmaBuffer(const RemoteIpcRmaBuffer &that) = delete;
+
+    RemoteIpcRmaBuffer &operator=(const RemoteIpcRmaBuffer &that) = delete;
+
+    string Describe() const override;
+
+private:
+    void Close() const;
+
+    char  ipcName[RTS_IPC_MEM_NAME_LEN]{0};
+    u64   ipcAddr{0};
+    u64   ipcOffset{0};
+    void *ipcPtr{};
+    u32   remotePid{0};
+    u32   myPid{0};
+    bool  isOpened;
+};
+
+class RemoteRdmaRmaBuffer : public RemoteRmaBuffer {
+public:
+    explicit RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle);
+
+    RemoteRdmaRmaBuffer(RdmaHandle rdmaHandle, const Serializable &rmtDto);
+
+    ~RemoteRdmaRmaBuffer() override;
+
+    RemoteRdmaRmaBuffer(const RemoteRdmaRmaBuffer &that) = delete;
+
+    RemoteRdmaRmaBuffer &operator=(const RemoteRdmaRmaBuffer &that) = delete;
+
+    string Describe() const override;
+
+    const u8 *GetKey() const
+    {
+        return key;
+    }
+
+    u32 GetRkey() {return rkey;}
+
+private:
+    RdmaHandle rdmaHandle{nullptr};
+    u8         exchangedKey[RDMA_MEM_KEY_MAX_LEN]{0};
+    u8         key[RDMA_MEM_KEY_MAX_LEN]{0};
+    u32        keyValidLen{0};
+    u32        rkey{0};
+};
+
+class RemoteUbRmaBuffer : public RemoteRmaBuffer {
+public:
+    explicit RemoteUbRmaBuffer(RdmaHandle rdmaHandle);
+
+    RemoteUbRmaBuffer(RdmaHandle rdmaHandle1, const Serializable &rmtDto);
+
+    ~RemoteUbRmaBuffer() override;
+
+    RemoteUbRmaBuffer(const RemoteUbRmaBuffer &that) = delete;
+
+    RemoteUbRmaBuffer &operator=(const RemoteUbRmaBuffer &that) = delete;
+
+    string Describe() const final;
+
+    uint32_t GetTokenId() const
+    {
+        return tokenId;
+    }
+
+    uint32_t GetTokenValue() const
+    {
+        return tokenValue;
+    }
+
+private:
+    RdmaHandle rdmaHandle{nullptr};
+    u8         key[HRT_UB_MEM_KEY_MAX_LEN]{0};
+    u32        tokenValue{0};
+    u32        tokenId{0};
+    u32        keySize{0};
+};
+
+} // namespace Hccl
+#endif

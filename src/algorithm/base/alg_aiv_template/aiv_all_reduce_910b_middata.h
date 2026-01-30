@@ -40,9 +40,9 @@ __aicore__ inline void AivAllReduceMid910B::Process(GM_ADDR input, GM_ADDR outpu
     __gm__ T *cclGmOther = (__gm__ T *)(GM_IN[block_idx] + dataOffset);
 
     int32_t OffSet = ifPingpong ? pingpongOffset:0;
-    int32_t clearOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE + 
-	    DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
-              (BLOCK_DIM_FOUR_PER_RANK_A3) * ATOMIC_FLAG_SIZE;
+    int32_t clearOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE + 
+	    DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE +
+              (NUM_BLOCKS_FOUR_PER_RANK_A3) * ATOMIC_FLAG_SIZE;
 
     if (block_idx == rank_) {
         SetSignalValue((__gm__ int32_t *)(GM_OUT[rank_] + OffSet + clearOffset), localSetTensor, 0); 

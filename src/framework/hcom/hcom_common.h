@@ -12,6 +12,7 @@
 #define HCOM_COMMOM_H
 
 #include "hccl_comm_pub.h"
+#include "hcom_common_v2.h"
 #include "../common/src/topo/topoinfo_detect.h"
 
 #include "topoinfo_struct.h"
@@ -19,6 +20,7 @@
 // Ge适配的类
 constexpr u32 SEND_RECEIVE_TASK_NUM = 20;
 constexpr u32 OP_DEFAULT_TASK_NUM = 245;
+constexpr u32 AIV_DEFAULT_TASK_NUM = 4; // 在AIV且非RDMA场景下，task数量固定为4
 constexpr u32 DFX_DEFAULT_TASK_NUM = 16; // 2个计数 + 2个其它dfx + 2个memcpy_async + 预留10个
 constexpr u32 DFX_PADDING_TASK_NUM = 4;
 constexpr u32 MASTER_STREAM_EVENT_NUM = 3;

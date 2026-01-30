@@ -564,12 +564,12 @@ HcclResult DispatcherGraph::SetGraphTailVectorReduceDescSdma(void *devMem, const
 }
 
 HcclResult DispatcherGraph::SetGraphDescVectorReduce(const void *src, const void *dst, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, const HcclDataType dataType, HcclReduceOp redOp, Stream &stream)
+    void *funcAddr, uint32_t numBlocks, const HcclDataType dataType, HcclReduceOp redOp, Stream &stream)
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
     u32 ctxIdx = 0;
     CHK_RET(GraphAddVectorReduceTask(fftsPubInfo_, fftsCtxsPtr, stream.id(), count, addrListDevMemPtr,
-        funcAddr, blockDim, &ctxIdx));
+        funcAddr, numBlocks, &ctxIdx));
 
     // 调用回调来保存 task 信息
     if (DispatcherPub::IsProfSubscribeAdditionInfo() && callback_ != nullptr) {

@@ -129,7 +129,7 @@ download_mockcpp() {
 }
 
 build_mockcpp() {
-  apt-get install libboost-dev -y
+  sudo apt-get install libboost-dev -y
 
   cd "${OUTPUT_PATH}/mockcpp_shared/mockcpp-2.7/"
 

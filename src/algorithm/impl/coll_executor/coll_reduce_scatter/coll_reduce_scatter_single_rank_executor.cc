@@ -34,7 +34,7 @@ HcclResult CollReduceScatterSingleRankExecutor::KernelRun(const OpParam &param, 
         auto opMeta = HcclOpMetaInfo::GetOneForReduceScatter(originalAlgTypeLevel1, param.DataDes.dataType, reduceType,
             hugeData, smallData, CopyPattern::ZCOPY, false, deterministic, false); // 通过CopyPattern字段区分不同的子图
     CHK_RET(InitTask(dispatcher_, const_cast<Stream&>(param.stream), opMeta.isEnableCache, opMeta.GetCacheKey()));
-    } else { // ranksize = 1; intput、output地址不同，input->output
+    } else { // ranksize = 1; input、output地址不同，input->output
         auto opMeta = HcclOpMetaInfo::GetOneForReduceScatter(originalAlgTypeLevel1, param.DataDes.dataType, reduceType,
             hugeData, smallData, CopyPattern::BCOPY, false, deterministic, false);
         CHK_RET(InitTask(dispatcher_, const_cast<Stream&>(param.stream), opMeta.isEnableCache, opMeta.GetCacheKey()));

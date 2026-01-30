@@ -973,7 +973,7 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
                 "than or equal to 2147483647s"
             }));
         CHK_PRT_RET(flag,
-            HCCL_ERROR("[%s][%s]ExecTimeOut[%s] is invalid. except: [0, %d]", LOG_KEYWORDS_INIT_GROUP.c_str(),
+            HCCL_ERROR("[%s][%s]ExecTimeOut[%s]s is invalid. except: [0, %d]", LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_ENV_CONFIG.c_str(), execTimeOutStr, HCCL_EXEC_TIME_OUT_S_910_93), HCCL_E_PARA);
     } else {
         // 非910B和910_93算子超时时间范围1s-17340s
@@ -985,7 +985,7 @@ HcclResult SetHccLExecTimeOut(const char *execTimeOutStr, const HcclExecTimeoutS
             "HCCL_EXEC_TIMEOUT", "it should be a number greater than or equal to 1s and less than or equal to 17340s"
             }));
         CHK_PRT_RET(flag,
-            HCCL_ERROR("[%s][%s]ExecTimeOut[%s] is invalid. except: [1, %d]",
+            HCCL_ERROR("[%s][%s]ExecTimeOut[%s]s is invalid. except: [1, %d]",
                 LOG_KEYWORDS_INIT_GROUP.c_str(),
                 LOG_KEYWORDS_ENV_CONFIG.c_str(),
                 execTimeOutStr,
@@ -1322,7 +1322,7 @@ HcclResult ParseCannVersion()
     return HcclResult::HCCL_SUCCESS;
 #else
 	HCCL_WARNING("[ParseCannVersion]Does not support this interface.");
-	return HCCL_E_NOT_SUPPORT;
+    return HCCL_E_NOT_SUPPORT;
 #endif
 }
 

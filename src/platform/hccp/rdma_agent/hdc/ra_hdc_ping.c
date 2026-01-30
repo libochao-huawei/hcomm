@@ -24,7 +24,7 @@ int RaHdcPingInit(struct RaPingHandle *pingHandle, struct PingInitAttr *initAttr
         ret, phyId), -ESAFEFUNC);
 
     ret = RaHdcProcessMsg(RA_RS_PING_INIT, phyId, (char *)&pingData, sizeof(union OpPingInitData));
-    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_ping]ra hdc message process failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
     ret = memcpy_s(initInfo, sizeof(struct PingInitInfo), &(pingData.rxData.info), sizeof(struct PingInitInfo));
@@ -54,7 +54,7 @@ int RaHdcPingTargetAdd(struct RaPingHandle *pingHandle, struct PingTargetInfo ta
     for (i = 0; i < num; i++) {
         if (pingHandle->protocol == PROTOCOL_RDMA) {
             CHK_PRT_RETURN(target[i].localInfo.rdma.udpSport > MAX_PORT_NUM,
-                hccp_err("[add][ra_hdc_ping]udp_sport(%u) invaild, i(%u), phyId(%u)",
+                hccp_err("[add][ra_hdc_ping]udp_sport(%u) invalid, i(%u), phyId(%u)",
                 target[i].localInfo.rdma.udpSport, i, phyId), -EINVAL);
         }
 
@@ -65,7 +65,7 @@ int RaHdcPingTargetAdd(struct RaPingHandle *pingHandle, struct PingTargetInfo ta
         CHK_PRT_RETURN(ret, hccp_err("[add][ra_hdc_ping]memcpy_s target failed, ret(%d) i(%u) phyId(%u)",
             ret, i, phyId), -ESAFEFUNC);
         ret = RaHdcProcessMsg(RA_RS_PING_ADD, phyId, (char *)&pingData, sizeof(union OpPingAddData));
-        CHK_PRT_RETURN(ret, hccp_err("[add][ra_hdc_ping]ra hdc message process failed ret(%d) i(%u) phy_id(%u)",
+        CHK_PRT_RETURN(ret, hccp_err("[add][ra_hdc_ping]ra hdc message process failed ret(%d) i(%u) phyId(%u)",
             ret, i, phyId), ret);
     }
 
@@ -84,7 +84,7 @@ int RaHdcPingTaskStart(struct RaPingHandle *pingHandle, struct PingTaskAttr *att
         ret, phyId), -ESAFEFUNC);
 
     ret = RaHdcProcessMsg(RA_RS_PING_START, phyId, (char *)&pingData, sizeof(union OpPingStartData));
-    CHK_PRT_RETURN(ret, hccp_err("[start][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[start][ra_hdc_ping]ra hdc message process failed ret(%d) phyId(%u)",
         ret, phyId), ret);
     return 0;
 }
@@ -149,7 +149,7 @@ int RaHdcPingGetResults(struct RaPingHandle *pingHandle, struct PingTargetResult
 
         completeCnt += pingData.rxData.num;
         if (ret) {
-            hccp_err("[get][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)", ret, phyId);
+            hccp_err("[get][ra_hdc_ping]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
             goto out;
         }
     }
@@ -186,7 +186,7 @@ int RaHdcPingTargetDel(struct RaPingHandle *pingHandle, struct PingTargetCommInf
         pingData.txData.num = sendNum;
 
         ret = RaHdcProcessMsg(RA_RS_PING_DEL, phyId, (char *)&pingData, sizeof(union OpPingDelData));
-        CHK_PRT_RETURN(ret, hccp_err("[del][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
+        CHK_PRT_RETURN(ret, hccp_err("[del][ra_hdc_ping]ra hdc message process failed ret(%d) phyId(%u)",
             ret, phyId), ret);
         completeCnt += sendNum;
     }
@@ -203,7 +203,7 @@ int RaHdcPingTaskStop(struct RaPingHandle *pingHandle)
     RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
 
     ret = RaHdcProcessMsg(RA_RS_PING_STOP, phyId, (char *)&pingData, sizeof(union OpPingStopData));
-    CHK_PRT_RETURN(ret, hccp_err("[stop][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[stop][ra_hdc_ping]ra hdc message process failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
     return 0;
@@ -218,7 +218,7 @@ int RaHdcPingDeinit(struct RaPingHandle *pingHandle)
     RaHdcPingInitRdev(&pingData.txData.rdev, phyId, pingHandle->devIndex);
 
     ret = RaHdcProcessMsg(RA_RS_PING_DEINIT, phyId, (char *)&pingData, sizeof(union OpPingDeinitData));
-    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_ping]ra hdc message process failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_ping]ra hdc message process failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
     return 0;

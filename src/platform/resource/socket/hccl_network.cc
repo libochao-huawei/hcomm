@@ -109,7 +109,8 @@ HcclResult NetDevContext::InitV2(const HcclNetDevInfos *info)
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).CreateVnicSocketHandle(localIp_));
                 RaResourceInfo raResourceInfo;
                 NetworkManager::GetInstance(deviceLogicId_).GetRaResourceInfo(raResourceInfo);
-                handle_ = raResourceInfo.vnicSocketHandle;
+                IpSocket &sock = raResourceInfo.vnicSocketMap[localIp_];
+                handle_ = sock.nicSocketHandle;
                 CHK_PTR_NULL(handle_);
                 HCCL_INFO("[NetDevContext][InitV2]Deployment is device and proto is bus");
                 break;
@@ -186,7 +187,7 @@ HcclResult NetDevContext::DeinitV2()
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).StopRdmaHandle(localIp_, netDevDeployment_));
                 break;
             case HCCL_PROTO_TYPE_BUS:
-                CHK_RET(NetworkManager::GetInstance(deviceLogicId_).StopVnicSocketHandle());
+                CHK_RET(NetworkManager::GetInstance(deviceLogicId_).StopVnicSocketHandle(localIp_));
                 break;
             case HCCL_PROTO_TYPE_TCP:
                 CHK_RET(NetworkManager::GetInstance(deviceLogicId_).StopNicSocketHandle( localIp_));

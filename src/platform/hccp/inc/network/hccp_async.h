@@ -8,6 +8,9 @@
 #define HCCP_ASYNC_H
 
 #include "hccp_common.h"
+#ifdef CONFIG_CONTEXT
+#include "hccp_ctx.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,6 +113,25 @@ HCCP_ATTRI_VISI_DEF int RaSocketSendAsync(const void *fdHandle, const void *data
 */
 HCCP_ATTRI_VISI_DEF int RaSocketRecvAsync(const void *fdHandle, void *data, unsigned long long size,
     unsigned long long *receivedSize, void **reqHandle);
+
+#ifdef CONFIG_CONTEXT
+/**
+ * @ingroup libudma
+ * @brief get corresponding eid by ip async
+ * @param ctx_handle [IN] ctx handle
+ * @param ip [IN] ip array, see struct IpInfo
+ * @param eid [IN/OUT] eid array, see union hccp_eid
+ * @param num [IN/OUT] num of ip and eid array, max num is GET_EID_BY_IP_MAX_NUM
+ * @param req_handle [OUT] async request handle
+ * @see ra_get_async_req_result
+ * @see ra_ctx_init
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int ra_get_eid_by_ip_async(void *ctx_handle, struct IpInfo ip[], union hccp_eid eid[],
+    unsigned int *num, void **req_handle);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

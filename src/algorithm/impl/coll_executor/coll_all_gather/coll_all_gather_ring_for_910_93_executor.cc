@@ -82,9 +82,9 @@ HcclResult CollAllGatherRingFor91093Executor::CalcLevel0CommInfo(TransportMemTyp
 HcclResult CollAllGatherRingFor91093Executor::CalcLevel2CommInfo(TransportMemType inputType, TransportMemType outputType,
     std::vector<LevelNSubCommTransport>& opTransport)
 {
-    if( algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
+    if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
-        HCCL_INFO("[CollAllGatherRingFor91093Executor][CalcLevel2CommInfo] select AHC bypass level2 comm calulate");
+        HCCL_INFO("[CollAllGatherRingFor91093Executor][CalcLevel2CommInfo] select AHC bypass level2 comm calculate");
         return HCCL_SUCCESS;
     }
 
@@ -118,7 +118,7 @@ HcclResult CollAllGatherRingFor91093Executor::RunIntraSeverAllGather(
     const std::vector<std::vector<Slice>> &multRingsUserMemSlice)
 {
     CHK_RET(MultiRingAllGather(tag, inputMem, outputMem, count, dataType,
-        multRingsSliceZero, stream, profStage, baseOffset, opInfo, multRingsUserMemSlice));
+        multRingsSliceZero, stream, profStage, baseOffset, opInfo, multRingsUserMemSlice, logicalLevel0plane_));
     return HCCL_SUCCESS;
 }
 
@@ -153,7 +153,17 @@ HcclResult CollAllGatherRingFor91093Executor::PrepareSlicesL0(std::vector<std::v
 
     // 多环数据切分
     std::vector<std::vector<Slice>> multRingsSliceZero; // 数据基于该rank上环0的偏移
-    if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING &&
+    bool ARSFlag = topoMatcher_->GetARSFlag();
+    bool ARSDoubleRing = (ARSFlag && (level0RankSize > FACTOR_TWO) && topoAttr_.isARSDoubleRing);
+ 
+    if (ARSDoubleRing) {
+        std::vector<u32> mockNicList;
+        mockNicList.reserve(level0RankSize);
+        for (u32 rankIndex = 0; rankIndex < level0RankSize; rankIndex++) {
+            mockNicList.push_back(rankIndex);
+        }
+        multRingsSliceZero = PrepareMultiRingSlice(dataSegsSlice, param.tag, false, mockNicList);
+    } else if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING &&
         !IsSupportUnifiedMarch(param, topoType_, topoAttr_.serverNum, topoAttr_.superPodNum)) {
         multRingsSliceZero = PrepareMultiRingSlice(dataSegsSlice, param.tag, false, topoAttr_.nicList);
     } else {
@@ -250,10 +260,25 @@ HcclResult CollAllGatherRingFor91093Executor::PrepareUserMemSlices(std::vector<s
     return HCCL_SUCCESS;
 }
 
+HcclResult CollAllGatherRingFor91093Executor::GetLevelCommInfo()
+{
+    logicalLevel0plane_ = COMM_LEVEL0;
+    CHK_RET(CheckCommSize(logicalLevel0plane_, COMM_INDEX_0 + 1));
+    logicalLevel0CommInfo_ = GetSubCommInfo(logicalLevel0plane_, COMM_INDEX_0);
+    u32 commIndex = logicalLevel0CommInfo_.localRank;
+    bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
+        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
+    logicalLevel1plane_ = isSelectAHC ? COMM_LEVEL1_AHC : COMM_LEVEL1;
+    CHK_RET(CheckCommSize(logicalLevel1plane_, commIndex + 1));
+    logicalLevel1CommInfo_ = GetSubCommInfo(logicalLevel1plane_, commIndex);
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, ExecMem &execMem)
 {
     HCCL_CONFIG_INFO(HCCL_ALG, "[%s] The AllGatherRingExecutor starts, topoType_[%u], agv[%u]",
         __func__, topoType_, isAllGatherV_);
+    CHK_RET(GetLevelCommInfo()); // 设置逻辑通信域
     CHK_RET(ActiveSlaveStreams(param.stream));
     const HcclDataType dataType = param.GetDataType();
     u32 perDataSize = 0;
@@ -262,20 +287,14 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
         HCCL_ERROR("[CollAllGatherRingFor91093Executor][KernelRun]errNo[0x%016llx] datatype[%s] is invalid",
             HCCL_ERROR_CODE(HCCL_E_PARA), GetDataTypeEnumStr(dataType).c_str()), HCCL_E_PARA);
 
-    CHK_RET(CheckCommSize(COMM_LEVEL0, COMM_INDEX_0 + 1));
-    SubCommInfo level0CommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
-    u32 level0ServerIndex = level0CommInfo.localRank;
-
-    bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
+     bool isSelectAHC = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
-    CommPlane commPlaneLevel1 = isSelectAHC ? COMM_LEVEL1_AHC : COMM_LEVEL1;
-    CHK_RET(CheckCommSize(commPlaneLevel1, level0ServerIndex + 1));
-    SubCommInfo level1CommInfo = GetSubCommInfo(commPlaneLevel1, level0ServerIndex);
-    u32 level1RankSize = level1CommInfo.localRankSize;
+    
+    u32 level1RankSize = logicalLevel1CommInfo_.localRankSize;
 
     SubCommInfo level2CommInfo;
     if (isSelectAHC) {
-        level2CommInfo = level1CommInfo;
+        level2CommInfo = logicalLevel1CommInfo_;
         level2CommInfo.localRankSize = 1;   // AHC bypass level2
     } else {
         CHK_RET(CheckCommSize(COMM_LEVEL2, COMM_INDEX_0 + 1));
@@ -327,7 +346,7 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
         }
         CHK_SMART_PTR_NULL(level2AGExecutor);
 
-        std::vector<Slice> level2DataSegsSlice = PrepareSlicesL2(param, level2CommInfo, level1CommInfo, level0CommInfo,
+        std::vector<Slice> level2DataSegsSlice = PrepareSlicesL2(param, level2CommInfo, logicalLevel1CommInfo_, logicalLevel0CommInfo_,
             perDataSize, inputMemSize);
         CHK_RET(level2AGExecutor->Prepare(execMem.outputMem, execMem.outputMem, execMem.inputMem, execMem.count,
             dataType, param.stream, HCCL_REDUCE_RESERVED, INVALID_VALUE_RANKID, level2DataSegsSlice, 0));
@@ -342,7 +361,7 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
     }
     if (level1RankSize > 1) {
         // 计算slice, 不同超节点相同slice
-        std::vector<Slice> level1DataSegsSlice = PrepareSlicesL1(param, level2CommInfo, level1CommInfo, level0CommInfo,
+        std::vector<Slice> level1DataSegsSlice = PrepareSlicesL1(param, level2CommInfo, logicalLevel1CommInfo_, logicalLevel0CommInfo_,
             perDataSize, inputMemSize);
 
         std::unique_ptr<AlgTemplateBase> level1AGExecutor;
@@ -358,11 +377,11 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
             level1AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(
                 TemplateType::TEMPLATE_ALL_GATHER_NHR, dispatcher_);
             HCCL_CONFIG_INFO(HCCL_ALG, "[%s] Run TEMPLATE_ALL_GATHER_NHR in COMM_LEVEL1", __func__);
-        } else if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE) {
+        } else if (isSelectAHC) {
             // 获取通信域分组信息
             std::vector<std::vector<std::vector<u32>>> globalSubGroups;
             std::map<AHCConcOpType, TemplateType> ahcAlgOption;
-            CHK_RET(topoMatcher_->GetGlobalSubGroups(commPlaneLevel1, globalSubGroups));
+            CHK_RET(topoMatcher_->GetGlobalSubGroups(logicalLevel1plane_, globalSubGroups));
             topoMatcher_->GetAHCAlgOption(ahcAlgOption);
             if (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) {
                 level1AGExecutor = AlgTemplateRegistry::Instance().GetAlgTemplate(TemplateType::TEMPLATE_ALL_GATHER_AHC, dispatcher_);
@@ -385,18 +404,18 @@ HcclResult CollAllGatherRingFor91093Executor::KernelRun(const OpParam &param, Ex
             level1RankSize << PROF_RANKSIZE_OFFSET_OF_PLANEID) + level2CommInfo.localRank,
             PROF_STAGE_1, HCCL_EXEC_STEP_NOT_SET, param.stream));
 
-        CHK_RET(RunTemplate(level1AGExecutor, level1CommInfo));
+        CHK_RET(RunTemplate(level1AGExecutor, logicalLevel1CommInfo_));
         HCCL_INFO("AllGather ring [superpod] level1 AllGather run successtopoType_[%u], agv[%u]",
             topoType_, isAllGatherV_);
     }
     // 节点内做AllGather ring
     std::vector<std::vector<Slice>> multRingsSlice;
-    CHK_RET(PrepareSlicesL0(multRingsSlice, param, level2CommInfo, level1CommInfo, level0CommInfo, perDataSize,
+    CHK_RET(PrepareSlicesL0(multRingsSlice, param, level2CommInfo, logicalLevel1CommInfo_, logicalLevel0CommInfo_, perDataSize,
         inputMemSize));
 
     std::vector<std::vector<Slice>> multRingsUserMemSlice;
-    CHK_RET(PrepareUserMemSlices(multRingsUserMemSlice, multRingsSlice, param, level2CommInfo, level1CommInfo,
-        level0CommInfo, perDataSize, inputMemSize));
+    CHK_RET(PrepareUserMemSlices(multRingsUserMemSlice, multRingsSlice, param, level2CommInfo, logicalLevel1CommInfo_,
+        logicalLevel0CommInfo_, perDataSize, inputMemSize));
 
     if (DMAReduceFlag_ && (level1RankSize > 1 || level2RankSize > 1)) {
         // allgather输入放在CCL buffer上，通过设置nullptr指示要从CCL buffer获取输入

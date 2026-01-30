@@ -22,15 +22,15 @@
 namespace hccl {
 constexpr u32 OP_RETRY_MAX_CNT = 3;
 constexpr u32 OP_RETRY_WAIT_AICPU_TIMEOUT = 5; // 等待Aicpu的时长, 单位s
+constexpr u32 OP_RETRY_WAIT_AGENT_AICPU_TIMEOUT = 10; // 等待Agent+Aicpu的时长, 单位s
 constexpr u32 OP_RETRY_POLL_AICPU_ERROR_INTERVAL = 1; // 正常状态轮询Aicpu错误码的间隔, 单位s
 constexpr u32 OP_RETRY_POLL_RDMA_ERROR_INTERVAL = 1; // 正常状态轮询RDMA错误码的间隔, 单位s
 constexpr u32 OP_RETRY_POLL_AICPU_STATE_INTERVAL = 10000; // 重执行状态轮询Aicpu状态的间隔, 单位us
-constexpr u32 OP_RETRY_SEND_RECV_TIMEOUT = 205; // 发送和接收的超时时间, 单位s, 比aicpu状态机超时时间长5s
+constexpr u32 OP_RETRY_SEND_RECV_TIMEOUT = 200; // 发送和接收的超时时间, 单位s
 constexpr u32 OP_RETRY_SEND_RECV_INTERVAL = 10000; // 发送和接收的间隔时间, 单位us
 constexpr u32 OP_RETRY_KEEP_INTERVAL = 1; // 保活时间间隔, 单位s
 constexpr u32 OP_RETRY_RUNNING_POLL_INTERVAL = 100000; // 重执行状态轮询状态的间隔, 单位us
 constexpr u32 TIME_MS_TO_US = 1000;
-constexpr u32 OP_RETRY_WAIT_CAN_RETRY_RANK = 60;
 
 // 重执行初始化需要用到的参数
 struct OpRetryAgentParam {
@@ -77,12 +77,12 @@ using HcclAgentRetryInfo = struct HcclAgentRetryInfoDef {
 
 inline const char *GetReadableState(RetryState retryState) {
     auto it = RETRY_STATE_STR_MAP.find(retryState);
-    return (it != RETRY_STATE_STR_MAP.end()) ? it->second.c_str() : "unkown state";
+    return (it != RETRY_STATE_STR_MAP.end()) ? it->second.c_str() : "unknown state";
 }
 
 inline const char *GetReadableCmd(RetryCommand retryCommand) {
     auto it = RETRY_COMMAND_STR_MAP.find(retryCommand);
-    return (it != RETRY_COMMAND_STR_MAP.end()) ? it->second.c_str() : "unkown cmd";
+    return (it != RETRY_COMMAND_STR_MAP.end()) ? it->second.c_str() : "unknown cmd";
 }
 
 class RetryContext;
@@ -160,6 +160,7 @@ private:
     HcclResult CheckOpName(const RetryInfo &opInfo1, const RetryInfo &opInfo2); // 校验算子一致
     HcclResult CheckMaxRetryCnt(const RetryInfo &retryInfo, const std::string& identifier = HCCL_WORLD_GROUP); // 校验重执行次数
     HcclResult CheckLinkStates(const RetryInfo &retryInfo); // 校验link状态
+    void CheckSnapshotStatus(RetryContext* retryCtx);
     bool enableSendRecv = true;
 };
 
@@ -205,6 +206,7 @@ public:
             serverSockets_.insert(std::make_pair(it->first, std::move(tempAgentInfo)));
         }
         rankId_ = agentInfo.userRank;
+        deviceLogicId_ = agentInfo.deviceLogicId;
         std::string dfxInfo = "deviceIP:" + std::string(agentInfo.deviceIP.GetReadableIP()) +
             ",hostIP:" + std::string(agentInfo.hostIP.GetReadableIP());
         EXCEPTION_THROW_IF_COND_ERR(memcpy_s(localRetryInfo_.dfxIpInfo, sizeof(localRetryInfo_.dfxIpInfo),
@@ -275,6 +277,10 @@ public:
         return d2hPtr_;
     }
 
+    bool IsPaused() const {
+        return isPaused_;
+    }
+
     std::string group_ = "";
     s32 deviceLogicId_ = INVALID_INT;
     u32 rankId_ = INVALID_UINT;
@@ -318,6 +324,7 @@ public:
     bool isNeedReportOpRetryErr = false; // 针对重执行算子不一致和inplace场景，上报故障
 
     bool isOpRetryQuit = false;
+    bool isPaused_ = false;
 private:
     std::shared_ptr<OpRetryBase> retryBase_ = nullptr;
     RetryState state_ = RETRY_STATE_RESERVED;
