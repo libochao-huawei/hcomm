@@ -20,28 +20,39 @@ SelectorStatus AlltoAllVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topo
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
+    HCCL_DEBUG("[AlltoAllVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+
     if (topoInfo.levelNum > 1) {
         HCCL_WARNING("[Algo][AlltoAllVAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
         return SelectorStatus::NOT_MATCH;
-    }
-
-    HcclAlgoType levle0Algo = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
-    auto it = configAlgMap.find(op.opType);
-    if ((it != configAlgMap.end()) && (it->second.size() > 0)) {
-        levle0Algo = it->second[0];
-    }
-
-    if (IsDefaultAlg(levle0Algo) || levle0Algo ==  HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH) {
+    } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "CcuAlltoAllVMesh1D";
+            if (Is2DieFullMesh()) {
+                primQueueGenName = "CcuAlltoAllVMesh2Die";
+            } else {
+                primQueueGenName = "CcuAlltoAllVMesh1D";
+            }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
             primQueueGenName = "CcuAlltoAllVMesh2D";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
+            if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
+                // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+                primQueueGenName = "CcuAlltoAllVMesh2Die";
+            } else {
+                primQueueGenName = "CcuAlltoAllVMesh1D";
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            HCCL_WARNING("[Algo][AlltoAllVAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
+                    topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        } else {
+            HCCL_WARNING("[Algo][AlltoAllVAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
+                    topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
         }
-        return SelectorStatus::MATCH;
-    } else {
-        HCCL_WARNING("[Algo][AlltoAllVAutoSelector] algo[%u] is not supported yet for ccu_ms mode, reset to default.", levle0Algo);
-        return SelectorStatus::NOT_MATCH;
     }
+    HCCL_INFO("[Algo][AlltoAllVAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
+    return SelectorStatus::MATCH;
 }
 
 SelectorStatus AlltoAllVAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
@@ -49,17 +60,39 @@ SelectorStatus AlltoAllVAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
-    (void) topoInfo;
-    std::vector<HcclAlgoType> algos = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
-    auto it = configAlgMap.find(op.opType);
-    if (it != configAlgMap.end()) {
-        algos = it->second;
+    HCCL_DEBUG("[AlltoAllVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
+
+    // 目前只有 InsAlltoAllvMesh 算法
+    if (topoInfo.levelNum > 1) {
+        if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            primQueueGenName = "InsAlltoAllvMesh";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+            primQueueGenName = "InsAlltoAllvMesh";
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            primQueueGenName = "InsAlltoAllvMesh";
+        } else {
+            return SelectorStatus::NOT_MATCH;
+        }
+    } else {
+        if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            primQueueGenName = "InsAlltoAllvMesh";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+            primQueueGenName = "InsAlltoAllvMesh";
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
+            if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
+                // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+                primQueueGenName = "InsAlltoAllvMesh";
+            } else {
+                primQueueGenName = "InsAlltoAllvMesh";
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            primQueueGenName = "InsAlltoAllvMesh";
+        } else {
+            HCCL_WARNING("[AlltoAllVAutoSelector] topo not match");
+            return SelectorStatus::NOT_MATCH;
+        }
     }
-
-    HCCL_INFO("hccl algo op config: config opType:%s, level0:%u, level1:%u, level2:%u, level3:%u",
-        op.opType.Describe().c_str(), algos[0], algos[1], algos[2], algos[3]);
-
-    primQueueGenName = "InsAlltoAllvMesh";
+    HCCL_INFO("[Algo][AlltoAllVAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
 }
 
@@ -68,18 +101,12 @@ SelectorStatus AlltoAllVAutoSelector::SelectAivAlgo(const TopoInfo &topoInfo,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                     std::string &primQueueGenName) const
 {
-    (void) topoInfo;
-    std::vector<HcclAlgoType> algos = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
-    auto it = configAlgMap.find(op.opType);
-    if (it != configAlgMap.end()) {
-        algos = it->second;
-    }
+    HCCL_DEBUG("[AlltoAllVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
-    HCCL_INFO("hccl algo op config: config opType:%s, level0:%u, level1:%u, level2:%u, level3:%u",
-        op.opType.Describe().c_str(), algos[0], algos[1], algos[2], algos[3]);
-
+    // aiv 直接走打平 mesh
     primQueueGenName = "AivAlltoAllVMesh1D";
 
+    HCCL_INFO("[Algo][AlltoAllVAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
 }
 
