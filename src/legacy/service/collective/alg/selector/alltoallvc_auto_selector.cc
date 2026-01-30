@@ -34,16 +34,12 @@ SelectorStatus AlltoAllVCAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
                                                       const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
                                                       std::string &primQueueGenName) const
 {
-    (void) topoInfo;
-    std::vector<HcclAlgoType> algos = std::vector<HcclAlgoType>(HCCL_ALGO_LEVEL_NUM, HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT);
-    auto it = configAlgMap.find(op.opType);
-    if (it != configAlgMap.end()) {
-        algos = it->second;
-    }
-    HCCL_INFO("hccl algo op config: config opType:%s, level0:%u, level1:%u, level2:%u, level3:%u",
-        op.opType.Describe().c_str(), algos[0], algos[1], algos[2], algos[3]);
+    HCCL_DEBUG("[AlltoAllVCAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
+    // aiv 直接走打平 mesh
     primQueueGenName = "InsAlltoAllvcMesh";
+
+    HCCL_INFO("[Algo][AlltoAllVCAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
     return SelectorStatus::MATCH;
 }
 
