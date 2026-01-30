@@ -556,6 +556,7 @@ private:
     void AppendLocalDieIdForLinks(); 
     HcclResult SetAivControledCoreNum(bool isAiv);
 
+    void CheckAcceleratorConsistency(AcceleratorState commAccelerator, AcceleratorState tilingAccelerator) const;
     HcclResult GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const;
 };
 } // namespace Hccl

@@ -47,6 +47,9 @@ SelectorStatus AutoSelectorBase::Select(const CollAlgOperator &op, CollAlgParams
             return ret;
         }
     }
+    if (params.opExecuteConfig.accState == AcceleratorState::AIV_ONLY) {
+        return SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    }
     if (IsStarsState(params.opExecuteConfig)) {
         ret = SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
         if ((ret == SelectorStatus::MATCH)&&(params.opExecuteConfig.accState == AcceleratorState::CCU_FALLBACK)) {

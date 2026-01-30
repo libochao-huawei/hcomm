@@ -81,7 +81,7 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
     // AIV aclgrah 流程
-    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV) {
+    if (comm->GetOpExecuteConfig().accState == AcceleratorState::AIV || comm->GetOpExecuteConfig().accState == AcceleratorState::AIV_ONLY) {
         HandleAclGraphFirstOpAivBuff(stream->GetPtr());
     }
 
@@ -322,7 +322,7 @@ HcclResult CollServiceDeviceMode::GetSnapShotDynamicBuf(CollOperator &op, Binary
 void CollServiceDeviceMode::AllocCommResource(void *mc2Tiling, void **commContext, const AcceleratorState& tilingAccelerator)
 {
     HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
-    if (tilingAccelerator == AcceleratorState::AIV) {
+    if (tilingAccelerator == AcceleratorState::AIV || tilingAccelerator == AcceleratorState::AIV_ONLY) {
         aivMc2Compont.AllocCommResource(mc2Tiling, commContext);
     } else {
         mc2Compont.AllocCommResource(mc2Tiling, commContext);

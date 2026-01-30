@@ -229,6 +229,11 @@ rtError_t aclrtFree(void *devPtr)
     return RT_ERROR_NONE;
 }
 
+rtError_t aclrtMallocHost(void **hostPtr, size_t size)
+{
+    return RT_ERROR_NONE;
+}
+
 rtError_t rtPointerGetAttributes(rtPointerAttributes_t *attributes, const void *ptr)
 {
     attributes->memoryType = rtMemoryType_t::RT_MEMORY_TYPE_HOST;

@@ -1653,7 +1653,8 @@ TEST_F(InsRulesTest, Interpret_aiv_instruction)
 
     rtStream_t fakePtr = nullptr;
     MOCKER(rtStreamCreateWithFlags).stubs().with(outBoundP(&fakePtr, sizeof(fakePtr))).will(returnValue(RT_ERROR_NONE));
-
+    MOCKER_CPP(&Hccl::MirrorTaskManager::AddTaskInfo).stubs().with(any()).will(ignoreReturnValue());
+    
     s32 fakeStreamId = 123;
     MOCKER(aclrtStreamGetId)
         .stubs()

@@ -16,12 +16,14 @@
 #include "mc2_global_mirror_tasks.h"
 #include "ccu_device_manager.h"
 #include "ccu_dev_mgr.h"
+#include "acl/acl_rt.h"
 
 namespace Hccl {
 
 using namespace std;
 using namespace CcuRep;
 
+constexpr uint32_t AIV_FLAG_UB_ALIGN_SIZE=32; //aiv flag对齐规则
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
 
@@ -107,10 +109,118 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
 
         if (curTask->taskParam_.taskType == TaskParamType::TASK_CCU) {
             ProcessCcuException(exceptionInfo->deviceid, *curTask);
+        } else if(curTask->taskParam_.taskType == TaskParamType::TASK_AIV){
+            ProcessAivException(exceptionInfo, *curTask);
         } else {
             ProcessException(exceptionInfo, *curTask);
         }
     );
+}
+
+/*
+ @Desc: AIV 算子异常DFX
+*/
+void TaskExceptionHandler::ProcessAivException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo){
+    HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
+    
+    HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
+                "deviceId[%u] streamId[%u], TaskId[%u], cmdType[%u], "
+                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], blockDim[%d],"
+                "dataType:[%u], beginTime:[%llu], flagMem[%p]",
+                exceptionInfo->deviceid, exceptionInfo->streamid, 
+                exceptionInfo->taskid, taskInfo.taskParam_.taskPara.Aiv.cmdType, 
+                taskInfo.taskParam_.taskPara.Aiv.tag, taskInfo.taskParam_.taskPara.Aiv.rank, 
+                taskInfo.taskParam_.taskPara.Aiv.rankSize, taskInfo.taskParam_.taskPara.Aiv.count, 
+                taskInfo.taskParam_.taskPara.Aiv.blockDim, taskInfo.taskParam_.taskPara.Aiv.dataType, 
+                taskInfo.taskParam_.beginTime, taskInfo.taskParam_.taskPara.Aiv.flagMem);
+
+    // 打印算子flag 区域, flag区域比较大，需要通过LOG_TMPBUF_SIZE控制打印的长度
+    void *flag_buff_temp = nullptr;
+    aclError aclRet = 0;
+    aclRet = aclrtMallocHost(&flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize);
+    if(aclRet != ACL_SUCCESS){
+        HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
+        return;
+    }
+    aclRet = aclrtMemcpy(flag_buff_temp, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, taskInfo.taskParam_.taskPara.Aiv.flagMem, taskInfo.taskParam_.taskPara.Aiv.flagMemSize, ACL_MEMCPY_DEVICE_TO_HOST);
+    if(aclRet != ACL_SUCCESS){
+        HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
+        return;
+    }
+
+    std::stringstream flagStr;
+    int32_t          *flagMemInt32 = static_cast<int32_t*>(flag_buff_temp);
+    u64               flagCount    = taskInfo.taskParam_.taskPara.Aiv.flagMemSize / sizeof(int32_t);
+    //aiv 内部是32 byte对齐,即每32字节首位存放一个4字节的有效flag
+    u64               alignstep = AIV_FLAG_UB_ALIGN_SIZE/sizeof(int32_t);
+    flagStr << "[TaskExceptionHandler][AIV]Task run failed, para information is deviceId["
+            << exceptionInfo->deviceid << "], streamId[" << exceptionInfo->streamid << "], TaskId["
+            << exceptionInfo->taskid << "], flag:";
+    for (u64 i = 0; (flag_buff_temp != nullptr) && (i < flagCount) && (flagStr.str().size() <= LOG_TMPBUF_SIZE); i++) {
+        if (i % alignstep == 0) {
+            flagStr << flagMemInt32[i] << " ";
+        }
+    }
+    HCCL_ERROR(flagStr.str().c_str());
+    
+    if(flag_buff_temp != nullptr){
+        aclRet = aclrtFreeHost(flag_buff_temp);
+        if(aclRet != ACL_SUCCESS){
+            HCCL_ERROR("[TaskExceptionHandler] [%s] error[%d].", __func__, aclRet);
+            return;
+        }
+    }
+    PrintAivPreviousTaskException(exceptionInfo);
+}
+
+void TaskExceptionHandler::PrintAivPreviousTaskException(rtExceptionInfo_t *exceptionInfo)
+{
+    // 倒序打印前序AIV task信息,找到当前异常task的前50个task(至多)
+    auto queue = GlobalMirrorTasks::Instance().GetQueue(exceptionInfo->deviceid, exceptionInfo->streamid);
+    if (queue == nullptr) {
+        // 未找到异常对应的TaskQueue
+        HCCL_ERROR("Exception task queue not found. deviceId[%u], streamId[%u].", exceptionInfo->deviceid, exceptionInfo->streamid);
+        return;
+    }
+
+    u32  taskId = exceptionInfo->taskid;
+    auto func   = [taskId](const shared_ptr<TaskInfo> &task) {
+        return task->taskId_ == taskId;
+    };
+    auto taskItorPtr = queue->Find(func);
+    if (taskItorPtr == nullptr || *taskItorPtr == *queue->End()) {
+        // 在队列中未找到异常对应的TaskInfo
+        HCCL_ERROR("Exception task not found. deviceId[%u], streamId[%u], taskId[%u].", exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+        return;
+    }
+
+    HCCL_ERROR("[TaskExceptionHandler][AIV]Task run failed, para information is "
+               "deviceId[%u] streamId[%u], TaskId[%u], task info before failed task is:",
+               exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
+
+    for (uint32_t i = 0; i < TASK_CONTEXT_SIZE && *taskItorPtr != *queue->Begin(); --(*taskItorPtr)) {
+        if ((**taskItorPtr)->taskId_ > taskId) {
+            break;
+        }
+        if ((**taskItorPtr)->taskId_ != taskId && (**taskItorPtr)->taskParam_.taskType == TaskParamType::TASK_AIV) {
+                HCCL_ERROR("[TaskExceptionHandler][AIV] "
+                "previous TaskId[%u],streamId[%u], cmdType[%u], "
+                "tag[%d],rank[%u],rankSize[%u], dataCount[%u], blockDim[%d],"
+                "dataType:[%u], beginTime:[%llu], flagMem[%p]",
+                (**taskItorPtr)->taskId_, 
+                (**taskItorPtr)->streamId_,
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.cmdType, 
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.tag, 
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.rank, 
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.rankSize, 
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.count, 
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.blockDim,
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.dataType, 
+                (**taskItorPtr)->taskParam_.beginTime,
+                (**taskItorPtr)->taskParam_.taskPara.Aiv.flagMem);
+        }
+        i++;
+    }
 }
 
 string TaskExceptionHandler::GetGroupRankInfo(const TaskInfo& taskInfo)

@@ -584,7 +584,7 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
             HCCL_ERROR("Opbase mode is not supported in expanding on the host in 910_95");
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
-        bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV);
+        bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
         CHK_RET(SetAivControledCoreNum(isAiv));
@@ -832,7 +832,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
             return HcclResult::HCCL_E_NOT_SUPPORT;
         }
 
-        bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV);
+        bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
         HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
         if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
             RPT_INPUT_ERR(true, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
@@ -1238,6 +1238,7 @@ void CommunicatorImpl::InitCollService()
     hostCollService->Init();
 
     collServices[AcceleratorState::AIV] = ccuCollService; // host 展开，aiv使用
+    collServices[AcceleratorState::AIV_ONLY] = ccuCollService; // host 展开，aiv使用
     collServices[AcceleratorState::CCU_MS] = ccuCollService; // host 展开，ccu使用
     collServices[AcceleratorState::CCU_SCHED] = ccuCollService; // host 展开，ccu使用
     collServices[AcceleratorState::AICPU_TS] = aiCpuCollService; // aicpu 展开
@@ -1531,7 +1532,7 @@ bool CommunicatorImpl::GetCommCcuFeatureFlag() const
 
 HcclResult CommunicatorImpl::AllocCommResource(void *mc2Tiling, void **commContext)
 {
-    bool isAiv = (GetCommExecuteConfig().accState == AcceleratorState::AIV);
+    bool isAiv = (GetCommExecuteConfig().accState == AcceleratorState::AIV || GetCommExecuteConfig().accState == AcceleratorState::AIV_ONLY);
     if (!GetCommCcuFeatureFlag() && !isAiv) { // 通信域粒度
         HCCL_ERROR("CommunicatorImpl::AllocCommResource: Comm accelerator is [%s] not support AllocCommResource",
                    GetCommExecuteConfig().accState.Describe().c_str());
@@ -2492,7 +2493,7 @@ HcclResult CommunicatorImpl::SetAccelerator(int32_t accelerator, bool isCcuMsAva
             commAccelerator = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
-            commAccelerator = AcceleratorState::AIV;
+            commAccelerator = AcceleratorState::AIV_ONLY;
             break;
         case HcclAccelerator::AICPU_TS:
             commAccelerator = AcceleratorState::AICPU_TS;
@@ -2534,6 +2535,9 @@ HcclResult CommunicatorImpl::GetAccelerator(int32_t *accelerator) const
             break;
         case AcceleratorState::AIV:
             hcclAccelerator = HcclAccelerator::AIV;
+            break;
+        case AcceleratorState::AIV_ONLY:
+            hcclAccelerator = HcclAccelerator::AIV_ONLY;
             break;
         case AcceleratorState::AICPU_TS:
             hcclAccelerator = HcclAccelerator::AICPU_TS;
@@ -2650,7 +2654,7 @@ HcclResult CommunicatorImpl::HcomSelectAlg(const CollOpParams& opParams, int32_t
     // 图模式算子加载选择CollService
     opExecuteConfig = commExecuteConfig;
     ExecAlgSelect(opParams, OpMode::OFFLOAD);
-    ifAiv = (opExecuteConfig.accState == AcceleratorState::AIV);
+    ifAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(opParams, GetOpCcuFeatureFlag(),
                                                                         GetOpAiCpuTSFeatureFlag(), ifAiv, true);
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
@@ -2728,7 +2732,7 @@ HcclResult CommunicatorImpl::ReLoadOpbasedOp()
         HCCL_ERROR("ReLoadOpbasedOp is not supported in CollServiceDefaultImpl.");
         return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    bool       isAiv          = (opExecuteConfig.accState == AcceleratorState::AIV);
+    bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOpbase(curOpParams, GetOpCcuFeatureFlag(),
                                                                        GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
@@ -2756,7 +2760,7 @@ HcclResult CommunicatorImpl::ReLoadOffloadOp()
             HCCL_ERROR("[CommunicatorImpl::ReLoadOffloadOp] HOSTCPU_TS is not support.");
             return HcclResult::HCCL_E_NOT_SUPPORT;
     }
-    bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV);
+    bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
     HcclResult dataTypeChkRes = OpParamsChecker::CheckOpDataTypeOffload(curOpParams, GetOpCcuFeatureFlag(),
                                                                         GetOpAiCpuTSFeatureFlag(), isAiv); // 算子粒度
     if (dataTypeChkRes != HcclResult::HCCL_SUCCESS) {
@@ -3445,6 +3449,19 @@ HcclResult CommunicatorImpl::SaveTopoDesc(std::string &identifier)
     return HCCL_SUCCESS;
 }
 
+void CommunicatorImpl::CheckAcceleratorConsistency(AcceleratorState commAccelerator, AcceleratorState tilingAccelerator) const
+{
+    bool isCommAiv = (commAccelerator == AcceleratorState::AIV || commAccelerator == AcceleratorState::AIV_ONLY);
+    bool isTilingCcu = (tilingAccelerator == AcceleratorState::CCU_MS || tilingAccelerator == AcceleratorState::CCU_SCHED);
+
+    bool isCommCcu = (commAccelerator == AcceleratorState::CCU_MS || commAccelerator == AcceleratorState::CCU_SCHED);
+    bool isTilingAiv = (tilingAccelerator == AcceleratorState::AIV || tilingAccelerator == AcceleratorState::AIV_ONLY);
+
+    if ((isCommAiv && isTilingCcu) || (isCommCcu && isTilingAiv)) {
+        HCCL_WARNING("CommunicatorImpl::GetTilingAccelerator comm accelerator is [%s] but tiling accelerator is [%s]",
+                     commAccelerator.Describe().c_str(), tilingAccelerator.Describe().c_str());
+    }
+}
 
 HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const
 {
@@ -3498,7 +3515,7 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::AIV;
             break;
         case HcclAccelerator::AIV_ONLY:
-            acceleratorState = AcceleratorState::AIV;
+            acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:
             HCCL_ERROR("[SetAccelerator] Tiling hcclAccelerator not support, hcclAccelerator[%s]", hcclAccelerator.Describe().c_str());
@@ -3506,11 +3523,7 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
     }
 
     AcceleratorState commAccelerator = GetCommExecuteConfig().accState;
-    if ((commAccelerator == AcceleratorState::AIV && (acceleratorState == AcceleratorState::CCU_MS || acceleratorState == AcceleratorState::CCU_SCHED))
-        || ((commAccelerator == AcceleratorState::CCU_MS || commAccelerator == AcceleratorState::CCU_SCHED) && acceleratorState == AcceleratorState::AIV)) { // 通信域粒度
-        HCCL_WARNING("CommunicatorImpl::GetTilingAccelerator comm accelerator is [%s] but tiling accelerator is [%s]",
-                     commAccelerator.Describe().c_str(), acceleratorState.Describe().c_str());
-    }
+    CheckAcceleratorConsistency(commAccelerator, acceleratorState);
 
     return HCCL_SUCCESS;
 }
@@ -3532,7 +3545,7 @@ HcclResult CommunicatorImpl::GetAlgExecParam(const CollOpParams &opParams, bool 
     bool ifAiv = true;
     std::string algName = "";
     CHK_RET(HcomSelectAlg(opParams, aivCoreLimit, ifAiv, algName));
-    bool       isAiv          = (opExecuteConfig.accState == AcceleratorState::AIV);
+    bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
     if (!isAiv) {
         HCCL_WARNING("GetAlgExecParam only supported aiv.");
         return HCCL_E_NOT_SUPPORT;

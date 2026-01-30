@@ -2497,6 +2497,12 @@ TEST_F(CommunicatorImplTest, Ut_AppendLocalDieId_When_OneP_return)
     EXPECT_NO_THROW(comm.AppendLocalDieIdForLinks());
 }
 
+TEST(CommunicatorImplTest, St_CheckAcceleratorConsistency)
+{
+    CommunicatorImpl comm;
+    EXPECT_NO_THROW(comm.CheckAcceleratorConsistency(AcceleratorState::AIV, AcceleratorState::AIV));
+}
+
 TEST_F(CommunicatorImplTest, Ut_GetNetLayers_When_InputValue_Expect_Return_HCCL_SUCCESS)
 {
     MockCommunicatorImpl();

@@ -19,7 +19,7 @@
 #include "acl/acl_rt.h"
  
 namespace Hccl {
-constexpr u32 MAX_RANK_SIZE_ = 8; // 注意要和device侧的一致
+constexpr u32 MAX_RANK_SIZE_ = 64; // 注意要和device侧的一致
 constexpr u32 MAX_BLOCK_DIM = 56; // 56-72
  
 constexpr s32 TAG_INIT_VALUE = 1;

@@ -25,7 +25,7 @@ MAKE_ENUM(DmaOp, HCCL_DMA_READ, HCCL_DMA_WRITE, HCCL_DMA_NOTIFY_WAIT)
 MAKE_ENUM(AlgType, NOT_SPECIFIED, RING, MULTI_RING, MESH, RECURSIVE_HD, BINARY_HD, PAIR_WISE, INVALID_VAL)
 
 MAKE_ENUM(TaskParamType, TASK_SDMA, TASK_RDMA, TASK_REDUCE_INLINE, TASK_REDUCE_TBE, TASK_NOTIFY_RECORD, TASK_NOTIFY_WAIT,
-    TASK_SEND_NOTIFY, TASK_SEND_PAYLOAD, TASK_WRITE_WITH_NOTIFY, TASK_WRITE_REDUCE_WITH_NOTIFY, TASK_CCU, TASK_AICPU_KERNEL, TASK_AICPU_REDUCE)
+    TASK_SEND_NOTIFY, TASK_SEND_PAYLOAD, TASK_WRITE_WITH_NOTIFY, TASK_WRITE_REDUCE_WITH_NOTIFY, TASK_CCU, TASK_AICPU_KERNEL, TASK_AICPU_REDUCE, TASK_AIV)
 
 MAKE_ENUM(DfxLinkType, ONCHIP, HCCS, PCIE, ROCE, SIO, HCCS_SW, STANDARD_ROCE, UB, UBoE, RESERVED)
 
@@ -91,6 +91,19 @@ struct ParaCcu {
     u64 executeId;
 };
 
+struct ParaAiv{
+    HcclCMDType cmdType;
+    u32 tag;
+    u64 count;
+    u32 blockDim;
+    u32 rankSize;
+    void* flagMem;
+    u64 flagMemSize;
+    u32 rank;
+    bool isOpbase;
+    HcclDataType dataType;
+};
+
 struct TaskParam {
     TaskParamType taskType;
     u64           beginTime;
@@ -100,6 +113,7 @@ struct TaskParam {
         ParaReduce Reduce; // taskType = inline/CCE Reduce使用
         ParaNotify Notify; // taskType = Noitfy Record/Wait使用
         ParaCcu    Ccu;
+        ParaAiv    Aiv; //aiv param
     } taskPara;
     std::shared_ptr<std::vector<CcuProfilingInfo>> ccuDetailInfo; // taskType为TASK_CCU时，ParaCcu的补充profiling信息
     std::string Describe() const

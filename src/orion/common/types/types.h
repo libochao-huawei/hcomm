@@ -30,7 +30,7 @@ using SockPort = u16;
 MAKE_ENUM(HcclAccelerator, DEFAULT, HOSTCPU_TS, AICPU_TS, AIV, AIV_ONLY, CCU_MS, CCU_SCHED, AICPU);
 
 // 通信域粒度加速模式
-MAKE_ENUM(AcceleratorState, CCU_MS, CCU_SCHED, CCU_FALLBACK, AIV, AICPU_TS, HOSTCPU_TS, AICPU);
+MAKE_ENUM(AcceleratorState, CCU_MS, CCU_SCHED, CCU_FALLBACK, AIV, AIV_ONLY, AICPU_TS, HOSTCPU_TS, AICPU);
 
 // AcceleratorState是通信域内部加速模式
 struct OpExecuteConfig {
@@ -51,6 +51,7 @@ const std::unordered_map<AcceleratorState, std::string, AcceleratorEnumHash> Acc
     { AcceleratorState::CCU_SCHED, "CCU_SCHED" },
     { AcceleratorState::CCU_FALLBACK,  "CCU_FALLBACK" },
     { AcceleratorState::AIV,       "AIV" },
+    { AcceleratorState::AIV_ONLY,  "AIV_ONLY" },
     { AcceleratorState::AICPU_TS,  "AICPU_TS" },
     { AcceleratorState::HOSTCPU_TS, "HOSTCPU_TS" },
     { AcceleratorState::AICPU,     "AICPU" }

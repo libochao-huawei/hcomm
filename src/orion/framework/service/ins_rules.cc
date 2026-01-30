@@ -760,6 +760,35 @@ void Interpret(const AicpuInstruction &aicpuInstruction, CommunicatorImpl &comm,
     aicpuKernelLauncher.AicpuKernelLaunch(stream, aicpuInstruction.GetAlgName());
 }
 
+static void ReportAivTaskInfo(const CommunicatorImpl &comm, AivOpArgs &aivOpArgs)
+{
+    HCCL_DEBUG("Begin to SaveAivDfxTaskInfo taskType[%d]", static_cast<int32_t>(TaskParamType::TASK_AIV));
+    //flagMem每个stream的中的任务复用，异常时只有最后一个task的信息
+    TaskParam taskParam = {
+        .taskType  = TaskParamType::TASK_AIV,
+        .beginTime = aivOpArgs.beginTime,
+        .endTime   = DlProfFunction::GetInstance().dlMsprofSysCycleTime(),
+        .taskPara  = {
+            .Aiv = {
+                    .cmdType     = aivOpArgs.cmdType,
+                    .tag         = aivOpArgs.aivTag,
+                    .count       = aivOpArgs.count,
+                    .blockDim    = aivOpArgs.blockDim,
+                    .rankSize    = aivOpArgs.rankSize,
+                    .flagMem     = aivOpArgs.isOpBase ? reinterpret_cast<void *>(comm.GetAivTagBuffer()->GetAddr() + AIV_FLAG_ADDR_OFFSET):
+                                           reinterpret_cast<void *>(comm.GetAivOffloadTagBuffer()->GetAddr() + AIV_FLAG_ADDR_OFFSET),
+                    .flagMemSize = AIV_FLAG_AREA_SIZE,
+                    .rank        = aivOpArgs.rank,
+                    .isOpbase    = aivOpArgs.isOpBase,
+                    .dataType    = DataTypeToHcclDataType(aivOpArgs.dataType),
+            }
+        },
+        .ccuDetailInfo  = nullptr
+    };
+ 
+    SaveDfxTaskInfo(comm, taskParam, INVALID_RANKID);
+}
+
 void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &comm, const Stream &stream,
                const OpTaskConfig &taskConfig)
 {
@@ -826,6 +855,7 @@ void Interpret(const AivInstruction &aivInstruction, const CommunicatorImpl &com
         aivOpArgs.output += localOutputAddr;
     }
     ExecuteKernelLaunch(aivOpArgs);
+    ReportAivTaskInfo(comm, aivOpArgs);
 }
 
 } // namespace Hccl
