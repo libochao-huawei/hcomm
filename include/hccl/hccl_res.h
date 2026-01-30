@@ -372,6 +372,8 @@ typedef int32_t(Callback)(uint64_t, int32_t);
  * @param msgTag 操作标签，用于标识和区分不同的任务。
  * @param cb 回调函数，任务完成时将被调用。
  * @return HcclResult。
+ * 
+ * experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
 /**
@@ -380,6 +382,8 @@ extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
  * @param msgTag 操作标签，用于标识要注销的任务。
  * @param cb 回调函数，任务完成时将被调用。
  * @return HcclResult。
+ * 
+ * experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
  
@@ -391,6 +395,8 @@ extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
  * @param[out] addr 对应的workspace起始地址
  * @param[out] newCreated 可为nullptr, 不为nullptr时会返回是否新创建的workspace
  * @return HcclResult 执行结果状态码
+ * 
+ * experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
 
@@ -403,6 +409,8 @@ extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t 
  * @param[out] exportedThreads 导出的Thread列表
  * @return HcclResult 执行结果状态码
  * @note 导出到目标通信引擎之后，在目标通信引擎直接引用，不需要导入操作
+ * 
+ * experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
 

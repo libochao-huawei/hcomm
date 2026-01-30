@@ -16,48 +16,52 @@
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
- 
-extern HcclResult HcommEndpointGet(HcommDevId deviceId, EndpointDesc **endpointDescs, uint32_t *num);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommEndpointCreate(const EndpointDesc *endPoint, EndpointHandle *endPointHandle);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommEndpointDestroy(EndpointHandle endPointHandle);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemReg(EndpointHandle endPointHandle, const char *memTag, HcommMem mem, void **memHandle);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemUnreg(EndpointHandle endPointHandle, void *memHandle);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemExport(
     EndpointHandle endPointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemImport(
     EndpointHandle endPointHandle, const void *memDesc, uint32_t descLen, HcommBuf *outBuf);
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommMemUnimport(EndpointHandle endPointHandle, const HcommBuf *buf);
- 
-/* 暂未实现 */
-extern HcclResult HcommMemGrant(EndpointHandle endPointHandle, const HcommMemGrantInfo *remoteGrantInfo);
- 
-/* 暂未实现 */
-extern HcclResult HcommMemRemap(const EndpointHandle endPointHandle, const HcommMem *memArray, uint64_t arraySize);
- 
-extern HcclResult HcommMemGetAllMemHandles(EndpointHandle endPointHandle, void **memHandles, uint32_t *memHandleNum);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommChannelCreate(EndpointHandle endPointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommChannelGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcommMem **remoteMem, uint32_t *memNum, char **memTags);
- 
+
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t notifyNumPerThread, ThreadHandle *threads);
 
+// experimental API, No compatibility is currently guaranteed for this API
 extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
-extern HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
