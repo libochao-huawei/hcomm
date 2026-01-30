@@ -17,10 +17,7 @@ namespace Hccl {
 SelectorStatus ReduceScatterVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
-    if (topoInfo.levelNum > 1) {
-        HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
-        return SelectorStatus::NOT_MATCH;
-    }
+    HCCL_DEBUG("[ReduceScatterVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
     // MS 模式不支持 int8
     CHK_PRT_RET(op.dataType == DataType::INT8,
@@ -28,60 +25,87 @@ SelectorStatus ReduceScatterVAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoI
             op.dataType.Describe().c_str()),
         SelectorStatus::NOT_MATCH);
 
-    HcclAlgoType levle0Algo = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
-    auto it = configAlgMap.find(op.opType);
-    if ((it != configAlgMap.end()) && (it->second.size() > 0)) {
-        levle0Algo = it->second[0];
-    }
-    if (IsDefaultAlg(levle0Algo) || levle0Algo == HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH) {
+    if (topoInfo.levelNum > 1) {
+        HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] levelNum > 1 is not supported yet for ccu_ms mode.");
+        return SelectorStatus::NOT_MATCH;
+    } else {
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-            primQueueGenName = "CcuReduceScatterVMesh1D";
-            return SelectorStatus::MATCH;
+            if (Is2DieFullMesh()) {
+                HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] 2DieFullMesh is not supported yet for ccu_ms mode.",
+                    topoInfo.level0Shape);
+                return SelectorStatus::NOT_MATCH;
+            } else {
+                primQueueGenName = "CcuReduceScatterVMesh1D";
+            }
         } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
-            HCCL_WARNING(
-                "[Algo][ReduceScatterVAutoSelector] algo[%u] is not supported yet for ccu_ms 2D topo, not match.",
-                levle0Algo);
+            HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
+                    topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
+            if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
+                // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+                primQueueGenName = "CcuReduceScatterVMesh1D";
+            } else { // MS 不支持
+                HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
+                    topoInfo.level0Shape);
+                return SelectorStatus::NOT_MATCH;
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
+                    topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        } else {
+            HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu_ms mode.",
+                    topoInfo.level0Shape);
             return SelectorStatus::NOT_MATCH;
         }
-    } else {
-        HCCL_WARNING(
-            "[Algo][ReduceScatterVAutoSelector] algo[%u] is not supported yet for ccu_ms mode, not match.", levle0Algo);
-        return SelectorStatus::NOT_MATCH;
     }
-    return SelectorStatus::NOT_MATCH;
+    HCCL_INFO("[Algo][ReduceScatterVAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
+    return SelectorStatus::MATCH;
 }
 
 SelectorStatus ReduceScatterVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
-    // 暂时没有跨框算法
-    CHK_PRT_RET(topoInfo.levelNum > 1,
-        HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] levelNum > 1 is not supported yet for ccu_schedule mode.")
-        , SelectorStatus::NOT_MATCH);
-    // 暂时没有 2D 算法
-    CHK_PRT_RET(topoInfo.level0Shape != Level0Shape::MESH_1D,
-        HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape [%d] is not supported yet for ccu_schedule mode.",
-            topoInfo.level0Shape)
-        , SelectorStatus::NOT_MATCH);
+    HCCL_DEBUG("[ReduceScatterVAutoSelector][%s] start, topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
 
-    // 获取算法类型
-    HcclAlgoType levle0Algo = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
-    auto it = configAlgMap.find(op.opType);
-    if ((it != configAlgMap.end()) && (it->second.size() > 0)) {
-        levle0Algo = it->second[0];
-    }
-
-    // 选择算法
-    if ((IsDefaultAlg(levle0Algo) || levle0Algo ==  HcclAlgoType::HCCL_ALGO_TYPE_FULLMESH)&&(topoInfo.level0Shape == Level0Shape::MESH_1D)) {
-        // 默认使用 Mesh 算法
-        primQueueGenName = "CcuReduceScatterVMeshMem2Mem1D";
-        return SelectorStatus::MATCH;
+    if (topoInfo.levelNum > 1) {
+        HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] levelNum > 1 is not supported yet for ccu_schedule mode.");
+        return SelectorStatus::NOT_MATCH;
     } else {
-        // 默认使用 Mesh 算法
-        HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] algo[%u] is not supported yet for ccu_schedule mode, reset to default.", levle0Algo);
-        primQueueGenName = "CcuReduceScatterVMeshMem2Mem1D";
-        return  SelectorStatus::MATCH;
+        if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+            if (Is2DieFullMesh()) {
+                HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] 2DieFullMesh is not supported yet for ccu schedule mode.");
+                return SelectorStatus::NOT_MATCH;
+            } else {
+                primQueueGenName = "CcuReduceScatterVMeshMem2Mem1D";
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+            HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        } else if (topoInfo.level0Shape == Level0Shape::MESH_1D_CLOS) {
+            if (IsLayerAllConnetedWithTopo(topoInfo, 0, TopoType::MESH_1D)) {
+                // MESH_1D 即可链接所有卡， 使用 MESH_1D 算法
+                primQueueGenName = "CcuReduceScatterVMeshMem2Mem1D";
+            } else {
+                HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                    topoInfo.level0Shape);
+                return SelectorStatus::NOT_MATCH;
+            }
+        } else if (topoInfo.level0Shape == Level0Shape::CLOS) {
+            HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        } else {
+            HCCL_WARNING("[Algo][ReduceScatterVAutoSelector] level0Shape[%d] is not supported yet for ccu schedule mode.",
+                topoInfo.level0Shape);
+            return SelectorStatus::NOT_MATCH;
+        }
     }
+
+    HCCL_INFO("[Algo][ReduceScatterVAutoSelector][%s] Algo match [%s]", __func__, primQueueGenName.c_str());
+    return SelectorStatus::MATCH;
 }
 
 SelectorStatus ReduceScatterVAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,

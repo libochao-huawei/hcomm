@@ -26,7 +26,7 @@ SelectorStatus AutoSelectorBase::Select(const CollAlgOperator &op, CollAlgParams
     std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = EnvConfig::GetInstance().GetAlgoConfig().GetAlgoConfig();
     SelectorStatus ret = SelectorStatus::NOT_MATCH;
     HCCL_DEBUG("[AutoSelectorBase][%s] params.opExecuteConfig.accelerator[%s]", __func__, params.opExecuteConfig.accState.Describe().c_str());
-    dataSize_ = params.dataSize;
+    dataSize_ = op.dataCount * DataTypeSizeGet(op.dataType);;
     if (params.opExecuteConfig.accState == AcceleratorState::CCU_MS) {
         ret = SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
         if (ret == SelectorStatus::NOT_MATCH) {
@@ -62,9 +62,9 @@ SelectorStatus AutoSelectorBase::Select(const CollAlgOperator &op, CollAlgParams
         if ((ret == SelectorStatus::MATCH)&&(params.opExecuteConfig.accState == AcceleratorState::CCU_FALLBACK)) {
             params.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
         }
+        return ret;
     }
-    HCCL_INFO("[Algo][AutoSelectorBase] The selected algo is %s.", primQueueGenName.c_str());
-    return ret;
+    return SelectorStatus::NOT_MATCH;
 }
 
 bool AutoSelectorBase::IsStarsState(const OpExecuteConfig &opExecuteConfig) const
@@ -77,6 +77,16 @@ bool AutoSelectorBase::IsStarsState(const OpExecuteConfig &opExecuteConfig) cons
 bool AutoSelectorBase::IsDefaultAlg(const HcclAlgoType algoType) const
 {
     return (algoType ==  HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) || (algoType ==  HcclAlgoType::HCCL_ALGO_TYPE_NA);
+}
+
+HcclAlgoType AutoSelectorBase::GetLevel0AlgoType(const CollAlgOperator &op, const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap) const
+{
+    HcclAlgoType levle0Algo = HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT;
+    auto it = configAlgMap.find(op.opType);
+    if ((it != configAlgMap.end()) && (it->second.size() > 0)) {
+        levle0Algo = it->second[0];
+    }
+    return levle0Algo;
 }
 
 bool AutoSelectorBase::IsSmallData(const u64 dataSize) const
