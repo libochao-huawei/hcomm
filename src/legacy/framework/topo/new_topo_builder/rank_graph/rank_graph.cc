@@ -721,6 +721,8 @@ unique_ptr<RankGraph> RankGraph::CreateSubRankGraph(const std::vector<u32> &rank
     // step6: 构造完成
     subRankGraph->InitFinish();
 
+    HCCL_INFO("[subRankGraph] Build success!");
+    subRankGraph->Dump();
     return subRankGraph;
 }
 

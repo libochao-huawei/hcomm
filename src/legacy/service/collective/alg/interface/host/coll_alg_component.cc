@@ -24,7 +24,8 @@ CollAlgComponent::CollAlgComponent(RankGraph *rankGraph, DevType devType, u32 my
 
 {
     collAlgSelector_ = std::make_shared<ExecuteSelector>(ExecuteSelector().SetVirtualTopo(rankGraph)
-                                                                          .SetRankSize(rankSize_));
+                                                                          .SetRankSize(rankSize)
+                                                                          .SetMyRank(myRank));
 }
 
 constexpr u64 HCCLV2_DEFAULT_TASK_NUM = 30;
@@ -125,7 +126,7 @@ HcclResult CollAlgComponent::CalcResOffload(const OpType &opType, const u64 &dat
     params.opMode = OpMode::OFFLOAD;
     params.dataSize = dataSize;
     std::string  collAlgName;
-    collAlgSelector_->Run(op, params, collAlgName);
+    CHK_RET(collAlgSelector_->Run(op, params, collAlgName));
     CHK_PRT_RET(collAlgName.empty(),
         HCCL_ERROR("[CollAlgComponent] Please assign a collAlgName by env variable!"),
         HcclResult::HCCL_E_PARA);
@@ -136,7 +137,7 @@ HcclResult CollAlgComponent::CalcResOffload(const OpType &opType, const u64 &dat
     CHK_PRT_RET(SetInsCollAlgExecutor(insGenFunc) != HcclResult::HCCL_SUCCESS,
                 HCCL_ERROR("[CollAlgComponent] Unable to Set InsCollAlgExecutor, please check params!"),
                 HcclResult::HCCL_E_PARA);
-    insGenFunc->CalcResOffload(rankGraph_, dataSize, resReq);
+    CHK_RET(insGenFunc->CalcResOffload(rankGraph_, dataSize, resReq));
     CHK_RET(TmpStubCalcResOffload(resReq));
 
     HCCL_INFO("[CollAlgComponent][CalcResOffload] requiredSubQueNum[%llu], requiredScratchMemSize[%llu]",
@@ -408,7 +409,7 @@ HcclResult CollAlgComponent::CalcTaskNumMesh(OpType opType, u64 dataSize, u64 sc
         taskNum += 5 * (rankSize_ - 1)  + 4 * (rankSize_ - TASK_NUM_CONST_TWO) + rankSize_; // 每个对端5次同步+拷贝，每个queue 4次同步，ranksize个localCopy、localReduce
     } else if (opType == OpType::ALLTOALL || opType == OpType::ALLTOALLV) {
         u32 numSubStep = (dataSize + scratchBufSize - 1) / scratchBufSize;
-        u32 concurrentSendRecvNum = (rankSize_ > ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE) ? 
+        u32 concurrentSendRecvNum = (rankSize_ > ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE) ?
             ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE : rankSize_;
         u64 commLoops = (rankSize_ + concurrentSendRecvNum - 1) / concurrentSendRecvNum;
         taskNum += numSubStep * commLoops * (6 * concurrentSendRecvNum); // 每步6次同步拷贝task
@@ -438,7 +439,7 @@ HcclResult CollAlgComponent::CalcTaskNumNHR(OpType opType, u32 &taskNum) const
     } else if (opType == OpType::REDUCESCATTER) {
         taskNum += 4 * nSteps + (1LL << nSteps) + 1; // 每步4个卡间同步, task+数据搬运
     } else if (opType == OpType::BROADCAST) {
-        // scatter + allgather  
+        // scatter + allgather
         taskNum += TASK_NUM_CONST_TWO * nSteps + (rankSize_ - 1) + (rankSize_ + 1);
         taskNum += 4 * nSteps + (1LL << nSteps) + 1; // 每步4个卡间同步task
     } else if (opType == OpType::SCATTER) {
