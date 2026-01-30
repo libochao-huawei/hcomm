@@ -280,11 +280,13 @@ extern HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool 
 
 /**
  * @brief Group Start
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGroupStart();
 
 /**
  * @brief Group End
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclGroupEnd();
 
