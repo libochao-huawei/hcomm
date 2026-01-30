@@ -573,6 +573,16 @@ void AddNewLink(u32 layer, const NetInstance::Link &oldLink, RankId srcNewRankId
                                       oldLink.GetLinkProtocols(), oldLink.GetLinkDirection(), oldLink.GetHop());
  
     newNetInstance->AddLink(link);
+    newNetInstance->UpdateTopoInst(newSourceNode->GetTopoInstId(), newSourceNode->GetTopoType(), srcNewRankId);
+    newNetInstance->UpdateTopoInst(newTargetIface->GetTopoInstId(), newTargetIface->GetTopoType(), dstNewRankId);
+    for (const auto&pair: newNetInstance->topoInsts_){
+        uint32_t topoInstId = pair.first;
+        if(pair.second==nullptr){
+            HCCL_ERROR("topoInst of newNetInstance is nullptr");
+        }
+        auto topoType = pair.second->topoType;
+        HCCL_DEBUG("[SubRankGraph] topoInstId[%u] topoType[%d]", topoInstId, topoType);
+    }
  
     HCCL_DEBUG("[RankGraph][AddNewLink] srcNewRankId[%d] dstNewRankId[%d] newLink[%s]", srcNewRankId, dstNewRankId,
                link->Describe().c_str());
@@ -661,16 +671,6 @@ void RankGraph::CreateSubNetInstances(const std::vector<RankId> rankIds, Level2I
             shared_ptr<NetInstance> subNetInstance = GetOrCreateNetInstance(netLayer, netInstId, netType, subNetInstances, subRankGraph);
             auto topoInsts = oldNetInstance->GetTopoInsts();
             
-            subNetInstance->AddTopoInst(std::move(topoInsts));
-            for (const auto&pair : subNetInstance->topoInsts_) {
-                uint32_t topoInstId = pair.first;
-                if (pair.second == nullptr) {
-                    HCCL_ERROR("topoInst of subnetInsts is nullptr");
-                }
-                auto topoType = pair.second->topoType;
-                HCCL_DEBUG("[SubRankGraph][CreateSubNetInstances] topoInstId[%u] topoType[%d]", topoInstId, topoType);
-            }
- 
             // subNetInstance Add RankId and subPeer
             shared_ptr<NetInstance::Peer> subPeer = peers.at(subRankId);
             subNetInstance->AddRankId(subRankId);
