@@ -159,7 +159,7 @@ void UbConnLite::ProcessSlicesWithNotify(
         lastSliceSize = sliceSize;
     }
     u64 totalSize = static_cast<u64>(sliceNum) * static_cast<u64>(sliceSize);
-    if (UNLIKELY(loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSiz)e) {
+    if (UNLIKELY(loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize)) {
         THROW<InternalException>("integer overflow occurs");
     }
     for (u32 sliceIdx = 0; sliceIdx < sliceNum; sliceIdx++) {
