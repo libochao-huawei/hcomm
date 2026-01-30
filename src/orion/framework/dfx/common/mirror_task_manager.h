@@ -11,6 +11,7 @@
 #define MIRROR_TASK_MANAGER_H
 
 #include <map>
+#include <unordered_map>
 #include <memory>
 #include <functional>
 #include "circular_queue.h"
@@ -33,8 +34,8 @@ public:
     TaskInfoQueue             *GetQueue(u32 streamId) const;
 
 public:
-    std::map<u32, TaskInfoQueue *>::iterator Begin();
-    std::map<u32, TaskInfoQueue *>::iterator End();
+    std::unordered_map<u32, TaskInfoQueue *>::iterator Begin();
+    std::unordered_map<u32, TaskInfoQueue *>::iterator End();
 
     ~MirrorTaskManager();
 
@@ -44,7 +45,8 @@ private:
     bool                           devUsed_{false};
     bool                           isStaticGraphMode_{false};
     OpMode                         opMode_;
-    std::map<u32, TaskInfoQueue *> queueMap_;
+    std::unordered_map<u32, TaskInfoQueue *> queueMap_;
+    std::unordered_map<u32, u32> queueTaskNum;
     std::shared_ptr<DfxOpInfo>     currDfxOpInfo_;
     std::function<void()>          fullyCallBack_;
 
