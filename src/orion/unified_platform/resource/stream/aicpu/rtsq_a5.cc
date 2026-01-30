@@ -116,8 +116,8 @@ void RtsqA5::CopyLocBufToSq()
             }
         }
     } else {
-        HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, tail < head, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u, depth remain: %u", 
-                __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt, depthLeft);
+        HCCL_INFO("RtsqA5::%s copy sqe from sqe buffer, tail < head, sqId_: %u, streamId_: %u, cur head: %u, cur tail: %u, size: %u", 
+                __func__, sqId_, streamId_, sqHead_, sqTail_, pendingSqeCnt);
         int ret = memcpy_s(sqCurrAddr, pendingSqeCnt * AC_SQE_SIZE, locBuf, pendingSqeCnt * rtsqSqeSize);
         if (UNLIKELY(ret != 0)) {
             THROW<InternalException>(StringFormat("RtsqA5::%s sqe memcpy_s failed, ret = %d", __func__, ret));
