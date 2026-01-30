@@ -114,6 +114,7 @@ protected:
         string commId = "comm ";
         memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
         params.rank = 0;
+        params.userRank = 0;
         params.totalRanks = 2;
         params.isHeterogComm = false;
         params.logicDevId = 0;
@@ -143,6 +144,7 @@ protected:
         string commId = "comm ";
         memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
         params.rank = 0;
+        params.userRank = 0;
         params.totalRanks = 2;
         params.isHeterogComm = false;
         params.logicDevId = 0;
@@ -173,6 +175,7 @@ static void TestConstructParam_2Server(HcclCommParams &params, RankTable_t &rank
     string commId = "comm ";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 4;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -216,6 +219,7 @@ static void TestConstructParam_2Server(HcclCommParams &params, RankTable_t &rank
         string commId = "comm ";
         memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
         params.rank = 0;
+        params.userRank = 0;
         params.totalRanks = 4;
         params.isHeterogComm = false;
         params.logicDevId = 0;
@@ -1849,6 +1853,7 @@ void get_rank_table_rank_1server_2module_7p_4_3(HcclCommParams &params, RankTabl
     string commId = "comm ";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 7;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -2974,6 +2979,7 @@ static void TestConstructParam_1server_8p(HcclCommParams &params, RankTable_t &r
     string commId = "comm ";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 8;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -3049,6 +3055,7 @@ static void TestConstructParam_1server_8p_910_93(HcclCommParams &params, RankTab
     string commId = "comm ";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 8;
     params.isHeterogComm = false;
     params.logicDevId = 0;

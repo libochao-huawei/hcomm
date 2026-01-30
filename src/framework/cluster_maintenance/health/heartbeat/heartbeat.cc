@@ -19,6 +19,7 @@
 #include "task_exception_handler_pub.h"
 #include "comm_configer.h"
 #include "snapshot_control.h"
+#include "rt_external.h"
 
 namespace hccl {
 constexpr u32 HEARTBEAT_INTERVAL = 1000;                                 // 心跳帧发送周期为1000 ms
@@ -716,7 +717,7 @@ HcclResult Heartbeat::GetConnInfo(RankInfo &remRank, bool useSuperPodMode, HcclS
     return HCCL_SUCCESS;
 }
 
-void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperPodMode, u32 index, u32 nextOrPrevIndex,
+HcclResult GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperPodMode, u32 index, u32 nextOrPrevIndex,
     HcclSocketType &type)
 {
     // 910_93 Type要动态改一下 1. 同server vnic 2. 不同server 超结点内vnic 超结点间nic
@@ -725,7 +726,30 @@ void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperP
     bool localUseSuporPodModel = useSuperPodMode && locRank.superPodId.empty() == false;
     bool needSuperModeHb = localUseSuporPodModel && useSuperPodMode && rankInfo.superPodId.empty() == false;
     if (needSuperModeHb) {
-        if (locRank.serverId == rankInfo.serverId) { // serverId相同表示同超结点同server
+        bool isInterServer = false;
+        if (locRank.deviceType == DevType::DEV_TYPE_910_93) {
+            uint32_t userRankServerId = 0;
+            uint32_t remoteRankServerId = 0;
+            rtError_t ret = rtGetServerIDBySDID(locRank.superDeviceId, &userRankServerId);
+            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[GetSocketTypeIn91093]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                locRank.superDeviceId, userRankServerId, ret), HCCL_E_RUNTIME);
+            ret = rtGetServerIDBySDID(rankInfo.superDeviceId, &remoteRankServerId);
+            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[GetSocketTypeIn91093]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                rankInfo.superDeviceId, remoteRankServerId, ret), HCCL_E_RUNTIME);
+            isInterServer = (userRankServerId != remoteRankServerId) || (locRank.superPodId != rankInfo.superPodId);
+            HCCL_INFO("[GetSocketTypeIn91093]localSDID[0x%08x], localdevicePhyId[%d], localServerId[%s], localServerIdBySDID[%d], localSuperPodId[%s]" \
+                "remoteSDID[0x%08x], remotedevicePhyId[%d], remoteRankServerId[%d], remoteServerIdBySDID[%d], remoteSuperPodId[%s], " \
+                "isInterServer[%s]",
+                locRank.superDeviceId, locRank.devicePhyId, locRank.serverId.c_str(), userRankServerId, locRank.superPodId.c_str(),
+                rankInfo.superDeviceId, rankInfo.devicePhyId, rankInfo.serverId.c_str(), remoteRankServerId, rankInfo.superPodId.c_str(),
+                isInterServer ? "true" : "false");
+        } else {
+            isInterServer = locRank.serverId != rankInfo.serverId;
+            HCCL_INFO("[GetSocketTypeIn91093]localdevicePhyId[%d], localRankServerId[%s], " \
+                "remotedevicePhyId[%d], remoteRankServerId[%s], isInterServer[%s]",
+                locRank.devicePhyId, locRank.serverId.c_str(), rankInfo.devicePhyId, rankInfo.serverId.c_str(), isInterServer ? "true" : "false");
+        }
+        if (!isInterServer) { // serverId相同表示同超结点同server
             type = HcclSocketType::SOCKET_VNIC;
         } else if (locRank.superPodId == rankInfo.superPodId) { // 同超结点
             type =
@@ -734,6 +758,7 @@ void GetSocketTypeIn91093(const std::vector<RankInfo> &rankInfos, bool useSuperP
             type = HcclSocketType::SOCKET_NIC;
         }
     }
+    return HCCL_SUCCESS;
 }
 
 template <typename T>
@@ -755,7 +780,7 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
     } else if (connCount == 2) { // 2个rank, 只需建链一条连接
         u32 nextIndex = connVec[(index + 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
-            GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type);
+            CHK_RET(GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type));
         }
         HCCL_INFO("[GetSamePlaneConnInfo]local rank[%u], remote rank[%u], type[%d]", worldRank,
             rankInfos[nextIndex].worldRank, type);
@@ -769,7 +794,7 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
     } else {
         u32 nextIndex = connVec[(index + 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
-            GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type);
+            CHK_RET(GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, nextIndex, type));
         }
         HCCL_INFO("[GetSamePlaneConnInfo][nextIndex]local rank[%u], remote rank[%u], type[%d]", worldRank,
             rankInfos[nextIndex].worldRank, type);
@@ -778,7 +803,7 @@ HcclResult Heartbeat::GetSamePlaneConnInfo(HcclSocketType type, std::vector<std:
 
         u32 prevIndex = connVec[(index + connCount - 1) % connCount].second;
         if (devType == DevType::DEV_TYPE_910_93) {
-            GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, prevIndex, type);
+            CHK_RET(GetSocketTypeIn91093(rankInfos, useSuperPodMode, connVec[index].second, prevIndex, type));
         }
         HCCL_INFO("[GetSamePlaneConnInfo][prevIndex]local rank[%u], remote rank[%u], type[%d]", worldRank,
             rankInfos[prevIndex].worldRank, type);

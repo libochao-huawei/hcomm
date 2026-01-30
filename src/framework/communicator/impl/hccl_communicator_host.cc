@@ -50,6 +50,7 @@
 #include "hccl_group_utils.h"
 #include "snapshot_control.h"
 #include "comm_topo_desc.h"
+#include "rt_external.h"
 
 using namespace std;
 constexpr u32 MODULE_NUM_FOUR = 4;
@@ -1197,6 +1198,28 @@ namespace hccl
             return HCCL_E_NOT_SUPPORT;
         }
         (void)rankTable;
+        // 判断是否为A3多docker场景，该场景需要使用sdid获取到的serverId判断是否属于同一server，若属于同一server则需要enablep2p
+        if (deviceType_ == DevType::DEV_TYPE_910_93) {
+            uint32_t localRankServerId = 0;
+            uint32_t remoteRankServerId = 0;
+            rtError_t ret = rtGetServerIDBySDID(rankInfoList_[realUserRank_].superDeviceId, &localRankServerId);
+            CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[InitPreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                rankInfoList_[realUserRank_].superDeviceId, localRankServerId, ret), HCCL_E_RUNTIME);
+            for (size_t index = 0; index < rankInfoList_.size(); ++index)
+            {
+                const RankInfo &rankInfo = rankInfoList_[index];
+                ret = rtGetServerIDBySDID(rankInfo.superDeviceId, &remoteRankServerId);
+                CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[InitPreResource]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+                    rankInfo.superDeviceId, remoteRankServerId, ret), HCCL_E_RUNTIME);
+                if (serverId_ != rankInfo.serverId && localRankServerId == remoteRankServerId) {
+                    enableP2PDevices_.push_back(rankInfo.devicePhyId);
+                    HCCL_INFO("[InitPreResource]localDevicePhyId[%u] needs to enable enablep2p for remoteDevicePhyId[%u], " \
+                        "and localServerId[%s], localServerIdBySDID[%u], remoteServerId[%s], remoteServerIdBySDID[%u]",
+                        rankInfoList_[realUserRank_].devicePhyId, rankInfo.devicePhyId,
+                        serverId_.c_str(), localRankServerId, rankInfo.serverId.c_str(), remoteRankServerId);
+                }
+            }
+        }
         // 查询本rank所在服务器
         auto iterServ = servRankInfo_.find(serverId_);
 
@@ -1207,6 +1230,8 @@ namespace hccl
         for (u32 i = 0; i < iterServ->second.size(); i++) {
             if (iterServ->second[i].deviceInfo.devicePhyId != HOST_DEVICE_ID) {
                 enableP2PDevices_.push_back(iterServ->second[i].deviceInfo.devicePhyId);
+                HCCL_INFO("[InitPreResource]Insert all devices in the current server[%s] into the enablep2p queue, devicePhyId[%d]",
+                    iterServ->second[i].serverId.c_str(), iterServ->second[i].deviceInfo.devicePhyId);
             }
         }
         if (deviceType_ != DevType::DEV_TYPE_310P3 && !isStandardCard_) {
