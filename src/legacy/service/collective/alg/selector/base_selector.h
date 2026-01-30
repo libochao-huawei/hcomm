@@ -26,6 +26,8 @@ enum class SelectorStatus { MATCH, NOT_MATCH };
 enum class Level0Shape {
     MESH_1D = 1,
     MESH_2D = 2,
+    CLOS = 3,
+    MESH_1D_CLOS = 4,
 };
 
 
@@ -63,20 +65,40 @@ public:
      = 0;
 
 protected:
+    struct NetLayerDetails {
+        u32 netLayerNum;
+        std::set<u32> netLayers;
+        std::vector<u32> netInstNumOfLayer;
+        std::vector<std::vector<u32>> instSizeListOfLayer;
+        std::vector<u32> localNetInsSizeOfLayer;
+    };
+    struct TopoInstDetails {
+        u32 topoInstNum;
+        std::vector<u32> sizeOfTopo;
+        std::vector<TopoType> typeOfTopo;
+        std::vector<std::vector<u32>> ranksInTopo;
+        std::map<TopoType, std::vector<u32>> rankNumForTopoType;
+    };
     struct TopoInfo {
         u32 levelNum;
         Level0Shape level0Shape;
+        NetLayerDetails netLayerDetails;
+        std::vector<TopoInstDetails> topoInstDetailsOfLayer;
+
         bool Level0Nhr{false};
         bool Level1Nhr{false};
     };
     u32 Gcd(u32 a, u32 b) const;  // 自定义实现的 gcd 函数（兼容旧版本 C++）
     u32 GcdOfArray(const std::vector<u32> &numbers) const;  // 计算数组中所有元素的最大公约数
     u32 GetLevel0Gcd();
-    u32 GetNumRanksPerBoard() const;
-    void CalcTopoShape(TopoInfo &topoInfo);
-    Level0Shape CalcTopoShapeLevel0(TopoInfo &topoInfo);
+    void CalcTopoShape(TopoInfo &topoInfo) const;
     bool IsAsymmetricTopoShapeLevel1Nhr(const std::vector<std::vector<u32>> &localIdPerBoard, u32 gcdRankSizeLevel0) const;
     bool IsTopoShapeLevel0Regular(const std::vector<std::vector<u32>> &localIdPerBoard) const;
+    bool IsLayerAllConnetedWithTopo(const TopoInfo &topoInfo, const u32 netLayer, const TopoType topoType) const;
+    HcclResult CalcLevel0TopoShape(TopoInfo &topoInfo) const;
+    HcclResult ExtractNetLayerDetails(TopoInfo &topoInfo) const;
+    HcclResult ExtractTopoDetails(TopoInfo &topoInfo) const;
+    bool Is2DieFullMesh() const;
     RankGraph *rankGraph_ = nullptr;
     OpExecuteConfig opConfig_;
     DevType      devType_;

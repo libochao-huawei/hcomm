@@ -127,7 +127,7 @@ std::string PhyTopo::ConnInterface::Describe() const
         protocolStr += it->Describe();
     }
 
-    return StringFormat("ConnInterface[ports={%s}, pos=%s, protocols={%s}, linkType=%s]", portsStr.c_str(),
+    return StringFormat("ConnInterface[ports={%s}, pos=%s, protocols={%s}, linkType=%s], topoInstId=%u, topoType=%u", portsStr.c_str(),
                         pos.Describe().c_str(), protocolStr.c_str(), linkType.Describe().c_str());
 }
 
