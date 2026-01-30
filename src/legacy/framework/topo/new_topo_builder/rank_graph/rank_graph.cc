@@ -659,6 +659,17 @@ void RankGraph::CreateSubNetInstances(const std::vector<RankId> rankIds, Level2I
             NetType netType = oldNetInstance->GetNetType();
             string netInstId = oldNetInstance->GetNetInstId();
             shared_ptr<NetInstance> subNetInstance = GetOrCreateNetInstance(netLayer, netInstId, netType, subNetInstances, subRankGraph);
+            auto topoInsts = oldNetInstance->GetTopoInsts();
+            
+            subNetInstance->AddTopoInst(std::move(topoInsts));
+            for (const auto&pair : subNetInstance->topoInsts_) {
+                uint32_t topoInstId = pair.first;
+                if (pair.second == nullptr) {
+                    HCCL_ERROR("topoInst of subnetInsts is nullptr");
+                }
+                auto topoType = pair.second->topoType;
+                HCCL_DEBUG("[SubRankGraph][CreateSubNetInstances] topoInstId[%u] topoType[%d]", topoInstId, topoType);
+            }
  
             // subNetInstance Add RankId and subPeer
             shared_ptr<NetInstance::Peer> subPeer = peers.at(subRankId);
@@ -667,7 +678,6 @@ void RankGraph::CreateSubNetInstances(const std::vector<RankId> rankIds, Level2I
  
             // subPeer Add subNetInstance
             subPeer->AddNetInstance(subNetInstance);
- 
             HCCL_DEBUG("[RankGraph][CreateSubNetInstances] subNetInstance subRankId[%d] subType[%s] subNetInstId[%s]",
                        subRankId, netType.Describe().c_str(), netInstId.c_str());
         }
@@ -721,6 +731,8 @@ unique_ptr<RankGraph> RankGraph::CreateSubRankGraph(const std::vector<u32> &rank
     // step6: 构造完成
     subRankGraph->InitFinish();
 
+    HCCL_INFO("[subRankGraph] Build success!");
+    subRankGraph->Dump();
     return subRankGraph;
 }
 
