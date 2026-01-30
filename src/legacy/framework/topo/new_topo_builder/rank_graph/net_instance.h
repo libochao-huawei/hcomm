@@ -210,6 +210,8 @@ public:
     void AddNode(const std::shared_ptr<Node> &node);
     void AddLink(const std::shared_ptr<Link> &link);
     void DeleteLink(const NodeId srcNodeId, const NodeId dstNodeId);
+    const std::unordered_map<u32, std::shared_ptr<Hccl::NetInstance::TopoInstance>>& GetTopoInsts() const;
+    void AddTopoInst(std::unordered_map<u32, std::shared_ptr<Hccl::NetInstance::TopoInstance>> topoInsts);
 
     void UpdateTopoInst(u32 topoInstId, TopoType topoType, RankId rankId);
     void GetTopoInstsByLayer(std::vector<u32>& topoInsts, u32& topoInstNum) const;
