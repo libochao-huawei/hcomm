@@ -23,7 +23,7 @@
 int rs_get_chip_protocol(unsigned int chip_id, enum NetworkMode hccp_mode, enum ProtocolTypeT *protocol,
     unsigned int logic_id)
 {
-#define CHIP_NAME_910_95 "910_95"
+#define CHIP_NAME_950 "950"
 #define CHIP_NAME_910_96 "910_96"
     halChipInfo chip_info = {0};
     int ret;
@@ -39,7 +39,7 @@ int rs_get_chip_protocol(unsigned int chip_id, enum NetworkMode hccp_mode, enum 
     CHK_PRT_RETURN(ret != 0, hccp_warn("hal get chip info unsuccessful, chip_id[%u], logic_id[%u], ret[%d]",
         chip_id, logic_id, ret), 0);
 
-    if ((strncmp((char *)chip_info.name, CHIP_NAME_910_95, sizeof(CHIP_NAME_910_95) - 1) == 0) ||
+    if ((strncmp((char *)chip_info.name, CHIP_NAME_950, sizeof(CHIP_NAME_950) - 1) == 0) ||
         (strncmp((char *)chip_info.name, CHIP_NAME_910_96, sizeof(CHIP_NAME_910_96) - 1) == 0)) {
         *protocol = PROTOCOL_UDMA;
     }
