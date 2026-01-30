@@ -587,13 +587,13 @@ u32 NetInstance::ConnInterface::GetTopoInstId() const
 
 std::string NetInstance::ConnInterface::Describe() const
 {
-    return StringFormat("ConnIface[addr=%s, pos=%s]", addr.Describe().c_str(), pos.Describe().c_str());
+    return StringFormat("ConnIface[addr=%s, pos=%s, topoInstId=%u, topoType=%u]", addr.Describe().c_str(), pos.Describe().c_str(), topoInstId, topoType);
 }
 
 bool NetInstance::ConnInterface::operator==(const NetInstance::ConnInterface &rhs) const
 {
     return addr == rhs.addr && pos == rhs.pos && linkType == rhs.linkType && 
-        linkProtocols == rhs.linkProtocols && ports == rhs.ports;
+        linkProtocols == rhs.linkProtocols && ports == rhs.ports && topoInstId == rhs.topoInstId && topoType == rhs.topoType;
 }
 
 bool NetInstance::ConnInterface::operator!=(const NetInstance::ConnInterface &rhs) const
