@@ -1,16 +1,16 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- * 
- * The code snippet comes from Cann project.
- * 
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ *
+ * The code snippet comes from CANN project
+ *
  * Copyright (c) Huawei Technologies Co., Ltd. 2012-2019. All rights reserved.
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
+ */
 
 #ifndef __ASCEND_INPACKAGE_HAL_H__
 #define __ASCEND_INPACKAGE_HAL_H__
@@ -117,7 +117,7 @@ int devdrv_get_board_id(unsigned int dev_id, unsigned int *board_id);
  * @attention This function is only can be called by components in driver of device,
  *  if the components is not in driver of device, don't use this function.
  * @param [in] dev_id phy_id in host
- * @param [out] ip_addr vnic ip address.
+ * @param [out] ip_addr vnic ip address
  * @return  0  success, return others fail
  */
 int devdrv_get_vnic_ip(unsigned int dev_id, unsigned int *ip_addr);
@@ -128,7 +128,7 @@ int devdrv_get_vnic_ip(unsigned int dev_id, unsigned int *ip_addr);
  * @attention This function is only can be called by components in driver of device,
  *  if the components is not in driver of device, don't use this function.
  * @param [in] sdid super pod SDID
- * @param [out] ip_addr vnic ip address.
+ * @param [out] ip_addr vnic ip address
  * @return  0  success, return others fail
  */
 int devdrv_get_vnic_ip_by_sdid(unsigned int sdid, unsigned int *ip_addr);
@@ -202,6 +202,26 @@ int halRegisterVmngClient(void);
  * @return 0  success, return others fail
  */
 int tsDevRecord(unsigned int devId, unsigned int tsId, unsigned int record_type, unsigned int record_Id);
+
+/**
+ * @ingroup driver
+ * @brief map ts cmdlist mem to tsd
+ * @attention only called by tsd
+ * @param [in] devId  device id
+ * @param [in] tsId  ts id
+ * @return 0  success, return others fail
+ */
+drvError_t halTsCmdlistMemMap(unsigned int devId, unsigned int tsId);
+
+/**
+ * @ingroup driver
+ * @brief ummap ts cmdlist mem from tsd
+ * @attention only called by tsd
+ * @param [in] devId  device id
+ * @param [in] tsId  ts id
+ * @return 0  success, return others fail
+ */
+drvError_t halTsCmdlistMemUnMap(unsigned int devId, unsigned int tsId);
 
 /**
  * @ingroup driver

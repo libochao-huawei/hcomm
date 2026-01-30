@@ -34,6 +34,7 @@ constexpr u64 PIPELINE_MIN_SIZE_NO_LITE = 2 * 1024 * 1024; // 如不支持RDMALi
 constexpr u64 HCCL_FFTS_CAPACITY = 65535; // FFTS+子图最大容量
 constexpr u32 AHC_MIN_SUBGROUP_SPLIT_DIVISOR = 2;
 constexpr u32 AHC_LEVEL0_GROUP_SIZE_THRESHOLD = 3;
+constexpr u32 SERVER_COUNT_THRESHOLD_FOR_MULTI_DETER_PIPELINE = 2;
 
 CollAlgOperator::CollAlgOperator(AlgConfigurator* algConfigurator, CCLBufferManager &cclBufferManager,
                                  HcclDispatcher dispatcher, std::unique_ptr<TopoMatcher> &topoMatcher,
@@ -72,28 +73,43 @@ HcclResult CollAlgOperator::GetAivExecParam(std::string& algName, const OpParam&
     return executor_->GetAivExecParam(param, algRes, args);
 }
 
-HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& param, u32 &blockDim, int32_t aivCoreLimit)
+HcclResult CollAlgOperator::CalNumBlocks(std::string& algName, const OpParam& param, u32 &numBlocks, int32_t aivCoreLimit)
 {
     if (executor_.get() == nullptr) {
         executor_ = CollAlgExecRegistry::Instance().GetAlgExec(algName, dispatcher_, topoMatcher_);
         CHK_PRT_RET(executor_.get() == nullptr,
-            HCCL_ERROR("[CollAlgOperator][CalBlockDim]Fail to find executor for algName[%s]", algName.c_str()),
+            HCCL_ERROR("[CollAlgOperator][CalNumBlocks]Fail to find executor for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
+        CHK_RET(SetExecutorAttr(param));
     }
 
     if (aivCoreLimit != 0) {
-        CHK_RET(executor_->SetBlockDim(aivCoreLimit));
+        CHK_RET(executor_->SetNumBlocks(aivCoreLimit));
     }
 
     if (param.opType == HcclCMDType::HCCL_CMD_ALLTOALL) {
-        return executor_->CalBlockDim(blockDim, userRankSize_,
+        return executor_->CalNumBlocks(numBlocks, userRankSize_,
             param.All2AllDataDes.sendCount * SIZE_TABLE[param.All2AllDataDes.sendType], param.opType);
     } else if (param.opType == HcclCMDType::HCCL_CMD_ALLREDUCE || param.opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER
         || param.opType == HcclCMDType::HCCL_CMD_ALLGATHER || param.opType == HcclCMDType::HCCL_CMD_BROADCAST) {
-        return executor_->CalBlockDim(blockDim, userRankSize_,
+        return executor_->CalNumBlocks(numBlocks, userRankSize_,
             param.DataDes.count * SIZE_TABLE[param.DataDes.dataType], param.opType);
     } else {
-        return executor_->CalBlockDim(blockDim, userRankSize_);
+        return executor_->CalNumBlocks(numBlocks, userRankSize_);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult CollAlgOperator::GetOpExpansionStr(const OpParam &param, AlgDesc &algDesc, std::string &opExpansionStr)
+{
+    if (algDesc.isAivMode) {
+        opExpansionStr = "AIV";
+    } else if (param.aicpuUnfoldMode) {
+        opExpansionStr = "AI_CPU";
+    } else if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
+        opExpansionStr = "HOST";
+    } else {
+        opExpansionStr = "HOST_TS";
     }
     return HCCL_SUCCESS;
 }
@@ -101,7 +117,7 @@ HcclResult CollAlgOperator::CalBlockDim(std::string& algName, const OpParam& par
 HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &param, const ResourceLimit &limit,
     std::string &algName, AlgDesc &algDesc, std::string &newTag)
 {
- 	// 兼容老接口
+    // 兼容老接口
     if (limit.ifLimit) {
         CHK_RET(SelectAlg(tag, param, algName, newTag, limit));
     } else {
@@ -114,7 +130,7 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         CHK_PRT_RET(executor_.get() == nullptr,
             HCCL_ERROR("[CollAlgOperator][SelectAlg]Fail to find executor for algName[DefaultExecutor]"),
             HCCL_E_PARA);
-    }else{
+    } else {
         // 校验控核
         if (limit.ifLimit && deviceType_ == DevType::DEV_TYPE_910_93 && topoMatcher_->GetAivModeConfig()) {
             CHK_RET(SelectAlgFor91093WithCoreLimit(param, limit, algName));
@@ -130,20 +146,13 @@ HcclResult CollAlgOperator::SelectAlg(const std::string& tag, const OpParam &par
         }
     }
 
+    bool isLastSelect = algDesc.isLastSelect;
     algDesc = executor_->GetAlgDesc();
     // 打印维测日志
-    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && algDesc.isLastSelect) {
+    if (UNLIKELY(GetDebugConfig() & HCCL_ALG) && isLastSelect) {
         // 获取展开模式，转换成字符串
         std::string opExpansionStr;
-        if (algDesc.isAivMode) {
-            opExpansionStr = "AIV";
-        } else if (param.aicpuUnfoldMode) {
-            opExpansionStr = "AI_CPU";
-        } else if (topoMatcher_->GetExternalInputHcclEnableFfts()) {
-            opExpansionStr = "HOST";
-        } else {
-            opExpansionStr = "HOST_TS";
-        }
+        CHK_RET(GetOpExpansionStr(param, algDesc, opExpansionStr));
         // 尝试获取确定性属性（如果Executor有声明自己是否为确定性）
         std::string appendStr = "";
         if (algDesc.deterministic >= 0) {
@@ -170,9 +179,10 @@ HcclResult CollAlgOperator::SelectAlgFor91093WithCoreLimit(const OpParam &param,
         CHK_PRT_RET(executor_.get() == nullptr,
             HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to find executor for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
+        CHK_RET(SetExecutorAttr(param));
     }
 
-    CHK_RET(SetBlockDim(limit.aivCoreLimit));
+    CHK_RET(SetNumBlocks(limit.aivCoreLimit));
 
     std::string reSelName;
     switch (param.opType) {
@@ -194,15 +204,15 @@ HcclResult CollAlgOperator::SelectAlgFor91093WithCoreLimit(const OpParam &param,
             break;
     }
 
-    u32 blockDim;
-    HcclResult ret = CalBlockDim(algName, param, blockDim);
-    executor_ = nullptr;
+    u32 numBlocks;
+    HcclResult ret = CalNumBlocks(algName, param, numBlocks);
     if (ret != HCCL_SUCCESS) {
         CHK_PRT_RET(reSelName.empty() || reSelName == algName,
-            HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to check CalBlockDim for algName[%s]", algName.c_str()),
+            HCCL_ERROR("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Fail to check CalNumBlocks for algName[%s]", algName.c_str()),
             HCCL_E_PARA);
 
         algName = reSelName;
+        executor_ = nullptr;
         HCCL_INFO("[CollAlgOperator][SelectAlgFor91093WithCoreLimit]Re select to algName[%s]", reSelName.c_str());
     }
 
@@ -285,7 +295,7 @@ void CollAlgOperator::SetTopoAttr(AlgConfigurator* algConfigurator)
     deviceNumPerAggregation_ = topoAttr.deviceNumPerAggregation;
     multiModuleDiffDeviceNumMode_ = topoAttr.multiModuleDiffDeviceNumMode;
     multiSuperPodDiffServerNumMode_ = topoAttr.multiSuperPodDiffServerNumMode;
-
+    multiSuperPodDiffDeviceNumMode_ = topoAttr.multiSuperPodDiffDeviceNumMode;
     isDiffDeviceType_ = topoAttr.isDiffDeviceType;
     gcdDeviceNumPerAggregation_ = topoAttr.gcdDeviceNumPerAggregation;
 
@@ -310,6 +320,7 @@ void CollAlgOperator::SetTopoAttr(AlgConfigurator* algConfigurator)
     isSupportRdmaLite_ = topoAttr.isSupportRdmaLite;
     isSupportHccsAndSio_ = topoAttr.isSupportHccsAndSio;
     useSuperPodMode_ = topoAttr.useSuperPodMode;
+    isARSDoubleRing_  = topoAttr.isARSDoubleRing;
     return;
 }
 
@@ -420,11 +431,15 @@ HcclResult CollAlgOperator::SelectAlgoForComm(HcclCMDType hcclCMDType, float del
 // 保守估计Pipeline算法所需context数量
 u32 CollAlgOperator::CalcContextNumForPipeline(HcclCMDType hcclCMDType)
 {
+    bool isDeterPipeline = topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE
+        && (hcclCMDType == HcclCMDType::HCCL_CMD_ALLREDUCE || hcclCMDType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
     const u32 stepNum = moduleNum_;  // 通信步数
     const u32 hccsContextNumPerStep = 5 * (deviceNumPerAggregation_ - 1);   // SDMA跨片每步所需context数
     const u32 roceContextNumPerStep = 7;  // RDMA每步所需context数
     const u32 copyContextNumPerStep = 1;  // SDMA片内每步所需context数
-    const u32 contextNumPerStep = hccsContextNumPerStep + roceContextNumPerStep + copyContextNumPerStep; // 小计
+    const u32 localReduceNumPerStep = isDeterPipeline ? (deviceNumPerAggregation_ - 1) : 0;
+    const u32 contextNumPerStep = hccsContextNumPerStep + roceContextNumPerStep + copyContextNumPerStep
+        + localReduceNumPerStep; // 小计
     const u32 barrierContextNum = 4;  // 通信结束时barrier操作所需context数
 
     switch (hcclCMDType) {
@@ -436,6 +451,9 @@ u32 CollAlgOperator::CalcContextNumForPipeline(HcclCMDType hcclCMDType)
             u32 contextNum = stepNum * contextNumPerStep + barrierContextNum + copyContextNum;
             if (hcclCMDType == HcclCMDType::HCCL_CMD_ALLREDUCE) {
                 contextNum += contextNum;
+            }
+            if (isDeterPipeline) {
+                contextNum += stepNum - 1; // 最后的local reduce
             }
             return contextNum;
         }
@@ -459,6 +477,8 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
     auto originalAlgTypeLevel0 = algType_.algoLevel0;
     bool disdeterniminsticWithInlineReduce = isInlineReduce && isRdmaReduce &&
         topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_DISABLE;
+    bool deterniminsticWithInlineReduce = isInlineReduce && isRdmaReduce &&
+        topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE;
 
     // 对于不支持Rdma Lite的场景，下发性能较差，RS和AG需要一个很大的数据量（AR的一半）才能掩盖下发时间
     u64 pipelineMinSize = (isSupportRdmaLite_) ? (PIPELINE_MIN_SIZE) : (PIPELINE_MIN_SIZE_NO_LITE);
@@ -466,6 +486,13 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
         hcclCMDType == HcclCMDType::HCCL_CMD_ALLGATHER || hcclCMDType == HcclCMDType::HCCL_CMD_ALLGATHER_V) &&
         deviceNumPerAggregation_ != 1 && curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
         CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
+        algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
+        return HCCL_SUCCESS;
+    }
+    if (hcclCMDType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER && deterniminsticWithInlineReduce &&
+        deviceNumPerAggregation_ > 1 && curSize >= pipelineMinSize && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+        CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY
+        && moduleNum_ > 1 && curSize >= HCCL_SMALL_COUNT_256_KB) {
         algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
         return HCCL_SUCCESS;
     }
@@ -478,6 +505,12 @@ HcclResult CollAlgOperator::GetDefaultAlgoLevel1V2(HcclCMDType hcclCMDType, u64 
         allreduceCurSize = curSize / (moduleNum_ * deviceNumPerAggregation_);
         if (disdeterniminsticWithInlineReduce && deviceNumPerAggregation_ != 1 &&
             allreduceCurSize >= pipelineMinSize && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
+            CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
+            algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
+            return HCCL_SUCCESS;
+        }
+        if (deterniminsticWithInlineReduce && deviceNumPerAggregation_ > 1 &&
+            allreduceCurSize >= HCCL_SMALL_COUNT_1_MB && !isAivMode && IsAlgTypeLevel0Mesh(originalAlgTypeLevel0) &&
             CalcContextNumForPipeline(hcclCMDType) <= HCCL_FFTS_CAPACITY) {
             algType = AlgTypeLevel1::ALG_LEVEL1_PIPELINE;
             return HCCL_SUCCESS;
@@ -506,7 +539,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForReduceScatter(float delay, u64 recv
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 recvCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
     double interMinCost = min(nhrCost, ringCost);
 
@@ -545,7 +578,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGather(float delay, u64 sendCurS
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 sendCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
     double interMinCost = min(nhrCost, ringCost);
 
@@ -584,7 +617,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllGatherV(float delay, u64 sendCur
                 static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 sendCurSize * userRankSize_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
 
     return HCCL_SUCCESS;
@@ -631,7 +664,7 @@ HcclResult CollAlgOperator::SelectAlgoTypeForAllReduce(float delay, u64 curSize,
                 NHR_FACTOR_TWO * static_cast<double>(moduleNum_ - 1) / moduleNum_ *
                 curSize / deviceNumPerAggregation_ / bandWidth * SECOND2MICROSECOND;
 
-    // compare costs bewteen NHR and Ring, if same cost, Ring > NHR > HD
+    // compare costs between NHR and Ring, if same cost, Ring > NHR > HD
     algType = (nhrCost < ringCost) ? AlgTypeLevel1::ALG_LEVEL1_NHR : AlgTypeLevel1::ALG_LEVEL1_RING;
     double interMinCost = min(nhrCost, ringCost);
 
@@ -811,14 +844,14 @@ bool CollAlgOperator::SupportRetryWithInplaceCheck(
     return true;
 }
 
-HcclResult CollAlgOperator::GetBlockDim(u32& blockDim){
+HcclResult CollAlgOperator::GetNumBlocks(u32& numBlocks){
     CHK_SMART_PTR_NULL(executor_);
-    return executor_->GetBlockDim(blockDim);
+    return executor_->GetNumBlocks(numBlocks);
 }
 
-HcclResult CollAlgOperator::SetBlockDim(const u32& blockDim){
+HcclResult CollAlgOperator::SetNumBlocks(const u32& numBlocks){
     CHK_SMART_PTR_NULL(executor_);
-    return executor_->SetBlockDim(blockDim);
+    return executor_->SetNumBlocks(numBlocks);
 }
     
 HcclResult CollAlgOperator::GetCache(HcclCacheInfo& cacheInfo){
@@ -831,8 +864,20 @@ HcclResult CollAlgOperator::SetOpCounter(const OpCounterInfo& opCounter)
     opCounter_ = opCounter;
     return HCCL_SUCCESS;
 }
+
+HcclResult CollAlgOperator::SetRmaInfo(void* rmaInfo)
+{
+    CHK_SMART_PTR_NULL(executor_);
+    CHK_PTR_NULL(rmaInfo);
+    return executor_->SetRmaInfo(rmaInfo);
+}
+
 HcclResult CollAlgOperator::SelectAlgforAHC(u64 dataSize, AHCOpType ahcOpType)
 {
+    if (multiModuleDiffDeviceNumMode_) {
+        return HCCL_SUCCESS;
+    }
+
     bool isAHCWholeConfig = (algType_.algoLevel0 == AlgTypeLevel0::ALG_LEVEL0_RESERVED &&
         (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC ||
         algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE));
@@ -963,4 +1008,74 @@ HcclResult CollAlgOperator::AHCAlgOptionSelect(AlgTypeLevel1 &algType, std::vect
     }
     return HCCL_SUCCESS;
 }
-}   // namesapce hccl
+
+u32 CollAlgOperator::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, HcclCMDType opType)
+{
+    if (!topoMatcher_->GetARSFlag()) return 0;
+ 
+    u32 level0RankSize   = topoMatcher_->GetCommPlaneRanks(COMM_LEVEL0)[0].size();
+    u32 rankSizeInSuperPod = topoMatcher_->GetCommPlaneRanks(COMM_ARS)[0].size();
+    u32 perDataSize = 0;
+    CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
+    // 不支持 ARS 或环内卡数不是 2 的倍数
+    u32 level0RingSize = 1;
+    if (!isARSDoubleRing_ || (level0RankSize % FACTOR_TWO != 0)) {
+        HCCL_INFO("not Support ARS doubleRing, level0RingSize:[%u], level0RankSize[%u].", level0RingSize, level0RankSize);
+        return level0RingSize;
+    }
+    // --- 1. 带宽 & 基本参数 ---
+    float bwHCCS, bwHBM, bwSIO;
+    CHK_RET(GetBandWidthPerNPU(0, userRankSize_, deviceNumPerAggregation_, bwHCCS));
+    CHK_RET(GetBandWidthPerNPU(2, userRankSize_, deviceNumPerAggregation_, bwHBM));
+    CHK_RET(GetBandWidthPerNPU(3, userRankSize_, deviceNumPerAggregation_, bwSIO));
+    float latency = BASE_COMM_LATENCY / MULTIPLIER_MS2US;   // ms
+    // --- 2. 数据总量 (GB) ---
+    float baseSizeGB = static_cast<double>(count) * perDataSize / GB2B;
+    float totalSize  = baseSizeGB;
+    HCCL_INFO("CalcOptimalIntraRingsize: count[%u], totalSize:[%lf]GB, perDataSize[%u].", count, totalSize, perDataSize);
+    if (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER) {
+        totalSize *= rankSizeInSuperPod;
+    }
+    // --- 3. 枚举可能的环大小 ---
+    std::vector<u32> factors;
+    for (u32 i = 1; i <= rankSizeInSuperPod / i; ++i) {
+        if (rankSizeInSuperPod % i == 0) {
+            factors.push_back(i);
+            if (i != rankSizeInSuperPod / i) {
+                factors.push_back(rankSizeInSuperPod / i);
+            }
+        }
+    }
+    std::sort(factors.begin(), factors.end());
+    // --- 4. 计算最优带宽 ---
+    double maxBwARS = 0.0;
+    for (u32 N1 : factors) {
+        u32 N2 = rankSizeInSuperPod / N1;
+        // 静态时延 (ms)
+        double interStep = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) ? (N2 - 1) : log2(N2);
+        double latencyStep = (interStep + (N1 - 1)) * latency;
+        // 传输时延 (ms)
+        double latencyIntra;
+        if ((N1 % FACTOR_TWO == 0) && (N1 > FACTOR_TWO)) {
+            latencyIntra = (N1 - 1) * totalSize * MULTIPLIER_S2MS / N1 / bwHCCS / FACTOR_TWO;
+        } else if (N1 == FACTOR_TWO) {
+            latencyIntra = totalSize * MULTIPLIER_S2MS / FACTOR_TWO / bwSIO;
+        } else {
+            latencyIntra = (N1 - 1) * totalSize * MULTIPLIER_S2MS / N1 / bwHCCS;
+        }
+        double latencyInter = (N2 - 1) * totalSize * MULTIPLIER_S2MS / N1 / N2 / bwHCCS;
+        // HBM 拷贝时延 (ms)
+        double latencyCopy = totalSize * MULTIPLIER_S2MS / bwHBM;
+        u8 mul = (opType == HcclCMDType::HCCL_CMD_ALLREDUCE) ? FACTOR_TWO : 1;
+        double timeCost = mul * (latencyStep + latencyIntra + latencyInter) + latencyCopy;
+        double bwARS = totalSize / timeCost;  // GB/ms
+        if (bwARS > maxBwARS) {
+            maxBwARS = bwARS;
+            level0RingSize = N1;
+        }
+    }
+    HCCL_INFO("level0RingSize:[%u], totalSize:[%lf]GB, level0RankSize[%u].", level0RingSize, totalSize, level0RankSize);
+    return level0RingSize;
+}
+
+}   // namespace hccl

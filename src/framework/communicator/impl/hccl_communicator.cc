@@ -439,6 +439,8 @@ namespace hccl
         moduleNum_ = attrCollector_.GetModuleNum();
         multiModuleDiffDeviceNumMode_ = attrCollector_.GetMultiModuleDiffDeviceNumMode();
         multiSuperPodDiffServerNumMode_ = attrCollector_.GetMultiSuperPodDiffServerNumMode();
+        multiSuperPodDiffDeviceNumMode_ = attrCollector_.GetmultiSuperPodDiffDeviceNumMode();
+        isARSDoubleRing_ = attrCollector_.GetSupportARS();
         // 生成nicList
         nicList_ = attrCollector_.GetNicList();
         // InitTopoInfo
@@ -750,6 +752,9 @@ namespace hccl
         ErrorMessageReport errorMessage;
         if (kfcStatusTransferD2H_ != nullptr)
         {
+            CHK_PRT_RET(isInvalidComm_,
+                HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+                "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), errorMessage);
             ret = kfcStatusTransferD2H_->Get(sizeof(HcclOpIdentifier) + sizeof(ExecStatusDef),
                                              sizeof(errorMessage), reinterpret_cast<uint8_t *>(&errorMessage));
             if (ret != HCCL_SUCCESS)
@@ -762,6 +767,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::UnRegisterBackGroundThread()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         CHK_RET(UnRegisterBackGroundThread(kfcControlTransferH2D_, kfcStatusTransferD2H_));
         if (IsEnableCustom())
         {
@@ -811,6 +819,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::DestroyAicpuComm()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         CHK_RET(DestroyAicpuComm(kfcControlTransferH2D_, kfcStatusTransferD2H_));
         if (IsEnableCustom())
         {
@@ -1154,6 +1165,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::Suspend()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         return Suspend(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
@@ -1211,6 +1225,9 @@ namespace hccl
 
     HcclResult HcclCommunicator::StopExec()
     {
+        CHK_PRT_RET(isInvalidComm_,
+            HCCL_ERROR("[HcclCommunicator][%s] comm[%s], rank[%u], devId[%d], snapshot recoverying, "
+            "this comm is invalid.", __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
         return StopExec(kfcControlTransferH2D_, kfcStatusTransferD2H_);
     }
 
@@ -1584,7 +1601,7 @@ namespace hccl
             CHK_SAFETY_FUNC_RET(memcpy_s(sendRecvInfoPtr, hostCollectBuffer_.size(), hostCollectBuffer_.ptr(), hostCollectBuffer_.size()));
         }
 
-        HCCL_DEBUG("[SetDynamicTilingDataAlltoallv] set dynamic tiling data for AllToAllV successs, alltoallvDataPtr[%p]", alltoallvDataPtr);
+        HCCL_DEBUG("[SetDynamicTilingDataAlltoallv] set dynamic tiling data for AllToAllV success, alltoallvDataPtr[%p]", alltoallvDataPtr);
         return HCCL_SUCCESS;
     }
 
@@ -2658,7 +2675,7 @@ namespace hccl
 
                 if (transport->GetTransportType() == TransportType::TRANS_TYPE_IBV_EXP)
                 {
-                    CHK_RET(GenIbvAiRMAInfo(i, transport, tag));
+                    CHK_RET(GenIbvAiRMAInfo(i, transport, tag, aiRMAInfoPtr));
                 }
             }
             else
@@ -2689,6 +2706,91 @@ namespace hccl
                        localIn.addr, localIn.size, localIn.key, localOut.addr, localOut.size, localOut.key);
         }
 
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::GenAiRMAInfoV2(const std::string &tag)
+    {
+        CHK_PTR_NULL(rmaInfoMem_);
+        HcclRMAInfo *rmaInfoPtr = reinterpret_cast<HcclRMAInfo*>(rmaInfoMem_->ptr());
+        CHK_PTR_NULL(rmaInfoPtr);
+        rmaInfoPtr->curRankId = userRank_;;
+        rmaInfoPtr->rankNum = userRankSize_;
+        LevelNSubCommTransport& commTransport = resMap_[tag].opTransportResponse[COMM_COMBINE_ORDER];
+        CHK_PRT_RET(commTransport.size() <= 0, HCCL_ERROR("[%s] no LevelComm resource, please create comm first. "
+            "tag[%s], curRankId[%u] rankNum[%u]", __func__, tag.c_str(), rmaInfoPtr->curRankId,
+            rmaInfoPtr->rankNum), HCCL_E_INTERNAL);
+        std::vector<LINK>& links = commTransport[0].links;
+        CHK_PRT_RET(links.size() <= 0, HCCL_ERROR("[%s] no transport resource, please create links first. "
+            "tag[%s], curRankId[%u] rankNum[%u]", __func__, tag.c_str(), rmaInfoPtr->curRankId,
+            rmaInfoPtr->rankNum), HCCL_E_INTERNAL);
+        CHK_RET(GetAIVNormalQPInfoV2(links, tag));
+ 
+        u32 tmpQueueSize = rmaInfoPtr->rankNum * rmaInfoPtr->qpNum;
+        u32 tmpMemSize = rmaInfoPtr->rankNum;
+        u32 tmpMemDetailSize = rmaInfoPtr->rankNum * AiMemMaxNum;
+ 
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAWQ) * tmpQueueSize, aiSqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMACQ) * tmpQueueSize, aiScqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAWQ) * tmpQueueSize, aiRqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMACQ) * tmpQueueSize, aiRcqMem_));
+        CHK_RET(AllocAndClearHostMem(sizeof(HcclAiRMAMemInfo) * tmpMemSize, aiMemMem_));
+        HcclAiRMAMemInfo *aiMemHost = reinterpret_cast<HcclAiRMAMemInfo*>(aiMemMem_->ptr());
+ 
+        CHK_RET(AllocAndClearHostMem(sizeof(MemDetails) * tmpMemDetailSize, aiMemDetailsMem_));
+        MemDetails *aiMemDetailsHost = reinterpret_cast<MemDetails*>(aiMemDetailsMem_->ptr());
+ 
+        aiMemDetailsDev_ = DeviceMem::alloc(aiMemDetailsMem_->size());
+        u64 memBase = reinterpret_cast<uint64_t>(aiMemDetailsDev_.ptr());
+ 
+        for (u32 i = 0; i < rmaInfoPtr->rankNum; i++) {
+            MemDetails &remoteIn = aiMemDetailsHost[i * AiMemMaxNum +
+                                                     GetAiMemTypeVal(HcclAiRMAMemType::REMOTE_INPUT)];
+            MemDetails &remoteOut = aiMemDetailsHost[i * AiMemMaxNum +
+                                                      GetAiMemTypeVal(HcclAiRMAMemType::REMOTE_OUTPUT)];
+            MemDetails &localIn = aiMemDetailsHost[i * AiMemMaxNum +
+                                                    GetAiMemTypeVal(HcclAiRMAMemType::LOCAL_INPUT)];
+            MemDetails &localOut = aiMemDetailsHost[i * AiMemMaxNum +
+                                                     GetAiMemTypeVal(HcclAiRMAMemType::LOCAL_OUTPUT)];
+ 
+            if (i != rmaInfoPtr->curRankId) {
+                // link rank info
+                const auto transport = links[i];
+                CHK_RET(GetTransportRemoteMem(transport, UserMemType::INPUT_MEM, remoteIn));
+                CHK_RET(GetTransportRemoteMem(transport, UserMemType::OUTPUT_MEM, remoteOut));
+                CHK_RET(GetTransportLocalMem(transport, UserMemType::INPUT_MEM, localIn));
+                CHK_RET(GetTransportLocalMem(transport, UserMemType::OUTPUT_MEM, localOut));
+ 
+                if (transport->GetTransportType() == TransportType::TRANS_TYPE_IBV_EXP) {
+                    CHK_RET(GenIbvAiRMAInfo(i, transport, tag, rmaInfoPtr));
+                }
+            } else {
+                void *commInPtr = nullptr;
+                void *commOutPtr = nullptr;
+                u64 commInSize;
+                u64 commOutSize;
+                CHK_RET(cclBufferManager_.GetInCCLbuffer(commInPtr, commInSize));
+                CHK_RET(cclBufferManager_.GetOutCCLbuffer(commOutPtr, commOutSize));
+                localIn.addr = reinterpret_cast<uint64_t>(commInPtr);
+                localIn.size = commInSize;
+                localOut.addr = reinterpret_cast<uint64_t>(commOutPtr);
+                localOut.size = commOutSize;
+            }
+ 
+            aiMemHost[i].memMaxNum = AiMemMaxNum;
+            aiMemHost[i].sizeOfMemDetails = static_cast<u32>(sizeof(MemDetails));
+            aiMemHost[i].memDetailPtr = memBase + i * AiMemMaxNum * aiMemHost[i].sizeOfMemDetails;
+ 
+            HCCL_DEBUG("[%s] tag[%s] curRankId[%u] dstRankId[%u] rankNum[%u] qpNum[%u] memMaxNum[%u] sizeOfMemDetails[%u] "
+                       "memDetailPtr[%p] remoteInAddr[%p] remoteInSize[%llu] remoteInKey[%u] remoteOutAddr[%p] "
+                       "remoteOutSize[%llu] remoteOutKey[%u] localInAddr[%p] localInSize[%llu] localInKey[%u] "
+                       "localOutAddr[%p] localOutSize[%llu] localOutKey[%u]",
+                       __func__, tag.c_str(), rmaInfoPtr->curRankId, i, rmaInfoPtr->rankNum, rmaInfoPtr->qpNum,
+                       aiMemHost[i].memMaxNum, aiMemHost[i].sizeOfMemDetails, aiMemHost[i].memDetailPtr,
+                       remoteIn.addr, remoteIn.size, remoteIn.key, remoteOut.addr, remoteOut.size, remoteOut.key,
+                       localIn.addr, localIn.size, localIn.key, localOut.addr, localOut.size, localOut.key);
+        }
+ 
         return HCCL_SUCCESS;
     }
 
@@ -2754,6 +2856,68 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
+    HcclResult HcclCommunicator::H2DAiRMAInfoV2(const std::string &tag, rtStream_t aiCpuStream)
+    {
+        CHK_PTR_NULL(rmaInfoMem_);
+        HcclRMAInfo *rmaInfoPtr = reinterpret_cast<HcclRMAInfo*>(rmaInfoMem_->ptr());
+        CHK_PTR_NULL(rmaInfoPtr);
+ 
+        CHK_PTR_NULL(combinOparaMem_);
+        HcclCombinOpParam *combinOparaPtr = reinterpret_cast<HcclCombinOpParam*>(combinOparaMem_->ptr());
+        CHK_PTR_NULL(combinOparaPtr);
+ 
+        rmaInfoPtr->sizeOfRMAWQ = static_cast<u32>(sizeof(HcclAiRMAWQ));
+        rmaInfoPtr->sizeOfRMACQ = static_cast<u32>(sizeof(HcclAiRMACQ));
+        rmaInfoPtr->sizeOfRMAMem = static_cast<u32>(sizeof(HcclAiRMAMemInfo));
+ 
+        CHK_RET(DeviceMem::alloc(aiSqDev_, aiSqMem_->size()));
+        rmaInfoPtr->sqPtr = reinterpret_cast<uintptr_t>(aiSqDev_.ptr());
+        CHK_RET(hrtMemAsyncCopy(aiSqDev_.ptr(), aiSqDev_.size(), aiSqMem_->ptr(), aiSqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(DeviceMem::alloc(aiScqDev_, aiScqMem_->size()));
+        rmaInfoPtr->scqPtr = reinterpret_cast<uintptr_t>(aiScqDev_.ptr());
+        CHK_RET(hrtMemAsyncCopy(aiScqDev_.ptr(), aiScqDev_.size(), aiScqMem_->ptr(), aiScqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(DeviceMem::alloc(aiRqDev_, aiRqMem_->size()));
+        rmaInfoPtr->rqPtr = reinterpret_cast<uintptr_t>(aiRqDev_.ptr());
+        CHK_RET(hrtMemAsyncCopy(aiRqDev_.ptr(), aiRqDev_.size(), aiRqMem_->ptr(), aiRqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(DeviceMem::alloc(aiRcqDev_, aiRcqMem_->size()));
+        rmaInfoPtr->rcqPtr = reinterpret_cast<uintptr_t>(aiRcqDev_.ptr());
+        CHK_RET(hrtMemAsyncCopy(aiRcqDev_.ptr(), aiRcqDev_.size(), aiRcqMem_->ptr(), aiRcqDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        CHK_RET(hrtMemAsyncCopy(aiMemDetailsDev_.ptr(), aiMemDetailsDev_.size(), aiMemDetailsMem_->ptr(),
+                                     aiMemDetailsDev_.size(), HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+
+        CHK_RET(DeviceMem::alloc(aiMemDev_, aiMemMem_->size()));
+        rmaInfoPtr->memPtr = reinterpret_cast<uintptr_t>(aiMemDev_.ptr());
+        CHK_RET(hrtMemAsyncCopy(aiMemDev_.ptr(), aiMemDev_.size(), aiMemMem_->ptr(), aiMemDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        combinOparaPtr->sizeOfAiRMAInfo = static_cast<u64>(sizeof(HcclAiRMAInfo));
+        CHK_RET(DeviceMem::alloc(aiRMAInfoDev_, combinOparaPtr->sizeOfAiRMAInfo));
+        combinOparaPtr->aiRMAInfo = aiRMAInfoDev_.ptr();
+        CHK_RET(hrtMemAsyncCopy(aiRMAInfoDev_.ptr(), aiRMAInfoDev_.size(), rmaInfoMem_->ptr(), aiRMAInfoDev_.size(),
+                                     HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE, aiCpuStream));
+ 
+        HCCL_INFO("[%s] tag[%s] curRankId[%u] rankNum[%u] qpNum[%u] aiRMAInfo[%p] sizeOfAiRMAInfo[%llu] "
+                  "sizeOfAiRMAWQ[%u] sizeOfAiRMACQ[%u] sizeOfAiRMAMem[%u] sqPtr[%p] sqSize[%llu] sqCount[%zu] "
+                  "scqPtr[%p] scqSize[%llu] scqCount[%zu] rqPtr[%p] rqSize[%llu] rqCount[%zu] rcqPtr[%p] "
+                  "rcqSize[%llu] rcqCount[%zu] memPtr[%p] memSize[%llu] memCount[%zu] memDetailCount[%zu]",
+                  __func__, tag.c_str(), rmaInfoPtr->curRankId, rmaInfoPtr->rankNum, rmaInfoPtr->qpNum,
+                  combinOparaPtr->aiRMAInfo, combinOparaPtr->sizeOfAiRMAInfo, rmaInfoPtr->sizeOfRMAWQ,
+                  rmaInfoPtr->sizeOfRMACQ, rmaInfoPtr->sizeOfRMAMem, rmaInfoPtr->sqPtr,
+                  aiSqDev_.size(), aiSqMem_->size(), rmaInfoPtr->scqPtr, aiScqDev_.size(), aiScqMem_->size(),
+                  rmaInfoPtr->rqPtr, aiRqDev_.size(), aiRqMem_->size(), rmaInfoPtr->rcqPtr, aiRcqDev_.size(),
+                  aiRcqMem_->size(), rmaInfoPtr->memPtr, aiMemDev_.size(), aiMemMem_->size(), aiMemDetailsMem_->size());
+ 
+        return HCCL_SUCCESS;
+    }
+
     HcclResult HcclCommunicator::GetAIVNormalQPInfo(CommBase *comm, const std::string &tag)
     {
         // 获取 Transport QP 数量
@@ -2784,13 +2948,40 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::GenIbvAiRMAInfo(u32 rankid, const std::shared_ptr<Transport> &transport, const std::string &tag)
+    HcclResult HcclCommunicator::GetAIVNormalQPInfoV2(std::vector<LINK>& links, const std::string &tag)
+    {
+        // 获取 Transport QP 数量
+        CHK_PTR_NULL(rmaInfoMem_);
+        HcclRMAInfo *rmaInfoPtr = reinterpret_cast<HcclRMAInfo*>(rmaInfoMem_->ptr());
+        CHK_PTR_NULL(rmaInfoPtr);
+        // 获取 Transport QP 数量（暂时只支持单QP）
+        rmaInfoPtr->qpNum = HCCL_QPS_PER_CONNECTION_DEFAULT;
+        for (u32 i = 0; i < links.size(); i++) {
+            if (i != rmaInfoPtr->curRankId) {
+                if (links[i]->GetTransportType() == TransportType::TRANS_TYPE_IBV_EXP) {
+                    std::vector<HcclAiRMAQueueInfo> aiQpVec;
+                    CHK_RET(links[i]->GetAiRMAQueueInfo(aiQpVec));
+                    rmaInfoPtr->qpNum = static_cast<u32>(aiQpVec.size());
+                    break;
+                }
+            }
+        }
+ 
+        CHK_PRT_RET(rmaInfoPtr->qpNum <= 0,
+                    HCCL_ERROR("[%s] invalid qpNum. tag[%s] curRankId[%u] rankNum[%u] qpNum[%u]", __func__,
+                    tag.c_str(), rmaInfoPtr->curRankId, rmaInfoPtr->rankNum, rmaInfoPtr->qpNum),
+                    HCCL_E_INTERNAL);
+ 
+        return HCCL_SUCCESS;
+    }
+
+    template<typename T>
+    HcclResult HcclCommunicator::GenIbvAiRMAInfo(u32 rankid, const std::shared_ptr<Transport> &transport,
+        const std::string &tag, T* aiRMAInfoPtr)
     {
         std::vector<HcclAiRMAQueueInfo> aiQpVec;
         CHK_RET(transport->GetAiRMAQueueInfo(aiQpVec));
 
-        CHK_PTR_NULL(aiRMAInfoMem_);
-        HcclAiRMAInfo *aiRMAInfoPtr = reinterpret_cast<HcclAiRMAInfo*>(aiRMAInfoMem_->ptr());
         CHK_PTR_NULL(aiRMAInfoPtr);
         CHK_PRT_RET(aiQpVec.size() != aiRMAInfoPtr->qpNum,
                     HCCL_ERROR("[%s] different qpNum. tag[%s] curRankId[%u] rankNum[%u] qpNum[%u] qpVecNum[%u]",
@@ -2816,7 +3007,7 @@ namespace hccl
 
     HcclResult HcclCommunicator::SetAivCoreLimit(u32 aivCoreLimit)
     {
-        blockDim_ = aivCoreLimit;
+        numBlocks_ = aivCoreLimit;
         return HCCL_SUCCESS;
     }
 
@@ -2829,6 +3020,81 @@ namespace hccl
         algName = ALGCFG_TO_NAME[algConfig];
         HCCL_INFO("[%s] tag=[%s], algName=[%s]",
                 __func__, tag.c_str(), algName.c_str());
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SetGroupMode(bool isGroup){
+        isGroupMode_ = isGroup;
+        return HCCL_SUCCESS;
+    }
+ 
+    bool HcclCommunicator::GetGroupMode(){
+        return isGroupMode_;
+    }
+ 
+    HcclResult HcclCommunicator::SetSendIndex(u32 index){
+        iSend = index;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::SetRecvIndex(u32 index){
+        iRecv = index;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::GetSendIndex(u32 &index){
+        index = iSend;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::GetRecvIndex(u32 &index){
+        index = iRecv;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::SetBufferSliceNum(u32 bufferSliceNum_){
+        bufferSliceNum = bufferSliceNum_; // std::min(rankSize - 1, MAX_CONCURRENT)
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::GetBufferSliceNum(u32 &bufferSliceNum_){
+        bufferSliceNum_ = bufferSliceNum;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::SetNSend(u32 index){
+        nSend = index;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::SetNRecv(u32 index){
+        nRecv = index;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::GetNSend(u32 &index){
+        index = nSend; 
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::GetNRecv(u32 &index){
+        index = nRecv;
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::GetSliceSize(u64 &sliceSize){ // 默认CCLIN和CCLOUT的大小一样
+        u32 alignSize = HCCL_MIN_SLICE_ALIGN_910B; // 对齐
+        sliceSize = GetExternalInputCCLBuffSize() / alignSize / bufferSliceNum * alignSize; 
+        return HCCL_SUCCESS;
+    }
+ 
+    HcclResult HcclCommunicator::GroupPrepareStreamAndNotify(HcclRtStream sendRecvMainStream){
+        HCCL_INFO("[GroupPrepareStreamAndNotify] Start");
+        CHK_RET(SetGroupMainStream(sendRecvMainStream));
+        CHK_RET(CreateGroupSendNotifies());
+        CHK_RET(CreateGroupRecvNotifies());
+        CHK_RET(CreateGroupSendStreams());
+        CHK_RET(CreateGroupRecvStreams());
         return HCCL_SUCCESS;
     }
 

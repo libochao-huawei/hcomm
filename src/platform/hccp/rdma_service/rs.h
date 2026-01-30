@@ -254,6 +254,15 @@ enum RsConnRole {
     RS_CONN_ROLE_SERVER = 0,
     RS_CONN_ROLE_CLIENT = 1,
 };
+
+enum ProductType {
+    PRODUCT_TYPE_310p = 0,
+    PRODUCT_TYPE_910,
+    PRODUCT_TYPE_910B,
+    PRODUCT_TYPE_910_93,
+    PRODUCT_TYPE_INVALID,
+};
+
 enum RsSocketStatus {
     RS_SOCK_STATUS_NA = 0,
     RS_SOCK_STATUS_OK = 1,
@@ -310,6 +319,7 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevI
     unsigned int *num);
 RS_ATTRI_VISI_DEF int RsDrvGetRandomNum(int *randNum);
 RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value);
+RS_ATTRI_VISI_DEF bool RsGetIsRdmaSupported(int devId);
 #ifdef __cplusplus
 }
 #endif

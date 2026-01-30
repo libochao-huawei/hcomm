@@ -82,6 +82,13 @@ HcclResult CollExecutorBase::PrepareCommInfoToDevice(AlgResourceResponse& algRes
     return HCCL_SUCCESS;
 }
 
+HcclResult CollExecutorBase::SetRmaInfo(void* rmaInfo)
+{
+    CHK_PTR_NULL(rmaInfo);
+    rmaInfo_ = rmaInfo;
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollExecutorBase::CalcIncreLinkRequest(const OpParam& param, std::set<u32>& ranksLinked, 
     AlgResourceRequest &resourceRequest, bool& needIncreLink)
 {
@@ -112,21 +119,21 @@ HcclResult CollExecutorBase::SetAivClearEnable(bool aivClearEnable)
     return HCCL_SUCCESS;
 }
 
-HcclResult CollExecutorBase::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollExecutorBase::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize;
+    numBlocks = rankSize;
     return HCCL_SUCCESS;
 }
 
-HcclResult CollExecutorBase::GetBlockDim(u32& blockDim)
+HcclResult CollExecutorBase::GetNumBlocks(u32& numBlocks)
 {
-    blockDim = blockDim_;
+    numBlocks = numBlocks_;
     return HCCL_SUCCESS;
 }
 
-HcclResult CollExecutorBase::SetBlockDim(const u32& blockDim)
+HcclResult CollExecutorBase::SetNumBlocks(const u32& numBlocks)
 {
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     return HCCL_SUCCESS;
 }
 

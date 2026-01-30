@@ -126,7 +126,7 @@ HcclResult HcclOpExecFsmStoppingProcess(AicpuComContext *ctx, HcclOpExecFSM &sta
 {
     HCCL_DEBUG("hccl aicpu stopping.");
     if (TaskOrchestrator::IsTaskExceptionForHccs(ctx)) {
-        HCCL_INFO("hccl aicpu recoverable task exception accurs.");
+        HCCL_INFO("hccl aicpu recoverable task exception occurs.");
         state = HcclOpExecFSM::HCCL_OP_EXEC_FSM_STOPPED;
         return HCCL_SUCCESS;
     }

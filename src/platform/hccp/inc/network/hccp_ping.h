@@ -11,6 +11,9 @@
 #define _HCCP_PING_H
 
 #include "hccp_common.h"
+#ifdef CONFIG_CONTEXT
+#include "hccp_ctx.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +37,20 @@ union PingQpAttr {
         } qpAttr;
         uint32_t reserved[4U];
     } rdma;
+#ifdef CONFIG_CONTEXT
+    struct {
+        struct CqExtAttr cq_attr;
+        struct {
+            struct QpCap cap;
+            uint32_t token_value; /**< refer to urma_token_t */
+            uint32_t reserved[3U];
+        } qp_attr;
+        struct {
+            uint32_t token_value;
+        } seg_attr;
+        uint32_t reserved[4U];
+    } ub;
+#endif
 };
 
 struct PingLocalCommInfo {
@@ -46,11 +63,23 @@ struct PingLocalCommInfo {
             uint32_t udpSport;
             uint32_t reserved[7U];
         } rdma;
+#ifdef CONFIG_CONTEXT
+        struct {
+            struct QosAttr qos_attr;
+            uint32_t reserved[7U];
+        } ub;
+#endif
     };
 };
 
 union PingDev {
     struct rdev rdma;
+#ifdef CONFIG_CONTEXT
+    struct {
+        union hccp_eid eid;
+        uint32_t eid_index;
+    } ub;
+#endif
 };
 
 struct PingInitAttr {
@@ -66,6 +95,12 @@ struct PingInitAttr {
         struct {
             uint32_t reserved[31U];
         } rdma;
+#ifdef CONFIG_CONTEXT
+        struct {
+            unsigned int phy_id;
+            uint32_t reserved[30U];
+        } ub;
+#endif
     };
 };
 
@@ -78,6 +113,14 @@ struct PingQpInfo {
             uint32_t qkey;
             uint32_t reserved[4U];
         } rdma;
+#ifdef CONFIG_CONTEXT
+        struct {
+            uint8_t size;
+            uint8_t key[28U]; // refer to qp_key
+            uint8_t reserved[7U];
+            uint32_t token_value;
+        } ub;
+#endif
     };
 };
 
@@ -115,6 +158,9 @@ struct PingPayloadInfo {
 struct PingTargetCommInfo {
     union {
         union HccpIpAddr ip;
+#ifdef CONFIG_CONTEXT
+        union hccp_eid eid;
+#endif
     };
     struct PingQpInfo qpInfo;
 };
@@ -239,6 +285,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTaskStop(void *pingHandle);
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaPingDeinit(void *pingHandle);
+
 #ifdef __cplusplus
 }
 #endif

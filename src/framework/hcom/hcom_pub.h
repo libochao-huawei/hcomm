@@ -109,6 +109,10 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit);
 // hcce资源计算相关
 HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32 &deviceNumPerServer, const s32 &serverNum,
     bool multiModuleDiffDeviceNumMode, u32 &taskNum, DevType devType);
+
+HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum);
+HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum);
+
 HcclResult GetInterComTaskNum(const std::string &sCollectiveType, s32 serverNum, s32 deviceNumPerServer,
     DevType devType, u32 &taskNum, const std::string& group = HCCL_WORLD_GROUP);
 HcclResult GetStreamNumOfflineComp(HcclCMDType hcclOpType, s32 serverNum, s32 deviceNumPerServer, bool ifAiv,
@@ -156,6 +160,9 @@ HcclResult GetDeterministic(DevType devType, u8 geDetOption, u8 &deterministic);
 
 HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm,
     std::string& group, std::string &sTag);
+
+HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, HcclReduceOp op,
+    int32_t aivCoreLimit, bool &ifAiv, char *algName);
 
 #ifdef __cplusplus
 }

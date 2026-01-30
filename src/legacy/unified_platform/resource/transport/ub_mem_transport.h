@@ -1,0 +1,152 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#ifndef UB_MEM_TRANSPORT_H
+#define UB_MEM_TRANSPORT_H
+#include "base_mem_transport.h"
+#include "local_cnt_notify.h"
+#include "local_ub_rma_buffer.h"
+#include "task_param.h"
+
+namespace Hccl {
+
+class UbMemTransport : public BaseMemTransport {
+public:
+    UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, const Socket &socket,
+                   RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1);
+
+    UbMemTransport(CommonLocRes &commonLocRes, Attribution &attr, const LinkData &linkData, const Socket &socket,
+                   RdmaHandle rdmaHandle1, LocCntNotifyRes &locCntNotifyRes1,
+                   std::function<void(u32 streamId, u32 taskId, const TaskParam &taskParam)> callback);
+
+    std::string Describe() const override;
+
+    TransportStatus GetStatus() override;
+
+    std::vector<char> GetUniqueId() override;
+
+    std::vector<char> GetUniqueIdV2();
+
+    vector<char> &GetRmtCntNotifyDesc() override // 仅UB 支持
+    {
+        return rmtCntNotifyDesc;
+    }
+
+    void SetConnVec(std::vector<RmaConnection *> &connectVec) override
+    {
+        commonLocRes.connVec = connectVec;
+    }
+
+    void Post(u32 index, const Stream &stream) override;
+
+    void Wait(u32 index, const Stream &stream, u32 timeout) override;
+
+    void Read(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream) override;
+
+    void ReadReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                    const Stream &stream) override;
+
+    void Write(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const Stream &stream) override;
+
+    void WriteReduce(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice, const ReduceIn &reduceIn,
+                     const Stream &stream) override;
+
+    void WriteWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
+                         const WithNotifyIn &withNotify, const Stream &stream) override;
+
+    void WriteReduceWithNotify(const RmaBufferSlice &locSlice, const RmtRmaBufferSlice &rmtSlice,
+                               const ReduceIn &reduceIn, const WithNotifyIn &withNotify, const Stream &stream) override;
+
+    u32 GetCurrentStatus()
+    {
+        return static_cast<u32>(baseStatus);
+    }
+
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags);
+
+    HcclResult Init();
+    HcclResult DeInit();
+
+private:
+    RdmaHandle rdmaHandle;
+
+    LocCntNotifyRes locCntNotifyRes;
+
+    MemoryBuffer GetLocMemBuffer(const RmaBufferSlice &locSlice) const;
+    MemoryBuffer GetRmtMemBuffer(const RmtRmaBufferSlice &rmtSlice) const;
+    MemoryBuffer GetRmtNotifyMemBuffer(u32 index);
+    MemoryBuffer GetRmtCntNotifyMemBuffer(const WithNotifyIn &withNotify);
+
+    static constexpr u64 NORMAL_NOTIFY_VAL = 1;
+
+    MAKE_ENUM(UbStatus, INIT, SOCKET_OK, SEND_DATA, RECV_DATA, SEND_FIN, RECV_FIN, PROCESS_DATA, CONN_OK)
+    UbStatus ubStatus{UbStatus::INIT};
+
+    u32          cntNotifyNum{0};
+    u32          cntNotifyDescSize{0};
+    vector<char> rmtCntNotifyDesc;
+
+    std::unique_ptr<HcclMem[]> remoteMemsPtr_;
+
+    using RemoteBufferVec = std::vector<std::unique_ptr<RemoteUbRmaBuffer>>;
+    using LocalBufferVec = std::vector<LocalUbRmaBuffer *>;
+
+    MAKE_ENUM(UbRmtBufType, NOTIFY, BUFFER, CNT_NOTIFY)
+ 
+    std::mutex remoteMemsMutex_;     // 远端内存列表互斥锁
+    RemoteBufferVec rmtNotifyVec;    // 远端普通 notify
+    RemoteBufferVec rmtBufferVec;    // 远端 buffer
+    RemoteBufferVec rmtCntNotifyVec; // 远端 cnt Notify
+    LocalBufferVec locBufferVec;    // 本端 buffer
+
+    void SendExchangeData();
+    void RecvExchangeData();
+
+    void SendFinish();
+    void RecvFinish();
+
+    void BufferVecPack(BinaryStream &binaryStream);
+    void CntNotifyVecPack(BinaryStream &binaryStream);
+
+    void CntNotifyDescPack(BinaryStream &binaryStream);
+    void CntNotifyDescUnpack(BinaryStream &binaryStream);
+
+    void RmtBufferVecUnpackProc(u32 locNum, BinaryStream &binaryStream, RemoteBufferVec &bufferVec, UbRmtBufType type);
+    bool ConnVecUnpackProc(BinaryStream &binaryStream);
+
+    void FillRmtRmaBufferVec(RemoteRmaBuffer *rmaBuffer, UbRmtBufType type);
+
+    void SubmitNotify(const MemoryBuffer &rmtNotify, u64 data, const Stream &stream);
+
+    void SubmitWriteEmptyWithNotify(const WithNotifyIn &withNotify, const Stream &stream);
+
+    void SubmitWriteWithNotify(const MemoryBuffer &rmt, const MemoryBuffer &loc, u64 data,
+                               const MemoryBuffer &rmtNotify, const Stream &stream);
+
+    void SubmitWriteReduceWithNotify(const MemoryBuffer &rmt, const MemoryBuffer &loc, const ReduceIn &reduceIn,
+                                     u64 data, const MemoryBuffer &rmtNotify, const Stream &stream);
+
+    std::vector<char> GetNotifyUniqueIds();
+    std::vector<char> GetRmtBufferUniqueIds(RemoteBufferVec &bufferVec, UbRmtBufType type) const;
+    std::vector<char> GetLocBufferUniqueIds(LocalBufferVec &bufferVec, UbRmtBufType type) const;
+    std::vector<char> GetSingleRmtBufferUniqueId(u64 addr, u64 size, u32 tokenId, u32 tokenValue) const;
+    std::vector<char> GetConnUniqueIds();
+
+    bool IsResReady();
+    bool IsConnsReady();
+    bool RecvDataProcess();
+    vector<char> recvData{};
+    vector<char> recvFinishMsg{};
+    vector<char> sendData{};
+    vector<char> sendFinishMsg{};
+
+    void SaveDfxTaskInfo(const TaskParam &taskParam);
+};
+} // namespace Hccl
+#endif

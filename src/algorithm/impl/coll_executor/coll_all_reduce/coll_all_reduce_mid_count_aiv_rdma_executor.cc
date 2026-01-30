@@ -66,17 +66,17 @@ HcclResult CollAllReduceMidCountAivRdmaExecutor::CalcLevel0CommInfo(TransportMem
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllReduceMidCountAivRdmaExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollAllReduceMidCountAivRdmaExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize; // 默认情况使用rankSize个AIV
-    u32 bestBlockDim = blockDim;
+    numBlocks = rankSize; // 默认情况使用rankSize个AIV
+    u32 bestNumBlocks = numBlocks;
 
-    CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollAllReduceMidCountAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-        blockDim_, blockDim), HCCL_E_PARA);
+    CHK_PRT_RET(numBlocks_ < numBlocks,
+        HCCL_WARNING("[CollAllReduceMidCountAivRdmaExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, numBlocks), HCCL_E_PARA);
 
-    HCCL_INFO("[CollAllReduceMidCountAivRdmaExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollAllReduceMidCountAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -100,7 +100,7 @@ HcclResult CollAllReduceMidCountAivRdmaExecutor::Orchestrate(OpParam& param, Alg
     HcclResult ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMidCountAivRdmaExecutor]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollAllReduceMidCountAivRdmaExecutor]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AllReduce executor orchestrate success, take time [%lld]us.",
@@ -153,14 +153,14 @@ HcclResult CollAllReduceMidCountAivRdmaExecutor::KernelRun(const OpParam &param,
         param.DataDes.dataType, param.reduceType, 0, isOpbase
     };
     AivTopoArgs topoArgs { intraRankId, intraRankSize };
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, intraRankSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, intraRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     topoArgs.identify = algoAttr_.identifier;
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs { INTRA_RS_STEP, false };
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();

@@ -9,6 +9,12 @@
  */
 
 #include "hccl_api_base_test.h"
+#include "hccl_api.h"
+#include "channel_manager.h"
+#include "log.h"
+#include "hccl_comm_pub.h"
+#include "independent_op.h"
+#include "mockcpp/mockcpp.hpp"
 
 class HcclSetConfigTest : public BaseInit {
 public:
@@ -68,4 +74,32 @@ TEST_F(HcclSetConfigTest, Ut_HcclSetConfig_When_SetEnvHCCL_DETERMINISTIC_Expect_
     EXPECT_EQ(ret, HCCL_SUCCESS);
     
     unsetenv("HCCL_DETERMINISTIC");
+}
+ 
+TEST_F(HcclSetConfigTest, ut_CommChannelGetStatus_When_Normal_Expect_ReturnIsHCCL_SUCCESS)
+{
+    UT_USE_RANK_TABLE_910_1SERVER_1RANK;
+    UT_COMM_CREATE_DEFAULT(comm);
+    uint32_t listNum = 1;
+    auto channelList = std::make_unique<ChannelHandle[]>(listNum);
+    std::vector<int32_t> statusList(listNum);
+    std::vector<int32_t> statusListCopy{1};
+    MOCKER(&ChannelManager::ChannelCommGetStatus)
+        .expects(once())
+        .with(any(), any(), outBoundP(statusListCopy.data()))
+        .will(returnValue(HCCL_SUCCESS));
+ 
+    // 执行：调用被测函数
+    HcclResult result = HcclChannelGetStatus(comm, channelList.get(), listNum, statusList.data());
+ 
+    // 验证：结果正确
+    EXPECT_EQ(result, HCCL_SUCCESS);
+    EXPECT_EQ(statusList[0], 1);
+    Ut_Comm_Destroy(comm);
+}
+ 
+TEST_F(HcclSetConfigTest, ut_CommChannelGetStatus_When_commNULL_Expect_ReturnIsHCCL_ERROR)
+{
+    HcclResult result = HcclChannelGetStatus(nullptr, nullptr, 0, {0});
+    EXPECT_EQ(result, HCCL_E_PTR);
 }

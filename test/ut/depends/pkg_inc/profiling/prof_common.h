@@ -243,7 +243,7 @@ struct MsprofGeProfTaskData {
     uint64_t curIterNum;
     uint64_t timeStamp;
     uint32_t shapeType;     // MsprofGeShapeType
-    uint32_t blockDims;
+    uint32_t numBlocks;
     uint32_t modelId;
     uint32_t streamId;
     uint32_t taskId;

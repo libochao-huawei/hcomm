@@ -1,12 +1,13 @@
-/**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+/**	
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.	
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of	
+ * CANN Open Software License Agreement Version 2.0 (the "License").	
+ * Please refer to the License for details. You may not use this file except in compliance with the License.	
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
@@ -32,9 +33,9 @@ struct RaPingOps gRaHdcPingOps = {
 
 STATIC int RaUdevInitCheck(unsigned int phyId, void *pingHandle)
 {
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[check][ra_ping_init]phy_id(%u) is invalid! "
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[check][ra_ping_init]phyId(%u) is invalid! "
         "it must greater or equal to 0 and less than %d!", phyId, RA_MAX_PHY_ID_NUM), -EINVAL);
-    CHK_PRT_RETURN(pingHandle == NULL, hccp_err("[check][ra_ping_init]phy_id(%u) ping_handle is null!", phyId),
+    CHK_PRT_RETURN(pingHandle == NULL, hccp_err("[check][ra_ping_init]phyId(%u) ping_handle is null!", phyId),
         -EINVAL);
     return 0;
 }
@@ -46,7 +47,7 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
     int ret;
 
     CHK_PRT_RETURN(initAttr == NULL || initInfo == NULL,
-        hccp_err("[init][ra_ping]init_attr or init_info is NULL"), -EINVAL);
+        hccp_err("[init][ra_ping]initAttr or init_info is NULL"), -EINVAL);
     CHK_PRT_RETURN(initAttr->mode != NETWORK_OFFLINE,
         hccp_err("[init][ra_ping]mode:%d do not support", initAttr->mode), -EINVAL);
 
@@ -57,8 +58,17 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
         CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_ping]ra_rdev_init_check failed, ret(%d)", ret), -EINVAL);
 
         pingHandle->phyId = initAttr->dev.rdma.phyId;
-        hccp_run_info("Input parameters: phy_id[%u], nicPosition[%d] family[%d] ip[%s] bufferSize[0x%x]",
+        hccp_run_info("Input parameters: phyId[%u], nicPosition[%d] family[%d] ip[%s] bufferSize[0x%x]",
             initAttr->dev.rdma.phyId, initAttr->mode, initAttr->dev.rdma.family, localIp, initAttr->bufferSize);
+#ifdef CONFIG_CONTEXT
+    } else if (initAttr->protocol == PROTOCOL_UDMA) {
+        ret = RaUdevInitCheck(initAttr->ub.phy_id, pingHandle);
+        CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra_ping]ra_ub_dev_init_check failed, ret(%d)", ret), -EINVAL);
+
+        pingHandle->phyId = initAttr->ub.phy_id;
+        hccp_run_info("Input parameters: phyId[%u], nicPosition[%d], eid_index[%u] bufferSize[0x%x]",
+            initAttr->ub.phy_id, initAttr->mode, initAttr->dev.ub.eid_index, initAttr->bufferSize);
+#endif
     } else {
         hccp_err("[init][ra_ping]protocol:%d do not support", initAttr->protocol);
         return -ENOTSUPP;
@@ -69,7 +79,7 @@ STATIC int RaPingInitGetHandle(struct PingInitAttr *initAttr, struct PingInitInf
     CHK_PRT_RETURN(pingHandle->pingOps->raPingInit == NULL, hccp_err("[init][ra_ping]ra_ping_init is NULL"),
         -EINVAL);
     CHK_PRT_RETURN(initAttr->bufferSize == 0 || initAttr->bufferSize % RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE != 0,
-        hccp_err("[init][ra_ping]init_attr->buffer_size:0x%x not 0x%xB aligned", initAttr->bufferSize,
+        hccp_err("[init][ra_ping]initAttr->buffer_size:0x%x not 0x%xB aligned", initAttr->bufferSize,
         RA_RS_PING_BUFFER_ALIGN_4K_PAGE_SIZE), -EINVAL);
     pingHandle->bufferSize = initAttr->bufferSize;
 
@@ -127,7 +137,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTargetAdd(void *pingHandle, struct PingTargetInfo 
         hccp_err("[add][ra_ping]ping_ops or ra_ping_target_add is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
 
     phyId = pingHandleTmp->phyId;
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[add][ra_ping]phy_id(%u) must less than %d!", phyId,
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[add][ra_ping]phyId(%u) must less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     RA_PTHREAD_MUTEX_LOCK(&pingHandleTmp->mutex);
@@ -170,7 +180,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTaskStart(void *pingHandle, struct PingTaskAttr *a
         ConverReturnCode(RDMA_OP, -EINVAL));
 
     phyId = pingHandleTmp->phyId;
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[start][ra_ping]phy_id(%u) must less than %d!", phyId,
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[start][ra_ping]phyId(%u) must less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     RA_PTHREAD_MUTEX_LOCK(&pingHandleTmp->mutex);
@@ -190,7 +200,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTaskStart(void *pingHandle, struct PingTaskAttr *a
     pingHandleTmp->taskCnt++;
     RA_PTHREAD_MUTEX_UNLOCK(&pingHandleTmp->mutex);
 
-    hccp_run_info("Input parameters: phy_id[%u], packetCnt[%u] interval[%u] timeoutInterval[%u], targetCnt[%u]",
+    hccp_run_info("Input parameters: phyId[%u], packetCnt[%u] interval[%u] timeoutInterval[%u], targetCnt[%u]",
         phyId, attr->packetCnt, attr->packetInterval, attr->timeoutInterval, pingHandleTmp->targetCnt);
 
     ret = pingHandleTmp->pingOps->raPingTaskStart(pingHandleTmp, attr);
@@ -224,7 +234,7 @@ HCCP_ATTRI_VISI_DEF int RaPingGetResults(void *pingHandle, struct PingTargetResu
     }
 
     phyId = pingHandleTmp->phyId;
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][ra_ping]phy_id(%u) must less than %d!", phyId,
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][ra_ping]phyId(%u) must less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     // num invalid, bigger than target exist
@@ -275,7 +285,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTargetDel(void *pingHandle, struct PingTargetCommI
     RA_PTHREAD_MUTEX_UNLOCK(&pingHandleTmp->mutex);
 
     phyId = pingHandleTmp->phyId;
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[del][ra_ping]phy_id(%u) must less than %d!", phyId,
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[del][ra_ping]phyId(%u) must less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     ret = pingHandleTmp->pingOps->raPingTargetDel(pingHandleTmp, target, num);
@@ -308,7 +318,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTaskStop(void *pingHandle)
     }
 
     phyId = pingHandleTmp->phyId;
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[stop][ra_ping]phy_id(%u) must less than %d!", phyId,
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[stop][ra_ping]phyId(%u) must less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     // no task to stop
@@ -322,7 +332,7 @@ HCCP_ATTRI_VISI_DEF int RaPingTaskStop(void *pingHandle)
     pingHandleTmp->taskCnt--;
     RA_PTHREAD_MUTEX_UNLOCK(&pingHandleTmp->mutex);
 
-    hccp_run_info("Input parameters: phy_id[%u], targetCnt[%u]", phyId, pingHandleTmp->targetCnt);
+    hccp_run_info("Input parameters: phyId[%u], targetCnt[%u]", phyId, pingHandleTmp->targetCnt);
 
     ret = pingHandleTmp->pingOps->raPingTaskStop(pingHandleTmp);
     if (ret != 0) {
@@ -348,15 +358,21 @@ STATIC int RaPingDeinitParaCheck(struct RaPingHandle *pingHandle)
 
     phyId = pingHandle->phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
-        hccp_err("[deinit][ra_ping]phy_id(%u) must smaller than %u", phyId, RA_MAX_PHY_ID_NUM), -EINVAL);
+        hccp_err("[deinit][ra_ping]phyId(%u) must smaller than %u", phyId, RA_MAX_PHY_ID_NUM), -EINVAL);
 
     devInfo = pingHandle->dev;
     if (pingHandle->protocol == PROTOCOL_RDMA) {
         ret = RaInetPton(devInfo.rdma.family, devInfo.rdma.localIp, localIp, MAX_IP_LEN);
         CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra_ping]ra_inet_pton for local_ip failed, ret(%d)", ret), ret);
-        hccp_run_info("Input parameters: phy_id[%u] dev_index[%u] family[%d] local_ip[%s] target_cnt[%u] task_cnt[%u]",
+        hccp_run_info("Input parameters: phyId[%u] dev_index[%u] family[%d] local_ip[%s] target_cnt[%u] task_cnt[%u]",
             phyId, pingHandle->devIndex, devInfo.rdma.family, localIp, pingHandle->targetCnt,
             pingHandle->taskCnt);
+#ifdef CONFIG_CONTEXT
+    } else if (pingHandle->protocol == PROTOCOL_UDMA) {
+        hccp_run_info("Input parameters: eid_index[%u] eid[0x%016llx%016llx] target_cnt[%u] task_cnt[%u]",
+            devInfo.ub.eid_index, devInfo.ub.eid.in6.subnet_prefix, devInfo.ub.eid.in6.interface_id,
+            pingHandle->targetCnt, pingHandle->taskCnt);
+#endif
     } else {
         hccp_err("[deinit][ra_ping]protocol:%d do not support", pingHandle->protocol);
         return -ENOTSUPP;

@@ -20,7 +20,12 @@ else()
     set(HCCL_OPEN_CODE_BASE_DIR ${TOP_DIR}/hcomm/src/)
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
     set(INSTALL_CCL_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
+    set(INSTALL_DPU_KERNEL_JSON_DIR ${INSTALL_LIBRARY_DIR})
 endif()
+
+
+set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
+
 
 message(STATUS "HCCL_OPEN_CODE_BASE_DIR = ${HCCL_OPEN_CODE_BASE_DIR}")
 message(STATUS "HCCL_BASE_DIR = ${HCCL_BASE_DIR}")
@@ -31,7 +36,6 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/algorithm/base/inc
     ${HCCL_BASE_DIR}/algorithm/pub_inc
     ${HCCL_BASE_DIR}/pub_inc
-    ${HCCL_BASE_DIR}/pub_inc/hccl
     ${HCCL_BASE_DIR}/pub_inc/new
     ${HCCL_BASE_DIR}/algorithm/base/alg_aiv_template
     ${HCCL_BASE_DIR}/algorithm/base/alg_template
@@ -49,6 +53,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/health/heartbeat/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/recovery/operator_retry/
     ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
+    ${HCCL_BASE_DIR}/framework/cluster_maintenance/snapshot/
     ${HCCL_BASE_DIR}/framework/common/src/
     ${HCCL_BASE_DIR}/framework/common/src/host
     ${HCCL_BASE_DIR}/framework/common/src/config
@@ -69,15 +74,30 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
+
     ${HCCL_BASE_DIR}/framework/hcom/
     ${HCCL_BASE_DIR}/framework/hcom/gradient_segment
     ${HCCL_BASE_DIR}/framework/inc/
     ${HCCL_BASE_DIR}/framework/
     ${HCCL_BASE_DIR}/framework/nslbdp/
     ${HCCL_BASE_DIR}/framework/op_base/src
+    ${HCCL_BASE_DIR}/framework/group
+
     ${HCCL_BASE_DIR}/common/health/
     ${HCCL_BASE_DIR}/common/stream/
     ${HCCL_BASE_DIR}/common/launch_device/
+
+    ${HCCL_BASE_DIR}/platform/resource/socket
+    ${HCCL_BASE_DIR}/platform/inc
+    ${HCCL_BASE_DIR}/platform/inc/adapter
+
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
 )
 
 target_include_directories(hcomm PRIVATE
@@ -85,6 +105,7 @@ target_include_directories(hcomm PRIVATE
 )
 
 if(BUILD_OPEN_PROJECT)
+
     target_compile_definitions(hcomm PRIVATE
         OPEN_BUILD_PROJECT
         LOG_CPP)
@@ -92,7 +113,6 @@ if(BUILD_OPEN_PROJECT)
     target_include_directories(hcomm PRIVATE
         ${HCCL_BASE_DIR}/pub_inc
         ${HCCL_BASE_DIR}/pub_inc/new/
-        ${HCCL_BASE_DIR}/inc
         ${HCCL_BASE_DIR}/../include
         ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
@@ -100,19 +120,24 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${HCCL_BASE_DIR}/platform/hccp/inc/
         ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network
 
         ${THIRD_PARTY_NLOHMANN_PATH}
 
         ${HCCL_BASE_DIR}/common/debug/profiling/inc
         ${HCCL_BASE_DIR}/common/debug/profiling/inc/host
         ${HCCL_BASE_DIR}/common/debug/config
+        ${HCCL_BASE_DIR}/legacy/interface
+        ${HCCL_BASE_DIR}/legacy/framework/topo/new_topo_builder/rank_graph
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # acl头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
@@ -134,6 +159,8 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 
         ${THIRD_PARTY_NLOHMANN_PATH}
+
+        ${HCCL_BASE_DIR}/framework/op_base/src
     )
 
     target_link_directories(hcomm PRIVATE
@@ -227,6 +254,15 @@ install(TARGETS hcomm
 message(STATUS "framework KERNEL_MODE=${KERNEL_MODE}")
 message(STATUS "framework BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
 message(STATUS "framework ASCEND_CANN_PACKAGE_PATH=${ASCEND_CANN_PACKAGE_PATH}")
+
+set(ORION_HEAD_LIST)
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT})
+
+foreach (dir ${sources_list})
+    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
+        list(APPEND ORION_HEAD_LIST ${dir})
+    endif()
+endforeach()
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     add_library(ccl_kernel  SHARED)
@@ -332,6 +368,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_staged_calculator.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_for_310p.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_direct_fullmesh.cc
+        ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_alltoallv/alltoallv_continuous_pipeline.cc
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_broadcast/bcast_recursive_halvingdoubling.cc
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_broadcast/broadcast_ring.cc
@@ -408,6 +445,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_mix_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_ring_zerocopy_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_order_preserved_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/coll_all_reduce_ars_for_910_93_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_ring_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_reduce/310P/coll_all_reduce_for_310p_doubling_direct_executor.cc
@@ -428,6 +466,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_exchange_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ring_zerocopy_pipeline_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather/coll_all_gather_ars_for_910_93_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_gather_v/coll_all_gather_v_ring_for_910_93_executor.cc
@@ -468,7 +507,8 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ring_zerocopy_exchange_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ring_zerocopy_exchange_pipeline_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_order_preserved_executor.cc
-
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter/coll_reduce_scatter_ars_for_910_93_executor.cc
+        
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_aiv_big_count_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_reduce_scatter_v/coll_reduce_scatter_v_mesh_aiv_smallcount_executor.cc
@@ -498,6 +538,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_direct_fullmesh_executor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_2level_pipeline_excecutor.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/310P/coll_all_to_all_v_for_310p_executor.cc
+        ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/coll_all_to_all/coll_all_to_all_v_continuous_pipeline_executor.cc
 
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/registry/coll_alg_exec_registry.cc
         ${HCCL_BASE_DIR}/algorithm/impl/coll_executor/alg_profiling.cc
@@ -551,15 +592,17 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     -Wl,-z,relro
     -Wl,-z,now
     -Wl,-z,noexecstack
-    $<$<CONFIG:Release>:-s>
-    )
-
+    -s
+)
+    
     target_compile_definitions(ccl_kernel PRIVATE
         HCCD
         CCL_KERNEL_AICPU
     )
-    target_include_directories(ccl_kernel PRIVATE
+
+    set(CCL_KERNEL_INCLUDE_LIST
         ${HCCL_BASE_DIR}/../include/hccl
+        ${HCCL_BASE_DIR}/pub_inc
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${HCCL_BASE_DIR}/algorithm/base/inc
         ${HCCL_BASE_DIR}/algorithm/pub_inc
@@ -601,6 +644,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/inc
         ${HCCL_BASE_DIR}/framework/cluster_maintenance/health/heartbeat/
         ${HCCL_BASE_DIR}/framework/cluster_maintenance/detect/detect_connect_anomalies/
+        ${HCCL_BASE_DIR}/framework/cluster_maintenance/snapshot/
         ${HCCL_BASE_DIR}/framework/common/src
         ${HCCL_BASE_DIR}/framework/common/src/aicpu
         ${HCCL_BASE_DIR}/framework/common/src/config
@@ -627,6 +671,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/rank_graph
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
         ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
+        
 
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_gather
         ${HCCL_BASE_DIR}/algorithm/base/alg_template/temp_all_reduce
@@ -652,16 +697,106 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
         ${HCCL_BASE_DIR}/platform/common
         ${HCCL_BASE_DIR}/platform/common/unique
         ${HCCL_BASE_DIR}/platform/common/unfold_cache
+
+        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${HCCL_BASE_DIR}/platform/
+        ${HCCL_BASE_DIR}/platform/inc/
+        ${HCCL_BASE_DIR}/platform/inc/adapter
+        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
+        ${HCCL_BASE_DIR}/platform/resource/transport/host/
+        ${HCCL_BASE_DIR}/platform/resource/transport/
+        ${HCCL_BASE_DIR}/platform/resource/notify/
+        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
+        ${HCCL_BASE_DIR}/platform/task
+        ${HCCL_BASE_DIR}/platform/common
+        ${HCCL_BASE_DIR}/platform/common/unique
+        ${hccl_include_list}
+        ${HCCL_BASE_DIR}/../include
+        ${HCCL_BASE_DIR}/../include/hccl
+        ${HCCL_BASE_DIR}/../inc/hccl/hccl
+        ${HCCL_BASE_DIR}/../pkg_inc/
+        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCCL_BASE_DIR}/pub_inc
+        ${HCCL_BASE_DIR}/pub_inc/aicpu
+
+        ${HCCL_BASE_DIR}/framework/device/
+        ${HCCL_BASE_DIR}/framework/device/common
+        ${HCCL_BASE_DIR}/framework/device/inc
+        ${HCCL_BASE_DIR}/framework/device/framework
+
+        # runtime头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/
+
+        # mmpa头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
+
+        # 包间接口
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
+
+        # driver头文件
+        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
+
+        # ascendc
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
+        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
+
+        ${HCCL_BASE_DIR}/../externel_depends/tsch/
+        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
+        ${THIRD_PARTY_NLOHMANN_PATH}
+
+        
+
+        ${HCCL_BASE_DIR}/platform/hccp/inc/network/
+        ${HCCL_BASE_DIR}/platform/hccp/inc/
+        ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
+        ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
+        ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+
     )
 
-    target_link_directories(ccl_kernel PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
+    target_include_directories(ccl_kernel PRIVATE
+        ${CCL_KERNEL_INCLUDE_LIST}
     )
+
+    target_include_directories(ccl_kernel PRIVATE ${ORION_HEAD_LIST})
 
     add_subdirectory(device)
 endif()
 
+target_include_directories(hcomm PRIVATE ${ORION_HEAD_LIST})
+add_subdirectory(${HCCL_BASE_DIR}/legacy ${CMAKE_CURRENT_BINARY_DIR}/legacy)
+add_dependencies(hcomm hccl_v2 hccl_aiv_op_910_95)
+target_link_libraries(hcomm
+    hccl_v2
+)
+
 if(NOT BUILD_OPEN_PROJECT)
+    # orion仓依赖
+    FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${TOP_DIR}/ace/comop/hccl/orion/*)
+    foreach (dir ${sources_list})
+        IF ((IS_DIRECTORY ${dir}))
+            target_include_directories(ccl_kernel PRIVATE ${dir})
+        endif()
+    endforeach()
+
+    FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${TOP_DIR}/ace/comop/hccl/whole/hccl_next/*)
+    foreach (dir ${open_dir_list})
+        IF ((IS_DIRECTORY ${dir}))
+            target_include_directories(ccl_kernel PRIVATE ${dir})
+        endif()
+    endforeach()
     target_include_directories(ccl_kernel PRIVATE
         ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/pub_inc
@@ -684,14 +819,19 @@ if(NOT BUILD_OPEN_PROJECT)
         ${TOP_DIR}/abl/adump/inc/adump
         ${TOP_DIR}/abl/atrace/inc/utrace
         ${TOP_DIR}/runtime/include/external
-        ${TOP_DIR}/runtime/include/external/acl
-        ${TOP_DIR}/runtime/pkg_inc
-        ${TOP_DIR}/runtime/pkg_inc/runtime
-        ${TOP_DIR}/runtime/pkg_inc/profiling
-        ${TOP_DIR}/runtime/pkg_inc/trace
-        ${TOP_DIR}/runtime/pkg_inc/base
-        ${TOP_DIR}/runtime/pkg_inc/aicpu
-        ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
+ 	    ${TOP_DIR}/runtime/include/external/acl
+ 	    ${TOP_DIR}/runtime/pkg_inc
+ 	    ${TOP_DIR}/runtime/pkg_inc/runtime
+ 	    ${TOP_DIR}/runtime/pkg_inc/profiling
+ 	    ${TOP_DIR}/runtime/pkg_inc/trace
+ 	    ${TOP_DIR}/runtime/pkg_inc/base
+ 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+        ${TOP_DIR}/asc/asc-devkit
+ 	    ${TOP_DIR}/asc/asc-devkit/include/adv_api/hccl/internal
+
+        # orion
+        ${TOP_DIR}/ace/comop/inc
+
         ${HCCL_BASE_DIR}/platform/
         ${HCCL_BASE_DIR}/platform/inc/
         ${HCCL_BASE_DIR}/platform/inc/adapter
@@ -709,12 +849,13 @@ if(NOT BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
 	    ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+
         ${HCCL_BASE_DIR}/framework
-        ${HCCL_BASE_DIR}/framework/common
-        ${HCCL_BASE_DIR}/framework/common/src
-        ${HCCL_BASE_DIR}/framework/common/src/mgr
-        ${HCCL_BASE_DIR}/framework/communicator
-        ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
+ 	    ${HCCL_BASE_DIR}/framework/common
+ 	    ${HCCL_BASE_DIR}/framework/common/src
+ 	    ${HCCL_BASE_DIR}/framework/common/src/mgr
+ 	    ${HCCL_BASE_DIR}/framework/communicator
+ 	    ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
     )
     target_link_libraries(ccl_kernel PRIVATE
         $<BUILD_INTERFACE:intf_pub_cxx14>
@@ -744,8 +885,10 @@ add_subdirectory(common)
 add_subdirectory(communicator)
 add_subdirectory(hcom)
 add_subdirectory(op_base)
+add_subdirectory(group)
 add_subdirectory(cluster_maintenance)
 add_subdirectory(nslbdp)
+add_subdirectory(next)
 
 if(NOT KERNEL_MODE)
     SET(HCCL_CMAKE_DIR ${HCCL_OPEN_CODE_BASE_DIR}/../cmake/)
@@ -768,65 +911,18 @@ if(NOT KERNEL_MODE)
         DESTINATION ${INSTALL_CCL_KERNEL_JSON_DIR} OPTIONAL
     )
 
-    add_dependencies(hcomm ccl_kernel_json aicpu_custom_json)
+    add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/libccl_dpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+    add_custom_target(dpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        DESTINATION ${INSTALL_DPU_KERNEL_JSON_DIR} OPTIONAL
+    )
+    add_dependencies(hcomm ccl_kernel_json aicpu_custom_json dpu_kernel_json)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
-    target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
-        ${HCCL_BASE_DIR}/platform/
-        ${HCCL_BASE_DIR}/platform/inc/
-        ${HCCL_BASE_DIR}/platform/inc/adapter
-        ${HCCL_BASE_DIR}/platform/resource/transport/heterog/
-        ${HCCL_BASE_DIR}/platform/resource/transport/host/
-        ${HCCL_BASE_DIR}/platform/resource/transport/
-        ${HCCL_BASE_DIR}/platform/resource/notify/
-        ${HCCL_BASE_DIR}/platform/resource/dispatcher_ctx
-        ${HCCL_BASE_DIR}/platform/task
-        ${HCCL_BASE_DIR}/platform/common
-        ${HCCL_BASE_DIR}/platform/common/unique
-        ${hccl_include_list}
-        ${HCCL_BASE_DIR}/../include
-        ${HCCL_BASE_DIR}/../include/hccl
-        ${HCCL_BASE_DIR}/../pkg_inc/
-        ${HCCL_BASE_DIR}/../pkg_inc/hccl/
-        ${HCCL_BASE_DIR}/pub_inc
-        ${HCCL_BASE_DIR}/pub_inc/aicpu
-
-        ${HCCL_BASE_DIR}/framework/device/
-        ${HCCL_BASE_DIR}/framework/device/common
-        ${HCCL_BASE_DIR}/framework/device/inc
-        ${HCCL_BASE_DIR}/framework/device/framework
-
-        # runtime头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-
-        # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/acl/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
-
-        # 包间接口
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/common/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/profiling/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/dump/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace/
-
-        # driver头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver
-
-        # ascendc
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/highlevel_api/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
-
-        ${HCCL_BASE_DIR}/../externel_depends/tsch/
-        ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include
-        ${THIRD_PARTY_NLOHMANN_PATH}
-        )
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
         target_compile_definitions(ccl_kernel PRIVATE

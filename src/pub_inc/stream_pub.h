@@ -181,7 +181,7 @@ private:
     std::queue<TaskLogicInfo> taskLogicInfo_;
 
     s32 streamId_;
-    /* stram的type主流：ture， 从流：fales */
+    /* stream的type主流：true， 从流：false */
     bool isMainStream_;
 
     bool modeGotFlag_;

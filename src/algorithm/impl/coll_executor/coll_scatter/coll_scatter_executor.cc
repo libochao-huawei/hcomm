@@ -265,7 +265,7 @@ HcclResult CollScatterExecutor::Orchestrate(OpParam& param, AlgResourceResponse&
         needLaunchAtTheEnd = false;
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollScatterExecutor][Orchestrate]errNo[0x%016llx]Scatter excutor kernel run failed",
+        HCCL_ERROR("[CollScatterExecutor][Orchestrate]errNo[0x%016llx]Scatter executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate

@@ -256,7 +256,7 @@ ACL_FUNC_VISIBILITY aclError aclrtBinaryUnLoadImpl(aclrtBinHandle binHandle);
 ACL_FUNC_VISIBILITY aclError aclrtBinaryGetFunctionImpl(const aclrtBinHandle binHandle, const char *kernelName,
     aclrtFuncHandle *funcHandle);
 
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelImpl(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelImpl(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     const void *argsData, size_t argsSize, aclrtStream stream);
 
 ACL_FUNC_VISIBILITY aclError aclrtMemExportToShareableHandleImpl(aclrtDrvMemHandle handle,
@@ -336,7 +336,7 @@ ACL_FUNC_VISIBILITY aclError aclrtKernelArgsGetPlaceHolderBufferImpl(aclrtArgsHa
 ACL_FUNC_VISIBILITY aclError aclrtKernelArgsParaUpdateImpl(aclrtArgsHandle argsHandle, aclrtParamHandle paramHandle,
     void *param, size_t paramSize);
 
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithConfigImpl(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithConfigImpl(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     aclrtStream stream, aclrtLaunchKernelCfg *cfg, aclrtArgsHandle argsHandle, void *reserve);
 
 ACL_FUNC_VISIBILITY aclError aclrtKernelArgsFinalizeImpl(aclrtArgsHandle argsHandle);
@@ -605,10 +605,10 @@ ACL_FUNC_VISIBILITY aclError aclrtGetPhyDevIdByLogicDevIdImpl(const int32_t logi
 
 ACL_FUNC_VISIBILITY aclError aclrtProfTraceImpl(void *userdata, int32_t length, aclrtStream stream);
 
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelV2Impl(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelV2Impl(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     const void *argsData, size_t argsSize, aclrtLaunchKernelCfg *cfg, aclrtStream stream);
 
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithHostArgsImpl(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithHostArgsImpl(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     aclrtStream stream, aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
     aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum);
 

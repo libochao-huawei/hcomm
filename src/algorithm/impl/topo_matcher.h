@@ -53,6 +53,7 @@ struct HcclTopoInfo {
     u32 meshAggregationRankSize;
     u32 multiModuleDiffDeviceNumMode;
     u32 multiSuperPodDiffServerNumMode;
+    u32 multiSuperPodDiffDeviceNumMode;
     bool isDiffDeviceType;
     u32 gcdDeviceNumPerAggregation;
     u32 realUserRank;
@@ -61,6 +62,7 @@ struct HcclTopoInfo {
     bool useSuperPodMode;
     std::unordered_map<u32, bool> isUsedRdmaMap;
     std::unordered_map<u32, u32> pairLinkCounter; // server内所有device间的链路类型计数
+    bool isARSDoubleRing;
 
     std::vector<std::vector<std::vector<std::vector<u32>>>> CommPlaneSubGroupVector; // 保存所有 level 的通信分组信息
     std::map<AHCConcOpType, TemplateType> ahcAlgOption;
@@ -81,11 +83,13 @@ struct HcclTopoInfo {
         meshAggregationRankSize(0),
         multiModuleDiffDeviceNumMode(0),
         multiSuperPodDiffServerNumMode(0),
+        multiSuperPodDiffDeviceNumMode(0),
         isDiffDeviceType(false),
         realUserRank(0),
         isDiffDeviceModule(false),
         moduleNum(0),
-        useSuperPodMode(false)
+        useSuperPodMode(false),
+        isARSDoubleRing(true)
     {}
 };
 
@@ -143,6 +147,7 @@ public:
     u32 GetExternalInputIntraRoceSwitch();
     u32 GetExternalInputHcclDumpDebug();
     u32 GetExternalInputInterHccsDisable();
+    bool GetARSFlag();
     bool CheckSdmaWithRohTopo(const std::vector<u32> &nicList, std::vector<u32> &topoList);
     HcclResult GetSubRootForScatter(const u32 root, u32& subRoot);
     u32 GetSubRootUserRank(const u32 userRank, const u32 rootUserRank);
@@ -168,13 +173,14 @@ public:
     HcclResult SetCommPlaneSubGroupVector(std::vector<std::vector<std::vector<std::vector<u32>>>> &commPlaneSubGroupVector);
     void GetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgOption);
     void SetAHCAlgOption(std::map<AHCConcOpType, TemplateType> &ahcAlgOption);
+    std::vector<std::vector<u32>> GetCommPlaneRanks(CommPlane commPlane);
+    HcclResult SetRankMap();
+    HcclResult EditCommPlaneVector(CommPlane commPlane, std::vector<std::vector<u32>> commVector);
 protected:
 
 private:
 
     HcclResult GetRankMap(const CommParaInfo &commParaInfo, std::vector<SingleSubCommTransport> &commTransport);
-
-    HcclResult SetRankMap();
 
     HcclResult SetIsUsedRdma(const CommParaInfo &commParaInfo, std::vector<SingleSubCommTransport> &commTransport);
 

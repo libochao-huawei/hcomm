@@ -113,7 +113,7 @@ typedef char char_t;
 #define FLOW_CONTROL_FREE_LIMITS (CQ_LEN - FLOW_CONTROL_HIGH_LIMITS)
 /**
  * @ingroup tsch
- * @brief the intial flag of BS
+ * @brief the initial flag of BS
  */
 #define BS_INITIALIZED (0x2U)
 
@@ -175,7 +175,7 @@ typedef struct ts_ttv_msg {
 * @brief error code and exception code encoding scheme
 Loc information 2 bits (31~30) ------ 0x01:device
 Code category 2 bits (29~28) ------------- 0x01:error code
-Error level 3 bits (27~25) --------------- 0b100:CRITICAL 0b011:MAJOR 0b010:MINOR 0b001:SUGGESTION 0b000:UNKNOW
+Error level 3 bits (27~25) --------------- 0b100:CRITICAL 0b011:MAJOR 0b010:MINOR 0b001:SUGGESTION 0b000:UNKNOWN
 Module ID 8 bits (24~17) ----------------- 0x03:TS
 */
 #define TS_STD_ERROR_CODE_BASIC                          (0x90060000U)
@@ -300,7 +300,7 @@ typedef enum tag_debug_exception {
 } ts_dbg_except_t;
 /**
  * @ingroup tsch
- * @brief the bool value defination
+ * @brief the bool value definition
  */
 #define TS_FALSE ((ts_bool_t)0U)
 #define TS_TRUE ((ts_bool_t)1U)
@@ -338,7 +338,7 @@ enum tag_ts_stream_state {
     STREAM_STATE_SCHEDULE = 6,
     STREAM_STATE_DEACTIVE = 7,  // ignore 1910, reset hwts sq
     STREAM_STATE_UNBIND_MODEL = 8,
-    STREAM_STATE_DESTROY = 9,   // get maintaince task, and clean data
+    STREAM_STATE_DESTROY = 9,   // get maintenance task, and clean data
     STREAM_STATE_RECYCLE = 10,    // send driver for recycling
     STREAM_STATE_RESERVED = 0XFF,
 };

@@ -9,6 +9,7 @@
 # -----------------------------------------------------------------------------------------------------------
 set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/rank_graph.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/rank_graph_v2.cc
 )
 
 target_sources(hcomm PRIVATE

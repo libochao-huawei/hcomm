@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Description: rank info detect declaration
+ * Create: 2025-09-16
+ */
+
+#ifndef HCCL_RANK_INFO_DETECT_H
+#define HCCL_RANK_INFO_DETECT_H
+
+#include "types.h"
+#include "socket.h"
+#include "ip_address.h"
+#include "rank_table_info.h"
+#include "root_handle_v2.h"
+#include "orion_adapter_hccp.h"
+#include "rank_info_detect_service.h"
+#include "rank_info_detect_client.h"
+#include "socket_handle_manager.h"
+#include "universal_concurrent_map.h"
+
+namespace Hccl {
+
+class RankInfoDetect {
+public:
+    RankInfoDetect();
+
+    void SetupServer(HcclRootHandleV2 &rootHandle);
+    void SetupAgent(u32 rankSize, u32 rankId, const HcclRootHandleV2 &rootHandle);
+    void GetRankTable(RankTableInfo &ranktable) const;
+    void WaitComplete(u32 listenPort);
+
+private:
+    s32                       devLogicId_{0};
+    u32                       devPhyId_{0};
+    RankTableInfo             rankTable_{};
+    IpAddress                 hostIp_{};
+    u32                       hostPort_{HCCL_INVALID_PORT};
+    vector<RaSocketWhitelist> wlistInfo_{};
+    std::string               identifier_{};
+
+    void                    SetupRankInfoDetectService(shared_ptr<Socket> serverSocket, s32 devLogicId, u32 devPhyId,
+                                                       std::string identifier, vector<RaSocketWhitelist> wlistInfo);
+    std::shared_ptr<Socket> ServerInit();
+    std::shared_ptr<Socket> ClientInit(const HcclRootHandleV2 &rootHandle);
+    void                    AddHostSocketWhitelist(SocketHandle &socketHandle, const std::vector<IpAddress> &hostSocketWlist);
+    u32                     GetHostListenPort();
+    void                    GetRootHandle(HcclRootHandleV2 &rootHandle);
+    SocketHandle            GetHostSocketHandle();
+
+    static UniversalConcurrentMap<u32, volatile u32> g_detectServerStatus_;
+};
+
+} // namespace Hccl
+
+#endif // HCCL_VIRT_TOPO_DETECT_H

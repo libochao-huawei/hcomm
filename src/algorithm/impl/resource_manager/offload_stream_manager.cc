@@ -47,7 +47,7 @@ Stream OffloadStreamManager::GetMaster(const std::string &tag)
     std::unique_lock<std::mutex> lock(masterMapMutex_);
     auto iter = masterMap_.find(tag);
     if (iter == masterMap_.end()) {
-        HCCL_ERROR("[OffloadStreamManager][GetMaster]cant find tag[%s]", tag.c_str());
+        HCCL_ERROR("[OffloadStreamManager][GetMaster]can't find tag[%s]", tag.c_str());
         return Stream();
     }
     return iter->second;
@@ -64,7 +64,7 @@ std::vector<Stream> OffloadStreamManager::GetSlaves(const std::string &tag, u32 
     std::unique_lock<std::mutex> lock(slavesMapMutex_);
     auto iter = slavesMap_.find(tag);
     if (iter == slavesMap_.end()) {
-        HCCL_ERROR("[OffloadStreamManager][GetSlaves]cant find tag[%s]", tag.c_str());
+        HCCL_ERROR("[OffloadStreamManager][GetSlaves]can't find tag[%s]", tag.c_str());
         return std::vector<Stream>();
     }
 

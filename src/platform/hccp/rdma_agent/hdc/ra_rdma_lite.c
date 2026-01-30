@@ -20,22 +20,22 @@ int gRdmaLiteApiRefcnt = 0;
 #ifndef HNS_ROCE_LLT
 struct RaRdmaLiteOps gRdmaLiteOps;
 #else
-struct ra_rdma_lite_ops g_rdma_lite_ops = {
-    .ra_rdma_lite_alloc_ctx = rdma_lite_alloc_context,
-    .ra_rdma_lite_free_ctx = rdma_lite_free_context,
-    .ra_rdma_lite_init_mem_pool = rdma_lite_init_mem_pool,
-    .ra_rdma_lite_deinit_mem_pool = rdma_lite_deinit_mem_pool,
-    .ra_rdma_lite_create_cq = rdma_lite_create_cq,
-    .ra_rdma_lite_destroy_cq = rdma_lite_destroy_cq,
-    .ra_rdma_lite_poll_cq = rdma_lite_poll_cq,
-    .ra_rdma_lite_poll_cq_v2 = rdma_lite_poll_cq_v2,
-    .ra_rdma_lite_create_qp = rdma_lite_create_qp,
-    .ra_rdma_lite_destroy_qp = rdma_lite_destroy_qp,
-    .ra_rdma_lite_post_send = rdma_lite_post_send,
-    .ra_rdma_lite_post_recv = rdma_lite_post_recv,
-    .ra_rdma_lite_set_qp_sl = rdma_lite_set_qp_sl,
-    .ra_rdma_lite_clean_qp = rdma_lite_clean_qp,
-    .ra_rdma_lite_restore_snapshot = rdma_lite_restore_snapshot,
+struct RaRdmaLiteOps gRdmaLiteOps = {
+    .raRdmaLiteAllocCtx = rdma_lite_alloc_context,
+    .raRdmaLiteFreeCtx = rdma_lite_free_context,
+    .raRdmaLiteInitMemPool = rdma_lite_init_mem_pool,
+    .raRdmaLiteDeinitMemPool = rdma_lite_deinit_mem_pool,
+    .raRdmaLiteCreateCq = rdma_lite_create_cq,
+    .raRdmaLiteDestroyCq = rdma_lite_destroy_cq,
+    .raRdmaLitePollCq = rdma_lite_poll_cq,
+    .raRdmaLitePollCqV2 = rdma_lite_poll_cq_v2,
+    .raRdmaLiteCreateQp = rdma_lite_create_qp,
+    .raRdmaLiteDestroyQp = rdma_lite_destroy_qp,
+    .raRdmaLitePostSend = rdma_lite_post_send,
+    .raRdmaLitePostRecv = rdma_lite_post_recv,
+    .raRdmaLiteSetQpSl = rdma_lite_set_qp_sl,
+    .raRdmaLiteCleanQp = rdma_lite_clean_qp,
+    .raRdmaLiteRestoreSnapshot = rdma_lite_restore_snapshot,
 };
 #endif
 
@@ -51,7 +51,6 @@ STATIC int RaHdcOpenRdmaLiteSo(void)
     } else {
             hccp_run_info("rdma lite api dlopen again!");
     }
-    return 0;
 #endif
     return 0;
 }
@@ -147,7 +146,7 @@ DL_ATTRI_VISI_DEF int RaHdcRdmaLiteApiInit(void)
     ret = RaHdcOpenRdmaLiteSo();
     if (ret) {
         pthread_mutex_unlock(&gRdmaLiteApiLock);
-        hccp_err("hccp_dlopen[libascend_rdma_lite.so]"\
+        hccp_err("HccpDlopen[libascend_rdma_lite.so]"\
             "failed! ret=[%d][%s]. Please check rdma lite driver has been installed.", ret, dlerror());
         return ret;
     }

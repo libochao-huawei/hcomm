@@ -8,6 +8,9 @@ endif()
 
 set(ra_hdc_list ra_hdc.c
     ${BASE_DIR}/ra_comm.c
+    ${BASE_DIR}/ctx/ra_ctx_comm.c
+    async/ra_hdc_async_ctx.c
+    ra_hdc_ctx.c
     ra_rdma_lite.c
     ra_hdc_lite.c
     ra_hdc_ping.c
@@ -25,7 +28,9 @@ add_library(ra_hdc SHARED ${ra_hdc_list})
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_hdc PRIVATE
         OPEN_BUILD_PROJECT
-        LOG_CPP)
+        LOG_CPP
+        CONFIG_CONTEXT
+    )
 
     target_include_directories(ra_hdc PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../inc
@@ -41,7 +46,6 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
         ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
         # runtime头文件
@@ -51,6 +55,12 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
+
+        # HCCP Legacy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
+        ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../hdc/async
     )
 
     target_link_directories(ra_hdc PRIVATE
@@ -122,8 +132,3 @@ target_compile_definitions(ra_hdc PRIVATE
 install(TARGETS  ra_hdc
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
-
-# install_package(
-#     PACKAGE ra_hdc
-#     TARGETS ra_hdc
-# )

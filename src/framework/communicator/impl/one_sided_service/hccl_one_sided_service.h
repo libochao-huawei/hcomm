@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_ONE_SIDED_SERVICE_H
-#define HCCL_ONE_SIDED_SERVICE_H
+#ifndef HCOMM_HCCL_ONE_SIDED_SERVICE_H
+#define HCOMM_HCCL_ONE_SIDED_SERVICE_H
 
 #include <array>
 #include <set>

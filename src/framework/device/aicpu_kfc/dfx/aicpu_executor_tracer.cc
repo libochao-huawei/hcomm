@@ -156,7 +156,7 @@ void AicpuExecutorTracer::PrintTaskException(const rtLogicCqReport_t &reportOfOn
         "task trap",
         "task timeout",
         "sqe error",
-        "resouce conflict error",
+        "resource conflict error",
         "sq sw status error",
         "warning"
     };

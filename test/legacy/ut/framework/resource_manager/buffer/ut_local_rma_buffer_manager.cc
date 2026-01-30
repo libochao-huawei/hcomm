@@ -1,0 +1,128 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "gtest/gtest.h"
+#include <mockcpp/mokc.h>
+#include <mockcpp/mockcpp.hpp>
+#define private public
+#define protected public
+#include "communicator_impl.h"
+#include "local_rma_buf_manager.h"
+#include "rdma_handle_manager.h"
+#include "invalid_params_exception.h"
+#include "internal_exception.h"
+#undef protected
+#undef private
+using namespace Hccl;
+
+class LocalRmaBufManagerTest : public testing::Test {
+protected:
+    static void SetUpTestCase()
+    {
+        std::cout << "LocalRmaBufManagerTest tests set up." << std::endl;
+    }
+
+    static void TearDownTestCase()
+    {
+        std::cout << "LocalRmaBufManagerTest tests tear down." << std::endl;
+    }
+
+    virtual void SetUp()
+    {
+        MOCKER(HrtIpcSetMemoryName).stubs().with(any(), any(), any(), any());
+        MOCKER(HrtDevMemAlignWithPage).stubs().with(any(), any(), any(), any(), any());
+        MOCKER(HrtIpcDestroyMemoryName).stubs().with(any());
+        MOCKER(GetUbToken).stubs().will(returnValue(1));
+
+        devBuffer = DevBuffer::Create(0x100, 0x100);
+        std::cout << "A Test case in LocalRmaBufManagerTest SetUP" << std::endl;
+    }
+
+    virtual void TearDown()
+    {
+        GlobalMockObject::verify();
+        std::cout << "A Test case in LocalRmaBufManagerTest TearDown" << std::endl;
+    }
+
+    shared_ptr<DevBuffer> devBuffer;
+    BufferType            bufferType = BufferType::SCRATCH;
+};
+
+TEST_F(LocalRmaBufManagerTest, get_return_null_ptr)
+{
+    CommunicatorImpl   comm;
+    LocalRmaBufManager localRmaBufManager(comm);
+    BasePortType       basePortType(PortDeploymentType::P2P, ConnectProtoType::RDMA);
+    PortData           port(0, basePortType, 0, IpAddress());
+
+    auto res = localRmaBufManager.Get("opTag", port, bufferType);
+    EXPECT_EQ(nullptr, res);
+}
+
+TEST_F(LocalRmaBufManagerTest, reg_invalid_port)
+{
+    CommunicatorImpl   comm;
+    LocalRmaBufManager localRmaBufManager(comm);
+    BasePortType       basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::TCP);
+    PortData           port(0, basePortType, 0, IpAddress());
+    string             opTag = "optag";
+
+    EXPECT_THROW(localRmaBufManager.Reg(opTag, bufferType, devBuffer, port), InternalException);
+}
+
+TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_throw)
+{
+    CommunicatorImpl comm;
+    LocalRmaBufManager localRmaBufManager(comm);
+    BasePortType basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    PortData port(0, basePortType, 0, IpAddress());
+    string opTag = "optag";
+
+    void *rdmaHandle = (void *)0x200;
+
+    MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+    MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+    RdmaHandleManager::GetInstance().tokenInfoMap[rdmaHandle] = make_unique<TokenInfoManager>(0, rdmaHandle);
+
+    auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port);
+    EXPECT_NE(nullptr, res);
+    EXPECT_EQ(RmaType::UB, res->GetRmaType());
+
+    auto res2 = localRmaBufManager.Get(opTag, port, bufferType);
+    EXPECT_EQ(res, res2);    
+    localRmaBufManager.Destroy();
+}
+
+TEST_F(LocalRmaBufManagerTest, reg_port_ub_first_time_get_then_second_no_throw_aicpu)
+{
+    MOCKER(HrtUbDevQueryInfo).stubs().with(any(), any());
+
+    CommunicatorImpl comm;
+    LocalRmaBufManager localRmaBufManager(comm);
+    BasePortType basePortType(PortDeploymentType::DEV_NET, ConnectProtoType::UB);
+    PortData port(0, basePortType, 0, IpAddress());
+    string opTag = "optag";
+ 
+    void *rdmaHandle = (void *)0x200;
+ 
+    MOCKER(HrtRaUbCtxInit).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+    MOCKER_CPP(&RdmaHandleManager::Get).stubs().with(any(), any()).will(returnValue(rdmaHandle));
+ 
+    auto res = localRmaBufManager.Reg(opTag, bufferType, devBuffer, port);
+    EXPECT_NE(nullptr, res);
+    EXPECT_EQ(RmaType::UB, res->GetRmaType());
+    auto res2 = localRmaBufManager.Get(opTag, port, bufferType);
+    EXPECT_EQ(res, res2);
+
+    // 重复注册逻辑修改，不再抛异常，而是返回注册好的资源
+    EXPECT_NO_THROW(localRmaBufManager.Reg(opTag, bufferType, devBuffer, port));
+    auto res3 = localRmaBufManager.Get(opTag, port, bufferType);
+    EXPECT_EQ(res, res3);
+}

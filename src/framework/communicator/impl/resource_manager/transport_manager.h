@@ -188,7 +188,7 @@ public:
     HcclResult CreateVirturalTransport(SingleSubCommTransport& singleSubCommTransport);
     HcclResult Alloc(const std::string &tag, const TransportIOMem &transMem, OpCommTransport &opTransportResponse,
         bool isAicpuModeEn, bool isBackup = false, bool isZeroCopy = false, const HcclCMDType &opType=HcclCMDType::HCCL_CMD_INVALID,
-        bool isCapture = false, bool isIndOp = false);
+        bool isCapture = false, bool isIndOp = false, bool isNpuDirectRoce = false);
     HcclResult IncreAlloc(const std::string &tag, const TransportIOMem &transMem, OpCommTransport &opTransportReq,
         OpCommTransport &opTransportResponse, bool isAicpuModeEn, bool isBackup = false, bool isCapture = false,
         const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
@@ -233,7 +233,7 @@ private:
         u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara, RankInfo &loaclRank, RankInfo &remoteRank,
         const HcclNetDevCtx &netDevCtx, TransportLinkType linkType = TransportLinkType::RESERVED, 
         const IndOpMem &indOpMem = IndOpMem(), bool isIndOp = false,
-		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
+		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false);
     TransportType GetTransportType(const u32 dstRank, bool isUsedRdma);
     void SetTransportParam(TransportPara &para, MachinePara &machinePara);
     HcclResult TransportInit(const u32 dstRank, MachinePara &machinePara,
@@ -245,7 +245,7 @@ private:
         bool isUsedRdma, std::shared_ptr<Transport> &link, bool isAicpuModeEn, HcclResult &retOut, const HcclNetDevCtx &netDevCtx,
         u32 notifyNum = 0, bool isBackup = false, bool isCapture = false, const DeviceMem expMem = DeviceMem(),
         TransportLinkType linkType = TransportLinkType::RESERVED, bool isIndOp = false, const IndOpMem indOpMem = IndOpMem(),
-		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID);
+		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false);
     bool IsHccsTransport(u32 remoteRank, TransportLinkType linkType);
     HcclResult ConstructTransTag(const std::string& tag, std::string& transTag, bool isInterRdma, u32 subCommIndex = 0,
         bool isHccs = false);

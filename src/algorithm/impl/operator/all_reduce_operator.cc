@@ -105,9 +105,6 @@ HcclResult AllReduceOperator::GetAllReduceScratchSize(const u32 count, const Hcc
         scratchSize = count * SIZE_TABLE[dataType] * DEVICE_TWO + reservedSize;
     }
 
-    const u64 MAX_SCRATCH_SIZE = 16 * 1024 * 1024 * 4;
-    scratchSize = scratchSize < MAX_SCRATCH_SIZE ? scratchSize : MAX_SCRATCH_SIZE;
-
     HCCL_INFO("[AllReduceOperator][GetAllReduceScratchSize] scratchSize %llu, count %llu", scratchSize, count);
     return HCCL_SUCCESS;
 }
@@ -163,6 +160,10 @@ HcclResult AllReduceOperator::SelectAlg(const std::string& tag, const OpParam& p
             newTag : newTag + ALL_REDUCE_NO_INLINE;
     } else {
         newTag = tag;
+    }
+    if (algName == "AllReduceARSFor91093Executor") {
+        u32 ringSize = CalcOptimalIntraRingsize(param.DataDes.count, param.DataDes.dataType, HcclCMDType::HCCL_CMD_ALLREDUCE);
+        newTag += std::to_string(ringSize);
     }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
     return ret;
@@ -538,7 +539,13 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
 {
     // 确定性图和单算子归一流程
     HcclDataCountType countType = GetCountTypeForDeterAllReduce(param.DataDes.count, param.DataDes.dataType);
-    if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
+    const bool isOpbase = GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
+    const bool isInlineReduce =
+        IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType);
+
+    if (isOpbase && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+        algName = "AllReduceDeterPipelineExecutor";
+    } else if (SingleMeshInlineReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
         if (countType == HcclDataCountType::HCCL_COUNT_SMALL) {
             algName = "AllReduceMeshSmallCountExecutor";
         } else if (countType == HcclDataCountType::HCCL_COUNT_MEDIUM) {
@@ -548,11 +555,13 @@ HcclResult AllReduceOperator::DeterministicSelector(const OpParam& param, std::s
         }
     } else {
         u64 dataSize = param.DataDes.count * SIZE_TABLE[param.DataDes.dataType];
-        // 单算子 + 确定性 + 数据量小于512kB
-        if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
-            !isSingleMeshAggregation_ && dataSize <= HCCL_SMALL_COUNT_512_KB && 
-            IsSupportSDMAReduce(param.inputPtr, param.outputPtr, param.DataDes.dataType, param.reduceType)) {
-            algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
+        if (isOpbase && !isSingleMeshAggregation_ && isInlineReduce) {
+            if (dataSize <= HCCL_SMALL_COUNT_512_KB) {
+                // 单算子 + 确定性 + 数据量小于512kB
+                algName = "AllReduceMeshOpbaseSmallCountDeterministicExecutor";
+            } else {
+                algName = "AllReduceMeshOpbaseMidCountDeterministicExecutor";
+            }
         }
     }
     return HCCL_SUCCESS;
@@ -578,7 +587,7 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
                         && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                         && ((topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) || (serverNum_ > 1))
                         && ((userRankSize_ > DEVICE_EIGHT && dataSize < HCCL_SMALL_COUNT_8_MB) ||
-                            (userRankSize_ <= DEVICE_EIGHT && dataSize <= HCCL_SMALL_COUNT_512_KB))
+                            (userRankSize_ <= DEVICE_EIGHT && dataSize <= HCCL_SMALL_COUNT_512_KB) || isOnlyAiv)
                         && (!retryEnable_)
                         && userRankSize_ > 1
                         && !multiModuleDiffDeviceNumMode_;
@@ -610,7 +619,16 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         HCCL_INFO("[SelectAlgfor91093] AllReduce SelectAlgfor91093 is algName [%s].", algName.c_str());
         return HCCL_SUCCESS;
     }
-
+    // ARS 算法选择
+    bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
+    if (isARSAlgo) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllReduceOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+    }
     // AHC 算法选择逻辑
     if ((algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) ||
         (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE)) {
@@ -641,8 +659,10 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB * deviceNumPerAggregation_) && !retryEnable_; // 涉及ROCE平面
 
-    if (multiModuleDiffDeviceNumMode_) {
+    if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
         algName = "AllReduceComm";
+    } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
+        algName = "AllReduceARSFor91093Executor";
     } else if (useHostComm || smallCountOptimMultiServer || smallCountOptimMultiPod) {
         algName = "AllReduceComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
@@ -666,16 +686,17 @@ HcclResult AllReduceOperator::SelectAlgfor91093(const OpParam& param, std::strin
         }
     }
     // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
-    if (isOnlyAiv && !isAivMode) {
+    if (isOnlyAiv && !isAivMode && !isSupportAivDeter) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
         CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported,"
             "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(serverNum_ != 1, HCCL_ERROR("current serverNum[%u] not equal to 1", serverNum_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable [%d] not supported", retryEnable_), HCCL_E_NOT_SUPPORT);
 
-        HCCL_ERROR("isOpbase[%d] deterministic config[%u] retryEnable_[%d]",
-            isOpbase, topoMatcher_->GetDeterministicConfig(), retryEnable_);
+        CHK_PRT_RET(superPodNum_ != 1, HCCL_ERROR("multi superpod [%u] not supported", superPodNum_), HCCL_E_NOT_SUPPORT);
+
+        CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] AllReduce SelectAlgfor91093 is algName [%s].", algName.c_str());

@@ -8,10 +8,11 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef CCL_BUFFER_MANAGER_H
-#define CCL_BUFFER_MANAGER_H
+#ifndef HCCL_CCL_BUFFER_MANAGER_H
+#define HCCL_CCL_BUFFER_MANAGER_H
 
 #include "mem_device_pub.h"
+#include "mem_host_pub.h"
 
 namespace hccl {
 
@@ -80,4 +81,4 @@ private:
 };
 } // namespace hccl
 
-#endif // CCL_BUFFER_MANAGER_H
+#endif // HCCL_CCL_BUFFER_MANAGER_H

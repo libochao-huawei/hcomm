@@ -806,7 +806,7 @@ HcclResult HcclSocketManager::WaitLinkEstablish(std::shared_ptr<HcclSocket> sock
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
             // 日志过滤, 50 次才打印一次
             if (count % 50 == 0) {
-                HCCL_DEBUG("[Wait][LinkEstablish]socket is connectting ");
+                HCCL_DEBUG("[Wait][LinkEstablish]socket is connecting ");
             }
             count++;
             

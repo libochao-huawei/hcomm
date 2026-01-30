@@ -36,7 +36,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::Orchestrate(OpParam& param, AlgResourc
     ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollRunAlltoAllDirectFullmesh][Orchestrate]errNo[0x%016llx]excutor run failed",
+        HCCL_ERROR("[CollRunAlltoAllDirectFullmesh][Orchestrate]errNo[0x%016llx]executor run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     HCCL_INFO("tag[%s], AlltoAllDirectFullmesh tempAlg orchestrate success, take time [%lld]us.",
@@ -344,7 +344,7 @@ HcclResult CollRunAlltoAllDirectFullmesh::KernelRun(const OpParam &param, ExecMe
 
     CHK_RET(tempAlg->RunAsync());
 
-    HCCL_INFO("[CollRunAlltoAllDirectFullmesh] excutor run success.");
+    HCCL_INFO("[CollRunAlltoAllDirectFullmesh] executor run success.");
     if (algOpContext_.opRetryHandler.isPostSync == true) {
         OpParam postSyncParam = param;
         if ((*prepareData.subStreamsPtr).size() == 0) {

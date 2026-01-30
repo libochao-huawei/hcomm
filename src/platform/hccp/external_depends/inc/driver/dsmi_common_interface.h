@@ -149,7 +149,7 @@ typedef enum {
 typedef enum {
     DSMI_UPGRADE_MAIN_TYPE_VERSION = 0,
     DSMI_UPGRADE_MAIN_TYPE_PARTITION,
-    DSMI_UPGRADE_MAIN_TYPE_REG_PROG_PKG_INFO, // register program package infomation
+    DSMI_UPGRADE_MAIN_TYPE_REG_PROG_PKG_INFO, // register program package information
     DSMI_UPGRADE_SUB_TYPE_FW_VERIFY,
     DSMI_UPGRADE_MAIN_TYPE_CRL,
     /* Basic version information of the BOM, which is written in the fixed area of
@@ -1331,7 +1331,7 @@ typedef struct ts_utilization_rate_info {
 } TS_UTILIZATION_RATE;
 
 typedef struct ts_utilization_block_info {
-    unsigned int array_len;         // Core utilization array length setted by user
+    unsigned int array_len;         // Core utilization array length set by user
     unsigned int valid_core_num;    // Numbers of valid cores
     TS_UTILIZATION_RATE core_util_array[CORE_UTIL_ARR_MAX_LEN];  // Structure array which store the core utilization
 } TS_UTILIZATION_BLOCK;
@@ -1855,8 +1855,8 @@ struct qos_gbl_config {
     unsigned int autoqos_fuse_en;         /* 0--enable, 1--disable */
     unsigned int mpamqos_fuse_mode;       /* 0--average, 1--max, 2--replace */
     unsigned int mpam_subtype;            /* 0--all, 1--wr, 2--rd, 3--none */
-    unsigned int lqos_retry_start_thres;  /* 0 is invaild */
-    unsigned int lqos_retry_stop_thres;   /* 0 is invaild */
+    unsigned int lqos_retry_start_thres;  /* 0 is invalid */
+    unsigned int lqos_retry_stop_thres;   /* 0 is invalid */
     int reserved[QOS_CFG_RESERVED_LEN - 2];
 };
 
@@ -2216,7 +2216,7 @@ DLLEXPORT int dsmi_dft_get_elable(int device_id, int item_type, char *elable_dat
 * @param [in] component_type firmware type
 * @param [in] file_name  the path of firmware
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_upgrade_start(int device_id, DSMI_COMPONENT_TYPE component_type, const char *file_name);
 
@@ -2240,7 +2240,7 @@ DLLEXPORT int dsmi_set_upgrade_attr(int device_id, DSMI_COMPONENT_TYPE component
 * @param [out] schedule  Upgrade progress
 * @param [out] upgrade_status  Upgrade state
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_upgrade_get_state(int device_id, unsigned char *schedule, unsigned char *upgrade_status);
 
@@ -2256,7 +2256,7 @@ DLLEXPORT int dsmi_upgrade_get_state(int device_id, unsigned char *schedule, uns
 * @param [out] ret_len  The space requested by the user is used to store the effective character length
                of the version number
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_upgrade_get_component_static_version(int device_id, DSMI_COMPONENT_TYPE component_type,
     unsigned char *version_str, unsigned int version_len, unsigned int *ret_len);
@@ -2272,7 +2272,7 @@ DLLEXPORT int dsmi_upgrade_get_component_static_version(int device_id, DSMI_COMP
 * @param [out] ret_len  The space requested by the user is used to store the effective
                length of the returned system version number
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_version(int device_id, char *version_str, unsigned int version_len, unsigned int *ret_len);
 
@@ -2283,7 +2283,7 @@ DLLEXPORT int dsmi_get_version(int device_id, char *version_str, unsigned int ve
 * @param [in] device_id  The device id
 * @param [out] component_count  The space requested by the user for storing the number of firmware returned
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_component_count(int device_id, unsigned int *component_count);
 
@@ -2297,7 +2297,7 @@ DLLEXPORT int dsmi_get_component_count(int device_id, unsigned int *component_co
 * @param [out] component_table  The space requested by the user is used to store the returned firmware list
 * @param [in] component_count  The count of firmware
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_component_list(int device_id,
     DSMI_COMPONENT_TYPE *component_table, unsigned int component_count);
@@ -2308,7 +2308,7 @@ DLLEXPORT int dsmi_get_component_list(int device_id,
 * @attention NULL
 * @param [out] device_count  The space requested by the user is used to store the number of returned devices
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_count(int *device_count);
 
@@ -2318,7 +2318,7 @@ DLLEXPORT int dsmi_get_device_count(int *device_count);
 * @attention the devices can obtain from lspci command,not just the devices can obtain from device manager.
 * @param [out] all_device_count  The space requested by the user is used to store the number of returned devices
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_all_device_count(int *all_device_count);
 
@@ -2329,7 +2329,7 @@ DLLEXPORT int dsmi_get_all_device_count(int *all_device_count);
 * @param [out] device_id_list[] The device ID list of all devices is displayed.
 * @param [in] count Number of equipment
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_list_device(int device_id_list[], int count);
 
@@ -2340,7 +2340,7 @@ DLLEXPORT int dsmi_list_device(int device_id_list[], int count);
 * @param [out] all_devices  The device ID list of all devices is displayed.
 * @param [in] count number of equipment
 * @return  0 for success, others for fail
-* @note Support:Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend910_95
+* @note Support:Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend950
 */
 DLLEXPORT int dsmi_list_all_device(int device_ids[], int count);
 
@@ -2349,7 +2349,7 @@ DLLEXPORT int dsmi_list_all_device(int device_ids[], int count);
 * @brief Start the container service
 * @attention Cannot be used simultaneously with the computing power distribution mode
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_enable_container_service(void);
 
@@ -2360,7 +2360,7 @@ DLLEXPORT int dsmi_enable_container_service(void);
 * @param [in] logicid logic id
 * @param [out] phyid   physic id
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend610,as31xm1,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend610,as31xm1,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_phyid_from_logicid(unsigned int logicid, unsigned int *phyid);
 
@@ -2371,7 +2371,7 @@ DLLEXPORT int dsmi_get_phyid_from_logicid(unsigned int logicid, unsigned int *ph
 * @param [in] phyid   physical id
 * @param [out] logicid logic id
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend610,as31xm1,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend610,as31xm1,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_logicid_from_phyid(unsigned int phyid, unsigned int *logicid);
 
@@ -2383,7 +2383,7 @@ DLLEXPORT int dsmi_get_logicid_from_phyid(unsigned int phyid, unsigned int *logi
 * @param [out] phealth  The pointer of the overall health status of the device only represents this component,
                         and does not include other components that have a logical relationship with this component.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_health(int device_id, unsigned int *phealth);
 
@@ -2395,7 +2395,7 @@ DLLEXPORT int dsmi_get_device_health(int device_id, unsigned int *phealth);
 * @param [out] errorcount  Number of error codes
 * @param [out] perrorcode  error codes
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_errorcode(int device_id, int *errorcount, unsigned int *perrorcode);
 
@@ -2420,7 +2420,7 @@ DLLEXPORT int dsmi_get_device_temperature(int device_id, int *ptemperature);
 * @param [out] schedule  Device power consumption: unit is W, accuracy is 0.1W. 16-bit unsigned short type,
                little endian
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_power_info(int device_id, struct dsmi_power_info_stru *pdevice_power_info);
 
@@ -2431,7 +2431,7 @@ DLLEXPORT int dsmi_get_device_power_info(int device_id, struct dsmi_power_info_s
 * @param [in] device_id  The device id
 * @param [out] pcie_idinfo  PCIe device information
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_pcie_info(int device_id, struct tag_pcie_idinfo *pcie_idinfo);
 
@@ -2443,7 +2443,7 @@ DLLEXPORT int dsmi_get_pcie_info(int device_id, struct tag_pcie_idinfo *pcie_idi
 * @param [out] pvoltage  The voltage of the HiSilicon SOC of the Shengteng AI processor: the unit is V,
                          and the accuracy is 0.01V
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_voltage(int device_id, unsigned int *pvoltage);
 
@@ -2455,7 +2455,7 @@ DLLEXPORT int dsmi_get_device_voltage(int device_id, unsigned int *pvoltage);
 * @param [in] device_type  device_type
 * @param [out] putilization_rate  Utilization rate of HiSilicon SOC of ascend AI processor, unit:%
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_utilization_rate(int device_id, int device_type, unsigned int *putilization_rate);
 
@@ -2467,7 +2467,7 @@ DLLEXPORT int dsmi_get_device_utilization_rate(int device_id, int device_type, u
 * @param [in] device_type  device_type
 * @param [out] pfrequency  Frequency, unit MHZ
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_frequency(int device_id, int device_type, unsigned int *pfrequency);
 
@@ -2478,7 +2478,7 @@ DLLEXPORT int dsmi_get_device_frequency(int device_id, int device_type, unsigned
 * @param [in] device_id  The device id
 * @param [out] pflash_count Returns the number of Flash, currently fixed at 1
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_flash_count(int device_id, unsigned int *pflash_count);
 
@@ -2490,7 +2490,7 @@ DLLEXPORT int dsmi_get_device_flash_count(int device_id, unsigned int *pflash_co
 * @param [in] flash_index Flash index number. The value is fixed at 0.
 * @param [out] pflash_info Returns Flash device information.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_flash_info(int device_id, unsigned int flash_index, dm_flash_info_stru *pflash_info);
 
@@ -2513,7 +2513,7 @@ DLLEXPORT int dsmi_get_memory_info(int device_id, struct dsmi_memory_info_stru *
 * @param [in] device_type  device type
 * @param [out] pdevice_ecc_info  return ECC information
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_ecc_info(int device_id, int device_type, struct dsmi_ecc_info_stru *pdevice_ecc_info);
 
@@ -2538,7 +2538,7 @@ DLLEXPORT int dsmi_passthru_mcu(int device_id, struct passthru_message_stru *pas
 * @param [out] buffsize The buff size brought in is fixed at 48 bytes. If the set buff size is greater
                         than 48 bytes, the default is 48 bytes
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_query_errorstring(int device_id, unsigned int errorcode, unsigned char *perrorinfo, int buffsize);
 
@@ -2549,7 +2549,7 @@ DLLEXPORT int dsmi_query_errorstring(int device_id, unsigned int errorcode, unsi
 * @param [in] device_id  The device id
 * @param [out] pboard_info  return board info
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_board_info(int device_id, struct dsmi_board_info_stru *pboard_info);
 
@@ -2560,7 +2560,7 @@ DLLEXPORT int dsmi_get_board_info(int device_id, struct dsmi_board_info_stru *pb
 * @param [in] device_id  The device id
 * @param [out] ntime_stamp  the number of seconds from 00:00:00, January 1,1970.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_system_time(int device_id, unsigned int *ntime_stamp);
 
@@ -2597,7 +2597,7 @@ DLLEXPORT int dsmi_get_ecc_enable(int device_id, DSMI_DEVICE_TYPE device_type, i
 * @param [in] pmac_addr Set a 6-byte MAC address.
 * @param [in] mac_addr_len  MAC address length, fixed length 6, unit byte.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_set_mac_addr(int device_id, int mac_id, const char *pmac_addr, unsigned int mac_addr_len);
 
@@ -2608,7 +2608,7 @@ DLLEXPORT int dsmi_set_mac_addr(int device_id, int mac_id, const char *pmac_addr
 * @param [in] device_id  The device id
 * @param [out] count Query the MAC number, the value range: 0 ~ 4.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_mac_count(int device_id, int *count);
 
@@ -2621,7 +2621,7 @@ DLLEXPORT int dsmi_get_mac_count(int device_id, int *count);
 * @param [out] pmac_addr return a 6-byte MAC address.
 * @param [in] mac_addr_len  MAC address length, fixed length 6, unit byte.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_mac_addr(int device_id, int mac_id, char *pmac_addr, unsigned int mac_addr_len);
 
@@ -2635,7 +2635,7 @@ DLLEXPORT int dsmi_get_mac_addr(int device_id, int mac_id, char *pmac_addr, unsi
 * @param [in] ip_address  ip address info wants to set
 * @param [in] mask_address  mask address info wants to set
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_set_device_ip_address(int device_id,
     int port_type, int port_id, ip_addr_t ip_address, ip_addr_t mask_address);
@@ -2650,7 +2650,7 @@ DLLEXPORT int dsmi_set_device_ip_address(int device_id,
 * @param [in&out] ip_address  return ip address info
 * @param [out] mask_address  return mask address info
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_ip_address(int device_id, int port_type, int port_id, ip_addr_t *ip_address,
     ip_addr_t *mask_address);
@@ -2684,7 +2684,7 @@ DLLEXPORT int dsmi_get_fan_speed(int device_id, int fan_id, int *speed);
 * @attention NULL
 * @param [in] device_id  The device id
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310P,Ascend310B,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310P,Ascend310B,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_pre_reset_soc(int device_id);
 
@@ -2694,7 +2694,7 @@ DLLEXPORT int dsmi_pre_reset_soc(int device_id);
 * @attention NULL
 * @param [in] device_id  The device id
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310P,Ascend310B,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310P,Ascend310B,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_rescan_soc(int device_id);
 
@@ -2704,7 +2704,7 @@ DLLEXPORT int dsmi_rescan_soc(int device_id);
 * @attention NULL
 * @param [in] device_id  The device id
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310P,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310P,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_hot_reset_soc(int device_id);
 
@@ -2715,7 +2715,7 @@ DLLEXPORT int dsmi_hot_reset_soc(int device_id);
 * @param [in] device_id  The device id
 * @param [out] boot_status The startup state of the HiSilicon SOC of the Ascend AI processor
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend910,Ascend310P,Ascend310B,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend910,Ascend310P,Ascend310B,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_boot_status(int device_id, enum dsmi_boot_status *boot_status);
 
@@ -2727,7 +2727,7 @@ DLLEXPORT int dsmi_get_device_boot_status(int device_id, enum dsmi_boot_status *
 * @param [in] device_id  The device id
 * @param [out] chip_info  Get the relevant information of ascend AI processor Hisilicon SOC
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_chip_info(int device_id, struct dsmi_chip_info_stru *chip_info);
 
@@ -2739,7 +2739,7 @@ DLLEXPORT int dsmi_get_chip_info(int device_id, struct dsmi_chip_info_stru *chip
 * @param [in] sensor_id Specify sensor index
 * @param [out] tsensor_info Returns the value that needs to be obtained
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_soc_sensor_info(int device_id, int sensor_id, TAG_SENSOR_INFO *tsensor_info);
 
@@ -2752,7 +2752,7 @@ DLLEXPORT int dsmi_get_soc_sensor_info(int device_id, int sensor_id, TAG_SENSOR_
 * @param [in] port_id  Specify the network port number, reserved field
 * @param [in] gtw_address  the gateway address info wants to set.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_set_gateway_addr(int device_id, int port_type, int port_id, ip_addr_t gtw_address);
 
@@ -2765,7 +2765,7 @@ DLLEXPORT int dsmi_set_gateway_addr(int device_id, int port_type, int port_id, i
 * @param [in] port_id  Specify the network port number, reserved field
 * @param [in&out] gtw_address  return gateway address info
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_gateway_addr(int device_id, int port_type, int port_id, ip_addr_t *gtw_address);
 
@@ -2786,7 +2786,7 @@ DLLEXPORT int dsmi_get_mini2mcu_heartbeat_status(int device_id, unsigned char *s
 * @brief Queries the frequency, total capacity, used capacity, temperature, and usage of the hbm.
 * @attention NULL
 * @param [in] device_id  The device id
-* @param [out] pdevice_hbm_info return hbm infomation
+* @param [out] pdevice_hbm_info return hbm information
 * @return  0 for success, others for fail
 * @note Support:Ascend910,Ascend910B,Ascend910_93
 */
@@ -2799,7 +2799,7 @@ DLLEXPORT int dsmi_get_hbm_info(int device_id, struct dsmi_hbm_info_stru *pdevic
 * @param [in] device_id  The device id
 * @param [out] pdevice_aicore_info  return aicore information
 * @return  0 for success, others for fail
-* @note Support:Ascend910,Ascend610,as31xm1,Ascend310P,Ascend310,Ascend310B,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend910,Ascend610,as31xm1,Ascend310P,Ascend310,Ascend310B,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_aicore_info(int device_id, struct dsmi_aicore_info_stru *pdevice_aicore_info);
 
@@ -2810,7 +2810,7 @@ DLLEXPORT int dsmi_get_aicore_info(int device_id, struct dsmi_aicore_info_stru *
 * @param [in] device_id The device id
 * @param [out] presult return the result wants to query
 * @return  0 for success, others for fail
-* @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_network_health(int device_id, DSMI_NET_HEALTH_STATUS *presult);
 
@@ -2821,7 +2821,7 @@ DLLEXPORT int dsmi_get_network_health(int device_id, DSMI_NET_HEALTH_STATUS *pre
 * @param [in] device_id The device id
 * @param [out] board_id Board ID. In the AI Server scenario, the value is 0
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_board_id(int device_id, unsigned int *board_id);
 
@@ -2833,7 +2833,7 @@ DLLEXPORT int dsmi_get_board_id(int device_id, unsigned int *board_id);
 * @param [out] perf_para  LLC performance parameter information, including LLC read hit rate,
                          write hit rate and throughput
 * @return  0 for success, others for fail
-* @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_llc_perf_para(int device_id, DSMI_LLC_PERF_INFO *perf_para);
 
@@ -2845,7 +2845,7 @@ DLLEXPORT int dsmi_get_llc_perf_para(int device_id, DSMI_LLC_PERF_INFO *perf_par
 * @param [out] pdevice_aicpu_info  Indicates the number of AICPUs, maximum operating frequency,
 *                                  current operating frequency, and usage.
 * @return  0 for success, others for fail
-* @note Support:Ascend910,Ascend610,as31xm1,Ascend310P,Ascend310B,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend910,Ascend610,as31xm1,Ascend310P,Ascend310B,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_aicpu_info(int device_id, struct dsmi_aicpu_info_stru *pdevice_aicpu_info);
 
@@ -2859,7 +2859,7 @@ DLLEXPORT int dsmi_get_aicpu_info(int device_id, struct dsmi_aicpu_info_stru *pd
 * @param [in] buf_size buf length, the maximum length is 1024 byte
 * @param [out] buf  buf pointer to the content of the configuration item
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_user_config(int device_id, const char *config_name, unsigned int buf_size, unsigned char *buf);
 
@@ -2873,7 +2873,7 @@ DLLEXPORT int dsmi_get_user_config(int device_id, const char *config_name, unsig
 * @param [in] buf_size buf length, the maximum length is 1024 byte
 * @param [in] buf  buf pointer to the content of the configuration item
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_set_user_config(int device_id, const char *config_name, unsigned int buf_size, unsigned char *buf);
 
@@ -2885,7 +2885,7 @@ DLLEXPORT int dsmi_set_user_config(int device_id, const char *config_name, unsig
 * @param [in] config_name Configuration item name, the maximum string length of the
                           configuration item name is 32
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_clear_user_config(int device_id, const char *config_name);
 
@@ -2894,9 +2894,9 @@ DLLEXPORT int dsmi_clear_user_config(int device_id, const char *config_name);
 * @brief Get the DIE ID of the specified device
 * @attention NULL
 * @param [in] device_id  The device id
-* @param [out] pdevice_die  return die id infomation
+* @param [out] pdevice_die  return die id information
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_die(int device_id, struct dsmi_soc_die_stru *pdevice_die);
 
@@ -2908,7 +2908,7 @@ DLLEXPORT int dsmi_get_device_die(int device_id, struct dsmi_soc_die_stru *pdevi
  * @param [in] file_data revocation file data
  * @param [in] file_size file data size for revocation
  * @return  0 for success, others for fail
- * @note Support:Ascend910,Ascend610,Ascend310P,Ascend310B,Ascend910B,Ascend910_93,bs9sx1a,as31xm1,Ascend610Lite,Ascend910_95,Ascend910_55
+ * @note Support:Ascend910,Ascend610,Ascend310P,Ascend310B,Ascend910B,Ascend910_93,bs9sx1a,as31xm1,Ascend610Lite,Ascend950,Ascend910_55
  */
 DLLEXPORT int dsmi_set_sec_revocation(int device_id, DSMI_REVOCATION_TYPE revo_type, const unsigned char *file_data,
     unsigned int file_size);
@@ -2991,9 +2991,9 @@ DLLEXPORT int dsmi_get_gpio_status(int device_id, unsigned int gpio_num, unsigne
  * @ingroup driver
  * @brief: get hiss status info
  * @param [in] device_id device id, not userd  default 0
- * @param [out] hiss_status_data hiss status infomation
+ * @param [out] hiss_status_data hiss status information
  * @return  0 for success, others for fail
- * @note Support:Ascend610,Ascend910B,Ascend910_93,bs9sx1a,as31xm1,Ascend610Lite,Ascend910_95,Ascend910_55
+ * @note Support:Ascend610,Ascend910B,Ascend910_93,bs9sx1a,as31xm1,Ascend610Lite,Ascend950,Ascend910_55
  */
 DLLEXPORT int dsmi_get_hiss_status(int device_id, struct dsmi_hiss_status_stru *hiss_status_data);
 
@@ -3044,7 +3044,7 @@ DLLEXPORT int dsmi_register_fault_event_handler(int device_id, fault_event_handl
  * @param [in] device_id device id
  * @param [out] cgroup info limit_in_bytes/max_usage_in_bytes/usage_in_bytes.
  * @return  0 for success, others for fail
- * @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+ * @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
  */
 DLLEXPORT int dsmi_get_device_cgroup_info(int device_id, struct tag_cgroup_info *cg_info);
 
@@ -3057,7 +3057,7 @@ DLLEXPORT int dsmi_get_device_cgroup_info(int device_id, struct tag_cgroup_info 
  * @param [in] buf input buffer
  * @param [in] buf_size buffer size
  * @return  0 for success, others for fail
- * @note Support:Ascend610,as31xm1,Ascend310P,Ascend310B,Ascend910,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+ * @note Support:Ascend610,as31xm1,Ascend310P,Ascend310B,Ascend910,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
  */
 DLLEXPORT int dsmi_set_device_info(unsigned int device_id, DSMI_MAIN_CMD main_cmd, unsigned int sub_cmd,
     const void *buf, unsigned int buf_size);
@@ -3071,7 +3071,7 @@ DLLEXPORT int dsmi_set_device_info(unsigned int device_id, DSMI_MAIN_CMD main_cm
  * @param [in out] buf input and output buffer
  * @param [in out] size input buffer size and output data size
  * @return  0 for success, others for fail
- * @note Support:Ascend610,as31xm1,Ascend310P,Ascend310B,Ascend910,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+ * @note Support:Ascend610,as31xm1,Ascend310P,Ascend310B,Ascend910,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
  */
 DLLEXPORT int dsmi_get_device_info(unsigned int device_id, DSMI_MAIN_CMD main_cmd, unsigned int sub_cmd,
     void *buf, unsigned int *size);
@@ -3084,7 +3084,7 @@ DLLEXPORT int dsmi_get_device_info(unsigned int device_id, DSMI_MAIN_CMD main_cm
 * @param [in]  ts_id ts id 0 : TS_AICORE, 1 : TS_AIVECTOR
 * @param [in]  group_info ts group info
 * @return  0 for success, others for fail
-* @note Support:Ascend610,bs9sx1a,Ascend310P,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend610,bs9sx1a,Ascend310P,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_create_capability_group(int device_id, int ts_id,
                                  struct dsmi_capability_group_info *group_info);
@@ -3097,7 +3097,7 @@ DLLEXPORT int dsmi_create_capability_group(int device_id, int ts_id,
 * @param [in]  ts_id ts id 0 : TS_AICORE, 1 : TS_AIVECTOR
 * @param [in]  group_id group id
 * @return  0 for success, others for fail
-* @note Support:Ascend610,bs9sx1a,Ascend310P,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend610,bs9sx1a,Ascend310P,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_delete_capability_group(int device_id, int ts_id, int group_id);
 
@@ -3111,7 +3111,7 @@ DLLEXPORT int dsmi_delete_capability_group(int device_id, int ts_id, int group_i
 * @param [in]  group_count group count
 * @param [out]  group_info ts group info
 * @return  0 for success, others for fail
-* @note Support:Ascend610,bs9sx1a,Ascend310P,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend610,bs9sx1a,Ascend310P,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_capability_group_info(int device_id, int ts_id, int group_id,
     struct dsmi_capability_group_info *group_info, int group_count);
@@ -3122,7 +3122,7 @@ DLLEXPORT int dsmi_get_capability_group_info(int device_id, int ts_id, int group
  * @param [in] module_type DDRC or HBM ECC Type
  * @param [out] pdevice_ecc_pages_statistics return ECC statistics
  * @return  0 for success, others for fail
- * @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend310P,Ascend910_95,Ascend910_55
+ * @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend310P,Ascend950,Ascend910_55
  */
 DLLEXPORT int dsmi_get_total_ecc_isolated_pages_info(int device_id, int module_type,
     struct dsmi_ecc_pages_stru *pdevice_ecc_pages_statistics);
@@ -3132,7 +3132,7 @@ DLLEXPORT int dsmi_get_total_ecc_isolated_pages_info(int device_id, int module_t
  * @brief: clear recorded ECC info
  * @param [in] device_id device id
  * @return  0 for success, others for fail
- * @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend310P,Ascend910_95,Ascend910_55
+ * @note Support:Ascend910,Ascend910B,Ascend910_93,Ascend310P,Ascend950,Ascend910_55
  */
 DLLEXPORT int dsmi_clear_ecc_isolated_statistics_info(int device_id);
 
@@ -3145,7 +3145,7 @@ DLLEXPORT int dsmi_clear_ecc_isolated_statistics_info(int device_id);
 * @param [in] vdev_res            specify resource for creating virtual device
 * @param [out] vdev_result        result for creating virtual device
 * @return  0 for success, others for fail
-* @note Support:Ascend910,Ascend310P,Ascend310B,Ascend910B,Ascend910_95,Ascend910_55
+* @note Support:Ascend910,Ascend310P,Ascend310B,Ascend910B,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_create_vdevice(unsigned int devid, unsigned int vdev_id, struct dsmi_create_vdev_res_stru *vdev_res,
     struct dsmi_create_vdev_result *vdev_result);
@@ -3159,7 +3159,7 @@ DLLEXPORT int dsmi_create_vdevice(unsigned int devid, unsigned int vdev_id, stru
 * @return  0 for success, others for fail
 * @attention  if vdevid = 0xffff, destroy all the vdevice created by device(devid)
               otherwise destroy the vdevice[vdevid]
-* @note Support:Ascend910,Ascend310P,Ascend310B,Ascend910B,Ascend910_95,Ascend910_55
+* @note Support:Ascend910,Ascend310P,Ascend310B,Ascend910B,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_destroy_vdevice(unsigned int devid, unsigned int vdevid);
 
@@ -3168,10 +3168,10 @@ DLLEXPORT int dsmi_destroy_vdevice(unsigned int devid, unsigned int vdevid);
 * @brief get resource info
 * @attention used on host side
 * @param [in] devid       device id
-* @param [in] para        intput para needed including type and id
+* @param [in] para        input para needed including type and id
 * @param [out] info       resource info including buffer and buffer len
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend310P,Ascend910,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_resource_info(unsigned int devid, struct dsmi_resource_para *para,
     struct dsmi_resource_info *info);
@@ -3191,7 +3191,7 @@ DLLEXPORT int dsmi_check_partitions(const char *config_xml_path);
 * @attention NULL
 * @param [out] chip_count  The space requested by the user is used to store the number of returned chips
 * @return  0 for success, others for fail
-* @note Support:Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_chip_count(int *chip_count);
 
@@ -3202,7 +3202,7 @@ DLLEXPORT int dsmi_get_chip_count(int *chip_count);
 * @param [out] chip_list Indicates the sequence number list of all AI processors.
 * @param [in] count Number of chips. The value of count is obtained through the dsmi_get_chip_count interface.
 * @return  0 for success, others for fail
-* @note Support:Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_list_chip(int chip_list[], int count);
 
@@ -3213,7 +3213,7 @@ DLLEXPORT int dsmi_list_chip(int chip_list[], int count);
 * @param [in] chip_id  The chip id
 * @param [out] device_count  The space requested by the user is used to store the number of returned chips
 * @return  0 for success, others for fail
-* @note Support:Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_count_from_chip(int chip_id, int *device_count);
 
@@ -3225,7 +3225,7 @@ DLLEXPORT int dsmi_get_device_count_from_chip(int chip_id, int *device_count);
 * @param [out] device_list device list.
 * @param [in] count Number of equipment
 * @return  0 for success, others for fail
-* @note Support:Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_device_from_chip(int chip_id, int device_list[], int count);
 
@@ -3237,7 +3237,7 @@ DLLEXPORT int dsmi_get_device_from_chip(int chip_id, int device_list[], int coun
 * @param [in] filter  Filter options
 * @param [in] handler  handler fault event callback func.
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,BS9SX1A,Ascend310P,Ascend910B,Ascend910_93,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,BS9SX1A,Ascend310P,Ascend910B,Ascend910_93,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_subscribe_fault_event(int device_id, struct dsmi_event_filter filter,
     fault_event_callback handler);
@@ -3251,7 +3251,7 @@ DLLEXPORT int dsmi_subscribe_fault_event(int device_id, struct dsmi_event_filter
 * @param [in] filter  Filter options
 * @param [out] event  Information of fault event
 * @return  0 for success, others for fail
-* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend610,as31xm1,BS9SX1A,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Ascend310,Ascend310B,Ascend910,Ascend310P,Ascend910B,Ascend910_93,Ascend610,as31xm1,BS9SX1A,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_read_fault_event(int device_id, int timeout, struct dsmi_event_filter filter,
     struct dsmi_event *event);
@@ -3265,7 +3265,7 @@ DLLEXPORT int dsmi_read_fault_event(int device_id, int timeout, struct dsmi_even
 * @param [out] event_buf: fault event info, at least max_event_cnt *sizeof(struct dsmi_event) bytes.
 * @param [out] event_cnt: count of fault event
 * @return  0 for success, others for fail
-* @note Support:Ascend610,as31xm1,BS9SX1A,Ascend610Lite,Ascend910_95
+* @note Support:Ascend610,as31xm1,BS9SX1A,Ascend610Lite,Ascend950
 */
 DLLEXPORT int dsmi_get_fault_event(int device_id, int max_event_cnt, struct dsmi_event *event_buf, int *event_cnt);
 
@@ -3353,7 +3353,7 @@ DLLEXPORT int dsmi_get_all_device_node(int device_id, DEV_DTM_CAP capability,
 * @param [in] buf input buffer
 * @param [in] buf_size buffer size
 * @return  0 for success, others for fail
-* @note Support:BS9SX1A,Ascend610Lite,Ascend910_95
+* @note Support:BS9SX1A,Ascend610Lite,Ascend950
 */
 DLLEXPORT int dsmi_set_bist_info(int device_id, DSMI_BIST_CMD cmd, const void *buf, unsigned int buf_size);
 
@@ -3366,7 +3366,7 @@ DLLEXPORT int dsmi_set_bist_info(int device_id, DSMI_BIST_CMD cmd, const void *b
 * @param [out] buf  output buffer
 * @param [in out] size input buffer size and output data size
 * @return  0 for success, others for fail
-* @note Support:BS9SX1A,Ascend610Lite,Ascend910_95
+* @note Support:BS9SX1A,Ascend610Lite,Ascend950
 */
 DLLEXPORT int dsmi_get_bist_info(int device_id, DSMI_BIST_CMD cmd, void *buf, unsigned int *size);
 
@@ -3379,7 +3379,7 @@ DLLEXPORT int dsmi_get_bist_info(int device_id, DSMI_BIST_CMD cmd, void *buf, un
 * @param [in] pack_type  The type of package, 1:abl Hotfix;
 * @param [in] file_name  the path of livepatch;
 * @return  0 for success, others for fail
-* @note Support:Ascend310P,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310P,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_load_package(int device_id, int pack_type, const char *file_name);
 
@@ -3391,7 +3391,7 @@ DLLEXPORT int dsmi_load_package(int device_id, int pack_type, const char *file_n
 * @param [in] device_id  The device id,only support -1;
 * @param [in] pack_type  The type of package, 1:abl Hotfix;
 * @return  0 for success, others for fail
-* @note Support:Ascend310P,Ascend910B,Ascend910_93,Ascend910_95,Ascend910_55
+* @note Support:Ascend310P,Ascend910B,Ascend910_93,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_unload_package(int device_id, int pack_type);
 typedef struct dsmi_fault_inject_info {
@@ -3440,12 +3440,12 @@ struct dsmi_sdid_parse_info {
 
 /**
 * @ingroup driver
-* @brief get the parsed SDID infomation
+* @brief get the parsed SDID information
 * @attention Not supported called in split mode, do not check validity for sdid;
 * @param [in]  sdid SDID
-* @param [out] sdid_parse  Parsed SDID infomation
+* @param [out] sdid_parse  Parsed SDID information
 * @return   0 for success, others for fail
-* @note Support:Ascend910B,Ascend910_93,Ascend910_95
+* @note Support:Ascend910B,Ascend910_93,Ascend950
 */
 DLLEXPORT int dsmi_parse_sdid(unsigned int sdid, struct dsmi_sdid_parse_info *sdid_parse);
 
@@ -3545,7 +3545,7 @@ DLLEXPORT int dsmi_get_detect_info(unsigned int device_id, DSMI_DETECT_MAIN_CMD 
 * @param [in] timeout  Setting of timeout duration, [1S, 120S]
 * @param [in] flag  Reserve para
 * @return  0 for success, others for fail
-* @note Support:,Ascend910_95,Ascend910_55
+* @note Support:,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_device_replace(struct dsmi_device_attr *src_dev_attr, struct dsmi_device_attr *dst_dev_attr,
     unsigned int timeout, unsigned long long flag);
@@ -3556,7 +3556,7 @@ DLLEXPORT int dsmi_device_replace(struct dsmi_device_attr *src_dev_attr, struct 
 * @attention NULL
 * @param [in out] info  platform info
 * @return  0 for success, others for fail
-* @note Support:Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend910_95,Ascend910_55
+* @note Support:Support:Ascend310,Ascend310B,Ascend910,Ascend610,as31xm1,Ascend310P,Ascend910B,Ascend910_93,bs9sx1a,Ascend610Lite,Ascend950,Ascend910_55
 */
 DLLEXPORT int dsmi_get_platform_info(DSMI_PLATFORM_INFO *info);
 
