@@ -84,11 +84,6 @@ void AivMc2Compont::GenerateCommContext(void **commContext)
     uint64_t commCclBufferAddr = static_cast<uint64_t>(comm->GetCclBuffer()->GetAddr());
     AddCclBuffer(combinOpParam, commCclBufferSize, commCclBufferAddr, comm->GetMyRank());
 
-    // win区清空内存
-    vector<char> clearVec(commCclBufferSize);
-    HrtMemcpy(reinterpret_cast<void *>(commCclBufferAddr), commCclBufferSize, clearVec.data(),
-             commCclBufferSize, RT_MEMCPY_HOST_TO_DEVICE);
-
     // 获取ubmemoryTranMgr，遍历所有ubmemoryTran，拿到CclBuffer，一分为2，放到windowsIn、windowsOut
     auto rankId2RmtIpcRmaBufList = comm->GetUbMemoryTransportMgr()->GetRmtRankId2RmtIpcRmaBufList();
     for (auto& rankId2RmtIpcRmaBuf : rankId2RmtIpcRmaBufList) {
