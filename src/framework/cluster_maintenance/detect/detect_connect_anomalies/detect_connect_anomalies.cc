@@ -188,7 +188,7 @@ HcclResult DetectConnectionAnomalies::GetIpQueue()
         }
         ipNictypeQueue_.pop();
     }
-    HCCL_INFO("[GetIpQueue] compeleted[%d]", ipNictypeQueue_.size());
+    HCCL_INFO("[GetIpQueue] completed[%d]", ipNictypeQueue_.size());
     lock.unlock();
     return HCCL_SUCCESS;
 }
@@ -215,7 +215,7 @@ HcclResult DetectConnectionAnomalies::CreateDetectVnicLinks(struct ErrInfo  errI
     CHK_RET(AddWhiteList(vnicSocket_, NicType::VNIC_TYPE, tag));; // 添加白名单
     HCCL_INFO("[CreateDetectVnicLinks]AddWhiteList finished");
 
-    u32 acceptTimeOut = 1; // accecpt 超时1s
+    u32 acceptTimeOut = 1; // accept 超时1s
     std::shared_ptr<HcclSocket> acceptSuccessSocket;
     auto detectTimeOut = std::chrono::seconds(GetExternalInputDfsConnectionFaultDetectionTime());
     startTime = std::chrono::steady_clock::now();
@@ -252,7 +252,7 @@ HcclResult DetectConnectionAnomalies::CreateDetectVnicLinks(struct ErrInfo  errI
     if (errInfo.deviceLogicId != HOST_DEVICE_ID) {
         hrtResetDevice(errInfo.deviceLogicId);
     }
-    HCCL_INFO("[CreateDetectVnicLinks] compeleted");
+    HCCL_INFO("[CreateDetectVnicLinks] completed");
     return HCCL_SUCCESS;
 }
 
@@ -314,7 +314,7 @@ HcclResult DetectConnectionAnomalies::CreateDetectNicLinks(struct ErrInfo errInf
     if (errInfo.deviceLogicId != HOST_DEVICE_ID) {
         hrtResetDevice(errInfo.deviceLogicId);
     }
-    HCCL_INFO("[CreateDetectNicLinks] compeleted");
+    HCCL_INFO("[CreateDetectNicLinks] completed");
     return HCCL_SUCCESS;
 }
 
@@ -538,7 +538,7 @@ HcclResult DetectConnectionAnomalies::CreateClient(struct ErrInfo errInfo)
     if (errInfo.deviceLogicId != HOST_DEVICE_ID) {
         hrtResetDevice(errInfo.deviceLogicId);
     }
-    HCCL_INFO("[CreateClient]compeleted");
+    HCCL_INFO("[CreateClient]completed");
     return HCCL_SUCCESS;
 }
 

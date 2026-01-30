@@ -20,14 +20,6 @@ namespace hccl {
 
 constexpr u32 RDMA_NOTIFY_MIN_NUM = 3;
 
-ChannelManager::ChannelManager()
-{    
-}
-
-ChannelManager::~ChannelManager()
-{
-}
-
 HcclResult ChannelManager::Init(aclrtBinHandle binHandle, u32 userRank, const ManagerCallbacks& callbacks)
 {
     binHandle_ = binHandle;
@@ -49,22 +41,29 @@ HcclResult ChannelManager::CheckChannelParam(CommEngine engine,
     std::unordered_set<HcclChannelDesc, std::hash<HcclChannelDesc>, HcclChannelDescEqual> descSet;
 
     for (uint32_t descIdx = 0; descIdx < descNum; ++descIdx) {
+        // 检查memHandleNum是否大于0
+        if (channelDesc[descIdx].memHandleNum != 0) {
+            HCCL_WARNING("[%s]Channeldesc[%u] memHandleNum[%u] is non-zero, memHandle exchange is not supported.", 
+                __func__, descIdx, channelDesc[descIdx].memHandleNum);
+        }
         // 检查HcclChannelDesc是否有重复元素
         CHK_PRT_RET(descSet.find(channelDesc[descIdx]) != descSet.end(),
-            HCCL_ERROR("[%s]Duplicate item found in HcclChannelDesc.", __func__), HCCL_E_PARA);
+            HCCL_ERROR("[%s]Duplicate item found in hcclchanneldesc.", __func__), HCCL_E_PARA);
         descSet.insert(channelDesc[descIdx]);
         // 检查RemoteRank有效性
         CHK_PRT_RET(channelDesc[descIdx].remoteRank == userRank_,
-            HCCL_ERROR("[%s]Local Rank found in HcclChannelDesc.", __func__), HCCL_E_PARA);
+            HCCL_ERROR("[%s]Local rank found in channeldesc, userRank_ = %u.", __func__, userRank_), 
+            HCCL_E_PARA);
         // 检查是否有不支持协议
         CHK_PRT_RET(channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_HCCS &&
             channelDesc[descIdx].channelProtocol != COMM_PROTOCOL_ROCE,
-            HCCL_ERROR("[%s]Unsupported channelProtocol found in HcclChannelDesc.", __func__), HCCL_E_PARA);
+            HCCL_ERROR("[%s]Unsupported protocol[%d] found in channeldesc, protocol: %d.", __func__,
+                    channelDesc[descIdx].channelProtocol), HCCL_E_PARA);
         
         // 检查engine支持情况
         if (engine != COMM_ENGINE_CPU && engine != COMM_ENGINE_CPU_TS && 
             engine != COMM_ENGINE_AICPU && engine != COMM_ENGINE_AICPU_TS) {
-            HCCL_ERROR("[%s]Unsupported engine for Channel.", __func__);
+            HCCL_ERROR("[%s]Unsupported engine for channel, engine: %d.", __func__, engine);
             return HCCL_E_PARA;
         }
     }
@@ -384,8 +383,8 @@ HcclResult ChannelManager::BuildOpRemoteChannelRoceResParam(const LINK &link, Hc
     if ((signalInfos.size() != notifyAddrKey.size()) || (signalInfos.size() < RDMA_NOTIFY_MIN_NUM) ||
         (signalInfos.size() > RDMA_NOTIFY_MAX_NUM) || (notifyAddrKey.size() < RDMA_NOTIFY_MIN_NUM) ||
         (notifyAddrKey.size() > RDMA_NOTIFY_MAX_NUM) ||
-        (((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) != 0) ||
-        (((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection)) != 0) {
+        ((signalInfos.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection) ||
+        ((notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) % linkRoce.qpsPerConnection)) {
         return HCCL_E_INTERNAL;
     }
     u64 notifyNum = (notifyAddrKey.size() - RDMA_NOTIFY_MIN_NUM) / linkRoce.qpsPerConnection - static_cast<u32>(linkRoce.qpsPerConnection > 1);
@@ -418,7 +417,10 @@ HcclResult ChannelManager::DeepCopyH2DchannelParam(const HcclIndOpChannelRemoteR
     if (hostChannelParam.remoteResV2 != nullptr && hostChannelParam.listNum > 0) {
         // 为设备端的remoteResV2数组分配内存（注意：这个数组存放的是HcclIndOpChannelRemoteResV2结构体）
         size_t remoteResV2ArraySize = sizeof(HcclIndOpChannelRemoteResV2) * hostChannelParam.listNum;
-        auto deviceRemoteResV2Array = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteResV2ArraySize));
+        std::shared_ptr<DeviceMem> deviceRemoteResV2Array;
+        EXECEPTION_CATCH(
+            (deviceRemoteResV2Array = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteResV2ArraySize))),
+            return HCCL_E_PTR);
 
         // 为每个数组元素进行深度拷贝，并保存设备内存和主机结构体（指针已调整）
         std::vector<DeviceMem> elementMemories; // 保存每个元素分配的设备内存（包括内部指针数据）
@@ -475,9 +477,10 @@ HcclResult ChannelManager::DeepCopyH2DChannelRoce(const HcclChannelRoce &hostCha
     // 处理remoteUserHostMem
     if (hostChannelRoce.remoteUserHostMem != nullptr && hostChannelRoce.remoteUserHostMemCount > 0) {
         size_t remoteUserHostMemSize = hostChannelRoce.remoteUserHostMemCount * sizeof(MemDetails);
-        auto deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserHostMemSize));
-        
-        CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserHostMemSize, hostChannelRoce.remoteUserHostMem, 
+        std::shared_ptr<DeviceMem> deviceMem;
+        EXECEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserHostMemSize))),
+                         return HCCL_E_PTR);
+        CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserHostMemSize, hostChannelRoce.remoteUserHostMem,
             remoteUserHostMemSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         deviceChannelRoce.remoteUserHostMem = reinterpret_cast<MemDetails*>(deviceMem.get()->ptr());
         channelParamMemVector_.push_back(std::move(deviceMem));
@@ -487,9 +490,10 @@ HcclResult ChannelManager::DeepCopyH2DChannelRoce(const HcclChannelRoce &hostCha
     // 处理remoteUserDeviceMem
     if (hostChannelRoce.remoteUserDeviceMem != nullptr && hostChannelRoce.remoteUserDeviceMemCount > 0) {
         size_t remoteUserDeviceMemSize = hostChannelRoce.remoteUserDeviceMemCount * sizeof(MemDetails);
-        auto deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserDeviceMemSize));
-        
-        CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserDeviceMemSize, hostChannelRoce.remoteUserDeviceMem, 
+        std::shared_ptr<DeviceMem> deviceMem;
+        EXECEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserDeviceMemSize))),
+                         return HCCL_E_PTR);
+        CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserDeviceMemSize, hostChannelRoce.remoteUserDeviceMem,
             remoteUserDeviceMemSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         deviceChannelRoce.remoteUserDeviceMem = reinterpret_cast<MemDetails*>(deviceMem.get()->ptr());
         channelParamMemVector_.push_back(std::move(deviceMem));
@@ -508,9 +512,10 @@ HcclResult ChannelManager::DeepCopyH2DChannelP2p(const HcclChannelP2p &hostChann
     // 处理remoteUserMem
     if (hostChannelP2p.remoteUserMem != nullptr && hostChannelP2p.remoteUserMemCount > 0) {
         size_t remoteUserMemSize = hostChannelP2p.remoteUserMemCount * sizeof(HcclMem);
-        auto deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserMemSize));
-
-        CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserMemSize, hostChannelP2p.remoteUserMem, 
+        std::shared_ptr<DeviceMem> deviceMem;
+        EXECEPTION_CATCH((deviceMem = std::make_shared<DeviceMem>(DeviceMem::alloc(remoteUserMemSize))),
+                         return HCCL_E_PTR);
+        CHK_RET(hrtMemSyncCopy(deviceMem.get()->ptr(), remoteUserMemSize, hostChannelP2p.remoteUserMem,
             remoteUserMemSize, HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_HOST_TO_DEVICE));
         deviceChannelP2p.remoteUserMem = reinterpret_cast<HcclMem*>(deviceMem.get()->ptr());
         channelParamMemVector_.push_back(std::move(deviceMem));

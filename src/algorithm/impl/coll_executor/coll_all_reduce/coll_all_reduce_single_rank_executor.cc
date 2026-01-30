@@ -35,7 +35,7 @@ HcclResult CollAllReduceSingleRankExecutor::KernelRun(const OpParam &param, Exec
         auto opMeta = HcclOpMetaInfo::GetOneForAllReduce(originalAlgTypeLevel1, param.DataDes.dataType, reduceType,
             totalSize <= HCCL_SMALL_COUNT_128_KB, 1, hugeData, CopyPattern::BCOPY); // 通过CopyPattern字段区分不同子图
         CHK_RET(InitTask(dispatcher_, const_cast<Stream&>(param.stream), opMeta.isEnableCache, opMeta.GetCacheKey()));
-        // ranksize = 1; intput、output地址不同，input->output
+        // ranksize = 1; input、output地址不同，input->output
         DeviceMem srcMem(execMem.inputPtr, totalSize);
         DeviceMem dstMem(execMem.outputPtr, totalSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, dstMem, srcMem, const_cast<Stream&>(param.stream)));

@@ -35,6 +35,8 @@
 #include "error_codes/rt_error_codes.h"
 #include "mmpa_api.h"
 #include "op_base.h"
+#include "hccl_group.h"
+#include "op_base_v2.h"
 
 using namespace std;
 using namespace hccl;
@@ -70,6 +72,21 @@ HcclResult GetCaptureInfo(aclrtStream stream, aclmdlRICaptureStatus &captureStat
 HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType,
                          HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLREDUCE;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendCount = count;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.op = op;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAllReduce] Finish taskAppend, count [%d] dataType [%s]", count, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
     HcclUs startut = TIME_NOW();
 
     bool isCapture;
@@ -94,6 +111,7 @@ HcclResult HcclAllReduceInner(void *sendBuf, void *recvBuf, uint64_t count, Hccl
                   std::vector<std::string>({"HcclAllReduceInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
 
+    HCCLV2_FUNC_RUN(HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream));
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -176,7 +194,9 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     s32 threadID = SalGetTid();
     ProfilingManagerPub::SetThreadCaptureStatus(threadID, isCapture);
     uint64_t beginTime = hrtMsprofSysCycleTime();
-    
+
+    HCCLV2_FUNC_RUN(HcclBarrierV2(comm, stream));
+
     // Allreduce入参定义
     HcclDataType dataType = HCCL_DATA_TYPE_FP32;
     HcclReduceOp op = HCCL_REDUCE_SUM;
@@ -185,20 +205,23 @@ HcclResult HcclBarrier(HcclComm comm, aclrtStream stream)
     // 同通信域同算子复用tag
     const string tag = "AllReduce_" + hcclComm->GetIdentifier();
 
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
-
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(hrtGetDeviceRefresh(&deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-                             "tag[%s], sendBuf[%p], recvBuf[%p], count[%d], dataType[%s], op[%s], streamId[%d],"
+                             "tag[%s], sendBuf[%p], recvBuf[%p], count[%d], dataType[%s], op[%s], localRank[%u], streamId[%d],"
                              "deviceLogicId[%d]",
                              tag.c_str(), hcclComm->barrierSendBuf, hcclComm->barrierRecvBuf, HCCL_BARRIER_DEFAULT_COUNT,
-                             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), streamId, deviceLogicId);
+                             GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclBarrier:" + std::string(stackLogBuffer) +

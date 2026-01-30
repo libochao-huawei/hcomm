@@ -142,7 +142,7 @@ int RaHdcSocketBatchAbort(unsigned int phyId, struct SocketConnectInfoT conn[], 
 
     socketConnectData = (union OpSocketConnectData *)calloc(sizeof(union OpSocketConnectData), sizeof(char));
     CHK_PRT_RETURN(socketConnectData == NULL, hccp_err("[batch_abort][ra_hdc_socket]calloc socket_connect_data "
-        "failed. phy_id(%u).", phyId), -ENOMEM);
+        "failed. phyId(%u).", phyId), -ENOMEM);
 
     socketConnectData->txData.num = num;
     ret = RaGetSocketConnectInfo(conn, num, socketConnectData->txData.conn, MAX_SOCKET_NUM);
@@ -182,7 +182,7 @@ int RaHdcSocketListenStop(unsigned int phyId, struct SocketListenInfoT conn[], u
 
     ret = RaHdcProcessMsg(RA_RS_SOCKET_LISTEN_STOP, phyId, (char *)&socketListenData,
         sizeof(union OpSocketListenData));
-    CHK_PRT_RETURN(ret, hccp_err("[listen_stop][ra_hdc_socket]ra hdc message process failed ret(%d) phy_id(%u).",
+    CHK_PRT_RETURN(ret, hccp_err("[listen_stop][ra_hdc_socket]ra hdc message process failed ret(%d) phyId(%u).",
         ret, phyId), ret);
 
     return 0;
@@ -320,7 +320,7 @@ int RaHdcSocketRecv(unsigned int phyId, const void *handle, void *data, unsigned
     }
 
     recvDataHead = (union OpSocketRecvData *)calloc(size + sizeof(union OpSocketRecvData), sizeof(char));
-    CHK_PRT_RETURN(recvDataHead == NULL, hccp_err("[recv][ra_hdc_socket]calloc failed. phy_id(%u)", phyId), -ENOMEM);
+    CHK_PRT_RETURN(recvDataHead == NULL, hccp_err("[recv][ra_hdc_socket]calloc failed. phyId(%u)", phyId), -ENOMEM);
     recvDataHead->txData.fd = (unsigned int)((const struct SocketHdcInfo *)handle)->fd;
     recvDataHead->txData.recvSize = size;
 
@@ -389,20 +389,20 @@ int RaHdcGetSockets(unsigned int phyId, unsigned int role, struct SocketInfoT co
 
     socketInfoData = (union OpSocketInfoData *)calloc(sizeof(union OpSocketInfoData), sizeof(char));
     CHK_PRT_RETURN(socketInfoData == NULL, hccp_err("[get][ra_hdc_sockets]socket info data"
-        "calloc failed phy_id(%u)", phyId), -ENOMEM);
+        "calloc failed phyId(%u)", phyId), -ENOMEM);
     socketInfoData->txData.num = num;
     socketInfoData->txData.role = role;
 
     ret = RaAssembleSockets(socketInfoData, conn, num, sockFd, sizeof(sockFd) / sizeof(sockFd[0]));
     if (ret) {
-        hccp_err("[get][ra_hdc_sockets]assemble sockets error ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[get][ra_hdc_sockets]assemble sockets error ret(%d) phyId(%u)", ret, phyId);
         goto out;
     }
 
     ret = RaHdcProcessMsg(RA_RS_GET_SOCKET, phyId, (char *)socketInfoData,
         sizeof(union OpSocketInfoData));
     if (ret) {
-        hccp_err("[get][ra_hdc_sockets]ra hdc message process failed ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[get][ra_hdc_sockets]ra hdc message process failed ret(%d) phyId(%u)", ret, phyId);
         ret = -EINVAL; /* !=0 is error situation return negative value, function normal return >=0 */
         goto err;
     }
@@ -531,31 +531,31 @@ int RaHdcSocketInit(struct rdev rdevInfo)
     int ret;
 
     ret = memset_s(&socketInitData, sizeof(socketInitData), 0, sizeof(socketInitData));
-    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]memset_s failed ret(%d) phy_id(%u)", ret,
+    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]memset_s failed ret(%d) phyId(%u)", ret,
         rdevInfo.phyId), -ESAFEFUNC);
 
     // check opcode version, init g_vnics with invalid ip mask 0xFFFFFFFF
     ret = RaHdcGetInterfaceVersion(rdevInfo.phyId, RA_RS_GET_VNIC_IP_INFOS_V1, &interfaceVersion);
     if (ret == 0 && interfaceVersion >= RA_RS_GET_VNIC_IP_INFOS_VERSION) {
         ret = memset_s(vnicIp, sizeof(vnicIp), 0xFFFFFFFF, sizeof(vnicIp));
-        CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]memset_s failed ret(%d) phy_id(%u)", ret,
+        CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]memset_s failed ret(%d) phyId(%u)", ret,
             rdevInfo.phyId), -ESAFEFUNC);
     } else {
-        // origin procedure: init g_vnics with vnic_ip get by phy_id
+        // origin procedure: init g_vnics with vnic_ip get by phyId
         ret = RaHdcGetAllVnic(rdevInfo.phyId, vnicIp, RA_MAX_VNIC_NUM);
-        CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]ra_hdc_get_all_vnic failed ret(%d) phy_id(%u)", ret,
+        CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]ra_hdc_get_all_vnic failed ret(%d) phyId(%u)", ret,
             rdevInfo.phyId), ret);
     }
 
     ret = memcpy_s(&(socketInitData.txData.vnicIp), sizeof(socketInitData.txData.vnicIp),
         &vnicIp, sizeof(vnicIp));
-    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]memcpy_s for vnic_ip failed ret(%d) phy_id(%u)", ret,
+    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]memcpy_s for vnic_ip failed ret(%d) phyId(%u)", ret,
         rdevInfo.phyId), -ESAFEFUNC);
 
     socketInitData.txData.num = RA_MAX_VNIC_NUM;
     ret = RaHdcProcessMsg(RA_RS_SOCKET_INIT, rdevInfo.phyId, (char *)&socketInitData,
         sizeof(union OpSocketInitData));
-    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]ra hdc message process failed ret(%d) phy_id(%u)", ret,
+    CHK_PRT_RETURN(ret, hccp_err("[init][ra_hdc_socket]ra hdc message process failed ret(%d) phyId(%u)", ret,
         rdevInfo.phyId), ret);
 
     return 0;
@@ -567,16 +567,16 @@ int RaHdcSocketDeinit(struct rdev rdevInfo)
     union OpSocketDeinitData socketDeinitData;
 
     ret = memset_s(&socketDeinitData, sizeof(socketDeinitData), 0, sizeof(socketDeinitData));
-    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_socket]memset_s failed ret(%d) phy_id(%u)", ret,
+    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_socket]memset_s failed ret(%d) phyId(%u)", ret,
         rdevInfo.phyId), -ESAFEFUNC);
 
     ret = memcpy_s(&(socketDeinitData.txData.rdevInfo), sizeof(struct rdev), &rdevInfo, sizeof(struct rdev));
-    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_socket]memcpy_s failed ret(%d) phy_id(%u)", ret,
+    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_socket]memcpy_s failed ret(%d) phyId(%u)", ret,
         rdevInfo.phyId), -ESAFEFUNC);
 
     ret = RaHdcProcessMsg(RA_RS_SOCKET_DEINIT, rdevInfo.phyId, (char *)&socketDeinitData,
         sizeof(union OpSocketDeinitData));
-    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_socket]ra hdc message process failed ret(%d) phy_id(%u)", ret,
+    CHK_PRT_RETURN(ret, hccp_err("[deinit][ra_hdc_socket]ra hdc message process failed ret(%d) phyId(%u)", ret,
         rdevInfo.phyId), ret);
 
     return 0;
@@ -590,7 +590,7 @@ int RaHdcGetIfnum(unsigned int phyId, bool isAll, unsigned int *num)
     ifnumData.txData.num = isAll ? RA_RS_GET_ALL_IP_BIT_MASK : 0;
     ifnumData.txData.phyId = phyId;
     ret = RaHdcProcessMsg(RA_RS_GET_IFNUM, phyId, (char *)&ifnumData, sizeof(union OpIfnumData));
-    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_ifnum]ra hdc message process failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_ifnum]ra hdc message process failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
     *num = ifnumData.rxData.num;
@@ -611,7 +611,7 @@ int RaHdcGetIfaddrs(unsigned int phyId, struct IfaddrInfo ifaddrInfos[], unsigne
 
     ifaddrData.txData.phyId = phyId;
     ret = RaHdcProcessMsg(RA_RS_GET_IFADDRS, phyId, (char *)&ifaddrData, sizeof(union OpIfaddrData));
-    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_ifaddrs]ra hdc message process failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_ifaddrs]ra hdc message process failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
     ret = memcpy_s(ifaddrInfos, sizeof(struct IfaddrInfo) * (*num), ifaddrData.rxData.ifaddrInfos,
@@ -636,7 +636,7 @@ int RaHdcGetIfaddrsV2(unsigned int phyId, bool isAll, struct InterfaceInfo inter
 
     ifaddrData.txData.phyId = phyId;
     ret = RaHdcProcessMsg(RA_RS_GET_IFADDRS_V2, phyId, (char *)&ifaddrData, sizeof(union OpIfaddrDataV2));
-    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_ifaddrs_v2]ra hdc message process failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[get][ra_hdc_ifaddrs_v2]ra hdc message process failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
     ret = memcpy_s(interfaceInfos, sizeof(struct InterfaceInfo) * (*num), ifaddrData.rxData.interfaceInfos,
@@ -654,7 +654,7 @@ static int RaHdcSocketWhiteListOpV1(unsigned int opcode, struct rdev rdevInfo,
     union OpWlistData *wlistData = NULL;
     int ret;
     wlistData = (union OpWlistData *)calloc(sizeof(union OpWlistData), sizeof(char));
-    CHK_PRT_RETURN(wlistData == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data failed! phy_id(%u)",
+    CHK_PRT_RETURN(wlistData == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data failed! phyId(%u)",
         rdevInfo.phyId), -ENOMEM);
     wlistData->txData.num = num;
     ret = memcpy_s(&(wlistData->txData.rdevInfo), sizeof(struct rdev), &(rdevInfo), sizeof(struct rdev));
@@ -675,7 +675,7 @@ static int RaHdcSocketWhiteListOpV1(unsigned int opcode, struct rdev rdevInfo,
 
     ret = RaHdcProcessMsg(opcode, rdevInfo.phyId, (char *)wlistData, sizeof(union OpWlistData));
     if (ret) {
-        hccp_err("[op][ra_hdc_socket_white_list]ra hdc process msg failed ret(%d) phy_id(%u)", ret, rdevInfo.phyId);
+        hccp_err("[op][ra_hdc_socket_white_list]ra hdc process msg failed ret(%d) phyId(%u)", ret, rdevInfo.phyId);
         goto out;
     }
 
@@ -692,7 +692,7 @@ static int RaHdcSocketWhiteListOpV2(unsigned int opcode, struct rdev rdevInfo,
     union OpWlistDataV2 *wlistData = NULL;
 
     wlistData = (union OpWlistDataV2 *)calloc(sizeof(union OpWlistDataV2), sizeof(char));
-    CHK_PRT_RETURN(wlistData == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data failed! phy_id(%u)",
+    CHK_PRT_RETURN(wlistData == NULL, hccp_err("[op][ra_hdc_socket_white_list]calloc wlist data failed! phyId(%u)",
         rdevInfo.phyId), -ENOMEM);
     wlistData->txData.num = num;
     ret = memcpy_s(&(wlistData->txData.rdevInfo), sizeof(struct rdev), &(rdevInfo), sizeof(struct rdev));
@@ -713,7 +713,7 @@ static int RaHdcSocketWhiteListOpV2(unsigned int opcode, struct rdev rdevInfo,
 
     ret = RaHdcProcessMsg(opcode, rdevInfo.phyId, (char *)wlistData, sizeof(union OpWlistDataV2));
     if (ret) {
-        hccp_err("[op][ra_hdc_socket_white_list]ra hdc process msg failed ret(%d) phy_id(%u)", ret, rdevInfo.phyId);
+        hccp_err("[op][ra_hdc_socket_white_list]ra hdc process msg failed ret(%d) phyId(%u)", ret, rdevInfo.phyId);
         goto out;
     }
 

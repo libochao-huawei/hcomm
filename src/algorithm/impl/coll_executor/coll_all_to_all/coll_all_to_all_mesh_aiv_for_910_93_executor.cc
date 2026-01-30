@@ -64,24 +64,25 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::CalcLevel0CommInfo(TransportMemT
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAlltoAllMeshAivFor91093Executor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollAlltoAllMeshAivFor91093Executor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
     // A3超节点内多机场景，block_num需要为偶数
-    blockDim = (rankSize < MAX_BLOCK_DIM ? rankSize + rankSize % BLOCK_DIM_FACTOR_TWO : MAX_BLOCK_DIM);
-    u32 bestBlockDim = blockDim;
-    u32 minBlockDim = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, BLOCK_DIM_FACTOR_TWO);
+    numBlocks = (rankSize < MAX_NUM_BLOCKS ? rankSize + rankSize % NUM_BLOCKS_FACTOR_TWO : MAX_NUM_BLOCKS);
+    u32 bestNumBlocks = numBlocks;
+    u32 minNumBlocks = std::max((rankSize + MAX_TARGET_NUM - 1) / MAX_TARGET_NUM, NUM_BLOCKS_FACTOR_TWO);
 
-    if (blockDim_ < blockDim) {
-        blockDim = blockDim_ / BLOCK_DIM_FACTOR_TWO * BLOCK_DIM_FACTOR_TWO;
+    if (numBlocks_ < numBlocks) {
+        numBlocks = numBlocks_ / NUM_BLOCKS_FACTOR_TWO * NUM_BLOCKS_FACTOR_TWO;
+        minNumBlocks = (minNumBlocks + NUM_BLOCKS_FACTOR_TWO - 1) / NUM_BLOCKS_FACTOR_TWO * NUM_BLOCKS_FACTOR_TWO;
     }
 
-    CHK_PRT_RET(blockDim < minBlockDim,
-        HCCL_WARNING("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
-        blockDim_, minBlockDim),
+    CHK_PRT_RET(numBlocks < minNumBlocks,
+        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, minNumBlocks),
         HCCL_E_PARA);
 
-    HCCL_INFO("[CollAlltoAllMeshAivFor91093Executor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollAlltoAllMeshAivFor91093Executor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -120,7 +121,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::GetAivExecParam(const OpParam& p
     HCCL_INFO("SPK [CollAlltoAllMeshAivFor91093Executor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AlltoAll executor getalgexecparam success, take time [%lld]us.",
@@ -153,7 +154,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::Orchestrate(OpParam& param, AlgR
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[CollAlltoAllMeshAivFor91093Executor][Orchestrate]errNo[0x%016llx] tag[%s] "
-            "excutor kernel run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
+            "executor kernel run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], AlltoAll executor orchestrate success, take time [%lld]us",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
@@ -182,14 +183,14 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::KernelRun(const OpParam &param, 
     buffersOut[BUFFER_IDX_ONE] = algResResp_->aivCommInfoMem.ptr(); // 通信域信息
 
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, topoAttr_.serverNum, topoAttr_.deviceType };
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     topoArgs.identify = algoAttr_.identifier;
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();

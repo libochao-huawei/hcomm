@@ -113,7 +113,7 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
     HCCL_RUN_INFO("[Load] comm config info of [%s]: configSize[%llu], version[%u], opExpansionMode[%u]", commName_.c_str(),
         configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
-        ", execTimeOut[%u], bufferName[%s]",
+        ", execTimeOut[%u]s, bufferName[%s]",
         commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str());
     return HCCL_SUCCESS;
 }
@@ -370,7 +370,7 @@ HcclResult CommConfig::SetConfigExecTimeout(const CommConfigHandle &config)
         if (deviceType == DevType::DEV_TYPE_910_93 || deviceType == DevType::DEV_TYPE_910B) {
             // 910B和910_93算子超时时间范围0s-2147483647s,其中0代表永不超时
             if ((execTimeOut < 0) || (execTimeOut > HCCL_EXEC_TIME_OUT_S_910_93)) {
-                HCCL_WARNING("[SetConfigByVersion][SetConfigExecTimeout] The configuration of ComConfigHcclExecTimeOut[%d] is invalid, "\
+                HCCL_WARNING("[SetConfigByVersion][SetConfigExecTimeout] The configuration of ComConfigHcclExecTimeOut[%d]s is invalid, "\
                 "which should be a number greater than or equal to 0s and less "\
                 "than or equal to 2147483647s", execTimeOut);
                 return HCCL_SUCCESS;
@@ -378,7 +378,7 @@ HcclResult CommConfig::SetConfigExecTimeout(const CommConfigHandle &config)
         } else {
             // 非910B和910_93算子超时时间范围1s-17340s
             if ((execTimeOut <= 0) || (execTimeOut > HCCL_EXEC_TIME_OUT_S)) {
-                HCCL_WARNING("[SetConfigByVersion] The configuration of ComConfigHcclExecTimeOut[%d] is invalid, "\
+                HCCL_WARNING("[SetConfigByVersion] The configuration of ComConfigHcclExecTimeOut[%d]s is invalid, "\
                 "which should be a number greater than 0s and less "\
                 "than or equal to 17340s", execTimeOut);
                 return HCCL_SUCCESS;
@@ -445,7 +445,7 @@ HcclResult CommConfig::SetConfigHcclRetryEnable(const CommConfigHandle &config)
     retryConfig.erase(std::remove(retryConfig.begin(), retryConfig.end(), ' '), retryConfig.end());
     if (retryConfig.empty()) {
         HCCL_WARNING("[%s] Hccl retry config is empty. The retryEnable of all levels is" \
-            "set by environment viable.", __func__);
+            "set by environment variable.", __func__);
         return HCCL_SUCCESS;
     }
     std::vector<std::string> retryEnables;

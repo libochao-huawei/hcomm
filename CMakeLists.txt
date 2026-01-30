@@ -85,7 +85,6 @@ if(ENABLE_TEST)
     include(cmake/config.cmake)
     include(cmake/function.cmake)
     include(cmake/intf_pub_gccnative.cmake)
-    include(cmake/utils.cmake)
     add_subdirectory(test)
     return()
 endif()
@@ -107,6 +106,8 @@ if(BUILD_OPEN_PROJECT)
         include/hccl/hccl_rank_graph.h
         include/hccl/hccl_res.h
         include/hccl/hcomm_primitives.h
+        include/hcomm_res.h
+        include/hcomm_res_defs.h
     )
 
     set(HCCL_JSON

@@ -16,7 +16,6 @@
 #include <string>
 #include <mutex>
 #include "hccl_api_data.h"
-#include "hccl_thread.h"
 
 class LaunchContext {
 public:

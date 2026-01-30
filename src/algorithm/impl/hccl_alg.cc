@@ -280,6 +280,7 @@ HcclResult HcclAlg::InitTopoInfo(HcclTopoInfo& topoInfo, HcclTopoAttr &topoAttr)
     topoInfo.meshAggregationRankSize = topoAttr.meshAggregationRankSize;
     topoInfo.multiModuleDiffDeviceNumMode = topoAttr.multiModuleDiffDeviceNumMode;
     topoInfo.multiSuperPodDiffServerNumMode = topoAttr.multiSuperPodDiffServerNumMode;
+    topoInfo.multiSuperPodDiffDeviceNumMode = topoAttr.multiSuperPodDiffDeviceNumMode;
     topoInfo.isDiffDeviceType = topoAttr.isDiffDeviceType;
     topoInfo.gcdDeviceNumPerAggregation = topoAttr.gcdDeviceNumPerAggregation;
     topoInfo.pairLinkCounter = topoAttr.pairLinkCounter;
@@ -287,6 +288,7 @@ HcclResult HcclAlg::InitTopoInfo(HcclTopoInfo& topoInfo, HcclTopoAttr &topoAttr)
     topoInfo.realUserRank = topoAttr.realUserRank;
     topoInfo.moduleNum = topoAttr.moduleNum;
     topoInfo.useSuperPodMode = topoAttr.useSuperPodMode;
+    topoInfo.isARSDoubleRing = topoAttr.isARSDoubleRing;
 
     topoInfoEx_->GetCommPlaneSubGroupVector(topoInfo.CommPlaneSubGroupVector);
     topoInfoEx_->GetAHCAlgOption(topoInfo.ahcAlgOption);

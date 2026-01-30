@@ -132,6 +132,7 @@ void hcclImpl::SetTopoAttr(HcclTopoAttr &topoAttr)
     deviceNumPerAggregation_ = topoAttr.deviceNumPerAggregation;
     multiModuleDiffDeviceNumMode_ = topoAttr.multiModuleDiffDeviceNumMode;
     multiSuperPodDiffServerNumMode_ = topoAttr.multiSuperPodDiffServerNumMode;
+    multiSuperPodDiffDeviceNumMode_ = topoAttr.multiSuperPodDiffDeviceNumMode;
 
     meshAggregationRankSize_ = topoAttr.meshAggregationRankSize;
     isDiffDeviceModule_ = topoAttr.isDiffDeviceModule;
@@ -542,7 +543,7 @@ HcclResult hcclImpl::CreateCommByAlg(const std::string &tag, const AlgType algTy
     }
     CommParaInfo commInfoLevel0(COMM_LEVEL0, commTypeInLevel0, root, INVALID_VALUE_RANKID,
         isAicpuModeEn, meshSinglePlane);
-    // defalut、whole_nhr和whole_nb算法不创建外层拓扑
+    // default、whole_nhr和whole_nb算法不创建外层拓扑
     if (algType.algoLevel0 != AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING &&
         algType.algoLevel0 != AlgTypeLevel0::ALG_LEVEL0_RESERVED && !isA2MC2MultiServer) {
         commThreadPtrLevel0_.reset(new (std::nothrow) std::thread(&hcclImpl::CreateCommThread, this,
@@ -647,7 +648,7 @@ HcclResult hcclImpl::CreateMutiStreamRes(const std::string &tag, Stream &stream,
     /* 多环资源初始化 */
     HcclResult ret = InitMultiStreamResource(tag, streamInfo, algType, isAicpuModeEn, isBatchSendRecv, ringNum);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[Create][MutiStreamRes]tag[%s] init muti ring resource failed, return[%d]",
+        HCCL_ERROR("[Create][MutiStreamRes]tag[%s] init multi ring resource failed, return[%d]",
             tag.c_str(), ret), ret);
 
     CHK_RET(hccl::ProfilingManagerPub::CallMsprofReportMultiThreadInfo(streamInfo.tidInfo));

@@ -18,7 +18,14 @@ extern "C" {
 
 enum TlvModuleType {
     TLV_MODULE_TYPE_NSLB,
+    TLV_MODULE_TYPE_CCU,
     TLV_MODULE_TYPE_MAX,
+};
+
+enum TlvCcuMsgType {
+    MSG_TYPE_CCU_INIT = 0,
+    MSG_TYPE_CCU_UNINIT,
+    MSG_TYPE_CCU_MAX,
 };
 
 struct TlvInitInfo {

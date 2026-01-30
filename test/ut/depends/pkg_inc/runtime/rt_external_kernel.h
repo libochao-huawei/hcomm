@@ -171,7 +171,7 @@ typedef struct tagRtSmCtrl {
  * @brief launch cpu kernel to device with dump identifier and kernelType
  * @param [in] kernelType    aicpu kernel type
  * @param [in] opName        address of op name
- * @param [in] blockDim      block dimensions
+ * @param [in] numBlocks      block dimensions
  * @param [in] argsInfo      arguments address for kernel function
  * @param [in] smDesc        shared memory description
  * @param [in] stm           associated stream
@@ -180,7 +180,7 @@ typedef struct tagRtSmCtrl {
  * @return RT_ERROR_INVALID_VALUE for error input
  */
 RTS_API rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const char_t * const opName,
-                                                const uint32_t blockDim, const rtAicpuArgsEx_t *argsInfo,
+                                                const uint32_t numBlocks, const rtAicpuArgsEx_t *argsInfo,
                                                 rtSmDesc_t * const smDesc, const rtStream_t stm,
                                                 const uint32_t flags);
 
@@ -271,7 +271,7 @@ RTS_API rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);
  * @brief launch cpu kernel to device  with dump identifier
  * @param [in] soName        so name
  * @param [in] kernelName    kernel name
- * @param [in] blockDim      block dimensions
+ * @param [in] numBlocks      block dimensions
  * @param [in] argsInfo      arguments address for kernel function
  * @param [in] smDesc        shared memory description
  * @param [in] stm           associated stream
@@ -279,7 +279,7 @@ RTS_API rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm);
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
-RTS_API rtError_t rtCpuKernelLaunchWithFlag(const void *soName, const void *kernelName, uint32_t blockDim,
+RTS_API rtError_t rtCpuKernelLaunchWithFlag(const void *soName, const void *kernelName, uint32_t numBlocks,
                                             const rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc, rtStream_t stm,
                                             uint32_t flags);
 
@@ -302,7 +302,7 @@ typedef enum {
     // vector core使能使用
     RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE,
     // vector core使能使用
-    RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET,
+    RT_LAUNCH_KERNEL_ATTR_NUMBLOCKS_OFFSET,
     RT_LAUNCH_KERNEL_ATTR_BLOCK_TASK_PREFETCH,
     RT_LAUNCH_KERNEL_ATTR_DATA_DUMP,
     RT_LAUNCH_KERNEL_ATTR_TIMEOUT,
@@ -318,7 +318,7 @@ typedef union {
     uint8_t schemMode;
     uint32_t localMemorySize;
     rtEngineType engineType;
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
     uint8_t isBlockTaskPrefetch;  // 任务下发时判断是否sqe后续需要刷新标记（tiling key依赖下沉场景）0:disable 1:enable
     uint8_t isDataDump; // 0:disable 1:enable
     uint16_t timeout;
@@ -348,7 +348,7 @@ typedef struct {
  * @ingroup rts_kernel
  * @brief rts Launch Kernel
  * @param [in] funcHandle  function Handle
- * @param [in] blockDim  block dimensions
+ * @param [in] numBlocks  block dimensions
  * @param [in] stm  associated stream
  * @param [in] cfg task t-v config
  * @param [in] argsHandle  args Handle
@@ -356,7 +356,7 @@ typedef struct {
  * @return RT_ERROR_NONE for ok
  * @return RT_ERROR_INVALID_VALUE for error input
  */
-RTS_API rtError_t rtsLaunchKernelWithConfig(rtFuncHandle funcHandle, uint32_t blockDim, rtStream_t stm,
+RTS_API rtError_t rtsLaunchKernelWithConfig(rtFuncHandle funcHandle, uint32_t numBlocks, rtStream_t stm,
                                             rtKernelLaunchCfg_t *cfg, rtArgsHandle argsHandle, void *reserve);
 
 /**

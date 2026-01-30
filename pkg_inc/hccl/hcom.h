@@ -262,7 +262,7 @@ HcclResult HcomCreateComResourceByComm(HcclComm comm, u32 streamMode, bool isOpb
 
 void HcomTopoInfoRegCallback(HcclResult (*p1)(const char *, uint32_t), void (*p2)(const char *));
 
-HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfo, s32 *len);
+HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfoPtr, s32 *len);
 
 HcclWorkflowMode HcomGetWorkflowMode();
 
@@ -326,8 +326,8 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts,
     bool &ifAiv, char *algName);
 
 
-HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        char *algName, u32 *blockDim);
+HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType,
+    int32_t aivCoreLimit, char *algName, u32 *numBlocks);
 
 HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream_t *stream,
     s32 len, void *memPtr, u64 maxSize);

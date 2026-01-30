@@ -12,9 +12,11 @@
 #include "securec.h"
 #include "hccp_tlv.h"
 #include "ra_rs_err.h"
-#include "ra_rs_comm.h"
 #include "rs_adp_nslb.h"
 #include "rs_inner.h"
+#ifdef CONFIG_CONTEXT
+#include "dl_ccu_function.h"
+#endif
 #include "rs_tlv.h"
 
 STATIC int RsGetTlvCb(uint32_t phyId, struct RsTlvCb **tlvCb)
@@ -114,6 +116,32 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
     return 0;
 }
 
+#ifdef CONFIG_CONTEXT
+STATIC int rs_ccu_request(struct TlvRequestMsgHead *head, char *data)
+{
+    int ret = 0;
+
+    switch (head->type) {
+        case MSG_TYPE_CCU_INIT:
+            ret = rs_ccu_init();
+            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_init failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
+                ret, head->moduleType, head->type, head->phyId), ret);
+            break;
+        case MSG_TYPE_CCU_UNINIT:
+            ret = rs_ccu_uninit();
+            CHK_PRT_RETURN(ret != 0, hccp_err("rs_ccu_uninit failed, ret(%d) module_type(%u) msg_type(%u) phy_id(%u)",
+                ret, head->moduleType, head->type, head->phyId), ret);
+            break;
+        default:
+            hccp_err("[request][rs_ccu]msg type error, module_type(%u) msg_type(%u) phy_id(%u)",
+                head->moduleType, head->type, head->phyId);
+            return -EINVAL;
+    }
+            
+    return ret;
+}
+#endif
+        
 RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
 {
     struct RsTlvCb *tlvCb = NULL;
@@ -143,6 +171,11 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
             ret = RsNslbNetcoRequest(head->phyId, &tlvCb->nslbCb,
                     head->type, tlvCb->bufInfo.buf, head->totalBytes);
             break;
+#ifdef CONFIG_CONTEXT
+        case TLV_MODULE_TYPE_CCU:
+            ret = rs_ccu_request(head, data);
+            break;
+#endif
         default:
             hccp_err("[request][rs_tlv]module type error, moduleType(%u) phyId(%u)", head->moduleType, head->phyId);
             ret = -EINVAL;

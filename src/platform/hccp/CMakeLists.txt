@@ -7,10 +7,9 @@
 # INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
-if(BUILD_OPEN_PROJECT)
-    if (DEVICE_MODE)
-        add_subdirectory(stub_tsd)
-    endif()
+
+if (DEVICE_MODE)
+    add_subdirectory(stub_tsd)
 endif()
 add_subdirectory(rdma_agent)
 add_subdirectory(rdma_service)
@@ -24,33 +23,32 @@ add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/dl_hal_function.c
 )
 
-if(BUILD_OPEN_PROJECT)
-    target_compile_definitions(hccp_service.bin PRIVATE OPEN_BUILD_PROJECT LOG_CPP)
+target_compile_definitions(hccp_service.bin PRIVATE OPEN_BUILD_PROJECT LOG_CPP)
 
-    target_include_directories(hccp_service.bin PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/
-        ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
-        ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
-        ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
-        ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
-        ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/providers/hns
-        ${CMAKE_CURRENT_SOURCE_DIR}/inc/network
-        ${CMAKE_CURRENT_SOURCE_DIR}/inc/private/network
-        ${CMAKE_CURRENT_SOURCE_DIR}/rdma_service
-        ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/adapter
-        ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/adapter/async
-        ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/hdc
-        ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/inc
-        ${CMAKE_CURRENT_SOURCE_DIR}/common
-        ${ASCEND_CANN_PACKAGE_PATH}/include/
-        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
-    )
+target_include_directories(hccp_service.bin PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/
+    ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/driver
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/inc/log
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/host_lite
+    ${CMAKE_CURRENT_SOURCE_DIR}/external_depends/rdma-core/providers/hns
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/inc/private/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/rdma_service
+    ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/adapter
+    ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/adapter/async
+    ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/hdc
+    ${CMAKE_CURRENT_SOURCE_DIR}/rdma_agent/inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/common
+    ${ASCEND_CANN_PACKAGE_PATH}/include/
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/aicpu/tsd
+)
 
-    target_link_directories(hccp_service.bin PRIVATE
-        ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/ # c_sec、mmpa、unified_dlog动态库搜索路径
-    )
-endif()
+# c_sec、mmpa、unified_dlog动态库搜索路径
+target_link_directories(hccp_service.bin PRIVATE
+    ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
+)
 
 target_compile_options(hccp_service.bin PRIVATE
     -Werror -Wall -fPIC -fPIE -rdynamic -fvisibility=hidden -fno-common -fsigned-char -fno-strict-aliasing -std=gnu11
@@ -71,23 +69,16 @@ target_compile_definitions(hccp_service.bin PRIVATE
     $<$<AND:$<STREQUAL:${PRODUCT},ascend310p>,$<STREQUAL:${PRODUCT_SIDE},device>>:CONFIG_CGROUP>
 )
 
-if(BUILD_OPEN_PROJECT)
-    target_link_libraries(hccp_service.bin PRIVATE
-        # $<BUILD_INTERFACE:intf_pub>
-        # $<BUILD_INTERFACE:slog_headers>
-        # $<BUILD_INTERFACE:network_headers>
-        c_sec
-        unified_dlog
-        ra_adp
-        rs
-        mmpa
-        tsd_eventclient
-        # ascend_protobuf
-        # crypto_static
-        -ldl
-        # ofed_headers
-    )
-endif()
+target_link_libraries(hccp_service.bin PRIVATE
+    c_sec
+    unified_dlog
+    ra_adp
+    rs
+    mmpa
+    tsd_eventclient
+    -ldl
+)
+
 
 install(TARGETS  hccp_service.bin
     RUNTIME DESTINATION ${INSTALL_RUNTIME_DIR}  OPTIONAL

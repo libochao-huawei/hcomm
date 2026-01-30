@@ -234,9 +234,9 @@ HcclResult TaskProfiling::Run(const TaskData &taskData, bool isCapture)
     if (streamRecordInfoMap_[deviceLogicId_].find(taskData.streamID) == streamRecordInfoMap_[deviceLogicId_].end()) {
         // 找不到对应的tag则认为该stream不参与profiling, 返回SUCCESS
         HCCL_DEBUG("streamID[%u] not found in profiler", taskData.streamID);
-        hcclReportData.tag = "unknow";
+        hcclReportData.tag = "unknown";
         hcclReportData.profInfo.planeID = 0;
-        hcclReportData.groupName = "unknow";
+        hcclReportData.groupName = "unknown";
         hcclReportData.profInfo.workFlowMode = 0;
     } else {
         StreamRecordInfo &streamInfo = streamRecordInfoMap_[deviceLogicId_][taskData.streamID];
@@ -338,9 +338,9 @@ HcclResult TaskProfiling::Save(u32 captureStreamID, u32 streamID, u32 taskID, co
     if (streamRecordInfoMap_[deviceLogicId_].find(streamID) == streamRecordInfoMap_[deviceLogicId_].end()) {
         // 找不到对应的tag则认为该stream不参与profiling, 返回SUCCESS
         HCCL_DEBUG("streamID[%u] not found in profiler", streamID);
-        hcclReportData.tag = "unknow";
+        hcclReportData.tag = "unknown";
         hcclReportData.profInfo.planeID = 0;
-        hcclReportData.groupName = "unknow";
+        hcclReportData.groupName = "unknown";
         hcclReportData.profInfo.workFlowMode = 0;
     } else {
         StreamRecordInfo &streamInfo = streamRecordInfoMap_[deviceLogicId_][streamID];

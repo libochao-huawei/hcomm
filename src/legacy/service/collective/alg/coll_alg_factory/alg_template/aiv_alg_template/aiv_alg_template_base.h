@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Description: 算法模板AivAlgTemplateBase类头文件
+ * Author: caixin
+ * Create: 2025-09-05
+ */
+
+#ifndef AIV_ALG_TEMPLATE_BASE
+#define AIV_ALG_TEMPLATE_BASE
+
+#include <memory>
+#include <map>
+#include <vector>
+#include <queue>
+#include <string>
+#include "const_val.h"
+#include "template_utils.h"
+#include "instruction.h"
+#include "ins_queue.h"
+#include "coll_alg_base.h"
+
+namespace Hccl {
+using InsQuePtr = std::shared_ptr<InsQueue>;
+constexpr uint64_t TOPO_LEN_Y_OFFSET = 8;
+constexpr uint64_t TOPO_LEN_Z_OFFSET = 16;
+constexpr uint64_t MAX_DIM_NUM = 3;
+
+class AivAlgTemplateBase {
+public:
+    explicit AivAlgTemplateBase(const RankId virtualRank, const u32 tempRankSize,
+        const std::vector<std::vector<RankId>> &tempVTopo, const std::map<RankId, u32> &tempVirtRankMap);
+    virtual ~AivAlgTemplateBase();
+
+    void SetCollOp(const CollAlgOperator &op);
+    void SetDmaMode(const DmaMode dmaMode);
+    void SetDataType(const DataType &dataType);
+    void SetRoot(const u32 root);
+    void InitReduceInfo(const ReduceOp &redOp, const DataType &dataType);
+
+    virtual std::string Describe() const = 0;
+
+    virtual HcclResult CalcRes(AlgTempResReq &tempResReq);
+    virtual HcclResult CalcResDetour(const RankGraph *rankGraph, AlgTempResReq &tempResReq);
+    virtual HcclResult CalcResDetour(ConnectedLinkMgr *linkMgr, AlgTempResReq &tempResReq);
+    virtual u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType);
+    virtual HcclResult CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit);
+
+    virtual HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, 
+        const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);
+
+protected:
+    void IncSliceId();
+
+    CollAlgOperator op_;
+    OpMode opMode_{OpMode::OPBASE};
+    u32 root_{0};
+    ReduceOp reduceOp_{ReduceOp::SUM};
+    DataType dataType_{DataType::INT32};
+    DmaMode dmaMode_ = DmaMode::DEFAULT;
+
+    RankId myRank_{INVALID_RANKID};
+    u32 tempRankSize_{0};
+    std::vector<std::vector<RankId>> tempVTopo_;
+    std::map<RankId, u32> tempVirtRankMap_;
+    u32  linkNumBtwPeers_ = 1;
+
+    u32 sliceId_{0};  // 用于组装aivTag
+};
+
+} // namespace Hccl
+
+#endif // AIV_ALG_TEMPLATE_BASE

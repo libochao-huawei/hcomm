@@ -383,7 +383,7 @@ namespace hccl {
     HcclResult OpUnfoldCache::DumpSqeHeader(const rtStarsSqeHeader_t& sqeHeader) {
         PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: type[%u] l1Lock[%u] l1Unlock[%u] ie[%u] preP[%u] postP[%u] wrCqe[%u]",
             sqeHeader.type, sqeHeader.l1Lock, sqeHeader.l1Unlock, sqeHeader.ie, sqeHeader.preP, sqeHeader.postP, sqeHeader.wrCqe);
-        PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: reserved[%u] blockDim[%u] rtStreamId[%u] taskId[%u]",
+        PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeHeader] SQE header: reserved[%u] numBlocks[%u] rtStreamId[%u] taskId[%u]",
             sqeHeader.reserved, sqeHeader.blockDim, sqeHeader.rtStreamId, sqeHeader.taskId);
 
         return HCCL_SUCCESS;

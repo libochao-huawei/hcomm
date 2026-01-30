@@ -215,7 +215,7 @@ HcclResult TransportManager::createSubCommLinkThreads(const std::string &tag, co
                 connectSockets, inputMem, outputMem, transportRequest.isUsedRdma, 
                 std::ref(link), isAicpuModeEn, std::ref(subCommLinkPara.linkResult[i]), netDevCtx,
                 transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
-                isIndOp, indOpMem, opType));
+                isIndOp, indOpMem, opType, false));
         CHK_SMART_PTR_NULL(subCommLinkPara.linkThreads[i]); // 异常时其他线程待处理
         singleSubCommTransport.status[index] = TransportStatus::READY; // 建链后 transport设置为ready状态
     }
@@ -350,7 +350,7 @@ HcclResult TransportManager::AllocSubCommLinks(const std::string &tag, const Tra
 
 HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem &transMem,
     OpCommTransport &opTransportResponse, bool isAicpuModeEn, bool isBackup, bool isZeroCopy, const HcclCMDType &opType,
-        bool isCapture, bool isIndOp)
+        bool isCapture, bool isIndOp, bool isNpuDirectRoce)
 {
     std::lock_guard<std::mutex> lock(mutex_);
     CHK_RET(notifyPool_->RegisterOp(tag));
@@ -436,7 +436,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                             "isBackup[%d], chooseBackup[%d], isInterRdma[%d]", __func__, transportRequest.remoteUserRank, 
                             userRank_, isBackup, chooseBackup, isInterRdma);
                     }
-
+                    bool chooseAivRoceDirect = transportRequest.isUsedRdma ? isNpuDirectRoce : false;
                     std::string threadStr = (isInterRdma? "HcclTerL_" : "HcclIntra_") +
                         std::to_string(threadsRapplyNum);
                     linkThreads[threadsRapplyNum].reset(
@@ -449,7 +449,7 @@ HcclResult TransportManager::Alloc(const std::string &tag, const TransportIOMem 
                             std::ref(singleSubCommTransport.links[linkIdx]), isAicpuModeEn,
                             std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
-                            isIndOp, indOpMem, opType));
+                            isIndOp, indOpMem, opType, chooseAivRoceDirect));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
                     singleSubCommTransport.status[linkIdx] = TransportStatus::READY; // 建链后 transport设置为ready状态
                     threadsRapplyNum++;
@@ -585,7 +585,7 @@ HcclResult TransportManager::IncreAlloc(const std::string &tag, const TransportI
                             transportRequest.isUsedRdma, std::ref(respSingleSubComm.links[rankIndex]), isAicpuModeEn,
                             std::ref(linkResult[threadsRapplyNum]), netDevCtx,
                             transportRequest.notifyNum, chooseBackup, isCapture, expMem, transportRequest.linkType,
-                            isIndOp, indOpMem, opType));
+                            isIndOp, indOpMem, opType, false));
                         CHK_SMART_PTR_NULL(linkThreads[threadsRapplyNum]); // 异常时其他线程待处理
                     respSingleSubComm.status[rankIndex] = TransportStatus::READY; // 建链后 transport设置为ready状态
                     threadsRapplyNum++;
@@ -621,7 +621,7 @@ bool TransportManager::IsHccsTransport(u32 remoteRank, TransportLinkType linkTyp
         HcclResult ret = hrtGetPairDeviceLinkType(
             rankInfoList_[userRank_].devicePhyId, rankInfoList_[remoteRank].devicePhyId, linkTypeTmp);
         if (ret != HCCL_SUCCESS) {
-            HCCL_WARNING("fail to get device link type for userRank[%u] remoteRank[%u] ret[%d], defalut to Hccs",
+            HCCL_WARNING("fail to get device link type for userRank[%u] remoteRank[%u] ret[%d], default to Hccs",
                 userRank_, remoteRank, ret);
             return true;
         }
@@ -858,7 +858,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     const DeviceMem inputMem, const DeviceMem outputMem, bool isUsedRdma,
     std::shared_ptr<Transport> &link, bool isAicpuModeEn, HcclResult &retOut, const HcclNetDevCtx &netDevCtx,
     u32 notifyNum, bool isBackup, bool isCapture, const DeviceMem expMem, TransportLinkType linkType,
-    bool isIndOp, const IndOpMem indOpMemd, const HcclCMDType &opType)
+    bool isIndOp, const IndOpMem indOpMemd, const HcclCMDType &opType, bool isNpuDirectRoce)
 {
     hrtErrMSetErrorContextPub(error_context);
     // 给当前线程添加名字
@@ -876,7 +876,7 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
     do {
         ret = SetMachinePara(tag, machineType, serverId, remoteRank, supportDataReceivedAck, linkMode, sockets,
             inputMem, outputMem, expMem, isAicpuModeEn, isBackup, isCapture, notifyNum, trafficClass_, serviceLevel_, machinePara,
-            loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMemd, isIndOp, opType);
+            loaclRankInfo, remoteRankInfo, netDevCtx, linkType, indOpMemd, isIndOp, opType, isNpuDirectRoce);
         retOut = ret;
         std::string tmpErrInfo = ret == HCCL_E_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s][%s]SetMachinePara error.", __func__, LOG_KEYWORDS_INIT_CHANNEL.c_str(), tmpErrInfo.c_str()),);
@@ -970,7 +970,7 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
     const DeviceMem &inputMem, const DeviceMem &outputMem, const DeviceMem &expMem, bool isAicpuModeEn, 
     bool isBackup, bool isCapture, u32 notifyNum, u32 trafficClass, u32 serviceLevel, MachinePara &machinePara,
     RankInfo &loaclRank, RankInfo &remoteRank, const HcclNetDevCtx &netDevCtx, TransportLinkType linkType,
-    const IndOpMem &indOpMem, bool isIndOp, const HcclCMDType &opType)
+    const IndOpMem &indOpMem, bool isIndOp, const HcclCMDType &opType, bool isNpuDirectRoce)
 {
     machinePara.notifyNum = notifyNum;
     machinePara.linkMode = linkMode;
@@ -1067,6 +1067,11 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
         machinePara.qpMode = QPMode::OFFLOAD;
     }
 
+    if (isNpuDirectRoce) {
+        // AIV ROCE直驱场景，需要将QPMode更改为NORMAL模式，以避免底层走入stars调度的下发流程
+        machinePara.qpMode = QPMode::NORMAL; 
+    }
+
     // reduce相关算子需要使能atomic write能力，用于实现rdma wqe(reduce+record)保序
     bool isReduceOp = (opType == HCCL_CMD_ALLREDUCE) || (opType == HCCL_CMD_REDUCE) ||
                       (opType == HCCL_CMD_REDUCE_SCATTER) || (opType == HCCL_CMD_REDUCE_SCATTER_V);
@@ -1083,17 +1088,13 @@ TransportType TransportManager::GetTransportType(const u32 dstRank, bool isUsedR
     TransportType transportType;
     // 判断是否在同一个server
     if (rankInfoList_[userRank_].serverId == rankInfoList_[dstRank].serverId) {
-        if (isHaveCpuRank_) {
-            transportType = TransportType::TRANS_TYPE_HETEROG_P2P;
+        LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
+        hrtGetPairDeviceLinkType(rankInfoList_[userRank_].devicePhyId, rankInfoList_[dstRank].devicePhyId,
+            linkType);
+        if (isUsedRdma) {
+            transportType = TransportType::TRANS_TYPE_IBV_EXP;
         } else {
-            LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
-            hrtGetPairDeviceLinkType(rankInfoList_[userRank_].devicePhyId, rankInfoList_[dstRank].devicePhyId,
-                linkType);
-            if (isUsedRdma) {
-                transportType = TransportType::TRANS_TYPE_IBV_EXP;
-            } else {
-                transportType = TransportType::TRANS_TYPE_P2P;
-            }
+            transportType = TransportType::TRANS_TYPE_P2P;
         }
     } else { // server间
         if ((!isUsedRdma) && IsSupportInterHccs(dstRank)) {
@@ -1101,11 +1102,6 @@ TransportType TransportManager::GetTransportType(const u32 dstRank, bool isUsedR
             transportType = TransportType::TRANS_TYPE_P2P;
         } else if (GetExternalInputHcclIsTcpMode()) {
             transportType = TransportType::TRANS_TYPE_HOST_TCP;
-        } else if ((static_cast<DevType>(rankInfoList_[dstRank].deviceType) == DevType::DEV_TYPE_310P3) ||
-            (static_cast<DevType>(rankInfoList_[dstRank].deviceType) == DevType::DEV_TYPE_310P1)) {
-            transportType = TransportType::TRANS_TYPE_ROCE;
-        } else if (isHaveCpuRank_) {
-            transportType = TransportType::TRANS_TYPE_HETEROG_ROCE;
         } else if ((!isUsedRdma) && IsSupportInterHccs(dstRank)) {
             // 超节点内节点间走HCCS通信
             transportType = TransportType::TRANS_TYPE_P2P;
@@ -1148,20 +1144,6 @@ HcclResult TransportManager::TransportInit(const u32 dstRank, MachinePara &machi
         link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
         para.nicDeploy = nicDeployment_;
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_ROCE) {
-        para.selfIp = &machinePara.localIpAddr;
-        para.peerIp = &machinePara.remoteIpAddr;
-        std::set<u32> listenedPort;
-        CHK_SMART_PTR_NULL(socketManager_);
-        CHK_RET(socketManager_->GetListenPortByIp(NICDeployment::NIC_DEPLOYMENT_DEVICE, *(para.selfIp),
-            listenedPort));
-        para.peerPort = *(listenedPort.begin());
-        para.selfPort = para.peerPort;
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_P2P) {
-        link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_ROCE) {
         link.reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_DEVICE_DIRECT) {
         bool isEnableMulQp = false;

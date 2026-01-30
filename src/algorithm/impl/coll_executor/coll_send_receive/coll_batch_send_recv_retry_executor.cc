@@ -163,7 +163,7 @@ HcclResult CollBatchSendRecvRetryExecutor::Orchestrate(OpParam& param, AlgResour
 
     CHK_RET(LaunchTaskExtend(dispatcher_, param.stream, algResResp_->slaveStreams));
     HCCL_INFO("[info][print] LaunchTaskExtend success.");
-    HCCL_INFO("tag[%s] BatchSendRecv Excutor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s] BatchSendRecv Executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }

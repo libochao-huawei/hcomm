@@ -155,7 +155,7 @@ HcclResult ProfilingManager::CallMsprofReportNodeInfo(uint64_t beginTime, uint64
 }
 
 HcclResult ProfilingManager::CallMsprofReportHostApi(HcclCMDType cmdType, uint64_t beginTime, u64 count,
-    HcclDataType dataType, AlgType algType, uint64_t groupName, u32 blockDim) const
+    HcclDataType dataType, AlgType algType, uint64_t groupName, u32 numBlocks) const
 {
     if (isHostApiSubscribe_ != HCCL_SUCCESS && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE &&
         !GetThreadCaptureStatus()) {
@@ -170,7 +170,7 @@ HcclResult ProfilingManager::CallMsprofReportHostApi(HcclCMDType cmdType, uint64
         CHK_RET(CallMsprofReportHostAclApi(type, beginTime, endTime, itemId, threadId));
         CHK_RET(CallMsprofReportHostNodeApi(beginTime, endTime, itemId, threadId));
         if (isAddtionInfoSubscribe_ == HCCL_SUCCESS || GetThreadCaptureStatus()) {
-            CHK_RET(CallMsprofReportHostNodeBasicInfo(endTime, itemId, threadId, blockDim));
+            CHK_RET(CallMsprofReportHostNodeBasicInfo(endTime, itemId, threadId, numBlocks));
         }
     }
     std::string algTypeStr = TransferAlgType(algType);
@@ -244,7 +244,7 @@ HcclResult ProfilingManager::CallMsprofReportHostAclApi(
 }
 
 HcclResult ProfilingManager::CallMsprofReportHostNodeBasicInfo(
-    uint64_t timeStamp, uint64_t itemId, uint32_t threadId, u32 blockDim) const
+    uint64_t timeStamp, uint64_t itemId, uint32_t threadId, u32 numBlocks) const
 {
     MsprofCompactInfo reporterData{};
 
@@ -257,7 +257,7 @@ HcclResult ProfilingManager::CallMsprofReportHostNodeBasicInfo(
     reporterData.data.nodeBasicInfo.opName = itemId;
     reporterData.data.nodeBasicInfo.taskType = MSPROF_GE_TASK_TYPE_HCCL;
     reporterData.data.nodeBasicInfo.opType = itemId;
-    reporterData.data.nodeBasicInfo.blockDim = blockDim;
+    reporterData.data.nodeBasicInfo.blockDim = numBlocks;
     reporterData.data.nodeBasicInfo.opFlag = 0;
     
     // 图下沉场景或者acl graph场景，缓存对应数据

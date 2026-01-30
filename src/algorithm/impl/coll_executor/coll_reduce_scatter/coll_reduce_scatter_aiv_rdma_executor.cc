@@ -79,17 +79,17 @@ HcclResult CollReduceScatterAivRdmaExecutor::CalcLevel0CommInfo(TransportMemType
     return HCCL_SUCCESS;
 }
 
-HcclResult CollReduceScatterAivRdmaExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollReduceScatterAivRdmaExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize; // 多机场景，单算子ReduceScatter使用rankSize个aiv
-    u32 bestBlockDim = blockDim;
+    numBlocks = rankSize; // 多机场景，单算子ReduceScatter使用rankSize个aiv
+    u32 bestNumBlocks = numBlocks;
 
-    CHK_PRT_RET(blockDim_ < blockDim,
-        HCCL_WARNING("[CollReduceScatterAivRdmaExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-        blockDim_, blockDim), HCCL_E_PARA);
+    CHK_PRT_RET(numBlocks_ < numBlocks,
+        HCCL_WARNING("[CollReduceScatterAivRdmaExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, numBlocks), HCCL_E_PARA);
     
-    HCCL_INFO("[CollReduceScatterAivRdmaExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollReduceScatterAivRdmaExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -117,7 +117,7 @@ HcclResult CollReduceScatterAivRdmaExecutor::Orchestrate(OpParam& param, AlgReso
     HcclResult ret = KernelRun(param, execMem);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterAivRdmaExecutor]errNo[0x%016llx] tag[%s] excutor kernel run failed",
+        HCCL_ERROR("[CollReduceScatterAivRdmaExecutor]errNo[0x%016llx] tag[%s] executor kernel run failed",
             HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
 
     HCCL_INFO("tag[%s], ReduceScatter executor orchestrate success, take time [%lld]us.",
@@ -164,13 +164,13 @@ HcclResult CollReduceScatterAivRdmaExecutor::KernelRun(const OpParam &param, Exe
         intraRankId, intraRankSize, topoAttr_.isDiffDeviceModule ? topoAttr_.devicePhyId : A_X_SIZE,
         0, serverNum, topoAttr_.deviceType, algoAttr_.identifier 
     };
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, intraRankSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, intraRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), dataBuffers, flagBuffers, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {0};
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();

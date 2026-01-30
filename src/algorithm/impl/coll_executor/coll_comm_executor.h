@@ -39,11 +39,14 @@ public:
     HcclResult CollectMultiRingsRankOrder(u32 ringNum,
         const std::vector<std::vector<u32>> &multiRingsOrder,
         std::vector<std::vector<u32>> &rankOrders);
+    u32 CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, HcclCMDType opType);
+    
     HcclResult MultiRingReduceScatter(const std::string &tag, DeviceMem inputMem, DeviceMem outputMem, const u64 count,
         const HcclDataType dataType, const HcclReduceOp reductionOp,
         const std::vector<std::vector<Slice>> multRingsSliceZero, Stream stream,
         s32 profStage, const u64 baseOffset = 0, const HcomCollOpInfo *opInfo = nullptr,
-        const std::vector<std::vector<Slice>> multRingsUserMemSlice = std::vector<std::vector<Slice>> (0));
+        const std::vector<std::vector<Slice>> multRingsUserMemSlice = std::vector<std::vector<Slice>> (0),
+        const CommPlane leveIndex = COMM_LEVEL0);
 
     HcclResult MultiRingReduceScatterConcurrent(const std::string &tag, DeviceMem inputMem,DeviceMem outputMem,
         const u64 count, const HcclDataType dataType, const HcclReduceOp reductionOp,
@@ -63,7 +66,8 @@ public:
         const HcclDataType dataType,
         const std::vector<std::vector<Slice> > multRingsSliceZero, Stream stream,
         s32 profStage, const u64 baseOffset = 0, const HcomCollOpInfo *opInfo = nullptr,
-        const std::vector<std::vector<Slice>> multRingsUserMemSlice = std::vector<std::vector<Slice>> (0));
+        const std::vector<std::vector<Slice>> multRingsUserMemSlice = std::vector<std::vector<Slice>> (0),
+        const CommPlane leveIndex = COMM_LEVEL0);
 
     HcclResult MultiRingAllGatherConcurrent(const std::string &tag, DeviceMem inputMem, DeviceMem outputMem,
         const u64 count, const HcclDataType dataType,
@@ -112,7 +116,7 @@ public:
     void NicSendSizeCal(const std::vector<std::vector<Slice>> &mutliSegsSlices, u32 ringCount, u32 chunkSize,
         const std::vector<u32> &nicList, const std::string &tag);
     std::vector<std::vector<Slice> > PrepareMultiRingSlice(const std::vector<Slice> &dataSegsSlice,
-        const std::string &tag, bool avoidCceRewrite = false, std::vector<u32> nicList = {0, 1, 2, 3, 4, 5, 6, 7});
+        const std::string &tag, bool avoidCceRewrite = false, std::vector<u32> nicList = {0, 1, 2, 3, 4, 5, 6, 7}, CommPlane commLevelIndex = COMM_LEVEL0);
     // AnyPath特性使用
     std::vector<std::vector<u32>> GetRingsOrderForAnyPath(u32 ranksSize, TopoType topoType, std::vector<u32> &nicList);
     std::vector<std::vector<Slice> > AnyPathPrepareMultiRingSlice(const std::vector<Slice> &dataSegsSlice,

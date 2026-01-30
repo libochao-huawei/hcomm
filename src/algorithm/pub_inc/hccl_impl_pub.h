@@ -95,6 +95,7 @@ struct HcclTopoAttr {
     u32 deviceNumPerAggregation;     // 每个module中的Device数量
     bool multiModuleDiffDeviceNumMode; // 每个module内的设备数是否相等，如果不相同即为多module不同卡模式 （走大RING环）
     bool multiSuperPodDiffServerNumMode; // 每个超节点内的server数是否相等
+    bool multiSuperPodDiffDeviceNumMode; // 每个超节点内的总rank数是否相等
     
     bool isDiffDeviceType;
     u32 gcdDeviceNumPerAggregation;
@@ -126,7 +127,8 @@ struct HcclTopoAttr {
     bool isSupportHccsAndSio;         //是否支持hccs sio并发
     u32 localNicPort;
     bool isNeedInitNic;      // 是否需要初始化Nic，心跳使用
-
+    bool isARSDoubleRing;
+    
     HcclTopoAttr()
         : serverNum(0),
         superPodNum(0),
@@ -135,6 +137,7 @@ struct HcclTopoAttr {
         deviceNumPerAggregation(0),
         multiModuleDiffDeviceNumMode(false),
         multiSuperPodDiffServerNumMode(false),
+        multiSuperPodDiffDeviceNumMode(false),
         isDiffDeviceType(false),
         gcdDeviceNumPerAggregation(0),
         meshAggregationRankSize(0),
@@ -159,7 +162,8 @@ struct HcclTopoAttr {
         isSupportRdmaLite(false),
         isSupportHccsAndSio(false),
         localNicPort(0),
-        isNeedInitNic(false)
+        isNeedInitNic(false),
+        isARSDoubleRing(true)
     {}
 };
 

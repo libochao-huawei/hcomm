@@ -33,16 +33,16 @@ HCCP_ATTRI_VISI_DEF int RaGetTlsEnable(struct RaInfo *info, bool *tlsEnable)
 
     CHK_PRT_RETURN(info == NULL || tlsEnable == NULL, hccp_err("[get][tls_enable]info or tls_enable is NULL"),
         ConverReturnCode(OTHERS, -EINVAL));
-    CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][tls_enable]phy_id(%u) must smaller than %u",
+    CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][tls_enable]phyId(%u) must smaller than %u",
         info->phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(OTHERS, -EINVAL));
 
-    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%d]", info->phyId, info->mode);
+    hccp_run_info("Input parameters: phyId[%u], nicPosition:[%d]", info->phyId, info->mode);
     if (info->mode == NETWORK_PEER_ONLINE) {
         ret = RaPeerGetTlsEnable(info->phyId, tlsEnable);
     } else if (info->mode == NETWORK_OFFLINE) {
         ret = RaHdcGetTlsEnable(info->phyId, tlsEnable);
     } else {
-        hccp_err("[get][tls_enable]do not support mode(%d) phy_id(%u)", info->mode, info->phyId);
+        hccp_err("[get][tls_enable]do not support mode(%d) phyId(%u)", info->mode, info->phyId);
         return ConverReturnCode(OTHERS, -ENOTSUPP);
     }
     return ConverReturnCode(OTHERS, ret);
@@ -57,7 +57,7 @@ HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct RaInfo *info, enum SaveSnapshotAct
     CHK_PRT_RETURN(action < SAVE_SNAPSHOT_ACTION_PRE_PROCESSING || action >= SAVE_SNAPSHOT_ACTION_MAX,
         hccp_err("[save][snapshot]invalid action(%d)", action), ConverReturnCode(OTHERS, -EINVAL));
 
-    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%d], action:[%d]", info->phyId, info->mode, action);
+    hccp_run_info("Input parameters: phyId[%u], nicPosition:[%d], action:[%d]", info->phyId, info->mode, action);
     if (info->mode == NETWORK_PEER_ONLINE) {
         return 0;
     } else if (info->mode == NETWORK_OFFLINE) {
@@ -72,7 +72,7 @@ HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct RaInfo *info, enum SaveSnapshotAct
         CHK_PRT_RETURN(ret != 0, hccp_err("[save][snapshot]ra_hdc_save_snapshot failed, ret[%d]", ret),
             ConverReturnCode(OTHERS, ret));
     } else {
-        hccp_err("[save][snapshot]do not support mode[%d] phy_id[%u]", info->mode, info->phyId);
+        hccp_err("[save][snapshot]do not support mode[%d] phyId[%u]", info->mode, info->phyId);
         return ConverReturnCode(OTHERS, -ENOTSUPP);
     }
 
@@ -86,7 +86,7 @@ HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct RaInfo *info)
 
     CHK_PRT_RETURN(info == NULL, hccp_err("[restore][snapshot]info is NULL"), ConverReturnCode(OTHERS, -EINVAL));
 
-    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%d]", info->phyId, info->mode);
+    hccp_run_info("Input parameters: phyId[%u], nicPosition:[%d]", info->phyId, info->mode);
     if (info->mode == NETWORK_PEER_ONLINE) {
         return 0;
     } else if (info->mode == NETWORK_OFFLINE) {
@@ -101,7 +101,7 @@ HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct RaInfo *info)
         CHK_PRT_RETURN(ret != 0, hccp_err("[restore][snapshot]ra_hdc_restore_snapshot failed, ret[%d]", ret),
             ConverReturnCode(OTHERS, ret));
     } else {
-        hccp_err("[restore][snapshot]do not support mode[%d] phy_id[%u]", info->mode, info->phyId);
+        hccp_err("[restore][snapshot]do not support mode[%d] phyId[%u]", info->mode, info->phyId);
         return ConverReturnCode(OTHERS, -ENOTSUPP);
     }
 
@@ -117,16 +117,36 @@ HCCP_ATTRI_VISI_DEF int RaGetHccnCfg(struct RaInfo *info, enum HccnCfgKey key, c
     CHK_PRT_RETURN(*valueLen < HCCN_CFG_MSG_DATA_LEN,
         hccp_err("[get][hccn_cfg] failed, valueLen[%d] < min_len[%d]", *valueLen, HCCN_CFG_MSG_DATA_LEN),
         ConverReturnCode(OTHERS, -EINVAL));
-    CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][hccn_cfg]phy_id(%u) must smaller than %u",
+    CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][hccn_cfg]phyId(%u) must smaller than %u",
         info->phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(OTHERS, -EINVAL));
     CHK_PRT_RETURN(info->mode != NETWORK_OFFLINE, hccp_err("[get][hccn_cfg]do not support mode(%u)", info->mode),
         ConverReturnCode(OTHERS, -EINVAL));
 
-    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%d], hccn_cfg_key[%d]",
+    hccp_run_info("Input parameters: phyId[%u], nicPosition:[%d], hccn_cfg_key[%d]",
         info->phyId, info->mode, key);
     ret = RaHdcGetHccnCfg(info->phyId, key, value, valueLen);
     if (ret != 0) {
         hccp_err("[get][hccn_cfg] failed, phyId[%u], ret[%d]", info->phyId, ret);
+    }
+
+    return ConverReturnCode(OTHERS, ret);
+}
+
+HCCP_ATTRI_VISI_DEF int ra_get_sec_random(struct RaInfo *info, u32 *value)
+{
+    int ret;
+
+    CHK_PRT_RETURN(info == NULL || value == NULL, hccp_err("[get][sec_random]info or value is NULL"),
+        ConverReturnCode(OTHERS, -EINVAL));
+    hccp_run_info("Input parameters: phy_id[%u], nic_position:[%d]", info->phyId, info->mode);
+
+    ret = RaPeerGetSecRandom(value);
+    if(ret != 0 && info->mode == NETWORK_OFFLINE) {
+        CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][sec_random]phy_id(%u) must smaller than %u",
+            info->phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(OTHERS, -EINVAL));
+        ret = RaHdcGetSecRandom(info->phyId, value);
+    } else if (ret != 0 && info->mode != NETWORK_OFFLINE) {
+        hccp_err("[get][sec_random] failed, mode[%u], ret[%d]", info->mode, ret);
     }
 
     return ConverReturnCode(OTHERS, ret);

@@ -21,6 +21,7 @@
 
 namespace hccl {
 constexpr s32 DEVICE_LOGIC_ID_LENGTH = 4;
+constexpr u32 AGENT_MAX_RETRY_TIME = 3;
 
 TopoInfoExchangeAgent::TopoInfoExchangeAgent(HcclIpAddress &serverIp, u32 serverPort, std::string identifier,
     HcclNetDevCtx netDevCtx, HcclBasicRankInfo localRankInfo)
@@ -75,7 +76,7 @@ HcclResult TopoInfoExchangeAgent::Setup()
     connRank_ = localRankInfo_.rank;
     //填充要发送的localRankHandle的值
     localRankHandle_.rankId = localRankInfo_.rank;
-    HcclResult ret = Connect(serverIP_, serverPort_, socket_);
+    HcclResult ret = ConnectWithRetry(serverIP_, serverPort_, socket_);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[TopoInfoExchangeAgent][Setup]TopoExchangeAgent: "\
         "connect server[%s : %u] failed", serverIP_.GetReadableAddress(), serverPort_), ret);
     HCCL_INFO("TopoExchangeAgent: client connect with server ip[%s] port[%u] success.",
@@ -321,9 +322,9 @@ HcclResult TopoInfoExchangeAgent::GetClusterTopoInfo(RankTable_t &clusterInfo)
 
     return HCCL_SUCCESS;
 }
-HcclResult TopoInfoExchangeAgent::GetIdentifier(u32 &indentify)
+HcclResult TopoInfoExchangeAgent::GetIdentifier(u32 &identify)
 {
-    indentify = identifierNum_;
+    identify = identifierNum_;
     return HCCL_SUCCESS;
 }
 HcclResult TopoInfoExchangeAgent::Connect(HcclIpAddress &serverIp, u32 port,
@@ -337,6 +338,57 @@ HcclResult TopoInfoExchangeAgent::Connect(HcclIpAddress &serverIp, u32 port,
     CHK_RET(socket->Connect());
 
     return GetConnection(serverIp, port, socket);
+}
+
+HcclResult TopoInfoExchangeAgent::ConnectWithRetry(HcclIpAddress &serverIp, u32 port,
+    std::shared_ptr<HcclSocket> &socket)
+{
+    u32 retryTime = 1;
+    HcclResult ret = HCCL_SUCCESS;
+    while (retryTime <= AGENT_MAX_RETRY_TIME) {
+        std::string tag = TOPO_DETECT_TAG + "_" + identifier_ + "_" + std::to_string(port);
+        EXECEPTION_CATCH((socket = std::make_shared<HcclSocket>(tag,
+            netDevCtx_, serverIp, port, HcclSocketRole::SOCKET_ROLE_CLIENT)), return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(socket);
+        CHK_RET(socket->Init());
+        CHK_RET(socket->Connect());
+ 
+        CHK_RET(GetConnection(serverIp, port, socket));
+
+        ret = TryRecvFromServer(socket, retryTime);
+        if (ret == HCCL_SUCCESS) {
+            break;
+        } else {
+            retryTime++;
+        }
+    }
+    return ret;
+}
+
+HcclResult TopoInfoExchangeAgent::TryRecvFromServer(std::shared_ptr<HcclSocket> &socket, u32 retryTime)
+{
+    // client端获取socket之后尝试从server接收数据，若在一定时间内没有接收到，则重新发起建链请求
+    u32 timeout = GetExternalInputHcclLinkTimeOut() / AGENT_MAX_RETRY_TIME;
+    char recvMsgBuf[sizeof(TOPO_EXCHANGE_CHECK_MESSAGE)] = {0};
+    auto ret = HCCL_SUCCESS;
+    if (retryTime == AGENT_MAX_RETRY_TIME) {
+        ret = socket->Recv(recvMsgBuf, sizeof(TOPO_EXCHANGE_CHECK_MESSAGE), timeout);
+    } else {
+        // 重试时打印RUN_WARN日志
+        SetErrToWarnSwitch(true);
+        ret = socket->Recv(recvMsgBuf, sizeof(TOPO_EXCHANGE_CHECK_MESSAGE), timeout);
+        SetErrToWarnSwitch(false);
+    }
+    
+    if (ret == HCCL_SUCCESS) {
+        HCCL_RUN_INFO("[%s]recvMes %s", __func__, recvMsgBuf);
+    } else if (retryTime < AGENT_MAX_RETRY_TIME) {
+        HCCL_RUN_WARNING("[%s]client recv from server failed, will try to connect with server again.", __func__);
+    } else {
+        HCCL_ERROR("[%s]failed to recv messages from server with %u times", __func__, AGENT_MAX_RETRY_TIME);
+    }
+
+    return ret;
 }
 
 void TopoInfoExchangeAgent::PrintSocketTimeoutReasons(HcclIpAddress &serverIp, u32 port,
@@ -989,7 +1041,7 @@ HcclResult TopoInfoExchangeAgent::VerifyClusterTlsConsistency(const RankTable_t 
     } else if (isTlsConsistent && !isSupportCheckTlsStatus) {
     // 3.通信域内的部分卡不支持查询TLS开关状态，目前能查询到的卡的TLS开关状态是一致的，打印warning提醒
         HCCL_RUN_WARNING("[Verify][TlsConsistency] Some ranks do not support to check tlsStatus, " \
-            "not suppport serverId/rankId: %s", tlsUnknownRankStr.c_str());
+            "not support serverId/rankId: %s", tlsUnknownRankStr.c_str());
     } else {
         errormessage =
             "Some rank tlsStatus are inconsistent, "

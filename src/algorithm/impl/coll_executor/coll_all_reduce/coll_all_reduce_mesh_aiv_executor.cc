@@ -61,25 +61,25 @@ HcclResult CollAllReduceMeshAivExecutor::CalcLevel0CommInfo(TransportMemType inp
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllReduceMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollAllReduceMeshAivExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize; // 默认情况使用rankSize个AIV
+    numBlocks = rankSize; // 默认情况使用rankSize个AIV
 
     bool isOpBase = (workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     if (isOpBase) {
-        blockDim = BLOCK_DIM_FACTOR_TWO * rankSize; // 单机场景，单算子AllReduce大数据使用2倍 rankSize个aiv
+        numBlocks = NUM_BLOCKS_FACTOR_TWO * rankSize; // 单机场景，单算子AllReduce大数据使用2倍 rankSize个aiv
     }
 
-    u32 bestBlockDim = blockDim;
-    CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_WARNING("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
-        blockDim_, rankSize), HCCL_E_PARA);
-    if (blockDim_ < blockDim) {
-        blockDim = blockDim_ / rankSize * rankSize;
+    u32 bestNumBlocks = numBlocks;
+    CHK_PRT_RET(numBlocks_ < rankSize,
+        HCCL_WARNING("[CollAllReduceMeshAivExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, rankSize), HCCL_E_PARA);
+    if (numBlocks_ < numBlocks) {
+        numBlocks = numBlocks_ / rankSize * rankSize;
     }
 
-    HCCL_INFO("[CollAllReduceMeshAivExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollAllReduceMeshAivExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -165,7 +165,7 @@ HcclResult CollAllReduceMeshAivExecutor::GetAivExecParam(const OpParam& param, A
     HCCL_INFO("SPK [CollAllReduceMeshAivExecutor][GetAivExecParam], rank[%llu], rankSize[%llu], len[%llu],datatype[%llu], op[%llu]", args.rank, args.rankSize, args.len, args.dataType, args.reduceOp);
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllReduceMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllReduceMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllReduce executor getalgexecparam success, take time [%lld]us.",
@@ -203,15 +203,15 @@ HcclResult CollAllReduceMeshAivExecutor::KernelRun(const OpParam &param, ExecMem
         param.DataDes.dataType, param.reduceType, 0, isOpbase
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType };
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     topoArgs.identify = algoAttr_.identifier;
-    HCCL_DEBUG("[CollAllReduceMeshAivExecutor][KernelRun]blockDim is %u", blockDim_);
+    HCCL_DEBUG("[CollAllReduceMeshAivExecutor][KernelRun]numBlocks is %u", numBlocks_);
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();

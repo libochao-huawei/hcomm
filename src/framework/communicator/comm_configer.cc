@@ -69,7 +69,7 @@ s32 CommConfiger::GetCommConfigExecTimeOut(const std::string& identifier)
         return execTimeOut;
     }
     execTimeOut = commConfigMap_[identifier].GetConfigExecTimeOut();
-    HCCL_INFO("[CommConfiger][GetCommConfigExecTimeOut]: identifier[%s], execTimeOut[%d]",
+    HCCL_INFO("[CommConfiger][GetCommConfigExecTimeOut]: identifier[%s], execTimeOut[%d]s",
         identifier.c_str(), execTimeOut);
     return execTimeOut;
 }
