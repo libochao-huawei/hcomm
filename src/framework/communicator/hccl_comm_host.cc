@@ -110,14 +110,14 @@ namespace hccl
 
     HcclResult hcclComm::RegistTaskAbortHandler() const
     {
-        HCCL_INFO("RegistTaskAbortHandler begin");
+        HCCL_RUN_INFO("RegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
         CHK_RET(TaskAbortHandler::Init(communicator_.get()));
         return HCCL_SUCCESS;
     }
 
     HcclResult hcclComm::UnRegistTaskAbortHandler() const
     {
-        HCCL_INFO("UnRegistTaskAbortHandler begin");
+        HCCL_RUN_INFO("UnRegistTaskAbortHandler begin, group[%s]", identifier_.c_str());
         CHK_RET(TaskAbortHandler::DeInit(communicator_.get()));
         return HCCL_SUCCESS;
     }
