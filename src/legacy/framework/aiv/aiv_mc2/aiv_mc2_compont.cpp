@@ -107,7 +107,7 @@ void AivMc2Compont::AivMC2AllocCommRes(Mc2Tiling *mc2TilingPtr) const
     auto insQueue = make_shared<InsQueue>();
 
     auto                            collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
-    auto                            aivLinks    = collService->GetFullMeshLinks();
+    auto                            aivLinks    = comm->GetFullMeshLinks();
     
     for (auto &link : aivLinks) {
         HCCL_INFO("[AivMc2Compont][AivMC2AllocCommRes] aivLink[%s]", link.Describe().c_str());
@@ -137,7 +137,7 @@ void AivMc2Compont::AivMC2AllocCommResV2(Mc2InitTilingInner *mc2TilingPtr) const
     auto insQueue = make_shared<InsQueue>();
 
     auto                            collService = dynamic_cast<CollServiceDeviceMode *>(comm->GetCollService());
-    auto                            aivLinks    = collService->GetFullMeshLinks();
+    auto                            aivLinks    = comm->GetFullMeshLinks();
     
     for (auto &link : aivLinks) {
         HCCL_INFO("[AivMc2Compont][AivMC2AllocCommRes] aivLink[%s]", link.Describe().c_str());

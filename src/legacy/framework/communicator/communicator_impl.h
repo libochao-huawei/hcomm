@@ -366,6 +366,7 @@ public:
     HcclResult ClearOpResource(const std::string &opTag);// 清空opTag所属资源
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
     std::string GetTopoFilePath();
+    std::vector<LinkData> GetFullMeshLinks() const;
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护

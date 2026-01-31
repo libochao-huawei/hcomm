@@ -177,6 +177,16 @@ HcclResult HcclRankGraphGetEndpointDescV2(HcclComm comm, uint32_t layer, uint32_
 HcclResult HcclRankGraphGetEndpointInfoV2(HcclComm comm, uint32_t rankId, const EndpointDesc *endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen, void *info);
 HcclResult HcclTaskRegisterV2(HcclComm comm, const char *msgTag, Callback cb);
 HcclResult HcclTaskUnRegisterV2(HcclComm comm, const char *msgTag);
+
+HcclResult HcclCommWorkingDevNicSetV2(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks);
+
+HcclResult HcclCommSetMemoryRangeV2(HcclComm comm, void *baseVirPtr, size_t size, size_t alignment, uint64_t flags);
+
+HcclResult HcclCommUnsetMemoryRangeV2(HcclComm comm, void *baseVirPtr);
+
+HcclResult HcclCommActivateCommMemoryV2(HcclComm comm, void *virPtr, size_t size, size_t offset, void* handle, uint64_t flags);
+
+HcclResult HcclCommDeactivateCommMemoryV2(HcclComm comm, void *virPtr);
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

@@ -416,39 +416,6 @@ void CollServiceDeviceMode::Resume()
     }
 }
 
-std::vector<LinkData> CollServiceDeviceMode::GetFullMeshLinks() const
-{
-    HCCL_INFO("[CollServiceDeviceMode::%s] start.", __func__);
-
-    // 遍历所有rank，两两建链
-    std::vector<LinkData> links;
-    std::unordered_set<LinkData> linkDataSet;
-    int                   rankSize = comm->GetRankSize();
-    int                   myRank   = comm->GetMyRank();
-    for (int dRank = 0; dRank < rankSize; dRank++) {
-        if (myRank == dRank) {
-            continue;
-        }
-        for (u32 level = 0; level < MAX_NET_LAYER; level++) {
-            vector<LinkData>            tempLinks;
-            std::vector<NetInstance::Path> paths = comm->GetRankGraph()->GetPaths(level, myRank, dRank);
-            for (NetInstance::Path &path : paths) {
-                tempLinks.emplace_back(LinkData(path));
-            }
-
-            if (!tempLinks.empty()) {
-                linkDataSet.insert(tempLinks.at(0));
-                break;
-            }
-        }
-    }
-
-    links.assign(linkDataSet.begin(), linkDataSet.end());
-
-    HCCL_INFO("[CollServiceDeviceMode::%s] end, links size[%zu]", __func__, links.size());
-    return links;
-}
-
 HcclResult CollServiceDeviceMode::HandleAclGraphFirstOpAivBuff(rtStream_t mainStream)
 {
     rtModel_t rtModel = nullptr;

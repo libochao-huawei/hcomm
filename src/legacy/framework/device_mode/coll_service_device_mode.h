@@ -48,7 +48,6 @@ public:
     CcuInsPreprocessor *GetCcuInsPreprocessor();
     AivInsPreprocessor *GetAivInsPreprocessor();
     std::vector<LinkData> GetUniqueLinks(std::shared_ptr<InsQueue> &insQueue) const;
-    std::vector<LinkData> GetFullMeshLinks() const;
     // Aicpu用
     AicpuInsPreprocessor *GetAicpuInsPreprocessor();
     bool       IsAicpuResExisted(std::string algName);

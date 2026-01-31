@@ -787,6 +787,10 @@ void CommunicatorImpl::RegisterOffloadScratchBuffer(const std::string &opTag, vo
     auto scratchBuffer = DevBuffer::Create(reinterpret_cast<uintptr_t>(scratchMemPtr), requiredScratchMemSize);
     if(scratchBuffer){
         offloadScrachBufferMap[opTag] = scratchBuffer;
+        HCCL_RUN_INFO("[CommunicatorImpl] offloadScratchBuffer register, opTag[%s], offloadScrachBufferAddr[%p], "
+                      "offloadScrachBufferBufSize[%llu]M",
+                      opTag.c_str(), scratchBuffer->GetAddr(),
+                      scratchBuffer->GetSize() / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
     }
 }
 
@@ -1159,9 +1163,14 @@ void CommunicatorImpl::InitRankGraph(const RankTableInfo &ranktable)
     rankGraph = rankGraphBuilder.Build(ranktable, topoPath, myRank);
     ranktableInfo = rankGraphBuilder.GetRankTableInfo(); // 获取ranktable信息
     topoInfo = rankGraphBuilder.GetTopoInfo(); // 获取topo信息
+    HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] topoInfo[%s]", topoInfo->Describe().c_str());
     rankSize = rankGraph->GetRankSize();
     CheckRankGraph();
     SaveTopoDesc(id);
+    std::vector<LinkData> fullLinks = GetFullMeshLinks();
+    for (auto link : fullLinks) {
+        HCCL_RUN_INFO("[CommunicatorImpl][InitRankGraph] link[%s]", link.Describe().c_str());
+    }
 }
 
 void CommunicatorImpl::InitRankGraph(std::unique_ptr<RankGraph> &inputRankGraph)
@@ -1189,9 +1198,11 @@ void CommunicatorImpl::InitDataBufferManager()
     // aiv mc2预埋1M，并不暴露在内部算子执行逻辑里
     scratchBufSize += HCCL_MC2_ON_AICPU_FIXED_CALC_BUFFER_SIZE;
     if (rankSize > 1) {
-        HCCL_INFO("[CommunicatorImpl][InitDataBufferManager] scratchBufSize[%llu]M", cclBufferSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
         aivOffloadTagBuffer = std::move(DevBuffer::CreateHugePageBuf(4 * 1024 * 1024));
         cclBuffer = std::move(DevBuffer::CreateHugePageBuf(scratchBufSize));
+        HCCL_RUN_INFO(
+            "[CommunicatorImpl][InitDataBufferManager] cclBuffer create, commId[%s], addr[%p], size[%llu]M",
+            GetId().c_str(), cclBuffer->GetAddr(), cclBufferSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
 
         u64 aivTagBufSize = HCCL_CCL_AIV_TAG_BUFFER_SIZE * HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE;
         HCCL_INFO("[CommunicatorImpl][InitDataBufferManager] aivTagBufSize[%llu]M", aivTagBufSize / HCCL_CCL_COMM_FIXED_CALC_BUFFER_SIZE);
@@ -1303,12 +1314,17 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
 {
     //ccu 模式 快速下发模式需要的变量初始化
     taskExceptionEnv = EnvConfig::GetInstance().GetLogConfig().GetDfsConfig().taskExceptionEnable;
-    enableProfilingEnv = ProfilingHandler::GetInstance().GetHostApiState() ||
-                            ProfilingHandler::GetInstance().GetHcclNodeState() ||
-                            ProfilingHandler::GetInstance().GetHcclL0State() ||
-                            ProfilingHandler::GetInstance().GetHcclL1State() ||
-                            ProfilingHandler::GetInstance().GetHcclL2State();
-    HCCL_INFO("taskExceptionEnv[%d], enableProfilingEnv[%d]", taskExceptionEnv, enableProfilingEnv);
+
+    bool hostApiState = ProfilingHandler::GetInstance().GetHostApiState();
+    bool nodeState = ProfilingHandler::GetInstance().GetHcclNodeState();
+    bool l0State = ProfilingHandler::GetInstance().GetHcclL0State();
+    bool l1State = ProfilingHandler::GetInstance().GetHcclL1State();
+    bool l2State = ProfilingHandler::GetInstance().GetHcclL2State();
+
+    enableProfilingEnv = hostApiState || nodeState || l0State || l1State || l2State;
+
+    HCCL_RUN_INFO("taskExceptionEnv[%d], enableProfilingEnv: hostApiState[%d] nodeState[%d] l0State[%d] l1State[%d] l2State[%d]",
+    taskExceptionEnv, hostApiState, nodeState, l0State, l1State, l2State);
 }
 
 void CommunicatorImpl::InitSocketManager()
@@ -2176,7 +2192,7 @@ CommunicatorImpl::~CommunicatorImpl()
 
     (void)DestroyDpuKernelResource();
     g_taskServiceMap.erase(id);
-    HCCL_INFO("[~CommunicatorImpl] end CommunicatorImpl destroy, commId[%s]", id.c_str());
+    HCCL_RUN_INFO("[~CommunicatorImpl] cclBuffer free, commId[%s] ", id.c_str());
 }
 
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
@@ -2418,7 +2434,7 @@ void CommunicatorImpl::ExecAlgSelect(const CollOpParams &opParams, const OpMode 
         inOpExecuteConfig.accState = opAcceStateCacheIt->second;
     }
     SetOpExecuteConfig(inOpExecuteConfig); // 算子粒度 ok
-    HCCL_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s]", __func__,
+    HCCL_RUN_INFO("[CommunicatorImpl][%s] current accelerator[%s], algName[%s]", __func__,
               opExecuteConfig.accState.Describe().c_str(), curAlgName.c_str());
     SelectCollService();
 }
@@ -3566,6 +3582,7 @@ HcclResult CommunicatorImpl::ClearOpResource(const std::string &opTag)
     CHK_RET(GetStreamManager().offload->ClearOpStream(opTag));
     // 清空workspaceMem资源
     offloadScrachBufferMap.erase(opTag);
+    HCCL_RUN_INFO("[CommunicatorImpl][%s] offloadScrachBuffer free, opTag[%s]", __func__, opTag.c_str());
     // 清空input/output/scratch资源
     CHK_RET(GetDataBufferManager().Deregister(opTag));
     CHK_RET(GetLocalRmaBufManager().Dereg(opTag));
@@ -3576,6 +3593,39 @@ HcclResult CommunicatorImpl::ClearOpResource(const std::string &opTag)
     CHK_PTR_NULL(aiCpuCollService);
     CHK_RET(aiCpuCollService->ClearOpLoadedInfo(opTag));
     return HCCL_SUCCESS;
+}
+
+std::vector<LinkData> CommunicatorImpl::GetFullMeshLinks() const
+{
+    HCCL_INFO("[CommunicatorImpl::%s] start.", __func__);
+
+    // 遍历所有rank，两两建链
+    std::vector<LinkData> links;
+    std::unordered_set<LinkData> linkDataSet;
+    int                   rankSize = GetRankSize();
+    int                   myRank   = GetMyRank();
+    for (int dRank = 0; dRank < rankSize; dRank++) {
+        if (myRank == dRank) {
+            continue;
+        }
+        for (u32 level = 0; level < MAX_NET_LAYER; level++) {
+            vector<LinkData>            tempLinks;
+            std::vector<NetInstance::Path> paths = GetRankGraph()->GetPaths(level, myRank, dRank);
+            for (NetInstance::Path &path : paths) {
+                tempLinks.emplace_back(LinkData(path));
+            }
+
+            if (!tempLinks.empty()) {
+                linkDataSet.insert(tempLinks.at(0));
+                break;
+            }
+        }
+    }
+
+    links.assign(linkDataSet.begin(), linkDataSet.end());
+
+    HCCL_INFO("[CommunicatorImpl::%s] end, links size[%zu]", __func__, links.size());
+    return links;
 }
 
 } // namespace Hccl

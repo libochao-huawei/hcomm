@@ -4345,6 +4345,10 @@ HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommSetMemoryRangeV2(comm, baseVirPtr, size, alignment, flags));
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->SetMemoryRange(baseVirPtr, size, alignment, flags));
@@ -4359,6 +4363,10 @@ HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr)
     // 入参校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommUnsetMemoryRangeV2(comm, baseVirPtr));
+#endif
 
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -4376,6 +4384,10 @@ HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, 
     CHK_PTR_NULL(virPtr);
     CHK_PTR_NULL(handle);
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommActivateCommMemoryV2(comm, virPtr, size, offset, handle, flags));
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->ActivateCommMemory(virPtr, size, offset, handle, flags));
@@ -4392,6 +4404,10 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(virPtr);
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommDeactivateCommMemoryV2(comm, virPtr));
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->DeactivateCommMemory(virPtr));
@@ -4403,6 +4419,9 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
 
 HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks)
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommWorkingDevNicSetV2(comm, ranks, useBackup, nRanks));
+#endif
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclCommWorkingDevNicSet", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
