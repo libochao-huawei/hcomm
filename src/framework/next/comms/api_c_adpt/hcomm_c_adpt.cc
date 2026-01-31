@@ -83,7 +83,7 @@ static inline HcclResult WithChannelByHandleLocked(ChannelHandle inHandle, Func 
 using namespace hcomm;
 static HcommEndpointMap g_EndpointMap;
 
-HcclResult HcommEndpointGet(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
+HcclResult HcommEndpointGet_(EndpointHandle endpointHandle, void **endpoint)  // 根据endpointHandle返回Endpoint对象指针
 {
     auto it = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_PRT_RET(it == nullptr, HCCL_ERROR("[%s] endpoint not found in g_EndpointMap, endpointHandle[%p]",
@@ -362,8 +362,29 @@ HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle
     return HCCL_SUCCESS;
 }
 
+HcclResult HcommChannelGet(const ChannelHandle channelHandle, void **channel)
+{
+    CHK_PTR_NULL(channel);
+ 
+    const auto &D2HhandleIter = hcomm::g_ChannelD2HMap.find(channelHandle);
+    if (D2HhandleIter == hcomm::g_ChannelD2HMap.end()) {
+        HCCL_ERROR("[Hcomm][%s] channel[%llx] not found.", __func__, channelHandle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+ 
+    const auto handle = D2HhandleIter->second;
+    const auto &handleIter = hcomm::g_ChannelMap.find(handle);
+    if (handleIter == hcomm::g_ChannelMap.end()) {
+        HCCL_ERROR("[Hcomm][%s] channel[%llx] not found.", __func__, handle);
+        return HcclResult::HCCL_E_NOT_FOUND;
+    }
+    *channel = reinterpret_cast<void*>(handleIter->second.get());
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList)
 {
+    // 不得随意添加无效日志，可能造成刷屏
     CHK_PTR_NULL(channelList);
     CHK_PTR_NULL(statusList);
 
@@ -383,9 +404,6 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
             HCCL_ERROR("[%s] Get ChannelHandle failed.", __func__);
             return ret;
         }
-
-        HCCL_INFO("[%s] channel status[%d].", __func__, status);
-
         CHK_PRT_RET(
             status == ChannelStatus::FAILED, HCCL_ERROR("%s failed, status[%d]", __func__, status), HCCL_E_NETWORK);
 
@@ -398,7 +416,6 @@ HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t list
     }
 
     HcclResult finalRet = (readyCount == listNum) ? HCCL_SUCCESS : HCCL_E_AGAIN;
-    HCCL_DEBUG("%s end, readyCount[%u], listNum[%u]", __func__, readyCount, listNum);
     return finalRet;
 }
 
@@ -524,13 +541,13 @@ HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32_t noti
 HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum)
 {
     if (threads == nullptr) {
-        HCCL_ERROR("[HcommThreadfree] threads is null");
+        HCCL_ERROR("[HcommThreadfree] threads is null.");
         return HCCL_E_PARA;
     }
 
     if (threadNum == 0) {
-        HCCL_INFO("[HcommThreadfree] threadNum is 0, nothing to free");
-        return HCCL_SUCCESS;
+        HCCL_ERROR("[HcommThreadfree] threadNum is 0, nothing to free.");
+        return HCCL_E_PARA;
     }
 
     HCCL_INFO("[HcommThreadfree] begin to free %u threads", threadNum);

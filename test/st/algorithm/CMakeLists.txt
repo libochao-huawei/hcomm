@@ -31,6 +31,7 @@ set(ASCEND_CANN_INCLUDE_LIST
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hccl
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/hcomm/ccu
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/trace
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/runtime/runtime
@@ -158,6 +159,18 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc
     ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc/network
     ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/external_depends/rdma-core/include
+
+    # ccu 头文件
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/adpt/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
+ 
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/pub_inc/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/ccu/ccu_transport/
 )
 
 set(HCOMM_LEGACY_INCLUDE_LIST

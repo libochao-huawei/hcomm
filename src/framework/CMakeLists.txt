@@ -98,6 +98,20 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoints/server_socket/
+
+    # ccu 头文件
+    ${HCCL_BASE_DIR}/framework/next/comms/adpt
+
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/pub_inc/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_transport/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_kernel
 )
 
 target_include_directories(hcomm PRIVATE
@@ -117,6 +131,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
