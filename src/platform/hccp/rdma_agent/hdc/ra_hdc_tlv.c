@@ -20,7 +20,6 @@ int RaHdcTlvInit(struct RaTlvHandle *tlvHandle)
     union OpTlvInitData tlvData = { 0 };
     int ret = 0;
 
-    tlvData.txData.moduleType = tlvHandle->moduleType;
     tlvData.txData.phyId = phyId;
 
     ret = RaHdcProcessMsg(RA_RS_TLV_INIT, phyId, (char *)&tlvData, sizeof(union OpTlvInitData));
@@ -39,7 +38,6 @@ int RaHdcTlvDeinit(struct RaTlvHandle *tlvHandle)
     union OpTlvDeinitData tlvData = { 0 };
     int ret;
 
-    tlvData.txData.moduleType = tlvHandle->moduleType;
     tlvData.txData.phyId = phyId;
 
     ret = RaHdcProcessMsg(RA_RS_TLV_DEINIT, phyId, (char *)&tlvData, sizeof(union OpTlvDeinitData));
@@ -49,24 +47,45 @@ int RaHdcTlvDeinit(struct RaTlvHandle *tlvHandle)
     return 0;
 }
 
-STATIC void RaHdcTlvRequestHeadInit(struct RaTlvHandle *tlvHandle, struct TlvMsg *sendMsg,
-    struct TlvRequestMsgHead *head)
+STATIC void RaHdcTlvRequestHeadInit(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
+    struct TlvMsg *sendMsg, struct TlvRequestMsgHead *head)
 {
-    head->moduleType = tlvHandle->moduleType;
+    head->moduleType = moduleType;
     head->phyId = tlvHandle->initInfo.phyId;
     head->totalBytes = sendMsg->length;
     head->type = sendMsg->type;
     head->offset = 0;
 }
 
-int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
+STATIC int RaHdTlvRequestForSendNullMsg(unsigned int phyId, union OpTlvRequestData *tlvData,
+    struct TlvRequestMsgHead *head, struct TlvMsg *recvMsg)
+{
+    int ret = 0;
+
+    (void)memcpy_s(&(tlvData->txData.head), sizeof(struct TlvRequestMsgHead),
+        head, sizeof(struct TlvRequestMsgHead));
+
+    ret = RaHdcProcessMsg(RA_RS_TLV_REQUEST, phyId, (char *)tlvData, sizeof(union OpTlvRequestData));
+    CHK_PRT_RETURN(ret != 0, hccp_err("[request][ra_hdc_tlv]hdc message process failed ret(%d) phy_id(%u)",
+        ret, phyId), ret);
+
+    recvMsg->length = tlvData->rxData.recvBytes;
+    return ret;
+}
+
+int RaHdcTlvRequest(struct RaTlvHandle *tlvHandle, unsigned int moduleType,
+    struct TlvMsg *sendMsg, struct TlvMsg *recvMsg)
 {
     unsigned int phyId = tlvHandle->initInfo.phyId;
     union OpTlvRequestData tlvData = { 0 };
     struct TlvRequestMsgHead head = { 0 };
     int ret = 0;
 
-    RaHdcTlvRequestHeadInit(tlvHandle, sendMsg, &head);
+    RaHdcTlvRequestHeadInit(tlvHandle, moduleType, sendMsg, &head);
+    if (sendMsg->length == 0) {
+        return RaHdTlvRequestForSendNullMsg(phyId, &tlvData, &head, recvMsg);
+    }
+
     while (head.offset < sendMsg->length) {
         head.sendBytes = (head.totalBytes - head.offset) >= MAX_TLV_MSG_DATA_LEN ?
             MAX_TLV_MSG_DATA_LEN : (head.totalBytes - head.offset);

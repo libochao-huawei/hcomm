@@ -28,11 +28,10 @@
 #include "ra_rs_err.h"
 #include "rs_drv_rdma.h"
 #include "dl_hal_function.h"
-#include "rs_drv_rdma.h"
+#include "rs_drv_socket.h"
 #include "rs_socket.h"
-#ifdef CONFIG_TLV
 #include "rs_adp_nslb.h"
-#endif
+#include "rs_ub.h"
 #include "rs_epoll.h"
 
 #define BIND_MIN_DCPU_NUM 1
@@ -219,13 +218,11 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
 
     ret = ssl_adp_do_handshake(acceptInfo->ssl);
     if (ret == 1) {
-#ifdef CONFIG_SSL
         ret = rs_tls_peer_cert_verify(acceptInfo->ssl, rscb);
         if (ret) {
             hccp_err("tls verify peer cert failed");
             return ;
         }
-#endif
         acceptInfo->state = RS_CONN_STATE_SSL_CONNECTED;
     } else {
         err = ssl_adp_get_error(acceptInfo->ssl, ret);
@@ -236,9 +233,7 @@ STATIC void RsDoSslHandshake(struct RsAcceptInfo *acceptInfo, struct rs_cb *rscb
             hccp_info("return want read");
             return ;
         } else {
-#ifdef CONFIG_SSL
             rs_ssl_err_string(acceptInfo->connFd, err);
-#endif
             return ;
         }
     }
@@ -322,6 +317,7 @@ STATIC int RsEpollEventHeterogTcpRecvInHandle(struct rs_cb *rsCb, int fd)
 
 STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
 {
+    enum ProductType productType;
     int fd = events->data.fd;
     int ret;
 
@@ -357,20 +353,40 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
         return;
     }
 
+    productType = RsGetProductType(rsCb->logicId);
+    if(productType == PRODUCT_TYPE_910D) {
+        ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
+        if (ret != -ENODEV) {
+            hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
+            return;
+        }
+
+        ret = RsEpollEventUrmaAsyncEventInHandle(rsCb, fd);
+        if (ret != -ENODEV) {
+            hccp_info("the fd:%d is for urma async event, no need to go on, ret:%d", fd, ret);
+            return;
+        }
+    }
+
     return;
 }
 
 STATIC void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events)
 {
-    RS_CHECK_POINTER_NULL_RETURN_VOID(events);
+    enum ProductType productType;
+    int ret;
+
+    RS_CHECK_POINTER_NULL_RETURN_VOID(events);	 
     RS_CHECK_POINTER_NULL_RETURN_VOID(rsCb);
 
 #ifdef CONFIG_TLV
-    int ret;
-    ret = RsEpollNslbEventHandle(&rsCb->nslbCb, events->data.fd, events->events);
-    if (ret != -ENODEV) {
-        hccp_info("the fd:%d is nslb event, no need to go on, ret:%d", events->data.fd, ret);
-        return;
+    productType = RsGetProductType(rsCb->logicId);
+    if(productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910C) {
+        ret = RsEpollNslbEventHandle(&rsCb->tlvCb.nslbCb, events->data.fd, events->events);
+        if (ret != -ENODEV) {
+            hccp_info("the fd:%d is nslb event, no need to go on, ret:%d", events->data.fd, ret);
+            return;
+        }
     }
 #endif
 

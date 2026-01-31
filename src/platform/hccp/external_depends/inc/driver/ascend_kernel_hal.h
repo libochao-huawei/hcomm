@@ -511,7 +511,7 @@ int hal_kernel_qos_notify_module_online(int dev_id, enum qos_master_type master)
 int hal_kernel_qos_notify_module_offline(int dev_id, enum qos_master_type master);
 
 /**
-* @brief get all bandwidth infomation
+* @brief get all bandwidth information
 * @param [in] uint32_t devid: device id
 * @param [out] struct qos_bw_result_t *res: bandwidth info of each master
 * @param [in] uint32_t in_size: size of res
@@ -650,7 +650,7 @@ struct svm_dma_desc {
 /**
  * @ingroup driver
  * @brief  Create a DMA descriptor.
- * @attention Ascend910_95 is not supported
+ * @attention Ascend950 is not supported
  * @param [in]  addr_info: dMA address information structure containing memory details.
  * @param [in]  handle: handle structure identifying DMA descriptor ownership and context.
  * @param [out]  dma_desc: output DMA descriptor structure to be populated.
@@ -663,7 +663,7 @@ int hal_kernel_svm_dma_desc_create(struct svm_dma_desc_addr_info *addr_info,
 /**
  * @ingroup driver
  * @brief  Destroy a DMA descriptor.
- * @attention Ascend910_95 is not supported
+ * @attention Ascend950 is not supported
  * @param [in]  handle: pointer to the DMA descriptor handle identifying the descriptor to destroy.
  * @return   0 Success, others for fail
  */
@@ -742,7 +742,7 @@ int hal_kernel_p2p_put_pages(struct p2p_page_table *page_table);
 /**
  * @ingroup driver
  * @brief  Check memory attributes for a specific virtual address range in SVM space.
- * @attention Ascend910_95 is not supported
+ * @attention Ascend950 is not supported
  * @param [in]  devpid: the device pid.
  * @param [in]  va: virtual address to start checking.
  * @param [in]  size: size of the memory region to check
@@ -754,7 +754,7 @@ int hal_kernel_svm_check_mem_attribute(int devpid, u64 va, u64 size, u32 attribu
 /**
  * @ingroup driver
  * @brief  Find the devpid corresponding to the physical page using pfn.
- * @attention Ascend910_95 is not supported
+ * @attention Ascend950 is not supported
  * @param [in]  pfn: physical frame number to query.
  * @param [out]  devpid: pointer to store the resulting device process ID.
  * @note There is an internal lock, Might sleep, Do not call in atomic context.
@@ -765,7 +765,7 @@ int hal_kernel_svm_query_devpid_by_pfn(u64 pfn, int *devpid);
 /**
  * @ingroup driver
  * @brief  Increment the reference count of the physical page by 1
- * @attention Ascend910C is not supported
+ * @attention 910_93 is not supported
  * @param [in]  pid: target process id.
  * @param [in]  va: starting virtual address.
  * @param [in]  nr_pages: number of pages from start to pin
@@ -778,7 +778,7 @@ int hal_kernel_svm_get_user_pages(int pid, u64 va, u32 nr_pages, void **pages, b
 /**
  * @ingroup driver
  * @brief  Decrement the reference count of the physical page by 1
- * @attention Ascend910C is not supported
+ * @attention 910_93 is not supported
  * @param [in]  nr_pages: number of pages from start to pin
  * @param [in]  is_remap_addr: if the VMA's vm_flags has the VM_PFNMAP bit set.
  * @param [out]  pages: array that receives pointers to the pages pinned.
@@ -855,7 +855,7 @@ int hal_kernel_get_hardware_info(unsigned int phy_id, devdrv_hardware_info_t *ha
 * @ingroup driver
 * @brief   This interface is used to get physical base address, only called in device side.
 * @param [in]  phy_id : Physical device id
-* @param [in]  offset : address
+* @param [in]  offset : address.
 * @return   address containing the offset of the physical base address, ULLONG_MAX if fail
 */
 unsigned long long hal_kernel_get_dev_phy_base_addr(unsigned int phy_id, unsigned long long offset);
@@ -883,7 +883,7 @@ typedef enum {
     SOC_TYPE_610LITE,           /* 610lite */
     SOC_TYPE_CLOUD_V3,          /* Ascend910A3 */
     SOC_TYPE_BS9SX1A,           /* BS9SX1A */
-    SOC_TYPE_CLOUD_V4,          /* Ascend910_95 */
+    SOC_TYPE_CLOUD_V4,          /* Ascend950 */
     SOC_TYPE_CLOUD_V5,          /* Ascend910_96 */
     SOC_TYPE_MC62CM12A,          /* MC62CM12A */
     SOC_TYPE_MAX
@@ -1116,11 +1116,11 @@ enum txatu_user_module_type {
 * @brief   This interface is used to add TXATU in device
 * @param [in]  udevid: unified device id in device
 * @param [in]  type: txatu_user_module_type
-* @param [in]  host_phy_addr: host physical address
+* @param [in]  host_phy_addr: host physical address.
 * @param [in]  host_addr_size: host physical address size
-* @param [out]  device_phy_addr: device physical address
+* @param [out]  device_phy_addr: device physical address.
 * @return   0 Success, others for fail
-* @note Support: Ascend910_95/Ascend910_96
+* @note Support: Ascend950/Ascend910_96
 */
 int hal_kernel_agentdrv_add_tx_atu(u32 udevid, enum txatu_user_module_type type, u64 host_phy_addr,
     u64 host_addr_size, u64 *device_phy_addr);
@@ -1133,7 +1133,7 @@ int hal_kernel_agentdrv_add_tx_atu(u32 udevid, enum txatu_user_module_type type,
 * @param [in]  host_phy_addr: host physical address to update
 * @param [in]  host_addr_size: host physical address size
 * @return   0 Success, others for fail
-* @note Support: Ascend910_95/Ascend910_96
+* @note Support: Ascend950/Ascend910_96
 */
 
 int hal_kernel_agentdrv_update_tx_atu(u32 udevid, enum txatu_user_module_type type, u64 host_phy_addr,
@@ -1144,7 +1144,7 @@ int hal_kernel_agentdrv_update_tx_atu(u32 udevid, enum txatu_user_module_type ty
 * @param [in]  udevid: unified device id in device
 * @param [in]  type: txatu_user_module_type
 * @return   0 Success, others for fail
-* @note Support: Ascend910_95/Ascend910_96
+* @note Support: Ascend950/Ascend910_96
 */
 int hal_kernel_agentdrv_del_tx_atu(u32 udevid, enum txatu_user_module_type type);
 

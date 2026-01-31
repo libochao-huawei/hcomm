@@ -23,7 +23,6 @@
 #include "dl_ibverbs_function.h"
 #include "dl_hal_function.h"
 
-#ifdef CONFIG_CGROUP
 typedef void (*SighandlerT)(int);
 
 STATIC int HccpAddToCgroup()
@@ -48,7 +47,6 @@ STATIC int HccpAddToCgroup()
 
     return 0;
 }
-#endif
 
 STATIC int HccpChangeNumOfFile()
 {
@@ -94,20 +92,27 @@ int main(int argc, char *argv[])
 int llt_main(int argc, char *argv[])
 #endif
 {
-    int ret;
     struct HccpInitParam param = {0};
+    enum ProductType productType;
     struct timeval start, end;
     float timeCost = 0.0;
+    int ret;
 
     hccp_run_info("hccp init start!");
     ret = HccpChangeNumOfFile();
     CHK_PRT_RETURN(ret, hccp_err("hccp change limit of nofile failed, ret = %d", ret), ret);
 
+    productType = RsGetProductType(param.logicId); // Cache result after first query, skip exception checking for subsequent queries
+    if(productType == PRODUCT_TYPE_INVALID) {
+        hccp_err("rs get product type failed");
+        return -ERR_UNKONWN_PRODUCT;
+    }
 #ifdef CONFIG_CGROUP
-    ret = HccpAddToCgroup();
-    CHK_PRT_RETURN(ret, hccp_err("hccp_add_to_cgroup error[%d]", ret), ret);
+    if(productType == PRODUCT_TYPE_910 || productType == PRODUCT_TYPE_310p){
+        ret = HccpAddToCgroup();
+        CHK_PRT_RETURN(ret, hccp_err("hccp_add_to_cgroup error[%d]", ret), ret);
+    }
 #endif
-
     ret = DlHalInit();
     CHK_PRT_RETURN(ret, hccp_err("dl_hal_init error[%d]", ret), ret);
 

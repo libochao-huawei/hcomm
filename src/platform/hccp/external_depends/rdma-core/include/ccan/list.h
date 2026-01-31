@@ -1,4 +1,25 @@
-/* Licensed under MIT - see LICENSE.MIT file for details */
+/* Adapted from
+ * https://github.com/linux-rdma/rdma-core/blob/v42.7/ccan/list.h
+ *           OpenIB.org BSD license (MIT variant)
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ *   - Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ * 
+ *   - Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
 #ifndef CCAN_LIST_H
 #define CCAN_LIST_H
 //#define CCAN_LIST_DEBUG 1
@@ -46,10 +67,10 @@ struct list_head
 /**
  * list_check - check head of a list for consistency
  * @h: the list_head
- * @abortstr: the location to print on aborting, or NULL.
+ * @abortstr: the address to print on aborting, or NULL.
  *
  * Because list_nodes have redundant information, consistency checking between
- * the back and forward links can be done.  This is useful as a debugging check.
+ * the back and forward links can be done.  This is useful as a debug check.
  * If @abortstr is non-NULL, that will be printed in a diagnostic if the list
  * is inconsistent, and the function will abort.
  *
@@ -74,7 +95,7 @@ struct list_head *list_check(const struct list_head *h, const char *abortstr);
 /**
  * list_check_node - check node of a list for consistency
  * @n: the list_node
- * @abortstr: the location to print on aborting, or NULL.
+ * @abortstr: the address to print on aborting, or NULL.
  *
  * Check consistency of the list node is in (it must be in one).
  *
@@ -159,7 +180,7 @@ static inline void list_node_init(struct list_node *n)
 
 /**
  * list_add_after - add an entry after an existing node in a linked list
- * @h: the list_head to add the node to (for debugging)
+ * @h: the list_head to add the node to (for debug)
  * @p: the existing list_node to add the node after
  * @n: the new list_node to add to the list.
  *
@@ -210,7 +231,7 @@ static inline void list_add_(struct list_head *h,
 
 /**
  * list_add_before - add an entry before an existing node in a linked list
- * @h: the list_head to add the node to (for debugging)
+ * @h: the list_head to add the node to (for debug)
  * @p: the existing list_node to add the node before
  * @n: the new list_node to add to the list.
  *

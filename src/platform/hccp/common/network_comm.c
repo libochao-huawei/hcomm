@@ -4,7 +4,7 @@
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
  * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
@@ -22,7 +22,7 @@ int NetCommGetSelfHome(char *homePath, unsigned int pathLen)
 {
     int ret, retVal;
     struct passwd *pwd = getpwuid(getuid());
-    CHK_PRT_RETURN(pwd == NULL, roce_err("pwd is NULL! getpwuid fail, errno:%d", errno), -EINVAL);
+    CHK_PRT_RETURN(pwd == NULL, roce_err("pwd is NULL! getpwuid failed, errno:%d", errno), -EINVAL);
 
     if (pwd->pw_name == NULL) {
         roce_err("pwd->pw_name is NULL, errno:%d", errno);
@@ -97,7 +97,7 @@ int NetGetGatewayAddress(unsigned int phyId, unsigned int *gtwAddr)
 out:
     retVal = fclose(fp);
     if (retVal) {
-        roce_warn("fclose fail, retVal:%d, errno:%d", retVal, errno);
+        roce_warn("fclose failed, retVal:%d, errno:%d", retVal, errno);
     }
     fp = NULL;
     return ret;

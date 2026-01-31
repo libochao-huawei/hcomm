@@ -36,6 +36,7 @@
 #include "tls.h"
 #include "hccp_common.h"
 #include "hccp_ping.h"
+#include "rs_rdma_inner.h"
 #include "rs_common_inner.h"
 #include "rs_ping_inner.h"
 #include "rs.h"
@@ -45,25 +46,10 @@
 #define CHIPER_LIST "ECDHE-RSA-AES256-GCM-SHA384:\
     !RC2:!RC4:!MD2:!MD4:!MD5:!DES:!3DES:!SHA1:!BLOWFISH:!CBC:!ECB:!ADH:!LOW:!PSK:!SRP:!DSS:!eNULL:!aNULL:!EXP:@STRENGTH"
 
-#define RS_WC_NUM 16384
 #define RS_S6_ADDR32 2
-#define RS_QP_ATTR_MIN_RNR_TIMER 12
-#define RS_QP_ATTR_TIMEOUT 16
-#define RS_QP_ATTR_RETRY_CNT 7
-#define RS_QP_ATTR_RNR_RETRY 7
-#define RS_QP_ATTR_MAX_SEND_SGE 8
-#define RS_QP_ATTR_GID_LEN 16
-#define RS_QP_TX_DEPTH_OFFLINE 128
-#define RS_QP_RX_DEPTH_OFFLINE 128
-#define RS_QP_TX_DEPTH_ONLINE 4096
-#define RS_QP_RX_DEPTH_ONLINE 4096
-#define RS_MR_NUM_MAX 256
 #define RS_USLEEP_TIME 20000
-#define RS_CONN_USLEEP_TIME 200000
-#define RS_PROMOTE_CONN_USLEEP_TIME 5000
 #define RS_RECV_MAX_TIME (1000.0 * 5) // ms
 #define RS_RECV_TAG_MAX_TIME (1000.0 * 90) // ms
-#define RS_TLS_CONN_TIME 1
 #define RS_DEVICE_NUM 0x3
 #define RS_HOSTID2DEVID(dev_id) ((dev_id) & RS_DEVICE_NUM)
 #define SOCK_CONN_DEV_ID_SIZE 64
@@ -85,8 +71,6 @@
 #define RS_ROCE_DSCP_33    33
 #define RS_DSCP_MASK       0x3f
 #define RS_DSCP_OFF        2
-
-#define RS_ROCE_4_SL    4
 
 #define RS_MAX_FD_NUM 65536
 
@@ -115,7 +99,6 @@
 #define RS_EC_KY_BITS_MIN_LEN 256
 #define RS_SSL_ERR_MSG_LEN 256
 #define RS_SOCKET_MAXLEN 2048
-#define RS_INTERFACE_LEN    5
 #define RS_INTERFACE_BOND_LEN    6
 #define RS_INTERFACE_ETH_PREFIX_LEN 3
 #define RS_INTERFACE_BOND_PREFIX_LEN 4
@@ -129,9 +112,6 @@
 #define RS_BOARDID_X86_16P     0x50
 #define RS_BOARDID_ARM_SERVER_2DIE    0xB0
 
-#define RS_MAX_RD_ATOMIC_NUM                128
-#define RS_QP_TX_DEPTH                      8191
-#define RS_QP_32K_DEPTH                     32767
 #define RS_MAX_RD_ATOMIC_NUM_PEER_ONLINE    16      // host RDMA adapt
 #define RS_QP_TX_DEPTH_PEER_ONLINE          4096    // host RDMA adapt
 
@@ -251,41 +231,14 @@ struct RsSecPara {
     } \
 } while (0)
 
-#define RS_QP_PARA_CHECK(phy_id) do { \
-    if ((phy_id) >= RS_MAX_DEV_NUM) { \
-        hccp_err("rs qp param error ! physical_id:%d", phy_id); \
+#define RS_QP_PARA_CHECK(phyId) do { \
+    if ((phyId) >= RS_MAX_DEV_NUM) { \
+        hccp_err("rs qp param error ! physical_id:%d", phyId); \
         return (-EINVAL); \
     } \
 } while (0)
 
-struct RsVnicInfo {
-    uint32_t vnicFlag;
-    uint32_t role;
-};
-
 #define RS_FD_INVALID       (-1)
-#define RS_EPOLL_EVENT      64
-#define RS_SGLIST_MAX       16
-#define RS_SGLIST_LEN_MAX   2147483648
-#define RS_QP_NUM_MAX       8192
-#define RS_MIN_TEMPTH_DEPTH 8
-#define RS_MAX_TEMPTH_DEPTH 4096
-
-enum RsCmdOpcode {
-    RS_CMD_QP_INFO = 0x12345678,
-    RS_CMD_MR_INFO = 0x12345687,
-    RS_CMD_LEN_INFO = 0x12345867,
-};
-
-struct RsMrInfo {
-    uint32_t cmd;    /* MUST be the first element */
-
-    uint32_t rkey;
-    uint64_t addr;
-    uint64_t len;
-};
-
-#define RS_MR_STATE_SYNCED  1
 
 /*
  * mr_cb also used to sync to remote
@@ -311,11 +264,6 @@ struct RsQpInfo {
     int gidIdx;
     union ibv_gid gid;
     struct RsMrInfo notifyMr;
-};
-
-struct RsQpLenInfo {
-    uint32_t cmd;
-    uint32_t len;
 };
 
 enum RsConnState {
@@ -580,6 +528,12 @@ struct RsCertSkidSubjectCb {
     struct RsSubject subjects[RS_SSL_MAX_ALL_CERT_NUM];
 };
 
+struct SensorNode {
+    unsigned int logicDevid;
+    int sensorUpdateCnt;
+    uint64_t sensorHandle;
+};
+
 struct RsRdevCb {
     struct rs_cb *rs_cb;
     unsigned int rdevIndex;
@@ -597,9 +551,6 @@ struct RsRdevCb {
     unsigned long long notifyVaBase;
     unsigned long long notifySize;
     int notifyAccess;
-    unsigned int logicDevid;
-    int sensorUpdateCnt;
-    uint64_t sensorHandle;
     unsigned int cqeErrCnt;
     pthread_mutex_t cqeErrCntMutex;
 
@@ -626,14 +577,18 @@ struct TlvBufInfo {
     unsigned int bufferSize;
     char *buf;
 };
-
-struct RsNslbCb {
-    struct rs_cb *rscb;
-    unsigned int phyId;
-    pthread_mutex_t mutex;
-    struct TlvBufInfo bufInfo;
+struct RsNslbCb {	
+    bool initFlag;	
     void *netcoCb;
-    bool netcoInitFlag;
+    pthread_mutex_t mutex;
+};
+
+struct RsTlvCb {
+    unsigned int phyId;	
+    pthread_mutex_t mutex;	
+    struct TlvBufInfo bufInfo;	
+    bool initFlag;	
+    struct RsNslbCb nslbCb;	
 };
 
 /*
@@ -664,13 +619,14 @@ struct rs_cb {
 
     struct RsPingCtxCb pingCb;
 
-    struct RsNslbCb nslbCb;
+    struct RsTlvCb tlvCb;
 
     char buf[RS_BUF_SIZE];
     struct ProcessRsSign pRsSign;
 
     unsigned long long notifyVaBase;
     unsigned long long notifySize;
+    struct SensorNode sensorNode;
 
     void (*tcpRecvCallback)(const void *fdHandle);
     const void **fdMap;
@@ -681,13 +637,6 @@ struct rs_cb {
     unsigned int grpId;
     pid_t hostPid;
     bool grpSetupFlag;
-};
-
-enum RsHardwareType {
-    RS_HARDWARE_SERVER,
-    RS_HARDWARE_PCIE,
-    RS_HARDWARE_2DIE,
-    RS_HARDWARE_UNKNOWN,
 };
 
 union RsSocketaddr {
@@ -724,11 +673,12 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId);
 
 int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
 bool RsCompareIpAddr(struct RsIpAddrInfo *a, struct RsIpAddrInfo *b);
-#ifdef CUSTOM_INTERFACE
 int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyid);
-#endif
 int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb, struct RsListHead *mrList);
 int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
 int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
 int RsEpollEventPingHandle(struct rs_cb *rsCb, int fd);
+int RsSensorNodeRegister(unsigned int phyId, struct rs_cb *rsCb);
+void RsSensorNodeUnregister(struct rs_cb *rsCb);
+int RsRetryTimeoutExceptionCheck(struct SensorNode *snesorNode);
 #endif // RS_INNER_H
