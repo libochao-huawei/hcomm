@@ -254,7 +254,7 @@ TEST_F(OneSidedUtV2, ut_HcclBatchPutV2_func)
     
     char* rank_table_file = "./ut_opbase_test.json";
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const std::string &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
-    MOCKER(SetCommAcceleratorV2).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER_CPP(&CommManager::SetCommAcceleratorV2).stubs().will(returnValue(HCCL_SUCCESS));
     CommManager::GetInstance(0).GetCommInfoV2().hcclGroupMap.clear();
     CommManager::GetInstance(0).GetCommInfoV2().pComm = nullptr;
     HcclResult ret = HcclCommInitClusterInfoV2(rank_table_file, 0, &comm);
