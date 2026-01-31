@@ -60,4 +60,8 @@ HcclResult HcomCheckUserRankV2(const u32 totalRanks, const u32 userRank);
 HcclResult HcomLoadRankTableFileV2(const char *clusterInfo, std::string &rankTableM);
 
 HcclResult HcomCheckVOpParamV2(u32 rankId, u32 rankSize, u64 count, void *inCounts);
+
+// 打印sendCountMatrix信息
+void HcomGetHashFromSendCountMatrixV2(u64 &sendCountMatrixHash, const void *sendCountMatrix,
+    u64 rankSize, const std::string &tag);
 #endif
