@@ -35,7 +35,7 @@ HcclResult UrmaEndpoint::Init()
     u32 devPhyId;
     s32 deviceLogicId;
     CHK_RET(hrtGetDevice(&deviceLogicId));
-    EXECEPTION_CATCH(Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId), return HCCL_E_INTERNAL);
+    Hccl::HccpHdcManager::GetInstance().Init(deviceLogicId);
     CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<uint32_t>(deviceLogicId), devPhyId));
     if (endpointDesc_.loc.device.devPhyId != devPhyId){
         HCCL_WARNING("[UrmaEndpoint][%s] endpointDesc.loc.device.devPhyId[%u] incorrect", __func__, endpointDesc_.loc.device.devPhyId);
@@ -51,6 +51,10 @@ HcclResult UrmaEndpoint::Init()
     CHK_RET(ServerSocketListen());
     EXECEPTION_CATCH(this->regedMemMgr_ = std::make_unique<UbRegedMemMgr>(), return HCCL_E_INTERNAL);
     this->regedMemMgr_->rdmaHandle_ = this->ctxHandle_;
+
+    // ccu模式专用的资源分配器
+    ccuChannelCtxPool_.reset(new (std::nothrow) CcuChannelCtxPool(deviceLogicId));
+    CHK_PTR_NULL(ccuChannelCtxPool_);
 
     return HcclResult::HCCL_SUCCESS;
 }
@@ -129,6 +133,11 @@ HcclResult UrmaEndpoint::MemoryUnimport(const void *memDesc, uint32_t descLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryUnimport(memDesc, descLen));
     return HCCL_SUCCESS;
+}
+
+CcuChannelCtxPool *UrmaEndpoint::GetCcuChannelCtxPool()
+{
+    return ccuChannelCtxPool_.get();
 }
 
 }

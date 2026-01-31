@@ -48,7 +48,7 @@ int32_t HcommLocalCopyOnThread(ThreadHandle thread, void *dst, const void *src, 
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        ret = threadPtr->LocalCopy(dst, src, len);
+        EXECEPTION_CATCH(ret = threadPtr->LocalCopy(dst, src, len), ret = HCCL_E_INTERNAL);
     } else {
         HcclBuf srcBuf{const_cast<void *>(src), len, nullptr};
         HcclBuf dstBuf{dst, len, nullptr};
@@ -77,7 +77,7 @@ int32_t HcommLocalReduceOnThread(ThreadHandle thread, void *dst, const void *src
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        ret = threadPtr->LocalReduce(dst, src, len, dataType, reduceOp);
+        EXECEPTION_CATCH(ret = threadPtr->LocalReduce(dst, src, len, dataType, reduceOp), ret = HCCL_E_INTERNAL);
     } else {
         CHK_PRT_RET((IsSupportReduce(dataType, reduceOp) == false), HCCL_ERROR("[%s] Not support reduce, "
             "dst[0x%llx], src[0x%llx], count[%llu], dataType[%d], reduceOp[%d]", __func__, dst, src, count, dataType, reduceOp), HCCL_E_PARA);
@@ -109,7 +109,7 @@ int32_t HcommThreadNotifyRecordOnThread(ThreadHandle thread, ThreadHandle dstThr
         LocalNotify *const notifyPtr = dstThreadPtr->GetNotify(dstNotifyIdx);
         CHK_PTR_NULL(notifyPtr);
         const uint32_t notifyId = notifyPtr->notifyId_;
-        ret = threadPtr->LocalNotifyRecord(notifyId);
+        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyRecord(notifyId), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -136,7 +136,7 @@ int32_t HcommThreadNotifyWaitOnThread(ThreadHandle thread, uint32_t notifyIdx, u
         LocalNotify *const notifyPtr = threadPtr->GetNotify(notifyIdx);
         CHK_PTR_NULL(notifyPtr);
         const uint32_t notifyId = notifyPtr->notifyId_;
-        ret = threadPtr->LocalNotifyWait(notifyId);
+        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -160,7 +160,7 @@ int32_t HcommAclrtNotifyRecordOnThread(ThreadHandle thread, uint64_t dstNotifyId
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        ret = threadPtr->LocalNotifyRecord(dstNotifyId);
+        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyRecord(dstNotifyId), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -182,7 +182,7 @@ int32_t HcommAclrtNotifyWaitOnThread(ThreadHandle thread, uint64_t notifyId, uin
 
     HcclResult ret = HCCL_SUCCESS;
     if (threadPtr->IsDeviceA5()) {
-        ret = threadPtr->LocalNotifyWait(notifyId);
+        EXECEPTION_CATCH(ret = threadPtr->LocalNotifyWait(notifyId), ret = HCCL_E_INTERNAL);
     } else {
         Stream *stream = GetStream(thread);
         CHK_PTR_NULL(stream);
@@ -220,7 +220,7 @@ HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum) // host fft
             Thread *threadPtrLoop = reinterpret_cast<Thread *>(threads[i]);
             CHK_PTR_NULL(threadPtrLoop);
             HCCL_INFO("[%s] Launching task in thread[0x%llx].", __func__, threads[i]);
-            threadPtrLoop->LaunchTask();
+            EXECEPTION_CATCH(threadPtrLoop->LaunchTask(), return HCCL_E_INTERNAL);
         }
         return HCCL_SUCCESS;
     }

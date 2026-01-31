@@ -288,7 +288,9 @@ HcclResult AicpuTsThread::HostInit()
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
         CHK_RET(notifys_[idx]->Init(notifyLoadType_));
-        CHK_RET(notifys_[idx]->SetIpc());
+        if (devType_ != DevType::DEV_TYPE_910_95) {
+            CHK_RET(notifys_[idx]->SetIpc());
+        }
     }
 
     if (streamType_ == StreamType::STREAM_TYPE_DEVICE && devType_ != DevType::DEV_TYPE_910_95) {
@@ -327,18 +329,26 @@ HcclResult AicpuTsThread::DeviceInit()
     HCCL_INFO("AicpuTsThread::DeviceInit InitStreams end");
 
     notifys_.reserve(notifyNum_);
+
     for (uint32_t idx = 0; idx < notifyNum_; idx++) {
         notifys_.emplace_back(nullptr);
         HcclSignalInfo notifyInfo;
         iss.read(reinterpret_cast<char_t *>(&notifyInfo), sizeof(notifyInfo));
         notifys_[idx].reset(new (std::nothrow) LocalNotify());
         CHK_SMART_PTR_NULL(notifys_[idx]);
-        CHK_RET(notifys_[idx]->Init(notifyInfo, notifyLoadType_));
-        HCCL_INFO("[AicpuTsThread][Init]local notify init success, resId[%u], tsId:%d, devId[%u]",
-            notifyInfo.resId,
-            notifyInfo.tsId,
-            notifyInfo.devId);
+        if (devType_ == DevType::DEV_TYPE_910_95) {
+            CHK_RET(notifys_[idx]->InitNotifyLite(notifyInfo));
+            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], devId[%u]",
+                notifyInfo.resId, notifyInfo.devId);
+        } else {
+            CHK_RET(notifys_[idx]->Init(notifyInfo, notifyLoadType_));
+            HCCL_INFO("[AicpuTsThread][Init]local notifyLite init success, resId[%u], tsId:%d, devId[%u]",
+                notifyInfo.resId,
+                notifyInfo.tsId,
+                notifyInfo.devId);
+        }
     }
+
     return HCCL_SUCCESS;
 }
 

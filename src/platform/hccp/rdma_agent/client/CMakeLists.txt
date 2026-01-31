@@ -2,6 +2,8 @@
 set(ra_list
     async/ra_comm.c
     async/ra_socket.c
+    async/ra_ctx.c
+    ra_ctx.c
     ra_host.c
     ra_common.c
     ra_ping.c
@@ -13,26 +15,12 @@ set(ra_list
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
 )
 
-# HCCP2.0
-if(EXISTS ${HCOMM_ORION})
-list(APPEND ra_list
-        ${HCOMM_ORION}/rdma_agent/client/async/ra_ctx.c
-        ${HCOMM_ORION}/rdma_agent/client/ra_ctx.c
-)
-endif()
-
 add_library(ra  SHARED ${ra_list})
-
-# HCCP2.0
-if(EXISTS ${HCOMM_ORION})
-target_compile_definitions(ra PRIVATE
-    CONFIG_CONTEXT
-)
-endif()
 
 target_compile_definitions(ra PRIVATE
     OPEN_BUILD_PROJECT
     LOG_CPP
+    CONFIG_CONTEXT
 )
 
 target_include_directories(ra PRIVATE
@@ -57,17 +45,10 @@ target_include_directories(ra PRIVATE
     # rdma头文件
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
-
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
 
-    # HCCP2.0
-    ${HCOMM_ORION}/inc/network
-    ${HCOMM_ORION}/inc/private/network
-    ${HCOMM_ORION}/rdma_agent/inc
-    ${HCOMM_ORION}/rdma_agent/client/async
-    ${HCOMM_ORION}/rdma_agent/hdc
-    ${HCOMM_ORION}/rdma_agent/hdc/async
-    ${HCOMM_ORION}/rdma_agent/peer
+    # HCCP Legacy
+    ${CMAKE_CURRENT_SOURCE_DIR}/async
 )
 
 target_link_directories(ra PRIVATE

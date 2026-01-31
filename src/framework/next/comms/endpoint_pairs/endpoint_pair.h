@@ -17,7 +17,7 @@
 #include "../endpoints/endpoint.h"
 #include "socket_mgr.h"
 #include "socket.h"
-#include "../../../../orion/unified_platform/resource/socket/socket.h"
+#include "../../../../legacy/unified_platform/resource/socket/socket.h"
 
 using EndpointDescPair = std::pair<EndpointDesc, EndpointDesc>;
 

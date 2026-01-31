@@ -106,6 +106,7 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_postSync)
     string commId = "AllReduce";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 2;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -166,6 +167,7 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_AicpuKfcTilingDataLaunchExt_Re
     string commId = "Reduce";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 2;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -226,6 +228,7 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_AicpuKfcTilingDataLaunchExt_Re
     string commId = "ReduceScatter";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 2;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -289,6 +292,7 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_AicpuKfcTilingDataLaunchExt_Al
     string commId = "Allreduce";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 2;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -348,6 +352,7 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_AicpuKDataLaunch)
     string commId = "Allreduce";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 2;
     params.isHeterogComm = false;
     params.logicDevId = 0;
@@ -431,6 +436,7 @@ TEST_F(HcclImplCommonNewTest, ut_HcclCommunicator_AicpuKDataLaunch_Capture)
     string commId = "Allreduce";
     memcpy_s(params.id.internal, HCCL_ROOT_INFO_BYTES, commId.c_str(), commId.length() + 1);
     params.rank = 0;
+    params.userRank = 0;
     params.totalRanks = 2;
     params.isHeterogComm = false;
     params.logicDevId = 0;

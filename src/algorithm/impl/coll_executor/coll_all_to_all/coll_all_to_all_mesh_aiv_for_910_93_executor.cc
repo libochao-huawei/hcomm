@@ -73,6 +73,7 @@ HcclResult CollAlltoAllMeshAivFor91093Executor::CalNumBlocks(u32& numBlocks, u32
 
     if (numBlocks_ < numBlocks) {
         numBlocks = numBlocks_ / NUM_BLOCKS_FACTOR_TWO * NUM_BLOCKS_FACTOR_TWO;
+        minNumBlocks = (minNumBlocks + NUM_BLOCKS_FACTOR_TWO - 1) / NUM_BLOCKS_FACTOR_TWO * NUM_BLOCKS_FACTOR_TWO;
     }
 
     CHK_PRT_RET(numBlocks < minNumBlocks,

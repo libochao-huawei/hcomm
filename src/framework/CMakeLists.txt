@@ -25,7 +25,6 @@ endif()
 
 
 set(HCCL_V2_CODE_ROOT ${ORION_REAL_PATH})
-set(HCCL_NEXT_CODE_ROOT ${HCCL_NEXT_REAL_PATH})
 
 
 message(STATUS "HCCL_OPEN_CODE_BASE_DIR = ${HCCL_OPEN_CODE_BASE_DIR}")
@@ -99,6 +98,20 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoints/server_socket/
+
+    # ccu 头文件
+    ${HCCL_BASE_DIR}/framework/next/comms/adpt
+
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/pub_inc/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1
+
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_transport/
+    ${HCCL_BASE_DIR}/framework/next/comms/ccu/ccu_kernel
 )
 
 target_include_directories(hcomm PRIVATE
@@ -118,6 +131,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/../include/hccl
         ${HCCL_BASE_DIR}/../pkg_inc/
         ${HCCL_BASE_DIR}/../pkg_inc/hccl/
+        ${HCCL_BASE_DIR}/../pkg_inc/hcomm/ccu
         ${HCCL_BASE_DIR}/platform/common
         ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
         ${HCCL_BASE_DIR}/platform/legacy/inc
@@ -131,8 +145,8 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/common/debug/profiling/inc
         ${HCCL_BASE_DIR}/common/debug/profiling/inc/host
         ${HCCL_BASE_DIR}/common/debug/config
-        ${HCCL_BASE_DIR}/orion/interface
-        ${HCCL_BASE_DIR}/orion/framework/topo/new_topo_builder/rank_graph
+        ${HCCL_BASE_DIR}/legacy/interface
+        ${HCCL_BASE_DIR}/legacy/framework/topo/new_topo_builder/rank_graph
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -260,14 +274,7 @@ set(ORION_HEAD_LIST)
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_V2_CODE_ROOT})
 
 foreach (dir ${sources_list})
-    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/orion") AND (NOT ${dir} MATCHES "src/orion/mdpi"))
-        list(APPEND ORION_HEAD_LIST ${dir})
-    endif()
-endforeach()
-
-FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${HCCL_NEXT_CODE_ROOT})
-foreach (dir ${open_dir_list})
-    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/hccl_next"))
+    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
         list(APPEND ORION_HEAD_LIST ${dir})
     endif()
 endforeach()
@@ -784,7 +791,7 @@ if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
 endif()
 
 target_include_directories(hcomm PRIVATE ${ORION_HEAD_LIST})
-add_subdirectory(${HCCL_BASE_DIR}/orion ${CMAKE_CURRENT_BINARY_DIR}/orion)
+add_subdirectory(${HCCL_BASE_DIR}/legacy ${CMAKE_CURRENT_BINARY_DIR}/legacy)
 add_dependencies(hcomm hccl_v2 hccl_aiv_op_910_95)
 target_link_libraries(hcomm
     hccl_v2
@@ -920,7 +927,7 @@ if(NOT KERNEL_MODE)
     )
 
     add_custom_command(OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
-        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../orion/framework/communicator/hostdpu/libccl_dpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
+        COMMAND ${HI_PYTHON} ${HCCL_BASE_DIR}/../cmake/scripts/parser_ini.py ${CMAKE_CURRENT_SOURCE_DIR}/../legacy/framework/communicator/hostdpu/libccl_dpu.ini ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     )
     add_custom_target(dpu_kernel_json DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/libccl_dpu.json)
@@ -931,11 +938,6 @@ if(NOT KERNEL_MODE)
 endif()
 
 if(BUILD_OPEN_PROJECT AND KERNEL_MODE)
-    target_include_directories(ccl_kernel PRIVATE
-        ${HCCL_BASE_DIR}/platform/hccp/inc/
-        # orion 仓头文件
-        ${HCCL_BASE_DIR}/../../ace/comop/hccl/orion/interface
-        )
     if(BUILD_OPEN_PROJECT)
         set(CMAKE_CXX_FLAGS "")
         target_compile_definitions(ccl_kernel PRIVATE

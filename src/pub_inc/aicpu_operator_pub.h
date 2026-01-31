@@ -676,6 +676,8 @@ struct HcclOpResParam {
     // ARS算法属性
     u32 multiSuperPodDiffDeviceNumMode;
     bool isARSDoubleRing;
+    // 读取HCCL_ENTRY_LOG_ENABLE环境变量，用于增加算子kernel展开信息
+    bool opEntry{false};
 };
 
 struct OpTilingData {

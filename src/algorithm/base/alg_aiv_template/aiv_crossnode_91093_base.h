@@ -36,7 +36,6 @@ KERNEL_ARGS_DEF_A3, ExtraArgsV2 extraArgs
 KERNEL_ARGS_CALL_A3, &extraArgs
 
 constexpr uint32_t SIZE_OF_INT32 = 4;
-constexpr uint32_t SYNCALL_BUFF_START = 2560 * 1024;
 
 class AivCrossNode91093Base {
 public:
@@ -235,6 +234,7 @@ public:
     uint32_t multiOffset;
     uint32_t pingpongOffset;
     uint32_t countOffset;
+    uint32_t syncAllOffset;
 };
 
 __aicore__ inline uint64_t AivCrossNode91093Base::CeilDiv(uint64_t a, uint64_t b)
@@ -415,9 +415,11 @@ __aicore__ inline void AivCrossNode91093Base::InitOffset()
     if (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 < MAX_RANK_SIZE_A3) {
         notifyArea = rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3;
     }
-    localOffset = (notifyArea * FLAG_BUF_NUM) * FLAG_SIZE;
-    multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE + localOffset;
-    countOffset = MAX_NUM_BLOCKS * FLAG_SIZE + localOffset;
+    localOffset = (notifyArea  * FLAG_BUF_NUM) * FLAG_SIZE;
+    multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+    pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+    countOffset = DOUBLE * pingpongOffset;
+    syncAllOffset = countOffset + notifyArea * FLAG_SIZE;
 }
 
 template<typename T>

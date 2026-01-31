@@ -15,7 +15,6 @@
 #include "reged_mems/roce_mem.h"
 #include "host_socket_handle_manager.h"
 #include "adapter_rts_common.h"
-#include "hccp_peer_manager.h"
  
 namespace hcomm {
 CpuRoceEndpoint::CpuRoceEndpoint(const EndpointDesc &endpointDesc)
@@ -35,12 +34,11 @@ HcclResult CpuRoceEndpoint::Init()
     CHK_RET(CommAddrToIpAddress(endpointDesc_.commAddr, ipAddr));
     s32 devId = 0;
     CHK_RET(hrtGetDevice(&devId));
-    EXECEPTION_CATCH(Hccl::HccpPeerManager::GetInstance().Init(devId), return HCCL_E_INTERNAL);
     u32 devPhyId = 0;
     CHK_RET(hrtGetDevicePhyIdByIndex(devId, devPhyId));
     auto &rdmaHandleMgr = Hccl::RdmaHandleManager::GetInstance();
-    EXECEPTION_CATCH(ctxHandle_ = static_cast<void *>(
-        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET)), return HCCL_E_INTERNAL);
+    ctxHandle_ = static_cast<void *>(
+        rdmaHandleMgr.GetByAddr(devPhyId, Hccl::LinkProtoType::RDMA, ipAddr, Hccl::PortDeploymentType::HOST_NET));
     CHK_PTR_NULL(ctxHandle_);
     HCCL_INFO("CpuRoceEndpoint::%s success, devId[%u], ipAddr[%s], ctxHandle[%p]",
         __func__,

@@ -25,22 +25,22 @@ endif()
 
 add_library(hccl_plf  SHARED)
 
-
 set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/aicpu/
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/inner
     ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc/new
+
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/inc/adapter
     ${CMAKE_CURRENT_SOURCE_DIR}/inc/adapter/host
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/common/
+    ${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unfold_cache
     ${CMAKE_CURRENT_SOURCE_DIR}/common/p2p_mgmt
     ${CMAKE_CURRENT_SOURCE_DIR}/common/unique
-    #${CMAKE_CURRENT_SOURCE_DIR}/common/buffer_manager
     ${CMAKE_CURRENT_SOURCE_DIR}/common/misc/network_manager
     ${CMAKE_CURRENT_SOURCE_DIR}/common/misc/gradient_segment
     ${CMAKE_CURRENT_SOURCE_DIR}/resource/transport
@@ -60,25 +60,7 @@ set(platform_include_list
     ${CMAKE_CURRENT_SOURCE_DIR}/task
     ${CMAKE_CURRENT_SOURCE_DIR}/tbe_vector_reduce
     ${CMAKE_CURRENT_SOURCE_DIR}/aiv_communication
-    #orion
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/unified_platform/resource/buffer
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/unified_platform/pub_inc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/unified_platform/resource
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/unified_platform
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/common
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/common/utils
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/common/exception
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/unified_platform/resource/buffer/aicpu
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/unified_platform/external_system
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/common/types
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/unified_platform/common
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/framework/topo
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/framework/topo/new_topo_builder/common
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../ace/comop/hccl/orion/framework/topo/new_topo_builder/rank_graph
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../drivers/network/orion/hcomm_dev/inc/network
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../../drivers/network/orion/hcomm_dev/inc/
 )
-
 
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(hccl_plf PRIVATE
@@ -156,7 +138,6 @@ target_compile_definitions(hccl_plf  PRIVATE
     USE_AICORE_REDUCESUM
     USE_AICORE_GATHERV2
     USE_AICORE_GATHERV2_INFER
-    CONFIG_CONTEXT
     $<$<STREQUAL:${PRODUCT_SIDE},host>:_GLIBCXX_USE_CXX11_ABI=0>
 )
 
@@ -187,7 +168,6 @@ target_link_options(hccl_plf PRIVATE
 target_include_directories(hccl_plf PRIVATE
     ${platform_include_list}
 )
-
 
 if(BUILD_OPEN_PROJECT)
     target_link_libraries(hccl_plf
@@ -229,9 +209,6 @@ else()
         hccl_headers
     )
 endif()
-
-
-
 
 add_subdirectory(comm_primitive)
 add_subdirectory(common)

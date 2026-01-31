@@ -8,9 +8,6 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 
-# HCCP2.0
-set(HCOMM_ORION ${CMAKE_CURRENT_SOURCE_DIR}/orion/hcomm_dev)
-
 if (DEVICE_MODE)
     add_subdirectory(stub_tsd)
 endif()

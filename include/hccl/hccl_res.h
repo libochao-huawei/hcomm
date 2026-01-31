@@ -43,6 +43,25 @@ typedef uint64_t ThreadHandle;
 #endif
 
 /**
+ * @enum CommMemType
+ * @brief 内存类型枚举定义
+ */
+typedef enum {
+    COMM_MEM_TYPE_INVALID = -1, ///< 无效的内存类别
+    COMM_MEM_TYPE_DEVICE = 0, ///< 设备侧内存（如NPU等）
+    COMM_MEM_TYPE_HOST,   ///< 主机侧内存
+} CommMemType;
+
+/**
+ * @brief 内存段元数据描述结构体
+ */
+typedef struct {
+    CommMemType type; ///< 内存物理位置类型，参见CommMemType
+    void *addr;       ///< 内存地址
+    uint64_t size;    ///< 内存区域字节数
+} CommMem;
+ 
+/**
  * @brief 通信引擎类型枚举
  */
 typedef enum {
@@ -372,6 +391,8 @@ typedef int32_t(Callback)(uint64_t, int32_t);
  * @param msgTag 操作标签，用于标识和区分不同的任务。
  * @param cb 回调函数，任务完成时将被调用。
  * @return HcclResult。
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
 /**
@@ -380,6 +401,8 @@ extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
  * @param msgTag 操作标签，用于标识要注销的任务。
  * @param cb 回调函数，任务完成时将被调用。
  * @return HcclResult。
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
  
@@ -391,6 +414,8 @@ extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
  * @param[out] addr 对应的workspace起始地址
  * @param[out] newCreated 可为nullptr, 不为nullptr时会返回是否新创建的workspace
  * @return HcclResult 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
 
@@ -403,9 +428,38 @@ extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t 
  * @param[out] exportedThreads 导出的Thread列表
  * @return HcclResult 执行结果状态码
  * @note 导出到目标通信引擎之后，在目标通信引擎直接引用，不需要导入操作
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
 
+/**
+ * @brief 获取channel中全部交换获得的远端内存信息
+ * 
+ * @param[in] comm 通信域句柄
+ * @param[in] channel 通道句柄
+ * @param[out] remoteMem 远端内存列表
+ * @param[out] memTag 远端内存字符串标识列表
+ * @param[in,out] memNum 内存数量
+ * @return HcclResult 
+ * @warning
+ */
+extern HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, CommMem **remoteMem,
+    char **memTag, uint32_t *memNum);
+
+/**
+ * @brief 向通信域注册内存
+ * @param[in] comm 通信域句柄
+ * @param[in] memTag 内存字符串标识，以"\0"结尾，最大字符长度为HCCL_RES_TAG_MAX_LEN
+ * @param[in] mem 内存信息
+ * @param[in] regAttr 内存注册属性
+ * @param[out] memHandle 注册内存句柄
+ * @return HcclResult 执行结果状态码
+ * @note 通信域内以memTag作为key存储该内存，并注册内存。 \n该接口既支持算子内，也支持算子外注册内存。
+ * @warning
+ */
+extern HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem, void **memHandle);
+ 
 #ifdef __cplusplus
 }
 #endif  // __cplusplus

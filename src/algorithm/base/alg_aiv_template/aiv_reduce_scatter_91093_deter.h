@@ -118,8 +118,8 @@ __aicore__ inline void AivReduceScatter91093Deter::Process(GM_ADDR buffIn0, GM_A
     LocalTensor<int32_t> workLocal;
 
     pipe.InitBuffer(syncQue, 1, syncBufferSize);
-    syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
-    syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
+    syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset), syncBufferSize);
+    syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset + syncBufferSize), syncBufferSize);
 
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;

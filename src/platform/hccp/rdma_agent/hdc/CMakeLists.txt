@@ -8,6 +8,9 @@ endif()
 
 set(ra_hdc_list ra_hdc.c
     ${BASE_DIR}/ra_comm.c
+    ${BASE_DIR}/ctx/ra_ctx_comm.c
+    async/ra_hdc_async_ctx.c
+    ra_hdc_ctx.c
     ra_rdma_lite.c
     ra_hdc_lite.c
     ra_hdc_ping.c
@@ -20,28 +23,14 @@ set(ra_hdc_list ra_hdc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
 )
 
-# HCCP2.0
-if(EXISTS ${HCOMM_ORION})
-list(APPEND ra_hdc_list
-        ${HCOMM_ORION}/rdma_agent/comm/ctx/ra_ctx_comm.c
-        ${HCOMM_ORION}/rdma_agent/hdc/async/ra_hdc_async_ctx.c
-        ${HCOMM_ORION}/rdma_agent/hdc/ra_hdc_ctx.c
-)
-endif()
-
 add_library(ra_hdc SHARED ${ra_hdc_list})
-
-# HCCP2.0
-if(EXISTS ${HCOMM_ORION})
-target_compile_definitions(ra_hdc PRIVATE
-    CONFIG_CONTEXT
-)
-endif()
 
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_hdc PRIVATE
         OPEN_BUILD_PROJECT
-        LOG_CPP)
+        LOG_CPP
+        CONFIG_CONTEXT
+    )
 
     target_include_directories(ra_hdc PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/../inc
@@ -66,16 +55,12 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
-
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
 
-        # HCCP2.0
-        ${HCOMM_ORION}/inc/network
-        ${HCOMM_ORION}/inc/private/network
-        ${HCOMM_ORION}/rdma_agent/inc
-        ${HCOMM_ORION}/rdma_agent/comm/ctx
-        ${HCOMM_ORION}/rdma_agent/hdc
-        ${HCOMM_ORION}/rdma_agent/hdc/async
+        # HCCP Legacy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
+        ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
+        ${CMAKE_CURRENT_SOURCE_DIR}/../hdc/async
     )
 
     target_link_directories(ra_hdc PRIVATE

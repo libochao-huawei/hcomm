@@ -96,8 +96,10 @@ HcclResult CollAllReduceMeshAivFor91093Executor::CalNumBlocks(u32& numBlocks, u3
     if (numBlocks_ < numBlocks) {
         if (numBlocks_ > rankSize) {
             numBlocks = numBlocks_ / rankSize * rankSize;
+            minNumBlocks = (minNumBlocks + rankSize - 1) / rankSize * rankSize;
         } else {
             numBlocks = numBlocks_ / NUM_BLOCKS_FACTOR_TWO * NUM_BLOCKS_FACTOR_TWO;
+            minNumBlocks = (minNumBlocks + NUM_BLOCKS_FACTOR_TWO - 1) / NUM_BLOCKS_FACTOR_TWO * NUM_BLOCKS_FACTOR_TWO;
         }
     }
 
