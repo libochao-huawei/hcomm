@@ -204,6 +204,28 @@ TEST_F(OpbaseTestV2, HcclBatchSendRecvV2)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
+TEST_F(OpbaseTestV2, HcclBatchSendRecvV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    Hccl::CommParams commParams;
+    std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(communicator.get());
+    int a = 0;
+    aclrtStream stream = static_cast<aclrtStream>(&a);
+
+    u32 itemNum = 10;
+    unique_ptr<HcclSendRecvItem> sendRecvInfo = make_unique<HcclSendRecvItem>();
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclBatchSendRecvV2(sendRecvInfo.get(), itemNum, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
+}
+
 TEST_F(OpbaseTestV2, HcclAlltoAllV2)
 {
     Hccl::CommParams commParams;
@@ -221,6 +243,31 @@ TEST_F(OpbaseTestV2, HcclAlltoAllV2)
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(OpbaseTestV2, HcclAlltoAllV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    Hccl::CommParams commParams;
+    std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(communicator.get());
+    void* sendBuf = nullptr;
+    uint64_t sendCount = 10;
+    HcclDataType sendType = HCCL_DATA_TYPE_INT32;
+    void* recvBuf = nullptr;
+    uint64_t recvCount = 10;
+    HcclDataType recvType = HCCL_DATA_TYPE_INT32;
+    int a = 0;
+    aclrtStream stream = static_cast<aclrtStream>(&a);
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
 TEST_F(OpbaseTestV2, HcclAlltoAllVV2)
@@ -243,6 +290,34 @@ TEST_F(OpbaseTestV2, HcclAlltoAllVV2)
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(OpbaseTestV2, HcclAlltoAllVV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    Hccl::CommParams commParams;
+    std::unique_ptr<Hccl::HcclCommunicator> communicator = std::make_unique<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(communicator.get());
+    void* sendBuf = nullptr;
+    void* sendCounts = (void *)0x1000000;
+    HcclDataType sendType = HCCL_DATA_TYPE_INT32;
+    void* recvBuf = nullptr;
+    void* recvCounts = (void *)0x1000001;
+    void* sdispls = nullptr;
+    void* rdispls = nullptr;
+
+    HcclDataType recvType = HCCL_DATA_TYPE_INT32;
+    int a = 0;
+    aclrtStream stream = static_cast<aclrtStream>(&a);
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
 TEST_F(OpbaseTestV2, HcclCommInitClusterInfoV2_1)
@@ -425,6 +500,31 @@ TEST_F(OpbaseTestV2, HcclAlltoAllVCV2)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
+TEST_F(OpbaseTestV2, HcclAlltoAllVCV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    // Prepare test data
+    void* sendBuf = nullptr;
+    void* sendCountMatrix = (void *)0x1000000;
+    void* recvBuf = nullptr;
+    HcclDataType sendType = HCCL_DATA_TYPE_INT8;
+    HcclDataType recvType = HCCL_DATA_TYPE_INT8;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int a = 0;
+    rtStream_t stream = static_cast<rtStream_t>(&a);
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
+}
+
 TEST_F(OpbaseTestV2, HcclReduceV2_Sum_ShouldPass_WhenValidParams)
 {
     // Mock objects and parameters
@@ -444,6 +544,33 @@ TEST_F(OpbaseTestV2, HcclReduceV2_Sum_ShouldPass_WhenValidParams)
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(OpbaseTestV2, HcclReduceV2_Sum_ShouldPass_WhenValidParams_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    // Mock objects and parameters
+    void *sendBuf = nullptr;
+    void *recvBuf = nullptr;
+    uint64_t count = 10;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    uint32_t root = 0;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclComm->pimpl->rankSize = 4;
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    aclrtStream stream = &count;
+    DevType devType = DevType::DEV_TYPE_910_95;
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
 TEST_F(OpbaseTestV2, HcclReduceV2_PROD_ShouldFail_WhenValidParams)
@@ -526,6 +653,30 @@ TEST_F(OpbaseTestV2, HcclAllReduceV2_Sum_ShouldPass_WhenValidParams_v2)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
+TEST_F(OpbaseTestV2, HcclAllReduceV2_Sum_ShouldPass_WhenValidParams_v2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    // Mock objects and parameters
+    void *sendBuf = nullptr;
+    void *recvBuf = nullptr;
+    uint64_t count = 10;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    aclrtStream stream = &count;
+    DevType devType = DevType::DEV_TYPE_910_95;
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclAllReduceV2(sendBuf, recvBuf, count, dataType, op, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
+}
+
 TEST_F(OpbaseTestV2, HcclAllReduceV2_PROD_ShouldFail_WhenValidParams_v2)
 {
     // Mock objects and parameters
@@ -596,6 +747,28 @@ TEST_F(OpbaseTestV2, HcclBroadcastV2_ShouldReturnSuccess_WhenAllParamsValid)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
+TEST_F(OpbaseTestV2, HcclBroadcastV2_ShouldReturnSuccess_WhenAllParamsValid_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    void *buf = nullptr;
+    uint64_t count = 10;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT32;
+    uint32_t root = 0;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclComm->pimpl->rankSize = 4;
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    aclrtStream stream = &count;
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclBroadcastV2(buf, count, dataType, root, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
+}
+
 TEST_F(OpbaseTestV2, HcclAllocComResourceByTilingV2)
 {
     Hccl::CommParams commParams;
@@ -609,6 +782,27 @@ TEST_F(OpbaseTestV2, HcclAllocComResourceByTilingV2)
     MOCKER_CPP(&HcclCommunicator::AllocCommResource).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, &commContext);
     EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(OpbaseTestV2, HcclAllocComResourceByTilingV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int dd = 0;
+    void *stream = static_cast<void *>(&dd);
+    void *mc2Tiling = static_cast<void *>(&dd);
+    void *commContext = static_cast<void *>(&dd);
+    MOCKER_CPP(&HcclCommunicator::GetCcuMc2ServerNum).stubs().with().will(returnValue(10));
+    MOCKER_CPP(&HcclCommunicator::AllocCommResource).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HcclAllocComResourceByTilingV2(comm, stream, mc2Tiling, &commContext);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
 TEST_F(OpbaseTestV2, Ut_HcclAllocComResourceByTilingV2_When_server_num_exceed_20_Expect_HCCL_E_INTERNAL)
@@ -700,6 +894,31 @@ TEST_F(OpbaseTestV2, HcclScatterV2)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
+TEST_F(OpbaseTestV2, HcclScatterV2)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    // Arrange
+    void *sendBuf = (void *)0x1000000;
+    void *recvBuf = nullptr;
+    uint64_t recvCount = 10;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    uint32_t root = 0;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    hcclComm->pimpl->rankSize = 4;
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    aclrtStream stream = &recvCount;
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclScatterV2(sendBuf, recvBuf, recvCount, dataType, root, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
+}
+
 TEST_F(OpbaseTestV2, HcclAllGatherV2)
 {
     // Arrange
@@ -716,6 +935,30 @@ TEST_F(OpbaseTestV2, HcclAllGatherV2)
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclAllGatherV2(sendBuf, recvBuf, recvCount, dataType, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(OpbaseTestV2, HcclAllGatherV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    // Arrange
+    void *sendBuf = nullptr;
+    void *recvBuf = nullptr;
+    uint64_t recvCount = 10;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int a = 10;
+    aclrtStream stream = static_cast<aclrtStream>(&a);
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclAllGatherV2(sendBuf, recvBuf, recvCount, dataType, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
 TEST_F(OpbaseTestV2, HcclSendV2)
@@ -737,6 +980,31 @@ TEST_F(OpbaseTestV2, HcclSendV2)
     EXPECT_EQ(result, HCCL_SUCCESS);
 }
 
+TEST_F(OpbaseTestV2, HcclSendV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    // Arrange
+    void *sendBuf = nullptr;
+    void *recvBuf = nullptr;
+    uint64_t recvCount = 10;
+    uint32_t destRank = 1;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    aclrtStream stream = nullptr;
+    uint64_t count = 10;
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclSendV2(sendBuf, count, dataType, destRank, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
+}
+
 TEST_F(OpbaseTestV2, HcclRecvV2)
 {
     // Arrange
@@ -754,6 +1022,31 @@ TEST_F(OpbaseTestV2, HcclRecvV2)
     MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
     HcclResult result = HcclRecvV2(recvBuf, count, dataType, srcRank, comm, stream);
     EXPECT_EQ(result, HCCL_SUCCESS);
+}
+
+TEST_F(OpbaseTestV2, HcclRecvV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    // Arrange
+    void *sendBuf = nullptr;
+    void *recvBuf = nullptr;
+    uint64_t recvCount = 10;
+    uint32_t srcRank = 1;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    aclrtStream stream = nullptr;
+    uint64_t count = 10;
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult result = HcclRecvV2(recvBuf, count, dataType, srcRank, comm, stream);
+    EXPECT_EQ(result, HCCL_SUCCESS);
+
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
 TEST_F(OpbaseTestV2, HcclReduceScatterV2)
@@ -782,6 +1075,40 @@ TEST_F(OpbaseTestV2, HcclReduceScatterV2)
     op = HCCL_REDUCE_PROD;
     ret = HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
     EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+}
+
+TEST_F(OpbaseTestV2, HcclReduceScatterV2_With_Log)
+{
+    EnvConfig::GetInstance().logCfg.entryLogEnable = CfgField<bool>({"HCCL_ENTRY_LOG_ENABLE", true, CastBin2Bool});
+    EnvConfig::GetInstance().logCfg.entryLogEnable.isParsed = true;
+    MOCKER(HrtGetDevice).Stubs().will(returnValue(0));
+
+    void *sendBuf = nullptr;
+    void *recvBuf = nullptr;
+    uint64_t recvCount = 10;
+    HcclDataType dataType = HCCL_DATA_TYPE_INT8;
+    Hccl::CommParams commParams;
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm = std::make_shared<Hccl::HcclCommunicator>(commParams);
+    HcclComm comm = static_cast<HcclComm>(hcclComm.get());
+    int a = 10;
+    aclrtStream stream = static_cast<aclrtStream>(&a);
+    DevType devType = DevType::DEV_TYPE_910_95;
+    HcclReduceOp op = HCCL_REDUCE_SUM;
+
+    MOCKER_CPP(&HcclCommunicator::LoadOpbasedCollOp).stubs().with(any(), any()).will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    op = HCCL_REDUCE_MAX;
+    ret = HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    op = HCCL_REDUCE_MIN;
+    ret = HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+    op = HCCL_REDUCE_PROD;
+    ret = HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream);
+    EXPECT_EQ(ret, HCCL_E_NOT_SUPPORT);
+    
+    EnvConfig::GetInstance().logCfg.entryLogEnable.value = false;
 }
 
 TEST_F(OpbaseTestV2, HcclGetRawCommHandle)

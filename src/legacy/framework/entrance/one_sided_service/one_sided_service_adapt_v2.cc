@@ -35,13 +35,16 @@ const std::map<int, HcclMemType> HCCL_MEM_TYPE_V2 {
 
 HcclResult HcclRegisterMemV2(HcclComm comm, u32 remoteRank, int type, void *addr, u64 size, HcclMemDesc *desc)
 {
-    HCCL_INFO("HcclRegisterMemV2 Begin");
+    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    std::string commIdentifier = hcclCommunicator->GetId();
+    HCCL_RUN_INFO("Entry-%s:comm[%s], remoteRank[%u], memType[%d], memAddr[%p], memSize[%llu], memDescPtr[%p]",
+                      __func__, commIdentifier.c_str(), remoteRank, type, addr, size, desc);
+
     auto it = HCCL_MEM_TYPE_V2.find(type);
     CHK_PRT_RET(it == HCCL_MEM_TYPE_V2.end(),
         HCCL_ERROR("[HcclRegisterMemV2] HcclMemType[%d] is invalid, please check memory type", type), HCCL_E_PARA);
     HcclMemType memType = it->second;
     u32 localRank = INVALID_VALUE_RANKID;
-    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
     CHK_RET(hcclCommunicator->GetRankId(localRank));
 
     CHK_PRT_RET(remoteRank == localRank,
@@ -92,8 +95,10 @@ HcclResult HcclRegisterMemV2(HcclComm comm, u32 remoteRank, int type, void *addr
 
 HcclResult HcclDeregisterMemV2(HcclComm comm, HcclMemDesc *desc)
 {
-    HCCL_INFO("HcclDeregisterMemV2 Begin");
     Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    std::string commIdentifier = hcclCommunicator->GetId();
+    HCCL_RUN_INFO("Entry-%s:comm[%s], memDescPtr[%p]", __func__, commIdentifier.c_str(), desc);
+
     Hccl::HcclOneSidedService *service = nullptr;
     CHK_RET(hcclCommunicator->GetOneSidedService(&service));
     CHK_PTR_NULL(service);
@@ -109,9 +114,12 @@ HcclResult HcclDeregisterMemV2(HcclComm comm, HcclMemDesc *desc)
 HcclResult HcclExchangeMemDescV2(
     HcclComm comm, u32 remoteRank, HcclMemDescs *local, int timeout, HcclMemDescs *remote, u32 *actualNum)
 {
-    HCCL_INFO("HcclExchangeMemDescV2 Begin");
-    u32 localRank = INVALID_VALUE_RANKID;
     Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    std::string commIdentifier = hcclCommunicator->GetId();
+    HCCL_RUN_INFO("Entry-%s:comm[%s], remoteRank[%u], localMemDescPtr[%p], timeout[%d s], remoteMemDescPtr[%p], "
+                    "actualNum[%u]", __func__, commIdentifier.c_str(), remoteRank, local, timeout, remote, *actualNum);
+
+    u32 localRank = INVALID_VALUE_RANKID;
     CHK_RET(hcclCommunicator->GetRankId(localRank));
     CHK_PRT_RET(remoteRank == localRank,
         HCCL_WARNING("remoteRank[%u] is equal to localRank[%u], no need to "
@@ -142,8 +150,11 @@ HcclResult HcclExchangeMemDescV2(
 
 HcclResult HcclEnableMemAccessV2(HcclComm comm, HcclMemDesc *remoteMemDesc, HcclMem *remoteMem)
 {
-    HCCL_INFO("HcclEnableMemAccessV2 Begin");
     Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    std::string commIdentifier = hcclCommunicator->GetId();
+    HCCL_RUN_INFO("Entry-%s:comm[%s], remoteMemDescPtr[%p], remoteMemPtr[%p]", __func__, commIdentifier.c_str(), remoteMemDesc,
+                    remoteMem);
+
     Hccl::HcclOneSidedService *service = nullptr;
     CHK_RET(hcclCommunicator->GetOneSidedService(&service));
     CHK_PTR_NULL(service);
@@ -159,8 +170,10 @@ HcclResult HcclEnableMemAccessV2(HcclComm comm, HcclMemDesc *remoteMemDesc, Hccl
 
 HcclResult HcclDisableMemAccessV2(HcclComm comm, HcclMemDesc *remoteMemDesc)
 {
-    HCCL_INFO("HcclDisableMemAccessV2 Begin");
-        Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    Hccl::HcclCommunicator *hcclCommunicator = static_cast<Hccl::HcclCommunicator *>(comm);
+    std::string commIdentifier = hcclCommunicator->GetId();
+    HCCL_RUN_INFO("Entry-%s:comm[%s], remoteMemDescPtr[%p]", __func__, commIdentifier.c_str(), remoteMemDesc);
+
         Hccl::HcclOneSidedService *service = nullptr;
         CHK_RET(hcclCommunicator->GetOneSidedService(&service));
         CHK_PTR_NULL(service);

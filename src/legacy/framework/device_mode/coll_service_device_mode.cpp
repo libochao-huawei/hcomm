@@ -98,12 +98,6 @@ void CollServiceDeviceMode::LoadWithOpBasedMode(CollOperator &op, std::unique_pt
 
     AllocQueueNotify(*insQueue);
 
-    // 日志打印
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
-
     // 获取insQueue中所有Ins的linkDats
     std::vector<LinkData> uniqueLinks = GetUniqueLinks(insQueue);
     // 将通讯域设置为transport建链中状态
@@ -141,11 +135,6 @@ void CollServiceDeviceMode::LoadWithOffloadMode(CollOperator &op, std::unique_pt
     shared_ptr<InsQueue> insQueue = Orchestrate(op);
 
     AllocQueueNotify(*insQueue);
-
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
     
     // 获取insQueue中所有Ins的linkDats
     std::vector<LinkData> uniqueLinks = GetUniqueLinks(insQueue);
