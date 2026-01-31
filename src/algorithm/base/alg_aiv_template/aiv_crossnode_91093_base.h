@@ -29,12 +29,6 @@ input, output, rank, rankSize, len, \
 dataType, reduceOp, root, tag, isOpBase, \
 step, deterministic
 
-#define EXTERN_KERNEL_ARGS_DEF_A3 \
-KERNEL_ARGS_DEF_A3, ExtraArgsV2 extraArgs
-
-#define EXTERN_KERNEL_ARGS_CALL_A3 \
-KERNEL_ARGS_CALL_A3, &extraArgs
-
 constexpr uint32_t SIZE_OF_INT32 = 4;
 
 class AivCrossNode91093Base {
@@ -126,9 +120,6 @@ public:
     __aicore__ inline void WaitNv1(uint32_t tag, GM_ADDR recordAddr, bool ifCoreLevel,
         AivNotifyType notifyType = AivNotifyType::ACK);
 
-    __aicore__ inline void WaitGENv1(uint32_t tag, GM_ADDR recordAddr, bool ifCoreLevel,
-        AivNotifyType notifyType = AivNotifyType::ACK);
-
     __aicore__ inline void Wait1vN(uint32_t tag, CommPattern pattern, bool ifClear = true,
         AivNotifyType notifyType = AivNotifyType::ACK);
 
@@ -137,10 +128,6 @@ public:
 
     __aicore__ inline void WaitSyncFlag(int32_t value, GM_ADDR waitAddr, 
         int32_t offAddr, int32_t waitBlock, bool ifPingpong=false);
-
-    __aicore__ inline void CountRecord(uint64_t count, int32_t index);
-
-    __aicore__ inline void CountWaitGE(GM_ADDR waitAddr, uint64_t count, int32_t index);
 
     __aicore__ inline void IntraSync(int32_t curTag, int32_t offset, int32_t blockIdx, bool ifPingpong = false);
 
@@ -199,7 +186,6 @@ public:
     LocalTensor<int32_t> localSetTensor;
     LocalTensor<int32_t> localCheckTensor;
     LocalTensor<int32_t> localClearTensor;
-    LocalTensor<int32_t> localCheckGETensor;
     TBuf<> bufferArgsBuf;
     LocalTensor<uint64_t> bufferArgsTensor; // buffer地址GM-UB
     TBuf<> offsetArgsBuf;
@@ -350,7 +336,6 @@ __aicore__ inline void AivCrossNode91093Base::InitSetCheckClearArgsTensor()
     localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, 0);
     localCheckTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE);
     localClearTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE * IDX_2);
-    localCheckGETensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, UB_FLAG_SIZE * IDX_3);
     localClearTensor.SetValue(0, 0);
     pipe.InitBuffer(bufferArgsBuf, UB_FLAG_SIZE * MAX_TARGET_NUM);
     bufferArgsTensor = bufferArgsBuf.Get<uint64_t>();
@@ -744,16 +729,6 @@ __aicore__ inline void AivCrossNode91093Base::WaitNv1(uint32_t tag, GM_ADDR reco
     WaitSignalValue(ctrlFlagGM, localCheckTensor, tag);
 }
 
-__aicore__ inline void AivCrossNode91093Base::WaitGENv1(uint32_t tag, GM_ADDR recordAddr, bool ifCoreLevel, AivNotifyType notifyType)
-{
-    AIV_INFO("[WaitNv1]tag is [%u], recordAddr is [%p], ifCoreLevel is [%d], notifyType is [%d]\n",
-        tag, recordAddr, ifCoreLevel, notifyType);
-    int32_t waitOffset = multiOffset + (int32_t(ifCoreLevel) * blockNumPerGroup * 2 +
-        int32_t(notifyType) * blockNumPerGroup + blockIdxInGroup) * ATOMIC_FLAG_SIZE;
-    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(recordAddr + waitOffset);
-    WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, tag);
-}
-
 __aicore__ inline void AivCrossNode91093Base::Wait1vN(uint32_t tag, CommPattern pattern, bool ifClear, AivNotifyType notifyType)
 {
     AIV_INFO("[Wait1vN]tag is [%u], pattern is [%d], ifClear is [%d], notifyType is [%d] \n",
@@ -857,18 +832,5 @@ __aicore__ inline void AivCrossNode91093Base::ClearGM()
     uint32_t blockCount= 1 * 1024 * 1024 / blockGroup_;
     CpGM2GM(flagAddrSelf_ + blockOffset, flagAddrSelf_ + blockOffset + emptyOffset, blockCount);
 }
-
-__aicore__ inline void AivCrossNode91093Base::CountRecord(uint64_t count, int32_t index)
-{
-    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(flagAddrSelf_+ countOffset + index * FLAG_SIZE);
-    SetSignalValue(ctrlFlagGM, localSetTensor, count);
-}
-
-__aicore__ inline void AivCrossNode91093Base::CountWaitGE(GM_ADDR waitAddr, uint64_t count, int32_t index)
-{
-    __gm__ int32_t *ctrlFlagGM = (__gm__ int32_t *)(waitAddr + countOffset + index * FLAG_SIZE);
-    WaitSignalGEValue(ctrlFlagGM, localCheckGETensor, count);
-}
-
 
 #endif  /* AIV_CROSSNODE_91093_BASE_H */

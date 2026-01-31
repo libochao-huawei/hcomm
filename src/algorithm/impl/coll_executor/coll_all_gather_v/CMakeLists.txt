@@ -18,7 +18,6 @@ set(src_list
   ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_semi_ring_executor.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_mesh_opbase_pipeline_executor.cc
   ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gather_v_mesh_graph_pipeline_executor.cc
-  ${CMAKE_CURRENT_SOURCE_DIR}/coll_all_gatherv_mesh_aiv_for_910_93_executor.cc
 )
 
 target_sources(hccl_alg PRIVATE
