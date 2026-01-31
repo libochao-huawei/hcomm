@@ -2979,7 +2979,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 return HCCL_SUCCESS;
             }
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            CHK_RET(HcclCommDestroyV2(hcclComm->GetCommunicatorV2()));
+            void* commV2 = hcclComm->GetCommunicatorV2();
             string group;
             group = hcclComm->GetIdentifier();
             HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
@@ -2991,6 +2991,7 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
                 return HCCL_E_PARA;
             }
+            CHK_RET(HcclCommDestroyV2(commV2));
             return HCCL_SUCCESS;
         }());
 #endif

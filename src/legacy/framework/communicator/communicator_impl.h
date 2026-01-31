@@ -354,8 +354,6 @@ public:
     }
 
     HcclResult CreateBarrierMemory(void *&sendBuf, void *&recvBuf, uint64_t count);
-    // DPU
-    HcclResult InitAndLaunchDpuKernel();
 
     HcclResult HcomSelectAlg(const CollOpParams &opParams, int32_t aivCoreLimit, bool &ifAiv, std::string &algName);
     HcclResult CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
@@ -432,6 +430,7 @@ private:
     bool isSuspended = false;
     bool isCleaned = false;
     bool isAicpuKernelLaunched = false;
+    bool isDpuKernelLaunched = false;
     bool isWorldGroup = false;
     bool aivClearEnable = false;
 
@@ -517,6 +516,7 @@ private:
     HcclResult PrepareDpuKernelResource(aclrtFuncHandle &funcHandle);
     HcclResult DestroyDpuKernelResource();
     HcclResult WaitDpuKernelThreadTerminate();
+    HcclResult InitAndLaunchDpuKernel();
 
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph, DevId inputDevLogicId);
     HcclResult Init(const CommParams &commParams, std::unique_ptr<RankGraph> &inputRankGraph,

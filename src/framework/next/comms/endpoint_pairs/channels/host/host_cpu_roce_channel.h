@@ -25,14 +25,14 @@ namespace hcomm {
 
 class HostCpuRoceChannel final : public Channel {
 public:
-    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED,  DATE_EXCHANG, QP_MODIFIED, CONN_OK)
+    MAKE_ENUM(RdmaStatus, INIT, SOCKET_OK, QP_CREATED,  DATA_EXCHANGE, QP_MODIFIED, CONN_OK)
 
     HostCpuRoceChannel(EndpointHandle endpointHandle, HcommChannelDesc channelDesc);
     ~HostCpuRoceChannel();
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) const override;
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) override;
     ChannelStatus GetStatus() override;
     HcclResult GetStatus(ChannelStatus &status);
 
@@ -72,37 +72,34 @@ private:
 
     std::vector<Hccl::QpInfo> GetQpInfos() const; // in Connection
 
-    HcclResult IbvPostRecv(ibv_qp *const qp, const uint64_t len) const;
-    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, ibv_send_wr &notifyRecordWr) const;
+    HcclResult IbvPostRecv() const;
+    HcclResult PrepareNotifyWrResource(const uint64_t len, const uint32_t remoteNotifyIdx, struct ibv_send_wr &notifyRecordWr) const;
     HcclResult PrepareWriteWrResource(const void *dst, const void *src, const uint64_t len, const uint32_t remoteNotifyIdx,
-                                      ibv_send_wr &writeWithNotifyWr) const;
+                                      struct ibv_send_wr &writeWithNotifyWr) const;
 
-    // --------------------- 入参 ---------------------
-    EndpointHandle                                              endpointHandle_;
-    HcommChannelDesc                                            channelDesc_;
+    // 入参
+    EndpointHandle endpointHandle_;
+    HcommChannelDesc channelDesc_;
 
-    // --------------------- 转换参数 ---------------------
-    EndpointDesc                                                localEp_;
-    EndpointDesc                                                remoteEp_;
-    uint32_t                                                    notifyNum_{0};
-    std::vector<std::shared_ptr<Hccl::Buffer>>                  bufs_;
+    // 转换参数
+    EndpointDesc localEp_;
+    EndpointDesc remoteEp_;
+    uint32_t notifyNum_{0};
+    Hccl::Socket *socket_{nullptr};
+    RdmaHandle rdmaHandle_{nullptr};
 
-    std::unique_ptr<Hccl::Socket>                               socket_{nullptr};
-    RdmaHandle                                                  rdmaHandle_{nullptr};
-    std::vector<std::unique_ptr<HostRdmaConnection>>            connections_{};
-    std::vector<std::unique_ptr<Hccl::LocalRdmaRmaBuffer>>      localRmaBuffers_{};
-    std::vector<uint32_t>                                       localDpuNotifyIds_{};
-    
-    uint32_t                                                    bufferNum_{0};
-    uint32_t                                                    connNum_{0};
-
-    // Hccl::BaseMemTransport::Attribution                         attr_;
-    ChannelStatus                                               channelStatus_{ChannelStatus::INIT};
-    RdmaStatus                                                  rdmaStatus_{RdmaStatus::INIT}; 
-                                                   
-    std::vector<uint32_t>                                       remoteDpuNotifyIds_;
-    std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>>     rmtRmaBuffers_{};
-    ExchangeRdmaConnDto                                         rmtConnDto_;
+    std::vector<std::unique_ptr<HostRdmaConnection>> connections_{};
+    std::vector<Hccl::LocalRdmaRmaBuffer *> localRmaBuffers_{};
+    std::vector<uint32_t> localDpuNotifyIds_{};
+    uint32_t bufferNum_{0};
+    uint32_t connNum_{0};
+    // Hccl::BaseMemTransport::Attribution attr_;
+    ChannelStatus channelStatus_{ChannelStatus::INIT};
+    RdmaStatus rdmaStatus_{RdmaStatus::INIT};
+    std::vector<uint32_t> remoteDpuNotifyIds_;
+    std::vector<std::unique_ptr<Hccl::RemoteRdmaRmaBuffer>> rmtRmaBuffers_{};
+    ExchangeRdmaConnDto rmtConnDto_;
+    std::vector<std::unique_ptr<HcclMem>> remoteMems{};
 
     std::mutex cq_mutex;
 };
