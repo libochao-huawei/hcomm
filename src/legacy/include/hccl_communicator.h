@@ -16,6 +16,7 @@
 #include "rank_table_info.h"
 #include "hccl_rank_graph.h"
 #include "hccl_mem_defs.h"
+#include "trace.h"
  
 namespace Hccl {
 class CommunicatorImpl;
@@ -127,7 +128,8 @@ public:
     HcclResult GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum, EndpointDesc* endpointDesc);
     HcclResult GetEndpointInfo(uint32_t rankId, const EndpointDesc* endpointDesc, EndpointAttr endpointAttr, uint32_t infoLen,
                        void* info);
- 
+    Trace& GetTrace() const;
+
     u32 GetDeviceLogicId() const;
  
 private:
