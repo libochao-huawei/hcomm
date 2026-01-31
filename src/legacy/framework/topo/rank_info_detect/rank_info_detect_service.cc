@@ -398,7 +398,7 @@ void RankInfoDetectService::TearDown()
     }
 
     s32 deviceLogicId = HrtGetDevice();
-    if (EnvConfig::GetInstance().GetHostNicConfig().GetSocketPortRange().size() > 0) {
+    if (EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange().size() > 0) {
         // 若开启抢占监听端口
         PreemptPortManager::GetInstance(deviceLogicId).Release(serverSocket_);
     } else {
