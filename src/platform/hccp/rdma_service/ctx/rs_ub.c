@@ -1518,7 +1518,6 @@ STATIC int rs_ub_jetty_cb_init(struct rs_ub_dev_cb *dev_cb, struct ctx_qp_attr *
     return 0;
 }
 
-#ifdef CUSTOM_INTERFACE
 STATIC int rs_ub_jetty_cb_buff_alloc(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jetty_cb *jetty_cb)
 {
     unsigned int logic_devid = 0;
@@ -1541,7 +1540,6 @@ STATIC int rs_ub_jetty_cb_buff_alloc(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_
 
     return ret;
 }
-#endif
 
 STATIC int rs_ub_ctx_init_jetty_cb(struct rs_ub_dev_cb *dev_cb, struct ctx_qp_attr *attr,
     struct rs_ctx_jetty_cb **jetty_cb)

@@ -19,17 +19,14 @@
 #include "ra_hdc.h"
 #include "ra_hdc_socket.h"
 #include "ra_hdc_async_socket.h"
-#ifdef CONFIG_CONTEXT
 #include "ra_ctx.h"
 #include "ra_hdc_ctx.h"
 #include "ra_hdc_async_ctx.h"
-#endif
 #include "ra_hdc_async.h"
 
 struct HdcAsyncInfo gRaHdcAsync[RA_MAX_PHY_ID_NUM] = { 0 };
 
 struct RaAsyncOpHandle gRaAsyncOpHandle[] = {
-#ifdef CONFIG_CONTEXT
     {RA_RS_GET_EID_BY_IP, RDMA_OP, ra_hdc_async_handle_get_eid_by_ip, sizeof(union op_get_eid_by_ip_data)},
     {RA_RS_LMEM_REG, RDMA_OP, ra_hdc_async_handle_lmem_register, sizeof(union op_lmem_reg_info_data)},
     {RA_RS_LMEM_UNREG, RDMA_OP, NULL, sizeof(union op_lmem_unreg_info_data)},
@@ -42,7 +39,6 @@ struct RaAsyncOpHandle gRaAsyncOpHandle[] = {
     {RA_RS_SET_TP_ATTR, RDMA_OP, NULL, sizeof(union op_set_tp_attr_data)},
     {RA_RS_CTX_QP_DESTROY_BATCH, RDMA_OP, ra_hdc_async_handle_qp_destroy_batch,
         sizeof(union op_ctx_qp_destroy_batch_data)},
-#endif
     {RA_RS_SOCKET_SEND, SOCKET_OP, RaHdcAsyncHandleSocketSend, sizeof(union OpSocketSendData)},
     {RA_RS_SOCKET_RECV, SOCKET_OP, RaHdcAsyncHandleSocketRecv, sizeof(union OpSocketRecvData)},
     {RA_RS_SOCKET_LISTEN_START, SOCKET_OP, RaHdcAsyncHandleSocketListenStart,
