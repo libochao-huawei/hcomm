@@ -26,9 +26,9 @@ constexpr u32 WQE_NUM_PER_SQE         = 4; // URMA约束每个SQE包含4个WQEBB
 constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传输量256*1024*1024 Byte
 
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                 const OpMode opMode, const bool devUsed)
+                                 const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), rmtEid(rmtAddr.GetReverseEid())
+      opMode(opMode), jfcMode(jfcMode), rmtEid(rmtAddr.GetReverseEid())
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
     devLogicId = HrtGetDevice();
@@ -37,7 +37,14 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
     dieId               = dieIdAndFuncId.first;
     funcId              = dieIdAndFuncId.second;
 
-    jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, jfcMode);
+    if (jfcMode == HrtUbJfcMode::USER_CTL) {
+        CqCreateInfo cqInfo{0};
+        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandleAndCqInfo(rdmaHandle, cqInfo, jfcMode);
+        SetJfcInfo(cqInfo);
+    }
+    else {
+        jfcHandle = RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, jfcMode);
+    }
 
     sqDepth = OPBASED_UB_SQ_DEPTH_MAX;
     if (opMode == OpMode::OFFLOAD && devUsed == false) {
@@ -53,15 +60,15 @@ DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &l
 }
 
 DevUbTpConnection::DevUbTpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                     const OpMode opMode, const bool devUsed)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed)
+                                     const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {
     tpProtocol = TpProtocol::TP;
 }
 
 DevUbCtpConnection::DevUbCtpConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
-                                       const OpMode opMode, const bool devUsed)
-    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed)
+                                       const OpMode opMode, const bool devUsed, const HrtUbJfcMode jfcMode)
+    : DevUbConnection(rdmaHandle, locAddr, rmtAddr, opMode, devUsed, jfcMode)
 {
     tpProtocol = TpProtocol::CTP;
 }
@@ -91,6 +98,24 @@ std::vector<char> DevUbConnection::GetUniqueId() const
     HCCL_INFO("type=%s, jfcPollMode=%u, dwqeCacheLocked=%d, sqCiAddr=0x%llx", rmaConnType.Describe().c_str(),
                jfcPollMode, dwqeCacheLocked, sqCiAddr);
     return result;
+}
+
+void DevUbConnection::SetJfcInfo(const CqCreateInfo &cqInfo)
+{
+    cqInfo_.jfcId = cqInfo.id;
+    cqInfo_.cqVA = cqInfo.va;
+    cqInfo_.cqeSize = cqInfo.cqe_size;
+    cqInfo_.cqDepth = sqDepth;
+    cqInfo_.dbAddr = cqInfo.swdb_addr;
+}
+
+HcclAiRMACQ DevUbConnection::GetCqInfo() const
+{
+    if (jfcMode != HrtUbJfcMode::USER_CTL) {
+        THROW<InvalidParamsException>("[DevUbConnection][GetCqInfo]jfcMode[%s] is not USER_CTL, "
+            "please check.", jfcMode.Describe().c_str());
+    }
+    return cqInfo_;
 }
 
 void DevUbConnection::Connect()
