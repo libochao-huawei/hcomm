@@ -283,7 +283,7 @@ public:
         return collAlgComponent.get();
     }
 
-    HcclResult SetAccelerator(int32_t accelerator, bool isCcuMsAvailable);
+    HcclResult SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable);
     HcclResult GetAccelerator(int32_t* accelerator) const;
     void ExecAlgSelect(const CollOpParams &opParams, const OpMode &opMode);
 
