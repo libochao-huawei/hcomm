@@ -29,10 +29,6 @@ void CollServiceDefaultImpl::LoadWithOpBasedModeNoRegister(CollOperator &op)
 {
     shared_ptr<InsQueue> insQueue;
     insQueue = OrchestrateWithIns(op);
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
 
     AllocQueueNotify(*insQueue);
 
@@ -106,11 +102,6 @@ void CollServiceDefaultImpl::LoadWithOffloadModeNoRegister(CollOperator &op)
 
     shared_ptr<InsQueue> insQueue;
     insQueue = OrchestrateWithIns(op);
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
-    AllocQueueNotify(*insQueue);
 
     vector<LinkData> links = insQueue->GetUniqueLinks();
 

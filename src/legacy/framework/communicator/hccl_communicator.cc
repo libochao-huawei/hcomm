@@ -516,4 +516,8 @@ HcclResult HcclCommunicator::GetEndpointInfo(uint32_t rankId, const EndpointDesc
     return pimpl->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
 }
 
+Trace& HcclCommunicator::GetTrace() const
+{
+    return pimpl->GetTrace();
+}
 } // namespace Hccl
