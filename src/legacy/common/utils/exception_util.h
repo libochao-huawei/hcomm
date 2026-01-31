@@ -59,6 +59,22 @@
         }                                                                                                              \
     } while (0)
 
+#define TRY_CATCH_PROCESS_THROW(EXCEPTION, EXPR, MSG, PROCESS)                                                         \
+   do {                                                                                                                \
+        try {                                                                                                          \
+            EXPR;                                                                                                      \
+        } catch (HcclException & e) {                                                                                  \
+            PROCESS;                                                                                                   \
+            MACRO_THROW(e, StringFormat("%s due to %s", MSG, e.what()));                                       \
+        } catch (std::exception & e) {                                                                                 \
+            PROCESS;                                                                                                   \
+            MACRO_THROW(EXCEPTION, StringFormat("%s due to %s", MSG, e.what()));                               \
+        } catch (...) {                                                                                                \
+            PROCESS;                                                                                                   \
+            MACRO_THROW(EXCEPTION, StringFormat("%s due to: Unknown error occurs!", MSG));                     \
+        }                                                                                                              \
+    } while (0)
+
 #define TRY_CATCH_PRINT_ERROR(expr)                                                                                    \
     do {                                                                                                               \
         try {                                                                                                          \
