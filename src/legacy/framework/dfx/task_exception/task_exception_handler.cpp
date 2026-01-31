@@ -107,6 +107,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
                     exceptionInfo->deviceid, exceptionInfo->streamid, exceptionInfo->taskid);
             return;
         }
+        std::cout << "void TaskExceptionHandler::Process" << std::endl;
 
         if (curTask->taskParam_.taskType == TaskParamType::TASK_CCU) {
             ProcessCcuException(exceptionInfo, *curTask);
