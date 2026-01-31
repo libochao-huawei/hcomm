@@ -72,6 +72,7 @@
 #include "topo_common_types.h"
 #include "ccu_ins_preprocessor.h"
 #include "aicpu_ins_preprocessor.h"
+#include "orion_adapter_hccp.h"
 #undef private
 #undef protected
 

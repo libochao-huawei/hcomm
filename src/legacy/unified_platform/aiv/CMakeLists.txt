@@ -11,4 +11,6 @@ target_sources(hccl_v2
         PRIVATE
         ub_memory_transport.cc
         ub_memory_transport.h
+        urma_direct_transport.cc
+ 	urma_direct_transport.h
 )

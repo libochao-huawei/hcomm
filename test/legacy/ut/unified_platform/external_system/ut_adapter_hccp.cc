@@ -413,7 +413,8 @@ TEST_F(AdapterHccpTest, HrtRaUbRemoteMemUnimport_ok)
 
 TEST_F(AdapterHccpTest, HrtRaUbCreateJfc_ok)
 {
-    u64 result = HrtRaUbCreateJfc(nullptr, HrtUbJfcMode::NORMAL);
+    CqCreateInfo cqInfo;
+    u64 result = HrtRaUbCreateJfc(nullptr, HrtUbJfcMode::NORMAL, CqCreateInfo& cqInfo);
     EXPECT_EQ(0, result);
 }
 
