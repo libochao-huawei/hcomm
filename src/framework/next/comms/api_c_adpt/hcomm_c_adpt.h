@@ -38,6 +38,8 @@ HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, 
 
 HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum,  int32_t* statusList);
 
+HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
+ 	 
 HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
 
 HcclResult HcommChannelKernelLaunch(ChannelHandle *channelHandles, ChannelHandle *hostChannelHandles, uint32_t listNum,

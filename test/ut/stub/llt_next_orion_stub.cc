@@ -47,6 +47,11 @@ HcclResult HcclChannelGetHcclBufferA5(HcclComm comm, ChannelHandle channel, void
     return HCCL_SUCCESS;
 }
 
+HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum)
+{
+    return HCCL_SUCCESS;
+}
+
 namespace hccl {
 HcclResult MyRank::ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size) {
     return HCCL_SUCCESS;

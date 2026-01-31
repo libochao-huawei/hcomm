@@ -46,7 +46,7 @@ extern HcclResult HcommChannelCreate(EndpointHandle endPointHandle, CommEngine e
  
 extern HcclResult HcommChannelGetStatus(const ChannelHandle *channelList, uint32_t listNum, int32_t *statusList);
  
-extern HcclResult HcommChannelGetNotifyNum(ChannelHandle channel, uint32_t *notifyNum);
+extern HcclResult HcommChannelGetNotifyNum(ChannelHandle channelHandle, uint32_t *notifyNum);
  
 extern HcclResult HcommChannelDestroy(const ChannelHandle *channels, uint32_t channelNum);
  
