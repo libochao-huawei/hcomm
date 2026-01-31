@@ -20,6 +20,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_mc2.cc
     # ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_GenRankTable.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_gert.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_ping_mesh.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_platform.cc
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
     ${HCCL_LLT_ROOT}/stub/llt_stub_sec.c
@@ -197,6 +198,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/platform/task/
     ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
     ${HCCL_CODE_ROOT}/src/hccd
+    ${HCCL_CODE_ROOT}/src/platform/ping_mesh
+    ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
 
     ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
 
@@ -292,7 +295,6 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
     ${THIRD_PARTY_NLOHMANN_PATH}
     ${ASCEND_3RD_LIB_PATH}/json/include/
@@ -350,6 +352,7 @@ target_compile_definitions(hccl_llt    PRIVATE
     HALF_T=float
     google=ascend_private
     CCL_KERNEL
+    CONFIG_CONTEXT
     -DCCL_LLT
 )
 

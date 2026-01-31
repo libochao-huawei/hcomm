@@ -74,6 +74,7 @@ target_include_directories(hccl_alg PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/launch_device
     ${HCCL_BASE_DIR}/framework/common/src/config
     ${HCCL_BASE_DIR}/framework/inc/
+    ${HCCL_BASE_DIR}/legacy/common/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/../framework/common/src/config
 )
 

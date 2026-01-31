@@ -14,13 +14,63 @@
 #include <securec.h>
 #include <arpa/inet.h>
 #include <hccl/base.h>
+#include <string>
+#include <vector>
+#include <regex>
+#include <log.h>
+#include "hccn_rping.h"
+#include "string_util.h"
+
+
+
+
+
+
 
 
 namespace hccl {
 constexpr u32 IP_ADDRESS_BUFFER_LEN = 64;
+
+
 struct HcclSocketInfo {
     void *socketHandle; /**< socket handle */
     void *fdHandle; /**< fd handle */
+};
+
+constexpr uint32_t URMA_EID_LEN = 16;
+constexpr uint32_t URMA_EID_NUM_TWO = 2;
+constexpr uint32_t MAX_IPV4_LEN = 15;   // 最大IPv4地址长度
+constexpr uint32_t MIN_IPV4_LEN = 7;    // 最小IPv4地址长度
+constexpr uint32_t BASE = 10;           // 进制基数
+constexpr uint32_t MAX_DOT_COUNT = 3;   // IPv4地址.分割符的最大个数
+constexpr uint32_t MAX_IPV4_SEGMENT_VALUE = 255;     // 每个段的最大值
+constexpr uint32_t URMA_EID_IPV4_PREFIX = 0x0;
+
+union Eid {
+    uint8_t raw[URMA_EID_LEN]{0};
+    struct {
+        uint64_t reserved;
+        uint32_t prefix;
+        uint32_t addr;
+    } in4;
+    struct {
+        uint64_t subnetPrefix;
+        uint64_t interfaceId;
+    } in6;
+
+    std::string Describe() const
+    {
+        return Hccl::StringFormat("eid[%016llx:%016llx]",
+                            static_cast<unsigned long long>(be64toh(in6.subnetPrefix)),
+                            static_cast<unsigned long long>(be64toh(in6.interfaceId)));
+    }
+    bool operator==(const Eid& other) const {
+        return memcmp(raw, other.raw, URMA_EID_LEN) == 0;
+    }
+
+    bool operator<(const Eid& other) const {
+        return memcmp(raw, other.raw, URMA_EID_LEN) < 0;
+    }
 };
 
 union HcclInAddr {
@@ -38,6 +88,74 @@ public:
         readableIP = "0.0.0.0";
         readableAddr = readableIP;
     }
+    explicit HcclIpAddress(const Eid &eidInput)
+    {
+        for (uint32_t i = 0; i < URMA_EID_LEN; i++) {
+            eid.raw[i] = eidInput.raw[i];
+        }
+
+        HCCL_INFO("[IpAddress] %s", eid.Describe().c_str());
+        // IPoURMA适配后，使用EID初始化时转为ipv6建链
+        family = AF_INET6;
+        (void)memcpy_s(binaryAddr.addr6.s6_addr, sizeof(eid.raw), eid.raw, sizeof(eid.raw));  
+        (void)SetBianryAddress(family, binaryAddr);
+    }
+ 
+    static bool IsEID(const std::string& str)
+    {
+        if (str.length() == URMA_EID_LEN * URMA_EID_NUM_TWO) {
+            std::regex hexCharsRegex("[0-9a-fA-F]+");
+            return std::regex_match(str, hexCharsRegex);
+        }
+        return false;
+    }
+
+    static Eid StrToEID(const std::string& str)
+    {
+        Eid tmpeEid{};
+        const int Base = 16;
+        for (size_t i = 0; i < URMA_EID_LEN; ++i) {
+            std::string byteString = str.substr(i * 2, 2);
+            tmpeEid.raw[i] = static_cast<uint8_t>(std::stoi(byteString, nullptr, Base));
+        }
+        return tmpeEid;
+    }
+    std::string GetIpStr() const
+    {
+        const void *src = nullptr;
+        if (family == AF_INET) {
+            src = &binaryAddr.addr;
+        } else if (family == AF_INET6) {
+            src = &binaryAddr.addr6;
+        } 
+        char        dst[INET6_ADDRSTRLEN];
+        const char *res = inet_ntop(family, src, dst, INET6_ADDRSTRLEN);
+        if (res == nullptr) {
+            // 转换失败处理：返回空字符串或抛异常
+            return "";  // 示例
+        }
+        return dst;
+    }
+
+    Eid GetEid() const
+    {
+        return eid;
+    }
+ 
+    std::string Describe() const
+    {
+        std::string desc = Hccl::StringFormat("IpAddress[%s, ", eid.Describe().c_str());
+        
+        if (family == AF_INET) {
+            desc += Hccl::StringFormat("AF=v4, addr=%s]", GetIpStr().c_str());
+        } else {
+            desc += Hccl::StringFormat("AF=v6, addr=%s, scopeId=0x%x]", GetIpStr().c_str(), scopeID);
+        }
+        return desc;
+    }
+
+
+
     explicit HcclIpAddress(u32 address)
     {
         union HcclInAddr ipAddr;
@@ -86,12 +204,12 @@ public:
 
     const char *GetReadableIP() const
     {
-        // return "IP address (string)"
+        // return "IP adddress (string)"
         return readableIP.c_str();
     }
     const char *GetReadableAddress() const
     {
-        // return "IP address (string) % ifname"
+        // return "IP adddress (string) % ifname"
         return readableAddr.c_str();
     }
     union HcclInAddr GetBinaryAddress() const
@@ -134,6 +252,8 @@ public:
             }
         }
     }
+
+
     bool operator != (const HcclIpAddress &that) const
     {
         return !(*this == that);
@@ -150,6 +270,7 @@ public:
                                            (this->readableAddr < that.readableAddr);
     }
 
+
     HcclResult SetReadableAddress(const std::string &address);
     HcclResult SetIfName(const std::string &name);
 
@@ -162,6 +283,9 @@ private:
     std::string ifname{};            // 网卡名
     s32 family{};
     s32 scopeID{};
+    Eid eid{};
+    
+
 };
 }
 #endif // HCCL_IP_ADDRESS_H

@@ -100,6 +100,8 @@ inline HcclResult hrtRaPingGetResultsStub(void *pingHandle, struct PingTargetRes
     return HCCL_SUCCESS;
 }
 
+
+
 class PingMesh_UT : public testing::Test {
 protected:
     static void SetUpTestCase()
@@ -257,9 +259,12 @@ protected:
 
 TEST_F(PingMesh_UT, ut_PingMeshInit)
 {
+
+    
+    
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -274,6 +279,9 @@ TEST_F(PingMesh_UT, ut_PingMeshInit)
 }
 
 
+
+
+
 TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
 {
     MOCKER_CPP(&PingMesh::RpingRecvTargetInfo)
@@ -286,9 +294,9 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
     .with(any())
     .will(returnValue(HCCL_SUCCESS));
     
-    u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 deviceId = 0;
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -305,7 +313,11 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
     hccl::RpingInput target[10];
     char *payload = "pingmesh";
     for (u32 i = 0; i < 10; i++) {
-        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        std::string hex_str = "000000000000002000100000dfdf1700";
+        std::string modified_str = hex_str.substr(0, hex_str.length() - 1);
+        std::string input = modified_str + std::to_string(i+1);
+        HcclIpAddress targetIp = HcclIpAddress(HcclIpAddress::StrToEID(input));
+
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -313,7 +325,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
-        target[i].addrType = 0;
+        target[i].addrType = 1;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
     }
     int i = 0;
@@ -330,10 +342,23 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
     std::shared_ptr<HcclSocket> socket = std::make_shared<HcclSocket>(netCtx, port);
     socket->Init();
     pingMesh->socketMaps_.insert({target[i].sip.GetReadableIP(), socket});
+    // // 打印删除前的 socketMaps_
+    // std::cout << "Before removal:" << std::endl;
+    // for (const auto &entry : pingMesh->socketMaps_) {
+    //     std::cout << "IP: " << entry.first << ", Socket: " << entry.second.get() << std::endl;
+    // }
+    
+   
     ret = pingMesh->HccnRpingRemoveTarget(deviceId, nodeNum, target);
     EXPECT_EQ(ret, HCCL_E_NOT_FOUND);
+    // // 打印删除后的 socketMaps_
+    // std::cout << "After removal:" << std::endl;
+    // for (const auto &entry : pingMesh->socketMaps_) {
+    //     std::cout << "IP: " << entry.first << ", Socket: " << entry.second.get() << std::endl;
+    // }
     HcclNetCloseDev(netCtx);
 }
+
 
 TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
 {
@@ -348,8 +373,8 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
     .will(returnValue(HCCL_SUCCESS));
     
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 1;
     u32 bufferSize = 100U;
@@ -366,7 +391,10 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
     hccl::RpingInput target[1];
     char *payload = "pingmesh";
     for (u32 i = 0; i < 1; i++) {
-        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        std::string hex_str = "000000000000002000100000dfdf1700";
+        std::string modified_str = hex_str.substr(0, hex_str.length() - 1);
+        std::string input = modified_str + std::to_string(i+1);
+        HcclIpAddress targetIp = HcclIpAddress(HcclIpAddress::StrToEID(input));
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -374,8 +402,13 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
-        target[i].addrType = 0;
+        target[i].addrType = 1;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
+    }
+        // 打印删除前的 target
+    std::cout << "Before removal - Target details:" << std::endl;
+    for (u32 j = 0; j < 1; j++) {
+        std::cout << "Target[" << j << "] - IP: " << target[j].sip.GetReadableIP() << ", Port: " << target[j].port << std::endl;
     }
     int i = 0;
     pingMesh->pingHandle_ = &i;
@@ -392,10 +425,16 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
     ret = HcclNetOpenDev(&netCtx, NicType::DEVICE_NIC_TYPE, deviceId, deviceId, target[i].sip);
     std::shared_ptr<HcclSocket> socket = std::make_shared<HcclSocket>(netCtx, port);
     socket->Init();
+
     pingMesh->socketMaps_.insert({target[i].sip.GetReadableIP(), socket});
     PingQpInfo rdmainfo { 0 };
     pingMesh->rdmaInfoMaps_.insert({target[i].sip.GetReadableIP(), rdmainfo});
     ret = pingMesh->HccnRpingRemoveTarget(deviceId, nodeNum, target);
+    // 打印删除后的 target
+    std::cout << "After removal - Target details:" << std::endl;
+    for (u32 j = 0; j < nodeNum; j++) {
+        std::cout << "Target[" << j << "] - IP: " << target[j].sip.GetReadableIP() << ", Port: " << target[j].port << std::endl;
+    }
     EXPECT_EQ(ret, HCCL_SUCCESS);
     HcclNetCloseDev(netCtx);
 }
@@ -413,8 +452,8 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch1)
     .will(returnValue(HCCL_SUCCESS));
     
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 1;
     u32 bufferSize = 100U;
@@ -431,7 +470,10 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch1)
     hccl::RpingInput target[1];
     char *payload = "pingmesh";
     for (u32 i = 0; i < 1; i++) {
-        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        std::string hex_str = "000000000000002000100000dfdf1700";
+        std::string modified_str = hex_str.substr(0, hex_str.length() - 1);
+        std::string input = modified_str + std::to_string(i+1);
+        HcclIpAddress targetIp = HcclIpAddress(HcclIpAddress::StrToEID(input));
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -463,8 +505,8 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch2)
     .will(returnValue(HCCL_E_NOT_FOUND));
     
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 1;
     u32 bufferSize = 100U;
@@ -481,7 +523,10 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch2)
     hccl::RpingInput target[1];
     char *payload = "pingmesh";
     for (u32 i = 0; i < 1; i++) {
-        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        std::string hex_str = "000000000000002000100000dfdf1700";
+        std::string modified_str = hex_str.substr(0, hex_str.length() - 1);
+        std::string input = modified_str + std::to_string(i+1);
+        HcclIpAddress targetIp = HcclIpAddress(HcclIpAddress::StrToEID(input));
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -518,8 +563,8 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch3)
     .will(returnValue(1));
     
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 1;
     u32 bufferSize = 100U;
@@ -536,7 +581,10 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch3)
     hccl::RpingInput target[1];
     char *payload = "pingmesh";
     for (u32 i = 0; i < 1; i++) {
-        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        std::string hex_str = "000000000000002000100000dfdf1700";
+        std::string modified_str = hex_str.substr(0, hex_str.length() - 1);
+        std::string input = modified_str + std::to_string(i+1);
+        HcclIpAddress targetIp = HcclIpAddress(HcclIpAddress::StrToEID(input));
         target[i].sip = targetIp;
         target[i].dip = targetIp;
         target[i].port = 13866;
@@ -558,8 +606,8 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch3)
 TEST_F(PingMesh_UT, ut_PingMeshStartStopPing)
 {
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -598,8 +646,8 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
     .will(returnValue(HCCL_SUCCESS));
     
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -618,7 +666,10 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
     char *payload = "pingmesh";
     PingQpInfo rdmainfo {0};
     for (u32 i = 0; i < 10; i++) {
-        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        std::string hex_str = "000000000000002000100000dfdf1700";
+        std::string modified_str = hex_str.substr(0, hex_str.length() - 1);
+        std::string input = modified_str + std::to_string(i+1);
+        HcclIpAddress targetIp = HcclIpAddress(HcclIpAddress::StrToEID(input));
         pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
         target[i].sip = targetIp;
         target[i].dip = targetIp;
@@ -627,7 +678,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
-        target[i].addrType = 0;
+        target[i].addrType = 1;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
     }
     int i = 0;
@@ -644,13 +695,13 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
     pingMesh->isUsePayload_ = true;
     void *payloadout = nullptr;
     u32 pyaloadlenout = 0;
-    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    pingMesh->mode = HCCN_RPING_MODE_UB;
     HccnRpingMode Hrtmode = pingMesh->mode;
     ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     pingMesh->isUsePayload_ = false;
-    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    pingMesh->mode = HCCN_RPING_MODE_UB;
     Hrtmode = pingMesh->mode;
     ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -664,8 +715,8 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResultFail)
     .will(returnValue(HCCL_E_NOT_SUPPORT));
     
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -684,7 +735,11 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResultFail)
     char *payload = "pingmesh";
     PingQpInfo rdmainfo {0};
     for (u32 i = 0; i < 10; i++) {
-        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        std::string hex_str = "000000000000002000100000dfdf1700";
+        std::string modified_str = hex_str.substr(0, hex_str.length() - 1);
+        std::string input = modified_str + std::to_string(i+1);
+        HcclIpAddress targetIp = HcclIpAddress(HcclIpAddress::StrToEID(input));
+
         pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
         target[i].sip = targetIp;
         target[i].dip = targetIp;
@@ -693,7 +748,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResultFail)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
-        target[i].addrType = 0;
+        target[i].addrType = 1;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
     }
     int i = 0;
@@ -711,8 +766,8 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResultFail)
 TEST_F(PingMesh_UT, ut_PingMeshStateCheck)
 {
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -758,8 +813,8 @@ TEST_F(PingMesh_UT, ut_PingMeshStateCheck)
 TEST_F(PingMesh_UT, ut_PingMeshSendRecvInfo)
 {
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -792,8 +847,8 @@ TEST_F(PingMesh_UT, ut_PingMeshSendRecvInfoPatch)
 {
     // 补充覆盖率
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -821,8 +876,8 @@ TEST_F(PingMesh_UT, ut_PingMeshSendRecvInfoPatch)
 TEST_F(PingMesh_UT, ut_PingMeshSendRecvInfoPatch1)
 {
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -850,8 +905,9 @@ TEST_F(PingMesh_UT, ut_PingMeshGetPayload)
     .will(returnValue(HCCL_SUCCESS));
     
     u32 deviceId = 1;
-    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
-    HcclIpAddress ipAddr = HcclIpAddress(std::string("2001:0db8:85a3:08d3:1319:8a2e:0370:7344"));
+    u32 mode = static_cast<u32>(LinkType::LINK_UB);
+    // 使用EID替代IPv6地址（示例EID）
+    HcclIpAddress ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string("000000000000002000100000dfdf1700")));
     u32 port = 13866;
     u32 nodeNum = 10;
     u32 bufferSize = 100U;
@@ -863,17 +919,18 @@ TEST_F(PingMesh_UT, ut_PingMeshGetPayload)
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
    
-
     // 获取结果
     hccl::RpingInput target[10];
     hccl::RpingOutput result[10];
     char *payload = "pingmesh";
     PingQpInfo rdmainfo {0};
-    std::string ipAddrStr = "2001:0db8:85a3:08d3:1319:8a2e:0370:7345";
-    HcclIpAddress firstTargetIp = HcclIpAddress(ipAddrStr);
+    // 使用EID替代IPv6地址（示例EID）
+    std::string eidStr = "000000000000002000100000dfdf1702";
+    HcclIpAddress firstTargetIp = HcclIpAddress(HcclIpAddress::StrToEID(eidStr));
 
     HcclInAddr ipAddrBin = firstTargetIp.GetBinaryAddress();
     for (u32 i = 0; i < 10; i++) {
+        // EID地址递增（修改最后字节）
         ipAddrBin.addr6.s6_addr[15]++;
         HcclIpAddress targetIp = HcclIpAddress(AF_INET6, ipAddrBin);
         pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
@@ -884,7 +941,7 @@ TEST_F(PingMesh_UT, ut_PingMeshGetPayload)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
-        target[i].addrType = 0;
+        target[i].addrType = 1;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
     }
     int i = 0;
@@ -899,23 +956,14 @@ TEST_F(PingMesh_UT, ut_PingMeshGetPayload)
     pingMesh->isUsePayload_ = true;
     void *payloadout = nullptr;
     u32 pyaloadlenout = 0;
-    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    pingMesh->mode = HCCN_RPING_MODE_UB;
     HccnRpingMode Hrtmode = pingMesh->mode;
     ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
-
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     pingMesh->isUsePayload_ = false;
-    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    pingMesh->mode = HCCN_RPING_MODE_UB;
     Hrtmode = pingMesh->mode;
     ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
-
     EXPECT_EQ(ret, HCCL_SUCCESS);
-        // 打印结果
-    if (payloadout != nullptr) {
-        std::cout << "Payload: " << static_cast<char*>(payloadout) << std::endl;
-        std::cout << "Payload Length: " << pyaloadlenout << std::endl;
-    } else {
-        std::cout << "Payload is null." << std::endl;
-    }
 }

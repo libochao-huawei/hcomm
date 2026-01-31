@@ -17,7 +17,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif // __cplusplus
+#endif // __cplusplusF
 
 #define HCCN_RPING_MIN_TIMEOUT 1
 #define HCCN_RPING_MAX_TIMEOUT 3600000
@@ -29,8 +29,46 @@ constexpr u32 NPU_NUM_MAX = 32768;
 constexpr u32 NPU_NUM_MIN = 128;
 constexpr u32 NPU_NUM_MAX_BITWIDTH = 128;
 constexpr u32 LINK_TYPE_MODE_ROCE = 3;
+#ifdef CONFIG_CONTEXT
+constexpr u32 LINK_TYPE_MODE_UB = 7;
+#endif
 constexpr u32 RPING_RESULT_STATE_VALID = 2;
 constexpr u32 TARGET_NUM_MAX = 16;
+
+
+inline void HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *initAttrInter, PingMesh *rpingInter, HcclResult &retInter, u32 &npuNumInter, 
+                               u32 &bufferSizeInter,std::string &ipAddrDesInter) 
+{
+    // npuNum必须为2的整次幂
+    npuNumInter = (initAttrInter->npuNum > NPU_NUM_MIN) ? initAttrInter->npuNum : NPU_NUM_MIN;
+    bufferSizeInter = 0;
+    npuNumInter = (npuNumInter > NPU_NUM_MAX) ? (NPU_NUM_MAX - 1) : (npuNumInter - 1);
+    for (u32 i = 0; i < NPU_NUM_MAX_BITWIDTH; i++) {
+        npuNumInter |= (npuNumInter >> 1);
+    }
+    npuNumInter++;
+    npuNumInter = npuNumInter < NPU_NUM_MIN ? NPU_NUM_MIN : npuNumInter;
+    // bufferSize必须为4k的倍数
+    if (initAttrInter->bufferSize > 0) {
+        bufferSizeInter = ((initAttrInter->bufferSize - 1) / BUFFER_SIZE_UNIT + 1) * BUFFER_SIZE_UNIT;
+    }
+
+    // 初始化pingmesh实例,利用用户输入的ip地址构造HcclIpAddress类
+    HcclIpAddress ipAddr;
+    if (initAttrInter->mode == HCCN_RPING_MODE_ROCE) {
+       ipAddr = HcclIpAddress(std::string(initAttrInter->ipAddr));
+       retInter = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_ROCE, ipAddr, initAttrInter->port, npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
+       ipAddrDesInter = ipAddr.GetReadableIP();
+    } 
+    #ifdef CONFIG_CONTEXT
+    if (initAttrInter->mode == HCCN_RPING_MODE_UB) {
+        ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string(initAttrInter->eid)));
+        retInter = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_UB, ipAddr, initAttrInter->port, npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
+        ipAddrDesInter = ipAddr.Describe();
+    }
+    #endif
+}
+
 
 HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnRpingCtx *rpingCtx)
 {
@@ -42,9 +80,18 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
     // 初始化ra接口
     CHK_PRT_RET(DlRaFunction::GetInstance().DlRaFunctionInit() != HCCL_SUCCESS,
         HCCL_ERROR("[HccnRpingInit]dlrafunction failed."), HCCN_E_FAIL);
-    HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
+    if (initAttr->mode == HCCN_RPING_MODE_ROCE) {
+       HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
         initAttr->mode, initAttr->port, initAttr->npuNum, initAttr->bufferSize, initAttr->sl, initAttr->tc,
-        std::string(initAttr->ipAddr).c_str());
+        std::string(initAttr->ipAddr).c_str()); 
+    } 
+    #ifdef CONFIG_CONTEXT
+    if (initAttr->mode == HCCN_RPING_MODE_UB) {
+        HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
+        initAttr->mode, initAttr->port, initAttr->npuNum, initAttr->bufferSize, initAttr->sl, initAttr->tc,
+        std::string(initAttr->eid).c_str());
+    }
+    #endif
     // 获取device id
     s32 currDevLogicId = 0;
     HcclResult ret = hrtGetDeviceRefresh(&currDevLogicId);
@@ -59,36 +106,24 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
     // 构造一个pingmesh实例, 用于存放初始化的pingmesh信息
     PingMesh *rping = new (std::nothrow) PingMesh();
     CHK_PRT_RET(rping == nullptr, HCCL_ERROR("[HccnRpingInit]rping alloc failed."), HCCN_E_MEM);
-    // 利用用户输入的ip地址构造HcclIpAddress类
-    HcclIpAddress ipAddr = HcclIpAddress(std::string(initAttr->ipAddr));
-    // npuNum必须为2的整次幂
-    u32 npuNum = (initAttr->npuNum > NPU_NUM_MIN) ? initAttr->npuNum : NPU_NUM_MIN;
-    npuNum = (npuNum > NPU_NUM_MAX) ? (NPU_NUM_MAX - 1) : (npuNum - 1);
-    for (u32 i = 0; i < NPU_NUM_MAX_BITWIDTH; i++) {
-        npuNum |= (npuNum >> 1);
-    }
-    npuNum++;
-    npuNum = npuNum < NPU_NUM_MIN ? NPU_NUM_MIN : npuNum;
-    // bufferSize必须为4k的倍数
-    u32 bufferSize = 0;
-    if (initAttr->bufferSize > 0) {
-        bufferSize = ((initAttr->bufferSize - 1) / BUFFER_SIZE_UNIT + 1) * BUFFER_SIZE_UNIT;
-    }
-
-    // 初始化pingmesh实例
-    ret = rping->HccnRpingInit(devLogicId, LINK_TYPE_MODE_ROCE, ipAddr, initAttr->port, npuNum, bufferSize,
-        initAttr->sl, initAttr->tc);
+    rping->init(initAttr); //定义现在pingmesh的mode
+    
+    u32 npuNum;
+    u32 bufferSize;
+    std::string ipAddrDes;
+    HccnRpingInitInter(devLogicId, initAttr, rping, ret, npuNum, bufferSize, ipAddrDes);
+    
     if (ret != HCCL_SUCCESS) {
         HCCL_ERROR("[HccnRpingInit]Pingmesh init failed, ret:%d, devLogicId:%u, port:%u npuNum:%u bufferSize:%u sl:%u"
         " tc:%u ip:%s", ret, devLogicId, initAttr->port, npuNum, bufferSize, initAttr->sl, initAttr->tc,
-        ipAddr.GetReadableIP());
+        ipAddrDes);
         delete rping; // 初始化失败释放内存
         return HCCN_E_FAIL;
     }
 
     HCCL_RUN_INFO("[HccnRpingInit]Pingmesh init success, devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u"
         " tc:%u ip:%s", devLogicId, initAttr->mode, initAttr->port, npuNum, bufferSize, initAttr->sl, initAttr->tc,
-        ipAddr.GetReadableIP());
+        ipAddrDes);
     // 记录pingmesh指针
     *rpingCtx = rping;
     return HCCN_SUCCESS;
@@ -132,6 +167,26 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     return HccnRpingAddTargetV2(rpingCtx, targetNum, target, &config);
 }
 
+inline void HccnRpingAddTargetV2Inter(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
+     if(targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) { 
+            inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
+            inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp)); 
+        }
+        #ifdef CONFIG_CONTEXT
+        if(targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+            inputInter[n].sip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(targetInter[n].srcEid))); 
+            inputInter[n].dip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(targetInter[n].dstEid)));
+        }
+        #endif
+        inputInter[n].srcPort = targetInter[n].srcPort;
+        inputInter[n].sl = targetInter[n].sl;
+        inputInter[n].tc = targetInter[n].tc;
+        inputInter[n].port = targetInter[n].port;
+        inputInter[n].len = targetInter[n].payloadLen;
+        inputInter[n].addrType = targetInter[n].addrType;
+
+}
+
 HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target, HccnRpingAddTargetConfig *config)
 {
     // 校验入参
@@ -165,19 +220,13 @@ HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnR
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingAddTarget]memory alloc failed."), HCCN_E_MEM);
-    for (uint32_t i = 0; i < targetNum; i++) {
-        input[i].sip = HcclIpAddress(std::string(target[i].srcIp));
-        input[i].dip = HcclIpAddress(std::string(target[i].dstIp));
-        input[i].srcPort = target[i].srcPort;
-        input[i].sl = target[i].sl;
-        input[i].tc = target[i].tc;
-        input[i].port = target[i].port;
-        input[i].len = target[i].payloadLen;
-        s32 sRet = memcpy_s(input[i].payload, input[i].len, target[i].payload, target[i].payloadLen);
+    for (uint32_t m = 0; m < targetNum; m++) {
+        HccnRpingAddTargetV2Inter(target, input, m);
+        s32 sRet = memcpy_s(input[m].payload, input[m].len, target[m].payload, target[m].payloadLen);
         if (sRet != EOK) {
             HCCL_ERROR("[HccnRpingAddTarget]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] dstPtr[%p] "
                          "srclen[%d] srcPayload[%p]",
-                sRet, input[i].len, input[i].payload, target[0].payloadLen, target[0].payload);
+                sRet, input[m].len, input[m].payload, target[0].payloadLen, target[0].payload);
             return HCCN_E_MEM;
         }
     }
@@ -219,11 +268,20 @@ HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, Hccn
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingRemoveTarget]memory alloc failed."), HCCN_E_FAIL);
-    for (uint32_t i = 0; i < targetNum; i++) {
-        input[i].sip = HcclIpAddress(std::string(target[i].srcIp));
-        input[i].dip = HcclIpAddress(std::string(target[i].dstIp));
-        input[i].sl = target[i].sl;
-        input[i].tc = target[i].tc;
+    for (uint32_t in = 0; in < targetNum; in++) {
+        if(target[in].addrType == HCCN_RPING_ADDR_TYPE_IP) { 
+            input[in].sip = HcclIpAddress(std::string(target[in].srcIp));
+            input[in].dip = HcclIpAddress(std::string(target[in].dstIp)); 
+        }
+        #ifdef CONFIG_CONTEXT
+        if(target[in].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+            input[in].sip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[in].srcEid))); 
+            input[in].dip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[in].dstEid)));
+        }
+        #endif
+        input[in].sl = target[in].sl;
+        input[in].tc = target[in].tc;
+        input[in].addrType = target[in].addrType;
     }
 
     ret = rping->HccnRpingRemoveTarget(static_cast<u32>(devLogicId), targetNum, input);
@@ -289,11 +347,19 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     // 将入参转换为内部接口可以使用的类型
     RpingInput *input = new (std::nothrow) RpingInput[targetNum];
     CHK_PRT_RET(input == nullptr, HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed."), HCCN_E_MEM);
-    for (uint32_t i = 0; i < targetNum; i++) {
-        input[i].sip = HcclIpAddress(std::string(target[i].srcIp));
-        input[i].dip = HcclIpAddress(std::string(target[i].dstIp));
+    for (uint32_t h = 0; h < targetNum; h++) {
+        if(target[h].addrType == HCCN_RPING_ADDR_TYPE_IP) { 
+            input[h].sip = HcclIpAddress(std::string(target[h].srcIp));
+            input[h].dip = HcclIpAddress(std::string(target[h].dstIp)); 
+        }
+        #ifdef CONFIG_CONTEXT
+        if(target[h].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+            input[h].sip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[h].srcEid))); 
+            input[h].dip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[h].dstEid)));
+        }
+        #endif
+        input[h].addrType = target[h].addrType;
     }
-
     int *state = new (std::nothrow) int[targetNum];
     CHK_PRT_RET(state == nullptr, HCCL_ERROR("[HccnRpingGetTarget]memory alloc failed."), HCCN_E_MEM);
     ret = rping->HccnRpingGetTarget(static_cast<u32>(devLogicId), targetNum, input, state);
@@ -373,6 +439,37 @@ inline void ConvertResultState(uint32_t state, HccnRpingResultState &resultState
     }
 }
 
+inline void ResultGetTarget(uint32_t &targetNumInter, HccnRpingTargetInfo *targetInter, RpingInput *inputInter) {
+    for (uint32_t k = 0; k < targetNumInter; k++) {
+        if(targetInter[k].addrType == HCCN_RPING_ADDR_TYPE_IP) { 
+            inputInter[k].sip = HcclIpAddress(std::string(targetInter[k].srcIp));
+            inputInter[k].dip = HcclIpAddress(std::string(targetInter[k].dstIp)); 
+        }
+        #ifdef CONFIG_CONTEXT
+        if(targetInter[k].addrType == HCCN_RPING_ADDR_TYPE_EID) {
+            inputInter[k].sip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(targetInter[k].srcEid))); 
+            inputInter[k].dip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(targetInter[k].dstEid)));
+        }
+        #endif
+        inputInter[k].addrType = targetInter[k].addrType;
+    }
+}
+
+inline void PutResult(uint32_t &targetNumInter, HccnRpingResultInfo *resultInter, RpingOutput *outputInter) {
+    for (uint32_t i = 0; i < targetNumInter; i++) {
+        ConvertResultState(outputInter[i].state, resultInter[i].state);
+        if (outputInter[i].state != PingResultState::PING_RESULT_STATE_VALID) {
+            HCCL_INFO("[HccnRpingGetResult]Target[%d]'s state is not valid, state[%d].", i, outputInter[i].state);
+            continue;
+        }
+        resultInter[i].txPkt = outputInter[i].txPkt;
+        resultInter[i].rxPkt = outputInter[i].rxPkt;
+        resultInter[i].minRTT = outputInter[i].minRTT;
+        resultInter[i].maxRTT = outputInter[i].maxRTT;
+        resultInter[i].avgRTT = outputInter[i].avgRTT;
+    }
+}
+
 HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
                               HccnRpingResultInfo *result)
 {
@@ -405,11 +502,7 @@ HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         HCCL_ERROR("[HccnRpingGetResult]memory alloc failed.");
         return HCCN_E_MEM;
     }
-    for (uint32_t i = 0; i < targetNum; i++) {
-        input[i].sip = HcclIpAddress(std::string(target[i].srcIp));
-        input[i].dip = HcclIpAddress(std::string(target[i].dstIp));
-    }
-
+    ResultGetTarget(targetNum, target, input);
     ret = rping->HccnRpingGetResult(static_cast<u32>(devLogicId), targetNum, input, output);
     if (ret == HCCL_E_AGAIN) {
         delete[] input;
@@ -423,18 +516,7 @@ HccnResult HccnRpingGetResult(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         return HCCN_E_FAIL;
     }
 
-    for (uint32_t i = 0; i < targetNum; i++) {
-        ConvertResultState(output[i].state, result[i].state);
-        if (output[i].state != PingResultState::PING_RESULT_STATE_VALID) {
-            HCCL_INFO("[HccnRpingGetResult]Target[%d]'s state is not valid, state[%d].", i, output[i].state);
-            continue;
-        }
-        result[i].txPkt = output[i].txPkt;
-        result[i].rxPkt = output[i].rxPkt;
-        result[i].minRTT = output[i].minRTT;
-        result[i].maxRTT = output[i].maxRTT;
-        result[i].avgRTT = output[i].avgRTT;
-    }
+    PutResult(targetNum, result, output); 
 
     delete[] input;
     delete[] output;
@@ -461,7 +543,7 @@ HccnResult HccnRpingGetPayload(HccnRpingCtx rpingCtx, void **payload, uint32_t *
         return HCCN_E_PARA;
     }
 
-    ret = rping->HccnRpingGetPayload(static_cast<u32>(devLogicId), payload, payloadLen);
+    ret = rping->HccnRpingGetPayload(static_cast<u32>(devLogicId), payload, payloadLen, rping->GetMode());
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HccnRpingGetPayload]Device[%d] get payload fail, ret[%d]", devLogicId, ret),
         HCCN_E_FAIL);
 

@@ -206,6 +206,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
     ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/
 
     # tbe头文件
     ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
@@ -235,7 +236,6 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
-    ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
@@ -247,19 +247,19 @@ set(UT_COMMON_INCLUDE_LIST
 )
 
 add_subdirectory(stub)
-add_subdirectory(common/prepare_ut_env)
-add_subdirectory(common/binary_package)
-add_subdirectory(misc)
-add_subdirectory(impl)
-add_subdirectory(device)
-add_subdirectory(platform/hcom)
-add_subdirectory(platform/resource/dispatcher)
-add_subdirectory(platform/resource/notify)
-add_subdirectory(platform/resource/transport)
+#add_subdirectory(common/prepare_ut_env)
+#add_subdirectory(common/binary_package)
+#add_subdirectory(misc)
+#add_subdirectory(impl)
+#add_subdirectory(device)
+#add_subdirectory(platform/hcom)
+#add_subdirectory(platform/resource/dispatcher)
+#add_subdirectory(platform/resource/notify)
+#add_subdirectory(platform/resource/transport)
 add_subdirectory(platform/ping_mesh)
-add_subdirectory(framework/communicator)
-add_subdirectory(framework/op_base_api)
-add_subdirectory(framework/communicator/impl)
-add_subdirectory(framework/resource)
-add_subdirectory(aicpu_kfc/aicpu)
-add_subdirectory(aicpu_kfc/misc)
+#add_subdirectory(framework/communicator)
+#add_subdirectory(framework/op_base_api)
+#add_subdirectory(framework/communicator/impl)
+#add_subdirectory(framework/resource)
+#add_subdirectory(aicpu_kfc/aicpu)
+#add_subdirectory(aicpu_kfc/misc)

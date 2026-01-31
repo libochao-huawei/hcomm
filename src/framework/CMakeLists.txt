@@ -98,6 +98,7 @@ set(hccl_include_list
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_BASE_DIR}/legacy/common/utils
 )
 
 target_include_directories(hcomm PRIVATE
@@ -187,8 +188,7 @@ else()
         ${HCCL_BASE_DIR}/inc
         ${TOP_DIR}/inc/aicpu
         ${HCCL_BASE_DIR}/pkg_inc
-
-        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
+        ${HCCL_BASE_DIR}/platform/legacy/inc
     )
 endif()
 
