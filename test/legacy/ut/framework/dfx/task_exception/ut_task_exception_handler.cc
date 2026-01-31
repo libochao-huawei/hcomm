@@ -676,7 +676,7 @@ TEST_F(TaskExceptionHandlerTest, test_process_when_task_less_than_50)
     globalMirrorTasks.DestroyQueue(0, 0);   // diveceId 0, streamId 0
 }
 
-HcclResult MockGetCcuErrorMsg(s32 deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
+HcclResult MockGetCcuErrorMsg(s32 deviceId, uint16_t missionStatus, uint16_t currIns, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo)
 {
     CcuErrorInfo loopGroupErrorInfo{};
     loopGroupErrorInfo.type = CcuErrorType::LOOP_GROUP;
@@ -749,6 +749,12 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     exceptionInfo.deviceid = 0;
     exceptionInfo.streamid = 0;
     exceptionInfo.taskid = 0;  // 当前异常TaskId 0
+    exceptionInfo.expandInfo.u.ccuInfo.ccuMissionNum = 1;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].dieId = 1;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].missionId = 2;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].instrId = 3;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].status = 4;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].subStatus = 5;
     TaskExceptionHandler::Process(&exceptionInfo);
 
     globalMirrorTasks.DestroyQueue(0, 0);   // diveceId 0, streamId 0
@@ -804,10 +810,10 @@ TEST_F(TaskExceptionHandlerTest, test_process_mc2)
     exceptionInfo.expandInfo.type = RT_EXCEPTION_FUSION;
     exceptionInfo.expandInfo.u.fusionInfo.type = RT_FUSION_AICORE_CCU;
     exceptionInfo.deviceid = 10;
-    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.ccuTaskNum = 1;
-    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.sqeInfo[0].dieId = 0;
-    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.sqeInfo[0].missionId = 1;
-    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.sqeInfo[0].instrId = 2;
+    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.ccuMissionNum = 1;
+    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.missionInfo[0].dieId = 0;
+    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.missionInfo[0].missionId = 1;
+    exceptionInfo.expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg.missionInfo[0].instrId = 2;
 
     MOCKER(GetCcuErrorMsg).stubs().will(returnValue(HcclResult::HCCL_SUCCESS)).then(invoke(MockGetCcuErrorMsg));
     CcuTaskParam ccuTaskParam{};

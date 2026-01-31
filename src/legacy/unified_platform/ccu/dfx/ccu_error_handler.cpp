@@ -62,11 +62,9 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
       {0x0c, "read local mem poison(0x0c)"}}},
 };
 
-void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, const ParaCcu &ccuTaskParam, vector<CcuErrorInfo> &errorInfo)
+void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, uint16_t currIns, const ParaCcu &ccuTaskParam,
+                                        std::vector<CcuErrorInfo> &errorInfo)
 {
-    // 检查mission status
-    const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
-    const uint16_t missionStatus = missionContext.GetStatus();
     if (missionStatus == 0) {
         HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
@@ -81,7 +79,6 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, const ParaCcu &ccuTaskPar
                                deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
                                ccuTaskParam.executeId);
     }
-    const uint16_t currIns = missionContext.GetCurrentIns();
     auto           rep     = ctx->GetRepByInstrId(currIns);
     if (rep == nullptr) {
         HCCL_WARNING("[CcuErrorHandler][%s] cannot find REP from current CcuContext, instrId[%u]", __func__, currIns);

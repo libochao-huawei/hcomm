@@ -26,6 +26,7 @@ using namespace CcuRep;
 constexpr uint32_t AIV_FLAG_UB_ALIGN_SIZE=32; //aiv flag对齐规则
 constexpr uint32_t TASK_CONTEXT_SIZE = 50;
 constexpr uint32_t TASK_CONTEXT_INFO_SIZE = LOG_TMPBUF_SIZE - 50; // task 执行失败时打印前序task信息的长度限制
+constexpr int BYTE = 8; // 一字节的位数
 
 std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> TaskExceptionHandlerManager::handlers_;
 
@@ -108,7 +109,7 @@ void TaskExceptionHandler::Process(rtExceptionInfo_t* exceptionInfo)
         }
 
         if (curTask->taskParam_.taskType == TaskParamType::TASK_CCU) {
-            ProcessCcuException(exceptionInfo->deviceid, *curTask);
+            ProcessCcuException(exceptionInfo, *curTask);
         } else if(curTask->taskParam_.taskType == TaskParamType::TASK_AIV){
             ProcessAivException(exceptionInfo, *curTask);
         } else {
@@ -300,28 +301,61 @@ void TaskExceptionHandler::PrintTaskContextInfo(uint32_t deviceId, uint32_t stre
     HCCL_ERROR("[TaskExceptionHandler]%s end.", taskContextInfo.c_str());
 }
 
+struct ccum_dfx_info {
+    unsigned int query_result; // 0:success, 1:fail
+    unsigned int ccum_sqe_recv_cnt;
+    unsigned int ccum_sqe_send_cnt;
+    unsigned int ccum_mission_dfx;
+    unsigned int ccum_sqe_drop_cnt;
+    unsigned int ccum_sqe_addr_len_err_drop_cnt;
+    unsigned int lqc_ccu_sec_reg0;
+    unsigned int ccum_tif_sqe_cnt;
+    unsigned int ccum_tif_cqe_cnt;
+    unsigned int ccum_cif_sqe_cnt;
+    unsigned int ccum_cif_cqe_cnt;
+};
+    
+void PrintPanicLogInfo(const uint8_t *panicLog)
+{
+    struct ccum_dfx_info *info = reinterpret_cast<struct ccum_dfx_info *>(const_cast<uint8_t*>(panicLog));
+    const uint16_t ccumIsEnable = info->lqc_ccu_sec_reg0 & 1;
+    if (info->query_result != 0) {
+        HCCL_ERROR("get ccu dfx info fail, ccu dfx info not all correct");
+    }
+    HCCL_ERROR("CCU DFX INFO: SQE_RECV_CNT[%u] SQE_SEND_CNT[%u] MISSION_DFX[%u]"
+                "TIF_SQE_CNT[%u] TIF_CQE_CNT[%u] CIF_SQE_CNT[%u] CIF_CQE_CNT[%u]"
+                "SQE_DROP_CNT[%u] SQE_ADDR_LEN_ERR_DROP_CNT[%u] ccumIsEnable[%u]",
+                info->ccum_sqe_recv_cnt, info->ccum_sqe_send_cnt, info->ccum_mission_dfx,
+                info->ccum_tif_sqe_cnt, info->ccum_tif_cqe_cnt, info->ccum_cif_sqe_cnt, info->ccum_cif_cqe_cnt,
+                info->ccum_sqe_drop_cnt, info->ccum_sqe_addr_len_err_drop_cnt, ccumIsEnable);
+}
+ 	 
 void TaskExceptionHandler::ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionInfo)
 {
     set<uint8_t> exDieIds{};
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg;
-    for (uint32_t i = 0; i < ccuExDetailInfo.ccuTaskNum; ++i) {
-        const auto& sqeInfo = ccuExDetailInfo.sqeInfo[i];   // 异常sqe
-        HCCL_INFO("Exception sqeInfo: dieId[%u], missionId[%u], instrId[%u]",
-            static_cast<u32>(sqeInfo.dieId), static_cast<u32>(sqeInfo.missionId), sqeInfo.instrId);
-        exDieIds.insert(sqeInfo.dieId);
+    for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) {
+        const auto& missionInfo = ccuExDetailInfo.missionInfo[i];   // 异常sqe
+        HCCL_INFO("[%s] Exception missionInfo: dieId[%u], missionId[%u], instrId[%u], status[0x%x], subStatus[0x%x]",
+            __func__, static_cast<u32>(missionInfo.dieId), static_cast<u32>(missionInfo.missionId), missionInfo.instrId, 
+            missionInfo.status, missionInfo.subStatus);
+        exDieIds.insert(missionInfo.dieId);
+        uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
+        // 打印寄存器信息
+        PrintPanicLogInfo(missionInfo.panicLog);
 
         auto serverTaskInfo = MC2GlobalMirrorTasks::GetInstance().GetTaskInfo(
-            exceptionInfo->deviceid, sqeInfo.dieId, sqeInfo.missionId, sqeInfo.instrId);
+            exceptionInfo->deviceid, missionInfo.dieId, missionInfo.missionId, missionInfo.instrId);
         if (serverTaskInfo == nullptr) {
             HCCL_ERROR("MC2 TaskInfo not found, deviceId[%u], dieId[%u], missionId[%u], instrId[%u].",
-                exceptionInfo->deviceid, static_cast<u32>(sqeInfo.dieId),
-                static_cast<u32>(sqeInfo.missionId), sqeInfo.instrId);
+                exceptionInfo->deviceid, static_cast<u32>(missionInfo.dieId),
+ 	            static_cast<u32>(missionInfo.missionId), missionInfo.instrId);
             continue;
         }
         ParaCcu serverParam = serverTaskInfo->taskParam_.taskPara.Ccu;
-        serverParam.execMissionId = sqeInfo.missionId;
+        serverParam.execMissionId = missionInfo.missionId;
         vector<CcuErrorInfo> serverErrorInfos {};
-        if (GetCcuErrorMsg(exceptionInfo->deviceid, serverParam, serverErrorInfos) != HcclResult::HCCL_SUCCESS) {
+        if (GetCcuErrorMsg(exceptionInfo->deviceid, status, missionInfo.instrId, serverParam, serverErrorInfos) != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("Get CCU error info failed.");
             continue;
         }
@@ -346,9 +380,9 @@ void TaskExceptionHandler::ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionIn
                 continue;
             }
             ParaCcu algoParam = algoTaskInfo->taskParam_.taskPara.Ccu;
-            algoParam.execMissionId = sqeInfo.missionId;
+            algoParam.execMissionId = missionInfo.missionId;
             vector<CcuErrorInfo> algoErrorInfos {};
-            if (GetCcuErrorMsg(exceptionInfo->deviceid, algoParam, algoErrorInfos) != HcclResult::HCCL_SUCCESS) {
+            if (GetCcuErrorMsg(exceptionInfo->deviceid, status, missionInfo.instrId, algoParam, algoErrorInfos) != HcclResult::HCCL_SUCCESS) {
                 HCCL_ERROR("Get CCU error info failed.");
                 continue;
             }
@@ -391,15 +425,23 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
     return collServiceCcu->GetMc2Compont().GetAlgoCcuTaskInfo(taskInfo.taskParam_.taskPara.Ccu.executeId);
 }
 
-void TaskExceptionHandler::ProcessCcuException(uint32_t deviceId, const TaskInfo& taskInfo)
+ void TaskExceptionHandler::ProcessCcuException(rtExceptionInfo_t* exceptionInfo, const TaskInfo& taskInfo)
 {
+    auto deviceId = exceptionInfo->deviceid;
     HCCL_ERROR("[TaskExceptionHandler][%s]Task from HCCL run failed.", __func__);
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, base information is deviceID:[%u], %s.",
         deviceId, taskInfo.GetBaseInfo().c_str());
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, groupRank information is %s.",
         GetGroupRankInfo(taskInfo).c_str());
     HCCL_ERROR("[TaskExceptionHandler]Task run failed, opData information is %s.", taskInfo.GetOpInfo().c_str());
-    PrintCcuErrorInfo(deviceId, taskInfo);
+    auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.ccuInfo;
+    for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) { // ccuExDetailInfo.ccuMissionNum为1
+        const auto& missionInfo = ccuExDetailInfo.missionInfo[i]; // 异常mission
+        uint16_t status = static_cast<uint16_t>(missionInfo.status) << BYTE | missionInfo.subStatus;
+        PrintCcuErrorInfo(deviceId, status, missionInfo.instrId, taskInfo);
+        // 打印寄存器信息
+        PrintPanicLogInfo(missionInfo.panicLog);
+    }
 
     const int32_t devLogicId = static_cast<int32_t>(deviceId);
     if (CcuCleanTaskKillState(devLogicId) != HcclResult::HCCL_SUCCESS) {
@@ -414,11 +456,11 @@ void TaskExceptionHandler::ProcessCcuException(uint32_t deviceId, const TaskInfo
     }
 }
 
-void TaskExceptionHandler::PrintCcuErrorInfo(uint32_t deviceId, const TaskInfo& taskInfo)
+void TaskExceptionHandler::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, uint16_t instrId, const TaskInfo& taskInfo)
 {
     const ParaCcu& ccuTaskParam = taskInfo.taskParam_.taskPara.Ccu;
     vector<CcuErrorInfo> errorInfos {};
-    HcclResult ret = GetCcuErrorMsg(deviceId, ccuTaskParam, errorInfos);
+    HcclResult ret = GetCcuErrorMsg(deviceId, status, instrId, ccuTaskParam, errorInfos);
     if (ret != HcclResult::HCCL_SUCCESS || errorInfos.empty()) {
         HCCL_ERROR("Get CCU error info failed. deviceId[%u], dieId[%u], missionId[%u], executeId[%llu].",
             deviceId, static_cast<uint32_t>(ccuTaskParam.dieId), static_cast<uint32_t>(ccuTaskParam.missionId),
