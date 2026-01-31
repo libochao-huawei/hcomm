@@ -105,7 +105,7 @@ shared_ptr<Socket> RankInfoDetect::ServerInit()
     std::shared_ptr<Socket> serverSocket = std::make_shared<Socket>(
         hccpHostSocketHandle, hostIp_, hostPort_, hostIp_, "server", SocketRole::SERVER, NicType::HOST_NIC_TYPE);
     if (hostPort_ == HCCL_INVALID_PORT) {
-        auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetSocketPortRange();
+        auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
         PreemptPortManager::GetInstance(devLogicId_).ListenPreempt(serverSocket, portRange, hostPort_);
     } else {
         serverSocket->Listen();
@@ -220,7 +220,7 @@ u32 RankInfoDetect::GetHostListenPort()
 {
     // 端口监听范围配置
     u32 listenPort = HCCL_INVALID_PORT;
-    auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetSocketPortRange();
+    auto portRange = EnvConfig::GetInstance().GetHostNicConfig().GetHostSocketPortRange();
     if (portRange.size() > 0) {
         HCCL_INFO("[RankInfoDetect::%s] SocketPortRange is configured.", __func__);
         return listenPort;
