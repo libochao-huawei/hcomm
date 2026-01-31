@@ -58,7 +58,7 @@ public:
     virtual HcclResult UnregisterMemory(void* memHandle) = 0;
  
     // 导出指定内存描述，用于交换
-    virtual HcclResult MemoryExport(const void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
+    virtual HcclResult MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen) = 0;
  
     // 基于内存描述，导入获得内存
     virtual HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) = 0;

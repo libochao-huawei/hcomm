@@ -145,7 +145,7 @@ HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult HcommMemExport(EndpointHandle endpointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
     auto endpoint = g_EndpointMap.GetEndpoint(endpointHandle);
     CHK_RET(endpoint->MemoryExport(memHandle, memDesc, memDescLen));

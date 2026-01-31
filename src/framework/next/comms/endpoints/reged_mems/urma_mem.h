@@ -19,6 +19,7 @@
 #include "buffer_key.h"
 #include "local_ub_rma_buffer.h"
 #include "remote_rma_buffer.h"
+#include "exchange_ub_buffer_dto.h"
  
 namespace hcomm {
 /**
@@ -34,9 +35,12 @@ public:
  
     HcclResult RegisterMemory(HcommMem mem, const char *memTag, void **memHandle) override;
     HcclResult UnregisterMemory(void* memHandle) override;
-    HcclResult MemoryExport(const EndpointDesc endpointDesc, const void *memHandle, void **memDesc, uint32_t *memDescLen) override;
+    HcclResult MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen) override;
     HcclResult MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem) override;
     HcclResult MemoryUnimport(const void *memDesc, uint32_t descLen) override;
+    HcclResult GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalUbRmaBuffer *localUbRmaBuffer);
+    HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
+                                        EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto);
  
 private:
     std::unique_ptr<LocalUbRmaBufferMgr> localUbRmaBufferMgr_{};

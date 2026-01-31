@@ -107,7 +107,7 @@ HcclResult CpuRoceEndpoint::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult CpuRoceEndpoint::MemoryExport(const void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult CpuRoceEndpoint::MemoryExport(void *memHandle, void **memDesc, uint32_t *memDescLen)
 {
     CHK_RET(this->regedMemMgr_->MemoryExport(this->endpointDesc_, memHandle, memDesc, memDescLen));
     return HCCL_SUCCESS;

@@ -27,7 +27,7 @@ HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommM
 
 HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
 
-HcclResult HcommMemExport(EndpointHandle endpointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
+HcclResult HcommMemExport(EndpointHandle endpointHandle, void *memHandle, void **memDesc, uint32_t *memDescLen);
 
 HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
 
