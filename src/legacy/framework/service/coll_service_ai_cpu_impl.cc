@@ -108,11 +108,6 @@ void CollServiceAiCpuImpl::LoadWithOpBasedModeNoRegister(CollOperator &op)
     comm->ReportHcclMC2Info(*lanchStream, *comm->GetStreamManager().opbase->GetMaster(), stream_pointers); // 上报MC2信息
     AllocOpMem(op);
 
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
-
     SaveMirrorDfxOpInfo();
     AicpuKernelEntranceLaunch(*comm->GetStreamManager().opbase->GetMaster(), op, comm->GetCurAlgName(), needUpdateRes, mem);
 }
@@ -136,11 +131,6 @@ void CollServiceAiCpuImpl::LoadWithOffloadModeNoRegister(CollOperator &op)
     DevBuffer *mem = nullptr;
     mem = OpBasedCollProcess(op, needUpdateRes, comm->GetCurAlgName());
     AllocOpMem(op);
-
-    auto info
-        = StringFormat("Entry-Hccl(opType[%s]_opBaseOpIndex[%u]): group[%s], AlgName[%s]", op.opType.Describe().c_str(),
-                       comm->GetOpBaseOpIndex(), comm->GetId().c_str(), comm->GetCurAlgName().c_str());
-    comm->GetTrace().Save(info);
 
     SaveMirrorDfxOpInfo();
     AicpuKernelEntranceLaunch(*comm->GetStreamManager().offload->GetMaster(op.opTag), op, comm->GetCurAlgName(), needUpdateRes, mem);
