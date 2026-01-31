@@ -1955,13 +1955,12 @@ extern HcclResult HcommMemExport(EndPointHandle endPointHandle, const void *memH
  * @brief 基于内存描述，导入获得内存
  * @warning  1、需要确认所有接口是否一定要加上endPointHandle？2、所有接口参数细节带确认 3、看看内存tag是否需要
  */
-extern HcclResult HcommMemImport(EndPointHandle endPointHandle, const void *memDesc, uint32_t descLen,
-    HcommBuf *outBuf);
+extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
 
 /**
  * @brief 关闭内存
  */
-extern HcclResult HcommMemClose(EndPointHandle endPointHandle, const HcommBuf *buf);
+extern HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
 /**
  * @brief 授权本机内存给指定远端进程
@@ -2019,14 +2018,14 @@ extern HcclResult HcommChannelGetHcclBuffer(ChannelHandle channel, CommBuffer *b
 // \endcond
 /**
  * @brief 获取channel中全部的交换获得的远端内存信息
- * @param channel 
- * @param remoteMem 
- * @param memTag 
- * @param memNum 
- * @return HcclResult 
+ * @param channel
+ * @param remoteMem
+ * @param memNum
+ * @param memTag
+ * @return HcclResult
  * @warning  1、补充参数介绍 2、这个基于Channel的接口暂时不对外提供！！！ 3、不提供memTag吧？
  */
-extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
+extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum, char **memTags);
 
 /** @} */  // 引擎资源管理
 /**

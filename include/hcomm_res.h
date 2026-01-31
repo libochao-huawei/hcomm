@@ -27,12 +27,11 @@ extern HcclResult HcommMemReg(EndpointHandle endPointHandle, const char *memTag,
  
 extern HcclResult HcommMemUnreg(EndpointHandle endPointHandle, void *memHandle);
  
-extern HcclResult HcommMemExport(
-    EndpointHandle endPointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
+extern HcclResult HcommMemExport(EndpointHandle endPointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
  
-extern HcclResult HcommMemImport(
-    EndpointHandle endPointHandle, const void *memDesc, uint32_t descLen, HcommBuf *outBuf);
-extern HcclResult HcommMemUnimport(EndpointHandle endPointHandle, const HcommBuf *buf);
+extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
+
+extern HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
  
 /* 暂未实现 */
 extern HcclResult HcommMemGrant(EndpointHandle endPointHandle, const HcommMemGrantInfo *remoteGrantInfo);
@@ -57,7 +56,6 @@ extern HcclResult HcommThreadAlloc(CommEngine engine, uint32_t threadNum, uint32
 
 extern HcclResult HcommThreadFree(const ThreadHandle *threads, uint32_t threadNum);
 
-extern HcclResult HcommThreadAllocWithStream(CommEngine engine, rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

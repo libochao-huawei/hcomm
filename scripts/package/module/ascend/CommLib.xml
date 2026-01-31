@@ -4,6 +4,7 @@
         <path value="$(TARGET_ENV)/lib64"/>
         <path value="$(TARGET_ENV)/include" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/hccl" install_type="devel"/>
+        <path value="$(TARGET_ENV)/include/hcomm" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/version" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel"/>
@@ -22,6 +23,10 @@
         <file value="hccl_rank_graph.h"/>
         <file value="hccl_res.h"/>
         <file value="hcomm_primitives.h"/>
+    </file_info>
+    <file_info value="include" copy_type="source" src_path="hcomm/include" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hcomm" install_type="devel" install_mod="440">
+        <file value="hcomm_res_defs.h"/>
+        <file value="hcomm_res.h"/>
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/src/pub_inc" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccn_rping.h"/>

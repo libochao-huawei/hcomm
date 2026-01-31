@@ -21,19 +21,17 @@ extern "C" {
 
 HcclResult HcommEndpointCreate(const EndpointDesc *endpoint, EndpointHandle *endpointHandle);
 
-HcclResult HcommEndpointDestroy(EndpointHandle endPointHandle);
+HcclResult HcommEndpointDestroy(EndpointHandle endpointHandle);
 
 HcclResult HcommMemReg(EndpointHandle endpointHandle, const char *memTag, HcommMem mem, void **memHandle);
 
-HcclResult HcommMemUnreg(EndpointHandle endPointHandle, void *memHandle);
+HcclResult HcommMemUnreg(EndpointHandle endpointHandle, void *memHandle);
 
-HcclResult HcommMemExport(
-    EndpointHandle endPointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
+HcclResult HcommMemExport(EndpointHandle endpointHandle, const void *memHandle, void **memDesc, uint32_t *memDescLen);
 
-HcclResult HcommMemImport(
-    EndpointHandle endPointHandle, const void *memDesc, uint32_t descLen, HcommBuf *outBuf);
+HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
 
-HcclResult HcommMemUnimport(EndpointHandle endPointHandle, const HcommBuf *buf);
+HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
 HcclResult HcommChannelCreate(EndpointHandle endpointHandle, CommEngine engine, HcommChannelDesc *channelDescs,
     uint32_t channelNum, ChannelHandle *channels);
