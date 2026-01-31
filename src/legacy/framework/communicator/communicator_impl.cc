@@ -121,6 +121,9 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitNotifyManager();
     InitStreamManager();
     InitSocketManager();
+    if (ranktableInfo != nullptr) {
+        GetSocketManager().SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+    }
     InitRmaConnManager();
     InitDataBufferManager();
     InitNotifyFixedValue();
@@ -297,7 +300,9 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             // 创建子虚拟拓扑
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
             // 初始化子通信域
-            return subCommImpl->Init(subCommParams, subRankGraph, devLogicId);
+            CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetDeviceServerListenPortMap());
+            return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
             THROW<InternalException>(msg);
@@ -317,7 +322,9 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             subCommImpl->rankIdsVec = rankIds;
             HCCL_INFO("[%s]rankIds size[%u], rankIdsVec size[%u]", __func__, rankIds.size(), subCommImpl->rankIdsVec.size());
             // 初始化子通信域
-            return subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId);
+            CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetDeviceServerListenPortMap());
+            return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
             THROW<InternalException>(msg);
@@ -1336,9 +1343,7 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
 
 void CommunicatorImpl::InitSocketManager()
 {
-    // 待修改: 从环境变量或配置中拿
-    u32 stubListenPort = 60001;
-    socketManager      = std::make_unique<SocketManager>(*this, myRank, devPhyId, stubListenPort);
+    socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
 }
 
 void CommunicatorImpl::InitRmaConnManager()

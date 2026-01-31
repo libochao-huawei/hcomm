@@ -106,7 +106,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
     linkDatas.push_back(linkData);
     cout<<1<<endl;
     IpAddress          ipAddress("1.0.0.0");
-    unique_ptr<Socket> fakeSocket = make_unique<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    shared_ptr<Socket> fakeSocket = make_shared<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     SocketConfig       socketConfig(linkData.GetRemoteRankId(), linkData, comm.GetEstablishLinkSocketTag());
     comm.GetSocketManager().connectedSocketMap[socketConfig] = std::move(fakeSocket);
     cout<<2<<endl;
