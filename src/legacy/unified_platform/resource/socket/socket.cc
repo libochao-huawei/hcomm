@@ -38,10 +38,6 @@ void Socket::Listen()
 
 bool Socket::Listen(u32 &port)
 {
-    if (nicType == NicType::DEVICE_NIC_TYPE) {
-        THROW<NotSupportException>(StringFormat("[Socket::%s] failed, not support device.", __func__));
-    }
-
     HCCL_INFO("[Socket::%s] trying to listen on port[%u]", __func__, port);
     RaSocketListenParam param(socketHandle, port);
     bool ret = HrtRaSocketTryListenOneStart(param);
