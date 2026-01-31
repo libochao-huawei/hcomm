@@ -1683,7 +1683,7 @@ TEST_F(CommunicatorImplTest, should_throw_exception_SetAccelerator_when_isLoadOp
 {
     CommunicatorImpl comm;
     comm.isLoadOp = true;
-    int32_t accelerator = 0;
+    HcclAccelerator accelerator{HcclAccelerator::DEFAULT};
     bool isCcuMsAvailable = false;
     EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
 }
@@ -1699,7 +1699,7 @@ TEST_F(CommunicatorImplTest, Ut_SetAccelerator_When_CcumsAndPciestd_Return_HCCL_
     CommunicatorImpl comm;
     MOCKER(HrtGetMainboardId).stubs().will(invoke(HrtGetMainboardIdStub));
 
-    int32_t accelerator = 5; // CCU_MS
+    HcclAccelerator accelerator{HcclAccelerator::CCU_MS};
     bool isCcuMsAvailable = true;
 
     // 后置验证
