@@ -128,7 +128,7 @@ else()
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
 
-        ${CMAKE_CURRENT_SOURCE_DIR}/legacy/inc
+        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
     )
 endif()
 
