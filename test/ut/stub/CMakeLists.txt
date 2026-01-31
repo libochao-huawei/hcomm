@@ -26,7 +26,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/llt_mmpa_stub.c
     ${HCCL_LLT_ROOT}/stub/llt_stub_mm.c
     ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rts.cc
-    ${HCCL_LLT_ROOT}/stub/orion/interface_channel.cc
+    ${HCCL_LLT_ROOT}/stub/legacy/interface_channel.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
 )
 
@@ -90,20 +90,20 @@ set(orion_list
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/thread.cc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads/cpu_ts_thread.cc
 
-    ${HCCL_CODE_ROOT}/src/orion/common/exception/exception_defination.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/buffer.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/notify/aicpu/notify_lite.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
-    ${HCCL_CODE_ROOT}/src/orion/interface/rank_graph_interface.cc
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_graph/net_instance.cc
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/virtual_topo.cc
+    ${HCCL_CODE_ROOT}/src/legacy/common/exception/exception_defination.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/ub_transport_lite_impl.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/buffer.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buf_slice_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/notify_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rma_buffer_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/rma_conn_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/rmt_rma_buf_slice_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite.cc
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/ub_conn_lite_mgr.cc
+    ${HCCL_CODE_ROOT}/src/legacy/interface/rank_graph_interface.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/rank_graph.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/net_instance.cc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/virtual_topo.cc
 )
 
 set(hccl_list
@@ -125,7 +125,7 @@ target_compile_definitions(hccl_llt PRIVATE
 #头文件搜索路径
 target_include_directories(hccl_llt  PRIVATE
     ${HCCL_LLT_ROOT}/stub
-    ${HCCL_LLT_ROOT}/stub/orion/
+    ${HCCL_LLT_ROOT}/stub/legacy/
 
     ${HCCL_CODE_ROOT}/src/framework/common/src
     ${HCCL_CODE_ROOT}/include/
@@ -297,8 +297,8 @@ target_include_directories(hccl_llt  PRIVATE
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
 
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/aicpu
-    ${HCCL_CODE_ROOT}/srcorion/unified_platform/resource/stream/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/host
@@ -306,52 +306,41 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints
     ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt
     ${HCCL_CODE_ROOT}/src/framework/next/comms/common
-    ${HCCL_CODE_ROOT}/src/orion/common
-    ${HCCL_CODE_ROOT}/src/orion/framework/resource_manager/socket
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/stream/aicpu/
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo
-    ${HCCL_CODE_ROOT}/src/orion/common/types
-    ${HCCL_CODE_ROOT}/src/orion/common/utils
-    ${HCCL_CODE_ROOT}/src/orion/common/exception/
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/common
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_graph
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_table_info
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/external_system
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/common
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/pub_inc
-    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu
-    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu/inc
+    ${HCCL_CODE_ROOT}/src/legacy/common
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/common/types
+    ${HCCL_CODE_ROOT}/src/legacy/common/utils
+    ${HCCL_CODE_ROOT}/src/legacy/common/exception/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/notify/aicpu
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/mem
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/mem
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/connection/aicpu
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/aicpu
-    ${HCCL_CODE_ROOT}/src/orion/service/collective
-    ${HCCL_CODE_ROOT}/src/orion/framework/communicator
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/mem
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
     ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
-    ${HCCL_CODE_ROOT}/src/orion/interface
+    ${HCCL_CODE_ROOT}/src/legacy/interface
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc/
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal/
 )
 
-FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/orion)
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/legacy)
 foreach (dir ${sources_list})
-    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/orion") AND (NOT ${dir} MATCHES "src/orion/mdpi"))
-        target_include_directories(hccl_llt  PRIVATE  ${dir})
-    endif()
-endforeach()
-
-FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${HCCL_CODE_ROOT}/src/hccl_next)
-foreach (dir ${open_dir_list})
-    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/hccl_next"))
+    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/legacy") AND (NOT ${dir} MATCHES "src/legacy/mdpi"))
         target_include_directories(hccl_llt  PRIVATE  ${dir})
     endif()
 endforeach()

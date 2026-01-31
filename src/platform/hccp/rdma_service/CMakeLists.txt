@@ -12,6 +12,16 @@ set(rs_list
     rs_drv_socket.c
     dl_ibverbs_function.c
     hccp_dl.c
+    ctx/dl_net_function.c
+    ctx/dl_ccu_function.c
+    ctx/dl_urma_function.c
+    ctx/rs_ping_urma.c
+    ctx/rs_ccu.c
+    ctx/rs_ctx.c
+    ctx/rs_esched.c
+    ctx/rs_ub.c
+    ctx/product/ascend910_95/rs_ub_jetty.c
+    ctx/product/ascend910_95/rs_ub_jfc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dl_hal_function.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/ascend_hal_dl.c
     $<$<NOT:$<STREQUAL:${PRODUCT},ascend310p>>:${CMAKE_CURRENT_SOURCE_DIR}/../common/file_opt.c>
@@ -28,36 +38,14 @@ list(APPEND rs_list
 )
 endif()
 
-# HCCP2.0
-if(EXISTS ${HCOMM_ORION})
-list(APPEND rs_list
-        ${HCOMM_ORION}/rdma_service/ctx/dl_net_function.c
-        ${HCOMM_ORION}/rdma_service/ctx/dl_ccu_function.c
-        ${HCOMM_ORION}/rdma_service/ctx/dl_urma_function.c
-        ${HCOMM_ORION}/rdma_service/ctx/rs_ping_urma.c
-        ${HCOMM_ORION}/rdma_service/ctx/rs_ccu.c
-        ${HCOMM_ORION}/rdma_service/ctx/rs_ctx.c
-        ${HCOMM_ORION}/rdma_service/ctx/rs_esched.c
-        ${HCOMM_ORION}/rdma_service/ctx/rs_ub.c
-        ${HCOMM_ORION}/rdma_service/ctx/product/ascend910_95/rs_ub_jetty.c
-        ${HCOMM_ORION}/rdma_service/ctx/product/ascend910_95/rs_ub_jfc.c
-)
-endif()
-
 add_library(rs  SHARED ${rs_list})
-
-# HCCP2.0
-if(EXISTS ${HCOMM_ORION})
-target_compile_definitions(rs PRIVATE
-    TGID_VA
-    CONFIG_V121
-    CONFIG_CONTEXT
-)
-endif()
 
 target_compile_definitions(rs PRIVATE
     OPEN_BUILD_PROJECT
     LOG_CPP
+    TGID_VA
+    CONFIG_V121
+    CONFIG_CONTEXT
 )
 
 target_include_directories(rs PRIVATE
@@ -83,17 +71,14 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
-
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
 
-    # HCCP2.0
-    ${HCOMM_ORION}/inc/network/
-    ${HCOMM_ORION}/inc/private/network
-    ${HCOMM_ORION}/rdma_service/ctx/
-    ${HCOMM_ORION}/external_depends/ccu/
-    ${HCOMM_ORION}/external_depends/net_adapt/
-    ${HCOMM_ORION}/external_depends/ubengine/
-    ${HCOMM_ORION}/rdma_service/ctx/product/
+    # HCCP Legacy
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctx
+    ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
+    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
 )
 
 # c_sec、mmpa、unified_dlog动态库搜索路径

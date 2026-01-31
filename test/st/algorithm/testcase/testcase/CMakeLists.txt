@@ -25,6 +25,7 @@ target_include_directories(open_hccl_test PRIVATE
     ${HCOMM_ALGORITHM_INCLUDE_LIST}
     ${HCOMM_COMMON_INCLUDE_LIST}
     ${HCOMM_FRAMEWORK_INCLUDE_LIST}
+    ${HCOMM_LEGACY_INCLUDE_LIST}
 
     ${THIRD_PARTY_PATH}/json/include
     ${THIRD_PARTY_PATH}/gtest_shared/include

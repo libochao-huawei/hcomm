@@ -15,8 +15,8 @@
 #include "hccl_common.h"
 
 // Orion
-#include "../../../../../../orion/unified_platform/resource/socket/socket.h"
-#include "../../../../../../orion/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
+#include "../../../../../../legacy/unified_platform/resource/socket/socket.h"
+#include "../../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
 #include "host_rdma_connection.h"
 // #include "base_mem_transport.h"
