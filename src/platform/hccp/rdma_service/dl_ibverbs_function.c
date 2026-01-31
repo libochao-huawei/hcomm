@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include "errno.h"
 #include "dl_ibverbs_function.h"
+#include "rs.h"
 
 static pthread_mutex_t gRoceUserApiLock = PTHREAD_MUTEX_INITIALIZER;
 static int gRoceUserApiRefcnt = 0;
