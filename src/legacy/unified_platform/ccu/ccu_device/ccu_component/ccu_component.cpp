@@ -357,7 +357,7 @@ HcclResult CcuComponent::CreateAndImportLoopJettys(const uint8_t dieId, const Ip
 {
     auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
     const auto rdmaHandle = rdmaHandleMgr.GetByIp(devPhyId, ipAddr);
-    const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL);
+ 	const auto jfcHandle = rdmaHandleMgr.GetJfcHandle(rdmaHandle, HrtUbJfcMode::CCU_POLL);
 
     const auto &rmaBufferIter = ccuRmaBufferMap.find(dieId);
     CHK_PRT_RET(rmaBufferIter == ccuRmaBufferMap.end(),
