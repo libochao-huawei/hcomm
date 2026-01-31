@@ -293,10 +293,13 @@ inline void RpingUbAttrInit(u32 deviceId, HcclIpAddress ipAddr, u32 port, u32 no
     initAttr.version = 0; // 暂时无用，默认给0
     initAttr.mode = NETWORK_OFFLINE; // net work mode 枚举值
     initAttr.ub.phy_id = deviceId;
-    initAttr.dev.ub.eid_index = eidmap.at(ipAddr.GetEid());
-    initAttr.dev.ub.eid.in6.subnet_prefix = ipAddr.GetEid().in6.subnetPrefix;
-    initAttr.dev.ub.eid.in6.interface_id = ipAddr.GetEid().in6.interfaceId;
-
+    HCCL_INFO("Input Eid %s", ipAddr.GetEid().Describe().c_str());
+    initAttr.dev.ub.eid_index = eidmap.at(ipAddr.GetEid());//从eid_list获取eid_index
+    u32 ret = memcpy_s(initAttr.dev.ub.eid.raw, sizeof(initAttr.dev.ub.eid.raw), 
+            ipAddr.GetEid().raw, sizeof(ipAddr.GetEid().raw));
+    if(ret != 0) {
+        HCCL_ERROR("memcpy_s Eid failed");
+    }
     initAttr.bufferSize = bufferSize == 0 ? (maxWrDepth * BYTE_PER_TARGET_DEFAULT) : bufferSize; // 发送接收缓存区大小
     initAttr.protocol = PROTOCOL_UDMA; // pingmesh支持兼容UB驱动，新增protocol字段
 
@@ -360,8 +363,11 @@ inline HcclResult RaGetEidMap(std::map<Eid, uint32_t>& eidmap, const HRaInfo &ra
     //填充map
     for (u32 i = 0; i < num; i++) {
         Eid eid;
-        eid.in6.subnetPrefix = infoList[i].eid.in6.subnet_prefix;
-        eid.in6.interfaceId = infoList[i].eid.in6.interface_id;
+        ret = memcpy_s(eid.raw, sizeof(eid.raw), 
+            infoList[i].eid.raw, sizeof(infoList[i].eid.raw));
+        if(ret != 0) {
+            return HCCL_E_INTERNAL;
+        }
         eidmap.insert(std::make_pair(eid, infoList[i].eid_index));
     }
 
@@ -710,7 +716,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
     HCCL_INFO("[HCCN][HccnRpingInit]Device[%u] open process success", deviceId);
 
     RpingInitState status = RpingInitState::HCCL_INIT_SUCCESS;
-    HcclResult ret;
+    HcclResult ret = HCCL_SUCCESS;
     void *pingHandle = nullptr;
     do {
         // hccp侧初始化ping mesh资源
@@ -732,7 +738,7 @@ HcclResult PingMesh::HccnRpingInit(u32 deviceId, u32 mode, HcclIpAddress ipAddr,
             ret = RaGetEidMap(eidmap, info);
             if (ret != HCCL_SUCCESS) {
                 HCCL_ERROR("call ra_get_dev_eid_map failed, devideId[%u], error code =%d.", deviceId, ret);
-                return HCCL_E_NETWORK; //ra接口是网络相关调用
+                break;
             }
             RpingUbAttrInit(devicePhyId_, ipAddr, port, nodeNum, bufferSize, sl, tc, initAttr, eidmap);
         }
