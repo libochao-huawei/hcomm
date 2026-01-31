@@ -11,6 +11,7 @@ set(src_list
     endpoint_mgr.cc
     cpu_roce_endpoint.cc
     urma_endpoint.cc
+    ub_mem_endpoint.cc
     endpoint.cc
 )
 
@@ -19,3 +20,4 @@ target_sources(hcomm PRIVATE
 )
 
 add_subdirectory(reged_mems)
+add_subdirectory(server_socket)

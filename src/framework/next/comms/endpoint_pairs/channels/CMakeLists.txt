@@ -19,3 +19,5 @@ target_sources(hcomm PRIVATE
 add_subdirectory(aicpu)
 add_subdirectory(host)
 add_subdirectory(slaves)
+add_subdirectory(ccu)
+add_subdirectory(aiv)
