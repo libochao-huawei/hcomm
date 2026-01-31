@@ -144,7 +144,7 @@ HcclResult HostCpuRoceChannel::Init()
     return HCCL_SUCCESS;
 }
 
-HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags) const
+HcclResult HostCpuRoceChannel::GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char** memTags)
 {
     return HCCL_SUCCESS;
 }

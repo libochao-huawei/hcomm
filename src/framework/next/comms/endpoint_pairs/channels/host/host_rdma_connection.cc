@@ -9,12 +9,7 @@
  */
 #include "host_rdma_connection.h"
 #include "dtype_common.h"
-
-// #include "invalid_params_exception.h"
 #include "orion_adapter_rts.h"
-
-
-
 #include "exchange_rdma_conn_dto.h"
 #include "hccp.h"
 #include "sal.h"
@@ -57,7 +52,7 @@ HcclResult HostRdmaConnection::Init()
 
 HostRdmaConnection::~HostRdmaConnection()
 {
-    if (rdmaConnStatus_ == RdmaConnStatus::CLOSED) {
+    if (rdmaConnStatus_ == RdmaConnStatus::CLOSED || rdmaConnStatus_ == RdmaConnStatus::INIT) {
         return;
     }
     HcclResult ret = DestroyQp();
@@ -105,8 +100,11 @@ HcclResult HostRdmaConnection::CreateQp()
 
 HcclResult HostRdmaConnection::DestroyQp()
 {
+    if (rdmaConnStatus_ == RdmaConnStatus::CLOSED || rdmaConnStatus_ == RdmaConnStatus::INIT) {
+        return HCCL_SUCCESS;
+    }
+
     CHK_RET(Hccl::HrtRaDestroyQpWithCq(qpInfo_, isHdcMode_));
-    qpInfo_ = Hccl::QpInfo();
 
     s32 ret = RaDestroyCompChannel(qpInfo_.rdmaHandle, sendCompChannel_);
     CHK_PRT_RET(ret != 0,
@@ -121,6 +119,7 @@ HcclResult HostRdmaConnection::DestroyQp()
                            HCCL_ERROR_CODE(HCCL_E_NETWORK), ret, qpInfo_.rdmaHandle, &recvCompChannel_),
                 HCCL_E_NETWORK);
 
+    qpInfo_ = Hccl::QpInfo();
     rdmaConnStatus_ = RdmaConnStatus::CLOSED;
     return HCCL_SUCCESS;
 }

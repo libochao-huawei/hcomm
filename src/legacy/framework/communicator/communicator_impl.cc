@@ -14,6 +14,7 @@
 #include "orion_adapter_rts.h"
 #include "hccl_exception.h"
 #include "null_ptr_exception.h"
+#include "runtime_api_exception.h"
 #include "exception_util.h"
 #include "hccp_hdc_manager.h"
 #include "hccp_peer_manager.h"
@@ -156,6 +157,7 @@ void CommunicatorImpl::InitDpuKernel() {
     }
     HCCL_INFO("[InitDpuKernel]all FlushHandle init success.");
     /* kernel Launch */
+    CHK_RET_THROW(RuntimeApiException, "InitAndLaunchDpuKernel Failed", InitAndLaunchDpuKernel());
 }
 
 std::unordered_set<IpAddress> CommunicatorImpl::GetHostIpFromRankGraph()
@@ -2210,7 +2212,7 @@ CommunicatorImpl::~CommunicatorImpl()
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
 {
     // 终止Dpu Kernel的TaskRun
-    if (!IsNeedDpu()) {
+    if (!isDpuKernelLaunched) {
         return HCCL_SUCCESS;
     }
 
@@ -2973,10 +2975,6 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 
 HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
 {
-    if (!IsNeedDpu()) {
-        return HCCL_SUCCESS;
-    }
-
     HCCL_INFO("[CommunicatorImpl::%s] Start to Launch Dpu Kernel", __func__);
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
