@@ -72,6 +72,7 @@
 #include "topo_common_types.h"
 #include "ccu_ins_preprocessor.h"
 #include "aicpu_ins_preprocessor.h"
+#include "orion_adapter_hccp.h"
 #undef private
 #undef protected
 
@@ -159,7 +160,8 @@ TEST(ST_SocketListenStop, st_HrtRaUbRemoteMemUnimport_ok)
 
 TEST(ST_SocketListenStop, st_HrtRaUbCreateCq_ok)
 {
-    auto result = HrtRaUbCreateJfc(nullptr, HrtUbJfcMode::NORMAL);
+    CqCreateInfo cqInfo;
+    auto result = HrtRaUbCreateJfc(nullptr, HrtUbJfcMode::NORMAL, CqCreateInfo& cqInfo);
     EXPECT_EQ(0, result);
 }
 

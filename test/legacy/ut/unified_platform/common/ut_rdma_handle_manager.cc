@@ -11,6 +11,7 @@
 #include "gtest/gtest.h"
 #include <mockcpp/mokc.h>
 #include <mockcpp/mockcpp.hpp>
+#include "orion_adapter_rts.h"
 #define protected public
 #define private public
 #include "rdma_handle_manager.h"
@@ -91,9 +92,10 @@ TEST_F(RdmaHandleManagerTest, rdma_handle_manager_get_jfc)
 {
     RdmaHandle rdmaHandle = nullptr;
     HrtUbJfcMode mode;
-    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, mode), InvalidParamsException);
+    CqCreateInfo cqInfo;
+    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, mode, cqInfo), InvalidParamsException);
     rdmaHandle = new RdmaHandle();
-    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, mode), InvalidParamsException);
+    EXPECT_THROW(RdmaHandleManager::GetInstance().GetJfcHandle(rdmaHandle, mode, cqInfo), InvalidParamsException);
 
 
     RdmaHandle rdmaHandle2 = nullptr;

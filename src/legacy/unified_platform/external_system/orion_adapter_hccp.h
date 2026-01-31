@@ -353,9 +353,17 @@ HrtRaUbRemMemImportedOutParam HrtRaUbRemoteMemImport(RdmaHandle handle, u8 *key,
 
 void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle);
 
-MAKE_ENUM(HrtUbJfcMode, NORMAL, STARS_POLL, CCU_POLL)
+MAKE_ENUM(HrtUbJfcMode, NORMAL, STARS_POLL, CCU_POLL, USER_CTL)
 
-JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode);
+struct CqCreateInfo {
+    uint64_t va; /**< refer to struct urma_jfc*, struct ibv_cq* */
+    uint32_t id; /**< jfc id */
+    uint64_t buf_addr;
+    uint32_t cqe_size;
+    uint64_t swdb_addr;
+};
+
+JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode, CqCreateInfo& cqInfo);
 
 void HrtRaUbDestroyJfc(RdmaHandle handle, JfcHandle jfcHandle);
 

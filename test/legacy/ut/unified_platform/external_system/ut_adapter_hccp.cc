@@ -19,6 +19,7 @@
 #include "internal_exception.h"
 #include "hccp_async.h"
 #include "ub_memory_transport.h"
+#include "orion_adapter_hccp.h"
 using namespace Hccl;
 
 class AdapterHccpTest : public testing::Test {
@@ -413,7 +414,8 @@ TEST_F(AdapterHccpTest, HrtRaUbRemoteMemUnimport_ok)
 
 TEST_F(AdapterHccpTest, HrtRaUbCreateJfc_ok)
 {
-    u64 result = HrtRaUbCreateJfc(nullptr, HrtUbJfcMode::NORMAL);
+    CqCreateInfo cqInfo;
+    u64 result = HrtRaUbCreateJfc(nullptr, HrtUbJfcMode::NORMAL, CqCreateInfo& cqInfo);
     EXPECT_EQ(0, result);
 }
 
