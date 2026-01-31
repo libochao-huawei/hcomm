@@ -38,3 +38,13 @@ rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t *srvId)
     *srvId = 0;
     return 0;
 }
+
+RTS_API rtError_t rtUbDevQueryInfo(rtUbDevQueryCmd cmd, void *devInfo)
+{
+    return 0;
+}
+ 
+rtError_t rtCCULaunch(rtCcuTaskInfo_t *taskInfo,  rtStream_t const stm)
+{
+    return 0;
+}
