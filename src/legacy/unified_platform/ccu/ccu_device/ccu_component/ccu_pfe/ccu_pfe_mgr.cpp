@@ -98,6 +98,8 @@ CcuPfeMgr::CcuPfeMgr(const int32_t devLogicId, const uint8_t dieId, const uint32
 
         const auto &pfeCtx = BuildPfeCtx(cfg);
         ConfigPfeTable(devPhyId, dieId, feId, pfeReservedNum, pfeCtx);
+        HCCL_INFO("[CcuPfeMgr] config pfe table end, devLogicId[%d] dieId[%u] feId[%u]",
+                devLogicId, dieId, feId);
     }
 }
 
@@ -111,6 +113,10 @@ HcclResult CcuPfeMgr::GetPfeStrategy(uint32_t feId, PfeJettyStrategy &pfeJettySt
     }
 
     pfeJettyStrategy = iter->second;
+    HCCL_INFO("[CcuPfeMgr][%s] find pfe strategy: dieId[%u] feId[%u] pfeId[%u] size[%u] "
+            "startTaJettyId[%u] startLocalJettyCtxId[%u]", __func__, dieId_,
+            pfeJettyStrategy.feId, pfeJettyStrategy.pfeId, pfeJettyStrategy.size,
+            pfeJettyStrategy.startTaJettyId, pfeJettyStrategy.startLocalJettyCtxId);
     return HCCL_SUCCESS;
 }
 
