@@ -852,6 +852,10 @@ private:
     HcclResult CheckSetRetryStateToWaitResume();
     HcclResult CheckExitWaitResumeState(bool &isChangedLink);
 
+    // reduce类算子的prod操作或者int64数据类型会回退为host，不支持AICPU&重执行
+    bool IsReduceLongOrProdOp(HcclCMDType opType, const OpParam &opParam);
+    // 控制当前通信域首次检测到reduce类算子的prod操作或者int64数据类型时打印提示信息
+    bool isNeedPrintConstraint_{true};
     bool isOnlyAiv_{false};
     HcclIpAddress loopBackIp_;
     bool profilingInitiated_;
