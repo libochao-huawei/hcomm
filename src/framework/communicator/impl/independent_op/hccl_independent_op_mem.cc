@@ -24,41 +24,47 @@
 
 using namespace hccl;
 
-HcclResult HcclCommRegMem(HcclComm comm, const char *memTag, const HcclMem *mem,
-                          HcclRegMemAttr attr, void **memHandle)
+HcclResult HcclCommMemReg(HcclComm comm, const char *memTag, const CommMem *mem, void **memHandle)
+ 
 {
-    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[HcclCommRegMem]comm is null"), HCCL_E_PARA);
-    CHK_PRT_RET(memTag == nullptr, HCCL_ERROR("[HcclCommRegMem]memTag is null"), HCCL_E_PARA);
+    CHK_PRT_RET(comm == nullptr,  HCCL_ERROR("[HcclCommMemReg]comm is null"), HCCL_E_PARA);
+    CHK_PRT_RET(memTag == nullptr, HCCL_ERROR("[HcclCommMemReg]memTag is null"), HCCL_E_PARA);
     CHK_PRT_RET(strlen(memTag) == 0 || strlen(memTag) > HCCL_RES_TAG_MAX_LEN,
-        HCCL_ERROR("[HcclCommRegMem]memTag length is %u", strlen(memTag)), HCCL_E_PARA);
-    CHK_PRT_RET(mem == nullptr,   HCCL_ERROR("[HcclCommRegMem]mem is null"), HCCL_E_PARA);
-    CHK_PRT_RET(memHandle == nullptr, HCCL_ERROR("[HcclCommRegMem]memHandle is null"), HCCL_E_PARA);
-    CHK_PRT_RET((mem->type != HCCL_MEM_TYPE_DEVICE) && (mem->type != HCCL_MEM_TYPE_HOST),
-        HCCL_ERROR("[HcclCommRegMem]memoryType[%d] must be device or host", mem->type), HCCL_E_PARA);
-    CHK_PRT_RET(mem->addr == nullptr, HCCL_ERROR("[HcclCommRegMem]addr is null"), HCCL_E_PARA);
-    CHK_PRT_RET(mem->size == 0, HCCL_ERROR("[HcclCommRegMem]size[%lld] invalid",
+        HCCL_ERROR("[HcclCommMemReg]memTag length is %u", strlen(memTag)), HCCL_E_PARA);
+    CHK_PRT_RET(mem == nullptr,   HCCL_ERROR("[HcclCommMemReg]mem is null"), HCCL_E_PARA);
+    CHK_PRT_RET(memHandle == nullptr, HCCL_ERROR("[HcclCommMemReg]memHandle is null"), HCCL_E_PARA);
+    CHK_PRT_RET((mem->type != COMM_MEM_TYPE_DEVICE) && (mem->type != COMM_MEM_TYPE_HOST),
+        HCCL_ERROR("[HcclCommMemReg]memoryType[%d] must be device or host", mem->type), HCCL_E_PARA);
+    CHK_PRT_RET(mem->addr == nullptr, HCCL_ERROR("[HcclCommMemReg]addr is null"), HCCL_E_PARA);
+    CHK_PRT_RET(mem->size == 0, HCCL_ERROR("[HcclCommMemReg]size[%lld] invalid",
         static_cast<long long>(mem->size)), HCCL_E_PARA);
 
-    auto *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    std::string commId = hcclComm->GetIdentifier();
-    HCCL_RUN_INFO("Entry-%s: comm[%s], memTag[%s], addr[%p], size[%lld], type[%d]",
-                  __func__, commId.c_str(), memTag, mem->addr, static_cast<long long>(mem->size), mem->type);
-    // 通信域实例：按算子绑定（幂等）
-    HcclResult ret = HCCL_SUCCESS;
-    if (hcclComm->IsCommunicatorV2()) {
-        hccl::CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        CommMemMgr* commMemMgr = collComm->GetCommMemMgr();
-        CHK_PTR_NULL(commMemMgr);
-        ret = commMemMgr->CommRegMem(std::string(memTag), *mem, attr, memHandle);
-    }
-    else {
-        auto& commMemMgr = hcclComm->GetIndependentOp().GetCommMemMgr();
-        ret = commMemMgr.CommRegMem(std::string(memTag), *mem, attr, memHandle);
-    }
-    CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[HcclCommRegMem]Bind failed. memTag[%s], ret[%d]", memTag, ret), ret);
-    HCCL_INFO("[HcclCommRegMem] success: raw handle[%p]", *memHandle);
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                HCCL_RUN_INFO("HcclCommMemReg is not supported");
+                return HCCL_SUCCESS;
+            }
+            auto* hcclComm = static_cast<hccl::hcclComm*>(comm);
+            std::string commId = hcclComm->GetIdentifier();
+            HCCL_RUN_INFO("Entry-%s:comm[%s]", __func__, commId.c_str());
+            hccl::CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            CommMems* commMem = myRank->GetCommMems();
+            HcclResult ret = HCCL_SUCCESS;
+            ret = commMem->CommRegMem(std::string(memTag), *mem, memHandle);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[HcclCommMemReg]Bind failed. memTag[%s], ret[%d]", memTag, ret), ret);
+            HCCL_INFO("[HcclCommMemReg] success: raw handle[%p]", *memHandle);
+            return HCCL_SUCCESS;
+        }());
+#endif
+
+    HCCL_RUN_INFO("HcclCommMemReg is not supported");
     return HCCL_SUCCESS;
 }
 
