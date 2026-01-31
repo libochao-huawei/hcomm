@@ -292,6 +292,7 @@ target_include_directories(hccl_llt  PRIVATE
     ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
     ${THIRD_PARTY_NLOHMANN_PATH}
     ${ASCEND_3RD_LIB_PATH}/json/include/
