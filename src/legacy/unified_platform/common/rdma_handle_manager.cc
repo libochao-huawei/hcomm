@@ -160,7 +160,7 @@ RdmaHandle RdmaHandleManager::GetByIp(u32 devPhyId, const IpAddress &localIp)
     return res;
 }
 
-JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode)
+JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jfcMode, CqCreateInfo& cqInfo)
 {
     std::lock_guard<std::mutex> lock(managerMutex);
 
@@ -168,8 +168,8 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
         THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]rdmaHandle is nullptr, please check input.");
     }
 
-    if (jfcMode != HrtUbJfcMode::STARS_POLL && jfcMode != HrtUbJfcMode::CCU_POLL) {
-        THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]jfcMode[%s] is not STARS_POLL or CCU_POLL, "
+    if (jfcMode != HrtUbJfcMode::STARS_POLL && jfcMode != HrtUbJfcMode::CCU_POLL && jfcMode != HrtUbJfcMode::USER_CTL) {
+ 	    THROW<InvalidParamsException>("[RdmaHandleManager][GetJfcHandle]jfcMode[%s] is not STARS_POLL, CCU_POLL or USER_CTL, "
             "please check input.", jfcMode.Describe().c_str());
     }
 
@@ -178,7 +178,7 @@ JfcHandle RdmaHandleManager::GetJfcHandle(RdmaHandle rdmaHandle, HrtUbJfcMode jf
         return jfcHandleMap[rdmaHandle][jfcMode];
     }
 
-    jfcHandleMap[rdmaHandle][jfcMode] = HrtRaUbCreateJfc(rdmaHandle, jfcMode);
+    jfcHandleMap[rdmaHandle][jfcMode] = HrtRaUbCreateJfc(rdmaHandle, jfcMode, cqInfo);
     return jfcHandleMap[rdmaHandle][jfcMode];
 }
 
