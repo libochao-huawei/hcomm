@@ -47,7 +47,7 @@ int rs_ub_delete_jfc_ext(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jfc_cb *jfc_
     return 0;
 }
 
-int rs_ub_ctx_jfc_create_ext(struct rs_ctx_jfc_cb *ctx_jfc_cb, urma_jfc_cfg_t jfc_cfg, urma_jfc_t **jfc)
+int rs_ub_ctx_jfc_create_ext(struct rs_ctx_jfc_cb *ctx_jfc_cb, urma_jfc_cfg_t *jfc_cfg, urma_jfc_t **jfc)
 {
     union create_jfc_cfg create_jfc_in = {0};
     urma_user_ctl_out_t out = {0};
@@ -56,13 +56,13 @@ int rs_ub_ctx_jfc_create_ext(struct rs_ctx_jfc_cb *ctx_jfc_cb, urma_jfc_cfg_t jf
     int ret;
 
     if (ctx_jfc_cb->jfc_type == JFC_MODE_CCU_POLL && ctx_jfc_cb->ccu_ex_cfg.valid) {
-        create_jfc_in.lock_jfc_cfg.base_cfg = jfc_cfg;
+        create_jfc_in.lock_jfc_cfg.base_cfg = *jfc_cfg;
         create_jfc_in.lock_jfc_cfg.ccu_cfg.ccu_cqe_flag = ctx_jfc_cb->ccu_ex_cfg.cqe_flag;
         in.len = (uint32_t)sizeof(struct udma_u_lock_jfc_cfg);
         in.opcode = UDMA_U_USER_CTL_CREATE_CCU_JFC_EX;
         in.addr = (uint64_t)(uintptr_t)&create_jfc_in.lock_jfc_cfg;
     } else {
-        create_jfc_in.jfc_cfg_ex.base_cfg = jfc_cfg;
+        create_jfc_in.jfc_cfg_ex.base_cfg = *jfc_cfg;
         create_jfc_in.jfc_cfg_ex.jfc_mode = (enum udma_u_jfc_type)ctx_jfc_cb->jfc_type;
         in.len = (uint32_t)sizeof(struct udma_u_jfc_cfg_ex);
         in.opcode = UDMA_U_USER_CTL_CREATE_JFC_EX;

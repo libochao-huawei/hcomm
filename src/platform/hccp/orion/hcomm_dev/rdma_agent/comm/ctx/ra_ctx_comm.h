@@ -23,6 +23,8 @@ void ra_ctx_prepare_rmem_import(struct mr_import_info_t *rmem_info, struct mem_i
 
 void ra_ctx_prepare_cq_create(struct cq_info_t *info, struct ctx_cq_attr *cq_attr);
 
+void ra_ctx_get_cq_create_info(struct ctx_cq_info *cq_info, struct cq_info_t *info);
+
 int ra_ctx_prepare_qp_create(struct qp_create_attr *qp_attr, struct ctx_qp_attr *ctx_qp_attr);
 
 void ra_ctx_get_qp_create_info(struct ra_ctx_handle *ctx_handle, struct qp_create_attr *qp_attr,

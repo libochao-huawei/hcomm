@@ -59,6 +59,15 @@ void ra_ctx_prepare_cq_create(struct cq_info_t *info, struct ctx_cq_attr *cq_att
     }
 }
 
+void ra_ctx_get_cq_create_info(struct ctx_cq_info *cq_info, struct cq_info_t *info)
+{
+    info->out.va = cq_info->addr;
+    info->out.id = cq_info->ub.id;
+    info->out.cqe_size = cq_info->ub.cqe_size;
+    info->out.buf_addr = cq_info->ub.buf_addr;
+    info->out.swdb_addr = cq_info->ub.swdb_addr;
+}
+
 int ra_ctx_prepare_qp_create(struct qp_create_attr *qp_attr, struct ctx_qp_attr *ctx_qp_attr)
 {
     struct ra_token_id_handle *token_id_handle = NULL;

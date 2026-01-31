@@ -18,6 +18,7 @@
 #define DEV_INDEX_UE_INFO_MASK 0x0000FFFFUL
 #define CI_ADDR_TWO_BYTES 2
 #define CI_ADDR_BUFFER_ALIGN_4K_PAGE_SIZE 4096U
+#define WQE_BB_SIZE 64ULL
 
 struct rs_ub_dev_cb {
     struct rs_cb *rscb;
@@ -69,6 +70,10 @@ struct rs_ctx_jfc_cb {
     struct rs_ub_dev_cb *dev_cb;
     uint64_t jfc_addr;
     enum jfc_mode jfc_type;
+    uint32_t depth;
+    uint32_t jfc_id;
+    uint64_t buf_addr;
+    uint64_t swdb_addr;
     struct RsListHead list;
     struct {
         bool valid;
@@ -158,6 +163,13 @@ struct rs_seg_cb {
     urma_target_seg_t *segment;
 
     struct RsListHead list;
+};
+
+struct udma_va_info {
+    enum res_addr_type resType;
+    int pid;
+    uint64_t va;
+    uint64_t len;
 };
 
 STATIC inline uint32_t rs_generate_ue_info(uint32_t die_id, uint32_t func_id)

@@ -403,6 +403,7 @@ int ra_hdc_ctx_cq_create(struct ra_ctx_handle *ctx_handle, struct cq_info_t *inf
         ret, phy_id, ctx_handle->dev_index), ret);
 
     cq_handle->addr = op_data.rx_data.info.addr;
+    ra_ctx_get_cq_create_info(&op_data.rx_data.info, info);
     return 0;
 }
 

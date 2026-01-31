@@ -28,7 +28,7 @@
 #include "rs_ub.h"
 #include "rs_ub_jetty.h"
 
-STATIC int rs_res_addr_munmap(struct rs_ctx_jetty_cb *jettyCb, struct jetty_va_info *vaInfo)
+STATIC int rs_res_addr_munmap(struct rs_ctx_jetty_cb *jettyCb, struct udma_va_info *vaInfo)
 {
     struct res_map_info_in resInfoIn = {0};
     int ret = 0;
@@ -36,7 +36,7 @@ STATIC int rs_res_addr_munmap(struct rs_ctx_jetty_cb *jettyCb, struct jetty_va_i
     resInfoIn.res_id = jettyCb->jetty->jetty_id.id;
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = vaInfo->resType;
-    resInfoIn.priv_len = sizeof(struct jetty_va_info);
+    resInfoIn.priv_len = sizeof(struct udma_va_info);
     resInfoIn.priv = (void *)vaInfo;
     ret = DlHalResAddrUnmapV2(jettyCb->dev_cb->rscb->logicId, &resInfoIn);
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrUnmapV2 failed, res_type:%d ret:%d, errno:%d",
@@ -45,7 +45,7 @@ STATIC int rs_res_addr_munmap(struct rs_ctx_jetty_cb *jettyCb, struct jetty_va_i
     return ret;
 }
 
-STATIC int rs_res_addr_mmap(struct rs_ctx_jetty_cb *jettyCb, struct jetty_va_info *vaInfo,
+STATIC int rs_res_addr_mmap(struct rs_ctx_jetty_cb *jettyCb, struct udma_va_info *vaInfo,
     struct res_map_info_out *resInfoOut)
 {
     struct res_map_info_in resInfoIn = {0};
@@ -54,7 +54,7 @@ STATIC int rs_res_addr_mmap(struct rs_ctx_jetty_cb *jettyCb, struct jetty_va_inf
     resInfoIn.res_id = jettyCb->jetty->jetty_id.id;
     resInfoIn.target_proc_type = PROCESS_CP1;
     resInfoIn.res_type = vaInfo->resType;
-    resInfoIn.priv_len = sizeof(struct jetty_va_info);
+    resInfoIn.priv_len = sizeof(struct udma_va_info);
     resInfoIn.priv = (void *)vaInfo;
     ret = DlHalResAddrMapV2(jettyCb->dev_cb->rscb->logicId, &resInfoIn, resInfoOut);
     CHK_PRT_RETURN(ret != 0, hccp_err("DlHalResAddrMapV2 failed, res_type:%d ret:%d, errno:%d",
@@ -65,7 +65,7 @@ STATIC int rs_res_addr_mmap(struct rs_ctx_jetty_cb *jettyCb, struct jetty_va_inf
 
 STATIC void rs_munmap_jetty_va(struct rs_ctx_jetty_cb *jettyCb)
 {
-    struct jetty_va_info vaInfo = {0};
+    struct udma_va_info vaInfo = {0};
 
     if ((jettyCb->jetty_mode != JETTY_MODE_CACHE_LOCK_DWQE) && (jettyCb->jetty_mode != JETTY_MODE_USER_CTL_NORMAL)) {
         return;
@@ -88,8 +88,8 @@ STATIC int rs_mmap_jetty_va(struct rs_ctx_jetty_cb *jettyCb)
 {
     struct res_map_info_out jettyVaInfoOut = {0};
     struct res_map_info_out dbVaInfoOut = {0};
-    struct jetty_va_info jettyVaInfo = {0};
-    struct jetty_va_info dbVaInfo = {0};
+    struct udma_va_info jettyVaInfo = {0};
+    struct udma_va_info dbVaInfo = {0};
     uint64_t dbOffset = 0;
     int ret = 0;
 
@@ -273,6 +273,7 @@ void rs_ub_ctx_ext_jetty_create(struct rs_ctx_jetty_cb *jettyCb, urma_jetty_cfg_
     ret = rs_urma_active_jetty(jettyCb->jetty);
     if (ret != 0) {
         hccp_err("rs_urma_active_jetty failed, ret:%d, errno:%d", ret, errno);
+        ret = -EOPENSRC;
         goto free_jetty;
     }
 

@@ -427,7 +427,8 @@ STATIC int rs_ub_free_jfc_cb(struct rs_ub_dev_cb *dev_cb, struct rs_ctx_jfc_cb *
     RsListDel(&jfc_cb->list);
     dev_cb->jfc_cnt--;
 
-    if (jfc_cb->jfc_type == JFC_MODE_STARS_POLL || jfc_cb->jfc_type == JFC_MODE_CCU_POLL) {
+    if (jfc_cb->jfc_type == JFC_MODE_STARS_POLL || jfc_cb->jfc_type == JFC_MODE_CCU_POLL ||
+        jfc_cb->jfc_type == JFC_MODE_USER_CTL_NORMAL) {
         (void)rs_ub_delete_jfc_ext(dev_cb, jfc_cb);
         hccp_info("[deinit][rs_jfc]destroy success, dev jfc_cnt:%u", dev_cb->jfc_cnt);
     } else if (jfc_cb->jfc_type == JFC_MODE_NORMAL) {
@@ -1401,6 +1402,15 @@ STATIC int rs_ub_ctx_jfc_create_normal(struct rs_ub_dev_cb *dev_cb, urma_jfc_cfg
     return ret;
 }
 
+STATIC void rs_ub_fill_jfc_info(struct rs_ctx_jfc_cb *jfc_cb, struct ctx_cq_info *info)
+{
+    info->addr = jfc_cb->jfc_addr;
+    info->ub.id = jfc_cb->jfc_id;
+    info->ub.cqe_size = WQE_BB_SIZE;
+    info->ub.buf_addr = jfc_cb->buf_addr;
+    info->ub.swdb_addr = jfc_cb->swdb_addr;
+}
+
 int rs_ub_ctx_jfc_create(struct rs_ub_dev_cb *dev_cb, struct ctx_cq_attr *attr, struct ctx_cq_info *info)
 {
     struct rs_ctx_jfc_cb *jfc_cb = NULL;
@@ -1413,17 +1423,19 @@ int rs_ub_ctx_jfc_create(struct rs_ub_dev_cb *dev_cb, struct ctx_cq_attr *attr, 
 
     jfc_cb->dev_cb = dev_cb;
     jfc_cb->jfc_type = attr->ub.mode;
+    jfc_cb->depth = attr->depth;
     jfc_cfg.depth = attr->depth;
     jfc_cfg.flag.value = attr->ub.flag.value;
     jfc_cfg.user_ctx = attr->ub.user_ctx;
     jfc_cfg.ceqn = attr->ub.ceqn;
     jfc_cfg.jfce = attr->chan_addr == 0 ? NULL : (urma_jfce_t *)(uintptr_t)attr->chan_addr;
-    if (attr->ub.mode == JFC_MODE_STARS_POLL || attr->ub.mode == JFC_MODE_CCU_POLL) {
+    if (attr->ub.mode == JFC_MODE_STARS_POLL || attr->ub.mode == JFC_MODE_CCU_POLL ||
+        attr->ub.mode == JFC_MODE_USER_CTL_NORMAL) {
         if (attr->ub.mode == JFC_MODE_CCU_POLL && attr->ub.ccu_ex_cfg.valid) {
             jfc_cb->ccu_ex_cfg.valid = attr->ub.ccu_ex_cfg.valid;
             jfc_cb->ccu_ex_cfg.cqe_flag = attr->ub.ccu_ex_cfg.cqe_flag;
         }
-        ret = rs_ub_ctx_jfc_create_ext(jfc_cb, jfc_cfg, &out_jfc);
+        ret = rs_ub_ctx_jfc_create_ext(jfc_cb, &jfc_cfg, &out_jfc);
         if (ret != 0) {
             hccp_err("rs_ub_ctx_jfc_create_ext jfc_mode:%d failed, ret:%d", attr->ub.mode, ret);
             goto jfc_cb_init_err;
@@ -1441,7 +1453,7 @@ int rs_ub_ctx_jfc_create(struct rs_ub_dev_cb *dev_cb, struct ctx_cq_attr *attr, 
         goto jfc_cb_init_err;
     }
     jfc_cb->jfc_addr = (uint64_t)(uintptr_t)out_jfc; // urma_jfc_t *
-    info->addr = jfc_cb->jfc_addr;
+    rs_ub_fill_jfc_info(jfc_cb, info);
 
     hccp_info("jfc addr:0x%llx", jfc_cb->jfc_addr);
 

@@ -16,17 +16,9 @@
 #include "dl_hal_function.h"
 #include "rs_ctx_inner.h"
 
-#define WQE_BB_SIZE 64ULL
 #define WQEBB_NUM_PER_SQE 4ULL
 #define PAGE_4K 0x1000
 #define ALIGN_DOWN(x, a) ((x) & (~((a) - 1)))
-
-struct jetty_va_info {
-    enum res_addr_type resType;
-    int pid;
-    uint64_t va;
-    uint64_t len;
-};
 
 void rs_ub_ctx_ext_jetty_create(struct rs_ctx_jetty_cb *jettyCb, urma_jetty_cfg_t *jettyCfg);
 void rs_ub_ctx_ext_jetty_delete(struct rs_ctx_jetty_cb *jettyCb);

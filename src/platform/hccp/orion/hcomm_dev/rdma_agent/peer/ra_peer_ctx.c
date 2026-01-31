@@ -307,6 +307,7 @@ int ra_peer_ctx_cq_create(struct ra_ctx_handle *ctx_handle, struct cq_info_t *in
     CHK_PRT_RETURN(ret != 0, hccp_err("[init][ctx_cq]rs_ctx_cq_create failed, ret[%d] phy_id[%u]", ret, phy_id), ret);
 
     cq_handle->addr = cq_info.addr;
+    ra_ctx_get_cq_create_info(&cq_info, info);
     return ret;
 }
 
