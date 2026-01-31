@@ -326,9 +326,9 @@ HcclResult HcclCommunicator::GetIndirectOutputCclBuf(void* &commIndirectOutputPt
     return pimpl->GetIndirectOutCclBuf(commIndirectOutputPtr, commIndirectOutputSize);
 }
 
-HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
 {
-    CHK_RET(pimpl->SetAccelerator(accelerator, isCcuMsAvailable));
+    CHK_RET(pimpl->SetAccelerator(hcclAccelerator, isCcuMsAvailable));
     return HcclResult::HCCL_SUCCESS;
 }
 
