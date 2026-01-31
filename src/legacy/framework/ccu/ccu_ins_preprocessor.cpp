@@ -347,7 +347,16 @@ void CcuInsPreprocessor::Preprocess(std::shared_ptr<InsQueue> &insQueue, bool is
     }
     // 若本地资源申请成功, 则进行握手, 该迭代默认握手成功
     // 资源确认
-    Confirm();
+    TRY_CATCH_PROCESS_THROW( 
+        Confirm(),
+        "[CCU Confirm] Comfirm Resources Error",
+        [&](){
+            // 建链失败时，清除临时创建的资源
+            ClearTmpResRecords();
+            return ;
+        };
+    );
+
     // 注册
     RegisterCtx(isFuncBlock);
     ClearTmpResRecords();
