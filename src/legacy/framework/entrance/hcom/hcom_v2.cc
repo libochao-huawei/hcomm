@@ -621,18 +621,41 @@ HcclResult HcomReduceV2(const char *tag, void *inputPtr, void *outputPtr, u64 co
 
 HcclResult HcomGetLocalRankSizeV2(const char *group, u32 *localRankSize)
 {
-    (void)group;
-    *localRankSize = -1;
-    HCCL_WARNING("HcomGetLocalRankSizeV2 is not support!");
-    return HCCL_E_NOT_SUPPORT;
+    CHK_RET(HcomCheckGroupNameV2(group));
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
+    CHK_RET(GetHcclCommV2(group, hcclComm));
+    u32 rankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(hcclComm->GetRankSize(&rankSize));
+    u32 layer0NetInstanceNum = 0;
+    u32 *instSizeList = nullptr;
+    CHK_RET(hcclComm->GetInstSizeListByNetLayer(0, &instSizeList, &layer0NetInstanceNum));
+    if (layer0NetInstanceNum == 0) {
+        HCCL_ERROR("[HcomGetLocalRankSizeV2] The layer0NetInstanceNum is zero, commId[%s]", hcclComm->GetId().c_str());
+        return HCCL_E_INTERNAL;
+    }
+    *localRankSize = rankSize / layer0NetInstanceNum;
+    HCCL_INFO("[HcomGetLocalRankSizeV2] end, layer0NetInstanceNum[%u], localRankSize[%u], rankSize[%u], commId[%s]",
+        layer0NetInstanceNum, localRankSize, rankSize, hcclComm->GetId().c_str());
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcomGetLocalRankIdV2(const char *group, u32 *localRankId)
 {
-    (void)group;
-    *localRankId = -1;
-    HCCL_WARNING("HcomGetLocalRankIdV2 is not support!");
-    return HCCL_E_NOT_SUPPORT;
+    CHK_RET(HcomCheckGroupNameV2(group));
+    std::shared_ptr<Hccl::HcclCommunicator> hcclComm;
+    CHK_RET(GetHcclCommV2(group, hcclComm));
+    u32 rankId = INVALID_VALUE_RANKID;
+    CHK_RET(hcclComm->GetRankId(rankId));
+    u32 localRankSize = INVALID_VALUE_RANKSIZE;
+    CHK_RET(HcomGetLocalRankSizeV2(group, &localRankSize));
+    if (localRankSize == 0) {
+        HCCL_ERROR("[HcomGetLocalRankIdV2] The localRankSize is zero, commId[%s]", hcclComm->GetId().c_str());
+        return HCCL_E_INTERNAL;
+    }
+    *localRankId = rankId % localRankSize;
+    HCCL_INFO("[HcomGetLocalRankIdV2] end, rankId[%u], localRankSize[%u], localRankId[%u], commId[%s]",
+        rankId, localRankSize, localRankId, hcclComm->GetId().c_str());
+    return HCCL_SUCCESS;
 }
 
 HcclResult HcomGetCommHandleByGroupV2(const char *group, HcclComm *commHandle)
