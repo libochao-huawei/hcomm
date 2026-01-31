@@ -181,8 +181,8 @@ HcclResult ThreadMgr::HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *no
     Thread* hcclThread = reinterpret_cast<Thread*>(thread);
     CHK_PTR_NULL(hcclThread);
     *notifyNum = hcclThread->GetNotifyNum();
-    HCCL_INFO("[ThreadMgr] Hcom[%s] thread[%s] HcclGetNotifyNumInThread done: notifyPerThread[%u]",
-        commId_.c_str(), hcclThread->GetUniqueId().c_str(), *notifyNum);
+    HCCL_INFO("[ThreadMgr] Hcom[%s] HcclGetNotifyNumInThread done: notifyPerThread[%u]",
+        commId_.c_str(),  *notifyNum);
     return HCCL_SUCCESS;
 }
 

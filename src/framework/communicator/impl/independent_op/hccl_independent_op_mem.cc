@@ -117,6 +117,7 @@ HcclResult HcclGetHcclBuffer(HcclComm comm, void ** buffer, uint64_t *size)
             auto myRank = collComm->GetMyRank();
             CHK_PTR_NULL(myRank);
             CommMems* commMem = myRank->GetCommMems();
+            CHK_PTR_NULL(commMem);
             CHK_RET(commMem->GetHcclBuffer(*buffer, *size));
             return HCCL_SUCCESS;
         }());
