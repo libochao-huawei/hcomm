@@ -1173,7 +1173,8 @@ void HrtRaUbRemoteMemUnimport(RdmaHandle rdmaHandle, RemMemHandle rmemHandle)
 
 const std::map<HrtUbJfcMode, jfc_mode> HRT_UB_JFC_MODE_MAP = {{HrtUbJfcMode::NORMAL, jfc_mode::JFC_MODE_NORMAL},
                                                               {HrtUbJfcMode::STARS_POLL, jfc_mode::JFC_MODE_STARS_POLL},
-                                                              {HrtUbJfcMode::CCU_POLL, jfc_mode::JFC_MODE_CCU_POLL}};
+                                                              {HrtUbJfcMode::CCU_POLL, jfc_mode::JFC_MODE_CCU_POLL},
+                                                              {HrtUbJfcMode::USER_CTL, jfc_mode::JFC_MODE_USER_CTL_NORMAL}};
 
 constexpr u32 CQ_DEPTH     = 1024 * 1024 / 64;
 constexpr u32 CCU_CQ_DEPTH = 64;
@@ -1200,6 +1201,36 @@ JfcHandle HrtRaUbCreateJfc(RdmaHandle handle, HrtUbJfcMode mode)
         string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
         THROW<NetworkApiException>(msg);
     }
+
+    return reinterpret_cast<JfcHandle>(jfcHandle);
+}
+
+JfcHandle HrtRaUbCreateJfcUserCtl(RdmaHandle handle, CqCreateInfo& cqInfo)
+{
+    struct cq_info_t info {};
+
+    info.in.chan_handle = nullptr;
+    info.in.depth = CQ_DEPTH;
+    info.in.ub.user_ctx   = 0;
+    info.in.ub.mode       = jfc_mode::JFC_MODE_USER_CTL_NORMAL;
+    info.in.ub.ceqn       = 0;
+    info.in.ub.flag.value = 0;
+
+    void *jfcHandle = nullptr;
+
+    s32 ret = ra_ctx_cq_create(handle, &info, &jfcHandle);
+    if (ret != 0) {
+        string msg = StringFormat("ubCreateCq failed, rdmaHandle=%p,", handle);
+        THROW<NetworkApiException>(msg);
+    }
+
+    HCCL_INFO("[HrtRaUbCreateJfcUserCtl] jfcId[%u], cqVA[%llx], cqeSize[%u], dbAddr[%llx]", 
+              info.out.id, info.out.buf_addr, info.out.cqe_size, info.out.swdb_addr);
+
+    cqInfo.va = info.out.buf_addr;
+    cqInfo.id = info.out.id;
+    cqInfo.cqe_size = info.out.cqe_size;
+    cqInfo.swdb_addr = info.out.swdb_addr;
 
     return reinterpret_cast<JfcHandle>(jfcHandle);
 }
