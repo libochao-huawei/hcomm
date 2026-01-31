@@ -141,7 +141,7 @@ HCCP_ATTRI_VISI_DEF int ra_get_sec_random(struct RaInfo *info, u32 *value)
     hccp_run_info("Input parameters: phy_id[%u], nic_position:[%d]", info->phyId, info->mode);
 
     ret = RaPeerGetSecRandom(value);
-    if(ret != 0 && info->mode == NETWORK_OFFLINE) {
+    if (ret != 0 && info->mode == NETWORK_OFFLINE) {
         CHK_PRT_RETURN(info->phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][sec_random]phy_id(%u) must smaller than %u",
             info->phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(OTHERS, -EINVAL));
         ret = RaHdcGetSecRandom(info->phyId, value);

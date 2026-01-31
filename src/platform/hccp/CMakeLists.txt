@@ -23,8 +23,6 @@ add_executable(hccp_service.bin  hccp_service/main.c hccp_service/param.c
     ${CMAKE_CURRENT_SOURCE_DIR}/common/dl_hal_function.c
 )
 
-target_compile_definitions(hccp_service.bin PRIVATE OPEN_BUILD_PROJECT LOG_CPP)
-
 target_include_directories(hccp_service.bin PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/
     ${CMAKE_CURRENT_SOURCE_DIR}/hccp_service
@@ -65,8 +63,8 @@ target_link_options(hccp_service.bin PRIVATE
 
 target_compile_definitions(hccp_service.bin PRIVATE
     google=ascend_private
-    $<$<AND:$<STREQUAL:${PRODUCT},ascend910>,$<STREQUAL:${PRODUCT_SIDE},device>>:CONFIG_CGROUP>
-    $<$<AND:$<STREQUAL:${PRODUCT},ascend310p>,$<STREQUAL:${PRODUCT_SIDE},device>>:CONFIG_CGROUP>
+    $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_CGROUP>
+    LOG_CPP
 )
 
 target_link_libraries(hccp_service.bin PRIVATE

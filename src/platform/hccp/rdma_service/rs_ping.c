@@ -20,9 +20,7 @@
 #include "rs_socket.h"
 #include "rs_ping_inner.h"
 #include "rs_ping_roce.h"
-#ifdef CONFIG_CONTEXT
 #include "rs_ping_urma.h"
-#endif
 #ifndef HNS_ROCE_LLT
 #include "dlog_pub.h"
 #endif
@@ -268,12 +266,10 @@ STATIC int RsPingInitProtocolOps(struct RsPingCtxCb *pingCb, enum ProtocolTypeT 
             pingCb->pingPongOps = RsPingRoceGetOps();
             pingCb->pingPongDfx = RsPingRoceGetDfx();
             break;
-#ifdef CONFIG_CONTEXT
         case PROTOCOL_UDMA:
             pingCb->pingPongOps = rs_ping_urma_get_ops();
             pingCb->pingPongDfx = rs_ping_urma_get_dfx();
             break;
-#endif
         default:
             hccp_err("unsupported protocol:%u", protocol);
             return -EINVAL;
@@ -289,17 +285,15 @@ STATIC int RsPingInitProtocolOps(struct RsPingCtxCb *pingCb, enum ProtocolTypeT 
 RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo *info, unsigned int *devIndex)
 {
     struct RsPingCtxCb *pingCb = NULL;
+    enum ProductType productType;
     struct rs_cb *rscb = NULL;
     unsigned int phyId;
     int ret = 0;
-
+    
     CHK_PRT_RETURN(attr == NULL || info == NULL || devIndex == NULL,
         hccp_err("param error, attr or info or devIndex is NULL"), -EINVAL);
 
-    phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : UINT_MAX;
-#ifdef CONFIG_CONTEXT
     phyId = (attr->protocol == PROTOCOL_RDMA) ? attr->dev.rdma.phyId : attr->ub.phy_id;
-#endif
     ret = RsGetRsCb(phyId, &rscb);
     CHK_PRT_RETURN(ret != 0, hccp_err("RsGetRsCb failed, phyId[%u] invalid, ret %d", phyId, ret), ret);
 
@@ -318,11 +312,14 @@ RS_ATTRI_VISI_DEF int RsPingInit(struct PingInitAttr *attr, struct PingInitInfo 
     }
 
 #ifdef CUSTOM_INTERFACE
-    // setup sharemem for pingmesh
-    ret = RsSetupSharemem(rscb, false, phyId);
-    if (ret != 0) {
-        hccp_err("RsSetupSharemem failed, phyId(%u), ret(%d)", phyId, ret);
-        goto free_dev_mutex;
+    productType = RsGetProductType(rscb->logicId);
+    if (productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        // setup sharemem for pingmesh
+        ret = RsSetupSharemem(rscb, false, phyId);
+        if (ret != 0) {
+            hccp_err("RsSetupSharemem failed, phyId(%u), ret(%d)", phyId, ret);
+            goto free_dev_mutex;
+        }
     }
 #endif
 

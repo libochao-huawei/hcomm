@@ -779,7 +779,7 @@ int ra_hdc_ctx_qp_query_batch(unsigned int phy_id, unsigned int dev_index, unsig
     CHK_PRT_RETURN(op_data.rx_data.num > *num, hccp_err("[query][ra_qp]op_data.rx_data.num[%u] is larger than num[%u], "
         "ret[%d]", op_data.rx_data.num, *num, ret), ret);
 
-    if(ret != 0 || op_data.rx_data.num < *num) {
+    if (ret != 0 || op_data.rx_data.num < *num) {
         hccp_err("[query][ra_qp]hdc message process failed ret[%d], phy_id[%u], num[%u], op_data.rx_data.num[%u]",
             ret, phy_id, *num, op_data.rx_data.num);
         ret = -EOPENSRC;
