@@ -47,6 +47,7 @@
 #include "ccu_driver_handle.h"
 #include "hccl_common_v2.h"
 #include "hccl_rank_graph.h"
+#include "mc2_type.h"
 
 namespace Hccl {
 
@@ -212,6 +213,9 @@ public:
         auto it = tagWorkspaceMap_.find(tag);
         return it != tagWorkspaceMap_.end() ? it->second : nullptr;
     }
+
+    HcclAiRMAWQ* GetWq();
+ 	HcclAiRMACQ* GetCq();
 
     HcclResult CreateCommCclBuf();
     HcclResult GetInCclBuf(void* &commInputPtr, u64 &commInputSize);
