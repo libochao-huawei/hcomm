@@ -12,6 +12,8 @@
 
 #include "ins_queue.h"
 #include "communicator_impl.h"
+#include "mc2_type.h"
+#include "connections_builder.h"
 
 namespace Hccl {
 
@@ -26,13 +28,19 @@ public:
     ~AivInsPreprocessor();
 
     void Preprocess(std::shared_ptr<InsQueue> &insQueue) const;
+    std::vector<HcclAiRMAWQ> GetWqs() const;
+    std::vector<HcclAiRMACQ> GetCqs() const;
+    void SetProtocol(uint8_t protocol);
+    uint8_t GetProtocol() const;
 
 private:
     void InsPreprocess(InsIterator &insIter) const;
     void BatchBuildTransports(const vector<LinkData> &links) const;
+    void BatchBuildUrmaTransports(const vector<LinkData> &links) const;
 
 private:
     CommunicatorImpl *comm;
+    uint8_t protocol_{0};
 };
 
 } // namespace Hccl
