@@ -1,0 +1,226 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#include "endpoint_mgr.h"
+#include "hccl_common.h"
+#include "urma_mem.h"
+#include <algorithm>
+#include "log.h"
+#include "hccl_api.h"
+#include "hccl_mem_v2.h"
+#include "exchange_ub_buffer_dto.h"
+#include "local_ub_rma_buffer_manager.h"
+#include "remote_rma_buffer.h"
+#include "local_ub_rma_buffer.h"
+
+namespace hcomm {
+
+UbRegedMemMgr::UbRegedMemMgr()
+{
+    localUbRmaBufferMgr_ = std::make_unique<LocalUbRmaBufferMgr>();
+}
+    
+HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void **memHandle)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    CHK_PTR_NULL(this->localUbRmaBufferMgr_);
+
+    // 构造LocalUbRmaBuffer
+    std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
+    EXECEPTION_CATCH((localBufferPtr = std::make_shared<Hccl::Buffer>(reinterpret_cast<uintptr_t>(mem.addr), mem.size, mem.type, memTag)),
+        return HCCL_E_PTR);
+    
+    // LocalUbRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
+    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
+    if(localUbRmaBufferMgr_->Find(tempKey).first) {
+        // 内存再次注册时
+        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
+                "{%p, %llu}", mem.addr, mem.size);
+        return HCCL_E_AGAIN;
+    }
+
+    std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
+    EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+        return HCCL_E_PTR);
+    
+    // 注册到LocalUbRmaBuffer计数器
+    auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
+    if (resultPair.first == localUbRmaBufferMgr_->End()) {
+        // 若已注册内存有交叉，返回HCCL_E_INTERNAL
+        HCCL_ERROR("[UbRegedMemMgr][RegisterMemory] [%s]The memory overlaps with the memory that has been registered.", __FUNCTION__);
+        return HCCL_E_INTERNAL;
+    }
+
+    // 已注册：输入key是表中某一最相近key的全集。 返回添加该key的迭代器，及false
+    // 未注册：输入key是表中某一最相近key的空集。 返回添加成功的迭代器，及true
+    std::shared_ptr<Hccl::LocalUbRmaBuffer> &localBuffer = resultPair.first->second.buffer;
+    CHK_SMART_PTR_NULL(localBuffer);
+    if (resultPair.second) {
+        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Register memory success! Add key {%p, %llu}", mem.addr, mem.size);
+    } else {  
+        // 内存再次注册时
+        HCCL_INFO("[UbRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
+                "{%p, %llu}", mem.addr, mem.size);;
+        return HCCL_E_AGAIN;
+    }
+ 
+    *memHandle = static_cast<void *>(localBuffer.get());
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbRegedMemMgr::UnregisterMemory(void* memHandle)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    CHK_PTR_NULL(this->localUbRmaBufferMgr_);
+
+    Hccl::LocalUbRmaBuffer* buffer = static_cast<Hccl::LocalUbRmaBuffer*>(memHandle);
+
+    auto bufferInfo = buffer->GetBufferInfo();
+
+    // 从LocalRamBuffer计数器删除HcclBuf
+    hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
+    bool resultPair = false;
+    EXECEPTION_CATCH(resultPair = this->localUbRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
+    // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
+    if (!resultPair) {
+        HCCL_INFO("[UbRegedMemMgr][[DeregMem] Memory reference count is larger than 0"
+                  "(used by other RemoteRank), do not deregister memory.");
+        return HCCL_E_AGAIN;
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, const void *memHandle, void **memDesc, uint32_t *memDescLen)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+
+    // 获取序列化信息
+    const Hccl::LocalUbRmaBuffer *localUbRmaBuffer = reinterpret_cast<const Hccl::LocalUbRmaBuffer *>(memHandle);
+    auto                          dto = const_cast<Hccl::LocalUbRmaBuffer*>(localUbRmaBuffer)->GetExchangeDto();
+    Hccl::BinaryStream            localUbRmaBufferStream;
+    dto->Serialize(localUbRmaBufferStream);
+    std::vector<char> tempLocalMemDesc;
+    localUbRmaBufferStream.Dump(tempLocalMemDesc);
+    HCCL_DEBUG("[UbRegedMemMgr][MemoryExport] [%s] dump data size [%u]", __func__, tempLocalMemDesc.size());
+    // 判断内存描述符是否正确导出
+    if (tempLocalMemDesc.empty()) {
+        HCCL_ERROR("[UbRegedMemMgr][MemoryExport] [%s] tempLocalMemDesc export failed.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    std::vector<char> tempLocalEndpointDesc;
+    tempLocalEndpointDesc.resize(sizeof(EndpointDesc));
+    if(memcpy_s(tempLocalEndpointDesc.data(), sizeof(EndpointDesc), &endpointDesc, sizeof(EndpointDesc)) != EOK) {
+        HCCL_ERROR("[UbRegedMemMgr][MemoryExport] [%s] endpointDesc memcpy_s failed.", __func__);
+        return HCCL_E_INTERNAL;
+    }
+
+    tempLocalMemDesc.insert(tempLocalMemDesc.end(), 
+                    tempLocalEndpointDesc.begin(), 
+                    tempLocalEndpointDesc.end());
+
+    // 内存描述符拷贝
+    *memDescLen = tempLocalMemDesc.size();
+    if (memcpy_s(*memDesc, TRANSPORT_EMD_ESC_SIZE, tempLocalMemDesc.data(), tempLocalMemDesc.size()) != EOK) {
+        HCCL_ERROR("[UbRegedMemMgr][MemoryExport] [%s] tempLocalMemDesc copy error. aim size:[%llu]", __func__, tempLocalMemDesc.size());
+        return HCCL_E_INTERNAL;
+    }
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
+                                                EndpointDesc &endpointDesc, Hccl::ExchangeUbBufferDto &dto) 
+{
+    const char *description = static_cast<const char *>(memDesc);
+
+    // 从memDesc末尾提取EndpointDesc
+    if (memcpy_s(&endpointDesc, sizeof(EndpointDesc), description + descLen - sizeof(EndpointDesc), sizeof(EndpointDesc)) != EOK) {
+        HCCL_ERROR("[UbRegedMemMgr][GetParamsFromMemDesc] [%s] endpointDesc copy error. aim size:[%llu]", __func__, sizeof(EndpointDesc));
+        return HCCL_E_INTERNAL;
+    }
+
+    // 反序列化
+    std::vector<char> tempDesc{};
+    tempDesc.resize(TRANSPORT_EMD_ESC_SIZE);
+    tempDesc.assign(description, description + descLen - sizeof(EndpointDesc));
+    Hccl::BinaryStream        remoteUbRmaBufferStream(tempDesc);
+    dto.Deserialize(remoteUbRmaBufferStream);
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbRegedMemMgr::MemoryImport(const void *memDesc, uint32_t descLen, HcommMem *outMem)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+
+    EndpointDesc endpointDesc;
+    Hccl::ExchangeUbBufferDto dto;
+    CHK_RET(GetParamsFromMemDesc(memDesc, descLen, endpointDesc, dto));
+
+    // 构造RemoteUbRmaBuffer
+    std::shared_ptr<Hccl::RemoteUbRmaBuffer> remoteUbRmaBuffer;
+    EXECEPTION_CATCH(
+        remoteUbRmaBuffer = std::make_shared<Hccl::RemoteUbRmaBuffer>(this->rdmaHandle_, dto),
+        return HCCL_E_PTR;
+    );
+    CHK_SMART_PTR_NULL(remoteUbRmaBuffer);
+
+    // 放到RemoteUbRmaBufferMgr_
+    hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(remoteUbRmaBuffer->GetAddr()), remoteUbRmaBuffer->GetSize());
+    if(remoteUbRmaBufferMgrs_.find(endpointDesc) == remoteUbRmaBufferMgrs_.end()) {
+        std::unique_ptr<RemoteUbRmaBufferMgr> remoteUbRmaBufferMgr;
+        EXECEPTION_CATCH((remoteUbRmaBufferMgr = std::make_unique<RemoteUbRmaBufferMgr>()),
+            return HCCL_E_PTR);
+        CHK_SMART_PTR_NULL(remoteUbRmaBufferMgr);
+        remoteUbRmaBufferMgrs_[endpointDesc] = std::move(remoteUbRmaBufferMgr);
+    }
+    
+    auto resultPair = remoteUbRmaBufferMgrs_[endpointDesc]->Add(tempKey, remoteUbRmaBuffer);
+    if(!resultPair.second) {
+        HCCL_ERROR("[UbRegedMemMgr][MemoryExport] This memDesc has already been imported!");
+        return HCCL_E_AGAIN;
+    }
+
+    outMem->addr   = reinterpret_cast<void *>(remoteUbRmaBuffer->GetAddr());
+    outMem->size    = remoteUbRmaBuffer->GetSize();
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult UbRegedMemMgr::MemoryUnimport(const void *memDesc, uint32_t descLen)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+
+    EndpointDesc endpointDesc;
+    Hccl::ExchangeUbBufferDto dto;
+    CHK_RET(GetParamsFromMemDesc(memDesc, descLen, endpointDesc, dto));
+
+    if(remoteUbRmaBufferMgrs_.find(endpointDesc) == remoteUbRmaBufferMgrs_.end()) {
+        HCCL_ERROR("[UrmaRegedMemMgr][MemoryUnimport] Remote buffer manager Not Found.");
+        return HCCL_E_NOT_FOUND;
+    }
+    
+    // 删除RemoteUbRmaBuffer
+    HCCL_INFO("[MemoryUnimport][Ub] MemoryUnimport");
+    hccl::BufferKey<uintptr_t, u64> tempKey(static_cast<uintptr_t>(dto.addr), dto.size);
+
+    bool resultPair = false;
+    EXECEPTION_CATCH(resultPair = remoteUbRmaBufferMgrs_[endpointDesc]->Del(tempKey), return HCCL_E_NOT_FOUND);
+    // 计数器大于1时，返回false，说明框架层有其它设备在使用这段内存，返回HCCL_E_AGAIN
+    if (!resultPair) {
+        HCCL_INFO("[UrmaRegedMemMgr][[MemoryUnimport] Memory reference count is larger than 0"
+                    "(used by other RemoteRank).");
+        return HCCL_E_AGAIN;
+    }
+    if (!remoteUbRmaBufferMgrs_[endpointDesc]->size()) {
+        remoteUbRmaBufferMgrs_.erase(endpointDesc);
+    }
+    return HCCL_SUCCESS;
+}
+}

@@ -130,7 +130,7 @@ struct TensorInfo {
 ADX_API int32_t AdumpDumpTensor(const std::string &opType, const std::string &opName,
     const std::vector<TensorInfo> &tensors, aclrtStream stream);
 
-constexpr char DUMP_ADDITIONAL_BLOCK_DIM[] = "block_dim";
+constexpr char DUMP_ADDITIONAL_NUM_BLOCKS[] = "num_blocks";
 constexpr char DUMP_ADDITIONAL_TILING_KEY[] = "tiling_key";
 constexpr char DUMP_ADDITIONAL_TILING_DATA[] = "tiling_data";
 constexpr char DUMP_ADDITIONAL_IMPLY_TYPE[] = "imply_type";

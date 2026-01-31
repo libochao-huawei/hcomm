@@ -60,6 +60,13 @@ HcclResult LaunchContext::HandleClear()
     launchModeMap_.erase(it);
     HCCL_INFO("[%s] begin clear, launchTag[%s], launchMode[%d]",
         __func__, launchTag_.c_str(), static_cast<int32_t>(mode_));
+
+    DevType devType = DevType::DEV_TYPE_COUNT;
+    hrtGetDeviceType(devType);
+    if (devType == DevType::DEV_TYPE_910_95) {
+        HCCL_INFO("[%s] Running on A5, HcclTaskClear skipped.", __func__);
+        return HCCL_SUCCESS;
+    }
     return HcclTaskClear(launchTag_);
 }
 
@@ -101,9 +108,17 @@ HcclResult LaunchContext::SetLaunchMode(const char* launchTag, HcommLaunchMode m
     HCCL_INFO("[%s] SetLaunchMode begin, launchTag[%s], launchMode[%d].",
         __func__, launchTag_.c_str(), static_cast<int32_t>(mode));
 
+#ifndef CCL_KERNEL_AICPU
+    DevType devType = DevType::DEV_TYPE_COUNT;
+#endif
     switch (mode_) {
         case HCOMM_LAUNCH_MODE_BATCH:
 #ifndef CCL_KERNEL_AICPU
+            hrtGetDeviceType(devType);
+            if (devType == DevType::DEV_TYPE_910_95) {
+                HCCL_INFO("[%s] Running on A5, CommTaskPrepare skipped.", __func__);
+                return HCCL_SUCCESS;
+            }
             HCCL_INFO("[%s]host mode, need CommTaskPrepare", __func__);
             if (!defaultTag) {
                 // 仅非缺省 tag 需要准备任务缓存

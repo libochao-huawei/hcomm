@@ -1,0 +1,35 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "orion_adapter_tsd.h"
+#include "log.h"
+#include "runtime/rts/rts_device.h"
+
+namespace Hccl {
+
+HcclResult HrtOpenTsdProcess(u32 deviceLogicId)
+{
+    std::string extPam("--hdcType=18");
+    rtNetServiceOpenArgs openArgs;
+    rtProcExtParam extParam{};
+    extParam.paramInfo = extPam.c_str();
+    extParam.paramLen = extPam.size();
+    openArgs.extParamCnt = 1UL;
+    openArgs.extParamList = &extParam;
+    rtError_t aclret = rtOpenNetService(&openArgs);
+    if (aclret != 0) {
+        HCCL_INFO("deviceLogicId = %u TsdProcessOpen fail aclret:%d\n", deviceLogicId, aclret);
+        return HcclResult::HCCL_E_UNAVAIL;
+    } else {
+        HCCL_INFO("deviceLogicId = %u TsdProcessOpen success\n", deviceLogicId);
+        return HcclResult::HCCL_SUCCESS;
+    }
+}
+} // namespace Hccl

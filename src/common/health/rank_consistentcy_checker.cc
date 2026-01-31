@@ -292,7 +292,7 @@ HcclResult RankConsistentcyChecker::GetOpParaByTag(const std::string &tag, HcclC
 {
     auto getResult = cmdInfoMap_.find(tag);
     CHK_PRT_RET(getResult == cmdInfoMap_.end(),
-        HCCL_ERROR("[RankConsistentcyChecker][GetOpParaByTag]There is not any CMD infomation for tag[%s]",
+        HCCL_ERROR("[RankConsistentcyChecker][GetOpParaByTag]There is not any CMD information for tag[%s]",
         tag.c_str()), HCCL_E_INTERNAL);
     CMDInfoOutput = getResult->second;
     return HCCL_SUCCESS;
@@ -302,7 +302,7 @@ HcclResult RankConsistentcyChecker::GetCrcByTag(const std::string &tag, HcclCRCI
 {
     const auto recordsIter = crcRecords_.find(tag);
     CHK_PRT_RET(recordsIter == crcRecords_.end(),
-        HCCL_ERROR("[RankConsistentcyChecker][GetCrcByTag]There is not any CRC infomation for tag[%s]",
+        HCCL_ERROR("[RankConsistentcyChecker][GetCrcByTag]There is not any CRC information for tag[%s]",
         tag.c_str()), HCCL_E_INTERNAL);
     crcInfo.crcNum = 0;
     const auto &tagRecords = recordsIter->second;
@@ -514,7 +514,7 @@ bool RankConsistentcyChecker::CompareFrame(HcclCheckInfo &checkInfo, HcclCheckIn
     }
     if (CompareCrcInfo(checkInfo.cmdInfo.tag, checkInfo.crcInfoOp, checkInfoRecv.crcInfoOp)) {
         HCCL_ERROR("[RankConsistentcyChecker][CompareFrame]errNo[0x%016llx] Op CRC check fail, please check the op"
-            " paramaters, rankTable file and hccl_config file.", HCCL_ERROR_CODE(HCCL_E_INTERNAL));
+            " parameters, rankTable file and hccl_config file.", HCCL_ERROR_CODE(HCCL_E_INTERNAL));
         bIsDiff = true;
     }
     if (!CompareSection(reinterpret_cast<char_t *>(&checkInfo.cmdInfo),

@@ -86,7 +86,6 @@ if(BUILD_OPEN_PROJECT)
         ${CMAKE_CURRENT_SOURCE_DIR}/../pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../include/hccl
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../pub_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc
         ${CMAKE_CURRENT_SOURCE_DIR}/../../pkg_inc/hccl
 
@@ -99,7 +98,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/platform/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # acl头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/acl/

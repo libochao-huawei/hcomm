@@ -61,6 +61,14 @@ HcclResult LocalNotify::Init(const HcclSignalInfo &signalInfo, const NotifyLoadT
     return HCCL_SUCCESS;
 }
 
+HcclResult LocalNotify::InitNotifyLite(const HcclSignalInfo &notifyInfo)
+{
+    notifyOwner_ = false; // aicpu侧不需要申请新的notify资源
+    notifyId_ = static_cast<u32>(notifyInfo.resId);
+    HCCL_INFO("[LocalNotify]Init success. notify id [%u]", notifyId_);
+    return HCCL_SUCCESS;
+}
+
 HcclResult LocalNotify::Wait(Stream& stream, HcclDispatcher dispatcher, s32 stage, u32 timeOut)
 {
     return pimpl_->Wait(stream, dispatcher, stage, timeOut);

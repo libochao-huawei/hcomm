@@ -54,7 +54,7 @@ int RaHdcSocketSendAsync(const struct SocketHdcInfo *fdHandle, const void *data,
     ret = RaHdcSendMsgAsync(RA_RS_SOCKET_SEND, phyId, (char *)asyncData, sizeof(union OpSocketSendData),
         reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[send][ra_hdc_socket]hdc async send message process failed ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[send][ra_hdc_socket]hdc async send message process failed ret(%d) phyId(%u)", ret, phyId);
         free(reqHandleTmp);
         reqHandleTmp = NULL;
         goto out;
@@ -82,7 +82,7 @@ void RaHdcAsyncHandleSocketSend(struct RaRequestHandle *reqHandle)
         reqHandle->opRet = -ESOCKCLOSED;
     } else {
         if (reqHandle->opRet != -EAGAIN) {
-            hccp_warn("[send][ra_hdc_socket]socket send unsuccessful ret(%d) phy_id(%u)", reqHandle->opRet,
+            hccp_warn("[send][ra_hdc_socket]socket send unsuccessful ret(%d) phyId(%u)", reqHandle->opRet,
                 reqHandle->phyId);
         }
         *(unsigned long long *)reqHandle->privData = 0;
@@ -134,7 +134,7 @@ int RaHdcSocketRecvAsync(const struct SocketHdcInfo *fdHandle, void *data, unsig
     ret = RaHdcSendMsgAsync(RA_RS_SOCKET_RECV, phyId, (char *)asyncData,
         (unsigned int)(sizeof(union OpSocketRecvData) + recvSize), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[recv][ra_hdc_socket]hdc async send message process failed ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[recv][ra_hdc_socket]hdc async send message process failed ret(%d) phyId(%u)", ret, phyId);
         free(reqHandleTmp);
         reqHandleTmp = NULL;
         goto out;
@@ -169,7 +169,7 @@ void RaHdcAsyncHandleSocketRecv(struct RaRequestHandle *reqHandle)
         goto out;
     } else if (reqHandle->opRet < 0) {
         if (reqHandle->opRet != -EAGAIN) {
-            hccp_warn("[recv][ra_hdc_socket]socket recv ret(%d) phy_id(%u)", reqHandle->opRet, phyId);
+            hccp_warn("[recv][ra_hdc_socket]socket recv ret(%d) phyId(%u)", reqHandle->opRet, phyId);
         }
         goto out;
     }
@@ -221,7 +221,7 @@ int RaHdcSocketListenStartAsync(unsigned int phyId, struct SocketListenInfoT con
     asyncRsp->num = num;
     reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
     if (reqHandleTmp == NULL) {
-        hccp_err("[listen_start][ra_hdc_socket]calloc ra_request_handle failed, phyId[%u]", phyId);
+        hccp_err("[listen_start][ra_hdc_socket]calloc RaRequestHandle failed, phyId[%u]", phyId);
         ret = -ENOMEM;
         goto out;
     }
@@ -230,7 +230,7 @@ int RaHdcSocketListenStartAsync(unsigned int phyId, struct SocketListenInfoT con
     ret = RaHdcSendMsgAsync(RA_RS_SOCKET_LISTEN_START, phyId, (char *)&asyncData,
         sizeof(union OpSocketListenData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[listen_start][ra_hdc_socket]hdc async send message process failed ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[listen_start][ra_hdc_socket]hdc async send message process failed ret(%d) phyId(%u)", ret, phyId);
         free(reqHandleTmp);
         reqHandleTmp = NULL;
         goto out;
@@ -281,12 +281,12 @@ int RaHdcSocketListenStopAsync(unsigned int phyId, struct SocketListenInfoT conn
 
     reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
     CHK_PRT_RETURN(reqHandleTmp == NULL,
-        hccp_err("[listen_stop][ra_hdc_socket]calloc ra_request_handle failed, phyId[%u]", phyId), -ENOMEM);
+        hccp_err("[listen_stop][ra_hdc_socket]calloc RaRequestHandle failed, phyId[%u]", phyId), -ENOMEM);
 
     ret = RaHdcSendMsgAsync(RA_RS_SOCKET_LISTEN_STOP, phyId, (char *)&asyncData,
         sizeof(union OpSocketListenData), reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[listen_stop][ra_hdc_socket]hdc async send message process failed ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[listen_stop][ra_hdc_socket]hdc async send message process failed ret(%d) phyId(%u)", ret, phyId);
         free(reqHandleTmp);
         reqHandleTmp = NULL;
         return ret;
@@ -316,7 +316,7 @@ int RaHdcSocketBatchConnectAsync(unsigned int phyId, struct SocketConnectInfoT c
 
     reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
     if (reqHandleTmp == NULL) {
-        hccp_err("[batch_connect][ra_hdc_socket]calloc ra_request_handle failed, phyId[%u]", phyId);
+        hccp_err("[batch_connect][ra_hdc_socket]calloc RaRequestHandle failed, phyId[%u]", phyId);
         ret = -ENOMEM;
         goto out;
     }
@@ -324,7 +324,7 @@ int RaHdcSocketBatchConnectAsync(unsigned int phyId, struct SocketConnectInfoT c
     ret = RaHdcSendMsgAsync(RA_RS_SOCKET_CONN, phyId, (char *)asyncData, sizeof(union OpSocketConnectData),
         reqHandleTmp);
     if (ret != 0) {
-        hccp_err("[batch_connect][ra_hdc_socket]hdc async send message process failed ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[batch_connect][ra_hdc_socket]hdc async send message process failed ret(%d) phyId(%u)", ret, phyId);
         free(reqHandleTmp);
         reqHandleTmp = NULL;
         goto out;
@@ -367,7 +367,7 @@ int RaHdcSocketBatchCloseAsync(unsigned int phyId, struct SocketCloseInfoT conn[
 
     reqHandleTmp = (struct RaRequestHandle *)calloc(1, sizeof(struct RaRequestHandle));
     if (reqHandleTmp == NULL) {
-        hccp_err("[batch_close][ra_hdc_socket]calloc ra_request_handle failed, phyId[%u]", phyId);
+        hccp_err("[batch_close][ra_hdc_socket]calloc RaRequestHandle failed, phyId[%u]", phyId);
         ret = -ENOMEM;
         goto out;
     }

@@ -20,6 +20,7 @@ set(HCOMM_CODE_COMMON    ${HCOMM_CODE_ROOT}/src/common)
 set(HCOMM_CODE_PLATFORM  ${HCOMM_CODE_ROOT}/src/platform)
 set(HCOMM_CODE_ALGORITHM ${HCOMM_CODE_ROOT}/src/algorithm)
 set(HCOMM_CODE_FRAMEWORK ${HCOMM_CODE_ROOT}/src/framework)
+set(HCOMM_CODE_LEGACY    ${HCOMM_CODE_ROOT}/src/legacy)
 
 set(THIRD_PARTY_PATH   ${HCOMM_CODE_ROOT}/output/third_party)
 set(PROTO_SOURCE_DIR   ${THIRD_PARTY_PATH}/protobuf/lib64)
@@ -62,6 +63,8 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
     ${HCOMM_CODE_ROOT}/src/pub_inc
     ${HCOMM_CODE_ROOT}/src/pub_inc/new
     ${HCOMM_CODE_ROOT}/src/pub_inc/inner
+    ${HCOMM_CODE_ROOT}/pub_inc
+    ${HCOMM_CODE_ROOT}/pub_inc/hccl
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
@@ -136,6 +139,68 @@ set(HCOMM_FRAMEWORK_INCLUDE_LIST
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/channel
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/rank_graph
     ${HCOMM_CODE_FRAMEWORK}/communicator/impl/independent_op/resource/engine
+
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/comm_engine_res/threads
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank
+    ${HCOMM_CODE_FRAMEWORK}/next/coll_comms/rank_pairs
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/sockets/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoints/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/endpoint_pairs/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/api_c_adpt/
+    ${HCOMM_CODE_FRAMEWORK}/next/comms/common/
+    ${HCOMM_CODE_FRAMEWORK}/../common/stream
+    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc
+    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/inc/network
+    ${HCOMM_CODE_FRAMEWORK}/../platform/hccp/external_depends/rdma-core/include
+)
+
+set(HCOMM_LEGACY_INCLUDE_LIST
+    ${HCOMM_CODE_LEGACY}/interface
+    ${HCOMM_CODE_LEGACY}/common
+    ${HCOMM_CODE_LEGACY}/common/utils
+    ${HCOMM_CODE_LEGACY}/common/types
+    ${HCOMM_CODE_LEGACY}/common/exception
+    ${HCOMM_CODE_LEGACY}/framework/env_config
+    ${HCOMM_CODE_LEGACY}/framework/misc/json_parser
+    ${HCOMM_CODE_LEGACY}/framework/communicator
+    ${HCOMM_CODE_LEGACY}/framework/communicator/aicpu
+    ${HCOMM_CODE_LEGACY}/framework/resource_manager/socket
+    ${HCOMM_CODE_LEGACY}/framework/topo
+    ${HCOMM_CODE_LEGACY}/framework/topo/new_topo_builder/common
+    ${HCOMM_CODE_LEGACY}/framework/topo/new_topo_builder/rank_graph
+    ${HCOMM_CODE_LEGACY}/framework/topo/new_topo_builder/rank_table_info
+    ${HCOMM_CODE_LEGACY}/framework/topo/new_topo_builder/rank_graph_builder
+    ${HCOMM_CODE_LEGACY}/framework/topo/new_topo_builder/phy_topo
+    ${HCOMM_CODE_LEGACY}/framework/topo/new_topo_builder/topo_info
+    ${HCOMM_CODE_LEGACY}/service/collective
+    ${HCOMM_CODE_LEGACY}/service/collective/primitive
+    ${HCOMM_CODE_LEGACY}/unified_platform
+    ${HCOMM_CODE_LEGACY}/unified_platform/external_system
+    ${HCOMM_CODE_LEGACY}/unified_platform/common
+    ${HCOMM_CODE_LEGACY}/unified_platform/pub_inc
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/transport
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/transport/aicpu
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/stream/aicpu
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/notify/aicpu
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/socket
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/stream/aicpu
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/connection/aicpu
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/buffer/aicpu
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/mem
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/connection
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/task
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/notify
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/stream
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/buffer
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel/dpu_notify
+    ${HCOMM_CODE_LEGACY}/unified_platform/resource/channel
 )
 
 add_subdirectory(testcase)

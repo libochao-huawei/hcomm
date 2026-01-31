@@ -1455,22 +1455,14 @@ HcclResult SalGetUniqueId(char *salUniqueId, int maxLen)
     static volatile u32 myCounter = 0;    // 静态变量保证每次获取到不同的计数。
     CHK_PTR_NULL(salUniqueId);
 
-    s32 sRet = memset_s(salUniqueId, SAL_UNIQUE_ID_BYTES, 0, SAL_UNIQUE_ID_BYTES);
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("In get unique id, mem set failed.errorno[%d], "\
-        "params: uniqueId[%p], dest max size[%d], set value[%d], set length[%d]", sRet, \
-        salUniqueId, SAL_UNIQUE_ID_BYTES, 0, SAL_UNIQUE_ID_BYTES), HCCL_E_MEMORY);
-
     u32 myPid = drvDeviceGetBarePid();    // 当前进程id
     u32 currentCounter = __sync_fetch_and_add(&myCounter, 1);   // 本次获取的唯一计数
-
     u32 currentTime = SalGetSysTime();  // 本次获取的唯一计数
-
-    s32 hcclRet = snprintf_s(salUniqueId, SAL_UNIQUE_ID_BYTES, SAL_UNIQUE_ID_BYTES - 1, "%08x-%08x-%08x",
-        myPid, currentTime, currentCounter);
+    s32 hcclRet = sprintf_s(salUniqueId, maxLen, "%08x-%08x-%08x", myPid, currentTime, currentCounter);
     if (hcclRet == -1) {
         HCCL_ERROR("In get unique id, printf failed.uniqueId[%s], "\
             "dest max size[%d] mypid[0x%08x] current time[0x%08x] current counter[0x%08x]", \
-            salUniqueId, SAL_UNIQUE_ID_BYTES, myPid, currentTime, currentCounter);
+            salUniqueId, maxLen, myPid, currentTime, currentCounter);
     }
 
     return HCCL_SUCCESS;

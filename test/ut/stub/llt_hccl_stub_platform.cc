@@ -107,7 +107,7 @@ HcclResult GraphAddRdmaSendTask(void *graphMgr, void *ctx, uint32_t streamId, u3
 }
 
 HcclResult GraphAddVectorReduceTask(void *graphMgr, void *ctx, uint32_t streamId, int count, void *addrListDevMemPtr,
-    void *funcAddr, uint32_t blockDim, uint32_t *ctxIdx)
+    void *funcAddr, uint32_t numBlocks, uint32_t *ctxIdx)
 {
     return HCCL_SUCCESS;
 }

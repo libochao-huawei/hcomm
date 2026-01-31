@@ -30,6 +30,7 @@
 #include "hccl_msg.h"
 #include "hccl_tiling_msg.h"
 #include "framework/aicpu_communicator.h"
+#include "hccl_mc2_ex.h"
 #undef private
 #undef protected
 
@@ -292,5 +293,37 @@ extern HcclResult RpcServerPreCheck(AicpuKfcRpcServerV2 *rpc, hccl::HcclCommAicp
 extern HcclResult RunRpcServerInnerProcessV2(uint32_t groupNum);
 extern HcclResult RunRpcServerLoopProcess(u32 groupIdx, bool &finalizeFlag);
 extern HcclResult UpdateOpExecStatus(AicpuComContext *ctx, HcclOpExecFSM &fsmState, KfcStatus state, KfcError &errorCode, uint32_t retryCnt);
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+HcclResult HcclGetCommHandleByCtx(void *ctx, void **opHandle) {
+    return HCCL_SUCCESS;
+}
+HcclResult HcclReleaseComm(void* opHandle) {
+    return HCCL_SUCCESS;
+}
+HcclResult HcclGetTaskStatus(void* opHandle, HcclTaskStatus *status) {
+    *status = HcclTaskStatus::HCCL_NORMAL_STATUS;
+    return HCCL_SUCCESS;
+}
+HcclResult HcclCheckFinishByStream(void* opHandle) {
+    return HCCL_SUCCESS;
+}
+HcclResult HcclPrintTaskExceptionAllComm(void* opHandle) {
+    return HCCL_SUCCESS;
+}
+HcclResult HcclLaunchCcoreWait(void* opHandle, uint64_t waitAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast) {
+    return HCCL_SUCCESS;
+}
+HcclResult HcclLaunchCcorePost(void* opHandle, uint64_t recordAddr, uint32_t turnNum, uint64_t turnNumAddr) {
+    return HCCL_SUCCESS;
+}
+HcclResult HcclLaunchOp(void* opHandle, HcclOpData* data) {
+    return HCCL_SUCCESS;
+}
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // __MC2_AICPU_STUB_HPP__

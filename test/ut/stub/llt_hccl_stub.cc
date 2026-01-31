@@ -833,6 +833,7 @@ aclError aclrtSetCurrentContext(aclrtContext ctx)
 aclError aclrtGetDevicesTopo(uint32_t devId, uint32_t otherDevId, uint64_t *value)
 {
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910B)) {
+
         if ((devId / 8)  != (otherDevId / 8)) {
             *value = ACL_RT_DEVS_TOPOLOGY_PIX; // PXI
         } else {
@@ -842,7 +843,8 @@ aclError aclrtGetDevicesTopo(uint32_t devId, uint32_t otherDevId, uint64_t *valu
     if (chip_type_stub[0] == static_cast<s32>(DevType::DEV_TYPE_910_93))
     {
         // 0-1 2-3 4-5 6-7
-        if ((fabs(devId - otherDevId) == 1) && ((devId + otherDevId) % 4 == 1)) {
+        int32_t diff = static_cast<int32_t>(devId) - static_cast<int32_t>(otherDevId);
+        if ((abs(diff) == 1) && ((devId + otherDevId) % 4 == 1)) {
             *value = ACL_RT_DEVS_TOPOLOGY_SIO;     // SIO
         } else {
             *value = ACL_RT_DEVS_TOPOLOGY_HCCS_SW;     // HCCS_SW
@@ -2486,7 +2488,7 @@ rtError_t rtNotifyGetPhyInfoExt(rtNotify_t notify, rtNotifyPhyInfo *notifyInfo)
     return RT_ERROR_NONE;
 }
 
-rtError_t rtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t blockDim,
+rtError_t rtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uint32_t numBlocks,
                                         const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
                                         rtStream_t stream, uint32_t flags)
 {
@@ -4665,91 +4667,91 @@ int stub_ibv_exp_post_send(struct ibv_qp *qp, struct ibv_send_wr *wr, struct ibv
 namespace hccl
 {
 std::map<std::string, void*> dlRaFuntionPtrMap = {
-    {"ra_qp_create", (void*)&RaQpCreate},
-    {"ra_get_qp_context", (void*)&RaGetQpContext},
-    {"ra_get_tsqp_depth", (void*)&RaGetTsqpDepth},
-    {"ra_set_tsqp_depth", (void*)&RaSetTsqpDepth},
-    {"ra_qp_destroy", (void*)&RaQpDestroy},
-    {"ra_qp_connect_async", (void*)&RaQpConnectAsync},
-    {"ra_get_qp_status", (void*)&RaGetQpStatus},
-    {"ra_deinit", (void*)&RaDeinit},
-    {"ra_get_notify_base_addr", (void*)&RaGetNotifyBaseAddr},
-    {"ra_get_sockets", (void*)&RaGetSockets},
-    {"ra_init", (void*)&RaInit},
-    {"ra_is_first_used", (void*)&ra_is_first_used},
-    {"ra_is_last_used", (void*)&ra_is_last_used},
-    {"ra_mr_dereg", (void*)&RaMrDereg},
-    {"ra_mr_reg", (void*)&RaMrReg},
-    {"ra_register_mr", (void*)&RaRegisterMr},
-    {"ra_deregister_mr", (void*)&RaDeregisterMr},
-    {"ra_rdev_deinit", (void*)&RaRdevDeinit},
-    {"ra_rdev_init", (void*)&RaRdevInit},
-    {"ra_rdev_init_v2", (void*)&RaRdevInitV2},
-    {"ra_rdev_init_with_backup", (void*)&RaRdevInitWithBackup},
-    {"ra_send_wr", (void*)&RaSendWr},
-    {"ra_send_wrlist", (void*)&RaSendWrlist},
-    {"ra_send_wrlist_ext", (void*)&RaSendWrlistExt},
-    {"ra_socket_batch_close", (void*)&RaSocketBatchClose},
-    {"ra_socket_batch_connect", (void*)&RaSocketBatchConnect},
-    {"ra_socket_batch_abort", (void*)&RaSocketBatchAbort},
-    {"ra_socket_deinit", (void*)&RaSocketDeinit},
-    {"ra_socket_init", (void*)&RaSocketInit},
-    {"ra_socket_init_v1", (void*)&RaSocketInitV1},
-    {"ra_socket_listen_start", (void*)&RaSocketListenStart},
-    {"ra_socket_listen_stop", (void*)&RaSocketListenStop},
-    {"ra_socket_recv", (void*)&RaSocketRecv},
-    {"ra_socket_send", (void*)&RaSocketSend},
-    {"ra_socket_set_white_list_status", (void*)&RaSocketSetWhiteListStatus},
-    {"ra_socket_get_white_list_status", (void*)&RaSocketGetWhiteListStatus},
-    {"ra_socket_white_list_add", (void*)&RaSocketWhiteListAdd},
-    {"ra_socket_white_list_del", (void*)&RaSocketWhiteListDel},
-    {"ra_get_ifnum", (void*)&RaGetIfnum},
-    {"ra_get_ifaddrs", (void*)&RaGetIfaddrs},
-    {"ra_get_interface_version", (void*)&RaGetInterfaceVersion},
-    {"ra_epoll_ctl_add", (void*)&RaEpollCtlAdd},
-    {"ra_epoll_ctl_mod", (void*)&RaEpollCtlMod},
-    {"ra_epoll_ctl_del", (void*)&RaEpollCtlDel},
-    {"ra_set_tcp_recv_callback", (void*)&RaSetTcpRecvCallback},
-    {"ra_cq_create", (void*)&RaCqCreate},
-    {"ra_cq_destroy", (void*)&RaCqDestroy},
-    {"ra_normal_qp_create", (void*)&RaNormalQpCreate},
-    {"ra_normal_qp_destroy", (void*)&RaNormalQpDestroy},
-    {"ra_set_qp_attr_qos", (void*)&RaSetQpAttrQos},
-    {"ra_set_qp_attr_timeout", (void*)&RaSetQpAttrTimeout},
-    {"ra_set_qp_attr_retry_cnt", (void*)&RaSetQpAttrRetryCnt},
-    {"ra_create_comp_channel", (void*)&RaCreateCompChannel},
-    {"ra_destroy_comp_channel", (void*)&RaDestroyCompChannel},
-    {"ra_get_cqe_err_info", (void*)&RaGetCqeErrInfo},
-    {"ra_rdev_get_cqe_err_info_list", (void*)&RaRdevGetCqeErrInfoList},
-    {"ra_get_qp_attr", (void*)&RaGetQpAttr},
-    {"ra_create_srq", (void*)&RaCreateSrq},
-    {"ra_destroy_srq", (void*)&RaDestroySrq},
-    {"ra_qp_create_with_attrs", (void*)&RaQpCreateWithAttrs},
-    {"ra_ai_qp_create", (void*)&RaAiQpCreate},
-    {"ra_send_wr_v2", (void*)&RaSendWrV2},
-    {"ra_send_normal_wrlist", (void*)&RaSendNormalWrlist},
-    {"ra_poll_cq", (void*)&RaPollCq},
-    {"ra_recv_wrlist", (void*)&RaRecvWrlist},
-    {"ra_socket_get_vnic_ip_infos", (void*)&RaSocketGetVnicIpInfos},
-    {"ra_rdev_get_support_lite", (void*)&RaRdevGetSupportLite},
-    {"ra_create_event_handle", (void*)&RaCreateEventHandle},
-    {"ra_ctl_event_handle", (void*)&RaCtlEventHandle},
-    {"ra_wait_event_handle", (void*)&RaWaitEventHandle},
-    {"ra_destroy_event_handle", (void*)&RaDestroyEventHandle},
-    {"ra_qp_batch_modify", (void*)&RaQpBatchModify},
-    {"ra_get_notify_mr_info", (void*)&RaGetNotifyMrInfo},
-    {"ra_typical_qp_create", (void*)&RaTypicalQpCreate},
-    {"ra_typical_qp_modify", (void*)&RaTypicalQpModify},
-    {"ra_typical_send_wr", (void*)&RaTypicalSendWr},
-    {"ra_rdev_get_port_status", (void*)&RaRdevGetPortStatus},
-    {"ra_socket_accept_credit_add", (void*)&RaSocketAcceptCreditAdd},
-    {"ra_remap_mr", (void*)&RaRemapMr},
-    {"ra_tlv_init", (void*)&RaTlvInit},
-    {"ra_tlv_deinit", (void*)&RaTlvDeinit},
-    {"ra_tlv_request", (void*)&RaTlvRequest},
-    {"ra_get_tls_enable", (void*)&RaGetTlsEnable},
-    {"ra_save_snapshot", (void*)&RaSaveSnapshot},
-    {"ra_restore_snapshot", (void*)&RaRestoreSnapshot},
+    {"RaQpCreate", (void*)&RaQpCreate},
+    {"RaGetQpContext", (void*)&RaGetQpContext},
+    {"RaGetTsqpDepth", (void*)&RaGetTsqpDepth},
+    {"RaSetTsqpDepth", (void*)&RaSetTsqpDepth},
+    {"RaQpDestroy", (void*)&RaQpDestroy},
+    {"RaQpConnectAsync", (void*)&RaQpConnectAsync},
+    {"RaGetQpStatus", (void*)&RaGetQpStatus},
+    {"RaDeinit", (void*)&RaDeinit},
+    {"RaGetNotifyBaseAddr", (void*)&RaGetNotifyBaseAddr},
+    {"RaGetSockets", (void*)&RaGetSockets},
+    {"RaInit", (void*)&RaInit},
+    {"RaIsFirstUsed", (void*)&ra_is_first_used},
+    {"RaIsLastUsed", (void*)&ra_is_last_used},
+    {"RaMrDereg", (void*)&RaMrDereg},
+    {"RaMrReg", (void*)&RaMrReg},
+    {"RaRegisterMr", (void*)&RaRegisterMr},
+    {"RaDeregisterMr", (void*)&RaDeregisterMr},
+    {"RaRdevDeinit", (void*)&RaRdevDeinit},
+    {"RaRdevInit", (void*)&RaRdevInit},
+    {"RaRdevInitV2", (void*)&RaRdevInitV2},
+    {"RaRdevInitWithBackup", (void*)&RaRdevInitWithBackup},
+    {"RaSendWr", (void*)&RaSendWr},
+    {"RaSendWrlist", (void*)&RaSendWrlist},
+    {"RaSendWrlistExt", (void*)&RaSendWrlistExt},
+    {"RaSocketBatchClose", (void*)&RaSocketBatchClose},
+    {"RaSocketBatchConnect", (void*)&RaSocketBatchConnect},
+    {"RaSocketBatchAbort", (void*)&RaSocketBatchAbort},
+    {"RaSocketDeinit", (void*)&RaSocketDeinit},
+    {"RaSocketInit", (void*)&RaSocketInit},
+    {"RaSocketInitV1", (void*)&RaSocketInitV1},
+    {"RaSocketListenStart", (void*)&RaSocketListenStart},
+    {"RaSocketListenStop", (void*)&RaSocketListenStop},
+    {"RaSocketRecv", (void*)&RaSocketRecv},
+    {"RaSocketSend", (void*)&RaSocketSend},
+    {"RaSocketSetWhiteListStatus", (void*)&RaSocketSetWhiteListStatus},
+    {"RaSocketGetWhiteListStatus", (void*)&RaSocketGetWhiteListStatus},
+    {"RaSocketWhiteListAdd", (void*)&RaSocketWhiteListAdd},
+    {"RaSocketWhiteListDel", (void*)&RaSocketWhiteListDel},
+    {"RaGetIfnum", (void*)&RaGetIfnum},
+    {"RaGetIfaddrs", (void*)&RaGetIfaddrs},
+    {"RaGetInterfaceVersion", (void*)&RaGetInterfaceVersion},
+    {"RaEpollCtlAdd", (void*)&RaEpollCtlAdd},
+    {"RaEpollCtlMod", (void*)&RaEpollCtlMod},
+    {"RaEpollCtlDel", (void*)&RaEpollCtlDel},
+    {"RaSetTcpRecvCallback", (void*)&RaSetTcpRecvCallback},
+    {"RaCqCreate", (void*)&RaCqCreate},
+    {"RaCqDestroy", (void*)&RaCqDestroy},
+    {"RaNormalQpCreate", (void*)&RaNormalQpCreate},
+    {"RaNormalQpDestroy", (void*)&RaNormalQpDestroy},
+    {"RaSetQpAttrQos", (void*)&RaSetQpAttrQos},
+    {"RaSetQpAttrTimeout", (void*)&RaSetQpAttrTimeout},
+    {"RaSetQpAttrRetryCnt", (void*)&RaSetQpAttrRetryCnt},
+    {"RaCreateCompChannel", (void*)&RaCreateCompChannel},
+    {"RaDestroyCompChannel", (void*)&RaDestroyCompChannel},
+    {"RaGetCqeErrInfo", (void*)&RaGetCqeErrInfo},
+    {"RaRdevGetCqeErrInfoList", (void*)&RaRdevGetCqeErrInfoList},
+    {"RaGetQpAttr", (void*)&RaGetQpAttr},
+    {"RaCreateSrq", (void*)&RaCreateSrq},
+    {"RaDestroySrq", (void*)&RaDestroySrq},
+    {"RaQpCreateWithAttrs", (void*)&RaQpCreateWithAttrs},
+    {"RaAiQpCreate", (void*)&RaAiQpCreate},
+    {"RaSendWrV2", (void*)&RaSendWrV2},
+    {"RaSendNormalWrlist", (void*)&RaSendNormalWrlist},
+    {"RaPollCq", (void*)&RaPollCq},
+    {"RaRecvWrlist", (void*)&RaRecvWrlist},
+    {"RaSocketGetVnicIpInfos", (void*)&RaSocketGetVnicIpInfos},
+    {"RaRdevGetSupportLite", (void*)&RaRdevGetSupportLite},
+    {"RaCreateEventHandle", (void*)&RaCreateEventHandle},
+    {"RaCtlEventHandle", (void*)&RaCtlEventHandle},
+    {"RaWaitEventHandle", (void*)&RaWaitEventHandle},
+    {"RaDestroyEventHandle", (void*)&RaDestroyEventHandle},
+    {"RaQpBatchModify", (void*)&RaQpBatchModify},
+    {"RaGetNotifyMrInfo", (void*)&RaGetNotifyMrInfo},
+    {"RaTypicalQpCreate", (void*)&RaTypicalQpCreate},
+    {"RaTypicalQpModify", (void*)&RaTypicalQpModify},
+    {"RaTypicalSendWr", (void*)&RaTypicalSendWr},
+    {"RaRdevGetPortStatus", (void*)&RaRdevGetPortStatus},
+    {"RaSocketAcceptCreditAdd", (void*)&RaSocketAcceptCreditAdd},
+    {"RaRemapMr", (void*)&RaRemapMr},
+    {"RaTlvInit", (void*)&RaTlvInit},
+    {"RaTlvDeinit", (void*)&RaTlvDeinit},
+    {"RaTlvRequest", (void*)&RaTlvRequest},
+    {"RaGetTlsEnable", (void*)&RaGetTlsEnable},
+    {"RaSaveSnapshot", (void*)&RaSaveSnapshot},
+    {"RaRestoreSnapshot", (void*)&RaRestoreSnapshot},
 };
 
 std::map<std::string, void*> dlTdtFuntionPtrMap = {
@@ -5301,7 +5303,7 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockDim,
+aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t numBlocks,
     aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     aclrtArgsHandle argsHandle, void *reserve)
 {
@@ -5326,12 +5328,25 @@ aclError aclrtGetResInCurrentThread(aclrtDevResLimitType type, uint32_t *value)
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream,
+aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream,
                                        aclrtLaunchKernelCfg *cfg, void *hostArgs, size_t argsSize,
                                        aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {
     return ACL_SUCCESS;
 }
+
+
+aclError aclrtSnapShotCallbackRegister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback, void *args)
+{
+    return ACL_SUCCESS;
+}
+
+
+aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback)
+{
+    return ACL_SUCCESS;
+}
+
 
 const char *aclrtGetSocName()
 {

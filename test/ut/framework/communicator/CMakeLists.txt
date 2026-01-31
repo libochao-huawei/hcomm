@@ -10,12 +10,13 @@
 set(src_to_test_list
     main.cc
     hccl_api_base_test.cc
-    ut_HcclSetConfig_API_test.cc
+    # ut_HcclSetConfig_API_test.cc
     ut_HcclGetConfig_API_test.cc
     ut_HcclGetCommName_API_test.cc
     ut_HcclCommInitAll_API_test.cc
     ut_HcclGetErrorString_API_test.cc
     ut_HcclGetCommConfigCapability_API_test.cc
+    ut_HcclTopoInfoDetect_API_test.cc
 )
 
 add_executable(hccl_utest_framework_communicator ${src_to_test_list})

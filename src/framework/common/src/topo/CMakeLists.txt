@@ -23,6 +23,17 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/hccl_whitelist.cc
 )
 
+set(device_src_list
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_detect_device.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_ranktable_partition_device.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_ranktableParser_device.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_parse_device.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_ranktableConcise_device.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_ranktableHeterog_device.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_ranktableStandard_device.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/topo_device/topoinfo_roletableParser_device.cc
+)
+
 target_sources(hcomm   PRIVATE
     ${src_list}
     ${CMAKE_CURRENT_SOURCE_DIR}/topoinfo_ranktableOffline.cc
@@ -30,6 +41,6 @@ target_sources(hcomm   PRIVATE
 
 if(NOT BUILD_OPEN_PROJECT OR (BUILD_OPEN_PROJECT AND KERNEL_MODE))
     target_sources(ccl_kernel PRIVATE
-        ${src_list}
+        ${device_src_list}
     )
 endif()

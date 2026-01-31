@@ -35,10 +35,10 @@ HcclResult CollSendExecutor::Orchestrate(OpParam& param, AlgResourceResponse& al
     }
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollSendExecutor][Orchestrate]errNo[0x%016llx]send excutor kernel run failed",
+        HCCL_ERROR("[CollSendExecutor][Orchestrate]errNo[0x%016llx]send executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
-    HCCL_INFO("tag[%s] Send Excutor orchestrate success, take time [%lld]us.",
+    HCCL_INFO("tag[%s] Send Executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));
     return HCCL_SUCCESS;
 }
@@ -127,6 +127,13 @@ HcclResult CollSendExecutor::CalcResRequest(const OpParam& param, AlgResourceReq
     return HCCL_SUCCESS;
 }
 
+HcclResult CollSendExecutor::NotifyMainstream(OpParam &param, AlgResourceResponse &algRes)
+{
+    CHK_RET(LocalNotify::Post(param.stream, dispatcher_, algRes.notifiesMain[0], INVALID_VALUE_STAGE));
+    CHK_RET(LocalNotify::Wait(param.stream, dispatcher_, algRes.notifiesAux[0], INVALID_VALUE_STAGE));
+    return HCCL_SUCCESS;
+}
+
 HcclResult CollSendExecutor::RunLoop(OpParam &param, AlgResourceResponse &algRes)
 {
     HcclResult ret;
@@ -141,7 +148,9 @@ HcclResult CollSendExecutor::RunLoop(OpParam &param, AlgResourceResponse &algRes
     u64 inputOffset = 0;
     u64 countLeft = param.DataDes.count;
     while (countLeft > 0) {
-        CHK_RET(InitTask(dispatcher_, const_cast<Stream&>(param.stream), meta.isEnableCache, meta.GetCacheKey()));
+        if (!param.isGroupMode) {
+            CHK_RET(InitTask(dispatcher_, const_cast<Stream&>(param.stream), meta.isEnableCache, meta.GetCacheKey()));
+        }
         curInputPtr += inputOffset;
 
         HCCL_DEBUG("SendOutPlace:inputOffset[%llu]", inputOffset);
@@ -154,6 +163,10 @@ HcclResult CollSendExecutor::RunLoop(OpParam &param, AlgResourceResponse &algRes
         DeviceMem inCommMem(algRes.cclInputMem.ptr(), curSize);
         DeviceMem inMem(curInputPtr, curSize);
         CHK_RET(HcclD2DMemcpyAsync(dispatcher_, inCommMem, inMem, const_cast<Stream&>(param.stream)));
+        HCCL_INFO("[CollSendExecutor] inCommMem[%p]size[%lld], inMem[%p]size[%lld]", inCommMem.ptr(), inCommMem.size(), inMem.ptr(), inMem.size());
+        if(param.isGroupMode){ // 跟主流同步，等待所有localcopy结束再跨卡read
+            CHK_RET(NotifyMainstream(param, algRes));
+        }
         ret = RunTemplate(param, inCommMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("errNo[0x%016llx] SendOutPlace: send error, tag[%s], ptr[%p], count[%llu], dataType[%d]",
@@ -181,7 +194,11 @@ HcclResult CollSendExecutor::RunTemplate(const OpParam &param, DeviceMem &inputM
     SendReceive sendExecutor(dispatcher_, transportLink);
     CHK_RET(sendExecutor.SendPrepare(inputMem, param.dstRank, param.stream));
     CHK_RET(sendExecutor.RegisterProfiler(0, PROF_STAGE_0, HCCL_EXEC_STEP_NOT_SET, param.stream));
-    CHK_RET(sendExecutor.SendRunAsync());
+    if (param.isGroupMode) {
+        CHK_RET(sendExecutor.BatchSendRunAsync());
+    } else {
+        CHK_RET(sendExecutor.SendRunAsync());
+    }
 
     return HCCL_SUCCESS;
 }

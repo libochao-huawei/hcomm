@@ -54,7 +54,6 @@ NetworkManager::InitTool::~InitTool()
 NetworkManager::NetworkManager()
     : deviceLogicId_(INVALID_INT),
       devicePhyId_(INVALID_UINT),
-      vnicListened_(false),
       isHostUseDevNic_(false),
       notifyType_(NO_USE)
 {
@@ -305,6 +304,14 @@ HcclResult NetworkManager::Init(NICDeployment nicDeploy, bool enableWhitelistFla
         HCCL_DEBUG("[%s]hdcType is set to HDC_SERVICE_TYPE_RDMA_V2, hasBackup[%d], nicDeploy[%d], "
             "devicePhyId[%u], deviceLogicId_[%d]", __func__, hasBackup, nicDeploy, devicePhyId_, deviceLogicId_);
     }
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if (devType == DevType::DEV_TYPE_910_93 && nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
+        isEnableHdcAsync_ = true;
+        config.enableHdcAsync = true;
+    }
+    HCCL_INFO("[%s]config.phyId[%u], config.nicPosition[%u], config.hdcType[%d], config.enableHdcAsync[%d]",
+        __func__, config.phyId, config.nicPosition, config.hdcType, config.enableHdcAsync);
     HcclResult ret = HrtRaInit(&config);
     RPT_CALL_ERR(ret != HCCL_SUCCESS,
         "ra init failed,return[%d] devicePhyId_[%u], nicPosition[%u]", ret, devicePhyId_,
@@ -554,7 +561,7 @@ HcclResult NetworkManager::DeInit(NICDeployment nicDeploy, bool resetDeviceFlag,
         return HCCL_E_INTERNAL;
     }
 
-    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+    struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, isEnableHdcAsync_ };
     config.nicPosition = Is310PDevice() ? 0 : static_cast<u32>(nicDeploy);
     config.phyId = devicePhyId_;
 
@@ -614,92 +621,143 @@ HcclResult NetworkManager::DeInitV2(NICDeployment nicDeploy,  bool isBackup, boo
     return HCCL_SUCCESS;
 }
 
-bool NetworkManager::IsHasStartVnic()
-{
-    return raResourceInfo_.vnicSocketHandle != nullptr ? true : false;
-}
-
 HcclResult NetworkManager::StartVnic(HcclIpAddress localIp, u32 &port)
 {
     CHK_PRT_RET(deviceNicInitRef_.Count() <= 0,
         HCCL_ERROR("[Start][Vnic]can't start vnic socket before init device nic!"), HCCL_E_INTERNAL);
-    CHK_PRT_RET(deviceVnicSocketRef_.Ref() > 1,
-        HCCL_INFO("NetworkManager: StartVnic socket success, deviceId[%u] has already started, skip.", devicePhyId_),
-        HCCL_SUCCESS);
     CHK_PRT_RET(Is310PDevice(), HCCL_INFO("DC does not need vnic"), HCCL_SUCCESS);
-    if (raResourceInfo_.vnicSocketHandle == nullptr) {
-        CHK_RET(InitDeviceSocket(devicePhyId_, localIp, raResourceInfo_.vnicSocketHandle));
+    CHK_PRT_RET(port > MAX_PORT_ID, HCCL_ERROR("[Start][Vnic]invalid port id[%u]", port), HCCL_E_PARA);
+
+    auto sockInfo = raResourceInfo_.vnicSocketMap.find(localIp);
+    if (sockInfo == raResourceInfo_.vnicSocketMap.end()) {
+        IpSocket tempSock;
+        raResourceInfo_.vnicSocketMap.insert(std::make_pair(localIp, tempSock)); // 本IP占位
+        HCCL_INFO("[Start][Vnic]device[%u] Start Vnic insert ip[%s]", devicePhyId_, localIp.GetReadableAddress());
     }
-    if (!vnicListened_) {
+
+    IpSocket &sock = raResourceInfo_.vnicSocketMap[localIp];
+    if (sock.listenedPort.size() == 0 && sock.nicSocketHandle == nullptr) {
+        HcclResult ret = InitDeviceSocket(devicePhyId_, localIp, sock.nicSocketHandle);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Start][Vnic]errNo[0x%016llx] ra vnic init socket failed, devid[%u], ipAddr[%s], return[%d]",
+            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, localIp.GetReadableAddress(), ret), ret);
+    } else {
+        HCCL_INFO("[Start][Vnic]vnic socket has inited, ipAddr[%s] port[%u], skip init.",
+            localIp.GetReadableAddress(), port);
+    }
+
+    if (sock.listenedPort.find(port) != sock.listenedPort.end()) {
+        HCCL_WARNING("[Start][Vnic]ipAddr[%s] port[%u] is already listened.", localIp.GetReadableAddress(), port);
+    } else {
         // 作为socket server端启动监听(虚拟网卡)
         bool isAutoPort = port == 0;
         HCCL_INFO("[Start][Vnic]trying to listen on ip[%s] port[%u].", localIp.GetReadableAddress(), port);
         CHK_RET(CheckAutoListenVersion(isAutoPort));
-        HcclResult ret = StartListenSocket(raResourceInfo_.vnicSocketHandle, port); /* 只拉起1个vnic */
-        if (ret == HCCL_E_UNAVAIL) {
-            deviceVnicSocketRef_.Unref();
+        HcclResult ret = StartListenSocket(sock.nicSocketHandle, port); /* 只拉起1个vnic */
+        CHK_PRT_RET(ret == HCCL_E_UNAVAIL,
             HCCL_INFO("[Start][StartVnic]Could not start listening socket for IP [%s] and port [%u].",
-                localIp.GetReadableAddress(), port);
-            return ret;
-        }
+            localIp.GetReadableAddress(), port), ret);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[Start][Vnic]errNo[0x%016llx] ra inner listen start failed, "
             "devid[%u], ip[%s], port[%u], return[%d]",
             HCCL_ERROR_CODE(ret), devicePhyId_, localIp.GetReadableAddress(), port, ret), ret);
-        vnicPort_ = port;
-        vnicListened_ = true;
+        sock.listenedPort.insert(port);
         HCCL_RUN_INFO("[Start][Vnic]Listen on ip[%s], port[%u] success, devPhyId[%u], devLogicId[%u], isAutoPort[%d]",
             localIp.GetReadableAddress(), port, devicePhyId_, deviceLogicId_, isAutoPort);
     }
-    HCCL_INFO("NetworkManager devicePhyId_[%u] port[%u] start vnic OK. refCount[%d]", devicePhyId_, port,
-        deviceVnicSocketRef_.Count());
+    int refCount = IPPortListenRefMapVnicDevice_[localIp][port].Ref();
+    HCCL_INFO("NetworkManager devicePhyId_[%u] ip[%s] port[%u] start vnic OK. refCount[%d]",
+        devicePhyId_, localIp.GetReadableAddress(), port, refCount);
     return HCCL_SUCCESS;
 }
 
 // 此处只进行socket的创建 不listen
 HcclResult NetworkManager::CreateVnicSocketHandle(HcclIpAddress localIp)
 {
-    CHK_PRT_RET(deviceNicInitRef_.Count() <= 0,
-        HCCL_ERROR("[Start][Vnic]can't start vnic socket before init device nic!"), HCCL_E_INTERNAL);
-    CHK_PRT_RET(deviceVnicSocketRef_.Ref() > 1,
-        HCCL_INFO("NetworkManager: CreateVnicSocketHandle socket success, deviceId[%u] has already started, skip.", devicePhyId_),
-        HCCL_SUCCESS);
+    CHK_PRT_RET(!deviceNicInitRef_.Count(), HCCL_ERROR("[NetworkManager][CreateVnicSocketHandle]"
+        "can't start vnic socket before init device nic!"), HCCL_E_INTERNAL);
+    OccupyIp(localIp, raResourceInfo_.vnicSocketMap);
     CHK_PRT_RET(Is310PDevice(), HCCL_INFO("DC does not need vnic"), HCCL_SUCCESS);
-    if (raResourceInfo_.vnicSocketHandle == nullptr) {
-        CHK_RET(InitDeviceSocket(devicePhyId_, localIp, raResourceInfo_.vnicSocketHandle));
-    }
-    HCCL_INFO("[NetworkManager] [CreateVnicSocketHandle] devicePhyId_[%u] ip[%s] CreateVnicSocketHandle OK. refCount[%d]", devicePhyId_, localIp.GetReadableAddress(),
-        deviceVnicSocketRef_.Count());
-    vnicIp_ = localIp; // 存储ip
-    return HCCL_SUCCESS;
-}
 
-HcclResult NetworkManager::StopVnic()
-{
-    int tmpCount = deviceVnicSocketRef_.Unref();
-    HCCL_INFO("NetworkManager devicePhyId_[%u] vnic stopped. refcount[%d]", devicePhyId_, tmpCount);
-    if (tmpCount > 0) {
-        return HCCL_SUCCESS;
-    } else if (tmpCount < 0) {
-        HCCL_ERROR("[Stop][Vnic]NetworkManager devicePhyId_[%u] vnic stopped ERROR. refcount[%d]",
-            devicePhyId_, tmpCount);
-        return HCCL_E_INTERNAL;
-    }
-    DestroyRaVnicResource();
-    return HCCL_SUCCESS;
-}
-
-HcclResult NetworkManager::StopVnicSocketHandle()
-{
-    if (deviceVnicSocketRef_.Count() >= 1) {
-        DestroyRaVnicResource();
-        deviceVnicSocketRef_.Clear();
-        HCCL_INFO("[NetworkManager] [StopVnicSocketHandle] devicePhyId_[%u] StopVnicSocketHandle success", devicePhyId_);
+    IpSocket &sock = raResourceInfo_.vnicSocketMap[localIp];
+    if (sock.listenedPort.size() == 0 && sock.nicSocketHandle == nullptr) {
+        HcclResult ret = InitDeviceSocket(devicePhyId_, localIp, sock.nicSocketHandle);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[NetworkManager][CreateVnicSocketHandle]errNo[0x%016llx] ra vnic init socket failed, "
+            "devid[%u], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, ret), ret);
     } else {
-        HCCL_ERROR("[NetworkManager][StopVnicSocketHandle]NetworkManager devicePhyId_[%u] vnic stopped ERROR. count[%d]",
-            devicePhyId_, deviceVnicSocketRef_.Count());
-        return HCCL_E_INTERNAL;
+        HCCL_INFO("[NetworkManager][CreateVnicSocketHandle] socket has inited, ipAddr[%s], skip.",
+            localIp.GetReadableAddress());
     }
+    HCCL_INFO("[NetworkManager][CreateVnicSocketHandle] CreateVnicSocketHandle OK, ipAddr[%s].",
+        localIp.GetReadableAddress());
+    return HCCL_SUCCESS;
+}
+
+HcclResult NetworkManager::StopVnic(const HcclIpAddress &localIp, u32 port)
+{
+    auto it = raResourceInfo_.vnicSocketMap.find(localIp);
+    CHK_PRT_RET(it == raResourceInfo_.vnicSocketMap.end(),
+        HCCL_ERROR("[Stop][Vnic]ip[%s] is not found in vnicSocketMap, port[%u].", localIp.GetReadableAddress(), port),
+        HCCL_E_INTERNAL);
+    IpSocket &ipSock = it->second;
+
+    int count = IPPortListenRefMapVnicDevice_[localIp][port].Unref();
+    CHK_PRT_RET(count > 0,
+        HCCL_INFO("[Stop][Vnic]ip[%s] port[%u] ref[%d] skip stop.", localIp.GetReadableAddress(), port, count),
+        HCCL_SUCCESS);
+    CHK_PRT_RET(count < 0,
+        HCCL_INFO("[Stop][Vnic]ip[%s] port[%u] devicePhyId_[%u] vnic stopped ERROR, refcount[%d].",
+            localIp.GetReadableAddress(), port, devicePhyId_, count), HCCL_SUCCESS);
+
+    // Stop Listen
+    CHK_PRT_RET(ipSock.nicSocketHandle != nullptr && StopListenSocket(ipSock.nicSocketHandle, port) != HCCL_SUCCESS,
+        HCCL_ERROR("[Stop][Vnic]errNo[0x%016llx] stop vnic socket failed,devid[%u], ip[%s], port[%u]",
+        HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, localIp.GetReadableAddress(), port), HCCL_E_INTERNAL);
+    ipSock.listenedPort.erase(port);
+
+    // DeInit Socket
+    if (ipSock.listenedPort.size() == 0 && ipSock.nicSocketHandle != nullptr) {
+        HcclResult ret = hrtRaSocketDeInit(ipSock.nicSocketHandle);
+        CHK_PRT_RET(ret != HCCL_SUCCESS,
+            HCCL_ERROR("[Stop][Vnic]errNo[0x%016llx] stop vnic socket failed,devid[%u], ip[%s], return[%d]",
+            HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_, localIp.GetReadableAddress(), ret),
+            HCCL_E_INTERNAL);
+        raResourceInfo_.vnicSocketMap.erase(localIp);
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult NetworkManager::StopVnicSocketHandle(const HcclIpAddress &localIp)
+{
+    auto it = raResourceInfo_.vnicSocketMap.find(localIp);
+    CHK_PRT_RET(it == raResourceInfo_.vnicSocketMap.end(),
+        HCCL_ERROR("[NetworkManager][StopVnicSocketHandle]ip[%s] is not found in vnicSocketMap.",
+        localIp.GetReadableAddress()), HCCL_E_INTERNAL);
+
+    IpSocket &ipSock = it->second;
+    // 关闭该ip下的全部端口的listen
+    for (auto &port : ipSock.listenedPort) {
+        if (ipSock.nicSocketHandle != nullptr && StopListenSocket(ipSock.nicSocketHandle, port) != HCCL_SUCCESS) {
+            HCCL_ERROR("[NetworkManager][StopVnicSocketHandle]errNo[0x%016llx] stop vnic listen failed, "
+                "devid[%u], ip[%s], port[%u]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
+                localIp.GetReadableAddress(), port);
+            return HCCL_E_INTERNAL;
+        }
+        ipSock.listenedPort.erase(port);
+        IPPortListenRefMapVnicDevice_[localIp][port].Clear();
+        HCCL_INFO("[NetworkManager][StopVnicSocketHandle] ip[%s] stop listen port[%u]",
+            localIp.GetReadableAddress(), port);
+    }
+
+    // 销毁socket
+    CHK_PRT_RET(ipSock.nicSocketHandle != nullptr && hrtRaSocketDeInit(ipSock.nicSocketHandle),
+        HCCL_ERROR("[Stop][NicsSocket]VNIC socket deInit not successfully"), HCCL_E_NETWORK);
+    ipSock.nicSocketHandle = nullptr;
+    raResourceInfo_.vnicSocketMap.erase(localIp);
+
+    HCCL_INFO("[NetworkManager][StopVnicSocketHandle] devid[%u] ip[%s] stop vnic socket success",
+        devicePhyId_, localIp.GetReadableAddress());
     return HCCL_SUCCESS;
 }
 
@@ -1021,6 +1079,35 @@ HcclResult NetworkManager::StopAllDeviceNicSockets()
     return  HCCL_SUCCESS; // stop socket。port 数清零时自动关闭socket
 }
 
+HcclResult NetworkManager::StopAllDeviceVnicSockets()
+{
+    HcclResult ret;
+
+    for (auto itSocket : raResourceInfo_.vnicSocketMap) {
+        HCCL_WARNING("vnicSocketMap ip[%s] is not released when NetworkManager Destroy, force releasing",
+            itSocket.first.GetReadableAddress());
+        if (itSocket.second.nicSocketHandle != nullptr) {
+            for (auto itPort : itSocket.second.listenedPort) {
+                ret = StopListenSocket(itSocket.second.nicSocketHandle, itPort);
+                CHK_PRT_RET(ret != HCCL_SUCCESS,
+                    HCCL_ERROR("[Stop][AllDeviceVnicSockets]errNo[0x%016llx] stop vnic socket listen failed, "
+                    "devid[%u], ip[%s], port[%u], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
+                    itSocket.first.GetReadableAddress(), itPort, ret), HCCL_E_INTERNAL);
+                IPPortListenRefMapVnicDevice_[itSocket.first][itPort].Clear();
+            }
+            ret = hrtRaSocketDeInit(itSocket.second.nicSocketHandle);
+            CHK_PRT_RET(ret != HCCL_SUCCESS,
+                HCCL_ERROR("[Stop][AllDeviceVnicSockets]errNo[0x%016llx] deinit vnic socket failed, "
+                "devid[%u], ip[%s], return[%d]", HCCL_ERROR_CODE(HCCL_E_TCP_CONNECT), devicePhyId_,
+                itSocket.first.GetReadableAddress(), ret), HCCL_E_INTERNAL);
+            itSocket.second.nicSocketHandle = nullptr;
+        }
+    }
+    raResourceInfo_.vnicSocketMap.clear();
+
+    return  HCCL_SUCCESS;
+}
+
 HcclResult NetworkManager::InitRDMA(u32 devicePhysicID, const HcclIpAddress &ipAddr, NetworkMode netMode,
     NotifyTypeT notifyType, RdmaHandle &rdmaHandle, bool disabledLiteThread, bool enable910ALite,
     HcclIpAddress ipAddrBackup)
@@ -1258,11 +1345,11 @@ HcclResult NetworkManager::Destroy()
         StopAllDeviceNicSockets();
     }
 
-    if (deviceVnicSocketRef_.Count() >= 1) {
-        /* 停止vnic ra的监听 */
-        DestroyRaVnicResource();
-        deviceVnicSocketRef_.Clear();
+    /* 停止vnic ra的监听 */ 
+    if (raResourceInfo_.vnicSocketMap.size() != 0) {
+        StopAllDeviceVnicSockets();
     }
+
     /* 停止host nic ra的监听 */
     if (raResourceInfo_.hostNetSocketMap.size() != 0) {
         for (auto it : raResourceInfo_.hostNetSocketMap) {
@@ -1275,7 +1362,7 @@ HcclResult NetworkManager::Destroy()
     HCCL_DEBUG("Destroy call HrtRaDeInit.");
     if (deviceNicInitRef_.Count() != 0 && !isRaDeInit_) {
         HCCL_WARNING("device Nic is not deinit when NetworkManager Destroy. ref[%d]", deviceNicInitRef_.Count());
-        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, isEnableHdcAsync_ };
         GetDeviceRaInitConfig(config);
         config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_DEVICE);
         if (HrtRaDeInit(&config) != HCCL_SUCCESS) {
@@ -1287,7 +1374,7 @@ HcclResult NetworkManager::Destroy()
     }
     if (hostNicInitRef_.Count() != 0) {
         HCCL_WARNING("host Nic is not deinit when NetworkManager Destroy. ref[%d]", hostNicInitRef_.Count());
-        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, false };
+        struct RaInitConfig config = { DEFAULT_INIT_PHY_ID, DEFAULT_INIT_NIC_POS, DEFAULT_HDC_TYPE, isEnableHdcAsync_ };
         config.nicPosition = static_cast<u32>(NICDeployment::NIC_DEPLOYMENT_HOST);
         config.phyId = devicePhyId_;
         if (HrtRaDeInit(&config) != HCCL_SUCCESS) {
@@ -1341,25 +1428,6 @@ HcclResult NetworkManager::StopNicsSocket(const HcclIpAddress &ipAddr)
     }
     ipSock.nicSocketHandle = nullptr;
     return HCCL_SUCCESS;
-}
-
-void NetworkManager::DestroyRaVnicResource()
-{
-    if (raResourceInfo_.vnicSocketHandle != nullptr) {
-        HCCL_DEBUG("stop intra socket listen");
-        struct SocketListenInfoT serverInfoVnic{};
-        serverInfoVnic.socketHandle = raResourceInfo_.vnicSocketHandle;
-        serverInfoVnic.port = vnicPort_;
-        if (hrtRaSocketListenStop(&serverInfoVnic, 1) != HCCL_SUCCESS) { /* 当前只拉起一个server */
-            HCCL_WARNING("VNIC socket listen is not stopped successfully");
-        }
-        vnicListened_ = false;
-
-        if (hrtRaSocketDeInit(raResourceInfo_.vnicSocketHandle) != HCCL_SUCCESS) {
-            HCCL_WARNING("VNIC socket deinit is not stopped successfully");
-        }
-        raResourceInfo_.vnicSocketHandle = nullptr;
-    }
 }
 
 HcclResult NetworkManager::InitRdmaHandle(u32 devId, const HcclIpAddress &ipAddr, bool disabledLiteThread,
@@ -1673,7 +1741,7 @@ HcclResult NetworkManager::StopHostSocketHandle(const HcclIpAddress &ipAddr)
     auto sockInfo = raResourceInfo_.hostNetSocketMap.find(ipAddr);
     auto ipIt = IPPortListenRefMapHost_.find(ipAddr);
     CHK_PRT_RET((sockInfo == raResourceInfo_.hostNetSocketMap.end()),
-        HCCL_ERROR("[NetworkManager][StopHostSocketHandle]ipAddr is invaild"), HCCL_E_INTERNAL);
+        HCCL_ERROR("[NetworkManager][StopHostSocketHandle]ipAddr is invalid"), HCCL_E_INTERNAL);
     IpSocket &sock = raResourceInfo_.hostNetSocketMap[ipAddr];  
     CHK_RET(CheckSocketInfo(sock.nicSocketHandle, ipAddr));
     

@@ -1,0 +1,150 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Description: MC2 selector实现
+ * Author: libiaozhi
+ * Create: 2025-03-22
+ */
+#include "log.h"
+#include "mc2_selector.h"
+#include "selector_registry.h"
+#include "coll_operator.h"
+#include "coll_alg_params.h"
+
+namespace Hccl {
+const std::map<OpType, std::string> MC2_CCU_1D_DEFAULT_ALG_MAP = {
+    {OpType::ALLGATHER, "CcuAllGatherMesh1D"},
+    {OpType::REDUCESCATTER, "CcuReduceScatterMesh1D"},
+    {OpType::ALLREDUCE, "CcuAllReduceMesh1D"},
+    {OpType::REDUCE, "CcuReduceMesh1D"},
+    {OpType::ALLTOALL, "CcuAlltoAllMesh1D"},
+    {OpType::ALLTOALLV, "CcuAlltoAllVMesh1D"},
+    {OpType::HALFALLTOALLV, "CcuHalfAll2AllVMesh1D"},
+};
+
+const std::map<OpType, std::string> MC2_CCU_2D_DEFAULT_ALG_MAP = {
+    {OpType::ALLGATHER, "CcuAllGatherMesh2D"},
+    {OpType::REDUCESCATTER, "CcuReduceScatterMesh2D"},
+    {OpType::ALLREDUCE, "CcuAllReduceMesh2DOneShot"},
+    {OpType::REDUCE, "CcuReduceMesh2D"},
+    {OpType::ALLTOALL, "CcuAlltoAllMesh2D"},
+};
+
+const std::map<OpType, std::string> MC2_AICPU_1D_DEFAULT_ALG_MAP = {
+    {OpType::ALLGATHER, "InsAllGatherMesh"},
+    {OpType::REDUCESCATTER, "InsReduceScatterNHR"},
+    {OpType::ALLREDUCE, "InsAllReduceNHR"},
+    {OpType::REDUCE, "InsReduceNHR"},
+    {OpType::ALLTOALL, "InsAlltoAllMesh"},
+    {OpType::ALLTOALLV, "InsAlltoAllvMesh"},
+    {OpType::BATCHSENDRECV, "InsBatchSendRecv"},
+    {OpType::BROADCAST, "InsBroadcastNHR"},
+    {OpType::SCATTER, "InsScatterNHR"},
+    {OpType::SEND, "InsSend"},
+    {OpType::RECV, "InsRecv"},
+};
+
+const std::map<OpType, std::string> MC2_AICPU_2D_DEFAULT_ALG_MAP = {
+};
+
+SelectorStatus Mc2Selector::SelectDefaultCcuMsAlgo(const CollAlgOperator &op,const CollAlgParams &params,
+                                   std::string &primQueueGenName)
+{
+    (void) params;
+    TopoInfo topoInfo;
+    CalcTopoShape(topoInfo);
+    std::map<OpType, string> algMap;
+    if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+        algMap = MC2_CCU_1D_DEFAULT_ALG_MAP;
+    } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+        algMap = MC2_CCU_2D_DEFAULT_ALG_MAP;
+    } else {
+        HCCL_ERROR("[Algo][Mc2Selector][SelectDefaultCcuMsAlgo] only support 1D mesh and 2D mesh algo.");
+        return SelectorStatus::NOT_MATCH;
+    }
+    auto it = algMap.find(op.opType);
+    if (it != algMap.end()) {
+        primQueueGenName = it->second;
+    } else {
+        HCCL_ERROR("[Algo][Mc2Selector][SelectDefaultCcuMsAlgo] op.opType[%s] Level0Shape[%d] does not have any default mc2 algo.",
+            op.opType.Describe().c_str(), topoInfo.level0Shape);
+        return SelectorStatus::NOT_MATCH;
+    }
+    return SelectorStatus::MATCH;
+}
+
+SelectorStatus Mc2Selector::SelectDefaultAicpuAlgo(const CollAlgOperator &op,const CollAlgParams &params,
+                                   std::string &primQueueGenName)
+{
+    (void) params;
+    TopoInfo topoInfo;
+    CalcTopoShape(topoInfo);
+    std::map<OpType, string> algMap;
+    if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
+        algMap = MC2_AICPU_1D_DEFAULT_ALG_MAP;
+    } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
+        algMap = MC2_AICPU_2D_DEFAULT_ALG_MAP;
+    } else {
+        HCCL_ERROR("[Algo][Mc2Selector][SelectDefaultAicpuAlgo] only support 1D mesh and 2D mesh algo.");
+        return SelectorStatus::NOT_MATCH;
+    }
+    auto it = algMap.find(op.opType);
+    if (it != algMap.end()) {
+        primQueueGenName = it->second;
+    } else {
+        HCCL_ERROR("[Algo][Mc2Selector][SelectDefaultAicpuAlgo] op.opType[%s] Level0Shape[%d] does not have any default mc2 algo.",
+            op.opType.Describe().c_str(), topoInfo.level0Shape);
+        return SelectorStatus::NOT_MATCH;
+    }
+    return SelectorStatus::MATCH;
+}
+
+SelectorStatus Mc2Selector::SelectCcuMsAlgo(const CollAlgOperator &op, CollAlgParams &params,
+                                   std::string &primQueueGenName)
+{
+    // 校验 algConfig 是否为空
+    if (params.algConfig.empty()) {
+        HCCL_INFO("[Algo][Mc2Selector][SelectAicpuAlgo] algConfig is [%s].", params.algConfig.c_str());
+        // 没有配置算法类型，返回默认算法
+        HCCL_INFO("[Algo][Mc2Selector][SelectCcuMsAlgo] MC2 CCU MS does not support algConfig yet.");
+    }
+
+    // 当前 ccu 模式只有默认算法选择，不支持配置 algConfig
+    return SelectDefaultCcuMsAlgo(op, params, primQueueGenName);
+}
+
+SelectorStatus Mc2Selector::SelectAicpuAlgo(const CollAlgOperator &op, CollAlgParams &params,
+                                   std::string &primQueueGenName)
+{
+    // 校验 algConfig 是否为空
+    if (params.algConfig.empty()) {
+        HCCL_INFO("[Algo][Mc2Selector][SelectAicpuAlgo] algConfig is [%s].", params.algConfig.c_str());
+        // 没有配置算法类型，返回默认算法
+        HCCL_INFO("[Algo][Mc2Selector][SelectAicpuAlgo] MC2 AICPU does not support algConfig yet.");
+    }
+
+    // 当前 ccu 模式只有默认算法选择，不支持配置 algConfig
+    return SelectDefaultAicpuAlgo(op, params, primQueueGenName);
+}
+
+SelectorStatus Mc2Selector::Select(const CollAlgOperator &op, CollAlgParams &params,
+                                   std::string &primQueueGenName)
+{
+    if (rankGraph_ == nullptr) {
+        HCCL_ERROR("[Algo][Mc2Selector] rankGraph_ is nullptr.");
+        return SelectorStatus::NOT_MATCH;
+    }
+
+    if (params.opExecuteConfig.accState == AcceleratorState::CCU_MS) {
+        return SelectCcuMsAlgo(op, params, primQueueGenName);
+    } else if (params.opExecuteConfig.accState == AcceleratorState::AICPU_TS) {
+        return SelectAicpuAlgo(op, params, primQueueGenName);
+    } else {
+        // 当前 MC2 场景不支持回退，当遇到不支持的 AcceleratorState 时直接报错
+        HCCL_ERROR("[Algo][Mc2Selector] AcceleratorState[%s] is not supported, match failed",
+            params.opExecuteConfig.accState.Describe().c_str());
+        return SelectorStatus::NOT_MATCH;
+    }
+}
+
+REGISTER_SELECTOR(18, Mc2Selector);
+} // namespace Hccl

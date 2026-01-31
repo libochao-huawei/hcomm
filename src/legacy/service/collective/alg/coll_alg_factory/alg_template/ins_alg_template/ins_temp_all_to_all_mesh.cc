@@ -1,0 +1,370 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Description: 算法模板InsTempAlltoAllMesh类实现
+ * Author: libiaozhi
+ * Create: 2025-01-20
+ */
+
+#include "log.h"
+
+#include "ins_temp_all_to_all_mesh.h"
+
+namespace Hccl {
+InsTempAlltoAllMesh::InsTempAlltoAllMesh(const RankId virtualRank, const u32 tempRankSize,
+                                           const std::vector<std::vector<RankId>> &tempVTopo,
+                                           const std::map<RankId, u32>            &tempVirtRankMap)
+    : InsAlgTemplateBase(virtualRank, tempRankSize, tempVTopo, tempVirtRankMap)
+{
+    if (tempRankSize_ == 0) {
+        THROW<InvalidParamsException>(StringFormat("[InsTempAlltoAllMesh] Invalid tempRankSize[%u].", tempRankSize_));
+    }
+}
+
+InsTempAlltoAllMesh::~InsTempAlltoAllMesh()
+{
+}
+
+HcclResult InsTempAlltoAllMesh::CalcRes(AlgTempResReq &tempResReq)
+{
+    tempResReq.queNum = (tempVTopo_[0].size() > 1) ? (tempVTopo_[0].size() - 1): 1;
+    tempResReq.streamNum = tempResReq.queNum;
+    tempResReq.queNotifys = CreateMasterSlaveQueNotifiesRequest(tempResReq.queNum);
+
+    QId centerQ = 0;
+    tempResReq.localWaitGroupCntNotify.emplace_back(centerQ, 0);
+    tempResReq.localBcastPostCntNotify.emplace_back(centerQ, 0);
+
+    CHK_RET(CalcResLinksMesh(myRank_, tempRankSize_, tempVTopo_, linkNumBtwPeers_, tempResReq));
+    HCCL_DEBUG("[InsTempAlltoAllMesh] Rank[%d], VtopoSize[%zu], requiredQue Num [%u].", myRank_, tempVTopo_[0].size(), tempResReq.queNum);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+void InsTempAlltoAllMesh::SetA2ASendRecvInfo(const A2ASendRecvInfo &sendRecvInfo)
+{
+    localSendRecvInfo_ = sendRecvInfo;
+}
+
+HcclResult InsTempAlltoAllMesh::GetScratchBufferInfo(const u64 &scratchBufferSize, DataType dataType)
+{
+    // 需要变更为CCU/AICPU均只加载scratchSize
+    u32 concurrentSendRecvNum = (tempRankSize_ > ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE) ?
+        ALLTOALLV_DIRECT_FULLMESH_CONCURRENT_SIZE : tempRankSize_;
+    u64 halfMaxTmpMemSize = scratchBufferSize / 2;
+    u32 typeSize = DataTypeSizeGet(dataType);
+    CHK_PRT_RET(typeSize == 0,
+                HCCL_ERROR("[InsTempAlltoAllMesh] Rank [%d], Invalid dataSizePerVolume [%u].", myRank_, typeSize),
+                HcclResult::HCCL_E_INTERNAL);
+    u64 scratchInputMemSize = halfMaxTmpMemSize / (concurrentSendRecvNum * typeSize) * typeSize;
+    CHK_RET(SetBuffBlockSize(scratchInputMemSize));
+    CHK_RET(SetConcurrentSendRecvNum(concurrentSendRecvNum));
+
+    HCCL_INFO("[InsTempAlltoAllMesh][GetScratchBufferInfo] concurrentSendRecvNum[%u], scratchInputMemSize[%llu]",
+                concurrentSendRecvNum, scratchInputMemSize);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::SetBuffBlockSize(const u64 buffBlockSize)
+{
+    CHK_PRT_RET(buffBlockSize == 0, HCCL_ERROR("[InsTempAlltoAllMesh][SetBuffBlockSize] buffBlockSize should not be zero"),
+                HcclResult::HCCL_E_PARA);
+    buffBlockSize_ = buffBlockSize;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::SetConcurrentSendRecvNum(const u32 concurrentSendRecvNum)
+{
+    CHK_PRT_RET(concurrentSendRecvNum == 0, HCCL_ERROR("[InsTempAlltoAllMesh][SetConcurrentSendRecvNum] concurrentSendRecvNum should not be zero"),
+                HcclResult::HCCL_E_PARA);
+    concurrentSendRecvNum_ = concurrentSendRecvNum;
+    return HcclResult::HCCL_SUCCESS;
+}
+
+u32 InsTempAlltoAllMesh::CalcStepNum()
+{
+    u32 numSubStep = 0;
+
+    for (u32 destRank = 0; destRank < tempRankSize_; destRank++) {
+        if (destRank == static_cast<u32>(myRank_)) {
+            continue;
+        }
+        u32 currRankSendSubStep = ((localSendRecvInfo_.sendLength[destRank] + buffBlockSize_- 1) / buffBlockSize_);
+        u32 currRankRecvSubStep = ((localSendRecvInfo_.recvLength[destRank] + buffBlockSize_- 1) / buffBlockSize_);
+        numSubStep = std::max(numSubStep, std::max(currRankSendSubStep, currRankRecvSubStep));
+    }
+    return numSubStep;
+}
+
+HcclResult InsTempAlltoAllMesh::CalcSendSliceInfo(u32 remoteRank, UsrData &sendSliceInfo)
+{
+    u32 pairNum = concurrentSendRecvNum_ / 2;
+    u32 gapRight = (remoteRank - myRank_ + tempRankSize_) % tempRankSize_;
+    u32 gapLeft = (myRank_ - remoteRank + tempRankSize_) % tempRankSize_;
+    u32 sendSrcBuffIdx = 0;
+    u32 sendDstBuffIdx = 0;
+    if (gapLeft < gapRight) {
+        u32 gap = gapLeft;
+        sendSrcBuffIdx = pairNum - 1 + (gap % pairNum);
+        sendDstBuffIdx = pairNum - (gap % pairNum);
+    } else if (gapLeft > gapRight) {
+        u32 gap = gapRight;
+        sendSrcBuffIdx = pairNum - (gap % pairNum);
+        sendDstBuffIdx = pairNum - 1 + (gap % pairNum);
+    } else {
+        sendSrcBuffIdx = 0;
+        sendDstBuffIdx = 0;
+    }
+    u64 sendDataOffset = 0;
+    u64 remainSendLen = localSendRecvInfo_.sendLength[remoteRank];
+    u64 sendSrcBuffOffset = sendSrcBuffIdx * buffBlockSize_;
+    u64 sendDstBuffOffset = sendDstBuffIdx * buffBlockSize_;
+    while (remainSendLen > 0) {
+        u64 currDataRemainLen = localSendRecvInfo_.sendLength[remoteRank] - sendDataOffset;
+        u64 sendLen = std::min(buffBlockSize_, currDataRemainLen);
+        u64 userInOffset = localSendRecvInfo_.sendOffset[remoteRank] + sendDataOffset;
+        DataSlice userInSlice = DataSlice(BufferType::INPUT, userInOffset, sendLen);
+        DataSlice sendScratchSlice = DataSlice(buffInfo_.inBuffType, sendSrcBuffOffset, sendLen);
+        DataSlice sendDstSlice = DataSlice(buffInfo_.outBuffType, sendDstBuffOffset + buffInfo_.outBuffBaseOff, sendLen);
+        sendSliceInfo.usrInSlices.emplace_back(userInSlice);
+        sendSliceInfo.scratchInSlices.emplace_back(sendScratchSlice);
+        sendSliceInfo.scratchOutSlices.emplace_back(sendDstSlice);
+        sendDataOffset += sendLen;
+        remainSendLen -= sendLen;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::CalcRecvSliceInfo(u32 remoteRank, UsrData &readSliceInfo)
+{
+    u32 pairNum = concurrentSendRecvNum_ / 2;
+    u32 gapRight = (remoteRank - myRank_ + tempRankSize_) % tempRankSize_;
+    u32 gapLeft = (myRank_ - remoteRank + tempRankSize_) % tempRankSize_;
+    u32 recvSrcBuffIdx = 0;
+    u32 recvDstBuffIdx = 0;
+    if (gapLeft < gapRight) {
+        u32 gap = gapLeft;
+        recvSrcBuffIdx = pairNum - (gap % pairNum);
+        recvDstBuffIdx = pairNum - 1 + (gap % pairNum);
+    } else if (gapLeft > gapRight) {
+        u32 gap = gapRight;
+        recvSrcBuffIdx = pairNum - 1 + (gap % pairNum);
+        recvDstBuffIdx = pairNum - (gap % pairNum);
+    } else {
+        recvSrcBuffIdx = 0;
+        recvDstBuffIdx = 0;
+    }
+    u64 recvDataOffset = 0;
+    u64 remainRecvLen = localSendRecvInfo_.recvLength[remoteRank];
+    u64 recvSrcBuffOffset = recvSrcBuffIdx * buffBlockSize_;
+    u64 rrecvDstBuffOffset = recvDstBuffIdx * buffBlockSize_;
+    while(remainRecvLen > 0) {
+        u64 currDataRemainLen = localSendRecvInfo_.recvLength[remoteRank] - recvDataOffset;
+        u64 recvLen = std::min(buffBlockSize_, currDataRemainLen);
+        u64 userOutOffset = localSendRecvInfo_.recvOffset[remoteRank] + recvDataOffset;
+        DataSlice recvScratchSlice = DataSlice(buffInfo_.inBuffType, recvSrcBuffOffset, recvLen);
+        DataSlice recvDstSlice = DataSlice(buffInfo_.outBuffType, rrecvDstBuffOffset + buffInfo_.outBuffBaseOff, recvLen);
+        DataSlice userOutSlice = DataSlice(BufferType::OUTPUT, userOutOffset, recvLen);
+        readSliceInfo.scratchInSlices.emplace_back(recvScratchSlice);
+        readSliceInfo.scratchOutSlices.emplace_back(recvDstSlice);
+        readSliceInfo.usrOutSlices.emplace_back(userOutSlice);
+        recvDataOffset += recvLen;
+        remainRecvLen -= recvLen;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::CalcSendRecvAllSliceInfo(std::unordered_map<u32, UsrData> &sendSliceInfoMap,
+                                                         std::unordered_map<u32, UsrData> &recvSliceInfoMap)
+{
+    for (u32 remoteRank = 0; remoteRank < tempRankSize_; remoteRank++) {
+        if (remoteRank == static_cast<u32>(myRank_)) {
+            continue;
+        }
+        UsrData readSliceInfo;
+        UsrData sendSliceInfo;
+        CalcSendSliceInfo(remoteRank, sendSliceInfo);
+        CalcRecvSliceInfo(remoteRank, readSliceInfo);
+        sendSliceInfoMap[remoteRank] = sendSliceInfo;
+        recvSliceInfoMap[remoteRank] = readSliceInfo;
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::CalcCommRankSetforOneLoop(u32 roundIdx, const u32 groupRankSize,
+                                                            std::vector<u32> &commRanks) const
+{
+    commRanks.clear();
+    u32 pairNumPerRound = concurrentSendRecvNum_ / 2;
+    u32 pairSize = (groupRankSize < concurrentSendRecvNum_) ? (groupRankSize +  1) / 2: pairNumPerRound;
+    for (u32 i = roundIdx * pairNumPerRound + 1; i < (roundIdx * pairNumPerRound + pairSize + 1); i++) {
+        u32 leftRemoteRank =  (myRank_+ tempRankSize_ - i) % tempRankSize_;
+        u32 rightRemoteRank = (myRank_ + i) % tempRankSize_;
+        if (leftRemoteRank == rightRemoteRank) {
+            commRanks.push_back(leftRemoteRank);
+            break;
+        } else {
+            commRanks.push_back(leftRemoteRank);
+            commRanks.push_back(rightRemoteRank);
+        }
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::CopySendDataToScratch(u32 step, const std::vector<u32> &commRanks,
+                                                      std::unordered_map<u32, UsrData> &sendSliceInfo,
+                                                      std::vector<InsQuePtr>           &queues) const
+{
+    for(u32 i = 0 ; i < commRanks.size(); i++) {
+        u32 remoteRank = commRanks[i];
+        UsrData &currSendSliceInfo = sendSliceInfo[remoteRank];
+        if (step < currSendSliceInfo.usrInSlices.size()) {
+            DataSlice &userInSlice = currSendSliceInfo.usrInSlices[step];
+            DataSlice &sendScratchSlice = currSendSliceInfo.scratchInSlices[step];
+            InsQuePtr queue = queues[i];
+            CHK_RET(LocalCopy(queue, userInSlice, sendScratchSlice));
+        }
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::SendRecvData(u32 step, const std::vector<u32> &commRanks,
+                                             std::unordered_map<u32, UsrData> &sendSliceInfo,
+                                             std::unordered_map<u32, UsrData> &readSliceInfo,
+                                             const ResLinks &tempLinks,
+                                             std::vector<InsQuePtr> &queues) const
+{
+    for(u32 i = 0 ; i < commRanks.size(); i++) {
+        s32 remoteRank = static_cast<s32>(commRanks[i]);
+        InsQuePtr queue = queues[i];
+        UsrData &currSendSliceInfo = sendSliceInfo[remoteRank];
+        UsrData &currReadSliceInfo = readSliceInfo[remoteRank];
+        LinkData link = tempLinks.at(remoteRank)[0];
+        if (step < currSendSliceInfo.scratchInSlices.size() && step < currReadSliceInfo.scratchInSlices.size()) {
+            DataSlice &sendSrcSlice = currSendSliceInfo.scratchInSlices[step];
+            DataSlice &sendDstSlice = currSendSliceInfo.scratchOutSlices[step];
+            std::vector<DataSlice> sendSrcSliceVec = {sendSrcSlice};
+            std::vector<DataSlice> sendDstSliceVec = {sendDstSlice};
+            SlicesList sendDataSlice(sendSrcSliceVec, sendDstSliceVec);
+            DataSlice &recvSrcSlice = currReadSliceInfo.scratchInSlices[step];
+            DataSlice &recvDstSlice = currReadSliceInfo.scratchOutSlices[step];
+            std::vector<DataSlice> recvSrcSliceVec = {recvSrcSlice};
+            std::vector<DataSlice> recvDstSliceVec = {recvDstSlice};
+            SlicesList recvDataSlice(recvSrcSliceVec, recvDstSliceVec);
+            TxRxSlicesList  sendRecvSlice(sendDataSlice, recvDataSlice);
+
+            TxRxLinks sendRecvLinks(link, link);
+            SendRecvInfo sendRecvInfo(sendRecvLinks, sendRecvSlice);
+            CHK_RET(SendRecv(sendRecvInfo, queue, 0, true, dmaMode_));
+            HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run send and recv.", step, i, remoteRank);
+        } else if (step < currSendSliceInfo.scratchInSlices.size()) {
+            DataSlice &sendSrcSlice = currSendSliceInfo.scratchInSlices[step];
+            DataSlice &sendDstSlice = currSendSliceInfo.scratchOutSlices[step];
+            std::vector<DataSlice> sendSrcSliceVec = {sendSrcSlice};
+            std::vector<DataSlice> sendDstSliceVec = {sendDstSlice};
+            SlicesList sendDataSlice(sendSrcSliceVec, sendDstSliceVec);
+            DataInfo sendDataInfo(link, sendDataSlice);
+            CHK_RET(Send(sendDataInfo, queue));
+            HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run send.", step, i, remoteRank);
+        } else if (step < currReadSliceInfo.scratchInSlices.size()) {
+            DataSlice &recvSrcSlice = currReadSliceInfo.scratchInSlices[step];
+            DataSlice &recvDstSlice = currReadSliceInfo.scratchOutSlices[step];
+            std::vector<DataSlice> recvSrcSliceVec = {recvSrcSlice};
+            std::vector<DataSlice> recvDstSliceVec = {recvDstSlice};
+            SlicesList recvDataSlice(recvSrcSliceVec, recvDstSliceVec);
+            DataInfo recvDataInfo(link, recvDataSlice);
+            CHK_RET(Recv(recvDataInfo, queue));
+            HCCL_DEBUG("[InsTempAlltoAllMesh][SendRecvData] step[%u], commRank[%u], remoteRank[%d] run recv.", step, i, remoteRank);
+        }
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::CopyRecvDataFromScratch(u32 step, const std::vector<u32> &commRanks,
+                                                        std::unordered_map<u32, UsrData> &readSliceInfo,
+                                                        std::vector<InsQuePtr>           &queues) const
+{
+    for(u32 i = 0 ; i < commRanks.size(); i++) {
+        u32 remoteRank = commRanks[i];
+        UsrData &currReadSliceInfo = readSliceInfo[remoteRank];
+        if (step < currReadSliceInfo.scratchOutSlices.size()) {
+            DataSlice &recvScratchSlice = currReadSliceInfo.scratchOutSlices[step];
+            DataSlice &userOutSlice = currReadSliceInfo.usrOutSlices[step];
+            InsQuePtr queue = queues[i];
+            CHK_RET(LocalCopy(queue, recvScratchSlice, userOutSlice));
+        }
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::RunSendRecvBufferLoop(u32 step, const std::vector<u32> &commRanks,
+                                                      std::unordered_map<u32, UsrData> &sendSliceInfoMap,
+                                                      std::unordered_map<u32, UsrData> &recvSliceInfoMap,
+                                                      const ResLinks &tempLinks,
+                                                      std::vector<InsQuePtr> &queues) const
+{   
+    if (commRanks.size() > 1) {
+        CHK_RET(PreSyncInterQueues(queues));
+    }
+    CHK_RET(CopySendDataToScratch(step, commRanks, sendSliceInfoMap, queues));
+    CHK_RET(SendRecvData(step, commRanks, sendSliceInfoMap, recvSliceInfoMap, tempLinks, queues));
+    CHK_RET(CopyRecvDataFromScratch(step, commRanks, recvSliceInfoMap, queues));
+    if (commRanks.size() > 1) {
+        CHK_RET(PostSyncInterQueues(queues));
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::RunSendRecvForAllRanks(u32 step, std::unordered_map<u32, UsrData> &sendSliceInfoMap,
+                                  std::unordered_map<u32, UsrData> &recvSliceInfoMap, const ResLinks &tempLinks, std::vector<InsQuePtr> &queues)
+{
+    u64 commLoops = (tempRankSize_ + concurrentSendRecvNum_ - 1) / concurrentSendRecvNum_;
+    u32 leftRankSize = tempRankSize_ - 1; // leftRankSize中去掉本卡
+    std::vector<u32> commRanks;
+    for (u32 roundIdx = 0; roundIdx < commLoops && leftRankSize > 0; roundIdx++) {
+        u32 groupRankSize = (leftRankSize > concurrentSendRecvNum_) ? concurrentSendRecvNum_ : leftRankSize;
+        CHK_RET(CalcCommRankSetforOneLoop(roundIdx, groupRankSize, commRanks));
+        CHK_RET(RunSendRecvBufferLoop(step, commRanks, sendSliceInfoMap, recvSliceInfoMap, tempLinks, queues));
+        leftRankSize -= groupRankSize;
+        HCCL_DEBUG("[InsTempAlltoAllMesh][RunSendRecvForAllRanks] commRanksSize[%zu], roundIdx[%u] finish.", commRanks.size(), roundIdx);
+    }
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::LocalDataCopy(InsQuePtr tempInsQue)
+{
+    u64 userInOffset = localSendRecvInfo_.sendOffset[myRank_];
+    u64 sendSize = localSendRecvInfo_.sendLength[myRank_];
+    u64 userOutOffset = localSendRecvInfo_.recvOffset[myRank_];
+    u64 recvSize = localSendRecvInfo_.recvLength[myRank_];
+    DataSlice userInSlice = DataSlice(BufferType::INPUT, userInOffset, sendSize);
+    DataSlice userOutSlice = DataSlice(BufferType::OUTPUT, userOutOffset, recvSize);
+    CHK_RET(LocalCopy(tempInsQue, userInSlice, userOutSlice));
+    return HcclResult::HCCL_SUCCESS;
+}
+
+HcclResult InsTempAlltoAllMesh::Run(const TempFuncs &tempFuncs, const RankSliceInfo &sliceInfoVec,
+                                           const BuffInfo &buffInfo,
+                                           const ResLinks &tempLinks,
+                                           std::vector<InsQuePtr> &tempInsQues)
+{
+    (void) tempFuncs;
+    (void) sliceInfoVec;
+    buffInfo_ = buffInfo;
+    u32 totalStep = CalcStepNum();
+    HCCL_INFO("[InsTempAlltoAllMesh] AllToAll full mesh total step is [%u], tempInsQuesSize[%zu].", totalStep, tempInsQues.size());
+    std::unordered_map<u32, UsrData> sendSliceInfoMap;
+    std::unordered_map<u32, UsrData> recvSliceInfoMap;
+    CHK_RET(CalcSendRecvAllSliceInfo(sendSliceInfoMap, recvSliceInfoMap));
+    if (tempInsQues.size() == 0) {
+        HCCL_ERROR("[CcuTempAlltoAllMesh1D] tempInsQues.size() is zero.");
+        return HcclResult::HCCL_E_PARA;
+    }
+    CHK_RET(LocalDataCopy(tempInsQues[0]));
+    for (u32 step = 0; step < totalStep; step++) {
+        CHK_RET(RunSendRecvForAllRanks(step, sendSliceInfoMap, recvSliceInfoMap, tempLinks, tempInsQues));
+        HCCL_DEBUG("[InsTempAlltoAllMesh] AllToAll full mesh step[%u] execute success", step);
+    }
+    HCCL_INFO("[InsTempAlltoAllMesh] AllToAll full mesh rank[%d] finish.", myRank_);
+    return HcclResult::HCCL_SUCCESS;
+}
+
+} // namespace Hccl

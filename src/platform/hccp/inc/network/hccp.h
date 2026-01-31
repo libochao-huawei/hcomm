@@ -13,6 +13,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /**
  * @ingroup libsocket
  * @brief Client sockets batch connect to server sockets(async)
@@ -1033,6 +1034,18 @@ HCCP_ATTRI_VISI_DEF int RaSaveSnapshot(struct RaInfo *info, enum SaveSnapshotAct
  * @retval #non-zero Failure
 */
 HCCP_ATTRI_VISI_DEF int RaRestoreSnapshot(struct RaInfo *info);
+
+/**
+ * @ingroup libcommon
+ * @brief ra get sec random
+ * @param info [IN] see ra_info
+ * @param value [OUT] sec random value
+ * @see ra_init
+ * @retval #zero Success
+ * @retval #non-zero Failure
+*/
+HCCP_ATTRI_VISI_DEF int ra_get_sec_random(struct RaInfo *info, uint32_t *value);
+
 #ifdef __cplusplus
 }
 #endif

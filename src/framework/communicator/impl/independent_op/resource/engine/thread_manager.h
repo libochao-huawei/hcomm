@@ -15,7 +15,8 @@
 #include <memory>
 #include <mutex>
 #include "hccl_api.h"
-#include "hccl_thread.h"
+#include "aicpu_ts_thread.h"
+#include "cpu_ts_thread.h"
 #include "log.h"
 #include "manager_common.h"
 
@@ -30,7 +31,7 @@ public:
     HcclResult HcclThreadAcquireWithStream(CommEngine engine,
         rtStream_t stream, uint32_t notifyNum, ThreadHandle *thread);
     HcclResult HcclGetNotifyNumInThread(ThreadHandle thread, uint32_t *notifyNum);
-
+    HcclResult HcclThreadExportToCommEngine(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
     u32 GetThreadNum() const { return threadNum_; }
     u32 GetNotifyNumPerThread() const { return notifyNumPerThread_; }
 
@@ -38,6 +39,9 @@ private:
     HcclResult CommEngineToNotifyLoadType(CommEngine engine, NotifyLoadType &type);
     HcclResult CommEngineToStreamType(CommEngine engine, StreamType &type);
 
+    HcclResult ThreadExportToCommEngineCpu(uint32_t threadNum, const ThreadHandle *threads, ThreadHandle *exportedThreads);
+    HcclResult ThreadExportToCommEngineAicpu(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
+    HcclResult GetExportedThread(const ThreadHandle threadHandle, CommEngine dstCommEngine, Thread *&exportedThread, std::shared_ptr<Thread> &threadOut);
     u32 threadNum_ = 0;
     u32 notifyNumPerThread_ = 0;
     std::string commId_;
@@ -45,11 +49,13 @@ private:
 
     u64 usedNotifyNum_ = 0;
     std::mutex threadMutex_;
-    std::vector<std::shared_ptr<HcclThread>> threads_;
+    std::vector<std::shared_ptr<Thread>> threads_;
 
     std::mutex mainThreadMutex_;
-    std::map<rtStream_t, std::unique_ptr<HcclThread>> mainThread_;
+    std::map<rtStream_t, std::shared_ptr<Thread>> mainThread_;
 
+    std::mutex threadMapMutex_;
+    std::unordered_map<ThreadHandle, ThreadHandle> threadHandleOthersToCpu_; // 其他引擎上的ThreadHandle与CPU_TS上的ThreadHandle的映射
     ManagerCallbacks callbacks_;
 };
 }

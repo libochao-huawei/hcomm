@@ -28,6 +28,7 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/all_reduce_hd_optim.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/all_reduce_graph_pipeline.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/all_reduce_doubling_local_reduce.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/all_reduce_multi_deter_pipeline.cc
 )
 
 target_sources(hccl_alg PRIVATE

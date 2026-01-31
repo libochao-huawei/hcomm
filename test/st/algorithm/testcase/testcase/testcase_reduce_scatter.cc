@@ -475,7 +475,7 @@ TEST_F(ReduceScatterTest, reduce_scatter_executor_test_loop)
         checker.CloseRankMemCheck();
         ret = checker.Check(checkerOpParam, topoMeta);
         if (ret == HcclResult::HCCL_SUCCESS) {
-            std::cout << reduceScatterAlgName[i] + " run successed" << std::endl;
+            std::cout << reduceScatterAlgName[i] + " run succeeded" << std::endl;
         } else {
             std::cout << reduceScatterAlgName[i] + " run failed" << std::endl;
         }
@@ -1892,5 +1892,70 @@ TEST_F(ReduceScatterTest, reduce_scatter_aiv_deter_priority_test)
     HcclResult ret;
     ret = checker.Check(checkerOpParam, topoMeta);
 
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+constexpr int BIG_COUNT = 2 * 1024 * 1024 + 1;
+void ReduceScatterDeterCheckerFor910B(int serverNum, int intraRankNum, int count)
+{
+    RankTable_For_LLT gen;
+    TopoMeta topoMeta;
+    gen.GenTopoMeta(topoMeta, 1, serverNum, intraRankNum);
+    setenv("HCCL_DETERMINISTIC", "true", 1);
+    setenv("HCCL_ALGO", "level0:NA;level1:ring", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.DataDes.count = count;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "ReduceScatterDeterPipelineExecutor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
+    EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_executor_deter_big_count_two_servers)
+{
+    ReduceScatterDeterCheckerFor910B(2, 8, BIG_COUNT);
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_executor_deter_big_count_normal)
+{
+    ReduceScatterDeterCheckerFor910B(4, 4, BIG_COUNT);
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_executor_deter_big_count_not_power_of_two_num_servers)
+{
+    ReduceScatterDeterCheckerFor910B(3, 8, BIG_COUNT);
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_executor_deter_big_count_not_power_of_two_intraRanks)
+{
+    ReduceScatterDeterCheckerFor910B(4, 3, BIG_COUNT);
+}
+
+TEST_F(ReduceScatterTest, reduce_scatter_executor_deter_big_count_ax)
+{
+    TopoMeta topoMeta {{{0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15}}};
+    setenv("HCCL_DETERMINISTIC", "true", 1);
+    setenv("HCCL_ALGO", "level0:NA;level1:ring", 1);
+    CheckerOpParam checkerOpParam;
+    checkerOpParam.opType = CheckerOpType::REDUCE_SCATTER;
+    checkerOpParam.tag = "ReduceScatter";
+    checkerOpParam.opMode = CheckerOpMode::OPBASE;
+    checkerOpParam.devtype = CheckerDevType::DEV_TYPE_910B;
+    checkerOpParam.DataDes.count = BIG_COUNT;
+    checkerOpParam.DataDes.dataType = CheckerDataType::DATA_TYPE_INT8;
+    checkerOpParam.reduceType = CheckerReduceOp::REDUCE_SUM;
+    checkerOpParam.algName = "ReduceScatterDeterPipelineExecutor";
+
+    Checker checker;
+    HcclResult ret;
+    ret = checker.Check(checkerOpParam, topoMeta);
     EXPECT_EQ(ret, HcclResult::HCCL_SUCCESS);
 }

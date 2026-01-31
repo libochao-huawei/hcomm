@@ -40,7 +40,7 @@ HcclResult CollReduceScatterVExecutor::Orchestrate(OpParam& param, AlgResourceRe
         ret = RunLoop(param, algRes);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterVExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
+        HCCL_ERROR("[CollReduceScatterVExecutor][Orchestrate]errNo[0x%016llx]executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
     HCCL_INFO("tag[%s], ReduceScatterV executor orchestrate success, take time [%lld]us.",
         param.tag.c_str(), DURATION_US(TIME_NOW() - startut));

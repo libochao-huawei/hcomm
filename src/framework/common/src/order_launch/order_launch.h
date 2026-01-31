@@ -17,6 +17,7 @@
 #include "stream_pub.h"
 #include "hccl_common.h"
 #include "local_notify.h"
+#include "adapter_rts.h"
 
 namespace hccl {
 enum class AicpuOrderEventIdx : uint32_t
@@ -25,7 +26,6 @@ enum class AicpuOrderEventIdx : uint32_t
     ACLGRAPH_ORDER_EVENT_1 = 1,
 };
 constexpr uint32_t AICPU_ORDER_EVENT_SIZE = 2;
-
 struct EventParam
 {
     rtEvent_t event = nullptr;
