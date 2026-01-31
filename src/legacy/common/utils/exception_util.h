@@ -59,6 +59,20 @@
         }                                                                                                              \
     } while (0)
 
+#define TRY_CATCH_PROCESS_THROW(expr, msg, postprocess)                                                                \
+   do {                                                                                                                \
+        try {                                                                                                          \
+            expr;                                                                                                      \
+        } catch (HcclException & e) {                                                                                  \
+            postprocess;                                                                                             \
+            HCCL_ERROR("%s due to: %s", msg, e.what());                                                                \
+            throw e;                                                                                                   \
+        } catch (exception & e) {                                                                                      \
+            HCCL_ERROR("Unkown error occurs!");                                                                        \
+            throw e;                                                                                                   \
+        }                                                                                                              \
+    } while (0)
+
 #define TRY_CATCH_PRINT_ERROR(expr)                                                                                    \
     do {                                                                                                               \
         try {                                                                                                          \
