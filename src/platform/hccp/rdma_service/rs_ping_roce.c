@@ -54,18 +54,22 @@ STATIC int RsPingCbGetDevRdevIndex(struct RsPingCtxCb *pingCb, int index)
 {
 #ifdef CUSTOM_INTERFACE
     struct roce_dev_data rdevData = { 0 };
+    enum ProductType productType;
     int ret;
 
-    RS_PTHREAD_MUTEX_LOCK(&pingCb->pingMutex);
-    pingCb->rdevCb.devName = RsIbvGetDeviceName(pingCb->rdevCb.devList[index]);
-    ret = RsRoceGetRoceDevData(pingCb->rdevCb.devName, &rdevData);
-    if (ret != 0) {
-        hccp_err("rs_roce_get_roce_dev_data failed, ret:%d, devName:%s", ret, pingCb->rdevCb.devName);
+    productType = RsGetProductType(pingCb->logicDevid);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        RS_PTHREAD_MUTEX_LOCK(&pingCb->pingMutex);
+        pingCb->rdevCb.devName = RsIbvGetDeviceName(pingCb->rdevCb.devList[index]);
+        ret = RsRoceGetRoceDevData(pingCb->rdevCb.devName, &rdevData);
+        if (ret != 0) {
+            hccp_err("rs_roce_get_roce_dev_data failed, ret:%d, devName:%s", ret, pingCb->rdevCb.devName);
+            RS_PTHREAD_MUTEX_ULOCK(&pingCb->pingMutex);
+            return ret;
+        }
+        pingCb->devIndex = rdevData.rdev_index; // rdev_index is same to port_id
         RS_PTHREAD_MUTEX_ULOCK(&pingCb->pingMutex);
-        return ret;
     }
-    pingCb->devIndex = rdevData.rdev_index; // rdev_index is same to port_id
-    RS_PTHREAD_MUTEX_ULOCK(&pingCb->pingMutex);
 #endif
     return 0;
 }

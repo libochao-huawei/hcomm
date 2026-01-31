@@ -23,7 +23,6 @@
 #include "dl_ibverbs_function.h"
 #include "dl_hal_function.h"
 
-#ifdef CONFIG_CGROUP
 typedef void (*SighandlerT)(int);
 
 STATIC int HccpAddToCgroup()
@@ -48,7 +47,6 @@ STATIC int HccpAddToCgroup()
 
     return 0;
 }
-#endif
 
 STATIC int HccpChangeNumOfFile()
 {
@@ -95,6 +93,7 @@ int llt_main(int argc, char *argv[])
 #endif
 {
     struct HccpInitParam param = {0};
+    enum ProductType productType;
     struct timeval start, end;
     float timeCost = 0.0;
     int ret;
@@ -103,11 +102,17 @@ int llt_main(int argc, char *argv[])
     ret = HccpChangeNumOfFile();
     CHK_PRT_RETURN(ret, hccp_err("hccp change limit of nofile failed, ret = %d", ret), ret);
 
+    productType = RsGetProductType(param.logicId); // Cache result after first query, skip exception checking for subsequent queries
+    if(productType == PRODUCT_TYPE_INVALID) {
+        hccp_err("rs get product type failed");
+        return -ERR_UNKONWN_PRODUCT;
+    }
 #ifdef CONFIG_CGROUP
-    ret = HccpAddToCgroup();
-    CHK_PRT_RETURN(ret, hccp_err("hccp_add_to_cgroup error[%d]", ret), ret);
+    if(productType == PRODUCT_TYPE_910 || productType == PRODUCT_TYPE_310p){
+        ret = HccpAddToCgroup();
+        CHK_PRT_RETURN(ret, hccp_err("hccp_add_to_cgroup error[%d]", ret), ret);
+    }
 #endif
-
     ret = DlHalInit();
     CHK_PRT_RETURN(ret, hccp_err("dl_hal_init error[%d]", ret), ret);
 
@@ -124,13 +129,6 @@ int llt_main(int argc, char *argv[])
     }
 
     RsGetCurTime(&start);
-    if(RsGetIsRdmaSupported(param.logicId)) {
-        ret = RsApiInit();
-        if (ret != 0) {
-            hccp_err("RsApiInit error[%d]", ret);
-            goto out;
-        }
-    }
 
     ret = HccpInit(param.chipId, param.pid, param.hdcType, param.whiteListStatus);
     if (ret) {
@@ -157,9 +155,6 @@ int llt_main(int argc, char *argv[])
     hccp_run_info("hccp deinit ok! logic_id=%d", param.logicId);
 
 hccp_init_fail:
-    if(RsGetIsRdmaSupported(param.logicId)) {
-        RsApiDeinit();
-    }
 out:
     DlHalDeinit();
     return ret;
