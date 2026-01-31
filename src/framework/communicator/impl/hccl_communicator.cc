@@ -1181,8 +1181,8 @@ namespace hccl
             execCommand.kfcCmd = KfcCommand::NsStopLaunch;
             execCommand.bgCmd = BackgroundCommand::kNone;
             execCommand.suspendingStatus = HcclComSuspendingFlag::isSuspending;
-            HCCL_RUN_INFO("[NsRecovery][SetOpExecCmd]set the suspending flag [%d] and set KfcCommand [%d].",
-                          execCommand.suspendingStatus, execCommand.kfcCmd);
+            HCCL_RUN_INFO("[NsRecovery][SetOpExecCmd]set the suspending flag [%d] and set KfcCommand [%d], group[%s]",
+ 	                      execCommand.suspendingStatus, execCommand.kfcCmd, identifier_.c_str());
 
             CHK_RET(CheckSetRetryStateToWaitResume());
 
@@ -1218,7 +1218,7 @@ namespace hccl
         }
         else
         {
-            HCCL_DEBUG("[NsRecovery] not mc2 or aicpu ENVIRONMENT");
+            HCCL_RUN_INFO("[NsRecovery] not mc2 or aicpu ENVIRONMENT, group[%s]", identifier_.c_str());
             return HCCL_SUCCESS;
         }
     }
@@ -2426,7 +2426,9 @@ namespace hccl
             }
         }
 
-        CHK_RET(CheckExitWaitResumeState(isChangedLink));
+        if (GetAicpuUnfoldFlag() || GetAicpuCommEngine()) {
+            CHK_RET(CheckExitWaitResumeState(isChangedLink));
+        }
 
         if (!isChangedLink) {
             CHK_RET(TraverseAlgResourceResponse(false));
