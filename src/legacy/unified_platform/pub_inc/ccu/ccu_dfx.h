@@ -19,7 +19,7 @@
 
 namespace Hccl {
 
-HcclResult GetCcuErrorMsg(s32 deviceId, const ParaCcu& ccuTaskParam, std::vector<CcuErrorInfo>& errorInfo);
+HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, uint16_t instrId, const ParaCcu& ccuTaskParam, std::vector<CcuErrorInfo>& errorInfo);
 
 } // namespace Hccl
 #endif // HCCL_CCU_DFX_H

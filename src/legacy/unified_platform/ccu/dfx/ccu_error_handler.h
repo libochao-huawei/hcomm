@@ -292,7 +292,7 @@ public:
     CcuErrorHandler(const CcuErrorHandler&) = delete;
     void operator=(const CcuErrorHandler&) = delete;
 
-    static void GetCcuErrorMsg(int32_t deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo);
+    static void GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, uint16_t currIns, const ParaCcu &ccuTaskParam, std::vector<CcuErrorInfo> &errorInfo);
 
 private:
     static void GenStatusInfo(const ErrorInfoBase &baseInfo, std::vector<CcuErrorInfo> &errorInfo);
