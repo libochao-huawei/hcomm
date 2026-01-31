@@ -10,8 +10,8 @@
 
 set(hccl_utest_pingmesh_list
     main.cc
-    #ut_ping_mesh_A5_pass.cc
-    #ut_hccn_rping_A5_pass.cc
+    ut_ping_mesh_A5_pass.cc
+    ut_hccn_rping_A5_pass.cc
 )
 add_executable(hccl_utest_pingmesh ${hccl_utest_pingmesh_list})
 
