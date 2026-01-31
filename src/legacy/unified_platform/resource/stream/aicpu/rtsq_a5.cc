@@ -277,7 +277,21 @@ bool RtsqA5::IsRtsqQueueSpaceSufficient()
     u32  availableSpace = GetTailToHeadDist();
     // 判断逻辑与rtsq内部保持一致，rtsq剩余空间需要大于（rtsq挂起的任务数量+本次任务） 
     // isPreStreamSync用于判断是否有Int64类型reduce算子，是否需要等其他流任务下发完成
-    return ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync)  ? false : true; 
+    auto isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
+
+    if (!isInsufficient) {
+        HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u] is sufficient. sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
+            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
+        return true;
+    }
+
+    sqHead_ = QuerySqHead();
+    availableSpace = GetTailToHeadDist();
+    isInsufficient = ((availableSpace <= pendingSqeCnt + 1) || isPreStreamSync);
+    HCCL_INFO("[Rtsq][%s], rtsq sqId_[%u], streamId_[%u], sqHead_[%u], sqTail_[%u], sqDepth[%u], availableSpace[%u], pendingSqeCnt[%u]", 
+            __func__, sqId_, streamId_, sqHead_, sqTail_, sqDepth_, availableSpace, pendingSqeCnt);
+
+    return !isInsufficient; 
 }
 
 HcclResult RtsqA5::SetPreStreamSyncReady() 
