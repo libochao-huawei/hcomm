@@ -16,6 +16,7 @@
 #include "detect_connect_anomalies.h"
 #include "../../nslbdp/hccl_nslbdp.h"
 #include "device_capacity.h"
+#include "rt_external.h"
 
 namespace hccl {
 
@@ -128,18 +129,20 @@ void TransportManager::SetQpQosAttr(u32 trafficClass, u32 serviceLevel)
     serviceLevel_ = serviceLevel;
 }
 
-void TransportManager::AddremoteUserRankToList(TransportRequest &transportRequest, std::vector<u32> &rankList,
+HcclResult TransportManager::AddremoteUserRankToList(TransportRequest &transportRequest, std::vector<u32> &rankList,
     TransportType transportType)
 {
     if (!transportRequest.isValid) {
-        return;
+        HCCL_WARNING("[AddremoteUserRankToList]transportRequest is invalid. No need to build a link, skip");
+        return HCCL_SUCCESS;
     }
-    TransportType type = GetTransportType(transportRequest.remoteUserRank, transportRequest.isUsedRdma);
+    TransportType type = TransportType::TRANS_TYPE_RESERVED;
+    CHK_PRT(GetTransportType(transportRequest.remoteUserRank, transportRequest.isUsedRdma, type));
     if (type == transportType) {
         // 仅添加对应Type类型的对端
         rankList.emplace_back(transportRequest.remoteUserRank);
     }
-    return;
+    return HCCL_SUCCESS;
 }
 
 HcclResult TransportManager::GetRemoteRankList(OpCommTransport &opTransportResponse, std::vector<u32> &rankList,
@@ -149,7 +152,7 @@ HcclResult TransportManager::GetRemoteRankList(OpCommTransport &opTransportRespo
     for (auto &levelNSubCommTransport : opTransportResponse) {
         for (auto &singleSubCommTransport : levelNSubCommTransport) {
             for (auto &transportRequest : singleSubCommTransport.transportRequests) {
-                AddremoteUserRankToList(transportRequest, rankList, transportType);
+                CHK_PRT(AddremoteUserRankToList(transportRequest, rankList, transportType));
             }
         }
     }
@@ -510,7 +513,7 @@ HcclResult TransportManager::GetIncreRemoteRankList(OpCommTransport &opTransport
             SingleSubCommTransport &reqSingleSubComm = opTransportReq[levelIndex][ringIndex];
             for (u32 rankIndex = 0; rankIndex < reqSingleSubComm.transportRequests.size(); rankIndex++) {
                 TransportRequest &transportRequest = reqSingleSubComm.transportRequests[rankIndex];
-                AddremoteUserRankToList(transportRequest, rankList, transportType);
+                CHK_PRT(AddremoteUserRankToList(transportRequest, rankList, transportType));
             }
         }
     }
@@ -781,7 +784,9 @@ HcclResult TransportManager::CreateDestSockets(const std::string &tag, RankId re
             enableP2PDevices_.push_back(rankInfoList_[remoteRank].devicePhyId);
         }
         // server内非异构场景，使能P2P
-        bool isInterServer = rankInfoList_[userRank_].serverId != rankInfoList_[remoteRank].serverId;
+        bool isInterServer = false;
+        CHK_PRT(IsInterServer(remoteRank, isInterServer));
+ 	 
         if (!isInterServer && !isHaveCpuRank_) {
             std::vector<u32> WaitP2PEnabledDevices;
             WaitP2PEnabledDevices.push_back(rankInfoList_[remoteRank].devicePhyId);
@@ -895,7 +900,8 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
             rankInfoList_[remoteRank].serverId.c_str(), machinePara.machineType, machinePara.serverId.c_str(),
             machinePara.nicDeploy, isBackup, opType);
         // transport初始化
-        TransportType type = GetTransportType(remoteRank, isUsedRdma);
+        TransportType type = TransportType::TRANS_TYPE_RESERVED;
+        CHK_PRT(GetTransportType(remoteRank, isUsedRdma, type));
             // A2/A3 batch_send_recv 走roce才切换到新链路
         if (type == TransportType::TRANS_TYPE_IBV_EXP && opType_ == HCCL_CMD_BATCH_SEND_RECV) {
             ret = CheckLinkNumAndSwitchLinkType(type, machinePara, sockets);
@@ -1083,14 +1089,16 @@ HcclResult TransportManager::SetMachinePara(const std::string &tag, MachineType 
     return HCCL_SUCCESS;
 }
 
-TransportType TransportManager::GetTransportType(const u32 dstRank, bool isUsedRdma)
+HcclResult TransportManager::GetTransportType(const u32 dstRank, bool isUsedRdma, TransportType &transportType)
 {
-    TransportType transportType;
     // 判断是否在同一个server
-    if (rankInfoList_[userRank_].serverId == rankInfoList_[dstRank].serverId) {
+    bool isInterServer = false;
+    CHK_PRT(IsInterServer(dstRank, isInterServer));
+ 	 
+    if (!isInterServer) {
         LinkTypeInServer linkType = LinkTypeInServer::RESERVED_LINK_TYPE;
-        hrtGetPairDeviceLinkType(rankInfoList_[userRank_].devicePhyId, rankInfoList_[dstRank].devicePhyId,
-            linkType);
+        CHK_RET(hrtGetPairDeviceLinkType(rankInfoList_[userRank_].devicePhyId, rankInfoList_[dstRank].devicePhyId,
+            linkType));
         if (isUsedRdma) {
             transportType = TransportType::TRANS_TYPE_IBV_EXP;
         } else {
@@ -1112,7 +1120,7 @@ TransportType TransportManager::GetTransportType(const u32 dstRank, bool isUsedR
 
     HCCL_INFO("GetTransportType: srcRank[%u], dstRank[%u], transport_type[%d].",
         userRank_, dstRank, transportType);
-    return transportType;
+    return HCCL_SUCCESS;
 }
 
 void TransportManager::SetTransportParam(TransportPara &para, MachinePara &machinePara)
@@ -1273,5 +1281,41 @@ void TransportManager::SetOpType(HcclCMDType opType)
 std::map<u32, TransportType> TransportManager::GetRemoteTransportMap()
 {
     return remoteTransportMap_;
+}
+
+HcclResult TransportManager::IsInterServer(const u32 dstRank, bool& isInterServer)
+{
+#if !defined(CCL_KERNEL_AICPU) && !defined(HCCD)
+    if (rankInfoList_[userRank_].deviceType == DevType::DEV_TYPE_910_93) {
+        uint32_t userRankServerId = 0;
+        uint32_t remoteRankServerId = 0;
+        rtError_t ret = rtGetServerIDBySDID(rankInfoList_[userRank_].superDeviceId, &userRankServerId);
+        CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[IsInterServer]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+            rankInfoList_[userRank_].superDeviceId, userRankServerId, ret), HCCL_E_RUNTIME);
+
+        ret = rtGetServerIDBySDID(rankInfoList_[dstRank].superDeviceId, &remoteRankServerId);
+        CHK_PRT_RET(ret != RT_ERROR_NONE, HCCL_ERROR("[IsInterServer]rtGetServerIDBySDID failed sdid[0x%08x], serverID[%u], ret[%u]",
+            rankInfoList_[dstRank].superDeviceId, remoteRankServerId, ret), HCCL_E_RUNTIME);
+        isInterServer = (userRankServerId != remoteRankServerId) || (rankInfoList_[userRank_].superPodId != rankInfoList_[dstRank].superPodId);
+        HCCL_INFO("[IsInterServer]localSDID[0x%08x], localdevicePhyId[%d], localServerId[%s], localServerIdBySDID[%d], localSuperPodId[%s], " \
+            "remoteSDID[0x%08x], remotedevicePhyId[%d], remoteRankServerId[%d], remoteServerIdBySDID[%d], remoteSuperPodId[%s], " \
+            "isInterServer[%s]",
+            rankInfoList_[userRank_].superDeviceId, rankInfoList_[userRank_].devicePhyId, rankInfoList_[userRank_].serverId.c_str(),
+            userRankServerId, rankInfoList_[userRank_].superPodId.c_str(), rankInfoList_[dstRank].superDeviceId,
+            rankInfoList_[dstRank].devicePhyId, rankInfoList_[dstRank].serverId.c_str(), remoteRankServerId,
+            rankInfoList_[dstRank].superPodId.c_str(), isInterServer ? "true" : "false");
+    } else {
+        isInterServer = rankInfoList_[userRank_].serverId != rankInfoList_[dstRank].serverId;
+        HCCL_INFO("[IsInterServer]localdevicePhyId[%d], localServerId[%s], " \
+            "remotedevicePhyId[%d], remoteServerId[%s], isInterServer[%s]",
+            rankInfoList_[userRank_].devicePhyId, rankInfoList_[userRank_].serverId.c_str(),
+            rankInfoList_[dstRank].devicePhyId, rankInfoList_[dstRank].serverId.c_str(),
+            isInterServer ? "true" : "false");
+    }
+    return HCCL_SUCCESS;
+#else
+    HCCL_ERROR("[IsInterServer]Does not support this interface.");
+    return HCCL_E_NOT_SUPPORT;
+#endif
 }
 }  // namespace hccl

@@ -218,4 +218,43 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_PKG_HEAD}
         DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hccl/ OPTIONAL
     )
+    set(HCCL_PKG_CCU_HEAD
+        pkg_inc/hcomm/ccu/ccu_assist_pub.h
+        pkg_inc/hcomm/ccu/ccu_common.h
+        pkg_inc/hcomm/ccu/ccu_condition_v1.h
+        pkg_inc/hcomm/ccu/ccu_context_resource_v1.h
+        pkg_inc/hcomm/ccu/ccu_datatype_v1.h
+        pkg_inc/hcomm/ccu/ccu_funccall_v1.h
+        pkg_inc/hcomm/ccu/ccu_instr_info_v1.h
+        pkg_inc/hcomm/ccu/ccu_interface_assist_v1.h
+        pkg_inc/hcomm/ccu/ccu_kernel_arg.h
+        pkg_inc/hcomm/ccu/ccu_kernel_signature.h
+        pkg_inc/hcomm/ccu/ccu_kernel.h
+        pkg_inc/hcomm/ccu/ccu_loopblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_loopcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_loopgroupcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_microcode_v1.h
+        pkg_inc/hcomm/ccu/ccu_operator_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_arg_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_base_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_block_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_context_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_funcblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_funccall_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_jump_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_jumplabel_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_loopblock_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_loopcall_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_reference_manager_v1.h
+        pkg_inc/hcomm/ccu/ccu_rep_type_v1.h
+        pkg_inc/hcomm/ccu/ccu_repeat_v1.h
+        pkg_inc/hcomm/ccu/ccu_res_repo.h
+        pkg_inc/hcomm/ccu/ccu_task_arg_v1.h
+        pkg_inc/hcomm/ccu/ccu_task_param_v1.h
+        pkg_inc/hcomm/ccu/hccl_ccu_res.h
+    )
+    install(FILES
+        ${HCCL_PKG_CCU_HEAD}
+        DESTINATION ${INSTALL_PKG_INCLUDE_DIR}/hcomm/ccu/ OPTIONAL
+    )
 endif()

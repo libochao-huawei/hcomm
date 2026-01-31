@@ -64,8 +64,8 @@ __aicore__ inline void AivAll2AllGraph91093::Process(GM_ADDR buffOut0, GM_ADDR c
         LocalTensor<int32_t> workLocal;
 
         pipe.InitBuffer(syncQue, 1, syncBufferSize);
-        syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
-        syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
+        syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset), syncBufferSize);
+        syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset + syncBufferSize), syncBufferSize);
         workLocal = syncQue.AllocTensor<int32_t>();
         Barrier(buffersOut, 1);
         SyncAll(syncGlobal, workLocal, numBlocks_);

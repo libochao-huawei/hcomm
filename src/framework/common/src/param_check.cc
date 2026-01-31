@@ -458,7 +458,7 @@ bool IsSupportHCCLV2(const char *socNamePtr)
 {
     std::string targetChipVerStr = socNamePtr;
     HCCL_DEBUG("[%s]SocVersion = %s.", __func__, targetChipVerStr.c_str());
-    if (targetChipVerStr.find("Ascend910_95") != std::string::npos) {
+    if (targetChipVerStr.find("Ascend950") != std::string::npos) {
         return true;
     }
     return false;

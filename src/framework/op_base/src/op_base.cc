@@ -350,7 +350,7 @@ HcclResult CheckOpBasedHcom(HcclOpInfoCtx &opBaseHcom, const uint32_t rank, cons
 }
 
 
-HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
+HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *config, HcclComm *comm)
 {
     CHK_PTR_NULL(*commV2);
     HCCL_INFO("HcclCommInitCollComm start.");
@@ -381,7 +381,7 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
 
     //Collcomm初始化
-    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName));
+    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
     // hcclComm中的IndependentOp，channelManager,ContextManager初始化
     *comm = static_cast<HcclComm>(hcclCommPtr.get());
 
@@ -617,7 +617,8 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -844,7 +845,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1588,7 +1589,8 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1709,7 +1711,7 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -2979,7 +2981,8 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 return HCCL_SUCCESS;
             }
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            void* commV2 = hcclComm->GetCommunicatorV2();
+            // 先拷贝orion通信域地址，避免coll comm销毁后无法获取
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
             string group;
             group = hcclComm->GetIdentifier();
             HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
@@ -2987,11 +2990,11 @@ HcclResult HcclCommDestroy(HcclComm comm)
             auto iter = opBaseHcom.opGroup2CommMap.find(group);
             if (iter != opBaseHcom.opGroup2CommMap.end()) {
                 EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+                CHK_RET(HcclCommDestroyV2(commV2));
             } else {
                 HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
                 return HCCL_E_PARA;
             }
-            CHK_RET(HcclCommDestroyV2(commV2));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -4346,9 +4349,8 @@ HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
 
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    CHK_RET(HcclCommSetMemoryRangeV2(comm, baseVirPtr, size, alignment, flags));
-    return HCCL_SUCCESS;
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommSetMemoryRangeV2(comm, baseVirPtr, size, alignment, flags));
 #endif
 
     HcclUs startut = TIME_NOW();
@@ -4366,9 +4368,8 @@ HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr)
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
 
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    CHK_RET(HcclCommUnsetMemoryRangeV2(comm, baseVirPtr));
-    return HCCL_SUCCESS;
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommUnsetMemoryRangeV2(comm, baseVirPtr));
 #endif
 
     HcclUs startut = TIME_NOW();
@@ -4387,9 +4388,8 @@ HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, 
     CHK_PTR_NULL(virPtr);
     CHK_PTR_NULL(handle);
 
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    CHK_RET(HcclCommActivateCommMemoryV2(comm, virPtr, size, offset, handle, flags));
-    return HCCL_SUCCESS;
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommActivateCommMemoryV2(comm, virPtr, size, offset, handle, flags));
 #endif
 
     HcclUs startut = TIME_NOW();
@@ -4408,9 +4408,8 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(virPtr);
 
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    CHK_RET(HcclCommDeactivateCommMemoryV2(comm, virPtr));
-    return HCCL_SUCCESS;
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommDeactivateCommMemoryV2(comm, virPtr));
 #endif
 
     HcclUs startut = TIME_NOW();
@@ -4424,9 +4423,8 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
 
 HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks)
 {
-#if (!defined (OPEN_BUILD_PROJECT)) && (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
-    CHK_RET(HcclCommWorkingDevNicSetV2(comm, ranks, useBackup, nRanks));
-    return HCCL_SUCCESS;
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommWorkingDevNicSetV2(comm, ranks, useBackup, nRanks));
 #endif
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclCommWorkingDevNicSet", "comm", "nullptr", "please check comm"}));

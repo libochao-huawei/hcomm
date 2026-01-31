@@ -11,6 +11,7 @@
  #include "endpoint.h"
  #include "cpu_roce_endpoint.h"
  #include "urma_endpoint.h"
+ #include "ub_mem_endpoint.h"
 
  namespace hcomm{
 Endpoint::Endpoint(const EndpointDesc &endpointDesc)
@@ -26,6 +27,8 @@ HcclResult Endpoint::CreateEndpoint(const EndpointDesc &endpointDesc, std::uniqu
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else if (endpointDesc.protocol == COMM_PROTOCOL_UBC_CTP && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
         EXECEPTION_CATCH(endpointPtr = std::make_unique<UrmaEndpoint>(endpointDesc), return HCCL_E_PTR);
+    } else if (endpointDesc.protocol == COMM_PROTOCOL_UB_MEM && endpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+        EXECEPTION_CATCH(endpointPtr = std::make_unique<UbMemEndpoint>(endpointDesc), return HCCL_E_PTR);
     } else {
         endpointPtr = nullptr;
         HCCL_ERROR("[%s] failed, endpointDesc.protocol [%d] is not supported.", __func__, endpointDesc.protocol);

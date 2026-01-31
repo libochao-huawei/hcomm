@@ -36,8 +36,7 @@ else()
 endif()
 
 message(STATUS "ORION_MODE=${ORION_MODE}")
-set(ORION_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/orion)
-set(HCCL_NEXT_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/hccl_next)
+set(ORION_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/legacy)
 set(HCOMM_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 add_library(hccd  SHARED)
@@ -145,18 +144,14 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/typical
 
     ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
-    ${HCCL_BASE_DIR}/orion/unified_platform/resource/transport
-    ${HCCL_BASE_DIR}/orion/common/utils/
-    ${HCCL_BASE_DIR}/orion/common/exception/
-    ${HCCL_BASE_DIR}/hccl_next/framework/topo/new_topo_builder/common/
-    ${HCCL_BASE_DIR}/hccl_next/framework/topo/
-    ${HCCL_BASE_DIR}/orion/common/types/
-    ${HCCL_BASE_DIR}/orion/common/
-    ${HCCL_BASE_DIR}/hccl_next/framework/topo/new_topo_builder/rank_graph/
-    ${HCCL_BASE_DIR}/orion/framework/resource_manager/socket/
-    ${HCCL_BASE_DIR}/orion/unified_platform/external_system/
-    ${HCCL_BASE_DIR}/hccl_next/framework/topo/new_topo_builder/rank_table_info/
-    ${HCCL_BASE_DIR}/orion/unified_platform/common/
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/transport
+    ${HCCL_BASE_DIR}/legacy/common/utils/
+    ${HCCL_BASE_DIR}/legacy/common/exception/
+    ${HCCL_BASE_DIR}/legacy/common/types/
+    ${HCCL_BASE_DIR}/legacy/common/
+    ${HCCL_BASE_DIR}/legacy/framework/resource_manager/socket/
+    ${HCCL_BASE_DIR}/legacy/unified_platform/external_system/
+    ${HCCL_BASE_DIR}/legacy/unified_platform/common/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
     ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
@@ -177,7 +172,7 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
-        ${HCCL_BASE_DIR}/orion/interface
+        ${HCCL_BASE_DIR}/legacy/interface
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
@@ -628,18 +623,10 @@ add_subdirectory(common)
 # 自动找到项目内所有头文件
 FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${ORION_REAL_PATH}/*)
 foreach (dir ${sources_list})
-    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "src/orion"))
+    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "src/legacy"))
         target_include_directories(hccd PRIVATE ${dir})
     endif ()
 endforeach ()
-
-FILE(GLOB_RECURSE open_dir_list LIST_DIRECTORIES TRUE ${HCCL_NEXT_REAL_PATH}/*)
-foreach (dir ${open_dir_list})
-    IF ((IS_DIRECTORY ${dir}) AND (${dir} MATCHES "src/hccl_next"))
-    target_include_directories(hccd PRIVATE ${dir})
-    endif()
-endforeach()
-
 
 set(FRAMEWORK_SRC PRIVATE
     ${HCCL_BASE_DIR}/framework/common/src/config.cc

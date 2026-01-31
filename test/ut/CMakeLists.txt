@@ -18,6 +18,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/include/hccl
     ${HCCL_CODE_ROOT}/pkg_inc
     ${HCCL_CODE_ROOT}/pkg_inc/hccl
+    ${HCCL_CODE_ROOT}/pkg_inc/hcomm/ccu
 
     # src/pub_inc 目录下头文件
     ${HCCL_CODE_ROOT}/src/pub_inc
@@ -181,33 +182,32 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
     ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
 
-    # orion include
-    ${HCCL_CODE_ROOT}/src/orion/common/
-    ${HCCL_CODE_ROOT}/src/orion/common/utils/
-    ${HCCL_CODE_ROOT}/src/orion/common/exception/
-    ${HCCL_CODE_ROOT}/src/orion/common/types/
-    ${HCCL_CODE_ROOT}/src/orion/framework/resource_manager/socket/
-    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/
-    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu/
-    ${HCCL_CODE_ROOT}/src/orion/framework/communicator/aicpu/inc
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/external_system/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/transport/aicpu/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/notify/aicpu/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/stream/aicpu/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/buffer/aicpu/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/resource/connection/aicpu/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/pub_inc/
-    ${HCCL_CODE_ROOT}/src/orion/unified_platform/common/
-
-    # hccl_next include
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/common/
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_graph/
-    ${HCCL_CODE_ROOT}/src/hccl_next/framework/topo/new_topo_builder/rank_table_info/
-    ${HCCL_CODE_ROOT}/src/hccl_next/service/collective/
+    # legacy include
+    ${HCCL_CODE_ROOT}/src/legacy/common/
+    ${HCCL_CODE_ROOT}/src/legacy/common/utils/
+    ${HCCL_CODE_ROOT}/src/legacy/common/exception/
+    ${HCCL_CODE_ROOT}/src/legacy/common/types/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/common/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_table_info/
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
 
     # tbe头文件
     ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
@@ -219,7 +219,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/engines/hcclengine/inc
 
     ${HCCL_CODE_ROOT}/test/ut/stub
-    ${HCCL_CODE_ROOT}/test/ut/stub/orion/
+    ${HCCL_CODE_ROOT}/test/ut/stub/legacy/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/common/
@@ -237,6 +237,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
@@ -245,9 +246,35 @@ set(UT_COMMON_INCLUDE_LIST
 
     ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
     ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
+
+    #next
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/channels/aicpu/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/api_c_adpt/
+
+    # ccu 头文件
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/adpt/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/common/
+ 
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/pub_inc/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_pfe/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_device/ccu_comp/ccu_channel/ccu_channel_ctx_v1/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/ccu/ccu_transport/
 )
 
 add_subdirectory(stub)
+add_subdirectory(framework/next)
 add_subdirectory(common/prepare_ut_env)
 add_subdirectory(common/binary_package)
 add_subdirectory(misc)
@@ -262,4 +289,5 @@ add_subdirectory(framework/communicator)
 add_subdirectory(framework/op_base_api)
 add_subdirectory(framework/communicator/impl)
 add_subdirectory(framework/resource)
-# add_subdirectory(framework/dpu_npu_sync)
+add_subdirectory(aicpu_kfc/aicpu)
+add_subdirectory(aicpu_kfc/misc)

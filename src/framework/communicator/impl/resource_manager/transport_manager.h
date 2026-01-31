@@ -196,7 +196,7 @@ public:
         TransportType transportType);
     HcclResult GetIncreRemoteRankList(OpCommTransport &opTransportReq,
         OpCommTransport &opTransportResponse, std::vector<u32> &rankList, TransportType transportType);
-    void AddremoteUserRankToList(TransportRequest &transportRequest, std::vector<u32> &rankList,
+    HcclResult AddremoteUserRankToList(TransportRequest &transportRequest, std::vector<u32> &rankList,
         TransportType transportType);
     TransportManager(TransportManager const&) = delete;                 // Copy construct
     TransportManager(TransportManager&&) = delete;                      // Move construct
@@ -234,7 +234,7 @@ private:
         const HcclNetDevCtx &netDevCtx, TransportLinkType linkType = TransportLinkType::RESERVED, 
         const IndOpMem &indOpMem = IndOpMem(), bool isIndOp = false,
 		const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isNpuDirectRoce = false);
-    TransportType GetTransportType(const u32 dstRank, bool isUsedRdma);
+    HcclResult GetTransportType(const u32 dstRank, bool isUsedRdma, TransportType &transportType);
     void SetTransportParam(TransportPara &para, MachinePara &machinePara);
     HcclResult TransportInit(const u32 dstRank, MachinePara &machinePara,
         std::shared_ptr<Transport> &link, bool useOneDoorbell, bool isUsedRdma, TransportType type);
@@ -258,6 +258,7 @@ private:
     HcclResult AllocSubCommLinks(const std::string &tag, const TransportIOMem &transMem,
         struct SingleSubCommTransport &singleSubCommTransport, bool isAicpuModeEn, bool isBackup, u32 subCommIndex,
         bool isCapture = false, const HcclCMDType &opType = HcclCMDType::HCCL_CMD_INVALID, bool isIndOp = false);
+    HcclResult IsInterServer(const u32 dstRank, bool& isInterServer);
 
     std::mutex mutex_;	// 用于控制互斥资源的访问
     CCLBufferManager &cclBufferManager_;

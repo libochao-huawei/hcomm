@@ -192,6 +192,8 @@ extern int32_t HcommWriteReduceOnThread(ThreadHandle thread, ChannelHandle chann
  * @param[in] notifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
  * @note 当前在A5上主要支持
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteWithNotifyOnThread(ThreadHandle thread, ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
@@ -229,6 +231,8 @@ extern int32_t HcommReadReduceOnThread(ThreadHandle thread, ChannelHandle channe
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
  
@@ -241,6 +245,8 @@ extern int32_t HcommWriteNbi(ChannelHandle channel, void *dst, const void *src, 
  * @param[in] notifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
  * @note 当前在A5上主要支持
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const void *src,
     uint64_t len, uint32_t remoteNotifyIdx);
@@ -252,6 +258,8 @@ extern int32_t HcommWriteWithNotifyNbi(ChannelHandle channel, void *dst, const v
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommReadNbi(ChannelHandle channel, void *dst, const void *src, uint64_t len);
 
@@ -276,6 +284,8 @@ extern int32_t HcommChannelNotifyRecordOnThread(ThreadHandle thread, ChannelHand
  * @param[in] channel 通道句柄
  * @param[in] remoteNotifyIdx 远端通知索引
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelNotifyRecord(ChannelHandle channel, uint32_t remoteNotifyIdx);
 
@@ -295,6 +305,8 @@ extern int32_t HcommChannelNotifyWaitOnThread(ThreadHandle thread, ChannelHandle
  * @param[in] localNotifyIdx 本地通知索引
  * @param[in] timeout 超时时间(毫秒)
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelNotifyWait(ChannelHandle channel, uint32_t localNotifyIdx, uint32_t timeout);
 
@@ -349,6 +361,8 @@ extern int32_t HcommReleaseComm(const char* commId);
  * @brief NPU上查询 rtsq任务执行完成的接口（阻塞）
  * @param[in] thread NPU上执行的线程句柄
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommThreadSynchronize(ThreadHandle thread);
 
@@ -362,6 +376,8 @@ using MsgHandle = uint64_t;
  * @param[in] sizeByte 消息大小（字节）
  * @param[out] msgId 消息 Id 指针
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void *src, size_t sizeByte, uint32_t *msgId);
 
@@ -372,6 +388,8 @@ extern int32_t HcommSendRequest(MsgHandle handle, const char* msgTag, const void
  * @param[in] sizeByte 数据大小（字节）
  * @param[out] msgId 消息 Id 指针
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, uint32_t *msgId);
 
@@ -379,6 +397,8 @@ extern int32_t HcommWaitResponse(MsgHandle handle, void *dst, size_t sizeByte, u
  * @brief DPU数据面flush接口，已架构师评审过
  * @param[in] void
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
 */
 extern int32_t HcommFlush();
 
@@ -386,9 +406,11 @@ extern int32_t HcommFlush();
  * @brief 通信通道级内存屏障操作
  * @param[in] channel 通道句柄
  * @return int32_t 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
  */
 extern int32_t HcommChannelFence(ChannelHandle channel);
- 
+
 /** @} */  // 算子编程接口
 #ifdef __cplusplus
 }

@@ -186,8 +186,8 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     HcclResult ret = HCCL_SUCCESS;
     CHK_RET(InitExternalInput());
     CHK_RET(InitEnvConfig());
+    CHK_RET(HcomCheckInitClusterInfo(rankTableM, identify));
     HCCL_RUN_INFO("Entry-HcomInitByString, rankTableM[%s], identify[%s], commWorkMode[%d]", rankTableM, identify, commWorkMode);
-    HCCL_RUN_INFO("Entry-HcomInitByString, identify[%s]", identify);
 
     ret = HcomInit(rankTableM, identify, commWorkMode);
 
@@ -314,7 +314,7 @@ HcclResult HcomInitByMasterInfo(const char *masterIp, const char *masterPort, co
     std::string rankTableM;
     std::string identify;
     HCCL_RUN_INFO("Entry-HcomInitByMasterInfo:masterIp[%s], masterPort[%s], master device id[%s], rankSize[%s], rankIp[%s], "
-        "deviceId[%d]", masterIp.c_str(), masterPort.c_str(), masterDeviceId.c_str(), rankSize.c_str(), rankIp.c_str(), logicDevId);
+        "deviceId[%d]", masterIp, masterPort, masterDeviceId, rankSize, rankIp, logicDevId);
 
     CHK_RET(InitExternalInput()); // 生成ranktable前需要提前感知部分配置
     CHK_RET(InitEnvConfig());

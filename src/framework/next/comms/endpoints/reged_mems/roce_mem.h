@@ -16,7 +16,7 @@
 #include "reged_mem_mgr.h"
 #include "rma_buffer_mgr.h"
 #include "buffer_key.h"
-#include "../../../../../orion/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
+#include "../../../../../legacy/unified_platform/resource/buffer/local_rdma_rma_buffer.h"
 #include "remote_rma_buffer.h"
  
 namespace hcomm {
