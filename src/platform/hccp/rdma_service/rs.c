@@ -35,11 +35,8 @@
 #include "dl_hal_function.h"
 #include "rs_drv_rdma.h"
 #include "file_opt.h"
-#ifdef CONFIG_TLV
 #include "hccp_tlv.h"
 #include "rs_tlv.h"
-#endif
-#ifdef CONFIG_CONTEXT
 #include "ra_rs_ctx.h"
 #include "rs_ccu.h"
 #include "rs_ctx.h"
@@ -47,7 +44,6 @@
 #include "dl_net_function.h"
 #include "rs_ub.h"
 #include "rs_ctx_inner.h"
-#endif
 
 __thread struct rs_cb *gRsCb = NULL;  //lint !e17
 struct rs_cb *gRsCbList[RS_MAX_DEV_NUM] = {0};  //lint !e17
@@ -143,17 +139,13 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_GET_CQE_ERR_INFO_LIST, 1},
     {RA_RS_GET_VNIC_IP_INFOS_V1, 1},
     {RA_RS_GET_VNIC_IP_INFOS, 1},
-#ifdef CONFIG_TLV
     {RA_RS_TLV_INIT, 1},
     {RA_RS_TLV_DEINIT, 1},
     {RA_RS_TLV_REQUEST, 1},
-#endif
     {RA_RS_GET_TLS_ENABLE, 1},
     {RA_RS_GET_SEC_RANDOM, 1},
     {RA_RS_GET_HCCN_CFG, 1},
     {RA_RS_GET_ROCE_API_VERSION, 0},
-
-#ifdef CONFIG_CONTEXT
     {RA_RS_GET_DEV_EID_INFO_NUM, 1},
     {RA_RS_GET_DEV_EID_INFO_LIST, 1},
     {RA_RS_CTX_INIT, 1},
@@ -186,7 +178,6 @@ struct OpcodeInterfaceInfo gInterfaceInfoList[] = {
     {RA_RS_CTX_UPDATE_CI, 1},
     {RA_RS_CTX_GET_AUX_INFO, 1},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, 1},
-#endif
 
     // inner opcode version
     {RA_RS_HDC_SESSION_CLOSE, 1},
@@ -448,22 +439,26 @@ STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
 
 STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 {
+    enum ProductType productType;
     struct timeval start, end;
     float timeCost = 0.0;
     int ret;
 
     ret = RsGetChipLogicId(rscb->chipId, rscb->hccpMode, &rscb->logicId);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_logic_id failed, ret[%d]", ret), ret);
-#ifdef CONFIG_CONTEXT
+
 #ifdef CUSTOM_INTERFACE
-    ret = rs_get_chip_protocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_protocol failed, ret[%d]", ret), ret);
-    ret = rs_ctx_api_init(rscb->hccpMode, rscb->protocol);
-    CHK_PRT_RETURN(ret != 0, hccp_err("rs_ctx_api_init failed, ret[%d]", ret), ret);
-    ret = rs_esched_init(rscb);
-    if (ret != 0) {
-        hccp_err("rs_esched_init chipId[%u] logic_devid[%u] failed, ret=%d", rscb->chipId, rscb->logicId, ret);
-        goto esched_init_err;
+    productType = RsGetProductType(rscb->logicId);
+    if(productType == PRODUCT_TYPE_950) {
+        ret = rs_get_chip_protocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_protocol failed, ret[%d]", ret), ret);
+        ret = rs_ctx_api_init(rscb->hccpMode, rscb->protocol);
+        CHK_PRT_RETURN(ret != 0, hccp_err("rs_ctx_api_init failed, ret[%d]", ret), ret);
+        ret = rs_esched_init(rscb);
+        if (ret != 0) {
+            hccp_err("rs_esched_init chipId[%u] logic_devid[%u] failed, ret=%d", rscb->chipId, rscb->logicId, ret);
+            goto esched_init_err;
+        }
     }
 
     ret = RsInitNetAdapt(rscb);
@@ -472,7 +467,7 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
     }
 
 #endif
-#endif
+
     ret = rs_ssl_init(rscb);
     if (ret != 0) {
         hccp_err("init ssl failed, ret[%d]", ret);
@@ -494,30 +489,32 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 create_pthread_err:
     rs_ssl_deinit(rscb);
 ssl_init_err:
-#ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
-    RsDeInitNetAdapt(rscb);
+    if(productType == PRODUCT_TYPE_950) {
+        RsDeInitNetAdapt(rscb);
 net_adapt_init_err:
-    rs_esched_deinit(rscb->protocol);
+        rs_esched_deinit(rscb->protocol);
 esched_init_err:
-    (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
-#endif
+        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+    }
 #endif
     return ret;
 }
 
 STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
 {
+    enum ProductType productType;
     int tryAgain = RS_TRY_TIME;
     eventfd_t event = 1;
     int ret;
 
-#ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
-    RsDeInitNetAdapt(rscb);
-    rs_esched_deinit(rscb->protocol);
-    (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
-#endif
+    productType = RsGetProductType(rscb->logicId);
+    if(productType == PRODUCT_TYPE_950) {
+        RsDeInitNetAdapt(rscb);
+        rs_esched_deinit(rscb->protocol);
+        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+    }
 #endif
     rs_ssl_deinit(rscb);
     // deinit resources in rs_epoll_connect_handle_init
@@ -709,7 +706,6 @@ RS_ATTRI_VISI_DEF int RsBindHostpid(unsigned int chipId, pid_t pid)
     return 0;
 }
 
-#ifdef CUSTOM_INTERFACE
 STATIC int RsSetRscbGrpId(struct rs_cb *rsCb, unsigned int devId)
 {
     GrpQueryGroupIdInfo grpQueryOut = {0};
@@ -828,7 +824,6 @@ int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyi
     rsCb->grpSetupFlag = true;
     return 0;
 }
-#endif
 
 STATIC int RsCompareIpGid(struct rdev rdevInfo, union ibv_gid *gid)
 {
@@ -876,20 +871,25 @@ STATIC int RsGetDevRdevIndex(struct RsRdevCb *rdevCb, unsigned int *rdevIndex, i
 {
 #ifdef CUSTOM_INTERFACE
     struct roce_dev_data rdevData = {0};  //lint !e565
+    enum ProductType productType;
     int retVal;
-    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
-    /*lint -e132*/
-    rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);  //lint !e101
-    retVal = RsRoceGetRoceDevData(rdevCb->devName, &rdevData); //lint !e101
-    /*lint +e132*/
-    if (retVal) {
-        hccp_err("rs_roce_get_roce_dev_data failed, retVal:%d, devName:%s", retVal, rdevCb->devName);
+
+    productType = RsGetProductType(rdevCb->rs_cb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
+        /*lint -e132*/
+        rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);  //lint !e101
+        retVal = RsRoceGetRoceDevData(rdevCb->devName, &rdevData); //lint !e101
+        /*lint +e132*/
+        if (retVal) {
+            hccp_err("rs_roce_get_roce_dev_data failed, retVal:%d, devName:%s", retVal, rdevCb->devName);
+            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+            return retVal;
+        }
+        *rdevIndex = rdevData.rdev_index; // rdev_index is same to port_id
+        rdevCb->rdevIndex = *rdevIndex;
         RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
-        return retVal;
     }
-    *rdevIndex = rdevData.rdev_index; // rdev_index is same to port_id
-    rdevCb->rdevIndex = *rdevIndex;
-    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
 #endif
     return 0;
 }
@@ -991,19 +991,23 @@ int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb)
 STATIC int RsGetSqDepthAndQpMaxNum(struct RsRdevCb *rdevCb, unsigned int rdevIndex)
 {
 #ifdef CUSTOM_INTERFACE
-    int ret;
-    unsigned int qpMaxNum = 0;
+    enum ProductType productType;
     unsigned int tempDepth = 0;
+    unsigned int qpMaxNum = 0;
     unsigned int sqDepth = 0;
+    int ret;
 
-    ret = RsRoceGetTsqpDepth(rdevCb->devName, rdevIndex, &tempDepth, &qpMaxNum, &sqDepth);
-    CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret:%d, devName:%s, rdevIndex:%u", ret,
-        rdevCb->devName, rdevIndex), ret);
+    productType = RsGetProductType(rdevCb->rs_cb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        ret = RsRoceGetTsqpDepth(rdevCb->devName, rdevIndex, &tempDepth, &qpMaxNum, &sqDepth);
+        CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret:%d, devName:%s, rdevIndex:%u", ret,
+            rdevCb->devName, rdevIndex), ret);
 
-    rdevCb->txDepth = sqDepth;
-    rdevCb->rxDepth = sqDepth;
-    rdevCb->qpMaxNum = qpMaxNum;
-    hccp_run_info("qp_max_num:%u, sqDepth:%u", qpMaxNum, sqDepth);
+        rdevCb->txDepth = sqDepth;
+        rdevCb->rxDepth = sqDepth;
+        rdevCb->qpMaxNum = qpMaxNum;
+        hccp_run_info("qp_max_num:%u, sqDepth:%u", qpMaxNum, sqDepth);
+    }
 #endif
     return 0;
 }
@@ -1047,6 +1051,7 @@ STATIC int RsRdevCbInfoInit(struct rdev rdevInfo, struct rs_cb *rsCb, struct RsR
 STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs_cb *rsCb,
     unsigned int *rdevIndex)
 {
+    enum ProductType productType;
     int ret;
 
     ret = RsRdevCbInfoInit(rdevInfo, rsCb, rdevCb);
@@ -1079,10 +1084,13 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
     }
 
 #ifdef CUSTOM_INTERFACE
-    ret = RsRoceMmapAiDbReg(rdevCb->ibCtx, (unsigned int)rdevCb->rs_cb->aicpuPid);
-    if (ret) {
-        hccp_err("rs_roce_mmap_ai_db_reg failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
-        goto close_dev;
+    productType = RsGetProductType(rsCb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        ret = RsRoceMmapAiDbReg(rdevCb->ibCtx, (unsigned int)rdevCb->rs_cb->aicpuPid);
+        if (ret) {
+            hccp_err("rs_roce_mmap_ai_db_reg failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
+            goto close_dev;
+        }
     }
 #endif
 
@@ -1096,7 +1104,9 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
 
 unmmap_ai_db:
 #ifdef CUSTOM_INTERFACE
-    (void)RsRoceUnmmapAiDbReg(rdevCb->ibCtx);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        (void)RsRoceUnmmapAiDbReg(rdevCb->ibCtx);
+    }
 #endif
 close_dev:
     RsIbvCloseDevice(rdevCb->ibCtx);
@@ -1192,9 +1202,9 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
 {
     unsigned int phyId = rdevInfo.phyId;
     struct RsRdevCb *rdevCb = NULL;
+    enum ProductType productType;
     struct rs_cb *rsCb = NULL;
     int ret;
-
     RS_CHECK_POINTER_NULL_RETURN_INT(rdevIndex);
 
     ret = RsApiInit();
@@ -1217,11 +1227,14 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
     (void)memcpy_s(&rdevCb->backupInfo.rdevInfo, sizeof(struct rdev),
         &backupInfo.rdevInfo, sizeof(struct rdev));
 #ifdef CUSTOM_INTERFACE
-    // setup sharemem for aicpu rdma unfold
-    ret = RsSetupSharemem(rsCb, rdevCb->backupInfo.backupFlag, rdevCb->backupInfo.rdevInfo.phyId);
-    if (ret != 0) {
-        hccp_err("[init][rs_rdev]RsSetupSharemem failed, phyId(%u), ret(%d)", phyId, ret);
-        goto free_rs_cb;
+    productType = RsGetProductType(rsCb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        // setup sharemem for aicpu rdma unfold
+        ret = RsSetupSharemem(rsCb, rdevCb->backupInfo.backupFlag, rdevCb->backupInfo.rdevInfo.phyId);
+        if (ret != 0) {
+            hccp_err("[init][rs_rdev]RsSetupSharemem failed, phyId(%u), ret(%d)", phyId, ret);
+            goto free_rs_cb;
+        }
     }
 #endif
 
@@ -1328,12 +1341,12 @@ STATIC void RsFreeTypicalMrCb(struct RsRdevCb *devCb)
 
 RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, unsigned int rdevIndex)
 {
-    int ret;
-    unsigned int chipId;
     struct RsRdevCb *rdevCb = NULL;
-    struct RsQpCb *qpCb = NULL;
+    enum ProductType productType;
     struct RsQpCb *qpCb2 = NULL;
-
+    struct RsQpCb *qpCb = NULL;
+    unsigned int chipId;
+    int ret;
     hccp_info("rdev deinit start, phyId:%u, rdevIndex:%u", phyId, rdevIndex);
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs set param error ! phyId:%u", phyId), -EINVAL);
     ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
@@ -1357,7 +1370,10 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     RsFreeTypicalMrCb(rdevCb);
 
 #ifdef CUSTOM_INTERFACE
-    (void)RsRoceUnmmapAiDbReg(rdevCb->ibCtx);
+    productType = RsGetProductType(rdevCb->rs_cb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        (void)RsRoceUnmmapAiDbReg(rdevCb->ibCtx);
+    }
 #endif
 
     RsIbvDeallocPd(rdevCb->ibPd);
@@ -1365,7 +1381,9 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     RsIbvCloseDevice(rdevCb->ibCtx);
 
 #ifdef CUSTOM_INTERFACE
-    RsCloseBackupIbCtx(rdevCb);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        RsCloseBackupIbCtx(rdevCb);
+    }
 #endif
 
     pthread_mutex_destroy(&rdevCb->cqeErrCntMutex);
@@ -1898,7 +1916,6 @@ STATIC void RsFreeRdevList(struct rs_cb *rsCb)
     return;
 }
 
-#ifdef CONFIG_CONTEXT
 STATIC void RsFreeUdevList(struct rs_cb *rsCb)
 {
     struct rs_ub_dev_cb *udev_cb_curr = NULL;
@@ -1916,7 +1933,6 @@ STATIC void RsFreeUdevList(struct rs_cb *rsCb)
 
     return;
 }
-#endif
 
 STATIC void RsFreeDevList(struct rs_cb *rsCb)
 {
@@ -1929,11 +1945,9 @@ STATIC void RsFreeDevList(struct rs_cb *rsCb)
         case PROTOCOL_RDMA:
             RsFreeRdevList(rsCb);
             break;
-#ifdef CONFIG_CONTEXT
         case PROTOCOL_UDMA:
             RsFreeUdevList(rsCb);
             break;
-#endif
         default:
             hccp_err("protocol[%d] not support", rsCb->protocol);
             break;
@@ -1998,6 +2012,8 @@ STATIC void RsSslFree(struct rs_cb *rscb)
 
 STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
 {
+    enum ProductType productType;
+
     RS_PTHREAD_MUTEX_LOCK(&rscb->mutex);
     RsListFree(rscb);
 
@@ -2009,22 +2025,24 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     RsFreeDevList(rscb);
     RsSslFree(rscb);
     RsFreeHeterogTcpFdList(rscb);
-
+    productType = RsGetProductType(rscb->logicId);
 #ifdef CONFIG_TLV
-    if (rscb->tlvCb.initFlag) {
-        RsTlvDeinit(rscb->tlvCb.phyId);
+    if(productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910_93) {
+        if (rscb->tlvCb.initFlag) {
+            RsTlvDeinit(rscb->tlvCb.phyId);
+        }
     }
 #endif
     pthread_mutex_destroy(&rscb->mutex);
     pthread_mutex_destroy(&rscb->connCb.connMutex);
     RsDestroyEpoll(rscb);
 
-#ifdef CONFIG_CONTEXT
 #ifdef CUSTOM_INTERFACE
-    RsDeInitNetAdapt(rscb);
-    rs_esched_deinit(rscb->protocol);
-    (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
-#endif
+    if(productType == PRODUCT_TYPE_950) {
+        RsDeInitNetAdapt(rscb);
+        rs_esched_deinit(rscb->protocol);
+        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+    }
 #endif
 
     free(rscb);
@@ -2034,10 +2052,10 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
 
 RS_ATTRI_VISI_DEF int RsDeinit(struct RsInitConfig *cfg)
 {
-    int ret;
-    eventfd_t event;
     struct rs_cb *rscb = gRsCb;
     unsigned int chipId;
+    eventfd_t event;
+    int ret;
 
     CHK_PRT_RETURN(cfg == NULL, hccp_err("param error, cfg is NULL"), -EINVAL);
 
@@ -2517,43 +2535,41 @@ RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value)
     return ret;
 }
 
-STATIC int RsGetProductType(int devId, enum ProductType *type)
+RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId)
 {
+    static enum ProductType type = PRODUCT_TYPE_NO_VALUE;
     halChipInfo chipInfo = {0};
     int ret;
+
+    if(type != PRODUCT_TYPE_NO_VALUE) { // Cache result after first query, skip exception checking for subsequent queries
+        return type;
+    }
 
     DlHalInit();
     ret = DlHalGetChipInfo(devId, &chipInfo);
     DlHalDeinit();
 
-    CHK_PRT_RETURN(ret != 0, hccp_err("[Get][ChipInfo]DlHalGetChipInfo failed ret:%d", ret), ret);
+    if(ret != 0) {
+        hccp_err("[Get][ChipInfo]DlHalGetChipInfo failed ret:%d", ret);
+        return PRODUCT_TYPE_INVALID;
+    }
 
     if(fnmatch("910_93[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
-        *type = PRODUCT_TYPE_910_93;
+        type = PRODUCT_TYPE_910_93;
     } else if (fnmatch("910B[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
-        *type = PRODUCT_TYPE_910B;
+        type = PRODUCT_TYPE_910B;
+    } else if(fnmatch("910_96[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
+        type = PRODUCT_TYPE_910_96;
     } else if(fnmatch("910[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
-        *type = PRODUCT_TYPE_910;
+        type = PRODUCT_TYPE_910;
     } else if(fnmatch("310p[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
-        *type = PRODUCT_TYPE_310p;
+        type = PRODUCT_TYPE_310p;
+    } else if(fnmatch("950[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0){
+        type = PRODUCT_TYPE_950;
     } else {
-        *type = PRODUCT_TYPE_INVALID;
+        type = PRODUCT_TYPE_OTHERS;
     }
 
-    hccp_info("[Get][ChipInfo]chip name is %s, type:%d", chipInfo.name, *type);
-    return ret;
-}
-
-RS_ATTRI_VISI_DEF bool RsGetIsRdmaSupported(int devId)
-{
-    enum ProductType productType = 0;
-    int ret;
-
-    ret = RsGetProductType(devId, &productType);
-    if(ret != 0) {
-        hccp_warn("Rs Get ProductType, ret:%d", ret);
-    }
-
-    return productType == PRODUCT_TYPE_910 || productType == PRODUCT_TYPE_910B || 
-        productType == PRODUCT_TYPE_910_93;
+    hccp_info("[Get][ChipInfo]chip name is %s, type:%d", chipInfo.name, type);
+    return type;
 }
