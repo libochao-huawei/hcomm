@@ -68,7 +68,5 @@ int RsDrvGetCqeErrInfo(struct CqeErrInfo *info);
 int RsQueryEvent(int cqEventId, struct event_summary **event);
 void RsDrvEventDestroy(struct event_summary *event);
 int RsDrvCompareIpGid(int family, union HccpIpAddr localIp, union ibv_gid *gid);
-#ifdef CUSTOM_INTERFACE
 void RsCloseBackupIbCtx(struct RsRdevCb *rdevCb);
-#endif
 #endif // RS_DRV_RDMA_H

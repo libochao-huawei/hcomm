@@ -23,6 +23,7 @@
 #define PROCESS_RS_SIGN_LENGTH 49
 #define PROCESS_RS_RESV_LENGTH 4
 #define EXP_DEVNUM             2
+#define ERR_UNKONWN_PRODUCT    1
 
 struct RsMrRegInfo {
     unsigned int phyId;
@@ -256,11 +257,14 @@ enum RsConnRole {
 };
 
 enum ProductType {
+    PRODUCT_TYPE_INVALID = -2,
+    PRODUCT_TYPE_NO_VALUE = -1,
     PRODUCT_TYPE_310p = 0,
     PRODUCT_TYPE_910,
     PRODUCT_TYPE_910B,
-    PRODUCT_TYPE_910_93,
-    PRODUCT_TYPE_INVALID,
+    PRODUCT_TYPE_910C,
+    PRODUCT_TYPE_910D,
+    PRODUCT_TYPE_OTHERS,
 };
 
 enum RsSocketStatus {
@@ -319,7 +323,7 @@ RS_ATTRI_VISI_DEF int RsGetCqeErrInfoList(unsigned int phyId, unsigned int rdevI
     unsigned int *num);
 RS_ATTRI_VISI_DEF int RsDrvGetRandomNum(int *randNum);
 RS_ATTRI_VISI_DEF int RsGetSecRandom(unsigned int *value);
-RS_ATTRI_VISI_DEF bool RsGetIsRdmaSupported(int devId);
+RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId);
 #ifdef __cplusplus
 }
 #endif
