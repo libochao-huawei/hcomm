@@ -1308,6 +1308,13 @@ void CommunicatorImpl::TryInitCcuFeature()
     }
     // 打开ccu驱动后初始化ccu资源
     ccuDrvHandle = CommManager::GetInstance(devLogicId).GetCcuDriver();
+    if (ccuDrvHandle == nullptr) {
+        HCCL_WARNING("CCU not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
+        OpExecuteConfig opExeCfg{AcceleratorState::AICPU_TS};
+        SetCommExecuteConfig(opExeCfg);
+        SetOpExecuteConfig(opExeCfg);
+        return;
+    }
 }
 
 void CommunicatorImpl::InitCcuSuperFastLoad()
@@ -2472,15 +2479,8 @@ void CommunicatorImpl::CollAlgComponentInit()
     HCCL_INFO("[CommunicatorImpl][%s] finished initializing collAlgComponent.", __func__);
 }
 
-HcclResult CommunicatorImpl::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
 {
-    if (accelerator < static_cast<int32_t>(HcclAccelerator::DEFAULT) || accelerator > static_cast<int32_t>(HcclAccelerator::AICPU)) {
-        HCCL_ERROR("[SetAccelerator] Invalid accelerator value [%d]", accelerator);
-        return HCCL_E_NOT_SUPPORT;
-    }
-    HcclAccelerator hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
-    HCCL_INFO("[CommunicatorImpl][%s] hcclAccelerator is [%s], isCcuMsAvailable is [%d]", __func__, hcclAccelerator.Describe().c_str(), 
-              isCcuMsAvailable);
     if (isLoadOp) {
         // 已下发过算子，不允许再设置accelerator
         HCCL_ERROR("[CommunicatorImpl]SetAccelerator is not allowed after load op.");
@@ -2496,8 +2496,7 @@ HcclResult CommunicatorImpl::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     switch (hcclAccelerator) {
         case HcclAccelerator::CCU_MS:
             if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置CCU_MS加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s",
-                            hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
+                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
                 return HCCL_E_NOT_SUPPORT;
             }
             commAccelerator = isCcuMsAvailable ? AcceleratorState::CCU_MS : AcceleratorState::CCU_SCHED;
@@ -2529,8 +2528,7 @@ HcclResult CommunicatorImpl::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     HCCL_DEBUG("[CommunicatorImpl][%s] inCommExecuteConfig[%s]", __func__, inCommExecuteConfig.accState.Describe().c_str());
     TRY_CATCH_RETURN(SetCommExecuteConfig(inCommExecuteConfig)); // 设置通信域粒度加速模式，ccu模式需打开ccu驱动
     SetOpExecuteConfig(inCommExecuteConfig); // 算子粒度加速模式 同步为 通信域粒度加速模式
-    HCCL_DEBUG("[CommunicatorImpl][%s] comm accelerator [%s], isCcuMsAvailable is [%d]", __func__,
-              GetCommExecuteConfig().accState.Describe().c_str(), isCcuMsAvailable);
+    HCCL_DEBUG("[CommunicatorImpl][%s] comm accelerator [%s], isCcuMsAvailable is [%d]", __func__, GetCommExecuteConfig().accState.Describe().c_str(), isCcuMsAvailable);
     return HCCL_SUCCESS;
 }
 
@@ -3534,7 +3532,7 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:
-            HCCL_ERROR("[SetAccelerator] Tiling hcclAccelerator not support, hcclAccelerator[%s]", hcclAccelerator.Describe().c_str());
+            HCCL_ERROR("[GetTilingAccelerator] Tiling hcclAccelerator not support, hcclAccelerator[%s]", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
     }
 

@@ -244,6 +244,21 @@ typedef enum rtUbExType {
     RT_UB_TYPE_DIRECT_WQE
 } rtUbExType_t;
 
+#define FUSION_SUB_TASK_MAX_CCU_NUM (8U)
+#define RT_CCU_SQE_ARGS_LEN (13U)
+#define MAX_CCU_EXCEPTION_INFO_SIZE (128U)
+
+typedef struct rtUbExDetailInfo {
+    rtUbExType_t ubType;
+    uint8_t ubNum;
+    uint8_t resv[3];
+    rtUbInfo_t info[UB_DB_SEND_MAX_NUM];
+} rtUbExDetailInfo_t;
+
+#define FUSION_SUB_TASK_MAX_CCU_NUM (8U)
+#define RT_CCU_SQE_ARGS_LEN (13U)
+#define MAX_CCU_EXCEPTION_INFO_SIZE (128U)
+
 typedef struct rtUbExDetailInfo {
     rtUbExType_t ubType;
     uint8_t ubNum;
@@ -252,18 +267,14 @@ typedef struct rtUbExDetailInfo {
 } rtUbExDetailInfo_t;
 
 typedef struct rtCCUExDetailInfo {
-	uint8_t dieId;
+    uint8_t dieId;
     uint8_t missionId;
     uint16_t instrId;
     uint64_t args[RT_CCU_SQE_ARGS_LEN];
-} rtCcuSqeDetailInfo_t;
-
-typedef struct rtMultiCCUExDetailInfo {
-    uint16_t ccuTaskNum;        /* used for sqeInfo */
-    uint16_t panicLogNum;       /* used for panicLog */
-    rtCcuSqeDetailInfo_t sqeInfo[FUSION_SUB_TASK_MAX_CCU_NUM];
-    uint8_t panicLog[FUSION_SUB_TASK_MAX_CCU_NUM][MAX_CCU_EXCEPTION_INFO_SIZE];
-} rtMultiCCUExDetailInfo_t;
+    uint8_t status;
+    uint8_t subStatus;
+    uint8_t panicLog[MAX_CCU_EXCEPTION_INFO_SIZE];
+} rtCcuMissionDetailInfo_t;
 
 typedef struct rtAicoreExDetailInfo {
     rtExceptionArgsInfo_t exceptionArgs;
