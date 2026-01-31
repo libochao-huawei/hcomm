@@ -16,8 +16,9 @@ namespace hccl {
 ZeroCopyAddressMgr AicpuZeroCopyExchanger::globalAddrMgr_;
 
 AicpuZeroCopyExchanger::AicpuZeroCopyExchanger(u32 rank, u32 rankSize, const HcclOpResParam *resParam,
-    std::function<bool()> needStop, u32 timeoutSec, u32 deviceNumPerAggregation)
-    : rankId_(rank), rankSize_(rankSize), resParam_(resParam), needStop_(needStop), timeoutSec_(timeoutSec), deviceNumPerAggregation_(deviceNumPerAggregation)
+    std::function<bool()> needStop, u32 timeoutSec, u32 deviceNumPerAggregation, u32 taskMonitorInterval)
+    : rankId_(rank), rankSize_(rankSize), resParam_(resParam), needStop_(needStop), timeoutSec_(timeoutSec), deviceNumPerAggregation_(deviceNumPerAggregation),
+    taskMonitorInterval_(taskMonitorInterval)
 {
 }
 
@@ -35,7 +36,7 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     CHK_PRT_RET(needStop_ == nullptr,
         HCCL_ERROR("[AicpuZeroCopyExchanger][ExchangeAddress] needStop function is nullptr"),
         HCCL_E_PARA);
-
+    HcclUs startut = TIME_NOW();
     HCCL_INFO("[AicpuZeroCopyExchanger][ExchangeAddress] rank[%u] input[%p] output[%p]", rankId_, localInput, localOutput);
     CHK_RET(PrepareTagRes(tag, algResResponse->opTransportResponse));
     CHK_PTR_NULL(current_);
@@ -54,7 +55,15 @@ HcclResult AicpuZeroCopyExchanger::ExchangeAddress(const std::string &tag, void 
     }
 
     CHK_RET(UpdateTransportAddress());
-
+    HcclUs endut = TIME_NOW();
+    auto timeVal = DURATION_US(endut - startut).count();
+    if (taskMonitorInterval_ != 0 && timeVal >= taskMonitorInterval_) {
+        std::string endInfo;
+        endInfo.reserve(100);
+        endInfo = "task time: " + std::to_string(timeVal) + " us," +
+            "taskMonitor" + std::to_string(taskMonitorInterval_) + " us";
+        HCCL_RUN_INFO("[ExchangeAddress] %s, %s", tag.c_str(), endInfo.c_str());
+    }
     return HCCL_SUCCESS;
 }
 

@@ -26,6 +26,7 @@ constexpr int BIT_NUM_PER_BYTE = 8;
 constexpr u32 TOPO_GROUPLEADER_PORT_OFFSET = 16 ; //TopoDetect GroupLeader监听端口偏移值
 constexpr u32 TOPO_HIERARCHICAL_ENABLE_THRESHOLD = 32768 ; //TopoDetect 分层阈值
 constexpr u32 TOPO_MAX_GROUP_SIZE = 2048 ;
+constexpr char TOPO_EXCHANGE_CHECK_MESSAGE[] = "TopoExchangeCheckMessage";
 
 enum class TopoDetectResult {
     TOPO_DETECT_SUCCESS = 0,

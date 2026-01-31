@@ -261,4 +261,24 @@ HcclResult OpRetryManager::ExitWaitResumeState(const std::string &group, bool is
     HCCL_RUN_INFO("[OpRetryManager][ExitWaitResumeState]group[%s], exit wait resume state success, isChangedLink[%d]", group.c_str(), isChangedLink);
     return HCCL_SUCCESS;
 }
+
+bool OpRetryManager::IsPaused(const std::string &group)
+{
+    return (serverOpRetry.find(group) == serverOpRetry.end()
+            || serverOpRetry[group].retryCtx == nullptr
+            || serverOpRetry[group].retryCtx->IsPaused())
+        && (agentOpRetry_.find(group) == agentOpRetry_.end()
+            || agentOpRetry_[group].retryCtx == nullptr
+            || agentOpRetry_[group].retryCtx->IsPaused());
+}
+
+bool OpRetryManager::IsResumed(const std::string &group)
+{
+    return (serverOpRetry.find(group) == serverOpRetry.end()
+            || serverOpRetry[group].retryCtx == nullptr
+            || !serverOpRetry[group].retryCtx->IsPaused())
+        && (agentOpRetry_.find(group) == agentOpRetry_.end()
+            || agentOpRetry_[group].retryCtx == nullptr
+            || !agentOpRetry_[group].retryCtx->IsPaused());
+}
 }

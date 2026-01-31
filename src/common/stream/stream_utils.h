@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef STREAM_UTILS_H
-#define STREAM_UTILS_H
+ #ifndef HCOMM_STREAM_UTILS_H
+ #define HCOMM_STREAM_UTILS_H
 
 #include "hccl/base.h"
 #include "acl/acl_rt.h"

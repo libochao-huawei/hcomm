@@ -55,6 +55,8 @@ const bool& GetExternalInconsistentCheckSwitch();
 
 s32& GetExternalInputDfsConnectionFaultDetectionTime();
 
+u32& GetExternalInputDfsTaskMonitorInterval();
+
 /*************** For Internal Use ***************/
 
 struct EnvConfig {
@@ -68,10 +70,13 @@ struct EnvConfig {
     std::vector<HcclSocketPortRange> npuSocketPortRange;
     u32 rdmaTrafficClass;
     u32 rdmaServerLevel;
+    u32 rdmaTimeOut;        // RDMA超时时间，配置范围5-24，默认值为20
+    u32 rdmaRetryCnt;       // RDMA重传次数，配置范围1-7，默认值为7
     bool enableClusterHeartBeat;
     bool opCounterEnable;
     bool inconsistentCheckSwitch;
     s32 dfsConnectionFaultDetectionTime;
+    u32 dfsTaskMonitorInterval;
 
     // HCCL_ALGO环境变量参数
     bool specificAlgoMode;
@@ -94,12 +99,15 @@ struct EnvConfig {
         rdmaTrafficClass = HCCL_RDMA_TC_DEFAULT;
         // 初始化 rdmaServerLevel 为默认值
         rdmaServerLevel = HCCL_RDMA_SL_DEFAULT;
+        rdmaTimeOut = HCCL_RDMA_TIMEOUT_DEFAULT;
+        rdmaRetryCnt = HCCL_RDMA_RETRY_CNT_DEFAULT;
         // 初始化 enableClusterHeartBeat 为默认值
         enableClusterHeartBeat = true;
         opCounterEnable = true;
         // 初始化 inconsistentCheckSwitch 为默认值
         inconsistentCheckSwitch = false;
         dfsConnectionFaultDetectionTime = HCCL_MIN_CONNECT_FAULT_DETECTION_TIME;
+        dfsTaskMonitorInterval = 0;
         specificAlgoMode = false;
         for (u32 opType = 0; opType < static_cast<u32>(HcclCMDType::HCCL_CMD_MAX); opType++) {
             hcclAlgoConfig[static_cast<HcclCMDType>(opType)] =
@@ -117,13 +125,28 @@ struct EnvConfig {
     static const u32 HCCL_RDMA_SL_DEFAULT = 4;      // 默认的server level为4
     static const u32 HCCL_RDMA_SL_MIN = 0;
     static const u32 HCCL_RDMA_SL_MAX = 7;
+
+    static const u32 HCCL_RDMA_TIMEOUT_DEFAULT = 20;  // 默认的TIMEOUT配置为20(对应时间4.096*2^20us)
+    static const u32 HCCL_RDMA_TIMEOUT_MIN = 5;  // TIMEOUT最小值为5
+    static const u32 HCCL_RDMA_TIMEOUT_MAX = 24;  // TIMEOUT最大值为24
+    static const u32 HCCL_RDMA_TIMEOUT_MAX_910_93 = 20;  // 910B和910_93 TIMEOUT最大值为20
+
+    static const u32 HCCL_RDMA_RETRY_CNT_DEFAULT = 7;  // 默认的Retry Cnt为7
+    static const u32 HCCL_RDMA_RETRY_CNT_MIN = 1;  // Retry Cnt最小值为1
+    static const u32 HCCL_RDMA_RETRY_CNT_MAX = 7;  // Retry Cnt最大值为7
     // 解析RDMATrafficClass
     HcclResult ParseRDMATrafficClass();
     // 解析RDMAServerLevel
     HcclResult ParseRDMAServerLevel();
 
+    HcclResult ParseRDMATimeOut(std::pair<u32, u32> &rdmaTimeOutRange);
+
+    HcclResult ParseRDMARetryCnt();
+
     static const u32& GetExternalInputRdmaTrafficClass();
     static const u32& GetExternalInputRdmaServerLevel();
+    static const u32& GetExternalInputRdmaTimeOut();
+    static const u32& GetExternalInputRdmaRetryCnt();
 
     bool CheckEnvLen(const char *envStr, u32 envMaxLen);
 };
@@ -153,6 +176,8 @@ HcclResult ParseEnvConfig(const EnvConfigParam& param, std::string& envValue, u3
 
 HcclResult ParseSingleDFSConfigItem(const std::string& dfsConfigEnv, const std::string& configName,
     std::string& configResult);
+
+HcclResult ParseMonitor(std::string &taskMonitorInterval, s32 &monitorTime);
 
 HcclResult GetKeyWordPath(const std::string &cannEnvStr, const std::string &keyStr, std::string &cannPath);
 

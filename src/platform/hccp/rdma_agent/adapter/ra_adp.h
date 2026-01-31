@@ -86,6 +86,14 @@ RA_ADP_ATTRI_VISI_DEF int HccpDeinit(unsigned int chipId);
     }           \
 } while (0)
 
+static inline bool RaIsOpcodeLogSuppressed(unsigned int opcode)
+{
+    if (opcode != RA_RS_GET_SOCKET) {
+        return false;
+    }
+    return true;
+}
+
 void RaHdcInitOpSec(struct RaHdcOpSec *opSec, unsigned long long tokenNum, bool isAsyncOp);
 int RaHdcSessionAccept(unsigned int chipId, HDC_SESSION *session, int initHostTgid);
 int RaHdcAsyncRecvPkt(struct RaHdcAsyncInfo *asyncInfo, unsigned int chipId, void **recvBuf,

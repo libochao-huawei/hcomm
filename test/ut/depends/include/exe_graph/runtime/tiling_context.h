@@ -176,14 +176,14 @@ class TilingContext : public ExtendedKernelContext {
    */
   enum TilingOutputIndex : uint32_t {
     kOutputTilingKey,
-    kOutputBlockDim,
+    kOutputNumBlocks,
     kOutputAtomicCleanFlag,
     kOutputTilingData,
     kOutputWorkspace,
     kOutputTilingCond,
     kOutputScheduleMode,
     kOutputLocalMemorySize,
-    kOutputAicpuBlockDim,
+    kOutputAicpuNumBlocks,
     // add new output definitions here
     kOutputNum
   };
@@ -249,23 +249,23 @@ class TilingContext : public ExtendedKernelContext {
 
   /**
    * 设置block dim
-   * @param block_dim block dim
+   * @param num_blocks block dim
    * @return 成功时返回ge::GRAPH_SUCCESS
    */
-  ge::graphStatus SetBlockDim(const uint32_t block_dim) {
-    const auto p = GetOutputPointer<uint32_t>(kOutputBlockDim);
+  ge::graphStatus SetNumBlocks(const uint32_t num_blocks) {
+    const auto p = GetOutputPointer<uint32_t>(kOutputNumBlocks);
     if (p == nullptr) {
       return ge::GRAPH_FAILED;
     }
-    *p = block_dim;
+    *p = num_blocks;
     return ge::GRAPH_SUCCESS;
   }
   /**
    * 获取block dim
    * @return block dim
    */
-  uint32_t GetBlockDim() const {
-    const auto p = GetOutputPointer<uint32_t>(kOutputBlockDim);
+  uint32_t GetNumBlocks() const {
+    const auto p = GetOutputPointer<uint32_t>(kOutputNumBlocks);
     if (p == nullptr) {
       return std::numeric_limits<uint32_t>::max();
     }
@@ -274,15 +274,15 @@ class TilingContext : public ExtendedKernelContext {
 
   /**
    * 设置aicpu block dim(融合算子使用)
-   * @param block_dim block dim
+   * @param num_blocks block dim
    * @return 成功时返回ge::GRAPH_SUCCESS
    */
-  ge::graphStatus SetAicpuBlockDim(uint32_t block_dim) {
-    const auto p = GetOutputPointer<uint32_t>(kOutputAicpuBlockDim);
+  ge::graphStatus SetAicpuNumBlocks(uint32_t num_blocks) {
+    const auto p = GetOutputPointer<uint32_t>(kOutputAicpuNumBlocks);
     if (p == nullptr) {
       return ge::GRAPH_FAILED;
     }
-    *p = block_dim;
+    *p = num_blocks;
     return ge::GRAPH_SUCCESS;
   }
 
@@ -290,8 +290,8 @@ class TilingContext : public ExtendedKernelContext {
    * 获取aicpu block dim(融合算子使用)
    * @return block dim
    */
-  uint32_t GetAicpuBlockDim() const {
-    const auto p = GetOutputPointer<uint32_t>(kOutputAicpuBlockDim);
+  uint32_t GetAicpuNumBlocks() const {
+    const auto p = GetOutputPointer<uint32_t>(kOutputAicpuNumBlocks);
     if (p == nullptr) {
       return std::numeric_limits<uint32_t>::max();
     }

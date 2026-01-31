@@ -173,7 +173,7 @@ HcclResult TopoInfoDetect::SetupServerByMasterInfo(const HcclIpAddress& masterIP
     }
     rootInfo_ = rootInfo;
     CHK_RET(HcclNetInit(NICDeployment::NIC_DEPLOYMENT_HOST, devicePhysicID_, deviceLogicID_, true));
-    HcclResult ret = StartRootNetwork(masterIP, masterPort);
+    HcclResult ret = StartRootNetwork(masterIP, masterPort, GetExternalInputHostSocketPortRange());
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, masterIP[%s] and masterPort[%u] ret[%u]",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__,
         masterIP.GetReadableAddress(), masterPort, ret), ret);
@@ -219,15 +219,19 @@ HcclResult TopoInfoDetect::SetupServer(HcclRootHandle &rootInfo)
         HCCL_E_PARA);
 
     u32 hostPort = HCCL_INVALID_PORT;
+    std::vector<HcclSocketPortRange> portRanges;
     if (!GetExternalInputHostPortSwitch()) {
-        // 不开启host侧端口范围配置, 则使用默认端口
         if (GetExternalInputHcclIfBasePort() == HCCL_INVALID_PORT) {
-            hostPort = devicePhysicID_ + HOST_CONTROL_BASE_PORT;
+            // 若没有设置HCCL_HOST_SOCKET_PORT_RANGE和HCCL_IF_BASE_PORT 使用自动调整监听端口range[60000,60015]
+            HCCL_RUN_INFO("[Setup][Server] user not set base port and port range, use default port range[%u, %u]", HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15);
+            portRanges.push_back({HOST_CONTROL_BASE_PORT, HOST_CONTROL_BASE_PORT + 15});
         } else {
             hostPort = devicePhysicID_ + GetExternalInputHcclIfBasePort();
         }
+    } else {
+        portRanges = GetExternalInputHostSocketPortRange();
     }
-    HcclResult ret = StartRootNetwork(hostIP, hostPort);
+    HcclResult ret = StartRootNetwork(hostIP, hostPort, portRanges);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]%s failed, hostIP[%s] and hostPort[%u] ret[%u]",
         LOG_KEYWORDS_INIT_GROUP.c_str(), LOG_KEYWORDS_RANKTABLE_DETECT.c_str(), __func__,
         hostIP.GetReadableAddress(), hostPort, ret), ret);
@@ -421,7 +425,7 @@ HcclResult TopoInfoDetect::WaitTopoExchangeServerCompelte(u32 idx) const
                 idx);
             return HCCL_E_INTERNAL;
         } else if (status == TOPO_EXCHANGE_SERVER_STATUS_IDLE) {
-            HCCL_INFO("topoExchangeServer[%u] compeleted.", idx);
+            HCCL_INFO("topoExchangeServer[%u] completed.", idx);
             return HCCL_SUCCESS;
         } else {
             const auto elapsed =
@@ -717,7 +721,7 @@ HcclResult TopoInfoDetect::SetIsInterSuperPodRetryEnable(bool isRetry)
     return HCCL_SUCCESS;
 }
 
-HcclResult TopoInfoDetect::StartRootNetwork( const HcclIpAddress& hostIP, u32 &usePort)
+HcclResult TopoInfoDetect::StartRootNetwork(const HcclIpAddress& hostIP, u32 &usePort, const std::vector<HcclSocketPortRange> &portRanges)
 {
     CHK_RET(HcclNetOpenDev(&serverPortCtx_, NicType::HOST_NIC_TYPE, devicePhysicID_, deviceLogicID_, hostIP));
     CHK_PTR_NULL(serverPortCtx_);
@@ -728,7 +732,7 @@ HcclResult TopoInfoDetect::StartRootNetwork( const HcclIpAddress& hostIP, u32 &u
         CHK_SMART_PTR_NULL(listenSocket_);
         CHK_RET(listenSocket_->Init());
         HcclResult ret = PreemptPortManager::GetInstance(deviceLogicID_).ListenPreempt(listenSocket_,
-            GetExternalInputHostSocketPortRange(), usePort);
+            portRanges, usePort);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[TopoInfoDetect][StartRootNetwork] devPhyId[%u], devLogicId[%u], host ip[%s], "
             "try to preempt port on host nic fail.",

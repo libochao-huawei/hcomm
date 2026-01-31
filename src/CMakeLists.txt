@@ -35,6 +35,10 @@ else()
     set(HCCL_THIRD_PARTY_DIR ${TOP_DIR})
 endif()
 
+message(STATUS "ORION_MODE=${ORION_MODE}")
+set(ORION_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/legacy)
+set(HCOMM_REAL_PATH ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 add_library(hccd  SHARED)
 
 #需要编译的文件list
@@ -113,6 +117,9 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/resource/engine
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
+    ${HCCL_BASE_DIR}/framework/next/comms/comm_engine_res/threads
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank
+    ${HCCL_BASE_DIR}/framework/next/coll_comms
     ${HCCL_BASE_DIR}/framework/op_base/src/
 
     ${HCCL_BASE_DIR}/platform/inc
@@ -134,14 +141,28 @@ set(include_list
     ${HCCL_BASE_DIR}/platform/resource/socket
     ${HCCL_BASE_DIR}/platform/task
     ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
-    ${HCCL_BASE_DIR}/platform/aiv_communication
     ${HCCL_BASE_DIR}/platform/typical
+
+    ${HCCL_BASE_DIR}/framework/next/coll_comms/rank_pairs
+    ${HCCL_BASE_DIR}/legacy/unified_platform/resource/transport
+    ${HCCL_BASE_DIR}/legacy/common/utils/
+    ${HCCL_BASE_DIR}/legacy/common/exception/
+    ${HCCL_BASE_DIR}/legacy/common/types/
+    ${HCCL_BASE_DIR}/legacy/common/
+    ${HCCL_BASE_DIR}/legacy/framework/resource_manager/socket/
+    ${HCCL_BASE_DIR}/legacy/unified_platform/external_system/
+    ${HCCL_BASE_DIR}/legacy/unified_platform/common/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/sockets/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoints/
+    ${HCCL_BASE_DIR}/framework/next/comms/endpoint_pairs/
+
 )
 
 # 指定hccd所需包含文件搜索路径
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(hccd PRIVATE
-        OPEN_BUILD_PROJECT)
+        OPEN_BUILD_PROJECT
+    )
 
     target_include_directories(hccd PRIVATE
         ${HCCL_BASE_DIR}/../include
@@ -151,12 +172,13 @@ if(BUILD_OPEN_PROJECT)
         ${HCCL_BASE_DIR}/platform/hccp/inc
         ${HCCL_BASE_DIR}/platform/hccp/inc/network
         ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include # 解决头文件依赖问题<infiniband/verbs.h>
+        ${HCCL_BASE_DIR}/legacy/interface
 
         # runtime头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
@@ -295,7 +317,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # 包间接口
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/
@@ -331,7 +353,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver
@@ -367,14 +389,14 @@ else()
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/runtime/include/external/acl
-        ${TOP_DIR}/runtime/include/driver
-        ${TOP_DIR}/runtime/pkg_inc
-        ${TOP_DIR}/runtime/pkg_inc/runtime
-        ${TOP_DIR}/runtime/pkg_inc/profiling
-        ${TOP_DIR}/runtime/pkg_inc/trace
-        ${TOP_DIR}/runtime/pkg_inc/base
-        ${TOP_DIR}/runtime/pkg_inc/aicpu
-        ${TOP_DIR}/runtime/src/runtime/platform/inc
+ 	    ${TOP_DIR}/runtime/include/driver
+ 	    ${TOP_DIR}/runtime/pkg_inc
+ 	    ${TOP_DIR}/runtime/pkg_inc/runtime
+ 	    ${TOP_DIR}/runtime/pkg_inc/profiling
+ 	    ${TOP_DIR}/runtime/pkg_inc/trace
+ 	    ${TOP_DIR}/runtime/pkg_inc/base
+ 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+ 	    ${TOP_DIR}/runtime/src/runtime/platform/inc
         ${TOP_DIR}/inc/external
         ${TOP_DIR}/inc/aicpu/
         ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
@@ -391,11 +413,11 @@ else()
     
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/hcomm/pkg_inc
-        ${TOP_DIR}/hcomm/pkg_inc/hccl
+ 	    ${TOP_DIR}/hcomm/pkg_inc/hccl
         ${TOP_DIR}/hcomm/src/
-        ${TOP_DIR}/hcomm/src/include/hccl/                          # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/src/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/platform
-        ${TOP_DIR}/hcomm/src/platform/legacy/inc/
+ 	    ${TOP_DIR}/hcomm/src/platform/legacy/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
@@ -406,14 +428,14 @@ else()
         ${TOP_DIR}/inc/driver
         ${TOP_DIR}/runtime/include/external
         ${TOP_DIR}/runtime/include/external/acl
-        ${TOP_DIR}/runtime/include/driver
-        ${TOP_DIR}/runtime/pkg_inc
-        ${TOP_DIR}/runtime/pkg_inc/runtime
-        ${TOP_DIR}/runtime/pkg_inc/profiling
-        ${TOP_DIR}/runtime/pkg_inc/trace
-        ${TOP_DIR}/runtime/pkg_inc/base
-        ${TOP_DIR}/runtime/pkg_inc/aicpu
-        ${TOP_DIR}/runtime/src/runtime/platform/inc
+ 	    ${TOP_DIR}/runtime/include/driver
+ 	    ${TOP_DIR}/runtime/pkg_inc
+ 	    ${TOP_DIR}/runtime/pkg_inc/runtime
+ 	    ${TOP_DIR}/runtime/pkg_inc/profiling
+ 	    ${TOP_DIR}/runtime/pkg_inc/trace
+ 	    ${TOP_DIR}/runtime/pkg_inc/base
+ 	    ${TOP_DIR}/runtime/pkg_inc/aicpu_sched
+ 	    ${TOP_DIR}/runtime/src/runtime/platform/inc
         ${TOP_DIR}/inc/external
         ${TOP_DIR}/inc/aicpu/
         ${TOP_DIR}/inc/aicpu/aicpu_schedule/aicpu_sharder
@@ -430,11 +452,11 @@ else()
 
         ${TOP_DIR}/open_source/json/include
         ${TOP_DIR}/hcomm/pkg_inc
-        ${TOP_DIR}/hcomm/pkg_inc/hccl
+ 	    ${TOP_DIR}/hcomm/pkg_inc/hccl
         ${TOP_DIR}/hcomm/src/
-        ${TOP_DIR}/hcomm/src/include/hccl/                           # ${ASCEND_CANN_PACKAGE_PATH}/include
+        ${TOP_DIR}/hcomm/src/include/hccl/                       # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/platform
-        ${TOP_DIR}/hcomm/src/platform/legacy/inc/
+ 	    ${TOP_DIR}/hcomm/src/platform/legacy/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
     )
@@ -517,7 +539,7 @@ target_link_options(ccl_kernel_plf PRIVATE
     -Wl,-z,relro,-z,now,-z,noexecstack
     -Wl,-Bsymbolic
     -Wl,--exclude-libs,ALL
-    $<$<CONFIG:Release>:-s>
+    -s
 )
 # 向ccl_kernel_plf_a添加链接器选项
 target_link_options(ccl_kernel_plf_a PRIVATE
@@ -597,10 +619,11 @@ add_subdirectory(hccd)
 add_subdirectory(algorithm)
 add_subdirectory(platform)
 add_subdirectory(common)
+
 # 自动找到项目内所有头文件
-FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${TOP_DIR}/hccl/*)
+FILE(GLOB_RECURSE sources_list LIST_DIRECTORIES TRUE ${ORION_REAL_PATH}/*)
 foreach (dir ${sources_list})
-    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "hccl/orion"))
+    IF ((IS_DIRECTORY ${dir} ) AND (${dir} MATCHES "src/legacy"))
         target_include_directories(hccd PRIVATE ${dir})
     endif ()
 endforeach ()

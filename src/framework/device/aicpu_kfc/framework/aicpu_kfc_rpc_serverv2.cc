@@ -34,7 +34,7 @@ HcclResult AicpuKfcRpcServerV2::Init(const HcclMC2WorkSpace &workspaceInfo, cons
         workspaceInfo.workSpace, addr, blockNum_, HcclAicpuUtils::GetBlockIdx());
     if (tilingData != nullptr && tilingData->queueNum > 0U) {
         totalQueueNum_ = tilingData->commBlockNum * tilingData->queueNum;
-        CHK_PRT_RET(totalQueueNum_ > LOCAL_STREAM_MAX_NUM || blockNum_ > std::min(MAX_AICPU_BLOCK_DIM, totalQueueNum_),
+        CHK_PRT_RET(totalQueueNum_ > LOCAL_STREAM_MAX_NUM || blockNum_ > std::min(MAX_AICPU_NUM_BLOCKS, totalQueueNum_),
                     HCCL_ERROR("Invalid para, comm block %u, aicpu block %u, queue number %u.",
                                tilingData->commBlockNum, blockNum_, tilingData->queueNum), HCCL_E_INTERNAL);
     } else {
@@ -45,7 +45,7 @@ HcclResult AicpuKfcRpcServerV2::Init(const HcclMC2WorkSpace &workspaceInfo, cons
     if (turnNumAddr_ + sizeof(u32) * TILING_TURN_MAX * HCCL_MAX_RANK_NUM_V2 >
         workspaceInfo.workSpace + workspaceInfo.workSpaceSize) {
         HCCL_ERROR("Turn number addr %#llx, space for turn number is %lu, the space after workspace %#llx will "
-            "be overwrited.", turnNumAddr_, sizeof(u32) * TILING_TURN_MAX * HCCL_MAX_RANK_NUM_V2,
+            "be overwritten.", turnNumAddr_, sizeof(u32) * TILING_TURN_MAX * HCCL_MAX_RANK_NUM_V2,
             workspaceInfo.workSpace + workspaceInfo.workSpaceSize);
         return HCCL_E_INTERNAL;
     }
@@ -154,21 +154,6 @@ uint64_t AicpuKfcRpcServerV2::GetFinishAddr(int32_t idx) const {
         return 0;
     }
     return reinterpret_cast<uint64_t>(&(hcclMsgArea_->commMsg.singleMsg.finishedTurnCnt[idx].cnt));
-}
-
-uint64_t AicpuKfcRpcServerV2::GenXorForMsgExt(int32_t idx, u32 rankSize) {
-    if (hcclMsgArea_ == nullptr) {
-        return 0UL;
-    }
-    uint64_t xorVal = 0U;
-    for (uint32_t i = 0U; i < rankSize; ++i) {
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].sendCounts[i];
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].sendOffset[i];
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].recvCounts[i];
-        xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].recvOffset[i];
-    }
-    xorVal ^= hcclMsgArea_->commMsg.singleMsg.paramExtMsgList[idx].valid;
-    return xorVal;
 }
 
 uint64_t AicpuKfcRpcServerV2::GetCommitareaAddr(int32_t idx) const {
@@ -306,7 +291,7 @@ bool AicpuKfcRpcServerV2::ReadValidMsgExtArea(int32_t idx, u32 rankSize)
     if (hcclMsgArea_ == nullptr || extMsgList.valid != static_cast<u64>(HCCL_MSG_VALID_MASK)) {
         return false;
     }
-    uint64_t msgExtXorCheck = GenXorForMsgExt(idx, rankSize);
+    uint64_t msgExtXorCheck = AicpuKfcUtils::GenXor(&extMsgList, rankSize);
     static uint32_t msgExtXorCheckTurn = 0;
     if (UNLIKELY(msgExtXorCheck != extMsgList.xorCheck)) {
         if (msgExtXorCheckTurn++ % MC2_API_XORCHECK_PRINT_NUM == 0) {

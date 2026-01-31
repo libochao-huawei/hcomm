@@ -273,6 +273,8 @@ public:
     HcclResult ClearCqeErr(const std::string &identifier, u32 remoteRank, u32 qpn = 0);
     void SetOpretryErr();
     void GetIpQueue();
+    bool IsPaused() const;
+    bool IsResumed() const;
  
 private:
     Heartbeat() = default;
@@ -333,7 +335,8 @@ private:
     void CheckRecvOpInfoList();
     void RegisterSROpIdentifier(const std::string &identifier, const std::string &newTag);
     void AddInconsistentOpRecord(const std::string &identifier, const OpInfoDesc &localOpInfo, InconsistentType status,
-    const std::string &localInfo, const std::string &remoteInfo);
+        const std::string &localInfo, const std::string &remoteInfo);
+    void CheckSnapshotStatus();
     struct Status {
         HeartBeatStatus status = HeartBeatStatus::HEARTBEAT_OK;
         UIDType informer;
@@ -403,6 +406,7 @@ private:
     std::map<std::string, OpInconsistentInfo> inconsistentOpMap_;
     std::mutex srTagMutex_;
     std::map<std::string, std::string> srTagMap_;//SR算子tag->identifier映射
+    bool isPaused_ { false }; // heartbeat need to be paused when snapshot
 };
 } // namespace hccl
 

@@ -35,6 +35,7 @@
 #include "topoinfo_ranktableOffline.h"
 #include "mmpa_api.h"
 #include "hccl_tbe_task.h"
+#include "hcom_private_v2.h"
 #include "comm_topo_desc.h"
 
 using namespace std;
@@ -166,6 +167,8 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     CHK_PTR_NULL(rankTableM);
     CHK_PTR_NULL(identify);
 
+    HCCLV2_FUNC_RUN(HcomInitByStringV2(rankTableM, identify));
+
     if (initConfig != nullptr) {
         DevType devType;
         CHK_RET(hrtGetDeviceType(devType));
@@ -184,7 +187,7 @@ HcclResult HcomInitByString(const char *rankTableM, const char *identify, WorkMo
     CHK_RET(InitExternalInput());
     CHK_RET(InitEnvConfig());
     CHK_RET(HcomCheckInitClusterInfo(rankTableM, identify));
-    HCCL_RUN_INFO("Entry-HcomInitByString, identify[%s]", identify);
+    HCCL_RUN_INFO("Entry-HcomInitByString, rankTableM[%s], identify[%s], commWorkMode[%d]", rankTableM, identify, commWorkMode);
 
     ret = HcomInit(rankTableM, identify, commWorkMode);
 
@@ -310,8 +313,8 @@ HcclResult HcomInitByMasterInfo(const char *masterIp, const char *masterPort, co
     // 读取rankTable文件到内存
     std::string rankTableM;
     std::string identify;
-    HCCL_RUN_INFO("Entry-HcomInitByMasterInfo:masterIp[%s], masterPort[%s], master device id[%s], rankSize[%s], "
-        "deviceId[%d]", masterIp, masterPort, masterDeviceId, rankSize, logicDevId);
+    HCCL_RUN_INFO("Entry-HcomInitByMasterInfo:masterIp[%s], masterPort[%s], master device id[%s], rankSize[%s], rankIp[%s], "
+        "deviceId[%d]", masterIp, masterPort, masterDeviceId, rankSize, rankIp, logicDevId);
 
     CHK_RET(InitExternalInput()); // 生成ranktable前需要提前感知部分配置
     CHK_RET(InitEnvConfig());
@@ -383,6 +386,9 @@ HcclResult HcomAllGather(const char *tag, void *inputPtr, void *outputPtr, u64 i
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    // HcomAllGatherV2
+    HCCLV2_FUNC_RUN(HcomAllGatherV2(tag, inputPtr, outputPtr, inputCount, dataType, group, stream));
+
     CHK_RET(HcomCheckOpParam(tag, inputCount, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -433,6 +439,9 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
         GetDataTypeEnumStr(dataType).c_str(), recvCounts, rdispls, strGroup.c_str(), streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(sendBuf));
     CHK_RET(PrintMemoryAttr(recvBuf));
+
+    HCCLV2_FUNC_RUN(
+        HcomAllGatherVV2(tag, const_cast<void*>(sendBuf), sendCount, const_cast<void*>(recvBuf), const_cast<void*>(recvCounts), const_cast<void*>(rdispls), dataType, group, stream));
     CHK_RET(HcomCheckOpParam(tag, 0, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -451,6 +460,7 @@ HcclResult HcomAllGatherV(const char *tag, const void *sendBuf, u64 sendCount, c
 
 HcclResult HcomGetInitStatus(bool *initiated)
 {
+    HCCLV2_FUNC_RUN(HcomGetInitStatusV2(*initiated));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     *initiated = !(hcomInfo.pComm == nullptr);
 
@@ -492,6 +502,9 @@ HcclResult HcomAllReduce(const char *tag, void *inputPtr, void *outputPtr, u64 c
         strGroup.c_str(), streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
+
+    // HcomAllReduceV2
+    HCCLV2_FUNC_RUN(HcomAllReduceV2(tag, inputPtr, outputPtr, count, dataType, op, group, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -536,13 +549,15 @@ HcclResult HcomBroadcast(const char *tag, void *ptr, u64 count, HcclDataType dat
         streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(ptr));
 
+    // HcomBroadcastV2
+    HCCLV2_FUNC_RUN(HcomBroadcastV2(tag, ptr, count, dataType, root, group, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_RET(HcomCheckUserRank(hcomInfo.params.totalRanks, root));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     /* 入参的正确性由HCCL确保 */
     HcclResult ret = hcclComm->Broadcast(tag, ptr, count, dataType, root, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -594,6 +609,8 @@ HcclResult HcomReduce(const char *tag, void *inputPtr, void *outputPtr, u64 coun
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    // HcomReduceV2
+    HCCLV2_FUNC_RUN(HcomReduceV2(tag, inputPtr, outputPtr, count, dataType, op, root, group, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_PRT_RET(hcomInfo.pComm == nullptr, HCCL_ERROR("[Reduce][Result]hcomInfo.pComm is null, "\
@@ -650,6 +667,7 @@ HcclResult HcomReduceScatter(const char *tag, void *inputPtr, void *outputPtr, u
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    HCCLV2_FUNC_RUN(HcomReduceScatterV2(tag, inputPtr, outputPtr, count, dataType, op, group, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -697,6 +715,9 @@ HcclResult HcomReduceScatterV(const char *tag, void *sendBuf, const void *sendCo
         GetReduceOpEnumStr(op).c_str(), strGroup.c_str(), streamId);
     CHK_RET(PrintMemoryAttr(sendBuf));
     CHK_RET(PrintMemoryAttr(recvBuf));
+
+    HCCLV2_FUNC_RUN(
+        HcomReduceScatterVV2(tag, sendBuf, const_cast<void*>(sendCounts), const_cast<void*>(sdispls), recvBuf, recvCount, dataType, op, group, stream));
     CHK_RET(HcomCheckOpParam(tag, 0, dataType, group, stream));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -747,6 +768,8 @@ HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dat
         strGroup.c_str(), streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(inputPtr));
 
+    // HcomSendV2
+    HCCLV2_FUNC_RUN(HcomSendV2(tag, inputPtr, count, dataType, destRank, srTag, group, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_RET(HcomCheckUserRank(hcomInfo.params.totalRanks, destRank));
@@ -764,9 +787,9 @@ HcclResult HcomSend(const char *tag, void *inputPtr, u64 count, HcclDataType dat
     CHK_RET(CallMsprofReportHostApi(hcclComm.get(), HcclCMDType::HCCL_CMD_SEND, beginTime, count, dataType));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom send success,time[%lld]us,tag[%s],inputPtr[%p],count[%llu],dataType[%s],destRank[%u],"
-        "srTag[%u], localGroupRank[%u]",
+        "srTag[%u],localGroupRank[%u]",
         DURATION_US(TIME_NOW() - startut), tag, inputPtr, count, GetDataTypeEnumStr(dataType).c_str(), destRank,
-        srTag, localGroupRank);
+        srTag,localGroupRank);
 
     return HCCL_SUCCESS;
 }
@@ -802,11 +825,11 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
         strGroup.c_str(), streamId, deviceLogicId);
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    // HcomReceiveV2
+    HCCLV2_FUNC_RUN(HcomReceiveV2(tag, outputPtr, count, dataType, srcRank, srTag, group, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType, group, stream));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_RET(HcomCheckUserRank(hcomInfo.params.totalRanks, srcRank));
-    u32 srcWorldRank = INVALID_VALUE_RANKID;
-    CHK_RET(HcomGetWorldRankFromGroupRank(strGroup.c_str(), srcRank, &srcWorldRank));
 
     std::shared_ptr<hccl::hcclComm>  hcclComm;
     HcclResult ret = HcomGetCommByGroup(strGroup.c_str(), hcclComm);
@@ -823,7 +846,7 @@ HcclResult HcomReceive(const char *tag, void *outputPtr, u64 count, HcclDataType
     CHK_RET(CallMsprofReportHostApi(hcclComm.get(), HcclCMDType::HCCL_CMD_RECEIVE, beginTime, count, dataType));
     /* 关键状态记录 */
     HCCL_RUN_INFO("hcom receive success,time[%lld]us,tag[%s],outputPtr[%p],count[%llu],dataType[%s],srcRank[%u],"
-        "srTag[%u],localGroupRank[%u]",
+        "srTag[%u], localGroupRank[%u]",
         DURATION_US(TIME_NOW() - startut), tag, outputPtr, count, GetDataTypeEnumStr(dataType).c_str(), srcRank,
         srTag, localGroupRank);
 
@@ -859,6 +882,8 @@ HcclResult HcclCommGraphAllGather(const char *tag, void *inputPtr, void *outputP
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    // HcclCommGraphAllGatherV2
+    HCCLV2_FUNC_RUN(HcclCommGraphAllGatherV2(tag, inputPtr, outputPtr, inputCount, dataType, opBaseHcom, stream));
     CHK_RET(HcomCheckOpParam(tag, inputCount, dataType, stream));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -902,6 +927,8 @@ HcclResult HcclCommGraphAllReduce(const char *tag, void *inputPtr, void *outputP
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    // HcomGraphAllReduceV2
+    HCCLV2_FUNC_RUN(HcomGraphAllReduceV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType, stream));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -953,6 +980,8 @@ HcclResult HcclCommGraphReduce(const char *tag, void *inputPtr, void *outputPtr,
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+     // HcomGraphReduceV2
+    HCCLV2_FUNC_RUN(HcomGraphReduceV2(tag, inputPtr, outputPtr, count, dataType, op, root, opBaseHcom, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -998,11 +1027,12 @@ HcclResult HcclCommGraphBroadcast(const char *tag, void *ptr, u64 count, HcclDat
 
     CHK_RET(PrintMemoryAttr(ptr));
 
+    HCCLV2_FUNC_RUN(HcomGraphBroadcastV2(tag, ptr, count, dataType, root, opBaseHcom, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     /* 入参的正确性由HCCL确保 */
     HcclResult ret = hcclComm->Broadcast(tag, ptr, count, dataType, root, stream);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
@@ -1044,6 +1074,7 @@ HcclResult HcclCommGraphReduceScatter(const char *tag, void *inputPtr, void *out
     CHK_RET(PrintMemoryAttr(inputPtr));
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    HCCLV2_FUNC_RUN(HcomGraphReduceScatterV2(tag, inputPtr, outputPtr, count, dataType, op, opBaseHcom, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1089,6 +1120,7 @@ HcclResult HcclCommGraphSend(const char *tag, void *inputPtr, u64 count, HcclDat
 
     CHK_RET(PrintMemoryAttr(inputPtr));
 
+    HCCLV2_FUNC_RUN(HcomGraphSendV2(tag, inputPtr, count, dataType, destRank, srTag, opBaseHcom, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1133,6 +1165,7 @@ HcclResult HcclCommGraphReceive(const char *tag, void *outputPtr, u64 count, Hcc
         srcRank, srTag, opBaseHcom, streamId);
     CHK_RET(PrintMemoryAttr(outputPtr));
 
+    HCCLV2_FUNC_RUN(HcomGraphReceiveV2(tag, outputPtr, count, dataType, srcRank, srTag, opBaseHcom, stream));
     CHK_RET(HcomCheckOpParam(tag, count, dataType));
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
@@ -1191,6 +1224,8 @@ HcclResult HcclCommGraphGetRankSize(s64 opBaseHcom, u32 *rankSize)
     }
     HCCL_INFO("HcclCommGraphGetRankSize:opBaseHcom[%lld]", opBaseHcom);
 
+    HCCLV2_FUNC_RUN(HcclCommGraphGetRankSizeV2(opBaseHcom, rankSize));
+
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
     CHK_RET(hcclComm->GetRankSize(*rankSize));
@@ -1209,6 +1244,8 @@ HcclResult HcclCommGraphGetRankId(s64 opBaseHcom, u32 *rankId)
         return HCCL_SUCCESS;
     }
     HCCL_INFO("HcclCommGraphGetRankId:opBaseHcom[%lld]", opBaseHcom);
+
+    HCCLV2_FUNC_RUN(HcclCommGraphGetRankIdV2(opBaseHcom, rankId));
 
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
@@ -1279,6 +1316,7 @@ HcclResult GenerateCclOpTag(const std::string &opType, const int64_t &hcomComm, 
 
 HcclResult HcomGetDevId(const char *group, s32 *devId)
 {
+    HCCLV2_FUNC_RUN(HcomGetDevIdV2(group, devId));
     /* 获取rankId */
     std::shared_ptr<hccl::hcclComm> hcclComm;
     if (group != nullptr && HcclGetCommHandle(group, hcclComm) == HCCL_SUCCESS) {
@@ -1321,6 +1359,8 @@ HcclResult HcomGetLocalRankSize(const char *group, u32 *localRankSize)
         std::vector<std::string>({ "ccl_op", "parameter", "value", "tips" }),
         std::vector<std::string>({ "HcomGetLocalRankSize", "localRankSize", "nullptr", "please check localRankSize" }));
     CHK_PTR_NULL(localRankSize);
+
+    HCCLV2_FUNC_RUN(HcomGetLocalRankSizeV2(group, localRankSize));
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
     if (isAutoTuneModeOpen) {
         *localRankSize = 1;
@@ -1377,7 +1417,10 @@ HcclResult HcomGetRankId(const char *group, u32 *rankId)
         "please check group name" }));
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s][%s]errNo[0x%016llx] get_rank_id group name is invalid",
         LOG_KEYWORDS_TASK_EXEC.c_str(), LOG_KEYWORDS_INVALID_ARGUMENT.c_str(), HCOM_ERROR_CODE(ret)), ret);
-    std::shared_ptr<hccl::hcclComm> hcclComm;
+
+    // HcomGetRankIdV2
+    HCCLV2_FUNC_RUN(HcomGetRankIdV2(group, rankId));
+    std::shared_ptr<hccl::hcclComm>  hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->GetGroupRank(*rankId));
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -1394,6 +1437,8 @@ HcclResult HcomGetLocalRankId(const char *group, u32 *localRankId)
         *localRankId = 0;
         return HCCL_SUCCESS;
     }
+
+    HCCLV2_FUNC_RUN(HcomGetLocalRankIdV2(group, localRankId));
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     CHK_PRT_RET(hcomInfo.pComm == nullptr, HCCL_ERROR("[Get][LocalRankId]hcomInfo.pComm is null, "\
         "please check if the initialize process is called."), HCCL_E_PTR);
@@ -1654,9 +1699,26 @@ HcclResult GetGradientSegment(const std::string &group, const struct model_featu
     return ret;
 }
 
+HcclResult HcomExecSelectAlg(s64 comm, const char *group, HcclCMDType opType, u64 count, HcclDataType dataType, HcclReduceOp op,
+    int32_t aivCoreLimit, bool &ifAiv, char *algName)
+{
+    std::string tempAlgName;
+    if (comm != static_cast<int64_t>(CommNumHcom::COMM_VALUE_DEFAULT)) {
+        CHK_RET(HcomSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
+    } else {
+        std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
+        CHK_RET(HcomGraphSelectAlgV2(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, tempAlgName));
+    }
+    int32_t sret = memcpy_s(algName, ALG_NAME_MAX_LEN, tempAlgName.c_str(), (tempAlgName.length() + 1));
+    CHK_PRT_RET(sret != EOK, HCCL_ERROR("[HcomExecSelectAlg][algName]memcpy failed. ret[%d],"
+        "params:destMaxSize[%zu],count[%zu]", sret, ALG_NAME_MAX_LEN, (tempAlgName.length() + 1)), HCCL_E_PARA);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, HcclDataType dataType, HcclReduceOp op,
     HcclCMDType opType, int32_t aivCoreLimit, bool &ifAiv, char *algName)
 {
+    HCCLV2_FUNC_RUN(HcomExecSelectAlg(comm, group, opType, count, dataType, op, aivCoreLimit, ifAiv, algName));
     HcclWorkflowMode lastWorkflowMode = GetWorkflowMode();
     SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB);
     std::string tempAlgName;
@@ -1678,13 +1740,15 @@ HcclResult HcomSelectAlg(s64 comm, const char *group, u64 count, void* counts, H
 }
 
 HcclResult HcomCalcAivCoreNum(const char *group, HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-        char *algName, u32 *blockDim)
+        char *algName, u32 *numBlocks)
 {
+    std::string algNamV2(algName);
+    HCCLV2_FUNC_RUN(HcomCalcNumBlocksV2(group, opType, count, dataType, aivCoreLimit, algNamV2, *numBlocks));
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
     std::string algNam(algName);
-    CHK_RET(hcclComm->HcclCalcBlockDim(opType, count, counts, dataType, aivCoreLimit, algNam, *blockDim));
+    CHK_RET(hcclComm->HcclCalcNumBlocks(opType, count, counts, dataType, aivCoreLimit, algNam, *numBlocks));
 
     return HCCL_SUCCESS;
 }
@@ -1693,6 +1757,9 @@ HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, vo
     HcclCMDType opType, bool clearEnable, HcclDataType dataType, HcclReduceOp op, 
     void **commContext, u64 *len, u32 aivCoreLimit)
 {
+    HCCLV2_FUNC_RUN(HcclGetAlgExecParamV2(tag, group, count, inputPtr, outputPtr, opType, clearEnable, dataType, op,
+            *commContext, *len, aivCoreLimit));
+
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -1705,6 +1772,7 @@ HcclResult HcomGetAlgExecParam(const char *tag, const char *group, u64 count, vo
 HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 dataSize, HcclDataType dataType, u32 aivCoreLimit,
     HcclReduceOp reduceOp, u64 count, HcclCMDType optype)
 {
+    HCCLV2_FUNC_RUN(HcomGetWorkspaceSubStreamNumV2(group, streamNum, dataSize, dataType, optype));
     std::shared_ptr<hccl::hcclComm> hcclComm{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
     hcclComm = hcomInfo.pComm;
@@ -1731,7 +1799,8 @@ HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 d
 
     string algName;
     bool ifAiv = false;
-    ret = hcclComm->HcclSelectAlg(optype, count, nullptr, dataType, reduceOp, aivCoreLimit, ifAiv, algName);
+    void* counts = nullptr;
+    ret = hcclComm->HcclSelectAlg(optype, count, counts, dataType, reduceOp, aivCoreLimit, ifAiv, algName);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
             "dataType[%d], reduceOp[%d]", ret, optype, count, dataType, reduceOp), ret);
@@ -1742,6 +1811,7 @@ HcclResult HcomGetWorkspaceSubStreamNum(const char *group, u64 &streamNum, u64 d
 HcclResult HcomGetWorkspaceMemSize(const std::string &opType, u64 count, HcclDataType dataType, const char *group,
     u64 &memSize)
 {
+    HCCLV2_FUNC_RUN(HcomGetWorkspaceMemSizeV2(opType, count, dataType, group, memSize));
     u32 rankSize = 0;
     std::shared_ptr<hccl::hcclComm> hcclComm{};
     HcomInfo &hcomInfo = HcomGetCtxHomInfo();
@@ -1776,6 +1846,8 @@ HcclResult HcomGetAlltoAllStagedWorkSpaceMemSize(const char *group, u64 *sendCou
     CHK_PTR_NULL(recvCounts);
     CHK_PTR_NULL(rdispls);
 
+    HCCLV2_FUNC_RUN(HcomGetAlltoAllStagedWorkSpaceMemSizeV2(group, sendCounts, sdispls, sendType, recvCounts,
+                                                            rdispls, recvType, memSize));
     CHK_RET(HcomCheckDataType(sendType));
     CHK_RET(HcomCheckDataType(recvType));
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
@@ -1790,6 +1862,7 @@ HcclResult HcomGetAlltoAllStagedWorkSpaceMemSize(const char *group, u64 *sendCou
 HcclResult HcomGetAlltoAllvcStagedWorkSpaceMemSize(const char *group,
     std::vector<SendRecvInfo> &allMeshAggregationSendRecvInfo, u64 &memSize)
 {
+    HCCLV2_FUNC_RUN(HcomGetAlltoAllvcStagedWorkSpaceMemSizeV2(group, memSize));
     std::string strGroup = (group == nullptr) ? HCCL_WORLD_GROUP : group;
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(strGroup.c_str(), hcclComm));
@@ -1844,6 +1917,7 @@ HcclResult HcomGetCCLBufferAvailableSize(u64 &size)
 
 HcclResult HcomCheckCommValidity(const char* group)
 {
+    HCCLV2_FUNC_RUN(HcomCheckCommValidityV2(group));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     if (HcomGetCommByGroup(group, hcclComm) != HCCL_SUCCESS) {
         return HCCL_E_PTR;
@@ -1857,6 +1931,7 @@ HcclResult HcomSetWorkspaceResource(const char *tag, const char *group, rtStream
 {
     std::vector<rtStream_t> rtStream(stream, stream + len);
 
+    HCCLV2_FUNC_RUN(HcomSetWorkspaceResourceV2(tag, group, rtStream, memPtr, maxSize));
     if (group == nullptr) {
         group = HCCL_WORLD_GROUP;
     }
@@ -1896,12 +1971,6 @@ HcclResult HcclCommSetAttachedStream(s64 opBaseHcom, u32 graphId, const std::vec
     return HCCL_SUCCESS;
 }
 
-DevType HcomGetDeviceType()
-{
-    HcomInfo &hcomInfo = HcomGetCtxHomInfo();
-    return hcomInfo.params.deviceType;
-}
-
 void HcomSetAutoTuneMode(bool autoTuneMode)
 {
     bool &isAutoTuneModeOpen = HcomGetCtxAutoTuneMode();
@@ -1910,7 +1979,7 @@ void HcomSetAutoTuneMode(bool autoTuneMode)
 
 HcclResult HcomSetExecTimeOut(const char *execTimeOut)
 {
-    HCCL_RUN_INFO("HcomSetExecTimeOut:execTimeOut[%s]", execTimeOut);
+    HCCL_RUN_INFO("HcomSetExecTimeOut:execTimeOut[%s]s", execTimeOut);
     if(execTimeOut == nullptr) {
         return HCCL_SUCCESS;
     }
@@ -2067,6 +2136,9 @@ HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void
         tag, sendBuf, recvBuf, sendCounts, recvCounts, GetDataTypeEnumStr(sendType).c_str(),
         GetDataTypeEnumStr(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
+    // HcomAlltoAllV2
+    HCCLV2_FUNC_RUN(HcomAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType,
+                                    group, stream, tag));
     CHK_RET(HcomCheckOpParam(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataType(recvType));
     std::shared_ptr<hccl::hcclComm> hcclComm;
@@ -2079,7 +2151,7 @@ HcclResult HcomAlltoAllV(const void *sendBuf, const void *sendCounts, const void
     u32 rankId = 0;
     CHK_RET(hcclComm->GetUserRank(rankId));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2122,7 +2194,8 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
     if (recvBuf != nullptr) {
         CHK_RET(PrintMemoryAttr(recvBuf));
     }
-
+    // HcomAlltoAllVCV2
+    HCCLV2_FUNC_RUN(HcomAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, group, stream, tag));
     CHK_RET(HcomCheckOpParam(tag, 0, sendType, group, stream));
     CHK_RET(HcomCheckDataType(recvType));
 
@@ -2147,7 +2220,7 @@ HcclResult HcomAlltoAllVC(const void *sendBuf, const void *sendCountMatrix, Hccl
                recvBuf, GetDataTypeEnumStr(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2209,7 +2282,7 @@ HcclResult HcclCommGraphAlltoAllV(const void *sendBuf, const void *sendCounts, c
         GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2272,7 +2345,7 @@ HcclResult HcclCommGraphAlltoAllVC(const void *sendBuf, const void *sendCountMat
                GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
 
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
         HCCL_E_INTERNAL);
@@ -2295,6 +2368,7 @@ HcclResult HcclCommGraphAlltoAllVC(const void *sendBuf, const void *sendCountMat
 
 HcclResult HcomUnloadTask(const char *group, const char *tag)
 {
+    HCCLV2_FUNC_RUN(HcomUnloadTaskV2(group, tag));
     std::shared_ptr<hcclComm> hcclComm;
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
         CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[UnloadAllTask]hcclComm is null, "\
@@ -2356,6 +2430,10 @@ HcclResult HcomGetActualRankSizeImpl(const char *group, u32 *rankSize)
 
 HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
 {
+ #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB));
+    HCCLV2_FUNC_RUN(HcclCommGraphUnloadTaskV2(opBaseHcom, tag));
+#endif
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_PRT_RET(hcclComm == nullptr, HCCL_WARNING("[HcclCommGraphUnloadTask]hcclComm is null, "\
         "please check if the initialize process is called."), HCCL_SUCCESS);
@@ -2367,6 +2445,8 @@ HcclResult HcclCommGraphUnloadTask(s64 opBaseHcom, const char *tag)
 
 HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr, u32 len)
 {
+    std::vector<void *> workspaceAddrVec(globalWorkSpaceAddr, globalWorkSpaceAddr + len);
+    HCCLV2_FUNC_RUN(HcomSetGlobalWorkSpaceV2(group, workspaceAddrVec));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     std::vector<void *> globalWorkSpaceAdd(globalWorkSpaceAddr, globalWorkSpaceAddr + len);
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
@@ -2376,6 +2456,13 @@ HcclResult HcomSetGlobalWorkSpace(const char *group, void **globalWorkSpaceAddr,
 
 HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globalWorkSpaceAddr)
 {
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if(devType == DevType::DEV_TYPE_910_95){
+        HCCL_WARNING(" A5 does not support this interface");
+        return HCCL_SUCCESS;
+    }
+    
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(hcclComm->SetGlobalWorkSpace(globalWorkSpaceAddr));
     return HCCL_SUCCESS;
@@ -2383,6 +2470,13 @@ HcclResult HcclCommSetGlobalWorkSpace(s64 opBaseHcom, std::vector<void *> &globa
 
 HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **hcclDumpInfoPtr, s32 *len)
 {
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if(devType == DevType::DEV_TYPE_910_95){
+        HCCL_WARNING("A5 does not support get and clear hcom over flow tasks.");
+        return HCCL_SUCCESS;
+    }
+
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     std::vector<hccl::HcclDumpInfo> hcclDumpInfo;
@@ -2405,6 +2499,13 @@ HcclResult HcomGetandClearOverFlowTasks(const char *group, hccl::HcclDumpInfo **
 
 HcclResult HcclCommGetandClearOverFlowTasks(s64 opBaseHcom, std::vector<hccl::HcclDumpInfo> &hcclDumpInfo)
 {
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if(devType == DevType::DEV_TYPE_910_95){
+        HCCL_WARNING("A5 does not support get and clear hcclcom over flow tasks.");
+        return HCCL_SUCCESS;
+    }
+
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(opBaseHcom);
     CHK_RET(hcclComm->GetandClearOverFlowTasks(hcclDumpInfo));
     return HCCL_SUCCESS;
@@ -2412,6 +2513,7 @@ HcclResult HcclCommGetandClearOverFlowTasks(s64 opBaseHcom, std::vector<hccl::Hc
 
 HcclResult HcomSupportDeterministicOptim(const char *group, bool *isDeterministicOptim)
 {
+    HCCLV2_FUNC_RUN(HcomSupportDeterministicOptimV2(group, *isDeterministicOptim));
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->SupportDeterministicOptim(*isDeterministicOptim));
@@ -2474,6 +2576,8 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
         tag, sendBuf, recvBuf, sendCount, recvCount, GetDataTypeEnumStr(sendType).c_str(),
         GetDataTypeEnumStr(recvType).c_str(), strGroup.c_str(), streamId, deviceLogicId);
 
+    // HcomAlltoAllV2
+    HCCLV2_FUNC_RUN(HcomAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, group, stream, tag));
     CHK_RET(HcomCheckOpParam(tag, sendCount, sendType, stream));
     CHK_RET(HcomCheckOpParam(tag, recvCount, recvType, stream));
     CHK_RET(HcomCheckDataType(sendType));
@@ -2485,7 +2589,7 @@ HcclResult HcomAllToAll(const void *sendBuf, u64 sendCount, HcclDataType sendTyp
     CHK_RET(hcclComm->GetRankSize(rankSize));
     CHK_RET(hcclComm->GetUserRank(rankId));
     u32 aivCoreLimit = 0;
-    CHK_RET(hcclComm->GetBlockDim(aivCoreLimit));
+    CHK_RET(hcclComm->GetNumBlocks(aivCoreLimit));
 
     HcclWorkflowMode mode = GetWorkflowMode();
     CHK_PRT_RET(mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED, HCCL_ERROR("Invalid Workflow Mode[%d]", mode),
@@ -2543,6 +2647,7 @@ HcclResult HcomGetTopoDesc(const char *group, HcclTopoDescs *topoDescs, uint32_t
 {
     CHK_PTR_NULL(topoDescs);
     CHK_PTR_NULL(group);
+    HCCLV2_FUNC_RUN(HcomGetTopoDescV2(group, topoDescs, topoSize));
 
     std::shared_ptr<hcclComm> hcclComm;
     s32 deviceLogicId = 0;
@@ -2561,6 +2666,7 @@ extern "C" {
 #endif // __cplusplus
 HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t flag)
 {
+    HCCLV2_FUNC_RUN(HcomGetL0TopoTypeExV2(group, topoType, flag));
 #define IS_SET_DEVICE_MASK 0xfffffffe
     CHK_PTR_NULL(topoType);
     CHK_PTR_NULL(group);
@@ -2577,6 +2683,7 @@ HcclResult HcomGetL0TopoTypeEx(const char *group, CommTopo *topoType, uint32_t f
 
 HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t flag)
 {
+    HCCLV2_FUNC_RUN(HcomGetRankSizeExV2(group, rankSize, flag));
 #define IS_SET_DEVICE_MASK 0xfffffffe
     CHK_PTR_NULL(rankSize);
     CHK_PTR_NULL(group);
@@ -2596,6 +2703,7 @@ HcclResult HcomGetRankSizeEx(const char *group, uint32_t *rankSize, uint32_t fla
 
 HcclResult HcomGetCommCCLBufferSize(const char *group, uint64_t &size)
 {
+    HCCLV2_FUNC_RUN(HcomGetCommCCLBufferSizeV2());
     CHK_PTR_NULL(group);
     std::shared_ptr<hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
@@ -2619,6 +2727,7 @@ bool HcomIsNormalComm(const char *group)
 
 HcclResult HcomClearAivSyncBuf(const char *group, bool aivClearEnable)
 {
+    HCCLV2_FUNC_RUN(HcomSetAivClearEnableV2(group, aivClearEnable));
     CHK_PTR_NULL(group);
     std::shared_ptr<hcclComm> hcclComm;
     if (HcomGetCommByGroup(group, hcclComm) == HCCL_SUCCESS) {
@@ -2641,7 +2750,8 @@ HcclResult HcomSetAivCoreLimit(const char *group, u32 aivCoreLimit)
 {
     CHK_PRT_RET(aivCoreLimit == 0,
         HCCL_ERROR("[HcomSetAivCoreLimit] aivCoreLimit[%u] invalid", aivCoreLimit), HCCL_E_PARA);
-  
+    HCCLV2_FUNC_RUN(HcomSetAivCoreLimitV2(group, aivCoreLimit));
+
     std::shared_ptr<hccl::hcclComm> hcclComm;
     CHK_RET(HcomGetCommByGroup(group, hcclComm));
     CHK_RET(hcclComm->SetAivCoreLimit(aivCoreLimit));
@@ -2656,10 +2766,24 @@ HcclResult HcclCommGraphSetAivCoreLimit(s64 comm, u32 aivCoreLimit)
         HCCL_ERROR("[HcclCommGraphSetAivCoreLimit] comm[%lld] or aivCoreLimit[%u] invalid", comm, aivCoreLimit),
         HCCL_E_PARA);
 
+    DevType devType;
+    CHK_RET(hrtGetDeviceType(devType));
+    if(devType == DevType::DEV_TYPE_910_95){
+        HCCL_WARNING("A5 does not support get and clear hcclcom set aiv core limit.");
+        return HCCL_SUCCESS;
+    }
+
     hccl::hcclComm* hcclComm = reinterpret_cast<hccl::hcclComm*>(comm);
     CHK_RET(hcclComm->SetAivCoreLimit(aivCoreLimit));
 
     HCCL_RUN_INFO("HcclCommGraphSetAivCoreLimit hcclComm[%p] aivCoreLimit[%u]", hcclComm, aivCoreLimit);
+    return HCCL_SUCCESS;
+}
+
+HcclResult HcomCalcTaskNum(HcomOpParam *hcomOpParam, u32 &taskNum)
+{
+    CHK_PTR_NULL(hcomOpParam);
+    HCCLV2_FUNC_RUN(HcomCalcTaskNumV2(hcomOpParam, taskNum));
     return HCCL_SUCCESS;
 }
 
@@ -2784,7 +2908,11 @@ HcclResult HcomCalcOpOnline(HcomOpParam *hcomOpParam, HcomResResponse *hcomResRe
         HCCL_WARNING("call GetModuleInfo error, failed to get multiModuleDiffDeviceNumMode.");
     }
 
-    CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
+    if (devType == DevType::DEV_TYPE_910_95) {
+        CHK_RET(CalcTaskNumV2(hcomOpParam, taskNum));
+    } else {
+        CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
+    }
 
     hcomResResponse->streamNum = streamNum;
     hcomResResponse->opMemSize = opMemSize;
@@ -2835,7 +2963,8 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     std::shared_ptr<hccl::hcclComm> hcclComm;
     std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
     CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
-    HcclResult ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, nullptr, hcomOpParam->dataType, 
+    void* counts = nullptr;
+    HcclResult ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, counts, hcomOpParam->dataType, 
                                 hcomOpParam->reduceOp, hcomOpParam->aivCoreLimit, ifAiv, algName);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
@@ -2844,7 +2973,10 @@ HcclResult HcomCalcOpResOffline(HcomOpParam *hcomOpParam, HcomResResponse *hcomR
     CHK_RET(GetStreamNumOfflineComp(hcclOpType, serverNum, deviceNumPerServer, ifAiv, devType, streamNum, group));
     CHK_RET(GetOpWorkspaceMemSize(true, hcclOpType, hcomOpParam, serverNum, opMemSize));
 
-    CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
+    if (devType == DevType::DEV_TYPE_910_95) {
+        HCCL_INFO("A5 offline calculation task num is not supported.");
+        CHK_RET(CalcTaskNum(hcomOpParam, streamNum, deviceNumPerServer, serverNum, multiModuleDiffDeviceNumMode, taskNum, devType));
+    }
 
     hcomResResponse->streamNum = streamNum;
     hcomResResponse->opMemSize = opMemSize;
@@ -3666,11 +3798,36 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
 
     std::string sCollectiveType(hcomOpParam->opType);
 
+    HcclResult ret;
     HcclUs startut = TIME_NOW();
 
     auto iter = HCCL_OPTYPE_NAME_MAP.find(hcomOpParam->opType);
     HcclCMDType hcclOpType = (iter != HCCL_OPTYPE_NAME_MAP.end()) ? iter->second : HcclCMDType::HCCL_CMD_INVALID;
 
+    string algName;
+    bool ifAiv = false;
+    std::shared_ptr<hccl::hcclComm> hcclComm;
+    // 获取通信域句柄
+    std::string group = hcomOpParam->group == nullptr ? HCCL_WORLD_GROUP : hcomOpParam->group;
+    CHK_RET(HcomGetCommByGroup(group.c_str(), hcclComm));
+    // 判断是否是AIV场景
+    void* counts = nullptr;
+    ret = hcclComm->HcclSelectAlg(hcclOpType, hcomOpParam->count, counts, hcomOpParam->dataType, 
+                                hcomOpParam->reduceOp, hcomOpParam->aivCoreLimit, ifAiv, algName);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[HcomGetWorkspaceSubStreamNum] HcclSelectAlg failed, ret[%d], optype[%d], count[%llu],"
+            "dataType[%d], reduceOp[%d]", ret, hcomOpParam->opType, hcomOpParam->count,
+            hcomOpParam->dataType, hcomOpParam->reduceOp), ret);
+    HCCL_INFO("[%s] HcclSelectAlg success ifAiv[%d] algName[%s] optype[%d] count[%llu] dataType[%d] reduceOp[%d]",
+        __func__, ifAiv, algName.c_str(), hcomOpParam->opType, hcomOpParam->count,
+        hcomOpParam->dataType, hcomOpParam->reduceOp);
+    // AIV和非rdma场景下，task数量固定
+    if (ifAiv && algName.find("Rdma") == std::string::npos) {
+        taskNum = AIV_DEFAULT_TASK_NUM;
+        HCCL_INFO("[%s] GetAndSetTaskNum success taskNum[%u]", __func__, taskNum);
+        return HCCL_SUCCESS;
+    }
+    
     if (!IsNeedCalTaskNum(hcclOpType)) {
         if (hcclOpType ==  HCCL_CMD_SEND || hcclOpType == HCCL_CMD_RECEIVE) {
             taskNum = SEND_RECEIVE_TASK_NUM;
@@ -3691,7 +3848,7 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
             // 计算Server间pipline切分数量
             u32 dataTypeSize;
             u64 totalSize = 0;
-            HcclResult ret = SalGetDataTypeSize(hcomOpParam->dataType, dataTypeSize);
+            ret = SalGetDataTypeSize(hcomOpParam->dataType, dataTypeSize);
             CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Get][OpWorkspaceMemSize]op[%s]: get data size failed. ret[%d]",
                 sCollectiveType.c_str(), ret), ret);
 
@@ -3740,6 +3897,27 @@ HcclResult CalcTaskNum(HcomOpParam *hcomOpParam, const u64 &streamNum, const s32
     }
     if (taskNum == 0) {
         taskNum = std::max(masterTaskNum, std::max(slaveTaskNum, piplineTaskNum));
+    }
+
+    HCCL_INFO("GetAndSetTaskNum success, cost time[%lld]us taskNum[%u]", DURATION_US(TIME_NOW() - startut), taskNum);
+    return HCCL_SUCCESS;
+}
+
+HcclResult CalcTaskNumV2(HcomOpParam *hcomOpParam, u32 &taskNum)
+{
+    HcclUs startut = TIME_NOW();
+
+    auto iter = HCCL_OPTYPE_NAME_MAP.find(hcomOpParam->opType);
+    HcclCMDType hcclOpType = (iter != HCCL_OPTYPE_NAME_MAP.end()) ? iter->second : HcclCMDType::HCCL_CMD_INVALID;
+
+    if (!IsNeedCalTaskNum(hcclOpType)) {
+        if (hcclOpType ==  HCCL_CMD_SEND || hcclOpType == HCCL_CMD_RECEIVE) {
+            taskNum = SEND_RECEIVE_TASK_NUM;
+        } else {
+            taskNum = OP_DEFAULT_TASK_NUM;
+        }
+    } else {
+        CHK_RET(HcomCalcTaskNum(hcomOpParam, taskNum));
     }
 
     HCCL_INFO("GetAndSetTaskNum success, cost time[%lld]us taskNum[%u]", DURATION_US(TIME_NOW() - startut), taskNum);

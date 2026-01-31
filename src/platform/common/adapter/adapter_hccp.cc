@@ -112,6 +112,9 @@ constexpr u32 TYPICAL_QP_MODIFY_VERSION = 2; // 支持QP解耦socket建链版本
 constexpr u32 SOCKET_ABORT = 97; // opcode: RA_RS_SOCKET_ABORT 
 constexpr u32 SOCKET_ABORT_VERSION = 1; // 支持socket abort的版本号
 
+constexpr u32 RS_INIT = 15; // opcode: RA_RS_INIT
+constexpr u32 RS_INIT_SUPPORT_ASYNC_VERSION = 2; // 支持socket async的版本号
+
 constexpr u32 ROCE_ENOMEM_RET = 328100; // 创建qp时由于内存不足的错误返回值
 
 template <typename T>
@@ -287,11 +290,12 @@ HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockH
     return HCCL_SUCCESS;
 }
 
-HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, std::function<bool()> needStop)
+HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, std::function<bool()> needStop, u32 timeout)
 {
     s32 ret = 0;
     auto startTime = chrono::steady_clock::now();
-    auto timeout = chrono::seconds(GetExternalInputHcclLinkTimeOut());
+    const chrono::seconds timeoutSec = chrono::seconds(
+        timeout > 0 ? timeout : GetExternalInputHcclLinkTimeOut());
     while (true) {
         CHK_PRT_RET(needStop(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
 
@@ -299,9 +303,9 @@ HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle, s
         if (!ret) {
             break;  // 成功跳出
         } else if (ret == SOCK_EAGAIN) {
-            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeout);
+            bool bTimeout = ((chrono::steady_clock::now() - startTime) >= timeoutSec);
             CHK_PRT_RET(bTimeout, HCCL_ERROR("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async "\
-                "timeout[%lld s]. return[%d].", HCCL_ERROR_CODE(HCCL_E_NETWORK), timeout, ret), HCCL_E_NETWORK);
+                "timeout[%lld s]. return[%d].", HCCL_ERROR_CODE(HCCL_E_NETWORK), timeoutSec, ret), HCCL_E_NETWORK);
             SaluSleep(ONE_MILLISECOND_OF_USLEEP);
         } else {
             HCCL_ERROR("[ConnectAsync][RaQp]errNo[0x%016llx] ra qp connect async fail. return[%d]",\
@@ -1468,25 +1472,25 @@ HcclResult hrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, std::function<bool()> needStop)
+HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, std::function<bool()> needStop, u32 timeout)
 {
     auto startTime = chrono::steady_clock::now();
     void *recvData = const_cast<void *>(data);
     u64 recvSize = 0;
     s32 rtRet = 0;
     u64 getedLen = 0;
-    const chrono::seconds timeout = chrono::seconds(
-        GetExternalInputHcclLinkTimeOut());
+    const chrono::seconds timeoutSec = chrono::seconds(
+        timeout > 0 ? timeout : GetExternalInputHcclLinkTimeOut());
 
     HCCL_DEBUG("before ra socket recv, para: data[%p], size[%llu]", recvData, size);
     while (true) {
         CHK_PRT_RET(needStop(), HCCL_ERROR("Terminating operation due to external request"), HCCL_E_INTERNAL);
 
-        if ((chrono::steady_clock::now() - startTime) >= timeout) {
+        if ((chrono::steady_clock::now() - startTime) >= timeoutSec) {
             HCCL_ERROR("[Recv][RaSocket]errNo[0x%016llx] Wait timeout for sockets recv, data[%p], "\
                 "size[%llu Byte], recvSize[%llu Byte] timeout[%lld s]. Peerrank did not send the data in time. " \
                 "Check whether the peerrank is abnormal.", \
-                HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeout);
+                HCCL_ERROR_CODE(HCCL_E_NETWORK), data, size, recvSize, timeoutSec);
             return HCCL_E_TIMEOUT;
         }
         rtRet = DlRaFunction::GetInstance().dlRaSocketRecv(fdHandle,
@@ -1514,6 +1518,56 @@ HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size, s
     }
     HCCL_DEBUG("ra socket receive finished");
     return HCCL_SUCCESS;
+}
+
+HcclResult IsSupportHdcAsync(bool &isSupportHdcAsync)
+{
+    isSupportHdcAsync = false;
+    s32 deviceLogicID = -1;
+    u32 devicePhyId = 0;
+    CHK_RET(hrtGetDevice(&deviceLogicID));
+    CHK_RET(hrtGetDevicePhyIdByIndex(static_cast<u32>(deviceLogicID), devicePhyId));
+    u32 version = 0;
+ 
+    // 获取版本号查看是否兼容
+    HcclResult ret = hrtRaGetInterfaceVersion(devicePhyId, RS_INIT, &version);
+    CHK_PRT_RET(ret == HCCL_E_NETWORK, HCCL_ERROR("[IsSupportHdcAsync]hrtRaGetInterfaceVersion "\
+        "failed, interface[%u]", RS_INIT), ret);
+    if (ret == HCCL_E_NOT_SUPPORT) {
+        HCCL_WARNING("this package does not support hrtRaGetInterfaceVersion, please change new package");
+        return HCCL_SUCCESS;
+    }
+ 
+    if (version >= RS_INIT_SUPPORT_ASYNC_VERSION) {
+        isSupportHdcAsync = true;
+    }
+
+    HCCL_INFO("[IsSupportHdcAsync] isSupportHdcAsync[%d], version[%d]", isSupportHdcAsync, version);
+    return HCCL_SUCCESS;
+}
+
+s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize, void **reqHandle)
+{
+    if (DlRaFunction::GetInstance().dlRaSocketSendAsync == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaSocketSendAsync(fdHandle, data, size, sentSize, reqHandle);
+}
+
+s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *receivedSize, void **reqHandle)
+{
+    if (DlRaFunction::GetInstance().dlRaSocketRecvAsync == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaSocketRecvAsync(fdHandle, data, size, receivedSize, reqHandle);
+}
+
+s32 hrtRaSocketGetAsyncReqResult(void *reqHandle, s32 *reqResult)
+{
+    if (DlRaFunction::GetInstance().dlRaGetAsyncReqResult == nullptr) {
+        return OTHERS_ENOTSUPP;
+    }
+    return DlRaFunction::GetInstance().dlRaGetAsyncReqResult(reqHandle, reqResult);
 }
 
 HcclResult hrtGetHostIf(vector<pair<string, HcclIpAddress>> &hostIfs, u32 devPhyId)

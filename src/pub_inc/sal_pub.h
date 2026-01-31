@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_INC_SAL_PUB_H
-#define HCCL_INC_SAL_PUB_H
+#ifndef HCOMM_HCCL_INC_SAL_PUB_H
+#define HCOMM_HCCL_INC_SAL_PUB_H
 
 #include <climits>
 #include <chrono>
@@ -24,13 +24,13 @@
 #include "hccl/base.h"
 #include "hccl_ip_address.h"
 
-#ifndef T_DESC
-#define T_DESC(_msg, _y) ((_y) ? true : false)
+#ifndef HCOMM_T_DESC
+#define HCOMM_T_DESC(_msg, _y) ((_y) ? true : false)
 #endif
 
 std::string SalGetEnv(const char *name); // deprecated, 环境变量读取统一使用 MM_SYS_GET_ENV 接口
 
-#if T_DESC("库函数封装", true)
+#if HCOMM_T_DESC("库函数封装", true)
 constexpr int HCCL_BASE_DECIMAL = 10; // 10进制字符串转换
 constexpr int HCCL_BASE_HEX = 16; // 16进制字符串转换
 
@@ -40,7 +40,7 @@ HcclResult  SalStrToULonglong(const std::string str, int base, u64 &val);
 HcclResult  SalStrToLonglong(const std::string str, int base, s64 &val);
 #endif
 
-#if T_DESC("跨进程处理函数", true)
+#if HCOMM_T_DESC("跨进程处理函数", true)
 s32 SalGetPid();
 HcclResult SalGetBareTgid(s32 *pid);
 u32 SalGetUid();
@@ -49,19 +49,19 @@ extern HcclResult SalGetUniqueId(char *salUniqueId, int maxLen = INT_MAX);
 
 #endif
 
-#if T_DESC("路径信息函数", true)
+#if HCOMM_T_DESC("路径信息函数", true)
 HcclResult SalIsDirExist(const std::string &dir, s32 &status);
 #endif
 
-#if T_DESC("C字符串处理函数适配", true)
+#if HCOMM_T_DESC("C字符串处理函数适配", true)
 std::string SalTrim(const std::string &s);
 #endif
 
-#if T_DESC("设置指定位值函数", true)
+#if HCOMM_T_DESC("设置指定位值函数", true)
 void SalSetBitOne(u64 &value, u64 index);
 #endif
 
-#if T_DESC("时间处理接口适配", true)
+#if HCOMM_T_DESC("时间处理接口适配", true)
 constexpr u32 SOCKET_SLEEP_MILLISECONDS = 1;
 constexpr u32 ONE_HUNDRED_MICROSECOND_OF_USLEEP = 100;
 constexpr u32 TWO_HUNDRED_MICROSECOND_OF_USLEEP = 200;
@@ -119,7 +119,7 @@ s32 SalLog2(s32 data);
 }  // extern "C"
 #endif
 
-#if T_DESC("计算类型占用内存大小函数", true)
+#if HCOMM_T_DESC("计算类型占用内存大小函数", true)
 HcclResult SalGetDataTypeSize(HcclDataType dataType, u32 &dataTypeSize);
 #endif
 

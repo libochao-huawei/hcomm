@@ -1,0 +1,67 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+#ifndef CHANNEL_H
+#define CHANNEL_H
+
+#include <memory>
+#include <vector>
+#include <unordered_map>
+#include "hccl_api.h"
+#include "hccl/hccl_types.h"
+#include "hcomm_res_defs.h"
+#include <string>
+#include <unordered_map>
+#include "enum_factory.h"
+
+// Orion
+#include "transport_status.h"
+#include "ip_address.h"
+#include "topo_common_types.h"
+#include "virtual_topo.h"
+
+namespace hcomm {
+
+MAKE_ENUM(ChannelStatus, INIT, SOCKET_OK, SOCKET_TIMEOUT, READY, FAILED)
+
+/**
+ * @note 职责：一个EndPointPair上的建立的通信通道的C++抽象接口类声明。
+ * 管理该通信通道Channel对上的同步信号Notify、通信队列（如qp、jetty等）等资源管理，负责建立连接，以及注册内存、同步信号等的交换。
+ */
+class Channel {
+public:
+    Channel() {};
+    virtual ~Channel() = default;
+
+    // 禁拷贝（避免切片/资源重复释放等）
+    Channel(const Channel&) = delete;
+    Channel& operator=(const Channel&) = delete;
+
+    // 视需要决定是否允许移动；很多资源类也会禁移动
+    Channel(Channel&&) = default;
+    Channel& operator=(Channel&&) = default;
+
+    // ------------------ 控制面接口 ------------------
+    virtual HcclResult Init() = 0;
+    virtual HcclResult GetNotifyNum(uint32_t *notifyNum) const = 0;
+    virtual HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) const = 0;
+    virtual ChannelStatus GetStatus() = 0;
+
+    // ------------------ 数据面接口 ------------------
+
+
+    // ------------------ 工厂 ------------------
+    static HcclResult CreateChannel(EndpointHandle endpointHandle, 
+                                    CommEngine engine, 
+                                    HcommChannelDesc channelDesc,
+                                    std::unique_ptr<Channel>& out);
+};
+
+} // namespace hcomm
+#endif // CHANNEL_H

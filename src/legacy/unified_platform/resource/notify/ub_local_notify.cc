@@ -1,0 +1,96 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "ub_local_notify.h"
+
+#include "hccp_ctx.h"
+#include "dev_capability.h"
+#include "not_support_exception.h"
+#include "exchange_ub_buffer_dto.h"
+#include "rdma_handle_manager.h"
+#include "local_ub_rma_buffer.h"
+
+namespace Hccl {
+
+UbLocalNotify::UbLocalNotify(RdmaHandle rdmaHandle, bool devUsed)
+    : BaseLocalNotify(RmaType::UB, devUsed), rdmaHandle(rdmaHandle)
+{
+    HrtDevResInfo devResInfo;
+    devResInfo.dieId            = 0;
+    devResInfo.procType         = HrtDevResProcType::PROCESS_HCCP;
+    devResInfo.resType          = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
+    devResInfo.resId            = GetNotify()->GetId();
+    devResInfo.flag             = 0;
+    auto resAddrInfo            = HrtGetDevResAddress(devResInfo);
+    addr                        = resAddrInfo.address;
+    size                        = DevCapability::GetInstance().GetNotifySize();
+    auto tokenIdInfoPair        = RdmaHandleManager::GetInstance().GetTokenIdInfo(rdmaHandle);
+    TokenIdHandle tokenIdHandle = tokenIdInfoPair.first;
+    tokenId                     = tokenIdInfoPair.second;
+    HCCL_INFO("[UbLocalNotify] tokenIdHandle=0x[%llx]", tokenIdHandle);
+    HCCL_INFO("mapped addr=[%llx]", addr);
+    HCCL_INFO("UB notify size=[%u]", size);
+
+    // halNotifyMap 返回的地址不保证4K对齐，
+    // notify的地址还是使用hal接口返回的addr，但是注册mem的时候我们需要自己做向下对齐
+    tokenValue = GetUbToken();
+    std::pair<u64, u64> alignBuf = BufAlign(addr, size);
+    HrtRaUbLocMemRegParam lmemReg{alignBuf.first, alignBuf.second, tokenValue, tokenIdHandle, 1};
+    reqReg = HrtRaUbLocalMemReg(rdmaHandle, lmemReg);
+    keySize         = reqReg.keySize;
+    memHandle       = reqReg.handle;
+    (void)memcpy_s(key, HRT_UB_MEM_KEY_MAX_LEN, reqReg.key, HRT_UB_MEM_KEY_MAX_LEN);
+}
+
+string UbLocalNotify::Describe() const
+{
+    return StringFormat("UbLocalNotify:notify=%s, addr=0x%llx, keySize=%u, memHandle=0x%llx",
+                        GetNotify()->Describe().c_str(), addr, keySize, memHandle);
+}
+
+void UbLocalNotify::Wait(const Stream &stream, u32 timeout) const
+{
+    GetNotify()->Wait(stream, timeout);
+}
+
+void UbLocalNotify::Post(const Stream &stream) const
+{
+    std::string msg = "UbLocalNotify does not support submitting record task";
+    MACRO_THROW(NotSupportException, msg);
+}
+
+std::unique_ptr<Serializable> UbLocalNotify::GetExchangeDto()
+{
+    std::unique_ptr<ExchangeUbBufferDto> dto
+        = make_unique<ExchangeUbBufferDto>(addr, size, tokenValue, tokenId, keySize);
+    (void)memcpy_s(dto->key, HRT_UB_MEM_KEY_MAX_LEN, key, HRT_UB_MEM_KEY_MAX_LEN);
+    return std::unique_ptr<Serializable>(dto.release());
+}
+
+void UbLocalNotify::ReleaseResource() const
+{
+    if (rdmaHandle && memHandle != 0) {
+        HrtRaUbLocalMemUnreg(rdmaHandle, memHandle);
+    }
+
+    HrtDevResInfo devResInfo;
+    devResInfo.dieId    = 0;
+    devResInfo.procType = HrtDevResProcType::PROCESS_HCCP;
+    devResInfo.resType  = HrtDevResType::RES_TYPE_STARS_NOTIFY_RECORD;
+    devResInfo.resId    = GetNotify()->GetId();
+    devResInfo.flag     = 0;
+    HrtReleaseDevResAddress(devResInfo);
+}
+
+UbLocalNotify::~UbLocalNotify()
+{
+    DECTOR_TRY_CATCH("UbLocalNotify", ReleaseResource());
+}
+} // namespace Hccl

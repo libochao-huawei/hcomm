@@ -527,7 +527,7 @@ HcclResult CommFactory::CreateCommP2PSync(const std::string &tag, const DeviceMe
         return HCCL_SUCCESS;
     }
     do {
-        HcclResult ret = CreateCommP2PQuerry(commVec, status);
+        HcclResult ret = CreateCommP2PQuarry(commVec, status);
         if (ret != HCCL_SUCCESS) {
             HCCL_ERROR("[Create][CommP2P]comm p2p init failed");
             return ret;
@@ -579,7 +579,7 @@ std::vector<std::unique_ptr<CommBase> > CommFactory::CreateCommP2PAsync(const st
     return commP2PArray;
 }
 
-HcclResult CommFactory::CreateCommP2PQuerry(std::vector<std::unique_ptr<CommBase> >& comm, u32& status)
+HcclResult CommFactory::CreateCommP2PQuarry(std::vector<std::unique_ptr<CommBase> >& comm, u32& status)
 {
     HcclResult ret;
     std::vector<u32> commStatus(comm.size());
@@ -587,13 +587,13 @@ HcclResult CommFactory::CreateCommP2PQuerry(std::vector<std::unique_ptr<CommBase
         CHK_SMART_PTR_NULL(comm[index]);
         ret = comm[index]->BuildQuerry(commStatus[index]);
         if (ret != HCCL_SUCCESS) {
-            HCCL_ERROR("[Querry][CommP2P]comm p2p array[%u] init failed", index);
+            HCCL_ERROR("[Quarry][CommP2P]comm p2p array[%u] init failed", index);
             comm[index].reset(nullptr);
             return ret;
         }
     }
     status = (static_cast<int>(comm.size()) == std::count(commStatus.begin(), commStatus.end(), 0)) ? 0 : 1;
-    HCCL_DEBUG("CreateCommP2PQuerry %u", status);
+    HCCL_DEBUG("CreateCommP2PQuarry %u", status);
     return HCCL_SUCCESS;
 }
 

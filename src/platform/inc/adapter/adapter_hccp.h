@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_INC_ADAPTER_HCCP_H
-#define HCCL_INC_ADAPTER_HCCP_H
+#ifndef HCOMM_HCCL_INC_ADAPTER_HCCP_H
+#define HCOMM_HCCL_INC_ADAPTER_HCCP_H
 
 #include <functional>
 
@@ -185,7 +185,7 @@ HcclResult HrtRaQpCreate(RdmaHandle rdmaHandle, int flag, int qpMode, QpHandle &
 HcclResult HrtRaQpDestroy(QpHandle handle);
 HcclResult HrtRaQpNonBlockConnectAsync(QpHandle handle, const SocketHandle sockHandle);
 HcclResult HrtRaQpConnectAsync(QpHandle handle, const SocketHandle sockHandle,
-    std::function<bool()> needStop = []() { return false; });
+    std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
 s32 hrtGetRaQpStatus(QpHandle handle, int *status);
 HcclResult HrtRaMrReg(QpHandle handle, struct MrInfoT *mrInfo);
 HcclResult HrtRaGetNotifyMrInfo(u32 phyId, RdmaHandle handle, struct MrInfoT *mrInfo);
@@ -240,9 +240,14 @@ HcclResult  hrtRaSocketNonBlockRecvHeterog(const FdHandle fdHandle, void *data, 
 s32 hrtRaSocketNonBlockRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 HcclResult hrtRaSocketNonBlockRecvHeart(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
 HcclResult hrtRaSocketBlockRecv(const FdHandle fdHandle, void *data, u64 size,
-    std::function<bool()> needStop = []() { return false; });
+    std::function<bool()> needStop = []() { return false; }, u32 timeout = 0);
 
 s32 hrtRaSocketRecv(const FdHandle fdHandle, void *data, u64 size, u64 *recvSize);
+
+HcclResult IsSupportHdcAsync(bool &isSupportHdcAsync);
+s32 hrtRaSocketSendAsync(const FdHandle fdHandle, const void *data, u64 size, u64 *sentSize, void **reqHandle);
+s32 hrtRaSocketRecvAsync(const FdHandle fdHandle, void *data, u64 size, u64 *receivedSize, void **reqHandle);
+s32 hrtRaSocketGetAsyncReqResult(void *reqHandle, s32 *reqResult);
 
 HcclResult hrtEpollCtlAdd(const FdHandle fdHandle, RaEpollEvent event);
 HcclResult hrtEpollCtlMod(const FdHandle fdHandle, RaEpollEvent event);

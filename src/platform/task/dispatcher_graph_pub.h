@@ -87,7 +87,7 @@ private:
     HcclResult SetGraphTailVectorReduceDescSdma(void *devMem, const void *tailSrc, u64 count,
         const HcclDataType dataType, HcclReduceOp redOp, Stream &stream);
     HcclResult SetGraphDescVectorReduce(const void *src, const void *dst, int count, void *addrListDevMemPtr,
-        void *funcAddr, uint32_t blockDim, const HcclDataType dataType, HcclReduceOp redOp, Stream &stream);
+        void *funcAddr, uint32_t numBlocks, const HcclDataType dataType, HcclReduceOp redOp, Stream &stream);
     HcclResult GetNotifyDfxInfo(HcclRtNotify signal, u32 userRank, u64 &offset, u32 &remoteUserRank, u64 &notifyID);
     void *fftsCtxsPtr;
     bool disableFfts_;

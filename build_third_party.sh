@@ -129,7 +129,7 @@ download_mockcpp() {
 }
 
 build_mockcpp() {
-  apt-get install libboost-dev -y
+  sudo apt-get install libboost-dev -y
 
   cd "${OUTPUT_PATH}/mockcpp_shared/mockcpp-2.7/"
 
@@ -187,21 +187,16 @@ main() {
   checkopts "$@"
 
   echo "---------------- script start ----------------"
-  whoami
-  id
-  echo $USER
 
   download_and_compile
   if [[ "$?" -ne 0 ]]; then
     echo "script failed.";
     exit 1;
   fi
-  echo "---------------- download_and_compile pass ----------------"
+
   # 下载、编译 mockcpp
   download_mockcpp
-  echo "---------------- download_mockcpp pass ----------------"
   build_mockcpp
-  echo "---------------- build_mockcpp pass ----------------"
 
   # 下载、编译 protobuf
   download_and_compile_protobuf

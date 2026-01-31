@@ -17,6 +17,7 @@
 #include "device_capacity.h"
 #include "comm.h"
 #include "coll_alg_utils.h"
+#include "search_path.h"
 
 namespace hccl {
 constexpr s32 COMM_MAX_DEVICE_ID = 31;
@@ -65,11 +66,13 @@ public:
     bool GetDiffDeviceType();
     u32 GetGcdDeviceNumPerAggregation();
     bool GetDiffDeviceModule();
+    bool GetSupportARS();
     ServRankInfo GetServRankInfo();
 
     u32 GetModuleNum();
     bool GetMultiModuleDiffDeviceNumMode();
     bool GetMultiSuperPodDiffServerNumMode();
+    bool GetmultiSuperPodDiffDeviceNumMode();
     bool GetUsedInterHccsMode();
     bool GetSingleMeshAggregation();
     bool GetAllRankSamePlane();
@@ -171,6 +174,7 @@ private:
     u32 meshAggregationRankSize_{0};
     bool multiModuleDiffDeviceNumMode_{false};
     bool multiSuperPodDiffServerNumMode_{false};    //判断每个超节点中的server数是否一致
+    bool multiSuperPodDiffDeviceNumMode_{false};
     u32 gcdServerNumPerSuperPod_{0};
     bool isStandardCard_{false};
     bool is310PDuoCard_{false};
@@ -224,7 +228,9 @@ private:
     std::vector<u32> groupVnicRanksPort_;
     std::vector<RankInfo> worldRankInfoList_;
     std::unordered_map<std::string, std::map<u32, HcclIpAddress>> rankDevicePhyIdNicInfoMap_;
+    bool isARSDoubleRing_ = true;
     std::map<HcclCMDType, std::vector<HcclAlgoType>> algoConfigMap_{};
 };
+bool CheckDoubleRingWithRohTopo(const std::vector<u32> &nicList);
 }  // end namespace hccl
 #endif

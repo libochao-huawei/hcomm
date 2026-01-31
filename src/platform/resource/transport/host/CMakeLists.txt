@@ -12,14 +12,14 @@ set(src_list
     transport_tcp.cc
     transport_p2p.cc
     transport_net.cc
-    transport_roce.cc
-    transport_shm_event.cc
     transport_virtural.cc
     transport_direct_npu.cc
 )
 
 target_sources(hccl_plf PRIVATE
     ${src_list}
+    transport_roce.cc
+    transport_shm_event.cc
 )
 
 target_sources(hccd PRIVATE

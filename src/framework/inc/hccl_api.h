@@ -31,6 +31,7 @@ extern "C" {
 typedef enum {
     RANK_GRAPH_RESERVED = -1,   ///< 保留的rank图类型
     RANK_GRAPH_910_93 = 0,      ///< 910_93 rank图类型
+    RANK_GRAPH_910_95 = 1,      ///< 910_95 rank图类型
 } GraphType;
 
 /**
@@ -472,15 +473,6 @@ typedef enum {
     HCCL_MEM_TYPE_HOST,   ///< 主机侧内存
     HCCL_MEM_TYPE_NUM     ///< 内存类型数量
 } HcclMemType;
-
-/**
- * @brief 内存段元数据描述结构体
- */
-typedef struct {
-    HcclMemType type; ///< 内存物理位置类型，参见HcclMemType
-    void *addr;       ///< 内存地址
-    uint64_t size;    ///< 内存区域字节数
-} HcclMem;
 
 /// 根节点信息长度
 const uint32_t HCCL_ROOT_INFO_BYTES = 4108;
@@ -1551,7 +1543,7 @@ extern HcclResult HcommWriteNbiOnThread(
  * @param[out] dst 目标内存地址
  * @param[in] src 源内存地址
  * @param[in] len 数据长度（字节）
- * @return int32_t 执行结果状态码
+ * @return HcclResult 执行结果状态码
  * @warning  因为有commChannelFence带了channel，所有跨卡通信的接口是否都统一加channel？
  */
 extern int32_t HcommWriteOnThread(
@@ -1696,9 +1688,9 @@ __aicore__ inline void HcommReadReduceNbi(ChannelHandle channel, __gm__ void *ds
  * @param[in] thread 线程句柄
  * @param[in] channel 通道句柄
  * @param[in] remoteNotifyIdx 远端通知索引
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
+extern int32_t HcommNotifyRecordOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t remoteNotifyIdx);
 
 /**
  * @brief 通信通道间记录通知+1
@@ -1715,9 +1707,9 @@ __aicore__ inline void HcommNotifyRecord(ChannelHandle channel, uint32_t remoteN
  * @param[in] channel 通道句柄
  * @param[in] localNotifyIdx 本地通知索引
  * @param[in] timeout 超时时间(毫秒)
- * @return HcclResult 执行结果状态码
+ * @return int32_t 执行结果状态码
  */
-extern HcclResult HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx,
+extern int32_t HcommNotifyWaitOnThread(ThreadHandle thread, ChannelHandle channel, uint32_t localNotifyIdx,
     uint32_t timeout);
 
 /**
@@ -1901,10 +1893,6 @@ typedef struct {
     uint64_t len;
 } HcommBuf;
 
-
-/* Socket通信句柄（不透明指针） */
-typedef void *HcommSocket;
-
 const uint32_t HCCL_SOCK_CONN_TAG_MAX_SIZE = 192; ///< 握手标识最大长度（含终止符）
 
 /**
@@ -1967,13 +1955,12 @@ extern HcclResult HcommMemExport(EndPointHandle endPointHandle, const void *memH
  * @brief 基于内存描述，导入获得内存
  * @warning  1、需要确认所有接口是否一定要加上endPointHandle？2、所有接口参数细节带确认 3、看看内存tag是否需要
  */
-extern HcclResult HcommMemImport(EndPointHandle endPointHandle, const void *memDesc, uint32_t descLen,
-    HcommBuf *outBuf);
+extern HcclResult HcommMemImport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen, HcommMem *outMem);
 
 /**
  * @brief 关闭内存
  */
-extern HcclResult HcommMemClose(EndPointHandle endPointHandle, const HcommBuf *buf);
+extern HcclResult HcommMemUnimport(EndpointHandle endpointHandle, const void *memDesc, uint32_t descLen);
 
 /**
  * @brief 授权本机内存给指定远端进程
@@ -1993,27 +1980,6 @@ extern HcclResult HcommMemGrant(HcommBuf *localBuf, const HcommMemGrantInfo *rem
  */
 extern HcclResult HcommMemRemap(const EndPointHandle endPointHandle, const HcclMem *memArray, uint64_t arraySize);
 /** @} */  // 内存注册与导入管理
-
-/**
- * @name 通信通道管理
- * @{
- */
-
-
-/**
- * @brief 通道描述参数
- * @warning  创建channel的参数需要分析； HccsAttr的定义需要分析（HCCS & UB MEM），或者改名？
- * 可能还要增加CntNotify，其他协议对应的Attr？
- */
-typedef struct {
-    EndPoint remoteEndPoint; ///< 远端端侧描述
-    uint32_t notifyNum;  ///< channel上使用的通知消息数量
-    union {
-        HccsAttr hccsAttr;
-        RoCEAttr roceAttr;
-        UbAttr ubAttr;
-    };
-} HcommChannelDesc;
 
 /**
  * @brief 创建通信通道
@@ -2052,14 +2018,14 @@ extern HcclResult HcommChannelGetHcclBuffer(ChannelHandle channel, CommBuffer *b
 // \endcond
 /**
  * @brief 获取channel中全部的交换获得的远端内存信息
- * @param channel 
- * @param remoteMem 
- * @param memTag 
- * @param memNum 
- * @return HcclResult 
+ * @param channel
+ * @param remoteMem
+ * @param memNum
+ * @param memTag
+ * @return HcclResult
  * @warning  1、补充参数介绍 2、这个基于Channel的接口暂时不对外提供！！！ 3、不提供memTag吧？
  */
-extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum);
+extern HcclResult HcommChannelGetRemoteMem(ChannelHandle channel, HcclMem **remoteMem, uint32_t *memNum, char **memTags);
 
 /** @} */  // 引擎资源管理
 /**
@@ -2199,7 +2165,7 @@ extern HcclResult HcommSocketIRecv(HcommSocket socket, void *recvBuf, uint64_t l
  * @param[in] comm 通信域句柄
  * @param[in] engineTag 引擎标签（最大字符长度为COMM_TAG_LEN_MAX）
  * @param[in] engine 通信引擎类型
- * @param[inout] engineCtx 通信引擎上下文\n
+ * @param[in,out] engineCtx 通信引擎上下文\n
  *                         -size: 申请的ctx内存大小；\n
  *                         -addr: 返回的ctx内存地址；\n
  *                         -type: 返回的ctx内存类型，分host和device。

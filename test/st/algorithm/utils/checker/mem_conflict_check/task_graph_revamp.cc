@@ -1,13 +1,9 @@
-/**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
-
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ * Description: Graph ReVamp
+ * Author: huangweihao
+ * Create: 2024-10-29
+ */
 #include "task_graph_revamp.h"
 #include <queue>
 #include <set>
@@ -791,7 +787,7 @@ HcclResult GraphRevampBilateralSemantics::AddTerminalNodeCurRankVirtualQue(TaskN
     CHK_RET(PrepAvailVirtQueTail(currRank, peerRank, dummyStart, rank2Head, virtQueManager));
     TaskNodePtr peerRankVirtQueTailNode = virtQueManager[currRank][peerRank][0];
     CHK_PRT_RET(peerRankVirtQueTailNode->task->GetType() != TaskTypeStub::POST,
-                HCCL_ERROR("[GraphRevampBilateralSemantics] The previous node of the virutal queue must be POST."),
+                HCCL_ERROR("[GraphRevampBilateralSemantics] The previous node of the virtual queue must be POST."),
                 HcclResult::HCCL_E_INTERNAL);
 
     TaskStub *postToShadow = new TaskStubLocalPostToShadow(

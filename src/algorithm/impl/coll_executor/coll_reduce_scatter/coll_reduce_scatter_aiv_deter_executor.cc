@@ -55,16 +55,16 @@ HcclResult CollReduceScatterAivDeterExecutor::CalcLevel0CommInfo(TransportMemTyp
     return HCCL_SUCCESS;
 }
  
-HcclResult CollReduceScatterAivDeterExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollReduceScatterAivDeterExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize; // 默认情况使用rankSize个AIV
+    numBlocks = rankSize; // 默认情况使用rankSize个AIV
  
-    blockDim = BLOCK_DIM_FACTOR_TWO * rankSize; // 小数据量使用2倍rankSize的AIV core
+    numBlocks = NUM_BLOCKS_FACTOR_TWO * rankSize; // 小数据量使用2倍rankSize的AIV core
     if (dataSize*rankSize >= AIV_REDUCE_SCATTER_DETER_SMALL_SIZE) {
-        blockDim = BLOCK_DIM_FACTOR_THREE * rankSize;
+        numBlocks = NUM_BLOCKS_FACTOR_THREE * rankSize;
     }
 
-    HCCL_INFO("[CollReduceScatterAivDeterExecutor][CalBlockDim] datasize is [%u], blockDim is set to [%u]", dataSize, blockDim);
+    HCCL_INFO("[CollReduceScatterAivDeterExecutor][CalNumBlocks] datasize is [%u], numBlocks is set to [%u]", dataSize, numBlocks);
     return HCCL_SUCCESS;
 }
  
@@ -175,13 +175,13 @@ HcclResult CollReduceScatterAivDeterExecutor::KernelRun(const OpParam &param, Ex
     topoArgs.identify = algoAttr_.identifier;
     
     u64 dataSize = SIZE_TABLE[param.DataDes.dataType] * execMem.count;
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, dataSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, localRankSize, dataSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
     algArgs.deterministic = 1;

@@ -19,57 +19,57 @@ void *gRoceUserApiHandle = NULL;
 struct RsIbverbsOps gIbverbsOps;
 struct RsRoceUserOps gRoceUserOps;
 #else
-struct rs_ibverbs_ops g_ibverbs_ops = {
-    .rs_ibv_free_device_list = ibv_free_device_list,
-    .rs_ibv_ack_cq_events = ibv_ack_cq_events,
-    .rs_ibv_get_device_name = ibv_get_device_name,
-    .rs_ibv_wc_status_str = ibv_wc_status_str,
-    .rs_ibv_query_gid_type = ibv_query_gid_type,
-    .rs_ibv_dereg_mr = ibv_dereg_mr,
-    .rs_ibv_query_qp = ibv_query_qp,
-    .rs_ibv_destroy_qp = ibv_destroy_qp,
-    .rs_ibv_get_cq_event = ibv_get_cq_event,
-    .rs_ibv_destroy_cq = ibv_destroy_cq,
-    .rs_ibv_modify_qp = ibv_modify_qp,
-    .rs_ibv_query_port = ibv_query_port,
-    .rs_ibv_query_gid = ibv_query_gid,
-    .rs_ibv_close_device = ibv_close_device,
-    .rs_ibv_dealloc_pd = ibv_dealloc_pd,
-    .rs_ibv_destroy_comp_channel = ibv_destroy_comp_channel,
-    .rs_ibv_open_device = ibv_open_device,
-    .rs_ibv_alloc_pd = ibv_alloc_pd,
-    .rs_ibv_get_device_list = ibv_get_device_list,
-    .rs_ibv_create_cq = ibv_create_cq,
-    .rs_ibv_reg_mr = ibv_reg_mr,
-    .rs_ibv_create_qp = ibv_create_qp,
-    .rs_ibv_create_comp_channel = ibv_create_comp_channel,
-    .rs_ibv_create_srq = ibv_create_srq,
-    .rs_ibv_destroy_srq = ibv_destroy_srq,
-    .rs_ibv_create_ah = ibv_create_ah,
-    .rs_ibv_destroy_ah = ibv_destroy_ah,
+struct RsIbverbsOps gIbverbsOps = {
+    .rsIbvFreeDeviceList = ibv_free_device_list,
+    .rsIbvAckCqEvents = ibv_ack_cq_events,
+    .rsIbvGetDeviceName = ibv_get_device_name,
+    .rsIbvWcStatusStr = ibv_wc_status_str,
+    .rsIbvQueryGidType = ibv_query_gid_type,
+    .rsIbvDeregMr = ibv_dereg_mr,
+    .rsIbvQueryQp = ibv_query_qp,
+    .rsIbvDestroyQp = ibv_destroy_qp,
+    .rsIbvGetCqEvent = ibv_get_cq_event,
+    .rsIbvDestroyCq = ibv_destroy_cq,
+    .rsIbvModifyQp = ibv_modify_qp,
+    .rsIbvQueryPort = ibv_query_port,
+    .rsIbvQueryGid = ibv_query_gid,
+    .rsIbvCloseDevice = ibv_close_device,
+    .rsIbvDeallocPd = ibv_dealloc_pd,
+    .rsIbvDestroyCompChannel = ibv_destroy_comp_channel,
+    .rsIbvOpenDevice = ibv_open_device,
+    .rsIbvAllocPd = ibv_alloc_pd,
+    .rsIbvGetDeviceList = ibv_get_device_list,
+    .rsIbvCreateCq = ibv_create_cq,
+    .rsIbvRegMr = ibv_reg_mr,
+    .rsIbvCreateQp = ibv_create_qp,
+    .rsIbvCreateCompChannel = ibv_create_comp_channel,
+    .rsIbvCreateSrq = ibv_create_srq,
+    .rsIbvDestroySrq = ibv_destroy_srq,
+    .rsIbvCreateAh = ibv_create_ah,
+    .rsIbvDestroyAh = ibv_destroy_ah,
 };
 
-struct rs_roce_user_ops g_roce_user_ops = {
-    .rs_roce_set_tsqp_depth = roce_set_tsqp_depth,
-    .rs_roce_get_tsqp_depth = roce_get_tsqp_depth,
-    .rs_roce_get_roce_dev_data = roce_get_roce_dev_data,
-    .rs_ibv_exp_query_notify = ibv_exp_query_notify,
-    .rs_ibv_exp_post_send = ibv_exp_post_send,
-    .rs_ibv_exp_reg_mr = ibv_exp_reg_mr,
-    .rs_ibv_exp_create_qp = ibv_exp_create_qp,
-    .rs_ibv_ext_post_send = ibv_ext_post_send,
-    .rs_ibv_exp_create_cq = ibv_exp_create_cq,
-    .rs_ibv_exp_query_device = ibv_exp_query_device,
-    .rs_roce_init_mem_pool = roce_init_mem_pool,
-    .rs_roce_deinit_mem_pool = roce_deinit_mem_pool,
-    .rs_roce_query_qpc = roce_query_qpc,
-    .rs_ibv_exp_create_ah = ibv_exp_create_ah,
-    .rs_roce_mmap_ai_db_reg = roce_mmap_ai_db_reg,
-    .rs_roce_unmmap_ai_db_reg = roce_unmmap_ai_db_reg,
-    .rs_roce_get_cq_data_plane_info = roce_get_cq_data_plane_info,
-    .rs_roce_get_qp_data_plane_info = roce_get_qp_data_plane_info,
-    .rs_roce_remap_mr = roce_remap_mr,
-    .rs_roce_get_api_version = roce_get_api_version,
+struct RsRoceUserOps gRoceUserOps = {
+    .rsRoceSetTsqpDepth = roce_set_tsqp_depth,
+    .rsRoceGetTsqpDepth = roce_get_tsqp_depth,
+    .rsRoceGetRoceDevData = roce_get_roce_dev_data,
+    .rsIbvExpQueryNotify = ibv_exp_query_notify,
+    .rsIbvExpPostSend = ibv_exp_post_send,
+    .rsIbvExpRegMr = ibv_exp_reg_mr,
+    .rsIbvExpCreateQp = ibv_exp_create_qp,
+    .rsIbvExtPostSend = ibv_ext_post_send,
+    .rsIbvExpCreateCq = ibv_exp_create_cq,
+    .rsIbvExpQueryDevice = ibv_exp_query_device,
+    .rsRoceInitMemPool = roce_init_mem_pool,
+    .rsRoceDeinitMemPool = roce_deinit_mem_pool,
+    .rsRoceQueryQpc = roce_query_qpc,
+    .rsIbvExpCreateAh = ibv_exp_create_ah,
+    .rsRoceMmapAiDbReg = roce_mmap_ai_db_reg,
+    .rsRoceUnmmapAiDbReg = roce_unmmap_ai_db_reg,
+    .rsRoceGetCqDataPlaneInfo = roce_get_cq_data_plane_info,
+    .rsRoceGetQpDataPlaneInfo = roce_get_qp_data_plane_info,
+    .rsRoceRemapMr = roce_remap_mr,
+    .rsRoceGetApiVersion = roce_get_api_version,
 };
 #endif
 
@@ -243,33 +243,33 @@ int RsIbverbsApiInit(void)
     int ret;
 
     ret = RsOpenIbverbsSo();
-    CHK_PRT_RETURN(ret, hccp_err("hccp_dlopen[libibverbs.so or libibverbs.so.1] failed! ret=[%d],"\
+    CHK_PRT_RETURN(ret, hccp_err("HccpDlopen[libibverbs.so or libibverbs.so.1] failed! ret=[%d],"\
     "Please check network adapter driver has been installed", ret), ret);
 
     ret = RsContextOpsApiInit();
     if (ret) {
-        hccp_err("[rs_context_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
+        hccp_err("[rs_context_ops_api_init]HccpDlopen failed! ret=[%d]", ret);
         RsCloseIbverbsSo();
         return ret;
     }
 
     ret = RsQpOpsApiInit();
     if (ret) {
-        hccp_err("[rs_qp_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
+        hccp_err("[rs_qp_ops_api_init]HccpDlopen failed! ret=[%d]", ret);
         RsCloseIbverbsSo();
         return ret;
     }
 
     ret = RsPdOpsApiInit();
     if (ret) {
-        hccp_err("[rs_pd_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
+        hccp_err("[rs_pd_ops_api_init]HccpDlopen failed! ret=[%d]", ret);
         RsCloseIbverbsSo();
         return ret;
     }
 
     ret = RsDeviceOpsApiInit();
     if (ret) {
-        hccp_err("[rs_device_ops_api_init]hccp_dlopen failed! ret=[%d]", ret);
+        hccp_err("[rs_device_ops_api_init]HccpDlopen failed! ret=[%d]", ret);
         RsCloseIbverbsSo();
         return ret;
     }
@@ -418,7 +418,7 @@ int RsRoceUserApiInit(void)
     int ret = 0;
 
     ret = RsOpenRoceUserSo(&type);
-    CHK_PRT_RETURN(ret != 0, hccp_err("hccp_dlopen[libhns-rdmav17.so or libhns-rdmav25.so or libhrn0-rdmav17.so]"
+    CHK_PRT_RETURN(ret != 0, hccp_err("HccpDlopen[libhns-rdmav17.so or libhns-rdmav25.so or libhrn0-rdmav17.so]"
         "failed! ret=[%d]. Please check network adapter driver has been installed.", ret), ret);
 
 #ifndef CA_CONFIG_LLT
@@ -455,7 +455,6 @@ close_roce_user_so:
 
 DL_ATTRI_VISI_DEF int RsApiInit(void)
 {
-#ifndef NOT_INIT_IBVERBS
 #ifndef CA_CONFIG_LLT
     int ret;
     ret = RsIbverbsApiInit();
@@ -467,7 +466,6 @@ DL_ATTRI_VISI_DEF int RsApiInit(void)
         RsCloseIbverbsSo();
         return ret;
     }
-#endif
 #endif
 #endif
     return 0;

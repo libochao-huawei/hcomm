@@ -27,7 +27,7 @@ enum class OperationType {
     OP_RECV = 1,
     OP_RECV_WITH_REDUCE = 2,
     OP_WAIT_DONE = 3,
-    OP_INVAILD = 4
+    OP_INVALID = 4
 };
 
 using ReduceParam = struct ReduceParamDef {

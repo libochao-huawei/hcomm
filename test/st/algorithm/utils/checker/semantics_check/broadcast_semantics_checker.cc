@@ -1,13 +1,9 @@
-/**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
-
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
+ * Description: Broadcast语义校验实现类
+ * Author: huangweihao
+ * Create: 2024-10-10
+ */
 #include "broadcast_semantics_checker.h"
 #include "data_dumper.h"
 #include "analysis_result.pb.h"
@@ -39,7 +35,7 @@ HcclResult TaskCheckBroadcastSemantics(std::map<RankId, RankMemorySemantics> &al
                 DataDumper::Global()->AddMissingSemantic(rankId, BufferType::INPUT, totalSize);
                 DataDumper::Global()->SetResultStatus(gui::ResultStatus::CHECK_FAILED_MISSING_SEMANTIC);
                 DUMP_AND_ERROR("[rankId:%u]Missing buffer semantic: "
-                    "exepected startAddr is %llu, while cur buffer semantic startAddr is %llu, cur buffer semantic is %s",
+                    "expected startAddr is %llu, while cur buffer semantic startAddr is %llu, cur buffer semantic is %s",
                     rankId, totalSize, ele.startAddr, ele.Describe().c_str());
                 return HcclResult::HCCL_E_PARA;
             }

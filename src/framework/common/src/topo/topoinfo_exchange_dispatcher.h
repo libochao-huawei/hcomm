@@ -33,20 +33,20 @@ public:
     struct SendState {
         u32 rankId;
         u32 header;
-        u32 indentify          = UINT_MAX;    // 默认UINT_MAX时，不发送indentify
+        u32 identify          = UINT_MAX;    // 默认UINT_MAX时，不发送identify
         size_t headerLen       = sizeof(u32); // the header need to send
         size_t headerSended    = 0;           // the header have sended length
         size_t bodyLen         = 0;           // the whole data length
         size_t bodySended      = 0;           // the data have sended
-        size_t indentifyLen    = sizeof(u32); // the indentify need to send (MasterInfo mode)
-        size_t indentifySended = 0;           // the indentify have sended
+        size_t identifyLen    = sizeof(u32); // the identify need to send (MasterInfo mode)
+        size_t identifySended = 0;           // the identify have sended
         void *data;                           // data pointer
         bool firstSendFlag_ =  true;
  
         HcclResult Send(std::shared_ptr<HcclSocket> socket);
         HcclResult SendHeader(std::shared_ptr<HcclSocket> socket);
         HcclResult SendBody(std::shared_ptr<HcclSocket> socket);
-        HcclResult SendIndentify(std::shared_ptr<HcclSocket> socket);
+        HcclResult SendIdentify(std::shared_ptr<HcclSocket> socket);
         HcclResult SendHelper(std::shared_ptr<HcclSocket> socket, char *buf, size_t dataLen, size_t &sendedLen);
         bool IsOk()
         {

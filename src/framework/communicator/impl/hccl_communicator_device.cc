@@ -390,8 +390,8 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::HcclCalcBlockDim(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
-                                                  std::string &algName, u32 &blockDim)
+    HcclResult HcclCommunicator::HcclCalcNumBlocks(HcclCMDType opType, u64 count, void* counts, HcclDataType dataType, int32_t aivCoreLimit,
+                                                  std::string &algName, u32 &numBlocks)
     {
         return HCCL_SUCCESS;
     }
@@ -504,6 +504,34 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitCCLbuffer(u64 inCCLbufferSize, u64 outCCLbufferSize)
     {
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::SetGroupMainStream(HcclRtStream sendRecvMainStream_){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupSendNotifies(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupRecvNotifies(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupSendStreams(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::CreateGroupRecvStreams(){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::GroupSyncMainstream(std::unordered_map<u32, std::vector<u64>> &sendIdx2Byte, std::unordered_map<u32, std::vector<u64>> &recvIdx2Byte){
+        return HCCL_E_NOT_SUPPORT;
+    }
+
+    HcclResult HcclCommunicator::GroupSubstreamsSync(){
         return HCCL_E_NOT_SUPPORT;
     }
 
@@ -1225,7 +1253,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::SetAicpuNotifyInvaild()
+    HcclResult HcclCommunicator::SetAicpuNotifyInvalid()
     {
         return HCCL_SUCCESS;
     }
@@ -1539,6 +1567,16 @@ namespace hccl
     }
 
     HcclResult HcclCommunicator::DeInitTransportMem()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SnapshotCheckPreProcess()
+    {
+        return HCCL_SUCCESS;
+    }
+
+    HcclResult HcclCommunicator::SnapshotCheckPostProcess()
     {
         return HCCL_SUCCESS;
     }

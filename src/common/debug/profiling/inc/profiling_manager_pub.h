@@ -25,7 +25,7 @@ public:
     static HcclResult GetAddtionInfoState();
     static HcclResult GetTaskApiState();
     static HcclResult CallMsprofReportHostApi(HcclCMDType cmdType, uint64_t beginTime, u64 count, HcclDataType dataType,
-        AlgType algType, uint64_t groupName, u32 blockDim=0);
+        AlgType algType, uint64_t groupName, u32 numBlocks=0);
     static HcclResult CallMsprofReportMc2CommInfo(uint64_t timeStamp, const void *data, int len);
     static HcclResult CallMsprofReportHostNodeApi(uint64_t beginTime, uint64_t endTime, const std::string profName,
         uint32_t threadId);

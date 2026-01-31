@@ -85,6 +85,10 @@ HcclResult ReduceScatterOperator::SelectAlg(const std::string& tag, const OpPara
         const std::string REDUCE_SCATTER_NO_INLINE = "_no_inline";
         newTag = (isInlineReduce && isRdmaReduce) ? newTag : newTag + REDUCE_SCATTER_NO_INLINE;
     }
+    if (algName == "ReduceScatterARSFor91093Executor") {
+        u32 ringSize = CalcOptimalIntraRingsize(param.DataDes.count, param.DataDes.dataType, HcclCMDType::HCCL_CMD_REDUCE_SCATTER);
+        newTag += std::to_string(ringSize);
+    }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
     return ret;
 }
@@ -166,6 +170,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     CHK_RET(cclBufferManager_.GetOutCCLbuffer(commOutputPtr, commOutputSize));
     bool isServNumPowOfTwo = (serverNum_ > 0) && ((serverNum_ & (serverNum_ - 1)) == 0);
     bool isOpbase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
+    bool isInlineReduce = IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
+        cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType);
 
     if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_STRICT) {
         if (!isMeshTopo || multiModuleDiffDeviceNumMode_) {
@@ -232,8 +238,6 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     }
 
     if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
-        bool isInlineReduce = IsSupportSDMAReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
-            cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType);
         bool isRdmaReduce = IsSupportRDMAReduce(param.DataDes.dataType, param.reduceType);
 
         std::string algTypeLevel1Tag;
@@ -261,7 +265,11 @@ HcclResult ReduceScatterOperator::SelectAlgfor910B(const OpParam& param, std::st
     }
 
     if (isMeshTopo) {
-        if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
+        if (topoMatcher_->GetDeterministicConfig() == DETERMINISTIC_ENABLE
+            && GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE
+            && algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_PIPELINE) {
+            algName = "ReduceScatterDeterPipelineExecutor";
+        } else if (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE) {
             if (SingleMeshInlineReduce(cclBufferManager_.GetInCCLbuffer().ptr(),
                 cclBufferManager_.GetOutCCLbuffer().ptr(), param.DataDes.dataType, param.reduceType)) {
                 if (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE) {
@@ -360,8 +368,8 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         && serverNum_ > 1
         && !GetExternalInputInterHccsDisable()
         && (
-            ((userRankSize_ <= ONE_EIGHTH_MAX_BLOCK_DIM && dataSize <= AIV_REDUCE_SCATTER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
-            (userRankSize_ <= ONE_THIRD_MAX_BLOCK_DIM && dataSize <= AIV_REDUCE_SCATTER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
+            ((userRankSize_ <= ONE_EIGHTH_MAX_NUM_BLOCKS && dataSize <= AIV_REDUCE_SCATTER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
+            (userRankSize_ <= ONE_THIRD_MAX_NUM_BLOCKS && dataSize <= AIV_REDUCE_SCATTER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
             (dataSize <= AIV_REDUCE_SCATTER_A3_LARGE_RANKSIZE_ENTRY_SIZE) || isOnlyAiv)
         );
 
@@ -376,7 +384,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
                         && topoMatcher_->GetAivModeConfig()
                         && IsSupportAIVReduce(param.DataDes.dataType, param.reduceType)
                         && (topoMatcher_->GetDeterministicConfig() != DETERMINISTIC_DISABLE)
-                        && (dataSize * userRankSize_ < HCCL_SMALL_COUNT_8_MB)
+                        && ((dataSize * userRankSize_ < HCCL_SMALL_COUNT_8_MB) || isOnlyAiv)
                         && (!retryEnable_)
                         && userRankSize_ > 1
                         && !multiModuleDiffDeviceNumMode_;
@@ -398,7 +406,7 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         if (isAivCrossNode) {
             algName = "ReduceScatterMeshAivFor91093Executor";
         } else if ((isOpbase && dataSize <= AIV_REDUCE_SCATTER_MID_SIZE) 
-            || (!isOpbase && dataSize <= std::min(limit.aivCoreLimit / userRankSize_, BLOCK_DIM_FACTOR_FOUR)
+            || (!isOpbase && dataSize <= std::min(limit.aivCoreLimit / userRankSize_, NUM_BLOCKS_FACTOR_FOUR)
             * AIV_REDUCE_SCATTER_BIG_SIZE)) {
             algName = "ReduceScatterMeshAivSmallCountExecutor";
         } else {
@@ -407,7 +415,15 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
         HCCL_INFO("[SelectAlgfor91093] ReduceScatter SelectAlgfor91093 is algName [%s]", algName.c_str());
         return HCCL_SUCCESS;
     }
-
+    // ARS 算法选择
+    bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
+    if (isARSAlgo) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[ReduceScatterOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+    }
     // AHC 算法选择逻辑
     bool isAHCAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
     if (isAHCAlgo) {
@@ -450,8 +466,10 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "ReduceScatterHccsSioExecutor";
-    } else if (multiModuleDiffDeviceNumMode_) {
-        algName = "ReduceScatterComm";
+    } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
+         algName = "ReduceScatterComm";
+    } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
+        algName = "ReduceScatterARSFor91093Executor";
     } else if (smallCountOptimMultiPod || useHostComm || (smallCountOptimMultiServer && !isPowOfTwo &&
         (param.DataDes.count * SIZE_TABLE[param.DataDes.dataType] <= HCCL_SMALL_COUNT_256_KB))) {
         algName = "ReduceScatterComm";
@@ -500,23 +518,17 @@ HcclResult ReduceScatterOperator::SelectAlgfor91093(const OpParam& param, std::s
             "default is algType=NHR.");
     }
      // 如果配置了aiv only,但是实际没有选择aiv算法,需要通过DFX打印出具体原因
-    if (isOnlyAiv && !isAivMode) {
+    if (isOnlyAiv && !isAivMode && !isSupportAivDeter) {
         HCCL_ERROR("The current conditions do not meet the aiv only execution criteria because:");
         CHK_PRT_RET(!IsSupportAIVReduce(param.DataDes.dataType, param.reduceType), HCCL_ERROR("current data type[%s] or reduceType[%s] not supported,"
             "data type support range:[int8, int16, int32, uint8, uint16, uint32, float16, float32, bfloat16] reduce type support range:[sum, max, min]",
             GetDataTypeEnumStr(param.DataDes.dataType).c_str(), GetReduceOpEnumStr(param.reduceType).c_str()), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isSupportAivDeter, HCCL_ERROR("is not support aiv deter.superPodNum_[%u] deterministic config[%u]"
-            "userRankSize_[%u] dataSize[%llu], retryEnable_[%d]",
-            superPodNum_, topoMatcher_->GetDeterministicConfig(), userRankSize_, dataSize, retryEnable_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable [%d] not supported", retryEnable_), HCCL_E_NOT_SUPPORT);
 
-        CHK_PRT_RET(!isAivSingleNode && !isAivCrossNode,
-            HCCL_ERROR("not is aiv single or cross node. serverNum_[%u] isOpbase[%d] superPodNum_[%u] hccs disable[%u]"
-                "userRankSize_[%u] dataSize[%llu]", serverNum_, isOpbase,
-                superPodNum_, GetExternalInputInterHccsDisable(), userRankSize_, dataSize), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(superPodNum_ != 1, HCCL_ERROR("multi superpod [%u] not supported", superPodNum_), HCCL_E_NOT_SUPPORT);
 
-        HCCL_ERROR("deterministic config[%u] retryEnable_[%d]",
-            topoMatcher_->GetDeterministicConfig(), retryEnable_);
+        CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] ReduceScatter SelectAlgfor91093 is algName [%s]", algName.c_str());

@@ -24,6 +24,7 @@ public:
     HcclResult Init(const NotifyLoadType type = NotifyLoadType::HOST_NOTIFY);
     HcclResult Init(const HcclSignalInfo &notifyInfo,
                     const NotifyLoadType type = NotifyLoadType::DEVICE_NOTIFY);
+    HcclResult InitNotifyLite(const HcclSignalInfo &notifyInfo);
 
     HcclResult Wait(Stream& stream, HcclDispatcher dispatcher,
         s32 stage = INVALID_VALUE_STAGE, u32 timeOut = NOTIFY_INVALID_WAIT_TIME);

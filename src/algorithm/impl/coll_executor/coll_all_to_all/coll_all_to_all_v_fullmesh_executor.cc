@@ -149,7 +149,7 @@ HcclResult CollRunAlltoAllVFullMesh::KernelRun(const OpParam &param, ExecMem &ex
         return HCCL_E_PARA;
     }
 
-    HCCL_INFO("[CollRunAlltoAllVFullMesh] excutor run success");
+    HCCL_INFO("[CollRunAlltoAllVFullMesh] executor run success");
 
     return HCCL_SUCCESS;
 }

@@ -2,11 +2,11 @@
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
 
 #include "zero_copy_memory_agent.h"
 #include <string>
@@ -14,6 +14,7 @@
 #include "hccl_network_pub.h"
 #include "adapter_hccp_common.h"
 #include "adapter_rts_common.h"
+#include "snapshot_control.h"
 
 namespace hccl {
 using namespace std;
@@ -21,6 +22,7 @@ using namespace std;
 const string STR_IPC_MEM_EXCHANGE = "IpcMemExchange";
 constexpr u32 IPC_MEMORY_EXCHANGE_LENGTH = 64;  // Bytes
 constexpr u32 USLEEP_ONE_THOUSAND = 1000;
+constexpr int INNER_THREAD_LOOP_US = 500;
 
 std::unique_ptr<ZeroCopyAddressMgr> ZeroCopyMemoryAgent::addressMgr_ = nullptr;
 
@@ -78,16 +80,25 @@ HcclResult ZeroCopyMemoryAgent::Init()
     CHK_RET(addressMgr_->IncreCommRefCnt());
 
     CHK_RET(EstablishSockets());
-    CHK_RET(InitRecvThread());
+
+    exchangeDataForSend_.resize(IPC_MEMORY_EXCHANGE_LENGTH * ZERO_COPY_MEMORY_AGENT_SEND_QUEUE_SIZE, 0);
+    for (const auto& kv : mapDevPhyIdconnectedSockets_) {
+        exchangeDataForAck_[kv.first].resize(IPC_MEMORY_EXCHANGE_LENGTH, 0);
+        sendMgrs_[kv.first].reqDataSize_ = IPC_MEMORY_EXCHANGE_LENGTH;
+        recvMgrs_[kv.first].receivedData_.resize(ZERO_COPY_MEMORY_AGENT_RECV_QUEUE_SIZE,
+            std::vector<u8>(IPC_MEMORY_EXCHANGE_LENGTH, 0));
+    }
+
+    CHK_RET(InitInnerThread());
 
     return HCCL_SUCCESS;
 }
 
-HcclResult ZeroCopyMemoryAgent::InitRecvThread()
+HcclResult ZeroCopyMemoryAgent::InitInnerThread()
 {
     threadRun_ = true;
-    recvThread_.reset(new (std::nothrow) std::thread(&ZeroCopyMemoryAgent::DealWithIpcMemoryRequest, this));
-    CHK_SMART_PTR_NULL(recvThread_);
+    innerThread_.reset(new (std::nothrow) std::thread(&ZeroCopyMemoryAgent::InnerThread, this));
+    CHK_SMART_PTR_NULL(innerThread_);
     return HCCL_SUCCESS;
 }
 
@@ -97,6 +108,9 @@ HcclResult ZeroCopyMemoryAgent::EstablishSockets()
         HCCL_ERROR("[ZeroCopyMemoryAgent][Init] already initd"), HCCL_E_PARA);
     CHK_RET(HcclNetOpenDev(&vnicPortCtx_, NicType::VNIC_TYPE, devicePhyId_, deviceLogicId_, localVnicIp_));
     CHK_PTR_NULL(vnicPortCtx_);
+
+    isSocketSupportAsync_ = HcclSocket::IsSupportAsync();
+    HCCL_RUN_INFO("[ZeroCopyMemoryAgent][Init] isSocketSupportAsync[%d]", isSocketSupportAsync_);
 
     for (size_t i = 0; i < rankInfoList_.size(); i++) {
         if (rankInfoList_[i].devicePhyId == static_cast<s32>(devicePhyId_)) {
@@ -125,7 +139,7 @@ HcclResult ZeroCopyMemoryAgent::EstablishSockets()
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Create][DestSockets]Create single link sockets failed, "
             "local rank[%u], remote rank[%u]", userRank_, i), ret);
         if (tmpSockets.size() != 1) {
-            HCCL_ERROR("[ZeroCopyMemoryAgent][CreateVnic] socket number[%llu] is not 1 as expected!");
+            HCCL_ERROR("[ZeroCopyMemoryAgent][CreateVnic] socket number[%llu] is not 1 as expected!", tmpSockets.size());
             return HCCL_E_INTERNAL;
         }
         // 设置强制断链为关闭，避免进程退出时recv失败
@@ -158,17 +172,304 @@ std::string ZeroCopyMemoryAgent::GenerateSocketTag(u32 localRank, u32 remoteRank
     return tag;
 }
 
-HcclResult ZeroCopyMemoryAgent::BatchSend(const std::string &prefix, u8 *data, u64 length)
+HcclResult ZeroCopyMemoryAgent::SendRequestSync(RequestType requestType, const std::vector<u8>& req, u32 remoteDevPhyId)
 {
-    HCCL_INFO("[ZeroCopyMemoryAgent][BatchSend][%s]", prefix.c_str());
-    std::unique_lock<std::mutex> lock(socketMutex_);
-    for (const auto& kv : mapDevPhyIdconnectedSockets_) {
-        CHK_PRT_RET(kv.second->Send(data, length) != HCCL_SUCCESS,
-            HCCL_ERROR("[ZeroCopyMemoryAgent][%s] send to rank[%u] failed", prefix.c_str(), mapDevPhyId2RankId_[kv.first]),
+    HcclResult ret;
+    if (remoteDevPhyId != INVALID_VALUE_RANKID) {
+        std::unique_lock<std::mutex> lock(sendMutex_);  // send 存在多线调用，需要锁保护
+        ret = mapDevPhyIdconnectedSockets_[remoteDevPhyId]->Send(req.data(), IPC_MEMORY_EXCHANGE_LENGTH); 
+        CHK_PRT_RET(ret != HCCL_SUCCESS, 
+            HCCL_ERROR("[ZeroCopyMemoryAgent][SendRequestSync] Send %s to remote[%u] failed",
+                        GetReadableRequestType(requestType), remoteDevPhyId),
             HCCL_E_INTERNAL);
+        return HCCL_SUCCESS;
     }
 
+    std::unique_lock<std::mutex> lock(sendMutex_);
+    for (const auto& kv : mapDevPhyIdconnectedSockets_) {
+        CHK_PRT_RET(kv.second->Send(req.data(), IPC_MEMORY_EXCHANGE_LENGTH) != HCCL_SUCCESS,
+            HCCL_ERROR("[ZeroCopyMemoryAgent][SendRequestSync] Send %s to remote[%u] failed",
+                        GetReadableRequestType(requestType), kv.first),
+            HCCL_E_INTERNAL);
+    }
     return HCCL_SUCCESS;
+}
+
+HcclResult ZeroCopyMemoryAgent::SendRequest(RequestType requestType, const std::vector<u8>& req, u32 remoteDevPhyId)
+{
+    HCCL_INFO("[ZeroCopyMemoryAgent][SendRequest] requestType[%s] remote[%u]",
+        GetReadableRequestType(requestType), remoteDevPhyId);
+
+    if (!isSocketSupportAsync_) {  // socket不支持异步收发的场景
+        return SendRequestSync(requestType, req, remoteDevPhyId);
+    }
+
+    bool isAck = IsAckRequestType(requestType);
+    if (remoteDevPhyId != INVALID_VALUE_RANKID) {
+        sendMgrs_[remoteDevPhyId].AddRequest(isAck, req);
+    } else {
+        for (auto& kv : sendMgrs_) {
+            kv.second.AddRequest(isAck, req);
+        }
+    }
+
+    // 唤醒内部io线程
+    std::unique_lock<std::mutex> lock(sendMutex_);
+    hasSendRequest_ = true;
+    sendCv_.notify_all();
+    return HCCL_SUCCESS;
+}
+
+void ZeroCopyMemoryAgent::RequestBatchSendAsync()
+{
+    HcclResult ret;
+    for (auto &kv : sendMgrs_) {
+        auto &sendMgr = kv.second;
+        if ((sendMgr.lastSendHandle_ != nullptr) || (!sendMgr.hasReq_[0] && !sendMgr.hasReq_[1])) {
+            // 前回发送未完成 或者 没有待发送的数据
+            continue;
+        }
+
+        auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
+        if (sendMgr.sentSize_ == 0) {  // 非断点续传
+            if (sendMgr.hasReq_[0] && sendMgr.hasReq_[1]) {  // 合并发送
+                u8 *ptr = const_cast<u8 *>(sendMgr.reqDatas_[1]->data()) + IPC_MEMORY_EXCHANGE_LENGTH;
+                u32 leftSize = IPC_MEMORY_EXCHANGE_LENGTH;
+                if (ConstructData(ptr, leftSize, const_cast<u8 *>(sendMgr.reqDatas_[0]->data()),
+                        IPC_MEMORY_EXCHANGE_LENGTH) == HCCL_SUCCESS) {
+                    sendMgr.hasReq_[0] = false;
+                    sendMgr.currIndex_ = 1;
+                    sendMgr.reqDataSize_ = IPC_MEMORY_EXCHANGE_LENGTH + IPC_MEMORY_EXCHANGE_LENGTH;
+                } else {
+                    sendMgr.currIndex_ = 0;
+                    sendMgr.reqDataSize_ = IPC_MEMORY_EXCHANGE_LENGTH;
+                }
+            } else {
+                sendMgr.currIndex_ = sendMgr.hasReq_[0] ? 0 : 1;
+                sendMgr.reqDataSize_ = IPC_MEMORY_EXCHANGE_LENGTH;
+            }
+        }
+        const std::vector<u8> *req = sendMgr.reqDatas_[sendMgr.currIndex_];
+        sendMgr.lastSendSize_ = 0;  // 用于ra上报发送的数据量
+        ret = socket->SendAsync(req->data() + sendMgr.sentSize_,
+                                sendMgr.reqDataSize_ - sendMgr.sentSize_,
+                                &sendMgr.lastSendSize_, &sendMgr.lastSendHandle_);
+        if (ret != HCCL_SUCCESS && ret != HCCL_E_AGAIN) {  // 发送失败的场景
+            RequestType requestType = *(const RequestType *)req->data();
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchSendAsync] failed, ret[%d] remote[%u] requestType[%s] sentSize[%llu]",
+                       ret, kv.first, GetReadableRequestType(requestType), sendMgr.sentSize_);
+        }
+    }
+}
+
+void ZeroCopyMemoryAgent::CheckBatchSendAsyncResult()
+{
+    HcclResult ret;
+    HcclResult lastSendRet;
+    for (auto &kv : sendMgrs_) {
+        auto &sendMgr = kv.second;
+        if (sendMgr.lastSendHandle_ == nullptr) {  // 没有正在执行的异步send
+            continue;
+        }
+
+        auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
+        ret = socket->GetAsyncReqResult(sendMgr.lastSendHandle_, lastSendRet);
+        if (ret != HCCL_SUCCESS) {
+            CHK_PRT_CONT(ret != HCCL_E_AGAIN,
+                HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchSendAsyncResult]GetAsyncReqResult failed, ret[%d] remote[%u]",
+                            ret, kv.first));
+            continue;
+        }
+
+        sendMgr.lastSendHandle_ = nullptr;
+        if ((lastSendRet != HCCL_SUCCESS) && (sendMgr.lastSendSize_ == 0)) {
+            CHK_PRT_CONT(lastSendRet != HCCL_E_AGAIN,
+                HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchSendAsyncResult]SendAsync failed, result[%d] remote[%u] sentSize[%llu]",
+                            lastSendRet, kv.first, sendMgr.sentSize_));
+            continue;
+        }
+
+        sendMgr.sentSize_ += sendMgr.lastSendSize_;  // 下次从中断的地方开始重发
+        if (sendMgr.sentSize_ == sendMgr.reqDataSize_) {  // request发送完成
+            sendMgr.sentSize_ = 0;
+            sendMgr.hasReq_[sendMgr.currIndex_] = false;
+            HCCL_DEBUG("[ZeroCopyMemoryAgent][CheckBatchSendAsyncResult]SendAsync success, requestType[%s] remote[%u]",
+                    GetReadableRequestType(*((RequestType *)sendMgr.reqDatas_[sendMgr.currIndex_]->data())), kv.first);
+        }
+    }
+}
+
+void ZeroCopyMemoryAgent::RequestBatchRecvAsync()
+{
+    HcclResult ret;
+    for (auto &kv : recvMgrs_) {
+        auto &recvMgr = kv.second;
+        if ((recvMgr.lastRecvHandle_ != nullptr) ||  // 前回接收未完成
+            ((receivedBarrierClose_.count(kv.first) != 0) && (receivedBarrierCloseAck_.count(kv.first) != 0))) {
+            // 该socket已经收到BarrierClose与BarrierCloseAck报文，因此不允许再进行其他数据接收了
+            continue;
+        }
+
+        auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
+        std::vector<u8> &req = recvMgr.receivedData_[recvMgr.recvIndex_];
+        recvMgr.lastRecvSize_ = 0;  // 用于ra上报接收的数据量
+        ret = socket->RecvAsync(req.data() + recvMgr.receivedSize_,
+            IPC_MEMORY_EXCHANGE_LENGTH - recvMgr.receivedSize_, &recvMgr.lastRecvSize_, &recvMgr.lastRecvHandle_);
+        CHK_PRT_CONT((ret != HCCL_SUCCESS) && (ret != HCCL_E_AGAIN),
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvAsync] RecvAsync failed, ret[%d] remote[%u] receivedSize[%llu]",
+                ret, kv.first, recvMgr.receivedSize_));
+    }
+}
+
+void ZeroCopyMemoryAgent::CheckBatchRecvAsyncResult()
+{
+    HcclResult ret;
+    HcclResult lastRecvRet;
+    for (auto &kv : recvMgrs_) {
+        auto &recvMgr = kv.second;
+        if (recvMgr.lastRecvHandle_ == nullptr) {  // 没有正在异步接收
+            continue;
+        }
+
+        auto socket = mapDevPhyIdconnectedSockets_[kv.first];
+        ret = socket->GetAsyncReqResult(recvMgr.lastRecvHandle_, lastRecvRet);
+        if (ret != HCCL_SUCCESS) {
+            CHK_PRT_CONT(ret != HCCL_E_AGAIN,
+                HCCL_ERROR("[ZeroCopyMemoryAgent][CheckBatchRecvAsyncResult] GetAsyncReqResult failed, ret[%d] remote[%u]",
+                            ret, kv.first));
+            continue;
+        }
+
+        recvMgr.lastRecvHandle_ = nullptr;
+        if ((lastRecvRet != HCCL_SUCCESS) && (recvMgr.lastRecvSize_ == 0)) {
+            CHK_PRT_CONT(lastRecvRet != HCCL_E_AGAIN,
+                HCCL_WARNING("[ZeroCopyMemoryAgent][CheckBatchRecvAsyncResult] RecvAsync failed, result[%d] remote[%u] lastRecvSize[%llu]",
+                    lastRecvRet, kv.first, recvMgr.lastRecvSize_));
+            continue;
+        }
+
+        recvMgr.receivedSize_ += recvMgr.lastRecvSize_;
+        if (recvMgr.receivedSize_ == IPC_MEMORY_EXCHANGE_LENGTH) {
+            recvMgr.receivedSize_ = 0;
+            RecvRequest(recvMgr, kv.first);
+            ioRecvWaiting_ = true;  // 后面高概率还有数据要收（ack与request合并场景），loop不等待
+        } else {
+            // request没收全，loop不等待
+            ioRecvWaiting_ = (recvMgr.receivedSize_ > 0);
+        }
+    }
+}
+
+inline void ZeroCopyMemoryAgent::RecvRequest(ZeroCopyMemoryAgentRecvMgr &recvMgr, u32 remoteDevicePhyId)
+{
+    std::vector<u8> &req = recvMgr.receivedData_[recvMgr.recvIndex_];
+    RequestType requestType = *(RequestType *)req.data();
+    HCCL_DEBUG("[ZeroCopyMemoryAgent][RecvRequest] recv requestType[%s] remote[%u]",
+        GetReadableRequestType(requestType), remoteDevicePhyId);
+
+    if (IsAckRequestType(requestType)) {  // 收到ACK时，直接优先处理
+        u32 remoteRank = mapDevPhyId2RankId_[remoteDevicePhyId];
+        CHK_PRT_CONT(ParseReceivedRequest(req, remoteRank) != HCCL_SUCCESS,
+                HCCL_ERROR("[ZeroCopyMemoryAgent][ParseReceivedRequest] failed requestType[%s] remote[%u]",
+                    GetReadableRequestType(requestType), remoteDevicePhyId));
+        return;
+    }
+
+    recvMgr.recvIndex_ = (recvMgr.recvIndex_ + 1) % ZERO_COPY_MEMORY_AGENT_RECV_QUEUE_SIZE;  // 准备下一次接收
+    hasReceivedRequest_ = true;
+}
+
+void ZeroCopyMemoryAgent::ParseReceivedRequests()
+{
+    if (!hasReceivedRequest_) {
+        return;
+    }
+    hasReceivedRequest_ = false;
+
+    for (auto &kv : recvMgrs_) {
+        u32 remoteRank = mapDevPhyId2RankId_[kv.first];
+        auto &recvMgr = kv.second;
+        while (recvMgr.praseIndex_ != recvMgr.recvIndex_) {
+            std::vector<u8> &req = recvMgr.receivedData_[recvMgr.praseIndex_];
+            CHK_PRT_CONT(ParseReceivedRequest(req, remoteRank) != HCCL_SUCCESS,
+                    HCCL_ERROR("[ZeroCopyMemoryAgent][ParseReceivedRequest] failed prase requestType[%s] remote[%u]",
+                        GetReadableRequestType(*((RequestType *)req.data())), kv.first));
+            recvMgr.praseIndex_++;
+            if (recvMgr.praseIndex_ == ZERO_COPY_MEMORY_AGENT_RECV_QUEUE_SIZE) {
+                recvMgr.praseIndex_ = 0;
+            }
+        }
+    }
+}
+
+void ZeroCopyMemoryAgent::RequestBatchRecvSync()
+{
+    HcclResult ret;
+    for (auto &kv : recvMgrs_) {
+        auto &recvMgr = kv.second;
+        if ((receivedBarrierClose_.count(kv.first) != 0) && (receivedBarrierCloseAck_.count(kv.first) != 0)) {
+            // 该socket已经收到BarrierClose与BarrierCloseAck报文，因此不允许再进行其他数据接收了
+            continue;
+        }
+
+        auto &socket = mapDevPhyIdconnectedSockets_[kv.first];
+        std::vector<u8> &req = recvMgr.receivedData_[0];
+        recvMgr.lastRecvSize_ = 0;
+        ret = socket->IRecv(req.data() + recvMgr.receivedSize_, IPC_MEMORY_EXCHANGE_LENGTH - recvMgr.receivedSize_,
+                            recvMgr.lastRecvSize_);
+        CHK_PRT_CONT((ret != HCCL_SUCCESS) && (ret != HCCL_E_AGAIN),
+            HCCL_ERROR("[ZeroCopyMemoryAgent][RequestBatchRecvSync] IRecv failed, ret[%d] remote[%u] receivedSize[%llu]",
+                    ret, kv.first, recvMgr.receivedSize_));
+
+        recvMgr.receivedSize_ += recvMgr.lastRecvSize_;
+        if (recvMgr.receivedSize_ == IPC_MEMORY_EXCHANGE_LENGTH) {
+            recvMgr.receivedSize_ = 0;
+            ret = ParseReceivedRequest(req, mapDevPhyId2RankId_[kv.first]);
+            CHK_PRT_CONT(ret != HCCL_SUCCESS, HCCL_ERROR("[ZeroCopyMemoryAgent][ParseReceivedRequest] failed"));
+        }
+    }
+}
+
+void ZeroCopyMemoryAgent::InnerThread()
+{
+    // 新线程，更新一下使用的设备
+    if (hrtSetDevice(deviceLogicId_) != HCCL_SUCCESS) {
+        HCCL_ERROR("[ZeroCopyMemoryAgent][InnerThread] set device failed");
+        return;
+    }
+
+    while (threadRun_) {
+        CheckSnapshotStatus();
+        if (isPaused_) {
+            SaluSleep(USLEEP_ONE_THOUSAND);
+            continue;
+        }
+
+        if (isSocketSupportAsync_) {
+            CheckBatchSendAsyncResult();
+            RequestBatchSendAsync();
+
+            CheckBatchRecvAsyncResult();
+            RequestBatchRecvAsync();
+
+            ParseReceivedRequests();
+
+            std::unique_lock<std::mutex> lock(sendMutex_);
+            if (!ioRecvWaiting_ && !hasSendRequest_) {
+                sendCv_.wait_for(lock, std::chrono::microseconds(INNER_THREAD_LOOP_US));
+            }
+            hasSendRequest_ = false;
+            ioRecvWaiting_ = false;
+        } else {
+            RequestBatchRecvSync();
+            SaluSleep(USLEEP_ONE_THOUSAND);
+        }
+    }
+
+    if (hrtResetDevice(deviceLogicId_) != HCCL_SUCCESS) {
+        HCCL_ERROR("[ZeroCopyMemoryAgent][InnerThread] reset device failed");
+        return;
+    }
 }
 
 HcclResult ZeroCopyMemoryAgent::SetRemoteTgid()
@@ -179,7 +480,6 @@ HcclResult ZeroCopyMemoryAgent::SetRemoteTgid()
     }
     remotePids_.clear();
 
-    exchangeDataForSend_.resize(IPC_MEMORY_EXCHANGE_LENGTH);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
 
@@ -189,7 +489,7 @@ HcclResult ZeroCopyMemoryAgent::SetRemoteTgid()
 
     CHK_RET(ConstructData(exchangeDataPtr, exchangeDataBlankSize, devicePhyId_));
 
-    CHK_RET(BatchSend(__func__, exchangeDataForSend_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
+    CHK_RET(SendRequest(requestType, exchangeDataForSend_));
 
     CHK_RET(WaitForAllRemoteComplete(RequestType::SET_REMOTE_BARE_TGID_ACK));
     if (remotePids_.size() != mapDevPhyIdconnectedSockets_.size()) {
@@ -209,12 +509,12 @@ HcclResult ZeroCopyMemoryAgent::DeInit()
         return HCCL_E_INTERNAL;
     }
     threadRun_ = false;
-    if (recvThread_) {
-        if (recvThread_->joinable()) {
-            recvThread_->join();  // 等待线程执行后释放资源
+    if (innerThread_) {
+        if (innerThread_->joinable()) {
+            innerThread_->join();  // 等待线程执行后释放资源
         }
     }
-    recvThread_ = nullptr;
+    innerThread_ = nullptr;
 
     if (vnicPortCtx_ != nullptr) {
         HcclNetCloseDev(vnicPortCtx_);
@@ -237,9 +537,8 @@ HcclResult ZeroCopyMemoryAgent::SetMemoryRange(void *virPtr, size_t size, size_t
         HCCL_ERROR("[ZeroCopyMemoryAgent][SetMemoryRange] invalid set ptr[%p] size[%lu] alignment[%lu] flags[%lu]",
         virPtr, size, alignment, flags), HCCL_E_PARA);
 
-    HCCL_INFO("[ZeroCopyMemoryAgent][SetMemoryRange] basePtr[%p] size[%lu] aligment[%lu] flag[%lu]",
+    HCCL_INFO("[ZeroCopyMemoryAgent][SetMemoryRange] basePtr[%p] size[%lu] alignment[%lu] flag[%lu]",
         virPtr, size, alignment, flags);
-    exchangeDataForSend_.resize(IPC_MEMORY_EXCHANGE_LENGTH);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
 
@@ -258,7 +557,7 @@ HcclResult ZeroCopyMemoryAgent::SetMemoryRange(void *virPtr, size_t size, size_t
 
     CHK_RET(ConstructData(exchangeDataPtr, exchangeDataBlankSize, flags));
 
-    CHK_RET(BatchSend(__func__, exchangeDataForSend_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
+    CHK_RET(SendRequest(requestType, exchangeDataForSend_));
 
     CHK_RET(WaitForAllRemoteComplete(RequestType::SET_MEMORY_RANGE_ACK));
     return HCCL_SUCCESS;
@@ -274,7 +573,6 @@ HcclResult ZeroCopyMemoryAgent::UnsetMemoryRange(void *virPtr)
     CHK_RET(addressMgr_->UnsetMemoryRange(devicePhyId_, virPtr));
 
     HCCL_INFO("[ZeroCopyMemoryAgent][UnsetMemoryRange] basePtr[%p]", virPtr);
-    exchangeDataForSend_.resize(IPC_MEMORY_EXCHANGE_LENGTH);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
 
@@ -286,7 +584,7 @@ HcclResult ZeroCopyMemoryAgent::UnsetMemoryRange(void *virPtr)
     u64 addr = reinterpret_cast<u64>(virPtr);
     CHK_RET(ConstructData(exchangeDataPtr, exchangeDataBlankSize, addr));
 
-    CHK_RET(BatchSend(__func__, exchangeDataForSend_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
+    CHK_RET(SendRequest(requestType, exchangeDataForSend_));
 
     CHK_RET(WaitForAllRemoteComplete(RequestType::UNSET_MEMORY_RANGE_ACK));
     return HCCL_SUCCESS;
@@ -317,7 +615,6 @@ HcclResult ZeroCopyMemoryAgent::ActivateCommMemory(void *virPtr, size_t size, si
         " failed, ret[%d]", shareableHandle, ret), HCCL_E_RUNTIME);
 
     HCCL_INFO("[ZeroCopyMemoryAgent][ActivateCommMemory] dev[%u] export shareableHandle[%lu]", devicePhyId_, shareableHandle);
-    exchangeDataForSend_.resize(IPC_MEMORY_EXCHANGE_LENGTH);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
 
@@ -337,7 +634,7 @@ HcclResult ZeroCopyMemoryAgent::ActivateCommMemory(void *virPtr, size_t size, si
 
     CHK_RET(ConstructData(exchangeDataPtr, exchangeDataBlankSize, flags));
 
-    CHK_RET(BatchSend(__func__, exchangeDataForSend_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
+    CHK_RET(SendRequest(requestType, exchangeDataForSend_));
 
     CHK_RET(WaitForAllRemoteComplete(RequestType::ACTIVATE_COMM_MEMORY_ACK));
     CHK_RET(addressMgr_->ActivateCommMemoryAddr(virPtr, size));
@@ -356,7 +653,6 @@ HcclResult ZeroCopyMemoryAgent::DeactivateCommMemory(void *virPtr)
     HCCL_INFO("[ZeroCopyMemoryAgent][DeactivateCommMemory] virPtr[%p]", virPtr);
     CHK_RET(addressMgr_->DeactivateCommMemoryAddr(virPtr));
 
-    exchangeDataForSend_.resize(IPC_MEMORY_EXCHANGE_LENGTH);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
 
@@ -368,7 +664,7 @@ HcclResult ZeroCopyMemoryAgent::DeactivateCommMemory(void *virPtr)
     u64 addr = reinterpret_cast<u64>(virPtr);
     CHK_RET(ConstructData(exchangeDataPtr, exchangeDataBlankSize, addr));
 
-    CHK_RET(BatchSend(__func__, exchangeDataForSend_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
+    CHK_RET(SendRequest(requestType, exchangeDataForSend_));
 
     CHK_RET(WaitForAllRemoteComplete(RequestType::DEACTIVATE_COMM_MEMORY_ACK));
     return HCCL_SUCCESS;
@@ -379,7 +675,6 @@ HcclResult ZeroCopyMemoryAgent::BarrierClose()
     CHK_PRT_RET(isSingleRank_, HCCL_INFO("[ZeroCopyMemoryAgent][BarrierClose] single rank communicator"), HCCL_SUCCESS);
 
     HCCL_RUN_INFO("[ZeroCopyMemoryAgent][BarrierClose] [%s] ready to barrier close", identifier_.c_str());
-    exchangeDataForSend_.resize(IPC_MEMORY_EXCHANGE_LENGTH);
     u8 *exchangeDataPtr = exchangeDataForSend_.data();
     u32 exchangeDataBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
 
@@ -387,7 +682,7 @@ HcclResult ZeroCopyMemoryAgent::BarrierClose()
     CHK_RET(ConstructData(exchangeDataPtr, exchangeDataBlankSize, requestType));
     CHK_RET(ConstructData(exchangeDataPtr, exchangeDataBlankSize, devicePhyId_));
 
-    CHK_RET(BatchSend(__func__, exchangeDataForSend_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
+    CHK_RET(SendRequest(requestType, exchangeDataForSend_));
 
     CHK_RET(WaitForAllRemoteComplete(RequestType::BARRIER_CLOSE_ACK));
 
@@ -424,84 +719,23 @@ HcclResult ZeroCopyMemoryAgent::WaitForAllRemoteComplete(RequestType requestType
     }
 
     u32 expectedNum = mapDevPhyIdconnectedSockets_.size();
-    auto startTime = std::chrono::steady_clock::now();
     auto timeout = std::chrono::seconds(GetExternalInputHcclLinkTimeOut());
+    std::unique_lock<std::mutex> lock(dfxMutex_);
+    waitCompleteCv_.wait_for(lock, timeout);
+    if ((reqMsgCounter_[static_cast<int>(requestType)] == expectedNum) &&
+        (!useBarrier || (useBarrier && reqMsgDeliverCnt_ <= reqMsgFinishCnt_))) {
+        reqMsgCounter_[static_cast<int>(requestType)] = 0;
+        reqMsgFinishedRanks_[static_cast<int>(requestType)].clear();
+        return HCCL_SUCCESS;
+    }
 
-    while (true) {
-        // reqMsgCounter：表示该类型的ACK我们收到了多少个（比如Valid的ACK收到了7个）
-        // reqMsgDeliver/reqMsgFinish：表示本端收完整了多少次数据（比如两次valid）
-        CHK_PRT_RET(reqMsgCounter_[static_cast<int>(requestType)] > expectedNum,
-            HCCL_ERROR("[ZeroCopyMemoryAgent][WaitForAllRemoteComplete] recv request[%s] ack [%u] more than expect [%u]",
-            GetReadableRequstType(requestType), reqMsgCounter_[static_cast<int>(requestType)].load(), expectedNum), HCCL_E_INTERNAL);
-
-        if (reqMsgCounter_[static_cast<int>(requestType)] == expectedNum) {
-            if (!useBarrier || (useBarrier && reqMsgDeliverCnt_ <= reqMsgFinishCnt_)) {
-                reqMsgCounter_[static_cast<int>(requestType)] = 0;
-
-                std::lock_guard<std::mutex> dfxLock(dfxMutex_);
-                reqMsgFinishedRanks_[static_cast<int>(requestType)].clear();
-                break;
-            }
-        }
-
-        bool bTimeout = ((std::chrono::steady_clock::now() - startTime) >= timeout);
-        CHK_PRT_RET(bTimeout, HCCL_ERROR("[Wait][RemoteComplete %s] dev[%u] errNo[0x%016llx] timeout[%d s] completeCount[%u] %s",
-            GetReadableRequstType(requestType), devicePhyId_,
+    HCCL_ERROR("[Wait][RemoteComplete %s] dev[%u] errNo[0x%016llx] timeout[%d s] completeCount[%u] %s",
+            GetReadableRequestType(requestType), devicePhyId_,
             HCCL_ERROR_CODE(HCCL_E_TCP_TRANSFER), timeout, reqMsgCounter_[static_cast<int>(requestType)].load(),
-            DumpFinishInfo(requestType).c_str()), HCCL_E_TCP_TRANSFER);
-        SaluSleep(USLEEP_ONE_THOUSAND);
-    }
-    return HCCL_SUCCESS;
-}
-
-void ZeroCopyMemoryAgent::DealWithIpcMemoryRequest()
-{
-    // 新线程，更新一下使用的设备
-    if (hrtSetDevice(deviceLogicId_) != HCCL_SUCCESS) {
-        HCCL_ERROR("[ZeroCopyMemoryAgent][DealWithIpcMemoryRequest] set device failed");
-        return;
-    }
-
-    for (const auto& kv : mapDevPhyIdconnectedSockets_) {
-        mapDevPhyIdReceivedLength_[kv.first] = 0;
-    }
-
-    std::vector<u8> second(IPC_MEMORY_EXCHANGE_LENGTH, 0);
-    for (const auto& kv : mapDevPhyIdconnectedSockets_) {
-        mapDevPhyIdReceivedData_[kv.first] = second;
-    }
-    HcclResult ret;
-    do {
-        for (const auto& kv : mapDevPhyIdconnectedSockets_) {
-            if (receivedBarrierClose_.count(kv.first) && receivedBarrierCloseAck_.count(kv.first)) {
-                // 该socket已经收到了BarrierClose报文，因此不允许再进行其他数据接收了
-                continue;
-            }
-
-            u32 receivedLength = mapDevPhyIdReceivedLength_[kv.first];
-            u32 expectedLength = IPC_MEMORY_EXCHANGE_LENGTH - receivedLength;
-            u64 receivingLength = 0;
-            {
-                std::unique_lock<std::mutex> lock(socketMutex_);
-                ret = kv.second->IRecv(mapDevPhyIdReceivedData_[kv.first].data() + receivedLength,
-                    expectedLength, receivingLength);
-            }
-            CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ZeroCopyMemoryAgent][Socket][IRecv] dev[%u] failed", kv.first), ;);
-            if (receivingLength != 0) {
-                mapDevPhyIdReceivedLength_[kv.first] += receivingLength;
-            }
-            if (mapDevPhyIdReceivedLength_[kv.first] == IPC_MEMORY_EXCHANGE_LENGTH) {
-                ret = ParseReceivedRequest(mapDevPhyIdReceivedData_[kv.first], mapDevPhyId2RankId_[kv.first]);
-                CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ZeroCopyMemoryAgent][Parse][ReceivedRequest] failed"), ;);
-                mapDevPhyIdReceivedLength_[kv.first] = 0;
-            }
-        }
-        SaluSleep(USLEEP_ONE_THOUSAND);
-    } while (threadRun_);
-    if (hrtResetDevice(deviceLogicId_) != HCCL_SUCCESS) {
-        HCCL_ERROR("[ZeroCopyMemoryAgent][DealWithIpcMemoryRequest] reset device failed");
-        return;
-    }
+            DumpFinishInfo(requestType).c_str());
+    reqMsgCounter_[static_cast<int>(requestType)] = 0;
+    reqMsgFinishedRanks_[static_cast<int>(requestType)].clear();
+    return HCCL_E_TCP_TRANSFER;
 }
 
 HcclResult ZeroCopyMemoryAgent::ParseSetMemoryRange(u8* &exchangeDataPtr, u32 &exchangeDataBlankSize)
@@ -550,8 +784,7 @@ HcclResult ZeroCopyMemoryAgent::ParseSetMemoryRange(u8* &exchangeDataPtr, u32 &e
 HcclResult ZeroCopyMemoryAgent::SendAckAfterParse(RequestType requestType, RequestType ackType, u32 remoteDevicePhyId,
     void *extraData, u64 extraDataLen)
 {
-    exchangeDataForAck_.resize(IPC_MEMORY_EXCHANGE_LENGTH);
-    u8 *exchangeDataAckPtr = exchangeDataForAck_.data();
+    u8 *exchangeDataAckPtr = exchangeDataForAck_[remoteDevicePhyId].data();
     u32 exchangeDataAckBlankSize = IPC_MEMORY_EXCHANGE_LENGTH;
 
     CHK_RET(ConstructData(exchangeDataAckPtr, exchangeDataAckBlankSize, ackType));
@@ -564,11 +797,9 @@ HcclResult ZeroCopyMemoryAgent::SendAckAfterParse(RequestType requestType, Reque
 
     // 不需要进行barrier，那么我们每处理一个请求就回复一个请求
     if (!NeedBarrier(requestType)) {
-        std::unique_lock<std::mutex> lock(socketMutex_);
-        CHK_PRT_RET(mapDevPhyIdconnectedSockets_.find(remoteDevicePhyId) == mapDevPhyIdconnectedSockets_.end(),
-            HCCL_ERROR("[ZeroCopyMemoryAgent][SendAckAfterParse] Invalid devicePhyId [%u]", remoteDevicePhyId), HCCL_E_PARA);
-        CHK_RET(mapDevPhyIdconnectedSockets_[remoteDevicePhyId]->Send(exchangeDataForAck_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
-
+        CHK_PRT_RET(SendRequest(ackType, exchangeDataForAck_[remoteDevicePhyId], remoteDevicePhyId) != HCCL_SUCCESS,
+            HCCL_WARNING("[ZeroCopyMemoryAgent][SendAckAfterParse] failed, remote[%u]", remoteDevicePhyId),
+            HCCL_E_INTERNAL);
         return HCCL_SUCCESS;
     }
 
@@ -583,7 +814,8 @@ HcclResult ZeroCopyMemoryAgent::SendAckAfterParse(RequestType requestType, Reque
         reqMsgFinishCnt_++;
 
         // 我们统一将所有的请求一次性都发送过去
-        CHK_RET(BatchSend(__func__, exchangeDataForAck_.data(), IPC_MEMORY_EXCHANGE_LENGTH));
+        CHK_PRT_RET(SendRequest(ackType, exchangeDataForAck_[remoteDevicePhyId]) != HCCL_SUCCESS,
+            HCCL_WARNING("[ZeroCopyMemoryAgent][SendAckAfterParse] failed, remote[all]"), HCCL_E_INTERNAL);
     }
 
     return HCCL_SUCCESS;
@@ -592,10 +824,14 @@ HcclResult ZeroCopyMemoryAgent::SendAckAfterParse(RequestType requestType, Reque
 
 HcclResult ZeroCopyMemoryAgent::ParseRemoteAck(RequestType requestType, u32 remoteRank)
 {
-    std::lock_guard<std::mutex> dfxLock(dfxMutex_);
+    bool useBarrier = NeedBarrier(requestType);
+    std::unique_lock<std::mutex> dfxLock(dfxMutex_);
     reqMsgFinishedRanks_[static_cast<int>(requestType)].insert(remoteRank);
-
-    reqMsgCounter_[static_cast<int>(requestType)]++;
+    u32 counter = ++reqMsgCounter_[static_cast<int>(requestType)];
+    if ((counter == mapDevPhyIdconnectedSockets_.size()) &&
+        (!useBarrier || (useBarrier && reqMsgDeliverCnt_ <= reqMsgFinishCnt_))) {
+        waitCompleteCv_.notify_all();
+    }
     return HCCL_SUCCESS;
 }
 
@@ -822,7 +1058,6 @@ HcclResult ZeroCopyMemoryAgent::ParseReceivedRequest(std::vector<u8>& receivedDa
 
 std::string ZeroCopyMemoryAgent::DumpFinishInfo(RequestType requestType)
 {
-    std::lock_guard<std::mutex> dfxLock(dfxMutex_);
     auto &finishedRanks = reqMsgFinishedRanks_[static_cast<int>(requestType)];
 
     std::string msg = "Expect [";
@@ -839,6 +1074,30 @@ std::string ZeroCopyMemoryAgent::DumpFinishInfo(RequestType requestType)
     finishedRanks.clear();
 
     return msg;
+}
+
+bool ZeroCopyMemoryAgent::IsPaused() const
+{
+    return !threadRun_ || isPaused_;
+}
+
+bool ZeroCopyMemoryAgent::IsResumed() const
+{
+    return !threadRun_ || !isPaused_;
+}
+
+void ZeroCopyMemoryAgent::CheckSnapshotStatus()
+{
+    auto snapshotStatus = SnapshotControl::GetInstance(deviceLogicId_).GetStatus();
+    if (isPaused_ && snapshotStatus == SnapshotStatus::POST_SNAPSHOT) {
+        isPaused_ = false;
+        HCCL_RUN_INFO("[ZeroCopyMemoryAgent][CheckSnapshotStatus] detect snapshot post-processing, "
+            "zero-copy memory agent is resumed, deviceLogicId[%d].", deviceLogicId_);
+    } else if (!isPaused_ && snapshotStatus == SnapshotStatus::PRE_SNAPSHOT) {
+        isPaused_ = true;
+        HCCL_RUN_INFO("[ZeroCopyMemoryAgent][CheckSnapshotStatus] detect snapshot pre-processing, "
+            "zero-copy memory agent is paused, deviceLogicId[%d].", deviceLogicId_);
+    }
 }
 
 }  // namespace hccl

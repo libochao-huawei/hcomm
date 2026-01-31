@@ -39,7 +39,7 @@ __aicore__ inline void AivAllReduce91093::Process(GM_ADDR input, GM_ADDR output,
 template<typename T>
 __aicore__ inline void AivAllReduce91093::ProcessSmall(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag)
 {
-    uint32_t blockNumPerGroup = blockdim_ / rankSize_; // blockdim_需要能被rankSize_整除
+    uint32_t blockNumPerGroup = numBlocks_ / rankSize_; // numBlocks_需要能被rankSize_整除
     uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
 
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
@@ -118,12 +118,12 @@ __aicore__ inline void AivAllReduce91093::ProcessSmall(GM_ADDR input, GM_ADDR ou
 template<typename T>
 __aicore__ inline void AivAllReduce91093::ProcessBig(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag)
 {
-    uint32_t blockNumPerGroup = blockdim_ / rankSize_; 
+    uint32_t blockNumPerGroup = numBlocks_ / rankSize_; 
     uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
     uint32_t dstRank = GetBlockIdx() / blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
 
-    uint64_t avgLengthPerBlock = CeilDiv(len, blockdim_);
+    uint64_t avgLengthPerBlock = CeilDiv(len, numBlocks_);
     uint64_t avgLengthPerSlice = CeilDiv(avgLengthPerBlock, padCount) * padCount; // 32B对齐
     uint64_t sliceCount = CeilDiv(len, avgLengthPerSlice);
     uint64_t tailLength = len - (sliceCount - 1) * avgLengthPerSlice;

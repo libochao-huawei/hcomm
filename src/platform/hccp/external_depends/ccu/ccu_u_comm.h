@@ -1,0 +1,240 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+ * Description: CCU common definitions
+ * Create: 2025-07-22
+ */
+#ifndef CCU_U_COMM_H
+#define CCU_U_COMM_H
+
+#include <stdbool.h>
+
+#define CCU_DATA_TYPE_UNION_ARRAY_SIZE 8
+#define CCU_RESOURCE_PATH_LEN_MAX 512
+#define CCU_DATA_MAX_SIZE 0x800  /* CCU data max size is 2048 */
+#define BYTE8   8
+#define BYTE32 32
+#define BYTE64 64
+#define CCU_PROD_MASK 0x000FFFFF
+#define CCU_PROD_SHIFT 8
+
+#ifdef CCU_CONFIG_LLT
+#define STATIC
+#else
+#define STATIC static
+#endif
+
+enum ccu_array_data_index {
+    CCU_ARRAY_DATA_0 = 0,
+    CCU_ARRAY_DATA_1,
+    CCU_ARRAY_DATA_2,
+    CCU_ARRAY_DATA_3,
+    CCU_ARRAY_DATA_4,
+    CCU_ARRAY_DATA_5,
+    CCU_ARRAY_DATA_6,
+    CCU_ARRAY_DATA_7,
+};
+
+/* opcode definition */
+typedef enum ccu_u_opcode {
+    CCU_U_OP_GET_VERSION                    = 0,    /* 获取所有die的版本号，未启用的die版本号为非法值 */
+    CCU_U_OP_K_MIN                          = 10,   /* 定义需要向内核发送请求的操作最小值 */
+
+    CCU_U_OP_GET_BASIC_INFO                 = 11,   /* 获取基础信息 */
+    CCU_U_OP_GET_MISSION_TIMEOUT_DURATION   = 12,   /* 获取任务超时时间 */
+    CCU_U_OP_GET_LOOP_TIMEOUT_DURATION      = 13,   /* 获取循环超时时间 */
+    CCU_U_OP_GET_MSID                       = 14,   /* 获取MSID */
+    CCU_U_OP_GET_DIE_WORKING                = 15,   /* 获取该dieId是否工作 */
+
+    CCU_U_OP_SET_MISSION_TIMEOUT_DURATION   = 51,   /* 设置任务超时时间 */
+    CCU_U_OP_SET_LOOP_TIMEOUT_DURATION      = 52,   /* 设置循环超时时间 */
+    CCU_U_OP_SET_MSID_TOKEN                 = 53,   /* 设置MSID和Token相关值 */
+    CCU_U_OP_SET_TASKKILL                   = 54,   /* 启动taskkill任务 */
+    CCU_U_OP_CLEAN_TASKKILL_STATE           = 55,   /* 清除taskkill任务 */
+    CCU_U_OP_CLEAN_TIF_TABLE                = 56,   /* 清除TIF表项 */
+
+    CCU_U_OP_K_MAX                          = 100,  /* 定义需要向内核发送请求的操作最大值 */
+
+    CCU_U_OP_GET_CHN_JETTY_MAP              = 101,  /* 获取Channel与Jetty的映射关系 */
+    CCU_U_OP_GET_HIGH_PERF_XN               = 102,  /* Get high-performance XN register range for 0.5RTT feature */
+
+    CCU_U_OP_SET_CHN_JETTY_MAP              = 126,  /* 设置Channel与Jetty的映射关系 */
+    CCU_U_OP_SET_TIF_SPLIT_SIZE             = 127,  /* Set count unit for the 0.5RTT feature */
+    CCU_U_OP_SET_XN_TOTAL_CNT               = 128,  /* Set compare register for 0.5RTT feature */
+    CCU_U_OP_SET_TRANM_NTF_HVAL             = 129,  /* Set high 32bits of notify value in Transmem for 0.5RTT feature */
+    CCU_U_OP_CONFIG_HW_MAX                  = 150,  /* 定义操作CCU硬件寄存器的最大值 */
+
+    /* 以下为操作CCU映射到用户态资源空间的操作码 */
+    CCU_U_OP_IN_RS_MIN                      = 200,  /* 定义一个在RS空间操作的最小值 */
+
+    CCU_U_OP_GET_INSTRUCTION                = 201,  /* 获取INS指令 */
+    CCU_U_OP_GET_GSA                        = 202,  /* 获取GSA数据 */
+    CCU_U_OP_GET_XN                         = 203,  /* 获取XN数据 */
+    CCU_U_OP_GET_CKE                        = 204,  /* 获取CKE数据 */
+    CCU_U_OP_GET_PFE                        = 205,  /* 获取PFE数据 */
+    CCU_U_OP_GET_CHANNEL                    = 206,  /* 获取Channel数据 */
+    CCU_U_OP_GET_JETTY_CTX                  = 207,  /* 获取Jetty_ctx数据 */
+    CCU_U_OP_GET_MISSION_CTX                = 208,  /* 获取Mission_ctx数据 */
+    CCU_U_OP_GET_LOOP_CTX                   = 209,  /* 获取Loop_ctx数据 */
+    CCU_U_OP_GET_MEMORY_SLICE               = 210,  /* 获取memory slice数据 */
+    CCU_U_OP_GET_LOOP_CKE_CTX               = 211,  /* 获取LOOP_CKE_CTX数据 */
+
+    CCU_U_OP_SET_INSTRUCTION                = 251,  /* 设置INS指令 */
+    CCU_U_OP_SET_GSA                        = 252,  /* 设置GSA数据 */
+    CCU_U_OP_SET_XN                         = 253,  /* 设置XN数据 */
+    CCU_U_OP_SET_CKE                        = 254,  /* 设置CKE数据 根据芯片约束set前需要先清零 */
+    CCU_U_OP_SET_PFE                        = 255,  /* 设置PFE数据 */
+    CCU_U_OP_SET_CHANNEL                    = 256,  /* 设置Channel数据 */
+    CCU_U_OP_SET_JETTY_CTX                  = 257,  /* 设置Jetty_ctx数据 */
+    CCU_U_OP_SET_LOOP_CKE_CTX               = 258,  /* 设置LOOP_CKE_CTX数据 */
+
+    CCU_U_OP_IN_RS_MAX                      = 300,  /* 定义一个在RS空间操作的最大值 */
+} ccu_u_opcode_t;
+
+struct ccu_region {
+    ccu_u_opcode_t ccu_u_op;    /* ccu u opcode */
+    unsigned int ccu_region_saddr;       /* base offset start addr */
+    unsigned int ccu_region_size;        /* region total size */
+    unsigned int ccu_entry_size;         /* entry size (per Byte) */
+    void *ccu_va_udie0;     /* vertual address get by mmap func */
+    void *ccu_va_udie1;     /* vertual address get by mmap func */
+};
+
+struct ccu_data_byte8 {
+    char raw[BYTE8];
+};
+
+struct ccu_data_byte32 {
+    char raw[BYTE32];
+};
+
+struct ccu_data_byte64 {
+    char raw[BYTE64];
+};
+
+struct ccu_data_caps {
+    unsigned int lqc_ccu_cap0;
+    unsigned int lqc_ccu_cap1;
+    unsigned int lqc_ccu_cap2;
+    unsigned int lqc_ccu_cap3;
+    unsigned int lqc_ccu_cap4;
+};
+
+struct ccu_baseinfo {
+    // set from hccl
+    unsigned int            ms_id;
+    unsigned int            token_id;
+    unsigned int            token_value;
+ 
+    // get from ccu drv
+    unsigned int            token_valid;
+ 
+    // get from chip
+    unsigned int            missionKey;
+    void                    *resourceAddr;
+    struct ccu_data_caps    caps;
+    unsigned int            chn_jetty_map;
+};
+
+/* 设置Instruction指令的专用数据结构 */
+struct ccu_insinfo {
+    unsigned long           resourceAddr;
+};
+
+struct ccu_dieinfo {
+    unsigned int enable_flag;
+};
+
+enum ccu_version_e {
+    CCU_V1 = 0,
+    CCU_V2 = 1,
+    CCU_VERSION_MAX,
+};
+
+struct ccu_tif_split_size {
+    unsigned int split_pkt_unit;
+    unsigned int tp_split_size;
+    unsigned int ctp_split_size;
+};
+
+struct ccu_high_perf_xn {
+    unsigned int start_id;
+    unsigned int xn_size;
+};
+
+struct ccu_xn_total_cnt {
+    unsigned int cnt_index;
+    unsigned int total_value;
+    unsigned int total_addr;
+    unsigned int flag_from_addr;
+    unsigned int flag_to_addr;
+};
+
+struct ccu_mission_kill_info {
+    bool is_single_mission; // 0:kill all; 1:single mission kill
+    unsigned int mission_id;
+};
+
+union ccu_data_type_union {
+    struct ccu_data_byte8   byte8;
+    struct ccu_data_byte32  byte32;
+    struct ccu_data_byte64  byte64;
+    struct ccu_baseinfo     baseinfo;
+    /* ccu_insinfo 只支持set时，传入一个元素，不支持循环配置 */
+    struct ccu_insinfo      insinfo;
+    struct ccu_dieinfo      dieinfo;
+    enum ccu_version_e      version;
+    struct ccu_tif_split_size tif_split_info;
+    struct ccu_high_perf_xn high_perf_xn;
+    struct ccu_xn_total_cnt xn_total_cnt;
+    unsigned int tranm_ntf_hval;
+    struct ccu_mission_kill_info  mission_info;
+};
+
+struct ccu_data {
+    unsigned int udie_idx;
+    unsigned int data_array_len;             /* 数据的总长度 (data_array_size * 每个元素的大小，以Byte为单位) 的值 */
+    unsigned int data_array_size;            /* data_array里总共有多少个元素 */
+    union ccu_data_type_union data_array[CCU_DATA_TYPE_UNION_ARRAY_SIZE];   /* 不同类型的数据，通过联合体来存储 */
+};
+
+union ccu_data_union {
+    char raw[CCU_DATA_MAX_SIZE];    /* 对外呈现是一个字符数组，内部转换成对应类型ccu_data */
+    struct ccu_data data_info;
+};
+
+struct channel_info_in {
+    union ccu_data_union data;
+    unsigned int offset_start;    /* 对应需要操作的元素的idx位置，位置用正整数代替，使用者不需要关心元素的实际大小 */
+    ccu_u_opcode_t op;
+};
+
+struct channel_info_out {
+    union ccu_data_union data;    /* 对外呈现是一个字符数组，内部转换成对应类型ccu_data */
+    unsigned int offset_next;     /* 操作后返回下一个元素的idx位置，位置用正整数代替，使用者不需要关心元素的实际大小 */
+    int op_ret;
+};
+
+struct ccu_version {
+    unsigned int prod_version;
+    unsigned int arch_version;
+};
+
+/*
+ * ccu_u_info 用户态内部数据结构体,用于存放用户态运行时的内部数据
+ * 包括部分全局变量，历史信息
+ */
+struct ccu_u_info {
+    /* set at init proc, and will never change */
+    unsigned int uent_num;      /* ccu uent_num */
+    unsigned int ccu_flag;      /* ccu exsit flag */
+    unsigned int eid;           /* ccu eid */
+    unsigned int ms_id;         /* ccu ms id */
+    unsigned int missionKey;    /* mision sqe secure key */
+    void *resourceAddr;         /* ccu resource addr va */
+    struct ccu_data_caps caps;  /* ccu caps, get from ccu regs */
+    struct ccu_version version;
+};
+
+bool is_ccu_attached(unsigned int die_id);
+
+#endif /* CCU_U_COMM_H */

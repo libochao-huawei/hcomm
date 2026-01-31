@@ -13,6 +13,7 @@
 
 #include <map>
 #include "buffer_key.h"
+#include "log.h"
 
 namespace hccl {
 template<typename KeyType, typename BufferType, template <typename...> class M = std::map, typename... MapArgs>
@@ -58,7 +59,7 @@ public:
                 throw std::logic_error("ref++ = 0, ref++ flipped");
             }
             else if(result.first->second.ref > 1) {
-                HCCL_RUN_INFO("Memory is already registed, just increase the reference count, "
+                HCCL_RUN_INFO("Memory is already registered, just increase the reference count, "
                     "current memory reference count[%llu], %s.", result.first->second.ref, key.ToString().c_str());
             }
         }

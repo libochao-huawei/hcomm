@@ -95,7 +95,7 @@ typedef struct tag_ts_ts_fw_profile_config {
     uint32_t ai_vector_status;  // 1-enable,2-disable
     uint32_t ts_keypoint;       // 1-enable,2-disable
     uint32_t ts_taskstep;       // 1-enable,2-disable
-    uint32_t ts_blockdim;       // 1-enable,2-disable
+    uint32_t ts_numBlocks;       // 1-enable,2-disable
 } ts_ts_fw_profile_config_t;
 
 typedef struct tag_ts_l2_profile_config_t {
