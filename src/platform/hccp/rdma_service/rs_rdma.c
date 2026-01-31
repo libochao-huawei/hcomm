@@ -1360,32 +1360,36 @@ RS_ATTRI_VISI_DEF int RsSetTsqpDepth(unsigned int phyId, unsigned int rdevIndex,
     unsigned int *qpNum)
 {
 #ifdef CUSTOM_INTERFACE
-    int ret;
-    unsigned int chipId = 0;
-    unsigned int sqDepth = 0;
     struct RsRdevCb *rdevCb = NULL;
+    enum ProductType productType;
+    unsigned int sqDepth = 0;
+    unsigned int chipId = 0;
+    int ret;
 
-    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs_set_tsqp_depth param error ! phyId:%d", phyId), -EINVAL);
+    productType = RsGetProductType(gRsCb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("rs_set_tsqp_depth param error ! phyId:%d", phyId), -EINVAL);
 
-    CHK_PRT_RETURN(qpNum == NULL, hccp_err("rs_set_tsqp_depth qp_num is NULL, param error!"), -EINVAL);
+        CHK_PRT_RETURN(qpNum == NULL, hccp_err("rs_set_tsqp_depth qp_num is NULL, param error!"), -EINVAL);
 
-    CHK_PRT_RETURN(tempDepth < RS_MIN_TEMPTH_DEPTH || tempDepth > RS_MAX_TEMPTH_DEPTH, hccp_err("param error!"
-        "temp_depth[%u] can not smaller than [%d] or bigerr than [%d]", tempDepth, RS_MIN_TEMPTH_DEPTH,
-        RS_MAX_TEMPTH_DEPTH), -EINVAL);
+        CHK_PRT_RETURN(tempDepth < RS_MIN_TEMPTH_DEPTH || tempDepth > RS_MAX_TEMPTH_DEPTH, hccp_err("param error!"
+            "temp_depth[%u] can not smaller than [%d] or bigerr than [%d]", tempDepth, RS_MIN_TEMPTH_DEPTH,
+            RS_MAX_TEMPTH_DEPTH), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
+        ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+        CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
-    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_set_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
-        "failed, ret %d", chipId, ret), ret);
+        ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+        CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_set_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
+            "failed, ret %d", chipId, ret), ret);
 
-    ret = RsRoceSetTsqpDepth(rdevCb->devName, rdevIndex, tempDepth, qpNum, &sqDepth);
-    CHK_PRT_RETURN(ret, hccp_err("rs_roce_set_tsqp_depth failed, ret %d, devName[%s]", ret, rdevCb->devName), ret);
+        ret = RsRoceSetTsqpDepth(rdevCb->devName, rdevIndex, tempDepth, qpNum, &sqDepth);
+        CHK_PRT_RETURN(ret, hccp_err("rs_roce_set_tsqp_depth failed, ret %d, devName[%s]", ret, rdevCb->devName), ret);
 
-    rdevCb->txDepth = sqDepth;
-    rdevCb->rxDepth = sqDepth;
-    rdevCb->qpMaxNum = *qpNum;
+        rdevCb->txDepth = sqDepth;
+        rdevCb->rxDepth = sqDepth;
+        rdevCb->qpMaxNum = *qpNum;
+    }
 #endif
     return 0;
 }
@@ -1394,25 +1398,29 @@ RS_ATTRI_VISI_DEF int RsGetTsqpDepth(unsigned int phyId, unsigned int rdevIndex,
     unsigned int *qpNum)
 {
 #ifdef CUSTOM_INTERFACE
-    int ret;
-    unsigned int chipId = 0;
-    unsigned int sqDepth = 0;
     struct RsRdevCb *rdevCb = NULL;
+    enum ProductType productType;
+    unsigned int sqDepth = 0;
+    unsigned int chipId = 0;
+    int ret;
 
-    CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("param error ! phyId:%d", phyId), -EINVAL);
+    productType = RsGetProductType(gRsCb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("param error ! phyId:%d", phyId), -EINVAL);
 
-    CHK_PRT_RETURN(tempDepth == NULL || qpNum == NULL, hccp_err("temp_depth or qp_num is NULL,"
-        "param error!"), -EINVAL);
+        CHK_PRT_RETURN(tempDepth == NULL || qpNum == NULL, hccp_err("temp_depth or qp_num is NULL,"
+            "param error!"), -EINVAL);
 
-    ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
-    CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
+        ret = rsGetLocalDevIDByHostDevID(phyId, &chipId);
+        CHK_PRT_RETURN(ret, hccp_err("phyId[%u] invalid, ret %d", phyId, ret), ret);
 
-    ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
-    CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_get_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
-        "failed, ret %d", chipId, ret), ret);
+        ret = RsRdev2rdevCb(chipId, rdevIndex, &rdevCb);
+        CHK_PRT_RETURN(ret || rdevCb == NULL, hccp_err("rs_get_tsqp_depth rs_rdev2rdev_cb for chip_id[%u]"
+            "failed, ret %d", chipId, ret), ret);
 
-    ret = RsRoceGetTsqpDepth(rdevCb->devName, rdevIndex, tempDepth, qpNum, &sqDepth);
-    CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret %d, devName[%s]", ret, rdevCb->devName), ret);
+        ret = RsRoceGetTsqpDepth(rdevCb->devName, rdevIndex, tempDepth, qpNum, &sqDepth);
+        CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret %d, devName[%s]", ret, rdevCb->devName), ret);
+    }
 #endif
     return 0;
 }
@@ -1895,7 +1903,6 @@ STATIC int RsQpCheckQpNorm(struct RsQpNormWithAttrs *qpNorm, int *qpMode)
     return 0;
 }
 
-#ifdef CUSTOM_INTERFACE
 STATIC void RsQpPrepareCqDataPlaneInfo(struct ibv_cq *ibCq, struct AiDataPlaneCq *dataPlaneCq)
 {
     struct hns_roce_cq_data_plane_info cqInfo = {0};
@@ -1956,11 +1963,11 @@ STATIC void RsQpPrepareDataPlaneInfo(struct RsQpNormWithAttrs *qpNorm, struct Rs
         RsQpPrepareQpDataPlaneInfo(qpCb->ibQp, &qpResp->dataPlaneInfo.sq, &qpResp->dataPlaneInfo.rq);
     }
 }
-#endif
 
 STATIC void RsQpPrepareQpResp(struct RsQpNormWithAttrs *qpNorm, struct RsQpCb *qpCb,
     struct RsQpRespWithAttrs *qpResp)
 {
+    enum ProductType productType;
     if (qpNorm->isExp != 0) {
         qpCb->isExp = RS_IS_EXP;
     } else {
@@ -1974,7 +1981,10 @@ STATIC void RsQpPrepareQpResp(struct RsQpNormWithAttrs *qpNorm, struct RsQpCb *q
     qpResp->psn = (unsigned int)qpCb->qpInfoLo.psn;
 
 #ifdef CUSTOM_INTERFACE
-    RsQpPrepareDataPlaneInfo(qpNorm, qpCb, qpResp);
+    productType = RsGetProductType(qpCb->rdevCb->rs_cb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        RsQpPrepareDataPlaneInfo(qpNorm, qpCb, qpResp);
+    }
 #endif
 
     return;
@@ -2027,7 +2037,6 @@ RS_ATTRI_VISI_DEF int RsQpCreateWithAttrs(unsigned int phyId, unsigned int rdevI
     }
 
     RsQpPrepareQpResp(qpNorm, qpCb, qpResp);
-
     return 0;
 
 ret_noritfy_cq:
@@ -2264,15 +2273,13 @@ STATIC void RsTypicalQpModifyInfoRelated(struct RsQpCb *qpCb, struct TypicalQp *
 RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevIndex,
     struct TypicalQp localQpInfo, struct TypicalQp remoteQpInfo, unsigned int *udpSport)
 {
-#ifdef CUSTOM_INTERFACE
     unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
     struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
-#endif
     struct ibv_qp_init_attr initAttr = { 0 };
     struct ibv_qp_attr attr = { 0 };
+    enum ProductType productType;
     struct RsQpCb *qpCb = NULL;
     int ret;
-
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("[modify]phyId:%u >= [%d], is invalid", phyId, RS_MAX_DEV_NUM),
         -EINVAL);
 
@@ -2297,11 +2304,14 @@ RS_ATTRI_VISI_DEF int RsTypicalQpModify(unsigned int phyId, unsigned int rdevInd
         localQpInfo.qpn, remoteQpInfo.qpn, ret), ret);
 
 #ifdef CUSTOM_INTERFACE
-    ret = RsRoceQueryQpc(qpCb->ibQp, &qpAttrVal, qpAttrMask);
-    if (ret != 0) {
-        hccp_warn("qpn:%d query qpc unsuccessful, ret %d", localQpInfo.qpn, ret);
-    } else {
-        qpCb->udpSport = qpAttrVal.udp_sport;
+    productType = RsGetProductType(gRsCb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        ret = RsRoceQueryQpc(qpCb->ibQp, &qpAttrVal, qpAttrMask);
+        if (ret != 0) {
+            hccp_warn("qpn:%d query qpc unsuccessful, ret %d", localQpInfo.qpn, ret);
+        } else {
+            qpCb->udpSport = qpAttrVal.udp_sport;
+        }
     }
 #endif
     *udpSport = qpCb->udpSport;
@@ -2430,13 +2440,12 @@ RS_ATTRI_VISI_DEF int RsQpConnectAsync(unsigned int phyId, unsigned int rdevInde
 RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, unsigned int qpn,
     struct RsQpStatusInfo *qpInfo)
 {
-#ifdef CUSTOM_INTERFACE
     unsigned int qpAttrMask = HNS_ROCE_AI_QPC_UDPSPN;
     struct hns_roce_qpc_attr_val qpAttrVal = { 0 };
-#endif
+    enum ProductType productType;
     struct RsQpCb *qpCb = NULL;
     int ret;
-
+    
     CHK_PRT_RETURN(qpInfo == NULL, hccp_err("param error, qpInfo is NULL"), -EINVAL);
 
     CHK_PRT_RETURN(phyId >= RS_MAX_DEV_NUM, hccp_err("phyId:%u >= [%d], is invalid",
@@ -2460,11 +2469,14 @@ RS_ATTRI_VISI_DEF int RsGetQpStatus(unsigned int phyId, unsigned int rdevIndex, 
 
 update_qp_cb:
 #ifdef CUSTOM_INTERFACE
-    ret = RsRoceQueryQpc(qpCb->ibQp, &qpAttrVal, qpAttrMask);
-    if (ret != 0) {
-        hccp_warn("qpn:%d query qpc unsuccessful, ret %d", qpCb->qpInfoLo.qpn, ret);
-    } else {
-        qpCb->udpSport = qpAttrVal.udp_sport;
+    productType = RsGetProductType(qpCb->rdevCb->rs_cb->logicId);
+    if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
+        ret = RsRoceQueryQpc(qpCb->ibQp, &qpAttrVal, qpAttrMask);
+        if (ret != 0) {
+            hccp_warn("qpn:%d query qpc unsuccessful, ret %d", qpCb->qpInfoLo.qpn, ret);
+        } else {
+            qpCb->udpSport = qpAttrVal.udp_sport;
+        }
     }
 #endif
 out:
