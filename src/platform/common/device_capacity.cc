@@ -28,6 +28,8 @@ constexpr float BANDWIDTH_HCCS_910A = 10.0f;
 constexpr float BANDWIDTH_HCCS_910B = 18.3f;
 constexpr float BANDWIDTH_RDMA_910A = 12.5f * 0.8;
 constexpr float BANDWIDTH_RDMA_910B = 25.0f * 0.8;
+constexpr float BANDWIDTH_HBM_910_93 = 650.0f * 0.9;
+constexpr float BANDWIDTH_SIO_910_93 = 240.0f * 0.85;
 
 // 常用带宽值   GB/s
 constexpr float BANDWIDTH_PCIE_GEN3 = 16.0f * 0.85;
@@ -139,45 +141,37 @@ HcclResult GetBandWidthPerNPU(u32 level, u32 userRankSize, u32 deviceNumPerAggre
 {
     DevType devType;
     CHK_RET(hrtGetDeviceType(devType));
-
-    if (level == 0) {
-        switch (devType) {
-            case DevType::DEV_TYPE_310P3:
-                bandWidth = BANDWIDTH_PCIE_GEN3;
-                break;
-            case DevType::DEV_TYPE_910:
-                bandWidth = BANDWIDTH_HCCS_910A;
-                break;
-            case DevType::DEV_TYPE_910B:
-            case DevType::DEV_TYPE_910_93:
-                bandWidth = BANDWIDTH_HCCS_910B;
-                break;
-            default:
-                HCCL_ERROR("[Get][BandWidthPerNPU] Failed, deviceType[%d] Bandwidth Level[%u]", devType, level);
-                return HCCL_E_NOT_SUPPORT;
-        }
-    } else if (level == 1) {
-        switch (devType) {
-            case DevType::DEV_TYPE_910:
-                bandWidth = BANDWIDTH_RDMA_910A;
-                break;
-            case DevType::DEV_TYPE_910B:
-            case DevType::DEV_TYPE_910_93:
-                if (userRankSize == deviceNumPerAggregation * 2) { // 2: 910B 16p形态 单server场景
-                    bandWidth = BANDWIDTH_PCIE_GEN5;
-                } else {
-                    bandWidth = BANDWIDTH_RDMA_910B;
-                }
-                break;
-            default:
-                HCCL_ERROR("[Get][BandWidthPerNPU] Failed, deviceType[%d] Bandwidth Level[%u]", devType, level);
-                return HCCL_E_NOT_SUPPORT;
-        }
-    } else {
-        HCCL_ERROR("[Get][BandWidthPerNPU] Failed, Bandwidth Level[%u]", level);
-        return HCCL_E_NOT_SUPPORT;
+    // 处理 level=1、910B 的特殊条件
+    if (level == 1 && (devType == DevType::DEV_TYPE_910B || devType == DevType::DEV_TYPE_910_93) &&
+        userRankSize == deviceNumPerAggregation * 2) // 2: 910B 16p形态 单server场景
+    {
+        bandWidth = BANDWIDTH_PCIE_GEN5;
+        return HCCL_SUCCESS;
     }
-    return HCCL_SUCCESS;
+    // 其余情况查表
+    static const std::map<std::pair<u32, DevType>, float> bwTable = {
+        // level 0
+        {{0, DevType::DEV_TYPE_310P3}, BANDWIDTH_PCIE_GEN3},
+        {{0, DevType::DEV_TYPE_910},   BANDWIDTH_HCCS_910A},
+        {{0, DevType::DEV_TYPE_910B},  BANDWIDTH_HCCS_910B},
+        {{0, DevType::DEV_TYPE_910_93},BANDWIDTH_HCCS_910B},
+        // level 1
+        {{1, DevType::DEV_TYPE_910},   BANDWIDTH_RDMA_910A},
+        {{1, DevType::DEV_TYPE_910B},  BANDWIDTH_RDMA_910B},
+        {{1, DevType::DEV_TYPE_910_93},BANDWIDTH_RDMA_910B},
+        // level 2
+        {{2, DevType::DEV_TYPE_910_93},BANDWIDTH_HBM_910_93},
+        // level 3
+        {{3, DevType::DEV_TYPE_910_93},BANDWIDTH_SIO_910_93},
+    };
+    auto key = std::make_pair(level, devType);
+    auto it  = bwTable.find(key);
+    if (it != bwTable.end()) {
+        bandWidth = it->second;
+        return HCCL_SUCCESS;
+    }
+    HCCL_ERROR("[Get][BandWidthPerNPU] Failed, deviceType[%d] Bandwidth Level[%u]", devType, level);
+    return HCCL_E_NOT_SUPPORT;
 }
 
 HcclResult CheckDeviceType(const DevType deviceType)

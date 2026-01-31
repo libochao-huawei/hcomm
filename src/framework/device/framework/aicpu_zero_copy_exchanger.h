@@ -24,7 +24,8 @@
 namespace hccl {
 class AicpuZeroCopyExchanger {
 public:
-    AicpuZeroCopyExchanger(u32 rank, u32 rankSize, const HcclOpResParam *resParam, std::function<bool()> needStop, u32 timeoutSec = 120, u32 deviceNumPerAggregation = MAX_MODULE_DEVICE_NUM);
+    AicpuZeroCopyExchanger(u32 rank, u32 rankSize, const HcclOpResParam *resParam, std::function<bool()> needStop, u32 timeoutSec = 120, u32 deviceNumPerAggregation = MAX_MODULE_DEVICE_NUM,
+        u32 taskMonitorInterval = 0);
     ~AicpuZeroCopyExchanger();
 
     HcclResult ExchangeAddress(const std::string &tag, void *localInput, void *localOutput, AlgResourceResponse *algResResponse);
@@ -89,6 +90,7 @@ private:
     static ZeroCopyAddressMgr globalAddrMgr_;
 
     u32 deviceNumPerAggregation_ = MAX_MODULE_DEVICE_NUM;
+    u32 taskMonitorInterval_ = 0;
 };
 }
 

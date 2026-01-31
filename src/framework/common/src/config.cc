@@ -296,7 +296,7 @@ HcclResult CheckGroupRankList(const std::vector<RankInfo_t> &rankList, u32 devic
 }
 
 HcclResult CheckDeviceId(const std::vector<RankInfo_t> &rankList, u32 deviceNum, u32 serverNum)
-// each server should has same device Id may not be continous
+// each server should has same device Id may not be continuous
 {
     if (serverNum == 0) {
         HCCL_ERROR("[Check][DeviceId]errNo[0x%016llx] server num is zero", HCOM_ERROR_CODE(HCCL_E_PARA));
@@ -352,7 +352,7 @@ HcclResult CheckRankListBaseInfo(u32 deviceNum, u32 serverNum)
 
 HcclResult CheckRankListInfo(const std::vector<RankInfo_t> &rankList)
 {
-    // rankList have been sorted when parseing rank table,
+    // rankList have been sorted when parsing rank table,
     // check the continuity of sorted rankList
     HCCL_INFO("START CheckRankListInfo");
     for (u32 index = 0; index < rankList.size(); index++) {

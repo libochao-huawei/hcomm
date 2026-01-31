@@ -68,4 +68,11 @@ HcclResult CommEngineResMgr::HcommFreeNotify(uint32_t notifyNum, NotifyHandle *n
     CHK_SMART_PTR_NULL(threadMgr_);
     return notifyMgr_->HcommFreeNotify(notifyNum, notifyHandleList);
 }
+
+HcclResult CommEngineResMgr::HcclThreadExportToCommEngine(uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads)
+{
+    CHK_SMART_PTR_NULL(threadMgr_);
+    return threadMgr_->HcclThreadExportToCommEngine(threadNum, threads, dstCommEngine, exportedThreads);
+}
+
 }

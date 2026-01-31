@@ -97,7 +97,7 @@ HcclResult ScatterDoubleRingDirect::CheckParameters(const u32 rank, const u32 ra
     if (ringsOrders_.size() != DOUBLE_RING_NUM || multiRingSlices_.size() != DOUBLE_RING_NUM ||
         userMemInputSlices_.size() != DOUBLE_RING_NUM) {
         HCCL_ERROR("[ScatterDoubleRingDirect] ringsOrder size[%u], multiRingSlices size[%u], userMemInputSlices"
-            "size[%u] must euqal to 2", ringsOrders_.size(), multiRingSlices_.size(), userMemInputSlices_.size());
+            "size[%u] must equal to 2", ringsOrders_.size(), multiRingSlices_.size(), userMemInputSlices_.size());
         return HCCL_E_PARA;
     }
     // 判断ringsOrder数量是否正确

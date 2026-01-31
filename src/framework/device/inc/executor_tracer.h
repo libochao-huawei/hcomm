@@ -35,6 +35,7 @@ private:
     static void HandleDestroyComm(AicpuComContext *const ctx);
     static void HandleSwitchNic(AicpuComContext *const ctx);
     static void HandleResumeChangeLink(AicpuComContext *const ctx);
+    static void TaskMonitor(void);
 };
 class AICPUcommandHandles {
 public:

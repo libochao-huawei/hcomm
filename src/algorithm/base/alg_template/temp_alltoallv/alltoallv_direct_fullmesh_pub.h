@@ -65,11 +65,11 @@ private:
     u32 GetPreSrcRank(u32& curDstRank);
     void GenRdmaSendInfo(u32 dstRank, std::vector<SendDataBlock>& sendInfo);
     void GenRdmaRecvInfo(u32 srcRank, std::vector<RecvDataBlock>& recvInfo);
-    HcclResult CopyDataForSend(u32 dstRank, std::vector<SendDataBlock>& sendInfo, u32 curStep, Stream strem);
+    HcclResult CopyDataForSend(u32 dstRank, std::vector<SendDataBlock>& sendInfo, u32 curStep, Stream stream);
     HcclResult SendRecvRdmaData(u32 dstRank, u32 srcRank, std::vector<SendDataBlock>& sendInfo,
-        std::vector<RecvDataBlock>& recvInfo, u32 round, u32 index, u32 curStep, Stream strem);
+        std::vector<RecvDataBlock>& recvInfo, u32 round, u32 index, u32 curStep, Stream stream);
     HcclResult CopyRecvDataToOutput(u32 srcRank, std::vector<RecvDataBlock>& recvInfo,
-        u32 curStep, Stream strem);
+        u32 curStep, Stream stream);
     HcclResult ProcessSingleGroupRdmaData(std::vector<u32>& dstRanks, std::vector<u32>& srcRanks, u32 round);
     HcclResult ProcessRdmaData();
     HcclResult RunRDMA();

@@ -34,6 +34,7 @@ set(src_list_pub
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_hccs_sio.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_slim_ring.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_v_pipeline.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/reduce_scatter_multi_deter_pipeline.cc
 
 )
 

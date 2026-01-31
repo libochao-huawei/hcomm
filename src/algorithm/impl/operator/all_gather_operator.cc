@@ -69,8 +69,12 @@ HcclResult AllGatherOperator::SelectAlg(const std::string& tag, const OpParam& p
                     HCCL_ERROR("[[AllGatherSelector]level1: algType1[%u] is invalid.", algType1), HCCL_E_INTERNAL);
         newTag = tag + level1Iter->second + algName;
     }
+    if (algName == "AllGatherARSFor91093Executor") {
+        u32 ringSize = CalcOptimalIntraRingsize(param.DataDes.count, param.DataDes.dataType, HcclCMDType::HCCL_CMD_ALLGATHER);
+        newTag += std::to_string(ringSize);
+    }
     newTag += (param.aicpuUnfoldMode ? "_device" : "_host");
-    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag);
+    HCCL_DEBUG("[AllGatherSelector][SelectAlg]newTag is [%s]", newTag.c_str());
     return ret;
 }
 
@@ -275,8 +279,8 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
                         && serverNum_ > 1
                         && !GetExternalInputInterHccsDisable()
                         && ((
-                            (userRankSize_ <= ONE_EIGHTH_MAX_BLOCK_DIM && dataSize <= AIV_ALL_GATHER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
-                            (userRankSize_ <= ONE_THIRD_MAX_BLOCK_DIM && dataSize <= AIV_ALL_GATHER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
+                            (userRankSize_ <= ONE_EIGHTH_MAX_NUM_BLOCKS && dataSize <= AIV_ALL_GATHER_A3_SMALL_RANKSIZE_ENTRY_SIZE) ||
+                            (userRankSize_ <= ONE_THIRD_MAX_NUM_BLOCKS && dataSize <= AIV_ALL_GATHER_A3_MID_RANKSIZE_ENTRY_SIZE) ||
                             (dataSize <= AIV_ALL_GATHER_A3_LARGE_RANKSIZE_ENTRY_SIZE)
                         ) || isOnlyAiv);
 
@@ -309,9 +313,19 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_512_KB) &&
         (deviceNumPerAggregation_ > HCCL_DEVICE_NUM_TWO) && !GetExternalInputInterHccsDisable();
     bool smallCountOptimMultiServer = SmallCountOptimMultiServer(param);
+
     bool smallCountOptimMultiPod = (superPodNum_ > 1 || (GetExternalInputInterHccsDisable() && serverNum_ > 1)) &&
         (param.DataDes.count * unitSize <= HCCL_SMALL_COUNT_16_KB) && !retryEnable_; // 涉及ROCE平面
-
+    // ARS 算法选择
+    bool isARSAlgo = multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_;
+    if (isARSAlgo) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+    }
     // AHC 算法选择逻辑
     bool isAHCAlgo = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC) || (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_AHC_BROKE);
     if (isAHCAlgo) {
@@ -323,8 +337,16 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
     isHccsPlusSio = false; //待适配
     if (isHccsPlusSio && isSupportHccsAndSio_) {
         algName = "AllGatherHccsSioExecutor";
-    } else if (multiModuleDiffDeviceNumMode_) {
-        algName = "AllGatherComm";
+    } else if (multiModuleDiffDeviceNumMode_ && multiSuperPodDiffDeviceNumMode_) {
+         algName = "AllGatherComm";
+    } else if (multiModuleDiffDeviceNumMode_ && !multiSuperPodDiffDeviceNumMode_) {
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB || algType_.algoLevel1 ==
+            AlgTypeLevel1::ALG_LEVEL1_RING)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllGatherOperator][SelectAlgfor91093] ARS only support NHR or RING in AlgoLevel1 "\
+                "yet, default is NHR.");
+        }
+        algName = "AllGatherARSFor91093Executor";
     } else if (smallCountOptimMultiPod) {
         algName = "AllGatherComm";
         algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_HD;
@@ -373,6 +395,7 @@ HcclResult AllGatherOperator::SelectAlgfor91093(const OpParam& param, std::strin
             HCCL_ERROR("not is aiv single or cross node. serverNum_[%u] isOpbase[%d] superPodNum_[%u]",
             serverNum_, isOpbase, superPodNum_), HCCL_E_NOT_SUPPORT);
         CHK_PRT_RET(retryEnable_, HCCL_ERROR("retryEnable_[%d] is true.", retryEnable_), HCCL_E_NOT_SUPPORT);
+        CHK_PRT_RET(multiModuleDiffDeviceNumMode_, HCCL_ERROR("multiModuleDiffDeviceNumMode [%d] not supported", multiModuleDiffDeviceNumMode_), HCCL_E_NOT_SUPPORT);
         return HCCL_E_NOT_SUPPORT;
     }
     HCCL_INFO("[SelectAlgfor91093] AllGather SelectAlgfor91093 is algName [%s].", algName.c_str());

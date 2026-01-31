@@ -84,4 +84,7 @@ HcclResult HcomCheckOpParam(const char *tag, const u64 count, const HcclDataType
 HcclResult HcclParseRanktable(const std::string &rankTableM,
     const std::string &identify, hccl::HcclCommParams &params, hccl::RankTable_t &rankTable);
 
+#include "param_check_basic_v2.h"
+bool IsSupportHCCLV2(const char *socNamePtr);
+
 #endif  // PARAM_CHECK_PUB_H

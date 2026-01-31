@@ -74,7 +74,7 @@ HCCP_ATTRI_VISI_DEF int RaIsLastUsed(int insId)
 
 HCCP_ATTRI_VISI_DEF int RaRdevGetHandle(unsigned int phyId, void **rdmaHandle)
 {
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][ra_rdev]phy_id(%u) must smaller than %u",
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[get][ra_rdev]phyId(%u) must smaller than %u",
         phyId, RA_MAX_PHY_ID_NUM), -EINVAL);
     CHK_PRT_RETURN(rdmaHandle == NULL, hccp_err("[get][ra_rdev]rdma_handle is NULL, phyId(%u)",
         phyId), -EINVAL);
@@ -88,7 +88,7 @@ HCCP_ATTRI_VISI_DEF int RaRdevGetHandle(unsigned int phyId, void **rdmaHandle)
 void RaRdevSetHandle(unsigned int phyId, void *rdmaHandle)
 {
     if (phyId >= RA_MAX_PHY_ID_NUM) {
-        hccp_warn("[set][ra_rdev]phy_id(%u) must smaller than %u", phyId, RA_MAX_PHY_ID_NUM);
+        hccp_warn("[set][ra_rdev]phyId(%u) must smaller than %u", phyId, RA_MAX_PHY_ID_NUM);
         return;
     }
 
@@ -152,7 +152,7 @@ HCCP_ATTRI_VISI_DEF int RaInit(struct RaInitConfig *config)
     CHK_PRT_RETURN(config == NULL, hccp_err("[init][ra]config is NULL"), ConverReturnCode(HCCP_INIT, -EINVAL));
 
     phyId = config->phyId;
-    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[init][ra]phy_id(%u) is invalid! it must greater or "
+    CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM, hccp_err("[init][ra]phyId(%u) is invalid! it must greater or "
         "equal to 0 and less than %d!", phyId, RA_MAX_PHY_ID_NUM), ConverReturnCode(HCCP_INIT, -EINVAL));
 
     if (config->hdcType != HDC_SERVICE_TYPE_RDMA && config->hdcType != HDC_SERVICE_TYPE_RDMA_V2) {
@@ -161,7 +161,7 @@ HCCP_ATTRI_VISI_DEF int RaInit(struct RaInitConfig *config)
         config->hdcType = HDC_SERVICE_TYPE_RDMA;
     }
 
-    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%u] hdcType:[%d] enableHdcAsync[%d]",
+    hccp_run_info("Input parameters: phyId[%u], nicPosition:[%u] hdcType:[%d] enableHdcAsync[%d]",
         phyId, config->nicPosition, config->hdcType, config->enableHdcAsync);
     ret = DlHalInit();
     CHK_PRT_RETURN(ret != 0, hccp_err("[init][ra]dl_hal_init failed, ret(%d) phyId(%u)", ret, phyId), ret);
@@ -179,7 +179,7 @@ HCCP_ATTRI_VISI_DEF int RaInit(struct RaInitConfig *config)
             goto err;
         }
     } else {
-        hccp_err("[init][ra]do not support nic_position(%u) phy_id(%u)", config->nicPosition, phyId);
+        hccp_err("[init][ra]do not support nic_position(%u) phyId(%u)", config->nicPosition, phyId);
         ret = -EPROTONOSUPPORT;
         goto err;
     }
@@ -214,10 +214,10 @@ HCCP_ATTRI_VISI_DEF int RaDeinit(struct RaInitConfig *config)
 
     phyId = config->phyId;
     CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
-        hccp_err("[deinit][ra]phy_id(%u) is invalid! it must greater or equal to 0 and less than %d!", phyId,
+        hccp_err("[deinit][ra]phyId(%u) is invalid! it must greater or equal to 0 and less than %d!", phyId,
         RA_MAX_PHY_ID_NUM), ConverReturnCode(HCCP_INIT, -EINVAL));
 
-    hccp_run_info("Input parameters: phy_id[%u], nicPosition:[%u]", phyId, config->nicPosition);
+    hccp_run_info("Input parameters: phyId[%u], nicPosition:[%u]", phyId, config->nicPosition);
 
     if (config->nicPosition == NETWORK_OFFLINE) {
         ret = RaDeinitHdc(config);
@@ -230,7 +230,7 @@ HCCP_ATTRI_VISI_DEF int RaDeinit(struct RaInitConfig *config)
         CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][ra]ra_peer_deinit failed, ret(%d) phyId(%u)", ret, phyId),
             ConverReturnCode(HCCP_INIT, ret));
     } else {
-        hccp_err("[deinit][ra]do not support nic_position(%u) phy_id(%u)", config->nicPosition, phyId);
+        hccp_err("[deinit][ra]do not support nic_position(%u) phyId(%u)", config->nicPosition, phyId);
         return ConverReturnCode(HCCP_INIT, -EPROTONOSUPPORT);
     }
 

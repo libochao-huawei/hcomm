@@ -13,25 +13,65 @@ message(STATUS "${HCCL_CODE_ROOT}/src/platform/common/ *************************
 set(HCCL_LLT_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 set(UT_COMMON_INCLUDE_LIST
-    # # hccl/src目录下头文件
-    ${HCCL_CODE_ROOT}/
-    ${HCCL_CODE_ROOT}/src
-    ${HCCL_CODE_ROOT}/src/inc
-    ${HCCL_CODE_ROOT}/src/hcom/src
-    ${HCCL_CODE_ROOT}/src/hcom/src/gradient_segment
-    ${HCCL_CODE_ROOT}/src/hccl/op_base/src
+    ${HCCL_CODE_ROOT}
+    ${HCCL_CODE_ROOT}/include
+    ${HCCL_CODE_ROOT}/include/hccl
+    ${HCCL_CODE_ROOT}/pkg_inc
+    ${HCCL_CODE_ROOT}/pkg_inc/hccl
+
+    # src/pub_inc 目录下头文件
+    ${HCCL_CODE_ROOT}/src/pub_inc
+    ${HCCL_CODE_ROOT}/src/pub_inc/inner
+    ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
+    ${HCCL_CODE_ROOT}/src/pub_inc/new
+
+    # src/hccd 目录下头文件
+    ${HCCL_CODE_ROOT}/src/hccd
+
+    # src/common 目录下头文件
+    ${HCCL_CODE_ROOT}/src/common/health
+    ${HCCL_CODE_ROOT}/src/common/stream
+    ${HCCL_CODE_ROOT}/src/common/launch_device
     ${HCCL_CODE_ROOT}/src/common/src
     ${HCCL_CODE_ROOT}/src/common/src/host
     ${HCCL_CODE_ROOT}/src/common/src/topo
-    ${HCCL_CODE_ROOT}/src/hccd
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm
-    ${HCCL_CODE_ROOT}/src/algorithm/pub_inc
-    ${HCCL_CODE_ROOT}/src/algorithm/impl
+    ${HCCL_CODE_ROOT}/src/common/debug/config
+    ${HCCL_CODE_ROOT}/src/common/debug/profiling
+    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc
+    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc/host
 
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/executor/component/inc
-    ${HCCL_CODE_ROOT}/src/hccl/hccl_comm/impl
-    ${HCCL_CODE_ROOT}/src/hdcs
+    # src/framework 目录下头文件
+    ${HCCL_CODE_ROOT}/src/framework/
+    ${HCCL_CODE_ROOT}/src/framework/inc/
+    ${HCCL_CODE_ROOT}/src/framework/inc/host
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/health/heartbeat/
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
+    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/snapshot
+    ${HCCL_CODE_ROOT}/src/framework/common/src
+    ${HCCL_CODE_ROOT}/src/framework/common/src/host
+    ${HCCL_CODE_ROOT}/src/framework/common/src/task
+    ${HCCL_CODE_ROOT}/src/framework/common/src/topo
+    ${HCCL_CODE_ROOT}/src/framework/common/src/exception
+    ${HCCL_CODE_ROOT}/src/framework/common/src/config
+    ${HCCL_CODE_ROOT}/src/framework/common/src/onesided_memory_management
+    ${HCCL_CODE_ROOT}/src/framework/common/src/order_launch
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/resource_manager
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/device
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/rank_graph
+    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine
+    ${HCCL_CODE_ROOT}/src/framework/hcom/
+    ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
+    ${HCCL_CODE_ROOT}/src/framework/op_base/src/
+    ${HCCL_CODE_ROOT}/src/framework/group
+    ${HCCL_CODE_ROOT}/src/framework/nslbdp/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/api_c_adpt
+
+    # src/platform 目录下头文件
     ${HCCL_CODE_ROOT}/src/platform/
     ${HCCL_CODE_ROOT}/src/platform/common/
     ${HCCL_CODE_ROOT}/src/platform/common/unique/
@@ -52,6 +92,7 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided
     ${HCCL_CODE_ROOT}/src/platform/resource/transport/onesided/device
     ${HCCL_CODE_ROOT}/src/platform/resource/socket/
+    ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
     ${HCCL_CODE_ROOT}/src/platform/task/
     ${HCCL_CODE_ROOT}/src/platform/aiv_communication/
     ${HCCL_CODE_ROOT}/src/platform/debug/
@@ -64,57 +105,8 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/platform/hccp/inc/network
     ${HCCL_CODE_ROOT}/src/platform/hccp/external_depends/rdma-core/include
 
-    ${HCCL_CODE_ROOT}/include/
-    ${HCCL_CODE_ROOT}/include/hccl
-    ${HCCL_CODE_ROOT}/pkg_inc
-    ${HCCL_CODE_ROOT}/pkg_inc/hccl
-    ${HCCL_CODE_ROOT}/src/pub_inc
-    ${HCCL_CODE_ROOT}/src/pub_inc/inner
-    ${HCCL_CODE_ROOT}/src/pub_inc/aicpu
-    ${HCCL_CODE_ROOT}/src/pub_inc/new
-    ${HCCL_CODE_ROOT}/src/platform/resource/dispatcher_ctx
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/rpc/
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/heterog_cpu/
-    ${HCCL_CODE_ROOT}/src/hccl_heterog/common/
-    ${HCCL_CODE_ROOT}/src/pkg_inc
-
-    ${HCCL_CODE_ROOT}/src/framework/
-    ${HCCL_CODE_ROOT}/src/framework/inc/
-    ${HCCL_CODE_ROOT}/src/framework/inc/host
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/health/heartbeat/
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/detect/detect_connect_anomalies/
-    ${HCCL_CODE_ROOT}/src/framework/cluster_maintenance/recovery/operator_retry
-    ${HCCL_CODE_ROOT}/src/framework/common/src
-    ${HCCL_CODE_ROOT}/src/framework/common/src/host
-    ${HCCL_CODE_ROOT}/src/framework/common/src/task
-    ${HCCL_CODE_ROOT}/src/framework/common/src/topo
-    ${HCCL_CODE_ROOT}/src/framework/common/src/exception
-    ${HCCL_CODE_ROOT}/src/framework/common/src/config
-    ${HCCL_CODE_ROOT}/src/framework/common/src/onesided_memory_management
-    ${HCCL_CODE_ROOT}/src/framework/common/src/order_launch
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/one_sided_service
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/resource_manager
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/channel/device
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/rank_graph
-    ${HCCL_CODE_ROOT}/src/framework/communicator/impl/independent_op/resource/engine
-    ${HCCL_CODE_ROOT}/src/framework/hcom/
-    ${HCCL_CODE_ROOT}/src/framework/hcom/gradient_segment
-    ${HCCL_CODE_ROOT}/src/framework/op_base/src/
-    ${HCCL_CODE_ROOT}/src/framework/nslbdp/
-
-    # hccl/common 目录下头文件
-    ${HCCL_CODE_ROOT}/src/common/health
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc
-    ${HCCL_CODE_ROOT}/src/common/debug/profiling/inc/host
-    ${HCCL_CODE_ROOT}/src/common/debug/config
-    ${HCCL_CODE_ROOT}/src/common/stream/
-    ${HCCL_CODE_ROOT}/src/common/launch_device/
-
     # hccl/algorithm 目录下头文件
+    ${HCCL_CODE_ROOT}/src/algorithm/pub_inc
     ${HCCL_CODE_ROOT}/src/algorithm/base
     ${HCCL_CODE_ROOT}/src/algorithm/base/inc
     ${HCCL_CODE_ROOT}/src/algorithm/base/alg_template
@@ -178,13 +170,54 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/src/framework/device/common
     ${HCCL_CODE_ROOT}/src/framework/device/utils
     ${HCCL_CODE_ROOT}/src/framework/device/framework
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/comm_engine_res/threads
 
-    ${CMAKE_BINARY_DIR}/hcomm_utils/${PRODUCT_SIDE}/include/legacy
+    # framework/next
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank/
+    ${HCCL_CODE_ROOT}/src/framework/next/coll_comms/rank_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/common/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoints/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/
+    ${HCCL_CODE_ROOT}/src/framework/next/comms/endpoint_pairs/sockets/
+
+    # legacy include
+    ${HCCL_CODE_ROOT}/src/legacy/common/
+    ${HCCL_CODE_ROOT}/src/legacy/common/utils/
+    ${HCCL_CODE_ROOT}/src/legacy/common/exception/
+    ${HCCL_CODE_ROOT}/src/legacy/common/types/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/resource_manager/socket/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/communicator/aicpu/inc
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/common/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_graph/
+    ${HCCL_CODE_ROOT}/src/legacy/framework/topo/new_topo_builder/rank_table_info/
+    ${HCCL_CODE_ROOT}/src/legacy/service/collective/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/external_system/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/transport/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/notify/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/stream/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/buffer/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/resource/connection/aicpu/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/pub_inc/
+    ${HCCL_CODE_ROOT}/src/legacy/unified_platform/common/
+
+    # tbe头文件
+    ${HCCL_CODE_ROOT}/src/platform/legacy/hccl_tbe_task/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/common/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/graph_ctx_mgr/
+    ${HCCL_CODE_ROOT}/src/platform/legacy/inc/
 
     # hcce头文件
     ${HCCL_CODE_ROOT}/src/engines/hcclengine/inc
 
     ${HCCL_CODE_ROOT}/test/ut/stub
+    ${HCCL_CODE_ROOT}/test/ut/stub/legacy/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/
     ${HCCL_CODE_ROOT}/test/ut/depends/pkg_inc/aicpu/common/
@@ -202,17 +235,31 @@ set(UT_COMMON_INCLUDE_LIST
     ${HCCL_CODE_ROOT}/test/ut/depends/include/driver/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/acl/
     ${HCCL_CODE_ROOT}/test/ut/depends/include/ascendc/highlevel_api/
+    ${HCCL_CODE_ROOT}/test/ut/depends/include/hcomm-legacy/
 
     ${ASCEND_3RD_LIB_PATH}/json/include/
     ${ASCEND_3RD_LIB_PATH}/gtest_shared/include/
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/
     ${ASCEND_3RD_LIB_PATH}/mockcpp_shared/include/3rdparty/
+
+    ${ASCEND_CANN_PACKAGE_PATH}/include/ascendc
+    ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/asc/hccl/internal
 )
 
 add_subdirectory(stub)
 add_subdirectory(common/prepare_ut_env)
+add_subdirectory(common/binary_package)
+add_subdirectory(misc)
+add_subdirectory(impl)
+add_subdirectory(device)
+add_subdirectory(platform/hcom)
 add_subdirectory(platform/resource/dispatcher)
 add_subdirectory(platform/resource/notify)
 add_subdirectory(platform/resource/transport)
+add_subdirectory(platform/ping_mesh)
 add_subdirectory(framework/communicator)
 add_subdirectory(framework/op_base_api)
+add_subdirectory(framework/communicator/impl)
+add_subdirectory(framework/resource)
+add_subdirectory(aicpu_kfc/aicpu)
+add_subdirectory(aicpu_kfc/misc)

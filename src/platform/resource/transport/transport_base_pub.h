@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef TRANSPORT_BASE_PUB_H
-#define TRANSPORT_BASE_PUB_H
+#ifndef HCOMM_TRANSPORT_BASE_PUB_H
+#define HCOMM_TRANSPORT_BASE_PUB_H
 
 #include <hccl/base.h>
 #include <hccl/hccl_types.h>

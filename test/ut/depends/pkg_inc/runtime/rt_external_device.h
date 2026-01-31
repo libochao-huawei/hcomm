@@ -315,6 +315,15 @@ RTS_API rtError_t rtGetPairPhyDevicesInfo(uint32_t devId, uint32_t otherDevId, i
 */
 RTS_API rtError_t rtGetPhyDeviceInfo(uint32_t phyId, int32_t moduleType, int32_t infoType, int64_t *val);
 
+/**
+* @ingroup
+* @brief get serverid by sdid
+* @param [int] sdid   sdid
+* @param [out] *srvId serverid
+* @return RT_ERROR_NONE for ok
+* @return RT_ERROR_INVALID_VALUE for error input
+*/
+RTS_API rtError_t rtGetServerIDBySDID(uint32_t sdid, uint32_t* srvId);
 #if defined(__cplusplus)
 }
 #endif

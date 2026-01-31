@@ -106,7 +106,7 @@ HCCP_ATTRI_VISI_DEF int RaSocketAcceptCreditAdd(struct SocketListenInfoT conn[],
 
         phyId = socketHandle->rdevInfo.phyId;
         CHK_PRT_RETURN(phyId >= RA_MAX_PHY_ID_NUM,
-            hccp_err("[set][ra_socket]phy_id(%u) must smaller than %u", phyId, RA_MAX_PHY_ID_NUM),
+            hccp_err("[set][ra_socket]phyId(%u) must smaller than %u", phyId, RA_MAX_PHY_ID_NUM),
             ConverReturnCode(SOCKET_OP, -EINVAL));
 
         ret = RaInetPton(socketHandle->rdevInfo.family, socketHandle->rdevInfo.localIp, localIp, MAX_IP_LEN);

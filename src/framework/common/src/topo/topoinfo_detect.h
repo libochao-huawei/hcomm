@@ -59,7 +59,7 @@ private:
     HcclResult GetRootHostIP(const std::vector<HcclIpAddress> &whitelist, HcclIpAddress &ip, u32 devPhyId);
     HcclResult StartNetwork(HcclIpAddress &hostIP, bool bInitDevNic);
     HcclResult StopNetwork(HcclIpAddress &hostIP, bool bInitDevNic);
-    HcclResult StartRootNetwork(const HcclIpAddress &hostIP, u32 &usePort);
+    HcclResult StartRootNetwork(const HcclIpAddress &hostIP, u32 &usePort, const std::vector<HcclSocketPortRange> &portRanges);
     HcclResult StartGroupLeaderNetwork(const std::vector<HcclIpAddress> &whitelist,
         const HcclIpAddress &hostIP, u32 &listenSocket_);
     HcclResult AddSocketWhiteList(u32 port,

@@ -269,6 +269,20 @@ HcclResult DlRaFunction::DlRaFunctionSocketInit()
     dlRaSocketSend = (int(*)(const FdHandle, const void*, unsigned long long, unsigned long long*))\
             HcclDlsym(handle_, "RaSocketSend");
     CHK_SMART_PTR_NULL(dlRaSocketSend);
+    dlRaSocketSendAsync = (int(*)(const FdHandle, const void*, unsigned long long, unsigned long long*, void**))\
+            HcclDlsym(handle_, "RaSocketSendAsync");
+    if (dlRaSocketSendAsync == nullptr) {
+        HCCL_WARNING("dlRaSocketSendAsync is nullptr, can not use RaSocketSendAsync");
+    }
+    dlRaSocketRecvAsync = (int(*)(const FdHandle, void*, unsigned long long, unsigned long long*, void**))\
+            HcclDlsym(handle_, "RaSocketRecvAsync");
+    if (dlRaSocketRecvAsync == nullptr) {
+        HCCL_WARNING("dlRaSocketRecvAsync is nullptr, can not use RaSocketRecvAsync");
+    }
+    dlRaGetAsyncReqResult = (int(*)(void*, int*))HcclDlsym(handle_, "RaGetAsyncReqResult");
+    if (dlRaGetAsyncReqResult == nullptr) {
+        HCCL_WARNING("dlRaGetAsyncReqResult is nullptr, can not use RaGetAsyncReqResult");
+    }
     dlRaSocketSetWhiteListStatus =
         (int(*)(unsigned int))HcclDlsym(handle_, "RaSocketSetWhiteListStatus");
     CHK_SMART_PTR_NULL(dlRaSocketSetWhiteListStatus);

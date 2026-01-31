@@ -4,6 +4,7 @@
         <path value="$(TARGET_ENV)/lib64"/>
         <path value="$(TARGET_ENV)/include" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/hccl" install_type="devel"/>
+        <path value="$(TARGET_ENV)/include/hcomm" install_type="devel"/>
         <path value="$(TARGET_ENV)/include/version" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc" install_type="devel"/>
         <path value="$(TARGET_ENV)/pkg_inc/hccl" install_type="devel"/>
@@ -14,6 +15,7 @@
         <path value="opp/built-in/op_impl/aicpu"/>
         <path value="opp/built-in/op_impl/aicpu/kernel"/>
         <path value="opp/built-in/op_impl/aicpu/config"/>
+        <path value="opp/built-in/op_impl/dpu"/>
     </dir_info>
     <file_info value="include" copy_type="source" src_path="hcomm/include/hccl" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccl_comm.h"/>
@@ -21,6 +23,10 @@
         <file value="hccl_rank_graph.h"/>
         <file value="hccl_res.h"/>
         <file value="hcomm_primitives.h"/>
+    </file_info>
+    <file_info value="include" copy_type="source" src_path="hcomm/include" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hcomm" install_type="devel" install_mod="440">
+        <file value="hcomm_res_defs.h"/>
+        <file value="hcomm_res.h"/>
     </file_info>
     <file_info value="include" copy_type="source" src_path="hcomm/src/pub_inc" dst_path="include/hccl" install_path="$(TARGET_ENV)/include/hccl" install_type="devel" install_mod="440">
         <file value="hccn_rping.h"/>
@@ -46,9 +52,19 @@
     <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/aicpu" install_path="opp/built-in/op_impl/aicpu/config" install_type="all" install_mod="440">
         <file value="ccl_kernel.json"/>
     </file_info>
+    <file_info value="json" copy_type="delivery" src_path="build" dst_path="built-in/data/op/dpu" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
+        <file value="libccl_dpu.json"/>
+    </file_info>
+    <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="opp/built-in/op_impl/dpu" install_type="all" install_mod="440">
+        <file value="libccl_dpu.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libccl_dpu.so"/>
+    </file_info>
     <file_info value="lib64" copy_type="delivery" src_path="build" dst_path="lib64" install_path="$(TARGET_ENV)/lib64" install_type="all" install_mod="440">
         <!-- hccl -->
         <file value="libhcomm.so" file_type="shared" install_softlink="$(TARGET_ENV)/lib64/libhccl_fwk.so"/>
+        <file value="hccl_aiv_op_910_95.o"/>
+        <file value="libhccl_v2.so" file_type="shared" release_type="debug"/>
+        <file value="libhccl_v2_alg_frame.so" file_type="shared" release_type="debug"/>
+        <file value="libhccl_v2_native_alg_repo.so" file_type="shared" release_type="debug"/>
         <file value="libhccl_alg.so" file_type="shared"/>
         <file value="libhccl_plf.so" file_type="shared"/>
         <file value="libhccl_legacy.so" file_type="shared"/>
@@ -147,6 +163,47 @@
         <file value="hccl_sk_rs_crossnode.o"/>
         <file value="hccl_sk_ag_crossnode.o"/>
         <file value="hccl_sk_a2a_crossnode.o"/>
+        <!-- hccl_v2 -->
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_int8.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_int16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_int32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_float16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_float32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_oneshot_bfloat16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_int8.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_int16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_int32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_float16.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_float32.o"/>
+        <file value="hccl_ar_superkernel_mesh_1d_twoshot_bfloat16.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_int8.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_int16.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_int32.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_float16.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_float32.o"/>
+        <file value="hccl_rs_superkernel_mesh_1d_bfloat16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int8.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int32.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_float16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_float32.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_bfloat16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint8.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint16.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint32.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_int64.o"/>
+        <file value="hccl_ag_superkernel_mesh_1d_uint64.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int8.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int32.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_float16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_float32.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_bfloat16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint8.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint16.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint32.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_int64.o"/>
+        <file value="hccl_a2a_superkernel_mesh_1d_uint64.o"/>
         <!-- network -->
         <file value="libra.so" file_type="shared" install_type="run;devel;docker"/>
         <file value="libra_hdc.so" file_type="shared"/>

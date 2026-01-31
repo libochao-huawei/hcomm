@@ -1,0 +1,61 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#ifndef TASK_SERVICE_H
+#define TASK_SERVICE_H
+
+#include <functional>
+#include <unordered_map>
+#include <string>
+#include "hccl_types.h"
+
+namespace Hccl {
+using CallbackTemplate = std::function<int32_t(uint64_t, int32_t)>;
+/**
+ * 1. 使用共享 HBM 内存传递任务信息和数据
+ * 2. 内存布局(shmemPtr_)分为两块等长区域：
+ *    - NPU -> DPU (npu2dpuShmem)
+ * +----------  ------+---------------------------+-------------------+------------------+
+ * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  |      data        |
+ * +-----------  -----+---------------------------+-------------------+------------------+
+ *    - DPU -> NPU (dpu2npuShmem)
+ * +-----------------+----------------------------+-------------------+
+ * |  flag (uint8_t)  | taskType (256字节定长空间) | msgId (uint32_t)  |
+ * +------------------+---------------------------+-------------------+
+ * 3. host侧内存装载npu2dpuShmem 的 data部分
+ * +------------------+
+ * |      data        |
+ * +------------------+
+ */
+class TaskService {
+public:
+    TaskService() = default;
+    TaskService(void* deviceMem, int32_t deviceMemSize, void* hostMem, int32_t hostMemSize);
+    HcclResult TaskRun();
+    HcclResult TaskRegister(std::string taskType, CallbackTemplate callback);
+    HcclResult TaskUnRegister(std::string taskType);
+private:
+    HcclResult WriteFlag(uint8_t *flagPtr, uint8_t newFlag);
+    HcclResult ReadFlag(uint8_t *srcFlagPtr, uint8_t &flag);
+    HcclResult ReadTaskType(uint8_t *srcTaskTypePtr, std::string &taskTypeStr);
+    HcclResult ExecuteTask(uint8_t *srcPtr, std::string taskTypeStr);
+    HcclResult SynchronizeControlInfo();
+private:
+    std::unordered_map<std::string, CallbackTemplate> callbacks_;
+    void       *npu2dpuMem_{nullptr};
+    void       *dpu2npuMem_{nullptr};
+    int32_t shmemSize_{0};
+    int32_t dataSize_{0};
+    void       *hostMem_{nullptr};
+    int32_t hostMemSize_{0};
+};
+} // namespace Hccl
+
+#endif // TASK_SERVICE_H

@@ -22,7 +22,7 @@ int NetCommGetSelfHome(char *homePath, unsigned int pathLen)
 {
     int ret, retVal;
     struct passwd *pwd = getpwuid(getuid());
-    CHK_PRT_RETURN(pwd == NULL, roce_err("pwd is NULL! getpwuid fail, errno:%d", errno), -EINVAL);
+    CHK_PRT_RETURN(pwd == NULL, roce_err("pwd is NULL! getpwuid failed, errno:%d", errno), -EINVAL);
 
     if (pwd->pw_name == NULL) {
         roce_err("pwd->pw_name is NULL, errno:%d", errno);
@@ -97,7 +97,7 @@ int NetGetGatewayAddress(unsigned int phyId, unsigned int *gtwAddr)
 out:
     retVal = fclose(fp);
     if (retVal) {
-        roce_warn("fclose fail, retVal:%d, errno:%d", retVal, errno);
+        roce_warn("fclose failed, retVal:%d, errno:%d", retVal, errno);
     }
     fp = NULL;
     return ret;

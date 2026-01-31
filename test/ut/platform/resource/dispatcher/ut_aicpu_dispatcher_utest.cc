@@ -25,64 +25,16 @@
 #include "queue_notify_manager.h"
 #include "llt_hccl_stub_mc2.h"
 #include "profiling_manager_device.h"
-#include "hccl_thread.h"
 
 #undef private
 #undef protected
 #include "hccl_dispatcher_ctx.h"
 #include "dispatcher_ctx.h"
-#include "sub_inc/mmpa_typedef_linux.h"
 
 using namespace hccl;
 
 extern HcclResult CommTaskPrepare(char *key, uint32_t keyLen);
 extern HcclResult CommTaskLaunch(ThreadHandle *threads, uint32_t threadNum);
-
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
-typedef enum tagRtClearStep {
-    RT_STREAM_STOP = 0,
-    RT_STREAM_CLEAR,
-} rtClearStep_t;
-
-rtError_t rtStreamClear(rtStream_t stm, rtClearStep_t step)
-{
-    return 0;
-}
-
-INT32 mmGetEnv(const CHAR *name, CHAR *value, UINT32 len)
-{
-    INT32 ret;
-    UINT32 envLen = 0;
-    if ((name == NULL) || (value == NULL) || (len == MMPA_ZERO)) {
-        return EN_INVALID_PARAM;
-    }
-    const CHAR *envPtr = getenv(name);
-    if (envPtr == NULL) {
-        return EN_ERROR;
-    }
-
-    UINT32 lenOfRet = (UINT32)strlen(envPtr);
-    if (lenOfRet < (UINT32)(MMPA_MEM_MAX_LEN - 1)) {
-        envLen = lenOfRet + 1U;
-    }
-
-    if ((envLen != MMPA_ZERO) && (len < envLen)) {
-        return EN_INVALID_PARAM;
-    } else {
-        ret = memcpy_s(value, len, envPtr, envLen); //lint !e613
-        if (ret != EN_OK) {
-            return EN_ERROR;
-        }
-    }
-    return EN_OK;
-}
-
-#ifdef __cplusplus
-}
-#endif // __cplusplus
 
 class DispatcherAiCpu_UT : public testing::Test {
 protected:

@@ -56,25 +56,27 @@ __aicore__ inline void AivAllGatherCrossNodeGraph91093::Process(GM_ADDR buffOut0
     PipeBarrier<PIPE_ALL>();
 
     if (clearEnable_ == 1) {
-        if (blockIdxInGroup == 0) {
-            TQue<AscendC::TPosition::VECIN, 1> syncQue;
-            GlobalTensor<int32_t> syncGlobal;
-            GlobalTensor<int32_t> syncGlobalSecond;
-            uint32_t syncBufferSize = blockdim_ * 32;
-            LocalTensor<int32_t> workLocal;
+        TQue<AscendC::TPosition::VECIN, 1> syncQue;
+        GlobalTensor<int32_t> syncGlobal;
+        GlobalTensor<int32_t> syncGlobalSecond;
+        uint32_t syncBufferSize = numBlocks_ * 32;
+        LocalTensor<int32_t> workLocal;
 
-            pipe.InitBuffer(syncQue, 1, syncBufferSize);
-            syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
-            syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
-            workLocal = syncQue.AllocTensor<int32_t>();
+        pipe.InitBuffer(syncQue, 1, syncBufferSize);
+        syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset), syncBufferSize);
+        syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset + syncBufferSize), syncBufferSize);
+        workLocal = syncQue.AllocTensor<int32_t>();
+        if (blockIdxInGroup == 0) {
             Barrier(buffersOut, 1);
-            SyncAll(syncGlobal, workLocal, blockGroup_);
+        }
+        SyncAll(syncGlobal, workLocal);
+        if (blockIdxInGroup == 0) {
             ClearGM();
             Barrier(buffersOut, 2);
-            SyncAll(syncGlobalSecond, workLocal, blockGroup_);
-            syncQue.FreeTensor(workLocal);
-            PipeBarrier<PIPE_ALL>();
         }
+        SyncAll(syncGlobalSecond, workLocal);
+        syncQue.FreeTensor(workLocal);
+        PipeBarrier<PIPE_ALL>();
     }
 
     // 首次卡间同步

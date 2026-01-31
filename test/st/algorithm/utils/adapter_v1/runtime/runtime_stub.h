@@ -110,7 +110,7 @@ HcclResult  hrtFunctionRegister(BinHandle binHandle, const void *stubFunc, const
 
 HcclResult hrtDevBinaryRegister(const rtDevBinary_t *bin, BinHandle *handle);
 
-HcclResult hrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+HcclResult hrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo);
 
 aclError aclrtBinaryGetFunction(const aclrtBinHandle binHandle, const char *kernelName,
@@ -121,7 +121,7 @@ aclError aclrtBinaryUnLoad(aclrtBinHandle binHandle);
 aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *options,
     aclrtBinHandle *binHandle);
 
-aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg *cfg,
+aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     void *hostArgs, size_t argsSize, aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum);
 
 #endif

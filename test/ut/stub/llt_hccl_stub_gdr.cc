@@ -286,7 +286,7 @@ char g_shm_name[64] = {0};
 void ra_set_shm_name(const char* name)
 {
     sal_strncpy(g_shm_name, 64 - 1, name, SalStrLen(name));
-    printf("ra_set_shm_name %s", name);
+    // printf("ra_set_shm_name %s\n", name);
     g_shm_name[63] = 0;
 }
 

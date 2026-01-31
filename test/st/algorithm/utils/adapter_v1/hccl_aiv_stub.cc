@@ -58,16 +58,19 @@ typedef void (*aivFuncExtra)(EXTERN_KERNEL_ARGS_DEF);
 typedef void (*aivFuncExtraV2)(EXTERN_KERNEL_ARGS_DEF_V2);
 typedef void (*aivFuncExtraA3)(KERNEL_ARGS_DEF_A3);
 
-enum class KernelLaunchMode {
-    LAUNCH_MODE_ARGS_BASE = 0,  // Launch模式，基础参数
-    LAUNCH_MODE_ARGS_EXTRA,     // Launch模式，基础参数+ExtraArgs
-    LAUNCH_MODE_ARGS_EXTRA_V2,  // Launch模式，基础参数+ExtraArgsV2
-    LAUNCH_MODE_ARGS_EXTRA_A3   // Launch模式，A3跨机
-};
+// enum class KernelArgsType {
+//     ARGS_TYPE_SERVER = 0,        // kernel参数为单机内
+//     ARGS_TYPE_SUPERPOD = 1,      // kernel参数包含多机，当前仅A3 AlltoAllV跨机场景
+//     ARGS_TYPE_SIMPLE = 2,  // kernel参数为A3跨机
+//     ARGS_TYPE_DEFAULT
+// };
 
-HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &topoArgs,
-    const AivResourceArgs &resourceArgs, const AivAlgArgs &algArgs,
-    AivProfilingInfo& aivProfilingInfo, KernelLaunchMode launchMode, void* extraArgsPtr = nullptr);
+// enum class KernelLaunchMode {
+//     LAUNCH_MODE_ARGS_BASE = 0,  // Launch模式，基础参数
+//     LAUNCH_MODE_ARGS_EXTRA,     // Launch模式，基础参数+ExtraArgs
+//     LAUNCH_MODE_ARGS_EXTRA_V2,  // Launch模式，基础参数+ExtraArgsV2
+//     LAUNCH_MODE_ARGS_EXTRA_A3   // Launch模式，A3跨机
+// };
 
 using AivKernelInfo = struct AivKernelInfoDef {
     const char* kernelName;
@@ -539,10 +542,10 @@ HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &t
     }
 
     s32 tag = resourceArgs.aivTag;
-    block_num = resourceArgs.blockDim;
+    block_num = resourceArgs.numBlocks;
     block_idx = 0;
 
-    checker::MemLayout::Global()->InitBlockMem(resourceArgs.blockDim);
+    checker::MemLayout::Global()->InitBlockMem(resourceArgs.numBlocks);
 
     uint8_t* buffersIn[MAX_RANK_SIZE] = {}; // 注册的CCLIN地址，所有卡可访问
     uint8_t* buffersOut[MAX_RANK_SIZE] = {}; // 注册的CCLOUT地址，所有卡可访问
@@ -552,7 +555,7 @@ HcclResult ExecuteKernelLaunchImpl(const AivOpArgs &opArgs, const AivTopoArgs &t
         buffersOut[i] = (uint8_t*) resourceArgs.buffersOut[i];
     }
 
-    for (u32 blkIdx = 0; blkIdx < resourceArgs.blockDim; blkIdx++) {
+    for (u32 blkIdx = 0; blkIdx < resourceArgs.numBlocks; blkIdx++) {
         switch (launchMode) {
             case KernelLaunchMode::LAUNCH_MODE_ARGS_BASE: {
                 const char* funcName = GetAivKernelFunc(opArgs.cmdType, opArgs.dataType);

@@ -65,7 +65,8 @@ set(platform_include_list
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(hccl_plf PRIVATE
         OPEN_BUILD_PROJECT
-        LOG_CPP)
+        LOG_CPP
+    )
 
     target_include_directories(hccl_plf PRIVATE
         ${HCCL_BASE_DIR}/../include
@@ -89,7 +90,7 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
 
         # mmpa头文件
-        ${ASCEND_CANN_PACKAGE_PATH}/include/mmpa/
+        ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/mmpa/
 
         # driver头文件
         ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
@@ -216,6 +217,7 @@ add_subdirectory(remote_access)
 add_subdirectory(resource)
 add_subdirectory(task)
 add_subdirectory(ping_mesh)
+add_subdirectory(typical)
 add_subdirectory(hccp)
 
 add_dependencies(hccl_plf json)

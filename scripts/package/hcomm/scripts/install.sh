@@ -375,7 +375,7 @@ is_valid_path() {
                     exit 1
                 fi
                 if [ "${ret}" -ne 0 ]; then
-                    log "WARNING" "You are going to put run-files on a unsecure install-path, do you want to continue? [y/n]"
+                    log "WARNING" "You are going to put run-files on a insecure install-path, do you want to continue? [y/n]"
                     while true
                     do
                         read yn
@@ -1173,7 +1173,7 @@ fi
  
 if [ "$docker_install" = "y" ]; then
     log "ERROR" "ERR_NO:0x0004;ERR_DES:Unsupported parameters, operation failed."
-    log "INFO" "--docker not uesd in hcomm"
+    log "INFO" "--docker not used in hcomm"
     exit 1
 fi
  
@@ -1307,7 +1307,7 @@ if [ "$input_install_for_all" = "n" ]; then
             usergroup_base=$(grep -i usergroup= "${install_info_old}" | cut -d"=" -f2-)
             check_group "${usergroup_base}" "${username}"
             if [ $? -ne 0 ]; then
-                log "ERROR" "ERR_NO:0x0093;ERR_DES:User is not belong to the dirver or firmware's installed usergroup! Please add the user (${username}) to the group (${usergroup_base})."
+                log "ERROR" "ERR_NO:0x0093;ERR_DES:User is not belong to the driver or firmware's installed usergroup! Please add the user (${username}) to the group (${usergroup_base})."
                 confirm=y
                 exit_install_log 1
             fi

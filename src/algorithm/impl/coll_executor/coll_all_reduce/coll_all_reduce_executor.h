@@ -41,7 +41,7 @@ protected:
     bool CCLMemSlice_{true};    // 每次Loop是否需要对CCLMem进行切片
     bool DMAReduceFlag_{false}; // 是否DMA消减
 private:
-    HcclResult RunLoopInner(OpParam &param, const ReduceType &reduceType, ExecMem &execMem);
+    virtual HcclResult RunLoopInner(OpParam &param, const ReduceType &reduceType, ExecMem &execMem);
 };
 
 } // namespace hccl

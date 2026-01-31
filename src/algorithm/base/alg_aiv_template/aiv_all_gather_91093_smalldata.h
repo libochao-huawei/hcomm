@@ -41,7 +41,7 @@ __aicore__ inline void AivAllGatherSmall91093::Process(GM_ADDR input, GM_ADDR ou
 template<typename T>
 __aicore__ inline void AivAllGatherSmall91093::ProcessSmall(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag)
 {
-    uint32_t blockNumPerGroup = blockdim_ / rankSize_; // blockdim_需要能被rankSize_整除
+    uint32_t blockNumPerGroup = numBlocks_ / rankSize_; // numBlocks_需要能被rankSize_整除
     uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
     localFlagTensor = localFlagBuf.Get<int32_t>();
 
@@ -57,7 +57,7 @@ __aicore__ inline void AivAllGatherSmall91093::ProcessSmall(GM_ADDR input, GM_AD
 
     // 共用2个flag
     uint32_t flagOffset = ((tag % 2 == 1) ? 0 : pingpongOffset) + multiOffset +
-        BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * 2 + BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE;
+        NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * 2 + NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE;
     uint32_t dataOffset = (tag % 2 == 0) ? AIV_INIT_OFFSET : AIV_PING_PONG_SIZE;
 
     __gm__ T *inputGM = (__gm__ T *)input;
@@ -100,7 +100,7 @@ __aicore__ inline void AivAllGatherSmall91093::ProcessBig(GM_ADDR input, GM_ADDR
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
 
-    uint32_t blockNumPerGroup = blockdim_ / rankSize_; // blockdim_需要能被rankSize_整除
+    uint32_t blockNumPerGroup = numBlocks_ / rankSize_; // numBlocks_需要能被rankSize_整除
     uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
 
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);

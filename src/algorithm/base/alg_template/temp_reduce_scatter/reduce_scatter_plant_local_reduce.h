@@ -23,7 +23,7 @@ public:
         const Stream &stream, std::vector<Stream> &subStreams,
         std::vector<std::shared_ptr<LocalNotify>> &meshSignal, std::vector<std::shared_ptr<LocalNotify>> &meshSignalAux,
         GroupSlicesInfo &grouSlicesInfo, const HcclReduceOp reductionOp, u32 all2allOffset, 
-        const HcclDataType dataType, bool isNeedSpaceBorrow) override;
+        const HcclDataType dataType, bool isNeedSpaceBorrow, bool reverseMemUsage = false) override;
     HcclResult RunAsync(const u32 rank, const u32 rankSize, const std::vector<LINK> &links) override;
 
 protected:
@@ -51,6 +51,8 @@ private:
     GroupSlicesInfo groupSlicesInfo_;
     void *inputMemPtr_{nullptr};
     bool isNeedSpaceBorrow_{false}; //是否需要借用CCLIN空间完成通信(算子维度)
+    UserMemType scratchMemType_{UserMemType::INPUT_MEM};
+    UserMemType outputMemType_{UserMemType::OUTPUT_MEM};
 };
 } // namespace hccl
 #endif /* REDUCE_SCATTER_PLANT_LOCAL_REDUCE_H */

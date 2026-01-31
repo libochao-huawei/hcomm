@@ -358,7 +358,7 @@ HcclResult ProfilingManager::UpdateStartReportSqeIdx(s32 streamId, u32 newSqeTai
 
 HcclResult ProfilingManager::GetProfInfoByStreamId(s32 streamId, ProfCommInfo& profInfo)
 {
-    std::string tag = "unkown";
+    std::string tag = "unknown";
     std::unique_lock<std::mutex> lock(streamMutex_);
     auto iter = streamToTagMap_.find(streamId);
     if (iter == streamToTagMap_.end()) {

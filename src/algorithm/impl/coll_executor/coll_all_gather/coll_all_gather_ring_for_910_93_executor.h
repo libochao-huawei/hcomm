@@ -42,7 +42,8 @@ private:
     virtual HcclResult PrepareUserMemSlices(std::vector<std::vector<Slice>> &userMemSlices,
         const std::vector<std::vector<Slice>> &multRingsSlice, const OpParam &param, const SubCommInfo &level2CommInfo,
         const SubCommInfo &level1CommInfo, const SubCommInfo &level0CommInfo, u32 perDataSize, u64 inputMemSize);
-
+    virtual HcclResult GetLevelCommInfo();
+    
     virtual HcclResult RunIntraSeverAllGather(const std::string &tag, DeviceMem &inputMem, DeviceMem &outputMem,
         const u64 count, const HcclDataType &dataType,
         const std::vector<std::vector<Slice>> &multRingsSliceZero, const Stream &stream,
@@ -51,6 +52,11 @@ private:
     HcclResult KernelRun(const OpParam &param, ExecMem &execMem) override;
     HcclResult Getlevel1CommRank(SubCommInfo& level1CommInfo) override;
     HcclResult SelectTempAlg(std::unique_ptr<AlgTemplateBase> &level1TempAlg, u32 level1RankSize) override;
+protected:
+    SubCommInfo logicalLevel0CommInfo_;
+    SubCommInfo logicalLevel1CommInfo_;
+    CommPlane logicalLevel0plane_;
+    CommPlane logicalLevel1plane_;
 };
 
 } // namespace hccl

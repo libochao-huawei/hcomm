@@ -1,14 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-# CANN Open Software License Agreement Version 2.0 (the "License").
-# Please refer to the License for details. You may not use this file except in compliance with the License.
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-# See LICENSE in the root of the software repository for the full text of the License.
-# -----------------------------------------------------------------------------------------------------------
 """
 #
 #
@@ -28,6 +19,15 @@
 # 修改历史  ：
 # 日期    ：2025年11月25日
 # 修改内容  ：创建文件
+#
+# Copyright (c) 2025 Huawei Technologies Co., Ltd.
+# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+# CANN Open Software License Agreement Version 2.0 (the "License").
+# Please refer to the License for details. You may not use this file except in compliance with the License.
+# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+# See LICENSE in the root of the software repository for the full text of the License.
+#
 """
 from collections import namedtuple
 from typing import Dict, Iterator, List, Tuple
@@ -331,7 +331,7 @@ def add_bios_esbc_header(root_dir, item_size_set, sign_file_dir):
         input_file = os.path.join(sign_file_dir, input_filename)
 
         if conf_item.nvcnt:
-            cmd = f'{os.environ["HI_PYTHON"]} {os.path.join(bios_esbc_header_tool_path, "esbc_header.py")}'
+            cmd = f'sudo {os.environ["HI_PYTHON"]} {os.path.join(bios_esbc_header_tool_path, "esbc_header.py")}'
             # 用esbc_header.py工具脚本添加esbc头
             cmd += f" -raw_img {input_file} -out_img {input_file}"
             cmd += f" -version {conf_item.version} -nvcnt {conf_item.nvcnt} -tag {conf_item.tag}"
@@ -423,7 +423,7 @@ def add_bios_header(item_size_set, sign_file_dir, bios_tool_path, sign_tool_path
         sign_file = os.path.realpath(os.path.join(sign_tmp_path, relative_path))
         sign_path = os.path.dirname(sign_file)
 
-        cmd = "{} {}".format(os.environ["HI_PYTHON"], os.path.join(bios_tool_path, "image_pack.py"))
+        cmd = "sudo {} {}".format(os.environ["HI_PYTHON"], os.path.join(bios_tool_path, "image_pack.py"))
         add_cmd = conf_item.additional
         # 镜像绑定cms签名,用image_pack.py工具脚本绑定cms签名信息
         if add_sign != "true" or conf_item.type == '':
