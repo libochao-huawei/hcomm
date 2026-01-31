@@ -59,10 +59,15 @@ inline void HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *ini
        ipAddr = HcclIpAddress(std::string(initAttrInter->ipAddr));
        retInter = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_ROCE, ipAddr, initAttrInter->port, npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
        ipAddrDesInter = ipAddr.GetReadableIP();
-    } 
+    }
     #ifdef CONFIG_CONTEXT
     if (initAttrInter->mode == HCCN_RPING_MODE_UB) {
-        ipAddr = HcclIpAddress(HcclIpAddress::StrToEID(std::string(initAttrInter->eid)));
+        if(!HcclIpAddress::IsEID(std::string(initAttr->eid))) {
+            HCCL_ERROR("[HccnRpingInit] invalid eid");
+            return HCCN_E_PARA;
+        }
+        Eid eid = HcclIpAddress::StrToEID(std::string(initAttrInter->eid));
+        ipAddr = HcclIpAddress(eid);
         retInter = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_UB, ipAddr, initAttrInter->port, npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
         ipAddrDesInter = ipAddr.Describe();
     }
@@ -84,7 +89,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
        HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
         initAttr->mode, initAttr->port, initAttr->npuNum, initAttr->bufferSize, initAttr->sl, initAttr->tc,
         std::string(initAttr->ipAddr).c_str()); 
-    } 
+    }
     #ifdef CONFIG_CONTEXT
     if (initAttr->mode == HCCN_RPING_MODE_UB) {
         HCCL_DEBUG("[HccnRpingInit]devLogicId:%u, mode:%d port:%u npuNum:%u bufferSize:%u sl:%u tc:%u ip:%s", devLogicId,
@@ -126,6 +131,7 @@ HccnResult HccnRpingInit(uint32_t devLogicId, HccnRpingInitAttr *initAttr, HccnR
         ipAddrDes);
     // 记录pingmesh指针
     *rpingCtx = rping;
+    HCCL_INFO("[HccnRpingInit]PingMesh init success, rping:%p",rping);
     return HCCN_SUCCESS;
 }
 
@@ -226,7 +232,7 @@ HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnR
         if (sRet != EOK) {
             HCCL_ERROR("[HccnRpingAddTarget]memcpy payload fail. errorno[%d] params:dstMaxSize[%u] dstPtr[%p] "
                          "srclen[%d] srcPayload[%p]",
-                sRet, input[m].len, input[m].payload, target[0].payloadLen, target[0].payload);
+                sRet, input[m].len, input[m].payload, target[m].payloadLen, target[m].payload);
             return HCCN_E_MEM;
         }
     }
