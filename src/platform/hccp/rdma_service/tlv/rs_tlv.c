@@ -14,9 +14,7 @@
 #include "ra_rs_err.h"
 #include "rs_adp_nslb.h"
 #include "rs_inner.h"
-#ifdef CONFIG_CONTEXT
 #include "dl_ccu_function.h"
-#endif
 #include "rs_tlv.h"
 
 STATIC int RsGetTlvCb(uint32_t phyId, struct RsTlvCb **tlvCb)
@@ -116,7 +114,6 @@ STATIC int RsTlvAssembleSendData(struct TlvBufInfo *bufInfo, struct TlvRequestMs
     return 0;
 }
 
-#ifdef CONFIG_CONTEXT
 STATIC int rs_ccu_request(struct TlvRequestMsgHead *head, char *data)
 {
     int ret = 0;
@@ -140,7 +137,6 @@ STATIC int rs_ccu_request(struct TlvRequestMsgHead *head, char *data)
             
     return ret;
 }
-#endif
         
 RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
 {
@@ -171,11 +167,9 @@ RS_ATTRI_VISI_DEF int RsTlvRequest(struct TlvRequestMsgHead *head, char *data)
             ret = RsNslbNetcoRequest(head->phyId, &tlvCb->nslbCb,
                     head->type, tlvCb->bufInfo.buf, head->totalBytes);
             break;
-#ifdef CONFIG_CONTEXT
         case TLV_MODULE_TYPE_CCU:
             ret = rs_ccu_request(head, data);
             break;
-#endif
         default:
             hccp_err("[request][rs_tlv]module type error, moduleType(%u) phyId(%u)", head->moduleType, head->phyId);
             ret = -EINVAL;
