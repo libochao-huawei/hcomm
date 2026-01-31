@@ -59,7 +59,6 @@ TransportP2p::~TransportP2p()
             ->CloseIpcMem(static_cast<const u8 *>(remoteInputMemName_.ipcName));
         HCCL_DEBUG("remoteInputMemName_.ipcName[%d]", remoteInputMemName_.ipcName);
     }
-
     for (u32 i = 0; i < machinePara_.mem.size(); i++) {
         MemNameRepository::GetInstance(machinePara_.deviceLogicId)
             ->CloseIpcMem(static_cast<const u8 *>(remoteIpcMemNameVector_[i].ipcName));
@@ -283,7 +282,7 @@ HcclResult TransportP2p::FillExchangeDataTotalSize()
         HCCL_DEBUG("[TransportP2p][FillExchangeDataTotalSize] Inter Proc");
         ipcMemDataSize = HCCL_IPC_MEM_NAME_LEN + sizeof(u64) + sizeof(u64); // size + offset
         if (!isMemInclude_) {
- 	             exchangeInfoSize_.ipcMenSize = ipcMemDataSize * (2 + machinePara_.mem.size());
+ 	        exchangeInfoSize_.ipcMenSize = ipcMemDataSize * (2 + machinePara_.mem.size());
         } else {
             //in和out包含在整块CCLbuf的时候，不需要传ipcName,但是size和offset不能少
             exchangeInfoSize_.ipcMenSize = ipcMemDataSize * machinePara_.mem.size() + 2 * (sizeof(u64) + sizeof(u64));
@@ -292,8 +291,8 @@ HcclResult TransportP2p::FillExchangeDataTotalSize()
         HCCL_DEBUG("[TransportP2p][FillExchangeDataTotalSize] intra Proc");
         ipcMemDataSize = sizeof(u64) + sizeof(u64); // addr + length
         exchangeInfoSize_.ipcMenSize = ipcMemDataSize * (2 + machinePara_.mem.size()); // 2: input  & output + mem.size()
-
     }
+ 
     // notify 信息
     if (machinePara_.linkMode != LinkMode::LINK_SIMPLEX_MODE ||
         machinePara_.machineType == MachineType::MACHINE_CLIENT_TYPE) {

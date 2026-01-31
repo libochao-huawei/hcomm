@@ -45,6 +45,7 @@ public:
     static HcclResult WaitAsyncFlag(hccl::Transport::Buffer *localFlagBufforCheck, const uint32_t flagValue,
         uint64_t timeOut);
     static HcclResult AicpuIndOpChannelInit(HcclIndOpChannelRemoteResV3 *commParam);
+    static HcclResult AicpuIndOpChannelInitV2(HcclChannelUrmaRes *commParam);
     static HcclResult AicpuIndOpThreadInit(ThreadMgrAicpuParam *param);
     static HcclResult AicpuIndOpNotifyInit(NotifyMgrAicpuParam *param);
     static HcclResult AicpuIndOpCommInit(CommAicpuParam *commAicpuParam);

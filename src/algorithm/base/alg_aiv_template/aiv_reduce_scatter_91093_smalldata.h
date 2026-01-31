@@ -41,7 +41,7 @@ __aicore__ inline void AivReduceScatterSmall91093::Process(GM_ADDR input, GM_ADD
 template<typename T>
 __aicore__ inline void AivReduceScatterSmall91093::ProcessSmall(GM_ADDR input, GM_ADDR output, uint64_t len, int32_t tag)
 {
-    uint32_t blockNumPerGroup = blockdim_ / rankSize_; // blockdim_需要能被rankSize_整除
+    uint32_t blockNumPerGroup = numBlocks_ / rankSize_; // numBlocks_需要能被rankSize_整除
     uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
  
     uint64_t maxCountPerLoop = (UB_MAX_DATA_SIZE - UB_FLAG_SIZE * 4) / sizeof(T);
@@ -105,7 +105,7 @@ __aicore__ inline void AivReduceScatterSmall91093::ProcessBig(GM_ADDR input, GM_
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
  
-    uint32_t blockNumPerGroup = blockdim_ / rankSize_; // blockdim_需要能被rankSize_整除
+    uint32_t blockNumPerGroup = numBlocks_ / rankSize_; // numBlocks_需要能被rankSize_整除
     uint32_t blockIdxInGroup = GetBlockIdx() % blockNumPerGroup;
 
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
@@ -120,7 +120,7 @@ __aicore__ inline void AivReduceScatterSmall91093::ProcessBig(GM_ADDR input, GM_
 
     GlobalTensor<int32_t> globalSet;
     __gm__ int32_t* ctrlFlagsGML = (__gm__ int32_t *)(GM_OUT[rank_] + multiOffset +
-        (2 * BLOCK_DIM_FOUR_PER_RANK_A3 + blockIdxInGroup) * ATOMIC_FLAG_SIZE);
+        (2 * NUM_BLOCKS_FOUR_PER_RANK_A3 + blockIdxInGroup) * ATOMIC_FLAG_SIZE);
     globalSet.SetGlobalBuffer(ctrlFlagsGML, UB_FLAG_PAD_COUNT);
     
     if (dstRank == rank_) {
@@ -159,8 +159,8 @@ template<typename T>
 __aicore__ inline void aiv_reduce_scatter_91093_smalldata(KERNEL_ARGS_DEF)
 {
     AivReduceScatterSmall91093 op;
-    op.isSmall_ = (len * sizeof(T) <= ((block_num / rankSize) < BLOCK_DIM_FOUR_PER_RANK_A3 ? 
-        (block_num / rankSize) : BLOCK_DIM_FOUR_PER_RANK_A3) * AIV_REDUCE_SCATTER_BIG_SIZE);
+    op.isSmall_ = (len * sizeof(T) <= ((block_num / rankSize) < NUM_BLOCKS_FOUR_PER_RANK_A3 ? 
+        (block_num / rankSize) : NUM_BLOCKS_FOUR_PER_RANK_A3) * AIV_REDUCE_SCATTER_BIG_SIZE);
     op.Init(KERNEL_CLASS_INIT, !op.isSmall_);
     op.HeadCounter();
     op.Process<T>(input, output, len, tag);
@@ -172,8 +172,8 @@ __aicore__ inline void sk_reduce_scatter_91093_smalldata(SUPERKERNEL_ARGS_DEF)
 {
     AivReduceScatterSmall91093 op;
     op.Init(SUPERKERNEL_CLASS_INIT, AIV_A3_REDUCE_SCATTER_GRAPH_GUIYI_SIZE);
-    op.isSmall_ = (op.len_ * op.unitSize_ <= ((op.blockdim_ / op.rankSize_) < BLOCK_DIM_FOUR_PER_RANK_A3 ? 
-        (op.blockdim_ / op.rankSize_) : BLOCK_DIM_FOUR_PER_RANK_A3) * AIV_REDUCE_SCATTER_BIG_SIZE);
+    op.isSmall_ = (op.len_ * op.unitSize_ <= ((op.numBlocks_ / op.rankSize_) < NUM_BLOCKS_FOUR_PER_RANK_A3 ? 
+        (op.numBlocks_ / op.rankSize_) : NUM_BLOCKS_FOUR_PER_RANK_A3) * AIV_REDUCE_SCATTER_BIG_SIZE);
     #ifdef HCCL_DTYPE_INT8
         op.Process<int8_t>(input, output, op.len_, op.tag_);
     #elif defined HCCL_DTYPE_INT16

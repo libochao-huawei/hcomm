@@ -15,6 +15,7 @@
 #include <arpa/inet.h>
 #include "securec.h"
 #include "acl/acl_rt.h"
+#include "hccl_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,6 +77,9 @@ typedef enum {
     COMM_PROTOCOL_ROCE = 1,       ///< RDMA over Converged Ethernet
     COMM_PROTOCOL_PCIE = 2,       ///< PCIE协议
     COMM_PROTOCOL_SIO = 3,        ///< SIO协议
+    COMM_PROTOCOL_UBC_CTP = 4,    ///< 华为统一总线UBC_CTP
+    COMM_PROTOCOL_UBC_TP = 5,     ///< 华为统一总线UBC_CP
+    COMM_PROTOCOL_UB_MEM = 6,     ///< UB_MEM
 } CommProtocol;
 
 /**
@@ -86,12 +90,14 @@ typedef enum {
     COMM_ADDR_TYPE_IP_V4 = 0,     ///< IPv4地址类型
     COMM_ADDR_TYPE_IP_V6 = 1,     ///< IPv6地址类型
     COMM_ADDR_TYPE_ID = 2,         ///< ID地址类型
+    COMM_ADDR_TYPE_EID = 3,        ///< EID地址类型
 } CommAddrType;
 
 /**
  * @brief 通信设备地址描述结构体
  * @note 支持CommAddrType的扩展，地址最大长度36字节
  */
+constexpr uint32_t COMM_ADDR_EID_LEN = 16;
 typedef struct {
     CommAddrType type;         ///< 通信地址类别
     union {
@@ -99,6 +105,7 @@ typedef struct {
         struct in_addr addr;   ///< IPv4地址结构
         struct in6_addr addr6; ///< IPv6地址结构
         uint32_t id;           ///< 标识
+        uint8_t eid[COMM_ADDR_EID_LEN];  ///< EID地址类型
     };
 } CommAddr;
 
@@ -175,7 +182,7 @@ typedef struct {
     EndpointDesc localEndpoint; ///< 本地网络设备端侧描述
     EndpointDesc remoteEndpoint; ///< 远端网络设备端侧描述
     uint32_t notifyNum;  ///< channel上使用的通知消息数量
-    void *memHandles; ///< 注册到通信域的待交换内存句柄
+    void **memHandles; ///< 注册到通信域的待交换内存句柄
     uint32_t memHandleNum; ///< 注册到通信域的待交换内存句柄数量
     union {
         uint8_t raws[128]; ///< 通用缓存
@@ -285,6 +292,7 @@ extern HcclResult HcclThreadAcquireWithStream(HcclComm comm, CommEngine engine, 
  * @defgroup 通信通道管理接口
  * @{
  */
+
 /**
  * @brief 基于通信域和给定信息创建通信通道
  * @param[in] comm 通信域句柄
@@ -349,6 +357,62 @@ extern HcclResult HcclEngineCtxGet(HcclComm comm, const char *ctxTag, CommEngine
  */
 extern HcclResult HcclEngineCtxCopy(HcclComm comm, CommEngine engine, const char *ctxTag, const void *srcCtx,
     uint64_t size, uint64_t dstCtxOffset);
+
+/* 控制面host kfc server算子注册函数 */
+/**
+ * @brief 定义一个回调函数类型，
+ * @param uint64_t 从共享内存中拷贝到DDR上数据段的地址
+ *  @param int32_t 数据段大小
+ * @return HcclResult
+ */
+typedef int32_t(Callback)(uint64_t, int32_t);
+/**
+ * @brief 注册一个任务到指定的通信域中。
+ * @param comm 通信域对象，用于标识任务注册的目标通信域。
+ * @param msgTag 操作标签，用于标识和区分不同的任务。
+ * @param cb 回调函数，任务完成时将被调用。
+ * @return HcclResult。
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb);
+/**
+ * @brief 从指定的通信域中注销一个已注册的任务。
+ * @param comm 通信域对象，用于标识任务注销的目标通信域。
+ * @param msgTag 操作标签，用于标识要注销的任务。
+ * @param cb 回调函数，任务完成时将被调用。
+ * @return HcclResult。
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern int32_t HcclTaskUnRegister(HcclComm comm, const char *msgTag);
+ 
+/**
+ * @brief 获取mc2场景下AICPU展开的workspace
+ * @param[in] comm 通信域句柄
+ * @param[in] memTag 全局标签为nullptr, 单算子标签不为空
+ * @param[in] size 未申请过对应memTga的资源会根据size自动创建device mem, 否则校验旧的device mem是否一致。
+ * @param[out] addr 对应的workspace起始地址
+ * @param[out] newCreated 可为nullptr, 不为nullptr时会返回是否新创建的workspace
+ * @return HcclResult 执行结果状态码
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern HcclResult HcclDevMemAcquire(HcclComm comm, const char *memTag, uint64_t *size, void **addr, bool *newCreated);
+
+/**
+ * @brief 将Thread资源导出到指定通信引擎上
+ * @param[in] comm 通信域句柄
+ * @param[in] threadNum 通知数量
+ * @param[in] threads Thread句柄列表
+ * @param[in] dstCommEngine 目标通信引擎
+ * @param[out] exportedThreads 导出的Thread列表
+ * @return HcclResult 执行结果状态码
+ * @note 导出到目标通信引擎之后，在目标通信引擎直接引用，不需要导入操作
+ * 
+ * WARNING: experimental API, No compatibility is currently guaranteed for this API
+ */
+extern HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const ThreadHandle *threads, CommEngine dstCommEngine, ThreadHandle *exportedThreads);
 
 #ifdef __cplusplus
 }

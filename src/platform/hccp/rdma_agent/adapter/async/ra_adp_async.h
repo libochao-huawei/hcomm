@@ -22,6 +22,8 @@ struct RaHdcOpSec {
     unsigned long long tokenNum;
     unsigned int cfgOpNum;
     bool isAsyncOp;
+    unsigned int lastOpcode;
+    unsigned int lastOpcodeCnt;
 };
 
 struct RaHdcAsyncInfo {

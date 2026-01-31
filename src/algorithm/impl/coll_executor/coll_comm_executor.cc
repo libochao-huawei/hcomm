@@ -174,19 +174,37 @@ HcclResult CollCommExecutor::UpdateOffsetBasedOnStrideCount(const OpParam &param
 HcclResult CollCommExecutor::MultiRingAllGather(const std::string &tag, DeviceMem inputMem, DeviceMem outputMem,
     const u64 count, const HcclDataType dataType, const std::vector<std::vector<Slice> > multRingsSliceZero,
     Stream stream, s32 profStage, const u64 baseOffset, const HcomCollOpInfo *opInfo,
-    const std::vector<std::vector<Slice>> multRingsUserMemSlice)
+    const std::vector<std::vector<Slice>> multRingsUserMemSlice, const CommPlane leveIndex)
 {
     HcclResult ret = HCCL_SUCCESS;
     u32 ringNum = multRingsSliceZero.size();
-    CHK_RET(CheckCommSize(COMM_LEVEL0, ringNum));
+    CHK_RET(CheckCommSize(leveIndex, ringNum));
 
     std::vector<std::vector<u32>> ringNics;
     CHK_RET(GetRingNics(tag, ringNics));
     // 拿到ring环映射关系
-    SubCommInfo level0ZeroCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
+    SubCommInfo level0ZeroCommInfo = GetSubCommInfo(leveIndex, COMM_INDEX_0);
     auto nicList = topoAttr_.nicList;
+    TopoType topoType = topoType_;
+ 
+    if (leveIndex == COMM_LEVEL0_LOGICAL) {
+        std::vector<u32> mockNicList;
+        mockNicList.reserve(level0ZeroCommInfo.localRankSize);
+        for (u32 rankIndex = 0; rankIndex < level0ZeroCommInfo.localRankSize; rankIndex++) {
+            mockNicList.push_back(rankIndex);
+        }
+        nicList = mockNicList;
+        u32 ARSRankSize = topoMatcher_->GetCommPlaneRanks(COMM_LEVEL0_LOGICAL)[0].size();
+        bool ARSDoubleRing = ((ARSRankSize > FACTOR_TWO) && (ARSRankSize % FACTOR_TWO == 0) && topoAttr_.isARSDoubleRing);
+ 
+        if (ARSDoubleRing) {
+            topoType = TopoType::TOPO_TYPE_NP_DOUBLE_RING;
+        } else {
+            topoType = TopoType::TOPO_TYPE_NP_SINGLE_RING;
+        }
+    }
     std::vector<std::vector<u32>> multiRingsOrder =
-        GetRingsOrderByTopoType(level0ZeroCommInfo.localRankSize, topoType_, nicList);
+        GetRingsOrderByTopoType(level0ZeroCommInfo.localRankSize, topoType, nicList);
 
     // 空拷贝用于后续操作附着
     CHK_RET(AlgTemplateBase::ExecEmptyTask(inputMem, outputMem, stream, dispatcher_));
@@ -206,7 +224,7 @@ HcclResult CollCommExecutor::MultiRingAllGather(const std::string &tag, DeviceMe
         std::vector<u32> rankOrder;
         CHK_RET(GetRankOrder(multiRingsOrder, ringIndex, rankOrder));
 
-        SubCommInfo level0RingCommInfo = GetSubCommInfo(COMM_LEVEL0, ringIndex);
+        SubCommInfo level0RingCommInfo = GetSubCommInfo(leveIndex, ringIndex);
 
         u32 rankSize = level0RingCommInfo.localRankSize;
         u32 ringIndexOp = ringIndex;
@@ -614,6 +632,75 @@ HcclResult CollCommExecutor::Level1AllGatherConcurrent(DeviceMem inputMem, Devic
     return HCCL_SUCCESS;
 }
 
+u32 CollCommExecutor::CalcOptimalIntraRingsize(u64 count, HcclDataType dataType, HcclCMDType opType)
+{
+    if (!topoMatcher_->GetARSFlag()) return 0;
+ 
+    u32 level0RankSize   = topoMatcher_->GetCommPlaneRanks(COMM_LEVEL0)[0].size();
+    u32 rankSizeInSuperPod = topoMatcher_->GetCommPlaneRanks(COMM_ARS)[0].size();
+    u32 perDataSize = 0;
+    CHK_RET(SalGetDataTypeSize(dataType, perDataSize));
+    // 不支持 ARS 或环内卡数不是 2 的倍数
+    u32 level0RingSize = 1;
+    if (!topoAttr_.isARSDoubleRing || (level0RankSize % FACTOR_TWO != 0)) {
+        HCCL_INFO("not Support ARS doubleRing, level0RingSize:[%u], level0RankSize[%u].", level0RingSize, level0RankSize);
+        return level0RingSize;
+    }
+    // --- 1. 带宽 & 基本参数 ---
+    float bwHCCS, bwHBM, bwSIO;
+    CHK_RET(GetBandWidthPerNPU(0, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwHCCS));
+    CHK_RET(GetBandWidthPerNPU(2, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwHBM));
+    CHK_RET(GetBandWidthPerNPU(3, topoAttr_.userRankSize, topoAttr_.deviceNumPerAggregation, bwSIO));
+    float latency = BASE_COMM_LATENCY / MULTIPLIER_MS2US;   // ms
+    // --- 2. 数据总量 (GB) ---
+    float baseSizeGB = static_cast<double>(count) * perDataSize / (1024 * 1024 * 1024);
+    float totalSize  = baseSizeGB;
+    HCCL_INFO("CalcOptimalIntraRingsize: count[%u], totalSize:[%lf]GB, perDataSize[%u].", count, totalSize, perDataSize);
+    if (opType == HcclCMDType::HCCL_CMD_ALLGATHER || opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER) {
+        totalSize *= rankSizeInSuperPod;
+    }
+    // --- 3. 枚举可能的环大小 ---
+    std::vector<u32> factors;
+    for (u32 i = 1; i <= rankSizeInSuperPod / i; ++i) {
+        if (rankSizeInSuperPod % i == 0) {
+            factors.push_back(i);
+            if (i != rankSizeInSuperPod / i) {
+                factors.push_back(rankSizeInSuperPod / i);
+            }
+        }
+    }
+    std::sort(factors.begin(), factors.end());
+    // --- 4. 计算最优带宽 ---
+    double maxBwARS = 0.0;
+    for (u32 N1 : factors) {
+        u32 N2 = rankSizeInSuperPod / N1;
+        // 静态时延 (ms)
+        double interStep = (algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING) ? (N2 - 1) : log2(N2);
+        double latencyStep = (interStep + (N1 - 1)) * latency;
+        // 传输时延 (ms)
+        double latencyIntra;
+        if ((N1 % FACTOR_TWO == 0) && (N1 > FACTOR_TWO)) {
+            latencyIntra = (N1 - 1) * totalSize * MULTIPLIER_S2MS / N1 / bwHCCS / FACTOR_TWO;
+        } else if (N1 == FACTOR_TWO) {
+            latencyIntra = totalSize * MULTIPLIER_S2MS / FACTOR_TWO / bwSIO;
+        } else {
+            latencyIntra = (N1 - 1) * totalSize * MULTIPLIER_S2MS / N1 / bwHCCS;
+        }
+        double latencyInter = (N2 - 1) * totalSize * MULTIPLIER_S2MS / N1 / N2 / bwHCCS;
+        // HBM 拷贝时延 (ms)
+        double latencyCopy = totalSize * MULTIPLIER_S2MS / bwHBM;
+        u8 mul = (opType == HcclCMDType::HCCL_CMD_ALLREDUCE) ? FACTOR_TWO : 1;
+        double timeCost = mul * (latencyStep + latencyIntra + latencyInter) + latencyCopy;
+        double bwARS = totalSize / timeCost;  // GB/ms
+        if (bwARS > maxBwARS) {
+            maxBwARS = bwARS;
+            level0RingSize = N1;
+        }
+    }
+    HCCL_INFO("level0RingSize:[%u], totalSize:[%lf]GB, level0RankSize[%u].", level0RingSize, totalSize, level0RankSize);
+    return level0RingSize;
+}
+
 HcclResult CollCommExecutor::CollectMultiRingsUserMemSlices(u32 ringNum, const HcclDataType dataType,
     const HcomCollOpInfo *opInfo, const std::vector<std::vector<Slice>> &multRingsSliceZero,
     const std::vector<std::vector<u32>> &multiRingsOrder,
@@ -659,20 +746,38 @@ HcclResult CollCommExecutor::MultiRingReduceScatter(const std::string &tag, Devi
     const u64 count, const HcclDataType dataType, const HcclReduceOp reductionOp,
     const std::vector<std::vector<Slice> > multRingsSliceZero, Stream stream, s32 profStage,
     const u64 baseOffset, const HcomCollOpInfo *opInfo,
-    const std::vector<std::vector<Slice>> multRingsUserMemSlice)
+    const std::vector<std::vector<Slice>> multRingsUserMemSlice, const CommPlane levelIndex)    
 {
     HCCL_INFO("[MultiRingReduceScatter] MultiRingReduceScatter starts");
     HcclResult ret = HCCL_SUCCESS;
     u32 ringNum = multRingsSliceZero.size();
-    CHK_RET(CheckCommSize(COMM_LEVEL0, ringNum));
+    CHK_RET(CheckCommSize(levelIndex, ringNum));
 
     std::vector<std::vector<u32>> ringNics;
     CHK_RET(GetRingNics(tag, ringNics));
     // 拿到ring环映射关系
-    SubCommInfo level0ZeroCommInfo = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0);
+    SubCommInfo level0ZeroCommInfo = GetSubCommInfo(levelIndex, COMM_INDEX_0);
     auto nicList = topoAttr_.nicList;
+
+    TopoType topoType = topoType_;
+ 
+    if (levelIndex == COMM_LEVEL0_LOGICAL) {
+        std::vector<u32> mockNicList;
+        mockNicList.reserve(level0ZeroCommInfo.localRankSize);
+        for (u32 rankIndex = 0; rankIndex < level0ZeroCommInfo.localRankSize; rankIndex++) {
+            mockNicList.push_back(rankIndex);
+        }
+        nicList = mockNicList;
+        u32 ARSRankSize = topoMatcher_->GetCommPlaneRanks(COMM_LEVEL0_LOGICAL)[0].size();        
+        bool ARSDoubleRing = ((ARSRankSize > FACTOR_TWO) && (ARSRankSize % FACTOR_TWO == 0) && topoAttr_.isARSDoubleRing);
+        if (ARSDoubleRing) {
+            topoType = TopoType::TOPO_TYPE_NP_DOUBLE_RING;
+        } else {
+            topoType = TopoType::TOPO_TYPE_NP_SINGLE_RING;
+        }
+    }
     std::vector<std::vector<u32>> multiRingsOrder =
-        GetRingsOrderByTopoType(level0ZeroCommInfo.localRankSize, topoType_, nicList);
+        GetRingsOrderByTopoType(level0ZeroCommInfo.localRankSize, topoType, nicList);
 
     u64 reduceAttr = GetReduceAttr(inputMem, outputMem, dataType, reductionOp);
 
@@ -695,7 +800,7 @@ HcclResult CollCommExecutor::MultiRingReduceScatter(const std::string &tag, Devi
         std::vector<u32> rankOrder;
         CHK_RET(GetRankOrder(multiRingsOrder, ringIndex, rankOrder));
 
-        SubCommInfo level0RingCommInfo = GetSubCommInfo(COMM_LEVEL0, ringIndex);
+        SubCommInfo level0RingCommInfo = GetSubCommInfo(levelIndex, ringIndex);
         u32 rankSize = level0RingCommInfo.localRankSize;
         u32 ringIndexOp = ringIndex;
 
@@ -1692,13 +1797,19 @@ void CollCommExecutor::NicSendSizeCal(const std::vector<std::vector<Slice>> &mut
 }
 
 std::vector<std::vector<Slice> > CollCommExecutor::PrepareMultiRingSlice(const std::vector<Slice> &dataSegsSlice,
-    const std::string &tag, bool avoidCceRewrite, std::vector<u32> nicList)
+    const std::string &tag, bool avoidCceRewrite, std::vector<u32> nicList, CommPlane commLevelIndex)
 {
     // get ranksSize
-    u32 ranksSize = GetSubCommInfo(COMM_LEVEL0, COMM_INDEX_0).localRankSize;
+    u32 ranksSize = GetSubCommInfo(commLevelIndex, COMM_INDEX_0).localRankSize;
     // 获取每个ring上设备的排布顺序，顺序均为deviceID
     sort(nicList.begin(), nicList.end());
-    std::vector<std::vector<u32> > multiRingsOrder = GetRingsOrderByTopoType(ranksSize, topoType_, nicList);
+    std::vector<std::vector<u32> > multiRingsOrder;
+    if(topoMatcher_->GetARSFlag()) {
+        multiRingsOrder = GetRingsOrderByTopoType(nicList.size(), TopoType::TOPO_TYPE_NP_DOUBLE_RING, nicList);
+    } else {
+        multiRingsOrder = GetRingsOrderByTopoType(ranksSize, topoType_, nicList);
+    }
+    HCCL_INFO("[%s], multiRingsOrder.size() = %u", __func__, multiRingsOrder.size());
     std::vector<std::vector<Slice> > mutliRingsSlices;
     std::vector<std::vector<Slice> > mutliSegsSlices;
     u32 ringCount = multiRingsOrder.size();
@@ -2094,7 +2205,7 @@ HcclResult CollCommExecutor::PrepareLevel1CommInfo(u32 &segmentIdx, u32 &commInd
             CHK_PRT_RET(iter == nicSendSizeList_.end(), HCCL_ERROR("[Prepare][Level1CommInfo]find tag[%s] in "\
                 "nicSendSizeList_ failed", tag.c_str()), HCCL_E_INTERNAL);
             CHK_PRT_RET(nicIdx >= iter->second.size(), HCCL_ERROR("[Prepare][Level1CommInfo]tag[%s] nicIdx[%u] "\
-                "invaild, expect less than %zu", tag.c_str(), nicIdx, iter->second.size()), HCCL_E_INTERNAL);
+                "invalid, expect less than %zu", tag.c_str(), nicIdx, iter->second.size()), HCCL_E_INTERNAL);
             hdSize = iter->second[nicIdx];                    // 通过nicSendSizeList_得到该网口传输数据量
             u32 ringRanks = multRingsSliceZero[0].size(); // 获取单个 ring 上设备的数量
             segmentIdx = ringRanks / topoAttr_.nicList.size() * nicIdx; // 通过网口位置得到该网口传输数据的起始位置

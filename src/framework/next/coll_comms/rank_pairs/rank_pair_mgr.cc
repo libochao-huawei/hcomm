@@ -1,0 +1,37 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#include "rank_pair_mgr.h"
+
+namespace hccl {
+
+HcclResult RankPairMgr::Get(RankIdPair rankIdPair, RankPair*& out)
+{
+    auto iterPtr = rankPairMap_.find(rankIdPair);
+    if (iterPtr != rankPairMap_.end()) {
+        out = iterPtr->second.get();
+        return HCCL_SUCCESS;
+    }
+
+    std::unique_ptr<RankPair> rankPair = nullptr;
+    EXECEPTION_CATCH(
+        (rankPair = std::make_unique<RankPair>(rankIdPair)), 
+        return HCCL_E_PTR
+    );
+    CHK_SMART_PTR_NULL(rankPair);
+    CHK_RET(rankPair->Init());
+
+    out = rankPair.get();
+    rankPairMap_.emplace(rankIdPair, std::move(rankPair));
+
+    return HCCL_SUCCESS;
+}
+
+} // namespace hccl

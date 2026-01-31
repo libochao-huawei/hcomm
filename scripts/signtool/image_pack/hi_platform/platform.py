@@ -182,6 +182,7 @@ def __add_magic_number_and_file_size(args, out, cms_flag, suffix=False, code_len
     else:
         value = (0x0, fileSize)
     stream = s.pack(*value)
+    # print(binascii.hexlify(stream))
     offset = code_len + 0x580 if before_header else 0x580
     out.seek(offset, 0)
     out.write(stream)

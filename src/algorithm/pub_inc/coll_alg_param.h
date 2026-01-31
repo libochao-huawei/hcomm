@@ -198,6 +198,8 @@ struct OpParam {
     bool supportZeroCopy = false;
     bool isZeroCopy = false;
     u8 aclGraphZeroCopyEnable = 0;  // 记录和传递外部配置参数aclGraphZeroCopyEnable
+    bool supportRoceDirect = false;   // AIV场景支持Roce直驱
+    bool isNpuDirectRoce = false;     // AIV场景使用Roce直驱标记位
     s32 aivTag = 0; // AIV场景使用的软同步标记位
     u32 index = 0;
     bool isInplaceError = false;
@@ -206,6 +208,11 @@ struct OpParam {
     u8 deterministic = 0;
     u32 srTag = 0;
     u32 localGroupRank = 0;
+    bool isGroupMode = false;
+    u32 nSend = 0;
+    u32 nRecv = 0;
+    u32 iSend = 0; // index of send
+    u32 iRecv = 0; // index of recv
 
     inline HcclDataType GetDataType() const
     {
@@ -271,7 +278,7 @@ struct AlgDesc {
 
 struct ResourceLimit {
     bool ifLimit = false;
-    bool ifCompileForAiv = false;
+    bool ifCompileForAiv = false; // 图编译时选择AIV算法，不运行
     u32 aivCoreLimit = 0;
 };
 

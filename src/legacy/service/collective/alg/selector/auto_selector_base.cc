@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
+ * Description: 自适应算法选择基类实现
+ * Author: libiaozhi
+ * Create: 2025-03-22
+ */
+#include "auto_selector_base.h"
+#include "selector_registry.h"
+#include "coll_operator.h"
+#include "coll_alg_params.h"
+
+namespace Hccl {
+
+SelectorStatus AutoSelectorBase::Select(const CollAlgOperator &op, CollAlgParams &params,
+                                   std::string &primQueueGenName)
+{
+    HCCL_DEBUG("[AutoSelectorBase][%s] start", __func__);
+    TopoInfo topoInfo;
+    HCCL_DEBUG("[AutoSelectorBase][%s] CalcTopoShape start", __func__);
+    CalcTopoShape(topoInfo);
+    HCCL_DEBUG("[AutoSelectorBase][%s] end, levelNum[%u]", __func__, topoInfo.levelNum);
+    std::map<OpType, std::vector<HcclAlgoType>> configAlgMap = EnvConfig::GetInstance().GetAlgoConfig().GetAlgoConfig();
+    SelectorStatus ret = SelectorStatus::NOT_MATCH;
+    HCCL_DEBUG("[AutoSelectorBase][%s] params.opExecuteConfig.accelerator[%s]", __func__, params.opExecuteConfig.accState.Describe().c_str());
+    dataSize_ = params.dataSize;
+    if (params.opExecuteConfig.accState == AcceleratorState::CCU_MS) {
+        ret = SelectCcuMsAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+        if (ret == SelectorStatus::NOT_MATCH) {
+            params.opExecuteConfig.accState = AcceleratorState::CCU_SCHED;
+        } else {
+            return ret;
+        }
+    }
+    if (params.opExecuteConfig.accState == AcceleratorState::CCU_SCHED) {
+        ret = SelectCcuScheduleAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+        if (ret == SelectorStatus::NOT_MATCH) {
+            params.opExecuteConfig.accState = AcceleratorState::CCU_FALLBACK;
+        } else {
+            return ret;
+        }
+    }
+    if (params.opExecuteConfig.accState == AcceleratorState::AIV) {
+        ret = SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+        if (ret == SelectorStatus::NOT_MATCH) {
+            params.opExecuteConfig.accState = AcceleratorState::CCU_FALLBACK;
+        } else {
+            return ret;
+        }
+    }
+    if (params.opExecuteConfig.accState == AcceleratorState::AIV_ONLY) {
+        return SelectAivAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+    }
+    if (IsStarsState(params.opExecuteConfig)) {
+        ret = SelectAicpuAlgo(topoInfo, op, configAlgMap, primQueueGenName);
+        if ((ret == SelectorStatus::MATCH)&&(params.opExecuteConfig.accState == AcceleratorState::CCU_FALLBACK)) {
+            params.opExecuteConfig.accState = AcceleratorState::AICPU_TS;
+        }
+    }
+    HCCL_INFO("[Algo][AutoSelectorBase] The selected algo is %s.", primQueueGenName.c_str());
+    return ret;
+}
+
+bool AutoSelectorBase::IsStarsState(const OpExecuteConfig &opExecuteConfig) const
+{
+    return (opExecuteConfig.accState == AcceleratorState::AICPU_TS ||
+            opExecuteConfig.accState == AcceleratorState::HOSTCPU_TS ||
+            opExecuteConfig.accState == AcceleratorState::CCU_FALLBACK);
+}
+
+bool AutoSelectorBase::IsDefaultAlg(const HcclAlgoType algoType) const
+{
+    return (algoType ==  HcclAlgoType::HCCL_ALGO_TYPE_DEFAULT) || (algoType ==  HcclAlgoType::HCCL_ALGO_TYPE_NA);
+}
+
+bool AutoSelectorBase::IsSmallData(const u64 dataSize) const
+{
+    return dataSize < SMALL_COUNT_512KB;
+}
+
+bool AutoSelectorBase::IsLargeData(const u64 dataSize) const
+{
+    return dataSize >= LARGE_COUNT_1024KB;
+}
+
+SelectorStatus AutoSelectorBase::SelectCcuMsAlgo(const TopoInfo &topoInfo,
+                                                    const CollAlgOperator &op,
+                                                    const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
+                                                    std::string &primQueueGenName) const
+{
+    (void)topoInfo;
+    (void)op;
+    (void)configAlgMap;
+    (void)primQueueGenName;
+    return SelectorStatus::NOT_MATCH;
+}
+
+SelectorStatus AutoSelectorBase::SelectCcuScheduleAlgo(const TopoInfo &topoInfo,
+                                                    const CollAlgOperator &op,
+                                                    const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
+                                                    std::string &primQueueGenName) const
+{
+    (void)topoInfo;
+    (void)op;
+    (void)configAlgMap;
+    (void)primQueueGenName;
+    return SelectorStatus::NOT_MATCH;
+}
+
+SelectorStatus AutoSelectorBase::SelectAicpuAlgo(const TopoInfo &topoInfo,
+                                                      const CollAlgOperator &op,
+                                                      const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
+                                                      std::string &primQueueGenName) const
+{
+    (void)topoInfo;
+    (void)op;
+    (void)configAlgMap;
+    (void)primQueueGenName;
+    return SelectorStatus::NOT_MATCH;
+}
+
+SelectorStatus AutoSelectorBase::SelectAivAlgo(const TopoInfo &topoInfo,
+                                                      const CollAlgOperator &op,
+                                                      const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
+                                                      std::string &primQueueGenName) const
+{
+    (void)topoInfo;
+    (void)op;
+    (void)configAlgMap;
+    (void)primQueueGenName;
+    return SelectorStatus::NOT_MATCH;
+}
+
+}

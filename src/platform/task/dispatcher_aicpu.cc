@@ -217,7 +217,6 @@ HcclResult DispatcherAiCpu::SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &
 HcclResult DispatcherAiCpu::SignalWait(HcclRtNotify signal, Stream &stream, u32 userRank, u32 remoteUserRank, s32 stage,
     bool inchip, u32 notifyId, u32 timeOut)
 {
-    (void)timeOut;
     const HcclComStreamInfo &streamInfo = stream.GetHcclStreamInfo();
     uint8_t *sqeBuffer = nullptr;
     uint8_t *sqeTypeAddr = nullptr;
@@ -229,6 +228,7 @@ HcclResult DispatcherAiCpu::SignalWait(HcclRtNotify signal, Stream &stream, u32 
     dfxInfo->remoteRank = remoteUserRank;
     dfxInfo->notifyId = notifyId;
 
+    dfxTimeOutConfig_.sqeTimeOutTimeOut = timeOut < notifyMaxWaitTime_ ? timeOut : dfxTimeOutConfig_.sqeTimeOutTimeOut;
     if (inchip || (aicpuInfo_.devType != DevType::DEV_TYPE_310P1 && aicpuInfo_.devType != DevType::DEV_TYPE_310P3)) {
         addOneNotifyWaitSqe_(streamInfo.actualStreamId, taskId, notifyId, sqeBuffer, sqeTypeAddr, dfxTimeOutConfig_);
     } else {
@@ -256,8 +256,9 @@ HcclResult DispatcherAiCpu::SignalWait(HcclRtNotify signal, Stream &stream, u32 
     }
 
     PLF_CONFIG_INFO(PLF_TASK,
-        "%s para: streamId[%u] userRank[%u] remoteRank[%u] inchip[%d] devType[%d] notifyId[%u]",
-        __func__, streamInfo.actualStreamId, userRank, remoteUserRank, inchip, aicpuInfo_.devType, notifyId);
+        "%s para: streamId[%u] userRank[%u] remoteRank[%u] inchip[%d] devType[%d] notifyId[%u] sqeTimeOutTimeOut[%llu]",
+        __func__, streamInfo.actualStreamId, userRank, remoteUserRank, inchip, aicpuInfo_.devType, notifyId,
+        dfxTimeOutConfig_.sqeTimeOutTimeOut);
     return HCCL_SUCCESS;
 }
 

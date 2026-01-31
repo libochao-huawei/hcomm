@@ -166,7 +166,7 @@ HcclResult HcclOneSidedConn::GetMemType(const char *description, RmaMemType &mem
         sizeof(void*)        // devAddr
     };
     // 计算偏移量
-    size_t offset = std::accumulate(skip_sizes.begin(), skip_sizes.end(), 0u);
+    size_t offset = std::accumulate(skip_sizes.begin(), skip_sizes.end(), 0);
     // 定位到 memType 的位置
     iss.seekg(offset);
     iss.read(reinterpret_cast<char_t *>(&memType), sizeof(memType));
@@ -244,8 +244,8 @@ void HcclOneSidedConn::DisableMemAccess(const HcclMemDesc &remoteMemDesc)
                 "(used by other RemoteRank), do not disable memory.");
         }
     } catch (std::out_of_range& e) {
-        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del expection: %s", e.what());
-        EXCEPTION_THROW_IF_COND_ERR(true, "[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del expection");
+        HCCL_ERROR("[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception: %s", e.what());
+        EXCEPTION_THROW_IF_COND_ERR(true, "[TransportIpcMem][DisableMemAccess] catch RmaBufferMgr Del exception");
     }
     HCCL_INFO("[HcclOneSidedConn][DisableMemAccess] Disable memory access success.");
 }

@@ -423,7 +423,7 @@ typedef enum aclrtLaunchKernelAttrId {
     ACL_RT_LAUNCH_KERNEL_ATTR_SCHEM_MODE = 1,
     ACL_RT_LAUNCH_KERNEL_ATTR_LOCAL_MEMORY_SIZE = 2,
     ACL_RT_LAUNCH_KERNEL_ATTR_ENGINE_TYPE = 3,
-    ACL_RT_LAUNCH_KERNEL_ATTR_BLOCKDIM_OFFSET = 4,
+    ACL_RT_LAUNCH_KERNEL_ATTR_NUMBLOCKS_OFFSET = 4,
     ACL_RT_LAUNCH_KERNEL_ATTR_BLOCK_TASK_PREFETCH = 5,
     ACL_RT_LAUNCH_KERNEL_ATTR_DATA_DUMP = 6,
     ACL_RT_LAUNCH_KERNEL_ATTR_TIMEOUT = 7,
@@ -444,7 +444,7 @@ typedef union aclrtLaunchKernelAttrValue {
     uint8_t schemMode;
     uint32_t localMemorySize;
     aclrtEngineType engineType;
-    uint32_t blockDimOffset;
+    uint32_t numBlocksOffset;
     uint8_t isBlockTaskPrefetch;
     uint8_t isDataDump;
     uint16_t timeout;   // unit: s
@@ -634,7 +634,7 @@ typedef struct {
 typedef struct {
     void *binHandle; // program handle
     void *funcEntryAddr;
-    void *blockDimAddr;
+    void *numBlocksAddr;
     uint32_t rsv[4];
 } aclrtAicAivTaskUpdateAttr;
 
@@ -656,6 +656,23 @@ typedef enum {
 } aclrtDeviceState;
 
 typedef void (*aclrtDeviceStateCallback)(int32_t deviceId, aclrtDeviceState state, void *args);
+
+/*
+ * BackUp Flow:
+ * LOCK_PRE → [aclrtSnapShotProcessLock] → BACKUP_PRE → [aclrtSnapShotProcessBackup] → BACKUP_POST → [aclrtSnapShotProcessUnlock] -> UNLOCK_POST
+ * Restore Flow:
+ * RESTORE_PRE → [aclrtSnapShotProcessRestore] → RESTORE_POST → [aclrtSnapShotProcessUnlock] → UNLOCK_POST
+ */
+typedef enum {
+    ACL_RT_SNAPSHOT_LOCK_PRE = 0,
+    ACL_RT_SNAPSHOT_BACKUP_PRE,
+    ACL_RT_SNAPSHOT_BACKUP_POST,
+    ACL_RT_SNAPSHOT_RESTORE_PRE,
+    ACL_RT_SNAPSHOT_RESTORE_POST,
+    ACL_RT_SNAPSHOT_UNLOCK_POST,
+} aclrtSnapShotStage;
+
+typedef uint32_t (*aclrtSnapShotCallBack)(int32_t deviceId, void* args);
 
 typedef struct {
     char bytes[16];
@@ -2504,7 +2521,7 @@ ACL_FUNC_VISIBILITY aclError aclrtBinaryGetFunction(const aclrtBinHandle binHand
  * @ingroup AscendCL
  * @brief Kernel Launch to device
  * @param [in] funcHandle  function handle
- * @param [in] blockDim  block dimensions
+ * @param [in] numBlocks  block dimensions
  * @param [in] argsData  args data
  * @param [in] argsSize  args size
  * @param [in] stream   stream handle
@@ -2512,7 +2529,7 @@ ACL_FUNC_VISIBILITY aclError aclrtBinaryGetFunction(const aclrtBinHandle binHand
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernel(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernel(aclrtFuncHandle funcHandle, uint32_t numBlocks,
                                                const void *argsData, size_t argsSize, aclrtStream stream);
 
 /**
@@ -2877,7 +2894,7 @@ ACL_FUNC_VISIBILITY aclError aclrtKernelArgsParaUpdate(aclrtArgsHandle argsHandl
  * @ingroup AscendCL
  * @brief Launch kernel
  * @param [in] funcHandle
- * @param [in] blockDim
+ * @param [in] numBlocks
  * @param [in] stream
  * @param [in] cfg
  * @param [in] argsHandle
@@ -2885,7 +2902,7 @@ ACL_FUNC_VISIBILITY aclError aclrtKernelArgsParaUpdate(aclrtArgsHandle argsHandl
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithConfig(aclrtFuncHandle funcHandle, uint32_t numBlocks,
                                                          aclrtStream stream, aclrtLaunchKernelCfg *cfg,
                                                          aclrtArgsHandle argsHandle, void *reserve);
 
@@ -4059,7 +4076,7 @@ ACL_FUNC_VISIBILITY aclError aclrtProfTrace(void *userdata, int32_t length, aclr
  * @ingroup AscendCL
  * @brief Kernel Launch to device
  * @param [in] funcHandle  function handle
- * @param [in] blockDim  block dimensions
+ * @param [in] numBlocks  block dimensions
  * @param [in] argsData  args data
  * @param [in] argsSize  args size
  * @param [in] cfg  configuration information
@@ -4068,7 +4085,7 @@ ACL_FUNC_VISIBILITY aclError aclrtProfTrace(void *userdata, int32_t length, aclr
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelV2(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelV2(aclrtFuncHandle funcHandle, uint32_t numBlocks,
                                                  const void *argsData, size_t argsSize,
                                                  aclrtLaunchKernelCfg *cfg, aclrtStream stream);
 
@@ -4076,7 +4093,7 @@ ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelV2(aclrtFuncHandle funcHandle, uin
  * @ingroup AscendCL
  * @brief Launch kernel with host args
  * @param [in] funcHandle  function handle
- * @param [in] blockDim  block dimensions
+ * @param [in] numBlocks  block dimensions
  * @param [in] stream  stream handle
  * @param [in] cfg  configuration information
  * @param [in] hostArgs  host args data
@@ -4086,7 +4103,7 @@ ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelV2(aclrtFuncHandle funcHandle, uin
  * @retval ACL_SUCCESS The function is successfully executed.
  * @retval OtherValues Failure
  */
-ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim,
+ACL_FUNC_VISIBILITY aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks,
                                                            aclrtStream stream, aclrtLaunchKernelCfg *cfg,
                                                            void *hostArgs, size_t argsSize,
                                                            aclrtPlaceHolderInfo *placeHolderArray,
@@ -4446,6 +4463,42 @@ ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessBackup();
  * @retval
 */
 ACL_FUNC_VISIBILITY aclError aclrtSnapShotProcessRestore();
+
+/**
+ * @ingroup AscendCL
+ * @brief registers a callback function for snapshot operation stages
+ * @param [in] stage the snapshot stage at which the callback should be triggered
+ *   The available stages are:
+ *   @li ACL_RT_SNAPSHOT_LOCK_PRE         - Called before process lock for snapshot
+ *   @li ACL_RT_SNAPSHOT_BACKUP_PRE       - Called before backup operation starts
+ *   @li ACL_RT_SNAPSHOT_BACKUP_POST      - Called after backup operation completes
+ *   @li ACL_RT_SNAPSHOT_RESTORE_PRE      - Called before restore operation starts
+ *   @li ACL_RT_SNAPSHOT_RESTORE_POST     - Called after restore operation completes
+ *   @li ACL_RT_SNAPSHOT_UNLOCK_POST      - Called after process unlock
+ * @param [in] callback Pointer to the callback function
+ * @param [in] args User-defined argument pointer passed unchanged to the callback.
+ *        This can be NULL if no additional data is needed.
+ * @retval ACL_SUCCESS The function is successfully executed
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclrtSnapShotCallbackRegister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback, void *args);
+
+/**
+ * @ingroup AscendCL
+ * @brief unregisters a previously registered callback function for a snapshot stage
+ * @param [in] stage the snapshot stage at which the callback should be triggered
+ *   The available stages are:
+ *   @li ACL_RT_SNAPSHOT_LOCK_PRE         - Called before process lock for snapshot
+ *   @li ACL_RT_SNAPSHOT_BACKUP_PRE       - Called before backup operation starts
+ *   @li ACL_RT_SNAPSHOT_BACKUP_POST      - Called after backup operation completes
+ *   @li ACL_RT_SNAPSHOT_RESTORE_PRE      - Called before restore operation starts
+ *   @li ACL_RT_SNAPSHOT_RESTORE_POST     - Called after restore operation completes
+ *   @li ACL_RT_SNAPSHOT_UNLOCK_POST      - Called after process unlock
+ * @param [in] callback Pointer to the callback function
+ * @retval ACL_SUCCESS The function is successfully executed
+ * @retval OtherValues Failure
+ */
+ACL_FUNC_VISIBILITY aclError aclrtSnapShotCallbackUnregister(aclrtSnapShotStage stage, aclrtSnapShotCallBack callback);
 
 /**
  * @ingroup AscendCL

@@ -55,25 +55,25 @@ HcclResult CollAllReduceAivDeterSmallExecutor::CalcLevel0CommInfo(TransportMemTy
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllReduceAivDeterSmallExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollAllReduceAivDeterSmallExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize; // 默认情况使用rankSize个AIV
+    numBlocks = rankSize; // 默认情况使用rankSize个AIV
 
-    blockDim = BLOCK_DIM_FACTOR_TWO * rankSize; // 小数据量使用2倍rankSize的AIV core
+    numBlocks = NUM_BLOCKS_FACTOR_TWO * rankSize; // 小数据量使用2倍rankSize的AIV core
     if (dataSize >= AIV_ALL_REDUCE_DETER_SIZE) {
-        blockDim = BLOCK_DIM_FACTOR_THREE * rankSize;
+        numBlocks = NUM_BLOCKS_FACTOR_THREE * rankSize;
     }
 
-    u32 bestBlockDim = blockDim;
-    CHK_PRT_RET(blockDim_ < rankSize,
-        HCCL_WARNING("[CollAllReduceAivDeterSmallExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
-        blockDim_, rankSize), HCCL_E_PARA);
-    if (blockDim_ < blockDim) {
-        blockDim = blockDim_ / rankSize * rankSize;
+    u32 bestNumBlocks = numBlocks;
+    CHK_PRT_RET(numBlocks_ < rankSize,
+        HCCL_WARNING("[CollAllReduceAivDeterSmallExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+        numBlocks_, rankSize), HCCL_E_PARA);
+    if (numBlocks_ < numBlocks) {
+        numBlocks = numBlocks_ / rankSize * rankSize;
     }
 
-    HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollAllReduceAivDeterSmallExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -140,13 +140,13 @@ HcclResult CollAllReduceAivDeterSmallExecutor::KernelRun(const OpParam &param, E
     topoArgs.identify = algoAttr_.identifier;
     
     u64 dataSize = SIZE_TABLE[param.DataDes.dataType] * execMem.count;
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize, dataSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, localRankSize, dataSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
     algArgs.deterministic = 1;

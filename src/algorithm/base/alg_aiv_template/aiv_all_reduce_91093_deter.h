@@ -67,7 +67,7 @@ __aicore__ inline void AivAllReduce91093Deter::InitDataCopyOffset(uint64_t perRa
     // 当rankSize小于等于总aiv核数时，根据ranksize和数据量大小选择使用多个aiv服务一个对端（多核并行），只需一次通信
     } else {
         numTargets = 1;
-        blockNumPerGroup = blockdim_ / rankSize_; // 多少个aiv服务一个rank
+        blockNumPerGroup = numBlocks_ / rankSize_; // 多少个aiv服务一个rank
         targetRanks[0] = GetBlockIdx() / blockNumPerGroup;
 
         uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
@@ -134,12 +134,12 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
     TQue<AscendC::TPosition::VECIN, 1> syncQue;
     GlobalTensor<int32_t> syncGlobal;
     GlobalTensor<int32_t> syncGlobalSecond;
-    uint32_t syncBufferSize = blockdim_ * 32;
+    uint32_t syncBufferSize = numBlocks_ * 32;
     LocalTensor<int32_t> workLocal;
 
     pipe.InitBuffer(syncQue, 1, syncBufferSize);
-    syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START), syncBufferSize);
-    syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + SYNCALL_BUFF_START + syncBufferSize), syncBufferSize);
+    syncGlobal.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset), syncBufferSize);
+    syncGlobalSecond.SetGlobalBuffer(reinterpret_cast<__gm__ int32_t*>(buffOut0 + syncAllOffset + syncBufferSize), syncBufferSize);
     // 内存准备
     __gm__ T *inputGM = (__gm__ T *)input;
     __gm__ T *outputGM = (__gm__ T *)output;
@@ -168,10 +168,10 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
     if (clearEnable_ == 1) {
         workLocal = syncQue.AllocTensor<int32_t>();
         Barrier(buffersOut, 1);
-        SyncAll(syncGlobal, workLocal, blockdim_);
+        SyncAll(syncGlobal, workLocal, numBlocks_);
         ClearGM();
         Barrier(buffersOut, 2);
-        SyncAll(syncGlobalSecond, workLocal, blockdim_);
+        SyncAll(syncGlobalSecond, workLocal, numBlocks_);
 	    syncQue.FreeTensor(workLocal);
         PipeBarrier<PIPE_ALL>();
     }
@@ -261,7 +261,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
 
         // 卡内每个核同步一次
         PipeBarrier<PIPE_ALL>();
-        SyncAll(syncGlobal, workLocal, blockdim_);
+        SyncAll(syncGlobal, workLocal, numBlocks_);
         PipeBarrier<PIPE_ALL>();
 
         // step3.2 归约为numReduce份数据的reduce
@@ -318,7 +318,7 @@ __aicore__ inline void AivAllReduce91093Deter::Process(GM_ADDR buffIn0, GM_ADDR 
         // 尾同步 
         if (bufferLoopNum > 1){
             PipeBarrier<PIPE_ALL>();
-            SyncAll(syncGlobalSecond, workLocal, blockdim_);
+            SyncAll(syncGlobalSecond, workLocal, numBlocks_);
             PipeBarrier<PIPE_ALL>();
         }
 

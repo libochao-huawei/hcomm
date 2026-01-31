@@ -1,12 +1,11 @@
-# -----------------------------------------------------------------------------------------------------------
-# Copyright (c) 2025 Huawei Technologies Co., Ltd.
-# This program is free software, you can redistribute it and/or modify it under the terms and conditions of
-# CANN Open Software License Agreement Version 2.0 (the "License").
-# Please refer to the License for details. You may not use this file except in compliance with the License.
-# THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
-# INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
-# See LICENSE in the root of the software repository for the full text of the License.
-# -----------------------------------------------------------------------------------------------------------
+set(orion_include_list
+    #2.0 - checker
+    ${HCCL_ALG_ROOT}/adapter_v2
+    ${HCCL_ALG_ROOT}/adapter_v2/stub_ccu
+    ${HCCL_ALG_ROOT}/adapter_v2/adapter_rts
+    ${HCCL_ALG_V2_CODE_ROOT}/primitive
+)
+
 set(analyzer_test_list
     ${HCCL_ALG_ROOT}/checker/cmd/src/main.cc
     ${HCCL_ALG_ROOT}/checker/cmd/src/CheckerCmd.cc
@@ -31,9 +30,10 @@ target_include_directories(hccl_alg_analyzer_test PRIVATE
     ${HCOMM_ALGORITHM_INCLUDE_LIST}
     ${HCOMM_COMMON_INCLUDE_LIST}
     ${HCOMM_FRAMEWORK_INCLUDE_LIST}
+    ${HCOMM_LEGACY_INCLUDE_LIST}
 
     ${THIRD_PARTY_PATH}/json/include
-    
+
     ${CMAKE_BINARY_DIR}/proto/alg_analyzer_proto/proto
 
     # protobuf源码

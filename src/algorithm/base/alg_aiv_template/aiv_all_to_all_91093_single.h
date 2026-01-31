@@ -44,7 +44,7 @@ template<typename T>
 __aicore__ inline void AivAll2All91093Single::ProcessBig(GM_ADDR input, GM_ADDR output, int32_t tag,
     uint64_t remoteSendOffset, uint64_t localRecvOffset, uint64_t remoteSendCount)
 {
-    uint32_t blockNumPerGroup = blockdim_/ rankSize_; 
+    uint32_t blockNumPerGroup = numBlocks_/ rankSize_; 
     uint32_t blockIdxInGroup = GetBlockIdx()% blockNumPerGroup;
     uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
@@ -80,7 +80,7 @@ template<typename T>
 __aicore__ inline void AivAll2All91093Single::ProcessSmall(GM_ADDR input, GM_ADDR output, int32_t tag,
     uint64_t remoteSendOffset, uint64_t localRecvOffset, uint64_t remoteSendCount)
 {
-    uint32_t blockNumPerGroup = blockdim_/ rankSize_; 
+    uint32_t blockNumPerGroup = numBlocks_/ rankSize_; 
     uint32_t blockIdxInGroup = GetBlockIdx()% blockNumPerGroup;
     uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
     uint32_t padCount = UB_ALIGN_SIZE / sizeof(T);
@@ -124,7 +124,7 @@ __aicore__ inline void aiv_all_to_all_vc_91093_single_graph(KERNEL_ARGS_DEF, Ext
     AivAll2All91093Single op;
     op.Init(KERNEL_CLASS_INIT, true);
 
-    uint32_t blockNumPerGroup = op.blockdim_/ rankSize; 
+    uint32_t blockNumPerGroup = op.numBlocks_/ rankSize; 
     uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
 
     uint64_t remoteSendOffset = 0;
@@ -148,7 +148,7 @@ __aicore__ inline void aiv_all_to_all_91093_single(KERNEL_ARGS_DEF)
     AivAll2All91093Single op;
     op.Init(KERNEL_CLASS_INIT, true);
 
-    uint32_t blockNumPerGroup = op.blockdim_/ rankSize; 
+    uint32_t blockNumPerGroup = op.numBlocks_/ rankSize; 
     uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
 
     uint64_t remoteSendOffset = rank * len;
@@ -164,7 +164,7 @@ __aicore__ inline void sk_all_to_all_91093_single(SUPERKERNEL_ARGS_DEF)
 {
     AivAll2All91093Single op;
     op.Init(SUPERKERNEL_CLASS_INIT, AIV_A3_ALL_TO_ALL_GRAPH_GUIYI_SIZE);
-    uint32_t blockNumPerGroup = op.blockdim_/ op.rankSize_; 
+    uint32_t blockNumPerGroup = op.numBlocks_/ op.rankSize_; 
     uint32_t dstRank = GetBlockIdx()/ blockNumPerGroup;
 
     uint64_t remoteSendOffset = op.rank_ * op.len_;

@@ -64,7 +64,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         execMem.scratchMem = algRes.paramInputMem;
         ret = KernelRunIntraServerPre(param, execMem);
         CHK_PRT_RET(ret != HCCL_SUCCESS,
-            HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]ReduceScatter excutor KernelRunIntraServerPre failed",
+            HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]ReduceScatter executor KernelRunIntraServerPre failed",
                 HCCL_ERROR_CODE(ret)), ret);
         if (algOpContext_.opRetryHandler.isPostSync == true) {
             // post Sync
@@ -99,7 +99,7 @@ HcclResult CollReduceScatterExecutor::Orchestrate(OpParam& param, AlgResourceRes
         }
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]excutor kernel run failed",
+        HCCL_ERROR("[CollReduceScatterExecutor][Orchestrate]errNo[0x%016llx]executor kernel run failed",
             HCCL_ERROR_CODE(ret)), ret);
 
     // Enforce task launch at the end of Orchestrate
@@ -468,6 +468,15 @@ std::vector<std::vector<Slice>> CollReduceScatterExecutor::ReduceScatterRingSlic
         sliceTemp.offset = outputMemSize * i;
         dataSegsSlice.push_back(sliceTemp);
     }
+    bool ARSFlag = topoMatcher_->GetARSFlag();
+    auto nicList = topoAttr_.nicList;
+    if (ARSFlag) {
+        std::vector<u32> mockNicList;
+        for (u32 i = 0; i < sliceNum; i++) {
+            mockNicList.push_back(i);
+        }
+        nicList = mockNicList;
+    }
 
     // 再将每个 slice 划分为 ringNum 份
     if (ringNum == LEVEL0_PLANE_NUM_IN_8PRING) {
@@ -481,11 +490,11 @@ std::vector<std::vector<Slice>> CollReduceScatterExecutor::ReduceScatterRingSlic
     } else if (ringNum == LEVEL0_PLANE_NUM_IN_NPRING_DOUBLE) {
         // 双环场景，需要传入正确的 niclist (不涉及网口裁剪)
         if (useInlineReduce) {
-            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, topoAttr_.nicList);
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, nicList);
         } else if (outputMem.size() % CCE_REDUCE_ALIGN_SIZE == 0) {
-            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, topoAttr_.nicList);
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, false, nicList);
         } else {
-            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, true, topoAttr_.nicList);
+            multiStreamSlice = PrepareMultiRingSlice(dataSegsSlice, tag, true, nicList);
         }
     } else {
         multiStreamSlice.push_back(dataSegsSlice);

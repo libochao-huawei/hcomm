@@ -8,11 +8,12 @@ endif()
 set(ra_peer_list
     ra_peer.c
     ra_peer_socket.c
+    ra_peer_ctx.c
     ${BASE_DIR}/ra_comm.c
+    ${BASE_DIR}/ctx/ra_ctx_comm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dl_hal_function.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
-    )
-
+)
 
 #编译目标
 add_library(ra_peer SHARED ${ra_peer_list})
@@ -20,7 +21,9 @@ add_library(ra_peer SHARED ${ra_peer_list})
 if(BUILD_OPEN_PROJECT)
     target_compile_definitions(ra_peer PRIVATE
         OPEN_BUILD_PROJECT
-        LOG_CPP)
+        LOG_CPP
+        CONFIG_CONTEXT
+    )
 
     target_include_directories(ra_peer PRIVATE
         ${BASE_DIR}/
@@ -34,12 +37,16 @@ if(BUILD_OPEN_PROJECT)
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc/base/
         ${ASCEND_CANN_PACKAGE_PATH}/include/
         ${ASCEND_CANN_PACKAGE_PATH}/include/toolchain/
-        ${ASCEND_CANN_PACKAGE_PATH}/include/driver/
         ${ASCEND_CANN_PACKAGE_PATH}/pkg_inc
 
         # rdma头文件
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
         ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
+
+        # HCCP Legacy
+        ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
+        ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_service/ctx
     )
 
     target_link_directories(ra_peer PRIVATE
@@ -107,8 +114,3 @@ target_compile_definitions(ra_peer PRIVATE
 install(TARGETS  ra_peer
     LIBRARY DESTINATION ${INSTALL_LIBRARY_DIR}  OPTIONAL
 )
-
-# install_package(
-#     PACKAGE ra_peer
-#     TARGETS ra_peer
-# )

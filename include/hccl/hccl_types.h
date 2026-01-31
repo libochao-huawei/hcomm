@@ -88,16 +88,15 @@ typedef enum {
     HCCL_DATA_TYPE_FP64 = 10,    /**< fp64 */
     HCCL_DATA_TYPE_BFP16 = 11,    /**< bfp16 */
     HCCL_DATA_TYPE_INT128 = 12,   /**< int128 */
-    HCCL_DATA_TYPE_HIF8 = 14,     /**< hif8 (not support this version) */ 
-    HCCL_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 (not support this version) */
-    HCCL_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 (not support this version) */
-    HCCL_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 (not support this version) */
+    HCCL_DATA_TYPE_HIF8 = 14,     /**< hif8 */
+    HCCL_DATA_TYPE_FP8E4M3 = 15,  /**< fp8e4m3 */
+    HCCL_DATA_TYPE_FP8E5M2 = 16,  /**< fp8e5m2 */
+    HCCL_DATA_TYPE_FP8E8M0 = 17,  /**< fp8e8m0 */
     HCCL_DATA_TYPE_RESERVED = 255 /**< reserved */
 } HcclDataType;
 
 typedef enum {
     HCCL_DETERMINISTIC = 0,     /**< 0: non-deterministic, 1: deterministic */
-    HCCL_ACCELERATOR,           /**< 0: default, 1: CCU, 2: AIV, 3: AICPU_TS, 4: HOSTCPU_TS, 5: AICPU (not support this version) */
     HCCL_CONFIG_RESERVED
 } HcclConfig;
 
@@ -121,7 +120,7 @@ typedef struct HcclRootInfoDef {
 
 const uint32_t HCCL_COMM_CONFIG_INFO_BYTES = 24;
 const uint32_t HCCL_COMM_CONFIG_MAGIC_WORD = 0xf0f0f0f0;
-const uint32_t HCCL_COMM_CONFIG_VERSION = 8;
+const uint32_t HCCL_COMM_CONFIG_VERSION = 9;
 const uint32_t HCCL_COMM_DEFAULT_BUFFSIZE = 200;
 const uint32_t HCCL_COMM_BUFFSIZE_CONFIG_NOT_SET = 0xffffffff;
 const uint32_t HCCL_COMM_DEFAULT_DETERMINISTIC = 0;
@@ -148,6 +147,7 @@ typedef struct HcclCommConfigDef {
     char hcclAlgo[HCCL_COMM_ALGO_MAX_LENGTH];
     char hcclRetryEnable[HCCL_COMM_RETRY_ENABLE_MAX_LENGTH];
     char hcclRetryParams[HCCL_COMM_RETRY_PARAMS_MAX_LENGTH];
+    char hcclBufferName[BUFFER_NAME_MAX_LENGTH];
 } HcclCommConfig;
 
 typedef enum {
@@ -162,6 +162,7 @@ typedef enum {
     HCCL_COMM_CONFIG_EXEC_TIMEOUT = 8,
     HCCL_COMM_CONFIG_ALGO = 9,
     HCCL_COMM_CONFIG_RETRY = 10,
+    HCCL_COMM_CONFIG_BUFFER_NAME = 11,
     HCCL_COMM_CONFIG_RESERVED
 } HcclCommConfigCapability;
 

@@ -291,6 +291,22 @@ u32 TopoMatcher::GetExternalInputInterHccsDisable()
     return externalEnable_.interHccsDisable;
 }
 
+bool TopoMatcher::GetARSFlag()
+{
+    bool isARSTrue = (topoInfo_.deviceType == DevType::DEV_TYPE_910_93) && topoInfo_.multiModuleDiffDeviceNumMode
+        && !topoInfo_.multiSuperPodDiffDeviceNumMode;
+    return isARSTrue;
+}
+ 
+HcclResult TopoMatcher::EditCommPlaneVector(CommPlane commPlane, std::vector<std::vector<u32>> commVector) {
+    CommPlaneVector_[commPlane] = commVector;
+    return HCCL_SUCCESS;
+}
+ 
+std::vector<std::vector<u32>> TopoMatcher::GetCommPlaneRanks(CommPlane commPlane) {
+    return CommPlaneVector_[commPlane];
+}
+
 bool CheckRankNeighbors(const std::vector<u32> &nicList)
 {
     // 组成ROH环路必须偶数个,且2节点不能组成双环？

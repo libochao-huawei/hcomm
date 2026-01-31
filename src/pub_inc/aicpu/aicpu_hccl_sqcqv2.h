@@ -43,7 +43,7 @@ struct rtStarsSqeHeaderV2_t {
     uint16_t res0 : 2;
     uint16_t l2_lock : 1;
     uint16_t l2_unlock : 1;
-    uint16_t res1; // block_dim or res
+    uint16_t res1; // num_blocks or res
     uint16_t rt_stream_id;
     uint16_t task_id;
 };

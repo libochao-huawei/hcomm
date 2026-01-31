@@ -269,7 +269,7 @@ HcclResult hrtDevBinaryRegister(const rtDevBinary_t *bin, BinHandle *handle)
     return HCCL_SUCCESS;
 }
 
-HcclResult hrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t blockDim, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
+HcclResult hrtKernelLaunchWithFlagV2(const void *stubFunc, uint32_t numBlocks, rtArgsEx_t *argsInfo, rtSmDesc_t *smDesc,
     rtStream_t stream, uint32_t flags, const rtTaskCfgInfo_t *cfgInfo)
 {
     return HCCL_SUCCESS;
@@ -336,7 +336,7 @@ aclError aclrtBinaryLoadFromFile(const char* binPath, aclrtBinaryLoadOptions *op
     return ACL_SUCCESS;
 }
 
-aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t blockDim, aclrtStream stream, aclrtLaunchKernelCfg *cfg,
+aclError aclrtLaunchKernelWithHostArgs(aclrtFuncHandle funcHandle, uint32_t numBlocks, aclrtStream stream, aclrtLaunchKernelCfg *cfg,
     void *hostArgs, size_t argsSize, aclrtPlaceHolderInfo *placeHolderArray, size_t placeHolderNum)
 {
     return RT_ERROR_NONE;

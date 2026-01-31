@@ -56,32 +56,32 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::CalcLevel0CommInfo(TransportM
     return HCCL_SUCCESS;
 }
 
-HcclResult CollAllGatherMeshAivSmallCountExecutor::CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
+HcclResult CollAllGatherMeshAivSmallCountExecutor::CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize, HcclCMDType cmdType)
 {
-    blockDim = rankSize; // 默认情况使用rankSize个AIV
+    numBlocks = rankSize; // 默认情况使用rankSize个AIV
 
     bool isOpBase = (GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE);
     if (topoAttr_.deviceType == DevType::DEV_TYPE_910_93 && !isOpBase) {
-        blockDim = rankSize * BLOCK_DIM_FOUR_PER_RANK_A3 > MAX_BLOCK_DIM ?
-            rankSize * BLOCK_DIM_THREE_PER_RANK_A3 : rankSize * BLOCK_DIM_FOUR_PER_RANK_A3;
+        numBlocks = rankSize * NUM_BLOCKS_FOUR_PER_RANK_A3 > MAX_NUM_BLOCKS ?
+            rankSize * NUM_BLOCKS_THREE_PER_RANK_A3 : rankSize * NUM_BLOCKS_FOUR_PER_RANK_A3;
     }
 
-    u32 bestBlockDim = blockDim;
+    u32 bestNumBlocks = numBlocks;
     if (isOpBase || topoAttr_.deviceType == DevType::DEV_TYPE_910B) {
-        CHK_PRT_RET(blockDim_ < blockDim,
-            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is less than need[%u].",
-            blockDim_, blockDim), HCCL_E_PARA);
+        CHK_PRT_RET(numBlocks_ < numBlocks,
+            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+            numBlocks_, numBlocks), HCCL_E_PARA);
     } else if (!isOpBase && topoAttr_.deviceType == DevType::DEV_TYPE_910_93) {
-        CHK_PRT_RET(blockDim_ < rankSize,
-            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
-            blockDim_, rankSize), HCCL_E_PARA);
-        if (blockDim_ < blockDim) {
-            blockDim = blockDim_ / rankSize * rankSize;
+        CHK_PRT_RET(numBlocks_ < rankSize,
+            HCCL_WARNING("[CollAllGatherMeshAivSmallCountExecutor][CalNumBlocks]aivCore[%u] is invalid, at least need [%u].",
+            numBlocks_, rankSize), HCCL_E_PARA);
+        if (numBlocks_ < numBlocks) {
+            numBlocks = numBlocks_ / rankSize * rankSize;
         }
     }
 
-    HCCL_INFO("[CollAllGatherMeshAivSmallCountExecutor][CalBlockDim] blockDim is set to [%u], limit[%u], best[%u]",
-        blockDim, blockDim_, bestBlockDim);
+    HCCL_INFO("[CollAllGatherMeshAivSmallCountExecutor][CalNumBlocks] numBlocks is set to [%u], limit[%u], best[%u]",
+        numBlocks, numBlocks_, bestNumBlocks);
     return HCCL_SUCCESS;
 }
 
@@ -103,7 +103,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::Orchestrate(OpParam& param, A
     ret = KernelRun(param, execMem);
  
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivSmallCountExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor orchestrate success, take time [%lld]us.",
@@ -151,7 +151,7 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::GetAivExecParam(const OpParam
     args.reduceOp = param.reduceType;
 
     CHK_PRT_RET(ret != HCCL_SUCCESS,
-        HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] excutor kernel "
+        HCCL_ERROR("[CollAllGatherMeshAivExecutor][Orchestrate]errNo[0x%016llx] tag[%s] executor kernel "
             "run failed", HCCL_ERROR_CODE(ret), param.tag.c_str()), ret);
  
     HCCL_INFO("tag[%s], AllGather executor getalgexecparam success, take time [%lld]us.",
@@ -191,13 +191,13 @@ HcclResult CollAllGatherMeshAivSmallCountExecutor::KernelRun(const OpParam &para
         param.DataDes.dataType, param.reduceType, 0, isOpbase
     };
     AivTopoArgs topoArgs { localRank, localRankSize, MAX_RANK_SIZE, 0, 1, topoAttr_.deviceType, algoAttr_.identifier};
-    u32 blockDim;
-    CHK_PRT_RET(CalBlockDim(blockDim, localRankSize) != HCCL_SUCCESS,
-        HCCL_ERROR("[%s] CalBlockDim failed", __func__),
+    u32 numBlocks;
+    CHK_PRT_RET(CalNumBlocks(numBlocks, localRankSize) != HCCL_SUCCESS,
+        HCCL_ERROR("[%s] CalNumBlocks failed", __func__),
         HCCL_E_PARA);
-    blockDim_ = blockDim;
+    numBlocks_ = numBlocks;
     AivResourceArgs resourceArgs {
-        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), blockDim_, param.aivTag
+        param.tag, param.stream.ptr(), buffersIn, buffersOut, execMem.inputMem.size(), numBlocks_, param.aivTag
     };
     AivAlgArgs algArgs {};
     algArgs.execTimeOut = topoMatcher_->GetExecTimeOutConfig();

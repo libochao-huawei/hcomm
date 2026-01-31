@@ -65,7 +65,7 @@ HcclResult AicpuLaunchMgr::AiCpuStreamAllocAndGet(rtStream_t &aiCpuStream)
     return HCCL_SUCCESS;
 }
 
-HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<HcclThread>> &newThreads,
+HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<Thread>> &newThreads,
     const std::string commId, std::unique_ptr<ThreadHandle[]> &hostHandle, aclrtBinHandle binCustomHandle)
 {
     CHK_PRT_RET(newThreads.size() > LOCAL_STREAM_MAX_NUM,
@@ -73,11 +73,13 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<HcclTh
         newThreads.size(), LOCAL_STREAM_MAX_NUM), HCCL_E_PARA);
 
     // Step 1. 创建局部 stream
+    HCCL_INFO("AicpuLaunchMgr::%s, step 1 create local stream", __func__);
     Stream localStream(StreamType::STREAM_TYPE_ONLINE);
     constexpr u32 aicpuStreamMode = 1;
     CHK_RET(hrtStreamSetMode(localStream.ptr(), aicpuStreamMode));
 
     // Step 2. 填写 opParam
+    HCCL_INFO("AicpuLaunchMgr::%s, step 2 fill opParam", __func__);
     ThreadMgrAicpuParam opParam{};
     (void)memset_s(&opParam, sizeof(opParam), 0, sizeof(opParam));
     opParam.threadNum = newThreads.size();
@@ -111,15 +113,17 @@ HcclResult AicpuLaunchMgr::ThreadKernelLaunch(std::vector<std::shared_ptr<HcclTh
     opParam.deviceHandle = deviceHandle.ptr();
 
     // Step 3. 调用 KernelLaunch，传入本地流
-
+    HCCL_INFO("AicpuLaunchMgr::%s, step 3 call KernelLaunch", __func__);
     HcclResult ret = KernelLaunchAicpuCustom(opParam, "RunAicpuIndOpThreadInit", localStream.ptr(), binCustomHandle);
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[AicpuLaunchMgr][%s] KernelLaunch failed, return [%d].", __func__, ret), ret);
 
     // Step 4. 等待流完成，localStream生命周期随函数结束自动销毁
+    HCCL_INFO("AicpuLaunchMgr::%s, step 4 wait stream", __func__);
     CHK_RET(hcclStreamSynchronize(localStream.ptr(), CommConfiger::GetInstance().GetCommConfigExecTimeOut(commId)));
 
     // Step 5. 返回device侧句柄
+    HCCL_INFO("AicpuLaunchMgr::%s, step 5 return device ptr", __func__);
     CHK_RET(hrtMemSyncCopy(hostHandle.get(), handleLen, opParam.deviceHandle, handleLen,
         HcclRtMemcpyKind::HCCL_RT_MEMCPY_KIND_DEVICE_TO_HOST));
 

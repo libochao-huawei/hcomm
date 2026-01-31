@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef HCCL_PRIMITIVE_LOCAL_H
-#define HCCL_PRIMITIVE_LOCAL_H
+#ifndef HCOMM_HCCL_PRIMITIVE_LOCAL_H
+#define HCOMM_HCCL_PRIMITIVE_LOCAL_H
 #include <stdint.h>
 #include <acl/acl.h>
 #include "hccl_primitive.h"

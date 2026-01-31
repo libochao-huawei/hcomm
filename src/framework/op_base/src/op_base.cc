@@ -42,6 +42,7 @@
 #include "aicpu_operator_pub.h"
 #include "../nslbdp/hccl_nslbdp.h"
 #include "comm_configer.h"
+#include "hccl_group.h"
 
 #define DOUBLE_SIZE 2
 
@@ -67,12 +68,12 @@ HcclResult CallMsprofReportHostApi(hccl::hcclComm* hcclComm, HcclCMDType cmdType
             CHK_RET(hcclComm->GetAlgType(algType, cmdType));
         }
 
-        u32 blockDim = 0;
-        hcclComm->GetBlockDim(blockDim);
+        u32 numBlocks = 0;
+        hcclComm->GetNumBlocks(numBlocks);
 
         uint64_t groupName = hrtMsprofGetHashId(hcclComm->GetIdentifier().c_str(), hcclComm->GetIdentifier().length());
         CHK_RET_AND_PRINT_IDE(ProfilingManagerPub::CallMsprofReportHostApi(cmdType, beginTime, count, dataType, algType,
-            groupName, blockDim), tag.c_str());
+            groupName, numBlocks), tag.c_str());
     }
     hcclComm->SetAivCoreLimit(0);
     return HCCL_SUCCESS;
@@ -166,7 +167,7 @@ HcclResult GetDeviceComm(uint32_t ndev, const HcclRootInfo &rootHandle, const s3
 HcclResult HcclGetCommAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
 {
     // 入参校验
-    CHK_PRT_RET(ndev == 0, HCCL_ERROR("[HcclGetCommAll] ndev is unvalid ndev[%u]", ndev), HCCL_E_PARA);
+    CHK_PRT_RET(ndev == 0, HCCL_ERROR("[HcclGetCommAll] ndev is invalid, ndev[%u]", ndev), HCCL_E_PARA);
     CHK_PTR_NULL(comms);
     CHK_PTR_NULL(devices);
 
@@ -225,7 +226,7 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
     // 入参校验
-    CHK_PRT_RET(ndev <= 0, HCCL_ERROR("[HcclCommInitAll] ndev is unvalid ndev:[%u]", ndev), HCCL_E_PARA);
+    CHK_PRT_RET(ndev <= 0, HCCL_ERROR("[HcclCommInitAll] ndev is invalid, ndev[%u]", ndev), HCCL_E_PARA);
     CHK_PTR_NULL(comms);
     CHK_PTR_NULL(devices);
 
@@ -237,6 +238,9 @@ HcclResult HcclCommInitAll(uint32_t ndev, int32_t *devices, HcclComm *comms)
         devSetSize, ndev),
         HCCL_E_PARA);
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommInitAllV2(ndev, devices, comms));
+#endif
     std::future<HcclResult> threadResult;
     std::unique_ptr<std::thread> getCommThread;
     getCommThread.reset(new (std::nothrow) std::thread(
@@ -342,6 +346,49 @@ HcclResult CheckOpBasedHcom(HcclOpInfoCtx &opBaseHcom, const uint32_t rank, cons
                 HCCL_ERROR_CODE(HCCL_E_PARA),
                 commIdentifier.c_str()),
         HCCL_E_PARA);
+    return HCCL_SUCCESS;
+}
+
+
+HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
+{
+    CHK_PTR_NULL(*commV2);
+    HCCL_INFO("HcclCommInitCollComm start.");
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HcclUs startut = TIME_NOW();
+
+    // 图模式
+    u32 rankNum = 0;
+    CHK_RET(HcclGetRankSizeV2(*commV2, &rankNum));
+    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+    CHK_RET(HcclGetCommNameV2(*commV2, commName));
+    CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
+    //获取cclbuffer
+    uintptr_t cclBufferAddr{0};
+    std::size_t cclBufferSize{0};
+    HcclMemType cclBufferMemType{HcclMemType::HCCL_MEM_TYPE_DEVICE};
+    CHK_RET(HcclGetCclBuffer(*commV2, cclBufferAddr, cclBufferSize, cclBufferMemType));
+    HcclMem cclBuffer;
+    cclBuffer.size = static_cast<uint64_t>(cclBufferSize);
+    cclBuffer.type = cclBufferMemType;
+    cclBuffer.addr = reinterpret_cast<void*>(cclBufferAddr);;
+    HcclCommPtr hcclCommPtr = make_shared<hccl::hcclComm>(cclBufferSize, cclBufferSize, commName);
+    CommConfig commConfig(commName);
+    HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
+    CHK_RET(CheckOpBasedHcom(opBaseHcom, rank, commConfig));
+
+    void *rankGraph = nullptr;
+    CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
+
+    //Collcomm初始化
+    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName));
+    // hcclComm中的IndependentOp，channelManager,ContextManager初始化
+    *comm = static_cast<HcclComm>(hcclCommPtr.get());
+
+    std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
+    opBaseHcom.opGroup2CommMap[hcclCommPtr->GetIdentifier()] = hcclCommPtr;
+    HCCL_RUN_INFO("[%s] success, take time [%lld]us.", __func__, DURATION_US(TIME_NOW() - startut));
+#endif
     return HCCL_SUCCESS;
 }
 
@@ -482,8 +529,17 @@ HcclResult InitCommClusterInfo(std::string &rankTableM, const uint32_t rank, con
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm)
-{
+HcclResult HcclCommInitClusterInfoWrapper(struct hcclAsyncJob* job_){
+    struct hcclCommInitRankTableAsyncJob* job = (hcclCommInitRankTableAsyncJob*) job_;
+    uint32_t rank = job->rank;
+    HcclComm* comm = job->initComm;
+    const char *clusterInfo = job->clusterInfo;
+    s32 devId = job->devId;
+    HCCL_DEBUG("[HcclCommInitClusterInfoWrapper] Set device devId: %d", devId);
+    CHK_PRT_RET(hrtSetDevice(devId) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclCommInitClusterInfoWrapper] set fail device[%d]", devId), HCCL_E_INTERNAL);
+    HCCL_DEBUG("[HcclCommInitClusterInfoWrapper] Done Set device devId: %d", devId);
+ 
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
@@ -492,7 +548,79 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
     // 入参合法性校验
     CHK_PTR_NULL(clusterInfo);
     CHK_PTR_NULL(comm);
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclCommInitClusterInfoV2(clusterInfo, rank, comm), socNamePtr);
+#endif
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
+        __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init environment config error.",
+        __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+ 
+    std::string identifier = HCCL_WORLD_GROUP;
+    CommConfig commConfig(identifier);
+    std::string rankTableM;
+    std::string realFilePath;
+    ret = HcomLoadRanktableFile(clusterInfo, rankTableM, realFilePath);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[Init][HcclCommInitClusterInfoWrapper]errNo[0x%016llx], clusterInfo[%s], rank[%u], "
+        "load rankTable error.", HCCL_ERROR_CODE(HCCL_E_UNAVAIL), clusterInfo, rank), HCCL_E_INTERNAL);
+ 
+    HCCL_INFO("%s success, clusterInfoRealPath[%s].", __func__, realFilePath.c_str());
+ 
+    HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
+    CHK_RET(CheckOpBasedHcom(opBaseHcom, rank, commConfig));
+ 
+    CHK_RET(InitCommClusterInfo(rankTableM, rank, commConfig, opBaseHcom, comm));
+ 
+    /* 关键状态记录 */
+    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+        __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
+    return HCCL_SUCCESS;      
+ 
+    return ret;
+}
 
+HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclComm *comm)
+{
+    if(hcclGroupDepth > 0){
+        HcclResult ret = HCCL_SUCCESS;
+        std::shared_ptr<struct hcclCommInitRankTableConfigAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
+        job->clusterInfo = clusterInfo;
+        job->rank = rank;
+        job->initComm = comm;
+        s32 devId = 0;
+        CHK_RET(HcclDeviceRefresh(devId));
+        job->devId = devId;
+        ret = commInitTaskAppend(job, HcclCommInitClusterInfoWrapper, comm);
+        return ret;
+    }
+    HcclUs startut = TIME_NOW();
+    s32 deviceLogicId = 0;
+    CHK_RET(HcclDeviceRefresh(deviceLogicId));
+    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+        __func__, clusterInfo, rank, deviceLogicId);
+    // 入参合法性校验
+    CHK_PTR_NULL(clusterInfo);
+    CHK_PTR_NULL(comm);
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            void *commV2 = nullptr;
+            CHK_RET(HcclCommInitClusterInfoV2(clusterInfo, rank, &commV2));
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                *comm = commV2;
+                return HCCL_SUCCESS;
+            }
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            return HCCL_SUCCESS;
+        }());
+#endif
     HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
         __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
@@ -537,7 +665,9 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
 
     HCCL_RUN_INFO("Entry-%s: rankTableString[%s], rank[%u], deviceLogicId[%d].",
         __func__, rankTableString, rank, deviceLogicId);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommInitClusterInfoMemConfigV2(rankTableString, rank, config, comm));
+#endif
     HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]errNo[0x%016llx] init external input error", __func__, HCCL_ERROR_CODE(ret)),
@@ -592,9 +722,100 @@ HcclResult HcclCommInitClusterInfoMemConfig(const char *rankTableString, uint32_
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommInitClusterInfoConfigWrapper(struct hcclAsyncJob* job_){
+    struct hcclCommInitRankTableConfigAsyncJob* job = (hcclCommInitRankTableConfigAsyncJob*) job_;
+    uint32_t rank = job->rank;
+    HcclComm* comm = job->initComm;
+    const char *clusterInfo = job->clusterInfo;
+    HcclCommConfig *config = job->config;
+    s32 devId = job->devId;
+    HCCL_DEBUG("[HcclCommInitClusterInfoConfigWrapper] Set device devId: %d", devId);
+    CHK_PRT_RET(hrtSetDevice(devId) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclCommInitClusterInfoConfigWrapper] set fail device[%d]", devId), HCCL_E_INTERNAL);
+    HCCL_DEBUG("[HcclCommInitClusterInfoConfigWrapper] Done Set device devId: %d", devId);
+ 
+    HcclUs startut = TIME_NOW();
+    s32 deviceLogicId = 0;
+    CHK_RET(HcclDeviceRefresh(deviceLogicId));
+    HCCL_RUN_INFO("Entry-%s: clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+        __func__, clusterInfo, rank, deviceLogicId);
+    // 入参合法性校验
+    CHK_PTR_NULL(clusterInfo);
+    CHK_PTR_NULL(comm);
+ 
+    // 检查配置参数是否为空
+    RPT_INPUT_ERR(config == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
+        std::vector<std::string>({"HcclCommInitClusterInfoConfigWrapper", "config", "nullptr", "please check comm"}));
+    CHK_SMART_PTR_NULL(config);
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, comm));
+            u32 rankNum = 0;
+            CHK_RET(HcclGetRankSizeV2(*comm, &rankNum));
+            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+            CHK_RET(HcclGetCommNameV2(*comm, commName));
+            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
+            return HCCL_SUCCESS;
+        }(),
+        socNamePtr);
+#endif
+    HcclResult ret = InitExternalInput();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
+        __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+    ret = InitEnvConfig();
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init environment config error.",
+        __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+ 
+    std::string identifier = HCCL_WORLD_GROUP;
+    CommConfig commConfig(identifier);
+    ret = commConfig.Load(config);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[%s]errNo[0x%016llx] load comm config failed.",
+        __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+ 
+    std::string rankTableM;
+    std::string realFilePath;
+    ret = HcomLoadRanktableFile(clusterInfo, rankTableM, realFilePath);
+    CHK_PRT_RET(ret != HCCL_SUCCESS,
+        HCCL_ERROR("[Init][HcclCommInitClusterInfoConfigWrapper]errNo[0x%016llx] clusterInfo[%s] rank[%u] "
+        "load rankTable error.", HCCL_ERROR_CODE(HCCL_E_UNAVAIL), clusterInfo, rank), HCCL_E_INTERNAL);
+ 
+    HCCL_INFO("%s success, clusterInfoRealPath[%s].", __func__, realFilePath.c_str());
+ 
+    HcclOpInfoCtx &opBaseHcom = GetHcclOpInfoCtx();
+    CHK_RET(CheckOpBasedHcom(opBaseHcom, rank, commConfig));
+ 
+    CHK_RET(InitCommClusterInfo(rankTableM, rank, commConfig, opBaseHcom, comm));
+ 
+    // 记录groupName和UDI的映射
+    HCCL_PROFILER_ADD_GROUP_UDI(commConfig.GetConfigCommName(), commConfig.GetConfigUdi());
+ 
+    /* 关键状态记录 */
+    HCCL_RUN_INFO("[HCCL_TRACE]%s success, take time [%lld]us, clusterInfo[%s], rank[%u], deviceLogicId[%d].",
+        __func__, DURATION_US(TIME_NOW() - startut), clusterInfo, rank, deviceLogicId);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank, HcclCommConfig *config,
     HcclComm *comm)
 {
+    if(hcclGroupDepth > 0){
+        HcclResult ret = HCCL_SUCCESS;
+        std::shared_ptr<struct hcclCommInitRankTableConfigAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitRankTableConfigAsyncJob>()), return HCCL_E_PARA);
+        job->clusterInfo = clusterInfo;
+        job->rank = rank;
+        job->config = config;
+        job->initComm = comm;
+        s32 devId = 0;
+        CHK_RET(HcclDeviceRefresh(devId));
+        job->devId = devId;
+        ret = commInitTaskAppend(job, HcclCommInitClusterInfoConfigWrapper, comm);
+        return ret;
+    }
     HcclUs startut = TIME_NOW();
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
@@ -608,7 +829,25 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
     RPT_INPUT_ERR(config == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),
         std::vector<std::string>({"HcclCommInitClusterInfoConfig", "config", "nullptr", "please check comm"}));
     CHK_SMART_PTR_NULL(config);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            void *commV2 = nullptr;
+            CHK_RET(HcclCommInitClusterInfoConfigV2(clusterInfo, rank, config, &commV2));
+            u32 rankNum = 0;
+            CHK_RET(HcclGetRankSizeV2(commV2, &rankNum));
+            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+            CHK_RET(HcclGetCommNameV2(commV2, commName));
+            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                *comm = commV2;
+                return HCCL_SUCCESS;
+            }
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            return HCCL_SUCCESS;
+        }());
+#endif
     HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx] init external input error.",
         __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
@@ -829,7 +1068,16 @@ HcclResult HcclCreateSubCommConfig(HcclComm *comm, uint32_t rankNum, uint32_t *r
         std::vector<std::string>({"HcclCreateSubCommConfig", "config", "nullptr", "please check comm"}));
     CHK_SMART_PTR_NULL(config);
     CHK_SMART_PTR_NULL(comm);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            CHK_RET(HcclCreateSubCommConfigV2(comm, rankNum, rankIds, subCommId, subCommRankId, config, subComm));
+            char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
+            CHK_RET(HcclGetCommNameV2(*subComm, commName));
+            CHK_RET(HcomSetGroupTopoInfo(commName, rankNum));
+            return HCCL_SUCCESS;
+        }());
+#endif
     ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[%s]errNo[0x%016llx] init external input error", __func__, HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
@@ -868,7 +1116,9 @@ HcclResult HcclGetRootInfo(HcclRootInfo *rootInfo)
     // input check
     CHK_PTR_NULL(rootInfo);
     HCCL_RUN_INFO("Entry-HcclGetRootInfo:rootInfo[%p], deviceLogicId[%d]", rootInfo, deviceLogicId);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetRootInfoV2(rootInfo));
+#endif
     // get commId from env
     CHK_RET(InitExternalInput());
     CHK_RET(InitEnvConfig());
@@ -917,7 +1167,19 @@ HcclResult HcclGetCommName(HcclComm commHandle, char *commName)
 {
     CHK_PTR_NULL(commHandle);
     CHK_PTR_NULL(commName);
-
+#if  (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+    [&]() -> HcclResult {
+        const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+        if (indOp == nullptr || strcmp(indOp, "") == 0) {
+            CHK_RET(HcclGetCommNameV2(commHandle, commName));
+            return HCCL_SUCCESS;
+        }
+        hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(commHandle);
+        CHK_RET(HcclGetCommNameV2(hcclComm->GetCommunicatorV2(), commName));
+        return HCCL_SUCCESS;
+    }());
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(commHandle);
     s32 ret = strncpy_s(commName, ROOTINFO_INDENTIFIER_MAX_LENGTH, hcclComm->GetIdentifier().c_str(),
         hcclComm->GetIdentifier().size());
@@ -1294,34 +1556,49 @@ HcclResult InitCommRootInfo(const u32 nRanks, const u32 rank, const HcclRootHand
 
 HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, HcclComm *comm)
 {
-    HcclResult ret = HCCL_SUCCESS;
     HcclUs startut = TIME_NOW();
-
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
-
-    CHK_SMART_PTR_NULL(rootInfo);
-    HcclRootHandle rootHandle;
-    s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Init][RootInfoInner]memcpy root info fail. errorno[%d] "\
-        "params:destMaxSize[%u], count[%u]", sRet, sizeof(HcclRootHandle),
-        sizeof(HcclRootHandle)), HCCL_E_MEMORY);
-    rootHandle.identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH - 1] = '\0';
 
     CHK_PRT_RET((nRanks == 0), HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] nRanks[%u] should "\
         "be greater than 0.", HCCL_ERROR_CODE(HCCL_E_PARA), nRanks), HCCL_E_PARA);
 
     CHK_PRT_RET((rank >= nRanks), HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] rank[%u] should "\
         "be less than nRanks[%u].", HCCL_ERROR_CODE(HCCL_E_PARA), rank, nRanks), HCCL_E_PARA);
-    CHK_SMART_PTR_NULL(comm);
 
-    ret = InitExternalInput();
+    CHK_SMART_PTR_NULL(comm);
+    CHK_SMART_PTR_NULL(rootInfo);
+
+    HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init "\
         "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
     ret = InitEnvConfig();
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[Init][CommRootInfoInner]errNo[0x%016llx] init environment config error.",
         HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            void *commV2 = nullptr;
+            std::string fooidentifier;
+            CHK_RET(HcclCommInitRootInfoV2(nRanks, rootInfo, rank, &commV2, fooidentifier));
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                *comm = commV2;
+                return HCCL_SUCCESS;
+            }
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            return HCCL_SUCCESS;
+        }());
+#endif
+
+    HcclRootHandle rootHandle;
+    s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Init][RootInfoInner]memcpy root info fail. errorno[%d] "\
+        "params:destMaxSize[%u], count[%u]", sRet, sizeof(HcclRootHandle),
+        sizeof(HcclRootHandle)), HCCL_E_MEMORY);
+    rootHandle.identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH - 1] = '\0';
 
     /* 接口交互信息日志 */
     HCCL_RUN_INFO("Entry-HcclCommInitRootInfoInner:ranks[%u], rank[%u], rootinfo: host ip[%s] port[%u] "\
@@ -1352,9 +1629,40 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommInitRootInfoInnerWrapper(struct hcclAsyncJob* job_)
+{
+    struct hcclCommInitAsyncJob* job = (hcclCommInitAsyncJob*) job_;
+    uint32_t nRanks = job->nRanks;
+    const HcclRootInfo* rootInfo = job->rootInfo;
+    uint32_t rank = job->rank;
+    HcclComm* comm = job->initComm;
+    s32 devId = job->devId;
+    HCCL_DEBUG("[HcclCommInitRootInfoInnerWrapper] Set device devId: %d", devId);
+    CHK_PRT_RET(hrtSetDevice(devId) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclCommInitRootInfo] set fail device[%d]", devId), HCCL_E_INTERNAL);
+ 
+    HcclResult ret = HCCL_SUCCESS;        
+    ret = HcclCommInitRootInfoInner(nRanks, rootInfo, rank, comm);
+    return ret;
+}
+
 HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank, HcclComm *comm)
 {
+    HCCL_INFO("hcclGroupDepth=[%d]", hcclGroupDepth);
     HcclResult ret = HCCL_SUCCESS;
+    if(hcclGroupDepth > 0){
+        std::shared_ptr<struct hcclCommInitAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitAsyncJob>()), return HCCL_E_PARA);
+        job->nRanks = nRanks;
+        job->rootInfo = rootInfo;
+        job->rank = rank;
+        job->initComm = comm;
+        s32 devId = 0;
+        CHK_RET(HcclDeviceRefresh(devId));
+        job->devId = devId;
+        ret = commInitTaskAppend(job, HcclCommInitRootInfoInnerWrapper, comm);
+        return ret;
+    }
     ret = HcclCommInitRootInfoInner(nRanks, rootInfo, rank, comm);
     return ret;
 }
@@ -1362,25 +1670,13 @@ HcclResult HcclCommInitRootInfo(uint32_t nRanks, const HcclRootInfo *rootInfo, u
 HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank,
     const HcclCommConfig *config, HcclComm *comm)
 {
-    HcclResult ret = HCCL_SUCCESS;
     HcclUs startut = TIME_NOW();
-
-    CHK_SMART_PTR_NULL(rootInfo);
-
-    HcclRootHandle rootHandle;
-    s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
-    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Init][RootInfo]memcpy root info fail. errorno[%d] "\
-        "params:destMaxSize[%u], count[%u]", sRet, sizeof(HcclRootHandle),
-        sizeof(HcclRootHandle)), HCCL_E_MEMORY);
-    rootHandle.identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH - 1] = '\0';
+    s32 deviceLogicId = 0;
+    CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
     // 检查配置参数是否为空
     RPT_INPUT_ERR(config == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclCommInitRootInfoConfigInner", "config", "nullptr", "please check comm"}));
-    CHK_SMART_PTR_NULL(config);
-
-    s32 deviceLogicId = 0;
-    CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
     CHK_PRT_RET((nRanks == 0),
         HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] nRanks[%u] should be greater than 0.",
@@ -1391,14 +1687,39 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
         HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] rank[%u] should be less than nRanks[%u].",
         HCCL_ERROR_CODE(HCCL_E_PARA), rank, nRanks),
         HCCL_E_PARA);
-    CHK_SMART_PTR_NULL(comm);
 
-    ret = InitExternalInput();
+    CHK_PTR_NULL(comm);
+    CHK_SMART_PTR_NULL(rootInfo);
+
+    HcclResult ret = InitExternalInput();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
         "external input error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
     ret = InitEnvConfig();
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Init][CommRootInfoConfigInner]errNo[0x%016llx] init "\
         "environment config error", HCCL_ERROR_CODE(ret)), HCCL_E_PARA);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            void *commV2 = nullptr;
+            HcclCommInitRootInfoConfigV2(nRanks, rootInfo, rank, config, &commV2);
+            CHK_PRT(HcomSetGroupTopoInfo(config->hcclCommName, nRanks));
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                *comm = commV2;
+                return HCCL_SUCCESS;
+            }
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            return HCCL_SUCCESS;
+        }());
+#endif
+
+    HcclRootHandle rootHandle;
+    s32 sRet = memcpy_s(&rootHandle, sizeof(HcclRootHandle), rootInfo->internal, sizeof(HcclRootHandle));
+    CHK_PRT_RET(sRet != EOK, HCCL_ERROR("[Init][RootInfo]memcpy root info fail. errorno[%d] "\
+        "params:destMaxSize[%u], count[%u]", sRet, sizeof(HcclRootHandle),
+        sizeof(HcclRootHandle)), HCCL_E_MEMORY);
+    rootHandle.identifier[ROOTINFO_INDENTIFIER_MAX_LENGTH - 1] = '\0';
 
     /* 读取用户配置 */
     CommConfig commConfig(rootHandle.identifier);
@@ -1434,10 +1755,42 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommInitRootInfoConfigInnerWrapper(struct hcclAsyncJob* job_){
+    struct hcclCommInitConfigAsyncJob* job = (hcclCommInitConfigAsyncJob*) job_;
+    uint32_t nRanks = job->nRanks;
+    const HcclRootInfo* rootInfo = job->rootInfo;
+    uint32_t rank = job->rank;
+    HcclComm* comm = job->initComm;
+    const HcclCommConfig* config = job->config;
+    s32 devId = job->devId;
+    HCCL_DEBUG("[HcclCommInitRootInfoConfigInnerWrapper] Set device devId: %d", devId);
+    CHK_PRT_RET(hrtSetDevice(devId) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclCommInitRootInfoConfigInnerWrapper] set fail device[%d]", devId), HCCL_E_INTERNAL);
+ 
+    HcclResult ret = HCCL_SUCCESS;        
+    ret = HcclCommInitRootInfoConfigInner(nRanks, rootInfo, rank, config, comm);
+    return ret;
+}
+
 HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootInfo, uint32_t rank,
     const HcclCommConfig *config, HcclComm *comm)
 {
     HcclResult ret = HCCL_SUCCESS;
+    HCCL_INFO("hcclGroupDepth=[%d]", hcclGroupDepth);
+    if(hcclGroupDepth > 0){
+        std::shared_ptr<struct hcclCommInitConfigAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommInitConfigAsyncJob>()), return HCCL_E_PARA);
+        job->nRanks = nRanks;
+        job->rootInfo = rootInfo;
+        job->rank = rank;
+        job->initComm = comm;
+        job->config = config;
+        s32 devId = 0;
+        CHK_RET(HcclDeviceRefresh(devId));
+        job->devId = devId;
+        ret = commInitTaskAppend(job, HcclCommInitRootInfoConfigInnerWrapper, comm);
+        return ret;
+    }
     ret = HcclCommInitRootInfoConfigInner(nRanks, rootInfo, rank, config, comm);
     return ret;
 }
@@ -1445,6 +1798,9 @@ HcclResult HcclCommInitRootInfoConfig(uint32_t nRanks, const HcclRootInfo *rootI
 HcclResult HcclSetConfig(HcclConfig config, HcclConfigValue configValue)
 {
     if (config == HCCL_DETERMINISTIC) {
+    #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        HCCLV2_FUNC_RUN(HcclSetConfigV2(config, configValue));
+    #endif
         char* mmSysGetEnvValue = nullptr;
         MM_SYS_GET_ENV(MM_ENV_HCCL_DETERMINISTIC, mmSysGetEnvValue);
         std::string hcclDeterministicEnv = (mmSysGetEnvValue != nullptr) ? mmSysGetEnvValue : "EmptyString";
@@ -1465,7 +1821,7 @@ HcclResult HcclSetConfig(HcclConfig config, HcclConfigValue configValue)
                 HCCL_INFO("[HcclSetConfig] Set HCCL_DETERMINISTIC to %u", configValue.value);
             }
         } else {
-            HCCL_WARNING("[HcclSetConfig] HCCL_DETERMINISTIC has been setted by Env, so will not be reseted again");
+            HCCL_WARNING("[HcclSetConfig] HCCL_DETERMINISTIC has been set by Env, so will not be reset again");
             return HCCL_SUCCESS;
         }
         HcclOpInfoCtx& opBaseInfo = GetHcclOpInfoCtx();
@@ -1481,6 +1837,9 @@ HcclResult HcclGetConfig(HcclConfig config, HcclConfigValue *configValue)
 {
     CHK_PTR_NULL(configValue);
     if (config == HCCL_DETERMINISTIC) {
+    #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+        HCCLV2_FUNC_RUN(HcclGetConfigV2(config, configValue));
+    #endif
         configValue->value = static_cast<int32_t>(GetExternalInputHcclDeterministicV2());
         HCCL_INFO("[HcclGetConfig] HCCL_DETERMINISTIC is [%d]", configValue->value);
     }
@@ -1503,6 +1862,22 @@ void HcclResetIfProfile()
 HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, uint32_t root, HcclComm comm,
                          aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_BROADCAST;
+        info.sendbuff = static_cast<const void *>(buf);
+        info.sendCount = count;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.op = HCCL_REDUCE_SUM;
+        info.root = root;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclBroadcast] Finish taskAppend, count [%d] dataType [%s] root [%u]", count, GetDataTypeEnumStr(dataType).c_str(), root);
+        return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -1522,7 +1897,9 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
     RPT_INPUT_ERR(buf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclBroadcastInner", "buf", "nullptr", "please check buf"}));
     CHK_PTR_NULL(buf);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclBroadcastV2(buf, count, dataType, root, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -1546,12 +1923,15 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], buf[%p], count[%llu], dataType[%s], root[%u], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), buf, count, GetDataTypeEnumStr(dataType).c_str(), root, streamId, deviceLogicId);
+            "tag[%s], buf[%p], count[%llu], dataType[%s], root[%u], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), buf, count, GetDataTypeEnumStr(dataType).c_str(), root, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclBroadcastInner:" + std::string(stackLogBuffer) +
@@ -1602,6 +1982,22 @@ HcclResult HcclBroadcastInner(void *buf, uint64_t count, HcclDataType dataType, 
 HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType,
                              HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_REDUCE_SCATTER;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.recvCount = recvCount;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.op = op;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclReduceScatter] Finish taskAppend, count [%d] dataType [%s]", recvCount, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -1623,7 +2019,9 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclReduceScatterInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclReduceScatterV2(sendBuf, recvBuf, recvCount, dataType, op, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -1645,14 +2043,17 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], op[%s],"
-            "streamId[%d], deviceLogicId[%d]",
+            "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
-            streamId, deviceLogicId);
+            localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclReduceScatterInner:" + std::string(stackLogBuffer) +
@@ -1691,6 +2092,24 @@ HcclResult HcclReduceScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCou
 HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const void *sendDispls,
     void *recvBuf, uint64_t recvCount, HcclDataType dataType, HcclReduceOp op, HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendCounts = sendCounts;
+        info.sdispls = sendDispls;
+        info.recvCount = recvCount;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.op = op;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclReduceScatterV] Finish taskAppend, recvCount [%d] dataType [%s]", recvCount, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -1720,7 +2139,9 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
         std::vector<std::string>({"HcclReduceScatterVInner", "recvBuf", "nullptr", "please check recvBuf"}));
         CHK_PTR_NULL(recvBuf);
     }
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclReduceScatterVV2(sendBuf, const_cast<void*>(sendCounts), const_cast<void*>(sendDispls), recvBuf, recvCount, dataType, op, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     // 同通信域同算子复用tag
@@ -1762,14 +2183,17 @@ HcclResult HcclReduceScatterVInner(void *sendBuf, const void *sendCounts, const 
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], sendDispls[%p], recvCount[%llu], dataType[%s], op[%s],"
-            "streamId[%d], deviceLogicId[%d]",
+            "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, sendDispls, recvCount,
-            GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(), localRank, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclReduceScatterVInner:" + std::string(stackLogBuffer) +
@@ -1834,6 +2258,22 @@ HcclResult CheckScatterInputPara(HcclComm comm, void *recvBuf)
 HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, HcclDataType dataType, uint32_t root,
     HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_SCATTER;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.recvCount = recvCount;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.root = root;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclScatter] Finish taskAppend, recvCount [%d] dataType [%s]", recvCount, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -1846,7 +2286,9 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
 
     CHK_PRT_RET(recvCount == 0, HCCL_WARNING("input recvCount is 0, return scatter success"), HCCL_SUCCESS);
     CHK_RET(CheckScatterInputPara(comm, recvBuf));
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclScatterV2(sendBuf, recvBuf, recvCount, dataType, root, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -1878,12 +2320,15 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], root[%u], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), root, streamId, deviceLogicId);
+            "tag[%s], sendBuf[%p], recvBuf[%p], recvCount[%llu], dataType[%s], root[%u], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), sendBuf, recvBuf, recvCount, GetDataTypeEnumStr(dataType).c_str(), root, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclScatterInner:" + std::string(stackLogBuffer) +
@@ -1936,6 +2381,21 @@ HcclResult HcclScatterInner(void *sendBuf, void *recvBuf, uint64_t recvCount, Hc
 HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, HcclDataType dataType,
                          HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLGATHER;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendCount = sendCount;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAllGather] Finish taskAppend, sendCount [%d] dataType [%s]", sendCount, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -1957,7 +2417,9 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclAllGatherInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclAllGatherV2(sendBuf, recvBuf, sendCount, dataType, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     const std::lock_guard<std::mutex> lock(hcclComm->operatorlock_);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
@@ -1973,13 +2435,16 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], streamId[%d],"
+            "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], dataType[%s], localRank[%u], streamId[%d],"
             "deviceLogicId[%d]",
-            tag.c_str(), sendBuf, recvBuf, sendCount, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            tag.c_str(), sendBuf, recvBuf, sendCount, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAllGatherInner:" + std::string(stackLogBuffer) +
@@ -2015,6 +2480,23 @@ HcclResult HcclAllGatherInner(void *sendBuf, void *recvBuf, uint64_t sendCount, 
 HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     const void *recvCounts, const void *recvDispls, HcclDataType dataType, HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLGATHER_V;
+        info.sendbuff = static_cast<const void *>(sendBuf);
+        info.recvbuff = static_cast<const void *>(recvBuf);
+        info.sendCount = sendCount;
+        info.recvCounts = recvCounts;
+        info.rdispls = recvDispls;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAllGatherV] Finish taskAppend, sendCount [%d] dataType [%s]", sendCount, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -2040,7 +2522,9 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     RPT_INPUT_ERR(stream == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclAllGatherVInner", "stream", "nullptr", "please check stream"}));
     CHK_PTR_NULL(stream);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclAllGatherVV2(sendBuf, sendCount, recvBuf, const_cast<void*>(recvCounts), const_cast<void*>(recvDispls), dataType, comm, stream));
+#endif
     if (UNLIKELY(sendCount > 0 && sendBuf == nullptr)) {
             RPT_INPUT_ERR(true, "EI0003",\
             std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
@@ -2080,6 +2564,9 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
@@ -2088,9 +2575,9 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], sendCount[%llu], recvCounts[%llu], recvDispls[%llu], "
-            "dataType[%s], streamId[%d], deviceLogicId[%d]",
+            "dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCount, recvCounts, recvDispls,
-            GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAllGatherVInner:" + std::string(stackLogBuffer) +
@@ -2139,6 +2626,20 @@ HcclResult HcclAllGatherVInner(void *sendBuf, uint64_t sendCount, void *recvBuf,
 HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, uint32_t destRank,
                     HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_SEND;
+        info.sendbuff = sendBuf;
+        info.sendCount = count;
+        info.sendType = dataType;
+        info.root = destRank;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclSend] Finish taskAppend, count [%lld] dataType [%s] destRank [%u]", count, GetDataTypeEnumStr(dataType).c_str(), destRank);
+        return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -2156,7 +2657,9 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
     CHK_PTR_NULL(stream);
 
     CHK_RET(HcomCheckCount(count));
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclSendV2(sendBuf, count, dataType, destRank, comm, stream));
+#endif
     CHK_RET(HcomCheckDataType(dataType));
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -2180,8 +2683,8 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendBuf[%p], count[%llu], dataType[%s], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), sendBuf, count, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            "tag[%s], sendBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), sendBuf, count, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclSendInner:" + std::string(stackLogBuffer) +
@@ -2216,6 +2719,20 @@ HcclResult HcclSendInner(void* sendBuf, uint64_t count, HcclDataType dataType, u
 HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, uint32_t srcRank,
                     HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_RECEIVE;
+        info.recvbuff = recvBuf;
+        info.recvCount = count;
+        info.recvType = dataType;
+        info.root = srcRank;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclRecv] Finish taskAppend, count [%d] dataType [%s] srcRank [%u]", count, GetDataTypeEnumStr(dataType).c_str(), srcRank);
+	    return HCCL_SUCCESS;
+    }
+
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -2233,7 +2750,9 @@ HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, u
     CHK_PTR_NULL(stream);
 
     CHK_RET(HcomCheckCount(count));
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclRecvV2(recvBuf, count, dataType, srcRank, comm, stream));
+#endif
     CHK_RET(HcomCheckDataType(dataType));
     s32 streamId = 0;
     CHK_RET(hrtGetStreamId(stream, streamId));
@@ -2257,8 +2776,8 @@ HcclResult HcclRecvInner(void* recvBuf, uint64_t count, HcclDataType dataType, u
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], recvBuf[%p], count[%llu], dataType[%s], streamId[%d], deviceLogicId[%d]",
-            tag.c_str(), recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), streamId, deviceLogicId);
+            "tag[%s], recvBuf[%p], count[%llu], dataType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
+            tag.c_str(), recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclRecvInner:" + std::string(stackLogBuffer) +
@@ -2349,8 +2868,100 @@ static HcclResult ResetDevice(hccl::hcclComm* hcclComm)
     return HCCL_SUCCESS;
 }
 
+HcclResult HcclCommDestroyWrapper(struct hcclAsyncJob* job_){
+    struct hcclCommDestroyAsyncJob* job = (hcclCommDestroyAsyncJob*) job_;
+    HcclComm comm = job->initComm;
+    s32 devId = job->devId;
+    HCCL_DEBUG("[HcclCommInitClusterInfoWrapper] Set device devId: %d", devId);
+    CHK_PRT_RET(hrtSetDevice(devId) != HCCL_SUCCESS,
+        HCCL_ERROR("[HcclCommInitClusterInfoWrapper] set fail"), HCCL_E_INTERNAL);
+    HCCL_DEBUG("[HcclCommInitClusterInfoWrapper] Done Set device devId: %d", devId);
+ 
+    HCCL_RUN_INFO("Entry-%s: op_base comm destroy begin", __func__);
+ 
+    HcclUs startut = TIME_NOW();
+    s32 deviceLogicId = 0;
+    HcclResult ret = HcclDeviceRefresh(deviceLogicId);
+    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommDestroy] Get device fail, comm=%p", comm), ret);
+    CHK_PRT_RET(comm == nullptr, HCCL_WARNING("[Destroy][HcclComm]An empty comm given, skip destroy."), HCCL_SUCCESS);
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(HcclCommDestroyV2(comm), socNamePtr);
+#endif
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    HcclCommState state = hcclComm->GetState();
+    if (state == HcclCommState::INUSE) {
+        HCCL_WARNING("[HcclCommDestroy] comm is in use, please try again later");
+        return HCCL_E_AGAIN;
+    }
+    hcclComm->DeinitZeroCopyMemoryAgent();
+    HCCL_RUN_INFO("[HcclCommDestroy] comm state is %s", HcclCommStateToString(state));
+ 
+    CHK_RET(hcclComm->SetStopFlag(true));
+    CHK_RET(SetWorkflowMode(HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE));
+    CHK_RET(ResetDevice(hcclComm));
+ 
+    if (IsOneSidedComm(comm)) {
+        return HcclOneSidedCommDestroy(comm, deviceLogicId, startut);
+    }
+ 
+    HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
+    string group;
+    if (comm == opBaseHcom.pComm.get()) {
+        group = opBaseHcom.pComm->GetIdentifier();
+        opBaseHcom.pComm = nullptr;
+        HcclCloseCommConnections(group);
+    } else {
+        HCCL_RUN_INFO("com is not global com");
+        group = hcclComm->GetIdentifier();
+    }
+ 
+    // 特殊场景，当comm name被手动配置为HCCL_WORLD_GROUP时，需要将hcomInfo.pComm设为nullptr
+    if (hcclComm->GetIdentifier() == HCCL_WORLD_GROUP) {
+        HcomGetCtxHomInfo().pComm = nullptr;
+    }
+ 
+    HcomUnSetGroupTopoInfo(group.c_str());
+ 
+    std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
+    auto iter = opBaseHcom.opGroup2CommMap.find(group);
+    if (iter != opBaseHcom.opGroup2CommMap.end()) {
+        EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+        HcclCloseCommConnections(group);
+    } else {
+        HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
+        return HCCL_E_PARA;
+    }
+ 
+    if (ProfilingManagerPub::GetAllState()) {
+        ProfilingManagerPub::ClearStoragedProfilingInfo();
+    }
+ 
+    HcclUs endut = TIME_NOW();
+ 
+    // 删除groupName和UDI的映射
+    HCCL_PROFILER_DEL_GROUP_UDI(group);
+ 
+    /* 关键状态记录 */
+    HCCL_RUN_INFO("op_base comm destroy complete, take time [%lld]us, group[%s], deviceLogicId[%d].",
+        DURATION_US(endut - startut), group.c_str(), deviceLogicId);
+    return HCCL_SUCCESS;
+}
+
 HcclResult HcclCommDestroy(HcclComm comm)
 {
+    if(hcclGroupDepth > 0){
+        std::shared_ptr<struct hcclCommDestroyAsyncJob> job;
+        EXECEPTION_CATCH((job = std::make_shared<struct hcclCommDestroyAsyncJob>()), return HCCL_E_PARA);
+        job->initComm = comm;
+        s32 devId = 0;
+        HcclResult ret = HcclDeviceRefresh(devId);
+        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[Group][HcclCommDestroy] Get device fail, comm=%p", comm), ret);
+        job->devId = devId;
+        ret = commInitTaskAppend(job, HcclCommDestroyWrapper, &comm);
+        return ret;
+    }
     HCCL_RUN_INFO("Entry-%s: op_base comm destroy begin", __func__);
 
     HcclUs startut = TIME_NOW();
@@ -2358,7 +2969,31 @@ HcclResult HcclCommDestroy(HcclComm comm)
     HcclResult ret = HcclDeviceRefresh(deviceLogicId);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[HcclCommDestroy] Get device fail, comm=%p", comm), ret);
     CHK_PRT_RET(comm == nullptr, HCCL_WARNING("[Destroy][HcclComm]An empty comm given, skip destroy."), HCCL_SUCCESS);
-
+    
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                CHK_RET(HcclCommDestroyV2(comm));
+                return HCCL_SUCCESS;
+            }
+            hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+            CHK_RET(HcclCommDestroyV2(hcclComm->GetCommunicatorV2()));
+            string group;
+            group = hcclComm->GetIdentifier();
+            HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();
+            std::unique_lock<std::mutex> lock(opBaseHcom.opGroupMapMutex);
+            auto iter = opBaseHcom.opGroup2CommMap.find(group);
+            if (iter != opBaseHcom.opGroup2CommMap.end()) {
+                EXECEPTION_CATCH(opBaseHcom.opGroup2CommMap.erase(group), return HCCL_E_MEMORY);
+            } else {
+                HCCL_ERROR("[HcclCommDestroy] comm is not exist, comm=%p, group=%s, deviceLogicId=%d", comm, group.c_str(), deviceLogicId);
+                return HCCL_E_PARA;
+            }
+            return HCCL_SUCCESS;
+        }());
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     HcclCommState state = hcclComm->GetState();
     if (state == HcclCommState::INUSE) {
@@ -2556,6 +3191,21 @@ HcclResult HcclGetOpBasedMemSize(const HcclCMDType &opType, u64 &size,
 HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataType sendType, const void *recvBuf,
     uint64_t recvCount, HcclDataType recvType, HcclComm comm, aclrtStream stream)
 {
+     if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLTOALL;
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
+        info.sendCount = sendCount;
+        info.recvCount = recvCount;
+        info.sendType = sendType;
+        info.recvType = recvType;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAlltoAll] Finish taskAppend, sendCount [%d] sendType [%s] recvCount [%d] recvType [%s]", sendCount, GetDataTypeEnumStr(sendType).c_str(), recvCount, GetDataTypeEnumStr(recvType).c_str());
+	    return HCCL_SUCCESS;
+    }
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -2591,7 +3241,9 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
     CHK_PTR_NULL(comm);
     CHK_PRT_RET(sendBuf == recvBuf,
         HCCL_ERROR("[HcclAlltoAllInner] sendBuf and recvBuf cannot be same."), HCCL_E_PARA);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclAlltoAllV2(sendBuf, sendCount, sendType, recvBuf, recvCount, recvType, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
     s32 threadID = SalGetTid();
@@ -2599,19 +3251,23 @@ HcclResult HcclAlltoAllInner(const void *sendBuf, uint64_t sendCount, HcclDataTy
     const std::string tag = HCCL_ALLTOALL + "_" + hcclComm->GetIdentifier();
     CHK_RET(HcomCheckOpParam(tag.c_str(), 0, sendType, stream));
     CHK_RET(HcomCheckDataType(recvType));
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
     // 接口交互信息日志
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], streamId[%d],"
+            "tag[%s], sendCount[%llu], recvCount[%llu], sendType[%s], recvType[%s], localRank[%u], streamId[%d],"
             "deviceLogicId[%d]",
             tag.c_str(), sendCount, recvCount, GetDataTypeEnumStr(sendType).c_str(), GetDataTypeEnumStr(recvType).c_str(),
-            streamId, deviceLogicId);
+            localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAlltoAllInner:" + std::string(stackLogBuffer) +
@@ -2646,6 +3302,23 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
                          const void *recvBuf, const void *recvCounts, const void *rdispls, HcclDataType recvType,
                          HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLTOALLV;
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
+        info.sendCounts = sendCounts;
+        info.recvCounts = recvCounts;
+        info.sdispls = sdispls;
+        info.rdispls = rdispls;
+        info.sendType = sendType;
+        info.recvType = recvType;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAlltoAllV] Finish taskAppend, sendType [%s] recvType [%s]", GetDataTypeEnumStr(sendType).c_str(), GetDataTypeEnumStr(recvType).c_str());
+	    return HCCL_SUCCESS;
+    }
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -2674,7 +3347,9 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclAlltoAllVInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclAlltoAllVV2(sendBuf, sendCounts, sdispls, sendType, recvBuf, recvCounts, rdispls, recvType, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
     s32 threadID = SalGetTid();
@@ -2686,19 +3361,23 @@ HcclResult HcclAlltoAllVInner(const void *sendBuf, const void *sendCounts, const
     const std::string tag = HCCL_ALLTOALLV + "_" + hcclComm->GetIdentifier();
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataType(recvType), tag.c_str());
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
     /* 接口交互信息日志 */
     char stackLogBuffer[LOG_TMPBUF_SIZE];
     if (GetExternalInputHcclEnableEntryLog()) {
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], sendCounts[%p], recvCounts[%p], sendType[%s],"
-            "recvType[%s], streamId[%d], deviceLogicId[%d]",
+            "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, sendCounts, recvCounts, GetDataTypeEnumStr(sendType).c_str(),
-            GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAlltoAllVInner:" + std::string(stackLogBuffer) +
@@ -2746,6 +3425,20 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     HcclDataType sendType, const void *recvBuf, HcclDataType recvType,
     HcclComm comm, rtStream_t stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_ALLTOALLVC;
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
+        info.sendCounts = sendCountMatrix;
+        info.sendType = sendType;
+        info.recvType = recvType;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclAlltoAllVC] Finish taskAppend, sendType [%s] recvType [%s]", GetDataTypeEnumStr(sendType).c_str(), GetDataTypeEnumStr(recvType).c_str());
+	    return HCCL_SUCCESS;
+    }
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -2765,7 +3458,9 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclAlltoAllVCInner", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclAlltoAllVCV2(sendBuf, sendCountMatrix, sendType, recvBuf, recvType, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
 
@@ -2781,8 +3476,6 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
     CHK_RET_AND_PRINT_IDE(HcomCheckOpParam(tag.c_str(), 0, sendType, stream), tag.c_str());
     CHK_RET_AND_PRINT_IDE(HcomCheckDataType(recvType), tag.c_str());
 
-    s32 streamId = 0;
-    CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
     u64 sendCountMatrixHash;
     HcomGetHashFromSendCountMatrix(sendCountMatrixHash, sendCountMatrix, rankSize, tag);
 
@@ -2792,11 +3485,17 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], sendCountMatrixHash[%llu], sendType[%s], recvBuf[%p],"
-            "recvType[%s], streamId[%d], deviceLogicId[%d]",
+            "recvType[%s], localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, sendCountMatrixHash, GetDataTypeEnumStr(sendType).c_str(), recvBuf,
-            GetDataTypeEnumStr(recvType).c_str(), streamId, deviceLogicId);
+            GetDataTypeEnumStr(recvType).c_str(), localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclAlltoAllVCInner:" + std::string(stackLogBuffer) +
@@ -2842,6 +3541,20 @@ HcclResult HcclAlltoAllVCInner(const void *sendBuf, const void *sendCountMatrix,
 HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDataType dataType, HcclReduceOp op,
                       uint32_t root, HcclComm comm, aclrtStream stream)
 {
+    if (hcclGroupDepth > 0) {
+        struct hcclOpInfo info;
+        info.coll = HcclCMDType::HCCL_CMD_REDUCE;
+        info.sendbuff = sendBuf;
+        info.recvbuff = recvBuf;
+        info.sendCount = count;
+        info.sendType = dataType;
+        info.recvType = dataType;
+        info.comm = comm;
+        info.stream = stream;
+        CHK_RET(taskAppend(comm, info));
+        HCCL_INFO("[HcclReduce] Finish taskAppend, count [%d] dataType [%s]", count, GetDataTypeEnumStr(dataType).c_str());
+	    return HCCL_SUCCESS;
+    }
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -2863,7 +3576,9 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
     RPT_INPUT_ERR(recvBuf == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclReduceInner", "recvBuf", "nullptr", "please check recvBuf"}));
     CHK_PTR_NULL(recvBuf);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclReduceV2(sendBuf, recvBuf, count, dataType, op, root, comm, stream));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
     s32 threadID = SalGetTid();
@@ -2887,14 +3602,17 @@ HcclResult HcclReduceInner(void *sendBuf, void *recvBuf, uint64_t count, HcclDat
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
         s32 streamId = 0;
         CHK_RET_AND_PRINT_IDE(hrtGetStreamId(stream, streamId), tag.c_str());
 
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
             "tag[%s], sendBuf[%p], recvBuf[%p], count[%llu], dataType[%s], op[%s], root[%u],"
-            "streamId[%d], deviceLogicId[%d]",
+            "localRank[%u], streamId[%d], deviceLogicId[%d]",
             tag.c_str(), sendBuf, recvBuf, count, GetDataTypeEnumStr(dataType).c_str(), GetReduceOpEnumStr(op).c_str(),
-            root, streamId, deviceLogicId);
+            root, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclReduceInner:" + std::string(stackLogBuffer) +
@@ -3194,7 +3912,9 @@ HcclResult HcclGetCommAsyncError(HcclComm comm, HcclResult *asyncError)
         std::vector<std::string>({"HcclCommGetAsyncError", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(asyncError);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetCommAsyncErrorV2());
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->CommCheckErrorCqe(*asyncError));
     if (*asyncError == HCCL_SUCCESS) {
@@ -3211,7 +3931,7 @@ HcclResult HcclGetCommAsyncError(HcclComm comm, HcclResult *asyncError)
 const char *HcclGetErrorString(HcclResult code)
 {
     if (code < HcclResult::HCCL_SUCCESS || code >= HcclResult::HCCL_E_RESERVED) {
-        return "unknow error";
+        return "unknown error";
     }
     static const std::map<HcclResult, std::string> errorMap = {{HCCL_SUCCESS, "no error"},
         {HCCL_E_PARA, "parameter error"}, {HCCL_E_PTR, "empty pointer"},
@@ -3224,9 +3944,15 @@ const char *HcclGetErrorString(HcclResult code)
         {HCCL_E_RUNTIME, "call runtime api fail"}, {HCCL_E_DRV, "call driver api fail"},
         {HCCL_E_PROFILING, "call profiling api fail"}, {HCCL_E_CCE, "call cce api fail"},
         {HCCL_E_NETWORK, "call network api fail"}, {HCCL_E_AGAIN, "try again"},
-        {HCCL_E_REMOTE, "error cqe"}};
+        {HCCL_E_REMOTE, "error cqe"}, {HCCL_E_SUSPENDING, "error communicator suspending"},
+ 	    {HCCL_E_OPRETRY_FAIL, "retry constraint"}, {HCCL_E_OOM, "out of memory"}};
 
-    return errorMap.at(code).data();
+    auto it = errorMap.find(code);
+    if (it != errorMap.end()) {
+        return it->second.c_str();
+    } else {
+        return "unknown err";
+    }
 }
 
 /*
@@ -3417,6 +4143,9 @@ HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8
     // 切换线程后获取不到hcom上下文，需重新刷新一次线程操作的deviceid
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
+ #if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetAicpuOpStreamAndNotifyV2(comm, opstream, aicpuNotifyNum, aicpuNotify));
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
 
     CHK_RET(hcclComm->GetAicpuOpStreamNotify(opstream, aicpuNotifyNum, aicpuNotify));
@@ -3428,6 +4157,9 @@ HcclResult HcclGetAicpuOpStreamAndNotify(HcclComm comm, rtStream_t* opstream, u8
 
 HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemNum, HcclComm comm, aclrtStream stream)
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclBatchSendRecvV2(sendRecvInfo, itemNum, comm, stream));
+#endif
     HcclUs startut = TIME_NOW();
     bool isCapture;
     aclmdlRICaptureStatus captureStatus = aclmdlRICaptureStatus::ACL_MODEL_RI_CAPTURE_STATUS_NONE;
@@ -3447,9 +4179,6 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
     CHK_PTR_NULL(sendRecvInfo);
     CHK_PRT_RET((itemNum == 0), HCCL_WARNING("[BatchSendRecv] taskList itemNum is zero."), HCCL_SUCCESS);
 
-    s32 streamId = 0;
-    CHK_RET(hrtGetStreamId(stream, streamId));
-
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     StateGuard<hccl::hcclComm, HcclCommState> guard(hcclComm, HcclCommState::INUSE);
     // 若任务不同，也复用tag
@@ -3465,8 +4194,14 @@ HcclResult HcclBatchSendRecvInner(HcclSendRecvItem* sendRecvInfo, uint32_t itemN
         s32 deviceLogicId = 0;
         CHK_RET(HcclDeviceRefresh(deviceLogicId));
 
+        u32 localRank = INVALID_VALUE_RANKID;
+        CHK_RET_AND_PRINT_IDE(hcclComm->GetUserRank(localRank), tag.c_str());
+
+        s32 streamId = 0;
+        CHK_RET(hrtGetStreamId(stream, streamId));
+
         s32 ret = snprintf_s(stackLogBuffer, LOG_TMPBUF_SIZE, LOG_TMPBUF_SIZE - 1U,
-            "tag[%s], itemNum[%u], streamId[%d], deviceLogicId[%d]", tag.c_str(), itemNum, streamId, deviceLogicId);
+            "tag[%s], itemNum[%u], localRank[%u], streamId[%d], deviceLogicId[%d]", tag.c_str(), itemNum, localRank, streamId, deviceLogicId);
 
         CHK_PRT_CONT(ret == -1, HCCL_WARNING("Failed to build log info, tag[%s].", tag.c_str()));
         std::string logInfo = "Entry-HcclBatchSendRecvInner:" + std::string(stackLogBuffer) +
@@ -3521,6 +4256,28 @@ HcclResult HcclDeviceRefresh(s32 &deviceLogicId)
     return HCCL_SUCCESS;
 }
 
+int32_t HcclTaskRegister(HcclComm comm, const char *msgTag, Callback cb)
+{
+    HCCL_INFO("[HcclTaskRegister] start to register task");
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_PTR_NULL(comm);
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    return HcclTaskRegisterV2(hcclComm->GetCommunicatorV2(), msgTag, cb);
+#endif
+    return HCCL_E_NOT_SUPPORT;
+}
+
+int32_t HcclTaskUnRegister(HcclComm comm,  const char *msgTag)
+{
+    HCCL_INFO("[HcclTaskUnRegister] start to register task");
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    CHK_PTR_NULL(comm);
+    hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
+    return HcclTaskUnRegisterV2(hcclComm->GetCommunicatorV2(), msgTag);
+#endif
+    return HCCL_E_NOT_SUPPORT;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
@@ -3535,7 +4292,9 @@ HcclResult HcclGetTopoDesc(HcclComm comm, HcclTopoDescs *topoDescs, uint32_t top
 
     s32 deviceLogicId = 0;
     CHK_RET(HcclDeviceRefresh(deviceLogicId));
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclGetTopoDescV2());
+#endif
     hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->GetTopoDesc(topoDescs, topoSize));
 
@@ -3546,7 +4305,9 @@ HcclResult HcclCommSuspend(HcclComm comm)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommSuspendV2(comm));
+#endif
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->Suspend());
@@ -3560,7 +4321,9 @@ HcclResult HcclCommResume(HcclComm comm)
 {
     // 入参校验
     CHK_PTR_NULL(comm);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommResumeV2(comm));
+#endif
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->Resume());
@@ -3582,6 +4345,10 @@ HcclResult HcclCommSetMemoryRange(HcclComm comm, void *baseVirPtr, size_t size, 
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommSetMemoryRangeV2(comm, baseVirPtr, size, alignment, flags));
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->SetMemoryRange(baseVirPtr, size, alignment, flags));
@@ -3596,6 +4363,10 @@ HcclResult HcclCommUnsetMemoryRange(HcclComm comm, void *baseVirPtr)
     // 入参校验
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(baseVirPtr);
+
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommUnsetMemoryRangeV2(comm, baseVirPtr));
+#endif
 
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
@@ -3613,6 +4384,10 @@ HcclResult HcclCommActivateCommMemory(HcclComm comm, void *virPtr, size_t size, 
     CHK_PTR_NULL(virPtr);
     CHK_PTR_NULL(handle);
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommActivateCommMemoryV2(comm, virPtr, size, offset, handle, flags));
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->ActivateCommMemory(virPtr, size, offset, handle, flags));
@@ -3629,6 +4404,10 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(virPtr);
 
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommDeactivateCommMemoryV2(comm, virPtr));
+#endif
+
     HcclUs startut = TIME_NOW();
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     CHK_RET(hcclComm->DeactivateCommMemory(virPtr));
@@ -3640,6 +4419,9 @@ HcclResult HcclCommDeactivateCommMemory(HcclComm comm, void *virPtr)
 
 HcclResult HcclCommWorkingDevNicSet(HcclComm comm, uint32_t *ranks, bool *useBackup, uint32_t nRanks)
 {
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(HcclCommWorkingDevNicSetV2(comm, ranks, useBackup, nRanks));
+#endif
     RPT_INPUT_ERR(comm == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"HcclCommWorkingDevNicSet", "comm", "nullptr", "please check comm"}));
     CHK_PTR_NULL(comm);
@@ -3784,7 +4566,11 @@ HcclResult CommGetCCLBufSizeCfg(HcclComm comm, uint64_t *cclBufSize)
     RPT_INPUT_ERR(cclBufSize == nullptr, "EI0003", std::vector<std::string>({"ccl_op", "parameter", "value", "tips"}),\
         std::vector<std::string>({"CommGetCCLBufSizeCfg", "cclBufSize", "nullptr", "please check cclBufSize"}));
     CHK_PTR_NULL(cclBufSize);
-
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    const char *socNamePtr = aclrtGetSocName();
+    CHK_PTR_NULL(socNamePtr);
+    HCCLV2_FUNC_RUN(CommGetCCLBufSizeCfgV2(comm, cclBufSize));
+#endif
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     uint64_t buffSize = 0;
     if (0 == hcclComm->GetConfigInCCLbufferSize()) {

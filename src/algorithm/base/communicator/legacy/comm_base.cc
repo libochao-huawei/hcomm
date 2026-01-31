@@ -225,29 +225,19 @@ HcclResult CommBase::SetTransportType(const u32 dstRank)
     // 适配910_93的RDMA+SIO ring,创建RDMA类型下的SIO连接
     if (linkType == LinkTypeInServer::SIO_TYPE && paraVector_[rank_].deviceType == DevType::DEV_TYPE_910_93) {
         transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
-    } else if (paraVector_[rank_].serverId == paraVector_[dstRank].serverId) {
-    // 判断是否在同一个server
-        if (isNeedHeterogP2P_) {
-            transportType_[dstRank] = TransportType::TRANS_TYPE_HETEROG_P2P;
+     } else if (paraVector_[rank_].serverId == paraVector_[dstRank].serverId) { // 判断是否在同一个server
+        // Server内判断是否使用rdma
+        if (isUsedRdmaLevel0_ || isAlltoAllCommMesh_ ||
+            (paraVector_[rank_].deviceType != DevType::DEV_TYPE_310P3 &&
+            (paraVector_[rank_].devicePhyId / HCCL_AISERVER_DEVICE_NUM != 
+            paraVector_[dstRank].devicePhyId / HCCL_AISERVER_DEVICE_NUM))) {
+            transportType_[dstRank] = TransportType::TRANS_TYPE_IBV_EXP;
         } else {
-            // Server内判断是否使用rdma
-            if (isUsedRdmaLevel0_ || isAlltoAllCommMesh_ ||
-                (paraVector_[rank_].deviceType != DevType::DEV_TYPE_310P3 &&
-                (paraVector_[rank_].devicePhyId / HCCL_AISERVER_DEVICE_NUM != 
-                paraVector_[dstRank].devicePhyId / HCCL_AISERVER_DEVICE_NUM))) {
-                transportType_[dstRank] = TransportType::TRANS_TYPE_IBV_EXP;
-            } else {
-                transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
-            }
+            transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
         }
     } else { // server间
         if (GetExternalInputHcclIsTcpMode()) {
             transportType_[dstRank] = TransportType::TRANS_TYPE_HOST_TCP;
-        } else if ((static_cast<DevType>(paraVector_[dstRank].deviceType) == DevType::DEV_TYPE_310P3) ||
-            (static_cast<DevType>(paraVector_[dstRank].deviceType) == DevType::DEV_TYPE_310P1)) {
-            transportType_[dstRank] = TransportType::TRANS_TYPE_ROCE;
-        } else if (isNeedHeterogP2P_) {
-            transportType_[dstRank] = TransportType::TRANS_TYPE_HETEROG_ROCE;
         } else if (IsSupportInterHccs(dstRank)) {
             // 超节点内节点间走HCCS通信
             transportType_[dstRank] = TransportType::TRANS_TYPE_P2P;
@@ -676,7 +666,7 @@ void CommBase::SetTransportParam(TransportPara &para, MachinePara &machinePara)
 HcclResult CommBase::TransportInit(const u32 dstRank, MachinePara &machinePara)
 {
     CHK_PRT_RET(dstRank >= transportInfo_.size(),
-        HCCL_ERROR("[TransportQuerry] Transport[%u] is invaild, should init before querry it.", dstRank), HCCL_E_PARA);
+        HCCL_ERROR("[TransportQuerry] Transport[%u] is invalid, should init before query it.", dstRank), HCCL_E_PARA);
     // 实例化TransportBase
     CHK_RET(SetTransportType(dstRank));
     TransportPara para{};
@@ -689,20 +679,6 @@ HcclResult CommBase::TransportInit(const u32 dstRank, MachinePara &machinePara)
         transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else if (type == TransportType::TRANS_TYPE_HOST_TCP) {
         para.nicDeploy = nicDeployInner_;
-        transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_ROCE) {
-        para.selfIp = &machinePara.localIpAddr;
-        para.peerIp = &machinePara.remoteIpAddr;
-        std::set<u32> listenedPort;
-        CHK_SMART_PTR_NULL(interSocketManager_);
-        CHK_RET(interSocketManager_->GetListenPortByIp(NICDeployment::NIC_DEPLOYMENT_DEVICE, *(para.selfIp),
-            listenedPort));
-        para.peerPort = *(listenedPort.begin());
-        para.selfPort = para.peerPort;
-        transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_P2P) {
-        transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
-    } else if (type == TransportType::TRANS_TYPE_HETEROG_ROCE) {
         transportInfo_[dstRank].reset(new (std::nothrow) Transport(type, para, dispatcher_, notifyPool_, machinePara));
     } else {
         HCCL_ERROR("[Init][Transport]not supported transport type");
@@ -902,7 +878,7 @@ HcclResult CommBase::GetBuildStatus(u32& status)
         status = HETEROG_P2P_WAIT;
     } else {
         status = HETEROG_P2P_FAILED;
-        HCCL_ERROR("transport done num[%u] invaild, expect[%u].", transportDoneNum, transportNum);
+        HCCL_ERROR("transport done num[%u] invalid, expect[%u].", transportDoneNum, transportNum);
         return HCCL_E_INTERNAL;
     }
     return HCCL_SUCCESS;
@@ -912,7 +888,7 @@ HcclResult CommBase::TransportBuildAsync(const MachineType machineType, const st
     const std::vector<std::shared_ptr<HcclSocket> > &sockets, u32& status)
 {
     CHK_PRT_RET(dstRank >= transportInfo_.size(),
-        HCCL_ERROR("[TransportQuerry] Transport[%u] is invaild, should init before querry it.", dstRank), HCCL_E_PARA);
+        HCCL_ERROR("[TransportQuerry] Transport[%u] is invalid, should init before query it.", dstRank), HCCL_E_PARA);
     MachinePara machinePara;
     CHK_RET(SetMachinePara(machineType, serverId, dstRank, sockets, machinePara));
     // 实例化TransportBase
@@ -940,7 +916,7 @@ HcclResult CommBase::TransportBuildAsync(const MachineType machineType, const st
 HcclResult CommBase::TransportBuildQuerry(u32 dstRank, u32& status)
 {
     CHK_PRT_RET(dstRank >= transportInfo_.size(),
-        HCCL_ERROR("[TransportQuerry] Transport[%u] is invaild, should init before querry it.", dstRank), HCCL_E_PARA);
+        HCCL_ERROR("[TransportQuerry] Transport[%u] is invalid, should init before query it.", dstRank), HCCL_E_PARA);
     if (transportInfo_[dstRank]) {
         CHK_RET(transportInfo_[dstRank]->ConnectQuerry(status));
         if (status == HETEROG_P2P_SUCCESS && checkStatus_[dstRank] == false) {

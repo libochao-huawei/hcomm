@@ -1,12 +1,9 @@
-/**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
+/*
+ * Copyright (c) Huawei Technologies Co., Ltd. 2017-2022. All rights reserved.
+ * Description: 系统抽象层实现
+ * Author: xiaoshizhong
+ * Create: 2017-07-26
+ */
 
 #include "sal.h"
 
@@ -174,7 +171,7 @@ HcclResult SalStrToInt(const std::string str, int base, s32 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][StrToInt]strtoi catch errror, str[%s] base[%d] val[%d]", str.c_str(), base, val);
+        HCCL_ERROR("[Transform][StrToInt]strtoi catch error, str[%s] base[%d] val[%d]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -222,7 +219,7 @@ HcclResult SalStrToULong(const std::string str, int base, u32 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][StrToULong]stoul catch errror, str[%s] base[%d] val[%u]", str.c_str(), base, val);
+        HCCL_ERROR("[Transform][StrToULong]stoul catch error, str[%s] base[%d] val[%u]", str.c_str(), base, val);
         return HCCL_E_PARA;
     }
     return HCCL_SUCCESS;
@@ -245,7 +242,7 @@ HcclResult SalStrToULonglong(const std::string str, int base, u64 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][StrToULonglong]stoull catch errror, str[%s] base[%d] val[%llu]",
+        HCCL_ERROR("[Transform][StrToULonglong]stoull catch error, str[%s] base[%d] val[%llu]",
             str.c_str(), base, val);
         return HCCL_E_PARA;
     }
@@ -269,7 +266,7 @@ HcclResult SalStrToLonglong(const std::string str, int base, s64 &val)
         return HCCL_E_PARA;
     }
     catch (...) {
-        HCCL_ERROR("[Transform][SalStrToLonglong]stoll catch errror, str[%s] base[%d] val[%lld]",
+        HCCL_ERROR("[Transform][SalStrToLonglong]stoll catch error, str[%s] base[%d] val[%lld]",
             str.c_str(), base, val);
         return HCCL_E_PARA;
     }

@@ -39,8 +39,11 @@ public:
     static void PrintAllHcclMsgArea(HcclApi::HcclMsgArea *hcclMsgArea, u32 rankSize, bool errorFlag = false);
     static void PrintAllHcclMsgAreaForMulti(HcclApi::HcclMsgArea *hcclMsgArea, bool errorFlag = false);
     static uint32_t GenXor(HcclApi::HcclMsg *msg);
+    static uint64_t GenXor(HcclApi::HcclMsgExt *msg, u32 rankSize);
     static HcclResult ThreadBarrier(u64 timeout);
     static HcclResult TraceProfSubmit();
-    static void PrintHcclCommParamDesc(const HcclCommParamDesc &desc);
+    static void PrintHcclCommParamDesc(const HcclApi::CommKfcParamDesc &desc);
+    static HcclResult ReadMsgFromMemory(HcclApi::HcclMsg *src, HcclApi::HcclMsg &dst);
+    static HcclResult ReadMsgFromMemory(HcclApi::HcclMsgExt *src, u32 rankSize, HcclApi::HcclMsgExt &dst);
 };
 #endif // __MC2_AICPU_UTILS_HPP__

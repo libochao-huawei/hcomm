@@ -26,7 +26,7 @@ extern "C" {
  * @brief 执行远端写操作
  * @param[in] streamHandle 异步流句柄
  * @param[in] memTransport 传输上下文
- * @param[inout] rmtBuf 目标远端缓冲区
+ * @param[in,out] rmtBuf 目标远端缓冲区
  * @param[in] locBuf 本地缓冲区描述
  * @return 执行状态码 HcclResult
  */
@@ -36,7 +36,7 @@ extern HcclResult HcclRemoteWrite(StreamHandle streamHandle, HcclMemTransport me
  * @brief 执行远端读操作
  * @param[in] streamHandle 异步流句柄
  * @param[in] memTransport 传输上下文
- * @param[inout] locBuf 本地接收缓冲区描述
+ * @param[in,out] locBuf 本地接收缓冲区描述
  * @param[in] rmtBuf 源远端缓冲区
  * @return 执行状态码 HcclResult
  */
@@ -46,7 +46,7 @@ extern HcclResult HcclRemoteRead(StreamHandle streamHandle, HcclMemTransport mem
  * @brief 带规约的远端写操作
  * @param[in] streamHandle 异步流句柄
  * @param[in] memTransport 传输上下文
- * @param[inout] rmtBuf 目标远端缓冲区
+ * @param[in,out] rmtBuf 目标远端缓冲区
  * @param[in] locBuf 本地缓冲区描述
  * @param[in] reduceInfo 规约操作信息
  * @return 执行状态码 HcclResult
@@ -58,7 +58,7 @@ extern HcclResult HcclRemoteWriteReduce(
  * @brief 带规约的远端读操作
  * @param[in] streamHandle 异步流句柄
  * @param[in] memTransport 传输上下文
- * @param[inout] locBuf 本地接收缓冲区
+ * @param[in,out] locBuf 本地接收缓冲区
  * @param[in] rmtBuf 源远端缓冲区
  * @param[in] reduceInfo 规约操作信息
  * @return 执行状态码 HcclResult
@@ -89,7 +89,7 @@ extern HcclResult HcclRemoteNotifyWait(StreamHandle streamHandle, HcclMemTranspo
  * @brief 带通知的远端写操作
  * @param[in] streamHandle 异步流句柄
  * @param[in] memTransport 传输上下文
- * @param[inout] rmtBuf 目标远端缓冲区
+ * @param[in,out] rmtBuf 目标远端缓冲区
  * @param[in] locBuf 本地缓冲区描述
  * @param[in] notifyIndex 通知索引号
  * @return 执行状态码 HcclResult
@@ -101,7 +101,7 @@ extern HcclResult HcclRemoteWriteWithNotify(
  * @brief 带通知和规约的远端写操作
  * @param[in] streamHandle 异步流句柄
  * @param[in] memTransport 传输上下文
- * @param[inout] rmtBuf 目标远端缓冲区
+ * @param[in,out] rmtBuf 目标远端缓冲区
  * @param[in] locBuf 本地缓冲区描述
  * @param[in] reduceInfo 规约操作信息
  * @param[in] notifyIndex 通知索引号

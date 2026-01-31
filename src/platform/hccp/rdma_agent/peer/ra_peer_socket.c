@@ -64,16 +64,16 @@ int RaPeerSocketAcceptCreditAdd(unsigned int phyId, struct SocketListenInfoT con
     int ret;
 
     ret = RaGetSocketListenInfo(conn, num, rsConn, MAX_SOCKET_NUM);
-    CHK_PRT_RETURN(ret, hccp_err("[set][ra_peer_socket]ra_peer_get_socket_listen_info failed ret(%d) phy_id(%u)",
+    CHK_PRT_RETURN(ret, hccp_err("[set][ra_peer_socket]ra_peer_get_socket_listen_info failed ret(%d) phyId(%u)",
         ret, phyId), ret);
 
     RaPeerMutexLock(phyId);
     RsSetCtx(phyId);
     ret = RsSocketAcceptCreditAdd(rsConn, num, creditLimit);
     if (ret == -ENODEV) {
-        hccp_warn("[set][ra_peer_socket]rs_socket_accept_credit_add unsuccessful ret(%d) phy_id(%u)", ret, phyId);
+        hccp_warn("[set][ra_peer_socket]rs_socket_accept_credit_add unsuccessful ret(%d) phyId(%u)", ret, phyId);
     } else if (ret != 0) {
-        hccp_err("[set][ra_peer_socket]rs_socket_accept_credit_add failed ret(%d) phy_id(%u)", ret, phyId);
+        hccp_err("[set][ra_peer_socket]rs_socket_accept_credit_add failed ret(%d) phyId(%u)", ret, phyId);
     }
     RaPeerMutexUnlock(phyId);
     return ret;

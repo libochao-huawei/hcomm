@@ -144,7 +144,8 @@ enum SqeType : uint8_t {
     EVENT_SQE_V2,
     MEMCPY_ASYNC_SQE_V2,
     RDMA_DB_SEND_SQE,
-    FLIP_PLACEHOLDER_SQE
+    FLIP_PLACEHOLDER_SQE,
+    MEMCPY_ASYNC_SQE_V3
 };
 
 constexpr aclDataType DT_MAP_TABLE[HCCL_DATA_TYPE_RESERVED + 1] = {
@@ -583,7 +584,7 @@ const std::vector<std::string> StarsCqeErrorDesc = {
     "task trap",
     "task timeout",
     "sqe error",
-    "resouce conflict error",
+    "resource conflict error",
     "sq sw status error",
     "warning"
 };

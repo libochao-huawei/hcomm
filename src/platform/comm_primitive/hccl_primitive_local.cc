@@ -61,7 +61,7 @@ HcclResult HcclLocalCopyReduce(StreamHandle streamHandle, HcclBuf *dst, HcclBuf 
 
     hccl::Stream *stream = reinterpret_cast<hccl::Stream*>(streamHandle);
 
-    return dispatcherPtr->InlineReduceAsync(src->addr, src->len / reduceInfo.dataType, reduceInfo.dataType,
+    return dispatcherPtr->InlineReduceAsync(src->addr, src->len / SIZE_TABLE[reduceInfo.dataType], reduceInfo.dataType,
         reduceInfo.reduceOp, *stream, dst->addr, INVALID_VALUE_RANKID, hccl::LinkType::LINK_ONCHIP);
 }
 

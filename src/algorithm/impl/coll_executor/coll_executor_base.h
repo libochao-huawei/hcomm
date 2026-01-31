@@ -8,8 +8,8 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
 
-#ifndef COLL_EXECUTOR_BASE_H
-#define COLL_EXECUTOR_BASE_H
+#ifndef HCCL_COLL_EXECUTOR_BASE_H
+#define HCCL_COLL_EXECUTOR_BASE_H
 
 #include "hccl_impl.h"
 #include "topo_matcher.h"
@@ -39,6 +39,8 @@ public:
     virtual HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo);
     // AIV拷贝通信域信息到device上
     virtual HcclResult PrepareCommInfoToDevice(AlgResourceResponse& algResource);
+    // AIV支持Roce直通Rma信息拷贝
+    HcclResult SetRmaInfo(void* rmaInfo);
 
     // batchsendrecv需要增量建链
     virtual HcclResult CalcIncreLinkRequest(const OpParam& param, std::set<u32>& ranksLinked, 
@@ -49,9 +51,9 @@ public:
     //batchsendrecv retry使用
     virtual HcclResult CreatePairWiseList(HcclSendRecvItem *sendRecvInfo, u32 itemNum);
     virtual HcclResult GetPairWiseList(std::vector<std::vector<HcclSendRecvItem*>> &sendRecvPairList);
-    virtual HcclResult CalBlockDim(u32& blockDim, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID);
-    HcclResult GetBlockDim(u32& blockDim);
-    HcclResult SetBlockDim(const u32& blockDim);
+    virtual HcclResult CalNumBlocks(u32& numBlocks, u32 rankSize, u64 dataSize = 0, HcclCMDType cmdType = HcclCMDType::HCCL_CMD_INVALID);
+    HcclResult GetNumBlocks(u32& numBlocks);
+    HcclResult SetNumBlocks(const u32& numBlocks);
     HcclResult GetCache(HcclCacheInfo& cacheInfo);
     HcclResult SetOpCounter(const OpCounterInfo& opCounter);
 
@@ -64,9 +66,10 @@ protected:
     bool isSupportSDMAReduce_ = false;
     AlgOpContext algOpContext_;
     bool aivClearEnable_ = false;
-    u32 blockDim_ = MAX_BLOCK_DIM;
+    u32 numBlocks_ = MAX_NUM_BLOCKS;
     OpCounterInfo opCounter_;
     AlgDesc desc_;
+    void* rmaInfo_ = nullptr;
     HcclCacheInfo cacheInfo_;
 };
 }
