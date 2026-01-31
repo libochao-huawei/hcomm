@@ -14,6 +14,8 @@
 #include "channel.h"
 #include "./aicpu/aicpu_ts_urma_channel.h"
 #include "./host/host_cpu_roce_channel.h"
+#include "./ccu/ccu_urma_channel.h"
+#include "./aiv/aiv_ub_mem_channel.h"
 
 namespace hcomm {
 std::unordered_map<ChannelHandle, ChannelHandle> channelD2HHandleMap_;
@@ -44,11 +46,13 @@ HcclResult Channel::CreateChannel(
             ));
             break; 
         case COMM_ENGINE_AIV:
-            HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_AIV] not support", __func__);
-            return HCCL_E_NOT_SUPPORT;
+            channelPtr.reset(
+                new (std::nothrow) AivUbMemChannel(endpointHandle, channelDesc));
+            break; 
         case COMM_ENGINE_CCU:
-            HCCL_ERROR("[Channel][%s] CommEngine[COMM_ENGINE_CCU] not support", __func__);
-            return HCCL_E_NOT_SUPPORT;
+            channelPtr.reset(
+                new (std::nothrow) CcuUrmaChannel(endpointHandle, channelDesc));
+            break;
         default:
             HCCL_ERROR("[Channel][%s] invalid type of CommEngine", __func__);
             return HCCL_E_NOT_FOUND;
