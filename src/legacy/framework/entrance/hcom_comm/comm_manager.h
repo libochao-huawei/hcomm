@@ -85,9 +85,11 @@ public:
     std::shared_ptr<Hccl::CcuDriverHandle> GetCcuDriver();
     void DeinitCcuDriver();
     s32 deviceLogicId{0};
+    HcclResult SetCommAcceleratorV2(Hccl::HcclCommunicator *communicator, int32_t accelerator);
 
 private:
     CommManager() = default;
+    bool isCcuAvailable{true};
 
     std::shared_ptr<Hccl::CcuDriverHandle> ccuDriverHandle{nullptr};
     HcclCommInfoV2 commInfoV2{};
@@ -107,7 +109,6 @@ HcclResult HcomGetRankSizeV2(const char *group, u32 *rankSize);
 HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify);
 HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify);
 HcclResult CallSingletons();
-HcclResult SetCommAcceleratorV2(Hccl::HcclCommunicator *communicator, int32_t accelerator);
 HcclResult CcuResAllocAndCtxMgrInit(s32 deviceLogicId);
 HcclResult HcomGetCcuTaskInfo(const std::string &group, void *tilingData, void *ccuTaskGroup);
 #ifdef __cplusplus

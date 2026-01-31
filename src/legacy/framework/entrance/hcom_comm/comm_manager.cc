@@ -41,6 +41,7 @@
 #include "ccu_res_batch_allocator.h"
 #include "ccu_component.h"
 #include "communicator_callback.h"
+#include "types.h"
 
 using namespace std;
 using namespace Hccl;
@@ -308,13 +309,13 @@ HcclResult HcomCreateGroupImplV2(const std::string &group, u32 rankNum, const st
 
     CHK_SMART_PTR_NULL(groupParamsV2Tem.pComm);
     groupParamsV2Tem.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    CHK_RET(SetCommAcceleratorV2(groupParamsV2Tem.pComm.get(), 0)); // 子通信域创建，设置默认accelerator
+    s32 logicDevId = HrtGetDevice();
+    CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(groupParamsV2Tem.pComm.get(), 0)); // 子通信域创建，设置默认accelerator
 
     groupParaLock.lock();
     hcomCommInfoV2.hcclGroupMap.insert(std::make_pair(group, groupParamsV2Tem));
     groupParaLock.unlock();
 
-    s32 logicDevId = HrtGetDevice();
     groupParamsV2Tem.pComm->RegisterPrintChannelInfoCallback(
         CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
     HCCL_RUN_INFO(
@@ -556,7 +557,8 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
         HCCL_ERROR("[HcomInitByFile] Hccl::Communicator Init failed, res %d", res), HCCL_E_INTERNAL);
 
     hcomCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    CHK_RET(SetCommAcceleratorV2(hcomCommInfoV2.pComm.get(), 0)); // 全局通信域创建，设置默认accelerator
+    s32 logicDevId = HrtGetDevice();
+    CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(hcomCommInfoV2.pComm.get(), 0)); // 全局通信域创建，设置默认accelerator
 
     res = hcomCommInfoV2.pComm->GetRankSize(&commParams.rankSize);
     CHK_PRT_RET(res != HCCL_SUCCESS,
@@ -569,7 +571,6 @@ HcclResult HcomInitByFileV2(const char *rankTablePath, const char *identify)
     hcomCommInfoV2.hcclGroupMap[commId] = params;
     groupParaLock.unlock();
 
-    s32 logicDevId = HrtGetDevice();
     hcomCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
         CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
 
@@ -614,7 +615,8 @@ HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
         HCCL_ERROR("[HcomInitByString] Hccl::Communicator Init failed, res %d", res), HCCL_E_INTERNAL);
 
     hcomCommInfoV2.pComm->RegisterAcceStateCallBack(CommunicatorCallback());
-    CHK_RET(SetCommAcceleratorV2(hcomCommInfoV2.pComm.get(), 0)); // 全局通信域创建，设置默认accelerator
+    s32 logicDevId = HrtGetDevice();
+    CHK_RET(CommManager::GetInstance(logicDevId).SetCommAcceleratorV2(hcomCommInfoV2.pComm.get(), 0)); // 全局通信域创建，设置默认accelerator
 
     res = hcomCommInfoV2.pComm->GetRankSize(&commParams.rankSize);
     CHK_PRT_RET(res != HCCL_SUCCESS,
@@ -627,7 +629,6 @@ HcclResult HcomInitByStringV2(const char *rankTableM, const char *identify)
     hcomCommInfoV2.hcclGroupMap[commId] = params;
     groupParaLock.unlock();
 
-    s32 logicDevId = HrtGetDevice();
     hcomCommInfoV2.pComm->RegisterPrintChannelInfoCallback(
         CommManager::GetInstance(logicDevId).GetPrintChannelInfoCallback());
 
@@ -693,23 +694,38 @@ void CcuStatus::InsertSchedCommId(const std::string &commId)
     useSchedCommIds.push_back(commId);
 }
 
-HcclResult SetCommAcceleratorV2(Hccl::HcclCommunicator *communicator, int32_t accelerator)
+HcclResult CommManager::SetCommAcceleratorV2(Hccl::HcclCommunicator *communicator, int32_t accelerator)
 {
     CHK_PTR_NULL(communicator);
+    if (accelerator < static_cast<int32_t>(HcclAccelerator::DEFAULT) || accelerator > static_cast<int32_t>(HcclAccelerator::AICPU)) {
+        HCCL_ERROR("[SetCommAcceleratorV2] Invalid accelerator value [%d]", accelerator);
+        return HCCL_E_NOT_SUPPORT;
+    }
+    HcclAccelerator hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
+
     HcclCommInfoV2 &opbasedCommInfoV2 = GetCommInfoV2();
     // 通过进程锁看护，避免多个通信域同时占用CCU_MS
     std::unique_lock<std::mutex> lock(opbasedCommInfoV2.groupParamsLock);
-
+    if ((hcclAccelerator == HcclAccelerator::CCU_MS || hcclAccelerator == HcclAccelerator::CCU_SCHED) && !isCcuAvailable) {
+        HCCL_WARNING("CCU not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
+        hcclAccelerator = HcclAccelerator::AICPU_TS;
+    }
     bool isMsAvailable = opbasedCommInfoV2.ccuStatus.IsMsAvailable(communicator->GetId());
-    HCCL_DEBUG("[%s] Accelerator is [%d], CcuMsAvailable is [%d]", __func__, accelerator, isMsAvailable);
-    CHK_RET(communicator->SetAccelerator(accelerator, isMsAvailable));
+    HCCL_INFO("[CommManager][%s] hcclAccelerator is [%s], isMsAvailable is [%d]", __func__, hcclAccelerator.Describe().c_str(), 
+            isMsAvailable);
+    CHK_RET(communicator->SetAccelerator(hcclAccelerator, isMsAvailable));
     return HCCL_SUCCESS;
 }
 
 std::shared_ptr<Hccl::CcuDriverHandle> CommManager::GetCcuDriver()
 {
-    if (ccuDriverHandle == nullptr) {
+    if (isCcuAvailable == true && ccuDriverHandle == nullptr) {
         ccuDriverHandle = std::make_shared<Hccl::CcuDriverHandle>(deviceLogicId);
+        if (ccuDriverHandle->Init() == HCCL_E_UNAVAIL) {
+            isCcuAvailable = false;
+            ccuDriverHandle = nullptr;
+            HCCL_WARNING("[CommManager::GetCcuDriver]Tlv already open, isCcuAvailable updated to false");
+        }
     }
     return ccuDriverHandle;
 }

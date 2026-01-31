@@ -84,7 +84,7 @@ public:
     void RegisterPrintChannelInfoCallback(std::function<void()> callback);
     CommStatus GetCommStatus() const;
     // 设置加速模式
-    HcclResult SetAccelerator(int32_t accelerator, bool isCcuMsAvailable);
+    HcclResult SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable);
     HcclResult GetAccelerator(int32_t* accelerator) const;
     bool IsUsingCcuMs() const;
     bool IsUsingCcuSched() const;

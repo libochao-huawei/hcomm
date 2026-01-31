@@ -40,6 +40,7 @@ constexpr u32 MAX_SEND_SGE_NUM = 8;
 constexpr u32 MAX_RECV_SGE_NUM = 1;
 constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
+constexpr u32 RA_TLV_REQUEST_UNAVAIL = 328307;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -97,7 +98,7 @@ void* HrtRaTlvInit(HRaTlvInitConfig  &cfg)
     return tlv_handle; 
 }
 
-void HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_msg_type) 
+HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_msg_type) 
 {
     s32 ret = 0;
 
@@ -107,12 +108,17 @@ void HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_msg_type
 
     ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
     if (ret != 0) {
+        if (ret == RA_TLV_REQUEST_UNAVAIL) {
+            HCCL_WARNING("[HrtRaTlvRequest]ra tlv request UNAVAIL. return: ret[%d]", ret);
+            return HCCL_E_UNAVAIL;
+        }
         HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. return: ret[%d], module type[%u], message type[%u]", 
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, tlv_module_type, tlv_ccu_msg_type);
         throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
     }
 
-    HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, tlv_ccu_msg_type); 
+    HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, tlv_ccu_msg_type);
+    return HCCL_SUCCESS;
 }
 
 void HrtRaTlvDeInit(void* tlv_handle)
