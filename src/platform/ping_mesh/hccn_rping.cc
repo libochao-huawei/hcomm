@@ -62,7 +62,7 @@ inline void HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *ini
     }
     #ifdef CONFIG_CONTEXT
     if (initAttrInter->mode == HCCN_RPING_MODE_UB) {
-        if(!HcclIpAddress::IsEID(std::string(initAttr->eid))) {
+        if(!HcclIpAddress::IsEID(std::string(initAttrInter->eid))) {
             HCCL_ERROR("[HccnRpingInit] invalid eid");
             return HCCN_E_PARA;
         }
