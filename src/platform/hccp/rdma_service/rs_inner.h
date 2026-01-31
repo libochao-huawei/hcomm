@@ -673,9 +673,7 @@ enum RsHardwareType RsGetDeviceType(unsigned int phyId);
 
 int RsConvertIpAddr(int family, union HccpIpAddr *ipAddr, struct RsIpAddrInfo *ip);
 bool RsCompareIpAddr(struct RsIpAddrInfo *a, struct RsIpAddrInfo *b);
-#ifdef CUSTOM_INTERFACE
 int RsSetupSharemem(struct rs_cb *rsCb, bool backupFlag, unsigned int backupPhyid);
-#endif
 int RsQueryMrCb(struct RsRdevCb *devCb, uint64_t addr, struct RsMrCb **mrCb, struct RsListHead *mrList);
 int RsGetRsCb(unsigned int phyId, struct rs_cb **rsCb);
 int RsQueryGid(struct rdev rdevInfo, struct ibv_context *ibCtxTmp, uint8_t ibPort, int *gidIdx);
