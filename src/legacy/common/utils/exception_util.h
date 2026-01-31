@@ -59,6 +59,28 @@
         }                                                                                                              \
     } while (0)
 
+#define TRY_CATCH_PROCESS_THROW(expr, msg,postprocess)                                                                     \
+   do {                                                                                                                \
+        try {                                                                                                          \
+            expr;                                                                                                      \
+        } catch (exception & e) {                                                                                      \
+            HCCL_ERROR("%s due to: %s", msg, e.what());
+            throw e;                                                            \
+        } catch (...) {                                                                                                \
+            HCCL_ERROR("Unkown error occurs!");    
+            throw e;                                                                    \
+        }                                                                                                              \
+    } while (0)
+
+#define CHK_RET_THROW(EXCEPTION, MSG, expr)                                                                            \
+    do {                                                                                                               \
+        auto ret = (expr);                                                                                             \
+        if (ret != HcclResult::HCCL_SUCCESS) {                                                                         \
+            THROW<EXCEPTION>(MSG);                                                                                     \
+        }                                                                                                              \
+    } while (0)
+
+
 #define TRY_CATCH_PRINT_ERROR(expr)                                                                                    \
     do {                                                                                                               \
         try {                                                                                                          \
