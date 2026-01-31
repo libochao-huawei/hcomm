@@ -13,9 +13,7 @@
 
 #include <pthread.h>
 #include <infiniband/verbs.h>
-#ifdef CONFIG_CONTEXT
 #include <urma_types.h>
-#endif
 #include "hccp_ping.h"
 #include "rs_list.h"
 #include "rs_common_inner.h"
@@ -114,9 +112,7 @@ struct RsPongTargetInfo {
     struct PingQpInfo qpInfo;
     union {
         struct ibv_ah *ah;
-#ifdef CONFIG_CONTEXT
         urma_target_jetty_t *import_tjetty;
-#endif
     };
 
     enum RsPingPongTargetState state;
@@ -132,9 +128,7 @@ struct RsPingTargetInfo {
     struct PingQpInfo qpInfo;
     union {
         struct ibv_ah *ah;
-#ifdef CONFIG_CONTEXT
         urma_target_jetty_t *import_tjetty;
-#endif
     };
 
     enum RsPingPongTargetState state;
@@ -159,7 +153,6 @@ struct RsPingRdevCb {
     struct ibv_pd *ibPd;
 };
 
-#ifdef CONFIG_CONTEXT
 struct rs_ping_seg_cb {
     uint32_t payload_offset;
     uint64_t len;
@@ -199,7 +192,6 @@ struct rs_ping_udev_cb {
     urma_device_t *urma_dev;
     urma_context_t *urma_ctx;
 };
-#endif
 
 struct RsPingCtxCb {
     enum ProtocolTypeT protocol;
@@ -224,23 +216,17 @@ struct RsPingCtxCb {
     pthread_mutex_t devMutex;
     union {
         struct RsPingRdevCb rdevCb;
-#ifdef CONFIG_CONTEXT
         struct rs_ping_udev_cb udev_cb;
-#endif
     };
 
     union {
         struct RsPingLocalQpCb pingQp;
-#ifdef CONFIG_CONTEXT
         struct rs_ping_local_jetty_cb ping_jetty;
-#endif
     };
 
     union {
         struct RsPingLocalQpCb pongQp;
-#ifdef CONFIG_CONTEXT
         struct rs_ping_local_jetty_cb pong_jetty;
-#endif
     };
 
     int taskStatus;
