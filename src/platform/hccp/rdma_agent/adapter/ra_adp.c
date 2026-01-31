@@ -31,11 +31,9 @@
 #include "ra_adp_tlv.h"
 #endif
 #include "ra_adp_socket.h"
-#ifdef CONFIG_CONTEXT
 #include "ra_hdc_ctx.h"
 #include "ra_hdc_async_ctx.h"
 #include "ra_adp_ctx.h"
-#endif
 #include "ra_adp_async.h"
 #include "ra_adp.h"
 
@@ -1764,7 +1762,6 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_GET_HCCN_CFG, RaRsGetHccnCfg, sizeof(union OpGetHccnCfgData)},
     {RA_RS_ASYNC_HDC_SESSION_CONNECT, RaRsAsyncHdcSessionConnect, sizeof(union OpAsyncHdcConnectData)},
     {RA_RS_ASYNC_HDC_SESSION_CLOSE, RaRsAsyncHdcSessionClose, sizeof(union OpAsyncHdcCloseData)},
-#ifdef CONFIG_CONTEXT
     {RA_RS_GET_DEV_EID_INFO_NUM, ra_rs_get_dev_eid_info_num, sizeof(union op_get_dev_eid_info_num_data)},
     {RA_RS_GET_DEV_EID_INFO_LIST, ra_rs_get_dev_eid_info_list, sizeof(union op_get_dev_eid_info_list_data)},
     {RA_RS_CTX_INIT, ra_rs_ctx_init, sizeof(union op_ctx_init_data)},
@@ -1797,7 +1794,6 @@ struct RaOpHandle gRaOpHandle[] = {
     {RA_RS_CTX_UPDATE_CI, ra_rs_ctx_update_ci, sizeof(union op_ctx_update_ci_data)},
     {RA_RS_CTX_GET_AUX_INFO, ra_rs_ctx_get_aux_info, sizeof(union op_ctx_get_aux_info_data)},
     {RA_RS_CTX_GET_CR_ERR_INFO_LIST, ra_rs_ctx_get_cr_err_info_list, sizeof(union op_ctx_get_cr_err_info_list_data)},
-#endif
 };
 
 STATIC int RaCheckParam(char *recvBuf, int rcvBufLen, char **sendBuf, int *sndBufLen, int *paramCheckResult)
