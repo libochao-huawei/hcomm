@@ -23,7 +23,7 @@
 
 using HcclUs = std::chrono::steady_clock::time_point;
 
-namespace Hccl { 
+namespace Hccl {
 
 void CollServiceDefaultImpl::LoadWithOpBasedModeNoRegister(CollOperator &op)
 {
