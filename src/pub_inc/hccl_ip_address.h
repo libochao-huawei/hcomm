@@ -94,7 +94,7 @@ public:
             eid.raw[i] = eidInput.raw[i];
         }
 
-        HCCL_INFO("[IpAddress] %s", eid.Describe().c_str());
+        Hccl::HCCL_INFO("[IpAddress] %s", eid.Describe().c_str());
         // IPoURMA适配后，使用EID初始化时转为ipv6建链
         family = AF_INET6;
         (void)memcpy_s(binaryAddr.addr6.s6_addr, sizeof(eid.raw), eid.raw, sizeof(eid.raw));  
