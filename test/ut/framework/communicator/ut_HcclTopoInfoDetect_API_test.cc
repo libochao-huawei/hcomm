@@ -56,7 +56,7 @@ public:
         GlobalMockObject::verify();
     }
 };
-/*
+
 TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_AutoPort_ReturnIsHCCL_SUCCESS)
 {
     int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -91,7 +91,7 @@ TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_AutoPort_ReturnIsHCCL_SUCCESS
     HcclResult ret = topoDetectServer->SetupServer(rootHandle);
     close(server_fd);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-}*/
+}
 
 TEST_F(HcclTopoInfoDetectTest, Ut_SetupServer_When_IfBasePort_ReturnIsHCCL_SUCCESS)
 {
