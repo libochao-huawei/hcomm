@@ -42,7 +42,7 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
 SelectorStatus AllGatherAutoSelector::SelectMeshAlgo(
     const TopoInfo &topoInfo, const CollAlgOperator &op, std::string &primQueueGenName) const
 {
-(void)op;
+    (void)op;
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start", __func__);
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
         HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
