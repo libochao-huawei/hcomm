@@ -14,23 +14,28 @@
 #include "string_util.h"
 #include "exception_util.h"
 #include "ccu_api_exception.h"
-
 namespace Hccl {
 namespace CcuRep {
 
 void LoopGroupCall::Run(const std::vector<LoopCall> &loopVec, const std::vector<Variable> &loopCfg,
                         const std::vector<Executor> &executors, Variable paraCfgIn, Variable offsetCfgIn) const
 {
-    auto loopGroup = std::make_shared<CcuRepLoopGroup>(CreateVariable(context), CreateVariable(context));
+    Variable tmp;
+    auto ret = CreateVariable(context, tmp);
+    if(ret != HcclResult::HCCL_SUCCESS)
+    {
+        THROW<CcuApiException>("CreateVariable is failed!");
+    }
+    auto loopGroup = std::make_shared<CcuRepLoopGroup>(tmp, tmp);
 
     std::vector<std::shared_ptr<CcuRepLoop>> loops;
     for (uint32_t index = 0; index < loopVec.size(); index++) {
-        auto repLoop = std::make_shared<CcuRepLoop>(loopVec[index].GetLabel(), CreateVariable(context));
+        auto repLoop = std::make_shared<CcuRepLoop>(loopVec[index].GetLabel(), tmp);
         AppendToContext(context, repLoop->SetLoopParam(executors[index], loopCfg[index]));
         loops.push_back(repLoop);
     }
 
-    auto hideLoop      = std::make_shared<CcuRepJump>("hideLoop", CreateVariable(context));
+    auto hideLoop      = std::make_shared<CcuRepJump>("hideLoop", tmp);
     auto hideLoopLabel = std::make_shared<CcuRepJumpLabel>("hideLoop");
     hideLoop->Reference(hideLoopLabel);
 
