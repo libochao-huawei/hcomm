@@ -74,6 +74,10 @@ HcclResult CollAllReduceMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rankSize
     CHK_PRT_RET(blockDim_ < rankSize,
         HCCL_WARNING("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
+    CHK_PRT_RET(isOpBase && blockDim_ < bestBlockDim,
+        HCCL_WARNING("[CollAllReduceMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
+        blockDim_, bestBlockDim), HCCL_E_PARA);
+
     if (blockDim_ < blockDim) {
         blockDim = blockDim_ / rankSize * rankSize;
     }
