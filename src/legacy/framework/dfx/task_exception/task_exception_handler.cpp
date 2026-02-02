@@ -32,18 +32,18 @@ constexpr int BYTE = 8; // 一字节的位数
 
 std::array<TaskExceptionHandler *, MAX_MODULE_DEVICE_NUM> TaskExceptionHandlerManager::handlers_;
 
-std::mutex g_communicatorCallbackMapMutex;
-array<map<s32, GetAicpuTaskExceptionCallBack>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMap;
-std::mutex g_commHadCallbackArrayMutex;
-array<bool, MAX_MODULE_DEVICE_NUM> g_commHadCallbackArray = {false};
+std::mutex g_communicatorCallbackMapMutexV2;
+array<map<s32, GetAicpuTaskExceptionCallBack>, MAX_MODULE_DEVICE_NUM> g_communicatorCallbackMapV2;
+std::mutex g_commHadCallbackArrayMutexV2;
+array<bool, MAX_MODULE_DEVICE_NUM> g_commHadCallbackArrayV2 = {false};
 
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1)
+void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1)
 {
-    lock_guard<mutex> lock(g_communicatorCallbackMapMutex);
-    g_communicatorCallbackMap[deviceLogicId].emplace(streamId, p1);
+    lock_guard<mutex> lock(Hccl::g_communicatorCallbackMapMutexV2);
+    Hccl::g_communicatorCallbackMapV2[deviceLogicId].emplace(streamId, p1);
     return;
 }
 #ifdef __cplusplus
@@ -681,18 +681,18 @@ void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankCo
 void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionInfo)
 {
     ErrorMessageReport errorMessage;
-    unique_lock<std::mutex> lock(g_commHadCallbackArrayMutex);
-    if (g_commHadCallbackArray[exceptionInfo->deviceid]) {
+    unique_lock<std::mutex> lock(Hccl::g_commHadCallbackArrayMutexV2);
+    if (Hccl::g_commHadCallbackArrayV2[exceptionInfo->deviceid]) {
         // 防止同一个device上出现通信主流和kernel流均出现task exception时runtime调用两次callback
         // HDC通道信息不是读清，防止aicpu task exception重复上报
         HCCL_WARNING("aicpu error message been reported. deviceid[%u]", exceptionInfo->deviceid);
         return;
     }
     lock.unlock();
-    if (g_communicatorCallbackMap[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
-        g_communicatorCallbackMap[exceptionInfo->deviceid].end()) {
+    if (Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid].find(exceptionInfo->streamid) !=\
+        Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid].end()) {
         // 找到对应的通信域，并调用回调函数从HDC通道获取AICPU异常信息
-        errorMessage = (g_communicatorCallbackMap[exceptionInfo->deviceid])[exceptionInfo->streamid]();
+        errorMessage = (Hccl::g_communicatorCallbackMapV2[exceptionInfo->deviceid])[exceptionInfo->streamid]();
         if (strlen(errorMessage.tag) > 0) {
             string groupRankContent;
             u32 streamId = static_cast<u32>(errorMessage.streamId);
@@ -722,7 +722,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             ReportErrorMsg(exceptionTaskInfo, groupRankContent);
 
             lock.lock();
-            g_commHadCallbackArray[exceptionInfo->deviceid] = true;
+            Hccl::g_commHadCallbackArrayV2[exceptionInfo->deviceid] = true;
         } else {
             HCCL_WARNING("PrintAicpuErrorMessage No Vaild errorMessage!");
         }

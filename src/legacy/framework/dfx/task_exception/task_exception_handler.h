@@ -24,7 +24,7 @@
 #include "rdma_handle_manager.h"
 
 namespace Hccl {
- using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>; 
+using GetAicpuTaskExceptionCallBack = std::function<ErrorMessageReport()>; 
 class TaskExceptionHandler {
 public:
     // 构造函数使用初始化列表初始化devId_
@@ -102,7 +102,7 @@ private:
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
-extern void RegisterGetAicpuTaskExceptionCallBack(s32 streamId, u32 deviceLogicId, GetAicpuTaskExceptionCallBack p1);
+extern void RegisterGetAicpuTaskExceptionCallBackV2(s32 streamId, u32 deviceLogicId, Hccl::GetAicpuTaskExceptionCallBack p1);
 #ifdef __cplusplus
 }
 #endif // __cplusplus
