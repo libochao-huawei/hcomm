@@ -35,7 +35,6 @@
 #include "hccl_trace_info.h"
 #include "aicpu_share_data_manager.h"
 #include "read_write_lock.h"
-#include "op_unfold_cache.h"
 #include "hccl_api.h"
 #include "channel_param.h"
 #include "aicpu_launch_manager.h"
@@ -44,6 +43,10 @@
 #include "aicpu_init_param.h"
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
+<<<<<<< HEAD
+=======
+#include "aicpu_cache_manager.h"
+>>>>>>> 000f23d... supoprt aicpu cache for alltoallv
 
 namespace hccl {
 
@@ -411,6 +414,7 @@ private:
     HcclResult GenTaskExceptionInfo(u8 sqeType, hccl::Stream &stream, u32 head);
     HcclResult InvokeKfcHandler(AicpuKfcHandlerType type, const std::vector<u64> args);
 
+<<<<<<< HEAD
     // 算子展开的动态缓存
     HcclResult InitOpUnfoldCache();
     HcclResult LookupOpUnfoldCache(const OpParam &param, const AlgResourceResponse &algResource, bool& needExecute, bool& isCacheMiss);
@@ -419,6 +423,8 @@ private:
     HcclResult PrepareUserMemRanges(const OpParam &param, const AlgResourceResponse &algResource, std::vector<OpUnfoldMemRange>& userInputMemRanges, std::vector<OpUnfoldMemRange>& userOutputMemRanges);
     HcclResult IsInplace(const OpParam &param, bool& isInplace);
     HcclResult ParseOpParamForCache(const OpParam &param, HcclDataType& sendType, HcclDataType& recvType, uint64_t& inputSize, uint64_t& outputSize);
+=======
+>>>>>>> 000f23d... supoprt aicpu cache for alltoallv
     bool IsNoNeedMonitor(void);
     void InsertMonitorData(Stream &stream, HcclUs &curTime, u32 sqHead, uint16_t taskId, uint8_t type);
     bool IsNeedRefreshMonitorData(AicpuStreamMontior &streamMontior, HcclUs &curTime, uint32_t remoteRank,
@@ -563,10 +569,6 @@ private:
     static bool errMessageReport_;
     AicpuKfcHandler kfcHandlers_[static_cast<size_t>(AicpuKfcHandlerType::kMax)]{};
 
-	// 算子展开的动态缓存
-    OpUnfoldCache *opUnfoldCachePtr_ = nullptr;
-    size_t opUnfoldIdx_ = 0; // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
-
     bool initialized_{ false };
 
     // 独立算子
@@ -579,6 +581,12 @@ private:
     TaskException taskExecption_;
     // A5 独立算子
     std::unordered_map<ChannelHandle, std::unique_ptr<Hccl::UbTransportLiteImpl>> ubTransportMap_;
+
+    // A3消息语义算子展开aicpu cache
+    AicpuCacheManager aicpuCacheManager_;
+
+    // 维护aicpu算子展开的索引, 方便定位当前展开的算子信息
+    size_t opUnfoldIdx_ = 0;
 };
 }  // namespace hccl
 #endif  // __AICPU_COMMUNICATOR_H__

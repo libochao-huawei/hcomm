@@ -662,6 +662,11 @@ public:
     
     bool GetIsUseAtomicWrite();
 
+    HcclResult GetLocalSendReadyNotify(HcclSignalInfo& notifyInfo, bool& isValid);
+    HcclResult GetLocalSendDoneNotify(HcclSignalInfo& notifyInfo, bool& isValid);
+    HcclResult GetRemoteSendReadyNotify(HcclSignalInfo& notifyInfo, bool& isValid);
+    HcclResult GetRemoteSendDoneNotify(HcclSignalInfo& notifyInfo, bool& isValid);
+
 private:
     void CreateTransportRoce(TransportType type, TransportPara& para, const HcclDispatcher dispatcherPtr,
         const std::unique_ptr<NotifyPool> &notifyPool, MachinePara &machinePara);
