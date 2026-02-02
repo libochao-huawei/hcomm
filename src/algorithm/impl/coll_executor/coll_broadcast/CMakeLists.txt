@@ -17,7 +17,6 @@ set(src_list
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_broadcast_mix_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_broadcast_ring_zerocopy_executor.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/coll_broadcast_mesh_aiv_executor.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/coll_broadcast_mesh_aiv_for_910_93_executor.cc
 )
 
 target_sources(hccl_alg PRIVATE

@@ -88,33 +88,20 @@ HcclResult ReduceScatterVOperator::SelectAlgfor91093(const OpParam& param, std::
         HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support mode, multiModuleDiffDeviceNumMode_[%u], "
             "multiSuperPodDiffServerNumMode_[%u]", multiModuleDiffDeviceNumMode_, multiSuperPodDiffServerNumMode_);
         return HCCL_E_NOT_SUPPORT;
-    }
-
-    bool isOpbase = workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
-    bool isAivSingleNode = (serverNum_ == 1) && (isSingleMeshAggregation_);
-    bool isAivCrossNode = (superPodNum_ == 1) && (serverNum_ > 1) && !GetExternalInputInterHccsDisable();
-    bool isAivMode = topoMatcher_->GetAivModeConfig()
-                    && IsSupportAIVCopy(param.VDataDes.dataType)
-                    && isOpbase
-                    && (isAivSingleNode || isAivCrossNode);
-    if (isAivMode){
-        if (isAivSingleNode){
-            algName = dataSize > AIV_REDUCE_SCATTER_MID_SIZE ? "ReduceScatterVAIVBigCountExecutor" : "ReduceScatterVMeshAivSmallCountExecutor";
-        }else{
-            algName = "ReduceScatterVMeshAivFor91093Executor";
-        }
-    } else if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
-        algName = "ReduceScatterVRingFor91093Executor";
-    } else if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
-        const s32 HCCS_PORT_NUM_910_93_7 = 7;
-        if (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) {
-            algName = "ReduceScatterVFastDoubleRingFor91093Executor";
-        } else {
-            algName = "AlignedReduceScatterVDoubleRingFor91093Executor";
-        }
     } else {
-        HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support topoType_[%u]", topoType_);
-        return HCCL_E_NOT_SUPPORT;
+        if (topoType_ == TopoType::TOPO_TYPE_NP_SINGLE_RING) {
+            algName = "ReduceScatterVRingFor91093Executor";
+        } else if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
+            const s32 HCCS_PORT_NUM_910_93_7 = 7;
+            if (hccsPortNum_ == HCCS_PORT_NUM_910_93_7) {
+                algName = "ReduceScatterVFastDoubleRingFor91093Executor";
+            } else {
+                algName = "AlignedReduceScatterVDoubleRingFor91093Executor";
+            }
+        } else {
+            HCCL_ERROR("[ReduceScatterVOperator][SelectAlgfor91093] not support topoType_[%u]", topoType_);
+            return HCCL_E_NOT_SUPPORT;
+        }
     }
 
     const bool isWholeRing = (algType_.algoLevel0 == AlgTypeLevel0::ALG_LEVEL0_WHOLE_RING) &&
