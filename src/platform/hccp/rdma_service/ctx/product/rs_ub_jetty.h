@@ -16,12 +16,19 @@
 #include "dl_hal_function.h"
 #include "rs_ctx_inner.h"
 
-#define WQEBB_NUM_PER_SQE 4ULL
+#define WQE_BB_SIZE 64ULL
 #define PAGE_4K 0x1000
 #define ALIGN_DOWN(x, a) ((x) & (~((a) - 1)))
 
-void rs_ub_ctx_ext_jetty_create(struct rs_ctx_jetty_cb *jettyCb, urma_jetty_cfg_t *jettyCfg);
-void rs_ub_ctx_ext_jetty_delete(struct rs_ctx_jetty_cb *jettyCb);
-void rs_ub_va_munmap_batch(struct rs_ctx_jetty_cb **jettyCbArr, unsigned int num);
-void rs_ub_free_jetty_id_batch(struct rs_ctx_jetty_cb **jettyCbArr, unsigned int num);
+struct JettyVaInfo {
+    enum res_addr_type resType;
+    int pid;
+    uint64_t va;
+    uint64_t len;
+};
+
+void RsUbCtxExtJettyCreate(struct RsCtxJettyCb *jettyCb, urma_jetty_cfg_t *jettyCfg);
+void RsUbCtxExtJettyDelete(struct RsCtxJettyCb *jettyCb);
+void RsUbVaMunmapBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
+void RsUbFreeJettyIdBatch(struct RsCtxJettyCb **jettyCbArr, unsigned int num);
 #endif // RS_UB_JETTY_H

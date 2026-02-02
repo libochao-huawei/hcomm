@@ -12,20 +12,20 @@ set(rs_list
     rs_drv_socket.c
     dl_ibverbs_function.c
     hccp_dl.c
-    ctx/dl_net_function.c
-    ctx/dl_ccu_function.c
-    ctx/dl_urma_function.c
-    ctx/rs_ping_urma.c
-    ctx/rs_ccu.c
-    ctx/rs_ctx.c
-    ctx/rs_esched.c
-    ctx/rs_ub.c
-    ctx/product/ascend910_95/rs_ub_jetty.c
-    ctx/product/ascend910_95/rs_ub_jfc.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/dl_hal_function.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/ascend_hal_dl.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/file_opt.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../common/network_comm.c
+    ${HCOMM_ORION}/rdma_service/ctx/dl_net_function.c
+    ${HCOMM_ORION}/rdma_service/ctx/dl_ccu_function.c
+    ${HCOMM_ORION}/rdma_service/ctx/dl_urma_function.c
+    ${HCOMM_ORION}/rdma_service/ctx/rs_ping_urma.c
+    ${HCOMM_ORION}/rdma_service/ctx/rs_ccu.c
+    ${HCOMM_ORION}/rdma_service/ctx/rs_ctx.c
+    ${HCOMM_ORION}/rdma_service/ctx/rs_esched.c
+    ${HCOMM_ORION}/rdma_service/ctx/rs_ub.c
+    ${HCOMM_ORION}/rdma_service/ctx/product/ascend910_95/rs_ub_jetty.c
+    ${HCOMM_ORION}/rdma_service/ctx/product/ascend910_95/rs_ub_jfc.c
     ${TLV_DIR}/dl_netco_function.c
     ${TLV_DIR}/rs_tlv.c
     ${TLV_DIR}/rs_adp_nslb.c
@@ -60,14 +60,17 @@ target_include_directories(rs PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/rdma-core/providers/hns
+
     ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/inc/driver
 
-    # HCCP Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/ctx
-    ${CMAKE_CURRENT_SOURCE_DIR}/ctx/product
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ccu
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/net_adapt
-    ${CMAKE_CURRENT_SOURCE_DIR}/../external_depends/ubengine
+    # HCCP2.0
+    ${HCOMM_ORION}/inc/network/
+    ${HCOMM_ORION}/inc/private/network
+    ${HCOMM_ORION}/rdma_service/ctx/
+    ${HCOMM_ORION}/external_depends/ccu/
+    ${HCOMM_ORION}/external_depends/net_adapt/
+    ${HCOMM_ORION}/external_depends/ubengine/
+    ${HCOMM_ORION}/rdma_service/ctx/product/
 )
 
 # c_sec、mmpa、unified_dlog动态库搜索路径

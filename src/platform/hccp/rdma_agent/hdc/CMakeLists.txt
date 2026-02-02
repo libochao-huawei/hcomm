@@ -4,9 +4,6 @@ set(ASYNC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/async)
 set(ra_hdc_list 
     ra_hdc.c
     ${BASE_DIR}/ra_comm.c
-    ${BASE_DIR}/ctx/ra_ctx_comm.c
-    async/ra_hdc_async_ctx.c
-    ra_hdc_ctx.c
     ra_rdma_lite.c
     ra_hdc_lite.c
     ra_hdc_ping.c
@@ -17,6 +14,9 @@ set(ra_hdc_list
     ${ASYNC_DIR}/ra_hdc_async_socket.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dl_hal_function.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
+    ${HCOMM_ORION}/rdma_agent/comm/ctx/ra_ctx_comm.c
+    ${HCOMM_ORION}/rdma_agent/hdc/async/ra_hdc_async_ctx.c
+    ${HCOMM_ORION}/rdma_agent/hdc/ra_hdc_ctx.c
 )
 
 
@@ -49,10 +49,13 @@ target_include_directories(ra_hdc PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/providers/hns
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
-    # HCCP Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../comm/ctx
-    ${CMAKE_CURRENT_SOURCE_DIR}/../hdc
-    ${CMAKE_CURRENT_SOURCE_DIR}/../hdc/async
+    # HCCP2.0
+    ${HCOMM_ORION}/inc/network
+    ${HCOMM_ORION}/inc/private/network
+    ${HCOMM_ORION}/rdma_agent/inc
+    ${HCOMM_ORION}/rdma_agent/comm/ctx
+    ${HCOMM_ORION}/rdma_agent/hdc
+    ${HCOMM_ORION}/rdma_agent/hdc/async
 )
 
 target_link_directories(ra_hdc PRIVATE

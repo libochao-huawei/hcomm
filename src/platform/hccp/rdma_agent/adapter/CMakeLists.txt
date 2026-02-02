@@ -6,7 +6,7 @@ set(ra_adp_list
     ra_adp_socket.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_pool.c
     ${BASIC_PATH}/rdma_agent/adapter/async/ra_adp_async.c
-    ${BASIC_PATH}/rdma_agent/adapter/ctx/ra_adp_ctx.c
+    ${HCOMM_ORION}/rdma_agent/adapter/ctx/ra_adp_ctx.c
     ${BASIC_PATH}/common/dl_hal_function.c
     ${BASIC_PATH}/common/ascend_hal_dl.c
     ${TLV_DIR}/ra_adp_tlv.c
@@ -17,10 +17,8 @@ add_library(ra_adp SHARED
     ${ra_adp_list}
 )
 
-target_compile_definitions(ra_adp PRIVATE
-    LOG_CPP
-    $<$<STREQUAL:${PRODUCT_SIDE},device>:CONFIG_TLV>
-)
+#添加头文件搜索路径
+target_compile_definitions(ra_adp PRIVATE LOG_CPP)
 
 target_include_directories(ra_adp PRIVATE
     ${BASIC_PATH}/external_depends/inc/driver
@@ -44,15 +42,26 @@ target_include_directories(ra_adp PRIVATE
     # rdma头文件
     ${BASIC_PATH}/external_depends/host_lite
 
-    # HCCP Legacy
-    ${BASIC_PATH}/rdma_agent/adapter/ctx
-    ${BASIC_PATH}/rdma_service/ctx
+    # HCCP2.0
+    ${HCOMM_ORION}/inc/network
+    ${HCOMM_ORION}/inc/private/network
+    ${HCOMM_ORION}/rdma_agent/inc
+    ${HCOMM_ORION}/rdma_agent/hdc
+    ${HCOMM_ORION}/rdma_agent/hdc/async
+    ${HCOMM_ORION}/rdma_agent/adapter/ctx
+    ${HCOMM_ORION}/rdma_service/ctx
 )
 
 # c_sec、mmpa、unified_dlog动态库搜索路径
 target_link_directories(ra_adp PRIVATE
     ${ASCEND_CANN_PACKAGE_PATH}/devlib/device/
 )
+
+if("${PRODUCT_SIDE}" STREQUAL "device")
+    target_compile_definitions(ra_adp PRIVATE
+        CONFIG_TLV
+    )
+endif()
 
 #编译选项
 target_compile_options(ra_adp PRIVATE

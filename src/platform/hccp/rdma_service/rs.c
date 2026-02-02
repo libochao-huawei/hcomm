@@ -422,7 +422,7 @@ STATIC int RsInitNetAdapt(struct rs_cb *rscb) {
         return 0;
     }
 
-    ret = rs_net_adapt_init();
+    ret = RsNetAdaptInit();
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_net_adapt_init chipId[%u] logic_devid[%u] failed, ret=%d",
         rscb->chipId, rscb->logicId, ret), ret);
 
@@ -434,7 +434,7 @@ STATIC void RsDeInitNetAdapt(struct rs_cb *rscb) {
         return;
     }
 
-    rs_net_adapt_uninit();
+    RsNetAdaptUninit();
 }
 
 STATIC int RsInitRscbCfg(struct rs_cb *rscb)
@@ -449,12 +449,12 @@ STATIC int RsInitRscbCfg(struct rs_cb *rscb)
 
 #ifdef CUSTOM_INTERFACE
     productType = RsGetProductType(rscb->logicId);
-    if(productType == PRODUCT_TYPE_950) {
-        ret = rs_get_chip_protocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
+    if(productType == PRODUCT_TYPE_910D) {
+        ret = RsGetChipProtocol(rscb->chipId, rscb->hccpMode, &rscb->protocol, rscb->logicId);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_get_chip_protocol failed, ret[%d]", ret), ret);
-        ret = rs_ctx_api_init(rscb->hccpMode, rscb->protocol);
+        ret = RsCtxApiInit(rscb->hccpMode, rscb->protocol);
         CHK_PRT_RETURN(ret != 0, hccp_err("rs_ctx_api_init failed, ret[%d]", ret), ret);
-        ret = rs_esched_init(rscb);
+        ret = RsEschedInit(rscb);
         if (ret != 0) {
             hccp_err("rs_esched_init chipId[%u] logic_devid[%u] failed, ret=%d", rscb->chipId, rscb->logicId, ret);
             goto esched_init_err;
@@ -490,12 +490,12 @@ create_pthread_err:
     rs_ssl_deinit(rscb);
 ssl_init_err:
 #ifdef CUSTOM_INTERFACE
-    if(productType == PRODUCT_TYPE_950) {
+    if(productType == PRODUCT_TYPE_910D) {
         RsDeInitNetAdapt(rscb);
 net_adapt_init_err:
-        rs_esched_deinit(rscb->protocol);
+        RsEschedDeinit(rscb->protocol);
 esched_init_err:
-        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+        (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
     }
 #endif
     return ret;
@@ -510,10 +510,10 @@ STATIC void RsDeinitRscbCfg(struct rs_cb *rscb)
 
 #ifdef CUSTOM_INTERFACE
     productType = RsGetProductType(rscb->logicId);
-    if(productType == PRODUCT_TYPE_950) {
+    if(productType == PRODUCT_TYPE_910D) {
         RsDeInitNetAdapt(rscb);
-        rs_esched_deinit(rscb->protocol);
-        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+        RsEschedDeinit(rscb->protocol);
+        (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
     }
 #endif
     rs_ssl_deinit(rscb);
@@ -874,21 +874,21 @@ STATIC int RsGetDevRdevIndex(struct RsRdevCb *rdevCb, unsigned int *rdevIndex, i
     enum ProductType productType;
     int retVal;
 
-    productType = RsGetProductType(rdevCb->rs_cb->logicId);
+    productType = RsGetProductType(rdevCb->rsCb->logicId);
     if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
-        RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_LOCK(&rdevCb->rsCb->mutex);
         /*lint -e132*/
         rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);  //lint !e101
         retVal = RsRoceGetRoceDevData(rdevCb->devName, &rdevData); //lint !e101
         /*lint +e132*/
         if (retVal) {
             hccp_err("rs_roce_get_roce_dev_data failed, retVal:%d, devName:%s", retVal, rdevCb->devName);
-            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
             return retVal;
         }
         *rdevIndex = rdevData.rdev_index; // rdev_index is same to port_id
         rdevCb->rdevIndex = *rdevIndex;
-        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
     }
 #endif
     return 0;
@@ -900,11 +900,11 @@ STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, uns
     struct RsRdevCb *rdevCbTmp = NULL;
     unsigned int tmpRdevIndex = 0;
 
-    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rs_cb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&rdevCb->rsCb->mutex);
     rdevCb->devName = RsIbvGetDeviceName(rdevCb->devList[index]);
     if (rdevCb->devName == NULL) {
         hccp_err("rs_ibv_get_device_name failed, errno:%d", errno);
-        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
         return -EINVAL;
     }
 
@@ -912,19 +912,19 @@ STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, uns
     int ret = RsConvertIpAddr(rdevInfo.family, &rdevInfo.localIp, &localIp);
     if (ret != 0) {
         hccp_err("convert(ntop) ip failed, ret:%d", ret);
-        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
         return ret;
     }
 
-    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rdevCb->rs_cb->rdevList, list, struct RsRdevCb);
-    for (; (&rdevCbTmp->list) != &rdevCb->rs_cb->rdevList;
+    RS_LIST_GET_HEAD_ENTRY(rdevCbTmp, rdevCbTmp2, &rdevCb->rsCb->rdevList, list, struct RsRdevCb);
+    for (; (&rdevCbTmp->list) != &rdevCb->rsCb->rdevList;
         rdevCbTmp = rdevCbTmp2, rdevCbTmp2 = list_entry(rdevCbTmp2->list.next, struct RsRdevCb, list)) {
         tmpRdevIndex = rdevCbTmp->rdevIndex;
         if (!RsCompareIpAddr(&rdevCbTmp->localIp, &localIp)) {
             *rdevIndex = tmpRdevIndex;
             rdevCb->rdevIndex = *rdevIndex;
             rdevCb->localIp = localIp;
-            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
             return 0;
         }
     }
@@ -932,7 +932,7 @@ STATIC int RsGetHostRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb, uns
     *rdevIndex = tmpRdevIndex + 1;
     rdevCb->rdevIndex = *rdevIndex;
     rdevCb->localIp = localIp;
-    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rs_cb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&rdevCb->rsCb->mutex);
     return 0;
 }
 
@@ -948,7 +948,7 @@ STATIC int RsGetIbCtxAndRdevIndex(struct rdev rdevInfo, struct RsRdevCb *rdevCb,
         CHK_PRT_RETURN(ibCtxTmp == NULL, hccp_err("ibv_open_device failed !"), -ENODEV);
         ret = RsQueryGid(rdevInfo, ibCtxTmp, rdevCb->ibPort, &gidIndex);
         if (ret == 0) {
-            if (rdevCb->rs_cb->hccpMode == NETWORK_PEER_ONLINE) {
+            if (rdevCb->rsCb->hccpMode == NETWORK_PEER_ONLINE) {
                 ret = RsGetHostRdevIndex(rdevInfo, rdevCb, rdevIndex, i);
             } else {
                 ret = RsGetDevRdevIndex(rdevCb, rdevIndex, i);
@@ -997,7 +997,7 @@ STATIC int RsGetSqDepthAndQpMaxNum(struct RsRdevCb *rdevCb, unsigned int rdevInd
     unsigned int sqDepth = 0;
     int ret;
 
-    productType = RsGetProductType(rdevCb->rs_cb->logicId);
+    productType = RsGetProductType(rdevCb->rsCb->logicId);
     if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
         ret = RsRoceGetTsqpDepth(rdevCb->devName, rdevIndex, &tempDepth, &qpMaxNum, &sqDepth);
         CHK_PRT_RETURN(ret, hccp_err("rs_roce_get_tsqp_depth failed, ret:%d, devName:%s, rdevIndex:%u", ret,
@@ -1036,7 +1036,7 @@ STATIC int RsRdevCbInfoInit(struct rdev rdevInfo, struct rs_cb *rsCb, struct RsR
     int ret;
 
     rdevCb->ibPort = RS_PORT_DEF;
-    rdevCb->rs_cb = rsCb;
+    rdevCb->rsCb = rsCb;
     rdevCb->notifyVaBase = rsCb->notifyVaBase;
     rdevCb->notifySize = rsCb->notifySize;
 
@@ -1086,7 +1086,7 @@ STATIC int RsRdevCbInit(struct rdev rdevInfo, struct RsRdevCb *rdevCb, struct rs
 #ifdef CUSTOM_INTERFACE
     productType = RsGetProductType(rsCb->logicId);
     if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
-        ret = RsRoceMmapAiDbReg(rdevCb->ibCtx, (unsigned int)rdevCb->rs_cb->aicpuPid);
+        ret = RsRoceMmapAiDbReg(rdevCb->ibCtx, (unsigned int)rdevCb->rsCb->aicpuPid);
         if (ret) {
             hccp_err("rs_roce_mmap_ai_db_reg failed, ret[%d], rdevIndex[%u]", ret, *rdevIndex);
             goto close_dev;
@@ -1256,7 +1256,7 @@ STATIC int RsRdevInitWithBackupInfo(struct rdev rdevInfo, struct RsBackupInfo ba
 
     ret = RsRdevCbInit(rdevInfo, rdevCb, rsCb, rdevIndex);
     if (ret != 0) {
-        RsSensorNodeUnregister(rdevCb->rs_cb);
+        RsSensorNodeUnregister(rdevCb->rsCb);
         hccp_err("rs_rdev_cb_init failed ret %d!, normal ret 0", ret);
         goto free_dev_list;
     }
@@ -1370,7 +1370,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     RsFreeTypicalMrCb(rdevCb);
 
 #ifdef CUSTOM_INTERFACE
-    productType = RsGetProductType(rdevCb->rs_cb->logicId);
+    productType = RsGetProductType(rdevCb->rsCb->logicId);
     if(productType != PRODUCT_TYPE_310p && productType != PRODUCT_TYPE_910) {
         (void)RsRoceUnmmapAiDbReg(rdevCb->ibCtx);
     }
@@ -1395,7 +1395,7 @@ RS_ATTRI_VISI_DEF int RsRdevDeinit(unsigned int phyId, unsigned int notifyType, 
     RS_PTHREAD_MUTEX_LOCK(&gRsCb->mutex);
     RsListDel(&rdevCb->list);
     RS_PTHREAD_MUTEX_ULOCK(&gRsCb->mutex);
-    RsSensorNodeUnregister(rdevCb->rs_cb);
+    RsSensorNodeUnregister(rdevCb->rsCb);
     RsApiDeinit();
     hccp_run_info("rdev deinit success, phyId:%u, rdevIndex:%u", phyId, rdevIndex);
     free(rdevCb);
@@ -1918,14 +1918,14 @@ STATIC void RsFreeRdevList(struct rs_cb *rsCb)
 
 STATIC void RsFreeUdevList(struct rs_cb *rsCb)
 {
-    struct rs_ub_dev_cb *udev_cb_curr = NULL;
-    struct rs_ub_dev_cb *udev_cb_next = NULL;
+    struct RsUbDevCb *udevCbCurr = NULL;
+    struct RsUbDevCb *udevCbNext = NULL;
     int ret;
 
-    RS_LIST_GET_HEAD_ENTRY(udev_cb_curr, udev_cb_next, &rsCb->rdevList, list, struct rs_ub_dev_cb);
-    for (; (&udev_cb_curr->list) != &rsCb->rdevList;
-        udev_cb_curr = udev_cb_next, udev_cb_next = list_entry(udev_cb_next->list.next, struct rs_ub_dev_cb, list)) {
-        ret = rs_ub_ctx_deinit(udev_cb_curr);
+    RS_LIST_GET_HEAD_ENTRY(udevCbCurr, udevCbNext, &rsCb->rdevList, list, struct RsUbDevCb);
+    for (; (&udevCbCurr->list) != &rsCb->rdevList;
+        udevCbCurr = udevCbNext, udevCbNext = list_entry(udevCbNext->list.next, struct RsUbDevCb, list)) {
+        ret = RsUbCtxDeinit(udevCbCurr);
         if (ret != 0) {
             hccp_err("rs_ub_ctx_deinit failed, ret:%d", ret);
         }
@@ -2027,7 +2027,7 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     RsFreeHeterogTcpFdList(rscb);
     productType = RsGetProductType(rscb->logicId);
 #ifdef CONFIG_TLV
-    if(productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910_93) {
+    if(productType == PRODUCT_TYPE_910B) {
         if (rscb->tlvCb.initFlag) {
             RsTlvDeinit(rscb->tlvCb.phyId);
         }
@@ -2038,10 +2038,10 @@ STATIC void RsDeinitFreeRscb(struct rs_cb *rscb)
     RsDestroyEpoll(rscb);
 
 #ifdef CUSTOM_INTERFACE
-    if(productType == PRODUCT_TYPE_950) {
+    if(productType == PRODUCT_TYPE_910D) {
         RsDeInitNetAdapt(rscb);
-        rs_esched_deinit(rscb->protocol);
-        (void)rs_ctx_api_deinit(rscb->hccpMode, rscb->protocol);
+        RsEschedDeinit(rscb->protocol);
+        (void)RsCtxApiDeinit(rscb->hccpMode, rscb->protocol);
     }
 #endif
 
@@ -2555,19 +2555,15 @@ RS_ATTRI_VISI_DEF enum ProductType RsGetProductType(int devId)
     }
 
     if(fnmatch("910_93[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
-        type = PRODUCT_TYPE_910_93;
+        type = PRODUCT_TYPE_910C;
     } else if (fnmatch("910B[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910B;
-    } else if(fnmatch("910_96[a-zA-Z1-9_]*", (const char *)chipInfo.name, 0) == 0){
-        type = PRODUCT_TYPE_910_96;
     } else if(fnmatch("910[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_910;
     } else if(fnmatch("310p[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0) {
         type = PRODUCT_TYPE_310p;
-    } else if(fnmatch("950[a-zA-Z1-9]*", (const char *)chipInfo.name, 0) == 0){
-        type = PRODUCT_TYPE_950;
     } else {
-        type = PRODUCT_TYPE_OTHERS;
+        type = PRODUCT_TYPE_910D;
     }
 
     hccp_info("[Get][ChipInfo]chip name is %s, type:%d", chipInfo.name, type);

@@ -354,8 +354,8 @@ STATIC void RsEpollEventInHandle(struct rs_cb *rsCb, struct epoll_event *events)
     }
 
     productType = RsGetProductType(rsCb->logicId);
-    if(productType == PRODUCT_TYPE_950) {
-        ret = rs_epoll_event_jfc_in_handle(rsCb, fd);
+    if(productType == PRODUCT_TYPE_910D) {
+        ret = RsEpollEventJfcInHandle(rsCb, fd);
         if (ret != -ENODEV) {
             hccp_info("the fd:%d is for poll jfc, no need to go on, ret:%d", fd, ret);
             return;
@@ -381,7 +381,7 @@ STATIC void RsEpollEventHandleOne(struct rs_cb *rsCb, struct epoll_event *events
 
 #ifdef CONFIG_TLV
     productType = RsGetProductType(rsCb->logicId);
-    if(productType == PRODUCT_TYPE_910B || productType == PRODUCT_TYPE_910_93) {
+    if(productType == PRODUCT_TYPE_910B) {
         ret = RsEpollNslbEventHandle(&rsCb->tlvCb.nslbCb, events->data.fd, events->events);
         if (ret != -ENODEV) {
             hccp_info("the fd:%d is nslb event, no need to go on, ret:%d", events->data.fd, ret);

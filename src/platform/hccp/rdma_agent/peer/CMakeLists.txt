@@ -2,12 +2,13 @@ set(BASE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../comm)
 set(ra_peer_list
     ra_peer.c
     ra_peer_socket.c
-    ra_peer_ctx.c
     ${BASE_DIR}/ra_comm.c
-    ${BASE_DIR}/ctx/ra_ctx_comm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/dl_hal_function.c
     ${CMAKE_CURRENT_SOURCE_DIR}/../../common/ascend_hal_dl.c
+    ${HCOMM_ORION}/rdma_agent/comm/ctx/ra_ctx_comm.c
+    ${HCOMM_ORION}/rdma_agent/peer/ra_peer_ctx.c
 )
+
 
 #编译目标
 add_library(ra_peer SHARED ${ra_peer_list})
@@ -30,9 +31,12 @@ target_include_directories(ra_peer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/rdma-core/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/host_lite
     ${CMAKE_CURRENT_SOURCE_DIR}/../../external_depends/inc/driver
-    # HCCP Legacy
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_agent/comm/ctx
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../rdma_service/ctx
+    # HCCP2.0
+    ${HCOMM_ORION}/inc/network
+    ${HCOMM_ORION}/inc/private/network
+    ${HCOMM_ORION}/rdma_agent/inc
+    ${HCOMM_ORION}/rdma_agent/comm/ctx
+    ${HCOMM_ORION}/rdma_service/ctx
 )
 
 target_link_directories(ra_peer PRIVATE
