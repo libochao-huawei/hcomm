@@ -4280,6 +4280,25 @@ namespace hccl
         return;
     }
 
+    bool HcclCommunicator::IsReduceWithInt64OrProd(HcclCMDType opType, const OpParam &opParam) const
+    {
+        if (opType == HcclCMDType::HCCL_CMD_ALLREDUCE || opType == HcclCMDType::HCCL_CMD_REDUCE ||
+            opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER) {
+            if (opParam.reduceType == HcclReduceOp::HCCL_REDUCE_PROD ||
+                opParam.DataDes.dataType == HcclDataType::HCCL_DATA_TYPE_INT64) {
+                return true;
+            }
+        }
+
+        if (opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER_V) {
+            if (opParam.reduceType == HcclReduceOp::HCCL_REDUCE_PROD ||
+                opParam.VDataDes.dataType == HcclDataType::HCCL_DATA_TYPE_INT64) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     HcclResult HcclCommunicator::ExecOp(HcclCMDType opType, OpParam &opParam, bool isCustom)
     {
         CHK_PRT_RET(isInvalidComm_,
@@ -4287,6 +4306,11 @@ namespace hccl
             "this comm is invalid, no operator is allowed to execute.",
             __func__, identifier_.c_str(), userRank_, deviceLogicId_), HCCL_E_UNAVAIL);
 
+        if (retryEnable_ && needWarnAboutReduceProdInt64_ && IsReduceWithInt64OrProd(opType, opParam)) {
+            HCCL_RUN_WARNING("[HcclCommunicator][%s]comm[%s], opType[%d], reduceType[%d]. Reduce operators with prod operation or int64 data type. This operator type unsupportd for AICPU mode, retry disabled",
+                             __func__, identifier_.c_str(), opType, opParam.reduceType);
+            needWarnAboutReduceProdInt64_ = false;
+        }
         std::string tag = opParam.tag;
         u32 aivCoreLimit = numBlocks_;
         //单机AIV场景下cache复用，提升下发性能
