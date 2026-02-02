@@ -138,7 +138,6 @@ TEST_F(StreamManagerTest, offload_register_master_and_get)
     streamManager->offload->slaves[opTag].push_back(std::move(streamData));
 
     streamManager->offload->RegisterMaster(opTag, std::move(stream));
-    streamManager->currOpTag = opTag;
 
     // when
     auto res = streamManager->offload->GetMaster(opTag);
@@ -155,7 +154,6 @@ TEST_F(StreamManagerTest, offload_register_master_two_diff_stream_and_get)
     std::string opTag = "test";
     // when
     streamManager->offload->RegisterMaster(opTag, std::move(stream));
-    streamManager->currOpTag = opTag;
     auto res = streamManager->offload->GetMaster(opTag);
     // then
     EXPECT_NE((void*)1, res);
@@ -172,7 +170,7 @@ TEST_F(StreamManagerTest, offload_register_two_diff_slave_stream_and_get)
     std::vector<void *> slaveStreams = {(void*)1234, (void*)5678}; 
     // when
     streamManager->offload->RegisterSlaves(opTag, slaveStreams);
-    streamManager->currOpTag = opTag;
+    streamManager->offload->currOpTag = opTag;
 
     auto res1 = streamManager->offload->GetSlave(opTag);
     auto res2 = streamManager->offload->GetSlave(opTag);
