@@ -92,7 +92,7 @@ HcclResult AicpuMc2Handler::HcclGetTaskStatus(void *opHandle, HcclTaskStatus *st
     StreamLite *curStream = streamLiteMgr->GetMaster();
     CHK_PTR_NULL_WITH_MSG(curStream, "commId[%u].", communicatorImplLite->GetCommIdIndex());
     HCCL_INFO("[%s]commId[%u], stream[%u].", __func__, communicatorImplLite->GetCommIdIndex(), curStream->GetId());
-    if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS) == 1) {
+    if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS, communicatorImplLite) == 1) {
         *status = HcclTaskStatus::HCCL_CQE_ERROR;
         return HCCL_SUCCESS;
     }
@@ -101,7 +101,7 @@ HcclResult AicpuMc2Handler::HcclGetTaskStatus(void *opHandle, HcclTaskStatus *st
         curStream = streamLiteMgr->GetSlave(id);
         CHK_PTR_NULL_WITH_MSG(curStream, "commId[%u]", communicatorImplLite->GetCommIdIndex());
         HCCL_INFO("[%s]commId[%u], stream[%u].", __func__, communicatorImplLite->GetCommIdIndex(), curStream->GetId());
-        if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS) == 1) {
+        if (AicpuUtils::GetInstance().GetException(curStream, GET_TASK_STATUS, communicatorImplLite) == 1) {
             *status = HcclTaskStatus::HCCL_CQE_ERROR;
             return HCCL_SUCCESS;
         }
@@ -157,12 +157,12 @@ HcclResult AicpuMc2Handler::HcclPrintTaskExceptionAllComm(void *opHandle) const
 
         StreamLite *curStream = streamLiteMgr->GetMaster();
         string nullInfo = "streamLiteMgr->GetMaster is nullptr";
-        AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo);
+        AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, communicatorImplLite, additionInfo);
 
         for (uint32_t id = 0; id < streamLiteMgr->SizeOfSlaves(); id++) {
             curStream = streamLiteMgr->GetSlave(id);
             nullInfo = "streamLiteMgr->GetSlave(" + to_string(id) + ") is nullptr";
-            AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, additionInfo);
+            AicpuUtils::GetInstance().GetStreamException(curStream, nullInfo, communicatorImplLite, additionInfo);
         }
     }
     return HCCL_SUCCESS;

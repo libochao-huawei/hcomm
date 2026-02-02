@@ -54,7 +54,7 @@ public:
 
     HcclResult WaitCommFree(CommunicatorImplLite *communicatorImplLite, const char *funcName) const;
 
-    void GetStreamException(StreamLite *curStream, string nullInfo, string additionInfo) const;
+    void GetStreamException(StreamLite *curStream, string nullInfo, CommunicatorImplLite *communicatorImplLite, string additionInfo) const;
 
     HcclResult HcclLaunchCcore(void *opHandle, uint64_t dstAddr, uint32_t turnNum, uint64_t turnNumAddr, bool isLast,
                                int ccoreType) const;
@@ -62,7 +62,7 @@ public:
     void ConvertCollOperatorMem(CollAlgOperator &algOperator, HcclAicpuOpLite &op, const HcclOpData *data,
                                 const uint64_t &size) const;
 
-    int  GetException(StreamLite *curStream, uint32_t flag, string additionInfo = "") const;
+    int  GetException(StreamLite *curStream, uint32_t flag, CommunicatorImplLite *communicatorImplLite, string additionInfo = "") const;
 
     HcclResult GetCommHandle(CommunicatorImplLite *communicatorImplLite, void **opHandle) const;
 

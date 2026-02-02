@@ -558,6 +558,8 @@ void UbTransportLiteImpl::WriteWithNotify(const RmaBufferLite &loc, const Buffer
     taskParam.taskPara.DMA.notifyID = GetRmtNotifySliceLite(withNotify.index_).GetAddr();
     taskParam.taskPara.DMA.linkType = DfxLinkType::UB;
     taskParam.taskPara.DMA.dmaOp    = DmaOp::HCCL_DMA_WRITE;
+    taskParam.taskPara.DMA.locEid = GetLocEid();
+    taskParam.taskPara.DMA.rmtEid = GetRmtEid();
     callback_(stream.GetSqId(), taskId, taskParam);
 }
 
@@ -614,5 +616,24 @@ void UbTransportLiteImpl::BatchOneSidedWrite(const vector<RmaBufSliceLite> &loc,
     // 当前使用1个connection，下标为0
     connVec[0]->BatchOneSidedWrite(loc, rmt, cfg, stream, connOut);
     BuildUbDbSendTask(stream, connVec[0]->GetUbJettyLiteId(), connOut.pi);
+}
+
+ 
+Eid UbTransportLiteImpl::GetLocEid() const
+{
+    Eid eid{};
+    if (!connVec.empty()) {
+        return connVec[0]->GetLocEid();
+    }
+    return eid;
+}
+
+Eid UbTransportLiteImpl::GetRmtEid() const
+{
+    Eid eid{};
+    if (!connVec.empty()) {
+        return connVec[0]->GetRmtEid();
+    }
+    return eid;
 }
 } // namespace Hccl

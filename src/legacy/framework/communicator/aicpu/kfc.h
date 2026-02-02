@@ -11,6 +11,7 @@
 #define HCCLV2_KFC_H
 
 #include "enum_factory.h"
+#include "error_message_v2.h"
 
 namespace Hccl {
 MAKE_ENUM(KfcCommand, NONE, NS_STOP_LAUNCH, NS_CLEAN, DESTROY_AICPU_COMM)
@@ -26,6 +27,7 @@ MAKE_ENUM(KfcErrType,
 struct KfcExecStatus {
     KfcStatus  kfcStatus;       // KFC状态
     KfcErrType kfcError;        // KFC错误码
+    ErrorMessageReport errorMessageReport;
 };
 #pragma pack(pop)
 }

@@ -53,6 +53,10 @@ public:
 
     // 该友元函数用于在context类外创建Variable并被context内的资源管理器管理
     friend CcuRep::Variable CcuRep::CreateVariable(CcuRep::CcuRepContext* context);
+    std::vector<CcuTransport *> GetCcuTransports() const
+    {
+        return transports;
+    }
 
 protected:
     // 编程接口

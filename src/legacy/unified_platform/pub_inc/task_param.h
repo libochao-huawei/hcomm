@@ -17,6 +17,7 @@
 #include "hccl/base.h"
 #include "const_val.h"
 #include "enum_factory.h"
+#include "ip_address.h"
 
 namespace Hccl {
 
@@ -64,6 +65,8 @@ struct ParaDMA {
     u64         notifyID;
     DfxLinkType linkType;
     DmaOp       dmaOp;
+    Eid         locEid{};
+    Eid         rmtEid{};
 };
 
 struct ParaReduce {
@@ -72,8 +75,8 @@ struct ParaReduce {
     std::size_t  size;
     u64          notifyID;
     DfxLinkType  linkType;
-    HcclReduceOp reduceOp;
-    HcclDataType dataType;
+    HcclReduceOp reduceOp{HcclReduceOp::HCCL_REDUCE_RESERVED};
+    HcclDataType dataType{HcclDataType::HCCL_DATA_TYPE_RESERVED};
 };
 
 struct ParaNotify {
