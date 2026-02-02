@@ -37,10 +37,9 @@ typedef enum {
     HCCN_RPING_MODE_RESERVED     /* reserved */
 } HccnRpingMode;
 
-typedef enum {
-    HCCN_RPING_ADDR_TYPE_IP = 0,    /* IP */
-    HCCN_RPING_ADDR_TYPE_EID = 1,      /* EID */
-} HccnRpingAddrType;
+#define HCCN_RPING_ADDR_TYPE uint32_t
+#define HCCN_RPING_ADDR_TYPE_IP ((HCCN_RPING_ADDR_TYPE)0)
+#define HCCN_RPING_ADDR_TYPE_EID ((HCCN_RPING_ADDR_TYPE)1)
 
 
 typedef enum {
@@ -73,7 +72,7 @@ typedef struct HccnRpingInitAttrDef {
  
 typedef struct HccnRpingTargetInfoDef {
     uint32_t srcPort;              /* udp src port, hash lag needed */
-    uint32_t addrType;             /* address type, 0: ip, 1: eid */
+    uint32_t addrType;             /* address type, HCCN_RPING_ADDR_TYPE_IP: ip, HCCN_RPING_ADDR_TYPE_EID: eid */
     uint32_t sl;                   /* service level, range: 0~7, need set as 4 when no use */
     uint32_t tc;                   /* traffic class, range: 0~255, need set as 132 when no use */
     uint32_t port;                 /* port to connect target */
