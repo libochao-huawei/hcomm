@@ -45,7 +45,7 @@
 #include "task_exception.h"
 #include "ub_transport_lite_impl.h"
 
-namespace hccl {
+namespace hccl { // test
 
 enum class CommTransportsType {
     INVALID,
