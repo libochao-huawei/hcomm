@@ -63,6 +63,7 @@ static bool g_init = false;
 static mutex g_mut;
 static aclrtBinHandle g_binHandle;
 static std::unordered_map<s8*, aclrtFuncHandle> g_aivFuncMap;
+static std::unordered_map<s8*, std::string> g_aivNameMap;
 
 static std::vector<AivKernelInfo> g_aivKernelInfoList = {
     // allreduce
@@ -451,6 +452,7 @@ HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHa
         HCCL_E_NOT_FOUND);
 
     g_aivFuncMap[stubFunc] = funcHandle;
+    g_aivNameMap[stubFunc] = funcName;
 
     return HCCL_SUCCESS;
 }
@@ -467,11 +469,6 @@ HcclResult GetKernelFunc(aclrtFuncHandle& funcHandle, s8* stubFunc)
 // Kernel注册入口，全局只需要初始化一次
 HcclResult RegisterKernel(DevType deviceType)
 {
-    lock_guard<mutex> guard(g_mut);
-    if (g_init) {
-        return HCCL_SUCCESS;
-    }
-    
     HcclResult ret;
     string binFilePath;
     ret = GetAivOpBinaryPath(deviceType, binFilePath);
@@ -488,8 +485,6 @@ HcclResult RegisterKernel(DevType deviceType)
             "cmdType[%d] dataType[%s] argsType[%d] failed", aivKernelInfo.kernelName, aivKernelInfo.cmdType,
             GetDataTypeEnumStr(aivKernelInfo.dataType).c_str(), aivKernelInfo.argsType), HCCL_E_RUNTIME);
     }
-
-    g_init = true;
 
     return HCCL_SUCCESS;
 }
@@ -577,13 +572,21 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
         };
 
         aclrtFuncHandle funcHandle;
-        ret = GetKernelFunc(funcHandle, GetStubFunc(HcclCMDType::HCCL_CMD_INVALID,
-            HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_SIMPLE));
+        s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID,
+ 	             HcclDataType::HCCL_DATA_TYPE_RESERVED, KernelArgsType::ARGS_TYPE_SIMPLE);
+ 	    ret = GetKernelFunc(funcHandle, stubFunc);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
             "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
         aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < numBlocks ? rankSize: numBlocks, stream,
             &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+        if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+            aclError aclGetRet = aclrtBinaryGetFunction(g_binHandle, g_aivNameMap[stubFunc].c_str(), &funcHandle);
+            CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+                HCCL_E_NOT_FOUND);
+            aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < numBlocks ? rankSize: numBlocks, stream,
+                &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+        }
         CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
             HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
     } else {
@@ -594,13 +597,21 @@ HcclResult Barrier(void** cclBuffersOut, u32 rank, u32 rankSize, rtStream_t stre
         };
 
         aclrtFuncHandle funcHandle;
-        ret = GetKernelFunc(funcHandle, GetStubFunc(HcclCMDType::HCCL_CMD_INVALID,
-            HcclDataType::HCCL_DATA_TYPE_RESERVED));
+        s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID,
+            HcclDataType::HCCL_DATA_TYPE_RESERVED);
+        ret = GetKernelFunc(funcHandle, stubFunc);
         CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][Barrier] errNo[0x%016llx] GetKernelFunc failed, "
             "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
         aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < numBlocks ? rankSize: numBlocks, stream,
             &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+        if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+            aclError aclGetRet = aclrtBinaryGetFunction(g_binHandle, g_aivNameMap[stubFunc].c_str(), &funcHandle);
+            CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+                HCCL_E_NOT_FOUND);
+            aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, rankSize < numBlocks ? rankSize: numBlocks, stream,
+                &cfg, &aivKernelArgs, sizeof(aivKernelArgs), nullptr, 0);
+        }
         CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
             HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
     }
@@ -640,13 +651,20 @@ HcclResult BarrierForMulServer(const AivResourceArgs &resourceArgs, s32 step, co
     u8* flagAddr = static_cast<u8 *>(resourceArgs.buffersIn[0]);
  
     aclrtFuncHandle funcHandle;
-    ret = GetKernelFunc(funcHandle, GetStubFunc(HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED,
-        KernelArgsType::ARGS_TYPE_SUPERPOD));
+    s8* stubFunc = GetStubFunc(HcclCMDType::HCCL_CMD_INVALID, HcclDataType::HCCL_DATA_TYPE_RESERVED,
+        KernelArgsType::ARGS_TYPE_SUPERPOD);
+    ret = GetKernelFunc(funcHandle, stubFunc);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][BarrierForMulServer] errNo[0x%016llx] GetKernelFunc failed, "
             "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
     aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
             &cfg, args, argsSize, nullptr, 0);
-
+    if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandle, g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+            HCCL_E_NOT_FOUND);
+        aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
+            &cfg, args, argsSize, nullptr, 0);
+    }
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
  
@@ -768,12 +786,20 @@ HcclResult ExecuteKernelLaunchInner(const AivOpArgs &opArgs, const AivTopoArgs &
     cfg.attrs = attr;
 
     aclrtFuncHandle funcHandle;
-    ret = GetKernelFunc(funcHandle, GetStubFunc(opArgs.cmdType, opArgs.dataType, argsType));
+    s8* stubFunc = GetStubFunc(opArgs.cmdType, opArgs.dataType, argsType);
+ 	ret = GetKernelFunc(funcHandle, stubFunc);
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner] errNo[0x%016llx] GetKernelFunc failed, "
         "return[%d]", HCCL_ERROR_CODE(HCCL_E_RUNTIME), ret), HCCL_E_RUNTIME);
 
     aclError aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
         &cfg, args, argsSize, nullptr, 0);
+    if (aclRet == ACL_ERROR_RT_INVALID_HANDLE) {
+        aclError aclGetRet = aclrtBinaryGetFunction(g_binHandle, g_aivNameMap[stubFunc].c_str(), &funcHandle);
+        CHK_PRT_RET(aclGetRet != ACL_SUCCESS, HCCL_ERROR("[RegisterBinaryKernel]errNo[0x%016llx] get function from binary error.", aclRet),
+            HCCL_E_NOT_FOUND);
+        aclRet = aclrtLaunchKernelWithHostArgs(funcHandle, resourceArgs.numBlocks, resourceArgs.stream,
+            &cfg, args, argsSize, nullptr, 0);
+    }
     CHK_PRT_RET(aclRet != ACL_SUCCESS, HCCL_ERROR("[ExecuteKernelLaunchInner]errNo[0x%016llx] aclrtLaunchKernelWithHostArgs error[%d].",
         HCCL_ERROR_CODE(HCCL_E_RUNTIME), aclRet), HCCL_E_RUNTIME);
 
