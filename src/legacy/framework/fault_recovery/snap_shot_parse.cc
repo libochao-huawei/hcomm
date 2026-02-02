@@ -308,7 +308,7 @@ void SnapShotParser::SerializeCommVersionInfo(BinaryStream &binStream) const
 
 void SnapShotParser::SerializeCommConfigInfo(const HcclCommConfig &config, BinaryStream &binStream) const
 {
-    HCCL_INFO("[%s]Snapshot saving: Start to serial commConfig info, hcclBufferSize[%u]", __func__, config.hcclBufferSize);
+    HCCL_INFO("[%s]Snapshot saving: Start to serial commConfig info, hcclBufferSize[%u] MB", __func__, config.hcclBufferSize);
     binStream << config.reserved << config.hcclBufferSize << config.hcclDeterministic << config.hcclCommName
               << config.hcclUdi;
 }
