@@ -16,7 +16,7 @@
 #include "mem_host_pub.h"
 #include "mem_device_pub.h"
 #include "stream_pub.h"
-#include "dlprof_func.h"
+#include "../platform/common/dlprof_func.h"
 #include "externalinput_pub.h"
 #include "hccl_common.h"
 
@@ -271,6 +271,17 @@ public:
  	    return hcclQos_;
  	}
 
+    inline bool IsPlaceholder() const
+    {
+        return isPlaceholder_;
+    }
+
+    inline void SetPlaceholder(const bool isPlaceholder)
+    {
+        isPlaceholder_ = isPlaceholder;
+        return;
+    }
+
 protected:
     HcclResult RdmaSend(u32 qpn, u32 wqeIndex, const struct SendWr &wr, HcclRtStream stream, hccl::RdmaType rdmaType,
         u64 notifyID = INVALID_U64, bool isMainStream = false);
@@ -311,6 +322,7 @@ protected:
     bool execTimeOutByConfig_;
     uint32_t hcclQos_;
  	uint32_t mPamid_;
+    bool isPlaceholder_ = false; // 用于区分是否生成placeholder SQE还是正常SQE
 
 private:
     void SetupTaskParaDma(hccl::TaskPara& taskPara, hccl::TaskParaDMA& para, TaskType taskType,

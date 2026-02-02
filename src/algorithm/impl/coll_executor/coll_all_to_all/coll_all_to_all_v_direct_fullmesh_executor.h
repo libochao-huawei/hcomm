@@ -18,6 +18,10 @@ public:
     ~CollRunAlltoAllDirectFullmesh() = default;
     HcclResult Orchestrate(OpParam& param, AlgResourceResponse& algRes) override;
     HcclResult GetAdjInfo(AlgResourceResponse& algRes, AdjInfo& adjInfo) override;
+
+    // 用于alltoallv算子的aicpu展开cache
+    HcclResult MarkNeedAlltoallvCache() override;
+    HcclResult GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const override;
 private:
     HcclOpMetaInfo GetOpMeta(HcclCMDType opType, const u64 size) override;
     HcclResult CalcStreamNum(u32& streamNum) override;
@@ -34,6 +38,10 @@ private:
     HcclResult GetLocalSendRecvInfoforAlltoallVC(const OpParam &param);
     HcclResult CalcTransportMemType(TransportMemType &inputType, TransportMemType &outputType);
     HcclResult GetLocalSDMAGroupInfo(const u32 userRank, u32& devNumInlocalPod, u32& rankIdxInPod);
+
+    // 用于alltoallv算子的aicpu展开cache
+    bool needAlltoallvCache_ = false; // 是否需要对当前alltoallv算子做aicpu cache
+    std::unordered_map<uint64_t, std::vector<uint32_t>> hcclOffsetDstRanksMap_; // Local hccl input buffer中的local hccl offset到remote dst ranks的映射 (用于PrepareIntraData)
 };
 } // namespace hccl
 #endif
