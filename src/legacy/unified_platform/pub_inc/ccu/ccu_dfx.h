@@ -16,10 +16,12 @@
 #include "hccl_types.h"
 #include "task_param.h"
 #include "ccu_error_info.h"
+#include "ccu_jetty.h"
 
 namespace Hccl {
 
 HcclResult GetCcuErrorMsg(s32 deviceId, uint16_t status, uint16_t instrId, const ParaCcu& ccuTaskParam, std::vector<CcuErrorInfo>& errorInfo);
+HcclResult GetCcuJettys(s32 deviceLogicId, const ParaCcu& ccuTaskParam, std::vector<CcuJetty *>& ccuJettys);
 
 } // namespace Hccl
 #endif // HCCL_CCU_DFX_H

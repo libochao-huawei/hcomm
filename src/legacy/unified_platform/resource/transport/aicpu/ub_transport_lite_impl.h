@@ -37,6 +37,9 @@ public:
 
     Buffer GetRmtBuffer(u32 index) override;
 
+    Eid GetLocEid() const;
+    Eid GetRmtEid() const;
+
     void Post(u32 index, const StreamLite &stream) override;
 
     void Wait(u32 index, const StreamLite &stream) override;

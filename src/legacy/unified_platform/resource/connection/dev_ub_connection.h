@@ -90,6 +90,7 @@ private:
     HrtUbJfcMode jfcMode{HrtUbJfcMode::STARS_POLL};
     u32          tokenValue{GetUbToken()};
     Eid          rmtEid{};
+    Eid          locEid{};
 
     int32_t   devLogicId{0};
     u32       dieId{0};

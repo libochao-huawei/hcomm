@@ -19,6 +19,7 @@ public:
     StreamLite *GetMaster();
     StreamLite *GetSlave(u32 index);
     u32         SizeOfSlaves();
+    std::vector<StreamLite *> GetAllStreams();
 
     void        Reset();
 

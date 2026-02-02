@@ -17,6 +17,7 @@
 #include "stream_lite.h"
 #include "ascend_hal_define.h"
 #include "daemon_func.h"
+#include "communicator_impl_lite.h"
 
 namespace Hccl {
 extern "C" {
@@ -52,7 +53,7 @@ struct rtLogicCqReport_t {
 };
 
 class TaskExceptionFunc : public DaemonFunc {
-    using Callback = std::function<void(rtLogicCqReport_t*)>;
+    using Callback = std::function<void(CommunicatorImplLite *, rtLogicCqReport_t*)>;
 
 public:
     static TaskExceptionFunc &GetInstance();

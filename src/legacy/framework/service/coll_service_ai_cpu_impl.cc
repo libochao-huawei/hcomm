@@ -20,6 +20,7 @@
 #include "aicpu_res_package_helper.h"
 #include "alg_topo_package_helper.h"
 #include "dlprof_function.h"
+#include "task_exception_handler.h"
 namespace Hccl {
 
 template <class T, class U> u16 CalcFieldOffset(T *target, U *base)
@@ -338,7 +339,11 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     }
 
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
-
+    if(op.opMode == OpMode::OPBASE) {
+        param.kernel.op.userStreamId = comm->GetStreamManager().opbase->GetMaster()->GetId();
+    } else {
+        param.kernel.op.userStreamId = comm->GetStreamManager().offload->GetMaster(op.opTag)->GetId();
+    }
     param.kernel.kfcControlTransferH2DParams = comm->GetKfcControlTransferH2D().GetCommunicateParams();
     param.kernel.kfcControlTransferD2HParams = comm->GetKfcStatusTransferD2H().GetCommunicateParams();
 
@@ -354,6 +359,7 @@ void CollServiceAiCpuImpl::SetDeviceEnvConfigParam(HcclKernelLaunchParam &param)
 void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName,
                                              bool needUpdateRes, const DevBuffer *mem)
 {
+    param.kernel.op.userStreamId = stream.GetId();
     HcclKernelLaunchParam param;
 
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
@@ -368,6 +374,9 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 
     HCCL_INFO("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch param.kernel.algName: %s, op.opTag %s", param.kernel.algName,
                op.opTag.c_str());
+               
+    auto getAicpuTaskExceptionCallBack = [this]() {return this->comm->GetAicpuTaskException();};
+    RegisterGetAicpuTaskExceptionCallBack(stream.GetId(), comm->GetDeviceLogicId(), getAicpuTaskExceptionCallBack);
 
     param.kernel.needUpdateRes = false;
 

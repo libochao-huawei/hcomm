@@ -28,7 +28,7 @@ constexpr u32 UB_MAX_TRANS_SIZE       = 256 * 1024 * 1024; // UB单次最大传�
 DevUbConnection::DevUbConnection(const RdmaHandle rdmaHandle, const IpAddress &locAddr, const IpAddress &rmtAddr,
                                  const OpMode opMode, const bool devUsed)
     : RmaConnection(nullptr, RmaConnType::UB), rdmaHandle(rdmaHandle), locAddr(locAddr), rmtAddr(rmtAddr),
-      opMode(opMode), rmtEid(rmtAddr.GetReverseEid())
+      opMode(opMode), rmtEid(rmtAddr.GetReverseEid()), locEid(locAddr.GetReverseEid())
 {
     HCCL_INFO("[DevUbConnection::DevUbConnection] rmtEid=%s", rmtEid.Describe().c_str());
     devLogicId = HrtGetDevice();
@@ -84,6 +84,7 @@ std::vector<char> DevUbConnection::GetUniqueId() const
     binaryStream << sqDepth;
     binaryStream << tpn;
     binaryStream << rmtEid.raw;
+    binaryStream << locEid.raw;
 
     std::vector<char> result;
     binaryStream.Dump(result);
