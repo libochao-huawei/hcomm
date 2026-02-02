@@ -92,7 +92,7 @@ Stream *OffloadStreamManager::GetMaster(const std::string &opTag)
 
     CheckOpTag(opTag);
 
-    if (masters.find(opTag) == master.end()) {
+    if (masters.find(opTag) == masters.end()) {
         HCCL_WARNING("[OffloadStreamManager::%s] master stream of opTag[%s] not found.", __func__, opTag.c_str());
         return nullptr;
     }
