@@ -121,6 +121,9 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
 
     PreSyncInterQueues(tempInsQues);
 
+    const u64 mySliceSize = sliceInfoVec[myIdx_][0].size;
+    const u64 mySliceOffset = sliceInfoVec[myIdx_][0].offset;
+
     for (u32 rankId = 0; rankId < tempRankSize_; rankId++) {
         u64 sliceSize = sliceInfoVec[rankId][0].size;
         u64 sliceOffset = sliceInfoVec[rankId][0].offset;
@@ -133,9 +136,6 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
                 CHK_RET(LocalCopy(tempInsQues[rankId], sendSrcSlice, sendDstSlice));
             }
         } else {
-            u64 mySliceSize = sliceInfoVec[myIdx_][0].size;
-            u64 mySliceOffset = sliceInfoVec[myIdx_][0].offset;
-
             DataSlice recvSrcSlice(tempAlgParams.buffInfo.inBuffType, mySliceOffset + inOff, mySliceSize);
             DataSlice recvDstSlice(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(rankId) * mySliceSize + scOff, mySliceSize);
 
@@ -158,16 +158,15 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
 
     PostSyncInterQueues(tempInsQues);
 
-    u64 myFinalSliceSize = sliceInfoVec[myIdx_][0].size;
-    if (myFinalSliceSize != 0) {
-        u64 destOffset = static_cast<u64>(myIdx_) * myFinalSliceSize + scOff;
-        DataSlice finalDest(tempAlgParams.buffInfo.scratBuffType, destOffset, myFinalSliceSize);
+    if (mySliceSize != 0) {
+        u64 destOffset = static_cast<u64>(myIdx_) * mySliceSize + scOff;
+        DataSlice finalDest(tempAlgParams.buffInfo.scratBuffType, destOffset, mySliceSize);
         
         for (u32 i = 0; i < tempRankSize_; i++) {
             if (i == myIdx_) {
                 continue;
             }
-            DataSlice currentSrc(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(i) * myFinalSliceSize + scOff, myFinalSliceSize);
+            DataSlice currentSrc(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(i) * mySliceSize + scOff, mySliceSize);
             CHK_RET(LocalReduce(tempInsQues[0], currentSrc, finalDest, dataType_, redOp_));
         }
     }
