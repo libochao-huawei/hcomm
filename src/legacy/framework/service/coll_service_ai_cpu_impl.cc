@@ -366,7 +366,6 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
                                              bool needUpdateRes, const DevBuffer *mem)
 {
     HcclKernelLaunchParam param;
-    param.kernel.op.userStreamId = stream.GetId();
 
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
     if (ret != EOK) {
@@ -380,9 +379,6 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 
     HCCL_INFO("CollServiceAiCpuImpl::AicpuKernelEntranceLaunch param.kernel.algName: %s, op.opTag %s", param.kernel.algName,
                op.opTag.c_str());
-               
-    auto getAicpuTaskExceptionCallBack = [this]() {return this->comm->GetAicpuTaskException();};
-    RegisterGetAicpuTaskExceptionCallBack(stream.GetId(), comm->GetDeviceLogicId(), getAicpuTaskExceptionCallBack);
 
     param.kernel.needUpdateRes = false;
 
@@ -401,6 +397,7 @@ void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollO
 
 void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream, OpMode opMode)
 {
+    param.kernel.op.userStreamId = stream.GetId();
     rtHostInputInfo hostInputInfo;
     hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
     hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
@@ -422,6 +419,11 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     AddPostToUserStream(stream);
     TaskParam taskParam {};
     taskParam.beginTime = DlProfFunction::GetInstance().dlMsprofSysCycleTime();
+
+    HCCL_INFO("[CollServiceAiCpuImpl::AicpuKernelLaunch] RegisterGetAicpuTaskExceptionCallBack streamId[%u], devLogicId[%u]", 
+              stream.GetId(), comm->GetDeviceLogicId());
+    auto getAicpuTaskExceptionCallBack = [this]() {return this->comm->GetAicpuTaskException();};
+    RegisterGetAicpuTaskExceptionCallBack(stream.GetId(), comm->GetDeviceLogicId(), getAicpuTaskExceptionCallBack);
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
