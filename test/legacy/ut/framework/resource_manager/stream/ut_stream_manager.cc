@@ -124,6 +124,7 @@ TEST_F(StreamManagerTest, opbase_register_master_two_diff_stream_and_get)
 
 TEST_F(StreamManagerTest, clear_slaves)
 {
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     streamManager->opbase->GetOrCreateSlave();
     ASSERT_NO_THROW(streamManager->opbase->Clear());
 }
@@ -187,6 +188,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_GetStreamCaptureInfo_ERROR_
 {
     // 前置条件
     MOCKER(&GetStreamCaptureInfo).stubs().will(returnValue(HCCL_E_RUNTIME));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     auto stream = std::make_unique<Stream>((void*)1);
     streamManager->opbase->RegisterMaster(std::move(stream));
@@ -210,6 +212,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_rtModel_Null_Expect_NullPtr
         .with(any(), outBound(rtModel), outBound(isCapture))
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_E_RUNTIME));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     auto stream = std::make_unique<Stream>((void*)1);
     streamManager->opbase->RegisterMaster(std::move(stream));
@@ -233,6 +236,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_GetModelId_ERROR_Expect_Int
         .with(any(), outBound(rtModel), outBound(isCapture))
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_E_RUNTIME));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
 
     auto stream = std::make_unique<Stream>((void*)1);
     streamManager->opbase->RegisterMaster(std::move(stream));
@@ -257,6 +261,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_When_AddStreamToModel_ERROR_Inte
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&AddStreamToModel).stubs().will(returnValue(HCCL_E_RUNTIME));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     auto stream = std::make_unique<Stream>((void*)1);
     streamManager->opbase->RegisterMaster(std::move(stream));
     streamManager->comm->currentCollOperator = std::make_unique<CollOperator>();
@@ -280,6 +285,7 @@ TEST_F(StreamManagerTest, Ut_CaptureSlaveStream_Expect_no_throw)
         .will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER(&GetModelId).stubs().will(returnValue(HCCL_SUCCESS));
     MOCKER(&AddStreamToModel).stubs().will(returnValue(HCCL_SUCCESS));
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     auto stream = std::make_unique<Stream>((void*)1);
     streamManager->opbase->RegisterMaster(std::move(stream));
     streamManager->comm->currentCollOperator = std::make_unique<CollOperator>();

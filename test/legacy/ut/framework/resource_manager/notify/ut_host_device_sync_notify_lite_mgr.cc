@@ -44,6 +44,7 @@ protected:
 TEST_F(HostDeviceSyncNotifyLiteMgrTest, test_parse_packed_data)
 {
     MOCKER(HrtGetDeviceType).stubs().will(returnValue((DevType)DevType::DEV_TYPE_910A3));
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<void*>(0)));
     HostDeviceSyncNotifyManager mgr;
     HostDeviceSyncNotifyLiteMgr liteMgr;
 

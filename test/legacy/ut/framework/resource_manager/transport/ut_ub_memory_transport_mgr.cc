@@ -123,6 +123,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
     MOCKER_CPP(&UbMemoryTransport::RecvMemInfo).stubs().will(ignoreReturnValue());
 
     u64 res = 1;
+    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(&CheckCollOperator).stubs().with().will(ignoreReturnValue());
     MOCKER(&HrtGetDevicePhyIdByIndex).stubs().with().will(returnValue(1));
     ReqHandleResult result = ReqHandleResult::COMPLETED;
@@ -133,6 +134,7 @@ TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_TransportsCo
 
 TEST_F(UbMemoryTransportMgrTest, should_return_success_when_calling_GetLocMemBuffer)
 {
+    MOCKER(HrtDevMemAlignWithPage).stubs().will(returnValue(static_cast<void*>(0)));
     std::shared_ptr<Buffer> cclBuffer = DevBuffer::Create(0x100, 10);
 
     unique_ptr<StubAivSocket> fakeSocket = make_unique<StubAivSocket>();

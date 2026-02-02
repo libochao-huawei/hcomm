@@ -296,6 +296,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_local_copy_extend)
     RtsqA5     rtsq(fakedevPhyId, fakeStreamId, fakeSqId);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<void*>(0)));
 
     StubResMgrFetcher mockResMgrFetcher;
     
@@ -314,6 +315,7 @@ TEST_F(InsToSqeRuleV82Test, Interpret_LocalReduce)
     RtsqA5     rtsq(0, 1, 2);
     stream.rtsq = std::make_unique<RtsqA5>(rtsq);
     MOCKER_CPP_VIRTUAL(rtsq, &RtsqA5::SdmaCopy).stubs().with(any(), any(), any(), any());
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<void*>(0)));
 
     StubResMgrFetcher mockResMgrFetcher;
     Interpret(insLocalReduce, stream, &mockResMgrFetcher);
