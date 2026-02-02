@@ -738,8 +738,8 @@ void TaskExceptionHandler::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status,
     }
     PrintCcuErrorLog(errorInfos, taskInfo);
 
-    if (ccuMissionStatus >= 0x01 && ccuMissionStatus <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
-        PrintCcuUbRegisters(static_cast<s32>(exceptionInfo->deviceid), taskInfo.taskParam_.taskPara.Ccu);
+    if (status >= 0x01 && status <= 0x05) { // 如果是UB错误(missionStatus为[0x01, 0x05])，打印Ub Dfx寄存器信息
+        PrintCcuUbRegisters(static_cast<s32>(deviceId), taskInfo.taskParam_.taskPara.Ccu);
     }
 }
 
