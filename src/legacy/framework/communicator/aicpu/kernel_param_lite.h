@@ -32,7 +32,7 @@ struct SendRecvItemTokenInfo {
 struct HcclAicpuCommunicatorLite {
     uint32_t            idIndex;
     uint32_t            myRank;
-    uint32_t            rankSie;
+    uint32_t            rankSize;
     Hccl::DevType       devType;
     uint32_t            devPhyId;
     HcclAicpuLocBufLite opBaseScratch;
