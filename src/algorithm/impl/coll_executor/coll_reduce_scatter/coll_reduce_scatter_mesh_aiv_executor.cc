@@ -79,7 +79,7 @@ HcclResult CollReduceScatterMeshAivExecutor::CalBlockDim(u32& blockDim, u32 rank
         HCCL_WARNING("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, rankSize), HCCL_E_PARA);
     
-    CHK_PRT_RET(blockDim_ < bestBlockDim && topoAttr_.deviceType != DevType::DEV_TYPE_910_93,
+    CHK_PRT_RET(blockDim_ < bestBlockDim && (topoAttr_.deviceType != DevType::DEV_TYPE_910_93 || isOpBase),
         HCCL_WARNING("[CollReduceScatterMeshAivExecutor][CalBlockDim]aivCore[%u] is invalid, at least need [%u].",
         blockDim_, bestBlockDim), HCCL_E_PARA);
 
