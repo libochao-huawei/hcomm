@@ -50,6 +50,58 @@ void ParseFlipPlaceHolderSqe(const uint8_t *sqeLocal, uint32_t addInfo, SqeInfo 
     info->length = sqe->u.flip_task_info.flipNumReport;
     info->remoteRank = addInfo;
 }
+void ParseCacheMemcpyPlaceholderSqe(const uint8_t *sqeLocal, uint32_t addInfo, SqeInfo *info)
+{
+    auto sqe = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqeLocal);
+    info->type = sqe->header.type;
+    info->streamId = sqe->header.rtStreamId;
+    info->taskId = sqe->header.taskId;
+    // 注意: cache hit后重新生成的placeholder SQE中的src/dst addr为0 (无需刷新, 因为addr字段只在第一次cache miss时使用, 用于确定memory type和target rank)
+    info->addr1High = sqe->u.cache_memcpy_task_info.src_addr_high;
+    info->addr1Low = sqe->u.cache_memcpy_task_info.src_addr_low;
+    info->addr2High = sqe->u.cache_memcpy_task_info.dst_addr_high;
+    info->addr2Low = sqe->u.cache_memcpy_task_info.dst_addr_low;
+    info->remoteRank = addInfo >> 16; // 16 bit
+    info->dataType = static_cast<uint16_t>(addInfo);
+    info->taskRelated.linkType = static_cast<uint8_t>(sqe->u.cache_memcpy_task_info.linkType); // linkType
+}
+void ParseCacheNotifyPlaceholderSqe(const uint8_t *sqeLocal, uint32_t addInfo, SqeInfo *info)
+{
+    auto sqe = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqeLocal);
+    info->type = sqe->header.type;
+    info->streamId = sqe->header.rtStreamId;
+    info->taskId = sqe->header.taskId;
+    info->notifyId = sqe->u.cache_notify_task_info.notify_id;
+    info->remoteRank = addInfo;
+}
+void ParseCacheWriteValuePlaceholderSqe(const uint8_t *sqeLocal, uint32_t addInfo, SqeInfo *info)
+{
+    auto sqe = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqeLocal);
+    info->type = sqe->header.type;
+    info->streamId = sqe->header.rtStreamId;
+    info->taskId = sqe->header.taskId;
+    info->subType = RT_STARS_WRITE_VALUE_SUB_TYPE_NOTIFY_RECORD_IPC_NO_PCIE;
+    info->addr1High = sqe->u.cache_write_value_task_info.write_addr_high;
+    info->addr1Low = sqe->u.cache_write_value_task_info.write_addr_low;
+    info->remoteRank = addInfo;
+}
+void ParseCacheMemcpyRecordPlaceholderSqe(const uint8_t *sqeLocal, uint32_t addInfo, SqeInfo *info)
+{
+    auto sqe = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqeLocal);
+    info->type = sqe->header.type;
+    info->streamId = sqe->header.rtStreamId;
+    info->taskId = sqe->header.taskId;
+    info->opCode = sqe->u.cache_memcpy_record_task_info.opcode;
+    info->length = sqe->u.cache_memcpy_record_task_info.length;
+    info->addr1High = sqe->u.cache_memcpy_record_task_info.src_addr_high;
+    info->addr1Low = sqe->u.cache_memcpy_record_task_info.src_addr_low;
+    info->addr2High = sqe->u.cache_memcpy_record_task_info.dst_addr_high;
+    info->addr2Low = sqe->u.cache_memcpy_record_task_info.dst_addr_low;
+    info->partId = sqe->u.cache_memcpy_record_task_info.partid;
+    info->remoteRank = addInfo >> 16; // 16 bit
+    info->dataType = static_cast<uint16_t>(addInfo);
+    info->taskRelated.linkType = static_cast<uint8_t>(sqe->u.cache_memcpy_record_task_info.linkType); // linkType
+}
 void ParseEventSqe(const uint8_t *sqeLocal, uint32_t /* addInfo */, SqeInfo *info)
 {
     auto sqe = reinterpret_cast<const rtStarsEventSqe_t *>(sqeLocal);
@@ -151,7 +203,11 @@ HcclResult SqeContextUtils::QuerySqeInfo(const uint8_t *sqeLocal, uint8_t sqeTyp
         { SqeType::EVENT_SQE_V2, ParseEventSqeV2 },
         { SqeType::MEMCPY_ASYNC_SQE_V2, ParseMemcpyAsyncSqeV2 },
         { SqeType::RDMA_DB_SEND_SQE, ParseWriteValueSqe },
-        { SqeType::FLIP_PLACEHOLDER_SQE, ParseFlipPlaceHolderSqe}
+        { SqeType::FLIP_PLACEHOLDER_SQE, ParseFlipPlaceHolderSqe},
+        { SqeType::CACHE_MEMCPY_PLACEHOLDER_SQE, ParseCacheMemcpyPlaceholderSqe},
+        { SqeType::CACHE_NOTIFY_PLACEHOLDER_SQE, ParseCacheNotifyPlaceholderSqe},
+        { SqeType::CACHE_WRITE_VALUE_PLACEHOLDER_SQE, ParseCacheWriteValuePlaceholderSqe},
+        { SqeType::CACHE_MEMCPY_RECORD_PLACEHOLDER_SQE, ParseCacheMemcpyRecordPlaceholderSqe}
     };
     auto it = funcMap.find(sqeType);
     if (it == funcMap.cend()) {

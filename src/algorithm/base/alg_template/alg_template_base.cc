@@ -1080,4 +1080,12 @@ HcclResult ExecutorBase::GetNslbAdjInfo(const u32 rank, const u32 rankSize,
     (void) nslbAdjInfo;
     return HCCL_SUCCESS;
 }
+
+HcclResult ExecutorBase::GetHcclOffsetDstRanksMap(std::unordered_map<uint64_t, std::vector<uint32_t>>& hcclOffsetDstRanksMap) const
+{
+    UNUSED_PARAM(hcclOffsetDstRanksMap);
+    HCCL_ERROR("[ExecutorBase][GetHcclOffsetDstRanksMap] not supported for current template!");
+    return HCCL_E_NOT_SUPPORT;
+}
+
 }  // namespace hccl
