@@ -889,7 +889,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify()
+    HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify(const HcclCMDType opType)
     {
         return HCCL_SUCCESS;
     }

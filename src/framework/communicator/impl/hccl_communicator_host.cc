@@ -5089,7 +5089,7 @@ namespace hccl
         return HCCL_SUCCESS;
     }
 
-    HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify()
+    HcclResult HcclCommunicator::BuildAicpuOrderLaunchNotify(const HcclCMDType opType)
     {
         if (aicpuOrderNotifyAddr_.ptr() == nullptr) {
             CHK_RET(CreateWorkSpace(sizeof(HcclSignalInfo) * AICPU_ORDER_NOTIFY_MAX_NUM, aicpuOrderNotifyAddr_));
@@ -5097,8 +5097,8 @@ namespace hccl
 
         opResPara_.aicpuOrderNotifyAddr = reinterpret_cast<u64>(aicpuOrderNotifyAddr_.ptr());
         opResPara_.aicpuOrderNotifySize = aicpuOrderNotifyAddr_.size();
-        HCCL_INFO("%s success, aicpuOrderNotifyAddr:0x%llx, aicpuOrderNotifySize:%llu",
-                  __func__, opResPara_.aicpuOrderNotifyAddr, opResPara_.aicpuOrderNotifySize);
+        HCCL_INFO("%s success, aicpuOrderNotifyAddr:0x%llx, aicpuOrderNotifySize:%llu for OpType[%u]",
+                  __func__, opResPara_.aicpuOrderNotifyAddr, opResPara_.aicpuOrderNotifySize, opType);
         return HCCL_SUCCESS;
     }
 
@@ -5835,7 +5835,7 @@ namespace hccl
         CHK_RET(BuildOpRetryParam(algResource, newTag));
         CHK_RET(BuildZeroCopyParam());
         CHK_RET(BuildAicpuCustomParam());
-        CHK_RET(BuildAicpuOrderLaunchNotify()); // 先申请device侧的关于按序下发的Notify内存
+        CHK_RET(BuildAicpuOrderLaunchNotify(opType)); // 先申请device侧的关于按序下发的Notify内存
         CHK_RET(CopyHostOpResToDeviceParam(newTag));
         HCCL_RUN_INFO("[%s]build aicpu unfold resource success, tag[%s] rWinStart[%u] rWinOffset[%u] opEntry[%d]",
                       __func__, newTag.c_str(), opResPara_.rWinStart, opResPara_.rWinOffset, opResPara_.opEntry);

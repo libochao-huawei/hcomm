@@ -803,7 +803,7 @@ private:
     HcclResult BuildOpTopoResParam(
         const std::string &algName, const AlgResourceResponse &algResource);
     HcclResult BuildAicpuCustomParam();
-    HcclResult BuildAicpuOrderLaunchNotify();
+    HcclResult BuildAicpuOrderLaunchNotify(const HcclCMDType opType);
     HcclResult BuildOpRemoteResParam(const AlgResourceResponse &algResource, const std::string &newTag,
         const HcclCMDType opType, bool isRetry = false);
     HcclResult BuildOpResParam(const std::string &algName, const AlgResourceResponse &algResource,
