@@ -360,8 +360,7 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
-        HCCL_ERROR("[HccnRpingGetTarget]curr devId[%d] don't match record logicId[%d].",
-            devLogicId, rping->GetDeviceLogicId());
+        HCCL_ERROR("[HccnRpingGetTarget]curr devId[%d] don't match record logicId[%d].", devLogicId, rping->GetDeviceLogicId());
         return HCCN_E_PARA;
     }
     HCCL_DEBUG("[HccnRpingGetTarget] device id is %d", devLogicId);
