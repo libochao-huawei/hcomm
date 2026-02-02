@@ -28,6 +28,8 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localRdmaRmaBufferMgr_);
+    CHK_PTR_NULL(memHandle);
+    CHK_PTR_NULL(memTag);
 
     // 构造LocalRdmaRmaBuffer
     std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
@@ -79,6 +81,7 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
 
     Hccl::LocalRdmaRmaBuffer* buffer = static_cast<Hccl::LocalRdmaRmaBuffer*>(memHandle);
     auto bufferInfo = buffer->GetBufferInfo();
+    CHK_PTR_NULL(memHandle);
 
     // 从LocalRamBuffer计数器删除HcclBuf
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);

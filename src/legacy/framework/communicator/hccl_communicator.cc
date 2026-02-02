@@ -435,11 +435,6 @@ HcclResult HcclCommunicator::GetKFCWorkSpace(const char *memTag, uint64_t *size,
     }
     return HcclResult::HCCL_SUCCESS;
 }
-// Dpu Kernel Launch
-HcclResult HcclCommunicator::LaunchDpuKernel()
-{
-    return pimpl->InitAndLaunchDpuKernel();
-}
 
 HcclResult HcclCommunicator::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum)
 {

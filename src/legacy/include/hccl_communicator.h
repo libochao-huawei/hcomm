@@ -109,8 +109,6 @@ public:
  
     HcclResult GetRankGraphV2(void *&rankGraph);
     HcclResult HcclGetCclBuffer(uintptr_t &cclBufferAddr, size_t &cclBufferSize, HcclMemType &cclBufferMemType);
-    // Dpu Kernel Launch
-    HcclResult LaunchDpuKernel();
     HcclResult GetConfigInCCLbufferSize(uint64_t *cclBufSize);
     HcclResult GetNetLayers(uint32_t **netLayers, uint32_t *netLayerNum);
     HcclResult GetInstSizeByNetLayer(uint32_t netLayer, uint32_t *rankNum);
