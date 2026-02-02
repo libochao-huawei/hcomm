@@ -332,6 +332,7 @@ HcclResult HcclGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t topoInstId
             HCCL_RUN_INFO("[%s] success, topoType [%d]", __func__, *topoType);
             return HCCL_SUCCESS;
         }());
+    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -362,6 +363,7 @@ HcclResult HcclGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uint32_t top
             HCCL_RUN_INFO("[%s] success, rankNum [%u]", __func__, *rankNum);
             return HCCL_SUCCESS;
         }());
+    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -391,6 +393,7 @@ HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t t
             HCCL_RUN_INFO("[%s] success, num [%u]", __func__, *num);
             return HCCL_SUCCESS;
         }());
+    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -421,6 +424,7 @@ HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t 
             HCCL_RUN_INFO("[%s] success", __func__);
             return HCCL_SUCCESS;
         }());
+    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -451,6 +455,7 @@ HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const En
             HCCL_RUN_INFO("[%s] success", __func__);
             return HCCL_SUCCESS;
         }());
+    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
     return HCCL_E_NOT_SUPPORT;
 }
 
