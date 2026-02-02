@@ -103,7 +103,7 @@ void CcuContextAllGatherMeshDetour1D::AllocDetourRes()
 {
     // 预期给每个对端使用的MS数量都相等
     moConfig.loopCount = CcuRep::CCU_MS_DEFAULT_LOOP_COUNT;
-    moConfig.msInterleave = pathNumPerPeer_ * 1;  // Bcast为msNum*1，Reduce为msNum*rankSize_
+    moConfig.msInterleave = 8;  // Bcast为msNum*1，Reduce为msNum*rankSize_
     if (moRes.executor.size() == 0) {
         moRes.executor = CreateBlockExecutor(moConfig.loopCount);
         moRes.maskSignal = CreateBlockMaskSignal(moConfig.loopCount);
@@ -177,7 +177,6 @@ void CcuContextAllGatherMeshDetour1D::GroupBroadcastDetour(
     std::vector<CcuRep::Variable> &lengths, std::vector<CcuRep::Memory> &src, std::vector<CcuRep::Memory> &dst)
 {
     CreateMultiOpBroadcastDetour();
-    uint32_t interLeave = pathNumPerPeer_ * 1;
 
     CCU_IF(loopIterNum_ != 0) {
         CcuRep::Variable loopParam = CreateVariable();
@@ -188,7 +187,7 @@ void CcuContextAllGatherMeshDetour1D::GroupBroadcastDetour(
         loopParam = CcuRep::GetLoopParam(0, singleTransportSize_ * moConfig.loopCount, 0);  // 偏移是单次总搬运量*loopNum
         loopParam += loopIterNum_;  // 加上loop的迭代次数构成完整loop参数
         paraCfg = CcuRep::GetParallelParam(moConfig.loopCount - 1, 0, 1);  // loop固定展开到128个
-        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize_, interLeave, 1);  // 下一个loop偏移量
+        offsetCfg = CcuRep::GetOffsetParam(singleTransportSize_, interLeave, pathNumPerPeer_);  // 下一个loop偏移量
         auto lc = Loop("broadcastDetour_loop")(src, dst, lengths);
         LoopGroup({lc}, {loopParam}, paraCfg, offsetCfg);
     }

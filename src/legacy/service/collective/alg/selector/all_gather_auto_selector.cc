@@ -42,10 +42,23 @@ SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, 
 SelectorStatus AllGatherAutoSelector::SelectMeshAlgo(
     const TopoInfo &topoInfo, const CollAlgOperator &op, std::string &primQueueGenName) const
 {
-    (void)op;
+(void)op;
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start", __func__);
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-        primQueueGenName = "CcuAllGatherMesh1D";
+        HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
+        if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ == 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ == 4)) {
+            primQueueGenName = "CcuAllGatherMeshDetour1D";
+        } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ != 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ != 4)) {
+            HCCL_WARNING("[Algo][AllGatherAutoSelector] detourType not match for ranksize.");
+            return SelectorStatus::NOT_MATCH;
+        } else if (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P_AND_4P) {
+            HCCL_WARNING("[Algo][AllGatherAutoSelector] HCCL_DETOUR_ENABLE_2P_AND_4P is not supported yet.");
+            return SelectorStatus::NOT_MATCH;
+        } else {
+            primQueueGenName = "CcuAllGatherMesh1D";
+        }
     } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
         primQueueGenName = "CcuAllGatherMesh2D";
     }
