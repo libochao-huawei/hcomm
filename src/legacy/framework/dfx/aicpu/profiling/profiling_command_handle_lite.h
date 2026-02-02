@@ -12,7 +12,7 @@
 #include "hccl/hccl_types.h"
 
 namespace Hccl {
-#ifdef CCL_KERNEL
+#ifdef CCL_KERNEL_AICPU
 using Prof_Status = uint32_t;
 const Prof_Status PROF_SUCCESS = 0x0;
 const Prof_Status PROF_FAILED = 0xFFFFFFFF;
