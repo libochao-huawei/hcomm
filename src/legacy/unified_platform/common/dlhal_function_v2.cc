@@ -36,14 +36,23 @@ DlHalFunction::~DlHalFunction()
 
 HcclResult DlHalFunction::DlHalFunctionEschedInit()
 {
+	HCCL_INFO("DlHalFunctionEschedInit start");
 	dlHalEschedSubmitEvent = (drvError_t(*)(unsigned int, struct event_summary *))dlsym(handle_,
 		"halEschedSubmitEvent");
 	CHK_SMART_PTR_NULL(dlHalEschedSubmitEvent);
+
+	dlHalDrvQueryProcessHostPid = (drvError_t(*)(int, unsigned int*, unsigned int*, unsigned int*, unsigned int*))dlsym(handle_,
+		"drvQueryProcessHostPid");
+	CHK_SMART_PTR_NULL(dlHalDrvQueryProcessHostPid);
+
+	HCCL_INFO("DlHalFunction::DlHalFunctionEschedInit end");
+
 	return HCCL_SUCCESS;
 }
 
 HcclResult DlHalFunction::DlHalFunctionInit()
 {
+	HCCL_INFO("DlHalFunctionInit start");
 	std::lock_guard<std::mutex> lock(handleMutex_);
 	if (handle_ == nullptr) {
 		handle_ = dlopen("libascend_hal.so", RTLD_NOW);
@@ -54,6 +63,7 @@ HcclResult DlHalFunction::DlHalFunctionInit()
 	}
 
 	CHK_RET(DlHalFunctionEschedInit());
+	HCCL_INFO("DlHalFunction::DlHalFunctionInit end");
 	return HCCL_SUCCESS;
 }
 }

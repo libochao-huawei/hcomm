@@ -423,7 +423,7 @@ void CollServiceAiCpuImpl::AicpuKernelLaunch(HcclKernelLaunchParam &param, Strea
     HCCL_INFO("[CollServiceAiCpuImpl::AicpuKernelLaunch] RegisterGetAicpuTaskExceptionCallBack streamId[%u], devLogicId[%u]", 
               stream.GetId(), comm->GetDeviceLogicId());
     auto getAicpuTaskExceptionCallBack = [this]() {return this->comm->GetAicpuTaskException();};
-    RegisterGetAicpuTaskExceptionCallBack(stream.GetId(), comm->GetDeviceLogicId(), getAicpuTaskExceptionCallBack);
+    Hccl::RegisterGetAicpuTaskExceptionCallBack(stream.GetId(), comm->GetDeviceLogicId(), getAicpuTaskExceptionCallBack);
 
     HCCL_INFO("[CollServiceAiCpuImpl][%s] param.soName: %s, param.kernelName: %s",
               __func__, param.soName, param.kernelName);
