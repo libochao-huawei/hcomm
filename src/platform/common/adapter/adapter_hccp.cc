@@ -502,7 +502,8 @@ HcclResult HrtRaSendWrlistExt(QpHandle handle, struct SendWrlistDataExt wr[], st
 {
     DevType deviceType;
     CHK_RET(hrtGetDeviceType(deviceType));
-    if (deviceType != DevType::DEV_TYPE_910B && deviceType != DevType::DEV_TYPE_910_93) {
+    if ((deviceType != DevType::DEV_TYPE_910B && deviceType != DevType::DEV_TYPE_910_93) ||
+        (DlRaFunction::GetInstance().dlRaSendWrlistExt == nullptr)) { // Peer模式没有RaSendWrlistExt
         vector<SendWrlistData> wqeList(sendNum);
         struct SendWrlistData* data = wqeList.data();
         for (unsigned int i = 0; i < sendNum; i++) {

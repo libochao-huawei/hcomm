@@ -159,6 +159,12 @@ constexpr u32 RDMA_REDUCE_OP_TYPE_TABLE[HCCL_REDUCE_RESERVED] = {
 };
 }
 
+struch TaskParam {
+    s32 streamId;
+    void *transport;
+    MemType notifyType;  
+};
+
 class TransportIbverbs : public TransportNet {
 public:
     explicit TransportIbverbs(DispatcherPub *dispatcher,
@@ -240,6 +246,12 @@ public:
     HcclResult GetTransportId(u32 &id) override;
 
     HcclResult Fence() override;
+
+    HcclResult ExecTask(s32 streamId);
+    HcclResult CreateHostNotifyBuffer(MemType notifyType, u8 *&exchangeDataPtr, u64 &exchangeDataBlankSize);
+    HcclResult WaitHostNotify(MemType notifyType, u32 timeoutS = NPTIFY_DEFAULT_WAIT_TIME);
+    void ReleaseHostRdmaResource();
+
 protected:
     HcclResult GetRemoteAddr(MemType memType, u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
     HcclResult GetIndOpRemoteAddr(u8*& exchangeDataPtr, u64& exchangeDataBlankSize);
@@ -388,6 +400,10 @@ private:
     static bool g_isSupCqeErrInfoListConfig;
     static u32 cqeErrQpn_;
     bool isCapture_{false};
+
+    QpInfo qpInfo_;
+    std:vector<s8 *> hostMemPtr_;
+    std::map<s32, std:queue<Taskparam>> waitTask_;
 };
 }  // namespace hccl
 

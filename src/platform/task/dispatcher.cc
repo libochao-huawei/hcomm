@@ -19,6 +19,7 @@
 #ifndef HCCD
 #include "graph_ctx_mgr_common.h"
 #endif
+#include "adapter_verbs.h"
 
 using namespace hccl;
 
@@ -39,6 +40,8 @@ const std::map<HcclReduceOp, aclrtReduceKind> HCCL_RT_REDUCE_OP_MAP = {
     {HCCL_REDUCE_MAX, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MAX},
     {HCCL_REDUCE_MIN, ACL_RT_MEMCPY_SDMA_AUTOMATIC_MIN},
 };
+
+constexpr u32 HCCL_POLL_CQ_DEPTH = 32;
 }
 
 bool DispatcherPub::isForce_ = false;
@@ -802,13 +805,43 @@ void HostNicTcpCallBackProfiling(RaSocketParams *params, std::chrono::microsecon
     params->callback(params->callBackUserPtr, (void *)&taskPara, sizeof(struct TaskPara));
 }
 
+HcclResult SendWrlistHost(QpHandle handle, struct SendWrlistDataExt wr[], struct SendWrRsp opRsp[],
+    unsigned int sendNum, unsigned int *completeNum, struct ibv_cq *sendCq)
+{
+    std::vector<SendWrlistData> wqeList(sendNum);
+    struct SendWrlistData *data = wqeList.data();
+    for (unsigned int i = 0; i < sendNum; i++) {
+        s32 sret = memcpy_s(&data[i], sizeof(struct SendWrlistData), &wr[i], sizeof(struct SendWrlistData));
+        CHK_PRT_RET(sret != EOK, HCCL_ERROR("[SendWrlistHost]add wqe list fail, memcpy failed . errorno[%d]", sret),
+            HCCL_E_MEMORY);
+    }
+    CHK_RET(HrtRaSendWrlist(handle, data, opRsp, sendNum, completeNum));
+
+    s32 num = 0;
+    stryct ibv_wc wc[HCCL_POLL_CQ_DEPTH];
+    CHK_RET(hrtIbvPollCq(sendCq, HCCL_POLL_CQ_DEPTH, wc, num));
+    for (s32 i = 0; i < num; i++) {
+        CHK_PRT_RET(wc[i].status != 0, HCCL_ERROR("rdma poll sq failed, cqe status[%u] wrId[%llu] opcode[%u]",
+            wc[i].status, wc[i].wr_id, wc[i].opcode), HCCL_E_NETWORK);
+    }
+
+    return HCCL_SUCCESS;
+}
+
 void HostNicCallbackSendWr(void *fnData)
 {
     RaSendWrParams *params = static_cast<RaSendWrParams *>(fnData);
     unsigned int completeNum = 0;
     HcclUs startut = TIME_NOW();
-    HcclResult ret = HrtRaSendWrlistExt(params->qpHandle, &params->wr, &params->opRsp,
-        1, &completeNum);
+    HcclResult ret = HCCL_SUCCESS;
+    
+    if (params->nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        ret = SendWrlistHost(params->qpHandle, &params->wr, &params->opRsp,
+            1, &completeNum, params->sendCq);
+    } else {
+        ret = HrtRaSendWrlistExt(params->qpHandle, &params->wr, &params->opRsp,
+            1, &completeNum);
+    }
     HcclUs endtut = TIME_NOW();
     std::chrono::microseconds duration = DURATION_US(endtut - startut);
     if (ret != HCCL_SUCCESS) {
@@ -950,7 +983,7 @@ void StartHostNicTcpSendThread(void *fnData)
 }
 
 HcclResult DispatcherPub::HostNicRdmaSend(QpHandle qpHandle, SendWrlistDataExt &wr, SendWrRsp &opRsp,
-    hccl::Stream &stream, u32 userRank, u64 offset)
+    hccl::Stream &stream, u32 userRank, u64 offset， const NICDeployment nicDeploy, struct ibv_cq *sendCq)
 {
     uint64_t beginTime = GetMsprofSysCycleTime();
     CHK_PTR_NULL(qpHandle);
@@ -971,7 +1004,7 @@ HcclResult DispatcherPub::HostNicRdmaSend(QpHandle qpHandle, SendWrlistDataExt &
     std::unique_ptr<RaSendWrParams> params = nullptr;
     HcclWorkflowMode workflowMode = GetWorkflowMode();
     params.reset(new (std::nothrow) RaSendWrParams(qpHandle, wr, static_cast<void *>(this),
-        streamID, taskID, notifyID, workflowMode, callback_, callBackUserPtr_));
+        streamID, taskID, notifyID, workflowMode, callback_, callBackUserPtr_, nicDeploy, sendCq));
     CHK_PTR_NULL(params);
 
     std::unique_lock<std::mutex> lock(hostNicMutex_);

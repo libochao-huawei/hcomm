@@ -43,11 +43,14 @@ struct RaSendWrParams {
     HcclWorkflowMode workMode = HcclWorkflowMode::HCCL_WORKFLOW_MODE_RESERVED;
     LoadTaskCallBack callback = nullptr;
     void *callBackUserPtr = nullptr;
+    NICDeployment nicDeploy = NICDeployment::NIC_DEPLOYMENT_RESERVED;
+    struct ibv_cq *sendCq = nullptr;
 
     RaSendWrParams(QpHandle &qpHandle, SendWrlistDataExt &wr, void *dispatcherPtr, u32 &streamId, u32 &taskId,
-        u64 &notifyID, HcclWorkflowMode &workMode, LoadTaskCallBack callback, void *callBackUserPtr)
+        u64 &notifyID, HcclWorkflowMode &workMode, LoadTaskCallBack callback, void *callBackUserPtr,
+        NICDeployment nicDeploy, struct ibv_cq *sendCq)
         : qpHandle(qpHandle), wr(wr), dispatcherPtr(dispatcherPtr), workMode(workMode),
-        callback(callback), callBackUserPtr(callBackUserPtr)
+        callback(callback), callBackUserPtr(callBackUserPtr), nicDeploy(nicDeploy), sendCq(sendCq)
     {
         opRsp = {0};
         taskInfo.streamId = streamId;
@@ -175,7 +178,8 @@ public:
 
     // host网卡模式下的rdma send
     HcclResult HostNicRdmaSend(QpHandle qpHandle, SendWrlistDataExt &wr, SendWrRsp &opRsp,
-        hccl::Stream &stream, u32 userRank = INVALID_VALUE_RANKID, u64 offset = 0xFFFFFFFFFFFFFFFF);
+        hccl::Stream &stream, u32 userRank = INVALID_VALUE_RANKID, u64 offset = 0xFFFFFFFFFFFFFFFF,
+    const NICDeployment nicDeploy = NICDeployment::NIC_DEPLOYMENT_DEVICE, struct ibv_cq *sendCq = nullptr);
     // host网卡模式下的tcp send
     HcclResult HostNicTcpSend(SocketHandle socketFdHandle, const void *socketBufferPtr, u64 socketBufferLen,
         const void *src, u64 len, hccl::Stream &stream, const NICDeployment nicDeploy);

@@ -20,6 +20,7 @@
 #include "hccl_network.h"
 #include "externalinput.h"
 #include "../host/transport_ibverbs.h"
+#include "adapter_verbs.h"
 
 using namespace std;
 constexpr u32 RDMA_QP_EXPECT_STATUS_PAUSE = 5;
@@ -40,6 +41,9 @@ constexpr u32 DEV_PHY_ID_BIT = 32;
 constexpr u32 WQE_RESERVE_LENGTH = 4;
 
 constexpr u32 NOTIFY_VA_ALIGN_EIGHT = 8; // notifyVa地址8byte对齐
+
+constexpr u32 LOOP_SLEEP_TIME_US = 10;
+constexpr u64 DEFAULT_OFFSET = 0xFFFFFFFFFFFFFFFF;
 
 TransportIbverbs::TransportIbverbs(DispatcherPub *dispatcher,
                                    const std::unique_ptr<NotifyPool> &notifyPool,
@@ -79,6 +83,10 @@ HcclResult TransportIbverbs::DeInit()
     (void)DestroySignal();
 
     (void)DestroyQP();
+
+    if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        ReleaseHostRdmaResource();
+    }
 
     return HCCL_SUCCESS;
 }
@@ -312,6 +320,63 @@ HcclResult TransportIbverbs::FillExchangeDataTotalSize()
     return HCCL_SUCCESS;
 }
 
+HcclResult TransportIbverbs::CreateHostNotifyBuffer(MemType memType, u8*& exchangeDataPtr, u64& exchangeDataBlankSize)
+{
+    s8 *ptr = new (std::nothrow) s8[notifySize_];
+    CHK_PTR_NULL(ptr);
+
+    hostMemPtr_.emplace_back(ptr);
+    CHK_SAFETY_FUNC_RET(memset_s(ptr, notifySize_, 0, notifySize_));
+
+    struct MrInfoT mrInfo = {nullptr};
+    mrInfo.addr = ptr;
+    mrInfo.size = notifySize_;
+    mrInfo.access = access_;
+    CHK_RET(HrtRaMrReg(qpInfo_.qpHandle, &mrInfo));
+
+    memMsg_[static_cast<u32>(memType)].mrRegFlag = REG_VALID;
+    memMsg_[static_cast<u32>(memType)].addr = reinterpret_cast<void *>(static_cast<uintptr_t>(ptr));
+    memMsg_[static_cast<u32>(memType)].len = notifySize_;
+    memMsg_[static_cast<u32>(memType)].memType = memType;
+    memMsg_[static_cast<u32>(memType)].lkey = mrInfo.lkey;
+
+    CHK_SAFETY_FUNC_RET(memcpy_s(exchangeDataPtr, exchangeDataBlankSize,
+        reinterpret_cast<void*>(&memMsg_[static_cast<u32>(memType)]), sizeof(MemMsg)));
+
+    exchangeDataPtr += sizeof(MemMsg);
+    exchangeDataBlankSize -= sizeof(MemMsg);
+
+    return HCCL_SUCCESS;
+}
+
+HcclResult TransportIbverbs::WaitHostNotify(MemType memType, u32 timeoutS)
+{
+    auto timeoutSec = std::chrono::seconds(timeoutS);
+    auto startTime = std:chrono::steady_clock::now();
+    u32 *tmp = (u32 *)memMsg_[static_cast<u32>(memType)].addr;
+    while (*tmp == 0) {
+        if ((std:chrono::steady_clock::now() - startTime) >= timeoutSec) {
+            HCCL_ERROR("Wait host notify %d timeout %us", memType, timeoutS);
+            return HCCL_E_TIMEOUT;
+        }
+        std::yhis_thread::sleep_for(std:chrono::microseconds(LOOP_SLEEP_TIME_US));
+    }
+    *tmp = 0;
+
+    return HCCL_SUCCESS;
+}
+
+void TransportIbverbs::ReleaseHostRdmaResource()
+{
+    for (u64 i = 0; i < hostMemPtr_.size(); i++) {
+        if (hostMemPtr_[i] != nullptr) {
+            delete[] hostMemPtr_[i];
+            hostMemPtr_[i] = nullptr;
+        }
+    }
+    hostMemPtr_.clear();
+}
+
 HcclResult TransportIbverbs::ConstructExchangeForSend()
 {
     exchangeDataForSend_.resize(exchangeDataTotalSize_);
@@ -344,7 +409,11 @@ HcclResult TransportIbverbs::ConstructExchangeForSend()
 
     CHK_RET(RegUserMem(MemType::USER_OUTPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
     CHK_RET(RegUserMem(MemType::USER_INPUT_MEM, exchangeDataPtr, exchangeDataBlankSize));
-    if (machinePara_.isAicpuModeEn) {
+    if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        CHK_RET(CreateNotifyBuffer(MemType::DATA_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(CreateNotifyBuffer(MemType::ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+        CHK_RET(CreateNotifyBuffer(MemType::DATA_ACK_NOTIFY_MEM, exchangeDataPtr, exchangeDataBlankSize));
+    } else if (machinePara_.isAicpuModeEn) {
         CHK_RET(CreateNotifyBuffer(dataNotify_, MemType::DATA_NOTIFY_MEM,
             exchangeDataPtr, exchangeDataBlankSize, NotifyLoadType::DEVICE_NOTIFY));
         CHK_RET(CreateNotifyBuffer(ackNotify_, MemType::ACK_NOTIFY_MEM,
@@ -651,12 +720,17 @@ HcclResult TransportIbverbs::CreateSingleQp(s32 qpMode) // 根据socket个数创
     }
     // 原来是 machinePara_.socketFdHandles 换成 machinePara_.sockets
     for (u32 i = 0; i < socketNum; i++) {
-        QpHandle qpHandle = nullptr;
-        u32 udpSport = machinePara_.srcPorts.empty()? 0 : machinePara_.srcPorts[0];
-        CHK_RET(CreateOneQp(qpMode, HCCL_QPS_PER_CONNECTION_DEFAULT, qpHandle, combineAiQpInfo_.aiQpInfo,
-            machinePara_.isAicpuModeEn, udpSport));
         CombineQpHandle tmpCombineQpHandle;
-        tmpCombineQpHandle.qpHandle = qpHandle;
+        if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_DEVICE) {
+            QpHandle qpHandle = nullptr;
+            u32 udpSport = machinePara_.srcPorts.empty() ? 0 : machinePara_.srcPorts[0];
+            CHK_RET(CreateOneQp(qpMode, HCCL_QPS_PER_CONNECTION_DEFAULT, qpHandle, combineAiQpInfo_.aiQpInfo,
+                machinePara_.isAicpuModeEn, udpSport));
+            tmpCombineQpHandle.qpHandle = qpHandle;
+        } else {
+            CHK_RET(CreateQpWithCq(nicRdmaHandle_, -1, -1, nullptr, nullptr, qpInfo_, false, false));
+            tmpCombineQpHandle.qpHandle = qpInfo_.qpHandle;
+        }
         combineQpHandles_.push_back(tmpCombineQpHandle);
     }
     return HCCL_SUCCESS;
@@ -724,6 +798,12 @@ bool TransportIbverbs::UseMultiQp()
 HcclResult TransportIbverbs::CreateQp()
 {
     s32 qpMode = GetQpMode();
+
+    if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        qpInfo_.qpMode = qpMode;
+        qpInfo_.flag = QP_FLAG_RC;
+    }
+
     HCCL_DEBUG("[TransportIbverbs][CreateQp] QpMode[%u]", qpMode);
     CHK_RET(CreateSingleQp(qpMode));
     if (UseMultiQp()) {
@@ -1455,13 +1535,13 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(std::vector<WqeInfo> &wqeInfoV
         fence_ = false;
 
         if (wqeInfoVec[i].wqeType == static_cast<u64>(WqeType::WQE_TYPE_DATA)) {
-                ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                    opRsp, stream, machinePara_.remoteWorldRank);
-            } else {
-                ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                    opRsp, stream, machinePara_.remoteWorldRank,
-                    wqeInfoVec[i].wqeDataOffset);
-            }
+            ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
+                opRsp, stream, machinePara_.remoteWorldRank, DEFAULT_OFFSET, machinePara_.nicDeploy, qpInfo.sendCq);
+        } else {
+            ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
+                opRsp, stream, machinePara_.remoteWorldRank,
+                wqeInfoVec[i].wqeDataOffset, machinePara_.nicDeploy, qpInfo.sendCq);
+        }
         CHK_PRT_RET(ret != HCCL_SUCCESS,
             HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline " \
             "mode, rdma send failed. sq_index[%u] wqe_index[%u], offset[%llu]", HCCL_ERROR_CODE(ret),
@@ -1533,12 +1613,12 @@ HcclResult TransportIbverbs::RdmaSendAsyncHostNIC(struct SendWrlistDataExt &wr, 
     HcclResult ret;
     struct SendWrRsp opRsp = {0};
     if (wqeType == WqeType::WQE_TYPE_DATA) {
-            ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                opRsp, stream, machinePara_.remoteWorldRank);
-        } else {
-            ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
-                opRsp, stream, machinePara_.remoteWorldRank,
-                notifyOffset);
+        ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
+            opRsp, stream, machinePara_.remoteWorldRank, DEFAULT_OFFSET, machinePara_.nicDeploy, qpInfo_.sendCq);
+    } else {
+        ret = dispatcher_->HostNicRdmaSend(combineQpHandles_[0].qpHandle, wr,
+            opRsp, stream, machinePara_.remoteWorldRank,
+            notifyOffset, machinePara_.nicDeploy, qpInfo_.sendCq);
     }
     CHK_PRT_RET(ret != HCCL_SUCCESS,
         HCCL_ERROR("[TransportIbverbs][RdmaSendAsyncHostNIC]errNo[0x%016llx] In lbv exp offline mode, "\
@@ -1668,6 +1748,21 @@ HcclResult TransportIbverbs::TxSendNotifyWqe(MemMsg& memMsg, const void *srcMemP
     return HCCL_SUCCESS;
 }
 
+static void HostNicProcCallback(void *fnData)
+{
+    TaskParam *param = static_cast<TaskParam *>(funData);
+    TransportIbverbs *transport = static_cast<TransportIbverbs *>(param->transport);
+    transport->ExecTask(param->streamId);
+}
+
+HcclResult TransportIbverbs::ExecTask(s32 streamId)
+{
+    auto param = waitTask_[streamId].front();
+    waitTask_[streamId].pop();
+    WaitHostNotify(param.notify);
+    return HCCL_SUCCESS;
+}
+
 HcclResult TransportIbverbs::RxAsync(UserMemType srcMemType, u64 srcOffset, void *dst, u64 len, Stream &stream)
 {
     u32 actualMultiQpNum = 1;
@@ -1679,6 +1774,18 @@ HcclResult TransportIbverbs::RxAsync(UserMemType srcMemType, u64 srcOffset, void
         u32 remainder =  len % (GetExternalInputMultiQpThreshold() * KByteToByte);
         actualMultiQpNum = quotient + (remainder != 0 ? 1 : 0);
     }
+
+    if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        s32 streamId = 0;
+        CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
+        TaskParam taskParam;
+        taskParam.streamId = streamId;
+        taskParam.transport = this;
+        taskParam = notifyType = MemType::DATA_NOTIFY_MEM;
+        waitTask_[streamId].push[TaskParam];
+        CHK_RET(hrtCallbackLaunch(HosNicProcCallback, &waitTask_[streamId].back(), stream.ptr(), true));
+    }
+
     // 等待TS把任务处理完成
     HCCL_DEBUG("[TransportIbverbs][RxAsync] UseMultiQp[%d] actualMultiQpNum[%u], RX dst[%p] len[%llu] srcOffset[%llu]", UseMultiQp(), actualMultiQpNum, dst, len, srcOffset);
     if (UseMultiQp() && actualMultiQpNum != 1 && actualMultiQpNum <= qpsPerConnection_ && len != 0) {
@@ -1726,9 +1833,23 @@ HcclResult TransportIbverbs::TxWaitDone(Stream &stream)
 /* 发送ack消息(同步模式) */
 HcclResult TransportIbverbs::TxAck(Stream &stream)
 {
+    if (machinePara_.nicDeploy == NICDeployment::NIC_DEPLOYMENT_HOST) {
+        s32 streamId = 0;
+        CHK_RET(hrtGetStreamId(stream.ptr(), streamId));
+        TaskParam taskParam;
+        taskParam.streamId = streamId;
+        taskParam.transport = this;
+        taskParam = notifyType = MemType::ACK_NOTIFY_MEM;
+        waitTask_[streamId].push[TaskParam];
+        CHK_RET(hrtCallbackLaunch(HosNicProcCallback, &waitTask_[streamId].back(), stream.ptr(), true));
+
+        return HCCL_SUCCESS;
+    }
+
     CHK_RET(TxSendWqe(remoteMemMsg_[static_cast<u32>(MemType::ACK_NOTIFY_MEM)].addr,
         notifyValueMem_[machinePara_.deviceLogicId].ptr(), notifySize_,
         stream, WqeType::WQE_TYPE_ACK_NOTIFY));
+
     return HCCL_SUCCESS;
 }
 
