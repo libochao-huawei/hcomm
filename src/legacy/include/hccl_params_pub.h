@@ -101,6 +101,8 @@ public:
         count(), root(), staticAddr(), staticShape(), outputDataType(), debugCase() {
     // 显式初始化 union 的默认成员
         dataDes = {0, DataType::INVALID, 0}; // 假设 dataDes 是默认使用的成员
+        all2AllDataDes = {DataType::INT8, DataType::INT8, 0, 0};  // mc2在aicpu场景下展开时，这些值有可能不赋值，设置默认值使得其能够过算法校验
+        all2AllVDataDes = {DataType::INT8, DataType::INT8, nullptr, nullptr, nullptr, nullptr};  // mc2在aicpu场景下展开时，这些值有可能不赋值，设置默认值使得其能够过算法校验
     }
 
     std::string Describe() const;
