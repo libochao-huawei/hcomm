@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * Description: allgather自适应算法选择实现
- * Author: libiaozhi
+ * Author: libiaozhi hxdw
  * Create: 2025-03-22
  */
 #include "all_gather_auto_selector.h"
