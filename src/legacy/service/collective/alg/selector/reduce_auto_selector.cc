@@ -11,6 +11,8 @@
 
 namespace Hccl {
 
+constexpr u64 REDUCE_AICPU_1D_MAX_DATA_SIZE = 32 * 1024 * 1024;
+
 SelectorStatus ReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap,
@@ -150,6 +152,8 @@ SelectorStatus ReduceAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo,
         if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
             if (op.dataType == DataType::INT64 || op.dataType == DataType::UINT64 || op.dataType == DataType::FP64) {
                 primQueueGenName = "InsReduceAicpuReduce";
+            } else if (dataSize_ > REDUCE_AICPU_1D_MAX_DATA_SIZE) {
+                primQueueGenName = "InsReduceMesh1DTwoShot";
             } else {
                 primQueueGenName = "InsReduceMesh1D";
             }
