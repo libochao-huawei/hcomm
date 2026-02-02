@@ -17,11 +17,11 @@ void *gNetcoApiHandle = NULL;
 #ifndef CA_CONFIG_LLT
 struct RsNetcoOps gNetcoOps;
 #else
-struct rs_netco_ops g_netco_ops = {
-    .rs_netco_init = Net_CoInitFactory,
-    .rs_netco_deinit = NET_CoDestruct,
-    .rs_netco_event_dispatch = NET_CoFdEventDispatch,
-    .rs_netco_tbl_add_upd = NET_CoTblAddUpd,
+struct RsNetcoOps gNetcoOps = {
+    .rsNetcoInit = Net_CoInitFactory,
+    .rsNetcoDeinit = NET_CoDestruct,
+    .rsNetcoEventDispatch = NET_CoFdEventDispatch,
+    .rsNetcoTblAddUpd = NET_CoTblAddUpd,
 };
 #endif
 
