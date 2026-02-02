@@ -1,0 +1,35 @@
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
+ */
+
+#ifndef DRV_LOG_LLT_H
+#define DRV_LOG_LLT_H
+void drv_err(char *s, char *fmt, ...);
+void drv_warn(char *s, char *fmt, ...);
+void drv_info(char *s, char *fmt, ...);
+void drv_debug(char *s, char *fmt, ...);
+
+#define TSDRV_SHARE_LOG_START (0xE0000000000ULL)
+#define DEVMM_SHARE_LOG_START (0xE0000020000ULL)
+#define DEVMNG_SHARE_LOG_START (0xE0000040000ULL)
+#define DP_PROC_MNG_SHARE_LOG_START (0xE0000060000ULL)
+#define ESCHED_SHARE_LOG_START (0xE0000080000ULL)
+#define XSMEM_SHARE_LOG_START   (0xE00000A0000ULL)
+#define QUEUE_SHARE_LOG_START   (0xE00000C0000ULL)
+#define COMMON_SHARE_LOG_START   (0xE00000E0000ULL)
+
+#define TSDRV_SHARE_LOG_RUNINFO_START (0xE0000001000ULL)
+#define DEVMM_SHARE_LOG_RUNINFO_START (0xE0000021000ULL)
+#define DEVMNG_SHARE_LOG_RUNINFO_START (0xE0000041000ULL)
+#define DP_PROC_MNG_SHARE_LOG_RUNINFO_START (0xE0000061000ULL)
+#define ESCHED_SHARE_LOG_RUNINFO_START (0xE0000081000ULL)
+#define XSMEM_SHARE_LOG_RUNINFO_START   (0xE00000A1000ULL)
+#define QUEUE_SHARE_LOG_RUNINFO_START   (0xE00000C1000ULL)
+#define COMMON_SHARE_LOG_RUNINFO_START   (0xE00000E1000ULL)
+#endif
