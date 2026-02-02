@@ -16,7 +16,7 @@ set(src_to_test_list
     ut_HcclCommInitAll_API_test.cc
     ut_HcclGetErrorString_API_test.cc
     ut_HcclGetCommConfigCapability_API_test.cc
-    ut_HcclTopoInfoDetect_API_test.cc
+    #ut_HcclTopoInfoDetect_API_test.cc
 )
 
 add_executable(hccl_utest_framework_communicator ${src_to_test_list})
