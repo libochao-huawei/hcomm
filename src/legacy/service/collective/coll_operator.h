@@ -69,6 +69,7 @@ using BaseCollOperator = struct BaseCollOperatorDef {
     BaseCollOperatorDef() : opMode(), opType(), reduceOp(), dataType(), dataCount(0), root(0), sendRecvRemoteRank() {
     // 显式初始化 union 的默认成员
         dataDes = {0, DataType::INVALID, 0}; // 假设 dataDes 是默认使用的成员
+        all2AllDataDes = {DataType::INVALID, DataType::INVALID, 0, 0};
     }
     Buffer *GetBuffer(const BufferType type)
     {

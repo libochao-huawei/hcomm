@@ -101,6 +101,7 @@ public:
         count(), root(), staticAddr(), staticShape(), outputDataType(), debugCase() {
     // 显式初始化 union 的默认成员
         dataDes = {0, DataType::INVALID, 0}; // 假设 dataDes 是默认使用的成员
+        all2AllDataDes = {DataType::INVALID, DataType::INVALID, 0, 0};
     }
 
     std::string Describe() const;
