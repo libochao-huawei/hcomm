@@ -16,6 +16,7 @@
 #include "sqe_v82.h"
 #include "task_param.h"
 
+#include "task_struct.h"
 #include "orion_adapter_hal.h"
 
 namespace Hccl {

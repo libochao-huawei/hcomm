@@ -359,8 +359,8 @@ void CollServiceAiCpuImpl::SetDeviceEnvConfigParam(HcclKernelLaunchParam &param)
 void CollServiceAiCpuImpl::AicpuKernelEntranceLaunch(Stream &stream, const CollOperator &op, const string &algName,
                                              bool needUpdateRes, const DevBuffer *mem)
 {
-    param.kernel.op.userStreamId = stream.GetId();
     HcclKernelLaunchParam param;
+    param.kernel.op.userStreamId = stream.GetId();
 
     s32 ret = strcpy_s(param.kernel.algName, sizeof(param.kernel.algName), algName.data());
     if (ret != EOK) {

@@ -16,7 +16,6 @@
 #include "task_exception_func.h"
 #include "dlhal_function_v2.h"
 #include "communicator_impl_lite.h"
-#include "task_struct.h"
 
 namespace Hccl {
 class TaskExceptionHandlerLite {

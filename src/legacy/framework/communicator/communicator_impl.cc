@@ -3646,6 +3646,7 @@ ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
     } else {
         HCCL_ERROR("GetAicpuTaskException kfcStatusTransferD2H is nullptr");
     }
+    HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
     return errorMessage;
 }
 
