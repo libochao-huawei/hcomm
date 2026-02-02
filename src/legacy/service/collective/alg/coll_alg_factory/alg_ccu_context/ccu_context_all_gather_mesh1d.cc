@@ -37,7 +37,7 @@ void CcuContextAllGatherMesh1D::Algorithm()
 {
     HCCL_INFO("[CcuContextAllGatherMesh1D] AllgatherMesh1D run.");
     uint16_t selfBit = 1 << rankId_;
-    uint16_t allBit  = ((1 << rankSize_) - 1) & (~(1 << rankId_));
+    uint16_t allBit  = ((1 << rankSize_) - 1) & (~(1 << rankId_)); // 同步用
 
     input_.push_back(CreateVariable());
     uint16_t transportIdx = 0;
