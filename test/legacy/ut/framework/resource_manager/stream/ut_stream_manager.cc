@@ -170,6 +170,7 @@ TEST_F(StreamManagerTest, offload_register_two_diff_slave_stream_and_get)
     std::vector<void *> slaveStreams = {(void*)1234, (void*)5678}; 
     // when
     streamManager->offload->RegisterSlaves(opTag, slaveStreams);
+    streamManager->offload->currOpTag = opTag;
 
     auto res1 = streamManager->offload->GetSlave(opTag);
     auto res2 = streamManager->offload->GetSlave(opTag);

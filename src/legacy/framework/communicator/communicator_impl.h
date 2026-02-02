@@ -47,6 +47,7 @@
 #include "ccu_driver_handle.h"
 #include "hccl_common_v2.h"
 #include "hccl_rank_graph.h"
+#include "error_message_v2.h"
 
 namespace Hccl {
 
@@ -365,6 +366,7 @@ public:
     HcclResult GetAicpuOpStreamNotify(rtStream_t *opStream, u8 aicpuNotifyNum, void** aicpuNotify) const;
     std::string GetTopoFilePath();
     std::vector<LinkData> GetFullMeshLinks() const;
+    ErrorMessageReport GetAicpuTaskException();
 private:
     std::string                                id;
     static std::atomic<u32>                    globalIndex; // 全局通信域唯一一个index, 对应锁保护

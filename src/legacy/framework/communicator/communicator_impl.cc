@@ -3631,4 +3631,23 @@ std::vector<LinkData> CommunicatorImpl::GetFullMeshLinks() const
     return links;
 }
 
+ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
+{
+    HcclResult ret = HCCL_SUCCESS;
+    ErrorMessageReport errorMessage;
+    if (kfcStatusTransferD2H != nullptr)
+    {
+        ret = kfcStatusTransferD2H->Get(sizeof(KfcStatus) + sizeof(KfcErrType),
+            sizeof(errorMessage), reinterpret_cast<uint8_t *>(&errorMessage));
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("GetAicpuTaskException get aicpu task exception failed.ret[%u]", ret);
+        }
+    } else {
+        HCCL_ERROR("GetAicpuTaskException kfcStatusTransferD2H is nullptr");
+    }
+    HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
+    return errorMessage;
+}
+
 } // namespace Hccl
