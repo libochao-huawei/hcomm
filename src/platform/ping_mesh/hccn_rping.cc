@@ -36,7 +36,7 @@ constexpr u32 RPING_RESULT_STATE_VALID = 2;
 constexpr u32 TARGET_NUM_MAX = 16;
 
 
-inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *initAttrInter,
+inline HcclResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *initAttrInter,
         u32 &npuNumInter, u32 &bufferSizeInter,std::string &ipAddrDesInter)
 {
     // npuNum必须为2的整次幂
@@ -54,12 +54,12 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
 
     // 初始化pingmesh实例,利用用户输入的ip地址构造HcclIpAddress类
     HcclIpAddress ipAddr;
-    HccnResult ret = HCCL_SUCCESS;
+    HcclResult ret = HCCL_SUCCESS;
     if (initAttrInter->mode == HCCN_RPING_MODE_ROCE) {
         ipAddr = HcclIpAddress(std::string(initAttrInter->ipAddr));
         ret = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_ROCE, ipAddr, initAttrInter->port,
             npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
-        if (ret != HCCL_SUCCESS) {
+        if (ret != HCCN_SUCCESS) {
             return HCCL_E_INTERNAL;
         }
         ipAddrDesInter = ipAddr.GetReadableIP();
