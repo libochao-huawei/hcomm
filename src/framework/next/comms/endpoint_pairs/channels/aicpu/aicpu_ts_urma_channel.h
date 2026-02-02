@@ -28,7 +28,7 @@ public:
 
     HcclResult Init() override;
     HcclResult GetNotifyNum(uint32_t *notifyNum) const override;
-    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) const override;
+    HcclResult GetRemoteMem(HcclMem **remoteMem, uint32_t *memNum, char **memTags) override;
     ChannelStatus GetStatus() override;
 
     HcclResult H2DResPack(std::vector<char>& buffer);
