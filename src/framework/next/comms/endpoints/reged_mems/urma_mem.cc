@@ -50,8 +50,14 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     }
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
-    EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
-        return HCCL_E_PTR);
+    if(strcmp(memTag, "HcclBuffer") == 0) {
+        EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
+            return HCCL_E_PTR);
+    }
+    else {
+        EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+            return HCCL_E_PTR);
+    }
     
     // 注册到LocalUbRmaBuffer计数器
     auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
