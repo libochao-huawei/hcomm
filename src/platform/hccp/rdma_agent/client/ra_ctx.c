@@ -202,20 +202,16 @@ HCCP_ATTRI_VISI_DEF int ra_ctx_get_async_events(void *ctx_handle, struct async_e
     CHK_PRT_RETURN(ctx_handle == NULL || events == NULL || num == NULL,
         hccp_err("[get][async_events]ctx_handle or events or num is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
 
-    if (*num == 0 || *num > ASYNC_EVENT_MAX_NUM) {
-        hccp_err("[get][async_events]num:%u must greater than 0 and less or equal to %d", *num, ASYNC_EVENT_MAX_NUM);
-        return ConverReturnCode(RDMA_OP, -EINVAL);
-    }
+    CHK_PRT_RETURN(*num == 0 || *num > ASYNC_EVENT_MAX_NUM, hccp_err("[get][async_events]num:%u must greater than 0"
+        " and less or equal to %d", *num, ASYNC_EVENT_MAX_NUM), ConverReturnCode(RDMA_OP, -EINVAL));
 
     ctx_handle_tmp = (struct ra_ctx_handle *)ctx_handle;
     CHK_PRT_RETURN(ctx_handle_tmp->ctx_ops == NULL || ctx_handle_tmp->ctx_ops->ra_ctx_get_async_events == NULL,
         hccp_err("[get][async_events]ctx_ops or ra_ctx_get_async_events is NULL"), ConverReturnCode(RDMA_OP, -EINVAL));
 
-    hccp_run_info("[get][async_events]phy_id(%u), dev_index(0x%x)", ctx_handle_tmp->attr.phy_id,
-        ctx_handle_tmp->dev_index);
     ret = ctx_handle_tmp->ctx_ops->ra_ctx_get_async_events(ctx_handle_tmp, events, num);
-    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]ra_ctx_get_async_events failed, ret(%d) phy_id(%u) dev_index"
-        "(0x%x)", ret, ctx_handle_tmp->attr.phy_id, ctx_handle_tmp->dev_index), ConverReturnCode(RDMA_OP, ret));
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]get async events failed, ret:%d phy_id:%u dev_index:0x%x",
+        ret, ctx_handle_tmp->attr.phy_id, ctx_handle_tmp->dev_index), ConverReturnCode(RDMA_OP, ret));
 
     return ConverReturnCode(RDMA_OP, ret);
 }
@@ -272,7 +268,7 @@ HCCP_ATTRI_VISI_DEF int ra_get_eid_by_ip(void *ctx_handle, struct IpInfo ip[], u
     return ret;
 }
 
-int ra_ctx_token_id_alloc(void *ctx_handle, struct hccp_token_id *info, void **token_id_handle)
+HCCP_ATTRI_VISI_DEF int ra_ctx_token_id_alloc(void *ctx_handle, struct hccp_token_id *info, void **token_id_handle)
 {
     struct ra_token_id_handle *token_id_handle_tmp = NULL;
     struct ra_ctx_handle *ctx_handle_tmp = NULL;
@@ -307,7 +303,7 @@ err:
     return ConverReturnCode(RDMA_OP, ret);
 }
 
-int ra_ctx_token_id_free(void *ctx_handle, void *token_id_handle)
+HCCP_ATTRI_VISI_DEF int ra_ctx_token_id_free(void *ctx_handle, void *token_id_handle)
 {
     struct ra_token_id_handle *token_id_handle_tmp = NULL;
     struct ra_ctx_handle *ctx_handle_tmp = NULL;
