@@ -370,7 +370,6 @@ static EndpointLocType AddrPositionToEndpointLoc(AddrPosition pos) {
     }
 }
 
-
 HcclResult RankGraph::GetEndpointDesc(uint32_t layer, uint32_t topoInstId, uint32_t* descNum,
                                       EndpointDesc* endpointDesc)
 {
