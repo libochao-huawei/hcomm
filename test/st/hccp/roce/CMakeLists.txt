@@ -1,0 +1,7 @@
+add_subdirectory(hccp_service)
+add_subdirectory(rdma_agent)
+add_subdirectory(rdma_service)
+add_subdirectory(rdma_service_v2)
+add_subdirectory(rdma_service_stub)
+add_subdirectory(roce_kernel)
+add_subdirectory(roce_user)
