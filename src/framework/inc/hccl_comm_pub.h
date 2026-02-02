@@ -334,6 +334,7 @@ public:
     HcclResult GetCommParams(HcclCommParams &params);       // 逆向解析获取HcclCommParams参数
     HcclResult GetCommRankTable(RankTable_t &rankTable);    // 逆向解析获取RankTable_t参数
     HcclResult SetQpQosAttr(u32 trafficClass, u32 serviceLevel); // 设置TC/SL配置
+    HcclResult SetHcclQos(u32 hcclQos);
 
     std::shared_ptr<struct hcclKernelPlanner> planner {nullptr}; //for group
     void* barrierSendBuf;

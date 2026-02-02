@@ -29,12 +29,15 @@ constexpr uint32_t HCCL_PER_LAUNCH_SQE_CNT = 128U; // 每编排N个SQE，做一�
 #ifdef __cplusplus
 extern "C" {
 #endif  // __cplusplus
-HcclResult HcclDispatcherAicpuInit(HcclDispatcher *dispatcher, const u32 devPhyId, DispatcherType type)
+HcclResult HcclDispatcherAicpuInit(HcclDispatcher *dispatcher, const u32 devPhyId, uint32_t hcclQos, DispatcherType type)
 {
     CHK_PTR_NULL(dispatcher);
     DispatcherPub *pDispatcher = nullptr;
     if (type == DispatcherType::DISPATCHER_AICPU) {
         pDispatcher = new (std::nothrow) DispatcherAiCpu(devPhyId);
+        pDispatcher->SetHcclQos(hcclQos);
+ 	  	pDispatcher->SetMpamid(0);
+ 	    HCCL_INFO("HcclDispatcherAicpuInit hcclQos = %u", pDispatcher->GetHcclQos());
     } else {
         HCCL_ERROR("[HcclCommAicpu][HcclDispatcherInit] Not support the dispatcher type[%d]", type);
         return HCCL_E_NOT_SUPPORT;
@@ -206,11 +209,11 @@ HcclResult DispatcherAiCpu::SignalRecord(hccl::DeviceMem &dst, hccl::DeviceMem &
     dfxInfo->remoteRank = remoteUserRank;
     dfxInfo->notifyId = notifyId;
     addOneMemcpySqe_(streamInfo.actualStreamId, taskId, src.ptr(), src.size() , ACL_FLOAT, rtReduceOp,
-        dst.ptr(), 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr);
+        dst.ptr(), 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr, SDMA_QOS_DEFAULT);
 
     PLF_CONFIG_INFO(PLF_TASK,
-        "%s para: linkType[%u] srcPtr[%p] srcSize[%llu] dstPtr[%p] taskId[%u] streamId[%u] remoteRank[%u] notifyId[%u]",
-        __func__, linkType, src.ptr(), src.size(), dst.ptr(), taskId, streamInfo.actualStreamId, remoteUserRank, notifyId);
+        "%s para: linkType[%u] srcPtr[%p] srcSize[%llu] dstPtr[%p] taskId[%u] streamId[%u] remoteRank[%u] notifyId[%u] hcclQos[%u]",
+        __func__, linkType, src.ptr(), src.size(), dst.ptr(), taskId, streamInfo.actualStreamId, remoteUserRank, notifyId, SDMA_QOS_DEFAULT);
     return HCCL_SUCCESS;
 }
 
@@ -314,11 +317,11 @@ HcclResult DispatcherAiCpu::MemcpyAsync(hccl::DeviceMem &dst, const hccl::Device
         dfxInfo->remoteRank = remoteUserRank;
         dfxInfo->notifyId = INVALID_VALUE_RANKID;
         addOneMemcpySqe_(streamInfo.actualStreamId, taskId, srcSplit, countSplit , ACL_FLOAT, rtReduceOp,
-            dstSplit, 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr);
+            dstSplit, 0, aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr, hcclQos_);
 
         PLF_CONFIG_INFO(PLF_TASK,
-            "%s para: linkType[%u] srcSplit[%p] dstSplit[%p] countSplit[%llu] taskId[%u] streamId[%u] remoteRank[%u]",
-            __func__, linkType, srcSplit, dstSplit, countSplit , taskId, streamInfo.actualStreamId, remoteUserRank);
+            "%s para: linkType[%u] srcSplit[%p] dstSplit[%p] countSplit[%llu] taskId[%u] streamId[%u] remoteRank[%u] hcclQos[%u]",
+            __func__, linkType, srcSplit, dstSplit, countSplit , taskId, streamInfo.actualStreamId, remoteUserRank, hcclQos_);
     }
     return HCCL_SUCCESS;
 }
@@ -804,12 +807,12 @@ HcclResult DispatcherAiCpu::InlineReduceAsync(const void *src, u64 dataCount, co
         dfxInfo->remoteRank = remoteUserRank;
         dfxInfo->notifyId = INVALID_VALUE_RANKID;
         addOneMemcpySqe_(streamInfo.actualStreamId, taskId, srcSplit, countSplit, runtimeDataType, rtReduceOp, dstSplit, 0,
-            aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr);
+            aicpuInfo_.ssid, aicpuInfo_.devId, aicpuInfo_.overflowAddr, linkType, sqeBuffer, sqeTypeAddr, hcclQos_);
 
         PLF_CONFIG_INFO(PLF_TASK,
             "%s para: linkType[%u] srcSplit[%p] dstSplit[%p] countSplit[%llu] taskId[%u] streamId[%u] remoteRank[%u] "\
-            "rtDatatType[%d] rtReduceOp[%d]", __func__, linkType, srcSplit, dstSplit, countSplit, taskId,
-            streamInfo.actualStreamId, remoteUserRank, runtimeDataType, rtReduceOp);
+            "rtDatatType[%d] rtReduceOp[%d] hcclQos[%u]", __func__, linkType, srcSplit, dstSplit, countSplit, taskId,
+            streamInfo.actualStreamId, remoteUserRank, runtimeDataType, rtReduceOp, hcclQos_);
     }
 
     return HCCL_SUCCESS;

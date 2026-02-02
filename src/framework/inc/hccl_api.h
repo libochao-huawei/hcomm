@@ -88,6 +88,7 @@ typedef struct {
     int32_t commEngine;             ///< 通信引擎（0: HOST CPU；1: HOST CPU TS；...)（参考CommEngine，从hcclOpExpansionMode变更）
     uint32_t threadNum;             ///< thread数量（新增）
     uint32_t notifyNumPerThread;    ///< 每个thread的notify数量（新增）
+    uint32_t hcclQos;
 } HcclCommConfigV2;
 
 /**
