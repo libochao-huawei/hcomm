@@ -143,7 +143,6 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
             DataSlice rsrc(tempAlgParams.buffInfo.inBuffType, mySliceOffset + inOff, mySliceSize);
             DataSlice rdest(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(rankId) * mySliceSize + scOff, mySliceSize);
 
-            // [修改] 使用优化后的 GetRankFromMap
             const auto &link = tempLinks.at(GetRankFromMap(rankId))[0];
             TxRxLinks links(link, link);
             SlicesList sendSList({ssrc}, {sdest});
