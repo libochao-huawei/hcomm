@@ -699,7 +699,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
             std::string tag = std::string(errorMessage.tag);
             TaskParam taskParam{};
             taskParam.taskType = errorMessage.taskType;
-            std::shared_ptr<DfxOpInfo> dfxOpInfo;
+            std::shared_ptr<DfxOpInfo> dfxOpInfo = std::make_shared<DfxOpInfo>();
             dfxOpInfo->tag_ = tag;
             TaskInfo exceptionTaskInfo(streamId, errorMessage.taskId, errorMessage.remoteUserRank, taskParam, dfxOpInfo);
             auto logKeywordL2 = exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
