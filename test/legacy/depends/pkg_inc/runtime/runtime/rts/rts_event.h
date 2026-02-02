@@ -367,17 +367,6 @@ RTS_API rtError_t rtCntNotifyReset(rtCntNotify_t const inCntNotify, rtStream_t c
  * @ingroup rt_stars
  * @brief destroy count notify object
  * @param [in] inCntNotify count notify object
- * @param [in] len addr len
- * @param [in] stm stream
- * @param [in] isAsync async or sync
- * @return RT_ERROR_NONE for ok, others failed
- */
-RTS_API rtError_t rtCntNotifyDestroy(rtCntNotify_t const inCntNotify);
-
-/**
- * @ingroup rt_stars
- * @brief destroy count notify object
- * @param [in] inCntNotify count notify object
  * @param [out] cntNotifyAddress count notify address
  * @return RT_ERROR_NONE for ok, others failed
  */
@@ -392,14 +381,6 @@ RTS_API rtError_t rtGetCntNotifyAddress(rtCntNotify_t const inCntNotify, uint64_
  * @return RT_ERROR_NONE for ok, others failed
  */
 RTS_API rtError_t rtGetCntNotifyId(rtCntNotify_t inCntNotify, uint32_t * const notifyId);
-
-/**
- * @ingroup rt_stars
- * @brief create count notify
- * @param [out] retCntNotify: count notify object
- * @return RT_ERROR_NONE for ok, others failed
- */
-RTS_API rtError_t rtCntNotifyCreateServer(rtCntNotify_t * const cntNotify, uint64_t flags);
 
 typedef enum {
     RT_CNT_NOTIFY_RECORD_SET_VALUE_MODE = 0x0U,

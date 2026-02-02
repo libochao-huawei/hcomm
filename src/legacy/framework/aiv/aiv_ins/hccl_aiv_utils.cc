@@ -17,6 +17,7 @@
 #include "acl/acl_rt.h"
 #include "env_config.h"
 #include "hccl_aiv_utils.h"
+#include "hccl_common.h"
  
 using namespace std;
  
@@ -283,46 +284,44 @@ HcclResult RegisterBinaryKernel(const char* funcName, const aclrtBinHandle binHa
 
 HcclResult RegisterKernel()
 {
-    lock_guard<mutex> guard(g_mut);
-    if (g_init) {
-        return HCCL_SUCCESS;
-    }
- 
-    HcclResult ret;
-    string binFilePath;
-    ret = GetAivOpBinaryPath(binFilePath);
-    HCCL_INFO("[RegisterKernel] binFilePath: %s", binFilePath.c_str());
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] get aiv op binary path failed"), HCCL_E_RUNTIME);
+	lock_guard<mutex> guard(g_mut);
+	if (g_init) {
+		return HCCL_SUCCESS;
+	}
 
-    ret = LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] read aiv kernel bin file failed"),
-        HCCL_E_RUNTIME);
- 
-    for (auto &aivKernelInfo: g_aivKernelInfoList) {
-        ret = RegisterBinaryKernel(aivKernelInfo.kernelName, g_binHandle,
-            GetStubFunc(aivKernelInfo.cmdType, aivKernelInfo.dataType, aivKernelInfo.argsType));
+	HcclResult ret;
+	string binFilePath;
+	ret = GetAivOpBinaryPath(binFilePath);
+	CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] get aiv op binary path failed"), HCCL_E_RUNTIME);
 
-        CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] register binary kernel for kernelName[%s] "
-            "cmdType[%d] dataType[%d] argsType[%d] failed", aivKernelInfo.kernelName, aivKernelInfo.cmdType,
-            aivKernelInfo.dataType, aivKernelInfo.argsType), HCCL_E_RUNTIME);
-    }
- 
-    g_init = true;
- 
-    return HCCL_SUCCESS;
+	ret = LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
+	CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] read aiv kernel bin file failed"),
+		HCCL_E_RUNTIME);
+
+	for (auto &aivKernelInfo: g_aivKernelInfoList) {
+            ret = RegisterBinaryKernel(aivKernelInfo.kernelName, g_binHandle,
+                    GetStubFunc(aivKernelInfo.cmdType, aivKernelInfo.dataType, aivKernelInfo.argsType));
+            CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] register binary kernel for kernelName[%s]"
+                    "cmdType[%d] dataType[%s] argsType[%d] failed", aivKernelInfo.kernelName, aivKernelInfo.cmdType,
+                GetDataTypeEnumStr(aivKernelInfo.dataType).c_str(), aivKernelInfo.argsType), HCCL_E_RUNTIME);
+	}
+
+	g_init = true;
+
+	return HCCL_SUCCESS;
 }
 
 HcclResult UnRegisterAivKernel()
 {
-    lock_guard<mutex> guard(g_mut);
-    if (g_init) {
-        aclError aclRet = aclrtBinaryUnLoad(g_binHandle);
-        CHK_PRT_RET(aclRet != ACL_SUCCESS,
-            HCCL_ERROR("[UnRegisterAivKernel] aclrtBinaryUnLoad failed, ret[%d]", aclRet), HCCL_E_RUNTIME);
-        g_aivFuncMap.clear();
-        g_init = false;
-    }
-    return HCCL_SUCCESS;
+	lock_guard<mutex> guard(g_mut);
+	if (g_init) {
+		aclrtBinaryUnLoad(g_binHandle);
+		g_aivFuncMap.clear();
+
+		g_init = false;
+	}
+
+	return HCCL_SUCCESS;
 }
 
 HcclResult GetMinAndMaxNpuSchedTimeOut(u64 &minNpuSchedTimeout, u64 &maxNpuSchedTimeout)

@@ -167,24 +167,6 @@ typedef struct tagRtSmCtrl {
 } rtSmDesc_t;
 
 /**
- * @ingroup rtAicpuKernelLaunchExWithArgs
- * @brief launch cpu kernel to device with dump identifier and kernelType
- * @param [in] kernelType    aicpu kernel type
- * @param [in] opName        address of op name
- * @param [in] numBlocks      block dimensions
- * @param [in] argsInfo      argments address for kernel function
- * @param [in] smDesc        shared memory description
- * @param [in] stm           associated stream
- * @param [in] flags         dump flag or others function flag
- * @return RT_ERROR_NONE for ok
- * @return RT_ERROR_INVALID_VALUE for error input
- */
-RTS_API rtError_t rtAicpuKernelLaunchExWithArgs(const uint32_t kernelType, const char_t * const opName,
-                                                const uint32_t numBlocks, const rtAicpuArgsEx_t *argsInfo,
-                                                rtSmDesc_t * const smDesc, const rtStream_t stm,
-                                                const uint32_t flags);
-
-/**
  * @ingroup dvrt_mem
  * @brief HCCL copy ffts args
  * @param [in] stm task stream
