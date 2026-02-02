@@ -67,25 +67,48 @@ HcclResult AicpuUtils::WaitCommFree(CommunicatorImplLite *communicatorImplLite, 
 
 HcclResult AicpuUtils::GetCommHandle(CommunicatorImplLite *communicatorImplLite, void **opHandle) const
 {
+    std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+    std::cout.flush();
     // 启动计时，一直获取不到comm.isUsed会退出
     CHK_RET(WaitCommFree(communicatorImplLite, __func__));
-
+    std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+    std::cout.flush();
     // comm空闲，第一次创建或需要刷新，执行反序列化
     if (communicatorImplLite->IsFirstUsed() || kernelParam_->needUpdateRes) {
+        std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+        std::cout.flush();
         auto reporter = communicatorImplLite->GetProfilingReporterLite();
+        std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+        std::cout.flush();
         CHK_PTR_NULL(reporter);
+        std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+        std::cout.flush();
         reporter->UpdateProfStat();
+        std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+        std::cout.flush();
         if (kernelParam_->op.algOperator.opMode == OpMode::OPBASE) {
+            std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+            std::cout.flush();
             communicatorImplLite->SetCurrentOpMode(kernelParam_->op.algOperator.opMode);
+            std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+            std::cout.flush();
             communicatorImplLite->UpdateCommParam(kernelParam_);
+            std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+            std::cout.flush();
             EXECEPTION_CATCH(communicatorImplLite->UpdateOpRes(kernelParam_), return HCCL_E_INTERNAL);
+            std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+            std::cout.flush();
         } else {
             HCCL_ERROR("[%s]%s only support opbase, but get opMode %s.", __func__, __func__,
                        kernelParam_->op.algOperator.opMode.Describe().c_str());
             return HCCL_E_PARA;
         }
     }
+    std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+    std::cout.flush();
     *opHandle = reinterpret_cast<void *>(communicatorImplLite);
+    std::cout<<__func__<<":line "<<__LINE__<<std::endl;
+    std::cout.flush();
     return HCCL_SUCCESS;
 }
 
@@ -330,6 +353,8 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
          data->opType == HCCL_CMD_REDUCE_SCATTER || data->opType == HCCL_CMD_REDUCE_SCATTER_V){
         kernelParam_->op.algOperator.reduceOp       = HcclReduceOpToReduceOp(data->reduceOp);
     }
+    kernelParam_->op.algOperator.dataType = HcclDataTypeToDataType(data->dataType);
+    CHECK_DATA_TYPE(kernelParam_->op.algOperator.dataType);
     kernelParam_->op.algOperator.outputDataType = HcclDataTypeToDataType(data->outputDataType);
     CHECK_DATA_TYPE(kernelParam_->op.algOperator.outputDataType);
     kernelParam_->op.algOperator.dataCount          = data->dataCount;

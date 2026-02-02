@@ -112,8 +112,15 @@ HcclResult InsCollAlgBase::InitParams(const CollAlgOperator &op, const CollAlgPa
     dataTypeSize_ = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataTypeSize_;
 
+    HCCL_WARNING("[myinfo][%s]get info, op.type_:%s, opMode_:%s, maxTmpMemSize_:%llu, dataType_:%s, outputDataType_:%s, dataCount_:%llu, dataTypeSize:%llu, dataSize:%llu",
+        __func__, op_.opType.Describe().c_str(), opMode_.Describe().c_str(), maxTmpMemSize_, dataType_.Describe().c_str(), outputDataType_.Describe().c_str(), dataCount_, dataTypeSize_, dataSize_);
+
+    HCCL_WARNING("[myinfo][%s]get info, inputAddr:%llu, inputSize:%llu, outputAddr:%llu, outputSize:%llu",
+        __func__, op_.inputMem->GetAddr(), op_.inputMem->GetSize(), op_.outputMem->GetAddr(), op_.outputMem->GetSize());
+
     CHK_PRT_RET(InitOpInfo(op, opType_, redOp_, root_), HCCL_ERROR("[InsCollAlgFactory] unable to init OpInfo."),
                 HcclResult::HCCL_E_PARA);
+    HCCL_WARNING("[myinfo][%s]get info, opType_:%s, reduceOp:%s, root:%u",__func__, opType_.Describe().c_str(), redOp_.Describe().c_str(), root_);
 
     return HcclResult::HCCL_SUCCESS;
 }

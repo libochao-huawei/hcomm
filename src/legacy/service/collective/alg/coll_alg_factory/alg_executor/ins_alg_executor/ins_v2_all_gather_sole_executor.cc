@@ -136,6 +136,7 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
     const CollAlgOperator &op, const CollAlgParams &params, ConnectedLinkMgr *linkMgr, InsQuePtr insQue)
 {
     HCCL_DEBUG("[InsV2AllGatherSoleExecutor][Orchestrate] Orchestrate AICPU Start");
+    HCCL_WARNING("[myinfo][%s]CollAlgParams opMode:%s, maxTmpMemSize:%llu, datasize:%llu", __func__, params.opMode.Describe().c_str(), params.maxTmpMemSize, params.datasize);
     CHK_RET(Init(op, params, insQue));
     CHK_RET(InitCommInfo(topoInfo));
 
@@ -163,6 +164,7 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
     HCCL_INFO("[InsV2AllGatherSoleExecutor][OrchestrateOpbase] Start, template[%s]", algTemplate->Describe().c_str());
     u32 dataSizePerVolume = DataTypeSizeGet(dataType_);
     dataSize_ = dataCount_ * dataSizePerVolume;
+    HCCL_WARNING("[myinfo][%s]dataSize_:%llu, dataCount_:%llu, oneDataLen:%u", __func__, dataSize_, dataCount_, dataSizePerVolume);
 
     TemplateDataParams tempAlgParams;
     tempAlgParams.buffInfo.inBuffType = BufferType::INPUT;
@@ -211,7 +213,9 @@ HcclResult InsV2AllGatherSoleExecutor<AlgTopoMatch, InsAlgTemplate>::Orchestrate
         tempAlgParams.tailSize = tempAlgParams.sliceSize;
         tempAlgParams.inputSliceStride = 0;           // 输入数据仅有 1 个 slice, 不需要 stride
         tempAlgParams.outputSliceStride = dataSize_;  // 每张卡的数据间隔为算子输入大小
-
+        
+        HCCL_WARNING("[myinfo][%s]currDataCount:%llu, sliceSize:%llu, tailSize:%llu, outputSliceStride:%llu",
+         __func__, currDataCount, sliceSize, outputSliceStride);
         CHK_RET(algTemplate->GenExtIns(tempFuncs, tempAlgParams, tempResLinks_, tempInsQue_));
         processedDataCount += currDataCount;
     }
