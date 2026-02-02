@@ -60,7 +60,20 @@ SelectorStatus ReduceScatterAutoSelector::SelectMeshAlgo(const TopoInfo &topoInf
 {
     (void)op;
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
-        primQueueGenName = "CcuReduceScatterMesh1D";
+        HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
+        if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ == 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ == 4)) {
+            primQueueGenName = "CcuReduceScatterMeshDetour1D";
+        } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ != 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ != 4)) {
+            HCCL_WARNING("[Algo][ReduceScatterAutoSelector] detourType not match for ranksize.");
+            return SelectorStatus::NOT_MATCH;
+        }else if (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P_AND_4P) {
+            HCCL_WARNING("[Algo][ReduceScatterAutoSelector] HCCL_DETOUR_ENABLE_2P_AND_4P is not supported yet.");
+            return SelectorStatus::NOT_MATCH;
+        } else {
+            primQueueGenName = "CcuReduceScatterMesh1D";
+        }
     } else if (topoInfo.level0Shape == Level0Shape::MESH_2D) {
         primQueueGenName = "CcuReduceScatterMesh2D";
     }
