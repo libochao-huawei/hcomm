@@ -330,6 +330,8 @@ HcclResult AicpuUtils::FillKernelParam(HcclOpData *data) const
          data->opType == HCCL_CMD_REDUCE_SCATTER || data->opType == HCCL_CMD_REDUCE_SCATTER_V){
         kernelParam_->op.algOperator.reduceOp       = HcclReduceOpToReduceOp(data->reduceOp);
     }
+    kernelParam_->op.algOperator.dataType = HcclDataTypeToDataType(data->dataType);
+    CHECK_DATA_TYPE(kernelParam_->op.algOperator.dataType);
     kernelParam_->op.algOperator.outputDataType = HcclDataTypeToDataType(data->outputDataType);
     CHECK_DATA_TYPE(kernelParam_->op.algOperator.outputDataType);
     kernelParam_->op.algOperator.dataCount          = data->dataCount;
