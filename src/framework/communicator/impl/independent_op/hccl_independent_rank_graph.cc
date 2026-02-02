@@ -263,6 +263,7 @@ HcclResult HcclRankGraphGetTopoInstsByLayer(HcclComm comm, uint32_t netLayer, ui
             HCCL_RUN_INFO("[%s] success, topoInstNum [%u]", __func__, *topoInstNum);
             return HCCL_SUCCESS;
         }());
+    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -284,7 +285,7 @@ HcclResult HcclRankGraphGetTopoType(HcclComm comm, uint32_t netLayer, uint32_t t
             HCCL_RUN_INFO("[%s] success, topoType [%d]", __func__, *topoType);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
+    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -307,7 +308,7 @@ HcclResult HcclRankGraphGetRanksByTopoInst(HcclComm comm, uint32_t netLayer, uin
             HCCL_RUN_INFO("[%s] success, rankNum [%u]", __func__, *rankNum);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
+    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -329,7 +330,7 @@ HcclResult HcclRankGraphGetEndpointNum(HcclComm comm, uint32_t layer, uint32_t t
             HCCL_RUN_INFO("[%s] success, num [%u]", __func__, *num);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
+    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -352,7 +353,7 @@ HcclResult HcclRankGraphGetEndpointDesc(HcclComm comm, uint32_t layer, uint32_t 
             HCCL_RUN_INFO("[%s] success", __func__);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
+    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
@@ -375,7 +376,7 @@ HcclResult HcclRankGraphGetEndpointInfo(HcclComm comm, uint32_t rankId, const En
             HCCL_RUN_INFO("[%s] success", __func__);
             return HCCL_SUCCESS;
         }());
-    HCCL_ERROR("[%s] Failed to execute, return code [%d], only A5 is supported", __func__, ret);
+    HCCL_ERROR("[%s] Failed to execute, only A5 is supported", __func__);
     return HCCL_E_NOT_SUPPORT;
 }
 
