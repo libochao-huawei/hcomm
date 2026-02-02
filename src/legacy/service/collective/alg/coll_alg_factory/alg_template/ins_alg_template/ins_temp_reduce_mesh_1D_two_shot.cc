@@ -125,24 +125,31 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
         u64 sliceSize = sliceInfoVec[rankId][0].size;
         u64 sliceOffset = sliceInfoVec[rankId][0].offset;
 
-        DataSlice ssrc(tempAlgParams.buffInfo.inBuffType, sliceOffset + inOff, sliceSize);
-        DataSlice sdest(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(myIdx_) * sliceSize + scOff, sliceSize);
+        DataSlice sendSrcSlice(tempAlgParams.buffInfo.inBuffType, sliceOffset + inOff, sliceSize);
+        DataSlice sendDstSlice(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(myIdx_) * sliceSize + scOff, sliceSize);
 
         if (rankId == myIdx_) {
             if (sliceSize != 0) {
-                CHK_RET(LocalCopy(tempInsQues[rankId], ssrc, sdest));
+                CHK_RET(LocalCopy(tempInsQues[rankId], sendSrcSlice, sendDstSlice));
             }
         } else {
             u64 mySliceSize = sliceInfoVec[myIdx_][0].size;
             u64 mySliceOffset = sliceInfoVec[myIdx_][0].offset;
 
-            DataSlice rsrc(tempAlgParams.buffInfo.inBuffType, mySliceOffset + inOff, mySliceSize);
-            DataSlice rdest(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(rankId) * mySliceSize + scOff, mySliceSize);
+            DataSlice recvSrcSlice(tempAlgParams.buffInfo.inBuffType, mySliceOffset + inOff, mySliceSize);
+            DataSlice recvDstSlice(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(rankId) * mySliceSize + scOff, mySliceSize);
 
-            const auto &link = tempLinks.at(GetRankFromMap(rankId))[0];
+            RankId targetRank = GetRankFromMap(rankId);
+            if (targetRank == -1 || tempLinks.find(targetRank) == tempLinks.end()) {
+                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] Invalid rank [%d] mapped to [%d] or link not found.", rankId, targetRank);
+                return HcclResult::HCCL_E_INTERNAL;
+            }
+
+            const auto &link = tempLinks.at(targetRank)[0];
             TxRxLinks links(link, link);
-            SlicesList sendSList({ssrc}, {sdest});
-            SlicesList recvSList({rsrc}, {rdest});
+            
+            SlicesList sendSList({sendSrcSlice}, {sendDstSlice});
+            SlicesList recvSList({recvSrcSlice}, {recvDstSlice});
             TxRxSlicesList txRxSList(sendSList, recvSList);
 
             CHK_RET(SendRecv(SendRecvInfo(links, txRxSList), tempInsQues[rankId], 0, true, DmaMode::PUT));
@@ -191,7 +198,13 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
                 DataSlice rsrc(tempAlgParams.buffInfo.scratBuffType, remoteSrcOffset, curSize);
                 DataSlice rdest(tempAlgParams.buffInfo.outBuffType, sliceInfoVec[rankIdx][0].offset + outOff, curSize);
 
-                const auto &link = tempLinks.at(GetRankFromMap(rankIdx))[0];
+                RankId targetRank = GetRankFromMap(rankIdx);
+                if (targetRank == -1 || tempLinks.find(targetRank) == tempLinks.end()) {
+                    HCCL_ERROR("[InsTempReduceMesh1DTwoShot] Gather root: Invalid rank [%d] mapped to [%d] or link not found.", rankIdx, targetRank);
+                    return HcclResult::HCCL_E_INTERNAL;
+                }
+
+                const auto &link = tempLinks.at(targetRank)[0];
                 SlicesList sliceList({rsrc}, {rdest});
                 
                 CHK_RET(Recv(DataInfo(link, sliceList), tempInsQues[rankIdx], 1, true, DmaMode::GET));
@@ -205,6 +218,11 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
             u64 srcOffset = static_cast<u64>(rankIdx) * curSize + scOff;
             DataSlice ssrc(tempAlgParams.buffInfo.scratBuffType, srcOffset, curSize);
             DataSlice sdest(tempAlgParams.buffInfo.outBuffType, sliceInfoVec[rankIdx][0].offset + outOff, curSize);
+
+            if (tempLinks.find(root_) == tempLinks.end()) {
+                HCCL_ERROR("[InsTempReduceMesh1DTwoShot] Gather non-root: Root rank [%u] link not found.", root_);
+                return HcclResult::HCCL_E_INTERNAL;
+            }
 
             const auto &link = tempLinks.at(root_)[0];
             SlicesList sliceList({ssrc}, {sdest});
