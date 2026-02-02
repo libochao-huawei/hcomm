@@ -63,11 +63,11 @@ SelectorStatus AllReduceAutoSelector::SelectMeshAlgo(const TopoInfo &topoInfo,
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
         if (IsInputOutputOverlap(op.inputMem, op.outputMem) != true) {
             HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
-            if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ == 2)||
-                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ == 4)) {
+            if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
+                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
                 primQueueGenName = "CcuAllReduceMeshDetour1D";
-            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ != 2)||
-                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ != 4)) {
+            } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
+                (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4)) {
                 HCCL_WARNING("[Algo][AllReduceAutoSelector] detourType not match for ranksize.");
                 return SelectorStatus::NOT_MATCH;
             } else if (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P_AND_4P) {

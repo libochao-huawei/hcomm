@@ -46,11 +46,11 @@ SelectorStatus AllGatherAutoSelector::SelectMeshAlgo(
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start", __func__);
     if (topoInfo.level0Shape == Level0Shape::MESH_1D) {
         HcclDetourType detourType = EnvConfig::GetInstance().GetDetourConfig().GetDetourType();
-        if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ == 2)||
-            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ == 4)) {
+        if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ == 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ == 4)) {
             primQueueGenName = "CcuAllGatherMeshDetour1D";
-        } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && ranksize_ != 2)||
-            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && ranksize_ != 4)) {
+        } else if ((detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P && rankSize_ != 2)||
+            (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_4P && rankSize_ != 4)) {
             HCCL_WARNING("[Algo][AllGatherAutoSelector] detourType not match for ranksize.");
             return SelectorStatus::NOT_MATCH;
         } else if (detourType == HcclDetourType::HCCL_DETOUR_ENABLE_2P_AND_4P) {
