@@ -107,6 +107,25 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, u
     }
 }
 
+void CcuErrorHandler::GetCcuJettys(int32_t deviceId, const ParaCcu &ccuTaskParam, std::vector<CcuJetty *> ccuJettys)
+{
+    // 获取异常指令对应的Rep
+    CcuContext *ctx
+        = CtxMgrImp::GetInstance(deviceId).GetCtx(ccuTaskParam.executeId, ccuTaskParam.dieId, ccuTaskParam.missionId);
+    if (ctx == nullptr) {
+        THROW<CcuApiException>("CcuContext not found, deviceId[%d], dieId[%u], missionId[%u], executeId[%llu]",
+                            deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.missionId),
+                            ccuTaskParam.executeId);
+    }
+
+    std::vector<CcuTransport *> ccuTransports = ctx->GetCcuTransports();
+    for (auto ccuTransport : ccuTransports) {
+        CcuConnection *ccuConn = ccuTransport->GetCcuConnection();
+        std::vector<CcuJetty *> ccuJettysOneConn = ccuConn->GetCcuJettys();
+        ccuJettys.insert(ccuJettys.end(), ccuJettysOneConn.begin(), ccuJettysOneConn.end());
+    }
+}
+
 static string StatusCode2Str(uint8_t highPart, uint8_t lowPart)
 {
     HCCL_INFO("Mission Status Code: highPart[0x%02x], lowPart[0x%02x]", highPart, lowPart);

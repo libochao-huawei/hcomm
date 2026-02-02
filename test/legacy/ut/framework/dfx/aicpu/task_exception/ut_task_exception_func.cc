@@ -56,7 +56,7 @@ TEST_F(TaskExceptionFuncTest, SetDevId_ShouldSetDevId_WhenCalled)
 TEST_F(TaskExceptionFuncTest, RegisterCallback_ShouldRegisterCallback_WhenCalled)
 {
     TaskExceptionFunc &instance = TaskExceptionFunc::GetInstance();
-    instance.RegisterCallback([](const rtLogicCqReport_t *report) {
+    instance.RegisterCallback([](const CommunicatorImplLite * communicatorImplLite, const rtLogicCqReport_t *report) {
         // Do something with the report
     });
 }
