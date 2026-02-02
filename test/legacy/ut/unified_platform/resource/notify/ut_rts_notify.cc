@@ -95,6 +95,7 @@ const u32                 CAP_NOTIFY_SIZE_V82                    = 8;
 
 TEST_F(RtsNotifyTest, rtsNotify_dev_used_false)
 {
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     Stream    stream;
     RtsNotify notify(false);
 
@@ -113,6 +114,7 @@ TEST_F(RtsNotifyTest, rtsNotify_dev_used_false)
 
 TEST_F(RtsNotifyTest, rtsNotify_dev_used_true)
 {
+    MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
     Stream    stream;
     RtsNotify notify(true);
 
