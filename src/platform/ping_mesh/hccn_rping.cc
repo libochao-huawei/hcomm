@@ -54,6 +54,7 @@ inline HccnResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
 
     // 初始化pingmesh实例,利用用户输入的ip地址构造HcclIpAddress类
     HcclIpAddress ipAddr;
+    HccnResult ret = HCCL_SUCCESS;
     if (initAttrInter->mode == HCCN_RPING_MODE_ROCE) {
         ipAddr = HcclIpAddress(std::string(initAttrInter->ipAddr));
         ret = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_ROCE, ipAddr, initAttrInter->port,
@@ -360,8 +361,7 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 
     // 判断devLogicId与pingmesh所记录的是否一致
     if (devLogicId != rping->GetDeviceLogicId()) {
-        HCCL_ERROR("[HccnRpingGetTarget]curr devId[%d] don't match record logicId[%d].",
-            devLogicId, rping->GetDeviceLogicId());
+        HCCL_ERROR("[HccnRpingGetTarget]curr devId[%d] don't match record logicId[%d].", devLogicId, rping->GetDeviceLogicId());
         return HCCN_E_PARA;
     }
     HCCL_DEBUG("[HccnRpingGetTarget] device id is %d", devLogicId);
