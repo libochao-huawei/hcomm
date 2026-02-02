@@ -42,14 +42,14 @@ using BaseCollOperator = struct BaseCollOperatorDef {
             DataType dataType;
         } vDataDes;
         struct {
-            DataType sendType;
-            DataType recvType;
-            u64 sendCount;
-            u64 recvCount;
+            DataType sendType{DataType::INVALID};
+            DataType recvType{DataType::INVALID};
+            u64 sendCount{0};
+            u64 recvCount{0};
         } all2AllDataDes;
         struct {
-            DataType sendType;
-            DataType recvType;
+            DataType sendType{DataType::INVALID};
+            DataType recvType{DataType::INVALID};
             void* sendCounts;
             void* recvCounts;
             void* sdispls;
