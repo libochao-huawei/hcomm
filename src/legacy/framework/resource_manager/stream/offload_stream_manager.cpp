@@ -64,8 +64,6 @@ void OffloadStreamManager::RegisterSlaves(const std::string &opTag, const std::v
         slaves[opTag][i] = std::make_unique<Stream>(slaveStreams[i]);
     }
 
-    currOpTag = opTag;
-
     HCCL_INFO("[OffloadStreamManager::%s] end, slaveNum[%d].", __func__, slaveNum);
 }
 

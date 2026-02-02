@@ -104,8 +104,10 @@ HcclResult SendTaskExceptionByMBox(const u32 localDeviceId, const u32 notifyId, 
     ts_aicpu_sqe_t aicpuSqe = {};
     u32 hostpid = 0;
     u32 vf_id = 0;
+    int pid = getpid();
+    HCCL_INFO("SendTaskExceptionByMBox getpid[%d]", pid);
     // 调整drvQueryProcessHostPid获取pid和vf_id的值
-    CHK_RET(HrtHalDrvQueryProcessHostPid(getpid(), nullptr, &vf_id, &hostpid, nullptr));
+    CHK_RET(HrtHalDrvQueryProcessHostPid(pid, nullptr, &vf_id, &hostpid, nullptr));
 
     aicpuSqe.pid = hostpid;
     aicpuSqe.cmd_type = AICPU_RECORD;
