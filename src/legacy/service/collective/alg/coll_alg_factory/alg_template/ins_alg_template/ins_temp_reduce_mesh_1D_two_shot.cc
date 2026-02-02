@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * Description: 算法模板InsTempReduceMesh1DTwoShot类实现
- * Author: l00929943
+ * Author: liuhaoyu
  * Create: 2025-06-05
  */
 
@@ -60,12 +60,12 @@ HcclResult InsTempReduceMesh1DTwoShot::CalcSlice(const u64 dataSize, RankSliceIn
     std::vector<SliceInfo> tmp(tempVTopo_.size());
     sliceInfoVec.resize(tempRankSize_, tmp);
 
-    u32 unitAllignSize = DataTypeSizeGet(dataType_);
-    if (unitAllignSize == 0) {
+    u32 unitAlignSize = DataTypeSizeGet(dataType_);
+    if (unitAlignSize == 0) {
         return HcclResult::HCCL_E_INTERNAL;
     }
 
-    u64 totalElements = dataSize / unitAllignSize;
+    u64 totalElements = dataSize / unitAlignSize;
     u64 baseElements = totalElements / tempRankSize_;
     u64 remainder = totalElements % tempRankSize_;
     
@@ -74,9 +74,9 @@ HcclResult InsTempReduceMesh1DTwoShot::CalcSlice(const u64 dataSize, RankSliceIn
         u64 currSize = 0;
         
         if (rankIdx < remainder) {
-            currSize = (baseElements + 1) * unitAllignSize;
+            currSize = (baseElements + 1) * unitAlignSize;
         } else {
-            currSize = baseElements * unitAllignSize;
+            currSize = baseElements * unitAlignSize;
         }
 
         sliceInfoVec[rankIdx][0] = {accumOff, currSize};
