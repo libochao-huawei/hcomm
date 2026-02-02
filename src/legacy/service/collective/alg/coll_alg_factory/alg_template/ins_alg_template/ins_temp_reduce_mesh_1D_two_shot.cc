@@ -42,7 +42,7 @@ HcclResult InsTempReduceMesh1DTwoShot::CalcRes(AlgTempResReq &tempResReq)
     return HcclResult::HCCL_SUCCESS;
 }
 
-u32 InsTempReduceMesh1DTwoShot::CalcScratchMultiple(BufferType input, BufferType output) const
+u32 InsTempReduceMesh1DTwoShot::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType) const
 {
     (void)input;
     (void)output;
