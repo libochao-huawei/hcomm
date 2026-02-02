@@ -18,6 +18,7 @@
 #include "reduce_op.h"
 #include "hcom_v2.h"
 #include "log.h"
+#include <iostream>
 
 namespace Hccl {
 AicpuMc2Handler::AicpuMc2Handler()
@@ -32,28 +33,63 @@ AicpuMc2Handler &AicpuMc2Handler::GetInstance()
 
 HcclResult AicpuMc2Handler::HcclGetCommHandleByCtx(void *ctx, void **opHandle) const
 {
-    HCCL_RUN_INFO("[%s]HcclGetCommHandleByCtx begin, ctx:%p, *ctx:%llu", __func__, ctx, *((uint64_t *)ctx));
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
+    // HCCL_RUN_INFO("[%s]HcclGetCommHandleByCtx begin, ctx:%p, *ctx:%llu", __func__, ctx, *((uint64_t *)ctx));
+    HCCL_RUN_INFO("[%s]HcclGetCommHandleByCtx begin, ctx:%p", __func__, ctx);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     // 存储kernel参数
     unique_lock<std::shared_timed_mutex> handlerLock(AicpuUtils::GetInstance().handlerMutex_);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     AicpuUtils::GetInstance().kernelParam_ = reinterpret_cast<HcclKernelParamLite *>(ctx);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     uint32_t commIdIndex = AicpuUtils::GetInstance().kernelParam_->comm.idIndex;
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     if (AicpuUtils::GetInstance().kernelParamMap_.find(commIdIndex) == AicpuUtils::GetInstance().kernelParamMap_.end()) {
+        std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+        std::cout.flush();
         AicpuUtils::GetInstance().kernelParamMap_[commIdIndex] = AicpuUtils::GetInstance().kernelParam_;
+        std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+        std::cout.flush();
     }
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     handlerLock.unlock();
-
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     // 创建单例对象
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     std::shared_lock<std::shared_timed_mutex> sharedLock(AicpuUtils::GetInstance().handlerMutex_);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     AicpuUtils::GetInstance().CreateSingleInstance(ctx);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
 
     // 初始化硬件参数
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     DevCapability::GetInstance().Init(AicpuUtils::GetInstance().kernelParam_->comm.devType);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
 
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     HCCL_INFO("[%s]DevCapability %s, kernelParam_.algName[%s], commIdIndex[%u]", __func__,
               AicpuUtils::GetInstance().kernelParam_->comm.devType.Describe().c_str(), AicpuUtils::GetInstance().kernelParam_->algName, commIdIndex);
-
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     CommunicatorImplLite *communicatorImplLite = CommunicatorImplLiteMgr::GetInstance().Get(commIdIndex);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     CHK_PTR_NULL(communicatorImplLite);
+    std::cout<<"HcclGetCommHandleByCtx:line "<<__LINE__<<std::endl;
+    std::cout.flush();
     return AicpuUtils::GetInstance().GetCommHandle(communicatorImplLite, opHandle);
 }
 
