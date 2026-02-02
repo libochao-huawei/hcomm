@@ -1,7 +1,7 @@
 /*
  * Copyright (c) Huawei Technologies Co., Ltd. 2025-2025. All rights reserved.
  * Description: 算法模板InsTempReduceMesh1DTwoShot类头文件
- * Author: l00929943
+ * Author: liuhaoyu
  * Create: 2025-06-05
  */
 
