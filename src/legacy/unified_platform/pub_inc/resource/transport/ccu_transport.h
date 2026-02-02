@@ -69,7 +69,9 @@ public:
             channelInfo(channelInfo), ccuJettys(ccuJettys) {}
     };
 
-    CcuTransport(Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);
+    static HcclResult CcuCreateTransport(Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
+        const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport);
+
     CcuTransport(const CcuTransport &that)             = delete;
     CcuTransport &operator=(const CcuTransport &other) = delete;
     ~CcuTransport();
@@ -133,7 +135,7 @@ public:
     HcclResult  GetRmtBuffer(CclBufferInfo &bufferInfo, const uint32_t &bufNum) const;
     TransStatus GetStatus();
     std::string Describe() const;
-    void        Clean();
+    HcclResult  Clean();
 
 private:
     // 保存transport中需要使用的cke，xn等ccu资源
@@ -142,6 +144,7 @@ private:
         std::vector<uint32_t> cntCkes;
         std::vector<uint32_t> xns;
     };
+    CcuTransport(Socket *socket, std::unique_ptr<CcuConnection> &&connection, const CclBufferInfo &locCclBufInfo);
     TransStatus                              StateMachine();
     HcclResult                               AppendCkes(uint32_t ckesNum);
     HcclResult                               AppendXns(uint32_t xnsNum);
@@ -186,9 +189,6 @@ private:
     std::vector<char>                        recvFinishMsg{};
     std::vector<char>                        sendFinishMsg{};
 };
-
-HcclResult CcuCreateTransport(Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
-    const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport);
 
 } // namespace Hccl
 #endif // HCCL_CCU_TRANSPORT_H
