@@ -60,13 +60,13 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstTopoTypeByNetLayer(uint32_t netLayer, CommTopo* topoType)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstTopoTypeByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstTopoTypeByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
         std::set<u32> levels = rankGraph->GetLevels(rankId);
         if (levels.find(netLayer) == levels.end()) {
-            HCCL_ERROR("[IRankGraph::GetInstTopoTypeByNetLayer] netLayer[%u] is invalid",netLayer);
+            HCCL_ERROR("[IRankGraph::GetInstTopoTypeByNetLayer] netLayer[%u] is invalid", netLayer);
             return HCCL_E_PARA;
         }
         auto type = rankGraph->GetNetType(netLayer);
@@ -88,13 +88,13 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstSizeByNetLayer(uint32_t netLayer, uint32_t* rankNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
         std::set<u32> levels = rankGraph->GetLevels(rankId);
         if (levels.find(netLayer) == levels.end()) {
-            HCCL_ERROR("[IRankGraph::GetInstSizeByNetLayer] netLayer[%u] is invalid",netLayer);
+            HCCL_ERROR("[IRankGraph::GetInstSizeByNetLayer] netLayer[%u] is invalid", netLayer);
             return HCCL_E_PARA;
         }
         u32 num = rankGraph->GetLocalInstSize(netLayer);
@@ -104,13 +104,13 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t** rankList, uint32_t* rankNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstRanksByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstRanksByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
         std::set<u32> levels = rankGraph->GetLevels(rankId);
         if (levels.find(netLayer) == levels.end()) {
-            HCCL_ERROR("[IRankGraph::GetInstRanksByNetLayer] netLayer[%u] is invalid",netLayer);
+            HCCL_ERROR("[IRankGraph::GetInstRanksByNetLayer] netLayer[%u] is invalid", netLayer);
             return HCCL_E_PARA;
         }
         u32 num = 0;
@@ -123,7 +123,7 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetInstSizeListByNetLayer(uint32_t netLayer, uint32_t** instSizeList, uint32_t* listSize)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeListByNetLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetInstSizeListByNetLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
@@ -291,7 +291,7 @@ namespace Hccl {
     HcclResult IRankGraph::GetLinks(uint32_t netLayer, uint32_t srcRank, uint32_t dstRank, CommLink** linkList,
                                     uint32_t* listSize)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetLinks");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetLinks netLayr[%u], srcRank[%u], dstRank[%u]", netLayer, srcRank, dstRank);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
@@ -336,7 +336,7 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetTopoInstsByLayer(uint32_t netLayer, uint32_t** topoInsts, uint32_t* topoInstNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoInstsByLayer");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoInstsByLayer with netLayer[%u]", netLayer);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
@@ -355,7 +355,7 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetTopoType(const uint32_t netLayer, const uint32_t topoInstId, CommTopo* topoType)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoType");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetTopoType netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
@@ -386,7 +386,7 @@ namespace Hccl {
     HcclResult IRankGraph::GetRanksByTopoInst(const uint32_t netLayer, const uint32_t topoInstId, uint32_t** ranks,
                                               uint32_t* rankNum)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetRanksByTopoInst");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetRanksByTopoInst netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph* rankGraph = static_cast<RankGraph*>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
@@ -408,7 +408,7 @@ namespace Hccl {
 
     HcclResult IRankGraph::GetEndpointNum(uint32_t netLayer, uint32_t topoInstId, uint32_t *num)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointNum");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointNum netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
@@ -429,7 +429,7 @@ namespace Hccl {
     HcclResult IRankGraph::GetEndpointDesc(uint32_t netLayer, uint32_t topoInstId, uint32_t *descNum,
                                            EndpointDesc *endpointDesc)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointDesc");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointDesc netLayer[%u], topoInstId[%u]", netLayer, topoInstId);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
         u32 rankId = rankGraph->GetMyRank();
@@ -450,7 +450,7 @@ namespace Hccl {
     HcclResult IRankGraph::GetEndpointInfo(uint32_t rankId, const EndpointDesc *endPointDesc, EndpointAttr endpointAttr,
                                            uint32_t infoLen, void *info)
     {
-        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointInfo");
+        HCCL_RUN_INFO("Entry-IRankGraph::GetEndpointInfo with rankId[%u]", rankId);
         CHK_PTR_NULL(rankGraphPtr_);
         RankGraph *rankGraph = static_cast<RankGraph *>(rankGraphPtr_);
         HcclResult ret = rankGraph->GetEndpointInfo(rankId, endPointDesc, endpointAttr, infoLen, info);
