@@ -16,10 +16,14 @@ namespace Hccl {
 constexpr uint32_t FINISH_MSG_SIZE             = 128;
 constexpr char_t   FINISH_MSG[FINISH_MSG_SIZE] = "Transport exchange data ready!";
 
-HcclResult CcuCreateTransport(Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
+HcclResult CcuTransport::CcuCreateTransport(Socket *socket, const CcuTransport::CcuConnectionInfo &ccuConnectionInfo,
     const CcuTransport::CclBufferInfo &cclBufferInfo, std::unique_ptr<CcuTransport> &ccuTransport)
 {
     CHK_PTR_NULL(socket);
+    HCCL_INFO("[%s]ccuConnectionInfo type[%d], locAddr[%s], rmtAddr[%s], channelInfo[channelId %u:dieId %u], "
+        "cclBufferInfo addr[%llu], size[%u]", __func__, ccuConnectionInfo.type, ccuConnectionInfo.locAddr.GetIpStr().c_str(),
+        ccuConnectionInfo.rmtAddr.GetIpStr().c_str(), ccuConnectionInfo.channelInfo.channelId, ccuConnectionInfo.channelInfo.dieId,
+        cclBufferInfo.addr, cclBufferInfo.size);
     TRY_CATCH_RETURN(
         std::unique_ptr<CcuConnection> ccuConnection;
         if (ccuConnectionInfo.type == CcuTransport::CcuConnectionType::UBC_CTP) {
@@ -172,6 +176,7 @@ HcclResult CcuTransport::AppendXns(uint32_t xnsNum)
 
 void CcuTransport::SetCntCke(const vector<uint32_t> &cntCke)
 {
+    HCCL_INFO("[%s]cntCke size[%llu]", __func__, cntCke.size());
     locRes.cntCkes = cntCke;
 }
 
@@ -586,11 +591,12 @@ std::string CcuTransport::Describe() const
     return description;
 }
 
-void CcuTransport::Clean()
+HcclResult CcuTransport::Clean()
 {
     transStatus = TransStatus::INIT;
     sendData.clear();
-    ccuConnection->Clean();
+    TRY_CATCH_RETURN(ccuConnection->Clean());
+    return HCCL_SUCCESS;
 }
 
 } // namespace Hccl

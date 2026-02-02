@@ -270,7 +270,7 @@ TEST_F(CcuTransportMgrTest, St_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
 
 TEST_F(CcuTransportMgrTest, Ut_PrepareCreateFailAndFallback_When_InterfaceUnavailable_Expect_Return_Unavailable)
 {
-    MOCKER(CcuCreateTransport).stubs().will(returnValue(HcclResult::HCCL_E_UNAVAIL));
+    MOCKER(CcuTransport::CcuCreateTransport).stubs().will(returnValue(HcclResult::HCCL_E_UNAVAIL));
 
     const uint32_t baseIpAddrInt = 100;
     const uint32_t linkNum = 4;
@@ -416,7 +416,7 @@ TEST_F(CcuTransportMgrTest, Ut_CleanAndResumeFailed_When_InterfaceError_Expect_R
     EXPECT_NE(0, linkSize);
     EXPECT_EQ(transportMgr.ccuLink2TransportMap.size(), linkSize);
 
-    MOCKER(CcuCreateTransport).stubs().will(returnValue(HcclResult::HCCL_E_UNAVAIL));
+    MOCKER(CcuTransport::CcuCreateTransport).stubs().will(returnValue(HcclResult::HCCL_E_UNAVAIL));
 }
 
 TEST_F(CcuTransportMgrTest, Ut_RecoverTransports_When_InterfaceOk_Expect_Return_Ok)
