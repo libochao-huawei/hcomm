@@ -38,10 +38,14 @@ HcclResult RoceRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, voi
  
     // LocalRdmaRmaBuffer构造函数存在注册动作，在调用该构造函数前需检查是否注册过
     hccl::BufferKey<uintptr_t, u64> tempKey(reinterpret_cast<uintptr_t>(mem.addr), mem.size);
-    if(localRdmaRmaBufferMgr_->Find(tempKey).first) {
+    auto findPair = localRdmaRmaBufferMgr_->Find(tempKey);
+    if(findPair.first) {
         // 内存再次注册时
         HCCL_INFO("[RdmaRegedMemMgr][RegisterMemory]Memory is already registered, just increase the reference count. Add key "
                 "{%p, %llu}", mem.addr, mem.size);
+        std::shared_ptr<Hccl::LocalRdmaRmaBuffer> &localRegisteredBuffer = findPair.second;
+        CHK_SMART_PTR_NULL(localRegisteredBuffer);
+        *memHandle = static_cast<void *>(localRegisteredBuffer.get());
         return HCCL_E_AGAIN;
     }
     
@@ -83,7 +87,7 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     auto bufferInfo = buffer->GetBufferInfo();
     CHK_PTR_NULL(memHandle);
 
-    // 从LocalRamBuffer计数器删除HcclBuf
+    // 从LocalRamBuffer计数器删除
     hccl::BufferKey<uintptr_t, u64> tempKey(bufferInfo.first, bufferInfo.second);
     bool resultPair = false;
     EXECEPTION_CATCH(resultPair = this->localRdmaRmaBufferMgr_->Del(tempKey), return HCCL_E_NOT_FOUND);
@@ -96,13 +100,9 @@ HcclResult RoceRegedMemMgr::UnregisterMemory(void* memHandle)
     return HCCL_SUCCESS;
 }
 
-HcclResult RoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, const void *memHandle, void **memDesc, uint32_t *memDescLen)
+HcclResult RoceRegedMemMgr::GetMemDesc(const EndpointDesc endpointDesc, Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer) 
 {
-    HCCL_INFO("[%s] Begin", __FUNCTION__);
-
-    // 获取序列化信息
-    const Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer = reinterpret_cast<const Hccl::LocalRdmaRmaBuffer *>(memHandle);
-    auto                      dto = const_cast<Hccl::LocalRdmaRmaBuffer*>(localRdmaRmaBuffer)->GetExchangeDto();
+    auto                      dto = localRdmaRmaBuffer->GetExchangeDto();
     Hccl::BinaryStream        localRdmaRmaBufferStream;
     dto->Serialize(localRdmaRmaBufferStream);
     std::vector<char> tempLocalMemDesc;
@@ -126,16 +126,25 @@ HcclResult RoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, const 
                        tempLocalEndpointDesc.end());
 
     // 内存描述符拷贝
-    *memDescLen = tempLocalMemDesc.size();
-    if (memcpy_s(*memDesc, TRANSPORT_EMD_ESC_SIZE, tempLocalMemDesc.data(), tempLocalMemDesc.size()) != EOK) {
-        HCCL_ERROR("[RoceRegedMemMgr][MemoryExport] [%s] tempLocalMemDesc copy error. aim size:[%llu]", __func__, tempLocalMemDesc.size());
-        return HCCL_E_INTERNAL;
-    }
-
+    localRdmaRmaBuffer->Desc = std::move(tempLocalMemDesc);
     return HCCL_SUCCESS;
 }
 
-HcclResult GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
+HcclResult RoceRegedMemMgr::MemoryExport(const EndpointDesc endpointDesc, void *memHandle, void **memDesc, uint32_t *memDescLen)
+{
+    HCCL_INFO("[%s] Begin", __FUNCTION__);
+    CHK_PTR_NULL(memHandle);
+    Hccl::LocalRdmaRmaBuffer *localRdmaRmaBuffer = reinterpret_cast<Hccl::LocalRdmaRmaBuffer *>(memHandle);
+
+    // 获取序列化信息
+    CHK_RET(GetMemDesc(endpointDesc, localRdmaRmaBuffer));
+
+    *memDescLen = static_cast<uint32_t>(localRdmaRmaBuffer->Desc.size());
+    *memDesc = static_cast<void *>(localRdmaRmaBuffer->Desc.data());
+    return HCCL_SUCCESS;
+}
+
+HcclResult RoceRegedMemMgr::GetParamsFromMemDesc(const void *memDesc, uint32_t descLen, 
                                                 EndpointDesc &endpointDesc, Hccl::ExchangeRdmaBufferDto &dto) 
 {
     const char *description = static_cast<const char *>(memDesc);
