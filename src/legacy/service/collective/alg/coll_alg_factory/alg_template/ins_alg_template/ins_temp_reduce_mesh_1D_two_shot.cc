@@ -17,9 +17,9 @@ InsTempReduceMesh1DTwoShot::InsTempReduceMesh1DTwoShot(const RankId virtualRank,
     const std::vector<std::vector<RankId>> &tempVTopo, const std::map<RankId, u32> &tempVirtRankMap)
     : InsAlgTemplateBase(virtualRank, tempRankSize, tempVTopo, tempVirtRankMap)
 {
-    idxToRankMap_.assign(tempRankSize_, -1);
+    idxToRankMap_.assign(this->tempRankSize_, -1);
     for (const auto &pair : tempVirtRankMap_) {
-        if (pair.second < tempRankSize_) {
+        if (pair.second < this->tempRankSize_) {
             idxToRankMap_[pair.second] = pair.first;
         }
     }
