@@ -2040,6 +2040,7 @@ HcclResult CreateQp(RdmaHandle rdmaHandle, int& flag, s32& qpMode, QpInfo& qp, b
         CHK_RET(ConstructQpAttrs(qpMode, attrs, qpDepth));
         attrs.udpSport = 0x0;
         attrs.qpAttr.cap.max_send_wr = HETEROG_OFFLINE_EXT_MAX_SEND_WR;
+        attrs.cqAttr.sendCqDepth = HETEROG_OFFLINE_EXT_MAX_SEND_WR;  // 修改sq和scq的队列深度，减少内存占用
         CHK_RET(hrtRaQpCreateWithAttrs(rdmaHandle, &attrs, qp.qpHandle));
     } else {
         CHK_RET(HrtRaQpCreate(rdmaHandle, flag, qpMode, qp.qpHandle));
