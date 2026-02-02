@@ -655,7 +655,7 @@ void TaskExceptionHandler::PrintOpDataErrorMessage(u32 deviceId, ErrorMessageRep
     return;
 }
 
-void ReportErrorMsg(const TaskInfo &exceptionTaskInfo)
+void ReportErrorMsg(const TaskInfo &exceptionTaskInfo, const string &groupRankContent)
 {
     if (exceptionTaskInfo.taskParam_.taskType == TaskParamType::TASK_NOTIFY_WAIT) {
         RPT_INPUT_ERR(true,
@@ -719,7 +719,7 @@ void TaskExceptionHandler::PrintAicpuErrorMessage(rtExceptionInfo_t *exceptionIn
                 PrintUbRegisters(static_cast<s32>(exceptionInfo->deviceid), rdmaHandle);
             }
 
-            ReportErrorMsg(exceptionTaskInfo);
+            ReportErrorMsg(exceptionTaskInfo, groupRankContent);
 
             lock.lock();
             g_commHadCallbackArray[exceptionInfo->deviceid] = true;
