@@ -177,7 +177,7 @@ void CcuContextAllGatherMeshDetour1D::GroupBroadcastDetour(
     std::vector<CcuRep::Variable> &lengths, std::vector<CcuRep::Memory> &src, std::vector<CcuRep::Memory> &dst)
 {
     CreateMultiOpBroadcastDetour();
-
+    uint32_t interLeave = 8;
     CCU_IF(loopIterNum_ != 0) {
         CcuRep::Variable loopParam = CreateVariable();
         CcuRep::Variable paraCfg = CreateVariable();
