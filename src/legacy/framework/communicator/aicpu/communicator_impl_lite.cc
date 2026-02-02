@@ -277,8 +277,8 @@ void CommunicatorImplLite::UpdateOpRes(HcclKernelParamLite *kernelParam)
 
 void CommunicatorImplLite::UpdateHDCommnicate(HcclKernelParamLite *kernelParam)
 {
-    kfcControlTransferH2D->Init(kernelParam->kfcControlTransferH2DParams);
-    kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams);
+    CHK_RET_THROW(kfcControlTransferH2D->Init(kernelParam->kfcControlTransferH2DParams));
+    CHK_RET_THROW(kfcStatusTransferD2H->Init(kernelParam->kfcControlTransferD2HParams));
     std::unique_lock<std::mutex> lock(hdcShmLock_);
     hdcHandler = make_unique<AicpuHdcHandler>(*kfcControlTransferH2D, *kfcStatusTransferD2H);
 }
