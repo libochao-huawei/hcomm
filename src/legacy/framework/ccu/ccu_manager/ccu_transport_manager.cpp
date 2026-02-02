@@ -137,7 +137,7 @@ HcclResult CcuTransportMgr::CreateTransportByLink(const LinkData &link, CcuTrans
 
     // 当前不支持创建非UBC协议的链路
     std::unique_ptr<CcuTransport> transportPtr = nullptr;
-    auto ret = CcuCreateTransport(socket, connectionInfo, locCclBufInfo, transportPtr);
+    auto ret = CcuTransport::CcuCreateTransport(socket, connectionInfo, locCclBufInfo, transportPtr);
     if (ret == HcclResult::HCCL_E_UNAVAIL) {
         HCCL_WARNING("[CcuTransportMgr][%s] failed, some ccu resources are unavaialble, "
             "locAddr[%s] rmtAddr[%s].", __func__, locAddr.Describe().c_str(), rmtAddr.Describe().c_str());
@@ -248,7 +248,9 @@ vector<std::pair<CcuTransport *, LinkData>> CcuTransportMgr::GetUnConfirmedTrans
 void CcuTransportMgr::Clean()
 {
     for (auto &linkTransPair : ccuLink2TransportMap) {
-        linkTransPair.second->Clean();
+        if (linkTransPair.second->Clean() !=HCCL_SUCCESS) {
+            THROW<CcuApiException>("[CcuTransportMgr::%s]CcuTransport clean failed.", __func__);
+        }
     }
 }
 
