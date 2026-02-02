@@ -68,11 +68,15 @@ set(HCOMM_PUBLIC_INCLUDE_LIST
 )
 
 set(HCOMM_PLATFORM_INCLUDE_LIST
+    ${HCOMM_CODE_PLATFORM}
     ${HCOMM_CODE_PLATFORM}/inc
     ${HCOMM_CODE_PLATFORM}/inc/adapter
     ${HCOMM_CODE_PLATFORM}/inc/adapter/host
     ${HCOMM_CODE_PLATFORM}/common
     ${HCOMM_CODE_PLATFORM}/hccp/external_depends/inc/log
+    ${HCOMM_CODE_PLATFORM}/task/
+    ${HCOMM_CODE_PLATFORM}/hccp/inc/network/
+    ${HCOMM_CODE_PLATFORM}/hccp/external_depends/rdma-core/include/
 )
 
 set(HCOMM_COMMON_INCLUDE_LIST
