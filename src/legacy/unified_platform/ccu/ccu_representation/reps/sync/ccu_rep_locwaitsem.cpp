@@ -27,6 +27,21 @@ uint16_t CcuRepLocWaitSem::GetSemId() const
     return sem.Id();
 }
 
+void CcuRepLocWaitSem::SetDependencyInfo(const std::unordered_map<uint32_t, std::vector<std::shared_ptr<CcuRepBase>>>& depInfo) {
+    depInfo_ = depInfo;
+}
+
+std::vector<std::shared_ptr<CcuRepBase>> CcuRepLocWaitSem::GetDependencyInfo(uint32_t bit) {
+    // 查找给定 bit 是否存在于 depInfo_ 中
+    auto it = depInfo_.find(bit);
+    // 如果找到 bit，返回与之关联的 vector
+    if (it != depInfo_.end()) {
+        return it->second;
+    }
+    // 如果未找到 bit，返回一个空的 vector
+    return std::vector<std::shared_ptr<CcuRepBase>>();
+}
+
 bool CcuRepLocWaitSem::Translate(CcuInstr *&instr, uint16_t &instrId, const TransDep &dep)
 {
     this->instrId = instrId;
