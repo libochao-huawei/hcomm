@@ -712,6 +712,30 @@ bool Transport::GetIsUseAtomicWrite()
     return pimpl_->GetIsUseAtomicWrite();
 }
 
+HcclResult Transport::GetLocalSendReadyNotify(HcclSignalInfo& notifyInfo, bool& isValid)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->GetLocalSendReadyNotify(notifyInfo, isValid);
+}
+
+HcclResult Transport::GetLocalSendDoneNotify(HcclSignalInfo& notifyInfo, bool& isValid)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->GetLocalSendDoneNotify(notifyInfo, isValid);
+}
+
+HcclResult Transport::GetRemoteSendReadyNotify(HcclSignalInfo& notifyInfo, bool& isValid)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->GetRemoteSendReadyNotify(notifyInfo, isValid);
+}
+
+HcclResult Transport::GetRemoteSendDoneNotify(HcclSignalInfo& notifyInfo, bool& isValid)
+{
+    CHK_PTR_NULL(pimpl_);
+    return pimpl_->GetRemoteSendDoneNotify(notifyInfo, isValid);
+}
+
 HcclResult Transport::HcclBatchRead(const TransportDeviceNormalData &ibvData, struct MemDetails *localMems,
     struct MemDetails *remoteMems, u32 memNum, u64 &dbInfo)
 {

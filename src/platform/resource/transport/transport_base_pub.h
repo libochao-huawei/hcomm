@@ -225,6 +225,44 @@ public:
     }
 
     virtual bool GetIsUseAtomicWrite() { return useAtomicWrite_; }
+
+    // 针对alltoallv算子aicpu cache, 提供Tx/RxAck和Tx/RxDataSignal的相关notify信息
+    inline HcclResult GetLocalSendReadyNotify(HcclSignalInfo& notifyInfo, bool& isValid) { // For RxDataSignal
+        if (!localSendReadyNotify_) {
+            isValid = false;
+        } else {
+            CHK_RET(localSendReadyNotify_->GetNotifyData(notifyInfo));
+            isValid = true;
+        }
+        return HCCL_SUCCESS;
+    }
+    inline HcclResult GetLocalSendDoneNotify(HcclSignalInfo& notifyInfo, bool& isValid) { // For RxAck
+        if (!localSendDoneNotify_) {
+            isValid = false;
+        } else {
+            CHK_RET(localSendDoneNotify_->GetNotifyData(notifyInfo));
+            isValid = true;
+        }
+        return HCCL_SUCCESS;
+    }
+    inline HcclResult GetRemoteSendReadyNotify(HcclSignalInfo& notifyInfo, bool& isValid) { // For TxDataSignal
+        if (!remoteSendReadyNotify_) {
+            isValid = false;
+        } else {
+            CHK_RET(remoteSendReadyNotify_->GetNotifyData(notifyInfo));
+            isValid = true;
+        }
+        return HCCL_SUCCESS;
+    }
+    inline HcclResult GetRemoteSendDoneNotify(HcclSignalInfo& notifyInfo, bool& isValid) { // For TxAck
+        if (!remoteSendDoneNotify_) {
+            isValid = false;
+        } else {
+            CHK_RET(remoteSendDoneNotify_->GetNotifyData(notifyInfo));
+            isValid = true;
+        }
+        return HCCL_SUCCESS;
+    }
 protected:
     virtual HcclResult FillExchangeDataTotalSize();
     virtual HcclResult ConstructExchangeForSend();

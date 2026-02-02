@@ -75,6 +75,12 @@ target_include_directories(hccl_alg PRIVATE
     ${HCCL_BASE_DIR}/framework/common/src/config
     ${HCCL_BASE_DIR}/framework/inc/
     ${CMAKE_CURRENT_SOURCE_DIR}/../framework/common/src/config
+    ${HCCL_BASE_DIR}/platform/task/
+    ${HCCL_BASE_DIR}/platform/inc/adapter/
+    ${HCCL_BASE_DIR}/platform/common/
+    ${HCCL_BASE_DIR}/platform/hccp/inc/network/
+    ${HCCL_BASE_DIR}/platform/hccp/external_depends/rdma-core/include/
+
 )
 
 if(BUILD_OPEN_PROJECT)

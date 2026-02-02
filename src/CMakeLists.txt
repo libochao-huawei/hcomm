@@ -115,6 +115,7 @@ set(include_list
     ${HCCL_BASE_DIR}/framework/communicator/impl/independent_op/channel/device
     ${HCCL_BASE_DIR}/framework/op_base/src/
 
+    ${HCCL_BASE_DIR}/platform/
     ${HCCL_BASE_DIR}/platform/inc
     ${HCCL_BASE_DIR}/platform/inc/adapter
     ${HCCL_BASE_DIR}/platform/inc/adapter/hccd

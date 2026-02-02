@@ -20,47 +20,6 @@ namespace hccl {
 
     constexpr size_t OP_UNFOLD_CACHE_CAPACITY = 500; // Cache entry数目的上限
 
-    bool OpUnfoldCache::NeedCache(const uint8_t aicpuCacheEnable, const HcclCMDType opType, const std::unordered_map<u32, bool>& isUsedRdmaMap, const bool isDeviceMode) {
-        // 校验环境变量
-        if (aicpuCacheEnable == 0) {
-            HCCL_INFO("[OpUnfoldCache][NeedCache] disable aicpu cache for aicpuCacheEnable[%u]", aicpuCacheEnable);
-            return false;
-        }
-
-        // 屏蔽MC2算子
-        if (isDeviceMode) {
-            HCCL_INFO("[OpUnfoldCache][NeedCache] MC2 op is not supported for operator unfolding cache");
-            return false;
-        }
-        HCCL_INFO("[OpUnfoldCache][NeedCache] device mode is not MC2 op");
-
-        // 判断当前通信域是否使用RDMA (例如跨超通信域), 使用则不cache (因为RoCE队列的WQE不可见)
-        for (std::unordered_map<u32, bool>::const_iterator map_iter = isUsedRdmaMap.cbegin(); map_iter != isUsedRdmaMap.end(); ++map_iter) {
-            if (map_iter->second) {
-                HCCL_INFO("[OpUnfoldCache][NeedCache] rank[%u] uses RDMA -> not supported for operator unfolding cache", map_iter->first);
-                return false;
-            }
-        }
-        HCCL_INFO("[OpUnfoldCache][NeedCache] all ranks do not use RDMA");
-
-        // 目前V类算子、batch类型算子、以及send/recv不考虑动态缓存 (使用白名单而非黑名单管理, 避免非预期算子进入cache机制)
-        // 注意: 如果想要通过比较缓存刷新后的SQE与正常算子展开的SQE来debug, 可以将想要比较的算子从以下的cache白名单中移除, 重新打包运行
-        if (opType == HcclCMDType::HCCL_CMD_BROADCAST ||
-            opType == HcclCMDType::HCCL_CMD_REDUCE ||
-            opType == HcclCMDType::HCCL_CMD_ALLGATHER ||
-            opType == HcclCMDType::HCCL_CMD_REDUCE_SCATTER ||
-            opType == HcclCMDType::HCCL_CMD_ALLTOALL ||
-            opType == HcclCMDType::HCCL_CMD_SCATTER ||
-            opType == HcclCMDType::HCCL_CMD_ALLREDUCE) {
-            HCCL_INFO("[OpUnfoldCache][NeedCache] opType[%d] is supported for operator unfolding cache", opType);
-        } else {
-            HCCL_INFO("[OpUnfoldCache][NeedCache] opType[%d] is not supported for operator unfolding cache", opType);
-            return false;
-        }
-
-        return true;
-    }
-
     OpUnfoldCache::OpUnfoldCache() {
         HCCL_INFO("[OpUnfoldCache][OpUnfoldCache] create a cache at 0x%016llx for operator unfolding", this);
     }
@@ -102,11 +61,11 @@ namespace hccl {
             *entryPtrPtr = constIter->second;
             CHK_PTR_NULL(*entryPtrPtr);
 
-            HCCL_INFO("[OpUnfoldCache][FindEntry] find cache entry for key[%s]", key.getKeyString().c_str());
+            HCCL_INFO("[OpUnfoldCache][FindEntry] find cache entry for key[%s]", key.GetKeyString().c_str());
         } else {
             *entryPtrPtr = nullptr;
 
-            HCCL_INFO("[OpUnfoldCache][FindEntry] not find cache entry for key[%s]", key.getKeyString().c_str());
+            HCCL_INFO("[OpUnfoldCache][FindEntry] not find cache entry for key[%s]", key.GetKeyString().c_str());
         }
 
         return HCCL_SUCCESS;
@@ -119,7 +78,7 @@ namespace hccl {
         CacheHashMap::iterator iter = cacheHashMap_.find(key);
 
         // key不应该存在
-        CHK_PRT_RET(iter != cacheHashMap_.end(), HCCL_ERROR("[OpUnfoldCache][AddEntry] cache entry for key[%s] exists at 0x%016llx", key.getKeyString().c_str(), this), HCCL_E_INTERNAL);
+        CHK_PRT_RET(iter != cacheHashMap_.end(), HCCL_ERROR("[OpUnfoldCache][AddEntry] cache entry for key[%s] exists at 0x%016llx", key.GetKeyString().c_str(), this), HCCL_E_INTERNAL);
 
         // 创建一个新的cache entry
         OpUnfoldCacheEntry *newCacheEntryPtr = (new (std::nothrow) OpUnfoldCacheEntry(userInputMemRanges, userOutputMemRanges));
@@ -128,14 +87,14 @@ namespace hccl {
         // 插入新的cache entry
         std::pair<CacheHashMap::iterator, bool> insertResult = cacheHashMap_.emplace(key, newCacheEntryPtr);
         if (UNLIKELY(!(insertResult.second))) {
-            HCCL_ERROR("[OpUnfoldCache][AddEntry] fail to insert a new cache entry for key[%s]", key.getKeyString().c_str());
+            HCCL_ERROR("[OpUnfoldCache][AddEntry] fail to insert a new cache entry for key[%s]", key.GetKeyString().c_str());
 
             delete newCacheEntryPtr;
             newCacheEntryPtr = nullptr;
 
             return HCCL_E_INTERNAL;
         } else {
-            HCCL_INFO("[OpUnfoldCache][AddEntry] add a new cache entry for key[%s] cacheHashMap_.size[%u]", key.getKeyString().c_str(), cacheHashMap_.size());
+            HCCL_INFO("[OpUnfoldCache][AddEntry] add a new cache entry for key[%s] cacheHashMap_.size[%u]", key.GetKeyString().c_str(), cacheHashMap_.size());
 
             iter = insertResult.first;
             *entryPtrPtr = iter->second;
@@ -148,7 +107,7 @@ namespace hccl {
     HcclResult OpUnfoldCache::ClearEntry(const OpUnfoldKey& key) {
         CacheHashMap::iterator iter = cacheHashMap_.find(key);
         if (iter != cacheHashMap_.end()) { // cache entry存在
-            HCCL_INFO("[OpUnfoldCache][ClearEntry] clear cache entry for key[%s]", key.getKeyString().c_str());
+            HCCL_INFO("[OpUnfoldCache][ClearEntry] clear cache entry for key[%s]", key.GetKeyString().c_str());
 
             // 释放cache entry对应的内存
             OpUnfoldCacheEntry *entryPtr = iter->second;
@@ -160,7 +119,7 @@ namespace hccl {
             // 清理cache entry
             cacheHashMap_.erase(iter);
         } else { // cache entry不存在
-            HCCL_INFO("[OpUnfoldCache][ClearEntry] not find cache entry for key [%s]", key.getKeyString().c_str());
+            HCCL_INFO("[OpUnfoldCache][ClearEntry] not find cache entry for key [%s]", key.GetKeyString().c_str());
         }
 
         return HCCL_SUCCESS;
@@ -350,24 +309,76 @@ namespace hccl {
                     CHK_RET(DumpSqeHeader(placeholderSqePtr->header));
                     PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] res1[%u] res2[%u] kernel_credit[%u] res3[%u]",
                         placeholderSqePtr->res1, placeholderSqePtr->res2, placeholderSqePtr->kernel_credit, placeholderSqePtr->res3);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info: flipNumReport[%u] reserved[0][%u] reserved[1][%u] reserved[2][%u] reserved[3][%u] reserved[4][%u] reserved[5][%u]",
-                        placeholderSqePtr->u.flip_task_info.flipNumReport, placeholderSqePtr->u.flip_task_info.reserved[0], placeholderSqePtr->u.flip_task_info.reserved[1], placeholderSqePtr->u.flip_task_info.reserved[2], placeholderSqePtr->u.flip_task_info.reserved[3], placeholderSqePtr->u.flip_task_info.reserved[4], placeholderSqePtr->u.flip_task_info.reserved[5]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info: reserved[6][%u] reserved[7][%u] reserved[8][%u] reserved[9][%u] reserved[10][%u] reserved[11][%u] reserved[12][%u]",
-                        placeholderSqePtr->u.flip_task_info.reserved[6], placeholderSqePtr->u.flip_task_info.reserved[7], placeholderSqePtr->u.flip_task_info.reserved[8], placeholderSqePtr->u.flip_task_info.reserved[9], placeholderSqePtr->u.flip_task_info.reserved[10], placeholderSqePtr->u.flip_task_info.reserved[11], placeholderSqePtr->u.flip_task_info.reserved[12]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info: reserved[13][%u] reserved[14][%u] reserved[15][%u] reserved[16][%u] reserved[17][%u] reserved[18][%u] reserved[19][%u]",
-                        placeholderSqePtr->u.flip_task_info.reserved[13], placeholderSqePtr->u.flip_task_info.reserved[14], placeholderSqePtr->u.flip_task_info.reserved[15], placeholderSqePtr->u.flip_task_info.reserved[16], placeholderSqePtr->u.flip_task_info.reserved[17], placeholderSqePtr->u.flip_task_info.reserved[18], placeholderSqePtr->u.flip_task_info.reserved[19]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info: reserved[20][%u] reserved[21][%u] reserved[22][%u] reserved[23][%u] reserved[24][%u] reserved[25][%u] reserved[26][%u]",
-                        placeholderSqePtr->u.flip_task_info.reserved[20], placeholderSqePtr->u.flip_task_info.reserved[21], placeholderSqePtr->u.flip_task_info.reserved[22], placeholderSqePtr->u.flip_task_info.reserved[23], placeholderSqePtr->u.flip_task_info.reserved[24], placeholderSqePtr->u.flip_task_info.reserved[25], placeholderSqePtr->u.flip_task_info.reserved[26]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info: reserved[27][%u] reserved[28][%u] reserved[29][%u] reserved[30][%u] reserved[31][%u] reserved[32][%u] reserved[33][%u]",
-                        placeholderSqePtr->u.flip_task_info.reserved[27], placeholderSqePtr->u.flip_task_info.reserved[28], placeholderSqePtr->u.flip_task_info.reserved[29], placeholderSqePtr->u.flip_task_info.reserved[30], placeholderSqePtr->u.flip_task_info.reserved[31], placeholderSqePtr->u.flip_task_info.reserved[32], placeholderSqePtr->u.flip_task_info.reserved[33]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info: reserved[34][%u] reserved[35][%u] reserved[36][%u] reserved[37][%u] reserved[38][%u] reserved[39][%u] reserved[40][%u]",
-                        placeholderSqePtr->u.flip_task_info.reserved[34], placeholderSqePtr->u.flip_task_info.reserved[35], placeholderSqePtr->u.flip_task_info.reserved[36], placeholderSqePtr->u.flip_task_info.reserved[37], placeholderSqePtr->u.flip_task_info.reserved[38], placeholderSqePtr->u.flip_task_info.reserved[39], placeholderSqePtr->u.flip_task_info.reserved[40]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info:  reserved[41][%u] reserved[42][%u] reserved[43][%u] reserved[44][%u] reserved[45][%u]",
-                        placeholderSqePtr->u.flip_task_info.reserved[41], placeholderSqePtr->u.flip_task_info.reserved[42], placeholderSqePtr->u.flip_task_info.reserved[43], placeholderSqePtr->u.flip_task_info.reserved[44], placeholderSqePtr->u.flip_task_info.reserved[45]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.resv[0][%u] u.resv[1][%u] u.resv[2][%u] u.resv[3][%u] u.resv[4][%u] u.resv[5][%u] u.resv[6][%u]",
-                        placeholderSqePtr->u.resv[0], placeholderSqePtr->u.resv[1], placeholderSqePtr->u.resv[2], placeholderSqePtr->u.resv[3], placeholderSqePtr->u.resv[4], placeholderSqePtr->u.resv[5], placeholderSqePtr->u.resv[6]);
-                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.resv[7][%u] u.resv[8][%u] u.resv[9][%u] u.resv[10][%u] u.resv[11][%u]",
-                        placeholderSqePtr->u.resv[7], placeholderSqePtr->u.resv[8], placeholderSqePtr->u.resv[9], placeholderSqePtr->u.resv[10], placeholderSqePtr->u.resv[11]);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.flip_task_info: flipNumReport[%u]",
+                        placeholderSqePtr->u.flip_task_info.flipNumReport);
+                    // 注意: 无需打印u.flip_task_info中的reserved数组
+                    // 注意: 无需打印union中的resv数组
+                    break;
+                }
+                case SqeType::CACHE_MEMCPY_PLACEHOLDER_SQE: {
+                    const rtStarsPlaceHolderSqe_t *placeholderSqePtr = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqePtr);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] rtStarsPlaceHolderSqe_t sqeType[%u]", sqeType);
+                    CHK_RET(DumpSqeHeader(placeholderSqePtr->header));
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] res1[%u] res2[%u] kernel_credit[%u] res3[%u]",
+                        placeholderSqePtr->res1, placeholderSqePtr->res2, placeholderSqePtr->kernel_credit, placeholderSqePtr->res3);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.cache_memcpy_task_info: src_addr_low[0x%08x] src_addr_high[0x%08x] dst_addr_low[0x%08x] dst_addr_high[0x%08x]",
+                        placeholderSqePtr->u.cache_memcpy_task_info.src_addr_low, placeholderSqePtr->u.cache_memcpy_task_info.src_addr_high, placeholderSqePtr->u.cache_memcpy_task_info.dst_addr_low, placeholderSqePtr->u.cache_memcpy_task_info.dst_addr_high);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.cache_memcpy_task_info: kernel_credit[%u] linkType[%u]",
+                        placeholderSqePtr->u.cache_memcpy_task_info.kernel_credit,
+                        placeholderSqePtr->u.cache_memcpy_task_info.linkType);
+                    // 注意: 无需打印u.cache_memcpy_task_info中的reserved数组
+                    // 注意: 无需打印union中的resv数组
+                    break;
+                }
+                case SqeType::CACHE_NOTIFY_PLACEHOLDER_SQE: {
+                    const rtStarsPlaceHolderSqe_t *placeholderSqePtr = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqePtr);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] rtStarsPlaceHolderSqe_t sqeType[%u]", sqeType);
+                    CHK_RET(DumpSqeHeader(placeholderSqePtr->header));
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] res1[%u] res2[%u] kernel_credit[%u] res3[%u]",
+                        placeholderSqePtr->res1, placeholderSqePtr->res2, placeholderSqePtr->kernel_credit, placeholderSqePtr->res3);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.cache_notify_task_info: is_wait[%u] kernel_credit[%u] timeout[%u] notify_id[%u]",
+                        placeholderSqePtr->u.cache_notify_task_info.is_wait,
+                        placeholderSqePtr->u.cache_notify_task_info.kernel_credit,
+                        placeholderSqePtr->u.cache_notify_task_info.timeout,
+                        placeholderSqePtr->u.cache_notify_task_info.notify_id);
+                    // 注意: 无需打印u.cache_notify_task_info中的reserved数组
+                    // 注意: 无需打印union中的resv数组
+                    break;
+                }
+                case SqeType::CACHE_WRITE_VALUE_PLACEHOLDER_SQE: {
+                    const rtStarsPlaceHolderSqe_t *placeholderSqePtr = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqePtr);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] rtStarsPlaceHolderSqe_t sqeType[%u]", sqeType);
+                    CHK_RET(DumpSqeHeader(placeholderSqePtr->header));
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] res1[%u] res2[%u] kernel_credit[%u] res3[%u]",
+                        placeholderSqePtr->res1, placeholderSqePtr->res2, placeholderSqePtr->kernel_credit, placeholderSqePtr->res3);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.cache_write_value_task_info: write_addr_low[0x%08x] write_addr_high[0x%08x]",
+                        placeholderSqePtr->u.cache_write_value_task_info.write_addr_low,
+                        placeholderSqePtr->u.cache_write_value_task_info.write_addr_high);
+                    // 注意: 无需打印u.cache_write_value_task_info中的reserved数组
+                    // 注意: 无需打印union中的resv数组
+                    break;
+                }
+                case SqeType::CACHE_MEMCPY_RECORD_PLACEHOLDER_SQE: {
+                    const rtStarsPlaceHolderSqe_t *placeholderSqePtr = reinterpret_cast<const rtStarsPlaceHolderSqe_t *>(sqePtr);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] rtStarsPlaceHolderSqe_t sqeType[%u]", sqeType);
+                    CHK_RET(DumpSqeHeader(placeholderSqePtr->header));
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] res1[%u] res2[%u] kernel_credit[%u] res3[%u]",
+                        placeholderSqePtr->res1, placeholderSqePtr->res2, placeholderSqePtr->kernel_credit, placeholderSqePtr->res3);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.cache_memcpy_record_task_info: length[%u]"\
+                        "src_addr_low[0x%08x] src_addr_high[0x%08x] dst_addr_low[0x%08x] dst_addr_high[0x%08x]",
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.length,
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.src_addr_low,
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.src_addr_high,
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.dst_addr_low,
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.dst_addr_high);
+                    PLF_CONFIG_DEBUG(PLF_TASK, "[OpUnfoldCache][DumpSqeContent] u.cache_memcpy_record_task_info: opcode[%u]"\
+                        "partid[%u] kernel_credit[%u] linkType[%u]",
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.opcode,
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.partid,
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.kernel_credit,
+                        placeholderSqePtr->u.cache_memcpy_record_task_info.linkType);
+                    // 注意: 无需打印u.cache_memcpy_record_task_info中的reserved数组
+                    // 注意: 无需打印union中的resv数组
                     break;
                 }
                 default: {

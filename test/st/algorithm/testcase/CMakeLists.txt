@@ -149,6 +149,7 @@ target_include_directories(hccl_alg_test PRIVATE
     ${HCOMM_ALGORITHM_INCLUDE_LIST}
     ${HCOMM_COMMON_INCLUDE_LIST}
     ${ASCEND_CANN_INCLUDE_LIST}
+    ${HCOMM_PLATFORM_INCLUDE_LIST}
 )
 
 target_compile_options(hccl_alg_test PRIVATE
