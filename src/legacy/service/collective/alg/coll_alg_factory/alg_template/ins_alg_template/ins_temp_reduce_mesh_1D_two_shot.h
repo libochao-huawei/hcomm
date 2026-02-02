@@ -5,8 +5,8 @@
  * Create: 2025-06-05
  */
 
-#ifndef HCCLV2_INS_TEMP_REDUCE_1D_MESH_TWO_SHOT
-#define HCCLV2_INS_TEMP_REDUCE_1D_MESH_TWO_SHOT
+#ifndef HCCLV2_INS_TEMP_REDUCE_MESH_1D_TWO_SHOT_H
+#define HCCLV2_INS_TEMP_REDUCE_MESH_1D_TWO_SHOT_H
 
 #include "string_util.h"
 #include "ins_alg_template_base.h"
@@ -45,4 +45,4 @@ private:
 
 }  // namespace Hccl
 
-#endif  // HCCLV2_INS_TEMP_REDUCE_1D_MESH_TWO_SHOT
+#endif  // HCCLV2_INS_TEMP_REDUCE_MESH_1D_TWO_SHOT_H
