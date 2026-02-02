@@ -116,7 +116,7 @@ HcclResult CommConfig::Load(const HcclCommConfig *userConfig)
         configHandle.info.configSize, configHandle.info.version, configHandle.opExpansionMode);
     HCCL_RUN_INFO("[Load] comm config of [%s]: bufferSize[%llu], deterministic[%u], trafficClass[%u], serviceLevel[%u]"
         ", execTimeOut[%u]s, bufferName[%s], hcclQos[%u]",
-        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str()), hcclQos_;
+        commName_.c_str(), bufferSize_, deterministic_, trafficClass_, serviceLevel_, execTimeOut_, bufferName_.c_str(), hcclQos_);
     return HCCL_SUCCESS;
 }
 

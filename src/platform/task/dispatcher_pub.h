@@ -310,7 +310,7 @@ protected:
     s32 execTimeOut_;
     bool execTimeOutByConfig_;
     uint32_t hcclQos_;
- 	uint32_t mPamid_
+ 	uint32_t mPamid_;
 
 private:
     void SetupTaskParaDma(hccl::TaskPara& taskPara, hccl::TaskParaDMA& para, TaskType taskType,
