@@ -123,22 +123,18 @@ int ra_hdc_ctx_get_async_events(struct ra_ctx_handle *ctx_handle, struct async_e
     op_data.tx_data.num = *num;
     ret = RaHdcProcessMsg(RA_RS_CTX_GET_ASYNC_EVENTS, phy_id, (char *)&op_data,
         sizeof(union op_ctx_get_async_events_data));
-    CHK_PRT_RETURN(ret, hccp_err("[get][async_events]hdc message process failed ret[%d], phy_id[%u] dev_index[0x%x]",
-        ret, phy_id, ctx_handle->dev_index), ret);
 
-    if (op_data.rx_data.num > expected_num) {
-        hccp_err("[get][async_events]rx_data.num(%u) > expected_num(%u), phy_id(%u) dev_index(0x%x)",
-            op_data.rx_data.num, expected_num, phy_id, ctx_handle->dev_index);
-        return -EINVAL;
-    }
-
-    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]hdc message process failed ret[%d], phy_id[%u]"
-        " dev_index[0x%x]", ret, phy_id, ctx_handle->dev_index), ret);
+    CHK_PRT_RETURN(op_data.rx_data.num > expected_num, hccp_err("[get][async_events]rx_data.num:%u > expected_num:%u,"
+        " phy_id:%u dev_index:0x%x", op_data.rx_data.num, expected_num, phy_id, ctx_handle->dev_index), -EINVAL);
 
     for (i = 0; i < op_data.rx_data.num; i++) {
         (void)memcpy_s(&events[i], sizeof(struct async_event), &op_data.rx_data.events[i], sizeof(struct async_event));
     }
     *num = op_data.rx_data.num;
+
+    CHK_PRT_RETURN(ret != 0, hccp_err("[get][async_events]hdc message process failed ret:%d, phy_id:%u"
+        " dev_index:0x%x", ret, phy_id, ctx_handle->dev_index), ret);
+
     return ret;
 }
 
