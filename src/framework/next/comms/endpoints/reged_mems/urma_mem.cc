@@ -30,6 +30,7 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
 {
     HCCL_INFO("[%s] Begin", __FUNCTION__);
     CHK_PTR_NULL(this->localUbRmaBufferMgr_);
+    CHK_PTR_NULL(memHandle);
 
     // 构造LocalUbRmaBuffer
     std::shared_ptr<Hccl::Buffer> localBufferPtr = nullptr;
@@ -50,8 +51,14 @@ HcclResult UbRegedMemMgr::RegisterMemory(HcommMem mem, const char *memTag, void 
     }
 
     std::shared_ptr<Hccl::LocalUbRmaBuffer> localUbRmaBuffer = nullptr;
-    EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
-        return HCCL_E_PTR);
+    if(strcmp(memTag, "HcclBuffer") == 0) {
+        EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr)),
+            return HCCL_E_PTR);
+    }
+    else {
+        EXECEPTION_CATCH((localUbRmaBuffer = std::make_shared<Hccl::LocalUbRmaBuffer>(localBufferPtr, this->rdmaHandle_)),
+            return HCCL_E_PTR);
+    }
     
     // 注册到LocalUbRmaBuffer计数器
     auto resultPair = localUbRmaBufferMgr_->Add(tempKey, localUbRmaBuffer);
