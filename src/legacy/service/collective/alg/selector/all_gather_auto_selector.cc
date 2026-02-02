@@ -16,6 +16,7 @@ constexpr u64 AG_2D_SMALL_DATA_SIZE = 1 * 1024 * 1024;
 SelectorStatus AllGatherAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
+    //try
     HCCL_DEBUG("[AllGatherAutoSelector][%s] start", __func__);
     HCCL_DEBUG("[AllGatherAutoSelector][%s] topoInfo levelNum[%u]", __func__, topoInfo.levelNum);
     if (topoInfo.levelNum > 1) {
