@@ -12,6 +12,8 @@
 
 namespace hccl {
 
+std::unique_ptr<Stream> CpuTsThread::streamDevice_ = nullptr; 
+
 CpuTsThread::CpuTsThread(rtStream_t rtStream, uint32_t notifyNum, const NotifyLoadType notifyLoadType)
     : rtStream_(rtStream), notifyNum_(notifyNum), notifyLoadType_(notifyLoadType)
 {}
@@ -87,10 +89,13 @@ std::string &CpuTsThread::GetUniqueId()
     oss.write(reinterpret_cast<const char_t *>(&notifyNum_), sizeof(notifyNum_));
 
     // 临时申请一条流，用于在device侧资源展开时initStream
-    streamDevice_.reset(new (std::nothrow) Stream(streamType));
+    std::lock_guard<std::mutex> lock(streamDeviceMutex_);
     if (streamDevice_ == nullptr) {
-        HCCL_ERROR("[CpuTsThread][%s]reset stream failed, stream type[%d]",__func__, streamType);
-        return uniqueIdStr_;
+        streamDevice_.reset(new (std::nothrow) Stream(streamType));
+        if (streamDevice_ == nullptr) {
+            HCCL_ERROR("[CpuTsThread][%s]reset stream failed, stream type[%d]", __func__, streamType);
+            return uniqueIdStr_;
+        }
     }
 
     uint64_t size = sizeof(SqCqeContext);

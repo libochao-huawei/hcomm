@@ -195,3 +195,63 @@ TEST_F(HcclIndependentOpEngineTest, Ut_CommGetNotifyNumInThread_When_Param_Is_In
     ret = HcclGetNotifyNumInThread(comm, thread1[0], CommEngine::COMM_ENGINE_RESERVED, &getNotifyNum);
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Param_Is_Invalid)
+{
+    ThreadHandle threads[1] = {0};
+    ThreadHandle exportedThreads[1] = {0};
+
+    // 通信域为空
+    HcclResult ret = HcclThreadExportToCommEngine(nullptr, 1, threads, CommEngine::COMM_ENGINE_CPU, exportedThreads);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    // 需要转换的thread为0
+    ret = HcclThreadExportToCommEngine(comm, 0, threads, CommEngine::COMM_ENGINE_CPU, exportedThreads);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    // 需要导入的地址为空
+    ret = HcclThreadExportToCommEngine(comm, 1, nullptr, CommEngine::COMM_ENGINE_CPU, exportedThreads);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+
+    // 目标引擎非法
+    ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_RESERVED, exportedThreads);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    // 导出地址为空
+    ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_CPU, nullptr);
+    EXPECT_EQ(ret, HCCL_E_PTR);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Engine_Is_Cpu)
+{
+    ThreadHandle threads[1] = {1};
+    ThreadHandle exportedThreads[1] = {2};
+
+    // 未知threadHandle
+    HcclResult ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_CPU, exportedThreads);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    // 添加thread 
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    auto &threadMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr().threadMgr_;
+    threadMgr->threadHandleOthersToCpu_[threads[0]] = exportedThreads[0];
+    ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_CPU, exportedThreads);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(HcclIndependentOpEngineTest, Ut_HcclThreadExportToCommEngine_When_Engine_Is_Aicpu)
+{
+    ThreadHandle threads[1] = {1};
+    ThreadHandle exportedThreads[1] = {2};
+
+    // 未知threadHandle
+    HcclResult ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_AICPU_TS, exportedThreads);
+    EXPECT_EQ(ret, HCCL_E_PARA);
+
+    // 添加thread 
+    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+    auto &threadMgr = hcclComm->GetIndependentOp().GetCommEngineResMgr().threadMgr_;
+    threadMgr->threadHandleOthersToCpu_[threads[0]] = exportedThreads[0];
+    ret = HcclThreadExportToCommEngine(comm, 1, threads, CommEngine::COMM_ENGINE_CPU, exportedThreads);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
