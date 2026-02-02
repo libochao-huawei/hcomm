@@ -60,6 +60,7 @@ SelectorStatus AllReduceAutoSelector::SelectCcuMsAlgo(const TopoInfo &topoInfo,
     }
 }
 
+
 SelectorStatus AllReduceAutoSelector::SelectMeshAlgo(const TopoInfo &topoInfo,
                                                     const CollAlgOperator &op,
                                                     std::string &primQueueGenName) const
