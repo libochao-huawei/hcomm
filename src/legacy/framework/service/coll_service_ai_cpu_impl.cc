@@ -339,10 +339,16 @@ void CollServiceAiCpuImpl::SetHcclKernelLaunchParam(HcclKernelLaunchParam &param
     }
 
     param.kernel.op.sendRecvRemoteRank = op.sendRecvRemoteRank;
+    Stream *streamPtr = nullptr;
     if(op.opMode == OpMode::OPBASE) {
-        param.kernel.op.userStreamId = comm->GetStreamManager().opbase->GetMaster()->GetId();
+        streamPtr = comm->GetStreamManager().opbase->GetMaster()->GetId();
     } else {
-        param.kernel.op.userStreamId = comm->GetStreamManager().offload->GetMaster(op.opTag)->GetId();
+        streamPtr = comm->GetStreamManager().offload->GetMaster(op.opTag)->GetId();
+    }
+    if (streamPtr != nullptr) {
+        param.kernel.op.userStreamId = streamPtr -> GetId();
+    } else {
+        HCCL_WARNING("CollServiceAiCpuImpl::%s userStream is nullptr, userStreamId id in kernel param is invalid.", __func__);
     }
     param.kernel.kfcControlTransferH2DParams = comm->GetKfcControlTransferH2D().GetCommunicateParams();
     param.kernel.kfcControlTransferD2HParams = comm->GetKfcStatusTransferD2H().GetCommunicateParams();
