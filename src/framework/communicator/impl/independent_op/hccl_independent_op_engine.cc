@@ -229,5 +229,6 @@ HcclResult HcclThreadExportToCommEngine(HcclComm comm, uint32_t threadNum, const
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[%s] Thread export failed. Export threadNum[%u], commEngine[%d], threadsPtr[%p], exportedThreadsPtr[%p]",
          __func__, threadNum, dstCommEngine, threads, exportedThreads), ret);
     HCCL_INFO("[%s]:comm[%s] export success. ", __func__, commId.c_str());
+    HCCL_INFO("TEST export success. ");
     return HCCL_SUCCESS;
 }
