@@ -35,10 +35,11 @@ void AddressInfo::Deserialize(const nlohmann::json &addressInfoJson)
     
     std::string address;
     std::string msgAddr = "error occurs when parser object of propName \"addr\"";
+    const int MAX_DISPLAY_LEN = 128;
     TRY_CATCH_THROW(InvalidParamsException, msgAddr, address = GetJsonProperty(addressInfoJson, "addr"););
    
     if (address.length() < MIN_VALUE_ADDR_LENGRH || address.length() > MAX_VALUE_ADDR_LENGRH) {
-        THROW<InvalidParamsException>(StringFormat("addr [%s] length is out of range [%u] to [%u]", address.c_str(), MIN_VALUE_ADDR_LENGRH, MAX_VALUE_ADDR_LENGRH));
+        THROW<InvalidParamsException>(StringFormat("addr [%.*s] length is out of range [%u] to [%u]", MAX_DISPLAY_LEN, address.c_str(), MIN_VALUE_ADDR_LENGRH, MAX_VALUE_ADDR_LENGRH));
     }
 
     if (addrTypeStr == "IPV4") {
