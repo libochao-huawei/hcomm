@@ -39,6 +39,8 @@ private:
     RankId GetRankFromMap(const u32 rankIdx);
 
     u32 myIdx_ = INVALID_U32;
+
+    std::vector<RankId> idxToRankMap_;
 };
 
 }  // namespace Hccl

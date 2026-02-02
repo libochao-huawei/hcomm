@@ -17,6 +17,12 @@ InsTempReduceMesh1DTwoShot::InsTempReduceMesh1DTwoShot(const RankId virtualRank,
     const std::vector<std::vector<RankId>> &tempVTopo, const std::map<RankId, u32> &tempVirtRankMap)
     : InsAlgTemplateBase(virtualRank, tempRankSize, tempVTopo, tempVirtRankMap)
 {
+    idxToRankMap_.assign(tempRankSize_, -1);
+    for (const auto &pair : tempVirtRankMap_) {
+        if (pair.second < tempRankSize_) {
+            idxToRankMap_[pair.second] = pair.first;
+        }
+    }
     HCCL_INFO("[InsTempReduceMesh1DTwoShot] Init.");
 }
 
@@ -44,8 +50,8 @@ HcclResult InsTempReduceMesh1DTwoShot::CalcRes(AlgTempResReq &tempResReq)
 
 u32 InsTempReduceMesh1DTwoShot::CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType) const
 {
-    (void)input;
-    (void)output;
+    (void)inBuffType;
+    (void)outBuffType;
     return tempRankSize_;
 }
 
@@ -55,21 +61,30 @@ HcclResult InsTempReduceMesh1DTwoShot::CalcSlice(const u64 dataSize, RankSliceIn
     sliceInfoVec.resize(tempRankSize_, tmp);
 
     u32 unitAllignSize = DataTypeSizeGet(dataType_);
+    if (unitAllignSize == 0) {
+        return HcclResult::HCCL_E_INTERNAL;
+    }
 
-    u64 elementsPerRank = (dataSize / unitAllignSize) / tempRankSize_;
-    u64 chunkSize = elementsPerRank * unitAllignSize;
+    u64 totalElements = dataSize / unitAllignSize;
+    u64 baseElements = totalElements / tempRankSize_;
+    u64 remainder = totalElements % tempRankSize_;
     
     u64 accumOff = 0;
     for (u32 rankIdx = 0; rankIdx < tempRankSize_; rankIdx++) {
-        u64 currChunkSize;
-        if (rankIdx == tempRankSize_ - 1) {
-            currChunkSize = dataSize - accumOff;
+        u64 currSize = 0;
+        
+        if (rankIdx < remainder) {
+            currSize = (baseElements + 1) * unitAllignSize;
         } else {
-            currChunkSize = chunkSize;
+            currSize = baseElements * unitAllignSize;
+        }
+
+        if (rankIdx == tempRankSize_ - 1) {
+             currSize = dataSize - accumOff;
         }
         
-        sliceInfoVec[rankIdx][0] = {accumOff, currChunkSize};
-        accumOff += currChunkSize;
+        sliceInfoVec[rankIdx][0] = {accumOff, currSize};
+        accumOff += currSize;
     }
 
     return HcclResult::HCCL_SUCCESS;
@@ -84,7 +99,13 @@ HcclResult InsTempReduceMesh1DTwoShot::GenExtIns(const TempFuncs &tempFuncs, con
 
     opMode_ = tempFuncs.opMode;
     enableCounterNotify_ = tempFuncs.enableCounterNotify;
-    myIdx_ = tempVirtRankMap_.at(myRank_);
+
+    auto it = tempVirtRankMap_.find(myRank_);
+    if (it == tempVirtRankMap_.end()) {
+        HCCL_ERROR("[InsTempReduceMesh1DTwoShot] myRank [%d] not found in tempVirtRankMap.", myRank_);
+        return HcclResult::HCCL_E_INTERNAL;
+    }
+    myIdx_ = it->second;
 
     RankSliceInfo sliceInfoVec;
     CHK_RET(CalcSlice(tempAlgParams.sliceSize, sliceInfoVec));
@@ -105,17 +126,24 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
     PreSyncInterQueues(tempInsQues);
 
     for (u32 rankId = 0; rankId < tempRankSize_; rankId++) {
-        DataSlice ssrc(tempAlgParams.buffInfo.inBuffType, sliceInfoVec[rankId][0].offset + inOff, sliceInfoVec[rankId][0].size);
-        DataSlice sdest(tempAlgParams.buffInfo.scratBuffType, myIdx_ * sliceInfoVec[rankId][0].size + scOff, sliceInfoVec[rankId][0].size);
+        u64 sliceSize = sliceInfoVec[rankId][0].size;
+        u64 sliceOffset = sliceInfoVec[rankId][0].offset;
+
+        DataSlice ssrc(tempAlgParams.buffInfo.inBuffType, sliceOffset + inOff, sliceSize);
+        DataSlice sdest(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(myIdx_) * sliceSize + scOff, sliceSize);
 
         if (rankId == myIdx_) {
-            if (sliceInfoVec[rankId][0].size != 0) {
+            if (sliceSize != 0) {
                 CHK_RET(LocalCopy(tempInsQues[rankId], ssrc, sdest));
             }
         } else {
-            DataSlice rsrc(tempAlgParams.buffInfo.inBuffType, sliceInfoVec[myIdx_][0].offset + inOff, sliceInfoVec[myIdx_][0].size);
-            DataSlice rdest(tempAlgParams.buffInfo.scratBuffType, rankId * sliceInfoVec[myIdx_][0].size + scOff, sliceInfoVec[myIdx_][0].size);
+            u64 mySliceSize = sliceInfoVec[myIdx_][0].size;
+            u64 mySliceOffset = sliceInfoVec[myIdx_][0].offset;
 
+            DataSlice rsrc(tempAlgParams.buffInfo.inBuffType, mySliceOffset + inOff, mySliceSize);
+            DataSlice rdest(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(rankId) * mySliceSize + scOff, mySliceSize);
+
+            // [修改] 使用优化后的 GetRankFromMap
             const auto &link = tempLinks.at(GetRankFromMap(rankId))[0];
             TxRxLinks links(link, link);
             SlicesList sendSList({ssrc}, {sdest});
@@ -128,10 +156,11 @@ HcclResult InsTempReduceMesh1DTwoShot::RunReduceScatter(const RankSliceInfo &sli
 
     PostSyncInterQueues(tempInsQues);
 
-    if (sliceInfoVec[myIdx_][0].size != 0) {
-        DataSlice finalDest(tempAlgParams.buffInfo.scratBuffType, scOff, sliceInfoVec[myIdx_][0].size);
+    u64 myFinalSliceSize = sliceInfoVec[myIdx_][0].size;
+    if (myFinalSliceSize != 0) {
+        DataSlice finalDest(tempAlgParams.buffInfo.scratBuffType, scOff, myFinalSliceSize);
         for (u32 i = 1; i < tempRankSize_; i++) {
-            DataSlice currentSrc(tempAlgParams.buffInfo.scratBuffType, i * sliceInfoVec[myIdx_][0].size + scOff, sliceInfoVec[myIdx_][0].size);
+            DataSlice currentSrc(tempAlgParams.buffInfo.scratBuffType, static_cast<u64>(i) * myFinalSliceSize + scOff, myFinalSliceSize);
             CHK_RET(LocalReduce(tempInsQues[0], currentSrc, finalDest, dataType_, redOp_));
         }
     }
@@ -147,7 +176,7 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
 
     PreSyncInterQueues(tempInsQues);
 
-    if (u32(myRank_) == root_) {
+    if (static_cast<u32>(myRank_) == root_) {
         for (u32 rankIdx = 0; rankIdx < tempRankSize_; rankIdx++) {
             u64 curSize = sliceInfoVec[rankIdx][0].size;
             if (curSize == 0) continue;
@@ -187,13 +216,9 @@ HcclResult InsTempReduceMesh1DTwoShot::RunGatherToRoot(const RankSliceInfo &slic
 
 RankId InsTempReduceMesh1DTwoShot::GetRankFromMap(const u32 rankIdx)
 {
-    RankId rank = -1;
-    for (auto &pair : tempVirtRankMap_) {
-        if (pair.second == rankIdx) {
-            rank = pair.first;
-            break;
-        }
+    if (rankIdx >= idxToRankMap_.size()) {
+        return -1;
     }
-    return rank;
+    return idxToRankMap_[rankIdx];
 }
 }  // namespace Hccl
