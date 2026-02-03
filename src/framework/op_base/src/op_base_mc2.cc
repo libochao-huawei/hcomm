@@ -46,6 +46,7 @@ HcclResult HcclGetInitTilingList(const void *mc2Tiling, const void *p[], uint32_
             p[i] = reinterpret_cast<const void *>(reinterpret_cast<const u8 *>(mc2Tiling) + versionPtr[i]);
         }
     }
+    HCCL_INFO("HcclGetInitTilingList version[%u] cnt[%u]", version, cnt);
     return HCCL_SUCCESS;
 }
 
@@ -54,6 +55,7 @@ HcclResult HcclMc2ComResourceByTiling(HcclComm comm, void *mc2Tiling, rtStream_t
     const void *tilingList[MAX_HCOM_NUM];
     uint32_t tilingNum;
     CHK_RET(HcclGetInitTilingList(mc2Tiling, tilingList, tilingNum));
+    CHK_PRT_RET(tilingNum == 0, HCCL_ERROR("Invalid tilingNum %u.", tilingNum), HCCL_E_PARA);
 
     hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
     string commIdentifier = hcclComm->GetIdentifier();
