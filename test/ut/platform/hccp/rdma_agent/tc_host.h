@@ -30,4 +30,7 @@ extern "C" void tc_ra_get_server_socket_err_info(void);
 extern "C" void tc_ra_socket_accept_credit_add(void);
 extern "C" void tc_ra_remap_mr(void);
 extern "C" void tc_ra_register_mr(void);
+extern "C" void tc_ra_get_lb_max(void);
+extern "C" void tc_ra_set_qp_lb_value(void);
+extern "C" void tc_ra_get_qp_lb_value(void);
 #endif
