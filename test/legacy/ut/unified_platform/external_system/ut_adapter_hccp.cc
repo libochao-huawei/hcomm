@@ -182,7 +182,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_ok)
@@ -190,10 +190,11 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_ok)
     // Given
     MOCKER(RaSocketWhiteListAdd).stubs().will(returnValue(0));
     vector<RaSocketWhitelist> whiteList(1);
+    SocketHandle validSocketHandle = reinterpret_cast<SocketHandle>(0x123);
     // when
 
     // then
-    EXPECT_NO_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList));
+    EXPECT_NO_THROW(HrtRaSocketWhiteListAdd(validSocketHandle, whiteList));
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_strcpy_nok)
@@ -204,7 +205,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListAdd_strcpy_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), InternalException);
+    EXPECT_THROW(HrtRaSocketWhiteListAdd(nullptr, whiteList), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, HrtRaSocketWhiteListDel_nok)
@@ -215,7 +216,7 @@ TEST_F(AdapterHccpTest, HrtRaSocketWhiteListDel_nok)
     // when
 
     // then
-    EXPECT_THROW(HrtRaSocketWhiteListDel(nullptr, whiteList), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketWhiteListDel(nullptr, whiteList), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, hrtRaSocketListenOneStart_again)
@@ -347,7 +348,8 @@ TEST_F(AdapterHccpTest, HrtRaUbCtxInit_ok)
 
 TEST_F(AdapterHccpTest, HrtRaUbCtxDestroy_ok)
 {
-    HrtRaUbCtxDestroy(nullptr);
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    HrtRaUbCtxDestroy(handle);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbLocalMemReg_ok)
@@ -359,7 +361,7 @@ TEST_F(AdapterHccpTest, HrtRaUbLocalMemReg_ok)
 
     HrtRaUbLocMemRegParam inParam(fakeAddr, fakeSize, fakeTokenValue, fakeTokenIdHandle);
 
-    RdmaHandle fakeRdmaHandle = nullptr;
+    RdmaHandle fakeRdmaHandle = reinterpret_cast<RdmaHandle>(0x123);
 
     HrtRaUbLocalMemRegOutParam result = HrtRaUbLocalMemReg(fakeRdmaHandle, inParam);
 
@@ -368,7 +370,7 @@ TEST_F(AdapterHccpTest, HrtRaUbLocalMemReg_ok)
 
 TEST_F(AdapterHccpTest, Ut_RaUbLocalMemRegAsync_When_Normal_Input_Expect_No_Throw)
 {
-    RdmaHandle handle = nullptr;
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
     uint64_t fakeAddr       = 0;
     uint64_t fakeSize       = 0;
     uint32_t fakeTokenValue = 0;
@@ -394,50 +396,56 @@ TEST_F(AdapterHccpTest, Ut_RaUbLocalMemRegAsync_When_Normal_Input_Expect_No_Thro
 
 TEST_F(AdapterHccpTest, HrtRaUbLocalMemUnreg_ok)
 {
-    RdmaHandle fakeRdmaHandle = nullptr;
+    RdmaHandle fakeRdmaHandle = reinterpret_cast<RdmaHandle>(0x123);
     HrtRaUbLocalMemUnreg(fakeRdmaHandle, 0);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbRemoteMemImport_ok)
 {
     uint8_t value[128];
-    HrtRaUbRemMemImportedOutParam result = HrtRaUbRemoteMemImport(nullptr, value, 128, 0);
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    HrtRaUbRemMemImportedOutParam result = HrtRaUbRemoteMemImport(handle, value, 128, 0);
  
     EXPECT_EQ(0, result.targetSegVa);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbRemoteMemUnimport_ok)
 {
-    HrtRaUbRemoteMemUnimport(nullptr, 0);
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    HrtRaUbRemoteMemUnimport(handle, 0);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbCreateJfc_ok)
 {
-    u64 result = HrtRaUbCreateJfc(nullptr, HrtUbJfcMode::NORMAL);
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    u64 result = HrtRaUbCreateJfc(handle, HrtUbJfcMode::NORMAL);
     EXPECT_EQ(0, result);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbDestroyJfc_ok)
 {
-    HrtRaUbDestroyJfc(nullptr, 0);
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    HrtRaUbDestroyJfc(handle, 0);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbCreateJetty_ok)
 {
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+
     HrtRaUbCreateJettyParam inParam1{100, 100, 100, 100, HrtJettyMode::HOST_OPBASE, 0, 100, 100, 100, 100};
-    HrtRaUbJettyCreatedOutParam result1 = HrtRaUbCreateJetty(nullptr, inParam1);
+    HrtRaUbJettyCreatedOutParam result1 = HrtRaUbCreateJetty(handle, inParam1);
     EXPECT_EQ(0, result1.jettyVa);
 
     HrtRaUbCreateJettyParam inParam2{100, 100, 100, 100, HrtJettyMode::HOST_OFFLOAD, 0, 100, 100, 100, 100};
-    HrtRaUbJettyCreatedOutParam result2 = HrtRaUbCreateJetty(nullptr, inParam2);
+    HrtRaUbJettyCreatedOutParam result2 = HrtRaUbCreateJetty(handle, inParam2);
     EXPECT_EQ(0, result2.jettyVa);
 
     HrtRaUbCreateJettyParam inParam3{100, 100, 100, 100, HrtJettyMode::CCU_CCUM_CACHE, 0, 100, 100, 100, 100};
-    HrtRaUbJettyCreatedOutParam result3 = HrtRaUbCreateJetty(nullptr, inParam3);
+    HrtRaUbJettyCreatedOutParam result3 = HrtRaUbCreateJetty(handle, inParam3);
     EXPECT_EQ(0, result3.jettyVa);
 
     HrtRaUbCreateJettyParam inParam4{100, 100, 100, 100, HrtJettyMode::DEV_USED, 0, 100, 100, 100, 100};
-    HrtRaUbJettyCreatedOutParam result4 = HrtRaUbCreateJetty(nullptr, inParam4);
+    HrtRaUbJettyCreatedOutParam result4 = HrtRaUbCreateJetty(handle, inParam4);
     EXPECT_EQ(0, result4.jettyVa);
 }
 
@@ -449,12 +457,15 @@ TEST_F(AdapterHccpTest, HrtRaUbDestroyJetty_ok)
 TEST_F(AdapterHccpTest, RaUbTpImportJetty_throw)
 {
     struct JettyImportCfg cfg = {};
-    EXPECT_THROW(RaUbTpImportJetty(nullptr, nullptr, 0, 0, cfg), NetworkApiException);
+    uint8_t value[128];
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    EXPECT_THROW(RaUbTpImportJetty(handle, value, 0, 0, cfg), NetworkApiException);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbUnimportJetty_ok)
 {
-    HrtRaUbUnimportJetty(nullptr, 0);
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    HrtRaUbUnimportJetty(handle, 0);
 }
 
 TEST_F(AdapterHccpTest, HrtRaUbJettyBind_ok)
@@ -591,20 +602,20 @@ TEST_F(AdapterHccpTest, RaGetAsyncReqResult_exception)
  
 TEST_F(AdapterHccpTest, RaUbLocalMemUnregAsync_exception)
 {
-    RdmaHandle rdmaHandle;
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x123);
     LocMemHandle lmemHandle;
     RaUbLocalMemUnregAsync(rdmaHandle, lmemHandle);
 }
  
 TEST_F(AdapterHccpTest, RaUbDestroyJettyAsync_exception)
 {
-    void* jettyHandle = nullptr;
+    void* jettyHandle = reinterpret_cast<void*>(0x123);
     RequestHandle result = RaUbDestroyJettyAsync(jettyHandle);
 }
  
 TEST_F(AdapterHccpTest, RaUbUnimportJettyAsync_exception)
 {
-    void* targetJettyHandle = nullptr;
+    void* targetJettyHandle = reinterpret_cast<void*>(0x123);
     RaUbUnimportJettyAsync(targetJettyHandle);
 }
 
@@ -695,7 +706,8 @@ TEST_F(AdapterHccpTest, RaSocketListenOneStopAsync_return_ok)
 
 TEST_F(AdapterHccpTest, RaUbAllocTokenIdHandle_ok)
 {
-    std::pair<TokenIdHandle, uint32_t> result = RaUbAllocTokenIdHandle(nullptr);
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x123);
+    std::pair<TokenIdHandle, uint32_t> result = RaUbAllocTokenIdHandle(rdmaHandle);
     std::pair<TokenIdHandle, uint32_t> expectResult(0, 0);
     EXPECT_EQ(result, expectResult);
 }
@@ -703,7 +715,7 @@ TEST_F(AdapterHccpTest, RaUbAllocTokenIdHandle_ok)
 TEST_F(AdapterHccpTest, RaUbFreeTokenIdHandle_exception)
 {
     MOCKER(RaCtxTokenIdFree).stubs().with(any()).will(returnValue(1));
-    EXPECT_THROW(RaUbFreeTokenIdHandle(0, 0), NetworkApiException);
+    EXPECT_THROW(RaUbFreeTokenIdHandle(0, 0), NullPtrException);
 }
 
 void MockRaSocketRecv(int ret, unsigned long long recvSize)
@@ -723,6 +735,8 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvOnceComplete_Expect_Suc
 {
     MockRaSocketRecv(0, 100); // 一次接收完成
     MockEnvLinkTimeoutGet(1); // 1秒超时
+    FdHandle fakeFdHandle = reinterpret_cast<FdHandle>(0x123);
+    void *fakeData = reinterpret_cast<void *>(0x133);
     EXPECT_NO_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100));
 }
 
@@ -730,35 +744,35 @@ TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeExceeds_Expect_Thro
 {
     MockRaSocketRecv(0, 150); // 超出预期大小
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_RecvSizeZero_Expect_ThrowException)
 {
     MockRaSocketRecv(0, 0); // 接收为0
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClosed_Expect_ThrowException)
 {
     MockRaSocketRecv(SOCK_ESOCKCLOSED, 0);
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_SockClose_Expect_ThrowException)
 {
     MockRaSocketRecv(SOCK_CLOSE, 0);
     MockEnvLinkTimeoutGet(1);
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, Ut_HrtRaSocketBlockRecv_When_Timeout_Expect_ThrowException)
 {
     MockRaSocketRecv(0, 0); // 模拟一直接收不到数据
     MockEnvLinkTimeoutGet(0); // 超时时间设为0
-    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NetworkApiException);
+    EXPECT_THROW(HrtRaSocketBlockRecv(fakeFdHandle, fakeData, 100), NullPtrException);
 }
 
 TEST_F(AdapterHccpTest, ut_HrtRaSocketWhiteListDel_With_Enormous_WhiteList)
@@ -766,10 +780,11 @@ TEST_F(AdapterHccpTest, ut_HrtRaSocketWhiteListDel_With_Enormous_WhiteList)
     // 大量删除接口
     RaSocketWhitelist wlist{};
     vector<RaSocketWhitelist> wlists(56, wlist);
+    SocketHandle fakeFdHandle = reinterpret_cast<SocketHandle>(0x123);
 
     MOCKER(RaSocketWhiteListDel).stubs().will(returnValue(0));
 
-    EXPECT_NO_THROW(HrtRaSocketWhiteListDel(nullptr, wlists));
+    EXPECT_NO_THROW(HrtRaSocketWhiteListDel(fakeFdHandle, wlists));
 }
 
 TEST_F(AdapterHccpTest, Ut_HraGetRtpEnable_When_RTP_Equals_1_Expect_Return_True)
