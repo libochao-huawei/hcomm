@@ -75,6 +75,7 @@ private:
     static RankId GetRankIdByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
     static void PrintGroupErrorMessage(ErrorMessageReport &errorMessage, TaskInfo &exceptionTaskInfo, string &groupRankContent, string &stageErrInfo);
     static void PrintOpDataErrorMessage(u32 deviceId, ErrorMessageReport &errorMessage, string &stageErrInfo);
+    static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
 
 private:
     uint32_t devId_; // 当前设备id
