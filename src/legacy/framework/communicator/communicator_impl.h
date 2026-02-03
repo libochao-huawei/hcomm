@@ -469,6 +469,7 @@ private:
     OpExecuteConfig                            commExecuteConfig; // 通信域粒度 加速模式
     std::string                                curAlgName; // 当前算法名称
     bool                                       isLoadOp{false}; // 是否已加载过算子,只要算子下发过就不让改加速模式 loadop offload AllocCommResource
+    std::atomic<u32>                           tagResourceIndex_{0};
     u32                                        aivTag{1}; // aiv kernal内部用于标志位计数
     u32                                        aivOffloadTag{0};// aiv kernal内部用于标志位计数
     
@@ -561,6 +562,10 @@ private:
 
     void CheckAcceleratorConsistency(AcceleratorState commAccelerator, AcceleratorState tilingAccelerator) const;
     HcclResult GetTilingAccelerator(void *mc2Tiling, AcceleratorState& acceleratorState) const;
+
+    // AICPU场景aclgraph专用
+    bool IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const;
+    HcclResult OffloadResourcePre(std::string &opTag, const CollOpParams &opParams);
 };
 } // namespace Hccl
 
