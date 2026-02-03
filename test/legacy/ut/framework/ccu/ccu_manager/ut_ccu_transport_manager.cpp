@@ -154,6 +154,8 @@ void MockCcuTransportMgrDevs()
 
     MOCKER_CPP(&CcuTransport::Init).stubs().will(returnValue(OkResult));
     MOCKER_CPP(&CcuConnection::Init).stubs().will(returnValue(OkResult));
+
+    MOCKER(HrtRaUbUnimportJetty).stubs().with(any(), any()).will(ignoreReturnValue());
 }
 
 TEST_F(CcuTransportMgrTest, Ut_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
