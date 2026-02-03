@@ -194,6 +194,10 @@ TEST_F(CcuContextTrackerTest, TrackerTest)
         ctx->SetCcuInstrInfo(instrInfo);
 
         CcuTaskArgTest taskArg(0, 0, 100);
-        auto taskParam = ctx->GeneTaskParam(taskArg);
+        std::vector<CcuTaskParam> tmp;
+        auto ret = ctx->GeneTaskParam(taskArg, tmp);
+        if (ret != HcclResult::HCCL_SUCCESS) {
+            THROW<CcuApiException>("GeneTaskParam is failed!");
+        }
     }
 }

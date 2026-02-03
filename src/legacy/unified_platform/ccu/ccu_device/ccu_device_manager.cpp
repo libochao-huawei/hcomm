@@ -27,7 +27,10 @@ HcclResult CcuAllocChannels(const int32_t deviceLogicId, const CcuChannelPara &c
         "channelnum[%u], jettyNum[%u], sqSize[%u].", __func__, deviceLogicId,
         ccuChannelPara.ipAddr.Describe().c_str(), ccuChannelPara.channelNum,
         ccuChannelPara.jettyNum, ccuChannelPara.sqSize);
-
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuAllocChannels]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);  
     TRY_CATCH_RETURN(
         const uint32_t devPhyId = HrtGetDevicePhyIdByIndex(deviceLogicId);
         auto &rdmaHandleMgr = RdmaHandleManager::GetInstance();
@@ -47,7 +50,10 @@ HcclResult CcuReleaseChannel(const int32_t deviceLogicId, const uint8_t dieId,
 {
     HCCL_INFO("[%s] new release request: deviceLogicId[%d], dieId[%u], "
         "ccuChannelId[%u].", __func__, deviceLogicId, dieId, ccuChannelId);
-
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuReleaseChannel]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA); 
     TRY_CATCH_RETURN(
         return CcuComponent::GetInstance(deviceLogicId).ReleaseChannel(dieId, ccuChannelId);
     );
@@ -55,6 +61,11 @@ HcclResult CcuReleaseChannel(const int32_t deviceLogicId, const uint8_t dieId,
 
 HcclResult CcuGetChannelSpecNum(const int32_t deviceLogicId, const uint8_t dieId, uint32_t &channelNum)
 {
+    HCCL_INFO("[CcuGetChannelSpecNum] Input params: deviceLogicId[%d], dieId[%u], channelNum[%u]", deviceLogicId, dieId, channelNum);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuGetChannelSpecNum]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
     TRY_CATCH_RETURN(
         return CcuResSpecifications::GetInstance(deviceLogicId).GetChannelNum(dieId, channelNum);
     );
@@ -62,6 +73,11 @@ HcclResult CcuGetChannelSpecNum(const int32_t deviceLogicId, const uint8_t dieId
 
 HcclResult CcuSetTaskKill(const int32_t deviceLogicId)
 {
+    HCCL_INFO("[CcuSetTaskKill] Input params: deviceLogicId[%d]", deviceLogicId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuSetTaskKill]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
     TRY_CATCH_RETURN(
         return CcuComponent::GetInstance(deviceLogicId).SetTaskKill();
     );
@@ -69,6 +85,11 @@ HcclResult CcuSetTaskKill(const int32_t deviceLogicId)
 
 HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId)
 {
+    HCCL_INFO("[CcuSetTaskKillDone] Input params: deviceLogicId[%d]", deviceLogicId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuSetTaskKillDone]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
     TRY_CATCH_RETURN(
         return CcuComponent::GetInstance(deviceLogicId).SetTaskKillDone();
     );
@@ -76,6 +97,11 @@ HcclResult CcuSetTaskKillDone(const int32_t deviceLogicId)
 
 HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
 {
+    HCCL_INFO("[CcuCleanTaskKillState] Input params: deviceLogicId[%u]", deviceLogicId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuCleanTaskKillState]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
     TRY_CATCH_RETURN(
         return CcuComponent::GetInstance(deviceLogicId).CleanTaskKillState();
     );
@@ -83,6 +109,11 @@ HcclResult CcuCleanTaskKillState(const int32_t deviceLogicId)
 
 HcclResult CcuCleanDieCkes(const int32_t deviceLogicId, const uint8_t dieId)
 {
+    HCCL_INFO("[CcuCleanDieCkes] Input params: deviceLogicId[%u], dieId[%u]", deviceLogicId, dieId);
+    // 入参校验拦截
+    CHK_PRT_RET((deviceLogicId < 0 || static_cast<u32>(deviceLogicId) >= MAX_MODULE_DEVICE_NUM),
+        HCCL_ERROR("[CcuCleanDieCkes]deviceLogicId[%d] error, MAX_MODULE_DEVICE_NUM[%u]", deviceLogicId, MAX_MODULE_DEVICE_NUM),
+            HcclResult::HCCL_E_PARA);
     TRY_CATCH_RETURN(
         return CcuComponent::GetInstance(deviceLogicId).CleanDieCkes(dieId);
     );
