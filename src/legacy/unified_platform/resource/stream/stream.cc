@@ -42,7 +42,7 @@ Stream::~Stream()
 {
     try {
         if (selfOwned) {
-            HrtStreamDestroy(ptr);
+            DECTOR_TRY_CATCH("Stream", HrtStreamDestroy(ptr));
         }
     } catch (HcclException &e) {
         HCCL_ERROR(e.what());

@@ -71,7 +71,7 @@ std::pair<TokenIdHandle, uint32_t> InnerNetDev::getTokenIdInfo(const BufferKey<u
 InnerNetDev::~InnerNetDev()
 {
     if (ubJfcHandle_ != 0) {
-        HrtRaUbDestroyJfc(rdmaHandle_, ubJfcHandle_);
+        DECTOR_TRY_CATCH("jfc handle destroy", HrtRaUbDestroyJfc(rdmaHandle_, ubJfcHandle_));
     }
     if (localProto_ == LinkProtoType::RDMA) {
         if (tokenHandle_ != 0) {
