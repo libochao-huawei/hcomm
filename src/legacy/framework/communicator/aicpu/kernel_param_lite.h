@@ -49,6 +49,7 @@ struct HcclAicpuOpLite {
     void*                 batchPutGetLocalAddr{nullptr};
     void*                 batchPutGetRemoteAddr{nullptr};
     uint32_t              batchPutGetDescNum{0};
+    uint32_t              userStreamId{0};
 };
 
 struct HcclDeviceEnvConfigLite {

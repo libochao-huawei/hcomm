@@ -67,6 +67,11 @@ Eid RmaConnLite::GetRmtEid() const
     return rmtEid_;
 }
 
+Eid RmaConnLite::GetLocEid() const
+{
+    return locEid_;
+}
+
 u32 RmaConnLite::GetQpVa() const
 {
     return qpVa_;

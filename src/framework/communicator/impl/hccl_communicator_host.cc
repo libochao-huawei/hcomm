@@ -209,7 +209,7 @@ namespace hccl
         }
 
         if (IsEnableBackupLink()) {
-            if (g_enableBackupLinkCommCount == 0) {
+            if (g_enableBackupLinkCommCount.load() == 0) {
                 HCCL_ERROR("[Destroy] g_enableBackupLinkCommCount is 0");
             } else {
                 g_enableBackupLinkCommCount--;
@@ -1174,7 +1174,7 @@ namespace hccl
             CHK_RET(opRetryManager_->RegisterOpRetryMachine(agentParam, userRankSize_, commConnections_.isRoot,
                                                             commConnections_.serverConnections, serverInfo));
             HCCL_RUN_INFO("[InitOpRetry] group[%s], isEnableBackupLink[%d], g_enableBackupLinkCommCount[%u]",
-                          identifier_, IsEnableBackupLink(), g_enableBackupLinkCommCount.load());
+                          identifier_.c_str(), IsEnableBackupLink(), g_enableBackupLinkCommCount.load());
         }
         return HCCL_SUCCESS;
     }
@@ -1268,7 +1268,7 @@ namespace hccl
 
     bool HcclCommunicator::IsEnableBackupLink()
     {
-        return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetExternalInputHcclAicpuUnfold() &&
+        return deviceType_ == DevType::DEV_TYPE_910_93 && IsEnableRoce() && GetExternalInputHcclAicpuUnfold() && retryEnable_ &&
                commConfig_.GetConfigInterSuperPodRetryEnable() && !devBackupIpAddr_[0].IsInvalid() && rtsSupportChangeLink_ &&
                !isDiffDeviceType_;
     }

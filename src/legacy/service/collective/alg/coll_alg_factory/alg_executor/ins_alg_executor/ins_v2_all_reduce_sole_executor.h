@@ -35,7 +35,7 @@ public:
         const RankGraph *rankGraph, const u64 &dataSize, CollOffloadOpResReq &resReq) override;
 
     HcclResult CalcRes(const RankGraph *rankGraph, CollAlgResReq &algResReq) override;
-    HcclResult CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit) override;
+    HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit) override;
 
 private:
     HcclResult InitCommInfo(const RankGraph *rankGraph);

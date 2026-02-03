@@ -46,7 +46,7 @@ public:
     virtual HcclResult CalcResDetour(const RankGraph *rankGraph, AlgTempResReq &tempResReq);
     virtual HcclResult CalcResDetour(ConnectedLinkMgr *linkMgr, AlgTempResReq &tempResReq);
     virtual u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType);
-    virtual HcclResult CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit);
+    virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
 
     virtual HcclResult GenExtIns(const TempFuncs &tempFuncs, const TemplateDataParams &templateDataParams, 
         const ResLinks &tempLinks, std::vector<InsQuePtr> &tempInsQues);

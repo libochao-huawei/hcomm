@@ -22,7 +22,7 @@ public:
     {
         dataSize_ = len_ * sizeof(T);
         coreIdx_ = GetBlockIdx();
-        coreNum_ = blockdim_;
+        coreNum_ = numBlocks_;
         opTag_ = tag;
     }
 
