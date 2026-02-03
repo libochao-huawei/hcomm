@@ -23,8 +23,16 @@ void OffloadStreamManager::RegisterMaster(const std::string &opTag, std::unique_
         std::string msg = StringFormat("master stream of op[%s] has been registered.", opTag.c_str());
         THROW<InvalidParamsException>(msg);
     }
-
-    ActivateSlaveStreams(opTag, stream.get());
+    // 判断是否为acl graph零拷贝切图模式，判断标志为主流是否被捕获
+    bool isCapture = false;
+    rtModel_t rtModel = nullptr;
+    CHK_RET(GetStreamCaptureInfo(stream->GetPtr(), rtModel, isCapture));
+    if (!isCapture)
+    {
+        ActivateSlaveStreams(opTag, stream.get()); // 不是acl graph则维持原流程
+    } else {
+        HCCL_INFO("change to offload to acl graph zcopy"); // 临时打印
+    }
     masters[opTag] = std::move(stream);
 
     currOpTag = opTag;
