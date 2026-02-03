@@ -184,20 +184,19 @@ using AivExtraKernelArgs = struct AivExtraKernelArgsDef {
  
 HcclResult GetAivOpBinaryPath(std::string &binaryPath)
 {
+    char *envValue = nullptr; 
+    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, envValue);
+
     std::string libPath;
-    char *getPath = nullptr;
-    MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, getPath);
-    if (getPath != nullptr) {
-        libPath = getPath;
+    if (envValue != nullptr) {
+        libPath = envValue;
     } else {
         libPath = "/usr/local/Ascend/cann";
-        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:ASCEND_HOME_PATH is not set, use default path[%s]", binaryPath.c_str());
+        HCCL_WARNING("[AIV][GetAivOpBinaryPath]ENV:ASCEND_HOME_PATH is not set, use default path[%s]", 
+                     libPath.c_str());
     }
 
-    binaryPath = libPath + "/lib64";
-
-    binaryPath += "/hccl_aiv_op_910_95.o";
-    return HCCL_SUCCESS;
+    binaryPath = libPath + "/lib64/hccl_aiv_op_910_95.o";
 
     HCCL_INFO("[AIV][GetAivOpBinaryPath]binaryPath: %s", binaryPath.c_str());
 
