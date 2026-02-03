@@ -164,7 +164,19 @@ extern HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, 
  * @param config: HccnRpingAddTargetConfig.
  * @return HccnResult
  */
-extern HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target, HccnRpingAddTargetConfig *config);
+extern HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+    HccnRpingAddTargetConfig *config); // deprecated
+
+/**
+ * @brief Add targets to client.
+ * @param rpingCtx: context of rping resource.
+ * @param targetNum: Number of NPUs need probe.
+ * @param target: Infoes of NPU need probe, this is an array.
+ * @param config: HccnRpingAddTargetConfig.
+ * @return HccnResult
+ */
+extern HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+    HccnRpingAddTargetConfig *config);
  
 /**
  * @brief Remove targets from targets.
