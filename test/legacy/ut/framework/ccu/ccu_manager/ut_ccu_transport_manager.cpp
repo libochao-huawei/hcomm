@@ -472,7 +472,8 @@ TEST_F(CcuTransportMgrTest, Ut_Clean_And_Destory_Success_When_InterfaceOk_Expect
     MockCcuTransportMgrDevs();
     ReqHandleResult result = ReqHandleResult::COMPLETED;
     MOCKER(&HrtRaGetAsyncReqResult).stubs().with().will(returnValue(result));
-
+    MOCKER(HrtRaUbUnimportJetty).stubs().with(any(), any()).will(ignoreReturnValue());
+    
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
