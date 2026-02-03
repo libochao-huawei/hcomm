@@ -135,8 +135,8 @@ TransportTuple MockMakeCcuTransport(bool allocCkeUnavailFlag, bool allocXnUnavai
         ccuJettyPtrs.emplace_back(ccuJetty.get());
         ccuJettys.emplace_back(std::move(ccuJetty));
     }
-
-    unique_ptr<Socket> socket = make_unique<Socket>(nullptr, locAddr, 65001, rmtAddr,
+    SocketHandle socketHandle = (void *)0x123;
+    unique_ptr<Socket> socket = make_unique<Socket>(socketHandle, locAddr, 65001, rmtAddr,
         string(), SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     // 模拟CTP即可
     unique_ptr<CcuConnection> connection = make_unique<CcuCtpConnection>(
@@ -165,7 +165,7 @@ TEST_F(CcuTransportTest, Ut_GetStatus_When_InterfaceOk_Expect_Return_Ok)
     const vector<uint32_t> cntCkes(DEFAULT_CCU_RESOURCE_NUM);
     transport->SetCntCke(cntCkes);
 
-    const vector<char> handshakeMsg(128);
+    const vector<char> handshakeMsg(128, 'a');
     transport->SetHandshakeMsg(handshakeMsg);
 
     for (uint32_t i = 0; i < 2; i++) { // Connection切换2步
@@ -272,7 +272,7 @@ TEST_F(CcuTransportTest, Ut_GetStatusError_When_HandshakeMsgInvalid_Expect_Retur
     const vector<uint32_t> cntCkes(DEFAULT_CCU_RESOURCE_NUM);
     transport->SetCntCke(cntCkes);
 
-    const vector<char> handshakeMsg(128);
+    const vector<char> handshakeMsg(128, 'a');
     transport->SetHandshakeMsg(handshakeMsg);
 
     EXPECT_EQ(transport->GetStatus(), CcuTransport::TransStatus::INIT);
