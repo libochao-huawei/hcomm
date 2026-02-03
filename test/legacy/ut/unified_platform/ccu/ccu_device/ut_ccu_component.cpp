@@ -20,6 +20,7 @@
 #include "hccl_common_v2.h"
 #include "ccu_res_specs.h"
 #include "rdma_handle_manager.h"
+#include "ccu_api_exception.h"
 
 #undef private
 #undef protected
@@ -135,7 +136,7 @@ TEST_F(CcuComponentTest, Ut_Init_When_CcuV1_Expect_Return_Ok)
     EXPECT_NO_THROW(ccuComponent.Init());
 }
 
-TEST_F(CcuComponentTest, Ut_Init_When_NoUsbleFeEid_Expect_Return_Ok)
+TEST_F(CcuComponentTest, Ut_Init_When_NoUsbleFeEid_Expect_Throw_CcuApiException)
 {
     const int32_t devLogicId = MAX_MODULE_DEVICE_NUM - 2; // 避免影响其他用例
     const CcuVersion ccuVersion = CcuVersion::CCU_V1;
@@ -144,7 +145,8 @@ TEST_F(CcuComponentTest, Ut_Init_When_NoUsbleFeEid_Expect_Return_Ok)
     CcuComponent ccuComponent;
     ccuComponent.devLogicId = devLogicId;
 
-    EXPECT_NO_THROW(ccuComponent.Init());
+    // 没有可用EID时，两个die都表示为不启用
+    EXPECT_THROW(ccuComponent.Init(), CcuApiException);
 }
 
 TEST_F(CcuComponentTest, Ut_AllocInsAndCkeAndXn_When_ResNumIsOk_Expect_Return_Ok)
