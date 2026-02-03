@@ -152,7 +152,6 @@ TEST_F(HcclRankGraphTest, Ut_HcclRankGraphGetRanksByLayer_When_Param_Is_InVaild_
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-
 TEST_F(HcclRankGraphTest, Ut_HcclRankGraphGetTopoTypeByLayer_When_ValidParam_Expect_Return_HCCL_SUCCESS) {
     std::shared_ptr < hccl::hcclComm > hcclCommPtr;
     std::shared_ptr < Hccl::RankGraph > rankGraphV2;
