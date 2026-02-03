@@ -110,7 +110,8 @@ protected:
 
 TEST_F(StreamLiteManagerTest, parse_packed_data)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<void*>(0)));
+    u32 pid = 0;
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
     BinaryStream liteBinaryStream;
     liteBinaryStream << fakeStreamId1;
     liteBinaryStream << fakeSqId1;
@@ -142,7 +143,8 @@ TEST_F(StreamLiteManagerTest, parse_packed_data)
 
 TEST_F(StreamLiteManagerTest, update_reset)
 {
-    MOCKER(HrtGetNotifyID).stubs().will(returnValue(static_cast<void*>(0)));
+    u32 pid = 0;
+    MOCKER(HrtGetNotifyID).stubs().will(returnValue(pid));
     // 构造lite dto的序列化数据
     BinaryStream liteBinaryStream;
     liteBinaryStream << fakeStreamId1;
