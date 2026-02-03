@@ -11,7 +11,6 @@ set(CMAKE_SKIP_RPATH FALSE)
 
 # UT
 if(ENABLE_UT)
-    # add_subdirectory(ut)
     add_subdirectory(legacy/ut)
 endif()
 
