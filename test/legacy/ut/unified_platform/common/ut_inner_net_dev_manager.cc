@@ -60,7 +60,8 @@ protected:
 */
 TEST_F(InnerNetDevManagerTest, AddDevice_ShouldReturnSuccess_WhenDeviceCreated)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
 
     Hccl::HcclNetDevice* hcclNetDev = nullptr;
@@ -93,7 +94,8 @@ TEST_F(InnerNetDevManagerTest, AddDevice_ShouldReturnError_WhenDeviceCreationFai
 */
 TEST_F(InnerNetDevManagerTest, RemoveDevice_ShouldReturnSuccess_WhenDeviceExists)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     
     Hccl::HcclNetDevice* hcclNetDev = nullptr;
@@ -111,7 +113,8 @@ TEST_F(InnerNetDevManagerTest, RemoveDevice_ShouldReturnSuccess_WhenDeviceExists
 */
 TEST_F(InnerNetDevManagerTest, RemoveDevice_ShouldReturnError_WhenDeviceDoesNotExist)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     HcclResult result = Hccl::InnerNetDevManager::GetInstance().RemoveDevice(info);
 
@@ -125,7 +128,8 @@ TEST_F(InnerNetDevManagerTest, RemoveDevice_ShouldReturnError_WhenDeviceDoesNotE
 */
 TEST_F(InnerNetDevManagerTest, GetDevice_ShouldReturnNewDevice_WhenDeviceDoesNotExist)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     InnerNetDev* dev = Hccl::InnerNetDevManager::GetInstance().GetDevice(info);
 
@@ -140,7 +144,8 @@ TEST_F(InnerNetDevManagerTest, GetDevice_ShouldReturnNewDevice_WhenDeviceDoesNot
 */
 TEST_F(InnerNetDevManagerTest, GetDevice_ShouldReturnExistingDevice_WhenDeviceExists)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     
     Hccl::HcclNetDevice* hcclNetDev = nullptr;
@@ -160,7 +165,8 @@ TEST_F(InnerNetDevManagerTest, GetDevice_ShouldReturnExistingDevice_WhenDeviceEx
 */
 TEST_F(InnerNetDevManagerTest, ReplaceDevice_ShouldReturnTrue_WhenDeviceReplaced)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     
     Hccl::HcclNetDevice* hcclNetDev = nullptr;
@@ -179,7 +185,8 @@ TEST_F(InnerNetDevManagerTest, ReplaceDevice_ShouldReturnTrue_WhenDeviceReplaced
 */
 TEST_F(InnerNetDevManagerTest, ReplaceDevice_ShouldReturnFalse_WhenDeviceDoesNotExist)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle handle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     std::unique_ptr<InnerNetDev> newDev = std::make_unique<InnerNetDev>(info);
     bool result = Hccl::InnerNetDevManager::GetInstance().ReplaceDevice(info, std::move(newDev));
@@ -194,7 +201,8 @@ TEST_F(InnerNetDevManagerTest, ReplaceDevice_ShouldReturnFalse_WhenDeviceDoesNot
 */
 TEST_F(InnerNetDevManagerTest, GetRdmaHandleByIP_ShouldReturnHandle_WhenDeviceExists)
 {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    RdmaHandle rdmaHandle = reinterpret_cast<RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(rdmaHandle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     
     
