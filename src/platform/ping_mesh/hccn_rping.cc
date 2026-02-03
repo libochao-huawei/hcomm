@@ -36,8 +36,8 @@ constexpr u32 RPING_RESULT_STATE_VALID = 2;
 constexpr u32 TARGET_NUM_MAX = 16;
 
 
-inline HcclResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *initAttrInter,
-        u32 &npuNumInter, PingMesh *rpingInter, u32 &bufferSizeInter,std::string &ipAddrDesInter)
+inline HcclResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *initAttrInter, PingMesh *rpingInter,
+        u32 &npuNumInter, u32 &bufferSizeInter,std::string &ipAddrDesInter)
 {
     // npuNum必须为2的整次幂
     npuNumInter = (initAttrInter->npuNum > NPU_NUM_MIN) ? initAttrInter->npuNum : NPU_NUM_MIN;
