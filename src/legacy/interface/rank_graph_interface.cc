@@ -282,6 +282,11 @@ namespace Hccl {
                 return result;
             }
             CHK_RET(SetEndpointLoc(commLink.dstEndpointDesc.loc.locType, dstInterface->GetPos()));
+            if (commLink.dstEndpointDesc.loc.locType == ENDPOINT_LOC_TYPE_DEVICE) {
+                std::shared_ptr<NetInstance::Node> dstNode = peer2net->GetSourceNode();
+                std::shared_ptr<NetInstance::Peer> dstPeer = std::dynamic_pointer_cast<NetInstance::Peer>(dstNode);
+                commLink.dstEndpointDesc.loc.device.devPhyId = dstPeer->GetDeviceId();
+            }
 
             linkListVec.emplace_back(std::move(commLink));
         }
