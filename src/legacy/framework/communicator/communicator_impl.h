@@ -505,6 +505,8 @@ private:
     void RefreshSubmittedOpcnt();
     void SingleRankProc(const CollOpParams &opParams, void *stream) const;
     void ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch = true);
+    void DefaultConvertCollOperatorA2A(const CollOpParams &opParams);
+    void LaunchConvertCollOperatorA2A(const CollOpParams &opParams);
     void ConvertCollOperatorMem(const CollOpParams &opParams, u64 size);
     void CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sendSize, u64 &recvSize) const;
     void ConvertCollOperatorMemV(const CollOpParams &opParams);
