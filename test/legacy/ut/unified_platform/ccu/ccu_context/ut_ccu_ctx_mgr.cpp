@@ -161,7 +161,6 @@ HcclResult CtxMgrGetInstructionNumStub(
 TEST_F(CcuContextManagerTest, AGTest)
 {
     MOCKER(HrtStreamCreateWithFlags).stubs().will(returnValue(static_cast<void*>(0)));
-    MOCKER(CcuContext::GetResPack).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
@@ -280,7 +279,6 @@ HcclResult CtxMgrGetResourceSharedResStub(
 
 TEST_F(CcuContextManagerTest, TestSharedRes)
 {
-    MOCKER(CcuContext::GetResPack).stubs().will(returnValue(static_cast<void*>(0)));
     MOCKER(HrtGetDevice).defaults().will(returnValue(0));
     MOCKER(CcuDeviceManager::ReleaseCke).stubs().will(returnValue(HcclResult::HCCL_SUCCESS));
     MOCKER_CPP(&CcuTransportGroup::CheckTransports).stubs().with(any()).will(returnValue(true));
