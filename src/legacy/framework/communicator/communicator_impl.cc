@@ -1302,13 +1302,6 @@ void CommunicatorImpl::InitHccpHdc() const
 
 void CommunicatorImpl::TryInitCcuFeature()
 {
-    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
-    if (indOp != nullptr && strcmp(indOp, "") != 0) {
-        HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
-            "will use open source ccu feature.", __func__);
-        return;
-    }
-
     if (rankSize == 1) {
         HCCL_RUN_INFO("[CommunicatorImpl][%s] rank size is 1, init steps passed.", __func__);
         return;
@@ -1318,6 +1311,13 @@ void CommunicatorImpl::TryInitCcuFeature()
     if (commExecuteConfig.accState != AcceleratorState::CCU_MS && commExecuteConfig.accState != AcceleratorState::CCU_SCHED) {
         HCCL_RUN_INFO("[CommunicatorImpl][%s] communicator accstate[%s] doesn't use ccu, init steps passed.",
             __func__, commExecuteConfig.accState.Describe().c_str());
+        return;
+    }
+
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+        HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
+            "will use open source ccu feature.", __func__);
         return;
     }
 
