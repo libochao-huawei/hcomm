@@ -9,6 +9,7 @@
  */
 
 #include "communicator_impl.h"
+#include <op_type.h>
 #include <adapter_error_manager_pub.h>
 #include "orion_adapter_tsd.h"
 #include "orion_adapter_rts.h"
@@ -75,6 +76,19 @@ struct DpuKernelLaunchParam {
     std::string commId;
 };
 DpuKernelLaunchParam hostArgsTemp;
+
+// 支持零拷贝算子的白名单
+std::set<OpType> opWhiteSet = {
+    OpType::BROADCAST,
+    OpType::ALLREDUCE,
+    OpType::REDUCE,
+    OpType::ALLTOALL,
+    OpType::ALLTOALLV,
+    OpType::REDUCESCATTER,
+    OpType::SEND,
+    OpType::RECV,
+    OpType::ALLGATHER
+};
 
 static void PrintBackTrace(HcclException &e)
 {
@@ -564,6 +578,36 @@ HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
     return HCCL_SUCCESS;
 }
 
+bool CommunicatorImpl::IsOpSupportZeroCopyAlg(const CollOpParams &opParams, const rtStream_t stream) const
+{
+    bool isCapture = false;
+    rtModel_t rtModel = nullptr;
+    CHK_RET(GetStreamCaptureInfo(stream, rtModel, isCapture));
+    if (isCapture && opWhiteSet.find(opParams.opType) != opWhiteSet.end()) {
+        return true;
+    }
+    return false;
+}
+
+HcclResult CommunicatorImpl::OffloadResourcePre(std::string &opTag, const CollOpParams &opParams)
+{
+    CollOffloadOpResReq resReq;
+    auto dataSize = opParams.count * DataTypeSizeGet(opParams.dataType);
+    auto dataType = DataTypeToHcclDataType(opParams.dataType);
+    CHK_RET(CalcCollOffloadOpRes(opParams.opType, dataSize, dataType, resReq));
+
+    // 设定workspace内存资源
+    std::vector<rtStream_t> slaveStreams;
+    slaveStreams.resize(resReq.requiredSubQueNum);
+    for (u64 i = 0; i < resReq.requiredSubQueNum; ++i) {
+        slaveStreams[i] = static_cast<rtStream_t>(std::make_uique<Stream>(true).get());
+    }
+    CHK_RET(SetCollOffloadSlaveStreams(opTag, slaveStreams));
+    CHK_RET(SetCollOffloadScratchBuf(opTag, reinterpret_cast<void *>(GetCclBuffer()->GetAddr()),
+        GetCclBuffer()->GetSize()));
+    return HCCL_SUCCESS
+}
+
 HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, void *stream)
 {
     try {
@@ -596,6 +640,13 @@ HcclResult CommunicatorImpl::LoadOpbasedCollOp(const CollOpParams &opParams, voi
         bool isAiv = (opExecuteConfig.accState == AcceleratorState::AIV || opExecuteConfig.accState == AcceleratorState::AIV_ONLY);
         status = CommStatus::COMM_READY;
         CHK_RET(OpParamsChecker::CheckOpDataTypeOpbase(opParams, GetOpCcuFeatureFlag(), GetOpAiCpuTSFeatureFlag(), isAiv));
+
+        // AICPU aclgraph场景传入的stream被capture且算子时支持零拷贝算法的，会切换到图模式
+        if (opExecuteConfig.accState == AcceleratorState::AICPU_TS && IsOpSupportZeroCopyAlg(opParams, stream)) {
+            std:: string tag = opParams.opTag + "_" + std::to_string(tagResourceIndex_++);
+            OffloadResourcePre(tag, opParams);
+            return LoadOffloadCollOp(tag, opParams, stream);
+        }
         CHK_RET(SetAivControledCoreNum(isAiv));
 
         // 避免transport建链前，通讯域被摧毁
@@ -2490,6 +2541,7 @@ void CommunicatorImpl::CollAlgComponentInit()
 
 HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
 {
+    hcclAccelerator = 2;
     if (isLoadOp) {
         // 已下发过算子，不允许再设置accelerator
         HCCL_ERROR("[CommunicatorImpl]SetAccelerator is not allowed after load op.");
