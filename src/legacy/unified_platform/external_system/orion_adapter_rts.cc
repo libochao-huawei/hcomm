@@ -1080,9 +1080,9 @@ void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uin
                                     const rtAicpuArgsEx_t *argsInfo, rtSmDesc_t * const smDesc, const rtStream_t stream,
                                     uint32_t flags)
 {
-    HCCL_INFO("[HrtAicpuKernelLaunchExWithArgs] kernelType[%u], opName[%s], blockDim[%u], argsInfo[%p], "
+    HCCL_INFO("[HrtAicpuKernelLaunchExWithArgs] kernelType[%u], opName[%s], numBlocks[%u], argsInfo[%p], "
                 "smDesc[%p], stream[%p], flags[%u].", 
-                kernelType, opName, blockDim, argsInfo, smDesc, stream, flags);
+                kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags);
     CHECK_NULLPTR(argsInfo, "[HrtAicpuKernelLaunchExWithArgs] argsInfo is nullptr!");
     CHECK_NULLPTR(smDesc, "[HrtAicpuKernelLaunchExWithArgs] smDesc is nullptr!");
     CHECK_NULLPTR(stream, "[HrtAicpuKernelLaunchExWithArgs] stream is nullptr!");
@@ -1094,8 +1094,8 @@ void HrtAicpuKernelLaunchExWithArgs(uint32_t kernelType, const char *opName, uin
     rtError_t ret = rtAicpuKernelLaunchExWithArgs(kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags);
     if (ret != RT_ERROR_NONE) {
         string msg = StringFormat("Call rtAicpuKernelLaunchExWithArgs failed, return[%d], kernelType[%u], opName[%s], "
-                    "blockDim[%u], argsInfo[%p], smDesc[%p], stream[%p], flags[%u], tmp[%s].", 
-                ret, kernelType, opName, blockDim, argsInfo, smDesc, stream, flags, tmp);
+                    "numBlocks[%u], argsInfo[%p], smDesc[%p], stream[%p], flags[%u], tmp[%s].", 
+                ret, kernelType, opName, numBlocks, argsInfo, smDesc, stream, flags, tmp);
         THROW<RuntimeApiException>(msg);
     }
 }
