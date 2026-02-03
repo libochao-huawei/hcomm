@@ -42,6 +42,7 @@ public:
     void SetDmaMode(const DmaMode dmaMode);
     std::vector<char> GetPackedData() const;
     HcclResult ExecAlgSelect(const CollAlgOperator &op, const CollAlgParams &params, std::string &algName, OpExecuteConfig &opExecuteConfig);
+    AlgorithmType GetAlgorithmTypeForMC2(const std::string& name);
 
     // Host
     virtual HcclResult Orchestrate(const CollAlgOperator &op, const CollAlgParams &params,

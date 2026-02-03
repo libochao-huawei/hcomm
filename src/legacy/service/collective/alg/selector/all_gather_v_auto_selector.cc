@@ -73,7 +73,6 @@ SelectorStatus AllGatherVAutoSelector::SelectCcuScheduleAlgo(const TopoInfo &top
     return SelectorStatus::NOT_MATCH;
 }
 
-
 SelectorStatus AllGatherVAutoSelector::SelectAicpuAlgo(const TopoInfo &topoInfo, const CollAlgOperator &op,
     const std::map<OpType, std::vector<HcclAlgoType>> &configAlgMap, std::string &primQueueGenName) const
 {
