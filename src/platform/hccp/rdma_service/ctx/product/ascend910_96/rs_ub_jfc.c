@@ -61,6 +61,7 @@ int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urm
         in.len = (uint32_t)sizeof(struct udma_u_lock_jfc_cfg);
         in.opcode = UDMA_U_USER_CTL_CREATE_CCU_JFC_EX;
         in.addr = (uint64_t)(uintptr_t)&createJfcIn.lockJfcCfg;
+        hccp_err("%s", "UDMA_U_USER_CTL_CREATE_CCU_JFC_EX come in")
     } else {
         createJfcIn.jfcCfgEx.base_cfg = *jfcCfg;
         createJfcIn.jfcCfgEx.jfc_mode = (enum udma_u_jfc_type)ctxJfcCb->jfcType;
@@ -72,6 +73,7 @@ int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urm
     out.len = sizeof(urma_jfc_t *);
     out.addr = (uint64_t)(uintptr_t)&jfcOut;
 
+    hccp_err("%s", "RsUrmaUserCtl come in")
     ret = RsUrmaUserCtl(ctxJfcCb->devCb->urmaCtx, &in, &out);
     if (ret != 0) {
         hccp_err("rs_urma_user_ctl create jfc failed, ret:%d errno:%d", ret, errno);
@@ -79,6 +81,6 @@ int RsUbCtxJfcCreateExt(struct RsCtxJfcCb *ctxJfcCb, urma_jfc_cfg_t *jfcCfg, urm
     }
 
     *jfc = jfcOut;
-
+    hccp_err("jfc_id: %d", jfcOut->jfc_id.id)
     return ret;
 }
