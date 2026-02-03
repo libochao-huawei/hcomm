@@ -178,7 +178,7 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
 {
     HccnRpingAddTargetConfig config;
     config.connectTimeout = HCCN_RPING_DEFAULT_TIMEOUT;
-    return HccnRpingAddTargetV2(rpingCtx, targetNum, target, &config);
+    return HccnRpingAddTargetWithCfg(rpingCtx, targetNum, target, &config);
 }
 
 inline HccnResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
@@ -206,7 +206,14 @@ inline HccnResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, Rpin
     return HCCN_SUCCESS;
 }
 
-HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target, HccnRpingAddTargetConfig *config)
+HccnResult HccnRpingAddTargetV2(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+    HccnRpingAddTargetConfig *config)
+{
+    return HccnRpingAddTargetWithCfg(rpingCtx, targetNum, target, config);
+}
+
+HccnResult HccnRpingAddTargetWithCfg(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpingTargetInfo *target,
+    HccnRpingAddTargetConfig *config)
 {
     // 校验入参
     CHK_PRT_RET(config == nullptr, HCCL_ERROR("[HccnRpingAddTargetV2]config is null."), HCCN_E_PARA);
