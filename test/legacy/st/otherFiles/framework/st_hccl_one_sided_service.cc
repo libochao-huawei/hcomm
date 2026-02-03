@@ -141,8 +141,8 @@ TEST_F(HcclOneSidedServiceTest, test_ExchangeMemDesc)
     MOCKER_CPP(&MemTransportManager::IsAllOneSidedTransportReady).stubs().will(returnValue(true));
 
     // 打桩 SocketManager::GetConnectedSocket
-    unique_ptr<Socket> fakeSocketPtr =
-        make_unique<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    shared_ptr<Socket> fakeSocketPtr =
+        make_shared<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     SocketConfig socketConfig(linkData1.GetRemoteRankId(), linkData1, fakeCommA.GetEstablishLinkSocketTag());
     fakeCommA.GetSocketManager().connectedSocketMap[socketConfig] = std::move(fakeSocketPtr);
 
@@ -231,8 +231,8 @@ TEST_F(HcclOneSidedServiceTest, test_BatchGet_BatchPut)
     fakeCommA.memTransportManager = std::move(std::make_unique<MemTransportManager>(fakeCommA));
     fakeCommA.GetMemTransportManager()->oneSidedMap[linkData1] = std::move(transport);
     MOCKER_CPP(&MemTransportManager::IsAllOneSidedTransportReady).stubs().will(returnValue(true));
-    unique_ptr<Socket> fakeSocketPtr =
-        make_unique<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
+    shared_ptr<Socket> fakeSocketPtr =
+        make_shared<Socket>(nullptr, ipAddress, 100, ipAddress, "tag", SocketRole::SERVER, NicType::DEVICE_NIC_TYPE);
     SocketConfig socketConfig(linkData1.GetRemoteRankId(), linkData1, fakeCommA.GetEstablishLinkSocketTag());
     fakeCommA.GetSocketManager().connectedSocketMap[socketConfig] = std::move(fakeSocketPtr);
 

@@ -2035,45 +2035,45 @@ TEST(CommunicatorImplTest, should_no_throw_exception_SetAccelerator_GetAccelerat
     comm.rankGraph->netInsts_[level].emplace(groupId, fabGroup);
 
     comm.RegisterAcceStateCallBack(CommunicatorCallback());
-    int32_t accelerator = 0;  // DEFAULT
+    HcclAccelerator accelerator{HcclAccelerator::DEFAULT};  // DEFAULT
     bool isCcuMsAvailable = true;
     comm.SetAccelerator(accelerator, isCcuMsAvailable);
 
-    accelerator = 1;  // HOSTCPU_TS
+    accelerator = HcclAccelerator::HOSTCPU_TS;  // HOSTCPU_TS
     isCcuMsAvailable = false;
     comm.SetAccelerator(accelerator, isCcuMsAvailable);
 
-    accelerator = 2;  // AICPU_TS
+    accelerator = HcclAccelerator::AICPU_TS;  // AICPU_TS
     isCcuMsAvailable = false;
     comm.SetAccelerator(accelerator, isCcuMsAvailable);
 
-    accelerator = 3;  // AIV
+    accelerator = HcclAccelerator::AIV;  // AIV
     isCcuMsAvailable = false;
     comm.SetAccelerator(accelerator, isCcuMsAvailable);
 
-    accelerator = 4;  // AIV_ONLY
+    accelerator = HcclAccelerator::AIV_ONLY;  // AIV_ONLY
     isCcuMsAvailable = false;
     EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
 
-    accelerator = 5;  // CCU_MS
+    accelerator = HcclAccelerator::CCU_MS;  // CCU_MS
     isCcuMsAvailable = false;
     comm.SetAccelerator(accelerator, isCcuMsAvailable);
 
-    accelerator = 6;  // CCU_SCHED
+    accelerator = HcclAccelerator::CCU_SCHED;  // CCU_SCHED
     isCcuMsAvailable = false;
     comm.SetAccelerator(accelerator, isCcuMsAvailable);
 
-    accelerator = 7;  // AICPU
+    accelerator = HcclAccelerator::AICPU;  // AICPU
     isCcuMsAvailable = false;
     EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
 
     comm.rankGraph = nullptr;
-    accelerator = 8;  // other
+    accelerator = static_cast<HcclAccelerator::Value>(8); // other
     isCcuMsAvailable = true;
     EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
 
     comm.rankGraph = make_unique<RankGraph>(0);
-    accelerator = 8;  // other
+    accelerator = static_cast<HcclAccelerator::Value>(8); // other
     isCcuMsAvailable = false;
     EXPECT_EQ(comm.SetAccelerator(accelerator, isCcuMsAvailable), HCCL_E_NOT_SUPPORT);
 

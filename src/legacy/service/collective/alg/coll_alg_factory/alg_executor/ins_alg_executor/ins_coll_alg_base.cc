@@ -1,8 +1,11 @@
-/*
- * Copyright (c) Huawei Technologies Co., Ltd. 2024-2024. All rights reserved.
- * Description: 算法库InsCollAlgBase类实现
- * Author: shenyutian
- * Create: 2024-04-30
+/**
+ * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
+ * CANN Open Software License Agreement Version 2.0 (the "License").
+ * Please refer to the License for details. You may not use this file except in compliance with the License.
+ * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
+ * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
+ * See LICENSE in the root of the software repository for the full text of the License.
  */
 
 #include "log.h"
@@ -171,11 +174,11 @@ LinkReq InsCollAlgBase::GetSeqLinksUnion(const LinkReq &linkReq0, const LinkReq 
     return retLinkReq;
 }
 
-HcclResult InsCollAlgBase::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult InsCollAlgBase::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {   
-    blockDim = 0;
+    numBlocks = 0;
     (void)dataSize;
-    (void)blockDimLimit;
+    (void)numBlocksLimit;
     HCCL_INFO("[InsCollAlgFactory] current excutor doesn't support controlling num of aiv cores.");
     return HcclResult::HCCL_SUCCESS;
 }

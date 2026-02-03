@@ -85,34 +85,19 @@ HcclResult AllGatherVOperator::SelectAlgfor91093(const OpParam& param, std::stri
         HCCL_ERROR("[AllGatherVOperator][SelectAlgfor91093]not support mode, multiModuleDiffDeviceNumMode_[%u], "
             "multiSuperPodDiffServerNumMode_[%u]", multiModuleDiffDeviceNumMode_, multiSuperPodDiffServerNumMode_);
         return HCCL_E_NOT_SUPPORT;
-    }
-
-    bool isOpbase = workflowMode_ == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OP_BASE;
-    bool isAivSingleNode = (serverNum_ == 1) && (isSingleMeshAggregation_);
-    bool isAivCrossNode = (superPodNum_ == 1) && (serverNum_ > 1) && !GetExternalInputInterHccsDisable();
-    bool isAivMode = topoMatcher_->GetAivModeConfig()
-                    && isOpbase
-                    && IsSupportAIVCopy(param.VDataDes.dataType)
-                    && (isAivSingleNode || isAivCrossNode);
-
-    if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING ||
-        algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB)) {
-        algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
-        HCCL_WARNING("[AllGatherVOperator][SelectAlgfor91093] only support ring, NB and NHR in AlgoLevel1 yet, "
-            "default is algType=NHR.");
-    }
-
-    if (isAivMode) {
-        if (isAivSingleNode){
-            algName = dataSize <= AIV_ALL_GATHER_SMALL_SIZE ? "AllGatherVMeshAivSmallCountExecutor" : "AllGatherVMeshAivExecutor";
-        }else{
-            algName = "AllGatherVMeshAivFor91093Executor";
-        }
-    } else if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
-        algName = "AlignedAllGatherVDoubleRingFor91093Executor";
     } else {
-        algName = "AllGatherVRingFor91093Executor";
+        if (!(algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_RING ||
+            algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_WHOLE_RING ||
+            algType_.algoLevel1 == AlgTypeLevel1::ALG_LEVEL1_NB)) {
+            algType_.algoLevel1 = AlgTypeLevel1::ALG_LEVEL1_NHR;
+            HCCL_WARNING("[AllGatherVOperator][SelectAlgfor91093] only support ring, NB and NHR in AlgoLevel1 yet, "
+                "default is algType=NHR.");
+        }
+        if (topoType_ == TopoType::TOPO_TYPE_NP_DOUBLE_RING) {
+            algName = "AlignedAllGatherVDoubleRingFor91093Executor";
+        } else {
+            algName = "AllGatherVRingFor91093Executor";
+        }
     }
 
     HCCL_INFO("[SelectAlgfor91093] AllGatherV SelectAlgfor91093 is algName [%s]", algName.c_str());

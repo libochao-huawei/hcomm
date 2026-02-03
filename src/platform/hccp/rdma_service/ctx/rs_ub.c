@@ -298,14 +298,22 @@ STATIC int rs_ub_dev_cb_init(struct ctx_init_attr *attr, struct rs_ub_dev_cb *de
         goto destroy_mutex;
     }
 
+    ret = RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_ADD, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
+    if (ret != 0) {
+        hccp_err("rs_epoll_ctl failed, ret:%d", ret);
+        goto close_dev;
+    }
+
     ret = rs_ub_get_dev_attr(dev_cb, dev_attr, devIndex);
     if (ret != 0) {
         hccp_err("rs_ub_get_dev_attr failed, ret:%d", ret);
-        goto close_dev;
+        goto epoll_del;
     }
 
     return 0;
 
+epoll_del:
+    (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
 close_dev:
     (void)rs_urma_delete_context(dev_cb->urma_ctx);
 destroy_mutex:
@@ -1045,6 +1053,7 @@ STATIC void rs_ub_free_async_event_cb_list(struct rs_ub_dev_cb *dev_cb, struct R
     struct rs_ctx_async_event_cb *async_event_next = NULL;
 
     RS_PTHREAD_MUTEX_LOCK(&dev_cb->mutex);
+    (void)RsEpollCtl(dev_cb->rscb->connCb.epollfd, EPOLL_CTL_DEL, dev_cb->urma_ctx->async_fd, EPOLLIN | EPOLLRDHUP);
     if (!RsListEmpty(async_event_list)) {
         hccp_warn("async_event list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(async_event_curr, async_event_next, async_event_list, list,
@@ -2659,6 +2668,10 @@ int rs_epoll_event_jfc_in_handle(struct rs_cb *rs_cb, int fd)
     struct rs_ub_dev_cb *dev_cb_next = NULL;
     int ret = 0;
 
+    if (rs_cb->protocol != PROTOCOL_UDMA) {
+        return -ENODEV;
+    }
+
     RS_LIST_GET_HEAD_ENTRY(dev_cb_curr, dev_cb_next, &rs_cb->rdevList, list, struct rs_ub_dev_cb);
     for (; (&dev_cb_curr->list) != &rs_cb->rdevList;
         dev_cb_curr = dev_cb_next, dev_cb_next = list_entry(dev_cb_next->list.next, struct rs_ub_dev_cb, list)) {
@@ -2750,11 +2763,15 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
     struct rs_ub_dev_cb *dev_cb_next = NULL;
     int ret = 0;
 
+    if (rsCb->protocol != PROTOCOL_UDMA) {
+        return -ENODEV;
+    }
+
     RS_LIST_GET_HEAD_ENTRY(dev_cb_curr, dev_cb_next, &rsCb->rdevList, list, struct rs_ub_dev_cb);
     for (; (&dev_cb_curr->list) != &rsCb->rdevList;
         dev_cb_curr = dev_cb_next, dev_cb_next = list_entry(dev_cb_next->list.next, struct rs_ub_dev_cb, list)) {
-        if (dev_cb_curr->urma_ctx->async_fd == fd) {
-            RS_PTHREAD_MUTEX_LOCK(&dev_cb_curr->mutex);
+        RS_PTHREAD_MUTEX_LOCK(&dev_cb_curr->mutex);
+        if (dev_cb_curr->urma_ctx != NULL && dev_cb_curr->urma_ctx->async_fd == fd) {
             ret = rs_ub_get_save_async_event(dev_cb_curr);
             if (ret != 0) {
                 hccp_err("rs_ub_get_save_async_event failed, ret:%d dev_index:0x%x", ret, dev_cb_curr->index);
@@ -2762,6 +2779,7 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
             RS_PTHREAD_MUTEX_ULOCK(&dev_cb_curr->mutex);
             return ret;
         }
+        RS_PTHREAD_MUTEX_ULOCK(&dev_cb_curr->mutex);
     }
 
     return -ENODEV;

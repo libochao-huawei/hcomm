@@ -223,7 +223,7 @@ TEST_F(CcuTransportMgrTest, St_PrepareCreate_When_InterfaceOk_Expect_Return_Ok)
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
-        std::make_unique<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
             "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
     unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);
@@ -282,7 +282,7 @@ TEST_F(CcuTransportMgrTest, Ut_PrepareCreateFailAndFallback_When_InterfaceUnavai
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
-        std::make_unique<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
             "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
     unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);
@@ -323,7 +323,7 @@ TEST_F(CcuTransportMgrTest, Ut_CleanAndResume_When_InterfaceOk_Expect_Return_Ok)
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
-        std::make_unique<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
             "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
     unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);
@@ -378,7 +378,7 @@ TEST_F(CcuTransportMgrTest, Ut_CleanAndResumeFailed_When_InterfaceError_Expect_R
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
-        std::make_unique<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
             "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
     unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);
@@ -431,7 +431,7 @@ TEST_F(CcuTransportMgrTest, Ut_RecoverTransports_When_InterfaceOk_Expect_Return_
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
-        std::make_unique<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
             "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
     unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);
@@ -491,7 +491,7 @@ TEST_F(CcuTransportMgrTest, Ut_RecoverTransportsFailed_When_RecoverMsgError_Expe
     std::string  socketTag = commImpl->GetEstablishLinkSocketTag();
     SocketConfig socketConfig(1, link, socketTag);
     commImpl->GetSocketManager().connectedSocketMap[socketConfig] =
-        std::make_unique<Socket>(nullptr, IpAddress(), 0, IpAddress(),
+        std::make_shared<Socket>(nullptr, IpAddress(), 0, IpAddress(),
             "stub", SocketRole::CLIENT, NicType::DEVICE_NIC_TYPE);
 
     unique_ptr<LocalRmaBuffer> fakeBuffer = make_unique<LocalUbRmaBuffer>(commImpl->cclBuffer);

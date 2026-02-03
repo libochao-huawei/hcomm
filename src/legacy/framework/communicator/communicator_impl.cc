@@ -14,6 +14,7 @@
 #include "orion_adapter_rts.h"
 #include "hccl_exception.h"
 #include "null_ptr_exception.h"
+#include "runtime_api_exception.h"
 #include "exception_util.h"
 #include "hccp_hdc_manager.h"
 #include "hccp_peer_manager.h"
@@ -121,6 +122,9 @@ void CommunicatorImpl::InitCommResource(const CommParams &commParams)
     InitNotifyManager();
     InitStreamManager();
     InitSocketManager();
+    if (ranktableInfo != nullptr) {
+        GetSocketManager().SetDeviceServerListenPortMap(ranktableInfo->GetRankDeviceListenPortMap());
+    }
     InitRmaConnManager();
     InitDataBufferManager();
     InitNotifyFixedValue();
@@ -153,6 +157,7 @@ void CommunicatorImpl::InitDpuKernel() {
     }
     HCCL_INFO("[InitDpuKernel]all FlushHandle init success.");
     /* kernel Launch */
+    CHK_RET_THROW(RuntimeApiException, "InitAndLaunchDpuKernel Failed", InitAndLaunchDpuKernel());
 }
 
 std::unordered_set<IpAddress> CommunicatorImpl::GetHostIpFromRankGraph()
@@ -297,7 +302,9 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             // 创建子虚拟拓扑
             std::unique_ptr<RankGraph> subRankGraph = rankGraph->CreateSubRankGraph(rankIds);
             // 初始化子通信域
-            return subCommImpl->Init(subCommParams, subRankGraph, devLogicId);
+            CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetDeviceServerListenPortMap());
+            return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
             THROW<InternalException>(msg);
@@ -317,7 +324,9 @@ HcclResult CommunicatorImpl::CreateSubComm(const CommParams &subCommParams, cons
             subCommImpl->rankIdsVec = rankIds;
             HCCL_INFO("[%s]rankIds size[%u], rankIdsVec size[%u]", __func__, rankIds.size(), subCommImpl->rankIdsVec.size());
             // 初始化子通信域
-            return subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId);
+            CHK_RET(subCommImpl->Init(subCommParams, subRankGraph, subConfig, devLogicId));
+            subCommImpl->GetSocketManager().SetDeviceServerListenPortMap(GetSocketManager().GetDeviceServerListenPortMap());
+            return HcclResult::HCCL_SUCCESS;
         } else {
             std::string msg = StringFormat("CreateSubComm fail, communicator has not been initialized, please check.");
             THROW<InternalException>(msg);
@@ -541,16 +550,16 @@ void CommunicatorImpl::ExecuteFastCcuLaunch(const CollOpParams &opParams, aclrtS
 HcclResult CommunicatorImpl::SetAivControledCoreNum(bool isAiv)
 {   
     if (isAiv) {
-        u32 blockDimLimit = MAX_BLOCK_DIM;
-        aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &blockDimLimit);
+        u32 numBlocksLimit = MAX_NUM_BLOCKS;
+        aclError acl_ret = aclrtGetResInCurrentThread(ACL_RT_DEV_RES_VECTOR_CORE, &numBlocksLimit);
         CHK_PRT_RET(acl_ret != ACL_SUCCESS,
             HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] aclrtGetResInCurrentThread failed, ret=[%d]", acl_ret),
             HCCL_E_PARA);
-        CHK_PRT_RET(blockDimLimit < 1,
-            HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] block num less than 1, block num[%d]", blockDimLimit),
+        CHK_PRT_RET(numBlocksLimit < 1,
+            HCCL_ERROR("[CommunicatorImpl::SetAivControledCoreNum] block num less than 1, block num[%d]", numBlocksLimit),
             HCCL_E_PARA);
-        currentCollOperator->blockDimLimit = blockDimLimit;
-        HCCL_INFO("[CommunicatorImpl::SetAivControledCoreNum] Aiv core limit is [%d].", blockDimLimit);
+        currentCollOperator->numBlocksLimit = numBlocksLimit;
+        HCCL_INFO("[CommunicatorImpl::SetAivControledCoreNum] Aiv core limit is [%d].", numBlocksLimit);
     }
     return HCCL_SUCCESS;
 }
@@ -656,14 +665,14 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
 {
     try {
         if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
- 	        HCCL_ERROR("[AllocCollOpResource]It's support aicpu unfold on mc2. input is %s", opParams.commEngine.Describe().c_str());
+            HCCL_ERROR("[AllocCollOpResource::%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
  
         WaitReady();
         curOpParams = opParams;
-        CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
+        CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE, false);
         opExecuteConfig = commExecuteConfig;
         ExecAlgSelect(opParams, OpMode::OPBASE);
         CHK_PTR_NULL(collService);
@@ -848,7 +857,7 @@ HcclResult CommunicatorImpl::LoadOffloadCollOp(std::string &opTag, const CollOpP
         }
 
         if (isAiv) {
-            currentCollOperator->blockDimLimit = aivCoreLimit;
+            currentCollOperator->numBlocksLimit = aivCoreLimit;
             HCCL_INFO("[CommunicatorImpl::LoadOffloadCollOp] Aiv core limit is [%d].", aivCoreLimit);
         }
 
@@ -925,7 +934,7 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
     recvSize = recvCount * recvTypeSize;
 }
 
-void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams)
+void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch)
 {
     if (currentCollOperator) {
         HCCL_INFO("ConvertCollOperatorA2A START");
@@ -950,12 +959,14 @@ void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams)
             currentCollOperator->all2AllVCDataDes.sendCountMatrix = opParams.all2AllVCDataDes.sendCountMatrix;
             currentCollOperator->dataType = opParams.all2AllVCDataDes.sendType;
         }
-        u64 sendSize = 0;
-        u64 recvSize = 0;
-        CalcA2ASendRecvMem(opParams, sendSize, recvSize);
-        HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
-        currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
-        currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
+        if (isLaunch) {
+            u64 sendSize = 0;
+            u64 recvSize = 0;
+            CalcA2ASendRecvMem(opParams, sendSize, recvSize);
+            HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
+            currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
+            currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
+        }
     } else {
         HCCL_ERROR("currentCollOperator is nullptr");
     }
@@ -1007,7 +1018,7 @@ void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams)
     HCCL_INFO("[CommunicatorImpl::%s] end.", __func__);
 }
 
-void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode)
+void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch)
 {
     currentCollOperator = make_unique<CollOperator>();
     if (!currentCollOperator) {
@@ -1038,7 +1049,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
     currentCollOperator->debugCase = opParams.debugCase;
     currentCollOperator->sendRecvRemoteRank = opParams.dstRank;
     if (opParams.opType == OpType::ALLTOALL || opParams.opType == OpType::ALLTOALLV || opParams.opType == OpType::ALLTOALLVC) {
-        ConvertCollOperatorA2A(opParams);
+        ConvertCollOperatorA2A(opParams, isLaunch);
     } else if (opParams.opType == OpType::BATCHSENDRECV) {
         currentCollOperator->batchSendRecvDataDes.sendRecvItemsPtr = opParams.batchSendRecvDataDes.sendRecvItemsPtr;
         currentCollOperator->batchSendRecvDataDes.itemNum = opParams.batchSendRecvDataDes.itemNum;
@@ -1291,6 +1302,13 @@ void CommunicatorImpl::InitHccpHdc() const
 
 void CommunicatorImpl::TryInitCcuFeature()
 {
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+        HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
+            "will use open source ccu feature.", __func__);
+        return;
+    }
+
     if (rankSize == 1) {
         HCCL_RUN_INFO("[CommunicatorImpl][%s] rank size is 1, init steps passed.", __func__);
         return;
@@ -1308,6 +1326,13 @@ void CommunicatorImpl::TryInitCcuFeature()
     }
     // 打开ccu驱动后初始化ccu资源
     ccuDrvHandle = CommManager::GetInstance(devLogicId).GetCcuDriver();
+    if (ccuDrvHandle == nullptr) {
+        HCCL_WARNING("CCU not support reuse in single device multi-precess services, accelerator fallback AICPU_TS");
+        OpExecuteConfig opExeCfg{AcceleratorState::AICPU_TS};
+        SetCommExecuteConfig(opExeCfg);
+        SetOpExecuteConfig(opExeCfg);
+        return;
+    }
 }
 
 void CommunicatorImpl::InitCcuSuperFastLoad()
@@ -1329,9 +1354,7 @@ void CommunicatorImpl::InitCcuSuperFastLoad()
 
 void CommunicatorImpl::InitSocketManager()
 {
-    // 待修改: 从环境变量或配置中拿
-    u32 stubListenPort = 60001;
-    socketManager      = std::make_unique<SocketManager>(*this, myRank, devPhyId, stubListenPort);
+    socketManager = std::make_unique<SocketManager>(*this, myRank, devPhyId, devLogicId);
 }
 
 void CommunicatorImpl::InitRmaConnManager()
@@ -2198,7 +2221,7 @@ CommunicatorImpl::~CommunicatorImpl()
 HcclResult CommunicatorImpl::DestroyDpuKernelResource()
 {
     // 终止Dpu Kernel的TaskRun
-    if (!IsNeedDpu()) {
+    if (!isDpuKernelLaunched) {
         return HCCL_SUCCESS;
     }
 
@@ -2472,15 +2495,8 @@ void CommunicatorImpl::CollAlgComponentInit()
     HCCL_INFO("[CommunicatorImpl][%s] finished initializing collAlgComponent.", __func__);
 }
 
-HcclResult CommunicatorImpl::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+HcclResult CommunicatorImpl::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
 {
-    if (accelerator < static_cast<int32_t>(HcclAccelerator::DEFAULT) || accelerator > static_cast<int32_t>(HcclAccelerator::AICPU)) {
-        HCCL_ERROR("[SetAccelerator] Invalid accelerator value [%d]", accelerator);
-        return HCCL_E_NOT_SUPPORT;
-    }
-    HcclAccelerator hcclAccelerator = static_cast<HcclAccelerator::Value>(accelerator);
-    HCCL_INFO("[CommunicatorImpl][%s] hcclAccelerator is [%s], isCcuMsAvailable is [%d]", __func__, hcclAccelerator.Describe().c_str(), 
-              isCcuMsAvailable);
     if (isLoadOp) {
         // 已下发过算子，不允许再设置accelerator
         HCCL_ERROR("[CommunicatorImpl]SetAccelerator is not allowed after load op.");
@@ -2496,8 +2512,7 @@ HcclResult CommunicatorImpl::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     switch (hcclAccelerator) {
         case HcclAccelerator::CCU_MS:
             if (hcclMainboardId == HcclMainboardId::MAINBOARD_PCIE_STD) { // 标卡环境下配置CCU_MS加速模式拦截报错
-                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s",
-                            hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
+                HCCL_ERROR("[SetAccelerator] hcclAccelerator[%s] not support in %s", hcclAccelerator.Describe().c_str(), hcclMainboardId.Describe().c_str());
                 return HCCL_E_NOT_SUPPORT;
             }
             commAccelerator = isCcuMsAvailable ? AcceleratorState::CCU_MS : AcceleratorState::CCU_SCHED;
@@ -2529,8 +2544,7 @@ HcclResult CommunicatorImpl::SetAccelerator(int32_t accelerator, bool isCcuMsAva
     HCCL_DEBUG("[CommunicatorImpl][%s] inCommExecuteConfig[%s]", __func__, inCommExecuteConfig.accState.Describe().c_str());
     TRY_CATCH_RETURN(SetCommExecuteConfig(inCommExecuteConfig)); // 设置通信域粒度加速模式，ccu模式需打开ccu驱动
     SetOpExecuteConfig(inCommExecuteConfig); // 算子粒度加速模式 同步为 通信域粒度加速模式
-    HCCL_DEBUG("[CommunicatorImpl][%s] comm accelerator [%s], isCcuMsAvailable is [%d]", __func__,
-              GetCommExecuteConfig().accState.Describe().c_str(), isCcuMsAvailable);
+    HCCL_DEBUG("[CommunicatorImpl][%s] comm accelerator [%s], isCcuMsAvailable is [%d]", __func__, GetCommExecuteConfig().accState.Describe().c_str(), isCcuMsAvailable);
     return HCCL_SUCCESS;
 }
 
@@ -2946,7 +2960,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     kernelAttr.value.timeout = NOTIFY_DEFAULT_WAIT_TIME;
     cfg.numAttrs             = 1;
     cfg.attrs                = &kernelAttr;
-    constexpr u32 blockDim   = 1;
+    constexpr u32 numBlocks   = 1;
     hostArgsTemp.commId     = id;
     hostArgsTemp.memorySize = SHARE_HBM_MEMORY_SIZE;
     hostArgsTemp.hostMem    = hostShareBuf;
@@ -2959,7 +2973,7 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
     size_t               argsSize = sizeof(hostArgsTemp);
     aclrtPlaceHolderInfo placeHolderArrays;
     size_t               placeHolderNum = 0;
-    if (aclrtLaunchKernelWithHostArgs(funcHandle, blockDim, dpuStream, &cfg, &hostArgsTemp, argsSize,
+    if (aclrtLaunchKernelWithHostArgs(funcHandle, numBlocks, dpuStream, &cfg, &hostArgsTemp, argsSize,
                                       &placeHolderArrays, placeHolderNum)
         != ACL_SUCCESS) {
         HCCL_ERROR("[CommunicatorImpl::%s] Launch Dpu Kernel Failed", __func__);
@@ -2970,10 +2984,6 @@ HcclResult CommunicatorImpl::LaunchDpuKernel(aclrtFuncHandle &funcHandle)
 
 HcclResult CommunicatorImpl::InitAndLaunchDpuKernel()
 {
-    if (!IsNeedDpu()) {
-        return HCCL_SUCCESS;
-    }
-
     HCCL_INFO("[CommunicatorImpl::%s] Start to Launch Dpu Kernel", __func__);
     // 设置XPU
     HCCL_INFO("[CommunicatorImpl::%s] Switch to Dpu Ctx", __func__);
@@ -3534,7 +3544,7 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
             acceleratorState = AcceleratorState::AIV_ONLY;
             break;
         default:
-            HCCL_ERROR("[SetAccelerator] Tiling hcclAccelerator not support, hcclAccelerator[%s]", hcclAccelerator.Describe().c_str());
+            HCCL_ERROR("[GetTilingAccelerator] Tiling hcclAccelerator not support, hcclAccelerator[%s]", hcclAccelerator.Describe().c_str());
             return HCCL_E_NOT_SUPPORT;
     }
 
@@ -3544,13 +3554,13 @@ HcclResult CommunicatorImpl::GetTilingAccelerator(void *mc2Tiling, AcceleratorSt
     return HCCL_SUCCESS;
 }
 
-HcclResult CommunicatorImpl::CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
-                                          u32 &blockDim) const
+HcclResult CommunicatorImpl::CalcNumBlocks(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName,
+                                          u32 &numBlocks) const
 {
-    HCCL_INFO("[CommunicatorImpl::CalcBlockDim] count[%llu], dataType[%s], opType[%s], aivCoreLimit[%d], algName[%s].",
+    HCCL_INFO("[CommunicatorImpl::CalcNumBlocks] count[%llu], dataType[%s], opType[%s], aivCoreLimit[%d], algName[%s].",
               opParams.count, opParams.dataType.Describe().c_str(), opParams.opType.Describe().c_str(), aivCoreLimit,
               algName.c_str());
-    blockDim = aivCoreLimit;
+    numBlocks = aivCoreLimit;
     return HCCL_SUCCESS;
 }
 
@@ -3567,10 +3577,10 @@ HcclResult CommunicatorImpl::GetAlgExecParam(const CollOpParams &opParams, bool 
         return HCCL_E_NOT_SUPPORT;
     }
 
-    u32 blockDim = 0;
-    CHK_RET(CalcBlockDim(opParams, aivCoreLimit, algName, blockDim));
+    u32 numBlocks = 0;
+    CHK_RET(CalcNumBlocks(opParams, aivCoreLimit, algName, numBlocks));
 
-    return collService->GetAlgExecParam(clearEnable, blockDim, commContext, len);
+    return collService->GetAlgExecParam(clearEnable, numBlocks, commContext, len);
 }
 
 HcclResult DeregisterOffloadSlaveStreams(const std::string &opTag);
@@ -3626,6 +3636,25 @@ std::vector<LinkData> CommunicatorImpl::GetFullMeshLinks() const
 
     HCCL_INFO("[CommunicatorImpl::%s] end, links size[%zu]", __func__, links.size());
     return links;
+}
+
+ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
+{
+    HcclResult ret = HCCL_SUCCESS;
+    ErrorMessageReport errorMessage;
+    if (kfcStatusTransferD2H != nullptr)
+    {
+        ret = kfcStatusTransferD2H->Get(sizeof(KfcStatus) + sizeof(KfcErrType),
+            sizeof(errorMessage), reinterpret_cast<uint8_t *>(&errorMessage));
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("GetAicpuTaskException get aicpu task exception failed.ret[%u]", ret);
+        }
+    } else {
+        HCCL_ERROR("GetAicpuTaskException kfcStatusTransferD2H is nullptr");
+    }
+    HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
+    return errorMessage;
 }
 
 } // namespace Hccl

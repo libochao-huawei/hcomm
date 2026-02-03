@@ -31,7 +31,7 @@ typedef struct tagStarsSqeHeader {
     uint8_t wrCqe : 1;
     uint8_t reserved : 1;
 
-    uint16_t blockDim;
+    uint16_t numBlocks;
 
     uint16_t rtStreamId;
     uint16_t taskId;
@@ -50,7 +50,7 @@ typedef struct tagDavidStarsSqeHeader {
     uint8_t rttMode : 1;
     uint8_t headUpdate : 1;
     uint8_t res0 : 1;
-    uint16_t blockDim;
+    uint16_t numBlocks;
 
     /* word1 */
     uint16_t rtStreamId;
@@ -117,7 +117,7 @@ typedef struct tagStarsFftsPlusHeader {
     /* tell mcu if this subgraph is overflow-enabled and mcu will send this flag to aicpu when aicpu ctx is excuted */
     uint8_t overflowEn : 1;
 
-    uint16_t blockDim;
+    uint16_t numBlocks;
 
     uint16_t rtStreamId;
     uint16_t taskId;

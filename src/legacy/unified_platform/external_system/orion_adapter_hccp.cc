@@ -40,6 +40,7 @@ constexpr u32 MAX_SEND_SGE_NUM = 8;
 constexpr u32 MAX_RECV_SGE_NUM = 1;
 constexpr u32 MAX_CQ_DEPTH = 65535;
 constexpr u32 MAX_INLINE_DATA = 128;
+constexpr u32 RA_TLV_REQUEST_UNAVAIL = 328307;
 
 const std::unordered_map<HrtNetworkMode, NetworkMode, EnumClassHash> HRT_NETWORK_MODE_MAP
     = {{HrtNetworkMode::PEER, NetworkMode::NETWORK_PEER_ONLINE}, {HrtNetworkMode::HDC, NetworkMode::NETWORK_OFFLINE}};
@@ -97,7 +98,7 @@ void* HrtRaTlvInit(HRaTlvInitConfig  &cfg)
     return tlv_handle; 
 }
 
-void HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_msg_type) 
+HcclResult HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_msg_type) 
 {
     s32 ret = 0;
 
@@ -107,12 +108,17 @@ void HrtRaTlvRequest(void* tlv_handle, u32 tlv_module_type, u32 tlv_ccu_msg_type
 
     ret = RaTlvRequest(tlv_handle, tlv_module_type, &send_msg, &recv_msg);
     if (ret != 0) {
+        if (ret == RA_TLV_REQUEST_UNAVAIL) {
+            HCCL_WARNING("[HrtRaTlvRequest]ra tlv request UNAVAIL. return: ret[%d]", ret);
+            return HCCL_E_UNAVAIL;
+        }
         HCCL_ERROR("[Request][RaTlv]errNo[0x%016llx] ra tlv request fail. return: ret[%d], module type[%u], message type[%u]", 
                    HCCL_ERROR_CODE(HcclResult::HCCL_E_NETWORK), ret, tlv_module_type, tlv_ccu_msg_type);
         throw NetworkApiException(StringFormat("call ra_tlv_request failed"));
     }
 
-    HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, tlv_ccu_msg_type); 
+    HCCL_INFO("tlv request success, tlv module type[%u], message type[%u]", tlv_module_type, tlv_ccu_msg_type);
+    return HCCL_SUCCESS;
 }
 
 void HrtRaTlvDeInit(void* tlv_handle)
@@ -2185,6 +2191,60 @@ HcclResult HrtRaNormalQpDestroy(QpHandle qpHandle)
     s32 ret = RaNormalQpDestroy(qpHandle);
     CHK_PRT_RET(ret != 0, HCCL_ERROR("[Destroy][NormalQp]errNo[0x%016llx] ra destroy normal qp fail. return[%d]",\
         HCCL_ERROR_CODE(HCCL_E_NETWORK), ret), HCCL_E_NETWORK);
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaGetAuxInfo(const RdmaHandle rdmaHandle, AuxInfoIn auxInfoIn, AuxInfoOut &auxInfoOut)
+{
+    aux_info_in in;
+    in.type = static_cast<aux_info_in_type>(static_cast<int>(auxInfoIn.auxInfoInType));
+    if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_CQE) {
+        in.cqe.status = auxInfoIn.cqe.status;
+        in.cqe.s_r = auxInfoIn.cqe.sR;
+    } else if (auxInfoIn.auxInfoInType == AuxInfoInType::AUX_INFO_IN_TYPE_AE) {
+        in.ae.event_type = auxInfoIn.ae.eventType;
+    }
+
+    aux_info_out out;
+    auto ret = ra_ctx_get_aux_info(rdmaHandle, &in, &out);
+    if (ret != 0) {
+        HCCL_ERROR("RaGetAuxInfo failed.");
+        return HCCL_E_NETWORK;
+    }
+
+    auxInfoOut.auxInfoNum = out.aux_info_num;
+    for (uint32_t i = 0; i < out.aux_info_num; i++) {
+        auxInfoOut.auxInfoTypes[i] = out.aux_info_type[i];
+        auxInfoOut.auxInfoValues[i] = out.aux_info_value[i];
+    }
+    return HCCL_SUCCESS;
+}
+
+HcclResult RaBatchQueryJettyStatus(const std::vector<JettyHandle> &jettyHandles, std::vector<JettyStatus> &jettyAttrs, u32 &num)
+{
+    if (jettyHandles.size() != num) {
+        HCCL_ERROR("jettyHandles size[%zu] not equal to num[%u]", jettyHandles.size(), num);
+        return HCCL_E_PARA;
+    }
+    std::vector<struct jetty_attr> raJettyAttrs(MAX_JETTY_QUERY_NUM);
+    void* qp_handle[jettyHandles.size()];
+    for (size_t i = 0; i < jettyHandles.size(); ++i) {
+        qp_handle[i] = reinterpret_cast<void*>(jettyHandles[i]);
+    }
+    auto ret = ra_ctx_qp_query_batch(qp_handle, raJettyAttrs.data(), &num);
+    if (ret != 0) {
+        HCCL_ERROR("RaBatchQueryJettyAttr failed.");
+        return HCCL_E_NETWORK;
+    }
+    if (num != jettyHandles.size()) {
+        HCCL_ERROR("jettyAttrs num[%zu] not equal to input jettyHandles size[%zu]", num, jettyHandles.size());
+        return HCCL_E_PARA;
+    }
+
+    for (u32 i = 0; i < num; i++) {
+        JettyStatus jettyStatus = static_cast<JettyStatus::Value>(static_cast<int>(raJettyAttrs[i].state));
+        jettyAttrs.push_back(jettyStatus);
+    }
     return HCCL_SUCCESS;
 }
 } // namespace Hccl

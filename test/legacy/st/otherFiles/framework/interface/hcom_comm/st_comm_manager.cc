@@ -354,9 +354,7 @@ TEST_F(HcomutCommManagerTest, st_HcomInitByStringV2_expectHCCL_E_INTERNAL)
 
     MOCKER_CPP(&HcclCommunicator::Init, HcclResult(HcclCommunicator::*)(const std::string &)).stubs().with(any()).will(returnValue(HCCL_SUCCESS));
     MOCKER(HrtGetDevice).stubs().will(returnValue(0));
-    MOCKER(SetCommAcceleratorV2).stubs().will(returnValue(HCCL_SUCCESS));
-    HcclResult ret;
-
-    ret = HcomInitByStringV2(rank_table_string.c_str(), "0");
+    MOCKER_CPP(&CommManager::SetCommAcceleratorV2).stubs().will(returnValue(HCCL_SUCCESS));
+    HcclResult ret = HcomInitByStringV2(rank_table_string.c_str(), "0");
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
