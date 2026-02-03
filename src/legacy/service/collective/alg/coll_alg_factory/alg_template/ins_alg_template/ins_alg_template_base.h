@@ -63,7 +63,7 @@ public:
     virtual uint64_t GetMaxSliceSize();
     virtual u64 CalcLoopMaxCount(ParamPool &paramPool);
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
-    virtual HcclResult CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit);
+    virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
 
     std::vector<std::tuple<QId, QId, u32>> CreateMasterSlaveQueNotifiesRequest(u32 queueNum, u32 pairNum = 1,
                                                                                QId masterId = 0) const;

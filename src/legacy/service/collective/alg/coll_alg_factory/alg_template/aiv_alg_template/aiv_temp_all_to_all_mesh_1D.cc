@@ -33,25 +33,25 @@ u32 AivTempAlltoAllMesh1D::CalcScratchMultiple(BufferType inBuffType, BufferType
     return 1;
 }
 
-HcclResult AivTempAlltoAllMesh1D::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult AivTempAlltoAllMesh1D::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
     (void) dataSize;
-    HCCL_INFO("[AivTempAlltoAllMesh1D] Limit core num[%u]", blockDimLimit);
+    HCCL_INFO("[AivTempAlltoAllMesh1D] Limit core num[%u]", numBlocksLimit);
 
     // 小于1的场景
-    if (blockDimLimit < 1) {
-        blockDim = blockDimLimit;
+    if (numBlocksLimit < 1) {
+        numBlocks = numBlocksLimit;
         return HcclResult::HCCL_SUCCESS;
     }
 
-    if (blockDimLimit >= tempRankSize_) {
-        blockDim = blockDimLimit / tempRankSize_ * tempRankSize_;
+    if (numBlocksLimit >= tempRankSize_) {
+        numBlocks = numBlocksLimit / tempRankSize_ * tempRankSize_;
     } else {
-        u32 rankPerCore = (tempRankSize_ + blockDimLimit - 1) / blockDimLimit;  // 向上取整
-        blockDim = (tempRankSize_ + rankPerCore - 1) / rankPerCore;  // 向上取整
+        u32 rankPerCore = (tempRankSize_ + numBlocksLimit - 1) / numBlocksLimit;  // 向上取整
+        numBlocks = (tempRankSize_ + rankPerCore - 1) / rankPerCore;  // 向上取整
     }
 
-    HCCL_INFO("[AivTempAlltoAllMesh1D] Actually use core num[%u]", blockDim);
+    HCCL_INFO("[AivTempAlltoAllMesh1D] Actually use core num[%u]", numBlocks);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -92,7 +92,7 @@ HcclResult AivTempAlltoAllMesh1D::GenExtIns(const TempFuncs &tempFuncs, const Te
     aivAlltoAllArgs.yRankSize = 0;
     aivAlltoAllArgs.zRankSize = 0;
     u64 dataSize = op_.dataCount * DataTypeSizeGet(dataType_);
-    CHK_RET(CalBlockDim(aivAlltoAllArgs.blockDim, dataSize, op_.blockDimLimit));
+    CHK_RET(CalNumBlocks(aivAlltoAllArgs.numBlocks, dataSize, op_.numBlocksLimit));
     for (u32 i = 0; i < tempVTopo_[0].size(); i ++){
         aivAlltoAllArgs.topo_[i] = tempVTopo_[0][i];
     }

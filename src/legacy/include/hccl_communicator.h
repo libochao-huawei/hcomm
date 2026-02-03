@@ -122,7 +122,7 @@ public:
     HcclResult GetTopoInstsByLayer(uint32_t netLayer, uint32_t **topoInsts, uint32_t *topoInstNum);
     HcclResult GetTopoType(uint32_t netLayer, uint32_t topoInstId, CommTopo *topoType);
     HcclResult GetRanksByTopoInst(uint32_t netLayer, uint32_t topoInstId, uint32_t **ranks, uint32_t *rankNum);
-    HcclResult CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName, u32 &blockDim);
+    HcclResult CalcNumBlocks(const CollOpParams &opParams, int32_t aivCoreLimit, std::string &algName, u32 &numBlocks);
     HcclResult GetAlgExecParam(const CollOpParams &opParams, bool clearEnable, void *&commContext, u64 &len, u32 aivCoreLimit);
     HcclResult ClearOpResource(const std::string &opTag);
     HcclResult GetEndpointNum(uint32_t layer, uint32_t topoInstId, uint32_t* num);

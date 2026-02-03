@@ -65,7 +65,7 @@ public:
     // N秒快恢场景使用
     void Resume() override;
 
-    HcclResult GetAlgExecParam(bool clearEnable, u32 blockDim, void *&commContext, u64 &len) override;
+    HcclResult GetAlgExecParam(bool clearEnable, u32 numBlocks, void *&commContext, u64 &len) override;
 private:
     CcuInsPreprocessor   ccuInsPreprocessor;
     AivInsPreprocessor   aivInsPreprocessor;
@@ -85,7 +85,7 @@ private:
     HcclResult HandleAclGraphFirstOpAivBuff(rtStream_t mainStream);
     // 生成AivOpArgs，AIV superKernel
     HcclResult GenerateAivOpArgs(const AivInstruction &aivInstruction, AivOpArgs& aivOpArgs) const;
-    void GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpArgs, bool clearEnable, u32 blockDim,
+    void GeneratorAivSuperKernelArgs(const AivOpArgs &aivOpArgs, bool clearEnable, u32 numBlocks,
                                      AivSuperKernelArgs &superArgs) const;
 };
 

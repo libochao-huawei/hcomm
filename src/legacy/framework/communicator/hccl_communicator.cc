@@ -473,10 +473,10 @@ HcclResult HcclCommunicator::GetRanksByTopoInst(uint32_t netLayer, uint32_t topo
     return pimpl->GetRanksByTopoInst(netLayer, topoInstId, ranks, rankNum);
 }
 
-HcclResult HcclCommunicator::CalcBlockDim(const CollOpParams &opParams, int32_t aivCoreLimit,
-        std::string &algName, u32 &blockDim)
+HcclResult HcclCommunicator::CalcNumBlocks(const CollOpParams &opParams, int32_t aivCoreLimit,
+        std::string &algName, u32 &numBlocks)
 {
-    return pimpl->CalcBlockDim(opParams, aivCoreLimit, algName, blockDim);
+    return pimpl->CalcNumBlocks(opParams, aivCoreLimit, algName, numBlocks);
 }
 
 HcclResult HcclCommunicator::GetAlgExecParam(const CollOpParams &opParams, bool clearEnable, void *&commContext, u64 &len,

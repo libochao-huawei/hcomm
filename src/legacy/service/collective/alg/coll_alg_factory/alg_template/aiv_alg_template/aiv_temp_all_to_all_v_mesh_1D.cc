@@ -14,7 +14,7 @@
 #include "executor_utils.h"
 
 namespace Hccl {
-constexpr u64 MAX_BLOCK_DIM_ALL_TO_ALL_V = 48; // 算法不交付控核
+constexpr u64 MAX_NUM_BLOCKS_ALL_TO_ALL_V = 48; // 算法不交付控核
 
 AivTempAlltoAllVMesh1D::AivTempAlltoAllVMesh1D(const RankId virtualRank, const u32 tempRankSize,
     const std::vector<std::vector<RankId>> &tempVTopo, const std::map<RankId, u32> &tempVirtRankMap)
@@ -70,7 +70,7 @@ HcclResult AivTempAlltoAllVMesh1D::GenExtIns(const TempFuncs &tempFuncs, const T
     aivAlltoAllVArgs.xRankSize = tempVTopo_[0].size();
     aivAlltoAllVArgs.yRankSize = 0;
     aivAlltoAllVArgs.zRankSize = 0;
-    aivAlltoAllVArgs.blockDim = MAX_BLOCK_DIM_ALL_TO_ALL_V;
+    aivAlltoAllVArgs.numBlocks = MAX_NUM_BLOCKS_ALL_TO_ALL_V;
 
     for (u64 i = 0; i < tempVTopo_[0].size(); i++) {
         aivAlltoAllVArgs.extraArgs.sendCounts[i] = static_cast<u64 *>(op_.all2AllVDataDes.sendCounts)[i];

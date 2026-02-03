@@ -281,7 +281,7 @@ HcclResult CollAlgComponent::SetCollAlgExecutor(std::shared_ptr<CollAlgBase> col
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult CollAlgComponent::CalBlockDim(u32& blockDim, u64 dataSize, OpType opType, string &algName, u32 blockDimLimit) const
+HcclResult CollAlgComponent::CalNumBlocks(u32& numBlocks, u64 dataSize, OpType opType, string &algName, u32 numBlocksLimit) const
 {
     std::string insCollAlgName;
 
@@ -293,7 +293,7 @@ HcclResult CollAlgComponent::CalBlockDim(u32& blockDim, u64 dataSize, OpType opT
         insCollAlgName = algName;
     }
     std::shared_ptr<InsCollAlgBase> insGenFunc = InsCollAlgRegistry::Global()->GetAlgImpl(opType, insCollAlgName);
-    CHK_RET(insGenFunc->CalBlockDim(blockDim, dataSize, blockDimLimit));
+    CHK_RET(insGenFunc->CalNumBlocks(numBlocks, dataSize, numBlocksLimit));
     return HcclResult::HCCL_SUCCESS;
 }
 

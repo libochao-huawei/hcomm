@@ -44,7 +44,7 @@ public:
     virtual uint64_t BufferTypeToAddr(const BufferType bufferType);
     virtual  u32 CalcScratchMultiple(BufferType inBuffType, BufferType outBuffType);
     virtual HcclResult GetMaxTransPortDataSize(u64 &maxTransPortDataSize) const;
-    virtual HcclResult CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit);
+    virtual HcclResult CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit);
 
     void SetCollOp(const CollAlgOperator &op);
     void SetDmaMode(const DmaMode dmaMode);

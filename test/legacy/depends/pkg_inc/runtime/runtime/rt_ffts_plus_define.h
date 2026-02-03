@@ -152,8 +152,8 @@ typedef struct tagFftsPlusAicAivCtx {
     uint16_t threadId;
     uint16_t threadDim;
     // 76-79
-    uint16_t nonTailBlockdim;
-    uint16_t tailBlockdim;
+    uint16_t nonTailNumBlocks;
+    uint16_t tailNumBlocks;
     // 80-83
     uint32_t taskParamPtrBaseL;
     // 84-87
@@ -218,8 +218,8 @@ typedef struct tagFftsPlusMixAicAivCtx {
     uint16_t threadId;
     uint16_t threadDim;
     // 76-79
-    uint16_t nonTailBlockdim;
-    uint16_t tailBlockdim;
+    uint16_t nonTailNumBlocks;
+    uint16_t tailNumBlocks;
     // 80-87
     uint32_t aicTaskParamPtrL;
     uint16_t aicTaskParamPtrH;
@@ -416,8 +416,8 @@ typedef struct tagFftsPlusAiCpuCtx {
     uint16_t threadId;
     uint16_t threadDim;
     // 76-79
-    uint16_t nonTailBlockdim;
-    uint16_t tailBlockdim;
+    uint16_t nonTailNumBlocks;
+    uint16_t tailNumBlocks;
     // 80-115
     uint32_t usrData[9];   // usr_data0 -> usr_data8 usr_data2(task_param_base_l) usr_data3(task_param_base_h)
     // 116--119

@@ -41,15 +41,15 @@ HcclResult AivTempReduceScatterMesh1D::CalcRes(AlgTempResReq &tempResReq)
     return HcclResult::HCCL_SUCCESS;
 }
 
-HcclResult AivTempReduceScatterMesh1D::CalBlockDim(u32& blockDim, u64 dataSize, u32 blockDimLimit)
+HcclResult AivTempReduceScatterMesh1D::CalNumBlocks(u32& numBlocks, u64 dataSize, u32 numBlocksLimit)
 {
     (void) dataSize;
-    blockDim = blockDimLimit;
+    numBlocks = numBlocksLimit;
     constexpr uint32_t stepNum = 2;
-    if (blockDim > stepNum * tempRankSize_) {
-        blockDim = stepNum * tempRankSize_;
+    if (numBlocks > stepNum * tempRankSize_) {
+        numBlocks = stepNum * tempRankSize_;
     }
-    HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", blockDim);
+    HCCL_INFO("[AivTempReduceScatterMesh1D] Actually use core num[%u]", numBlocks);
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -97,7 +97,7 @@ HcclResult AivTempReduceScatterMesh1D::GenExtIns(const TempFuncs &tempFuncs, con
     }
 
     u64 dataSize = op_.dataCount * DataTypeSizeGet(dataType_);
-    CHK_RET(CalBlockDim(aivReduceScatterArgs.blockDim, dataSize, op_.blockDimLimit));
+    CHK_RET(CalNumBlocks(aivReduceScatterArgs.numBlocks, dataSize, op_.numBlocksLimit));
 
     aivReduceScatterArgs.inputSliceStride = templateDataParams.inputSliceStride;
     aivReduceScatterArgs.outputSliceStride = templateDataParams.outputSliceStride;

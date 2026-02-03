@@ -55,7 +55,7 @@ using AivSuperKernelArgs = struct AivSuperKernelArgsDef {
     uint64_t dataType;
     uint64_t unitSize;
     uint64_t reduceOp;
-    uint64_t blockdim;
+    uint64_t numBlocks;
     uint64_t tag; // 第几次调用，定时重置成1
     uint64_t clearEnable;
     uint64_t inputSliceStride;
@@ -134,8 +134,8 @@ constexpr uint64_t BUFFER_AREA = 1024 * 1024; // aiv算子的单独功能flag区
 
 constexpr uint64_t AIV_PING_PONG_FACTOR_TWO = 2;
 
-constexpr uint32_t BLOCK_DIM_FOUR_PER_RANK_A3 = 4;
-constexpr uint32_t MAX_BLOCK_DIM = 48;
+constexpr uint32_t NUM_BLOCKS_FOUR_PER_RANK_A3 = 4;
+constexpr uint32_t MAX_NUM_BLOCKS = 48;
 
 constexpr uint64_t UB_ALIGN_SIZE = 32;
 constexpr uint64_t UB_FLAG_SIZE = 32;
@@ -186,7 +186,7 @@ public:
         output_ = output;
         dataType_ = dataType;
         useDoubleBuffer_ = useDoubleBuffer;
-        blockdim_ = block_num;
+        numBlocks_ = block_num;
 
         inputSliceStride_ = inputSliceStride;
         outputSliceStride_ = outputSliceStride;
@@ -196,11 +196,11 @@ public:
 
         InitBuffArray(buffIn);
 
-        localOffset = (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
-        multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
-        pingpongOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
-        seperateOffset = countOffset + BLOCK_DIM_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
 
         pipe.InitBuffer(localFlagBuf, LOCAL_FLAG_BUF_LEN);
         localSetTensor = localFlagBuf.GetWithOffset<int32_t>(UB_FLAG_PAD_COUNT, FLAG_ONE_OFFSET);
@@ -222,7 +222,7 @@ public:
         tag_ = args->tag;
         dataType_ = args->dataType;
         unitSize_ = args->unitSize;
-        blockdim_ = args->blockdim;
+        numBlocks_ = args->numBlocks;
 
         input_ = reinterpret_cast<uint64_t>(input);
         output_ = reinterpret_cast<uint64_t>(output);
@@ -234,11 +234,11 @@ public:
         inputRepeatStride_ = args->inputRepeatStride;
         outputRepeatStride_ = args->outputRepeatStride;
  
-        localOffset = (rankSize_ * BLOCK_DIM_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
-        multiOffset = MAX_BLOCK_DIM * DOUBLE * FLAG_SIZE+ localOffset;
-        pingpongOffset = multiOffset + DOUBLE * DOUBLE * BLOCK_DIM_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
+        localOffset = (rankSize_ * NUM_BLOCKS_FOUR_PER_RANK_A3 * FLAG_BUF_NUM) * FLAG_SIZE;
+        multiOffset = MAX_NUM_BLOCKS * DOUBLE * FLAG_SIZE+ localOffset;
+        pingpongOffset = multiOffset + DOUBLE * DOUBLE * NUM_BLOCKS_FOUR_PER_RANK_A3 * ATOMIC_FLAG_SIZE * DOUBLE;
         countOffset = DOUBLE * pingpongOffset;
-        seperateOffset = countOffset + BLOCK_DIM_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
+        seperateOffset = countOffset + NUM_BLOCKS_FOUR_PER_RANK_A3 * rankSize_ * FLAG_SIZE;
 
         InitBuffArray(args->buffersIn);
 
@@ -325,7 +325,7 @@ public:
 
     uint64_t len_;
     int32_t tag_;
-    int32_t blockdim_;
+    int32_t numBlocks_;
 
     uint64_t inputSliceStride_;
     uint64_t outputSliceStride_;
@@ -399,7 +399,7 @@ __aicore__ inline void AivCommBase::SyncCoreAll(int32_t curTag)
     Record(rank_, flag_offset / UB_ALIGN_SIZE, curTag);
 
     pipe_barrier(PIPE_ALL);
-    for (int i = 0; i < MAX_BLOCK_DIM; i++) {
+    for (int i = 0; i < MAX_NUM_BLOCKS; i++) {
         uint64_t flag_offset = SYNC_CORE_OFFSET + i * FLAG_SIZE;
         WaitFlag(rank_, flag_offset / UB_ALIGN_SIZE, curTag);
     }
@@ -534,12 +534,12 @@ __aicore__ inline void AivCommBase::ClearFlag()
  
     __aicore__ inline void AivCommBase::BlockSync()
     {
-        uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * blockdim_;
+        uint32_t flagOffset = SYNC_BUFFER_OFFSET + 2 * FLAG_SIZE * numBlocks_;
         __gm__ int32_t *ctrlFlagsGM = (__gm__ int32_t *)(GM_OUT[rank_] + flagOffset);
         if (GetBlockIdx() == 0) {
             //通知其他核
             pipe_barrier(PIPE_ALL);
-            for (int i = 1; i < blockdim_; i++) {
+            for (int i = 1; i < numBlocks_; i++) {
                 SetSignalValue(ctrlFlagsGM + i * FLAG_SIZE, localSetTensor, 1);
             }
             pipe_barrier(PIPE_ALL);
