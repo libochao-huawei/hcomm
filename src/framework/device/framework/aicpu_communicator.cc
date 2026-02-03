@@ -366,7 +366,8 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
                         CHK_PTR_NULL(curLink);
 
                         // 获取user input memory range if any
-                        if (curReq.inputMemType == TransportMemType::PARAM_INPUT) {
+                        if (curReq.inputMemType == TransportMemType::PARAM_INPUT ||
+                            curReq.inputMemType == TransportMemType::CCL_INPUT) {
                             // 获取remoteRank的user input memory baseaddr
                             void *remoteUserInputBaseAddr = nullptr;
                             CHK_RET(curLink->GetRemoteMem(UserMemType::INPUT_MEM, &remoteUserInputBaseAddr));
@@ -382,7 +383,8 @@ HcclResult HcclCommAicpu::PrepareUserMemRanges(const OpParam &param, const AlgRe
                         }
 
                         // 获取user output memory range if any
-                        if (curReq.outputMemType == TransportMemType::PARAM_OUTPUT) {
+                        if (curReq.outputMemType == TransportMemType::PARAM_OUTPUT ||
+                            curReq.outputMemType == TransportMemType::CCL_OUTPUT) {
                             // 获取remoteRank的user output memory baseaddr
                             void *remoteUserOutputBaseAddr = nullptr;
                             CHK_RET(curLink->GetRemoteMem(UserMemType::OUTPUT_MEM, &remoteUserOutputBaseAddr));
