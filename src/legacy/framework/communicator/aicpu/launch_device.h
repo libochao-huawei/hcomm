@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
+ * Copyright (c) 2026 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
  * CANN Open Software License Agreement Version 2.0 (the "License").
  * Please refer to the License for details. You may not use this file except in compliance with the License.
@@ -8,18 +8,21 @@
  * See LICENSE in the root of the software repository for the full text of the License.
  */
  
-#ifndef LAUNCH_AICPU_H
-#define LAUNCH_AICPU_H
+#ifndef LEGACY_LAUNCH_DEVICE_H
+#define LEGACY_LAUNCH_DEVICE_H
 
 #include "hccl/base.h"
 #include "hccl_types.h"
 #include "acl/acl_rt.h"
 
-namespace hccl {
-HcclResult AicpuAclKernelLaunchV2(const rtStream_t stm, void *addr, u32 size,
-    aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
-    void *tilingDataPtr, u32 tilingDataSize);
-HcclResult GetKernelFilePath(std::string &binaryPath);
+namespace Hccl {
+
+void LoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+    aclrtBinHandle& binHandle);
+void AicpuAclKernelLaunch(const rtStream_t stm, void *addr, u32 size,
+                                  aclrtBinHandle binHandle, const std::string &kernelName, bool isInitTask, u16 timeOut,
+                                  void *tilingDataPtr, u32 tilingDataSize);
+void GetKernelFilePath(std::string &binaryPath);
 }
 
-#endif // LAUNCH_AICPU_H
+#endif // LEGACY_LAUNCH_DEVICE_H

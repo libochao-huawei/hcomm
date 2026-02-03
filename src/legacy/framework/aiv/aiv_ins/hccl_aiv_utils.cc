@@ -294,10 +294,7 @@ HcclResult RegisterKernel()
     HCCL_INFO("[RegisterKernel] binFilePath: %s", binFilePath.c_str());
     CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] get aiv op binary path failed"), HCCL_E_RUNTIME);
 
-    ret = LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
-    CHK_PRT_RET(ret != HCCL_SUCCESS, HCCL_ERROR("[AIV][RegisterKernel] read aiv kernel bin file failed"),
-        HCCL_E_RUNTIME);
- 
+    LoadBinaryFromFile(binFilePath.c_str(), ACL_RT_BINARY_LOAD_OPT_LAZY_LOAD, 1, g_binHandle);
     for (auto &aivKernelInfo: g_aivKernelInfoList) {
         ret = RegisterBinaryKernel(aivKernelInfo.kernelName, g_binHandle,
             GetStubFunc(aivKernelInfo.cmdType, aivKernelInfo.dataType, aivKernelInfo.argsType));

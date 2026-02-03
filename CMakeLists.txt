@@ -8,6 +8,7 @@
 # See LICENSE in the root of the software repository for the full text of the License.
 # -----------------------------------------------------------------------------------------------------------
 cmake_minimum_required(VERSION 3.16.0)
+set(CMAKE_EXPORT_COMPILE_COMMANDS  ON)
 option(BUILD_OPEN_PROJECT "Build open hcomm project." ON)
 message(STATUS "DEVICE_MODE=${DEVICE_MODE}")
 message(STATUS "BUILD_OPEN_PROJECT=${BUILD_OPEN_PROJECT}")
@@ -77,6 +78,7 @@ else()
 endif()
 
 math(EXPR JOBS "${CPU_CORES} * 2")
+set(JOBS 1)
 message(STATUS "Detected JOBS: ${JOBS}")
 set(CMAKE_JOB_POOL_COMPILE "${JOBS}")
 set(CMAKE_JOB_POOL_LINK "${JOBS}")
