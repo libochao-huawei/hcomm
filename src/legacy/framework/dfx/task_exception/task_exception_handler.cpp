@@ -336,7 +336,7 @@ void TaskExceptionHandler::ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionIn
     auto& ccuExDetailInfo = exceptionInfo->expandInfo.u.fusionInfo.u.aicoreCcuInfo.ccuDetailMsg;
     for (uint32_t i = 0; i < ccuExDetailInfo.ccuMissionNum; ++i) {
         const auto& missionInfo = ccuExDetailInfo.missionInfo[i];   // 异常sqe
-        HCCL_INFO("[%s] Exception missionInfo: dieId[%u], missionId[%u], instrId[%u], status[0x%x], subStatus[0x%x]",
+        HCCL_INFO("[%s] Exception missionInfo: dieId[%u], missionId[%u], startInstrId[%u], status[0x%x], subStatus[0x%x]",
             __func__, static_cast<u32>(missionInfo.dieId), static_cast<u32>(missionInfo.missionId), missionInfo.instrId, 
             missionInfo.status, missionInfo.subStatus);
         exDieIds.insert(missionInfo.dieId);
@@ -355,7 +355,7 @@ void TaskExceptionHandler::ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionIn
         ParaCcu serverParam = serverTaskInfo->taskParam_.taskPara.Ccu;
         serverParam.execMissionId = missionInfo.missionId;
         vector<CcuErrorInfo> serverErrorInfos {};
-        if (GetCcuErrorMsg(exceptionInfo->deviceid, status, missionInfo.instrId, serverParam, serverErrorInfos) != HcclResult::HCCL_SUCCESS) {
+        if (GetCcuErrorMsg(exceptionInfo->deviceid, status, serverParam, serverErrorInfos) != HcclResult::HCCL_SUCCESS) {
             HCCL_ERROR("Get CCU error info failed.");
             continue;
         }
@@ -382,7 +382,7 @@ void TaskExceptionHandler::ProcessCcuMC2Exception(rtExceptionInfo_t* exceptionIn
             ParaCcu algoParam = algoTaskInfo->taskParam_.taskPara.Ccu;
             algoParam.execMissionId = missionInfo.missionId;
             vector<CcuErrorInfo> algoErrorInfos {};
-            if (GetCcuErrorMsg(exceptionInfo->deviceid, status, missionInfo.instrId, algoParam, algoErrorInfos) != HcclResult::HCCL_SUCCESS) {
+            if (GetCcuErrorMsg(exceptionInfo->deviceid, status, algoParam, algoErrorInfos) != HcclResult::HCCL_SUCCESS) {
                 HCCL_ERROR("Get CCU error info failed.");
                 continue;
             }
@@ -456,11 +456,11 @@ vector<CcuTaskParam> TaskExceptionHandler::GetMC2AlgTaskParam(const TaskInfo& ta
     }
 }
 
-void TaskExceptionHandler::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, uint16_t instrId, const TaskInfo& taskInfo)
+void TaskExceptionHandler::PrintCcuErrorInfo(uint32_t deviceId, uint16_t status, const TaskInfo& taskInfo)
 {
     const ParaCcu& ccuTaskParam = taskInfo.taskParam_.taskPara.Ccu;
     vector<CcuErrorInfo> errorInfos {};
-    HcclResult ret = GetCcuErrorMsg(deviceId, status, instrId, ccuTaskParam, errorInfos);
+    HcclResult ret = GetCcuErrorMsg(deviceId, status, ccuTaskParam, errorInfos);
     if (ret != HcclResult::HCCL_SUCCESS || errorInfos.empty()) {
         HCCL_ERROR("Get CCU error info failed. deviceId[%u], dieId[%u], missionId[%u], executeId[%llu].",
             deviceId, static_cast<uint32_t>(ccuTaskParam.dieId), static_cast<uint32_t>(ccuTaskParam.missionId),

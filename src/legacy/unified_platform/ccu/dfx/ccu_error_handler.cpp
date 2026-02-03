@@ -62,9 +62,10 @@ const map<uint8_t, map<uint8_t, string>> MISSION_SUB_STATUS_MAP{
       {0x0c, "read local mem poison(0x0c)"}}},
 };
 
-void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, uint16_t currIns, const ParaCcu &ccuTaskParam,
+void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, const ParaCcu &ccuTaskParam,
                                         std::vector<CcuErrorInfo> &errorInfo)
 {
+    const auto missionContext = GetCcuMissionContext(deviceId, ccuTaskParam.dieId, ccuTaskParam.execMissionId);
     if (missionStatus == 0) {
         HCCL_INFO("[CcuErrorHandler][%s] no err found, mission status is 0, deviceId[%d], dieId[%u], execMissionId[%u]",
             __func__, deviceId, static_cast<u32>(ccuTaskParam.dieId), static_cast<u32>(ccuTaskParam.execMissionId));
@@ -84,6 +85,7 @@ void CcuErrorHandler::GetCcuErrorMsg(int32_t deviceId, uint16_t missionStatus, u
     GenStatusInfo(baseInfo, errorInfo);
     const uint16_t endIns = missionContext.GetEndIns();
     const uint16_t startIns = missionContext.GetStartIns();
+    const uint16_t currIns = missionContext.GetCurrentIns();
     // 获取异常指令对应的Rep
     
     HCCL_ERROR("[CcuErrorHandler]device %u, execMissionId[%u], startIns[%u], endIns[%u], currIns[%u]", 
