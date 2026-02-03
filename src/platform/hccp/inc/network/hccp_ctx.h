@@ -438,7 +438,13 @@ struct qp_create_info {
         } ub;
     };
     uint64_t va; /**< refer to struct urma_jetty*, struct ibv_qp* */
-    uint32_t resv[16U];
+    struct {
+        void *qbuf;
+        void *qbuf_end;
+        uint32_t qbuf_size;
+        void *qbuf_curr;
+    } udma_jetty_sq;
+    uint32_t resv[15U];
 };
 
 enum jetty_grp_policy {
