@@ -29,6 +29,7 @@ set(hccl_llt_stub
     ${HCCL_LLT_ROOT}/stub/legacy/interface_channel.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_orion_stub.cc
     ${HCCL_LLT_ROOT}/stub/llt_next_hccp_stub.cc
+    ${HCCL_LLT_ROOT}/stub/llt_hccl_stub_rank_graph.cc
 )
 
 file(GLOB_RECURSE ALGORITHM_SOURCES "${HCCL_CODE_ROOT}/src/algorithm/*.cc")
