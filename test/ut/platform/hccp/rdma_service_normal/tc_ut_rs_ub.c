@@ -1197,10 +1197,12 @@ void TcRsUbCtxLmemReg()
 void TcRsUbCtxJfcCreateFail()
 {
     struct RsUbDevCb devCb = {0};
+    struct RsUbDevCb rsCb = {0};
     struct CtxCqAttr attr = {0};
     struct CtxCqInfo info = {0};
     int ret = 0;
 
+    devCb.rsCb = &rsCb;
     attr.ub.mode = JFC_MODE_STARS_POLL;
     mocker(RsUbCtxJfcCreateExt, 1, -1);
     ret = RsUbCtxJfcCreate(&devCb, &attr, &info);
