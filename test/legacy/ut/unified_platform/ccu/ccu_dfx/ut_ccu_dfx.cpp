@@ -60,7 +60,9 @@ TEST_F(CcuDfxTest, get_ccu_error_msg_should_fail_when_param_error)
     ccuTaskParam.missionId = 0;
     ccuTaskParam.executeId = 0;
     vector<CcuErrorInfo> errorInfo{};
-    EXPECT_EQ(GetCcuErrorMsg(100, ccuTaskParam, errorInfo), HcclResult::HCCL_E_PARA);
+    uint16_t status = 0;
+    uint16_t instrId = 0;
+    EXPECT_EQ(GetCcuErrorMsg(100, status, instrId, ccuTaskParam, errorInfo), HcclResult::HCCL_E_PARA);
 }
 
 void GetCcuErrorMsgExcptionStub(int32_t deviceId, const ParaCcu &ccuTaskParam, vector<CcuErrorInfo> &errorInfo)
@@ -75,14 +77,12 @@ TEST_F(CcuDfxTest, get_ccu_error_msg_should_fail_when_throw_exception)
     ccuTaskParam.missionId = 0;
     ccuTaskParam.executeId = 0;
     vector<CcuErrorInfo> errorInfo{};
+    uint16_t status = 0xffff;
+    uint16_t instrId = 0;
 
     MOCKER_CPP(&CtxMgrImp::Init).stubs();
     CcuContext* ctx{nullptr};
     MOCKER_CPP(&CtxMgrImp::GetCtx).stubs().with(any(), any(), any()).will(returnValue(ctx));
-    CcuMissionContext missionCtx{};
-    missionCtx.part2.value = 0xffff;
-    missionCtx.part3.value = 0xffff;
-    MOCKER(CcuErrorHandler::GetCcuMissionContext).stubs().with(any(), any(), any()).will(returnValue(missionCtx));
-
-    EXPECT_EQ(GetCcuErrorMsg(1, ccuTaskParam, errorInfo), HcclResult::HCCL_E_INTERNAL);
+    
+    EXPECT_EQ(GetCcuErrorMsg(1, status, instrId, ccuTaskParam, errorInfo), HcclResult::HCCL_E_INTERNAL);
 }

@@ -16,6 +16,7 @@ namespace Hccl {
 class CcuDriverHandle {
 public:
     CcuDriverHandle(s32 deviceLogicId);
+    HcclResult Init();
     ~CcuDriverHandle();
 
 private:

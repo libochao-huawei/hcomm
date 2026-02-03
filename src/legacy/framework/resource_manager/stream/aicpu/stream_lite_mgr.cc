@@ -81,4 +81,13 @@ StreamLiteMgr::~StreamLiteMgr()
     streams.clear();
 }
 
+std::vector<StreamLite*> StreamLiteMgr::GetAllStreams()
+{
+    std::vector<StreamLite*> result;
+    result.reserve(streams.size());
+    std::transform(streams.begin(), streams.end(), std::back_inserter(result),
+                [](const auto& ptr) { return ptr.get(); });
+    return result;
+}
+
 } // namespace Hccl

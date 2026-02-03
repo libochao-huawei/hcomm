@@ -417,9 +417,10 @@ else()
         ${TOP_DIR}/hcomm/src/
         ${TOP_DIR}/hcomm/src/include/hccl/                      # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/platform
- 	    ${TOP_DIR}/hcomm/src/platform/legacy/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+
+        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
     )
 
     target_include_directories(ccl_kernel_plf_a PRIVATE
@@ -456,9 +457,10 @@ else()
         ${TOP_DIR}/hcomm/src/
         ${TOP_DIR}/hcomm/src/include/hccl/                       # ${ASCEND_CANN_PACKAGE_PATH}/include
         ${TOP_DIR}/hcomm/src/platform
- 	    ${TOP_DIR}/hcomm/src/platform/legacy/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc
         ${TOP_DIR}/hcomm/src/platform/hccp/inc/network
+
+        ${TOP_DIR}/hcomm-legacy/src/platform/legacy/inc
     )
 endif()
 

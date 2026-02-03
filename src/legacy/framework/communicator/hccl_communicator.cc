@@ -326,9 +326,9 @@ HcclResult HcclCommunicator::GetIndirectOutputCclBuf(void* &commIndirectOutputPt
     return pimpl->GetIndirectOutCclBuf(commIndirectOutputPtr, commIndirectOutputSize);
 }
 
-HcclResult HcclCommunicator::SetAccelerator(int32_t accelerator, bool isCcuMsAvailable)
+HcclResult HcclCommunicator::SetAccelerator(HcclAccelerator hcclAccelerator, bool isCcuMsAvailable)
 {
-    CHK_RET(pimpl->SetAccelerator(accelerator, isCcuMsAvailable));
+    CHK_RET(pimpl->SetAccelerator(hcclAccelerator, isCcuMsAvailable));
     return HcclResult::HCCL_SUCCESS;
 }
 
@@ -435,11 +435,6 @@ HcclResult HcclCommunicator::GetKFCWorkSpace(const char *memTag, uint64_t *size,
     }
     return HcclResult::HCCL_SUCCESS;
 }
-// Dpu Kernel Launch
-HcclResult HcclCommunicator::LaunchDpuKernel()
-{
-    return pimpl->InitAndLaunchDpuKernel();
-}
 
 HcclResult HcclCommunicator::GetInstRanksByNetLayer(uint32_t netLayer, uint32_t **ranks, uint32_t *rankNum)
 {
@@ -516,4 +511,8 @@ HcclResult HcclCommunicator::GetEndpointInfo(uint32_t rankId, const EndpointDesc
     return pimpl->GetEndpointInfo(rankId, endpointDesc, endpointAttr, infoLen, info);
 }
 
+Trace& HcclCommunicator::GetTrace() const
+{
+    return pimpl->GetTrace();
+}
 } // namespace Hccl

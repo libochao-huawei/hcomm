@@ -116,33 +116,37 @@ HcclResult HcclChannelGetHcclBuffer(HcclComm comm, ChannelHandle channel, void *
     return HCCL_SUCCESS;
 }
 
-HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, HcclMem **remoteMem, char **memTag, uint32_t *memNum)
+constexpr uint32_t MEM_NUM_MAX = 256;  // memNum的默认限制最大为256
+
+HcclResult HcclChannelGetRemoteMem(HcclComm comm, ChannelHandle channel, CommMem **remoteMem, char **memTag, uint32_t *memNum)
 {
-    // memTag 目前未使用
     CHK_PTR_NULL(comm);
     CHK_PTR_NULL(remoteMem);
+    CHK_PTR_NULL(memTag);
     CHK_PTR_NULL(memNum);
-    hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
-    HcclResult ret = HCCL_SUCCESS;
-    if (hcclComm->IsCommunicatorV2()) {
-        CollComm* collComm = hcclComm->GetCollComm();
-        CHK_PTR_NULL(collComm);
-        ChannelManager* channelMgr = collComm->GetChannelManager();
-        CHK_PTR_NULL(channelMgr);
-        ret = channelMgr->ChannelCommGetRemoteMem(channel, remoteMem, memNum);
-    }
-    else {
-        auto& channelMgr = hcclComm->GetIndependentOp().GetChannelManager();
-        ret = channelMgr.ChannelCommGetRemoteMem(channel, remoteMem, memNum);
-    }
+    CHK_PRT_RET(
+        (*memNum > MEM_NUM_MAX), HCCL_ERROR("[%s]Invalid memNum, memNum[%u], max memNum[%u]",
+        __func__, *memNum, MEM_NUM_MAX), HCCL_E_PARA
+    );
 
-    if (ret != HCCL_SUCCESS) {
-        HCCL_ERROR("[%s] Failed to get channel remote mem, group[%s], channel[%p], ret[%d]",
-           __func__, hcclComm->GetIdentifier().c_str(), channel, ret);
-        return ret;
-    }
+#if (!defined (HCCD)) && (!defined (CCL_KERNEL_AICPU))
+    HCCLV2_FUNC_RUN(
+        [&]() -> HcclResult {
+            const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+            if (indOp == nullptr || strcmp(indOp, "") == 0) {
+                HCCL_WARNING("[%s] is not supported in HCCL_INDEPENDENT_OP is set to 0.", __func__);
+                return HCCL_SUCCESS;
+            }
 
-    HCCL_RUN_INFO("[%s] get channel remote mem success, group[%s], channel[%p], memNum[%lu], ret[%d]", 
-        __func__, hcclComm->GetIdentifier().c_str(), channel, *memNum, ret);
+            hccl::hcclComm *hcclComm = static_cast<hccl::hcclComm *>(comm);
+            CollComm* collComm = hcclComm->GetCollComm();
+            CHK_PTR_NULL(collComm);
+            auto myRank = collComm->GetMyRank();
+            CHK_PTR_NULL(myRank);
+            CHK_RET(myRank->ChannelGetRemoteMem(channel, remoteMem, memTag, memNum));
+            return HCCL_SUCCESS;
+        }());
+#endif
+    HCCL_RUN_INFO("HcclChannelGetRemoteMem is not supported.");
     return HCCL_SUCCESS;
 }
