@@ -1,25 +1,13 @@
-/**
- * Copyright (c) 2025 Huawei Technologies Co., Ltd.
- * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
- * CANN Open Software License Agreement Version 2.0 (the "License").
- * Please refer to the License for details. You may not use this file except in compliance with the License.
- * THIS SOFTWARE IS PROVIDED ON AN "AS IS" BASIS, WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO NON-INFRINGEMENT, MERCHANTABILITY, OR FITNESS FOR A PARTICULAR PURPOSE.
- * See LICENSE in the root of the software repository for the full text of the License.
- */
-
+#include "gtest/gtest.h"
+#include <mockcpp/mockcpp.hpp>
 #include <thread>
 #include <chrono>
-#include <securec.h>
-#include <gtest/gtest.h>
-#include <mockcpp/mockcpp.hpp>
-
+#include "securec.h"
 #define private public
 #include "hccl_network_pub.h"
 #include "network_manager_pub.h"
 #include "ping_mesh.h"
 #undef private
-
 #include "adapter_hccp.h"
 #include "adapter_tdt.h"
 #include "adapter_hal.h"
@@ -32,6 +20,7 @@
 #include "network/hccp_ping.h"
 #include "externalinput.h"
 
+ 
 using namespace hccl;
 
 // 打桩函数
@@ -47,7 +36,7 @@ inline HcclResult hrtGetDevicePhyIdByIndexStub(u32 deviceLogicId, u32 &devicePhy
     return HCCL_SUCCESS;
 }
 
-inline HcclResult hrtOpenNetServiceStub(rtNetServiceOpenArgs *openArgs)
+inline HcclResult hrtTsdProcessOpenStub(u32 deviceLogicId, ProcOpenArgs *openArgs)
 {
     // *(openArgs->subPid) = 1;
     return HCCL_SUCCESS;
@@ -59,7 +48,7 @@ inline HcclResult hrtRaGetInterfaceVersionStub(unsigned int phyId, unsigned int 
     return HCCL_SUCCESS;
 }
 
-inline HcclResult hrtRaPingInitStub(struct ping_init_attr *initAttr, struct ping_init_info *initInfo, void **pingHandle)
+inline HcclResult hrtRaPingInitStub(struct PingInitAttr *initAttr, struct PingInitInfo *initInfo, void **pingHandle)
 {
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
@@ -72,17 +61,17 @@ inline HcclResult hrtRaPingDeinitStub(void *pingHandle)
     return HCCL_SUCCESS;
 }
 
-inline HcclResult hrtRaPingTargetAddStub(void *pingHandle, struct ping_target_info target[], uint32_t num)
+inline HcclResult hrtRaPingTargetAddStub(void *pingHandle, struct PingTargetInfo target[], uint32_t num)
 {
     return HCCL_SUCCESS;
 }
 
-inline HcclResult hrtRaPingTargetDelStub(void *pingHandle, struct ping_target_info target[], uint32_t num)
+inline HcclResult hrtRaPingTargetDelStub(void *pingHandle, struct PingTargetInfo target[], uint32_t num)
 {
     return HCCL_SUCCESS;
 }
 
-inline HcclResult hrtRaPingTaskStartStub(void *pingHandle, struct ping_task_attr *attr)
+inline HcclResult hrtRaPingTaskStartStub(void *pingHandle, struct PingTaskAttr *attr)
 {
     return HCCL_SUCCESS;
 }
@@ -92,21 +81,21 @@ inline HcclResult hrtRaPingTaskStopStub(void *pingHandle)
     return HCCL_SUCCESS;
 }
 
-inline HcclResult hrtRaPingGetResultsStub(void *pingHandle, struct ping_target_result output[], uint32_t *num)
+inline HcclResult hrtRaPingGetResultsStub(void *pingHandle, struct PingTargetResult output[], uint32_t *num)
 {
     char *payload = "pingmesh";
 
     for (int i = 0; i < *num; i++) {
         HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i * 3);
-        output[i].result.state = static_cast<ping_result_state>(i % 3);
-        output[i].result.summary.rtt_avg = 10;
-        output[i].result.summary.rtt_max = 35;
-        output[i].result.summary.rtt_min = 5;
-        output[i].result.summary.send_cnt = 2;
-        output[i].result.summary.recv_cnt = 0;
+        output[i].result.state = static_cast<PingResultState>(i % 3);
+        output[i].result.summary.rttAvg = 10;
+        output[i].result.summary.rttMax = 35;
+        output[i].result.summary.rttMin = 5;
+        output[i].result.summary.sendCnt = 2;
+        output[i].result.summary.recvCnt = 0;
  
-        output[i].remote_info.qp_info = {0};
-        output[i].remote_info.ip.addr.s_addr = targetIp.GetBinaryAddress().addr.s_addr;
+        output[i].remoteInfo.qpInfo = {0};
+        output[i].remoteInfo.ip.addr.s_addr = targetIp.GetBinaryAddress().addr.s_addr;
     }
     return HCCL_SUCCESS;
 }
@@ -126,6 +115,11 @@ protected:
     // Some expensive resource shared by all tests.
     virtual void SetUp()
     {
+        s32 portNum = 7;
+        MOCKER(hrtGetHccsPortNum)
+            .stubs()
+            .with(any(), outBound(portNum))
+            .will(returnValue(HCCL_SUCCESS));
         MOCKER(hrtGetDevice)
         .stubs()
         .with(any())
@@ -136,12 +130,12 @@ protected:
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
-        MOCKER(hrtOpenNetService)
+        MOCKER(TsdProcessOpen)
         .stubs()
         .with(any())
-        .will(returnValue(HCCL_SUCCESS));
+        .will(invoke(hrtTsdProcessOpenStub));
 
-        MOCKER(hrtCloseNetService)
+        MOCKER(ProcessCloseSubProcList)
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
@@ -205,7 +199,7 @@ protected:
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
-
+ 
         MOCKER_CPP(&HcclSocket::Listen, HcclResult(HcclSocket::*)(u32))
         .stubs()
         .with(any())
@@ -226,10 +220,15 @@ protected:
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
-        MOCKER_CPP(&HcclSocket::Recv, HcclResult(HcclSocket::*)(void *, u32))
+        MOCKER_CPP(static_cast<HcclResult (hccl::HcclSocket::*)(void*, uint32_t, uint32_t)>(&hccl::HcclSocket::Recv),
+                    HcclResult(hccl::HcclSocket::*)(void*, uint32_t, uint32_t))
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
+        // MOCKER_CPP(&HcclSocket::Recv, HcclResult(HcclSocket::*)(const void *, u32, u32))
+        // .stubs()
+        // .with(any())
+        // .will(returnValue(HCCL_SUCCESS));
 
         MOCKER_CPP(&HcclSocket::DeInit)
         .stubs()
@@ -241,22 +240,12 @@ protected:
         .with(any())
         .will(ignoreReturnValue());
 
-        MOCKER(hrtMemSyncCopyEx)
-        .stubs()
-        .with(any())
-        .will(returnValue(HCCL_SUCCESS));
-
         MOCKER(hrtHalMemCtl)
         .stubs()
         .with(any())
         .will(returnValue(HCCL_SUCCESS));
 
-        s32 portNum = -1;
-        MOCKER(hrtGetHccsPortNum)
-            .stubs()
-            .with(any(), outBound(portNum))
-            .will(returnValue(HCCL_SUCCESS));
-        std::cout << "PingMesh_UT Test SetUP" << std::endl;
+        std::cout << "PingMesh_ST Test SetUP" << std::endl;
     }
  
     virtual void TearDown()
@@ -282,11 +271,8 @@ TEST_F(PingMesh_UT, ut_PingMeshInit)
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
     EXPECT_EQ(ret, HCCL_SUCCESS);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
 }
+
 
 TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
 {
@@ -313,10 +299,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 添加目标
     hccl::RpingInput target[10];
@@ -330,6 +313,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTarget)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
+        target[i].addrType = 0;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
     }
     int i = 0;
@@ -376,10 +360,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 添加目标
     hccl::RpingInput target[1];
@@ -393,6 +374,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
+        target[i].addrType = 0;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
     }
     int i = 0;
@@ -411,7 +393,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch)
     std::shared_ptr<HcclSocket> socket = std::make_shared<HcclSocket>(netCtx, port);
     socket->Init();
     pingMesh->socketMaps_.insert({target[i].sip.GetReadableIP(), socket});
-    ping_qp_info rdmainfo { 0 };
+    PingQpInfo rdmainfo { 0 };
     pingMesh->rdmaInfoMaps_.insert({target[i].sip.GetReadableIP(), rdmainfo});
     ret = pingMesh->HccnRpingRemoveTarget(deviceId, nodeNum, target);
     EXPECT_EQ(ret, HCCL_SUCCESS);
@@ -443,10 +425,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch1)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 添加目标
     hccl::RpingInput target[1];
@@ -496,10 +475,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch2)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 添加目标
     hccl::RpingInput target[1];
@@ -554,10 +530,7 @@ TEST_F(PingMesh_UT, ut_PingMeshAddDelTargetPatch3)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 添加目标
     hccl::RpingInput target[1];
@@ -597,18 +570,15 @@ TEST_F(PingMesh_UT, ut_PingMeshStartStopPing)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 启动任务
     int i = 0;
     pingMesh->pingHandle_ = &i;
     pingMesh->rpingState_ = RpingState::READY;
     pingMesh->rpingTargetNum_ = 2;
-    ping_init_info &initInfo = pingMesh->initInfo_;
-    initInfo.result.buffer_size = 4096 * 15;
+    PingInitInfo &initInfo = pingMesh->initInfo_;
+    initInfo.result.bufferSize = 4096 * 15;
     u32 pktNum = 10;
     u32 interval = 1;
     u32 timeout = 1000;
@@ -622,6 +592,11 @@ TEST_F(PingMesh_UT, ut_PingMeshStartStopPing)
 
 TEST_F(PingMesh_UT, ut_PingMeshGetResult)
 {
+    MOCKER(hrtMemSyncCopyEx)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+    
     u32 deviceId = 1;
     u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
     HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
@@ -635,16 +610,13 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 获取结果
     hccl::RpingInput target[10];
     hccl::RpingOutput result[10];
     char *payload = "pingmesh";
-    ping_qp_info rdmainfo {0};
+    PingQpInfo rdmainfo {0};
     for (u32 i = 0; i < 10; i++) {
         HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
         pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
@@ -655,27 +627,84 @@ TEST_F(PingMesh_UT, ut_PingMeshGetResult)
         target[i].sl = 1;
         target[i].srcPort = 0;
         target[i].len = 9;
+        target[i].addrType = 0;
         memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
     }
     int i = 0;
     pingMesh->pingHandle_ = &i;
     pingMesh->rpingState_ = RpingState::RUN;
     pingMesh->rpingTargetNum_ = 10;
-    ping_init_info &initInfo = pingMesh->initInfo_;
-    initInfo.result.buffer_size = 4096 * 10;
-    initInfo.result.payload_offset = 100;
-    initInfo.result.header_size = 50;
+    PingInitInfo &initInfo = pingMesh->initInfo_;
+    initInfo.result.bufferSize = 4096 * 10;
+    initInfo.result.payloadOffset = 100;
+    initInfo.result.headerSize = 50;
     ret = pingMesh->HccnRpingGetResult(deviceId, nodeNum, target, result);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     pingMesh->isUsePayload_ = true;
     void *payloadout = nullptr;
     u32 pyaloadlenout = 0;
-    ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout);
+    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    HccnRpingMode Hrtmode = pingMesh->mode;
+    ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 
     pingMesh->isUsePayload_ = false;
-    ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout);
+    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    Hrtmode = pingMesh->mode;
+    ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(PingMesh_UT, ut_PingMeshGetResultFail)
+{
+    MOCKER(hrtMemSyncCopyEx)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_E_NOT_SUPPORT));
+    
+    u32 deviceId = 1;
+    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
+    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 port = 13866;
+    u32 nodeNum = 10;
+    u32 bufferSize = 100U;
+    u32 sl = 0;
+    u32 tc = 0;
+
+    // 初始化成功
+    std::shared_ptr<PingMesh> pingMesh;
+    pingMesh.reset(new (std::nothrow) PingMesh());
+    auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
+   
+
+    // 获取结果
+    hccl::RpingInput target[10];
+    hccl::RpingOutput result[10];
+    char *payload = "pingmesh";
+    PingQpInfo rdmainfo {0};
+    for (u32 i = 0; i < 10; i++) {
+        HcclIpAddress targetIp = HcclIpAddress(0x7F000002 + i);
+        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        target[i].sip = targetIp;
+        target[i].dip = targetIp;
+        target[i].port = 13866;
+        target[i].tc = 1;
+        target[i].sl = 1;
+        target[i].srcPort = 0;
+        target[i].len = 9;
+        target[i].addrType = 0;
+        memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
+    }
+    int i = 0;
+    pingMesh->pingHandle_ = &i;
+    pingMesh->rpingState_ = RpingState::RUN;
+    pingMesh->rpingTargetNum_ = 10;
+    PingInitInfo &initInfo = pingMesh->initInfo_;
+    initInfo.result.bufferSize = 4096 * 10;
+    initInfo.result.payloadOffset = 100;
+    initInfo.result.headerSize = 50;
+    ret = pingMesh->HccnRpingGetResult(deviceId, nodeNum, target, result);
     EXPECT_EQ(ret, HCCL_SUCCESS);
 }
 
@@ -693,10 +722,7 @@ TEST_F(PingMesh_UT, ut_PingMeshStateCheck)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 未初始化状态
     pingMesh->rpingState_ = RpingState::UNINIT;
@@ -743,13 +769,10 @@ TEST_F(PingMesh_UT, ut_PingMeshSendRecvInfo)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 发送成功
-    ping_init_info initInfo {};
+    PingInitInfo initInfo {};
     std::shared_ptr<HcclSocket> socket = pingMesh->socket_;
     pingMesh->connThreadStop_.store(true);
     auto ret = pingMesh->RpingSendInitInfo(deviceId, port, ipAddr, initInfo, socket);
@@ -780,20 +803,119 @@ TEST_F(PingMesh_UT, ut_PingMeshSendRecvInfoPatch)
     std::shared_ptr<PingMesh> pingMesh;
     pingMesh.reset(new (std::nothrow) PingMesh());
     pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
-    ProcOpenArgs *openArgs = &(pingMesh->hccpProcessInfo_);
-    int subpid = 1;
-    openArgs->subPid = &subpid;
-    openArgs->procType = TSD_SUB_PROC_HCCP;
+   
 
     // 发送成功
     MOCKER_CPP(&HcclSocket::GetStatus)
     .stubs()
     .will(returnValue(HcclSocketStatus::SOCKET_CONNECTING));
 
-    ping_init_info initInfo {};
+    PingInitInfo initInfo {};
     std::shared_ptr<HcclSocket> socket = pingMesh->socket_;
     std::thread backgroundTh(&PingMesh::RpingSendInitInfo, pingMesh, deviceId, port, ipAddr, initInfo, socket);
     usleep(1000);
     pingMesh->connThreadStop_.store(true);
     backgroundTh.join();
+}
+
+TEST_F(PingMesh_UT, ut_PingMeshSendRecvInfoPatch1)
+{
+    u32 deviceId = 1;
+    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
+    HcclIpAddress ipAddr = HcclIpAddress(0x7F000001);
+    u32 port = 13866;
+    u32 nodeNum = 10;
+    u32 bufferSize = 100U;
+    u32 sl = 0;
+    u32 tc = 0;
+    
+    std::shared_ptr<PingMesh> pingMesh;
+    pingMesh.reset(new (std::nothrow) PingMesh());
+    pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
+   
+
+    PingInitInfo initInfo {};
+    std::shared_ptr<HcclSocket> socket = nullptr;
+    pingMesh->socketMaps_.insert({std::string(ipAddr.GetReadableIP()), socket});
+    void *clientNetCtx = pingMesh->netCtx_;
+    auto ret = pingMesh->RpingRecvTargetInfo(clientNetCtx, port, ipAddr, initInfo, 120000);
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+}
+
+TEST_F(PingMesh_UT, ut_PingMeshGetPayload)
+{
+    MOCKER(hrtMemSyncCopyEx)
+    .stubs()
+    .with(any())
+    .will(returnValue(HCCL_SUCCESS));
+    
+    u32 deviceId = 1;
+    u32 mode = static_cast<u32>(LinkType::LINK_ROCE);
+    HcclIpAddress ipAddr = HcclIpAddress(std::string("2001:0db8:85a3:08d3:1319:8a2e:0370:7344"));
+    u32 port = 13866;
+    u32 nodeNum = 10;
+    u32 bufferSize = 100U;
+    u32 sl = 0;
+    u32 tc = 0;
+
+    // 初始化成功
+    std::shared_ptr<PingMesh> pingMesh;
+    pingMesh.reset(new (std::nothrow) PingMesh());
+    auto ret = pingMesh->HccnRpingInit(deviceId, mode, ipAddr, port, nodeNum, bufferSize, sl, tc);
+   
+
+    // 获取结果
+    hccl::RpingInput target[10];
+    hccl::RpingOutput result[10];
+    char *payload = "pingmesh";
+    PingQpInfo rdmainfo {0};
+    std::string ipAddrStr = "2001:0db8:85a3:08d3:1319:8a2e:0370:7345";
+    HcclIpAddress firstTargetIp = HcclIpAddress(ipAddrStr);
+
+    HcclInAddr ipAddrBin = firstTargetIp.GetBinaryAddress();
+    for (u32 i = 0; i < 10; i++) {
+        ipAddrBin.addr6.s6_addr[15]++;
+        HcclIpAddress targetIp = HcclIpAddress(AF_INET6, ipAddrBin);
+        pingMesh->rdmaInfoMaps_.insert({std::string(targetIp.GetReadableIP()), rdmainfo});
+        target[i].sip = targetIp;
+        target[i].dip = targetIp;
+        target[i].port = 13866;
+        target[i].tc = 1;
+        target[i].sl = 1;
+        target[i].srcPort = 0;
+        target[i].len = 9;
+        target[i].addrType = 0;
+        memcpy_s(target[i].payload, target[i].len, payload, target[i].len);
+    }
+    int i = 0;
+    pingMesh->pingHandle_ = &i;
+    pingMesh->rpingState_ = RpingState::RUN;
+    pingMesh->rpingTargetNum_ = 10;
+    PingInitInfo &initInfo = pingMesh->initInfo_;
+    initInfo.result.bufferSize = 4096 * 10;
+    initInfo.result.payloadOffset = 100;
+    initInfo.result.headerSize = 50;
+
+    pingMesh->isUsePayload_ = true;
+    void *payloadout = nullptr;
+    u32 pyaloadlenout = 0;
+    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    HccnRpingMode Hrtmode = pingMesh->mode;
+    ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+
+    pingMesh->isUsePayload_ = false;
+    pingMesh->mode = HCCN_RPING_MODE_ROCE;
+    Hrtmode = pingMesh->mode;
+    ret = pingMesh->HccnRpingGetPayload(deviceId, &payloadout, &pyaloadlenout, Hrtmode);
+
+    EXPECT_EQ(ret, HCCL_SUCCESS);
+        // 打印结果
+    if (payloadout != nullptr) {
+        std::cout << "Payload: " << static_cast<char*>(payloadout) << std::endl;
+        std::cout << "Payload Length: " << pyaloadlenout << std::endl;
+    } else {
+        std::cout << "Payload is null." << std::endl;
+    }
 }
