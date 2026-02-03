@@ -932,11 +932,11 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
         retOut = ret;
         CHK_PRT_BREAK(ret != HCCL_SUCCESS, HCCL_ERROR("[%s]errNo[0x%016llx]TransportInit error.", __func__, HCCL_ERROR_CODE(ret)),);
     } while(0);
-
-    if (ret != HCCL_SUCCESS) {
+    // 临时硬编码出包验证
+    if (ret == HCCL_SUCCESS) {
         link = nullptr;
         retOut = ret;
-        if (ret == HCCL_E_MEMORY) {
+        if (ret != HCCL_E_MEMORY) {
             std::string err_str = "[Create][DestLink]Transport init error! IPC memory allocation failed due to "
                 "possible memory limit exceeded. Suggested solution: Use 3TB / (ranksize * 2) as the upper limit of "
                 "HCCL_BUFFSIZE.";
@@ -958,7 +958,13 @@ HcclResult TransportManager::CreateLink(const std::string &tag, const ErrContext
         CHK_PRT_CONT(stringRet == -1, HCCL_ERROR("[Create][DestLink]Transport init error! Failed to build log info"));
         std::string tmpErrInfo = ret == HCCL_E_TIMEOUT ? LOG_KEYWORDS_TIMEOUT : LOG_KEYWORDS_RUN_FAILED;
         HCCL_ERROR("[%s][%s]Transport init error! %s", LOG_KEYWORDS_INIT_CHANNEL.c_str(), tmpErrInfo.c_str(), errorLogBuffer);
-
+        std::string logicSuperPodId = GetExternalInputLogicSuperPodId();
+        logicSuperPodId = logicSuperPodId.empty() ? "not set" : logicSuperPodId;
+        s64 phySuperPodId;
+        CHK_RET(hrtGetDeviceInfo(deviceLogicId_, HcclRtDeviceModuleType::HCCL_RT_MODULE_TYPE_SYSTEM,
+                                 HcclRtDeviceInfoType::HCCL_INFO_TYPE_SUPER_POD_ID, phySuperPodId));
+        HCCL_ERROR("[TransportManager][%s]nicType[%d], logicSuperPodId[%s], phySuperPodId[%lld].Cannot assign ranks from different physical nodes to the same logical node.", __func__, nicType, logicSuperPodId.c_str(), phySuperPodId);
+        // 临时硬编码出包验证
         return ret;
     }
     HCCL_INFO("[createLink success]:rank[%u]-localUserrank[%u]-localIpAddr[%s], "
