@@ -23,7 +23,8 @@ CollAlgComponent::CollAlgComponent(RankGraph *rankGraph, DevType devType, u32 my
     : rankGraph_(rankGraph), devType_(devType), myRank_(myRank), rankSize_(rankSize)
 
 {
-    collAlgSelector_ = std::make_shared<ExecuteSelector>(ExecuteSelector().SetVirtualTopo(rankGraph));
+    collAlgSelector_ = std::make_shared<ExecuteSelector>(ExecuteSelector().SetVirtualTopo(rankGraph)
+                                                                          .SetRankSize(rankSize_));
 }
 
 constexpr u64 HCCLV2_DEFAULT_TASK_NUM = 30;
