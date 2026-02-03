@@ -47,7 +47,8 @@ TEST_F(HcclNetDevTest, GetNetDevInfoReturnsCorrectInfo) {
 
 // Test case for SetInnerNetDev and GetInnerNetDev methods
 TEST_F(HcclNetDevTest, SetAndGetInnerNetDevWorksCorrectly) {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    Hccl::RdmaHandle handle = reinterpret_cast<Hccl::RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     Hccl::InnerNetDev netDev(info);
     hcclNetDev_->SetInnerNetDev(&netDev);
@@ -56,7 +57,8 @@ TEST_F(HcclNetDevTest, SetAndGetInnerNetDevWorksCorrectly) {
 
 // Test case for GetRdmaHandle method when InnerNetDev is set
 TEST_F(HcclNetDevTest, GetRdmaHandleReturnsHandleWhenInnerNetDevIsSet) {
-    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(Hccl::RdmaHandle()));
+    Hccl::RdmaHandle handle = reinterpret_cast<Hccl::RdmaHandle>(0x123);
+    MOCKER(Hccl::HrtRaRdmaInit).stubs().will(returnValue(handle));
     Hccl::NetDevInfo info = {0, Hccl::PortDeploymentType::DEV_NET, Hccl::LinkProtoType::RDMA, 0, Hccl::IpAddress("1.0.0.0")};
     Hccl::InnerNetDev netDev(info);
     Hccl::RdmaHandle expectedHandle;    
