@@ -274,6 +274,49 @@ STATIC int RsUbGetDevAttr(struct RsUbDevCb *devCb, struct DevBaseAttr *devAttr, 
     return 0;
 }
 
+STATIC int RsUbDevCbInitMutex(struct RsUbDevCb *devCb)
+{
+    int ret = 0;
+
+    ret = pthread_mutex_init(&devCb->asyncEventList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("asyncEventList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->jfceList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("jfceList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->jfcList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("jfcList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->jettyList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("jettyList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->rjettyList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rjettyList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->tokenIdList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("tokenIdList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->lsegList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("lsegList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    ret = pthread_mutex_init(&devCb->rsegList.mutex, NULL);
+    CHK_PRT_RETURN(ret != 0, hccp_err("rsegList mutexInit failed ret:%d", ret), -ESYSFUNC);
+
+    return ret;
+}
+
+STATIC void RsUbDevCbDestroyMutex(struct RsUbDevCb *devCb)
+{
+    pthread_mutex_destroy(&devCb->asyncEventList.mutex);
+    pthread_mutex_destroy(&devCb->jfceList.mutex);
+    pthread_mutex_destroy(&devCb->jfcList.mutex);
+    pthread_mutex_destroy(&devCb->jettyList.mutex);
+    pthread_mutex_destroy(&devCb->rjettyList.mutex);
+    pthread_mutex_destroy(&devCb->tokenIdList.mutex);
+    pthread_mutex_destroy(&devCb->lsegList.mutex);
+    pthread_mutex_destroy(&devCb->rsegList.mutex);
+}
+
 STATIC int RsUbDevCbInit(struct CtxInitAttr *attr, struct RsUbDevCb *devCb, struct rs_cb *rscb,
     unsigned int *devIndex, struct DevBaseAttr *devAttr)
 {
@@ -284,17 +327,17 @@ STATIC int RsUbDevCbInit(struct CtxInitAttr *attr, struct RsUbDevCb *devCb, stru
     devCb->eidIndex = attr->ub.eidIndex;
     devCb->eid = attr->ub.eid;
 
-    ret = pthread_mutex_init(&devCb->mutex, NULL);
-    CHK_PRT_RETURN(ret != 0, hccp_err("mutex_init failed ret:%d", ret), -ESYSFUNC);
+    ret = RsUbDevCbInitMutex(devCb);
+    CHK_PRT_RETURN(ret != 0, hccp_err("RsUbDevCbInitMutex failed ret:%d", ret), ret);
 
-    RS_INIT_LIST_HEAD(&devCb->asyncEventList);
-    RS_INIT_LIST_HEAD(&devCb->jfceList);
-    RS_INIT_LIST_HEAD(&devCb->jfcList);
-    RS_INIT_LIST_HEAD(&devCb->jettyList);
-    RS_INIT_LIST_HEAD(&devCb->rjettyList);
-    RS_INIT_LIST_HEAD(&devCb->tokenIdList);
-    RS_INIT_LIST_HEAD(&devCb->lsegList);
-    RS_INIT_LIST_HEAD(&devCb->rsegList);
+    RS_INIT_LIST_HEAD(&devCb->asyncEventList.list);
+    RS_INIT_LIST_HEAD(&devCb->jfceList.list);
+    RS_INIT_LIST_HEAD(&devCb->jfcList.list);
+    RS_INIT_LIST_HEAD(&devCb->jettyList.list);
+    RS_INIT_LIST_HEAD(&devCb->rjettyList.list);
+    RS_INIT_LIST_HEAD(&devCb->tokenIdList.list);
+    RS_INIT_LIST_HEAD(&devCb->lsegList.list);
+    RS_INIT_LIST_HEAD(&devCb->rsegList.list);
 
     ret = RsUbCreateCtx(devCb->urmaDev, attr->ub.eidIndex, &(devCb->urmaCtx));
     if (ret != 0) {
@@ -321,7 +364,7 @@ epoll_del:
 close_dev:
     (void)RsUrmaDeleteContext(devCb->urmaCtx);
 destroy_mutex:
-    pthread_mutex_destroy(&devCb->mutex);
+    RsUbDevCbDestroyMutex(devCb);
     return ret;
 }
 
@@ -415,15 +458,18 @@ STATIC int RsUbGetJfcCb(struct RsUbDevCb *devCb, unsigned long long addr, struct
     struct RsCtxJfcCb *jfcCbCurr = NULL;
     struct RsCtxJfcCb *jfcCbNext = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(jfcCbCurr, jfcCbNext, &devCb->jfcList, list, struct RsCtxJfcCb);
-    for (; (&jfcCbCurr->list) != &devCb->jfcList;
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfcList.mutex);
+    RS_LIST_GET_HEAD_ENTRY(jfcCbCurr, jfcCbNext, &devCb->jfcList.list, list, struct RsCtxJfcCb);
+    for (; (&jfcCbCurr->list) != &devCb->jfcList.list;
         jfcCbCurr = jfcCbNext,
         jfcCbNext = list_entry(jfcCbNext->list.next, struct RsCtxJfcCb, list)) {
         if (jfcCbCurr->jfcAddr == addr) {
             *tempJfcCb = jfcCbCurr;
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
             return 0;
         }
     }
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
 
     *tempJfcCb = NULL;
     hccp_err("jfc_cb for jfc_addr:0x%llx do not available!", addr);
@@ -437,16 +483,16 @@ STATIC int RsUbFreeJfcCb(struct RsUbDevCb *devCb, struct RsCtxJfcCb *jfcCb)
     int ret = 0;
 
     RsListDel(&jfcCb->list);
-    devCb->jfcCnt--;
+    devCb->jfcList.nodeCnt--;
 
     if (jfcCb->jfcType == JFC_MODE_STARS_POLL || jfcCb->jfcType == JFC_MODE_CCU_POLL ||
         jfcCb->jfcType == JFC_MODE_USER_CTL_NORMAL) {
         (void)RsUbDeleteJfcExt(devCb, jfcCb);
-        hccp_info("[deinit][rs_jfc]destroy success, dev jfcCnt:%u", devCb->jfcCnt);
+        hccp_info("[deinit][rs_jfc]destroy success, dev jfcCnt:%u", devCb->jfcList.nodeCnt);
     } else if (jfcCb->jfcType == JFC_MODE_NORMAL) {
         urmaJfc = (urma_jfc_t *)(uintptr_t)jfcCb->jfcAddr;
         (void)RsUrmaDeleteJfc(urmaJfc);
-        hccp_info("[deinit][rs_jfc]destroy success, dev jfcCnt:%u", devCb->jfcCnt);
+        hccp_info("[deinit][rs_jfc]destroy success, dev jfcCnt:%u", devCb->jfcList.nodeCnt);
     } else {
         hccp_err("jfc_type:%d is invalid, not support!", jfcCb->jfcType);
         ret = -EINVAL;
@@ -464,16 +510,16 @@ int RsUbCtxJfcDestroy(struct RsUbDevCb *devCb, unsigned long long addr)
 
     hccp_info("[deinit][rs_jfc]destroy addr:0x%llx", addr);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     ret = RsUbGetJfcCb(devCb, addr, &jfcCb);
     if (ret != 0) {
         hccp_err("get jfc_cb failed, ret:%d, jfc addr:0x%llx", ret, addr);
         goto out;
     }
 
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfcList.mutex);
     ret = RsUbFreeJfcCb(devCb, jfcCb);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
 out:
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
     return ret;
 }
 
@@ -483,7 +529,7 @@ STATIC void RsUbFreeJfcCbList(struct RsUbDevCb *devCb, struct RsListHead *jfcLis
     struct RsCtxJfcCb *jfcNext = NULL;
     int ret;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfcList.mutex);
     if (!RsListEmpty(jfcList)) {
         hccp_warn("jfc list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(jfcCurr, jfcNext, jfcList, list, struct RsCtxJfcCb);
@@ -495,7 +541,7 @@ STATIC void RsUbFreeJfcCbList(struct RsUbDevCb *devCb, struct RsListHead *jfcLis
             }
         }
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
 }
 
 STATIC int RsUbFreeSegCb(struct RsUbDevCb *devCb, struct RsSegCb *segCb)
@@ -506,7 +552,7 @@ STATIC int RsUbFreeSegCb(struct RsUbDevCb *devCb, struct RsSegCb *segCb)
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_unregister_seg failed ret:%d", ret), -EOPENSRC);
 
     RsListDel(&segCb->list);
-    devCb->lsegCnt--;
+    devCb->lsegList.nodeCnt--;
     free(segCb);
     segCb = NULL;
 
@@ -520,7 +566,7 @@ STATIC void RsUbFreeSegCbList(struct RsUbDevCb *devCb, struct RsListHead *lsegLi
     struct RsSegCb *segNext = NULL;
     int ret;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->lsegList.mutex);
     if (!RsListEmpty(lsegList)) {
         hccp_warn("lseg list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(segCurr, segNext, lsegList, list, struct RsSegCb);
@@ -532,9 +578,9 @@ STATIC void RsUbFreeSegCbList(struct RsUbDevCb *devCb, struct RsListHead *lsegLi
             }
         }
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->lsegList.mutex);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rsegList.mutex);
     if (!RsListEmpty(rsegList)) {
         hccp_warn("rseg list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(segCurr, segNext, rsegList, list, struct RsSegCb);
@@ -546,7 +592,7 @@ STATIC void RsUbFreeSegCbList(struct RsUbDevCb *devCb, struct RsListHead *lsegLi
             segCurr = NULL;
         }
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rsegList.mutex);
 }
 
 STATIC void RsUbCtxFreeJettyCb(struct RsCtxJettyCb *jettyCb)
@@ -586,7 +632,7 @@ STATIC int RsUbFreeRemJettyCb(struct RsUbDevCb *devCb, struct RsCtxRemJettyCb *r
     int ret;
 
     RsListDel(&rjettyCb->list);
-    devCb->rjettyCnt--;
+    devCb->rjettyList.nodeCnt--;
 
     ret = RsUrmaUnimportJetty(rjettyCb->tjetty);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_unimport_jetty failed, ret:%d, devIndex:0x%x, remJettyId %u",
@@ -738,7 +784,7 @@ STATIC void RsUbDestroyJettyCbList(struct RsUbDevCb *devCb, struct RsListHead *j
     }
 
     hccp_warn("jetty list is not empty! start to delete");
-    ret = RsUbCallocJettyBatchInfo(&batchInfo, devCb->jettyCnt);
+    ret = RsUbCallocJettyBatchInfo(&batchInfo, devCb->jettyList.nodeCnt);
     if (ret != 0) {
         hccp_err("rs_ub_calloc_jetty_batch_info failed, ret:%d", ret);
         goto free_batch_info;
@@ -757,7 +803,7 @@ STATIC void RsUbDestroyJettyCbList(struct RsUbDevCb *devCb, struct RsListHead *j
         batchInfo.jfrArr[i] = jettyCurr->jfr;
 
         RsListDel(&jettyCurr->list);
-        devCb->jettyCnt--;
+        devCb->jettyList.nodeCnt--;
         i++;
     }
 
@@ -778,17 +824,17 @@ void RsUbFreeJettyCbList(struct RsUbDevCb *devCb, struct RsListHead *jettyList,
     struct RsListHead *rjettyList)
 {
     // free jetty step: unbind -> unimport -> delete
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jettyList.mutex);
     RsUbUnbindJettyCbList(devCb, jettyList);
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jettyList.mutex);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rjettyList.mutex);
     RsUbUnimportJettyCbList(devCb, rjettyList);
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rjettyList.mutex);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jettyList.mutex);
     RsUbDestroyJettyCbList(devCb, jettyList);
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jettyList.mutex);
 }
 
 int RsUbCtxChanCreate(struct RsUbDevCb *devCb, union DataPlaneCstmFlag dataPlaneFlag,
@@ -821,10 +867,10 @@ int RsUbCtxChanCreate(struct RsUbDevCb *devCb, union DataPlaneCstmFlag dataPlane
     }
     jfceCb->dataPlaneFlag = dataPlaneFlag;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
-    RsListAddTail(&jfceCb->list, &devCb->jfceList);
-    jfceCb->devCb->jfceCnt++;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfceList.mutex);
+    RsListAddTail(&jfceCb->list, &devCb->jfceList.list);
+    jfceCb->devCb->jfceList.nodeCnt++;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfceList.mutex);
 
     *fd = outJfce->fd;
     hccp_info("dev_index:0x%x jfce addr:0x%llx fd:%d", devCb->index, jfceCb->jfceAddr, outJfce->fd);
@@ -844,15 +890,18 @@ STATIC int RsUbGetJfceCb(struct RsUbDevCb *devCb, unsigned long long addr, struc
     struct RsCtxJfceCb *jfceCbCurr = NULL;
     struct RsCtxJfceCb *jfceCbNext = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(jfceCbCurr, jfceCbNext, &devCb->jfceList, list, struct RsCtxJfceCb);
-    for (; (&jfceCbCurr->list) != (&devCb->jfceList);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfceList.mutex);
+    RS_LIST_GET_HEAD_ENTRY(jfceCbCurr, jfceCbNext, &devCb->jfceList.list, list, struct RsCtxJfceCb);
+    for (; (&jfceCbCurr->list) != (&devCb->jfceList.list);
         jfceCbCurr = jfceCbNext,
         jfceCbNext = list_entry(jfceCbNext->list.next, struct RsCtxJfceCb, list)) {
         if (jfceCbCurr->jfceAddr == addr) {
             *tempJfceCb = jfceCbCurr;
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->jfceList.mutex);
             return 0;
         }
     }
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfceList.mutex);
 
     *tempJfceCb = NULL;
     hccp_err("jfce_cb for jfce_addr:0x%llx do not available!", addr);
@@ -871,10 +920,10 @@ int RsUbCtxChanDestroy(struct RsUbDevCb *devCb, unsigned long long addr)
     ret = RsUbGetJfceCb(devCb, addr, &jfceCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("get jfce_cb failed, ret:%d, jfce addr:0x%llx", ret, addr), ret);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfceList.mutex);
     RsListDel(&jfceCb->list);
-    jfceCb->devCb->jfceCnt--;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    jfceCb->devCb->jfceList.nodeCnt--;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfceList.mutex);
 
     jfce = (urma_jfce_t *)(uintptr_t)jfceCb->jfceAddr;
     if (jfceCb->dataPlaneFlag.bs.pollCqCstm == 0) {
@@ -888,7 +937,7 @@ int RsUbCtxChanDestroy(struct RsUbDevCb *devCb, unsigned long long addr)
     free(jfceCb);
     jfceCb = NULL;
 
-    hccp_info("rs ctx jfce destroy success, dev jfce num is %u", devCb->jfceCnt);
+    hccp_info("rs ctx jfce destroy success, dev jfce num is %u", devCb->jfceList.nodeCnt);
     return ret;
 }
 
@@ -915,7 +964,7 @@ STATIC void RsUbFreeJfceCbList(struct RsUbDevCb *devCb, struct RsListHead *jfceL
     struct RsCtxJfceCb *jfceNext = NULL;
     int ret;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfceList.mutex);
     if (!RsListEmpty(jfceList)) {
         hccp_warn("jfce list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(jfceCurr, jfceNext, jfceList, list, struct RsCtxJfceCb);
@@ -927,7 +976,7 @@ STATIC void RsUbFreeJfceCbList(struct RsUbDevCb *devCb, struct RsListHead *jfceL
             }
         }
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfceList.mutex);
 }
 
 int RsUbCtxTokenIdAlloc(struct RsUbDevCb *devCb, unsigned long long *addr,
@@ -947,10 +996,10 @@ int RsUbCtxTokenIdAlloc(struct RsUbDevCb *devCb, unsigned long long *addr,
 
     *addr = (uint64_t)(uintptr_t)tokenIdCb->tokenId; // urma_token_id_t *
     *tokenId = tokenIdCb->tokenId->token_id;
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
-    RsListAddTail(&tokenIdCb->list, &devCb->tokenIdList);
-    tokenIdCb->devCb->tokenIdCnt++;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->tokenIdList.mutex);
+    RsListAddTail(&tokenIdCb->list, &devCb->tokenIdList.list);
+    tokenIdCb->devCb->tokenIdList.nodeCnt++;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->tokenIdList.mutex);
 
     hccp_info("alloc success, tokenId addr:0x%llx, devIndex:0x%x", *addr, devCb->index);
     return 0;
@@ -968,15 +1017,18 @@ STATIC int RsUbGetTokenIdCb(struct RsUbDevCb *devCb, unsigned long long addr,
     struct RsTokenIdCb *tokenIdCbCurr = NULL;
     struct RsTokenIdCb *tokenIdCbNext = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(tokenIdCbCurr, tokenIdCbNext, &devCb->tokenIdList, list, struct RsTokenIdCb);
-    for (; (&tokenIdCbCurr->list) != (&devCb->tokenIdList);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->tokenIdList.mutex);
+    RS_LIST_GET_HEAD_ENTRY(tokenIdCbCurr, tokenIdCbNext, &devCb->tokenIdList.list, list, struct RsTokenIdCb);
+    for (; (&tokenIdCbCurr->list) != (&devCb->tokenIdList.list);
         tokenIdCbCurr = tokenIdCbNext,
         tokenIdCbNext = list_entry(tokenIdCbNext->list.next, struct RsTokenIdCb, list)) {
         if ((uint64_t)(uintptr_t)tokenIdCbCurr->tokenId == addr) {
             *tempTokenIdCb = tokenIdCbCurr;
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->tokenIdList.mutex);
             return 0;
         }
     }
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->tokenIdList.mutex);
 
     *tempTokenIdCb = NULL;
     hccp_err("token_id_cb for token_id addr:0x%llx do not available! devIndex:0x%x", addr, devCb->index);
@@ -989,7 +1041,7 @@ STATIC int RsUbFreeTokenIdCb(struct RsUbDevCb *devCb, struct RsTokenIdCb *tokenI
     int ret = 0;
 
     RsListDel(&tokenIdCb->list);
-    devCb->tokenIdCnt--;
+    devCb->tokenIdList.nodeCnt--;
 
     ret = RsUrmaFreeTokenId(tokenIdCb->tokenId);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_free_token_id failed, ret:%d, devIndex:0x%x, tokenId addr:0x%llx",
@@ -1005,22 +1057,23 @@ int RsUbCtxTokenIdFree(struct RsUbDevCb *devCb, unsigned long long addr)
     struct RsTokenIdCb *tokenIdCb = NULL;
     int ret;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     ret = RsUbGetTokenIdCb(devCb, addr, &tokenIdCb);
     if (ret != 0) {
         hccp_err("get token_id_cb failed! ret %d, devIndex:0x%x, tokenId addr:0x%llx", ret, devCb->index, addr);
-        goto free_lock;
+        goto out;
     }
+
+    RS_PTHREAD_MUTEX_LOCK(&devCb->tokenIdList.mutex);
     ret = RsUbFreeTokenIdCb(devCb, tokenIdCb);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->tokenIdList.mutex);
     if (ret != 0) {
         hccp_err("free_token_id_cb failed, ret:%d, devIndex:0x%x, tokenId addr:0x%llx", ret, devCb->index, addr);
-        goto free_lock;
+        goto out;
     }
     hccp_info("rs token id free success, dev tokenId num is %u, devIndex:0x%x, tokenId addr:0x%llx",
         devCb->tokenIdCnt, devCb->index, addr);
 
-free_lock:
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+out:
     return ret;
 }
 
@@ -1029,7 +1082,7 @@ STATIC void RsUbFreeTokenIdCbList(struct RsUbDevCb *devCb, struct RsListHead *to
     struct RsTokenIdCb *tokenIdCurr = NULL;
     struct RsTokenIdCb *tokenIdNext = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->tokenIdList.mutex);
     if (!RsListEmpty(tokenIdList)) {
         hccp_warn("token_id list do not empty!");
         RS_LIST_GET_HEAD_ENTRY(tokenIdCurr, tokenIdNext, tokenIdList, list, struct RsTokenIdCb);
@@ -1038,7 +1091,7 @@ STATIC void RsUbFreeTokenIdCbList(struct RsUbDevCb *devCb, struct RsListHead *to
             (void)RsUbFreeTokenIdCb(devCb, tokenIdCurr);
         }
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->tokenIdList.mutex);
     return;
 }
 
@@ -1056,7 +1109,7 @@ STATIC void RsUbFreeAsyncEventCbList(struct RsUbDevCb *devCb, struct RsListHead 
     struct RsCtxAsyncEventCb *asyncEventCurr = NULL;
     struct RsCtxAsyncEventCb *asyncEventNext = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->asyncEventList.mutex);
     (void)RsEpollCtl(devCb->rscb->connCb.epollfd, EPOLL_CTL_DEL, devCb->urmaCtx->async_fd, EPOLLIN | EPOLLRDHUP);
     if (!RsListEmpty(asyncEventList)) {
         hccp_run_warn("async_event list do not empty!");
@@ -1067,7 +1120,7 @@ STATIC void RsUbFreeAsyncEventCbList(struct RsUbDevCb *devCb, struct RsListHead 
             RsUbFreeAsyncEventCb(devCb, asyncEventCurr);
         }
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->asyncEventList.mutex);
 }
 
 int RsUbCtxDeinit(struct RsUbDevCb *devCb)
@@ -1076,19 +1129,19 @@ int RsUbCtxDeinit(struct RsUbDevCb *devCb)
 
     hccp_info("[deinit][rs_ctx]start deinit, phyId:%u, devIndex:0x%x", devCb->phyId, devCb->index);
 
-    RsUbFreeSegCbList(devCb, &devCb->lsegList, &devCb->rsegList);
-    RsUbFreeJettyCbList(devCb, &devCb->jettyList, &devCb->rjettyList);
-    RsUbFreeJfcCbList(devCb, &devCb->jfcList);
-    RsUbFreeJfceCbList(devCb, &devCb->jfceList);
-    RsUbFreeTokenIdCbList(devCb, &devCb->tokenIdList);
-    RsUbFreeAsyncEventCbList(devCb, &devCb->asyncEventList);
+    RsUbFreeSegCbList(devCb, &devCb->lsegList.list, &devCb->rsegList.list);
+    RsUbFreeJettyCbList(devCb, &devCb->jettyList.list, &devCb->rjettyList.list);
+    RsUbFreeJfcCbList(devCb, &devCb->jfcList.list);
+    RsUbFreeJfceCbList(devCb, &devCb->jfceList.list);
+    RsUbFreeTokenIdCbList(devCb, &devCb->tokenIdList.list);
+    RsUbFreeAsyncEventCbList(devCb, &devCb->asyncEventList.list);
 
     ret = RsUrmaDeleteContext(devCb->urmaCtx);
     if (ret != 0) {
         hccp_err("rs_urma_delete_context failed, ret:%d", ret);
     }
 
-    pthread_mutex_destroy(&devCb->mutex);
+    RsUbDevCbDestroyMutex(devCb);
 
     RS_PTHREAD_MUTEX_LOCK(&devCb->rscb->mutex);
     RsListDel(&devCb->list);
@@ -1182,19 +1235,19 @@ STATIC int RsUbQuerySegCb(struct RsUbDevCb *devCb, uint64_t addr, struct RsSegCb
     struct RsSegCb *segCurr = NULL;
     struct RsSegCb *segNext = NULL;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->lsegList.mutex);
     RS_LIST_GET_HEAD_ENTRY(segCurr, segNext, segList, list, struct RsSegCb);
     for (; (&segCurr->list) != segList;
         segCurr = segNext, segNext = list_entry(segNext->list.next, struct RsSegCb, list)) {
         if ((segCurr->segInfo.addr <= addr) && (addr < segCurr->segInfo.addr + segCurr->segInfo.len)) {
             *segCb = segCurr;
-            RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->lsegList.mutex);
             return 0;
         }
     }
 
     *segCb = NULL;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->lsegList.mutex);
 
     hccp_info("cannot find seg_cb for addr@0x%lx", addr);
     return -ENODEV;
@@ -1213,7 +1266,7 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
     segCfg.user_ctx = (uintptr_t)NULL;
     segCfg.iova = 0;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->lsegList.mutex);
 
     // token id in cfg is valid, get token id by mem_attr->ub.token_id_addr
     if (segCfg.flag.bs.token_id_valid == URMA_TOKEN_ID_VALID) {
@@ -1237,11 +1290,11 @@ STATIC int RsUbInitSegCb(struct MemRegAttrT *memAttr, struct RsUbDevCb *devCb, s
     // resv len as 1 to save addr for later unreg to query
     segCb->segInfo.addr = (uint64_t)(uintptr_t)segCb->segment;
     segCb->segInfo.len = 1;
-    RsListAddTail(&segCb->list, &devCb->lsegList);
-    devCb->lsegCnt++;
+    RsListAddTail(&segCb->list, &devCb->lsegList.list);
+    devCb->lsegList.nodeCnt++;
 
 free_lock:
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->lsegList.mutex);
     return ret;
 }
 
@@ -1250,7 +1303,7 @@ STATIC void RsUbDeinitSegCb(struct RsUbDevCb *devCb, struct RsSegCb *segCb)
     (void)RsUrmaUnregisterSeg(segCb->segment);
     RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
     RsListDel(&segCb->list);
-    devCb->lsegCnt--;
+    devCb->lsegList.nodeCnt--;
     RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
 }
 
@@ -1310,10 +1363,10 @@ int RsUbCtxLmemUnreg(struct RsUbDevCb *devCb, unsigned long long addr)
     ret = RsUrmaUnregisterSeg(lsegCb->segment);
     CHK_PRT_RETURN(ret != 0, hccp_err("[deinit][rs_ctx_lmem]rs_urma_unregister_seg failed ret:%d ", ret), -EOPENSRC);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->lsegList.mutex);
     RsListDel(&lsegCb->list);
-    devCb->lsegCnt--;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    devCb->lsegList.nodeCnt--;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->lsegList.mutex);
     hccp_run_info("[deinit][rs_ctx_lmem]devIndex:0x%x addr:0x%llx unregister segment success", devCb->index, addr);
     free(lsegCb);
     lsegCb = NULL;
@@ -1360,9 +1413,9 @@ int RsUbCtxRmemImport(struct RsUbDevCb *devCb, struct MemImportAttrT *memAttr,
 
     hccp_run_info("[init][rs_ctx_rmem]devIndex:0x%x import addr:0x%llx", devCb->index, remSegCb->segInfo.addr);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
-    RsListAddTail(&remSegCb->list, &devCb->rsegList);
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rsegList.mutex);
+    RsListAddTail(&remSegCb->list, &devCb->rsegList.list);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rsegList.mutex);
 
     return 0;
 
@@ -1386,9 +1439,9 @@ int RsUbCtxRmemUnimport(struct RsUbDevCb *devCb, unsigned long long addr)
     }
 
     RsUrmaUnimportSeg(remSegCb->segment);
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rsegList.mutex);
     RsListDel(&remSegCb->list);
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rsegList.mutex);
 
     free(remSegCb);
     remSegCb = NULL;
@@ -1470,10 +1523,10 @@ int RsUbCtxJfcCreate(struct RsUbDevCb *devCb, struct CtxCqAttr *attr, struct Ctx
 
     hccp_info("jfc addr:0x%llx", jfcCb->jfcAddr);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
-    jfcCb->devCb->jfcCnt++;
-    RsListAddTail(&jfcCb->list, &devCb->jfcList);
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jfcList.mutex);
+    jfcCb->devCb->jfcList.nodeCnt++;
+    RsListAddTail(&jfcCb->list, &devCb->jfcList.list);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jfcList.mutex);
 
     return 0;
 
@@ -1816,10 +1869,10 @@ int RsUbCtxJettyCreate(struct RsUbDevCb *devCb, struct CtxQpAttr *attr, struct Q
         goto fill_jetty_info_err;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
-    RsListAddTail(&jettyCb->list, &devCb->jettyList);
-    devCb->jettyCnt++;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jettyList.mutex);
+    RsListAddTail(&jettyCb->list, &devCb->jettyList.list);
+    devCb->jettyList.nodeCnt++;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jettyList.mutex);
 
     hccp_run_info("[init][rs_ctx]devIndex:0x%x qp_id:%u create success, jettyCnt:%u",
         devCb->index, info->ub.id, devCb->jettyCnt);
@@ -1840,15 +1893,18 @@ STATIC int RsUbGetJettyCb(struct RsUbDevCb *devCb, unsigned int jettyId, struct 
     struct RsCtxJettyCb *jettyCbCurr = NULL;
     struct RsCtxJettyCb *jettyCbNext = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(jettyCbCurr, jettyCbNext, &devCb->jettyList, list, struct RsCtxJettyCb);
-    for (; (&jettyCbCurr->list) != &devCb->jettyList;
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jettyList.mutex);
+    RS_LIST_GET_HEAD_ENTRY(jettyCbCurr, jettyCbNext, &devCb->jettyList.list, list, struct RsCtxJettyCb);
+    for (; (&jettyCbCurr->list) != &devCb->jettyList.list;
          jettyCbCurr = jettyCbNext,
          jettyCbNext = list_entry(jettyCbNext->list.next, struct RsCtxJettyCb, list)) {
         if (jettyCbCurr->jetty != NULL && jettyCbCurr->jetty->jetty_id.id == jettyId) {
             *tempJettyCb = jettyCbCurr;
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->jettyList.mutex);
             return 0;
         }
     }
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jettyList.mutex);
 
     *tempJettyCb = NULL;
     return -ENODEV;
@@ -1866,10 +1922,10 @@ int RsUbCtxJettyDestroy(struct RsUbDevCb *devCb, unsigned int jettyId)
         return -EINVAL;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->jettyList.mutex);
     RsListDel(&jettyCb->list);
-    devCb->jettyCnt--;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    devCb->jettyList.nodeCnt--;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->jettyList.mutex);
 
     RsUbCtxDrvJettyDelete(jettyCb);
 
@@ -1895,21 +1951,20 @@ int RsUbCtxJettyFree(struct rs_cb *rscb, unsigned int ueInfo, unsigned int jetty
             continue;
         }
 
-        RS_PTHREAD_MUTEX_LOCK(&devCbCurr->mutex);
         ret = RsUbGetJettyCb(devCbCurr, jettyId, &jettyCb);
         if (ret == 0) {
             goto jetty_found;
         }
-        RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->mutex);
     }
 
     hccp_run_warn("get jetty_cb unsuccessful, ueInfo:0x%x, jettyId:%u", ueInfo, jettyId);
     return -ENODEV;
 
 jetty_found:
+    RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->jettyList.mutex);
     RsListDel(&jettyCb->list);
-    devCbCurr->jettyCnt--;
-    RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->mutex);
+    devCbCurr->jettyList.nodeCnt--;
+    RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->jettyList.mutex);
 
     if (jettyCb->state == RS_JETTY_STATE_BIND) {
         hccp_info("jetty_id:%u will be unbind, devIndex:0x%x", jettyId, devCbCurr->index);
@@ -2005,15 +2060,15 @@ int RsUbCtxJettyImport(struct RsUbDevCb *devCb, struct RsJettyImportAttr *import
     importInfo->info.tjettyHandle = (uint64_t)(uintptr_t)rjettyCb->tjetty;
     importInfo->info.tpn = rjettyCb->tjetty->tp.tpn;
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
-    RsListAddTail(&rjettyCb->list, &devCb->rjettyList);
-    devCb->rjettyCnt++;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rjettyList.mutex);
+    RsListAddTail(&rjettyCb->list, &devCb->rjettyList.list);
+    devCb->rjettyList.nodeCnt++;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rjettyList.mutex);
 
     rjettyCb->state = RS_JETTY_STATE_IMPORTED;
 
     hccp_run_info("[init][rs_ctx]devIndex:0x%x rem_qp_id:%u mode:%d import success, rjettyCnt:%u",
-        devCb->index, importInfo->remJettyId, importAttr->attr.mode, devCb->rjettyCnt);
+        devCb->index, importInfo->remJettyId, importAttr->attr.mode, devCb->rjettyList.nodeCnt);
 
     return 0;
 
@@ -2031,8 +2086,9 @@ STATIC int RsUbGetRemJettyCb(struct RsUbDevCb *devCb, unsigned int remJettyId,
     struct RsCtxRemJettyCb *jettyCbCurr = NULL;
     struct RsCtxRemJettyCb *jettyCbNext = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(jettyCbCurr, jettyCbNext, &devCb->rjettyList, list, struct RsCtxRemJettyCb);
-    for (; (&jettyCbCurr->list) != &devCb->rjettyList;
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rjettyList.mutex);
+    RS_LIST_GET_HEAD_ENTRY(jettyCbCurr, jettyCbNext, &devCb->rjettyList.list, list, struct RsCtxRemJettyCb);
+    for (; (&jettyCbCurr->list) != &devCb->rjettyList.list;
          jettyCbCurr = jettyCbNext,
          jettyCbNext = list_entry(jettyCbNext->list.next, struct RsCtxRemJettyCb, list)) {
         if (jettyCbCurr->tjetty == NULL) {
@@ -2041,9 +2097,11 @@ STATIC int RsUbGetRemJettyCb(struct RsUbDevCb *devCb, unsigned int remJettyId,
         }
         if (jettyCbCurr->tjetty->id.id == remJettyId) {
             *tempJettyCb = jettyCbCurr;
+            RS_PTHREAD_MUTEX_ULOCK(&devCb->rjettyList.mutex);
             return 0;
         }
     }
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rjettyList.mutex);
 
     *tempJettyCb = NULL;
     hccp_err("rjetty_cb for rem_jetty %u do not available!", remJettyId);
@@ -2062,11 +2120,11 @@ int RsUbCtxJettyUnimport(struct RsUbDevCb *devCb, unsigned int remJettyId)
     CHK_PRT_RETURN(rjettyCb->state != RS_JETTY_STATE_IMPORTED, hccp_err("rjetty_cb->state:%u not support to "
         "unimport, jettyId:%u", rjettyCb->state, remJettyId), -EINVAL);
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_LOCK(&devCb->rjettyList.mutex);
     RsListDel(&rjettyCb->list);
-    devCb->rjettyCnt--;
-    rjettyCnt = devCb->rjettyCnt;
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    devCb->rjettyList.nodeCnt--;
+    rjettyCnt = devCb->rjettyList.nodeCnt;
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->rjettyList.mutex);
 
     ret = RsUrmaUnimportJetty(rjettyCb->tjetty);
     CHK_PRT_RETURN(ret != 0, hccp_err("rs_urma_unimport_jetty failed, ret:%d, remJettyId %u", ret, remJettyId),
@@ -2420,10 +2478,10 @@ STATIC int RsUbGetJettyDestroyBatchInfo(struct RsUbDevCb *devCb, unsigned int je
         CHK_PRT_RETURN(batchInfo->jettyCbArr[i]->state != RS_JETTY_STATE_CREATED, hccp_err("jetty_cb[%u]->state:%u "
         "not support to destroy, jettyId:%u", i, batchInfo->jettyCbArr[i]->state, jettyIds[i]), -EINVAL);
 
-        RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
+        RS_PTHREAD_MUTEX_LOCK(&devCb->jettyList.mutex);
         RsListDel(&batchInfo->jettyCbArr[i]->list);
-        devCb->jettyCnt--;
-        RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+        devCb->jettyList.nodeCnt--;
+        RS_PTHREAD_MUTEX_ULOCK(&devCb->jettyList.mutex);
 
         batchInfo->jettyArr[i] = batchInfo->jettyCbArr[i]->jetty;
         batchInfo->jfrArr[i] = batchInfo->jettyCbArr[i]->jfr;
@@ -2631,16 +2689,13 @@ STATIC int RsHandleEpollPollJfc(struct RsUbDevCb *devCb, urma_jfce_t *jfce)
 
     for (i = 0; i < polledCnt; i++) {
         jettyId = gCrBuf[i].local_id;
-        RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
         ret = RsUbGetJettyCb(devCb, jettyId, &jettyCb);
         if (ret != 0) {
             hccp_err("get jetty_cb failed, ret:%d, jettyId[%u]:%u", ret, i, jettyId);
-            RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
             break;
         }
         jettyCb->qpShareInfoAddr->ciVal += 1;
         RsJfcCallbackProcess(jettyCb, &(gCrBuf[i]), evJfc);
-        RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
     }
 
 rearm_jfc:
@@ -2655,8 +2710,8 @@ STATIC int RsHandleJfcEpollEvent(struct RsUbDevCb *devCb, int fd)
     struct RsCtxJfceCb *jfceCbNext = NULL;
     urma_jfce_t *jfceTmp = NULL;
 
-    RS_LIST_GET_HEAD_ENTRY(jfceCbCurr, jfceCbNext, &devCb->jfceList, list, struct RsCtxJfceCb);
-    for (; (&jfceCbCurr->list) != &devCb->jfceList;
+    RS_LIST_GET_HEAD_ENTRY(jfceCbCurr, jfceCbNext, &devCb->jfceList.list, list, struct RsCtxJfceCb);
+    for (; (&jfceCbCurr->list) != &devCb->jfceList.list;
         jfceCbCurr = jfceCbNext, jfceCbNext = list_entry(jfceCbNext->list.next, struct RsCtxJfceCb, list)) {
         jfceTmp = (urma_jfce_t *)(uintptr_t)jfceCbCurr->jfceAddr;
         if (jfceTmp->fd == fd) {
@@ -2752,8 +2807,8 @@ STATIC int RsUbGetSaveAsyncEvent(struct RsUbDevCb *devCb)
     hccp_run_info("get async_event_type:%d res_id:%u dev_index:0x%x", event->event_type, asyncEventCb->resId,
         devCb->index);
 
-    RsListAddTail(&asyncEventCb->list, &devCb->asyncEventList);
-    devCb->asyncEventCnt++;
+    RsListAddTail(&asyncEventCb->list, &devCb->asyncEventList.list);
+    devCb->asyncEventList.nodeCnt++;
 
     return ret;
 
@@ -2776,16 +2831,16 @@ int RsEpollEventUrmaAsyncEventInHandle(struct rs_cb *rsCb, int fd)
     RS_LIST_GET_HEAD_ENTRY(devCbCurr, devCbNext, &rsCb->rdevList, list, struct RsUbDevCb);
     for (; (&devCbCurr->list) != &rsCb->rdevList;
         devCbCurr = devCbNext, devCbNext = list_entry(devCbNext->list.next, struct RsUbDevCb, list)) {
-        RS_PTHREAD_MUTEX_LOCK(&devCbCurr->mutex);
+        RS_PTHREAD_MUTEX_LOCK(&devCbCurr->asyncEventList.mutex);
         if (devCbCurr->urmaCtx != NULL && devCbCurr->urmaCtx->async_fd == fd) {
             ret = RsUbGetSaveAsyncEvent(devCbCurr);
             if (ret != 0) {
                 hccp_err("rs_ub_get_save_async_event failed, ret:%d devIndex:0x%x", ret, devCbCurr->index);
             }
-            RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->mutex);
+            RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->asyncEventList.mutex);
             return ret;
         }
-        RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->mutex);
+        RS_PTHREAD_MUTEX_ULOCK(&devCbCurr->asyncEventList.mutex);
     }
 
     return -ENODEV;
@@ -2798,13 +2853,13 @@ void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvent
     unsigned int expectedNum = *num;
 
     *num = 0;
-    if (RsListEmpty(&devCb->asyncEventList)) {
+    if (RsListEmpty(&devCb->asyncEventList.list)) {
         return;
     }
 
-    RS_PTHREAD_MUTEX_LOCK(&devCb->mutex);
-    RS_LIST_GET_HEAD_ENTRY(eventCbCurr, eventCbNext, &devCb->asyncEventList, list, struct RsCtxAsyncEventCb);
-    for (; (&eventCbCurr->list) != &devCb->asyncEventList; eventCbCurr = eventCbNext,
+    RS_PTHREAD_MUTEX_LOCK(&devCb->asyncEventList.mutex);
+    RS_LIST_GET_HEAD_ENTRY(eventCbCurr, eventCbNext, &devCb->asyncEventList.list, list, struct RsCtxAsyncEventCb);
+    for (; (&eventCbCurr->list) != &devCb->asyncEventList.list; eventCbCurr = eventCbNext,
         eventCbNext = list_entry(eventCbNext->list.next, struct RsCtxAsyncEventCb, list)) {
         asyncEvents[*num].resId = eventCbCurr->resId;
         asyncEvents[*num].eventType = eventCbCurr->asyncEvent.event_type;
@@ -2814,5 +2869,5 @@ void RsUbCtxGetAsyncEvents(struct RsUbDevCb *devCb, struct AsyncEvent asyncEvent
             break;
         }
     }
-    RS_PTHREAD_MUTEX_ULOCK(&devCb->mutex);
+    RS_PTHREAD_MUTEX_ULOCK(&devCb->asyncEventList.mutex);
 }
