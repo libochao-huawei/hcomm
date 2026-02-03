@@ -350,7 +350,7 @@ HcclResult CheckOpBasedHcom(HcclOpInfoCtx &opBaseHcom, const uint32_t rank, cons
 }
 
 
-HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
+HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclCommConfig *config, HcclComm *comm)
 {
     CHK_PTR_NULL(*commV2);
     HCCL_INFO("HcclCommInitCollComm start.");
@@ -381,7 +381,7 @@ HcclResult HcclCommInitCollComm(uint32_t rank, void **commV2, HcclComm *comm)
     CHK_RET(HcclGetRankGraphV2(commV2, &rankGraph));
 
     //Collcomm初始化
-    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName));
+    CHK_RET(hcclCommPtr->InitCollComm(*commV2, rankGraph, rank, cclBuffer, commName, config));
     // hcclComm中的IndependentOp，channelManager,ContextManager初始化
     *comm = static_cast<HcclComm>(hcclCommPtr.get());
 
@@ -617,7 +617,8 @@ HcclResult HcclCommInitClusterInfo(const char *clusterInfo, uint32_t rank, HcclC
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -844,7 +845,7 @@ HcclResult HcclCommInitClusterInfoConfig(const char *clusterInfo, uint32_t rank,
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1588,7 +1589,8 @@ HcclResult HcclCommInitRootInfoInner(uint32_t nRanks, const HcclRootInfo *rootIn
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            constexpr HcclCommConfig *config = nullptr; // 未配置为默认加速模式
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, config, comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -1709,7 +1711,7 @@ HcclResult HcclCommInitRootInfoConfigInner(uint32_t nRanks, const HcclRootInfo *
                 *comm = commV2;
                 return HCCL_SUCCESS;
             }
-            CHK_PRT(HcclCommInitCollComm(rank, &commV2, comm));
+            CHK_PRT(HcclCommInitCollComm(rank, &commV2, const_cast<HcclCommConfig *>(config), comm));
             return HCCL_SUCCESS;
         }());
 #endif
@@ -2979,7 +2981,8 @@ HcclResult HcclCommDestroy(HcclComm comm)
                 return HCCL_SUCCESS;
             }
             hccl::hcclComm* hcclComm = static_cast<hccl::hcclComm *>(comm);
-            void* commV2 = hcclComm->GetCommunicatorV2();
+            // 先拷贝orion通信域地址，避免coll comm销毁后无法获取
+            HcclComm commV2 = hcclComm->GetCommunicatorV2();
             string group;
             group = hcclComm->GetIdentifier();
             HcclOpInfoCtx& opBaseHcom = GetHcclOpInfoCtx();

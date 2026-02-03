@@ -1302,6 +1302,13 @@ void CommunicatorImpl::InitHccpHdc() const
 
 void CommunicatorImpl::TryInitCcuFeature()
 {
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+        HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
+            "will use open source ccu feature.", __func__);
+        return;
+    }
+
     if (rankSize == 1) {
         HCCL_RUN_INFO("[CommunicatorImpl][%s] rank size is 1, init steps passed.", __func__);
         return;
