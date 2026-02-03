@@ -68,6 +68,7 @@ private:
     static std::string GetCcuErrorMsgBufLocWrite(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static std::string GetCcuErrorMsgBufReduce(const CcuErrorInfo& ccuErrorInfo, const TaskInfo& taskInfo);
     static RankId GetRankIdByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
+    static std::pair<IpAddress, IpAddress> GetAddrPairByChannelId(uint16_t channelId, const TaskInfo& taskInfo);
 
 private:
     uint32_t devId_; // 当前设备id
