@@ -378,7 +378,7 @@ HccnResult HccnRpingGetTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
         if (target[h].addrType == HCCN_RPING_ADDR_TYPE_EID) {
             if (!HcclIpAddress::IsEID(std::string(target[h].srcEid)) && !HcclIpAddress::IsEID(std::string(target[h].dstEid))) {
                 HCCL_ERROR("[HccnRpingGetTarget] invalid eid");
-                return HCCL_E_PARA;
+                return HCCN_E_PARA;
             }
             input[h].sip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[h].srcEid))); 
             input[h].dip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[h].dstEid)));
