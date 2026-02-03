@@ -3292,15 +3292,15 @@ static constexpr u32 HCCL_AICPU_WAIT_HOST_BASE_TIME_MS = 200 * 1000;
 static constexpr u32 TIME_S_TO_MS = 1000;
 u32 HcclCommAicpu::HcclGetWaitStopExecCmdTimeout()
 {
-    return std::max(static_cast<u32>(GetExternalInputHcclLinkTimeOut()) * TIME_S_TO_MS, HCCL_AICPU_WAIT_HOST_BASE_TIME_MS);
+    return std::max(static_cast<u32>(linkTimeOut_.count()), HCCL_AICPU_WAIT_HOST_BASE_TIME_MS);
 }
 
 u32 HcclCommAicpu::HcclGetWaitRetryCmdTimeout(uint32_t retryCnt)
 {
     if (retryCnt == 0) {
-        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + retryHoldTime_;
+        return HcclGetWaitStopExecCmdTimeout() + retryHoldTime_;
     } else {
-        return HCCL_AICPU_WAIT_HOST_BASE_TIME_MS + retryIntervalTime_;
+        return HcclGetWaitStopExecCmdTimeout() + retryIntervalTime_;
     }
 }
 
