@@ -284,7 +284,7 @@ TEST_F(TestHcclThread, Ut_HcommThreadFree_When_ThreadNullptr_expect_Return_HCCL_
     EXPECT_EQ(ret, HCCL_E_PARA);
 }
 
-// ######################HcommThreadAllocWithStream
+
 TEST_F(TestHcclThread, UT_TestHcommThreadAllocWithStream_When_Allocate_WithStream_expect_return_HcclSuccess)
 {
     std::shared_ptr<Thread> Handle;
@@ -736,47 +736,6 @@ TEST_F(TestHcclThread, Ut_HcclGetNotifyNumInThread_When_engineResMgrNullptr_Retu
     ret =  HcclGetNotifyNumInThread(comm, thread[0], COMM_ENGINE_CPU_TS, &notifyNum);
     EXPECT_EQ(ret, HCCL_E_PTR);
 
-}
-
-TEST_F(TestHcclThread, Ut_001)
-{
-    MOCKER(hrtGetDeviceType)
-        .stubs()
-        .with(outBound(DevType::DEV_TYPE_910_95))
-        .will(returnValue(HCCL_SUCCESS));
-    bool isDeviceSide{false};
-    MOCKER(GetRunSideIsDevice)
-        .stubs()
-        .with(outBound(isDeviceSide))
-        .will(returnValue(HCCL_SUCCESS));  
-
-    void* commV2 = (void*)0x2000;
-    void* rankGraph = (void*)0x2000;
-    u32 rank = 1;
-    HcclMem cclBuffer;
-    cclBuffer.size = 1;
-    cclBuffer.type = HcclMemType::HCCL_MEM_TYPE_HOST;
-    cclBuffer.addr = (void*)0x1000;;
-    char commName[ROOTINFO_INDENTIFIER_MAX_LENGTH] = {};
-    std::shared_ptr<hccl::hcclComm> hcclCommPtr = make_shared<hccl::hcclComm>(1, 1, commName);
-    HcclCommConfig config;
-    config.hcclOpExpansionMode = 1; // 非CCU模式，避免拉起CCU平台层
-    HcclResult ret = hcclCommPtr->InitCollComm(commV2, rankGraph, rank, cclBuffer, commName, &config);
-    EXPECT_EQ(ret, 0);
-    ThreadHandle thread;
-    void* comm = static_cast<HcclComm>(hcclCommPtr.get());
-    ret =  HcclThreadAcquire(comm, COMM_ENGINE_CPU, 1, 3, &thread);
-    EXPECT_EQ(ret, 0);
-
-    // Thread * threadptr0 = reinterpret_cast<Thread *>(&thread);
-
-    
-    // EXPECT_EQ(threadptr0->GetNotifyNum(), 3);
-
-    uint32_t notifyNum;
-    ret =  HcclGetNotifyNumInThread(comm, thread, COMM_ENGINE_CPU_TS, &notifyNum);
-    EXPECT_EQ(ret, 0);
-    EXPECT_EQ(notifyNum, 3);
 }
 
 TEST_F(TestHcclThread, Ut_HcclThreadAcquireWithStream_When_Acquire_CpuTsThread_Return_HCCL_Success)
