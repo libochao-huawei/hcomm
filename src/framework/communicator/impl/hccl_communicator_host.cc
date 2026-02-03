@@ -6712,6 +6712,28 @@ namespace hccl
         CHK_RET(InitAndCheckAicpuOrderNotify(opTilingData->orderLaunchMode));
         CHK_RET(BuildHierarchicalAlgOption(opTilingData->ahcConfInfo));
         opTilingData->aicpuCacheEnable = opParam.aicpuCacheEnable;
+        // 开启aicpu cache, 且原来是图模式建链但强制走单算子模式展开
+        if (opParam.aicpuCacheEnable != 0 &&
+            GetWorkflowMode() == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB &&
+            (IsForceAicpuOpBaseMode(opParam, opType) && !opParam.isZeroCopy)) {
+            // 环境变量传入的aicpuCacheEnable一定 < 10
+            constexpr uint8_t FORCE_OP_BASE_DELTA = 10;
+            CHK_PRT_RET(opParam.aicpuCacheEnable >= FORCE_OP_BASE_DELTA,
+                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable >= %u",
+                    opParam.aicpuCacheEnable, FORCE_OP_BASE_DELTA),
+                HCCL_E_INTERNAL);
+
+            // 1 -> 11: 开启aicpu cache且存在强制单算子模式转换
+            opTilingData->aicpuCacheEnable += FORCE_OP_BASE_DELTA;
+            HCCL_WARNING("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opParam.aicpuCacheEnable[%u]"\
+                "opTilingData->aicpuCacheEnable[%u]", opParam.aicpuCacheEnable, opTilingData->aicpuCacheEnable);
+            
+            // 注意: 开启aicpu cache且存在强制单算子模式转换, 传入device的aicpuCacheEnable一定 > 10
+            CHK_PRT_RET(opTilingData->aicpuCacheEnable <= FORCE_OP_BASE_DELTA,
+                HCCL_ERROR("[HcclCommunicator][AicpuInitOpTilingDataBuf] enforce opbase mode: opTilingData->aicpuCacheEnable[%u] <= %u",
+                    opTilingData->aicpuCacheEnable, FORCE_OP_BASE_DELTA),
+                HCCL_E_INTERNAL);
+        }
 
         // 填充动态内容
         HostMem dynamicDataMem = opTilingDataBuf_.range(sizeof(struct OpTilingData), dynamicDataSize);
