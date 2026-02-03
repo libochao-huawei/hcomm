@@ -23,32 +23,30 @@ CollComm::~CollComm()
     HCCL_INFO("[CollComm][~CollComm] collComm deinit");
 }
 
-HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer)
+HcclResult CollComm::Init(void * rankGraph, aclrtBinHandle binHandle, HcclMem cclBuffer, HcclCommConfig *config)
 {
     EXCEPTION_HANDLE_BEGIN
-    // 创建RankGraph
+
     EXECEPTION_CATCH(rankgraph_ = std::make_unique<RankGraphV2>(rankGraph), return HCCL_E_PTR);
-    // int32_t commEngine = -1;
+
     u32 threadNum = 0xffffffff;
     u32 notifyNumPerThread = 0xffffffff;
-    
-   
-    // Threadmanger
     if (!commEngineResMgr_) {
         EXECEPTION_CATCH(commEngineResMgr_ = std::make_unique<CommEngineResMgr>(),
             return HCCL_E_PTR);
         CHK_PRT(commEngineResMgr_->Init(threadNum, notifyNumPerThread, commId_, binHandle, callbacks_));
     }
 
-    // Contextmanger
     if (!contextMgr_) {
         EXECEPTION_CATCH(contextMgr_ = std::make_unique<ContextManager>(), return HCCL_E_PTR);
     }
-   
 
     EXECEPTION_CATCH(myRank_ = std::make_shared<MyRank>(binHandle, rankId_, config_), return HCCL_E_PTR);
-    // // 初始化MyRank
-    CHK_RET(myRank_->Init(cclBuffer));
+    uint32_t opExpansionMode = 0;
+    if (config) {
+        opExpansionMode = config->hcclOpExpansionMode;
+    }
+    CHK_RET(myRank_->Init(cclBuffer, opExpansionMode));
 
     EXCEPTION_HANDLE_END
     return HCCL_SUCCESS;

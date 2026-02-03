@@ -139,7 +139,8 @@ HcclResult HcclAllocNotify(HcclComm comm, CommEngine commEngine, NotifyType noti
     CHK_PRT_RET(notifyHandleList == nullptr, HCCL_ERROR("[%s] notifyHandleList is null", __func__), HCCL_E_PARA);
     CHK_PRT_RET(*notifyHandleList != nullptr, HCCL_ERROR("[%s] notifyHandleList is not null", __func__), HCCL_E_PARA);
 
-    if (commEngine == CommEngine::COMM_ENGINE_CPU || commEngine == CommEngine::COMM_ENGINE_CPU_TS) {
+    if (commEngine == CommEngine::COMM_ENGINE_CPU || commEngine == CommEngine::COMM_ENGINE_CPU_TS
+        || commEngine == CommEngine::COMM_ENGINE_CCU) {
         if (notifyType != NotifyType:: NOTIFY_TYPE_RTS_NOTIFY) {
             HCCL_ERROR("[%s] commEngine[%u] and notifyType[%u] are mismatch",  __func__, commEngine, notifyType);
             return HCCL_E_PARA;

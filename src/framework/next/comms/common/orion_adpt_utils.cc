@@ -1,4 +1,3 @@
- 
 /**
  * Copyright (c) 2025 Huawei Technologies Co., Ltd.
  * This program is free software, you can redistribute it and/or modify it under the terms and conditions of
@@ -45,6 +44,22 @@ HcclResult CommAddrToIpAddress(const CommAddr &commAddr, Hccl::IpAddress &ipAddr
     return HCCL_SUCCESS;
 }
 
+HcclResult IpAddressToCommAddr(const Hccl::IpAddress &ipAddr, CommAddr &commAddr)
+{
+    int32_t family = ipAddr.GetFamily();
+    const auto &binAddr = ipAddr.GetBinaryAddress();
+
+    if (family == AF_INET) {
+        commAddr.addr = binAddr.addr;
+        commAddr.type = COMM_ADDR_TYPE_IP_V4;
+        return HcclResult::HCCL_SUCCESS;
+    }
+
+    commAddr.addr6 = binAddr.addr6;
+    commAddr.type = COMM_ADDR_TYPE_IP_V6;
+    return HcclResult::HCCL_SUCCESS;
+}
+
 HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProtocol &linkProtocol)
 {
     switch (commProtocol) {
@@ -59,6 +74,9 @@ HcclResult CommProtocolToLinkProtocol(CommProtocol commProtocol, Hccl::LinkProto
             break;
         case COMM_PROTOCOL_HCCS:
             linkProtocol = Hccl::LinkProtocol::HCCS;
+            break;
+        case COMM_PROTOCOL_UB_MEM:
+            linkProtocol = Hccl::LinkProtocol::UB_MEM;
             break;
         default:
             HCCL_ERROR("[%s] Invaild CommProtocol[%u]", __func__, commProtocol);
@@ -96,7 +114,7 @@ HcclResult EndpointDescPairToLinkData(const EndpointDesc &locEp, const EndpointD
             break;
         default:
             // 保留/未知：保持默认 DEV_NET 或者在此处报错
-            HCCL_ERROR("[%s] unknown type of EndpointLocType[%d]", __func__, EndpointLocType::ENDPOINT_LOC_TYPE_HOST);
+            HCCL_ERROR("[%s] unknown type of EndpointLocType[%d]", __func__, locEp.loc.locType);
             break;
     }
 

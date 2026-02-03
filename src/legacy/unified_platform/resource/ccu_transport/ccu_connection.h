@@ -42,6 +42,10 @@ public:
     uint32_t GetChannelId() const;
     uint32_t GetDieId() const;
     int32_t  GetDevLogicId() const;
+    std::vector<CcuJetty *> GetCcuJettys() const
+    {
+        return ccuJettys_;
+    }
     void     Clean();
 
 protected:

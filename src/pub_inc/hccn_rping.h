@@ -32,8 +32,15 @@ typedef enum {
 
 typedef enum {
     HCCN_RPING_MODE_ROCE = 0,    /* RoCE */
+    HCCN_RPING_MODE_UB = 1,      /* UB */
+    PING_MODE_IPoUB = 2,      /* UBoE */
     HCCN_RPING_MODE_RESERVED     /* reserved */
 } HccnRpingMode;
+
+#define HCCN_RPING_ADDR_TYPE uint32_t
+#define HCCN_RPING_ADDR_TYPE_IP ((HCCN_RPING_ADDR_TYPE)0)
+#define HCCN_RPING_ADDR_TYPE_EID ((HCCN_RPING_ADDR_TYPE)1)
+
 
 typedef enum {
     HCCN_RPING_ADDTARGET_STATE_DONE = 0,        /* add success */
@@ -51,25 +58,34 @@ typedef enum {
 } HccnRpingResultState;
 
 typedef struct HccnRpingInitAttrDef {
-    HccnRpingMode mode;  /* Link type: RoCE : HCCN_RPING_MODE_ROCE / others */
+    HccnRpingMode mode;  /* Link type: RoCE : HCCN_RPING_MODE_ROCE /UB/ others */
     uint32_t port;       /* Port to listen when device being target */
     uint32_t npuNum;     /* Numbers of all the devices in the net */
     uint32_t bufferSize; /* Size of resource that device need to allocate when device being client */
     uint32_t sl;         /* service level, range: 0~7, need set as 4 when no use */
     uint32_t tc;         /* traffic class, range: 0~255, need set as 132 when no use */
-    char *ipAddr;        /* IP address of device */
+    union{
+            char *ipAddr;             /* IP address of device */
+            char *eid;             /* Eid of device */
+    };
 } HccnRpingInitAttr;
  
 typedef struct HccnRpingTargetInfoDef {
     uint32_t srcPort;              /* udp src port, hash lag needed */
-    uint32_t reserved;
+    uint32_t addrType;             /* address type, HCCN_RPING_ADDR_TYPE_IP: ip, HCCN_RPING_ADDR_TYPE_EID: eid */
     uint32_t sl;                   /* service level, range: 0~7, need set as 4 when no use */
     uint32_t tc;                   /* traffic class, range: 0~255, need set as 132 when no use */
     uint32_t port;                 /* port to connect target */
     uint32_t payloadLen;
     char payload[HCCN_RPING_PAYLOAD_LEN_MAX]; /* user defined payload */
-    char *srcIp;                   /* local(client) ip */
-    char *dstIp;                   /* remote(target) ip */
+    union {
+      char* srcIp;                  /* local(client) ip */
+      char* srcEid;                 /* local(client) eid */
+    };
+    union {
+      char* dstIp;                  /* remote(target) ip */
+      char* dstEid;                 /* remote(target) eid */
+    };
 } HccnRpingTargetInfo;
  
 typedef struct HccnRpingResultInfoDef {
@@ -96,8 +112,14 @@ typedef struct HccnRpingAddTargetConfigDef {
  * @brief struct of every payload header
  */
 typedef struct HccnRpingPayloadHeadDef {
-    char srcIp[64];        /* local(client) ip */
-    char dstIp[64];        /* remote(target) ip */
+    union {
+        char srcIp[64];   /* local(client) ip */
+        char srcEid[16];  /* local(client) eid */
+    };
+    union {
+        char dstIp[64];   /* remote(target) ip  */
+        char dstEid[16];  /* remote(target) eid */
+    };
     uint32_t payloadLen;   /* user defined payload length */
     uint32_t resvd[3];
     HccnRpingTimestamp t1; /* client send timestamp */
@@ -105,7 +127,8 @@ typedef struct HccnRpingPayloadHeadDef {
     HccnRpingTimestamp t3; /* target send timestamp */
     HccnRpingTimestamp t4; /* client recv timestamp */
     uint32_t rpingBatchId; /* batch ping task id */
-    uint8_t reserved[44];
+    uint32_t addr_type;     /* address type, 0: ip, 1: eid */
+    uint8_t reserved[40];  //PPT40
 } HccnRpingPayloadHead;
 
 /**

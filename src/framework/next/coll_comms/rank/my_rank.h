@@ -18,39 +18,54 @@
 #include "common.h"
 #include "comm_mems/comm_mems.h"
 #include "endpoint_mgr.h"
+
+#include "../../comms/comm_engine_res/ccu/ccu_res_container.h"
+
 namespace hccl {
 /**
  * @note 职责：管理当前通信域下本Rank的信息和通信资源
  */
 class MyRank {
 public:
-    MyRank(aclrtBinHandle binHandle, uint32_t rankId, const RankInfo& rankInfo, const CommConfig& config);
     MyRank(aclrtBinHandle binHandle, uint32_t rankId, const CommConfig& config);
     ~MyRank();
-    // 获取通信内存管理器
-    CommMems* GetCommMems() const { return commMems_.get(); }
-    // 初始化MyRank资源
-    HcclResult Init(HcclMem cclBuffer);
 
-    // 创建通信Channel
+    HcclResult Init(HcclMem cclBuffer, const uint32_t opExpansionMode);
+
+    CommMems* GetCommMems() const { return commMems_.get(); }
+
+    hcomm::CcuResContainer *GetCcuResContainer() { return ccuResContainer_.get(); }
+
+    uint32_t GetOpExpansionMode() {
+        return opExpansionMode_;
+    }
+
     HcclResult CreateChannels(CommEngine engine, const std::string &commTag, 
         const HcclChannelDesc* channelDescs, uint32_t channelNum, ChannelHandle *channels);
     
     HcclResult ChannelGetHcclBuffer(ChannelHandle channel, void **buffer, uint64_t *size);
-
+    HcclResult ChannelGetRemoteMem(ChannelHandle channel, CommMem **remoteMem, char **memTag, uint32_t *memNum);
 private:
     HcclResult BatchCreateSockets(const HcclChannelDesc* channelDescs, uint32_t channelNum,
         const std::string &commTag, std::vector<HcommChannelDesc> &hcommDescs);
     HcclResult BatchCreateChannels(CommEngine engine, const HcclChannelDesc* channelDescs, uint32_t channelNum,
         std::vector<HcommChannelDesc> &hcommDescs, ChannelHandle *channelHandles);
     HcclResult BatchConnectChannels(ChannelHandle *channelHandles, uint32_t channelNum);
+    HcclResult CheckChannelParam(CommEngine engine, const HcclChannelDesc &channelDesc, uint32_t index);
 
     aclrtBinHandle binHandle_{nullptr};
     uint32_t rankId_{};
     CommConfig config_{};
+
+    // 当前通信域初始化没有处理CommConfig，暂时只使用展开模式
+    uint32_t opExpansionMode_{0};
+
     std::unique_ptr<RankPairMgr> rankPairMgr_{nullptr};
     std::unique_ptr<hcomm::EndpointMgr> endpointMgr_{nullptr};
     std::unique_ptr<CommMems> commMems_{nullptr};
+
+    // 当前CommEngineResMgr复用a3代码，为不影响a3流程，先将ccu资源管理放在MyRank
+    std::unique_ptr<hcomm::CcuResContainer> ccuResContainer_{nullptr};
 };
 
 } // namespace hccl

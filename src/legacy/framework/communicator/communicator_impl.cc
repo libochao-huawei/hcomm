@@ -665,14 +665,14 @@ HcclResult CommunicatorImpl::AllocCollOpResource(const CollOpParams &opParams, v
 {
     try {
         if (opParams.commEngine != HcclAccelerator::AICPU && opParams.commEngine != HcclAccelerator::AICPU_TS) {
- 	        HCCL_ERROR("[AllocCollOpResource]It's support aicpu unfold on mc2. input is %s", opParams.commEngine.Describe().c_str());
+            HCCL_ERROR("[AllocCollOpResource::%s]It's support aicpu unfold on mc2. input is %s", __func__, opParams.commEngine.Describe().c_str());
  	        return HCCL_E_NOT_SUPPORT;
  	    }
         CHK_RET(CheckCommStatus());
  
         WaitReady();
         curOpParams = opParams;
-        CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE);
+        CovertToCurrentCollOperator(id, opParams, OpMode::OPBASE, false);
         opExecuteConfig = commExecuteConfig;
         ExecAlgSelect(opParams, OpMode::OPBASE);
         CHK_PTR_NULL(collService);
@@ -934,7 +934,7 @@ void CommunicatorImpl::CalcA2ASendRecvMem(const CollOpParams &opParams, u64 &sen
     recvSize = recvCount * recvTypeSize;
 }
 
-void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams)
+void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams, bool isLaunch)
 {
     if (currentCollOperator) {
         HCCL_INFO("ConvertCollOperatorA2A START");
@@ -959,12 +959,14 @@ void CommunicatorImpl::ConvertCollOperatorA2A(const CollOpParams &opParams)
             currentCollOperator->all2AllVCDataDes.sendCountMatrix = opParams.all2AllVCDataDes.sendCountMatrix;
             currentCollOperator->dataType = opParams.all2AllVCDataDes.sendType;
         }
-        u64 sendSize = 0;
-        u64 recvSize = 0;
-        CalcA2ASendRecvMem(opParams, sendSize, recvSize);
-        HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
-        currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
-        currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
+        if (isLaunch) {
+            u64 sendSize = 0;
+            u64 recvSize = 0;
+            CalcA2ASendRecvMem(opParams, sendSize, recvSize);
+            HCCL_INFO("sendSize[%llu], recvSize[%llu]", sendSize, recvSize);
+            currentCollOperator->inputMem  = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.sendBuf), sendSize);
+            currentCollOperator->outputMem = DevBuffer::Create(reinterpret_cast<uintptr_t >(opParams.recvBuf), recvSize);
+        }
     } else {
         HCCL_ERROR("currentCollOperator is nullptr");
     }
@@ -1016,7 +1018,7 @@ void CommunicatorImpl::ConvertCollOperatorMemV(const CollOpParams &opParams)
     HCCL_INFO("[CommunicatorImpl::%s] end.", __func__);
 }
 
-void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode)
+void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const CollOpParams &opParams, OpMode opMode, bool isLaunch)
 {
     currentCollOperator = make_unique<CollOperator>();
     if (!currentCollOperator) {
@@ -1047,7 +1049,7 @@ void CommunicatorImpl::CovertToCurrentCollOperator(std::string &opTag, const Col
     currentCollOperator->debugCase = opParams.debugCase;
     currentCollOperator->sendRecvRemoteRank = opParams.dstRank;
     if (opParams.opType == OpType::ALLTOALL || opParams.opType == OpType::ALLTOALLV || opParams.opType == OpType::ALLTOALLVC) {
-        ConvertCollOperatorA2A(opParams);
+        ConvertCollOperatorA2A(opParams, isLaunch);
     } else if (opParams.opType == OpType::BATCHSENDRECV) {
         currentCollOperator->batchSendRecvDataDes.sendRecvItemsPtr = opParams.batchSendRecvDataDes.sendRecvItemsPtr;
         currentCollOperator->batchSendRecvDataDes.itemNum = opParams.batchSendRecvDataDes.itemNum;
@@ -1300,6 +1302,13 @@ void CommunicatorImpl::InitHccpHdc() const
 
 void CommunicatorImpl::TryInitCcuFeature()
 {
+    const char *indOp = getenv("HCCL_INDEPENDENT_OP");
+    if (indOp != nullptr && strcmp(indOp, "") != 0) {
+        HCCL_RUN_INFO("[CommunicatorImpl][%s] passed, "
+            "will use open source ccu feature.", __func__);
+        return;
+    }
+
     if (rankSize == 1) {
         HCCL_RUN_INFO("[CommunicatorImpl][%s] rank size is 1, init steps passed.", __func__);
         return;
@@ -3627,6 +3636,25 @@ std::vector<LinkData> CommunicatorImpl::GetFullMeshLinks() const
 
     HCCL_INFO("[CommunicatorImpl::%s] end, links size[%zu]", __func__, links.size());
     return links;
+}
+
+ErrorMessageReport CommunicatorImpl::GetAicpuTaskException()
+{
+    HcclResult ret = HCCL_SUCCESS;
+    ErrorMessageReport errorMessage;
+    if (kfcStatusTransferD2H != nullptr)
+    {
+        ret = kfcStatusTransferD2H->Get(sizeof(KfcStatus) + sizeof(KfcErrType),
+            sizeof(errorMessage), reinterpret_cast<uint8_t *>(&errorMessage));
+        if (ret != HCCL_SUCCESS)
+        {
+            HCCL_ERROR("GetAicpuTaskException get aicpu task exception failed.ret[%u]", ret);
+        }
+    } else {
+        HCCL_ERROR("GetAicpuTaskException kfcStatusTransferD2H is nullptr");
+    }
+    HCCL_INFO("[CommunicatorImpl::GetAicpuTaskException] end");
+    return errorMessage;
 }
 
 } // namespace Hccl
