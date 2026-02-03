@@ -392,32 +392,87 @@ void HcclOneSidedService::SetOneSidedKernelLaunchParam(HcclKernelLaunchParam &pa
     param.kernel.kfcControlTransferD2HParams = comm_->GetKfcStatusTransferD2H().GetCommunicateParams();
 }
 
+namespace{
+	HcclResult GetKernelFilePath(std::string &binaryPath)
+	{
+		// 获取二进制文件路径
+		std::string libPath;
+		char *getPath = getenv("ASCEND_HOME_PATH");
+		//MM_SYS_GET_ENV(MM_ENV_ASCEND_HOME_PATH, getPath);
+		if (getPath != nullptr) {
+			libPath = getPath;
+		} else {
+			libPath = "/usr/local/Ascend/cann/";
+			HCCL_WARNING("[GetKernelFilePath]ENV:ASCEND_HOME_PATH is not set");
+		}
+
+		libPath += "/opp/built-in/op_impl/aicpu/config/";
+		binaryPath = libPath;
+		HCCL_DEBUG("[GetKernelFilePath]kernel folder path[%s]", binaryPath.c_str());
+
+		return HCCL_SUCCESS;
+	}
+
+	HcclResult OneSideLoadBinaryFromFile(const char *binPath, aclrtBinaryLoadOptionType optionType, uint32_t cpuKernelMode,
+		aclrtBinHandle &binHandle)
+	{
+		CHK_PRT_RET(binPath == nullptr,
+			HCCL_ERROR("[Load][Binary]binary path is nullptr"),
+			HCCL_E_PTR);
+
+		char realPath[PATH_MAX] = {0};
+		CHK_PRT_RET(realpath(binPath, realPath) == nullptr,
+			HCCL_ERROR("LoadBinaryFromFile: %s is not a valid real path, err[%d]", binPath, errno),
+			HCCL_E_INTERNAL);
+		HCCL_INFO("[LoadBinaryFromFile]realPath: %s", realPath);
+
+		aclrtBinaryLoadOptions loadOptions = {0};
+		aclrtBinaryLoadOption option;
+		loadOptions.numOpt = 1;
+		loadOptions.options = &option;
+		option.type = optionType;
+		option.value.cpuKernelMode = cpuKernelMode;
+		aclError aclRet = aclrtBinaryLoadFromFile(realPath, &loadOptions, &binHandle); // ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE
+		CHK_PRT_RET(aclRet != ACL_SUCCESS,
+			HCCL_ERROR("[LoadBinaryFromFile]errNo[0x%016llx] load binary from file error.", aclRet),
+			HCCL_E_OPEN_FILE_FAILURE);
+
+		return HCCL_SUCCESS;
+	}
+}
 void HcclOneSidedService::OneSidedAicpuKernelLaunch(HcclKernelLaunchParam &param, Stream &stream) const
 {
     rtHostInputInfo hostInputInfo;
     hostInputInfo.addrOffset = KERNEL_PARAM_ADDR_OFFSET;
     hostInputInfo.dataOffset = KERNEL_PARAM_DATA_OFFSET;
 
-    rtAicpuArgsEx_t args;
-    args.args                 = static_cast<void *>(&param);
-    args.argsSize             = sizeof(HcclKernelLaunchParam);
-    args.hostInputInfoPtr     = &hostInputInfo;
-    args.hostInputInfoNum     = 0;
-    args.kernelOffsetInfoPtr  = nullptr;
-    args.kernelOffsetInfoNum  = 0;
-    args.kernelNameAddrOffset = CalcFieldOffset(param.kernelName, &param);
-    args.soNameAddrOffset     = CalcFieldOffset(param.soName, &param);
-    args.isNoNeedH2DCopy      = false;
+	std::string jsonPath;
+	if (GetKernelFilePath(jsonPath) != HCCL_SUCCESS)
+	{
+		THROW<InternalException>(StringFormat("AicpuKernelLaunch, GetKernelFilePath failed!"));
+	}
+	jsonPath += "ccl_kernel.json";
+	aclrtBinHandle binHandle;
+	HcclResult retCode = OneSideLoadBinaryFromFile(jsonPath.c_str(), ACL_RT_BINARY_LOAD_OPT_CPU_KERNEL_MODE, 0,
+		binHandle);
+	aclrtFuncHandle funcHandle;
+	aclError aclRet = aclrtBinaryGetFunction(binHandle, param.kernelName, &funcHandle);
+	constexpr u32 numBlocks = 1;
+
+	aclrtLaunchKernelCfg cfg;
+	aclrtLaunchKernelAttr attr;
+	cfg.numAttrs = 1;
+	cfg.attrs = &attr;
 
     AddPostToUserStream(stream);
 
     HCCL_INFO("[HcclOneSidedService::AicpuKernelLaunch] param.soName: %s, param.kernelName: %s", param.soName,
               param.kernelName);
 
-    HrtAicpuKernelLaunchExWithArgs(KERNEL_TYPE_AICPU, param.opName, 1, &args, nullptr,
-                                   comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(), 0);
+	HrtAicpuLaunchKernelWithHostArgs(funcHandle, numBlocks, comm_->GetAicpuStreamManager().GetFreeStream()->GetPtr(),
+		&cfg, &param.kernel, sizeof(HcclKernelParamLite));
     HCCL_INFO("[HcclOneSidedService][AicpuKernelLaunch] param.kernel.algName: %s OPBASE mode "
-              "HrtAicpuKernelLaunchExWithArgs end!",
+              "HrtAicpuLaunchKernelWithHostArgs end!",
               param.kernel.algName);
 
     AddWaitToUserStream(stream);
