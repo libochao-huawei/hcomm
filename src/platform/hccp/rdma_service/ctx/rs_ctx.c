@@ -818,14 +818,14 @@ RS_ATTRI_VISI_DEF int RsCtxGetCrErrInfoList(struct RaRsDevInfo *devInfo, struct 
     ret = RsUbGetDevCb(rscb, devInfo->devIndex, &devCb);
     CHK_PRT_RETURN(ret != 0, hccp_err("get dev_cb failed, ret:%d devIndex:0x%x", ret, devInfo->devIndex), ret);
 
-    if (RsListEmpty(&devCb->jettyList)) {
+    if (RsListEmpty(&devCb->jettyList.list)) {
         *num = 0;
         return ret;
     }
 
     numTmp = *num;
-    RS_LIST_GET_HEAD_ENTRY(jettyCbCurr, jettyCbNext, &devCb->jettyList, list, struct RsCtxJettyCb);
-    for (; (&jettyCbCurr->list) != &devCb->jettyList; jettyCbCurr = jettyCbNext,
+    RS_LIST_GET_HEAD_ENTRY(jettyCbCurr, jettyCbNext, &devCb->jettyList.list, list, struct RsCtxJettyCb);
+    for (; (&jettyCbCurr->list) != &devCb->jettyList.list; jettyCbCurr = jettyCbNext,
         jettyCbNext = list_entry(jettyCbNext->list.next, struct RsCtxJettyCb, list)) {
         if (jettyCbCurr->crErrInfo.info.status != 0) {
             RS_PTHREAD_MUTEX_LOCK(&jettyCbCurr->crErrInfo.mutex);
