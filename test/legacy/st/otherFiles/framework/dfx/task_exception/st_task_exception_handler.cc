@@ -699,6 +699,14 @@ TEST_F(TaskExceptionHandlerTest, test_process_ccu)
     exceptionInfo.deviceid = 0;
     exceptionInfo.streamid = 0;
     exceptionInfo.taskid = 0;  // 当前异常TaskId 0
+    exceptionInfo.expandInfo.u.ccuInfo.ccuMissionNum = 1;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].dieId = 1;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].missionId = 2;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].instrId = 3;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].status = 4;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].subStatus = 5;
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].panicLog[7] = 1;  // SQE_RECV_CNT
+    exceptionInfo.expandInfo.u.ccuInfo.missionInfo[0].panicLog[11] = 1; // SQE_SEND_CNT
     TaskExceptionHandler::Process(&exceptionInfo);
 
     globalMirrorTasks.DestroyQueue(0, 0);   // diveceId 0, streamId 0
