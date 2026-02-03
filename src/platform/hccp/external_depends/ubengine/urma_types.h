@@ -789,6 +789,159 @@ typedef struct urma_jetty {
     urma_jetty_opt_t urma_jetty_opt;
 } urma_jetty_t;
 
+enum udma_db_type {
+	UDMA_JFR_TYPE_DB,
+	UDMA_JFC_TYPE_DB,
+	UDMA_JFR_PAYLOAD,
+	UDMA_DB_TYPE_NUM,
+};
+
+struct udma_u_buf {
+	void *buf;
+	uint32_t length;
+};
+
+struct udma_u_db_page {
+	struct udma_u_db_page *prev, *next;
+	struct udma_u_buf buf;
+	uint32_t num_db;
+	uint32_t use_cnt;
+	uintptr_t *bitmap;
+	uint32_t bitmap_cnt;
+};
+
+enum db_mmap_type {
+	UDMA_MMAP_HUGEPAGE,
+	UDMA_MMAP_JFC_PAGE,
+	UDMA_MMAP_JETTY_DSQE,
+};
+
+struct udma_u_doorbell {
+	uint32_t id;
+	enum db_mmap_type type;
+	void volatile *addr;
+};
+
+struct udma_u_hugepage_priv {
+	void *va_base;
+	uint32_t va_len;
+	uint32_t left_va_offset;
+	uint32_t left_va_len;
+	uint32_t refcnt;
+	struct udma_u_hugepage_priv *pre;
+	struct udma_u_hugepage_priv *next;
+};
+
+/* 32 */
+#define UDMA_JETTY_TABLE_NUM 1 << 5
+
+struct udma_u_context {
+	urma_context_t		urma_ctx;
+	void			*db_addr;
+	uint32_t		page_size;
+	struct udma_u_db_page	*db_list[UDMA_DB_TYPE_NUM];
+	pthread_mutex_t		db_list_mutex;
+	struct udma_u_doorbell	db;
+	uint8_t			cqe_size;
+	bool			dwqe_enable;
+	bool			reduce_enable;
+	uint32_t		ue_id;
+	uint32_t		chip_id;
+	uint32_t		die_id;
+	bool			dump_aux_info;
+	uint32_t		jfr_sge;
+	bool			hugepage_enable;
+	pthread_mutex_t		hugepage_lock;
+	struct udma_u_hugepage_priv *hugepage_list;
+	struct {
+		struct udma_u_jetty	**jetty_array;
+		int			refcnt;
+	} jetty_table[UDMA_JETTY_TABLE_NUM];
+	struct {
+		struct udma_u_jfr	**jfr_array;
+		int			refcnt;
+	} jfr_table[UDMA_JETTY_TABLE_NUM];
+	pthread_rwlock_t	jetty_table_lock;
+	pthread_rwlock_t	jfr_table_lock;
+	uint32_t		jettys_in_tbl_shift;
+	uint32_t		jettys_in_tbl;
+};
+
+struct udma_u_target_jetty {
+	urma_target_jetty_t urma_tjetty;
+	urma_eid_t le_eid;
+	uint32_t token_value;
+	bool token_value_valid;
+};
+
+struct udma_u_jetty_queue {
+	struct udma_u_context *ctx;
+	/* Command queue */
+	void *qbuf; /* Base virtual address of command buffer */
+	void *qbuf_end;
+	uint32_t qbuf_size; /* Command buffer size */
+	void *qbuf_curr; /* Virtual address to store the current command */
+	uint32_t pi; /* Producer index of a queue. */
+	uint32_t ci; /* Consumer index of a queue */
+	uint32_t idx; /* JETTY ID */
+	struct udma_u_doorbell db; /* doorbell info */
+	/* Wqe or cqe base block */
+	uint32_t baseblk_shift;
+	uint32_t baseblk_cnt;
+	uint32_t baseblk_mask;
+	uintptr_t *wrid; /* Work Request ID */
+	pthread_spinlock_t lock; /* protect the @qbuf, @qbuf_curr, @wrid, @pi, and @ci. */
+	uint32_t max_inline_size;
+	void *dwqe_addr;
+	struct udma_u_target_jetty *tjetty;
+	urma_transport_mode_t trans_mode;
+	uint32_t sqe_bb_cnt;
+	uint32_t max_sge_num;
+	bool flush_flag;
+	uint32_t old_entry_idx;
+	bool lock_free;
+	bool cstm; /* sq ctrl flag */
+	struct udma_u_hugepage *hugepage;
+};
+
+struct udma_u_jfr_idx_que {
+	struct udma_u_buf buf;
+	uint32_t entry_shift;
+	uint64_t *bitmap;
+	uint32_t bitmap_cnt;
+	bool cstm;
+};
+
+struct udma_u_jfr {
+	urma_jfr_t base;
+	struct udma_u_jetty_queue rq;
+	struct udma_u_jfr_idx_que idx_que;
+	uint32_t wqe_cnt;
+	uint32_t wqe_shift;
+	uint32_t max_sge;
+	uint32_t cap_flags;
+	bool swdb_cstm;
+	uint32_t *sw_db;
+	pthread_spinlock_t lock;
+	bool lock_free;
+	bool *long_sleeptime;
+};
+
+struct udma_u_jetty_grp {
+	urma_jetty_grp_t base;
+	uint32_t jetty_cnt;
+	pthread_spinlock_t lock;
+};
+
+struct udma_u_jetty {
+	urma_jetty_t base;
+	struct udma_u_jetty_queue sq;
+	struct udma_u_jfr *jfr;
+	struct udma_u_jetty_grp *jetty_grp;
+	uint32_t jetty_type;
+	bool pi_type;
+};
+
 typedef struct urma_notifier {
     urma_context_t *urma_ctx;
     int fd;
