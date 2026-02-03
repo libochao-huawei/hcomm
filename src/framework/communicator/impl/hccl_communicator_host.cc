@@ -6673,7 +6673,6 @@ namespace hccl
     u8 HcclCommunicator::GetOrderLaunchMode (bool isCapture)
     {
         bool isSupportHcomAttachedStream = !(attachedStreams_.empty() || attachedStreams_[0].ptr() == nullptr); // true 表示图模式下成功申请附属从流
-        const u8 orderLaunchInvalidInHcom = 255;
         u8 orderLaunchMode = 0;
         HcclWorkflowMode mode = GetWorkflowMode();
         if (isCapture) {
@@ -6683,7 +6682,7 @@ namespace hccl
         } else if (mode == HcclWorkflowMode::HCCL_WORKFLOW_MODE_OPS_KERNEL_INFO_LIB && isSupportHcomAttachedStream) {
             orderLaunchMode = static_cast<u8>(AicpuNotifyMode::HCOM_MODE);
         } else {
-            orderLaunchMode = orderLaunchInvalidInHcom;
+            orderLaunchMode = orderLaunchInvalidInHcom_;
         }
 
         return orderLaunchMode;
@@ -6691,6 +6690,11 @@ namespace hccl
 
     HcclResult HcclCommunicator::InitAndCheckAicpuOrderNotify(u8 &orderLaunchMode)
     {
+        if (orderLaunchMode == orderLaunchInvalidInHcom_) {
+            HCCL_INFO("[HcclCommunicator][InitAndCheckAicpuOrderNotify] orderLaunchMode is invalid in hcom "
+                        "for there is no attached stream included in this operator!");
+            return HCCL_SUCCESS;
+        }
         const u8 opbaseOrderLaunchMode = 0;
         const u8 aclgraphOrderLaunchMode = 1;
         u32 idx0;
