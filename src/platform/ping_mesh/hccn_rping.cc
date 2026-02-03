@@ -37,7 +37,7 @@ constexpr u32 TARGET_NUM_MAX = 16;
 
 
 inline HcclResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAttr *initAttrInter,
-        u32 &npuNumInter, u32 &bufferSizeInter,std::string &ipAddrDesInter)
+        u32 &npuNumInter, PingMesh *rpingInter, u32 &bufferSizeInter,std::string &ipAddrDesInter)
 {
     // npuNum必须为2的整次幂
     npuNumInter = (initAttrInter->npuNum > NPU_NUM_MIN) ? initAttrInter->npuNum : NPU_NUM_MIN;
@@ -59,7 +59,7 @@ inline HcclResult HccnRpingInitInter(uint32_t &devLogicIdInter, HccnRpingInitAtt
         ipAddr = HcclIpAddress(std::string(initAttrInter->ipAddr));
         ret = rpingInter->HccnRpingInit(devLogicIdInter, LINK_TYPE_MODE_ROCE, ipAddr, initAttrInter->port,
             npuNumInter, bufferSizeInter, initAttrInter->sl, initAttrInter->tc);
-        if (ret != HCCN_SUCCESS) {
+        if (ret != HCCL_SUCCESS) {
             return HCCL_E_INTERNAL;
         }
         ipAddrDesInter = ipAddr.GetReadableIP();
@@ -181,7 +181,7 @@ HccnResult HccnRpingAddTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, HccnRpi
     return HccnRpingAddTargetV2(rpingCtx, targetNum, target, &config);
 }
 
-inline HccnResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
+inline HcclResult HccnRpingInitTargetAttr(HccnRpingTargetInfo *targetInter, RpingInput *inputInter, uint32_t &n) {
     if (targetInter[n].addrType == HCCN_RPING_ADDR_TYPE_IP) { 
         inputInter[n].sip = HcclIpAddress(std::string(targetInter[n].srcIp));
         inputInter[n].dip = HcclIpAddress(std::string(targetInter[n].dstIp)); 
@@ -296,7 +296,7 @@ HccnResult HccnRpingRemoveTarget(HccnRpingCtx rpingCtx, uint32_t targetNum, Hccn
         if (target[in].addrType == HCCN_RPING_ADDR_TYPE_EID) {
             if (!HcclIpAddress::IsEID(std::string(target[in].srcEid)) && !HcclIpAddress::IsEID(std::string(target[in].dstEid))) {
                 HCCL_ERROR("[HccnRpingRemoveTarget] invalid eid");
-                return HCCL_E_PARA;
+                return HCCN_E_PARA;
             }
             input[in].sip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[in].srcEid))); 
             input[in].dip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(target[in].dstEid)));
@@ -475,7 +475,7 @@ inline void ResultGetTarget(uint32_t &targetNumInter, HccnRpingTargetInfo *targe
         if (targetInter[k].addrType == HCCN_RPING_ADDR_TYPE_EID) {
             if (!HcclIpAddress::IsEID(std::string(targetInter[k].srcEid)) && !HcclIpAddress::IsEID(std::string(targetInter[k].dstEid))) {
                 HCCL_ERROR("[ResultGetTarget] invalid eid");
-                return HCCL_E_PARA;
+                return ;
             }
             inputInter[k].sip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(targetInter[k].srcEid))); 
             inputInter[k].dip = HcclIpAddress(HcclIpAddress::StrToEID(std::string(targetInter[k].dstEid)));
