@@ -55,7 +55,7 @@ void UbConnLite::FillCommSqe(UdmaSqeCommon *sqe, const RmtRmaBufSliceLite &rmt, 
     sqe->se           = 1; // 表示是否使能solicited event
     sqe->rmtJettyType = 1; // 00 JFR  01:JETTY  10:jettyGroup 11:reserved
     s32 ret           = memcpy_s(sqe->rmtEid, RMT_EID_BYTE_SIZE, rmtEid_.raw, RAW_SIZE);
-    if (ret != 0) {
+    if (UNLIKELY(ret != 0)) {
         HCCL_ERROR("UbConnLite::FillCommSqe FillCommSqe memcpy failed, ret=%d", ret);
         THROW<InternalException>(StringFormat("UbConnLite::FillCommSqe memcpy_s failed, ret = %d", ret));
     }
@@ -110,7 +110,7 @@ void UbConnLite::ProcessSlices(const RmaBufSliceLite &loc, const RmtRmaBufSliceL
     u32 lastSliceSize = locBufSize % sliceSize;
 
     u64 totalSize = static_cast<u64>(sliceNum) * static_cast<u64>(sliceSize);
-    if (loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize) {
+    if (UNLIKELY(loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize)) {
         THROW<InternalException>("integer overflow occurs");
     }
     for (u32 sliceIdx = 0; sliceIdx < sliceNum; sliceIdx++) {
@@ -159,7 +159,7 @@ void UbConnLite::ProcessSlicesWithNotify(
         lastSliceSize = sliceSize;
     }
     u64 totalSize = static_cast<u64>(sliceNum) * static_cast<u64>(sliceSize);
-    if (loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize) {
+    if (UNLIKELY(loc.GetAddr() > UINT64_MAX - totalSize || rmt.GetAddr() > UINT64_MAX - totalSize)) {
         THROW<InternalException>("integer overflow occurs");
     }
     for (u32 sliceIdx = 0; sliceIdx < sliceNum; sliceIdx++) {
@@ -214,7 +214,7 @@ void UbConnLite::ProcessOneWqe(UdmaSqeWrite *sqe, UdmaSqOpcode opCode, const Str
     u8 *va = reinterpret_cast<u8 *>(sqVa_ + sqOffset * SQE_SIZE_64);
     if (!dwqeCacheLocked_) {
         auto ret = memcpy_s(va, SQE_SIZE_64, sqe, SQE_SIZE_64);
-        if (ret != 0) {
+        if (UNLIKELY(ret != 0)) {
             THROW<InternalException>(StringFormat("[UbConnLite::%s] memcpy_s failed, ret = %d", __func__, ret));
         }
     }
@@ -265,11 +265,11 @@ void UbConnLite::ProcessOneWqeWithNotify(const RmaBufSliceLite &loc, const RmtRm
 void UbConnLite::MemorySetAndCopy(u8 *va, u32 sqeSize, void *sqe)
 {
     auto ret = memset_s(va, sqeSize, 0, sqeSize);
-    if (ret != 0) {
+    if (UNLIKELY(ret != 0)) {
         THROW<InternalException>(StringFormat("[UbConnLite::%s] memset fail, ret = %d", __func__, ret));
     }
     ret = memcpy_s(va, sqeSize, sqe, sqeSize);
-    if (ret != 0) {
+    if (UNLIKELY(ret != 0)) {
         THROW<InternalException>(StringFormat("[UbConnLite::%s] not support this op type yet.", __func__));
     }
 }
@@ -334,7 +334,7 @@ void UbConnLite::InlineWrite(const u8 *data, u16 size, const RmtRmaBufSliceLite 
     sqe.comm.inlineMsgLen = size;
     FillCommSqe(&(sqe.comm), rmt, cfg, UdmaSqOpcode::UDMA_OPC_WRITE);
     auto ret = memcpy_s(sqe.u.inlineData.data, SQE_INLINE_DATA_SIZE, data, size);
-    if (ret != 0) {
+    if (UNLIKELY(ret != 0)) {
         THROW<InternalException>(StringFormat("[UbConnLite::%s] not support this op type yet.", __func__));
     }
 
@@ -484,13 +484,17 @@ void UbConnLite::FillBatchOneWqe(const RmaBufSliceLite &loc, const RmtRmaBufSlic
     FillCommSqe(&(sqe.comm), rmt, cfg, opCode);
     FillLocalSgeSqe(&(sqe.u.sge), loc);
 
+    if (UNLIKELY(sqe.u.sge.length == 0)) {
+        sqe.comm.sgeNum = 0;
+    }
+
     CustomizeSqeByOneSidedComm(&(sqe.comm), isLostWqe);
 
     HCCL_INFO("UbConnLite BatchWrite cp data to va %llu, pi %u", sqVa_, pi);
     u8 *va = reinterpret_cast<u8 *>(sqVa_ + sqOffset * SQE_SIZE_64);
     if (dwqeCacheLocked_ == false) {
         auto ret = memcpy_s(va, SQE_SIZE_64, &sqe, sizeof(UdmaSqeWrite));
-        if (ret != 0) {
+        if (UNLIKELY(ret != 0)) {
             HCCL_ERROR("UbConnLite::BatchWrite FillCommSqe memcpy failed, ret=%d", ret);
             THROW<InternalException>(StringFormat("UbConnLite::BatchWrite memcpy_s failed, ret = %d", ret));
         }
@@ -625,7 +629,7 @@ UbConnLiteParam::UbConnLiteParam(std::vector<char> &uniqueId)
     static auto lastPrintTime = std::chrono::steady_clock::now();
     const auto now = std::chrono::steady_clock::now();
     const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastPrintTime).count();
-    if (duration >= MAX_LOG_TIMEOUT_MS) { 
+    if (UNLIKELY(duration >= MAX_LOG_TIMEOUT_MS)) { 
         HCCL_INFO("%s", Describe().c_str());
         lastPrintTime = now;
     }
